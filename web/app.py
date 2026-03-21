@@ -30,7 +30,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '1.8.0'
+VERSION = '1.9.0'
 
 
 def set_version(v):
@@ -2250,6 +2250,140 @@ def create_app():
             w.writerow([r['name'], r['callsign'], r['role'], r['skills'], r['phone'], r['freq'], r['email'], r['address'], r['rally_point'], r['blood_type'], r['medical_notes'], r['notes']])
         return Response(buf.getvalue(), mimetype='text/csv',
                        headers={'Content-Disposition': 'attachment; filename="nomad-contacts.csv"'})
+
+    # ─── Vault API (encrypted client-side) ──────────────────────────
+
+    @app.route('/api/vault')
+    def api_vault_list():
+        db = get_db()
+        rows = db.execute('SELECT id, title, created_at, updated_at FROM vault_entries ORDER BY updated_at DESC').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/vault', methods=['POST'])
+    def api_vault_create():
+        data = request.get_json()
+        db = get_db()
+        cur = db.execute('INSERT INTO vault_entries (title, encrypted_data, iv, salt) VALUES (?, ?, ?, ?)',
+                         (data.get('title', 'Untitled'), data['encrypted_data'], data['iv'], data['salt']))
+        db.commit()
+        eid = cur.lastrowid
+        db.close()
+        return jsonify({'id': eid, 'status': 'saved'}), 201
+
+    @app.route('/api/vault/<int:eid>')
+    def api_vault_get(eid):
+        db = get_db()
+        row = db.execute('SELECT * FROM vault_entries WHERE id = ?', (eid,)).fetchone()
+        db.close()
+        if not row:
+            return jsonify({'error': 'Not found'}), 404
+        return jsonify(dict(row))
+
+    @app.route('/api/vault/<int:eid>', methods=['PUT'])
+    def api_vault_update(eid):
+        data = request.get_json()
+        db = get_db()
+        db.execute('UPDATE vault_entries SET title = ?, encrypted_data = ?, iv = ?, salt = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                   (data.get('title', ''), data['encrypted_data'], data['iv'], data['salt'], eid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'saved'})
+
+    @app.route('/api/vault/<int:eid>', methods=['DELETE'])
+    def api_vault_delete(eid):
+        db = get_db()
+        db.execute('DELETE FROM vault_entries WHERE id = ?', (eid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    # ─── Weather Log API ──────────────────────────────────────────────
+
+    @app.route('/api/weather')
+    def api_weather_list():
+        db = get_db()
+        limit = request.args.get('limit', 50, type=int)
+        rows = db.execute('SELECT * FROM weather_log ORDER BY created_at DESC LIMIT ?', (limit,)).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/weather', methods=['POST'])
+    def api_weather_create():
+        data = request.get_json()
+        db = get_db()
+        cur = db.execute(
+            'INSERT INTO weather_log (pressure_hpa, temp_f, wind_dir, wind_speed, clouds, precip, visibility, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            (data.get('pressure_hpa'), data.get('temp_f'), data.get('wind_dir', ''),
+             data.get('wind_speed', ''), data.get('clouds', ''), data.get('precip', ''),
+             data.get('visibility', ''), data.get('notes', '')))
+        db.commit()
+        row = db.execute('SELECT * FROM weather_log WHERE id = ?', (cur.lastrowid,)).fetchone()
+        db.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/weather/trend')
+    def api_weather_trend():
+        """Return pressure trend for weather prediction."""
+        db = get_db()
+        rows = db.execute('SELECT pressure_hpa, created_at FROM weather_log WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 10').fetchall()
+        db.close()
+        if len(rows) < 2:
+            return jsonify({'trend': 'insufficient', 'prediction': 'Need at least 2 pressure readings', 'readings': len(rows)})
+        newest = rows[0]['pressure_hpa']
+        oldest = rows[-1]['pressure_hpa']
+        diff = newest - oldest
+        if diff > 3:
+            trend, pred = 'rising_fast', 'Fair weather coming. Clearing skies likely.'
+        elif diff > 1:
+            trend, pred = 'rising', 'Weather improving. Gradual clearing.'
+        elif diff < -3:
+            trend, pred = 'falling_fast', 'Storm approaching! Prepare for severe weather within 12-24 hours.'
+        elif diff < -1:
+            trend, pred = 'falling', 'Weather deteriorating. Rain/wind likely within 24 hours.'
+        else:
+            trend, pred = 'steady', 'Stable conditions. Current weather pattern continuing.'
+        return jsonify({'trend': trend, 'prediction': pred, 'diff_hpa': round(diff, 1),
+                       'current': newest, 'readings': len(rows)})
+
+    @app.route('/api/dashboard/overview')
+    def api_dashboard_overview():
+        """Quick overview for command dashboard."""
+        db = get_db()
+        from datetime import datetime, timedelta
+
+        # Active timers
+        timer_count = db.execute('SELECT COUNT(*) as c FROM timers').fetchone()['c']
+
+        # Low stock
+        low_stock = db.execute('SELECT COUNT(*) as c FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchone()['c']
+
+        # Expiring soon (30 days)
+        soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        today = datetime.now().strftime('%Y-%m-%d')
+        expiring = db.execute("SELECT COUNT(*) as c FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ?", (soon, today)).fetchone()['c']
+
+        # Recent incidents (24h)
+        recent_incidents = db.execute("SELECT COUNT(*) as c FROM incidents WHERE created_at >= datetime('now', '-24 hours')").fetchone()['c']
+
+        # Situation board
+        settings = {r['key']: r['value'] for r in db.execute('SELECT key, value FROM settings').fetchall()}
+        sit = {}
+        try:
+            sit = json.loads(settings.get('sit_board', '{}'))
+        except Exception:
+            pass
+
+        # Weather trend
+        pressure_rows = db.execute('SELECT pressure_hpa FROM weather_log WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 3').fetchall()
+
+        db.close()
+
+        return jsonify({
+            'timers': timer_count, 'low_stock': low_stock, 'expiring': expiring,
+            'recent_incidents': recent_incidents, 'situation': sit,
+            'pressure_current': pressure_rows[0]['pressure_hpa'] if pressure_rows else None,
+        })
 
     # ─── Expanded Unified Search ──────────────────────────────────────
 

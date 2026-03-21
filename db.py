@@ -176,6 +176,29 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS vault_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            encrypted_data TEXT NOT NULL,
+            iv TEXT NOT NULL,
+            salt TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS weather_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pressure_hpa REAL,
+            temp_f REAL,
+            wind_dir TEXT DEFAULT '',
+            wind_speed TEXT DEFAULT '',
+            clouds TEXT DEFAULT '',
+            precip TEXT DEFAULT '',
+            visibility TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS waypoints (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,

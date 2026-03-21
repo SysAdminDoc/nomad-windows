@@ -1013,6 +1013,8 @@ a { color: var(--accent); text-decoration: none; }
         <button class="btn btn-sm btn-danger" onclick="stopAllServices()">Stop All</button>
       </div>
     </div>
+    <!-- Command Dashboard Overview -->
+    <div id="cmd-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:16px;"></div>
     <div class="welcome-banner" id="welcome-banner" style="display:none;">
       <h3 class="shimmer-text">Welcome to N.O.M.A.D.</h3>
       <p>Your offline-first knowledge and AI command center. Install your first tool to get started.</p>
@@ -1261,6 +1263,9 @@ a { color: var(--accent); text-decoration: none; }
       <button class="prep-subtab" data-psub="radio" onclick="switchPrepSub('radio')">Radio Ref</button>
       <button class="prep-subtab" data-psub="reference" onclick="switchPrepSub('reference')">Quick Ref</button>
       <button class="prep-subtab" data-psub="protocols" onclick="switchPrepSub('protocols')">Protocols</button>
+      <button class="prep-subtab" data-psub="vault" onclick="switchPrepSub('vault')">Vault</button>
+      <button class="prep-subtab" data-psub="weather" onclick="switchPrepSub('weather')">Weather</button>
+      <button class="prep-subtab" data-psub="signals" onclick="switchPrepSub('signals')">Signals</button>
     </div>
 
     <!-- Sub: Checklists -->
@@ -2097,6 +2102,83 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
     </div><!-- /psub-protocols -->
+
+    <!-- Sub: Vault -->
+    <div id="psub-vault" class="prep-sub">
+    <div class="prep-section">
+      <h3>Document Vault (AES-256 Encrypted)</h3>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
+        <div style="display:flex;gap:8px;margin-bottom:10px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Vault Password</label>
+            <input id="vault-pw" type="password" style="width:200px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="Enter password to unlock"></div>
+          <button class="btn btn-sm btn-primary" onclick="unlockVault()">Unlock</button>
+          <button class="btn btn-sm" onclick="lockVault()">Lock</button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);">Encryption happens in your browser. The password never leaves your machine. If you forget the password, data cannot be recovered.</div>
+      </div>
+      <div id="vault-locked" style="text-align:center;color:var(--text-muted);padding:40px;font-size:13px;">Enter your vault password above to access encrypted documents.</div>
+      <div id="vault-unlocked" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button class="btn btn-sm btn-primary" onclick="newVaultEntry()">+ New Entry</button>
+        </div>
+        <div id="vault-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;">
+          <input id="vault-title" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:13px;font-weight:600;outline:none;margin-bottom:8px;" placeholder="Entry title (e.g., Bank Accounts, Medical Records)">
+          <textarea id="vault-content" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:12px;font-family:'Cascadia Code','Consolas',monospace;outline:none;resize:vertical;min-height:120px;" placeholder="Enter sensitive information here. It will be encrypted before saving."></textarea>
+          <input type="hidden" id="vault-edit-id" value="">
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <button class="btn btn-sm btn-primary" onclick="saveVaultEntry()">Encrypt & Save</button>
+            <button class="btn btn-sm" onclick="hideVaultForm()">Cancel</button>
+          </div>
+        </div>
+        <div id="vault-list"></div>
+      </div>
+    </div>
+    </div><!-- /psub-vault -->
+
+    <!-- Sub: Weather -->
+    <div id="psub-weather" class="prep-sub">
+    <div class="prep-section">
+      <h3>Weather Journal & Barometer</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="settings-card">
+          <h3 style="font-size:13px;">Log Observation</h3>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+            <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Pressure (hPa/mbar)</label><input id="wx-pressure" type="number" step="0.1" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. 1013.25"></div>
+            <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Temperature (F)</label><input id="wx-temp" type="number" step="1" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. 72"></div>
+            <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Wind Direction</label><select id="wx-wind-dir" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"><option value="">Calm</option><option>N</option><option>NE</option><option>E</option><option>SE</option><option>S</option><option>SW</option><option>W</option><option>NW</option></select></div>
+            <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Wind Speed</label><select id="wx-wind-spd" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"><option value="">Calm</option><option>Light (1-7 mph)</option><option>Moderate (8-18 mph)</option><option>Strong (19-31 mph)</option><option>Gale (32-63 mph)</option><option>Storm (64+ mph)</option></select></div>
+            <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Cloud Cover</label><select id="wx-clouds" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"><option value="">Clear</option><option>Few (1-2/8)</option><option>Scattered (3-4/8)</option><option>Broken (5-7/8)</option><option>Overcast (8/8)</option></select></div>
+            <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Precipitation</label><select id="wx-precip" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"><option value="">None</option><option>Light Rain</option><option>Moderate Rain</option><option>Heavy Rain</option><option>Drizzle</option><option>Snow</option><option>Sleet</option><option>Hail</option><option>Fog</option></select></div>
+          </div>
+          <div style="margin-top:8px;"><label style="color:var(--text-dim);display:block;margin-bottom:3px;font-size:12px;">Notes</label><input id="wx-notes" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="Additional observations..."></div>
+          <button class="btn btn-sm btn-primary" onclick="logWeather()" style="margin-top:10px;">Log Observation</button>
+        </div>
+        <div class="settings-card">
+          <h3 style="font-size:13px;">Pressure Trend & Forecast</h3>
+          <div id="wx-trend" style="font-size:13px;"></div>
+          <div id="wx-history" style="margin-top:12px;max-height:300px;overflow-y:auto;"></div>
+        </div>
+      </div>
+    </div>
+    </div><!-- /psub-weather -->
+
+    <!-- Sub: Signals -->
+    <div id="psub-signals" class="prep-sub">
+    <div class="prep-section">
+      <h3>Signal Schedule & Radio Check-Ins</h3>
+      <div class="settings-card">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:end;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Frequency/Channel</label><input id="sig-freq" style="width:160px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. FRS Ch 3"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Check-in Time</label><input id="sig-time" type="time" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Interval</label><select id="sig-interval" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"><option value="1">Every hour</option><option value="2" selected>Every 2 hours</option><option value="4">Every 4 hours</option><option value="6">Every 6 hours</option><option value="8">Every 8 hours</option><option value="12">Every 12 hours</option><option value="24">Once daily</option></select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Callsign / Purpose</label><input id="sig-purpose" style="width:160px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. Net Control"></div>
+          <button class="btn btn-sm btn-primary" onclick="addSignalSchedule()">Add</button>
+        </div>
+        <div id="signal-schedule-list"></div>
+        <div id="signal-next" style="margin-top:12px;padding:10px;background:var(--accent-dim);border-radius:var(--radius-sm);font-size:12px;display:none;"></div>
+      </div>
+    </div>
+    </div><!-- /psub-signals -->
   </div>
 
   <!-- LAN Chat Widget -->
@@ -4146,6 +4228,9 @@ function switchPrepSub(sub) {
   if (sub === 'contacts') loadContacts();
   if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); }
   if (sub === 'reference') { convertUnit(); showPlantZone(); }
+  if (sub === 'vault' && _vaultKey) loadVaultList();
+  if (sub === 'weather') loadWeather();
+  if (sub === 'signals') loadSignalSchedule();
 }
 
 /* ─── Preparedness ─── */
@@ -5011,12 +5096,278 @@ async function deleteWaypoint(id) {
   loadWaypoints();
 }
 
+/* ─── Command Dashboard ─── */
+async function loadCmdDashboard() {
+  try {
+    const d = await (await fetch('/api/dashboard/overview')).json();
+    const el = document.getElementById('cmd-dashboard');
+    const sitLabels = {green:'GOOD',yellow:'CAUTION',orange:'CONCERN',red:'CRITICAL'};
+    const sitColors = {green:'var(--green)',yellow:'#c8a800',orange:'var(--orange)',red:'var(--red)'};
+    // Find worst situation
+    let worstSit = 'green';
+    const sitOrder = ['green','yellow','orange','red'];
+    for (const [domain, level] of Object.entries(d.situation || {})) {
+      if (sitOrder.indexOf(level) > sitOrder.indexOf(worstSit)) worstSit = level;
+    }
+    const hasSit = Object.keys(d.situation || {}).length > 0;
+    el.innerHTML = `
+      ${hasSit ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Status</div>
+        <div style="font-size:16px;font-weight:700;color:${sitColors[worstSit]};margin:2px 0;">${sitLabels[worstSit]}</div>
+      </div>` : ''}
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Timers</div>
+        <div style="font-size:16px;font-weight:700;color:${d.timers > 0 ? 'var(--accent)' : 'var(--text-muted)'};margin:2px 0;">${d.timers}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;cursor:pointer;" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('inventory'),200)">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Low Stock</div>
+        <div style="font-size:16px;font-weight:700;color:${d.low_stock > 0 ? 'var(--red)' : 'var(--green)'};margin:2px 0;">${d.low_stock}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Expiring</div>
+        <div style="font-size:16px;font-weight:700;color:${d.expiring > 0 ? 'var(--orange)' : 'var(--green)'};margin:2px 0;">${d.expiring}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;cursor:pointer;" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('incidents'),200)">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Incidents 24h</div>
+        <div style="font-size:16px;font-weight:700;color:${d.recent_incidents > 0 ? 'var(--orange)' : 'var(--text-muted)'};margin:2px 0;">${d.recent_incidents}</div>
+      </div>
+      ${d.pressure_current ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Pressure</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text);margin:2px 0;">${d.pressure_current}</div>
+      </div>` : ''}
+    `;
+  } catch(e) {}
+}
+
+/* ─── Document Vault (AES-256-GCM client-side encryption) ─── */
+let _vaultKey = null;
+
+async function deriveVaultKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey('raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256'}, keyMaterial, {name: 'AES-GCM', length: 256}, false, ['encrypt', 'decrypt']);
+}
+
+async function unlockVault() {
+  const pw = document.getElementById('vault-pw').value;
+  if (!pw) { toast('Enter a password', 'warning'); return; }
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    _vaultKey = {key: await deriveVaultKey(pw, salt), password: pw};
+    document.getElementById('vault-locked').style.display = 'none';
+    document.getElementById('vault-unlocked').style.display = 'block';
+    loadVaultList();
+    toast('Vault unlocked', 'success');
+  } catch(e) { toast('Failed to unlock', 'error'); }
+}
+
+function lockVault() {
+  _vaultKey = null;
+  document.getElementById('vault-locked').style.display = 'block';
+  document.getElementById('vault-unlocked').style.display = 'none';
+  document.getElementById('vault-pw').value = '';
+  toast('Vault locked');
+}
+
+async function encryptVaultData(text) {
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveVaultKey(_vaultKey.password, salt);
+  const encrypted = await crypto.subtle.encrypt({name: 'AES-GCM', iv}, key, enc.encode(text));
+  return {
+    encrypted_data: btoa(String.fromCharCode(...new Uint8Array(encrypted))),
+    iv: btoa(String.fromCharCode(...iv)),
+    salt: btoa(String.fromCharCode(...salt)),
+  };
+}
+
+async function decryptVaultData(encrypted_data, iv_b64, salt_b64) {
+  const dec = new TextDecoder();
+  const salt = Uint8Array.from(atob(salt_b64), c => c.charCodeAt(0));
+  const iv = Uint8Array.from(atob(iv_b64), c => c.charCodeAt(0));
+  const data = Uint8Array.from(atob(encrypted_data), c => c.charCodeAt(0));
+  const key = await deriveVaultKey(_vaultKey.password, salt);
+  const decrypted = await crypto.subtle.decrypt({name: 'AES-GCM', iv}, key, data);
+  return dec.decode(decrypted);
+}
+
+async function loadVaultList() {
+  try {
+    const entries = await (await fetch('/api/vault')).json();
+    const el = document.getElementById('vault-list');
+    if (!entries.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px;">No entries yet. Click "+ New Entry" to add encrypted documents.</div>'; return; }
+    el.innerHTML = entries.map(e => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:4px;">
+        <div style="cursor:pointer;flex:1;" onclick="viewVaultEntry(${e.id})">
+          <div style="font-weight:500;font-size:13px;">${escapeHtml(e.title)}</div>
+          <div style="font-size:10px;color:var(--text-muted);">${new Date(e.updated_at).toLocaleString()}</div>
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-sm" onclick="editVaultEntry(${e.id})">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteVaultEntry(${e.id})">Delete</button>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+function newVaultEntry() {
+  document.getElementById('vault-form').style.display = 'block';
+  document.getElementById('vault-title').value = '';
+  document.getElementById('vault-content').value = '';
+  document.getElementById('vault-edit-id').value = '';
+}
+
+function hideVaultForm() { document.getElementById('vault-form').style.display = 'none'; }
+
+async function saveVaultEntry() {
+  if (!_vaultKey) { toast('Vault is locked', 'warning'); return; }
+  const title = document.getElementById('vault-title').value.trim();
+  const content = document.getElementById('vault-content').value;
+  if (!title) { toast('Title required', 'warning'); return; }
+  try {
+    const encrypted = await encryptVaultData(content);
+    const editId = document.getElementById('vault-edit-id').value;
+    if (editId) {
+      await fetch(`/api/vault/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title, ...encrypted})});
+    } else {
+      await fetch('/api/vault', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title, ...encrypted})});
+    }
+    toast('Entry encrypted and saved', 'success');
+    hideVaultForm();
+    loadVaultList();
+  } catch(e) { toast('Encryption failed: ' + e.message, 'error'); }
+}
+
+async function viewVaultEntry(id) {
+  if (!_vaultKey) { toast('Vault is locked', 'warning'); return; }
+  try {
+    const e = await (await fetch(`/api/vault/${id}`)).json();
+    const decrypted = await decryptVaultData(e.encrypted_data, e.iv, e.salt);
+    document.getElementById('vault-form').style.display = 'block';
+    document.getElementById('vault-title').value = e.title;
+    document.getElementById('vault-content').value = decrypted;
+    document.getElementById('vault-edit-id').value = id;
+  } catch(err) { toast('Decryption failed — wrong password?', 'error'); }
+}
+
+async function editVaultEntry(id) { await viewVaultEntry(id); }
+
+async function deleteVaultEntry(id) {
+  await fetch(`/api/vault/${id}`, {method:'DELETE'});
+  toast('Entry deleted');
+  loadVaultList();
+}
+
+/* ─── Weather Journal ─── */
+async function logWeather() {
+  const data = {
+    pressure_hpa: parseFloat(document.getElementById('wx-pressure').value) || null,
+    temp_f: parseFloat(document.getElementById('wx-temp').value) || null,
+    wind_dir: document.getElementById('wx-wind-dir').value,
+    wind_speed: document.getElementById('wx-wind-spd').value,
+    clouds: document.getElementById('wx-clouds').value,
+    precip: document.getElementById('wx-precip').value,
+    notes: document.getElementById('wx-notes').value.trim(),
+  };
+  await fetch('/api/weather', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  toast('Weather observation logged', 'success');
+  document.getElementById('wx-notes').value = '';
+  loadWeather();
+}
+
+async function loadWeather() {
+  try {
+    // Load trend
+    const trend = await (await fetch('/api/weather/trend')).json();
+    const trendEl = document.getElementById('wx-trend');
+    const trendColors = {rising_fast:'var(--green)',rising:'var(--green)',steady:'var(--text)',falling:'var(--orange)',falling_fast:'var(--red)',insufficient:'var(--text-muted)'};
+    const trendIcons = {rising_fast:'++ ',rising:'+ ',steady:'= ',falling:'- ',falling_fast:'-- ',insufficient:''};
+    trendEl.innerHTML = `
+      <div style="font-size:18px;font-weight:700;color:${trendColors[trend.trend]};">${trendIcons[trend.trend]}${trend.current ? trend.current + ' hPa' : 'No data'}</div>
+      ${trend.diff_hpa !== undefined ? `<div style="font-size:12px;color:var(--text-dim);">Change: ${trend.diff_hpa > 0 ? '+' : ''}${trend.diff_hpa} hPa over ${trend.readings} readings</div>` : ''}
+      <div style="font-size:13px;margin-top:6px;font-weight:500;">${trend.prediction}</div>`;
+
+    // Load history
+    const history = await (await fetch('/api/weather?limit=20')).json();
+    const histEl = document.getElementById('wx-history');
+    if (!history.length) { histEl.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No observations yet.</div>'; return; }
+    histEl.innerHTML = '<table class="freq-table"><thead><tr><th>Time</th><th>hPa</th><th>Temp</th><th>Wind</th><th>Sky</th><th>Notes</th></tr></thead><tbody>' +
+      history.map(w => {
+        const t = new Date(w.created_at);
+        const ts = t.toLocaleDateString([],{month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+        return `<tr><td style="white-space:nowrap;">${ts}</td><td>${w.pressure_hpa||'-'}</td><td>${w.temp_f ? w.temp_f+'F' : '-'}</td><td>${w.wind_dir||'-'} ${w.wind_speed||''}</td><td>${[w.clouds,w.precip].filter(Boolean).join(', ')||'-'}</td><td style="font-size:10px;">${escapeHtml(w.notes||'')}</td></tr>`;
+      }).join('') + '</tbody></table>';
+  } catch(e) {}
+}
+
+/* ─── Signal Schedule ─── */
+let _signalSchedule = [];
+
+function loadSignalSchedule() {
+  const saved = localStorage.getItem('nomad-signal-schedule');
+  _signalSchedule = saved ? JSON.parse(saved) : [];
+  renderSignalSchedule();
+}
+
+function addSignalSchedule() {
+  const freq = document.getElementById('sig-freq').value.trim();
+  const time = document.getElementById('sig-time').value;
+  const interval = parseInt(document.getElementById('sig-interval').value);
+  const purpose = document.getElementById('sig-purpose').value.trim();
+  if (!freq || !time) { toast('Frequency and time required', 'warning'); return; }
+  _signalSchedule.push({freq, time, interval, purpose, id: Date.now()});
+  localStorage.setItem('nomad-signal-schedule', JSON.stringify(_signalSchedule));
+  document.getElementById('sig-freq').value = '';
+  document.getElementById('sig-purpose').value = '';
+  renderSignalSchedule();
+  toast('Signal schedule added', 'success');
+}
+
+function deleteSignalEntry(id) {
+  _signalSchedule = _signalSchedule.filter(s => s.id !== id);
+  localStorage.setItem('nomad-signal-schedule', JSON.stringify(_signalSchedule));
+  renderSignalSchedule();
+}
+
+function renderSignalSchedule() {
+  const el = document.getElementById('signal-schedule-list');
+  if (!_signalSchedule.length) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:12px;">No signal schedules. Add check-in times above.</div>';
+    document.getElementById('signal-next').style.display = 'none';
+    return;
+  }
+  el.innerHTML = '<table class="freq-table"><thead><tr><th>Freq/Channel</th><th>Start Time</th><th>Interval</th><th>Purpose</th><th></th></tr></thead><tbody>' +
+    _signalSchedule.map(s => `<tr><td style="font-weight:600;">${escapeHtml(s.freq)}</td><td>${s.time}</td><td>Every ${s.interval}h</td><td>${escapeHtml(s.purpose)}</td><td><span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="deleteSignalEntry(${s.id})">x</span></td></tr>`).join('') +
+    '</tbody></table>';
+
+  // Calculate next check-in
+  const now = new Date();
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  let nextMin = Infinity, nextEntry = null;
+  _signalSchedule.forEach(s => {
+    const [h, m] = s.time.split(':').map(Number);
+    const startMins = h * 60 + m;
+    for (let t = startMins; t < 1440; t += s.interval * 60) {
+      if (t > nowMins && t < nextMin) { nextMin = t; nextEntry = s; }
+    }
+  });
+  const nextEl = document.getElementById('signal-next');
+  if (nextEntry) {
+    const nh = Math.floor(nextMin / 60), nm = nextMin % 60;
+    nextEl.style.display = 'block';
+    nextEl.innerHTML = `<strong>Next check-in:</strong> ${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')} on <strong>${escapeHtml(nextEntry.freq)}</strong> ${nextEntry.purpose ? '(' + escapeHtml(nextEntry.purpose) + ')' : ''}`;
+  } else { nextEl.style.display = 'none'; }
+}
+
 /* ─── Init ─── */
 loadServices();
+loadCmdDashboard();
 loadReadiness();
 loadActivity();
 loadContentSummary();
-setInterval(() => { loadServices(); loadReadiness(); }, 8000);
+setInterval(() => { loadServices(); loadReadiness(); loadCmdDashboard(); }, 8000);
 checkNetwork();
 setInterval(checkNetwork, 30000);
 checkWizard();

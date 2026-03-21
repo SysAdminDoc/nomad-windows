@@ -6,3 +6,5 @@ dist/
 build/
 screenshot*.png
 .env
+ProjectNOMAD-Setup.exe
+.qdrant-initialized

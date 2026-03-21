@@ -12,7 +12,7 @@ import subprocess
 from flask import Flask, render_template, jsonify, request, Response
 
 from db import get_db
-from services import ollama, kiwix, cyberchef, kolibri
+from services import ollama, kiwix, cyberchef, kolibri, qdrant
 from services.manager import (
     get_download_progress, get_dir_size, format_size, uninstall_service, get_services_dir
 )
@@ -24,9 +24,16 @@ SERVICE_MODULES = {
     'kiwix': kiwix,
     'cyberchef': cyberchef,
     'kolibri': kolibri,
+    'qdrant': qdrant,
 }
 
-VERSION = '0.4.0'
+VERSION = '0.5.0'
+
+# RAG / Knowledge Base state
+_embed_state = {'status': 'idle', 'doc_id': None, 'progress': 0, 'detail': ''}
+EMBED_MODEL = 'nomic-embed-text:v1.5'
+CHUNK_SIZE = 500  # approximate tokens per chunk
+CHUNK_OVERLAP = 50
 
 # Benchmark state
 _benchmark_state = {'status': 'idle', 'progress': 0, 'stage': '', 'results': None}
@@ -174,9 +181,27 @@ def create_app():
         model = data.get('model', ollama.DEFAULT_MODEL)
         messages = data.get('messages', [])
         system_prompt = data.get('system_prompt', '')
+        use_kb = data.get('knowledge_base', False)
 
         if not ollama.running():
             return jsonify({'error': 'Ollama is not running'}), 503
+
+        # RAG: inject knowledge base context if enabled
+        if use_kb and qdrant.running() and messages:
+            last_user_msg = next((m['content'] for m in reversed(messages) if m['role'] == 'user'), '')
+            if last_user_msg:
+                try:
+                    vectors = embed_text([last_user_msg], prefix='search_query: ')
+                    if vectors:
+                        results = qdrant.search(vectors[0], limit=4)
+                        if results:
+                            context_parts = [r.get('payload', {}).get('text', '') for r in results if r.get('score', 0) > 0.3]
+                            if context_parts:
+                                kb_context = '\n\n---\n\n'.join(context_parts)
+                                system_prompt = (system_prompt + '\n\n' if system_prompt else '') + \
+                                    f'Use the following knowledge base context to help answer the question. If the context is not relevant, ignore it.\n\n--- Knowledge Base ---\n{kb_context}\n--- End Knowledge Base ---'
+                except Exception as e:
+                    log.warning(f'RAG context injection failed: {e}')
 
         if system_prompt:
             messages = [{'role': 'system', 'content': system_prompt}] + messages
@@ -781,6 +806,195 @@ def create_app():
             pass
 
         return jsonify({'online': online, 'lan_ip': lan_ip, 'dashboard_url': f'http://{lan_ip}:8080'})
+
+    # ─── Knowledge Base / RAG API ─────────────────────────────────────
+
+    def get_kb_upload_dir():
+        path = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD', 'kb_uploads')
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
+        """Split text into overlapping chunks (~chunk_size words)."""
+        words = text.split()
+        chunks = []
+        i = 0
+        while i < len(words):
+            chunk = ' '.join(words[i:i + chunk_size])
+            if chunk.strip():
+                chunks.append(chunk)
+            i += chunk_size - overlap
+        return chunks
+
+    def embed_text(texts: list[str], prefix: str = 'search_document: ') -> list[list[float]]:
+        """Embed texts using Ollama's embedding API."""
+        import requests as rq
+        prefixed = [prefix + t for t in texts]
+        resp = rq.post(
+            f'http://localhost:{ollama.OLLAMA_PORT}/api/embed',
+            json={'model': EMBED_MODEL, 'input': prefixed},
+            timeout=120,
+        )
+        resp.raise_for_status()
+        return resp.json().get('embeddings', [])
+
+    def extract_text_from_file(filepath: str, content_type: str) -> str:
+        """Extract text from uploaded file."""
+        if content_type == 'pdf':
+            try:
+                import PyPDF2
+                text = ''
+                with open(filepath, 'rb') as f:
+                    reader = PyPDF2.PdfReader(f)
+                    for page in reader.pages:
+                        text += page.extract_text() or ''
+                return text
+            except Exception as e:
+                log.error(f'PDF extraction failed: {e}')
+                return ''
+        else:
+            # Plain text / markdown
+            with open(filepath, 'r', encoding='utf-8', errors='ignore') as f:
+                return f.read()
+
+    @app.route('/api/kb/upload', methods=['POST'])
+    def api_kb_upload():
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+
+        file = request.files['file']
+        if not file.filename:
+            return jsonify({'error': 'No filename'}), 400
+
+        filename = file.filename
+        ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+        content_type = 'pdf' if ext == 'pdf' else 'text'
+
+        upload_dir = get_kb_upload_dir()
+        filepath = os.path.join(upload_dir, filename)
+        file.save(filepath)
+        file_size = os.path.getsize(filepath)
+
+        db = get_db()
+        cur = db.execute('INSERT INTO documents (filename, content_type, file_size, status) VALUES (?, ?, ?, ?)',
+                         (filename, content_type, file_size, 'pending'))
+        db.commit()
+        doc_id = cur.lastrowid
+        db.close()
+
+        # Start embedding in background
+        def do_embed():
+            global _embed_state
+            _embed_state = {'status': 'processing', 'doc_id': doc_id, 'progress': 0, 'detail': f'Processing {filename}...'}
+            db2 = get_db()
+            try:
+                # Ensure embedding model is available
+                _embed_state['detail'] = 'Checking embedding model...'
+                models = ollama.list_models()
+                model_names = [m['name'] for m in models]
+                if EMBED_MODEL not in model_names and EMBED_MODEL.split(':')[0] not in [m.split(':')[0] for m in model_names]:
+                    _embed_state['detail'] = f'Pulling {EMBED_MODEL}...'
+                    ollama.pull_model(EMBED_MODEL)
+
+                # Extract text
+                _embed_state.update({'progress': 20, 'detail': 'Extracting text...'})
+                text = extract_text_from_file(filepath, content_type)
+                if not text.strip():
+                    raise ValueError('No text could be extracted from file')
+
+                # Chunk
+                _embed_state.update({'progress': 30, 'detail': 'Chunking text...'})
+                chunks = chunk_text(text)
+                total = len(chunks)
+
+                # Embed in batches of 8
+                _embed_state.update({'progress': 40, 'detail': f'Embedding {total} chunks...'})
+                batch_size = 8
+                all_points = []
+                import hashlib
+                for i in range(0, total, batch_size):
+                    batch = chunks[i:i + batch_size]
+                    vectors = embed_text(batch)
+                    for j, (chunk, vec) in enumerate(zip(batch, vectors)):
+                        point_id = int(hashlib.md5(f'{doc_id}:{i+j}'.encode()).hexdigest()[:8], 16)
+                        all_points.append({
+                            'id': point_id,
+                            'vector': vec,
+                            'payload': {
+                                'doc_id': doc_id,
+                                'filename': filename,
+                                'chunk_index': i + j,
+                                'text': chunk,
+                            }
+                        })
+                    pct = 40 + int(60 * min(i + batch_size, total) / total)
+                    _embed_state.update({'progress': pct, 'detail': f'Embedded {min(i+batch_size, total)}/{total} chunks'})
+
+                # Upsert to Qdrant
+                qdrant.upsert_vectors(all_points)
+
+                db2.execute('UPDATE documents SET status = ?, chunks_count = ? WHERE id = ?',
+                            ('ready', total, doc_id))
+                db2.commit()
+                _embed_state = {'status': 'complete', 'doc_id': doc_id, 'progress': 100, 'detail': f'{filename}: {total} chunks embedded'}
+
+            except Exception as e:
+                log.error(f'Embedding failed for doc {doc_id}: {e}')
+                db2.execute('UPDATE documents SET status = ?, error = ? WHERE id = ?', ('error', str(e), doc_id))
+                db2.commit()
+                _embed_state = {'status': 'error', 'doc_id': doc_id, 'progress': 0, 'detail': str(e)}
+            finally:
+                db2.close()
+
+        threading.Thread(target=do_embed, daemon=True).start()
+        return jsonify({'status': 'uploading', 'doc_id': doc_id}), 201
+
+    @app.route('/api/kb/documents')
+    def api_kb_documents():
+        db = get_db()
+        docs = db.execute('SELECT * FROM documents ORDER BY created_at DESC').fetchall()
+        db.close()
+        return jsonify([dict(d) for d in docs])
+
+    @app.route('/api/kb/documents/<int:doc_id>', methods=['DELETE'])
+    def api_kb_document_delete(doc_id):
+        db = get_db()
+        doc = db.execute('SELECT filename FROM documents WHERE id = ?', (doc_id,)).fetchone()
+        if doc:
+            filepath = os.path.join(get_kb_upload_dir(), doc['filename'])
+            if os.path.isfile(filepath):
+                os.remove(filepath)
+            qdrant.delete_by_doc_id(doc_id)
+            db.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
+            db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/kb/status')
+    def api_kb_status():
+        info = qdrant.get_collection_info() if qdrant.running() else {'points_count': 0}
+        return jsonify({**_embed_state, 'collection': info, 'qdrant_running': qdrant.running()})
+
+    @app.route('/api/kb/search', methods=['POST'])
+    def api_kb_search():
+        data = request.get_json()
+        query = data.get('query', '')
+        limit = data.get('limit', 5)
+        if not query:
+            return jsonify([])
+        try:
+            vectors = embed_text([query], prefix='search_query: ')
+            if not vectors:
+                return jsonify([])
+            results = qdrant.search(vectors[0], limit=limit)
+            return jsonify([{
+                'text': r.get('payload', {}).get('text', ''),
+                'filename': r.get('payload', {}).get('filename', ''),
+                'score': r.get('score', 0),
+            } for r in results])
+        except Exception as e:
+            log.error(f'KB search failed: {e}')
+            return jsonify([])
 
     # ─── Health ────────────────────────────────────────────────────────
 

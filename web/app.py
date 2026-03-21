@@ -22,7 +22,7 @@ SERVICE_MODULES = {
     'cyberchef': cyberchef,
 }
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 
 
 def create_app():
@@ -205,6 +205,13 @@ def create_app():
         def do_download():
             try:
                 kiwix.download_zim(url, filename)
+                # Auto-restart Kiwix to pick up new content
+                if kiwix.running():
+                    log.info('Restarting Kiwix to load new ZIM content...')
+                    kiwix.stop()
+                    import time
+                    time.sleep(1)
+                    kiwix.start()
             except Exception as e:
                 log.error(f'ZIM download failed: {e}')
 
@@ -341,10 +348,90 @@ def create_app():
             'disk_total': format_size(disk_total),
         })
 
+    # ─── Conversations API ────────────────────────────────────────────
+
+    @app.route('/api/conversations')
+    def api_conversations_list():
+        db = get_db()
+        convos = db.execute('SELECT id, title, model, created_at, updated_at FROM conversations ORDER BY updated_at DESC').fetchall()
+        db.close()
+        return jsonify([dict(c) for c in convos])
+
+    @app.route('/api/conversations', methods=['POST'])
+    def api_conversations_create():
+        data = request.get_json() or {}
+        db = get_db()
+        cur = db.execute('INSERT INTO conversations (title, model, messages) VALUES (?, ?, ?)',
+                         (data.get('title', 'New Chat'), data.get('model', ''), '[]'))
+        db.commit()
+        cid = cur.lastrowid
+        convo = db.execute('SELECT * FROM conversations WHERE id = ?', (cid,)).fetchone()
+        db.close()
+        return jsonify(dict(convo)), 201
+
+    @app.route('/api/conversations/<int:cid>')
+    def api_conversations_get(cid):
+        db = get_db()
+        convo = db.execute('SELECT * FROM conversations WHERE id = ?', (cid,)).fetchone()
+        db.close()
+        if not convo:
+            return jsonify({'error': 'Not found'}), 404
+        return jsonify(dict(convo))
+
+    @app.route('/api/conversations/<int:cid>', methods=['PUT'])
+    def api_conversations_update(cid):
+        data = request.get_json()
+        db = get_db()
+        db.execute('UPDATE conversations SET title = ?, model = ?, messages = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                   (data.get('title'), data.get('model'), json.dumps(data.get('messages', [])), cid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'saved'})
+
+    @app.route('/api/conversations/<int:cid>', methods=['DELETE'])
+    def api_conversations_delete(cid):
+        db = get_db()
+        db.execute('DELETE FROM conversations WHERE id = ?', (cid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    # ─── Connectivity & Network ───────────────────────────────────────
+
+    @app.route('/api/network')
+    def api_network():
+        import socket
+        # Internet check
+        online = False
+        try:
+            socket.create_connection(('1.1.1.1', 443), timeout=3).close()
+            online = True
+        except Exception:
+            pass
+
+        # LAN IP
+        lan_ip = '127.0.0.1'
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(('8.8.8.8', 80))
+            lan_ip = s.getsockname()[0]
+            s.close()
+        except Exception:
+            pass
+
+        return jsonify({'online': online, 'lan_ip': lan_ip})
+
     # ─── Health ────────────────────────────────────────────────────────
 
     @app.route('/api/health')
     def api_health():
         return jsonify({'status': 'ok', 'version': VERSION})
+
+    # ─── Favicon ──────────────────────────────────────────────────────
+
+    @app.route('/favicon.ico')
+    def favicon():
+        svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><polygon points="32,4 60,32 32,60 4,32" fill="#4f9cf7"/><polygon points="32,14 50,32 32,50 14,32" fill="#0d0d0d"/><polygon points="32,22 42,32 32,42 22,32" fill="#4f9cf7"/></svg>'
+        return Response(svg, mimetype='image/svg+xml')
 
     return app

@@ -48,7 +48,7 @@ from PIL import Image, ImageDraw
 from web.app import create_app
 from db import init_db, get_db
 
-VERSION = '0.2.0'
+VERSION = '0.3.0'
 PORT = 8080
 
 _tray_icon = None
@@ -140,6 +140,32 @@ def on_window_closing():
     return False  # Prevent actual close
 
 
+def health_monitor():
+    """Background thread that detects crashed services and updates DB status."""
+    from services import ollama, kiwix, cyberchef
+    from services.manager import _processes
+
+    time.sleep(10)  # Wait for initial startup
+    mods = {'ollama': ollama, 'kiwix': kiwix, 'cyberchef': cyberchef}
+
+    while True:
+        try:
+            db = get_db()
+            rows = db.execute('SELECT id FROM services WHERE running = 1 AND installed = 1').fetchall()
+            for row in rows:
+                sid = row['id']
+                mod = mods.get(sid)
+                if mod and not mod.running():
+                    log.warning(f'Service {sid} crashed — marking as stopped')
+                    db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (sid,))
+                    db.commit()
+                    _processes.pop(sid, None)
+            db.close()
+        except Exception as e:
+            log.error(f'Health monitor error: {e}')
+        time.sleep(15)
+
+
 def first_run_check():
     """Check if this is the first run and mark it."""
     db = get_db()
@@ -183,6 +209,9 @@ def main():
 
     # Auto-start services from previous session
     threading.Thread(target=auto_start_services, daemon=True).start()
+
+    # Health monitor — detect crashed services
+    threading.Thread(target=health_monitor, daemon=True).start()
 
     # System tray
     setup_tray()

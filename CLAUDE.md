@@ -52,15 +52,18 @@ pyinstaller build.spec
 - Kiwix: http://localhost:8888
 - CyberChef: http://localhost:8889
 
-## Features (v0.2.0)
+## Features (v0.3.0)
 - **Setup wizard** — first-run guided install of all services
 - **Auto-start** — previously running services restart on app launch
 - **System tray** — minimize to tray, background operation
+- **Health monitor** — background crash detection, auto-marks failed services as stopped
 - **Service management** — install, start, stop, restart, uninstall with disk usage
 - **AI Chat** — streaming responses, model pull with progress, model delete, system prompts
-- **Kiwix Library** — ZIM catalog browser, download/delete content packs
+- **Conversation history** — persistent chat sessions with sidebar, auto-create, auto-save
+- **Kiwix Library** — ZIM catalog browser, download/delete content packs, auto-restart on new ZIM
 - **Notes** — markdown notes with auto-save
 - **Settings** — system info (CPU/RAM/GPU/disk), model manager with recommended models
+- **Network status** — online/offline indicator with LAN IP in header
 - **Download progress** — speed display, percentage tracking
 
 ## Architecture Decisions
@@ -73,6 +76,9 @@ pyinstaller build.spec
 - **Kiwix** uses kiwix-tools Windows binary with `kiwix-serve`
 - Downloads use GitHub Releases API to resolve versioned URLs dynamically (CyberChef)
 - Ollama model pull uses streaming API for real-time progress
+- Conversations stored as JSON messages blob in SQLite
+- Health monitor runs every 15s, checks `running()` on each service module
+- Network status checks connectivity to 1.1.1.1:443, LAN IP via UDP socket trick
 
 ## Gotchas
 - Kiwix tools URL includes version number — currently hardcoded to 3.8.1
@@ -82,7 +88,7 @@ pyinstaller build.spec
 - psutil import used in system info endpoint — included in bootstrap
 
 ## Version
-v0.2.0
+v0.3.0
 
 ## Status
-Working v0.2.0 — all 3 services install/start/stop/restart/uninstall. Auto-start on launch. System tray. Setup wizard. AI chat with streaming + model management. ZIM catalog browser. Notes with auto-save. Settings with system info + GPU detection. PyInstaller build spec.
+Working v0.3.0 — all 3 services install/start/stop/restart/uninstall. Auto-start on launch. System tray. Health monitor for crash detection. Setup wizard. AI chat with streaming + model management + persistent conversation history. ZIM catalog with auto-restart Kiwix on new downloads. Notes with auto-save. Network status indicator. Settings with system info + GPU detection. PyInstaller build spec. README.

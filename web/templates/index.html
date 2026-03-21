@@ -4,6 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Project N.O.M.A.D. - Command Center</title>
+<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css">
+<script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/pmtiles@4.0.0/dist/pmtiles.js"></script>
 <style>
 :root {
   --bg: #0a0a0a;
@@ -400,6 +403,48 @@ a { color: var(--accent); text-decoration: none; }
 }
 .lan-banner a { font-weight: 600; }
 
+/* ─── KB Panel ─── */
+.kb-panel {
+  padding: 8px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px; font-size: 12px; flex-wrap: wrap;
+}
+.kb-toggle { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.kb-toggle input { accent-color: var(--accent); }
+.kb-docs { max-height: 120px; overflow-y: auto; font-size: 11px; }
+.kb-doc-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 3px 6px; background: var(--surface2); border-radius: 4px; margin: 2px 0;
+}
+.kb-doc-item .kb-doc-status { font-size: 10px; }
+
+/* ─── Notes Preview ─── */
+.notes-editor-split { display: flex; flex: 1; overflow: hidden; }
+.notes-editor-split textarea { flex: 1; border-right: 1px solid var(--border); }
+.notes-preview {
+  flex: 1; padding: 14px 16px; overflow-y: auto;
+  font-size: 13px; line-height: 1.7; color: var(--text);
+}
+.notes-preview pre { background: var(--bg); padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12px; }
+.notes-preview code { background: var(--bg); padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: 'Cascadia Code','Consolas',monospace; }
+.notes-preview pre code { background: none; padding: 0; }
+.notes-preview h1,.notes-preview h2,.notes-preview h3 { margin: 8px 0; }
+.notes-preview blockquote { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--text-dim); }
+.notes-preview ul,.notes-preview ol { margin-left: 18px; }
+
+/* ─── Map Search ─── */
+.map-search {
+  position: absolute; top: 10px; left: 10px; z-index: 2;
+  display: flex; gap: 4px;
+}
+.map-search input {
+  background: var(--surface); color: var(--text); border: 1px solid var(--border);
+  padding: 6px 12px; border-radius: var(--radius-sm); font-size: 12px; width: 240px; outline: none;
+}
+.map-search button {
+  background: var(--accent); color: #fff; border: none; padding: 6px 12px;
+  border-radius: var(--radius-sm); font-size: 12px; cursor: pointer;
+}
+
 /* ─── Toast ─── */
 .toast {
   position: fixed; bottom: 20px; right: 20px;
@@ -416,7 +461,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <div class="header">
   <div class="header-logo"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-  <h1>Project N.O.M.A.D. <span class="version">v0.4.0</span></h1>
+  <h1>Project N.O.M.A.D. <span class="version">v0.5.0</span></h1>
   <div class="header-right">
     <span id="net-status" style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--text-muted);"></span>
   </div>
@@ -463,6 +508,13 @@ a { color: var(--accent); text-decoration: none; }
             <div class="progress-info"><span id="pull-detail">...</span><span id="pull-pct">0%</span></div>
           </div>
         </div>
+        <div class="kb-panel" id="kb-panel">
+          <label class="kb-toggle"><input type="checkbox" id="kb-toggle" onchange="toggleKB()"> Knowledge Base</label>
+          <input type="file" id="kb-file-input" style="display:none;" accept=".pdf,.txt,.md,.csv" onchange="uploadKBFile()">
+          <button class="btn btn-sm" onclick="document.getElementById('kb-file-input').click()">Upload Doc</button>
+          <span id="kb-status-badge" style="font-size:10px;color:var(--text-muted);"></span>
+          <div class="kb-docs" id="kb-docs-list" style="display:none;width:100%;margin-top:4px;"></div>
+        </div>
         <div class="chat-messages" id="chat-messages">
           <div class="empty-state" id="chat-empty">
             <div class="icon">AI</div>
@@ -498,16 +550,26 @@ a { color: var(--accent); text-decoration: none; }
   <div id="tab-maps" class="tab-content">
     <div class="map-controls">
       <span style="font-weight:600;font-size:14px;">Offline Maps</span>
-      <span style="font-size:11px;color:var(--text-dim);">Download US regional maps for offline use</span>
+      <button class="btn btn-sm" id="map-toggle-btn" onclick="toggleMapView()">Show Map</button>
     </div>
-    <div id="map-container" class="map-wrap" style="display:none;"></div>
-    <div id="map-placeholder" class="settings-card" style="min-height:200px;">
-      <h3>Map Regions</h3>
-      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Download PMTiles map data for offline map viewing. Each region covers multiple US states.</p>
-      <div class="region-grid" id="region-grid"></div>
-      <div style="margin-top:16px;">
-        <h3 style="margin-bottom:8px;">Downloaded Maps</h3>
-        <div id="map-files-list"><span style="color:var(--text-dim);font-size:12px;">No maps downloaded yet.</span></div>
+    <div id="map-viewer" style="display:none;position:relative;">
+      <div class="map-search">
+        <input id="map-search-input" placeholder="Search location..." onkeydown="if(event.key==='Enter')searchMap()">
+        <button onclick="searchMap()">Go</button>
+      </div>
+      <div id="map-container" class="map-wrap"></div>
+    </div>
+    <div id="map-management">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <div class="settings-card">
+          <h3>Map Regions</h3>
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Download PMTiles map data for offline map viewing.</p>
+          <div class="region-grid" id="region-grid"></div>
+        </div>
+        <div class="settings-card">
+          <h3>Downloaded Maps</h3>
+          <div id="map-files-list"><span style="color:var(--text-dim);font-size:12px;">No maps downloaded yet.</span></div>
+        </div>
       </div>
     </div>
   </div>
@@ -525,9 +587,13 @@ a { color: var(--accent); text-decoration: none; }
       <div class="notes-editor">
         <div class="notes-editor-header">
           <input id="note-title" placeholder="Note title..." oninput="autoSaveNote()">
+          <button class="btn btn-sm" onclick="toggleNotePreview()" id="note-preview-btn">Preview</button>
           <button class="btn btn-sm btn-danger" onclick="deleteNote()">Delete</button>
         </div>
-        <textarea id="note-content" placeholder="Start writing..." oninput="autoSaveNote()"></textarea>
+        <div class="notes-editor-split">
+          <textarea id="note-content" placeholder="Start writing (Markdown supported)..." oninput="autoSaveNote();updateNotePreview()"></textarea>
+          <div class="notes-preview" id="note-preview" style="display:none;"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -540,10 +606,12 @@ a { color: var(--accent); text-decoration: none; }
         <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">
           Test your system's CPU, memory, disk, and AI inference performance. Results are scored 0-100.
         </p>
-        <div style="display:flex;gap:8px;margin-bottom:16px;">
+        <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-primary" onclick="runBenchmark('full')" id="bench-run-btn">Run Full Benchmark</button>
           <button class="btn" onclick="runBenchmark('system')">System Only</button>
           <button class="btn" onclick="runBenchmark('ai')">AI Only</button>
+          <span style="color:var(--text-dim);font-size:12px;margin-left:8px;">Builder Tag:</span>
+          <input id="builder-tag" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 10px;border-radius:6px;font-size:12px;width:140px;outline:none;" placeholder="Your name" oninput="saveBuilderTag()">
         </div>
         <div id="bench-progress" style="display:none;">
           <div class="progress-bar"><div class="fill" id="bench-fill" style="width:0%"></div></div>
@@ -648,6 +716,13 @@ a { color: var(--accent); text-decoration: none; }
             <div class="wiz-cap-desc">Khan Academy courses, textbooks, progress tracking</div>
           </div>
         </div>
+        <div class="wiz-cap selected" data-svc="qdrant">
+          <input type="checkbox" checked>
+          <div class="wiz-cap-info">
+            <div class="wiz-cap-name">Knowledge Base (Qdrant)</div>
+            <div class="wiz-cap-desc">Document upload and semantic search for AI chat (RAG)</div>
+          </div>
+        </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:center;">
         <button class="btn btn-primary" onclick="runWizard()" id="wiz-start-btn">Install Selected</button>
@@ -688,7 +763,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); }
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); }
     if (tab.dataset.tab === 'maps') loadMaps();
-    if (tab.dataset.tab === 'benchmark') loadBenchHistory();
+    if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
   });
 });
 
@@ -747,6 +822,7 @@ const SVC = {
   kiwix:     { name:'Kiwix (Information Library)',   desc:'Offline Wikipedia, medical references, survival guides, and ebooks.' },
   cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.' },
   kolibri:   { name:'Kolibri (Education Platform)',  desc:'Offline Khan Academy courses, textbooks, and educational content.' },
+  qdrant:    { name:'Qdrant (Vector DB)',           desc:'Vector database for knowledge base semantic search and RAG.' },
 };
 
 async function loadServices() {
@@ -951,7 +1027,7 @@ async function sendChat() {
   try {
     const resp = await fetch('/api/ai/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model, messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)})
+      body: JSON.stringify({model, knowledge_base: kbEnabled, messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)})
     });
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
@@ -1439,6 +1515,162 @@ function skipWizard() {
   document.getElementById('wizard').style.display = 'none';
   history.replaceState(null, '', '/');
   fetch('/api/settings/wizard-complete', {method:'POST'});
+}
+
+/* ─── Knowledge Base ─── */
+let kbEnabled = false;
+
+function toggleKB() {
+  kbEnabled = document.getElementById('kb-toggle').checked;
+  const docsEl = document.getElementById('kb-docs-list');
+  docsEl.style.display = kbEnabled ? 'block' : 'none';
+  if (kbEnabled) loadKBDocs();
+}
+
+async function loadKBDocs() {
+  const docs = await (await fetch('/api/kb/documents')).json();
+  const el = document.getElementById('kb-docs-list');
+  if (!docs.length) { el.innerHTML = '<span style="color:var(--text-muted);font-size:10px;">No documents uploaded yet.</span>'; return; }
+  el.innerHTML = docs.map(d => {
+    const color = d.status === 'ready' ? 'var(--green)' : d.status === 'error' ? 'var(--red)' : 'var(--orange)';
+    return `<div class="kb-doc-item">
+      <span>${escapeHtml(d.filename)} <span class="kb-doc-status" style="color:${color};">${d.status}${d.chunks_count ? ' ('+d.chunks_count+' chunks)' : ''}</span></span>
+      <span class="convo-del" style="cursor:pointer;color:var(--red);font-size:12px;" onclick="deleteKBDoc(${d.id})">x</span>
+    </div>`;
+  }).join('');
+
+  // Update badge
+  const status = await (await fetch('/api/kb/status')).json();
+  const badge = document.getElementById('kb-status-badge');
+  if (status.qdrant_running) {
+    badge.textContent = `${status.collection?.points_count || 0} vectors`;
+    badge.style.color = 'var(--green)';
+  } else {
+    badge.textContent = 'Qdrant not running';
+    badge.style.color = 'var(--red)';
+  }
+}
+
+async function uploadKBFile() {
+  const input = document.getElementById('kb-file-input');
+  if (!input.files.length) return;
+  const file = input.files[0];
+  const formData = new FormData();
+  formData.append('file', file);
+  toast(`Uploading ${file.name}...`);
+  await fetch('/api/kb/upload', {method: 'POST', body: formData});
+  input.value = '';
+  toast('Processing document...');
+  pollKBEmbed();
+}
+
+let _kbPoll = null;
+function pollKBEmbed() {
+  if (_kbPoll) return;
+  _kbPoll = setInterval(async () => {
+    const s = await (await fetch('/api/kb/status')).json();
+    if (s.status === 'complete' || s.status === 'error' || s.status === 'idle') {
+      clearInterval(_kbPoll); _kbPoll = null;
+      if (s.status === 'complete') toast('Document embedded!');
+      if (s.status === 'error') toast('Embedding failed: ' + s.detail);
+      loadKBDocs();
+    }
+  }, 2000);
+}
+
+async function deleteKBDoc(id) {
+  await fetch(`/api/kb/documents/${id}`, {method:'DELETE'});
+  toast('Document deleted');
+  loadKBDocs();
+}
+
+/* ─── Map Viewer ─── */
+let _map = null;
+let _mapVisible = false;
+
+function toggleMapView() {
+  _mapVisible = !_mapVisible;
+  document.getElementById('map-viewer').style.display = _mapVisible ? 'block' : 'none';
+  document.getElementById('map-management').style.display = _mapVisible ? 'none' : 'block';
+  document.getElementById('map-toggle-btn').textContent = _mapVisible ? 'Manage Maps' : 'Show Map';
+  if (_mapVisible && !_map) initMap();
+}
+
+function initMap() {
+  if (typeof maplibregl === 'undefined') {
+    toast('MapLibre GL JS not loaded (requires internet on first use)');
+    return;
+  }
+
+  // Register PMTiles protocol
+  if (typeof pmtiles !== 'undefined') {
+    const protocol = new pmtiles.Protocol();
+    maplibregl.addProtocol('pmtiles', protocol.tile);
+  }
+
+  _map = new maplibregl.Map({
+    container: 'map-container',
+    style: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
+    center: [-98.5, 39.8],
+    zoom: 4,
+    attributionControl: true,
+  });
+
+  _map.addControl(new maplibregl.NavigationControl(), 'top-right');
+  _map.addControl(new maplibregl.FullscreenControl(), 'top-right');
+  _map.addControl(new maplibregl.GeolocateControl({
+    positionOptions: {enableHighAccuracy: true},
+    trackUserLocation: true,
+  }));
+}
+
+async function searchMap() {
+  const q = document.getElementById('map-search-input').value.trim();
+  if (!q || !_map) return;
+  try {
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
+    const results = await r.json();
+    if (results.length) {
+      const {lat, lon, display_name} = results[0];
+      _map.flyTo({center: [parseFloat(lon), parseFloat(lat)], zoom: 12});
+      new maplibregl.Marker().setLngLat([parseFloat(lon), parseFloat(lat)])
+        .setPopup(new maplibregl.Popup().setText(display_name))
+        .addTo(_map).togglePopup();
+    } else { toast('Location not found'); }
+  } catch(e) { toast('Search failed (requires internet)'); }
+}
+
+/* ─── Notes Preview ─── */
+let _notePreviewVisible = false;
+
+function toggleNotePreview() {
+  _notePreviewVisible = !_notePreviewVisible;
+  document.getElementById('note-preview').style.display = _notePreviewVisible ? 'block' : 'none';
+  document.getElementById('note-preview-btn').textContent = _notePreviewVisible ? 'Editor' : 'Preview';
+  if (_notePreviewVisible) updateNotePreview();
+}
+
+function updateNotePreview() {
+  if (!_notePreviewVisible) return;
+  const content = document.getElementById('note-content').value;
+  document.getElementById('note-preview').innerHTML = renderMarkdown(content);
+}
+
+/* ─── Builder Tag ─── */
+let _builderTagTimer;
+function saveBuilderTag() {
+  clearTimeout(_builderTagTimer);
+  _builderTagTimer = setTimeout(async () => {
+    const tag = document.getElementById('builder-tag').value;
+    await fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({builder_tag: tag})});
+  }, 500);
+}
+
+async function loadBuilderTag() {
+  try {
+    const s = await (await fetch('/api/settings')).json();
+    if (s.builder_tag) document.getElementById('builder-tag').value = s.builder_tag;
+  } catch(e) {}
 }
 
 /* ─── Init ─── */

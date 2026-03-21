@@ -58,6 +58,17 @@ def init_db():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT NOT NULL,
+            content_type TEXT DEFAULT 'text',
+            file_size INTEGER DEFAULT 0,
+            chunks_count INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            error TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS benchmarks (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cpu_score REAL DEFAULT 0,

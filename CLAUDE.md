@@ -25,6 +25,7 @@ services/
   kiwix.py            # Kiwix service (kiwix-serve + tiered ZIM catalog)
   cyberchef.py        # CyberChef (GitHub Releases API + static HTTP server)
   kolibri.py          # Kolibri education platform (pip install + subprocess)
+  qdrant.py           # Qdrant vector DB (GitHub Releases binary + REST API)
 ```
 
 ## Key Paths
@@ -56,8 +57,8 @@ pyinstaller build.spec
 - CyberChef: http://localhost:8889
 - Kolibri: http://localhost:8300
 
-## Features (v0.4.0)
-- **4 services**: Ollama (AI), Kiwix (offline content), CyberChef (data tools), Kolibri (education)
+## Features (v0.5.0)
+- **5 services**: Ollama (AI), Kiwix (offline content), CyberChef (data tools), Kolibri (education)
 - **Setup wizard** — capability selection (choose which services to install)
 - **Auto-start** — previously running services restart on app launch
 - **System tray** — minimize to tray, background operation
@@ -105,7 +106,7 @@ pyinstaller build.spec
 - Benchmark disk test creates/deletes temp files in ProjectNOMAD\benchmark\
 
 ## Version
-v0.4.0
+v0.5.0
 
 ## Status
-Working v0.4.0 — 4 services (Ollama, Kiwix, CyberChef, Kolibri). Feature parity with original Project N.O.M.A.D.: tiered ZIM catalog, AI chat with markdown/conversations/rename, benchmark system, system monitoring with live gauges, maps management, enhanced wizard with capability selection, custom AI name, LAN access display, disk device breakdown. 7-tab dashboard: Services, AI Chat, Library, Maps, Notes, Benchmark, Settings.
+Working v0.5.0 — 5 services (Ollama, Kiwix, CyberChef, Kolibri, Qdrant). Full feature parity with original Project N.O.M.A.D.: Qdrant vector DB + RAG pipeline (document upload, PDF extraction, chunking, embedding, semantic search in AI chat), MapLibre GL JS map viewer with Nominatim search, notes with markdown preview, benchmark with builder tags, tiered ZIM catalog, AI chat with markdown/conversations/rename, system monitoring with live gauges, enhanced wizard with capability selection. 7-tab dashboard.

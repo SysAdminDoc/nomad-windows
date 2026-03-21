@@ -726,6 +726,10 @@ a { color: var(--accent); text-decoration: none; }
     <div class="map-controls">
       <span style="font-weight:600;font-size:14px;">Offline Maps</span>
       <button class="btn btn-sm" id="map-toggle-btn" onclick="toggleMapView()">Show Map</button>
+      <button class="btn btn-sm" onclick="dropPin()" style="display:none;" id="pin-btn">Drop Pin</button>
+      <button class="btn btn-sm" id="measure-btn" onclick="toggleMeasure()" style="display:none;">Measure</button>
+      <button class="btn btn-sm" onclick="clearPins()" style="display:none;" id="clear-pins-btn">Clear Pins</button>
+      <span id="map-coords" style="font-size:10px;color:var(--text-muted);margin-left:auto;font-family:monospace;"></span>
     </div>
     <div id="map-viewer" style="display:none;position:relative;">
       <div class="map-search">
@@ -845,6 +849,24 @@ a { color: var(--accent); text-decoration: none; }
         </div>
       </div>
       <div class="settings-card" style="grid-column:1/-1;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">
+          Application Log
+          <div style="display:flex;gap:6px;">
+            <select id="log-level-filter" class="preset-select" onchange="loadLogViewer()">
+              <option value="">All Levels</option>
+              <option value="error">Errors</option>
+              <option value="warning">Warnings</option>
+            </select>
+            <button class="btn btn-sm" onclick="loadLogViewer()">Refresh</button>
+          </div>
+        </h3>
+        <div id="log-viewer" style="max-height:250px;overflow-y:auto;margin-top:8px;font-family:'Cascadia Code','Consolas',monospace;font-size:11px;line-height:1.6;"></div>
+      </div>
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3>Disk Space Monitor</h3>
+        <div id="disk-monitor"></div>
+      </div>
+      <div class="settings-card" style="grid-column:1/-1;">
         <h3>About</h3>
         <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
           <p><strong style="color:var(--text);">Project N.O.M.A.D. for Windows</strong> &mdash; Native edition, no Docker required.</p>
@@ -935,7 +957,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'ai-chat') { loadModels(); loadConversations(); pollPullProgress(); }
     if (tab.dataset.tab === 'notes') loadNotes();
-    if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); }
+    if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); loadLogViewer(); loadDiskMonitor(); }
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); }
     if (tab.dataset.tab === 'maps') loadMaps();
     if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
@@ -1774,8 +1796,13 @@ function toggleMapView() {
   document.getElementById('map-viewer').style.display = _mapVisible ? 'block' : 'none';
   document.getElementById('map-management').style.display = _mapVisible ? 'none' : 'block';
   document.getElementById('map-toggle-btn').textContent = _mapVisible ? 'Manage Maps' : 'Show Map';
+  ['pin-btn','measure-btn','clear-pins-btn'].forEach(id => document.getElementById(id).style.display = _mapVisible ? '' : 'none');
   if (_mapVisible && !_map) initMap();
 }
+
+let _mapMarkers = [];
+let _measurePoints = [];
+let _measureMode = false;
 
 function initMap() {
   if (typeof maplibregl === 'undefined') {
@@ -1783,7 +1810,6 @@ function initMap() {
     return;
   }
 
-  // Register PMTiles protocol
   if (typeof pmtiles !== 'undefined') {
     const protocol = new pmtiles.Protocol();
     maplibregl.addProtocol('pmtiles', protocol.tile);
@@ -1799,10 +1825,87 @@ function initMap() {
 
   _map.addControl(new maplibregl.NavigationControl(), 'top-right');
   _map.addControl(new maplibregl.FullscreenControl(), 'top-right');
+  _map.addControl(new maplibregl.ScaleControl({maxWidth: 200}), 'bottom-left');
   _map.addControl(new maplibregl.GeolocateControl({
     positionOptions: {enableHighAccuracy: true},
     trackUserLocation: true,
   }));
+
+  // Coordinate display on mouse move
+  const coordEl = document.getElementById('map-coords');
+  _map.on('mousemove', (e) => {
+    if (coordEl) coordEl.textContent = `${e.lngLat.lat.toFixed(5)}, ${e.lngLat.lng.toFixed(5)}`;
+  });
+
+  // Click to drop pin
+  _map.on('click', (e) => {
+    if (_measureMode) {
+      addMeasurePoint(e.lngLat);
+      return;
+    }
+  });
+}
+
+function dropPin() {
+  if (!_map) return;
+  const center = _map.getCenter();
+  const note = prompt('Pin label (optional):');
+  const marker = new maplibregl.Marker({color: '#5b9fff'})
+    .setLngLat(center)
+    .setPopup(new maplibregl.Popup().setText(note || `${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`))
+    .addTo(_map);
+  marker.togglePopup();
+  _mapMarkers.push(marker);
+  toast('Pin dropped');
+}
+
+function clearPins() {
+  _mapMarkers.forEach(m => m.remove());
+  _mapMarkers = [];
+  toast('Pins cleared');
+}
+
+function toggleMeasure() {
+  _measureMode = !_measureMode;
+  document.getElementById('measure-btn').textContent = _measureMode ? 'Stop Measuring' : 'Measure';
+  if (!_measureMode) {
+    _measurePoints = [];
+    if (_map.getSource('measure-line')) { _map.removeLayer('measure-line'); _map.removeSource('measure-line'); }
+  }
+  toast(_measureMode ? 'Click points on map to measure distance' : 'Measurement mode off');
+}
+
+function addMeasurePoint(lngLat) {
+  _measurePoints.push([lngLat.lng, lngLat.lat]);
+  new maplibregl.Marker({color: '#ff9800', scale: 0.5}).setLngLat(lngLat).addTo(_map);
+
+  if (_measurePoints.length >= 2) {
+    // Calculate total distance
+    let totalKm = 0;
+    for (let i = 1; i < _measurePoints.length; i++) {
+      totalKm += haversineKm(_measurePoints[i-1], _measurePoints[i]);
+    }
+    const miles = totalKm * 0.621371;
+    toast(`Distance: ${totalKm.toFixed(2)} km (${miles.toFixed(2)} mi)`);
+
+    // Draw line
+    const geojson = {type:'Feature', geometry:{type:'LineString', coordinates: _measurePoints}};
+    if (_map.getSource('measure-line')) {
+      _map.getSource('measure-line').setData(geojson);
+    } else {
+      _map.addSource('measure-line', {type:'geojson', data: geojson});
+      _map.addLayer({id:'measure-line', type:'line', source:'measure-line', paint:{'line-color':'#ff9800','line-width':2,'line-dasharray':[2,2]}});
+    }
+  }
+}
+
+function haversineKm(a, b) {
+  const R = 6371;
+  const dLat = (b[1]-a[1])*Math.PI/180;
+  const dLon = (b[0]-a[0])*Math.PI/180;
+  const lat1 = a[1]*Math.PI/180, lat2 = b[1]*Math.PI/180;
+  const x = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x), Math.sqrt(1-x));
 }
 
 async function searchMap() {
@@ -1960,6 +2063,63 @@ async function loadContentSummary() {
       <div class="cs-stat"><div class="cs-val">${s.conversations}</div><div class="cs-label">Conversations</div></div>
       <div class="cs-stat"><div class="cs-val">${s.notes}</div><div class="cs-label">Notes</div></div>
     `;
+  } catch(e) {}
+}
+
+/* ─── Log Viewer ─── */
+async function loadLogViewer() {
+  const level = document.getElementById('log-level-filter').value;
+  try {
+    const items = await (await fetch('/api/activity?limit=100')).json();
+    const filtered = level ? items.filter(a => a.level === level) : items;
+    const el = document.getElementById('log-viewer');
+    if (!filtered.length) { el.innerHTML = '<span style="color:var(--text-muted);">No log entries.</span>'; return; }
+    el.innerHTML = filtered.map(a => {
+      const t = new Date(a.created_at);
+      const ts = t.toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const color = a.level === 'error' ? 'var(--red)' : a.level === 'warning' ? 'var(--orange)' : 'var(--text-dim)';
+      const badge = a.level === 'error' ? 'ERR' : a.level === 'warning' ? 'WRN' : 'INF';
+      return `<div style="display:flex;gap:8px;padding:2px 0;border-bottom:1px solid var(--border);">
+        <span style="color:var(--text-muted);white-space:nowrap;">${ts}</span>
+        <span style="color:${color};font-weight:600;min-width:28px;">${badge}</span>
+        <span style="color:var(--accent);">${a.service||'-'}</span>
+        <span>${escapeHtml(a.event.replace(/_/g,' '))}${a.detail ? ' — '+escapeHtml(a.detail) : ''}</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+/* ─── Disk Monitor ─── */
+async function loadDiskMonitor() {
+  try {
+    const sys = await (await fetch('/api/system')).json();
+    const summary = await (await fetch('/api/content-summary')).json();
+    const el = document.getElementById('disk-monitor');
+
+    // Calculate usage breakdown
+    const totalBytes = summary.total_bytes || 0;
+    const freeStr = sys.disk_free || 'Unknown';
+    const totalStr = sys.disk_total || 'Unknown';
+
+    let warn = '';
+    const devices = sys.disk_devices || [];
+    const criticalDisk = devices.find(d => d.percent > 90);
+    if (criticalDisk) {
+      warn = `<div style="background:var(--red-dim);border:1px solid rgba(244,67,54,0.3);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--red);">
+        Drive ${criticalDisk.mountpoint} is ${criticalDisk.percent}% full. Consider freeing space or moving data.
+      </div>`;
+    }
+
+    el.innerHTML = `${warn}
+      <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;">
+        <div><span style="color:var(--text-dim);">N.O.M.A.D. Data:</span> <strong>${summary.total_size}</strong></div>
+        <div><span style="color:var(--text-dim);">ZIM Content:</span> <strong>${summary.zim_size}</strong></div>
+        <div><span style="color:var(--text-dim);">Disk Free:</span> <strong>${freeStr}</strong></div>
+        <div><span style="color:var(--text-dim);">Disk Total:</span> <strong>${totalStr}</strong></div>
+      </div>
+      <div style="margin-top:8px;font-size:11px;color:var(--text-muted);">
+        Tip: Large ZIM files (Wikipedia Full, Stack Overflow) can be deleted from the Library tab when not needed.
+      </div>`;
   } catch(e) {}
 }
 

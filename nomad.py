@@ -1,5 +1,5 @@
 """
-Project N.O.M.A.D. for Windows v0.6.0
+Project N.O.M.A.D. for Windows v0.7.0
 Node for Offline Media, Archives, and Data
 Native Windows edition — no Docker required.
 """
@@ -48,7 +48,7 @@ from PIL import Image, ImageDraw
 from web.app import create_app
 from db import init_db, get_db, log_activity, backup_db
 
-VERSION = '0.6.0'
+VERSION = '0.7.0'
 PORT = 8080
 
 _tray_icon = None
@@ -60,10 +60,10 @@ SERVICE_MODULES = None  # Lazy-loaded
 def _get_service_modules():
     global SERVICE_MODULES
     if SERVICE_MODULES is None:
-        from services import ollama, kiwix, cyberchef, kolibri, qdrant
+        from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling
         SERVICE_MODULES = {
             'ollama': ollama, 'kiwix': kiwix, 'cyberchef': cyberchef,
-            'kolibri': kolibri, 'qdrant': qdrant,
+            'kolibri': kolibri, 'qdrant': qdrant, 'stirling': stirling,
         }
     return SERVICE_MODULES
 

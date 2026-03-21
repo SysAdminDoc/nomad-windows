@@ -31,6 +31,7 @@ DEPENDENCIES = {
     'kiwix': [],
     'cyberchef': [],
     'kolibri': [],
+    'stirling': [],
 }
 
 # Reverse: which services depend on this one (for ordered shutdown)

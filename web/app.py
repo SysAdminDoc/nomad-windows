@@ -12,7 +12,7 @@ import subprocess
 from flask import Flask, render_template, jsonify, request, Response
 
 from db import get_db, log_activity
-from services import ollama, kiwix, cyberchef, kolibri, qdrant
+from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling
 from services.manager import (
     get_download_progress, get_dir_size, format_size, uninstall_service, get_services_dir,
     ensure_dependencies, detect_gpu
@@ -26,9 +26,10 @@ SERVICE_MODULES = {
     'cyberchef': cyberchef,
     'kolibri': kolibri,
     'qdrant': qdrant,
+    'stirling': stirling,
 }
 
-VERSION = '0.6.0'
+VERSION = '0.7.0'
 
 # RAG / Knowledge Base state
 _embed_state = {'status': 'idle', 'doc_id': None, 'progress': 0, 'detail': ''}

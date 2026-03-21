@@ -599,13 +599,23 @@ a { color: var(--accent); text-decoration: none; }
   transition: opacity 0.25s ease, transform 0.25s ease; pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ─── Service Icon Color ─── */
+.service-card svg { color: var(--accent); }
+.service-card:hover svg { color: var(--accent-hover); }
+
+/* ─── Tab Indicator Animation ─── */
+.tab { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
+.tab.active { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
 </style>
 </head>
 <body>
 
 <div class="header">
   <div class="header-logo"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-  <h1>Project N.O.M.A.D. <span class="version">v0.6.0</span></h1>
+  <h1>Project N.O.M.A.D. <span class="version">v0.7.0</span></h1>
   <div class="header-right">
     <span id="net-status" style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--text-muted);"></span>
   </div>
@@ -920,6 +930,13 @@ a { color: var(--accent); text-decoration: none; }
             <div class="wiz-cap-desc">Document upload and semantic search for AI chat (RAG)</div>
           </div>
         </div>
+        <div class="wiz-cap" data-svc="stirling">
+          <input type="checkbox">
+          <div class="wiz-cap-info">
+            <div class="wiz-cap-name">PDF Tools (Stirling PDF)</div>
+            <div class="wiz-cap-desc">Merge, split, compress, convert, OCR — 50+ PDF operations</div>
+          </div>
+        </div>
       </div>
       <div style="display:flex;gap:10px;justify-content:center;">
         <button class="btn btn-primary" onclick="runWizard()" id="wiz-start-btn">Install Selected</button>
@@ -938,7 +955,7 @@ a { color: var(--accent); text-decoration: none; }
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = '0.4.0';
+const VERSION = '0.7.0';
 let chatMessages = [];
 let currentNoteId = null;
 let saveTimer = null;
@@ -964,13 +981,26 @@ document.querySelectorAll('.tab').forEach(tab => {
   });
 });
 
-/* ─── Toast ─── */
+/* ─── Toast (stacking) ─── */
+let _toastStack = [];
 function toast(msg) {
-  const el = document.getElementById('toast');
+  const el = document.createElement('div');
+  el.className = 'toast';
   el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+  document.body.appendChild(el);
+  _toastStack.push(el);
+  _toastStack.forEach((t, i) => {
+    t.style.bottom = (20 + i * 48) + 'px';
+  });
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => {
+    el.classList.remove('show');
+    setTimeout(() => {
+      el.remove();
+      _toastStack = _toastStack.filter(t => t !== el);
+      _toastStack.forEach((t, i) => { t.style.bottom = (20 + i * 48) + 'px'; });
+    }, 250);
+  }, 3000);
 }
 
 /* ─── Helpers ─── */
@@ -1014,19 +1044,28 @@ function renderMarkdown(text) {
 }
 
 /* ─── Services ─── */
+const SVC_ICONS = {
+  ollama: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a7 7 0 0 0-7 7c0 3.5 2.5 6.5 7 13 4.5-6.5 7-9.5 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>',
+  kiwix: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h5"/></svg>',
+  cyberchef: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>',
+  kolibri: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c0 1.66 2.69 3 6 3s6-1.34 6-3v-5"/></svg>',
+  qdrant: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+  stirling: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h4"/></svg>',
+};
 const SVC = {
   ollama:    { name:'Ollama (AI Chat)',             desc:'Local AI chat powered by LLMs. Run Llama 3, Mistral, and more entirely offline.' },
   kiwix:     { name:'Kiwix (Information Library)',   desc:'Offline Wikipedia, medical references, survival guides, and ebooks.' },
   cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.' },
   kolibri:   { name:'Kolibri (Education Platform)',  desc:'Offline Khan Academy courses, textbooks, and educational content.' },
   qdrant:    { name:'Qdrant (Vector DB)',           desc:'Vector database for knowledge base semantic search and RAG.' },
+  stirling:  { name:'Stirling PDF',                  desc:'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools.' },
 };
 
 let _servicesLoaded = false;
 async function loadServices() {
   const grid = document.getElementById('services-grid');
   if (!_servicesLoaded) {
-    grid.innerHTML = Array(5).fill('<div class="skeleton skeleton-card"></div>').join('');
+    grid.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
   }
   try {
     const services = await (await fetch('/api/services')).json();
@@ -1039,8 +1078,13 @@ async function loadServices() {
       const statusClass = isInstalling ? 'installing' : !s.installed ? 'not-installed' : s.running ? 'running' : 'stopped';
       const statusText = isInstalling ? 'Installing' : !s.installed ? 'Not Installed' : s.running ? 'Running' : 'Stopped';
 
+      const busy = svcBusy(s.id);
       let actions = '';
-      if (isInstalling) {
+      if (busy) {
+        actions = `<button class="btn btn-sm" disabled style="opacity:0.6;">
+          <span style="display:inline-block;width:12px;height:12px;border:2px solid var(--text-muted);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:4px;"></span>Working...
+        </button>`;
+      } else if (isInstalling) {
         actions = `<button class="btn btn-sm" disabled>Installing...</button>`;
       } else if (!s.installed) {
         actions = `<button class="btn btn-sm btn-primary" onclick="installService('${s.id}')">Install</button>`;
@@ -1066,9 +1110,13 @@ async function loadServices() {
         </div>`;
       }
 
+      const icon = SVC_ICONS[s.id] || '';
       return `<div class="service-card">
         <div class="card-header">
-          <h3>${info.name}</h3>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="color:var(--accent);flex-shrink:0;">${icon}</span>
+            <h3>${info.name}</h3>
+          </div>
           <span class="badge ${statusClass}"><span class="dot"></span>${statusText}</span>
         </div>
         <p class="desc">${info.desc}</p>
@@ -1080,11 +1128,13 @@ async function loadServices() {
   } catch(e) { console.error('loadServices', e); }
 }
 
+let _busyServices = new Set();
+function svcBusy(id) { return _busyServices.has(id); }
 async function installService(id)   { await fetch(`/api/services/${id}/install`, {method:'POST'}); toast(`Installing ${SVC[id]?.name||id}...`); pollServices(); }
-async function startService(id)     { const r = await (await fetch(`/api/services/${id}/start`, {method:'POST'})).json(); toast(r.error||`${SVC[id]?.name||id} started`); loadServices(); }
-async function stopService(id)      { await fetch(`/api/services/${id}/stop`, {method:'POST'}); toast(`${SVC[id]?.name||id} stopped`); loadServices(); }
-async function restartService(id)   { toast(`Restarting ${SVC[id]?.name||id}...`); await fetch(`/api/services/${id}/restart`, {method:'POST'}); loadServices(); }
-async function uninstallService(id) { if(!confirm(`Uninstall ${SVC[id]?.name||id}? This removes all data.`)) return; await fetch(`/api/services/${id}/uninstall`, {method:'POST'}); toast(`${SVC[id]?.name||id} uninstalled`); loadServices(); }
+async function startService(id)     { _busyServices.add(id); loadServices(); const r = await (await fetch(`/api/services/${id}/start`, {method:'POST'})).json(); _busyServices.delete(id); toast(r.error||`${SVC[id]?.name||id} started`); loadServices(); }
+async function stopService(id)      { _busyServices.add(id); loadServices(); await fetch(`/api/services/${id}/stop`, {method:'POST'}); _busyServices.delete(id); toast(`${SVC[id]?.name||id} stopped`); loadServices(); }
+async function restartService(id)   { _busyServices.add(id); loadServices(); toast(`Restarting ${SVC[id]?.name||id}...`); await fetch(`/api/services/${id}/restart`, {method:'POST'}); _busyServices.delete(id); loadServices(); }
+async function uninstallService(id) { _busyServices.add(id); loadServices(); await fetch(`/api/services/${id}/uninstall`, {method:'POST'}); _busyServices.delete(id); toast(`${SVC[id]?.name||id} uninstalled`); loadServices(); }
 
 let _pollInt = null;
 function pollServices() {
@@ -1182,7 +1232,6 @@ async function deleteConvo(id) {
   await loadConversations();
 }
 async function deleteAllConvos() {
-  if (!confirm('Delete all conversations?')) return;
   await fetch('/api/conversations/all', {method:'DELETE'});
   currentConvoId = null; chatMessages = []; allConvos = [];
   renderChat(); renderConvoList();
@@ -1338,7 +1387,6 @@ async function downloadZim(url, filename) {
 }
 
 async function deleteZim(filename) {
-  if (!confirm(`Delete ${filename}?`)) return;
   await fetch('/api/kiwix/delete-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename}) });
   toast('Deleted');
   loadZimList();
@@ -1381,7 +1429,6 @@ async function loadMaps() {
 }
 
 async function deleteMap(filename) {
-  if (!confirm(`Delete ${filename}?`)) return;
   await fetch('/api/maps/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename})});
   toast('Deleted');
   loadMaps();
@@ -1625,7 +1672,6 @@ async function loadModelManager() {
 }
 
 async function deleteModel(name) {
-  if (!confirm(`Delete model ${name}?`)) return;
   await fetch('/api/ai/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})});
   toast(`Deleted ${name}`);
   loadModelManager();
@@ -2133,6 +2179,7 @@ async function loadReadiness() {
       {id:'cyberchef', label:'Data Tools', need:['cyberchef']},
       {id:'kolibri', label:'Education', need:['kolibri']},
       {id:'qdrant', label:'Knowledge Base', need:['qdrant','ollama']},
+      {id:'stirling', label:'PDF Tools', need:['stirling']},
     ];
     const svcMap = {};
     services.forEach(s => svcMap[s.id] = s);

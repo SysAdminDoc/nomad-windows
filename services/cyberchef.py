@@ -45,7 +45,13 @@ def install(callback=None):
         # Resolve actual zip URL from GitHub releases API
         import requests as req
         rel = req.get(CYBERCHEF_RELEASE_API, timeout=15).json()
-        zip_url = rel['assets'][0]['browser_download_url']
+        zip_url = None
+        for asset in rel.get('assets', []):
+            if asset['name'].endswith('.zip') and 'CyberChef' in asset['name']:
+                zip_url = asset['browser_download_url']
+                break
+        if not zip_url:
+            zip_url = rel['assets'][0]['browser_download_url']
         download_file(zip_url, zip_path, SERVICE_ID)
 
         _download_progress[SERVICE_ID]['status'] = 'extracting'

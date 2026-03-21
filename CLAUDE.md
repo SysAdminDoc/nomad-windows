@@ -26,6 +26,7 @@ services/
   cyberchef.py        # CyberChef (GitHub Releases API + static HTTP server)
   kolibri.py          # Kolibri education platform (pip install + subprocess)
   qdrant.py           # Qdrant vector DB (GitHub Releases binary + REST API)
+  stirling.py         # Stirling PDF toolkit (GitHub Releases exe + Java runtime)
 ```
 
 ## Key Paths
@@ -56,9 +57,10 @@ pyinstaller build.spec
 - Kiwix: http://localhost:8888
 - CyberChef: http://localhost:8889
 - Kolibri: http://localhost:8300
+- Stirling PDF: http://localhost:8443
 
-## Features (v0.5.0)
-- **5 services**: Ollama (AI), Kiwix (offline content), CyberChef (data tools), Kolibri (education)
+## Features (v0.7.0)
+- **6 services**: Ollama (AI), Kiwix (offline content), CyberChef (data tools), Kolibri (education), Qdrant (vector DB), Stirling PDF (PDF toolkit)
 - **Setup wizard** — capability selection (choose which services to install)
 - **Auto-start** — previously running services restart on app launch
 - **System tray** — minimize to tray, background operation
@@ -106,7 +108,7 @@ pyinstaller build.spec
 - Benchmark disk test creates/deletes temp files in ProjectNOMAD\benchmark\
 
 ## Version
-v0.5.0
+v0.7.0
 
 ## Status
-Working v0.5.0 — 5 services (Ollama, Kiwix, CyberChef, Kolibri, Qdrant). Full feature parity+ with original Project N.O.M.A.D. Phases 1-5+7 complete: resilient service infrastructure (auto-restart, GPU detection, dependency graph, graceful shutdown, DB backup), premium glassmorphism UI (animations, skeleton loaders, shimmer effects), AI chat power features (conversation search, export to markdown, 6 system prompt presets, RAG with KB), unified search across all content, content capacity summary, MapLibre GL JS map viewer (pins, measurement tool, coordinate display), log viewer, disk monitor with warnings. 5.7K lines across 11 files. 7-tab dashboard.
+Working v0.7.0 — 6 services (Ollama, Kiwix, CyberChef, Kolibri, Qdrant, Stirling PDF). Full feature parity+ with original Project N.O.M.A.D. Phases 1-7 complete + v0.7.0 upgrades: Stirling PDF service (offline merge/split/compress/convert/OCR), SVG service icons, stacking toasts, button loading spinners, no-confirm instant actions, CI/CD GitHub Actions workflow (PyInstaller build on tag push), CyberChef asset selection fix. ~6K lines across 12 files. 7-tab dashboard.

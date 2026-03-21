@@ -31,6 +31,7 @@ a = Analysis(
         'services.cyberchef',
         'services.kolibri',
         'services.qdrant',
+        'services.stirling',
         'services.manager',
     ],
     hookspath=[],

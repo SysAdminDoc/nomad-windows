@@ -30,7 +30,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '0.8.0'
+VERSION = '1.0.0'
 
 
 def set_version(v):
@@ -278,6 +278,17 @@ def create_app():
 
         threading.Thread(target=do_download, daemon=True).start()
         return jsonify({'status': 'downloading'})
+
+    @app.route('/api/kiwix/zim-downloads')
+    def api_kiwix_zim_downloads():
+        """Return all active/recent ZIM download progress entries."""
+        from services.manager import _download_progress
+        zim_entries = {
+            k.replace('kiwix-zim-', ''): v
+            for k, v in _download_progress.items()
+            if k.startswith('kiwix-zim-')
+        }
+        return jsonify(zim_entries)
 
     @app.route('/api/kiwix/delete-zim', methods=['POST'])
     def api_kiwix_delete_zim():

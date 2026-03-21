@@ -700,6 +700,46 @@ a { color: var(--accent); text-decoration: none; }
 .message .content hr, .notes-preview hr { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
 .message .content del, .notes-preview del { color: var(--text-muted); }
 
+/* ─── Code Block Copy ─── */
+.code-wrap { position: relative; }
+.code-copy-btn {
+  position: absolute; top: 6px; right: 6px;
+  background: var(--surface3); border: 1px solid var(--border);
+  color: var(--text-dim); font-size: 10px; padding: 2px 8px;
+  border-radius: 4px; cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s;
+}
+.code-wrap:hover .code-copy-btn { opacity: 1; }
+.code-copy-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.code-copy-btn.copied { background: var(--green); color: #fff; border-color: var(--green); }
+
+/* ─── Message Actions ─── */
+.message-actions { display: flex; gap: 4px; margin-top: 4px; opacity: 0; transition: opacity 0.15s; }
+.message:hover .message-actions { opacity: 1; }
+.msg-action-btn {
+  background: var(--surface3); border: 1px solid var(--border);
+  color: var(--text-muted); font-size: 10px; padding: 2px 8px;
+  border-radius: 4px; cursor: pointer;
+}
+.msg-action-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+
+/* ─── Stop Button ─── */
+.btn-stop { background: var(--red-dim); color: var(--red); border-color: var(--red); }
+.btn-stop:hover { background: var(--red); color: #fff; }
+
+/* ─── ZIM Download Queue ─── */
+.zim-queue-item { background: var(--surface2); border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 6px; font-size: 12px; }
+.zim-queue-item .zq-name { font-weight: 500; margin-bottom: 4px; }
+.zim-queue-item .zq-meta { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+
+/* ─── Open Service Button ─── */
+.btn-open-svc { background: linear-gradient(135deg, var(--green), var(--accent)); color: #fff; border-color: transparent; box-shadow: 0 2px 8px var(--green-dim); font-weight: 600; }
+.btn-open-svc:hover { opacity: 0.9; transform: translateY(-1px); }
+
+/* ─── Notes Search ─── */
+.notes-search { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+.notes-search input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 5px 8px; border-radius: 6px; font-size: 11px; outline: none; }
+.notes-search input:focus { border-color: var(--accent); }
+
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ─── Service Icon Color ─── */
@@ -838,6 +878,7 @@ a { color: var(--accent); text-decoration: none; }
             onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
             oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
           <button class="btn btn-primary" onclick="sendChat()" id="send-btn">Send</button>
+          <button class="btn btn-stop" onclick="stopChat()" id="stop-btn" style="display:none;">Stop</button>
         </div>
       </div>
     </div>
@@ -847,8 +888,12 @@ a { color: var(--accent); text-decoration: none; }
   <div id="tab-kiwix-library" class="tab-content">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div class="settings-card">
-        <h3>My Content Packs</h3>
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">My Content Packs<button class="btn btn-sm" onclick="loadZimList();loadZimDownloads()">Refresh</button></h3>
         <div id="zim-list"><div style="color:var(--text-dim);font-size:13px;">No content downloaded yet.</div></div>
+        <div id="zim-download-queue" style="display:none;margin-top:12px;">
+          <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:6px;">Active Downloads</div>
+          <div id="zim-queue-items"></div>
+        </div>
       </div>
       <div class="settings-card">
         <h3>Content Catalog</h3>
@@ -897,6 +942,7 @@ a { color: var(--accent); text-decoration: none; }
           <span style="font-weight:600;font-size:13px;">Notes</span>
           <button class="btn btn-sm btn-primary" onclick="createNote()">+ New</button>
         </div>
+        <div class="notes-search"><input id="notes-search" placeholder="Search notes..." oninput="filterNotes()"></div>
         <div class="notes-list" id="notes-list"></div>
       </div>
       <div class="notes-editor">
@@ -970,6 +1016,13 @@ a { color: var(--accent); text-decoration: none; }
       <div class="settings-card">
         <h3>Preferences</h3>
         <div>
+          <div class="setting-row">
+            <span class="setting-label">Theme</span>
+            <span class="setting-value" style="display:flex;align-items:center;gap:6px;font-weight:600;">
+              <span id="active-theme-dot" style="width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,#f7eedc,#424420);"></span>
+              <span id="active-theme-label">NOMAD</span>
+            </span>
+          </div>
           <div class="setting-row">
             <span class="setting-label">AI Assistant Name</span>
             <input id="ai-name-input" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 10px;border-radius:6px;font-size:12px;width:140px;outline:none;" value="AI" oninput="saveAIName()">
@@ -1122,23 +1175,34 @@ a { color: var(--accent); text-decoration: none; }
 const VERSION = '{{ version }}';
 
 /* ─── Theme ─── */
+const THEME_NAMES = { nomad:'NOMAD (Desert)', nightops:'Night Ops (Dark)', cyber:'Cyber (Blue)' };
+const THEME_COLORS = { nomad:'linear-gradient(135deg,#f7eedc,#424420)', nightops:'linear-gradient(135deg,#1c1b16,#858a55)', cyber:'linear-gradient(135deg,#060608,#5b9fff)' };
+
 function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('nomad-theme', theme);
   document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.t === theme));
-  // Persist to server settings
+  updateThemeIndicator(theme);
   fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({theme})});
+}
+function updateThemeIndicator(theme) {
+  const dot = document.getElementById('active-theme-dot');
+  const label = document.getElementById('active-theme-label');
+  if (dot) dot.style.background = THEME_COLORS[theme] || '';
+  if (label) label.textContent = THEME_NAMES[theme] || theme;
 }
 (function initTheme() {
   const saved = localStorage.getItem('nomad-theme') || 'nomad';
   if (saved !== 'nomad') document.documentElement.setAttribute('data-theme', saved);
   document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.t === saved));
+  updateThemeIndicator(saved);
 })();
 
 let chatMessages = [];
 let currentNoteId = null;
 let saveTimer = null;
 let isSending = false;
+let _chatAbortCtrl = null;
 let currentConvoId = null;
 let allConvos = [];
 let aiName = 'AI';
@@ -1154,7 +1218,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'ai-chat') { loadModels(); loadConversations(); pollPullProgress(); }
     if (tab.dataset.tab === 'notes') loadNotes();
     if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); loadLogViewer(); loadDiskMonitor(); loadStartupState(); }
-    if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); }
+    if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); }
     if (tab.dataset.tab === 'maps') loadMaps();
     if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
   });
@@ -1184,6 +1248,21 @@ function toast(msg, type='info') {
 
 /* ─── Helpers ─── */
 function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escapeAttr(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function copyCode(btn) {
+  const code = btn.previousElementSibling.textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    btn.textContent = 'Copied!'; btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+function copyMsg(btn) {
+  const msg = btn.closest('.message').dataset.content;
+  navigator.clipboard.writeText(msg).then(() => {
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 2000);
+  });
+}
 function formatBytes(b) {
   if (b >= 1073741824) return (b/1073741824).toFixed(1)+' GB';
   if (b >= 1048576) return (b/1048576).toFixed(1)+' MB';
@@ -1195,8 +1274,9 @@ function formatBytes(b) {
 function renderMarkdown(text) {
   if (!text) return '';
   let h = escapeHtml(text);
-  // Code blocks
-  h = h.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  // Code blocks with copy button
+  h = h.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) =>
+    `<div class="code-wrap"><pre><code>${code}</code></pre><button class="code-copy-btn" onclick="copyCode(this)">Copy</button></div>`);
   // Inline code
   h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
   // Tables
@@ -1254,12 +1334,12 @@ const SVC_ICONS = {
   stirling: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h4"/></svg>',
 };
 const SVC = {
-  ollama:    { name:'Ollama (AI Chat)',             desc:'Local AI chat powered by LLMs. Run Llama 3, Mistral, and more entirely offline.' },
-  kiwix:     { name:'Kiwix (Information Library)',   desc:'Offline Wikipedia, medical references, survival guides, and ebooks.', hint:'Download content from the Library tab to get started.' },
-  cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.' },
-  kolibri:   { name:'Kolibri (Education Platform)',  desc:'Offline Khan Academy courses, textbooks, and educational content.', requires:'Python on PATH' },
-  qdrant:    { name:'Qdrant (Vector DB)',           desc:'Vector database for knowledge base semantic search and RAG.' },
-  stirling:  { name:'Stirling PDF',                  desc:'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools.', requires:'Java 17+ (<a href="https://adoptium.net" target="_blank">adoptium.net</a>)' },
+  ollama:    { name:'Ollama (AI Chat)',             desc:'Local AI chat powered by LLMs. Run Llama 3, Mistral, and more entirely offline.', tip:'Go to the AI Chat tab to start a private conversation.' },
+  kiwix:     { name:'Kiwix (Information Library)',   desc:'Offline Wikipedia, medical references, survival guides, and ebooks.', hint:'Download content from the Library tab to get started.', tip:'Open in browser to browse your downloaded content packs.' },
+  cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.', tip:'Open in browser for 400+ data transformation operations.' },
+  kolibri:   { name:'Kolibri (Education Platform)',  desc:'Offline Khan Academy courses, textbooks, and educational content.', requires:'Python on PATH', tip:'Open in browser to access courses and learning materials.' },
+  qdrant:    { name:'Qdrant (Vector DB)',           desc:'Vector database enabling AI to search your uploaded documents.', tip:'Enable "Search My Documents" in AI Chat to use this.' },
+  stirling:  { name:'Stirling PDF',                  desc:'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools.', requires:'Java 17+ (<a href="https://adoptium.net" target="_blank">adoptium.net</a>)', tip:'Open in browser to work with PDFs without cloud services.' },
 };
 
 let _servicesLoaded = false;
@@ -1292,9 +1372,9 @@ async function loadServices() {
         actions = `<button class="btn btn-sm btn-primary" onclick="installService('${s.id}')">Install</button>`;
       } else if (s.running) {
         actions = `
+          ${s.port ? `<a class="btn btn-sm btn-open-svc" href="http://localhost:${s.port}" target="_blank">Open in Browser</a>` : ''}
           <button class="btn btn-sm btn-danger" onclick="stopService('${s.id}')">Stop</button>
           <button class="btn btn-sm" onclick="restartService('${s.id}')">Restart</button>
-          ${s.port ? `<a class="btn btn-sm" href="http://localhost:${s.port}" target="_blank">Open</a>` : ''}
           <button class="btn btn-sm btn-ghost btn-danger" onclick="uninstallService('${s.id}')">Uninstall</button>
         `;
       } else {
@@ -1327,6 +1407,11 @@ async function loadServices() {
         hintHtml = `<div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">${info.hint}</div>`;
       }
 
+      let tipHtml = '';
+      if (s.running && info.tip) {
+        tipHtml = `<div style="font-size:11px;color:var(--green);margin-bottom:8px;">${info.tip}</div>`;
+      }
+
       const icon = SVC_ICONS[s.id] || '';
       return `<div class="service-card">
         <div class="card-header">
@@ -1337,7 +1422,7 @@ async function loadServices() {
           <span class="badge ${statusClass}"><span class="dot"></span>${statusText}</span>
         </div>
         <p class="desc">${info.desc}</p>
-        ${prereqHtml}${hintHtml}
+        ${prereqHtml}${hintHtml}${tipHtml}
         <div class="meta"><span>${s.disk_used && s.disk_used !== '0 B' ? 'Using '+s.disk_used : ''}</span>${s.running ? `<span style="color:var(--green);">Ready</span>` : ''}</div>
         ${progressHtml}${errorHtml}
         <div class="card-actions">${actions}</div>
@@ -1526,7 +1611,9 @@ async function sendChat() {
   input.value = '';
   input.style.height = 'auto';
   isSending = true;
+  _chatAbortCtrl = new AbortController();
   document.getElementById('send-btn').disabled = true;
+  document.getElementById('stop-btn').style.display = '';
 
   if (!currentConvoId) {
     const c = await (await fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title: msg.slice(0,50), model})})).json();
@@ -1541,11 +1628,14 @@ async function sendChat() {
   try {
     const resp = await fetch('/api/ai/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model, knowledge_base: kbEnabled, system_prompt: PRESETS[activePreset] || '', messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)})
+      body: JSON.stringify({model, knowledge_base: kbEnabled, system_prompt: PRESETS[activePreset] || '', messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)}),
+      signal: _chatAbortCtrl.signal,
     });
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
     let full = '';
+    const msgs = document.getElementById('chat-messages');
+    let lastMsgEl = null;
     while (true) {
       const {done, value} = await reader.read();
       if (done) break;
@@ -1557,19 +1647,47 @@ async function sendChat() {
             full += d.message.content;
             chatMessages[chatMessages.length-1].content = full;
             chatMessages[chatMessages.length-1].thinking = false;
-            renderChat();
+            if (!lastMsgEl) {
+              lastMsgEl = msgs.querySelector('.message.assistant:last-child .content');
+            }
+            if (lastMsgEl) {
+              lastMsgEl.innerHTML = renderMarkdown(full);
+              const nearBottom = msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 100;
+              if (nearBottom) msgs.scrollTop = msgs.scrollHeight;
+            }
           }
         } catch {}
       }
     }
-  } catch(e) {
-    chatMessages[chatMessages.length-1].content = 'Could not reach the AI. Go to the Services tab and make sure AI Chat Assistant is running (green), then try again.';
-    chatMessages[chatMessages.length-1].thinking = false;
     renderChat();
+  } catch(e) {
+    if (e.name !== 'AbortError') {
+      chatMessages[chatMessages.length-1].content = 'Could not reach the AI. Go to the Services tab and make sure AI Chat Assistant is running (green), then try again.';
+      chatMessages[chatMessages.length-1].thinking = false;
+      renderChat();
+    }
   }
   isSending = false;
+  _chatAbortCtrl = null;
   document.getElementById('send-btn').disabled = false;
+  document.getElementById('stop-btn').style.display = 'none';
   saveConversation();
+}
+
+function stopChat() {
+  if (_chatAbortCtrl) {
+    _chatAbortCtrl.abort();
+    _chatAbortCtrl = null;
+    isSending = false;
+    document.getElementById('send-btn').disabled = false;
+    document.getElementById('stop-btn').style.display = 'none';
+    if (chatMessages.length && chatMessages[chatMessages.length-1].role === 'assistant') {
+      chatMessages[chatMessages.length-1].thinking = false;
+    }
+    renderChat();
+    saveConversation();
+    toast('Generation stopped', 'warning');
+  }
 }
 
 function renderChat() {
@@ -1582,7 +1700,8 @@ function renderChat() {
     const av = m.role === 'user' ? 'U' : aiName.slice(0,2).toUpperCase();
     const thinkHtml = m.thinking ? '<div class="thinking">Thinking...</div>' : '';
     const content = m.role === 'assistant' ? renderMarkdown(m.content) : escapeHtml(m.content).replace(/\n/g,'<br>');
-    html += `<div class="message ${m.role}"><div class="avatar">${av}</div><div class="content">${content}${thinkHtml}</div></div>`;
+    const copyAction = m.content && !m.thinking ? `<div class="message-actions"><button class="msg-action-btn" onclick="copyMsg(this)">Copy</button></div>` : '';
+    html += `<div class="message ${m.role}" data-content="${escapeAttr(m.content)}"><div class="avatar">${av}</div><div class="content">${content}${thinkHtml}${copyAction}</div></div>`;
   }
   c.innerHTML = `<div class="empty-state" id="chat-empty" style="display:none"><div class="icon">${aiName}</div><p>Start a conversation</p></div>` + html;
   c.scrollTop = c.scrollHeight;
@@ -1645,7 +1764,39 @@ function switchTier(ci, tier, btn) {
 
 async function downloadZim(url, filename) {
   await fetch('/api/kiwix/download-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, filename}) });
-  toast(`Downloading ${filename}...`);
+  toast(`Downloading ${filename}...`, 'info');
+  startZimQueuePoll();
+}
+
+let _zimQueuePoll = null;
+async function loadZimDownloads() {
+  try {
+    const downloads = await (await fetch('/api/kiwix/zim-downloads')).json();
+    const active = Object.entries(downloads).filter(([,v]) => v.status === 'downloading' || v.status === 'extracting');
+    const queueEl = document.getElementById('zim-download-queue');
+    const itemsEl = document.getElementById('zim-queue-items');
+    if (!active.length) {
+      queueEl.style.display = 'none';
+      if (_zimQueuePoll) { clearInterval(_zimQueuePoll); _zimQueuePoll = null; }
+      return;
+    }
+    queueEl.style.display = 'block';
+    itemsEl.innerHTML = active.map(([filename, p]) => `
+      <div class="zim-queue-item">
+        <div class="zq-name">${escapeHtml(filename)}</div>
+        <div class="progress-bar"><div class="fill" style="width:${p.percent||0}%"></div></div>
+        <div class="zq-meta"><span>${p.status||''} ${p.speed ? '- '+p.speed : ''}</span><span>${p.percent||0}%</span></div>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+function startZimQueuePoll() {
+  if (_zimQueuePoll) return;
+  _zimQueuePoll = setInterval(async () => {
+    await loadZimDownloads();
+    await loadZimList();
+  }, 2000);
 }
 
 async function deleteZim(filename) {
@@ -1730,6 +1881,19 @@ async function deleteNote() {
   document.getElementById('note-content').value = '';
   await loadNotes();
 }
+function filterNotes() {
+  const q = document.getElementById('notes-search').value.toLowerCase();
+  if (!q) { renderNotesList(); return; }
+  const filtered = allNotes.filter(n => (n.title||'').toLowerCase().includes(q) || (n.content||'').toLowerCase().includes(q));
+  const list = document.getElementById('notes-list');
+  list.innerHTML = filtered.map(n => `
+    <div class="note-item ${n.id===currentNoteId?'active':''}" onclick="selectNote(${n.id})">
+      <div class="note-title">${escapeHtml(n.title||'Untitled')}</div>
+      <div class="note-date">${new Date(n.updated_at).toLocaleDateString()}</div>
+    </div>
+  `).join('') || '<div style="padding:14px;color:var(--text-muted);font-size:12px;text-align:center;">No matches</div>';
+}
+
 function autoSaveNote() {
   if (!currentNoteId) return;
   clearTimeout(saveTimer);

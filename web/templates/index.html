@@ -67,6 +67,34 @@
   --card-text: #f7eedc;
 }
 
+/* ─── Red Light / Night Vision Theme ─── */
+[data-theme="redlight"] {
+  --bg: #0a0000;
+  --surface: rgba(20,2,2,0.9);
+  --surface-solid: #140202;
+  --surface2: #1e0404;
+  --surface3: #280606;
+  --border: rgba(255,50,50,0.1);
+  --border-hover: rgba(255,50,50,0.2);
+  --text: #cc3333;
+  --text-dim: #882222;
+  --text-muted: #551515;
+  --accent: #cc2200;
+  --accent-hover: #ee3311;
+  --accent-dim: rgba(204,34,0,0.15);
+  --accent-glow: rgba(204,34,0,0.2);
+  --green: #883322;
+  --green-dim: rgba(136,51,34,0.15);
+  --red: #ff3333;
+  --red-dim: rgba(255,51,51,0.15);
+  --orange: #cc4400;
+  --orange-dim: rgba(204,68,0,0.15);
+  --purple: #993333;
+  --shadow: 0 12px 40px rgba(0,0,0,0.8);
+  --shadow-sm: 0 4px 12px rgba(0,0,0,0.6);
+  --card-text: #cc3333;
+}
+
 /* ─── Cyber Theme (Blue/Purple Dark) ─── */
 [data-theme="cyber"] {
   --bg: #060608;
@@ -122,6 +150,7 @@ a { color: var(--accent); text-decoration: none; }
 .theme-btn[data-t="nomad"] { background: linear-gradient(135deg, #f7eedc, #424420); }
 .theme-btn[data-t="nightops"] { background: linear-gradient(135deg, #1c1b16, #858a55); }
 .theme-btn[data-t="cyber"] { background: linear-gradient(135deg, #060608, #5b9fff); }
+.theme-btn[data-t="redlight"] { background: linear-gradient(135deg, #0a0000, #cc2200); }
 
 /* ─── Header ─── */
 .header {
@@ -948,6 +977,7 @@ a { color: var(--accent); text-decoration: none; }
       <div class="theme-btn active" data-t="nomad" onclick="setTheme('nomad')" title="NOMAD (Desert)"></div>
       <div class="theme-btn" data-t="nightops" onclick="setTheme('nightops')" title="Night Ops (Dark)"></div>
       <div class="theme-btn" data-t="cyber" onclick="setTheme('cyber')" title="Cyber (Blue Dark)"></div>
+      <div class="theme-btn" data-t="redlight" onclick="setTheme('redlight')" title="Red Light (Night Vision)"></div>
     </div>
   </div>
 </div>
@@ -1125,6 +1155,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="btn btn-sm" id="map-toggle-btn" onclick="toggleMapView()">Show Map</button>
       <button class="btn btn-sm" onclick="dropPin()" style="display:none;" id="pin-btn">Drop Pin</button>
       <button class="btn btn-sm" id="measure-btn" onclick="toggleMeasure()" style="display:none;">Measure</button>
+      <button class="btn btn-sm btn-primary" onclick="saveWaypoint()" style="display:none;" id="save-wp-btn">Save Waypoint</button>
       <button class="btn btn-sm" onclick="clearPins()" style="display:none;" id="clear-pins-btn">Clear Pins</button>
       <span id="map-coords" style="font-size:10px;color:var(--text-muted);margin-left:auto;font-family:monospace;"></span>
     </div>
@@ -1317,6 +1348,7 @@ a { color: var(--accent); text-decoration: none; }
         </select>
         <input id="inv-search" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Search supplies..." oninput="loadInventory()">
         <button class="btn btn-sm btn-primary" onclick="showInvForm()">+ Add Item</button>
+        <button class="btn btn-sm" onclick="window.open('/api/inventory/export-csv','_blank')" title="Export to CSV">Export CSV</button>
       </div>
       <!-- Add/Edit Form (hidden by default) -->
       <div id="inv-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
@@ -1355,6 +1387,7 @@ a { color: var(--accent); text-decoration: none; }
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <input id="contact-search" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Search contacts..." oninput="loadContacts()">
         <button class="btn btn-sm btn-primary" onclick="showContactForm()">+ Add Contact</button>
+        <button class="btn btn-sm" onclick="window.open('/api/contacts/export-csv','_blank')" title="Export to CSV">Export CSV</button>
       </div>
       <div id="contact-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:12px;">
@@ -2087,6 +2120,28 @@ a { color: var(--accent); text-decoration: none; }
     </div>
   </div>
 
+  <!-- Timer Widget -->
+  <div id="timer-btn" onclick="toggleTimerPanel()" style="position:fixed;bottom:20px;right:80px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--orange),var(--red));color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:9990;font-size:18px;transition:transform 0.2s;" title="Timers">&#9202;</div>
+  <div id="timer-panel" style="display:none;position:fixed;bottom:80px;right:80px;width:320px;max-height:400px;background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);z-index:9990;flex-direction:column;overflow:hidden;">
+    <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <span style="font-weight:600;font-size:13px;">Timers</span>
+      <button class="btn btn-sm btn-ghost" onclick="toggleTimerPanel()" style="font-size:16px;padding:2px 6px;">x</button>
+    </div>
+    <div style="padding:8px 14px;border-bottom:1px solid var(--border);display:flex;gap:4px;flex-wrap:wrap;">
+      <input id="timer-name" style="flex:1;min-width:100px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:11px;outline:none;" placeholder="Timer name">
+      <input id="timer-mins" type="number" min="1" max="1440" value="30" style="width:50px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:6px;font-size:11px;outline:none;">
+      <span style="font-size:11px;color:var(--text-dim);align-self:center;">min</span>
+      <button class="btn btn-sm btn-primary" onclick="createTimer()">Start</button>
+    </div>
+    <div style="padding:4px 8px;border-bottom:1px solid var(--border);display:flex;gap:4px;flex-wrap:wrap;">
+      <button class="btn btn-sm" onclick="createTimerQuick('Water purification',30)" style="font-size:10px;padding:2px 8px;">Water 30m</button>
+      <button class="btn btn-sm" onclick="createTimerQuick('Medication',240)" style="font-size:10px;padding:2px 8px;">Meds 4h</button>
+      <button class="btn btn-sm" onclick="createTimerQuick('Watch change',120)" style="font-size:10px;padding:2px 8px;">Watch 2h</button>
+      <button class="btn btn-sm" onclick="createTimerQuick('Cooking',15)" style="font-size:10px;padding:2px 8px;">Cook 15m</button>
+    </div>
+    <div id="timer-list" style="flex:1;overflow-y:auto;padding:8px 14px;font-size:12px;"></div>
+  </div>
+
   <!-- Settings Tab -->
   <div id="tab-settings" class="tab-content">
     <div class="settings-grid">
@@ -2275,8 +2330,8 @@ a { color: var(--accent); text-decoration: none; }
 const VERSION = '{{ version }}';
 
 /* ─── Theme ─── */
-const THEME_NAMES = { nomad:'NOMAD (Desert)', nightops:'Night Ops (Dark)', cyber:'Cyber (Blue)' };
-const THEME_COLORS = { nomad:'linear-gradient(135deg,#f7eedc,#424420)', nightops:'linear-gradient(135deg,#1c1b16,#858a55)', cyber:'linear-gradient(135deg,#060608,#5b9fff)' };
+const THEME_NAMES = { nomad:'NOMAD (Desert)', nightops:'Night Ops (Dark)', cyber:'Cyber (Blue)', redlight:'Red Light (Night Vision)' };
+const THEME_COLORS = { nomad:'linear-gradient(135deg,#f7eedc,#424420)', nightops:'linear-gradient(135deg,#1c1b16,#858a55)', cyber:'linear-gradient(135deg,#060608,#5b9fff)', redlight:'linear-gradient(135deg,#0a0000,#cc2200)' };
 
 function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
@@ -3603,8 +3658,9 @@ function toggleMapView() {
   document.getElementById('map-viewer').style.display = _mapVisible ? 'block' : 'none';
   document.getElementById('map-management').style.display = _mapVisible ? 'none' : 'block';
   document.getElementById('map-toggle-btn').textContent = _mapVisible ? 'Manage Maps' : 'Show Map';
-  ['pin-btn','measure-btn','clear-pins-btn'].forEach(id => document.getElementById(id).style.display = _mapVisible ? '' : 'none');
+  ['pin-btn','measure-btn','clear-pins-btn','save-wp-btn'].forEach(id => document.getElementById(id).style.display = _mapVisible ? '' : 'none');
   if (_mapVisible && !_map) initMap();
+  if (_mapVisible && _map) loadWaypoints();
 }
 
 let _mapMarkers = [];
@@ -3643,6 +3699,9 @@ function initMap() {
   _map.on('mousemove', (e) => {
     if (coordEl) coordEl.textContent = `${e.lngLat.lat.toFixed(5)}, ${e.lngLat.lng.toFixed(5)}`;
   });
+
+  // Load saved waypoints after map loads
+  _map.on('load', () => loadWaypoints());
 
   // Click to drop pin
   _map.on('click', (e) => {
@@ -3860,11 +3919,14 @@ async function doUnifiedSearch() {
   const el = document.getElementById('search-results');
   if (!q) { el.classList.remove('active'); return; }
   try {
-    const r = await (await fetch(`/api/search?q=${encodeURIComponent(q)}`)).json();
+    const r = await (await fetch(`/api/search/all?q=${encodeURIComponent(q)}`)).json();
     const items = [
       ...r.conversations.map(c => ({...c, type: 'conversation'})),
       ...r.notes.map(n => ({...n, type: 'note'})),
       ...r.documents.map(d => ({...d, type: 'document'})),
+      ...(r.inventory||[]).map(i => ({...i, type: 'inventory'})),
+      ...(r.contacts||[]).map(c => ({...c, type: 'contact'})),
+      ...(r.checklists||[]).map(c => ({...c, type: 'checklist'})),
     ];
     if (!items.length) {
       el.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;">No results</div>';
@@ -3898,6 +3960,15 @@ function openSearchResult(type, id) {
   } else if (type === 'document') {
     document.querySelector('[data-tab="ai-chat"]').click();
     setTimeout(() => { document.getElementById('kb-toggle').checked = true; toggleKB(); }, 200);
+  } else if (type === 'inventory') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => switchPrepSub('inventory'), 200);
+  } else if (type === 'contact') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => switchPrepSub('contacts'), 200);
+  } else if (type === 'checklist') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => { switchPrepSub('checklists'); selectChecklist(id); }, 200);
   }
 }
 
@@ -4828,6 +4899,116 @@ function toggleProtocol(header) {
   header.classList.toggle('open');
   const body = header.nextElementSibling;
   body.classList.toggle('open');
+}
+
+/* ─── Timers ─── */
+let _timerPanelOpen = false;
+let _timerPoll = null;
+
+function toggleTimerPanel() {
+  _timerPanelOpen = !_timerPanelOpen;
+  document.getElementById('timer-panel').style.display = _timerPanelOpen ? 'flex' : 'none';
+  if (_timerPanelOpen) {
+    loadTimers();
+    if (!_timerPoll) _timerPoll = setInterval(loadTimers, 1000);
+  } else {
+    if (_timerPoll) { clearInterval(_timerPoll); _timerPoll = null; }
+  }
+}
+
+async function loadTimers() {
+  try {
+    const timers = await (await fetch('/api/timers')).json();
+    const el = document.getElementById('timer-list');
+    if (!timers.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:11px;">No active timers. Start one above.</div>'; return; }
+    el.innerHTML = timers.map(t => {
+      const rem = Math.max(0, Math.round(t.remaining_sec));
+      const h = Math.floor(rem / 3600);
+      const m = Math.floor((rem % 3600) / 60);
+      const s = rem % 60;
+      const timeStr = h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
+      const color = t.done ? 'var(--green)' : rem < 60 ? 'var(--red)' : rem < 300 ? 'var(--orange)' : 'var(--text)';
+      const label = t.done ? 'DONE' : timeStr;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);">
+        <div><div style="font-weight:500;">${escapeHtml(t.name)}</div></div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-family:'Cascadia Code','Consolas',monospace;font-size:16px;font-weight:700;color:${color};">${label}</span>
+          <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="deleteTimer(${t.id})">x</span>
+        </div>
+      </div>`;
+    }).join('');
+    // Alert for done timers
+    timers.filter(t => t.done).forEach(t => {
+      if (!t._alerted) { t._alerted = true; }
+    });
+  } catch(e) {}
+}
+
+async function createTimer() {
+  const name = document.getElementById('timer-name').value.trim() || 'Timer';
+  const mins = parseInt(document.getElementById('timer-mins').value) || 30;
+  await fetch('/api/timers', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name, duration_sec: mins * 60})});
+  document.getElementById('timer-name').value = '';
+  toast(`Timer "${name}" started (${mins}m)`, 'success');
+  loadTimers();
+}
+
+function createTimerQuick(name, mins) {
+  fetch('/api/timers', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name, duration_sec: mins * 60})}).then(() => {
+    toast(`Timer "${name}" started (${mins}m)`, 'success');
+    loadTimers();
+  });
+}
+
+async function deleteTimer(id) {
+  await fetch(`/api/timers/${id}`, {method:'DELETE'});
+  loadTimers();
+}
+
+/* ─── Map Waypoints ─── */
+async function loadWaypoints() {
+  if (!_map) return;
+  try {
+    const waypoints = await (await fetch('/api/waypoints')).json();
+    // Remove existing waypoint markers
+    if (window._waypointMarkers) window._waypointMarkers.forEach(m => m.remove());
+    window._waypointMarkers = [];
+    waypoints.forEach(w => {
+      const marker = new maplibregl.Marker({color: w.color || '#5b9fff'})
+        .setLngLat([w.lng, w.lat])
+        .setPopup(new maplibregl.Popup().setHTML(
+          `<div style="font-size:12px;"><strong>${escapeHtml(w.name)}</strong><br>
+           <span style="text-transform:uppercase;font-size:10px;color:#888;">${w.category}</span>
+           ${w.notes ? '<br>' + escapeHtml(w.notes) : ''}
+           <br><span style="font-size:10px;color:#999;">${w.lat.toFixed(5)}, ${w.lng.toFixed(5)}</span>
+           <br><a href="#" onclick="deleteWaypoint(${w.id});return false;" style="color:red;font-size:10px;">Delete</a></div>`
+        ))
+        .addTo(_map);
+      window._waypointMarkers.push(marker);
+    });
+  } catch(e) {}
+}
+
+async function saveWaypoint() {
+  if (!_map) return;
+  const center = _map.getCenter();
+  const name = prompt('Waypoint name:');
+  if (!name) return;
+  const cats = ['rally','water','cache','shelter','hazard','medical','comms','general'];
+  const cat = prompt('Category (' + cats.join(', ') + '):', 'general') || 'general';
+  const notes = prompt('Notes (optional):') || '';
+  await fetch('/api/waypoints', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({name, lat: center.lat, lng: center.lng, category: cat, notes})});
+  toast(`Waypoint "${name}" saved`, 'success');
+  loadWaypoints();
+}
+
+async function deleteWaypoint(id) {
+  await fetch(`/api/waypoints/${id}`, {method:'DELETE'});
+  toast('Waypoint deleted');
+  loadWaypoints();
 }
 
 /* ─── Init ─── */

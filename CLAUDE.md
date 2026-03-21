@@ -63,7 +63,7 @@ pyinstaller build.spec
 - Kolibri: http://localhost:8300
 - Stirling PDF: http://localhost:8443
 
-## Features (v1.7.0)
+## Features (v1.8.0)
 - **6 services**: Ollama (AI), Kiwix (offline content), CyberChef (data tools), Kolibri (education), Qdrant (vector DB), Stirling PDF (PDF toolkit)
 - **Setup wizard** — capability selection (choose which services to install)
 - **Auto-start** — previously running services restart on app launch
@@ -112,10 +112,10 @@ pyinstaller build.spec
 - Benchmark disk test creates/deletes temp files in ProjectNOMAD\benchmark\
 
 ## Version
-v1.7.0
+v1.8.0
 
 ## Status
-Working v1.7.0 — Command Center Edition. 8-tab dashboard. Preparedness tab with 8 sub-sections and persistent Situation Board (6-domain threat level dashboard). Incident Log for chronological event tracking with severity/categories. Watch/guard rotation schedule generator. Medication dosage reference, barter value guide. 8 emergency protocols (added choking/Heimlich, hypothermia, wound closure). Plus all v1.3.0 features: inventory, contacts, LAN chat, checklists, calculators, radio ref, quick ref cards, 12 AI presets.
+Working v1.8.0 — Command Center Edition. 8-tab dashboard. Preparedness tab with 8 sub-sections and persistent Situation Board (6-domain threat level dashboard). Incident Log for chronological event tracking with severity/categories. Watch/guard rotation schedule generator. Medication dosage reference, barter value guide. 8 emergency protocols (added choking/Heimlich, hypothermia, wound closure). Plus all v1.3.0 features: inventory, contacts, LAN chat, checklists, calculators, radio ref, quick ref cards, 12 AI presets.
 
 ## Gotchas (v0.8.0)
 - Stirling PDF requires Java 17+ (downloads .jar, not .exe — no Windows exe in releases)

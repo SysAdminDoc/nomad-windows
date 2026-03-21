@@ -518,6 +518,104 @@ def create_app():
         db.close()
         return jsonify({'status': 'deleted'})
 
+    @app.route('/api/conversations/search')
+    def api_conversations_search():
+        q = request.args.get('q', '').strip()
+        if not q:
+            return jsonify([])
+        db = get_db()
+        rows = db.execute(
+            "SELECT id, title, model, created_at FROM conversations WHERE title LIKE ? OR messages LIKE ? ORDER BY updated_at DESC LIMIT 20",
+            (f'%{q}%', f'%{q}%')
+        ).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/conversations/<int:cid>/export')
+    def api_conversations_export(cid):
+        db = get_db()
+        convo = db.execute('SELECT * FROM conversations WHERE id = ?', (cid,)).fetchone()
+        db.close()
+        if not convo:
+            return jsonify({'error': 'Not found'}), 404
+        messages = json.loads(convo['messages'] or '[]')
+        md = f"# {convo['title']}\n\n"
+        md += f"*Model: {convo['model'] or 'Unknown'} | {convo['created_at']}*\n\n---\n\n"
+        for m in messages:
+            role = 'You' if m['role'] == 'user' else 'AI'
+            md += f"**{role}:**\n\n{m.get('content', '')}\n\n---\n\n"
+        return Response(md, mimetype='text/markdown',
+                       headers={'Content-Disposition': f'attachment; filename="{convo["title"]}.md"'})
+
+    # ─── Unified Search API ────────────────────────────────────────────
+
+    @app.route('/api/search')
+    def api_unified_search():
+        q = request.args.get('q', '').strip()
+        if not q:
+            return jsonify({'conversations': [], 'notes': [], 'documents': []})
+        db = get_db()
+        convos = db.execute(
+            "SELECT id, title, 'conversation' as type FROM conversations WHERE title LIKE ? OR messages LIKE ? ORDER BY updated_at DESC LIMIT 10",
+            (f'%{q}%', f'%{q}%')
+        ).fetchall()
+        notes = db.execute(
+            "SELECT id, title, 'note' as type FROM notes WHERE title LIKE ? OR content LIKE ? ORDER BY updated_at DESC LIMIT 10",
+            (f'%{q}%', f'%{q}%')
+        ).fetchall()
+        docs = db.execute(
+            "SELECT id, filename as title, 'document' as type FROM documents WHERE filename LIKE ? AND status = 'ready' ORDER BY created_at DESC LIMIT 10",
+            (f'%{q}%',)
+        ).fetchall()
+        db.close()
+        return jsonify({
+            'conversations': [dict(r) for r in convos],
+            'notes': [dict(r) for r in notes],
+            'documents': [dict(r) for r in docs],
+        })
+
+    @app.route('/api/content-summary')
+    def api_content_summary():
+        """Human-readable summary of offline knowledge capacity."""
+        db = get_db()
+        convo_count = db.execute('SELECT COUNT(*) as c FROM conversations').fetchone()['c']
+        note_count = db.execute('SELECT COUNT(*) as c FROM notes').fetchone()['c']
+        doc_count = db.execute('SELECT COUNT(*) as c FROM documents WHERE status = ?', ('ready',)).fetchone()['c']
+        doc_chunks = db.execute('SELECT COALESCE(SUM(chunks_count), 0) as c FROM documents WHERE status = ?', ('ready',)).fetchone()['c']
+        db.close()
+
+        # Disk usage
+        data_dir = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD')
+        total_bytes = get_dir_size(data_dir)
+
+        # ZIM count and size
+        zim_count = 0
+        zim_bytes = 0
+        if kiwix.is_installed():
+            zims = kiwix.list_zim_files()
+            zim_count = len(zims)
+            zim_bytes = sum(z['size_mb'] * 1024 * 1024 for z in zims)
+
+        # Model count
+        model_count = 0
+        if ollama.is_installed() and ollama.running():
+            try:
+                model_count = len(ollama.list_models())
+            except Exception:
+                pass
+
+        return jsonify({
+            'total_size': format_size(total_bytes),
+            'total_bytes': total_bytes,
+            'conversations': convo_count,
+            'notes': note_count,
+            'documents': doc_count,
+            'document_chunks': doc_chunks,
+            'zim_files': zim_count,
+            'zim_size': format_size(int(zim_bytes)),
+            'ai_models': model_count,
+        })
+
     # ─── Benchmark API ─────────────────────────────────────────────────
 
     @app.route('/api/benchmark/run', methods=['POST'])

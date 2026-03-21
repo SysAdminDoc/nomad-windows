@@ -452,6 +452,79 @@ a { color: var(--accent); text-decoration: none; }
 }
 .lan-banner a { font-weight: 600; }
 
+/* ─── Unified Search ─── */
+.search-bar {
+  position: relative; margin-bottom: 16px;
+}
+.search-bar input {
+  width: 100%; background: var(--surface); backdrop-filter: blur(16px);
+  border: 1px solid var(--border); color: var(--text);
+  padding: 10px 16px 10px 36px; border-radius: var(--radius);
+  font-size: 13px; outline: none; transition: border-color 0.2s;
+}
+.search-bar input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim); }
+.search-bar .search-icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--text-muted); font-size: 14px;
+}
+.search-results {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 50;
+  background: var(--surface-solid); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow);
+  max-height: 300px; overflow-y: auto; display: none;
+}
+.search-results.active { display: block; }
+.search-result-item {
+  padding: 8px 14px; cursor: pointer; font-size: 12px;
+  display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border); transition: background 0.1s;
+}
+.search-result-item:hover { background: var(--surface2); }
+.search-result-item:last-child { border-bottom: none; }
+.search-result-type {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 2px 6px; border-radius: 4px; font-weight: 600;
+}
+.search-result-type.conversation { background: var(--accent-dim); color: var(--accent); }
+.search-result-type.note { background: var(--green-dim); color: var(--green); }
+.search-result-type.document { background: var(--orange-dim); color: var(--orange); }
+
+/* ─── Content Summary ─── */
+.content-summary {
+  background: var(--surface); backdrop-filter: blur(16px);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px 20px; margin-bottom: 16px;
+  display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+}
+.content-summary .cs-total {
+  font-size: 22px; font-weight: 700;
+  background: linear-gradient(135deg, var(--accent), var(--purple));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.content-summary .cs-label { font-size: 11px; color: var(--text-dim); }
+.content-summary .cs-stat {
+  text-align: center; padding: 0 12px; border-left: 1px solid var(--border);
+}
+.content-summary .cs-stat:first-of-type { border-left: none; }
+.content-summary .cs-val { font-size: 16px; font-weight: 700; color: var(--text); }
+
+/* ─── Convo Search ─── */
+.convo-search {
+  padding: 6px 8px; border-bottom: 1px solid var(--border);
+}
+.convo-search input {
+  width: 100%; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 5px 8px; border-radius: 6px; font-size: 11px; outline: none;
+}
+.convo-search input:focus { border-color: var(--accent); }
+
+/* ─── System Presets ─── */
+.preset-select {
+  background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+  padding: 5px 8px; border-radius: var(--radius-sm); font-size: 11px; outline: none;
+}
+.preset-select:focus { border-color: var(--accent); }
+
 /* ─── Readiness ─── */
 .readiness-pill {
   display: flex; align-items: center; gap: 6px;
@@ -552,6 +625,14 @@ a { color: var(--accent); text-decoration: none; }
   <!-- Services Tab -->
   <div id="tab-services" class="tab-content active">
     <div class="lan-banner" id="lan-banner" style="display:none;"></div>
+    <!-- Unified Search -->
+    <div class="search-bar">
+      <span class="search-icon">&#128269;</span>
+      <input id="unified-search" placeholder="Search conversations, notes, documents..." oninput="debounceSearch()" onfocus="showSearchResults()" onblur="setTimeout(()=>hideSearchResults(),200)">
+      <div class="search-results" id="search-results"></div>
+    </div>
+    <!-- Content Summary -->
+    <div class="content-summary" id="content-summary"></div>
     <!-- Mission Readiness -->
     <div id="readiness-bar" style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;"></div>
     <div class="services-grid" id="services-grid"></div>
@@ -573,6 +654,9 @@ a { color: var(--accent); text-decoration: none; }
           <span>Conversations</span>
           <button class="btn btn-sm btn-primary" onclick="newConversation()">+ New</button>
         </div>
+        <div class="convo-search">
+          <input id="convo-search" placeholder="Search chats..." oninput="filterConvos()">
+        </div>
         <div class="convo-list" id="convo-list"></div>
         <div class="convo-sidebar-footer">
           <button class="btn btn-sm btn-danger" style="width:100%;" onclick="deleteAllConvos()">Delete All</button>
@@ -582,7 +666,17 @@ a { color: var(--accent); text-decoration: none; }
         <div class="chat-header">
           <div class="chat-header-left">
             <select id="model-select"><option value="">No models</option></select>
-            <button class="btn btn-sm" onclick="managePullModel()">+ Pull Model</button>
+            <select class="preset-select" id="system-preset" onchange="applyPreset()">
+              <option value="">No system prompt</option>
+              <option value="assistant">General Assistant</option>
+              <option value="medical">Medical Advisor</option>
+              <option value="coding">Coding Helper</option>
+              <option value="survival">Survival Guide</option>
+              <option value="teacher">Teacher/Tutor</option>
+              <option value="analyst">Data Analyst</option>
+            </select>
+            <button class="btn btn-sm" onclick="managePullModel()">+ Pull</button>
+            <button class="btn btn-sm" onclick="exportConversation()" title="Export to Markdown">Export</button>
           </div>
           <div id="pull-progress-bar" style="display:none;flex:1;max-width:250px;">
             <div class="progress-bar"><div class="fill" id="pull-fill" style="width:0%"></div></div>
@@ -1114,7 +1208,7 @@ async function sendChat() {
   try {
     const resp = await fetch('/api/ai/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model, knowledge_base: kbEnabled, messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)})
+      body: JSON.stringify({model, knowledge_base: kbEnabled, system_prompt: PRESETS[activePreset] || '', messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)})
     });
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
@@ -1760,6 +1854,115 @@ async function loadBuilderTag() {
   } catch(e) {}
 }
 
+/* ─── System Prompt Presets ─── */
+const PRESETS = {
+  assistant: 'You are a helpful, knowledgeable assistant. Be concise and accurate.',
+  medical: 'You are a medical information advisor. Provide evidence-based health information. Always recommend consulting a healthcare professional for medical decisions. Reference medical terminology accurately.',
+  coding: 'You are an expert software engineer. Write clean, efficient code. Explain your reasoning. Suggest best practices and potential pitfalls. Support multiple programming languages.',
+  survival: 'You are a survival and preparedness expert. Provide practical, actionable advice for emergency situations, outdoor survival, first aid, and disaster preparedness.',
+  teacher: 'You are a patient, encouraging teacher. Explain concepts clearly with examples. Break complex topics into digestible parts. Ask follow-up questions to check understanding. Adapt your teaching style to the student.',
+  analyst: 'You are a data analyst. Help interpret data, create queries, explain statistical concepts, and provide analytical frameworks. Be precise with numbers.',
+};
+let activePreset = '';
+
+function applyPreset() {
+  activePreset = document.getElementById('system-preset').value;
+}
+
+function exportConversation() {
+  if (!currentConvoId) { toast('No conversation selected'); return; }
+  window.open(`/api/conversations/${currentConvoId}/export`, '_blank');
+}
+
+/* ─── Conversation Search ─── */
+function filterConvos() {
+  const q = document.getElementById('convo-search').value.toLowerCase();
+  if (!q) { renderConvoList(); return; }
+  const filtered = allConvos.filter(c => c.title.toLowerCase().includes(q));
+  const el = document.getElementById('convo-list');
+  if (!filtered.length) { el.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:11px;text-align:center;">No matches</div>'; return; }
+  el.innerHTML = filtered.map(c => `
+    <div class="convo-item ${c.id===currentConvoId?'active':''}" onclick="selectConvo(${c.id})">
+      <span class="convo-title">${escapeHtml(c.title)}</span>
+      <span class="convo-actions">
+        <span onclick="event.stopPropagation();renameConvo(${c.id})" title="Rename">r</span>
+        <span class="convo-del" onclick="event.stopPropagation();deleteConvo(${c.id})" title="Delete">x</span>
+      </span>
+    </div>
+  `).join('');
+}
+
+/* ─── Unified Search ─── */
+let _searchTimer;
+function debounceSearch() {
+  clearTimeout(_searchTimer);
+  _searchTimer = setTimeout(doUnifiedSearch, 300);
+}
+
+async function doUnifiedSearch() {
+  const q = document.getElementById('unified-search').value.trim();
+  const el = document.getElementById('search-results');
+  if (!q) { el.classList.remove('active'); return; }
+  try {
+    const r = await (await fetch(`/api/search?q=${encodeURIComponent(q)}`)).json();
+    const items = [
+      ...r.conversations.map(c => ({...c, type: 'conversation'})),
+      ...r.notes.map(n => ({...n, type: 'note'})),
+      ...r.documents.map(d => ({...d, type: 'document'})),
+    ];
+    if (!items.length) {
+      el.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;">No results</div>';
+    } else {
+      el.innerHTML = items.map(i => `
+        <div class="search-result-item" onclick="openSearchResult('${i.type}',${i.id})">
+          <span>${escapeHtml(i.title)}</span>
+          <span class="search-result-type ${i.type}">${i.type}</span>
+        </div>
+      `).join('');
+    }
+    el.classList.add('active');
+  } catch(e) { el.classList.remove('active'); }
+}
+
+function showSearchResults() {
+  const q = document.getElementById('unified-search').value.trim();
+  if (q) document.getElementById('search-results').classList.add('active');
+}
+function hideSearchResults() { document.getElementById('search-results').classList.remove('active'); }
+
+function openSearchResult(type, id) {
+  hideSearchResults();
+  document.getElementById('unified-search').value = '';
+  if (type === 'conversation') {
+    document.querySelector('[data-tab="ai-chat"]').click();
+    setTimeout(() => selectConvo(id), 200);
+  } else if (type === 'note') {
+    document.querySelector('[data-tab="notes"]').click();
+    setTimeout(() => { loadNotes().then(() => selectNote(id)); }, 200);
+  } else if (type === 'document') {
+    document.querySelector('[data-tab="ai-chat"]').click();
+    setTimeout(() => { document.getElementById('kb-toggle').checked = true; toggleKB(); }, 200);
+  }
+}
+
+/* ─── Content Summary ─── */
+async function loadContentSummary() {
+  try {
+    const s = await (await fetch('/api/content-summary')).json();
+    document.getElementById('content-summary').innerHTML = `
+      <div>
+        <div class="cs-total">${s.total_size}</div>
+        <div class="cs-label">Offline Knowledge</div>
+      </div>
+      <div class="cs-stat"><div class="cs-val">${s.ai_models}</div><div class="cs-label">AI Models</div></div>
+      <div class="cs-stat"><div class="cs-val">${s.zim_files}</div><div class="cs-label">ZIM Libraries</div></div>
+      <div class="cs-stat"><div class="cs-val">${s.documents}</div><div class="cs-label">KB Documents</div></div>
+      <div class="cs-stat"><div class="cs-val">${s.conversations}</div><div class="cs-label">Conversations</div></div>
+      <div class="cs-stat"><div class="cs-val">${s.notes}</div><div class="cs-label">Notes</div></div>
+    `;
+  } catch(e) {}
+}
+
 /* ─── Mission Readiness ─── */
 async function loadReadiness() {
   try {
@@ -1810,6 +2013,7 @@ async function loadActivity() {
 loadServices();
 loadReadiness();
 loadActivity();
+loadContentSummary();
 setInterval(() => { loadServices(); loadReadiness(); }, 8000);
 checkNetwork();
 setInterval(checkNetwork, 30000);

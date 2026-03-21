@@ -1,10 +1,20 @@
-# Project N.O.M.A.D. for Windows
+<div align="center">
+<img src="https://raw.githubusercontent.com/Crosstalk-Solutions/project-nomad/refs/heads/main/admin/public/project_nomad_logo.png" width="200" height="200"/>
 
-Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) — your offline-first knowledge and AI command center. No Docker required.
+# Project N.O.M.A.D.
+### Offline Media, Archives, and Data for Windows
 
-Manages offline tools (AI chat, Wikipedia, CyberChef) as native Windows processes instead of containers, wrapped in a sleek dark dashboard powered by WebView2.
+**Knowledge That Never Goes Offline**
 
-![Dashboard](screenshot.png)
+[![Website](https://img.shields.io/badge/Website-projectnomad.us-blue)](https://www.projectnomad.us)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2)](https://discord.com/invite/crosstalksolutions)
+[![Benchmark](https://img.shields.io/badge/Benchmark-Leaderboard-green)](https://benchmark.projectnomad.us)
+
+</div>
+
+---
+
+Project N.O.M.A.D. is a self-contained, offline-first knowledge and education server packed with critical tools, knowledge, and AI to keep you informed and empowered—anytime, anywhere.
 
 ## Features
 

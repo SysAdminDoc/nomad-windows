@@ -749,6 +749,113 @@ a { color: var(--accent); text-decoration: none; }
 /* ─── Tab Indicator Animation ─── */
 .tab { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
 .tab.active { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
+
+/* ─── Preparedness Tab ─── */
+.prep-section { margin-bottom: 24px; }
+.prep-section h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+.prep-layout { display: flex; gap: 16px; min-height: 500px; }
+.prep-sidebar {
+  width: 260px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); display: flex; flex-direction: column; flex-shrink: 0;
+}
+.prep-sidebar-header { padding: 12px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.prep-sidebar-header span { font-weight: 600; font-size: 13px; }
+.prep-template-btns { padding: 8px; border-bottom: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 4px; }
+.prep-template-btn {
+  padding: 4px 10px; font-size: 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--text-dim); cursor: pointer; transition: all 0.15s;
+}
+.prep-template-btn:hover { border-color: var(--accent); color: var(--accent); }
+.prep-list { flex: 1; overflow-y: auto; padding: 6px; }
+.prep-item {
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  font-size: 12px; margin-bottom: 1px; transition: background 0.1s;
+  display: flex; justify-content: space-between; align-items: center; gap: 4px;
+}
+.prep-item:hover { background: var(--surface2); }
+.prep-item.active { background: var(--surface3); }
+.prep-item .prep-item-name { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.prep-item .prep-progress { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+.prep-item .prep-del { color: var(--red); cursor: pointer; padding: 0 3px; font-size: 13px; opacity: 0; }
+.prep-item:hover .prep-del { opacity: 0.6; }
+.prep-item .prep-del:hover { opacity: 1; }
+.prep-main {
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); display: flex; flex-direction: column;
+}
+.prep-main-header {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.prep-main-header h4 { font-size: 14px; font-weight: 600; }
+.prep-progress-bar { height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; margin: 0 16px 0; }
+.prep-progress-bar .fill { height: 100%; background: linear-gradient(90deg, var(--green), var(--accent)); transition: width 0.3s; border-radius: 2px; }
+.prep-checklist { flex: 1; overflow-y: auto; padding: 8px 16px; }
+.check-item {
+  display: flex; align-items: center; gap: 10px; padding: 6px 0;
+  border-bottom: 1px solid var(--border); font-size: 13px; cursor: pointer; transition: opacity 0.15s;
+}
+.check-item:last-child { border-bottom: none; }
+.check-item input[type="checkbox"] { accent-color: var(--green); width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+.check-item.checked { opacity: 0.45; text-decoration: line-through; }
+.check-cat {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; padding: 1px 6px;
+  border-radius: 4px; background: var(--accent-dim); color: var(--accent); font-weight: 600; flex-shrink: 0;
+}
+
+/* ─── Calculators ─── */
+.calc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 16px; }
+.calc-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 20px; transition: border-color 0.2s;
+}
+.calc-card:hover { border-color: var(--border-hover); }
+.calc-card h4 { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 12px; }
+.calc-row { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 13px; }
+.calc-row label { color: var(--text-dim); min-width: 100px; }
+.calc-row input, .calc-row select {
+  flex: 1; background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+  padding: 6px 10px; border-radius: var(--radius-sm); font-size: 13px; outline: none; max-width: 120px;
+}
+.calc-row input:focus, .calc-row select:focus { border-color: var(--accent); }
+.calc-result {
+  margin-top: 12px; padding: 12px; background: var(--accent-dim); border-radius: var(--radius-sm);
+  font-size: 13px; line-height: 1.6;
+}
+.calc-result strong { color: var(--accent); font-size: 18px; }
+
+/* ─── Radio Ref ─── */
+.freq-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.freq-table th {
+  background: var(--surface3); padding: 8px 10px; text-align: left;
+  border: 1px solid var(--border); font-weight: 600; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.3px; color: var(--accent);
+}
+.freq-table td { padding: 6px 10px; border: 1px solid var(--border); }
+.freq-table tr:hover td { background: var(--surface2); }
+.freq-section-header td {
+  background: var(--accent-dim); font-weight: 600; color: var(--accent);
+  padding: 8px 10px; font-size: 12px;
+}
+
+/* ─── Emergency Protocols ─── */
+.protocol-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  margin-bottom: 8px; overflow: hidden;
+}
+.protocol-header {
+  padding: 12px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+  font-weight: 600; font-size: 13px; transition: background 0.15s;
+}
+.protocol-header:hover { background: var(--surface2); }
+.protocol-header .proto-arrow { transition: transform 0.2s; color: var(--text-muted); }
+.protocol-header.open .proto-arrow { transform: rotate(90deg); }
+.protocol-body { padding: 0 16px 16px; display: none; font-size: 13px; line-height: 1.7; }
+.protocol-body.open { display: block; animation: fadeSlideIn 0.2s ease; }
+.protocol-body ol { margin-left: 18px; }
+.protocol-body li { margin-bottom: 6px; }
+.protocol-body .proto-warn { color: var(--orange); font-weight: 600; font-size: 12px; margin-top: 8px; }
+.protocol-body .proto-tip { color: var(--green); font-size: 12px; margin-top: 4px; padding: 6px 10px; background: var(--green-dim); border-radius: 6px; }
 </style>
 </head>
 <body>
@@ -775,6 +882,7 @@ a { color: var(--accent); text-decoration: none; }
     <button class="tab" data-tab="maps">Maps</button>
     <button class="tab" data-tab="notes">Notes</button>
     <button class="tab" data-tab="benchmark">Benchmark</button>
+    <button class="tab" data-tab="preparedness">Preparedness</button>
     <button class="tab" data-tab="settings">Settings</button>
   </div>
 
@@ -845,6 +953,12 @@ a { color: var(--accent); text-decoration: none; }
               <option value="survival">Survival Guide</option>
               <option value="teacher">Teacher/Tutor</option>
               <option value="analyst">Data Analyst</option>
+              <option value="field_medic">Field Medic</option>
+              <option value="ham_radio">HAM Radio Tech</option>
+              <option value="homesteader">Homesteader</option>
+              <option value="water_specialist">Water/Sanitation</option>
+              <option value="tactical">Security/OPSEC</option>
+              <option value="forager">Foraging/Wild Food</option>
               <option value="custom">Custom Prompt...</option>
             </select>
             <button class="btn btn-sm" onclick="toggleModelPicker()">+ Get Model</button>
@@ -1003,6 +1117,253 @@ a { color: var(--accent); text-decoration: none; }
       <div class="settings-card" style="grid-column:1/-1;">
         <h3>Benchmark History</h3>
         <div id="bench-history"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Preparedness Tab -->
+  <div id="tab-preparedness" class="tab-content">
+
+    <!-- Emergency Checklists -->
+    <div class="prep-section">
+      <h3>Emergency Checklists</h3>
+      <div class="prep-layout">
+        <div class="prep-sidebar">
+          <div class="prep-sidebar-header">
+            <span>My Checklists</span>
+          </div>
+          <div class="prep-template-btns" id="prep-template-btns"></div>
+          <div class="prep-list" id="prep-list"></div>
+        </div>
+        <div class="prep-main">
+          <div class="prep-main-header">
+            <h4 id="prep-active-name">Select or create a checklist</h4>
+            <span id="prep-active-stats" style="font-size:11px;color:var(--text-muted);"></span>
+          </div>
+          <div class="prep-progress-bar"><div class="fill" id="prep-progress-fill" style="width:0%"></div></div>
+          <div class="prep-checklist" id="prep-checklist">
+            <div class="empty-state" style="height:100%;">
+              <div class="icon" style="font-size:32px;opacity:0.2;">&#9745;</div>
+              <p>Choose a template above to create a checklist, or select an existing one.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Resource Calculators -->
+    <div class="prep-section">
+      <h3>Resource Calculators</h3>
+      <div class="calc-grid">
+        <!-- Water Calculator -->
+        <div class="calc-card">
+          <h4>Water Storage Calculator</h4>
+          <div class="calc-row"><label>People</label><input type="number" id="calc-water-people" value="4" min="1" max="50" oninput="calcWater()"></div>
+          <div class="calc-row"><label>Days</label><input type="number" id="calc-water-days" value="14" min="1" max="365" oninput="calcWater()"></div>
+          <div class="calc-row"><label>Climate</label>
+            <select id="calc-water-climate" onchange="calcWater()">
+              <option value="1">Temperate</option>
+              <option value="1.5">Hot / Arid</option>
+              <option value="0.85">Cool / Mild</option>
+            </select>
+          </div>
+          <div class="calc-result" id="calc-water-result"></div>
+        </div>
+        <!-- Food Calculator -->
+        <div class="calc-card">
+          <h4>Food Storage Calculator</h4>
+          <div class="calc-row"><label>People</label><input type="number" id="calc-food-people" value="4" min="1" max="50" oninput="calcFood()"></div>
+          <div class="calc-row"><label>Days</label><input type="number" id="calc-food-days" value="14" min="1" max="365" oninput="calcFood()"></div>
+          <div class="calc-row"><label>Cal/person/day</label><input type="number" id="calc-food-cal" value="2000" min="1200" max="4000" step="100" oninput="calcFood()"></div>
+          <div class="calc-result" id="calc-food-result"></div>
+        </div>
+        <!-- Power Calculator -->
+        <div class="calc-card">
+          <h4>Power / Solar Calculator</h4>
+          <div class="calc-row"><label>Total watts</label><input type="number" id="calc-power-watts" value="500" min="1" oninput="calcPower()"></div>
+          <div class="calc-row"><label>Hours/day</label><input type="number" id="calc-power-hours" value="8" min="1" max="24" oninput="calcPower()"></div>
+          <div class="calc-row"><label>Days</label><input type="number" id="calc-power-days" value="3" min="1" max="30" oninput="calcPower()"></div>
+          <div class="calc-row"><label>Sun hours</label><input type="number" id="calc-power-sun" value="5" min="1" max="12" oninput="calcPower()"></div>
+          <div class="calc-result" id="calc-power-result"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Radio Frequency Reference -->
+    <div class="prep-section">
+      <h3>Radio Frequency Reference</h3>
+      <div class="settings-card" style="overflow-x:auto;">
+        <table class="freq-table">
+          <thead>
+            <tr><th>Service</th><th>Frequency / Channel</th><th>Notes</th><th>License?</th></tr>
+          </thead>
+          <tbody>
+            <tr class="freq-section-header"><td colspan="4">Emergency & Weather</td></tr>
+            <tr><td>NOAA Weather</td><td>162.400, 162.425, 162.450, 162.475, 162.500, 162.525, 162.550 MHz</td><td>24/7 weather alerts and forecasts</td><td>Receive only</td></tr>
+            <tr><td>Emergency (analog)</td><td>156.800 MHz (Ch 16)</td><td>Marine emergency & distress</td><td>No (emergency)</td></tr>
+            <tr><td>AM Emergency</td><td>530 kHz, 1610 kHz</td><td>Highway advisory / travel info</td><td>Receive only</td></tr>
+
+            <tr class="freq-section-header"><td colspan="4">FRS (Family Radio Service) -- No License Required</td></tr>
+            <tr><td>FRS Ch 1-7</td><td>462.5625 - 462.7125 MHz</td><td>Shared w/ GMRS. 2W max. Best for short range</td><td>No</td></tr>
+            <tr><td>FRS Ch 8-14</td><td>467.5625 - 467.7125 MHz</td><td>0.5W max. Very short range</td><td>No</td></tr>
+            <tr><td>FRS Ch 15-22</td><td>462.5500 - 462.7250 MHz</td><td>2W max. Added in 2017</td><td>No</td></tr>
+            <tr><td style="color:var(--green);font-weight:600;">FRS Ch 1 (Rally)</td><td>462.5625 MHz</td><td>Common prepper rally channel</td><td>No</td></tr>
+            <tr><td style="color:var(--green);font-weight:600;">FRS Ch 3 (Emergency)</td><td>462.6125 MHz</td><td>Unofficial emergency channel</td><td>No</td></tr>
+
+            <tr class="freq-section-header"><td colspan="4">GMRS (General Mobile Radio Service) -- License Required (no exam)</td></tr>
+            <tr><td>GMRS Ch 15-22</td><td>462.5500 - 462.7250 MHz</td><td>Up to 50W. Repeater capable</td><td>Yes ($35, 10yr)</td></tr>
+            <tr><td>GMRS Repeater In</td><td>467.5500 - 467.7250 MHz</td><td>Repeater input frequencies</td><td>Yes</td></tr>
+            <tr><td style="color:var(--green);font-weight:600;">GMRS Ch 20 (Emergency)</td><td>462.6750 MHz</td><td>National GMRS emergency calling</td><td>Yes</td></tr>
+
+            <tr class="freq-section-header"><td colspan="4">MURS (Multi-Use Radio Service) -- No License Required</td></tr>
+            <tr><td>MURS Ch 1</td><td>151.820 MHz</td><td>2W max. Good building penetration</td><td>No</td></tr>
+            <tr><td>MURS Ch 2</td><td>151.880 MHz</td><td>Less crowded than FRS</td><td>No</td></tr>
+            <tr><td>MURS Ch 3</td><td>151.940 MHz</td><td>Business and personal use</td><td>No</td></tr>
+            <tr><td>MURS Ch 4</td><td>154.570 MHz</td><td>Often used for DRIVEWAY ALERTS</td><td>No</td></tr>
+            <tr><td>MURS Ch 5</td><td>154.600 MHz</td><td>Blue Dot (Walmart/retail)</td><td>No</td></tr>
+
+            <tr class="freq-section-header"><td colspan="4">CB Radio -- No License Required</td></tr>
+            <tr><td>CB Ch 9</td><td>27.065 MHz</td><td>Official emergency channel</td><td>No</td></tr>
+            <tr><td>CB Ch 19</td><td>27.185 MHz</td><td>Trucker / highway channel</td><td>No</td></tr>
+            <tr><td>CB range</td><td>26.965 - 27.405 MHz</td><td>40 channels, 4W AM / 12W SSB</td><td>No</td></tr>
+
+            <tr class="freq-section-header"><td colspan="4">Amateur (HAM) Radio -- License Required (exam)</td></tr>
+            <tr><td>2m Calling</td><td>146.520 MHz FM</td><td>National FM simplex calling freq</td><td>Technician+</td></tr>
+            <tr><td>2m Emergency</td><td>146.550 MHz FM</td><td>Simplex emergency use</td><td>Technician+</td></tr>
+            <tr><td>70cm Calling</td><td>446.000 MHz FM</td><td>UHF simplex calling freq</td><td>Technician+</td></tr>
+            <tr><td>2m Band</td><td>144 - 148 MHz</td><td>Best all-around VHF band</td><td>Technician+</td></tr>
+            <tr><td>70cm Band</td><td>420 - 450 MHz</td><td>UHF, good for urban areas</td><td>Technician+</td></tr>
+            <tr><td>HF 40m</td><td>7.000 - 7.300 MHz</td><td>Regional (100-1000mi), day+night</td><td>General+</td></tr>
+            <tr><td>HF 20m</td><td>14.000 - 14.350 MHz</td><td>Worldwide daytime propagation</td><td>General+</td></tr>
+            <tr><td>HF 80m</td><td>3.500 - 4.000 MHz</td><td>Regional nighttime. ARES/RACES nets</td><td>General+</td></tr>
+
+            <tr class="freq-section-header"><td colspan="4">Shortwave Broadcast (Receive Only)</td></tr>
+            <tr><td>BBC World</td><td>5.875, 9.410, 11.750 MHz</td><td>International news</td><td>Receive only</td></tr>
+            <tr><td>VOA</td><td>9.355, 15.580 MHz</td><td>Voice of America</td><td>Receive only</td></tr>
+            <tr><td>WWV Time</td><td>2.5, 5, 10, 15, 20 MHz</td><td>NIST time signal + propagation</td><td>Receive only</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Emergency Protocols Quick Reference -->
+    <div class="prep-section">
+      <h3>Emergency Protocols Quick Reference</h3>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>CPR -- Cardiopulmonary Resuscitation (Adult)</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Check scene safety.</strong> Make sure the area is safe for you and the victim.</li>
+            <li><strong>Check responsiveness.</strong> Tap shoulders firmly, shout "Are you okay?"</li>
+            <li><strong>Call 911</strong> (or have someone call). Get an AED if available.</li>
+            <li><strong>Check breathing.</strong> Look for chest rise for no more than 10 seconds. Gasping is NOT normal breathing.</li>
+            <li><strong>Begin chest compressions.</strong> Place heel of one hand on center of chest (lower half of sternum), other hand on top, fingers interlocked.</li>
+            <li><strong>Push hard and fast.</strong> Compress at least 2 inches deep, rate of 100-120/min (tempo of "Stayin' Alive").</li>
+            <li><strong>Allow full chest recoil</strong> between compressions. Don't lean on chest.</li>
+            <li><strong>30 compressions : 2 breaths</strong> ratio. Tilt head back, lift chin, pinch nose, give 1-second breaths watching for chest rise.</li>
+            <li><strong>Continue until:</strong> AED arrives, EMS takes over, victim starts breathing, or you're physically unable.</li>
+            <li><strong>AED:</strong> Turn on, follow voice prompts. Apply pads. "Clear" before shock. Resume CPR immediately after shock.</li>
+          </ol>
+          <div class="proto-warn">Hands-Only CPR: If untrained or uncomfortable with breaths, continuous chest compressions at 100-120/min is still effective.</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Severe Bleeding Control</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Ensure your safety.</strong> Wear gloves if available. Avoid contact with blood.</li>
+            <li><strong>Apply direct pressure.</strong> Use gauze, cloth, or clothing pressed firmly on the wound. Do NOT remove — add more on top.</li>
+            <li><strong>If limb wound won't stop:</strong> Apply a tourniquet 2-3 inches above the wound (NOT on a joint). Tighten until bleeding stops.</li>
+            <li><strong>Note the time</strong> tourniquet was applied. Write "TQ" and time on patient's forehead or the tourniquet.</li>
+            <li><strong>Wound packing:</strong> For deep wounds (junctional areas like groin, armpit, neck), pack tightly with hemostatic gauze, then apply pressure.</li>
+            <li><strong>Pressure dressing:</strong> Wrap wound firmly with elastic bandage or Israeli bandage. Tight enough to control bleeding but check circulation below.</li>
+            <li><strong>Elevate the injured area</strong> above the heart if possible (unless suspected fracture).</li>
+            <li><strong>Treat for shock:</strong> Lay flat, elevate legs, keep warm with blankets, keep calm and still.</li>
+          </ol>
+          <div class="proto-tip">Remember: You will NOT hurt someone by applying a tourniquet. A limb can survive 6+ hours. Blood loss kills in minutes.</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Water Purification Methods</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Boiling</strong> (most reliable): Bring water to a rolling boil for 1 minute (3 minutes above 6,500 ft elevation). Let cool before drinking.</li>
+            <li><strong>Chemical treatment:</strong>
+              <ul>
+                <li>Household bleach (6-8.25% sodium hypochlorite, unscented): 8 drops per gallon of clear water, 16 drops if cloudy. Wait 30 minutes. Should have slight chlorine smell.</li>
+                <li>Iodine tablets: Follow package directions. Not for pregnant women or those with thyroid conditions.</li>
+                <li>Water purification tablets (Aquatabs, Katadyn): Follow package directions for dose and wait time.</li>
+              </ul>
+            </li>
+            <li><strong>Filtration:</strong> Pump filters (0.2 micron or smaller) remove bacteria and protozoa. Does NOT remove viruses — combine with chemical treatment if viral contamination suspected.</li>
+            <li><strong>UV treatment:</strong> SteriPEN or similar. Effective against bacteria, viruses, and protozoa. Requires clear water and batteries.</li>
+            <li><strong>Solar disinfection (SODIS):</strong> Fill clear PET bottle, place in direct sunlight for 6+ hours (2 days if cloudy). Emergency backup method only.</li>
+          </ol>
+          <div class="proto-warn">Always pre-filter cloudy water through cloth, coffee filter, or sand filter BEFORE purifying.</div>
+          <div class="proto-tip">Priority water sources: Rain > Springs > Fast streams > Lakes > Puddles. Avoid water near industrial/agricultural sites.</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Emergency Shelter Construction</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Site selection:</strong> High ground (avoid flood zones), natural windbreak, near water but not in a drainage. Avoid dead trees, hilltops (lightning), ravines (flash floods).</li>
+            <li><strong>Debris hut (no tools needed):</strong>
+              <ul>
+                <li>Find a sturdy ridgepole (9-12 ft long). Prop one end on a stump/rock at waist height.</li>
+                <li>Lean sticks along both sides at 45 degrees, creating a ribcage frame.</li>
+                <li>Pile leaves, pine needles, grass 2-3 feet thick over the frame.</li>
+                <li>Fill inside with dry leaves for insulation bedding.</li>
+                <li>Make it just big enough for your body — smaller = warmer.</li>
+              </ul>
+            </li>
+            <li><strong>Tarp shelter (A-frame):</strong> Tie cordage between two trees. Drape tarp over ridgeline. Stake/weight corners at 45-degree angle. Face opening away from wind.</li>
+            <li><strong>Snow shelter:</strong> Dig into a drift or build a quinzhee (pile snow 5ft high, let settle 2 hours, hollow out). Poke ventilation hole. Sleep on elevated platform inside.</li>
+            <li><strong>Key principles:</strong> Insulation from ground is critical (use pine boughs, leaves, foam pad). Small entrance. Ventilation to prevent CO2 buildup. Wind protection.</li>
+          </ol>
+          <div class="proto-tip">The #1 killer in survival situations is exposure (hypothermia/hyperthermia). Shelter is your FIRST priority after immediate medical needs.</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Fire Starting Methods</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Gather materials FIRST:</strong>
+              <ul>
+                <li><strong>Tinder:</strong> Dry grass, birch bark, cotton balls w/ vaseline, dryer lint, fatwood shavings, char cloth</li>
+                <li><strong>Kindling:</strong> Pencil-thick dry sticks, split small wood</li>
+                <li><strong>Fuel:</strong> Wrist-thick+ dry wood, graduated sizes</li>
+              </ul>
+            </li>
+            <li><strong>Build the fire lay:</strong> Teepee method (lean kindling around tinder bundle) or log cabin (stack kindling in alternating layers around tinder).</li>
+            <li><strong>Ferro rod:</strong> Scrape rod with spine of knife at 45-degree angle, directing sparks onto tinder bundle. Most reliable method in wet conditions.</li>
+            <li><strong>Matches/lighter:</strong> Light tinder from upwind side, shield from wind with body. Waterproof matches > regular.</li>
+            <li><strong>Flint and steel:</strong> Strike steel against sharp flint edge, catch sparks on char cloth, transfer to tinder bundle, blow gently.</li>
+            <li><strong>Magnifying lens:</strong> Focus sunlight into tight point on dark tinder. Works only with direct sun.</li>
+            <li><strong>Fire maintenance:</strong> Feed gradually, larger fuel as fire grows. Keep dry wood supply stocked. Bank coals at night with ash for easy restart.</li>
+          </ol>
+          <div class="proto-warn">Always have a fire extinguishment plan. Clear area around fire. Never leave unattended. Build fire INSIDE shelter entrance, not inside enclosed shelter (CO poisoning).</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1241,6 +1602,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); }
     if (tab.dataset.tab === 'maps') loadMaps();
     if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
+    if (tab.dataset.tab === 'preparedness') { loadPrepTab(); }
   });
 });
 
@@ -2688,9 +3050,15 @@ const PRESETS = {
   assistant: 'You are a helpful, knowledgeable assistant. Be concise and accurate.',
   medical: 'You are a medical information advisor. Provide evidence-based health information. Always recommend consulting a healthcare professional for medical decisions. Reference medical terminology accurately.',
   coding: 'You are an expert software engineer. Write clean, efficient code. Explain your reasoning. Suggest best practices and potential pitfalls. Support multiple programming languages.',
-  survival: 'You are a survival and preparedness expert. Provide practical, actionable advice for emergency situations, outdoor survival, first aid, and disaster preparedness.',
+  survival: 'You are a survival and preparedness expert. Provide practical, actionable advice for emergency situations, outdoor survival, first aid, and disaster preparedness. Cover shelter, water, fire, food, navigation, and signaling.',
   teacher: 'You are a patient, encouraging teacher. Explain concepts clearly with examples. Break complex topics into digestible parts. Ask follow-up questions to check understanding. Adapt your teaching style to the student.',
   analyst: 'You are a data analyst. Help interpret data, create queries, explain statistical concepts, and provide analytical frameworks. Be precise with numbers.',
+  field_medic: 'You are a field medic / tactical medicine advisor. Provide step-by-step trauma care guidance: tourniquet application, wound packing, chest seals, airway management, shock treatment, triage. Reference TCCC (Tactical Combat Casualty Care) and TECC protocols. Include drug dosages when relevant. Always emphasize scene safety and personal protective equipment.',
+  ham_radio: 'You are an amateur radio (HAM) expert. Help with radio operations, antenna design, propagation, frequency planning, emergency communications (ARES/RACES), radio programming, Winlink, digital modes (FT8, JS8Call, APRS). Explain band plans, license requirements, and equipment selection. Cover both VHF/UHF and HF operations.',
+  homesteader: 'You are a homesteading and self-sufficiency expert. Advise on gardening (seasonal planting, soil prep, seed saving), animal husbandry (chickens, goats, rabbits), food preservation (canning, dehydrating, smoking, fermenting, root cellaring), off-grid living, rainwater harvesting, composting, and traditional crafts. Be practical and regionally adaptable.',
+  water_specialist: 'You are a water treatment and sanitation expert. Advise on water purification methods (boiling, chemical, filtration, UV, distillation), water source assessment, well drilling and maintenance, rainwater collection systems, greywater recycling, emergency sanitation (latrines, waste disposal), and waterborne illness prevention. Include specific measurements, ratios, and procedures.',
+  tactical: 'You are a security and operational security (OPSEC) advisor for preparedness. Cover home security hardening, perimeter defense, situational awareness, threat assessment, communications security, travel security, gray man concepts, community defense organization, and neighborhood watch coordination. Focus on legal, defensive, and preventive measures.',
+  forager: 'You are a wild food and foraging expert. Help identify edible plants, mushrooms, insects, and wild game. Cover safe foraging practices, poisonous look-alikes, seasonal availability, preparation methods, and nutritional value. Include preservation techniques for wild-harvested food. Always emphasize positive identification and the rule: when in doubt, do NOT eat it.',
 };
 // Load saved custom prompt
 (function() { const cp = localStorage.getItem('nomad-custom-prompt'); if (cp) PRESETS.custom = cp; })();
@@ -2974,6 +3342,185 @@ async function importConfig() {
   const r = await (await fetch('/api/import-config', {method:'POST', body:formData})).json();
   input.value = '';
   toast(r.message || r.error || 'Import complete');
+}
+
+/* ─── Preparedness ─── */
+let _prepLoaded = false;
+let _currentChecklistId = null;
+let _currentChecklistItems = [];
+
+async function loadPrepTab() {
+  if (!_prepLoaded) {
+    await loadPrepTemplates();
+    calcWater(); calcFood(); calcPower();
+    _prepLoaded = true;
+  }
+  await loadChecklists();
+}
+
+async function loadPrepTemplates() {
+  try {
+    const templates = await (await fetch('/api/checklists/templates')).json();
+    const el = document.getElementById('prep-template-btns');
+    el.innerHTML = Object.entries(templates).map(([k, v]) =>
+      `<button class="prep-template-btn" onclick="createChecklist('${k}')" title="${v.item_count} items">+ ${v.name}</button>`
+    ).join('');
+  } catch(e) {}
+}
+
+async function loadChecklists() {
+  try {
+    const lists = await (await fetch('/api/checklists')).json();
+    const el = document.getElementById('prep-list');
+    if (!lists.length) {
+      el.innerHTML = '<div style="padding:10px;color:var(--text-muted);font-size:11px;text-align:center;">No checklists yet. Choose a template above.</div>';
+      return;
+    }
+    el.innerHTML = lists.map(c => {
+      const pct = c.item_count > 0 ? Math.round(c.checked_count / c.item_count * 100) : 0;
+      return `<div class="prep-item ${c.id === _currentChecklistId ? 'active' : ''}" onclick="selectChecklist(${c.id})">
+        <span class="prep-item-name">${escapeHtml(c.name)}</span>
+        <span class="prep-progress">${pct}%</span>
+        <span class="prep-del" onclick="event.stopPropagation();deleteChecklist(${c.id})" title="Delete">x</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function createChecklist(template) {
+  try {
+    const r = await (await fetch('/api/checklists', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({template})
+    })).json();
+    toast(`Created: ${r.name}`, 'success');
+    _currentChecklistId = r.id;
+    await loadChecklists();
+    await selectChecklist(r.id);
+  } catch(e) { toast('Failed to create checklist', 'error'); }
+}
+
+async function selectChecklist(id) {
+  _currentChecklistId = id;
+  try {
+    const c = await (await fetch(`/api/checklists/${id}`)).json();
+    _currentChecklistItems = c.items || [];
+    document.getElementById('prep-active-name').textContent = c.name;
+    renderChecklist();
+    // Update sidebar active state
+    document.querySelectorAll('.prep-item').forEach(el => {
+      el.classList.toggle('active', el.onclick.toString().includes(id));
+    });
+    await loadChecklists();
+  } catch(e) { toast('Failed to load checklist', 'error'); }
+}
+
+function renderChecklist() {
+  const el = document.getElementById('prep-checklist');
+  const total = _currentChecklistItems.length;
+  const checked = _currentChecklistItems.filter(i => i.checked).length;
+  const pct = total > 0 ? Math.round(checked / total * 100) : 0;
+  document.getElementById('prep-active-stats').textContent = `${checked}/${total} items (${pct}%)`;
+  document.getElementById('prep-progress-fill').style.width = pct + '%';
+
+  // Group by category
+  const cats = {};
+  _currentChecklistItems.forEach((item, idx) => {
+    const cat = item.cat || 'general';
+    if (!cats[cat]) cats[cat] = [];
+    cats[cat].push({...item, idx});
+  });
+
+  let html = '';
+  for (const [cat, items] of Object.entries(cats)) {
+    html += `<div style="margin-bottom:4px;"><span class="check-cat">${cat}</span></div>`;
+    html += items.map(item =>
+      `<div class="check-item ${item.checked ? 'checked' : ''}" onclick="toggleCheckItem(${item.idx})">
+        <input type="checkbox" ${item.checked ? 'checked' : ''} onclick="event.stopPropagation();toggleCheckItem(${item.idx})">
+        <span>${escapeHtml(item.text)}</span>
+      </div>`
+    ).join('');
+  }
+  el.innerHTML = html;
+}
+
+async function toggleCheckItem(idx) {
+  if (!_currentChecklistId || idx >= _currentChecklistItems.length) return;
+  _currentChecklistItems[idx].checked = !_currentChecklistItems[idx].checked;
+  renderChecklist();
+  // Save
+  await fetch(`/api/checklists/${_currentChecklistId}`, {
+    method: 'PUT', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({items: _currentChecklistItems})
+  });
+  loadChecklists();
+}
+
+async function deleteChecklist(id) {
+  await fetch(`/api/checklists/${id}`, {method: 'DELETE'});
+  toast('Checklist deleted');
+  if (_currentChecklistId === id) {
+    _currentChecklistId = null;
+    _currentChecklistItems = [];
+    document.getElementById('prep-active-name').textContent = 'Select or create a checklist';
+    document.getElementById('prep-active-stats').textContent = '';
+    document.getElementById('prep-progress-fill').style.width = '0%';
+    document.getElementById('prep-checklist').innerHTML = '<div class="empty-state" style="height:100%;"><div class="icon" style="font-size:32px;opacity:0.2;">&#9745;</div><p>Choose a template above to create a checklist, or select an existing one.</p></div>';
+  }
+  await loadChecklists();
+}
+
+/* ─── Resource Calculators ─── */
+function calcWater() {
+  const people = parseInt(document.getElementById('calc-water-people').value) || 1;
+  const days = parseInt(document.getElementById('calc-water-days').value) || 1;
+  const climate = parseFloat(document.getElementById('calc-water-climate').value) || 1;
+  const gal = people * days * climate;
+  const liters = gal * 3.785;
+  const containers = Math.ceil(gal / 5); // 5-gallon jugs
+  document.getElementById('calc-water-result').innerHTML =
+    `<strong>${gal.toFixed(1)} gallons</strong> (${liters.toFixed(0)} liters) needed<br>
+     That's about <strong>${containers}</strong> five-gallon jugs<br>
+     <span style="font-size:11px;color:var(--text-dim);">Based on 1 gal/person/day (drinking + cooking + hygiene). Minimum 0.5 gal/day for drinking only.</span>`;
+}
+
+function calcFood() {
+  const people = parseInt(document.getElementById('calc-food-people').value) || 1;
+  const days = parseInt(document.getElementById('calc-food-days').value) || 1;
+  const cal = parseInt(document.getElementById('calc-food-cal').value) || 2000;
+  const totalCal = people * days * cal;
+  const lbsDry = totalCal / 1800; // ~1800 cal per lb of dry staples
+  const mres = Math.ceil(totalCal / 1250); // ~1250 cal per MRE
+  document.getElementById('calc-food-result').innerHTML =
+    `<strong>${totalCal.toLocaleString()} calories</strong> total needed<br>
+     ~<strong>${lbsDry.toFixed(0)} lbs</strong> of dry staples (rice, beans, oats)<br>
+     Or ~<strong>${mres}</strong> MREs<br>
+     <span style="font-size:11px;color:var(--text-dim);">Dry staples avg ~1,800 cal/lb. Store variety: grains, legumes, canned protein, comfort foods.</span>`;
+}
+
+function calcPower() {
+  const watts = parseInt(document.getElementById('calc-power-watts').value) || 1;
+  const hours = parseInt(document.getElementById('calc-power-hours').value) || 1;
+  const days = parseInt(document.getElementById('calc-power-days').value) || 1;
+  const sunHrs = parseInt(document.getElementById('calc-power-sun').value) || 5;
+  const dailyWh = watts * hours;
+  const totalWh = dailyWh * days;
+  const batteryAh12v = Math.ceil(totalWh / 12 * 1.2); // 12V, 20% safety margin, per day
+  const solarWatts = Math.ceil(dailyWh / sunHrs * 1.3); // 30% loss factor
+  const batteryKwh = (totalWh / 1000).toFixed(1);
+  document.getElementById('calc-power-result').innerHTML =
+    `<strong>${dailyWh.toLocaleString()} Wh/day</strong> (${(dailyWh/1000).toFixed(1)} kWh/day)<br>
+     Total for ${days} days: <strong>${batteryKwh} kWh</strong><br>
+     Battery bank: <strong>${batteryAh12v} Ah</strong> @ 12V (per day, with 20% margin)<br>
+     Solar panel: <strong>${solarWatts}W</strong> minimum (with ${sunHrs}h sun, 30% loss factor)<br>
+     <span style="font-size:11px;color:var(--text-dim);">For LiFePO4 batteries, use 80% depth of discharge. Lead-acid: 50% DOD max.</span>`;
+}
+
+/* ─── Emergency Protocols ─── */
+function toggleProtocol(header) {
+  header.classList.toggle('open');
+  const body = header.nextElementSibling;
+  body.classList.toggle('open');
 }
 
 /* ─── Init ─── */

@@ -30,7 +30,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '1.0.0'
+VERSION = '1.2.0'
 
 
 def set_version(v):
@@ -1499,6 +1499,282 @@ def create_app():
 
         threading.Thread(target=do_setup, daemon=True).start()
         return jsonify({'status': 'started'})
+
+    # ─── Checklists API ──────────────────────────────────────────────
+
+    CHECKLIST_TEMPLATES = {
+        '72hour': {
+            'name': '72-Hour Emergency Kit',
+            'items': [
+                {'text': 'Water — 1 gallon per person per day (3-day supply)', 'checked': False, 'cat': 'water'},
+                {'text': 'Water purification tablets or filter', 'checked': False, 'cat': 'water'},
+                {'text': 'Collapsible water container', 'checked': False, 'cat': 'water'},
+                {'text': 'Non-perishable food (3-day supply)', 'checked': False, 'cat': 'food'},
+                {'text': 'Manual can opener', 'checked': False, 'cat': 'food'},
+                {'text': 'Eating utensils, plates, cups', 'checked': False, 'cat': 'food'},
+                {'text': 'First aid kit (comprehensive)', 'checked': False, 'cat': 'medical'},
+                {'text': 'Prescription medications (7-day supply)', 'checked': False, 'cat': 'medical'},
+                {'text': 'Flashlight + extra batteries', 'checked': False, 'cat': 'gear'},
+                {'text': 'Battery-powered or hand-crank radio (NOAA)', 'checked': False, 'cat': 'comms'},
+                {'text': 'Cell phone charger (solar/hand-crank)', 'checked': False, 'cat': 'comms'},
+                {'text': 'Whistle (signal for help)', 'checked': False, 'cat': 'gear'},
+                {'text': 'Dust masks / N95 respirators', 'checked': False, 'cat': 'safety'},
+                {'text': 'Plastic sheeting and duct tape (shelter-in-place)', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Wrench / pliers (turn off utilities)', 'checked': False, 'cat': 'tools'},
+                {'text': 'Local maps (paper copies)', 'checked': False, 'cat': 'nav'},
+                {'text': 'Cash in small denominations', 'checked': False, 'cat': 'docs'},
+                {'text': 'Important documents (copies in waterproof bag)', 'checked': False, 'cat': 'docs'},
+                {'text': 'Change of clothes per person', 'checked': False, 'cat': 'clothing'},
+                {'text': 'Sturdy shoes per person', 'checked': False, 'cat': 'clothing'},
+                {'text': 'Sleeping bag or warm blanket per person', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Rain poncho', 'checked': False, 'cat': 'clothing'},
+                {'text': 'Fire extinguisher (small, portable)', 'checked': False, 'cat': 'safety'},
+                {'text': 'Matches/lighter in waterproof container', 'checked': False, 'cat': 'fire'},
+                {'text': 'Feminine supplies / personal hygiene items', 'checked': False, 'cat': 'hygiene'},
+                {'text': 'Garbage bags and plastic ties', 'checked': False, 'cat': 'sanitation'},
+                {'text': 'Paper towels, moist towelettes', 'checked': False, 'cat': 'hygiene'},
+                {'text': 'Infant formula / diapers (if needed)', 'checked': False, 'cat': 'special'},
+                {'text': 'Pet food and supplies (if needed)', 'checked': False, 'cat': 'special'},
+                {'text': 'Books, games, puzzles (morale)', 'checked': False, 'cat': 'morale'},
+            ],
+        },
+        'bugout': {
+            'name': 'Bug-Out Bag (Go Bag)',
+            'items': [
+                {'text': 'Backpack (50-70L, sturdy, waterproof)', 'checked': False, 'cat': 'gear'},
+                {'text': 'Water bottle + filter (Sawyer/LifeStraw)', 'checked': False, 'cat': 'water'},
+                {'text': 'Water purification tablets (backup)', 'checked': False, 'cat': 'water'},
+                {'text': 'Food: MREs or freeze-dried meals (3 days)', 'checked': False, 'cat': 'food'},
+                {'text': 'Energy bars / trail mix', 'checked': False, 'cat': 'food'},
+                {'text': 'Compact stove + fuel canister', 'checked': False, 'cat': 'food'},
+                {'text': 'Metal cup / pot for boiling', 'checked': False, 'cat': 'food'},
+                {'text': 'Fixed-blade knife (full tang)', 'checked': False, 'cat': 'tools'},
+                {'text': 'Multi-tool (Leatherman/Gerber)', 'checked': False, 'cat': 'tools'},
+                {'text': 'Ferro rod + waterproof matches', 'checked': False, 'cat': 'fire'},
+                {'text': 'Tinder (cotton balls w/ vaseline)', 'checked': False, 'cat': 'fire'},
+                {'text': 'Headlamp + extra batteries', 'checked': False, 'cat': 'gear'},
+                {'text': 'Tarp / emergency bivvy', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Paracord (100 ft minimum)', 'checked': False, 'cat': 'gear'},
+                {'text': 'Compass + topographic map', 'checked': False, 'cat': 'nav'},
+                {'text': 'First aid kit (IFAK level)', 'checked': False, 'cat': 'medical'},
+                {'text': 'Tourniquet (CAT or SOFTT-W)', 'checked': False, 'cat': 'medical'},
+                {'text': 'Prescription meds (7-day supply)', 'checked': False, 'cat': 'medical'},
+                {'text': 'Hand-crank / solar radio', 'checked': False, 'cat': 'comms'},
+                {'text': 'FRS/GMRS radio (charged)', 'checked': False, 'cat': 'comms'},
+                {'text': 'Cash + coins', 'checked': False, 'cat': 'docs'},
+                {'text': 'ID / passport copies (laminated)', 'checked': False, 'cat': 'docs'},
+                {'text': 'USB drive with scanned documents', 'checked': False, 'cat': 'docs'},
+                {'text': 'Change of clothes (layerable)', 'checked': False, 'cat': 'clothing'},
+                {'text': 'Rain gear', 'checked': False, 'cat': 'clothing'},
+                {'text': 'Work gloves', 'checked': False, 'cat': 'clothing'},
+                {'text': 'Bandana / shemagh', 'checked': False, 'cat': 'clothing'},
+                {'text': 'Duct tape (small roll)', 'checked': False, 'cat': 'gear'},
+                {'text': 'Zip ties (assorted)', 'checked': False, 'cat': 'gear'},
+                {'text': 'Notepad + pencil', 'checked': False, 'cat': 'gear'},
+            ],
+        },
+        'medical': {
+            'name': 'Medical / First Aid Kit',
+            'items': [
+                {'text': 'Adhesive bandages (assorted sizes)', 'checked': False, 'cat': 'wound'},
+                {'text': 'Sterile gauze pads (4x4)', 'checked': False, 'cat': 'wound'},
+                {'text': 'Roller bandage / gauze rolls', 'checked': False, 'cat': 'wound'},
+                {'text': 'Medical tape', 'checked': False, 'cat': 'wound'},
+                {'text': 'Butterfly closures / steri-strips', 'checked': False, 'cat': 'wound'},
+                {'text': 'Tourniquet (CAT gen 7)', 'checked': False, 'cat': 'trauma'},
+                {'text': 'Hemostatic gauze (QuikClot/Celox)', 'checked': False, 'cat': 'trauma'},
+                {'text': 'Israeli bandage (pressure dressing)', 'checked': False, 'cat': 'trauma'},
+                {'text': 'Chest seal (vented, 2-pack)', 'checked': False, 'cat': 'trauma'},
+                {'text': 'NPA airway (28Fr with lube)', 'checked': False, 'cat': 'trauma'},
+                {'text': 'SAM splint', 'checked': False, 'cat': 'ortho'},
+                {'text': 'ACE wrap / elastic bandage', 'checked': False, 'cat': 'ortho'},
+                {'text': 'Triangle bandage / sling', 'checked': False, 'cat': 'ortho'},
+                {'text': 'Nitrile gloves (multiple pairs)', 'checked': False, 'cat': 'ppe'},
+                {'text': 'CPR pocket mask', 'checked': False, 'cat': 'ppe'},
+                {'text': 'Trauma shears', 'checked': False, 'cat': 'tools'},
+                {'text': 'Tweezers (fine point)', 'checked': False, 'cat': 'tools'},
+                {'text': 'Thermometer', 'checked': False, 'cat': 'tools'},
+                {'text': 'Ibuprofen / acetaminophen', 'checked': False, 'cat': 'meds'},
+                {'text': 'Antihistamine (Benadryl)', 'checked': False, 'cat': 'meds'},
+                {'text': 'Anti-diarrheal (Imodium)', 'checked': False, 'cat': 'meds'},
+                {'text': 'Electrolyte packets (ORS)', 'checked': False, 'cat': 'meds'},
+                {'text': 'Antibiotic ointment (Neosporin)', 'checked': False, 'cat': 'meds'},
+                {'text': 'Hydrocortisone cream', 'checked': False, 'cat': 'meds'},
+                {'text': 'Eye wash solution', 'checked': False, 'cat': 'meds'},
+                {'text': 'Burn gel packets', 'checked': False, 'cat': 'meds'},
+                {'text': 'Prescription medications log', 'checked': False, 'cat': 'docs'},
+                {'text': 'Emergency medical info cards', 'checked': False, 'cat': 'docs'},
+                {'text': 'First aid reference guide', 'checked': False, 'cat': 'docs'},
+            ],
+        },
+        'comms': {
+            'name': 'Communications Kit',
+            'items': [
+                {'text': 'NOAA weather radio (battery + crank)', 'checked': False, 'cat': 'receive'},
+                {'text': 'FRS/GMRS handheld radio (pair)', 'checked': False, 'cat': 'twoway'},
+                {'text': 'Extra batteries for all radios', 'checked': False, 'cat': 'power'},
+                {'text': 'Solar charger panel (foldable)', 'checked': False, 'cat': 'power'},
+                {'text': 'Power bank (20,000+ mAh)', 'checked': False, 'cat': 'power'},
+                {'text': 'USB cables (multi-type)', 'checked': False, 'cat': 'power'},
+                {'text': 'HAM radio (Baofeng UV-5R or better)', 'checked': False, 'cat': 'twoway'},
+                {'text': 'HAM radio license study guide', 'checked': False, 'cat': 'docs'},
+                {'text': 'Frequency list (laminated card)', 'checked': False, 'cat': 'docs'},
+                {'text': 'CB radio (mobile or handheld)', 'checked': False, 'cat': 'twoway'},
+                {'text': 'Signal mirror', 'checked': False, 'cat': 'visual'},
+                {'text': 'Whistle (pealess, storm-proof)', 'checked': False, 'cat': 'visual'},
+                {'text': 'Glow sticks / chem lights', 'checked': False, 'cat': 'visual'},
+                {'text': 'Pen flares or road flares', 'checked': False, 'cat': 'visual'},
+                {'text': 'Written comms plan (rally points, contacts)', 'checked': False, 'cat': 'docs'},
+                {'text': 'Out-of-area emergency contact designated', 'checked': False, 'cat': 'docs'},
+                {'text': 'Family meeting point established', 'checked': False, 'cat': 'docs'},
+                {'text': 'Paper maps of local area + routes', 'checked': False, 'cat': 'nav'},
+                {'text': 'Shortwave radio (for international news)', 'checked': False, 'cat': 'receive'},
+                {'text': 'Faraday bag (EMP protection for electronics)', 'checked': False, 'cat': 'protect'},
+            ],
+        },
+        'vehicle': {
+            'name': 'Vehicle Emergency Kit',
+            'items': [
+                {'text': 'Jumper cables / jump starter pack', 'checked': False, 'cat': 'auto'},
+                {'text': 'Tire repair kit + inflator', 'checked': False, 'cat': 'auto'},
+                {'text': 'Spare tire (confirmed inflated)', 'checked': False, 'cat': 'auto'},
+                {'text': 'Lug wrench + jack', 'checked': False, 'cat': 'auto'},
+                {'text': 'Tow strap / recovery strap', 'checked': False, 'cat': 'auto'},
+                {'text': 'Quart of oil + coolant', 'checked': False, 'cat': 'auto'},
+                {'text': 'Fuses (assorted, matching vehicle)', 'checked': False, 'cat': 'auto'},
+                {'text': 'Flashlight + spare batteries', 'checked': False, 'cat': 'gear'},
+                {'text': 'Road flares / reflective triangles', 'checked': False, 'cat': 'safety'},
+                {'text': 'Hi-vis vest', 'checked': False, 'cat': 'safety'},
+                {'text': 'Fire extinguisher (small, mounted)', 'checked': False, 'cat': 'safety'},
+                {'text': 'Basic tool kit (wrenches, screwdrivers, pliers)', 'checked': False, 'cat': 'tools'},
+                {'text': 'Duct tape + zip ties + wire', 'checked': False, 'cat': 'tools'},
+                {'text': 'Water (1 gallon minimum)', 'checked': False, 'cat': 'survival'},
+                {'text': 'Non-perishable snacks', 'checked': False, 'cat': 'survival'},
+                {'text': 'Emergency blanket / sleeping bag', 'checked': False, 'cat': 'survival'},
+                {'text': 'Rain poncho', 'checked': False, 'cat': 'survival'},
+                {'text': 'First aid kit', 'checked': False, 'cat': 'medical'},
+                {'text': 'Paper maps / atlas', 'checked': False, 'cat': 'nav'},
+                {'text': 'Pen + paper', 'checked': False, 'cat': 'gear'},
+                {'text': 'Cash (small bills)', 'checked': False, 'cat': 'docs'},
+                {'text': 'Phone charger (12V adapter)', 'checked': False, 'cat': 'power'},
+                {'text': 'Seatbelt cutter + window breaker', 'checked': False, 'cat': 'safety'},
+                {'text': 'Siphon pump', 'checked': False, 'cat': 'tools'},
+            ],
+        },
+        'home': {
+            'name': 'Home Emergency Supplies',
+            'items': [
+                {'text': 'Water storage — 1 gal/person/day for 14 days', 'checked': False, 'cat': 'water'},
+                {'text': 'Water purification (filter, tablets, bleach)', 'checked': False, 'cat': 'water'},
+                {'text': 'WaterBOB or bathtub bladder', 'checked': False, 'cat': 'water'},
+                {'text': 'Food storage — 14-day supply per person', 'checked': False, 'cat': 'food'},
+                {'text': 'Manual can opener (2+)', 'checked': False, 'cat': 'food'},
+                {'text': 'Camp stove + fuel (outdoor use only)', 'checked': False, 'cat': 'food'},
+                {'text': 'Cooler + ice plan for fridge items', 'checked': False, 'cat': 'food'},
+                {'text': 'Generator + fuel (stored safely)', 'checked': False, 'cat': 'power'},
+                {'text': 'Extension cords (heavy duty)', 'checked': False, 'cat': 'power'},
+                {'text': 'Flashlights + lanterns (LED)', 'checked': False, 'cat': 'power'},
+                {'text': 'Batteries (D, AA, AAA — bulk)', 'checked': False, 'cat': 'power'},
+                {'text': 'Solar panel charger', 'checked': False, 'cat': 'power'},
+                {'text': 'Propane heater (indoor-safe Mr Buddy)', 'checked': False, 'cat': 'heat'},
+                {'text': 'Extra propane tanks', 'checked': False, 'cat': 'heat'},
+                {'text': 'Warm blankets / sleeping bags', 'checked': False, 'cat': 'heat'},
+                {'text': 'Plastic sheeting + duct tape (windows)', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Plywood for window boarding', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Sandbags (if flood zone)', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Comprehensive first aid kit', 'checked': False, 'cat': 'medical'},
+                {'text': 'Prescription meds (30-day supply)', 'checked': False, 'cat': 'medical'},
+                {'text': 'Bucket toilet + bags + kitty litter', 'checked': False, 'cat': 'sanitation'},
+                {'text': 'Trash bags (heavy duty, lots)', 'checked': False, 'cat': 'sanitation'},
+                {'text': 'Bleach (unscented, for sanitation)', 'checked': False, 'cat': 'sanitation'},
+                {'text': 'Hand soap, sanitizer, disinfectant', 'checked': False, 'cat': 'hygiene'},
+                {'text': 'Toilet paper (extra supply)', 'checked': False, 'cat': 'hygiene'},
+                {'text': 'NOAA weather radio', 'checked': False, 'cat': 'comms'},
+                {'text': 'Fire extinguishers (kitchen + garage)', 'checked': False, 'cat': 'safety'},
+                {'text': 'Smoke + CO detectors (fresh batteries)', 'checked': False, 'cat': 'safety'},
+                {'text': 'Important docs in fireproof safe', 'checked': False, 'cat': 'docs'},
+                {'text': 'Cash on hand ($500+ in small bills)', 'checked': False, 'cat': 'docs'},
+                {'text': 'Utility shut-off tools + knowledge', 'checked': False, 'cat': 'tools'},
+                {'text': 'Axe / hatchet / pry bar', 'checked': False, 'cat': 'tools'},
+            ],
+        },
+    }
+
+    @app.route('/api/checklists')
+    def api_checklists_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM checklists ORDER BY updated_at DESC').fetchall()
+        db.close()
+        result = []
+        for r in rows:
+            items = json.loads(r['items'] or '[]')
+            result.append({
+                'id': r['id'], 'name': r['name'], 'template': r['template'],
+                'item_count': len(items),
+                'checked_count': sum(1 for i in items if i.get('checked')),
+                'created_at': r['created_at'], 'updated_at': r['updated_at'],
+            })
+        return jsonify(result)
+
+    @app.route('/api/checklists/templates')
+    def api_checklists_templates():
+        return jsonify({k: {'name': v['name'], 'item_count': len(v['items'])} for k, v in CHECKLIST_TEMPLATES.items()})
+
+    @app.route('/api/checklists', methods=['POST'])
+    def api_checklists_create():
+        data = request.get_json()
+        template_id = data.get('template', '')
+        tmpl = CHECKLIST_TEMPLATES.get(template_id)
+        if tmpl:
+            name = tmpl['name']
+            items = json.dumps(tmpl['items'])
+        else:
+            name = data.get('name', 'Custom Checklist')
+            items = json.dumps(data.get('items', []))
+        db = get_db()
+        cur = db.execute('INSERT INTO checklists (name, template, items) VALUES (?, ?, ?)',
+                         (name, template_id, items))
+        db.commit()
+        cid = cur.lastrowid
+        row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
+        db.close()
+        return jsonify({**dict(row), 'items': json.loads(row['items'] or '[]')}), 201
+
+    @app.route('/api/checklists/<int:cid>')
+    def api_checklists_get(cid):
+        db = get_db()
+        row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
+        db.close()
+        if not row:
+            return jsonify({'error': 'Not found'}), 404
+        return jsonify({**dict(row), 'items': json.loads(row['items'] or '[]')})
+
+    @app.route('/api/checklists/<int:cid>', methods=['PUT'])
+    def api_checklists_update(cid):
+        data = request.get_json()
+        db = get_db()
+        fields = []
+        vals = []
+        if 'name' in data:
+            fields.append('name = ?')
+            vals.append(data['name'])
+        if 'items' in data:
+            fields.append('items = ?')
+            vals.append(json.dumps(data['items']))
+        fields.append('updated_at = CURRENT_TIMESTAMP')
+        vals.append(cid)
+        db.execute(f'UPDATE checklists SET {", ".join(fields)} WHERE id = ?', vals)
+        db.commit()
+        db.close()
+        return jsonify({'status': 'saved'})
+
+    @app.route('/api/checklists/<int:cid>', methods=['DELETE'])
+    def api_checklists_delete(cid):
+        db = get_db()
+        db.execute('DELETE FROM checklists WHERE id = ?', (cid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
 
     # ─── Favicon ──────────────────────────────────────────────────────
 

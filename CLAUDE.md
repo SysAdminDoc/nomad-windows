@@ -63,7 +63,7 @@ pyinstaller build.spec
 - Kolibri: http://localhost:8300
 - Stirling PDF: http://localhost:8443
 
-## Features (v0.7.0)
+## Features (v1.2.0)
 - **6 services**: Ollama (AI), Kiwix (offline content), CyberChef (data tools), Kolibri (education), Qdrant (vector DB), Stirling PDF (PDF toolkit)
 - **Setup wizard** — capability selection (choose which services to install)
 - **Auto-start** — previously running services restart on app launch
@@ -112,10 +112,10 @@ pyinstaller build.spec
 - Benchmark disk test creates/deletes temp files in ProjectNOMAD\benchmark\
 
 ## Version
-v0.9.0
+v1.2.0
 
 ## Status
-Working v0.9.0 — Production polish release. 6 services (Ollama, Kiwix, CyberChef, Kolibri, Qdrant, Stirling PDF). v0.8.0 adds: typed toast notifications (success/error/warning/info with color-coded icons), service prerequisite checks (Java for Stirling, Python for Kolibri), inline conversation rename (no prompt() dialogs), service card error display with retry buttons, welcome banner for first-time users, enhanced markdown renderer (tables, horizontal rules, strikethrough), version consolidation via Jinja template vars, better offline map search messaging, fixed polling double-fetch. Previous: wizard presets, guided tour, splash screen, inline model picker, update checker, Windows startup toggle, config export/import, Inno Setup installer, app icon. ~7K lines across 14 files. 7-tab dashboard.
+Working v1.2.0 — Preparedness Edition. 8-tab dashboard. New Preparedness tab: 6 emergency checklist templates (72-hour kit, bug-out bag, medical, comms, vehicle, home supplies) with persistent checkable items; resource calculators (water, food, power/solar); comprehensive radio frequency reference (NOAA, FRS, GMRS, MURS, CB, HAM bands, shortwave); 5 quick-reference emergency protocols (CPR, bleeding control, water purification, shelter, fire starting). 12 AI system prompt presets (6 new prepper-focused: Field Medic, HAM Radio Tech, Homesteader, Water/Sanitation, Security/OPSEC, Foraging). All data persists offline in SQLite.
 
 ## Gotchas (v0.8.0)
 - Stirling PDF requires Java 17+ (downloads .jar, not .exe — no Windows exe in releases)

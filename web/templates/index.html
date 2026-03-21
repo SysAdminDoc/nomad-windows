@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project N.O.M.A.D. - Command Center</title>
+<style>
+:root {
+  --bg: #0d0d0d;
+  --surface: #161616;
+  --surface2: #1e1e1e;
+  --surface3: #252525;
+  --border: #2a2a2a;
+  --text: #e0e0e0;
+  --text-dim: #888;
+  --accent: #4f9cf7;
+  --accent-hover: #6ab0ff;
+  --green: #4caf50;
+  --red: #f44336;
+  --orange: #ff9800;
+  --radius: 12px;
+  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+}
+a { color: var(--accent); text-decoration: none; }
+
+/* ─── Header ─── */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header svg { width: 36px; height: 36px; fill: var(--accent); }
+.header h1 { font-size: 20px; font-weight: 600; }
+.header .version { color: var(--text-dim); font-size: 13px; margin-left: 8px; }
+
+/* ─── Layout ─── */
+.container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+/* ─── Tabs ─── */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0;
+}
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  color: var(--text-dim);
+  border-bottom: 2px solid transparent;
+  font-size: 14px;
+  font-weight: 500;
+  transition: color 0.2s, border-color 0.2s;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ─── Service Cards ─── */
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 20px;
+}
+.service-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.service-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+.service-card .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+.service-card h3 { font-size: 16px; font-weight: 600; }
+.service-card .desc { color: var(--text-dim); font-size: 13px; margin-bottom: 16px; line-height: 1.5; }
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+.status-badge.running { background: rgba(76,175,80,0.15); color: var(--green); }
+.status-badge.stopped { background: rgba(136,136,136,0.15); color: var(--text-dim); }
+.status-badge.not-installed { background: rgba(255,152,0,0.15); color: var(--orange); }
+.status-badge .dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.card-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+
+/* ─── Buttons ─── */
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn:hover { background: var(--surface3); border-color: var(--accent); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-danger { color: var(--red); }
+.btn-danger:hover { border-color: var(--red); }
+.btn-sm { padding: 5px 12px; font-size: 12px; }
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  padding: 0;
+  font-size: 13px;
+}
+
+/* ─── Progress Bar ─── */
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--surface3);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 12px;
+}
+.progress-bar .fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s;
+  border-radius: 3px;
+}
+.progress-text { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+
+/* ─── AI Chat ─── */
+.chat-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 200px);
+  min-height: 500px;
+}
+.chat-header {
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.chat-header select {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+}
+.chat-messages::-webkit-scrollbar { width: 6px; }
+.chat-messages::-webkit-scrollbar-track { background: transparent; }
+.chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+.message {
+  margin-bottom: 16px;
+  display: flex;
+  gap: 12px;
+}
+.message .avatar {
+  width: 32px; height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.message.user .avatar { background: var(--accent); color: #fff; }
+.message.assistant .avatar { background: var(--surface3); color: var(--accent); }
+.message .content {
+  background: var(--surface2);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 80%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.message.user .content { background: rgba(79,156,247,0.12); }
+
+.chat-input-area {
+  padding: 16px 20px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+}
+.chat-input-area textarea {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  resize: none;
+  outline: none;
+  min-height: 44px;
+  max-height: 120px;
+}
+.chat-input-area textarea:focus { border-color: var(--accent); }
+.chat-input-area textarea::placeholder { color: var(--text-dim); }
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-dim);
+  gap: 12px;
+}
+.empty-state svg { width: 48px; height: 48px; opacity: 0.3; }
+.empty-state p { font-size: 14px; }
+
+/* ─── Notes ─── */
+.notes-layout { display: flex; gap: 20px; height: calc(100vh - 220px); min-height: 400px; }
+.notes-sidebar {
+  width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.notes-sidebar-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.notes-list { flex: 1; overflow-y: auto; padding: 8px; }
+.note-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  margin-bottom: 2px;
+  transition: background 0.15s;
+}
+.note-item:hover { background: var(--surface2); }
+.note-item.active { background: var(--surface3); }
+.note-item .note-title { font-weight: 500; margin-bottom: 2px; }
+.note-item .note-date { font-size: 11px; color: var(--text-dim); }
+
+.notes-editor {
+  flex: 1;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+}
+.notes-editor-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.notes-editor-header input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+  outline: none;
+}
+.notes-editor textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  padding: 16px 20px;
+  font-size: 14px;
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+}
+
+/* ─── Toast ─── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 13px;
+  box-shadow: var(--shadow);
+  z-index: 9999;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+  <h1>Project N.O.M.A.D. <span class="version">v0.1.0 for Windows</span></h1>
+</div>
+
+<!-- Main Content -->
+<div class="container">
+  <div class="tabs">
+    <button class="tab active" data-tab="services">Services</button>
+    <button class="tab" data-tab="ai-chat">AI Chat</button>
+    <button class="tab" data-tab="notes">Notes</button>
+  </div>
+
+  <!-- Services Tab -->
+  <div id="tab-services" class="tab-content active">
+    <div class="services-grid" id="services-grid"></div>
+  </div>
+
+  <!-- AI Chat Tab -->
+  <div id="tab-ai-chat" class="tab-content">
+    <div class="chat-container">
+      <div class="chat-header">
+        <span style="font-weight:600;">AI Assistant</span>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="model-select"><option value="">No models available</option></select>
+          <button class="btn btn-sm" onclick="pullModel()">Pull Model</button>
+        </div>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="empty-state" id="chat-empty">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+          <p>Start a conversation with your local AI</p>
+          <p style="font-size:12px;">Make sure Ollama is installed and running</p>
+        </div>
+      </div>
+      <div class="chat-input-area">
+        <textarea id="chat-input" placeholder="Type a message..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
+        <button class="btn btn-primary" onclick="sendChat()">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notes Tab -->
+  <div id="tab-notes" class="tab-content">
+    <div class="notes-layout">
+      <div class="notes-sidebar">
+        <div class="notes-sidebar-header">
+          <span style="font-weight:600;font-size:14px;">Notes</span>
+          <button class="btn btn-sm btn-primary" onclick="createNote()">+ New</button>
+        </div>
+        <div class="notes-list" id="notes-list"></div>
+      </div>
+      <div class="notes-editor" id="notes-editor">
+        <div class="notes-editor-header">
+          <input id="note-title" placeholder="Note title..." oninput="autoSaveNote()">
+          <button class="btn btn-sm btn-danger" onclick="deleteNote()">Delete</button>
+        </div>
+        <textarea id="note-content" placeholder="Start writing..." oninput="autoSaveNote()"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── State ─── */
+let chatMessages = [];
+let currentNoteId = null;
+let saveTimer = null;
+
+/* ─── Tabs ─── */
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    if (tab.dataset.tab === 'ai-chat') loadModels();
+    if (tab.dataset.tab === 'notes') loadNotes();
+  });
+});
+
+/* ─── Toast ─── */
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ─── Services ─── */
+const SERVICE_INFO = {
+  ollama: {
+    name: 'Ollama (AI Chat)',
+    desc: 'Local AI chat powered by large language models. Run models like Llama 3, Mistral, and more entirely offline.',
+    icon: '&#129504;'
+  },
+  kiwix: {
+    name: 'Kiwix (Information Library)',
+    desc: 'Offline Wikipedia, medical references, survival guides, and ebooks. Access knowledge without internet.',
+    icon: '&#128218;'
+  },
+  cyberchef: {
+    name: 'CyberChef (Data Tools)',
+    desc: 'Encryption, encoding, hashing, and data analysis toolkit by GCHQ. Swiss army knife for data.',
+    icon: '&#128737;'
+  }
+};
+
+async function loadServices() {
+  try {
+    const resp = await fetch('/api/services');
+    const services = await resp.json();
+    const grid = document.getElementById('services-grid');
+    grid.innerHTML = services.map(s => {
+      const info = SERVICE_INFO[s.id] || { name: s.id, desc: '', icon: '&#9881;' };
+      const statusClass = !s.installed ? 'not-installed' : s.running ? 'running' : 'stopped';
+      const statusText = !s.installed ? 'Not Installed' : s.running ? 'Running' : 'Stopped';
+      const prog = s.progress;
+      const showProgress = prog && prog.status === 'downloading' || prog.status === 'extracting';
+
+      let actions = '';
+      if (!s.installed) {
+        actions = `<button class="btn btn-primary" onclick="installService('${s.id}')">Install</button>`;
+      } else {
+        if (s.running) {
+          actions = `
+            <button class="btn btn-danger" onclick="stopService('${s.id}')">Stop</button>
+            ${s.port ? `<a class="btn" href="http://localhost:${s.port}" target="_blank">Open</a>` : ''}
+          `;
+        } else {
+          actions = `<button class="btn btn-primary" onclick="startService('${s.id}')">Start</button>`;
+        }
+      }
+
+      return `
+        <div class="service-card">
+          <div class="card-header">
+            <h3>${info.icon} ${info.name}</h3>
+            <span class="status-badge ${statusClass}"><span class="dot"></span>${statusText}</span>
+          </div>
+          <p class="desc">${info.desc}</p>
+          ${showProgress ? `
+            <div class="progress-bar"><div class="fill" style="width:${prog.percent}%"></div></div>
+            <div class="progress-text">${prog.status}... ${prog.percent}%</div>
+          ` : ''}
+          <div class="card-actions">${actions}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    console.error('Failed to load services', e);
+  }
+}
+
+async function installService(id) {
+  await fetch(`/api/services/${id}/install`, { method: 'POST' });
+  toast(`Installing ${SERVICE_INFO[id]?.name || id}...`);
+  pollServices();
+}
+
+async function startService(id) {
+  const resp = await fetch(`/api/services/${id}/start`, { method: 'POST' });
+  const data = await resp.json();
+  if (data.error) toast(data.error);
+  else toast(`${SERVICE_INFO[id]?.name || id} started`);
+  loadServices();
+}
+
+async function stopService(id) {
+  await fetch(`/api/services/${id}/stop`, { method: 'POST' });
+  toast(`${SERVICE_INFO[id]?.name || id} stopped`);
+  loadServices();
+}
+
+let pollInterval = null;
+function pollServices() {
+  if (pollInterval) return;
+  pollInterval = setInterval(async () => {
+    await loadServices();
+    const resp = await fetch('/api/services');
+    const services = await resp.json();
+    const anyInstalling = services.some(s => {
+      const p = s.progress;
+      return p && (p.status === 'downloading' || p.status === 'extracting');
+    });
+    if (!anyInstalling) {
+      clearInterval(pollInterval);
+      pollInterval = null;
+    }
+  }, 2000);
+}
+
+/* ─── AI Chat ─── */
+async function loadModels() {
+  try {
+    const resp = await fetch('/api/ai/models');
+    const models = await resp.json();
+    const select = document.getElementById('model-select');
+    if (models.length === 0) {
+      select.innerHTML = '<option value="">No models — pull one first</option>';
+    } else {
+      select.innerHTML = models.map(m =>
+        `<option value="${m.name}">${m.name} (${(m.size / 1e9).toFixed(1)}GB)</option>`
+      ).join('');
+    }
+  } catch (e) {}
+}
+
+async function pullModel() {
+  const model = prompt('Model to pull (e.g. llama3.2:3b, mistral, gemma2:2b):', 'llama3.2:3b');
+  if (!model) return;
+  await fetch('/api/ai/pull', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model })
+  });
+  toast(`Pulling ${model}... This may take several minutes.`);
+  setTimeout(loadModels, 10000);
+}
+
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  const model = document.getElementById('model-select').value;
+  if (!model) { toast('No model selected. Pull a model first.'); return; }
+
+  input.value = '';
+  chatMessages.push({ role: 'user', content: msg });
+  renderChat();
+
+  document.getElementById('chat-empty').style.display = 'none';
+
+  // Add placeholder for assistant response
+  chatMessages.push({ role: 'assistant', content: '' });
+  renderChat();
+
+  try {
+    const resp = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model, messages: chatMessages.slice(0, -1) })
+    });
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let assistantMsg = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      for (const line of chunk.split('\n')) {
+        if (!line.trim()) continue;
+        try {
+          const data = JSON.parse(line);
+          if (data.message?.content) {
+            assistantMsg += data.message.content;
+            chatMessages[chatMessages.length - 1].content = assistantMsg;
+            renderChat();
+          }
+        } catch {}
+      }
+    }
+  } catch (e) {
+    chatMessages[chatMessages.length - 1].content = 'Error: Could not reach AI. Is Ollama running?';
+    renderChat();
+  }
+}
+
+function renderChat() {
+  const container = document.getElementById('chat-messages');
+  const empty = document.getElementById('chat-empty');
+  if (chatMessages.length === 0) {
+    empty.style.display = 'flex';
+    return;
+  }
+  empty.style.display = 'none';
+
+  // Keep only message elements, not the empty state
+  let html = '';
+  for (const m of chatMessages) {
+    const avatar = m.role === 'user' ? 'U' : 'AI';
+    html += `
+      <div class="message ${m.role}">
+        <div class="avatar">${avatar}</div>
+        <div class="content">${escapeHtml(m.content)}${m.role === 'assistant' && !m.content ? '<span style="opacity:0.4">Thinking...</span>' : ''}</div>
+      </div>
+    `;
+  }
+  // Preserve empty state element
+  container.innerHTML = `<div class="empty-state" id="chat-empty" style="display:none">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+    <p>Start a conversation with your local AI</p>
+  </div>` + html;
+  container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+/* ─── Notes ─── */
+let allNotes = [];
+
+async function loadNotes() {
+  const resp = await fetch('/api/notes');
+  allNotes = await resp.json();
+  renderNotesList();
+}
+
+function renderNotesList() {
+  const list = document.getElementById('notes-list');
+  list.innerHTML = allNotes.map(n => `
+    <div class="note-item ${n.id === currentNoteId ? 'active' : ''}" onclick="selectNote(${n.id})">
+      <div class="note-title">${escapeHtml(n.title || 'Untitled')}</div>
+      <div class="note-date">${new Date(n.updated_at).toLocaleDateString()}</div>
+    </div>
+  `).join('') || '<div style="padding:16px;color:var(--text-dim);font-size:13px;text-align:center;">No notes yet</div>';
+}
+
+function selectNote(id) {
+  currentNoteId = id;
+  const note = allNotes.find(n => n.id === id);
+  if (note) {
+    document.getElementById('note-title').value = note.title || '';
+    document.getElementById('note-content').value = note.content || '';
+  }
+  renderNotesList();
+}
+
+async function createNote() {
+  const resp = await fetch('/api/notes', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'New Note', content: '' })
+  });
+  const note = await resp.json();
+  await loadNotes();
+  selectNote(note.id);
+}
+
+async function deleteNote() {
+  if (!currentNoteId) return;
+  await fetch(`/api/notes/${currentNoteId}`, { method: 'DELETE' });
+  currentNoteId = null;
+  document.getElementById('note-title').value = '';
+  document.getElementById('note-content').value = '';
+  await loadNotes();
+}
+
+function autoSaveNote() {
+  if (!currentNoteId) return;
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    await fetch(`/api/notes/${currentNoteId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: document.getElementById('note-title').value,
+        content: document.getElementById('note-content').value
+      })
+    });
+    await loadNotes();
+  }, 500);
+}
+
+/* ─── Init ─── */
+loadServices();
+setInterval(loadServices, 10000);
+</script>
+</body>
+</html>

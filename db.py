@@ -57,6 +57,20 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS benchmarks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cpu_score REAL DEFAULT 0,
+            memory_score REAL DEFAULT 0,
+            disk_read_score REAL DEFAULT 0,
+            disk_write_score REAL DEFAULT 0,
+            ai_tps REAL DEFAULT 0,
+            ai_ttft REAL DEFAULT 0,
+            nomad_score REAL DEFAULT 0,
+            hardware TEXT DEFAULT '{}',
+            details TEXT DEFAULT '{}',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     conn.commit()
     conn.close()

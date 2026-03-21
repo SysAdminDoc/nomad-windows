@@ -2,14 +2,17 @@
 
 import json
 import os
+import sys
+import time
 import threading
 import platform
 import logging
 import shutil
+import subprocess
 from flask import Flask, render_template, jsonify, request, Response
 
 from db import get_db
-from services import ollama, kiwix, cyberchef
+from services import ollama, kiwix, cyberchef, kolibri
 from services.manager import (
     get_download_progress, get_dir_size, format_size, uninstall_service, get_services_dir
 )
@@ -20,9 +23,13 @@ SERVICE_MODULES = {
     'ollama': ollama,
     'kiwix': kiwix,
     'cyberchef': cyberchef,
+    'kolibri': kolibri,
 }
 
-VERSION = '0.3.0'
+VERSION = '0.4.0'
+
+# Benchmark state
+_benchmark_state = {'status': 'idle', 'progress': 0, 'stage': '', 'results': None}
 
 
 def create_app():
@@ -40,7 +47,6 @@ def create_app():
 
     @app.route('/api/services')
     def api_services():
-        """Get status of all services with disk usage."""
         services = []
         for sid, mod in SERVICE_MODULES.items():
             installed = mod.is_installed()
@@ -49,7 +55,10 @@ def create_app():
 
             port_val = getattr(mod, f'{sid.upper()}_PORT', None)
             if port_val is None:
-                port_val = getattr(mod, 'OLLAMA_PORT', None) or getattr(mod, 'KIWIX_PORT', None) or getattr(mod, 'CYBERCHEF_PORT', None)
+                for attr in ['OLLAMA_PORT', 'KIWIX_PORT', 'CYBERCHEF_PORT', 'KOLIBRI_PORT']:
+                    port_val = getattr(mod, attr, None)
+                    if port_val:
+                        break
 
             services.append({
                 'id': sid,
@@ -110,7 +119,6 @@ def create_app():
             return jsonify({'error': 'Unknown service'}), 404
         try:
             mod.stop()
-            import time
             time.sleep(1)
             mod.start()
             return jsonify({'status': 'restarted'})
@@ -183,6 +191,10 @@ def create_app():
 
         return Response(generate(), mimetype='text/event-stream')
 
+    @app.route('/api/ai/recommended')
+    def api_ai_recommended():
+        return jsonify(ollama.RECOMMENDED_MODELS)
+
     # ─── Kiwix ZIM API ─────────────────────────────────────────────────
 
     @app.route('/api/kiwix/zims')
@@ -193,7 +205,6 @@ def create_app():
 
     @app.route('/api/kiwix/catalog')
     def api_kiwix_catalog():
-        """Get curated ZIM catalog for download."""
         return jsonify(kiwix.get_catalog())
 
     @app.route('/api/kiwix/download-zim', methods=['POST'])
@@ -205,11 +216,9 @@ def create_app():
         def do_download():
             try:
                 kiwix.download_zim(url, filename)
-                # Auto-restart Kiwix to pick up new content
                 if kiwix.running():
                     log.info('Restarting Kiwix to load new ZIM content...')
                     kiwix.stop()
-                    import time
                     time.sleep(1)
                     kiwix.start()
             except Exception as e:
@@ -274,8 +283,7 @@ def create_app():
         db = get_db()
         rows = db.execute('SELECT key, value FROM settings').fetchall()
         db.close()
-        settings = {r['key']: r['value'] for r in rows}
-        return jsonify(settings)
+        return jsonify({r['key']: r['value'] for r in rows})
 
     @app.route('/api/settings', methods=['PUT'])
     def api_settings_update():
@@ -313,40 +321,103 @@ def create_app():
 
         try:
             mem = psutil.virtual_memory()
+            swap = psutil.swap_memory()
             cpu_count = psutil.cpu_count()
+            cpu_count_phys = psutil.cpu_count(logical=False)
             cpu_name = platform.processor()
+            cpu_percent = psutil.cpu_percent(interval=0.5)
         except Exception:
-            mem = None
+            mem = swap = None
             cpu_count = os.cpu_count()
+            cpu_count_phys = cpu_count
             cpu_name = platform.processor()
+            cpu_percent = 0
 
         # GPU detection
         gpu_name = 'None detected'
+        gpu_vram = ''
         try:
-            import subprocess
             result = subprocess.run(
-                ['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
+                ['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader,nounits'],
                 capture_output=True, text=True, timeout=5, creationflags=0x08000000,
             )
             if result.returncode == 0 and result.stdout.strip():
-                gpu_name = result.stdout.strip()
+                parts = result.stdout.strip().split(', ')
+                gpu_name = parts[0]
+                if len(parts) > 1:
+                    gpu_vram = f'{int(parts[1])} MB'
         except Exception:
             pass
+
+        # Disk partitions
+        disk_devices = []
+        try:
+            for part in psutil.disk_partitions(all=False):
+                try:
+                    usage = psutil.disk_usage(part.mountpoint)
+                    disk_devices.append({
+                        'device': part.device,
+                        'mountpoint': part.mountpoint,
+                        'fstype': part.fstype,
+                        'total': format_size(usage.total),
+                        'used': format_size(usage.used),
+                        'free': format_size(usage.free),
+                        'percent': usage.percent,
+                    })
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Uptime
+        try:
+            uptime_secs = time.time() - psutil.boot_time()
+            days = int(uptime_secs // 86400)
+            hours = int((uptime_secs % 86400) // 3600)
+            mins = int((uptime_secs % 3600) // 60)
+            uptime_str = f'{days}d {hours}h {mins}m' if days else f'{hours}h {mins}m'
+        except Exception:
+            uptime_str = 'Unknown'
 
         return jsonify({
             'version': VERSION,
             'platform': f'{platform.system()} {platform.release()}',
+            'os_version': platform.version(),
+            'hostname': platform.node(),
+            'arch': platform.machine(),
             'cpu': cpu_name or f'{cpu_count} cores',
             'cpu_cores': cpu_count,
+            'cpu_cores_physical': cpu_count_phys,
+            'cpu_percent': cpu_percent,
             'ram_total': format_size(mem.total) if mem else 'Unknown',
             'ram_used': format_size(mem.used) if mem else 'Unknown',
+            'ram_available': format_size(mem.available) if mem else 'Unknown',
             'ram_percent': mem.percent if mem else 0,
+            'swap_total': format_size(swap.total) if swap else '0 B',
+            'swap_used': format_size(swap.used) if swap else '0 B',
+            'swap_percent': swap.percent if swap else 0,
             'gpu': gpu_name,
+            'gpu_vram': gpu_vram,
             'data_dir': data_dir,
             'nomad_disk_used': format_size(total_disk),
             'disk_free': format_size(disk_free),
             'disk_total': format_size(disk_total),
+            'disk_devices': disk_devices,
+            'uptime': uptime_str,
         })
+
+    @app.route('/api/system/live')
+    def api_system_live():
+        """Lightweight live metrics for real-time gauges."""
+        import psutil
+        try:
+            return jsonify({
+                'cpu_percent': psutil.cpu_percent(interval=0.3),
+                'ram_percent': psutil.virtual_memory().percent,
+                'swap_percent': psutil.swap_memory().percent,
+            })
+        except Exception:
+            return jsonify({'cpu_percent': 0, 'ram_percent': 0, 'swap_percent': 0})
 
     # ─── Conversations API ────────────────────────────────────────────
 
@@ -382,8 +453,20 @@ def create_app():
     def api_conversations_update(cid):
         data = request.get_json()
         db = get_db()
-        db.execute('UPDATE conversations SET title = ?, model = ?, messages = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                   (data.get('title'), data.get('model'), json.dumps(data.get('messages', [])), cid))
+        fields = []
+        vals = []
+        if 'title' in data:
+            fields.append('title = ?')
+            vals.append(data['title'])
+        if 'model' in data:
+            fields.append('model = ?')
+            vals.append(data['model'])
+        if 'messages' in data:
+            fields.append('messages = ?')
+            vals.append(json.dumps(data['messages']))
+        fields.append('updated_at = CURRENT_TIMESTAMP')
+        vals.append(cid)
+        db.execute(f'UPDATE conversations SET {", ".join(fields)} WHERE id = ?', vals)
         db.commit()
         db.close()
         return jsonify({'status': 'saved'})
@@ -396,12 +479,291 @@ def create_app():
         db.close()
         return jsonify({'status': 'deleted'})
 
+    @app.route('/api/conversations/all', methods=['DELETE'])
+    def api_conversations_delete_all():
+        db = get_db()
+        db.execute('DELETE FROM conversations')
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    # ─── Benchmark API ─────────────────────────────────────────────────
+
+    @app.route('/api/benchmark/run', methods=['POST'])
+    def api_benchmark_run():
+        data = request.get_json() or {}
+        mode = data.get('mode', 'full')  # full, system, ai
+
+        def do_benchmark():
+            import psutil
+            global _benchmark_state
+            _benchmark_state = {'status': 'running', 'progress': 0, 'stage': 'Starting...', 'results': None}
+            results = {}
+            hw = {}
+
+            try:
+                # Hardware detection
+                hw['cpu'] = platform.processor() or f'{os.cpu_count()} cores'
+                hw['cpu_cores'] = psutil.cpu_count()
+                hw['ram_gb'] = round(psutil.virtual_memory().total / (1024**3), 1)
+
+                try:
+                    r = subprocess.run(
+                        ['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
+                        capture_output=True, text=True, timeout=5, creationflags=0x08000000,
+                    )
+                    hw['gpu'] = r.stdout.strip() if r.returncode == 0 else 'None'
+                except Exception:
+                    hw['gpu'] = 'None'
+
+                if mode in ('full', 'system'):
+                    # CPU benchmark — prime calculation
+                    _benchmark_state.update({'progress': 10, 'stage': 'CPU benchmark...'})
+                    start = time.time()
+                    count = 0
+                    while time.time() - start < 10:
+                        n = 2
+                        for _ in range(10000):
+                            n = (n * 1103515245 + 12345) & 0x7FFFFFFF
+                        count += 10000
+                    cpu_score = count / 10
+                    results['cpu_score'] = round(cpu_score)
+
+                    # Memory benchmark — sequential allocation
+                    _benchmark_state.update({'progress': 30, 'stage': 'Memory benchmark...'})
+                    start = time.time()
+                    block_size = 1024 * 1024  # 1MB
+                    blocks = 0
+                    while time.time() - start < 5:
+                        data_block = bytearray(block_size)
+                        for i in range(0, block_size, 4096):
+                            data_block[i] = 0xFF
+                        blocks += 1
+                    mem_score = blocks * block_size / (1024 * 1024)  # MB/s
+                    results['memory_score'] = round(mem_score)
+
+                    # Disk benchmark
+                    _benchmark_state.update({'progress': 50, 'stage': 'Disk benchmark...'})
+                    test_dir = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD', 'benchmark')
+                    os.makedirs(test_dir, exist_ok=True)
+                    test_file = os.path.join(test_dir, 'bench.tmp')
+
+                    # Write
+                    chunk = os.urandom(1024 * 1024)
+                    start = time.time()
+                    written = 0
+                    with open(test_file, 'wb') as f:
+                        while time.time() - start < 5:
+                            f.write(chunk)
+                            written += len(chunk)
+                    write_elapsed = time.time() - start
+                    results['disk_write_score'] = round(written / write_elapsed / (1024 * 1024))
+
+                    # Read
+                    _benchmark_state.update({'progress': 65, 'stage': 'Disk read benchmark...'})
+                    start = time.time()
+                    read_bytes = 0
+                    with open(test_file, 'rb') as f:
+                        while True:
+                            d = f.read(1024 * 1024)
+                            if not d:
+                                break
+                            read_bytes += len(d)
+                    read_elapsed = time.time() - start
+                    results['disk_read_score'] = round(read_bytes / read_elapsed / (1024 * 1024)) if read_elapsed > 0 else 0
+
+                    try:
+                        os.remove(test_file)
+                        os.rmdir(test_dir)
+                    except Exception:
+                        pass
+
+                if mode in ('full', 'ai'):
+                    _benchmark_state.update({'progress': 80, 'stage': 'AI benchmark...'})
+                    results['ai_tps'] = 0
+                    results['ai_ttft'] = 0
+
+                    if ollama.is_installed() and ollama.running():
+                        models = ollama.list_models()
+                        if models:
+                            test_model = models[0]['name']
+                            try:
+                                import requests
+                                start = time.time()
+                                resp = requests.post(
+                                    f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
+                                    json={'model': test_model, 'prompt': 'Write a paragraph about the history of computing.', 'stream': True},
+                                    stream=True, timeout=120,
+                                )
+                                ttft = None
+                                tokens = 0
+                                for line in resp.iter_lines():
+                                    if line:
+                                        try:
+                                            d = json.loads(line)
+                                            if d.get('response') and ttft is None:
+                                                ttft = time.time() - start
+                                            if d.get('response'):
+                                                tokens += 1
+                                            if d.get('done'):
+                                                break
+                                        except Exception:
+                                            pass
+                                elapsed = time.time() - start
+                                results['ai_tps'] = round(tokens / elapsed, 1) if elapsed > 0 else 0
+                                results['ai_ttft'] = round(ttft * 1000) if ttft else 0
+                            except Exception as e:
+                                log.error(f'AI benchmark failed: {e}')
+
+                # Calculate NOMAD Score (0-100, weighted)
+                _benchmark_state.update({'progress': 95, 'stage': 'Calculating score...'})
+                import math
+
+                def norm(val, ref):
+                    if val <= 0:
+                        return 0
+                    return min(100, math.log(val / ref + 1) / math.log(2) * 100)
+
+                cpu_n = norm(results.get('cpu_score', 0), 500000)
+                mem_n = norm(results.get('memory_score', 0), 500)
+                dr_n = norm(results.get('disk_read_score', 0), 500)
+                dw_n = norm(results.get('disk_write_score', 0), 300)
+                ai_n = norm(results.get('ai_tps', 0), 10)
+                ttft_n = max(0, 100 - results.get('ai_ttft', 5000) / 50) if results.get('ai_ttft', 0) > 0 else 0
+
+                nomad_score = (
+                    ai_n * 0.30 + cpu_n * 0.25 + mem_n * 0.15 +
+                    ttft_n * 0.10 + dr_n * 0.10 + dw_n * 0.10
+                )
+                results['nomad_score'] = round(nomad_score, 1)
+
+                # Save to DB
+                db = get_db()
+                db.execute('''INSERT INTO benchmarks
+                    (cpu_score, memory_score, disk_read_score, disk_write_score, ai_tps, ai_ttft, nomad_score, hardware, details)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                    (results.get('cpu_score', 0), results.get('memory_score', 0),
+                     results.get('disk_read_score', 0), results.get('disk_write_score', 0),
+                     results.get('ai_tps', 0), results.get('ai_ttft', 0),
+                     results.get('nomad_score', 0), json.dumps(hw), json.dumps(results)))
+                db.commit()
+                db.close()
+
+                _benchmark_state = {'status': 'complete', 'progress': 100, 'stage': 'Done', 'results': results, 'hardware': hw}
+
+            except Exception as e:
+                log.error(f'Benchmark failed: {e}')
+                _benchmark_state = {'status': 'error', 'progress': 0, 'stage': str(e), 'results': None}
+
+        threading.Thread(target=do_benchmark, daemon=True).start()
+        return jsonify({'status': 'started'})
+
+    @app.route('/api/benchmark/status')
+    def api_benchmark_status():
+        return jsonify(_benchmark_state)
+
+    @app.route('/api/benchmark/history')
+    def api_benchmark_history():
+        db = get_db()
+        rows = db.execute('SELECT * FROM benchmarks ORDER BY created_at DESC LIMIT 20').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    # ─── Maps API ──────────────────────────────────────────────────────
+
+    MAPS_DIR_NAME = 'maps'
+
+    def get_maps_dir():
+        path = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD', MAPS_DIR_NAME)
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    MAP_REGIONS = [
+        {'id': 'us-pacific', 'name': 'Pacific', 'states': 'AK, CA, HI, OR, WA'},
+        {'id': 'us-mountain', 'name': 'Mountain', 'states': 'AZ, CO, ID, MT, NV, NM, UT, WY'},
+        {'id': 'us-west-north-central', 'name': 'West North Central', 'states': 'IA, KS, MN, MO, NE, ND, SD'},
+        {'id': 'us-east-north-central', 'name': 'East North Central', 'states': 'IL, IN, MI, OH, WI'},
+        {'id': 'us-west-south-central', 'name': 'West South Central', 'states': 'AR, LA, OK, TX'},
+        {'id': 'us-east-south-central', 'name': 'East South Central', 'states': 'AL, KY, MS, TN'},
+        {'id': 'us-south-atlantic', 'name': 'South Atlantic', 'states': 'DE, FL, GA, MD, NC, SC, VA, DC, WV'},
+        {'id': 'us-middle-atlantic', 'name': 'Middle Atlantic', 'states': 'NJ, NY, PA'},
+        {'id': 'us-new-england', 'name': 'New England', 'states': 'CT, ME, MA, NH, RI, VT'},
+    ]
+
+    @app.route('/api/maps/regions')
+    def api_maps_regions():
+        maps_dir = get_maps_dir()
+        result = []
+        for r in MAP_REGIONS:
+            pmtiles = os.path.join(maps_dir, f'{r["id"]}.pmtiles')
+            result.append({
+                **r,
+                'downloaded': os.path.isfile(pmtiles),
+                'size': format_size(os.path.getsize(pmtiles)) if os.path.isfile(pmtiles) else None,
+            })
+        return jsonify(result)
+
+    @app.route('/api/maps/files')
+    def api_maps_files():
+        maps_dir = get_maps_dir()
+        files = []
+        for f in os.listdir(maps_dir):
+            if f.endswith('.pmtiles'):
+                fp = os.path.join(maps_dir, f)
+                files.append({'filename': f, 'size': format_size(os.path.getsize(fp))})
+        return jsonify(files)
+
+    @app.route('/api/maps/delete', methods=['POST'])
+    def api_maps_delete():
+        data = request.get_json()
+        filename = data.get('filename')
+        if not filename or '..' in filename:
+            return jsonify({'error': 'Invalid filename'}), 400
+        path = os.path.join(get_maps_dir(), filename)
+        try:
+            if os.path.isfile(path):
+                os.remove(path)
+            return jsonify({'status': 'deleted'})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/maps/tiles/<path:filepath>')
+    def api_maps_serve_tile(filepath):
+        """Serve local PMTiles files."""
+        maps_dir = get_maps_dir()
+        safe_path = os.path.normpath(os.path.join(maps_dir, filepath))
+        if not safe_path.startswith(os.path.normpath(maps_dir)):
+            return jsonify({'error': 'Forbidden'}), 403
+        if not os.path.isfile(safe_path):
+            return jsonify({'error': 'Not found'}), 404
+
+        # Support range requests for PMTiles
+        range_header = request.headers.get('Range')
+        file_size = os.path.getsize(safe_path)
+
+        if range_header:
+            byte_range = range_header.replace('bytes=', '').split('-')
+            start = int(byte_range[0])
+            end = int(byte_range[1]) if byte_range[1] else file_size - 1
+            length = end - start + 1
+
+            with open(safe_path, 'rb') as f:
+                f.seek(start)
+                data = f.read(length)
+
+            resp = Response(data, 206, mimetype='application/octet-stream')
+            resp.headers['Content-Range'] = f'bytes {start}-{end}/{file_size}'
+            resp.headers['Accept-Ranges'] = 'bytes'
+            resp.headers['Content-Length'] = length
+            return resp
+
+        return Response(open(safe_path, 'rb').read(), mimetype='application/octet-stream')
+
     # ─── Connectivity & Network ───────────────────────────────────────
 
     @app.route('/api/network')
     def api_network():
         import socket
-        # Internet check
         online = False
         try:
             socket.create_connection(('1.1.1.1', 443), timeout=3).close()
@@ -409,7 +771,6 @@ def create_app():
         except Exception:
             pass
 
-        # LAN IP
         lan_ip = '127.0.0.1'
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -419,7 +780,7 @@ def create_app():
         except Exception:
             pass
 
-        return jsonify({'online': online, 'lan_ip': lan_ip})
+        return jsonify({'online': online, 'lan_ip': lan_ip, 'dashboard_url': f'http://{lan_ip}:8080'})
 
     # ─── Health ────────────────────────────────────────────────────────
 

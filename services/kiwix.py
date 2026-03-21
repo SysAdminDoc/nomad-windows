@@ -596,7 +596,8 @@ def start():
     zim_paths = [z['path'] for z in zims]
 
     if not zim_paths:
-        log.warning('No ZIM files found — kiwix-serve will start with no content')
+        log.warning('No ZIM files found — kiwix-serve needs content to run. Download a ZIM from the Library tab first.')
+        raise RuntimeError('No content downloaded yet — add content from the Library tab before starting Kiwix')
 
     args = ['--port', str(KIWIX_PORT), '--address', '0.0.0.0'] + zim_paths
     exe = get_exe_path()

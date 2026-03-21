@@ -185,4 +185,12 @@ def init_db():
         );
     ''')
     conn.commit()
+
+    # Schema migrations for existing databases
+    try:
+        conn.execute('ALTER TABLE inventory ADD COLUMN daily_usage REAL DEFAULT 0')
+        conn.commit()
+    except Exception:
+        pass  # Column already exists
+
     conn.close()

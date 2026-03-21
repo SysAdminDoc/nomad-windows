@@ -1201,6 +1201,11 @@ a { color: var(--accent); text-decoration: none; }
 
   <!-- Preparedness Tab -->
   <div id="tab-preparedness" class="tab-content">
+    <!-- Header with Print -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-size:11px;color:var(--text-dim);">Click status cells to update threat level</span>
+      <button class="btn btn-sm" onclick="window.open('/api/preparedness/print','_blank')" title="Print emergency card with contacts, frequencies, and supply status">Print Emergency Card</button>
+    </div>
     <!-- Situation Board -->
     <div class="sit-board" id="sit-board">
       <div class="sit-cell" data-domain="security" data-level="green" onclick="cycleSitLevel(this)"><div class="sit-label">Security</div><div class="sit-level">Good</div></div>
@@ -1318,6 +1323,7 @@ a { color: var(--accent); text-decoration: none; }
           <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Quantity</label><input id="inv-qty" type="number" min="0" step="0.5" value="1" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
           <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Unit</label><input id="inv-unit" value="ea" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="ea, lbs, gal, boxes"></div>
           <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Min Qty (alert)</label><input id="inv-min" type="number" min="0" step="0.5" value="0" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Daily Usage</label><input id="inv-daily" type="number" min="0" step="0.1" value="0" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" title="Daily consumption rate for burn rate tracking"></div>
           <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Expiration</label><input id="inv-exp" type="date" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
           <div style="grid-column:span 2;"><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Notes</label><input id="inv-notes" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="Optional notes"></div>
         </div>
@@ -1327,6 +1333,8 @@ a { color: var(--accent); text-decoration: none; }
           <button class="btn btn-sm" onclick="hideInvForm()">Cancel</button>
         </div>
       </div>
+      <!-- Burn Rate Dashboard -->
+      <div id="burn-rate-dash" style="margin-bottom:16px;"></div>
       <div id="inv-table-wrap" style="overflow-x:auto;">
         <table class="freq-table" id="inv-table">
           <thead><tr><th>Name</th><th>Cat</th><th>Qty</th><th>Location</th><th>Expires</th><th>Notes</th><th style="width:70px;"></th></tr></thead>
@@ -1414,6 +1422,18 @@ a { color: var(--accent); text-decoration: none; }
             <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Start Time</label><input id="watch-start" type="time" value="18:00" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcWatch()"></div>
           </div>
           <div id="watch-result" style="overflow-x:auto;"></div>
+        </div>
+        <!-- Solar Calculator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Sunrise / Sunset Calculator (Offline)</h4>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Latitude</label><input id="solar-lat" type="number" step="0.001" value="39.8" style="width:110px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcSolar()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Longitude</label><input id="solar-lng" type="number" step="0.001" value="-98.5" style="width:110px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcSolar()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Date</label><input id="solar-date" type="date" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcSolar()"></div>
+            <button class="btn btn-sm" onclick="document.getElementById('solar-date').value=new Date().toISOString().slice(0,10);calcSolar()">Today</button>
+            <button class="btn btn-sm" onclick="getSolarLocation()">Use My Location</button>
+          </div>
+          <div class="calc-result" id="solar-result"></div>
         </div>
       </div>
     </div>
@@ -1651,6 +1671,86 @@ a { color: var(--accent); text-decoration: none; }
             <div>Radio communications, electrical work</div>
             <div>Food preservation (canning, smoking, drying)</div>
             <div>Security, armed escort, patrol</div>
+          </div>
+        </div>
+        <!-- Planting Calendar -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Planting Calendar by USDA Hardiness Zone</h4>
+          <div style="display:flex;gap:8px;margin-bottom:8px;align-items:center;">
+            <label style="font-size:11px;color:var(--text-dim);">Zone:</label>
+            <select id="plant-zone" onchange="showPlantZone()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:12px;">
+              <option value="4">Zone 4 (-30 to -20F)</option><option value="5">Zone 5 (-20 to -10F)</option>
+              <option value="6">Zone 6 (-10 to 0F)</option><option value="7" selected>Zone 7 (0 to 10F)</option>
+              <option value="8">Zone 8 (10 to 20F)</option><option value="9">Zone 9 (20 to 30F)</option>
+            </select>
+            <span style="font-size:10px;color:var(--text-muted);">Months shown are outdoor sowing. Start indoors 4-6 weeks earlier for transplants.</span>
+          </div>
+          <div id="plant-calendar" style="overflow-x:auto;"></div>
+        </div>
+
+        <!-- Improvised Solutions -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Improvised Survival Solutions</h4>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;font-size:12px;line-height:1.7;">
+            <div>
+              <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">DIY Water Filter (Bio-Sand)</div>
+              <div>Layer in a container (bucket, bottle, pipe) from bottom up:</div>
+              <div>1. Gravel (2") — drainage layer</div>
+              <div>2. Coarse sand (4") — large particle removal</div>
+              <div>3. Fine sand (8") — bacterial/sediment removal</div>
+              <div>4. Activated charcoal (2") — chemical/taste removal</div>
+              <div>5. Fine sand (2") — prevent charcoal from floating</div>
+              <div>6. Gravel (1") — top layer to prevent channeling</div>
+              <div style="color:var(--orange);font-size:11px;margin-top:4px;">Still requires boiling or chemical treatment after filtering to kill viruses.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Solar Water Still</div>
+              <div>1. Dig hole 3ft wide, 2ft deep in sunny area</div>
+              <div>2. Place collection container in center</div>
+              <div>3. Add vegetation, dirty water around container (not in it)</div>
+              <div>4. Cover hole with clear plastic sheet</div>
+              <div>5. Seal edges with dirt/rocks</div>
+              <div>6. Place small rock on plastic directly above container to form cone</div>
+              <div>7. Condensation forms, drips into container</div>
+              <div style="color:var(--text-dim);font-size:11px;margin-top:4px;">Produces 1-2 quarts/day in good sun. Emergency method only.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Zeer Pot (Evaporative Fridge)</div>
+              <div>1. Get two unglazed clay pots (one fits inside the other)</div>
+              <div>2. Fill gap between pots with wet sand</div>
+              <div>3. Place food in inner pot</div>
+              <div>4. Cover with wet cloth</div>
+              <div>5. Place in shaded, breezy location</div>
+              <div>6. Keep sand wet — re-wet 2x daily</div>
+              <div style="color:var(--text-dim);font-size:11px;margin-top:4px;">Keeps food 10-20F cooler than ambient. Best in dry climates. Can preserve produce for weeks.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Basic Snares</div>
+              <div><strong>Simple loop snare:</strong> Wire (20-24 gauge) or paracord inner strands. Make loop 4" diameter for rabbits, fist-sized for squirrel. Secure to stake/tree at animal trail height.</div>
+              <div><strong>Placement:</strong> Animal trails, near burrows, water sources. Set 6-12 snares for realistic catch rates. Check every 12 hours minimum.</div>
+              <div><strong>Trigger snare:</strong> Bent sapling + trigger stick + snare. Sapling tension lifts and holds animal.</div>
+              <div style="color:var(--text-dim);font-size:11px;margin-top:4px;">Check local laws. In true survival, protein trapping is 10x more efficient than hunting.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Ash Lye Soap</div>
+              <div>1. Collect hardwood ash (not softwood). Fill bucket.</div>
+              <div>2. Pour boiling water through ash, collect dark brown liquid (lye water)</div>
+              <div>3. Test strength: raw egg should float halfway</div>
+              <div>4. Heat animal fat/lard, strain clean</div>
+              <div>5. Mix 1 part lye water to 2 parts melted fat at ~100F</div>
+              <div>6. Stir 30+ minutes until trace (pudding consistency)</div>
+              <div>7. Pour into mold, cure 4-6 weeks</div>
+              <div style="color:var(--orange);font-size:11px;margin-top:4px;">CAUTION: Lye is caustic. Avoid skin/eye contact. Work outdoors.</div>
+            </div>
+            <div>
+              <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Dakota Fire Hole (Smokeless)</div>
+              <div>1. Dig main fire pit: 1ft wide, 1ft deep</div>
+              <div>2. Dig air tunnel: Start 1ft away, angle down to connect at bottom of fire pit</div>
+              <div>3. Tunnel opening should face INTO the wind</div>
+              <div>4. Build fire in main hole</div>
+              <div><strong>Benefits:</strong> Nearly smokeless, hidden from view, wind-resistant, efficient fuel use, easy to cook over (pot sits on top), easy to extinguish (fill with dirt).</div>
+              <div style="color:var(--text-dim);font-size:11px;margin-top:4px;">Best concealment fire method. Great for tactical situations or fire-ban conditions.</div>
+            </div>
           </div>
         </div>
       </div>
@@ -3842,10 +3942,10 @@ function switchPrepSub(sub) {
   document.querySelectorAll('.prep-subtab').forEach(b => b.classList.toggle('active', b.dataset.psub === sub));
   document.querySelectorAll('.prep-sub').forEach(p => p.classList.toggle('active', p.id === 'psub-' + sub));
   if (sub === 'incidents') loadIncidents();
-  if (sub === 'inventory') loadInventory();
+  if (sub === 'inventory') { loadInventory(); loadBurnRate(); }
   if (sub === 'contacts') loadContacts();
-  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); }
-  if (sub === 'reference') convertUnit();
+  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); }
+  if (sub === 'reference') { convertUnit(); showPlantZone(); }
 }
 
 /* ─── Preparedness ─── */
@@ -4081,6 +4181,7 @@ function showInvForm(item) {
     document.getElementById('inv-qty').value = item.quantity;
     document.getElementById('inv-unit').value = item.unit;
     document.getElementById('inv-min').value = item.min_quantity;
+    document.getElementById('inv-daily').value = item.daily_usage || 0;
     document.getElementById('inv-location').value = item.location;
     document.getElementById('inv-exp').value = item.expiration;
     document.getElementById('inv-notes').value = item.notes;
@@ -4090,6 +4191,7 @@ function showInvForm(item) {
     document.getElementById('inv-qty').value = 1;
     document.getElementById('inv-unit').value = 'ea';
     document.getElementById('inv-min').value = 0;
+    document.getElementById('inv-daily').value = 0;
     document.getElementById('inv-exp').value = '';
   }
   // Populate category dropdown
@@ -4111,6 +4213,7 @@ async function saveInvItem() {
     quantity: parseFloat(document.getElementById('inv-qty').value) || 0,
     unit: document.getElementById('inv-unit').value.trim() || 'ea',
     min_quantity: parseFloat(document.getElementById('inv-min').value) || 0,
+    daily_usage: parseFloat(document.getElementById('inv-daily').value) || 0,
     location: document.getElementById('inv-location').value.trim(),
     expiration: document.getElementById('inv-exp').value,
     notes: document.getElementById('inv-notes').value.trim(),
@@ -4318,6 +4421,111 @@ async function sendLanMsg() {
     _lanLastId = msg.id;
     el.scrollTop = el.scrollHeight;
   } catch(e) { toast('Failed to send', 'error'); }
+}
+
+/* ─── Burn Rate Dashboard ─── */
+async function loadBurnRate() {
+  try {
+    const data = await (await fetch('/api/inventory/burn-rate')).json();
+    const el = document.getElementById('burn-rate-dash');
+    if (!Object.keys(data).length) { el.innerHTML = ''; return; }
+    let html = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:8px;">';
+    for (const [cat, info] of Object.entries(data).sort((a,b) => (a[1].min_days||999) - (b[1].min_days||999))) {
+      const days = info.min_days;
+      const color = days === null ? 'var(--text-muted)' : days < 3 ? 'var(--red)' : days < 7 ? 'var(--orange)' : days < 14 ? '#c8a800' : 'var(--green)';
+      const bg = days === null ? 'transparent' : days < 3 ? 'var(--red-dim)' : days < 7 ? 'var(--orange-dim)' : days < 14 ? 'rgba(255,235,59,0.08)' : 'var(--green-dim)';
+      html += `<div style="background:${bg};border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">${cat}</div>
+        <div style="font-size:22px;font-weight:700;color:${color};margin:2px 0;">${days !== null ? days : '--'}</div>
+        <div style="font-size:10px;color:var(--text-muted);">days left</div>
+      </div>`;
+    }
+    html += '</div>';
+    el.innerHTML = html;
+  } catch(e) {}
+}
+
+/* ─── Solar Calculator ─── */
+function calcSolar() {
+  const lat = parseFloat(document.getElementById('solar-lat').value) || 0;
+  const lng = parseFloat(document.getElementById('solar-lng').value) || 0;
+  const dateStr = document.getElementById('solar-date').value;
+  if (!dateStr) { document.getElementById('solar-result').innerHTML = 'Select a date.'; return; }
+  const date = new Date(dateStr + 'T12:00:00');
+  const doy = Math.floor((date - new Date(date.getFullYear(),0,0)) / 86400000);
+  const rad = Math.PI / 180;
+  const B = (360/365) * (doy - 81) * rad;
+  const decl = Math.asin(0.39779 * Math.sin(B));
+  const latRad = lat * rad;
+  const cosH = -Math.tan(latRad) * Math.tan(decl);
+  if (cosH > 1) { document.getElementById('solar-result').innerHTML = '<strong>No sunrise</strong> — polar night at this latitude and date.'; return; }
+  if (cosH < -1) { document.getElementById('solar-result').innerHTML = '<strong>No sunset</strong> — midnight sun at this latitude and date.'; return; }
+  const H = Math.acos(cosH) / rad;
+  const dayLengthHrs = 2 * H / 15;
+  const eot = 9.87 * Math.sin(2*B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+  const solarNoonUTC = 720 - 4 * lng - eot;
+  const sunriseUTC = solarNoonUTC - dayLengthHrs * 30;
+  const sunsetUTC = solarNoonUTC + dayLengthHrs * 30;
+  const tzOffset = Math.round(lng / 15) * 60;
+  const toLocal = (utcMin) => { let m = utcMin + tzOffset; if (m < 0) m += 1440; if (m >= 1440) m -= 1440; const h = Math.floor(m / 60); const min = Math.round(m % 60); return `${String(h).padStart(2,'0')}:${String(min).padStart(2,'0')}`; };
+  const nightHrs = 24 - dayLengthHrs;
+  const goldenAM = sunriseUTC + 60;
+  const goldenPM = sunsetUTC - 60;
+  document.getElementById('solar-result').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;text-align:center;">
+      <div><div style="font-size:10px;color:var(--text-dim);">Sunrise</div><strong style="font-size:18px;">${toLocal(sunriseUTC)}</strong></div>
+      <div><div style="font-size:10px;color:var(--text-dim);">Solar Noon</div><strong style="font-size:18px;">${toLocal(solarNoonUTC)}</strong></div>
+      <div><div style="font-size:10px;color:var(--text-dim);">Sunset</div><strong style="font-size:18px;">${toLocal(sunsetUTC)}</strong></div>
+      <div><div style="font-size:10px;color:var(--text-dim);">Day Length</div><strong style="font-size:18px;">${Math.floor(dayLengthHrs)}h ${Math.round((dayLengthHrs%1)*60)}m</strong></div>
+      <div><div style="font-size:10px;color:var(--text-dim);">Night Length</div><strong style="font-size:18px;">${Math.floor(nightHrs)}h ${Math.round((nightHrs%1)*60)}m</strong></div>
+      <div><div style="font-size:10px;color:var(--text-dim);">Golden Hour</div><strong style="font-size:14px;">${toLocal(sunriseUTC)}-${toLocal(goldenAM)}<br>${toLocal(goldenPM)}-${toLocal(sunsetUTC)}</strong></div>
+    </div>
+    <div style="margin-top:8px;font-size:11px;color:var(--text-dim);">Times based on longitude timezone (UTC${tzOffset>=0?'+':''}${tzOffset/60}). Adjust for DST. Accuracy ~10min.</div>`;
+}
+
+function getSolarLocation() {
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(pos => {
+      document.getElementById('solar-lat').value = pos.coords.latitude.toFixed(4);
+      document.getElementById('solar-lng').value = pos.coords.longitude.toFixed(4);
+      document.getElementById('solar-date').value = new Date().toISOString().slice(0,10);
+      calcSolar();
+      toast('Location acquired', 'success');
+    }, () => toast('Location access denied', 'warning'));
+  } else { toast('Geolocation not available', 'warning'); }
+}
+
+/* ─── Planting Calendar ─── */
+const PLANT_DATA = {
+  crops: ['Tomatoes','Peppers','Lettuce','Spinach','Carrots','Beans','Peas','Squash','Corn','Potatoes','Onions','Garlic','Beets','Radishes','Cucumbers','Kale','Broccoli','Cabbage','Watermelon','Herbs (Basil)'],
+  zones: {
+    '4': [[5,6],[5,6],[4,5],[4,5],[5,6],[5,6],[4,5],[5,6],[5,6],[5,5],[4,5],[9,10],[5,6],[4,8],[5,6],[4,5],[4,5],[4,5],[5,6],[5,6]],
+    '5': [[5,6],[5,6],[3,5],[3,5],[4,6],[5,6],[3,5],[5,6],[5,6],[4,5],[3,4],[9,10],[4,6],[3,9],[5,6],[3,5],[3,5],[3,5],[5,6],[5,6]],
+    '6': [[4,5],[4,5],[3,4],[3,4],[3,6],[4,6],[2,4],[4,6],[4,5],[3,4],[2,4],[10,11],[3,6],[3,9],[4,6],[2,4],[2,4],[2,4],[4,6],[4,6]],
+    '7': [[4,5],[4,5],[2,4],[2,4],[2,5],[3,5],[1,3],[4,5],[4,5],[2,3],[1,3],[10,11],[2,5],[2,10],[4,5],[1,3],[1,3],[1,3],[4,5],[4,5]],
+    '8': [[3,4],[3,4],[1,3],[1,3],[1,4],[3,5],[1,2],[3,5],[3,4],[1,3],[1,2],[10,12],[1,4],[1,10],[3,5],[1,3],[1,3],[1,3],[3,5],[3,5]],
+    '9': [[2,3],[2,3],[10,2],[10,2],[1,3],[2,4],[11,1],[2,4],[2,3],[1,2],[10,1],[11,12],[1,3],[1,11],[2,4],[10,2],[10,2],[10,2],[3,4],[2,4]],
+  }
+};
+const MONTH_NAMES = ['','Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function showPlantZone() {
+  const zone = document.getElementById('plant-zone').value;
+  const zoneData = PLANT_DATA.zones[zone];
+  if (!zoneData) return;
+  let html = '<table class="freq-table"><thead><tr><th>Crop</th>';
+  for (let m = 1; m <= 12; m++) html += `<th style="text-align:center;min-width:38px;">${MONTH_NAMES[m]}</th>`;
+  html += '</tr></thead><tbody>';
+  PLANT_DATA.crops.forEach((crop, i) => {
+    const [s, e] = zoneData[i];
+    html += `<tr><td style="font-weight:500;">${crop}</td>`;
+    for (let m = 1; m <= 12; m++) {
+      const inRange = s <= e ? (m >= s && m <= e) : (m >= s || m <= e);
+      html += `<td style="text-align:center;${inRange ? 'background:var(--green-dim);color:var(--green);font-weight:700;' : 'color:var(--text-muted);'}">${inRange ? 'SOW' : '-'}</td>`;
+    }
+    html += '</tr>';
+  });
+  html += '</tbody></table><div style="font-size:11px;color:var(--text-dim);margin-top:4px;">SOW = direct outdoor sowing window. Start transplants indoors 4-6 weeks earlier. Garlic planted in fall.</div>';
+  document.getElementById('plant-calendar').innerHTML = html;
 }
 
 /* ─── Situation Board ─── */

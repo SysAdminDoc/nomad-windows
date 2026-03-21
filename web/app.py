@@ -30,7 +30,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '1.4.0'
+VERSION = '1.5.0'
 
 
 def set_version(v):
@@ -1809,10 +1809,10 @@ def create_app():
         data = request.get_json()
         db = get_db()
         cur = db.execute(
-            'INSERT INTO inventory (name, category, quantity, unit, min_quantity, location, expiration, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO inventory (name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (data.get('name', ''), data.get('category', 'other'), data.get('quantity', 0),
-             data.get('unit', 'ea'), data.get('min_quantity', 0), data.get('location', ''),
-             data.get('expiration', ''), data.get('notes', '')))
+             data.get('unit', 'ea'), data.get('min_quantity', 0), data.get('daily_usage', 0),
+             data.get('location', ''), data.get('expiration', ''), data.get('notes', '')))
         db.commit()
         item_id = cur.lastrowid
         row = db.execute('SELECT * FROM inventory WHERE id = ?', (item_id,)).fetchone()
@@ -1823,7 +1823,7 @@ def create_app():
     def api_inventory_update(item_id):
         data = request.get_json()
         db = get_db()
-        allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'location', 'expiration', 'notes']
+        allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'notes']
         fields = []
         vals = []
         for k in allowed:
@@ -1868,6 +1868,139 @@ def create_app():
     @app.route('/api/inventory/categories')
     def api_inventory_categories():
         return jsonify(INVENTORY_CATEGORIES)
+
+    @app.route('/api/inventory/burn-rate')
+    def api_inventory_burn_rate():
+        """Calculate days of supply remaining per category."""
+        db = get_db()
+        rows = db.execute('SELECT category, name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY category, name').fetchall()
+        db.close()
+        cats = {}
+        for r in rows:
+            cat = r['category']
+            if cat not in cats:
+                cats[cat] = {'items': [], 'min_days': float('inf')}
+            days = r['quantity'] / r['daily_usage'] if r['daily_usage'] > 0 else float('inf')
+            cats[cat]['items'].append({
+                'name': r['name'], 'quantity': r['quantity'], 'unit': r['unit'],
+                'daily_usage': r['daily_usage'], 'days_remaining': round(days, 1),
+            })
+            if days < cats[cat]['min_days']:
+                cats[cat]['min_days'] = round(days, 1)
+        # Convert inf
+        for cat in cats.values():
+            if cat['min_days'] == float('inf'):
+                cat['min_days'] = None
+        return jsonify(cats)
+
+    @app.route('/api/preparedness/print')
+    def api_preparedness_print():
+        """Generate printable emergency summary page."""
+        db = get_db()
+        contacts = db.execute('SELECT * FROM contacts ORDER BY name').fetchall()
+        settings = {r['key']: r['value'] for r in db.execute('SELECT key, value FROM settings').fetchall()}
+
+        # Burn rate summary
+        burn_rows = db.execute('SELECT category, name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY category').fetchall()
+        burn = {}
+        for r in burn_rows:
+            cat = r['category']
+            days = round(r['quantity'] / r['daily_usage'], 1) if r['daily_usage'] > 0 else 999
+            if cat not in burn or days < burn[cat]:
+                burn[cat] = days
+
+        # Low stock items
+        low = db.execute('SELECT name, quantity, unit, category FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchall()
+
+        # Expiring items
+        from datetime import datetime, timedelta
+        soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+        expiring = db.execute("SELECT name, expiration, category FROM inventory WHERE expiration != '' AND expiration <= ? ORDER BY expiration", (soon,)).fetchall()
+        db.close()
+
+        # Situation board
+        sit = {}
+        try:
+            sit = json.loads(settings.get('sit_board', '{}'))
+        except Exception:
+            pass
+
+        sit_colors = {'green': '#2d6a2d', 'yellow': '#8a7a00', 'orange': '#a84a12', 'red': '#993333'}
+        sit_labels = {'green': 'GOOD', 'yellow': 'CAUTION', 'orange': 'CONCERN', 'red': 'CRITICAL'}
+
+        html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>N.O.M.A.D. Emergency Card</title>
+        <style>
+        @media print {{ @page {{ margin: 0.5in; }} }}
+        * {{ margin:0; padding:0; box-sizing:border-box; }}
+        body {{ font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; line-height: 1.4; }}
+        h1 {{ font-size: 16px; text-align: center; margin-bottom: 4px; }}
+        h2 {{ font-size: 12px; background: #222; color: #fff; padding: 3px 8px; margin: 8px 0 4px; }}
+        .date {{ text-align: center; font-size: 10px; color: #666; margin-bottom: 8px; }}
+        .sit-row {{ display: flex; gap: 4px; margin-bottom: 6px; }}
+        .sit-box {{ flex:1; text-align:center; padding: 4px; border: 1px solid #999; font-weight: bold; font-size: 10px; }}
+        table {{ width: 100%; border-collapse: collapse; margin-bottom: 6px; }}
+        th, td {{ border: 1px solid #999; padding: 3px 6px; text-align: left; font-size: 10px; }}
+        th {{ background: #eee; font-weight: bold; }}
+        .warn {{ color: #993333; font-weight: bold; }}
+        .cols2 {{ display: flex; gap: 8px; }}
+        .cols2 > div {{ flex: 1; }}
+        </style></head><body>
+        <h1>PROJECT N.O.M.A.D. - EMERGENCY CARD</h1>
+        <div class="date">Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")} | KEEP THIS CARD ACCESSIBLE</div>'''
+
+        # Situation Board
+        if sit:
+            html += '<h2>SITUATION STATUS</h2><div class="sit-row">'
+            for domain in ['security','water','food','medical','power','comms']:
+                lvl = sit.get(domain, 'green')
+                html += f'<div class="sit-box" style="background:{sit_colors.get(lvl,"#fff")}; color:#fff;">{domain.upper()}<br>{sit_labels.get(lvl,"?")}</div>'
+            html += '</div>'
+
+        # Contacts
+        if contacts:
+            html += '<h2>EMERGENCY CONTACTS</h2><table><tr><th>Name</th><th>Role</th><th>Callsign</th><th>Phone</th><th>Freq</th><th>Blood</th><th>Rally Point</th></tr>'
+            for c in contacts:
+                html += f'<tr><td>{c["name"]}</td><td>{c["role"]}</td><td>{c["callsign"]}</td><td>{c["phone"]}</td><td>{c["freq"]}</td><td>{c["blood_type"]}</td><td>{c["rally_point"]}</td></tr>'
+            html += '</table>'
+
+        # Burn rate + alerts
+        html += '<div class="cols2"><div>'
+        if burn:
+            html += '<h2>DAYS OF SUPPLY</h2><table><tr><th>Resource</th><th>Days Left</th></tr>'
+            for cat, days in sorted(burn.items()):
+                cls = ' class="warn"' if days < 7 else ''
+                html += f'<tr{cls}><td>{cat.upper()}</td><td>{days}</td></tr>'
+            html += '</table>'
+
+        if low:
+            html += '<h2>LOW STOCK ALERTS</h2><table><tr><th>Item</th><th>Qty</th><th>Cat</th></tr>'
+            for r in low:
+                html += f'<tr class="warn"><td>{r["name"]}</td><td>{r["quantity"]} {r["unit"]}</td><td>{r["category"]}</td></tr>'
+            html += '</table>'
+        html += '</div><div>'
+
+        if expiring:
+            html += '<h2>EXPIRING SOON</h2><table><tr><th>Item</th><th>Expires</th><th>Cat</th></tr>'
+            for r in expiring:
+                html += f'<tr><td>{r["name"]}</td><td>{r["expiration"]}</td><td>{r["category"]}</td></tr>'
+            html += '</table>'
+
+        # Key frequencies
+        html += '''<h2>KEY FREQUENCIES</h2><table>
+        <tr><th>Use</th><th>Freq/Ch</th></tr>
+        <tr><td>FRS Rally (Ch 1)</td><td>462.5625 MHz</td></tr>
+        <tr><td>FRS Emergency (Ch 3)</td><td>462.6125 MHz</td></tr>
+        <tr><td>GMRS Emergency (Ch 20)</td><td>462.6750 MHz</td></tr>
+        <tr><td>CB Emergency (Ch 9)</td><td>27.065 MHz</td></tr>
+        <tr><td>CB Highway (Ch 19)</td><td>27.185 MHz</td></tr>
+        <tr><td>2m HAM Calling</td><td>146.520 MHz</td></tr>
+        <tr><td>2m HAM Emergency</td><td>146.550 MHz</td></tr>
+        <tr><td>NOAA Weather</td><td>162.400-.550 MHz</td></tr>
+        </table>'''
+        html += '</div></div>'
+        html += '<div style="text-align:center;margin-top:8px;font-size:9px;color:#999;">Project N.O.M.A.D. for Windows - Offline Survival Command Center</div>'
+        html += '</body></html>'
+        return Response(html, mimetype='text/html')
 
     # ─── Contacts API ─────────────────────────────────────────────────
 

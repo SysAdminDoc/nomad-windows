@@ -14,11 +14,9 @@ import zipfile
 import shutil
 import logging
 from db import get_db, log_activity
+from config import get_data_dir
 
 log = logging.getLogger('nomad.manager')
-
-DATA_DIR = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'ProjectNOMAD')
-SERVICES_DIR = os.path.join(DATA_DIR, 'services')
 
 # Track running processes
 _processes: dict[str, subprocess.Popen] = {}
@@ -47,8 +45,9 @@ _restart_tracker: dict[str, list[float]] = {}  # service_id -> list of restart t
 
 
 def get_services_dir():
-    os.makedirs(SERVICES_DIR, exist_ok=True)
-    return SERVICES_DIR
+    svc_dir = os.path.join(get_data_dir(), 'services')
+    os.makedirs(svc_dir, exist_ok=True)
+    return svc_dir
 
 
 # ─── GPU Detection ────────────────────────────────────────────────────

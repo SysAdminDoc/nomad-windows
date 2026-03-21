@@ -47,10 +47,11 @@ _bootstrap()
 import webview
 import pystray
 from PIL import Image, ImageDraw
+from config import get_data_dir
 from web.app import create_app, set_version
 from db import init_db, get_db, log_activity, backup_db
 
-VERSION = '0.8.0'
+VERSION = '0.9.0'
 PORT = 8080
 
 _tray_icon = None
@@ -68,10 +69,6 @@ def _get_service_modules():
             'kolibri': kolibri, 'qdrant': qdrant, 'stirling': stirling,
         }
     return SERVICE_MODULES
-
-
-def get_data_dir():
-    return os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'ProjectNOMAD')
 
 
 def get_log_path():

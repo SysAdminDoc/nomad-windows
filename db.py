@@ -2,12 +2,11 @@
 
 import sqlite3
 import os
+from config import get_data_dir
 
 
 def get_db_path():
-    data_dir = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'ProjectNOMAD')
-    os.makedirs(data_dir, exist_ok=True)
-    return os.path.join(data_dir, 'nomad.db')
+    return os.path.join(get_data_dir(), 'nomad.db')
 
 
 def get_db():

@@ -459,6 +459,50 @@ ZIM_CATALOG = [
 ]
 
 
+def get_content_tiers():
+    """Return content tier definitions derived from ZIM_CATALOG for the wizard."""
+    tiers = {
+        'essential': {'name': 'Essential', 'desc': 'Core survival knowledge — medical, preparedness, repair guides',
+                      'services': ['ollama', 'kiwix', 'cyberchef', 'stirling'], 'zims': [], 'models': ['llama3.2:3b'],
+                      'est_size': '~10 GB'},
+        'standard': {'name': 'Standard', 'desc': 'Comprehensive offline library — Wikipedia, Stack Overflow, education',
+                     'services': ['ollama', 'kiwix', 'cyberchef', 'kolibri', 'qdrant', 'stirling'], 'zims': [], 'models': ['llama3.2:3b'],
+                     'est_size': '~80 GB'},
+        'maximum': {'name': 'Maximum', 'desc': 'Download EVERYTHING — complete archives, all references, all models',
+                    'services': ['ollama', 'kiwix', 'cyberchef', 'kolibri', 'qdrant', 'stirling'], 'zims': [],
+                    'models': ['llama3.2:3b', 'llama3.1:8b', 'mistral:7b', 'gemma2:2b'],
+                    'est_size': '~500+ GB'},
+    }
+
+    for cat in ZIM_CATALOG:
+        for tier_name, tier_items in cat.get('tiers', {}).items():
+            for item in tier_items:
+                entry = {'url': item['url'], 'filename': item['filename'], 'name': item['name'],
+                         'size': item['size'], 'desc': item.get('desc', ''), 'category': cat['category']}
+                if tier_name == 'essential':
+                    tiers['essential']['zims'].append(entry)
+                    tiers['standard']['zims'].append(entry)
+                    tiers['maximum']['zims'].append(entry)
+                elif tier_name == 'standard':
+                    tiers['standard']['zims'].append(entry)
+                    tiers['maximum']['zims'].append(entry)
+                elif tier_name == 'comprehensive':
+                    tiers['maximum']['zims'].append(entry)
+
+    # Deduplicate zims by filename
+    for tier in tiers.values():
+        seen = set()
+        deduped = []
+        for z in tier['zims']:
+            if z['filename'] not in seen:
+                seen.add(z['filename'])
+                deduped.append(z)
+        tier['zims'] = deduped
+        tier['zim_count'] = len(deduped)
+
+    return tiers
+
+
 def get_install_dir():
     return os.path.join(get_services_dir(), 'kiwix')
 

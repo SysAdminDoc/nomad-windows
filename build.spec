@@ -13,6 +13,7 @@ a = Analysis(
         ('web/static', 'web/static'),
         ('services', 'services'),
         ('db.py', '.'),
+        ('config.py', '.'),
     ],
     hiddenimports=[
         'flask',

@@ -11,6 +11,7 @@ import shutil
 import subprocess
 from flask import Flask, render_template, jsonify, request, Response
 
+from config import get_data_dir, set_data_dir
 from db import get_db, log_activity
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling
 from services.manager import (
@@ -354,12 +355,199 @@ def create_app():
         db.close()
         return jsonify({'status': 'ok'})
 
+    # ─── Drives API ───────────────────────────────────────────────────
+
+    @app.route('/api/drives')
+    def api_drives():
+        """List available drives with free space for storage picker."""
+        import psutil
+        drives = []
+        try:
+            for part in psutil.disk_partitions(all=False):
+                try:
+                    usage = psutil.disk_usage(part.mountpoint)
+                    drives.append({
+                        'path': part.mountpoint,
+                        'device': part.device,
+                        'fstype': part.fstype,
+                        'total': usage.total,
+                        'free': usage.free,
+                        'used': usage.used,
+                        'percent': usage.percent,
+                        'total_str': format_size(usage.total),
+                        'free_str': format_size(usage.free),
+                    })
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        return jsonify(drives)
+
+    @app.route('/api/settings/data-dir', methods=['POST'])
+    def api_set_data_dir():
+        """Set custom data directory (wizard only)."""
+        data = request.get_json()
+        path = data.get('path', '')
+        if not path:
+            return jsonify({'error': 'No path provided'}), 400
+        try:
+            full_path = os.path.join(path, 'ProjectNOMAD')
+            os.makedirs(full_path, exist_ok=True)
+            # Test write
+            test_file = os.path.join(full_path, '.write_test')
+            with open(test_file, 'w') as f:
+                f.write('ok')
+            os.remove(test_file)
+            set_data_dir(full_path)
+            return jsonify({'status': 'ok', 'path': full_path})
+        except Exception as e:
+            return jsonify({'error': f'Cannot write to {path}: {e}'}), 400
+
+    # ─── Wizard Setup API ─────────────────────────────────────────────
+
+    _wizard_state = {'status': 'idle', 'phase': '', 'current_item': '', 'item_progress': 0,
+                     'overall_progress': 0, 'completed': [], 'errors': [], 'total_items': 0}
+
+    @app.route('/api/wizard/setup', methods=['POST'])
+    def api_wizard_setup():
+        """Full turnkey setup — installs services, downloads content, pulls models."""
+        data = request.get_json()
+        services_list = data.get('services', ['ollama', 'kiwix', 'cyberchef', 'stirling'])
+        zims = data.get('zims', [])
+        models = data.get('models', ['llama3.2:3b'])
+
+        def do_setup():
+            total = len(services_list) + len(zims) + len(models)
+            _wizard_state.update({'status': 'running', 'phase': 'services', 'completed': [],
+                                  'errors': [], 'total_items': total, 'overall_progress': 0})
+            done = 0
+
+            # Phase 1: Install services
+            for sid in services_list:
+                mod = SERVICE_MODULES.get(sid)
+                if not mod:
+                    continue
+                _wizard_state.update({'current_item': f'Installing {SVC_FRIENDLY.get(sid, sid)}', 'item_progress': 0})
+                try:
+                    if not mod.is_installed():
+                        mod.install()
+                        # Wait for install to complete
+                        import time
+                        for _ in range(300):
+                            p = get_download_progress(sid)
+                            _wizard_state['item_progress'] = p.get('percent', 0)
+                            if p.get('status') in ('complete', 'error'):
+                                break
+                            time.sleep(1)
+                        if get_download_progress(sid).get('status') == 'error':
+                            _wizard_state['errors'].append(f'{sid}: {get_download_progress(sid).get("error", "unknown")}')
+                except Exception as e:
+                    _wizard_state['errors'].append(f'{sid}: {e}')
+                done += 1
+                _wizard_state['overall_progress'] = int(done / total * 100)
+                _wizard_state['completed'].append(sid)
+
+            # Phase 2: Start all installed services
+            _wizard_state['phase'] = 'starting'
+            _wizard_state['current_item'] = 'Starting services...'
+            import time
+            for sid in services_list:
+                mod = SERVICE_MODULES.get(sid)
+                if mod and mod.is_installed() and not mod.running():
+                    try:
+                        mod.start()
+                        time.sleep(2)
+                    except Exception as e:
+                        _wizard_state['errors'].append(f'Start {sid}: {e}')
+
+            # Phase 3: Download ZIM content
+            if zims:
+                _wizard_state['phase'] = 'content'
+                for zim in zims:
+                    url = zim.get('url', '')
+                    filename = zim.get('filename', '')
+                    name = zim.get('name', filename)
+                    _wizard_state.update({'current_item': f'Downloading {name}', 'item_progress': 0})
+                    try:
+                        kiwix.download_zim(url, filename)
+                        # Poll progress
+                        prog_key = f'kiwix-zim-{filename}'
+                        for _ in range(7200):  # up to 2 hours per ZIM
+                            p = get_download_progress(prog_key)
+                            _wizard_state['item_progress'] = p.get('percent', 0)
+                            if p.get('status') in ('complete', 'error'):
+                                break
+                            time.sleep(1)
+                    except Exception as e:
+                        _wizard_state['errors'].append(f'ZIM {filename}: {e}')
+                    done += 1
+                    _wizard_state['overall_progress'] = int(done / total * 100)
+                    _wizard_state['completed'].append(filename)
+
+                # Restart Kiwix to load new content
+                if kiwix.is_installed():
+                    try:
+                        if kiwix.running():
+                            kiwix.stop()
+                            time.sleep(1)
+                        kiwix.start()
+                    except Exception:
+                        pass
+
+            # Phase 4: Pull AI models
+            if models:
+                _wizard_state['phase'] = 'models'
+                for model_name in models:
+                    _wizard_state.update({'current_item': f'Downloading AI model: {model_name}', 'item_progress': 0})
+                    try:
+                        if ollama.running():
+                            ollama.pull_model(model_name)
+                            # Poll pull progress
+                            for _ in range(3600):
+                                p = ollama.get_pull_progress()
+                                _wizard_state['item_progress'] = p.get('percent', 0)
+                                if p.get('status') in ('complete', 'error'):
+                                    break
+                                time.sleep(1)
+                    except Exception as e:
+                        _wizard_state['errors'].append(f'Model {model_name}: {e}')
+                    done += 1
+                    _wizard_state['overall_progress'] = int(done / total * 100)
+                    _wizard_state['completed'].append(model_name)
+
+            # Mark wizard complete
+            db = get_db()
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '1')")
+            db.commit()
+            db.close()
+
+            _wizard_state.update({'status': 'complete', 'phase': 'done', 'overall_progress': 100,
+                                  'current_item': 'Setup complete!'})
+
+        threading.Thread(target=do_setup, daemon=True).start()
+        return jsonify({'status': 'started'})
+
+    @app.route('/api/wizard/progress')
+    def api_wizard_progress():
+        return jsonify(_wizard_state)
+
+    @app.route('/api/content-tiers')
+    def api_content_tiers():
+        """Return content tier definitions with sizes for wizard."""
+        tiers = kiwix.get_content_tiers()
+        return jsonify(tiers)
+
+    SVC_FRIENDLY = {
+        'ollama': 'AI Chat', 'kiwix': 'Offline Encyclopedia', 'cyberchef': 'Data Toolkit',
+        'kolibri': 'Education Platform', 'qdrant': 'Document Search', 'stirling': 'PDF Tools',
+    }
+
     # ─── System Info ───────────────────────────────────────────────────
 
     @app.route('/api/system')
     def api_system():
         import psutil
-        data_dir = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD')
+        data_dir = get_data_dir()
         total_disk = get_dir_size(data_dir)
 
         try:
@@ -605,7 +793,7 @@ def create_app():
         db.close()
 
         # Disk usage
-        data_dir = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD')
+        data_dir = get_data_dir()
         total_bytes = get_dir_size(data_dir)
 
         # ZIM count and size

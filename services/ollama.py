@@ -2,7 +2,6 @@
 
 import os
 import subprocess
-import threading
 import time
 import logging
 import requests
@@ -18,6 +17,19 @@ SERVICE_ID = 'ollama'
 OLLAMA_PORT = 11434
 OLLAMA_URL = 'https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip'
 DEFAULT_MODEL = 'llama3.2:3b'
+
+_pull_progress = {'status': 'idle', 'model': '', 'percent': 0, 'detail': ''}
+
+RECOMMENDED_MODELS = [
+    {'name': 'llama3.2:3b', 'size': '2.0 GB', 'desc': 'Fast, capable general-purpose model'},
+    {'name': 'llama3.2:1b', 'size': '1.3 GB', 'desc': 'Lightweight model for low-RAM systems'},
+    {'name': 'gemma2:2b', 'size': '1.6 GB', 'desc': 'Google compact model, great for chat'},
+    {'name': 'mistral:7b', 'size': '4.1 GB', 'desc': 'Strong reasoning and instruction following'},
+    {'name': 'phi3:mini', 'size': '2.3 GB', 'desc': 'Microsoft compact model, good for coding'},
+    {'name': 'llama3.1:8b', 'size': '4.7 GB', 'desc': 'Full-size Llama 3.1, best quality'},
+    {'name': 'qwen2.5:7b', 'size': '4.7 GB', 'desc': 'Alibaba multilingual model'},
+    {'name': 'deepseek-r1:8b', 'size': '4.9 GB', 'desc': 'DeepSeek reasoning model'},
+]
 
 
 def get_install_dir():
@@ -38,7 +50,10 @@ def install(callback=None):
     os.makedirs(install_dir, exist_ok=True)
     zip_path = os.path.join(install_dir, 'ollama.zip')
 
-    _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'downloading', 'error': None}
+    _download_progress[SERVICE_ID] = {
+        'percent': 0, 'status': 'downloading', 'error': None,
+        'speed': '', 'downloaded': 0, 'total': 0,
+    }
 
     try:
         download_file(OLLAMA_URL, zip_path, SERVICE_ID)
@@ -49,7 +64,6 @@ def install(callback=None):
             zf.extractall(install_dir)
         os.remove(zip_path)
 
-        # Register in DB
         db = get_db()
         db.execute('''
             INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
@@ -62,11 +76,17 @@ def install(callback=None):
         db.commit()
         db.close()
 
-        _download_progress[SERVICE_ID] = {'percent': 100, 'status': 'complete', 'error': None}
+        _download_progress[SERVICE_ID] = {
+            'percent': 100, 'status': 'complete', 'error': None,
+            'speed': '', 'downloaded': 0, 'total': 0,
+        }
         log.info('Ollama installed successfully')
 
     except Exception as e:
-        _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'error', 'error': str(e)}
+        _download_progress[SERVICE_ID] = {
+            'percent': 0, 'status': 'error', 'error': str(e),
+            'speed': '', 'downloaded': 0, 'total': 0,
+        }
         log.error(f'Ollama install failed: {e}')
         raise
 
@@ -98,7 +118,6 @@ def start():
     db.commit()
     db.close()
 
-    # Wait for port
     for _ in range(30):
         if check_port(OLLAMA_PORT):
             log.info(f'Ollama running on port {OLLAMA_PORT} (PID {proc.pid})')
@@ -129,16 +148,63 @@ def list_models():
 
 
 def pull_model(model_name: str):
-    """Pull/download a model."""
+    """Pull/download a model with progress tracking."""
+    global _pull_progress
+    _pull_progress = {'status': 'pulling', 'model': model_name, 'percent': 0, 'detail': 'Starting...'}
+
     try:
         resp = requests.post(
             f'http://localhost:{OLLAMA_PORT}/api/pull',
-            json={'name': model_name, 'stream': False},
-            timeout=600,
+            json={'name': model_name, 'stream': True},
+            stream=True,
+            timeout=1800,
+        )
+        resp.raise_for_status()
+
+        import json
+        for line in resp.iter_lines():
+            if not line:
+                continue
+            try:
+                data = json.loads(line)
+                status = data.get('status', '')
+                total = data.get('total', 0)
+                completed = data.get('completed', 0)
+                pct = int(completed / total * 100) if total > 0 else 0
+
+                _pull_progress = {
+                    'status': 'pulling',
+                    'model': model_name,
+                    'percent': pct,
+                    'detail': status,
+                }
+            except Exception:
+                pass
+
+        _pull_progress = {'status': 'complete', 'model': model_name, 'percent': 100, 'detail': 'Done'}
+        log.info(f'Model {model_name} pulled successfully')
+        return True
+    except Exception as e:
+        _pull_progress = {'status': 'error', 'model': model_name, 'percent': 0, 'detail': str(e)}
+        log.error(f'Model pull failed: {e}')
+        return False
+
+
+def get_pull_progress():
+    return _pull_progress
+
+
+def delete_model(model_name: str) -> bool:
+    """Delete a downloaded model."""
+    try:
+        resp = requests.delete(
+            f'http://localhost:{OLLAMA_PORT}/api/delete',
+            json={'name': model_name},
+            timeout=30,
         )
         return resp.ok
     except Exception as e:
-        log.error(f'Model pull failed: {e}')
+        log.error(f'Model delete failed: {e}')
         return False
 
 

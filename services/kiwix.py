@@ -16,8 +16,47 @@ log = logging.getLogger('nomad.kiwix')
 SERVICE_ID = 'kiwix'
 KIWIX_PORT = 8888
 KIWIX_TOOLS_URL = 'https://download.kiwix.org/release/kiwix-tools/kiwix-tools_win-x86_64-3.8.1.zip'
-# Small starter ZIM — Wikipedia mini (100 top articles)
 STARTER_ZIM_URL = 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_100_mini_2025-06.zim'
+
+# Curated ZIM catalog — popular offline content packs
+ZIM_CATALOG = [
+    {
+        'category': 'Wikipedia',
+        'items': [
+            {'name': 'Wikipedia Mini (Top 100)', 'filename': 'wikipedia_en_100_mini_2025-06.zim',
+             'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_100_mini_2025-06.zim',
+             'size': '1.2 MB', 'desc': 'Top 100 Wikipedia articles — great for testing'},
+            {'name': 'Wikipedia Top 100k', 'filename': 'wikipedia_en_top_nopic_2025-05.zim',
+             'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_top_nopic_2025-05.zim',
+             'size': '~3 GB', 'desc': 'Top 100,000 articles without pictures'},
+            {'name': 'Wikipedia Full (No Pics)', 'filename': 'wikipedia_en_all_nopic_2025-05.zim',
+             'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_nopic_2025-05.zim',
+             'size': '~25 GB', 'desc': 'Complete English Wikipedia without images'},
+        ]
+    },
+    {
+        'category': 'Medical & Survival',
+        'items': [
+            {'name': 'WikiMed Medical Encyclopedia', 'filename': 'wikipedia_en_medicine_nopic_2025-05.zim',
+             'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_medicine_nopic_2025-05.zim',
+             'size': '~800 MB', 'desc': 'Medical articles from Wikipedia'},
+            {'name': 'Wikibooks', 'filename': 'wikibooks_en_all_nopic_2025-05.zim',
+             'url': 'https://download.kiwix.org/zim/wikibooks/wikibooks_en_all_nopic_2025-05.zim',
+             'size': '~400 MB', 'desc': 'How-to guides and textbooks'},
+        ]
+    },
+    {
+        'category': 'Reference',
+        'items': [
+            {'name': 'Wiktionary', 'filename': 'wiktionary_en_all_nopic_2025-05.zim',
+             'url': 'https://download.kiwix.org/zim/wiktionary/wiktionary_en_all_nopic_2025-05.zim',
+             'size': '~5 GB', 'desc': 'Complete English dictionary'},
+            {'name': 'Stack Exchange', 'filename': 'stackoverflow.com_en_all_2025-05.zim',
+             'url': 'https://download.kiwix.org/zim/stack_exchange/stackoverflow.com_en_all_2025-05.zim',
+             'size': '~55 GB', 'desc': 'Full Stack Overflow Q&A archive'},
+        ]
+    },
+]
 
 
 def get_install_dir():
@@ -33,15 +72,13 @@ def get_library_dir():
 def get_exe_path():
     """Find kiwix-serve.exe (may be in a subdirectory after extraction)."""
     install_dir = get_install_dir()
-    # Check root
     exe = os.path.join(install_dir, 'kiwix-serve.exe')
     if os.path.isfile(exe):
         return exe
-    # Check subdirectories (zip often has a version folder)
     for root, dirs, files in os.walk(install_dir):
         if 'kiwix-serve.exe' in files:
             return os.path.join(root, 'kiwix-serve.exe')
-    return exe  # Return expected path even if not found
+    return exe
 
 
 def is_installed():
@@ -54,7 +91,10 @@ def install(callback=None):
     os.makedirs(install_dir, exist_ok=True)
     zip_path = os.path.join(install_dir, 'kiwix-tools.zip')
 
-    _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'downloading kiwix-tools', 'error': None}
+    _download_progress[SERVICE_ID] = {
+        'percent': 0, 'status': 'downloading kiwix-tools', 'error': None,
+        'speed': '', 'downloaded': 0, 'total': 0,
+    }
 
     try:
         download_file(KIWIX_TOOLS_URL, zip_path, SERVICE_ID)
@@ -65,7 +105,6 @@ def install(callback=None):
             zf.extractall(install_dir)
         os.remove(zip_path)
 
-        # Register in DB
         db = get_db()
         db.execute('''
             INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
@@ -79,11 +118,17 @@ def install(callback=None):
         db.commit()
         db.close()
 
-        _download_progress[SERVICE_ID] = {'percent': 100, 'status': 'complete', 'error': None}
+        _download_progress[SERVICE_ID] = {
+            'percent': 100, 'status': 'complete', 'error': None,
+            'speed': '', 'downloaded': 0, 'total': 0,
+        }
         log.info('Kiwix installed successfully')
 
     except Exception as e:
-        _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'error', 'error': str(e)}
+        _download_progress[SERVICE_ID] = {
+            'percent': 0, 'status': 'error', 'error': str(e),
+            'speed': '', 'downloaded': 0, 'total': 0,
+        }
         log.error(f'Kiwix install failed: {e}')
         raise
 
@@ -103,6 +148,11 @@ def list_zim_files():
     return zims
 
 
+def get_catalog():
+    """Return the curated ZIM catalog."""
+    return ZIM_CATALOG
+
+
 def download_zim(url: str, filename: str = None):
     """Download a ZIM file to the library directory."""
     if not filename:
@@ -110,6 +160,18 @@ def download_zim(url: str, filename: str = None):
     dest = os.path.join(get_library_dir(), filename)
     download_file(url, dest, f'kiwix-zim-{filename}')
     return dest
+
+
+def delete_zim(filename: str) -> bool:
+    """Delete a ZIM file from the library."""
+    path = os.path.join(get_library_dir(), filename)
+    try:
+        if os.path.isfile(path):
+            os.remove(path)
+            return True
+    except Exception as e:
+        log.error(f'Failed to delete ZIM {filename}: {e}')
+    return False
 
 
 def start():

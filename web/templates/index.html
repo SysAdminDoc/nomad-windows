@@ -6,164 +6,168 @@
 <title>Project N.O.M.A.D. - Command Center</title>
 <style>
 :root {
-  --bg: #0d0d0d;
-  --surface: #161616;
-  --surface2: #1e1e1e;
-  --surface3: #252525;
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface2: #1a1a1a;
+  --surface3: #222;
   --border: #2a2a2a;
+  --border-hover: #3a3a3a;
   --text: #e0e0e0;
-  --text-dim: #888;
+  --text-dim: #777;
+  --text-muted: #555;
   --accent: #4f9cf7;
   --accent-hover: #6ab0ff;
+  --accent-dim: rgba(79,156,247,0.12);
   --green: #4caf50;
+  --green-dim: rgba(76,175,80,0.12);
   --red: #f44336;
+  --red-dim: rgba(244,67,54,0.12);
   --orange: #ff9800;
+  --orange-dim: rgba(255,152,0,0.12);
+  --purple: #b388ff;
   --radius: 12px;
-  --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  --radius-sm: 8px;
+  --shadow: 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
 }
 * { margin:0; padding:0; box-sizing:border-box; }
 body {
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Segoe UI', system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
+  overflow-x: hidden;
 }
 a { color: var(--accent); text-decoration: none; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--border-hover); }
 
 /* ─── Header ─── */
 .header {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
-  padding: 16px 32px;
+  padding: 12px 24px;
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  -webkit-app-region: drag;
+  user-select: none;
 }
-.header svg { width: 36px; height: 36px; fill: var(--accent); }
-.header h1 { font-size: 20px; font-weight: 600; }
-.header .version { color: var(--text-dim); font-size: 13px; margin-left: 8px; }
+.header-logo {
+  width: 32px; height: 32px;
+  background: linear-gradient(135deg, #4f9cf7, #b388ff);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+}
+.header-logo svg { width: 18px; height: 18px; fill: #fff; }
+.header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
+.header .version { color: var(--text-muted); font-size: 11px; font-weight: 400; }
+.header-right { margin-left: auto; display: flex; gap: 8px; -webkit-app-region: no-drag; }
 
 /* ─── Layout ─── */
-.container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+.container { max-width: 1200px; margin: 0 auto; padding: 24px 24px; }
 
 /* ─── Tabs ─── */
 .tabs {
   display: flex;
-  gap: 4px;
-  margin-bottom: 28px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 0;
+  gap: 2px;
+  margin-bottom: 24px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 4px;
+  border: 1px solid var(--border);
 }
 .tab {
-  padding: 10px 20px;
+  padding: 8px 18px;
   cursor: pointer;
   color: var(--text-dim);
-  border-bottom: 2px solid transparent;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 500;
-  transition: color 0.2s, border-color 0.2s;
+  transition: all 0.15s;
   background: none;
-  border-top: none;
-  border-left: none;
-  border-right: none;
+  border: none;
+  border-radius: var(--radius-sm);
 }
-.tab:hover { color: var(--text); }
-.tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-
-.tab-content { display: none; }
+.tab:hover { color: var(--text); background: var(--surface2); }
+.tab.active { color: #fff; background: var(--accent); }
+.tab-content { display: none; animation: fadeIn 0.2s; }
 .tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ─── Service Cards ─── */
 .services-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 16px;
 }
 .service-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 24px;
-  transition: transform 0.15s, box-shadow 0.15s;
+  padding: 20px;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
-.service-card:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
-.service-card .card-header {
+.service-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-sm); }
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
-.service-card h3 { font-size: 16px; font-weight: 600; }
-.service-card .desc { color: var(--text-dim); font-size: 13px; margin-bottom: 16px; line-height: 1.5; }
+.service-card h3 { font-size: 15px; font-weight: 600; }
+.service-card .desc { color: var(--text-dim); font-size: 12px; margin-bottom: 12px; line-height: 1.5; }
+.service-card .meta { display: flex; gap: 12px; color: var(--text-muted); font-size: 11px; margin-bottom: 14px; }
+.service-card .meta span { display: flex; align-items: center; gap: 4px; }
 
-.status-badge {
+.badge {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 10px;
+  gap: 5px;
+  padding: 3px 10px;
   border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
 }
-.status-badge.running { background: rgba(76,175,80,0.15); color: var(--green); }
-.status-badge.stopped { background: rgba(136,136,136,0.15); color: var(--text-dim); }
-.status-badge.not-installed { background: rgba(255,152,0,0.15); color: var(--orange); }
-.status-badge .dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: currentColor;
-}
+.badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge.running { background: var(--green-dim); color: var(--green); }
+.badge.stopped { background: rgba(100,100,100,0.15); color: var(--text-dim); }
+.badge.not-installed { background: var(--orange-dim); color: var(--orange); }
+.badge.installing { background: var(--accent-dim); color: var(--accent); }
 
-.card-actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+.card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
 
 /* ─── Buttons ─── */
 .btn {
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 7px 14px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   background: var(--surface2);
   color: var(--text);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
-.btn:hover { background: var(--surface3); border-color: var(--accent); }
-.btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn-primary {
-  background: var(--accent);
-  color: #fff;
-  border-color: var(--accent);
-}
-.btn-primary:hover { background: var(--accent-hover); }
+.btn:hover { background: var(--surface3); border-color: var(--border-hover); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn-primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); }
 .btn-danger { color: var(--red); }
-.btn-danger:hover { border-color: var(--red); }
-.btn-sm { padding: 5px 12px; font-size: 12px; }
-.btn-link {
-  background: none;
-  border: none;
-  color: var(--accent);
-  cursor: pointer;
-  padding: 0;
-  font-size: 13px;
-}
+.btn-danger:hover { border-color: var(--red); background: var(--red-dim); }
+.btn-ghost { background: transparent; border-color: transparent; }
+.btn-ghost:hover { background: var(--surface2); }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
 
-/* ─── Progress Bar ─── */
-.progress-bar {
-  width: 100%;
-  height: 6px;
-  background: var(--surface3);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-top: 12px;
-}
-.progress-bar .fill {
-  height: 100%;
-  background: var(--accent);
-  transition: width 0.3s;
-  border-radius: 3px;
-}
-.progress-text { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+/* ─── Progress ─── */
+.progress-wrap { margin-top: 10px; }
+.progress-bar { width: 100%; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+.progress-bar .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); transition: width 0.3s; border-radius: 2px; }
+.progress-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 4px; }
 
 /* ─── AI Chat ─── */
 .chat-container {
@@ -172,199 +176,200 @@ a { color: var(--accent); text-decoration: none; }
   border-radius: var(--radius);
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 200px);
+  height: calc(100vh - 180px);
   min-height: 500px;
 }
 .chat-header {
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-.chat-header select {
+.chat-header-left { display: flex; align-items: center; gap: 10px; }
+.chat-header select, .chat-header input {
   background: var(--surface2);
   color: var(--text);
   border: 1px solid var(--border);
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 13px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  outline: none;
 }
-.chat-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 20px;
-}
-.chat-messages::-webkit-scrollbar { width: 6px; }
-.chat-messages::-webkit-scrollbar-track { background: transparent; }
-.chat-messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
-
-.message {
-  margin-bottom: 16px;
-  display: flex;
-  gap: 12px;
-}
+.chat-header select:focus, .chat-header input:focus { border-color: var(--accent); }
+.chat-messages { flex: 1; overflow-y: auto; padding: 16px; }
+.message { margin-bottom: 12px; display: flex; gap: 10px; }
 .message .avatar {
-  width: 32px; height: 32px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  flex-shrink: 0;
+  width: 28px; height: 28px; border-radius: 6px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; flex-shrink: 0;
 }
 .message.user .avatar { background: var(--accent); color: #fff; }
 .message.assistant .avatar { background: var(--surface3); color: var(--accent); }
 .message .content {
   background: var(--surface2);
-  padding: 12px 16px;
-  border-radius: 12px;
-  font-size: 14px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
   line-height: 1.6;
   max-width: 80%;
   white-space: pre-wrap;
   word-break: break-word;
 }
-.message.user .content { background: rgba(79,156,247,0.12); }
-
+.message.user .content { background: var(--accent-dim); }
 .chat-input-area {
-  padding: 16px 20px;
+  padding: 12px 16px;
   border-top: 1px solid var(--border);
   display: flex;
-  gap: 12px;
+  gap: 8px;
 }
 .chat-input-area textarea {
-  flex: 1;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text);
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 14px;
-  font-family: inherit;
-  resize: none;
-  outline: none;
-  min-height: 44px;
-  max-height: 120px;
+  flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text); padding: 8px 12px; border-radius: var(--radius-sm);
+  font-size: 13px; font-family: inherit; resize: none; outline: none;
+  min-height: 40px; max-height: 120px;
 }
 .chat-input-area textarea:focus { border-color: var(--accent); }
-.chat-input-area textarea::placeholder { color: var(--text-dim); }
+.chat-input-area textarea::placeholder { color: var(--text-muted); }
 
 .empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  color: var(--text-dim);
-  gap: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  height: 100%; color: var(--text-dim); gap: 8px;
 }
-.empty-state svg { width: 48px; height: 48px; opacity: 0.3; }
-.empty-state p { font-size: 14px; }
+.empty-state .icon { font-size: 36px; opacity: 0.25; }
+.empty-state p { font-size: 13px; }
 
 /* ─── Notes ─── */
-.notes-layout { display: flex; gap: 20px; height: calc(100vh - 220px); min-height: 400px; }
+.notes-layout { display: flex; gap: 16px; height: calc(100vh - 200px); min-height: 400px; }
 .notes-sidebar {
-  width: 260px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
+  width: 240px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); display: flex; flex-direction: column; flex-shrink: 0;
 }
 .notes-sidebar-header {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  padding: 12px 14px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
 }
-.notes-list { flex: 1; overflow-y: auto; padding: 8px; }
+.notes-list { flex: 1; overflow-y: auto; padding: 6px; }
 .note-item {
-  padding: 10px 12px;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 13px;
-  margin-bottom: 2px;
-  transition: background 0.15s;
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  font-size: 12px; margin-bottom: 1px; transition: background 0.1s;
 }
 .note-item:hover { background: var(--surface2); }
 .note-item.active { background: var(--surface3); }
-.note-item .note-title { font-weight: 500; margin-bottom: 2px; }
-.note-item .note-date { font-size: 11px; color: var(--text-dim); }
-
+.note-item .note-title { font-weight: 500; margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.note-item .note-date { font-size: 10px; color: var(--text-muted); }
 .notes-editor {
-  flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  display: flex;
-  flex-direction: column;
+  flex: 1; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); display: flex; flex-direction: column;
 }
 .notes-editor-header {
-  padding: 14px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  display: flex; gap: 10px; align-items: center;
 }
 .notes-editor-header input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text);
-  font-size: 16px;
-  font-weight: 600;
-  outline: none;
+  flex: 1; background: transparent; border: none; color: var(--text);
+  font-size: 15px; font-weight: 600; outline: none;
 }
 .notes-editor textarea {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--text);
-  padding: 16px 20px;
-  font-size: 14px;
+  flex: 1; background: transparent; border: none; color: var(--text);
+  padding: 14px 16px; font-size: 13px;
   font-family: 'Cascadia Code', 'Consolas', monospace;
-  line-height: 1.6;
-  resize: none;
-  outline: none;
+  line-height: 1.7; resize: none; outline: none;
 }
+
+/* ─── Settings ─── */
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 800px) { .settings-grid { grid-template-columns: 1fr; } }
+.settings-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
+}
+.settings-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--accent); }
+.setting-row {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 13px;
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-label { color: var(--text-dim); }
+.setting-value { font-weight: 500; }
+
+/* ─── Model Manager ─── */
+.model-list { margin-top: 12px; }
+.model-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; background: var(--surface2); border-radius: var(--radius-sm);
+  margin-bottom: 4px; font-size: 12px;
+}
+.model-item .model-name { font-weight: 500; }
+.model-item .model-size { color: var(--text-dim); }
+
+/* ─── Wizard Overlay ─── */
+.wizard-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+  display: flex; align-items: center; justify-content: center; z-index: 10000;
+}
+.wizard-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; padding: 40px; max-width: 520px; width: 90%;
+  text-align: center; box-shadow: var(--shadow);
+}
+.wizard-card h2 { font-size: 22px; margin-bottom: 8px; }
+.wizard-card .subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; line-height: 1.6; }
+.wizard-steps { text-align: left; margin-bottom: 24px; }
+.wizard-step {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 0; font-size: 13px;
+}
+.wizard-step .step-num {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--accent-dim); color: var(--accent);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+.wizard-step.done .step-num { background: var(--green-dim); color: var(--green); }
+
+/* ─── ZIM Catalog ─── */
+.catalog-section { margin-bottom: 20px; }
+.catalog-section h4 { font-size: 13px; color: var(--accent); margin-bottom: 8px; font-weight: 600; }
+.catalog-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 8px 12px; background: var(--surface2); border-radius: var(--radius-sm);
+  margin-bottom: 4px; font-size: 12px;
+}
+.catalog-item .cat-info { flex: 1; }
+.catalog-item .cat-name { font-weight: 500; }
+.catalog-item .cat-desc { color: var(--text-dim); font-size: 11px; }
+.catalog-item .cat-size { color: var(--text-muted); font-size: 11px; margin-left: 12px; white-space: nowrap; }
 
 /* ─── Toast ─── */
 .toast {
-  position: fixed;
-  bottom: 24px;
-  right: 24px;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  padding: 12px 20px;
-  border-radius: 10px;
-  font-size: 13px;
-  box-shadow: var(--shadow);
-  z-index: 9999;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.2s, transform 0.2s;
-  pointer-events: none;
+  position: fixed; bottom: 20px; right: 20px;
+  background: var(--surface2); border: 1px solid var(--border);
+  padding: 10px 18px; border-radius: var(--radius-sm);
+  font-size: 12px; box-shadow: var(--shadow); z-index: 9999;
+  opacity: 0; transform: translateY(8px);
+  transition: opacity 0.2s, transform 0.2s; pointer-events: none;
 }
 .toast.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
 </style>
 </head>
 <body>
 
-<!-- Header -->
 <div class="header">
-  <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
-  <h1>Project N.O.M.A.D. <span class="version">v0.1.0 for Windows</span></h1>
+  <div class="header-logo"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
+  <h1>Project N.O.M.A.D. <span class="version">v0.2.0</span></h1>
 </div>
 
-<!-- Main Content -->
 <div class="container">
   <div class="tabs">
     <button class="tab active" data-tab="services">Services</button>
     <button class="tab" data-tab="ai-chat">AI Chat</button>
+    <button class="tab" data-tab="kiwix-library">Library</button>
     <button class="tab" data-tab="notes">Notes</button>
+    <button class="tab" data-tab="settings">Settings</button>
   </div>
 
   <!-- Services Tab -->
@@ -376,22 +381,42 @@ a { color: var(--accent); text-decoration: none; }
   <div id="tab-ai-chat" class="tab-content">
     <div class="chat-container">
       <div class="chat-header">
-        <span style="font-weight:600;">AI Assistant</span>
-        <div style="display:flex;gap:8px;align-items:center;">
-          <select id="model-select"><option value="">No models available</option></select>
-          <button class="btn btn-sm" onclick="pullModel()">Pull Model</button>
+        <div class="chat-header-left">
+          <select id="model-select"><option value="">No models</option></select>
+          <button class="btn btn-sm" onclick="managePullModel()">+ Pull Model</button>
+          <button class="btn btn-sm btn-ghost" onclick="clearChat()">Clear Chat</button>
+        </div>
+        <div id="pull-progress-bar" style="display:none;flex:1;max-width:250px;">
+          <div class="progress-bar"><div class="fill" id="pull-fill" style="width:0%"></div></div>
+          <div class="progress-info"><span id="pull-detail">...</span><span id="pull-pct">0%</span></div>
         </div>
       </div>
       <div class="chat-messages" id="chat-messages">
         <div class="empty-state" id="chat-empty">
-          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+          <div class="icon">AI</div>
           <p>Start a conversation with your local AI</p>
-          <p style="font-size:12px;">Make sure Ollama is installed and running</p>
+          <p style="font-size:11px;color:var(--text-muted);">Install Ollama and pull a model to begin</p>
         </div>
       </div>
       <div class="chat-input-area">
-        <textarea id="chat-input" placeholder="Type a message..." rows="1" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"></textarea>
-        <button class="btn btn-primary" onclick="sendChat()">Send</button>
+        <textarea id="chat-input" placeholder="Type a message... (Enter to send, Shift+Enter for newline)" rows="1"
+          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+        <button class="btn btn-primary" onclick="sendChat()" id="send-btn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Kiwix Library Tab -->
+  <div id="tab-kiwix-library" class="tab-content">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="settings-card">
+        <h3>Downloaded Content</h3>
+        <div id="zim-list"><div style="color:var(--text-dim);font-size:13px;">No content downloaded yet. Install Kiwix first, then download content packs from the catalog.</div></div>
+      </div>
+      <div class="settings-card">
+        <h3>Content Catalog</h3>
+        <div id="zim-catalog"></div>
       </div>
     </div>
   </div>
@@ -401,12 +426,12 @@ a { color: var(--accent); text-decoration: none; }
     <div class="notes-layout">
       <div class="notes-sidebar">
         <div class="notes-sidebar-header">
-          <span style="font-weight:600;font-size:14px;">Notes</span>
+          <span style="font-weight:600;font-size:13px;">Notes</span>
           <button class="btn btn-sm btn-primary" onclick="createNote()">+ New</button>
         </div>
         <div class="notes-list" id="notes-list"></div>
       </div>
-      <div class="notes-editor" id="notes-editor">
+      <div class="notes-editor">
         <div class="notes-editor-header">
           <input id="note-title" placeholder="Note title..." oninput="autoSaveNote()">
           <button class="btn btn-sm btn-danger" onclick="deleteNote()">Delete</button>
@@ -415,15 +440,70 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
   </div>
+
+  <!-- Settings Tab -->
+  <div id="tab-settings" class="tab-content">
+    <div class="settings-grid">
+      <div class="settings-card">
+        <h3>System Information</h3>
+        <div id="system-info">Loading...</div>
+      </div>
+      <div class="settings-card">
+        <h3>AI Models</h3>
+        <div id="model-manager">
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Manage downloaded AI models</p>
+          <div id="model-list"></div>
+          <div style="margin-top:12px;">
+            <h4 style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Recommended Models</h4>
+            <div id="recommended-models"></div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3>About</h3>
+        <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
+          <p><strong style="color:var(--text);">Project N.O.M.A.D. for Windows</strong> &mdash; Native edition, no Docker required.</p>
+          <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad" target="_blank">Project N.O.M.A.D.</a> by Crosstalk Solutions.</p>
+          <p>Windows port manages services as native processes instead of containers.</p>
+          <div style="margin-top:8px;">
+            <span class="setting-label">Data Directory: </span>
+            <span id="data-dir" class="setting-value"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Setup Wizard -->
+<div class="wizard-overlay" id="wizard" style="display:none;">
+  <div class="wizard-card">
+    <h2>Welcome to N.O.M.A.D.</h2>
+    <p class="subtitle">Your offline-first knowledge and AI command center.<br>Let's get you set up in just a few clicks.</p>
+    <div class="wizard-steps">
+      <div class="wizard-step" id="wiz-step-1"><div class="step-num">1</div><div>Install AI Engine (Ollama)</div></div>
+      <div class="wizard-step" id="wiz-step-2"><div class="step-num">2</div><div>Install Information Library (Kiwix)</div></div>
+      <div class="wizard-step" id="wiz-step-3"><div class="step-num">3</div><div>Install Data Tools (CyberChef)</div></div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:center;">
+      <button class="btn btn-primary" onclick="runWizard()" id="wiz-start-btn">Install All Services</button>
+      <button class="btn" onclick="skipWizard()">Skip Setup</button>
+    </div>
+    <div id="wiz-progress" style="margin-top:16px;display:none;">
+      <div class="progress-bar"><div class="fill" id="wiz-fill" style="width:0%"></div></div>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:6px;" id="wiz-status">Installing...</p>
+    </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
-/* ─── State ─── */
+const VERSION = '0.2.0';
 let chatMessages = [];
 let currentNoteId = null;
 let saveTimer = null;
+let isSending = false;
 
 /* ─── Tabs ─── */
 document.querySelectorAll('.tab').forEach(tab => {
@@ -432,8 +512,10 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
-    if (tab.dataset.tab === 'ai-chat') loadModels();
+    if (tab.dataset.tab === 'ai-chat') { loadModels(); pollPullProgress(); }
     if (tab.dataset.tab === 'notes') loadNotes();
+    if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); }
+    if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); }
   });
 });
 
@@ -442,293 +524,412 @@ function toast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg;
   el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3000);
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+/* ─── Helpers ─── */
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+function formatBytes(b) {
+  if (b >= 1073741824) return (b/1073741824).toFixed(1)+' GB';
+  if (b >= 1048576) return (b/1048576).toFixed(1)+' MB';
+  if (b >= 1024) return (b/1024).toFixed(0)+' KB';
+  return b+' B';
 }
 
 /* ─── Services ─── */
-const SERVICE_INFO = {
-  ollama: {
-    name: 'Ollama (AI Chat)',
-    desc: 'Local AI chat powered by large language models. Run models like Llama 3, Mistral, and more entirely offline.',
-    icon: '&#129504;'
-  },
-  kiwix: {
-    name: 'Kiwix (Information Library)',
-    desc: 'Offline Wikipedia, medical references, survival guides, and ebooks. Access knowledge without internet.',
-    icon: '&#128218;'
-  },
-  cyberchef: {
-    name: 'CyberChef (Data Tools)',
-    desc: 'Encryption, encoding, hashing, and data analysis toolkit by GCHQ. Swiss army knife for data.',
-    icon: '&#128737;'
-  }
+const SVC = {
+  ollama:    { name:'Ollama (AI Chat)',             desc:'Local AI chat powered by LLMs. Run Llama 3, Mistral, and more entirely offline.', icon:'\u{1F9E0}' },
+  kiwix:     { name:'Kiwix (Information Library)',   desc:'Offline Wikipedia, medical references, survival guides, and ebooks.', icon:'\u{1F4DA}' },
+  cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.', icon:'\u{1F6E1}' },
 };
 
 async function loadServices() {
   try {
-    const resp = await fetch('/api/services');
-    const services = await resp.json();
+    const services = await (await fetch('/api/services')).json();
     const grid = document.getElementById('services-grid');
     grid.innerHTML = services.map(s => {
-      const info = SERVICE_INFO[s.id] || { name: s.id, desc: '', icon: '&#9881;' };
-      const statusClass = !s.installed ? 'not-installed' : s.running ? 'running' : 'stopped';
-      const statusText = !s.installed ? 'Not Installed' : s.running ? 'Running' : 'Stopped';
-      const prog = s.progress;
-      const showProgress = prog && prog.status === 'downloading' || prog.status === 'extracting';
+      const info = SVC[s.id] || { name:s.id, desc:'', icon:'\u2699' };
+      const prog = s.progress || {};
+      const isInstalling = prog.status === 'downloading' || prog.status === 'extracting';
+      const statusClass = isInstalling ? 'installing' : !s.installed ? 'not-installed' : s.running ? 'running' : 'stopped';
+      const statusText = isInstalling ? 'Installing' : !s.installed ? 'Not Installed' : s.running ? 'Running' : 'Stopped';
 
       let actions = '';
-      if (!s.installed) {
-        actions = `<button class="btn btn-primary" onclick="installService('${s.id}')">Install</button>`;
+      if (isInstalling) {
+        actions = `<button class="btn btn-sm" disabled>Installing...</button>`;
+      } else if (!s.installed) {
+        actions = `<button class="btn btn-sm btn-primary" onclick="installService('${s.id}')">Install</button>`;
+      } else if (s.running) {
+        actions = `
+          <button class="btn btn-sm btn-danger" onclick="stopService('${s.id}')">Stop</button>
+          <button class="btn btn-sm" onclick="restartService('${s.id}')">Restart</button>
+          ${s.port ? `<a class="btn btn-sm" href="http://localhost:${s.port}" target="_blank">Open</a>` : ''}
+          <button class="btn btn-sm btn-ghost btn-danger" onclick="uninstallService('${s.id}')">Uninstall</button>
+        `;
       } else {
-        if (s.running) {
-          actions = `
-            <button class="btn btn-danger" onclick="stopService('${s.id}')">Stop</button>
-            ${s.port ? `<a class="btn" href="http://localhost:${s.port}" target="_blank">Open</a>` : ''}
-          `;
-        } else {
-          actions = `<button class="btn btn-primary" onclick="startService('${s.id}')">Start</button>`;
-        }
+        actions = `
+          <button class="btn btn-sm btn-primary" onclick="startService('${s.id}')">Start</button>
+          <button class="btn btn-sm btn-ghost btn-danger" onclick="uninstallService('${s.id}')">Uninstall</button>
+        `;
       }
 
-      return `
-        <div class="service-card">
-          <div class="card-header">
-            <h3>${info.icon} ${info.name}</h3>
-            <span class="status-badge ${statusClass}"><span class="dot"></span>${statusText}</span>
-          </div>
-          <p class="desc">${info.desc}</p>
-          ${showProgress ? `
-            <div class="progress-bar"><div class="fill" style="width:${prog.percent}%"></div></div>
-            <div class="progress-text">${prog.status}... ${prog.percent}%</div>
-          ` : ''}
-          <div class="card-actions">${actions}</div>
+      let progressHtml = '';
+      if (isInstalling) {
+        progressHtml = `<div class="progress-wrap">
+          <div class="progress-bar"><div class="fill" style="width:${prog.percent||0}%"></div></div>
+          <div class="progress-info"><span>${prog.status||''}${prog.speed ? ' - '+prog.speed : ''}</span><span>${prog.percent||0}%</span></div>
+        </div>`;
+      }
+
+      return `<div class="service-card">
+        <div class="card-header">
+          <h3>${info.icon} ${info.name}</h3>
+          <span class="badge ${statusClass}"><span class="dot"></span>${statusText}</span>
         </div>
-      `;
+        <p class="desc">${info.desc}</p>
+        <div class="meta"><span>Port: ${s.port||'—'}</span><span>Disk: ${s.disk_used||'—'}</span></div>
+        ${progressHtml}
+        <div class="card-actions">${actions}</div>
+      </div>`;
     }).join('');
-  } catch (e) {
-    console.error('Failed to load services', e);
-  }
+  } catch(e) { console.error('loadServices', e); }
 }
 
-async function installService(id) {
-  await fetch(`/api/services/${id}/install`, { method: 'POST' });
-  toast(`Installing ${SERVICE_INFO[id]?.name || id}...`);
-  pollServices();
-}
+async function installService(id)   { await fetch(`/api/services/${id}/install`, {method:'POST'}); toast(`Installing ${SVC[id]?.name||id}...`); pollServices(); }
+async function startService(id)     { const r = await (await fetch(`/api/services/${id}/start`, {method:'POST'})).json(); toast(r.error||`${SVC[id]?.name||id} started`); loadServices(); }
+async function stopService(id)      { await fetch(`/api/services/${id}/stop`, {method:'POST'}); toast(`${SVC[id]?.name||id} stopped`); loadServices(); }
+async function restartService(id)   { toast(`Restarting ${SVC[id]?.name||id}...`); await fetch(`/api/services/${id}/restart`, {method:'POST'}); loadServices(); }
+async function uninstallService(id) { if(!confirm(`Uninstall ${SVC[id]?.name||id}? This removes all data.`)) return; await fetch(`/api/services/${id}/uninstall`, {method:'POST'}); toast(`${SVC[id]?.name||id} uninstalled`); loadServices(); }
 
-async function startService(id) {
-  const resp = await fetch(`/api/services/${id}/start`, { method: 'POST' });
-  const data = await resp.json();
-  if (data.error) toast(data.error);
-  else toast(`${SERVICE_INFO[id]?.name || id} started`);
-  loadServices();
-}
-
-async function stopService(id) {
-  await fetch(`/api/services/${id}/stop`, { method: 'POST' });
-  toast(`${SERVICE_INFO[id]?.name || id} stopped`);
-  loadServices();
-}
-
-let pollInterval = null;
+let _pollInt = null;
 function pollServices() {
-  if (pollInterval) return;
-  pollInterval = setInterval(async () => {
+  if (_pollInt) return;
+  _pollInt = setInterval(async () => {
     await loadServices();
-    const resp = await fetch('/api/services');
-    const services = await resp.json();
-    const anyInstalling = services.some(s => {
-      const p = s.progress;
-      return p && (p.status === 'downloading' || p.status === 'extracting');
-    });
-    if (!anyInstalling) {
-      clearInterval(pollInterval);
-      pollInterval = null;
-    }
-  }, 2000);
+    const svcs = await (await fetch('/api/services')).json();
+    const busy = svcs.some(s => {const p=s.progress; return p&&(p.status==='downloading'||p.status==='extracting');});
+    if (!busy) { clearInterval(_pollInt); _pollInt = null; }
+  }, 1500);
 }
 
 /* ─── AI Chat ─── */
 async function loadModels() {
   try {
-    const resp = await fetch('/api/ai/models');
-    const models = await resp.json();
-    const select = document.getElementById('model-select');
-    if (models.length === 0) {
-      select.innerHTML = '<option value="">No models — pull one first</option>';
+    const models = await (await fetch('/api/ai/models')).json();
+    const sel = document.getElementById('model-select');
+    if (!models.length) {
+      sel.innerHTML = '<option value="">No models — pull one first</option>';
     } else {
-      select.innerHTML = models.map(m =>
-        `<option value="${m.name}">${m.name} (${(m.size / 1e9).toFixed(1)}GB)</option>`
-      ).join('');
+      sel.innerHTML = models.map(m => `<option value="${m.name}">${m.name} (${(m.size/1e9).toFixed(1)}GB)</option>`).join('');
     }
-  } catch (e) {}
+  } catch(e) {}
 }
 
-async function pullModel() {
-  const model = prompt('Model to pull (e.g. llama3.2:3b, mistral, gemma2:2b):', 'llama3.2:3b');
-  if (!model) return;
-  await fetch('/api/ai/pull', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model })
-  });
-  toast(`Pulling ${model}... This may take several minutes.`);
-  setTimeout(loadModels, 10000);
+async function managePullModel() {
+  const name = prompt('Model name (e.g. llama3.2:3b, mistral:7b, gemma2:2b):', 'llama3.2:3b');
+  if (!name) return;
+  await fetch('/api/ai/pull', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name}) });
+  toast(`Pulling ${name}...`);
+  pollPullProgress();
 }
+
+let _pullPoll = null;
+function pollPullProgress() {
+  if (_pullPoll) return;
+  _pullPoll = setInterval(async () => {
+    const p = await (await fetch('/api/ai/pull-progress')).json();
+    const bar = document.getElementById('pull-progress-bar');
+    if (p.status === 'pulling') {
+      bar.style.display = 'block';
+      document.getElementById('pull-fill').style.width = p.percent + '%';
+      document.getElementById('pull-detail').textContent = p.detail || '...';
+      document.getElementById('pull-pct').textContent = p.percent + '%';
+    } else {
+      bar.style.display = 'none';
+      if (p.status === 'complete') { toast(`Model ${p.model} ready!`); loadModels(); }
+      if (p.status === 'error') toast(`Pull error: ${p.detail}`);
+      if (p.status !== 'pulling') { clearInterval(_pullPoll); _pullPoll = null; }
+    }
+  }, 1000);
+}
+
+function clearChat() { chatMessages = []; renderChat(); }
 
 async function sendChat() {
+  if (isSending) return;
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
   if (!msg) return;
-
   const model = document.getElementById('model-select').value;
-  if (!model) { toast('No model selected. Pull a model first.'); return; }
+  if (!model) { toast('No model selected'); return; }
 
   input.value = '';
-  chatMessages.push({ role: 'user', content: msg });
-  renderChat();
+  input.style.height = 'auto';
+  isSending = true;
+  document.getElementById('send-btn').disabled = true;
 
-  document.getElementById('chat-empty').style.display = 'none';
-
-  // Add placeholder for assistant response
-  chatMessages.push({ role: 'assistant', content: '' });
+  chatMessages.push({role:'user', content:msg});
+  chatMessages.push({role:'assistant', content:''});
   renderChat();
 
   try {
     const resp = await fetch('/api/ai/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model, messages: chatMessages.slice(0, -1) })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({model, messages: chatMessages.filter(m=>m.content).slice(0,-1)})
     });
-
     const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let assistantMsg = '';
-
+    const dec = new TextDecoder();
+    let full = '';
     while (true) {
-      const { done, value } = await reader.read();
+      const {done, value} = await reader.read();
       if (done) break;
-      const chunk = decoder.decode(value);
-      for (const line of chunk.split('\n')) {
+      for (const line of dec.decode(value).split('\n')) {
         if (!line.trim()) continue;
         try {
-          const data = JSON.parse(line);
-          if (data.message?.content) {
-            assistantMsg += data.message.content;
-            chatMessages[chatMessages.length - 1].content = assistantMsg;
-            renderChat();
-          }
+          const d = JSON.parse(line);
+          if (d.message?.content) { full += d.message.content; chatMessages[chatMessages.length-1].content = full; renderChat(); }
         } catch {}
       }
     }
-  } catch (e) {
-    chatMessages[chatMessages.length - 1].content = 'Error: Could not reach AI. Is Ollama running?';
+  } catch(e) {
+    chatMessages[chatMessages.length-1].content = 'Error: Could not reach AI. Is Ollama running?';
     renderChat();
   }
+  isSending = false;
+  document.getElementById('send-btn').disabled = false;
 }
 
 function renderChat() {
-  const container = document.getElementById('chat-messages');
+  const c = document.getElementById('chat-messages');
   const empty = document.getElementById('chat-empty');
-  if (chatMessages.length === 0) {
-    empty.style.display = 'flex';
-    return;
-  }
+  if (!chatMessages.length) { empty.style.display = 'flex'; c.querySelectorAll('.message').forEach(m=>m.remove()); return; }
   empty.style.display = 'none';
-
-  // Keep only message elements, not the empty state
   let html = '';
   for (const m of chatMessages) {
-    const avatar = m.role === 'user' ? 'U' : 'AI';
-    html += `
-      <div class="message ${m.role}">
-        <div class="avatar">${avatar}</div>
-        <div class="content">${escapeHtml(m.content)}${m.role === 'assistant' && !m.content ? '<span style="opacity:0.4">Thinking...</span>' : ''}</div>
-      </div>
-    `;
+    const av = m.role === 'user' ? 'U' : 'AI';
+    const thinking = m.role === 'assistant' && !m.content ? '<span style="opacity:0.3">Thinking...</span>' : '';
+    html += `<div class="message ${m.role}"><div class="avatar">${av}</div><div class="content">${escapeHtml(m.content)}${thinking}</div></div>`;
   }
-  // Preserve empty state element
-  container.innerHTML = `<div class="empty-state" id="chat-empty" style="display:none">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
-    <p>Start a conversation with your local AI</p>
-  </div>` + html;
-  container.scrollTop = container.scrollHeight;
+  c.innerHTML = `<div class="empty-state" id="chat-empty" style="display:none"><div class="icon">AI</div><p>Start a conversation</p></div>` + html;
+  c.scrollTop = c.scrollHeight;
 }
 
-function escapeHtml(s) {
-  const div = document.createElement('div');
-  div.textContent = s;
-  return div.innerHTML;
+/* ─── Kiwix Library ─── */
+async function loadZimList() {
+  const zims = await (await fetch('/api/kiwix/zims')).json();
+  const el = document.getElementById('zim-list');
+  if (!zims.length) { el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;">No content downloaded yet.</div>'; return; }
+  el.innerHTML = zims.map(z => `
+    <div class="model-item">
+      <span class="model-name">${escapeHtml(z.filename)}</span>
+      <span style="display:flex;gap:8px;align-items:center;">
+        <span class="model-size">${z.size_mb} MB</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteZim('${escapeHtml(z.filename)}')">Delete</button>
+      </span>
+    </div>
+  `).join('');
+}
+
+async function loadZimCatalog() {
+  const catalog = await (await fetch('/api/kiwix/catalog')).json();
+  const el = document.getElementById('zim-catalog');
+  el.innerHTML = catalog.map(cat => `
+    <div class="catalog-section">
+      <h4>${escapeHtml(cat.category)}</h4>
+      ${cat.items.map(i => `
+        <div class="catalog-item">
+          <div class="cat-info"><div class="cat-name">${escapeHtml(i.name)}</div><div class="cat-desc">${escapeHtml(i.desc)}</div></div>
+          <span class="cat-size">${i.size}</span>
+          <button class="btn btn-sm" style="margin-left:8px;" onclick="downloadZim('${i.url}','${i.filename}')">Download</button>
+        </div>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+async function downloadZim(url, filename) {
+  await fetch('/api/kiwix/download-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, filename}) });
+  toast(`Downloading ${filename}...`);
+}
+
+async function deleteZim(filename) {
+  if (!confirm(`Delete ${filename}?`)) return;
+  await fetch('/api/kiwix/delete-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename}) });
+  toast('Deleted');
+  loadZimList();
 }
 
 /* ─── Notes ─── */
 let allNotes = [];
-
 async function loadNotes() {
-  const resp = await fetch('/api/notes');
-  allNotes = await resp.json();
+  allNotes = await (await fetch('/api/notes')).json();
   renderNotesList();
 }
-
 function renderNotesList() {
   const list = document.getElementById('notes-list');
   list.innerHTML = allNotes.map(n => `
-    <div class="note-item ${n.id === currentNoteId ? 'active' : ''}" onclick="selectNote(${n.id})">
-      <div class="note-title">${escapeHtml(n.title || 'Untitled')}</div>
+    <div class="note-item ${n.id===currentNoteId?'active':''}" onclick="selectNote(${n.id})">
+      <div class="note-title">${escapeHtml(n.title||'Untitled')}</div>
       <div class="note-date">${new Date(n.updated_at).toLocaleDateString()}</div>
     </div>
-  `).join('') || '<div style="padding:16px;color:var(--text-dim);font-size:13px;text-align:center;">No notes yet</div>';
+  `).join('') || '<div style="padding:14px;color:var(--text-muted);font-size:12px;text-align:center;">No notes yet</div>';
 }
-
 function selectNote(id) {
   currentNoteId = id;
-  const note = allNotes.find(n => n.id === id);
-  if (note) {
-    document.getElementById('note-title').value = note.title || '';
-    document.getElementById('note-content').value = note.content || '';
-  }
+  const n = allNotes.find(n => n.id === id);
+  if (n) { document.getElementById('note-title').value = n.title||''; document.getElementById('note-content').value = n.content||''; }
   renderNotesList();
 }
-
 async function createNote() {
-  const resp = await fetch('/api/notes', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title: 'New Note', content: '' })
-  });
-  const note = await resp.json();
+  const n = await (await fetch('/api/notes', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Note', content:''})})).json();
   await loadNotes();
-  selectNote(note.id);
+  selectNote(n.id);
 }
-
 async function deleteNote() {
   if (!currentNoteId) return;
-  await fetch(`/api/notes/${currentNoteId}`, { method: 'DELETE' });
+  await fetch(`/api/notes/${currentNoteId}`, {method:'DELETE'});
   currentNoteId = null;
   document.getElementById('note-title').value = '';
   document.getElementById('note-content').value = '';
   await loadNotes();
 }
-
 function autoSaveNote() {
   if (!currentNoteId) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
-    await fetch(`/api/notes/${currentNoteId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: document.getElementById('note-title').value,
-        content: document.getElementById('note-content').value
-      })
-    });
+    await fetch(`/api/notes/${currentNoteId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title:document.getElementById('note-title').value, content:document.getElementById('note-content').value})});
     await loadNotes();
   }, 500);
 }
 
+/* ─── Settings ─── */
+async function loadSystemInfo() {
+  try {
+    const s = await (await fetch('/api/system')).json();
+    document.getElementById('system-info').innerHTML = `
+      <div class="setting-row"><span class="setting-label">Version</span><span class="setting-value">v${s.version}</span></div>
+      <div class="setting-row"><span class="setting-label">Platform</span><span class="setting-value">${s.platform}</span></div>
+      <div class="setting-row"><span class="setting-label">CPU</span><span class="setting-value">${s.cpu} (${s.cpu_cores} cores)</span></div>
+      <div class="setting-row"><span class="setting-label">RAM</span><span class="setting-value">${s.ram_used} / ${s.ram_total} (${s.ram_percent}%)</span></div>
+      <div class="setting-row"><span class="setting-label">GPU</span><span class="setting-value">${s.gpu}</span></div>
+      <div class="setting-row"><span class="setting-label">N.O.M.A.D. Data</span><span class="setting-value">${s.nomad_disk_used}</span></div>
+      <div class="setting-row"><span class="setting-label">Disk Free</span><span class="setting-value">${s.disk_free} / ${s.disk_total}</span></div>
+    `;
+    document.getElementById('data-dir').textContent = s.data_dir;
+  } catch(e) { document.getElementById('system-info').innerHTML = '<span style="color:var(--red)">Failed to load</span>'; }
+}
+
+async function loadModelManager() {
+  // Installed models
+  const models = await (await fetch('/api/ai/models')).json();
+  const el = document.getElementById('model-list');
+  if (!models.length) {
+    el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No models downloaded</div>';
+  } else {
+    el.innerHTML = models.map(m => `
+      <div class="model-item">
+        <span class="model-name">${m.name}</span>
+        <span style="display:flex;gap:8px;align-items:center;">
+          <span class="model-size">${(m.size/1e9).toFixed(1)} GB</span>
+          <button class="btn btn-sm btn-danger" onclick="deleteModel('${m.name}')">Delete</button>
+        </span>
+      </div>
+    `).join('');
+  }
+
+  // Recommended models
+  const rec = [
+    {name:'llama3.2:3b', size:'2.0 GB', desc:'Fast general-purpose'},
+    {name:'llama3.2:1b', size:'1.3 GB', desc:'Lightweight'},
+    {name:'gemma2:2b', size:'1.6 GB', desc:'Google compact'},
+    {name:'mistral:7b', size:'4.1 GB', desc:'Strong reasoning'},
+    {name:'phi3:mini', size:'2.3 GB', desc:'Good for coding'},
+    {name:'deepseek-r1:8b', size:'4.9 GB', desc:'Reasoning model'},
+  ];
+  const installed = new Set(models.map(m => m.name));
+  document.getElementById('recommended-models').innerHTML = rec.map(r => `
+    <div class="model-item">
+      <span><span class="model-name">${r.name}</span> <span class="model-size">${r.desc} (${r.size})</span></span>
+      ${installed.has(r.name)
+        ? '<span style="color:var(--green);font-size:11px;">Installed</span>'
+        : `<button class="btn btn-sm btn-primary" onclick="pullFromSettings('${r.name}')">Pull</button>`}
+    </div>
+  `).join('');
+}
+
+async function deleteModel(name) {
+  if (!confirm(`Delete model ${name}?`)) return;
+  await fetch('/api/ai/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})});
+  toast(`Deleted ${name}`);
+  loadModelManager();
+  loadModels();
+}
+
+async function pullFromSettings(name) {
+  await fetch('/api/ai/pull', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})});
+  toast(`Pulling ${name}...`);
+  // Switch to chat tab to see progress
+  document.querySelector('[data-tab="ai-chat"]').click();
+  pollPullProgress();
+}
+
+/* ─── Setup Wizard ─── */
+async function checkWizard() {
+  if (new URLSearchParams(location.search).has('wizard')) {
+    document.getElementById('wizard').style.display = 'flex';
+  }
+}
+
+async function runWizard() {
+  const btn = document.getElementById('wiz-start-btn');
+  btn.disabled = true;
+  btn.textContent = 'Installing...';
+  document.getElementById('wiz-progress').style.display = 'block';
+
+  const steps = ['ollama', 'kiwix', 'cyberchef'];
+  for (let i = 0; i < steps.length; i++) {
+    const sid = steps[i];
+    document.getElementById('wiz-status').textContent = `Installing ${SVC[sid]?.name||sid}...`;
+    document.getElementById('wiz-fill').style.width = ((i/3)*100) + '%';
+
+    await fetch(`/api/services/${sid}/install`, {method:'POST'});
+    // Poll until complete
+    while (true) {
+      await new Promise(r => setTimeout(r, 1500));
+      const p = await (await fetch(`/api/services/${sid}/progress`)).json();
+      if (p.status === 'complete' || p.status === 'error') break;
+      document.getElementById('wiz-fill').style.width = ((i/3)*100 + p.percent/3) + '%';
+    }
+    document.getElementById(`wiz-step-${i+1}`).classList.add('done');
+  }
+
+  document.getElementById('wiz-fill').style.width = '100%';
+  document.getElementById('wiz-status').textContent = 'All services installed!';
+  await fetch('/api/settings/wizard-complete', {method:'POST'});
+
+  setTimeout(() => {
+    document.getElementById('wizard').style.display = 'none';
+    history.replaceState(null, '', '/');
+    loadServices();
+  }, 1500);
+}
+
+function skipWizard() {
+  document.getElementById('wizard').style.display = 'none';
+  history.replaceState(null, '', '/');
+  fetch('/api/settings/wizard-complete', {method:'POST'});
+}
+
 /* ─── Init ─── */
 loadServices();
-setInterval(loadServices, 10000);
+setInterval(loadServices, 8000);
+checkWizard();
 </script>
 </body>
 </html>

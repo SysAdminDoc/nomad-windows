@@ -1,13 +1,18 @@
 """Flask web application — dashboard and API routes."""
 
 import json
+import os
 import threading
+import platform
 import logging
+import shutil
 from flask import Flask, render_template, jsonify, request, Response
 
 from db import get_db
 from services import ollama, kiwix, cyberchef
-from services.manager import get_download_progress
+from services.manager import (
+    get_download_progress, get_dir_size, format_size, uninstall_service, get_services_dir
+)
 
 log = logging.getLogger('nomad.web')
 
@@ -16,6 +21,8 @@ SERVICE_MODULES = {
     'kiwix': kiwix,
     'cyberchef': cyberchef,
 }
+
+VERSION = '0.2.0'
 
 
 def create_app():
@@ -33,16 +40,25 @@ def create_app():
 
     @app.route('/api/services')
     def api_services():
-        """Get status of all services."""
+        """Get status of all services with disk usage."""
         services = []
         for sid, mod in SERVICE_MODULES.items():
+            installed = mod.is_installed()
+            install_dir = os.path.join(get_services_dir(), sid)
+            disk_used = format_size(get_dir_size(install_dir)) if installed else '0 B'
+
+            port_val = getattr(mod, f'{sid.upper()}_PORT', None)
+            if port_val is None:
+                port_val = getattr(mod, 'OLLAMA_PORT', None) or getattr(mod, 'KIWIX_PORT', None) or getattr(mod, 'CYBERCHEF_PORT', None)
+
             services.append({
                 'id': sid,
                 'name': getattr(mod, 'SERVICE_ID', sid),
-                'installed': mod.is_installed(),
-                'running': mod.running() if mod.is_installed() else False,
-                'port': getattr(mod, f'{sid.upper()}_PORT', None) or getattr(mod, 'KIWIX_PORT', None) or getattr(mod, 'CYBERCHEF_PORT', None) or getattr(mod, 'OLLAMA_PORT', None),
+                'installed': installed,
+                'running': mod.running() if installed else False,
+                'port': port_val,
                 'progress': get_download_progress(sid),
+                'disk_used': disk_used,
             })
         return jsonify(services)
 
@@ -87,6 +103,27 @@ def create_app():
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
+    @app.route('/api/services/<service_id>/restart', methods=['POST'])
+    def api_restart_service(service_id):
+        mod = SERVICE_MODULES.get(service_id)
+        if not mod:
+            return jsonify({'error': 'Unknown service'}), 404
+        try:
+            mod.stop()
+            import time
+            time.sleep(1)
+            mod.start()
+            return jsonify({'status': 'restarted'})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/services/<service_id>/uninstall', methods=['POST'])
+    def api_uninstall_service(service_id):
+        if service_id not in SERVICE_MODULES:
+            return jsonify({'error': 'Unknown service'}), 404
+        uninstall_service(service_id)
+        return jsonify({'status': 'uninstalled'})
+
     @app.route('/api/services/<service_id>/progress')
     def api_service_progress(service_id):
         return jsonify(get_download_progress(service_id))
@@ -110,14 +147,31 @@ def create_app():
         threading.Thread(target=do_pull, daemon=True).start()
         return jsonify({'status': 'pulling', 'model': model_name})
 
+    @app.route('/api/ai/pull-progress')
+    def api_ai_pull_progress():
+        return jsonify(ollama.get_pull_progress())
+
+    @app.route('/api/ai/delete', methods=['POST'])
+    def api_ai_delete():
+        data = request.get_json()
+        model_name = data.get('model')
+        if not model_name:
+            return jsonify({'error': 'No model specified'}), 400
+        success = ollama.delete_model(model_name)
+        return jsonify({'status': 'deleted' if success else 'error'})
+
     @app.route('/api/ai/chat', methods=['POST'])
     def api_ai_chat():
         data = request.get_json()
         model = data.get('model', ollama.DEFAULT_MODEL)
         messages = data.get('messages', [])
+        system_prompt = data.get('system_prompt', '')
 
         if not ollama.running():
             return jsonify({'error': 'Ollama is not running'}), 503
+
+        if system_prompt:
+            messages = [{'role': 'system', 'content': system_prompt}] + messages
 
         def generate():
             try:
@@ -137,19 +191,34 @@ def create_app():
             return jsonify([])
         return jsonify(kiwix.list_zim_files())
 
+    @app.route('/api/kiwix/catalog')
+    def api_kiwix_catalog():
+        """Get curated ZIM catalog for download."""
+        return jsonify(kiwix.get_catalog())
+
     @app.route('/api/kiwix/download-zim', methods=['POST'])
     def api_kiwix_download_zim():
         data = request.get_json()
         url = data.get('url', kiwix.STARTER_ZIM_URL)
+        filename = data.get('filename')
 
         def do_download():
             try:
-                kiwix.download_zim(url)
+                kiwix.download_zim(url, filename)
             except Exception as e:
                 log.error(f'ZIM download failed: {e}')
 
         threading.Thread(target=do_download, daemon=True).start()
         return jsonify({'status': 'downloading'})
+
+    @app.route('/api/kiwix/delete-zim', methods=['POST'])
+    def api_kiwix_delete_zim():
+        data = request.get_json()
+        filename = data.get('filename')
+        if not filename:
+            return jsonify({'error': 'No filename'}), 400
+        success = kiwix.delete_zim(filename)
+        return jsonify({'status': 'deleted' if success else 'error'})
 
     # ─── Notes API ─────────────────────────────────────────────────────
 
@@ -191,10 +260,91 @@ def create_app():
         db.close()
         return jsonify({'status': 'deleted'})
 
+    # ─── Settings API ─────────────────────────────────────────────────
+
+    @app.route('/api/settings')
+    def api_settings():
+        db = get_db()
+        rows = db.execute('SELECT key, value FROM settings').fetchall()
+        db.close()
+        settings = {r['key']: r['value'] for r in rows}
+        return jsonify(settings)
+
+    @app.route('/api/settings', methods=['PUT'])
+    def api_settings_update():
+        data = request.get_json()
+        db = get_db()
+        for key, value in data.items():
+            db.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', (key, str(value)))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'saved'})
+
+    @app.route('/api/settings/wizard-complete', methods=['POST'])
+    def api_wizard_complete():
+        db = get_db()
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '1')")
+        db.commit()
+        db.close()
+        return jsonify({'status': 'ok'})
+
+    # ─── System Info ───────────────────────────────────────────────────
+
+    @app.route('/api/system')
+    def api_system():
+        import psutil
+        data_dir = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD')
+        total_disk = get_dir_size(data_dir)
+
+        try:
+            disk = shutil.disk_usage(data_dir)
+            disk_free = disk.free
+            disk_total = disk.total
+        except Exception:
+            disk_free = 0
+            disk_total = 0
+
+        try:
+            mem = psutil.virtual_memory()
+            cpu_count = psutil.cpu_count()
+            cpu_name = platform.processor()
+        except Exception:
+            mem = None
+            cpu_count = os.cpu_count()
+            cpu_name = platform.processor()
+
+        # GPU detection
+        gpu_name = 'None detected'
+        try:
+            import subprocess
+            result = subprocess.run(
+                ['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
+                capture_output=True, text=True, timeout=5, creationflags=0x08000000,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                gpu_name = result.stdout.strip()
+        except Exception:
+            pass
+
+        return jsonify({
+            'version': VERSION,
+            'platform': f'{platform.system()} {platform.release()}',
+            'cpu': cpu_name or f'{cpu_count} cores',
+            'cpu_cores': cpu_count,
+            'ram_total': format_size(mem.total) if mem else 'Unknown',
+            'ram_used': format_size(mem.used) if mem else 'Unknown',
+            'ram_percent': mem.percent if mem else 0,
+            'gpu': gpu_name,
+            'data_dir': data_dir,
+            'nomad_disk_used': format_size(total_disk),
+            'disk_free': format_size(disk_free),
+            'disk_total': format_size(disk_total),
+        })
+
     # ─── Health ────────────────────────────────────────────────────────
 
     @app.route('/api/health')
     def api_health():
-        return jsonify({'status': 'ok', 'version': '0.1.0'})
+        return jsonify({'status': 'ok', 'version': VERSION})
 
     return app

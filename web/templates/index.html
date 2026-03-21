@@ -64,31 +64,23 @@ a { color: var(--accent); text-decoration: none; }
 .header-logo svg { width: 18px; height: 18px; fill: #fff; }
 .header h1 { font-size: 16px; font-weight: 600; letter-spacing: -0.3px; }
 .header .version { color: var(--text-muted); font-size: 11px; font-weight: 400; }
-.header-right { margin-left: auto; display: flex; gap: 8px; -webkit-app-region: no-drag; }
+.header-right { margin-left: auto; display: flex; gap: 12px; align-items: center; -webkit-app-region: no-drag; }
 
 /* ─── Layout ─── */
 .container { max-width: 1200px; margin: 0 auto; padding: 24px 24px; }
 
 /* ─── Tabs ─── */
 .tabs {
-  display: flex;
-  gap: 2px;
-  margin-bottom: 24px;
-  background: var(--surface);
-  border-radius: var(--radius);
-  padding: 4px;
-  border: 1px solid var(--border);
+  display: flex; gap: 2px; margin-bottom: 24px;
+  background: var(--surface); border-radius: var(--radius);
+  padding: 4px; border: 1px solid var(--border);
+  overflow-x: auto;
 }
 .tab {
-  padding: 8px 18px;
-  cursor: pointer;
-  color: var(--text-dim);
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.15s;
-  background: none;
-  border: none;
-  border-radius: var(--radius-sm);
+  padding: 8px 16px; cursor: pointer; color: var(--text-dim);
+  font-size: 13px; font-weight: 500; transition: all 0.15s;
+  background: none; border: none; border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 .tab:hover { color: var(--text); background: var(--surface2); }
 .tab.active { color: #fff; background: var(--accent); }
@@ -96,40 +88,24 @@ a { color: var(--accent); text-decoration: none; }
 .tab-content.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-/* ─── Service Cards ─── */
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 16px;
-}
+/* ─── Cards ─── */
+.services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
 .service-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 20px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 20px;
   transition: border-color 0.2s, box-shadow 0.2s;
 }
 .service-card:hover { border-color: var(--border-hover); box-shadow: var(--shadow-sm); }
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
-}
+.card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
 .service-card h3 { font-size: 15px; font-weight: 600; }
 .service-card .desc { color: var(--text-dim); font-size: 12px; margin-bottom: 12px; line-height: 1.5; }
 .service-card .meta { display: flex; gap: 12px; color: var(--text-muted); font-size: 11px; margin-bottom: 14px; }
 .service-card .meta span { display: flex; align-items: center; gap: 4px; }
 
 .badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  padding: 3px 10px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 10px; border-radius: 20px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
 }
 .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .badge.running { background: var(--green-dim); color: var(--green); }
@@ -141,16 +117,10 @@ a { color: var(--accent); text-decoration: none; }
 
 /* ─── Buttons ─── */
 .btn {
-  padding: 7px 14px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  background: var(--surface2);
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.15s;
-  white-space: nowrap;
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text); font-size: 12px; font-weight: 500;
+  cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
 .btn:hover { background: var(--surface3); border-color: var(--border-hover); }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
@@ -169,34 +139,66 @@ a { color: var(--accent); text-decoration: none; }
 .progress-bar .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--purple)); transition: width 0.3s; border-radius: 2px; }
 .progress-info { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-top: 4px; }
 
+/* ─── Gauge ─── */
+.gauge-row { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+.gauge-card {
+  flex: 1; min-width: 140px; background: var(--surface2); border-radius: var(--radius-sm);
+  padding: 14px; text-align: center;
+}
+.gauge-card .gauge-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
+.gauge-card .gauge-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.gauge-card .gauge-bar { height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
+.gauge-card .gauge-bar .fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+.gauge-green .gauge-value { color: var(--green); }
+.gauge-green .fill { background: var(--green); }
+.gauge-orange .gauge-value { color: var(--orange); }
+.gauge-orange .fill { background: var(--orange); }
+.gauge-red .gauge-value { color: var(--red); }
+.gauge-red .fill { background: var(--red); }
+.gauge-blue .gauge-value { color: var(--accent); }
+.gauge-blue .fill { background: var(--accent); }
+
 /* ─── AI Chat ─── */
+.chat-layout { display: flex; gap: 12px; height: calc(100vh - 180px); min-height: 500px; }
+.convo-sidebar {
+  width: 220px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); display: flex; flex-direction: column; flex-shrink: 0;
+}
+.convo-sidebar-header {
+  padding: 10px 12px; border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.convo-sidebar-header span { font-weight: 600; font-size: 13px; }
+.convo-list { flex: 1; overflow-y: auto; padding: 6px; }
+.convo-item {
+  padding: 8px 10px; border-radius: 6px; cursor: pointer;
+  font-size: 12px; margin-bottom: 1px; transition: background 0.1s;
+  display: flex; justify-content: space-between; align-items: center; gap: 4px;
+}
+.convo-item:hover { background: var(--surface2); }
+.convo-item.active { background: var(--surface3); }
+.convo-item .convo-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.convo-item .convo-actions { display: flex; gap: 2px; opacity: 0; flex-shrink: 0; }
+.convo-item:hover .convo-actions { opacity: 0.6; }
+.convo-item .convo-actions span { cursor: pointer; padding: 0 3px; font-size: 13px; }
+.convo-item .convo-actions span:hover { opacity: 1; }
+.convo-item .convo-actions .convo-del { color: var(--red); }
+.convo-sidebar-footer { padding: 8px; border-top: 1px solid var(--border); }
+
 .chat-container {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  display: flex;
-  flex-direction: column;
-  height: calc(100vh - 180px);
-  min-height: 500px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); display: flex; flex-direction: column; flex: 1;
 }
 .chat-header {
-  padding: 12px 16px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px;
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
 }
 .chat-header-left { display: flex; align-items: center; gap: 10px; }
 .chat-header select, .chat-header input {
-  background: var(--surface2);
-  color: var(--text);
-  border: 1px solid var(--border);
-  padding: 5px 10px;
-  border-radius: var(--radius-sm);
-  font-size: 12px;
-  outline: none;
+  background: var(--surface2); color: var(--text);
+  border: 1px solid var(--border); padding: 5px 10px;
+  border-radius: var(--radius-sm); font-size: 12px; outline: none;
 }
 .chat-header select:focus, .chat-header input:focus { border-color: var(--accent); }
 .chat-messages { flex: 1; overflow-y: auto; padding: 16px; }
@@ -209,21 +211,22 @@ a { color: var(--accent); text-decoration: none; }
 .message.user .avatar { background: var(--accent); color: #fff; }
 .message.assistant .avatar { background: var(--surface3); color: var(--accent); }
 .message .content {
-  background: var(--surface2);
-  padding: 10px 14px;
-  border-radius: 10px;
-  font-size: 13px;
-  line-height: 1.6;
-  max-width: 80%;
-  white-space: pre-wrap;
-  word-break: break-word;
+  background: var(--surface2); padding: 10px 14px;
+  border-radius: 10px; font-size: 13px; line-height: 1.6;
+  max-width: 80%; word-break: break-word;
 }
+.message .content pre { background: var(--bg); padding: 10px; border-radius: 6px; overflow-x: auto; margin: 6px 0; font-size: 12px; }
+.message .content code { background: var(--bg); padding: 1px 5px; border-radius: 3px; font-size: 12px; font-family: 'Cascadia Code','Consolas',monospace; }
+.message .content pre code { background: none; padding: 0; }
+.message .content p { margin: 4px 0; }
+.message .content ul, .message .content ol { margin: 4px 0 4px 18px; }
+.message .content h1,.message .content h2,.message .content h3 { margin: 8px 0 4px; font-size: 14px; }
+.message .content blockquote { border-left: 3px solid var(--accent); padding-left: 10px; color: var(--text-dim); margin: 6px 0; }
+.message .thinking { font-size: 11px; color: var(--text-muted); font-style: italic; padding: 4px 0; }
 .message.user .content { background: var(--accent-dim); }
 .chat-input-area {
-  padding: 12px 16px;
-  border-top: 1px solid var(--border);
-  display: flex;
-  gap: 8px;
+  padding: 12px 16px; border-top: 1px solid var(--border);
+  display: flex; gap: 8px;
 }
 .chat-input-area textarea {
   flex: 1; background: var(--surface2); border: 1px solid var(--border);
@@ -289,12 +292,17 @@ a { color: var(--accent); text-decoration: none; }
 .settings-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; color: var(--accent); }
 .setting-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 8px 0; border-bottom: 1px solid var(--border);
-  font-size: 13px;
+  padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px;
 }
 .setting-row:last-child { border-bottom: none; }
 .setting-label { color: var(--text-dim); }
 .setting-value { font-weight: 500; }
+
+/* ─── Disk Device Bars ─── */
+.disk-device { margin-bottom: 10px; }
+.disk-device .disk-label { font-size: 12px; display: flex; justify-content: space-between; margin-bottom: 3px; }
+.disk-device .disk-label span:first-child { color: var(--text-dim); }
+.disk-device .disk-label span:last-child { color: var(--text-muted); font-size: 11px; }
 
 /* ─── Model Manager ─── */
 .model-list { margin-top: 12px; }
@@ -306,23 +314,38 @@ a { color: var(--accent); text-decoration: none; }
 .model-item .model-name { font-weight: 500; }
 .model-item .model-size { color: var(--text-dim); }
 
-/* ─── Wizard Overlay ─── */
+/* ─── Wizard ─── */
 .wizard-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.85);
   display: flex; align-items: center; justify-content: center; z-index: 10000;
 }
 .wizard-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; padding: 40px; max-width: 520px; width: 90%;
+  border-radius: 16px; padding: 40px; max-width: 600px; width: 90%;
   text-align: center; box-shadow: var(--shadow);
 }
 .wizard-card h2 { font-size: 22px; margin-bottom: 8px; }
 .wizard-card .subtitle { color: var(--text-dim); font-size: 13px; margin-bottom: 24px; line-height: 1.6; }
-.wizard-steps { text-align: left; margin-bottom: 24px; }
-.wizard-step {
-  display: flex; align-items: center; gap: 12px;
-  padding: 10px 0; font-size: 13px;
+
+.wiz-capabilities { text-align: left; margin-bottom: 24px; }
+.wiz-cap {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  background: var(--surface2); border-radius: var(--radius-sm); margin-bottom: 6px;
+  cursor: pointer; border: 1px solid transparent; transition: border-color 0.15s;
 }
+.wiz-cap:hover { border-color: var(--border-hover); }
+.wiz-cap.selected { border-color: var(--accent); background: var(--accent-dim); }
+.wiz-cap input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
+.wiz-cap .wiz-cap-info { flex: 1; }
+.wiz-cap .wiz-cap-name { font-size: 13px; font-weight: 600; }
+.wiz-cap .wiz-cap-desc { font-size: 11px; color: var(--text-dim); }
+.wiz-cap select { background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; font-size: 11px; }
+
+.wiz-storage { margin-bottom: 20px; text-align: left; }
+.wiz-storage-label { font-size: 12px; color: var(--text-dim); margin-bottom: 4px; }
+
+.wizard-steps { text-align: left; margin-bottom: 24px; }
+.wizard-step { display: flex; align-items: center; gap: 12px; padding: 10px 0; font-size: 13px; }
 .wizard-step .step-num {
   width: 28px; height: 28px; border-radius: 50%;
   background: var(--accent-dim); color: var(--accent);
@@ -331,9 +354,16 @@ a { color: var(--accent); text-decoration: none; }
 }
 .wizard-step.done .step-num { background: var(--green-dim); color: var(--green); }
 
-/* ─── ZIM Catalog ─── */
+/* ─── ZIM Catalog (Tiered) ─── */
 .catalog-section { margin-bottom: 20px; }
-.catalog-section h4 { font-size: 13px; color: var(--accent); margin-bottom: 8px; font-weight: 600; }
+.catalog-section h4 { font-size: 13px; color: var(--accent); margin-bottom: 4px; font-weight: 600; }
+.tier-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.tier-tab {
+  padding: 3px 10px; font-size: 10px; border-radius: 10px;
+  background: var(--surface2); color: var(--text-dim); border: none; cursor: pointer;
+  text-transform: capitalize;
+}
+.tier-tab.active { background: var(--accent); color: #fff; }
 .catalog-item {
   display: flex; justify-content: space-between; align-items: center;
   padding: 8px 12px; background: var(--surface2); border-radius: var(--radius-sm);
@@ -344,30 +374,31 @@ a { color: var(--accent); text-decoration: none; }
 .catalog-item .cat-desc { color: var(--text-dim); font-size: 11px; }
 .catalog-item .cat-size { color: var(--text-muted); font-size: 11px; margin-left: 12px; white-space: nowrap; }
 
-/* ─── Chat Layout with Conversations Sidebar ─── */
-.chat-layout { display: flex; gap: 12px; height: calc(100vh - 180px); min-height: 500px; }
-.convo-sidebar {
-  width: 220px; background: var(--surface); border: 1px solid var(--border);
-  border-radius: var(--radius); display: flex; flex-direction: column; flex-shrink: 0;
+/* ─── Maps ─── */
+.map-wrap { height: calc(100vh - 240px); min-height: 400px; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.map-controls { display: flex; gap: 8px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+.region-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; margin-top: 12px; }
+.region-card {
+  padding: 10px 14px; background: var(--surface2); border-radius: var(--radius-sm);
+  display: flex; justify-content: space-between; align-items: center; font-size: 12px;
 }
-.convo-sidebar-header {
-  padding: 10px 12px; border-bottom: 1px solid var(--border);
-  display: flex; justify-content: space-between; align-items: center;
+
+/* ─── Benchmark ─── */
+.bench-scores { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin-top: 12px; }
+.bench-score {
+  background: var(--surface2); border-radius: var(--radius-sm); padding: 12px; text-align: center;
 }
-.convo-sidebar-header span { font-weight: 600; font-size: 13px; }
-.convo-list { flex: 1; overflow-y: auto; padding: 6px; }
-.convo-item {
-  padding: 8px 10px; border-radius: 6px; cursor: pointer;
-  font-size: 12px; margin-bottom: 1px; transition: background 0.1s;
-  display: flex; justify-content: space-between; align-items: center;
+.bench-score .score-val { font-size: 22px; font-weight: 700; color: var(--accent); }
+.bench-score .score-label { font-size: 10px; color: var(--text-dim); margin-top: 2px; }
+.bench-big { font-size: 48px; font-weight: 800; color: var(--accent); margin: 16px 0; }
+
+/* ─── LAN Info ─── */
+.lan-banner {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px 16px; margin-bottom: 16px; font-size: 12px; color: var(--text-dim);
+  display: flex; align-items: center; gap: 10px;
 }
-.convo-item:hover { background: var(--surface2); }
-.convo-item.active { background: var(--surface3); }
-.convo-item .convo-title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
-.convo-item .convo-delete { opacity: 0; color: var(--red); cursor: pointer; font-size: 14px; padding: 0 4px; flex-shrink: 0; }
-.convo-item:hover .convo-delete { opacity: 0.6; }
-.convo-item .convo-delete:hover { opacity: 1; }
-.chat-layout .chat-container { flex: 1; height: auto; min-height: unset; }
+.lan-banner a { font-weight: 600; }
 
 /* ─── Toast ─── */
 .toast {
@@ -385,7 +416,7 @@ a { color: var(--accent); text-decoration: none; }
 
 <div class="header">
   <div class="header-logo"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
-  <h1>Project N.O.M.A.D. <span class="version">v0.3.0</span></h1>
+  <h1>Project N.O.M.A.D. <span class="version">v0.4.0</span></h1>
   <div class="header-right">
     <span id="net-status" style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--text-muted);"></span>
   </div>
@@ -396,50 +427,56 @@ a { color: var(--accent); text-decoration: none; }
     <button class="tab active" data-tab="services">Services</button>
     <button class="tab" data-tab="ai-chat">AI Chat</button>
     <button class="tab" data-tab="kiwix-library">Library</button>
+    <button class="tab" data-tab="maps">Maps</button>
     <button class="tab" data-tab="notes">Notes</button>
+    <button class="tab" data-tab="benchmark">Benchmark</button>
     <button class="tab" data-tab="settings">Settings</button>
   </div>
 
   <!-- Services Tab -->
   <div id="tab-services" class="tab-content active">
+    <div class="lan-banner" id="lan-banner" style="display:none;"></div>
     <div class="services-grid" id="services-grid"></div>
   </div>
 
   <!-- AI Chat Tab -->
   <div id="tab-ai-chat" class="tab-content">
     <div class="chat-layout">
-    <div class="convo-sidebar">
-      <div class="convo-sidebar-header">
-        <span>Conversations</span>
-        <button class="btn btn-sm btn-primary" onclick="newConversation()">+ New</button>
-      </div>
-      <div class="convo-list" id="convo-list"></div>
-    </div>
-    <div class="chat-container">
-      <div class="chat-header">
-        <div class="chat-header-left">
-          <select id="model-select"><option value="">No models</option></select>
-          <button class="btn btn-sm" onclick="managePullModel()">+ Pull Model</button>
+      <div class="convo-sidebar">
+        <div class="convo-sidebar-header">
+          <span>Conversations</span>
+          <button class="btn btn-sm btn-primary" onclick="newConversation()">+ New</button>
         </div>
-        <div id="pull-progress-bar" style="display:none;flex:1;max-width:250px;">
-          <div class="progress-bar"><div class="fill" id="pull-fill" style="width:0%"></div></div>
-          <div class="progress-info"><span id="pull-detail">...</span><span id="pull-pct">0%</span></div>
+        <div class="convo-list" id="convo-list"></div>
+        <div class="convo-sidebar-footer">
+          <button class="btn btn-sm btn-danger" style="width:100%;" onclick="deleteAllConvos()">Delete All</button>
         </div>
       </div>
-      <div class="chat-messages" id="chat-messages">
-        <div class="empty-state" id="chat-empty">
-          <div class="icon">AI</div>
-          <p>Start a conversation with your local AI</p>
-          <p style="font-size:11px;color:var(--text-muted);">Install Ollama and pull a model to begin</p>
+      <div class="chat-container">
+        <div class="chat-header">
+          <div class="chat-header-left">
+            <select id="model-select"><option value="">No models</option></select>
+            <button class="btn btn-sm" onclick="managePullModel()">+ Pull Model</button>
+          </div>
+          <div id="pull-progress-bar" style="display:none;flex:1;max-width:250px;">
+            <div class="progress-bar"><div class="fill" id="pull-fill" style="width:0%"></div></div>
+            <div class="progress-info"><span id="pull-detail">...</span><span id="pull-pct">0%</span></div>
+          </div>
+        </div>
+        <div class="chat-messages" id="chat-messages">
+          <div class="empty-state" id="chat-empty">
+            <div class="icon">AI</div>
+            <p>Start a conversation with your local AI</p>
+            <p style="font-size:11px;color:var(--text-muted);">Install Ollama and pull a model to begin</p>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <textarea id="chat-input" placeholder="Type a message... (Enter to send, Shift+Enter for newline)" rows="1"
+            onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+            oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+          <button class="btn btn-primary" onclick="sendChat()" id="send-btn">Send</button>
         </div>
       </div>
-      <div class="chat-input-area">
-        <textarea id="chat-input" placeholder="Type a message... (Enter to send, Shift+Enter for newline)" rows="1"
-          onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
-          oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
-        <button class="btn btn-primary" onclick="sendChat()" id="send-btn">Send</button>
-      </div>
-    </div>
     </div>
   </div>
 
@@ -448,11 +485,29 @@ a { color: var(--accent); text-decoration: none; }
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
       <div class="settings-card">
         <h3>Downloaded Content</h3>
-        <div id="zim-list"><div style="color:var(--text-dim);font-size:13px;">No content downloaded yet. Install Kiwix first, then download content packs from the catalog.</div></div>
+        <div id="zim-list"><div style="color:var(--text-dim);font-size:13px;">No content downloaded yet.</div></div>
       </div>
       <div class="settings-card">
         <h3>Content Catalog</h3>
         <div id="zim-catalog"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maps Tab -->
+  <div id="tab-maps" class="tab-content">
+    <div class="map-controls">
+      <span style="font-weight:600;font-size:14px;">Offline Maps</span>
+      <span style="font-size:11px;color:var(--text-dim);">Download US regional maps for offline use</span>
+    </div>
+    <div id="map-container" class="map-wrap" style="display:none;"></div>
+    <div id="map-placeholder" class="settings-card" style="min-height:200px;">
+      <h3>Map Regions</h3>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Download PMTiles map data for offline map viewing. Each region covers multiple US states.</p>
+      <div class="region-grid" id="region-grid"></div>
+      <div style="margin-top:16px;">
+        <h3 style="margin-bottom:8px;">Downloaded Maps</h3>
+        <div id="map-files-list"><span style="color:var(--text-dim);font-size:12px;">No maps downloaded yet.</span></div>
       </div>
     </div>
   </div>
@@ -477,12 +532,46 @@ a { color: var(--accent); text-decoration: none; }
     </div>
   </div>
 
+  <!-- Benchmark Tab -->
+  <div id="tab-benchmark" class="tab-content">
+    <div class="settings-grid">
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3>N.O.M.A.D. Benchmark</h3>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">
+          Test your system's CPU, memory, disk, and AI inference performance. Results are scored 0-100.
+        </p>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          <button class="btn btn-primary" onclick="runBenchmark('full')" id="bench-run-btn">Run Full Benchmark</button>
+          <button class="btn" onclick="runBenchmark('system')">System Only</button>
+          <button class="btn" onclick="runBenchmark('ai')">AI Only</button>
+        </div>
+        <div id="bench-progress" style="display:none;">
+          <div class="progress-bar"><div class="fill" id="bench-fill" style="width:0%"></div></div>
+          <div class="progress-info"><span id="bench-stage">...</span><span id="bench-pct">0%</span></div>
+        </div>
+        <div id="bench-results"></div>
+      </div>
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3>Benchmark History</h3>
+        <div id="bench-history"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- Settings Tab -->
   <div id="tab-settings" class="tab-content">
     <div class="settings-grid">
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3>System Monitoring</h3>
+        <div class="gauge-row" id="system-gauges"></div>
+      </div>
       <div class="settings-card">
         <h3>System Information</h3>
         <div id="system-info">Loading...</div>
+      </div>
+      <div class="settings-card">
+        <h3>Storage Devices</h3>
+        <div id="disk-devices"></div>
       </div>
       <div class="settings-card">
         <h3>AI Models</h3>
@@ -495,16 +584,29 @@ a { color: var(--accent); text-decoration: none; }
           </div>
         </div>
       </div>
+      <div class="settings-card">
+        <h3>AI Assistant</h3>
+        <div>
+          <div class="setting-row">
+            <span class="setting-label">Assistant Name</span>
+            <input id="ai-name-input" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 10px;border-radius:6px;font-size:12px;width:140px;outline:none;" value="AI" oninput="saveAIName()">
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">LAN Access</span>
+            <span class="setting-value" id="lan-url-setting">-</span>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Data Directory</span>
+            <span class="setting-value" id="data-dir" style="font-size:11px;word-break:break-all;"></span>
+          </div>
+        </div>
+      </div>
       <div class="settings-card" style="grid-column:1/-1;">
         <h3>About</h3>
         <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
           <p><strong style="color:var(--text);">Project N.O.M.A.D. for Windows</strong> &mdash; Native edition, no Docker required.</p>
-          <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad" target="_blank">Project N.O.M.A.D.</a> by Crosstalk Solutions.</p>
-          <p>Windows port manages services as native processes instead of containers.</p>
-          <div style="margin-top:8px;">
-            <span class="setting-label">Data Directory: </span>
-            <span id="data-dir" class="setting-value"></span>
-          </div>
+          <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad" target="_blank">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc" target="_blank">SysAdminDoc</a>.</p>
+          <p>Manages services as native processes instead of containers. Offline-first knowledge and AI command center.</p>
         </div>
       </div>
     </div>
@@ -514,20 +616,49 @@ a { color: var(--accent); text-decoration: none; }
 <!-- Setup Wizard -->
 <div class="wizard-overlay" id="wizard" style="display:none;">
   <div class="wizard-card">
-    <h2>Welcome to N.O.M.A.D.</h2>
-    <p class="subtitle">Your offline-first knowledge and AI command center.<br>Let's get you set up in just a few clicks.</p>
-    <div class="wizard-steps">
-      <div class="wizard-step" id="wiz-step-1"><div class="step-num">1</div><div>Install AI Engine (Ollama)</div></div>
-      <div class="wizard-step" id="wiz-step-2"><div class="step-num">2</div><div>Install Information Library (Kiwix)</div></div>
-      <div class="wizard-step" id="wiz-step-3"><div class="step-num">3</div><div>Install Data Tools (CyberChef)</div></div>
+    <div id="wiz-page-1">
+      <h2>Welcome to N.O.M.A.D.</h2>
+      <p class="subtitle">Your offline-first knowledge and AI command center.<br>Select the capabilities you want to install.</p>
+      <div class="wiz-capabilities" id="wiz-caps">
+        <div class="wiz-cap selected" data-svc="ollama">
+          <input type="checkbox" checked>
+          <div class="wiz-cap-info">
+            <div class="wiz-cap-name">AI Assistant (Ollama)</div>
+            <div class="wiz-cap-desc">Local AI chat with LLMs — Llama, Mistral, and more</div>
+          </div>
+        </div>
+        <div class="wiz-cap selected" data-svc="kiwix">
+          <input type="checkbox" checked>
+          <div class="wiz-cap-info">
+            <div class="wiz-cap-name">Information Library (Kiwix)</div>
+            <div class="wiz-cap-desc">Offline Wikipedia, medical references, survival guides</div>
+          </div>
+        </div>
+        <div class="wiz-cap selected" data-svc="cyberchef">
+          <input type="checkbox" checked>
+          <div class="wiz-cap-info">
+            <div class="wiz-cap-name">Data Tools (CyberChef)</div>
+            <div class="wiz-cap-desc">Encryption, encoding, hashing, and data analysis</div>
+          </div>
+        </div>
+        <div class="wiz-cap" data-svc="kolibri">
+          <input type="checkbox">
+          <div class="wiz-cap-info">
+            <div class="wiz-cap-name">Education Platform (Kolibri)</div>
+            <div class="wiz-cap-desc">Khan Academy courses, textbooks, progress tracking</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:center;">
+        <button class="btn btn-primary" onclick="runWizard()" id="wiz-start-btn">Install Selected</button>
+        <button class="btn" onclick="skipWizard()">Skip Setup</button>
+      </div>
     </div>
-    <div style="display:flex;gap:10px;justify-content:center;">
-      <button class="btn btn-primary" onclick="runWizard()" id="wiz-start-btn">Install All Services</button>
-      <button class="btn" onclick="skipWizard()">Skip Setup</button>
-    </div>
-    <div id="wiz-progress" style="margin-top:16px;display:none;">
-      <div class="progress-bar"><div class="fill" id="wiz-fill" style="width:0%"></div></div>
-      <p style="font-size:12px;color:var(--text-dim);margin-top:6px;" id="wiz-status">Installing...</p>
+    <div id="wiz-page-2" style="display:none;">
+      <h2>Installing...</h2>
+      <div class="wizard-steps" id="wiz-steps"></div>
+      <div class="progress-bar" style="margin-top:12px;"><div class="fill" id="wiz-fill" style="width:0%"></div></div>
+      <p style="font-size:12px;color:var(--text-dim);margin-top:8px;" id="wiz-status">Preparing...</p>
     </div>
   </div>
 </div>
@@ -535,13 +666,15 @@ a { color: var(--accent); text-decoration: none; }
 <div class="toast" id="toast"></div>
 
 <script>
-const VERSION = '0.3.0';
+const VERSION = '0.4.0';
 let chatMessages = [];
 let currentNoteId = null;
 let saveTimer = null;
 let isSending = false;
 let currentConvoId = null;
 let allConvos = [];
+let aiName = 'AI';
+let _catalogTiers = {};
 
 /* ─── Tabs ─── */
 document.querySelectorAll('.tab').forEach(tab => {
@@ -552,8 +685,10 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'ai-chat') { loadModels(); loadConversations(); pollPullProgress(); }
     if (tab.dataset.tab === 'notes') loadNotes();
-    if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); }
+    if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); }
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); }
+    if (tab.dataset.tab === 'maps') loadMaps();
+    if (tab.dataset.tab === 'benchmark') loadBenchHistory();
   });
 });
 
@@ -567,11 +702,7 @@ function toast(msg) {
 }
 
 /* ─── Helpers ─── */
-function escapeHtml(s) {
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function formatBytes(b) {
   if (b >= 1073741824) return (b/1073741824).toFixed(1)+' GB';
   if (b >= 1048576) return (b/1048576).toFixed(1)+' MB';
@@ -579,11 +710,43 @@ function formatBytes(b) {
   return b+' B';
 }
 
+/* ─── Markdown ─── */
+function renderMarkdown(text) {
+  if (!text) return '';
+  let h = escapeHtml(text);
+  // Code blocks
+  h = h.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  // Inline code
+  h = h.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Bold
+  h = h.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Italic
+  h = h.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Headers
+  h = h.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  h = h.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  h = h.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  // Blockquote
+  h = h.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+  // Unordered list
+  h = h.replace(/^[*-] (.+)$/gm, '<li>$1</li>');
+  h = h.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+  // Numbered list
+  h = h.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  // Links
+  h = h.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
+  // Paragraphs
+  h = h.replace(/\n\n/g, '</p><p>');
+  h = h.replace(/\n/g, '<br>');
+  return '<p>' + h + '</p>';
+}
+
 /* ─── Services ─── */
 const SVC = {
-  ollama:    { name:'Ollama (AI Chat)',             desc:'Local AI chat powered by LLMs. Run Llama 3, Mistral, and more entirely offline.', icon:'\u{1F9E0}' },
-  kiwix:     { name:'Kiwix (Information Library)',   desc:'Offline Wikipedia, medical references, survival guides, and ebooks.', icon:'\u{1F4DA}' },
-  cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.', icon:'\u{1F6E1}' },
+  ollama:    { name:'Ollama (AI Chat)',             desc:'Local AI chat powered by LLMs. Run Llama 3, Mistral, and more entirely offline.' },
+  kiwix:     { name:'Kiwix (Information Library)',   desc:'Offline Wikipedia, medical references, survival guides, and ebooks.' },
+  cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.' },
+  kolibri:   { name:'Kolibri (Education Platform)',  desc:'Offline Khan Academy courses, textbooks, and educational content.' },
 };
 
 async function loadServices() {
@@ -591,9 +754,9 @@ async function loadServices() {
     const services = await (await fetch('/api/services')).json();
     const grid = document.getElementById('services-grid');
     grid.innerHTML = services.map(s => {
-      const info = SVC[s.id] || { name:s.id, desc:'', icon:'\u2699' };
+      const info = SVC[s.id] || { name:s.id, desc:'' };
       const prog = s.progress || {};
-      const isInstalling = prog.status === 'downloading' || prog.status === 'extracting';
+      const isInstalling = prog.status === 'downloading' || prog.status === 'extracting' || (prog.status && prog.status.startsWith('downloading'));
       const statusClass = isInstalling ? 'installing' : !s.installed ? 'not-installed' : s.running ? 'running' : 'stopped';
       const statusText = isInstalling ? 'Installing' : !s.installed ? 'Not Installed' : s.running ? 'Running' : 'Stopped';
 
@@ -626,7 +789,7 @@ async function loadServices() {
 
       return `<div class="service-card">
         <div class="card-header">
-          <h3>${info.icon} ${info.name}</h3>
+          <h3>${info.name}</h3>
           <span class="badge ${statusClass}"><span class="dot"></span>${statusText}</span>
         </div>
         <p class="desc">${info.desc}</p>
@@ -650,7 +813,7 @@ function pollServices() {
   _pollInt = setInterval(async () => {
     await loadServices();
     const svcs = await (await fetch('/api/services')).json();
-    const busy = svcs.some(s => {const p=s.progress; return p&&(p.status==='downloading'||p.status==='extracting');});
+    const busy = svcs.some(s => {const p=s.progress; return p&&(p.status==='downloading'||p.status==='extracting'||p.status?.startsWith('downloading'));});
     if (!busy) { clearInterval(_pollInt); _pollInt = null; }
   }, 1500);
 }
@@ -696,8 +859,6 @@ function pollPullProgress() {
   }, 1000);
 }
 
-function clearChat() { chatMessages = []; currentConvoId = null; renderChat(); renderConvoList(); }
-
 /* ─── Conversations ─── */
 async function loadConversations() {
   allConvos = await (await fetch('/api/conversations')).json();
@@ -712,7 +873,10 @@ function renderConvoList() {
   el.innerHTML = allConvos.map(c => `
     <div class="convo-item ${c.id===currentConvoId?'active':''}" onclick="selectConvo(${c.id})">
       <span class="convo-title">${escapeHtml(c.title)}</span>
-      <span class="convo-delete" onclick="event.stopPropagation();deleteConvo(${c.id})">x</span>
+      <span class="convo-actions">
+        <span onclick="event.stopPropagation();renameConvo(${c.id})" title="Rename">r</span>
+        <span class="convo-del" onclick="event.stopPropagation();deleteConvo(${c.id})" title="Delete">x</span>
+      </span>
     </div>
   `).join('');
 }
@@ -738,6 +902,20 @@ async function deleteConvo(id) {
   if (currentConvoId === id) { currentConvoId = null; chatMessages = []; renderChat(); }
   await loadConversations();
 }
+async function deleteAllConvos() {
+  if (!confirm('Delete all conversations?')) return;
+  await fetch('/api/conversations/all', {method:'DELETE'});
+  currentConvoId = null; chatMessages = []; allConvos = [];
+  renderChat(); renderConvoList();
+  toast('All conversations deleted');
+}
+async function renameConvo(id) {
+  const c = allConvos.find(x => x.id === id);
+  const name = prompt('Rename conversation:', c?.title || 'Chat');
+  if (!name) return;
+  await fetch(`/api/conversations/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title: name})});
+  await loadConversations();
+}
 async function saveConversation() {
   if (!currentConvoId) return;
   const model = document.getElementById('model-select').value;
@@ -745,17 +923,6 @@ async function saveConversation() {
   await fetch(`/api/conversations/${currentConvoId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({title, model, messages: chatMessages})});
   await loadConversations();
-}
-
-/* ─── Network Status ─── */
-async function checkNetwork() {
-  try {
-    const n = await (await fetch('/api/network')).json();
-    const el = document.getElementById('net-status');
-    const dot = n.online ? '#4caf50' : '#f44336';
-    const label = n.online ? 'Online' : 'Offline';
-    el.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${dot};"></span>${label} &middot; ${n.lan_ip}`;
-  } catch(e) {}
 }
 
 async function sendChat() {
@@ -771,7 +938,6 @@ async function sendChat() {
   isSending = true;
   document.getElementById('send-btn').disabled = true;
 
-  // Auto-create conversation if none selected
   if (!currentConvoId) {
     const c = await (await fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title: msg.slice(0,50), model})})).json();
     currentConvoId = c.id;
@@ -779,13 +945,13 @@ async function sendChat() {
   }
 
   chatMessages.push({role:'user', content:msg});
-  chatMessages.push({role:'assistant', content:''});
+  chatMessages.push({role:'assistant', content:'', thinking: true});
   renderChat();
 
   try {
     const resp = await fetch('/api/ai/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model, messages: chatMessages.filter(m=>m.content).slice(0,-1)})
+      body: JSON.stringify({model, messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)})
     });
     const reader = resp.body.getReader();
     const dec = new TextDecoder();
@@ -797,12 +963,18 @@ async function sendChat() {
         if (!line.trim()) continue;
         try {
           const d = JSON.parse(line);
-          if (d.message?.content) { full += d.message.content; chatMessages[chatMessages.length-1].content = full; renderChat(); }
+          if (d.message?.content) {
+            full += d.message.content;
+            chatMessages[chatMessages.length-1].content = full;
+            chatMessages[chatMessages.length-1].thinking = false;
+            renderChat();
+          }
         } catch {}
       }
     }
   } catch(e) {
     chatMessages[chatMessages.length-1].content = 'Error: Could not reach AI. Is Ollama running?';
+    chatMessages[chatMessages.length-1].thinking = false;
     renderChat();
   }
   isSending = false;
@@ -817,15 +989,16 @@ function renderChat() {
   empty.style.display = 'none';
   let html = '';
   for (const m of chatMessages) {
-    const av = m.role === 'user' ? 'U' : 'AI';
-    const thinking = m.role === 'assistant' && !m.content ? '<span style="opacity:0.3">Thinking...</span>' : '';
-    html += `<div class="message ${m.role}"><div class="avatar">${av}</div><div class="content">${escapeHtml(m.content)}${thinking}</div></div>`;
+    const av = m.role === 'user' ? 'U' : aiName.slice(0,2).toUpperCase();
+    const thinkHtml = m.thinking ? '<div class="thinking">Thinking...</div>' : '';
+    const content = m.role === 'assistant' ? renderMarkdown(m.content) : escapeHtml(m.content).replace(/\n/g,'<br>');
+    html += `<div class="message ${m.role}"><div class="avatar">${av}</div><div class="content">${content}${thinkHtml}</div></div>`;
   }
-  c.innerHTML = `<div class="empty-state" id="chat-empty" style="display:none"><div class="icon">AI</div><p>Start a conversation</p></div>` + html;
+  c.innerHTML = `<div class="empty-state" id="chat-empty" style="display:none"><div class="icon">${aiName}</div><p>Start a conversation</p></div>` + html;
   c.scrollTop = c.scrollHeight;
 }
 
-/* ─── Kiwix Library ─── */
+/* ─── Kiwix Library (Tiered Catalog) ─── */
 async function loadZimList() {
   const zims = await (await fetch('/api/kiwix/zims')).json();
   const el = document.getElementById('zim-list');
@@ -844,18 +1017,40 @@ async function loadZimList() {
 async function loadZimCatalog() {
   const catalog = await (await fetch('/api/kiwix/catalog')).json();
   const el = document.getElementById('zim-catalog');
-  el.innerHTML = catalog.map(cat => `
-    <div class="catalog-section">
+  el.innerHTML = catalog.map((cat, ci) => {
+    const tiers = cat.tiers || {};
+    const tierNames = Object.keys(tiers);
+    if (!tierNames.length) return '';
+    _catalogTiers[ci] = tierNames[0];
+
+    return `<div class="catalog-section">
       <h4>${escapeHtml(cat.category)}</h4>
-      ${cat.items.map(i => `
-        <div class="catalog-item">
-          <div class="cat-info"><div class="cat-name">${escapeHtml(i.name)}</div><div class="cat-desc">${escapeHtml(i.desc)}</div></div>
-          <span class="cat-size">${i.size}</span>
-          <button class="btn btn-sm" style="margin-left:8px;" onclick="downloadZim('${i.url}','${i.filename}')">Download</button>
-        </div>
-      `).join('')}
+      <div class="tier-tabs">${tierNames.map(t =>
+        `<button class="tier-tab ${t===tierNames[0]?'active':''}" onclick="switchTier(${ci},'${t}',this)">${t}</button>`
+      ).join('')}</div>
+      <div id="cat-items-${ci}">${renderTierItems(tiers[tierNames[0]])}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderTierItems(items) {
+  if (!items || !items.length) return '<span style="color:var(--text-dim);font-size:11px;">No items in this tier.</span>';
+  return items.map(i => `
+    <div class="catalog-item">
+      <div class="cat-info"><div class="cat-name">${escapeHtml(i.name)}</div><div class="cat-desc">${escapeHtml(i.desc)}</div></div>
+      <span class="cat-size">${i.size}</span>
+      <button class="btn btn-sm" style="margin-left:8px;" onclick="downloadZim('${i.url}','${i.filename}')">Download</button>
     </div>
   `).join('');
+}
+
+function switchTier(ci, tier, btn) {
+  btn.parentElement.querySelectorAll('.tier-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  fetch('/api/kiwix/catalog').then(r=>r.json()).then(catalog => {
+    const items = catalog[ci]?.tiers?.[tier] || [];
+    document.getElementById(`cat-items-${ci}`).innerHTML = renderTierItems(items);
+  });
 }
 
 async function downloadZim(url, filename) {
@@ -868,6 +1063,49 @@ async function deleteZim(filename) {
   await fetch('/api/kiwix/delete-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename}) });
   toast('Deleted');
   loadZimList();
+}
+
+/* ─── Maps ─── */
+async function loadMaps() {
+  const [regions, files] = await Promise.all([
+    fetch('/api/maps/regions').then(r=>r.json()),
+    fetch('/api/maps/files').then(r=>r.json()),
+  ]);
+
+  document.getElementById('region-grid').innerHTML = regions.map(r => `
+    <div class="region-card">
+      <div>
+        <div style="font-weight:500;">${r.name}</div>
+        <div style="font-size:11px;color:var(--text-dim);">${r.states}</div>
+      </div>
+      ${r.downloaded
+        ? `<span style="color:var(--green);font-size:11px;">${r.size}</span>`
+        : `<span style="color:var(--text-muted);font-size:11px;">Not downloaded</span>`
+      }
+    </div>
+  `).join('');
+
+  const filesEl = document.getElementById('map-files-list');
+  if (!files.length) {
+    filesEl.innerHTML = '<span style="color:var(--text-dim);font-size:12px;">No maps downloaded yet.</span>';
+  } else {
+    filesEl.innerHTML = files.map(f => `
+      <div class="model-item">
+        <span class="model-name">${escapeHtml(f.filename)}</span>
+        <span style="display:flex;gap:8px;align-items:center;">
+          <span class="model-size">${f.size}</span>
+          <button class="btn btn-sm btn-danger" onclick="deleteMap('${escapeHtml(f.filename)}')">Delete</button>
+        </span>
+      </div>
+    `).join('');
+  }
+}
+
+async function deleteMap(filename) {
+  if (!confirm(`Delete ${filename}?`)) return;
+  await fetch('/api/maps/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename})});
+  toast('Deleted');
+  loadMaps();
 }
 
 /* ─── Notes ─── */
@@ -914,25 +1152,171 @@ function autoSaveNote() {
   }, 500);
 }
 
+/* ─── Benchmark ─── */
+async function runBenchmark(mode) {
+  document.getElementById('bench-run-btn').disabled = true;
+  document.getElementById('bench-progress').style.display = 'block';
+  document.getElementById('bench-results').innerHTML = '';
+  await fetch('/api/benchmark/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mode})});
+  pollBenchmark();
+}
+
+let _benchPoll = null;
+function pollBenchmark() {
+  if (_benchPoll) clearInterval(_benchPoll);
+  _benchPoll = setInterval(async () => {
+    const s = await (await fetch('/api/benchmark/status')).json();
+    document.getElementById('bench-fill').style.width = s.progress + '%';
+    document.getElementById('bench-stage').textContent = s.stage;
+    document.getElementById('bench-pct').textContent = s.progress + '%';
+
+    if (s.status === 'complete' || s.status === 'error') {
+      clearInterval(_benchPoll);
+      _benchPoll = null;
+      document.getElementById('bench-run-btn').disabled = false;
+      document.getElementById('bench-progress').style.display = 'none';
+      if (s.status === 'complete' && s.results) showBenchResults(s.results);
+      if (s.status === 'error') toast('Benchmark failed: ' + s.stage);
+      loadBenchHistory();
+    }
+  }, 1000);
+}
+
+function showBenchResults(r) {
+  document.getElementById('bench-results').innerHTML = `
+    <div style="text-align:center;"><div class="bench-big">${r.nomad_score}</div><div style="color:var(--text-dim);font-size:12px;">N.O.M.A.D. Score</div></div>
+    <div class="bench-scores">
+      <div class="bench-score"><div class="score-val">${r.cpu_score||0}</div><div class="score-label">CPU ops/s</div></div>
+      <div class="bench-score"><div class="score-val">${r.memory_score||0}</div><div class="score-label">Memory MB/s</div></div>
+      <div class="bench-score"><div class="score-val">${r.disk_read_score||0}</div><div class="score-label">Disk Read MB/s</div></div>
+      <div class="bench-score"><div class="score-val">${r.disk_write_score||0}</div><div class="score-label">Disk Write MB/s</div></div>
+      <div class="bench-score"><div class="score-val">${r.ai_tps||0}</div><div class="score-label">AI tok/s</div></div>
+      <div class="bench-score"><div class="score-val">${r.ai_ttft||0}</div><div class="score-label">AI TTFT ms</div></div>
+    </div>
+  `;
+}
+
+async function loadBenchHistory() {
+  const history = await (await fetch('/api/benchmark/history')).json();
+  const el = document.getElementById('bench-history');
+  if (!history.length) { el.innerHTML = '<span style="color:var(--text-dim);font-size:12px;">No benchmarks run yet.</span>'; return; }
+  el.innerHTML = `<table style="width:100%;font-size:12px;border-collapse:collapse;">
+    <tr style="color:var(--text-dim);text-align:left;"><th style="padding:4px 8px;">Date</th><th>Score</th><th>CPU</th><th>Mem</th><th>Disk R</th><th>Disk W</th><th>AI tok/s</th></tr>
+    ${history.map(h => `<tr style="border-top:1px solid var(--border);">
+      <td style="padding:4px 8px;">${new Date(h.created_at).toLocaleDateString()}</td>
+      <td><strong style="color:var(--accent);">${h.nomad_score}</strong></td>
+      <td>${h.cpu_score}</td><td>${h.memory_score}</td><td>${h.disk_read_score}</td><td>${h.disk_write_score}</td><td>${h.ai_tps}</td>
+    </tr>`).join('')}
+  </table>`;
+}
+
 /* ─── Settings ─── */
+async function loadSettings() {
+  try {
+    const s = await (await fetch('/api/settings')).json();
+    if (s.ai_name) {
+      aiName = s.ai_name;
+      document.getElementById('ai-name-input').value = aiName;
+    }
+  } catch(e) {}
+
+  try {
+    const n = await (await fetch('/api/network')).json();
+    document.getElementById('lan-url-setting').textContent = n.dashboard_url || '-';
+  } catch(e) {}
+}
+
+let _saveNameTimer;
+function saveAIName() {
+  clearTimeout(_saveNameTimer);
+  _saveNameTimer = setTimeout(async () => {
+    aiName = document.getElementById('ai-name-input').value || 'AI';
+    await fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ai_name: aiName})});
+  }, 500);
+}
+
 async function loadSystemInfo() {
   try {
     const s = await (await fetch('/api/system')).json();
+
+    // Gauges
+    function gaugeColor(pct) { return pct > 90 ? 'gauge-red' : pct > 70 ? 'gauge-orange' : 'gauge-green'; }
+    document.getElementById('system-gauges').innerHTML = `
+      <div class="gauge-card ${gaugeColor(s.cpu_percent)}">
+        <div class="gauge-label">CPU</div>
+        <div class="gauge-value">${s.cpu_percent}%</div>
+        <div class="gauge-bar"><div class="fill" style="width:${s.cpu_percent}%"></div></div>
+      </div>
+      <div class="gauge-card ${gaugeColor(s.ram_percent)}">
+        <div class="gauge-label">Memory</div>
+        <div class="gauge-value">${s.ram_percent}%</div>
+        <div class="gauge-bar"><div class="fill" style="width:${s.ram_percent}%"></div></div>
+      </div>
+      <div class="gauge-card ${gaugeColor(s.swap_percent)}">
+        <div class="gauge-label">Swap</div>
+        <div class="gauge-value">${s.swap_percent}%</div>
+        <div class="gauge-bar"><div class="fill" style="width:${s.swap_percent}%"></div></div>
+      </div>
+      <div class="gauge-card gauge-blue">
+        <div class="gauge-label">Uptime</div>
+        <div class="gauge-value" style="font-size:16px;">${s.uptime}</div>
+        <div class="gauge-bar"><div class="fill" style="width:100%"></div></div>
+      </div>
+    `;
+
+    // System info
     document.getElementById('system-info').innerHTML = `
       <div class="setting-row"><span class="setting-label">Version</span><span class="setting-value">v${s.version}</span></div>
       <div class="setting-row"><span class="setting-label">Platform</span><span class="setting-value">${s.platform}</span></div>
-      <div class="setting-row"><span class="setting-label">CPU</span><span class="setting-value">${s.cpu} (${s.cpu_cores} cores)</span></div>
+      <div class="setting-row"><span class="setting-label">Hostname</span><span class="setting-value">${s.hostname}</span></div>
+      <div class="setting-row"><span class="setting-label">CPU</span><span class="setting-value">${s.cpu}</span></div>
+      <div class="setting-row"><span class="setting-label">Cores</span><span class="setting-value">${s.cpu_cores_physical} physical / ${s.cpu_cores} logical</span></div>
       <div class="setting-row"><span class="setting-label">RAM</span><span class="setting-value">${s.ram_used} / ${s.ram_total} (${s.ram_percent}%)</span></div>
-      <div class="setting-row"><span class="setting-label">GPU</span><span class="setting-value">${s.gpu}</span></div>
+      <div class="setting-row"><span class="setting-label">Swap</span><span class="setting-value">${s.swap_used} / ${s.swap_total}</span></div>
+      <div class="setting-row"><span class="setting-label">GPU</span><span class="setting-value">${s.gpu}${s.gpu_vram ? ' ('+s.gpu_vram+')' : ''}</span></div>
       <div class="setting-row"><span class="setting-label">N.O.M.A.D. Data</span><span class="setting-value">${s.nomad_disk_used}</span></div>
-      <div class="setting-row"><span class="setting-label">Disk Free</span><span class="setting-value">${s.disk_free} / ${s.disk_total}</span></div>
     `;
     document.getElementById('data-dir').textContent = s.data_dir;
+
+    // Disk devices
+    const dd = document.getElementById('disk-devices');
+    if (s.disk_devices && s.disk_devices.length) {
+      dd.innerHTML = s.disk_devices.map(d => {
+        const color = d.percent > 90 ? 'var(--red)' : d.percent > 75 ? 'var(--orange)' : 'var(--accent)';
+        return `<div class="disk-device">
+          <div class="disk-label"><span>${d.mountpoint} (${d.fstype})</span><span>${d.used} / ${d.total} (${d.percent}%)</span></div>
+          <div class="progress-bar"><div class="fill" style="width:${d.percent}%;background:${color};"></div></div>
+        </div>`;
+      }).join('');
+    } else {
+      dd.innerHTML = `<div class="setting-row"><span class="setting-label">Disk Free</span><span class="setting-value">${s.disk_free} / ${s.disk_total}</span></div>`;
+    }
   } catch(e) { document.getElementById('system-info').innerHTML = '<span style="color:var(--red)">Failed to load</span>'; }
 }
 
+let _liveGaugeInt = null;
+function startLiveGauges() {
+  if (_liveGaugeInt) clearInterval(_liveGaugeInt);
+  _liveGaugeInt = setInterval(async () => {
+    if (!document.getElementById('tab-settings').classList.contains('active')) { clearInterval(_liveGaugeInt); _liveGaugeInt = null; return; }
+    try {
+      const l = await (await fetch('/api/system/live')).json();
+      const gauges = document.querySelectorAll('#system-gauges .gauge-card');
+      if (gauges.length >= 3) {
+        function updateGauge(g, pct) {
+          g.querySelector('.gauge-value').textContent = pct + '%';
+          g.querySelector('.gauge-bar .fill').style.width = pct + '%';
+          g.className = 'gauge-card ' + (pct > 90 ? 'gauge-red' : pct > 70 ? 'gauge-orange' : 'gauge-green');
+        }
+        updateGauge(gauges[0], l.cpu_percent);
+        updateGauge(gauges[1], l.ram_percent);
+        updateGauge(gauges[2], l.swap_percent);
+      }
+    } catch(e) {}
+  }, 3000);
+}
+
 async function loadModelManager() {
-  // Installed models
   const models = await (await fetch('/api/ai/models')).json();
   const el = document.getElementById('model-list');
   if (!models.length) {
@@ -949,15 +1333,7 @@ async function loadModelManager() {
     `).join('');
   }
 
-  // Recommended models
-  const rec = [
-    {name:'llama3.2:3b', size:'2.0 GB', desc:'Fast general-purpose'},
-    {name:'llama3.2:1b', size:'1.3 GB', desc:'Lightweight'},
-    {name:'gemma2:2b', size:'1.6 GB', desc:'Google compact'},
-    {name:'mistral:7b', size:'4.1 GB', desc:'Strong reasoning'},
-    {name:'phi3:mini', size:'2.3 GB', desc:'Good for coding'},
-    {name:'deepseek-r1:8b', size:'4.9 GB', desc:'Reasoning model'},
-  ];
+  const rec = await (await fetch('/api/ai/recommended')).json();
   const installed = new Set(models.map(m => m.name));
   document.getElementById('recommended-models').innerHTML = rec.map(r => `
     <div class="model-item">
@@ -980,9 +1356,26 @@ async function deleteModel(name) {
 async function pullFromSettings(name) {
   await fetch('/api/ai/pull', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})});
   toast(`Pulling ${name}...`);
-  // Switch to chat tab to see progress
   document.querySelector('[data-tab="ai-chat"]').click();
   pollPullProgress();
+}
+
+/* ─── Network Status ─── */
+async function checkNetwork() {
+  try {
+    const n = await (await fetch('/api/network')).json();
+    const el = document.getElementById('net-status');
+    const dot = n.online ? '#4caf50' : '#f44336';
+    const label = n.online ? 'Online' : 'Offline';
+    el.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${dot};"></span>${label} &middot; ${n.lan_ip}`;
+
+    // LAN banner
+    const banner = document.getElementById('lan-banner');
+    if (n.lan_ip !== '127.0.0.1') {
+      banner.style.display = 'flex';
+      banner.innerHTML = `Access from other devices on your network: <a href="${n.dashboard_url}" target="_blank">${n.dashboard_url}</a>`;
+    }
+  } catch(e) {}
 }
 
 /* ─── Setup Wizard ─── */
@@ -992,27 +1385,43 @@ async function checkWizard() {
   }
 }
 
-async function runWizard() {
-  const btn = document.getElementById('wiz-start-btn');
-  btn.disabled = true;
-  btn.textContent = 'Installing...';
-  document.getElementById('wiz-progress').style.display = 'block';
+// Wizard capability toggle
+document.querySelectorAll('.wiz-cap').forEach(cap => {
+  cap.addEventListener('click', (e) => {
+    if (e.target.tagName === 'SELECT') return;
+    const cb = cap.querySelector('input[type="checkbox"]');
+    cb.checked = !cb.checked;
+    cap.classList.toggle('selected', cb.checked);
+  });
+});
 
-  const steps = ['ollama', 'kiwix', 'cyberchef'];
-  for (let i = 0; i < steps.length; i++) {
-    const sid = steps[i];
+async function runWizard() {
+  const selected = [];
+  document.querySelectorAll('.wiz-cap').forEach(cap => {
+    if (cap.querySelector('input').checked) selected.push(cap.dataset.svc);
+  });
+  if (!selected.length) { toast('Select at least one capability'); return; }
+
+  document.getElementById('wiz-page-1').style.display = 'none';
+  document.getElementById('wiz-page-2').style.display = 'block';
+
+  document.getElementById('wiz-steps').innerHTML = selected.map((sid, i) =>
+    `<div class="wizard-step" id="wiz-step-${i}"><div class="step-num">${i+1}</div><div>${SVC[sid]?.name || sid}</div></div>`
+  ).join('');
+
+  for (let i = 0; i < selected.length; i++) {
+    const sid = selected[i];
     document.getElementById('wiz-status').textContent = `Installing ${SVC[sid]?.name||sid}...`;
-    document.getElementById('wiz-fill').style.width = ((i/3)*100) + '%';
+    document.getElementById('wiz-fill').style.width = ((i/selected.length)*100) + '%';
 
     await fetch(`/api/services/${sid}/install`, {method:'POST'});
-    // Poll until complete
     while (true) {
       await new Promise(r => setTimeout(r, 1500));
       const p = await (await fetch(`/api/services/${sid}/progress`)).json();
       if (p.status === 'complete' || p.status === 'error') break;
-      document.getElementById('wiz-fill').style.width = ((i/3)*100 + p.percent/3) + '%';
+      document.getElementById('wiz-fill').style.width = ((i/selected.length)*100 + (p.percent||0)/selected.length) + '%';
     }
-    document.getElementById(`wiz-step-${i+1}`).classList.add('done');
+    document.getElementById(`wiz-step-${i}`).classList.add('done');
   }
 
   document.getElementById('wiz-fill').style.width = '100%';

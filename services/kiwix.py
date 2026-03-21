@@ -18,43 +18,146 @@ KIWIX_PORT = 8888
 KIWIX_TOOLS_URL = 'https://download.kiwix.org/release/kiwix-tools/kiwix-tools_win-x86_64-3.8.1.zip'
 STARTER_ZIM_URL = 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_100_mini_2025-06.zim'
 
-# Curated ZIM catalog — popular offline content packs
+# Curated ZIM catalog — tiered categories matching Project N.O.M.A.D.
 ZIM_CATALOG = [
     {
         'category': 'Wikipedia',
-        'items': [
-            {'name': 'Wikipedia Mini (Top 100)', 'filename': 'wikipedia_en_100_mini_2025-06.zim',
-             'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_100_mini_2025-06.zim',
-             'size': '1.2 MB', 'desc': 'Top 100 Wikipedia articles — great for testing'},
-            {'name': 'Wikipedia Top 100k', 'filename': 'wikipedia_en_top_nopic_2025-05.zim',
-             'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_top_nopic_2025-05.zim',
-             'size': '~3 GB', 'desc': 'Top 100,000 articles without pictures'},
-            {'name': 'Wikipedia Full (No Pics)', 'filename': 'wikipedia_en_all_nopic_2025-05.zim',
-             'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_nopic_2025-05.zim',
-             'size': '~25 GB', 'desc': 'Complete English Wikipedia without images'},
-        ]
+        'tiers': {
+            'essential': [
+                {'name': 'Wikipedia Mini (Top 100)', 'filename': 'wikipedia_en_100_mini_2025-06.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_100_mini_2025-06.zim',
+                 'size': '1.2 MB', 'desc': 'Top 100 articles — quick reference'},
+            ],
+            'standard': [
+                {'name': 'Wikipedia Top 100k (No Pics)', 'filename': 'wikipedia_en_top_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_top_nopic_2025-05.zim',
+                 'size': '~3 GB', 'desc': 'Top 100,000 articles without images'},
+            ],
+            'comprehensive': [
+                {'name': 'Wikipedia Full (No Pics)', 'filename': 'wikipedia_en_all_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_nopic_2025-05.zim',
+                 'size': '~25 GB', 'desc': 'Complete English Wikipedia without images'},
+                {'name': 'Wikipedia Full (With Pics)', 'filename': 'wikipedia_en_all_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_maxi_2025-05.zim',
+                 'size': '~102 GB', 'desc': 'Complete English Wikipedia with all images'},
+            ],
+        },
     },
     {
-        'category': 'Medical & Survival',
-        'items': [
-            {'name': 'WikiMed Medical Encyclopedia', 'filename': 'wikipedia_en_medicine_nopic_2025-05.zim',
-             'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_medicine_nopic_2025-05.zim',
-             'size': '~800 MB', 'desc': 'Medical articles from Wikipedia'},
-            {'name': 'Wikibooks', 'filename': 'wikibooks_en_all_nopic_2025-05.zim',
-             'url': 'https://download.kiwix.org/zim/wikibooks/wikibooks_en_all_nopic_2025-05.zim',
-             'size': '~400 MB', 'desc': 'How-to guides and textbooks'},
-        ]
+        'category': 'Medicine',
+        'tiers': {
+            'essential': [
+                {'name': 'WikiMed Medical Encyclopedia', 'filename': 'wikipedia_en_medicine_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_medicine_nopic_2025-05.zim',
+                 'size': '~800 MB', 'desc': 'Medical articles from Wikipedia'},
+            ],
+            'standard': [
+                {'name': 'WikiMed Medical Encyclopedia', 'filename': 'wikipedia_en_medicine_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_medicine_nopic_2025-05.zim',
+                 'size': '~800 MB', 'desc': 'Medical articles from Wikipedia'},
+                {'name': 'MedlinePlus Health Topics', 'filename': 'medlineplus.gov_en_all_2024-10.zim',
+                 'url': 'https://download.kiwix.org/zim/other/medlineplus.gov_en_all_2024-10.zim',
+                 'size': '~500 MB', 'desc': 'NIH consumer health information'},
+            ],
+            'comprehensive': [
+                {'name': 'WikiMed Medical Encyclopedia', 'filename': 'wikipedia_en_medicine_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_medicine_nopic_2025-05.zim',
+                 'size': '~800 MB', 'desc': 'Medical articles from Wikipedia'},
+                {'name': 'MedlinePlus Health Topics', 'filename': 'medlineplus.gov_en_all_2024-10.zim',
+                 'url': 'https://download.kiwix.org/zim/other/medlineplus.gov_en_all_2024-10.zim',
+                 'size': '~500 MB', 'desc': 'NIH consumer health information'},
+                {'name': 'WHO Factsheets', 'filename': 'who.int_en_all_2024-06.zim',
+                 'url': 'https://download.kiwix.org/zim/other/who.int_en_all_2024-06.zim',
+                 'size': '~1.5 GB', 'desc': 'World Health Organization resources'},
+            ],
+        },
     },
     {
-        'category': 'Reference',
-        'items': [
-            {'name': 'Wiktionary', 'filename': 'wiktionary_en_all_nopic_2025-05.zim',
-             'url': 'https://download.kiwix.org/zim/wiktionary/wiktionary_en_all_nopic_2025-05.zim',
-             'size': '~5 GB', 'desc': 'Complete English dictionary'},
-            {'name': 'Stack Exchange', 'filename': 'stackoverflow.com_en_all_2025-05.zim',
-             'url': 'https://download.kiwix.org/zim/stack_exchange/stackoverflow.com_en_all_2025-05.zim',
-             'size': '~55 GB', 'desc': 'Full Stack Overflow Q&A archive'},
-        ]
+        'category': 'Survival & Preparedness',
+        'tiers': {
+            'essential': [
+                {'name': 'Wikibooks (Guides & Manuals)', 'filename': 'wikibooks_en_all_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikibooks/wikibooks_en_all_nopic_2025-05.zim',
+                 'size': '~400 MB', 'desc': 'How-to guides, textbooks, field manuals'},
+            ],
+            'standard': [
+                {'name': 'Wikibooks (Guides & Manuals)', 'filename': 'wikibooks_en_all_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikibooks/wikibooks_en_all_nopic_2025-05.zim',
+                 'size': '~400 MB', 'desc': 'How-to guides, textbooks, field manuals'},
+                {'name': 'Wikivoyage Travel Guide', 'filename': 'wikivoyage_en_all_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikivoyage/wikivoyage_en_all_nopic_2025-05.zim',
+                 'size': '~600 MB', 'desc': 'Worldwide travel and survival information'},
+            ],
+            'comprehensive': [
+                {'name': 'Wikibooks (Guides & Manuals)', 'filename': 'wikibooks_en_all_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikibooks/wikibooks_en_all_nopic_2025-05.zim',
+                 'size': '~400 MB', 'desc': 'How-to guides, textbooks, field manuals'},
+                {'name': 'Wikivoyage Travel Guide', 'filename': 'wikivoyage_en_all_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikivoyage/wikivoyage_en_all_nopic_2025-05.zim',
+                 'size': '~600 MB', 'desc': 'Worldwide travel and survival information'},
+                {'name': 'iFixit Repair Guides', 'filename': 'ifixit_en_all_2024-10.zim',
+                 'url': 'https://download.kiwix.org/zim/other/ifixit_en_all_2024-10.zim',
+                 'size': '~3 GB', 'desc': 'Electronics and device repair guides'},
+            ],
+        },
+    },
+    {
+        'category': 'Computing & Technology',
+        'tiers': {
+            'essential': [
+                {'name': 'Stack Overflow', 'filename': 'stackoverflow.com_en_all_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/stack_exchange/stackoverflow.com_en_all_2025-05.zim',
+                 'size': '~55 GB', 'desc': 'Full Stack Overflow Q&A archive'},
+            ],
+            'standard': [
+                {'name': 'Stack Overflow', 'filename': 'stackoverflow.com_en_all_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/stack_exchange/stackoverflow.com_en_all_2025-05.zim',
+                 'size': '~55 GB', 'desc': 'Full Stack Overflow Q&A archive'},
+                {'name': 'DevDocs API Documentation', 'filename': 'devdocs.io_en_all_2024-09.zim',
+                 'url': 'https://download.kiwix.org/zim/other/devdocs.io_en_all_2024-09.zim',
+                 'size': '~800 MB', 'desc': 'Offline API docs for 100+ languages'},
+            ],
+            'comprehensive': [
+                {'name': 'Stack Overflow', 'filename': 'stackoverflow.com_en_all_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/stack_exchange/stackoverflow.com_en_all_2025-05.zim',
+                 'size': '~55 GB', 'desc': 'Full Stack Overflow Q&A archive'},
+                {'name': 'DevDocs API Documentation', 'filename': 'devdocs.io_en_all_2024-09.zim',
+                 'url': 'https://download.kiwix.org/zim/other/devdocs.io_en_all_2024-09.zim',
+                 'size': '~800 MB', 'desc': 'Offline API docs for 100+ languages'},
+                {'name': 'Super User', 'filename': 'superuser.com_en_all_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/stack_exchange/superuser.com_en_all_2025-05.zim',
+                 'size': '~5 GB', 'desc': 'Computer power user Q&A'},
+            ],
+        },
+    },
+    {
+        'category': 'Science & Engineering',
+        'tiers': {
+            'essential': [
+                {'name': 'Wikipedia Science Portal', 'filename': 'wikipedia_en_science_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_science_nopic_2025-05.zim',
+                 'size': '~1.5 GB', 'desc': 'Science-focused Wikipedia articles'},
+            ],
+            'standard': [
+                {'name': 'Wikipedia Science Portal', 'filename': 'wikipedia_en_science_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_science_nopic_2025-05.zim',
+                 'size': '~1.5 GB', 'desc': 'Science-focused Wikipedia articles'},
+                {'name': 'Wiktionary', 'filename': 'wiktionary_en_all_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wiktionary/wiktionary_en_all_nopic_2025-05.zim',
+                 'size': '~5 GB', 'desc': 'Complete English dictionary'},
+            ],
+            'comprehensive': [
+                {'name': 'Wikipedia Science Portal', 'filename': 'wikipedia_en_science_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_science_nopic_2025-05.zim',
+                 'size': '~1.5 GB', 'desc': 'Science-focused Wikipedia articles'},
+                {'name': 'Wiktionary', 'filename': 'wiktionary_en_all_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wiktionary/wiktionary_en_all_nopic_2025-05.zim',
+                 'size': '~5 GB', 'desc': 'Complete English dictionary'},
+                {'name': 'Mathematics SE', 'filename': 'math.stackexchange.com_en_all_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/stack_exchange/math.stackexchange.com_en_all_2025-05.zim',
+                 'size': '~8 GB', 'desc': 'Mathematics Q&A from Stack Exchange'},
+            ],
+        },
     },
 ]
 
@@ -151,6 +254,19 @@ def list_zim_files():
 def get_catalog():
     """Return the curated ZIM catalog."""
     return ZIM_CATALOG
+
+
+def get_catalog_flat():
+    """Return a flat list of all ZIM items across all tiers (for backward compat)."""
+    items = []
+    seen = set()
+    for cat in ZIM_CATALOG:
+        for tier_name, tier_items in cat.get('tiers', {}).items():
+            for item in tier_items:
+                if item['filename'] not in seen:
+                    seen.add(item['filename'])
+                    items.append({**item, 'category': cat['category'], 'tier': tier_name})
+    return items
 
 
 def download_zim(url: str, filename: str = None):

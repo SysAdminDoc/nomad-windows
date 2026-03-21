@@ -1,5 +1,5 @@
 """
-Project N.O.M.A.D. for Windows v0.2.0
+Project N.O.M.A.D. for Windows v0.4.0
 Node for Offline Media, Archives, and Data
 Native Windows edition — no Docker required.
 """
@@ -48,7 +48,7 @@ from PIL import Image, ImageDraw
 from web.app import create_app
 from db import init_db, get_db
 
-VERSION = '0.3.0'
+VERSION = '0.4.0'
 PORT = 8080
 
 _tray_icon = None
@@ -86,8 +86,8 @@ def tray_show_window(icon, item):
 def tray_quit(icon, item):
     global _window
     # Stop all running services
-    from services import ollama, kiwix, cyberchef
-    for mod in [ollama, kiwix, cyberchef]:
+    from services import ollama, kiwix, cyberchef, kolibri
+    for mod in [ollama, kiwix, cyberchef, kolibri]:
         try:
             if mod.is_installed() and mod.running():
                 mod.stop()
@@ -113,14 +113,14 @@ def setup_tray():
 
 def auto_start_services():
     """Start services that were running when the app last closed."""
-    from services import ollama, kiwix, cyberchef
+    from services import ollama, kiwix, cyberchef, kolibri
     from db import get_db as gdb
 
     db = gdb()
     rows = db.execute('SELECT id FROM services WHERE running = 1 AND installed = 1').fetchall()
     db.close()
 
-    mods = {'ollama': ollama, 'kiwix': kiwix, 'cyberchef': cyberchef}
+    mods = {'ollama': ollama, 'kiwix': kiwix, 'cyberchef': cyberchef, 'kolibri': kolibri}
     for row in rows:
         sid = row['id']
         mod = mods.get(sid)
@@ -142,11 +142,11 @@ def on_window_closing():
 
 def health_monitor():
     """Background thread that detects crashed services and updates DB status."""
-    from services import ollama, kiwix, cyberchef
+    from services import ollama, kiwix, cyberchef, kolibri
     from services.manager import _processes
 
     time.sleep(10)  # Wait for initial startup
-    mods = {'ollama': ollama, 'kiwix': kiwix, 'cyberchef': cyberchef}
+    mods = {'ollama': ollama, 'kiwix': kiwix, 'cyberchef': cyberchef, 'kolibri': kolibri}
 
     while True:
         try:

@@ -30,7 +30,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '1.7.0'
+VERSION = '1.8.0'
 
 
 def set_version(v):
@@ -2147,6 +2147,132 @@ def create_app():
         db.commit()
         db.close()
         return jsonify({'status': 'cleared'})
+
+    # ─── Waypoints API ─────────────────────────────────────────────────
+
+    WAYPOINT_CATEGORIES = ['rally', 'water', 'cache', 'shelter', 'hazard', 'medical', 'comms', 'general']
+    WAYPOINT_COLORS = {'rally': '#5b9fff', 'water': '#4fc3f7', 'cache': '#ff9800', 'shelter': '#4caf50',
+                       'hazard': '#f44336', 'medical': '#e91e63', 'comms': '#b388ff', 'general': '#9e9e9e'}
+
+    @app.route('/api/waypoints')
+    def api_waypoints_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM waypoints ORDER BY created_at DESC').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/waypoints', methods=['POST'])
+    def api_waypoints_create():
+        data = request.get_json()
+        cat = data.get('category', 'general')
+        color = WAYPOINT_COLORS.get(cat, '#9e9e9e')
+        db = get_db()
+        cur = db.execute('INSERT INTO waypoints (name, lat, lng, category, color, notes) VALUES (?, ?, ?, ?, ?, ?)',
+                         (data.get('name', 'Waypoint'), data.get('lat', 0), data.get('lng', 0),
+                          cat, color, data.get('notes', '')))
+        db.commit()
+        row = db.execute('SELECT * FROM waypoints WHERE id = ?', (cur.lastrowid,)).fetchone()
+        db.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/waypoints/<int:wid>', methods=['DELETE'])
+    def api_waypoints_delete(wid):
+        db = get_db()
+        db.execute('DELETE FROM waypoints WHERE id = ?', (wid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    # ─── Timers API ───────────────────────────────────────────────────
+
+    @app.route('/api/timers')
+    def api_timers_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM timers ORDER BY created_at DESC').fetchall()
+        db.close()
+        result = []
+        from datetime import datetime
+        now = datetime.now()
+        for r in rows:
+            started = datetime.fromisoformat(r['started_at'])
+            elapsed = (now - started).total_seconds()
+            remaining = max(0, r['duration_sec'] - elapsed)
+            result.append({**dict(r), 'remaining_sec': remaining, 'done': remaining <= 0})
+        return jsonify(result)
+
+    @app.route('/api/timers', methods=['POST'])
+    def api_timers_create():
+        data = request.get_json()
+        from datetime import datetime
+        db = get_db()
+        cur = db.execute('INSERT INTO timers (name, duration_sec, started_at) VALUES (?, ?, ?)',
+                         (data.get('name', 'Timer'), int(data.get('duration_sec', 300)),
+                          datetime.now().isoformat()))
+        db.commit()
+        row = db.execute('SELECT * FROM timers WHERE id = ?', (cur.lastrowid,)).fetchone()
+        db.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/timers/<int:tid>', methods=['DELETE'])
+    def api_timers_delete(tid):
+        db = get_db()
+        db.execute('DELETE FROM timers WHERE id = ?', (tid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    # ─── CSV Export API ───────────────────────────────────────────────
+
+    @app.route('/api/inventory/export-csv')
+    def api_inventory_csv():
+        db = get_db()
+        rows = db.execute('SELECT name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes FROM inventory ORDER BY category, name').fetchall()
+        db.close()
+        import csv, io
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(['Name', 'Category', 'Quantity', 'Unit', 'Min Qty', 'Daily Usage', 'Location', 'Expiration', 'Notes'])
+        for r in rows:
+            w.writerow([r['name'], r['category'], r['quantity'], r['unit'], r['min_quantity'], r['daily_usage'], r['location'], r['expiration'], r['notes']])
+        return Response(buf.getvalue(), mimetype='text/csv',
+                       headers={'Content-Disposition': 'attachment; filename="nomad-inventory.csv"'})
+
+    @app.route('/api/contacts/export-csv')
+    def api_contacts_csv():
+        db = get_db()
+        rows = db.execute('SELECT name, callsign, role, skills, phone, freq, email, address, rally_point, blood_type, medical_notes, notes FROM contacts ORDER BY name').fetchall()
+        db.close()
+        import csv, io
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(['Name', 'Callsign', 'Role', 'Skills', 'Phone', 'Frequency', 'Email', 'Address', 'Rally Point', 'Blood Type', 'Medical Notes', 'Notes'])
+        for r in rows:
+            w.writerow([r['name'], r['callsign'], r['role'], r['skills'], r['phone'], r['freq'], r['email'], r['address'], r['rally_point'], r['blood_type'], r['medical_notes'], r['notes']])
+        return Response(buf.getvalue(), mimetype='text/csv',
+                       headers={'Content-Disposition': 'attachment; filename="nomad-contacts.csv"'})
+
+    # ─── Expanded Unified Search ──────────────────────────────────────
+
+    @app.route('/api/search/all')
+    def api_search_all():
+        """Extended search across all data types."""
+        q = request.args.get('q', '').strip()
+        if not q:
+            return jsonify({'conversations': [], 'notes': [], 'documents': [], 'inventory': [], 'contacts': [], 'checklists': []})
+        db = get_db()
+        like = f'%{q}%'
+        convos = db.execute("SELECT id, title, 'conversation' as type FROM conversations WHERE title LIKE ? OR messages LIKE ? LIMIT 10", (like, like)).fetchall()
+        notes = db.execute("SELECT id, title, 'note' as type FROM notes WHERE title LIKE ? OR content LIKE ? LIMIT 10", (like, like)).fetchall()
+        docs = db.execute("SELECT id, filename as title, 'document' as type FROM documents WHERE filename LIKE ? AND status = 'ready' LIMIT 10", (like,)).fetchall()
+        inv = db.execute("SELECT id, name as title, 'inventory' as type FROM inventory WHERE name LIKE ? OR location LIKE ? OR notes LIKE ? LIMIT 10", (like, like, like)).fetchall()
+        contacts = db.execute("SELECT id, name as title, 'contact' as type FROM contacts WHERE name LIKE ? OR callsign LIKE ? OR role LIKE ? OR skills LIKE ? LIMIT 10", (like, like, like, like)).fetchall()
+        checklists = db.execute("SELECT id, name as title, 'checklist' as type FROM checklists WHERE name LIKE ? LIMIT 10", (like,)).fetchall()
+        db.close()
+        return jsonify({
+            'conversations': [dict(r) for r in convos], 'notes': [dict(r) for r in notes],
+            'documents': [dict(r) for r in docs], 'inventory': [dict(r) for r in inv],
+            'contacts': [dict(r) for r in contacts], 'checklists': [dict(r) for r in checklists],
+        })
 
     # ─── Favicon ──────────────────────────────────────────────────────
 

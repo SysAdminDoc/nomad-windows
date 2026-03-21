@@ -30,7 +30,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '1.3.0'
+VERSION = '1.4.0'
 
 
 def set_version(v):
@@ -1963,6 +1963,54 @@ def create_app():
     def api_lan_clear():
         db = get_db()
         db.execute('DELETE FROM lan_messages')
+        db.commit()
+        db.close()
+        return jsonify({'status': 'cleared'})
+
+    # ─── Incident Log API ─────────────────────────────────────────────
+
+    @app.route('/api/incidents')
+    def api_incidents_list():
+        db = get_db()
+        limit = request.args.get('limit', 100, type=int)
+        cat = request.args.get('category', '')
+        query = 'SELECT * FROM incidents'
+        params = []
+        if cat:
+            query += ' WHERE category = ?'
+            params.append(cat)
+        query += ' ORDER BY created_at DESC LIMIT ?'
+        params.append(limit)
+        rows = db.execute(query, params).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/incidents', methods=['POST'])
+    def api_incidents_create():
+        data = request.get_json()
+        desc = (data.get('description', '') or '').strip()
+        if not desc:
+            return jsonify({'error': 'Description required'}), 400
+        db = get_db()
+        cur = db.execute('INSERT INTO incidents (severity, category, description) VALUES (?, ?, ?)',
+                         (data.get('severity', 'info'), data.get('category', 'other'), desc))
+        db.commit()
+        row = db.execute('SELECT * FROM incidents WHERE id = ?', (cur.lastrowid,)).fetchone()
+        db.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/incidents/<int:iid>', methods=['DELETE'])
+    def api_incidents_delete(iid):
+        db = get_db()
+        db.execute('DELETE FROM incidents WHERE id = ?', (iid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/incidents/clear', methods=['POST'])
+    def api_incidents_clear():
+        db = get_db()
+        db.execute('DELETE FROM incidents')
         db.commit()
         db.close()
         return jsonify({'status': 'cleared'})

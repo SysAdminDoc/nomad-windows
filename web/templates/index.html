@@ -746,6 +746,47 @@ a { color: var(--accent); text-decoration: none; }
 .service-card svg { color: var(--accent); }
 .service-card:hover svg { color: var(--accent-hover); }
 
+/* ─── Situation Board ─── */
+.sit-board {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px;
+  margin-bottom: 16px; padding: 12px; background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+}
+@media (max-width: 800px) { .sit-board { grid-template-columns: repeat(3, 1fr); } }
+.sit-cell {
+  text-align: center; padding: 10px 6px; border-radius: var(--radius-sm);
+  cursor: pointer; transition: all 0.15s; border: 1px solid transparent;
+  user-select: none;
+}
+.sit-cell:hover { transform: scale(1.03); }
+.sit-cell .sit-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px; }
+.sit-cell .sit-level { font-size: 13px; font-weight: 600; }
+.sit-cell[data-level="green"] { background: var(--green-dim); color: var(--green); border-color: rgba(76,175,80,0.2); }
+.sit-cell[data-level="yellow"] { background: rgba(255,235,59,0.1); color: #c8a800; border-color: rgba(255,235,59,0.2); }
+.sit-cell[data-level="orange"] { background: var(--orange-dim); color: var(--orange); border-color: rgba(255,152,0,0.2); }
+.sit-cell[data-level="red"] { background: var(--red-dim); color: var(--red); border-color: rgba(244,67,54,0.2); }
+
+/* ─── Incident Log ─── */
+.incident-item {
+  display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border);
+  font-size: 12px; align-items: flex-start;
+}
+.incident-item:last-child { border-bottom: none; }
+.incident-sev {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px;
+  border-radius: 4px; font-weight: 700; flex-shrink: 0; min-width: 52px; text-align: center;
+}
+.incident-sev.info { background: var(--accent-dim); color: var(--accent); }
+.incident-sev.warning { background: rgba(255,235,59,0.12); color: #c8a800; }
+.incident-sev.alert { background: var(--orange-dim); color: var(--orange); }
+.incident-sev.critical { background: var(--red-dim); color: var(--red); }
+.incident-cat { font-size: 10px; color: var(--text-muted); flex-shrink: 0; min-width: 70px; }
+.incident-time { font-size: 10px; color: var(--text-muted); flex-shrink: 0; white-space: nowrap; }
+.incident-desc { flex: 1; line-height: 1.5; }
+.incident-del { color: var(--red); cursor: pointer; opacity: 0; font-size: 11px; flex-shrink: 0; }
+.incident-item:hover .incident-del { opacity: 0.6; }
+.incident-del:hover { opacity: 1 !important; }
+
 /* ─── Prep Sub-tabs ─── */
 .prep-subtab {
   padding: 6px 14px; cursor: pointer; color: var(--text-dim);
@@ -1160,9 +1201,20 @@ a { color: var(--accent); text-decoration: none; }
 
   <!-- Preparedness Tab -->
   <div id="tab-preparedness" class="tab-content">
+    <!-- Situation Board -->
+    <div class="sit-board" id="sit-board">
+      <div class="sit-cell" data-domain="security" data-level="green" onclick="cycleSitLevel(this)"><div class="sit-label">Security</div><div class="sit-level">Good</div></div>
+      <div class="sit-cell" data-domain="water" data-level="green" onclick="cycleSitLevel(this)"><div class="sit-label">Water</div><div class="sit-level">Good</div></div>
+      <div class="sit-cell" data-domain="food" data-level="green" onclick="cycleSitLevel(this)"><div class="sit-label">Food</div><div class="sit-level">Good</div></div>
+      <div class="sit-cell" data-domain="medical" data-level="green" onclick="cycleSitLevel(this)"><div class="sit-label">Medical</div><div class="sit-level">Good</div></div>
+      <div class="sit-cell" data-domain="power" data-level="green" onclick="cycleSitLevel(this)"><div class="sit-label">Power</div><div class="sit-level">Good</div></div>
+      <div class="sit-cell" data-domain="comms" data-level="green" onclick="cycleSitLevel(this)"><div class="sit-label">Comms</div><div class="sit-level">Good</div></div>
+    </div>
+
     <!-- Sub-navigation -->
     <div class="prep-subtabs" style="display:flex;gap:2px;margin-bottom:20px;background:var(--surface);border-radius:var(--radius);padding:4px;border:1px solid var(--border);overflow-x:auto;">
       <button class="prep-subtab active" data-psub="checklists" onclick="switchPrepSub('checklists')">Checklists</button>
+      <button class="prep-subtab" data-psub="incidents" onclick="switchPrepSub('incidents')">Incident Log</button>
       <button class="prep-subtab" data-psub="inventory" onclick="switchPrepSub('inventory')">Inventory</button>
       <button class="prep-subtab" data-psub="contacts" onclick="switchPrepSub('contacts')">Contacts</button>
       <button class="prep-subtab" data-psub="calculators" onclick="switchPrepSub('calculators')">Calculators</button>
@@ -1199,6 +1251,51 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
     </div><!-- /psub-checklists -->
+
+    <!-- Sub: Incidents -->
+    <div id="psub-incidents" class="prep-sub">
+    <div class="prep-section">
+      <h3>Incident Log</h3>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:stretch;">
+        <select id="inc-severity" class="preset-select" style="min-width:90px;">
+          <option value="info">Info</option>
+          <option value="warning">Warning</option>
+          <option value="alert">Alert</option>
+          <option value="critical">Critical</option>
+        </select>
+        <select id="inc-category" class="preset-select" style="min-width:100px;">
+          <option value="security">Security</option>
+          <option value="medical">Medical</option>
+          <option value="infrastructure">Infrastructure</option>
+          <option value="weather">Weather</option>
+          <option value="comms">Comms</option>
+          <option value="supply">Supply</option>
+          <option value="movement">Movement</option>
+          <option value="other">Other</option>
+        </select>
+        <input id="inc-desc" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Describe the event..." onkeydown="if(event.key==='Enter')logIncident()">
+        <button class="btn btn-sm btn-primary" onclick="logIncident()">Log Event</button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;">
+        <select id="inc-filter" class="preset-select" onchange="loadIncidents()" style="min-width:100px;">
+          <option value="">All Categories</option>
+          <option value="security">Security</option>
+          <option value="medical">Medical</option>
+          <option value="infrastructure">Infrastructure</option>
+          <option value="weather">Weather</option>
+          <option value="comms">Comms</option>
+          <option value="supply">Supply</option>
+          <option value="movement">Movement</option>
+          <option value="other">Other</option>
+        </select>
+        <span style="flex:1;"></span>
+        <button class="btn btn-sm btn-danger" onclick="clearIncidents()">Clear All</button>
+      </div>
+      <div class="settings-card" style="max-height:500px;overflow-y:auto;">
+        <div id="incidents-list"></div>
+      </div>
+    </div>
+    </div><!-- /psub-incidents -->
 
     <!-- Sub: Inventory -->
     <div id="psub-inventory" class="prep-sub">
@@ -1306,6 +1403,17 @@ a { color: var(--accent); text-decoration: none; }
           <div class="calc-row"><label>Days</label><input type="number" id="calc-power-days" value="3" min="1" max="30" oninput="calcPower()"></div>
           <div class="calc-row"><label>Sun hours</label><input type="number" id="calc-power-sun" value="5" min="1" max="12" oninput="calcPower()"></div>
           <div class="calc-result" id="calc-power-result"></div>
+        </div>
+        <!-- Watch Schedule -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Watch / Guard Rotation Schedule</h4>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Team Members (comma-separated)</label><input id="watch-names" style="width:300px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" value="Alpha, Bravo, Charlie, Delta" oninput="calcWatch()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Shift (hours)</label><input id="watch-shift" type="number" min="1" max="12" value="4" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcWatch()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Days</label><input id="watch-days" type="number" min="1" max="14" value="3" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcWatch()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Start Time</label><input id="watch-start" type="time" value="18:00" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcWatch()"></div>
+          </div>
+          <div id="watch-result" style="overflow-x:auto;"></div>
         </div>
       </div>
     </div>
@@ -1494,6 +1602,57 @@ a { color: var(--accent); text-decoration: none; }
           </div>
           <div style="margin-top:8px;font-size:11px;color:var(--text-dim);">Make symbols at least 10 feet tall. Use contrasting materials (rocks on snow, branches on sand). Three fires in a triangle = universal distress signal.</div>
         </div>
+
+        <!-- Medication Reference -->
+        <div class="calc-card">
+          <h4>Common Medication Dosages</h4>
+          <div style="font-size:12px;line-height:2;">
+            <div><strong>Ibuprofen</strong> (Advil/Motrin) — 200-400mg every 4-6h. Max 1200mg/day OTC. Anti-inflammatory + pain + fever.</div>
+            <div><strong>Acetaminophen</strong> (Tylenol) — 500-1000mg every 4-6h. Max 3000mg/day. Pain + fever. NO alcohol.</div>
+            <div><strong>Diphenhydramine</strong> (Benadryl) — 25-50mg every 4-6h. Allergies + sleep + mild nausea. Causes drowsiness.</div>
+            <div><strong>Loperamide</strong> (Imodium) — 4mg initial, then 2mg per loose stool. Max 8mg/day OTC. Anti-diarrheal.</div>
+            <div><strong>Aspirin</strong> — 325-650mg every 4h for pain. 81-325mg for suspected heart attack (chew, don't swallow).</div>
+            <div><strong>Pseudoephedrine</strong> (Sudafed) — 30-60mg every 4-6h. Nasal decongestant. Raises BP.</div>
+            <div><strong>Guaifenesin</strong> (Mucinex) — 200-400mg every 4h. Loosens mucus. Drink lots of water.</div>
+            <div><strong>Bismuth subsalicylate</strong> (Pepto) — 30mL or 2 tabs every 30-60min. Max 8 doses/day. Stomach/nausea/diarrhea.</div>
+            <div><strong>Hydrocortisone 1%</strong> — Apply thin layer 2-4x/day. Rash, itch, insect bites. Max 7 days on face.</div>
+            <div><strong>Bacitracin/Neosporin</strong> — Apply to clean wound 1-3x/day. Prevents infection.</div>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--orange);font-weight:600;">Shelf life: Most OTC meds retain 90%+ potency for 1-5 years past expiration if stored cool and dry. Exceptions: nitroglycerin, insulin, liquid antibiotics, EpiPens.</div>
+        </div>
+
+        <!-- Barter Guide -->
+        <div class="calc-card">
+          <h4>Grid-Down Barter Values</h4>
+          <div style="font-size:12px;line-height:1.9;">
+            <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Tier 1 — Highest Value</div>
+            <div>Antibiotics, prescription meds, insulin</div>
+            <div>Water purification (filters, tablets, bleach)</div>
+            <div>Ammunition (common calibers: .22LR, 9mm, 5.56, 12ga)</div>
+            <div>Fuel (gasoline, diesel, propane, kerosene)</div>
+            <div>Seeds (heirloom, non-GMO, viable)</div>
+            <div style="font-weight:600;color:var(--accent);margin-top:8px;margin-bottom:4px;">Tier 2 — High Value</div>
+            <div>Salt, sugar, honey (indefinite shelf life)</div>
+            <div>Coffee, tea, alcohol (morale + antiseptic)</div>
+            <div>Batteries (AA, D, CR123A)</div>
+            <div>Fire starters (lighters, ferro rods, matches)</div>
+            <div>OTC medicines (pain, allergy, anti-diarrheal)</div>
+            <div>Tobacco products</div>
+            <div style="font-weight:600;color:var(--accent);margin-top:8px;margin-bottom:4px;">Tier 3 — Steady Value</div>
+            <div>Canned food, MREs, freeze-dried meals</div>
+            <div>Soap, toothpaste, toilet paper, feminine products</div>
+            <div>Cordage (paracord, rope, zip ties, duct tape)</div>
+            <div>Hand tools (axe, saw, wrench, multi-tool)</div>
+            <div>Candles, lamp oil, flashlights</div>
+            <div>Sewing kits, fabric, tarps</div>
+            <div style="font-weight:600;color:var(--accent);margin-top:8px;margin-bottom:4px;">Valuable Skills to Trade</div>
+            <div>Medical care, dental work, veterinary</div>
+            <div>Mechanical repair (auto, small engine, welding)</div>
+            <div>Radio communications, electrical work</div>
+            <div>Food preservation (canning, smoking, drying)</div>
+            <div>Security, armed escort, patrol</div>
+          </div>
+        </div>
       </div>
     </div>
     </div><!-- /psub-reference -->
@@ -1616,6 +1775,65 @@ a { color: var(--accent); text-decoration: none; }
             <li><strong>Fire maintenance:</strong> Feed gradually, larger fuel as fire grows. Keep dry wood supply stocked. Bank coals at night with ash for easy restart.</li>
           </ol>
           <div class="proto-warn">Always have a fire extinguishment plan. Clear area around fire. Never leave unattended. Build fire INSIDE shelter entrance, not inside enclosed shelter (CO poisoning).</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Choking — Heimlich Maneuver</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Confirm choking.</strong> Ask "Are you choking?" Look for: inability to speak/cough, hands at throat, turning blue.</li>
+            <li><strong>Adult/child (standing):</strong> Stand behind victim. Make a fist with one hand, place thumb side against abdomen above navel, below ribcage. Grasp fist with other hand. Give sharp upward thrusts.</li>
+            <li><strong>Repeat thrusts</strong> until object is expelled or victim becomes unconscious.</li>
+            <li><strong>If victim goes unconscious:</strong> Lower to ground carefully. Call 911. Begin CPR — look in mouth before each breath for the object. Remove if visible.</li>
+            <li><strong>Self-Heimlich:</strong> Make a fist above your navel. Drive it inward and upward against a chair back, countertop, or your other hand.</li>
+            <li><strong>Infant (under 1 year):</strong> Place face-down on your forearm, head lower than chest. Give 5 back blows between shoulder blades with heel of hand. Flip over, give 5 chest thrusts with 2 fingers on breastbone. Alternate until clear.</li>
+          </ol>
+          <div class="proto-warn">Never do blind finger sweeps in infants or children — you may push the object deeper.</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Hypothermia Recognition & Treatment</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Recognize stages:</strong>
+              <ul>
+                <li><strong>Mild (90-95F/32-35C):</strong> Shivering, cold hands/feet, numbness, clumsiness, slurred speech</li>
+                <li><strong>Moderate (82-90F/28-32C):</strong> Violent shivering then shivering STOPS, confusion, drowsiness, paradoxical undressing</li>
+                <li><strong>Severe (below 82F/28C):</strong> No shivering, unconscious, very slow pulse, appears dead</li>
+              </ul>
+            </li>
+            <li><strong>Remove from cold.</strong> Get to shelter. Remove wet clothing. Handle GENTLY — rough handling can cause cardiac arrest in severe cases.</li>
+            <li><strong>Passive rewarming (mild):</strong> Dry clothing, blankets, sleeping bag. Hot drinks (no alcohol/caffeine). Skin-to-skin contact in sleeping bag.</li>
+            <li><strong>Active rewarming (moderate):</strong> Warm water bottles/heat packs to neck, armpits, groin (major blood vessels). NOT hands/feet first.</li>
+            <li><strong>Severe hypothermia:</strong> Minimize movement. Rewarm torso FIRST. Keep horizontal. Even if no pulse detected, begin CPR — cold hearts can restart. Evacuate.</li>
+          </ol>
+          <div class="proto-tip">Do NOT give alcohol — it dilates blood vessels and increases heat loss. Do NOT rub extremities. Do NOT place in hot bath (cardiac shock risk).</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Wound Closure & Infection Prevention</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Clean the wound thoroughly.</strong> Irrigate with clean water under pressure (syringe, squeeze bottle, punctured water bottle cap). Remove debris. This is the MOST important step for preventing infection.</li>
+            <li><strong>Assess if closure is appropriate:</strong> Close clean cuts less than 6-8 hours old. Do NOT close: animal bites, punctures, visibly contaminated wounds, wounds older than 12 hours — these need to drain.</li>
+            <li><strong>Butterfly strips / Steri-strips:</strong> Apply perpendicular to wound. Place strips 3mm apart. Apply one side, pull wound edges together, apply other side. Reinforce with lengthwise strips.</li>
+            <li><strong>Skin staples:</strong> Evert wound edges. Place staple perpendicular to wound. Squeeze stapler firmly. Space staples 5-7mm apart.</li>
+            <li><strong>Sutures (if trained):</strong> Simple interrupted sutures, 5mm from edge, 5mm apart. Enter perpendicular, exit perpendicular. Square knot, 4-5 throws.</li>
+            <li><strong>After closure:</strong> Apply antibiotic ointment. Cover with sterile dressing. Change dressing daily. Watch for infection signs: increasing redness, warmth, swelling, pus, red streaks, fever.</li>
+          </ol>
+          <div class="proto-warn">Signs of infection requiring urgent care: red streaks spreading from wound, fever over 101F, foul smell, rapid swelling, green/brown drainage.</div>
         </div>
       </div>
     </div>
@@ -3623,9 +3841,10 @@ async function importConfig() {
 function switchPrepSub(sub) {
   document.querySelectorAll('.prep-subtab').forEach(b => b.classList.toggle('active', b.dataset.psub === sub));
   document.querySelectorAll('.prep-sub').forEach(p => p.classList.toggle('active', p.id === 'psub-' + sub));
+  if (sub === 'incidents') loadIncidents();
   if (sub === 'inventory') loadInventory();
   if (sub === 'contacts') loadContacts();
-  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); }
+  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); }
   if (sub === 'reference') convertUnit();
 }
 
@@ -3637,6 +3856,7 @@ let _currentChecklistItems = [];
 async function loadPrepTab() {
   if (!_prepLoaded) {
     await loadPrepTemplates();
+    await loadSitBoard();
     calcWater(); calcFood(); calcPower();
     _prepLoaded = true;
   }
@@ -4098,6 +4318,124 @@ async function sendLanMsg() {
     _lanLastId = msg.id;
     el.scrollTop = el.scrollHeight;
   } catch(e) { toast('Failed to send', 'error'); }
+}
+
+/* ─── Situation Board ─── */
+const SIT_LEVELS = ['green','yellow','orange','red'];
+const SIT_LABELS = {green:'Good', yellow:'Caution', orange:'Concern', red:'Critical'};
+
+function cycleSitLevel(cell) {
+  const current = cell.dataset.level;
+  const next = SIT_LEVELS[(SIT_LEVELS.indexOf(current) + 1) % SIT_LEVELS.length];
+  cell.dataset.level = next;
+  cell.querySelector('.sit-level').textContent = SIT_LABELS[next];
+  saveSitBoard();
+}
+
+function saveSitBoard() {
+  const levels = {};
+  document.querySelectorAll('.sit-cell').forEach(c => levels[c.dataset.domain] = c.dataset.level);
+  fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sit_board: JSON.stringify(levels)})});
+}
+
+async function loadSitBoard() {
+  try {
+    const s = await (await fetch('/api/settings')).json();
+    if (s.sit_board) {
+      const levels = JSON.parse(s.sit_board);
+      document.querySelectorAll('.sit-cell').forEach(c => {
+        const lvl = levels[c.dataset.domain] || 'green';
+        c.dataset.level = lvl;
+        c.querySelector('.sit-level').textContent = SIT_LABELS[lvl];
+      });
+    }
+  } catch(e) {}
+}
+
+/* ─── Incident Log ─── */
+async function loadIncidents() {
+  const cat = document.getElementById('inc-filter').value;
+  let url = '/api/incidents?limit=200';
+  if (cat) url += `&category=${encodeURIComponent(cat)}`;
+  try {
+    const items = await (await fetch(url)).json();
+    const el = document.getElementById('incidents-list');
+    if (!items.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:30px;font-size:12px;">No incidents logged. Use this to track events during an emergency.</div>';
+      return;
+    }
+    el.innerHTML = items.map(i => {
+      const t = new Date(i.created_at);
+      const ts = t.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      return `<div class="incident-item">
+        <span class="incident-sev ${i.severity}">${i.severity}</span>
+        <span class="incident-cat">${i.category}</span>
+        <span class="incident-time">${ts}</span>
+        <span class="incident-desc">${escapeHtml(i.description)}</span>
+        <span class="incident-del" onclick="deleteIncident(${i.id})">x</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function logIncident() {
+  const desc = document.getElementById('inc-desc').value.trim();
+  if (!desc) { toast('Enter an event description', 'warning'); return; }
+  const severity = document.getElementById('inc-severity').value;
+  const category = document.getElementById('inc-category').value;
+  await fetch('/api/incidents', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({severity, category, description: desc})});
+  document.getElementById('inc-desc').value = '';
+  toast('Event logged', severity === 'critical' ? 'error' : severity === 'alert' ? 'warning' : 'success');
+  loadIncidents();
+}
+
+async function deleteIncident(id) {
+  await fetch(`/api/incidents/${id}`, {method:'DELETE'});
+  loadIncidents();
+}
+
+async function clearIncidents() {
+  await fetch('/api/incidents/clear', {method:'POST'});
+  toast('Incident log cleared');
+  loadIncidents();
+}
+
+/* ─── Watch Schedule ─── */
+function calcWatch() {
+  const names = document.getElementById('watch-names').value.split(',').map(n => n.trim()).filter(Boolean);
+  const shift = parseInt(document.getElementById('watch-shift').value) || 4;
+  const days = parseInt(document.getElementById('watch-days').value) || 3;
+  const startStr = document.getElementById('watch-start').value || '18:00';
+  if (names.length < 2) { document.getElementById('watch-result').innerHTML = '<span style="color:var(--text-muted);font-size:12px;">Enter at least 2 team members.</span>'; return; }
+
+  const totalHours = days * 24;
+  const totalShifts = Math.ceil(totalHours / shift);
+  const [startH, startM] = startStr.split(':').map(Number);
+
+  let html = '<table class="freq-table"><thead><tr><th>Shift</th><th>Day</th><th>Start</th><th>End</th><th>On Duty</th></tr></thead><tbody>';
+  for (let i = 0; i < totalShifts; i++) {
+    const person = names[i % names.length];
+    const startMins = (startH * 60 + startM + i * shift * 60);
+    const endMins = startMins + shift * 60;
+    const dayNum = Math.floor(startMins / (24*60)) + 1;
+    const sh = Math.floor((startMins % (24*60)) / 60);
+    const sm = startMins % 60;
+    const eh = Math.floor((endMins % (24*60)) / 60);
+    const em = endMins % 60;
+    const fmt = (h,m) => `${String(h%24).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+    html += `<tr><td>${i+1}</td><td>Day ${dayNum}</td><td>${fmt(sh,sm)}</td><td>${fmt(eh,em)}</td><td style="font-weight:600;">${escapeHtml(person)}</td></tr>`;
+  }
+  html += '</tbody></table>';
+
+  // Summary
+  const shiftsPerPerson = Math.ceil(totalShifts / names.length);
+  const hoursPerPerson = shiftsPerPerson * shift;
+  const restPerCycle = (names.length - 1) * shift;
+  html += `<div style="margin-top:8px;font-size:11px;color:var(--text-dim);">
+    ${names.length} people, ${shift}h shifts, ${days} days = ${totalShifts} total shifts.
+    Each person: ~${hoursPerPerson}h on duty, ${restPerCycle}h rest between shifts.
+  </div>`;
+  document.getElementById('watch-result').innerHTML = html;
 }
 
 /* ─── Emergency Protocols ─── */

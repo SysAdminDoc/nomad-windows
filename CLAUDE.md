@@ -63,7 +63,7 @@ pyinstaller build.spec
 - Kolibri: http://localhost:8300
 - Stirling PDF: http://localhost:8443
 
-## Features (v1.3.0)
+## Features (v1.4.0)
 - **6 services**: Ollama (AI), Kiwix (offline content), CyberChef (data tools), Kolibri (education), Qdrant (vector DB), Stirling PDF (PDF toolkit)
 - **Setup wizard** — capability selection (choose which services to install)
 - **Auto-start** — previously running services restart on app launch
@@ -112,10 +112,10 @@ pyinstaller build.spec
 - Benchmark disk test creates/deletes temp files in ProjectNOMAD\benchmark\
 
 ## Version
-v1.3.0
+v1.4.0
 
 ## Status
-Working v1.3.0 — Preparedness Edition. 8-tab dashboard with sub-navigated Preparedness tab (7 sub-sections: Checklists, Inventory, Contacts, Calculators, Radio Ref, Quick Ref, Protocols). Supply inventory tracker with expiration alerts, low-stock warnings, category filtering, search. Emergency contacts directory with callsigns, roles, skills, blood types, rally points, medical notes. LAN Chat widget for local network messaging (accessible from any tab). Quick reference cards: NATO phonetic alphabet, Morse code, unit converter (14 conversions), essential knots, weather prediction from observation, ground-to-air signals. Plus v1.2.0 features: 6 checklist templates, resource calculators, radio frequency reference, emergency protocols, 12 AI presets.
+Working v1.4.0 — Command Center Edition. 8-tab dashboard. Preparedness tab with 8 sub-sections and persistent Situation Board (6-domain threat level dashboard). Incident Log for chronological event tracking with severity/categories. Watch/guard rotation schedule generator. Medication dosage reference, barter value guide. 8 emergency protocols (added choking/Heimlich, hypothermia, wound closure). Plus all v1.3.0 features: inventory, contacts, LAN chat, checklists, calculators, radio ref, quick ref cards, 12 AI presets.
 
 ## Gotchas (v0.8.0)
 - Stirling PDF requires Java 17+ (downloads .jar, not .exe — no Windows exe in releases)

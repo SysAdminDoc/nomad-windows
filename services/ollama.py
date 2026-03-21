@@ -22,19 +22,19 @@ _pull_progress = {'status': 'idle', 'model': '', 'percent': 0, 'detail': ''}
 
 RECOMMENDED_MODELS = [
     # Small (under 4GB) — fast, practical knowledge
-    {'name': 'llama3.2:3b', 'size': '2.0 GB', 'desc': 'Fast general-purpose model, great starting point'},
-    {'name': 'phi4-mini', 'size': '2.5 GB', 'desc': 'Microsoft Phi-4 Mini — excellent reasoning for its size'},
-    {'name': 'gemma3:4b', 'size': '3.3 GB', 'desc': 'Google Gemma 3 — strong at following instructions'},
+    {'name': 'qwen3:4b', 'size': '2.5 GB', 'desc': 'Best small model — dual thinking mode, rivals 72B on reasoning'},
+    {'name': 'gemma3:4b', 'size': '3.3 GB', 'desc': 'Google Gemma 3 — multimodal (analyzes images), 128K context'},
+    {'name': 'phi4-mini', 'size': '2.3 GB', 'desc': 'Microsoft Phi-4 Mini — exceptional instruction following'},
+    {'name': 'llama3.2:3b', 'size': '2.0 GB', 'desc': 'Meta Llama — reliable, battle-tested, great starting point'},
     {'name': 'llama3.2:1b', 'size': '1.3 GB', 'desc': 'Ultra-light for low-RAM systems (4GB RAM OK)'},
-    {'name': 'qwen2.5:3b', 'size': '1.9 GB', 'desc': 'Alibaba compact model, good multilingual support'},
     # Medium (4-8GB) — detailed technical answers
-    {'name': 'llama3.3:8b', 'size': '4.9 GB', 'desc': 'Latest Llama 3.3 — best open-source quality/size ratio'},
+    {'name': 'qwen3:8b', 'size': '5.2 GB', 'desc': 'Best medium model — thinking mode for step-by-step procedures'},
+    {'name': 'deepseek-r1:8b', 'size': '5.2 GB', 'desc': 'DeepSeek reasoning — chain-of-thought problem solving'},
+    {'name': 'gemma3:12b', 'size': '8.1 GB', 'desc': 'Google Gemma 3 12B — multimodal, strong medical/technical'},
+    {'name': 'llama3.1:8b', 'size': '4.7 GB', 'desc': 'Most battle-tested model on Ollama (108M+ downloads)'},
     {'name': 'mistral:7b', 'size': '4.1 GB', 'desc': 'Strong reasoning, great for step-by-step procedures'},
-    {'name': 'gemma3:12b', 'size': '8.1 GB', 'desc': 'Google Gemma 3 12B — excellent medical/technical knowledge'},
-    {'name': 'qwen2.5:7b', 'size': '4.7 GB', 'desc': 'Strong at coding, math, and structured output'},
-    {'name': 'deepseek-r1:8b', 'size': '4.9 GB', 'desc': 'DeepSeek reasoning — shows its thinking step by step'},
-    # Specialized
-    {'name': 'medllama2:7b', 'size': '3.8 GB', 'desc': 'Medical domain fine-tuned — first aid, medications, symptoms'},
+    # Specialized — medical, agriculture
+    {'name': 'alibayram/medgemma', 'size': '3.3 GB', 'desc': 'Medical AI — can analyze wound photos, X-rays, symptoms'},
     {'name': 'meditron:7b', 'size': '3.8 GB', 'desc': 'Medical AI by EPFL — clinical knowledge, drug interactions'},
 ]
 

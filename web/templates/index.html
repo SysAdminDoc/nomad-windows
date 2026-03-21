@@ -1037,6 +1037,10 @@ a { color: var(--accent); text-decoration: none; }
               <option value="water_specialist">Water/Sanitation</option>
               <option value="tactical">Security/OPSEC</option>
               <option value="forager">Foraging/Wild Food</option>
+              <option disabled>--- Scenarios ---</option>
+              <option value="scenario_grid">Scenario: Grid Down</option>
+              <option value="scenario_medical">Scenario: Medical Emergency</option>
+              <option value="scenario_evacuation">Scenario: Evacuation</option>
               <option value="custom">Custom Prompt...</option>
             </select>
             <button class="btn btn-sm" onclick="toggleModelPicker()">+ Get Model</button>
@@ -1753,6 +1757,67 @@ a { color: var(--accent); text-decoration: none; }
             </div>
           </div>
         </div>
+        <!-- Morse Code Trainer (Interactive) -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Morse Code Trainer</h4>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div style="flex:1;min-width:200px;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Text to encode</label><input id="morse-input" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;outline:none;" placeholder="Type text to convert to Morse..." oninput="textToMorse()"></div>
+            <button class="btn btn-sm btn-primary" onclick="playMorse()">Play Sound</button>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Speed (WPM)</label><input id="morse-wpm" type="number" min="5" max="30" value="15" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
+          </div>
+          <div id="morse-output" style="font-family:'Cascadia Code','Consolas',monospace;font-size:16px;letter-spacing:3px;padding:10px;background:var(--surface2);border-radius:6px;min-height:30px;word-break:break-all;margin-bottom:8px;"></div>
+          <div style="display:flex;gap:10px;margin-bottom:8px;flex-wrap:wrap;align-items:end;">
+            <div style="flex:1;min-width:200px;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Morse to decode</label><input id="morse-decode-input" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:13px;font-family:'Cascadia Code','Consolas',monospace;outline:none;" placeholder="Enter dots (.) and dashes (-), space between letters, / between words" oninput="morseToText()"></div>
+          </div>
+          <div id="morse-decode-output" style="font-size:14px;font-weight:600;padding:6px 10px;background:var(--surface2);border-radius:6px;min-height:24px;margin-bottom:8px;"></div>
+          <div style="font-size:11px;color:var(--text-dim);">Common prosigns: SOS = ...---... | CQ (calling) = -.-. --.- | AR (end of message) = .-.-. | SK (end of contact) = ...-.-</div>
+        </div>
+
+        <!-- Electrical / Wiring Reference -->
+        <div class="calc-card">
+          <h4>Electrical & Wiring Reference</h4>
+          <div style="font-size:12px;line-height:1.8;">
+            <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Wire Gauge (AWG) Ampacity</div>
+            <table class="freq-table"><thead><tr><th>AWG</th><th>mm2</th><th>Max Amps</th><th>Common Use</th></tr></thead><tbody>
+            <tr><td>14</td><td>2.1</td><td>15A</td><td>Lighting, 15A circuits</td></tr>
+            <tr><td>12</td><td>3.3</td><td>20A</td><td>Outlets, 20A circuits</td></tr>
+            <tr><td>10</td><td>5.3</td><td>30A</td><td>Dryers, AC units, 30A circuits</td></tr>
+            <tr><td>8</td><td>8.4</td><td>40A</td><td>Ranges, large appliances</td></tr>
+            <tr><td>6</td><td>13.3</td><td>55A</td><td>Sub-panels, large equipment</td></tr>
+            <tr><td>4</td><td>21.2</td><td>70A</td><td>Service entrance, feeders</td></tr>
+            <tr><td>2</td><td>33.6</td><td>95A</td><td>Main service entrance</td></tr>
+            </tbody></table>
+            <div style="font-weight:700;color:var(--accent);margin-top:10px;margin-bottom:4px;">Wire Color Codes (US Residential)</div>
+            <div><strong style="color:#333;">Black</strong> = Hot (line) | <strong style="color:#fff;background:#333;padding:0 4px;">White</strong> = Neutral | <strong style="color:var(--green);">Green</strong> / Bare = Ground</div>
+            <div><strong style="color:var(--red);">Red</strong> = Hot (2nd, 240V) | <strong style="color:var(--accent);">Blue</strong> = Hot (3-phase, commercial)</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:10px;margin-bottom:4px;">12V Solar System Sizing</div>
+            <div>Panel watts / 17V open circuit = amps to charge controller</div>
+            <div>Battery Ah = (daily Wh / 12V) / 0.5 DOD (lead-acid) or / 0.8 DOD (LiFePO4)</div>
+            <div>Fuse = 125% of max expected current on that wire</div>
+            <div style="color:var(--orange);font-size:11px;margin-top:6px;">NEVER connect a generator to house wiring without a transfer switch. Backfeed kills lineworkers.</div>
+          </div>
+        </div>
+
+        <!-- Seed Saving Guide -->
+        <div class="calc-card">
+          <h4>Seed Saving Guide</h4>
+          <div style="font-size:12px;">
+            <table class="freq-table"><thead><tr><th>Crop</th><th>Pollination</th><th>Isolation</th><th>Seed Life</th><th>Harvest When</th></tr></thead><tbody>
+            <tr><td>Tomato</td><td>Self</td><td>10-25 ft</td><td>4-7 yrs</td><td>Fully ripe, ferment pulp 3 days</td></tr>
+            <tr><td>Pepper</td><td>Self/Insect</td><td>300+ ft</td><td>2-4 yrs</td><td>Fully colored, dry seeds on plate</td></tr>
+            <tr><td>Bean</td><td>Self</td><td>10-20 ft</td><td>3-4 yrs</td><td>Leave pods on vine until brown/dry</td></tr>
+            <tr><td>Pea</td><td>Self</td><td>50 ft</td><td>3 yrs</td><td>Leave pods until brown and rattling</td></tr>
+            <tr><td>Lettuce</td><td>Self</td><td>12 ft</td><td>3-5 yrs</td><td>Let bolt, harvest fluffy seed heads</td></tr>
+            <tr><td>Squash</td><td>Insect</td><td>1/2 mile</td><td>4-6 yrs</td><td>Full maturity, scoop seeds, wash, dry</td></tr>
+            <tr><td>Corn</td><td>Wind</td><td>1/2 mile</td><td>2 yrs</td><td>Leave ears on stalk until husks brown</td></tr>
+            <tr><td>Carrot</td><td>Insect</td><td>1/2 mile</td><td>3 yrs</td><td>Biennial — overwinter, collect seed yr 2</td></tr>
+            <tr><td>Radish</td><td>Insect</td><td>1/2 mile</td><td>4-5 yrs</td><td>Let bolt, harvest dried seed pods</td></tr>
+            <tr><td>Cucumber</td><td>Insect</td><td>1/2 mile</td><td>5-7 yrs</td><td>Over-ripen on vine until yellow, ferment</td></tr>
+            </tbody></table>
+            <div style="margin-top:6px;color:var(--text-dim);font-size:11px;">Always save from OPEN-POLLINATED (OP) or heirloom varieties. Hybrids (F1) won't breed true. Store seeds cool, dark, dry — paper envelopes in a sealed jar with silica gel packets.</div>
+          </div>
+        </div>
+
         <!-- Food Preservation Timetable -->
         <div class="calc-card" style="grid-column:1/-1;">
           <h4>Food Preservation Reference</h4>
@@ -3713,6 +3778,9 @@ const PRESETS = {
   water_specialist: 'You are a water treatment and sanitation expert. Advise on water purification methods (boiling, chemical, filtration, UV, distillation), water source assessment, well drilling and maintenance, rainwater collection systems, greywater recycling, emergency sanitation (latrines, waste disposal), and waterborne illness prevention. Include specific measurements, ratios, and procedures.',
   tactical: 'You are a security and operational security (OPSEC) advisor for preparedness. Cover home security hardening, perimeter defense, situational awareness, threat assessment, communications security, travel security, gray man concepts, community defense organization, and neighborhood watch coordination. Focus on legal, defensive, and preventive measures.',
   forager: 'You are a wild food and foraging expert. Help identify edible plants, mushrooms, insects, and wild game. Cover safe foraging practices, poisonous look-alikes, seasonal availability, preparation methods, and nutritional value. Include preservation techniques for wild-harvested food. Always emphasize positive identification and the rule: when in doubt, do NOT eat it.',
+  scenario_grid: 'You are an emergency planning advisor. The power grid has been down for 3 days with no estimated restoration. Help me prioritize: water procurement and purification, food preservation from thawing freezers, alternative heating/cooling, communication with family and neighbors, security considerations, medical needs, fuel conservation. Ask about my specific situation (how many people, location, supplies on hand, season/weather) and provide a detailed hour-by-hour and day-by-day action plan.',
+  scenario_medical: 'You are a remote/austere medicine advisor. There is a medical emergency and professional medical help is not available. Help me assess and treat the situation using available supplies. Ask about: the patient (age, weight, conditions, medications), the injury/illness symptoms, what medical supplies are available, distance to nearest medical facility. Provide step-by-step treatment, monitoring instructions, warning signs to watch for, and when to escalate. Reference TCCC and wilderness medicine protocols.',
+  scenario_evacuation: 'You are an evacuation planning expert. Help me plan an emergency evacuation. Ask about: number of people (ages, mobility), vehicles available, fuel levels, distance to destinations, current threats (fire, flood, civil unrest, chemical), time available, supplies already packed. Provide: route planning (primary + 2 alternates), vehicle loading priority, communication plan, rally points, go/no-go decision criteria, and what to grab in the last 5 minutes.',
 };
 // Load saved custom prompt
 (function() { const cp = localStorage.getItem('nomad-custom-prompt'); if (cp) PRESETS.custom = cp; })();
@@ -4482,6 +4550,54 @@ async function sendLanMsg() {
     _lanLastId = msg.id;
     el.scrollTop = el.scrollHeight;
   } catch(e) { toast('Failed to send', 'error'); }
+}
+
+/* ─── Morse Code Trainer ─── */
+const MORSE_MAP = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','G':'--.','H':'....','I':'..','J':'.---','K':'-.-','L':'.-..','M':'--','N':'-.','O':'---','P':'.--.','Q':'--.-','R':'.-.','S':'...','T':'-','U':'..-','V':'...-','W':'.--','X':'-..-','Y':'-.--','Z':'--..','0':'-----','1':'.----','2':'..---','3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','.':'.-.-.-',',':'--..--','?':'..--..','!':'-.-.--','/':'-..-.','-':'-....-','=':'-...-'};
+const MORSE_REV = Object.fromEntries(Object.entries(MORSE_MAP).map(([k,v])=>[v,k]));
+
+function textToMorse() {
+  const text = document.getElementById('morse-input').value.toUpperCase();
+  const morse = text.split('').map(c => c === ' ' ? '/' : (MORSE_MAP[c] || '')).filter(Boolean).join(' ');
+  document.getElementById('morse-output').textContent = morse;
+}
+
+function morseToText() {
+  const morse = document.getElementById('morse-decode-input').value.trim();
+  const words = morse.split(/\s*\/\s*/);
+  const text = words.map(w => w.split(/\s+/).map(c => MORSE_REV[c] || '?').join('')).join(' ');
+  document.getElementById('morse-decode-output').textContent = text;
+}
+
+let _morseAudioCtx = null;
+function playMorse() {
+  const morse = document.getElementById('morse-output').textContent;
+  if (!morse) { toast('Type some text first', 'warning'); return; }
+  if (!_morseAudioCtx) _morseAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  const ctx = _morseAudioCtx;
+  const wpm = parseInt(document.getElementById('morse-wpm').value) || 15;
+  const dotLen = 1.2 / wpm; // seconds per dot
+  let t = ctx.currentTime + 0.1;
+  for (const ch of morse) {
+    if (ch === '.') { playTone(ctx, t, dotLen, 700); t += dotLen * 2; }
+    else if (ch === '-') { playTone(ctx, t, dotLen * 3, 700); t += dotLen * 4; }
+    else if (ch === ' ') { t += dotLen * 3; }
+    else if (ch === '/') { t += dotLen * 7; }
+  }
+  toast('Playing Morse...', 'info');
+}
+
+function playTone(ctx, startTime, duration, freq) {
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.value = freq;
+  gain.gain.setValueAtTime(0.3, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+  osc.connect(gain);
+  gain.connect(ctx.destination);
+  osc.start(startTime);
+  osc.stop(startTime + duration);
 }
 
 /* ─── Burn Rate Dashboard ─── */

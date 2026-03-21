@@ -16,6 +16,17 @@ SERVICE_ID = 'kolibri'
 KOLIBRI_PORT = 8300
 
 
+def _python_exe():
+    """Return the real Python interpreter, not the frozen exe."""
+    if getattr(sys, 'frozen', False):
+        import shutil
+        p = shutil.which('python') or shutil.which('python3')
+        if p:
+            return p
+        raise RuntimeError('Python interpreter not found on PATH — Kolibri requires Python installed separately')
+    return sys.executable
+
+
 def get_install_dir():
     return os.path.join(get_services_dir(), 'kolibri')
 
@@ -30,7 +41,7 @@ def get_home_dir():
 def is_installed():
     try:
         result = subprocess.run(
-            [sys.executable, '-m', 'kolibri', '--version'],
+            [_python_exe(), '-m', 'kolibri', '--version'],
             capture_output=True, text=True, timeout=10,
             creationflags=0x08000000,
         )
@@ -53,14 +64,14 @@ def install(callback=None):
         _download_progress[SERVICE_ID].update({'percent': 10, 'speed': 'Installing Kolibri...'})
 
         result = subprocess.run(
-            [sys.executable, '-m', 'pip', 'install', 'kolibri'],
+            [_python_exe(), '-m', 'pip', 'install', 'kolibri'],
             capture_output=True, text=True, timeout=600,
             creationflags=0x08000000,
         )
         if result.returncode != 0:
             # Try --user fallback
             result = subprocess.run(
-                [sys.executable, '-m', 'pip', 'install', '--user', 'kolibri'],
+                [_python_exe(), '-m', 'pip', 'install', '--user', 'kolibri'],
                 capture_output=True, text=True, timeout=600,
                 creationflags=0x08000000,
             )
@@ -73,7 +84,7 @@ def install(callback=None):
         env = os.environ.copy()
         env['KOLIBRI_HOME'] = get_home_dir()
         subprocess.run(
-            [sys.executable, '-m', 'kolibri', 'manage', 'migrate', '--noinput'],
+            [_python_exe(), '-m', 'kolibri', 'manage', 'migrate', '--noinput'],
             env=env, capture_output=True, text=True, timeout=120,
             creationflags=0x08000000,
         )
@@ -118,7 +129,7 @@ def start():
 
     CREATE_NO_WINDOW = 0x08000000
     proc = subprocess.Popen(
-        [sys.executable, '-m', 'kolibri', 'start', '--foreground', '--port', str(KOLIBRI_PORT)],
+        [_python_exe(), '-m', 'kolibri', 'start', '--foreground', '--port', str(KOLIBRI_PORT)],
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,

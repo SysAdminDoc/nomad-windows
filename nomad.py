@@ -21,7 +21,9 @@ log = logging.getLogger('nomad')
 
 
 def _bootstrap():
-    """Auto-install dependencies before imports."""
+    """Auto-install dependencies before imports. Skipped when running as frozen exe."""
+    if getattr(sys, 'frozen', False):
+        return
     deps = ['flask', 'requests', 'webview', 'PIL', 'pystray', 'psutil', 'PyPDF2']
     pkg_names = {'webview': 'pywebview', 'PIL': 'pillow', 'pystray': 'pystray', 'psutil': 'psutil', 'PyPDF2': 'PyPDF2'}
     for dep in deps:

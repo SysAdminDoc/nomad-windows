@@ -2,6 +2,7 @@
 
 import os
 import subprocess
+import shutil
 import time
 import logging
 import requests as req
@@ -21,19 +22,42 @@ def get_install_dir():
     return os.path.join(get_services_dir(), 'stirling')
 
 
-def get_exe_path():
-    return os.path.join(get_install_dir(), 'stirling.exe')
+def get_jar_path():
+    install_dir = get_install_dir()
+    jar = os.path.join(install_dir, 'Stirling-PDF.jar')
+    if os.path.isfile(jar):
+        return jar
+    # Check for any jar file
+    if os.path.isdir(install_dir):
+        for f in os.listdir(install_dir):
+            if f.endswith('.jar') and 'stirling' in f.lower():
+                return os.path.join(install_dir, f)
+    return jar
+
+
+def _find_java():
+    """Find a Java runtime. Stirling-PDF requires Java 17+."""
+    java = shutil.which('java')
+    if java:
+        return java
+    # Check common Windows paths
+    for base in [os.environ.get('JAVA_HOME', ''), r'C:\Program Files\Java', r'C:\Program Files\Eclipse Adoptium']:
+        if base and os.path.isdir(base):
+            for root, dirs, files in os.walk(base):
+                if 'java.exe' in files:
+                    return os.path.join(root, 'java.exe')
+    return None
 
 
 def is_installed():
-    return os.path.isfile(get_exe_path())
+    return os.path.isfile(get_jar_path())
 
 
 def install(callback=None):
-    """Download Stirling-PDF from GitHub releases."""
+    """Download Stirling-PDF jar from GitHub releases."""
     install_dir = get_install_dir()
     os.makedirs(install_dir, exist_ok=True)
-    exe_path = get_exe_path()
+    jar_path = os.path.join(install_dir, 'Stirling-PDF.jar')
 
     _download_progress[SERVICE_ID] = {
         'percent': 0, 'status': 'downloading', 'error': None,
@@ -43,16 +67,23 @@ def install(callback=None):
     try:
         # Resolve download URL from GitHub releases
         rel = req.get(STIRLING_RELEASE_API, timeout=15).json()
-        exe_url = None
+        jar_url = None
         for asset in rel.get('assets', []):
-            name = asset['name'].lower()
-            if 'win' in name and asset['name'].endswith('.exe'):
-                exe_url = asset['browser_download_url']
+            # Get the standalone jar (not -with-login, not -server)
+            if asset['name'] == 'Stirling-PDF.jar':
+                jar_url = asset['browser_download_url']
                 break
-        if not exe_url:
-            raise RuntimeError('Could not find Stirling-PDF Windows release')
+        if not jar_url:
+            # Fallback: any jar that isn't -with-login or -server
+            for asset in rel.get('assets', []):
+                name = asset['name']
+                if name.endswith('.jar') and 'login' not in name.lower() and 'server' not in name.lower():
+                    jar_url = asset['browser_download_url']
+                    break
+        if not jar_url:
+            raise RuntimeError('Could not find Stirling-PDF jar in release assets')
 
-        download_file(exe_url, exe_path, SERVICE_ID)
+        download_file(jar_url, jar_path, SERVICE_ID)
 
         db = get_db()
         db.execute('''
@@ -61,7 +92,7 @@ def install(callback=None):
         ''', (
             SERVICE_ID, 'Stirling PDF',
             'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools',
-            'file', 'tools', STIRLING_PORT, install_dir, exe_path,
+            'file', 'tools', STIRLING_PORT, install_dir, jar_path,
             f'http://localhost:{STIRLING_PORT}'
         ))
         db.commit()
@@ -83,16 +114,25 @@ def install(callback=None):
 
 
 def start():
-    """Start Stirling-PDF server."""
+    """Start Stirling-PDF server via Java."""
     if not is_installed():
         raise RuntimeError('Stirling-PDF is not installed')
 
-    exe = get_exe_path()
+    java = _find_java()
+    if not java:
+        raise RuntimeError('Java not found — Stirling PDF requires Java 17+ installed on your system')
+
+    jar = get_jar_path()
+    install_dir = get_install_dir()
 
     CREATE_NO_WINDOW = 0x08000000
+    env = os.environ.copy()
+    env['STIRLING_PDF_DESKTOP_UI'] = 'false'
+
     proc = subprocess.Popen(
-        [exe, f'--server.port={STIRLING_PORT}'],
-        cwd=os.path.dirname(exe),
+        [java, '-jar', jar, f'--server.port={STIRLING_PORT}'],
+        cwd=install_dir,
+        env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         creationflags=CREATE_NO_WINDOW,
@@ -106,7 +146,11 @@ def start():
     db.commit()
     db.close()
 
-    for _ in range(30):
+    # Stirling PDF (Spring Boot) takes longer to start
+    for _ in range(60):
+        if proc.poll() is not None:
+            stderr = proc.stderr.read().decode(errors='replace')[-500:]
+            raise RuntimeError(f'Stirling-PDF exited immediately: {stderr}')
         if check_port(STIRLING_PORT):
             log.info(f'Stirling-PDF running on port {STIRLING_PORT} (PID {proc.pid})')
             return proc.pid

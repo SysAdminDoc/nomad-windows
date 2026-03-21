@@ -120,7 +120,7 @@ def start():
     env['QDRANT__STORAGE__STORAGE_PATH'] = storage
 
     proc = subprocess.Popen(
-        [exe, '--storage-path', storage],
+        [exe],
         cwd=os.path.dirname(exe),
         env=env,
         stdout=subprocess.PIPE,

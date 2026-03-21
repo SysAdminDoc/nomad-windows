@@ -30,7 +30,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '1.9.0'
+VERSION = '2.0.0'
 
 
 def set_version(v):
@@ -1696,6 +1696,91 @@ def create_app():
                 {'text': 'Cash on hand ($500+ in small bills)', 'checked': False, 'cat': 'docs'},
                 {'text': 'Utility shut-off tools + knowledge', 'checked': False, 'cat': 'tools'},
                 {'text': 'Axe / hatchet / pry bar', 'checked': False, 'cat': 'tools'},
+            ],
+        },
+        'earthquake': {
+            'name': 'Scenario: Earthquake',
+            'items': [
+                {'text': 'Check for injuries — self, then others', 'checked': False, 'cat': 'immediate'},
+                {'text': 'Move to safe area away from damaged structures', 'checked': False, 'cat': 'immediate'},
+                {'text': 'Check for gas leaks (smell, hissing) — shut off if suspected', 'checked': False, 'cat': 'immediate'},
+                {'text': 'Check water supply — fill tubs/containers before pressure drops', 'checked': False, 'cat': 'water'},
+                {'text': 'Check structural damage — do NOT enter if walls cracked/leaning', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Turn on NOAA weather radio for aftershock warnings', 'checked': False, 'cat': 'comms'},
+                {'text': 'Wear sturdy shoes — broken glass and debris everywhere', 'checked': False, 'cat': 'safety'},
+                {'text': 'Check on neighbors, especially elderly/disabled', 'checked': False, 'cat': 'community'},
+                {'text': 'Photograph damage for insurance before cleanup', 'checked': False, 'cat': 'docs'},
+                {'text': 'Prepare for aftershocks — stay away from chimneys and tall furniture', 'checked': False, 'cat': 'safety'},
+                {'text': 'Set up alternative shelter if home is unsafe (tent, vehicle, tarp)', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Conserve phone battery — text instead of call', 'checked': False, 'cat': 'comms'},
+            ],
+        },
+        'hurricane': {
+            'name': 'Scenario: Hurricane/Major Storm',
+            'items': [
+                {'text': 'Board windows with plywood or close hurricane shutters', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Fill bathtub(s) with water for flushing/cleaning', 'checked': False, 'cat': 'water'},
+                {'text': 'Charge all devices, battery packs, and radios', 'checked': False, 'cat': 'power'},
+                {'text': 'Move vehicles to highest ground available', 'checked': False, 'cat': 'vehicle'},
+                {'text': 'Secure or bring inside all outdoor furniture/objects', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Fill vehicle fuel tanks completely', 'checked': False, 'cat': 'fuel'},
+                {'text': 'Withdraw cash ($500+ small bills)', 'checked': False, 'cat': 'docs'},
+                {'text': 'Set fridge/freezer to coldest — food lasts longer in power outage', 'checked': False, 'cat': 'food'},
+                {'text': 'Know your evacuation zone and route', 'checked': False, 'cat': 'evac'},
+                {'text': 'Stage go-bags at door if evacuation may be needed', 'checked': False, 'cat': 'evac'},
+                {'text': 'Move to interior room during storm (no windows)', 'checked': False, 'cat': 'safety'},
+                {'text': 'After storm: avoid downed power lines and standing water', 'checked': False, 'cat': 'safety'},
+            ],
+        },
+        'pandemic': {
+            'name': 'Scenario: Pandemic/Quarantine',
+            'items': [
+                {'text': 'Stock 30+ days of food and water per person', 'checked': False, 'cat': 'food'},
+                {'text': 'Stock 90-day supply of prescription medications', 'checked': False, 'cat': 'medical'},
+                {'text': 'N95/KN95 masks — minimum 50 per person', 'checked': False, 'cat': 'medical'},
+                {'text': 'Nitrile gloves, hand sanitizer, disinfectant', 'checked': False, 'cat': 'hygiene'},
+                {'text': 'Thermometer and pulse oximeter', 'checked': False, 'cat': 'medical'},
+                {'text': 'Establish quarantine room/area if household member gets sick', 'checked': False, 'cat': 'medical'},
+                {'text': 'Set up contactless delivery/pickup protocols', 'checked': False, 'cat': 'supply'},
+                {'text': 'Home school/education materials for children', 'checked': False, 'cat': 'morale'},
+                {'text': 'Entertainment/morale supplies for extended isolation', 'checked': False, 'cat': 'morale'},
+                {'text': 'Establish check-in schedule with family/neighbors', 'checked': False, 'cat': 'comms'},
+                {'text': 'Disinfect all incoming packages/deliveries', 'checked': False, 'cat': 'hygiene'},
+                {'text': 'Backup internet/comms plan if ISP fails', 'checked': False, 'cat': 'comms'},
+            ],
+        },
+        'wildfire': {
+            'name': 'Scenario: Wildfire Evacuation',
+            'items': [
+                {'text': 'Monitor fire maps and evacuation orders continuously', 'checked': False, 'cat': 'intel'},
+                {'text': 'Load go-bags in vehicle NOW — do not wait for mandatory evac', 'checked': False, 'cat': 'evac'},
+                {'text': 'Important documents, photos, irreplaceable items in car first', 'checked': False, 'cat': 'docs'},
+                {'text': 'Close all windows, doors, and vents to slow ember entry', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Connect garden hoses, fill pools/tubs/trash cans with water', 'checked': False, 'cat': 'defense'},
+                {'text': 'Move flammable furniture away from windows', 'checked': False, 'cat': 'shelter'},
+                {'text': 'Remove flammable items from around house (30ft clearance)', 'checked': False, 'cat': 'defense'},
+                {'text': 'N95 masks for smoke — limit outdoor exposure', 'checked': False, 'cat': 'medical'},
+                {'text': 'Know 2+ evacuation routes — primary route may be blocked', 'checked': False, 'cat': 'evac'},
+                {'text': 'Livestock/pets loaded and ready', 'checked': False, 'cat': 'evac'},
+                {'text': 'Leave lights on and a note on door with destination info', 'checked': False, 'cat': 'comms'},
+                {'text': 'DO NOT return until authorities give all-clear', 'checked': False, 'cat': 'safety'},
+            ],
+        },
+        'civil_unrest': {
+            'name': 'Scenario: Civil Unrest',
+            'items': [
+                {'text': 'Stay home — avoid protest/riot areas entirely', 'checked': False, 'cat': 'safety'},
+                {'text': 'Lock and secure all entry points', 'checked': False, 'cat': 'security'},
+                {'text': 'Close blinds/curtains — do not attract attention', 'checked': False, 'cat': 'security'},
+                {'text': 'Park vehicles in garage or away from street', 'checked': False, 'cat': 'security'},
+                {'text': 'Verify food/water supply for 2+ weeks sheltering in place', 'checked': False, 'cat': 'supply'},
+                {'text': 'Keep all devices charged — power disruptions possible', 'checked': False, 'cat': 'power'},
+                {'text': 'Monitor multiple news/radio sources for situational awareness', 'checked': False, 'cat': 'intel'},
+                {'text': 'Establish neighborhood watch communication with trusted neighbors', 'checked': False, 'cat': 'comms'},
+                {'text': 'Have fire extinguishers accessible (arson risk)', 'checked': False, 'cat': 'safety'},
+                {'text': 'Know alternate routes to hospital/pharmacy if primary roads blocked', 'checked': False, 'cat': 'medical'},
+                {'text': 'Cash on hand — ATMs and card systems may go down', 'checked': False, 'cat': 'docs'},
+                {'text': 'Gray man principles — do not display wealth, supplies, or opinions', 'checked': False, 'cat': 'opsec'},
             ],
         },
     }

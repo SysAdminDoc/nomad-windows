@@ -816,6 +816,19 @@ a { color: var(--accent); text-decoration: none; }
 .incident-item:hover .incident-del { opacity: 0.6; }
 .incident-del:hover { opacity: 1 !important; }
 
+/* ─── PACE Inputs ─── */
+.pace-input { width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:4px;font-size:11px;outline:none; }
+.pace-input:focus { border-color:var(--accent); }
+
+/* ─── Skills Matrix ─── */
+.skills-grid { overflow-x:auto; }
+.skills-grid table { border-collapse:collapse; font-size:11px; }
+.skills-grid th, .skills-grid td { padding:4px 8px;border:1px solid var(--border);text-align:center;white-space:nowrap; }
+.skills-grid th { background:var(--surface3);font-weight:600; }
+.skills-grid td.has-skill { background:var(--green-dim);color:var(--green);font-weight:700; }
+.skills-grid td.no-skill { color:var(--text-muted); }
+.skills-grid .gap-row td { background:var(--red-dim);color:var(--red);font-weight:600; }
+
 /* ─── Prep Sub-tabs ─── */
 .prep-subtab {
   padding: 6px 14px; cursor: pointer; color: var(--text-dim);
@@ -1415,6 +1428,11 @@ a { color: var(--accent); text-decoration: none; }
         </div>
       </div>
       <div id="contacts-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;"></div>
+      <!-- Skills Matrix -->
+      <div style="margin-top:20px;">
+        <h3 style="font-size:14px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px;">Skills Matrix <button class="btn btn-sm" onclick="loadSkillsMatrix()">Refresh</button></h3>
+        <div id="skills-matrix" class="skills-grid"></div>
+      </div>
     </div>
     </div><!-- /psub-contacts -->
 
@@ -1476,6 +1494,60 @@ a { color: var(--accent); text-decoration: none; }
             <button class="btn btn-sm" onclick="getSolarLocation()">Use My Location</button>
           </div>
           <div class="calc-result" id="solar-result"></div>
+        </div>
+        <!-- Moon Phase Calculator -->
+        <div class="calc-card">
+          <h4>Moon Phase Calculator</h4>
+          <div class="calc-row"><label>Date</label><input id="moon-date" type="date" oninput="calcMoon()" style="max-width:160px;"></div>
+          <button class="btn btn-sm" onclick="document.getElementById('moon-date').value=new Date().toISOString().slice(0,10);calcMoon()" style="margin-bottom:8px;">Today</button>
+          <div class="calc-result" id="moon-result"></div>
+        </div>
+        <!-- Grid Coordinate Converter -->
+        <div class="calc-card">
+          <h4>Coordinate Converter</h4>
+          <div class="calc-row"><label>Latitude</label><input id="coord-lat" type="number" step="0.00001" value="39.8283" oninput="convertCoords()" style="max-width:140px;"></div>
+          <div class="calc-row"><label>Longitude</label><input id="coord-lng" type="number" step="0.00001" value="-98.5795" oninput="convertCoords()" style="max-width:140px;"></div>
+          <div class="calc-result" id="coord-result"></div>
+        </div>
+        <!-- Travel Time Calculator -->
+        <div class="calc-card">
+          <h4>Travel Time Estimator</h4>
+          <div class="calc-row"><label>Distance (mi)</label><input id="travel-dist" type="number" value="10" min="0.1" step="0.1" oninput="calcTravel()"></div>
+          <div class="calc-row"><label>Mode</label>
+            <select id="travel-mode" onchange="calcTravel()" style="flex:1;max-width:180px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;">
+              <option value="walk">Walking (3 mph)</option>
+              <option value="walk_loaded">Walking w/ heavy pack (2 mph)</option>
+              <option value="run">Running/jogging (6 mph)</option>
+              <option value="horse">Horse (6 mph avg)</option>
+              <option value="bike">Bicycle (12 mph)</option>
+              <option value="vehicle">Vehicle - road (30 mph avg)</option>
+              <option value="vehicle_offroad">Vehicle - offroad (10 mph)</option>
+            </select>
+          </div>
+          <div class="calc-row"><label>Terrain</label>
+            <select id="travel-terrain" onchange="calcTravel()" style="flex:1;max-width:180px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;">
+              <option value="1">Flat road/trail</option>
+              <option value="1.3">Rolling hills</option>
+              <option value="1.6">Steep/mountainous</option>
+              <option value="1.4">Forest/brush</option>
+              <option value="1.5">Snow/sand</option>
+              <option value="2">Swamp/dense jungle</option>
+            </select>
+          </div>
+          <div class="calc-result" id="travel-result"></div>
+        </div>
+        <!-- Calorie Tracker -->
+        <div class="calc-card">
+          <h4>Daily Calorie Tracker (Rationing)</h4>
+          <div class="calc-row"><label>Target cal/day</label><input id="cal-target" type="number" value="2000" min="800" max="5000" step="100" oninput="updateCalTracker()"></div>
+          <div id="cal-log-form" style="margin-bottom:8px;">
+            <div style="display:flex;gap:6px;align-items:end;">
+              <div style="flex:1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Item</label><input id="cal-item" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. MRE, rice + beans"></div>
+              <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Calories</label><input id="cal-amount" type="number" min="1" value="500" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
+              <button class="btn btn-sm btn-primary" onclick="addCalEntry()">Log</button>
+            </div>
+          </div>
+          <div id="cal-tracker-result"></div>
         </div>
       </div>
     </div>
@@ -1916,6 +1988,73 @@ a { color: var(--accent); text-decoration: none; }
               <div><strong>Back azimuth:</strong> Add 180 degrees to your bearing (or subtract if >180). Used to verify your back trail.</div>
             </div>
           </div>
+        </div>
+        <!-- Medicinal Plants Database -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Medicinal Plant Reference (North America)</h4>
+          <div style="overflow-x:auto;">
+          <table class="freq-table"><thead><tr><th>Plant</th><th>Uses</th><th>Part Used</th><th>Preparation</th><th>Caution</th></tr></thead><tbody>
+          <tr><td style="font-weight:600;">Yarrow</td><td>Stop bleeding, fever, cold/flu</td><td>Leaves, flowers</td><td>Chew leaves for wound poultice; tea for fever</td><td>Avoid during pregnancy</td></tr>
+          <tr><td style="font-weight:600;">Plantain (broadleaf)</td><td>Insect stings, cuts, rashes</td><td>Leaves</td><td>Chew and apply as poultice directly on wound</td><td>Very safe, no known issues</td></tr>
+          <tr><td style="font-weight:600;">Willow bark</td><td>Pain relief (natural aspirin)</td><td>Inner bark</td><td>Chew bark or steep in hot water 15 min</td><td>Aspirin allergy = avoid</td></tr>
+          <tr><td style="font-weight:600;">Elderberry</td><td>Cold/flu, immune boost</td><td>Berries (cooked only)</td><td>Simmer berries 45 min into syrup</td><td>RAW berries/leaves are TOXIC</td></tr>
+          <tr><td style="font-weight:600;">Pine needle</td><td>Vitamin C, decongestant</td><td>Needles (green)</td><td>Steep in hot water 10 min for tea</td><td>Avoid yew/Norfolk pine (toxic)</td></tr>
+          <tr><td style="font-weight:600;">Dandelion</td><td>Diuretic, liver support, nutrition</td><td>All parts</td><td>Leaves in salad; root roasted as coffee</td><td>Latex allergy caution</td></tr>
+          <tr><td style="font-weight:600;">Chamomile</td><td>Anxiety, sleep, stomach</td><td>Flowers</td><td>Steep flowers 5-10 min as tea</td><td>Ragweed allergy cross-reaction</td></tr>
+          <tr><td style="font-weight:600;">Jewelweed</td><td>Poison ivy/oak relief</td><td>Stems, leaves</td><td>Crush and rub juice on affected skin</td><td>Apply immediately after exposure</td></tr>
+          <tr><td style="font-weight:600;">Cattail</td><td>Food (all parts), wound care</td><td>Pollen, roots, shoots</td><td>Pollen as flour; root starch; brown fluff as wound packing</td><td>Avoid polluted water sources</td></tr>
+          <tr><td style="font-weight:600;">Mullein</td><td>Respiratory, ear infections</td><td>Leaves, flowers</td><td>Tea from leaves; flower oil infusion for ear drops</td><td>Strain tea well (tiny hairs)</td></tr>
+          <tr><td style="font-weight:600;">Echinacea</td><td>Immune stimulant, infections</td><td>Root, flowers</td><td>Tincture or decoction of root</td><td>Autoimmune conditions = avoid</td></tr>
+          <tr><td style="font-weight:600;">Aloe vera</td><td>Burns, skin healing</td><td>Inner leaf gel</td><td>Split leaf, apply gel directly to burn/wound</td><td>Internal use: laxative effect</td></tr>
+          <tr><td style="font-weight:600;">Garlic</td><td>Antibiotic, antifungal, antiviral</td><td>Cloves</td><td>Crush, wait 10 min (activates allicin), eat raw or apply</td><td>Can cause skin irritation topically</td></tr>
+          <tr><td style="font-weight:600;">Honey</td><td>Wound care, cough, energy</td><td>Raw honey</td><td>Apply directly to wounds; 1 tbsp for cough</td><td>Never give to infants under 1 yr</td></tr>
+          <tr><td style="font-weight:600;">Ginger</td><td>Nausea, inflammation, digestion</td><td>Root</td><td>Chew raw, steep slices for tea</td><td>Blood thinning effect at high doses</td></tr>
+          <tr><td style="font-weight:600;">Peppermint</td><td>Headache, nausea, congestion</td><td>Leaves</td><td>Crush and inhale; steep for tea; apply to temples</td><td>May worsen GERD</td></tr>
+          <tr><td style="font-weight:600;">Comfrey</td><td>Sprains, bruises, bone healing</td><td>Leaves, root</td><td>Poultice of crushed leaves on sprains/bruises</td><td>EXTERNAL only — liver toxic if eaten</td></tr>
+          <tr><td style="font-weight:600;">Black walnut hull</td><td>Antifungal, antiparasitic</td><td>Green hull</td><td>Tincture of green hulls; topical for ringworm</td><td>Stains everything brown</td></tr>
+          <tr><td style="font-weight:600;">Clover (red)</td><td>Blood purifier, respiratory</td><td>Flower heads</td><td>Dry and steep as tea</td><td>Blood thinner interaction</td></tr>
+          <tr><td style="font-weight:600;">Activated charcoal</td><td>Poisoning, water filter, GI</td><td>Charcoal powder</td><td>Mix with water for poison ingestion; filter medium</td><td>Absorbs medications — take 2h apart</td></tr>
+          </tbody></table>
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:var(--orange);font-weight:600;">ALWAYS positively identify plants before use. When in doubt, do NOT use. This is a reference only — not medical advice. Consult medical professionals when available.</div>
+        </div>
+
+        <!-- Night Sky Navigation -->
+        <div class="calc-card">
+          <h4>Night Sky Navigation</h4>
+          <div style="font-size:12px;line-height:1.8;">
+            <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Finding Polaris (North Star)</div>
+            <div>1. Find the Big Dipper (7 bright stars, ladle shape)</div>
+            <div>2. The two stars forming the outer edge of the "cup" are "pointer stars"</div>
+            <div>3. Draw a line through them, extending 5x their separation</div>
+            <div>4. That line hits Polaris — the last star in the Little Dipper's handle</div>
+            <div>5. Polaris is within 1 degree of true north, all year</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:8px;margin-bottom:4px;">Southern Hemisphere</div>
+            <div>1. Find the Southern Cross (4 bright stars in cross shape)</div>
+            <div>2. Extend the long axis 4.5x its length toward the horizon</div>
+            <div>3. Drop straight down to the horizon = approximate south</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:8px;margin-bottom:4px;">Using Orion (visible globally)</div>
+            <div>Orion's belt rises due east, sets due west (within a few degrees)</div>
+            <div>The sword hangs south in N. hemisphere, north in S. hemisphere</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:8px;margin-bottom:4px;">Moon Navigation</div>
+            <div>Crescent moon: line through the horns to the horizon = south (N. hemisphere)</div>
+            <div>Full moon rises east at sunset, is south at midnight, sets west at sunrise</div>
+          </div>
+        </div>
+
+        <!-- PACE Communication Plan -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>PACE Communication Plan Template</h4>
+          <div style="font-size:12px;margin-bottom:8px;color:var(--text-dim);">PACE = Primary, Alternate, Contingency, Emergency. Fill in your plan for each communication method. Saved locally.</div>
+          <table class="freq-table" id="pace-table">
+            <thead><tr><th style="width:90px;">Level</th><th>Method</th><th>Details</th><th>When to Use</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:700;color:var(--green);">PRIMARY</td><td><input class="pace-input" id="pace-p-method" placeholder="e.g. Cell phone" oninput="savePace()"></td><td><input class="pace-input" id="pace-p-detail" placeholder="e.g. Group text to family" oninput="savePace()"></td><td><input class="pace-input" id="pace-p-when" placeholder="e.g. Normal conditions" oninput="savePace()"></td></tr>
+              <tr><td style="font-weight:700;color:var(--accent);">ALTERNATE</td><td><input class="pace-input" id="pace-a-method" placeholder="e.g. FRS Radio Ch 3" oninput="savePace()"></td><td><input class="pace-input" id="pace-a-detail" placeholder="e.g. Check every 2 hrs" oninput="savePace()"></td><td><input class="pace-input" id="pace-a-when" placeholder="e.g. Cell towers down" oninput="savePace()"></td></tr>
+              <tr><td style="font-weight:700;color:var(--orange);">CONTINGENCY</td><td><input class="pace-input" id="pace-c-method" placeholder="e.g. HAM 146.520 MHz" oninput="savePace()"></td><td><input class="pace-input" id="pace-c-detail" placeholder="e.g. Simplex, listen continuously" oninput="savePace()"></td><td><input class="pace-input" id="pace-c-when" placeholder="e.g. FRS range exceeded" oninput="savePace()"></td></tr>
+              <tr><td style="font-weight:700;color:var(--red);">EMERGENCY</td><td><input class="pace-input" id="pace-e-method" placeholder="e.g. Runner / signal mirror" oninput="savePace()"></td><td><input class="pace-input" id="pace-e-detail" placeholder="e.g. Physical messenger to rally point" oninput="savePace()"></td><td><input class="pace-input" id="pace-e-when" placeholder="e.g. All electronic comms failed" oninput="savePace()"></td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -4225,8 +4364,8 @@ function switchPrepSub(sub) {
   document.querySelectorAll('.prep-sub').forEach(p => p.classList.toggle('active', p.id === 'psub-' + sub));
   if (sub === 'incidents') loadIncidents();
   if (sub === 'inventory') { loadInventory(); loadBurnRate(); }
-  if (sub === 'contacts') loadContacts();
-  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); }
+  if (sub === 'contacts') { loadContacts(); loadSkillsMatrix(); }
+  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); updateCalTracker(); }
   if (sub === 'reference') { convertUnit(); showPlantZone(); }
   if (sub === 'vault' && _vaultKey) loadVaultList();
   if (sub === 'weather') loadWeather();
@@ -4243,6 +4382,7 @@ async function loadPrepTab() {
     await loadPrepTemplates();
     await loadSitBoard();
     calcWater(); calcFood(); calcPower();
+    loadPace();
     _prepLoaded = true;
   }
   await loadChecklists();
@@ -5094,6 +5234,183 @@ async function deleteWaypoint(id) {
   await fetch(`/api/waypoints/${id}`, {method:'DELETE'});
   toast('Waypoint deleted');
   loadWaypoints();
+}
+
+/* ─── Moon Phase Calculator ─── */
+function calcMoon() {
+  const dateStr = document.getElementById('moon-date').value;
+  if (!dateStr) { document.getElementById('moon-result').innerHTML = 'Select a date.'; return; }
+  const date = new Date(dateStr + 'T12:00:00');
+  // Simplified moon phase calculation (synodic month = 29.53059 days)
+  const known_new = new Date('2000-01-06T12:00:00'); // Known new moon
+  const diff = (date - known_new) / 86400000; // days
+  const cycle = 29.53059;
+  const phase = ((diff % cycle) + cycle) % cycle;
+  const phasePercent = Math.round(phase / cycle * 100);
+  const phases = [
+    {name:'New Moon', icon:'&#127761;', max:1.85}, {name:'Waxing Crescent', icon:'&#127762;', max:7.38},
+    {name:'First Quarter', icon:'&#127763;', max:11.07}, {name:'Waxing Gibbous', icon:'&#127764;', max:14.77},
+    {name:'Full Moon', icon:'&#127765;', max:18.46}, {name:'Waning Gibbous', icon:'&#127766;', max:22.15},
+    {name:'Last Quarter', icon:'&#127767;', max:25.84}, {name:'Waning Crescent', icon:'&#127768;', max:29.53},
+  ];
+  const p = phases.find(p => phase <= p.max) || phases[0];
+  const illumination = Math.round(50 * (1 - Math.cos(2 * Math.PI * phase / cycle)));
+  const nextFull = cycle * (0.5 - phase / cycle + (phase > cycle/2 ? 1 : 0));
+  const nextNew = cycle - phase;
+  document.getElementById('moon-result').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;">
+      <span style="font-size:36px;">${p.icon}</span>
+      <div>
+        <div style="font-size:16px;font-weight:700;">${p.name}</div>
+        <div style="font-size:12px;color:var(--text-dim);">${illumination}% illuminated | Day ${Math.round(phase)} of ${cycle.toFixed(0)}-day cycle</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">Next full: ~${Math.round(nextFull)} days | Next new: ~${Math.round(nextNew)} days</div>
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Best fishing/hunting: 2 days before and after full/new moon. Best stealth movement: new moon (darkest).</div>`;
+}
+
+/* ─── Coordinate Converter ─── */
+function convertCoords() {
+  const lat = parseFloat(document.getElementById('coord-lat').value) || 0;
+  const lng = parseFloat(document.getElementById('coord-lng').value) || 0;
+  // Decimal degrees
+  const dd = `${Math.abs(lat).toFixed(6)}${lat >= 0 ? 'N' : 'S'}, ${Math.abs(lng).toFixed(6)}${lng >= 0 ? 'E' : 'W'}`;
+  // DMS
+  const toDMS = (d) => { const abs = Math.abs(d); const deg = Math.floor(abs); const min = Math.floor((abs-deg)*60); const sec = ((abs-deg)*60-min)*60; return `${deg}° ${min}' ${sec.toFixed(1)}"`; };
+  const dms = `${toDMS(lat)} ${lat>=0?'N':'S'}, ${toDMS(lng)} ${lng>=0?'E':'W'}`;
+  // UTM (simplified)
+  const zoneNum = Math.floor((lng + 180) / 6) + 1;
+  const zoneLetter = 'CDEFGHJKLMNPQRSTUVWX'[Math.floor((lat + 80) / 8)] || '?';
+  // MGRS-style grid reference
+  const mgrsApprox = `${zoneNum}${zoneLetter}`;
+  document.getElementById('coord-result').innerHTML = `
+    <div style="font-family:'Cascadia Code','Consolas',monospace;font-size:12px;line-height:2;">
+      <div><strong>Decimal:</strong> ${dd}</div>
+      <div><strong>DMS:</strong> ${dms}</div>
+      <div><strong>UTM Zone:</strong> ${mgrsApprox} (Zone ${zoneNum}${zoneLetter})</div>
+      <div><strong>Google Maps:</strong> ${lat.toFixed(6)}, ${lng.toFixed(6)}</div>
+    </div>`;
+}
+
+/* ─── Travel Time Calculator ─── */
+function calcTravel() {
+  const dist = parseFloat(document.getElementById('travel-dist').value) || 0;
+  const speeds = {walk:3, walk_loaded:2, run:6, horse:6, bike:12, vehicle:30, vehicle_offroad:10};
+  const mode = document.getElementById('travel-mode').value;
+  const terrain = parseFloat(document.getElementById('travel-terrain').value);
+  const baseSpeed = speeds[mode] || 3;
+  const adjustedSpeed = baseSpeed / terrain;
+  const hours = dist / adjustedSpeed;
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  // Calories burned
+  const calPerMile = {walk:80, walk_loaded:120, run:100, horse:40, bike:45, vehicle:0, vehicle_offroad:0};
+  const cal = Math.round(dist * (calPerMile[mode] || 0) * terrain);
+  // Water needed (0.5L per hour of exertion)
+  const waterL = (hours * 0.5).toFixed(1);
+  document.getElementById('travel-result').innerHTML = `
+    <strong>${h}h ${m}m</strong> estimated travel time<br>
+    Effective speed: <strong>${adjustedSpeed.toFixed(1)} mph</strong> (${baseSpeed} mph base, ${terrain}x terrain factor)<br>
+    ${cal > 0 ? `Calories burned: ~<strong>${cal}</strong> | Water needed: ~<strong>${waterL}L</strong>` : 'Motorized — minimal physical exertion'}
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Add 30% for nighttime travel. Add rest stops: 10 min per hour for walking, 15 min per 2 hours driving.</div>`;
+}
+
+/* ─── Calorie Tracker ─── */
+let _calLog = JSON.parse(localStorage.getItem('nomad-cal-log') || '[]');
+let _calLogDate = new Date().toISOString().slice(0,10);
+
+function addCalEntry() {
+  const item = document.getElementById('cal-item').value.trim();
+  const amount = parseInt(document.getElementById('cal-amount').value) || 0;
+  if (!item || !amount) return;
+  const today = new Date().toISOString().slice(0,10);
+  if (today !== _calLogDate) { _calLog = []; _calLogDate = today; }
+  _calLog.push({item, cal: amount, time: new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})});
+  localStorage.setItem('nomad-cal-log', JSON.stringify(_calLog));
+  localStorage.setItem('nomad-cal-date', _calLogDate);
+  document.getElementById('cal-item').value = '';
+  updateCalTracker();
+}
+
+function updateCalTracker() {
+  const today = new Date().toISOString().slice(0,10);
+  const savedDate = localStorage.getItem('nomad-cal-date');
+  if (savedDate !== today) { _calLog = []; _calLogDate = today; }
+  const target = parseInt(document.getElementById('cal-target').value) || 2000;
+  const total = _calLog.reduce((s, e) => s + e.cal, 0);
+  const pct = Math.min(100, Math.round(total / target * 100));
+  const remaining = Math.max(0, target - total);
+  const color = total >= target ? 'var(--green)' : total >= target * 0.5 ? 'var(--orange)' : 'var(--red)';
+  let html = `<div style="margin-bottom:8px;">
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+      <span style="font-weight:600;color:${color};">${total} / ${target} cal (${pct}%)</span>
+      <span style="color:var(--text-dim);">${remaining} remaining</span>
+    </div>
+    <div style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+      <div style="height:100%;width:${pct}%;background:${color};border-radius:3px;transition:width 0.3s;"></div>
+    </div>
+  </div>`;
+  if (_calLog.length) {
+    html += _calLog.map(e => `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;border-bottom:1px solid var(--border);"><span>${e.time} — ${escapeHtml(e.item)}</span><span style="font-weight:500;">${e.cal} cal</span></div>`).join('');
+    html += `<button class="btn btn-sm" onclick="_calLog=[];localStorage.removeItem('nomad-cal-log');updateCalTracker()" style="margin-top:6px;font-size:10px;">Clear Today</button>`;
+  }
+  document.getElementById('cal-tracker-result').innerHTML = html;
+}
+
+/* ─── Skills Matrix ─── */
+async function loadSkillsMatrix() {
+  try {
+    const contacts = await (await fetch('/api/contacts')).json();
+    if (!contacts.length) { document.getElementById('skills-matrix').innerHTML = '<div style="color:var(--text-muted);font-size:12px;">Add contacts with skills to see the matrix.</div>'; return; }
+    // Extract all unique skills
+    const allSkills = new Set();
+    contacts.forEach(c => { if (c.skills) c.skills.split(',').map(s => s.trim().toLowerCase()).filter(Boolean).forEach(s => allSkills.add(s)); });
+    if (!allSkills.size) { document.getElementById('skills-matrix').innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No skills listed in contacts. Edit contacts to add skills.</div>'; return; }
+    const skills = [...allSkills].sort();
+    let html = '<table><thead><tr><th>Name</th>';
+    skills.forEach(s => html += `<th>${s.charAt(0).toUpperCase()+s.slice(1)}</th>`);
+    html += '</tr></thead><tbody>';
+    contacts.forEach(c => {
+      const mySkills = c.skills ? c.skills.split(',').map(s => s.trim().toLowerCase()) : [];
+      html += `<tr><td style="font-weight:500;text-align:left;">${escapeHtml(c.name)}</td>`;
+      skills.forEach(s => {
+        const has = mySkills.includes(s);
+        html += `<td class="${has ? 'has-skill' : 'no-skill'}">${has ? 'Y' : '-'}</td>`;
+      });
+      html += '</tr>';
+    });
+    // Gap analysis row
+    html += '<tr class="gap-row"><td style="text-align:left;font-weight:700;">Coverage</td>';
+    skills.forEach(s => {
+      const count = contacts.filter(c => c.skills && c.skills.toLowerCase().includes(s)).length;
+      html += `<td>${count === 0 ? 'GAP' : count}</td>`;
+    });
+    html += '</tr></tbody></table>';
+    document.getElementById('skills-matrix').innerHTML = html;
+  } catch(e) {}
+}
+
+/* ─── PACE Plan ─── */
+function savePace() {
+  const pace = {};
+  ['p','a','c','e'].forEach(l => {
+    ['method','detail','when'].forEach(f => {
+      pace[`${l}_${f}`] = document.getElementById(`pace-${l}-${f}`).value;
+    });
+  });
+  localStorage.setItem('nomad-pace-plan', JSON.stringify(pace));
+}
+
+function loadPace() {
+  try {
+    const pace = JSON.parse(localStorage.getItem('nomad-pace-plan') || '{}');
+    ['p','a','c','e'].forEach(l => {
+      ['method','detail','when'].forEach(f => {
+        const el = document.getElementById(`pace-${l}-${f}`);
+        if (el && pace[`${l}_${f}`]) el.value = pace[`${l}_${f}`];
+      });
+    });
+  } catch(e) {}
 }
 
 /* ─── Command Dashboard ─── */

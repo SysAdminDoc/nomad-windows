@@ -793,6 +793,28 @@ a { color: var(--accent); text-decoration: none; }
 .alert-dismiss { color: var(--text-muted); cursor: pointer; font-size: 14px; flex-shrink: 0; padding: 0 4px; }
 .alert-dismiss:hover { color: var(--text); }
 
+/* ─── Decision Guides ─── */
+.guide-tile {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 18px; cursor: pointer; transition: all 0.2s;
+}
+.guide-tile:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: var(--shadow); }
+.guide-tile h4 { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+.guide-tile p { font-size: 11px; color: var(--text-dim); line-height: 1.5; margin: 0; }
+.guide-option {
+  padding: 12px 16px; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); cursor: pointer; transition: all 0.15s;
+  font-size: 13px; margin-bottom: 6px;
+}
+.guide-option:hover { border-color: var(--accent); background: var(--accent-dim); }
+.guide-result {
+  padding: 16px; border-radius: var(--radius-sm); font-size: 13px; line-height: 1.7;
+}
+.guide-result.success { background: var(--green-dim); border-left: 4px solid var(--green); }
+.guide-result.warning { background: var(--orange-dim); border-left: 4px solid var(--orange); }
+.guide-result.danger { background: var(--red-dim); border-left: 4px solid var(--red); }
+.guide-result.info { background: var(--accent-dim); border-left: 4px solid var(--accent); }
+
 /* ─── Service Error Display ─── */
 .svc-error { color: var(--red); font-size: 11px; margin-top: 8px; padding: 8px 10px; background: var(--red-dim); border-radius: 8px; line-height: 1.5; }
 .svc-error a { color: var(--red); text-decoration: underline; cursor: pointer; font-weight: 600; }
@@ -1700,6 +1722,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="prep-subtab" data-psub="contacts" onclick="switchPrepSub('contacts')">Contacts</button>
       <button class="prep-subtab" data-psub="calculators" onclick="switchPrepSub('calculators')">Calculators</button>
       <button class="prep-subtab" data-psub="radio" onclick="switchPrepSub('radio')">Radio Ref</button>
+      <button class="prep-subtab" data-psub="guides" onclick="switchPrepSub('guides')">Guides</button>
       <button class="prep-subtab" data-psub="reference" onclick="switchPrepSub('reference')">Quick Ref</button>
       <button class="prep-subtab" data-psub="protocols" onclick="switchPrepSub('protocols')">Protocols</button>
       <button class="prep-subtab" data-psub="vault" onclick="switchPrepSub('vault')">Vault</button>
@@ -2243,6 +2266,27 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
     </div><!-- /psub-radio -->
+
+    <!-- Sub: Interactive Guides (Decision Trees) -->
+    <div id="psub-guides" class="prep-sub">
+    <div class="prep-section">
+      <h3>Interactive Decision Guides</h3>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">Step-by-step interactive guides that ask about YOUR situation and give you the exact procedure. No AI required — works fully offline.</p>
+      <div id="guide-selector" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;"></div>
+      <div id="guide-active" style="display:none;margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <button class="btn btn-sm" onclick="guideBack()" id="guide-back-btn" style="display:none;">Back</button>
+          <div id="guide-breadcrumb" style="flex:1;font-size:10px;color:var(--text-muted);margin:0 12px;overflow-x:auto;white-space:nowrap;"></div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm" onclick="guideAskAI()" title="Ask AI for more detail on this step">Ask AI</button>
+            <button class="btn btn-sm" onclick="guidePrint()" title="Print this guide path">Print</button>
+            <button class="btn btn-sm btn-ghost" onclick="guideClose()">Close Guide</button>
+          </div>
+        </div>
+        <div id="guide-card" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;min-height:200px;"></div>
+      </div>
+    </div>
+    </div><!-- /psub-guides -->
 
     <!-- Sub: Quick Reference -->
     <div id="psub-reference" class="prep-sub">
@@ -4462,7 +4506,7 @@ a { color: var(--accent); text-decoration: none; }
           <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
-            <div><strong style="color:var(--accent);">13 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Calculators, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
+            <div><strong style="color:var(--accent);">14 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
             <div><strong style="color:var(--accent);">Tools Tab</strong><br>Meshtastic, Barcode Scanner, Video Library, Guided Drills</div>
           </div>
           <div style="margin:8px 0;">
@@ -6936,6 +6980,7 @@ function switchPrepSub(sub) {
   if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
   if (sub === 'ops') { loadInfraStatus(); renderVehicles(); calcBleach(); loadThreatMatrix(); renderHomeSecurity(); }
   if (sub === 'family') loadFEP();
+  if (sub === 'guides') renderGuideSelector();
   if (sub === 'reference') { convertUnit(); showPlantZone(); loadShelterAssess(); }
 }
 
@@ -10257,6 +10302,349 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'n') { e.preventDefault(); document.querySelector('[data-tab="notes"]').click(); setTimeout(createNote, 200); }
   }
 });
+
+/* ─── Interactive Decision Guide Engine ─── */
+const DECISION_GUIDES = [
+  {
+    id: 'water_purify', title: 'Water Purification', icon: '&#128167;',
+    desc: 'Find the right purification method based on your water source, equipment, and situation.',
+    nodes: {
+      start: {type:'question', text:'What is your water source?', options:[
+        {label:'Tap water (municipal, well)', next:'tap'},
+        {label:'Clear stream, river, or lake', next:'clear_surface'},
+        {label:'Murky/muddy water', next:'murky'},
+        {label:'Rainwater collection', next:'rain'},
+        {label:'Saltwater / ocean', next:'salt'},
+        {label:'Unknown / possibly contaminated', next:'unknown'},
+      ]},
+      tap: {type:'question', text:'Is the municipal supply compromised (boil advisory, disaster)?', options:[
+        {label:'No — normal supply', next:'tap_ok'},
+        {label:'Yes — boil advisory or disaster', next:'clear_surface'},
+      ]},
+      tap_ok: {type:'result', style:'success', text:'Tap water is generally safe.\n\nFor extra protection, fill containers and add 2 drops of unscented bleach per quart. Wait 30 minutes.\n\nStore in clean, food-grade containers away from chemicals.'},
+      clear_surface: {type:'question', text:'What equipment do you have?', options:[
+        {label:'Portable water filter (Sawyer, Katadyn, LifeStraw)', next:'has_filter'},
+        {label:'Pot and heat source (can boil)', next:'boil_method'},
+        {label:'Bleach (unscented household, 8.25%)', next:'bleach_method'},
+        {label:'Iodine or purification tablets', next:'iodine_method'},
+        {label:'UV pen (SteriPEN)', next:'uv_method'},
+        {label:'Nothing — improvise', next:'improvise'},
+      ]},
+      murky: {type:'result', style:'warning', text:'Murky water must be PRE-FILTERED before treatment.\n\n1. Let water settle in a container for 30+ minutes\n2. Pour through a cloth (bandana, t-shirt, coffee filter) into a clean container\n3. Repeat if still cloudy\n4. THEN treat with one of these methods:\n   - Boil for 1 minute (3 min above 6500 ft)\n   - Add bleach: 4 drops per quart (double normal dose for cloudy water)\n   - Use a ceramic filter if available\n\nNever drink murky water untreated — sediment harbors parasites.'},
+      rain: {type:'result', style:'info', text:'Rainwater is generally clean but may contain debris from collection surfaces.\n\n1. Use a "first flush" diverter — discard the first 10 gallons after a dry spell\n2. Filter through cloth to remove debris\n3. For drinking, add 2 drops bleach per quart as a precaution\n4. Store in covered, opaque containers to prevent algae growth\n\nRoof material matters: Metal roofs are cleanest. Avoid asphalt shingles for drinking water (chemicals).'},
+      salt: {type:'result', style:'danger', text:'Saltwater CANNOT be made drinkable by filtering or chemicals. You need DISTILLATION.\n\n1. Boil saltwater in a pot\n2. Angle a clean lid or sheet over the pot to collect steam\n3. Drip condensation into a separate clean container\n4. The collected water is fresh — the salt stays behind\n\nSolar still alternative: Dig a hole, place a container in the center, cover with clear plastic, place a rock to create a drip point. Very slow but works.'},
+      unknown: {type:'result', style:'danger', text:'Treat unknown water as contaminated. Use the STRONGEST method available:\n\n1. BEST: Boil for 3 minutes + let cool\n2. GOOD: Ceramic filter + bleach (double treatment)\n3. OK: Bleach alone — 4 drops per quart, wait 30 min\n4. LAST RESORT: Solar disinfection (SODIS) — clear bottle in full sun for 6+ hours\n\nNever drink untreated water from an unknown source. Waterborne illness can be fatal when medical care is unavailable.'},
+      has_filter: {type:'result', style:'success', text:'Portable filters are the best field option.\n\n1. Collect water from the cleanest part of the source (upstream, away from shore)\n2. Pre-filter through cloth if water is turbid\n3. Filter through your device per manufacturer instructions\n4. For extra safety, add 2 drops bleach per quart after filtering\n\nMaintenance: Backflush your filter regularly. Replace cartridge per manufacturer specs. A clogged filter can push contaminants through.'},
+      boil_method: {type:'result', style:'success', text:'Boiling is the MOST RELIABLE purification method.\n\n1. Bring water to a rolling boil\n2. Boil for 1 minute (3 minutes above 6,500 ft elevation)\n3. Let cool naturally — do not add ice\n4. Pour between containers to improve taste (adds oxygen)\n\nKills: bacteria, viruses, parasites, protozoa.\nDoes NOT remove: chemicals, heavy metals, sediment (pre-filter if needed).'},
+      bleach_method: {type:'result', style:'info', text:'Household bleach (unscented, 8.25% sodium hypochlorite):\n\n1. Pre-filter if cloudy (cloth, coffee filter)\n2. Add bleach:\n   - Clear water: 2 drops per quart / 8 drops per gallon\n   - Cloudy water: 4 drops per quart / 16 drops per gallon\n3. Stir and wait 30 minutes\n4. Should smell faintly of chlorine — if not, add another dose and wait 15 more min\n\nShelf life: Bleach loses potency over time. Use within 1 year of manufacture.'},
+      iodine_method: {type:'result', style:'info', text:'Iodine purification tablets:\n\n1. Follow package directions (typically 1-2 tablets per quart)\n2. Wait 30 minutes minimum (longer in cold water)\n3. Use vitamin C tablet after treatment to improve taste\n\nWarnings:\n- NOT safe for pregnant women\n- NOT safe for people with thyroid conditions\n- Less effective against Cryptosporidium\n- Bad taste (vitamin C helps)\n- Good backup method when filter/boiling unavailable'},
+      uv_method: {type:'result', style:'success', text:'UV treatment (SteriPEN or similar):\n\n1. Water MUST be clear — pre-filter if turbid (UV cannot penetrate murky water)\n2. Insert UV pen, stir for 90 seconds\n3. Water is safe to drink immediately\n\nPros: Fast, effective against all microorganisms\nCons: Requires batteries/charging, water must be clear, no chemical removal\n\nCarry backup batteries. Pair with a pre-filter for best results.'},
+      improvise: {type:'result', style:'danger', text:'No equipment — emergency methods:\n\n1. SOLAR DISINFECTION (SODIS): Fill a clear PET plastic bottle, lay in direct sun for 6 hours (48 hours if cloudy). Kills most pathogens.\n\n2. SAND FILTER: Layer (bottom to top): gravel, coarse sand, fine sand, charcoal (from fire), fine sand, cloth. Pour water through. STILL needs chemical treatment after.\n\n3. BOILING: Even a tin can over a fire works. Any container that holds water over heat.\n\n4. LAST RESORT: Dig a seep well 10+ feet from a water source. Ground naturally filters water. Still risky.\n\nDehydration kills faster than most waterborne illness. In a true emergency, any water is better than none.'},
+    }
+  },
+  {
+    id: 'wound_assess', title: 'Wound Assessment', icon: '&#129657;',
+    desc: 'Assess wound severity and get step-by-step treatment instructions.',
+    nodes: {
+      start: {type:'question', text:'What type of wound?', options:[
+        {label:'Cut or laceration (sharp edge)', next:'cut'},
+        {label:'Puncture wound (nail, knife, animal bite)', next:'puncture'},
+        {label:'Burn (heat, chemical, electrical)', next:'burn'},
+        {label:'Blunt force / crush injury', next:'blunt'},
+        {label:'Gunshot wound', next:'gsw'},
+        {label:'Abrasion / scrape', next:'abrasion'},
+      ]},
+      cut: {type:'question', text:'How severe is the bleeding?', options:[
+        {label:'Minor — oozing, small cut', next:'cut_minor'},
+        {label:'Moderate — steady flow, deep cut', next:'cut_moderate'},
+        {label:'Severe — spurting or soaking through bandages', next:'cut_severe'},
+      ]},
+      cut_minor: {type:'result', style:'success', text:'Minor cut treatment:\n\n1. Wash hands (or glove up)\n2. Clean wound with clean water — flush out debris\n3. Apply antibiotic ointment if available\n4. Cover with adhesive bandage or sterile gauze\n5. Change dressing daily or when wet/dirty\n\nWatch for infection (next 48h): increasing redness, swelling, warmth, red streaks, pus, fever. If any appear, wound needs antibiotics.'},
+      cut_moderate: {type:'result', style:'warning', text:'Moderate laceration treatment:\n\n1. Apply DIRECT PRESSURE with clean cloth/gauze — hold firmly for 10 minutes minimum\n2. Do NOT lift to check — this restarts clotting\n3. Once bleeding stops, clean wound with clean water\n4. If wound edges can be pulled together: use butterfly bandages or Steri-Strips across the cut\n5. Apply antibiotic ointment\n6. Cover with sterile gauze, secure with medical tape\n7. Elevate injured area above heart level\n8. Change dressing every 12-24 hours\n\nSeek medical care if: wound is >1 inch, on face/hands/joints, or won\'t stop bleeding in 20 min.'},
+      cut_severe: {type:'result', style:'danger', text:'SEVERE BLEEDING — ACT IMMEDIATELY:\n\n1. Call 911 if available\n2. Apply DIRECT PRESSURE — hard, with both hands if needed\n3. If blood soaks through, ADD more gauze ON TOP (don\'t remove soaked layer)\n4. If on a limb and direct pressure fails: TOURNIQUET\n   - Place 2-3 inches above wound (between wound and heart)\n   - Tighten until bleeding stops\n   - Note the TIME applied\n   - Do NOT remove once applied\n5. If no tourniquet: pack wound tightly with gauze or clean cloth, maintain pressure\n6. Keep patient lying down, legs elevated\n7. Keep patient warm (shock prevention)\n\nA tourniquet that saves a life is never wrong. Limb loss from tourniquet is extremely rare.'},
+      puncture: {type:'result', style:'warning', text:'Puncture wound treatment:\n\n1. Do NOT remove large embedded objects — stabilize in place with bulky dressing\n2. For small punctures: let wound bleed briefly (flushes bacteria)\n3. Clean around wound with clean water and soap\n4. Apply antibiotic ointment\n5. Cover with sterile dressing\n6. TETANUS RISK: If no tetanus shot in past 5 years, seek medical care within 72 hours\n\nAnimal bites: Wash aggressively with soap and water for 5+ minutes. High infection risk. Seek medical care — may need antibiotics and rabies evaluation.\n\nWatch for: redness spreading, fever, swelling — signs of serious infection requiring antibiotics.'},
+      burn: {type:'question', text:'What degree burn?', options:[
+        {label:'Red, painful, no blisters (1st degree / sunburn)', next:'burn_1st'},
+        {label:'Blisters, very painful, red/white (2nd degree)', next:'burn_2nd'},
+        {label:'White/charred, may not hurt (3rd degree)', next:'burn_3rd'},
+        {label:'Chemical burn', next:'burn_chem'},
+      ]},
+      burn_1st: {type:'result', style:'success', text:'First degree burn (superficial):\n\n1. Cool under running water for 10-20 minutes\n2. Do NOT use ice (causes more damage)\n3. Apply aloe vera gel or burn cream\n4. Take ibuprofen for pain\n5. Cover loosely if needed\n\nHeals in 3-7 days. No scarring expected.'},
+      burn_2nd: {type:'result', style:'warning', text:'Second degree burn:\n\n1. Cool under running water for 20 minutes\n2. Do NOT pop blisters (protective barrier against infection)\n3. If blisters break: clean gently, apply antibiotic ointment\n4. Cover with non-stick sterile dressing (Telfa pad)\n5. Wrap loosely with gauze\n6. Change dressing daily\n7. Take ibuprofen/acetaminophen for pain\n\nSeek medical care if: burn is larger than your palm, on face/hands/feet/genitals/joints, or shows signs of infection.\n\nHealing: 2-3 weeks. May scar. Keep clean and moist.'},
+      burn_3rd: {type:'result', style:'danger', text:'Third degree burn — MEDICAL EMERGENCY:\n\n1. Call 911 if available\n2. Do NOT run cold water on large 3rd degree burns (shock risk)\n3. Cover with clean, dry, non-stick dressing\n4. Elevate burned area if possible\n5. Watch for shock: pale, rapid pulse, confusion → lay flat, elevate legs\n6. Do NOT apply ointments, butter, or home remedies\n7. Do NOT remove clothing stuck to the burn\n8. Give small sips of water if patient is conscious\n\nThis burn has destroyed nerve endings (may not hurt despite severity). Requires professional medical care — skin grafting likely needed.'},
+      burn_chem: {type:'result', style:'danger', text:'Chemical burn:\n\n1. Remove contaminated clothing (use gloves if possible)\n2. FLUSH with large amounts of water for 20+ minutes\n3. For dry chemicals: brush off powder BEFORE flushing with water\n4. Do NOT neutralize (acid with base or vice versa) — water only\n5. Cover with loose, dry, sterile dressing\n6. Identify the chemical if possible (for medical team)\n\nEye exposure: Flush eyes with clean water for 15+ minutes. Hold eyelids open. Seek immediate medical care.'},
+      blunt: {type:'result', style:'warning', text:'Blunt force / crush injury:\n\n1. Check for deformity (possible fracture) — if present, immobilize\n2. Apply ice/cold compress: 20 minutes on, 20 minutes off\n3. Compress with elastic bandage (not too tight)\n4. Elevate above heart level\n5. Take ibuprofen for pain and swelling\n\nRed flags requiring emergency care:\n- Inability to move the limb\n- Numbness or tingling below injury\n- Visible bone or severe deformity\n- Crush injury to torso/abdomen (internal bleeding risk)\n- Compartment syndrome signs: severe pain, tight/shiny skin, pain on passive stretch'},
+      gsw: {type:'result', style:'danger', text:'Gunshot wound — LIFE THREAT:\n\n1. Scene safety FIRST — ensure no ongoing threat\n2. Call 911 if available\n3. Apply direct pressure to wound with cloth/gauze\n4. If on limb with severe bleeding: apply TOURNIQUET high and tight\n5. If torso wound: pack wound cavity with gauze, apply pressure\n6. Check for EXIT wound (treat both holes)\n7. Chest wound with sucking sound: seal 3 sides with plastic/tape (allows air out, not in)\n8. Keep patient still, warm, legs elevated\n9. Do NOT give food/water (surgery likely needed)\n\nMost survivable if bleeding is controlled quickly. Every second counts.'},
+      abrasion: {type:'result', style:'success', text:'Abrasion / scrape:\n\n1. Clean thoroughly — this is the most important step for abrasions\n2. Use clean water and mild soap, gently scrub out all debris\n3. Embedded dirt/gravel must be removed (infection risk)\n4. Apply thin layer of antibiotic ointment\n5. Cover with non-stick bandage\n6. Change dressing daily\n\nLarge abrasions (road rash): Keep moist with ointment to minimize scarring. Do NOT let large abrasions dry out and scab — moist healing is faster and scars less.'},
+    }
+  },
+  {
+    id: 'fire_start', title: 'Fire Starting', icon: '&#128293;',
+    desc: 'Choose the right fire-starting method based on conditions and available materials.',
+    nodes: {
+      start: {type:'question', text:'What fire-starting tools do you have?', options:[
+        {label:'Lighter or matches', next:'has_lighter'},
+        {label:'Ferro rod / fire steel', next:'ferro'},
+        {label:'Magnifying glass / lens', next:'lens'},
+        {label:'Nothing — need to improvise', next:'primitive'},
+      ]},
+      has_lighter: {type:'question', text:'What are the weather conditions?', options:[
+        {label:'Dry conditions', next:'dry_easy'},
+        {label:'Wet / raining', next:'wet_fire'},
+        {label:'Windy', next:'windy_fire'},
+        {label:'Snow / freezing', next:'cold_fire'},
+      ]},
+      dry_easy: {type:'result', style:'success', text:'Dry conditions with lighter/matches — easiest scenario.\n\n1. TINDER: Gather dry material that catches a spark — dryer lint, birch bark, dry grass, pine needles, cotton balls (with vaseline = best), char cloth\n2. KINDLING: Pencil-thin dry sticks, split wood shavings\n3. FUEL: Wrist-thick to arm-thick dry wood\n\nBuild method (teepee):\n1. Place tinder bundle in center\n2. Lean kindling sticks in a cone shape over tinder\n3. Light tinder from the upwind side\n4. Add kindling as fire grows\n5. Gradually add larger fuel wood\n\nFeed gradually. Don\'t smother with too much wood too fast.'},
+      wet_fire: {type:'result', style:'warning', text:'Wet conditions — hardest but possible.\n\n1. Find DRY tinder (look INSIDE dead standing trees, under bark, inside coat pockets for lint)\n2. Feather sticks: Shave thin curls on a stick without detaching — these catch fire even when damp\n3. Birch bark burns even when wet (natural oils)\n4. Split wet wood to get dry inner wood — the inside is always drier\n5. Build a platform of sticks to keep fire off wet ground\n6. Start small — build up slowly\n7. Create a windbreak/rain shelter over your fire spot\n\nPine resin/sap is a natural fire accelerant — collect from wounds on pine trees.'},
+      windy_fire: {type:'result', style:'info', text:'Windy conditions:\n\n1. Find or create a windbreak (rocks, log, dirt bank, your body)\n2. Dig a small pit if possible — below-ground fire is wind-resistant\n3. Light tinder on the downwind side (wind blows flame INTO the fire)\n4. Use a "log cabin" structure instead of teepee — more stable in wind\n5. Shield your lighter/match with cupped hands\n\nDakota fire hole (best for wind):\n1. Dig a main hole 1 ft deep, 1 ft wide\n2. Dig a tunnel from upwind side into the bottom of the hole\n3. Build fire in the hole — tunnel provides air, hole blocks wind\n4. Very efficient, low smoke, wind-resistant.'},
+      cold_fire: {type:'result', style:'warning', text:'Snow/freezing conditions:\n\n1. Create a platform of green logs or rocks — fire on snow melts through and dies\n2. Standing dead wood is drier than fallen wood (off the wet ground)\n3. Use a candle stub or fuel tablet to extend your flame time while kindling catches\n4. Break branches — if they snap, they\'re dry enough. If they bend, too wet.\n5. Build a reflector wall behind the fire (stacked logs) to direct heat toward you\n6. Position yourself between fire and reflector for maximum warmth\n\nPrioritize: shelter from wind first, then fire. A good shelter retains more heat than an exposed fire.'},
+      ferro: {type:'result', style:'info', text:'Ferro rod / fire steel:\n\n1. Prepare tinder FIRST — you need very fine, dry material\n   - Best: char cloth, cotton ball + vaseline, birch bark, dry grass bundle\n   - Good: fine wood shavings, dryer lint, jute twine (pulled apart)\n2. Hold ferro rod close to tinder (1-2 inches)\n3. Strike AWAY from tinder with the scraper (rod stays still, scraper moves)\n4. Aim sparks into the tinder bundle\n5. Once tinder glows, gently blow to flame\n6. Transfer burning tinder to your prepared fire lay\n\nPractice at home before you need it in the field. Ferro rods work when wet — wipe dry and strike.'},
+      lens: {type:'result', style:'info', text:'Magnifying glass / lens method:\n\n1. ONLY works with direct sunlight (no clouds)\n2. Need very fine, dark-colored tinder (char cloth is ideal)\n3. Focus the light to the smallest possible point on the tinder\n4. Hold steady — do not move the focal point\n5. Takes 30-60 seconds for tinder to begin smoking\n6. Once smoking, gently blow to create flame\n7. Transfer to prepared fire lay\n\nLens sources: reading glasses, binocular lens, camera lens, bottom of a polished soda can, clear ice shaped into a lens, water-filled clear plastic bag shaped into a sphere.'},
+      primitive: {type:'result', style:'danger', text:'No tools — primitive methods (extremely difficult, practice first):\n\nBOW DRILL (most reliable primitive method):\n1. Fireboard: flat piece of dry softwood (cedar, willow, cottonwood)\n2. Spindle: straight, dry, round stick (same wood)\n3. Bearing block: hardwood or stone with socket (lubricate with lip balm)\n4. Bow: curved branch with cordage (shoelace, paracord, strip of clothing)\n5. Notch: cut V-notch in fireboard, place tinder bundle under it\n6. Wrap cordage around spindle, press into fireboard with bearing block\n7. Saw bow back and forth — spindle spins and creates friction\n8. Dark powder falls into notch → ember forms\n9. Transfer ember to tinder bundle, blow gently to flame\n\nThis is the hardest skill in survival. Practice when your life doesn\'t depend on it.'},
+    }
+  },
+  {
+    id: 'shelter_build', title: 'Shelter Construction', icon: '&#127968;',
+    desc: 'Build emergency shelter based on your environment, materials, and timeframe.',
+    nodes: {
+      start: {type:'question', text:'What environment are you in?', options:[
+        {label:'Forest / wooded area', next:'forest'},
+        {label:'Open field / grassland', next:'open'},
+        {label:'Snow / winter conditions', next:'snow'},
+        {label:'Desert / arid', next:'desert'},
+        {label:'Urban / suburban (disaster)', next:'urban'},
+      ]},
+      forest: {type:'question', text:'How much time do you have?', options:[
+        {label:'Under 1 hour (emergency)', next:'debris_hut'},
+        {label:'A few hours', next:'lean_to'},
+        {label:'Longer term (days+)', next:'a_frame'},
+      ]},
+      debris_hut: {type:'result', style:'warning', text:'DEBRIS HUT — fastest forest shelter (30-60 min):\n\n1. Find a ridgepole: straight branch, body length + 2 feet\n2. Prop one end on a stump/rock at sitting height, other end on ground\n3. Lean sticks along both sides (ribbing) — close together\n4. Pile leaves, pine needles, grass thickly over the ribbing (2-3 feet deep)\n5. Stuff the inside with dry leaves for insulation (your body heats the trapped air)\n6. Block the entrance with a backpack or pile of debris\n\nKey: make it SMALL — just big enough to fit you. Smaller = warmer. Body heat is your furnace.\n\nInsulation on the ground is MORE important than overhead. Cold ground steals heat 25x faster than cold air.'},
+      lean_to: {type:'result', style:'info', text:'LEAN-TO — good forest shelter (2-3 hours):\n\n1. Find or lash a horizontal ridge pole between two trees (chest height)\n2. Lean long branches at 45-60 degrees against the ridge pole\n3. Weave smaller branches horizontally between the leaning poles\n4. Layer debris (leaves, bark, pine boughs) thickly from bottom up — like shingles\n5. Build a reflector fire 4-6 feet in front of the opening\n\nAdvantages: open front for fire warmth, easy to build, room for gear\nDisadvantages: open to wind from one side — position opening away from prevailing wind\n\nImprovement: build a log reflector wall behind the fire to bounce heat back toward you.'},
+      a_frame: {type:'result', style:'success', text:'A-FRAME — best long-term forest shelter:\n\n1. Ridge pole: strong branch, 9-12 feet long\n2. Prop between two trees or on forked sticks at both ends\n3. Lean branches on both sides creating an A shape\n4. Weave horizontal branches for structure\n5. Layer debris thickly (leaves, bark, pine boughs) — minimum 1 foot thick for rain protection\n6. Create a raised bed inside with logs and pine boughs\n\nFor rain protection: add a layer of bark shingles or plastic sheeting if available.\n\nLong-term improvements: add a door flap, dig a drainage trench around the perimeter, build a stone-ring fire pit nearby, create a drying rack for wet clothes.'},
+      open: {type:'result', style:'warning', text:'Open field — limited materials:\n\n1. FIRST: look for ANY natural windbreak (rock outcrop, hill, tree line)\n2. Dig a body-length trench, 2 feet deep if soil allows\n3. Cover with branches, grass, tarp, or whatever is available\n4. Pile excavated dirt on the windward side as a wall\n\nIf you have a tarp/poncho:\n- Stake one edge to ground with rocks\n- Angle the other side up with sticks or trekking poles\n- Ensure opening faces away from wind\n\nGrass/reed shelter: bundle tall grass into thick mats, lean against a ridge pole. Grass is an excellent insulator when packed thick.'},
+      snow: {type:'result', style:'danger', text:'SNOW SHELTER — life-saving in winter:\n\nQUINZHEE (easiest, 2-3 hours):\n1. Pile snow into a mound 6+ feet tall, 8 feet wide\n2. Wait 1-2 hours for snow to sinter (bond together)\n3. Hollow out the inside — walls should be 1-1.5 feet thick\n4. Poke a ventilation hole in the top (CRITICAL — CO2 buildup kills)\n5. Sleeping platform should be higher than entrance (warm air rises)\n6. Block entrance partially with a backpack\n\nSNOW TRENCH (fastest, 30 min):\n1. Dig a trench body-width, body-length, 3 feet deep\n2. Cover with branches/tarp and snow\n3. Insulate floor with pine boughs\n\nNEVER seal a snow shelter completely — always maintain ventilation.'},
+      desert: {type:'result', style:'warning', text:'Desert shelter — shade is survival:\n\n1. Priority is SHADE, not insulation\n2. If you have a tarp/blanket: create a double-layer shade\n   - First layer 1 foot above ground (air gap underneath)\n   - Second layer 1 foot above first (air gap between layers = cooler)\n3. Dig a shallow trench and cover with fabric for a cooler microclimate\n4. Desert temps can swing 40+ degrees at night — build insulation for nighttime cold too\n\nNatural shelters: rock overhangs, dry washes (NOT during rain — flash flood risk), north-facing cliff faces (shadier in Northern Hemisphere)\n\nTravel and work during dawn/dusk. Rest in shade during peak heat (10am-4pm).'},
+      urban: {type:'result', style:'info', text:'Urban/suburban disaster shelter:\n\n1. FIRST: assess building safety — look for cracks, lean, gas smell, structural damage\n2. Interior rooms on lowest floors are safest (away from exterior walls and windows)\n3. Avoid rooms with large unsupported ceilings\n4. Use mattresses, couch cushions for insulation and ground padding\n5. Seal windows with plastic sheeting and tape (cold/contamination)\n6. Vehicles make decent short-term shelters (run engine 10 min/hour for heat — crack window to prevent CO poisoning)\n\nAbandoned buildings: check for other occupants first, avoid structures with fire/water damage, test floors before trusting them.\n\nBest urban resources: hardware stores, home improvement centers (tarps, insulation, tools).'},
+    }
+  },
+  {
+    id: 'radio_setup', title: 'Radio Communications', icon: '&#128225;',
+    desc: 'Set up emergency radio communications based on your equipment and range needs.',
+    nodes: {
+      start: {type:'question', text:'What radio equipment do you have?', options:[
+        {label:'No radio — need to buy one', next:'buy'},
+        {label:'FRS walkie-talkies (Motorola, Midland, etc.)', next:'frs'},
+        {label:'GMRS radio (need license)', next:'gmrs'},
+        {label:'HAM / amateur radio (need license)', next:'ham'},
+        {label:'CB radio', next:'cb'},
+        {label:'Meshtastic / LoRa device', next:'mesh'},
+      ]},
+      buy: {type:'result', style:'info', text:'Recommended first radio purchases:\n\n1. IMMEDIATE (no license): Midland X-Talker T77VP5 FRS ($60/pair) — 2-mile range, weather alerts, rechargeable\n\n2. BETTER (easy license, $35, no exam): Midland MXT275 GMRS mobile ($200) + Midland GXT1000VP4 handhelds ($70/pair) — 5-25 mile range, repeater capable\n\n3. BEST (exam required): Baofeng UV-5R HAM handheld ($25) for Technician license + Icom IC-7300 HF ($1100) for General license — local to worldwide range\n\n4. OFF-GRID: Heltec LoRa 32 V3 ($20) with Meshtastic firmware — mesh networking, no license, 1-10+ mile range\n\nStart with FRS (zero barrier) then get GMRS license ($35, covers whole family, no exam).'},
+      frs: {type:'result', style:'info', text:'FRS Radio Setup:\n\n1. Channel 1 is the common prepper rally channel\n2. Channel 3 is the unofficial emergency channel\n3. Agree on a PRIMARY and BACKUP channel with your group\n4. Set CTCSS/privacy codes to reduce crosstalk (not encryption — anyone can hear you)\n5. Use channel 1 for initial contact, then move to a pre-agreed channel\n\nRange: 0.5-2 miles typical (terrain dependent)\nPower: 2W maximum (channels 1-7, 15-22), 0.5W (channels 8-14)\nNo license required\n\nTips:\n- Higher ground = better range\n- Hold radio vertically (antenna straight up)\n- Speak across the mic, not into it\n- Use NATO phonetic alphabet for clarity'},
+      gmrs: {type:'result', style:'success', text:'GMRS Radio Setup:\n\n1. Get your license: $35 at fcc.gov, no exam, covers your whole family, valid 10 years\n2. Channel 20 (462.675 MHz) is the national GMRS emergency calling frequency\n3. GMRS allows repeater use — greatly extends range (10-50+ miles through repeaters)\n4. Find local repeaters: mygmrs.com/repeaters\n\nSetup for your group:\n1. Program a primary simplex channel (direct radio-to-radio)\n2. Program a backup simplex channel\n3. Program your nearest GMRS repeater (input/output freqs + tone)\n4. Schedule check-in times (e.g., top of every hour)\n\nRange: 2-5 miles handheld simplex, 10-50+ miles through repeaters\nPower: up to 50W mobile\n\nBest GMRS radios: Midland MXT275/MXT500 (mobile), Wouxun KG-805G (handheld)'},
+      ham: {type:'question', text:'What HAM license level?', options:[
+        {label:'Technician (VHF/UHF local)', next:'ham_tech'},
+        {label:'General (HF worldwide)', next:'ham_gen'},
+        {label:'No license yet', next:'ham_study'},
+      ]},
+      ham_tech: {type:'result', style:'success', text:'HAM Technician — Local Communications:\n\nKey frequencies:\n- 146.520 MHz FM — National simplex calling frequency (start here)\n- 146.550 MHz FM — Simplex emergency\n- 446.000 MHz FM — UHF calling frequency\n\nSetup:\n1. Program your local repeaters (repeaterbook.com)\n2. Program simplex calling frequencies\n3. Join your local ARES/RACES emergency communications group\n4. Practice weekly nets\n\nEquipment: Baofeng UV-5R ($25) for start, Yaesu FT-65R ($90) for better quality, Kenwood TM-V71A ($350) for mobile\n\nRange: 5-15 miles simplex, 30-100+ miles through repeaters\n\nIn an emergency, any person may use any frequency to call for help — license rules are suspended for life-threatening situations.'},
+      ham_gen: {type:'result', style:'success', text:'HAM General — Regional & Worldwide:\n\nKey HF frequencies:\n- 7.260 MHz (40m) — Regional, day+night, 100-1000 miles\n- 14.300 MHz (20m) — Worldwide daytime, emergency net\n- 3.860 MHz (80m) — Regional nighttime, ARES nets\n\nSetup:\n1. HF radio (Icom IC-7300 recommended — $1100)\n2. Antenna: end-fed half-wave (EFHW) is easiest to deploy in the field\n3. Power: 12V battery + solar panel for off-grid operation\n4. Tuner: built into most modern HF rigs\n\nEmergency nets to know:\n- 14.300 MHz — Intercon Net (worldwide emergency)\n- 7.290 MHz — SATERN (Salvation Army)\n- 3.860 MHz — Regional ARES nets (check your state)\n\nHF can reach anywhere on Earth with the right conditions. Practice NVIS (Near Vertical Incidence Skywave) for reliable 0-300 mile coverage.'},
+      ham_study: {type:'result', style:'info', text:'Getting your HAM license:\n\n1. TECHNICIAN (easiest, 2-3 weeks study):\n   - Study at hamstudy.org (free)\n   - 35 multiple choice questions, need 26 correct\n   - Find an exam session: arrl.org/find-an-amateur-radio-license-exam-session\n   - Cost: ~$15 exam fee\n   - Gives access to VHF/UHF (local comms, repeaters)\n\n2. GENERAL (4-6 weeks additional study):\n   - Can take same day as Technician\n   - 35 more questions\n   - Gives access to HF bands (regional + worldwide)\n\nMost people pass Technician with 1-2 weeks of casual study using hamstudy.org. The questions are public — you\'re studying the actual test pool.\n\nIn a true emergency, license is not required to transmit a distress call.'},
+      cb: {type:'result', style:'info', text:'CB Radio Setup:\n\nKey channels:\n- Channel 9 — Official emergency channel\n- Channel 19 — Trucker/highway channel (most monitored)\n\nSetup:\n1. Mount antenna as high as possible (magnetic mount on vehicle roof)\n2. Set to channel 9 or 19 for monitoring\n3. No license required\n4. Squelch: turn up until static just disappears\n\nRange: 2-5 miles typical, up to 15-20 with good antenna\nPower: 4W AM, 12W SSB\n\nLimitations: Short range, crowded in some areas, no repeater access\nAdvantage: No license, ubiquitous, truckers monitor ch19 24/7\n\nBest for: vehicle convoys, short-range base-to-vehicle, highway travel monitoring'},
+      mesh: {type:'result', style:'success', text:'Meshtastic / LoRa Mesh Setup:\n\n1. Hardware: Heltec LoRa 32 V3 (~$20) or LILYGO T-Beam ($35)\n2. Flash Meshtastic firmware: flasher.meshtastic.org (one click)\n3. Configure via Meshtastic app (Android/iOS) or web interface\n4. No license required (ISM band)\n\nRange: 1-10+ miles depending on antenna and terrain\nPower: runs on small battery for days\n\nKey advantages:\n- Mesh networking: messages hop through other nodes automatically\n- Works without any internet or cell infrastructure\n- GPS position sharing between nodes\n- Encrypted by default\n- Solar + battery = indefinite operation\n\nSetup for your group:\n1. Flash all devices with same firmware version\n2. Set same region and channel\n3. Share encryption key\n4. Place one node at highest elevation for relay\n\nN.O.M.A.D. has built-in Meshtastic support in the Tools tab.'},
+    }
+  },
+  {
+    id: 'food_preserve', title: 'Food Preservation', icon: '&#127858;',
+    desc: 'Choose the right preservation method based on what food you have and your available equipment.',
+    nodes: {
+      start: {type:'question', text:'What type of food do you need to preserve?', options:[
+        {label:'Meat / fish / poultry', next:'meat'},
+        {label:'Vegetables', next:'veg'},
+        {label:'Fruit', next:'fruit'},
+        {label:'Dairy / eggs', next:'dairy'},
+        {label:'Herbs', next:'herbs'},
+      ]},
+      meat: {type:'question', text:'What equipment/method do you prefer?', options:[
+        {label:'Salt curing / jerky (no electricity needed)', next:'meat_salt'},
+        {label:'Smoking', next:'meat_smoke'},
+        {label:'Canning (pressure canner required)', next:'meat_can'},
+        {label:'Freezing', next:'meat_freeze'},
+      ]},
+      meat_salt: {type:'result', style:'info', text:'Salt curing / jerky:\n\nJERKY (cooked, shelf-stable):\n1. Slice meat thin (1/4 inch) against the grain\n2. Marinate in salt + spices 4-24 hours\n3. Dehydrate at 160F for 4-6 hours (oven on lowest setting with door cracked, or dehydrator)\n4. Done when it bends and cracks but doesn\'t snap\n5. Store in airtight container — lasts 1-2 months at room temp\n\nSALT CURE (traditional, no electricity):\n1. Cover meat completely in salt (1 lb salt per 5 lbs meat)\n2. Store in cool place (under 40F ideal)\n3. After 7 days per inch of thickness, rinse salt\n4. Hang in cool, dry, ventilated area to dry further\n5. Properly salt-cured meat lasts months without refrigeration'},
+      meat_smoke: {type:'result', style:'info', text:'Smoking meat:\n\nHOT SMOKING (cooked, eat within 1-2 weeks):\n1. Cure meat with salt first (24-48 hours)\n2. Smoke at 225-275F for 2-8 hours depending on thickness\n3. Internal temp must reach 145F (whole cuts) or 165F (ground)\n4. Refrigerate — lasts 1-2 weeks\n\nCOLD SMOKING (preserved, longer storage):\n1. Salt cure meat thoroughly first (7+ days)\n2. Smoke at 68-86F for 12-48 hours (smoke only, no cooking)\n3. This is a preservation method, NOT cooking\n4. Hang in cool, dry place — lasts months\n\nWood: Use hardwoods (hickory, oak, apple, cherry, mesquite). NEVER softwood (pine, cedar) — toxic resin.\n\nImprovised smoker: metal trash can with holes, clay pot, or even a hole in the ground with a fire tunnel.'},
+      meat_can: {type:'result', style:'warning', text:'Pressure canning meat (safest long-term method):\n\nREQUIRED: Pressure canner (NOT a water bath canner — meat is low-acid)\n\n1. Cut meat into chunks, brown in pan (optional but improves flavor)\n2. Pack hot meat into sterilized jars, leave 1-inch headspace\n3. Add 1 tsp salt per quart (optional)\n4. Add hot broth or water to cover meat, maintain 1-inch headspace\n5. Remove air bubbles, wipe rims, apply lids\n6. Process in pressure canner:\n   - Pints: 75 minutes at 10 PSI\n   - Quarts: 90 minutes at 10 PSI\n   - Adjust PSI for altitude (15 PSI above 1000 ft)\n7. Let canner depressurize naturally\n\nProperly canned meat lasts 2-5+ years. NEVER water-bath can meat — botulism risk.'},
+      meat_freeze: {type:'result', style:'success', text:'Freezing meat:\n\n1. Wrap tightly in plastic wrap, then aluminum foil, then freezer bag\n2. Remove as much air as possible (vacuum seal is best)\n3. Label with date and contents\n4. Freeze at 0F or below\n\nStorage times at 0F:\n- Ground meat: 3-4 months\n- Steaks/roasts: 6-12 months\n- Poultry: 9-12 months\n- Fish: 3-6 months\n\nThawing: refrigerator (safest), cold water bath (faster), microwave (fastest)\nNEVER thaw on counter — bacterial growth in the danger zone (40-140F)\n\nPower outage: a full freezer stays frozen 48 hours if kept closed. Half-full: 24 hours. Blankets on top help.'},
+      veg: {type:'question', text:'What method?', options:[
+        {label:'Canning (water bath or pressure)', next:'veg_can'},
+        {label:'Dehydrating', next:'veg_dry'},
+        {label:'Fermenting (sauerkraut, kimchi)', next:'veg_ferment'},
+        {label:'Root cellar / cold storage', next:'veg_cellar'},
+      ]},
+      veg_can: {type:'result', style:'warning', text:'Canning vegetables:\n\nLOW-ACID vegetables (most veggies) REQUIRE pressure canning:\n- Green beans, corn, peas, carrots, potatoes, etc.\n- Process per USDA guidelines (times vary by vegetable)\n\nHIGH-ACID vegetables can use water bath canning:\n- Tomatoes (add 1 tbsp lemon juice per pint to ensure acidity)\n- Pickled vegetables (vinegar provides the acid)\n- Salsa (tested recipes only)\n\nBasic steps:\n1. Sterilize jars and lids\n2. Pack prepared vegetables into hot jars\n3. Add liquid (water, brine, or syrup)\n4. Remove bubbles, wipe rims, seal\n5. Process for required time at correct pressure\n\nALWAYS use tested recipes from USDA, Ball, or your state extension service. Improvised canning recipes risk botulism.'},
+      veg_dry: {type:'result', style:'success', text:'Dehydrating vegetables:\n\n1. Wash, peel, slice uniformly thin (1/4 inch)\n2. Blanch most vegetables first (1-3 min in boiling water, then ice bath)\n   - Skip blanching for: onions, peppers, mushrooms, herbs\n3. Arrange on dehydrator trays (no overlap)\n4. Dry at 125-135F until brittle:\n   - Beans: 8-14 hours\n   - Carrots: 6-12 hours\n   - Tomatoes: 8-14 hours\n   - Peppers: 8-12 hours\n5. Condition: place in sealed jar for 1 week, shake daily. Any moisture = dry longer.\n6. Store in airtight containers with oxygen absorbers\n\nShelf life: 6-12 months (2+ years with oxygen absorbers in Mylar bags)\n\nNo-electricity method: sun drying works in hot, dry climates. Use screens elevated off ground with cheesecloth cover.'},
+      veg_ferment: {type:'result', style:'success', text:'Fermenting vegetables (no equipment needed):\n\nBASIC SAUERKRAUT:\n1. Shred cabbage finely\n2. Add 2% salt by weight (1 tbsp per pound of cabbage)\n3. Massage/squeeze until liquid is released (10 min)\n4. Pack tightly into clean jar, submerge under liquid\n5. Weight down (small jar filled with water on top works)\n6. Cover loosely (gas must escape)\n7. Ferment at room temp 1-4 weeks\n8. Taste weekly — move to fridge when you like the sourness\n\nFermentation works with almost any vegetable: carrots, radishes, green beans, peppers, beets.\n\nThe 2% salt rule works for everything. Measure by weight, not volume.\n\nProperly fermented food lasts months refrigerated and is more nutritious than fresh (probiotics, increased vitamins).'},
+      veg_cellar: {type:'result', style:'info', text:'Root cellar / cold storage (no electricity):\n\nIdeal conditions: 32-40F, 85-95% humidity, dark, ventilated\n\nStorage life at optimal conditions:\n- Potatoes: 4-6 months (cure 2 weeks first, no light)\n- Carrots: 4-6 months (in damp sand)\n- Onions: 3-6 months (cure 2 weeks, need DRY storage)\n- Apples: 2-4 months (store separately — ethylene gas spoils other produce)\n- Winter squash: 3-6 months (cure 2 weeks at 80F first)\n- Cabbage: 3-4 months (wrap in newspaper)\n- Beets: 3-5 months (in damp sand, cut tops to 1 inch)\n- Garlic: 6-8 months (braid and hang)\n\nImprovised root cellar: buried garbage can with lid, straw insulation. North-facing basement corner. Buried cooler.'},
+      fruit: {type:'result', style:'info', text:'Fruit preservation methods:\n\n1. CANNING (water bath — fruit is high-acid):\n   - Pack in light syrup, juice, or water\n   - Process 15-25 minutes depending on fruit and jar size\n   - Lasts 1-2+ years\n\n2. DEHYDRATING: Slice thin, dry at 135F until leathery\n   - Fruit leather: puree, spread thin on tray, dry 6-12 hours\n   - Lasts 6-12 months\n\n3. JAM/JELLY: Cook with sugar + pectin, water-bath can\n   - Lasts 1-2 years\n\n4. FREEZING: Spread on tray first (IQF), then bag\n   - Lasts 8-12 months\n\n5. FERMENTATION: Fruit wines, vinegars, kvass\n\nBest no-electricity: drying and jam. Sun-dried fruit has been preserved for thousands of years.'},
+      dairy: {type:'result', style:'warning', text:'Dairy & egg preservation:\n\nEGGS:\n- Water glass method: dissolve 1 oz sodium silicate in 1 quart water. Submerge clean, unwashed eggs. Lasts 12-18 months unrefrigerated.\n- Mineral oil: coat each egg — seals pores. Lasts 6-9 months refrigerated.\n- Freeze: crack into muffin tin, freeze, bag. Lasts 12 months.\n- Dehydrate: scramble, dry, powder. Lasts 6-12 months.\n\nBUTTER:\n- Clarified/ghee: heat butter, skim foam, pour clear fat. Lasts months at room temp.\n- Canning: melt butter, pour into hot jars, water-bath 60 min. Controversial but traditional.\n\nCHEESE:\n- Hard cheese: wax-sealed whole wheels last months in cool storage.\n- Soft cheese: freeze (texture changes but fine for cooking).\n\nMILK:\n- Powdered milk stores 20+ years in sealed Mylar with O2 absorbers.'},
+      herbs: {type:'result', style:'success', text:'Herb preservation:\n\n1. AIR DRYING (easiest):\n   - Bundle 5-6 stems, hang upside down in warm, dry, dark area\n   - 1-2 weeks until crispy\n   - Strip leaves, store in airtight jars\n   - Lasts 1-3 years\n\n2. DEHYDRATOR: 95-105F for 2-4 hours. Fastest method.\n\n3. FREEZING:\n   - Chop herbs, pack into ice cube trays with water or olive oil\n   - Pop out frozen cubes, bag them\n   - Drop directly into cooking\n\n4. HERB-INFUSED OIL:\n   - Pack jar with dried herbs (MUST be dried — fresh in oil risks botulism)\n   - Cover with oil, seal, store in cool dark place\n   - Ready in 2-4 weeks\n\n5. SALT PRESERVATION:\n   - Layer fresh herbs with coarse salt in jar\n   - 1:4 ratio herb to salt\n   - Lasts indefinitely'},
+    }
+  },
+  {
+    id: 'triage_start', title: 'START Triage', icon: '&#9878;',
+    desc: 'Interactive mass casualty triage — rapidly categorize patients using the START system.',
+    nodes: {
+      start: {type:'question', text:'Can the patient WALK?', options:[
+        {label:'Yes — they can walk', next:'green'},
+        {label:'No — they cannot walk', next:'breathing'},
+      ]},
+      green: {type:'result', style:'success', text:'GREEN — MINOR\n\nDirect this patient to the collection point for walking wounded.\n\nThey will be treated LAST. Reassess periodically — conditions can change.\n\nTag: GREEN'},
+      breathing: {type:'question', text:'Is the patient BREATHING?', options:[
+        {label:'Yes — they are breathing', next:'resp_rate'},
+        {label:'No — not breathing', next:'reposition'},
+      ]},
+      reposition: {type:'question', text:'Reposition the airway (head-tilt, chin-lift). Are they breathing NOW?', options:[
+        {label:'Yes — started breathing after repositioning', next:'red_airway'},
+        {label:'No — still not breathing', next:'black'},
+      ]},
+      black: {type:'result', style:'danger', text:'BLACK — DEAD / EXPECTANT\n\nThis patient is not breathing even after airway repositioning.\n\nTag BLACK and move to the next patient. In a mass casualty event, resources must go to salvageable patients.\n\nTag: BLACK\n\nThis is the hardest decision in triage. You are saving others by moving on.'},
+      red_airway: {type:'result', style:'danger', text:'RED — IMMEDIATE\n\nPatient is breathing only with airway intervention. They need immediate care.\n\n1. Maintain airway position (recovery position if possible)\n2. Tag RED\n3. Move to next patient\n\nTag: RED — Treat first'},
+      resp_rate: {type:'question', text:'Count their respiratory rate. Is it above 30 breaths per minute?', options:[
+        {label:'Yes — breathing fast (>30/min)', next:'red_resp'},
+        {label:'No — breathing rate is normal (<30/min)', next:'perfusion'},
+      ]},
+      red_resp: {type:'result', style:'danger', text:'RED — IMMEDIATE\n\nRespiratory rate over 30/minute indicates respiratory distress or shock.\n\nTag RED — this patient needs immediate treatment.\n\nTag: RED — Treat first'},
+      perfusion: {type:'question', text:'Check PERFUSION: Feel for a radial pulse (wrist) OR press fingernail and release — does color return in under 2 seconds?', options:[
+        {label:'No radial pulse OR cap refill > 2 seconds', next:'red_perf'},
+        {label:'Radial pulse present AND cap refill < 2 seconds', next:'mental'},
+      ]},
+      red_perf: {type:'result', style:'danger', text:'RED — IMMEDIATE\n\nNo radial pulse or slow capillary refill indicates poor perfusion (shock/major bleeding).\n\n1. Control any visible bleeding (direct pressure, tourniquet if limb)\n2. Tag RED\n3. Move to next patient\n\nTag: RED — Treat first'},
+      mental: {type:'question', text:'Check MENTAL STATUS: Can the patient follow simple commands? ("Squeeze my hand", "Open your eyes")', options:[
+        {label:'No — cannot follow commands', next:'red_mental'},
+        {label:'Yes — follows commands', next:'yellow'},
+      ]},
+      red_mental: {type:'result', style:'danger', text:'RED — IMMEDIATE\n\nAltered mental status with normal breathing and perfusion indicates head injury or other serious condition.\n\nTag RED — this patient needs immediate treatment.\n\nTag: RED — Treat first'},
+      yellow: {type:'result', style:'warning', text:'YELLOW — DELAYED\n\nThis patient:\n- Cannot walk\n- Is breathing normally (<30/min)\n- Has adequate perfusion (radial pulse present, good cap refill)\n- Can follow simple commands\n\nThey have serious injuries but can wait for treatment while IMMEDIATE (RED) patients are treated first.\n\nTag: YELLOW — Treat second\n\nReassess periodically — conditions can deteriorate.'},
+    }
+  },
+];
+
+let _guideHistory = [];
+let _currentGuide = null;
+let _currentNode = null;
+
+function renderGuideSelector() {
+  const el = document.getElementById('guide-selector');
+  el.innerHTML = DECISION_GUIDES.map(g => `
+    <div class="guide-tile" onclick="startGuide('${g.id}')">
+      <h4><span style="margin-right:6px;">${g.icon}</span>${g.title}</h4>
+      <p>${g.desc}</p>
+    </div>
+  `).join('');
+  document.getElementById('guide-active').style.display = 'none';
+  document.getElementById('guide-selector').style.display = 'grid';
+}
+
+function startGuide(id) {
+  _currentGuide = DECISION_GUIDES.find(g => g.id === id);
+  if (!_currentGuide) return;
+  _guideHistory = [];
+  _currentNode = 'start';
+  document.getElementById('guide-selector').style.display = 'none';
+  document.getElementById('guide-active').style.display = 'block';
+  renderGuideNode();
+}
+
+function renderGuideNode() {
+  const node = _currentGuide.nodes[_currentNode];
+  if (!node) return;
+  const card = document.getElementById('guide-card');
+  const backBtn = document.getElementById('guide-back-btn');
+  backBtn.style.display = _guideHistory.length > 0 ? 'inline-flex' : 'none';
+
+  // Breadcrumb
+  const crumb = document.getElementById('guide-breadcrumb');
+  const trail = [_currentGuide.title, ..._guideHistory.map(h => {
+    const n = _currentGuide.nodes[h.from];
+    const opt = n?.options?.find(o => o.next === h.to);
+    return opt?.label?.slice(0, 30) || '...';
+  })];
+  crumb.innerHTML = trail.map((t, i) => `<span style="color:${i === trail.length-1 ? 'var(--accent)' : 'var(--text-muted)'};">${escapeHtml(t)}</span>`).join(' <span style="color:var(--text-muted);margin:0 4px;">&#8250;</span> ');
+
+  if (node.type === 'question') {
+    card.innerHTML = `
+      <div style="font-size:16px;font-weight:600;margin-bottom:16px;line-height:1.4;">${escapeHtml(node.text)}</div>
+      <div>${node.options.map(opt => `
+        <div class="guide-option" onclick="guideChoose('${opt.next}')">${escapeHtml(opt.label)}</div>
+      `).join('')}</div>
+    `;
+  } else if (node.type === 'result') {
+    const lines = node.text.split('\n').map(l => escapeHtml(l)).join('<br>');
+    card.innerHTML = `
+      <div class="guide-result ${node.style || 'info'}">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px;">${escapeHtml(_currentGuide.title)} — Result</div>
+        <div style="font-size:13px;line-height:1.7;">${lines}</div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="btn btn-sm btn-primary" onclick="startGuide('${_currentGuide.id}')">Start Over</button>
+        <button class="btn btn-sm" onclick="guideClose()">Back to Guides</button>
+      </div>
+    `;
+  }
+}
+
+function guideChoose(nextNode) {
+  _guideHistory.push({from: _currentNode, to: nextNode});
+  _currentNode = nextNode;
+  renderGuideNode();
+}
+
+function guideBack() {
+  if (!_guideHistory.length) return;
+  const prev = _guideHistory.pop();
+  _currentNode = prev.from;
+  renderGuideNode();
+}
+
+function guideClose() {
+  _currentGuide = null;
+  _currentNode = null;
+  _guideHistory = [];
+  renderGuideSelector();
+}
+
+function guideAskAI() {
+  if (!_currentGuide || !_currentNode) return;
+  const node = _currentGuide.nodes[_currentNode];
+  const context = node.type === 'result' ? node.text : node.text;
+  const msg = `I'm using the "${_currentGuide.title}" guide and I'm at this step: "${context.slice(0, 200)}..."\n\nGive me more detail and practical advice for this specific situation.`;
+  document.querySelector('[data-tab="ai-chat"]').click();
+  setTimeout(() => {
+    document.getElementById('chat-input').value = msg;
+    sendChat();
+  }, 300);
+}
+
+function guidePrint() {
+  if (!_currentGuide) return;
+  // Build the full path taken
+  let html = `<h2>${_currentGuide.title}</h2>`;
+  let nodeId = 'start';
+  for (const step of _guideHistory) {
+    const node = _currentGuide.nodes[step.from];
+    if (node.type === 'question') {
+      const chosen = node.options.find(o => o.next === step.to);
+      html += `<p><strong>Q:</strong> ${node.text}</p><p><strong>A:</strong> ${chosen?.label || '?'}</p><hr>`;
+    }
+    nodeId = step.to;
+  }
+  const finalNode = _currentGuide.nodes[nodeId];
+  if (finalNode?.type === 'result') {
+    html += `<div style="background:#f0f0f0;padding:12px;border-radius:8px;margin-top:12px;"><strong>Result:</strong><br>${finalNode.text.replace(/\n/g, '<br>')}</div>`;
+  }
+  openAppFrameHTML(`${_currentGuide.title} — Decision Path`, `<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:'Segoe UI',sans-serif;padding:20px 40px;max-width:800px;margin:0 auto;line-height:1.7;font-size:13px;}h2{border-bottom:1px solid #ccc;padding-bottom:8px;}hr{border:none;border-top:1px solid #ddd;margin:12px 0;}@media print{body{padding:10px;}}</style></head><body>${html}<p style="margin-top:20px;font-size:10px;color:#999;">Generated by Project N.O.M.A.D. — ${new Date().toLocaleString()}</p></body></html>`);
+}
 
 /* ─── Proactive Alert System ─── */
 let _alertBarVisible = false;

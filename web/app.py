@@ -3560,6 +3560,196 @@ def create_app():
         except Exception as e:
             return jsonify({'summary': f'{len(alerts)} active alert(s). AI summary unavailable: {e}'})
 
+    # ─── Food Production Module ────────────────────────────────────────
+
+    # USDA hardiness zones by approximate latitude (simplified offline lookup)
+    HARDINESS_ZONES = [
+        (48, '3a', 'Apr 30 - May 15', 'Sep 15 - Sep 30'),
+        (45, '4a', 'Apr 20 - May 10', 'Sep 20 - Oct 5'),
+        (43, '5a', 'Apr 10 - May 1', 'Oct 1 - Oct 15'),
+        (40, '6a', 'Apr 1 - Apr 20', 'Oct 10 - Oct 25'),
+        (37, '7a', 'Mar 20 - Apr 10', 'Oct 20 - Nov 5'),
+        (34, '8a', 'Mar 10 - Mar 25', 'Nov 1 - Nov 15'),
+        (31, '9a', 'Feb 15 - Mar 10', 'Nov 15 - Dec 1'),
+        (28, '10a', 'Jan 30 - Feb 15', 'Dec 1 - Dec 15'),
+        (25, '11a', 'Year-round', 'Year-round'),
+    ]
+
+    SEED_VIABILITY = {
+        'onion': 1, 'parsnip': 1, 'parsley': 1, 'leek': 2, 'corn': 2, 'pepper': 2, 'spinach': 2,
+        'lettuce': 3, 'pea': 3, 'bean': 3, 'carrot': 3, 'broccoli': 3, 'cauliflower': 3, 'kale': 3,
+        'tomato': 4, 'squash': 4, 'pumpkin': 4, 'melon': 4, 'watermelon': 4, 'cucumber': 5,
+        'radish': 5, 'beet': 4, 'cabbage': 4, 'turnip': 4, 'eggplant': 4,
+    }
+
+    @app.route('/api/garden/zone')
+    def api_garden_zone():
+        lat = request.args.get('lat', type=float)
+        if lat is None:
+            return jsonify({'zone': 'Unknown', 'last_frost': 'Unknown', 'first_frost': 'Unknown'})
+        for min_lat, zone, last_frost, first_frost in HARDINESS_ZONES:
+            if lat >= min_lat:
+                return jsonify({'zone': zone, 'last_frost': last_frost, 'first_frost': first_frost, 'latitude': lat})
+        return jsonify({'zone': '11a+', 'last_frost': 'Year-round', 'first_frost': 'Year-round', 'latitude': lat})
+
+    @app.route('/api/garden/plots')
+    def api_garden_plots():
+        db = get_db()
+        rows = db.execute('SELECT * FROM garden_plots ORDER BY name').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/garden/plots', methods=['POST'])
+    def api_garden_plots_create():
+        data = request.get_json() or {}
+        if not data.get('name'):
+            return jsonify({'error': 'Name required'}), 400
+        db = get_db()
+        db.execute('INSERT INTO garden_plots (name, width_ft, length_ft, sun_exposure, soil_type, notes) VALUES (?,?,?,?,?,?)',
+                   (data['name'], data.get('width_ft', 0), data.get('length_ft', 0),
+                    data.get('sun_exposure', 'full'), data.get('soil_type', ''), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'}), 201
+
+    @app.route('/api/garden/plots/<int:pid>', methods=['DELETE'])
+    def api_garden_plots_delete(pid):
+        db = get_db()
+        db.execute('DELETE FROM garden_plots WHERE id = ?', (pid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/garden/seeds')
+    def api_garden_seeds():
+        db = get_db()
+        rows = db.execute('SELECT * FROM seeds ORDER BY species').fetchall()
+        db.close()
+        result = []
+        current_year = int(time.strftime('%Y'))
+        for r in rows:
+            d = dict(r)
+            species_key = r['species'].lower().strip()
+            max_years = SEED_VIABILITY.get(species_key, 3)
+            if r['year_harvested']:
+                age = current_year - r['year_harvested']
+                d['viability_pct'] = max(0, min(100, int(100 * (1 - age / (max_years + 1)))))
+                d['viable'] = age <= max_years
+            else:
+                d['viability_pct'] = None
+                d['viable'] = None
+            result.append(d)
+        return jsonify(result)
+
+    @app.route('/api/garden/seeds', methods=['POST'])
+    def api_garden_seeds_create():
+        data = request.get_json() or {}
+        if not data.get('species'):
+            return jsonify({'error': 'Species required'}), 400
+        db = get_db()
+        db.execute('INSERT INTO seeds (species, variety, quantity, unit, year_harvested, source, days_to_maturity, planting_season, notes) VALUES (?,?,?,?,?,?,?,?,?)',
+                   (data['species'], data.get('variety', ''), data.get('quantity', 0), data.get('unit', 'seeds'),
+                    data.get('year_harvested'), data.get('source', ''), data.get('days_to_maturity'),
+                    data.get('planting_season', 'spring'), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'}), 201
+
+    @app.route('/api/garden/seeds/<int:sid>', methods=['DELETE'])
+    def api_garden_seeds_delete(sid):
+        db = get_db()
+        db.execute('DELETE FROM seeds WHERE id = ?', (sid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/garden/harvests')
+    def api_garden_harvests():
+        db = get_db()
+        rows = db.execute('SELECT h.*, g.name as plot_name FROM harvest_log h LEFT JOIN garden_plots g ON h.plot_id = g.id ORDER BY h.created_at DESC LIMIT 100').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/garden/harvests', methods=['POST'])
+    def api_garden_harvests_create():
+        data = request.get_json() or {}
+        if not data.get('crop'):
+            return jsonify({'error': 'Crop name required'}), 400
+        db = get_db()
+        db.execute('INSERT INTO harvest_log (crop, quantity, unit, plot_id, notes) VALUES (?,?,?,?,?)',
+                   (data['crop'], data.get('quantity', 0), data.get('unit', 'lbs'),
+                    data.get('plot_id'), data.get('notes', '')))
+        # Auto-add to inventory
+        existing = db.execute('SELECT id, quantity FROM inventory WHERE name = ? AND category = ?', (data['crop'], 'food')).fetchone()
+        if existing:
+            db.execute('UPDATE inventory SET quantity = quantity + ? WHERE id = ?', (data.get('quantity', 0), existing['id']))
+        else:
+            db.execute('INSERT INTO inventory (name, category, quantity, unit) VALUES (?, ?, ?, ?)',
+                       (data['crop'], 'food', data.get('quantity', 0), data.get('unit', 'lbs')))
+        db.commit()
+        db.close()
+        log_activity('harvest_logged', detail=f'{data.get("quantity", 0)} {data.get("unit", "lbs")} of {data["crop"]}')
+        return jsonify({'status': 'created', 'inventory_updated': True}), 201
+
+    @app.route('/api/livestock')
+    def api_livestock_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM livestock ORDER BY species, name').fetchall()
+        db.close()
+        return jsonify([{**dict(r), 'health_log': json.loads(r['health_log'] or '[]'),
+                         'vaccinations': json.loads(r['vaccinations'] or '[]')} for r in rows])
+
+    @app.route('/api/livestock', methods=['POST'])
+    def api_livestock_create():
+        data = request.get_json() or {}
+        if not data.get('species'):
+            return jsonify({'error': 'Species required'}), 400
+        db = get_db()
+        db.execute('INSERT INTO livestock (species, name, tag, dob, sex, weight_lbs, notes) VALUES (?,?,?,?,?,?,?)',
+                   (data['species'], data.get('name', ''), data.get('tag', ''), data.get('dob', ''),
+                    data.get('sex', ''), data.get('weight_lbs'), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'}), 201
+
+    @app.route('/api/livestock/<int:lid>', methods=['PUT'])
+    def api_livestock_update(lid):
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('UPDATE livestock SET species=?, name=?, tag=?, dob=?, sex=?, weight_lbs=?, status=?, health_log=?, vaccinations=?, notes=?, updated_at=CURRENT_TIMESTAMP WHERE id=?',
+                   (data.get('species', ''), data.get('name', ''), data.get('tag', ''), data.get('dob', ''),
+                    data.get('sex', ''), data.get('weight_lbs'), data.get('status', 'active'),
+                    json.dumps(data.get('health_log', [])), json.dumps(data.get('vaccinations', [])),
+                    data.get('notes', ''), lid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'updated'})
+
+    @app.route('/api/livestock/<int:lid>', methods=['DELETE'])
+    def api_livestock_delete(lid):
+        db = get_db()
+        db.execute('DELETE FROM livestock WHERE id = ?', (lid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/livestock/<int:lid>/health', methods=['POST'])
+    def api_livestock_health_event(lid):
+        """Add a health event to an animal's log."""
+        data = request.get_json() or {}
+        db = get_db()
+        animal = db.execute('SELECT health_log FROM livestock WHERE id = ?', (lid,)).fetchone()
+        if not animal:
+            db.close()
+            return jsonify({'error': 'Not found'}), 404
+        log_entries = json.loads(animal['health_log'] or '[]')
+        log_entries.append({'date': time.strftime('%Y-%m-%d'), 'event': data.get('event', ''), 'notes': data.get('notes', '')})
+        db.execute('UPDATE livestock SET health_log = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+                   (json.dumps(log_entries), lid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'logged'}), 201
+
     # ─── Scenario Training Engine ──────────────────────────────────────
 
     @app.route('/api/scenarios')

@@ -1735,6 +1735,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="prep-subtab" data-psub="calculators" onclick="switchPrepSub('calculators')">Calculators</button>
       <button class="prep-subtab" data-psub="radio" onclick="switchPrepSub('radio')">Radio Ref</button>
       <button class="prep-subtab" data-psub="medical" onclick="switchPrepSub('medical')">Medical</button>
+      <button class="prep-subtab" data-psub="garden" onclick="switchPrepSub('garden')">Garden</button>
       <button class="prep-subtab" data-psub="guides" onclick="switchPrepSub('guides')">Guides</button>
       <button class="prep-subtab" data-psub="reference" onclick="switchPrepSub('reference')">Quick Ref</button>
       <button class="prep-subtab" data-psub="protocols" onclick="switchPrepSub('protocols')">Protocols</button>
@@ -2279,6 +2280,83 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
     </div><!-- /psub-radio -->
+
+    <!-- Sub: Garden & Food Production -->
+    <div id="psub-garden" class="prep-sub">
+    <div class="prep-section">
+      <h3>Food Production</h3>
+
+      <!-- Zone Lookup -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px;">
+        <div style="display:flex;gap:8px;align-items:end;flex-wrap:wrap;margin-bottom:8px;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Latitude</label><input id="garden-lat" type="number" step="0.1" value="39.8" style="width:90px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"></div>
+          <button class="btn btn-sm btn-primary" onclick="lookupZone()">Lookup Zone</button>
+          <button class="btn btn-sm" onclick="navigator.geolocation?.getCurrentPosition(p=>{document.getElementById('garden-lat').value=p.coords.latitude.toFixed(1);lookupZone();})">Use My Location</button>
+          <div id="zone-result" style="font-size:12px;color:var(--accent);font-weight:600;"></div>
+        </div>
+      </div>
+
+      <!-- Tabs within garden -->
+      <div style="display:flex;gap:4px;margin-bottom:12px;">
+        <button class="btn btn-sm btn-primary" id="garden-tab-plots" onclick="showGardenTab('plots')">Plots</button>
+        <button class="btn btn-sm" id="garden-tab-seeds" onclick="showGardenTab('seeds')">Seed Inventory</button>
+        <button class="btn btn-sm" id="garden-tab-harvest" onclick="showGardenTab('harvest')">Harvest Log</button>
+        <button class="btn btn-sm" id="garden-tab-livestock" onclick="showGardenTab('livestock')">Livestock</button>
+      </div>
+
+      <!-- Plots -->
+      <div id="garden-plots-panel">
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Plot Name</label><input id="gp-name" style="width:140px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Main Garden"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Width (ft)</label><input id="gp-width" type="number" min="1" value="10" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Length (ft)</label><input id="gp-length" type="number" min="1" value="20" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Sun</label><select id="gp-sun" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option value="full">Full Sun (6+hr)</option><option value="partial">Partial (3-6hr)</option><option value="shade">Shade (<3hr)</option></select></div>
+          <button class="btn btn-sm btn-primary" onclick="addPlot()">Add Plot</button>
+        </div>
+        <div id="plots-list"></div>
+      </div>
+
+      <!-- Seeds -->
+      <div id="garden-seeds-panel" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Species</label><input id="gs-species" style="width:100px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Tomato"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Variety</label><input id="gs-variety" style="width:120px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Roma"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Qty</label><input id="gs-qty" type="number" min="1" value="50" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Year Harvested</label><input id="gs-year" type="number" min="2000" max="2030" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="2025"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Days to Maturity</label><input id="gs-dtm" type="number" min="20" max="200" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="75"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Season</label><select id="gs-season" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option>spring</option><option>summer</option><option>fall</option><option>winter</option></select></div>
+          <button class="btn btn-sm btn-primary" onclick="addSeed()">Add Seed</button>
+        </div>
+        <div id="seeds-list"></div>
+      </div>
+
+      <!-- Harvest -->
+      <div id="garden-harvest-panel" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Crop</label><input id="gh-crop" style="width:120px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Tomatoes"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Quantity</label><input id="gh-qty" type="number" min="0.1" step="0.1" value="5" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Unit</label><select id="gh-unit" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option>lbs</option><option>oz</option><option>ea</option><option>bushels</option><option>gallons</option></select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">From Plot</label><select id="gh-plot" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option value="">— Any —</option></select></div>
+          <button class="btn btn-sm btn-primary" onclick="logHarvest()">Log Harvest</button>
+        </div>
+        <p style="font-size:10px;color:var(--text-muted);margin-bottom:8px;">Harvests automatically add to your inventory.</p>
+        <div id="harvest-list"></div>
+      </div>
+
+      <!-- Livestock -->
+      <div id="garden-livestock-panel" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Species</label><select id="gl-species" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option>Chicken</option><option>Duck</option><option>Goat</option><option>Rabbit</option><option>Pig</option><option>Cow</option><option>Sheep</option><option>Turkey</option><option>Bee Hive</option><option>Other</option></select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Name/Tag</label><input id="gl-name" style="width:100px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Henrietta"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Sex</label><select id="gl-sex" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">DOB</label><input id="gl-dob" type="date" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Weight (lbs)</label><input id="gl-weight" type="number" min="0.1" step="0.1" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"></div>
+          <button class="btn btn-sm btn-primary" onclick="addLivestock()">Add Animal</button>
+        </div>
+        <div id="livestock-list"></div>
+      </div>
+    </div>
+    </div><!-- /psub-garden -->
 
     <!-- Sub: Medical Module -->
     <div id="psub-medical" class="prep-sub">
@@ -4606,7 +4684,7 @@ a { color: var(--accent); text-decoration: none; }
           <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
-            <div><strong style="color:var(--accent);">15 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
+            <div><strong style="color:var(--accent);">16 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
             <div><strong style="color:var(--accent);">Tools Tab</strong><br>Meshtastic, Barcode Scanner, Video Library, Guided Drills</div>
           </div>
           <div style="margin:8px 0;">
@@ -7080,6 +7158,7 @@ function switchPrepSub(sub) {
   if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
   if (sub === 'ops') { loadInfraStatus(); renderVehicles(); calcBleach(); loadThreatMatrix(); renderHomeSecurity(); }
   if (sub === 'family') loadFEP();
+  if (sub === 'garden') { loadPlots(); lookupZone(); }
   if (sub === 'medical') loadPatients();
   if (sub === 'guides') renderGuideSelector();
   if (sub === 'reference') { convertUnit(); showPlantZone(); loadShelterAssess(); }
@@ -10403,6 +10482,177 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'n') { e.preventDefault(); document.querySelector('[data-tab="notes"]').click(); setTimeout(createNote, 200); }
   }
 });
+
+/* ─── Food Production Module ─── */
+function showGardenTab(tab) {
+  ['plots','seeds','harvest','livestock'].forEach(t => {
+    document.getElementById(`garden-${t}-panel`).style.display = t === tab ? 'block' : 'none';
+    document.getElementById(`garden-tab-${t}`).className = t === tab ? 'btn btn-sm btn-primary' : 'btn btn-sm';
+  });
+  if (tab === 'plots') loadPlots();
+  if (tab === 'seeds') loadSeeds();
+  if (tab === 'harvest') loadHarvests();
+  if (tab === 'livestock') loadLivestockList();
+}
+
+async function lookupZone() {
+  const lat = parseFloat(document.getElementById('garden-lat').value);
+  if (isNaN(lat)) return;
+  try {
+    const z = await (await fetch(`/api/garden/zone?lat=${lat}`)).json();
+    document.getElementById('zone-result').innerHTML =
+      `Zone <strong>${z.zone}</strong> | Last frost: ${z.last_frost} | First frost: ${z.first_frost}`;
+  } catch(e) {}
+}
+
+async function loadPlots() {
+  try {
+    const plots = await (await fetch('/api/garden/plots')).json();
+    const el = document.getElementById('plots-list');
+    // Update harvest plot dropdown
+    const sel = document.getElementById('gh-plot');
+    sel.innerHTML = '<option value="">-- Any --</option>' + plots.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+    if (!plots.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:16px;text-align:center;">No garden plots. Add one above.</div>'; return; }
+    const totalSqFt = plots.reduce((s, p) => s + (p.width_ft * p.length_ft), 0);
+    el.innerHTML = `<div style="font-size:11px;color:var(--accent);margin-bottom:8px;font-weight:600;">Total garden area: ${totalSqFt.toLocaleString()} sq ft (${(totalSqFt/43560).toFixed(2)} acres)</div>` +
+      plots.map(p => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:4px;font-size:12px;">
+        <div><strong>${escapeHtml(p.name)}</strong> — ${p.width_ft}x${p.length_ft} ft (${p.width_ft * p.length_ft} sq ft) | ${p.sun_exposure} sun${p.soil_type ? ' | ' + escapeHtml(p.soil_type) : ''}</div>
+        <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="deletePlot(${p.id})">x</span>
+      </div>`).join('');
+  } catch(e) {}
+}
+
+async function addPlot() {
+  const name = document.getElementById('gp-name').value.trim();
+  if (!name) { toast('Enter plot name', 'warning'); return; }
+  await fetch('/api/garden/plots', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    name, width_ft: parseFloat(document.getElementById('gp-width').value) || 10,
+    length_ft: parseFloat(document.getElementById('gp-length').value) || 20,
+    sun_exposure: document.getElementById('gp-sun').value})});
+  document.getElementById('gp-name').value = '';
+  toast('Plot added', 'success');
+  loadPlots();
+}
+
+async function deletePlot(id) { await fetch(`/api/garden/plots/${id}`, {method:'DELETE'}); loadPlots(); }
+
+async function loadSeeds() {
+  try {
+    const seeds = await (await fetch('/api/garden/seeds')).json();
+    const el = document.getElementById('seeds-list');
+    if (!seeds.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:16px;text-align:center;">No seeds in inventory. Add seeds above.</div>'; return; }
+    el.innerHTML = '<table class="freq-table"><thead><tr><th>Species</th><th>Variety</th><th>Qty</th><th>Year</th><th>Viability</th><th>Season</th><th>Days</th><th></th></tr></thead><tbody>' +
+      seeds.map(s => {
+        const viabColor = s.viability_pct === null ? '' : s.viability_pct > 70 ? 'color:var(--green);font-weight:600;' : s.viability_pct > 30 ? 'color:var(--orange);font-weight:600;' : 'color:var(--red);font-weight:600;';
+        return `<tr><td><strong>${escapeHtml(s.species)}</strong></td><td>${escapeHtml(s.variety||'')}</td><td>${s.quantity}</td><td>${s.year_harvested||'-'}</td><td style="${viabColor}">${s.viability_pct !== null ? s.viability_pct + '%' : '-'}</td><td>${s.planting_season}</td><td>${s.days_to_maturity||'-'}</td><td><span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="deleteSeed(${s.id})">x</span></td></tr>`;
+      }).join('') + '</tbody></table>';
+  } catch(e) {}
+}
+
+async function addSeed() {
+  const species = document.getElementById('gs-species').value.trim();
+  if (!species) { toast('Enter species name', 'warning'); return; }
+  await fetch('/api/garden/seeds', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    species, variety: document.getElementById('gs-variety').value.trim(),
+    quantity: parseInt(document.getElementById('gs-qty').value) || 50,
+    year_harvested: parseInt(document.getElementById('gs-year').value) || null,
+    days_to_maturity: parseInt(document.getElementById('gs-dtm').value) || null,
+    planting_season: document.getElementById('gs-season').value})});
+  document.getElementById('gs-species').value = ''; document.getElementById('gs-variety').value = '';
+  toast('Seed added', 'success');
+  loadSeeds();
+}
+
+async function deleteSeed(id) { await fetch(`/api/garden/seeds/${id}`, {method:'DELETE'}); loadSeeds(); }
+
+async function loadHarvests() {
+  try {
+    const harvests = await (await fetch('/api/garden/harvests')).json();
+    const el = document.getElementById('harvest-list');
+    if (!harvests.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:16px;text-align:center;">No harvests logged yet.</div>'; return; }
+    const totalLbs = harvests.filter(h => h.unit === 'lbs').reduce((s, h) => s + h.quantity, 0);
+    el.innerHTML = `<div style="font-size:11px;color:var(--accent);margin-bottom:8px;font-weight:600;">Total harvested: ${totalLbs.toFixed(1)} lbs across ${harvests.length} entries</div>` +
+      '<table class="freq-table"><thead><tr><th>Date</th><th>Crop</th><th>Quantity</th><th>Plot</th><th>Notes</th></tr></thead><tbody>' +
+      harvests.map(h => `<tr><td style="font-size:10px;">${new Date(h.created_at).toLocaleDateString()}</td><td><strong>${escapeHtml(h.crop)}</strong></td><td>${h.quantity} ${h.unit}</td><td>${escapeHtml(h.plot_name||'-')}</td><td style="font-size:10px;">${escapeHtml(h.notes||'')}</td></tr>`).join('') +
+      '</tbody></table>';
+  } catch(e) {}
+}
+
+async function logHarvest() {
+  const crop = document.getElementById('gh-crop').value.trim();
+  if (!crop) { toast('Enter crop name', 'warning'); return; }
+  await fetch('/api/garden/harvests', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    crop, quantity: parseFloat(document.getElementById('gh-qty').value) || 0,
+    unit: document.getElementById('gh-unit').value,
+    plot_id: document.getElementById('gh-plot').value || null,
+    notes: ''})});
+  document.getElementById('gh-crop').value = '';
+  toast('Harvest logged and added to inventory!', 'success');
+  loadHarvests();
+}
+
+async function loadLivestockList() {
+  try {
+    const animals = await (await fetch('/api/livestock')).json();
+    const el = document.getElementById('livestock-list');
+    if (!animals.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:16px;text-align:center;">No livestock registered.</div>'; return; }
+    const bySpecies = {};
+    animals.forEach(a => { if (!bySpecies[a.species]) bySpecies[a.species] = []; bySpecies[a.species].push(a); });
+    el.innerHTML = Object.entries(bySpecies).map(([species, list]) =>
+      `<div style="margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:4px;">${escapeHtml(species)} (${list.length})</div>
+        ${list.map(a => `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:3px;font-size:12px;">
+          <div>
+            <strong>${escapeHtml(a.name || a.tag || '#' + a.id)}</strong>
+            ${a.sex ? `<span style="color:var(--text-dim);"> | ${a.sex}</span>` : ''}
+            ${a.weight_lbs ? `<span style="color:var(--text-dim);"> | ${a.weight_lbs} lbs</span>` : ''}
+            ${a.dob ? `<span style="color:var(--text-dim);"> | Born: ${a.dob}</span>` : ''}
+            <span style="font-size:10px;color:${a.status === 'active' ? 'var(--green)' : 'var(--text-muted)'};">${a.status}</span>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-sm" onclick="logHealthEvent(${a.id})" title="Log health event">Health</button>
+            <span style="cursor:pointer;color:var(--red);font-size:11px;padding:4px;" onclick="deleteLivestock(${a.id})">x</span>
+          </div>
+        </div>`).join('')}
+      </div>`
+    ).join('');
+  } catch(e) {}
+}
+
+async function addLivestock() {
+  const species = document.getElementById('gl-species').value;
+  await fetch('/api/livestock', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    species, name: document.getElementById('gl-name').value.trim(),
+    sex: document.getElementById('gl-sex').value, dob: document.getElementById('gl-dob').value,
+    weight_lbs: parseFloat(document.getElementById('gl-weight').value) || null})});
+  document.getElementById('gl-name').value = '';
+  toast(`${species} added`, 'success');
+  loadLivestockList();
+}
+
+async function deleteLivestock(id) { await fetch(`/api/livestock/${id}`, {method:'DELETE'}); toast('Animal removed', 'warning'); loadLivestockList(); }
+
+async function logHealthEvent(id) {
+  // Inline form
+  const el = event.target.parentElement.parentElement;
+  if (el.querySelector('.health-form')) return;
+  const form = document.createElement('div');
+  form.className = 'health-form';
+  form.style.cssText = 'display:flex;gap:6px;margin-top:6px;align-items:center;';
+  form.innerHTML = `<input id="he-${id}" placeholder="Health event (e.g., dewormed, vaccinated, limping...)" style="flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:11px;outline:none;">
+    <button class="btn btn-sm btn-primary" onclick="submitHealthEvent(${id})">Log</button>`;
+  el.appendChild(form);
+  document.getElementById(`he-${id}`).focus();
+}
+
+async function submitHealthEvent(id) {
+  const inp = document.getElementById(`he-${id}`);
+  const event_text = inp?.value?.trim();
+  if (!event_text) return;
+  await fetch(`/api/livestock/${id}/health`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({event: event_text})});
+  toast('Health event logged', 'success');
+  loadLivestockList();
+}
 
 /* ─── Immersive Training Scenarios ─── */
 const SCENARIOS = [

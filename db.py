@@ -300,6 +300,57 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS garden_plots (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            width_ft REAL DEFAULT 0,
+            length_ft REAL DEFAULT 0,
+            sun_exposure TEXT DEFAULT 'full',
+            soil_type TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS seeds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            species TEXT NOT NULL,
+            variety TEXT DEFAULT '',
+            quantity INTEGER DEFAULT 0,
+            unit TEXT DEFAULT 'seeds',
+            year_harvested INTEGER,
+            source TEXT DEFAULT '',
+            days_to_maturity INTEGER,
+            planting_season TEXT DEFAULT 'spring',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS harvest_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            crop TEXT NOT NULL,
+            quantity REAL DEFAULT 0,
+            unit TEXT DEFAULT 'lbs',
+            plot_id INTEGER,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS livestock (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            species TEXT NOT NULL,
+            name TEXT DEFAULT '',
+            tag TEXT DEFAULT '',
+            dob TEXT DEFAULT '',
+            sex TEXT DEFAULT '',
+            weight_lbs REAL,
+            status TEXT DEFAULT 'active',
+            health_log TEXT DEFAULT '[]',
+            vaccinations TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS scenarios (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             scenario_type TEXT NOT NULL,

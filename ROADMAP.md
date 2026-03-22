@@ -106,13 +106,13 @@
 **Builds on:** Situation board, incident log, tactical AI persona
 **Effort:** Huge (3+ sessions, hardware-dependent)
 
-- [ ] Camera viewer — RTSP/HTTP MJPEG stream display in an iframe or canvas element
-- [ ] Camera registry — add cameras by URL, name, location on map
-- [ ] Motion detection alerts (stretch) — OpenCV-based frame differencing on server-side, push alert to frontend
-- [ ] Access log — manual or sensor-triggered entry/exit logging with timestamps
-- [ ] Perimeter zones on map — link drawn zones to camera feeds and alert rules
-- [ ] Security dashboard — consolidated view of all cameras, recent access log entries, incident timeline
-- [ ] RF scanner integration (stretch) — SDR dongle spectrum sweep, identify active transmitters in area
+- [x] Camera viewer — MJPEG live streams + snapshot auto-refresh (5s) + HLS support
+- [x] Camera registry — name, URL, stream type, location, with common camera URL examples
+- [x] Access log — person, direction (entry/exit/patrol), location, method (visual/camera/sensor/radio), notes
+- [x] Security dashboard — threat level, active cameras, 24h access count, 48h incident count
+- [ ] Motion detection alerts (stretch — requires OpenCV)
+- [ ] Perimeter zones linked to cameras (enhancement)
+- [ ] RF scanner integration (stretch — requires SDR hardware)
 
 ## Phase 10: Deep Document Understanding
 **Builds on:** Full RAG pipeline (Qdrant + nomic-embed-text + chunking)

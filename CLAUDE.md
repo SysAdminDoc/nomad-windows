@@ -117,9 +117,13 @@ v3.5.0
 ## Status
 Working v3.5.0 — Command Center Edition. 16,364 total lines. Massive content expansion: 10 interactive calculators (food storage, generator fuel, rainwater, radio range, medication dosage, solar power, BOB weight, plus existing 8), 50+ map sources with pmtiles extract, 5 natural disaster protocols (tornado/earthquake/flood/wildfire/hurricane), printable wallet card generator, 35-item home security assessment. Quick Ref: START triage, companion planting (15 crops), calorie DB (20 foods), livestock (9 animals), WHO medicines (25+ meds), essential knots (8), navigation without GPS, water purification decision tree, sanitation guide, improvised tools (12), wild edibles by season (18 plants), EMP/Faraday guide, gray man OPSEC, water finding, supply cache guide, group organization template. 18 AI presets. Plus all prior features.
 
-## Gotchas (v0.8.0)
+## Gotchas
 - Stirling PDF requires Java 17+ (downloads .jar, not .exe — no Windows exe in releases)
 - Qdrant: --storage-path CLI arg removed — use QDRANT__STORAGE__STORAGE_PATH env var
 - Kiwix: won't start without ZIM files (raises RuntimeError with user-friendly message)
 - PyInstaller frozen exe: _bootstrap() must skip (sys.frozen check) or fork-bombs via sys.executable
 - Kolibri uses _python_exe() helper to find real Python on PATH when frozen
+- Protomaps planet URL: `https://data.source.coop/protomaps/openstreetmap/v4.pmtiles` (NOT build.protomaps.com — that domain is dead)
+- pmtiles CLI: resolve asset URL via GitHub API (asset naming includes version, changes between releases)
+- NukeMap CSS: persistent issue in PyInstaller builds, multiple fix attempts (trailing slash, send_from_directory, local Leaflet). May still be broken in exe.
+- `web/static/` must exist and be committed or PyInstaller build fails

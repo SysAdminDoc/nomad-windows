@@ -5206,6 +5206,135 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         report['text'] = txt
         return jsonify(report)
 
+    @app.route('/api/emergency-sheet')
+    def api_emergency_sheet():
+        """Generate a comprehensive printable emergency reference sheet."""
+        db = get_db()
+        from datetime import datetime, timedelta
+
+        # Gather all critical data
+        contacts = [dict(r) for r in db.execute('SELECT * FROM contacts ORDER BY name').fetchall()]
+        inventory = [dict(r) for r in db.execute('SELECT * FROM inventory ORDER BY category, name').fetchall()]
+        burn_items = [dict(r) for r in db.execute('SELECT name, quantity, unit, daily_usage, category FROM inventory WHERE daily_usage > 0 ORDER BY (quantity/daily_usage)').fetchall()]
+        patients = [dict(r) for r in db.execute('SELECT * FROM patients ORDER BY name').fetchall()]
+        waypoints = [dict(r) for r in db.execute('SELECT * FROM waypoints ORDER BY category, name').fetchall()]
+        checklists = [dict(r) for r in db.execute('SELECT name, items FROM checklists ORDER BY name').fetchall()]
+        sit_raw = db.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
+        sit = json.loads(sit_raw['value'] or '{}') if sit_raw else {}
+        wx = [dict(r) for r in db.execute('SELECT * FROM weather_log ORDER BY created_at DESC LIMIT 5').fetchall()]
+        db.close()
+
+        sit_labels = {'green': 'GOOD', 'yellow': 'CAUTION', 'orange': 'CONCERN', 'red': 'CRITICAL'}
+        sit_colors = {'green': '#2e7d32', 'yellow': '#f9a825', 'orange': '#ef6c00', 'red': '#c62828'}
+        now = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+        html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>N.O.M.A.D. Emergency Reference Sheet</title>
+<style>
+body {{ font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 12px; font-size: 10px; line-height: 1.4; color: #000; }}
+h1 {{ font-size: 16px; text-align: center; margin: 0 0 4px; border-bottom: 3px solid #000; padding-bottom: 4px; }}
+h2 {{ font-size: 12px; background: #333; color: #fff; padding: 3px 8px; margin: 8px 0 4px; border-radius: 3px; }}
+table {{ width: 100%; border-collapse: collapse; margin-bottom: 6px; }}
+th, td {{ border: 1px solid #999; padding: 2px 5px; text-align: left; font-size: 9px; }}
+th {{ background: #eee; font-weight: 700; }}
+.grid {{ display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }}
+.sit-badge {{ display: inline-block; padding: 1px 6px; border-radius: 3px; color: #fff; font-weight: 700; font-size: 9px; }}
+.warn {{ color: #c62828; font-weight: 700; }}
+@media print {{ body {{ padding: 5px; }} @page {{ margin: 0.3in; size: letter; }} }}
+</style></head><body>
+<h1>PROJECT N.O.M.A.D. — EMERGENCY REFERENCE SHEET</h1>
+<div style="text-align:center;font-size:9px;margin-bottom:8px;">Generated: {now} | Keep in go-bag | Replace monthly</div>
+'''
+
+        # Situation Board
+        if sit:
+            html += '<h2>SITUATION STATUS</h2><div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">'
+            for domain, level in sit.items():
+                html += f'<span class="sit-badge" style="background:{sit_colors.get(level,"#666")}">{domain.upper()}: {sit_labels.get(level, level.upper())}</span>'
+            html += '</div>'
+
+        # Emergency Contacts
+        html += '<h2>EMERGENCY CONTACTS</h2>'
+        if contacts:
+            html += '<table><tr><th>Name</th><th>Role</th><th>Phone</th><th>Callsign</th><th>Radio Freq</th><th>Blood</th><th>Rally Point</th></tr>'
+            for c in contacts:
+                html += f"<tr><td><strong>{_esc(c.get('name',''))}</strong></td><td>{_esc(c.get('role',''))}</td><td>{_esc(c.get('phone',''))}</td><td>{_esc(c.get('callsign',''))}</td><td>{_esc(c.get('freq',''))}</td><td>{_esc(c.get('blood_type',''))}</td><td>{_esc(c.get('rally_point',''))}</td></tr>"
+            html += '</table>'
+        else:
+            html += '<p>No contacts registered.</p>'
+
+        # Medical — Patients with allergies
+        if patients:
+            html += '<h2>MEDICAL — PATIENT PROFILES</h2><table><tr><th>Name</th><th>Age</th><th>Weight</th><th>Blood</th><th>ALLERGIES</th><th>Medications</th><th>Conditions</th></tr>'
+            for p in patients:
+                allergies = json.loads(p.get('allergies') or '[]')
+                meds = json.loads(p.get('medications') or '[]')
+                conds = json.loads(p.get('conditions') or '[]')
+                allergy_str = ', '.join(allergies) if allergies else 'NKDA'
+                html += f"<tr><td><strong>{_esc(p.get('name',''))}</strong></td><td>{p.get('age','')}</td><td>{p.get('weight_kg','') or ''} kg</td><td>{_esc(p.get('blood_type',''))}</td><td class='warn'>{_esc(allergy_str)}</td><td>{_esc(', '.join(meds))}</td><td>{_esc(', '.join(conds))}</td></tr>"
+            html += '</table>'
+
+        # Critical Supply Status
+        html += '<h2>SUPPLY STATUS</h2>'
+        if burn_items:
+            html += '<table><tr><th>Item</th><th>Category</th><th>Quantity</th><th>Daily Use</th><th>Days Left</th></tr>'
+            for b in burn_items[:15]:
+                days = round(b['quantity'] / b['daily_usage'], 1) if b['daily_usage'] > 0 else 999
+                color = '#c62828' if days < 3 else '#ef6c00' if days < 7 else '#2e7d32' if days < 30 else ''
+                html += f"<tr><td><strong>{_esc(b['name'])}</strong></td><td>{_esc(b['category'])}</td><td>{b['quantity']} {_esc(b.get('unit',''))}</td><td>{b['daily_usage']}/day</td><td style='color:{color};font-weight:700;'>{days}d</td></tr>"
+            html += '</table>'
+
+        # Inventory by category
+        cats = {}
+        for item in inventory:
+            cat = item.get('category', 'other')
+            if cat not in cats:
+                cats[cat] = {'count': 0, 'items': []}
+            cats[cat]['count'] += 1
+            cats[cat]['items'].append(item)
+        if cats:
+            html += '<div style="font-size:9px;margin-bottom:4px;">'
+            for cat, info in sorted(cats.items()):
+                html += f'<strong>{cat}:</strong> {info["count"]} items | '
+            html += '</div>'
+
+        # Waypoints / Rally Points
+        if waypoints:
+            html += '<h2>WAYPOINTS & RALLY POINTS</h2><table><tr><th>Name</th><th>Category</th><th>Lat</th><th>Lng</th><th>Notes</th></tr>'
+            for w in waypoints:
+                html += f"<tr><td><strong>{_esc(w.get('name',''))}</strong></td><td>{_esc(w.get('category',''))}</td><td>{w.get('lat','')}</td><td>{w.get('lng','')}</td><td>{_esc(w.get('notes',''))}</td></tr>"
+            html += '</table>'
+
+        # Checklist Progress
+        if checklists:
+            html += '<h2>CHECKLIST STATUS</h2><table><tr><th>Checklist</th><th>Progress</th></tr>'
+            for cl in checklists:
+                items = json.loads(cl.get('items') or '[]')
+                total = len(items)
+                checked = sum(1 for i in items if i.get('checked'))
+                pct = round(checked / total * 100) if total > 0 else 0
+                html += f"<tr><td>{_esc(cl['name'])}</td><td>{checked}/{total} ({pct}%)</td></tr>"
+            html += '</table>'
+
+        # Weather
+        if wx:
+            html += '<h2>RECENT WEATHER</h2><table><tr><th>Time</th><th>Pressure (hPa)</th><th>Temp (F)</th><th>Wind</th><th>Clouds</th></tr>'
+            for w in wx:
+                html += f"<tr><td>{w.get('created_at','')}</td><td>{w.get('pressure_hpa','') or '-'}</td><td>{w.get('temp_f','') or '-'}</td><td>{w.get('wind_dir','')} {w.get('wind_speed','')}</td><td>{w.get('clouds','') or '-'}</td></tr>"
+            html += '</table>'
+
+        # Quick Reference Footer
+        html += '''<h2>QUICK REFERENCE</h2>
+<div class="grid">
+<div><strong>Water:</strong> 1 gal/person/day. Bleach: 8 drops/gal (clear), 16 drops/gal (cloudy). Wait 30 min.</div>
+<div><strong>Food:</strong> 2,000 cal/person/day. Eat perishable first, then frozen, then shelf-stable.</div>
+<div><strong>Radio:</strong> FRS Ch 1 (rally), Ch 3 (emergency). GMRS Ch 20 (emergency). HAM 146.520 MHz (calling).</div>
+<div><strong>Medical:</strong> Direct pressure for bleeding. Tourniquet if limb bleeding won\'t stop. Note time applied.</div>
+</div>
+<div style="text-align:center;margin-top:8px;font-size:8px;color:#666;">Generated by Project N.O.M.A.D. for Windows — projectnomad.us</div>
+</body></html>'''
+
+        return html
+
     # ─── Dashboard Checklists Progress ─────────────────────────────────
 
     @app.route('/api/dashboard/checklists')

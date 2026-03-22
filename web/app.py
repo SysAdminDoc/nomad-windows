@@ -263,6 +263,7 @@ def create_app():
 
     _pull_queue = []
     _pull_queue_active = False
+    _pull_queue_lock = threading.Lock()
 
     @app.route('/api/ai/pull', methods=['POST'])
     def api_ai_pull():
@@ -291,12 +292,12 @@ def create_app():
         to_pull = [m for m in models if m not in installed]
         if not to_pull:
             return jsonify({'status': 'all_installed', 'count': 0})
-        if _pull_queue_active:
-            return jsonify({'error': 'A download queue is already running. Wait for it to finish.'}), 409
-
-        _pull_queue.clear()
-        _pull_queue.extend(to_pull)
-        _pull_queue_active = True
+        with _pull_queue_lock:
+            if _pull_queue_active:
+                return jsonify({'error': 'A download queue is already running. Wait for it to finish.'}), 409
+            _pull_queue.clear()
+            _pull_queue.extend(to_pull)
+            _pull_queue_active = True
 
         def do_queue():
             nonlocal _pull_queue_active
@@ -379,7 +380,7 @@ def create_app():
                 # Situation board
                 settings_row = db_ctx.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
                 if settings_row:
-                    sit = json.loads(settings_row['value'])
+                    sit = json.loads(settings_row['value'] or '{}')
                     sit_parts.append('SITUATION STATUS: ' + ', '.join(f'{k}: {v}' for k, v in sit.items()))
                 db_ctx.close()
                 if sit_parts:
@@ -641,7 +642,7 @@ def create_app():
                 except Exception as e:
                     _wizard_state['errors'].append(f'{sid}: Setup failed — check your internet connection and try again from the Home tab.')
                 done += 1
-                _wizard_state['overall_progress'] = int(done / total * 100)
+                _wizard_state['overall_progress'] = int(done / total * 100) if total > 0 else 100
                 _wizard_state['completed'].append(sid)
 
             # Phase 2: Start services that CAN start now (skip Kiwix — needs content first)
@@ -681,7 +682,7 @@ def create_app():
                     except Exception as e:
                         _wizard_state['errors'].append(f'ZIM {filename}: {e}')
                     done += 1
-                    _wizard_state['overall_progress'] = int(done / total * 100)
+                    _wizard_state['overall_progress'] = int(done / total * 100) if total > 0 else 100
                     _wizard_state['completed'].append(filename)
 
                 # NOW start Kiwix — it has content to serve
@@ -718,7 +719,7 @@ def create_app():
                     except Exception as e:
                         _wizard_state['errors'].append(f'Model {model_name}: {e}')
                     done += 1
-                    _wizard_state['overall_progress'] = int(done / total * 100)
+                    _wizard_state['overall_progress'] = int(done / total * 100) if total > 0 else 100
                     _wizard_state['completed'].append(model_name)
 
             # Mark wizard complete
@@ -1418,9 +1419,12 @@ def create_app():
         file_size = os.path.getsize(safe_path)
 
         if range_header:
-            byte_range = range_header.replace('bytes=', '').split('-')
-            start = int(byte_range[0])
-            end = int(byte_range[1]) if byte_range[1] else file_size - 1
+            try:
+                byte_range = range_header.replace('bytes=', '').split('-')
+                start = int(byte_range[0])
+                end = int(byte_range[1]) if byte_range[1] else file_size - 1
+            except (ValueError, IndexError):
+                return jsonify({'error': 'Invalid Range header'}), 416
             length = end - start + 1
 
             with open(safe_path, 'rb') as f:
@@ -2835,10 +2839,13 @@ def create_app():
         from datetime import datetime
         now = datetime.now()
         for r in rows:
-            started = datetime.fromisoformat(r['started_at'])
-            elapsed = (now - started).total_seconds()
-            remaining = max(0, r['duration_sec'] - elapsed)
-            result.append({**dict(r), 'remaining_sec': remaining, 'done': remaining <= 0})
+            try:
+                started = datetime.fromisoformat(r['started_at'])
+                elapsed = (now - started).total_seconds()
+                remaining = max(0, r['duration_sec'] - elapsed)
+                result.append({**dict(r), 'remaining_sec': remaining, 'done': remaining <= 0})
+            except (ValueError, TypeError):
+                continue
         return jsonify(result)
 
     @app.route('/api/timers', methods=['POST'])
@@ -3592,7 +3599,8 @@ Respond with ONLY the category word, nothing else."""
 
             r = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
                         json={'model': model, 'prompt': classify_prompt, 'stream': False}, timeout=20)
-            category = r.json().get('response', '').strip().lower().split()[0] if r.ok else 'other'
+            cat_words = r.json().get('response', '').strip().lower().split() if r.ok else []
+            category = cat_words[0] if cat_words else 'other'
             if category not in DOC_CATEGORIES:
                 category = 'other'
 
@@ -3773,7 +3781,7 @@ If no entities found, respond with: []"""
         security_level = 'green'
         if sit_raw and sit_raw['value']:
             try:
-                sit = json.loads(sit_raw['value'])
+                sit = json.loads(sit_raw['value'] or '{}')
                 security_level = sit.get('security', 'green')
             except Exception:
                 pass
@@ -4363,11 +4371,12 @@ If no entities found, respond with: []"""
         sit_raw = db.execute("SELECT value FROM settings WHERE key='sit_board'").fetchone()
         db.close()
 
-        context = f"Inventory: {', '.join(f'{r['name']}: {r['quantity']} {r['unit']}' for r in inv_items) or 'unknown'}\n"
+        inv_str = ', '.join(f"{r['name']}: {r['quantity']} {r['unit']}" for r in inv_items) or 'unknown'
+        context = f"Inventory: {inv_str}\n"
         context += f"Group size: {contacts_count} contacts\n"
         if sit_raw and sit_raw['value']:
             try:
-                sit = json.loads(sit_raw['value'])
+                sit = json.loads(sit_raw['value'] or '{}')
                 context += f"Situation: {', '.join(f'{k}={v}' for k,v in sit.items())}\n"
             except Exception:
                 pass
@@ -4554,9 +4563,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         db.close()
 
         p = dict(patient)
-        allergies = json.loads(p.get('allergies', '[]'))
-        medications = json.loads(p.get('medications', '[]'))
-        conditions = json.loads(p.get('conditions', '[]'))
+        allergies = json.loads(p.get('allergies') or '[]')
+        medications = json.loads(p.get('medications') or '[]')
+        conditions = json.loads(p.get('conditions') or '[]')
         weight_lbs = round(p['weight_kg'] * 2.205, 1) if p.get('weight_kg') else '?'
 
         html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Patient Card — {_esc(p["name"])}</title>
@@ -5029,7 +5038,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
 
         # Situation board
         sit_row = db.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
-        report['situation'] = json.loads(sit_row['value']) if sit_row else {}
+        report['situation'] = json.loads(sit_row['value'] or '{}') if sit_row else {}
 
         # Services
         report['services'] = {}

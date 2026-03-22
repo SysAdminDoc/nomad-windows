@@ -183,9 +183,6 @@ ZIM_CATALOG = [
                 {'name': 'US Army Field Manuals', 'filename': 'armypubs_en_all_2024-12.zim',
                  'url': 'https://download.kiwix.org/zim/zimit/armypubs_en_all_2024-12.zim',
                  'size': '~7.7 GB', 'desc': 'Complete US Army field manuals — survival, engineering, medical, comms'},
-                {'name': 'Survivor Library (Full)', 'filename': 'survivorlibrary.com_en_all_2026-03.zim',
-                 'url': 'https://download.kiwix.org/zim/zimit/survivorlibrary.com_en_all_2026-03.zim',
-                 'size': '~235 GB', 'desc': 'Complete pre-industrial knowledge archive'},
             ],
         },
     },
@@ -231,9 +228,6 @@ ZIM_CATALOG = [
         'category': 'Computing & Technology',
         'tiers': {
             'essential': [
-                {'name': 'DevHints Cheat Sheets', 'filename': 'devhints.io_en_all_2026-03.zim',
-                 'url': 'https://download.kiwix.org/zim/zimit/devhints.io_en_all_2026-03.zim',
-                 'size': '3.8 MB', 'desc': 'Quick-reference developer cheat sheets'},
                 {'name': 'DevHints Cheat Sheets', 'filename': 'devhints.io_en_all_2026-03.zim',
                  'url': 'https://download.kiwix.org/zim/zimit/devhints.io_en_all_2026-03.zim',
                  'size': '3.8 MB', 'desc': 'Quick-reference developer cheat sheets'},

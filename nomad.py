@@ -172,6 +172,7 @@ def health_monitor():
     mods = _get_service_modules()
 
     while True:
+        db = None
         try:
             db = get_db()
             rows = db.execute('SELECT id FROM services WHERE running = 1 AND installed = 1').fetchall()
@@ -199,9 +200,14 @@ def health_monitor():
                         db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (sid,))
                         db.commit()
                         _processes.pop(sid, None)
-            db.close()
         except Exception as e:
             log.error(f'Health monitor error: {e}')
+        finally:
+            if db:
+                try:
+                    db.close()
+                except Exception:
+                    pass
         time.sleep(10)
 
 

@@ -435,7 +435,23 @@ def init_db():
     ''')
     conn.commit()
 
-    # Performance indexes
+    # Schema migrations FIRST (before indexes that depend on new columns)
+    for migration in [
+        'ALTER TABLE inventory ADD COLUMN daily_usage REAL DEFAULT 0',
+        'ALTER TABLE notes ADD COLUMN tags TEXT DEFAULT ""',
+        'ALTER TABLE notes ADD COLUMN pinned INTEGER DEFAULT 0',
+        'ALTER TABLE documents ADD COLUMN doc_category TEXT DEFAULT ""',
+        'ALTER TABLE documents ADD COLUMN summary TEXT DEFAULT ""',
+        'ALTER TABLE documents ADD COLUMN entities TEXT DEFAULT "[]"',
+        'ALTER TABLE documents ADD COLUMN linked_records TEXT DEFAULT "[]"',
+    ]:
+        try:
+            conn.execute(migration)
+            conn.commit()
+        except Exception:
+            pass
+
+    # Performance indexes (after migrations so columns exist)
     for idx in [
         'CREATE INDEX IF NOT EXISTS idx_activity_log_timestamp ON activity_log(created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_activity_log_level ON activity_log(level)',
@@ -460,21 +476,5 @@ def init_db():
         except Exception:
             pass
     conn.commit()
-
-    # Schema migrations for existing databases
-    for migration in [
-        'ALTER TABLE inventory ADD COLUMN daily_usage REAL DEFAULT 0',
-        'ALTER TABLE notes ADD COLUMN tags TEXT DEFAULT ""',
-        'ALTER TABLE notes ADD COLUMN pinned INTEGER DEFAULT 0',
-        'ALTER TABLE documents ADD COLUMN doc_category TEXT DEFAULT ""',
-        'ALTER TABLE documents ADD COLUMN summary TEXT DEFAULT ""',
-        'ALTER TABLE documents ADD COLUMN entities TEXT DEFAULT "[]"',
-        'ALTER TABLE documents ADD COLUMN linked_records TEXT DEFAULT "[]"',
-    ]:
-        try:
-            conn.execute(migration)
-            conn.commit()
-        except Exception:
-            pass
 
     conn.close()

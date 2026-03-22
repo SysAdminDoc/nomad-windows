@@ -5277,32 +5277,36 @@ async function installService(id) {
 }
 async function startService(id) {
   _busyServices.add(id); loadServices();
-  const r = await (await fetch(`/api/services/${id}/start`, {method:'POST'})).json();
-  _busyServices.delete(id);
-  if (r.error) { toast(r.error, 'error'); } else { toast(`${SVC[id]?.name||id} started`, 'success'); }
-  loadServices();
+  try {
+    const r = await (await fetch(`/api/services/${id}/start`, {method:'POST'})).json();
+    if (r.error) { toast(r.error, 'error'); } else { toast(`${SVC[id]?.name||id} started`, 'success'); }
+  } catch(e) { toast(`Failed to start ${SVC[id]?.name||id}`, 'error'); }
+  finally { _busyServices.delete(id); loadServices(); }
 }
 async function stopService(id) {
   _busyServices.add(id); loadServices();
-  await fetch(`/api/services/${id}/stop`, {method:'POST'});
-  _busyServices.delete(id);
-  toast(`${SVC[id]?.name||id} stopped`, 'warning');
-  loadServices();
+  try {
+    await fetch(`/api/services/${id}/stop`, {method:'POST'});
+    toast(`${SVC[id]?.name||id} stopped`, 'warning');
+  } catch(e) { toast(`Failed to stop ${SVC[id]?.name||id}`, 'error'); }
+  finally { _busyServices.delete(id); loadServices(); }
 }
 async function restartService(id) {
   _busyServices.add(id); loadServices();
   toast(`Restarting ${SVC[id]?.name||id}...`, 'info');
-  const r = await (await fetch(`/api/services/${id}/restart`, {method:'POST'})).json();
-  _busyServices.delete(id);
-  if (r.error) { toast(r.error, 'error'); } else { toast(`${SVC[id]?.name||id} restarted`, 'success'); }
-  loadServices();
+  try {
+    const r = await (await fetch(`/api/services/${id}/restart`, {method:'POST'})).json();
+    if (r.error) { toast(r.error, 'error'); } else { toast(`${SVC[id]?.name||id} restarted`, 'success'); }
+  } catch(e) { toast(`Failed to restart ${SVC[id]?.name||id}`, 'error'); }
+  finally { _busyServices.delete(id); loadServices(); }
 }
 async function uninstallService(id) {
   _busyServices.add(id); loadServices();
-  await fetch(`/api/services/${id}/uninstall`, {method:'POST'});
-  _busyServices.delete(id);
-  toast(`${SVC[id]?.name||id} uninstalled`, 'warning');
-  loadServices();
+  try {
+    await fetch(`/api/services/${id}/uninstall`, {method:'POST'});
+    toast(`${SVC[id]?.name||id} uninstalled`, 'warning');
+  } catch(e) { toast(`Failed to uninstall ${SVC[id]?.name||id}`, 'error'); }
+  finally { _busyServices.delete(id); loadServices(); }
 }
 
 async function startAllServices() {
@@ -5371,6 +5375,7 @@ let _pullPoll = null;
 function pollPullProgress() {
   if (_pullPoll) return;
   _pullPoll = setInterval(async () => {
+    try {
     const p = await (await fetch('/api/ai/pull-progress')).json();
     const bar = document.getElementById('pull-progress-bar');
     if (p.status === 'pulling') {
@@ -5395,12 +5400,13 @@ function pollPullProgress() {
         loadModelManager();
       }
     }
+    } catch(e) {}
   }, 1000);
 }
 
 /* ─── Conversations ─── */
 async function loadConversations() {
-  allConvos = await (await fetch('/api/conversations')).json();
+  try { allConvos = await (await fetch('/api/conversations')).json(); } catch(e) { allConvos = []; }
   renderConvoList();
 }
 function renderConvoList() {
@@ -5463,7 +5469,7 @@ function renameConvo(id) {
   if (!item) return;
   const titleEl = item.querySelector('.convo-title');
   const oldTitle = c?.title || 'Chat';
-  titleEl.innerHTML = `<input class="convo-rename-input" value="${escapeHtml(oldTitle)}" onblur="finishRename(${id},this)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='';this.blur();}">`;
+  titleEl.innerHTML = `<input class="convo-rename-input" value="${escapeAttr(oldTitle)}" onblur="finishRename(${id},this)" onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='';this.blur();}">`;
   const inp = titleEl.querySelector('input');
   inp.focus();
   inp.select();
@@ -6290,6 +6296,7 @@ function startLiveGauges() {
 }
 
 async function loadModelManager() {
+  try {
   const models = await (await fetch('/api/ai/models')).json();
   const el = document.getElementById('model-list');
   if (!models.length) {
@@ -6316,6 +6323,7 @@ async function loadModelManager() {
         : `<button class="btn btn-sm btn-primary" onclick="pullFromSettings('${r.name}')">Pull</button>`}
     </div>
   `).join('');
+  } catch(e) {}
 }
 
 function deleteModel(name, btn) {

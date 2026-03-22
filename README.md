@@ -1,12 +1,12 @@
 <div align="center">
 <img src="https://raw.githubusercontent.com/Crosstalk-Solutions/project-nomad/refs/heads/main/admin/public/project_nomad_logo.png" width="200" height="200"/>
 
-# Project N.O.M.A.D. for Windows
-### Offline Media, Archives, and Data
+# Project N.O.M.A.D. for Windows v3.2.0
+### The Most Complete Offline Survival Command Center Available
 
-**Knowledge That Never Goes Offline**
+**Free. Open Source. No Internet Required After Setup.**
 
-Native Windows port — no Docker required. 5 managed services, 70+ downloadable datasets, AI chat with RAG, offline maps, and a premium dark dashboard.
+Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ downloadable datasets, situation-aware AI, tactical operations center, and a premium dark dashboard with night vision mode.
 
 [![Release](https://img.shields.io/github/v/release/SysAdminDoc/nomad-windows?include_prereleases&label=Download&color=blue)](https://github.com/SysAdminDoc/nomad-windows/releases/latest)
 [![Website](https://img.shields.io/badge/Website-projectnomad.us-blue)](https://www.projectnomad.us)
@@ -16,86 +16,102 @@ Native Windows port — no Docker required. 5 managed services, 70+ downloadable
 
 ---
 
-Project N.O.M.A.D. is a self-contained, offline-first knowledge and AI command center packed with critical tools, reference libraries, and local AI — designed to keep you informed and capable when the internet isn't available.
+> Competitors charge $280+ for a USB stick with curated content (Prepper Disk, Prep Drive). N.O.M.A.D. for Windows does everything they do and 10x more - for free.
 
-Download **[ProjectNOMAD.exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest)** (66 MB) — single file, double-click to run.
+Download **[ProjectNOMAD.exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest)** - single file, double-click to run.
 
 ![Dashboard](screenshot.png)
 
-## 5 Managed Services
+## What Makes This Different
+
+- **Situation-Aware AI** - The AI knows your actual inventory levels, burn rates, recent incidents, and threat status. It gives advice based on YOUR specific situation.
+- **Complete Command Center** - Not just a content library. Full tactical operations with SITREP generator, threat assessment matrix, comms log, incident timeline, and emergency broadcast.
+- **Night Vision Mode** - Red-on-black theme that preserves scotopic vision during darkness operations. Auto-switches at sunset.
+- **LAN Chat** - Everyone on your local WiFi can message each other through the dashboard. No internet needed.
+- **Paper Backup** - One-click printable emergency card with contacts, frequencies, family plan, PACE comms plan, supply status, and rally points.
+
+## 9 Main Tabs
+
+| Tab | What It Does |
+|-----|-------------|
+| **Services** | 6 managed services + command dashboard with situation overview |
+| **AI Chat** | Local AI with 15 presets, situation awareness, file drag-drop, conversation starters |
+| **Library** | ZIM content library (100+ datasets) + PDF/document viewer |
+| **Maps** | Offline maps with waypoints, zones, measurement, GPX export (23 regions worldwide) |
+| **Notes** | Markdown notes with tags, pinning, live preview |
+| **Benchmark** | CPU, memory, disk, AI inference scoring (NOMAD Score 0-100) |
+| **Tools** | Meshtastic integration, barcode scanner, video library, guided drills |
+| **Preparedness** | 13 sub-tabs of survival tools (see below) |
+| **Settings** | System monitoring, model management, external Ollama, auth, host power control |
+
+## 6 Managed Services
 
 | Service | What It Does | Port |
 |---------|-------------|------|
-| **Ollama** | Local AI chat — Llama 3, Mistral, Gemma, DeepSeek + GPU auto-detection (NVIDIA/AMD/Intel) | 11434 |
-| **Kiwix** | Offline Wikipedia, medical references, survival guides, 70+ downloadable content packs | 8888 |
-| **CyberChef** | Encryption, encoding, hashing, and data analysis toolkit by GCHQ | 8889 |
-| **Kolibri** | Khan Academy courses, textbooks, progress tracking, offline education platform | 8300 |
-| **Qdrant** | Vector database enabling document upload, semantic search, and RAG for AI chat | 6333 |
+| **Ollama** | Local AI chat - Qwen3, Gemma 3, MedGemma, DeepSeek-R1 + GPU auto-detection | 11434 |
+| **Kiwix** | Offline Wikipedia, medical references, survival guides, Army field manuals | 8888 |
+| **CyberChef** | Encryption, encoding, hashing, 400+ data operations by GCHQ | 8889 |
+| **Kolibri** | Khan Academy courses, textbooks, progress tracking | 8300 |
+| **Qdrant** | Vector database for document upload and semantic search (RAG) | 6333 |
+| **Stirling PDF** | Merge, split, compress, convert, OCR - 50+ PDF tools | 8443 |
 
-All services are downloaded as native Windows binaries and managed as processes — no Docker, no WSL, no VMs.
+## 13 Preparedness Sub-Tabs
 
-## 13-Category Content Library
+| Sub-Tab | Features |
+|---------|---------|
+| **Checklists** | 11 templates: 72hr kit, bug-out bag, medical, comms, vehicle, home, earthquake, hurricane, pandemic, wildfire, civil unrest. Community sharing (JSON export/import). |
+| **Incident Log** | Chronological event timeline with severity levels and category filtering |
+| **Inventory** | Supply tracking with quantities, expiration alerts, burn rate dashboard, daily usage projections, Days Left column, shopping list generator, CSV import/export |
+| **Contacts** | Emergency directory with callsigns, roles, skills, blood types, rally points, medical notes. Skills matrix with automatic gap analysis. CSV import/export. |
+| **Calculators** | 13 calculators: water, food, power/solar, watch schedule, sunrise/sunset, moon phase, coordinate converter, travel time, calorie tracker, battery life, horizon/line-of-sight, bleach/disinfection, resource allocation planner |
+| **Radio Ref** | Complete frequency table: NOAA, FRS (22ch), GMRS, MURS, CB, HAM (2m/70cm/HF), shortwave. HAM net control script. |
+| **Quick Ref** | 20+ reference cards: NATO alphabet, interactive Morse code trainer (with audio), unit converter, knots, weather prediction, ground-to-air signals, medication dosages, barter values, electrical/wiring, seed saving, food preservation (water bath + pressure canning), navigation without GPS, planting calendar (20 crops, zones 4-9), improvised solutions (6 DIY builds), medicinal plants (20), night sky navigation, PACE communication plan, game processing, shelter defense assessment (15 criteria) |
+| **Protocols** | 12 emergency procedures: CPR, severe bleeding, water purification, shelter construction, fire starting, choking/Heimlich, hypothermia, wound closure, burn treatment, fracture/splinting, snake bite, anaphylaxis |
+| **Vault** | AES-256-GCM encrypted document storage (Web Crypto API, client-side encryption, password never leaves browser). Password generator. |
+| **Weather** | Barometric pressure journal with automated trend analysis and weather forecasting |
+| **Signals** | Radio check-in schedule planner + full communications log (HAM-style contact tracking) |
+| **Operations** | SITREP generator, message cipher (Caesar/Atbash/Reverse), infrastructure status tracker (12 utilities), vehicle readiness board, threat assessment matrix (10 scenarios), after-action review template, emergency broadcast system |
+| **Family Plan** | FEMA-style family emergency plan: meeting locations, 3 evacuation routes, household members (medical info, blood types, medications, allergies), insurance/utility info |
 
-70+ downloadable datasets organized into **Essential / Standard / Comprehensive** tiers:
+## AI Features
 
-| Category | Highlights |
-|----------|-----------|
-| **Wikipedia** | Mini (1.2 MB) through Full with images (115 GB) |
-| **Medicine & Health** | WikiMed (10 GB, 73k articles), MedlinePlus, CDC, NHS Medicines, Military Medicine |
-| **Survival & Preparedness** | FEMA Ready.gov (2.3 GB), Survivor Library, Wikibooks, Outdoors SE |
-| **Repair & How-To** | iFixit (2.5 GB, 44k guides), DIY SE, Cooking SE, Gardening SE |
-| **Computing & Technology** | Stack Overflow (55 GB), DevDocs, Super User, Python docs, Server Fault |
-| **Science & Engineering** | PhET Simulations, Physics/Chemistry/Biology/Math/Engineering SE |
-| **Education** | Khan Academy (168 GB), CrashCourse (21 GB), GCFGlobal, OpenStax, Wikiversity |
-| **Books & Literature** | Project Gutenberg (78k books), Wikiquote, Wikisource |
-| **Ham Radio & Communications** | Ham Radio SE, Electronics SE, Signal Processing SE |
-| **TED Talks & Videos** | Top 100 through all 6,658 talks |
-| **Reference & Dictionaries** | Wiktionary, Cheatography (11 GB), Wikinews |
-| **Homesteading & Agriculture** | Gardening SE, Cooking SE, Sustainability SE, Survivor Library |
+- **15 system prompt presets**: General, Medical, Coding, Survival, Teacher, Analyst, Field Medic, HAM Radio, Homesteader, Water/Sanitation, Security/OPSEC, Foraging, plus 3 scenario planners (Grid Down, Medical Emergency, Evacuation)
+- **Situation-aware context**: Toggle "My Situation" to auto-inject your inventory, burn rates, incidents, contacts, and threat levels into the conversation
+- **Drag-drop file context**: Attach PDFs, text files, CSVs to your chat messages
+- **12 recommended models** including medical-specific (MedGemma, Meditron)
+- **RAG pipeline**: Upload documents, auto-embed via nomic-embed-text, semantic search injected into chat
+- **External Ollama host**: Point to a remote Ollama server on another machine
+- **Conversation starters**: 8 pre-built questions for common prepper scenarios
 
-See **[OFFLINE-DATASETS.md](OFFLINE-DATASETS.md)** for a complete reference of 100+ downloadable datasets including non-ZIM content (military field manuals, FEMA nuclear guides, Red Cross first aid, FCC frequency charts, OpenStax textbooks).
+## Tools Tab
 
-## AI Chat
+- **Meshtastic Integration**: Connect LoRa mesh radio devices via Web Serial API for off-grid messaging
+- **Barcode Scanner**: Camera-based barcode scanning via BarcodeDetector API, auto-add to inventory
+- **Offline Video Library**: Upload, categorize (9 categories), and play instructional videos
+- **Guided Emergency Drills**: 6 timed drill scenarios with step checklists, live timer, completion tracking, and persistent drill history
 
-- **Streaming responses** with full markdown rendering (code blocks, headers, lists, bold/italic)
-- **Conversation history** — create, rename, search, export to markdown, delete all
-- **Knowledge Base (RAG)** — upload PDFs and text, auto-embed via nomic-embed-text, semantic search injected into chat context
-- **6 system prompt presets** — General Assistant, Medical Advisor, Coding Helper, Survival Guide, Teacher/Tutor, Data Analyst
-- **Model management** — pull, delete, recommended models with one-click install
-- **Custom AI name** — configurable assistant identity
+## Content Library
 
-## Offline Maps
+14 categories, 3 tiers each (Essential / Standard / Comprehensive), 100+ downloadable datasets:
 
-- **MapLibre GL JS** with dark Carto basemap
-- **Location search** via Nominatim geocoding
-- **Drop pins** with labels, **measurement tool** (haversine distance in km/mi)
-- **Coordinate display** on mouse hover, scale control, fullscreen, geolocate
-- **US regional PMTiles** map management (9 regions)
+Wikipedia, Medicine & Health, Survival & Preparedness (including Post-Disaster Guide, Water Treatment, Army Field Manuals), Repair & How-To (iFixit), Computing & Technology (Stack Overflow), Science & Engineering, Education (Khan Academy, CrashCourse), Books & Literature (Project Gutenberg), Ham Radio & Communications, TED Talks, Reference & Dictionaries, Homesteading & Agriculture, Appropriate Technology (Appropedia, Energypedia), Multi-Language (Spanish, French, German, Portuguese Wikipedia)
 
-## System Tools
+## 4 Themes
 
-| Tool | Description |
-|------|-------------|
-| **Benchmark** | CPU, memory, disk R/W, AI inference (tok/s + TTFT) with weighted NOMAD Score (0-100) |
-| **System Monitoring** | Real-time CPU/RAM/swap gauges (3s polling), per-disk usage bars with >90% warnings |
-| **Unified Search** | Search across conversations, notes, and KB documents from one search bar |
-| **Content Summary** | Total offline knowledge capacity: models, ZIMs, documents, conversations, notes |
-| **Activity Log** | Timestamped event feed with level filtering (info/warning/error) |
-| **Disk Monitor** | Space breakdown with cleanup recommendations |
-| **Notes** | Markdown editor with live preview, auto-save |
+- **NOMAD** (Desert/Tactical) - Default light theme
+- **Night Ops** (Dark) - Dark tactical theme
+- **Cyber** (Blue Dark) - Blue-accent dark theme
+- **Red Light** (Night Vision) - Pure red-on-black for preserving night vision. Auto-switches at sunset.
 
-## Infrastructure
+## Keyboard Shortcuts
 
-- **Setup wizard** — choose which services to install on first run
-- **Auto-restart** — crashed services restart automatically (rate-limited 3 per 5 min)
-- **Service dependencies** — prerequisites auto-start when needed
-- **GPU auto-detection** — NVIDIA CUDA, AMD ROCm, Intel Arc configured for Ollama
-- **Graceful shutdown** — ordered service stop with DB backup
-- **SQLite backup** — 5-rotation backup on every startup
-- **System tray** — minimize to background, tray menu for show/quit
-- **LAN access** — Flask on 0.0.0.0, dashboard accessible from other devices on the network
-- **Health monitor** — 10-second polling detects crashed services
-- **Download resume** — interrupted downloads continue where they left off
+| Shortcut | Action |
+|----------|--------|
+| `Alt+1` through `Alt+8` | Switch main tabs |
+| `Alt+T` | Toggle timer widget |
+| `Alt+C` | Toggle LAN chat |
+| `Alt+N` | New note |
+| `Ctrl+K` | Global search (focuses unified search from any tab) |
 
 ## Quick Start
 
@@ -130,56 +146,30 @@ pyinstaller build.spec
 | Component | Technology |
 |-----------|-----------|
 | Window | pywebview + WebView2 |
-| Backend | Flask (background thread, 0.0.0.0) |
-| Database | SQLite with WAL mode + automatic backups |
-| AI | Ollama native binary + GPU auto-config |
-| Library | Kiwix (kiwix-serve + ZIM files) |
-| Data Tools | CyberChef (Python HTTP server) |
-| Education | Kolibri (pip + subprocess) |
-| Vector DB | Qdrant native binary (REST API) |
-| Embeddings | nomic-embed-text v1.5 via Ollama |
-| Maps | MapLibre GL JS + PMTiles protocol |
-| System Tray | pystray |
+| Backend | Flask (0.0.0.0 for LAN access) |
+| Database | SQLite (19 tables, WAL mode, auto-backups) |
+| AI | Ollama native + GPU auto-config (NVIDIA/AMD/Intel) |
+| Encryption | AES-256-GCM via Web Crypto API |
+| Maps | MapLibre GL JS + PMTiles |
+| Tray | pystray (background operation) |
+| Build | PyInstaller (single exe) |
 
 ## Data Location
 
 All data stored in `%APPDATA%\ProjectNOMAD\`:
 
 ```
-nomad.db          # SQLite database (services, settings, conversations, notes, benchmarks)
-logs/             # Application logs
-backups/          # Automatic DB backups (5 rotation)
-services/         # Downloaded service binaries (Ollama, Kiwix, CyberChef, Qdrant)
-  ollama/models/  # AI models
-  kiwix/library/  # ZIM content files
-  kolibri/data/   # Education platform data
-  qdrant/storage/ # Vector database storage
-maps/             # PMTiles map data
-kb_uploads/       # Knowledge base documents
-benchmark/        # Benchmark temp files
+nomad.db           # SQLite (19 tables)
+logs/              # Application logs
+backups/           # Automatic DB backups (5 rotation)
+services/          # Service binaries + data
+  ollama/models/   # AI models
+  kiwix/library/   # ZIM content files
+maps/              # PMTiles map data
+videos/            # Offline video library
+library/           # PDF/ePub documents
+kb_uploads/        # Knowledge base documents
 ```
-
-## Feature Parity with Original
-
-| Feature | Original (Docker) | Windows Port |
-|---------|-------------------|-------------|
-| Ollama + AI Chat | Container | Native binary + GPU auto-detect |
-| Kiwix Library | Container (6 categories) | Native binary (13 categories, 70+ datasets) |
-| CyberChef | Container | Static HTTP server |
-| Kolibri Education | Container | pip + subprocess |
-| Qdrant + RAG | Container | Native binary + full pipeline |
-| FlatNotes | Container | Built-in Notes with markdown preview |
-| Tiered ZIM Catalog | Yes | Yes (expanded) |
-| Benchmark System | Yes | Yes |
-| System Monitoring | Yes | Yes (real-time gauges) |
-| Offline Maps | Yes | Yes (MapLibre + measurement tools) |
-| Conversation History | Yes | Yes (+ search, export, presets) |
-| Setup Wizard | Yes (capability tiers) | Yes (capability selection) |
-| Health Monitor | Container health | Auto-restart with rate limiting |
-| LAN Access | Yes | Yes (0.0.0.0 + dashboard URL) |
-| Activity Log | No | Yes |
-| Unified Search | No | Yes |
-| Content Summary | No | Yes |
 
 ## Credits
 

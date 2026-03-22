@@ -1043,6 +1043,7 @@ a { color: var(--accent); text-decoration: none; }
     <button class="tab" data-tab="maps">Maps</button>
     <button class="tab" data-tab="notes">Notes</button>
     <button class="tab" data-tab="benchmark">Benchmark</button>
+    <button class="tab" data-tab="tools">Tools</button>
     <button class="tab" data-tab="preparedness">Preparedness</button>
     <button class="tab" data-tab="settings">Settings</button>
   </div>
@@ -1211,6 +1212,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="btn btn-sm" onclick="dropPin()" style="display:none;" id="pin-btn">Drop Pin</button>
       <button class="btn btn-sm" id="measure-btn" onclick="toggleMeasure()" style="display:none;">Measure</button>
       <button class="btn btn-sm btn-primary" onclick="saveWaypoint()" style="display:none;" id="save-wp-btn">Save Waypoint</button>
+      <button class="btn btn-sm" onclick="startDrawZone()" style="display:none;" id="draw-zone-btn">Draw Zone</button>
       <button class="btn btn-sm" onclick="clearPins()" style="display:none;" id="clear-pins-btn">Clear Pins</button>
       <span id="map-coords" style="font-size:10px;color:var(--text-muted);margin-left:auto;font-family:monospace;"></span>
     </div>
@@ -1285,6 +1287,102 @@ a { color: var(--accent); text-decoration: none; }
       <div class="settings-card" style="grid-column:1/-1;">
         <h3>Benchmark History</h3>
         <div id="bench-history"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tools Tab -->
+  <div id="tab-tools" class="tab-content">
+    <div class="settings-grid">
+
+      <!-- Meshtastic Integration -->
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3>Meshtastic / LoRa Mesh Network</h3>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Connect a Meshtastic LoRa device via USB to enable off-grid mesh messaging. Range: 1-10+ miles depending on terrain and antenna.</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-sm btn-primary" onclick="scanMeshtastic()">Scan for Devices</button>
+          <span id="mesh-status" style="font-size:11px;color:var(--text-muted);">No device connected</span>
+        </div>
+        <div id="mesh-nodes" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin-bottom:12px;"></div>
+        <div style="display:flex;gap:6px;align-items:end;">
+          <input id="mesh-msg" style="flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Type mesh message..." disabled>
+          <button class="btn btn-sm" onclick="sendMeshMsg()" disabled id="mesh-send-btn">Send</button>
+        </div>
+        <div id="mesh-log" style="max-height:200px;overflow-y:auto;margin-top:8px;font-size:11px;font-family:'Cascadia Code','Consolas',monospace;"></div>
+        <div style="margin-top:12px;font-size:11px;color:var(--text-dim);line-height:1.6;">
+          <strong>Setup:</strong> 1. Flash Meshtastic firmware to ESP32/nRF52 device. 2. Connect via USB. 3. Click "Scan for Devices" above.
+          4. Requires Web Serial API (Chrome/Edge). <a href="https://meshtastic.org/" target="_blank" style="color:var(--accent);">meshtastic.org</a>
+        </div>
+      </div>
+
+      <!-- Barcode Scanner -->
+      <div class="settings-card">
+        <h3>Barcode Scanner</h3>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Scan barcodes to quickly add items to inventory. Requires camera permission.</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;">
+          <button class="btn btn-sm btn-primary" onclick="startBarcodeScanner()">Start Scanner</button>
+          <button class="btn btn-sm" onclick="stopBarcodeScanner()">Stop</button>
+        </div>
+        <video id="barcode-video" style="width:100%;max-height:200px;border-radius:var(--radius-sm);background:#000;display:none;" autoplay></video>
+        <div id="barcode-result" style="margin-top:8px;font-size:12px;"></div>
+      </div>
+
+      <!-- Video Library -->
+      <div class="settings-card">
+        <h3>Offline Video Library</h3>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Upload and organize instructional videos for offline viewing.</div>
+        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+          <input type="file" id="video-upload" style="display:none;" accept="video/*" onchange="uploadVideo()">
+          <button class="btn btn-sm btn-primary" onclick="document.getElementById('video-upload').click()">Upload Video</button>
+          <select id="video-cat-select" class="preset-select"><option value="general">General</option><option value="survival">Survival</option><option value="medical">Medical</option><option value="repair">Repair</option><option value="bushcraft">Bushcraft</option><option value="cooking">Cooking</option><option value="radio">Radio</option><option value="farming">Farming</option><option value="defense">Defense</option></select>
+        </div>
+        <div id="video-list"></div>
+        <div id="video-player" style="display:none;margin-top:8px;">
+          <video id="video-play" controls style="width:100%;max-height:400px;border-radius:var(--radius-sm);background:#000;"></video>
+        </div>
+      </div>
+
+      <!-- Guided Drills -->
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3>Guided Emergency Drills</h3>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Run a timed drill to test your preparedness. Each drill walks you through tasks, tracks completion time, and generates an after-action review.</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;" id="drill-cards">
+          <div class="calc-card" style="padding:14px;cursor:pointer;" onclick="startDrill('72hour')">
+            <h4 style="font-size:13px;">72-Hour Kit Check</h4>
+            <div style="font-size:11px;color:var(--text-dim);">Verify your 72-hour kit is complete, nothing expired, all batteries charged. Est: 30 min.</div>
+          </div>
+          <div class="calc-card" style="padding:14px;cursor:pointer;" onclick="startDrill('evacuation')">
+            <h4 style="font-size:13px;">Evacuation Drill</h4>
+            <div style="font-size:11px;color:var(--text-dim);">Time how fast your household can pack go-bags, load vehicles, and reach rally point. Est: 15-30 min.</div>
+          </div>
+          <div class="calc-card" style="padding:14px;cursor:pointer;" onclick="startDrill('comms')">
+            <h4 style="font-size:13px;">Communications Check</h4>
+            <div style="font-size:11px;color:var(--text-dim);">Test all radios, verify frequencies, run a radio net with contacts, check backup power. Est: 20 min.</div>
+          </div>
+          <div class="calc-card" style="padding:14px;cursor:pointer;" onclick="startDrill('blackout')">
+            <h4 style="font-size:13px;">Blackout Drill</h4>
+            <div style="font-size:11px;color:var(--text-dim);">Turn off main breaker. Operate on backup power only. Test lighting, cooking, comms, heating. Est: 2-4 hours.</div>
+          </div>
+          <div class="calc-card" style="padding:14px;cursor:pointer;" onclick="startDrill('medical')">
+            <h4 style="font-size:13px;">Medical Response</h4>
+            <div style="font-size:11px;color:var(--text-dim);">Locate and inventory first aid kit, practice tourniquet application, review CPR steps. Est: 20 min.</div>
+          </div>
+          <div class="calc-card" style="padding:14px;cursor:pointer;" onclick="startDrill('water')">
+            <h4 style="font-size:13px;">Water Security</h4>
+            <div style="font-size:11px;color:var(--text-dim);">Test water filter, practice purification methods, verify water storage levels. Est: 30 min.</div>
+          </div>
+        </div>
+        <div id="drill-active" style="display:none;margin-top:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h4 id="drill-title" style="font-size:14px;font-weight:600;"></h4>
+            <span id="drill-timer" style="font-family:'Cascadia Code','Consolas',monospace;font-size:18px;font-weight:700;color:var(--accent);"></span>
+          </div>
+          <div id="drill-steps" style="font-size:12px;"></div>
+          <div style="display:flex;gap:6px;margin-top:10px;">
+            <button class="btn btn-sm btn-primary" onclick="completeDrill()">Complete Drill</button>
+            <button class="btn btn-sm btn-danger" onclick="cancelDrill()">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -3007,6 +3105,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); }
     if (tab.dataset.tab === 'maps') loadMaps();
     if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
+    if (tab.dataset.tab === 'tools') { loadVideoList(); }
     if (tab.dataset.tab === 'preparedness') { loadPrepTab(); }
   });
 });
@@ -4294,7 +4393,7 @@ function toggleMapView() {
   document.getElementById('map-viewer').style.display = _mapVisible ? 'block' : 'none';
   document.getElementById('map-management').style.display = _mapVisible ? 'none' : 'block';
   document.getElementById('map-toggle-btn').textContent = _mapVisible ? 'Manage Maps' : 'Show Map';
-  ['pin-btn','measure-btn','clear-pins-btn','save-wp-btn'].forEach(id => document.getElementById(id).style.display = _mapVisible ? '' : 'none');
+  ['pin-btn','measure-btn','clear-pins-btn','save-wp-btn','draw-zone-btn'].forEach(id => document.getElementById(id).style.display = _mapVisible ? '' : 'none');
   if (_mapVisible && !_map) initMap();
   if (_mapVisible && _map) loadWaypoints();
 }
@@ -4336,15 +4435,13 @@ function initMap() {
     if (coordEl) coordEl.textContent = `${e.lngLat.lat.toFixed(5)}, ${e.lngLat.lng.toFixed(5)}`;
   });
 
-  // Load saved waypoints after map loads
-  _map.on('load', () => loadWaypoints());
+  // Load saved waypoints and zones after map loads
+  _map.on('load', () => { loadWaypoints(); renderMapZones(); });
 
-  // Click to drop pin
+  // Click to drop pin or draw zone
   _map.on('click', (e) => {
-    if (_measureMode) {
-      addMeasurePoint(e.lngLat);
-      return;
-    }
+    if (_measureMode) { addMeasurePoint(e.lngLat); return; }
+    if (_drawingZone) { _zonePoints.push([e.lngLat.lng, e.lngLat.lat]); new maplibregl.Marker({color:'#ff9800',scale:0.4}).setLngLat(e.lngLat).addTo(_map); return; }
   });
 }
 
@@ -6598,6 +6695,232 @@ async function importContactsCSV() {
     toast(`Imported ${r.count} contacts`, 'success');
     loadContacts();
   } catch(e) { toast('Import failed', 'error'); input.value = ''; }
+}
+
+/* ─── Meshtastic (Web Serial) ─── */
+let _meshPort = null;
+async function scanMeshtastic() {
+  if (!('serial' in navigator)) { toast('Web Serial not supported. Use Chrome or Edge.', 'error'); return; }
+  try {
+    _meshPort = await navigator.serial.requestPort();
+    await _meshPort.open({baudRate: 115200});
+    document.getElementById('mesh-status').textContent = 'Device connected';
+    document.getElementById('mesh-status').style.color = 'var(--green)';
+    document.getElementById('mesh-msg').disabled = false;
+    document.getElementById('mesh-send-btn').disabled = false;
+    toast('Meshtastic device connected', 'success');
+    readMeshSerial();
+  } catch(e) { toast('No device selected or connection failed', 'warning'); }
+}
+
+async function readMeshSerial() {
+  if (!_meshPort || !_meshPort.readable) return;
+  const reader = _meshPort.readable.getReader();
+  const decoder = new TextDecoder();
+  const log = document.getElementById('mesh-log');
+  try {
+    while (true) {
+      const {value, done} = await reader.read();
+      if (done) break;
+      const text = decoder.decode(value);
+      log.innerHTML += `<div>${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'})} ${escapeHtml(text)}</div>`;
+      log.scrollTop = log.scrollHeight;
+    }
+  } catch(e) { log.innerHTML += `<div style="color:var(--red);">Connection lost</div>`; }
+}
+
+async function sendMeshMsg() {
+  if (!_meshPort || !_meshPort.writable) return;
+  const msg = document.getElementById('mesh-msg').value.trim();
+  if (!msg) return;
+  const writer = _meshPort.writable.getWriter();
+  await writer.write(new TextEncoder().encode(msg + '\n'));
+  writer.releaseLock();
+  document.getElementById('mesh-msg').value = '';
+  document.getElementById('mesh-log').innerHTML += `<div style="color:var(--accent);">${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})} > ${escapeHtml(msg)}</div>`;
+}
+
+/* ─── Barcode Scanner ─── */
+let _barcodeStream = null;
+async function startBarcodeScanner() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}});
+    _barcodeStream = stream;
+    const video = document.getElementById('barcode-video');
+    video.srcObject = stream;
+    video.style.display = 'block';
+    if ('BarcodeDetector' in window) {
+      const detector = new BarcodeDetector();
+      const scanLoop = async () => {
+        if (!_barcodeStream) return;
+        try {
+          const barcodes = await detector.detect(video);
+          if (barcodes.length > 0) {
+            const code = barcodes[0].rawValue;
+            document.getElementById('barcode-result').innerHTML = `<strong>Scanned:</strong> ${escapeHtml(code)} <button class="btn btn-sm btn-primary" onclick="barcodeToInventory('${escapeAttr(code)}')" style="margin-left:6px;">Add to Inventory</button>`;
+            toast(`Barcode: ${code}`, 'success');
+          }
+        } catch(e) {}
+        if (_barcodeStream) requestAnimationFrame(scanLoop);
+      };
+      requestAnimationFrame(scanLoop);
+    } else {
+      document.getElementById('barcode-result').innerHTML = '<span style="color:var(--orange);">BarcodeDetector API not available. Use Chrome 83+ or enable chrome://flags/#enable-experimental-web-platform-features</span>';
+    }
+  } catch(e) { toast('Camera access denied', 'error'); }
+}
+
+function stopBarcodeScanner() {
+  if (_barcodeStream) { _barcodeStream.getTracks().forEach(t => t.stop()); _barcodeStream = null; }
+  document.getElementById('barcode-video').style.display = 'none';
+}
+
+function barcodeToInventory(code) {
+  stopBarcodeScanner();
+  document.querySelector('[data-tab="preparedness"]').click();
+  setTimeout(() => { switchPrepSub('inventory'); showInvForm(); document.getElementById('inv-name').value = code; }, 300);
+}
+
+/* ─── Video Library ─── */
+async function loadVideoList() {
+  try {
+    const videos = await (await fetch('/api/videos')).json();
+    const el = document.getElementById('video-list');
+    if (!videos.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:10px;">No videos uploaded. Click Upload to add instructional videos.</div>'; return; }
+    el.innerHTML = videos.map(v => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <div style="cursor:pointer;flex:1;" onclick="playVideo('${escapeAttr(v.filename)}')">
+          <span style="font-weight:500;">${escapeHtml(v.title)}</span>
+          <span class="check-cat" style="margin-left:6px;">${v.category}</span>
+        </div>
+        <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="deleteVideo(${v.id})">x</span>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+async function uploadVideo() {
+  const input = document.getElementById('video-upload');
+  if (!input.files.length) return;
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+  formData.append('category', document.getElementById('video-cat-select').value);
+  formData.append('title', input.files[0].name.replace(/\.[^.]+$/, ''));
+  toast('Uploading video...', 'info');
+  try {
+    await fetch('/api/videos/upload', {method:'POST', body:formData});
+    input.value = '';
+    toast('Video uploaded', 'success');
+    loadVideoList();
+  } catch(e) { toast('Upload failed', 'error'); }
+}
+
+function playVideo(filename) {
+  const player = document.getElementById('video-player');
+  const video = document.getElementById('video-play');
+  video.src = `/api/videos/serve/${filename}`;
+  player.style.display = 'block';
+  video.play();
+}
+
+async function deleteVideo(id) {
+  await fetch(`/api/videos/${id}`, {method:'DELETE'});
+  toast('Video deleted');
+  loadVideoList();
+  document.getElementById('video-player').style.display = 'none';
+}
+
+/* ─── Guided Drills ─── */
+const DRILL_DATA = {
+  '72hour': {title: '72-Hour Kit Check', steps: ['Locate your 72-hour kit','Check water supply (1 gal/person/day x 3 days)','Check food supply (non-perishable, within expiration)','Test flashlight and replace batteries if needed','Check first aid kit — restock used items','Verify prescription medications are current','Test NOAA weather radio','Charge all battery packs and power banks','Verify cash on hand ($200+ small bills)','Check clothing — season-appropriate for all members','Verify copies of important documents','Test all communication devices']},
+  'evacuation': {title: 'Evacuation Drill', steps: ['Announce evacuation drill to all household members','Each person grabs their go-bag','Load essential items into vehicle(s)','Verify fuel level is above 3/4 tank','Account for all household members + pets','Lock and secure the house','Drive primary evacuation route to rally point','Note total time from announcement to arrival','Discuss what went well and what to improve','Update your family emergency plan with findings']},
+  'comms': {title: 'Communications Check', steps: ['Power on all FRS/GMRS radios','Replace batteries if signal is weak','Test transmission on your designated channel','Test reception — have someone transmit from another room/building','Power on HAM radio (if licensed)','Check into a local net or make a simplex call on 146.520','Test NOAA weather radio reception','Verify all frequencies are programmed correctly','Test backup power (battery pack, solar charger)','Document any equipment issues']},
+  'blackout': {title: 'Blackout Drill', steps: ['Turn off main breaker (simulate grid failure)','Activate backup lighting (lanterns, flashlights, candles)','Start generator if available — connect critical loads','Test alternate cooking method (camp stove, grill)','Verify refrigerator plan — coolers, ice, consume perishables order','Test communication devices on battery power','Assess heating/cooling capability without grid','Run for minimum 2 hours (ideally 4+)','Log observations — what worked, what failed','Restore power and document lessons learned']},
+  'medical': {title: 'Medical Response Drill', steps: ['Locate your first aid kit / IFAK','Inventory contents — check for expired items','Practice applying a tourniquet (on yourself or training dummy)','Review CPR steps (30 compressions : 2 breaths)','Practice the recovery position','Locate and test any AED device','Review location of prescription medications for all household members','Practice wound packing with gauze','Review your emergency contact numbers','Restock any used or expired supplies']},
+  'water': {title: 'Water Security Drill', steps: ['Check water storage levels — gallons on hand','Calculate days of supply (1 gal/person/day)','Test water filter — filter 1 quart and taste','Practice chemical purification (bleach method — 8 drops/gallon)','Boil water for 1 minute as backup method','Check expiration on water purification tablets','Identify nearest natural water sources (creek, lake, well)','Verify you have containers for water transport','Test rain collection setup if applicable','Document total water capacity and daily burn rate']},
+};
+
+let _drillTimer = null;
+let _drillStart = null;
+
+function startDrill(type) {
+  const drill = DRILL_DATA[type];
+  if (!drill) return;
+  _drillStart = Date.now();
+  document.getElementById('drill-active').style.display = 'block';
+  document.getElementById('drill-title').textContent = drill.title;
+  document.getElementById('drill-steps').innerHTML = drill.steps.map((s, i) =>
+    `<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);align-items:center;">
+      <input type="checkbox" style="accent-color:var(--green);width:16px;height:16px;">
+      <span style="font-size:12px;">${i+1}. ${s}</span>
+    </div>`
+  ).join('');
+  if (_drillTimer) clearInterval(_drillTimer);
+  _drillTimer = setInterval(() => {
+    const elapsed = Math.floor((Date.now() - _drillStart) / 1000);
+    const m = Math.floor(elapsed / 60), s = elapsed % 60;
+    document.getElementById('drill-timer').textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }, 1000);
+  toast(`Drill started: ${drill.title}`, 'info');
+}
+
+function completeDrill() {
+  if (_drillTimer) { clearInterval(_drillTimer); _drillTimer = null; }
+  const elapsed = Math.floor((Date.now() - _drillStart) / 1000);
+  const m = Math.floor(elapsed / 60), s = elapsed % 60;
+  const title = document.getElementById('drill-title').textContent;
+  const checked = document.querySelectorAll('#drill-steps input:checked').length;
+  const total = document.querySelectorAll('#drill-steps input').length;
+  toast(`Drill complete! ${title}: ${checked}/${total} tasks in ${m}m ${s}s`, 'success');
+  sendNotification('Drill Complete', `${title}: ${checked}/${total} tasks in ${m}m ${s}s`);
+  document.getElementById('drill-active').style.display = 'none';
+}
+
+function cancelDrill() {
+  if (_drillTimer) { clearInterval(_drillTimer); _drillTimer = null; }
+  document.getElementById('drill-active').style.display = 'none';
+  toast('Drill cancelled');
+}
+
+/* ─── Map Zone Drawing ─── */
+let _drawingZone = false;
+let _zonePoints = [];
+
+function startDrawZone() {
+  _drawingZone = !_drawingZone;
+  _zonePoints = [];
+  document.getElementById('draw-zone-btn').textContent = _drawingZone ? 'Finish Zone' : 'Draw Zone';
+  if (!_drawingZone && _zonePoints.length >= 3) saveDrawnZone();
+  else if (_drawingZone) toast('Click map points to draw zone. Click "Finish Zone" when done.', 'info');
+}
+
+function saveDrawnZone() {
+  if (_zonePoints.length < 3) return;
+  const name = prompt('Zone name:') || 'Zone';
+  const color = prompt('Color (danger=red, safe=green, caution=yellow):', 'red');
+  const colorMap = {red:'#f44336', green:'#4caf50', yellow:'#ffeb3b', blue:'#2196f3', orange:'#ff9800'};
+  const fillColor = colorMap[color] || color || '#f44336';
+  const coords = [..._zonePoints, _zonePoints[0]]; // Close polygon
+  const geojson = {type:'Feature', geometry:{type:'Polygon', coordinates:[coords]}, properties:{name, color:fillColor}};
+  const zones = JSON.parse(localStorage.getItem('nomad-map-zones') || '[]');
+  zones.push(geojson);
+  localStorage.setItem('nomad-map-zones', JSON.stringify(zones));
+  renderMapZones();
+  _zonePoints = [];
+  toast(`Zone "${name}" saved`, 'success');
+}
+
+function renderMapZones() {
+  if (!_map) return;
+  const zones = JSON.parse(localStorage.getItem('nomad-map-zones') || '[]');
+  // Remove existing zone layers
+  zones.forEach((z, i) => {
+    const id = `zone-${i}`;
+    if (_map.getLayer(id)) _map.removeLayer(id);
+    if (_map.getSource(id)) _map.removeSource(id);
+    _map.addSource(id, {type:'geojson', data:z});
+    _map.addLayer({id, type:'fill', source:id, paint:{'fill-color':z.properties.color || '#f44336','fill-opacity':0.2}});
+  });
 }
 
 /* ─── Sneakernet Sync ─── */

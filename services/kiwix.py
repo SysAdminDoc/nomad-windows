@@ -38,15 +38,9 @@ ZIM_CATALOG = [
                  'size': '~7.7 GB', 'desc': 'Top articles with images'},
             ],
             'comprehensive': [
-                {'name': 'Wikipedia Full (No Pics)', 'filename': 'wikipedia_en_all_nopic_2025-12.zim',
-                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_nopic_2025-12.zim',
-                 'size': '~48 GB', 'desc': 'Complete English Wikipedia without images'},
                 {'name': 'Wikipedia Full (With Pics)', 'filename': 'wikipedia_en_all_maxi_2026-02.zim',
                  'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_maxi_2026-02.zim',
-                 'size': '~115 GB', 'desc': 'Complete English Wikipedia with all images'},
-                {'name': 'Wikipedia Mini (All Articles)', 'filename': 'wikipedia_en_all_mini_2026-03.zim',
-                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_all_mini_2026-03.zim',
-                 'size': '~12 GB', 'desc': 'All articles, intro + infobox only'},
+                 'size': '~115 GB', 'desc': 'Complete English Wikipedia with all images (includes everything from nopic version)'},
             ],
         },
     },
@@ -555,14 +549,14 @@ def get_content_tiers():
     """Return content tier definitions derived from ZIM_CATALOG for the wizard."""
     tiers = {
         'essential': {'name': 'Essential', 'desc': 'Core survival knowledge — medical, preparedness, repair guides',
-                      'services': ['ollama', 'kiwix', 'cyberchef', 'stirling'], 'zims': [], 'models': ['llama3.2:3b'],
+                      'services': ['ollama', 'kiwix', 'cyberchef', 'stirling'], 'zims': [], 'models': ['qwen3:4b'],
                       'est_size': '~10 GB'},
         'standard': {'name': 'Standard', 'desc': 'Comprehensive offline library — Wikipedia, Stack Overflow, education',
-                     'services': ['ollama', 'kiwix', 'cyberchef', 'kolibri', 'qdrant', 'stirling'], 'zims': [], 'models': ['llama3.2:3b'],
+                     'services': ['ollama', 'kiwix', 'cyberchef', 'kolibri', 'qdrant', 'stirling'], 'zims': [], 'models': ['qwen3:4b'],
                      'est_size': '~80 GB'},
         'maximum': {'name': 'Maximum', 'desc': 'Download EVERYTHING — complete archives, all references, all models',
                     'services': ['ollama', 'kiwix', 'cyberchef', 'kolibri', 'qdrant', 'stirling'], 'zims': [],
-                    'models': ['llama3.2:3b', 'llama3.1:8b', 'mistral:7b', 'gemma2:2b'],
+                    'models': ['qwen3:4b', 'qwen3:8b', 'alibayram/medgemma', 'deepseek-r1:8b'],
                     'est_size': '~500+ GB'},
     }
 
@@ -581,7 +575,7 @@ def get_content_tiers():
                 elif tier_name == 'comprehensive':
                     tiers['maximum']['zims'].append(entry)
 
-    # Deduplicate zims by filename
+    # Deduplicate zims by filename, and remove nopic when maxi exists for same content
     for tier in tiers.values():
         seen = set()
         deduped = []
@@ -589,6 +583,34 @@ def get_content_tiers():
             if z['filename'] not in seen:
                 seen.add(z['filename'])
                 deduped.append(z)
+        # Smart dedup: if "all_maxi" exists, remove "all_nopic" and "all_mini" and "top_*" for same language
+        # If "top_maxi" exists, remove "top_nopic" for same language
+        import re as _re
+        maxi_bases = set()
+        for z in deduped:
+            m = _re.match(r'(wikipedia_\w+)_all_maxi', z['filename'])
+            if m:
+                maxi_bases.add(m.group(1))
+            m = _re.match(r'(wikipedia_\w+)_top_maxi', z['filename'])
+            if m:
+                maxi_bases.add(m.group(1) + '_top')
+        if maxi_bases:
+            filtered = []
+            for z in deduped:
+                fn = z['filename']
+                # Skip nopic/mini if maxi of same scope exists
+                skip = False
+                for base in maxi_bases:
+                    if base.endswith('_top'):
+                        lang = base[:-4]
+                        if fn.startswith(lang + '_top_nopic'):
+                            skip = True
+                    else:
+                        if fn.startswith(base + '_all_nopic') or fn.startswith(base + '_all_mini') or fn.startswith(base + '_top_'):
+                            skip = True
+                if not skip:
+                    filtered.append(z)
+            deduped = filtered
         tier['zims'] = deduped
         tier['zim_count'] = len(deduped)
 

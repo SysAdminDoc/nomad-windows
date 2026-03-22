@@ -1374,6 +1374,7 @@ a { color: var(--accent); text-decoration: none; }
           <label class="kb-toggle"><input type="checkbox" id="kb-toggle" onchange="toggleKB()"> My Documents</label>
           <input type="file" id="kb-file-input" style="display:none;" accept=".pdf,.txt,.md,.csv" onchange="uploadKBFile()">
           <button class="btn btn-sm" onclick="document.getElementById('kb-file-input').click()">Upload Doc</button>
+          <button class="btn btn-sm" onclick="analyzeAllDocs()" title="AI: classify, summarize, and extract entities from all documents">Analyze All</button>
           <span id="kb-status-badge" style="font-size:10px;color:var(--text-muted);"></span>
           <div class="kb-docs" id="kb-docs-list" style="display:none;width:100%;margin-top:4px;"></div>
         </div>
@@ -6643,11 +6644,20 @@ async function loadKBDocs() {
   const docs = await (await fetch('/api/kb/documents')).json();
   const el = document.getElementById('kb-docs-list');
   if (!docs.length) { el.innerHTML = '<span style="color:var(--text-muted);font-size:10px;">No documents uploaded yet.</span>'; return; }
+  const catColors = {medical:'#e91e63',property:'#4caf50',vehicle:'#2196f3',financial:'#ff9800',legal:'#9c27b0',reference:'#00bcd4',personal:'#795548',other:'var(--text-muted)'};
   el.innerHTML = docs.map(d => {
     const color = d.status === 'ready' ? 'var(--green)' : d.status === 'error' ? 'var(--red)' : 'var(--orange)';
-    return `<div class="kb-doc-item">
-      <span>${escapeHtml(d.filename)} <span class="kb-doc-status" style="color:${color};">${d.status}${d.chunks_count ? ' ('+d.chunks_count+' chunks)' : ''}</span></span>
-      <span class="convo-del" style="cursor:pointer;color:var(--red);font-size:12px;" onclick="deleteKBDoc(${d.id})">x</span>
+    const cat = d.doc_category || '';
+    const catBadge = cat ? `<span style="font-size:8px;text-transform:uppercase;letter-spacing:0.5px;padding:1px 5px;border-radius:3px;background:${catColors[cat]||'var(--surface3)'};color:#fff;font-weight:600;margin-left:4px;">${cat}</span>` : '';
+    const summary = d.summary ? `<div style="font-size:9px;color:var(--text-dim);margin-top:1px;line-height:1.3;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeAttr(d.summary)}">${escapeHtml(d.summary.slice(0,100))}</div>` : '';
+    const analyzeBtn = d.status === 'ready' && !d.doc_category ? `<span style="cursor:pointer;color:var(--accent);font-size:10px;margin-right:4px;" onclick="event.stopPropagation();analyzeDoc(${d.id})" title="AI: classify, summarize, extract entities">Analyze</span>` : '';
+    const detailBtn = d.doc_category ? `<span style="cursor:pointer;color:var(--accent);font-size:10px;margin-right:4px;" onclick="event.stopPropagation();showDocDetails(${d.id})" title="View analysis details">Details</span>` : '';
+    return `<div class="kb-doc-item" style="flex-direction:column;align-items:stretch;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span>${escapeHtml(d.filename)} ${catBadge} <span class="kb-doc-status" style="color:${color};">${d.status}${d.chunks_count ? ' ('+d.chunks_count+' chunks)' : ''}</span></span>
+        <span style="display:flex;gap:2px;">${analyzeBtn}${detailBtn}<span class="convo-del" style="cursor:pointer;color:var(--red);font-size:12px;" onclick="deleteKBDoc(${d.id})">x</span></span>
+      </div>
+      ${summary}
     </div>`;
   }).join('');
 
@@ -6695,6 +6705,64 @@ async function deleteKBDoc(id) {
   await fetch(`/api/kb/documents/${id}`, {method:'DELETE'});
   toast('Document deleted', 'warning');
   loadKBDocs();
+}
+
+async function analyzeDoc(id) {
+  toast('Analyzing document with AI...', 'info');
+  await fetch(`/api/kb/documents/${id}/analyze`, {method:'POST'});
+  // Poll for completion
+  let polls = 0;
+  const poll = setInterval(async () => {
+    polls++;
+    const d = await (await fetch(`/api/kb/documents/${id}/details`)).json();
+    if (d.doc_category || polls > 30) {
+      clearInterval(poll);
+      toast(`Document analyzed: ${d.doc_category || 'complete'}`, 'success');
+      loadKBDocs();
+    }
+  }, 2000);
+}
+
+async function showDocDetails(id) {
+  try {
+    const d = await (await fetch(`/api/kb/documents/${id}/details`)).json();
+    const catColors = {medical:'#e91e63',property:'#4caf50',vehicle:'#2196f3',financial:'#ff9800',legal:'#9c27b0',reference:'#00bcd4',personal:'#795548',other:'var(--text-muted)'};
+    const entities = d.entities || [];
+    const linked = d.linked_records || [];
+    let html = `<h3 style="font-size:14px;margin-bottom:8px;">${escapeHtml(d.filename)}</h3>`;
+    html += `<div style="margin-bottom:8px;"><span style="font-size:10px;text-transform:uppercase;padding:2px 8px;border-radius:4px;background:${catColors[d.doc_category]||'#666'};color:#fff;font-weight:600;">${d.doc_category||'unclassified'}</span></div>`;
+    if (d.summary) html += `<div style="margin-bottom:12px;font-size:13px;line-height:1.6;"><strong>Summary:</strong> ${escapeHtml(d.summary)}</div>`;
+    if (entities.length) {
+      html += `<div style="margin-bottom:12px;"><strong style="font-size:12px;">Extracted Entities (${entities.length}):</strong><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">`;
+      entities.forEach(e => {
+        const typeColors = {person:'#e91e63',date:'#ff9800',medication:'#4caf50',address:'#2196f3',phone:'#9c27b0',vehicle:'#00bcd4',amount:'#ff5722',coordinate:'#795548'};
+        html += `<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:${typeColors[e.type]||'var(--surface3)'}22;border:1px solid ${typeColors[e.type]||'var(--border)'};color:var(--text);">${escapeHtml(e.type)}: ${escapeHtml(e.value)}</span>`;
+      });
+      html += `</div></div>`;
+    }
+    if (linked.length) {
+      html += `<div style="margin-bottom:12px;"><strong style="font-size:12px;">Cross-References:</strong><div style="margin-top:4px;">`;
+      linked.forEach(l => {
+        html += `<div style="font-size:11px;padding:4px 0;">Linked to ${l.type}: <strong>${escapeHtml(l.name)}</strong></div>`;
+      });
+      html += `</div></div>`;
+    }
+    html += `<div style="font-size:10px;color:var(--text-muted);">File size: ${d.file_size ? Math.round(d.file_size/1024) + ' KB' : '?'} | Chunks: ${d.chunks_count || 0} | Status: ${d.status}</div>`;
+    html += `<button class="btn btn-sm" style="margin-top:8px;" onclick="this.parentElement.remove()">Close</button>`;
+    // Show as an overlay
+    const el = document.createElement('div');
+    el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);padding:24px;z-index:10001;box-shadow:var(--shadow);max-width:600px;max-height:80vh;overflow-y:auto;';
+    el.innerHTML = html;
+    document.body.appendChild(el);
+  } catch(e) { toast('Failed to load details', 'error'); }
+}
+
+async function analyzeAllDocs() {
+  const r = await fetch('/api/kb/analyze-all', {method:'POST'});
+  const d = await r.json();
+  toast(`Analyzing ${d.count} document(s)...`, 'info');
+  // Refresh list after a delay
+  setTimeout(loadKBDocs, 10000);
 }
 
 /* ─── Map Viewer ─── */

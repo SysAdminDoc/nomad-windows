@@ -466,6 +466,10 @@ def init_db():
         'ALTER TABLE inventory ADD COLUMN daily_usage REAL DEFAULT 0',
         'ALTER TABLE notes ADD COLUMN tags TEXT DEFAULT ""',
         'ALTER TABLE notes ADD COLUMN pinned INTEGER DEFAULT 0',
+        'ALTER TABLE documents ADD COLUMN doc_category TEXT DEFAULT ""',
+        'ALTER TABLE documents ADD COLUMN summary TEXT DEFAULT ""',
+        'ALTER TABLE documents ADD COLUMN entities TEXT DEFAULT "[]"',
+        'ALTER TABLE documents ADD COLUMN linked_records TEXT DEFAULT "[]"',
     ]:
         try:
             conn.execute(migration)

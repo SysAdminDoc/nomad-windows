@@ -1403,6 +1403,10 @@ a { color: var(--accent); text-decoration: none; }
               <button class="btn btn-sm" onclick="useStarter('How do I build a basic solar power system for essential devices?')" style="font-size:10px;">Solar power basics</button>
               <button class="btn btn-sm" onclick="useStarter('What are the most likely emergency scenarios in my area and how do I prepare?')" style="font-size:10px;">Threat assessment</button>
               <button class="btn btn-sm" onclick="useStarter('Create a weekly training schedule to improve my survival skills')" style="font-size:10px;">Training schedule</button>
+              <button class="btn btn-sm" onclick="useStarter('How do I set up a rain water collection system at my house?')" style="font-size:10px;">Rainwater collection</button>
+              <button class="btn btn-sm" onclick="useStarter('What are the best crops to grow for maximum calories per square foot?')" style="font-size:10px;">High-calorie crops</button>
+              <button class="btn btn-sm" onclick="useStarter('Help me create an emergency communication plan for my family of 4')" style="font-size:10px;">Family comms plan</button>
+              <button class="btn btn-sm" onclick="useStarter('What should I look for when choosing a bug-out location?')" style="font-size:10px;">Bug-out location</button>
             </div>
           </div>
         </div>
@@ -1909,6 +1913,7 @@ a { color: var(--accent); text-decoration: none; }
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <input id="contact-search" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Search contacts..." oninput="loadContacts()">
         <button class="btn btn-sm btn-primary" onclick="showContactForm()">+ Add Contact</button>
+        <button class="btn btn-sm" onclick="addEmergencyNumbers()" title="Add standard emergency numbers">+ Emergency Numbers</button>
         <button class="btn btn-sm" onclick="window.location='/api/contacts/export-csv'" title="Export">Export</button>
         <input type="file" id="ct-import-file" style="display:none;" accept=".csv" onchange="importContactsCSV()">
         <button class="btn btn-sm" onclick="document.getElementById('ct-import-file').click()" title="Import from CSV">Import</button>
@@ -7794,6 +7799,27 @@ async function loadContacts() {
   } catch(e) {
     document.getElementById('contacts-grid').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px;font-size:12px;grid-column:1/-1;">Failed to load contacts</div>';
   }
+}
+
+async function addEmergencyNumbers() {
+  const numbers = [
+    {name: 'Emergency Services', phone: '911', role: 'Police / Fire / EMS', notes: 'Primary emergency number'},
+    {name: 'Poison Control', phone: '1-800-222-1222', role: 'Poison emergency', notes: '24/7 — free, confidential'},
+    {name: 'National Suicide Hotline', phone: '988', role: 'Mental health crisis', notes: 'Call or text 988'},
+    {name: 'FEMA Helpline', phone: '1-800-621-3362', role: 'Disaster assistance', notes: 'Federal disaster relief registration'},
+    {name: 'Red Cross', phone: '1-800-733-2767', role: 'Disaster relief / shelter locator', notes: 'redcross.org'},
+    {name: 'National Weather Service', phone: '', role: 'Weather alerts', freq: 'NOAA 162.400-162.550 MHz', notes: 'Monitor via NOAA weather radio'},
+    {name: 'Coast Guard', phone: 'VHF Ch 16', role: 'Maritime emergency', freq: '156.800 MHz', notes: 'Marine distress frequency'},
+  ];
+  let added = 0;
+  for (const c of numbers) {
+    try {
+      await fetch('/api/contacts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(c)});
+      added++;
+    } catch(e) {}
+  }
+  toast(`Added ${added} emergency contacts`, 'success');
+  loadContacts();
 }
 
 function showContactForm(contact) {

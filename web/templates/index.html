@@ -774,6 +774,25 @@ a { color: var(--accent); text-decoration: none; }
 .toast.toast-warning .toast-icon { color: var(--orange); }
 .toast.toast-info .toast-icon { color: var(--accent); }
 
+/* ─── Proactive Alerts ─── */
+.alert-item {
+  display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px;
+  border-bottom: 1px solid var(--border); font-size: 12px; animation: fadeSlideIn 0.2s ease;
+}
+.alert-item:last-child { border-bottom: none; }
+.alert-sev {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px;
+  border-radius: 4px; font-weight: 700; flex-shrink: 0; min-width: 60px; text-align: center;
+}
+.alert-sev.critical { background: var(--red-dim); color: var(--red); }
+.alert-sev.warning { background: var(--orange-dim); color: var(--orange); }
+.alert-sev.info { background: var(--accent-dim); color: var(--accent); }
+.alert-body { flex: 1; line-height: 1.5; }
+.alert-title { font-weight: 600; margin-bottom: 2px; }
+.alert-msg { color: var(--text-dim); font-size: 11px; }
+.alert-dismiss { color: var(--text-muted); cursor: pointer; font-size: 14px; flex-shrink: 0; padding: 0 4px; }
+.alert-dismiss:hover { color: var(--text); }
+
 /* ─── Service Error Display ─── */
 .svc-error { color: var(--red); font-size: 11px; margin-top: 8px; padding: 8px 10px; background: var(--red-dim); border-radius: 8px; line-height: 1.5; }
 .svc-error a { color: var(--red); text-decoration: underline; cursor: pointer; font-weight: 600; }
@@ -1098,6 +1117,23 @@ a { color: var(--accent); text-decoration: none; }
 <!-- Emergency Broadcast Banner -->
 <div id="broadcast-banner" style="display:none;padding:10px 20px;text-align:center;font-weight:700;font-size:14px;z-index:200;position:sticky;top:0;cursor:pointer;animation:pulse 2s ease infinite;" onclick="dismissBroadcast()"></div>
 
+<!-- Proactive Alert Bar -->
+<div id="alert-bar" style="display:none;position:sticky;top:0;z-index:150;background:var(--surface-solid);border-bottom:1px solid var(--border);max-height:200px;overflow-y:auto;">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px;border-bottom:1px solid var(--border);">
+    <span style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--orange);animation:pulse 2s ease infinite;"></span>
+      SITUATION ALERTS <span id="alert-count" style="color:var(--text-muted);font-weight:400;"></span>
+    </span>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-sm" onclick="generateAlertSummary()" id="alert-summary-btn" title="AI situation summary">AI Summary</button>
+      <button class="btn btn-sm" onclick="dismissAllAlerts()">Dismiss All</button>
+      <button class="btn btn-sm btn-ghost" onclick="toggleAlertBar()" style="font-size:14px;padding:2px 6px;">x</button>
+    </div>
+  </div>
+  <div id="alert-summary-panel" style="display:none;padding:8px 16px;background:var(--accent-dim);font-size:12px;line-height:1.6;border-bottom:1px solid var(--border);"></div>
+  <div id="alert-items" style="padding:4px 8px;"></div>
+</div>
+
 <div class="header">
   <div class="header-logo"><img src="/static/logo.png" alt="N.O.M.A.D." style="width:28px;height:28px;object-fit:contain;"></div>
   <div class="header-tabs">
@@ -1112,6 +1148,10 @@ a { color: var(--accent); text-decoration: none; }
     <button class="tab" data-tab="settings">Settings</button>
   </div>
   <div class="header-right">
+    <button class="btn btn-sm btn-ghost" onclick="toggleAlertBar()" title="Situation Alerts" id="alert-bell-btn" style="font-size:13px;padding:3px 8px;position:relative;">
+      <span style="font-size:14px;">&#9888;</span>
+      <span id="alert-badge" style="display:none;position:absolute;top:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:var(--red);color:#fff;font-size:9px;font-weight:700;line-height:16px;text-align:center;"></span>
+    </button>
     <button class="btn btn-sm btn-ghost" onclick="showHelp()" title="Help & Guide" style="font-size:13px;padding:3px 8px;">?</button>
     <a id="update-banner" href="#" style="display:none;font-size:11px;padding:4px 12px;background:var(--green-dim);color:var(--green);border-radius:20px;font-weight:600;">Update Available</a>
     <span id="net-status" style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--text-muted);"></span>
@@ -10218,6 +10258,99 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+/* ─── Proactive Alert System ─── */
+let _alertBarVisible = false;
+let _lastAlertCount = 0;
+
+async function loadAlerts() {
+  try {
+    const alerts = await (await fetch('/api/alerts')).json();
+    const badge = document.getElementById('alert-badge');
+    const bar = document.getElementById('alert-bar');
+    const items = document.getElementById('alert-items');
+    const count = document.getElementById('alert-count');
+
+    if (!alerts.length) {
+      badge.style.display = 'none';
+      if (_alertBarVisible && !items.innerHTML.includes('All clear')) {
+        items.innerHTML = '<div style="padding:16px;text-align:center;color:var(--green);font-size:12px;">All clear. No active alerts.</div>';
+      }
+      count.textContent = '';
+      return;
+    }
+
+    // Update badge
+    badge.style.display = 'block';
+    badge.textContent = alerts.length;
+    count.textContent = `(${alerts.length})`;
+
+    // Notify on NEW alerts (ones we haven't seen before)
+    if (alerts.length > _lastAlertCount && _lastAlertCount > 0) {
+      const newest = alerts[0];
+      toast(`Alert: ${newest.title}`, newest.severity === 'critical' ? 'error' : 'warning');
+      sendNotification('N.O.M.A.D. Alert', newest.title);
+      if (newest.severity === 'critical') playAlertSound('broadcast');
+    }
+    _lastAlertCount = alerts.length;
+
+    // Auto-show bar on first critical alert
+    if (!_alertBarVisible && alerts.some(a => a.severity === 'critical')) {
+      _alertBarVisible = true;
+      bar.style.display = 'block';
+    }
+
+    // Render alert items
+    const sevOrder = {critical: 0, warning: 1, info: 2};
+    alerts.sort((a, b) => (sevOrder[a.severity] || 9) - (sevOrder[b.severity] || 9));
+    items.innerHTML = alerts.map(a => `
+      <div class="alert-item">
+        <span class="alert-sev ${a.severity}">${a.severity}</span>
+        <div class="alert-body">
+          <div class="alert-title">${escapeHtml(a.title)}</div>
+          <div class="alert-msg">${escapeHtml(a.message)}</div>
+        </div>
+        <span class="alert-dismiss" onclick="dismissAlert(${a.id})" title="Dismiss">x</span>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+function toggleAlertBar() {
+  _alertBarVisible = !_alertBarVisible;
+  document.getElementById('alert-bar').style.display = _alertBarVisible ? 'block' : 'none';
+  if (_alertBarVisible) loadAlerts();
+}
+
+async function dismissAlert(id) {
+  await fetch(`/api/alerts/${id}/dismiss`, {method:'POST'});
+  loadAlerts();
+}
+
+async function dismissAllAlerts() {
+  await fetch('/api/alerts/dismiss-all', {method:'POST'});
+  document.getElementById('alert-summary-panel').style.display = 'none';
+  loadAlerts();
+  toast('All alerts dismissed', 'info');
+}
+
+async function generateAlertSummary() {
+  const btn = document.getElementById('alert-summary-btn');
+  const panel = document.getElementById('alert-summary-panel');
+  btn.disabled = true;
+  btn.textContent = 'Analyzing...';
+  panel.style.display = 'block';
+  panel.textContent = 'Generating AI situation summary...';
+  try {
+    const r = await fetch('/api/alerts/generate-summary', {method:'POST'});
+    const d = await r.json();
+    panel.innerHTML = `<strong style="color:var(--accent);">AI Situation Summary:</strong><br>${escapeHtml(d.summary)}`;
+  } catch(e) {
+    panel.textContent = 'Failed to generate summary';
+  }
+  btn.disabled = false;
+  btn.textContent = 'AI Summary';
+}
+
 /* ─── Init ─── */
 loadServices();
 loadCmdDashboard();
@@ -10243,19 +10376,9 @@ loadStartupState();
 pollBroadcast();
 setInterval(() => { if (!document.hidden) pollBroadcast(); }, 5000);
 
-// Startup inventory alerts — notify about expired/low stock items
-setTimeout(async () => {
-  try {
-    const summary = await (await fetch('/api/inventory/summary')).json();
-    if (summary.expired > 0) {
-      toast(`${summary.expired} inventory item(s) have expired!`, 'error');
-      sendNotification('Inventory Alert', `${summary.expired} item(s) expired`);
-    }
-    if (summary.low_stock > 0) {
-      toast(`${summary.low_stock} inventory item(s) are low stock`, 'warning');
-    }
-  } catch(e) {}
-}, 3000);
+// Proactive alert system — poll every 60 seconds (backend checks every 5 min)
+setTimeout(loadAlerts, 5000);
+setInterval(() => { if (!document.hidden) loadAlerts(); }, 60000);
 </script>
 </body>
 </html>

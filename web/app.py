@@ -3391,6 +3391,175 @@ def create_app():
             'critical_burn': [{'name': r['name'], 'days_left': round(r['quantity']/r['daily_usage'], 1), 'category': r['category']} for r in critical_burn],
         })
 
+    # ─── Proactive Alert System ──────────────────────────────────────
+
+    _alert_check_running = False
+
+    def _run_alert_checks():
+        """Background alert engine — checks inventory, weather, incidents every 5 minutes."""
+        nonlocal _alert_check_running
+        if _alert_check_running:
+            return
+        _alert_check_running = True
+        import time as _t
+        _t.sleep(30)  # Wait for app to initialize
+        while True:
+            try:
+                alerts = []
+                db = get_db()
+                from datetime import datetime, timedelta
+                now = datetime.now()
+                today = now.strftime('%Y-%m-%d')
+                soon = (now + timedelta(days=14)).strftime('%Y-%m-%d')
+
+                # 1. Critical burn rate items (<7 days supply)
+                burn_items = db.execute(
+                    'SELECT name, quantity, daily_usage, category FROM inventory WHERE daily_usage > 0 AND (quantity / daily_usage) < 7 ORDER BY (quantity / daily_usage)'
+                ).fetchall()
+                for item in burn_items:
+                    days = round(item['quantity'] / item['daily_usage'], 1)
+                    sev = 'critical' if days < 3 else 'warning'
+                    alerts.append({
+                        'type': 'burn_rate', 'severity': sev,
+                        'title': f'{item["name"]} running low',
+                        'message': f'{item["name"]}: {days} days remaining at current usage ({item["quantity"]} {item.get("category", "")} left, using {item["daily_usage"]}/day). Reduce consumption or resupply.',
+                    })
+
+                # 2. Expiring items (within 14 days)
+                expiring = db.execute(
+                    "SELECT name, expiration FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ? ORDER BY expiration",
+                    (soon, today)
+                ).fetchall()
+                for item in expiring:
+                    exp_days = (datetime.strptime(item['expiration'], '%Y-%m-%d') - now).days
+                    sev = 'critical' if exp_days <= 3 else 'warning'
+                    alerts.append({
+                        'type': 'expiration', 'severity': sev,
+                        'title': f'{item["name"]} expiring',
+                        'message': f'{item["name"]} expires in {exp_days} day{"s" if exp_days != 1 else ""} ({item["expiration"]}). Use, rotate, or replace.',
+                    })
+
+                # 3. Barometric pressure drop (>4mb in recent readings)
+                pressure_rows = db.execute(
+                    'SELECT pressure_hpa, created_at FROM weather_log WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 10'
+                ).fetchall()
+                if len(pressure_rows) >= 2:
+                    newest = pressure_rows[0]['pressure_hpa']
+                    oldest = pressure_rows[-1]['pressure_hpa']
+                    diff = newest - oldest
+                    if diff < -4:
+                        alerts.append({
+                            'type': 'weather', 'severity': 'warning',
+                            'title': 'Rapid pressure drop detected',
+                            'message': f'Barometric pressure dropped {abs(round(diff, 1))} hPa ({round(oldest, 1)} to {round(newest, 1)}). Storm likely within 12-24 hours. Secure shelter, fill water containers, charge devices.',
+                        })
+
+                # 4. Incident cluster (3+ in same category within 48h)
+                cutoff = (now - timedelta(hours=48)).strftime('%Y-%m-%d %H:%M:%S')
+                incident_clusters = db.execute(
+                    "SELECT category, COUNT(*) as cnt FROM incidents WHERE created_at >= ? GROUP BY category HAVING cnt >= 3",
+                    (cutoff,)
+                ).fetchall()
+                for cluster in incident_clusters:
+                    alerts.append({
+                        'type': 'incident_cluster', 'severity': 'warning',
+                        'title': f'{cluster["category"].title()} incidents escalating',
+                        'message': f'{cluster["cnt"]} {cluster["category"]} incidents in the last 48 hours. Review incident log and consider elevating threat level.',
+                    })
+
+                # 5. Low stock items (quantity <= min_quantity)
+                low_stock = db.execute(
+                    'SELECT name, quantity, unit, min_quantity FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0'
+                ).fetchall()
+                for item in low_stock:
+                    alerts.append({
+                        'type': 'low_stock', 'severity': 'warning',
+                        'title': f'{item["name"]} below minimum',
+                        'message': f'{item["name"]}: {item["quantity"]} {item["unit"]} remaining (minimum: {item["min_quantity"]}). Add to shopping list or resupply.',
+                    })
+
+                db.close()
+
+                # Deduplicate against existing active alerts (don't re-create dismissed ones within 24h)
+                if alerts:
+                    db = get_db()
+                    for alert in alerts:
+                        existing = db.execute(
+                            "SELECT id, dismissed FROM alerts WHERE alert_type = ? AND title = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1",
+                            (alert['type'], alert['title'], (now - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S'))
+                        ).fetchone()
+                        if not existing:
+                            db.execute(
+                                'INSERT INTO alerts (alert_type, severity, title, message) VALUES (?, ?, ?, ?)',
+                                (alert['type'], alert['severity'], alert['title'], alert['message'])
+                            )
+                    db.commit()
+                    db.close()
+
+                # Prune old dismissed alerts (>7 days)
+                db = get_db()
+                db.execute("DELETE FROM alerts WHERE dismissed = 1 AND created_at < ?",
+                           ((now - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S'),))
+                db.commit()
+                db.close()
+
+            except Exception as e:
+                log.error(f'Alert engine error: {e}')
+            _t.sleep(300)  # Check every 5 minutes
+
+    threading.Thread(target=_run_alert_checks, daemon=True).start()
+
+    @app.route('/api/alerts')
+    def api_alerts():
+        """Get active (non-dismissed) alerts."""
+        db = get_db()
+        rows = db.execute('SELECT * FROM alerts WHERE dismissed = 0 ORDER BY severity DESC, created_at DESC LIMIT 50').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/alerts/<int:alert_id>/dismiss', methods=['POST'])
+    def api_alert_dismiss(alert_id):
+        db = get_db()
+        db.execute('UPDATE alerts SET dismissed = 1 WHERE id = ?', (alert_id,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'dismissed'})
+
+    @app.route('/api/alerts/dismiss-all', methods=['POST'])
+    def api_alerts_dismiss_all():
+        db = get_db()
+        db.execute('UPDATE alerts SET dismissed = 1 WHERE dismissed = 0')
+        db.commit()
+        db.close()
+        return jsonify({'status': 'dismissed'})
+
+    @app.route('/api/alerts/generate-summary', methods=['POST'])
+    def api_alerts_generate_summary():
+        """Use AI to generate a natural language situation summary from active alerts."""
+        db = get_db()
+        alerts = db.execute('SELECT * FROM alerts WHERE dismissed = 0 ORDER BY severity DESC').fetchall()
+        db.close()
+        if not alerts:
+            return jsonify({'summary': 'All clear. No active alerts.'})
+        # Build a concise prompt for Ollama
+        alert_text = '\n'.join([f'- [{a["severity"].upper()}] {a["title"]}: {a["message"]}' for a in alerts])
+        prompt = f'You are a survival operations officer. Summarize these alerts into a brief, actionable situation report (3-5 sentences max). Be direct and practical.\n\nActive Alerts:\n{alert_text}'
+        try:
+            if not ollama.running():
+                return jsonify({'summary': f'{len(alerts)} active alert(s). Start the AI service for an intelligent situation summary.'})
+            models = ollama.list_models()
+            if not models:
+                return jsonify({'summary': f'{len(alerts)} active alert(s). Download an AI model for intelligent summaries.'})
+            model = models[0]['name']
+            import requests as req
+            resp = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
+                           json={'model': model, 'prompt': prompt, 'stream': False},
+                           timeout=30)
+            result = resp.json()
+            return jsonify({'summary': result.get('response', '').strip()})
+        except Exception as e:
+            return jsonify({'summary': f'{len(alerts)} active alert(s). AI summary unavailable: {e}'})
+
     # ─── Emergency Broadcast ──────────────────────────────────────────
 
     _broadcast = {'active': False, 'message': '', 'severity': 'info', 'timestamp': ''}

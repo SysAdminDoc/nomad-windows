@@ -256,6 +256,17 @@ def init_db():
             description TEXT NOT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS alerts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            alert_type TEXT NOT NULL,
+            severity TEXT NOT NULL DEFAULT 'warning',
+            title TEXT NOT NULL,
+            message TEXT NOT NULL,
+            data TEXT DEFAULT '{}',
+            dismissed INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     conn.commit()
 
@@ -272,6 +283,7 @@ def init_db():
         'CREATE INDEX IF NOT EXISTS idx_notes_pinned ON notes(pinned DESC, updated_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_weather_log_created ON weather_log(created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_waypoints_category ON waypoints(category)',
+        'CREATE INDEX IF NOT EXISTS idx_alerts_dismissed ON alerts(dismissed, created_at DESC)',
     ]:
         try:
             conn.execute(idx)

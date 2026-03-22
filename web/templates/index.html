@@ -2012,6 +2012,82 @@ a { color: var(--accent); text-decoration: none; }
           </div>
           <div class="calc-result" id="gen-result"></div>
         </div>
+
+        <!-- Rainwater Harvest Calculator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Rainwater Harvest Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Estimate collectible rainwater from roof/catchment area.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Roof Area (sq ft)</label><input id="rw-area" type="number" min="10" max="100000" value="1500" style="width:100px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcRainwater()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Rainfall (inches)</label><input id="rw-rain" type="number" min="0.1" max="100" value="1" step="0.1" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcRainwater()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Roof Type</label>
+              <select id="rw-roof" onchange="calcRainwater()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="0.95">Metal (95% eff)</option>
+                <option value="0.90" selected>Asphalt Shingle (90%)</option>
+                <option value="0.85">Concrete Tile (85%)</option>
+                <option value="0.60">Flat/Gravel (60%)</option>
+                <option value="0.75">Tarp/Improvised (75%)</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">People</label><input id="rw-people" type="number" min="1" max="30" value="4" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcRainwater()"></div>
+          </div>
+          <div class="calc-result" id="rw-result"></div>
+        </div>
+
+        <!-- Radio Range Estimator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Radio Range Estimator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Estimate effective communication range based on radio type and terrain.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Radio Type</label>
+              <select id="rr-type" onchange="calcRadioRange()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="frs">FRS (walkie-talkie, 0.5W)</option>
+                <option value="gmrs">GMRS (5W handheld)</option>
+                <option value="gmrs-mobile">GMRS (50W mobile)</option>
+                <option value="2m-ht" selected>2m Ham HT (5W)</option>
+                <option value="2m-mobile">2m Ham Mobile (50W)</option>
+                <option value="2m-base">2m Ham Base + Yagi (50W)</option>
+                <option value="hf-20m">HF 20m (100W)</option>
+                <option value="hf-40m">HF 40m (100W)</option>
+                <option value="hf-80m">HF 80m (100W)</option>
+                <option value="cb">CB Radio (4W)</option>
+                <option value="murs">MURS (2W)</option>
+                <option value="meshtastic">Meshtastic LoRa</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Terrain</label>
+              <select id="rr-terrain" onchange="calcRadioRange()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="urban">Urban (buildings)</option>
+                <option value="suburban" selected>Suburban</option>
+                <option value="rural">Rural / Open</option>
+                <option value="mountains">Mountains</option>
+                <option value="forest">Dense Forest</option>
+                <option value="water">Over Water</option>
+                <option value="hilltop">Hilltop-to-Hilltop</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Antenna Height (ft)</label><input id="rr-height" type="number" min="3" max="500" value="6" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcRadioRange()"></div>
+          </div>
+          <div class="calc-result" id="rr-result"></div>
+        </div>
+
+        <!-- Medication Dosage Calculator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Medication Dosage Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Calculate weight-based doses for common OTC medications. For reference only — consult medical professional when possible.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Patient Weight</label><input id="md-weight" type="number" min="5" max="400" value="150" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcMedDose()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Unit</label>
+              <select id="md-unit" onchange="calcMedDose()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="lbs" selected>Pounds</option>
+                <option value="kg">Kilograms</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Age Group</label>
+              <select id="md-age" onchange="calcMedDose()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="adult" selected>Adult (12+)</option>
+                <option value="child">Child (2-11)</option>
+                <option value="infant">Infant (6mo-2yr)</option>
+              </select></div>
+          </div>
+          <div class="calc-result" id="md-result"></div>
+        </div>
       </div>
     </div>
     </div><!-- /psub-calculators -->
@@ -8670,6 +8746,113 @@ function calcGenFuel() {
     <br><strong>Tip:</strong> Run generator 2-4 hours at a time to cycle fridge/freezer. A freezer stays frozen 24-48 hrs if kept closed. Cycle loads to reduce generator wear.
   </div>`;
   document.getElementById('gen-result').innerHTML = html;
+}
+
+function calcRainwater() {
+  const area = parseFloat(document.getElementById('rw-area').value) || 1500;
+  const rain = parseFloat(document.getElementById('rw-rain').value) || 1;
+  const eff = parseFloat(document.getElementById('rw-roof').value) || 0.9;
+  const people = parseInt(document.getElementById('rw-people').value) || 4;
+  // 1 inch of rain on 1 sq ft = 0.623 gallons
+  const gallons = Math.round(area * rain * 0.623 * eff * 10) / 10;
+  const liters = Math.round(gallons * 3.785 * 10) / 10;
+  const personDays = Math.round(gallons / people * 10) / 10; // 1 gal/person/day
+  // Annual estimate (US avg ~38" rainfall)
+  const annualGal = Math.round(area * 38 * 0.623 * eff);
+  const annualPersonDays = Math.round(annualGal / people);
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:12px;">`;
+  html += `<div><strong style="color:var(--accent);">Per ${rain}" rain:</strong> ${gallons} gallons (${liters} L)</div>`;
+  html += `<div><strong style="color:var(--accent);">Days supply:</strong> ${personDays} days for ${people} people</div>`;
+  html += `<div><strong style="color:var(--accent);">Annual est (38"):</strong> ${annualGal.toLocaleString()} gallons</div>`;
+  html += `<div><strong style="color:var(--accent);">Annual supply:</strong> ${annualPersonDays} person-days</div>`;
+  html += `</div>`;
+  html += `<div style="margin-top:8px;font-size:11px;color:var(--text-dim);">
+    <strong>Storage:</strong> 55-gal drums ($15-30), IBC totes 275-gal ($50-100), cistern 500-5000 gal. First flush diverter recommended (discard first 10 gal after dry spell).
+    <strong>Purification:</strong> Roof water must be filtered + disinfected. Ceramic filter → UV or bleach (8 drops/gal). First-flush diverter discards debris.
+    <strong>Legal:</strong> Rainwater harvesting is legal in most US states but some have restrictions — check local laws.
+  </div>`;
+  document.getElementById('rw-result').innerHTML = html;
+}
+
+function calcRadioRange() {
+  const type = document.getElementById('rr-type').value;
+  const terrain = document.getElementById('rr-terrain').value;
+  const height = parseInt(document.getElementById('rr-height').value) || 6;
+  // Base ranges in miles (ideal conditions)
+  const bases = {
+    'frs': {base: 1, band: 'UHF 462 MHz', license: 'None', note: 'Bubble-pack radios. Very limited.'},
+    'gmrs': {base: 5, band: 'UHF 462 MHz', license: 'FCC GMRS ($35, 10yr)', note: 'Good family/group radio. Repeater-capable.'},
+    'gmrs-mobile': {base: 15, band: 'UHF 462 MHz', license: 'FCC GMRS ($35, 10yr)', note: 'Vehicle-mount with better antenna.'},
+    '2m-ht': {base: 7, band: 'VHF 144 MHz', license: 'Ham Technician', note: 'Most popular prepper radio. Repeater access.'},
+    '2m-mobile': {base: 25, band: 'VHF 144 MHz', license: 'Ham Technician', note: 'Vehicle-mount. Great simplex range.'},
+    '2m-base': {base: 50, band: 'VHF 144 MHz', license: 'Ham Technician', note: 'Directional antenna. Point-to-point.'},
+    'hf-20m': {base: 2000, band: 'HF 14 MHz', license: 'Ham General', note: 'Worldwide daytime. Skip zone 100-500mi.'},
+    'hf-40m': {base: 1000, band: 'HF 7 MHz', license: 'Ham General', note: 'Regional day, continental night. Most versatile HF.'},
+    'hf-80m': {base: 300, band: 'HF 3.5 MHz', license: 'Ham General', note: 'Night-only effective. Regional comms. NVIS capable.'},
+    'cb': {base: 3, band: 'HF 27 MHz', license: 'None', note: 'Truckers, Channel 9 emergency, Channel 19 highway.'},
+    'murs': {base: 3, band: 'VHF 151 MHz', license: 'None', note: 'Better building penetration than FRS. Low profile.'},
+    'meshtastic': {base: 5, band: '915 MHz LoRa', license: 'None', note: 'Encrypted text mesh. Nodes relay messages. Solar-powered.'}
+  };
+  const terrainMult = {urban: 0.3, suburban: 0.5, rural: 1.0, mountains: 0.4, forest: 0.5, water: 1.5, hilltop: 2.0};
+  const r = bases[type];
+  const mult = terrainMult[terrain] || 1;
+  // Height bonus (VHF/UHF benefit from height, HF not so much)
+  const isHF = type.startsWith('hf-');
+  const heightMult = isHF ? 1 : Math.min(1 + (height - 6) * 0.01, 3);
+  const range = Math.round(r.base * mult * heightMult * 10) / 10;
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:12px;">`;
+  html += `<div><strong style="color:var(--accent);">Est. Range:</strong> ${range >= 100 ? Math.round(range) : range} miles</div>`;
+  html += `<div><strong style="color:var(--accent);">Band:</strong> ${r.band}</div>`;
+  html += `<div><strong style="color:var(--accent);">License:</strong> ${r.license}</div>`;
+  html += `<div><strong style="color:var(--accent);">Notes:</strong> ${r.note}</div>`;
+  html += `</div>`;
+  html += `<div style="margin-top:8px;font-size:11px;color:var(--text-dim);">
+    Range is estimated. Actual range depends on terrain, weather, antenna quality, and interference. <strong>Repeaters</strong> can extend VHF/UHF range to 50-100+ miles. <strong>NVIS</strong> (Near Vertical Incidence Skywave) on 40m/80m gives 0-300 mile coverage with horizontal antenna — fills the HF skip zone. In emergencies, you may transmit on any frequency (FCC §97.405).
+  </div>`;
+  document.getElementById('rr-result').innerHTML = html;
+}
+
+function calcMedDose() {
+  const weight = parseFloat(document.getElementById('md-weight').value) || 150;
+  const unit = document.getElementById('md-unit').value;
+  const age = document.getElementById('md-age').value;
+  const kg = unit === 'kg' ? weight : weight / 2.205;
+  const lbs = unit === 'lbs' ? weight : weight * 2.205;
+
+  const meds = [];
+  if (age === 'adult') {
+    meds.push({name: 'Ibuprofen', dose: '200-400mg', freq: 'Every 6-8 hours', max: '1,200mg/day OTC (3,200mg Rx)', warn: 'Take with food. Avoid if kidney disease or GI bleeding.'});
+    meds.push({name: 'Acetaminophen', dose: '500-1,000mg', freq: 'Every 6 hours', max: '3,000mg/day', warn: 'Liver toxic in overdose. No alcohol. Check combo products (NyQuil etc).'});
+    meds.push({name: 'Aspirin', dose: '325-650mg', freq: 'Every 4-6 hours', max: '4,000mg/day', warn: 'Heart attack: chew 325mg immediately. Blood thinner — avoid before surgery.'});
+    meds.push({name: 'Diphenhydramine', dose: '25-50mg', freq: 'Every 6-8 hours', max: '300mg/day', warn: 'Causes drowsiness. Anticholinergic — avoid in elderly.'});
+    meds.push({name: 'Loperamide', dose: '4mg initial, then 2mg', freq: 'After each loose stool', max: '8mg/day OTC', warn: 'Do NOT use if bloody diarrhea or fever (may be infectious).'});
+    meds.push({name: 'Epinephrine (auto)', dose: '0.3mg IM', freq: 'Repeat in 5-15 min if needed', max: 'No max in anaphylaxis', warn: 'Mid-outer thigh, through clothing OK. Call for help immediately.'});
+    meds.push({name: 'Amoxicillin', dose: '500mg', freq: 'Every 8 hours', max: '1,500mg/day', warn: 'Complete full course (7-10 days). Rash ≠ always allergy (but stop if hives/swelling).'});
+    meds.push({name: 'Ivermectin', dose: `${Math.round(kg * 0.2 * 10) / 10}mg (0.2mg/kg)`, freq: 'Single dose', max: 'Repeat in 2 weeks for parasites', warn: `Based on ${Math.round(kg)}kg body weight.`});
+  } else if (age === 'child') {
+    const ibuDose = Math.round(kg * 10); // 10mg/kg
+    const acetDose = Math.round(kg * 15); // 15mg/kg
+    const benadrylDose = Math.round(kg * 1.25 * 10) / 10; // 1.25mg/kg
+    meds.push({name: 'Ibuprofen (Children\'s)', dose: `${ibuDose}mg (10mg/kg)`, freq: 'Every 6-8 hours', max: `${Math.round(kg * 40)}mg/day`, warn: `Based on ${Math.round(kg)}kg. Use liquid form for accuracy.`});
+    meds.push({name: 'Acetaminophen (Children\'s)', dose: `${acetDose}mg (15mg/kg)`, freq: 'Every 4-6 hours', max: `${Math.round(kg * 75)}mg/day (5 doses)`, warn: 'Use dosing syringe, not kitchen spoons.'});
+    meds.push({name: 'Diphenhydramine', dose: `${benadrylDose}mg (1.25mg/kg)`, freq: 'Every 6-8 hours', max: `${Math.round(benadrylDose * 4)}mg/day`, warn: 'May cause excitability in children. Liquid preferred.'});
+    meds.push({name: 'Amoxicillin (Peds)', dose: `${Math.round(kg * 25)}mg (25mg/kg)`, freq: 'Every 8 hours', max: `${Math.round(kg * 75)}mg/day`, warn: 'Use suspension. Shake well. Complete full course.'});
+    meds.push({name: 'ORS (Oral Rehydration)', dose: '50-100ml', freq: 'After each loose stool', max: 'As needed', warn: 'DIY: 1L water + 6 tsp sugar + 0.5 tsp salt. Sip slowly.'});
+  } else {
+    meds.push({name: 'Acetaminophen Infant Drops', dose: `${Math.round(kg * 15)}mg (15mg/kg)`, freq: 'Every 4-6 hours', max: `${Math.round(kg * 75)}mg/day`, warn: 'Use infant concentration + dosing syringe only.'});
+    meds.push({name: 'Ibuprofen (6+ months only)', dose: `${Math.round(kg * 10)}mg (10mg/kg)`, freq: 'Every 6-8 hours', max: `${Math.round(kg * 40)}mg/day`, warn: 'NOT for infants under 6 months. Use with food.'});
+    meds.push({name: 'ORS (Oral Rehydration)', dose: '50ml', freq: 'After each loose stool', max: 'As needed', warn: 'Teaspoon at a time if vomiting. Pedialyte or DIY recipe.'});
+    meds.push({name: 'Epinephrine (infant auto)', dose: '0.15mg IM', freq: 'Repeat in 5-15 min', max: 'No max in anaphylaxis', warn: 'EpiPen Jr for <30kg. Mid-outer thigh.'});
+  }
+
+  let html = `<div style="font-size:12px;margin-bottom:8px;"><strong>Patient:</strong> ${Math.round(lbs)} lbs / ${Math.round(kg)} kg — ${age === 'adult' ? 'Adult' : age === 'child' ? 'Child (2-11)' : 'Infant (6mo-2yr)'}</div>`;
+  html += '<div style="overflow-x:auto;"><table class="ref-table" style="font-size:11px;width:100%;border-collapse:collapse;"><thead><tr><th>Medication</th><th>Dose</th><th>Frequency</th><th>Max Daily</th><th>Warning</th></tr></thead><tbody>';
+  for (const m of meds) {
+    html += `<tr><td><strong>${m.name}</strong></td><td style="color:var(--accent);font-weight:600;">${m.dose}</td><td>${m.freq}</td><td>${m.max}</td><td style="color:var(--text-dim);font-size:10px;">${m.warn}</td></tr>`;
+  }
+  html += '</tbody></table></div>';
+  html += '<div style="margin-top:6px;font-size:10px;color:var(--text-dim);"><strong>DISCLAIMER:</strong> For reference only. Consult a medical professional when possible. Doses may vary based on individual health conditions, allergies, and other medications.</div>';
+  document.getElementById('md-result').innerHTML = html;
 }
 
 /* ─── Quick Actions ─── */

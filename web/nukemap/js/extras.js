@@ -120,33 +120,39 @@ NM.DistanceRings = {
 NM.LayerSwitcher = {
   layers: {},
   current: 'dark',
-  control: null,
 
   init(map) {
     this.layers = {
-      dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OSM &copy; CARTO', subdomains: 'abcd', maxZoom: 19
-      }),
-      satellite: L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: '&copy; Esri', maxZoom: 19
-      }),
-      topo: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; CARTO', subdomains: 'abcd', maxZoom: 19
-      }),
-      osm: L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OSM', maxZoom: 19
-      }),
+      dark:       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {attribution:'&copy; OSM &copy; CARTO',subdomains:'abcd',maxZoom:19}),
+      darkClean:  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {attribution:'&copy; CARTO',subdomains:'abcd',maxZoom:19}),
+      satellite:  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution:'&copy; Esri',maxZoom:19}),
+      satLabels:  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution:'&copy; Esri',maxZoom:19}),
+      terrain:    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {attribution:'&copy; Esri',maxZoom:19}),
+      osm:        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {attribution:'&copy; OSM',maxZoom:19}),
+      voyager:    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {attribution:'&copy; CARTO',subdomains:'abcd',maxZoom:19}),
+      positron:   L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {attribution:'&copy; CARTO',subdomains:'abcd',maxZoom:19}),
     };
-    // Dark is already added by app.js, store ref
+    // Satellite + labels combo: overlay labels on imagery
+    this._labelOverlay = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {subdomains:'abcd',maxZoom:19,pane:'shadowPane'});
     this.map = map;
   },
 
   switchTo(name) {
-    if (!this.layers[name] || name === this.current) return;
-    // Remove current
-    this.map.eachLayer(l => { if (l instanceof L.TileLayer && !(l instanceof L.TileLayer.Canvas)) this.map.removeLayer(l); });
+    if (!this.layers[name]) return;
+    // Remove ALL tile layers (including initial dark layer and any overlays)
+    const toRemove = [];
+    this.map.eachLayer(l => {
+      if (l._url !== undefined && l._tiles !== undefined) toRemove.push(l); // duck-type check for tile layers
+    });
+    toRemove.forEach(l => this.map.removeLayer(l));
+    // Add selected tile layer
     this.layers[name].addTo(this.map);
+    // Add label overlay on satellite
+    if (name === 'satLabels') this._labelOverlay.addTo(this.map);
     this.current = name;
+    // Update active state in both switchers
+    document.querySelectorAll('.ms-btn').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
+    document.querySelectorAll('#layer-switcher .layer-btn').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
   }
 };
 
@@ -413,5 +419,172 @@ NM.FalloutParticles = {
     if (this.animId) cancelAnimationFrame(this.animId);
     if (this.layer) { map.removeLayer(this.layer); this.layer = null; }
     this.particles = [];
+  }
+};
+
+// ---- MULTI-DETONATION DAMAGE HEATMAP ----
+NM.DamageHeatmap = {
+  layer: null,
+
+  draw(map, dets) {
+    this.clear(map);
+    if (!dets.length) return;
+
+    const DmgLayer = L.Layer.extend({
+      onAdd(map) {
+        this._map = map;
+        this._canvas = L.DomUtil.create('canvas', 'dmg-heatmap');
+        this._canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:397;opacity:0.4;mix-blend-mode:screen';
+        map.getPanes().overlayPane.appendChild(this._canvas);
+        map.on('moveend zoomend resize', this._update, this);
+        this._update();
+      },
+      onRemove(map) {
+        L.DomUtil.remove(this._canvas);
+        map.off('moveend zoomend resize', this._update, this);
+      },
+      _update() {
+        const map = this._map, size = map.getSize();
+        this._canvas.width = size.x; this._canvas.height = size.y;
+        const ctx = this._canvas.getContext('2d');
+        ctx.clearRect(0, 0, size.x, size.y);
+
+        for (const d of dets) {
+          const e = d.effects;
+          const maxR = Math.max(e.psi1, e.thermal1, e.emp) || 1;
+          const center = map.latLngToContainerPoint([d.lat, d.lng]);
+          const edgePt = map.latLngToContainerPoint([d.lat + maxR / 111.32, d.lng]);
+          const pixelR = Math.abs(center.y - edgePt.y);
+          if (pixelR < 3) continue;
+
+          const grad = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, pixelR);
+          const intensity = Math.min(1, 0.4 + Math.log10(Math.max(d.yieldKt, 0.1)) * 0.12);
+          grad.addColorStop(0, `rgba(243, 139, 168, ${intensity})`);
+          grad.addColorStop(0.15, `rgba(250, 179, 135, ${intensity * 0.8})`);
+          grad.addColorStop(0.35, `rgba(249, 226, 175, ${intensity * 0.5})`);
+          grad.addColorStop(0.6, `rgba(203, 166, 247, ${intensity * 0.25})`);
+          grad.addColorStop(1, 'rgba(203, 166, 247, 0)');
+
+          ctx.beginPath();
+          ctx.arc(center.x, center.y, pixelR, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+
+        const topLeft = map.containerPointToLayerPoint([0, 0]);
+        L.DomUtil.setPosition(this._canvas, topLeft);
+      }
+    });
+    this.layer = new DmgLayer();
+    this.layer.addTo(map);
+  },
+
+  clear(map) {
+    if (this.layer) { map.removeLayer(this.layer); this.layer = null; }
+  }
+};
+
+// ---- RADIATION ZONE OVERLAY (canvas gradient) ----
+NM.RadiationOverlay = {
+  layer: null,
+
+  draw(map, lat, lng, effects) {
+    this.clear(map);
+    if (!effects.fallout && !effects.radiation) return;
+    const maxR = effects.fallout ? Math.max(effects.radiation, effects.fallout.heavy.length * 0.5) : effects.radiation;
+    if (maxR < 0.01) return;
+
+    const radR = effects.radiation;
+    const RadLayer = L.Layer.extend({
+      onAdd(map) {
+        this._map = map;
+        this._canvas = L.DomUtil.create('canvas', 'rad-overlay');
+        this._canvas.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:398;opacity:0.3';
+        map.getPanes().overlayPane.appendChild(this._canvas);
+        map.on('moveend zoomend resize', this._update, this);
+        this._update();
+      },
+      onRemove(map) {
+        L.DomUtil.remove(this._canvas);
+        map.off('moveend zoomend resize', this._update, this);
+      },
+      _update() {
+        const map = this._map, size = map.getSize();
+        this._canvas.width = size.x; this._canvas.height = size.y;
+        const ctx = this._canvas.getContext('2d');
+        ctx.clearRect(0, 0, size.x, size.y);
+        const center = map.latLngToContainerPoint([lat, lng]);
+        const edgePt = map.latLngToContainerPoint([lat + maxR / 111.32, lng]);
+        const pixelR = Math.abs(center.y - edgePt.y);
+        if (pixelR < 5) return;
+
+        const grad = ctx.createRadialGradient(center.x, center.y, 0, center.x, center.y, pixelR);
+        grad.addColorStop(0, 'rgba(166, 227, 161, 0.9)');    // bright green center
+        grad.addColorStop(0.15, 'rgba(249, 226, 175, 0.7)'); // yellow
+        grad.addColorStop(0.35, 'rgba(250, 179, 135, 0.5)'); // orange
+        grad.addColorStop(0.6, 'rgba(243, 139, 168, 0.25)'); // red
+        grad.addColorStop(0.85, 'rgba(203, 166, 247, 0.08)');// faint purple
+        grad.addColorStop(1, 'rgba(203, 166, 247, 0)');
+
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, pixelR, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        const topLeft = map.containerPointToLayerPoint([0, 0]);
+        L.DomUtil.setPosition(this._canvas, topLeft);
+      }
+    });
+    this.layer = new RadLayer();
+    this.layer.addTo(map);
+  },
+
+  clear(map) {
+    if (this.layer) { map.removeLayer(this.layer); this.layer = null; }
+  }
+};
+
+// ---- CUMULATIVE DOSE CALCULATOR ----
+NM.DoseCalc = {
+  // Calculate cumulative dose for a person arriving at `arriveHr` hours after detonation
+  // staying for `stayHr` hours, at `distKm` from GZ of a `yieldKt` surface burst
+  calculate(yieldKt, fissionFrac, distKm, arriveHr, stayHr) {
+    fissionFrac = (fissionFrac || 50) / 100;
+    const refRate = 3000 * yieldKt * fissionFrac;
+    const distFactor = Math.pow(Math.max(distKm, 0.1), -2);
+    const rateAt1hr = refRate * distFactor;
+
+    // Integrate dose rate R(t) = R1 * t^(-1.2) from arriveHr to arriveHr+stayHr
+    // Integral of t^(-1.2) = t^(-0.2) / (-0.2)
+    const t1 = Math.max(arriveHr, 0.1);
+    const t2 = t1 + stayHr;
+    const dose = rateAt1hr * (Math.pow(t1, -0.2) - Math.pow(t2, -0.2)) / 0.2;
+
+    const rateOnArrival = rateAt1hr * Math.pow(t1, -1.2);
+    const rateOnLeave = rateAt1hr * Math.pow(t2, -1.2);
+
+    let prognosis, progColor;
+    if (dose > 600) { prognosis = 'LETHAL - Near-certain death within days to weeks'; progColor = 'var(--red)'; }
+    else if (dose > 300) { prognosis = 'SEVERE - 50%+ mortality without medical treatment'; progColor = 'var(--red)'; }
+    else if (dose > 100) { prognosis = 'ACUTE - Radiation sickness, hospitalization required'; progColor = 'var(--peach)'; }
+    else if (dose > 50) { prognosis = 'MODERATE - Nausea, fatigue, blood count changes'; progColor = 'var(--yellow)'; }
+    else if (dose > 10) { prognosis = 'LOW - Minimal symptoms, long-term cancer risk elevated'; progColor = 'var(--teal)'; }
+    else { prognosis = 'NEGLIGIBLE - Below threshold for acute effects'; progColor = 'var(--green)'; }
+
+    return { dose, rateOnArrival, rateOnLeave, prognosis, progColor };
+  },
+
+  generateHTML(yieldKt, fissionFrac, distKm, arriveHr, stayHr) {
+    const r = this.calculate(yieldKt, fissionFrac, distKm, arriveHr, stayHr);
+    return `<div class="dose-panel">
+      <div class="dose-main"><span class="dose-val">${r.dose >= 1 ? r.dose.toFixed(0) : r.dose.toFixed(2)}</span><span class="dose-unit">rem</span></div>
+      <div class="dose-prognosis" style="color:${r.progColor}">${r.prognosis}</div>
+      <div class="dose-detail">
+        <div class="dose-row"><span>Rate on arrival (${arriveHr}h)</span><span>${r.rateOnArrival >= 1 ? r.rateOnArrival.toFixed(0) : r.rateOnArrival.toFixed(2)} R/hr</span></div>
+        <div class="dose-row"><span>Rate on departure (${(arriveHr + stayHr).toFixed(1)}h)</span><span>${r.rateOnLeave >= 1 ? r.rateOnLeave.toFixed(0) : r.rateOnLeave.toFixed(2)} R/hr</span></div>
+        <div class="dose-row"><span>Total time exposed</span><span>${stayHr}h</span></div>
+      </div>
+      <div class="dose-note">Assumes outdoor exposure with no shielding. Sheltering reduces dose proportionally to protection factor.</div>
+    </div>`;
   }
 };

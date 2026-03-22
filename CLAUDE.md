@@ -115,7 +115,7 @@ pyinstaller build.spec
 v3.5.0
 
 ## Status
-Working v3.5.0 — Command Center Edition + comprehensive UX audit (6 rounds, 95+ fixes). ~14,300 total lines. Round 6: Go-to coordinates (offline map navigation via lat,lng input), inventory expiration notifications on startup, benchmark trend deltas (green/red indicators vs previous run), chat message/token counter, last backup timestamp indicator with age coloring, Escape key closes app frame overlay, double-click to rename conversations, Ollama quick link redirects to AI Chat, loadInventory/loadContacts/loadActivity error states, readiness bar error fallback. Plus all prior features.
+Working v3.5.0 — Command Center Edition + comprehensive UX/download audit (7 rounds, 110+ fixes). ~14,500 total lines. Download UX overhaul: ZIM download failures now visible with retry guidance + completion toasts, PDF upload response-checked, double-install race condition fixed (mutex), wizard reports skipped models, service install completion notifications, download sizes on Install buttons, downloaded/total bytes shown, disk space warnings, model pull shows speed+size without backward jumps, all map downloads visible, video/PDF uploads show file size, human-readable error messages throughout, map URL auto-filename. Plus all prior features.
 
 ## Gotchas
 - Stirling PDF requires Java 17+ (downloads .jar, not .exe — no Windows exe in releases)

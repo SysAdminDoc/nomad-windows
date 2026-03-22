@@ -160,6 +160,50 @@ NM.Scenarios = [
       {lat:55.752,lng:37.6175,yield_kt:800,burst:'airburst'},
     ]
   },
+  {
+    name: 'London Strike',
+    desc: '3 warheads targeting central London',
+    dets: [
+      {lat:51.5014,lng:-0.1419,yield_kt:800,burst:'airburst'},  // Buckingham Palace
+      {lat:51.5155,lng:-0.0922,yield_kt:455,burst:'airburst'},   // City of London
+      {lat:51.4775,lng:-0.0014,yield_kt:300,burst:'surface'},    // Canary Wharf
+    ]
+  },
+  {
+    name: 'Beijing Strike',
+    desc: '3 warheads on Chinese capital',
+    dets: [
+      {lat:39.9042,lng:116.3974,yield_kt:455,burst:'airburst'},  // Forbidden City
+      {lat:39.9554,lng:116.3976,yield_kt:300,burst:'airburst'},   // Olympic area
+      {lat:39.8665,lng:116.3658,yield_kt:300,burst:'surface'},    // South Beijing
+    ]
+  },
+  {
+    name: 'Tel Aviv + Tehran',
+    desc: 'Middle East exchange scenario',
+    dets: [
+      {lat:32.0853,lng:34.7818,yield_kt:200,burst:'airburst'},   // Tel Aviv
+      {lat:35.6892,lng:51.389,yield_kt:250,burst:'airburst'},     // Tehran
+    ]
+  },
+  {
+    name: 'Korean Peninsula',
+    desc: 'DPRK strikes Seoul, US retaliates on Pyongyang',
+    dets: [
+      {lat:37.5665,lng:126.978,yield_kt:250,burst:'airburst'},    // Seoul
+      {lat:39.0392,lng:125.763,yield_kt:455,burst:'airburst'},     // Pyongyang
+      {lat:39.0319,lng:125.754,yield_kt:100,burst:'surface'},      // Pyongyang military
+    ]
+  },
+  {
+    name: 'US West Coast',
+    desc: 'Strikes on LA, SF, and Seattle',
+    dets: [
+      {lat:34.0522,lng:-118.244,yield_kt:800,burst:'airburst'},
+      {lat:37.7749,lng:-122.419,yield_kt:455,burst:'airburst'},
+      {lat:47.6062,lng:-122.332,yield_kt:300,burst:'airburst'},
+    ]
+  },
 ];
 
 // ---- MEASUREMENT TOOL ----
@@ -385,3 +429,57 @@ NM.Facts = [
   "Prompt radiation (neutrons and gamma rays) is the main killer within 1-2 km of small weapons.",
   "The mushroom cloud from Tsar Bomba rose to 64 km \u2014 above 99.5% of Earth's atmosphere.",
 ];
+
+// ---- BUILDING DAMAGE AT PSI LEVELS ----
+NM.BuildingDamage = {
+  generate(yieldKt) {
+    const levels = [
+      {psi:0.5, r:NM.CustomPsi.calcRadius(yieldKt, 0.5), title:'0.5 psi', color:'var(--teal)',
+        items:['Windows crack and may shatter','Light objects displaced','Doors blown open','Minor plaster damage']},
+      {psi:1, r:NM.CustomPsi.calcRadius(yieldKt, 1), title:'1 psi', color:'var(--yellow)',
+        items:['All glass windows shatter into lethal shrapnel','Roof tiles and shingles torn off','Wood-frame walls crack','Interior partitions damaged','Power lines downed']},
+      {psi:3, r:NM.CustomPsi.calcRadius(yieldKt, 3), title:'3 psi', color:'var(--peach)',
+        items:['Wood-frame houses collapse','Brick veneer walls fail','Factory-type steel frames distorted','Telephone poles snapped','Vehicles overturned','Residential area fires widespread']},
+      {psi:5, r:NM.CustomPsi.calcRadius(yieldKt, 5), title:'5 psi', color:'var(--red)',
+        items:['Most commercial buildings destroyed','Highway bridges damaged','Underground pipes ruptured','Railroad tracks buckled','Firestorm probable in urban areas','Residential area: total destruction']},
+      {psi:10, r:NM.CustomPsi.calcRadius(yieldKt, 10), title:'10 psi', color:'var(--maroon)',
+        items:['Reinforced concrete severely damaged','Steel-frame buildings collapse','Underground shelters threatened','Vehicles thrown and crushed','No standing structures above ground']},
+      {psi:20, r:NM.CustomPsi.calcRadius(yieldKt, 20), title:'20 psi', color:'var(--red)',
+        items:['Reinforced concrete destroyed','Hardened military structures damaged','Everything above ground obliterated','Crater formation begins','Only deep underground bunkers survive']},
+    ];
+
+    let html = '<div class="bldg-list">';
+    for (const lv of levels) {
+      html += `<div class="bldg-item"><div class="bldg-header" style="color:${lv.color}"><span class="bldg-psi">${lv.title}</span><span class="bldg-dist">${NM.fmtR(lv.r)}</span></div><ul class="bldg-effects">`;
+      for (const item of lv.items) html += `<li>${item}</li>`;
+      html += '</ul></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+};
+
+// ---- EMERGENCY ACTION GUIDE ----
+NM.EmergencyGuide = {
+  generate(det) {
+    const e = det.effects;
+    const hasFallout = !!e.fallout;
+    const items = [
+      {title:'Immediate: Flash', body:'DO NOT look toward the blast. The thermal flash causes temporary or permanent blindness. Duck behind any solid cover. Close your eyes and cover them.', color:'var(--red)', always:true},
+      {title:'0-10 seconds: Take Cover', body:'GET DOWN immediately. Lie flat face-down, away from windows. Cover head and neck. The blast wave arrives seconds after the flash \u2014 flying glass is the #1 cause of blast injuries.', color:'var(--peach)', always:true},
+      {title:'10 sec - 2 min: Stay Down', body:'Remain in cover until the blast wave passes and reverses. Debris continues falling. Do not move until shaking stops completely.', color:'var(--yellow)', always:true},
+      {title:'2 - 10 min: Assess & Move', body:'If your building is damaged, move to a more substantial structure. Go to a basement or interior room. Put as many walls between you and the outside as possible. Brick/concrete reduces radiation 10-100x.', color:'var(--teal)', always:true},
+      {title:'10 min - 1 hr: Shelter In Place', body:hasFallout ? `Fallout begins ~10 min after a surface burst. Visible as ash/dust. Do NOT go outside. Seal windows, turn off ventilation. The first hour is the most dangerous \u2014 radiation levels are 1000x higher than at 48 hours.` : 'Airburst produces minimal fallout. Primary danger is from fires and structural collapse. If safe to move, evacuate away from fires.', color:'var(--blue)', always:true},
+      {title:'1 - 48 hr: Stay Sheltered', body:hasFallout ? `7:10 Rule: Every 7x increase in time = 10x decrease in radiation. At 49 hours, radiation is 1/100th of the 1-hour level. Stay sheltered for at least 24 hours, ideally 48-72 hours. Ration water and food.` : 'Monitor emergency broadcasts. Assist injured if safe. Do not approach ground zero \u2014 fires may burn for days.', color:'var(--mauve)', always:hasFallout},
+      {title:'Supplies to Have Ready', body:'Water (1 gal/person/day for 3 days), non-perishable food, battery radio, flashlight, first aid kit, dust masks or cloth, plastic sheeting and duct tape, medications.', color:'var(--green)', always:true},
+    ];
+
+    let html = '<div class="guide-list">';
+    for (const it of items) {
+      if (!it.always && !hasFallout) continue;
+      html += `<div class="guide-item" style="border-left-color:${it.color}"><div class="gi-title" style="color:${it.color}">${it.title}</div><div class="gi-body">${it.body}</div></div>`;
+    }
+    html += '</div>';
+    return html;
+  }
+};

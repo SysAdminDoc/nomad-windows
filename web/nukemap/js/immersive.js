@@ -491,3 +491,304 @@ NM.TestDB = {
     this.layers = [];
   }
 };
+
+// ---- GROUND-LEVEL EXPERIENCE REPORT ----
+NM.GroundReport = {
+  generate(effects, yieldKt) {
+    const distances = [
+      {km: effects.fireball, label: 'Fireball Edge'},
+      {km: effects.psi20, label: '20 psi Zone'},
+      {km: effects.psi5, label: '5 psi Zone'},
+      {km: effects.thermal3, label: '3rd Degree Burn Zone'},
+      {km: effects.psi1, label: '1 psi Zone'},
+      {km: effects.thermal1, label: '1st Degree Burn Zone'},
+    ].filter(d => d.km > 0.01);
+
+    const reports = {
+      'Fireball Edge': {
+        see: 'You see nothing. The air itself becomes plasma at millions of degrees. Everything is vaporized instantly \u2014 buildings, vehicles, people reduced to their component atoms.',
+        hear: 'The sound has not yet arrived. You would not exist long enough to hear it.',
+        feel: 'Instantaneous vaporization. No pain \u2014 nerve conduction speed is far too slow.',
+        survive: 'Impossible. No material on Earth can survive these temperatures.'
+      },
+      '20 psi Zone': {
+        see: 'An impossibly bright flash turns everything white. Half a second later, a wall of debris and dust moving at 500+ mph obliterates everything in sight. Concrete buildings explode outward.',
+        hear: 'A crack like reality splitting open, followed by a roar louder than any jet engine. Your eardrums rupture instantly.',
+        feel: 'A crushing force hits from all directions. 500 mph winds tear clothing from your body. Internal organs rupture from overpressure.',
+        survive: 'Effectively impossible. Even deep basements are crushed.'
+      },
+      '5 psi Zone': {
+        see: 'Blinding white flash, then everything catches fire simultaneously. Windows explode inward as razor shrapnel. Buildings collapse in slow motion. A wall of fire and debris rushes toward you.',
+        hear: 'Thunder that never stops. Cracking, groaning, smashing as every structure fails.',
+        feel: '160 mph winds throw you across the room. Glass shards embedded in exposed skin. Intense heat on exposed surfaces.',
+        survive: 'About 50% fatality rate. Underground concrete shelters offer the best chance.'
+      },
+      '3rd Degree Burn Zone': {
+        see: 'The flash is brighter than looking directly at the sun. Everything combustible ignites \u2014 curtains, paper, clothing, dry leaves. Multiple fires start simultaneously.',
+        hear: 'A deep rolling thunder arrives seconds after the flash, lasting 10+ seconds.',
+        feel: 'Exposed skin chars instantly. Full-thickness burns. Clothing may ignite. Hair catches fire.',
+        survive: 'Being behind any solid wall or inside a building dramatically improves survival. Do NOT look at the flash.'
+      },
+      '1 psi Zone': {
+        see: 'A blinding flash on the horizon. Seconds later, every window in sight explodes inward simultaneously. Car alarms trigger. Power goes out. A mushroom cloud rises.',
+        hear: 'A sharp bang followed by sustained rumbling like distant thunder. Glass shattering everywhere.',
+        feel: 'A sudden blast of hot wind. Glass fragments hit you if you were near a window. The building sways.',
+        survive: 'High survival rate if away from windows. Interior rooms, below window level. The #1 cause of injury here is flying glass.'
+      },
+      '1st Degree Burn Zone': {
+        see: 'A flash bright enough to leave afterimages for minutes. You may be temporarily blinded. A mushroom cloud rises on the horizon.',
+        hear: 'A distant boom arrives 20+ seconds after the flash, like faraway thunder.',
+        feel: 'A brief pulse of heat on exposed skin, like opening an oven door. Sunburn-like reddening develops over minutes.',
+        survive: 'Very high survival rate. Take cover, do NOT look toward the blast. Monitor for fallout.'
+      },
+    };
+
+    let html = '<div class="ground-report">';
+    for (const d of distances) {
+      const r = reports[d.label];
+      if (!r) continue;
+      html += `<div class="gr-zone">
+        <div class="gr-header"><span class="gr-label">${d.label}</span><span class="gr-dist">${NM.fmtDist(d.km)} from GZ</span></div>
+        <div class="gr-row"><span class="gr-sense">See</span><span class="gr-desc">${r.see}</span></div>
+        <div class="gr-row"><span class="gr-sense">Hear</span><span class="gr-desc">${r.hear}</span></div>
+        <div class="gr-row"><span class="gr-sense">Feel</span><span class="gr-desc">${r.feel}</span></div>
+        <div class="gr-row gr-survive"><span class="gr-sense">Survive</span><span class="gr-desc">${r.survive}</span></div>
+      </div>`;
+    }
+    html += '</div>';
+    return html;
+  }
+};
+
+// ---- MUSHROOM CLOUD HEIGHT COMPARISON ----
+NM.CloudCompare = {
+  landmarks: [
+    {name: 'Empire State Building', km: 0.443},
+    {name: 'Burj Khalifa', km: 0.828},
+    {name: 'Commercial aircraft cruise', km: 10},
+    {name: 'Weather balloons', km: 30},
+    {name: 'Edge of space (Karman line)', km: 100},
+    {name: 'Low Earth orbit (ISS)', km: 408},
+  ],
+
+  generate(effects) {
+    const cloudH = effects.cloudTopH;
+    if (cloudH < 0.1) return '';
+
+    const maxH = Math.max(cloudH * 1.3, this.landmarks.find(l => l.km > cloudH)?.km || cloudH * 1.5);
+    const W = 260, H = 140;
+    const sy = (km) => H - 10 - (km / maxH) * (H - 20);
+
+    let svg = `<svg viewBox="0 0 ${W} ${H}" class="cloud-compare-svg">`;
+    svg += `<rect width="${W}" height="${H}" fill="var(--mantle)" rx="6"/>`;
+
+    // Landmarks
+    for (const lm of this.landmarks) {
+      if (lm.km > maxH) continue;
+      const y = sy(lm.km);
+      svg += `<line x1="30" y1="${y}" x2="${W-10}" y2="${y}" stroke="var(--surface1)" stroke-width="0.5" stroke-dasharray="3 4"/>`;
+      svg += `<text x="32" y="${y - 2}" fill="var(--overlay0)" font-size="6">${lm.name}</text>`;
+      svg += `<text x="${W-12}" y="${y - 2}" fill="var(--overlay0)" font-size="6" text-anchor="end">${lm.km >= 1 ? lm.km.toFixed(lm.km >= 10 ? 0 : 1) + ' km' : (lm.km * 1000).toFixed(0) + ' m'}</text>`;
+    }
+
+    // Cloud
+    const cloudY = sy(cloudH);
+    const capW = 30, capH = 12;
+    svg += `<rect x="${13}" y="${cloudY}" width="4" height="${sy(0) - cloudY}" fill="rgba(139,115,85,0.4)" rx="2"/>`;
+    svg += `<ellipse cx="15" cy="${cloudY}" rx="${capW/2}" ry="${capH/2}" fill="rgba(238,136,68,0.5)" stroke="#ee8844" stroke-width="1"/>`;
+    svg += `<text x="15" y="${cloudY - capH/2 - 3}" fill="var(--peach)" font-size="8" font-weight="700" text-anchor="middle">${cloudH.toFixed(1)} km</text>`;
+
+    // Ground
+    svg += `<line x1="5" y1="${sy(0)}" x2="${W-5}" y2="${sy(0)}" stroke="var(--surface2)" stroke-width="1"/>`;
+    svg += `<text x="8" y="${sy(0) + 9}" fill="var(--overlay0)" font-size="6">Ground</text>`;
+
+    svg += '</svg>';
+    return svg;
+  }
+};
+
+// ---- ANIMATED NUCLEAR TEST TIMELINE ----
+NM.TestTimeline = {
+  layers: [], active: false, animId: null,
+
+  play(map) {
+    this.stop(map);
+    this.active = true;
+    const tests = NM.TestDatabase.slice().sort((a, b) => a.year - b.year);
+    const countryColors = {US:'#89b4fa',USSR:'#f38ba8',UK:'#a6e3a1',FR:'#cba6f7',CN:'#fab387',IN:'#f9e2af',PK:'#94e2d5',DPRK:'#f5c2e7'};
+
+    // Show year counter on map
+    const yearEl = document.createElement('div');
+    yearEl.className = 'test-timeline-year';
+    yearEl.id = 'tt-year';
+    document.body.appendChild(yearEl);
+
+    let idx = 0;
+    const tick = () => {
+      if (!this.active || idx >= tests.length) {
+        yearEl.textContent = 'Timeline complete';
+        setTimeout(() => yearEl.remove(), 3000);
+        this.active = false;
+        return;
+      }
+      const t = tests[idx];
+      const color = countryColors[t.country] || '#cdd6f4';
+      const r = Math.max(4, Math.min(25, Math.log10(Math.max(t.kt, 0.1)) * 5));
+
+      // Animated expanding circle
+      const marker = L.circleMarker([t.lat, t.lng], {
+        radius: 2, color, fillColor: color, fillOpacity: 0.7, weight: 1.5, opacity: 0.8
+      }).addTo(map);
+      this.layers.push(marker);
+
+      // Animate expansion
+      let frame = 0;
+      const expand = () => {
+        frame++;
+        if (frame > 15) return;
+        marker.setRadius(2 + (r - 2) * (frame / 15));
+        marker.setStyle({fillOpacity: 0.7 - (frame / 15) * 0.4});
+        requestAnimationFrame(expand);
+      };
+      requestAnimationFrame(expand);
+
+      marker.bindTooltip(`<b>${t.name}</b><br>${t.country} ${t.year}<br>${NM.fmtYield(t.kt)}`, {className: 'test-tooltip'});
+
+      yearEl.innerHTML = `<span style="color:${color}">${t.country}</span> ${t.year} - ${t.name} (${NM.fmtYield(t.kt)})`;
+
+      idx++;
+      this.animId = setTimeout(tick, 350);
+    };
+
+    map.flyTo([20, 0], 2, {duration: 1});
+    setTimeout(tick, 1200);
+  },
+
+  stop(map) {
+    this.active = false;
+    if (this.animId) clearTimeout(this.animId);
+    this.layers.forEach(l => map.removeLayer(l));
+    this.layers = [];
+    const el = document.getElementById('tt-year');
+    if (el) el.remove();
+  }
+};
+
+// ---- CONVENTIONAL WEAPON EQUIVALENTS ----
+NM.ConventionalCompare = {
+  weapons: [
+    {name:'MOAB (GBU-43)', tnt_tons: 11, desc:'Largest non-nuclear US bomb'},
+    {name:'FOAB (Russia)', tnt_tons: 44, desc:'Largest non-nuclear bomb ever'},
+    {name:'Tomahawk cruise missile', tnt_tons: 0.45, desc:'Standard cruise missile'},
+    {name:'Mk 84 bomb', tnt_tons: 0.43, desc:'Standard 2,000 lb bomb'},
+    {name:'Grand Slam (WW2)', tnt_tons: 6.5, desc:'Largest WW2 conventional bomb'},
+    {name:'Oklahoma City bombing', tnt_tons: 2, desc:'1995 truck bomb'},
+    {name:'Halifax Explosion (1917)', tnt_tons: 2900, desc:'Largest accidental non-nuclear'},
+  ],
+
+  generate(yieldKt) {
+    const yieldTons = yieldKt * 1000;
+    let html = '<div class="conv-list">';
+    for (const w of this.weapons) {
+      const count = yieldTons / w.tnt_tons;
+      if (count < 0.5) continue;
+      const display = count >= 1e6 ? (count/1e6).toFixed(1) + 'M' : count >= 1e3 ? (count/1e3).toFixed(count >= 1e4 ? 0 : 1) + 'K' : count.toFixed(count >= 100 ? 0 : 1);
+      html += `<div class="conv-row"><span class="conv-count">${display}x</span><span class="conv-name">${w.name}</span><span class="conv-desc">${w.desc}</span></div>`;
+    }
+    html += '</div>';
+    return html;
+  }
+};
+
+// ---- FALLOUT TIME-LAPSE ----
+NM.FalloutTimelapse = {
+  layer: null,
+  animId: null,
+
+  draw(map, lat, lng, fallout, windAngle, hours) {
+    this.clear(map);
+    if (!fallout) return;
+    const heavyFrac = Math.min(1, hours / 3);
+    const lightFrac = Math.min(1, Math.sqrt(hours / 24));
+    const dAngle = ((windAngle + 180) % 360) * Math.PI / 180;
+    const R = 6371;
+    const mkE = (l, w) => {
+      const pts = [];
+      for (let i = 0; i <= 40; i++) {
+        const t = (i / 40) * 2 * Math.PI;
+        const dx = l * (0.5 + 0.5 * Math.cos(t)) * Math.cos(dAngle) - (w / 2) * Math.sin(t) * Math.sin(dAngle);
+        const dy = l * (0.5 + 0.5 * Math.cos(t)) * Math.sin(dAngle) + (w / 2) * Math.sin(t) * Math.cos(dAngle);
+        pts.push([lat + (dy / R) * (180 / Math.PI), lng + (dx / R) * (180 / Math.PI) / Math.cos(lat * Math.PI / 180)]);
+      }
+      return pts;
+    };
+    const layers = [];
+    layers.push(L.polygon(mkE(fallout.heavy.length * heavyFrac, fallout.heavy.width * Math.min(1, heavyFrac + 0.3)), {
+      color: '#f9e2af', weight: 1.5, opacity: 0.6, fillColor: '#f9e2af', fillOpacity: 0.2, dashArray: '4 4'
+    }));
+    layers.push(L.polygon(mkE(fallout.light.length * lightFrac, fallout.light.width * Math.min(1, lightFrac + 0.2)), {
+      color: '#f9e2af', weight: 1, opacity: 0.3, fillColor: '#f9e2af', fillOpacity: 0.06, dashArray: '6 4'
+    }));
+    this.layer = L.layerGroup(layers).addTo(map);
+  },
+
+  playAnimation(map, lat, lng, fallout, windAngle, onUpdate) {
+    if (this.animId) cancelAnimationFrame(this.animId);
+    let hour = 0.5;
+    const tick = () => {
+      hour += 0.3;
+      if (hour > 48) { this.animId = null; return; }
+      this.draw(map, lat, lng, fallout, windAngle, hour);
+      if (onUpdate) onUpdate(hour);
+      this.animId = requestAnimationFrame(tick);
+    };
+    this.animId = requestAnimationFrame(tick);
+  },
+
+  stopAnimation() {
+    if (this.animId) { cancelAnimationFrame(this.animId); this.animId = null; }
+  },
+
+  clear(map) {
+    this.stopAnimation();
+    if (this.layer) { map.removeLayer(this.layer); this.layer = null; }
+  }
+};
+
+// ---- BLAST WAVE ARRIVAL INDICATOR ----
+NM.BlastArrival = {
+  active: false, el: null, _handler: null,
+
+  init() {
+    this.el = document.createElement('div');
+    this.el.className = 'blast-arrival-indicator';
+    document.body.appendChild(this.el);
+  },
+
+  start(map) {
+    if (!this.el) this.init();
+    this.active = true;
+    this._handler = (e) => {
+      if (!this.active || !NM._lastDet) return;
+      const det = NM._lastDet;
+      const dist = NM.haversine(det.lat, det.lng, e.latlng.lat, e.latlng.lng);
+      const arrivalSec = dist / 0.34;
+      const psi = NM.Shelter.estimatePsi(det.effects, dist);
+      let timeStr;
+      if (arrivalSec < 1) timeStr = (arrivalSec * 1000).toFixed(0) + ' ms';
+      else if (arrivalSec < 60) timeStr = arrivalSec.toFixed(1) + ' sec';
+      else timeStr = (arrivalSec / 60).toFixed(1) + ' min';
+      const sevColor = psi >= 20 ? 'var(--red)' : psi >= 5 ? 'var(--peach)' : psi >= 1 ? 'var(--yellow)' : psi >= 0.5 ? 'var(--teal)' : 'var(--green)';
+      const severity = psi >= 20 ? 'LETHAL' : psi >= 5 ? 'SEVERE' : psi >= 1 ? 'DAMAGE' : psi >= 0.5 ? 'GLASS' : 'SAFE';
+      this.el.innerHTML = `<span class="ba-time">${timeStr}</span> <span class="ba-psi">${psi.toFixed(1)} psi</span> <span class="ba-sev" style="color:${sevColor}">${severity}</span>`;
+      this.el.style.display = 'block';
+    };
+    map.on('mousemove', this._handler);
+  },
+
+  stop(map) {
+    this.active = false;
+    if (this._handler) map.off('mousemove', this._handler);
+    if (this.el) this.el.style.display = 'none';
+  }
+};

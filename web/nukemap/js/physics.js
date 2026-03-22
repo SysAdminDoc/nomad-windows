@@ -31,6 +31,9 @@ NM.calcEffects = function(Y, burstType, heightM, fissionFrac) {
       ? { heavy:{length:1.3*Math.pow(Y*fissionFrac,0.45), width:0.39*Math.pow(Y*fissionFrac,0.35)},
           light:{length:4.6*Math.pow(Y*fissionFrac,0.45), width:1.1*Math.pow(Y*fissionFrac,0.35)} }
       : null,
+    flashBlindDay:  2.1 * Math.pow(Y, 0.4),   // km - temporary blindness in daylight
+    flashBlindNight: 55 * Math.pow(Y, 0.25),  // km - temporary blindness at night (much larger)
+    firestormR: 0.68 * Math.pow(Y, 0.41) * 0.85, // km - firestorm probability zone (inside 3rd degree burns)
     burstHeight: h, optimalHeight: optH, isSurface, yieldKt: Y
   };
 };
@@ -38,10 +41,12 @@ NM.calcEffects = function(Y, burstType, heightM, fissionFrac) {
 NM.calcTimeline = function(Y, e) {
   const items = [
     {time:'0 ms', desc:'Detonation. X-ray pulse heats air to millions of degrees.'},
+    {time:'0.1 ms', desc:'Thermal flash. Temporary blindness to '+NM.fmtR(e.flashBlindDay)+' (day) or '+NM.fmtR(e.flashBlindNight)+' (night).'},
     {time: (0.0013*Math.pow(Y,0.4)*1000).toFixed(0)+' ms', desc:'Fireball reaches max size ('+NM.fmtR(e.fireball)+' radius). Surface temperature ~10,000,000\u00B0C.'},
     {time: NM.fmtTime(e.psi5/0.34), desc:'Blast wave at 5 psi ('+NM.fmtR(e.psi5)+'). Buildings destroyed. 160 mph winds.'},
     {time: NM.fmtTime(e.psi1/0.34), desc:'Blast wave at 1 psi ('+NM.fmtR(e.psi1)+'). Windows shatter into shrapnel.'},
   ];
+  if (e.firestormR > 0.1) items.push({time:'~5 min', desc:'Firestorm ignites within '+NM.fmtR(e.firestormR)+'. Hurricane-force inward winds feed the fire.'});
   if (e.isSurface && e.fallout) {
     items.push({time:'~10 min', desc:'Mushroom cloud stabilizes at ~'+e.cloudTopH.toFixed(1)+' km. Fallout begins.'});
     items.push({time:'~30 min', desc:'Heaviest fallout within '+NM.fmtR(e.fallout.heavy.length)+' downwind.'});
@@ -85,10 +90,10 @@ NM.findNearestCity = function(lat,lng){
 };
 
 // Formatting
-NM.fmtR = function(km){if(km<0.01)return Math.round(km*1000)+' m';if(km<1)return(km*1000).toFixed(0)+' m';if(km<10)return km.toFixed(2)+' km';if(km<100)return km.toFixed(1)+' km';return km.toFixed(0)+' km'};
-NM.fmtArea = function(km){const a=Math.PI*km*km;if(a<0.01)return(a*1e6).toFixed(0)+' m\u00B2';if(a<1)return(a*100).toFixed(0)+' ha';return a.toFixed(1)+' km\u00B2'};
-NM.fmtYield = function(kt){if(kt<0.001)return(kt*1e6).toFixed(0)+' g';if(kt<1)return(kt<0.01?(kt*1000).toFixed(1):(kt*1000).toFixed(0))+' tons';if(kt<1000)return(kt>=100?kt.toFixed(0):kt.toFixed(1))+' kT';return(kt/1000).toFixed(kt>=10000?0:1)+' MT'};
-NM.fmtNum = function(n){if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(n>=1e4?0:1)+'K';return Math.round(n).toLocaleString()};
+NM.fmtR = function(km){if(!isFinite(km))return'--';if(km<0.01)return Math.round(km*1000)+' m';if(km<1)return(km*1000).toFixed(0)+' m';if(km<10)return km.toFixed(2)+' km';if(km<100)return km.toFixed(1)+' km';return km.toFixed(0)+' km'};
+NM.fmtArea = function(km){if(!isFinite(km))return'--';const a=Math.PI*km*km;if(a<0.01)return(a*1e6).toFixed(0)+' m\u00B2';if(a<1)return(a*100).toFixed(0)+' ha';return a.toFixed(1)+' km\u00B2'};
+NM.fmtYield = function(kt){if(!isFinite(kt)||isNaN(kt))return'--';if(kt<0.001)return(kt*1e6).toFixed(0)+' g';if(kt<1)return(kt<0.01?(kt*1000).toFixed(1):(kt*1000).toFixed(0))+' tons';if(kt<1000)return(kt>=100?kt.toFixed(0):kt.toFixed(1))+' kT';return(kt/1000).toFixed(kt>=10000?0:1)+' MT'};
+NM.fmtNum = function(n){if(!isFinite(n)||isNaN(n))return'--';if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(n>=1e4?0:1)+'K';return Math.round(n).toLocaleString()};
 NM.fmtDist = function(km){const mi=km*0.621371;return NM.fmtR(km)+' ('+(mi<1?(mi*5280).toFixed(0)+' ft':mi.toFixed(mi<10?1:0)+' mi')+')'};
 NM.fmtTime = function(s){if(s<1)return(s*1000).toFixed(0)+' ms';if(s<60)return s.toFixed(1)+' sec';return(s/60).toFixed(1)+' min'};
 NM.sliderToYield = function(v){return Math.pow(10,-3+(v/1000)*8)};

@@ -1,14 +1,16 @@
-// NukeMap v3.0.0 - Main Application Controller
+// NukeMap v3.3.0 - Main Application Controller
 window.NM = window.NM || {};
 
 (function() {
 'use strict';
 
 let map, currentDets = [], windAngle = 0, multiMode = false, mirvMode = false, currentMirvPreset = null;
+NM._nightMode = false;
 
 // ---- MAP INIT ----
 function initMap() {
-  map = L.map('map', {center: [39.83, -98.58], zoom: 5, zoomControl: true, attributionControl: true});
+  map = L.map('map', {center: [39.83, -98.58], zoom: 5, zoomControl: true, attributionControl: true, zoomSnap: 0.5});
+  L.control.scale({position: 'bottomleft', imperial: true, metric: true, maxWidth: 200}).addTo(map);
   NM._map = map; // expose for mushroom3d positioning
   const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '&copy; <a href="https://osm.org">OSM</a> &copy; <a href="https://carto.com">CARTO</a>',
@@ -43,9 +45,18 @@ function initMap() {
   window.addEventListener('offline', () => showBadge(false));
 
   map.on('click', e => onMapClick(e.latlng.lat, e.latlng.lng));
+  map.on('contextmenu', e => { e.originalEvent.preventDefault(); onMapClick(e.latlng.lat, e.latlng.lng); });
   map.on('mousemove', e => { document.getElementById('coords').textContent = `${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`; });
   map.on('moveend zoomend', () => { if (NM.Mushroom3D.active) NM.Mushroom3D.onMapMove(); });
   map.getContainer().classList.add('crosshair');
+
+  // Dismiss loading overlay once first tile loads
+  const lo = document.getElementById('loading-overlay');
+  if (lo) {
+    const dismiss = () => { lo.classList.add('hidden'); setTimeout(() => lo.remove(), 600); };
+    dark.once('load', dismiss);
+    setTimeout(dismiss, 4000); // fallback
+  }
 
   NM.Heatmap.init(map);
   loadFromURL();
@@ -85,11 +96,25 @@ function onMapClick(lat, lng) {
 // ---- DETONATION ----
 function triggerDetonation(lat, lng) {
   const Y = getYield();
-  const burst = getBurst();
+  let burst = getBurst();
+  const isHEMP = burst === 'hemp';
+  if (isHEMP) burst = 'airburst'; // HEMP uses airburst physics but overrides effects
   const hM = burst === 'custom' ? (+$('burst-height').value || 0) : 0;
   const fission = +$('fission-pct').value || 50;
-  const effects = NM.calcEffects(Y, burst, hM, fission);
-  const cas = NM.estimateCasualties(lat, lng, effects);
+  const effects = NM.calcEffects(Y, isHEMP ? 'airburst' : burst, hM, fission);
+
+  // HEMP override: no blast/thermal at ground level, massive EMP
+  if (isHEMP) {
+    effects.fireball = 0; effects.psi200 = 0; effects.psi20 = 0; effects.psi5 = 0;
+    effects.psi3 = 0; effects.psi1 = 0; effects.thermal3 = 0; effects.thermal2 = 0;
+    effects.thermal1 = 0; effects.radiation = 0; effects.craterR = 0; effects.craterDepth = 0;
+    effects.firestormR = 0; effects.flashBlindDay = 0; effects.flashBlindNight = 0;
+    effects.fallout = null;
+    effects.emp = Math.min(2200, 40 * Math.pow(Y, 0.25)); // continent-scale EMP
+    effects.burstHeight = 400000; // 400 km
+    effects.isSurface = false;
+  }
+  const cas = isHEMP ? {deaths: 0, injuries: 0, density: 0} : NM.estimateCasualties(lat, lng, effects);
 
   // Single mode: clear previous
   if (!multiMode) {
@@ -99,8 +124,8 @@ function triggerDetonation(lat, lng) {
   }
 
   const det = {
-    id: Date.now(), lat, lng, yieldKt: Y, burstType: burst, heightM: hM, fission, effects, casualties: cas, layers: [],
-    weapon: $('weapon-select').selectedOptions[0]?.textContent || 'Custom'
+    id: Date.now(), lat, lng, yieldKt: Y, burstType: isHEMP ? 'hemp' : burst, heightM: hM, fission, effects, casualties: cas, layers: [],
+    weapon: $('weapon-select').selectedOptions[0]?.textContent || 'Custom', isHEMP
   };
 
   // Draw static effect rings
@@ -147,6 +172,8 @@ function triggerDetonation(lat, lng) {
   if ($('distfromgz-check').checked) NM.DistanceIndicator.start(map, det.lat, det.lng);
   if ($('thermal-check').checked) NM.ThermalOverlay.draw(map, det.lat, det.lng, effects);
   if ($('falloutanim-check').checked && effects.fallout) NM.FalloutParticles.start(map, det.lat, det.lng, effects.fallout, windAngle);
+  if ($('radoverlay-check').checked) NM.RadiationOverlay.draw(map, det.lat, det.lng, effects);
+  if ($('dmgheatmap-check').checked) NM.DamageHeatmap.draw(map, currentDets);
 
   // Show radiation decay & psi sections in Tools tab
   if (effects.isSurface) $('raddecay-section').style.display = '';
@@ -184,13 +211,42 @@ function triggerDetonation(lat, lng) {
   if (wInfo) { $('weaponinfo-section').style.display = ''; $('weaponinfo-content').innerHTML = wInfo; }
   else $('weaponinfo-section').style.display = 'none';
 
+  // Nearby strategic targets
+  updateNearbyTargets(det);
+
+  // Ground-level experience report
+  $('ground-section').style.display = '';
+  $('ground-content').innerHTML = NM.GroundReport.generate(effects, Y);
+
+  // Cloud height comparison
+  $('cloudcompare-section').style.display = '';
+  $('cloudcompare-content').innerHTML = NM.CloudCompare.generate(effects);
+
+  // Emergency guide
+  $('guide-section').style.display = '';
+  $('guide-content').innerHTML = NM.EmergencyGuide.generate(det);
+
+  // Dose calculator visibility
+  if (effects.isSurface) $('dosecalc-section').style.display = '';
+
   // Seismic equivalent
   $('seismic-section').style.display = '';
   $('seismic-content').innerHTML = NM.Seismic.generateHTML(Y, effects.isSurface);
 
+  // Conventional weapon comparison
+  $('conventional-section').style.display = '';
+  $('conventional-content').innerHTML = NM.ConventionalCompare.generate(Y);
+
+  // Building damage
+  $('bldgdmg-section').style.display = '';
+  $('bldgdmg-content').innerHTML = NM.BuildingDamage.generate(Y);
+
   // Size comparisons
   $('sizecompare-section').style.display = '';
   $('sizecompare-content').innerHTML = NM.SizeCompare.generate(effects);
+
+  // Fallout time-lapse visibility
+  if (effects.fallout) $('fallout-timelapse').style.display = '';
 
   // Escape time
   $('escape-section').style.display = '';
@@ -216,11 +272,13 @@ function triggerDetonation(lat, lng) {
     });
   }
 
-  // Zoom to fit
-  const largest = [effects.emp, effects.thermal1, effects.psi1].filter(r => r > 0).sort((a, b) => b - a)[0];
-  if (largest) {
-    map.fitBounds(L.circle([lat, lng], {radius: largest * 1000}).getBounds().pad(0.3), {maxZoom: 15, animate: true, duration: 0.8});
-  }
+  // Auto-switch to Effects tab after first detonation
+  if (currentDets.length === 1) switchTab('effects');
+
+  // Detonation toast
+  showDetToast(det);
+
+  // No auto-zoom — let user control the map view
 
   updateURL();
 }
@@ -261,13 +319,40 @@ function initControls() {
   NM.WEAPONS.forEach((w, i) => { const g = w.country || 'Custom'; if (!groups[g]) groups[g] = []; groups[g].push({...w, idx: i}); });
   for (const [g, ws] of Object.entries(groups)) {
     const og = document.createElement('optgroup'); og.label = g;
-    ws.forEach(w => { const o = document.createElement('option'); o.value = w.idx; o.textContent = w.name; o.title = w.desc; og.appendChild(o); });
+    ws.forEach(w => { const o = document.createElement('option'); o.value = w.idx; o.textContent = `${w.name} (${NM.fmtYield(w.yield_kt)})`; o.title = w.desc; og.appendChild(o); });
     sel.appendChild(og);
   }
   sel.addEventListener('change', () => setYield(NM.WEAPONS[sel.value].yield_kt));
 
-  // Yield slider
-  $('yield-slider').addEventListener('input', () => { const kt = NM.sliderToYield(+$('yield-slider').value); updateYieldUI(kt); syncYieldInput(kt); });
+  // Weapon filter
+  $('weapon-filter').addEventListener('input', () => {
+    const q = $('weapon-filter').value.toLowerCase();
+    sel.querySelectorAll('option').forEach(o => {
+      o.hidden = q && !o.textContent.toLowerCase().includes(q);
+    });
+    sel.querySelectorAll('optgroup').forEach(g => {
+      const visible = [...g.querySelectorAll('option')].some(o => !o.hidden);
+      g.hidden = !visible;
+    });
+  });
+
+  // Yield slider with live preview
+  let yieldPreviewRing = null;
+  $('yield-slider').addEventListener('input', () => {
+    const kt = NM.sliderToYield(+$('yield-slider').value);
+    updateYieldUI(kt); syncYieldInput(kt);
+    // Show preview circle at map center
+    const c = map.getCenter();
+    const previewR = 0.59 * Math.pow(kt, 1/3); // 5 psi radius
+    if (yieldPreviewRing) map.removeLayer(yieldPreviewRing);
+    yieldPreviewRing = L.circle([c.lat, c.lng], {
+      radius: previewR * 1000, color: '#cba6f7', weight: 1.5, opacity: 0.4,
+      fill: false, dashArray: '6 6', className: 'yield-preview-ring', interactive: false
+    }).addTo(map);
+  });
+  $('yield-slider').addEventListener('change', () => {
+    if (yieldPreviewRing) { map.removeLayer(yieldPreviewRing); yieldPreviewRing = null; }
+  });
 
   // Direct yield input
   const syncFromInput = () => {
@@ -289,13 +374,23 @@ function initControls() {
     b.classList.add('active');
     $('height-row').style.display = b.dataset.burst === 'custom' ? '' : 'none';
     $('wind-wrap').style.display = b.dataset.burst === 'surface' ? '' : 'none';
+    $('hemp-info').style.display = b.dataset.burst === 'hemp' ? '' : 'none';
   }));
 
-  // Detonate / Clear / Share
+  // Detonate / Undo / Clear / Share
   $('detonate-btn').addEventListener('click', () => { const c = map.getCenter(); onMapClick(c.lat, c.lng); });
+  $('undo-btn').addEventListener('click', () => { if (currentDets.length) removeDet(currentDets.length - 1); });
   $('clear-btn').addEventListener('click', clearAll);
   $('share-btn').addEventListener('click', showShareLink);
   $('share-copy').addEventListener('click', copyShareLink);
+  $('share-text').addEventListener('click', () => {
+    const text = getShareText();
+    if (text) { navigator.clipboard?.writeText(text); $('share-text').textContent = 'Copied!'; setTimeout(() => $('share-text').textContent = 'Copy Summary', 2000); }
+  });
+  $('share-native').addEventListener('click', () => {
+    const text = getShareText();
+    if (text && navigator.share) navigator.share({title: 'NukeMap Simulation', text, url: location.href}).catch(() => {});
+  });
 
   // Multi-detonation toggle
   $('multi-check').addEventListener('change', () => { multiMode = $('multi-check').checked; });
@@ -318,6 +413,15 @@ function initControls() {
   // Panel toggle
   $('panel-toggle').addEventListener('click', () => $('panel').classList.toggle('collapsed'));
 
+  // Coords click-to-copy
+  $('coords').addEventListener('click', () => {
+    const t = $('coords').textContent;
+    if (t && t !== '--') { navigator.clipboard?.writeText(t); $('coords').classList.add('copied'); setTimeout(() => $('coords').classList.remove('copied'), 1200); }
+  });
+
+  // Fullscreen
+  if ($('fullscreen-btn')) $('fullscreen-btn').addEventListener('click', toggleFullscreen);
+
   // MIRV controls
   initMIRV();
 
@@ -337,13 +441,32 @@ function initControls() {
   NM.DistanceIndicator.init();
   NM.LayerSwitcher.init(map);
 
-  // Layer switcher buttons
+  // Layer switcher buttons (panel)
   document.querySelectorAll('#layer-switcher .layer-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('#layer-switcher .layer-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
       NM.LayerSwitcher.switchTo(btn.dataset.layer);
     });
+  });
+
+  // Floating map switcher
+  $('ms-toggle').addEventListener('click', e => {
+    e.stopPropagation();
+    const isOpen = $('ms-panel').classList.contains('open');
+    $('ms-toggle').classList.toggle('open', !isOpen);
+    $('ms-panel').classList.toggle('open', !isOpen);
+  });
+  $('ms-panel').addEventListener('click', e => e.stopPropagation());
+  document.querySelectorAll('.ms-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      NM.LayerSwitcher.switchTo(btn.dataset.layer);
+      $('ms-toggle').classList.remove('open');
+      $('ms-panel').classList.remove('open');
+    });
+  });
+  document.addEventListener('click', () => {
+    $('ms-toggle').classList.remove('open');
+    $('ms-panel').classList.remove('open');
   });
 
   // Ring labels toggle
@@ -468,9 +591,11 @@ function initControls() {
     } else NM.DraggableGZ.disable(map);
   });
 
-  // Export PNG + KML
+  // Export PNG + KML + JSON + Report
   $('export-png').addEventListener('click', () => NM.ExportPNG.capture());
   $('export-kml').addEventListener('click', () => { if (currentDets.length) NM.KMLExport.download(currentDets); });
+  $('export-json').addEventListener('click', () => { if (currentDets.length) exportJSON(); });
+  $('export-report').addEventListener('click', () => { if (currentDets.length) exportReport(); });
 
   // GPS check
   $('gps-check').addEventListener('click', () => NM.GPSSafe.check(map));
@@ -488,6 +613,66 @@ function initControls() {
     if ($('contours-check').checked && NM._lastDet?.effects.fallout) {
       NM.FalloutContours.draw(map, NM._lastDet.lat, NM._lastDet.lng, NM._lastDet.effects.fallout, windAngle);
     } else NM.FalloutContours.clear(map);
+  });
+
+  // Radiation overlay
+  $('radoverlay-check').addEventListener('change', () => {
+    if ($('radoverlay-check').checked && currentDets.length) {
+      const det = currentDets[currentDets.length - 1];
+      NM.RadiationOverlay.draw(map, det.lat, det.lng, det.effects);
+    } else NM.RadiationOverlay.clear(map);
+  });
+
+  // Damage heatmap
+  $('dmgheatmap-check').addEventListener('change', () => {
+    if ($('dmgheatmap-check').checked && currentDets.length) NM.DamageHeatmap.draw(map, currentDets);
+    else NM.DamageHeatmap.clear(map);
+  });
+
+  // Test timeline
+  $('test-timeline-btn').addEventListener('click', () => NM.TestTimeline.play(map));
+  $('test-timeline-stop').addEventListener('click', () => NM.TestTimeline.stop(map));
+
+  // Blast wave arrival indicator
+  $('blastwaveinfo-check').addEventListener('change', () => {
+    if ($('blastwaveinfo-check').checked && currentDets.length) NM.BlastArrival.start(map);
+    else NM.BlastArrival.stop(map);
+  });
+
+  // Fallout time-lapse
+  $('ft-slider').addEventListener('input', () => {
+    const hr = +$('ft-slider').value;
+    $('ft-label').textContent = hr < 24 ? hr + ' hr' : (hr / 24).toFixed(1) + ' d';
+    $('ft-info').textContent = `Fallout extent at ${hr} hour${hr > 1 ? 's' : ''} after detonation`;
+    if (NM._lastDet?.effects.fallout) {
+      NM.FalloutTimelapse.draw(map, NM._lastDet.lat, NM._lastDet.lng, NM._lastDet.effects.fallout, windAngle, hr);
+    }
+  });
+  $('ft-play').addEventListener('click', () => {
+    if (!NM._lastDet?.effects.fallout) return;
+    NM.FalloutTimelapse.playAnimation(map, NM._lastDet.lat, NM._lastDet.lng, NM._lastDet.effects.fallout, windAngle, (hr) => {
+      $('ft-slider').value = Math.min(48, Math.round(hr));
+      $('ft-label').textContent = hr < 24 ? Math.round(hr) + ' hr' : (hr / 24).toFixed(1) + ' d';
+      $('ft-info').textContent = `Fallout extent at ${Math.round(hr)} hours after detonation`;
+    });
+  });
+
+  // Night mode toggle
+  $('night-check').addEventListener('change', () => {
+    NM._nightMode = $('night-check').checked;
+    $('night-label').textContent = NM._nightMode ? 'Night mode ON (flash blindness 20x)' : 'Night mode (flash blindness)';
+    if (currentDets.length) { updateLegend(currentDets[currentDets.length - 1]); }
+  });
+
+  // Dose calculator
+  $('dose-calc').addEventListener('click', () => {
+    if (!currentDets.length) return;
+    const det = currentDets[currentDets.length - 1];
+    if (!det.effects.isSurface) { $('dose-result').innerHTML = '<div style="color:var(--overlay0);font-size:11px">Dose calculator requires a surface burst (fallout)</div>'; return; }
+    const dist = +$('dose-dist').value || 5;
+    const arrive = +$('dose-arrive').value || 1;
+    const stay = +$('dose-stay').value || 4;
+    $('dose-result').innerHTML = NM.DoseCalc.generateHTML(det.yieldKt, det.fission, dist, arrive, stay);
   });
 
   // Test database
@@ -517,6 +702,61 @@ function initControls() {
     NM.WW3.paused = !NM.WW3.paused;
     $('ww3-pause').textContent = NM.WW3.paused ? 'Resume' : 'Pause';
   });
+
+  // Collapsible sections in Effects/Encyclopedia tabs
+  const alwaysOpen = new Set(['legend-section','cloud-section','timeline-section','shelter-section']);
+  document.querySelectorAll('#tab-effects .section, #tab-encyclopedia .section').forEach(sec => {
+    const title = sec.querySelector('.section-title');
+    if (!title) return;
+    title.classList.add('collapsible');
+    title.addEventListener('click', () => {
+      title.classList.toggle('collapsed');
+      sec.classList.toggle('sec-collapsed');
+    });
+    // Auto-collapse secondary sections
+    if (!alwaysOpen.has(sec.id)) {
+      title.classList.add('collapsed');
+      sec.classList.add('sec-collapsed');
+    }
+  });
+
+  // WW3 quick-launch button
+  $('ww3-quick-btn').addEventListener('click', () => {
+    switchTab('tools');
+    // Scroll WW3 section into view
+    const ww3Sec = $('ww3-scenario')?.closest('.section');
+    if (ww3Sec) ww3Sec.scrollIntoView({behavior: 'smooth', block: 'start'});
+    // If panel is collapsed, open it
+    $('panel').classList.remove('collapsed');
+  });
+
+  // Quick weapon bar
+  document.querySelectorAll('.qw-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const kt = +chip.dataset.kt;
+      setYield(kt);
+      const i = NM.WEAPONS.findIndex(w => Math.abs(w.yield_kt - kt) < 0.01);
+      if (i >= 0) $('weapon-select').value = i;
+      document.querySelectorAll('.qw-chip').forEach(c => c.classList.remove('qw-active'));
+      chip.classList.add('qw-active');
+    });
+  });
+
+  // Save/Load scenarios
+  $('save-btn').addEventListener('click', () => {
+    if (!currentDets.length) return;
+    const name = $('save-name').value.trim() || `Scenario ${new Date().toLocaleDateString()}`;
+    const saves = JSON.parse(localStorage.getItem('nukemap-saves') || '[]');
+    saves.push({
+      name, date: Date.now(),
+      dets: currentDets.map(d => ({lat:d.lat,lng:d.lng,yieldKt:d.yieldKt,burstType:d.burstType,weapon:d.weapon}))
+    });
+    localStorage.setItem('nukemap-saves', JSON.stringify(saves));
+    $('save-name').value = '';
+    renderSavedList();
+  });
+  renderSavedList();
+  initEncyclopedia();
 
   // Rotating facts banner
   let factIdx = Math.floor(Math.random() * NM.Facts.length);
@@ -637,7 +877,7 @@ function initSearch() {
   inp.addEventListener('input', () => {
     const items = NM.searchLocations(inp.value); si = -1;
     if (!items.length) { res.classList.remove('active'); return; }
-    res.innerHTML = items.map((it, i) => `<div class="sr-item" data-idx="${i}"><div><div class="sr-name">${NM.esc(it.name)}</div><div class="sr-detail">${NM.esc(it.detail)}</div></div>${it.pop ? `<div class="sr-pop">${NM.fmtNum(it.pop)}</div>` : ''}</div>`).join('');
+    res.innerHTML = items.map((it, i) => `<div class="sr-item" data-idx="${i}"><div><div class="sr-name">${it.isTarget ? '<span style="color:var(--red);font-size:8px;margin-right:3px">&#9733;</span>' : ''}${NM.esc(it.name)}</div><div class="sr-detail">${NM.esc(it.detail)}</div></div>${it.pop ? `<div class="sr-pop">${NM.fmtNum(it.pop)}</div>` : ''}</div>`).join('');
     res.classList.add('active');
     res.querySelectorAll('.sr-item').forEach(el => el.addEventListener('click', () => { const it = items[+el.dataset.idx]; selectResult(it); }));
   });
@@ -659,7 +899,8 @@ function updateDetsList() {
     const nc = NM.findNearestCity(d.lat, d.lng);
     const nm = nc && nc.dist < 50 ? nc.name : `${d.lat.toFixed(2)}, ${d.lng.toFixed(2)}`;
     const el = document.createElement('div'); el.className = 'det-item';
-    el.innerHTML = `<span class="det-idx">${i + 1}</span><span class="det-name">${NM.esc(nm)}</span><span class="det-yield">${NM.fmtYield(d.yieldKt)}</span><button class="det-remove" data-i="${i}">&times;</button>`;
+    const wShort = d.weapon ? d.weapon.split('(')[0].trim() : '';
+    el.innerHTML = `<span class="det-idx">${i + 1}</span><div class="det-info"><span class="det-name">${NM.esc(nm)}</span><span class="det-weapon">${NM.esc(wShort)}</span></div>${d.isHEMP ? '<span class="det-badge">HEMP</span>' : ''}<span class="det-yield">${NM.fmtYield(d.yieldKt)}</span><button class="det-remove" data-i="${i}">&times;</button>`;
     el.querySelector('.det-remove').addEventListener('click', e => { e.stopPropagation(); removeDet(i); });
     el.addEventListener('click', e => { if (!e.target.classList.contains('det-remove')) map.flyTo([d.lat, d.lng], map.getZoom(), {duration: 0.6}); });
     list.appendChild(el);
@@ -669,12 +910,15 @@ function updateDetsList() {
 function updateLegend(det) {
   const c = $('legend-items'); c.innerHTML = '';
   const e = det.effects;
+  const flashR = NM._nightMode ? e.flashBlindNight : e.flashBlindDay;
   const items = [
     {id: 'fireball', r: e.fireball, color: '#f5e0dc'}, {id: 'radiation', r: e.radiation, color: '#a6e3a1'},
     {id: 'psi200', r: e.psi200, color: '#89dceb'}, {id: 'psi20', r: e.psi20, color: '#89b4fa'},
+    {id: 'firestorm', r: e.firestormR, color: '#e64553'},
     {id: 'psi5', r: e.psi5, color: '#cba6f7'}, {id: 'thermal3', r: e.thermal3, color: '#fab387'},
     {id: 'psi1', r: e.psi1, color: '#f9e2af'}, {id: 'thermal1', r: e.thermal1, color: '#f5c2e7'},
     {id: 'emp', r: e.emp, color: '#94e2d5'},
+    {id: 'flashblind', r: flashR, color: '#b4befe'},
   ];
   if (e.craterR > 0) items.unshift({id: 'crater', r: e.craterR, color: '#585b70'});
 
@@ -682,7 +926,8 @@ function updateLegend(det) {
     if (it.r < 0.0005) return;
     const def = NM.EFFECTS_DEF.find(d => d.id === it.id); if (!def) return;
     const div = document.createElement('div'); div.className = 'legend-item';
-    div.innerHTML = `<div class="legend-dot" style="background:${it.color}"></div><div class="legend-label">${def.label}<span class="legend-desc">${def.desc.split('.')[0]}</span></div><div class="legend-value">${NM.fmtR(it.r)}<span class="legend-area">${NM.fmtArea(it.r)}</span></div><button class="legend-eye on" data-eid="${it.id}">&#10003;</button>`;
+    const popEst = Math.round(Math.PI * it.r * it.r * (det.casualties.density || 40));
+    div.innerHTML = `<div class="legend-dot" style="background:${it.color}"></div><div class="legend-label">${def.label}<span class="legend-desc">${def.desc.split('.')[0]}</span><span class="legend-pop">~${NM.fmtNum(popEst)} people in zone</span></div><div class="legend-value">${NM.fmtR(it.r)}<span class="legend-area">${NM.fmtArea(it.r)}</span></div><button class="legend-eye on" data-eid="${it.id}">&#10003;</button>`;
     div.querySelector('.legend-eye').addEventListener('click', ev => {
       const btn = ev.currentTarget; btn.classList.toggle('on');
       div.classList.toggle('dimmed', !btn.classList.contains('on'));
@@ -713,10 +958,32 @@ function updateCrater(det) {
   const e = det.effects;
   if (e.craterR <= 0) { $('crater-section').style.display = 'none'; return; }
   $('crater-section').style.display = '';
-  $('crater-panel').innerHTML = [
+  const stats = [
     ['Crater radius', NM.fmtDist(e.craterR)], ['Crater depth', NM.fmtDist(e.craterDepth)],
     ['Lip height', '~' + NM.fmtR(e.craterDepth * 0.5)], ['Ejecta radius', '~' + NM.fmtR(e.craterR * 2)],
   ].map(([l, v]) => `<div class="cloud-row"><span class="cl">${l}</span><span class="cv">${v}</span></div>`).join('');
+
+  // SVG crater cross-section
+  if (e.craterR < 0.001 || e.craterDepth < 0.001) { $('crater-panel').innerHTML = stats; return; }
+  const W = 280, H = 100;
+  const rPx = 120, dPx = Math.max(10, 50);
+  const lipH = dPx * 0.35;
+  const ejectaR = rPx * 1.6;
+  const svg = `<svg viewBox="0 0 ${W} ${H}" class="crater-svg">
+    <rect x="0" y="0" width="${W}" height="${H}" fill="var(--mantle)" rx="6"/>
+    <line x1="10" y1="${H*0.55}" x2="${W-10}" y2="${H*0.55}" stroke="var(--surface1)" stroke-width="0.5" stroke-dasharray="4 4"/>
+    <text x="12" y="${H*0.55-3}" fill="var(--overlay0)" font-size="7">Ground level</text>
+    <path d="M${W/2 - ejectaR} ${H*0.55} Q${W/2 - rPx} ${H*0.55 - lipH} ${W/2 - rPx*0.8} ${H*0.55 + 2} Q${W/2} ${H*0.55 + dPx} ${W/2 + rPx*0.8} ${H*0.55 + 2} Q${W/2 + rPx} ${H*0.55 - lipH} ${W/2 + ejectaR} ${H*0.55}" fill="none" stroke="var(--surface2)" stroke-width="1.5"/>
+    <path d="M${W/2 - rPx*0.8} ${H*0.55 + 2} Q${W/2} ${H*0.55 + dPx} ${W/2 + rPx*0.8} ${H*0.55 + 2}" fill="rgba(88,91,112,0.3)" stroke="var(--overlay0)" stroke-width="1"/>
+    <line x1="${W/2 - rPx*0.8}" y1="${H*0.55 + 5}" x2="${W/2 + rPx*0.8}" y2="${H*0.55 + 5}" stroke="var(--peach)" stroke-width="0.8" stroke-dasharray="3 2"/>
+    <text x="${W/2}" y="${H*0.55 + 14}" fill="var(--peach)" font-size="7" text-anchor="middle">${NM.fmtR(e.craterR * 2)} diameter</text>
+    <line x1="${W/2 + 2}" y1="${H*0.55}" x2="${W/2 + 2}" y2="${H*0.55 + dPx - 3}" stroke="var(--red)" stroke-width="0.8" stroke-dasharray="3 2"/>
+    <text x="${W/2 + 8}" y="${H*0.55 + dPx/2 + 2}" fill="var(--red)" font-size="7">${NM.fmtR(e.craterDepth)}</text>
+    <text x="${W/2 - ejectaR + 5}" y="${H*0.55 - lipH - 3}" fill="var(--overlay0)" font-size="6">Lip</text>
+    <text x="${W/2 + rPx + 5}" y="${H*0.55 - 5}" fill="var(--overlay0)" font-size="6">Ejecta</text>
+  </svg>`;
+
+  $('crater-panel').innerHTML = stats + svg;
 }
 
 function updateShelter(det) {
@@ -724,17 +991,60 @@ function updateShelter(det) {
   $('shelter-content').innerHTML = NM.Shelter.generateReport(det.effects);
 }
 
+function updateNearbyTargets(det) {
+  const allTargets = [
+    ...(NM.WW3_TARGETS_US || []).map(t => ({...t, side: 'US'})),
+    ...(NM.WW3_TARGETS_RU || []).map(t => ({...t, side: 'Russia'})),
+    ...(NM.WW3_TARGETS_NATO || []).map(t => ({...t, side: 'NATO'})),
+  ];
+  const nearby = allTargets.map(t => ({...t, dist: NM.haversine(det.lat, det.lng, t.lat, t.lng)}))
+    .filter(t => t.dist < 200)
+    .sort((a, b) => a.dist - b.dist)
+    .slice(0, 12);
+
+  if (!nearby.length) { $('nearby-section').style.display = 'none'; return; }
+  $('nearby-section').style.display = '';
+
+  const typeColors = {icbm:'#f38ba8',bomber:'#fab387',sub:'#89b4fa',c2:'#cba6f7',nuclear:'#a6e3a1',military:'#f9e2af',infra:'#94e2d5',city:'#f5c2e7'};
+  const typeLabels = {icbm:'ICBM',bomber:'Bomber',sub:'Submarine',c2:'Command',nuclear:'Nuclear',military:'Military',infra:'Infrastructure',city:'City'};
+
+  let html = '<div class="nearby-list">';
+  for (const t of nearby) {
+    const c = typeColors[t.type] || '#cdd6f4';
+    const inBlast = t.dist <= det.effects.psi1;
+    html += `<div class="nearby-item${inBlast ? ' nearby-hit' : ''}">
+      <div class="nb-header"><span class="nb-type" style="color:${c}">${typeLabels[t.type] || t.type}</span><span class="nb-dist">${NM.fmtR(t.dist)}</span></div>
+      <div class="nb-name">${NM.esc(t.name)}</div>
+      ${t.cat ? `<div class="nb-cat">${NM.esc(t.cat.substring(0, 80))}${t.cat.length > 80 ? '...' : ''}</div>` : ''}
+      ${inBlast ? '<div class="nb-status">WITHIN BLAST ZONE</div>' : ''}
+    </div>`;
+  }
+  html += '</div>';
+  $('nearby-content').innerHTML = html;
+}
+
 function updateStats() {
-  let td = 0, ti = 0; currentDets.forEach(d => { td += d.casualties.deaths; ti += d.casualties.injuries; });
+  let td = 0, ti = 0, ty = 0; currentDets.forEach(d => { td += d.casualties.deaths; ti += d.casualties.injuries; ty += d.yieldKt; });
+  const hiro = ty / 15; // Hiroshima equivalents
   $('stat-deaths').textContent = NM.fmtNum(td);
   $('stat-injuries').textContent = NM.fmtNum(ti);
   $('stat-total').textContent = NM.fmtNum(td + ti);
-  $('stat-note').textContent = currentDets.length > 1 ? `Across ${currentDets.length} detonations` : 'Based on estimated population density';
+  $('stat-yield').textContent = ty > 0 ? NM.fmtYield(ty) : '--';
+  $('stat-note').textContent = currentDets.length > 1 ? `${currentDets.length} detonations | ${hiro >= 10 ? hiro.toFixed(0) : hiro.toFixed(1)}x Hiroshima` : currentDets.length === 1 ? (hiro >= 0.01 ? `${hiro >= 10 ? hiro.toFixed(0) : hiro.toFixed(1)}x Hiroshima equivalent` : 'Sub-tactical yield') : 'Detonate a weapon to see estimates';
+
+  // Detonation counter badge
+  const dc = $('det-counter');
+  if (currentDets.length) {
+    $('det-counter-num').textContent = currentDets.length;
+    dc.querySelector('.dc-label').textContent = currentDets.length === 1 ? 'strike' : 'strikes';
+    dc.style.display = '';
+  } else dc.style.display = 'none';
 
   // Info bar
   const bar = $('info-bar');
   if (currentDets.length) {
-    bar.innerHTML = `<div class="ib-stat"><div class="ib-val" style="color:var(--red)">${NM.fmtNum(td)}</div><div class="ib-lbl">Fatalities</div></div><div class="ib-div"></div><div class="ib-stat"><div class="ib-val" style="color:var(--peach)">${NM.fmtNum(ti)}</div><div class="ib-lbl">Injuries</div></div><div class="ib-div"></div><div class="ib-stat"><div class="ib-val" style="color:var(--yellow)">${NM.fmtNum(td + ti)}</div><div class="ib-lbl">Total</div></div>`;
+    const hiroStr = hiro >= 10 ? hiro.toFixed(0) : hiro >= 0.1 ? hiro.toFixed(1) : hiro.toFixed(2);
+    bar.innerHTML = `<div class="ib-stat"><div class="ib-val" style="color:var(--red)">${NM.fmtNum(td)}</div><div class="ib-lbl">Fatalities</div></div><div class="ib-div"></div><div class="ib-stat"><div class="ib-val" style="color:var(--peach)">${NM.fmtNum(ti)}</div><div class="ib-lbl">Injuries</div></div><div class="ib-div"></div><div class="ib-stat"><div class="ib-val" style="color:var(--mauve)">${hiroStr}x</div><div class="ib-lbl">Hiroshimas</div></div><div class="ib-div"></div><div class="ib-stat"><div class="ib-val" style="color:var(--yellow)">${currentDets.length}</div><div class="ib-lbl">${currentDets.length === 1 ? 'Detonation' : 'Detonations'}</div></div>`;
     bar.classList.add('active');
   } else bar.classList.remove('active');
 }
@@ -767,6 +1077,12 @@ function clearAll() {
   NM.FalloutContours.clear(map);
   NM.Geiger.stop(map);
   NM.WW3.stop(map);
+  NM.FalloutTimelapse.clear(map);
+  NM.BlastArrival.stop(map);
+  NM.RadiationOverlay.clear(map);
+  NM.DamageHeatmap.clear(map);
+  NM.TestTimeline.stop(map);
+  $('fallout-timelapse').style.display = 'none';
   NM._lastDet = null;
   updateDetsList(); updateStats(); resetPanels(); updateURL();
 }
@@ -788,8 +1104,15 @@ function resetPanels() {
   $('survival-section').style.display = 'none';
   $('weaponinfo-section').style.display = 'none';
   $('seismic-section').style.display = 'none';
+  $('conventional-section').style.display = 'none';
+  $('bldgdmg-section').style.display = 'none';
   $('sizecompare-section').style.display = 'none';
   $('escape-section').style.display = 'none';
+  $('nearby-section').style.display = 'none';
+  $('ground-section').style.display = 'none';
+  $('cloudcompare-section').style.display = 'none';
+  $('guide-section').style.display = 'none';
+  $('dosecalc-section').style.display = 'none';
   $('legend-items').innerHTML = '<div style="color:var(--overlay0);font-size:12px;padding:10px 0">Detonate a weapon to see effects</div>';
   $('info-bar').classList.remove('active');
 }
@@ -816,8 +1139,201 @@ function loadFromURL() {
   });
 }
 
-function showShareLink() { $('share-section').style.display = ''; $('share-input').value = location.href; switchTab('results'); }
-function copyShareLink() { $('share-input').select(); navigator.clipboard?.writeText($('share-input').value); $('share-copy').textContent = 'Copied!'; setTimeout(() => $('share-copy').textContent = 'Copy', 2000); }
+function showShareLink() {
+  $('share-section').style.display = ''; $('share-input').value = location.href; switchTab('results');
+  // Show native share button if Web Share API available
+  if (navigator.share) $('share-native').style.display = '';
+}
+function copyShareLink() { $('share-input').select(); navigator.clipboard?.writeText($('share-input').value); $('share-copy').textContent = 'Copied!'; setTimeout(() => $('share-copy').textContent = 'Copy Link', 2000); }
+function getShareText() {
+  if (!currentDets.length) return '';
+  let td = 0, ti = 0, ty = 0;
+  currentDets.forEach(d => { td += d.casualties.deaths; ti += d.casualties.injuries; ty += d.yieldKt; });
+  const hiro = (ty / 15);
+  const nc = NM.findNearestCity(currentDets[0].lat, currentDets[0].lng);
+  const loc = nc && nc.dist < 50 ? nc.name : `${currentDets[0].lat.toFixed(2)}, ${currentDets[0].lng.toFixed(2)}`;
+  let text = `NukeMap: ${NM.fmtYield(ty)} (${hiro >= 10 ? hiro.toFixed(0) : hiro.toFixed(1)}x Hiroshima)`;
+  if (currentDets.length === 1) text += ` on ${loc}`;
+  else text += ` across ${currentDets.length} targets`;
+  text += ` | ${NM.fmtNum(td)} killed, ${NM.fmtNum(ti)} injured`;
+  text += `\n${location.href}`;
+  return text;
+}
+
+// ---- WEAPON ENCYCLOPEDIA ----
+function initEncyclopedia() {
+  const list = $('encyclopedia-list'); if (!list) return;
+  const groups = {};
+  const countryOrder = ['US','RU','CN','UK','FR','IN','PK','KP','IL'];
+  const countryNames = {US:'United States',RU:'Russia',CN:'China',UK:'United Kingdom',FR:'France',IN:'India',PK:'Pakistan',KP:'North Korea',IL:'Israel'};
+  NM.WEAPONS.forEach((w, i) => {
+    if (!w.country) return;
+    if (!groups[w.country]) groups[w.country] = [];
+    groups[w.country].push({...w, idx: i});
+  });
+
+  let html = '';
+  for (const code of countryOrder) {
+    const ws = groups[code];
+    if (!ws) continue;
+    html += `<div class="enc-country"><div class="enc-country-name">${countryNames[code] || code} (${ws.length})</div>`;
+    for (const w of ws) {
+      html += `<div class="enc-weapon" data-idx="${w.idx}" data-yield="${w.yield_kt}">
+        <span class="enc-w-name">${NM.esc(w.name)}</span>
+        <span class="enc-w-year">${w.year || ''}</span>
+        <span class="enc-w-yield">${NM.fmtYield(w.yield_kt)}</span>
+      </div>`;
+    }
+    html += '</div>';
+  }
+  list.innerHTML = html;
+
+  list.querySelectorAll('.enc-weapon').forEach(el => {
+    el.addEventListener('click', () => {
+      const idx = +el.dataset.idx;
+      $('weapon-select').value = idx;
+      setYield(NM.WEAPONS[idx].yield_kt);
+      switchTab('weapon');
+      list.querySelectorAll('.enc-weapon').forEach(e => e.classList.remove('enc-selected'));
+      el.classList.add('enc-selected');
+    });
+  });
+}
+
+// ---- EXPORT JSON ----
+function exportJSON() {
+  const data = currentDets.map(d => {
+    const nc = NM.findNearestCity(d.lat, d.lng);
+    return {
+      location: {lat: d.lat, lng: d.lng, nearestCity: nc && nc.dist < 50 ? nc.name : null},
+      weapon: d.weapon, yieldKt: d.yieldKt, burstType: d.burstType,
+      effects: {
+        fireball_km: +d.effects.fireball.toFixed(3), psi20_km: +d.effects.psi20.toFixed(3),
+        psi5_km: +d.effects.psi5.toFixed(3), psi1_km: +d.effects.psi1.toFixed(3),
+        thermal3_km: +d.effects.thermal3.toFixed(3), thermal1_km: +d.effects.thermal1.toFixed(3),
+        radiation_km: +d.effects.radiation.toFixed(3), emp_km: +d.effects.emp.toFixed(3),
+        firestorm_km: +d.effects.firestormR.toFixed(3),
+        cloudTop_km: +d.effects.cloudTopH.toFixed(2),
+      },
+      casualties: d.casualties, hiroshimaEquivalent: +(d.yieldKt / 15).toFixed(2)
+    };
+  });
+  const blob = new Blob([JSON.stringify({version:'3.2.0', generated: new Date().toISOString(), detonations: data}, null, 2)], {type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'nukemap-data.json';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+}
+
+// ---- SUMMARY REPORT ----
+function exportReport() {
+  let td = 0, ti = 0, ty = 0;
+  currentDets.forEach(d => { td += d.casualties.deaths; ti += d.casualties.injuries; ty += d.yieldKt; });
+  const hiro = ty / 15;
+
+  let report = `NUKEMAP DETONATION REPORT\n`;
+  report += `Generated: ${new Date().toLocaleString()}\n`;
+  report += `${'='.repeat(50)}\n\n`;
+  report += `SUMMARY\n`;
+  report += `  Detonations: ${currentDets.length}\n`;
+  report += `  Total Yield: ${NM.fmtYield(ty)} (${hiro.toFixed(1)}x Hiroshima)\n`;
+  report += `  Est. Fatalities: ${NM.fmtNum(td)}\n`;
+  report += `  Est. Injuries: ${NM.fmtNum(ti)}\n`;
+  report += `  Total Affected: ${NM.fmtNum(td + ti)}\n\n`;
+
+  currentDets.forEach((d, i) => {
+    const nc = NM.findNearestCity(d.lat, d.lng);
+    const loc = nc && nc.dist < 50 ? `${nc.name}, ${nc.state}` : `${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}`;
+    report += `DETONATION ${i + 1}: ${d.weapon}\n`;
+    report += `${'-'.repeat(40)}\n`;
+    report += `  Location: ${loc}\n`;
+    report += `  Coordinates: ${d.lat.toFixed(4)}, ${d.lng.toFixed(4)}\n`;
+    report += `  Yield: ${NM.fmtYield(d.yieldKt)} (${(d.yieldKt/15).toFixed(1)}x Hiroshima)\n`;
+    report += `  Burst Type: ${d.burstType}\n`;
+    report += `  Fatalities: ${NM.fmtNum(d.casualties.deaths)}\n`;
+    report += `  Injuries: ${NM.fmtNum(d.casualties.injuries)}\n`;
+    report += `  Effect Radii:\n`;
+    report += `    Fireball: ${NM.fmtDist(d.effects.fireball)}\n`;
+    report += `    20 psi: ${NM.fmtDist(d.effects.psi20)}\n`;
+    report += `    5 psi: ${NM.fmtDist(d.effects.psi5)}\n`;
+    report += `    1 psi: ${NM.fmtDist(d.effects.psi1)}\n`;
+    report += `    3rd deg burns: ${NM.fmtDist(d.effects.thermal3)}\n`;
+    report += `    Firestorm: ${NM.fmtDist(d.effects.firestormR)}\n`;
+    report += `    EMP: ${NM.fmtDist(d.effects.emp)}\n`;
+    report += `    Cloud top: ${NM.fmtDist(d.effects.cloudTopH)}\n`;
+    if (d.effects.fallout) {
+      report += `    Fallout (heavy): ${NM.fmtDist(d.effects.fallout.heavy.length)} downwind\n`;
+      report += `    Fallout (light): ${NM.fmtDist(d.effects.fallout.light.length)} downwind\n`;
+    }
+    report += `\n`;
+  });
+
+  report += `\nPhysics: Glasstone & Dolan, "The Effects of Nuclear Weapons"\n`;
+  report += `Generated by NukeMap v3.3.0 - https://sysadmindoc.github.io/NukeMap/\n`;
+
+  const blob = new Blob([report], {type:'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'nukemap-report.txt';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+}
+
+// ---- SAVE/LOAD SCENARIOS ----
+function renderSavedList() {
+  const list = $('saved-list'); if (!list) return;
+  const saves = JSON.parse(localStorage.getItem('nukemap-saves') || '[]');
+  if (!saves.length) { list.innerHTML = '<div style="color:var(--overlay0);font-size:10px">No saved scenarios</div>'; return; }
+  list.innerHTML = '';
+  saves.forEach((s, i) => {
+    const el = document.createElement('div'); el.className = 'saved-item';
+    el.innerHTML = `<span class="si-name">${NM.esc(s.name)}</span><span class="si-meta">${s.dets.length} det${s.dets.length > 1 ? 's' : ''}</span><button class="si-del" data-i="${i}">&times;</button>`;
+    el.addEventListener('click', e => { if (!e.target.classList.contains('si-del')) loadScenario(s); });
+    el.querySelector('.si-del').addEventListener('click', e => { e.stopPropagation(); deleteSave(i); });
+    list.appendChild(el);
+  });
+}
+
+function loadScenario(s) {
+  clearAll();
+  multiMode = true; $('multi-check').checked = true;
+  if (s.dets.length) map.flyTo([s.dets[0].lat, s.dets[0].lng], s.dets.length > 2 ? 6 : 9, {duration: 1});
+  setTimeout(() => {
+    s.dets.forEach((d, i) => {
+      setTimeout(() => {
+        setYield(d.yieldKt);
+        document.querySelectorAll('.burst-btn').forEach(b => b.classList.toggle('active', b.dataset.burst === d.burstType));
+        $('wind-wrap').style.display = d.burstType === 'surface' ? '' : 'none';
+        triggerDetonation(d.lat, d.lng);
+      }, i * 400);
+    });
+  }, 1200);
+}
+
+function deleteSave(i) {
+  const saves = JSON.parse(localStorage.getItem('nukemap-saves') || '[]');
+  saves.splice(i, 1);
+  localStorage.setItem('nukemap-saves', JSON.stringify(saves));
+  renderSavedList();
+}
+
+// ---- DETONATION TOAST ----
+function showDetToast(det) {
+  const nc = NM.findNearestCity(det.lat, det.lng);
+  const loc = nc && nc.dist < 50 ? nc.name : `${det.lat.toFixed(2)}, ${det.lng.toFixed(2)}`;
+  const hiro = det.yieldKt / 15;
+  const hiroStr = hiro >= 10 ? hiro.toFixed(0) + 'x Hiroshima' : hiro >= 1 ? hiro.toFixed(1) + 'x Hiroshima' : '';
+  const el = document.createElement('div');
+  el.className = 'det-toast';
+  el.innerHTML = `<span class="dt-yield">${NM.fmtYield(det.yieldKt)}</span> <span class="dt-loc">${NM.esc(loc)}</span>${hiroStr ? ` <span class="dt-hiro">${hiroStr}</span>` : ''}`;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('show'));
+  setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 500); }, 3000);
+}
+
+// ---- FULLSCREEN ----
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen?.() || document.documentElement.webkitRequestFullscreen?.();
+  } else {
+    document.exitFullscreen?.() || document.webkitExitFullscreen?.();
+  }
+}
 
 // ---- INIT ----
 function init() {
@@ -826,6 +1342,29 @@ function init() {
   initMap();
   initControls();
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+
+  // Lazy-load ZIP code database (1.5MB) after app is interactive
+  setTimeout(() => {
+    const s = document.createElement('script'); s.src = 'js/zipcodes.js'; document.body.appendChild(s);
+  }, 2000);
+
+  // Welcome overlay
+  const wo = $('welcome-overlay');
+  const hasUrlDets = new URLSearchParams(location.search).get('d');
+  if (wo && !localStorage.getItem('nukemap-welcomed')) {
+    wo.style.display = '';
+    $('welcome-dismiss').addEventListener('click', () => {
+      if ($('welcome-noshow').checked) localStorage.setItem('nukemap-welcomed', '1');
+      wo.classList.add('hidden');
+      // Demo detonation on first visit
+      if (!hasUrlDets && !currentDets.length) {
+        setTimeout(() => {
+          map.flyTo([40.7128, -74.006], 11, {duration: 1.2});
+          setTimeout(() => { setYield(455); triggerDetonation(40.7128, -74.006); }, 1400);
+        }, 300);
+      }
+    });
+  } else if (wo) wo.classList.add('hidden');
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

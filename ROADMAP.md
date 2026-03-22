@@ -28,14 +28,16 @@
 **Builds on:** Dosage calculator, contacts with blood_type/medical_notes, field_medic AI persona
 **Effort:** Large (2-3 sessions)
 
-- [ ] Patient profiles linked to contacts — structured fields: weight, age, allergies (array), current medications (array), conditions (array)
-- [ ] Allergy-aware dosage calculator — reads patient profile, flags contraindicated meds
-- [ ] Drug interaction matrix — offline SQLite table with ~200 common drug pairs and interaction severity (source: FDA open data)
-- [ ] Interactive triage flowchart — START/JumpSTART branching logic as a decision tree (Phase 2 engine)
-- [ ] Wound documentation — photo upload per incident with timestamp, linked to patient, side-by-side comparison over time
-- [ ] Vital signs log per patient — BP, pulse, temp, SpO2, pain level with timestamped entries and trend chart
-- [ ] Medical bag inventory template — pre-built checklist with standard first aid + trauma kit items
-- [ ] Printable patient care card — one-page summary of a patient's vitals, meds, allergies, wound photos
+- [x] Patient profiles linked to contacts — name, age, weight, sex, blood type, allergies, medications, conditions, notes
+- [x] Drug interaction checker — 26 drug pairs with major/moderate severity (NSAIDs, anticoagulants, opioids, SSRIs, etc)
+- [x] Interactive triage flowchart — START triage built as Phase 2 decision tree (already in Guides tab)
+- [x] Wound documentation — log by location, type (8), severity (4), description, treatment, chronological timeline
+- [x] Vital signs log per patient — BP, pulse, resp, temp, SpO2, pain, GCS with color-coded abnormals
+- [x] Printable patient care card — full HTML page with vitals history, wound log, allergies, medications
+- [x] Import patients from contacts with one click
+- [ ] Allergy-aware dosage calculator — cross-reference patient allergies with med calc (enhancement)
+- [ ] Wound photo upload with side-by-side comparison over time (enhancement)
+- [ ] Medical bag inventory template — pre-built checklist (can use existing checklist system)
 
 ## Phase 4: Immersive Training Scenarios
 **Builds on:** Drill system (6 drills with timer/history), scenario AI personas

@@ -31,7 +31,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '2.5.2'
+VERSION = '2.6.0'
 
 
 def set_version(v):
@@ -2579,6 +2579,204 @@ def create_app():
         fname = f'nomad-full-backup-{datetime.now().strftime("%Y%m%d-%H%M%S")}.zip'
         return Response(buf.read(), mimetype='application/zip',
                        headers={'Content-Disposition': f'attachment; filename="{fname}"'})
+
+    # ─── Video Library API ─────────────────────────────────────────────
+
+    def get_video_dir():
+        path = os.path.join(get_data_dir(), 'videos')
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    VIDEO_CATEGORIES = ['survival', 'medical', 'repair', 'bushcraft', 'cooking', 'radio', 'farming', 'defense', 'general']
+
+    @app.route('/api/videos')
+    def api_videos_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM videos ORDER BY category, title').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/videos/upload', methods=['POST'])
+    def api_videos_upload():
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file'}), 400
+        file = request.files['file']
+        filename = secure_filename(file.filename)
+        if not filename:
+            return jsonify({'error': 'Invalid filename'}), 400
+        filepath = os.path.join(get_video_dir(), filename)
+        file.save(filepath)
+        category = request.form.get('category', 'general')
+        title = request.form.get('title', filename.rsplit('.', 1)[0])
+        db = get_db()
+        cur = db.execute('INSERT INTO videos (title, filename, category) VALUES (?, ?, ?)', (title, filename, category))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'uploaded', 'id': cur.lastrowid}), 201
+
+    @app.route('/api/videos/<int:vid>', methods=['DELETE'])
+    def api_videos_delete(vid):
+        db = get_db()
+        row = db.execute('SELECT filename FROM videos WHERE id = ?', (vid,)).fetchone()
+        if row:
+            filepath = os.path.join(get_video_dir(), row['filename'])
+            if os.path.isfile(filepath):
+                try:
+                    os.remove(filepath)
+                except Exception:
+                    pass
+            db.execute('DELETE FROM videos WHERE id = ?', (vid,))
+            db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/videos/serve/<path:filename>')
+    def api_videos_serve(filename):
+        vdir = get_video_dir()
+        safe = os.path.normpath(os.path.join(vdir, secure_filename(filename)))
+        if not safe.startswith(os.path.normpath(vdir)) or not os.path.isfile(safe):
+            return jsonify({'error': 'Not found'}), 404
+        from flask import send_file
+        return send_file(safe)
+
+    @app.route('/api/videos/categories')
+    def api_videos_categories():
+        return jsonify(VIDEO_CATEGORIES)
+
+    # ─── Sneakernet Sync API ─────────────────────────────────────────
+
+    @app.route('/api/sync/export', methods=['POST'])
+    def api_sync_export():
+        """Export selected data as a portable content pack ZIP."""
+        data = request.get_json() or {}
+        include = data.get('include', ['inventory', 'contacts', 'checklists', 'notes', 'incidents', 'waypoints'])
+        import io
+        import zipfile as zf
+        buf = io.BytesIO()
+        db = get_db()
+        with zf.ZipFile(buf, 'w', zf.ZIP_DEFLATED) as z:
+            manifest = {'version': VERSION, 'exported_at': time.strftime('%Y-%m-%dT%H:%M:%S'), 'tables': []}
+            for table in include:
+                try:
+                    rows = db.execute(f'SELECT * FROM {table}').fetchall()
+                    table_data = [dict(r) for r in rows]
+                    z.writestr(f'{table}.json', json.dumps(table_data, indent=2, default=str))
+                    manifest['tables'].append({'name': table, 'count': len(table_data)})
+                except Exception:
+                    pass
+            z.writestr('manifest.json', json.dumps(manifest, indent=2))
+        db.close()
+        buf.seek(0)
+        fname = f'nomad-sync-{time.strftime("%Y%m%d-%H%M%S")}.zip'
+        return Response(buf.read(), mimetype='application/zip',
+                       headers={'Content-Disposition': f'attachment; filename="{fname}"'})
+
+    @app.route('/api/sync/import', methods=['POST'])
+    def api_sync_import():
+        """Import a content pack ZIP (merge mode — adds data, doesn't overwrite)."""
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file'}), 400
+        import zipfile as zf
+        import io
+        file = request.files['file']
+        try:
+            with zf.ZipFile(io.BytesIO(file.read())) as z:
+                if 'manifest.json' not in z.namelist():
+                    return jsonify({'error': 'Invalid sync file (no manifest)'}), 400
+                manifest = json.loads(z.read('manifest.json'))
+                db = get_db()
+                imported = {}
+                for table_info in manifest.get('tables', []):
+                    tname = table_info['name']
+                    if tname not in ('inventory', 'contacts', 'checklists', 'notes', 'incidents', 'waypoints'):
+                        continue
+                    fname = f'{tname}.json'
+                    if fname not in z.namelist():
+                        continue
+                    rows = json.loads(z.read(fname))
+                    count = 0
+                    for row in rows:
+                        row.pop('id', None)
+                        row.pop('created_at', None)
+                        row.pop('updated_at', None)
+                        cols = list(row.keys())
+                        vals = list(row.values())
+                        placeholders = ','.join(['?'] * len(cols))
+                        try:
+                            db.execute(f'INSERT INTO {tname} ({",".join(cols)}) VALUES ({placeholders})', vals)
+                            count += 1
+                        except Exception:
+                            pass
+                    imported[tname] = count
+                db.commit()
+                db.close()
+                return jsonify({'status': 'imported', 'tables': imported})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
+
+    # ─── Community Sharing API ────────────────────────────────────────
+
+    @app.route('/api/checklists/<int:cid>/export-json')
+    def api_checklist_export_json(cid):
+        db = get_db()
+        row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
+        db.close()
+        if not row:
+            return jsonify({'error': 'Not found'}), 404
+        export = {'type': 'nomad_checklist', 'version': 1,
+                  'name': row['name'], 'template': row['template'],
+                  'items': json.loads(row['items'] or '[]')}
+        return Response(json.dumps(export, indent=2), mimetype='application/json',
+                       headers={'Content-Disposition': f'attachment; filename="{row["name"]}.json"'})
+
+    @app.route('/api/checklists/import-json', methods=['POST'])
+    def api_checklist_import_json():
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file'}), 400
+        file = request.files['file']
+        try:
+            data = json.loads(file.read().decode('utf-8'))
+            if data.get('type') != 'nomad_checklist':
+                return jsonify({'error': 'Invalid checklist file'}), 400
+            db = get_db()
+            cur = db.execute('INSERT INTO checklists (name, template, items) VALUES (?, ?, ?)',
+                             (data['name'], data.get('template', 'imported'), json.dumps(data['items'])))
+            db.commit()
+            db.close()
+            return jsonify({'status': 'imported', 'id': cur.lastrowid})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 400
+
+    # ─── Service Health API ───────────────────────────────────────────
+
+    @app.route('/api/services/health-summary')
+    def api_services_health_summary():
+        """Detailed health info for all services."""
+        services = []
+        for sid, mod in SERVICE_MODULES.items():
+            installed = mod.is_installed()
+            running = mod.running() if installed else False
+            install_dir = os.path.join(get_services_dir(), sid)
+            disk = get_dir_size(install_dir) if installed else 0
+            port_val = getattr(mod, f'{sid.upper()}_PORT', None)
+            services.append({
+                'id': sid, 'installed': installed, 'running': running,
+                'disk_bytes': disk, 'disk_str': format_size(disk),
+                'port': port_val,
+                'port_responding': mod.running() if installed else False,
+            })
+        # Uptime
+        from db import get_db as gdb
+        db = gdb()
+        recent_crashes = db.execute("SELECT service, COUNT(*) as c FROM activity_log WHERE event = 'service_crash_detected' AND created_at >= datetime('now', '-24 hours') GROUP BY service").fetchall()
+        recent_restarts = db.execute("SELECT service, COUNT(*) as c FROM activity_log WHERE event = 'service_autorestarted' AND created_at >= datetime('now', '-24 hours') GROUP BY service").fetchall()
+        db.close()
+        crash_map = {r['service']: r['c'] for r in recent_crashes}
+        restart_map = {r['service']: r['c'] for r in recent_restarts}
+        for s in services:
+            s['crashes_24h'] = crash_map.get(s['id'], 0)
+            s['restarts_24h'] = restart_map.get(s['id'], 0)
+        return jsonify(services)
 
     # ─── Expanded Unified Search ──────────────────────────────────────
 

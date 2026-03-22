@@ -869,6 +869,43 @@ a { color: var(--accent); text-decoration: none; }
 .lan-msg .lan-text { font-size: 12px; margin-top: 1px; line-height: 1.5; word-break: break-word; }
 .lan-msg.system { color: var(--text-muted); font-style: italic; font-size: 11px; }
 
+/* ─── Mobile Responsive ─── */
+@media (max-width: 768px) {
+  .container { padding: 12px; }
+  .header h1 { font-size: 13px; }
+  .tabs { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .tab { padding: 6px 10px; font-size: 11px; }
+  .services-grid { grid-template-columns: 1fr; }
+  .settings-grid { grid-template-columns: 1fr; }
+  .chat-layout { flex-direction: column; height: auto; }
+  .convo-sidebar { width: 100%; max-height: 200px; }
+  .notes-layout { flex-direction: column; height: auto; }
+  .notes-sidebar { width: 100%; max-height: 200px; }
+  .prep-layout { flex-direction: column; min-height: auto; }
+  .prep-sidebar { width: 100%; max-height: 200px; }
+  .prep-subtabs { flex-wrap: wrap; }
+  .prep-subtab { font-size: 10px; padding: 4px 8px; }
+  .calc-grid { grid-template-columns: 1fr; }
+  .sit-board { grid-template-columns: repeat(3, 1fr); }
+  .content-summary { flex-wrap: wrap; gap: 8px; }
+  .region-grid { grid-template-columns: 1fr; }
+  .gauge-row { flex-direction: column; }
+  #lan-chat-panel { width: 300px; left: 10px; bottom: 70px; }
+  #timer-panel { width: 280px; right: 10px; bottom: 70px; }
+  .map-wrap { height: 300px; min-height: 300px; }
+  .bench-scores { grid-template-columns: repeat(2, 1fr); }
+  .freq-table { font-size: 10px; }
+  .freq-table th, .freq-table td { padding: 4px 6px; }
+}
+@media (max-width: 480px) {
+  .header { padding: 8px 12px; gap: 8px; }
+  .header-right { gap: 6px; }
+  .theme-btn { width: 18px; height: 18px; }
+  .tab { padding: 5px 8px; font-size: 10px; }
+  .sit-board { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+  #cmd-dashboard { grid-template-columns: repeat(2, 1fr); }
+}
+
 /* ─── Tab Indicator Animation ─── */
 .tab { transition: all 0.25s cubic-bezier(0.4,0,0.2,1); }
 .tab.active { transition: all 0.3s cubic-bezier(0.4,0,0.2,1); }
@@ -1297,6 +1334,11 @@ a { color: var(--accent); text-decoration: none; }
             <span>My Checklists</span>
           </div>
           <div class="prep-template-btns" id="prep-template-btns"></div>
+          <div style="padding:4px 8px;border-bottom:1px solid var(--border);display:flex;gap:4px;">
+            <input type="file" id="cl-import-file" style="display:none;" accept=".json" onchange="importChecklistJSON()">
+            <button class="btn btn-sm" onclick="document.getElementById('cl-import-file').click()" style="font-size:9px;padding:2px 6px;" title="Import shared checklist">Import</button>
+            <button class="btn btn-sm" onclick="exportCurrentChecklist()" style="font-size:9px;padding:2px 6px;" title="Export current checklist for sharing">Share</button>
+          </div>
           <div class="prep-list" id="prep-list"></div>
         </div>
         <div class="prep-main">
@@ -2778,6 +2820,18 @@ a { color: var(--accent); text-decoration: none; }
               <input type="file" id="import-file" style="display:none;" accept=".zip" onchange="importConfig()">
               <button class="btn btn-sm" onclick="document.getElementById('import-file').click()">Import</button>
             </span>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Sneakernet Sync</span>
+            <span style="display:flex;gap:6px;">
+              <button class="btn btn-sm" onclick="exportSyncPack()">Export Content Pack</button>
+              <input type="file" id="sync-import-file" style="display:none;" accept=".zip" onchange="importSyncPack()">
+              <button class="btn btn-sm" onclick="document.getElementById('sync-import-file').click()">Import Pack</button>
+            </span>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Notifications</span>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" id="notif-toggle" onchange="toggleNotifications()" style="accent-color:var(--accent);width:16px;height:16px;"> Enable browser alerts</label>
           </div>
         </div>
       </div>
@@ -5534,6 +5588,7 @@ async function loadTimers() {
       if (!window._alertedTimers.has(t.id)) {
         window._alertedTimers.add(t.id);
         toast(`Timer "${t.name}" is DONE!`, 'warning');
+        sendNotification('Timer Complete', `${t.name} has finished!`);
       }
     });
   } catch(e) {}
@@ -6544,6 +6599,88 @@ async function importContactsCSV() {
     loadContacts();
   } catch(e) { toast('Import failed', 'error'); input.value = ''; }
 }
+
+/* ─── Sneakernet Sync ─── */
+async function exportSyncPack() {
+  try {
+    const resp = await fetch('/api/sync/export', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({include:['inventory','contacts','checklists','notes','incidents','waypoints']})});
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `nomad-sync-${new Date().toISOString().slice(0,10)}.zip`;
+    a.click(); URL.revokeObjectURL(url);
+    toast('Content pack exported', 'success');
+  } catch(e) { toast('Export failed', 'error'); }
+}
+
+async function importSyncPack() {
+  const input = document.getElementById('sync-import-file');
+  if (!input.files.length) return;
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+  try {
+    const r = await (await fetch('/api/sync/import', {method:'POST', body:formData})).json();
+    input.value = '';
+    if (r.tables) {
+      const summary = Object.entries(r.tables).map(([t,c]) => `${t}: ${c}`).join(', ');
+      toast(`Imported: ${summary}`, 'success');
+    } else { toast(r.error || 'Import failed', 'error'); }
+  } catch(e) { toast('Import failed', 'error'); input.value = ''; }
+}
+
+/* ─── Community Sharing ─── */
+async function exportCurrentChecklist() {
+  if (!_currentChecklistId) { toast('Select a checklist first', 'warning'); return; }
+  window.open(`/api/checklists/${_currentChecklistId}/export-json`, '_blank');
+  toast('Checklist exported for sharing', 'success');
+}
+
+async function importChecklistJSON() {
+  const input = document.getElementById('cl-import-file');
+  if (!input.files.length) return;
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+  try {
+    const r = await (await fetch('/api/checklists/import-json', {method:'POST', body:formData})).json();
+    input.value = '';
+    if (r.id) { toast('Checklist imported!', 'success'); loadChecklists(); selectChecklist(r.id); }
+    else { toast(r.error || 'Import failed', 'error'); }
+  } catch(e) { toast('Import failed', 'error'); input.value = ''; }
+}
+
+/* ─── Notifications ─── */
+let _notifsEnabled = false;
+
+function toggleNotifications() {
+  const enabled = document.getElementById('notif-toggle').checked;
+  if (enabled && 'Notification' in window) {
+    Notification.requestPermission().then(perm => {
+      _notifsEnabled = perm === 'granted';
+      document.getElementById('notif-toggle').checked = _notifsEnabled;
+      localStorage.setItem('nomad-notifs', _notifsEnabled ? '1' : '0');
+      if (_notifsEnabled) toast('Browser notifications enabled', 'success');
+      else toast('Notification permission denied', 'warning');
+    });
+  } else {
+    _notifsEnabled = false;
+    localStorage.setItem('nomad-notifs', '0');
+  }
+}
+
+function sendNotification(title, body) {
+  if (_notifsEnabled && 'Notification' in window && Notification.permission === 'granted') {
+    new Notification(title, {body, icon: '/favicon.ico'});
+  }
+}
+
+// Init notification state
+(function() {
+  if (localStorage.getItem('nomad-notifs') === '1' && 'Notification' in window && Notification.permission === 'granted') {
+    _notifsEnabled = true;
+    const el = document.getElementById('notif-toggle');
+    if (el) el.checked = true;
+  }
+})();
 
 /* ─── Keyboard Shortcuts ─── */
 document.addEventListener('keydown', (e) => {

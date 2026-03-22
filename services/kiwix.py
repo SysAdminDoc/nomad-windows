@@ -507,6 +507,47 @@ ZIM_CATALOG = [
             ],
         },
     },
+    {
+        'category': 'Multi-Language',
+        'tiers': {
+            'essential': [
+                {'name': 'Wikipedia Espanol (Top)', 'filename': 'wikipedia_es_top_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_es_top_maxi_2025-05.zim',
+                 'size': '~5 GB', 'desc': 'Spanish Wikipedia — top articles with images'},
+                {'name': 'Wikipedia Francais (Top)', 'filename': 'wikipedia_fr_top_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_fr_top_maxi_2025-05.zim',
+                 'size': '~5 GB', 'desc': 'French Wikipedia — top articles with images'},
+            ],
+            'standard': [
+                {'name': 'Wikipedia Espanol (Top)', 'filename': 'wikipedia_es_top_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_es_top_maxi_2025-05.zim',
+                 'size': '~5 GB', 'desc': 'Spanish Wikipedia — top articles with images'},
+                {'name': 'Wikipedia Francais (Top)', 'filename': 'wikipedia_fr_top_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_fr_top_maxi_2025-05.zim',
+                 'size': '~5 GB', 'desc': 'French Wikipedia — top articles with images'},
+                {'name': 'Wikipedia Deutsch (Top)', 'filename': 'wikipedia_de_top_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_de_top_maxi_2025-05.zim',
+                 'size': '~6 GB', 'desc': 'German Wikipedia — top articles with images'},
+                {'name': 'Wiktionary Espanol', 'filename': 'wiktionary_es_all_nopic_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wiktionary/wiktionary_es_all_nopic_2025-05.zim',
+                 'size': '~1 GB', 'desc': 'Spanish dictionary'},
+            ],
+            'comprehensive': [
+                {'name': 'Wikipedia Espanol (Full)', 'filename': 'wikipedia_es_all_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_es_all_maxi_2025-05.zim',
+                 'size': '~30 GB', 'desc': 'Complete Spanish Wikipedia'},
+                {'name': 'Wikipedia Francais (Full)', 'filename': 'wikipedia_fr_all_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_fr_all_maxi_2025-05.zim',
+                 'size': '~40 GB', 'desc': 'Complete French Wikipedia'},
+                {'name': 'Wikipedia Deutsch (Full)', 'filename': 'wikipedia_de_all_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_de_all_maxi_2025-05.zim',
+                 'size': '~45 GB', 'desc': 'Complete German Wikipedia'},
+                {'name': 'Wikipedia Portugues (Full)', 'filename': 'wikipedia_pt_all_maxi_2025-05.zim',
+                 'url': 'https://download.kiwix.org/zim/wikipedia/wikipedia_pt_all_maxi_2025-05.zim',
+                 'size': '~15 GB', 'desc': 'Complete Portuguese Wikipedia'},
+            ],
+        },
+    },
 ]
 
 

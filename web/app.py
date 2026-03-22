@@ -31,7 +31,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '3.1.0'
+VERSION = '3.2.0'
 
 
 def set_version(v):
@@ -3116,6 +3116,193 @@ def create_app():
         if len(words) > 4000:
             content = ' '.join(words[:4000]) + '\n\n[... truncated, file too large for full context ...]'
         return jsonify({'filename': filename, 'content': content, 'words': len(words)})
+
+    # ─── Comms Log API ─────────────────────────────────────────────────
+
+    @app.route('/api/comms-log')
+    def api_comms_log_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM comms_log ORDER BY created_at DESC LIMIT 200').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/comms-log', methods=['POST'])
+    def api_comms_log_create():
+        data = request.get_json() or {}
+        db = get_db()
+        cur = db.execute('INSERT INTO comms_log (freq, callsign, direction, message, signal_quality) VALUES (?, ?, ?, ?, ?)',
+                         (data.get('freq', ''), data.get('callsign', ''), data.get('direction', 'rx'),
+                          data.get('message', ''), data.get('signal_quality', '')))
+        db.commit()
+        row = db.execute('SELECT * FROM comms_log WHERE id = ?', (cur.lastrowid,)).fetchone()
+        db.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/comms-log/<int:lid>', methods=['DELETE'])
+    def api_comms_log_delete(lid):
+        db = get_db()
+        db.execute('DELETE FROM comms_log WHERE id = ?', (lid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    # ─── Drill History API ────────────────────────────────────────────
+
+    @app.route('/api/drills/history')
+    def api_drill_history():
+        db = get_db()
+        rows = db.execute('SELECT * FROM drill_history ORDER BY created_at DESC LIMIT 50').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/drills/history', methods=['POST'])
+    def api_drill_history_save():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO drill_history (drill_type, title, duration_sec, tasks_total, tasks_completed, notes) VALUES (?, ?, ?, ?, ?, ?)',
+                   (data.get('drill_type', ''), data.get('title', ''), data.get('duration_sec', 0),
+                    data.get('tasks_total', 0), data.get('tasks_completed', 0), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'saved'}), 201
+
+    # ─── Shopping List Generator ──────────────────────────────────────
+
+    @app.route('/api/inventory/shopping-list')
+    def api_shopping_list():
+        db = get_db()
+        from datetime import datetime, timedelta
+        today = datetime.now().strftime('%Y-%m-%d')
+        soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+
+        # Low stock items — need to restock
+        low = db.execute('SELECT name, quantity, unit, min_quantity, category FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchall()
+        low_items = [{'name': r['name'], 'need': round(r['min_quantity'] - r['quantity'], 1), 'unit': r['unit'],
+                      'category': r['category'], 'reason': 'below minimum'} for r in low]
+
+        # Expiring items — need replacement
+        expiring = db.execute("SELECT name, unit, category, expiration FROM inventory WHERE expiration != '' AND expiration <= ?", (soon,)).fetchall()
+        exp_items = [{'name': r['name'], 'need': 1, 'unit': r['unit'], 'category': r['category'],
+                      'reason': f'expires {r["expiration"]}'} for r in expiring]
+
+        # Critical burn rate — running out within 14 days
+        burn = db.execute("SELECT name, quantity, daily_usage, unit, category FROM inventory WHERE daily_usage > 0 AND (quantity / daily_usage) < 14").fetchall()
+        burn_items = [{'name': r['name'], 'need': round(r['daily_usage'] * 30 - r['quantity'], 1), 'unit': r['unit'],
+                       'category': r['category'], 'reason': f'{round(r["quantity"]/r["daily_usage"],1)} days left'}
+                      for r in burn if r['daily_usage'] * 30 > r['quantity']]
+
+        db.close()
+
+        # Deduplicate by name
+        seen = set()
+        all_items = []
+        for item in low_items + exp_items + burn_items:
+            if item['name'] not in seen:
+                seen.add(item['name'])
+                all_items.append(item)
+
+        return jsonify(sorted(all_items, key=lambda x: x['category']))
+
+    # ─── Comprehensive Status Report ──────────────────────────────────
+
+    @app.route('/api/status-report')
+    def api_status_report():
+        """Generate a comprehensive status report from all systems."""
+        db = get_db()
+        from datetime import datetime, timedelta
+
+        report = {'generated': datetime.now().isoformat(), 'version': VERSION}
+
+        # Situation board
+        sit_row = db.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
+        report['situation'] = json.loads(sit_row['value']) if sit_row else {}
+
+        # Services
+        report['services'] = {}
+        for sid, mod in SERVICE_MODULES.items():
+            report['services'][sid] = {'installed': mod.is_installed(), 'running': mod.running() if mod.is_installed() else False}
+
+        # Inventory summary
+        inv = db.execute('SELECT category, COUNT(*) as cnt, SUM(quantity) as qty FROM inventory GROUP BY category').fetchall()
+        report['inventory'] = {r['category']: {'count': r['cnt'], 'quantity': r['qty'] or 0} for r in inv}
+
+        low = db.execute('SELECT COUNT(*) as c FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchone()['c']
+        report['low_stock_count'] = low
+
+        # Burn rates
+        burns = db.execute('SELECT category, MIN(quantity/daily_usage) as min_days FROM inventory WHERE daily_usage > 0 GROUP BY category').fetchall()
+        report['burn_rates'] = {r['category']: round(r['min_days'], 1) for r in burns if r['min_days'] is not None}
+
+        # Contacts
+        report['contact_count'] = db.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c']
+
+        # Recent incidents
+        report['incidents_24h'] = db.execute("SELECT COUNT(*) as c FROM incidents WHERE created_at >= datetime('now', '-24 hours')").fetchone()['c']
+
+        # Active checklists
+        cls = db.execute('SELECT name, items FROM checklists').fetchall()
+        cl_summary = []
+        for c in cls:
+            items = json.loads(c['items'] or '[]')
+            total = len(items)
+            checked = sum(1 for i in items if i.get('checked'))
+            cl_summary.append({'name': c['name'], 'pct': round(checked / total * 100) if total > 0 else 0})
+        report['checklists'] = cl_summary
+
+        # Weather
+        wx = db.execute('SELECT pressure_hpa, temp_f, created_at FROM weather_log ORDER BY created_at DESC LIMIT 1').fetchone()
+        if wx:
+            report['weather'] = {'pressure': wx['pressure_hpa'], 'temp_f': wx['temp_f'], 'time': wx['created_at']}
+
+        # Timers
+        report['active_timers'] = db.execute('SELECT COUNT(*) as c FROM timers').fetchone()['c']
+
+        # Notes and conversations
+        report['notes_count'] = db.execute('SELECT COUNT(*) as c FROM notes').fetchone()['c']
+        report['conversations_count'] = db.execute('SELECT COUNT(*) as c FROM conversations').fetchone()['c']
+
+        db.close()
+
+        # Generate text report
+        txt = f"===== N.O.M.A.D. STATUS REPORT =====\nGenerated: {report['generated']}\nVersion: {report['version']}\n\n"
+
+        if report['situation']:
+            txt += "SITUATION BOARD:\n"
+            for domain, level in report['situation'].items():
+                txt += f"  {domain.upper()}: {level.upper()}\n"
+            txt += "\n"
+
+        txt += "SERVICES:\n"
+        for sid, info in report['services'].items():
+            status = 'RUNNING' if info['running'] else 'INSTALLED' if info['installed'] else 'NOT INSTALLED'
+            txt += f"  {sid}: {status}\n"
+        txt += "\n"
+
+        if report['inventory']:
+            txt += f"INVENTORY ({report['low_stock_count']} low stock):\n"
+            for cat, info in report['inventory'].items():
+                burn = report['burn_rates'].get(cat, '')
+                burn_str = f" ({burn} days)" if burn else ''
+                txt += f"  {cat}: {info['count']} items, {info['quantity']} total{burn_str}\n"
+            txt += "\n"
+
+        txt += f"TEAM: {report['contact_count']} contacts\n"
+        txt += f"INCIDENTS (24h): {report['incidents_24h']}\n"
+        txt += f"ACTIVE TIMERS: {report['active_timers']}\n"
+        txt += f"NOTES: {report['notes_count']} | CONVERSATIONS: {report['conversations_count']}\n"
+
+        if report.get('weather'):
+            txt += f"\nWEATHER: {report['weather']['pressure']} hPa, {report['weather']['temp_f']}F\n"
+
+        if report['checklists']:
+            txt += "\nCHECKLISTS:\n"
+            for cl in report['checklists']:
+                txt += f"  {cl['name']}: {cl['pct']}% complete\n"
+
+        txt += "\n===== END REPORT ====="
+
+        report['text'] = txt
+        return jsonify(report)
 
     # ─── Dashboard Checklists Progress ─────────────────────────────────
 

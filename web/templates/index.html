@@ -1434,6 +1434,11 @@ a { color: var(--accent); text-decoration: none; }
           </div>
         </div>
       </div>
+      <!-- Drill History -->
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">Drill History <button class="btn btn-sm" onclick="loadDrillHistory()">Refresh</button></h3>
+        <div id="drill-history-list" style="font-size:12px;"></div>
+      </div>
     </div>
   </div>
 
@@ -1444,6 +1449,7 @@ a { color: var(--accent); text-decoration: none; }
       <span style="font-size:11px;color:var(--text-dim);">Click status cells to update threat level</span>
       <button class="btn btn-sm" onclick="window.open('/api/preparedness/print','_blank')" title="Print server-side card">Print Basic Card</button>
       <button class="btn btn-sm btn-primary" onclick="printFullCard()" title="Print complete card with family plan, PACE, and all local data">Print Full Card</button>
+      <button class="btn btn-sm" onclick="generateStatusReport()" title="Generate comprehensive status report from all systems">Status Report</button>
     </div>
     <!-- Situation Board -->
     <div class="sit-board" id="sit-board">
@@ -1562,6 +1568,7 @@ a { color: var(--accent); text-decoration: none; }
         </select>
         <input id="inv-search" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Search supplies..." oninput="loadInventory()">
         <button class="btn btn-sm btn-primary" onclick="showInvForm()">+ Add Item</button>
+        <button class="btn btn-sm" onclick="showShoppingList()" title="Auto-generate shopping list from gaps">Shopping List</button>
         <button class="btn btn-sm" onclick="window.open('/api/inventory/export-csv','_blank')" title="Export to CSV">Export</button>
         <input type="file" id="inv-import-file" style="display:none;" accept=".csv" onchange="importInvCSV()">
         <button class="btn btn-sm" onclick="document.getElementById('inv-import-file').click()" title="Import from CSV">Import</button>
@@ -2713,6 +2720,19 @@ a { color: var(--accent); text-decoration: none; }
         <div id="signal-schedule-list"></div>
         <div id="signal-next" style="margin-top:12px;padding:10px;background:var(--accent-dim);border-radius:var(--radius-sm);font-size:12px;display:none;"></div>
       </div>
+      <!-- Comms Log -->
+      <div class="settings-card" style="margin-top:16px;">
+        <h3 style="font-size:13px;display:flex;justify-content:space-between;align-items:center;">Communications Log <button class="btn btn-sm" onclick="loadCommsLog()">Refresh</button></h3>
+        <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;align-items:end;font-size:12px;">
+          <select id="comms-dir" class="preset-select" style="min-width:60px;"><option value="rx">RX</option><option value="tx">TX</option></select>
+          <input id="comms-freq" style="width:100px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:11px;outline:none;" placeholder="Freq/Channel">
+          <input id="comms-call" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:11px;outline:none;" placeholder="Callsign">
+          <input id="comms-msg" style="flex:1;min-width:150px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:11px;outline:none;" placeholder="Message / notes" onkeydown="if(event.key==='Enter')logComms()">
+          <select id="comms-sig" class="preset-select" style="min-width:60px;"><option value="">Sig?</option><option value="5/5">5/5</option><option value="4/5">4/5</option><option value="3/5">3/5</option><option value="2/5">2/5</option><option value="1/5">1/5</option></select>
+          <button class="btn btn-sm btn-primary" onclick="logComms()">Log</button>
+        </div>
+        <div id="comms-log-list" style="max-height:300px;overflow-y:auto;font-size:11px;font-family:'Cascadia Code','Consolas',monospace;"></div>
+      </div>
     </div>
     </div><!-- /psub-signals -->
 
@@ -3226,7 +3246,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); loadPDFList(); }
     if (tab.dataset.tab === 'maps') { loadMaps(); loadWPDistances(); }
     if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
-    if (tab.dataset.tab === 'tools') { loadVideoList(); }
+    if (tab.dataset.tab === 'tools') { loadVideoList(); loadDrillHistory(); }
     if (tab.dataset.tab === 'preparedness') { loadPrepTab(); }
   });
 });
@@ -5017,7 +5037,7 @@ function switchPrepSub(sub) {
   if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); calcHorizon(); updateCalTracker(); calcPlan(); }
   if (sub === 'vault' && _vaultKey) loadVaultList();
   if (sub === 'weather') loadWeather();
-  if (sub === 'signals') loadSignalSchedule();
+  if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
   if (sub === 'ops') { loadInfraStatus(); renderVehicles(); calcBleach(); loadThreatMatrix(); }
   if (sub === 'family') loadFEP();
   if (sub === 'reference') { convertUnit(); showPlantZone(); loadShelterAssess(); }
@@ -6991,6 +7011,7 @@ let _drillStart = null;
 function startDrill(type) {
   const drill = DRILL_DATA[type];
   if (!drill) return;
+  _currentDrillType = type;
   _drillStart = Date.now();
   document.getElementById('drill-active').style.display = 'block';
   document.getElementById('drill-title').textContent = drill.title;
@@ -7018,8 +7039,13 @@ function completeDrill() {
   const total = document.querySelectorAll('#drill-steps input').length;
   toast(`Drill complete! ${title}: ${checked}/${total} tasks in ${m}m ${s}s`, 'success');
   sendNotification('Drill Complete', `${title}: ${checked}/${total} tasks in ${m}m ${s}s`);
+  // Save to history
+  fetch('/api/drills/history', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({drill_type: _currentDrillType || '', title, duration_sec: elapsed, tasks_total: total, tasks_completed: checked})});
   document.getElementById('drill-active').style.display = 'none';
+  loadDrillHistory();
 }
+let _currentDrillType = '';
 
 function cancelDrill() {
   if (_drillTimer) { clearInterval(_drillTimer); _drillTimer = null; }
@@ -7246,6 +7272,122 @@ function clearChatFile() {
   _chatFileContext = '';
   document.getElementById('chat-file-context').style.display = 'none';
 }
+
+/* ─── Comms Log ─── */
+async function logComms() {
+  const msg = document.getElementById('comms-msg').value.trim();
+  const data = {
+    freq: document.getElementById('comms-freq').value.trim(),
+    callsign: document.getElementById('comms-call').value.trim(),
+    direction: document.getElementById('comms-dir').value,
+    message: msg,
+    signal_quality: document.getElementById('comms-sig').value,
+  };
+  if (!msg && !data.callsign) { toast('Enter a callsign or message', 'warning'); return; }
+  await fetch('/api/comms-log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  document.getElementById('comms-msg').value = '';
+  toast('Communication logged', 'success');
+  loadCommsLog();
+}
+
+async function loadCommsLog() {
+  try {
+    const logs = await (await fetch('/api/comms-log')).json();
+    const el = document.getElementById('comms-log-list');
+    if (!logs.length) { el.innerHTML = '<div style="color:var(--text-muted);padding:10px;text-align:center;">No communications logged yet.</div>'; return; }
+    el.innerHTML = logs.map(l => {
+      const t = new Date(l.created_at);
+      const ts = t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const date = t.toLocaleDateString([], {month:'short',day:'numeric'});
+      const dirColor = l.direction === 'tx' ? 'var(--accent)' : 'var(--green)';
+      return `<div style="display:flex;gap:6px;padding:3px 0;border-bottom:1px solid var(--border);align-items:baseline;">
+        <span style="color:var(--text-muted);min-width:90px;">${date} ${ts}</span>
+        <span style="color:${dirColor};font-weight:700;min-width:20px;">${l.direction.toUpperCase()}</span>
+        <span style="min-width:80px;">${escapeHtml(l.freq)}</span>
+        <span style="color:var(--accent);min-width:60px;">${escapeHtml(l.callsign)}</span>
+        ${l.signal_quality ? `<span style="color:var(--text-muted);min-width:30px;">${l.signal_quality}</span>` : ''}
+        <span style="flex:1;">${escapeHtml(l.message)}</span>
+        <span style="cursor:pointer;color:var(--red);opacity:0.3;" onclick="deleteCommsLog(${l.id})" onmouseover="this.style.opacity=1" onmouseout="this.style.opacity=0.3">x</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function deleteCommsLog(id) {
+  await fetch(`/api/comms-log/${id}`, {method:'DELETE'});
+  loadCommsLog();
+}
+
+/* ─── Shopping List ─── */
+async function showShoppingList() {
+  try {
+    const items = await (await fetch('/api/inventory/shopping-list')).json();
+    if (!items.length) { toast('No items needed — inventory is fully stocked!', 'success'); return; }
+    let html = '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);padding:24px;z-index:10001;box-shadow:var(--shadow);max-width:500px;max-height:80vh;overflow-y:auto;">';
+    html += '<h3 style="font-size:15px;margin-bottom:12px;display:flex;justify-content:space-between;"><span>Shopping List</span><span style="cursor:pointer;font-size:18px;" onclick="this.parentElement.parentElement.remove()">x</span></h3>';
+    html += '<div style="font-size:12px;">';
+    let lastCat = '';
+    items.forEach(i => {
+      if (i.category !== lastCat) { html += `<div style="font-weight:700;color:var(--accent);margin-top:8px;text-transform:uppercase;font-size:10px;letter-spacing:0.5px;">${i.category}</div>`; lastCat = i.category; }
+      html += `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);">
+        <span>${escapeHtml(i.name)}</span>
+        <span style="color:var(--text-dim);white-space:nowrap;">${i.need > 0 ? '+' + i.need : ''} ${i.unit} <span style="font-size:10px;color:var(--orange);">(${i.reason})</span></span>
+      </div>`;
+    });
+    html += '</div><div style="display:flex;gap:6px;margin-top:12px;">';
+    html += `<button class="btn btn-sm btn-primary" onclick="navigator.clipboard.writeText(${JSON.stringify(items.map(i => `${i.name}: ${i.need > 0 ? '+'+i.need : ''} ${i.unit} (${i.reason})`).join('\n'))});toast('Copied','success')">Copy List</button>`;
+    html += '<button class="btn btn-sm" onclick="this.parentElement.parentElement.remove()">Close</button></div></div>';
+    document.body.insertAdjacentHTML('beforeend', html);
+  } catch(e) { toast('Failed to generate shopping list', 'error'); }
+}
+
+/* ─── Status Report ─── */
+async function generateStatusReport() {
+  try {
+    const r = await (await fetch('/api/status-report')).json();
+    const w = window.open('', '_blank');
+    w.document.write(`<html><head><title>N.O.M.A.D. Status Report</title><style>body{font-family:'Cascadia Code','Consolas',monospace;background:#0d0d0d;color:#e8e8ed;padding:20px;font-size:13px;white-space:pre-wrap;line-height:1.6;}button{background:#5b9fff;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:8px;font-size:12px;}</style></head><body>`);
+    w.document.write(`<button onclick="navigator.clipboard.writeText(document.getElementById('rpt').textContent)">Copy to Clipboard</button>`);
+    w.document.write(`<button onclick="window.print()">Print</button><hr style="border-color:#333;margin:12px 0;">`);
+    w.document.write(`<div id="rpt">${escapeHtml(r.text)}</div></body></html>`);
+    w.document.close();
+  } catch(e) { toast('Failed to generate report', 'error'); }
+}
+
+/* ─── Drill History ─── */
+async function loadDrillHistory() {
+  try {
+    const drills = await (await fetch('/api/drills/history')).json();
+    const el = document.getElementById('drill-history-list');
+    if (!drills.length) { el.innerHTML = '<div style="color:var(--text-muted);text-align:center;padding:10px;">No drills completed yet. Run a drill above to start tracking.</div>'; return; }
+    el.innerHTML = '<table class="freq-table"><thead><tr><th>Date</th><th>Drill</th><th>Time</th><th>Tasks</th><th>Score</th></tr></thead><tbody>' +
+      drills.map(d => {
+        const t = new Date(d.created_at);
+        const date = t.toLocaleDateString([], {month:'short', day:'numeric'});
+        const m = Math.floor(d.duration_sec / 60), s = d.duration_sec % 60;
+        const pct = d.tasks_total > 0 ? Math.round(d.tasks_completed / d.tasks_total * 100) : 0;
+        const color = pct === 100 ? 'var(--green)' : pct >= 50 ? 'var(--orange)' : 'var(--red)';
+        return `<tr><td>${date}</td><td>${escapeHtml(d.title)}</td><td>${m}m ${s}s</td><td>${d.tasks_completed}/${d.tasks_total}</td><td style="color:${color};font-weight:600;">${pct}%</td></tr>`;
+      }).join('') + '</tbody></table>';
+  } catch(e) {}
+}
+
+/* ─── Night Mode Auto-Switch ─── */
+function checkNightMode() {
+  const autoNight = localStorage.getItem('nomad-auto-night');
+  if (autoNight !== '1') return;
+  const hour = new Date().getHours();
+  const isNight = hour >= 21 || hour < 6; // 9pm - 6am
+  const currentTheme = localStorage.getItem('nomad-theme') || 'nomad';
+  if (isNight && currentTheme !== 'redlight') {
+    localStorage.setItem('nomad-pre-night-theme', currentTheme);
+    setTheme('redlight');
+  } else if (!isNight && currentTheme === 'redlight') {
+    const prev = localStorage.getItem('nomad-pre-night-theme') || 'nomad';
+    setTheme(prev);
+  }
+}
+setInterval(checkNightMode, 60000);
 
 /* ─── AI Conversation Starters ─── */
 function useStarter(text) {

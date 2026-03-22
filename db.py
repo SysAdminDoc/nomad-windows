@@ -186,6 +186,27 @@ def init_db():
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS comms_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            freq TEXT NOT NULL DEFAULT '',
+            callsign TEXT DEFAULT '',
+            direction TEXT DEFAULT 'rx',
+            message TEXT DEFAULT '',
+            signal_quality TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS drill_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            drill_type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            duration_sec INTEGER DEFAULT 0,
+            tasks_total INTEGER DEFAULT 0,
+            tasks_completed INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS videos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,

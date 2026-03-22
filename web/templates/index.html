@@ -1265,6 +1265,9 @@ a { color: var(--accent); text-decoration: none; }
               <option value="scenario_grid">Scenario: Grid Down</option>
               <option value="scenario_medical">Scenario: Medical Emergency</option>
               <option value="scenario_evacuation">Scenario: Evacuation</option>
+              <option value="solar_expert">Solar Power Expert</option>
+              <option value="land_nav">Land Navigation</option>
+              <option value="herbalist">Medicinal Herbalist</option>
               <option value="custom">Custom Prompt...</option>
             </select>
             <button class="btn btn-sm" onclick="toggleModelPicker()">+ Get Model</button>
@@ -2087,6 +2090,42 @@ a { color: var(--accent); text-decoration: none; }
               </select></div>
           </div>
           <div class="calc-result" id="md-result"></div>
+        </div>
+
+        <!-- Solar Power Sizing Calculator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Off-Grid Solar Power Sizing Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Size a solar system for off-grid or backup power. Enter your daily loads to calculate panels, batteries, and inverter.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Daily Watt-Hours</label><input id="sol-wh" type="number" min="100" max="50000" value="3000" style="width:90px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcSolarSize()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Sun Hours/Day</label>
+              <select id="sol-sun" onchange="calcSolarSize()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="3">3 hrs (cloudy/winter/north)</option>
+                <option value="4" selected>4 hrs (avg US winter)</option>
+                <option value="5">5 hrs (avg US annual)</option>
+                <option value="6">6 hrs (sunny/south)</option>
+                <option value="7">7 hrs (desert/SW)</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Battery Type</label>
+              <select id="sol-batt" onchange="calcSolarSize()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="lifepo4" selected>LiFePO4 (best, 80% DoD)</option>
+                <option value="agm">AGM Lead-Acid (50% DoD)</option>
+                <option value="flooded">Flooded Lead-Acid (50% DoD)</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Autonomy Days</label><input id="sol-days" type="number" min="1" max="7" value="2" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcSolarSize()"></div>
+          </div>
+          <div class="calc-result" id="sol-size-result"></div>
+        </div>
+
+        <!-- Bug-Out Bag Weight Calculator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Bug-Out Bag Weight Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Track your BOB weight. Target: 15-25% of body weight for 72-hour kit. Check items you're carrying.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Body Weight (lbs)</label><input id="bob-bodyweight" type="number" min="80" max="400" value="180" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcBOB()"></div>
+          </div>
+          <div id="bob-checklist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:3px;font-size:11px;margin-bottom:8px;"></div>
+          <div class="calc-result" id="bob-result"></div>
         </div>
       </div>
     </div>
@@ -3008,6 +3047,151 @@ a { color: var(--accent); text-decoration: none; }
             <div>- Meshtastic devices create encrypted mesh networks over LoRa radio.</div>
             <div>- Pre-share encryption keys IN PERSON before an event.</div>
             <div>- Assume any unencrypted channel is being monitored.</div>
+          </div>
+        </div>
+
+        <!-- Essential Knots Reference -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Essential Survival Knots</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">8 knots that cover 95% of survival needs. Practice each until you can tie them in the dark.</div>
+          <div style="overflow-x:auto;">
+            <table class="ref-table" style="font-size:11px;width:100%;border-collapse:collapse;">
+              <thead><tr><th style="min-width:110px;">Knot</th><th>Use</th><th>How to Tie</th><th>Strength</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Bowline</strong></td><td>Non-slip loop. Rescue, anchor, tie to post.</td><td>Make loop in standing end. Tail up through loop, around behind standing end, back down through loop. "Rabbit out of hole, around tree, back in hole."</td><td>~60% of rope strength</td></tr>
+                <tr><td><strong>Clove Hitch</strong></td><td>Tie to pole/tree quickly. Start lashings.</td><td>Wrap rope around pole, cross over, wrap again in same direction, tuck end under last wrap.</td><td>Moderate — can slip under load</td></tr>
+                <tr><td><strong>Taut-Line Hitch</strong></td><td>Adjustable tension — tent guy lines, tarps.</td><td>Wrap around anchor, coil twice inside the loop, once outside, pull tight. Slides to adjust, locks under load.</td><td>Adjustable — holds well</td></tr>
+                <tr><td><strong>Figure-8 on a Bight</strong></td><td>Strong loop in middle of rope. Climbing, hauling.</td><td>Fold rope into bight, make figure-8 with doubled rope. Simple and very strong.</td><td>~75% — strongest loop knot</td></tr>
+                <tr><td><strong>Square (Reef) Knot</strong></td><td>Join two ropes of SAME diameter. Bandages.</td><td>Right over left and twist, then left over right and twist. Lays flat.</td><td>~45% — NOT for critical loads</td></tr>
+                <tr><td><strong>Sheet Bend</strong></td><td>Join two ropes of DIFFERENT diameter.</td><td>Make bight in thicker rope. Thinner rope up through bight, around both tails, tuck under itself.</td><td>~55% — reliable for mixed ropes</td></tr>
+                <tr><td><strong>Prusik Knot</strong></td><td>Slide along rope, grip under load. Climbing, hauling, tensioning.</td><td>Loop thin cord around thick rope 3 times, pass tail through loop. Slides when loose, grips when loaded.</td><td>Grips — won't slip under load</td></tr>
+                <tr><td><strong>Trucker's Hitch</strong></td><td>Mechanical advantage — tie down loads, tarps, shelters.</td><td>Make slip loop in standing end. Pass tail around anchor, up through slip loop, pull for 3:1 advantage, secure with half-hitches.</td><td>3:1 mechanical advantage</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:6px;font-size:11px;color:var(--text-dim);"><strong>Tip:</strong> Learn bowline + clove hitch + taut-line hitch first — these 3 handle most camp tasks. Always back up life-safety knots with a stopper knot. Wet rope loses ~20% strength.</div>
+        </div>
+
+        <!-- Navigation Without GPS -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Navigation Without GPS</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Land navigation when electronics fail.</div>
+          <div style="font-size:12px;line-height:1.8;">
+            <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Compass Navigation</div>
+            <div><strong>Declination:</strong> Difference between true north and magnetic north. In eastern US: subtract ~10-15&deg;. In western US: add ~10-20&deg;. Check local declination before SHTF.</div>
+            <div><strong>Bearing:</strong> Hold compass flat at waist. Rotate bezel until desired bearing aligns with direction-of-travel arrow. Turn body until needle sits in orienting arrow ("red in the shed"). Walk toward landmark on that bearing.</div>
+            <div><strong>Triangulation:</strong> Take bearings to 2-3 known landmarks. Draw lines on map from each landmark on the reverse bearing. Your position is where lines intersect.</div>
+            <div><strong>Pace count:</strong> Walk 100 meters on flat ground, count double-steps. Average is 62-68. This is your pace count. Use it to measure distance traveled.</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:10px;margin-bottom:4px;">Celestial Navigation</div>
+            <div><strong>North Star (Polaris):</strong> Find Big Dipper, extend the "pointer stars" (front edge) 5x their spacing. That's Polaris = true north, always. Its altitude above horizon = your latitude.</div>
+            <div><strong>Southern Cross:</strong> (Southern hemisphere) Extend the long axis 4.5x its length downward toward horizon. Drop straight down to horizon = due south.</div>
+            <div><strong>Sun method:</strong> Stick in ground, mark shadow tip. Wait 15+ minutes, mark again. Line between marks = east-west (first mark is west). Perpendicular = north-south.</div>
+            <div><strong>Watch method:</strong> Point hour hand at sun. Halfway between hour hand and 12 o'clock is south (northern hemisphere). Use 1 o'clock if daylight saving time.</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:10px;margin-bottom:4px;">Natural Navigation</div>
+            <div><strong>Moss:</strong> Myth — grows on all sides. But IS slightly more common on north side of trees in northern hemisphere (less sun).</div>
+            <div><strong>Trees:</strong> In open, growth is often fuller on south side (more sun). Snow melts first on south-facing slopes.</div>
+            <div><strong>Wind:</strong> Learn prevailing wind direction for your area. In US, generally west-to-east.</div>
+            <div><strong>Streams:</strong> Flow downhill to larger water. Follow downstream to find civilization (usually).</div>
+            <div><strong>Spider webs:</strong> Open-air spider webs tend to face south (insects fly toward warmth/light).</div>
+          </div>
+        </div>
+
+        <!-- Water Purification Decision Tree -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Water Purification Decision Tree</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Choose the right method based on what you have available. Always filter before chemical treatment when possible.</div>
+          <div style="overflow-x:auto;">
+            <table class="ref-table" style="font-size:11px;width:100%;border-collapse:collapse;">
+              <thead><tr><th>Method</th><th>Kills Bacteria</th><th>Kills Viruses</th><th>Removes Protozoa</th><th>Removes Chemicals</th><th>Speed</th><th>Notes</th></tr></thead>
+              <tbody>
+                <tr style="background:rgba(0,255,0,0.03);"><td><strong>Boiling (1 min, 3 min &gt;6500ft)</strong></td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#f33;">NO</td><td>Fast</td><td>Most reliable. Fuel-intensive. Works on any water.</td></tr>
+                <tr style="background:rgba(0,255,0,0.03);"><td><strong>Ceramic Filter (Sawyer, Katadyn)</strong></td><td style="color:#3f3;">YES</td><td style="color:#f33;">NO*</td><td style="color:#3f3;">YES</td><td style="color:#f33;">NO</td><td>Fast</td><td>*Some filters (Sawyer) rated for viruses. Check specs. Best field option.</td></tr>
+                <tr><td><strong>Bleach (unscented, 8.25%)</strong></td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#ff3;">SOME</td><td style="color:#f33;">NO</td><td>30 min</td><td>2 drops/quart clear water, 4 drops/quart cloudy. Double for 8.25%. Wait 30 min. Slight chlorine smell = OK.</td></tr>
+                <tr><td><strong>Iodine tablets</strong></td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#ff3;">SOME</td><td style="color:#f33;">NO</td><td>30 min</td><td>1-2 tabs/quart, wait 30 min. Bad taste. Not for pregnant women or thyroid issues. Less effective in cold water.</td></tr>
+                <tr><td><strong>UV pen (SteriPEN)</strong></td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#f33;">NO</td><td>90 sec</td><td>Needs batteries. Water must be clear (pre-filter). Fast and effective.</td></tr>
+                <tr><td><strong>SODIS (solar disinfection)</strong></td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#f33;">NO</td><td>6-48 hrs</td><td>Fill clear PET bottle, lay in full sun 6 hrs (48 hrs if cloudy). Free but slow.</td></tr>
+                <tr><td><strong>Activated Carbon Filter</strong></td><td style="color:#f33;">NO</td><td style="color:#f33;">NO</td><td style="color:#f33;">NO</td><td style="color:#3f3;">YES</td><td>Fast</td><td>Removes chemicals, pesticides, taste. Combine with another method for bio treatment.</td></tr>
+                <tr><td><strong>Distillation</strong></td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td style="color:#3f3;">YES</td><td>Slow</td><td>Removes EVERYTHING including salt. Fuel-intensive. Best for contaminated/salt water.</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--text-dim);">
+            <strong>Best combo:</strong> Pre-filter (bandana/coffee filter) → Ceramic filter → Bleach/UV. This handles bacteria, viruses, protozoa, and sediment.
+            <strong>Emergency bleach ratio:</strong> 1/8 tsp (8 drops) per gallon of clear water. Double for cloudy. Wait 30 min. Should smell faintly of chlorine.
+          </div>
+        </div>
+
+        <!-- Grid-Down Sanitation -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Grid-Down Sanitation & Hygiene</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">More people die from poor sanitation than violence in most disasters. This saves lives.</div>
+          <div style="font-size:12px;line-height:1.8;">
+            <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Emergency Latrine</div>
+            <div><strong>Cat hole:</strong> 6-8" deep, 200+ feet from water/camp. Cover after each use. For short-term/individual.</div>
+            <div><strong>Trench latrine:</strong> 4 ft long x 1 ft wide x 2.5 ft deep. Cover waste with 2" soil after each use. Serves 1-4 people for 1-3 days per foot of trench.</div>
+            <div><strong>Bucket system:</strong> 5-gal bucket with pool noodle seat or snap-on lid. Line with heavy bag. Add kitty litter, sawdust, or wood ash after each use to control odor and absorb moisture. Seal and bury when full.</div>
+            <div><strong>Location rules:</strong> 200+ ft from any water source, downhill from camp, downwind, away from drainage paths. Never upstream from water collection.</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:10px;margin-bottom:4px;">Handwashing Station</div>
+            <div>Jug with spigot + soap + catch basin. Wash after every bathroom use and before food handling. This alone prevents most diarrheal disease. Alcohol-based sanitizer (60%+) as backup.</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:10px;margin-bottom:4px;">Waste Management</div>
+            <div><strong>Garbage:</strong> Burn paper/cardboard. Crush cans, bury 200+ ft from water. Compost food scraps away from camp (attracts animals).</div>
+            <div><strong>Greywater:</strong> Wash water from dishes/laundry. Strain food particles. Scatter over wide area 200+ ft from water sources. Do NOT pour into streams.</div>
+            <div><strong>Dead animals:</strong> Bury 3+ ft deep, 200+ ft from water. Lime if available. Double-bag in plastic first.</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:10px;margin-bottom:4px;">Disease Prevention Priorities</div>
+            <div>1. <strong>Clean water</strong> (purify everything) 2. <strong>Hand hygiene</strong> (wash constantly) 3. <strong>Proper waste disposal</strong> (latrine discipline) 4. <strong>Food safety</strong> (cook thoroughly, clean surfaces) 5. <strong>Insect control</strong> (permethrin on clothing, DEET on skin, drain standing water)</div>
+          </div>
+        </div>
+
+        <!-- Improvised Tools & Solutions -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Improvised Tools & Field Solutions</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">When you don't have the right tool, adapt what's available.</div>
+          <div style="overflow-x:auto;">
+            <table class="ref-table" style="font-size:11px;width:100%;border-collapse:collapse;">
+              <thead><tr><th>Need</th><th>Improvised Solution</th><th>Materials</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Water filter</strong></td><td>Layer filter: gravel → sand → charcoal → sand → cloth</td><td>2-liter bottle (cut bottom), charcoal from fire, sand, gravel, cloth</td></tr>
+                <tr><td><strong>Fishing hook</strong></td><td>Bend safety pin, thorn, or soda can tab. Paperclip works.</td><td>Safety pin, thorns, aluminum tab, dental floss/thread for line</td></tr>
+                <tr><td><strong>Compass</strong></td><td>Magnetize needle by stroking with magnet/silk 50x same direction. Float on leaf in water.</td><td>Needle, small magnet or silk cloth, leaf, still water</td></tr>
+                <tr><td><strong>Candle</strong></td><td>Crisco/lard in can with cotton wick. Burns 30+ hours per inch of fat.</td><td>Crisco/bacon grease, tin can, cotton string</td></tr>
+                <tr><td><strong>Stove</strong></td><td>Two aluminum cans: one as pot stand (holes punched in sides), one as base. Burns twigs or alcohol.</td><td>2 aluminum cans, knife/scissors</td></tr>
+                <tr><td><strong>Splint</strong></td><td>Straight sticks, rolled newspaper, or SAM splint. Pad with cloth. Immobilize joint above and below fracture.</td><td>Straight rigid material, cloth strips/tape</td></tr>
+                <tr><td><strong>Stretcher</strong></td><td>Two poles through jacket/shirt sleeves (zip/button shut). Or blanket rolled around poles.</td><td>2 sturdy poles 7+ ft, 2 jackets or 1 blanket</td></tr>
+                <tr><td><strong>Signal mirror</strong></td><td>Any reflective surface (CD, foil on cardboard, polished metal). Aim reflection at target through V-sight of fingers.</td><td>CD, aluminum foil, mirror fragment</td></tr>
+                <tr><td><strong>Rope</strong></td><td>Braid plastic bags, strips of cloth, or inner bark of basswood/tulip poplar. Paracord inner strands are fishing line.</td><td>Plastic bags, cloth strips, natural fibers</td></tr>
+                <tr><td><strong>Charcoal (for filter/fuel)</strong></td><td>Burn hardwood in low-oxygen fire (covered pit or sealed can with small hole). Cool completely before handling.</td><td>Hardwood, fire, covered container</td></tr>
+                <tr><td><strong>Torch/light</strong></td><td>Cattail head dipped in fat/oil. Burns 20-30 min. Birch bark rolled tight also works.</td><td>Cattail, fat/oil, or birch bark</td></tr>
+                <tr><td><strong>Insulation</strong></td><td>Stuff clothing with dry leaves, newspaper, pine needles. Dead air space = warmth.</td><td>Dry leaves, newspaper, garbage bags</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Ground-to-Air Emergency Signals -->
+        <div class="calc-card">
+          <h4>Ground-to-Air Emergency Signals</h4>
+          <div style="font-size:12px;line-height:1.8;">
+            <div style="font-family:monospace;font-size:16px;margin-bottom:6px;">
+              <div><strong style="font-size:28px;">V</strong> = Need Assistance</div>
+              <div><strong style="font-size:28px;">X</strong> = Need Medical Help</div>
+              <div><strong style="font-size:28px;">N</strong> = No (Negative)</div>
+              <div><strong style="font-size:28px;">Y</strong> = Yes (Affirmative)</div>
+              <div><strong style="font-size:28px;">&rarr;</strong> = Traveling This Direction</div>
+            </div>
+            <div style="font-size:11px;color:var(--text-dim);">Make signals 10+ ft tall using rocks, logs, trenches, or trampled snow. High contrast to ground. 3 fires in triangle = universal distress. Signal mirror flash visible 50+ miles.</div>
+          </div>
+        </div>
+
+        <!-- Body Language of Animals -->
+        <div class="calc-card">
+          <h4>Animal Behavior Warning Signs</h4>
+          <div style="font-size:12px;line-height:1.7;">
+            <div><strong style="color:var(--accent);">Bear:</strong> Huffing, jaw popping, stomping = stressed. Ears back = aggressive. <strong>Black:</strong> Fight back. <strong>Grizzly:</strong> Play dead (face down, hands on neck). Never run.</div>
+            <div><strong style="color:var(--accent);">Mountain Lion:</strong> Stalking posture, tail twitching. Make yourself BIG, don't run, maintain eye contact, throw rocks. Fight back aggressively.</div>
+            <div><strong style="color:var(--accent);">Moose:</strong> Ears back, hair raised, licking lips = about to charge. MORE dangerous than bears. Run behind a tree — they can't turn quickly.</div>
+            <div><strong style="color:var(--accent);">Wild Dogs/Coyotes:</strong> Circling, testing approaches. Stand tall, don't turn back. Group up. Use sticks/rocks.</div>
+            <div><strong style="color:var(--accent);">Snakes:</strong> S-coil, rattle, hissing. Back away slowly. Strike range = body length. Most bites happen when people try to kill or handle them.</div>
+            <div><strong style="color:var(--accent);">Birds:</strong> Sudden flock flight = predator nearby. Circling vultures = carcass/water. Waterfowl landing = water ahead.</div>
           </div>
         </div>
 
@@ -5699,6 +5883,9 @@ const PRESETS = {
   scenario_medical: 'You are a remote/austere medicine advisor. There is a medical emergency and professional medical help is not available. Help me assess and treat the situation using available supplies. Ask about: the patient (age, weight, conditions, medications), the injury/illness symptoms, what medical supplies are available, distance to nearest medical facility. Provide step-by-step treatment, monitoring instructions, warning signs to watch for, and when to escalate. Reference TCCC and wilderness medicine protocols.',
   nuclear: 'You are a nuclear preparedness and civil defense expert. Advise on: blast radius effects by yield (thermal, overpressure, radiation), optimal shelter locations (PF ratings, basement vs above-ground), fallout protection (shelter-in-place timing, 7-10 rule of decay), decontamination procedures, potassium iodide dosing, EMP effects on electronics (Faraday protection), evacuation vs shelter-in-place decision criteria based on distance from ground zero, long-term fallout zone mapping, food/water contamination assessment. Reference Glasstone & Dolan nuclear effects data. Be specific about distances, timeframes, and protection factors.',
   scenario_evacuation: 'You are an evacuation planning expert. Help me plan an emergency evacuation. Ask about: number of people (ages, mobility), vehicles available, fuel levels, distance to destinations, current threats (fire, flood, civil unrest, chemical), time available, supplies already packed. Provide: route planning (primary + 2 alternates), vehicle loading priority, communication plan, rally points, go/no-go decision criteria, and what to grab in the last 5 minutes.',
+  solar_expert: 'You are an off-grid solar power expert. Help design and troubleshoot solar systems: panel sizing, battery bank calculations (LiFePO4 vs lead-acid), charge controllers (MPPT vs PWM), inverter selection (pure vs modified sine), wiring (series vs parallel, wire gauge), mounting, tilt angles, and maintenance. Calculate loads, autonomy days, and system costs. Cover both portable (camping/bug-out) and permanent (homestead) installations. Include safety: grounding, overcurrent protection, disconnect switches.',
+  land_nav: 'You are a land navigation instructor with military and wilderness experience. Teach map reading (topographic contour interpretation, UTM/MGRS grid coordinates, distance estimation), compass use (declination adjustment, triangulation, backstighting), celestial navigation (Polaris, sun methods, Southern Cross), natural navigation (vegetation, wind, animal behavior, terrain association), GPS alternatives, route planning, terrain association, pace counting, and dead reckoning. Provide practical exercises.',
+  herbalist: 'You are a medicinal herbalist and ethnobotanist. Advise on growing, harvesting, preparing, and using medicinal plants for common ailments when modern medicine is unavailable. Cover: anti-inflammatory herbs (willow bark, turmeric), antimicrobial plants (garlic, oregano, goldenseal), wound care (yarrow, plantain, aloe), digestive remedies (ginger, peppermint, chamomile), pain relief (valerian, white willow), and immune support (elderberry, echinacea). Include preparation methods: tinctures, teas, poultices, salves, and proper dosing. Always note contraindications and when professional care is critical.',
 };
 // Load saved custom prompt
 (function() { const cp = localStorage.getItem('nomad-custom-prompt'); if (cp) PRESETS.custom = cp; })();
@@ -6031,7 +6218,7 @@ function switchPrepSub(sub) {
   if (sub === 'incidents') loadIncidents();
   if (sub === 'inventory') { loadInventory(); loadBurnRate(); loadInvViz(); }
   if (sub === 'contacts') { loadContacts(); loadSkillsMatrix(); }
-  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); calcHorizon(); updateCalTracker(); calcPlan(); }
+  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); calcHorizon(); updateCalTracker(); calcPlan(); calcFoodStorage(); calcGenFuel(); calcRainwater(); calcRadioRange(); calcMedDose(); calcSolarSize(); renderBOBChecklist(); calcBOB(); }
   if (sub === 'vault' && _vaultKey) loadVaultList();
   if (sub === 'weather') loadWeather();
   if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
@@ -8853,6 +9040,89 @@ function calcMedDose() {
   html += '</tbody></table></div>';
   html += '<div style="margin-top:6px;font-size:10px;color:var(--text-dim);"><strong>DISCLAIMER:</strong> For reference only. Consult a medical professional when possible. Doses may vary based on individual health conditions, allergies, and other medications.</div>';
   document.getElementById('md-result').innerHTML = html;
+}
+
+function calcSolarSize() {
+  const dailyWh = parseInt(document.getElementById('sol-wh').value) || 3000;
+  const sunHrs = parseInt(document.getElementById('sol-sun').value) || 4;
+  const battType = document.getElementById('sol-batt').value;
+  const autoDays = parseInt(document.getElementById('sol-days').value) || 2;
+
+  const battInfo = {lifepo4: {dod: 0.8, volt: 12.8, life: '10+ years', cost: '$$$$'}, agm: {dod: 0.5, volt: 12, life: '3-5 years', cost: '$$'}, flooded: {dod: 0.5, volt: 12, life: '3-7 years', cost: '$'}};
+  const b = battInfo[battType];
+  const panelWatts = Math.ceil((dailyWh / sunHrs) * 1.25);
+  const numPanels = Math.ceil(panelWatts / 400);
+  const actualPanelW = numPanels * 400;
+  const battWh = Math.ceil((dailyWh * autoDays) / b.dod);
+  const battAh = Math.ceil(battWh / b.volt);
+  const num100Ah = Math.ceil(battAh / 100);
+  const inverterW = Math.ceil(dailyWh / 8 * 1.5 / 100) * 100;
+  const ccAmps = Math.ceil(actualPanelW / b.volt * 1.25);
+
+  let html = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;font-size:12px;">`;
+  html += `<div><strong style="color:var(--accent);">Solar Panels:</strong> ${actualPanelW}W total (${numPanels}x 400W panels)</div>`;
+  html += `<div><strong style="color:var(--accent);">Battery Bank:</strong> ${battWh}Wh / ${battAh}Ah (${num100Ah}x 100Ah ${battType.toUpperCase()})</div>`;
+  html += `<div><strong style="color:var(--accent);">Inverter:</strong> ${inverterW}W+ pure sine wave</div>`;
+  html += `<div><strong style="color:var(--accent);">Charge Controller:</strong> ${ccAmps}A MPPT</div>`;
+  html += `<div><strong style="color:var(--accent);">Battery Life:</strong> ${b.life}</div>`;
+  html += `<div><strong style="color:var(--accent);">Autonomy:</strong> ${autoDays} days without sun</div>`;
+  html += `</div>`;
+  html += `<div style="margin-top:10px;font-size:11px;color:var(--text-dim);">
+    <strong>Common loads:</strong> Fridge 150Wh/hr x 8hr = 1,200Wh/day | Lights (LED) 10W x 5hr = 50Wh | Laptop 50W x 4hr = 200Wh | Phone 20Wh | Well pump 1000W x 1hr = 1,000Wh | CPAP 40W x 8hr = 320Wh
+    <br><strong>Tips:</strong> MPPT controllers 20-30% more efficient than PWM. LiFePO4 costs more but lasts 3x longer. Tilt panels to latitude angle.
+  </div>`;
+  document.getElementById('sol-size-result').innerHTML = html;
+}
+
+const BOB_ITEMS = [
+  {cat:'Water',items:[{n:'Water bottles (2L)',w:4.4},{n:'Water filter (Sawyer)',w:0.2},{n:'Purification tabs',w:0.1}]},
+  {cat:'Shelter',items:[{n:'Tarp (8x10)',w:1.5},{n:'Paracord (100ft)',w:0.6},{n:'Emergency bivy',w:0.7},{n:'Sleeping bag',w:2.5}]},
+  {cat:'Fire',items:[{n:'Ferro rod + striker',w:0.2},{n:'Bic lighters (x2)',w:0.1},{n:'Tinder (cotton+vaseline)',w:0.2},{n:'Stormproof matches',w:0.1}]},
+  {cat:'Food',items:[{n:'MREs/freeze-dried (3 day)',w:4.0},{n:'Energy bars (x6)',w:1.2},{n:'Trail mix (1 lb)',w:1.0},{n:'Coffee/tea',w:0.3}]},
+  {cat:'First Aid',items:[{n:'IFAK (trauma kit)',w:1.5},{n:'Personal meds',w:0.5},{n:'Tourniquet (CAT)',w:0.2},{n:'SAM splint',w:0.3}]},
+  {cat:'Tools',items:[{n:'Fixed-blade knife',w:0.8},{n:'Multi-tool',w:0.5},{n:'Headlamp + batteries',w:0.3},{n:'Duct tape (mini)',w:0.3},{n:'Compass + map',w:0.3}]},
+  {cat:'Clothing',items:[{n:'Rain jacket',w:0.8},{n:'Warm layer (fleece)',w:1.0},{n:'Extra socks (x2)',w:0.4},{n:'Gloves + hat',w:0.3},{n:'Bandana/shemagh',w:0.2}]},
+  {cat:'Comms',items:[{n:'Ham radio HT',w:0.8},{n:'Phone+charger+bank',w:1.0},{n:'Whistle',w:0.05},{n:'Signal mirror',w:0.1},{n:'Notebook+pencil',w:0.2}]},
+  {cat:'Defense',items:[{n:'Pepper spray',w:0.3},{n:'Firearm + ammo',w:3.5}]},
+  {cat:'Docs',items:[{n:'ID/insurance copies',w:0.2},{n:'Cash (small bills)',w:0.1},{n:'USB drive (encrypted)',w:0.05}]},
+];
+
+function renderBOBChecklist() {
+  const el = document.getElementById('bob-checklist');
+  if (!el) return;
+  el.innerHTML = BOB_ITEMS.map(cat => `
+    <div style="background:var(--surface2);padding:6px 8px;border-radius:6px;">
+      <div style="font-weight:700;color:var(--accent);font-size:10px;text-transform:uppercase;margin-bottom:3px;">${cat.cat}</div>
+      ${cat.items.map(item => `
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer;padding:1px 0;">
+          <input type="checkbox" class="bob-item" data-weight="${item.w}" onchange="calcBOB()" style="accent-color:var(--accent);">
+          <span>${item.n}</span>
+          <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">${item.w}lb</span>
+        </label>
+      `).join('')}
+    </div>
+  `).join('');
+}
+
+function calcBOB() {
+  if (!document.querySelector('.bob-item')) renderBOBChecklist();
+  const bodyWeight = parseInt(document.getElementById('bob-bodyweight').value) || 180;
+  let totalWeight = 0, checkedCount = 0;
+  document.querySelectorAll('.bob-item').forEach(cb => {
+    if (cb.checked) { totalWeight += parseFloat(cb.dataset.weight); checkedCount++; }
+  });
+  totalWeight = Math.round(totalWeight * 10) / 10;
+  const pct = Math.round(totalWeight / bodyWeight * 100);
+  const target15 = Math.round(bodyWeight * 0.15);
+  const target25 = Math.round(bodyWeight * 0.25);
+  const color = pct <= 15 ? 'var(--green)' : pct <= 25 ? '#ffdd33' : '#ff4444';
+  let html = `<div style="display:flex;gap:16px;align-items:center;font-size:13px;flex-wrap:wrap;">`;
+  html += `<div><strong>Pack Weight:</strong> <span style="color:${color};font-weight:700;font-size:16px;">${totalWeight} lbs</span> (${pct}% body weight)</div>`;
+  html += `<div><strong>Target:</strong> ${target15}-${target25} lbs (15-25%)</div>`;
+  html += `<div><strong>Items:</strong> ${checkedCount} checked</div>`;
+  html += `</div>`;
+  if (pct > 25) html += `<div style="margin-top:4px;font-size:11px;color:#ff4444;">Pack too heavy for sustained travel. Remove non-essentials or reduce quantities.</div>`;
+  document.getElementById('bob-result').innerHTML = html;
 }
 
 /* ─── Quick Actions ─── */

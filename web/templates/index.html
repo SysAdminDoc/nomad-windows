@@ -1746,6 +1746,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="prep-subtab" data-psub="medical" onclick="switchPrepSub('medical')">Medical</button>
       <button class="prep-subtab" data-psub="garden" onclick="switchPrepSub('garden')">Garden</button>
       <button class="prep-subtab" data-psub="power" onclick="switchPrepSub('power')">Power</button>
+      <button class="prep-subtab" data-psub="security" onclick="switchPrepSub('security')">Security</button>
       <button class="prep-subtab" data-psub="guides" onclick="switchPrepSub('guides')">Guides</button>
       <button class="prep-subtab" data-psub="reference" onclick="switchPrepSub('reference')">Quick Ref</button>
       <button class="prep-subtab" data-psub="protocols" onclick="switchPrepSub('protocols')">Protocols</button>
@@ -2290,6 +2291,53 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
     </div><!-- /psub-radio -->
+
+    <!-- Sub: Security -->
+    <div id="psub-security" class="prep-sub">
+    <div class="prep-section">
+      <h3>Security Operations</h3>
+
+      <!-- Security Dashboard -->
+      <div id="security-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:16px;"></div>
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:12px;">
+        <button class="btn btn-sm btn-primary" id="sec-tab-cameras" onclick="showSecurityTab('cameras')">Cameras</button>
+        <button class="btn btn-sm" id="sec-tab-access" onclick="showSecurityTab('access')">Access Log</button>
+      </div>
+
+      <!-- Cameras -->
+      <div id="security-cameras-panel">
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Camera Name</label><input id="cam-name" style="width:130px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Front Door"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Stream URL</label><input id="cam-url" style="width:280px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="http://192.168.1.100:8080/video"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Type</label><select id="cam-type" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option value="mjpeg">MJPEG</option><option value="snapshot">Snapshot (refresh)</option><option value="hls">HLS Stream</option></select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Location</label><input id="cam-location" style="width:120px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="North perimeter"></div>
+          <button class="btn btn-sm btn-primary" onclick="addCamera()">Add Camera</button>
+        </div>
+        <p style="font-size:10px;color:var(--text-muted);margin-bottom:12px;">Supports MJPEG streams (most IP cameras), snapshot URLs (auto-refreshes), and HLS streams. Common camera URLs:<br>
+        Reolink: <code>http://IP/cgi-bin/api.cgi?cmd=Snap&channel=0</code> | Amcrest: <code>http://IP/cgi-bin/snapshot.cgi</code> | Wyze: Use rtsp-simple-server bridge | Generic ONVIF: <code>http://IP:port/video</code></p>
+        <div id="camera-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;"></div>
+      </div>
+
+      <!-- Access Log -->
+      <div id="security-access-panel" style="display:none;">
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Person</label><input id="al-person" style="width:120px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Name"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Direction</label><select id="al-direction" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option value="entry">Entry</option><option value="exit">Exit</option><option value="patrol">Patrol</option><option value="unknown">Unknown</option></select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Location</label><input id="al-location" style="width:120px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Front gate"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Method</label><select id="al-method" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option value="visual">Visual</option><option value="camera">Camera</option><option value="sensor">Sensor</option><option value="radio">Radio Report</option><option value="other">Other</option></select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Notes</label><input id="al-notes" style="width:160px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Optional details"></div>
+          <button class="btn btn-sm btn-primary" onclick="logAccess()">Log</button>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;font-weight:600;">Access History</span>
+          <button class="btn btn-sm btn-danger" onclick="clearAccessLog()">Clear Log</button>
+        </div>
+        <div id="access-log-list" style="overflow-x:auto;"></div>
+      </div>
+    </div>
+    </div><!-- /psub-security -->
 
     <!-- Sub: Power Management -->
     <div id="psub-power" class="prep-sub">
@@ -4775,7 +4823,7 @@ a { color: var(--accent); text-decoration: none; }
           <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
-            <div><strong style="color:var(--accent);">17 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Power, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
+            <div><strong style="color:var(--accent);">18 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Security, Power, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
             <div><strong style="color:var(--accent);">Tools Tab</strong><br>Meshtastic, Barcode Scanner, Video Library, Guided Drills</div>
           </div>
           <div style="margin:8px 0;">
@@ -7251,6 +7299,7 @@ function switchPrepSub(sub) {
   if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
   if (sub === 'ops') { loadInfraStatus(); renderVehicles(); calcBleach(); loadThreatMatrix(); renderHomeSecurity(); }
   if (sub === 'family') loadFEP();
+  if (sub === 'security') { loadSecurityDashboard(); loadCameras(); }
   if (sub === 'power') { loadPowerDashboard(); loadPowerDevices(); updatePowerSpecFields(); }
   if (sub === 'garden') { loadPlots(); lookupZone(); }
   if (sub === 'medical') loadPatients();
@@ -10847,6 +10896,157 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'n') { e.preventDefault(); document.querySelector('[data-tab="notes"]').click(); setTimeout(createNote, 200); }
   }
 });
+
+/* ─── Security Module ─── */
+function showSecurityTab(tab) {
+  ['cameras','access'].forEach(t => {
+    document.getElementById(`security-${t}-panel`).style.display = t === tab ? 'block' : 'none';
+    document.getElementById(`sec-tab-${t}`).className = t === tab ? 'btn btn-sm btn-primary' : 'btn btn-sm';
+  });
+  if (tab === 'cameras') loadCameras();
+  if (tab === 'access') loadAccessLog();
+}
+
+async function loadSecurityDashboard() {
+  try {
+    const d = await (await fetch('/api/security/dashboard')).json();
+    const el = document.getElementById('security-dashboard');
+    const secColors = {green:'var(--green)',yellow:'#c8a800',orange:'var(--orange)',red:'var(--red)'};
+    const secLabels = {green:'SECURE',yellow:'CAUTION',orange:'ELEVATED',red:'CRITICAL'};
+    el.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Threat Level</div>
+        <div style="font-size:18px;font-weight:700;color:${secColors[d.security_level]||'var(--green)'};">${secLabels[d.security_level]||'UNKNOWN'}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Cameras Active</div>
+        <div style="font-size:20px;font-weight:700;color:${d.cameras_active > 0 ? 'var(--green)' : 'var(--text-muted)'};">${d.cameras_active}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Access (24h)</div>
+        <div style="font-size:20px;font-weight:700;color:var(--accent);">${d.access_24h}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Incidents (48h)</div>
+        <div style="font-size:20px;font-weight:700;color:${d.security_incidents_48h > 0 ? 'var(--red)' : 'var(--green)'};">${d.security_incidents_48h}</div>
+      </div>`;
+  } catch(e) {}
+}
+
+let _cameraRefreshTimers = {};
+
+async function loadCameras() {
+  try {
+    const cameras = await (await fetch('/api/security/cameras')).json();
+    const el = document.getElementById('camera-grid');
+    // Clear old refresh timers
+    Object.values(_cameraRefreshTimers).forEach(t => clearInterval(t));
+    _cameraRefreshTimers = {};
+    if (!cameras.length) {
+      el.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:30px;font-size:12px;">No cameras registered. Add IP cameras above to view live feeds.</div>';
+      return;
+    }
+    el.innerHTML = cameras.map(c => {
+      let feedHtml = '';
+      if (c.stream_type === 'mjpeg') {
+        feedHtml = `<img id="cam-feed-${c.id}" src="${escapeAttr(c.url)}" style="width:100%;height:200px;object-fit:cover;border-radius:var(--radius-sm) var(--radius-sm) 0 0;background:#000;" onerror="this.style.background='#1a1a1a';this.alt='Camera offline';" alt="Live feed">`;
+      } else if (c.stream_type === 'snapshot') {
+        feedHtml = `<img id="cam-feed-${c.id}" src="${escapeAttr(c.url)}?t=${Date.now()}" style="width:100%;height:200px;object-fit:cover;border-radius:var(--radius-sm) var(--radius-sm) 0 0;background:#000;" onerror="this.alt='Camera offline';" alt="Snapshot">`;
+      } else {
+        feedHtml = `<div style="width:100%;height:200px;background:#1a1a1a;border-radius:var(--radius-sm) var(--radius-sm) 0 0;display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:12px;">HLS — open in new tab</div>`;
+      }
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+        ${feedHtml}
+        <div style="padding:10px 12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:600;font-size:13px;">${escapeHtml(c.name)}</div>
+              <div style="font-size:10px;color:var(--text-dim);">${escapeHtml(c.location || 'No location')} | ${c.stream_type.toUpperCase()}</div>
+            </div>
+            <div style="display:flex;gap:4px;">
+              <button class="btn btn-sm" onclick="window.open('${escapeAttr(c.url)}','_blank')" title="Open in new tab">Fullscreen</button>
+              <span style="cursor:pointer;color:var(--red);font-size:13px;padding:4px;" onclick="deleteCamera(${c.id})">x</span>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+
+    // Auto-refresh snapshot cameras every 5 seconds
+    cameras.filter(c => c.stream_type === 'snapshot').forEach(c => {
+      _cameraRefreshTimers[c.id] = setInterval(() => {
+        const img = document.getElementById(`cam-feed-${c.id}`);
+        if (img) img.src = `${c.url}?t=${Date.now()}`;
+      }, 5000);
+    });
+  } catch(e) {}
+}
+
+async function addCamera() {
+  const name = document.getElementById('cam-name').value.trim();
+  const url = document.getElementById('cam-url').value.trim();
+  if (!name || !url) { toast('Enter camera name and URL', 'warning'); return; }
+  await fetch('/api/security/cameras', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    name, url, stream_type: document.getElementById('cam-type').value,
+    location: document.getElementById('cam-location').value.trim()})});
+  document.getElementById('cam-name').value = '';
+  document.getElementById('cam-url').value = '';
+  document.getElementById('cam-location').value = '';
+  toast(`Camera "${name}" added`, 'success');
+  loadCameras();
+  loadSecurityDashboard();
+}
+
+async function deleteCamera(id) {
+  await fetch(`/api/security/cameras/${id}`, {method:'DELETE'});
+  toast('Camera removed', 'warning');
+  if (_cameraRefreshTimers[id]) { clearInterval(_cameraRefreshTimers[id]); delete _cameraRefreshTimers[id]; }
+  loadCameras();
+  loadSecurityDashboard();
+}
+
+async function logAccess() {
+  const person = document.getElementById('al-person').value.trim();
+  if (!person) { toast('Enter person name', 'warning'); return; }
+  await fetch('/api/security/access-log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    person, direction: document.getElementById('al-direction').value,
+    location: document.getElementById('al-location').value.trim(),
+    method: document.getElementById('al-method').value,
+    notes: document.getElementById('al-notes').value.trim()})});
+  document.getElementById('al-person').value = '';
+  document.getElementById('al-notes').value = '';
+  toast('Access logged', 'success');
+  loadAccessLog();
+  loadSecurityDashboard();
+}
+
+async function loadAccessLog() {
+  try {
+    const logs = await (await fetch('/api/security/access-log')).json();
+    const el = document.getElementById('access-log-list');
+    if (!logs.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:16px;text-align:center;">No access events logged.</div>'; return; }
+    el.innerHTML = '<table class="freq-table"><thead><tr><th>Time</th><th>Person</th><th>Dir</th><th>Location</th><th>Method</th><th>Notes</th></tr></thead><tbody>' +
+      logs.map(l => {
+        const t = new Date(l.created_at);
+        const ts = t.toLocaleDateString([],{month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+        const dirColor = l.direction === 'entry' ? 'var(--green)' : l.direction === 'exit' ? 'var(--text-muted)' : l.direction === 'unknown' ? 'var(--red)' : 'var(--accent)';
+        return `<tr><td style="font-size:10px;">${ts}</td><td><strong>${escapeHtml(l.person)}</strong></td><td style="color:${dirColor};font-weight:600;text-transform:uppercase;font-size:10px;">${l.direction}</td><td>${escapeHtml(l.location||'-')}</td><td style="font-size:10px;">${l.method}</td><td style="font-size:10px;">${escapeHtml(l.notes||'')}</td></tr>`;
+      }).join('') + '</tbody></table>';
+  } catch(e) {}
+}
+
+async function clearAccessLog() {
+  const btn = event.target;
+  if (!btn.dataset.confirm) {
+    btn.dataset.confirm = '1'; btn.textContent = 'Confirm clear?';
+    btn.style.background = 'var(--red)'; btn.style.color = '#fff';
+    setTimeout(() => { btn.textContent = 'Clear Log'; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
+    return;
+  }
+  await fetch('/api/security/access-log/clear', {method:'POST'});
+  toast('Access log cleared', 'warning');
+  loadAccessLog();
+}
 
 /* ─── Power Management ─── */
 function showPowerTab(tab) {

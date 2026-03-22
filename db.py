@@ -300,6 +300,28 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS cameras (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            url TEXT NOT NULL,
+            stream_type TEXT DEFAULT 'mjpeg',
+            location TEXT DEFAULT '',
+            zone TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS access_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person TEXT NOT NULL DEFAULT '',
+            direction TEXT DEFAULT 'entry',
+            location TEXT DEFAULT '',
+            method TEXT DEFAULT 'visual',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS power_devices (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             device_type TEXT NOT NULL,
@@ -431,6 +453,7 @@ def init_db():
         'CREATE INDEX IF NOT EXISTS idx_wound_patient ON wound_log(patient_id, created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_patients_contact ON patients(contact_id)',
         'CREATE INDEX IF NOT EXISTS idx_power_log_created ON power_log(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_access_log_created ON access_log(created_at DESC)',
     ]:
         try:
             conn.execute(idx)

@@ -3560,6 +3560,88 @@ def create_app():
         except Exception as e:
             return jsonify({'summary': f'{len(alerts)} active alert(s). AI summary unavailable: {e}'})
 
+    # ─── Security Module ──────────────────────────────────────────────
+
+    @app.route('/api/security/cameras')
+    def api_cameras_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM cameras ORDER BY name').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/security/cameras', methods=['POST'])
+    def api_cameras_create():
+        data = request.get_json() or {}
+        if not data.get('name') or not data.get('url'):
+            return jsonify({'error': 'Name and URL required'}), 400
+        db = get_db()
+        db.execute('INSERT INTO cameras (name, url, stream_type, location, zone, notes) VALUES (?,?,?,?,?,?)',
+                   (data['name'], data['url'], data.get('stream_type', 'mjpeg'),
+                    data.get('location', ''), data.get('zone', ''), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'}), 201
+
+    @app.route('/api/security/cameras/<int:cid>', methods=['DELETE'])
+    def api_cameras_delete(cid):
+        db = get_db()
+        db.execute('DELETE FROM cameras WHERE id = ?', (cid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/security/access-log')
+    def api_access_log():
+        db = get_db()
+        rows = db.execute('SELECT * FROM access_log ORDER BY created_at DESC LIMIT 200').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/security/access-log', methods=['POST'])
+    def api_access_log_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO access_log (person, direction, location, method, notes) VALUES (?,?,?,?,?)',
+                   (data.get('person', ''), data.get('direction', 'entry'),
+                    data.get('location', ''), data.get('method', 'visual'), data.get('notes', '')))
+        db.commit()
+        db.close()
+        log_activity('access_logged', detail=f'{data.get("direction","entry")}: {data.get("person","")} at {data.get("location","")}')
+        return jsonify({'status': 'logged'}), 201
+
+    @app.route('/api/security/access-log/clear', methods=['POST'])
+    def api_access_log_clear():
+        db = get_db()
+        db.execute('DELETE FROM access_log')
+        db.commit()
+        db.close()
+        return jsonify({'status': 'cleared'})
+
+    @app.route('/api/security/dashboard')
+    def api_security_dashboard():
+        """Security overview: camera status, recent access, incident summary."""
+        db = get_db()
+        from datetime import datetime, timedelta
+        cameras = db.execute('SELECT COUNT(*) as c FROM cameras WHERE status = ?', ('active',)).fetchone()['c']
+        access_24h = db.execute("SELECT COUNT(*) as c FROM access_log WHERE created_at >= ?",
+                                ((datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S'),)).fetchone()['c']
+        sec_incidents = db.execute("SELECT COUNT(*) as c FROM incidents WHERE category = 'security' AND created_at >= ?",
+                                  ((datetime.now() - timedelta(hours=48)).strftime('%Y-%m-%d %H:%M:%S'),)).fetchone()['c']
+        # Get situation board security level
+        sit_raw = db.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
+        security_level = 'green'
+        if sit_raw and sit_raw['value']:
+            try:
+                sit = json.loads(sit_raw['value'])
+                security_level = sit.get('security', 'green')
+            except Exception:
+                pass
+        db.close()
+        return jsonify({
+            'cameras_active': cameras, 'access_24h': access_24h,
+            'security_incidents_48h': sec_incidents, 'security_level': security_level,
+        })
+
     # ─── Power Management ─────────────────────────────────────────────
 
     @app.route('/api/power/devices')

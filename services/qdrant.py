@@ -67,7 +67,7 @@ def install(callback=None):
                 zip_url = asset['browser_download_url']
                 break
         if not zip_url:
-            raise RuntimeError('Could not find Qdrant Windows release')
+            raise RuntimeError('Could not find Qdrant download for Windows. Check your internet connection and try again.')
 
         download_file(zip_url, zip_path, SERVICE_ID)
 

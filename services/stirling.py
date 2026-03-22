@@ -134,7 +134,7 @@ def install(callback=None):
                     jar_url = asset['browser_download_url']
                     break
         if not jar_url:
-            raise RuntimeError('Could not find Stirling-PDF jar in release assets')
+            raise RuntimeError('Could not find Stirling-PDF download. Check your internet connection and try again.')
 
         download_file(jar_url, jar_path, SERVICE_ID)
 

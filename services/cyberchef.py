@@ -39,7 +39,7 @@ def install(callback=None):
     os.makedirs(install_dir, exist_ok=True)
     zip_path = os.path.join(install_dir, 'CyberChef.zip')
 
-    _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'downloading', 'error': None}
+    _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'downloading', 'error': None, 'speed': '', 'downloaded': 0, 'total': 0}
 
     try:
         # Resolve actual zip URL from GitHub releases API

@@ -169,6 +169,10 @@ def pull_model(model_name: str):
         resp.raise_for_status()
 
         import json
+        import time as _time
+        _pull_max_pct = 0
+        _pull_last_bytes = 0
+        _pull_last_time = _time.time()
         for line in resp.iter_lines():
             if not line:
                 continue
@@ -178,12 +182,31 @@ def pull_model(model_name: str):
                 total = data.get('total', 0)
                 completed = data.get('completed', 0)
                 pct = int(completed / total * 100) if total > 0 else 0
+                # Prevent backward jumps when Ollama switches layers
+                _pull_max_pct = max(_pull_max_pct, pct)
+
+                # Calculate speed
+                speed_str = ''
+                now = _time.time()
+                if completed > 0 and total > 0 and now - _pull_last_time >= 1:
+                    bytes_delta = completed - _pull_last_bytes
+                    time_delta = now - _pull_last_time
+                    if bytes_delta > 0 and time_delta > 0:
+                        bps = bytes_delta / time_delta
+                        speed_str = f'{bps/1024/1024:.1f} MB/s' if bps > 1024*1024 else f'{bps/1024:.0f} KB/s'
+                    _pull_last_bytes = completed
+                    _pull_last_time = now
+
+                # Build size display
+                size_str = ''
+                if total > 0:
+                    size_str = f'{completed/1024/1024/1024:.1f}/{total/1024/1024/1024:.1f} GB' if total > 1024**3 else f'{completed/1024/1024:.0f}/{total/1024/1024:.0f} MB'
 
                 _pull_progress = {
                     'status': 'pulling',
                     'model': model_name,
-                    'percent': pct,
-                    'detail': status,
+                    'percent': _pull_max_pct,
+                    'detail': f'{status} {size_str} {speed_str}'.strip(),
                 }
             except Exception:
                 pass
@@ -192,7 +215,12 @@ def pull_model(model_name: str):
         log.info(f'Model {model_name} pulled successfully')
         return True
     except Exception as e:
-        _pull_progress = {'status': 'error', 'model': model_name, 'percent': 0, 'detail': str(e)}
+        detail = str(e)
+        if 'Connection refused' in detail or 'ConnectionError' in detail:
+            detail = 'AI service is not running. Start Ollama from the Home tab first.'
+        elif 'not found' in detail.lower():
+            detail = f'Model "{model_name}" not found. Check the name and try again.'
+        _pull_progress = {'status': 'error', 'model': model_name, 'percent': 0, 'detail': detail}
         log.error(f'Model pull failed: {e}')
         return False
 

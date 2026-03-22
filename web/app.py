@@ -129,6 +129,8 @@ def create_app():
             })
         return jsonify(services)
 
+    _installing = set()
+
     @app.route('/api/services/<service_id>/install', methods=['POST'])
     def api_install_service(service_id):
         mod = SERVICE_MODULES.get(service_id)
@@ -136,12 +138,17 @@ def create_app():
             return jsonify({'error': 'Unknown service'}), 404
         if mod.is_installed():
             return jsonify({'status': 'already_installed'})
+        if service_id in _installing:
+            return jsonify({'status': 'already_installing'})
+        _installing.add(service_id)
 
         def do_install():
             try:
                 mod.install()
             except Exception as e:
                 log.error(f'Install failed for {service_id}: {e}')
+            finally:
+                _installing.discard(service_id)
 
         threading.Thread(target=do_install, daemon=True).start()
         return jsonify({'status': 'installing'})
@@ -577,9 +584,10 @@ def create_app():
                                 break
                             time.sleep(1)
                         if get_download_progress(sid).get('status') == 'error':
-                            _wizard_state['errors'].append(f'{sid}: {get_download_progress(sid).get("error", "unknown")}')
+                            err_msg = get_download_progress(sid).get("error", "unknown")
+                            _wizard_state['errors'].append(f'{sid}: Download failed — {err_msg}. You can retry from the Home tab.')
                 except Exception as e:
-                    _wizard_state['errors'].append(f'{sid}: {e}')
+                    _wizard_state['errors'].append(f'{sid}: Setup failed — check your internet connection and try again from the Home tab.')
                 done += 1
                 _wizard_state['overall_progress'] = int(done / total * 100)
                 _wizard_state['completed'].append(sid)
@@ -644,7 +652,9 @@ def create_app():
                 for model_name in models:
                     _wizard_state.update({'current_item': f'Downloading AI model: {model_name}', 'item_progress': 0})
                     try:
-                        if ollama.running():
+                        if not ollama.running():
+                            _wizard_state['errors'].append(f'Model {model_name}: Skipped — AI service is not running. Start it from the Services tab and download models from AI Chat.')
+                        else:
                             ollama.pull_model(model_name)
                             # Poll pull progress
                             for _ in range(3600):
@@ -784,6 +794,7 @@ def create_app():
             'data_dir': data_dir,
             'nomad_disk_used': format_size(total_disk),
             'disk_free': format_size(disk_free),
+            'disk_free_bytes': disk_free,
             'disk_total': format_size(disk_total),
             'disk_devices': disk_devices,
             'uptime': uptime_str,

@@ -4725,12 +4725,12 @@ const SVC_ICONS = {
   stirling: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 13h6M9 17h4"/></svg>',
 };
 const SVC = {
-  ollama:    { name:'Ollama (AI Chat)',             desc:'Local AI chat powered by LLMs. Run Llama 3, Mistral, and more entirely offline.', tip:'Go to the AI Chat tab to start a private conversation.' },
-  kiwix:     { name:'Kiwix (Information Library)',   desc:'Offline Wikipedia, medical references, survival guides, and ebooks.', hint:'Download content from the Library tab to get started.', tip:'Open in browser to browse your downloaded content packs.' },
-  cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.', tip:'Open in browser for 400+ data transformation operations.' },
-  kolibri:   { name:'Kolibri (Education Platform)',  desc:'Offline Khan Academy courses, textbooks, and educational content.', requires:'Python on PATH', tip:'Open in browser to access courses and learning materials.' },
-  qdrant:    { name:'Qdrant (Vector DB)',           desc:'Vector database enabling AI to search your uploaded documents.', tip:'Enable "Search My Documents" in AI Chat to use this.' },
-  stirling:  { name:'Stirling PDF',                  desc:'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools.', requires:'Java 17+ (<a href="https://adoptium.net">adoptium.net</a>)', tip:'Open in browser to work with PDFs without cloud services.' },
+  ollama:    { name:'Ollama (AI Chat)',             desc:'Local AI chat powered by LLMs. Run Llama 3, Mistral, and more entirely offline.', tip:'Go to the AI Chat tab to start a private conversation.', dlSize:'~310 MB' },
+  kiwix:     { name:'Kiwix (Information Library)',   desc:'Offline Wikipedia, medical references, survival guides, and ebooks.', hint:'Download content from the Library tab to get started.', tip:'Open in browser to browse your downloaded content packs.', dlSize:'~15 MB' },
+  cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.', tip:'Open in browser for 400+ data transformation operations.', dlSize:'~20 MB' },
+  kolibri:   { name:'Kolibri (Education Platform)',  desc:'Offline Khan Academy courses, textbooks, and educational content.', requires:'Python on PATH', tip:'Open in browser to access courses and learning materials.', dlSize:'~200 MB' },
+  qdrant:    { name:'Qdrant (Vector DB)',           desc:'Vector database enabling AI to search your uploaded documents.', tip:'Enable "Search My Documents" in AI Chat to use this.', dlSize:'~30 MB' },
+  stirling:  { name:'Stirling PDF',                  desc:'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools.', requires:'Java 17+ (<a href="https://adoptium.net">adoptium.net</a>)', tip:'Open in browser to work with PDFs without cloud services.', dlSize:'~400 MB' },
 };
 
 let _servicesLoaded = false;
@@ -4759,7 +4759,7 @@ async function loadServices() {
       } else if (isInstalling) {
         actions = `<button class="btn btn-sm" disabled>Installing...</button>`;
       } else if (!s.installed) {
-        actions = `<button class="btn btn-sm btn-primary" onclick="installService('${s.id}')">Install</button>`;
+        actions = `<button class="btn btn-sm btn-primary" onclick="installService('${s.id}')">Install${info.dlSize ? ' ('+info.dlSize+')' : ''}</button>`;
       } else if (s.running) {
         actions = `
           ${s.port ? (s.id === 'ollama' ? `<button class="btn btn-sm btn-open-svc" onclick="document.querySelector('[data-tab=\\'ai-chat\\']').click()">Open AI Chat</button>` : `<button class="btn btn-sm btn-open-svc" onclick="openAppFrame('${escapeAttr(info.name)}','http://localhost:${s.port}')">Open</button>`) : ''}
@@ -4776,9 +4776,10 @@ async function loadServices() {
 
       let progressHtml = '';
       if (isInstalling) {
+        const dlInfo = prog.total > 0 ? `${formatBytes(prog.downloaded||0)} / ${formatBytes(prog.total)}` : '';
         progressHtml = `<div class="progress-wrap">
           <div class="progress-bar"><div class="fill" style="width:${prog.percent||0}%"></div></div>
-          <div class="progress-info"><span>${prog.status||''}${prog.speed ? ' - '+prog.speed : ''}</span><span>${prog.percent||0}%</span></div>
+          <div class="progress-info"><span>${prog.status||''}${prog.speed ? ' - '+prog.speed : ''}${dlInfo ? ' - '+dlInfo : ''}</span><span>${prog.percent||0}%</span></div>
         </div>`;
       }
 
@@ -4834,16 +4835,31 @@ async function loadServices() {
 
 let _busyServices = new Set();
 function svcBusy(id) { return _busyServices.has(id); }
+
+// Approximate download sizes in MB for disk space check
+const SVC_SIZES_MB = {ollama:310, kiwix:15, cyberchef:20, kolibri:300, qdrant:30, stirling:500};
+
 async function installService(id) {
-  // Check prereqs first
+  // Check disk space first
+  const neededMB = SVC_SIZES_MB[id] || 100;
+  try {
+    const sys = await (await fetch('/api/system')).json();
+    const freeMB = (sys.disk_free_bytes || 0) / (1024*1024);
+    if (freeMB > 0 && freeMB < neededMB * 1.5) {
+      toast(`Low disk space! ${Math.round(freeMB)} MB free, need ~${neededMB} MB. Install may fail.`, 'warning');
+    }
+  } catch(e) {}
+  // Check prereqs
   try {
     const p = await (await fetch(`/api/services/${id}/prereqs`)).json();
     if (!p.met) { toast(p.message || `Prerequisites not met for ${SVC[id]?.name||id}`, 'error'); return; }
     if (p.message) toast(p.message, 'info');
   } catch(e) { toast('Failed to check prerequisites', 'warning'); }
   try {
-    await fetch(`/api/services/${id}/install`, {method:'POST'});
-    toast(`Installing ${SVC[id]?.name||id}...`, 'info');
+    const r = await fetch(`/api/services/${id}/install`, {method:'POST'});
+    const d = await r.json();
+    if (d.status === 'already_installing') { toast('Already installing...', 'info'); return; }
+    toast(`Installing ${SVC[id]?.name||id} (${SVC[id]?.dlSize || '?'})...`, 'info');
     pollServices();
   } catch(e) { toast(`Failed to install ${SVC[id]?.name||id}`, 'error'); }
 }
@@ -4893,12 +4909,32 @@ async function stopAllServices() {
 
 let _pollInt = null;
 let _lastServicesData = [];
+let _prevInstalling = new Set();
 function pollServices() {
   if (_pollInt) return;
   _pollInt = setInterval(async () => {
     await loadServices();
-    const busy = _lastServicesData.some(s => {const p=s.progress; return p&&(p.status==='downloading'||p.status==='extracting'||p.status?.startsWith('downloading'));});
-    if (!busy) { clearInterval(_pollInt); _pollInt = null; }
+    const nowInstalling = new Set();
+    const nowComplete = new Set();
+    const nowError = new Set();
+    _lastServicesData.forEach(s => {
+      const p = s.progress;
+      if (p && (p.status === 'downloading' || p.status === 'extracting' || p.status?.startsWith('downloading'))) nowInstalling.add(s.id);
+      if (p && p.status === 'complete') nowComplete.add(s.id);
+      if (p && p.status === 'error') nowError.add(s.id);
+    });
+    // Notify on completion — was installing, now complete
+    _prevInstalling.forEach(id => {
+      if (!nowInstalling.has(id) && !nowError.has(id)) {
+        const name = SVC[id]?.name || id;
+        if (nowComplete.has(id) || _lastServicesData.find(s => s.id === id)?.installed) {
+          toast(`${name} installed successfully! Click Start to use it.`, 'success');
+          sendNotification('Install Complete', `${name} is ready`);
+        }
+      }
+    });
+    _prevInstalling = nowInstalling;
+    if (!nowInstalling.size) { clearInterval(_pollInt); _pollInt = null; }
   }, 1500);
 }
 
@@ -5250,22 +5286,49 @@ let _zimQueuePoll = null;
 async function loadZimDownloads() {
   try {
     const downloads = await (await fetch('/api/kiwix/zim-downloads')).json();
-    const active = Object.entries(downloads).filter(([,v]) => v.status === 'downloading' || v.status === 'extracting');
+    const entries = Object.entries(downloads);
+    const active = entries.filter(([,v]) => v.status === 'downloading' || v.status === 'extracting');
+    const errors = entries.filter(([,v]) => v.status === 'error');
+    const completed = entries.filter(([,v]) => v.status === 'complete');
     const queueEl = document.getElementById('zim-download-queue');
     const itemsEl = document.getElementById('zim-queue-items');
-    if (!active.length) {
+    // Show success toasts for newly completed downloads
+    completed.forEach(([filename]) => {
+      if (!window._zimCompletedSet) window._zimCompletedSet = new Set();
+      if (!window._zimCompletedSet.has(filename)) {
+        window._zimCompletedSet.add(filename);
+        toast(`${filename} downloaded successfully!`, 'success');
+        sendNotification('Download Complete', `${filename} is ready`);
+      }
+    });
+    // Show error toasts for failed downloads
+    errors.forEach(([filename, p]) => {
+      if (!window._zimErrorSet) window._zimErrorSet = new Set();
+      if (!window._zimErrorSet.has(filename)) {
+        window._zimErrorSet.add(filename);
+        toast(`Download failed: ${filename} — ${p.error || 'Unknown error'}. Click Download again to retry (will resume).`, 'error');
+      }
+    });
+    if (!active.length && !errors.length) {
       queueEl.style.display = 'none';
       if (_zimQueuePoll) { clearInterval(_zimQueuePoll); _zimQueuePoll = null; }
       return;
     }
     queueEl.style.display = 'block';
-    itemsEl.innerHTML = active.map(([filename, p]) => `
+    let html = active.map(([filename, p]) => `
       <div class="zim-queue-item">
         <div class="zq-name">${escapeHtml(filename)}</div>
         <div class="progress-bar"><div class="fill" style="width:${p.percent||0}%"></div></div>
         <div class="zq-meta"><span>${p.status||''} ${p.speed ? '- '+p.speed : ''}</span><span>${p.percent||0}%</span></div>
       </div>
     `).join('');
+    html += errors.map(([filename, p]) => `
+      <div class="zim-queue-item" style="border-left:3px solid var(--red);">
+        <div class="zq-name" style="color:var(--red);">${escapeHtml(filename)} - FAILED</div>
+        <div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${escapeHtml(p.error || 'Unknown error')}. Retry will resume from where it stopped.</div>
+      </div>
+    `).join('');
+    itemsEl.innerHTML = html;
   } catch(e) {}
 }
 
@@ -5380,13 +5443,21 @@ function startMapDownloadPolling() {
       const errors = Object.entries(progress).filter(([, v]) => v.error);
 
       if (active.length > 0) {
-        const [id, info] = active[0];
         const label = document.getElementById('map-dl-label');
         const pct = document.getElementById('map-dl-pct');
         const bar = document.getElementById('map-dl-bar');
-        if (label) label.textContent = `${id}: ${info.status}`;
-        if (pct) pct.textContent = `${info.progress}%`;
-        if (bar) bar.style.width = `${info.progress}%`;
+        // Show all active downloads, not just first
+        if (active.length === 1) {
+          const [id, info] = active[0];
+          if (label) label.textContent = `${id}: ${info.status}`;
+          if (pct) pct.textContent = `${info.progress}%`;
+          if (bar) bar.style.width = `${info.progress}%`;
+        } else {
+          const avgPct = Math.round(active.reduce((s,[,v]) => s + v.progress, 0) / active.length);
+          if (label) label.textContent = `Downloading ${active.length} regions: ${active.map(([id]) => id).join(', ')}`;
+          if (pct) pct.textContent = `~${avgPct}%`;
+          if (bar) bar.style.width = `${avgPct}%`;
+        }
       } else {
         // No active downloads
         if (statusEl) statusEl.style.display = 'none';
@@ -5407,9 +5478,10 @@ function startMapDownloadPolling() {
 
 async function downloadMapFromUrl() {
   const url = document.getElementById('map-url-input')?.value?.trim();
-  if (!url) { toast('Enter a URL first', 'error'); return; }
-  const filename = prompt('Save as filename:', url.split('/').pop() || 'download.pmtiles');
-  if (!filename) return;
+  if (!url) { toast('Enter a URL first', 'warning'); return; }
+  // Auto-generate filename from URL, user can edit via the file path input field
+  const filename = (document.getElementById('map-file-input')?.value?.trim()) || url.split('/').pop()?.split('?')[0] || 'download.pmtiles';
+  if (!filename) { toast('Could not determine filename', 'warning'); return; }
   try {
     const resp = await fetch('/api/maps/download-url', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -6065,10 +6137,20 @@ async function loadModelPickerList() {
 }
 
 async function pullModel(name) {
-  await fetch('/api/ai/pull', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})});
-  toast(`Downloading ${name}...`);
-  toggleModelPicker();
-  pollPullProgress();
+  // Check if Ollama is running first
+  try {
+    const svcs = _lastServicesData || await (await fetch('/api/services')).json();
+    const ollamaSvc = svcs.find(s => s.id === 'ollama');
+    if (!ollamaSvc?.installed) { toast('Install the AI Chat service first from the Home tab', 'warning'); return; }
+    if (!ollamaSvc?.running) { toast('Start the AI Chat service first — go to Home tab and click Start on Ollama', 'warning'); return; }
+  } catch(e) {}
+  try {
+    const r = await fetch('/api/ai/pull', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})});
+    if (!r.ok) { const d = await r.json().catch(()=>({})); toast(d.error || 'Failed to start download', 'error'); return; }
+    toast(`Downloading ${name}...`, 'info');
+    toggleModelPicker();
+    pollPullProgress();
+  } catch(e) { toast('Failed to connect to AI service', 'error'); }
 }
 
 function pullCustomModel() {
@@ -8858,17 +8940,23 @@ async function loadVideoList() {
 async function uploadVideo() {
   const input = document.getElementById('video-upload');
   if (!input.files.length) return;
+  const file = input.files[0];
+  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
   const formData = new FormData();
-  formData.append('file', input.files[0]);
+  formData.append('file', file);
   formData.append('category', document.getElementById('video-cat-select').value);
-  formData.append('title', input.files[0].name.replace(/\.[^.]+$/, ''));
-  toast('Uploading video...', 'info');
+  formData.append('title', file.name.replace(/\.[^.]+$/, ''));
+  toast(`Uploading ${file.name} (${sizeMB} MB)... Please wait.`, 'info');
   try {
-    await fetch('/api/videos/upload', {method:'POST', body:formData});
+    const r = await fetch('/api/videos/upload', {method:'POST', body:formData});
     input.value = '';
-    toast('Video uploaded', 'success');
+    if (r.ok) {
+      toast('Video uploaded', 'success');
+    } else {
+      toast('Video upload failed', 'error');
+    }
     loadVideoList();
-  } catch(e) { toast('Upload failed', 'error'); }
+  } catch(e) { toast('Upload failed — file may be too large', 'error'); }
 }
 
 function playVideo(filename) {
@@ -9154,12 +9242,22 @@ async function loadPDFList() {
 async function uploadPDF() {
   const input = document.getElementById('pdf-upload');
   if (!input.files.length) return;
+  const file = input.files[0];
+  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+  toast(`Uploading ${file.name} (${sizeMB} MB)...`, 'info');
   const formData = new FormData();
-  formData.append('file', input.files[0]);
-  await fetch('/api/library/upload-pdf', {method:'POST', body:formData});
-  input.value = '';
-  toast('Document uploaded', 'success');
-  loadPDFList();
+  formData.append('file', file);
+  try {
+    const r = await fetch('/api/library/upload-pdf', {method:'POST', body:formData});
+    input.value = '';
+    if (r.ok) {
+      toast('Document uploaded', 'success');
+    } else {
+      const d = await r.json().catch(() => ({}));
+      toast(`Upload failed: ${d.error || 'Server error'}`, 'error');
+    }
+    loadPDFList();
+  } catch(e) { toast('Upload failed — check your connection', 'error'); }
 }
 function viewPDF(filename) {
   document.getElementById('pdf-viewer').style.display = 'block';

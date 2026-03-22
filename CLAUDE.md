@@ -115,7 +115,7 @@ pyinstaller build.spec
 v3.4.0
 
 ## Status
-Working v3.4.0 — Command Center Edition. Map region downloads via Protomaps pmtiles extract (auto-installs CLI), 50+ alternative map sources catalog (Geofabrik, BBBike, USGS, Natural Earth, HOT, NOAA, Sentinel-2, etc.), URL/file import for maps. Phase 1 prepper data: START triage decision tree, companion planting matrix (15 crops), calorie density database (20 foods), livestock care reference (9 animals), WHO essential medicines reference (25+ medications). Plus all prior features.
+Working v3.4.0 — Command Center Edition. All 4 research phases implemented. Map region downloads via Protomaps pmtiles extract, 50+ alternative map sources catalog, URL/file import. Phase 1: START triage, companion planting, calorie DB, livestock ref, WHO medicines. Phase 2: Food storage planner, generator fuel calc, dental/PFA/CERT protocols. Phase 3: Universal edibility test, seed saving, soil/fermentation ref, legal doc templates, cloud weather, COMSEC. Phase 4: Rainwater harvest calc, radio range estimator, medication dosage calc. Plus all prior features.
 
 ## Gotchas (v0.8.0)
 - Stirling PDF requires Java 17+ (downloads .jar, not .exe — no Windows exe in releases)

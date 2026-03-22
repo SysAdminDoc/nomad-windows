@@ -95,12 +95,12 @@
 **Builds on:** Solar/battery/generator calculators, solar_expert AI persona
 **Effort:** Large-Huge (3+ sessions)
 
-- [ ] Power device registry — define solar panels (wattage, count), batteries (type, capacity), charge controllers, inverters
-- [ ] Manual power log — log daily readings: battery voltage, solar yield (Wh), load consumption
-- [ ] Power budget dashboard — visualize generation vs consumption, projected autonomy
-- [ ] Charge controller USB integration (stretch) — Victron VE.Direct protocol parser, Renogy RS-232 protocol
-- [ ] Weather-aware solar forecast (stretch) — use barometric pressure trend + cloud observations to estimate next-day yield
-- [ ] Low battery alerts — threshold-based alerts integrated with Phase 1 alert system
+- [x] Power device registry — 5 types (solar, battery, controller, inverter, generator) with type-specific specs
+- [x] Manual power log — battery voltage, SOC, solar watts/Wh, load watts/Wh, generator status
+- [x] Power budget dashboard — autonomy projection, net daily balance, color-coded SOC and autonomy
+- [ ] Charge controller USB integration (stretch — Victron VE.Direct, Renogy RS-232)
+- [ ] Weather-aware solar forecast (stretch — pressure trend + cloud data)
+- [ ] Low battery alerts integrated with Phase 1 alert system (enhancement)
 
 ## Phase 9: Security Module
 **Builds on:** Situation board, incident log, tactical AI persona

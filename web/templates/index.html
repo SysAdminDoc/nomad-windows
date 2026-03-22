@@ -196,6 +196,7 @@ a { color: var(--accent); text-decoration: none; }
   white-space: nowrap; position: relative;
 }
 .tab:hover { color: var(--text); background: rgba(255,255,255,0.06); }
+.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .tab.active {
   color: #fff; background: linear-gradient(135deg, var(--accent), var(--green));
   box-shadow: 0 2px 8px var(--accent-glow);
@@ -309,6 +310,7 @@ a { color: var(--accent); text-decoration: none; }
   cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
 .btn:hover { background: var(--surface3); border-color: var(--border-hover); }
+.btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .btn:active { transform: scale(0.97); }
 .btn-primary { background: linear-gradient(135deg, var(--accent), var(--green)); color: #fff; border-color: transparent; box-shadow: 0 2px 8px var(--accent-glow); }
@@ -987,15 +989,15 @@ a { color: var(--accent); text-decoration: none; }
   .notes-sidebar { width: 100%; max-height: 200px; }
   .prep-layout { flex-direction: column; min-height: auto; }
   .prep-sidebar { width: 100%; max-height: 200px; }
-  .prep-subtabs { flex-wrap: wrap; }
+  .prep-subtabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
   .prep-subtab { font-size: 10px; padding: 4px 8px; }
   .calc-grid { grid-template-columns: 1fr; }
   .sit-board { grid-template-columns: repeat(3, 1fr); }
   .content-summary { flex-wrap: wrap; gap: 8px; }
   .region-grid { grid-template-columns: 1fr; }
   .gauge-row { flex-direction: column; }
-  #lan-chat-panel { width: 300px; left: 10px; bottom: 70px; }
-  #timer-panel { width: 280px; right: 10px; bottom: 70px; }
+  #lan-chat-panel { width: calc(100vw - 20px); max-width: 300px; left: 10px; bottom: 70px; }
+  #timer-panel { width: calc(100vw - 20px); max-width: 280px; right: 10px; bottom: 70px; }
   .map-wrap { height: 300px; min-height: 300px; }
   .bench-scores { grid-template-columns: repeat(2, 1fr); }
   .freq-table { font-size: 10px; }
@@ -1233,7 +1235,7 @@ a { color: var(--accent); text-decoration: none; }
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'preparedness\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
         <div class="cc-title">Preparedness</div>
-        <div class="cc-desc">Checklists, inventory, contacts, calculators, protocols, vault, weather, operations — 13 tools.</div>
+        <div class="cc-desc">Checklists, inventory, contacts, medical, security, power, garden, calculators, guides, protocols, and more — 18 sub-tabs.</div>
       </div>
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'tools\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
@@ -1544,7 +1546,7 @@ a { color: var(--accent); text-decoration: none; }
           </div>
         </div>
         <div class="notes-search"><input id="notes-search" placeholder="Search notes..." oninput="filterNotes()"></div>
-        <div class="notes-list" id="notes-list"></div>
+        <div class="notes-list" id="notes-list"><div style="padding:16px;color:var(--text-muted);font-size:11px;text-align:center;">No notes yet. Click + New to create one.</div></div>
       </div>
       <div class="notes-editor">
         <div class="notes-editor-header">
@@ -4839,7 +4841,7 @@ a { color: var(--accent); text-decoration: none; }
 </div>
 
 <!-- Setup Wizard -->
-<div class="wizard-overlay" id="wizard" style="display:none;">
+<div class="wizard-overlay" id="wizard" role="dialog" aria-modal="true" aria-label="Setup Wizard" style="display:none;">
   <div class="wizard-card" style="max-width:680px;">
     <!-- Page 1: Welcome -->
     <div id="wiz-page-1">
@@ -6351,21 +6353,41 @@ async function pullFromSettings(name) {
 }
 
 /* ─── Network Status ─── */
+let _backendFailCount = 0;
 async function checkNetwork() {
   try {
     const n = await (await fetch('/api/network')).json();
+    _backendFailCount = 0;
     const el = document.getElementById('net-status');
     const dot = n.online ? '#4caf50' : '#f44336';
     const label = n.online ? 'Online' : 'Offline';
     el.innerHTML = `<span style="width:7px;height:7px;border-radius:50%;background:${dot};"></span>${label} &middot; ${n.lan_ip}`;
-
+    // Clear connection-lost banner if it was shown
+    const lostBanner = document.getElementById('connection-lost');
+    if (lostBanner) lostBanner.style.display = 'none';
     // LAN banner
     const banner = document.getElementById('lan-banner');
     if (n.lan_ip !== '127.0.0.1') {
       banner.style.display = 'flex';
       banner.innerHTML = `Access from other devices on your network: <a href="${n.dashboard_url}">${n.dashboard_url}</a>`;
     }
-  } catch(e) {}
+  } catch(e) {
+    _backendFailCount++;
+    if (_backendFailCount >= 2) {
+      const el = document.getElementById('net-status');
+      el.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:#f44336;"></span>Disconnected';
+      // Show connection-lost banner
+      let lostBanner = document.getElementById('connection-lost');
+      if (!lostBanner) {
+        lostBanner = document.createElement('div');
+        lostBanner.id = 'connection-lost';
+        lostBanner.style.cssText = 'position:sticky;top:0;z-index:199;background:var(--red-dim);border-bottom:1px solid var(--red);padding:8px 16px;text-align:center;font-size:12px;font-weight:600;color:var(--red);';
+        lostBanner.textContent = 'Connection to backend lost — retrying automatically...';
+        document.querySelector('.header').after(lostBanner);
+      }
+      lostBanner.style.display = 'block';
+    }
+  }
 }
 
 /* ─── Setup Wizard ─── */
@@ -10430,17 +10452,68 @@ function playAlertSound(type) {
 
 /* ─── Help / Guide ─── */
 function showHelp() {
+  const theme = localStorage.getItem('nomad-theme') || 'nomad';
+  const isDark = theme !== 'nomad';
+  const bg = isDark ? '#0d0d0d' : '#f5f0e0';
+  const text = isDark ? '#e8e8ed' : '#1a1a0f';
+  const muted = isDark ? '#666' : '#8b7355';
+  const surface = isDark ? '#1e1e26' : '#fff';
+  const border = isDark ? '#333' : '#d4c9b0';
   openAppFrameHTML('Help Guide', `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>N.O.M.A.D. Help Guide</title>
-  <style>body{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#e8e8ed;padding:20px 40px;line-height:1.7;max-width:800px;margin:0 auto;}
-  h1{color:#5b9fff;border-bottom:1px solid #333;padding-bottom:8px;}h2{color:#4caf50;margin-top:24px;}h3{color:#ff9800;}
-  kbd{background:#1e1e26;padding:2px 6px;border-radius:4px;font-size:12px;border:1px solid #333;}
-  table{border-collapse:collapse;width:100%;margin:8px 0;}th,td{border:1px solid #333;padding:6px 10px;text-align:left;font-size:13px;}th{background:#1e1e26;}
+  <style>body{font-family:'Segoe UI',sans-serif;background:${bg};color:${text};padding:20px 40px;line-height:1.7;max-width:850px;margin:0 auto;font-size:14px;}
+  h1{color:#5b9fff;border-bottom:2px solid ${border};padding-bottom:8px;}h2{color:#4caf50;margin-top:28px;border-bottom:1px solid ${border};padding-bottom:4px;}h3{color:#ff9800;margin-top:16px;}
+  kbd{background:${surface};padding:2px 6px;border-radius:4px;font-size:12px;border:1px solid ${border};}
+  table{border-collapse:collapse;width:100%;margin:8px 0;}th,td{border:1px solid ${border};padding:6px 10px;text-align:left;font-size:13px;}th{background:${surface};}
+  code{background:${surface};padding:1px 4px;border-radius:3px;font-size:12px;}
   </style></head><body>
-  <h1>Project N.O.M.A.D. for Windows — Help Guide</h1>
-  <p>Version ${VERSION} — The most complete offline survival command center available.</p>
+  <h1>Project N.O.M.A.D. for Windows v${VERSION}</h1>
+  <p>The most complete offline survival command center available. 221 API endpoints, 30+ database tables, 18 preparedness sub-tabs.</p>
 
   <h2>Getting Started</h2>
   <p>On first run, the Setup Wizard guides you through choosing a storage drive and what to download. You can re-run it anytime from <strong>Settings > Re-run Setup Wizard</strong>.</p>
+  <p><strong>Quick setup:</strong> Install AI Chat (Ollama) + download a small model (Llama 3.2 3B, 2 GB) + download Essential content packs. Takes ~10 minutes on a decent connection.</p>
+
+  <h2>9 Main Tabs</h2>
+  <h3>Home (Services)</h3><p>Command dashboard with proactive alerts, service management, situation overview, content summary, and activity feed. Install, start, stop, and monitor all 6 services. Download sizes shown on Install buttons.</p>
+  <h3>AI Chat</h3><p>Local AI powered by Ollama. 19 system presets (medical, survival, coding, etc). Toggle <strong>"My Situation"</strong> to inject your real inventory, burn rates, incidents, and threat levels into the conversation. Drag-drop files for context. Upload documents for semantic search (RAG). Download All models with one click.</p>
+  <h3>Library</h3><p>100+ downloadable content packs in 14 categories across 3 tiers (Essential / Standard / Comprehensive). Bulk download buttons at top. Each item shows live download state. Upload and view PDFs/ePubs. AI document intelligence classifies, summarizes, and extracts entities from uploaded documents.</p>
+  <h3>Maps</h3><p>Offline maps with 10 tools: Drop Pin, Measure, Save Waypoint, Draw Zone, Property Boundary (calculates area in acres + perimeter), Clear Pins, Print Layout, Bookmark, Bearing & Distance, Export GPX. 22 downloadable regions worldwide. Enter coordinates directly (lat,lng) for offline navigation.</p>
+  <h3>Notes</h3><p>Markdown notes with tags, pinning, live preview. Export individual notes as .md or all notes as ZIP.</p>
+  <h3>Tools</h3><p>NukeMap v3.2.0 nuclear simulator (418 targets, 7 WW3 scenarios). 4 immersive training scenarios with AI complications and scored after-action reviews. Meshtastic mesh radio integration. Barcode scanner (auto-adds to inventory). Video library. 6 timed emergency drills.</p>
+  <h3>Benchmark</h3><p>CPU, memory, disk, AI inference scoring (NOMAD Score 0-100). Trend indicators show improvement vs previous run.</p>
+  <h3>Preparedness</h3><p>18 sub-tabs (see below).</p>
+  <h3>Settings</h3><p>System monitoring with live gauges. AI model manager with Download All. Network federation (sync between NOMAD nodes). Theme selection. Backup/restore. LAN access URL. Host power control. Application log viewer.</p>
+
+  <h2>18 Preparedness Sub-Tabs</h2>
+  <table><tr><th>Tab</th><th>What It Does</th></tr>
+  <tr><td><strong>Checklists</strong></td><td>11 templates (72hr kit, bug-out bag, medical, etc). Custom checklists. JSON import/export for sharing.</td></tr>
+  <tr><td><strong>Incidents</strong></td><td>Chronological event log with severity (info/warning/alert/critical) and category filtering.</td></tr>
+  <tr><td><strong>Inventory</strong></td><td>Supply tracking with quantities, expiration alerts, burn rate (Days Left), shopping list generator, CSV import/export.</td></tr>
+  <tr><td><strong>Contacts</strong></td><td>Emergency directory with callsigns, roles, skills, blood types, rally points. Skills matrix with gap analysis.</td></tr>
+  <tr><td><strong>Security</strong></td><td>IP camera feeds (MJPEG/snapshot/HLS). Access logging (entry/exit/patrol). Security dashboard with threat level.</td></tr>
+  <tr><td><strong>Power</strong></td><td>Device registry (solar/battery/controller/inverter/generator). Power log. Autonomy projection dashboard.</td></tr>
+  <tr><td><strong>Garden</strong></td><td>Garden plots, seed inventory with auto-viability, harvest log (auto-feeds inventory), livestock records, hardiness zone lookup.</td></tr>
+  <tr><td><strong>Medical</strong></td><td>Patient profiles, vital signs tracking (BP/pulse/resp/temp/SpO2/pain/GCS), wound documentation, 26-pair drug interaction checker, printable patient cards.</td></tr>
+  <tr><td><strong>Calculators</strong></td><td>10+ calculators: water, food storage, generator fuel, rainwater, radio range, medication dosage, solar sizing, BOB weight, and more.</td></tr>
+  <tr><td><strong>Guides</strong></td><td>7 interactive decision trees: water purification, wound assessment, fire starting, shelter, radio, food preservation, START triage. Works offline without AI.</td></tr>
+  <tr><td><strong>Radio Ref</strong></td><td>Complete frequency table: NOAA, FRS, GMRS, MURS, CB, HAM, shortwave.</td></tr>
+  <tr><td><strong>Quick Ref</strong></td><td>25+ reference cards: NATO alphabet, Morse code trainer, unit converter, triage, companion planting, and more.</td></tr>
+  <tr><td><strong>Protocols</strong></td><td>17 emergency procedures with search and expand-all. Printable wallet card generator.</td></tr>
+  <tr><td><strong>Vault</strong></td><td>AES-256 encrypted storage. Password verified on unlock. Legal document templates. Password generator.</td></tr>
+  <tr><td><strong>Weather</strong></td><td>Barometric pressure journal with automated trend analysis and weather prediction.</td></tr>
+  <tr><td><strong>Signals</strong></td><td>Radio check-in schedule planner + communications log.</td></tr>
+  <tr><td><strong>Operations</strong></td><td>SITREP generator, message cipher, infrastructure tracker, vehicle board, threat matrix, emergency broadcast, home security assessment.</td></tr>
+  <tr><td><strong>Family Plan</strong></td><td>FEMA-style emergency plan: meeting locations, evacuation routes, household members, insurance info.</td></tr>
+  </table>
+
+  <h2>Proactive Alerts</h2>
+  <p>A background engine checks every 5 minutes for: inventory items running low (<7 days supply), expiring items (<14 days), barometric pressure drops (storm warning), and incident clusters (3+ in 48h). Alerts appear in the bell icon in the header. Click <strong>AI Summary</strong> to get a natural language situation report.</p>
+
+  <h2>Network Federation</h2>
+  <p>Sync data between multiple NOMAD installations on your LAN. Go to <strong>Settings > Network Federation</strong>. Click <strong>Scan for Nodes</strong> to find other instances. Click <strong>Push Data</strong> to send your inventory, contacts, checklists, notes, incidents, and waypoints to a peer. Enter an IP manually for cross-subnet connections.</p>
+
+  <h2>Training Scenarios</h2>
+  <p>In the <strong>Tools</strong> tab, 4 immersive multi-phase scenarios test your decision-making: Grid Down (7 days), Medical Crisis, Evacuation, Winter Storm. AI generates complications between phases based on your real inventory data. Each run is scored 0-100 with an after-action review.</p>
 
   <h2>Keyboard Shortcuts</h2>
   <table><tr><th>Shortcut</th><th>Action</th></tr>
@@ -10448,25 +10521,12 @@ function showHelp() {
   <tr><td><kbd>Alt+T</kbd></td><td>Toggle timer widget</td></tr>
   <tr><td><kbd>Alt+C</kbd></td><td>Toggle LAN chat</td></tr>
   <tr><td><kbd>Alt+N</kbd></td><td>New note</td></tr>
-  <tr><td><kbd>Ctrl+K</kbd></td><td>Global search</td></tr></table>
-
-  <h2>Main Tabs</h2>
-  <h3>Services</h3><p>Install, start, and manage the 6 core services. The command dashboard shows situation status, active timers, low stock alerts, and recent incidents.</p>
-  <h3>AI Chat</h3><p>Chat with a local AI model. Toggle <strong>"My Situation"</strong> to make the AI aware of your inventory, incidents, and threat levels. Drag-drop files for context.</p>
-  <h3>Library</h3><p>Browse and download offline content (Wikipedia, medical references, survival guides). Upload and view PDFs.</p>
-  <h3>Maps</h3><p>Offline maps with persistent waypoints (7 categories), zone drawing, measurement, and GPX export. 22 regions worldwide.</p>
-  <h3>Tools</h3><p>NukeMap simulator, Meshtastic radio, barcode scanner, video library, and guided emergency drills.</p>
-  <h3>Preparedness</h3><p>13 sub-tabs: Checklists, Incident Log, Inventory, Contacts, Calculators, Radio Ref, Quick Ref, Protocols, Vault, Weather, Signals, Operations, Family Plan.</p>
-
-  <h2>Key Features</h2>
-  <h3>Situation Board</h3><p>Click the colored cells at the top of the Preparedness tab to cycle threat levels (Green > Yellow > Orange > Red) for Security, Water, Food, Medical, Power, Comms.</p>
-  <h3>Inventory Burn Rate</h3><p>Set a "Daily Usage" when adding items to see "Days Left" projections. Items below minimum quantity or expiring soon show alerts.</p>
-  <h3>Emergency Broadcast</h3><p>In Operations, type a message and click Broadcast to push an alert to ALL devices connected to the LAN. A colored banner appears at the top of every browser.</p>
-  <h3>Encrypted Vault</h3><p>Set a password to unlock, then store sensitive information. AES-256 encryption happens in your browser — the password never leaves your machine.</p>
-  <h3>LAN Access</h3><p>Other devices on your network can access the dashboard at the URL shown in the LAN banner. Everything is shared — inventory, contacts, chat, maps.</p>
+  <tr><td><kbd>Ctrl+K</kbd></td><td>Global search</td></tr>
+  <tr><td><kbd>Escape</kbd></td><td>Close app frame / overlay</td></tr></table>
 
   <h2>Data Storage</h2>
-  <p>All data is in <code>%APPDATA%\\ProjectNOMAD\\</code>. Use <strong>Settings > Full Backup</strong> to download a ZIP of everything. Use <strong>Sneakernet Sync</strong> to share data between NOMAD installations via USB.</p>
+  <p>All data is stored in <code>%APPDATA%\\ProjectNOMAD\\</code> (or custom location set in wizard). Use <strong>Settings > Full Backup</strong> to download a ZIP. The <strong>Last Backup</strong> indicator shows how long since your last backup with color coding (green <7d, orange <30d, red >30d).</p>
+  <p><strong>Federation Sync</strong> shares data between NOMAD nodes over LAN. <strong>Sneakernet Sync</strong> exports a portable ZIP for USB transfer.</p>
   </body></html>`);
 }
 
@@ -12411,13 +12471,12 @@ async function generateAlertSummary() {
 }
 
 /* ─── Init ─── */
+// Critical: load immediately
 loadServices();
-loadCmdDashboard();
-loadServiceQuickLinks();
-loadCmdChecklists();
 loadReadiness();
-loadActivity();
-loadContentSummary();
+// Defer non-critical by 500ms to avoid 11 concurrent fetches on startup
+setTimeout(() => { loadCmdDashboard(); loadServiceQuickLinks(); loadCmdChecklists(); }, 500);
+setTimeout(() => { loadActivity(); loadContentSummary(); }, 1000);
 let _svcPollTimer = setInterval(() => {
   if (document.hidden) return;
   const activeTab = document.querySelector('.tab.active');

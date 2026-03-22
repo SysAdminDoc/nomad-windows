@@ -3354,30 +3354,37 @@ def create_app():
 
     # ─── NukeMap ──────────────────────────────────────────────────────
 
-    # Resolve nukemap directory once at app creation
+    # Resolve nukemap directory — try multiple paths for robustness
+    _nukemap_candidates = []
     if getattr(sys, 'frozen', False):
-        _nukemap_dir = os.path.join(sys._MEIPASS, 'web', 'nukemap')
+        _nukemap_candidates.append(os.path.join(sys._MEIPASS, 'web', 'nukemap'))
+    _nukemap_candidates.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nukemap'))
+    _nukemap_candidates.append(os.path.join(os.getcwd(), 'web', 'nukemap'))
+
+    _nukemap_dir = None
+    for candidate in _nukemap_candidates:
+        if os.path.isdir(candidate) and os.path.isfile(os.path.join(candidate, 'index.html')):
+            _nukemap_dir = candidate
+            break
+    if _nukemap_dir:
+        log.info(f'NukeMap directory: {_nukemap_dir}')
     else:
-        _nukemap_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nukemap')
-    log.info(f'NukeMap directory: {_nukemap_dir} (exists: {os.path.isdir(_nukemap_dir)})')
+        log.warning(f'NukeMap directory NOT FOUND. Tried: {_nukemap_candidates}')
+        _nukemap_dir = _nukemap_candidates[0]  # Use first candidate as fallback
 
     @app.route('/nukemap')
-    def nukemap_index():
-        from flask import send_from_directory
-        return send_from_directory(_nukemap_dir, 'index.html')
-
+    @app.route('/nukemap/')
     @app.route('/nukemap/<path:filepath>')
-    def nukemap_static(filepath):
+    def nukemap_serve(filepath='index.html'):
         from flask import send_from_directory
         if '..' in filepath:
             return jsonify({'error': 'Forbidden'}), 403
-        # Split into directory and filename for send_from_directory
-        parts = filepath.replace('\\', '/').split('/')
-        if len(parts) == 1:
-            return send_from_directory(_nukemap_dir, parts[0])
-        else:
-            subdir = os.path.join(_nukemap_dir, *parts[:-1])
-            return send_from_directory(subdir, parts[-1])
+        # For nested paths like css/styles.css, resolve the subdirectory
+        full_path = os.path.normpath(os.path.join(_nukemap_dir, filepath))
+        if not os.path.isfile(full_path):
+            log.warning(f'NukeMap file not found: {full_path}')
+            return jsonify({'error': f'Not found: {filepath}'}), 404
+        return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
 
     # ─── Favicon ──────────────────────────────────────────────────────
 

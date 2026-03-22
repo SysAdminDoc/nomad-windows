@@ -1831,6 +1831,9 @@ def create_app():
                 db2.commit()
                 _embed_state = {'status': 'complete', 'doc_id': doc_id, 'progress': 100, 'detail': f'{filename}: {total} chunks embedded'}
 
+                # Auto-trigger document analysis (classify, summarize, extract entities)
+                threading.Thread(target=_analyze_document, args=(doc_id, text, filename), daemon=True).start()
+
             except Exception as e:
                 log.error(f'Embedding failed for doc {doc_id}: {e}')
                 db2.execute('UPDATE documents SET status = ?, error = ? WHERE id = ?', ('error', str(e), doc_id))
@@ -3559,6 +3562,144 @@ def create_app():
             return jsonify({'summary': result.get('response', '').strip()})
         except Exception as e:
             return jsonify({'summary': f'{len(alerts)} active alert(s). AI summary unavailable: {e}'})
+
+    # ─── Deep Document Understanding ───────────────────────────────────
+
+    DOC_CATEGORIES = ['medical', 'property', 'vehicle', 'financial', 'legal', 'reference', 'personal', 'other']
+
+    def _analyze_document(doc_id, text, filename):
+        """Background: classify, summarize, extract entities from a document using AI."""
+        db = get_db()
+        try:
+            if not ollama.running() or not ollama.list_models():
+                db.execute("UPDATE documents SET doc_category = 'other', summary = 'AI analysis unavailable — start Ollama for document intelligence.' WHERE id = ?", (doc_id,))
+                db.commit()
+                db.close()
+                return
+
+            model = ollama.list_models()[0]['name']
+            import requests as req
+            text_sample = text[:3000]  # Use first 3000 chars for analysis
+
+            # Step 1: Classify
+            classify_prompt = f"""Classify this document into ONE category: medical, property, vehicle, financial, legal, reference, personal, other.
+
+Document filename: {filename}
+Document text (first 3000 chars):
+{text_sample}
+
+Respond with ONLY the category word, nothing else."""
+
+            r = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
+                        json={'model': model, 'prompt': classify_prompt, 'stream': False}, timeout=20)
+            category = r.json().get('response', '').strip().lower().split()[0] if r.ok else 'other'
+            if category not in DOC_CATEGORIES:
+                category = 'other'
+
+            # Step 2: Summarize
+            summary_prompt = f"""Write a 2-3 sentence summary of this document. Be concise and factual.
+
+Document: {filename}
+Text: {text_sample}
+
+Summary:"""
+
+            r = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
+                        json={'model': model, 'prompt': summary_prompt, 'stream': False}, timeout=20)
+            summary = r.json().get('response', '').strip()[:500] if r.ok else ''
+
+            # Step 3: Extract entities
+            entity_prompt = f"""Extract key entities from this document as a JSON array. Include: names (people), dates, medications, addresses, phone numbers, vehicle info (make/model/year/VIN), dollar amounts, and GPS coordinates if present.
+
+Document: {filename}
+Text: {text_sample}
+
+Respond with ONLY a JSON array of objects, each with "type" and "value" keys. Example: [{{"type":"person","value":"John Smith"}},{{"type":"medication","value":"Lisinopril 10mg"}}]
+If no entities found, respond with: []"""
+
+            r = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
+                        json={'model': model, 'prompt': entity_prompt, 'stream': False, 'format': 'json'}, timeout=25)
+            entities_raw = r.json().get('response', '[]') if r.ok else '[]'
+            try:
+                entities = json.loads(entities_raw)
+                if not isinstance(entities, list):
+                    entities = []
+            except Exception:
+                entities = []
+
+            # Step 4: Cross-reference entities against existing contacts/inventory
+            linked = []
+            if entities:
+                contacts = [dict(r) for r in db.execute('SELECT id, name FROM contacts').fetchall()]
+                contact_names = {c['name'].lower(): c['id'] for c in contacts}
+                for ent in entities:
+                    if ent.get('type') == 'person' and ent.get('value', '').lower() in contact_names:
+                        linked.append({'type': 'contact', 'id': contact_names[ent['value'].lower()], 'name': ent['value']})
+
+            db.execute("UPDATE documents SET doc_category = ?, summary = ?, entities = ?, linked_records = ? WHERE id = ?",
+                       (category, summary, json.dumps(entities), json.dumps(linked), doc_id))
+            db.commit()
+            log.info(f'Document {doc_id} analyzed: {category}, {len(entities)} entities, {len(linked)} links')
+        except Exception as e:
+            log.error(f'Document analysis failed for {doc_id}: {e}')
+            db.execute("UPDATE documents SET doc_category = 'other', summary = ? WHERE id = ?",
+                       (f'Analysis failed: {e}', doc_id))
+            db.commit()
+        finally:
+            db.close()
+
+    @app.route('/api/kb/documents/<int:doc_id>/analyze', methods=['POST'])
+    def api_kb_analyze(doc_id):
+        """Trigger AI analysis (classify, summarize, extract) for a document."""
+        db = get_db()
+        doc = db.execute('SELECT * FROM documents WHERE id = ?', (doc_id,)).fetchone()
+        db.close()
+        if not doc:
+            return jsonify({'error': 'Not found'}), 404
+
+        # Read the file text
+        filepath = os.path.join(get_kb_upload_dir(), doc['filename'])
+        if not os.path.isfile(filepath):
+            return jsonify({'error': 'File not found on disk'}), 404
+
+        text = extract_text_from_file(filepath, doc['content_type'])
+        threading.Thread(target=_analyze_document, args=(doc_id, text, doc['filename']), daemon=True).start()
+        return jsonify({'status': 'analyzing'})
+
+    @app.route('/api/kb/documents/<int:doc_id>/details')
+    def api_kb_doc_details(doc_id):
+        """Get full document details including analysis results."""
+        db = get_db()
+        doc = db.execute('SELECT * FROM documents WHERE id = ?', (doc_id,)).fetchone()
+        db.close()
+        if not doc:
+            return jsonify({'error': 'Not found'}), 404
+        d = dict(doc)
+        try:
+            d['entities'] = json.loads(d.get('entities', '[]') or '[]')
+        except Exception:
+            d['entities'] = []
+        try:
+            d['linked_records'] = json.loads(d.get('linked_records', '[]') or '[]')
+        except Exception:
+            d['linked_records'] = []
+        return jsonify(d)
+
+    @app.route('/api/kb/analyze-all', methods=['POST'])
+    def api_kb_analyze_all():
+        """Analyze all unanalyzed documents."""
+        db = get_db()
+        docs = db.execute("SELECT * FROM documents WHERE (doc_category IS NULL OR doc_category = '') AND status = 'ready'").fetchall()
+        db.close()
+        count = 0
+        for doc in docs:
+            filepath = os.path.join(get_kb_upload_dir(), doc['filename'])
+            if os.path.isfile(filepath):
+                text = extract_text_from_file(filepath, doc['content_type'])
+                threading.Thread(target=_analyze_document, args=(doc['id'], text, doc['filename']), daemon=True).start()
+                count += 1
+                time.sleep(0.5)  # Stagger to avoid overloading Ollama
+        return jsonify({'status': 'analyzing', 'count': count})
 
     # ─── Security Module ──────────────────────────────────────────────
 

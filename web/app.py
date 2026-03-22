@@ -1449,6 +1449,16 @@ def create_app():
             output_file = os.path.join(maps_dir, f'{region_id}.pmtiles')
             temp_file = output_file + '.tmp'
 
+            # Clean up stale temp file from previous failed download
+            if os.path.isfile(temp_file):
+                try:
+                    os.remove(temp_file)
+                    log.info('Cleaned up stale temp file: %s', temp_file)
+                except PermissionError:
+                    # File locked by another process — try alternative temp name
+                    temp_file = output_file + f'.{int(time.time())}.tmp'
+                    log.warning('Original temp file locked, using: %s', temp_file)
+
             # Source Cooperative mirror of Protomaps planet (supports range requests)
             source_url = 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles'
 
@@ -1482,6 +1492,8 @@ def create_app():
 
             if proc.returncode != 0:
                 err = '\n'.join(lines[-5:]) if lines else 'Unknown error'
+                if 'permission denied' in err.lower() or 'access is denied' in err.lower():
+                    err = 'Permission denied. Your antivirus may be blocking pmtiles.exe. Add it to your antivirus exclusions, or try running N.O.M.A.D. as Administrator.'
                 _map_downloads[region_id] = {'progress': 0, 'status': 'Error', 'error': f'pmtiles extract failed: {err}'}
                 if os.path.isfile(temp_file):
                     os.remove(temp_file)
@@ -1489,18 +1501,38 @@ def create_app():
 
             # Rename temp to final
             if os.path.isfile(temp_file):
-                if os.path.isfile(output_file):
-                    os.remove(output_file)
-                os.rename(temp_file, output_file)
+                try:
+                    if os.path.isfile(output_file):
+                        os.remove(output_file)
+                    os.rename(temp_file, output_file)
+                except PermissionError:
+                    # Output file may be locked by Flask tile server — retry with delay
+                    import time as _t
+                    _t.sleep(1)
+                    try:
+                        if os.path.isfile(output_file):
+                            os.remove(output_file)
+                        os.rename(temp_file, output_file)
+                    except PermissionError as pe:
+                        _map_downloads[region_id] = {'progress': 0, 'status': 'Error',
+                            'error': f'Permission denied when saving map file. Close any programs using the maps folder and try again. ({pe})'}
+                        return
                 size = format_size(os.path.getsize(output_file))
                 _map_downloads[region_id] = {'progress': 100, 'status': f'Complete ({size})', 'error': None}
                 log.info('Map region %s downloaded: %s', region_id, size)
             else:
                 _map_downloads[region_id] = {'progress': 0, 'status': 'Error', 'error': 'No output file produced'}
 
+        except PermissionError as e:
+            log.exception('Map download permission error for %s', region_id)
+            _map_downloads[region_id] = {'progress': 0, 'status': 'Error',
+                'error': 'Permission denied. Try running N.O.M.A.D. as Administrator, or check that your antivirus is not blocking pmtiles.exe.'}
         except Exception as e:
             log.exception('Map download error for %s', region_id)
-            _map_downloads[region_id] = {'progress': 0, 'status': 'Error', 'error': str(e)}
+            err_msg = str(e)
+            if 'WinError 5' in err_msg or 'Permission denied' in err_msg or 'Access is denied' in err_msg:
+                err_msg = 'Permission denied. Try running N.O.M.A.D. as Administrator, or check that your antivirus is not blocking pmtiles.exe.'
+            _map_downloads[region_id] = {'progress': 0, 'status': 'Error', 'error': err_msg}
 
     @app.route('/api/maps/download-region', methods=['POST'])
     def api_maps_download_region():

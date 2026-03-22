@@ -239,10 +239,15 @@ def init_db():
     conn.commit()
 
     # Schema migrations for existing databases
-    try:
-        conn.execute('ALTER TABLE inventory ADD COLUMN daily_usage REAL DEFAULT 0')
-        conn.commit()
-    except Exception:
-        pass  # Column already exists
+    for migration in [
+        'ALTER TABLE inventory ADD COLUMN daily_usage REAL DEFAULT 0',
+        'ALTER TABLE notes ADD COLUMN tags TEXT DEFAULT ""',
+        'ALTER TABLE notes ADD COLUMN pinned INTEGER DEFAULT 0',
+    ]:
+        try:
+            conn.execute(migration)
+            conn.commit()
+        except Exception:
+            pass
 
     conn.close()

@@ -1020,6 +1020,9 @@ a { color: var(--accent); text-decoration: none; }
 </head>
 <body>
 
+<!-- Emergency Broadcast Banner -->
+<div id="broadcast-banner" style="display:none;padding:10px 20px;text-align:center;font-weight:700;font-size:14px;z-index:200;position:sticky;top:0;cursor:pointer;animation:pulse 2s ease infinite;" onclick="dismissBroadcast()"></div>
+
 <div class="header">
   <div class="header-logo"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></div>
   <h1>Project N.O.M.A.D. <span class="version">v{{ version }}</span></h1>
@@ -1171,7 +1174,17 @@ a { color: var(--accent); text-decoration: none; }
           <div class="empty-state" id="chat-empty">
             <div class="icon">AI</div>
             <p>Your private AI assistant</p>
-            <p style="font-size:11px;color:var(--text-muted);">Everything stays on your computer. Type a message to start.</p>
+            <p style="font-size:11px;color:var(--text-muted);">Everything stays on your computer. Try a starter below or type your own.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;max-width:600px;justify-content:center;">
+              <button class="btn btn-sm" onclick="useStarter('What should I prioritize in my preparedness plan?')" style="font-size:10px;">What to prioritize?</button>
+              <button class="btn btn-sm" onclick="useStarter('How do I purify water if I run out of filters?')" style="font-size:10px;">Water purification</button>
+              <button class="btn btn-sm" onclick="useStarter('What are the signs of a medical emergency I should watch for?')" style="font-size:10px;">Medical warning signs</button>
+              <button class="btn btn-sm" onclick="useStarter('Help me plan a 14-day food supply for 4 people on a budget')" style="font-size:10px;">Food planning</button>
+              <button class="btn btn-sm" onclick="useStarter('What radio should I get for emergency communications?')" style="font-size:10px;">Radio recommendations</button>
+              <button class="btn btn-sm" onclick="useStarter('How do I build a basic solar power system for essential devices?')" style="font-size:10px;">Solar power basics</button>
+              <button class="btn btn-sm" onclick="useStarter('What are the most likely emergency scenarios in my area and how do I prepare?')" style="font-size:10px;">Threat assessment</button>
+              <button class="btn btn-sm" onclick="useStarter('Create a weekly training schedule to improve my survival skills')" style="font-size:10px;">Training schedule</button>
+            </div>
           </div>
         </div>
         <div class="chat-input-area">
@@ -1254,6 +1267,8 @@ a { color: var(--accent); text-decoration: none; }
       <div class="notes-editor">
         <div class="notes-editor-header">
           <input id="note-title" placeholder="Note title..." oninput="autoSaveNote()">
+          <input id="note-tags" placeholder="Tags (comma-separated)" style="width:140px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:10px;outline:none;" oninput="autoSaveNoteTags()">
+          <button class="btn btn-sm" onclick="toggleNotePin()" id="note-pin-btn" title="Pin/unpin note">Pin</button>
           <button class="btn btn-sm" onclick="toggleNotePreview()" id="note-preview-btn">Preview</button>
           <button class="btn btn-sm btn-danger" onclick="deleteNote()">Delete</button>
         </div>
@@ -1722,6 +1737,21 @@ a { color: var(--accent); text-decoration: none; }
             </div>
           </div>
           <div id="cal-tracker-result"></div>
+        </div>
+        <!-- Resource Allocation Planner -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Resource Allocation Planner</h4>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">People</label><input id="plan-people" type="number" min="1" max="50" value="4" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcPlan()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Days</label><input id="plan-days" type="number" min="1" max="365" value="14" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcPlan()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Activity Level</label>
+              <select id="plan-activity" onchange="calcPlan()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="sedentary">Sedentary (shelter-in-place)</option>
+                <option value="moderate" selected>Moderate (normal activity)</option>
+                <option value="heavy">Heavy (labor/movement)</option>
+              </select></div>
+          </div>
+          <div class="calc-result" id="plan-result"></div>
         </div>
       </div>
     </div>
@@ -2658,6 +2688,21 @@ a { color: var(--accent); text-decoration: none; }
     <div class="prep-section">
       <h3>Operations Center</h3>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+
+        <!-- Emergency Broadcast -->
+        <div class="settings-card" style="grid-column:1/-1;">
+          <h3 style="font-size:13px;color:var(--red);">Emergency Broadcast (All LAN Devices)</h3>
+          <div style="display:flex;gap:6px;align-items:end;flex-wrap:wrap;">
+            <select id="bcast-severity" class="preset-select" style="min-width:90px;">
+              <option value="warning">Warning</option>
+              <option value="critical">Critical</option>
+              <option value="info">Info</option>
+            </select>
+            <input id="bcast-msg" style="flex:1;min-width:200px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Emergency message to all connected devices...">
+            <button class="btn btn-sm btn-danger" onclick="sendBroadcast()">Broadcast</button>
+            <button class="btn btn-sm" onclick="clearBroadcast()">Clear</button>
+          </div>
+        </div>
 
         <!-- Infrastructure Status -->
         <div class="settings-card">
@@ -3800,17 +3845,27 @@ async function loadNotes() {
 }
 function renderNotesList() {
   const list = document.getElementById('notes-list');
-  list.innerHTML = allNotes.map(n => `
+  const q = (document.getElementById('notes-search')?.value || '').toLowerCase();
+  let filtered = q ? allNotes.filter(n => (n.title||'').toLowerCase().includes(q) || (n.tags||'').toLowerCase().includes(q)) : allNotes;
+  list.innerHTML = filtered.map(n => `
     <div class="note-item ${n.id===currentNoteId?'active':''}" onclick="selectNote(${n.id})">
-      <div class="note-title">${escapeHtml(n.title||'Untitled')}</div>
-      <div class="note-date">${new Date(n.updated_at).toLocaleDateString()}</div>
+      <div style="display:flex;align-items:center;gap:4px;">
+        ${n.pinned ? '<span style="color:var(--accent);font-size:10px;" title="Pinned">&#9733;</span>' : ''}
+        <div class="note-title">${escapeHtml(n.title||'Untitled')}</div>
+      </div>
+      <div class="note-date">${n.tags ? '<span style="color:var(--accent);font-size:9px;">'+escapeHtml(n.tags)+'</span> ' : ''}${new Date(n.updated_at).toLocaleDateString()}</div>
     </div>
   `).join('') || '<div style="padding:14px;color:var(--text-muted);font-size:12px;text-align:center;">No notes yet</div>';
 }
 function selectNote(id) {
   currentNoteId = id;
   const n = allNotes.find(n => n.id === id);
-  if (n) { document.getElementById('note-title').value = n.title||''; document.getElementById('note-content').value = n.content||''; }
+  if (n) {
+    document.getElementById('note-title').value = n.title||'';
+    document.getElementById('note-content').value = n.content||'';
+    document.getElementById('note-tags').value = n.tags||'';
+    document.getElementById('note-pin-btn').textContent = n.pinned ? 'Unpin' : 'Pin';
+  }
   renderNotesList();
 }
 async function createNote() {
@@ -4890,7 +4945,7 @@ function switchPrepSub(sub) {
   if (sub === 'incidents') loadIncidents();
   if (sub === 'inventory') { loadInventory(); loadBurnRate(); }
   if (sub === 'contacts') { loadContacts(); loadSkillsMatrix(); }
-  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); calcHorizon(); updateCalTracker(); }
+  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); calcHorizon(); updateCalTracker(); calcPlan(); }
   if (sub === 'vault' && _vaultKey) loadVaultList();
   if (sub === 'weather') loadWeather();
   if (sub === 'signals') loadSignalSchedule();
@@ -7026,6 +7081,100 @@ function sendNotification(title, body) {
   }
 })();
 
+/* ─── AI Conversation Starters ─── */
+function useStarter(text) {
+  document.getElementById('chat-input').value = text;
+  sendChat();
+}
+
+/* ─── Note Pin/Tags ─── */
+async function toggleNotePin() {
+  if (!currentNoteId) return;
+  const n = allNotes.find(n => n.id === currentNoteId);
+  if (!n) return;
+  const newPinned = !n.pinned;
+  await fetch(`/api/notes/${currentNoteId}/pin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pinned:newPinned})});
+  n.pinned = newPinned;
+  document.getElementById('note-pin-btn').textContent = newPinned ? 'Unpin' : 'Pin';
+  toast(newPinned ? 'Note pinned' : 'Note unpinned', 'success');
+  await loadNotes();
+}
+
+let _tagSaveTimer;
+function autoSaveNoteTags() {
+  clearTimeout(_tagSaveTimer);
+  _tagSaveTimer = setTimeout(async () => {
+    if (!currentNoteId) return;
+    const tags = document.getElementById('note-tags').value;
+    await fetch(`/api/notes/${currentNoteId}/tags`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tags})});
+    const n = allNotes.find(n => n.id === currentNoteId);
+    if (n) n.tags = tags;
+    renderNotesList();
+  }, 500);
+}
+
+/* ─── Emergency Broadcast ─── */
+async function sendBroadcast() {
+  const msg = document.getElementById('bcast-msg').value.trim();
+  if (!msg) { toast('Enter a message', 'warning'); return; }
+  const severity = document.getElementById('bcast-severity').value;
+  await fetch('/api/broadcast', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:msg, severity})});
+  toast('Broadcast sent to all LAN devices', 'warning');
+  document.getElementById('bcast-msg').value = '';
+}
+
+async function clearBroadcast() {
+  await fetch('/api/broadcast/clear', {method:'POST'});
+  toast('Broadcast cleared');
+  document.getElementById('broadcast-banner').style.display = 'none';
+}
+
+function dismissBroadcast() {
+  document.getElementById('broadcast-banner').style.display = 'none';
+}
+
+async function pollBroadcast() {
+  try {
+    const b = await (await fetch('/api/broadcast')).json();
+    const banner = document.getElementById('broadcast-banner');
+    if (b.active && b.message) {
+      const colors = {info:'var(--accent)',warning:'var(--orange)',critical:'var(--red)'};
+      const bgs = {info:'var(--accent-dim)',warning:'var(--orange-dim)',critical:'var(--red-dim)'};
+      banner.style.display = 'block';
+      banner.style.background = bgs[b.severity] || bgs.info;
+      banner.style.color = colors[b.severity] || colors.info;
+      banner.textContent = b.message;
+      banner.title = 'Click to dismiss | ' + b.timestamp;
+    }
+  } catch(e) {}
+}
+
+/* ─── Resource Allocation Planner ─── */
+async function calcPlan() {
+  const people = parseInt(document.getElementById('plan-people').value) || 4;
+  const days = parseInt(document.getElementById('plan-days').value) || 14;
+  const activity = document.getElementById('plan-activity').value;
+  try {
+    const r = await (await fetch('/api/planner/calculate', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({people, days, activity})})).json();
+    const n = r.needs;
+    const inv = r.current_inventory;
+    document.getElementById('plan-result').innerHTML = `
+      <div style="font-size:13px;font-weight:600;margin-bottom:8px;">${people} people x ${days} days (${activity})</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:12px;">
+        <div><strong style="color:var(--accent);">Water:</strong> ${n.water_gal} gallons ${inv.water ? `<span style="color:var(--text-dim);">(have: ${inv.water})</span>` : ''}</div>
+        <div><strong style="color:var(--accent);">Food:</strong> ${n.food_cal.toLocaleString()} total calories</div>
+        <div><strong style="color:var(--accent);">Rice/beans:</strong> ${n.food_lbs_rice} lbs dry staples</div>
+        <div><strong style="color:var(--accent);">Canned food:</strong> ~${n.food_cans} cans</div>
+        <div><strong style="color:var(--accent);">Toilet paper:</strong> ${n.tp_rolls} rolls</div>
+        <div><strong style="color:var(--accent);">Bleach:</strong> ${n.bleach_oz} oz (water treatment)</div>
+        <div><strong style="color:var(--accent);">Batteries (AA):</strong> ~${n.batteries_aa}</div>
+        <div><strong style="color:var(--accent);">Trash bags:</strong> ${n.trash_bags}</div>
+        <div><strong style="color:var(--accent);">First aid kits:</strong> ${n.first_aid_kits}</div>
+      </div>`;
+  } catch(e) { document.getElementById('plan-result').innerHTML = 'Calculation failed.'; }
+}
+
 /* ─── Quick Actions ─── */
 let _qaOpen = false;
 function toggleQuickActions() {
@@ -7109,6 +7258,8 @@ setInterval(checkNetwork, 30000);
 checkWizard();
 checkForUpdate();
 loadStartupState();
+pollBroadcast();
+setInterval(pollBroadcast, 5000);
 </script>
 </body>
 </html>

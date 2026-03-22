@@ -31,7 +31,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '2.8.0'
+VERSION = '2.9.0'
 
 
 def set_version(v):
@@ -369,7 +369,7 @@ def create_app():
     @app.route('/api/notes')
     def api_notes_list():
         db = get_db()
-        notes = db.execute('SELECT * FROM notes ORDER BY updated_at DESC').fetchall()
+        notes = db.execute('SELECT * FROM notes ORDER BY pinned DESC, updated_at DESC').fetchall()
         db.close()
         return jsonify([dict(n) for n in notes])
 
@@ -2855,6 +2855,117 @@ def create_app():
             'expiring_items': [dict(r) for r in expiring_items],
             'critical_burn': [{'name': r['name'], 'days_left': round(r['quantity']/r['daily_usage'], 1), 'category': r['category']} for r in critical_burn],
         })
+
+    # ─── Emergency Broadcast ──────────────────────────────────────────
+
+    _broadcast = {'active': False, 'message': '', 'severity': 'info', 'timestamp': ''}
+
+    @app.route('/api/broadcast')
+    def api_broadcast_get():
+        return jsonify(_broadcast)
+
+    @app.route('/api/broadcast', methods=['POST'])
+    def api_broadcast_set():
+        data = request.get_json() or {}
+        _broadcast['active'] = True
+        _broadcast['message'] = (data.get('message', '') or '')[:500]
+        _broadcast['severity'] = data.get('severity', 'info')
+        _broadcast['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+        log_activity('broadcast_sent', detail=_broadcast['message'][:100])
+        return jsonify({'status': 'sent'})
+
+    @app.route('/api/broadcast/clear', methods=['POST'])
+    def api_broadcast_clear():
+        _broadcast['active'] = False
+        _broadcast['message'] = ''
+        return jsonify({'status': 'cleared'})
+
+    # ─── Resource Allocation Planner ──────────────────────────────────
+
+    @app.route('/api/planner/calculate', methods=['POST'])
+    def api_planner_calculate():
+        """Calculate resource needs for X people over Y days."""
+        data = request.get_json() or {}
+        people = max(1, int(data.get('people', 4)))
+        days = max(1, int(data.get('days', 14)))
+        activity = data.get('activity', 'moderate')  # sedentary, moderate, heavy
+
+        cal_mult = {'sedentary': 1800, 'moderate': 2200, 'heavy': 3000}.get(activity, 2200)
+        water_mult = {'sedentary': 0.75, 'moderate': 1.0, 'heavy': 1.5}.get(activity, 1.0)
+
+        needs = {
+            'water_gal': round(people * days * water_mult, 1),
+            'food_cal': people * days * cal_mult,
+            'food_lbs_rice': round(people * days * cal_mult / 1800 * 0.45, 1),  # ~0.45 lb rice/1800cal
+            'food_cans': people * days * 2,  # ~2 cans per person per day
+            'tp_rolls': max(1, round(people * days / 5)),  # ~1 roll per 5 person-days
+            'bleach_oz': round(people * days * 0.1, 1),  # ~0.1 oz per person-day for water treatment
+            'batteries_aa': people * 2 + days,  # rough estimate
+            'trash_bags': max(1, round(people * days / 3)),
+            'first_aid_kits': max(1, round(people / 4)),
+        }
+
+        # Compare with current inventory
+        db = get_db()
+        inv = {}
+        rows = db.execute('SELECT category, SUM(quantity) as qty FROM inventory GROUP BY category').fetchall()
+        for r in rows:
+            inv[r['category']] = r['qty'] or 0
+        db.close()
+
+        return jsonify({
+            'people': people, 'days': days, 'activity': activity,
+            'needs': needs, 'current_inventory': inv,
+        })
+
+    # ─── Notes Pin/Tag ────────────────────────────────────────────────
+
+    @app.route('/api/notes/<int:note_id>/pin', methods=['POST'])
+    def api_notes_pin(note_id):
+        data = request.get_json() or {}
+        pinned = 1 if data.get('pinned', True) else 0
+        db = get_db()
+        db.execute('UPDATE notes SET pinned = ? WHERE id = ?', (pinned, note_id))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'ok', 'pinned': pinned})
+
+    @app.route('/api/notes/<int:note_id>/tags', methods=['PUT'])
+    def api_notes_tags(note_id):
+        data = request.get_json() or {}
+        tags = data.get('tags', '')
+        db = get_db()
+        db.execute('UPDATE notes SET tags = ? WHERE id = ?', (tags, note_id))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'ok'})
+
+    # ─── Waypoint Distance Matrix ─────────────────────────────────────
+
+    @app.route('/api/waypoints/distances')
+    def api_waypoints_distances():
+        db = get_db()
+        wps = db.execute('SELECT id, name, lat, lng, category FROM waypoints ORDER BY name').fetchall()
+        db.close()
+        import math
+        def haversine(lat1, lon1, lat2, lon2):
+            R = 3959  # miles
+            dlat = math.radians(lat2 - lat1)
+            dlon = math.radians(lon2 - lon1)
+            a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+            return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+        points = [dict(w) for w in wps]
+        matrix = []
+        for i, a in enumerate(points):
+            row = []
+            for j, b in enumerate(points):
+                if i == j:
+                    row.append(0)
+                else:
+                    row.append(round(haversine(a['lat'], a['lng'], b['lat'], b['lng']), 2))
+            matrix.append(row)
+        return jsonify({'points': points, 'matrix': matrix})
 
     # ─── Expanded Unified Search ──────────────────────────────────────
 

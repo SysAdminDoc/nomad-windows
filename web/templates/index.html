@@ -1020,6 +1020,18 @@ a { color: var(--accent); text-decoration: none; }
 </head>
 <body>
 
+<!-- In-App Frame Modal -->
+<div id="app-frame-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:20000;display:none;flex-direction:column;">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:var(--surface-solid);border-bottom:1px solid var(--border);">
+    <span id="app-frame-title" style="font-weight:600;font-size:14px;"></span>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-sm" onclick="printAppFrame()">Print</button>
+      <button class="btn btn-sm btn-danger" onclick="closeAppFrame()">Close</button>
+    </div>
+  </div>
+  <iframe id="app-frame-iframe" style="flex:1;border:none;background:#fff;"></iframe>
+</div>
+
 <!-- Emergency Broadcast Banner -->
 <div id="broadcast-banner" style="display:none;padding:10px 20px;text-align:center;font-weight:700;font-size:14px;z-index:200;position:sticky;top:0;cursor:pointer;animation:pulse 2s ease infinite;" onclick="dismissBroadcast()"></div>
 
@@ -1028,7 +1040,7 @@ a { color: var(--accent); text-decoration: none; }
   <h1>Project N.O.M.A.D. <span class="version">v{{ version }}</span></h1>
   <div class="header-right">
     <button class="btn btn-sm btn-ghost" onclick="showHelp()" title="Help & Guide" style="font-size:13px;padding:3px 8px;">?</button>
-    <a id="update-banner" href="#" target="_blank" style="display:none;font-size:11px;padding:4px 12px;background:var(--green-dim);color:var(--green);border-radius:20px;font-weight:600;">Update Available</a>
+    <a id="update-banner" href="#" style="display:none;font-size:11px;padding:4px 12px;background:var(--green-dim);color:var(--green);border-radius:20px;font-weight:600;">Update Available</a>
     <span id="net-status" style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--text-muted);"></span>
     <div class="theme-switcher" title="Switch theme">
       <div class="theme-btn active" data-t="nomad" onclick="setTheme('nomad')" title="NOMAD (Desert)"></div>
@@ -1257,7 +1269,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="btn btn-sm btn-primary" onclick="saveWaypoint()" style="display:none;" id="save-wp-btn">Save Waypoint</button>
       <button class="btn btn-sm" onclick="startDrawZone()" style="display:none;" id="draw-zone-btn">Draw Zone</button>
       <button class="btn btn-sm" onclick="clearPins()" style="display:none;" id="clear-pins-btn">Clear Pins</button>
-      <button class="btn btn-sm" onclick="window.open('/api/waypoints/export-gpx','_blank')" style="display:none;" id="gpx-btn">Export GPX</button>
+      <button class="btn btn-sm" onclick="window.location='/api/waypoints/export-gpx'" style="display:none;" id="gpx-btn">Export GPX</button>
       <span id="map-coords" style="font-size:10px;color:var(--text-muted);margin-left:auto;font-family:monospace;"></span>
     </div>
     <div id="map-viewer" style="display:none;position:relative;">
@@ -1281,7 +1293,7 @@ a { color: var(--accent); text-decoration: none; }
           <div id="wp-distance-matrix" style="overflow-x:auto;font-size:11px;"><span style="color:var(--text-dim);font-size:12px;">Save waypoints to see distance matrix.</span></div>
           <div style="display:flex;gap:6px;margin-top:8px;">
             <button class="btn btn-sm" onclick="loadWPDistances()">Refresh</button>
-            <button class="btn btn-sm" onclick="window.open('/api/waypoints/export-gpx','_blank')">Export GPX</button>
+            <button class="btn btn-sm" onclick="window.location='/api/waypoints/export-gpx'">Export GPX</button>
           </div>
         </div>
       </div>
@@ -1356,7 +1368,7 @@ a { color: var(--accent); text-decoration: none; }
           Full nuclear weapon effects simulator with Glasstone & Dolan physics. Blast radius, thermal radiation, fallout, EMP, shelter analysis, MIRV simulation, and a complete WW3 simulation engine with 418 verified targets and 7 escalation scenarios. Works completely offline.
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <a href="/nukemap" target="_blank" class="btn btn-sm" style="background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;border:none;box-shadow:0 2px 8px rgba(244,67,54,0.3);font-weight:600;padding:8px 20px;">Launch NukeMap</a>
+          <button class="btn btn-sm" onclick="openAppFrame('NukeMap','/nukemap')" style="background:linear-gradient(135deg,var(--red),var(--orange));color:#fff;border:none;box-shadow:0 2px 8px rgba(244,67,54,0.3);font-weight:600;padding:8px 20px;">Launch NukeMap</button>
           <span style="font-size:11px;color:var(--text-muted);align-self:center;">418 targets | 708 warheads | 7 scenarios | Animated missile arcs | Nuclear winter | Shelter analysis</span>
         </div>
       </div>
@@ -1377,7 +1389,7 @@ a { color: var(--accent); text-decoration: none; }
         <div id="mesh-log" style="max-height:200px;overflow-y:auto;margin-top:8px;font-size:11px;font-family:'Cascadia Code','Consolas',monospace;"></div>
         <div style="margin-top:12px;font-size:11px;color:var(--text-dim);line-height:1.6;">
           <strong>Setup:</strong> 1. Flash Meshtastic firmware to ESP32/nRF52 device. 2. Connect via USB. 3. Click "Scan for Devices" above.
-          4. Requires Web Serial API (Chrome/Edge). <a href="https://meshtastic.org/" target="_blank" style="color:var(--accent);">meshtastic.org</a>
+          4. Requires Web Serial API (Chrome/Edge). <a href="https://meshtastic.org/" style="color:var(--accent);">meshtastic.org</a>
         </div>
       </div>
 
@@ -1463,7 +1475,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Header with Print -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
       <span style="font-size:11px;color:var(--text-dim);">Click status cells to update threat level</span>
-      <button class="btn btn-sm" onclick="window.open('/api/preparedness/print','_blank')" title="Print server-side card">Print Basic Card</button>
+      <button class="btn btn-sm" onclick="openAppFrame('Emergency Card','/api/preparedness/print')" title="Print server-side card">Print Basic Card</button>
       <button class="btn btn-sm btn-primary" onclick="printFullCard()" title="Print complete card with family plan, PACE, and all local data">Print Full Card</button>
       <button class="btn btn-sm" onclick="generateStatusReport()" title="Generate comprehensive status report from all systems">Status Report</button>
     </div>
@@ -1590,7 +1602,7 @@ a { color: var(--accent); text-decoration: none; }
         <button class="btn btn-sm btn-primary" onclick="showInvForm()">+ Add Item</button>
         <button class="btn btn-sm" onclick="showInvQuickAdd()" title="Quick-add common supplies">Quick Add</button>
         <button class="btn btn-sm" onclick="showShoppingList()" title="Auto-generate shopping list from gaps">Shopping List</button>
-        <button class="btn btn-sm" onclick="window.open('/api/inventory/export-csv','_blank')" title="Export to CSV">Export</button>
+        <button class="btn btn-sm" onclick="window.location='/api/inventory/export-csv'" title="Export to CSV">Export</button>
         <input type="file" id="inv-import-file" style="display:none;" accept=".csv" onchange="importInvCSV()">
         <button class="btn btn-sm" onclick="document.getElementById('inv-import-file').click()" title="Import from CSV">Import</button>
       </div>
@@ -1633,7 +1645,7 @@ a { color: var(--accent); text-decoration: none; }
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <input id="contact-search" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Search contacts..." oninput="loadContacts()">
         <button class="btn btn-sm btn-primary" onclick="showContactForm()">+ Add Contact</button>
-        <button class="btn btn-sm" onclick="window.open('/api/contacts/export-csv','_blank')" title="Export">Export</button>
+        <button class="btn btn-sm" onclick="window.location='/api/contacts/export-csv'" title="Export">Export</button>
         <input type="file" id="ct-import-file" style="display:none;" accept=".csv" onchange="importContactsCSV()">
         <button class="btn btn-sm" onclick="document.getElementById('ct-import-file').click()" title="Import from CSV">Import</button>
       </div>
@@ -3082,7 +3094,7 @@ a { color: var(--accent); text-decoration: none; }
           <div class="setting-row">
             <span class="setting-label">Backup & Restore</span>
             <span style="display:flex;gap:6px;">
-              <button class="btn btn-sm btn-primary" onclick="window.open('/api/export-all','_blank')" title="Download complete backup">Full Backup</button>
+              <button class="btn btn-sm btn-primary" onclick="window.location='/api/export-all'" title="Download complete backup">Full Backup</button>
               <button class="btn btn-sm" onclick="exportConfig()">Export DB</button>
               <input type="file" id="import-file" style="display:none;" accept=".zip" onchange="importConfig()">
               <button class="btn btn-sm" onclick="document.getElementById('import-file').click()">Import</button>
@@ -3124,7 +3136,7 @@ a { color: var(--accent); text-decoration: none; }
         <h3>About Project N.O.M.A.D. for Windows</h3>
         <div style="font-size:12px;color:var(--text-dim);line-height:1.7;">
           <p><strong style="color:var(--text);">The most complete offline survival command center available.</strong> Native Windows edition, no Docker required.</p>
-          <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad" target="_blank">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc" target="_blank">SysAdminDoc</a>.</p>
+          <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
             <div><strong style="color:var(--accent);">13 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Calculators, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
@@ -3412,7 +3424,7 @@ function renderMarkdown(text) {
     return '<ol>' + items + '</ol>';
   });
   // Links
-  h = h.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
+  h = h.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
   // Paragraphs
   h = h.replace(/\n\n/g, '</p><p>');
   h = h.replace(/\n/g, '<br>');
@@ -3434,7 +3446,7 @@ const SVC = {
   cyberchef: { name:'CyberChef (Data Tools)',        desc:'Encryption, encoding, hashing, and data analysis toolkit by GCHQ.', tip:'Open in browser for 400+ data transformation operations.' },
   kolibri:   { name:'Kolibri (Education Platform)',  desc:'Offline Khan Academy courses, textbooks, and educational content.', requires:'Python on PATH', tip:'Open in browser to access courses and learning materials.' },
   qdrant:    { name:'Qdrant (Vector DB)',           desc:'Vector database enabling AI to search your uploaded documents.', tip:'Enable "Search My Documents" in AI Chat to use this.' },
-  stirling:  { name:'Stirling PDF',                  desc:'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools.', requires:'Java 17+ (<a href="https://adoptium.net" target="_blank">adoptium.net</a>)', tip:'Open in browser to work with PDFs without cloud services.' },
+  stirling:  { name:'Stirling PDF',                  desc:'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools.', requires:'Java 17+ (<a href="https://adoptium.net">adoptium.net</a>)', tip:'Open in browser to work with PDFs without cloud services.' },
 };
 
 let _servicesLoaded = false;
@@ -3467,7 +3479,7 @@ async function loadServices() {
         actions = `<button class="btn btn-sm btn-primary" onclick="installService('${s.id}')">Install</button>`;
       } else if (s.running) {
         actions = `
-          ${s.port ? `<a class="btn btn-sm btn-open-svc" href="http://localhost:${s.port}" target="_blank">Open in Browser</a>` : ''}
+          ${s.port ? `<button class="btn btn-sm btn-open-svc" onclick="openAppFrame('${escapeAttr(info.name)}','http://localhost:${s.port}')">Open</button>` : ''}
           <button class="btn btn-sm btn-danger" onclick="stopService('${s.id}')">Stop</button>
           <button class="btn btn-sm" onclick="restartService('${s.id}')">Restart</button>
           <button class="btn btn-sm btn-ghost btn-danger" onclick="uninstallService('${s.id}')">Uninstall</button>
@@ -4279,7 +4291,7 @@ async function checkNetwork() {
     const banner = document.getElementById('lan-banner');
     if (n.lan_ip !== '127.0.0.1') {
       banner.style.display = 'flex';
-      banner.innerHTML = `Access from other devices on your network: <a href="${n.dashboard_url}" target="_blank">${n.dashboard_url}</a>`;
+      banner.innerHTML = `Access from other devices on your network: <a href="${n.dashboard_url}">${n.dashboard_url}</a>`;
     }
   } catch(e) {}
 }
@@ -4865,7 +4877,7 @@ function clearCustomPrompt() {
 
 function exportConversation() {
   if (!currentConvoId) { toast('No conversation selected', 'warning'); return; }
-  window.open(`/api/conversations/${currentConvoId}/export`, '_blank');
+  window.location=`/api/conversations/${currentConvoId}/export`;
 }
 
 /* ─── Conversation Search ─── */
@@ -5102,7 +5114,7 @@ async function toggleStartup() {
 
 /* ─── Export / Import Config ─── */
 function exportConfig() {
-  window.open('/api/export-config', '_blank');
+  window.location='/api/export-config';
   toast('Config exported');
 }
 
@@ -5114,6 +5126,34 @@ async function importConfig() {
   const r = await (await fetch('/api/import-config', {method:'POST', body:formData})).json();
   input.value = '';
   toast(r.message || r.error || 'Import complete');
+}
+
+/* ─── In-App Frame ─── */
+function openAppFrame(title, url) {
+  document.getElementById('app-frame-title').textContent = title;
+  document.getElementById('app-frame-iframe').src = url;
+  document.getElementById('app-frame-overlay').style.display = 'flex';
+}
+
+function openAppFrameHTML(title, html) {
+  const iframe = document.getElementById('app-frame-iframe');
+  document.getElementById('app-frame-title').textContent = title;
+  document.getElementById('app-frame-overlay').style.display = 'flex';
+  iframe.src = 'about:blank';
+  setTimeout(() => {
+    iframe.contentDocument.open();
+    iframe.contentDocument.write(html);
+    iframe.contentDocument.close();
+  }, 50);
+}
+
+function closeAppFrame() {
+  document.getElementById('app-frame-overlay').style.display = 'none';
+  document.getElementById('app-frame-iframe').src = 'about:blank';
+}
+
+function printAppFrame() {
+  document.getElementById('app-frame-iframe').contentWindow.print();
 }
 
 /* ─── Prep Sub-Tab Navigation ─── */
@@ -6171,10 +6211,7 @@ async function printFullCard() {
 
   h += '<div style="text-align:center;margin-top:6px;font-size:8px;color:#999;">N.O.M.A.D. for Windows - Offline Survival Command Center - v' + VERSION + '</div>';
   h += '</body></html>';
-  const w = window.open('', '_blank');
-  w.document.write(h);
-  w.document.close();
-  w.print();
+  openAppFrameHTML('Emergency Card', h);
 }
 
 /* ─── Family Emergency Plan ─── */
@@ -7215,7 +7252,7 @@ async function importSyncPack() {
 /* ─── Community Sharing ─── */
 async function exportCurrentChecklist() {
   if (!_currentChecklistId) { toast('Select a checklist first', 'warning'); return; }
-  window.open(`/api/checklists/${_currentChecklistId}/export-json`, '_blank');
+  window.location=`/api/checklists/${_currentChecklistId}/export-json`;
   toast('Checklist exported for sharing', 'success');
 }
 
@@ -7435,12 +7472,8 @@ async function showShoppingList() {
 async function generateStatusReport() {
   try {
     const r = await (await fetch('/api/status-report')).json();
-    const w = window.open('', '_blank');
-    w.document.write(`<html><head><title>N.O.M.A.D. Status Report</title><style>body{font-family:'Cascadia Code','Consolas',monospace;background:#0d0d0d;color:#e8e8ed;padding:20px;font-size:13px;white-space:pre-wrap;line-height:1.6;}button{background:#5b9fff;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:8px;font-size:12px;}</style></head><body>`);
-    w.document.write(`<button onclick="navigator.clipboard.writeText(document.getElementById('rpt').textContent)">Copy to Clipboard</button>`);
-    w.document.write(`<button onclick="window.print()">Print</button><hr style="border-color:#333;margin:12px 0;">`);
-    w.document.write(`<div id="rpt">${escapeHtml(r.text)}</div></body></html>`);
-    w.document.close();
+    const html = `<html><head><title>N.O.M.A.D. Status Report</title><style>body{font-family:'Cascadia Code','Consolas',monospace;background:#0d0d0d;color:#e8e8ed;padding:20px;font-size:13px;white-space:pre-wrap;line-height:1.6;}button{background:#5b9fff;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;margin-right:8px;font-size:12px;}</style></head><body><button onclick="navigator.clipboard.writeText(document.getElementById('rpt').textContent)">Copy to Clipboard</button><hr style="border-color:#333;margin:12px 0;"><div id="rpt">${escapeHtml(r.text)}</div></body></html>`;
+    openAppFrameHTML('Status Report', html);
   } catch(e) { toast('Failed to generate report', 'error'); }
 }
 
@@ -7596,8 +7629,7 @@ function playAlertSound(type) {
 
 /* ─── Help / Guide ─── */
 function showHelp() {
-  const w = window.open('', '_blank');
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>N.O.M.A.D. Help Guide</title>
+  openAppFrameHTML('Help Guide', `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>N.O.M.A.D. Help Guide</title>
   <style>body{font-family:'Segoe UI',sans-serif;background:#0d0d0d;color:#e8e8ed;padding:20px 40px;line-height:1.7;max-width:800px;margin:0 auto;}
   h1{color:#5b9fff;border-bottom:1px solid #333;padding-bottom:8px;}h2{color:#4caf50;margin-top:24px;}h3{color:#ff9800;}
   kbd{background:#1e1e26;padding:2px 6px;border-radius:4px;font-size:12px;border:1px solid #333;}
@@ -7635,7 +7667,6 @@ function showHelp() {
   <h2>Data Storage</h2>
   <p>All data is in <code>%APPDATA%\\ProjectNOMAD\\</code>. Use <strong>Settings > Full Backup</strong> to download a ZIP of everything. Use <strong>Sneakernet Sync</strong> to share data between NOMAD installations via USB.</p>
   </body></html>`);
-  w.document.close();
 }
 
 /* ─── Auto Backup ─── */
@@ -7848,7 +7879,7 @@ async function loadServiceQuickLinks() {
     if (!running.length) { el.innerHTML = ''; return; }
     const names = {ollama:'AI Chat',kiwix:'Library',cyberchef:'CyberChef',kolibri:'Kolibri',stirling:'PDF Tools'};
     el.innerHTML = running.filter(s => s.id !== 'qdrant').map(s =>
-      `<a href="http://localhost:${s.port}" target="_blank" class="btn btn-sm btn-open-svc" style="font-size:10px;padding:3px 10px;">Open ${names[s.id]||s.id}</a>`
+      `<button class="btn btn-sm btn-open-svc" onclick="openAppFrame('${names[s.id]||s.id}','http://localhost:${s.port}')" style="font-size:10px;padding:3px 10px;">Open ${names[s.id]||s.id}</button>`
     ).join('');
   } catch(e) {}
 }

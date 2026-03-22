@@ -1740,6 +1740,7 @@ a { color: var(--accent); text-decoration: none; }
       <span style="font-size:11px;color:var(--text-dim);">Click status cells to update threat level</span>
       <button class="btn btn-sm" onclick="openAppFrame('Emergency Card','/api/preparedness/print')" title="Print server-side card">Print Basic Card</button>
       <button class="btn btn-sm btn-primary" onclick="printFullCard()" title="Print complete card with family plan, PACE, and all local data">Print Full Card</button>
+      <button class="btn btn-sm btn-primary" onclick="openAppFrame('Emergency Reference Sheet','/api/emergency-sheet')" title="Print comprehensive one-page emergency reference with all contacts, supplies, patients, waypoints" style="background:linear-gradient(135deg,var(--red),var(--orange));border:none;">Emergency Sheet</button>
       <button class="btn btn-sm" onclick="generateStatusReport()" title="Generate comprehensive status report from all systems">Status Report</button>
     </div>
     <!-- Situation Board -->
@@ -4842,7 +4843,7 @@ a { color: var(--accent); text-decoration: none; }
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
             <div><strong style="color:var(--accent);">18 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Security, Power, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
-            <div><strong style="color:var(--accent);">Tools Tab</strong><br>Meshtastic, Barcode Scanner, Video Library, Guided Drills</div>
+            <div><strong style="color:var(--accent);">Key Stats</strong><br>221 API routes, 30+ DB tables, 10 decision guides, 15 checklist templates, 4 training scenarios, 12 AI chat starters</div>
           </div>
           <div style="margin:8px 0;">
             <strong style="color:var(--accent);">Keyboard Shortcuts:</strong>
@@ -5001,7 +5002,11 @@ document.addEventListener('keydown', e => {
   }
 });
 (function initTheme() {
-  const saved = localStorage.getItem('nomad-theme') || 'nomad';
+  let saved = localStorage.getItem('nomad-theme');
+  // Auto-detect OS dark mode on first run (no saved preference)
+  if (!saved) {
+    saved = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'nightops' : 'nomad';
+  }
   if (saved !== 'nomad') document.documentElement.setAttribute('data-theme', saved);
   document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.t === saved));
   updateThemeIndicator(saved);

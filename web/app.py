@@ -3560,6 +3560,198 @@ def create_app():
         except Exception as e:
             return jsonify({'summary': f'{len(alerts)} active alert(s). AI summary unavailable: {e}'})
 
+    # ─── Medical Module ────────────────────────────────────────────────
+
+    @app.route('/api/patients')
+    def api_patients_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM patients ORDER BY name').fetchall()
+        db.close()
+        return jsonify([{**dict(r), 'allergies': json.loads(r['allergies'] or '[]'),
+                         'medications': json.loads(r['medications'] or '[]'),
+                         'conditions': json.loads(r['conditions'] or '[]')} for r in rows])
+
+    @app.route('/api/patients', methods=['POST'])
+    def api_patients_create():
+        data = request.get_json() or {}
+        if not data.get('name'):
+            return jsonify({'error': 'Name required'}), 400
+        db = get_db()
+        cur = db.execute(
+            'INSERT INTO patients (contact_id, name, age, weight_kg, sex, blood_type, allergies, medications, conditions, notes) VALUES (?,?,?,?,?,?,?,?,?,?)',
+            (data.get('contact_id'), data['name'], data.get('age'), data.get('weight_kg'),
+             data.get('sex', ''), data.get('blood_type', ''),
+             json.dumps(data.get('allergies', [])), json.dumps(data.get('medications', [])),
+             json.dumps(data.get('conditions', [])), data.get('notes', '')))
+        db.commit()
+        pid = cur.lastrowid
+        db.close()
+        return jsonify({'id': pid, 'status': 'created'}), 201
+
+    @app.route('/api/patients/<int:pid>', methods=['PUT'])
+    def api_patients_update(pid):
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute(
+            'UPDATE patients SET name=?, age=?, weight_kg=?, sex=?, blood_type=?, allergies=?, medications=?, conditions=?, notes=?, contact_id=?, updated_at=CURRENT_TIMESTAMP WHERE id=?',
+            (data.get('name', ''), data.get('age'), data.get('weight_kg'),
+             data.get('sex', ''), data.get('blood_type', ''),
+             json.dumps(data.get('allergies', [])), json.dumps(data.get('medications', [])),
+             json.dumps(data.get('conditions', [])), data.get('notes', ''), data.get('contact_id'), pid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'updated'})
+
+    @app.route('/api/patients/<int:pid>', methods=['DELETE'])
+    def api_patients_delete(pid):
+        db = get_db()
+        db.execute('DELETE FROM patients WHERE id = ?', (pid,))
+        db.execute('DELETE FROM vitals_log WHERE patient_id = ?', (pid,))
+        db.execute('DELETE FROM wound_log WHERE patient_id = ?', (pid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/patients/<int:pid>/vitals')
+    def api_vitals_list(pid):
+        db = get_db()
+        rows = db.execute('SELECT * FROM vitals_log WHERE patient_id = ? ORDER BY created_at DESC LIMIT 50', (pid,)).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/patients/<int:pid>/vitals', methods=['POST'])
+    def api_vitals_create(pid):
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute(
+            'INSERT INTO vitals_log (patient_id, bp_systolic, bp_diastolic, pulse, resp_rate, temp_f, spo2, pain_level, gcs, notes) VALUES (?,?,?,?,?,?,?,?,?,?)',
+            (pid, data.get('bp_systolic'), data.get('bp_diastolic'), data.get('pulse'),
+             data.get('resp_rate'), data.get('temp_f'), data.get('spo2'),
+             data.get('pain_level'), data.get('gcs'), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'logged'}), 201
+
+    @app.route('/api/patients/<int:pid>/wounds')
+    def api_wounds_list(pid):
+        db = get_db()
+        rows = db.execute('SELECT * FROM wound_log WHERE patient_id = ? ORDER BY created_at DESC', (pid,)).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/patients/<int:pid>/wounds', methods=['POST'])
+    def api_wounds_create(pid):
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute(
+            'INSERT INTO wound_log (patient_id, location, wound_type, severity, description, treatment) VALUES (?,?,?,?,?,?)',
+            (pid, data.get('location', ''), data.get('wound_type', ''), data.get('severity', 'minor'),
+             data.get('description', ''), data.get('treatment', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'logged'}), 201
+
+    @app.route('/api/patients/<int:pid>/card')
+    def api_patient_card(pid):
+        """Generate a printable patient care card."""
+        db = get_db()
+        patient = db.execute('SELECT * FROM patients WHERE id = ?', (pid,)).fetchone()
+        if not patient:
+            db.close()
+            return jsonify({'error': 'Not found'}), 404
+        vitals = [dict(r) for r in db.execute('SELECT * FROM vitals_log WHERE patient_id = ? ORDER BY created_at DESC LIMIT 20', (pid,)).fetchall()]
+        wounds = [dict(r) for r in db.execute('SELECT * FROM wound_log WHERE patient_id = ? ORDER BY created_at DESC', (pid,)).fetchall()]
+        db.close()
+
+        p = dict(patient)
+        allergies = json.loads(p.get('allergies', '[]'))
+        medications = json.loads(p.get('medications', '[]'))
+        conditions = json.loads(p.get('conditions', '[]'))
+        weight_lbs = round(p['weight_kg'] * 2.205, 1) if p.get('weight_kg') else '?'
+
+        html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Patient Card — {_esc(p["name"])}</title>
+        <style>body{{font-family:'Segoe UI',sans-serif;padding:20px;max-width:800px;margin:0 auto;font-size:12px;line-height:1.6;}}
+        h1{{font-size:18px;border-bottom:2px solid #333;padding-bottom:4px;}}h2{{font-size:14px;color:#555;margin-top:16px;border-bottom:1px solid #ccc;padding-bottom:3px;}}
+        .grid{{display:grid;grid-template-columns:1fr 1fr;gap:8px;}}
+        .field{{margin-bottom:4px;}}.label{{font-weight:700;color:#333;}}.warn{{color:red;font-weight:700;}}
+        table{{border-collapse:collapse;width:100%;margin:8px 0;font-size:11px;}}th,td{{border:1px solid #ccc;padding:4px 8px;text-align:left;}}th{{background:#f0f0f0;}}
+        @media print{{body{{padding:10px;}}}} </style></head><body>
+        <h1>Patient Care Card — {_esc(p["name"])}</h1>
+        <div class="grid">
+          <div class="field"><span class="label">Age:</span> {p.get("age") or "?"}</div>
+          <div class="field"><span class="label">Sex:</span> {p.get("sex") or "?"}</div>
+          <div class="field"><span class="label">Weight:</span> {p.get("weight_kg") or "?"} kg ({weight_lbs} lbs)</div>
+          <div class="field"><span class="label">Blood Type:</span> {_esc(p.get("blood_type") or "?")}</div>
+        </div>
+        <div class="field warn">Allergies: {", ".join(allergies) if allergies else "NKDA (No Known Drug Allergies)"}</div>
+        <div class="field"><span class="label">Current Medications:</span> {", ".join(medications) if medications else "None"}</div>
+        <div class="field"><span class="label">Conditions:</span> {", ".join(conditions) if conditions else "None"}</div>
+        {f'<div class="field"><span class="label">Notes:</span> {_esc(p.get("notes",""))}</div>' if p.get("notes") else ""}
+        '''
+
+        if vitals:
+            html += '<h2>Vital Signs History</h2><table><thead><tr><th>Time</th><th>BP</th><th>Pulse</th><th>Resp</th><th>Temp</th><th>SpO2</th><th>Pain</th><th>GCS</th><th>Notes</th></tr></thead><tbody>'
+            for v in vitals:
+                bp = f'{v["bp_systolic"]}/{v["bp_diastolic"]}' if v.get('bp_systolic') else '-'
+                html += f'<tr><td>{v["created_at"]}</td><td>{bp}</td><td>{v.get("pulse") or "-"}</td><td>{v.get("resp_rate") or "-"}</td><td>{v.get("temp_f") or "-"}</td><td>{v.get("spo2") or "-"}%</td><td>{v.get("pain_level") or "-"}/10</td><td>{v.get("gcs") or "-"}</td><td>{_esc(v.get("notes",""))}</td></tr>'
+            html += '</tbody></table>'
+
+        if wounds:
+            html += '<h2>Wound Log</h2><table><thead><tr><th>Time</th><th>Location</th><th>Type</th><th>Severity</th><th>Description</th><th>Treatment</th></tr></thead><tbody>'
+            for w in wounds:
+                html += f'<tr><td>{w["created_at"]}</td><td>{_esc(w.get("location",""))}</td><td>{_esc(w.get("wound_type",""))}</td><td>{_esc(w.get("severity",""))}</td><td>{_esc(w.get("description",""))}</td><td>{_esc(w.get("treatment",""))}</td></tr>'
+            html += '</tbody></table>'
+
+        html += f'<p style="margin-top:16px;font-size:9px;color:#999;">Generated by Project N.O.M.A.D. — {time.strftime("%Y-%m-%d %H:%M")}</p></body></html>'
+        return html
+
+    DRUG_INTERACTIONS = [
+        ('Ibuprofen', 'Aspirin', 'major', 'Ibuprofen reduces aspirin\'s cardioprotective effect. Take aspirin 30 min before ibuprofen.'),
+        ('Ibuprofen', 'Warfarin', 'major', 'Increased bleeding risk. Avoid combination or monitor closely.'),
+        ('Ibuprofen', 'Lisinopril', 'moderate', 'NSAIDs reduce blood pressure medication effectiveness and risk kidney damage.'),
+        ('Ibuprofen', 'Metformin', 'moderate', 'NSAIDs may impair kidney function, affecting metformin clearance.'),
+        ('Acetaminophen', 'Warfarin', 'moderate', 'High-dose acetaminophen (>2g/day) can increase INR/bleeding risk.'),
+        ('Acetaminophen', 'Alcohol', 'major', 'Combined liver toxicity. Avoid acetaminophen if >3 drinks/day.'),
+        ('Aspirin', 'Warfarin', 'major', 'Significantly increased bleeding risk. Avoid unless directed by physician.'),
+        ('Aspirin', 'Methotrexate', 'major', 'Aspirin reduces methotrexate clearance — toxicity risk.'),
+        ('Amoxicillin', 'Methotrexate', 'major', 'Amoxicillin reduces methotrexate clearance — toxicity risk.'),
+        ('Amoxicillin', 'Warfarin', 'moderate', 'May increase anticoagulant effect. Monitor for bleeding.'),
+        ('Diphenhydramine', 'Alcohol', 'major', 'Extreme drowsiness and CNS depression. Do not combine.'),
+        ('Diphenhydramine', 'Oxycodone', 'major', 'Additive CNS/respiratory depression. Life-threatening.'),
+        ('Diphenhydramine', 'Tramadol', 'major', 'Seizure risk increased. Additive CNS depression.'),
+        ('Metformin', 'Alcohol', 'major', 'Lactic acidosis risk. Limit alcohol with metformin.'),
+        ('Lisinopril', 'Potassium', 'major', 'Hyperkalemia risk. Avoid potassium supplements unless directed.'),
+        ('Lisinopril', 'Spironolactone', 'major', 'Dangerous hyperkalemia. Requires monitoring.'),
+        ('Warfarin', 'Vitamin K', 'major', 'Vitamin K reverses warfarin effect. Keep dietary intake consistent.'),
+        ('Warfarin', 'Ciprofloxacin', 'major', 'Dramatically increases warfarin effect — bleeding risk.'),
+        ('Oxycodone', 'Alcohol', 'major', 'Fatal respiratory depression. Never combine.'),
+        ('Oxycodone', 'Benzodiazepines', 'major', 'Fatal respiratory depression. FDA black box warning.'),
+        ('Metoprolol', 'Verapamil', 'major', 'Severe bradycardia and heart block risk.'),
+        ('Ciprofloxacin', 'Antacids', 'moderate', 'Antacids reduce ciprofloxacin absorption. Take 2h apart.'),
+        ('Prednisone', 'Ibuprofen', 'moderate', 'Increased GI bleeding risk. Use with PPI if needed.'),
+        ('Prednisone', 'Diabetes meds', 'moderate', 'Steroids raise blood sugar. May need dose adjustment.'),
+        ('SSRIs', 'Tramadol', 'major', 'Serotonin syndrome risk. Potentially fatal.'),
+        ('SSRIs', 'MAOIs', 'major', 'Serotonin syndrome — potentially fatal. 14-day washout required.'),
+    ]
+
+    @app.route('/api/medical/interactions', methods=['POST'])
+    def api_drug_interactions():
+        """Check drug interactions for a list of medications."""
+        data = request.get_json() or {}
+        meds = [m.strip().lower() for m in data.get('medications', []) if m.strip()]
+        if len(meds) < 2:
+            return jsonify([])
+        found = []
+        for drug1, drug2, severity, detail in DRUG_INTERACTIONS:
+            d1, d2 = drug1.lower(), drug2.lower()
+            for m in meds:
+                for n in meds:
+                    if m != n and ((d1 in m or m in d1) and (d2 in n or n in d2)):
+                        entry = {'drug1': drug1, 'drug2': drug2, 'severity': severity, 'detail': detail}
+                        if entry not in found:
+                            found.append(entry)
+        return jsonify(found)
+
     # ─── Emergency Broadcast ──────────────────────────────────────────
 
     _broadcast = {'active': False, 'message': '', 'severity': 'info', 'timestamp': ''}

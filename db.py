@@ -257,6 +257,49 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS patients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            contact_id INTEGER,
+            name TEXT NOT NULL,
+            age INTEGER,
+            weight_kg REAL,
+            sex TEXT DEFAULT '',
+            blood_type TEXT DEFAULT '',
+            allergies TEXT DEFAULT '[]',
+            medications TEXT DEFAULT '[]',
+            conditions TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS vitals_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            bp_systolic INTEGER,
+            bp_diastolic INTEGER,
+            pulse INTEGER,
+            resp_rate INTEGER,
+            temp_f REAL,
+            spo2 INTEGER,
+            pain_level INTEGER,
+            gcs INTEGER,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS wound_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            location TEXT NOT NULL DEFAULT '',
+            wound_type TEXT DEFAULT '',
+            severity TEXT DEFAULT 'minor',
+            description TEXT DEFAULT '',
+            treatment TEXT DEFAULT '',
+            photo_path TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS alerts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             alert_type TEXT NOT NULL,
@@ -284,6 +327,9 @@ def init_db():
         'CREATE INDEX IF NOT EXISTS idx_weather_log_created ON weather_log(created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_waypoints_category ON waypoints(category)',
         'CREATE INDEX IF NOT EXISTS idx_alerts_dismissed ON alerts(dismissed, created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_vitals_patient ON vitals_log(patient_id, created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_wound_patient ON wound_log(patient_id, created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_patients_contact ON patients(contact_id)',
     ]:
         try:
             conn.execute(idx)

@@ -1722,6 +1722,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="prep-subtab" data-psub="contacts" onclick="switchPrepSub('contacts')">Contacts</button>
       <button class="prep-subtab" data-psub="calculators" onclick="switchPrepSub('calculators')">Calculators</button>
       <button class="prep-subtab" data-psub="radio" onclick="switchPrepSub('radio')">Radio Ref</button>
+      <button class="prep-subtab" data-psub="medical" onclick="switchPrepSub('medical')">Medical</button>
       <button class="prep-subtab" data-psub="guides" onclick="switchPrepSub('guides')">Guides</button>
       <button class="prep-subtab" data-psub="reference" onclick="switchPrepSub('reference')">Quick Ref</button>
       <button class="prep-subtab" data-psub="protocols" onclick="switchPrepSub('protocols')">Protocols</button>
@@ -2266,6 +2267,93 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
     </div><!-- /psub-radio -->
+
+    <!-- Sub: Medical Module -->
+    <div id="psub-medical" class="prep-sub">
+    <div class="prep-section">
+      <h3>Medical Module</h3>
+      <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-sm btn-primary" onclick="showPatientForm()">+ Add Patient</button>
+        <button class="btn btn-sm" onclick="addPatientFromContacts()">Import from Contacts</button>
+        <span style="font-size:11px;color:var(--text-dim);">Track patients, vitals, wounds, allergies, and medications. Drug interaction checking built-in.</span>
+      </div>
+
+      <!-- Patient Form -->
+      <div id="patient-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;font-size:12px;">
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Name *</label><input id="pt-name" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Age</label><input id="pt-age" type="number" min="0" max="120" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Weight (kg)</label><input id="pt-weight" type="number" min="1" max="300" step="0.1" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Sex</label><select id="pt-sex" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"><option value="">-</option><option>Male</option><option>Female</option></select></div>
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Blood Type</label><select id="pt-blood" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"><option value="">Unknown</option><option>A+</option><option>A-</option><option>B+</option><option>B-</option><option>AB+</option><option>AB-</option><option>O+</option><option>O-</option></select></div>
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Allergies (comma-separated)</label><input id="pt-allergies" placeholder="Penicillin, Sulfa, Latex..." style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Current Medications</label><input id="pt-meds" placeholder="Lisinopril, Metformin..." style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Conditions</label><input id="pt-conditions" placeholder="Diabetes, Hypertension..." style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
+        </div>
+        <div style="margin-top:8px;"><label style="color:var(--text-dim);display:block;margin-bottom:3px;font-size:12px;">Notes</label><input id="pt-notes" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="Additional medical info..."></div>
+        <input type="hidden" id="pt-edit-id" value="">
+        <div style="display:flex;gap:6px;margin-top:10px;">
+          <button class="btn btn-sm btn-primary" onclick="savePatient()">Save Patient</button>
+          <button class="btn btn-sm" onclick="hidePatientForm()">Cancel</button>
+          <button class="btn btn-sm" onclick="checkDrugInteractions()" id="interaction-check-btn" title="Check drug interactions for this patient's medications">Check Interactions</button>
+        </div>
+        <div id="interaction-results" style="display:none;margin-top:8px;"></div>
+      </div>
+
+      <!-- Patient List -->
+      <div id="patient-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;">
+        <div style="text-align:center;color:var(--text-muted);padding:40px;font-size:12px;grid-column:1/-1;">No patients registered. Click "+ Add Patient" or "Import from Contacts" to start.</div>
+      </div>
+
+      <!-- Vitals Form (shown when viewing a patient) -->
+      <div id="vitals-panel" style="display:none;margin-top:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <h3 id="vitals-patient-name" style="font-size:15px;">Patient Vitals</h3>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm" onclick="openAppFrame('Patient Card','/api/patients/'+_activePatientId+'/card')" title="Print patient care card">Print Card</button>
+            <button class="btn btn-sm btn-ghost" onclick="closeVitalsPanel()">Close</button>
+          </div>
+        </div>
+        <div id="vitals-allergy-banner" style="display:none;padding:8px 12px;background:var(--red-dim);border:1px solid var(--red);border-radius:var(--radius-sm);margin-bottom:8px;font-size:12px;font-weight:600;color:var(--red);"></div>
+        <!-- Log vitals -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:600;margin-bottom:8px;">Record Vital Signs</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;">
+            <div><label style="color:var(--text-dim);display:block;">BP Sys</label><input id="v-bps" type="number" min="40" max="300" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="120"></div>
+            <div><label style="color:var(--text-dim);display:block;">BP Dia</label><input id="v-bpd" type="number" min="20" max="200" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="80"></div>
+            <div><label style="color:var(--text-dim);display:block;">Pulse</label><input id="v-pulse" type="number" min="20" max="250" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="72"></div>
+            <div><label style="color:var(--text-dim);display:block;">Resp</label><input id="v-resp" type="number" min="4" max="60" style="width:50px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="16"></div>
+            <div><label style="color:var(--text-dim);display:block;">Temp F</label><input id="v-temp" type="number" min="90" max="110" step="0.1" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="98.6"></div>
+            <div><label style="color:var(--text-dim);display:block;">SpO2%</label><input id="v-spo2" type="number" min="50" max="100" style="width:55px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="98"></div>
+            <div><label style="color:var(--text-dim);display:block;">Pain 0-10</label><input id="v-pain" type="number" min="0" max="10" style="width:50px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="0"></div>
+            <div><label style="color:var(--text-dim);display:block;">GCS 3-15</label><input id="v-gcs" type="number" min="3" max="15" style="width:50px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="15"></div>
+            <div><label style="color:var(--text-dim);display:block;">Notes</label><input id="v-notes" style="width:140px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="Optional"></div>
+            <div style="display:flex;align-items:end;"><button class="btn btn-sm btn-primary" onclick="logVitals()">Log</button></div>
+          </div>
+        </div>
+        <!-- Vitals history -->
+        <div style="overflow-x:auto;"><table class="freq-table" id="vitals-table"><thead><tr><th>Time</th><th>BP</th><th>Pulse</th><th>Resp</th><th>Temp</th><th>SpO2</th><th>Pain</th><th>GCS</th><th>Notes</th></tr></thead><tbody id="vitals-tbody"></tbody></table></div>
+        <!-- Wound Log -->
+        <div style="margin-top:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <span style="font-size:13px;font-weight:600;">Wound Log</span>
+            <button class="btn btn-sm" onclick="showWoundForm()">+ Log Wound</button>
+          </div>
+          <div id="wound-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:8px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:12px;">
+              <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Body Location</label><input id="w-loc" style="width:120px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Left forearm"></div>
+              <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Type</label><select id="w-type" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option>Laceration</option><option>Puncture</option><option>Abrasion</option><option>Burn</option><option>Blunt</option><option>Gunshot</option><option>Bite</option><option>Other</option></select></div>
+              <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Severity</label><select id="w-sev" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;"><option value="minor">Minor</option><option value="moderate">Moderate</option><option value="severe">Severe</option><option value="critical">Critical</option></select></div>
+              <div style="flex:1;min-width:150px;"><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Description</label><input id="w-desc" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="2cm laceration, clean edges..."></div>
+              <div style="flex:1;min-width:150px;"><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Treatment Given</label><input id="w-treat" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Cleaned, steri-strips, gauze..."></div>
+              <div style="display:flex;align-items:end;gap:4px;"><button class="btn btn-sm btn-primary" onclick="logWound()">Log</button><button class="btn btn-sm" onclick="document.getElementById('wound-form').style.display='none'">Cancel</button></div>
+            </div>
+          </div>
+          <div id="wound-list" style="font-size:12px;"></div>
+        </div>
+      </div>
+    </div>
+    </div><!-- /psub-medical -->
 
     <!-- Sub: Interactive Guides (Decision Trees) -->
     <div id="psub-guides" class="prep-sub">
@@ -4506,7 +4594,7 @@ a { color: var(--accent); text-decoration: none; }
           <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
-            <div><strong style="color:var(--accent);">14 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
+            <div><strong style="color:var(--accent);">15 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
             <div><strong style="color:var(--accent);">Tools Tab</strong><br>Meshtastic, Barcode Scanner, Video Library, Guided Drills</div>
           </div>
           <div style="margin:8px 0;">
@@ -6980,6 +7068,7 @@ function switchPrepSub(sub) {
   if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
   if (sub === 'ops') { loadInfraStatus(); renderVehicles(); calcBleach(); loadThreatMatrix(); renderHomeSecurity(); }
   if (sub === 'family') loadFEP();
+  if (sub === 'medical') loadPatients();
   if (sub === 'guides') renderGuideSelector();
   if (sub === 'reference') { convertUnit(); showPlantZone(); loadShelterAssess(); }
 }
@@ -10302,6 +10391,235 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'n') { e.preventDefault(); document.querySelector('[data-tab="notes"]').click(); setTimeout(createNote, 200); }
   }
 });
+
+/* ─── Medical Module ─── */
+let _activePatientId = null;
+let _patients = [];
+
+async function loadPatients() {
+  try {
+    _patients = await (await fetch('/api/patients')).json();
+    const el = document.getElementById('patient-list');
+    if (!_patients.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:40px;font-size:12px;grid-column:1/-1;">No patients registered. Click "+ Add Patient" or "Import from Contacts" to start.</div>';
+      return;
+    }
+    el.innerHTML = _patients.map(p => {
+      const allergies = (p.allergies || []).join(', ') || 'NKDA';
+      const meds = (p.medications || []).join(', ') || 'None';
+      const allergyWarn = p.allergies?.length > 0;
+      return `<div class="contact-card">
+        <div class="cc-name">${escapeHtml(p.name)}</div>
+        <div class="cc-role">${p.age ? p.age + ' yr' : ''} ${p.sex || ''} ${p.weight_kg ? '| ' + p.weight_kg + ' kg' : ''} ${p.blood_type ? '| ' + p.blood_type : ''}</div>
+        ${allergyWarn ? `<div style="color:var(--red);font-size:11px;font-weight:700;">ALLERGIES: ${escapeHtml(allergies)}</div>` : '<div style="color:var(--green);font-size:10px;">NKDA</div>'}
+        <div class="cc-field"><strong>Meds:</strong> ${escapeHtml(meds)}</div>
+        ${p.conditions?.length ? `<div class="cc-field"><strong>Conditions:</strong> ${escapeHtml(p.conditions.join(', '))}</div>` : ''}
+        <div class="cc-actions">
+          <button class="btn btn-sm btn-primary" onclick="openVitalsPanel(${p.id})">Vitals</button>
+          <button class="btn btn-sm" onclick="editPatient(${p.id})">Edit</button>
+          <button class="btn btn-sm" onclick="openAppFrame('Patient Card','/api/patients/${p.id}/card')">Card</button>
+          <button class="btn btn-sm btn-danger" onclick="deletePatient(${p.id})">Delete</button>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('patient-list').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px;font-size:12px;grid-column:1/-1;">Failed to load patients</div>';
+  }
+}
+
+function showPatientForm(patient) {
+  document.getElementById('patient-form').style.display = 'block';
+  document.getElementById('pt-name').value = patient?.name || '';
+  document.getElementById('pt-age').value = patient?.age || '';
+  document.getElementById('pt-weight').value = patient?.weight_kg || '';
+  document.getElementById('pt-sex').value = patient?.sex || '';
+  document.getElementById('pt-blood').value = patient?.blood_type || '';
+  document.getElementById('pt-allergies').value = (patient?.allergies || []).join(', ');
+  document.getElementById('pt-meds').value = (patient?.medications || []).join(', ');
+  document.getElementById('pt-conditions').value = (patient?.conditions || []).join(', ');
+  document.getElementById('pt-notes').value = patient?.notes || '';
+  document.getElementById('pt-edit-id').value = patient?.id || '';
+  document.getElementById('interaction-results').style.display = 'none';
+}
+function hidePatientForm() { document.getElementById('patient-form').style.display = 'none'; }
+
+async function savePatient() {
+  const name = document.getElementById('pt-name').value.trim();
+  if (!name) { toast('Patient name required', 'warning'); return; }
+  const data = {
+    name, age: parseInt(document.getElementById('pt-age').value) || null,
+    weight_kg: parseFloat(document.getElementById('pt-weight').value) || null,
+    sex: document.getElementById('pt-sex').value,
+    blood_type: document.getElementById('pt-blood').value,
+    allergies: document.getElementById('pt-allergies').value.split(',').map(s => s.trim()).filter(Boolean),
+    medications: document.getElementById('pt-meds').value.split(',').map(s => s.trim()).filter(Boolean),
+    conditions: document.getElementById('pt-conditions').value.split(',').map(s => s.trim()).filter(Boolean),
+    notes: document.getElementById('pt-notes').value.trim(),
+  };
+  const editId = document.getElementById('pt-edit-id').value;
+  if (editId) {
+    await fetch(`/api/patients/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    toast('Patient updated', 'success');
+  } else {
+    await fetch('/api/patients', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    toast('Patient added', 'success');
+  }
+  hidePatientForm();
+  loadPatients();
+}
+
+function editPatient(id) {
+  const p = _patients.find(x => x.id === id);
+  if (p) showPatientForm(p);
+}
+
+async function deletePatient(id) {
+  const btn = event.target;
+  if (!btn.dataset.confirm) {
+    btn.dataset.confirm = '1'; btn.textContent = 'Confirm?';
+    btn.style.background = 'var(--red)'; btn.style.color = '#fff';
+    setTimeout(() => { btn.textContent = 'Delete'; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
+    return;
+  }
+  await fetch(`/api/patients/${id}`, {method:'DELETE'});
+  toast('Patient removed', 'warning');
+  if (_activePatientId === id) closeVitalsPanel();
+  loadPatients();
+}
+
+async function addPatientFromContacts() {
+  try {
+    const contacts = await (await fetch('/api/contacts')).json();
+    if (!contacts.length) { toast('No contacts found. Add contacts first.', 'warning'); return; }
+    for (const c of contacts) {
+      // Skip if already a patient with same name
+      if (_patients.some(p => p.name === c.name)) continue;
+      await fetch('/api/patients', {method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({name: c.name, contact_id: c.id, blood_type: c.blood_type || '', notes: c.medical_notes || ''})});
+    }
+    toast('Contacts imported as patients', 'success');
+    loadPatients();
+  } catch(e) { toast('Import failed', 'error'); }
+}
+
+async function checkDrugInteractions() {
+  const meds = document.getElementById('pt-meds').value.split(',').map(s => s.trim()).filter(Boolean);
+  const el = document.getElementById('interaction-results');
+  if (meds.length < 2) { el.style.display = 'block'; el.innerHTML = '<div style="font-size:11px;color:var(--text-dim);">Enter 2+ medications to check interactions.</div>'; return; }
+  try {
+    const interactions = await (await fetch('/api/medical/interactions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({medications: meds})})).json();
+    el.style.display = 'block';
+    if (!interactions.length) {
+      el.innerHTML = '<div style="font-size:11px;color:var(--green);font-weight:600;">No known interactions found between these medications.</div>';
+    } else {
+      el.innerHTML = interactions.map(i => {
+        const color = i.severity === 'major' ? 'var(--red)' : 'var(--orange)';
+        return `<div style="padding:6px 10px;background:${i.severity === 'major' ? 'var(--red-dim)' : 'var(--orange-dim)'};border-radius:6px;margin-bottom:4px;font-size:11px;">
+          <strong style="color:${color};">${i.severity.toUpperCase()}: ${escapeHtml(i.drug1)} + ${escapeHtml(i.drug2)}</strong><br>
+          ${escapeHtml(i.detail)}
+        </div>`;
+      }).join('');
+    }
+  } catch(e) { el.style.display = 'block'; el.innerHTML = '<div style="color:var(--red);font-size:11px;">Interaction check failed</div>'; }
+}
+
+async function openVitalsPanel(patientId) {
+  _activePatientId = patientId;
+  const p = _patients.find(x => x.id === patientId);
+  if (!p) return;
+  document.getElementById('vitals-panel').style.display = 'block';
+  document.getElementById('vitals-patient-name').textContent = `${p.name} — Vitals & Wounds`;
+  // Show allergy banner
+  const banner = document.getElementById('vitals-allergy-banner');
+  if (p.allergies?.length) {
+    banner.style.display = 'block';
+    banner.textContent = 'ALLERGIES: ' + p.allergies.join(', ');
+  } else { banner.style.display = 'none'; }
+  await loadVitals(patientId);
+  await loadWounds(patientId);
+}
+
+function closeVitalsPanel() {
+  _activePatientId = null;
+  document.getElementById('vitals-panel').style.display = 'none';
+}
+
+async function logVitals() {
+  if (!_activePatientId) return;
+  const data = {
+    bp_systolic: parseInt(document.getElementById('v-bps').value) || null,
+    bp_diastolic: parseInt(document.getElementById('v-bpd').value) || null,
+    pulse: parseInt(document.getElementById('v-pulse').value) || null,
+    resp_rate: parseInt(document.getElementById('v-resp').value) || null,
+    temp_f: parseFloat(document.getElementById('v-temp').value) || null,
+    spo2: parseInt(document.getElementById('v-spo2').value) || null,
+    pain_level: parseInt(document.getElementById('v-pain').value) || null,
+    gcs: parseInt(document.getElementById('v-gcs').value) || null,
+    notes: document.getElementById('v-notes').value.trim(),
+  };
+  if (!data.bp_systolic && !data.pulse && !data.temp_f && !data.spo2) { toast('Enter at least one vital sign', 'warning'); return; }
+  await fetch(`/api/patients/${_activePatientId}/vitals`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  toast('Vitals logged', 'success');
+  ['v-bps','v-bpd','v-pulse','v-resp','v-temp','v-spo2','v-pain','v-gcs','v-notes'].forEach(id => document.getElementById(id).value = '');
+  await loadVitals(_activePatientId);
+}
+
+async function loadVitals(pid) {
+  try {
+    const vitals = await (await fetch(`/api/patients/${pid}/vitals`)).json();
+    const tbody = document.getElementById('vitals-tbody');
+    if (!vitals.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:var(--text-muted);padding:16px;">No vitals recorded. Use the form above to log.</td></tr>'; return; }
+    tbody.innerHTML = vitals.map(v => {
+      const bp = v.bp_systolic ? `${v.bp_systolic}/${v.bp_diastolic}` : '-';
+      const t = new Date(v.created_at);
+      const ts = t.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      const pulseColor = v.pulse > 100 ? 'color:var(--red);font-weight:600;' : v.pulse < 50 ? 'color:var(--orange);font-weight:600;' : '';
+      const spo2Color = v.spo2 && v.spo2 < 92 ? 'color:var(--red);font-weight:600;' : '';
+      const tempColor = v.temp_f && v.temp_f > 101 ? 'color:var(--red);font-weight:600;' : v.temp_f && v.temp_f < 96 ? 'color:var(--orange);font-weight:600;' : '';
+      return `<tr><td style="font-size:10px;">${ts}</td><td>${bp}</td><td style="${pulseColor}">${v.pulse||'-'}</td><td>${v.resp_rate||'-'}</td><td style="${tempColor}">${v.temp_f||'-'}</td><td style="${spo2Color}">${v.spo2 ? v.spo2+'%' : '-'}</td><td>${v.pain_level!=null ? v.pain_level+'/10' : '-'}</td><td>${v.gcs||'-'}</td><td style="font-size:10px;">${escapeHtml(v.notes||'')}</td></tr>`;
+    }).join('');
+  } catch(e) {}
+}
+
+function showWoundForm() { document.getElementById('wound-form').style.display = 'block'; }
+
+async function logWound() {
+  if (!_activePatientId) return;
+  const data = {
+    location: document.getElementById('w-loc').value.trim(),
+    wound_type: document.getElementById('w-type').value,
+    severity: document.getElementById('w-sev').value,
+    description: document.getElementById('w-desc').value.trim(),
+    treatment: document.getElementById('w-treat').value.trim(),
+  };
+  if (!data.location) { toast('Enter wound location', 'warning'); return; }
+  await fetch(`/api/patients/${_activePatientId}/wounds`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  toast('Wound logged', 'success');
+  document.getElementById('wound-form').style.display = 'none';
+  ['w-loc','w-desc','w-treat'].forEach(id => document.getElementById(id).value = '');
+  await loadWounds(_activePatientId);
+}
+
+async function loadWounds(pid) {
+  try {
+    const wounds = await (await fetch(`/api/patients/${pid}/wounds`)).json();
+    const el = document.getElementById('wound-list');
+    if (!wounds.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:12px;">No wounds logged.</div>'; return; }
+    el.innerHTML = wounds.map(w => {
+      const t = new Date(w.created_at);
+      const ts = t.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      const sevColor = {minor:'var(--green)',moderate:'var(--orange)',severe:'var(--red)',critical:'var(--red)'}[w.severity] || 'var(--text)';
+      return `<div style="padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:4px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <span><strong>${escapeHtml(w.location)}</strong> — ${escapeHtml(w.wound_type)} <span style="color:${sevColor};font-weight:600;font-size:10px;text-transform:uppercase;">${w.severity}</span></span>
+          <span style="font-size:10px;color:var(--text-muted);">${ts}</span>
+        </div>
+        ${w.description ? `<div style="font-size:11px;color:var(--text-dim);margin-top:2px;">${escapeHtml(w.description)}</div>` : ''}
+        ${w.treatment ? `<div style="font-size:11px;color:var(--green);margin-top:2px;">Tx: ${escapeHtml(w.treatment)}</div>` : ''}
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
 
 /* ─── Interactive Decision Guide Engine ─── */
 const DECISION_GUIDES = [

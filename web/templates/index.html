@@ -587,6 +587,9 @@ a { color: var(--accent); text-decoration: none; }
 .search-result-type.conversation { background: var(--accent-dim); color: var(--accent); }
 .search-result-type.note { background: var(--green-dim); color: var(--green); }
 .search-result-type.document { background: var(--orange-dim); color: var(--orange); }
+.search-result-type.inventory { background: rgba(255,235,59,0.1); color: #c8a800; }
+.search-result-type.contact { background: rgba(233,30,99,0.1); color: #e91e63; }
+.search-result-type.checklist { background: var(--green-dim); color: var(--green); }
 
 /* ─── Content Summary ─── */
 .content-summary {
@@ -1391,8 +1394,8 @@ a { color: var(--accent); text-decoration: none; }
       <div id="burn-rate-dash" style="margin-bottom:16px;"></div>
       <div id="inv-table-wrap" style="overflow-x:auto;">
         <table class="freq-table" id="inv-table">
-          <thead><tr><th>Name</th><th>Cat</th><th>Qty</th><th>Location</th><th>Expires</th><th>Notes</th><th style="width:70px;"></th></tr></thead>
-          <tbody id="inv-tbody"><tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No items yet. Click "+ Add Item" to start tracking supplies.</td></tr></tbody>
+          <thead><tr><th>Name</th><th>Cat</th><th>Qty</th><th>Days Left</th><th>Location</th><th>Expires</th><th>Notes</th><th style="width:70px;"></th></tr></thead>
+          <tbody id="inv-tbody"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">No items yet. Click "+ Add Item" to start tracking supplies.</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1535,6 +1538,21 @@ a { color: var(--accent); text-decoration: none; }
             </select>
           </div>
           <div class="calc-result" id="travel-result"></div>
+        </div>
+        <!-- Battery Life Calculator -->
+        <div class="calc-card">
+          <h4>Battery Life Estimator</h4>
+          <div class="calc-row"><label>Battery (mAh)</label><input id="batt-mah" type="number" value="10000" min="100" oninput="calcBattery()"></div>
+          <div class="calc-row"><label>Voltage (V)</label><input id="batt-v" type="number" value="5" min="1" max="48" step="0.1" oninput="calcBattery()"></div>
+          <div class="calc-row"><label>Device watts</label><input id="batt-watts" type="number" value="5" min="0.1" step="0.1" oninput="calcBattery()"></div>
+          <div class="calc-row"><label>Efficiency</label>
+            <select id="batt-eff" onchange="calcBattery()" style="flex:1;max-width:160px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;">
+              <option value="0.85">85% (typical)</option>
+              <option value="0.90">90% (good converter)</option>
+              <option value="0.70">70% (cheap/old)</option>
+            </select>
+          </div>
+          <div class="calc-result" id="batt-result"></div>
         </div>
         <!-- Calorie Tracker -->
         <div class="calc-card">
@@ -1944,7 +1962,22 @@ a { color: var(--accent); text-decoration: none; }
               <tr><td>Salsa</td><td>15 min</td><td>Tested recipe only</td></tr>
               <tr><td>Sauerkraut</td><td>10 min</td><td>Ferment 3-6 weeks first</td></tr>
               </tbody></table>
-              <div style="color:var(--orange);font-size:11px;margin-top:4px;">Add 5 min per 1,000 ft above sea level. LOW-ACID foods (meat, beans, corn, green beans) REQUIRE pressure canning — water bath is NOT safe.</div>
+              <div style="color:var(--orange);font-size:11px;margin-top:4px;">Add 5 min per 1,000 ft above sea level. LOW-ACID foods REQUIRE pressure canning (below).</div>
+              <div style="font-weight:700;color:var(--accent);margin-top:10px;margin-bottom:4px;">Pressure Canning (10 PSI, 240F) — LOW-ACID FOODS</div>
+              <table class="freq-table"><thead><tr><th>Food</th><th>Pints</th><th>Quarts</th></tr></thead><tbody>
+              <tr><td>Green beans</td><td>20 min</td><td>25 min</td></tr>
+              <tr><td>Corn (whole kernel)</td><td>55 min</td><td>85 min</td></tr>
+              <tr><td>Carrots</td><td>25 min</td><td>30 min</td></tr>
+              <tr><td>Potatoes</td><td>35 min</td><td>40 min</td></tr>
+              <tr><td>Peas</td><td>40 min</td><td>40 min</td></tr>
+              <tr><td>Chicken (bone-in)</td><td>65 min</td><td>75 min</td></tr>
+              <tr><td>Beef/venison chunks</td><td>75 min</td><td>90 min</td></tr>
+              <tr><td>Ground meat</td><td>75 min</td><td>90 min</td></tr>
+              <tr><td>Fish</td><td>100 min</td><td>100 min</td></tr>
+              <tr><td>Beans (dried, soaked)</td><td>75 min</td><td>90 min</td></tr>
+              <tr><td>Soup/stew</td><td>60 min</td><td>75 min</td></tr>
+              </tbody></table>
+              <div style="color:var(--red);font-size:11px;margin-top:4px;font-weight:600;">Altitude adjustment: Above 1,000 ft use 15 PSI (weighted gauge) or add 1 PSI per 1,000 ft (dial gauge). NEVER water-bath-can meat, beans, corn, or other low-acid foods — botulism risk is fatal.</div>
             </div>
             <div>
               <div style="font-weight:700;color:var(--accent);margin-bottom:6px;">Dehydration Temperatures & Times</div>
@@ -2322,7 +2355,7 @@ a { color: var(--accent); text-decoration: none; }
 
   <!-- LAN Chat Widget -->
   <div id="lan-chat-btn" onclick="toggleLanChat()" style="position:fixed;bottom:20px;left:20px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--green));color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:9990;font-size:18px;transition:transform 0.2s;" title="LAN Chat">&#9993;</div>
-  <div id="lan-chat-panel" style="display:none;position:fixed;bottom:80px;left:20px;width:360px;height:440px;background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);z-index:9990;display:none;flex-direction:column;overflow:hidden;">
+  <div id="lan-chat-panel" style="display:none;position:fixed;bottom:80px;left:20px;width:360px;height:440px;background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);z-index:9990;flex-direction:column;overflow:hidden;">
     <div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
       <span style="font-weight:600;font-size:13px;">LAN Chat</span>
       <div style="display:flex;gap:6px;align-items:center;">
@@ -4365,7 +4398,7 @@ function switchPrepSub(sub) {
   if (sub === 'incidents') loadIncidents();
   if (sub === 'inventory') { loadInventory(); loadBurnRate(); }
   if (sub === 'contacts') { loadContacts(); loadSkillsMatrix(); }
-  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); updateCalTracker(); }
+  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); updateCalTracker(); }
   if (sub === 'reference') { convertUnit(); showPlantZone(); }
   if (sub === 'vault' && _vaultKey) loadVaultList();
   if (sub === 'weather') loadWeather();
@@ -4557,7 +4590,7 @@ async function loadInventory() {
     const items = await (await fetch(url)).json();
     const tbody = document.getElementById('inv-tbody');
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No items found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:20px;">No items found.</td></tr>';
     } else {
       const today = new Date().toISOString().slice(0,10);
       const soon = new Date(Date.now()+30*86400000).toISOString().slice(0,10);
@@ -4568,10 +4601,13 @@ async function loadInventory() {
           else if (i.expiration <= soon) expCls = 'color:var(--orange);font-weight:600;';
         }
         const lowStock = i.min_quantity > 0 && i.quantity <= i.min_quantity;
+        const daysLeft = i.daily_usage > 0 ? Math.round(i.quantity / i.daily_usage * 10) / 10 : null;
+        const daysColor = daysLeft === null ? '' : daysLeft < 3 ? 'color:var(--red);font-weight:600;' : daysLeft < 7 ? 'color:var(--orange);font-weight:600;' : daysLeft < 14 ? 'color:#c8a800;' : 'color:var(--green);';
         return `<tr>
           <td style="${lowStock?'color:var(--red);font-weight:600;':''}">${escapeHtml(i.name)}</td>
           <td><span class="check-cat">${i.category}</span></td>
           <td style="${lowStock?'color:var(--red);font-weight:600;':''}">${i.quantity} ${escapeHtml(i.unit)}</td>
+          <td style="${daysColor}font-size:12px;font-weight:500;">${daysLeft !== null ? daysLeft + 'd' : '-'}</td>
           <td style="font-size:11px;">${escapeHtml(i.location)}</td>
           <td style="${expCls}font-size:11px;">${i.expiration||'-'}</td>
           <td style="font-size:11px;max-width:120px;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(i.notes)}</td>
@@ -5234,6 +5270,22 @@ async function deleteWaypoint(id) {
   await fetch(`/api/waypoints/${id}`, {method:'DELETE'});
   toast('Waypoint deleted');
   loadWaypoints();
+}
+
+/* ─── Battery Life Calculator ─── */
+function calcBattery() {
+  const mah = parseInt(document.getElementById('batt-mah').value) || 0;
+  const v = parseFloat(document.getElementById('batt-v').value) || 5;
+  const watts = parseFloat(document.getElementById('batt-watts').value) || 1;
+  const eff = parseFloat(document.getElementById('batt-eff').value) || 0.85;
+  const wh = (mah / 1000) * v * eff;
+  const hours = wh / watts;
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  document.getElementById('batt-result').innerHTML = `
+    Battery capacity: <strong>${wh.toFixed(1)} Wh</strong> (usable)<br>
+    Runtime at ${watts}W: <strong>${h}h ${m}m</strong><br>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Common devices: Phone charging ~5-10W | LED lantern ~3-5W | Radio ~1-3W | Laptop ~30-65W | Router ~10-15W</div>`;
 }
 
 /* ─── Moon Phase Calculator ─── */

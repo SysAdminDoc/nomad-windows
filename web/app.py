@@ -1139,8 +1139,8 @@ def create_app():
     MAP_SOURCES = [
         # === PMTiles (native format — works directly with MapLibre viewer) ===
         {'id': 'protomaps-planet', 'name': 'Protomaps World Basemap', 'category': 'PMTiles',
-         'url': 'https://build.protomaps.com/', 'format': 'pmtiles', 'est_size': '~80 GB',
-         'desc': 'Full planet vector tiles. Daily builds. The definitive offline map source.'},
+         'url': 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles', 'format': 'pmtiles', 'est_size': '~120 GB',
+         'desc': 'Full planet vector tiles (v4). Source Cooperative mirror. The definitive offline map source.', 'direct': True},
         {'id': 'openfreemap-planet', 'name': 'OpenFreeMap Planet', 'category': 'PMTiles',
          'url': 'https://openfreemap.com/', 'format': 'pmtiles', 'est_size': '~80 GB',
          'desc': 'Free, open-source planet tiles. Self-hostable.'},
@@ -1150,9 +1150,9 @@ def create_app():
         {'id': 'source-coop', 'name': 'Source Cooperative Maps', 'category': 'PMTiles',
          'url': 'https://source.coop/', 'format': 'pmtiles', 'est_size': 'Varies',
          'desc': 'Community-hosted geospatial datasets in PMTiles and other formats.'},
-        {'id': 'protomaps-basemap-demo', 'name': 'Protomaps Basemap (Demo Tile)', 'category': 'PMTiles',
-         'url': 'https://build.protomaps.com/20230408.pmtiles', 'format': 'pmtiles', 'est_size': '~70 GB',
-         'desc': 'Archived daily build — stable URL for testing/downloading.', 'direct': True},
+        {'id': 'mapterhorn-terrain', 'name': 'Mapterhorn Terrain Tiles', 'category': 'PMTiles',
+         'url': 'https://download.mapterhorn.com/planet.pmtiles', 'format': 'pmtiles', 'est_size': '~30 GB',
+         'desc': 'Global terrain/elevation tiles in PMTiles format.', 'direct': True},
 
         # === OSM Extracts (PBF — need conversion to PMTiles via tilemaker or planetiler) ===
         {'id': 'geofabrik-na', 'name': 'Geofabrik: North America', 'category': 'OSM Extracts',
@@ -1364,8 +1364,21 @@ def create_app():
         if os.path.isfile(exe):
             return exe
         # Download from GitHub releases
-        import urllib.request, zipfile, io
-        url = 'https://github.com/protomaps/go-pmtiles/releases/latest/download/go-pmtiles_Windows_x86_64.zip'
+        import urllib.request, zipfile, io, json as _json
+        # Resolve latest release asset URL via GitHub API
+        api_url = 'https://api.github.com/repos/protomaps/go-pmtiles/releases/latest'
+        log.info('Resolving pmtiles CLI release from %s', api_url)
+        req = urllib.request.Request(api_url, headers={'User-Agent': 'ProjectNOMAD/3.5.0', 'Accept': 'application/vnd.github+json'})
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            release = _json.loads(resp.read())
+        url = None
+        for asset in release.get('assets', []):
+            if 'Windows' in asset['name'] and 'x86_64' in asset['name'] and asset['name'].endswith('.zip'):
+                url = asset['browser_download_url']
+                break
+        if not url:
+            log.error('No Windows x86_64 asset found in go-pmtiles release')
+            return None
         log.info('Downloading pmtiles CLI from %s', url)
         req = urllib.request.Request(url, headers={'User-Agent': 'ProjectNOMAD/3.5.0'})
         with urllib.request.urlopen(req, timeout=120) as resp:
@@ -1398,10 +1411,8 @@ def create_app():
             output_file = os.path.join(maps_dir, f'{region_id}.pmtiles')
             temp_file = output_file + '.tmp'
 
-            # Use latest Protomaps daily build
-            import datetime
-            today = datetime.date.today().strftime('%Y%m%d')
-            source_url = f'https://build.protomaps.com/{today}.pmtiles'
+            # Source Cooperative mirror of Protomaps planet (supports range requests)
+            source_url = 'https://data.source.coop/protomaps/openstreetmap/v4.pmtiles'
 
             bbox_str = f'{bbox[0]},{bbox[1]},{bbox[2]},{bbox[3]}'
 

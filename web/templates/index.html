@@ -1160,7 +1160,8 @@ a { color: var(--accent); text-decoration: none; }
           </div>
         </div>
         <div class="kb-panel" id="kb-panel">
-          <label class="kb-toggle"><input type="checkbox" id="kb-toggle" onchange="toggleKB()"> Search My Documents</label>
+          <label class="kb-toggle"><input type="checkbox" id="sit-context-toggle"> My Situation</label>
+          <label class="kb-toggle"><input type="checkbox" id="kb-toggle" onchange="toggleKB()"> My Documents</label>
           <input type="file" id="kb-file-input" style="display:none;" accept=".pdf,.txt,.md,.csv" onchange="uploadKBFile()">
           <button class="btn btn-sm" onclick="document.getElementById('kb-file-input').click()">Upload Doc</button>
           <span id="kb-status-badge" style="font-size:10px;color:var(--text-muted);"></span>
@@ -1214,6 +1215,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="btn btn-sm btn-primary" onclick="saveWaypoint()" style="display:none;" id="save-wp-btn">Save Waypoint</button>
       <button class="btn btn-sm" onclick="startDrawZone()" style="display:none;" id="draw-zone-btn">Draw Zone</button>
       <button class="btn btn-sm" onclick="clearPins()" style="display:none;" id="clear-pins-btn">Clear Pins</button>
+      <button class="btn btn-sm" onclick="window.open('/api/waypoints/export-gpx','_blank')" style="display:none;" id="gpx-btn">Export GPX</button>
       <span id="map-coords" style="font-size:10px;color:var(--text-muted);margin-left:auto;font-family:monospace;"></span>
     </div>
     <div id="map-viewer" style="display:none;position:relative;">
@@ -2590,6 +2592,7 @@ a { color: var(--accent); text-decoration: none; }
       <div id="vault-unlocked" style="display:none;">
         <div style="display:flex;gap:8px;margin-bottom:12px;">
           <button class="btn btn-sm btn-primary" onclick="newVaultEntry()">+ New Entry</button>
+          <button class="btn btn-sm" onclick="generatePassword()">Generate Password</button>
         </div>
         <div id="vault-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:12px;">
           <input id="vault-title" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:8px 12px;border-radius:6px;font-size:13px;font-weight:600;outline:none;margin-bottom:8px;" placeholder="Entry title (e.g., Bank Accounts, Medical Records)">
@@ -2834,6 +2837,16 @@ a { color: var(--accent); text-decoration: none; }
       <input id="lan-chat-input" style="flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendLanMsg()">
       <button class="btn btn-sm btn-primary" onclick="sendLanMsg()">Send</button>
     </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div id="quick-actions-btn" onclick="toggleQuickActions()" style="position:fixed;bottom:20px;right:20px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--green));color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,0.3);z-index:9990;font-size:22px;transition:transform 0.2s;" title="Quick Actions">+</div>
+  <div id="quick-actions-menu" style="display:none;position:fixed;bottom:78px;right:20px;z-index:9990;display:none;flex-direction:column;gap:6px;">
+    <button class="btn btn-sm btn-primary" onclick="quickLogIncident()" style="box-shadow:var(--shadow-sm);">Log Incident</button>
+    <button class="btn btn-sm btn-primary" onclick="toggleTimerPanel();toggleQuickActions()" style="box-shadow:var(--shadow-sm);">Start Timer</button>
+    <button class="btn btn-sm btn-primary" onclick="quickAddInventory()" style="box-shadow:var(--shadow-sm);">Add Supply</button>
+    <button class="btn btn-sm btn-primary" onclick="quickWeatherObs()" style="box-shadow:var(--shadow-sm);">Weather Obs</button>
+    <button class="btn btn-sm btn-primary" onclick="quickNewNote()" style="box-shadow:var(--shadow-sm);">New Note</button>
   </div>
 
   <!-- Timer Widget -->
@@ -3533,7 +3546,7 @@ async function sendChat() {
   try {
     const resp = await fetch('/api/ai/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model, knowledge_base: kbEnabled, system_prompt: PRESETS[activePreset] || '', messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)}),
+      body: JSON.stringify({model, knowledge_base: kbEnabled, situation_context: document.getElementById('sit-context-toggle').checked, system_prompt: PRESETS[activePreset] || '', messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)}),
       signal: _chatAbortCtrl.signal,
     });
     const reader = resp.body.getReader();
@@ -4393,7 +4406,7 @@ function toggleMapView() {
   document.getElementById('map-viewer').style.display = _mapVisible ? 'block' : 'none';
   document.getElementById('map-management').style.display = _mapVisible ? 'none' : 'block';
   document.getElementById('map-toggle-btn').textContent = _mapVisible ? 'Manage Maps' : 'Show Map';
-  ['pin-btn','measure-btn','clear-pins-btn','save-wp-btn','draw-zone-btn'].forEach(id => document.getElementById(id).style.display = _mapVisible ? '' : 'none');
+  ['pin-btn','measure-btn','clear-pins-btn','save-wp-btn','draw-zone-btn','gpx-btn'].forEach(id => document.getElementById(id).style.display = _mapVisible ? '' : 'none');
   if (_mapVisible && !_map) initMap();
   if (_mapVisible && _map) loadWaypoints();
 }
@@ -6445,6 +6458,14 @@ async function loadCmdDashboard() {
         <div style="font-size:16px;font-weight:700;color:var(--text);margin:2px 0;">${d.pressure_current}</div>
       </div>` : ''}
     `;
+    // Load critical details
+    try {
+      const crit = await (await fetch('/api/dashboard/critical')).json();
+      let critHtml = '';
+      if (crit.critical_burn.length) critHtml += `<div style="font-size:11px;color:var(--red);margin-top:4px;">Running low: ${crit.critical_burn.map(i => `${i.name} (${i.days_left}d)`).join(', ')}</div>`;
+      if (crit.expiring_items.length) critHtml += `<div style="font-size:11px;color:var(--orange);margin-top:2px;">Expiring: ${crit.expiring_items.map(i => `${i.name} (${i.expiration})`).join(', ')}</div>`;
+      if (critHtml) el.innerHTML += `<div style="grid-column:1/-1;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);">${critHtml}</div>`;
+    } catch(e2) {}
   } catch(e) {}
 }
 
@@ -7004,6 +7025,63 @@ function sendNotification(title, body) {
     if (el) el.checked = true;
   }
 })();
+
+/* ─── Quick Actions ─── */
+let _qaOpen = false;
+function toggleQuickActions() {
+  _qaOpen = !_qaOpen;
+  document.getElementById('quick-actions-menu').style.display = _qaOpen ? 'flex' : 'none';
+  document.getElementById('quick-actions-btn').style.transform = _qaOpen ? 'rotate(45deg)' : '';
+}
+function quickLogIncident() {
+  toggleQuickActions();
+  document.querySelector('[data-tab="preparedness"]').click();
+  setTimeout(() => switchPrepSub('incidents'), 200);
+}
+function quickAddInventory() {
+  toggleQuickActions();
+  document.querySelector('[data-tab="preparedness"]').click();
+  setTimeout(() => { switchPrepSub('inventory'); showInvForm(); }, 200);
+}
+function quickWeatherObs() {
+  toggleQuickActions();
+  document.querySelector('[data-tab="preparedness"]').click();
+  setTimeout(() => switchPrepSub('weather'), 200);
+}
+function quickNewNote() {
+  toggleQuickActions();
+  document.querySelector('[data-tab="notes"]').click();
+  setTimeout(createNote, 200);
+}
+
+/* ─── Password Generator ─── */
+function generatePassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789!@#$%&*';
+  const arr = new Uint32Array(20);
+  crypto.getRandomValues(arr);
+  const pw = Array.from(arr).map(n => chars[n % chars.length]).join('');
+  navigator.clipboard.writeText(pw).then(() => toast('Password copied to clipboard: ' + pw.slice(0,8) + '...', 'success'));
+  // Also put it in the vault content if form is open
+  const content = document.getElementById('vault-content');
+  if (content && document.getElementById('vault-form').style.display !== 'none') {
+    content.value = (content.value ? content.value + '\n\n' : '') + 'Generated Password: ' + pw;
+  }
+}
+
+/* ─── QR Code Generator (using canvas) ─── */
+function generateQR(text) {
+  // Simple QR-like data display — for actual QR, would need a library
+  // Instead, display as a compact, scannable text format with copy button
+  const el = document.createElement('div');
+  el.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);padding:24px;z-index:10001;box-shadow:var(--shadow);max-width:400px;';
+  el.innerHTML = `<h3 style="font-size:14px;margin-bottom:8px;">Shareable Data</h3>
+    <div style="background:#fff;color:#000;padding:16px;border-radius:8px;font-family:'Cascadia Code','Consolas',monospace;font-size:11px;word-break:break-all;margin-bottom:8px;">${escapeHtml(text)}</div>
+    <div style="display:flex;gap:6px;">
+      <button class="btn btn-sm btn-primary" onclick="navigator.clipboard.writeText(${JSON.stringify(text)});toast('Copied','success')">Copy</button>
+      <button class="btn btn-sm" onclick="this.parentElement.parentElement.remove()">Close</button>
+    </div>`;
+  document.body.appendChild(el);
+}
 
 /* ─── Keyboard Shortcuts ─── */
 document.addEventListener('keydown', (e) => {

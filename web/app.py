@@ -31,7 +31,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '2.7.0'
+VERSION = '2.8.0'
 
 
 def set_version(v):
@@ -238,6 +238,45 @@ def create_app():
 
         if not ollama.running():
             return jsonify({'error': 'Ollama is not running'}), 503
+
+        # Situation-aware context injection
+        use_situation = data.get('situation_context', False)
+        if use_situation:
+            try:
+                db_ctx = get_db()
+                sit_parts = []
+                # Inventory summary
+                inv_rows = db_ctx.execute('SELECT category, SUM(quantity) as qty, COUNT(*) as cnt FROM inventory GROUP BY category').fetchall()
+                if inv_rows:
+                    sit_parts.append('SUPPLY INVENTORY: ' + ', '.join(f'{r["category"]}: {r["cnt"]} items ({r["qty"]} total)' for r in inv_rows))
+                # Low stock
+                low = db_ctx.execute('SELECT name, quantity, unit, category FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0 LIMIT 10').fetchall()
+                if low:
+                    sit_parts.append('LOW STOCK ALERTS: ' + ', '.join(f'{r["name"]} ({r["quantity"]} {r["unit"]})' for r in low))
+                # Burn rate
+                burn = db_ctx.execute('SELECT name, quantity, daily_usage, category FROM inventory WHERE daily_usage > 0 LIMIT 10').fetchall()
+                if burn:
+                    sit_parts.append('BURN RATES: ' + ', '.join(f'{r["name"]}: {round(r["quantity"]/r["daily_usage"],1)} days left' for r in burn))
+                # Contacts count
+                ct_count = db_ctx.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c']
+                if ct_count:
+                    sit_parts.append(f'TEAM: {ct_count} contacts registered')
+                # Recent incidents
+                incidents = db_ctx.execute("SELECT severity, category, description FROM incidents WHERE created_at >= datetime('now', '-24 hours') ORDER BY created_at DESC LIMIT 5").fetchall()
+                if incidents:
+                    sit_parts.append('RECENT INCIDENTS (24h): ' + ' | '.join(f'[{r["severity"]}] {r["category"]}: {r["description"][:60]}' for r in incidents))
+                # Situation board
+                settings_row = db_ctx.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
+                if settings_row:
+                    sit = json.loads(settings_row['value'])
+                    sit_parts.append('SITUATION STATUS: ' + ', '.join(f'{k}: {v}' for k, v in sit.items()))
+                db_ctx.close()
+                if sit_parts:
+                    ctx = '\n'.join(sit_parts)
+                    system_prompt = (system_prompt + '\n\n' if system_prompt else '') + \
+                        f'You have access to the user\'s current preparedness data. Use this to give specific, actionable advice based on their actual situation:\n\n--- Current Situation ---\n{ctx}\n--- End Situation ---'
+            except Exception as e:
+                log.warning(f'Situation context injection failed: {e}')
 
         # RAG: inject knowledge base context if enabled
         if use_kb and qdrant.running() and messages:
@@ -2777,6 +2816,45 @@ def create_app():
             s['crashes_24h'] = crash_map.get(s['id'], 0)
             s['restarts_24h'] = restart_map.get(s['id'], 0)
         return jsonify(services)
+
+    # ─── GPX Waypoint Export ─────────────────────────────────────────
+
+    @app.route('/api/waypoints/export-gpx')
+    def api_waypoints_gpx():
+        db = get_db()
+        rows = db.execute('SELECT * FROM waypoints ORDER BY created_at').fetchall()
+        db.close()
+        gpx = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="ProjectNOMAD">\n'
+        for w in rows:
+            gpx += f'  <wpt lat="{w["lat"]}" lon="{w["lng"]}">\n'
+            gpx += f'    <name>{_esc(w["name"])}</name>\n'
+            gpx += f'    <desc>{_esc(w["notes"])}</desc>\n'
+            gpx += f'    <type>{_esc(w["category"])}</type>\n'
+            gpx += f'  </wpt>\n'
+        gpx += '</gpx>'
+        return Response(gpx, mimetype='application/gpx+xml',
+                       headers={'Content-Disposition': 'attachment; filename="nomad-waypoints.gpx"'})
+
+    # ─── Enhanced Dashboard API ───────────────────────────────────────
+
+    @app.route('/api/dashboard/critical')
+    def api_dashboard_critical():
+        """Return actual critical items for the command dashboard."""
+        db = get_db()
+        from datetime import datetime, timedelta
+        today = datetime.now().strftime('%Y-%m-%d')
+        soon = (datetime.now() + timedelta(days=14)).strftime('%Y-%m-%d')
+
+        low_items = db.execute('SELECT name, quantity, unit, category FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0 LIMIT 5').fetchall()
+        expiring_items = db.execute("SELECT name, expiration, category FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ? ORDER BY expiration LIMIT 5", (soon, today)).fetchall()
+        critical_burn = db.execute("SELECT name, quantity, daily_usage, category FROM inventory WHERE daily_usage > 0 AND (quantity / daily_usage) < 7 ORDER BY (quantity / daily_usage) LIMIT 5").fetchall()
+
+        db.close()
+        return jsonify({
+            'low_items': [dict(r) for r in low_items],
+            'expiring_items': [dict(r) for r in expiring_items],
+            'critical_burn': [{'name': r['name'], 'days_left': round(r['quantity']/r['daily_usage'], 1), 'category': r['category']} for r in critical_burn],
+        })
 
     # ─── Expanded Unified Search ──────────────────────────────────────
 

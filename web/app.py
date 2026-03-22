@@ -31,7 +31,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '3.6.0'
+VERSION = '1.0.0'
 
 
 def set_version(v):

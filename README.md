@@ -1,7 +1,7 @@
 <div align="center">
 <img src="project_nomad_logo.png" width="200" height="200"/>
 
-# Project N.O.M.A.D. for Windows v3.6.0
+# Project N.O.M.A.D. for Windows v1.0.0
 ### The Most Complete Offline Survival Command Center Available
 
 **Free. Open Source. No Internet Required After Setup.**
@@ -18,7 +18,9 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 
 > Competitors charge $280+ for a USB stick with curated content (Prepper Disk, Prep Drive). N.O.M.A.D. for Windows does everything they do and 10x more — for free. 24,000+ lines of code, 50+ map sources, 10 interactive calculators, 25+ reference cards, 17 emergency protocols, NukeMap v3.2.0 nuclear simulator, and the most comprehensive offline prepper knowledge base ever built into a single application.
 
-Download **[ProjectNOMAD.exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest)** — single file, double-click to run.
+**[Download Portable .exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD.exe)** — single file, no install needed, run from anywhere (USB, desktop, etc.)
+
+**[Download Installer](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD-Setup.exe)** — installs to Program Files with Start Menu shortcut and desktop icon
 
 ![Dashboard](screenshot.png)
 
@@ -116,12 +118,17 @@ Wikipedia, Medicine & Health, Survival & Preparedness (Post-Disaster Guide, Wate
 
 ## Quick Start
 
-### Option 1: Download the exe
-1. Download **[ProjectNOMAD.exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest)**
-2. Double-click to run
+### Option 1: Portable (no install)
+1. Download **[ProjectNOMAD.exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD.exe)**
+2. Double-click to run — works from USB drives, desktops, anywhere
 3. Follow the setup wizard
 
-### Option 2: Run from source
+### Option 2: Installer
+1. Download **[ProjectNOMAD-Setup.exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD-Setup.exe)**
+2. Run the installer — adds Start Menu shortcut and desktop icon
+3. Launch from Start Menu or desktop
+
+### Option 3: Run from source
 ```bash
 git clone https://github.com/SysAdminDoc/nomad-windows.git
 cd nomad-windows

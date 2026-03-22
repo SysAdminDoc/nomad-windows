@@ -22,22 +22,35 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: pip install flask requests pywebview pystray pillow psutil PyPDF2 pyinstaller
 
-      - name: Build
+      - name: Build portable exe
         run: pyinstaller build.spec
 
-      - name: Upload artifact
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build installer
+        run: iscc installer.iss
+
+      - name: Upload portable exe
         uses: actions/upload-artifact@v4
         with:
-          name: ProjectNOMAD
+          name: ProjectNOMAD-Portable
           path: dist/ProjectNOMAD.exe
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProjectNOMAD-Setup
+          path: ProjectNOMAD-Setup.exe
 
       - name: Create release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
           gh release create ${{ github.ref_name }} --generate-notes
           gh release upload ${{ github.ref_name }} dist/ProjectNOMAD.exe --clobber
+          gh release upload ${{ github.ref_name }} ProjectNOMAD-Setup.exe --clobber
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

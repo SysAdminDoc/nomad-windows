@@ -51,7 +51,7 @@ from config import get_data_dir
 from web.app import create_app, set_version
 from db import init_db, get_db, log_activity, backup_db
 
-VERSION = '3.6.0'
+VERSION = '1.0.0'
 PORT = 8080
 
 _tray_icon = None

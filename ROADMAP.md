@@ -43,13 +43,13 @@
 **Builds on:** Drill system (6 drills with timer/history), scenario AI personas
 **Effort:** Large (2-3 sessions)
 
-- [ ] Scenario engine — state machine with phases, each phase has: situation description, available actions, time pressure, resource costs
-- [ ] 4 multi-phase scenarios: Grid Down (7 days), Medical Crisis, Evacuation Under Fire, Winter Storm
-- [ ] AI complication injector — at phase transitions, AI generates context-aware complications based on the user's actual inventory/contacts/situation
-- [ ] Decision logging — every user choice is timestamped and stored
-- [ ] After-Action Review — AI evaluates decisions against doctrinal best practices, scores each phase, generates improvement recommendations
-- [ ] Scenario state persists across app restarts (SQLite table)
-- [ ] Leaderboard — compare your scenario scores over time
+- [x] Scenario engine — state machine with phases, decision branching, progress bar
+- [x] 4 multi-phase scenarios: Grid Down (7 phases), Medical Crisis (5), Evacuation Under Threat (5), Winter Storm (5)
+- [x] AI complication injector — 50% chance between phases, uses real inventory/contacts/situation data, Ollama-generated with fallback
+- [x] Decision logging — every choice timestamped and stored in SQLite
+- [x] After-Action Review — AI scores 0-100 with detailed assessment and improvement recommendations
+- [x] Scenario state persists across app restarts (scenarios table)
+- [x] Scenario history with score tracking and comparison
 
 ## Phase 5: Food Production Module
 **Builds on:** Companion planting table, seed saving reference, homesteader AI persona, inventory system

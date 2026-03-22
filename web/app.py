@@ -10,6 +10,7 @@ import logging
 import shutil
 import subprocess
 from flask import Flask, render_template, jsonify, request, Response
+from werkzeug.utils import secure_filename
 
 from config import get_data_dir, set_data_dir
 from db import get_db, log_activity
@@ -30,7 +31,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '2.5.0'
+VERSION = '2.5.1'
 
 
 def set_version(v):
@@ -70,7 +71,7 @@ def create_app():
 
             port_val = getattr(mod, f'{sid.upper()}_PORT', None)
             if port_val is None:
-                for attr in ['OLLAMA_PORT', 'KIWIX_PORT', 'CYBERCHEF_PORT', 'KOLIBRI_PORT']:
+                for attr in ['OLLAMA_PORT', 'KIWIX_PORT', 'CYBERCHEF_PORT', 'KOLIBRI_PORT', 'QDRANT_PORT', 'STIRLING_PORT']:
                     port_val = getattr(mod, attr, None)
                     if port_val:
                         break
@@ -205,7 +206,7 @@ def create_app():
 
     @app.route('/api/ai/pull', methods=['POST'])
     def api_ai_pull():
-        data = request.get_json()
+        data = request.get_json() or {}
         model_name = data.get('model', ollama.DEFAULT_MODEL)
 
         def do_pull():
@@ -220,7 +221,7 @@ def create_app():
 
     @app.route('/api/ai/delete', methods=['POST'])
     def api_ai_delete():
-        data = request.get_json()
+        data = request.get_json() or {}
         model_name = data.get('model')
         if not model_name:
             return jsonify({'error': 'No model specified'}), 400
@@ -229,7 +230,7 @@ def create_app():
 
     @app.route('/api/ai/chat', methods=['POST'])
     def api_ai_chat():
-        data = request.get_json()
+        data = request.get_json() or {}
         model = data.get('model', ollama.DEFAULT_MODEL)
         messages = data.get('messages', [])
         system_prompt = data.get('system_prompt', '')
@@ -286,7 +287,7 @@ def create_app():
 
     @app.route('/api/kiwix/download-zim', methods=['POST'])
     def api_kiwix_download_zim():
-        data = request.get_json()
+        data = request.get_json() or {}
         url = data.get('url', kiwix.STARTER_ZIM_URL)
         filename = data.get('filename')
 
@@ -317,7 +318,7 @@ def create_app():
 
     @app.route('/api/kiwix/delete-zim', methods=['POST'])
     def api_kiwix_delete_zim():
-        data = request.get_json()
+        data = request.get_json() or {}
         filename = data.get('filename')
         if not filename:
             return jsonify({'error': 'No filename'}), 400
@@ -335,7 +336,7 @@ def create_app():
 
     @app.route('/api/notes', methods=['POST'])
     def api_notes_create():
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
         cur = db.execute('INSERT INTO notes (title, content) VALUES (?, ?)',
                          (data.get('title', 'Untitled'), data.get('content', '')))
@@ -347,10 +348,17 @@ def create_app():
 
     @app.route('/api/notes/<int:note_id>', methods=['PUT'])
     def api_notes_update(note_id):
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
+        # Fetch current values to preserve on partial update
+        current = db.execute('SELECT title, content FROM notes WHERE id = ?', (note_id,)).fetchone()
+        if not current:
+            db.close()
+            return jsonify({'error': 'Not found'}), 404
+        title = data.get('title') if data.get('title') is not None else current['title']
+        content = data.get('content') if data.get('content') is not None else current['content']
         db.execute('UPDATE notes SET title = ?, content = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-                   (data.get('title'), data.get('content'), note_id))
+                   (title, content, note_id))
         db.commit()
         note = db.execute('SELECT * FROM notes WHERE id = ?', (note_id,)).fetchone()
         db.close()
@@ -375,7 +383,7 @@ def create_app():
 
     @app.route('/api/settings', methods=['PUT'])
     def api_settings_update():
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
         for key, value in data.items():
             db.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', (key, str(value)))
@@ -422,7 +430,7 @@ def create_app():
     @app.route('/api/settings/data-dir', methods=['POST'])
     def api_set_data_dir():
         """Set custom data directory (wizard only)."""
-        data = request.get_json()
+        data = request.get_json() or {}
         path = data.get('path', '')
         if not path:
             return jsonify({'error': 'No path provided'}), 400
@@ -447,7 +455,7 @@ def create_app():
     @app.route('/api/wizard/setup', methods=['POST'])
     def api_wizard_setup():
         """Full turnkey setup — installs services, downloads content, pulls models."""
-        data = request.get_json()
+        data = request.get_json() or {}
         services_list = data.get('services', ['ollama', 'kiwix', 'cyberchef', 'stirling'])
         zims = data.get('zims', [])
         models = data.get('models', ['llama3.2:3b'])
@@ -726,7 +734,7 @@ def create_app():
 
     @app.route('/api/conversations/<int:cid>', methods=['PUT'])
     def api_conversations_update(cid):
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
         fields = []
         vals = []
@@ -930,7 +938,7 @@ def create_app():
                             f.write(chunk)
                             written += len(chunk)
                     write_elapsed = time.time() - start
-                    results['disk_write_score'] = round(written / write_elapsed / (1024 * 1024))
+                    results['disk_write_score'] = round(written / write_elapsed / (1024 * 1024)) if write_elapsed > 0 else 0
 
                     # Read
                     _benchmark_state.update({'progress': 65, 'stage': 'Disk read benchmark...'})
@@ -1088,7 +1096,7 @@ def create_app():
 
     @app.route('/api/maps/delete', methods=['POST'])
     def api_maps_delete():
-        data = request.get_json()
+        data = request.get_json() or {}
         filename = data.get('filename')
         if not filename or '..' in filename:
             return jsonify({'error': 'Invalid filename'}), 400
@@ -1130,7 +1138,9 @@ def create_app():
             resp.headers['Content-Length'] = length
             return resp
 
-        return Response(open(safe_path, 'rb').read(), mimetype='application/octet-stream')
+        with open(safe_path, 'rb') as f:
+            data = f.read()
+        return Response(data, mimetype='application/octet-stream')
 
     # ─── Connectivity & Network ───────────────────────────────────────
 
@@ -1214,7 +1224,9 @@ def create_app():
         if not file.filename:
             return jsonify({'error': 'No filename'}), 400
 
-        filename = file.filename
+        filename = secure_filename(file.filename)
+        if not filename:
+            return jsonify({'error': 'Invalid filename'}), 400
         ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
         content_type = 'pdf' if ext == 'pdf' else 'text'
 
@@ -1325,7 +1337,7 @@ def create_app():
 
     @app.route('/api/kb/search', methods=['POST'])
     def api_kb_search():
-        data = request.get_json()
+        data = request.get_json() or {}
         query = data.get('query', '')
         limit = data.get('limit', 5)
         if not query:
@@ -1415,7 +1427,7 @@ def create_app():
     def api_startup_set():
         """Enable or disable start with Windows."""
         import winreg
-        data = request.get_json()
+        data = request.get_json() or {}
         enabled = data.get('enabled', False)
         try:
             key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
@@ -1807,7 +1819,7 @@ def create_app():
 
     @app.route('/api/checklists', methods=['POST'])
     def api_checklists_create():
-        data = request.get_json()
+        data = request.get_json() or {}
         template_id = data.get('template', '')
         tmpl = CHECKLIST_TEMPLATES.get(template_id)
         if tmpl:
@@ -1836,7 +1848,7 @@ def create_app():
 
     @app.route('/api/checklists/<int:cid>', methods=['PUT'])
     def api_checklists_update(cid):
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
         fields = []
         vals = []
@@ -1891,7 +1903,7 @@ def create_app():
 
     @app.route('/api/inventory', methods=['POST'])
     def api_inventory_create():
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
         cur = db.execute(
             'INSERT INTO inventory (name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -1906,7 +1918,7 @@ def create_app():
 
     @app.route('/api/inventory/<int:item_id>', methods=['PUT'])
     def api_inventory_update(item_id):
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
         allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'notes']
         fields = []
@@ -1978,6 +1990,10 @@ def create_app():
                 cat['min_days'] = None
         return jsonify(cats)
 
+    def _esc(s):
+        """Escape HTML for print output."""
+        return (s or '').replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+
     @app.route('/api/preparedness/print')
     def api_preparedness_print():
         """Generate printable emergency summary page."""
@@ -2045,7 +2061,7 @@ def create_app():
         if contacts:
             html += '<h2>EMERGENCY CONTACTS</h2><table><tr><th>Name</th><th>Role</th><th>Callsign</th><th>Phone</th><th>Freq</th><th>Blood</th><th>Rally Point</th></tr>'
             for c in contacts:
-                html += f'<tr><td>{c["name"]}</td><td>{c["role"]}</td><td>{c["callsign"]}</td><td>{c["phone"]}</td><td>{c["freq"]}</td><td>{c["blood_type"]}</td><td>{c["rally_point"]}</td></tr>'
+                html += f'<tr><td>{_esc(c["name"])}</td><td>{_esc(c["role"])}</td><td>{_esc(c["callsign"])}</td><td>{_esc(c["phone"])}</td><td>{_esc(c["freq"])}</td><td>{_esc(c["blood_type"])}</td><td>{_esc(c["rally_point"])}</td></tr>'
             html += '</table>'
 
         # Burn rate + alerts
@@ -2060,14 +2076,14 @@ def create_app():
         if low:
             html += '<h2>LOW STOCK ALERTS</h2><table><tr><th>Item</th><th>Qty</th><th>Cat</th></tr>'
             for r in low:
-                html += f'<tr class="warn"><td>{r["name"]}</td><td>{r["quantity"]} {r["unit"]}</td><td>{r["category"]}</td></tr>'
+                html += f'<tr class="warn"><td>{_esc(r["name"])}</td><td>{r["quantity"]} {_esc(r["unit"])}</td><td>{_esc(r["category"])}</td></tr>'
             html += '</table>'
         html += '</div><div>'
 
         if expiring:
             html += '<h2>EXPIRING SOON</h2><table><tr><th>Item</th><th>Expires</th><th>Cat</th></tr>'
             for r in expiring:
-                html += f'<tr><td>{r["name"]}</td><td>{r["expiration"]}</td><td>{r["category"]}</td></tr>'
+                html += f'<tr><td>{_esc(r["name"])}</td><td>{_esc(r["expiration"])}</td><td>{_esc(r["category"])}</td></tr>'
             html += '</table>'
 
         # Key frequencies
@@ -2105,7 +2121,7 @@ def create_app():
 
     @app.route('/api/contacts', methods=['POST'])
     def api_contacts_create():
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
         cur = db.execute(
             'INSERT INTO contacts (name, callsign, role, skills, phone, freq, email, address, rally_point, blood_type, medical_notes, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -2121,7 +2137,7 @@ def create_app():
 
     @app.route('/api/contacts/<int:cid>', methods=['PUT'])
     def api_contacts_update(cid):
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
         allowed = ['name', 'callsign', 'role', 'skills', 'phone', 'freq', 'email', 'address', 'rally_point', 'blood_type', 'medical_notes', 'notes']
         fields = []
@@ -2163,7 +2179,7 @@ def create_app():
 
     @app.route('/api/lan/messages', methods=['POST'])
     def api_lan_send():
-        data = request.get_json()
+        data = request.get_json() or {}
         content = (data.get('content', '') or '').strip()
         if not content:
             return jsonify({'error': 'Empty message'}), 400
@@ -2205,7 +2221,7 @@ def create_app():
 
     @app.route('/api/incidents', methods=['POST'])
     def api_incidents_create():
-        data = request.get_json()
+        data = request.get_json() or {}
         desc = (data.get('description', '') or '').strip()
         if not desc:
             return jsonify({'error': 'Description required'}), 400
@@ -2248,7 +2264,7 @@ def create_app():
 
     @app.route('/api/waypoints', methods=['POST'])
     def api_waypoints_create():
-        data = request.get_json()
+        data = request.get_json() or {}
         cat = data.get('category', 'general')
         color = WAYPOINT_COLORS.get(cat, '#9e9e9e')
         db = get_db()
@@ -2287,7 +2303,7 @@ def create_app():
 
     @app.route('/api/timers', methods=['POST'])
     def api_timers_create():
-        data = request.get_json()
+        data = request.get_json() or {}
         from datetime import datetime
         db = get_db()
         cur = db.execute('INSERT INTO timers (name, duration_sec, started_at) VALUES (?, ?, ?)',
@@ -2347,7 +2363,10 @@ def create_app():
 
     @app.route('/api/vault', methods=['POST'])
     def api_vault_create():
-        data = request.get_json()
+        data = request.get_json() or {}
+        for field in ('encrypted_data', 'iv', 'salt'):
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
         db = get_db()
         cur = db.execute('INSERT INTO vault_entries (title, encrypted_data, iv, salt) VALUES (?, ?, ?, ?)',
                          (data.get('title', 'Untitled'), data['encrypted_data'], data['iv'], data['salt']))
@@ -2367,7 +2386,10 @@ def create_app():
 
     @app.route('/api/vault/<int:eid>', methods=['PUT'])
     def api_vault_update(eid):
-        data = request.get_json()
+        data = request.get_json() or {}
+        for field in ('encrypted_data', 'iv', 'salt'):
+            if field not in data:
+                return jsonify({'error': f'Missing required field: {field}'}), 400
         db = get_db()
         db.execute('UPDATE vault_entries SET title = ?, encrypted_data = ?, iv = ?, salt = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
                    (data.get('title', ''), data['encrypted_data'], data['iv'], data['salt'], eid))
@@ -2395,7 +2417,7 @@ def create_app():
 
     @app.route('/api/weather', methods=['POST'])
     def api_weather_create():
-        data = request.get_json()
+        data = request.get_json() or {}
         db = get_db()
         cur = db.execute(
             'INSERT INTO weather_log (pressure_hpa, temp_f, wind_dir, wind_speed, clouds, precip, visibility, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',

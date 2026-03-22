@@ -3045,10 +3045,15 @@ function renderMarkdown(text) {
   // Blockquote
   h = h.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
   // Unordered list
-  h = h.replace(/^[*-] (.+)$/gm, '<li>$1</li>');
-  h = h.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+  h = h.replace(/((?:^[*-] .+$\n?)+)/gm, (match) => {
+    const items = match.trim().split('\n').map(l => '<li>' + l.replace(/^[*-] /, '') + '</li>').join('');
+    return '<ul>' + items + '</ul>';
+  });
   // Numbered list
-  h = h.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  h = h.replace(/((?:^\d+\. .+$\n?)+)/gm, (match) => {
+    const items = match.trim().split('\n').map(l => '<li>' + l.replace(/^\d+\. /, '') + '</li>').join('');
+    return '<ol>' + items + '</ol>';
+  });
   // Links
   h = h.replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" target="_blank">$1</a>');
   // Paragraphs

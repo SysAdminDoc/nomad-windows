@@ -672,6 +672,9 @@ def download_zim(url: str, filename: str = None):
 
 def delete_zim(filename: str) -> bool:
     """Delete a ZIM file from the library."""
+    if '..' in filename or '/' in filename or '\\' in filename:
+        log.warning(f'Rejected ZIM delete with unsafe filename: {filename}')
+        return False
     path = os.path.join(get_library_dir(), filename)
     try:
         if os.path.isfile(path):

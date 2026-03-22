@@ -3560,6 +3560,107 @@ def create_app():
         except Exception as e:
             return jsonify({'summary': f'{len(alerts)} active alert(s). AI summary unavailable: {e}'})
 
+    # ─── Power Management ─────────────────────────────────────────────
+
+    @app.route('/api/power/devices')
+    def api_power_devices():
+        db = get_db()
+        rows = db.execute('SELECT * FROM power_devices ORDER BY device_type, name').fetchall()
+        db.close()
+        return jsonify([{**dict(r), 'specs': json.loads(r['specs'] or '{}')} for r in rows])
+
+    @app.route('/api/power/devices', methods=['POST'])
+    def api_power_devices_create():
+        data = request.get_json() or {}
+        if not data.get('name') or not data.get('device_type'):
+            return jsonify({'error': 'Name and type required'}), 400
+        db = get_db()
+        db.execute('INSERT INTO power_devices (device_type, name, specs, notes) VALUES (?,?,?,?)',
+                   (data['device_type'], data['name'], json.dumps(data.get('specs', {})), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'}), 201
+
+    @app.route('/api/power/devices/<int:did>', methods=['DELETE'])
+    def api_power_devices_delete(did):
+        db = get_db()
+        db.execute('DELETE FROM power_devices WHERE id = ?', (did,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/power/log')
+    def api_power_log():
+        db = get_db()
+        rows = db.execute('SELECT * FROM power_log ORDER BY created_at DESC LIMIT 100').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/power/log', methods=['POST'])
+    def api_power_log_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO power_log (battery_voltage, battery_soc, solar_watts, solar_wh_today, load_watts, load_wh_today, generator_running, notes) VALUES (?,?,?,?,?,?,?,?)',
+                   (data.get('battery_voltage'), data.get('battery_soc'), data.get('solar_watts'),
+                    data.get('solar_wh_today'), data.get('load_watts'), data.get('load_wh_today'),
+                    1 if data.get('generator_running') else 0, data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'logged'}), 201
+
+    @app.route('/api/power/dashboard')
+    def api_power_dashboard():
+        """Power budget summary with autonomy projection."""
+        db = get_db()
+        devices = db.execute('SELECT * FROM power_devices WHERE status = ?', ('active',)).fetchall()
+        logs = [dict(r) for r in db.execute('SELECT * FROM power_log ORDER BY created_at DESC LIMIT 24').fetchall()]
+        db.close()
+
+        # Calculate totals from device registry
+        total_solar_w = 0
+        total_battery_wh = 0
+        for d in devices:
+            specs = json.loads(d['specs'] or '{}')
+            if d['device_type'] == 'solar_panel':
+                total_solar_w += specs.get('watts', 0) * specs.get('count', 1)
+            elif d['device_type'] == 'battery':
+                total_battery_wh += specs.get('capacity_wh', 0) * specs.get('count', 1)
+
+        # Average consumption from recent logs
+        avg_load_w = 0
+        avg_solar_w = 0
+        latest_voltage = None
+        latest_soc = None
+        if logs:
+            load_readings = [l['load_watts'] for l in logs if l['load_watts']]
+            solar_readings = [l['solar_watts'] for l in logs if l['solar_watts']]
+            avg_load_w = sum(load_readings) / len(load_readings) if load_readings else 0
+            avg_solar_w = sum(solar_readings) / len(solar_readings) if solar_readings else 0
+            latest_voltage = logs[0].get('battery_voltage')
+            latest_soc = logs[0].get('battery_soc')
+
+        # Autonomy calculation
+        daily_consumption_wh = avg_load_w * 24 if avg_load_w else 0
+        daily_solar_wh = avg_solar_w * 5 if avg_solar_w else 0  # ~5 sun hours avg
+        usable_battery_wh = total_battery_wh * 0.8  # 80% depth of discharge
+        net_daily = daily_solar_wh - daily_consumption_wh
+
+        if daily_consumption_wh > 0 and net_daily < 0:
+            autonomy_days = usable_battery_wh / abs(net_daily) if abs(net_daily) > 0 else 999
+        elif daily_consumption_wh > 0:
+            autonomy_days = 999  # solar covers load
+        else:
+            autonomy_days = 999
+
+        return jsonify({
+            'total_solar_w': total_solar_w, 'total_battery_wh': total_battery_wh,
+            'avg_load_w': round(avg_load_w, 1), 'avg_solar_w': round(avg_solar_w, 1),
+            'daily_consumption_wh': round(daily_consumption_wh), 'daily_solar_wh': round(daily_solar_wh),
+            'net_daily_wh': round(net_daily), 'autonomy_days': round(min(autonomy_days, 999), 1),
+            'latest_voltage': latest_voltage, 'latest_soc': latest_soc,
+            'device_count': len(devices), 'log_count': len(logs),
+        })
+
     # ─── Multi-Node Federation ─────────────────────────────────────────
 
     import uuid as _uuid

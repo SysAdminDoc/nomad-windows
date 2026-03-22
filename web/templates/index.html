@@ -1745,6 +1745,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="prep-subtab" data-psub="radio" onclick="switchPrepSub('radio')">Radio Ref</button>
       <button class="prep-subtab" data-psub="medical" onclick="switchPrepSub('medical')">Medical</button>
       <button class="prep-subtab" data-psub="garden" onclick="switchPrepSub('garden')">Garden</button>
+      <button class="prep-subtab" data-psub="power" onclick="switchPrepSub('power')">Power</button>
       <button class="prep-subtab" data-psub="guides" onclick="switchPrepSub('guides')">Guides</button>
       <button class="prep-subtab" data-psub="reference" onclick="switchPrepSub('reference')">Quick Ref</button>
       <button class="prep-subtab" data-psub="protocols" onclick="switchPrepSub('protocols')">Protocols</button>
@@ -2289,6 +2290,57 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
     </div><!-- /psub-radio -->
+
+    <!-- Sub: Power Management -->
+    <div id="psub-power" class="prep-sub">
+    <div class="prep-section">
+      <h3>Power Management</h3>
+
+      <!-- Power Dashboard -->
+      <div id="power-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px;"></div>
+
+      <!-- Tabs -->
+      <div style="display:flex;gap:4px;margin-bottom:12px;">
+        <button class="btn btn-sm btn-primary" id="pwr-tab-devices" onclick="showPowerTab('devices')">Devices</button>
+        <button class="btn btn-sm" id="pwr-tab-log" onclick="showPowerTab('log')">Power Log</button>
+      </div>
+
+      <!-- Devices -->
+      <div id="power-devices-panel">
+        <div style="display:flex;gap:8px;margin-bottom:8px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Type</label><select id="pd-type" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" onchange="updatePowerSpecFields()">
+            <option value="solar_panel">Solar Panel</option>
+            <option value="battery">Battery</option>
+            <option value="charge_controller">Charge Controller</option>
+            <option value="inverter">Inverter</option>
+            <option value="generator">Generator</option>
+          </select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Name</label><input id="pd-name" style="width:140px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;" placeholder="Renogy 200W"></div>
+          <div id="pd-spec-fields"></div>
+          <button class="btn btn-sm btn-primary" onclick="addPowerDevice()">Add</button>
+        </div>
+        <div id="power-devices-list"></div>
+      </div>
+
+      <!-- Power Log -->
+      <div id="power-log-panel" style="display:none;">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;">
+          <div style="font-size:12px;font-weight:600;margin-bottom:8px;">Log Power Reading</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;font-size:11px;">
+            <div><label style="color:var(--text-dim);display:block;">Battery V</label><input id="pl-voltage" type="number" step="0.1" min="0" max="60" style="width:65px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="12.8"></div>
+            <div><label style="color:var(--text-dim);display:block;">SOC %</label><input id="pl-soc" type="number" min="0" max="100" style="width:55px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="85"></div>
+            <div><label style="color:var(--text-dim);display:block;">Solar W</label><input id="pl-solar" type="number" min="0" step="1" style="width:65px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="350"></div>
+            <div><label style="color:var(--text-dim);display:block;">Solar Wh Today</label><input id="pl-solar-wh" type="number" min="0" style="width:75px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="1800"></div>
+            <div><label style="color:var(--text-dim);display:block;">Load W</label><input id="pl-load" type="number" min="0" step="1" style="width:65px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="150"></div>
+            <div><label style="color:var(--text-dim);display:block;">Load Wh Today</label><input id="pl-load-wh" type="number" min="0" style="width:75px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;" placeholder="2400"></div>
+            <div><label style="color:var(--text-dim);display:block;">Generator</label><select id="pl-gen" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:12px;outline:none;"><option value="0">Off</option><option value="1">Running</option></select></div>
+            <div style="display:flex;align-items:end;"><button class="btn btn-sm btn-primary" onclick="logPowerReading()">Log</button></div>
+          </div>
+        </div>
+        <div id="power-log-list" style="overflow-x:auto;"></div>
+      </div>
+    </div>
+    </div><!-- /psub-power -->
 
     <!-- Sub: Garden & Food Production -->
     <div id="psub-garden" class="prep-sub">
@@ -4723,7 +4775,7 @@ a { color: var(--accent); text-decoration: none; }
           <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
-            <div><strong style="color:var(--accent);">16 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
+            <div><strong style="color:var(--accent);">17 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Power, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
             <div><strong style="color:var(--accent);">Tools Tab</strong><br>Meshtastic, Barcode Scanner, Video Library, Guided Drills</div>
           </div>
           <div style="margin:8px 0;">
@@ -7199,6 +7251,7 @@ function switchPrepSub(sub) {
   if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
   if (sub === 'ops') { loadInfraStatus(); renderVehicles(); calcBleach(); loadThreatMatrix(); renderHomeSecurity(); }
   if (sub === 'family') loadFEP();
+  if (sub === 'power') { loadPowerDashboard(); loadPowerDevices(); updatePowerSpecFields(); }
   if (sub === 'garden') { loadPlots(); lookupZone(); }
   if (sub === 'medical') loadPatients();
   if (sub === 'guides') renderGuideSelector();
@@ -10794,6 +10847,161 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'n') { e.preventDefault(); document.querySelector('[data-tab="notes"]').click(); setTimeout(createNote, 200); }
   }
 });
+
+/* ─── Power Management ─── */
+function showPowerTab(tab) {
+  ['devices','log'].forEach(t => {
+    document.getElementById(`power-${t}-panel`).style.display = t === tab ? 'block' : 'none';
+    document.getElementById(`pwr-tab-${t}`).className = t === tab ? 'btn btn-sm btn-primary' : 'btn btn-sm';
+  });
+  if (tab === 'devices') { loadPowerDevices(); updatePowerSpecFields(); }
+  if (tab === 'log') loadPowerLog();
+}
+
+async function loadPowerDashboard() {
+  try {
+    const d = await (await fetch('/api/power/dashboard')).json();
+    const el = document.getElementById('power-dashboard');
+    const autoColor = d.autonomy_days > 7 ? 'var(--green)' : d.autonomy_days > 3 ? 'var(--orange)' : 'var(--red)';
+    const socColor = d.latest_soc > 50 ? 'var(--green)' : d.latest_soc > 20 ? 'var(--orange)' : 'var(--red)';
+    const netColor = d.net_daily_wh >= 0 ? 'var(--green)' : 'var(--red)';
+    el.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Autonomy</div>
+        <div style="font-size:20px;font-weight:700;color:${autoColor};">${d.autonomy_days >= 999 ? 'Unlimited' : d.autonomy_days + 'd'}</div>
+      </div>
+      ${d.latest_soc !== null ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Battery SOC</div>
+        <div style="font-size:20px;font-weight:700;color:${socColor};">${d.latest_soc}%</div>
+        ${d.latest_voltage ? `<div style="font-size:10px;color:var(--text-muted);">${d.latest_voltage}V</div>` : ''}
+      </div>` : ''}
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Solar Capacity</div>
+        <div style="font-size:20px;font-weight:700;color:var(--accent);">${d.total_solar_w}W</div>
+        <div style="font-size:10px;color:var(--text-muted);">Avg: ${d.avg_solar_w}W</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Battery Bank</div>
+        <div style="font-size:20px;font-weight:700;color:var(--accent);">${d.total_battery_wh}Wh</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Avg Load</div>
+        <div style="font-size:20px;font-weight:700;color:var(--orange);">${d.avg_load_w}W</div>
+        <div style="font-size:10px;color:var(--text-muted);">${d.daily_consumption_wh} Wh/day</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;text-align:center;">
+        <div style="font-size:10px;text-transform:uppercase;color:var(--text-dim);font-weight:600;">Net Daily</div>
+        <div style="font-size:20px;font-weight:700;color:${netColor};">${d.net_daily_wh >= 0 ? '+' : ''}${d.net_daily_wh}Wh</div>
+        <div style="font-size:10px;color:var(--text-muted);">${d.net_daily_wh >= 0 ? 'Surplus' : 'Deficit'}</div>
+      </div>
+    `;
+  } catch(e) {
+    document.getElementById('power-dashboard').innerHTML = '<div style="grid-column:1/-1;text-align:center;color:var(--text-muted);padding:20px;font-size:12px;">Add power devices and log readings to see your power dashboard.</div>';
+  }
+}
+
+function updatePowerSpecFields() {
+  const type = document.getElementById('pd-type').value;
+  const el = document.getElementById('pd-spec-fields');
+  const s = 'width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:12px;outline:none;';
+  const l = 'font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;';
+  if (type === 'solar_panel') {
+    el.innerHTML = `<div><label style="${l}">Watts</label><input id="pd-watts" type="number" style="${s}" placeholder="200"></div>
+      <div><label style="${l}">Count</label><input id="pd-count" type="number" value="1" min="1" style="${s}"></div>`;
+  } else if (type === 'battery') {
+    el.innerHTML = `<div><label style="${l}">Capacity Wh</label><input id="pd-wh" type="number" style="${s}" placeholder="1280"></div>
+      <div><label style="${l}">Voltage</label><input id="pd-volts" type="number" step="0.1" style="${s}" placeholder="12.8"></div>
+      <div><label style="${l}">Type</label><select id="pd-btype" style="${s}"><option>LiFePO4</option><option>AGM</option><option>Flooded</option><option>Li-ion</option></select></div>
+      <div><label style="${l}">Count</label><input id="pd-count" type="number" value="1" min="1" style="${s}"></div>`;
+  } else if (type === 'inverter') {
+    el.innerHTML = `<div><label style="${l}">Watts</label><input id="pd-watts" type="number" style="${s}" placeholder="2000"></div>
+      <div><label style="${l}">Type</label><select id="pd-itype" style="${s}"><option>Pure Sine</option><option>Modified Sine</option></select></div>`;
+  } else if (type === 'charge_controller') {
+    el.innerHTML = `<div><label style="${l}">Amps</label><input id="pd-amps" type="number" style="${s}" placeholder="30"></div>
+      <div><label style="${l}">Type</label><select id="pd-ctype" style="${s}"><option>MPPT</option><option>PWM</option></select></div>`;
+  } else if (type === 'generator') {
+    el.innerHTML = `<div><label style="${l}">Watts</label><input id="pd-watts" type="number" style="${s}" placeholder="3500"></div>
+      <div><label style="${l}">Fuel</label><select id="pd-fuel" style="${s}"><option>Gasoline</option><option>Diesel</option><option>Propane</option><option>Dual Fuel</option></select></div>`;
+  }
+}
+
+async function addPowerDevice() {
+  const type = document.getElementById('pd-type').value;
+  const name = document.getElementById('pd-name').value.trim();
+  if (!name) { toast('Enter device name', 'warning'); return; }
+  const specs = {};
+  if (document.getElementById('pd-watts')) specs.watts = parseInt(document.getElementById('pd-watts').value) || 0;
+  if (document.getElementById('pd-count')) specs.count = parseInt(document.getElementById('pd-count').value) || 1;
+  if (document.getElementById('pd-wh')) specs.capacity_wh = parseInt(document.getElementById('pd-wh').value) || 0;
+  if (document.getElementById('pd-volts')) specs.voltage = parseFloat(document.getElementById('pd-volts').value) || 0;
+  if (document.getElementById('pd-btype')) specs.battery_type = document.getElementById('pd-btype').value;
+  if (document.getElementById('pd-itype')) specs.inverter_type = document.getElementById('pd-itype').value;
+  if (document.getElementById('pd-ctype')) specs.controller_type = document.getElementById('pd-ctype').value;
+  if (document.getElementById('pd-amps')) specs.amps = parseInt(document.getElementById('pd-amps').value) || 0;
+  if (document.getElementById('pd-fuel')) specs.fuel = document.getElementById('pd-fuel').value;
+  await fetch('/api/power/devices', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({device_type: type, name, specs})});
+  document.getElementById('pd-name').value = '';
+  toast(`${name} added`, 'success');
+  loadPowerDevices();
+  loadPowerDashboard();
+}
+
+async function loadPowerDevices() {
+  try {
+    const devices = await (await fetch('/api/power/devices')).json();
+    const el = document.getElementById('power-devices-list');
+    if (!devices.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:16px;text-align:center;">No power devices registered. Add your solar panels, batteries, and other equipment above.</div>'; return; }
+    const icons = {solar_panel:'&#9728;', battery:'&#128267;', charge_controller:'&#9889;', inverter:'&#128268;', generator:'&#9981;'};
+    el.innerHTML = devices.map(d => {
+      const specs = d.specs || {};
+      let specStr = '';
+      if (d.device_type === 'solar_panel') specStr = `${specs.watts||0}W x ${specs.count||1} = ${(specs.watts||0)*(specs.count||1)}W`;
+      else if (d.device_type === 'battery') specStr = `${specs.capacity_wh||0}Wh ${specs.battery_type||''} ${specs.voltage||''}V x ${specs.count||1}`;
+      else if (d.device_type === 'inverter') specStr = `${specs.watts||0}W ${specs.inverter_type||''}`;
+      else if (d.device_type === 'charge_controller') specStr = `${specs.amps||0}A ${specs.controller_type||''}`;
+      else if (d.device_type === 'generator') specStr = `${specs.watts||0}W ${specs.fuel||''}`;
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:4px;font-size:12px;">
+        <div><span style="margin-right:4px;">${icons[d.device_type]||''}</span><strong>${escapeHtml(d.name)}</strong> <span style="color:var(--text-dim);">— ${specStr}</span></div>
+        <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="deletePowerDevice(${d.id})">x</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
+}
+
+async function deletePowerDevice(id) { await fetch(`/api/power/devices/${id}`, {method:'DELETE'}); loadPowerDevices(); loadPowerDashboard(); }
+
+async function logPowerReading() {
+  const data = {
+    battery_voltage: parseFloat(document.getElementById('pl-voltage').value) || null,
+    battery_soc: parseInt(document.getElementById('pl-soc').value) || null,
+    solar_watts: parseFloat(document.getElementById('pl-solar').value) || null,
+    solar_wh_today: parseFloat(document.getElementById('pl-solar-wh').value) || null,
+    load_watts: parseFloat(document.getElementById('pl-load').value) || null,
+    load_wh_today: parseFloat(document.getElementById('pl-load-wh').value) || null,
+    generator_running: document.getElementById('pl-gen').value === '1',
+  };
+  if (!data.battery_voltage && !data.solar_watts && !data.load_watts) { toast('Enter at least one reading', 'warning'); return; }
+  await fetch('/api/power/log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  toast('Power reading logged', 'success');
+  ['pl-voltage','pl-soc','pl-solar','pl-solar-wh','pl-load','pl-load-wh'].forEach(id => document.getElementById(id).value = '');
+  loadPowerLog();
+  loadPowerDashboard();
+}
+
+async function loadPowerLog() {
+  try {
+    const logs = await (await fetch('/api/power/log')).json();
+    const el = document.getElementById('power-log-list');
+    if (!logs.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:16px;text-align:center;">No readings logged yet.</div>'; return; }
+    el.innerHTML = '<table class="freq-table"><thead><tr><th>Time</th><th>Battery V</th><th>SOC</th><th>Solar W</th><th>Solar Wh</th><th>Load W</th><th>Load Wh</th><th>Gen</th></tr></thead><tbody>' +
+      logs.map(l => {
+        const t = new Date(l.created_at);
+        const ts = t.toLocaleDateString([],{month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+        const socColor = l.battery_soc > 50 ? '' : l.battery_soc > 20 ? 'color:var(--orange);font-weight:600;' : 'color:var(--red);font-weight:600;';
+        return `<tr><td style="font-size:10px;">${ts}</td><td>${l.battery_voltage||'-'}</td><td style="${socColor}">${l.battery_soc != null ? l.battery_soc+'%' : '-'}</td><td>${l.solar_watts||'-'}</td><td>${l.solar_wh_today||'-'}</td><td>${l.load_watts||'-'}</td><td>${l.load_wh_today||'-'}</td><td>${l.generator_running ? '<span style="color:var(--green);">ON</span>' : '-'}</td></tr>`;
+      }).join('') + '</tbody></table>';
+  } catch(e) {}
+}
 
 /* ─── Food Production Module ─── */
 function showGardenTab(tab) {

@@ -300,6 +300,29 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS power_devices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_type TEXT NOT NULL,
+            name TEXT NOT NULL,
+            specs TEXT DEFAULT '{}',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS power_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            battery_voltage REAL,
+            battery_soc INTEGER,
+            solar_watts REAL,
+            solar_wh_today REAL,
+            load_watts REAL,
+            load_wh_today REAL,
+            generator_running INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS sync_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             direction TEXT NOT NULL DEFAULT 'push',
@@ -407,6 +430,7 @@ def init_db():
         'CREATE INDEX IF NOT EXISTS idx_vitals_patient ON vitals_log(patient_id, created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_wound_patient ON wound_log(patient_id, created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_patients_contact ON patients(contact_id)',
+        'CREATE INDEX IF NOT EXISTS idx_power_log_created ON power_log(created_at DESC)',
     ]:
         try:
             conn.execute(idx)

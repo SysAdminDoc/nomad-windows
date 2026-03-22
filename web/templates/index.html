@@ -819,9 +819,9 @@ a { color: var(--accent); text-decoration: none; }
 .incident-item:hover .incident-del { opacity: 0.6; }
 .incident-del:hover { opacity: 1 !important; }
 
-/* ─── PACE Inputs ─── */
-.pace-input { width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:4px;font-size:11px;outline:none; }
-.pace-input:focus { border-color:var(--accent); }
+/* ─── PACE & FEP Inputs ─── */
+.pace-input, .fep-input { width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:4px;font-size:11px;outline:none; }
+.pace-input:focus, .fep-input:focus { border-color:var(--accent); }
 
 /* ─── Skills Matrix ─── */
 .skills-grid { overflow-x:auto; }
@@ -1283,6 +1283,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="prep-subtab" data-psub="weather" onclick="switchPrepSub('weather')">Weather</button>
       <button class="prep-subtab" data-psub="signals" onclick="switchPrepSub('signals')">Signals</button>
       <button class="prep-subtab" data-psub="ops" onclick="switchPrepSub('ops')">Operations</button>
+      <button class="prep-subtab" data-psub="family" onclick="switchPrepSub('family')">Family Plan</button>
     </div>
 
     <!-- Sub: Checklists -->
@@ -2099,6 +2100,63 @@ a { color: var(--accent); text-decoration: none; }
         </div>
       </div>
     </div>
+        <!-- HAM Radio Net Script -->
+        <div class="calc-card">
+          <h4>Radio Net Control Script</h4>
+          <div style="font-size:12px;font-family:'Cascadia Code','Consolas',monospace;line-height:1.8;background:var(--surface2);padding:12px;border-radius:6px;">
+            <div style="color:var(--accent);font-weight:700;">[OPENING]</div>
+            <div>"Calling all stations, calling all stations.</div>
+            <div>This is [YOUR CALLSIGN], net control for the</div>
+            <div>[NET NAME] net on [FREQUENCY].</div>
+            <div>This net meets [SCHEDULE] for the purpose of</div>
+            <div>[PURPOSE: emergency comms / welfare check / info exchange].</div>
+            <div>Is there any emergency or priority traffic? [PAUSE]</div>
+            <div>Hearing none, I will now take check-ins.</div>
+            <div>All stations, check in with your callsign,</div>
+            <div>name, location, and status. Go ahead."</div>
+            <div style="color:var(--accent);font-weight:700;margin-top:8px;">[AFTER EACH CHECK-IN]</div>
+            <div>"[CALLSIGN], copied. [LOCATION], [STATUS].</div>
+            <div>Any traffic for [CALLSIGN]? [PAUSE]</div>
+            <div>Next station, go ahead."</div>
+            <div style="color:var(--accent);font-weight:700;margin-top:8px;">[CLOSING]</div>
+            <div>"This is [YOUR CALLSIGN] closing the [NET NAME] net.</div>
+            <div>[NUMBER] stations checked in. Next net at [TIME].</div>
+            <div>73 to all. [YOUR CALLSIGN] clear."</div>
+          </div>
+          <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">73 = best regards. Status codes: Green (all good), Yellow (concerns), Red (needs help). Keep transmissions brief.</div>
+        </div>
+
+        <!-- Game Processing Quick Reference -->
+        <div class="calc-card">
+          <h4>Game Processing Quick Reference</h4>
+          <div style="font-size:12px;line-height:1.8;">
+            <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Field Dressing (Deer/Large Game)</div>
+            <div>1. Place animal on slope with head uphill if possible</div>
+            <div>2. Cut around anus, tie off with string to prevent contamination</div>
+            <div>3. Open abdomen from pelvis to ribcage — cut SKIN ONLY (don't puncture organs)</div>
+            <div>4. Cut diaphragm free from ribs on both sides</div>
+            <div>5. Reach up into chest, cut windpipe and esophagus as high as possible</div>
+            <div>6. Roll animal on side, pull organs out in one mass</div>
+            <div>7. Save heart and liver in separate bag if desired</div>
+            <div>8. Drain body cavity, prop open with stick for cooling</div>
+            <div>9. Get meat cooled below 40F as quickly as possible</div>
+            <div style="font-weight:700;color:var(--accent);margin-top:8px;margin-bottom:4px;">Meat Preservation (No Refrigeration)</div>
+            <div><strong>Jerky:</strong> Slice with grain, 1/4" thick. Salt heavily. Dry in sun/smoke 12-24 hrs until brittle.</div>
+            <div><strong>Smoking:</strong> Cold smoke (80-90F) for preservation, hot smoke (160F+) for cooking. Hardwood only (no pine/resin).</div>
+            <div><strong>Salt cure:</strong> Pack in salt (1 lb salt per 4 lbs meat). Store cool for 2-4 weeks. Rinse before cooking.</div>
+            <div><strong>Pemmican:</strong> Dried jerky ground to powder + rendered fat (50/50 by weight). Add dried berries. Lasts months-years.</div>
+          </div>
+        </div>
+
+        <!-- Shelter Defense Assessment -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Shelter/Location Defense Assessment</h4>
+          <div style="font-size:12px;margin-bottom:8px;color:var(--text-dim);">Score your current location. Click each criterion to cycle: Green (good) / Yellow (fair) / Red (poor). Saved locally.</div>
+          <div id="shelter-assess" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px;"></div>
+          <div id="shelter-score" style="margin-top:8px;font-size:13px;font-weight:600;"></div>
+        </div>
+      </div>
+    </div>
     </div><!-- /psub-reference -->
 
     <!-- Sub: Protocols -->
@@ -2280,6 +2338,93 @@ a { color: var(--accent); text-decoration: none; }
           <div class="proto-warn">Signs of infection requiring urgent care: red streaks spreading from wound, fever over 101F, foul smell, rapid swelling, green/brown drainage.</div>
         </div>
       </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Burn Treatment</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Stop the burning process.</strong> Remove from heat source. Remove clothing/jewelry near burn (unless stuck to skin). Do NOT pull off stuck fabric.</li>
+            <li><strong>Classify the burn:</strong>
+              <ul>
+                <li><strong>1st degree:</strong> Red, painful, no blisters (sunburn). Treat at home.</li>
+                <li><strong>2nd degree:</strong> Blisters, very painful, red/mottled. Treat at home if small (&lt;3 inches). Seek help if on face, hands, feet, joints, or circumferential.</li>
+                <li><strong>3rd degree:</strong> White/charred/leathery, may be painless (nerves destroyed). ALWAYS needs medical care.</li>
+              </ul>
+            </li>
+            <li><strong>Cool the burn:</strong> Run cool (NOT ice cold) water over it for 10-20 minutes. Do NOT use ice, butter, toothpaste, or oil.</li>
+            <li><strong>Do NOT pop blisters.</strong> They protect against infection. If they pop on their own, clean gently and apply antibiotic ointment.</li>
+            <li><strong>Cover with sterile non-stick dressing.</strong> Wrap loosely. Do NOT use fluffy cotton (sticks to wound).</li>
+            <li><strong>Pain management:</strong> Ibuprofen + acetaminophen together. Keep burned area elevated if possible.</li>
+            <li><strong>Hydrate aggressively.</strong> Burns cause massive fluid loss. Drink electrolyte solution.</li>
+            <li><strong>Watch for infection:</strong> Increasing pain after 48h, fever, pus, foul smell, red streaks.</li>
+          </ol>
+          <div class="proto-warn">Rule of 9s (body surface area): Head 9%, each arm 9%, chest 18%, back 18%, each leg 18%, groin 1%. Burns over 20% BSA = life-threatening shock risk.</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Fracture & Splinting</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Suspect a fracture if:</strong> Deformity, swelling, bruising, inability to bear weight, grinding/crunching sensation, pain with movement.</li>
+            <li><strong>Do NOT attempt to realign</strong> the bone unless there is no pulse below the injury (circulation at risk).</li>
+            <li><strong>Splint in position found.</strong> Immobilize the joint ABOVE and BELOW the fracture site.</li>
+            <li><strong>Splint materials:</strong> SAM splint, boards, sticks, rolled magazines/newspapers, trekking poles, cardboard. Pad with clothing/towels.</li>
+            <li><strong>Secure with:</strong> Tape, cravats, torn cloth strips, belts, paracord. Firm but not so tight it cuts circulation.</li>
+            <li><strong>Check circulation</strong> below the splint every 15-30 minutes: pulse, sensation, skin color, capillary refill (press nail, color should return in &lt;2 seconds).</li>
+            <li><strong>Elevate</strong> the injured limb above the heart if possible.</li>
+            <li><strong>Cold pack:</strong> Apply wrapped cold pack 20 min on, 20 min off to reduce swelling.</li>
+            <li><strong>Sling:</strong> For arm/clavicle fractures, use a triangular bandage or improvised sling + swathe to immobilize against body.</li>
+          </ol>
+          <div class="proto-tip">Open fracture (bone visible or skin broken): Cover wound with sterile dressing, splint around it, treat for shock, evacuate immediately. High infection risk.</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Snake Bite / Envenomation</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Move away from the snake.</strong> Do NOT try to catch or kill it. Note appearance if possible (color, pattern, head shape).</li>
+            <li><strong>Keep victim calm and still.</strong> Increased heart rate spreads venom faster. Lie down with bite site below heart level.</li>
+            <li><strong>Remove jewelry and watches</strong> near the bite — severe swelling will occur.</li>
+            <li><strong>Mark the edge of swelling</strong> with a pen and note the time. This tracks spread rate.</li>
+            <li><strong>Clean the wound</strong> gently with soap and water. Cover with clean dressing.</li>
+            <li><strong>Immobilize the bitten limb</strong> with a splint. Keep at or below heart level.</li>
+            <li><strong>Evacuate to medical facility.</strong> Antivenom is the definitive treatment. Call ahead so they can prepare.</li>
+          </ol>
+          <div class="proto-warn">Do NOT: Cut the wound, suck out venom, apply tourniquet, apply ice, give alcohol, apply electric shock. These all make it WORSE.</div>
+          <div class="proto-tip">Most US venomous snakes: Rattlesnake, Copperhead, Cottonmouth (water moccasin), Coral snake. Pit vipers have triangular heads, vertical pupils, heat pits. "Red touches yellow, kills a fellow" (coral snake).</div>
+        </div>
+      </div>
+
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Allergic Reaction / Anaphylaxis</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <ol>
+            <li><strong>Recognize anaphylaxis:</strong> Difficulty breathing, throat/tongue swelling, widespread hives, dizziness, rapid pulse, vomiting, feeling of doom. Can progress to death in minutes.</li>
+            <li><strong>EpiPen (if available):</strong> Remove blue safety cap. Press orange tip firmly into outer thigh (through clothing is OK). Hold 10 seconds. Massage injection site.</li>
+            <li><strong>Call 911 immediately.</strong> Even after EpiPen, symptoms can return (biphasic reaction).</li>
+            <li><strong>Position:</strong> Sit upright if breathing difficulty. Lay flat with legs elevated if lightheaded/low BP. Recovery position if unconscious but breathing.</li>
+            <li><strong>Antihistamine:</strong> Give diphenhydramine (Benadryl) 50mg if they can swallow — this helps but is NOT a substitute for epinephrine in anaphylaxis.</li>
+            <li><strong>Second EpiPen:</strong> If no improvement after 5-15 minutes, give a second dose in the other thigh.</li>
+            <li><strong>Monitor continuously.</strong> Be prepared to start CPR if breathing stops or pulse is lost.</li>
+            <li><strong>Without EpiPen:</strong> Antihistamine, keep airway open, treat for shock, evacuate IMMEDIATELY. This is a true emergency.</li>
+          </ol>
+          <div class="proto-tip">Common triggers: Bee/wasp stings, peanuts/tree nuts, shellfish, medications (penicillin, NSAIDs), latex. If someone has a known allergy, ensure EpiPen is always accessible and not expired.</div>
+        </div>
+      </div>
     </div>
     </div><!-- /psub-protocols -->
 
@@ -2455,6 +2600,49 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
     </div><!-- /psub-ops -->
+
+    <!-- Sub: Family Plan -->
+    <div id="psub-family" class="prep-sub">
+    <div class="prep-section">
+      <h3>Family Emergency Plan</h3>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Complete this plan with your household. Print copies (use Print Emergency Card button). Review quarterly. Saved locally.</div>
+      <div class="settings-card" style="margin-bottom:12px;">
+        <h3 style="font-size:13px;">Meeting Locations</h3>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px;align-items:center;">
+          <label style="color:var(--text-dim);font-weight:600;">Near Home:</label><input class="fep-input" id="fep-meet1" placeholder="e.g. Mailbox, front yard tree" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Neighborhood:</label><input class="fep-input" id="fep-meet2" placeholder="e.g. Park pavilion at Oak & Main" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Out of Area:</label><input class="fep-input" id="fep-meet3" placeholder="e.g. Uncle Bob's house, 123 Pine St, Springfield" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Out-of-Area Contact:</label><input class="fep-input" id="fep-ooa" placeholder="e.g. Aunt Mary (555) 123-4567 — everyone calls her" oninput="saveFEP()">
+        </div>
+      </div>
+      <div class="settings-card" style="margin-bottom:12px;">
+        <h3 style="font-size:13px;">Evacuation Routes</h3>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px;align-items:center;">
+          <label style="color:var(--text-dim);font-weight:600;">Route A (Primary):</label><input class="fep-input" id="fep-route1" placeholder="e.g. I-95 North to Exit 42, then Route 7 West" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Route B (Alternate):</label><input class="fep-input" id="fep-route2" placeholder="e.g. Back roads: County Rd 12 to Highway 30" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Route C (Last Resort):</label><input class="fep-input" id="fep-route3" placeholder="e.g. On foot via railroad tracks to river bridge" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Destination:</label><input class="fep-input" id="fep-dest" placeholder="e.g. Family cabin, GPS: 38.1234, -79.5678" oninput="saveFEP()">
+        </div>
+      </div>
+      <div class="settings-card" style="margin-bottom:12px;">
+        <h3 style="font-size:13px;">Household Members</h3>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">Medical conditions, allergies, medications, blood type for each person.</div>
+        <div id="fep-members"></div>
+        <button class="btn btn-sm btn-primary" onclick="addFEPMember()" style="margin-top:6px;">+ Add Member</button>
+      </div>
+      <div class="settings-card">
+        <h3 style="font-size:13px;">Important Numbers & Info</h3>
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:12px;align-items:center;">
+          <label style="color:var(--text-dim);font-weight:600;">Insurance (Home):</label><input class="fep-input" id="fep-ins-home" placeholder="Company, policy #, phone" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Insurance (Auto):</label><input class="fep-input" id="fep-ins-auto" placeholder="Company, policy #, phone" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Doctor/Clinic:</label><input class="fep-input" id="fep-doctor" placeholder="Name, phone, address" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Veterinarian:</label><input class="fep-input" id="fep-vet" placeholder="Name, phone (if pets)" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Utility Shutoffs:</label><input class="fep-input" id="fep-utility" placeholder="e.g. Gas: meter on south wall, Water: front yard valve" oninput="saveFEP()">
+          <label style="color:var(--text-dim);font-weight:600;">Safe/Combo Location:</label><input class="fep-input" id="fep-safe" placeholder="e.g. Master closet, combo known by both adults" oninput="saveFEP()">
+        </div>
+      </div>
+    </div>
+    </div><!-- /psub-family -->
   </div>
 
   <!-- LAN Chat Widget -->
@@ -4503,11 +4691,12 @@ function switchPrepSub(sub) {
   if (sub === 'inventory') { loadInventory(); loadBurnRate(); }
   if (sub === 'contacts') { loadContacts(); loadSkillsMatrix(); }
   if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); calcHorizon(); updateCalTracker(); }
-  if (sub === 'reference') { convertUnit(); showPlantZone(); }
   if (sub === 'vault' && _vaultKey) loadVaultList();
   if (sub === 'weather') loadWeather();
   if (sub === 'signals') loadSignalSchedule();
   if (sub === 'ops') { loadInfraStatus(); renderVehicles(); calcBleach(); }
+  if (sub === 'family') loadFEP();
+  if (sub === 'reference') { convertUnit(); showPlantZone(); loadShelterAssess(); }
 }
 
 /* ─── Preparedness ─── */
@@ -5375,6 +5564,106 @@ async function deleteWaypoint(id) {
   await fetch(`/api/waypoints/${id}`, {method:'DELETE'});
   toast('Waypoint deleted');
   loadWaypoints();
+}
+
+/* ─── Family Emergency Plan ─── */
+let _fepMembers = JSON.parse(localStorage.getItem('nomad-fep-members') || '[]');
+
+function saveFEP() {
+  const fields = ['meet1','meet2','meet3','ooa','route1','route2','route3','dest','ins-home','ins-auto','doctor','vet','utility','safe'];
+  const data = {};
+  fields.forEach(f => { const el = document.getElementById('fep-'+f); if (el) data[f] = el.value; });
+  localStorage.setItem('nomad-fep', JSON.stringify(data));
+}
+
+function loadFEP() {
+  try {
+    const data = JSON.parse(localStorage.getItem('nomad-fep') || '{}');
+    Object.entries(data).forEach(([k, v]) => { const el = document.getElementById('fep-'+k); if (el) el.value = v; });
+    _fepMembers = JSON.parse(localStorage.getItem('nomad-fep-members') || '[]');
+    renderFEPMembers();
+  } catch(e) {}
+}
+
+function addFEPMember() {
+  _fepMembers.push({name:'', age:'', blood:'', conditions:'', meds:'', allergies:'', id: Date.now()});
+  localStorage.setItem('nomad-fep-members', JSON.stringify(_fepMembers));
+  renderFEPMembers();
+}
+
+function updateFEPMember(id, field, value) {
+  const m = _fepMembers.find(m => m.id === id);
+  if (m) { m[field] = value; localStorage.setItem('nomad-fep-members', JSON.stringify(_fepMembers)); }
+}
+
+function deleteFEPMember(id) {
+  _fepMembers = _fepMembers.filter(m => m.id !== id);
+  localStorage.setItem('nomad-fep-members', JSON.stringify(_fepMembers));
+  renderFEPMembers();
+}
+
+function renderFEPMembers() {
+  const el = document.getElementById('fep-members');
+  if (!_fepMembers.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:11px;padding:6px;">No members added yet.</div>'; return; }
+  el.innerHTML = _fepMembers.map(m => `
+    <div style="background:var(--surface2);border-radius:6px;padding:8px;margin-bottom:4px;display:grid;grid-template-columns:1fr 60px 60px 1fr 1fr 1fr auto;gap:4px;font-size:11px;align-items:center;">
+      <input class="fep-input" value="${escapeAttr(m.name)}" placeholder="Name" oninput="updateFEPMember(${m.id},'name',this.value)">
+      <input class="fep-input" value="${escapeAttr(m.age)}" placeholder="Age" oninput="updateFEPMember(${m.id},'age',this.value)">
+      <input class="fep-input" value="${escapeAttr(m.blood)}" placeholder="Blood" oninput="updateFEPMember(${m.id},'blood',this.value)">
+      <input class="fep-input" value="${escapeAttr(m.conditions)}" placeholder="Conditions" oninput="updateFEPMember(${m.id},'conditions',this.value)">
+      <input class="fep-input" value="${escapeAttr(m.meds)}" placeholder="Medications" oninput="updateFEPMember(${m.id},'meds',this.value)">
+      <input class="fep-input" value="${escapeAttr(m.allergies)}" placeholder="Allergies" oninput="updateFEPMember(${m.id},'allergies',this.value)">
+      <span style="cursor:pointer;color:var(--red);font-size:12px;" onclick="deleteFEPMember(${m.id})">x</span>
+    </div>`).join('');
+}
+
+/* ─── Shelter Defense Assessment ─── */
+const SHELTER_CRITERIA = [
+  'Line of sight (visibility of approaches)',
+  'Cover from gunfire (brick/concrete)',
+  'Concealment (not easily spotted)',
+  'Multiple exits/escape routes',
+  'Water access within perimeter',
+  'Food storage capacity',
+  'Heating without grid power',
+  'Defensible entry points (choke points)',
+  'Communication capability (radio/antenna)',
+  'Medical treatment area',
+  'Storage for supplies/equipment',
+  'Sanitation plan (latrine/waste)',
+  'Fire resistance of structure',
+  'Flooding/drainage risk',
+  'Distance from high-threat areas',
+];
+const SHELTER_SCORES = {green:3, yellow:2, red:1};
+const SHELTER_COLORS = {green:'var(--green)',yellow:'#c8a800',red:'var(--red)'};
+
+function loadShelterAssess() {
+  const saved = JSON.parse(localStorage.getItem('nomad-shelter') || '{}');
+  const el = document.getElementById('shelter-assess');
+  el.innerHTML = SHELTER_CRITERIA.map((c, i) => {
+    const level = saved[i] || 'red';
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;background:var(--surface2);border-radius:4px;cursor:pointer;" onclick="cycleShelter(${i})">
+      <span style="font-size:11px;">${c}</span>
+      <span style="font-size:10px;font-weight:700;color:${SHELTER_COLORS[level]};min-width:50px;text-align:right;">${level.toUpperCase()}</span>
+    </div>`;
+  }).join('');
+  // Score
+  let total = 0;
+  SHELTER_CRITERIA.forEach((_, i) => total += SHELTER_SCORES[saved[i] || 'red']);
+  const max = SHELTER_CRITERIA.length * 3;
+  const pct = Math.round(total / max * 100);
+  const color = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--orange)' : 'var(--red)';
+  document.getElementById('shelter-score').innerHTML = `Overall Score: <span style="color:${color};">${total}/${max} (${pct}%)</span>`;
+}
+
+function cycleShelter(idx) {
+  const saved = JSON.parse(localStorage.getItem('nomad-shelter') || '{}');
+  const levels = ['red','yellow','green'];
+  const current = saved[idx] || 'red';
+  saved[idx] = levels[(levels.indexOf(current) + 1) % levels.length];
+  localStorage.setItem('nomad-shelter', JSON.stringify(saved));
+  loadShelterAssess();
 }
 
 /* ─── Distance to Horizon ─── */

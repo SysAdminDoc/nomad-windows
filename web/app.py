@@ -3560,6 +3560,140 @@ def create_app():
         except Exception as e:
             return jsonify({'summary': f'{len(alerts)} active alert(s). AI summary unavailable: {e}'})
 
+    # ─── Scenario Training Engine ──────────────────────────────────────
+
+    @app.route('/api/scenarios')
+    def api_scenarios_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM scenarios ORDER BY started_at DESC LIMIT 20').fetchall()
+        db.close()
+        return jsonify([{**dict(r), 'decisions': json.loads(r['decisions'] or '[]'),
+                         'complications': json.loads(r['complications'] or '[]')} for r in rows])
+
+    @app.route('/api/scenarios', methods=['POST'])
+    def api_scenarios_create():
+        data = request.get_json() or {}
+        db = get_db()
+        cur = db.execute('INSERT INTO scenarios (scenario_type, title) VALUES (?, ?)',
+                         (data.get('type', ''), data.get('title', '')))
+        db.commit()
+        sid = cur.lastrowid
+        db.close()
+        return jsonify({'id': sid}), 201
+
+    @app.route('/api/scenarios/<int:sid>', methods=['PUT'])
+    def api_scenarios_update(sid):
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('UPDATE scenarios SET current_phase=?, status=?, decisions=?, complications=?, score=?, aar_text=?, completed_at=? WHERE id=?',
+                   (data.get('current_phase', 0), data.get('status', 'active'),
+                    json.dumps(data.get('decisions', [])), json.dumps(data.get('complications', [])),
+                    data.get('score', 0), data.get('aar_text', ''), data.get('completed_at', ''), sid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'updated'})
+
+    @app.route('/api/scenarios/<int:sid>/complication', methods=['POST'])
+    def api_scenario_complication(sid):
+        """AI generates a context-aware complication based on current scenario state + user's real data."""
+        data = request.get_json() or {}
+        phase_desc = data.get('phase_description', '')
+        decisions_so_far = data.get('decisions', [])
+
+        # Gather real situation context
+        db = get_db()
+        inv_items = db.execute('SELECT name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY (quantity/daily_usage) LIMIT 5').fetchall()
+        contacts_count = db.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c']
+        sit_raw = db.execute("SELECT value FROM settings WHERE key='sit_board'").fetchone()
+        db.close()
+
+        context = f"Inventory: {', '.join(f'{r['name']}: {r['quantity']} {r['unit']}' for r in inv_items) or 'unknown'}\n"
+        context += f"Group size: {contacts_count} contacts\n"
+        if sit_raw and sit_raw['value']:
+            try:
+                sit = json.loads(sit_raw['value'])
+                context += f"Situation: {', '.join(f'{k}={v}' for k,v in sit.items())}\n"
+            except Exception:
+                pass
+
+        prompt = f"""You are a survival training instructor running a disaster scenario. Generate ONE realistic complication for the current phase of the scenario. The complication should force a difficult decision.
+
+Scenario phase: {phase_desc}
+Decisions made so far: {', '.join(d.get('label','') for d in decisions_so_far[-3:]) if decisions_so_far else 'none yet'}
+Real situation data: {context}
+
+Respond with ONLY a JSON object (no markdown, no explanation):
+{{"title": "short complication title", "description": "2-3 sentence description of the complication", "choices": ["choice A text", "choice B text", "choice C text"]}}"""
+
+        try:
+            if not ollama.running():
+                return jsonify({'title': 'Equipment Failure', 'description': 'Your primary water filter has cracked. You need to switch to backup purification methods.',
+                                'choices': ['Use bleach purification', 'Boil all water', 'Ration existing clean water']})
+            models = ollama.list_models()
+            if not models:
+                return jsonify({'title': 'Supply Shortage', 'description': 'You discover your food supply is 30% less than expected. Some items were damaged.',
+                                'choices': ['Implement strict rationing', 'Forage for supplemental food', 'Send a team to resupply']})
+            import requests as req
+            resp = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
+                           json={'model': models[0]['name'], 'prompt': prompt, 'stream': False, 'format': 'json'}, timeout=30)
+            result = resp.json().get('response', '{}')
+            complication = json.loads(result)
+            return jsonify(complication)
+        except Exception as e:
+            log.error(f'Complication generation failed: {e}')
+            return jsonify({'title': 'Unexpected Event', 'description': 'Weather conditions have changed rapidly. High winds are approaching your position.',
+                            'choices': ['Shelter in place', 'Relocate to secondary position', 'Reinforce current shelter']})
+
+    @app.route('/api/scenarios/<int:sid>/aar', methods=['POST'])
+    def api_scenario_aar(sid):
+        """AI generates an After-Action Review scoring the user's decisions."""
+        db = get_db()
+        scenario = db.execute('SELECT * FROM scenarios WHERE id = ?', (sid,)).fetchone()
+        db.close()
+        if not scenario:
+            return jsonify({'error': 'Not found'}), 404
+
+        decisions = json.loads(scenario['decisions'] or '[]')
+        complications = json.loads(scenario['complications'] or '[]')
+
+        decision_summary = '\n'.join([f"Phase {d.get('phase',0)+1}: {d.get('label','')} (chose: {d.get('choice','')})" for d in decisions])
+        complication_summary = '\n'.join([f"- {c.get('title','')}: chose {c.get('response','')}" for c in complications])
+
+        prompt = f"""You are a survival training evaluator. Score this scenario performance and write a brief After-Action Review.
+
+Scenario: {scenario['title']}
+Decisions made:
+{decision_summary or 'None recorded'}
+
+Complications encountered and responses:
+{complication_summary or 'None'}
+
+Provide:
+1. An overall score 0-100
+2. A 3-5 sentence assessment of strengths and weaknesses
+3. 2-3 specific improvement recommendations
+
+Respond as plain text, not JSON. Start with "Score: XX/100" on the first line."""
+
+        try:
+            if not ollama.running() or not ollama.list_models():
+                score = min(100, max(20, len(decisions) * 15 + 10))
+                return jsonify({'score': score, 'aar': f'Score: {score}/100\n\nCompleted {len(decisions)} phases with {len(complications)} complications handled. Practice regularly to improve response times and decision quality.'})
+            import requests as req
+            resp = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
+                           json={'model': ollama.list_models()[0]['name'], 'prompt': prompt, 'stream': False}, timeout=45)
+            aar_text = resp.json().get('response', '').strip()
+            # Try to extract score
+            score = 50
+            import re
+            score_match = re.search(r'Score:\s*(\d+)', aar_text)
+            if score_match:
+                score = min(100, max(0, int(score_match.group(1))))
+            return jsonify({'score': score, 'aar': aar_text})
+        except Exception as e:
+            score = min(100, max(20, len(decisions) * 15 + 10))
+            return jsonify({'score': score, 'aar': f'Score: {score}/100\n\nAI review unavailable. Completed {len(decisions)} decision phases. Review your choices and consider alternative approaches for future training.'})
+
     # ─── Medical Module ────────────────────────────────────────────────
 
     @app.route('/api/patients')

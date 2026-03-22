@@ -1692,6 +1692,18 @@ a { color: var(--accent); text-decoration: none; }
         <h3 style="display:flex;justify-content:space-between;align-items:center;">Drill History <button class="btn btn-sm" onclick="loadDrillHistory()">Refresh</button></h3>
         <div id="drill-history-list" style="font-size:12px;"></div>
       </div>
+
+      <!-- Scenario Training Engine -->
+      <div class="settings-card" style="grid-column:1/-1;border-color:var(--accent);border-width:2px;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">
+          Immersive Training Scenarios
+          <button class="btn btn-sm" onclick="loadScenarioHistory()">History</button>
+        </h3>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Multi-phase survival simulations with AI-generated complications. Your real inventory, contacts, and situation data shape the experience. Each decision is logged and scored.</p>
+        <div id="scenario-selector" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
+        <div id="scenario-active" style="display:none;margin-top:16px;"></div>
+        <div id="scenario-history" style="display:none;margin-top:12px;"></div>
+      </div>
     </div>
   </div>
 
@@ -4783,7 +4795,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); loadPDFList(); }
     if (tab.dataset.tab === 'maps') { loadMaps(); loadWPDistances(); loadMapSources(); }
     if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
-    if (tab.dataset.tab === 'tools') { loadVideoList(); loadDrillHistory(); }
+    if (tab.dataset.tab === 'tools') { loadVideoList(); loadDrillHistory(); renderScenarioSelector(); }
     if (tab.dataset.tab === 'preparedness') { loadPrepTab(); }
   });
 });
@@ -10391,6 +10403,261 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'n') { e.preventDefault(); document.querySelector('[data-tab="notes"]').click(); setTimeout(createNote, 200); }
   }
 });
+
+/* ─── Immersive Training Scenarios ─── */
+const SCENARIOS = [
+  { id:'grid_down', title:'Grid Down — 7 Days', icon:'&#9889;', desc:'Power grid fails. No electricity, no internet, limited fuel. Survive 7 days with your current supplies.',
+    phases:[
+      {title:'Day 1: The Blackout', desc:'Power went out 2 hours ago. Cell towers are down. Radio reports suggest a widespread grid failure affecting multiple states. No estimated restoration time.', choices:['Assess supplies and create inventory','Focus on securing the home first','Try to gather information via radio']},
+      {title:'Day 2: Water Pressure Drops', desc:'Municipal water pressure is dropping. Your toilets flush weakly. Neighbors are panicking. You hear distant sirens.', choices:['Fill every container with water NOW','Start rationing existing water supply','Go to a store to buy bottled water']},
+      {title:'Day 3: Food Decisions', desc:'Your refrigerator food is warming up. Freezer has maybe 24 more hours. Neighbors are asking if you have food to share.', choices:['Cook all perishables today and share with neighbors','Strict rationing — feed only your household','Cook perishables but keep it quiet']},
+      {title:'Day 4: Security Concern', desc:'There was a break-in two streets over last night. No police response. Someone knocked on your door at 3 AM.', choices:['Organize a neighborhood watch','Increase home security and stay armed','Bug out to a safer location']},
+      {title:'Day 5: Medical Issue', desc:'A family member develops a fever and stomach pain. Your antibiotics are limited. The nearest hospital is overwhelmed.', choices:['Treat with available medications and monitor','Try to reach the hospital','Ask neighbors if anyone has medical training']},
+      {title:'Day 6: Communication', desc:'You make contact with someone via HAM/FRS radio who says power may return in 48 hours. But they also mention reports of violence in the next town.', choices:['Share info with neighbors and plan together','Keep the info to yourself and prepare quietly','Organize an armed patrol of your street']},
+      {title:'Day 7: Resolution', desc:'Power flickers on, then off, then on again. Services are slowly restoring. What is your priority?', choices:['Restock and prepare for the next event','Document lessons learned and update plans','Help neighbors who struggled through the week']},
+    ]},
+  { id:'medical_crisis', title:'Medical Crisis', icon:'&#127973;', desc:'A family member has a serious injury. Professional medical help is hours away. You are the first responder.',
+    phases:[
+      {title:'The Injury', desc:'Someone fell from a ladder while repairing a roof. They are conscious but in severe pain. Their left forearm is visibly deformed — likely a fracture. There is a 3-inch laceration on their forehead bleeding steadily.', choices:['Address the bleeding first — head wounds bleed heavily','Immobilize the arm fracture first','Call 911 / send someone for help immediately']},
+      {title:'Bleeding Control', desc:'The head wound is bleeding through your first gauze pad. The patient is pale and says they feel dizzy. Their pulse is rapid.', choices:['Apply direct pressure with a fresh pad on top','Pack the wound and wrap tightly with a pressure bandage','Elevate the head and apply a hemostatic agent']},
+      {title:'Pain Management', desc:'The arm fracture is causing intense pain. The patient is shaking and having trouble staying calm. You have OTC medications available.', choices:['Administer ibuprofen 400mg for pain and inflammation','Give acetaminophen to avoid blood-thinning effects','Create an improvised splint before giving any meds']},
+      {title:'Monitoring', desc:'It has been 2 hours. The head wound bleeding has stopped but the patient is drowsy. The splinted arm is swollen. Help is still 90+ minutes away.', choices:['Keep the patient awake and talking — monitor for concussion','Let them rest but check pupils and consciousness every 15 minutes','Begin transport yourself rather than wait for help']},
+      {title:'Complication', desc:'The patient vomits and complains of increasing headache. Their pupils appear slightly unequal in size.', choices:['Assume concussion — keep them still, monitor airway','Begin immediate transport — this could be serious brain injury','Radio for emergency helicopter evacuation']},
+    ]},
+  { id:'evacuation', title:'Evacuation Under Threat', icon:'&#128663;', desc:'A wildfire / flood / civil unrest is approaching. You have 2 hours to evacuate with your family.',
+    phases:[
+      {title:'The Warning', desc:'Emergency alert: mandatory evacuation order for your area. Estimated 2 hours before conditions become dangerous. Roads are getting congested.', choices:['Execute your pre-planned evacuation route immediately','Take 30 minutes to pack essentials, then go','Wait for more information before deciding']},
+      {title:'Packing', desc:'You need to load the vehicle. You can fit about 200 lbs of gear beyond the go-bags. What is your priority?', choices:['Water, food, and medical supplies','Important documents, cash, and electronics','Weapons, ammo, and security equipment']},
+      {title:'Route Decision', desc:'Your primary route (highway) has heavy traffic — reports say it is near standstill. Your secondary route (back roads) is clear but 40 miles longer.', choices:['Take the highway — it moves slowly but is the shortest path','Take the back roads — less traffic, more distance','Wait 30 minutes to see if highway clears']},
+      {title:'Roadblock', desc:'You encounter a road closure. Emergency vehicles are blocking the road. A detour adds 1 hour. You can see another route on the map that cuts through a rural area.', choices:['Follow the official detour','Take the unmarked rural route','Turn back and try a completely different direction']},
+      {title:'Arrival', desc:'You reach your destination (rally point / family / shelter). But you realize you forgot something important.', choices:['Accept the loss and focus on setting up at the destination','Send someone back for the forgotten item','Use the radio to ask neighbors to grab it if they are still in the area']},
+    ]},
+  { id:'winter_storm', title:'Winter Storm Survival', icon:'&#10052;', desc:'A severe winter storm traps you at home. Power is out, roads impassable, temperatures dropping to -10F.',
+    phases:[
+      {title:'Storm Hits', desc:'Blizzard conditions. 2 feet of snow, wind gusts to 50 mph, temperature dropping fast. Power just went out. It was 68F inside — it will drop quickly.', choices:['Move everyone to one room and seal it for heat retention','Start the generator immediately','Light the fireplace/wood stove and gather all blankets']},
+      {title:'Heating Crisis', desc:'4 hours in. Inside temperature is now 45F and dropping. Your heating fuel (wood/gas/propane) is limited. Outside is -5F with windchill of -25F.', choices:['Ration fuel — heat only during sleeping hours','Use all fuel to maintain minimum temperature','Build an insulated shelter-within-a-shelter in one room']},
+      {title:'Water Pipes', desc:'You hear a pipe burst in the bathroom. Water is spraying. The shutoff valve is in the basement which is already below freezing.', choices:['Rush to shut off the main water valve before more damage','Let it freeze — it will stop on its own','Collect the spraying water in containers before shutting off']},
+      {title:'Day 3: Running Low', desc:'Storm continues. Food is holding up but water is a problem — pipes are frozen, snow melt is slow. A neighbor comes to your door asking for help — their house has no heat at all.', choices:['Take them in — more body heat and shared resources','Give them blankets and some supplies but keep your space','Invite the whole neighborhood to consolidate in your house']},
+      {title:'Rescue', desc:'Day 5. Storm is finally clearing. Plows are working but your road is not priority. You can see the main road from your house. A neighbor\'s elderly parent needs medication.', choices:['Attempt to walk to the main road for help','Wait for plows — could be hours more','Use a vehicle to push through the snow to the road']},
+    ]},
+];
+
+let _activeScenario = null;
+let _scenarioDbId = null;
+let _scenarioDecisions = [];
+let _scenarioComplications = [];
+
+function renderScenarioSelector() {
+  document.getElementById('scenario-selector').innerHTML = SCENARIOS.map(s => `
+    <div class="guide-tile" onclick="startScenario('${s.id}')">
+      <h4><span style="margin-right:6px;">${s.icon}</span>${s.title}</h4>
+      <p>${s.desc}</p>
+      <div style="margin-top:6px;font-size:10px;color:var(--accent);">${s.phases.length} phases</div>
+    </div>
+  `).join('');
+}
+
+async function startScenario(id) {
+  _activeScenario = SCENARIOS.find(s => s.id === id);
+  if (!_activeScenario) return;
+  _scenarioDecisions = [];
+  _scenarioComplications = [];
+  // Create DB record
+  try {
+    const r = await (await fetch('/api/scenarios', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({type: id, title: _activeScenario.title})})).json();
+    _scenarioDbId = r.id;
+  } catch(e) { _scenarioDbId = null; }
+  document.getElementById('scenario-selector').style.display = 'none';
+  document.getElementById('scenario-active').style.display = 'block';
+  renderScenarioPhase(0);
+  toast(`Scenario started: ${_activeScenario.title}`, 'info');
+}
+
+function renderScenarioPhase(phaseIdx) {
+  if (!_activeScenario || phaseIdx >= _activeScenario.phases.length) {
+    completeScenario();
+    return;
+  }
+  const phase = _activeScenario.phases[phaseIdx];
+  const el = document.getElementById('scenario-active');
+  const progress = Math.round((phaseIdx / _activeScenario.phases.length) * 100);
+  el.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span style="font-size:13px;font-weight:600;">${_activeScenario.icon} ${escapeHtml(_activeScenario.title)}</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span style="font-size:11px;color:var(--text-muted);">Phase ${phaseIdx + 1} of ${_activeScenario.phases.length}</span>
+        <button class="btn btn-sm btn-danger" onclick="abandonScenario()">Abandon</button>
+      </div>
+    </div>
+    <div class="progress-bar" style="margin-bottom:16px;"><div class="fill" style="width:${progress}%;background:linear-gradient(90deg,var(--accent),var(--green));"></div></div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;">
+      <h4 style="font-size:15px;color:var(--accent);margin-bottom:8px;">${escapeHtml(phase.title)}</h4>
+      <p style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:16px;">${escapeHtml(phase.desc)}</p>
+      <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:8px;">What do you do?</div>
+      ${phase.choices.map((c, i) => `
+        <div class="guide-option" onclick="scenarioChoose(${phaseIdx}, ${i}, '${escapeAttr(c)}')">${escapeHtml(c)}</div>
+      `).join('')}
+    </div>
+  `;
+}
+
+async function scenarioChoose(phaseIdx, choiceIdx, choiceLabel) {
+  const phase = _activeScenario.phases[phaseIdx];
+  _scenarioDecisions.push({phase: phaseIdx, label: phase.title, choice: choiceLabel, time: new Date().toISOString()});
+
+  // Save to DB
+  if (_scenarioDbId) {
+    fetch(`/api/scenarios/${_scenarioDbId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({current_phase: phaseIdx + 1, decisions: _scenarioDecisions, complications: _scenarioComplications})});
+  }
+
+  // 50% chance of AI complication between phases (not on last phase)
+  const nextPhase = phaseIdx + 1;
+  if (nextPhase < _activeScenario.phases.length && Math.random() < 0.5) {
+    await showComplication(phaseIdx);
+  } else {
+    renderScenarioPhase(nextPhase);
+  }
+}
+
+async function showComplication(afterPhase) {
+  const el = document.getElementById('scenario-active');
+  el.innerHTML = `
+    <div style="text-align:center;padding:30px;color:var(--text-dim);">
+      <div style="font-size:24px;margin-bottom:8px;">&#9888;</div>
+      <div style="font-size:13px;">Generating complication...</div>
+    </div>`;
+
+  try {
+    const phase = _activeScenario.phases[afterPhase];
+    const r = await fetch(`/api/scenarios/${_scenarioDbId || 0}/complication`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({phase_description: phase.title + ': ' + phase.desc, decisions: _scenarioDecisions})
+    });
+    const comp = await r.json();
+
+    _scenarioComplications.push({...comp, response: '', phase: afterPhase});
+
+    el.innerHTML = `
+      <div style="background:var(--orange-dim);border:2px solid var(--orange);border-radius:var(--radius);padding:20px;">
+        <div style="font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--orange);font-weight:700;margin-bottom:6px;">&#9888; COMPLICATION</div>
+        <h4 style="font-size:15px;margin-bottom:8px;">${escapeHtml(comp.title || 'Unexpected Event')}</h4>
+        <p style="font-size:13px;line-height:1.7;margin-bottom:16px;">${escapeHtml(comp.description || '')}</p>
+        <div style="font-size:12px;font-weight:600;color:var(--text-dim);margin-bottom:8px;">How do you respond?</div>
+        ${(comp.choices || ['Deal with it','Ignore it','Adapt']).map((c, i) => `
+          <div class="guide-option" onclick="complicationRespond(${afterPhase}, ${i}, '${escapeAttr(c)}')" style="border-color:var(--orange);">${escapeHtml(c)}</div>
+        `).join('')}
+      </div>`;
+    playAlertSound('broadcast');
+  } catch(e) {
+    renderScenarioPhase(afterPhase + 1);
+  }
+}
+
+function complicationRespond(afterPhase, choiceIdx, choiceLabel) {
+  const lastComp = _scenarioComplications[_scenarioComplications.length - 1];
+  if (lastComp) lastComp.response = choiceLabel;
+  toast('Complication handled', 'info');
+  renderScenarioPhase(afterPhase + 1);
+}
+
+async function completeScenario() {
+  const el = document.getElementById('scenario-active');
+  el.innerHTML = `
+    <div style="text-align:center;padding:30px;">
+      <div style="font-size:36px;margin-bottom:8px;">&#127942;</div>
+      <div style="font-size:16px;font-weight:600;margin-bottom:4px;">Scenario Complete!</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">Generating After-Action Review...</div>
+      <div style="width:200px;height:3px;background:var(--surface3);border-radius:2px;margin:0 auto;overflow:hidden;">
+        <div style="width:60%;height:100%;background:var(--accent);border-radius:2px;animation:load 1.5s ease infinite;"></div>
+      </div>
+    </div>`;
+
+  try {
+    const r = await fetch(`/api/scenarios/${_scenarioDbId || 0}/aar`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({decisions: _scenarioDecisions, complications: _scenarioComplications})
+    });
+    const aar = await r.json();
+    const score = aar.score || 50;
+    const scoreColor = score >= 80 ? 'var(--green)' : score >= 60 ? 'var(--orange)' : 'var(--red)';
+
+    // Save final state
+    if (_scenarioDbId) {
+      fetch(`/api/scenarios/${_scenarioDbId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({status:'complete', current_phase: _activeScenario.phases.length,
+          decisions: _scenarioDecisions, complications: _scenarioComplications,
+          score, aar_text: aar.aar, completed_at: new Date().toISOString()})});
+    }
+
+    el.innerHTML = `
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;">
+        <div style="text-align:center;margin-bottom:16px;">
+          <div style="font-size:48px;font-weight:800;color:${scoreColor};">${score}<span style="font-size:20px;color:var(--text-muted);">/100</span></div>
+          <div style="font-size:12px;color:var(--text-dim);">N.O.M.A.D. Score</div>
+        </div>
+        <h4 style="font-size:14px;color:var(--accent);margin-bottom:8px;">After-Action Review</h4>
+        <div style="font-size:13px;line-height:1.7;white-space:pre-line;margin-bottom:16px;">${escapeHtml(aar.aar || 'No review available.')}</div>
+        <h4 style="font-size:13px;margin-bottom:8px;">Your Decisions (${_scenarioDecisions.length} phases, ${_scenarioComplications.length} complications):</h4>
+        <div style="font-size:11px;color:var(--text-dim);">
+          ${_scenarioDecisions.map(d => `<div style="padding:3px 0;border-bottom:1px solid var(--border);"><strong>${escapeHtml(d.label)}:</strong> ${escapeHtml(d.choice)}</div>`).join('')}
+          ${_scenarioComplications.filter(c=>c.response).map(c => `<div style="padding:3px 0;border-bottom:1px solid var(--border);color:var(--orange);"><strong>&#9888; ${escapeHtml(c.title||'')}:</strong> ${escapeHtml(c.response)}</div>`).join('')}
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn btn-sm btn-primary" onclick="startScenario('${_activeScenario.id}')">Run Again</button>
+          <button class="btn btn-sm" onclick="closeScenario()">Back to Scenarios</button>
+        </div>
+      </div>`;
+    sendNotification('Scenario Complete', `${_activeScenario.title}: ${score}/100`);
+  } catch(e) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--red);">Failed to generate review. <button class="btn btn-sm" onclick="closeScenario()">Back</button></div>`;
+  }
+}
+
+function abandonScenario() {
+  if (_scenarioDbId) {
+    fetch(`/api/scenarios/${_scenarioDbId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status:'abandoned', decisions: _scenarioDecisions, complications: _scenarioComplications})});
+  }
+  closeScenario();
+  toast('Scenario abandoned', 'warning');
+}
+
+function closeScenario() {
+  _activeScenario = null;
+  _scenarioDbId = null;
+  _scenarioDecisions = [];
+  _scenarioComplications = [];
+  document.getElementById('scenario-active').style.display = 'none';
+  document.getElementById('scenario-selector').style.display = 'grid';
+  renderScenarioSelector();
+}
+
+async function loadScenarioHistory() {
+  const el = document.getElementById('scenario-history');
+  try {
+    const scenarios = await (await fetch('/api/scenarios')).json();
+    const completed = scenarios.filter(s => s.status === 'complete');
+    if (!completed.length) { el.style.display = 'block'; el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No completed scenarios yet.</div>'; return; }
+    el.style.display = 'block';
+    el.innerHTML = `<table class="freq-table"><thead><tr><th>Date</th><th>Scenario</th><th>Score</th><th>Phases</th><th>Complications</th></tr></thead><tbody>
+      ${completed.map(s => {
+        const scoreColor = s.score >= 80 ? 'var(--green)' : s.score >= 60 ? 'var(--orange)' : 'var(--red)';
+        return `<tr><td style="font-size:10px;">${new Date(s.started_at).toLocaleDateString()}</td><td>${escapeHtml(s.title)}</td><td style="color:${scoreColor};font-weight:700;">${s.score}/100</td><td>${s.decisions.length}</td><td>${s.complications.length}</td></tr>`;
+      }).join('')}
+    </tbody></table>`;
+  } catch(e) { el.style.display = 'block'; el.innerHTML = '<div style="color:var(--red);font-size:12px;">Failed to load history</div>'; }
+}
+
+// Init scenario selector when tools tab loads
+(function() {
+  const origToolsLoad = document.querySelector('[data-tab="tools"]');
+  if (origToolsLoad) {
+    const origClick = origToolsLoad.onclick;
+    // Selector will render on first view
+  }
+})();
 
 /* ─── Medical Module ─── */
 let _activePatientId = null;

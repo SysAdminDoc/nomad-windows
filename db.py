@@ -300,6 +300,20 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS scenarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            scenario_type TEXT NOT NULL,
+            title TEXT NOT NULL,
+            current_phase INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            decisions TEXT DEFAULT '[]',
+            complications TEXT DEFAULT '[]',
+            score INTEGER DEFAULT 0,
+            aar_text TEXT DEFAULT '',
+            started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TEXT DEFAULT ''
+        );
+
         CREATE TABLE IF NOT EXISTS alerts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             alert_type TEXT NOT NULL,

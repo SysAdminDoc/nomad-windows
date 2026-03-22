@@ -1974,6 +1974,44 @@ a { color: var(--accent); text-decoration: none; }
           </div>
           <div class="calc-result" id="plan-result"></div>
         </div>
+        <!-- Food Storage Planner -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Food Storage Planner</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Calculate how much food to store per person. Based on LDS/FEMA/Red Cross guidelines.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">People</label><input id="fs-people" type="number" min="1" max="30" value="4" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcFoodStorage()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Months</label><input id="fs-months" type="number" min="1" max="24" value="3" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcFoodStorage()"></div>
+          </div>
+          <div class="calc-result" id="fs-result"></div>
+        </div>
+
+        <!-- Generator Fuel Calculator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Generator Fuel Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Estimate fuel needs for generator runtime. Adjust based on your generator's rated consumption.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Generator Size (watts)</label>
+              <select id="gen-size" onchange="calcGenFuel()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="2000">2,000W (small portable)</option>
+                <option value="3500" selected>3,500W (mid portable)</option>
+                <option value="5000">5,000W (large portable)</option>
+                <option value="7500">7,500W (whole-house portable)</option>
+                <option value="10000">10,000W (standby)</option>
+                <option value="20000">20,000W (large standby)</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Fuel Type</label>
+              <select id="gen-fuel" onchange="calcGenFuel()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="gasoline" selected>Gasoline</option>
+                <option value="diesel">Diesel</option>
+                <option value="propane">Propane (LP)</option>
+                <option value="natgas">Natural Gas</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Hours/Day Running</label><input id="gen-hours" type="number" min="1" max="24" value="8" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcGenFuel()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Days</label><input id="gen-days" type="number" min="1" max="90" value="7" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcGenFuel()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Load %</label><input id="gen-load" type="number" min="10" max="100" value="50" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcGenFuel()"></div>
+          </div>
+          <div class="calc-result" id="gen-result"></div>
+        </div>
       </div>
     </div>
     </div><!-- /psub-calculators -->
@@ -2980,6 +3018,125 @@ a { color: var(--accent); text-decoration: none; }
             <li><strong>Without EpiPen:</strong> Antihistamine, keep airway open, treat for shock, evacuate IMMEDIATELY. This is a true emergency.</li>
           </ol>
           <div class="proto-tip">Common triggers: Bee/wasp stings, peanuts/tree nuts, shellfish, medications (penicillin, NSAIDs), latex. If someone has a known allergy, ensure EpiPen is always accessible and not expired.</div>
+        </div>
+      </div>
+      <!-- Dental Emergency -->
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Dental Emergency Procedures</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Knocked-Out Tooth (Avulsion)</div>
+          <ol>
+            <li><strong>Handle by the crown (white part) ONLY.</strong> Never touch the root.</li>
+            <li><strong>Rinse gently</strong> with milk or saline. Do NOT scrub or remove tissue fragments.</li>
+            <li><strong>Replant immediately if possible:</strong> Push tooth back into socket, bite down on gauze to hold.</li>
+            <li><strong>If can't replant:</strong> Store in milk, saliva (inside cheek), or saline. NOT water. Time is critical — best results within 30 min.</li>
+            <li><strong>Get to dentist ASAP.</strong> Tooth can survive up to 1 hour in milk.</li>
+          </ol>
+          <div style="font-weight:700;color:var(--accent);margin-top:12px;margin-bottom:4px;">Severe Toothache / Abscess</div>
+          <ol>
+            <li><strong>Pain relief:</strong> Ibuprofen 400-600mg + Acetaminophen 500mg simultaneously (stagger schedule q6h).</li>
+            <li><strong>Clove oil</strong> (eugenol): Apply to cavity/gum with cotton ball. Natural anesthetic and antiseptic.</li>
+            <li><strong>Salt water rinse:</strong> 1 tsp salt in 8 oz warm water, swish 30 seconds, repeat hourly.</li>
+            <li><strong>If abscess (swelling, pus, fever):</strong> Antibiotics needed — Amoxicillin 500mg q8h x 7 days. If penicillin-allergic: Clindamycin 300mg q6h.</li>
+            <li><strong>Do NOT apply aspirin directly to gum</strong> — causes chemical burn.</li>
+            <li><strong>Drainage:</strong> Only if fluctuant (soft, fluid-filled). Sterilize needle, lance at most prominent point, express pus, rinse with salt water.</li>
+          </ol>
+          <div style="font-weight:700;color:var(--accent);margin-top:12px;margin-bottom:4px;">Temporary Filling / Lost Crown</div>
+          <ol>
+            <li><strong>Temporary filling:</strong> OTC dental cement (Dentemp), softened candle wax, or sugar-free gum pressed into cavity.</li>
+            <li><strong>Lost crown:</strong> Clean crown, apply dental adhesive or denture cream inside, press firmly back on tooth.</li>
+            <li><strong>Broken tooth:</strong> Rinse mouth, apply gauze to bleeding. Dental wax over sharp edge to prevent tongue/cheek cuts.</li>
+          </ol>
+          <div class="proto-warn">Stock clove oil (eugenol), dental cement, dental wax, and oral antibiotics in your medical kit. A dental emergency in a grid-down situation can become life-threatening if an abscess spreads to the neck (Ludwig's angina) or bloodstream (sepsis).</div>
+        </div>
+      </div>
+
+      <!-- Psychological First Aid -->
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>Psychological First Aid (PFA)</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Evidence-based approach for supporting people during/after crisis events. Based on WHO/NCTSN guidelines. You do NOT need to be a therapist.</div>
+          <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">The 5 Core Actions (RAPID Model)</div>
+          <ol>
+            <li><strong>Rapport & Reflective Listening:</strong> Introduce yourself. "I'm here to help." Make eye contact. Listen more than talk. Validate feelings: "That sounds really frightening." Do NOT say "I know how you feel" or "It could be worse."</li>
+            <li><strong>Assessment:</strong> Check for immediate needs — injuries, safety, separated family members, medications needed. Ask: "What do you need most right now?"</li>
+            <li><strong>Prioritization:</strong> Address urgent needs first (physical safety, medical, shelter). Triage emotional needs — those in acute distress or dissociation need more support.</li>
+            <li><strong>Intervention:</strong> Provide practical help. Reunite with support system. Give accurate information (reduces anxiety). Help with problem-solving. Teach grounding techniques.</li>
+            <li><strong>Disposition:</strong> Connect to resources, family, community. Follow up when possible. Identify who needs professional mental health referral.</li>
+          </ol>
+          <div style="font-weight:700;color:var(--accent);margin-top:12px;margin-bottom:4px;">Grounding Technique: 5-4-3-2-1</div>
+          <div style="font-size:12px;line-height:1.8;">
+            <div>Guide the person to identify:</div>
+            <div><strong>5</strong> things they can SEE</div>
+            <div><strong>4</strong> things they can TOUCH</div>
+            <div><strong>3</strong> things they can HEAR</div>
+            <div><strong>2</strong> things they can SMELL</div>
+            <div><strong>1</strong> thing they can TASTE</div>
+            <div style="margin-top:4px;color:var(--text-dim);">This anchors to the present moment and interrupts panic/flashback cycles.</div>
+          </div>
+          <div style="font-weight:700;color:var(--accent);margin-top:12px;margin-bottom:4px;">Crisis Communication Tips</div>
+          <div style="font-size:12px;line-height:1.8;">
+            <div><strong>DO:</strong> Stay calm. Use simple language. Give concrete next steps. Validate emotions. Maintain routine where possible. Include children in age-appropriate information.</div>
+            <div><strong>DON'T:</strong> Force people to talk about trauma. Make promises you can't keep. Dismiss fears. Share gruesome details. Use phrases like "be strong" or "get over it." Leave vulnerable people alone.</div>
+          </div>
+          <div style="font-weight:700;color:var(--accent);margin-top:12px;margin-bottom:4px;">Signs Someone Needs More Help</div>
+          <div style="font-size:12px;line-height:1.6;">
+            <div>- Talking about suicide or self-harm</div>
+            <div>- Unable to care for self (not eating, sleeping, basic hygiene) for &gt;3 days</div>
+            <div>- Excessive substance use to cope</div>
+            <div>- Extreme aggression or dangerous behavior</div>
+            <div>- Complete emotional shutdown / catatonia</div>
+            <div>- Panic attacks that don't resolve with grounding</div>
+          </div>
+          <div class="proto-tip">Mental health IS survival. In prolonged emergencies, psychological breakdown causes more casualties than physical threats. Build morale activities into your daily routine: shared meals, storytelling, music, physical exercise, task rotation, humor.</div>
+        </div>
+      </div>
+
+      <!-- CERT Basics -->
+      <div class="protocol-card">
+        <div class="protocol-header" onclick="toggleProtocol(this)">
+          <span>CERT (Community Emergency Response Team) Guide</span>
+          <span class="proto-arrow">&#9654;</span>
+        </div>
+        <div class="protocol-body">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Based on FEMA CERT training curriculum. Core skills for community-level disaster response.</div>
+          <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">CERT Organization Structure</div>
+          <div style="font-size:12px;line-height:1.8;margin-bottom:8px;">
+            <div><strong>Team Leader:</strong> Coordinates team, communicates with command, makes assignments.</div>
+            <div><strong>Search & Rescue:</strong> Systematic building search, call-out patterns, light debris removal.</div>
+            <div><strong>Medical:</strong> Triage (START), basic life support, wound care, patient tracking.</div>
+            <div><strong>Fire Suppression:</strong> Small fire extinguishment, utility shutoff, hazard assessment.</div>
+            <div><strong>Logistics:</strong> Supplies, equipment, documentation, communications.</div>
+          </div>
+          <div style="font-weight:700;color:var(--accent);margin-bottom:4px;">Systematic Search Pattern</div>
+          <ol style="font-size:12px;">
+            <li><strong>Size up the situation.</strong> Check for structural damage, gas leaks, downed power lines, fire. Do NOT enter unsafe structures.</li>
+            <li><strong>Call out:</strong> "This is CERT. If you can hear me, call out or tap on something!"</li>
+            <li><strong>Right-wall search:</strong> Keep right hand on wall, systematically sweep room-by-room. Mark searched rooms.</li>
+            <li><strong>Mark buildings</strong> with standard FEMA X-code: Time/team in, hazards, victims found (alive/deceased), time out.</li>
+            <li><strong>Victim removal:</strong> Only if safe. Drag using clothing, blanket, or chair. Protect spine if fall/collapse.</li>
+          </ol>
+          <div style="font-weight:700;color:var(--accent);margin-top:12px;margin-bottom:4px;">Fire Extinguisher: PASS Method</div>
+          <div style="font-size:12px;line-height:1.8;">
+            <div><strong>P</strong>ull the pin</div>
+            <div><strong>A</strong>im at base of fire (not flames)</div>
+            <div><strong>S</strong>queeze handle</div>
+            <div><strong>S</strong>weep side to side</div>
+            <div style="margin-top:4px;color:var(--text-dim);">Only fight fires smaller than you. Always keep exit behind you. If fire doesn't go out in 30 seconds, evacuate.</div>
+          </div>
+          <div style="font-weight:700;color:var(--accent);margin-top:12px;margin-bottom:4px;">Utility Shutoff</div>
+          <div style="font-size:12px;line-height:1.8;">
+            <div><strong>Gas:</strong> Locate meter (usually outside). Use 12" crescent wrench. Turn valve 1/4 turn so it's perpendicular to pipe. Do NOT turn back on — only gas company can do this.</div>
+            <div><strong>Electricity:</strong> Main breaker panel — flip main breaker to OFF. If water is present, do NOT touch panel — call utility.</div>
+            <div><strong>Water:</strong> Locate shutoff valve at meter (curb box) or where main enters house. Turn clockwise to close.</div>
+          </div>
+          <div class="proto-tip">CERT training is free through local fire departments and emergency management agencies. Find a class at <strong>community.fema.gov</strong>. The training covers disaster preparedness, fire safety, medical operations, light search and rescue, team organization, disaster psychology, and terrorism awareness.</div>
         </div>
       </div>
     </div>
@@ -8232,6 +8389,95 @@ async function calcPlan() {
         <div><strong style="color:var(--accent);">First aid kits:</strong> ${n.first_aid_kits}</div>
       </div>`;
   } catch(e) { document.getElementById('plan-result').innerHTML = 'Calculation failed.'; }
+}
+
+function calcFoodStorage() {
+  const people = parseInt(document.getElementById('fs-people').value) || 4;
+  const months = parseInt(document.getElementById('fs-months').value) || 3;
+  const days = months * 30;
+  // LDS/FEMA recommended quantities per adult per year, scaled
+  const scale = days / 365;
+  const items = [
+    {name: 'Wheat/Flour', lbs: Math.round(300 * scale * people), note: 'Bread, tortillas, baking'},
+    {name: 'Rice', lbs: Math.round(100 * scale * people), note: 'Staple grain, long shelf life'},
+    {name: 'Corn/Cornmeal', lbs: Math.round(50 * scale * people), note: 'Cornbread, polenta, tortillas'},
+    {name: 'Oats', lbs: Math.round(50 * scale * people), note: 'Breakfast, baking, thickener'},
+    {name: 'Pasta', lbs: Math.round(40 * scale * people), note: 'Quick cooking, morale food'},
+    {name: 'Dried Beans/Legumes', lbs: Math.round(60 * scale * people), note: 'Protein + fiber'},
+    {name: 'Sugar', lbs: Math.round(60 * scale * people), note: 'Energy, preserving, baking'},
+    {name: 'Honey', lbs: Math.round(12 * scale * people), note: 'Indefinite shelf life, medicine'},
+    {name: 'Powdered Milk', lbs: Math.round(16 * scale * people), note: 'Calcium, protein'},
+    {name: 'Cooking Oil', gal: Math.round(10 * scale * people * 10) / 10, note: 'Essential fats, cooking'},
+    {name: 'Salt', lbs: Math.round(8 * scale * people), note: 'Seasoning, preservation'},
+    {name: 'Peanut Butter', lbs: Math.round(12 * scale * people), note: 'Dense calories + protein'},
+    {name: 'Canned Meat', cans: Math.round(120 * scale * people), note: 'Protein variety'},
+    {name: 'Canned Vegetables', cans: Math.round(180 * scale * people), note: 'Vitamins, fiber'},
+    {name: 'Canned Fruit', cans: Math.round(90 * scale * people), note: 'Vitamins, morale'},
+    {name: 'Multivitamins', count: Math.round(days * people), note: '1 per person per day'},
+    {name: 'Water', gal: Math.round(days * people * 1), note: '1 gal/person/day minimum'},
+  ];
+  const totalCal = Math.round(2000 * days * people);
+  let html = `<div style="font-size:13px;font-weight:600;margin-bottom:8px;">${people} people x ${months} months (${days} days) = ~${totalCal.toLocaleString()} total calories needed</div>`;
+  html += '<div style="overflow-x:auto;"><table class="ref-table" style="font-size:11px;width:100%;border-collapse:collapse;"><thead><tr><th>Item</th><th>Amount</th><th>Notes</th></tr></thead><tbody>';
+  for (const item of items) {
+    const amt = item.lbs ? `${item.lbs} lbs` : item.gal ? `${item.gal} gal` : item.cans ? `${item.cans} cans` : `${item.count}`;
+    html += `<tr><td><strong>${item.name}</strong></td><td style="color:var(--accent);font-weight:600;">${amt}</td><td style="color:var(--text-dim);">${item.note}</td></tr>`;
+  }
+  html += '</tbody></table></div>';
+  html += '<div style="margin-top:6px;font-size:11px;color:var(--text-dim);">Based on LDS/FEMA long-term storage guidelines. Store in Mylar bags with O2 absorbers in 5-gallon buckets for 25+ year shelf life.</div>';
+  document.getElementById('fs-result').innerHTML = html;
+}
+
+function calcGenFuel() {
+  const watts = parseInt(document.getElementById('gen-size').value);
+  const fuel = document.getElementById('gen-fuel').value;
+  const hours = parseInt(document.getElementById('gen-hours').value) || 8;
+  const days = parseInt(document.getElementById('gen-days').value) || 7;
+  const load = parseInt(document.getElementById('gen-load').value) || 50;
+  // Fuel consumption rates (gal/hr at full load per 1000W)
+  const rates = {
+    gasoline: {per1kw: 0.75, unit: 'gallons', shelf: '3-6 months (1-2 yr w/ stabilizer)', weight: 6.3, container: '5-gal jerry cans'},
+    diesel: {per1kw: 0.5, unit: 'gallons', shelf: '6-12 months (2+ yr w/ treatment)', weight: 7.1, container: '5-gal diesel cans'},
+    propane: {per1kw: 1.0, unit: 'gallons', shelf: 'Indefinite (tank inspection needed)', weight: 4.2, container: '20-lb tanks (4.7 gal each)'},
+    natgas: {per1kw: 130, unit: 'cubic feet', shelf: 'Continuous supply (utility dependent)', weight: 0, container: 'Utility line'}
+  };
+  const r = rates[fuel];
+  const loadFactor = load / 100;
+  const kw = watts / 1000;
+  const totalHours = hours * days;
+  let consumption, totalFuel;
+  if (fuel === 'natgas') {
+    consumption = r.per1kw * kw * loadFactor;
+    totalFuel = Math.round(consumption * totalHours);
+  } else {
+    consumption = r.per1kw * kw * loadFactor;
+    totalFuel = Math.round(consumption * totalHours * 10) / 10;
+  }
+  const perDay = fuel === 'natgas' ? Math.round(consumption * hours) : Math.round(consumption * hours * 10) / 10;
+  let html = `<div style="font-size:13px;font-weight:600;margin-bottom:8px;">${watts.toLocaleString()}W Generator — ${fuel.charAt(0).toUpperCase()+fuel.slice(1)} @ ${load}% load</div>`;
+  html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;font-size:12px;">`;
+  html += `<div><strong style="color:var(--accent);">Per Hour:</strong> ${fuel === 'natgas' ? Math.round(consumption) : Math.round(consumption*100)/100} ${r.unit}</div>`;
+  html += `<div><strong style="color:var(--accent);">Per Day (${hours}h):</strong> ${perDay} ${r.unit}</div>`;
+  html += `<div><strong style="color:var(--accent);">Total (${days} days):</strong> ${totalFuel} ${r.unit}</div>`;
+  if (fuel !== 'natgas') {
+    const weight = Math.round(totalFuel * r.weight);
+    html += `<div><strong style="color:var(--accent);">Weight:</strong> ~${weight} lbs</div>`;
+    if (fuel === 'propane') {
+      const tanks = Math.ceil(totalFuel / 4.7);
+      html += `<div><strong style="color:var(--accent);">20-lb Tanks:</strong> ${tanks} tanks</div>`;
+    } else {
+      const cans = Math.ceil(totalFuel / 5);
+      html += `<div><strong style="color:var(--accent);">5-gal Cans:</strong> ${cans} cans</div>`;
+    }
+  }
+  html += `<div><strong style="color:var(--accent);">Fuel Shelf Life:</strong> ${r.shelf}</div>`;
+  html += `</div>`;
+  // Common load reference
+  html += `<div style="margin-top:10px;font-size:11px;color:var(--text-dim);">
+    <strong>Common loads:</strong> Refrigerator 600W, Freezer 500W, Well Pump 1000W, Sump Pump 800W, Space Heater 1500W, Lights (LED) 10-15W each, Phone charger 5W, CPAP 30-60W, Window AC 500-1500W, Microwave 1000-1500W, TV 100-200W.
+    <br><strong>Tip:</strong> Run generator 2-4 hours at a time to cycle fridge/freezer. A freezer stays frozen 24-48 hrs if kept closed. Cycle loads to reduce generator wear.
+  </div>`;
+  document.getElementById('gen-result').innerHTML = html;
 }
 
 /* ─── Quick Actions ─── */

@@ -184,16 +184,18 @@ def create_app():
 
     @app.route('/api/services/<service_id>/prereqs')
     def api_service_prereqs(service_id):
-        """Check prerequisites for a service."""
+        """Check prerequisites for a service. All prerequisites auto-install if missing."""
         if service_id == 'stirling':
             java = stirling._find_java()
-            return jsonify({'met': java is not None, 'java_found': java is not None, 'java_path': java,
-                            'message': None if java else 'Java 17+ required. Install from https://adoptium.net'})
+            return jsonify({'met': True, 'java_found': java is not None, 'java_path': java,
+                            'message': None if java else 'Java will be auto-installed on first use (~50 MB download)'})
         if service_id == 'kolibri':
-            import shutil
-            py = shutil.which('python') or shutil.which('python3')
-            return jsonify({'met': py is not None, 'python_found': py is not None,
-                            'message': None if py else 'Python required on PATH for Kolibri'})
+            try:
+                py = kolibri._python_exe()
+                return jsonify({'met': True, 'python_found': True, 'message': None})
+            except RuntimeError:
+                return jsonify({'met': True, 'python_found': False,
+                                'message': 'Python will be auto-installed on first use (~15 MB download)'})
         return jsonify({'met': True, 'message': None})
 
     # ─── Ollama AI Chat API ───────────────────────────────────────────

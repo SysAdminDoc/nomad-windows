@@ -35,18 +35,71 @@ def get_jar_path():
     return jar
 
 
+ADOPTIUM_JRE_URL = 'https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse'
+
+
+def _get_bundled_java_dir():
+    """Path where we store our own portable JRE."""
+    return os.path.join(get_install_dir(), 'jre')
+
+
 def _find_java():
-    """Find a Java runtime. Stirling-PDF requires Java 17+."""
+    """Find a Java runtime. Auto-downloads portable JRE if not found."""
+    # 1. Check our bundled JRE first
+    bundled_dir = _get_bundled_java_dir()
+    if os.path.isdir(bundled_dir):
+        for root, dirs, files in os.walk(bundled_dir):
+            if 'java.exe' in files:
+                return os.path.join(root, 'java.exe')
+
+    # 2. Check system PATH
     java = shutil.which('java')
     if java:
         return java
-    # Check common Windows paths
+
+    # 3. Check common Windows paths
     for base in [os.environ.get('JAVA_HOME', ''), r'C:\Program Files\Java', r'C:\Program Files\Eclipse Adoptium']:
         if base and os.path.isdir(base):
             for root, dirs, files in os.walk(base):
                 if 'java.exe' in files:
                     return os.path.join(root, 'java.exe')
+
     return None
+
+
+def _auto_install_java():
+    """Download a portable Adoptium JRE 21 into our install directory."""
+    import zipfile
+    jre_dir = _get_bundled_java_dir()
+    os.makedirs(jre_dir, exist_ok=True)
+    zip_path = os.path.join(jre_dir, 'jre.zip')
+
+    log.info('Auto-downloading portable Java JRE 21 from Adoptium...')
+    try:
+        resp = req.get(ADOPTIUM_JRE_URL, stream=True, timeout=30, allow_redirects=True)
+        resp.raise_for_status()
+        with open(zip_path, 'wb') as f:
+            for chunk in resp.iter_content(chunk_size=65536):
+                f.write(chunk)
+
+        log.info('Extracting JRE...')
+        with zipfile.ZipFile(zip_path, 'r') as zf:
+            zf.extractall(jre_dir)
+        os.remove(zip_path)
+
+        # Find java.exe in extracted tree
+        java = _find_java()
+        if java:
+            log.info(f'Portable JRE installed: {java}')
+            return java
+        else:
+            log.error('JRE extracted but java.exe not found')
+            return None
+    except Exception as e:
+        log.error(f'Auto-install JRE failed: {e}')
+        if os.path.isfile(zip_path):
+            os.remove(zip_path)
+        return None
 
 
 def is_installed():
@@ -85,6 +138,11 @@ def install(callback=None):
 
         download_file(jar_url, jar_path, SERVICE_ID)
 
+        # Auto-install Java if not found
+        if not _find_java():
+            _download_progress[SERVICE_ID].update({'status': 'installing Java runtime...', 'percent': 90})
+            _auto_install_java()
+
         db = get_db()
         db.execute('''
             INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
@@ -114,13 +172,16 @@ def install(callback=None):
 
 
 def start():
-    """Start Stirling-PDF server via Java."""
+    """Start Stirling-PDF server via Java. Auto-downloads JRE if needed."""
     if not is_installed():
         raise RuntimeError('Stirling-PDF is not installed')
 
     java = _find_java()
     if not java:
-        raise RuntimeError('Java not found — Stirling PDF requires Java 17+ installed on your system')
+        log.info('Java not found — auto-installing portable JRE...')
+        java = _auto_install_java()
+        if not java:
+            raise RuntimeError('Java not found and auto-install failed — check your internet connection')
 
     jar = get_jar_path()
     install_dir = get_install_dir()

@@ -2,17 +2,55 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NukeMap v3.0.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>NukeMap v3.3.0</title>
+<meta name="description" content="Nuclear weapon effects simulator with animated blast waves, WW3 simulation, MIRV strikes, 418 verified targets, and shelter survival analysis. Physics based on Glasstone &amp; Dolan.">
+<meta name="theme-color" content="#1e1e2e">
+<meta property="og:title" content="NukeMap - Nuclear Weapon Effects Simulator">
+<meta property="og:description" content="Simulate nuclear detonations with realistic blast waves, fallout modeling, casualty estimates, and full WW3 scenarios with 708 warheads across 418 verified targets.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sysadmindoc.github.io/NukeMap/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="NukeMap - Nuclear Weapon Effects Simulator">
+<meta name="twitter:description" content="Simulate nuclear detonations with realistic physics, WW3 scenarios, and shelter survival analysis.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><circle cx='50' cy='50' r='40' fill='none' stroke='%23f38ba8' stroke-width='6'/><circle cx='50' cy='50' r='12' fill='%23f38ba8'/><line x1='50' y1='5' x2='50' y2='25' stroke='%23f38ba8' stroke-width='4' stroke-linecap='round'/><line x1='50' y1='75' x2='50' y2='95' stroke='%23f38ba8' stroke-width='4' stroke-linecap='round'/><line x1='5' y1='50' x2='25' y2='50' stroke='%23f38ba8' stroke-width='4' stroke-linecap='round'/><line x1='75' y1='50' x2='95' y2='50' stroke='%23f38ba8' stroke-width='4' stroke-linecap='round'/></svg>">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='96' fill='%231e1e2e'/%3E%3Ccircle cx='256' cy='256' r='100' fill='none' stroke='%23f38ba8' stroke-width='16'/%3E%3Ccircle cx='256' cy='256' r='30' fill='%23f38ba8'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="lib/leaflet.css"/>
 <link rel="stylesheet" href="css/styles.css"/>
 </head>
 <body>
 
 <div id="map"></div>
+<div id="loading-overlay"><div class="loading-spinner"></div><div class="loading-text">Loading NukeMap...</div></div>
+<div id="welcome-overlay">
+  <div class="welcome-card">
+    <div class="welcome-header">
+      <div class="welcome-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
+      <div class="welcome-title">Nuke<span>Map</span> v3.3.0</div>
+    </div>
+    <div class="welcome-body">
+      <div class="welcome-step"><span class="ws-num">1</span><span class="ws-text">Search for a city or click a quick target pill</span></div>
+      <div class="welcome-step"><span class="ws-num">2</span><span class="ws-text">Select a weapon or use the quick bar at the bottom</span></div>
+      <div class="welcome-step"><span class="ws-num">3</span><span class="ws-text">Click anywhere on the map to detonate</span></div>
+      <div class="welcome-step"><span class="ws-num">4</span><span class="ws-text">Explore effects, casualties, shelter analysis, and more</span></div>
+      <div class="welcome-features">
+        <span class="wf-tag">32 Weapons</span>
+        <span class="wf-tag">WW3 Simulation</span>
+        <span class="wf-tag">MIRV Strikes</span>
+        <span class="wf-tag">Fallout Modeling</span>
+        <span class="wf-tag">Shelter Analysis</span>
+        <span class="wf-tag">12 Map Styles</span>
+      </div>
+    </div>
+    <button class="welcome-dismiss" id="welcome-dismiss">Start Exploring</button>
+    <label class="welcome-remember"><input type="checkbox" id="welcome-noshow" checked/> Don't show again</label>
+  </div>
+</div>
 <div id="flash"></div>
 <div id="coords">--</div>
 <div id="offline-badge"><span class="ob-dot"></span><span class="ob-lbl">Online</span></div>
+<div id="det-counter" style="display:none"><span id="det-counter-num">0</span><span class="dc-label">strikes</span></div>
 
 <div id="panel">
   <button id="panel-toggle" title="Toggle panel">
@@ -25,11 +63,11 @@
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
         </div>
         <div class="brand-text">Nuke<span>Map</span></div>
-        <div class="brand-ver">v3.0.0</div>
+        <div class="brand-ver">v3.3.0</div>
       </div>
       <div class="search-wrap">
         <span class="search-icon"><svg viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></span>
-        <input type="text" id="search" placeholder="City, state, ZIP, or lat,lng..." autocomplete="off" spellcheck="false"/>
+        <input type="text" id="search" placeholder="City, ZIP code, base, or coordinates..." autocomplete="off" spellcheck="false"/>
         <div id="search-results"></div>
       </div>
     </div>
@@ -45,12 +83,14 @@
         <button class="tab" data-tab="effects">Effects</button>
         <button class="tab" data-tab="results">Results</button>
         <button class="tab" data-tab="tools">Tools</button>
+        <button class="tab" data-tab="encyclopedia">Info</button>
       </div>
 
       <!-- ===== WEAPON TAB ===== -->
       <div class="tab-content active" id="tab-weapon">
         <div class="section">
           <div class="section-title">Warhead</div>
+          <input type="text" id="weapon-filter" class="weapon-filter" placeholder="Filter weapons..." autocomplete="off" spellcheck="false"/>
           <div class="select-wrap">
             <select class="custom-select" id="weapon-select"></select>
             <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
@@ -72,6 +112,11 @@
             <button class="burst-btn active" data-burst="airburst">Airburst</button>
             <button class="burst-btn" data-burst="surface">Surface</button>
             <button class="burst-btn" data-burst="custom">Custom</button>
+            <button class="burst-btn" data-burst="hemp">HEMP</button>
+          </div>
+          <div class="hemp-info" id="hemp-info" style="display:none">
+            <div style="font-size:9px;color:var(--teal);font-weight:600;margin-bottom:3px">High-Altitude EMP (HEMP)</div>
+            <div style="font-size:9px;color:var(--overlay0);line-height:1.4">Detonation at 400 km altitude. No blast/thermal damage at ground level. Generates massive EMP covering ~2,200 km radius (~continent-scale). Gamma rays interact with upper atmosphere to produce E1/E2/E3 electromagnetic pulses.</div>
           </div>
           <div class="compact-row" id="height-row" style="display:none">
             <label>Height</label><input type="number" class="compact-input" id="burst-height" value="0" min="0"/><span class="unit">m</span>
@@ -94,6 +139,7 @@
         <div class="section">
           <button id="detonate-btn">DETONATE</button>
           <div class="btn-row">
+            <button class="btn-secondary" id="undo-btn">Undo Last</button>
             <button class="btn-secondary" id="clear-btn">Clear All</button>
             <button class="btn-secondary" id="share-btn">Share Link</button>
           </div>
@@ -163,6 +209,14 @@
           <div class="section-title">Seismic Equivalent</div>
           <div id="seismic-content"></div>
         </div>
+        <div class="section" id="conventional-section" style="display:none">
+          <div class="section-title">Conventional Weapon Equivalent</div>
+          <div id="conventional-content"></div>
+        </div>
+        <div class="section" id="bldgdmg-section" style="display:none">
+          <div class="section-title">Building Damage by Overpressure</div>
+          <div id="bldgdmg-content"></div>
+        </div>
         <div class="section" id="sizecompare-section" style="display:none">
           <div class="section-title">Size Comparisons</div>
           <div id="sizecompare-content"></div>
@@ -170,6 +224,23 @@
         <div class="section" id="escape-section" style="display:none">
           <div class="section-title">Escape Time</div>
           <div id="escape-content"></div>
+        </div>
+        <div class="section" id="nearby-section" style="display:none">
+          <div class="section-title">Nearby Strategic Targets</div>
+          <div id="nearby-content"></div>
+        </div>
+        <div class="section" id="ground-section" style="display:none">
+          <div class="section-title">Ground-Level Experience</div>
+          <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">What you would see, hear, and feel at each distance from ground zero.</div>
+          <div id="ground-content"></div>
+        </div>
+        <div class="section" id="cloudcompare-section" style="display:none">
+          <div class="section-title">Mushroom Cloud Height</div>
+          <div id="cloudcompare-content"></div>
+        </div>
+        <div class="section" id="guide-section" style="display:none">
+          <div class="section-title">Emergency Action Guide</div>
+          <div id="guide-content"></div>
         </div>
       </div>
 
@@ -180,7 +251,9 @@
           <div class="stat-grid">
             <div class="stat-card"><div class="stat-label">Fatalities</div><div class="stat-value deaths" id="stat-deaths">--</div></div>
             <div class="stat-card"><div class="stat-label">Injuries</div><div class="stat-value injuries" id="stat-injuries">--</div></div>
-            <div class="stat-card wide"><div class="stat-label">Total Affected</div><div class="stat-value total" id="stat-total">--</div><div class="stat-sub" id="stat-note">Detonate a weapon to see estimates</div></div>
+            <div class="stat-card"><div class="stat-label">Total Affected</div><div class="stat-value total" id="stat-total">--</div></div>
+            <div class="stat-card"><div class="stat-label">Total Yield</div><div class="stat-value" id="stat-yield" style="color:var(--mauve)">--</div></div>
+            <div class="stat-card wide"><div class="stat-sub" id="stat-note">Detonate a weapon to see estimates</div></div>
           </div>
         </div>
         <div class="section" id="dets-section" style="display:none">
@@ -188,8 +261,21 @@
           <div id="dets-list"></div>
         </div>
         <div class="section" id="share-section" style="display:none">
-          <div class="section-title">Share</div>
-          <div class="share-row"><input type="text" id="share-input" readonly/><button class="share-copy" id="share-copy">Copy</button></div>
+          <div class="section-title">Share Results</div>
+          <div class="share-row"><input type="text" id="share-input" readonly/><button class="share-copy" id="share-copy">Copy Link</button></div>
+          <div class="btn-row" style="margin-top:5px">
+            <button class="btn-secondary" id="share-text">Copy Summary</button>
+            <button class="btn-secondary" id="share-native" style="display:none">Share</button>
+          </div>
+        </div>
+        <div class="section">
+          <div class="section-title">Save / Load Scenario</div>
+          <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Save current detonations to browser storage for later.</div>
+          <div class="save-row">
+            <input type="text" id="save-name" class="compact-input" placeholder="Scenario name..." style="flex:1;max-width:none;text-align:left"/>
+            <button class="btn-secondary" id="save-btn" style="flex:0;white-space:nowrap">Save</button>
+          </div>
+          <div id="saved-list" style="margin-top:6px"></div>
         </div>
       </div>
 
@@ -307,9 +393,13 @@
           <div class="section-title">Map Style</div>
           <div class="layer-switcher" id="layer-switcher">
             <button class="layer-btn active" data-layer="dark">Dark</button>
+            <button class="layer-btn" data-layer="darkClean">Dark Clean</button>
             <button class="layer-btn" data-layer="satellite">Satellite</button>
-            <button class="layer-btn" data-layer="topo">Dark (No Labels)</button>
+            <button class="layer-btn" data-layer="satLabels">Satellite + Labels</button>
+            <button class="layer-btn" data-layer="terrain">Terrain</button>
             <button class="layer-btn" data-layer="osm">OpenStreetMap</button>
+            <button class="layer-btn" data-layer="voyager">Voyager</button>
+            <button class="layer-btn" data-layer="positron">Light</button>
           </div>
         </div>
 
@@ -341,6 +431,32 @@
           <label class="toggle-row"><input type="checkbox" id="falloutanim-check"/><span class="tg-slider"></span><span class="tg-label">Animated fallout particles</span></label>
           <label class="toggle-row"><input type="checkbox" id="screenshot-check"/><span class="tg-slider"></span><span class="tg-label">Screenshot mode (hide UI)</span></label>
           <label class="toggle-row"><input type="checkbox" id="draggable-check"/><span class="tg-slider"></span><span class="tg-label">Draggable ground zero</span></label>
+          <label class="toggle-row"><input type="checkbox" id="blastwaveinfo-check"/><span class="tg-slider"></span><span class="tg-label">Blast wave arrival on hover</span></label>
+          <label class="toggle-row"><input type="checkbox" id="radoverlay-check"/><span class="tg-slider"></span><span class="tg-label">Radiation intensity overlay</span></label>
+          <label class="toggle-row"><input type="checkbox" id="dmgheatmap-check"/><span class="tg-slider"></span><span class="tg-label">Aggregate damage heatmap</span></label>
+        </div>
+
+        <!-- Dose Calculator -->
+        <div class="section" id="dosecalc-section" style="display:none">
+          <div class="section-title">Radiation Dose Calculator</div>
+          <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Estimate cumulative dose based on time spent at a distance from ground zero after a surface burst.</div>
+          <div class="compact-row">
+            <label>Distance</label>
+            <input type="number" class="compact-input" id="dose-dist" value="5" min="0.1" step="any"/>
+            <span class="unit">km</span>
+          </div>
+          <div class="compact-row">
+            <label>Arrive at</label>
+            <input type="number" class="compact-input" id="dose-arrive" value="1" min="0.1" step="any"/>
+            <span class="unit">hr after</span>
+          </div>
+          <div class="compact-row">
+            <label>Stay for</label>
+            <input type="number" class="compact-input" id="dose-stay" value="4" min="0.1" step="any"/>
+            <span class="unit">hours</span>
+          </div>
+          <button class="btn-secondary" id="dose-calc" style="width:100%;margin-top:4px">Calculate Dose</button>
+          <div id="dose-result" style="margin-top:6px"></div>
         </div>
 
         <!-- GPS Am I Safe -->
@@ -354,30 +470,92 @@
         <!-- Extra toggles -->
         <div class="section">
           <div class="section-title">Immersive</div>
+          <label class="toggle-row"><input type="checkbox" id="night-check"/><span class="tg-slider"></span><span class="tg-label" id="night-label">Night mode (flash blindness)</span></label>
           <label class="toggle-row"><input type="checkbox" id="geiger-check"/><span class="tg-slider"></span><span class="tg-label">Geiger counter (hover audio)</span></label>
           <label class="toggle-row"><input type="checkbox" id="shockwave-check" checked/><span class="tg-slider"></span><span class="tg-label">Shockwave ring animation</span></label>
           <label class="toggle-row"><input type="checkbox" id="contours-check"/><span class="tg-slider"></span><span class="tg-label">Fallout dose contour lines</span></label>
+          <div id="fallout-timelapse" style="display:none;margin-top:6px">
+            <div style="display:flex;align-items:center;gap:8px">
+              <span style="font-size:9px;color:var(--overlay0);font-weight:600;min-width:28px" id="ft-label">1 hr</span>
+              <input type="range" id="ft-slider" min="1" max="48" value="1" step="1" style="flex:1;accent-color:var(--yellow)"/>
+              <button class="btn-secondary" id="ft-play" style="flex:0;padding:4px 8px;font-size:9px">Play</button>
+            </div>
+            <div style="font-size:9px;color:var(--overlay0);margin-top:2px" id="ft-info">Fallout extent at 1 hour after detonation</div>
+          </div>
           <label class="toggle-row"><input type="checkbox" id="testdb-check"/><span class="tg-slider"></span><span class="tg-label">Show historic nuclear tests</span></label>
+          <div class="btn-row" style="margin-top:4px">
+            <button class="btn-secondary" id="test-timeline-btn">Play Test Timeline</button>
+            <button class="btn-secondary" id="test-timeline-stop">Stop</button>
+          </div>
         </div>
 
         <!-- Export -->
         <div class="section">
           <div class="section-title">Export</div>
           <button class="export-btn" id="export-png" style="margin-bottom:5px">Export Map as PNG</button>
-          <button class="export-btn" id="export-kml" style="background:var(--mauve)">Export to Google Earth (KML)</button>
+          <button class="export-btn" id="export-kml" style="background:var(--mauve);margin-bottom:5px">Export to Google Earth (KML)</button>
+          <button class="export-btn" id="export-json" style="background:var(--teal);margin-bottom:5px">Export Data as JSON</button>
+          <button class="export-btn" id="export-report" style="background:var(--green)">Generate Summary Report</button>
+        </div>
+      </div>
+
+      <!-- ===== ENCYCLOPEDIA TAB ===== -->
+      <div class="tab-content" id="tab-encyclopedia">
+        <div class="section">
+          <div class="section-title">Weapon Arsenal</div>
+          <div style="font-size:10px;color:var(--overlay0);margin-bottom:8px">Browse all weapons by country. Click to select.</div>
+          <div id="encyclopedia-list"></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Nuclear Glossary</div>
+          <div class="glossary-list">
+            <div class="gloss-item"><span class="gloss-term">Yield</span><span class="gloss-def">Total energy released, measured in kilotons (kT) or megatons (MT) of TNT equivalent.</span></div>
+            <div class="gloss-item"><span class="gloss-term">Airburst</span><span class="gloss-def">Detonation at optimal altitude to maximize blast damage. No crater, minimal fallout.</span></div>
+            <div class="gloss-item"><span class="gloss-term">Surface Burst</span><span class="gloss-def">Detonation at ground level. Creates crater, produces heavy radioactive fallout.</span></div>
+            <div class="gloss-item"><span class="gloss-term">HEMP</span><span class="gloss-def">High-altitude Electromagnetic Pulse. Detonation at 30-400+ km altitude creates continent-scale EMP with no blast damage at ground level.</span></div>
+            <div class="gloss-item"><span class="gloss-term">MIRV</span><span class="gloss-def">Multiple Independently-targetable Reentry Vehicle. Single missile carries multiple warheads aimed at different targets.</span></div>
+            <div class="gloss-item"><span class="gloss-term">Overpressure (psi)</span><span class="gloss-def">Air pressure above normal atmospheric. 5 psi collapses most buildings. 20 psi destroys reinforced concrete.</span></div>
+            <div class="gloss-item"><span class="gloss-term">Fallout</span><span class="gloss-def">Radioactive debris carried downwind after surface burst. Most dangerous in first 48 hours (7:10 decay rule).</span></div>
+            <div class="gloss-item"><span class="gloss-term">Firestorm</span><span class="gloss-def">Self-sustaining fire with hurricane-force inward winds. Consumes all oxygen in the area. Occurred at Hiroshima.</span></div>
+            <div class="gloss-item"><span class="gloss-term">Fission</span><span class="gloss-def">Splitting heavy atoms (U-235, Pu-239). Powers all nuclear weapons. Pure fission weapons: up to ~500 kT.</span></div>
+            <div class="gloss-item"><span class="gloss-term">Thermonuclear</span><span class="gloss-def">Two-stage design using fission primary to ignite fusion secondary. No theoretical yield limit. Most modern weapons.</span></div>
+            <div class="gloss-item"><span class="gloss-term">CEP</span><span class="gloss-def">Circular Error Probable. Radius within which 50% of warheads land. Modern ICBMs: ~100-200m. GPS-guided bombs: ~30m.</span></div>
+          </div>
         </div>
       </div>
     </div>
   </div>
 </div>
 
+<button id="ww3-quick-btn" title="Launch WW3 Simulation">WW3</button>
+<div id="quick-weapons">
+  <button class="qw-chip" data-kt="15" data-name="Hiroshima"><span class="qw-name">Hiroshima</span><span class="qw-yield">15 kT</span></button>
+  <button class="qw-chip" data-kt="100" data-name="W76-1"><span class="qw-name">W76-1</span><span class="qw-yield">100 kT</span></button>
+  <button class="qw-chip" data-kt="455" data-name="W88"><span class="qw-name">W88</span><span class="qw-yield">455 kT</span></button>
+  <button class="qw-chip" data-kt="800" data-name="Sarmat"><span class="qw-name">Sarmat</span><span class="qw-yield">800 kT</span></button>
+  <button class="qw-chip" data-kt="1200" data-name="B83"><span class="qw-name">B83</span><span class="qw-yield">1.2 MT</span></button>
+  <button class="qw-chip" data-kt="50000" data-name="Tsar Bomba"><span class="qw-name">Tsar</span><span class="qw-yield">50 MT</span></button>
+</div>
 <div id="info-bar"></div>
+<button id="fullscreen-btn" title="Toggle fullscreen"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h4v1.5h-2.793l3.147 3.146-1.061 1.061L1.5 3.414V6.5H0V1.5A.5.5 0 01.5 1h1zm13 0h-4v1.5h2.793L10.146 5.646l1.061 1.061L14.5 3.414V6.5H16V1.5a.5.5 0 00-.5-.5h-1zM1.5 15h4v-1.5H2.707l3.147-3.146-1.061-1.061L1.5 12.586V9.5H0v5a.5.5 0 00.5.5h1zm13 0h-4v-1.5h2.793l-3.147-3.146 1.061-1.061L14.5 12.586V9.5H16v5a.5.5 0 01-.5.5h-1z"/></svg></button>
+<div id="map-switcher">
+  <button class="ms-toggle" id="ms-toggle" title="Change map style"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0L1 4v8l7 4 7-4V4L8 0zm0 1.25L13.5 4.5 8 7.75 2.5 4.5 8 1.25zM2 5.5l5.5 3v5.75L2 11V5.5zm6.5 8.75V8.5L14 5.5V11l-5.5 3.25z"/></svg></button>
+  <div class="ms-panel" id="ms-panel">
+    <button class="ms-btn active" data-layer="dark">Dark</button>
+    <button class="ms-btn" data-layer="darkClean">Dark Clean</button>
+    <button class="ms-btn" data-layer="satellite">Satellite</button>
+    <button class="ms-btn" data-layer="satLabels">Sat+Labels</button>
+    <button class="ms-btn" data-layer="terrain">Terrain</button>
+    <button class="ms-btn" data-layer="osm">OSM</button>
+    <button class="ms-btn" data-layer="voyager">Voyager</button>
+    <button class="ms-btn" data-layer="positron">Light</button>
+  </div>
+</div>
 <div id="screenshot-hint">Click here or press Escape to exit screenshot mode</div>
 <div id="fact-banner"><div class="fact-label">Did You Know?</div><span id="fact-text"></span></div>
 
 <!-- Libraries -->
 <script src="lib/leaflet.js"></script>
-<script>L.Icon.Default.imagePath = 'lib/images/';</script>
 <!-- Three.js removed - mushroom cloud now uses SVG Leaflet overlay -->
 
 <!-- NukeMap Modules -->

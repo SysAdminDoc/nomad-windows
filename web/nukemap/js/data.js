@@ -43,6 +43,10 @@ NM.HISTORICAL = [
   {name:'Ivy Mike',lat:11.668,lng:162.195,yield_kt:10400,year:'1952',burst:'surface',height:0,desc:'First H-bomb, Enewetak Atoll'},
   {name:'Castle Bravo',lat:11.697,lng:165.273,yield_kt:15000,year:'1954',burst:'surface',height:0,desc:'15 MT, Bikini Atoll'},
   {name:'Tsar Bomba',lat:73.812,lng:54.583,yield_kt:50000,year:'1961',burst:'airburst',height:4000,desc:'50 MT, Novaya Zemlya'},
+  {name:'Sedan (cratering)',lat:37.177,lng:-116.047,yield_kt:104,year:'1962',burst:'surface',height:0,desc:'Underground cratering test, NTS'},
+  {name:'Starfish Prime',lat:16.28,lng:-169.53,yield_kt:1400,year:'1962',burst:'airburst',height:400000,desc:'Space detonation, 400 km alt, EMP'},
+  {name:'Canopus',lat:-21.87,lng:-138.72,yield_kt:2600,year:'1968',burst:'airburst',height:600,desc:'French H-bomb, Fangataufa'},
+  {name:'DPRK Test 6',lat:41.3,lng:129.078,yield_kt:250,year:'2017',burst:'surface',height:0,desc:'North Korea, est. 250 kT'},
 ];
 
 NM.QUICK_TARGETS = [
@@ -52,6 +56,8 @@ NM.QUICK_TARGETS = [
   {name:'Chicago',lat:41.8781,lng:-87.6298},{name:'Tokyo',lat:35.6762,lng:139.65},
   {name:'Paris',lat:48.8566,lng:2.3522},{name:'Tehran',lat:35.6892,lng:51.389},
   {name:'Pyongyang',lat:39.0392,lng:125.763},{name:'Pentagon',lat:38.8719,lng:-77.056},
+  {name:'Seoul',lat:37.5665,lng:126.978},{name:'Tel Aviv',lat:32.0853,lng:34.782},
+  {name:'Berlin',lat:52.52,lng:13.405},{name:'Mumbai',lat:19.076,lng:72.878},
 ];
 
 NM.EFFECTS_DEF = [
@@ -65,6 +71,8 @@ NM.EFFECTS_DEF = [
   {id:'psi1',      label:'Light Blast (1 psi)',    color:'#f9e2af',desc:'Glass windows shatter into lethal shrapnel. Light structural damage. Injuries from flying debris.'},
   {id:'thermal1',  label:'1st Degree Burns',       color:'#f5c2e7',desc:'Pain, skin reddening comparable to severe sunburn. Temporary flash blindness at night. ~2 cal/cm\u00B2.'},
   {id:'emp',       label:'EMP Radius',             color:'#94e2d5',desc:'Electromagnetic pulse disables electronics, power grid, communications. Line-of-sight from burst.',dashed:true},
+  {id:'flashblind',label:'Flash Blindness',         color:'#b4befe',desc:'Temporary retinal burn causing blindness for seconds to minutes. Range is dramatically larger at night. Looking directly at fireball causes permanent damage.',dashed:true},
+  {id:'firestorm', label:'Firestorm Zone',          color:'#e64553',desc:'Self-sustaining fire with hurricane-force inward winds. Consumes all oxygen. Survival impossible within zone. Requires sufficient urban fuel loading.'},
 ];
 
 NM.MIRV_PRESETS = [

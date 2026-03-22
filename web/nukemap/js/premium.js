@@ -121,12 +121,24 @@ NM.DestructionStats = {
 // ---- WEAPON INFO CARDS ----
 NM.WeaponInfo = {
   specs: {
+    'Davy Crockett (M-28)': {type:'Fission',fuel:'Plutonium-239',weight:'23 kg (warhead)',length:'0.78 m (projectile)',diameter:'0.28 m',deployed:'M28/M29 recoilless rifle',note:'Smallest US nuclear weapon. 3-man crew. Range: 1.25-2.5 miles. Lethal radiation to the crew at max range.'},
     'Little Boy (Hiroshima)': {type:'Gun-type fission',fuel:'Uranium-235',weight:'4,400 kg',length:'3 m',diameter:'0.71 m',deployed:'B-29 Superfortress',note:'First weapon used in combat. 64 kg of U-235, only ~1 kg fissioned.'},
     'Fat Man (Nagasaki)': {type:'Implosion fission',fuel:'Plutonium-239',weight:'4,670 kg',length:'3.25 m',diameter:'1.52 m',deployed:'B-29 Superfortress',note:'Implosion design using explosive lenses. More efficient than Little Boy.'},
+    'W76-2 (Trident Low)': {type:'Thermonuclear (modified)',fuel:'Classified',weight:'~164 kg',length:'~0.3 m',diameter:'~0.3 m',deployed:'Trident II D5 SLBM',note:'Low-yield "mini-nuke" for flexible deterrence. Modified W76-1 with secondary disabled. Controversial.'},
+    'B61-12 (Guided)': {type:'Thermonuclear',fuel:'Classified',weight:'~375 kg',length:'3.58 m',diameter:'0.34 m',deployed:'F-35A, F-15E, B-2, Tornado',note:'GPS/INS guided tail kit for precision strike. Variable yield 0.3-50 kT. $28B program. NATO nuclear sharing.'},
+    'W76-1 (Trident II)': {type:'Thermonuclear',fuel:'Classified',weight:'~164 kg',length:'~0.3 m',diameter:'~0.3 m',deployed:'Trident II D5 SLBM',note:'Most numerous US warhead (~1,500 deployed). 8 per missile, 20 missiles per Ohio-class sub.'},
+    'W87-0 (Minuteman III)': {type:'Thermonuclear',fuel:'Classified',weight:'~200 kg',length:'~0.5 m',diameter:'~0.55 m',deployed:'Minuteman III ICBM',note:'Land-based ICBM warhead. Single warhead per missile. 400 deployed across 3 bases in MT, ND, WY.'},
     'W88 (Trident II)': {type:'Thermonuclear',fuel:'Plutonium + Lithium deuteride',weight:'~360 kg',length:'~1.75 m',diameter:'~0.55 m',deployed:'Trident II D5 SLBM',note:'Most powerful US SLBM warhead. 5 per missile, 24 missiles per Ohio-class sub.'},
-    'B83-1': {type:'Thermonuclear',fuel:'Classified',weight:'1,100 kg',length:'3.67 m',diameter:'0.46 m',deployed:'B-2 Spirit, B-52',note:'Largest weapon in active US inventory. Variable yield up to 1.2 MT.'},
-    'Tsar Bomba (50 MT)': {type:'Three-stage thermonuclear',fuel:'Lithium deuteride',weight:'27,000 kg',length:'8 m',diameter:'2.1 m',deployed:'Tu-95V bomber',note:'Largest detonation in history. Shockwave circled Earth 3x. Mushroom cloud rose 64 km.'},
+    'B83-1': {type:'Thermonuclear',fuel:'Classified',weight:'1,100 kg',length:'3.67 m',diameter:'0.46 m',deployed:'B-2 Spirit, B-52',note:'Largest weapon in active US inventory. Variable yield up to 1.2 MT. Scheduled for retirement.'},
+    'Castle Bravo': {type:'Thermonuclear',fuel:'Lithium deuteride',weight:'10,660 kg',length:'4.56 m',diameter:'1.37 m',deployed:'Surface (Bikini Atoll)',note:'Yielded 15 MT \u2014 2.5x predicted. Contaminated 7,000 sq mi. Japanese fishing vessel Lucky Dragon #5 irradiated.'},
+    'Tsar Bomba (50 MT)': {type:'Three-stage thermonuclear',fuel:'Lithium deuteride',weight:'27,000 kg',length:'8 m',diameter:'2.1 m',deployed:'Tu-95V bomber',note:'Largest detonation in history. Shockwave circled Earth 3x. Mushroom cloud rose 64 km. Windows broken 900 km away.'},
+    'Tsar Bomba (100 MT)': {type:'Three-stage thermonuclear',fuel:'Lithium deuteride + Uranium tamper',weight:'~27,000 kg',length:'8 m',diameter:'2.1 m',deployed:'Theoretical',note:'Full design yield with uranium-238 tamper. Never tested. Would have produced extreme fallout.'},
     'RS-28 Sarmat': {type:'Thermonuclear MIRV',fuel:'Liquid (UDMH/N2O4)',weight:'208,100 kg',length:'35.5 m',diameter:'3 m',deployed:'Silo-based ICBM',note:'Replaces SS-18 Satan. Can carry 10-15 MIRV warheads or Avangard HGV. Range: 18,000 km.'},
+    'R-36M2 SS-18 Satan': {type:'Thermonuclear MIRV',fuel:'Liquid (UDMH/N2O4)',weight:'211,100 kg',length:'36.6 m',diameter:'3 m',deployed:'Silo-based ICBM',note:'10 MIRV x 750 kT or single 20 MT warhead. Most feared Cold War ICBM. Being replaced by Sarmat.'},
+    'RT-2PM2 Topol-M': {type:'Thermonuclear',fuel:'Solid',weight:'47,200 kg',length:'22.7 m',diameter:'1.95 m',deployed:'Silo or road-mobile TEL',note:'Single 800 kT warhead. Can maneuver during reentry to evade ABM. ~60 deployed.'},
+    'DF-41 (China)': {type:'Thermonuclear MIRV',fuel:'Solid',weight:'~80,000 kg',length:'~22 m',diameter:'~2.25 m',deployed:'Road-mobile TEL or silo',note:'China\'s most capable ICBM. 3+ MIRV warheads. Range: 12,000-15,000 km. Rapid buildup underway.'},
+    'Trident D5 (UK)': {type:'Thermonuclear MIRV',fuel:'Solid',weight:'58,500 kg',length:'13.42 m',diameter:'2.11 m',deployed:'Vanguard-class SSBN',note:'UK deterrent. 4 submarines, 1 always on patrol. Up to 8 warheads per missile, 16 missiles per sub.'},
+    'Hwasong-15 (DPRK)': {type:'Thermonuclear (claimed)',fuel:'Liquid',weight:'Unknown',length:'~22 m',diameter:'~2.4 m',deployed:'Road-mobile TEL',note:'Demonstrated ICBM range to reach entire US mainland. Actual warhead capability uncertain.'},
   },
 
   generate(weaponName) {

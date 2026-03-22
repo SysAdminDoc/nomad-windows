@@ -19,13 +19,17 @@ NM.Sound = {
     const ctx = this.ctx;
     const now = ctx.currentTime;
     const vol = Math.min(0.7, 0.3 + Math.log10(Math.max(yieldKt, 0.01)) * 0.1);
+    // Yield-proportional parameters
+    const yLog = Math.log10(Math.max(yieldKt, 0.01));
+    const boomPitch = Math.max(30, 180 - yLog * 25); // larger = deeper
+    const crackPitch = Math.max(1500, 3500 - yLog * 400); // larger = duller crack
 
-    // Initial flash crack (bright transient)
+    // Initial flash crack (bright transient, pitch varies with yield)
     const crack = ctx.createBufferSource();
     const crackBuf = ctx.createBuffer(1, ctx.sampleRate * 0.05, ctx.sampleRate);
     const crackData = crackBuf.getChannelData(0);
     for (let i = 0; i < crackData.length; i++) {
-      crackData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * 0.008));
+      crackData[i] = (Math.random() * 2 - 1) * Math.exp(-i / (ctx.sampleRate * (0.005 + yLog * 0.001)));
     }
     crack.buffer = crackBuf;
     const crackGain = ctx.createGain();
@@ -33,12 +37,12 @@ NM.Sound = {
     crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
     const crackFilter = ctx.createBiquadFilter();
     crackFilter.type = 'highpass';
-    crackFilter.frequency.value = 2000;
+    crackFilter.frequency.value = crackPitch;
     crack.connect(crackFilter).connect(crackGain).connect(ctx.destination);
     crack.start(now);
 
-    // Deep boom (low frequency rumble)
-    const boomLen = 1.5 + Math.min(3, Math.log10(Math.max(yieldKt,1)) * 0.8);
+    // Deep boom (duration and pitch scale with yield)
+    const boomLen = 1.5 + Math.min(4, yLog * 0.9);
     const boom = ctx.createBufferSource();
     const boomBuf = ctx.createBuffer(1, ctx.sampleRate * boomLen, ctx.sampleRate);
     const boomData = boomBuf.getChannelData(0);
@@ -49,8 +53,8 @@ NM.Sound = {
     boom.buffer = boomBuf;
     const boomFilter = ctx.createBiquadFilter();
     boomFilter.type = 'lowpass';
-    boomFilter.frequency.setValueAtTime(200, now);
-    boomFilter.frequency.exponentialRampToValueAtTime(60, now + boomLen);
+    boomFilter.frequency.setValueAtTime(boomPitch, now);
+    boomFilter.frequency.exponentialRampToValueAtTime(Math.max(20, boomPitch * 0.3), now + boomLen);
     boomFilter.Q.value = 0.7;
     const boomGain = ctx.createGain();
     boomGain.gain.setValueAtTime(0.001, now);
@@ -59,11 +63,12 @@ NM.Sound = {
     boom.connect(boomFilter).connect(boomGain).connect(ctx.destination);
     boom.start(now + 0.05);
 
-    // Sub bass throb
+    // Sub bass throb (deeper and longer for bigger weapons)
+    const subFreq = Math.max(12, 40 - yLog * 5);
     const sub = ctx.createOscillator();
     sub.type = 'sine';
-    sub.frequency.setValueAtTime(40, now + 0.1);
-    sub.frequency.exponentialRampToValueAtTime(15, now + boomLen);
+    sub.frequency.setValueAtTime(subFreq * 1.5, now + 0.1);
+    sub.frequency.exponentialRampToValueAtTime(subFreq, now + boomLen);
     const subGain = ctx.createGain();
     subGain.gain.setValueAtTime(0.001, now);
     subGain.gain.linearRampToValueAtTime(vol * 0.6, now + 0.2);
@@ -72,7 +77,28 @@ NM.Sound = {
     sub.start(now + 0.1);
     sub.stop(now + boomLen);
 
-    // Distant rumble / echo (delayed noise burst)
+    // Mid-frequency pressure wave (new: adds body for larger yields)
+    if (yieldKt >= 10) {
+      const mid = ctx.createBufferSource();
+      const midLen = boomLen * 0.6;
+      const midBuf = ctx.createBuffer(1, ctx.sampleRate * midLen, ctx.sampleRate);
+      const midData = midBuf.getChannelData(0);
+      for (let i = 0; i < midData.length; i++) {
+        const t = i / ctx.sampleRate;
+        midData[i] = (Math.random() * 2 - 1) * Math.exp(-t / (midLen * 0.25)) * Math.sin(t * 8);
+      }
+      mid.buffer = midBuf;
+      const midFilter = ctx.createBiquadFilter();
+      midFilter.type = 'bandpass'; midFilter.frequency.value = 80 + yLog * 15; midFilter.Q.value = 1.2;
+      const midGain = ctx.createGain();
+      midGain.gain.setValueAtTime(0.001, now + 0.08);
+      midGain.gain.linearRampToValueAtTime(vol * 0.4, now + 0.2);
+      midGain.gain.exponentialRampToValueAtTime(0.001, now + 0.08 + midLen);
+      mid.connect(midFilter).connect(midGain).connect(ctx.destination);
+      mid.start(now + 0.08);
+    }
+
+    // Distant rumble / echo (delayed, longer for bigger weapons)
     const echo = ctx.createBufferSource();
     const echoLen = boomLen * 1.5;
     const echoBuf = ctx.createBuffer(1, ctx.sampleRate * echoLen, ctx.sampleRate);
@@ -84,7 +110,7 @@ NM.Sound = {
     echo.buffer = echoBuf;
     const echoFilter = ctx.createBiquadFilter();
     echoFilter.type = 'bandpass';
-    echoFilter.frequency.value = 100;
+    echoFilter.frequency.value = Math.max(60, 100 - yLog * 8);
     echoFilter.Q.value = 0.5;
     const echoGain = ctx.createGain();
     echoGain.gain.setValueAtTime(vol * 0.3, now + 0.5);

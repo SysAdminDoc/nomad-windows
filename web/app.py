@@ -30,7 +30,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '2.4.0'
+VERSION = '2.5.0'
 
 
 def set_version(v):
@@ -2469,6 +2469,94 @@ def create_app():
             'recent_incidents': recent_incidents, 'situation': sit,
             'pressure_current': pressure_rows[0]['pressure_hpa'] if pressure_rows else None,
         })
+
+    # ─── CSV Import API ────────────────────────────────────────────────
+
+    @app.route('/api/inventory/import-csv', methods=['POST'])
+    def api_inventory_import_csv():
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        import csv, io
+        file = request.files['file']
+        content = file.read().decode('utf-8-sig')
+        reader = csv.DictReader(io.StringIO(content))
+        db = get_db()
+        imported = 0
+        for row in reader:
+            name = row.get('Name', row.get('name', '')).strip()
+            if not name:
+                continue
+            db.execute(
+                'INSERT INTO inventory (name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (name, row.get('Category', row.get('category', 'other')),
+                 float(row.get('Quantity', row.get('quantity', 0)) or 0),
+                 row.get('Unit', row.get('unit', 'ea')),
+                 float(row.get('Min Qty', row.get('min_quantity', 0)) or 0),
+                 float(row.get('Daily Usage', row.get('daily_usage', 0)) or 0),
+                 row.get('Location', row.get('location', '')),
+                 row.get('Expiration', row.get('expiration', '')),
+                 row.get('Notes', row.get('notes', ''))))
+            imported += 1
+        db.commit()
+        db.close()
+        return jsonify({'status': 'imported', 'count': imported})
+
+    @app.route('/api/contacts/import-csv', methods=['POST'])
+    def api_contacts_import_csv():
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        import csv, io
+        file = request.files['file']
+        content = file.read().decode('utf-8-sig')
+        reader = csv.DictReader(io.StringIO(content))
+        db = get_db()
+        imported = 0
+        for row in reader:
+            name = row.get('Name', row.get('name', '')).strip()
+            if not name:
+                continue
+            db.execute(
+                'INSERT INTO contacts (name, callsign, role, skills, phone, freq, email, address, rally_point, blood_type, medical_notes, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (name, row.get('Callsign', row.get('callsign', '')),
+                 row.get('Role', row.get('role', '')),
+                 row.get('Skills', row.get('skills', '')),
+                 row.get('Phone', row.get('phone', '')),
+                 row.get('Frequency', row.get('freq', '')),
+                 row.get('Email', row.get('email', '')),
+                 row.get('Address', row.get('address', '')),
+                 row.get('Rally Point', row.get('rally_point', '')),
+                 row.get('Blood Type', row.get('blood_type', '')),
+                 row.get('Medical Notes', row.get('medical_notes', '')),
+                 row.get('Notes', row.get('notes', ''))))
+            imported += 1
+        db.commit()
+        db.close()
+        return jsonify({'status': 'imported', 'count': imported})
+
+    # ─── Full Data Export ─────────────────────────────────────────────
+
+    @app.route('/api/export-all')
+    def api_export_all():
+        """Export complete database + settings as a single ZIP."""
+        import io
+        import zipfile as zf
+        from db import get_db_path
+
+        buf = io.BytesIO()
+        with zf.ZipFile(buf, 'w', zf.ZIP_DEFLATED) as z:
+            db_path = get_db_path()
+            if os.path.isfile(db_path):
+                z.write(db_path, 'nomad.db')
+            # Export config
+            from config import get_config_path
+            cfg_path = get_config_path()
+            if os.path.isfile(cfg_path):
+                z.write(cfg_path, 'config.json')
+        buf.seek(0)
+        from datetime import datetime
+        fname = f'nomad-full-backup-{datetime.now().strftime("%Y%m%d-%H%M%S")}.zip'
+        return Response(buf.read(), mimetype='application/zip',
+                       headers={'Content-Disposition': f'attachment; filename="{fname}"'})
 
     # ─── Expanded Unified Search ──────────────────────────────────────
 

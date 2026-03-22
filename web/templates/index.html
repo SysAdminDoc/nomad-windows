@@ -1372,7 +1372,9 @@ a { color: var(--accent); text-decoration: none; }
         </select>
         <input id="inv-search" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Search supplies..." oninput="loadInventory()">
         <button class="btn btn-sm btn-primary" onclick="showInvForm()">+ Add Item</button>
-        <button class="btn btn-sm" onclick="window.open('/api/inventory/export-csv','_blank')" title="Export to CSV">Export CSV</button>
+        <button class="btn btn-sm" onclick="window.open('/api/inventory/export-csv','_blank')" title="Export to CSV">Export</button>
+        <input type="file" id="inv-import-file" style="display:none;" accept=".csv" onchange="importInvCSV()">
+        <button class="btn btn-sm" onclick="document.getElementById('inv-import-file').click()" title="Import from CSV">Import</button>
       </div>
       <!-- Add/Edit Form (hidden by default) -->
       <div id="inv-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
@@ -1411,7 +1413,9 @@ a { color: var(--accent); text-decoration: none; }
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <input id="contact-search" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Search contacts..." oninput="loadContacts()">
         <button class="btn btn-sm btn-primary" onclick="showContactForm()">+ Add Contact</button>
-        <button class="btn btn-sm" onclick="window.open('/api/contacts/export-csv','_blank')" title="Export to CSV">Export CSV</button>
+        <button class="btn btn-sm" onclick="window.open('/api/contacts/export-csv','_blank')" title="Export">Export</button>
+        <input type="file" id="ct-import-file" style="display:none;" accept=".csv" onchange="importContactsCSV()">
+        <button class="btn btn-sm" onclick="document.getElementById('ct-import-file').click()" title="Import from CSV">Import</button>
       </div>
       <div id="contact-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:12px;">
@@ -2769,7 +2773,8 @@ a { color: var(--accent); text-decoration: none; }
           <div class="setting-row">
             <span class="setting-label">Backup & Restore</span>
             <span style="display:flex;gap:6px;">
-              <button class="btn btn-sm" onclick="exportConfig()">Export</button>
+              <button class="btn btn-sm btn-primary" onclick="window.open('/api/export-all','_blank')" title="Download complete backup">Full Backup</button>
+              <button class="btn btn-sm" onclick="exportConfig()">Export DB</button>
               <input type="file" id="import-file" style="display:none;" accept=".zip" onchange="importConfig()">
               <button class="btn btn-sm" onclick="document.getElementById('import-file').click()">Import</button>
             </span>
@@ -6501,6 +6506,47 @@ function renderSignalSchedule() {
     nextEl.innerHTML = `<strong>Next check-in:</strong> ${String(nh).padStart(2,'0')}:${String(nm).padStart(2,'0')} on <strong>${escapeHtml(nextEntry.freq)}</strong> ${nextEntry.purpose ? '(' + escapeHtml(nextEntry.purpose) + ')' : ''}`;
   } else { nextEl.style.display = 'none'; }
 }
+
+/* ─── CSV Import ─── */
+async function importInvCSV() {
+  const input = document.getElementById('inv-import-file');
+  if (!input.files.length) return;
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+  try {
+    const r = await (await fetch('/api/inventory/import-csv', {method:'POST', body:formData})).json();
+    input.value = '';
+    toast(`Imported ${r.count} items`, 'success');
+    loadInventory();
+  } catch(e) { toast('Import failed', 'error'); input.value = ''; }
+}
+
+async function importContactsCSV() {
+  const input = document.getElementById('ct-import-file');
+  if (!input.files.length) return;
+  const formData = new FormData();
+  formData.append('file', input.files[0]);
+  try {
+    const r = await (await fetch('/api/contacts/import-csv', {method:'POST', body:formData})).json();
+    input.value = '';
+    toast(`Imported ${r.count} contacts`, 'success');
+    loadContacts();
+  } catch(e) { toast('Import failed', 'error'); input.value = ''; }
+}
+
+/* ─── Keyboard Shortcuts ─── */
+document.addEventListener('keydown', (e) => {
+  // Only if not typing in an input/textarea
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+  if (e.altKey) {
+    const shortcuts = {'1':'services','2':'ai-chat','3':'kiwix-library','4':'maps','5':'notes','6':'benchmark','7':'preparedness','8':'settings'};
+    const tab = shortcuts[e.key];
+    if (tab) { e.preventDefault(); document.querySelector(`[data-tab="${tab}"]`).click(); }
+    if (e.key === 't') { e.preventDefault(); toggleTimerPanel(); }
+    if (e.key === 'c') { e.preventDefault(); toggleLanChat(); }
+    if (e.key === 'n') { e.preventDefault(); document.querySelector('[data-tab="notes"]').click(); setTimeout(createNote, 200); }
+  }
+});
 
 /* ─── Init ─── */
 loadServices();

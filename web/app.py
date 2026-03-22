@@ -261,6 +261,9 @@ def create_app():
             return jsonify([])
         return jsonify(ollama.list_models())
 
+    _pull_queue = []
+    _pull_queue_active = False
+
     @app.route('/api/ai/pull', methods=['POST'])
     def api_ai_pull():
         data = request.get_json() or {}
@@ -272,9 +275,58 @@ def create_app():
         threading.Thread(target=do_pull, daemon=True).start()
         return jsonify({'status': 'pulling', 'model': model_name})
 
+    @app.route('/api/ai/pull-queue', methods=['POST'])
+    def api_ai_pull_queue():
+        """Queue multiple models for sequential download."""
+        nonlocal _pull_queue_active
+        data = request.get_json() or {}
+        models = data.get('models', [])
+        if not models:
+            return jsonify({'error': 'No models specified'}), 400
+        # Filter out already-installed models
+        try:
+            installed = set(m['name'] for m in ollama.list_models())
+        except Exception:
+            installed = set()
+        to_pull = [m for m in models if m not in installed]
+        if not to_pull:
+            return jsonify({'status': 'all_installed', 'count': 0})
+        if _pull_queue_active:
+            return jsonify({'error': 'A download queue is already running. Wait for it to finish.'}), 409
+
+        _pull_queue.clear()
+        _pull_queue.extend(to_pull)
+        _pull_queue_active = True
+
+        def do_queue():
+            nonlocal _pull_queue_active
+            try:
+                for i, model_name in enumerate(to_pull):
+                    ollama._pull_progress = {
+                        'status': 'pulling', 'model': model_name, 'percent': 0,
+                        'detail': f'Queue: {i+1}/{len(to_pull)} — Starting {model_name}...',
+                        'queue_pos': i + 1, 'queue_total': len(to_pull),
+                    }
+                    ollama.pull_model(model_name)
+                    # Wait for pull to finish
+                    for _ in range(7200):
+                        p = ollama.get_pull_progress()
+                        if p.get('status') in ('complete', 'error', 'idle'):
+                            break
+                        time.sleep(1)
+            finally:
+                _pull_queue.clear()
+                _pull_queue_active = False
+
+        threading.Thread(target=do_queue, daemon=True).start()
+        return jsonify({'status': 'queued', 'count': len(to_pull), 'models': to_pull})
+
     @app.route('/api/ai/pull-progress')
     def api_ai_pull_progress():
-        return jsonify(ollama.get_pull_progress())
+        progress = ollama.get_pull_progress()
+        progress['queue'] = list(_pull_queue)
+        progress['queue_active'] = _pull_queue_active
+        return jsonify(progress)
 
     @app.route('/api/ai/delete', methods=['POST'])
     def api_ai_delete():

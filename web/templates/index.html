@@ -1285,7 +1285,10 @@ a { color: var(--accent); text-decoration: none; }
         <div id="model-picker-panel" style="display:none;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);font-size:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
             <span style="font-weight:600;">Download an AI Model</span>
-            <button class="btn btn-sm btn-ghost" onclick="toggleModelPicker()" style="font-size:16px;padding:2px 6px;">x</button>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button class="btn btn-sm btn-primary" onclick="pullAllModels()" title="Download all recommended models sequentially">Download All</button>
+              <button class="btn btn-sm btn-ghost" onclick="toggleModelPicker()" style="font-size:16px;padding:2px 6px;">x</button>
+            </div>
           </div>
           <div id="model-picker-list" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"></div>
           <div style="display:flex;gap:6px;margin-top:8px;align-items:center;">
@@ -1361,7 +1364,9 @@ a { color: var(--accent); text-decoration: none; }
         </div>
       </div>
       <div class="settings-card">
-        <h3>Content Catalog</h3>
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">Content Catalog
+          <button class="btn btn-sm btn-primary" onclick="downloadAllZims()" title="Download all essential content packs">Download All Essentials</button>
+        </h3>
         <div id="zim-catalog"></div>
       </div>
     </div>
@@ -4293,7 +4298,10 @@ a { color: var(--accent); text-decoration: none; }
           <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Manage downloaded AI models</p>
           <div id="model-list"></div>
           <div style="margin-top:12px;">
-            <h4 style="font-size:12px;color:var(--text-dim);margin-bottom:6px;">Recommended Models</h4>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <h4 style="font-size:12px;color:var(--text-dim);">Recommended Models</h4>
+              <button class="btn btn-sm btn-primary" onclick="pullAllModels()" title="Download all recommended models">Download All</button>
+            </div>
             <div id="recommended-models"></div>
           </div>
         </div>
@@ -4965,13 +4973,24 @@ function pollPullProgress() {
     if (p.status === 'pulling') {
       bar.style.display = 'block';
       document.getElementById('pull-fill').style.width = p.percent + '%';
-      document.getElementById('pull-detail').textContent = p.detail || '...';
+      let detail = p.detail || '...';
+      if (p.queue_total > 1) detail = `[${p.queue_pos || '?'}/${p.queue_total}] ${detail}`;
+      document.getElementById('pull-detail').textContent = detail;
       document.getElementById('pull-pct').textContent = p.percent + '%';
     } else {
-      bar.style.display = 'none';
-      if (p.status === 'complete') { toast(`Model ${p.model} ready!`, 'success'); loadModels(); }
+      if (p.status === 'complete') {
+        toast(`Model ${p.model} ready!`, 'success');
+        loadModels();
+        // If queue is still active, keep polling for next model
+        if (p.queue_active) return;
+      }
       if (p.status === 'error') toast(`Model pull failed: ${p.detail}`, 'error');
-      if (p.status !== 'pulling') { clearInterval(_pullPoll); _pullPoll = null; }
+      if (!p.queue_active) {
+        bar.style.display = 'none';
+        clearInterval(_pullPoll); _pullPoll = null;
+        if (p.queue?.length > 0) toast('All queued models finished downloading!', 'success');
+        loadModelManager();
+      }
     }
   }, 1000);
 }
@@ -5272,6 +5291,31 @@ function switchTier(ci, tier, btn) {
   };
   if (_cachedCatalog) { render(_cachedCatalog); return; }
   fetch('/api/kiwix/catalog').then(r=>r.json()).then(render);
+}
+
+async function downloadAllZims() {
+  try {
+    const catalog = await (await fetch('/api/kiwix/catalog')).json();
+    const existing = await (await fetch('/api/kiwix/zims')).json();
+    const existingNames = new Set(existing.map(z => z.filename));
+    // Collect all Essential tier items across all categories
+    const toDownload = [];
+    for (const [catName, cat] of Object.entries(catalog)) {
+      const essentials = cat.tiers?.essential || [];
+      for (const item of essentials) {
+        if (!existingNames.has(item.filename)) {
+          toDownload.push(item);
+        }
+      }
+    }
+    if (!toDownload.length) { toast('All essential content packs are already downloaded!', 'success'); return; }
+    const totalSize = toDownload.map(z => z.size).join(', ');
+    toast(`Starting ${toDownload.length} downloads: ${toDownload.map(z => z.filename).join(', ')}`, 'info');
+    for (const item of toDownload) {
+      await fetch('/api/kiwix/download-zim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url: item.url, filename: item.filename})});
+    }
+    startZimQueuePoll();
+  } catch(e) { toast('Failed to start bulk download', 'error'); }
 }
 
 async function downloadZim(url, filename) {
@@ -6159,6 +6203,29 @@ function pullCustomModel() {
   if (!name) return;
   document.getElementById('custom-model-input').value = '';
   pullModel(name);
+}
+
+async function pullAllModels() {
+  // Check Ollama is running
+  try {
+    const svcs = _lastServicesData || await (await fetch('/api/services')).json();
+    const ollamaSvc = svcs.find(s => s.id === 'ollama');
+    if (!ollamaSvc?.installed) { toast('Install the AI Chat service first from the Home tab', 'warning'); return; }
+    if (!ollamaSvc?.running) { toast('Start the AI Chat service first', 'warning'); return; }
+  } catch(e) {}
+  // Get all recommended model names
+  try {
+    const rec = await (await fetch('/api/ai/recommended')).json();
+    const models = rec.map(r => r.name);
+    const totalSize = rec.reduce((s, r) => s + parseFloat(r.size), 0).toFixed(1);
+    const r = await fetch('/api/ai/pull-queue', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({models})});
+    const d = await r.json();
+    if (d.error) { toast(d.error, 'warning'); return; }
+    if (d.status === 'all_installed') { toast('All recommended models are already downloaded!', 'success'); return; }
+    toast(`Queued ${d.count} models for download. They will download one at a time.`, 'info');
+    toggleModelPicker();
+    pollPullProgress();
+  } catch(e) { toast('Failed to start model queue', 'error'); }
 }
 
 /* ─── Knowledge Base ─── */

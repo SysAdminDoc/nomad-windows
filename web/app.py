@@ -3352,6 +3352,19 @@ def create_app():
             'contacts': [dict(r) for r in contacts], 'checklists': [dict(r) for r in checklists],
         })
 
+    # ─── NukeMap ──────────────────────────────────────────────────────
+
+    @app.route('/nukemap')
+    @app.route('/nukemap/<path:filepath>')
+    def nukemap_serve(filepath='index.html'):
+        import os as _os
+        nukemap_dir = _os.path.join(_os.path.dirname(__file__), 'nukemap')
+        safe = _os.path.normpath(_os.path.join(nukemap_dir, filepath))
+        if not safe.startswith(_os.path.normpath(nukemap_dir)) or not _os.path.isfile(safe):
+            return jsonify({'error': 'Not found'}), 404
+        from flask import send_file
+        return send_file(safe)
+
     # ─── Favicon ──────────────────────────────────────────────────────
 
     @app.route('/favicon.ico')

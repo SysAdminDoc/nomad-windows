@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NukeMap v3.0.0</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+<link rel="stylesheet" href="css/styles.css"/>
+</head>
+<body>
+
+<div id="map"></div>
+<div id="flash"></div>
+<div id="coords">--</div>
+<div id="offline-badge"><span class="ob-dot"></span><span class="ob-lbl">Online</span></div>
+
+<div id="panel">
+  <button id="panel-toggle" title="Toggle panel">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1.5H2zm0 4.25h12v1.5H2zm0 4.25h12v1.5H2z"/></svg>
+  </button>
+  <div class="panel-content">
+    <div class="panel-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+        </div>
+        <div class="brand-text">Nuke<span>Map</span></div>
+        <div class="brand-ver">v3.0.0</div>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon"><svg viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></span>
+        <input type="text" id="search" placeholder="City, state, ZIP, or lat,lng..." autocomplete="off" spellcheck="false"/>
+        <div id="search-results"></div>
+      </div>
+    </div>
+
+    <div class="panel-body">
+      <div class="section">
+        <div class="section-title">Quick Targets</div>
+        <div class="target-pills" id="target-pills"></div>
+      </div>
+
+      <div class="tabs" id="main-tabs">
+        <button class="tab active" data-tab="weapon">Weapon</button>
+        <button class="tab" data-tab="effects">Effects</button>
+        <button class="tab" data-tab="results">Results</button>
+        <button class="tab" data-tab="tools">Tools</button>
+      </div>
+
+      <!-- ===== WEAPON TAB ===== -->
+      <div class="tab-content active" id="tab-weapon">
+        <div class="section">
+          <div class="section-title">Warhead</div>
+          <div class="select-wrap">
+            <select class="custom-select" id="weapon-select"></select>
+            <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
+          </div>
+          <div class="yield-row">
+            <input type="range" id="yield-slider" min="0" max="1000" value="280" step="1"/>
+            <div class="yield-display"><span id="yield-val">15</span> <span class="yield-unit" id="yield-unit">kT</span></div>
+          </div>
+          <div class="yield-labels"><span>0.001 kT</span><span>100 MT</span></div>
+          <div class="yield-input-row">
+            <input type="number" id="yield-input" value="15" min="0.001" step="any"/>
+            <select id="yield-unit-select"><option value="kt" selected>kT</option><option value="mt">MT</option><option value="t">tons</option></select>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Detonation</div>
+          <div class="burst-options">
+            <button class="burst-btn active" data-burst="airburst">Airburst</button>
+            <button class="burst-btn" data-burst="surface">Surface</button>
+            <button class="burst-btn" data-burst="custom">Custom</button>
+          </div>
+          <div class="compact-row" id="height-row" style="display:none">
+            <label>Height</label><input type="number" class="compact-input" id="burst-height" value="0" min="0"/><span class="unit">m</span>
+          </div>
+          <div class="compact-row" id="fission-row">
+            <label>Fission</label><input type="number" class="compact-input" id="fission-pct" value="50" min="0" max="100"/><span class="unit">%</span>
+          </div>
+          <div id="wind-wrap" style="display:none">
+            <div class="wind-wrap">
+              <div class="wind-compass" id="wind-compass"><div class="wind-arrow" id="wind-arrow"></div></div>
+              <div class="wind-info">
+                <label>Wind (fallout)</label>
+                <div class="wind-speed-row"><input type="number" id="wind-speed" value="24" min="0" max="300"/><span class="unit">km/h</span></div>
+                <div class="wind-dir-label" id="wind-dir-label">From N (0deg)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <button id="detonate-btn">DETONATE</button>
+          <div class="btn-row">
+            <button class="btn-secondary" id="clear-btn">Clear All</button>
+            <button class="btn-secondary" id="share-btn">Share Link</button>
+          </div>
+          <label class="toggle-row"><input type="checkbox" id="multi-check"/><span class="tg-slider"></span><span class="tg-label">Multiple detonations</span></label>
+          <label class="toggle-row"><input type="checkbox" id="sound-check" checked/><span class="tg-slider"></span><span class="tg-label">Sound effects</span></label>
+          <label class="toggle-row"><input type="checkbox" id="cloud-toggle"/><span class="tg-slider"></span><span class="tg-label">3D mushroom cloud</span></label>
+          <label class="toggle-row"><input type="checkbox" id="heatmap-check"/><span class="tg-slider"></span><span class="tg-label" id="heatmap-label">Population heatmap</span></label>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Weapon Presets</div>
+          <div class="preset-grid" id="preset-grid"></div>
+        </div>
+        <div class="section">
+          <div class="section-title">Historical Detonations</div>
+          <div class="preset-grid" id="historical-grid"></div>
+        </div>
+      </div>
+
+      <!-- ===== EFFECTS TAB ===== -->
+      <div class="tab-content" id="tab-effects">
+        <div class="section" id="legend-section">
+          <div class="section-title">Effect Rings</div>
+          <div id="legend-items"><div style="color:var(--overlay0);font-size:12px;padding:10px 0">Detonate a weapon to see effects</div></div>
+        </div>
+        <div class="section" id="cloud-section" style="display:none">
+          <div class="section-title">Mushroom Cloud</div>
+          <div class="cloud-panel" id="cloud-panel"></div>
+        </div>
+        <div class="section" id="timeline-section" style="display:none">
+          <div class="section-title">Event Timeline</div>
+          <div class="timeline" id="timeline"></div>
+        </div>
+        <div class="section" id="crater-section" style="display:none">
+          <div class="section-title">Crater</div>
+          <div class="cloud-panel" id="crater-panel"></div>
+        </div>
+        <div class="section" id="shelter-section" style="display:none">
+          <div class="section-title">Shelter Survival Analysis</div>
+          <div id="shelter-content"></div>
+        </div>
+        <div class="section" id="altitude-section" style="display:none">
+          <div class="section-title">Altitude Cross-Section</div>
+          <div id="altitude-profile"></div>
+        </div>
+        <div class="section" id="zonecas-section" style="display:none">
+          <div class="section-title">Casualties by Zone</div>
+          <div id="zonecas-content"></div>
+        </div>
+        <div class="section" id="destruction-section" style="display:none">
+          <div class="section-title">Destruction Statistics</div>
+          <div id="destruction-content"></div>
+        </div>
+        <div class="section" id="emp-section" style="display:none">
+          <div class="section-title">EMP Effects Detail</div>
+          <div id="emp-content"></div>
+        </div>
+        <div class="section" id="survival-section" style="display:none">
+          <div class="section-title">Survival Probability by Distance</div>
+          <div id="survival-content"></div>
+        </div>
+        <div class="section" id="weaponinfo-section" style="display:none">
+          <div class="section-title">Weapon Specifications</div>
+          <div id="weaponinfo-content"></div>
+        </div>
+        <div class="section" id="seismic-section" style="display:none">
+          <div class="section-title">Seismic Equivalent</div>
+          <div id="seismic-content"></div>
+        </div>
+        <div class="section" id="sizecompare-section" style="display:none">
+          <div class="section-title">Size Comparisons</div>
+          <div id="sizecompare-content"></div>
+        </div>
+        <div class="section" id="escape-section" style="display:none">
+          <div class="section-title">Escape Time</div>
+          <div id="escape-content"></div>
+        </div>
+      </div>
+
+      <!-- ===== RESULTS TAB ===== -->
+      <div class="tab-content" id="tab-results">
+        <div class="section">
+          <div class="section-title">Estimated Casualties</div>
+          <div class="stat-grid">
+            <div class="stat-card"><div class="stat-label">Fatalities</div><div class="stat-value deaths" id="stat-deaths">--</div></div>
+            <div class="stat-card"><div class="stat-label">Injuries</div><div class="stat-value injuries" id="stat-injuries">--</div></div>
+            <div class="stat-card wide"><div class="stat-label">Total Affected</div><div class="stat-value total" id="stat-total">--</div><div class="stat-sub" id="stat-note">Detonate a weapon to see estimates</div></div>
+          </div>
+        </div>
+        <div class="section" id="dets-section" style="display:none">
+          <div class="section-title">Active Detonations</div>
+          <div id="dets-list"></div>
+        </div>
+        <div class="section" id="share-section" style="display:none">
+          <div class="section-title">Share</div>
+          <div class="share-row"><input type="text" id="share-input" readonly/><button class="share-copy" id="share-copy">Copy</button></div>
+        </div>
+      </div>
+
+      <!-- ===== TOOLS TAB ===== -->
+      <div class="tab-content" id="tab-tools">
+        <!-- MIRV -->
+        <div class="section">
+          <div class="section-title">MIRV Strike</div>
+          <div class="mirv-status" id="mirv-status">Select a MIRV preset, then click the map</div>
+          <div class="preset-grid" id="mirv-grid"></div>
+        </div>
+
+        <!-- Comparison -->
+        <div class="section">
+          <div class="section-title">Weapon Comparison</div>
+          <div class="compare-selects">
+            <select id="compare-a"></select>
+            <span style="color:var(--overlay0);font-size:11px;font-weight:700">vs</span>
+            <select id="compare-b"></select>
+          </div>
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn-secondary" id="compare-go">Compare</button>
+            <button class="btn-secondary" id="compare-clear">Clear</button>
+          </div>
+          <div id="compare-result"></div>
+        </div>
+
+        <!-- Experience Mode -->
+        <div class="section">
+          <div class="section-title">What Would I Experience?</div>
+          <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Enable, then click anywhere on the map to see a detailed report of effects at that distance from ground zero.</div>
+          <label class="toggle-row"><input type="checkbox" id="experience-check"/><span class="tg-slider"></span><span class="tg-label">Experience mode</span></label>
+        </div>
+
+        <!-- Measurement -->
+        <div class="section">
+          <div class="section-title">Measure Distance</div>
+          <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Enable, then click two or more points on the map to measure distances.</div>
+          <div class="btn-row">
+            <button class="btn-secondary" id="measure-toggle">Enable Ruler</button>
+            <button class="btn-secondary" id="measure-clear">Clear</button>
+          </div>
+        </div>
+
+        <!-- WW3 Simulation -->
+        <div class="section">
+          <div class="section-title">WW3 Simulation</div>
+          <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Full-scale nuclear exchange with animated missile arcs, phased escalation, and live casualty tracking.</div>
+          <div class="select-wrap">
+            <select class="custom-select" id="ww3-scenario">
+              <option value="">Select scenario...</option>
+            </select>
+            <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
+          </div>
+          <div id="ww3-scenario-desc" style="font-size:9px;color:var(--overlay0);margin-bottom:6px"></div>
+          <div class="compact-row" style="margin-bottom:4px">
+            <label>Speed</label>
+            <select class="compact-input" id="ww3-speed" style="max-width:80px;text-align:left">
+              <option value="1">1x</option>
+              <option value="2">2x</option>
+              <option value="5" selected>5x</option>
+              <option value="10">10x</option>
+            </select>
+          </div>
+          <div class="btn-row" style="margin-top:0">
+            <button class="btn-ww3-launch" id="ww3-launch">LAUNCH SIMULATION</button>
+            <button class="btn-secondary" id="ww3-pause" style="display:none">Pause</button>
+            <button class="btn-secondary" id="ww3-stop">Stop</button>
+          </div>
+          <div id="ww3-phase" style="font-size:10px;color:var(--mauve);font-weight:700;margin-top:6px">Simulation idle</div>
+          <div id="ww3-stats" style="margin-top:6px"></div>
+        </div>
+
+        <!-- Attack Scenarios -->
+        <div class="section">
+          <div class="section-title">Attack Scenarios</div>
+          <div id="scenario-list"></div>
+        </div>
+
+        <!-- Missile Flight Time -->
+        <div class="section">
+          <div class="section-title">Missile Flight Time</div>
+          <div class="compact-row">
+            <label>Type</label>
+            <select class="compact-input" id="missile-type" style="max-width:120px;text-align:left">
+              <option value="icbm">ICBM</option>
+              <option value="slbm">SLBM</option>
+              <option value="irbm">IRBM</option>
+              <option value="srbm">SRBM</option>
+            </select>
+          </div>
+          <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Uses last detonation as target. Calculates from major launch sites.</div>
+          <div class="btn-row">
+            <button class="btn-secondary" id="flight-us">From US</button>
+            <button class="btn-secondary" id="flight-ru">From Russia</button>
+            <button class="btn-secondary" id="flight-cn">From China</button>
+          </div>
+          <div id="flight-result"></div>
+        </div>
+
+        <!-- Yield Comparison -->
+        <div class="section" id="yieldchart-section" style="display:none">
+          <div class="section-title">Yield Comparison</div>
+          <div id="yield-chart"></div>
+        </div>
+
+        <!-- Nuclear Winter -->
+        <div class="section" id="nw-section" style="display:none">
+          <div class="section-title">Nuclear Winter Estimate</div>
+          <div id="nw-result"></div>
+        </div>
+
+        <!-- Map Layers -->
+        <div class="section">
+          <div class="section-title">Map Style</div>
+          <div class="layer-switcher" id="layer-switcher">
+            <button class="layer-btn active" data-layer="dark">Dark</button>
+            <button class="layer-btn" data-layer="satellite">Satellite</button>
+            <button class="layer-btn" data-layer="topo">Dark (No Labels)</button>
+            <button class="layer-btn" data-layer="osm">OpenStreetMap</button>
+          </div>
+        </div>
+
+        <!-- Radiation Decay -->
+        <div class="section" id="raddecay-section" style="display:none">
+          <div class="section-title">Radiation Decay (Fallout)</div>
+          <div class="compact-row">
+            <label>Distance</label>
+            <input type="number" class="compact-input" id="raddecay-dist" value="10" min="0.1" step="any"/>
+            <span class="unit">km</span>
+            <button class="btn-secondary" id="raddecay-calc" style="flex:0;padding:5px 10px">Calc</button>
+          </div>
+          <div id="raddecay-result"></div>
+        </div>
+
+        <!-- Overpressure Table -->
+        <div class="section" id="psi-section" style="display:none">
+          <div class="section-title">Overpressure Table</div>
+          <div id="psi-result"></div>
+        </div>
+
+        <!-- Toggles -->
+        <div class="section">
+          <div class="section-title">Overlays</div>
+          <label class="toggle-row"><input type="checkbox" id="ringlabels-check" checked/><span class="tg-slider"></span><span class="tg-label">Ring labels on map</span></label>
+          <label class="toggle-row"><input type="checkbox" id="distrings-check"/><span class="tg-slider"></span><span class="tg-label">Distance reference rings</span></label>
+          <label class="toggle-row"><input type="checkbox" id="distfromgz-check"/><span class="tg-slider"></span><span class="tg-label">Distance from GZ on hover</span></label>
+          <label class="toggle-row"><input type="checkbox" id="thermal-check"/><span class="tg-slider"></span><span class="tg-label">Thermal flash gradient</span></label>
+          <label class="toggle-row"><input type="checkbox" id="falloutanim-check"/><span class="tg-slider"></span><span class="tg-label">Animated fallout particles</span></label>
+          <label class="toggle-row"><input type="checkbox" id="screenshot-check"/><span class="tg-slider"></span><span class="tg-label">Screenshot mode (hide UI)</span></label>
+          <label class="toggle-row"><input type="checkbox" id="draggable-check"/><span class="tg-slider"></span><span class="tg-label">Draggable ground zero</span></label>
+        </div>
+
+        <!-- GPS Am I Safe -->
+        <div class="section">
+          <div class="section-title">Am I Safe? (GPS)</div>
+          <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Uses your browser location to check against the last detonation.</div>
+          <button class="btn-secondary" id="gps-check" style="width:100%">Check My Location</button>
+          <div id="gps-result" style="margin-top:6px"></div>
+        </div>
+
+        <!-- Extra toggles -->
+        <div class="section">
+          <div class="section-title">Immersive</div>
+          <label class="toggle-row"><input type="checkbox" id="geiger-check"/><span class="tg-slider"></span><span class="tg-label">Geiger counter (hover audio)</span></label>
+          <label class="toggle-row"><input type="checkbox" id="shockwave-check" checked/><span class="tg-slider"></span><span class="tg-label">Shockwave ring animation</span></label>
+          <label class="toggle-row"><input type="checkbox" id="contours-check"/><span class="tg-slider"></span><span class="tg-label">Fallout dose contour lines</span></label>
+          <label class="toggle-row"><input type="checkbox" id="testdb-check"/><span class="tg-slider"></span><span class="tg-label">Show historic nuclear tests</span></label>
+        </div>
+
+        <!-- Export -->
+        <div class="section">
+          <div class="section-title">Export</div>
+          <button class="export-btn" id="export-png" style="margin-bottom:5px">Export Map as PNG</button>
+          <button class="export-btn" id="export-kml" style="background:var(--mauve)">Export to Google Earth (KML)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="info-bar"></div>
+<div id="screenshot-hint">Click here or press Escape to exit screenshot mode</div>
+<div id="fact-banner"><div class="fact-label">Did You Know?</div><span id="fact-text"></span></div>
+
+<!-- Libraries -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+<!-- Three.js removed - mushroom cloud now uses SVG Leaflet overlay -->
+
+<!-- NukeMap Modules -->
+<script src="js/data.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/search.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/animation.js"></script>
+<script src="js/sound.js"></script>
+<script src="js/mushroom3d.js"></script>
+<script src="js/mirv.js"></script>
+<script src="js/shelter.js"></script>
+<script src="js/compare.js"></script>
+<script src="js/heatmap.js"></script>
+<script src="js/extras.js"></script>
+<script src="js/advanced.js"></script>
+<script src="js/premium.js"></script>
+<script src="js/immersive.js"></script>
+<script src="js/ww3.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

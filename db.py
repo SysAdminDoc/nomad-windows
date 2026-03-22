@@ -300,6 +300,18 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
+        CREATE TABLE IF NOT EXISTS sync_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            direction TEXT NOT NULL DEFAULT 'push',
+            peer_node_id TEXT DEFAULT '',
+            peer_name TEXT DEFAULT '',
+            peer_ip TEXT DEFAULT '',
+            tables_synced TEXT DEFAULT '{}',
+            items_count INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'success',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         CREATE TABLE IF NOT EXISTS garden_plots (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,

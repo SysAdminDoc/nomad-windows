@@ -3560,6 +3560,248 @@ def create_app():
         except Exception as e:
             return jsonify({'summary': f'{len(alerts)} active alert(s). AI summary unavailable: {e}'})
 
+    # ─── Multi-Node Federation ─────────────────────────────────────────
+
+    import uuid as _uuid
+
+    def _get_node_id():
+        db = get_db()
+        row = db.execute("SELECT value FROM settings WHERE key = 'node_id'").fetchone()
+        if row and row['value']:
+            db.close()
+            return row['value']
+        node_id = str(_uuid.uuid4())[:8]
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('node_id', ?)", (node_id,))
+        db.commit()
+        db.close()
+        return node_id
+
+    def _get_node_name():
+        db = get_db()
+        row = db.execute("SELECT value FROM settings WHERE key = 'node_name'").fetchone()
+        db.close()
+        return (row['value'] if row and row['value'] else platform.node()) or 'NOMAD Node'
+
+    @app.route('/api/node/identity')
+    def api_node_identity():
+        return jsonify({'node_id': _get_node_id(), 'node_name': _get_node_name(), 'version': VERSION})
+
+    @app.route('/api/node/identity', methods=['PUT'])
+    def api_node_identity_update():
+        data = request.get_json() or {}
+        name = data.get('name', '').strip()
+        if name:
+            db = get_db()
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('node_name', ?)", (name,))
+            db.commit()
+            db.close()
+        return jsonify({'status': 'updated', 'node_name': name})
+
+    # UDP Discovery
+    _discovered_peers = {}
+
+    @app.route('/api/node/discover', methods=['POST'])
+    def api_node_discover():
+        """Broadcast UDP to find other N.O.M.A.D. nodes on LAN."""
+        import socket
+        _discovered_peers.clear()
+        node_id = _get_node_id()
+        node_name = _get_node_name()
+        msg = json.dumps({'type': 'nomad_discover', 'node_id': node_id, 'node_name': node_name, 'port': 8080}).encode()
+
+        # Broadcast on UDP port 5353 (common mDNS-adjacent)
+        DISCOVERY_PORT = 18080
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            sock.settimeout(3)
+            sock.sendto(msg, ('<broadcast>', DISCOVERY_PORT))
+
+            # Listen for responses for 3 seconds
+            end_time = time.time() + 3
+            while time.time() < end_time:
+                try:
+                    data, addr = sock.recvfrom(1024)
+                    peer = json.loads(data.decode())
+                    if peer.get('type') == 'nomad_announce' and peer.get('node_id') != node_id:
+                        _discovered_peers[peer['node_id']] = {
+                            'node_id': peer['node_id'], 'node_name': peer.get('node_name', 'Unknown'),
+                            'ip': addr[0], 'port': peer.get('port', 8080), 'version': peer.get('version', '?'),
+                        }
+                except socket.timeout:
+                    break
+                except Exception:
+                    continue
+            sock.close()
+        except Exception as e:
+            log.warning(f'Discovery broadcast failed: {e}')
+
+        return jsonify({'peers': list(_discovered_peers.values()), 'self': {'node_id': node_id, 'node_name': node_name}})
+
+    @app.route('/api/node/peers')
+    def api_node_peers():
+        return jsonify(list(_discovered_peers.values()))
+
+    @app.route('/api/node/announce', methods=['POST'])
+    def api_node_announce():
+        """Respond to a discovery broadcast (called by peers via HTTP as fallback)."""
+        return jsonify({
+            'type': 'nomad_announce', 'node_id': _get_node_id(),
+            'node_name': _get_node_name(), 'port': 8080, 'version': VERSION,
+        })
+
+    @app.route('/api/node/sync-push', methods=['POST'])
+    def api_node_sync_push():
+        """Push data TO a peer node."""
+        data = request.get_json() or {}
+        peer_ip = data.get('ip')
+        peer_port = data.get('port', 8080)
+        if not peer_ip:
+            return jsonify({'error': 'No peer IP'}), 400
+
+        import requests as req
+        SYNC_TABLES = ['inventory', 'contacts', 'checklists', 'notes', 'incidents', 'waypoints']
+        node_id = _get_node_id()
+        node_name = _get_node_name()
+
+        # Collect our data
+        db = get_db()
+        payload = {'source_node_id': node_id, 'source_node_name': node_name, 'tables': {}}
+        total_items = 0
+        for table in SYNC_TABLES:
+            try:
+                rows = db.execute(f'SELECT * FROM {table}').fetchall()
+                table_data = [dict(r) for r in rows]
+                # Strip local IDs — peer will assign new ones
+                for row in table_data:
+                    row.pop('id', None)
+                    row['_source_node'] = node_id
+                payload['tables'][table] = table_data
+                total_items += len(table_data)
+            except Exception:
+                pass
+        db.close()
+
+        # Push to peer
+        try:
+            r = req.post(f'http://{peer_ip}:{peer_port}/api/node/sync-receive',
+                        json=payload, timeout=30)
+            result = r.json()
+            # Log sync
+            db = get_db()
+            db.execute('INSERT INTO sync_log (direction, peer_node_id, peer_name, peer_ip, tables_synced, items_count, status) VALUES (?,?,?,?,?,?,?)',
+                       ('push', result.get('node_id', ''), result.get('node_name', ''), peer_ip,
+                        json.dumps({t: len(d) for t, d in payload['tables'].items()}), total_items, 'success'))
+            db.commit()
+            db.close()
+            return jsonify({'status': 'pushed', 'items': total_items, 'peer': result.get('node_name', peer_ip)})
+        except Exception as e:
+            return jsonify({'error': f'Push failed: {e}'}), 500
+
+    @app.route('/api/node/sync-receive', methods=['POST'])
+    def api_node_sync_receive():
+        """Receive data FROM a peer node (merge mode)."""
+        data = request.get_json() or {}
+        source_node = data.get('source_node_id', '')
+        source_name = data.get('source_node_name', '')
+        tables = data.get('tables', {})
+
+        ALLOWED = {'inventory', 'contacts', 'checklists', 'notes', 'incidents', 'waypoints'}
+        db = get_db()
+        imported = {}
+        total = 0
+        for tname, rows in tables.items():
+            if tname not in ALLOWED:
+                continue
+            count = 0
+            for row in rows:
+                row.pop('id', None)
+                row.pop('created_at', None)
+                row.pop('updated_at', None)
+                row.pop('_source_node', None)
+                cols = list(row.keys())
+                vals = list(row.values())
+                if not cols:
+                    continue
+                placeholders = ','.join(['?'] * len(cols))
+                try:
+                    db.execute(f'INSERT INTO {tname} ({",".join(cols)}) VALUES ({placeholders})', vals)
+                    count += 1
+                except Exception:
+                    pass
+            imported[tname] = count
+            total += count
+        db.commit()
+
+        # Log receipt
+        db.execute('INSERT INTO sync_log (direction, peer_node_id, peer_name, peer_ip, tables_synced, items_count, status) VALUES (?,?,?,?,?,?,?)',
+                   ('receive', source_node, source_name, request.remote_addr or '',
+                    json.dumps(imported), total, 'success'))
+        db.commit()
+        db.close()
+
+        log_activity('sync_received', detail=f'From {source_name} ({source_node}): {total} items')
+        return jsonify({'status': 'received', 'imported': imported, 'total': total,
+                       'node_id': _get_node_id(), 'node_name': _get_node_name()})
+
+    @app.route('/api/node/sync-pull', methods=['POST'])
+    def api_node_sync_pull():
+        """Pull data FROM a peer node."""
+        data = request.get_json() or {}
+        peer_ip = data.get('ip')
+        peer_port = data.get('port', 8080)
+        if not peer_ip:
+            return jsonify({'error': 'No peer IP'}), 400
+
+        import requests as req
+        node_id = _get_node_id()
+        node_name = _get_node_name()
+
+        try:
+            # Ask peer to push their data to us
+            r = req.post(f'http://{peer_ip}:{peer_port}/api/node/sync-push',
+                        json={'ip': request.host.split(':')[0], 'port': 8080}, timeout=30)
+            # The peer pushed to us — our sync-receive handler logged it
+            return jsonify({'status': 'pull_requested', 'peer': peer_ip})
+        except Exception as e:
+            return jsonify({'error': f'Pull failed: {e}'}), 500
+
+    @app.route('/api/node/sync-log')
+    def api_node_sync_log():
+        db = get_db()
+        rows = db.execute('SELECT * FROM sync_log ORDER BY created_at DESC LIMIT 50').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    # Start UDP discovery listener in background
+    def _discovery_listener():
+        import socket
+        DISCOVERY_PORT = 18080
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind(('', DISCOVERY_PORT))
+            sock.settimeout(1)
+            while True:
+                try:
+                    data, addr = sock.recvfrom(1024)
+                    msg = json.loads(data.decode())
+                    if msg.get('type') == 'nomad_discover' and msg.get('node_id') != _get_node_id():
+                        # Respond with our identity
+                        response = json.dumps({
+                            'type': 'nomad_announce', 'node_id': _get_node_id(),
+                            'node_name': _get_node_name(), 'port': 8080, 'version': VERSION,
+                        }).encode()
+                        sock.sendto(response, addr)
+                except socket.timeout:
+                    continue
+                except Exception:
+                    continue
+        except Exception as e:
+            log.warning(f'Discovery listener failed to start: {e}')
+
+    threading.Thread(target=_discovery_listener, daemon=True).start()
+
     # ─── Food Production Module ────────────────────────────────────────
 
     # USDA hardiness zones by approximate latitude (simplified offline lookup)

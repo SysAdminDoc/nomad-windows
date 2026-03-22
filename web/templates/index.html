@@ -4667,6 +4667,36 @@ a { color: var(--accent); text-decoration: none; }
           </div>
         </div>
       </div>
+      <!-- Federation / Multi-Node Sync -->
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3 style="display:flex;justify-content:space-between;align-items:center;">
+          Network Federation
+          <span id="node-id-badge" style="font-size:10px;color:var(--text-muted);font-weight:400;"></span>
+        </h3>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Sync data between multiple N.O.M.A.D. installations on your network. All sync operations merge data — nothing is overwritten.</p>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">This Node's Name</label>
+            <input id="node-name-input" style="width:160px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="My Base Camp">
+          </div>
+          <button class="btn btn-sm" onclick="saveNodeName()">Save Name</button>
+          <button class="btn btn-sm btn-primary" onclick="discoverPeers()">Scan for Nodes</button>
+        </div>
+        <div id="peer-list" style="margin-bottom:12px;"></div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;align-items:end;flex-wrap:wrap;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Manual Peer IP</label>
+            <input id="manual-peer-ip" style="width:140px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="192.168.1.50">
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="syncToPeer(document.getElementById('manual-peer-ip').value.trim())">Push to IP</button>
+        </div>
+        <div style="margin-top:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span style="font-size:12px;font-weight:600;">Sync History</span>
+            <button class="btn btn-sm" onclick="loadSyncLog()">Refresh</button>
+          </div>
+          <div id="sync-log-list" style="max-height:200px;overflow-y:auto;font-size:11px;"></div>
+        </div>
+      </div>
+
       <div class="settings-card" style="grid-column:1/-1;">
         <h3 style="display:flex;justify-content:space-between;align-items:center;">
           Application Log
@@ -4878,7 +4908,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'ai-chat') { loadModels(); loadConversations(); pollPullProgress(); }
     if (tab.dataset.tab === 'notes') loadNotes();
-    if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); loadLogViewer(); loadDiskMonitor(); loadStartupState(); loadOllamaHost(); updateLastBackup(); }
+    if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); loadLogViewer(); loadDiskMonitor(); loadStartupState(); loadOllamaHost(); updateLastBackup(); loadNodeIdentity(); loadSyncLog(); }
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); loadPDFList(); }
     if (tab.dataset.tab === 'maps') { loadMaps(); loadWPDistances(); loadMapSources(); renderMapBookmarks(); }
     if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
@@ -9635,6 +9665,86 @@ function handleBearingClick(lngLat) {
     document.getElementById('bearing-btn').className = 'btn btn-sm';
   }
   return true;
+}
+
+/* ─── Multi-Node Federation ─── */
+async function loadNodeIdentity() {
+  try {
+    const n = await (await fetch('/api/node/identity')).json();
+    document.getElementById('node-id-badge').textContent = `Node: ${n.node_name} (${n.node_id})`;
+    document.getElementById('node-name-input').value = n.node_name;
+  } catch(e) {}
+}
+
+async function saveNodeName() {
+  const name = document.getElementById('node-name-input').value.trim();
+  if (!name) { toast('Enter a node name', 'warning'); return; }
+  await fetch('/api/node/identity', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})});
+  toast(`Node name set to "${name}"`, 'success');
+  loadNodeIdentity();
+}
+
+async function discoverPeers() {
+  const el = document.getElementById('peer-list');
+  el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px;">Scanning network...</div>';
+  try {
+    const r = await fetch('/api/node/discover', {method:'POST'});
+    const d = await r.json();
+    if (!d.peers.length) {
+      el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;padding:8px;">No other N.O.M.A.D. nodes found on this network. Make sure other instances are running and on the same LAN.</div>';
+      return;
+    }
+    el.innerHTML = d.peers.map(p => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:4px;">
+        <div>
+          <div style="font-weight:600;font-size:13px;">${escapeHtml(p.node_name)}</div>
+          <div style="font-size:10px;color:var(--text-dim);">${escapeHtml(p.ip)}:${p.port} | ID: ${escapeHtml(p.node_id)} | v${escapeHtml(p.version || '?')}</div>
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-sm btn-primary" onclick="syncToPeer('${escapeAttr(p.ip)}',${p.port},'${escapeAttr(p.node_name)}')">Push Data</button>
+        </div>
+      </div>
+    `).join('');
+    toast(`Found ${d.peers.length} node(s) on your network`, 'success');
+  } catch(e) { el.innerHTML = '<div style="color:var(--red);font-size:12px;">Discovery failed</div>'; }
+}
+
+async function syncToPeer(ip, port, name) {
+  if (!ip) { toast('Enter a peer IP address', 'warning'); return; }
+  port = port || 8080;
+  toast(`Pushing data to ${name || ip}...`, 'info');
+  try {
+    const r = await fetch('/api/node/sync-push', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({ip, port})});
+    const d = await r.json();
+    if (d.error) { toast(d.error, 'error'); return; }
+    toast(`Pushed ${d.items} items to ${d.peer || ip}`, 'success');
+    sendNotification('Sync Complete', `Pushed ${d.items} items to ${d.peer || ip}`);
+    loadSyncLog();
+  } catch(e) { toast('Push failed — check the IP address and make sure the peer is running', 'error'); }
+}
+
+async function loadSyncLog() {
+  try {
+    const logs = await (await fetch('/api/node/sync-log')).json();
+    const el = document.getElementById('sync-log-list');
+    if (!logs.length) { el.innerHTML = '<div style="color:var(--text-muted);padding:8px;">No sync history yet.</div>'; return; }
+    el.innerHTML = logs.map(l => {
+      const t = new Date(l.created_at);
+      const ts = t.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+      const icon = l.direction === 'push' ? '&#8593;' : '&#8595;';
+      const color = l.direction === 'push' ? 'var(--accent)' : 'var(--green)';
+      const tables = JSON.parse(l.tables_synced || '{}');
+      const tableStr = Object.entries(tables).map(([t,c]) => `${t}:${c}`).join(', ');
+      return `<div style="display:flex;gap:8px;padding:4px 0;border-bottom:1px solid var(--border);align-items:baseline;">
+        <span style="color:${color};font-weight:700;font-size:14px;">${icon}</span>
+        <span style="font-size:10px;color:var(--text-muted);min-width:80px;">${ts}</span>
+        <span style="font-weight:500;">${l.direction.toUpperCase()}</span>
+        <span style="color:var(--text-dim);">${escapeHtml(l.peer_name || l.peer_ip || '?')}</span>
+        <span style="color:var(--text-muted);font-size:10px;">${l.items_count} items (${tableStr})</span>
+      </div>`;
+    }).join('');
+  } catch(e) {}
 }
 
 /* ─── Sneakernet Sync ─── */

@@ -1417,22 +1417,23 @@ a { color: var(--accent); text-decoration: none; }
   <!-- Kiwix Library Tab -->
   <div id="tab-kiwix-library" class="tab-content">
     <div id="library-summary" class="content-summary" style="margin-bottom:16px;"></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
-      <div class="settings-card">
-        <h3 style="display:flex;justify-content:space-between;align-items:center;">My Content Packs<button class="btn btn-sm" onclick="loadZimList();loadZimDownloads()">Refresh</button></h3>
-        <div id="zim-list"><div style="color:var(--text-dim);font-size:13px;">No content downloaded yet.</div></div>
-        <div id="zim-download-queue" style="display:none;margin-top:12px;">
-          <div style="font-size:11px;font-weight:600;color:var(--accent);margin-bottom:6px;">Active Downloads</div>
-          <div id="zim-queue-items"></div>
-        </div>
-      </div>
-      <div class="settings-card">
-        <h3 style="display:flex;justify-content:space-between;align-items:center;">Content Catalog
-          <button class="btn btn-sm btn-primary" onclick="downloadAllZims()" title="Download all essential content packs">Download All Essentials</button>
-        </h3>
-        <div id="zim-catalog"></div>
-      </div>
+
+    <!-- Bulk Download Buttons -->
+    <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+      <button class="btn btn-sm btn-primary" onclick="downloadAllZimsByTier('essential')">Download All Essentials</button>
+      <button class="btn btn-sm" onclick="downloadAllZimsByTier('standard')">Download Standard</button>
+      <button class="btn btn-sm" onclick="downloadAllZimsByTier('comprehensive')">Download Everything</button>
+      <button class="btn btn-sm" onclick="loadZimList();loadZimCatalog();loadZimDownloads()" style="margin-left:auto;">Refresh</button>
     </div>
+
+    <!-- Active Downloads Queue -->
+    <div id="zim-download-queue" style="display:none;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;">
+      <div style="font-size:12px;font-weight:600;color:var(--accent);margin-bottom:8px;">Active Downloads</div>
+      <div id="zim-queue-items"></div>
+    </div>
+
+    <!-- Unified Content Catalog -->
+    <div id="zim-catalog"></div>
     <!-- Document Library -->
     <div class="settings-card" style="margin-top:16px;">
       <h3 style="display:flex;justify-content:space-between;align-items:center;">Document Library (PDF/ePub/Text)
@@ -5625,9 +5626,12 @@ function renderChat() {
 }
 
 /* ─── Kiwix Library (Tiered Catalog) ─── */
+let _installedZims = new Set();
+let _downloadingZims = new Set();
+
 async function loadZimList() {
   const zims = await (await fetch('/api/kiwix/zims')).json();
-  const el = document.getElementById('zim-list');
+  _installedZims = new Set(zims.map(z => z.filename));
 
   // Update library summary
   const summaryEl = document.getElementById('library-summary');
@@ -5640,92 +5644,120 @@ async function loadZimList() {
     `;
   }
 
-  if (!zims.length) { el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;">No content downloaded yet.</div>'; return; }
-  el.innerHTML = zims.map(z => `
-    <div class="model-item">
-      <span class="model-name">${escapeHtml(z.filename)}</span>
-      <span style="display:flex;gap:8px;align-items:center;">
-        <span class="model-size">${z.size_mb} MB</span>
-        <button class="btn btn-sm btn-danger" onclick="deleteZim('${escapeHtml(z.filename)}')">Delete</button>
-      </span>
-    </div>
-  `).join('');
+  // Re-render catalog if visible to update download states
+  if (_cachedCatalog) renderFullCatalog(_cachedCatalog);
 }
 
 async function loadZimCatalog() {
   const catalog = await (await fetch('/api/kiwix/catalog')).json();
+  _cachedCatalog = catalog;
+  renderFullCatalog(catalog);
+}
+
+function renderFullCatalog(catalog) {
   const el = document.getElementById('zim-catalog');
   el.innerHTML = catalog.map((cat, ci) => {
     const tiers = cat.tiers || {};
     const tierNames = Object.keys(tiers);
     if (!tierNames.length) return '';
-    _catalogTiers[ci] = tierNames[0];
+    const activeTier = _catalogTiers[ci] || tierNames[0];
+    _catalogTiers[ci] = activeTier;
 
-    return `<div class="catalog-section">
-      <h4>${escapeHtml(cat.category)}</h4>
-      <div class="tier-tabs">${tierNames.map(t =>
-        `<button class="tier-tab ${t===tierNames[0]?'active':''}" onclick="switchTier(${ci},'${t}',this)">${t}</button>`
+    return `<div class="settings-card" style="margin-bottom:12px;">
+      <h4 style="font-size:13px;color:var(--accent);margin-bottom:6px;">${escapeHtml(cat.category)}</h4>
+      <div class="tier-tabs" style="margin-bottom:8px;">${tierNames.map(t =>
+        `<button class="tier-tab ${t===activeTier?'active':''}" onclick="switchTier(${ci},'${t}',this)">${t}</button>`
       ).join('')}</div>
-      <div id="cat-items-${ci}">${renderTierItems(tiers[tierNames[0]])}</div>
+      <div id="cat-items-${ci}">${renderTierItems(tiers[activeTier])}</div>
     </div>`;
   }).join('');
 }
 
 function renderTierItems(items) {
   if (!items || !items.length) return '<span style="color:var(--text-dim);font-size:11px;">No items in this tier.</span>';
-  return items.map(i => `
-    <div class="catalog-item">
+  return items.map(i => {
+    const installed = _installedZims.has(i.filename);
+    const downloading = _downloadingZims.has(i.filename);
+    let actionHtml;
+    if (installed) {
+      actionHtml = `<span style="display:flex;align-items:center;gap:6px;">
+        <span style="color:var(--green);font-size:11px;font-weight:600;">Downloaded</span>
+        <button class="btn btn-sm btn-danger" onclick="deleteZim('${escapeAttr(i.filename)}')" style="font-size:10px;padding:2px 8px;">Delete</button>
+      </span>`;
+    } else if (downloading) {
+      actionHtml = `<span style="display:flex;align-items:center;gap:6px;">
+        <span style="color:var(--accent);font-size:11px;font-weight:500;"><span style="display:inline-block;width:10px;height:10px;border:2px solid var(--text-muted);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:3px;"></span>Downloading...</span>
+      </span>`;
+    } else {
+      actionHtml = `<button class="btn btn-sm btn-primary" onclick="downloadZimItem(this,'${escapeAttr(i.url)}','${escapeAttr(i.filename)}')" style="min-width:75px;">Download</button>`;
+    }
+    return `<div class="catalog-item" data-filename="${escapeAttr(i.filename)}">
       <div class="cat-info"><div class="cat-name">${escapeHtml(i.name)}</div><div class="cat-desc">${escapeHtml(i.desc)}</div></div>
-      <span class="cat-size">${i.size}</span>
-      <button class="btn btn-sm" style="margin-left:8px;" onclick="downloadZim('${i.url}','${i.filename}')">Download</button>
-    </div>
-  `).join('');
+      <span class="cat-size" style="white-space:nowrap;">${i.size}</span>
+      ${actionHtml}
+    </div>`;
+  }).join('');
 }
 
 let _cachedCatalog = null;
 function switchTier(ci, tier, btn) {
   btn.parentElement.querySelectorAll('.tier-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
-  const render = catalog => {
-    _cachedCatalog = catalog;
-    const items = catalog[ci]?.tiers?.[tier] || [];
+  _catalogTiers[ci] = tier;
+  if (_cachedCatalog) {
+    const items = _cachedCatalog[ci]?.tiers?.[tier] || [];
     document.getElementById(`cat-items-${ci}`).innerHTML = renderTierItems(items);
-  };
-  if (_cachedCatalog) { render(_cachedCatalog); return; }
-  fetch('/api/kiwix/catalog').then(r=>r.json()).then(render);
+  } else {
+    fetch('/api/kiwix/catalog').then(r=>r.json()).then(catalog => {
+      _cachedCatalog = catalog;
+      const items = catalog[ci]?.tiers?.[tier] || [];
+      document.getElementById(`cat-items-${ci}`).innerHTML = renderTierItems(items);
+    });
+  }
 }
 
-async function downloadAllZims() {
+async function downloadAllZimsByTier(tier) {
   try {
-    const catalog = await (await fetch('/api/kiwix/catalog')).json();
+    const catalog = _cachedCatalog || await (await fetch('/api/kiwix/catalog')).json();
+    _cachedCatalog = catalog;
     const existing = await (await fetch('/api/kiwix/zims')).json();
     const existingNames = new Set(existing.map(z => z.filename));
-    // Collect all Essential tier items across all categories
     const toDownload = [];
-    for (const [catName, cat] of Object.entries(catalog)) {
-      const essentials = cat.tiers?.essential || [];
-      for (const item of essentials) {
-        if (!existingNames.has(item.filename)) {
-          toDownload.push(item);
+    for (const cat of catalog) {
+      // For 'comprehensive', download ALL tiers. For 'standard', download essential+standard. For 'essential', just essential.
+      const tiersToGet = tier === 'comprehensive' ? Object.keys(cat.tiers || {}) :
+                         tier === 'standard' ? ['essential', 'standard'] : ['essential'];
+      for (const t of tiersToGet) {
+        const items = cat.tiers?.[t] || [];
+        for (const item of items) {
+          if (!existingNames.has(item.filename) && !toDownload.some(d => d.filename === item.filename)) {
+            toDownload.push(item);
+          }
         }
       }
     }
-    if (!toDownload.length) { toast('All essential content packs are already downloaded!', 'success'); return; }
-    const totalSize = toDownload.map(z => z.size).join(', ');
-    toast(`Starting ${toDownload.length} downloads: ${toDownload.map(z => z.filename).join(', ')}`, 'info');
+    if (!toDownload.length) { toast(`All ${tier} content packs are already downloaded!`, 'success'); return; }
+    toast(`Starting ${toDownload.length} downloads (${tier} tier)...`, 'info');
     for (const item of toDownload) {
+      _downloadingZims.add(item.filename);
       await fetch('/api/kiwix/download-zim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url: item.url, filename: item.filename})});
     }
+    renderFullCatalog(_cachedCatalog); // Update button states
     startZimQueuePoll();
   } catch(e) { toast('Failed to start bulk download', 'error'); }
 }
 
-async function downloadZim(url, filename) {
+async function downloadZimItem(btn, url, filename) {
+  // Change button state immediately
+  btn.disabled = true;
+  btn.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border:2px solid var(--text-muted);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:3px;"></span>Starting...';
+  _downloadingZims.add(filename);
   try {
-    const r = await fetch('/api/kiwix/download-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, filename}) });
-    if (!r.ok) { const d = await r.json().catch(()=>({})); toast(d.error || 'Download failed', 'error'); return; }
-    toast(`Downloading ${filename}...`, 'info');
-  } catch(e) { toast('Failed to start download', 'error'); return; }
+    const r = await fetch('/api/kiwix/download-zim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, filename})});
+    if (!r.ok) { const d = await r.json().catch(()=>({})); toast(d.error || 'Download failed', 'error'); btn.disabled = false; btn.textContent = 'Retry'; _downloadingZims.delete(filename); return; }
+    btn.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border:2px solid var(--text-muted);border-top-color:var(--accent);border-radius:50%;animation:spin 0.6s linear infinite;vertical-align:middle;margin-right:3px;"></span>Downloading...';
+    btn.style.opacity = '0.7';
+  } catch(e) { toast('Failed to start download', 'error'); btn.disabled = false; btn.textContent = 'Retry'; _downloadingZims.delete(filename); return; }
   startZimQueuePoll();
 }
 
@@ -5744,18 +5776,24 @@ async function loadZimDownloads() {
       if (!window._zimCompletedSet) window._zimCompletedSet = new Set();
       if (!window._zimCompletedSet.has(filename)) {
         window._zimCompletedSet.add(filename);
+        _installedZims.add(filename);
+        _downloadingZims.delete(filename);
         toast(`${filename} downloaded successfully!`, 'success');
         sendNotification('Download Complete', `${filename} is ready`);
       }
     });
+    // Refresh catalog to update button states if any completed
+    if (completed.length && _cachedCatalog) renderFullCatalog(_cachedCatalog);
     // Show error toasts for failed downloads
     errors.forEach(([filename, p]) => {
       if (!window._zimErrorSet) window._zimErrorSet = new Set();
       if (!window._zimErrorSet.has(filename)) {
         window._zimErrorSet.add(filename);
+        _downloadingZims.delete(filename);
         toast(`Download failed: ${filename} — ${p.error || 'Unknown error'}. Click Download again to retry (will resume).`, 'error');
       }
     });
+    if (errors.length && _cachedCatalog) renderFullCatalog(_cachedCatalog);
     if (!active.length && !errors.length) {
       queueEl.style.display = 'none';
       if (_zimQueuePoll) { clearInterval(_zimQueuePoll); _zimQueuePoll = null; }
@@ -5789,7 +5827,9 @@ function startZimQueuePoll() {
 
 async function deleteZim(filename) {
   await fetch('/api/kiwix/delete-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename}) });
-  toast('Deleted');
+  _installedZims.delete(filename);
+  window._zimCompletedSet?.delete(filename);
+  toast('Content pack deleted', 'warning');
   loadZimList();
 }
 

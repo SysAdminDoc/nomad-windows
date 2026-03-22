@@ -63,7 +63,7 @@ pyinstaller build.spec
 - Kolibri: http://localhost:8300
 - Stirling PDF: http://localhost:8443
 
-## Features (v3.6.0)
+## Features (v1.0.0)
 - **6 services**: Ollama (AI), Kiwix (offline content), CyberChef (data tools), Kolibri (education), Qdrant (vector DB), Stirling PDF (PDF toolkit)
 - **Setup wizard** — capability selection (choose which services to install)
 - **Auto-start** — previously running services restart on app launch
@@ -112,10 +112,10 @@ pyinstaller build.spec
 - Benchmark disk test creates/deletes temp files in ProjectNOMAD\benchmark\
 
 ## Version
-v3.6.0
+v1.0.0
 
 ## Status
-Working v3.6.0 — Command Center Edition + comprehensive UX/download audit (8 rounds, 120+ fixes). ~24,800 total lines (incl NukeMap v3.2.0). Release-ready. Download UX overhaul: ZIM download failures now visible with retry guidance + completion toasts, PDF upload response-checked, double-install race condition fixed (mutex), wizard reports skipped models, service install completion notifications, download sizes on Install buttons, downloaded/total bytes shown, disk space warnings, model pull shows speed+size without backward jumps, all map downloads visible, video/PDF uploads show file size, human-readable error messages throughout, map URL auto-filename. Plus all prior features.
+Working v1.0.0 — Command Center Edition + comprehensive UX/download audit (8 rounds, 120+ fixes). ~24,800 total lines (incl NukeMap v3.2.0). Release-ready. Download UX overhaul: ZIM download failures now visible with retry guidance + completion toasts, PDF upload response-checked, double-install race condition fixed (mutex), wizard reports skipped models, service install completion notifications, download sizes on Install buttons, downloaded/total bytes shown, disk space warnings, model pull shows speed+size without backward jumps, all map downloads visible, video/PDF uploads show file size, human-readable error messages throughout, map URL auto-filename. Plus all prior features.
 
 ## Gotchas
 - Stirling PDF requires Java 17+ (downloads .jar, not .exe — no Windows exe in releases)

@@ -530,18 +530,21 @@ def create_app():
                 _wizard_state['overall_progress'] = int(done / total * 100)
                 _wizard_state['completed'].append(sid)
 
-            # Phase 2: Start all installed services
+            # Phase 2: Start services that CAN start now (skip Kiwix — needs content first)
             _wizard_state['phase'] = 'starting'
-            _wizard_state['current_item'] = 'Starting services...'
             import time
             for sid in services_list:
+                if sid == 'kiwix':
+                    continue  # Kiwix needs ZIM files before it can start — handled after downloads
                 mod = SERVICE_MODULES.get(sid)
                 if mod and mod.is_installed() and not mod.running():
+                    _wizard_state['current_item'] = f'Starting {SVC_FRIENDLY.get(sid, sid)}...'
                     try:
                         mod.start()
                         time.sleep(2)
                     except Exception as e:
-                        _wizard_state['errors'].append(f'Start {sid}: {e}')
+                        # Non-fatal — service may need prerequisites, will auto-start later
+                        log.warning(f'Wizard: non-fatal start error for {sid}: {e}')
 
             # Phase 3: Download ZIM content
             if zims:
@@ -567,15 +570,19 @@ def create_app():
                     _wizard_state['overall_progress'] = int(done / total * 100)
                     _wizard_state['completed'].append(filename)
 
-                # Restart Kiwix to load new content
+                # NOW start Kiwix — it has content to serve
+                _wizard_state['current_item'] = 'Starting Kiwix with downloaded content...'
                 if kiwix.is_installed():
                     try:
                         if kiwix.running():
                             kiwix.stop()
                             time.sleep(1)
                         kiwix.start()
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        log.warning(f'Wizard: Kiwix start after content: {e}')
+            elif 'kiwix' in services_list:
+                # No ZIMs selected but Kiwix installed — note it needs content
+                _wizard_state['current_item'] = 'Kiwix installed (add content from Library tab to start it)'
 
             # Phase 4: Pull AI models
             if models:

@@ -3184,6 +3184,10 @@ a { color: var(--accent); text-decoration: none; }
       </div>
       <div id="wiz-completed-list" style="max-height:150px;overflow-y:auto;font-size:11px;"></div>
       <div id="wiz-errors" style="margin-top:8px;font-size:11px;color:var(--red);display:none;"></div>
+      <div id="wiz-stall-help" style="display:none;margin-top:12px;text-align:center;">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:8px;">Taking longer than expected? Some downloads can take a while on slower connections.</div>
+        <button class="btn btn-sm" onclick="wizSkipToComplete()">Skip & Continue</button>
+      </div>
     </div>
 
     <!-- Page 5: Complete -->
@@ -4354,9 +4358,14 @@ async function wizStartSetup() {
 }
 
 let _wizPollInt = null;
+let _wizLastProgress = 0;
+let _wizStallCount = 0;
 function wizPollProgress() {
   if (_wizPollInt) clearInterval(_wizPollInt);
+  _wizLastProgress = 0;
+  _wizStallCount = 0;
   _wizPollInt = setInterval(async () => {
+    try {
     const s = await (await fetch('/api/wizard/progress')).json();
     document.getElementById('wiz-overall-fill').style.width = s.overall_progress + '%';
     document.getElementById('wiz-overall-pct').textContent = s.overall_progress + '%';
@@ -4365,6 +4374,17 @@ function wizPollProgress() {
     document.getElementById('wiz-item-pct').textContent = s.item_progress + '%';
     const phaseNames = {services:'Installing tools...', starting:'Starting services...', content:'Downloading offline content...', models:'Downloading AI models...', done:'Complete!'};
     document.getElementById('wiz-phase-label').textContent = phaseNames[s.phase] || s.phase;
+    // Detect stall — show help after 60 seconds of no progress change
+    if (s.overall_progress === _wizLastProgress && s.item_progress === 0) {
+      _wizStallCount++;
+      if (_wizStallCount > 30) { // 30 polls * 2s = 60 seconds
+        document.getElementById('wiz-stall-help').style.display = 'block';
+      }
+    } else {
+      _wizStallCount = 0;
+      _wizLastProgress = s.overall_progress;
+      document.getElementById('wiz-stall-help').style.display = 'none';
+    }
     if (s.completed.length) {
       document.getElementById('wiz-completed-list').innerHTML = s.completed.map(c =>
         `<div style="display:flex;align-items:center;gap:6px;padding:2px 0;"><span style="color:var(--green);font-weight:700;">&#10003;</span><span>${c}</span></div>`).join('');
@@ -4377,7 +4397,14 @@ function wizPollProgress() {
       clearInterval(_wizPollInt); _wizPollInt = null;
       setTimeout(() => wizShowComplete(s), 1000);
     }
+    } catch(e) { /* poll error — server may be busy */ }
   }, 2000);
+}
+
+function wizSkipToComplete() {
+  if (_wizPollInt) { clearInterval(_wizPollInt); _wizPollInt = null; }
+  fetch('/api/settings/wizard-complete', {method:'POST'});
+  wizShowComplete({completed:[], errors:['Setup was skipped — you can install services and content manually from the Services and Library tabs.']});
 }
 
 async function wizShowComplete(state) {

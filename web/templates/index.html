@@ -1772,6 +1772,7 @@ a { color: var(--accent); text-decoration: none; }
       <button class="prep-subtab" data-psub="weather" onclick="switchPrepSub('weather')">Weather</button>
       <button class="prep-subtab" data-psub="signals" onclick="switchPrepSub('signals')">Signals</button>
       <button class="prep-subtab" data-psub="ops" onclick="switchPrepSub('ops')">Operations</button>
+      <button class="prep-subtab" data-psub="journal" onclick="switchPrepSub('journal')">Journal</button>
       <button class="prep-subtab" data-psub="family" onclick="switchPrepSub('family')">Family Plan</button>
     </div>
 
@@ -1861,7 +1862,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Inventory -->
     <div id="psub-inventory" class="prep-sub">
     <div class="prep-section">
-      <h3>Supply Inventory</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Supply Inventory <button class="btn btn-sm" onclick="openAppFrame('Inventory Report','/api/inventory/print')" title="Printable inventory list">Print</button></h3>
       <div id="inv-alerts" style="margin-bottom:12px;"></div>
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <select id="inv-cat-filter" class="preset-select" onchange="loadInventory()" style="min-width:120px;">
@@ -1910,7 +1911,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Contacts -->
     <div id="psub-contacts" class="prep-sub">
     <div class="prep-section">
-      <h3>Emergency Contacts & Comms Plan</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Emergency Contacts & Comms Plan <button class="btn btn-sm" onclick="openAppFrame('Contact Directory','/api/contacts/print')" title="Printable contact list">Print</button></h3>
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <input id="contact-search" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Search contacts..." oninput="loadContacts()">
         <button class="btn btn-sm btn-primary" onclick="showContactForm()">+ Add Contact</button>
@@ -4570,6 +4571,33 @@ a { color: var(--accent); text-decoration: none; }
     </div>
     </div><!-- /psub-ops -->
 
+    <!-- Sub: Daily Journal -->
+    <div id="psub-journal" class="prep-sub">
+    <div class="prep-section">
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Daily Journal
+        <button class="btn btn-sm" onclick="window.location='/api/journal/export'" title="Export journal as Markdown">Export Journal</button>
+      </h3>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
+        <textarea id="journal-entry" placeholder="Record today's observations, events, decisions, lessons learned..." style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:10px 12px;border-radius:var(--radius-sm);font-size:13px;font-family:inherit;resize:vertical;min-height:80px;outline:none;margin-bottom:8px;" onkeydown="if(event.key==='Enter'&&event.ctrlKey)submitJournal()"></textarea>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="journal-mood" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:11px;outline:none;">
+            <option value="">Mood...</option>
+            <option value="good">Good</option>
+            <option value="okay">Okay</option>
+            <option value="stressed">Stressed</option>
+            <option value="alert">On Alert</option>
+            <option value="tired">Tired</option>
+            <option value="motivated">Motivated</option>
+          </select>
+          <input id="journal-tags" placeholder="Tags (comma-separated)" style="flex:1;min-width:120px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:4px;font-size:11px;outline:none;">
+          <button class="btn btn-sm btn-primary" onclick="submitJournal()">Log Entry</button>
+          <span style="font-size:10px;color:var(--text-muted);">Ctrl+Enter to submit</span>
+        </div>
+      </div>
+      <div id="journal-list"></div>
+    </div>
+    </div><!-- /psub-journal -->
+
     <!-- Sub: Family Plan -->
     <div id="psub-family" class="prep-sub">
     <div class="prep-section">
@@ -4842,7 +4870,7 @@ a { color: var(--accent); text-decoration: none; }
           <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
-            <div><strong style="color:var(--accent);">18 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Security, Power, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Family</div>
+            <div><strong style="color:var(--accent);">19 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Security, Power, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Journal, Family</div>
             <div><strong style="color:var(--accent);">Key Stats</strong><br>221 API routes, 30+ DB tables, 10 decision guides, 15 checklist templates, 4 training scenarios, 12 AI chat starters</div>
           </div>
           <div style="margin:8px 0;">
@@ -7457,6 +7485,7 @@ function switchPrepSub(sub) {
   if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
   if (sub === 'ops') { loadInfraStatus(); renderVehicles(); calcBleach(); loadThreatMatrix(); renderHomeSecurity(); }
   if (sub === 'family') loadFEP();
+  if (sub === 'journal') loadJournal();
   if (sub === 'security') { loadSecurityDashboard(); loadCameras(); }
   if (sub === 'power') { loadPowerDashboard(); loadPowerDevices(); updatePowerSpecFields(); }
   if (sub === 'garden') { loadPlots(); lookupZone(); }
@@ -11113,6 +11142,60 @@ document.addEventListener('keydown', (e) => {
     if (e.key === 'n') { e.preventDefault(); document.querySelector('[data-tab="notes"]').click(); setTimeout(createNote, 200); }
   }
 });
+
+/* ─── Daily Journal ─── */
+async function loadJournal() {
+  try {
+    const entries = await (await fetch('/api/journal')).json();
+    const el = document.getElementById('journal-list');
+    if (!entries.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:30px;font-size:12px;">No journal entries yet. Start recording your daily observations above.</div>';
+      return;
+    }
+    el.innerHTML = entries.map(e => {
+      const t = new Date(e.created_at);
+      const date = t.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'});
+      const time = t.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      const moodColors = {good:'var(--green)',okay:'var(--accent)',stressed:'var(--orange)',alert:'var(--red)',tired:'var(--text-muted)',motivated:'var(--accent)'};
+      const moodBadge = e.mood ? `<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:${moodColors[e.mood]||'var(--surface3)'}22;color:${moodColors[e.mood]||'var(--text-dim)'};font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${e.mood}</span>` : '';
+      const tagBadges = e.tags ? e.tags.split(',').map(t => t.trim()).filter(Boolean).map(t => `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:var(--accent-dim);color:var(--accent);">${escapeHtml(t)}</span>`).join(' ') : '';
+      return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:6px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span style="font-size:12px;font-weight:600;">${date}</span>
+            <span style="font-size:10px;color:var(--text-muted);">${time}</span>
+            ${moodBadge} ${tagBadges}
+          </div>
+          <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="deleteJournalEntry(${e.id})">x</span>
+        </div>
+        <div style="font-size:13px;line-height:1.6;white-space:pre-line;">${escapeHtml(e.entry)}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    document.getElementById('journal-list').innerHTML = '<div style="color:var(--red);font-size:12px;">Failed to load journal</div>';
+  }
+}
+
+async function submitJournal() {
+  const entry = document.getElementById('journal-entry').value.trim();
+  if (!entry) { toast('Write something first', 'warning'); return; }
+  const mood = document.getElementById('journal-mood').value;
+  const tags = document.getElementById('journal-tags').value.trim();
+  try {
+    await fetch('/api/journal', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({entry, mood, tags})});
+    document.getElementById('journal-entry').value = '';
+    document.getElementById('journal-mood').value = '';
+    document.getElementById('journal-tags').value = '';
+    toast('Journal entry logged', 'success');
+    loadJournal();
+  } catch(e) { toast('Failed to save entry', 'error'); }
+}
+
+async function deleteJournalEntry(id) {
+  await fetch(`/api/journal/${id}`, {method:'DELETE'});
+  toast('Entry deleted', 'warning');
+  loadJournal();
+}
 
 /* ─── Security Module ─── */
 function showSecurityTab(tab) {

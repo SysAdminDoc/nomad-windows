@@ -382,6 +382,27 @@ def create_app():
                 if settings_row:
                     sit = json.loads(settings_row['value'] or '{}')
                     sit_parts.append('SITUATION STATUS: ' + ', '.join(f'{k}: {v}' for k, v in sit.items()))
+                # Weather
+                wx = db_ctx.execute('SELECT pressure_hpa, temp_f, created_at FROM weather_log WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 1').fetchone()
+                if wx:
+                    sit_parts.append(f'WEATHER: {wx["pressure_hpa"]} hPa, {wx["temp_f"]}F (as of {wx["created_at"]})')
+                # Active alerts
+                alerts = db_ctx.execute('SELECT title, severity FROM alerts WHERE dismissed = 0 ORDER BY severity DESC LIMIT 5').fetchall()
+                if alerts:
+                    sit_parts.append('ACTIVE ALERTS: ' + ' | '.join(f'[{a["severity"]}] {a["title"]}' for a in alerts))
+                # Power status
+                pwr = db_ctx.execute('SELECT battery_soc, solar_watts, load_watts FROM power_log ORDER BY created_at DESC LIMIT 1').fetchone()
+                if pwr:
+                    sit_parts.append(f'POWER: Battery {pwr["battery_soc"] or "?"}%, Solar {pwr["solar_watts"] or 0}W, Load {pwr["load_watts"] or 0}W')
+                # Patients with conditions
+                patients = db_ctx.execute('SELECT name, allergies, conditions FROM patients LIMIT 5').fetchall()
+                if patients:
+                    pt_str = ', '.join(f'{p["name"]} (allergies: {json.loads(p["allergies"] or "[]")}, conditions: {json.loads(p["conditions"] or "[]")})' for p in patients)
+                    sit_parts.append(f'PATIENTS: {pt_str}')
+                # Garden/harvest
+                harvest_count = db_ctx.execute('SELECT COUNT(*) as c FROM harvest_log').fetchone()['c']
+                if harvest_count:
+                    sit_parts.append(f'GARDEN: {harvest_count} harvests logged')
                 db_ctx.close()
                 if sit_parts:
                     ctx = '\n'.join(sit_parts)
@@ -5205,6 +5226,101 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
 
         report['text'] = txt
         return jsonify(report)
+
+    # ─── Daily Journal ─────────────────────────────────────────────────
+
+    @app.route('/api/journal')
+    def api_journal_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM journal ORDER BY created_at DESC LIMIT 100').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/journal', methods=['POST'])
+    def api_journal_create():
+        data = request.get_json() or {}
+        entry = data.get('entry', '').strip()
+        if not entry:
+            return jsonify({'error': 'Entry required'}), 400
+        db = get_db()
+        db.execute('INSERT INTO journal (entry, mood, tags) VALUES (?,?,?)',
+                   (entry, data.get('mood', ''), data.get('tags', '')))
+        db.commit()
+        db.close()
+        log_activity('journal_entry', detail=entry[:50])
+        return jsonify({'status': 'logged'}), 201
+
+    @app.route('/api/journal/<int:jid>', methods=['DELETE'])
+    def api_journal_delete(jid):
+        db = get_db()
+        db.execute('DELETE FROM journal WHERE id = ?', (jid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/journal/export')
+    def api_journal_export():
+        """Export journal as a text file."""
+        db = get_db()
+        entries = [dict(r) for r in db.execute('SELECT * FROM journal ORDER BY created_at ASC').fetchall()]
+        db.close()
+        md = '# N.O.M.A.D. Daily Journal\n\n'
+        for e in entries:
+            md += f'## {e["created_at"]}\n'
+            if e.get('mood'):
+                md += f'Mood: {e["mood"]}\n'
+            if e.get('tags'):
+                md += f'Tags: {e["tags"]}\n'
+            md += f'\n{e["entry"]}\n\n---\n\n'
+        return Response(md, mimetype='text/markdown',
+                       headers={'Content-Disposition': 'attachment; filename="nomad-journal.md"'})
+
+    # ─── Printable Reports ───────────────────────────────────────────
+
+    @app.route('/api/inventory/print')
+    def api_inventory_print():
+        """Printable inventory list."""
+        db = get_db()
+        items = db.execute('SELECT * FROM inventory ORDER BY category, name').fetchall()
+        db.close()
+        now = time.strftime('%Y-%m-%d %H:%M')
+        html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Inventory Report</title>
+<style>body{{font-family:'Segoe UI',sans-serif;padding:15px;font-size:11px;}}
+h1{{font-size:16px;border-bottom:2px solid #000;padding-bottom:4px;}}
+table{{width:100%;border-collapse:collapse;margin:8px 0;}}th,td{{border:1px solid #999;padding:3px 6px;text-align:left;font-size:10px;}}th{{background:#eee;}}
+.warn{{color:#c00;font-weight:700;}}
+@media print{{@page{{margin:0.3in;size:letter;}}}}
+</style></head><body>
+<h1>N.O.M.A.D. Inventory Report — {now}</h1>
+<table><thead><tr><th>Name</th><th>Category</th><th>Qty</th><th>Unit</th><th>Min</th><th>Daily Use</th><th>Days Left</th><th>Expires</th><th>Location</th></tr></thead><tbody>'''
+        for i in items:
+            d = dict(i)
+            days = round(d['quantity'] / d['daily_usage'], 1) if d.get('daily_usage') and d['daily_usage'] > 0 else '-'
+            low = d['quantity'] <= d['min_quantity'] and d['min_quantity'] > 0 if d.get('min_quantity') else False
+            html += f"<tr><td{'class=\"warn\"' if low else ''}>{_esc(d['name'])}</td><td>{_esc(d['category'])}</td><td>{d['quantity']}</td><td>{_esc(d.get('unit',''))}</td><td>{d.get('min_quantity','')}</td><td>{d.get('daily_usage','') or ''}</td><td>{days}</td><td>{d.get('expiration','')}</td><td>{_esc(d.get('location',''))}</td></tr>"
+        html += f'</tbody></table><p style="font-size:9px;color:#666;">Generated by N.O.M.A.D. — {now}</p></body></html>'
+        return html
+
+    @app.route('/api/contacts/print')
+    def api_contacts_print():
+        """Printable contacts directory."""
+        db = get_db()
+        contacts = db.execute('SELECT * FROM contacts ORDER BY name').fetchall()
+        db.close()
+        now = time.strftime('%Y-%m-%d %H:%M')
+        html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Contact Directory</title>
+<style>body{{font-family:'Segoe UI',sans-serif;padding:15px;font-size:11px;}}
+h1{{font-size:16px;border-bottom:2px solid #000;padding-bottom:4px;}}
+table{{width:100%;border-collapse:collapse;margin:8px 0;}}th,td{{border:1px solid #999;padding:3px 6px;text-align:left;font-size:10px;}}th{{background:#eee;}}
+@media print{{@page{{margin:0.3in;size:letter;}}}}
+</style></head><body>
+<h1>N.O.M.A.D. Contact Directory — {now}</h1>
+<table><thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Callsign</th><th>Radio Freq</th><th>Blood</th><th>Rally Point</th><th>Skills</th><th>Medical Notes</th></tr></thead><tbody>'''
+        for c in contacts:
+            d = dict(c)
+            html += f"<tr><td><strong>{_esc(d['name'])}</strong></td><td>{_esc(d.get('role',''))}</td><td>{_esc(d.get('phone',''))}</td><td>{_esc(d.get('callsign',''))}</td><td>{_esc(d.get('freq',''))}</td><td>{_esc(d.get('blood_type',''))}</td><td>{_esc(d.get('rally_point',''))}</td><td>{_esc(d.get('skills',''))}</td><td>{_esc(d.get('medical_notes',''))}</td></tr>"
+        html += f'</tbody></table><p style="font-size:9px;color:#666;">Generated by N.O.M.A.D. — {now}</p></body></html>'
+        return html
 
     @app.route('/api/emergency-sheet')
     def api_emergency_sheet():

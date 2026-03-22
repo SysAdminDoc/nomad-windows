@@ -243,11 +243,24 @@ a { color: var(--accent); text-decoration: none; }
 [data-theme="nightops"] .cc-card { color: var(--card-text); }
 [data-theme="cyber"] .cc-card { color: var(--card-text); }
 [data-theme="redlight"] .cc-card {
-  background: linear-gradient(135deg, var(--accent), var(--red));
-  border-color: var(--accent);
+  background: rgba(40,6,6,0.9);
+  border: 2px solid #882200;
+  color: #cc3333;
 }
+[data-theme="redlight"] .cc-card:hover {
+  background: rgba(60,10,10,0.95);
+  border-color: #cc2200;
+  color: #ff4444;
+}
+[data-theme="redlight"] .cc-card .cc-sub { color: #881111; }
+[data-theme="redlight"] .cc-card .cc-desc { color: #993333; opacity: 1; }
+[data-theme="redlight"] .cc-card .cc-icon { color: #cc2200; }
 [data-theme="redlight"] .cc-card-nuke {
-  background: linear-gradient(135deg, var(--red), #660000);
+  background: rgba(50,5,5,0.9);
+  border-color: #aa0000;
+}
+[data-theme="redlight"] .cc-card-nuke:hover {
+  border-color: #ff3333;
 }
 
 /* ─── Cards ─── */

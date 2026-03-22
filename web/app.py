@@ -3354,25 +3354,30 @@ def create_app():
 
     # ─── NukeMap ──────────────────────────────────────────────────────
 
+    # Resolve nukemap directory once at app creation
+    if getattr(sys, 'frozen', False):
+        _nukemap_dir = os.path.join(sys._MEIPASS, 'web', 'nukemap')
+    else:
+        _nukemap_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'nukemap')
+    log.info(f'NukeMap directory: {_nukemap_dir} (exists: {os.path.isdir(_nukemap_dir)})')
+
     @app.route('/nukemap')
-    @app.route('/nukemap/<path:filepath>')
-    def nukemap_serve(filepath='index.html'):
-        import os as _os
+    def nukemap_index():
         from flask import send_from_directory
-        # Resolve nukemap directory robustly
-        if getattr(sys, 'frozen', False):
-            nukemap_dir = _os.path.join(sys._MEIPASS, 'web', 'nukemap')
-        else:
-            nukemap_dir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), 'nukemap')
-        # Security: prevent path traversal
+        return send_from_directory(_nukemap_dir, 'index.html')
+
+    @app.route('/nukemap/<path:filepath>')
+    def nukemap_static(filepath):
+        from flask import send_from_directory
         if '..' in filepath:
             return jsonify({'error': 'Forbidden'}), 403
-        full = _os.path.join(nukemap_dir, filepath)
-        if not _os.path.isfile(full):
-            return jsonify({'error': f'Not found: {filepath}'}), 404
-        directory = _os.path.dirname(full)
-        filename = _os.path.basename(full)
-        return send_from_directory(directory, filename)
+        # Split into directory and filename for send_from_directory
+        parts = filepath.replace('\\', '/').split('/')
+        if len(parts) == 1:
+            return send_from_directory(_nukemap_dir, parts[0])
+        else:
+            subdir = os.path.join(_nukemap_dir, *parts[:-1])
+            return send_from_directory(subdir, parts[-1])
 
     # ─── Favicon ──────────────────────────────────────────────────────
 

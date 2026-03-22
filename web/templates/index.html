@@ -1281,6 +1281,15 @@ a { color: var(--accent); text-decoration: none; }
       </div>
     </div>
 
+    <!-- Getting Started Checklist (dismissable) -->
+    <div id="getting-started" style="display:none;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <span style="font-size:14px;font-weight:600;color:var(--accent);">Getting Started</span>
+        <button class="btn btn-sm btn-ghost" onclick="dismissGettingStarted()" style="font-size:12px;">Dismiss</button>
+      </div>
+      <div style="font-size:12px;line-height:2;" id="gs-items"></div>
+    </div>
+
     <!-- Service Detail Grid -->
     <div class="services-grid" id="services-grid"></div>
 
@@ -5157,6 +5166,7 @@ async function loadServices() {
     const services = await (await fetch('/api/services')).json();
     _lastServicesData = services;
     _servicesLoaded = true;
+    updateGettingStarted();
     grid.innerHTML = services.map(s => {
       const info = SVC[s.id] || { name:s.id, desc:'' };
       const prog = s.progress || {};
@@ -10495,7 +10505,7 @@ function showHelp() {
   <tr><td><strong>Garden</strong></td><td>Garden plots, seed inventory with auto-viability, harvest log (auto-feeds inventory), livestock records, hardiness zone lookup.</td></tr>
   <tr><td><strong>Medical</strong></td><td>Patient profiles, vital signs tracking (BP/pulse/resp/temp/SpO2/pain/GCS), wound documentation, 26-pair drug interaction checker, printable patient cards.</td></tr>
   <tr><td><strong>Calculators</strong></td><td>10+ calculators: water, food storage, generator fuel, rainwater, radio range, medication dosage, solar sizing, BOB weight, and more.</td></tr>
-  <tr><td><strong>Guides</strong></td><td>7 interactive decision trees: water purification, wound assessment, fire starting, shelter, radio, food preservation, START triage. Works offline without AI.</td></tr>
+  <tr><td><strong>Guides</strong></td><td>10 interactive decision trees: water purification, wound assessment, fire starting, shelter construction, radio communications, food preservation, START triage, power outage response, vehicle emergency, bug-out vs shelter-in-place. Works offline without AI.</td></tr>
   <tr><td><strong>Radio Ref</strong></td><td>Complete frequency table: NOAA, FRS, GMRS, MURS, CB, HAM, shortwave.</td></tr>
   <tr><td><strong>Quick Ref</strong></td><td>25+ reference cards: NATO alphabet, Morse code trainer, unit converter, triage, companion planting, and more.</td></tr>
   <tr><td><strong>Protocols</strong></td><td>17 emergency procedures with search and expand-all. Printable wallet card generator.</td></tr>
@@ -12261,6 +12271,123 @@ const DECISION_GUIDES = [
   },
 ];
 
+  {
+    id: 'power_outage', title: 'Power Outage Response', icon: '&#9889;',
+    desc: 'Step-by-step response when the power goes out — from the first minute to long-term grid-down.',
+    nodes: {
+      start: {type:'question', text:'How long has the power been out?', options:[
+        {label:'Just happened (minutes ago)', next:'immediate'},
+        {label:'A few hours', next:'hours'},
+        {label:'12+ hours / overnight', next:'extended'},
+        {label:'Days — grid may be down long-term', next:'longterm'},
+      ]},
+      immediate: {type:'question', text:'Do you know the cause?', options:[
+        {label:'Storm / weather event', next:'storm'},
+        {label:'Transformer blew / local outage', next:'local'},
+        {label:'Widespread / unknown cause', next:'unknown'},
+        {label:'I tripped my breaker / internal issue', next:'breaker'},
+      ]},
+      breaker: {type:'result', style:'success', text:'Internal electrical issue:\n\n1. Check your main breaker panel — look for a tripped breaker (halfway position)\n2. Turn the tripped breaker fully OFF, then back ON\n3. If it trips again immediately: you have a short circuit. Unplug everything on that circuit.\n4. Plug devices back in one at a time to find the culprit\n5. If the main breaker is tripped: call an electrician — could be a serious issue\n\nIf your WHOLE panel is dead and breakers are fine, call your power company — the issue is at the meter or transformer.'},
+      storm: {type:'result', style:'warning', text:'Storm-related outage:\n\n1. STAY INSIDE during active storm\n2. Unplug sensitive electronics (TV, computer, modem) to protect from surge when power returns\n3. Leave one light ON so you know when power returns\n4. Move perishable food to coolers with ice if available\n5. Check on neighbors, especially elderly\n6. If you have a generator: run it OUTSIDE only (CO kills), use heavy-duty extension cords\n7. Report outage to your power company via phone (not app — cell towers may be down too)\n\nExpect 4-24 hours for storm restoration. Keep flashlights and battery radio handy.'},
+      local: {type:'result', style:'info', text:'Local outage (transformer/line down):\n\n1. Check if neighbors also lost power — confirms it is not just you\n2. Report to power company\n3. Stay away from downed power lines (assume ALL are live)\n4. If you see sparking or fire near a transformer: call 911\n5. Expected restoration: 2-8 hours for transformer replacement\n\nWhile waiting:\n- Use flashlights (not candles — fire risk)\n- Keep fridge/freezer CLOSED (stays cold 4h fridge, 24-48h freezer if full)\n- Charge phones from car if needed (engine running, in open air)'},
+      unknown: {type:'question', text:'Is your cell phone working?', options:[
+        {label:'Yes — I have cell service', next:'cells_up'},
+        {label:'No — cell service is also down', next:'cells_down'},
+      ]},
+      cells_up: {type:'result', style:'warning', text:'Widespread outage, cells working:\n\n1. Check power company website/app for outage map and estimates\n2. Monitor local news/social media for cause\n3. This is likely a grid equipment failure — usually restored in 4-12 hours\n\nActions:\n- Unplug sensitive electronics\n- Fill bathtubs and large containers with water (water pressure may drop if pumping stations lose power)\n- Consolidate perishable food; eat most perishable items first\n- Check on neighbors\n- Get cash — ATMs and card readers won\'t work without power\n- Fill vehicle gas tanks (pumps need electricity)'},
+      cells_down: {type:'result', style:'danger', text:'Power AND cell service down — potential major event:\n\nThis could be: major infrastructure failure, EMP, cyber attack, or catastrophic weather.\n\n1. Switch to battery-powered AM/FM radio for information\n2. If you have HAM/GMRS radio: monitor emergency frequencies\n3. Fill ALL water containers immediately (municipal water may fail soon)\n4. Secure your home — lock doors, close curtains\n5. Account for all household members\n6. DO NOT drive unless necessary (traffic lights out, chaos likely)\n7. Start your emergency plan:\n   - Review your go-bag readiness\n   - Check fuel levels in vehicles\n   - Inventory food and water supply\n   - Establish communication plan with family\n\nIf power is not restored within 24 hours, shift to grid-down protocols.'},
+      hours: {type:'question', text:'What is your biggest concern right now?', options:[
+        {label:'Food spoiling in fridge/freezer', next:'food_concern'},
+        {label:'Heating or cooling (extreme temperature)', next:'temp_concern'},
+        {label:'Medical devices that need power', next:'medical_power'},
+        {label:'General preparedness / what to do next', next:'hours_general'},
+      ]},
+      food_concern: {type:'result', style:'info', text:'Protecting food during outage:\n\n1. KEEP DOORS CLOSED — every opening costs 30 minutes of cold\n2. Refrigerator: safe for 4 hours if unopened\n3. Freezer: safe for 24 hours (half-full) to 48 hours (completely full)\n4. After 4 hours fridge: move critical items to cooler with ice\n5. Eat perishable items in this order:\n   - Leftovers and open deli items (first)\n   - Dairy, eggs, meat (within 4-6 hours)\n   - Condiments and hard cheese (last — more resilient)\n\nWhen in doubt: If food has been above 40F for more than 2 hours, throw it out.\n\nFreeze water bottles now — they serve double duty as ice packs and drinking water.'},
+      temp_concern: {type:'question', text:'Is it extremely hot or cold?', options:[
+        {label:'Extreme heat (90F+ / no AC)', next:'heat'},
+        {label:'Extreme cold (below freezing / no heat)', next:'cold'},
+      ]},
+      heat: {type:'result', style:'warning', text:'Surviving without AC:\n\n1. Close blinds/curtains on sun-facing windows\n2. Open windows on shaded side for cross-ventilation (only if outdoor air is cooler)\n3. Go to the lowest floor (heat rises)\n4. Wet towels on neck and wrists — major cooling points\n5. Drink water constantly — dehydration is the real killer\n6. If you have a generator: run ONE fan, not the AC (uses far less power)\n7. Avoid cooking (adds heat) — eat cold foods\n8. Check on elderly and young children frequently\n9. If it becomes dangerous (105F+, confusion, no sweating): go to a public cooling center\n\nHeat kills more people than any other weather event. Take it seriously.'},
+      cold: {type:'result', style:'danger', text:'Surviving without heat:\n\n1. Consolidate everyone into ONE room — close doors to unused rooms\n2. Seal window gaps with towels or blankets\n3. Layer clothing: base layer (wicking), insulation (fleece/wool), outer (wind block)\n4. Stay off cold floors — use rugs, cardboard, sleeping pads\n5. If you have a fireplace/wood stove: use it. Open the flue.\n6. DO NOT use gas oven/stove for heating — carbon monoxide risk\n7. DO NOT run a generator indoors — EVER\n8. Body heat: huddle together under blankets\n9. Eat high-calorie foods — your body burns calories to stay warm\n10. If pipes are at risk: let faucets drip (moving water resists freezing)\n\nIf indoor temp drops below 50F and you cannot heat: go to a warming shelter or a neighbor with heat.'},
+      medical_power: {type:'result', style:'danger', text:'Medical devices during outage — CRITICAL:\n\n1. CPAP: Most have battery backup options. Car inverter works. Prioritize this.\n2. Oxygen concentrator: Switch to backup O2 tanks immediately. Call your DME provider.\n3. Ventilator: Call 911 if battery backup is running low. This is life-threatening.\n4. Insulin (refrigerated): Place in a cooler with ice. Insulin is safe at room temp for up to 28 days.\n5. Nebulizer: Use a metered-dose inhaler (MDI) as backup.\n6. Electric wheelchair: Charge from car (inverter) while engine is running.\n\nPROACTIVE:\n- Register with your power company as a medical priority customer\n- Keep a UPS (battery backup) on critical medical devices\n- Have a written medical emergency plan posted on the fridge\n- Know your nearest hospital with generator power'},
+      hours_general: {type:'result', style:'info', text:'Power out for several hours — action checklist:\n\n1. Confirm it is not just your house (check neighbors/power company)\n2. Unplug sensitive electronics (surge protection when power returns)\n3. Keep ONE light switch ON to know when power returns\n4. Inventory your resources:\n   - Water: how many gallons on hand?\n   - Food: what needs to be eaten first (perishable)?\n   - Light: flashlights, lanterns, candles (use carefully)\n   - Communication: battery radio, charged phone, HAM/FRS radio\n   - Power: generator, solar panel, battery banks, car inverter\n5. Conserve phone battery — lower brightness, close apps, airplane mode when not needed\n6. If you have a car: it is a charging station (run engine briefly in OPEN AIR)\n7. Start a simple log: time, temperature, actions taken — helps with insurance claims and after-action review'},
+      extended: {type:'result', style:'warning', text:'12+ hours without power:\n\nYou are now in sustained outage territory. Shift from "waiting it out" to "managing the situation."\n\n1. FOOD: Cook and eat all thawed meat today. Prioritize perishables.\n2. WATER: If municipal, fill every container (water treatment plants have limited generator fuel). If well, you have no water without power — use stored supply.\n3. SANITATION: If water pressure fails, fill toilet tanks manually to flush. Or use 5-gallon buckets lined with trash bags + kitty litter.\n4. SECURITY: Darkness = vulnerability. Plan lighting and lock-up before sunset.\n5. MORALE: Establish a routine. Assign tasks. Play card games. Routine prevents panic.\n6. COMMUNICATION: Check in with neighbors. Establish a signal system (flag, whistle).\n7. FUEL: Calculate generator fuel burn rate. Ration run time (2 hours on, 4 hours off).\n\nIf no restoration estimate: begin preparing for multi-day grid-down.'},
+      longterm: {type:'result', style:'danger', text:'Multi-day grid down — survival mode:\n\nThis is a sustained emergency. Your priorities are: Water, Security, Food, Shelter, Communication.\n\n1. WATER: You need 1 gallon per person per day. Identify backup sources (rain, creek, pool). Purify everything.\n2. FOOD: Shift to shelf-stable supplies. Start a rationing plan. Cook with camp stove, grill, or fire.\n3. SECURITY: Establish a watch schedule. Lock everything. Know your neighbors.\n4. CASH: Have small bills. Electronic payments are dead.\n5. FUEL: Gas stations are closed. Whatever is in your tank is what you have. Drive only when critical.\n6. MEDICAL: Inventory all medications. Calculate how many days of supply remain.\n7. COMMUNICATION: Battery radio for news. HAM/FRS for local coordination. Establish a daily check-in schedule with neighbors.\n8. INFORMATION: Track your situation in N.O.M.A.D. — log incidents, update inventory burn rates, adjust threat levels.\n\nMost grid-down events resolve within 3-7 days. But prepare as if it won\'t.'},
+    }
+  },
+  {
+    id: 'vehicle_emergency', title: 'Vehicle Emergency', icon: '&#128663;',
+    desc: 'What to do when your vehicle breaks down, gets stuck, or you are in an accident.',
+    nodes: {
+      start: {type:'question', text:'What is the situation?', options:[
+        {label:'Vehicle broke down / won\'t start', next:'breakdown'},
+        {label:'Flat tire', next:'flat'},
+        {label:'Accident / collision', next:'accident'},
+        {label:'Stuck (mud, snow, ditch)', next:'stuck'},
+        {label:'Overheating', next:'overheat'},
+        {label:'Stranded in remote area', next:'stranded'},
+      ]},
+      breakdown: {type:'question', text:'Where are you?', options:[
+        {label:'Highway / busy road', next:'breakdown_highway'},
+        {label:'Side street / parking lot', next:'breakdown_safe'},
+        {label:'Remote / rural area', next:'stranded'},
+      ]},
+      breakdown_highway: {type:'result', style:'danger', text:'Highway breakdown — SAFETY FIRST:\n\n1. Turn on hazard lights IMMEDIATELY\n2. Try to coast to the shoulder — as far right as possible\n3. If you cannot move: stay IN the vehicle with seatbelt ON\n4. Set flares or reflective triangles 50-100 feet behind the vehicle\n5. Exit on the PASSENGER side (away from traffic) if you must get out\n6. Stand well behind the guardrail, never between your car and traffic\n7. Call for help (roadside assistance, 911 if unsafe)\n\nAt night: interior dome light ON so approaching cars see you.\n\nDO NOT try to cross highway lanes on foot. Wait for help.'},
+      breakdown_safe: {type:'result', style:'info', text:'Safe-location breakdown:\n\n1. Turn on hazard lights\n2. Try to diagnose:\n   - Won\'t crank at all: dead battery. Try jump start.\n   - Cranks but won\'t start: fuel problem, ignition, or sensor\n   - Starts then dies: fuel delivery or idle control\n   - Check engine light + rough running: sensor failure\n3. Basic checks you can do:\n   - Battery terminals tight and clean? (White corrosion = clean with baking soda + water)\n   - Gas tank not empty?\n   - Any visible leaks under the vehicle?\n   - Any burning smell?\n4. If you have jumper cables: flag down another car or use a jump pack\n5. If you have tools: check fuses (owner\'s manual has fuse box location)\n6. Call roadside assistance or a trusted mechanic'},
+      flat: {type:'result', style:'info', text:'Flat tire — change it yourself:\n\n1. Pull to a flat, firm surface away from traffic. Hazards on.\n2. Apply parking brake. Put transmission in Park (auto) or gear (manual).\n3. Get spare tire, jack, and lug wrench from trunk.\n4. Loosen lug nuts BEFORE jacking up (1/4 turn each, star pattern)\n5. Place jack under the vehicle frame (check manual for jack points)\n6. Jack up until flat tire is 1 inch off ground\n7. Remove lug nuts completely, pull off flat tire\n8. Mount spare tire, hand-tighten lug nuts in star pattern\n9. Lower vehicle, then fully tighten lug nuts (star pattern, firm)\n10. Check spare tire pressure — most spares are limited to 50 mph and 50 miles\n\nNo spare? Use a tire sealant can (Fix-a-Flat). Drive slowly to the nearest tire shop.\n\nIf you don\'t have tools: call roadside assistance.'},
+      accident: {type:'result', style:'danger', text:'Vehicle accident response:\n\n1. CHECK YOURSELF for injuries first. Are you bleeding? Can you move?\n2. Check passengers. If anyone is seriously injured: call 911 FIRST.\n3. Turn off the engine. Hazard lights on.\n4. If the vehicle is on fire or you smell gas: GET OUT and move 100+ feet away.\n5. If safe to stay: keep seatbelt on until emergency services arrive.\n6. DO NOT move seriously injured people unless there\'s immediate danger (fire, water).\n7. Exchange info with other driver: name, license, insurance, plate number, phone.\n8. Take photos: damage to all vehicles, license plates, intersection, traffic signs, road conditions.\n9. File a police report — even for minor accidents.\n10. Do NOT admit fault at the scene.\n\nCall your insurance company within 24 hours. Get a copy of the police report for your records.'},
+      stuck: {type:'result', style:'warning', text:'Vehicle stuck (mud/snow/ditch):\n\n1. STOP spinning wheels immediately — you are digging deeper.\n2. Straighten the steering wheel.\n3. Clear mud/snow from around the tires (as much as you can reach).\n4. Place traction material under the drive wheels:\n   - Floor mats (rubber side up)\n   - Branches, boards, gravel, sand\n   - Cat litter (absorbs moisture, adds traction)\n   - Cardboard in a pinch\n5. Rock the vehicle: alternate Drive and Reverse gently. Do NOT floor it.\n6. Let some air out of tires (lowers to ~20 PSI) — wider contact patch. Re-inflate ASAP after.\n7. If you have a winch or tow strap: attach to a solid tree/anchor point.\n8. If truly stuck: call a tow truck. Don\'t damage your transmission.\n\nPrevention: carry a traction mat, tow strap, and small shovel in your vehicle kit.'},
+      overheat: {type:'result', style:'warning', text:'Engine overheating:\n\n1. Turn OFF the AC immediately.\n2. Turn the heater to MAX HOT and fan to HIGH — this pulls heat from the engine.\n3. Pull over as soon as safely possible. Turn off the engine.\n4. DO NOT open the radiator cap while hot — pressurized steam will burn you severely.\n5. Wait at least 30 minutes for the engine to cool.\n6. Check coolant level (only when cool): if low, add water or coolant.\n7. Check for visible leaks: under the car, around hoses, at the radiator.\n8. If you must drive: go slowly with heater on max. Stop every 5 minutes if temp rises.\n\nCommon causes: coolant leak, broken fan belt, failed water pump, stuck thermostat, blocked radiator.\n\nIf coolant is spraying or there\'s steam from under the hood: DO NOT drive. Tow it.'},
+      stranded: {type:'result', style:'danger', text:'Stranded in a remote area:\n\n1. STAY WITH YOUR VEHICLE — it is shelter, signaling device, and easier to find than a person on foot.\n2. Turn on hazard lights. At night, dome light on periodically.\n3. If you have cell signal: call for help. Share your GPS coordinates.\n4. If no cell signal: try driving to higher ground for signal.\n5. Conserve fuel — run engine 10 minutes per hour for heat. Crack a window to prevent CO buildup.\n6. Make yourself visible: bright cloth on antenna, hood up, flares if available.\n7. If you must walk: ONLY if you can see a building or know the exact distance. Leave a note on dashboard with direction you went + time.\n\nSurvival priorities:\n- Shelter (your car)\n- Water (carry at least 1 gallon in your vehicle always)\n- Signaling (mirror, horn, lights)\n- Food (keep granola bars in your vehicle kit)\n\nMost stranded motorists are found within 24 hours if they stay with their vehicle.'},
+    }
+  },
+  {
+    id: 'bugout_decision', title: 'Bug-Out vs Shelter-In-Place', icon: '&#127970;',
+    desc: 'The hardest decision in an emergency — should you stay or go? This guide helps you decide.',
+    nodes: {
+      start: {type:'question', text:'What type of threat are you facing?', options:[
+        {label:'Natural disaster (storm, flood, fire, earthquake)', next:'natural'},
+        {label:'Infrastructure failure (grid down, water contamination)', next:'infra'},
+        {label:'Civil unrest / social breakdown', next:'civil'},
+        {label:'Chemical / nuclear / biological event', next:'cbrn'},
+        {label:'Personal threat (home invasion, stalker)', next:'personal'},
+      ]},
+      natural: {type:'question', text:'Is your home directly threatened?', options:[
+        {label:'Yes — flood water rising, fire approaching, building damaged', next:'evacuate_now'},
+        {label:'Maybe — in warning zone but not immediate danger', next:'natural_maybe'},
+        {label:'No — we are outside the danger zone', next:'shelter_natural'},
+      ]},
+      evacuate_now: {type:'result', style:'danger', text:'EVACUATE NOW — your home is directly threatened.\n\n1. Grab your go-bag (you have 15 minutes or less)\n2. Take: IDs, medications, phone + charger, cash, keys\n3. Take: important documents if within arm\'s reach (passports, insurance)\n4. Load family + pets into vehicle\n5. Drive your PRIMARY evacuation route\n6. If primary is blocked: switch to ALTERNATE route immediately\n7. DO NOT go back for anything\n8. Notify family/contacts of your destination\n9. Head to your pre-designated rally point\n\nIf you have NO plan:\n- Drive perpendicular to the threat (away from flood path, away from fire front)\n- Head toward a major highway\n- Go to the nearest public shelter (school, community center)\n\nYour life is worth more than anything in that house.'},
+      natural_maybe: {type:'question', text:'How prepared is your home?', options:[
+        {label:'Well-prepared (supplies, sturdy construction, elevated)', next:'shelter_natural'},
+        {label:'Somewhat prepared (some supplies, average construction)', next:'prepare_or_go'},
+        {label:'Not prepared (no supplies, vulnerable structure)', next:'go_soon'},
+      ]},
+      shelter_natural: {type:'result', style:'success', text:'SHELTER IN PLACE — monitor and prepare to leave.\n\n1. Your home is your best shelter IF it is not directly threatened\n2. Monitor the situation: NOAA radio, local news, emergency alerts\n3. Set a TRIGGER — a specific condition that means you leave:\n   - Water reaches X street\n   - Fire is within X miles\n   - Wind exceeds X mph\n4. Pre-load vehicle with go-bags and essentials NOW\n5. Top off vehicle fuel\n6. Identify what you would grab in a 5-minute evacuation\n7. Keep shoes and clothes by the bed if sleeping\n\nAdvantages of sheltering: you have all your supplies, you know the space, you have power/water (for now).\n\nBut be READY to go. Don\'t let comfort turn into a death trap.'},
+      prepare_or_go: {type:'result', style:'warning', text:'PREPARE NOW — you have a window of time.\n\nYou are in the decision zone. Use the next 1-2 hours wisely:\n\n1. Fill bathtubs and containers with water\n2. Charge all devices\n3. Secure outdoor items (flying debris in storms)\n4. Move to interior room / upper floor (flood) / lowest floor (tornado)\n5. Load vehicle with essentials in case you need to leave quickly\n\nDecision framework — LEAVE if any of these become true:\n- Mandatory evacuation order issued\n- You can see/smell the threat approaching\n- Utilities fail (water/power/gas)\n- You feel unsafe for ANY reason\n\nTrust your instincts. If your gut says go — GO. You can always come back.'},
+      go_soon: {type:'result', style:'danger', text:'LEAVE SOON — your situation is vulnerable.\n\nYou don\'t have the supplies or structure to ride this out safely.\n\n1. Pack what you can in 30 minutes\n2. Essentials: water, food (non-perishable), medications, IDs, cash, phone, charger, warm clothes, blankets\n3. Head to:\n   - Family or friends outside the danger zone\n   - Public emergency shelter\n   - Hotel/motel in a safe area\n4. Bring your pets\n5. Tell someone where you\'re going\n6. Take photos of your home interior for insurance before you leave\n\nLeaving early is ALWAYS better than leaving late. Traffic, panic, and road closures get worse every hour you wait.'},
+      infra: {type:'question', text:'How long do you think services will be out?', options:[
+        {label:'Hours to 1-2 days', next:'shelter_infra_short'},
+        {label:'Days to a week', next:'shelter_infra_week'},
+        {label:'Unknown / could be weeks+', next:'infra_long'},
+      ]},
+      shelter_infra_short: {type:'result', style:'success', text:'SHELTER IN PLACE — short-term infrastructure outage.\n\nYou are safer at home for 1-2 day outages.\n\n1. Use your stored water and food\n2. Conserve: minimize fridge openings, ration fuel, reduce water use\n3. Stay informed: battery radio, check on neighbors\n4. Keep your vehicle fueled and ready as a backup plan\n\nDon\'t panic-drive to the store. You will burn fuel and encounter chaos. Use what you have.'},
+      shelter_infra_week: {type:'result', style:'warning', text:'SHELTER IN PLACE — but actively manage resources.\n\nFor a week-long outage, home is still likely your best option IF you have supplies.\n\nDaily management:\n- Track water consumption (1 gal/person/day minimum)\n- Track food inventory and plan meals around perishables\n- Manage generator fuel (2h on / 4h off cycle)\n- Maintain security (lock up, neighborhood watch)\n- Log everything in N.O.M.A.D.\n\nConsider leaving IF:\n- Water supply drops below 3 days\n- Medical needs cannot be met\n- Security situation deteriorates\n- You have a fully-supplied bug-out location available'},
+      infra_long: {type:'result', style:'danger', text:'CRITICAL DECISION — stay or relocate.\n\nWeeks-long infrastructure failure is a survival situation.\n\nSTAY if:\n- You have 30+ days of water and food\n- You have a sustainable water source (well, spring, rain collection)\n- Your community is organized and cooperative\n- You have renewable power (solar)\n- Your home is defensible\n\nGO if:\n- You have a pre-planned bug-out location with supplies\n- Your neighborhood is becoming unsafe\n- Water or food will run out before services return\n- You have family/group at a better-supplied location\n- Roads are still passable (this window closes fast)\n\nIf you GO: travel during daylight, avoid highways (checkpoints, bottlenecks), take back roads, travel in convoy if possible, be armed and vigilant.'},
+      civil: {type:'question', text:'How close is the unrest to your location?', options:[
+        {label:'In my neighborhood / within blocks', next:'civil_close'},
+        {label:'In my city but not my area yet', next:'civil_city'},
+        {label:'In my region but not my city', next:'shelter_civil'},
+      ]},
+      civil_close: {type:'result', style:'danger', text:'IMMEDIATE THREAT — unrest in your neighborhood.\n\n1. Lock all doors and windows. Close blinds/curtains.\n2. Move family to an interior room on an upper floor\n3. Stay away from windows (stray bullets, thrown objects)\n4. DO NOT engage with crowds or confront anyone\n5. Have go-bags ready by the door\n6. If your home is being specifically targeted: LEAVE via back exit\n7. If leaving: drive calmly, do not draw attention, avoid main roads\n8. Head to a pre-planned safe location outside the affected area\n\nDO NOT:\n- Stand on your porch or roof to watch\n- Post your location on social media\n- Open the door for anyone you don\'t know\n- Fire warning shots (escalates the situation and reveals you\'re armed)'},
+      civil_city: {type:'result', style:'warning', text:'SHELTER IN PLACE — prepare to leave.\n\nUnrest in your city but not your area yet. You have time.\n\n1. Lock down your home. Arm security if you have it.\n2. Fill vehicle with fuel, pack go-bags, load essentials\n3. Monitor situation: local news, scanner apps, social media (carefully)\n4. Set a TRIGGER point: if unrest reaches [specific street/landmark], you leave\n5. Identify your evacuation route OUT of the city\n6. Contact friends/family outside the area — arrange a place to stay\n7. Keep a low profile: no political signs, flags, or bumper stickers visible\n8. Be a "gray man" — blend in, don\'t attract attention\n\nMost civil unrest is localized and burns out in 3-7 days. But it can spread unpredictably.'},
+      shelter_civil: {type:'result', style:'success', text:'SHELTER IN PLACE — monitor from a distance.\n\nUnrest in your region but not your city. Lowest risk.\n\n1. Increase situational awareness — monitor news, local scanner\n2. Top off fuel, water, and supplies as a precaution\n3. Avoid traveling to affected areas\n4. Review your emergency plans and rally points\n5. Consider: would you be cut off if roads in/out are blocked?\n6. If you commute through affected areas: work from home or take alternate routes\n\nThis is a good time to do a full supply check and ensure your go-bags are current.'},
+      cbrn: {type:'result', style:'danger', text:'Chemical / Nuclear / Biological event:\n\nSHELTER IN PLACE for the initial event. Do NOT evacuate during a chemical/radiological release.\n\n1. Get INSIDE immediately — a sealed building is your best protection\n2. Close all windows and doors\n3. Turn OFF HVAC / air conditioning (stops pulling contaminated air in)\n4. Seal gaps: wet towels under doors, tape over vents if available\n5. Move to an interior room, preferably above ground (chemicals settle, radiation doesn\'t rise)\n6. Cover nose and mouth with wet cloth if air quality is poor\n7. Monitor emergency broadcasts (NOAA radio, TV if available)\n8. DO NOT go outside to "check the situation"\n\nEvacuate ONLY when authorities say it is safe, OR if your shelter is compromised.\n\nNuclear: shelter for minimum 24 hours (fallout decay). Ideal: 48-72 hours.\nChemical: shelter until all-clear is given.\nBiological: follow quarantine protocols. Limit contact with others.'},
+      personal: {type:'result', style:'danger', text:'Personal threat — leave if you can.\n\n1. If someone is actively threatening you: call 911 first\n2. Do NOT confront — leave the area\n3. Go to a safe person\'s house, police station, or public place\n4. Take your phone, ID, keys, wallet, medications\n5. If children are involved: take them with you\n6. Do NOT announce your destination on social media\n\nIf you cannot leave safely:\n- Lock yourself in a room with a phone\n- Call 911 and stay on the line\n- Barricade the door\n- Identify an alternate exit (window)\n\nAfter the immediate threat:\n- File a police report\n- Document everything (photos, messages, dates)\n- Consider a protective order\n- Change locks and security codes\n- Tell trusted neighbors to watch for the person'},
+    }
+  },
+];
+
 let _guideHistory = [];
 let _currentGuide = null;
 let _currentNode = null;
@@ -12468,6 +12595,45 @@ async function generateAlertSummary() {
   }
   btn.disabled = false;
   btn.textContent = 'AI Summary';
+}
+
+/* ─── Getting Started Checklist ─── */
+function updateGettingStarted() {
+  if (localStorage.getItem('nomad-gs-dismissed') === '1') return;
+  const svcs = _lastServicesData || [];
+  const ollama = svcs.find(s => s.id === 'ollama');
+  const kiwix = svcs.find(s => s.id === 'kiwix');
+  const steps = [
+    {done: ollama?.installed, text: 'Install AI Chat (Ollama)', action: "installService('ollama')"},
+    {done: ollama?.running, text: 'Start AI Chat service', action: "startService('ollama')"},
+    {done: false, text: 'Download an AI model', action: "document.querySelector('[data-tab=\"ai-chat\"]').click();setTimeout(()=>toggleModelPicker(),200)"},
+    {done: kiwix?.installed, text: 'Install Information Library (Kiwix)', action: "installService('kiwix')"},
+    {done: false, text: 'Download content packs from the Library tab', action: "document.querySelector('[data-tab=\"kiwix-library\"]').click()"},
+    {done: false, text: 'Try the Interactive Guides in Preparedness > Guides', action: "document.querySelector('[data-tab=\"preparedness\"]').click();setTimeout(()=>switchPrepSub('guides'),200)"},
+  ];
+  // Check if any AI models exist
+  if (ollama?.running) {
+    fetch('/api/ai/models').then(r=>r.json()).then(models => { steps[2].done = models.length > 0; renderGS(steps); }).catch(()=>renderGS(steps));
+  } else {
+    renderGS(steps);
+  }
+}
+function renderGS(steps) {
+  const allDone = steps.every(s => s.done);
+  if (allDone) { document.getElementById('getting-started').style.display = 'none'; return; }
+  document.getElementById('getting-started').style.display = 'block';
+  const el = document.getElementById('gs-items');
+  el.innerHTML = steps.map((s, i) => `
+    <div style="display:flex;gap:8px;align-items:center;${s.done ? 'opacity:0.4;text-decoration:line-through;' : ''}">
+      <span style="color:${s.done ? 'var(--green)' : 'var(--text-muted)'};">${s.done ? '&#10003;' : (i+1)+'.'}</span>
+      <span>${s.text}</span>
+      ${!s.done ? `<button class="btn btn-sm" onclick="${s.action}" style="font-size:10px;padding:2px 8px;margin-left:4px;">Go</button>` : ''}
+    </div>
+  `).join('');
+}
+function dismissGettingStarted() {
+  localStorage.setItem('nomad-gs-dismissed', '1');
+  document.getElementById('getting-started').style.display = 'none';
 }
 
 /* ─── Init ─── */

@@ -3501,6 +3501,95 @@ def create_app():
         counts = Counter(c['category'] for c in CHANNEL_CATALOG)
         return jsonify([{'name': cat, 'count': counts[cat]} for cat in CHANNEL_CATEGORIES])
 
+    # ─── YouTube Search & Channel Videos ─────────────────────────────
+
+    @app.route('/api/youtube/search')
+    def api_youtube_search():
+        """Search YouTube via yt-dlp and return video metadata."""
+        query = request.args.get('q', '').strip()
+        limit = min(int(request.args.get('limit', '12')), 30)
+        if not query:
+            return jsonify([])
+        exe = get_ytdlp_path()
+        if not os.path.isfile(exe):
+            return jsonify({'error': 'Downloader not installed'}), 400
+        try:
+            result = subprocess.run(
+                [exe, '--flat-playlist', '--dump-json', f'ytsearch{limit}:{query}'],
+                capture_output=True, text=True, timeout=30, creationflags=0x08000000,
+            )
+            videos = []
+            for line in result.stdout.strip().split('\n'):
+                if not line.strip():
+                    continue
+                try:
+                    d = json.loads(line)
+                    thumb = ''
+                    if d.get('thumbnails'):
+                        thumb = d['thumbnails'][-1].get('url', '')
+                    elif d.get('thumbnail'):
+                        thumb = d['thumbnail']
+                    videos.append({
+                        'id': d.get('id', ''),
+                        'title': d.get('title', ''),
+                        'channel': d.get('channel', d.get('uploader', '')),
+                        'duration': d.get('duration_string', ''),
+                        'views': d.get('view_count', 0),
+                        'thumbnail': thumb,
+                        'url': f"https://www.youtube.com/watch?v={d.get('id', '')}",
+                    })
+                except json.JSONDecodeError:
+                    continue
+            return jsonify(videos)
+        except subprocess.TimeoutExpired:
+            return jsonify({'error': 'Search timed out'}), 504
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/youtube/channel-videos')
+    def api_youtube_channel_videos():
+        """List recent videos from a YouTube channel."""
+        channel_url = request.args.get('url', '').strip()
+        limit = min(int(request.args.get('limit', '12')), 50)
+        if not channel_url:
+            return jsonify([])
+        exe = get_ytdlp_path()
+        if not os.path.isfile(exe):
+            return jsonify({'error': 'Downloader not installed'}), 400
+        try:
+            result = subprocess.run(
+                [exe, '--flat-playlist', '--dump-json', '--playlist-end', str(limit),
+                 channel_url + '/videos'],
+                capture_output=True, text=True, timeout=45, creationflags=0x08000000,
+            )
+            videos = []
+            for line in result.stdout.strip().split('\n'):
+                if not line.strip():
+                    continue
+                try:
+                    d = json.loads(line)
+                    thumb = ''
+                    if d.get('thumbnails'):
+                        thumb = d['thumbnails'][-1].get('url', '')
+                    elif d.get('thumbnail'):
+                        thumb = d['thumbnail']
+                    videos.append({
+                        'id': d.get('id', ''),
+                        'title': d.get('title', ''),
+                        'channel': d.get('channel', d.get('uploader', '')),
+                        'duration': d.get('duration_string', ''),
+                        'views': d.get('view_count', 0),
+                        'thumbnail': thumb,
+                        'url': f"https://www.youtube.com/watch?v={d.get('id', '')}",
+                    })
+                except json.JSONDecodeError:
+                    continue
+            return jsonify(videos)
+        except subprocess.TimeoutExpired:
+            return jsonify({'error': 'Request timed out'}), 504
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     # ─── Media Shared Endpoints (favorites, batch) ────────────────────
 
     @app.route('/api/media/favorite', methods=['POST'])

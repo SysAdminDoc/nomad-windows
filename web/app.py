@@ -13,6 +13,7 @@ from flask import Flask, render_template, jsonify, request, Response
 from werkzeug.utils import secure_filename
 
 from config import get_data_dir, set_data_dir
+from web.catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
 from db import get_db, log_activity
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling
 from services.manager import (
@@ -3479,6 +3480,19 @@ def create_app():
     @app.route('/api/audio/catalog')
     def api_audio_catalog():
         return jsonify(AUDIO_CATALOG)
+
+    @app.route('/api/channels/catalog')
+    def api_channels_catalog():
+        category = request.args.get('category', '')
+        if category:
+            return jsonify([c for c in CHANNEL_CATALOG if c['category'] == category])
+        return jsonify(CHANNEL_CATALOG)
+
+    @app.route('/api/channels/categories')
+    def api_channels_categories():
+        from collections import Counter
+        counts = Counter(c['category'] for c in CHANNEL_CATALOG)
+        return jsonify([{'name': cat, 'count': counts[cat]} for cat in CHANNEL_CATEGORIES])
 
     # ─── Media Shared Endpoints (favorites, batch) ────────────────────
 

@@ -721,12 +721,13 @@ body{background:var(--bg);color:var(--text)}
           <button class="media-subtab active" data-msub="videos" onclick="switchMediaSub('videos')">Videos</button>
           <button class="media-subtab" data-msub="audio" onclick="switchMediaSub('audio')">Audio</button>
           <button class="media-subtab" data-msub="books" onclick="switchMediaSub('books')">Books</button>
+          <button class="media-subtab" data-msub="channels" onclick="switchMediaSub('channels')" style="border-left:1px solid var(--border);margin-left:4px;padding-left:10px;">Browse Channels</button>
           <div style="flex:1;"></div>
           <div style="font-size:11px;color:var(--text-muted);padding:6px 12px;" id="media-total-stats"></div>
         </div>
 
         <!-- Top Bar -->
-        <div class="media-topbar">
+        <div class="media-topbar" id="media-topbar">
           <div style="display:flex;gap:6px;align-items:center;flex:1;flex-wrap:wrap;">
             <input type="text" id="media-url-input" placeholder="Paste YouTube URL to download..." style="flex:1;min-width:200px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;">
             <button class="btn btn-sm btn-primary" id="media-dl-btn" onclick="downloadMediaURL()">Download</button>
@@ -797,6 +798,20 @@ body{background:var(--bg);color:var(--text)}
         <!-- Content Area -->
         <div id="media-content-area" style="padding:12px 16px;overflow-y:auto;flex:1;">
           <div id="media-item-list"></div>
+        </div>
+
+        <!-- Channel Browser -->
+        <div id="channel-browser" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
+          <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <span style="font-weight:600;font-size:13px;">Survival Channel Library</span>
+            <span style="font-size:11px;color:var(--text-muted);" id="channel-count">171 channels across 20 categories</span>
+            <div style="flex:1;"></div>
+            <select id="channel-cat-filter" onchange="filterChannels()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:11px;">
+              <option value="">All Categories</option>
+            </select>
+            <input type="text" id="channel-search" placeholder="Search channels..." oninput="filterChannels()" style="width:160px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;">
+          </div>
+          <div id="channel-list" style="padding:12px 16px;overflow-y:auto;flex:1;"></div>
         </div>
 
         <!-- Video Player -->
@@ -8919,11 +8934,28 @@ function switchMediaSub(sub) {
   _mediaSub = sub;
   _mediaFolder = '';
   document.querySelectorAll('.media-subtab').forEach(b => b.classList.toggle('active', b.dataset.msub === sub));
-  // Update URL input placeholder and file accept
   const urlInput = document.getElementById('media-url-input');
   const fileInput = document.getElementById('media-file-upload');
   const dlBtn = document.getElementById('media-dl-btn');
   const catBtn = document.getElementById('media-catalog-btn');
+  // Hide channel browser for non-channel tabs
+  const channelBrowser = document.getElementById('channel-browser');
+  const contentArea = document.getElementById('media-content-area');
+  const topbar = document.getElementById('media-topbar');
+  const sidebar = document.querySelector('.media-sidebar');
+  if (sub === 'channels') {
+    channelBrowser.style.display = 'flex';
+    contentArea.style.display = 'none';
+    topbar.style.display = 'none';
+    sidebar.style.display = 'none';
+    document.getElementById('media-catalog-panel').style.display = 'none';
+    loadChannelBrowser();
+    return;
+  }
+  channelBrowser.style.display = 'none';
+  contentArea.style.display = '';
+  topbar.style.display = '';
+  sidebar.style.display = '';
   if (sub === 'videos') {
     urlInput.placeholder = 'Paste YouTube URL to download video...';
     fileInput.setAttribute('accept', 'video/*');
@@ -9165,6 +9197,87 @@ async function toggleFavorite(id) {
   const item = _mediaItems.find(i => i.id === id);
   if (item) item.favorited = item.favorited ? 0 : 1;
   renderMediaItems();
+}
+
+// ── Channel Browser ──
+let _channelData = [];
+let _channelCategories = [];
+
+async function loadChannelBrowser() {
+  try {
+    const [channels, categories] = await Promise.all([
+      fetch('/api/channels/catalog').then(r => r.json()),
+      fetch('/api/channels/categories').then(r => r.json()),
+    ]);
+    _channelData = channels;
+    _channelCategories = categories;
+    const sel = document.getElementById('channel-cat-filter');
+    sel.innerHTML = '<option value="">All Categories (' + channels.length + ')</option>' +
+      categories.map(c => `<option value="${c.name}">${c.name} (${c.count})</option>`).join('');
+    document.getElementById('channel-count').textContent = `${channels.length} channels across ${categories.length} categories`;
+    filterChannels();
+  } catch(e) { document.getElementById('channel-list').innerHTML = '<div style="padding:20px;color:var(--text-muted);">Failed to load channel catalog</div>'; }
+}
+
+function filterChannels() {
+  const cat = document.getElementById('channel-cat-filter').value;
+  const search = (document.getElementById('channel-search').value || '').toLowerCase();
+  let filtered = _channelData;
+  if (cat) filtered = filtered.filter(c => c.category === cat);
+  if (search) filtered = filtered.filter(c => c.name.toLowerCase().includes(search) || c.focus.toLowerCase().includes(search) || c.category.toLowerCase().includes(search));
+  renderChannels(filtered);
+}
+
+function renderChannels(channels) {
+  const el = document.getElementById('channel-list');
+  if (!channels.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);font-size:13px;">No channels match your search</div>';
+    return;
+  }
+  // Group by category
+  const groups = {};
+  for (const c of channels) {
+    if (!groups[c.category]) groups[c.category] = [];
+    groups[c.category].push(c);
+  }
+  let html = '';
+  for (const [cat, items] of Object.entries(groups)) {
+    html += `<div style="margin-bottom:16px;">
+      <div style="font-weight:700;font-size:13px;color:var(--accent);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);">${escapeHtml(cat)} <span style="font-weight:400;color:var(--text-muted);font-size:11px;">(${items.length})</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:6px;">`;
+    for (const ch of items) {
+      html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div style="min-width:0;flex:1;">
+          <div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(ch.name)}</div>
+          <div style="font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(ch.focus)}</div>
+        </div>
+        <div style="display:flex;gap:4px;flex-shrink:0;">
+          <button class="btn btn-sm" onclick="downloadChannelVideo('${escapeAttr(ch.url)}','${escapeAttr(ch.name)}','${escapeAttr(ch.category)}')" title="Download latest videos from this channel">Download</button>
+          <a href="${escapeAttr(ch.url)}" target="_blank" class="btn btn-sm btn-ghost" style="text-decoration:none;" title="Open channel on YouTube">Visit</a>
+        </div>
+      </div>`;
+    }
+    html += '</div></div>';
+  }
+  el.innerHTML = html;
+}
+
+async function downloadChannelVideo(channelUrl, channelName, category) {
+  const s = await (await fetch('/api/ytdlp/status')).json();
+  if (!s.installed) { toast('Install the downloader first from the Videos tab', 'warning'); return; }
+  // Download latest video from channel, preserving channel name as folder
+  const folder = category;
+  try {
+    const r = await fetch('/api/ytdlp/download', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url: channelUrl + '/videos', folder: folder, category: category.toLowerCase().replace(/[^a-z]+/g, '_')})});
+    const d = await r.json();
+    if (d.id) {
+      toast(`Downloading from ${channelName}...`, 'info');
+      pollMediaDownloads(d.id);
+    } else {
+      toast(d.error || 'Download failed', 'error');
+    }
+  } catch(e) { toast('Download request failed', 'error'); }
 }
 
 // ── Playback ──

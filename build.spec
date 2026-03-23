@@ -35,6 +35,7 @@ a = Analysis(
         'services.qdrant',
         'services.stirling',
         'services.manager',
+        'web.catalog',
     ],
     hookspath=[],
     hooksconfig={},

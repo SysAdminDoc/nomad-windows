@@ -954,6 +954,8 @@ a { color: var(--accent); text-decoration: none; }
 .inv-alert.ok { background:var(--green-dim);color:var(--green); }
 .qty-adj { cursor:pointer;color:var(--text-muted);font-size:8px;padding:2px 4px;border-radius:3px;user-select:none;vertical-align:middle; }
 .qty-adj:hover { color:var(--accent);background:var(--accent-dim); }
+.help-icon { display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:50%;background:var(--accent-dim);color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;border:none;padding:0;margin-left:6px;vertical-align:middle;transition:all 0.2s;font-family:serif;line-height:1; }
+.help-icon:hover { background:var(--accent);color:#fff;transform:scale(1.15); }
 
 /* ─── Contact Cards ─── */
 .contact-card {
@@ -1214,7 +1216,7 @@ a { color: var(--accent); text-decoration: none; }
   <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px;border-bottom:1px solid var(--border);">
     <span style="font-size:11px;font-weight:700;display:flex;align-items:center;gap:6px;">
       <span style="width:8px;height:8px;border-radius:50%;background:var(--orange);animation:pulse 2s ease infinite;"></span>
-      SITUATION ALERTS <span id="alert-count" style="color:var(--text-muted);font-weight:400;"></span>
+      SITUATION ALERTS <button class="help-icon" onclick="showHelp('alerts')" title="How alerts work" style="width:14px;height:14px;font-size:9px;">?</button> <span id="alert-count" style="color:var(--text-muted);font-weight:400;"></span>
     </span>
     <div style="display:flex;gap:6px;">
       <button class="btn btn-sm" onclick="generateAlertSummary()" id="alert-summary-btn" title="AI situation summary">AI Summary</button>
@@ -1249,7 +1251,7 @@ a { color: var(--accent); text-decoration: none; }
     <div id="readiness-score-panel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;">
       <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
         <div style="text-align:center;min-width:80px;">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Readiness</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Readiness <button class="help-icon" onclick="showHelp('readiness')" title="How your score is calculated" style="width:14px;height:14px;font-size:9px;">?</button></div>
           <div id="rs-grade" style="font-size:32px;font-weight:800;line-height:1.1;margin:2px 0;">--</div>
           <div id="rs-total" style="font-size:11px;color:var(--text-muted);">0/100</div>
         </div>
@@ -1414,7 +1416,7 @@ a { color: var(--accent); text-decoration: none; }
         </div>
         <div id="model-picker-panel" style="display:none;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);font-size:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <span style="font-weight:600;">Download an AI Model <span style="font-weight:400;color:var(--text-muted);font-size:11px;">(downloaded once, works forever offline)</span></span>
+            <span style="font-weight:600;">Download an AI Model <button class="help-icon" onclick="showHelp('models-guide')" title="Which model should I choose?">?</button> <span style="font-weight:400;color:var(--text-muted);font-size:11px;">(downloaded once, works forever offline)</span></span>
             <div style="display:flex;gap:6px;align-items:center;">
               <button class="btn btn-sm btn-primary" onclick="pullAllModels()" title="Download all recommended models one at a time">Download All Recommended</button>
               <button class="btn btn-sm btn-ghost" onclick="toggleModelPicker()" style="font-size:16px;padding:2px 6px;">x</button>
@@ -1552,7 +1554,7 @@ a { color: var(--accent); text-decoration: none; }
     <div id="map-management">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div class="settings-card">
-          <h3 style="display:flex;justify-content:space-between;align-items:center;">Download Regional Maps
+          <h3 style="display:flex;justify-content:space-between;align-items:center;">Download Regional Maps <button class="help-icon" onclick="showHelp('maps')" title="Maps guide">?</button>
             <button class="btn btn-sm btn-primary" onclick="downloadAllMaps()">Download All Regions</button>
           </h3>
           <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Download offline maps for your region. Select an area below and it will be available for navigation without internet. The download tool is installed automatically on first use.</p>
@@ -1639,7 +1641,7 @@ a { color: var(--accent); text-decoration: none; }
   <div id="tab-benchmark" class="tab-content">
     <div class="settings-grid">
       <div class="settings-card" style="grid-column:1/-1;">
-        <h3>N.O.M.A.D. Benchmark</h3>
+        <h3>N.O.M.A.D. Benchmark <button class="help-icon" onclick="showHelp('benchmark')" title="What is this?">?</button></h3>
         <p style="font-size:12px;color:var(--text-dim);margin-bottom:14px;">
           Test your system's CPU, memory, disk, and AI inference performance. Results are scored 0-100.
         </p>
@@ -1683,7 +1685,7 @@ a { color: var(--accent); text-decoration: none; }
 
       <!-- Meshtastic Integration -->
       <div class="settings-card" style="grid-column:1/-1;">
-        <h3>Off-Grid Radio Messaging</h3>
+        <h3>Off-Grid Radio Messaging <button class="help-icon" onclick="showHelp('comms-guide')" title="Radio & messaging guide">?</button></h3>
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Send messages without cell towers or internet using a Meshtastic radio device. Range: 1-10+ miles. Plug a Meshtastic radio into your USB port to get started.</div>
         <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-sm btn-primary" onclick="scanMeshtastic()">Scan for Devices</button>
@@ -1730,7 +1732,7 @@ a { color: var(--accent); text-decoration: none; }
 
       <!-- Guided Drills -->
       <div class="settings-card" style="grid-column:1/-1;">
-        <h3>Guided Emergency Drills</h3>
+        <h3>Guided Emergency Drills <button class="help-icon" onclick="showHelp('scenarios-deep')" title="How drills & scenarios work">?</button></h3>
         <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Run a timed drill to test your preparedness. Each drill walks you through tasks, tracks completion time, and generates an after-action review.</div>
         <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;" id="drill-cards">
           <div class="calc-card" style="padding:14px;cursor:pointer;" onclick="startDrill('72hour')">
@@ -1779,7 +1781,7 @@ a { color: var(--accent); text-decoration: none; }
       <!-- Scenario Training Engine -->
       <div class="settings-card" style="grid-column:1/-1;border-color:var(--accent);border-width:2px;">
         <h3 style="display:flex;justify-content:space-between;align-items:center;">
-          Immersive Training Scenarios
+          Immersive Training Scenarios <button class="help-icon" onclick="showHelp('scenarios-deep')" title="How training scenarios work">?</button>
           <button class="btn btn-sm" onclick="loadScenarioHistory()">History</button>
         </h3>
         <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Multi-phase survival simulations with AI-generated complications. Your real inventory, contacts, and situation data shape the experience. Each decision is logged and scored.</p>
@@ -1836,7 +1838,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Checklists -->
     <div id="psub-checklists" class="prep-sub">
     <div class="prep-section">
-      <h3>Emergency Checklists</h3>
+      <h3>Emergency Checklists <button class="help-icon" onclick="showHelp('prep')" title="How checklists work">?</button></h3>
       <div class="prep-layout">
         <div class="prep-sidebar">
           <div class="prep-sidebar-header">
@@ -1874,7 +1876,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Incidents -->
     <div id="psub-incidents" class="prep-sub">
     <div class="prep-section">
-      <h3>Incident Log</h3>
+      <h3>Incident Log <button class="help-icon" onclick="showHelp('prep')" title="What to log as incidents">?</button></h3>
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:stretch;">
         <select id="inc-severity" class="preset-select" style="min-width:90px;">
           <option value="info">Info</option>
@@ -1919,7 +1921,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Inventory -->
     <div id="psub-inventory" class="prep-sub active">
     <div class="prep-section">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;">Supply Inventory <button class="btn btn-sm" onclick="openAppFrame('Inventory Report','/api/inventory/print')" title="Printable inventory list">Print</button></h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Supply Inventory <button class="help-icon" onclick="showHelp('inventory-guide')" title="Inventory best practices">?</button> <button class="btn btn-sm" onclick="openAppFrame('Inventory Report','/api/inventory/print')" title="Printable inventory list">Print</button></h3>
       <div id="inv-alerts" style="margin-bottom:12px;"></div>
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <select id="inv-cat-filter" class="preset-select" onchange="loadInventory()" style="min-width:120px;">
@@ -1969,7 +1971,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Contacts -->
     <div id="psub-contacts" class="prep-sub">
     <div class="prep-section">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;">Emergency Contacts & Comms Plan <button class="btn btn-sm" onclick="openAppFrame('Contact Directory','/api/contacts/print')" title="Printable contact list">Print</button></h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Emergency Contacts & Comms Plan <button class="help-icon" onclick="showHelp('comms-guide')" title="Contacts & communications guide">?</button> <button class="btn btn-sm" onclick="openAppFrame('Contact Directory','/api/contacts/print')" title="Printable contact list">Print</button></h3>
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
         <input id="contact-search" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;outline:none;" placeholder="Search contacts..." oninput="loadContacts()">
         <button class="btn btn-sm btn-primary" onclick="showContactForm()">+ Add Contact</button>
@@ -2010,7 +2012,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Calculators -->
     <div id="psub-calculators" class="prep-sub">
     <div class="prep-section">
-      <h3>Resource Calculators</h3>
+      <h3>Resource Calculators <button class="help-icon" onclick="showHelp('calculators-guide')" title="Calculator reference guide">?</button></h3>
       <div class="calc-grid">
         <!-- Water Calculator -->
         <div class="calc-card">
@@ -2373,7 +2375,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Security -->
     <div id="psub-security" class="prep-sub">
     <div class="prep-section">
-      <h3>Security Operations</h3>
+      <h3>Security Operations <button class="help-icon" onclick="showHelp('security-guide')" title="Security module guide">?</button></h3>
 
       <!-- Security Dashboard -->
       <div id="security-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-bottom:16px;"></div>
@@ -2420,7 +2422,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Power Management -->
     <div id="psub-power" class="prep-sub">
     <div class="prep-section">
-      <h3>Power Management</h3>
+      <h3>Power Management <button class="help-icon" onclick="showHelp('power-guide')" title="Power management guide">?</button></h3>
 
       <!-- Power Dashboard -->
       <div id="power-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-bottom:16px;"></div>
@@ -2471,7 +2473,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Garden & Food Production -->
     <div id="psub-garden" class="prep-sub">
     <div class="prep-section">
-      <h3>Food Production</h3>
+      <h3>Food Production <button class="help-icon" onclick="showHelp('garden-guide')" title="Food production guide">?</button></h3>
 
       <!-- Zone Lookup -->
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px;">
@@ -2548,7 +2550,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Medical Module -->
     <div id="psub-medical" class="prep-sub">
     <div class="prep-section">
-      <h3>Medical Module</h3>
+      <h3>Medical Module <button class="help-icon" onclick="showHelp('medical-guide')" title="Medical module guide">?</button></h3>
       <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
         <button class="btn btn-sm btn-primary" onclick="showPatientForm()">+ Add Patient</button>
         <button class="btn btn-sm" onclick="addPatientFromContacts()">Import from Contacts</button>
@@ -4397,7 +4399,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Vault -->
     <div id="psub-vault" class="prep-sub">
     <div class="prep-section">
-      <h3>Document Vault (AES-256 Encrypted)</h3>
+      <h3>Secure Vault (AES-256 Encrypted) <button class="help-icon" onclick="showHelp('vault-guide')" title="Vault encryption guide">?</button></h3>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:16px;">
         <div style="display:flex;gap:8px;margin-bottom:10px;align-items:end;flex-wrap:wrap;">
           <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Vault Password</label>
@@ -4430,7 +4432,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Weather -->
     <div id="psub-weather" class="prep-sub">
     <div class="prep-section">
-      <h3>Weather Journal & Barometer</h3>
+      <h3>Weather Journal & Barometer <button class="help-icon" onclick="showHelp('weather-guide')" title="Weather tracking guide">?</button></h3>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div class="settings-card">
           <h3 style="font-size:13px;">Log Observation</h3>
@@ -4525,7 +4527,7 @@ a { color: var(--accent); text-decoration: none; }
 
         <!-- SITREP Generator -->
         <div class="settings-card" style="grid-column:1/-1;">
-          <h3 style="font-size:13px;">SITREP Generator (Situation Report)</h3>
+          <h3 style="font-size:13px;">SITREP Generator (Situation Report) <button class="help-icon" onclick="showHelp('glossary')" title="What is a SITREP?">?</button></h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;margin-bottom:10px;">
             <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Date/Time Group</label><input id="sitrep-dtg" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:11px;outline:none;" placeholder="Auto-filled"></div>
             <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Location</label><input id="sitrep-loc" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:11px;outline:none;" placeholder="Grid ref or description"></div>
@@ -4621,7 +4623,7 @@ a { color: var(--accent); text-decoration: none; }
 
       <!-- Home Security Hardening -->
       <div class="settings-card" style="margin-top:16px;">
-        <h3 style="font-size:13px;">Home Security Hardening Assessment</h3>
+        <h3 style="font-size:13px;">Home Security Hardening Assessment <button class="help-icon" onclick="showHelp('security-guide')" title="Security guide">?</button></h3>
         <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Score your home security. Click items to mark complete. Focus on highest-impact items first.</div>
         <div id="home-security-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:4px;font-size:11px;"></div>
         <div id="home-security-score" style="margin-top:8px;font-size:13px;font-weight:600;"></div>
@@ -4632,7 +4634,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Daily Journal -->
     <div id="psub-journal" class="prep-sub">
     <div class="prep-section">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;">Daily Journal
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Daily Journal <button class="help-icon" onclick="showHelp('prep')" title="Journal guide">?</button>
         <button class="btn btn-sm" onclick="window.location='/api/journal/export'" title="Export journal as Markdown">Export Journal</button>
       </h3>
       <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
@@ -4659,7 +4661,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Family Plan -->
     <div id="psub-family" class="prep-sub">
     <div class="prep-section">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;">Family Emergency Plan <span style="font-size:10px;color:var(--text-muted);font-weight:400;">Auto-saves as you type</span></h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Family Emergency Plan <button class="help-icon" onclick="showHelp('prep')" title="Family plan guide">?</button> <span style="font-size:10px;color:var(--text-muted);font-weight:400;">Auto-saves as you type</span></h3>
       <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Complete this plan with your household. Print copies (use Print Emergency Card button). Review quarterly. Saved locally.</div>
       <div class="settings-card" style="margin-bottom:12px;">
         <h3 style="font-size:13px;">Meeting Locations</h3>
@@ -4769,7 +4771,7 @@ a { color: var(--accent); text-decoration: none; }
         <div id="disk-devices"></div>
       </div>
       <div class="settings-card">
-        <h3>AI Models</h3>
+        <h3>AI Models <button class="help-icon" onclick="showHelp('models-guide')" title="AI model guide">?</button></h3>
         <div id="model-manager">
           <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Manage downloaded AI models</p>
           <div id="model-list"></div>
@@ -4783,7 +4785,7 @@ a { color: var(--accent); text-decoration: none; }
         </div>
       </div>
       <div class="settings-card">
-        <h3>Preferences</h3>
+        <h3>Preferences <button class="help-icon" onclick="showHelp('settings')" title="Settings guide">?</button></h3>
         <div>
           <div class="setting-row">
             <span class="setting-label">Theme</span>
@@ -4875,7 +4877,7 @@ a { color: var(--accent); text-decoration: none; }
       <!-- Federation / Multi-Node Sync -->
       <div class="settings-card" style="grid-column:1/-1;">
         <h3 style="display:flex;justify-content:space-between;align-items:center;">
-          Connect Multiple Systems
+          Connect Multiple Systems <button class="help-icon" onclick="showHelp('sync')" title="How to sync between systems">?</button>
           <span id="node-id-badge" style="font-size:10px;color:var(--text-muted);font-weight:400;"></span>
         </h3>
         <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Share data between multiple N.O.M.A.D. computers on your network (e.g. sync your base camp with your cabin). Data is merged — nothing gets overwritten.</p>
@@ -7534,7 +7536,7 @@ function openAppFrame(title, url) {
   document.getElementById('app-frame-overlay').style.display = 'flex';
 }
 
-function openAppFrameHTML(title, html) {
+function openAppFrameHTML(title, html, scrollTo) {
   const iframe = document.getElementById('app-frame-iframe');
   document.getElementById('app-frame-title').textContent = title;
   document.getElementById('app-frame-overlay').style.display = 'flex';
@@ -7543,6 +7545,12 @@ function openAppFrameHTML(title, html) {
     iframe.contentDocument.open();
     iframe.contentDocument.write(html);
     iframe.contentDocument.close();
+    if (scrollTo) {
+      setTimeout(() => {
+        const el = iframe.contentDocument.getElementById(scrollTo);
+        if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
+      }, 100);
+    }
   }, 50);
 }
 
@@ -10668,7 +10676,7 @@ function playAlertSound(type) {
 }
 
 /* ─── Help / Guide ─── */
-function showHelp() {
+function showHelp(section) {
   const theme = localStorage.getItem('nomad-theme') || 'nomad';
   const isDark = theme !== 'nomad';
   const bg = isDark ? '#0d0d0d' : '#f5f0e0';
@@ -10676,7 +10684,7 @@ function showHelp() {
   const muted = isDark ? '#666' : '#8b7355';
   const surface = isDark ? '#1e1e26' : '#fff';
   const border = isDark ? '#333' : '#d4c9b0';
-  openAppFrameHTML('Help Guide', `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>N.O.M.A.D. Help Guide</title>
+  openAppFrameHTML('Help Guide', `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>N.O.M.A.D. User Guide</title>
   <style>body{font-family:'Segoe UI',sans-serif;background:${bg};color:${text};padding:24px 40px 60px;line-height:1.8;max-width:880px;margin:0 auto;font-size:14px;}
   h1{color:#5b9fff;border-bottom:3px solid #5b9fff;padding-bottom:8px;font-size:22px;}
   h2{color:#4caf50;margin-top:32px;border-bottom:1px solid ${border};padding-bottom:4px;font-size:17px;}
@@ -10725,16 +10733,19 @@ function showHelp() {
     <a href="#lan">23. LAN &amp; Multi-Device</a>
     <a href="#services-guide">24. Understanding Services</a>
     <a href="#use-cases">25. Common Use Cases</a>
-    <a href="#faq">26. FAQ</a>
-    <a href="#medical-guide">27. Medical Module In Depth</a>
-    <a href="#garden-guide">28. Food Production Guide</a>
-    <a href="#power-guide">29. Power Management Guide</a>
-    <a href="#security-guide">30. Security Module Guide</a>
-    <a href="#weather-guide">31. Weather Tracking Guide</a>
-    <a href="#comms-guide">32. Communications &amp; Radio</a>
-    <a href="#vault-guide">33. Secure Vault Guide</a>
-    <a href="#scenarios-deep">34. Training Scenarios In Depth</a>
-    <a href="#glossary">35. Glossary</a>
+    <a href="#calculators-guide">26. Calculators Reference</a>
+    <a href="#nukemap-guide">27. NukeMap Guide</a>
+    <a href="#notes-guide">28. Notes &amp; Documentation</a>
+    <a href="#faq">29. FAQ</a>
+    <a href="#medical-guide">30. Medical Module In Depth</a>
+    <a href="#garden-guide">31. Food Production Guide</a>
+    <a href="#power-guide">32. Power Management Guide</a>
+    <a href="#security-guide">33. Security Module Guide</a>
+    <a href="#weather-guide">34. Weather Tracking Guide</a>
+    <a href="#comms-guide">35. Communications &amp; Radio</a>
+    <a href="#vault-guide">36. Secure Vault Guide</a>
+    <a href="#scenarios-deep">37. Training Scenarios In Depth</a>
+    <a href="#glossary">38. Glossary</a>
   </div>
 
   <h2 id="getting-started">1. Getting Started</h2>
@@ -11093,7 +11104,75 @@ function showHelp() {
     <li><strong>Quarterly:</strong> Run a Training Scenario. Update your Family Plan. Review and update checklists. Sync with other N.O.M.A.D. systems if applicable.</li>
   </ul>
 
-  <h2 id="faq">26. Frequently Asked Questions</h2>
+  <h2 id="calculators-guide">26. Calculators Reference</h2>
+  <p>The Preparedness &gt; Calculators tab contains survival math tools. Here is what each one does:</p>
+  <table><tr><th>Calculator</th><th>Inputs</th><th>What It Calculates</th></tr>
+  <tr><td><strong>Water Storage</strong></td><td>People, days, climate</td><td>Total gallons needed. Hot climate adds 50%. Includes drinking, cooking, and hygiene water.</td></tr>
+  <tr><td><strong>Food Storage</strong></td><td>People, days, calories/person/day</td><td>Total calories needed. Compares your answer to LDS (2,000 cal) and FEMA (2,400 cal) standards.</td></tr>
+  <tr><td><strong>Power / Solar Sizing</strong></td><td>Load watts, hours/day, days, sun hours</td><td>Total watt-hours, recommended battery capacity (Ah), minimum solar panel wattage. Accounts for 80% depth of discharge and system efficiency.</td></tr>
+  <tr><td><strong>Watch Schedule</strong></td><td>Team members, shift length, days</td><td>Full rotation schedule showing who is on watch when. Ensures equal rest periods.</td></tr>
+  <tr><td><strong>Solar Position</strong></td><td>Latitude, longitude, date</td><td>Sunrise, sunset, solar noon, day length. Useful for planning activities and solar panel orientation.</td></tr>
+  <tr><td><strong>Moon Phase</strong></td><td>Date</td><td>Current moon phase and illumination. A full moon means better visibility at night but also means you are more visible.</td></tr>
+  <tr><td><strong>Coordinate Converter</strong></td><td>Latitude, longitude</td><td>Converts between decimal degrees (38.8977) and degrees-minutes-seconds (38&deg;53\'51.7&quot;N). Useful for radio communication and map reading.</td></tr>
+  <tr><td><strong>Travel Time</strong></td><td>Distance, mode, terrain</td><td>Estimated travel time by foot, bicycle, horse, or vehicle across flat, hilly, mountain, or swamp terrain. Accounts for reduced speed on difficult ground.</td></tr>
+  <tr><td><strong>Battery Life</strong></td><td>Capacity (mAh), voltage</td><td>Watt-hours available and estimated runtime for common devices (flashlight, radio, phone, laptop).</td></tr>
+  <tr><td><strong>Bleach Calculator</strong></td><td>Bleach %, water clarity, gallons</td><td>Exact drops or teaspoons of bleach needed to purify water. Adjusts for cloudy water (double dose). Includes surface disinfection ratios.</td></tr>
+  <tr><td><strong>Resource Planner</strong></td><td>People, days, activity level</td><td>Comprehensive resource needs: water, food (calories), fuel, medical supplies. Cross-references with your actual inventory to show gaps.</td></tr>
+  </table>
+  <div class="tip"><strong>Tip:</strong> The Resource Planner is the most powerful calculator &mdash; it pulls your real inventory data and shows exactly what you have vs. what you need for a given scenario.</div>
+
+  <h2 id="nukemap-guide">27. NukeMap Guide</h2>
+  <p>NukeMap v3.2.0 is a nuclear effects simulator bundled with N.O.M.A.D. It runs entirely offline.</p>
+  <h3>What It Can Do</h3>
+  <ul>
+    <li><strong>Blast Radius Visualization</strong> &mdash; Shows concentric rings for fireball, severe damage, moderate damage, and light damage zones for any weapon yield</li>
+    <li><strong>Thermal Radiation</strong> &mdash; Shows how far burns and fire ignition extend from ground zero</li>
+    <li><strong>Fallout Plume</strong> &mdash; Models fallout patterns based on wind direction and weapon yield</li>
+    <li><strong>Shelter Analysis</strong> &mdash; Calculates radiation exposure based on shelter type and distance</li>
+    <li><strong>Multiple Detonation Scenarios</strong> &mdash; 7 pre-built WW3 scenarios with 708 warheads across 418 real-world targets</li>
+    <li><strong>EMP/HEMP Burst</strong> &mdash; Visualize electromagnetic pulse effects from high-altitude detonations</li>
+  </ul>
+  <h3>How to Use It</h3>
+  <ol>
+    <li>Click <strong>Launch NukeMap</strong> in the Tools tab</li>
+    <li>Select a weapon from the sidebar or enter a custom yield</li>
+    <li>Click anywhere on the map to place the detonation point</li>
+    <li>Examine the colored rings to understand the blast effects at different distances</li>
+    <li>Use the scenarios panel to load pre-built conflict simulations</li>
+  </ol>
+  <div class="warn"><strong>Purpose:</strong> NukeMap is an educational and planning tool. Understanding blast effects helps you evaluate whether your location is within risk zones and plan appropriate shelter and evacuation routes. This is not a toy &mdash; it is a serious planning tool used by emergency management professionals.</div>
+
+  <h2 id="notes-guide">28. Notes &amp; Documentation</h2>
+  <p>The Notes tab is your digital notebook for plans, procedures, observations, and logs.</p>
+  <h3>Markdown Support</h3>
+  <p>Notes support Markdown formatting. Some examples:</p>
+  <table><tr><th>Type This</th><th>To Get This</th></tr>
+  <tr><td><code># Heading</code></td><td>Large heading</td></tr>
+  <tr><td><code>## Subheading</code></td><td>Smaller heading</td></tr>
+  <tr><td><code>**bold text**</code></td><td><strong>bold text</strong></td></tr>
+  <tr><td><code>*italic text*</code></td><td><em>italic text</em></td></tr>
+  <tr><td><code>- item</code></td><td>Bullet point</td></tr>
+  <tr><td><code>1. item</code></td><td>Numbered list</td></tr>
+  <tr><td><code>[link text](url)</code></td><td>Clickable link</td></tr>
+  </table>
+  <h3>Organizing Notes</h3>
+  <ul>
+    <li><strong>Tags</strong> &mdash; Add comma-separated tags (e.g., "medical, procedures, first-aid") to categorize. Use the search to filter by tag.</li>
+    <li><strong>Pinning</strong> &mdash; Pin critical notes (SOPs, emergency contacts, rally point coordinates) so they always appear at the top.</li>
+    <li><strong>Export</strong> &mdash; Export a single note as a .md file or all notes as a ZIP archive. Print important notes and keep physical copies.</li>
+  </ul>
+  <h3>Recommended Notes to Create</h3>
+  <ul>
+    <li>Standard Operating Procedures (SOPs) for your household</li>
+    <li>Rally point coordinates and descriptions</li>
+    <li>Neighborhood contact list and skills inventory</li>
+    <li>Water source locations and purification notes</li>
+    <li>Generator maintenance schedule and fuel rotation log</li>
+    <li>Garden planting schedule and crop rotation plan</li>
+    <li>Radio communication protocols and check-in schedules</li>
+  </ul>
+
+  <h2 id="faq">29. Frequently Asked Questions</h2>
   <h3>Does N.O.M.A.D. need the internet to work?</h3>
   <p>No. After you download services, AI models, and content packs, everything works completely offline forever. The only time it connects to the internet is when YOU choose to download something new.</p>
   <h3>Is my data sent to any server or cloud?</h3>
@@ -11115,7 +11194,7 @@ function showHelp() {
   <h3>The AI gives wrong or unhelpful answers. What should I do?</h3>
   <p>Try a larger AI model (see the AI Model guide above). Smaller models are fast but less accurate. Also try changing the conversation mode &mdash; "Medical Advisor" gives better medical answers than "General Assistant." Enable "Include My Prep Data" so the AI has context about your specific situation.</p>
 
-  <h2 id="medical-guide">27. Medical Module In Depth</h2>
+  <h2 id="medical-guide">30. Medical Module In Depth</h2>
   <p>The Medical tab in Preparedness is a full field-hospital record system. Here is how to use it effectively:</p>
   <h3>Setting Up Patients</h3>
   <ol>
@@ -11149,7 +11228,7 @@ function showHelp() {
   <h3>Wound Documentation</h3>
   <p>The wound log supports 8 wound types (laceration, puncture, abrasion, burn, fracture, crush, bite, other) and 4 severity levels (minor, moderate, severe, critical). Record the body location, description, and treatment given. This creates a timeline that is invaluable if the patient later reaches professional medical care.</p>
 
-  <h2 id="garden-guide">28. Food Production Guide</h2>
+  <h2 id="garden-guide">31. Food Production Guide</h2>
   <p>The Garden tab helps you track everything related to growing and raising your own food.</p>
   <h3>Garden Plots</h3>
   <p>Add each growing area with its dimensions (width x length in feet), sun exposure (full sun, partial shade, full shade), and soil type. N.O.M.A.D. calculates total square footage automatically. This helps you plan how much you can grow.</p>
@@ -11169,7 +11248,7 @@ function showHelp() {
   <h3>USDA Hardiness Zone</h3>
   <p>Enter your latitude and N.O.M.A.D. estimates your USDA plant hardiness zone (3a through 11a+). This tells you which plants can survive your winters and when to plant. The lookup works offline using latitude-based approximation.</p>
 
-  <h2 id="power-guide">29. Power Management Guide</h2>
+  <h2 id="power-guide">32. Power Management Guide</h2>
   <p>The Power tab helps you track your energy infrastructure and project how long you can sustain operations.</p>
   <h3>Device Registry</h3>
   <p>Register every power device you own. Each type has specific fields:</p>
@@ -11190,7 +11269,7 @@ function showHelp() {
     <li><strong style="color:#f44336;">Red gauge</strong> &mdash; Less than 3 days. Critical &mdash; activate generator or drastically cut loads.</li>
   </ul>
 
-  <h2 id="security-guide">30. Security Module Guide</h2>
+  <h2 id="security-guide">33. Security Module Guide</h2>
   <h3>Camera Setup</h3>
   <p>N.O.M.A.D. can display live feeds from IP cameras on your network. Three stream types are supported:</p>
   <ul>
@@ -11210,7 +11289,7 @@ function showHelp() {
   <h3>Security Dashboard</h3>
   <p>The dashboard aggregates: current threat level (from your situation board), number of active cameras, access events in the last 24 hours, and incidents in the last 48 hours. This gives you a single-glance security overview.</p>
 
-  <h2 id="weather-guide">31. Weather Tracking Guide</h2>
+  <h2 id="weather-guide">34. Weather Tracking Guide</h2>
   <p>The Weather tab lets you record manual weather observations. This is crucial when you are offline and cannot check weather forecasts.</p>
   <h3>What to Record</h3>
   <ul>
@@ -11231,7 +11310,7 @@ function showHelp() {
   </ul>
   <div class="tip"><strong>Tip:</strong> Record weather at the same times each day (e.g., morning and evening) for the most useful trend data. Even without instruments, noting cloud patterns and wind changes has value.</div>
 
-  <h2 id="comms-guide">32. Communications &amp; Radio Guide</h2>
+  <h2 id="comms-guide">35. Communications &amp; Radio Guide</h2>
   <p>N.O.M.A.D. includes several tools for emergency communications:</p>
   <h3>Radio Reference Table</h3>
   <p>Preparedness &gt; Radio has a complete frequency reference:</p>
@@ -11258,7 +11337,7 @@ function showHelp() {
   <h3>Emergency Broadcast</h3>
   <p>In the Command Post tab, the <strong>Emergency Broadcast</strong> feature sends a high-priority message to every device currently connected to N.O.M.A.D. It appears as a banner at the top of the screen with an alert sound. Use this for urgent group notifications like &ldquo;Evacuate now&rdquo; or &ldquo;Shelter in place.&rdquo;</p>
 
-  <h2 id="vault-guide">33. Secure Vault Guide</h2>
+  <h2 id="vault-guide">36. Secure Vault Guide</h2>
   <p>The Secure Vault encrypts sensitive information with AES-256-GCM &mdash; the same encryption standard used by banks and the military.</p>
   <h3>How It Works</h3>
   <ol>
@@ -11281,7 +11360,7 @@ function showHelp() {
   <h3>Password Generator</h3>
   <p>The built-in password generator creates strong random passwords. Adjust the length and click Generate. Use the show/hide toggle to verify the password before saving it.</p>
 
-  <h2 id="scenarios-deep">34. Training Scenarios In Depth</h2>
+  <h2 id="scenarios-deep">37. Training Scenarios In Depth</h2>
   <p>The 4 training scenarios are designed to test your decision-making under pressure. Here is what to expect:</p>
   <h3>Grid Down &mdash; 7 Days</h3>
   <p>The longest and most comprehensive scenario. You will face decisions about:</p>
@@ -11313,7 +11392,7 @@ function showHelp() {
   </ul>
   <p>Scores are saved to your history so you can track improvement over time. Aim for 80+ on all four scenarios.</p>
 
-  <h2 id="glossary">35. Glossary</h2>
+  <h2 id="glossary">38. Glossary</h2>
   <table><tr><th>Term</th><th>Definition</th></tr>
   <tr><td>AI Model</td><td>A downloadable file that gives the AI its knowledge and reasoning ability. Larger models = better answers but more storage and RAM required.</td></tr>
   <tr><td>BOB (Bug-Out Bag)</td><td>A pre-packed bag with essentials for a 72-hour evacuation. Also called a go-bag, GOOD bag, or INCH bag.</td></tr>
@@ -11343,7 +11422,7 @@ function showHelp() {
     Based on Project N.O.M.A.D. by Crosstalk Solutions. Windows port by SysAdminDoc.<br>
     <em>Knowledge that never goes offline.</em>
   </div>
-  </body></html>`);
+  </body></html>`, section);
 }
 
 /* ─── Auto Backup ─── */

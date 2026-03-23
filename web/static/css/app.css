@@ -179,8 +179,11 @@ a { color: var(--accent); text-decoration: none; }
 }
 
 /* ─── Layout ─── */
-.main-content { margin-left: 240px; min-height: 100vh; overflow-x: hidden; }
-.container { max-width: 1400px; margin: 0 auto; padding: 24px 32px; overflow: hidden; }
+.main-content {
+  margin-left: 240px; min-height: 100vh; overflow-x: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.container { max-width: 1400px; margin: 0 auto; padding: 24px 32px; overflow: hidden; width: 100%; }
 
 /* ─── Nav Items (sidebar) ─── */
 .tab {

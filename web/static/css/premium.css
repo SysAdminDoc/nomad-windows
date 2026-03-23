@@ -80,7 +80,7 @@ h1, h2, h3, h4 { letter-spacing: -0.025em; }
 }
 .cc-card::before {
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 50%);
+  background: linear-gradient(135deg, var(--accent-dim) 0%, transparent 50%);
   pointer-events: none;
 }
 .cc-card:hover {
@@ -125,7 +125,7 @@ h1, h2, h3, h4 { letter-spacing: -0.025em; }
 }
 .btn::after {
   content: ""; position: absolute; inset: 0;
-  background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+  background: linear-gradient(135deg, var(--accent-dim), transparent);
   opacity: 0; transition: opacity 0.2s; pointer-events: none;
 }
 .btn:hover::after { opacity: 1; }

@@ -22,8 +22,6 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 
 **[Download Installer](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD-Setup.exe)** — installs to Program Files with Start Menu shortcut and desktop icon
 
-![Dashboard](screenshot.png)
-
 ## What Makes This Different
 
 - **Proactive AI Alerts** — A background engine monitors your inventory burn rates, expiring items, weather pressure drops, and incident clusters every 5 minutes. It surfaces actionable alerts automatically and generates AI situation summaries.

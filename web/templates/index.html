@@ -134,10 +134,10 @@ body{background:var(--bg);color:var(--text)}
 
 <!-- Persistent Status Strip -->
 <div id="status-strip" style="display:flex;gap:16px;padding:6px 32px;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border);background:var(--surface);align-items:center;flex-wrap:wrap;max-width:100%;">
-  <span id="ss-services" title="Running services">Services: <strong style="color:var(--text);">-</strong></span>
-  <span id="ss-inventory" title="Total inventory items">Supplies: <strong style="color:var(--text);">-</strong></span>
-  <span id="ss-contacts" title="Emergency contacts">Contacts: <strong style="color:var(--text);">-</strong></span>
-  <span id="ss-alerts" title="Active alerts">Alerts: <strong style="color:var(--text);">0</strong></span>
+  <span id="ss-services" title="Running services" style="cursor:pointer;" onclick="switchToTab('services')" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Services: <strong style="color:var(--text);">-</strong></span>
+  <span id="ss-inventory" title="Total inventory items" style="cursor:pointer;" onclick="switchToTab('preparedness');switchPrepSub('inventory')" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Supplies: <strong style="color:var(--text);">-</strong></span>
+  <span id="ss-contacts" title="Emergency contacts" style="cursor:pointer;" onclick="switchToTab('preparedness');switchPrepSub('contacts')" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Contacts: <strong style="color:var(--text);">-</strong></span>
+  <span id="ss-alerts" title="Active alerts" style="cursor:pointer;" onclick="toggleAlertBar()" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">Alerts: <strong style="color:var(--text);">0</strong></span>
   <span style="flex:1;"></span>
   <span id="ss-time" style="font-family:'Cascadia Code','Consolas',monospace;font-size:10px;"></span>
 </div>
@@ -803,7 +803,17 @@ body{background:var(--bg);color:var(--text)}
         <div id="media-player" style="display:none;border-top:2px solid var(--accent);background:var(--bg);">
           <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px;background:var(--surface2);">
             <span id="media-player-title" style="font-weight:600;font-size:12px;"></span>
-            <button class="btn btn-sm btn-ghost" onclick="closeMediaPlayer()" style="font-size:14px;padding:2px 8px;">x</button>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <select id="media-speed" onchange="setMediaSpeed(this.value)" style="background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:4px;padding:2px 6px;font-size:11px;cursor:pointer;">
+                <option value="0.5">0.5x</option>
+                <option value="0.75">0.75x</option>
+                <option value="1" selected>1x</option>
+                <option value="1.25">1.25x</option>
+                <option value="1.5">1.5x</option>
+                <option value="2">2x</option>
+              </select>
+              <button class="btn btn-sm btn-ghost" onclick="closeMediaPlayer()" style="font-size:14px;padding:2px 8px;">x</button>
+            </div>
           </div>
           <video id="media-video-el" controls style="width:100%;max-height:50vh;background:#000;display:none;"></video>
           <audio id="media-audio-el" controls style="width:100%;display:none;padding:8px 16px;"></audio>
@@ -4615,7 +4625,7 @@ function renderConvoList() {
     <div class="convo-item ${c.id===currentConvoId?'active':''}" data-convo-id="${c.id}" onclick="selectConvo(${c.id})" ondblclick="event.stopPropagation();renameConvo(${c.id})">
       <span class="convo-title">${escapeHtml(c.title)}</span>
       <span class="convo-actions">
-        <span onclick="event.stopPropagation();renameConvo(${c.id})" title="Rename">r</span>
+        <span onclick="event.stopPropagation();renameConvo(${c.id})" title="Rename" style="font-size:12px;">&#9998;</span>
         <span class="convo-del" onclick="event.stopPropagation();deleteConvo(${c.id})" title="Delete">x</span>
       </span>
     </div>
@@ -4758,6 +4768,11 @@ async function sendChat() {
               const nearBottom = msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 100;
               if (nearBottom) msgs.scrollTop = msgs.scrollHeight;
             }
+          }
+          if (d.done && d.eval_count) {
+            const toks = d.eval_count;
+            const secs = (d.eval_duration || 1) / 1e9;
+            document.getElementById('chat-stats').textContent = `${toks} tokens | ${(toks/secs).toFixed(1)} tok/s | ${secs.toFixed(1)}s`;
           }
         } catch {}
       }
@@ -6356,7 +6371,7 @@ function filterConvos() {
     <div class="convo-item ${c.id===currentConvoId?'active':''}" data-convo-id="${c.id}" onclick="selectConvo(${c.id})" ondblclick="event.stopPropagation();renameConvo(${c.id})">
       <span class="convo-title">${escapeHtml(c.title)}</span>
       <span class="convo-actions">
-        <span onclick="event.stopPropagation();renameConvo(${c.id})" title="Rename">r</span>
+        <span onclick="event.stopPropagation();renameConvo(${c.id})" title="Rename" style="font-size:12px;">&#9998;</span>
         <span class="convo-del" onclick="event.stopPropagation();deleteConvo(${c.id})" title="Delete">x</span>
       </span>
     </div>
@@ -6693,6 +6708,12 @@ function printAppFrame() {
   }
 }
 
+/* ─── Tab Navigation Helper ─── */
+function switchToTab(tab) {
+  const el = document.querySelector(`.tab[data-tab="${tab}"]`);
+  if (el) el.click();
+}
+
 /* ─── Prep Sub-Tab Navigation ─── */
 function switchPrepSub(sub) {
   document.querySelectorAll('.prep-subtab').forEach(b => b.classList.toggle('active', b.dataset.psub === sub));
@@ -6915,8 +6936,10 @@ async function loadInventory() {
           else if (i.expiration <= soon) expCls = 'color:var(--orange);font-weight:600;';
         }
         const lowStock = i.min_quantity > 0 && i.quantity <= i.min_quantity;
-        const daysLeft = i.daily_usage > 0 ? Math.round(i.quantity / i.daily_usage * 10) / 10 : null;
-        const daysColor = daysLeft === null ? '' : daysLeft < 3 ? 'color:var(--red);font-weight:600;' : daysLeft < 7 ? 'color:var(--orange);font-weight:600;' : daysLeft < 14 ? 'color:#c8a800;' : 'color:var(--green);';
+        const usageDays = i.daily_usage > 0 ? Math.round(i.quantity / i.daily_usage) : null;
+        const expDays = i.expiration ? Math.round((new Date(i.expiration) - new Date(today)) / 86400000) : null;
+        const daysLeft = usageDays !== null && expDays !== null ? Math.min(usageDays, expDays) : usageDays !== null ? usageDays : expDays;
+        const daysColor = daysLeft === null ? '' : daysLeft < 7 ? 'color:var(--red);font-weight:600;' : daysLeft < 30 ? 'color:var(--orange);font-weight:600;' : 'color:var(--green);';
         return `<tr>
           <td style="${lowStock?'color:var(--red);font-weight:600;':''}">${escapeHtml(i.name)}</td>
           <td><span class="check-cat">${i.category}</span></td>
@@ -9145,6 +9168,13 @@ async function toggleFavorite(id) {
 }
 
 // ── Playback ──
+function setMediaSpeed(speed) {
+  const v = document.querySelector('#media-player video');
+  const a = document.querySelector('#media-player audio');
+  if (v) v.playbackRate = parseFloat(speed);
+  if (a) a.playbackRate = parseFloat(speed);
+}
+
 function playMediaVideo(id, filename, title) {
   const player = document.getElementById('media-player');
   const video = document.getElementById('media-video-el');
@@ -13208,6 +13238,7 @@ async function loadAlerts() {
           <div class="alert-title">${escapeHtml(a.title)}</div>
           <div class="alert-msg">${escapeHtml(a.message)}</div>
         </div>
+        <span class="alert-dismiss" onclick="snoozeAlert(${a.id})" title="Snooze 1hr" style="cursor:pointer;font-size:10px;color:var(--blue);margin-right:4px;">snooze</span>
         <span class="alert-dismiss" onclick="dismissAlert(${a.id})" title="Dismiss">x</span>
       </div>
     `).join('');
@@ -13218,6 +13249,12 @@ function toggleAlertBar() {
   _alertBarVisible = !_alertBarVisible;
   document.getElementById('alert-bar').style.display = _alertBarVisible ? 'block' : 'none';
   if (_alertBarVisible) loadAlerts();
+}
+
+async function snoozeAlert(id) {
+  await fetch(`/api/alerts/${id}/dismiss`, {method:'POST'});
+  toast('Alert snoozed for 1 hour', 'info');
+  loadAlerts();
 }
 
 async function dismissAlert(id) {

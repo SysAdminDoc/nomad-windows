@@ -951,6 +951,18 @@ def create_app():
         db.close()
         return jsonify({'status': 'saved'})
 
+    @app.route('/api/conversations/<int:cid>', methods=['PATCH'])
+    def api_conversation_rename(cid):
+        data = request.get_json() or {}
+        title = data.get('title', '').strip()
+        if not title:
+            return jsonify({'error': 'Title required'}), 400
+        db = get_db()
+        db.execute('UPDATE conversations SET title = ? WHERE id = ?', (title, cid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'renamed'})
+
     @app.route('/api/conversations/<int:cid>', methods=['DELETE'])
     def api_conversations_delete(cid):
         db = get_db()

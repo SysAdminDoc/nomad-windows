@@ -10726,6 +10726,15 @@ function showHelp() {
     <a href="#services-guide">24. Understanding Services</a>
     <a href="#use-cases">25. Common Use Cases</a>
     <a href="#faq">26. FAQ</a>
+    <a href="#medical-guide">27. Medical Module In Depth</a>
+    <a href="#garden-guide">28. Food Production Guide</a>
+    <a href="#power-guide">29. Power Management Guide</a>
+    <a href="#security-guide">30. Security Module Guide</a>
+    <a href="#weather-guide">31. Weather Tracking Guide</a>
+    <a href="#comms-guide">32. Communications &amp; Radio</a>
+    <a href="#vault-guide">33. Secure Vault Guide</a>
+    <a href="#scenarios-deep">34. Training Scenarios In Depth</a>
+    <a href="#glossary">35. Glossary</a>
   </div>
 
   <h2 id="getting-started">1. Getting Started</h2>
@@ -11105,6 +11114,226 @@ function showHelp() {
   <p>N.O.M.A.D. manages several separate tools (AI Chat, Information Library, etc.). Each needs to be downloaded once before use. This keeps the base application small and lets you choose what you need. Most features in the Preparedness tab work immediately with no installation required.</p>
   <h3>The AI gives wrong or unhelpful answers. What should I do?</h3>
   <p>Try a larger AI model (see the AI Model guide above). Smaller models are fast but less accurate. Also try changing the conversation mode &mdash; "Medical Advisor" gives better medical answers than "General Assistant." Enable "Include My Prep Data" so the AI has context about your specific situation.</p>
+
+  <h2 id="medical-guide">27. Medical Module In Depth</h2>
+  <p>The Medical tab in Preparedness is a full field-hospital record system. Here is how to use it effectively:</p>
+  <h3>Setting Up Patients</h3>
+  <ol>
+    <li>Go to Preparedness &gt; Medical and click <strong>Add Patient</strong></li>
+    <li>If the person is already in your Contacts, click <strong>Import from Contacts</strong> instead &mdash; it copies their name, blood type, and medical notes automatically</li>
+    <li>Fill in: age, weight (kg), sex, blood type, allergies, current medications, and existing conditions</li>
+    <li>Use JSON array format for allergies/medications/conditions: <code>["Penicillin", "Latex"]</code></li>
+  </ol>
+  <h3>Recording Vitals</h3>
+  <p>Click on a patient, then click <strong>Add Vitals</strong>. Enter any or all of:</p>
+  <table><tr><th>Vital</th><th>Normal Range (Adult)</th><th>Color Coding</th></tr>
+  <tr><td>Blood Pressure</td><td>90-140 / 60-90</td><td>Red if systolic &gt;180 or &lt;80</td></tr>
+  <tr><td>Pulse</td><td>60-100 bpm</td><td>Red if &gt;120 or &lt;50</td></tr>
+  <tr><td>Respiration</td><td>12-20 breaths/min</td><td>Red if &gt;30 or &lt;8</td></tr>
+  <tr><td>Temperature</td><td>97.0-99.5 &deg;F</td><td>Red if &gt;103 or &lt;95</td></tr>
+  <tr><td>SpO2</td><td>95-100%</td><td>Red if &lt;90%, orange if &lt;94%</td></tr>
+  <tr><td>Pain Level</td><td>0 (none) to 10 (worst)</td><td>Red if 8+, orange if 5-7</td></tr>
+  <tr><td>GCS (Glasgow Coma Scale)</td><td>15 (alert) to 3 (unresponsive)</td><td>Red if &lt;9</td></tr>
+  </table>
+  <div class="tip"><strong>Tip:</strong> Record vitals every 15-30 minutes during an active medical situation. The trend over time is often more important than any single reading. N.O.M.A.D. tracks the history so you can see if a patient is improving or declining.</div>
+  <h3>Drug Interaction Checker</h3>
+  <p>Before giving medications, check for dangerous interactions. The checker covers 26 common interaction pairs including:</p>
+  <ul>
+    <li>NSAIDs (ibuprofen, aspirin, naproxen) with blood thinners</li>
+    <li>Acetaminophen (Tylenol) with alcohol or liver medications</li>
+    <li>SSRIs with other serotonergic drugs (serotonin syndrome risk)</li>
+    <li>Opioids with benzodiazepines (respiratory depression risk)</li>
+    <li>ACE inhibitors with potassium supplements (hyperkalemia risk)</li>
+  </ul>
+  <div class="warn"><strong>Warning:</strong> The drug interaction checker is a reference tool, not a replacement for professional medical advice. In a true emergency, use your best judgment and seek professional care as soon as possible.</div>
+  <h3>Wound Documentation</h3>
+  <p>The wound log supports 8 wound types (laceration, puncture, abrasion, burn, fracture, crush, bite, other) and 4 severity levels (minor, moderate, severe, critical). Record the body location, description, and treatment given. This creates a timeline that is invaluable if the patient later reaches professional medical care.</p>
+
+  <h2 id="garden-guide">28. Food Production Guide</h2>
+  <p>The Garden tab helps you track everything related to growing and raising your own food.</p>
+  <h3>Garden Plots</h3>
+  <p>Add each growing area with its dimensions (width x length in feet), sun exposure (full sun, partial shade, full shade), and soil type. N.O.M.A.D. calculates total square footage automatically. This helps you plan how much you can grow.</p>
+  <h3>Seed Inventory &amp; Viability</h3>
+  <p>Seeds lose viability over time. N.O.M.A.D. tracks 25 species with species-specific shelf life data:</p>
+  <table><tr><th>Species</th><th>Years Viable</th><th>Notes</th></tr>
+  <tr><td>Onion, Parsnip, Parsley</td><td>1-2 years</td><td>Use quickly; short shelf life</td></tr>
+  <tr><td>Corn, Pepper, Beans</td><td>2-3 years</td><td>Moderate shelf life</td></tr>
+  <tr><td>Tomato, Squash, Carrot</td><td>3-5 years</td><td>Good keepers if stored dry and cool</td></tr>
+  <tr><td>Cucumber, Lettuce, Radish</td><td>5+ years</td><td>Longest viable; excellent for stockpiling</td></tr>
+  </table>
+  <p>Enter the year each seed was harvested and N.O.M.A.D. calculates current viability. If seeds show less than 50% viability, plant extra to compensate for lower germination rates.</p>
+  <h3>Harvest Logging</h3>
+  <p>When you harvest produce, log it in the Harvest tab. Specify the crop, quantity, unit (lbs, heads, bunches), and which plot it came from. <strong>Harvests automatically create or update items in your Inventory</strong> &mdash; so your supply counts stay accurate without duplicate entry.</p>
+  <h3>Livestock</h3>
+  <p>Track animals by species (chicken, goat, cattle, pig, rabbit, sheep, duck, turkey, horse, bee), with individual names or tag numbers, date of birth, sex, weight, and status (active, sold, deceased). Log health events (vaccinations, illnesses, treatments) on each animal with timestamps.</p>
+  <h3>USDA Hardiness Zone</h3>
+  <p>Enter your latitude and N.O.M.A.D. estimates your USDA plant hardiness zone (3a through 11a+). This tells you which plants can survive your winters and when to plant. The lookup works offline using latitude-based approximation.</p>
+
+  <h2 id="power-guide">29. Power Management Guide</h2>
+  <p>The Power tab helps you track your energy infrastructure and project how long you can sustain operations.</p>
+  <h3>Device Registry</h3>
+  <p>Register every power device you own. Each type has specific fields:</p>
+  <table><tr><th>Device Type</th><th>Key Specs to Record</th></tr>
+  <tr><td>Solar Panel</td><td>Wattage, voltage, type (monocrystalline, polycrystalline, thin-film)</td></tr>
+  <tr><td>Battery</td><td>Capacity (Ah), voltage, type (lead-acid, LiFePO4, lithium-ion, AGM)</td></tr>
+  <tr><td>Charge Controller</td><td>Amperage, type (MPPT, PWM), max voltage</td></tr>
+  <tr><td>Inverter</td><td>Wattage (continuous and peak), input voltage, output (120V/240V)</td></tr>
+  <tr><td>Generator</td><td>Wattage, fuel type, fuel capacity, runtime per tank</td></tr>
+  </table>
+  <h3>Power Logging</h3>
+  <p>Log daily readings: battery voltage, state of charge (SOC%), solar watts produced, solar watt-hours today, load watts consumed, load watt-hours today, and whether the generator is running. Over time, this builds a picture of your energy balance.</p>
+  <h3>Autonomy Dashboard</h3>
+  <p>The dashboard calculates your <strong>net daily energy balance</strong> (solar production minus consumption) and projects how many days your batteries will last:</p>
+  <ul>
+    <li><strong style="color:#4caf50;">Green gauge</strong> &mdash; More than 7 days of autonomy. You are energy-sustainable.</li>
+    <li><strong style="color:#ff9800;">Orange gauge</strong> &mdash; 3-7 days. Start reducing consumption or increasing production.</li>
+    <li><strong style="color:#f44336;">Red gauge</strong> &mdash; Less than 3 days. Critical &mdash; activate generator or drastically cut loads.</li>
+  </ul>
+
+  <h2 id="security-guide">30. Security Module Guide</h2>
+  <h3>Camera Setup</h3>
+  <p>N.O.M.A.D. can display live feeds from IP cameras on your network. Three stream types are supported:</p>
+  <ul>
+    <li><strong>MJPEG</strong> &mdash; Continuous video stream. Most common for budget cameras. Example URL: <code>http://192.168.1.100/cgi-bin/mjpg/video.cgi</code></li>
+    <li><strong>Snapshot</strong> &mdash; Still image that auto-refreshes every 5 seconds. Lower bandwidth. Example: <code>http://192.168.1.100/snap.cgi</code></li>
+    <li><strong>HLS</strong> &mdash; High-quality video stream. Used by newer cameras. Example: <code>http://192.168.1.100/live/stream.m3u8</code></li>
+  </ul>
+  <p>Common camera brands and typical URLs:</p>
+  <table><tr><th>Brand</th><th>Typical MJPEG URL</th></tr>
+  <tr><td>Reolink</td><td><code>http://IP/cgi-bin/api.cgi?cmd=Snap</code></td></tr>
+  <tr><td>Amcrest</td><td><code>http://IP/cgi-bin/mjpg/video.cgi?channel=1</code></td></tr>
+  <tr><td>Wyze (with firmware)</td><td><code>rtsp://IP/live</code> (requires bridge)</td></tr>
+  <tr><td>Generic ONVIF</td><td><code>http://IP/onvif-http/snapshot?Profile_1</code></td></tr>
+  </table>
+  <h3>Access Logging</h3>
+  <p>The access log tracks who comes and goes from your location. Log entries include: person name, direction (entry, exit, or patrol), location (front gate, back door, perimeter), method (visual, camera, sensor, radio report), and notes. Use this during heightened security situations to maintain awareness of all movements.</p>
+  <h3>Security Dashboard</h3>
+  <p>The dashboard aggregates: current threat level (from your situation board), number of active cameras, access events in the last 24 hours, and incidents in the last 48 hours. This gives you a single-glance security overview.</p>
+
+  <h2 id="weather-guide">31. Weather Tracking Guide</h2>
+  <p>The Weather tab lets you record manual weather observations. This is crucial when you are offline and cannot check weather forecasts.</p>
+  <h3>What to Record</h3>
+  <ul>
+    <li><strong>Barometric Pressure (hPa)</strong> &mdash; The most important reading. Falling pressure predicts storms. Rising pressure indicates clearing weather. A drop of more than 4 hPa in a few hours is a strong storm warning. <em>Requires a barometer &mdash; many outdoor thermometers include one.</em></li>
+    <li><strong>Temperature (&deg;F)</strong> &mdash; Current reading. Track trends to anticipate heating/cooling needs.</li>
+    <li><strong>Wind Direction &amp; Speed</strong> &mdash; Note where wind is coming from (N, NE, E, etc.) and estimated speed. Shifting winds often precede weather changes.</li>
+    <li><strong>Cloud Cover</strong> &mdash; Clear, partly cloudy, overcast, threatening. Cloud types can indicate approaching weather.</li>
+    <li><strong>Precipitation</strong> &mdash; Rain, snow, sleet, hail, fog, or none. Note intensity (light, moderate, heavy).</li>
+    <li><strong>Visibility</strong> &mdash; Good, reduced, poor. Important for travel decisions.</li>
+  </ul>
+  <h3>Reading the Trends</h3>
+  <p>N.O.M.A.D. automatically analyzes your pressure readings over time:</p>
+  <ul>
+    <li><strong>Steady (change &lt; 1 hPa)</strong> &mdash; Current weather likely to continue</li>
+    <li><strong>Slowly falling (1-3 hPa)</strong> &mdash; Weather may deteriorate in 12-24 hours</li>
+    <li><strong>Rapidly falling (&gt; 4 hPa)</strong> &mdash; Storm approaching. N.O.M.A.D. generates an automatic alert.</li>
+    <li><strong>Rising</strong> &mdash; Weather improving. If rising rapidly after a storm, clearing is imminent.</li>
+  </ul>
+  <div class="tip"><strong>Tip:</strong> Record weather at the same times each day (e.g., morning and evening) for the most useful trend data. Even without instruments, noting cloud patterns and wind changes has value.</div>
+
+  <h2 id="comms-guide">32. Communications &amp; Radio Guide</h2>
+  <p>N.O.M.A.D. includes several tools for emergency communications:</p>
+  <h3>Radio Reference Table</h3>
+  <p>Preparedness &gt; Radio has a complete frequency reference:</p>
+  <table><tr><th>Service</th><th>Channels</th><th>Range</th><th>License Needed</th></tr>
+  <tr><td>FRS (Family Radio Service)</td><td>22</td><td>0.5-2 miles</td><td>No</td></tr>
+  <tr><td>GMRS (General Mobile Radio)</td><td>30</td><td>1-25 miles</td><td>Yes ($35, covers family)</td></tr>
+  <tr><td>MURS (Multi-Use Radio)</td><td>5</td><td>1-5 miles</td><td>No</td></tr>
+  <tr><td>CB (Citizens Band)</td><td>40</td><td>2-15 miles</td><td>No</td></tr>
+  <tr><td>HAM (Amateur Radio)</td><td>Many</td><td>Local to worldwide</td><td>Yes (exam required)</td></tr>
+  </table>
+  <h3>Key Emergency Frequencies</h3>
+  <ul>
+    <li><strong>FRS Channel 1</strong> &mdash; Common rally/meeting channel</li>
+    <li><strong>FRS Channel 3</strong> &mdash; Widely used emergency channel</li>
+    <li><strong>GMRS Channel 20</strong> &mdash; Emergency/travel channel</li>
+    <li><strong>HAM 146.520 MHz</strong> &mdash; 2-meter calling frequency (most popular)</li>
+    <li><strong>HAM 446.000 MHz</strong> &mdash; 70cm calling frequency</li>
+    <li><strong>NOAA Weather</strong> &mdash; 162.400-162.550 MHz (7 channels, listen-only)</li>
+    <li><strong>CB Channel 9</strong> &mdash; Official emergency channel</li>
+    <li><strong>CB Channel 19</strong> &mdash; Highway/trucker channel (road conditions)</li>
+  </ul>
+  <h3>LAN Chat</h3>
+  <p>The chat bubble in the bottom-left corner lets anyone on your local network send messages to each other. This works when cell phones are down but your Wi-Fi router is still running (even on generator or battery power). Set your name in the chat window so others know who is messaging.</p>
+  <h3>Emergency Broadcast</h3>
+  <p>In the Command Post tab, the <strong>Emergency Broadcast</strong> feature sends a high-priority message to every device currently connected to N.O.M.A.D. It appears as a banner at the top of the screen with an alert sound. Use this for urgent group notifications like &ldquo;Evacuate now&rdquo; or &ldquo;Shelter in place.&rdquo;</p>
+
+  <h2 id="vault-guide">33. Secure Vault Guide</h2>
+  <p>The Secure Vault encrypts sensitive information with AES-256-GCM &mdash; the same encryption standard used by banks and the military.</p>
+  <h3>How It Works</h3>
+  <ol>
+    <li>Set a master password the first time you open the Vault</li>
+    <li>Enter this password each time you want to view or add entries</li>
+    <li>All data is encrypted <strong>in your browser</strong> before being stored &mdash; even N.O.M.A.D. itself cannot read your vault without the password</li>
+    <li>If you forget your password, <strong>there is no recovery</strong> &mdash; the encryption is real and cannot be bypassed</li>
+  </ol>
+  <h3>What to Store</h3>
+  <ul>
+    <li>Account passwords and PINs</li>
+    <li>Safe combinations and lock codes</li>
+    <li>GPS coordinates of caches, rally points, or sensitive locations</li>
+    <li>Insurance policy numbers and account details</li>
+    <li>Legal document references (will locations, power of attorney details)</li>
+    <li>Medical record numbers</li>
+    <li>Cryptocurrency wallet seeds or recovery phrases</li>
+  </ul>
+  <div class="warn"><strong>Critical:</strong> Write your vault password on paper and store it in a physically secure location (fireproof safe, safety deposit box). If you lose the password, your vault entries are permanently unrecoverable.</div>
+  <h3>Password Generator</h3>
+  <p>The built-in password generator creates strong random passwords. Adjust the length and click Generate. Use the show/hide toggle to verify the password before saving it.</p>
+
+  <h2 id="scenarios-deep">34. Training Scenarios In Depth</h2>
+  <p>The 4 training scenarios are designed to test your decision-making under pressure. Here is what to expect:</p>
+  <h3>Grid Down &mdash; 7 Days</h3>
+  <p>The longest and most comprehensive scenario. You will face decisions about:</p>
+  <ul>
+    <li><strong>Phase 1:</strong> Initial power loss &mdash; immediate actions, device protection</li>
+    <li><strong>Phase 2:</strong> Water supply &mdash; municipal water may fail, alternative sources</li>
+    <li><strong>Phase 3:</strong> Food management &mdash; refrigeration lost, prioritize perishables</li>
+    <li><strong>Phase 4:</strong> Security &mdash; darkness increases vulnerability, neighbor coordination</li>
+    <li><strong>Phase 5:</strong> Medical &mdash; managing without electric medical devices</li>
+    <li><strong>Phase 6:</strong> Communications &mdash; establishing contact with outside world</li>
+    <li><strong>Phase 7:</strong> Recovery &mdash; power restored, damage assessment, after-action review</li>
+  </ul>
+  <h3>How AI Complications Work</h3>
+  <p>Between phases, the AI has a 50% chance of injecting a complication based on your actual data. For example:</p>
+  <ul>
+    <li>If your water inventory is low, it might say: &ldquo;Your water supply has dropped to 4 gallons. A neighbor asks to share.&rdquo;</li>
+    <li>If you have a patient registered, it might say: &ldquo;[Patient name] is showing signs of dehydration.&rdquo;</li>
+    <li>If you have no generator in your power devices, it might say: &ldquo;The family next door has a generator and offers to let you charge devices &mdash; but they want something in trade.&rdquo;</li>
+  </ul>
+  <p>This makes every run unique and realistic. The more data you put into N.O.M.A.D., the more personalized the scenarios become.</p>
+  <h3>Scoring</h3>
+  <p>After completing all phases, the AI grades your performance 0-100 based on:</p>
+  <ul>
+    <li>Did you address immediate threats first?</li>
+    <li>Did you conserve resources appropriately?</li>
+    <li>Did you consider the needs of all household members?</li>
+    <li>Did you maintain communications and security?</li>
+    <li>Were your decisions consistent and logical?</li>
+  </ul>
+  <p>Scores are saved to your history so you can track improvement over time. Aim for 80+ on all four scenarios.</p>
+
+  <h2 id="glossary">35. Glossary</h2>
+  <table><tr><th>Term</th><th>Definition</th></tr>
+  <tr><td>AI Model</td><td>A downloadable file that gives the AI its knowledge and reasoning ability. Larger models = better answers but more storage and RAM required.</td></tr>
+  <tr><td>BOB (Bug-Out Bag)</td><td>A pre-packed bag with essentials for a 72-hour evacuation. Also called a go-bag, GOOD bag, or INCH bag.</td></tr>
+  <tr><td>Burn Rate</td><td>How fast you are consuming a supply. Measured in daily usage. N.O.M.A.D. uses this to calculate "Days Left."</td></tr>
+  <tr><td>CBRN</td><td>Chemical, Biological, Radiological, Nuclear. A category of threats requiring specialized protective measures.</td></tr>
+  <tr><td>Content Pack</td><td>A downloadable file containing offline reference material (Wikipedia articles, medical databases, survival guides, etc.).</td></tr>
+  <tr><td>GCS (Glasgow Coma Scale)</td><td>A 3-15 score measuring consciousness. 15 = fully alert, &lt;9 = severe impairment, 3 = unresponsive.</td></tr>
+  <tr><td>GPX</td><td>GPS Exchange Format. A standard file format for sharing waypoints and tracks between GPS devices and mapping software.</td></tr>
+  <tr><td>hPa (hectopascal)</td><td>Unit of barometric pressure. Standard sea-level pressure is 1013 hPa. Falling pressure indicates approaching storms.</td></tr>
+  <tr><td>LAN</td><td>Local Area Network. Your home Wi-Fi network. N.O.M.A.D. is accessible from any device on your LAN.</td></tr>
+  <tr><td>Meshtastic</td><td>An open-source project for long-range, low-power mesh networking using inexpensive radio hardware. No cell towers needed.</td></tr>
+  <tr><td>Node</td><td>A single N.O.M.A.D. installation. When syncing between multiple computers, each is called a "node."</td></tr>
+  <tr><td>OPSEC</td><td>Operations Security. Practices to prevent adversaries from learning about your plans, capabilities, and vulnerabilities.</td></tr>
+  <tr><td>Rally Point</td><td>A pre-designated meeting location for your family or group during an emergency.</td></tr>
+  <tr><td>SITREP</td><td>Situation Report. A standardized format for summarizing the current state of an emergency or operation.</td></tr>
+  <tr><td>SOC (State of Charge)</td><td>How full a battery is, expressed as a percentage (0-100%). Similar to your phone battery percentage.</td></tr>
+  <tr><td>SpO2</td><td>Blood oxygen saturation level. Normal is 95-100%. Below 90% is a medical emergency.</td></tr>
+  <tr><td>START Triage</td><td>Simple Triage and Rapid Treatment. A system for prioritizing multiple casualties: walk &rarr; breathe &rarr; pulse &rarr; mental status.</td></tr>
+  <tr><td>Waypoint</td><td>A saved location on the map with coordinates, name, and optional notes.</td></tr>
+  </table>
 
   <div style="text-align:center;margin-top:40px;padding-top:16px;border-top:2px solid ${border};color:${muted};font-size:12px;">
     <strong>Project N.O.M.A.D. for Windows v${VERSION}</strong><br>

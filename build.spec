@@ -12,6 +12,8 @@ a = Analysis(
         ('web/templates', 'web/templates'),
         ('web/static', 'web/static'),
         ('web/nukemap', 'web/nukemap'),
+        ('web/__init__.py', 'web'),
+        ('web/catalog.py', 'web'),
         ('services', 'services'),
         ('db.py', '.'),
         ('config.py', '.'),

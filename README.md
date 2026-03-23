@@ -237,6 +237,62 @@ library/           # PDF/ePub documents
 kb_uploads/        # Knowledge base documents
 ```
 
+## Original vs Windows Edition
+
+This project is based on [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) by Crosstalk Solutions. The original is a Docker-based Linux application; this is a native Windows port that extends it significantly.
+
+### What's the Same
+Both versions share the same core philosophy: an offline-first, self-contained knowledge and AI platform. Both include Ollama (AI chat), Kiwix (offline encyclopedia), Kolibri (education), ProtoMaps (offline maps), CyberChef (data tools), and Qdrant (vector search). The visual style and "Command Center" branding are consistent.
+
+### What the Original Has That We Don't
+| Feature | Original | Windows Edition |
+|---------|----------|-----------------|
+| Platform | Docker on Linux (Ubuntu/Debian) | Native Windows (no Docker) |
+| Notes | FlatNotes (separate app) | Built-in Markdown notes |
+| Community Benchmark | Online leaderboard at benchmark.projectnomad.us | Local-only benchmark |
+| Multi-user Auth | Planned | Dashboard password |
+| Automatic Updates | Docker image pull | Manual download from releases |
+
+### What the Windows Edition Adds (not in the original)
+
+| Feature | Description |
+|---------|-------------|
+| **19 Preparedness Sub-Tabs** | Inventory, contacts, checklists, medical, incidents, family plan, security, power, garden, weather, guides, calculators, procedures, radio ref, quick ref, signals, command post, journal, secure vault |
+| **Proactive AI Alerts** | Background engine monitors burn rates, expiring items, pressure drops, incident clusters every 5 minutes |
+| **Readiness Score** | Cross-module A-F grade (0-100) with 7 categories: water, food, medical, security, comms, power, planning |
+| **10 Interactive Decision Guides** | 200+ node step-by-step trees for water, wounds, fire, shelter, radio, food, triage, power outage, vehicle emergency, bug-out decisions |
+| **Medical Module** | Patient records, vitals tracking (BP/pulse/resp/temp/SpO2/pain/GCS), wound log, 26-pair drug interaction checker |
+| **4 Training Scenarios** | Multi-phase simulations (Grid Down, Medical Crisis, Evacuation, Winter Storm) with AI complications and scored reviews |
+| **Food Production** | Garden plots, seed viability tracking (25 species), harvest-to-inventory automation, livestock health records |
+| **Power Management** | Solar/battery/generator device registry, power logging, autonomy projection dashboard |
+| **Security Module** | IP camera viewer (MJPEG/snapshot/HLS), access logging, threat dashboard |
+| **Multi-Node Sync** | LAN auto-discovery + USB offline transfer between N.O.M.A.D. installations |
+| **NukeMap v3.2.0** | Nuclear effects simulator with 418 targets, 708 warheads, 7 WW3 scenarios |
+| **AI Document Intelligence** | Auto-classify, summarize, extract entities, cross-reference contacts |
+| **Encrypted Vault** | AES-256-GCM encrypted storage for passwords, coordinates, sensitive documents |
+| **Daily Inventory Consume** | One-click daily supply tracking with burn rate projections |
+| **Printable Reports** | Inventory, contacts, patient cards, emergency reference sheet, wallet cards |
+| **38-Section User Guide** | Comprehensive built-in reference manual with contextual help icons throughout the app |
+| **4 Themes** | NOMAD (desert), Night Ops (dark), Cyber (blue), Red Light (night vision) |
+| **Situation-Aware AI** | 7 data sources injected into AI context (inventory, weather, alerts, power, patients, garden, contacts) |
+| **15 Checklist Templates** | 72hr kit, bug-out bag, vehicle kit, winter storm, CBRN shelter, infant kit, and more |
+| **17 Emergency Procedures** | CPR, bleeding, burns, fractures, choking, hypothermia, snake bite, and more |
+| **25+ Quick Reference Cards** | NATO alphabet, Morse code, knots, triage, companion planting, wild edibles, and more |
+| **Portable Executable** | Single .exe file runs from USB — no installation needed |
+
+### Platform Differences
+| | Original | Windows Edition |
+|---|----------|-----------------|
+| Installation | `curl` + bash script, requires Docker | Download .exe and double-click |
+| Runtime | Docker containers on Linux | Native Windows processes |
+| Services | Docker Compose orchestration | Python subprocess management |
+| Database | MySQL | SQLite (zero config) |
+| Frontend | React + Inertia.js + Tailwind | Single-file HTML/CSS/JS |
+| Backend | AdonisJS (Node.js/TypeScript) | Flask (Python) |
+| Maps | ProtoMaps integration | MapLibre GL JS + PMTiles (bundled) |
+| System Tray | N/A (server) | pystray (minimize to tray) |
+| Build | Docker image | PyInstaller + Inno Setup |
+
 ## Credits
 
 Based on [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) by Crosstalk Solutions. Windows port by [SysAdminDoc](https://github.com/SysAdminDoc).

@@ -10718,6 +10718,14 @@ function showHelp() {
     <a href="#keyboard">16. Keyboard Shortcuts</a>
     <a href="#data">17. Data &amp; Privacy</a>
     <a href="#troubleshooting">18. Troubleshooting</a>
+    <a href="#day-one">19. Day One Checklist</a>
+    <a href="#models-guide">20. Choosing an AI Model</a>
+    <a href="#inventory-guide">21. Inventory Best Practices</a>
+    <a href="#printable">22. Printable Reports</a>
+    <a href="#lan">23. LAN &amp; Multi-Device</a>
+    <a href="#services-guide">24. Understanding Services</a>
+    <a href="#use-cases">25. Common Use Cases</a>
+    <a href="#faq">26. FAQ</a>
   </div>
 
   <h2 id="getting-started">1. Getting Started</h2>
@@ -10945,9 +10953,166 @@ function showHelp() {
   <h3>Need more help?</h3>
   <p>Visit the <a href="https://github.com/SysAdminDoc/nomad-windows/issues">GitHub Issues</a> page or join the <a href="https://discord.com/invite/crosstalksolutions">Crosstalk Solutions Discord</a> community.</p>
 
-  <div style="text-align:center;margin-top:32px;padding-top:16px;border-top:1px solid ${border};color:${muted};font-size:12px;">
-    Project N.O.M.A.D. for Windows v${VERSION} &mdash; <a href="https://www.projectnomad.us">projectnomad.us</a><br>
-    Based on Project N.O.M.A.D. by Crosstalk Solutions. Windows port by SysAdminDoc.
+  <h2 id="day-one">19. Day One Checklist</h2>
+  <p>If you just installed N.O.M.A.D. and want to be operational as fast as possible, follow this checklist:</p>
+  <table><tr><th>Priority</th><th>Task</th><th>Time</th></tr>
+  <tr><td style="color:#4caf50;font-weight:700;">1</td><td>Run the Setup Wizard &mdash; choose your storage drive and Essential content</td><td>2 min</td></tr>
+  <tr><td style="color:#4caf50;font-weight:700;">2</td><td>Install AI Chat from the Home page</td><td>3 min</td></tr>
+  <tr><td style="color:#4caf50;font-weight:700;">3</td><td>Download a small AI model (Llama 3.2 3B or Phi 3 Mini)</td><td>5 min</td></tr>
+  <tr><td style="color:#4caf50;font-weight:700;">4</td><td>Add your household members to Contacts (name, phone, blood type)</td><td>5 min</td></tr>
+  <tr><td style="color:#ff9800;font-weight:700;">5</td><td>Add your critical supplies to Inventory (water, food, medical, batteries)</td><td>15 min</td></tr>
+  <tr><td style="color:#ff9800;font-weight:700;">6</td><td>Set daily usage rates on consumable items (water, food staples)</td><td>5 min</td></tr>
+  <tr><td style="color:#ff9800;font-weight:700;">7</td><td>Fill out the Family Emergency Plan (meeting points, evacuation routes)</td><td>10 min</td></tr>
+  <tr><td style="color:#5b9fff;font-weight:700;">8</td><td>Download your regional map for offline navigation</td><td>5 min</td></tr>
+  <tr><td style="color:#5b9fff;font-weight:700;">9</td><td>Complete at least one built-in Checklist (72-Hour Kit recommended)</td><td>10 min</td></tr>
+  <tr><td style="color:#5b9fff;font-weight:700;">10</td><td>Run through one Interactive Guide (Water Purification is a good start)</td><td>5 min</td></tr>
+  </table>
+  <div class="tip"><strong>Result:</strong> After completing these 10 steps (~65 minutes), you will have a functional offline command center with AI chat, offline maps, supply tracking with automated alerts, and a family emergency plan. Your Readiness Score should jump to at least a C or B grade.</div>
+
+  <h2 id="models-guide">20. Choosing the Right AI Model</h2>
+  <p>AI models vary in size, speed, and quality. Here is a guide to help you choose:</p>
+  <table><tr><th>Model</th><th>Size</th><th>RAM Needed</th><th>Best For</th><th>Speed</th></tr>
+  <tr><td><strong>Phi 3 Mini</strong></td><td>2.3 GB</td><td>4 GB</td><td>Quick answers, older PCs, limited RAM</td><td>Fast</td></tr>
+  <tr><td><strong>Llama 3.2 3B</strong></td><td>2.0 GB</td><td>4 GB</td><td>General questions, good balance of speed and quality</td><td>Fast</td></tr>
+  <tr><td><strong>Gemma 3 4B</strong></td><td>3.3 GB</td><td>6 GB</td><td>Better reasoning, multilingual support</td><td>Medium</td></tr>
+  <tr><td><strong>Mistral 7B</strong></td><td>4.1 GB</td><td>8 GB</td><td>High-quality answers, good for medical and technical questions</td><td>Medium</td></tr>
+  <tr><td><strong>Llama 3.1 8B</strong></td><td>4.7 GB</td><td>8 GB</td><td>Best overall quality for 8GB systems</td><td>Medium</td></tr>
+  <tr><td><strong>Qwen3 8B</strong></td><td>4.9 GB</td><td>8 GB</td><td>Latest generation, strong reasoning and coding</td><td>Medium</td></tr>
+  <tr><td><strong>MedGemma</strong></td><td>5.0 GB</td><td>8 GB</td><td>Medical-specific: symptoms, medications, conditions</td><td>Medium</td></tr>
+  <tr><td><strong>DeepSeek-R1 14B</strong></td><td>9.0 GB</td><td>16 GB</td><td>Complex reasoning, detailed analysis, planning</td><td>Slower</td></tr>
+  </table>
+  <div class="tip"><strong>Recommendation:</strong> Start with <strong>Llama 3.2 3B</strong> (works on any PC). If you have 8+ GB RAM, upgrade to <strong>Mistral 7B</strong> for much better answers. If you have a GPU (NVIDIA/AMD), models run 5-10x faster.</div>
+  <div class="warn"><strong>Note:</strong> Models are downloaded once and stored permanently. You can have multiple models installed and switch between them in the AI Chat dropdown. Unused models can be deleted from Settings to free disk space.</div>
+
+  <h2 id="inventory-guide">21. Inventory Management Best Practices</h2>
+  <p>Your inventory is the backbone of your preparedness. Here is how to get the most out of it:</p>
+  <h3>Setting Up Your Inventory</h3>
+  <ol>
+    <li><strong>Start with critical categories:</strong> Water, Food, Medical, and Batteries/Power. These are what you need in the first 72 hours.</li>
+    <li><strong>Use specific names:</strong> "Canned black beans 15oz" is better than "beans." You will thank yourself later.</li>
+    <li><strong>Set minimum quantities:</strong> This triggers low-stock alerts. For water, a good minimum is 7 gallons per person.</li>
+    <li><strong>Set daily usage rates:</strong> Even rough estimates help. If your family drinks 2 gallons of water per day, enter 2.0. N.O.M.A.D. will calculate exactly how many days of supply you have left.</li>
+    <li><strong>Add expiration dates:</strong> N.O.M.A.D. alerts you 14 days before items expire, so you can rotate stock.</li>
+    <li><strong>Use locations:</strong> "Garage shelf 2", "Kitchen pantry", "Bug-out bag." This helps during an actual emergency when seconds count.</li>
+  </ol>
+  <h3>Daily Use</h3>
+  <ul>
+    <li><strong>Daily Consume button:</strong> Click this once per day to automatically subtract daily usage from all tracked items. One click updates everything.</li>
+    <li><strong>Quick +/- buttons:</strong> Use the arrow buttons on each row to adjust quantities without opening the edit form.</li>
+    <li><strong>Shopping List:</strong> Click "Shopping List" to auto-generate a list of items that are low, expiring, or running out based on burn rates.</li>
+  </ul>
+  <h3>Recommended Categories</h3>
+  <table><tr><th>Category</th><th>Example Items</th><th>Daily Usage Tip</th></tr>
+  <tr><td>Water</td><td>Stored water jugs, water filters, purification tablets</td><td>1 gallon per person per day (minimum)</td></tr>
+  <tr><td>Food</td><td>Canned goods, rice, beans, freeze-dried meals, MREs</td><td>2,000 calories per person per day</td></tr>
+  <tr><td>Medical</td><td>First aid kits, prescription meds, OTC meds, bandages</td><td>Track daily medications individually</td></tr>
+  <tr><td>Fuel</td><td>Gasoline, propane, firewood, charcoal, lamp oil</td><td>Generator: 0.5-1.5 gal/hour depending on load</td></tr>
+  <tr><td>Batteries</td><td>AA, AAA, D, 9V, CR123A, rechargeable packs</td><td>Flashlight: ~1 set per 20 hours of use</td></tr>
+  <tr><td>Hygiene</td><td>Toilet paper, soap, toothpaste, trash bags, bleach</td><td>Toilet paper: ~1 roll per person per week</td></tr>
+  <tr><td>Tools</td><td>Multi-tool, duct tape, rope, tarps, fire starters</td><td>Usually no daily usage (set to 0)</td></tr>
+  <tr><td>Communications</td><td>Radios, batteries for radios, antenna cables, solar chargers</td><td>Radio batteries: depends on usage</td></tr>
+  </table>
+
+  <h2 id="printable">22. Printable Reports &amp; Emergency Cards</h2>
+  <p>N.O.M.A.D. can generate several printable documents. Print these and keep physical copies in your go-bag, vehicle, and at rally points:</p>
+  <ul>
+    <li><strong>Inventory Report</strong> &mdash; Preparedness &gt; Inventory &gt; click <strong>Print</strong>. Full supply list with quantities, locations, and expiration dates.</li>
+    <li><strong>Contact Directory</strong> &mdash; Preparedness &gt; Contacts &gt; click <strong>Print</strong>. All emergency contacts with phone numbers, callsigns, rally points, and medical notes.</li>
+    <li><strong>Patient Care Card</strong> &mdash; Preparedness &gt; Medical &gt; select a patient &gt; click <strong>Print Card</strong>. Individual medical info including allergies, medications, conditions, and recent vitals.</li>
+    <li><strong>Emergency Reference Sheet</strong> &mdash; Home page &gt; scroll to services &gt; <strong>Emergency Sheet</strong> button. One-page comprehensive sheet with critical contacts, inventory summary, weather, waypoints, and quick-reference information.</li>
+    <li><strong>Family Emergency Card</strong> &mdash; Preparedness &gt; Family Plan &gt; click <strong>Print Emergency Card</strong>. Wallet-size card with meeting locations, evacuation routes, and emergency contacts.</li>
+    <li><strong>Decision Guide Procedure Card</strong> &mdash; Preparedness &gt; Guides &gt; complete a guide &gt; click <strong>Print</strong>. Shows the decision path you followed with the final recommendation.</li>
+    <li><strong>Emergency Procedures Wallet Card</strong> &mdash; Preparedness &gt; Procedures &gt; click <strong>Wallet Card</strong>. Condensed quick-reference for CPR, bleeding, choking, and other critical procedures.</li>
+  </ul>
+  <div class="warn"><strong>Important:</strong> Digital tools can fail. Always keep printed copies of your most critical information. Laminate cards that go in your bag or vehicle. Update and reprint whenever your information changes significantly.</div>
+
+  <h2 id="lan">23. LAN Access &amp; Multi-Device Use</h2>
+  <p>N.O.M.A.D. is accessible from any device on your local network &mdash; phones, tablets, laptops &mdash; not just the computer it is installed on.</p>
+  <h3>How to Access from Other Devices</h3>
+  <div class="step"><div class="step-num">1</div><div class="step-text">Find your LAN address in <strong>Settings</strong> (shown at the top, looks like <code>http://192.168.1.50:8080</code>)</div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-text">Open a browser on your phone, tablet, or other computer</div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-text">Type that address into the browser and press Enter</div></div>
+  <p>Everyone on your network gets the same full interface. Changes made on any device are saved to the central database immediately.</p>
+  <h3>LAN Chat</h3>
+  <p>The chat bubble in the bottom-left corner is a <strong>local network messenger</strong>. Anyone accessing N.O.M.A.D. from any device can send messages to each other &mdash; no internet or cell service needed. Useful for coordinating during an emergency when phones are down but your local network (router/Wi-Fi) is still running.</p>
+  <h3>Dashboard Password</h3>
+  <p>If you want to restrict who can access N.O.M.A.D. on your network, set a dashboard password in <strong>Settings &gt; Dashboard Password</strong>. Anyone accessing from outside localhost will need to enter the password.</p>
+
+  <h2 id="services-guide">24. Understanding the 6 Services</h2>
+  <p>N.O.M.A.D. manages 6 separate tools. Each one is optional &mdash; install only what you need:</p>
+  <table><tr><th>Service</th><th>What It Does</th><th>Size</th><th>Who Needs It</th></tr>
+  <tr><td><strong>AI Chat</strong></td><td>Private AI assistant that answers questions offline</td><td>~310 MB + models</td><td>Everyone &mdash; this is the core feature</td></tr>
+  <tr><td><strong>Information Library</strong></td><td>Offline Wikipedia, medical references, survival guides</td><td>~60 MB + content packs</td><td>Everyone &mdash; essential reference material</td></tr>
+  <tr><td><strong>CyberChef</strong></td><td>Data encoding, encryption, decryption, hashing, file analysis</td><td>~30 MB</td><td>Technical users who need encryption/encoding tools</td></tr>
+  <tr><td><strong>Education Platform</strong></td><td>Khan Academy courses, textbooks, progress tracking</td><td>~200 MB + courses</td><td>Families with children, long-term learning</td></tr>
+  <tr><td><strong>Vector Search</strong></td><td>AI-powered document search for uploaded files</td><td>~80 MB</td><td>Users who upload many documents for AI analysis</td></tr>
+  <tr><td><strong>PDF Tools</strong></td><td>Merge, split, compress, convert, OCR PDFs</td><td>~100 MB + Java</td><td>Users who work with PDF documents frequently</td></tr>
+  </table>
+  <div class="tip"><strong>Minimal setup:</strong> Install just AI Chat + Information Library for a powerful offline knowledge base. Add others as needed.</div>
+
+  <h2 id="use-cases">25. Common Use Cases</h2>
+  <h3>Power Outage (first 24 hours)</h3>
+  <ol>
+    <li>Open N.O.M.A.D. on your laptop (it runs on battery)</li>
+    <li>Check Inventory &gt; filter by "Food" &mdash; see what is perishable and eat that first</li>
+    <li>Use the Guides &gt; <strong>Power Outage Response</strong> for step-by-step instructions</li>
+    <li>Log an incident (Preparedness &gt; Incidents) so you have a record</li>
+    <li>If extended, use the Calculators &gt; <strong>Generator Fuel</strong> to plan fuel usage</li>
+    <li>Check the Weather tab &mdash; is a storm causing this? Monitor pressure trends</li>
+  </ol>
+  <h3>Medical Emergency</h3>
+  <ol>
+    <li>Open Preparedness &gt; Procedures &gt; search for the relevant procedure (CPR, bleeding, burns, etc.)</li>
+    <li>If treating someone: go to Medical tab, find or add the patient, record vitals</li>
+    <li>Check Drug Interactions before giving any medications</li>
+    <li>Ask the AI (set to "Field Medic" mode) for advice specific to the situation</li>
+    <li>Log the incident for your records</li>
+  </ol>
+  <h3>Evacuation</h3>
+  <ol>
+    <li>Pull up your Family Plan &mdash; confirm meeting locations and routes with everyone</li>
+    <li>Check Inventory &gt; filter by location "Bug-out bag" to verify what is packed</li>
+    <li>Use Maps to review your evacuation routes offline</li>
+    <li>Print your Contact Directory and Emergency Card (take physical copies)</li>
+    <li>If you have time: click "Daily Consume" to update your inventory as you grab items</li>
+  </ol>
+  <h3>Long-Term Off-Grid Living</h3>
+  <ul>
+    <li><strong>Daily:</strong> Click "Daily Consume" to track supply burn rates. Log weather observations. Write a journal entry.</li>
+    <li><strong>Weekly:</strong> Check the Shopping List for items running low. Review alerts. Run a checklist audit.</li>
+    <li><strong>Monthly:</strong> Run a Benchmark to confirm system health. Back up your database to USB. Review and rotate expiring inventory. Update garden records with harvest data.</li>
+    <li><strong>Quarterly:</strong> Run a Training Scenario. Update your Family Plan. Review and update checklists. Sync with other N.O.M.A.D. systems if applicable.</li>
+  </ul>
+
+  <h2 id="faq">26. Frequently Asked Questions</h2>
+  <h3>Does N.O.M.A.D. need the internet to work?</h3>
+  <p>No. After you download services, AI models, and content packs, everything works completely offline forever. The only time it connects to the internet is when YOU choose to download something new.</p>
+  <h3>Is my data sent to any server or cloud?</h3>
+  <p>No. Zero telemetry, zero cloud, zero tracking. All data stays on your computer in a local database file. The AI runs on your hardware &mdash; your conversations are never sent anywhere.</p>
+  <h3>Can I run N.O.M.A.D. from a USB drive?</h3>
+  <p>Yes. Download the portable <strong>ProjectNOMAD.exe</strong> and put it on a USB drive. Run it from there. You can choose to store data on the USB drive as well (select it during the Setup Wizard).</p>
+  <h3>How much disk space do I need?</h3>
+  <p>The base application is ~25 MB. With essential content and a small AI model: ~5 GB. With everything downloaded: 50-200 GB depending on how many content packs and AI models you install. You control what you download.</p>
+  <h3>Can my family use it from their phones?</h3>
+  <p>Yes. As long as their phone is on the same Wi-Fi network, they can open a browser and go to your N.O.M.A.D. address (shown in Settings). The interface works on mobile browsers.</p>
+  <h3>What happens if my computer breaks?</h3>
+  <p>If you have been backing up (Settings &gt; Full Backup), you can restore your entire database on another computer. Keep backup ZIPs on a USB drive in a separate location. The portable exe runs on any Windows 10/11 PC with no installation.</p>
+  <h3>Can I share my checklists with friends who also use N.O.M.A.D.?</h3>
+  <p>Yes. Go to Preparedness &gt; Checklists, click a checklist, then click <strong>Export JSON</strong>. Send the file to your friend and they can click <strong>Import</strong> to add it to their system. You can also use the sync features to share all data at once.</p>
+  <h3>How do I update N.O.M.A.D.?</h3>
+  <p>Download the latest version from the <a href="https://github.com/SysAdminDoc/nomad-windows/releases">releases page</a>. If using the portable exe, just replace the old file with the new one. If using the installer, run the new installer &mdash; it updates in place. Your data is stored separately and is preserved across updates.</p>
+  <h3>Why do some features say "Install" before I can use them?</h3>
+  <p>N.O.M.A.D. manages several separate tools (AI Chat, Information Library, etc.). Each needs to be downloaded once before use. This keeps the base application small and lets you choose what you need. Most features in the Preparedness tab work immediately with no installation required.</p>
+  <h3>The AI gives wrong or unhelpful answers. What should I do?</h3>
+  <p>Try a larger AI model (see the AI Model guide above). Smaller models are fast but less accurate. Also try changing the conversation mode &mdash; "Medical Advisor" gives better medical answers than "General Assistant." Enable "Include My Prep Data" so the AI has context about your specific situation.</p>
+
+  <div style="text-align:center;margin-top:40px;padding-top:16px;border-top:2px solid ${border};color:${muted};font-size:12px;">
+    <strong>Project N.O.M.A.D. for Windows v${VERSION}</strong><br>
+    <a href="https://www.projectnomad.us">projectnomad.us</a> &mdash;
+    <a href="https://github.com/SysAdminDoc/nomad-windows">GitHub</a> &mdash;
+    <a href="https://discord.com/invite/crosstalksolutions">Discord Community</a><br><br>
+    Based on Project N.O.M.A.D. by Crosstalk Solutions. Windows port by SysAdminDoc.<br>
+    <em>Knowledge that never goes offline.</em>
   </div>
   </body></html>`);
 }

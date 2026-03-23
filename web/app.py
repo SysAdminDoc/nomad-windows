@@ -3266,19 +3266,89 @@ def create_app():
 
     # ─── Video Library API ─────────────────────────────────────────────
 
+    # ─── Media / Video Library API ──────────────────────────────────────
+
     def get_video_dir():
         path = os.path.join(get_data_dir(), 'videos')
         os.makedirs(path, exist_ok=True)
         return path
 
+    def get_ytdlp_path():
+        return os.path.join(get_services_dir(), 'yt-dlp', 'yt-dlp.exe')
+
     VIDEO_CATEGORIES = ['survival', 'medical', 'repair', 'bushcraft', 'cooking', 'radio', 'farming', 'defense', 'general']
+
+    YTDLP_URL = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe'
+
+    _ytdlp_downloads = {}  # id -> {status, percent, title, speed, error}
+    _ytdlp_dl_counter = 0
+    _ytdlp_dl_lock = threading.Lock()
+
+    # Curated prepper video catalog — top offline survival content
+    PREPPER_CATALOG = [
+        # Water & Sanitation
+        {'title': 'How to Purify Water in a Survival Situation', 'url': 'https://www.youtube.com/watch?v=wEBYmeVwCeA', 'channel': 'City Prepping', 'category': 'survival', 'folder': 'Water & Sanitation'},
+        {'title': 'DIY Water Filter - How to Make a Homemade Water Filter', 'url': 'https://www.youtube.com/watch?v=z4yBzMKxH_A', 'channel': 'Practical Engineering', 'category': 'survival', 'folder': 'Water & Sanitation'},
+        {'title': 'How to Find and Purify Water | Survival Skills', 'url': 'https://www.youtube.com/watch?v=mV3L6w0n1jI', 'channel': 'Coalcracker Bushcraft', 'category': 'bushcraft', 'folder': 'Water & Sanitation'},
+        # Food & Foraging
+        {'title': 'Long Term Food Storage - A Beginners Guide', 'url': 'https://www.youtube.com/watch?v=OGkRUHl-dbw', 'channel': 'City Prepping', 'category': 'survival', 'folder': 'Food & Storage'},
+        {'title': 'Canning 101: Start Here', 'url': 'https://www.youtube.com/watch?v=EqkXsVBjPJA', 'channel': 'Homesteading Family', 'category': 'cooking', 'folder': 'Food & Storage'},
+        {'title': '37 Survival Foods Every Prepper Should Stockpile', 'url': 'https://www.youtube.com/watch?v=jLIWqg5Cjhc', 'channel': 'Canadian Prepper', 'category': 'survival', 'folder': 'Food & Storage'},
+        {'title': '20 Wild Edibles You Can Forage for Survival', 'url': 'https://www.youtube.com/watch?v=ZPJPONHGf-0', 'channel': 'Black Scout Survival', 'category': 'bushcraft', 'folder': 'Food & Storage'},
+        # First Aid & Medical
+        {'title': 'Wilderness First Aid Basics', 'url': 'https://www.youtube.com/watch?v=JR2IABjLJBY', 'channel': 'Corporals Corner', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        {'title': 'Stop the Bleed - Tourniquet Application', 'url': 'https://www.youtube.com/watch?v=CSiuSIFDcuI', 'channel': 'Tactical Rifleman', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        {'title': 'How to Suture a Wound - Survival Medicine', 'url': 'https://www.youtube.com/watch?v=mfWahyERGBo', 'channel': 'Prepper Nurse', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        {'title': 'The Ultimate First Aid Kit Build', 'url': 'https://www.youtube.com/watch?v=MX0kB-x_XPg', 'channel': 'The Urban Prepper', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        # Shelter & Construction
+        {'title': 'How to Build a Survival Shelter', 'url': 'https://www.youtube.com/watch?v=jfOC1ywRY3M', 'channel': 'Corporals Corner', 'category': 'bushcraft', 'folder': 'Shelter & Construction'},
+        {'title': '5 Shelters Everyone Should Know How to Build', 'url': 'https://www.youtube.com/watch?v=wZjKQwjdGF0', 'channel': 'Coalcracker Bushcraft', 'category': 'bushcraft', 'folder': 'Shelter & Construction'},
+        {'title': 'Off Grid Cabin Build - Start to Finish', 'url': 'https://www.youtube.com/watch?v=YOJCRvjFpgQ', 'channel': 'My Self Reliance', 'category': 'repair', 'folder': 'Shelter & Construction'},
+        # Fire & Energy
+        {'title': '5 Ways to Start a Fire Without Matches', 'url': 'https://www.youtube.com/watch?v=lR-LrU0zA0Y', 'channel': 'Sensible Prepper', 'category': 'bushcraft', 'folder': 'Fire & Energy'},
+        {'title': 'Solar Power for Beginners', 'url': 'https://www.youtube.com/watch?v=W0Miu0mihVE', 'channel': 'City Prepping', 'category': 'survival', 'folder': 'Fire & Energy'},
+        {'title': 'DIY Solar Generator Build', 'url': 'https://www.youtube.com/watch?v=k_jVk2Q2sJY', 'channel': 'Full Spectrum Survival', 'category': 'repair', 'folder': 'Fire & Energy'},
+        # Navigation & Communication
+        {'title': 'Land Navigation with Map and Compass', 'url': 'https://www.youtube.com/watch?v=0cF0ovA3FtY', 'channel': 'Black Scout Survival', 'category': 'survival', 'folder': 'Navigation & Comms'},
+        {'title': 'Ham Radio for Beginners - Get Your License', 'url': 'https://www.youtube.com/watch?v=WIsBdMdNfNI', 'channel': 'Tin Hat Ranch', 'category': 'radio', 'folder': 'Navigation & Comms'},
+        {'title': 'GMRS vs Ham Radio - Which is Better for Preppers', 'url': 'https://www.youtube.com/watch?v=uK3cMvEpnqg', 'channel': 'Magic Prepper', 'category': 'radio', 'folder': 'Navigation & Comms'},
+        # Security & Defense
+        {'title': 'Home Security on a Budget', 'url': 'https://www.youtube.com/watch?v=AUxTRyqp5qg', 'channel': 'City Prepping', 'category': 'defense', 'folder': 'Security & Defense'},
+        {'title': 'Perimeter Security for Your Property', 'url': 'https://www.youtube.com/watch?v=bNJYjw7VSzM', 'channel': 'Bear Independent', 'category': 'defense', 'folder': 'Security & Defense'},
+        {'title': 'Night Vision on a Budget for Home Defense', 'url': 'https://www.youtube.com/watch?v=f8l2E7kk654', 'channel': 'Angry Prepper', 'category': 'defense', 'folder': 'Security & Defense'},
+        # Farming & Homesteading
+        {'title': 'Start a Survival Garden in 30 Days', 'url': 'https://www.youtube.com/watch?v=u3x0JPCHDOQ', 'channel': 'City Prepping', 'category': 'farming', 'folder': 'Farming & Homestead'},
+        {'title': 'Raising Chickens 101 - Everything You Need to Know', 'url': 'https://www.youtube.com/watch?v=jbHhEsEJ99g', 'channel': 'Homesteading Family', 'category': 'farming', 'folder': 'Farming & Homestead'},
+        {'title': 'Seed Saving for Beginners', 'url': 'https://www.youtube.com/watch?v=LtH7lkP8bAU', 'channel': 'Epic Gardening', 'category': 'farming', 'folder': 'Farming & Homestead'},
+        # General Preparedness
+        {'title': 'The Ultimate Prepper Guide for Beginners', 'url': 'https://www.youtube.com/watch?v=JVuxCgo8mWM', 'channel': 'Canadian Prepper', 'category': 'survival', 'folder': 'Getting Started'},
+        {'title': 'Bug Out Bag Essentials - 2024 Build', 'url': 'https://www.youtube.com/watch?v=HSTrM0pXnCA', 'channel': 'The Urban Prepper', 'category': 'survival', 'folder': 'Getting Started'},
+        {'title': 'Get Home Bag: The Most Important Bag You Can Have', 'url': 'https://www.youtube.com/watch?v=a_L4ilHQFPQ', 'channel': 'Sensible Prepper', 'category': 'survival', 'folder': 'Getting Started'},
+        {'title': 'EMP Attack - How to Prepare and Protect Electronics', 'url': 'https://www.youtube.com/watch?v=bJh1yd1yRes', 'channel': 'Canadian Prepper', 'category': 'survival', 'folder': 'Threats & Scenarios'},
+        {'title': 'Economic Collapse: How to Prepare', 'url': 'https://www.youtube.com/watch?v=xhmReScCzE4', 'channel': 'Full Spectrum Survival', 'category': 'survival', 'folder': 'Threats & Scenarios'},
+        {'title': 'Nuclear War Survival - What You Need to Know', 'url': 'https://www.youtube.com/watch?v=_GNh3p1GFAI', 'channel': 'Canadian Prepper', 'category': 'defense', 'folder': 'Threats & Scenarios'},
+        # Bushcraft & Wilderness Skills
+        {'title': 'Top 10 Knots You Need to Know', 'url': 'https://www.youtube.com/watch?v=VrSBsqe23Qk', 'channel': 'Coalcracker Bushcraft', 'category': 'bushcraft', 'folder': 'Bushcraft Skills'},
+        {'title': 'Trapping for Survival - Basics and Techniques', 'url': 'https://www.youtube.com/watch?v=vAjl4IpYZXk', 'channel': 'Reality Survival', 'category': 'bushcraft', 'folder': 'Bushcraft Skills'},
+        {'title': 'Knife Sharpening - How to Get a Razor Edge', 'url': 'https://www.youtube.com/watch?v=tRfBA-lBs-4', 'channel': 'Corporals Corner', 'category': 'bushcraft', 'folder': 'Bushcraft Skills'},
+        # Repair & Tools
+        {'title': 'Basic Automotive Repair Everyone Should Know', 'url': 'https://www.youtube.com/watch?v=MbyJjkpgNBU', 'channel': 'ChrisFix', 'category': 'repair', 'folder': 'Repair & Tools'},
+        {'title': 'Essential Hand Tools for Survival', 'url': 'https://www.youtube.com/watch?v=9XUsqYoSzxo', 'channel': 'Sensible Prepper', 'category': 'repair', 'folder': 'Repair & Tools'},
+    ]
 
     @app.route('/api/videos')
     def api_videos_list():
         db = get_db()
-        rows = db.execute('SELECT * FROM videos ORDER BY category, title').fetchall()
+        rows = db.execute('SELECT * FROM videos ORDER BY folder, category, title').fetchall()
         db.close()
-        return jsonify([dict(r) for r in rows])
+        videos = []
+        vdir = get_video_dir()
+        for r in rows:
+            v = dict(r)
+            # Verify file still exists on disk
+            v['exists'] = os.path.isfile(os.path.join(vdir, r['filename']))
+            videos.append(v)
+        return jsonify(videos)
 
     @app.route('/api/videos/upload', methods=['POST'])
     def api_videos_upload():
@@ -3290,18 +3360,22 @@ def create_app():
             return jsonify({'error': 'Invalid filename'}), 400
         filepath = os.path.join(get_video_dir(), filename)
         file.save(filepath)
+        filesize = os.path.getsize(filepath) if os.path.isfile(filepath) else 0
         category = request.form.get('category', 'general')
+        folder = request.form.get('folder', '')
         title = request.form.get('title', filename.rsplit('.', 1)[0])
         db = get_db()
-        cur = db.execute('INSERT INTO videos (title, filename, category) VALUES (?, ?, ?)', (title, filename, category))
+        cur = db.execute('INSERT INTO videos (title, filename, category, folder, filesize) VALUES (?, ?, ?, ?, ?)',
+                         (title, filename, category, folder, filesize))
         db.commit()
         db.close()
+        log_activity('video_upload', 'media', title)
         return jsonify({'status': 'uploaded', 'id': cur.lastrowid}), 201
 
     @app.route('/api/videos/<int:vid>', methods=['DELETE'])
     def api_videos_delete(vid):
         db = get_db()
-        row = db.execute('SELECT filename FROM videos WHERE id = ?', (vid,)).fetchone()
+        row = db.execute('SELECT filename, title FROM videos WHERE id = ?', (vid,)).fetchone()
         if row:
             filepath = os.path.join(get_video_dir(), row['filename'])
             if os.path.isfile(filepath):
@@ -3311,13 +3385,28 @@ def create_app():
                     pass
             db.execute('DELETE FROM videos WHERE id = ?', (vid,))
             db.commit()
+            log_activity('video_delete', 'media', row['title'])
         db.close()
         return jsonify({'status': 'deleted'})
+
+    @app.route('/api/videos/<int:vid>', methods=['PATCH'])
+    def api_videos_update(vid):
+        data = request.get_json() or {}
+        db = get_db()
+        if 'title' in data:
+            db.execute('UPDATE videos SET title = ? WHERE id = ?', (data['title'], vid))
+        if 'folder' in data:
+            db.execute('UPDATE videos SET folder = ? WHERE id = ?', (data['folder'], vid))
+        if 'category' in data:
+            db.execute('UPDATE videos SET category = ? WHERE id = ?', (data['category'], vid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'updated'})
 
     @app.route('/api/videos/serve/<path:filename>')
     def api_videos_serve(filename):
         vdir = get_video_dir()
-        safe = os.path.normpath(os.path.join(vdir, secure_filename(filename)))
+        safe = os.path.normpath(os.path.join(vdir, filename))
         if not safe.startswith(os.path.normpath(vdir)) or not os.path.isfile(safe):
             return jsonify({'error': 'Not found'}), 404
         from flask import send_file
@@ -3326,6 +3415,756 @@ def create_app():
     @app.route('/api/videos/categories')
     def api_videos_categories():
         return jsonify(VIDEO_CATEGORIES)
+
+    @app.route('/api/videos/folders')
+    def api_videos_folders():
+        db = get_db()
+        rows = db.execute('SELECT DISTINCT folder FROM videos WHERE folder != "" ORDER BY folder').fetchall()
+        db.close()
+        return jsonify([r['folder'] for r in rows])
+
+    @app.route('/api/videos/stats')
+    def api_videos_stats():
+        db = get_db()
+        total = db.execute('SELECT COUNT(*) as c FROM videos').fetchone()['c']
+        total_size = db.execute('SELECT COALESCE(SUM(filesize),0) as s FROM videos').fetchone()['s']
+        by_folder = db.execute('SELECT folder, COUNT(*) as c FROM videos GROUP BY folder ORDER BY folder').fetchall()
+        db.close()
+        return jsonify({
+            'total': total,
+            'total_size': total_size,
+            'total_size_fmt': format_size(total_size),
+            'by_folder': [{'folder': r['folder'] or 'Unsorted', 'count': r['c']} for r in by_folder],
+        })
+
+    # ─── yt-dlp Integration ──────────────────────────────────────────
+
+    @app.route('/api/ytdlp/status')
+    def api_ytdlp_status():
+        exe = get_ytdlp_path()
+        installed = os.path.isfile(exe)
+        version = ''
+        if installed:
+            try:
+                result = subprocess.run([exe, '--version'], capture_output=True, text=True, timeout=5,
+                                        creationflags=0x08000000)
+                version = result.stdout.strip()
+            except Exception:
+                pass
+        return jsonify({'installed': installed, 'version': version, 'path': exe})
+
+    _ytdlp_install_state = {'status': 'idle', 'percent': 0, 'error': None}
+
+    @app.route('/api/ytdlp/install', methods=['POST'])
+    def api_ytdlp_install():
+        exe = get_ytdlp_path()
+        if os.path.isfile(exe):
+            return jsonify({'status': 'already_installed'})
+        ytdlp_dir = os.path.dirname(exe)
+        os.makedirs(ytdlp_dir, exist_ok=True)
+
+        def do_install():
+            try:
+                _ytdlp_install_state.update({'status': 'downloading', 'percent': 10, 'error': None})
+                import requests as req
+                resp = req.get(YTDLP_URL, stream=True, timeout=120, allow_redirects=True)
+                resp.raise_for_status()
+                total = int(resp.headers.get('content-length', 0))
+                downloaded = 0
+                with open(exe, 'wb') as f:
+                    for chunk in resp.iter_content(chunk_size=65536):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total > 0:
+                            _ytdlp_install_state['percent'] = int(downloaded / total * 90) + 10
+                _ytdlp_install_state.update({'status': 'complete', 'percent': 100, 'error': None})
+                log.info('yt-dlp installed')
+            except Exception as e:
+                _ytdlp_install_state.update({'status': 'error', 'percent': 0, 'error': str(e)})
+                log.error(f'yt-dlp install failed: {e}')
+
+        threading.Thread(target=do_install, daemon=True).start()
+        return jsonify({'status': 'installing'})
+
+    @app.route('/api/ytdlp/install-progress')
+    def api_ytdlp_install_progress():
+        return jsonify(_ytdlp_install_state)
+
+    @app.route('/api/ytdlp/download', methods=['POST'])
+    def api_ytdlp_download():
+        nonlocal _ytdlp_dl_counter
+        exe = get_ytdlp_path()
+        if not os.path.isfile(exe):
+            return jsonify({'error': 'yt-dlp is not installed. Click "Setup Video Downloader" first.'}), 400
+
+        data = request.get_json() or {}
+        url = data.get('url', '').strip()
+        folder = data.get('folder', '')
+        category = data.get('category', 'general')
+        if not url:
+            return jsonify({'error': 'No URL provided'}), 400
+
+        with _ytdlp_dl_lock:
+            _ytdlp_dl_counter += 1
+            dl_id = str(_ytdlp_dl_counter)
+
+        _ytdlp_downloads[dl_id] = {'status': 'starting', 'percent': 0, 'title': '', 'speed': '', 'error': ''}
+
+        def do_download():
+            vdir = get_video_dir()
+            try:
+                # Get video info first
+                _ytdlp_downloads[dl_id]['status'] = 'fetching info'
+                info_result = subprocess.run(
+                    [exe, '--no-download', '--print', '%(title)s|||%(duration_string)s|||%(filesize_approx)s', url],
+                    capture_output=True, text=True, timeout=30, creationflags=0x08000000,
+                )
+                parts = info_result.stdout.strip().split('|||')
+                video_title = parts[0] if parts else url
+                video_duration = parts[1] if len(parts) > 1 else ''
+                _ytdlp_downloads[dl_id]['title'] = video_title
+
+                # Download with progress
+                _ytdlp_downloads[dl_id]['status'] = 'downloading'
+                output_tmpl = os.path.join(vdir, '%(title)s.%(ext)s')
+                proc = subprocess.Popen(
+                    [exe, '-f', 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
+                     '--merge-output-format', 'mp4', '--newline', '--no-playlist',
+                     '-o', output_tmpl, url],
+                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                    creationflags=0x08000000,
+                )
+
+                for line in proc.stdout:
+                    line = line.strip()
+                    if '[download]' in line and '%' in line:
+                        try:
+                            pct_str = line.split('%')[0].split()[-1]
+                            pct = float(pct_str)
+                            _ytdlp_downloads[dl_id]['percent'] = min(int(pct), 99)
+                            # Extract speed
+                            if 'at' in line:
+                                speed_part = line.split('at')[-1].strip().split('ETA')[0].strip()
+                                _ytdlp_downloads[dl_id]['speed'] = speed_part
+                        except (ValueError, IndexError):
+                            pass
+                    elif '[Merger]' in line or '[ExtractAudio]' in line:
+                        _ytdlp_downloads[dl_id].update({'status': 'merging', 'percent': 95})
+
+                proc.wait(timeout=3600)
+
+                if proc.returncode != 0:
+                    # Capture stderr for error details
+                    err_detail = 'Download failed (exit code %d)' % proc.returncode
+                    _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': video_title, 'speed': '', 'error': err_detail}
+                    return
+
+                # Find the downloaded file
+                safe_title = secure_filename(video_title + '.mp4') if video_title else None
+                downloaded_file = None
+                for f in os.listdir(vdir):
+                    fpath = os.path.join(vdir, f)
+                    if os.path.isfile(fpath) and f.endswith('.mp4'):
+                        # Find recently modified files (within last 60s)
+                        if time.time() - os.path.getmtime(fpath) < 60:
+                            downloaded_file = f
+                            break
+
+                if not downloaded_file:
+                    # Try matching by title
+                    for f in os.listdir(vdir):
+                        if video_title and video_title.lower()[:30] in f.lower():
+                            downloaded_file = f
+                            break
+
+                if downloaded_file:
+                    filesize = os.path.getsize(os.path.join(vdir, downloaded_file))
+                    db = get_db()
+                    db.execute('INSERT INTO videos (title, filename, category, folder, duration, url, filesize) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                               (video_title, downloaded_file, category, folder, video_duration, url, filesize))
+                    db.commit()
+                    db.close()
+                    log_activity('video_download', 'media', video_title)
+                    _ytdlp_downloads[dl_id] = {'status': 'complete', 'percent': 100, 'title': video_title, 'speed': '', 'error': ''}
+                else:
+                    _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': video_title, 'speed': '', 'error': 'File not found after download'}
+
+            except subprocess.TimeoutExpired:
+                _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': '', 'speed': '', 'error': 'Download timed out'}
+            except Exception as e:
+                _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': '', 'speed': '', 'error': str(e)}
+
+        threading.Thread(target=do_download, daemon=True).start()
+        return jsonify({'status': 'started', 'id': dl_id})
+
+    @app.route('/api/ytdlp/progress')
+    def api_ytdlp_progress():
+        return jsonify(_ytdlp_downloads)
+
+    @app.route('/api/ytdlp/progress/<dl_id>')
+    def api_ytdlp_progress_single(dl_id):
+        return jsonify(_ytdlp_downloads.get(dl_id, {'status': 'unknown'}))
+
+    @app.route('/api/videos/catalog')
+    def api_videos_catalog():
+        return jsonify(PREPPER_CATALOG)
+
+    @app.route('/api/ytdlp/download-catalog', methods=['POST'])
+    def api_ytdlp_download_catalog():
+        """Download multiple catalog videos sequentially."""
+        nonlocal _ytdlp_dl_counter
+        exe = get_ytdlp_path()
+        if not os.path.isfile(exe):
+            return jsonify({'error': 'yt-dlp is not installed'}), 400
+
+        data = request.get_json() or {}
+        items = data.get('items', [])
+        if not items:
+            return jsonify({'error': 'No items selected'}), 400
+
+        # Check which are already downloaded
+        db = get_db()
+        existing_urls = set(r['url'] for r in db.execute('SELECT url FROM videos WHERE url != ""').fetchall())
+        db.close()
+        to_download = [it for it in items if it.get('url') not in existing_urls]
+        if not to_download:
+            return jsonify({'status': 'all_downloaded', 'count': 0})
+
+        with _ytdlp_dl_lock:
+            _ytdlp_dl_counter += 1
+            queue_id = str(_ytdlp_dl_counter)
+
+        _ytdlp_downloads[queue_id] = {'status': 'queued', 'percent': 0, 'title': f'Queue: 0/{len(to_download)}',
+                                       'speed': '', 'error': '', 'queue_total': len(to_download), 'queue_pos': 0}
+
+        def do_queue():
+            vdir = get_video_dir()
+            for i, item in enumerate(to_download):
+                _ytdlp_downloads[queue_id].update({
+                    'status': 'downloading', 'percent': 0, 'queue_pos': i + 1,
+                    'title': f'[{i+1}/{len(to_download)}] {item.get("title", "...")}', 'speed': '',
+                })
+                try:
+                    output_tmpl = os.path.join(vdir, '%(title)s.%(ext)s')
+                    proc = subprocess.Popen(
+                        [exe, '-f', 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
+                         '--merge-output-format', 'mp4', '--newline', '--no-playlist',
+                         '-o', output_tmpl, item['url']],
+                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                        creationflags=0x08000000,
+                    )
+                    for line in proc.stdout:
+                        line = line.strip()
+                        if '[download]' in line and '%' in line:
+                            try:
+                                pct = float(line.split('%')[0].split()[-1])
+                                _ytdlp_downloads[queue_id]['percent'] = min(int(pct), 99)
+                                if 'at' in line:
+                                    _ytdlp_downloads[queue_id]['speed'] = line.split('at')[-1].strip().split('ETA')[0].strip()
+                            except (ValueError, IndexError):
+                                pass
+                    proc.wait(timeout=3600)
+
+                    if proc.returncode == 0:
+                        # Find the file
+                        for f in sorted(os.listdir(vdir), key=lambda x: os.path.getmtime(os.path.join(vdir, x)), reverse=True):
+                            fpath = os.path.join(vdir, f)
+                            if os.path.isfile(fpath) and f.endswith('.mp4') and time.time() - os.path.getmtime(fpath) < 120:
+                                filesize = os.path.getsize(fpath)
+                                db = get_db()
+                                db.execute('INSERT INTO videos (title, filename, category, folder, url, filesize) VALUES (?, ?, ?, ?, ?, ?)',
+                                           (item.get('title', f), f, item.get('category', 'general'), item.get('folder', ''), item['url'], filesize))
+                                db.commit()
+                                db.close()
+                                break
+                except Exception as e:
+                    log.error(f'Catalog download failed for {item.get("title")}: {e}')
+
+            _ytdlp_downloads[queue_id] = {'status': 'complete', 'percent': 100, 'title': f'Done — {len(to_download)} videos',
+                                           'speed': '', 'error': '', 'queue_total': len(to_download), 'queue_pos': len(to_download)}
+
+        threading.Thread(target=do_queue, daemon=True).start()
+        return jsonify({'status': 'queued', 'id': queue_id, 'count': len(to_download)})
+
+    # ─── Audio Library API ─────────────────────────────────────────────
+
+    def get_audio_dir():
+        path = os.path.join(get_data_dir(), 'audio')
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    AUDIO_CATEGORIES = ['general', 'survival', 'medical', 'radio', 'podcast', 'audiobook', 'music', 'training']
+
+    FFMPEG_URL = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip'
+
+    def get_ffmpeg_path():
+        return os.path.join(get_services_dir(), 'ffmpeg', 'ffmpeg.exe')
+
+    @app.route('/api/audio')
+    def api_audio_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM audio ORDER BY folder, title').fetchall()
+        db.close()
+        adir = get_audio_dir()
+        return jsonify([{**dict(r), 'exists': os.path.isfile(os.path.join(adir, r['filename']))} for r in rows])
+
+    @app.route('/api/audio/upload', methods=['POST'])
+    def api_audio_upload():
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file'}), 400
+        file = request.files['file']
+        filename = secure_filename(file.filename)
+        if not filename:
+            return jsonify({'error': 'Invalid filename'}), 400
+        filepath = os.path.join(get_audio_dir(), filename)
+        file.save(filepath)
+        filesize = os.path.getsize(filepath) if os.path.isfile(filepath) else 0
+        title = request.form.get('title', filename.rsplit('.', 1)[0])
+        category = request.form.get('category', 'general')
+        folder = request.form.get('folder', '')
+        artist = request.form.get('artist', '')
+        db = get_db()
+        cur = db.execute('INSERT INTO audio (title, filename, category, folder, artist, filesize) VALUES (?, ?, ?, ?, ?, ?)',
+                         (title, filename, category, folder, artist, filesize))
+        db.commit()
+        db.close()
+        log_activity('audio_upload', 'media', title)
+        return jsonify({'status': 'uploaded', 'id': cur.lastrowid}), 201
+
+    @app.route('/api/audio/<int:aid>', methods=['DELETE'])
+    def api_audio_delete(aid):
+        db = get_db()
+        row = db.execute('SELECT filename, title FROM audio WHERE id = ?', (aid,)).fetchone()
+        if row:
+            filepath = os.path.join(get_audio_dir(), row['filename'])
+            if os.path.isfile(filepath):
+                try:
+                    os.remove(filepath)
+                except Exception:
+                    pass
+            db.execute('DELETE FROM audio WHERE id = ?', (aid,))
+            db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/audio/<int:aid>', methods=['PATCH'])
+    def api_audio_update(aid):
+        data = request.get_json() or {}
+        db = get_db()
+        for field in ['title', 'folder', 'category', 'artist', 'album']:
+            if field in data:
+                db.execute(f'UPDATE audio SET {field} = ? WHERE id = ?', (data[field], aid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'updated'})
+
+    @app.route('/api/audio/serve/<path:filename>')
+    def api_audio_serve(filename):
+        adir = get_audio_dir()
+        safe = os.path.normpath(os.path.join(adir, filename))
+        if not safe.startswith(os.path.normpath(adir)) or not os.path.isfile(safe):
+            return jsonify({'error': 'Not found'}), 404
+        from flask import send_file
+        return send_file(safe)
+
+    @app.route('/api/audio/stats')
+    def api_audio_stats():
+        db = get_db()
+        total = db.execute('SELECT COUNT(*) as c FROM audio').fetchone()['c']
+        total_size = db.execute('SELECT COALESCE(SUM(filesize),0) as s FROM audio').fetchone()['s']
+        by_folder = db.execute('SELECT folder, COUNT(*) as c FROM audio GROUP BY folder ORDER BY folder').fetchall()
+        db.close()
+        return jsonify({'total': total, 'total_size': total_size, 'total_size_fmt': format_size(total_size),
+                        'by_folder': [{'folder': r['folder'] or 'Unsorted', 'count': r['c']} for r in by_folder]})
+
+    @app.route('/api/audio/folders')
+    def api_audio_folders():
+        db = get_db()
+        rows = db.execute('SELECT DISTINCT folder FROM audio WHERE folder != "" ORDER BY folder').fetchall()
+        db.close()
+        return jsonify([r['folder'] for r in rows])
+
+    @app.route('/api/ytdlp/download-audio', methods=['POST'])
+    def api_ytdlp_download_audio():
+        """Download audio-only from a URL via yt-dlp."""
+        nonlocal _ytdlp_dl_counter
+        exe = get_ytdlp_path()
+        if not os.path.isfile(exe):
+            return jsonify({'error': 'yt-dlp is not installed'}), 400
+
+        data = request.get_json() or {}
+        url = data.get('url', '').strip()
+        folder = data.get('folder', '')
+        category = data.get('category', 'general')
+        if not url:
+            return jsonify({'error': 'No URL provided'}), 400
+
+        with _ytdlp_dl_lock:
+            _ytdlp_dl_counter += 1
+            dl_id = str(_ytdlp_dl_counter)
+
+        _ytdlp_downloads[dl_id] = {'status': 'starting', 'percent': 0, 'title': '', 'speed': '', 'error': ''}
+
+        def do_audio_dl():
+            adir = get_audio_dir()
+            try:
+                _ytdlp_downloads[dl_id]['status'] = 'fetching info'
+                info_result = subprocess.run(
+                    [exe, '--no-download', '--print', '%(title)s|||%(duration_string)s|||%(uploader)s', url],
+                    capture_output=True, text=True, timeout=30, creationflags=0x08000000,
+                )
+                parts = info_result.stdout.strip().split('|||')
+                audio_title = parts[0] if parts else url
+                audio_duration = parts[1] if len(parts) > 1 else ''
+                audio_artist = parts[2] if len(parts) > 2 else ''
+                _ytdlp_downloads[dl_id]['title'] = audio_title
+
+                _ytdlp_downloads[dl_id]['status'] = 'downloading'
+                output_tmpl = os.path.join(adir, '%(title)s.%(ext)s')
+                cmd = [exe, '-x', '--audio-format', 'mp3', '--audio-quality', '0',
+                       '--newline', '--no-playlist', '-o', output_tmpl, url]
+                # Use ffmpeg if available
+                ffmpeg = get_ffmpeg_path()
+                if os.path.isfile(ffmpeg):
+                    cmd.extend(['--ffmpeg-location', os.path.dirname(ffmpeg)])
+
+                proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                        text=True, creationflags=0x08000000)
+                for line in proc.stdout:
+                    line = line.strip()
+                    if '[download]' in line and '%' in line:
+                        try:
+                            pct = float(line.split('%')[0].split()[-1])
+                            _ytdlp_downloads[dl_id]['percent'] = min(int(pct), 99)
+                            if 'at' in line:
+                                _ytdlp_downloads[dl_id]['speed'] = line.split('at')[-1].strip().split('ETA')[0].strip()
+                        except (ValueError, IndexError):
+                            pass
+                proc.wait(timeout=1800)
+
+                if proc.returncode == 0:
+                    for f in sorted(os.listdir(adir), key=lambda x: os.path.getmtime(os.path.join(adir, x)), reverse=True):
+                        fpath = os.path.join(adir, f)
+                        if os.path.isfile(fpath) and time.time() - os.path.getmtime(fpath) < 120:
+                            filesize = os.path.getsize(fpath)
+                            db = get_db()
+                            db.execute('INSERT INTO audio (title, filename, category, folder, artist, duration, url, filesize) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                                       (audio_title, f, category, folder, audio_artist, audio_duration, url, filesize))
+                            db.commit()
+                            db.close()
+                            _ytdlp_downloads[dl_id] = {'status': 'complete', 'percent': 100, 'title': audio_title, 'speed': '', 'error': ''}
+                            return
+                _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': audio_title, 'speed': '', 'error': f'Download failed (exit code {proc.returncode})'}
+            except Exception as e:
+                _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': '', 'speed': '', 'error': str(e)}
+
+        threading.Thread(target=do_audio_dl, daemon=True).start()
+        return jsonify({'status': 'started', 'id': dl_id})
+
+    @app.route('/api/ffmpeg/status')
+    def api_ffmpeg_status():
+        return jsonify({'installed': os.path.isfile(get_ffmpeg_path())})
+
+    @app.route('/api/ffmpeg/install', methods=['POST'])
+    def api_ffmpeg_install():
+        ffmpeg = get_ffmpeg_path()
+        if os.path.isfile(ffmpeg):
+            return jsonify({'status': 'already_installed'})
+        ffmpeg_dir = os.path.dirname(ffmpeg)
+        os.makedirs(ffmpeg_dir, exist_ok=True)
+
+        _ffmpeg_install = {'status': 'downloading', 'percent': 0}
+
+        def do_install():
+            try:
+                zip_path = os.path.join(ffmpeg_dir, 'ffmpeg.zip')
+                import requests as req
+                resp = req.get(FFMPEG_URL, stream=True, timeout=300, allow_redirects=True)
+                resp.raise_for_status()
+                total = int(resp.headers.get('content-length', 0))
+                downloaded = 0
+                with open(zip_path, 'wb') as f:
+                    for chunk in resp.iter_content(chunk_size=131072):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total > 0:
+                            _ffmpeg_install['percent'] = int(downloaded / total * 80)
+                _ffmpeg_install.update({'status': 'extracting', 'percent': 85})
+                import zipfile
+                with zipfile.ZipFile(zip_path, 'r') as zf:
+                    for member in zf.namelist():
+                        basename = os.path.basename(member)
+                        if basename in ('ffmpeg.exe', 'ffprobe.exe'):
+                            data = zf.read(member)
+                            with open(os.path.join(ffmpeg_dir, basename), 'wb') as out:
+                                out.write(data)
+                os.remove(zip_path)
+                _ffmpeg_install.update({'status': 'complete', 'percent': 100})
+                log.info('FFmpeg installed')
+            except Exception as e:
+                _ffmpeg_install.update({'status': 'error', 'percent': 0, 'error': str(e)})
+                log.error(f'FFmpeg install failed: {e}')
+
+        threading.Thread(target=do_install, daemon=True).start()
+        return jsonify({'status': 'installing', '_ref': id(_ffmpeg_install)})
+
+    # ─── Books / Reference Library API ────────────────────────────────
+
+    def get_books_dir():
+        path = os.path.join(get_data_dir(), 'books')
+        os.makedirs(path, exist_ok=True)
+        return path
+
+    BOOK_CATEGORIES = ['survival', 'medical', 'farming', 'repair', 'radio', 'cooking', 'defense', 'reference', 'fiction', 'general']
+
+    REFERENCE_CATALOG = [
+        # Army Field Manuals (Public Domain)
+        {'title': 'FM 3-05.70 Survival (Army Survival Manual)', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'survival', 'folder': 'Army Field Manuals',
+         'url': 'https://archive.org/download/Fm21-76SurvivalManual/FM%2021-76%20-%20Survival%20Manual.pdf', 'description': 'The definitive military survival guide — shelter, water, food, navigation, signaling. 676 pages.'},
+        {'title': 'FM 21-11 First Aid for Soldiers', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'medical', 'folder': 'Army Field Manuals',
+         'url': 'https://archive.org/download/fm-21-11-first-aid-for-soldiers/FM%2021-11%20First%20Aid%20for%20Soldiers.pdf', 'description': 'Military first aid — bleeding control, fractures, burns, shock, CPR, field hygiene.'},
+        {'title': 'FM 21-76-1 Survival, Evasion, and Recovery', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'survival', 'folder': 'Army Field Manuals',
+         'url': 'https://archive.org/download/FM21-76-1/FM%2021-76-1.pdf', 'description': 'Pocket survival guide — evasion, signaling, water procurement, shelter, fire.'},
+        {'title': 'FM 5-34 Engineer Field Data', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'repair', 'folder': 'Army Field Manuals',
+         'url': 'https://archive.org/download/FM5-34/FM5-34.pdf', 'description': 'Construction, demolition, water supply, power generation, rope and rigging.'},
+        # FEMA Guides (Public Domain)
+        {'title': 'FEMA: Are You Ready? Emergency Preparedness Guide', 'author': 'FEMA', 'format': 'pdf', 'category': 'survival', 'folder': 'FEMA Guides',
+         'url': 'https://www.fema.gov/pdf/areyouready/areyouready_full.pdf', 'description': '204-page comprehensive emergency preparedness guide covering all major disaster types.'},
+        # Medical References
+        {'title': 'Where There Is No Doctor', 'author': 'David Werner', 'format': 'pdf', 'category': 'medical', 'folder': 'Medical References',
+         'url': 'https://archive.org/download/WTINDen2011/WTIND%20en%202011.pdf', 'description': 'Village health care handbook — the standard off-grid medical reference. CC-licensed.'},
+        {'title': 'Where There Is No Dentist', 'author': 'Murray Dickson', 'format': 'pdf', 'category': 'medical', 'folder': 'Medical References',
+         'url': 'https://archive.org/download/WhereThereIsNoDentist/WhereThereIsNoDentist.pdf', 'description': 'Dental care in remote areas — tooth extraction, fillings, oral health.'},
+        # Practical Skills
+        {'title': 'The SAS Survival Handbook', 'author': 'John Wiseman', 'format': 'pdf', 'category': 'survival', 'folder': 'Survival Guides',
+         'url': 'https://archive.org/download/sas-survival-guide/SAS%20Survival%20Guide.pdf', 'description': 'Comprehensive wilderness survival — climate, terrain, shelter, food, navigation.'},
+        {'title': 'Bushcraft 101: Field Guide to Wilderness Survival', 'author': 'Dave Canterbury', 'format': 'pdf', 'category': 'survival', 'folder': 'Survival Guides',
+         'url': 'https://archive.org/download/bushcraft-101/Bushcraft%20101.pdf', 'description': 'Modern bushcraft essentials — 5 Cs of survivability, tools, shelter, fire, water.'},
+        {'title': 'US Army Ranger Handbook', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'defense', 'folder': 'Army Field Manuals',
+         'url': 'https://archive.org/download/ranger-handbook-2017/Ranger%20Handbook%202017.pdf', 'description': 'Ranger operations — leadership, planning, patrols, demolitions, comms, first aid.'},
+        # Radio & Communications
+        {'title': 'ARRL Ham Radio License Manual', 'author': 'ARRL', 'format': 'pdf', 'category': 'radio', 'folder': 'Radio & Communications',
+         'url': 'https://archive.org/download/arrl-ham-radio-license-manual/ARRL%20Ham%20Radio%20License%20Manual.pdf', 'description': 'Study guide for amateur radio Technician license — FCC rules, electronics, operations.'},
+        # Homesteading & Food
+        {'title': 'Ball Complete Book of Home Preserving', 'author': 'Judi Kingry', 'format': 'pdf', 'category': 'cooking', 'folder': 'Homesteading',
+         'url': 'https://archive.org/download/ball-complete-book-home-preserving/Ball%20Complete%20Book%20of%20Home%20Preserving.pdf', 'description': '400 recipes for canning, preserving, pickling — long-term food storage.'},
+        {'title': 'Square Foot Gardening', 'author': 'Mel Bartholomew', 'format': 'pdf', 'category': 'farming', 'folder': 'Homesteading',
+         'url': 'https://archive.org/download/square-foot-gardening/Square%20Foot%20Gardening.pdf', 'description': 'Revolutionary approach to small-space gardening — grow more in less space.'},
+    ]
+
+    @app.route('/api/books')
+    def api_books_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM books ORDER BY folder, title').fetchall()
+        db.close()
+        bdir = get_books_dir()
+        return jsonify([{**dict(r), 'exists': os.path.isfile(os.path.join(bdir, r['filename']))} for r in rows])
+
+    @app.route('/api/books/upload', methods=['POST'])
+    def api_books_upload():
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file'}), 400
+        file = request.files['file']
+        filename = secure_filename(file.filename)
+        if not filename:
+            return jsonify({'error': 'Invalid filename'}), 400
+        filepath = os.path.join(get_books_dir(), filename)
+        file.save(filepath)
+        filesize = os.path.getsize(filepath) if os.path.isfile(filepath) else 0
+        ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else 'pdf'
+        fmt = ext if ext in ('pdf', 'epub', 'mobi', 'txt') else 'pdf'
+        title = request.form.get('title', filename.rsplit('.', 1)[0])
+        author = request.form.get('author', '')
+        category = request.form.get('category', 'general')
+        folder = request.form.get('folder', '')
+        db = get_db()
+        cur = db.execute('INSERT INTO books (title, author, filename, format, category, folder, filesize) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                         (title, author, filename, fmt, category, folder, filesize))
+        db.commit()
+        db.close()
+        log_activity('book_upload', 'media', title)
+        return jsonify({'status': 'uploaded', 'id': cur.lastrowid}), 201
+
+    @app.route('/api/books/<int:bid>', methods=['DELETE'])
+    def api_books_delete(bid):
+        db = get_db()
+        row = db.execute('SELECT filename FROM books WHERE id = ?', (bid,)).fetchone()
+        if row:
+            filepath = os.path.join(get_books_dir(), row['filename'])
+            if os.path.isfile(filepath):
+                try:
+                    os.remove(filepath)
+                except Exception:
+                    pass
+            db.execute('DELETE FROM books WHERE id = ?', (bid,))
+            db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/books/<int:bid>', methods=['PATCH'])
+    def api_books_update(bid):
+        data = request.get_json() or {}
+        db = get_db()
+        for field in ['title', 'folder', 'category', 'author', 'last_position']:
+            if field in data:
+                db.execute(f'UPDATE books SET {field} = ? WHERE id = ?', (data[field], bid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'updated'})
+
+    @app.route('/api/books/serve/<path:filename>')
+    def api_books_serve(filename):
+        bdir = get_books_dir()
+        safe = os.path.normpath(os.path.join(bdir, filename))
+        if not safe.startswith(os.path.normpath(bdir)) or not os.path.isfile(safe):
+            return jsonify({'error': 'Not found'}), 404
+        from flask import send_file
+        return send_file(safe)
+
+    @app.route('/api/books/stats')
+    def api_books_stats():
+        db = get_db()
+        total = db.execute('SELECT COUNT(*) as c FROM books').fetchone()['c']
+        total_size = db.execute('SELECT COALESCE(SUM(filesize),0) as s FROM books').fetchone()['s']
+        by_folder = db.execute('SELECT folder, COUNT(*) as c FROM books GROUP BY folder ORDER BY folder').fetchall()
+        db.close()
+        return jsonify({'total': total, 'total_size': total_size, 'total_size_fmt': format_size(total_size),
+                        'by_folder': [{'folder': r['folder'] or 'Unsorted', 'count': r['c']} for r in by_folder]})
+
+    @app.route('/api/books/catalog')
+    def api_books_catalog():
+        return jsonify(REFERENCE_CATALOG)
+
+    @app.route('/api/books/download-ref', methods=['POST'])
+    def api_books_download_ref():
+        """Download a reference book from the catalog."""
+        nonlocal _ytdlp_dl_counter
+        data = request.get_json() or {}
+        url = data.get('url', '').strip()
+        title = data.get('title', '')
+        author = data.get('author', '')
+        folder = data.get('folder', '')
+        category = data.get('category', 'reference')
+        fmt = data.get('format', 'pdf')
+        if not url:
+            return jsonify({'error': 'No URL'}), 400
+
+        # Check if already downloaded
+        db = get_db()
+        existing = db.execute('SELECT id FROM books WHERE url = ?', (url,)).fetchone()
+        db.close()
+        if existing:
+            return jsonify({'status': 'already_downloaded'})
+
+        with _ytdlp_dl_lock:
+            _ytdlp_dl_counter += 1
+            dl_id = str(_ytdlp_dl_counter)
+
+        _ytdlp_downloads[dl_id] = {'status': 'downloading', 'percent': 0, 'title': title, 'speed': '', 'error': ''}
+
+        def do_dl():
+            bdir = get_books_dir()
+            try:
+                filename = secure_filename(f'{title}.{fmt}') or f'book_{dl_id}.{fmt}'
+                filepath = os.path.join(bdir, filename)
+                import requests as req
+                resp = req.get(url, stream=True, timeout=120, allow_redirects=True)
+                resp.raise_for_status()
+                total = int(resp.headers.get('content-length', 0))
+                downloaded = 0
+                with open(filepath, 'wb') as f:
+                    for chunk in resp.iter_content(chunk_size=65536):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        if total > 0:
+                            _ytdlp_downloads[dl_id]['percent'] = int(downloaded / total * 100)
+                filesize = os.path.getsize(filepath)
+                db = get_db()
+                db.execute('INSERT INTO books (title, author, filename, format, category, folder, url, filesize) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                           (title, author, filename, fmt, category, folder, url, filesize))
+                db.commit()
+                db.close()
+                _ytdlp_downloads[dl_id] = {'status': 'complete', 'percent': 100, 'title': title, 'speed': '', 'error': ''}
+                log_activity('book_download', 'media', title)
+            except Exception as e:
+                _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': title, 'speed': '', 'error': str(e)}
+
+        threading.Thread(target=do_dl, daemon=True).start()
+        return jsonify({'status': 'started', 'id': dl_id})
+
+    @app.route('/api/books/download-all-refs', methods=['POST'])
+    def api_books_download_all_refs():
+        """Download all reference catalog books sequentially."""
+        nonlocal _ytdlp_dl_counter
+        db = get_db()
+        existing_urls = set(r['url'] for r in db.execute('SELECT url FROM books WHERE url != ""').fetchall())
+        db.close()
+        to_download = [b for b in REFERENCE_CATALOG if b['url'] not in existing_urls]
+        if not to_download:
+            return jsonify({'status': 'all_downloaded', 'count': 0})
+
+        with _ytdlp_dl_lock:
+            _ytdlp_dl_counter += 1
+            queue_id = str(_ytdlp_dl_counter)
+
+        _ytdlp_downloads[queue_id] = {'status': 'queued', 'percent': 0, 'title': f'Queue: 0/{len(to_download)}',
+                                       'speed': '', 'error': '', 'queue_total': len(to_download), 'queue_pos': 0}
+
+        def do_queue():
+            bdir = get_books_dir()
+            for i, item in enumerate(to_download):
+                _ytdlp_downloads[queue_id].update({
+                    'status': 'downloading', 'percent': 0, 'queue_pos': i + 1,
+                    'title': f'[{i+1}/{len(to_download)}] {item["title"]}',
+                })
+                try:
+                    filename = secure_filename(f'{item["title"]}.{item.get("format","pdf")}')
+                    filepath = os.path.join(bdir, filename)
+                    import requests as req
+                    resp = req.get(item['url'], stream=True, timeout=120, allow_redirects=True)
+                    resp.raise_for_status()
+                    total = int(resp.headers.get('content-length', 0))
+                    downloaded = 0
+                    with open(filepath, 'wb') as f:
+                        for chunk in resp.iter_content(chunk_size=65536):
+                            f.write(chunk)
+                            downloaded += len(chunk)
+                            if total > 0:
+                                _ytdlp_downloads[queue_id]['percent'] = int(downloaded / total * 100)
+                    filesize = os.path.getsize(filepath)
+                    db = get_db()
+                    db.execute('INSERT INTO books (title, author, filename, format, category, folder, url, filesize) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                               (item['title'], item.get('author',''), filename, item.get('format','pdf'),
+                                item.get('category','reference'), item.get('folder',''), item['url'], filesize))
+                    db.commit()
+                    db.close()
+                except Exception as e:
+                    log.error(f'Reference download failed for {item["title"]}: {e}')
+
+            _ytdlp_downloads[queue_id] = {'status': 'complete', 'percent': 100, 'title': f'Done — {len(to_download)} books',
+                                           'speed': '', 'error': '', 'queue_total': len(to_download), 'queue_pos': len(to_download)}
+
+        threading.Thread(target=do_queue, daemon=True).start()
+        return jsonify({'status': 'queued', 'id': queue_id, 'count': len(to_download)})
+
+    @app.route('/api/media/stats')
+    def api_media_stats():
+        """Combined stats for all media types."""
+        db = get_db()
+        v_count = db.execute('SELECT COUNT(*) as c FROM videos').fetchone()['c']
+        v_size = db.execute('SELECT COALESCE(SUM(filesize),0) as s FROM videos').fetchone()['s']
+        a_count = db.execute('SELECT COUNT(*) as c FROM audio').fetchone()['c']
+        a_size = db.execute('SELECT COALESCE(SUM(filesize),0) as s FROM audio').fetchone()['s']
+        b_count = db.execute('SELECT COUNT(*) as c FROM books').fetchone()['c']
+        b_size = db.execute('SELECT COALESCE(SUM(filesize),0) as s FROM books').fetchone()['s']
+        db.close()
+        total_size = v_size + a_size + b_size
+        return jsonify({
+            'videos': {'count': v_count, 'size': v_size, 'size_fmt': format_size(v_size)},
+            'audio': {'count': a_count, 'size': a_size, 'size_fmt': format_size(a_size)},
+            'books': {'count': b_count, 'size': b_size, 'size_fmt': format_size(b_size)},
+            'total_size': total_size, 'total_size_fmt': format_size(total_size),
+        })
 
     # ─── Sneakernet Sync API ─────────────────────────────────────────
 

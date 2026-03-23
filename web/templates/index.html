@@ -9,6 +9,7 @@
 <link rel="stylesheet" href="/static/css/premium.css">
 <script src="/static/maplibre-gl.js"></script>
 <script src="/static/pmtiles.js"></script>
+<script src="/static/js/epub.min.js"></script>
 <style>
 /* Critical: theme variables inline for instant rendering */
 :root,[data-theme="nomad"]{--bg:#f7eedc;--surface:rgba(255,255,255,0.85);--surface-solid:#ffffff;--surface2:#f0e8d4;--surface3:#e5dcc8;--border:rgba(66,68,32,0.18);--text:#1a1a0f;--text-dim:#6b5d4f;--text-muted:#8b7355;--accent:#424420;--accent-hover:#525530;--accent-dim:rgba(66,68,32,0.1);--accent-glow:rgba(66,68,32,0.15);--green:#4a6b2a;--green-dim:rgba(74,107,42,0.12);--red:#994444;--red-dim:rgba(153,68,68,0.1);--orange:#a84a12;--orange-dim:rgba(168,74,18,0.1);--border-hover:rgba(66,68,32,0.3);--purple:#6d7042;--radius:14px;--radius-sm:10px;--shadow:0 8px 30px rgba(100,80,50,0.15);--shadow-sm:0 4px 12px rgba(100,80,50,0.1);--card-text:#fff}
@@ -66,6 +67,10 @@ body{background:var(--bg);color:var(--text)}
     <button class="tab" data-tab="notes">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
       Notes
+    </button>
+    <button class="tab" data-tab="media">
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
+      Media
     </button>
     <button class="tab" data-tab="tools">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
@@ -632,20 +637,7 @@ body{background:var(--bg);color:var(--text)}
         <div id="barcode-result" style="margin-top:8px;font-size:12px;"></div>
       </div>
 
-      <!-- Video Library -->
-      <div class="settings-card">
-        <h3>Offline Video Library</h3>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Upload and organize instructional videos for offline viewing.</div>
-        <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
-          <input type="file" id="video-upload" style="display:none;" accept="video/*" onchange="uploadVideo()">
-          <button class="btn btn-sm btn-primary" onclick="document.getElementById('video-upload').click()">Upload Video</button>
-          <select id="video-cat-select" class="preset-select"><option value="general">General</option><option value="survival">Survival</option><option value="medical">Medical</option><option value="repair">Repair</option><option value="bushcraft">Bushcraft</option><option value="cooking">Cooking</option><option value="radio">Radio</option><option value="farming">Farming</option><option value="defense">Defense</option></select>
-        </div>
-        <div id="video-list"></div>
-        <div id="video-player" style="display:none;margin-top:8px;">
-          <video id="video-play" controls style="width:100%;max-height:400px;border-radius:var(--radius-sm);background:#000;"></video>
-        </div>
-      </div>
+      <!-- Video Library moved to Media tab -->
 
       <!-- Guided Drills -->
       <div class="settings-card" style="grid-column:1/-1;">
@@ -705,6 +697,118 @@ body{background:var(--bg);color:var(--text)}
         <div id="scenario-selector" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
         <div id="scenario-active" style="display:none;margin-top:16px;"></div>
         <div id="scenario-history" style="display:none;margin-top:12px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Media Tab -->
+  <div id="tab-media" class="tab-content">
+    <div class="media-layout">
+      <!-- Folder Sidebar -->
+      <div class="media-sidebar">
+        <div style="padding:10px 12px;border-bottom:1px solid var(--border);">
+          <div style="font-weight:600;font-size:13px;margin-bottom:8px;">Folders</div>
+          <button class="btn btn-sm btn-primary" onclick="createMediaFolder()" style="width:100%;margin-bottom:6px;">+ New Folder</button>
+        </div>
+        <div id="media-folder-list" style="padding:6px;overflow-y:auto;flex:1;"></div>
+        <div style="padding:8px 12px;border-top:1px solid var(--border);font-size:11px;color:var(--text-muted);" id="media-stats-footer">0 items</div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="media-main">
+        <!-- Sub-Tab Bar -->
+        <div class="media-subtabs">
+          <button class="media-subtab active" data-msub="videos" onclick="switchMediaSub('videos')">Videos</button>
+          <button class="media-subtab" data-msub="audio" onclick="switchMediaSub('audio')">Audio</button>
+          <button class="media-subtab" data-msub="books" onclick="switchMediaSub('books')">Books</button>
+          <div style="flex:1;"></div>
+          <div style="font-size:11px;color:var(--text-muted);padding:6px 12px;" id="media-total-stats"></div>
+        </div>
+
+        <!-- Top Bar -->
+        <div class="media-topbar">
+          <div style="display:flex;gap:6px;align-items:center;flex:1;flex-wrap:wrap;">
+            <input type="text" id="media-url-input" placeholder="Paste YouTube URL to download..." style="flex:1;min-width:200px;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;">
+            <button class="btn btn-sm btn-primary" id="media-dl-btn" onclick="downloadMediaURL()">Download</button>
+            <input type="file" id="media-file-upload" style="display:none;" multiple onchange="uploadMediaFiles()">
+            <button class="btn btn-sm" onclick="document.getElementById('media-file-upload').click()">Upload File</button>
+            <select id="media-cat-select" class="preset-select" style="font-size:11px;">
+              <option value="general">General</option><option value="survival">Survival</option><option value="medical">Medical</option>
+              <option value="repair">Repair</option><option value="bushcraft">Bushcraft</option><option value="cooking">Cooking</option>
+              <option value="radio">Radio</option><option value="farming">Farming</option><option value="defense">Defense</option>
+            </select>
+            <button class="btn btn-sm" onclick="toggleMediaCatalog()" id="media-catalog-btn">Catalog</button>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <input type="text" id="media-search" placeholder="Search..." oninput="filterMediaList()" style="width:140px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;">
+            <button class="btn btn-sm" onclick="toggleMediaView()" id="media-view-btn" title="Toggle grid/list view">Grid</button>
+          </div>
+        </div>
+
+        <!-- yt-dlp Setup Banner -->
+        <div id="media-ytdlp-banner" style="display:none;padding:10px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <span>Video/Audio Downloader (yt-dlp) required for downloading content. <span style="color:var(--text-muted);">~3 MB</span></span>
+            <button class="btn btn-sm btn-primary" onclick="installYtdlp()">Setup Downloader</button>
+          </div>
+          <div id="ytdlp-install-progress" style="display:none;margin-top:6px;">
+            <div class="progress-bar"><div class="fill" id="ytdlp-install-fill" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <!-- Download Progress Area -->
+        <div id="media-dl-progress" style="display:none;padding:8px 16px;background:var(--surface2);border-bottom:1px solid var(--border);font-size:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+            <span id="media-dl-title" style="font-weight:500;">Downloading...</span>
+            <span id="media-dl-speed" style="color:var(--text-muted);font-size:11px;"></span>
+          </div>
+          <div class="progress-bar"><div class="fill" id="media-dl-fill" style="width:0%"></div></div>
+        </div>
+
+        <!-- Catalog Panel (hidden by default) -->
+        <div id="media-catalog-panel" style="display:none;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface2);max-height:400px;overflow-y:auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+            <div>
+              <span style="font-weight:600;font-size:13px;" id="media-catalog-title">Catalog</span>
+              <span style="font-size:11px;color:var(--text-muted);margin-left:8px;" id="media-catalog-desc">Curated content for offline use</span>
+            </div>
+            <div style="display:flex;gap:6px;">
+              <button class="btn btn-sm btn-primary" id="media-catalog-dl-all" onclick="downloadAllCatalog()">Download All</button>
+              <button class="btn btn-sm btn-ghost" onclick="toggleMediaCatalog()" style="font-size:16px;padding:2px 6px;">x</button>
+            </div>
+          </div>
+          <div id="media-catalog-list"></div>
+        </div>
+
+        <!-- Content Area -->
+        <div id="media-content-area" style="padding:12px 16px;overflow-y:auto;flex:1;">
+          <div id="media-item-list"></div>
+        </div>
+
+        <!-- Video Player -->
+        <div id="media-player" style="display:none;border-top:2px solid var(--accent);background:var(--bg);">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 16px;background:var(--surface2);">
+            <span id="media-player-title" style="font-weight:600;font-size:12px;"></span>
+            <button class="btn btn-sm btn-ghost" onclick="closeMediaPlayer()" style="font-size:14px;padding:2px 8px;">x</button>
+          </div>
+          <video id="media-video-el" controls style="width:100%;max-height:50vh;background:#000;display:none;"></video>
+          <audio id="media-audio-el" controls style="width:100%;display:none;padding:8px 16px;"></audio>
+        </div>
+
+        <!-- Book Reader Overlay -->
+        <div id="media-book-reader" style="display:none;position:absolute;inset:0;background:var(--bg);z-index:50;flex-direction:column;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 16px;background:var(--surface2);border-bottom:1px solid var(--border);">
+            <span id="book-reader-title" style="font-weight:600;font-size:13px;"></span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <button class="btn btn-sm" onclick="bookReaderPrev()" id="book-prev-btn">Prev</button>
+              <span id="book-reader-loc" style="font-size:11px;color:var(--text-muted);"></span>
+              <button class="btn btn-sm" onclick="bookReaderNext()" id="book-next-btn">Next</button>
+              <button class="btn btn-sm btn-ghost" onclick="closeBookReader()" style="font-size:14px;padding:2px 8px;">x</button>
+            </div>
+          </div>
+          <div id="book-reader-content" style="flex:1;overflow:hidden;"></div>
+          <iframe id="book-pdf-frame" style="flex:1;border:none;display:none;" sandbox="allow-same-origin allow-scripts"></iframe>
+        </div>
       </div>
     </div>
   </div>
@@ -4057,7 +4161,8 @@ document.querySelectorAll('.tab').forEach(tab => {
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); loadPDFList(); }
     if (tab.dataset.tab === 'maps') { loadMaps(); loadWPDistances(); loadMapSources(); renderMapBookmarks(); }
     if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
-    if (tab.dataset.tab === 'tools') { loadVideoList(); loadDrillHistory(); renderScenarioSelector(); }
+    if (tab.dataset.tab === 'media') { loadMediaTab(); }
+    if (tab.dataset.tab === 'tools') { loadDrillHistory(); renderScenarioSelector(); }
     if (tab.dataset.tab === 'preparedness') { loadPrepTab(); }
   });
 });
@@ -8722,59 +8827,492 @@ function barcodeToInventory(code) {
   setTimeout(() => { switchPrepSub('inventory'); showInvForm(); document.getElementById('inv-name').value = code; }, 300);
 }
 
-/* ─── Video Library ─── */
-async function loadVideoList() {
+/* ─── Media Tab ─── */
+let _mediaItems = [];
+let _mediaFolder = '';
+let _mediaViewGrid = true;
+let _mediaCatalogVisible = false;
+let _mediaDlPoll = null;
+let _mediaSub = 'videos'; // videos | audio | books
+let _mediaBookRendition = null;
+
+function switchMediaSub(sub) {
+  _mediaSub = sub;
+  _mediaFolder = '';
+  document.querySelectorAll('.media-subtab').forEach(b => b.classList.toggle('active', b.dataset.msub === sub));
+  // Update URL input placeholder and file accept
+  const urlInput = document.getElementById('media-url-input');
+  const fileInput = document.getElementById('media-file-upload');
+  const dlBtn = document.getElementById('media-dl-btn');
+  const catBtn = document.getElementById('media-catalog-btn');
+  if (sub === 'videos') {
+    urlInput.placeholder = 'Paste YouTube URL to download video...';
+    fileInput.setAttribute('accept', 'video/*');
+    dlBtn.textContent = 'Download';
+    catBtn.textContent = 'Video Catalog';
+  } else if (sub === 'audio') {
+    urlInput.placeholder = 'Paste URL to download audio (YouTube, SoundCloud, etc.)...';
+    fileInput.setAttribute('accept', 'audio/*,.mp3,.flac,.ogg,.wav,.m4a,.opus');
+    dlBtn.textContent = 'Download Audio';
+    catBtn.textContent = 'Audio Catalog';
+  } else {
+    urlInput.placeholder = 'Not applicable for books — use Upload or browse the Reference Library';
+    fileInput.setAttribute('accept', '.pdf,.epub,.mobi,.txt');
+    dlBtn.style.display = 'none';
+    catBtn.textContent = 'Reference Library';
+  }
+  if (sub !== 'books') dlBtn.style.display = '';
+  closeMediaPlayer();
+  closeBookReader();
+  _mediaCatalogVisible = false;
+  document.getElementById('media-catalog-panel').style.display = 'none';
+  loadMediaContent();
+}
+
+async function loadMediaTab() {
+  await checkYtdlpStatus();
+  switchMediaSub(_mediaSub);
+  loadTotalMediaStats();
+}
+
+async function checkYtdlpStatus() {
   try {
-    const videos = await (await fetch('/api/videos')).json();
-    const el = document.getElementById('video-list');
-    if (!videos.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:11px;text-align:center;padding:10px;">No videos uploaded. Click Upload to add instructional videos.</div>'; return; }
-    el.innerHTML = videos.map(v => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
-        <div style="cursor:pointer;flex:1;" onclick="playVideo('${escapeAttr(v.filename)}')">
-          <span style="font-weight:500;">${escapeHtml(v.title)}</span>
-          <span class="check-cat" style="margin-left:6px;">${v.category}</span>
-        </div>
-        <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="deleteVideo(${v.id})">x</span>
-      </div>
-    `).join('');
+    const s = await (await fetch('/api/ytdlp/status')).json();
+    document.getElementById('media-ytdlp-banner').style.display = s.installed ? 'none' : 'block';
   } catch(e) {}
 }
 
-async function uploadVideo() {
-  const input = document.getElementById('video-upload');
-  if (!input.files.length) return;
-  const file = input.files[0];
-  const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('category', document.getElementById('video-cat-select').value);
-  formData.append('title', file.name.replace(/\.[^.]+$/, ''));
-  toast(`Uploading ${file.name} (${sizeMB} MB)... Please wait.`, 'info');
+async function installYtdlp() {
   try {
-    const r = await fetch('/api/videos/upload', {method:'POST', body:formData});
-    input.value = '';
-    if (r.ok) {
-      toast('Video uploaded', 'success');
-    } else {
-      toast('Video upload failed', 'error');
-    }
-    loadVideoList();
-  } catch(e) { toast('Upload failed — file may be too large', 'error'); }
+    const r = await fetch('/api/ytdlp/install', {method:'POST'});
+    const d = await r.json();
+    if (d.status === 'already_installed') { toast('Downloader already installed', 'info'); checkYtdlpStatus(); return; }
+    toast('Installing downloader...', 'info');
+    document.getElementById('ytdlp-install-progress').style.display = 'block';
+    const poll = setInterval(async () => {
+      const p = await (await fetch('/api/ytdlp/install-progress')).json();
+      document.getElementById('ytdlp-install-fill').style.width = p.percent + '%';
+      if (p.status === 'complete') { clearInterval(poll); toast('Downloader installed!', 'success'); document.getElementById('ytdlp-install-progress').style.display = 'none'; checkYtdlpStatus(); }
+      else if (p.status === 'error') { clearInterval(poll); toast('Install failed: ' + (p.error||''), 'error'); document.getElementById('ytdlp-install-progress').style.display = 'none'; }
+    }, 1000);
+  } catch(e) { toast('Install failed', 'error'); }
 }
 
-function playVideo(filename) {
-  const player = document.getElementById('video-player');
-  const video = document.getElementById('video-play');
-  video.src = `/api/videos/serve/${filename}`;
+async function loadMediaContent() {
+  const apiMap = {videos: '/api/videos', audio: '/api/audio', books: '/api/books'};
+  try { _mediaItems = await (await fetch(apiMap[_mediaSub])).json(); } catch(e) { _mediaItems = []; }
+  renderMediaItems();
+  loadMediaFolders();
+  loadMediaSidebarStats();
+}
+
+function renderMediaItems() {
+  const el = document.getElementById('media-item-list');
+  const search = (document.getElementById('media-search')?.value || '').toLowerCase();
+  let filtered = _mediaItems.filter(v => {
+    if (_mediaFolder !== '' && v.folder !== _mediaFolder) return false;
+    if (search && !v.title.toLowerCase().includes(search) && !(v.category||'').toLowerCase().includes(search) && !(v.author||'').toLowerCase().includes(search)) return false;
+    return true;
+  });
+  const icons = {videos: '&#9654;', audio: '&#9835;', books: '&#128214;'};
+  if (!filtered.length) {
+    const labels = {videos:'videos',audio:'audio files',books:'books'};
+    el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-muted);"><div style="font-size:32px;margin-bottom:8px;">${icons[_mediaSub]}</div><div style="font-size:13px;font-weight:500;">No ${labels[_mediaSub]}${_mediaFolder?' in this folder':''}</div><div style="font-size:11px;margin-top:4px;">Upload files or browse the catalog to get started</div></div>`;
+    return;
+  }
+  if (_mediaSub === 'books') { renderBooks(el, filtered); return; }
+  if (_mediaSub === 'audio') { renderAudio(el, filtered); return; }
+  // Videos
+  if (_mediaViewGrid) {
+    el.innerHTML = '<div class="media-grid">' + filtered.map(v => `
+      <div class="media-card" onclick="playMediaVideo(${v.id},'${escapeAttr(v.filename)}','${escapeAttr(v.title)}')">
+        <div class="media-card-thumb">&#9654;<div class="play-overlay"><span style="font-size:40px;color:#fff;">&#9654;</span></div></div>
+        <div class="media-card-info"><div class="media-card-title">${escapeHtml(v.title)}</div>
+        <div class="media-card-meta"><span class="check-cat">${v.category}</span><span>${v.filesize?formatBytes(v.filesize):''}</span></div></div>
+      </div>`).join('') + '</div>';
+  } else {
+    el.innerHTML = filtered.map(v => `
+      <div class="media-list-row" onclick="playMediaVideo(${v.id},'${escapeAttr(v.filename)}','${escapeAttr(v.title)}')">
+        <div class="media-list-play">&#9654;</div><div class="media-list-title">${escapeHtml(v.title)}</div>
+        <div class="media-list-meta">${v.folder?v.folder+' / ':''}${v.category}</div>
+        <div class="media-list-meta">${v.filesize?formatBytes(v.filesize):''}</div>
+        <div class="media-list-actions"><span style="cursor:pointer;color:var(--text-muted);font-size:11px;" onclick="event.stopPropagation();moveMediaItem(${v.id},'videos')" title="Move">&#9776;</span>
+        <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="event.stopPropagation();deleteMediaItem(${v.id},'videos')" title="Delete">x</span></div>
+      </div>`).join('');
+  }
+}
+
+function renderAudio(el, items) {
+  el.innerHTML = items.map(a => `
+    <div class="media-audio-row" onclick="playMediaAudio(${a.id},'${escapeAttr(a.filename)}','${escapeAttr(a.title)}')">
+      <div class="media-list-play">&#9835;</div>
+      <div class="media-list-title">${escapeHtml(a.title)}</div>
+      <div class="media-list-meta">${a.artist?escapeHtml(a.artist)+' &middot; ':''}${a.category}</div>
+      <div class="media-list-meta">${a.duration||''} ${a.filesize?formatBytes(a.filesize):''}</div>
+      <div class="media-list-actions">
+        <span style="cursor:pointer;color:var(--text-muted);font-size:11px;" onclick="event.stopPropagation();moveMediaItem(${a.id},'audio')" title="Move">&#9776;</span>
+        <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="event.stopPropagation();deleteMediaItem(${a.id},'audio')" title="Delete">x</span>
+      </div>
+    </div>`).join('');
+}
+
+function renderBooks(el, items) {
+  el.innerHTML = '<div class="media-grid">' + items.map(b => `
+    <div class="media-book-card" onclick="openBook(${b.id},'${escapeAttr(b.filename)}','${escapeAttr(b.title)}','${b.format}')">
+      <div class="media-book-cover ${b.format}">${b.format.toUpperCase()}</div>
+      <div class="media-card-info">
+        <div class="media-card-title">${escapeHtml(b.title)}</div>
+        <div class="media-card-meta"><span>${b.author?escapeHtml(b.author):''}</span><span>${b.filesize?formatBytes(b.filesize):''}</span></div>
+      </div>
+    </div>`).join('') + '</div>';
+}
+
+function formatBytes(b) {
+  if (b > 1073741824) return (b/1073741824).toFixed(1)+' GB';
+  if (b > 1048576) return (b/1048576).toFixed(0)+' MB';
+  return (b/1024).toFixed(0)+' KB';
+}
+
+async function loadMediaFolders() {
+  const statsMap = {videos:'/api/videos/stats', audio:'/api/audio/stats', books:'/api/books/stats'};
+  try {
+    const stats = await (await fetch(statsMap[_mediaSub])).json();
+    const el = document.getElementById('media-folder-list');
+    const labels = {videos:'All Videos',audio:'All Audio',books:'All Books'};
+    let html = `<div class="media-folder-item${_mediaFolder===''?' active':''}" onclick="selectMediaFolder('')">${labels[_mediaSub]} <span class="media-folder-count">${stats.total}</span></div>`;
+    for (const f of stats.by_folder) {
+      const fname = f.folder||'Unsorted', fkey = f.folder === 'Unsorted' ? '' : f.folder;
+      html += `<div class="media-folder-item${_mediaFolder===fkey?' active':''}" onclick="selectMediaFolder('${escapeAttr(fkey)}')">${escapeHtml(fname)} <span class="media-folder-count">${f.count}</span></div>`;
+    }
+    el.innerHTML = html;
+  } catch(e) {}
+}
+
+async function loadMediaSidebarStats() {
+  const statsMap = {videos:'/api/videos/stats', audio:'/api/audio/stats', books:'/api/books/stats'};
+  try {
+    const s = await (await fetch(statsMap[_mediaSub])).json();
+    document.getElementById('media-stats-footer').textContent = `${s.total} items, ${s.total_size_fmt}`;
+  } catch(e) {}
+}
+
+async function loadTotalMediaStats() {
+  try {
+    const s = await (await fetch('/api/media/stats')).json();
+    document.getElementById('media-total-stats').textContent = `${s.videos.count} videos, ${s.audio.count} audio, ${s.books.count} books (${s.total_size_fmt})`;
+  } catch(e) {}
+}
+
+function selectMediaFolder(f) { _mediaFolder = f; loadMediaFolders(); renderMediaItems(); }
+function filterMediaList() { renderMediaItems(); }
+function toggleMediaView() { _mediaViewGrid = !_mediaViewGrid; document.getElementById('media-view-btn').textContent = _mediaViewGrid ? 'Grid' : 'List'; renderMediaItems(); }
+
+// ── Playback ──
+function playMediaVideo(id, filename, title) {
+  const player = document.getElementById('media-player');
+  const video = document.getElementById('media-video-el');
+  const audio = document.getElementById('media-audio-el');
+  audio.style.display = 'none'; audio.pause();
+  video.style.display = 'block';
+  document.getElementById('media-player-title').textContent = title;
+  video.src = `/api/videos/serve/${encodeURIComponent(filename)}`;
   player.style.display = 'block';
   video.play();
 }
 
-async function deleteVideo(id) {
-  await fetch(`/api/videos/${id}`, {method:'DELETE'});
-  toast('Video deleted', 'warning');
-  loadVideoList();
-  document.getElementById('video-player').style.display = 'none';
+function playMediaAudio(id, filename, title) {
+  const player = document.getElementById('media-player');
+  const video = document.getElementById('media-video-el');
+  const audio = document.getElementById('media-audio-el');
+  video.style.display = 'none'; video.pause();
+  audio.style.display = 'block';
+  document.getElementById('media-player-title').textContent = title;
+  audio.src = `/api/audio/serve/${encodeURIComponent(filename)}`;
+  player.style.display = 'block';
+  audio.play();
+  // Highlight playing row
+  document.querySelectorAll('.media-audio-row').forEach(r => r.classList.remove('playing'));
+  event?.target?.closest?.('.media-audio-row')?.classList.add('playing');
+}
+
+function closeMediaPlayer() {
+  document.getElementById('media-video-el').pause();
+  document.getElementById('media-audio-el').pause();
+  document.getElementById('media-video-el').src = '';
+  document.getElementById('media-audio-el').src = '';
+  document.getElementById('media-player').style.display = 'none';
+}
+
+// ── Book Reader ──
+function openBook(id, filename, title, format) {
+  const reader = document.getElementById('media-book-reader');
+  const content = document.getElementById('book-reader-content');
+  const pdfFrame = document.getElementById('book-pdf-frame');
+  document.getElementById('book-reader-title').textContent = title;
+  reader.style.display = 'flex';
+
+  if (format === 'epub') {
+    content.style.display = 'block'; pdfFrame.style.display = 'none';
+    content.innerHTML = '';
+    document.getElementById('book-prev-btn').style.display = '';
+    document.getElementById('book-next-btn').style.display = '';
+    if (typeof ePub !== 'undefined') {
+      const book = ePub(`/api/books/serve/${encodeURIComponent(filename)}`);
+      _mediaBookRendition = book.renderTo(content, {width:'100%', height:'100%', flow:'paginated', spread:'none'});
+      _mediaBookRendition.display();
+      _mediaBookRendition.on('relocated', loc => {
+        document.getElementById('book-reader-loc').textContent = loc.start?.displayed ? `Page ${loc.start.displayed.page} of ${loc.start.displayed.total}` : '';
+        fetch(`/api/books/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({last_position:loc.start?.cfi||''})});
+      });
+    } else {
+      content.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);">EPUB reader loading... If this persists, the epub.js library may not be available.</div>';
+    }
+  } else {
+    // PDF — use iframe (WebView2 has built-in PDF viewer)
+    content.style.display = 'none'; pdfFrame.style.display = 'flex';
+    document.getElementById('book-prev-btn').style.display = 'none';
+    document.getElementById('book-next-btn').style.display = 'none';
+    document.getElementById('book-reader-loc').textContent = '';
+    pdfFrame.src = `/api/books/serve/${encodeURIComponent(filename)}`;
+  }
+}
+
+function closeBookReader() {
+  document.getElementById('media-book-reader').style.display = 'none';
+  document.getElementById('book-reader-content').innerHTML = '';
+  document.getElementById('book-pdf-frame').src = '';
+  _mediaBookRendition = null;
+}
+function bookReaderPrev() { if (_mediaBookRendition) _mediaBookRendition.prev(); }
+function bookReaderNext() { if (_mediaBookRendition) _mediaBookRendition.next(); }
+
+// ── CRUD ──
+async function deleteMediaItem(id, type) {
+  const apiMap = {videos:'/api/videos', audio:'/api/audio', books:'/api/books'};
+  await fetch(`${apiMap[type]}/${id}`, {method:'DELETE'});
+  toast('Deleted', 'warning');
+  closeMediaPlayer();
+  loadMediaContent(); loadTotalMediaStats();
+}
+
+async function moveMediaItem(id, type) {
+  const foldersMap = {videos:'/api/videos/folders', audio:'/api/audio/folders', books:'/api/books/folders'};
+  const apiMap = {videos:'/api/videos', audio:'/api/audio', books:'/api/books'};
+  let folders = [];
+  try { folders = await (await fetch(foldersMap[type])).json(); } catch(e) {}
+  const name = prompt('Move to folder:\n\nExisting: ' + (folders.length ? folders.join(', ') : 'none'));
+  if (name === null) return;
+  await fetch(`${apiMap[type]}/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({folder:name})});
+  toast('Moved to ' + (name || 'Unsorted'), 'success');
+  loadMediaContent();
+}
+
+function createMediaFolder() {
+  const name = prompt('New folder name:');
+  if (!name) return;
+  toast(`Folder "${name}" ready. Move or download content into it.`, 'info');
+}
+
+// ── Downloads ──
+async function downloadMediaURL() {
+  const input = document.getElementById('media-url-input');
+  const url = input.value.trim();
+  if (!url) { toast('Paste a URL first', 'warning'); return; }
+  const s = await (await fetch('/api/ytdlp/status')).json();
+  if (!s.installed) {
+    toast('Installing downloader first...', 'info');
+    await fetch('/api/ytdlp/install', {method:'POST'});
+    for (let i = 0; i < 60; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const p = await (await fetch('/api/ytdlp/install-progress')).json();
+      if (p.status === 'complete') break;
+      if (p.status === 'error') { toast('Install failed: ' + p.error, 'error'); return; }
+    }
+    checkYtdlpStatus();
+  }
+  const cat = document.getElementById('media-cat-select').value;
+  const endpoint = _mediaSub === 'audio' ? '/api/ytdlp/download-audio' : '/api/ytdlp/download';
+  try {
+    const r = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({url, category:cat, folder:_mediaFolder})});
+    const d = await r.json();
+    if (d.error) { toast(d.error, 'error'); return; }
+    input.value = '';
+    toast('Download started...', 'info');
+    pollMediaDownloads(d.id);
+  } catch(e) { toast('Download failed to start', 'error'); }
+}
+
+function pollMediaDownloads(watchId) {
+  if (_mediaDlPoll) clearInterval(_mediaDlPoll);
+  const bar = document.getElementById('media-dl-progress');
+  bar.style.display = 'block';
+  _mediaDlPoll = setInterval(async () => {
+    try {
+      const all = await (await fetch('/api/ytdlp/progress')).json();
+      let active = null;
+      for (const [id, p] of Object.entries(all)) {
+        if (watchId && id === watchId) { active = p; break; }
+        if (['downloading','queued','merging','fetching info','starting'].includes(p.status)) active = p;
+      }
+      if (active) {
+        document.getElementById('media-dl-title').textContent = active.title || 'Downloading...';
+        document.getElementById('media-dl-fill').style.width = active.percent + '%';
+        document.getElementById('media-dl-speed').textContent = active.speed || '';
+        if (active.status === 'complete') {
+          toast('Download complete: ' + active.title, 'success');
+          bar.style.display = 'none'; clearInterval(_mediaDlPoll); _mediaDlPoll = null;
+          loadMediaContent(); loadTotalMediaStats();
+        } else if (active.status === 'error') {
+          toast('Download failed: ' + (active.error||''), 'error');
+          bar.style.display = 'none'; clearInterval(_mediaDlPoll); _mediaDlPoll = null;
+        }
+      } else {
+        bar.style.display = 'none'; clearInterval(_mediaDlPoll); _mediaDlPoll = null;
+        loadMediaContent(); loadTotalMediaStats();
+      }
+    } catch(e) {}
+  }, 1500);
+}
+
+async function uploadMediaFiles() {
+  const input = document.getElementById('media-file-upload');
+  if (!input.files.length) return;
+  const cat = document.getElementById('media-cat-select').value;
+  const uploadMap = {videos:'/api/videos/upload', audio:'/api/audio/upload', books:'/api/books/upload'};
+  for (const file of input.files) {
+    const sizeMB = (file.size / 1024 / 1024).toFixed(1);
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('category', cat);
+    formData.append('folder', _mediaFolder);
+    formData.append('title', file.name.replace(/\.[^.]+$/, ''));
+    toast(`Uploading ${file.name} (${sizeMB} MB)...`, 'info');
+    try {
+      const r = await fetch(uploadMap[_mediaSub], {method:'POST', body:formData});
+      if (r.ok) toast('Uploaded: ' + file.name, 'success');
+      else toast('Upload failed: ' + file.name, 'error');
+    } catch(e) { toast('Upload failed: ' + file.name, 'error'); }
+  }
+  input.value = '';
+  loadMediaContent(); loadTotalMediaStats();
+}
+
+// ── Catalogs ──
+function toggleMediaCatalog() {
+  _mediaCatalogVisible = !_mediaCatalogVisible;
+  document.getElementById('media-catalog-panel').style.display = _mediaCatalogVisible ? 'block' : 'none';
+  if (_mediaCatalogVisible) loadActiveCatalog();
+}
+
+async function loadActiveCatalog() {
+  if (_mediaSub === 'books') { loadBookCatalog(); return; }
+  // Videos catalog (audio shares the same catalog — audio extraction from YouTube)
+  try {
+    const catalog = await (await fetch('/api/videos/catalog')).json();
+    const existing = new Set(_mediaItems.filter(v => v.url).map(v => v.url));
+    const el = document.getElementById('media-catalog-list');
+    document.getElementById('media-catalog-title').textContent = _mediaSub === 'audio' ? 'Audio Catalog' : 'Prepper Video Library';
+    document.getElementById('media-catalog-desc').textContent = _mediaSub === 'audio' ? 'Download audio from YouTube videos' : 'Curated survival & preparedness content';
+    document.getElementById('media-catalog-dl-all').onclick = _mediaSub === 'audio' ? downloadAllCatalog : downloadAllCatalog;
+    const groups = {};
+    for (const item of catalog) { const f = item.folder||'General'; if (!groups[f]) groups[f]=[]; groups[f].push(item); }
+    let html = '';
+    for (const [folder, items] of Object.entries(groups)) {
+      html += `<div class="catalog-folder-header">${escapeHtml(folder)} (${items.length})</div>`;
+      for (const item of items) {
+        const downloaded = existing.has(item.url);
+        const dlFn = _mediaSub === 'audio' ? 'downloadCatalogAudio' : 'downloadCatalogItem';
+        html += `<div class="catalog-item"><div class="catalog-item-info"><div class="catalog-item-title">${escapeHtml(item.title)}</div>
+          <div class="catalog-item-meta">${escapeHtml(item.channel)} &middot; ${item.category}</div></div>
+          ${downloaded ? '<span style="color:var(--green);font-size:11px;font-weight:600;">Downloaded</span>'
+          : `<button class="btn btn-sm btn-primary" onclick="${dlFn}(this,'${escapeAttr(item.url)}','${escapeAttr(item.folder)}','${escapeAttr(item.category)}')">Download</button>`}
+        </div>`;
+      }
+    }
+    el.innerHTML = html;
+  } catch(e) { toast('Failed to load catalog', 'error'); }
+}
+
+async function loadBookCatalog() {
+  try {
+    const catalog = await (await fetch('/api/books/catalog')).json();
+    const existing = new Set(_mediaItems.filter(b => b.url).map(b => b.url));
+    const el = document.getElementById('media-catalog-list');
+    document.getElementById('media-catalog-title').textContent = 'Reference Library';
+    document.getElementById('media-catalog-desc').textContent = 'Survival manuals, field guides, medical references (public domain)';
+    document.getElementById('media-catalog-dl-all').onclick = downloadAllBooks;
+    const groups = {};
+    for (const item of catalog) { const f = item.folder||'General'; if (!groups[f]) groups[f]=[]; groups[f].push(item); }
+    let html = '';
+    for (const [folder, items] of Object.entries(groups)) {
+      html += `<div class="catalog-folder-header">${escapeHtml(folder)} (${items.length})</div>`;
+      for (const item of items) {
+        const downloaded = existing.has(item.url);
+        html += `<div class="catalog-item"><div class="catalog-item-info"><div class="catalog-item-title">${escapeHtml(item.title)}</div>
+          <div class="catalog-item-meta">${escapeHtml(item.author)} &middot; ${item.format.toUpperCase()} &middot; ${item.category}</div>
+          ${item.description ? `<div style="font-size:10px;color:var(--text-dim);margin-top:2px;">${escapeHtml(item.description)}</div>` : ''}</div>
+          ${downloaded ? '<span style="color:var(--green);font-size:11px;font-weight:600;">Downloaded</span>'
+          : `<button class="btn btn-sm btn-primary" onclick="downloadRefBook(this,${JSON.stringify(item).replace(/"/g,'&quot;')})">Download</button>`}
+        </div>`;
+      }
+    }
+    el.innerHTML = html;
+  } catch(e) { toast('Failed to load catalog', 'error'); }
+}
+
+async function downloadCatalogItem(btn, url, folder, category) {
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const r = await fetch('/api/ytdlp/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, folder, category})});
+    const d = await r.json();
+    if (d.error) { toast(d.error, 'error'); btn.disabled = false; btn.textContent = 'Download'; return; }
+    btn.textContent = 'Queued'; pollMediaDownloads(d.id);
+  } catch(e) { toast('Failed', 'error'); btn.disabled = false; btn.textContent = 'Download'; }
+}
+
+async function downloadCatalogAudio(btn, url, folder, category) {
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const r = await fetch('/api/ytdlp/download-audio', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, folder, category})});
+    const d = await r.json();
+    if (d.error) { toast(d.error, 'error'); btn.disabled = false; btn.textContent = 'Download'; return; }
+    btn.textContent = 'Queued'; pollMediaDownloads(d.id);
+  } catch(e) { toast('Failed', 'error'); btn.disabled = false; btn.textContent = 'Download'; }
+}
+
+async function downloadRefBook(btn, item) {
+  btn.disabled = true; btn.textContent = '...';
+  try {
+    const r = await fetch('/api/books/download-ref', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(item)});
+    const d = await r.json();
+    if (d.status === 'already_downloaded') { toast('Already downloaded', 'info'); btn.textContent = 'Downloaded'; btn.style.color = 'var(--green)'; return; }
+    if (d.error) { toast(d.error, 'error'); btn.disabled = false; btn.textContent = 'Download'; return; }
+    btn.textContent = 'Downloading...'; pollMediaDownloads(d.id);
+  } catch(e) { toast('Failed', 'error'); btn.disabled = false; btn.textContent = 'Download'; }
+}
+
+async function downloadAllCatalog() {
+  const s = await (await fetch('/api/ytdlp/status')).json();
+  if (!s.installed) { toast('Install the downloader first', 'warning'); return; }
+  try {
+    const catalog = await (await fetch('/api/videos/catalog')).json();
+    const r = await fetch('/api/ytdlp/download-catalog', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({items:catalog})});
+    const d = await r.json();
+    if (d.error) { toast(d.error, 'error'); return; }
+    if (d.status === 'all_downloaded') { toast('All catalog content already downloaded!', 'success'); return; }
+    toast(`Queued ${d.count} items for download`, 'info'); pollMediaDownloads(d.id);
+  } catch(e) { toast('Failed', 'error'); }
+}
+
+async function downloadAllBooks() {
+  try {
+    const r = await fetch('/api/books/download-all-refs', {method:'POST'});
+    const d = await r.json();
+    if (d.status === 'all_downloaded') { toast('All reference books already downloaded!', 'success'); return; }
+    if (d.error) { toast(d.error, 'error'); return; }
+    toast(`Downloading ${d.count} reference books...`, 'info'); pollMediaDownloads(d.id);
+  } catch(e) { toast('Failed', 'error'); }
 }
 
 /* ─── Guided Drills ─── */

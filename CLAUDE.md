@@ -5,13 +5,16 @@ Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutio
 
 ## Tech Stack
 - **Python 3** — Flask web server + pywebview (WebView2) embedded browser
-- **SQLite** — 32 tables, WAL mode, auto-backups, performance indexes
+- **SQLite** — 35 tables, WAL mode, auto-backups, performance indexes
 - **CSS** — External files: `web/static/css/app.css` (base) + `web/static/css/premium.css` (polish layer)
 - **Native process management** — subprocess for Ollama, kiwix-serve, Kolibri; threading HTTP server for CyberChef
 - **pystray** — system tray icon for background operation
 - **psutil** — system info (CPU via background monitor thread, RAM, GPU detection, disk devices)
 - **MapLibre GL JS + PMTiles** — bundled locally (no CDN dependencies)
 - **NukeMap v3.2.0** — 18 JS modules + Leaflet (bundled locally)
+- **epub.js** — EPUB reader (bundled locally, `web/static/js/epub.min.js`)
+- **yt-dlp** — video/audio downloader (auto-installed to services dir)
+- **FFmpeg** — audio conversion (optional, auto-installed for MP3 extraction)
 
 ## Project Structure
 ```
@@ -25,7 +28,7 @@ ROADMAP.md            # 10-phase implementation plan (all complete)
 .github/workflows/
   build.yml           # CI/CD — PyInstaller + Inno Setup, dual artifact release on tag push
 web/
-  app.py              # Flask routes (231 endpoints) — ~5700 lines
+  app.py              # Flask routes (~260 endpoints) — ~6500 lines
   static/
     css/
       app.css         # Base styles (1117 lines) — themes, layout, components
@@ -34,6 +37,8 @@ web/
     maplibre-gl.js    # Map renderer (bundled)
     maplibre-gl.css   # Map styles (bundled)
     pmtiles.js        # Tile format handler (bundled)
+    js/
+      epub.min.js     # EPUB reader library (bundled)
   templates/
     index.html        # HTML + inline theme vars + JS (~12,500 lines)
   nukemap/            # NukeMap v3.2.0 — index.html, 18 JS modules, CSS, data/, lib/leaflet
@@ -113,6 +118,10 @@ Sections cover: getting started, all 9 tabs, all 19 prep sub-tabs, AI model sele
 - Kiwix won't start without ZIM files
 - Qdrant uses env var not CLI arg for storage path
 - Planet PMTiles URL: `https://data.source.coop/protomaps/openstreetmap/v4.pmtiles` (build.protomaps.com is dead)
+- Media tab has 3 sub-tabs (Videos/Audio/Books) sharing the same sidebar folder navigation
+- yt-dlp.exe and ffmpeg.exe are auto-installed to services dir, not bundled
+- epub.js is bundled (`web/static/js/epub.min.js`), PDFs use WebView2's built-in PDF viewer via iframe
+- Book catalog URLs point to Internet Archive — may change or go down
 
 ## UX Design Principles
 - All jargon removed — plain English throughout (no Ollama/Kiwix/PMTiles/Sneakernet)

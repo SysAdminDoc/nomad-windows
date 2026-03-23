@@ -212,8 +212,41 @@ def init_db():
             title TEXT NOT NULL,
             filename TEXT NOT NULL,
             category TEXT DEFAULT 'general',
+            folder TEXT DEFAULT '',
             duration TEXT DEFAULT '',
             notes TEXT DEFAULT '',
+            url TEXT DEFAULT '',
+            thumbnail TEXT DEFAULT '',
+            filesize INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS audio (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            filename TEXT NOT NULL,
+            artist TEXT DEFAULT '',
+            album TEXT DEFAULT '',
+            category TEXT DEFAULT 'general',
+            folder TEXT DEFAULT '',
+            duration TEXT DEFAULT '',
+            url TEXT DEFAULT '',
+            filesize INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS books (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            author TEXT DEFAULT '',
+            filename TEXT NOT NULL,
+            format TEXT DEFAULT 'pdf',
+            category TEXT DEFAULT 'general',
+            folder TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            url TEXT DEFAULT '',
+            filesize INTEGER DEFAULT 0,
+            last_position TEXT DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
@@ -452,6 +485,10 @@ def init_db():
         'ALTER TABLE documents ADD COLUMN summary TEXT DEFAULT ""',
         'ALTER TABLE documents ADD COLUMN entities TEXT DEFAULT "[]"',
         'ALTER TABLE documents ADD COLUMN linked_records TEXT DEFAULT "[]"',
+        'ALTER TABLE videos ADD COLUMN folder TEXT DEFAULT ""',
+        'ALTER TABLE videos ADD COLUMN url TEXT DEFAULT ""',
+        'ALTER TABLE videos ADD COLUMN thumbnail TEXT DEFAULT ""',
+        'ALTER TABLE videos ADD COLUMN filesize INTEGER DEFAULT 0',
     ]:
         try:
             conn.execute(migration)

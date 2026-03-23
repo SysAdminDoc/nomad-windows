@@ -846,7 +846,7 @@ body{background:var(--bg);color:var(--text)}
             </div>
           </div>
           <div id="book-reader-content" style="flex:1;overflow:hidden;"></div>
-          <iframe id="book-pdf-frame" style="flex:1;border:none;display:none;" sandbox="allow-same-origin allow-scripts"></iframe>
+          <iframe id="book-pdf-frame" style="flex:1;border:none;display:none;"></iframe>
         </div>
       </div>
     </div>
@@ -9427,7 +9427,10 @@ function pollMediaDownloads(watchId) {
   if (_mediaDlPoll) clearInterval(_mediaDlPoll);
   const bar = document.getElementById('media-dl-progress');
   bar.style.display = 'block';
-  _mediaDlPoll = setInterval(async () => {
+  document.getElementById('media-dl-title').textContent = 'Starting download...';
+  document.getElementById('media-dl-fill').style.width = '0%';
+  // Delay first poll to let backend initialize the download entry
+  setTimeout(() => { _mediaDlPoll = setInterval(async () => {
     try {
       const all = await (await fetch('/api/ytdlp/progress')).json();
       let active = null;
@@ -9452,7 +9455,7 @@ function pollMediaDownloads(watchId) {
         loadMediaContent(); loadTotalMediaStats();
       }
     } catch(e) {}
-  }, 1500);
+  }, 1500); }, 500);
 }
 
 async function uploadMediaFiles() {

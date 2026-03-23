@@ -203,6 +203,12 @@ a { color: var(--accent); text-decoration: none; }
 .tab.active .tab-icon { opacity: 1; }
 .tab-content { display: none; animation: fadeSlideIn 0.3s ease; }
 .tab-content.active { display: block; }
+/* Vertical centering for pages with less content */
+.main-content { display: flex; flex-direction: column; }
+.container { display: flex; flex-direction: column; flex: 1; }
+.tab-content.active.tab-vcenter {
+  flex: 1; display: flex; flex-direction: column; justify-content: center;
+}
 @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ─── Command Center Cards (Original NOMAD Style) ─── */

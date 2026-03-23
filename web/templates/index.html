@@ -212,6 +212,9 @@ a { color: var(--accent); text-decoration: none; }
 .tab.active .tab-icon { opacity: 1; }
 .tab-content { display: none; animation: fadeSlideIn 0.3s ease; }
 .tab-content.active { display: block; }
+.main-content { display: flex; flex-direction: column; }
+.container { display: flex; flex-direction: column; flex: 1; }
+.tab-content.active.tab-vcenter { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 
 /* ─── Command Center Cards (Original NOMAD Style) ─── */
@@ -1360,7 +1363,7 @@ a { color: var(--accent); text-decoration: none; }
   </div>
 
   <!-- AI Chat Tab -->
-  <div id="tab-ai-chat" class="tab-content">
+  <div id="tab-ai-chat" class="tab-content tab-vcenter">
     <div class="chat-layout">
       <div class="convo-sidebar">
         <div class="convo-sidebar-header">
@@ -1530,7 +1533,7 @@ a { color: var(--accent); text-decoration: none; }
   </div>
 
   <!-- Maps Tab -->
-  <div id="tab-maps" class="tab-content">
+  <div id="tab-maps" class="tab-content tab-vcenter">
     <div class="map-controls">
       <span style="font-weight:600;font-size:14px;">Offline Maps</span>
       <button class="btn btn-sm" id="map-toggle-btn" onclick="toggleMapView()">Show Map</button>
@@ -1609,7 +1612,7 @@ a { color: var(--accent); text-decoration: none; }
   </div>
 
   <!-- Notes Tab -->
-  <div id="tab-notes" class="tab-content">
+  <div id="tab-notes" class="tab-content tab-vcenter">
     <div class="notes-layout">
       <div class="notes-sidebar">
         <div class="notes-sidebar-header">
@@ -1640,7 +1643,7 @@ a { color: var(--accent); text-decoration: none; }
   </div>
 
   <!-- Benchmark Tab -->
-  <div id="tab-benchmark" class="tab-content">
+  <div id="tab-benchmark" class="tab-content tab-vcenter">
     <div class="settings-grid">
       <div class="settings-card" style="grid-column:1/-1;">
         <h3>N.O.M.A.D. Benchmark <button class="help-icon" onclick="showHelp('benchmark')" title="What is this?">?</button></h3>

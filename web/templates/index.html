@@ -4517,18 +4517,52 @@ function pollServices() {
 }
 
 /* ─── AI Chat ─── */
+let _chatReady = false;
+let _chatReadyPoll = null;
+
 async function loadModels() {
   try {
     const models = await (await fetch('/api/ai/models')).json();
     const sel = document.getElementById('model-select');
     if (!models.length) {
       sel.innerHTML = '<option value="">No models yet — click "+ Get Model"</option>';
+      setChatReady(false, 'No AI models downloaded');
+      // Poll until models appear (service may still be starting)
+      startChatReadyPoll();
     } else {
       sel.innerHTML = models.map(m => `<option value="${m.name}">${m.name} (${(m.size/1e9).toFixed(1)}GB)</option>`).join('');
+      setChatReady(true);
     }
   } catch(e) {
     document.getElementById('model-select').innerHTML = '<option value="">Failed to load models</option>';
+    setChatReady(false, 'AI service starting...');
+    startChatReadyPoll();
   }
+}
+
+function setChatReady(ready, reason) {
+  _chatReady = ready;
+  const btn = document.getElementById('send-btn');
+  const input = document.getElementById('chat-input');
+  btn.disabled = !ready;
+  input.disabled = !ready;
+  input.placeholder = ready ? 'Type a message... (Enter to send, Shift+Enter for newline, drop files)' : (reason || 'AI service starting...');
+  if (ready && _chatReadyPoll) { clearInterval(_chatReadyPoll); _chatReadyPoll = null; }
+}
+
+function startChatReadyPoll() {
+  if (_chatReadyPoll) return;
+  _chatReadyPoll = setInterval(async () => {
+    try {
+      const models = await (await fetch('/api/ai/models')).json();
+      if (models.length) {
+        const sel = document.getElementById('model-select');
+        sel.innerHTML = models.map(m => `<option value="${m.name}">${m.name} (${(m.size/1e9).toFixed(1)}GB)</option>`).join('');
+        setChatReady(true);
+        toast('AI assistant ready', 'success');
+      }
+    } catch {}
+  }, 3000);
 }
 
 /* managePullModel replaced by inline model picker */
@@ -4656,6 +4690,7 @@ async function saveConversation() {
 
 async function sendChat() {
   if (isSending) return;
+  if (!_chatReady) { toast('AI service is still starting. Please wait...', 'info'); return; }
   const input = document.getElementById('chat-input');
   const msg = input.value.trim();
   if (!msg) return;

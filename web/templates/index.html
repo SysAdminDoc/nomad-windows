@@ -10677,73 +10677,278 @@ function showHelp() {
   const surface = isDark ? '#1e1e26' : '#fff';
   const border = isDark ? '#333' : '#d4c9b0';
   openAppFrameHTML('Help Guide', `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>N.O.M.A.D. Help Guide</title>
-  <style>body{font-family:'Segoe UI',sans-serif;background:${bg};color:${text};padding:20px 40px;line-height:1.7;max-width:850px;margin:0 auto;font-size:14px;}
-  h1{color:#5b9fff;border-bottom:2px solid ${border};padding-bottom:8px;}h2{color:#4caf50;margin-top:28px;border-bottom:1px solid ${border};padding-bottom:4px;}h3{color:#ff9800;margin-top:16px;}
+  <style>body{font-family:'Segoe UI',sans-serif;background:${bg};color:${text};padding:24px 40px 60px;line-height:1.8;max-width:880px;margin:0 auto;font-size:14px;}
+  h1{color:#5b9fff;border-bottom:3px solid #5b9fff;padding-bottom:8px;font-size:22px;}
+  h2{color:#4caf50;margin-top:32px;border-bottom:1px solid ${border};padding-bottom:4px;font-size:17px;}
+  h3{color:#ff9800;margin-top:18px;font-size:14px;}
+  .toc{background:${surface};border:1px solid ${border};border-radius:8px;padding:16px 24px;margin:16px 0;columns:2;column-gap:24px;}
+  .toc a{display:block;padding:2px 0;color:${text};text-decoration:none;font-size:13px;}.toc a:hover{color:#5b9fff;}
+  .tip{background:${surface};border-left:3px solid #5b9fff;padding:8px 14px;margin:10px 0;border-radius:0 6px 6px 0;font-size:13px;}
+  .warn{background:${surface};border-left:3px solid #ff9800;padding:8px 14px;margin:10px 0;border-radius:0 6px 6px 0;font-size:13px;}
   kbd{background:${surface};padding:2px 6px;border-radius:4px;font-size:12px;border:1px solid ${border};}
   table{border-collapse:collapse;width:100%;margin:8px 0;}th,td{border:1px solid ${border};padding:6px 10px;text-align:left;font-size:13px;}th{background:${surface};}
   code{background:${surface};padding:1px 4px;border-radius:3px;font-size:12px;}
+  ul,ol{margin:6px 0 6px 20px;}li{margin:2px 0;}
+  .step{display:flex;align-items:flex-start;gap:12px;margin:8px 0;}
+  .step-num{width:28px;height:28px;border-radius:50%;background:#5b9fff;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0;}
+  .step-text{flex:1;padding-top:3px;}
+  .section-icon{margin-right:6px;}
   </style></head><body>
-  <h1>Project N.O.M.A.D. for Windows v${VERSION}</h1>
-  <p>The most complete offline survival command center available. 221 API endpoints, 30+ database tables, 18 preparedness sub-tabs.</p>
+  <h1>Project N.O.M.A.D. User Guide</h1>
+  <p style="font-size:15px;color:${muted};">Version ${VERSION} &mdash; The most complete offline survival command center available for Windows</p>
+  <p>Everything in this software works <strong>completely offline</strong> after initial setup. No cloud accounts, no subscriptions, no data leaves your computer. This guide covers every feature and how to get the most out of it.</p>
 
-  <h2>Getting Started</h2>
-  <p>On first run, the Setup Wizard guides you through choosing a storage drive and what to download. You can re-run it anytime from <strong>Settings > Re-run Setup Wizard</strong>.</p>
-  <p><strong>Quick setup:</strong> Install AI Chat (Ollama) + download a small model (Llama 3.2 3B, 2 GB) + download Essential content packs. Takes ~10 minutes on a decent connection.</p>
+  <div class="toc">
+    <strong style="display:block;margin-bottom:6px;column-span:all;">Table of Contents</strong>
+    <a href="#getting-started">1. Getting Started</a>
+    <a href="#home">2. Home Dashboard</a>
+    <a href="#readiness">3. Readiness Score</a>
+    <a href="#ai">4. AI Assistant</a>
+    <a href="#library">5. Information Library</a>
+    <a href="#maps">6. Offline Maps</a>
+    <a href="#notes">7. Notes</a>
+    <a href="#tools">8. Tools</a>
+    <a href="#prep">9. Preparedness (19 Sub-Tabs)</a>
+    <a href="#alerts">10. Proactive Alerts</a>
+    <a href="#sync">11. Connecting Multiple Systems</a>
+    <a href="#scenarios">12. Training Scenarios</a>
+    <a href="#themes">13. Themes</a>
+    <a href="#settings">14. Settings &amp; Backup</a>
+    <a href="#benchmark">15. Benchmark</a>
+    <a href="#keyboard">16. Keyboard Shortcuts</a>
+    <a href="#data">17. Data &amp; Privacy</a>
+    <a href="#troubleshooting">18. Troubleshooting</a>
+  </div>
 
-  <h2>9 Main Tabs</h2>
-  <h3>Home (Services)</h3><p>Command dashboard with proactive alerts, service management, situation overview, content summary, and activity feed. Install, start, stop, and monitor all 6 services. Download sizes shown on Install buttons.</p>
-  <h3>AI Chat</h3><p>Local AI powered by Ollama. 19 system presets (medical, survival, coding, etc). Toggle <strong>"Include My Prep Data"</strong> to inject your real inventory, burn rates, incidents, and threat levels into the conversation. Drag-drop files for context. Upload documents for semantic search (RAG). Download All models with one click.</p>
-  <h3>Library</h3><p>100+ downloadable content packs in 14 categories across 3 tiers (Essential / Standard / Comprehensive). Bulk download buttons at top. Each item shows live download state. Upload and view PDFs/ePubs. AI document intelligence classifies, summarizes, and extracts entities from uploaded documents.</p>
-  <h3>Maps</h3><p>Offline maps with 10 tools: Drop Pin, Measure, Save Waypoint, Draw Zone, Property Boundary (calculates area in acres + perimeter), Clear Pins, Print Layout, Bookmark, Bearing & Distance, Export GPX. 22 downloadable regions worldwide. Enter coordinates directly (lat,lng) for offline navigation.</p>
-  <h3>Notes</h3><p>Markdown notes with tags, pinning, live preview. Export individual notes as .md or all notes as ZIP.</p>
-  <h3>Tools</h3><p>NukeMap v3.2.0 nuclear simulator (418 targets, 7 WW3 scenarios). 4 immersive training scenarios with AI complications and scored after-action reviews. Meshtastic mesh radio integration. Barcode scanner (auto-adds to inventory). Video library. 6 timed emergency drills.</p>
-  <h3>Benchmark</h3><p>CPU, memory, disk, AI inference scoring (NOMAD Score 0-100). Trend indicators show improvement vs previous run.</p>
-  <h3>Preparedness</h3><p>18 sub-tabs (see below).</p>
-  <h3>Settings</h3><p>System monitoring with live gauges. AI model manager with Download All. Network federation (sync between NOMAD nodes). Theme selection. Backup/restore. LAN access URL. Host power control. Application log viewer.</p>
+  <h2 id="getting-started">1. Getting Started</h2>
+  <p>When you first open N.O.M.A.D., the Setup Wizard walks you through picking a storage drive and choosing what to download. You can re-run it anytime from <strong>Settings &gt; Re-run Setup Wizard</strong>.</p>
+  <h3>Recommended First Steps</h3>
+  <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Install AI Chat</strong> &mdash; Click "Install AI Chat" on the Home page. This downloads the AI engine (~310 MB). Takes 2-5 minutes.</div></div>
+  <div class="step"><div class="step-num">2</div><div class="step-text"><strong>Download an AI Model</strong> &mdash; Go to AI Assistant in the sidebar, click "+ Download AI Model." Pick a small model like <strong>Llama 3.2 3B</strong> (2 GB) to start. Larger models give better answers but need more disk space and RAM.</div></div>
+  <div class="step"><div class="step-num">3</div><div class="step-text"><strong>Install the Information Library</strong> &mdash; Click "Install Encyclopedia" on the Home page. Then go to the Library tab and click <strong>Download All Essentials</strong> to get offline Wikipedia, medical references, and survival guides.</div></div>
+  <div class="step"><div class="step-num">4</div><div class="step-text"><strong>Start Using Preparedness Tools</strong> &mdash; Click Preparedness in the sidebar. Start by adding your family members to <strong>Contacts</strong>, then add your supplies to <strong>Inventory</strong>.</div></div>
+  <div class="step"><div class="step-num">5</div><div class="step-text"><strong>Try the Interactive Guides</strong> &mdash; Go to Preparedness &gt; <strong>Guides</strong>. These step-by-step decision trees help you through real situations (water purification, wound care, fire starting, etc.) &mdash; no AI needed.</div></div>
+  <div class="tip"><strong>Tip:</strong> The entire setup takes about 10-15 minutes on a decent internet connection. After that, everything works offline forever.</div>
 
-  <h2>18 Preparedness Sub-Tabs</h2>
-  <table><tr><th>Tab</th><th>What It Does</th></tr>
-  <tr><td><strong>Checklists</strong></td><td>11 templates (72hr kit, bug-out bag, medical, etc). Custom checklists. JSON import/export for sharing.</td></tr>
-  <tr><td><strong>Incidents</strong></td><td>Chronological event log with severity (info/warning/alert/critical) and category filtering.</td></tr>
-  <tr><td><strong>Inventory</strong></td><td>Supply tracking with quantities, expiration alerts, burn rate (Days Left), shopping list generator, CSV import/export.</td></tr>
-  <tr><td><strong>Contacts</strong></td><td>Emergency directory with callsigns, roles, skills, blood types, rally points. Skills matrix with gap analysis.</td></tr>
-  <tr><td><strong>Security</strong></td><td>IP camera feeds (MJPEG/snapshot/HLS). Access logging (entry/exit/patrol). Security dashboard with threat level.</td></tr>
-  <tr><td><strong>Power</strong></td><td>Device registry (solar/battery/controller/inverter/generator). Power log. Autonomy projection dashboard.</td></tr>
-  <tr><td><strong>Garden</strong></td><td>Garden plots, seed inventory with auto-viability, harvest log (auto-feeds inventory), livestock records, hardiness zone lookup.</td></tr>
-  <tr><td><strong>Medical</strong></td><td>Patient profiles, vital signs tracking (BP/pulse/resp/temp/SpO2/pain/GCS), wound documentation, 26-pair drug interaction checker, printable patient cards.</td></tr>
-  <tr><td><strong>Calculators</strong></td><td>10+ calculators: water, food storage, generator fuel, rainwater, radio range, medication dosage, solar sizing, BOB weight, and more.</td></tr>
-  <tr><td><strong>Guides</strong></td><td>10 interactive decision trees: water purification, wound assessment, fire starting, shelter construction, radio communications, food preservation, START triage, power outage response, vehicle emergency, bug-out vs shelter-in-place. Works offline without AI.</td></tr>
-  <tr><td><strong>Radio Ref</strong></td><td>Complete frequency table: NOAA, FRS, GMRS, MURS, CB, HAM, shortwave.</td></tr>
-  <tr><td><strong>Quick Ref</strong></td><td>25+ reference cards: NATO alphabet, Morse code trainer, unit converter, triage, companion planting, and more.</td></tr>
-  <tr><td><strong>Protocols</strong></td><td>17 emergency procedures with search and expand-all. Printable wallet card generator.</td></tr>
-  <tr><td><strong>Vault</strong></td><td>AES-256 encrypted storage. Password verified on unlock. Legal document templates. Password generator.</td></tr>
-  <tr><td><strong>Weather</strong></td><td>Barometric pressure journal with automated trend analysis and weather prediction.</td></tr>
-  <tr><td><strong>Signals</strong></td><td>Radio check-in schedule planner + communications log.</td></tr>
-  <tr><td><strong>Operations</strong></td><td>SITREP generator, message cipher, infrastructure tracker, vehicle board, threat matrix, emergency broadcast, home security assessment.</td></tr>
-  <tr><td><strong>Family Plan</strong></td><td>FEMA-style emergency plan: meeting locations, evacuation routes, household members, insurance info.</td></tr>
+  <h2 id="home">2. Home Dashboard</h2>
+  <p>The Home page is your command center overview. It shows:</p>
+  <ul>
+    <li><strong>Status indicator</strong> &mdash; Overall threat level based on your situation board (green = all clear, yellow = caution, red = critical)</li>
+    <li><strong>Low stock &amp; expiring items</strong> &mdash; Click these to jump directly to your inventory</li>
+    <li><strong>Incidents (24h)</strong> &mdash; Recent security or safety events you have logged</li>
+    <li><strong>Readiness Score</strong> &mdash; Your overall preparedness grade (see below)</li>
+    <li><strong>Feature cards</strong> &mdash; Quick access to each major section</li>
+    <li><strong>Service status</strong> &mdash; Which tools are installed and running</li>
+    <li><strong>Activity feed</strong> &mdash; Recent events (services started, items added, alerts triggered)</li>
+  </ul>
+  <div class="tip"><strong>Tip:</strong> Use the search bar at the top to find anything &mdash; supplies, contacts, notes, checklists, conversations, and documents.</div>
+
+  <h2 id="readiness">3. Readiness Score</h2>
+  <p>The Readiness Score is a letter grade (A through F) that measures how prepared you are across 7 categories:</p>
+  <table><tr><th>Category</th><th>Max Points</th><th>What Improves It</th></tr>
+  <tr><td>Water</td><td>20</td><td>Adding water supplies to your inventory</td></tr>
+  <tr><td>Food</td><td>20</td><td>Adding food items, tracking daily usage, removing expired items</td></tr>
+  <tr><td>Medical</td><td>15</td><td>Adding medical supplies, registering patients, recording blood types</td></tr>
+  <tr><td>Security</td><td>10</td><td>Adding cameras, logging access events, resolving incidents</td></tr>
+  <tr><td>Communications</td><td>10</td><td>Adding contacts, logging radio communications</td></tr>
+  <tr><td>Power &amp; Land</td><td>10</td><td>Registering power devices, adding garden plots, saving map waypoints</td></tr>
+  <tr><td>Plans &amp; Knowledge</td><td>15</td><td>Completing checklists, writing notes, uploading documents, running drills</td></tr>
+  </table>
+  <p><strong>Click any category</strong> to jump directly to the relevant Preparedness section where you can improve that score.</p>
+
+  <h2 id="ai">4. AI Assistant</h2>
+  <p>The AI runs <strong>entirely on your computer</strong> &mdash; nothing is sent to the internet. It can answer questions about survival, medical care, homesteading, radio communications, and more.</p>
+  <h3>How to Use It</h3>
+  <ol>
+    <li>Make sure the AI Chat service is running (green status on Home page)</li>
+    <li>Select an AI model from the dropdown (top-left of the chat area)</li>
+    <li>Choose a <strong>conversation mode</strong> from the dropdown &mdash; this tells the AI what kind of expert to be (Medical Advisor, Survival Expert, Homesteading, etc.)</li>
+    <li>Type your question and press Enter or click Send</li>
+  </ol>
+  <h3>Include My Prep Data</h3>
+  <p>Toggle <strong>"Include My Prep Data"</strong> to let the AI see your inventory levels, contacts, weather logs, power status, and alerts. This means it can give advice based on YOUR actual situation rather than generic answers. Your data stays on your computer.</p>
+  <h3>Document Intelligence</h3>
+  <p>Upload PDFs, text files, or other documents in the Library tab. The AI can:</p>
+  <ul>
+    <li>Automatically classify documents (medical, property, financial, etc.)</li>
+    <li>Generate a 2-3 sentence summary</li>
+    <li>Extract key information (names, dates, medications, addresses)</li>
+    <li>Cross-reference extracted names against your contacts</li>
+  </ul>
+  <div class="tip"><strong>Tip:</strong> The AI models are downloaded once and work forever offline. Larger models (like Mistral 7B or Llama 3.1 8B) give much better answers than small ones. If you have a GPU, the AI will automatically use it for faster responses.</div>
+
+  <h2 id="library">5. Information Library</h2>
+  <p>The Library contains 100+ downloadable content packs organized into 14 categories. Content is available in 3 tiers:</p>
+  <ul>
+    <li><strong>Essential</strong> &mdash; Core references: Wikipedia, emergency guides, survival skills (~2-5 GB)</li>
+    <li><strong>Standard</strong> &mdash; Adds medical databases, repair guides, cooking, agriculture</li>
+    <li><strong>Everything</strong> &mdash; Complete collection including history, science, fiction, technical docs</li>
+  </ul>
+  <p>Use the <strong>Download All Essentials</strong> button to get started quickly. You can also upload your own PDFs and documents for offline reading.</p>
+
+  <h2 id="maps">6. Offline Maps</h2>
+  <p>Download maps for your region so you can navigate without cell service or internet. Select from 22 worldwide regions.</p>
+  <h3>10 Map Tools</h3>
+  <table><tr><th>Tool</th><th>What It Does</th></tr>
+  <tr><td>Drop Pin</td><td>Mark a point on the map with a label</td></tr>
+  <tr><td>Measure</td><td>Measure distance between two points</td></tr>
+  <tr><td>Save Waypoint</td><td>Save a named location to your database</td></tr>
+  <tr><td>Draw Zone</td><td>Draw a colored area on the map</td></tr>
+  <tr><td>Property Boundary</td><td>Draw a polygon and calculate area (acres) and perimeter (feet/miles)</td></tr>
+  <tr><td>Clear Pins</td><td>Remove all temporary markers</td></tr>
+  <tr><td>Print Layout</td><td>Generate a printable map page with title, compass, and scale</td></tr>
+  <tr><td>Bookmark</td><td>Save and recall specific map views</td></tr>
+  <tr><td>Bearing &amp; Distance</td><td>Calculate direction (degrees + cardinal) and distance between two points</td></tr>
+  <tr><td>Export GPX</td><td>Export all saved waypoints to a GPS-compatible file</td></tr>
+  </table>
+  <div class="tip"><strong>Tip:</strong> Enter coordinates directly (like "38.8977, -77.0365") in the search box to jump to a specific location.</div>
+
+  <h2 id="notes">7. Notes</h2>
+  <p>Write and organize notes, plans, SOPs, and logs. Notes auto-save as you type. Features include:</p>
+  <ul>
+    <li><strong>Tags</strong> &mdash; Add comma-separated tags to organize notes</li>
+    <li><strong>Pinning</strong> &mdash; Pin important notes to the top of the list</li>
+    <li><strong>Live preview</strong> &mdash; See formatted output as you type</li>
+    <li><strong>Export</strong> &mdash; Export individual notes as .md files or all notes as a ZIP</li>
+  </ul>
+
+  <h2 id="tools">8. Tools</h2>
+  <h3>NukeMap v3.2.0</h3>
+  <p>Nuclear effects simulator with 418 real-world targets, 708 warheads, and 7 conflict scenarios. Visualize blast radius, thermal radiation, fallout patterns, and shelter requirements for any location.</p>
+  <h3>Training Drills</h3>
+  <p>6 timed drill scenarios with step-by-step checklists: 72-Hour Kit Check, Evacuation Drill, Blackout Drill, Communication Test, Shelter-in-Place, and First Aid. Results are saved to your drill history.</p>
+  <h3>Off-Grid Radio Messaging</h3>
+  <p>Connect a Meshtastic radio device via USB to send and receive text messages without cell towers or internet. Range: 1-10+ miles depending on terrain. Buy a Meshtastic radio, plug it in, and click "Scan for Devices."</p>
+  <h3>Barcode Scanner</h3>
+  <p>Use your camera to scan barcodes and quickly add items to your inventory. Requires camera permission.</p>
+  <h3>Video Library</h3>
+  <p>Upload and organize instructional videos (survival, medical, repair, cooking, etc.) for offline viewing.</p>
+
+  <h2 id="prep">9. Preparedness (19 Sub-Tabs)</h2>
+  <p>The Preparedness section is the heart of N.O.M.A.D. It contains 19 sub-tabs ordered by emergency priority:</p>
+  <table><tr><th>Tab</th><th>What It Does</th><th>Key Features</th></tr>
+  <tr><td><strong>Inventory</strong></td><td>Track all your supplies</td><td>Quantities, expiration dates, daily usage tracking, "Days Left" projections, low-stock alerts, shopping list generator, CSV import/export, quick +/- buttons, one-click Daily Consume</td></tr>
+  <tr><td><strong>Contacts</strong></td><td>Emergency people directory</td><td>Names, callsigns, roles, skills, blood types, rally points, medical notes. Skills matrix shows coverage gaps. CSV import/export. Quick-add 7 standard emergency numbers.</td></tr>
+  <tr><td><strong>Checklists</strong></td><td>Readiness checklists</td><td>15 built-in templates (72hr kit, bug-out bag, vehicle kit, winter storm, CBRN shelter, infant kit, etc.). Create custom checklists. JSON import/export for sharing.</td></tr>
+  <tr><td><strong>Medical</strong></td><td>Health tracking</td><td>Patient profiles linked to contacts. Vital signs (BP, pulse, respiration, temperature, SpO2, pain 0-10, GCS 3-15) with color-coded abnormals. Wound documentation (8 types, 4 severities). 26-pair drug interaction checker. Printable patient care cards. Import patients from contacts with one click.</td></tr>
+  <tr><td><strong>Incidents</strong></td><td>Event log</td><td>Record security, medical, infrastructure, weather, and supply events with severity levels and category tags. Filter and search history.</td></tr>
+  <tr><td><strong>Family Plan</strong></td><td>Emergency family plan</td><td>FEMA-style plan: 3 meeting locations, 3 evacuation routes, household member cards (medical info, blood types), insurance and utility account numbers. Auto-saves as you type. Print emergency card.</td></tr>
+  <tr><td><strong>Security</strong></td><td>Physical security</td><td>Camera viewer (MJPEG live feeds, snapshot auto-refresh, HLS streams). Access log (entry/exit/patrol tracking). Security dashboard with threat level, camera count, and incident summary.</td></tr>
+  <tr><td><strong>Power</strong></td><td>Energy management</td><td>Device registry for solar panels, batteries, charge controllers, inverters, and generators with specs. Power log (voltage, SOC%, solar/load watts). Autonomy projection dashboard with color-coded gauges (green &gt;7d, orange &gt;3d, red &lt;3d).</td></tr>
+  <tr><td><strong>Garden</strong></td><td>Food production</td><td>Garden plots with dimensions and area calculation. Seed inventory with automatic viability tracking (25 species). Harvest log that automatically adds produce to your inventory. Livestock records (10 species) with health event logging. USDA hardiness zone lookup by latitude.</td></tr>
+  <tr><td><strong>Weather</strong></td><td>Weather tracking</td><td>Manual weather observations: pressure, temperature, wind, clouds, visibility. Barometric pressure trend analysis for storm prediction. Pressure drops &gt;4 hPa trigger alerts.</td></tr>
+  <tr><td><strong>Guides</strong></td><td>Step-by-step decision trees</td><td>10 interactive guides with 200+ decision nodes: water purification, wound assessment, fire starting, shelter construction, radio setup, food preservation, START triage, power outage response, vehicle emergency, bug-out vs shelter decision. "Ask AI" button at any step. Printable procedure cards. Works fully offline.</td></tr>
+  <tr><td><strong>Calculators</strong></td><td>Survival math</td><td>Water storage, food storage (LDS/FEMA), generator fuel, rainwater harvest, radio range (12 radio types), medication dosage, solar panel sizing, bug-out bag weight, resource planning, travel time, battery life, and bleach dosing calculators.</td></tr>
+  <tr><td><strong>Procedures</strong></td><td>Emergency procedures</td><td>17 step-by-step protocols: CPR, bleeding control, water purification, shelter building, fire starting, choking, hypothermia, wound closure, burns, fractures, snake bite, anaphylaxis, dental emergency, psychological first aid, CERT, and natural disaster procedures. Search and expand-all. Printable wallet card.</td></tr>
+  <tr><td><strong>Radio</strong></td><td>Frequency reference</td><td>Complete radio frequency table: NOAA weather (7 channels), FRS (22 channels), GMRS, MURS, CB (40 channels), HAM bands (2m, 70cm, HF), and shortwave stations.</td></tr>
+  <tr><td><strong>Quick Ref</strong></td><td>Reference cards</td><td>25+ quick reference topics: NATO phonetic alphabet, Morse code with audio trainer, unit converter, triage protocols, companion planting chart, calorie database, livestock care, WHO essential medicines, knots, navigation, sanitation, wild edibles, EMP protection guide, and OPSEC principles.</td></tr>
+  <tr><td><strong>Signals</strong></td><td>Emergency signals</td><td>Ground-to-air visual signals, sound signal patterns, smoke signal guide for rescue communication.</td></tr>
+  <tr><td><strong>Command Post</strong></td><td>Tactical operations</td><td>Situation Report (SITREP) generator with military format. Message cipher (Caesar, Reverse, Atbash). Infrastructure status tracker (12 utilities). Vehicle readiness board. Threat assessment matrix. After-event review form. Emergency broadcast to all LAN devices. 35-item home security hardening assessment with scoring.</td></tr>
+  <tr><td><strong>Journal</strong></td><td>Daily log</td><td>Daily journal entries with mood tracking (5 moods), tag system, chronological timeline, and full export.</td></tr>
+  <tr><td><strong>Secure Vault</strong></td><td>Encrypted storage</td><td>AES-256-GCM encrypted entries for sensitive information (passwords, coordinates, account numbers, legal documents). Master password required to unlock. Password generator with strength indicator. Legal document templates.</td></tr>
   </table>
 
-  <h2>Proactive Alerts</h2>
-  <p>A background engine checks every 5 minutes for: inventory items running low (<7 days supply), expiring items (<14 days), barometric pressure drops (storm warning), and incident clusters (3+ in 48h). Alerts appear in the bell icon in the header. Click <strong>AI Summary</strong> to get a natural language situation report.</p>
+  <h2 id="alerts">10. Proactive Alerts</h2>
+  <p>A background engine automatically checks every 5 minutes for conditions that need your attention:</p>
+  <ul>
+    <li><strong>Supply consumption warnings</strong> &mdash; Items with less than 7 days supply remaining</li>
+    <li><strong>Expiring items</strong> &mdash; Supplies expiring within the next 14 days</li>
+    <li><strong>Barometric pressure drops</strong> &mdash; Pressure falling more than 4 hPa (storm indicator)</li>
+    <li><strong>Incident clusters</strong> &mdash; 3 or more incidents logged within 48 hours</li>
+    <li><strong>Low stock</strong> &mdash; Items that have fallen below their minimum quantity</li>
+  </ul>
+  <p>Alerts appear as a badge on the bell icon in the sidebar. Click to see details. Click <strong>AI Summary</strong> for a natural-language situation report. Critical alerts trigger browser notifications and an alert sound.</p>
+  <div class="tip"><strong>Tip:</strong> Set daily usage rates on your inventory items (the "Daily Usage" field) to get accurate "Days Left" projections and timely low-supply alerts.</div>
 
-  <h2>Connect Multiple Systems</h2>
-  <p>Share data between multiple NOMAD computers on your network. Go to <strong>Settings > Connect Multiple Systems</strong>. Click <strong>Scan for Nodes</strong> to find other NOMAD systems. Click <strong>Push Data</strong> to send your inventory, contacts, checklists, notes, incidents, and waypoints to another system. Enter an IP manually for cross-subnet connections.</p>
+  <h2 id="sync">11. Connecting Multiple Systems</h2>
+  <p>If you have N.O.M.A.D. running on multiple computers (e.g., your home PC and a cabin laptop), you can sync data between them:</p>
+  <h3>Network Sync (same network)</h3>
+  <ol>
+    <li>Go to <strong>Settings &gt; Connect Multiple Systems</strong></li>
+    <li>Give this system a name (e.g., "Base Camp")</li>
+    <li>Click <strong>Scan for Nodes</strong> to find other N.O.M.A.D. systems on your network</li>
+    <li>Click <strong>Push Data</strong> to send your inventory, contacts, checklists, notes, incidents, and waypoints</li>
+    <li>Or click <strong>Pull Data</strong> to receive data from another system</li>
+  </ol>
+  <h3>USB / Offline Transfer (no network needed)</h3>
+  <p>In Settings, use <strong>USB / Offline Transfer</strong> to export a portable ZIP file. Copy it to a USB drive, carry it to the other system, and import it there. Data is always merged &mdash; nothing gets overwritten.</p>
 
-  <h2>Training Scenarios</h2>
-  <p>In the <strong>Tools</strong> tab, 4 immersive multi-phase scenarios test your decision-making: Grid Down (7 days), Medical Crisis, Evacuation, Winter Storm. AI generates complications between phases based on your real inventory data. Each run is scored 0-100 with an after-action review.</p>
+  <h2 id="scenarios">12. Training Scenarios</h2>
+  <p>Practice your emergency response with 4 realistic multi-phase simulations in the <strong>Tools</strong> tab:</p>
+  <table><tr><th>Scenario</th><th>Phases</th><th>Description</th></tr>
+  <tr><td>Grid Down &mdash; 7 Days</td><td>7</td><td>Progressive power failure: water loss, food decisions, security, medical, communications, recovery</td></tr>
+  <tr><td>Medical Crisis</td><td>5</td><td>Trauma response: assessment, bleeding control, pain management, monitoring, complications</td></tr>
+  <tr><td>Evacuation Under Threat</td><td>5</td><td>Emergency departure: warning, packing, route decisions, roadblocks, arrival</td></tr>
+  <tr><td>Winter Storm Survival</td><td>5</td><td>Cold weather: heating crisis, fuel rationing, pipe burst, neighbor aid, rescue</td></tr>
+  </table>
+  <p>If the AI is running, it generates realistic complications between phases based on your actual inventory and contacts data. Each run is scored 0-100 with an after-event review that identifies what you did well and what to improve.</p>
 
-  <h2>Keyboard Shortcuts</h2>
+  <h2 id="themes">13. Themes</h2>
+  <p>Four themes available (click the colored circles in the sidebar footer):</p>
+  <ul>
+    <li><strong>NOMAD</strong> &mdash; Desert/tactical tan theme (default, matches the original N.O.M.A.D.)</li>
+    <li><strong>Night Ops</strong> &mdash; Dark charcoal theme for low-light use</li>
+    <li><strong>Cyber</strong> &mdash; Blue-accent dark theme</li>
+    <li><strong>Red Light</strong> &mdash; Pure red-on-black for preserving night vision. Ideal for use after dark when you need to maintain your ability to see in the dark after looking away from the screen.</li>
+  </ul>
+
+  <h2 id="settings">14. Settings &amp; Backup</h2>
+  <ul>
+    <li><strong>System Monitoring</strong> &mdash; Live CPU, RAM, and disk usage gauges</li>
+    <li><strong>AI Models</strong> &mdash; Manage downloaded models. Click "Download All Recommended" to get all suggested models.</li>
+    <li><strong>Preferences</strong> &mdash; Theme, AI assistant name, external AI host, dashboard password, auto-backup interval, browser notifications</li>
+    <li><strong>Full Backup / Restore</strong> &mdash; Download a ZIP of your entire database, or restore from a previous backup</li>
+    <li><strong>Data Summary</strong> &mdash; See how many records you have across all tables</li>
+    <li><strong>Application Log</strong> &mdash; View and filter system events for troubleshooting</li>
+    <li><strong>Start with Windows</strong> &mdash; Toggle to have N.O.M.A.D. launch automatically at startup</li>
+  </ul>
+  <div class="warn"><strong>Important:</strong> Back up regularly! Use <strong>Settings &gt; Full Backup</strong> to download a ZIP file. Store copies on USB drives in multiple locations. The "Last Backup" indicator turns orange after 30 days and red after that.</div>
+
+  <h2 id="benchmark">15. Benchmark</h2>
+  <p>Test your system's CPU, memory, disk, and AI performance. Results are scored 0-100 (NOMAD Score). Run it periodically to confirm your hardware is performing well. Trend arrows show whether performance improved or declined since the last run.</p>
+
+  <h2 id="keyboard">16. Keyboard Shortcuts</h2>
   <table><tr><th>Shortcut</th><th>Action</th></tr>
-  <tr><td><kbd>Alt+1</kbd> - <kbd>Alt+9</kbd></td><td>Switch main tabs</td></tr>
-  <tr><td><kbd>Alt+T</kbd></td><td>Toggle timer widget</td></tr>
-  <tr><td><kbd>Alt+C</kbd></td><td>Toggle LAN chat</td></tr>
-  <tr><td><kbd>Alt+N</kbd></td><td>New note</td></tr>
-  <tr><td><kbd>Ctrl+K</kbd></td><td>Global search</td></tr>
-  <tr><td><kbd>Escape</kbd></td><td>Close app frame / overlay</td></tr></table>
+  <tr><td><kbd>Alt+1</kbd> through <kbd>Alt+9</kbd></td><td>Switch between the 9 main sections</td></tr>
+  <tr><td><kbd>Alt+T</kbd></td><td>Open/close the timer widget</td></tr>
+  <tr><td><kbd>Alt+C</kbd></td><td>Open/close LAN chat</td></tr>
+  <tr><td><kbd>Alt+N</kbd></td><td>Create a new note</td></tr>
+  <tr><td><kbd>Ctrl+K</kbd></td><td>Focus the global search bar</td></tr>
+  <tr><td><kbd>Escape</kbd></td><td>Close any open overlay, panel, or dialog</td></tr></table>
 
-  <h2>Data Storage</h2>
-  <p>All data is stored in <code>%APPDATA%\\ProjectNOMAD\\</code> (or custom location set in wizard). Use <strong>Settings > Full Backup</strong> to download a ZIP. The <strong>Last Backup</strong> indicator shows how long since your last backup with color coding (green <7d, orange <30d, red >30d).</p>
-  <p><strong>Network Sync</strong> shares data between NOMAD systems over your local network. <strong>USB / Offline Transfer</strong> exports a portable ZIP file you can carry on a USB drive to another system.</p>
+  <h2 id="data">17. Data &amp; Privacy</h2>
+  <p><strong>All data stays on your computer.</strong> N.O.M.A.D. has zero telemetry, zero cloud connections, and zero tracking. The only time it connects to the internet is when YOU choose to download services, content packs, or AI models.</p>
+  <p>Data is stored in <code>%APPDATA%\\\\ProjectNOMAD\\\\</code> (or the custom location you chose during setup). This includes:</p>
+  <ul>
+    <li><code>nomad.db</code> &mdash; SQLite database with all your data (32 tables)</li>
+    <li><code>logs/</code> &mdash; Application logs</li>
+    <li><code>backups/</code> &mdash; Automatic database backups (keeps last 5)</li>
+    <li><code>services/</code> &mdash; Downloaded service binaries and AI models</li>
+    <li><code>maps/</code> &mdash; Downloaded offline map data</li>
+    <li><code>videos/</code> &mdash; Your uploaded video library</li>
+    <li><code>kb_uploads/</code> &mdash; Uploaded documents for AI analysis</li>
+  </ul>
+
+  <h2 id="troubleshooting">18. Troubleshooting</h2>
+  <h3>AI Chat says "Could not reach the AI"</h3>
+  <p>The AI Chat service needs to be running. Go to the Home page and check if AI Chat shows a green "Running" badge. If not, click Start. If it is not installed yet, click Install first (~310 MB download).</p>
+  <h3>Service won't start</h3>
+  <p>Check the Application Log in Settings for error details. Common causes: another program is using the same port, antivirus is blocking the executable, or the service files are corrupted (try uninstalling and reinstalling).</p>
+  <h3>Map downloads fail with "permission denied"</h3>
+  <p>Your antivirus may be blocking the map download tool. Try adding the N.O.M.A.D. data folder to your antivirus exclusions, or run as Administrator.</p>
+  <h3>Content packs are stuck downloading</h3>
+  <p>Check your internet connection. Downloads resume where they left off if interrupted. If a download is truly stuck, restart the application.</p>
+  <h3>Everything appears frozen / buttons do nothing</h3>
+  <p>Try pressing <kbd>Ctrl+Shift+R</kbd> to force-reload the page. If running from the portable exe, make sure you are running the latest version from the releases page.</p>
+  <h3>LAN access from other devices</h3>
+  <p>Other devices on your network can access N.O.M.A.D. by opening a browser and going to <code>http://YOUR_IP:8080</code>. Your LAN address is shown in the Settings tab. Make sure your firewall allows port 8080.</p>
+  <h3>Need more help?</h3>
+  <p>Visit the <a href="https://github.com/SysAdminDoc/nomad-windows/issues">GitHub Issues</a> page or join the <a href="https://discord.com/invite/crosstalksolutions">Crosstalk Solutions Discord</a> community.</p>
+
+  <div style="text-align:center;margin-top:32px;padding-top:16px;border-top:1px solid ${border};color:${muted};font-size:12px;">
+    Project N.O.M.A.D. for Windows v${VERSION} &mdash; <a href="https://www.projectnomad.us">projectnomad.us</a><br>
+    Based on Project N.O.M.A.D. by Crosstalk Solutions. Windows port by SysAdminDoc.
+  </div>
   </body></html>`);
 }
 

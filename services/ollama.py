@@ -39,6 +39,19 @@ RECOMMENDED_MODELS = [
 ]
 
 
+def get_models_dir():
+    """Return the best models directory — prefer system Ollama's if it has models."""
+    system_dir = os.path.join(os.path.expanduser('~'), '.ollama', 'models')
+    app_dir = os.path.join(get_services_dir(), 'ollama', 'models')
+    # If system dir has blobs (actual model data), use it
+    system_blobs = os.path.join(system_dir, 'blobs')
+    if os.path.isdir(system_blobs) and os.listdir(system_blobs):
+        return system_dir
+    # Otherwise use the app's own models dir
+    os.makedirs(app_dir, exist_ok=True)
+    return app_dir
+
+
 def get_install_dir():
     return os.path.join(get_services_dir(), 'ollama')
 
@@ -116,7 +129,7 @@ def start():
 
     env = get_ollama_gpu_env()
     env['OLLAMA_HOST'] = f'0.0.0.0:{OLLAMA_PORT}'
-    env['OLLAMA_MODELS'] = os.path.join(get_install_dir(), 'models')
+    env['OLLAMA_MODELS'] = get_models_dir()
 
     CREATE_NO_WINDOW = 0x08000000
     proc = subprocess.Popen(

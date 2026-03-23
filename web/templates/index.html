@@ -955,6 +955,8 @@ a { color: var(--accent); text-decoration: none; }
 .inv-alert.warn { background:var(--orange-dim);color:var(--orange); }
 .inv-alert.danger { background:var(--red-dim);color:var(--red); }
 .inv-alert.ok { background:var(--green-dim);color:var(--green); }
+.qty-adj { cursor:pointer;color:var(--text-muted);font-size:8px;padding:2px 4px;border-radius:3px;user-select:none;vertical-align:middle; }
+.qty-adj:hover { color:var(--accent);background:var(--accent-dim); }
 
 /* ─── Contact Cards ─── */
 .contact-card {
@@ -1210,6 +1212,24 @@ a { color: var(--accent); text-decoration: none; }
 
     <!-- Command Dashboard Overview -->
     <div id="cmd-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:12px;"></div>
+
+    <!-- Readiness Score -->
+    <div id="readiness-score-panel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+        <div style="text-align:center;min-width:80px;">
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Readiness</div>
+          <div id="rs-grade" style="font-size:32px;font-weight:800;line-height:1.1;margin:2px 0;">--</div>
+          <div id="rs-total" style="font-size:11px;color:var(--text-muted);">0/100</div>
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <div id="rs-bar" style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;margin-bottom:8px;">
+            <div id="rs-bar-fill" style="height:100%;border-radius:4px;transition:width 0.6s ease;width:0%;"></div>
+          </div>
+          <div id="rs-categories" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:4px;font-size:11px;"></div>
+        </div>
+      </div>
+    </div>
+
     <div id="cmd-checklists" style="margin-bottom:12px;"></div>
 
     <!-- Command Center Cards (Original NOMAD Grid Style) -->
@@ -1235,7 +1255,7 @@ a { color: var(--accent); text-decoration: none; }
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'preparedness\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
         <div class="cc-title">Preparedness</div>
-        <div class="cc-desc">Checklists, inventory, contacts, medical, security, power, garden, calculators, guides, protocols, and more — 18 sub-tabs.</div>
+        <div class="cc-desc">Checklists, inventory, contacts, medical, security, power, garden, calculators, guides, protocols, journal, and more — 19 sub-tabs.</div>
       </div>
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'tools\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
@@ -1872,6 +1892,7 @@ a { color: var(--accent); text-decoration: none; }
         <button class="btn btn-sm btn-primary" onclick="showInvForm()">+ Add Item</button>
         <button class="btn btn-sm" onclick="showInvQuickAdd()" title="Quick-add common supplies">Quick Add</button>
         <button class="btn btn-sm" onclick="showShoppingList()" title="Auto-generate shopping list from gaps">Shopping List</button>
+        <button class="btn btn-sm" onclick="dailyConsume()" title="Subtract daily usage from all tracked items">Daily Consume</button>
         <button class="btn btn-sm" onclick="window.location='/api/inventory/export-csv'" title="Export to CSV">Export</button>
         <input type="file" id="inv-import-file" style="display:none;" accept=".csv" onchange="importInvCSV()">
         <button class="btn btn-sm" onclick="document.getElementById('inv-import-file').click()" title="Import from CSV">Import</button>
@@ -4859,6 +4880,10 @@ a { color: var(--accent); text-decoration: none; }
         <div id="log-viewer" style="max-height:250px;overflow-y:auto;margin-top:8px;font-family:'Cascadia Code','Consolas',monospace;font-size:11px;line-height:1.6;"></div>
       </div>
       <div class="settings-card" style="grid-column:1/-1;">
+        <h3>Data Summary</h3>
+        <div id="data-summary" style="font-size:12px;color:var(--text-dim);">Loading...</div>
+      </div>
+      <div class="settings-card" style="grid-column:1/-1;">
         <h3>Disk Space Monitor</h3>
         <div id="disk-monitor"><div style="color:var(--text-muted);font-size:12px;">Loading disk info...</div></div>
       </div>
@@ -4871,7 +4896,7 @@ a { color: var(--accent); text-decoration: none; }
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
             <div><strong style="color:var(--accent);">19 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Security, Power, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Journal, Family</div>
-            <div><strong style="color:var(--accent);">Key Stats</strong><br>221 API routes, 30+ DB tables, 10 decision guides, 15 checklist templates, 4 training scenarios, 12 AI chat starters</div>
+            <div><strong style="color:var(--accent);">Key Stats</strong><br>228 API routes, 32 DB tables, 10 decision guides, 15 checklist templates, 4 training scenarios</div>
           </div>
           <div style="margin:8px 0;">
             <strong style="color:var(--accent);">Keyboard Shortcuts:</strong>
@@ -5059,7 +5084,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'ai-chat') { loadModels(); loadConversations(); pollPullProgress(); }
     if (tab.dataset.tab === 'notes') loadNotes();
-    if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); loadLogViewer(); loadDiskMonitor(); loadStartupState(); loadOllamaHost(); updateLastBackup(); loadNodeIdentity(); loadSyncLog(); }
+    if (tab.dataset.tab === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); loadLogViewer(); loadDiskMonitor(); loadStartupState(); loadOllamaHost(); updateLastBackup(); loadNodeIdentity(); loadSyncLog(); loadDataSummary(); }
     if (tab.dataset.tab === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); loadPDFList(); }
     if (tab.dataset.tab === 'maps') { loadMaps(); loadWPDistances(); loadMapSources(); renderMapBookmarks(); }
     if (tab.dataset.tab === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
@@ -7284,6 +7309,24 @@ async function loadLogViewer() {
 }
 
 /* ─── Disk Monitor ─── */
+async function loadDataSummary() {
+  try {
+    const d = await (await fetch('/api/data-summary')).json();
+    const el = document.getElementById('data-summary');
+    if (!d.tables.length) {
+      el.innerHTML = '<span style="color:var(--text-muted);">No data yet. Start adding inventory, contacts, and notes to see your data summary.</span>';
+      return;
+    }
+    el.innerHTML = `
+      <div style="margin-bottom:8px;"><strong style="color:var(--text);">${d.total_records.toLocaleString()}</strong> total records across ${d.tables.length} tables</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;">
+        ${d.tables.map(t => `<div style="display:flex;justify-content:space-between;padding:4px 8px;background:var(--surface2);border-radius:6px;">
+          <span>${t.label}</span><strong style="color:var(--accent);">${t.count.toLocaleString()}</strong>
+        </div>`).join('')}
+      </div>`;
+  } catch(e) {}
+}
+
 async function loadDiskMonitor() {
   try {
     const sys = await (await fetch('/api/system')).json();
@@ -7699,7 +7742,7 @@ async function loadInventory() {
         return `<tr>
           <td style="${lowStock?'color:var(--red);font-weight:600;':''}">${escapeHtml(i.name)}</td>
           <td><span class="check-cat">${i.category}</span></td>
-          <td style="${lowStock?'color:var(--red);font-weight:600;':''}">${i.quantity} ${escapeHtml(i.unit)}</td>
+          <td style="${lowStock?'color:var(--red);font-weight:600;':''}"><span class="qty-adj" onclick="adjustQty(${i.id},-1)" title="-1">&#9660;</span> ${i.quantity} ${escapeHtml(i.unit)} <span class="qty-adj" onclick="adjustQty(${i.id},1)" title="+1">&#9650;</span></td>
           <td style="${daysColor}font-size:12px;font-weight:500;">${daysLeft !== null ? daysLeft + 'd' : '-'}</td>
           <td style="font-size:11px;">${escapeHtml(i.location)}</td>
           <td style="${expCls}font-size:11px;">${i.expiration||'-'}</td>
@@ -7795,6 +7838,29 @@ async function deleteInvItem(id) {
   await fetch(`/api/inventory/${id}`, {method:'DELETE'});
   toast('Item deleted', 'warning');
   loadInventory();
+}
+
+async function adjustQty(id, delta) {
+  const item = _cachedInvItems.find(i => i.id === id);
+  if (!item) return;
+  const newQty = Math.max(0, item.quantity + delta);
+  await fetch(`/api/inventory/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({quantity: newQty})});
+  item.quantity = newQty;
+  loadInventory();
+}
+
+async function dailyConsume() {
+  const items = _cachedInvItems?.filter(i => i.daily_usage > 0 && i.quantity > 0) || [];
+  if (!items.length) { toast('No items have daily usage set', 'info'); return; }
+  try {
+    const r = await (await fetch('/api/inventory/batch-consume', {method:'POST', headers:{'Content-Type':'application/json'}})).json();
+    if (r.items?.length) {
+      toast(`Consumed daily usage for ${r.items.length} items`, 'success');
+      loadInventory();
+    } else {
+      toast('No items to consume', 'info');
+    }
+  } catch(e) { toast('Failed to consume', 'error'); }
 }
 
 /* ─── Contacts ─── */
@@ -9235,6 +9301,36 @@ async function loadCmdDashboard() {
     if (crit.critical_burn.length) critHtml += `<div style="font-size:11px;color:var(--red);margin-top:4px;">Running low: ${crit.critical_burn.map(i => `${i.name} (${i.days_left}d)`).join(', ')}</div>`;
     if (crit.expiring_items.length) critHtml += `<div style="font-size:11px;color:var(--orange);margin-top:2px;">Expiring: ${crit.expiring_items.map(i => `${i.name} (${i.expiration})`).join(', ')}</div>`;
     if (critHtml) el.innerHTML += `<div style="grid-column:1/-1;padding:6px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);">${critHtml}</div>`;
+  } catch(e) {}
+}
+
+/* ─── Readiness Score ─── */
+async function loadReadinessScore() {
+  try {
+    const d = await (await fetch('/api/readiness-score')).json();
+    const panel = document.getElementById('readiness-score-panel');
+    panel.style.display = 'block';
+    const gradeColors = {A:'var(--green)',B:'#6d9f30',C:'var(--orange)',D:'#c85815',F:'var(--red)'};
+    document.getElementById('rs-grade').textContent = d.grade;
+    document.getElementById('rs-grade').style.color = gradeColors[d.grade] || 'var(--text)';
+    document.getElementById('rs-total').textContent = `${d.total}/100`;
+    const fill = document.getElementById('rs-bar-fill');
+    fill.style.width = `${d.total}%`;
+    fill.style.background = d.total >= 80 ? 'var(--green)' : d.total >= 50 ? 'var(--orange)' : 'var(--red)';
+    const catLabels = {water:'Water',food:'Food',medical:'Medical',security:'Security',comms:'Comms',shelter:'Power & Land',planning:'Planning'};
+    const catMax = {water:20,food:20,medical:15,security:10,comms:10,shelter:10,planning:15};
+    const cats = document.getElementById('rs-categories');
+    cats.innerHTML = Object.entries(d.categories).map(([k, v]) => {
+      const pct = Math.round(v.score / catMax[k] * 100);
+      const color = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--orange)' : 'var(--red)';
+      return `<div style="display:flex;align-items:center;gap:6px;" title="${v.detail}">
+        <span style="color:var(--text-dim);min-width:70px;">${catLabels[k] || k}</span>
+        <div style="flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;"></div>
+        </div>
+        <span style="color:${color};font-weight:600;min-width:20px;text-align:right;">${v.score}</span>
+      </div>`;
+    }).join('');
   } catch(e) {}
 }
 
@@ -12755,13 +12851,13 @@ function dismissGettingStarted() {
 loadServices();
 loadReadiness();
 // Defer non-critical by 500ms to avoid 11 concurrent fetches on startup
-setTimeout(() => { loadCmdDashboard(); loadServiceQuickLinks(); loadCmdChecklists(); }, 500);
+setTimeout(() => { loadCmdDashboard(); loadServiceQuickLinks(); loadCmdChecklists(); loadReadinessScore(); }, 500);
 setTimeout(() => { loadActivity(); loadContentSummary(); }, 1000);
 let _svcPollTimer = setInterval(() => {
   if (document.hidden) return;
   const activeTab = document.querySelector('.tab.active');
   if (activeTab && activeTab.dataset.tab === 'services') {
-    loadServices(); loadReadiness(); loadCmdDashboard(); loadServiceQuickLinks();
+    loadServices(); loadReadiness(); loadCmdDashboard(); loadServiceQuickLinks(); loadReadinessScore();
   } else {
     loadServices(); // lightweight status update for readiness indicators
   }

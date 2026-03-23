@@ -3374,13 +3374,19 @@ def create_app():
                     if fname not in z.namelist():
                         continue
                     rows = json.loads(z.read(fname))
+                    # Get valid column names from the actual table schema
+                    schema_cols = {row[1] for row in db.execute(f"PRAGMA table_info({tname})").fetchall()}
                     count = 0
                     for row in rows:
                         row.pop('id', None)
                         row.pop('created_at', None)
                         row.pop('updated_at', None)
-                        cols = list(row.keys())
-                        vals = list(row.values())
+                        # Only allow columns that exist in the table schema
+                        safe_row = {k: v for k, v in row.items() if k in schema_cols}
+                        if not safe_row:
+                            continue
+                        cols = list(safe_row.keys())
+                        vals = list(safe_row.values())
                         placeholders = ','.join(['?'] * len(cols))
                         try:
                             db.execute(f'INSERT INTO {tname} ({",".join(cols)}) VALUES ({placeholders})', vals)
@@ -5126,6 +5132,41 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
 
         return jsonify(sorted(all_items, key=lambda x: x['category']))
 
+    # ─── Inventory Consume (quick daily use) ──────────────────────────
+
+    @app.route('/api/inventory/<int:item_id>/consume', methods=['POST'])
+    def api_inventory_consume(item_id):
+        """Decrement item by daily_usage or specified amount. Logs consumption."""
+        data = request.get_json() or {}
+        db = get_db()
+        row = db.execute('SELECT * FROM inventory WHERE id = ?', (item_id,)).fetchone()
+        if not row:
+            db.close()
+            return jsonify({'error': 'Not found'}), 404
+        amount = data.get('amount', row['daily_usage'] or 1)
+        new_qty = max(0, row['quantity'] - amount)
+        db.execute('UPDATE inventory SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', (new_qty, item_id))
+        db.commit()
+        log_activity('inventory_consumed', row['name'], f'-{amount} {row["unit"]} (was {row["quantity"]}, now {new_qty})')
+        db.close()
+        return jsonify({'status': 'consumed', 'name': row['name'], 'consumed': amount, 'remaining': new_qty})
+
+    @app.route('/api/inventory/batch-consume', methods=['POST'])
+    def api_inventory_batch_consume():
+        """Consume daily usage for all items that have daily_usage set."""
+        db = get_db()
+        rows = db.execute('SELECT id, name, quantity, daily_usage, unit FROM inventory WHERE daily_usage > 0 AND quantity > 0').fetchall()
+        consumed = []
+        for r in rows:
+            new_qty = max(0, r['quantity'] - r['daily_usage'])
+            db.execute('UPDATE inventory SET quantity = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?', (new_qty, r['id']))
+            consumed.append({'name': r['name'], 'used': r['daily_usage'], 'remaining': new_qty, 'unit': r['unit']})
+        db.commit()
+        if consumed:
+            log_activity('daily_consumption', detail=f'Updated {len(consumed)} items')
+        db.close()
+        return jsonify({'status': 'consumed', 'items': consumed})
+
     # ─── Comprehensive Status Report ──────────────────────────────────
 
     @app.route('/api/status-report')
@@ -5466,6 +5507,127 @@ th {{ background: #eee; font-weight: 700; }}
             result.append({'id': r['id'], 'name': r['name'], 'total': total, 'checked': checked,
                           'pct': round(checked / total * 100) if total > 0 else 0})
         return jsonify(result)
+
+    # ─── Readiness Score ─────────────────────────────────────────────
+
+    @app.route('/api/readiness-score')
+    def api_readiness_score():
+        """Cross-module readiness assessment (0-100) with category breakdown."""
+        from datetime import datetime, timedelta
+        db = get_db()
+        scores = {}
+
+        # 1. Water (20 pts) — based on water-category inventory vs people
+        water_items = db.execute("SELECT SUM(quantity) as qty FROM inventory WHERE LOWER(category) IN ('water', 'hydration')").fetchone()
+        water_qty = water_items['qty'] or 0
+        contacts_count = max(db.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c'], 1)
+        water_days = water_qty / max(contacts_count, 1)  # rough gal/person
+        scores['water'] = {'score': min(round(water_days / 14 * 20), 20), 'detail': f'{round(water_days, 1)} gal/person'}
+
+        # 2. Food (20 pts) — based on food-category inventory with usage tracking
+        food_items = db.execute("SELECT COUNT(*) as c FROM inventory WHERE LOWER(category) IN ('food', 'food storage', 'canned goods')").fetchone()
+        food_count = food_items['c'] or 0
+        food_with_usage = db.execute("SELECT COUNT(*) as c FROM inventory WHERE LOWER(category) IN ('food', 'food storage', 'canned goods') AND daily_usage > 0").fetchone()['c']
+        today = datetime.now().strftime('%Y-%m-%d')
+        food_expired = db.execute("SELECT COUNT(*) as c FROM inventory WHERE LOWER(category) IN ('food', 'food storage', 'canned goods') AND expiration != '' AND expiration < ?", (today,)).fetchone()['c']
+        food_score = min(food_count * 2, 14) + (3 if food_with_usage > 0 else 0) + (3 if food_expired == 0 else 0)
+        scores['food'] = {'score': min(food_score, 20), 'detail': f'{food_count} items, {food_expired} expired'}
+
+        # 3. Medical (15 pts) — patients, meds inventory, contacts with blood types
+        med_items = db.execute("SELECT COUNT(*) as c FROM inventory WHERE LOWER(category) IN ('medical', 'first aid', 'medicine')").fetchone()['c']
+        patients = db.execute('SELECT COUNT(*) as c FROM patients').fetchone()['c']
+        blood_typed = db.execute("SELECT COUNT(*) as c FROM contacts WHERE blood_type != ''").fetchone()['c']
+        med_score = min(med_items, 8) + (4 if patients > 0 else 0) + min(blood_typed, 3)
+        scores['medical'] = {'score': min(med_score, 15), 'detail': f'{med_items} supplies, {patients} patients'}
+
+        # 4. Security (10 pts) — cameras, access logging, incidents
+        cameras = db.execute('SELECT COUNT(*) as c FROM cameras').fetchone()['c']
+        access_entries = db.execute("SELECT COUNT(*) as c FROM access_log WHERE created_at >= datetime('now', '-7 days')").fetchone()['c']
+        recent_incidents = db.execute("SELECT COUNT(*) as c FROM incidents WHERE created_at >= datetime('now', '-7 days')").fetchone()['c']
+        sec_score = min(cameras * 2, 4) + (3 if access_entries > 0 else 0) + (3 if recent_incidents == 0 else 1)
+        scores['security'] = {'score': min(sec_score, 10), 'detail': f'{cameras} cameras, {recent_incidents} incidents (7d)'}
+
+        # 5. Communications (10 pts) — contacts, comms log, radio ref usage
+        contact_count = db.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c']
+        comms_entries = db.execute('SELECT COUNT(*) as c FROM comms_log').fetchone()['c']
+        comm_score = min(contact_count, 5) + (3 if comms_entries > 0 else 0) + (2 if contact_count >= 5 else 0)
+        scores['comms'] = {'score': min(comm_score, 10), 'detail': f'{contact_count} contacts, {comms_entries} radio logs'}
+
+        # 6. Shelter & Power (10 pts) — power devices, garden, waypoints
+        power_devices = db.execute('SELECT COUNT(*) as c FROM power_devices').fetchone()['c']
+        garden_plots = db.execute('SELECT COUNT(*) as c FROM garden_plots').fetchone()['c']
+        waypoints = db.execute('SELECT COUNT(*) as c FROM waypoints').fetchone()['c']
+        shelter_score = min(power_devices * 2, 4) + min(garden_plots * 2, 3) + min(waypoints, 3)
+        scores['shelter'] = {'score': min(shelter_score, 10), 'detail': f'{power_devices} power devices, {garden_plots} plots'}
+
+        # 7. Planning & Knowledge (15 pts) — checklists completion, notes, documents, drills
+        checklists = db.execute('SELECT items FROM checklists').fetchall()
+        cl_total = 0
+        cl_checked = 0
+        for cl in checklists:
+            items = json.loads(cl['items'] or '[]')
+            cl_total += len(items)
+            cl_checked += sum(1 for i in items if i.get('checked'))
+        cl_pct = (cl_checked / cl_total * 100) if cl_total > 0 else 0
+        notes_count = db.execute('SELECT COUNT(*) as c FROM notes').fetchone()['c']
+        docs_count = db.execute("SELECT COUNT(*) as c FROM documents WHERE status = 'ready'").fetchone()['c']
+        drills = db.execute('SELECT COUNT(*) as c FROM drill_history').fetchone()['c']
+        plan_score = min(round(cl_pct / 10), 5) + min(notes_count, 3) + min(docs_count, 4) + min(drills, 3)
+        scores['planning'] = {'score': min(plan_score, 15), 'detail': f'{round(cl_pct)}% checklists, {notes_count} notes, {drills} drills'}
+
+        db.close()
+
+        total = sum(s['score'] for s in scores.values())
+        max_total = 100
+
+        # Letter grade
+        if total >= 90:
+            grade = 'A'
+        elif total >= 80:
+            grade = 'B'
+        elif total >= 65:
+            grade = 'C'
+        elif total >= 50:
+            grade = 'D'
+        else:
+            grade = 'F'
+
+        return jsonify({
+            'total': total, 'max': max_total, 'grade': grade,
+            'categories': scores,
+        })
+
+    # ─── Data Summary ──────────────────────────────────────────────────
+
+    @app.route('/api/data-summary')
+    def api_data_summary():
+        """Counts across all major tables for the settings data summary card."""
+        db = get_db()
+        tables = [
+            ('inventory', 'Inventory Items'), ('contacts', 'Contacts'), ('notes', 'Notes'),
+            ('conversations', 'AI Conversations'), ('checklists', 'Checklists'),
+            ('incidents', 'Incidents'), ('patients', 'Patients'),
+            ('waypoints', 'Waypoints'), ('documents', 'Documents'),
+            ('garden_plots', 'Garden Plots'), ('seeds', 'Seeds'),
+            ('harvest_log', 'Harvests'), ('livestock', 'Livestock'),
+            ('power_devices', 'Power Devices'), ('cameras', 'Cameras'),
+            ('comms_log', 'Radio Logs'), ('weather_log', 'Weather Entries'),
+            ('journal', 'Journal Entries'), ('drill_history', 'Drills'),
+            ('scenarios', 'Scenarios'), ('videos', 'Videos'),
+            ('activity_log', 'Activity Events'), ('alerts', 'Alerts'),
+        ]
+        result = []
+        total = 0
+        for tname, label in tables:
+            try:
+                c = db.execute(f'SELECT COUNT(*) as c FROM {tname}').fetchone()['c']
+                if c > 0:
+                    result.append({'table': tname, 'label': label, 'count': c})
+                total += c
+            except Exception:
+                pass
+        db.close()
+        return jsonify({'tables': result, 'total_records': total})
 
     # ─── Expanded Unified Search ──────────────────────────────────────
 

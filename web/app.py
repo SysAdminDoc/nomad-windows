@@ -6800,12 +6800,14 @@ th {{ background: #eee; font-weight: 700; }}
         med_score = min(med_items, 8) + (4 if patients > 0 else 0) + min(blood_typed, 3)
         scores['medical'] = {'score': min(med_score, 15), 'detail': f'{med_items} supplies, {patients} patients'}
 
-        # 4. Security (10 pts) — cameras, access logging, incidents
+        # 4. Security (10 pts) — cameras, access logging, incidents, ammo reserve
         cameras = db.execute('SELECT COUNT(*) as c FROM cameras').fetchone()['c']
         access_entries = db.execute("SELECT COUNT(*) as c FROM access_log WHERE created_at >= datetime('now', '-7 days')").fetchone()['c']
         recent_incidents = db.execute("SELECT COUNT(*) as c FROM incidents WHERE created_at >= datetime('now', '-7 days')").fetchone()['c']
-        sec_score = min(cameras * 2, 4) + (3 if access_entries > 0 else 0) + (3 if recent_incidents == 0 else 1)
-        scores['security'] = {'score': min(sec_score, 10), 'detail': f'{cameras} cameras, {recent_incidents} incidents (7d)'}
+        ammo_total = db.execute('SELECT COALESCE(SUM(quantity),0) as q FROM ammo_inventory').fetchone()['q']
+        ammo_pts = min(2 if ammo_total >= 500 else (1 if ammo_total > 0 else 0), 2)
+        sec_score = min(cameras * 2, 3) + (2 if access_entries > 0 else 0) + (3 if recent_incidents == 0 else 1) + ammo_pts
+        scores['security'] = {'score': min(sec_score, 10), 'detail': f'{cameras} cameras, {int(ammo_total)} rounds'}
 
         # 5. Communications (10 pts) — contacts, comms log, radio ref usage
         contact_count = db.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c']
@@ -6813,14 +6815,16 @@ th {{ background: #eee; font-weight: 700; }}
         comm_score = min(contact_count, 5) + (3 if comms_entries > 0 else 0) + (2 if contact_count >= 5 else 0)
         scores['comms'] = {'score': min(comm_score, 10), 'detail': f'{contact_count} contacts, {comms_entries} radio logs'}
 
-        # 6. Shelter & Power (10 pts) — power devices, garden, waypoints
+        # 6. Shelter & Power (10 pts) — power devices, garden, waypoints, fuel reserve
         power_devices = db.execute('SELECT COUNT(*) as c FROM power_devices').fetchone()['c']
         garden_plots = db.execute('SELECT COUNT(*) as c FROM garden_plots').fetchone()['c']
         waypoints = db.execute('SELECT COUNT(*) as c FROM waypoints').fetchone()['c']
-        shelter_score = min(power_devices * 2, 4) + min(garden_plots * 2, 3) + min(waypoints, 3)
-        scores['shelter'] = {'score': min(shelter_score, 10), 'detail': f'{power_devices} power devices, {garden_plots} plots'}
+        fuel_total = db.execute('SELECT COALESCE(SUM(quantity),0) as q FROM fuel_storage').fetchone()['q']
+        fuel_pts = min(2 if fuel_total >= 20 else (1 if fuel_total > 0 else 0), 2)
+        shelter_score = min(power_devices * 2, 3) + min(garden_plots * 2, 3) + min(waypoints, 2) + fuel_pts
+        scores['shelter'] = {'score': min(shelter_score, 10), 'detail': f'{power_devices} power devices, {round(fuel_total,1)} gal fuel'}
 
-        # 7. Planning & Knowledge (15 pts) — checklists completion, notes, documents, drills
+        # 7. Planning & Knowledge (15 pts) — checklists, notes, documents, drills, skills proficiency
         checklists = db.execute('SELECT items FROM checklists').fetchall()
         cl_total = 0
         cl_checked = 0
@@ -6832,8 +6836,11 @@ th {{ background: #eee; font-weight: 700; }}
         notes_count = db.execute('SELECT COUNT(*) as c FROM notes').fetchone()['c']
         docs_count = db.execute("SELECT COUNT(*) as c FROM documents WHERE status = 'ready'").fetchone()['c']
         drills = db.execute('SELECT COUNT(*) as c FROM drill_history').fetchone()['c']
-        plan_score = min(round(cl_pct / 10), 5) + min(notes_count, 3) + min(docs_count, 4) + min(drills, 3)
-        scores['planning'] = {'score': min(plan_score, 15), 'detail': f'{round(cl_pct)}% checklists, {notes_count} notes, {drills} drills'}
+        skilled = db.execute("SELECT COUNT(*) as c FROM skills WHERE proficiency IN ('intermediate','expert')").fetchone()['c']
+        skill_pts = min(skilled // 5, 3)  # 1 pt per 5 skilled areas, max 3
+        community_count = db.execute("SELECT COUNT(*) as c FROM community_resources WHERE trust_level IN ('trusted','inner-circle')").fetchone()['c']
+        plan_score = min(round(cl_pct / 10), 5) + min(notes_count, 2) + min(docs_count, 3) + min(drills, 2) + skill_pts + min(community_count, 1)
+        scores['planning'] = {'score': min(plan_score, 15), 'detail': f'{round(cl_pct)}% checklists, {skilled} skilled areas, {drills} drills'}
 
         db.close()
 
@@ -6875,6 +6882,9 @@ th {{ background: #eee; font-weight: 700; }}
             ('journal', 'Journal Entries'), ('drill_history', 'Drills'),
             ('scenarios', 'Scenarios'), ('videos', 'Videos'),
             ('activity_log', 'Activity Events'), ('alerts', 'Alerts'),
+            ('skills', 'Skills'), ('ammo_inventory', 'Ammo Inventory'),
+            ('community_resources', 'Community Resources'), ('radiation_log', 'Radiation Entries'),
+            ('fuel_storage', 'Fuel Storage'), ('equipment_log', 'Equipment'),
         ]
         result = []
         total = 0
@@ -6905,11 +6915,16 @@ th {{ background: #eee; font-weight: 700; }}
         inv = db.execute("SELECT id, name as title, 'inventory' as type FROM inventory WHERE name LIKE ? OR location LIKE ? OR notes LIKE ? LIMIT 10", (like, like, like)).fetchall()
         contacts = db.execute("SELECT id, name as title, 'contact' as type FROM contacts WHERE name LIKE ? OR callsign LIKE ? OR role LIKE ? OR skills LIKE ? LIMIT 10", (like, like, like, like)).fetchall()
         checklists = db.execute("SELECT id, name as title, 'checklist' as type FROM checklists WHERE name LIKE ? LIMIT 10", (like,)).fetchall()
+        skills = db.execute("SELECT id, name as title, 'skill' as type FROM skills WHERE name LIKE ? OR category LIKE ? OR notes LIKE ? LIMIT 5", (like, like, like)).fetchall()
+        ammo = db.execute("SELECT id, caliber as title, 'ammo' as type FROM ammo_inventory WHERE caliber LIKE ? OR brand LIKE ? OR location LIKE ? LIMIT 5", (like, like, like)).fetchall()
+        equipment = db.execute("SELECT id, name as title, 'equipment' as type FROM equipment_log WHERE name LIKE ? OR category LIKE ? OR location LIKE ? LIMIT 5", (like, like, like)).fetchall()
         db.close()
         return jsonify({
             'conversations': [dict(r) for r in convos], 'notes': [dict(r) for r in notes],
             'documents': [dict(r) for r in docs], 'inventory': [dict(r) for r in inv],
             'contacts': [dict(r) for r in contacts], 'checklists': [dict(r) for r in checklists],
+            'skills': [dict(r) for r in skills], 'ammo': [dict(r) for r in ammo],
+            'equipment': [dict(r) for r in equipment],
         })
 
     # ─── NukeMap ──────────────────────────────────────────────────────
@@ -7194,6 +7209,103 @@ th {{ background: #eee; font-weight: 700; }}
     def api_radiation_clear():
         conn = get_db()
         conn.execute('DELETE FROM radiation_log')
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+
+    # ─── Fuel Storage ─────────────────────────────────────────────────
+
+    @app.route('/api/fuel')
+    def api_fuel_list():
+        conn = get_db()
+        rows = conn.execute('SELECT * FROM fuel_storage ORDER BY fuel_type, created_at DESC').fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/fuel', methods=['POST'])
+    def api_fuel_create():
+        d = request.json or {}
+        conn = get_db()
+        cur = conn.execute(
+            'INSERT INTO fuel_storage (fuel_type, quantity, unit, container, location, stabilizer_added, date_stored, expires, notes) VALUES (?,?,?,?,?,?,?,?,?)',
+            (d.get('fuel_type',''), d.get('quantity',0), d.get('unit','gallons'),
+             d.get('container',''), d.get('location',''), int(d.get('stabilizer_added',0)),
+             d.get('date_stored',''), d.get('expires',''), d.get('notes','')))
+        conn.commit()
+        row = conn.execute('SELECT * FROM fuel_storage WHERE id=?', (cur.lastrowid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/fuel/<int:fid>', methods=['PUT'])
+    def api_fuel_update(fid):
+        d = request.json or {}
+        conn = get_db()
+        conn.execute(
+            'UPDATE fuel_storage SET fuel_type=?,quantity=?,unit=?,container=?,location=?,stabilizer_added=?,date_stored=?,expires=?,notes=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',
+            (d.get('fuel_type',''), d.get('quantity',0), d.get('unit','gallons'),
+             d.get('container',''), d.get('location',''), int(d.get('stabilizer_added',0)),
+             d.get('date_stored',''), d.get('expires',''), d.get('notes',''), fid))
+        conn.commit()
+        row = conn.execute('SELECT * FROM fuel_storage WHERE id=?', (fid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row) if row else {})
+
+    @app.route('/api/fuel/<int:fid>', methods=['DELETE'])
+    def api_fuel_delete(fid):
+        conn = get_db()
+        conn.execute('DELETE FROM fuel_storage WHERE id=?', (fid,))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+
+    @app.route('/api/fuel/summary')
+    def api_fuel_summary():
+        conn = get_db()
+        rows = conn.execute('SELECT fuel_type, SUM(quantity) as total, unit FROM fuel_storage GROUP BY fuel_type, unit').fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    # ─── Equipment Maintenance ────────────────────────────────────────
+
+    @app.route('/api/equipment')
+    def api_equipment_list():
+        conn = get_db()
+        rows = conn.execute('SELECT * FROM equipment_log ORDER BY status, next_service').fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/equipment', methods=['POST'])
+    def api_equipment_create():
+        d = request.json or {}
+        conn = get_db()
+        cur = conn.execute(
+            'INSERT INTO equipment_log (name, category, last_service, next_service, service_notes, status, location, notes) VALUES (?,?,?,?,?,?,?,?)',
+            (d.get('name',''), d.get('category','general'), d.get('last_service',''),
+             d.get('next_service',''), d.get('service_notes',''), d.get('status','operational'),
+             d.get('location',''), d.get('notes','')))
+        conn.commit()
+        row = conn.execute('SELECT * FROM equipment_log WHERE id=?', (cur.lastrowid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/equipment/<int:eid>', methods=['PUT'])
+    def api_equipment_update(eid):
+        d = request.json or {}
+        conn = get_db()
+        conn.execute(
+            'UPDATE equipment_log SET name=?,category=?,last_service=?,next_service=?,service_notes=?,status=?,location=?,notes=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',
+            (d.get('name',''), d.get('category','general'), d.get('last_service',''),
+             d.get('next_service',''), d.get('service_notes',''), d.get('status','operational'),
+             d.get('location',''), d.get('notes',''), eid))
+        conn.commit()
+        row = conn.execute('SELECT * FROM equipment_log WHERE id=?', (eid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row) if row else {})
+
+    @app.route('/api/equipment/<int:eid>', methods=['DELETE'])
+    def api_equipment_delete(eid):
+        conn = get_db()
+        conn.execute('DELETE FROM equipment_log WHERE id=?', (eid,))
         conn.commit()
         conn.close()
         return jsonify({'ok': True})

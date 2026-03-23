@@ -40,14 +40,8 @@ RECOMMENDED_MODELS = [
 
 
 def get_models_dir():
-    """Return the best models directory — prefer system Ollama's if it has models."""
-    system_dir = os.path.join(os.path.expanduser('~'), '.ollama', 'models')
-    app_dir = os.path.join(get_services_dir(), 'ollama', 'models')
-    # If system dir has blobs (actual model data), use it
-    system_blobs = os.path.join(system_dir, 'blobs')
-    if os.path.isdir(system_blobs) and os.listdir(system_blobs):
-        return system_dir
-    # Otherwise use the app's own models dir
+    """Return the app's models directory (always uses configured data dir)."""
+    app_dir = os.path.join(get_install_dir(), 'models')
     os.makedirs(app_dir, exist_ok=True)
     return app_dir
 
@@ -116,20 +110,17 @@ def start():
     if not is_installed():
         raise RuntimeError('Ollama is not installed')
 
-    # If Ollama is already running (e.g. from previous session), adopt it
+    models_dir = get_models_dir()
+
+    # If something is already on our port, kill it so we can start with correct OLLAMA_MODELS
     if check_port(OLLAMA_PORT):
-        try:
-            resp = requests.get(f'http://localhost:{OLLAMA_PORT}/api/tags', timeout=2)
-            if resp.ok:
-                log.info('Ollama already running, adopting existing instance')
-                _adopt_running_instance()
-                return None
-        except Exception:
-            pass
+        log.info('Port 11434 in use — stopping existing Ollama to ensure correct models directory')
+        _kill_port_holder(OLLAMA_PORT)
+        time.sleep(1)
 
     env = get_ollama_gpu_env()
     env['OLLAMA_HOST'] = f'0.0.0.0:{OLLAMA_PORT}'
-    env['OLLAMA_MODELS'] = get_models_dir()
+    env['OLLAMA_MODELS'] = models_dir
 
     CREATE_NO_WINDOW = 0x08000000
     proc = subprocess.Popen(
@@ -177,6 +168,24 @@ def running():
         except Exception:
             pass
     return False
+
+
+def _kill_port_holder(port):
+    """Kill whatever process is holding the given port."""
+    try:
+        import subprocess as _sp
+        result = _sp.run(
+            ['powershell', '-NoProfile', '-Command',
+             f"(Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess"],
+            capture_output=True, text=True, timeout=5, creationflags=0x08000000,
+        )
+        pid = int(result.stdout.strip()) if result.returncode == 0 and result.stdout.strip() else None
+        if pid and pid > 0:
+            log.info(f'Killing PID {pid} holding port {port}')
+            _sp.run(['taskkill', '/F', '/PID', str(pid)],
+                    capture_output=True, timeout=5, creationflags=0x08000000)
+    except Exception as e:
+        log.warning(f'Could not kill port holder: {e}')
 
 
 def _adopt_running_instance():

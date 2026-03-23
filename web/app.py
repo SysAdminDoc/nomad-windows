@@ -3837,13 +3837,15 @@ def create_app():
                 video_duration = parts[1] if len(parts) > 1 else ''
                 _ytdlp_downloads[dl_id]['title'] = video_title
 
-                # Download with progress
+                # Download with progress — include thumbnail + subtitles
                 _ytdlp_downloads[dl_id]['status'] = 'downloading'
                 output_tmpl = os.path.join(vdir, '%(title)s.%(ext)s')
                 proc = subprocess.Popen(
                     [exe, '-f', 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
                      '--merge-output-format', 'mp4', '--newline', '--no-playlist',
-                     '-o', output_tmpl, url],
+                     '--write-thumbnail', '--convert-thumbnails', 'jpg',
+                     '--write-subs', '--write-auto-subs', '--sub-langs', 'en', '--convert-subs', 'srt',
+                     '-o', output_tmpl, dl_url],
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                     creationflags=0x08000000,
                 )
@@ -3892,9 +3894,23 @@ def create_app():
 
                 if downloaded_file:
                     filesize = os.path.getsize(os.path.join(vdir, downloaded_file))
+                    # Find thumbnail (jpg/webp next to the video)
+                    base_name = os.path.splitext(downloaded_file)[0]
+                    thumb_file = ''
+                    for ext in ('.jpg', '.webp', '.png'):
+                        candidate = base_name + ext
+                        if os.path.isfile(os.path.join(vdir, candidate)):
+                            thumb_file = candidate
+                            break
+                    # Find subtitle file
+                    srt_file = ''
+                    for f2 in os.listdir(vdir):
+                        if f2.startswith(base_name) and f2.endswith('.srt'):
+                            srt_file = f2
+                            break
                     db = get_db()
-                    db.execute('INSERT INTO videos (title, filename, category, folder, duration, url, filesize) VALUES (?, ?, ?, ?, ?, ?, ?)',
-                               (video_title, downloaded_file, category, folder, video_duration, url, filesize))
+                    db.execute('INSERT INTO videos (title, filename, category, folder, duration, url, filesize, thumbnail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                               (video_title, downloaded_file, category, folder, video_duration, dl_url, filesize, thumb_file))
                     db.commit()
                     db.close()
                     log_activity('video_download', 'media', video_title)
@@ -3994,6 +4010,8 @@ def create_app():
                     proc = subprocess.Popen(
                         [exe, '-f', 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
                          '--merge-output-format', 'mp4', '--newline', '--no-playlist',
+                         '--write-thumbnail', '--convert-thumbnails', 'jpg',
+                         '--write-subs', '--write-auto-subs', '--sub-langs', 'en', '--convert-subs', 'srt',
                          '-o', output_tmpl, url],
                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
                         creationflags=0x08000000,
@@ -4012,14 +4030,20 @@ def create_app():
 
                     if proc.returncode == 0:
                         succeeded += 1
-                        # Find the file
+                        # Find the file + thumbnail
                         for f in sorted(os.listdir(vdir), key=lambda x: os.path.getmtime(os.path.join(vdir, x)), reverse=True):
                             fpath = os.path.join(vdir, f)
                             if os.path.isfile(fpath) and f.endswith('.mp4') and time.time() - os.path.getmtime(fpath) < 120:
                                 filesize = os.path.getsize(fpath)
+                                base = os.path.splitext(f)[0]
+                                thumb = ''
+                                for tx in ('.jpg', '.webp', '.png'):
+                                    if os.path.isfile(os.path.join(vdir, base + tx)):
+                                        thumb = base + tx
+                                        break
                                 db = get_db()
-                                db.execute('INSERT INTO videos (title, filename, category, folder, url, filesize) VALUES (?, ?, ?, ?, ?, ?)',
-                                           (item.get('title', f), f, item.get('category', 'general'), item.get('folder', ''), item['url'], filesize))
+                                db.execute('INSERT INTO videos (title, filename, category, folder, url, filesize, thumbnail) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                                           (title, f, item.get('category', 'general'), item.get('folder', ''), url, filesize, thumb))
                                 db.commit()
                                 db.close()
                                 break
@@ -4170,12 +4194,17 @@ def create_app():
 
                 _ytdlp_downloads[dl_id]['status'] = 'downloading'
                 output_tmpl = os.path.join(adir, '%(title)s.%(ext)s')
-                cmd = [exe, '-x', '--audio-format', 'mp3', '--audio-quality', '0',
-                       '--newline', '--no-playlist', '-o', output_tmpl, url]
-                # Use ffmpeg if available
                 ffmpeg = get_ffmpeg_path()
                 if os.path.isfile(ffmpeg):
-                    cmd.extend(['--ffmpeg-location', os.path.dirname(ffmpeg)])
+                    # FFmpeg available — convert to MP3
+                    cmd = [exe, '-x', '--audio-format', 'mp3', '--audio-quality', '0',
+                           '--newline', '--no-playlist', '--ffmpeg-location', os.path.dirname(ffmpeg),
+                           '-o', output_tmpl, url]
+                else:
+                    # No FFmpeg — download best audio as-is (m4a/opus/webm)
+                    cmd = [exe, '-f', 'bestaudio[ext=m4a]/bestaudio',
+                           '--newline', '--no-playlist',
+                           '-o', output_tmpl, url]
 
                 proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                         text=True, creationflags=0x08000000)

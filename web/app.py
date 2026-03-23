@@ -7386,6 +7386,73 @@ th {{ background: #eee; font-weight: 700; }}
         conn.close()
         return jsonify({'ok': True})
 
+    # ─── Built-in BitTorrent Client ───────────────────────────────────
+
+    from services.torrent import get_manager as _torrent_mgr, is_available as _torrent_avail
+
+    @app.route('/api/torrent/available')
+    def api_torrent_available():
+        return jsonify({'available': _torrent_avail()})
+
+    @app.route('/api/torrent/add', methods=['POST'])
+    def api_torrent_add():
+        d = request.json or {}
+        magnet = (d.get('magnet') or '').strip()
+        name = d.get('name', '')
+        torrent_id = d.get('torrent_id', '')
+        if not magnet.startswith('magnet:'):
+            return jsonify({'error': 'Invalid magnet link'}), 400
+        try:
+            h = _torrent_mgr().add_magnet(magnet, name, torrent_id)
+            return jsonify({'hash': h})
+        except RuntimeError as e:
+            return jsonify({'error': str(e), 'unavailable': True}), 503
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/torrent/status')
+    def api_torrent_status_all():
+        try:
+            return jsonify(_torrent_mgr().get_all_status())
+        except Exception:
+            return jsonify([])
+
+    @app.route('/api/torrent/status/<ih>')
+    def api_torrent_status_one(ih):
+        try:
+            return jsonify(_torrent_mgr().get_status(ih))
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/torrent/pause/<ih>', methods=['POST'])
+    def api_torrent_pause(ih):
+        _torrent_mgr().pause(ih)
+        return jsonify({'ok': True})
+
+    @app.route('/api/torrent/resume/<ih>', methods=['POST'])
+    def api_torrent_resume(ih):
+        _torrent_mgr().resume(ih)
+        return jsonify({'ok': True})
+
+    @app.route('/api/torrent/remove/<ih>', methods=['DELETE'])
+    def api_torrent_remove(ih):
+        delete_files = request.args.get('delete_files', 'false').lower() == 'true'
+        _torrent_mgr().remove(ih, delete_files)
+        return jsonify({'ok': True})
+
+    @app.route('/api/torrent/open-folder/<ih>', methods=['POST'])
+    def api_torrent_open_folder(ih):
+        try:
+            _torrent_mgr().open_save_folder(ih)
+            return jsonify({'ok': True})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/torrent/dir')
+    def api_torrent_dir():
+        d = os.path.join(get_data_dir(), 'torrents')
+        return jsonify({'path': d})
+
     # ─── Favicon ──────────────────────────────────────────────────────
 
     @app.route('/favicon.ico')

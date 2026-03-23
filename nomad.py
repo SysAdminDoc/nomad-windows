@@ -113,6 +113,13 @@ def tray_quit(icon, item):
             except Exception as e:
                 log.error(f'Error stopping {sid}: {e}')
 
+    # Shutdown built-in torrent client
+    try:
+        from services.torrent import get_manager as _tm
+        _tm().shutdown()
+    except Exception:
+        pass
+
     # Final DB backup
     try:
         backup_db()

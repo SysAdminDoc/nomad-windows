@@ -252,8 +252,8 @@ def start_process(service_id: str, exe_path: str, args: list[str] = None,
         cmd,
         cwd=cwd,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         creationflags=CREATE_NO_WINDOW,
     )
     _processes[service_id] = proc

@@ -194,8 +194,8 @@ def start():
         [java, '-jar', jar, f'--server.port={STIRLING_PORT}'],
         cwd=install_dir,
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         creationflags=CREATE_NO_WINDOW,
     )
 

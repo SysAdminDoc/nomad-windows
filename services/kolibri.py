@@ -224,8 +224,8 @@ def start():
     proc = subprocess.Popen(
         [_python_exe(), '-m', 'kolibri', 'start', '--foreground', '--port', str(KOLIBRI_PORT)],
         env=env,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
         creationflags=CREATE_NO_WINDOW,
     )
 

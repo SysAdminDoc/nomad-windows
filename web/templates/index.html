@@ -127,14 +127,30 @@ body{background:var(--bg);color:var(--text)}
   <div id="alert-items" style="padding:4px 8px;"></div>
 </div>
 
+<!-- Persistent Status Strip -->
+<div id="status-strip" style="display:flex;gap:16px;padding:6px 32px;font-size:11px;color:var(--text-muted);border-bottom:1px solid var(--border);background:var(--surface);align-items:center;flex-wrap:wrap;max-width:100%;">
+  <span id="ss-services" title="Running services">Services: <strong style="color:var(--text);">-</strong></span>
+  <span id="ss-inventory" title="Total inventory items">Supplies: <strong style="color:var(--text);">-</strong></span>
+  <span id="ss-contacts" title="Emergency contacts">Contacts: <strong style="color:var(--text);">-</strong></span>
+  <span id="ss-alerts" title="Active alerts">Alerts: <strong style="color:var(--text);">0</strong></span>
+  <span style="flex:1;"></span>
+  <span id="ss-time" style="font-family:'Cascadia Code','Consolas',monospace;font-size:10px;"></span>
+</div>
+
 <div class="container">
 
   <!-- Services Tab (Command Center) -->
   <div id="tab-services" class="tab-content active">
     <div class="lan-banner" id="lan-banner" style="display:none;"></div>
 
-    <!-- Command Center divider -->
-    <div style="width:60px;height:3px;background:var(--accent);margin:4px 0 12px;border-radius:2px;"></div>
+    <!-- Page Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div style="width:60px;height:3px;background:var(--accent);border-radius:2px;"></div>
+      <div style="display:flex;gap:6px;">
+        <button class="btn btn-sm" onclick="openAppFrame('Emergency Sheet','/api/emergency-sheet')" title="Print a one-page emergency reference sheet">Emergency Sheet</button>
+        <button class="btn btn-sm" onclick="showHelp()" title="Open the user guide">User Guide</button>
+      </div>
+    </div>
 
     <!-- Unified Search -->
     <div class="search-bar" style="max-width:500px;margin:16px auto;">
@@ -6175,14 +6191,23 @@ async function doUnifiedSearch() {
       ...(r.checklists||[]).map(c => ({...c, type: 'checklist'})),
     ];
     if (!items.length) {
-      el.innerHTML = '<div style="padding:12px;text-align:center;color:var(--text-muted);font-size:12px;">No results</div>';
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No results found for "' + escapeHtml(q) + '"</div>';
     } else {
-      el.innerHTML = items.map(i => `
-        <div class="search-result-item" onmousedown="event.preventDefault()" onclick="openSearchResult('${i.type}',${i.id})">
-          <span>${escapeHtml(i.title)}</span>
-          <span class="search-result-type ${i.type}">${i.type}</span>
-        </div>
-      `).join('');
+      const typeIcons = {inventory:'&#128230;',contact:'&#128100;',note:'&#128196;',conversation:'&#128172;',document:'&#128206;',checklist:'&#9745;'};
+      const typeLabels = {inventory:'Supply',contact:'Contact',note:'Note',conversation:'Chat',document:'Document',checklist:'Checklist'};
+      // Group by type
+      const groups = {};
+      items.forEach(i => { if (!groups[i.type]) groups[i.type] = []; groups[i.type].push(i); });
+      let html = '';
+      for (const [type, list] of Object.entries(groups)) {
+        html += `<div style="padding:4px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);background:var(--surface2);">${typeIcons[type]||''} ${typeLabels[type]||type} (${list.length})</div>`;
+        html += list.map(i => `
+          <div class="search-result-item" onmousedown="event.preventDefault()" onclick="openSearchResult('${i.type}',${i.id})">
+            <span>${escapeHtml(i.title)}</span>
+          </div>
+        `).join('');
+      }
+      el.innerHTML = html;
     }
     el.classList.add('active');
   } catch(e) { el.classList.remove('active'); }
@@ -9446,33 +9471,89 @@ async function loadInvViz() {
 
 /* ─── Inventory Quick-Add Presets ─── */
 const INV_QUICK_ITEMS = [
-  {name:'Water (1 gallon)', cat:'water', unit:'gal', qty:1, daily:0.25},
-  {name:'Rice (5 lb bag)', cat:'food', unit:'bags', qty:1},
-  {name:'Canned beans', cat:'food', unit:'cans', qty:1},
-  {name:'Canned meat', cat:'food', unit:'cans', qty:1},
-  {name:'MRE', cat:'food', unit:'ea', qty:1},
-  {name:'AA Batteries', cat:'power', unit:'pk', qty:1},
-  {name:'Ibuprofen 200mg', cat:'medical', unit:'bottles', qty:1},
-  {name:'Bandages (box)', cat:'medical', unit:'boxes', qty:1},
-  {name:'Toilet paper', cat:'hygiene', unit:'rolls', qty:1},
+  // Water
+  {name:'Water (1 gallon jugs)', cat:'water', unit:'gal', qty:7, daily:1},
+  {name:'Water filter (Sawyer/LifeStraw)', cat:'water', unit:'ea', qty:1},
+  {name:'Water purification tablets', cat:'water', unit:'packs', qty:2},
   {name:'Bleach (unscented)', cat:'water', unit:'gal', qty:1},
-  {name:'Matches/lighter', cat:'tools', unit:'ea', qty:1},
-  {name:'Duct tape', cat:'tools', unit:'rolls', qty:1},
-  {name:'Paracord (100ft)', cat:'tools', unit:'ea', qty:1},
-  {name:'N95 Masks', cat:'medical', unit:'ea', qty:10},
-  {name:'Propane (1lb)', cat:'fuel', unit:'cans', qty:1},
-  {name:'Trash bags', cat:'hygiene', unit:'boxes', qty:1},
+  // Food
+  {name:'Rice (5 lb bag)', cat:'food', unit:'bags', qty:2},
+  {name:'Canned beans', cat:'food', unit:'cans', qty:12},
+  {name:'Canned meat (chicken/tuna)', cat:'food', unit:'cans', qty:12},
+  {name:'Canned vegetables', cat:'food', unit:'cans', qty:12},
+  {name:'Canned soup/stew', cat:'food', unit:'cans', qty:6},
+  {name:'Peanut butter', cat:'food', unit:'jars', qty:2},
+  {name:'Pasta (dry)', cat:'food', unit:'lbs', qty:5},
+  {name:'Oatmeal', cat:'food', unit:'lbs', qty:3},
+  {name:'MRE', cat:'food', unit:'ea', qty:6},
+  {name:'Freeze-dried meals', cat:'food', unit:'ea', qty:6},
+  {name:'Salt', cat:'food', unit:'lbs', qty:2},
+  {name:'Sugar', cat:'food', unit:'lbs', qty:2},
+  {name:'Honey', cat:'food', unit:'jars', qty:1},
+  {name:'Powdered milk', cat:'food', unit:'lbs', qty:2},
+  // Medical
+  {name:'First aid kit (complete)', cat:'medical', unit:'ea', qty:1},
+  {name:'Ibuprofen 200mg', cat:'medical', unit:'bottles', qty:2},
+  {name:'Acetaminophen 500mg', cat:'medical', unit:'bottles', qty:1},
+  {name:'Diphenhydramine (Benadryl)', cat:'medical', unit:'boxes', qty:1},
+  {name:'Antibiotic ointment', cat:'medical', unit:'tubes', qty:2},
+  {name:'Bandages (assorted)', cat:'medical', unit:'boxes', qty:2},
+  {name:'Gauze pads (4x4)', cat:'medical', unit:'packs', qty:2},
+  {name:'Medical tape', cat:'medical', unit:'rolls', qty:2},
+  {name:'Tourniquet (CAT)', cat:'medical', unit:'ea', qty:1},
+  {name:'N95 Masks', cat:'medical', unit:'ea', qty:20},
+  {name:'Nitrile gloves', cat:'medical', unit:'boxes', qty:2},
+  {name:'Electrolyte packets', cat:'medical', unit:'packs', qty:10},
+  // Power & Fuel
+  {name:'AA Batteries', cat:'power', unit:'packs', qty:4},
+  {name:'AAA Batteries', cat:'power', unit:'packs', qty:2},
+  {name:'D Batteries', cat:'power', unit:'packs', qty:2},
+  {name:'USB battery pack', cat:'power', unit:'ea', qty:1},
+  {name:'Propane (1lb canisters)', cat:'fuel', unit:'cans', qty:6},
+  {name:'Gasoline (stored)', cat:'fuel', unit:'gal', qty:10},
+  {name:'Firewood', cat:'fuel', unit:'cords', qty:0.5},
+  // Hygiene
+  {name:'Toilet paper', cat:'hygiene', unit:'rolls', qty:24, daily:1},
+  {name:'Bar soap', cat:'hygiene', unit:'bars', qty:6},
+  {name:'Toothpaste', cat:'hygiene', unit:'tubes', qty:3},
+  {name:'Hand sanitizer', cat:'hygiene', unit:'bottles', qty:2},
+  {name:'Trash bags (heavy duty)', cat:'hygiene', unit:'boxes', qty:2},
+  {name:'Paper towels', cat:'hygiene', unit:'rolls', qty:6},
+  // Tools & Gear
+  {name:'Flashlight (LED)', cat:'tools', unit:'ea', qty:2},
+  {name:'Headlamp', cat:'tools', unit:'ea', qty:1},
+  {name:'Multi-tool/knife', cat:'tools', unit:'ea', qty:1},
+  {name:'Duct tape', cat:'tools', unit:'rolls', qty:2},
+  {name:'Paracord (100ft)', cat:'tools', unit:'ea', qty:2},
+  {name:'Tarp (10x12)', cat:'tools', unit:'ea', qty:1},
+  {name:'Matches (waterproof)', cat:'tools', unit:'boxes', qty:3},
+  {name:'Fire starter (ferro rod)', cat:'tools', unit:'ea', qty:1},
+  {name:'Can opener (manual)', cat:'tools', unit:'ea', qty:1},
+  // Communications
+  {name:'FRS/GMRS Radio (pair)', cat:'communications', unit:'pairs', qty:1},
+  {name:'NOAA Weather Radio', cat:'communications', unit:'ea', qty:1},
+  {name:'Whistle (signal)', cat:'communications', unit:'ea', qty:2},
 ];
 
 function showInvQuickAdd() {
-  let html = '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);padding:20px;z-index:10001;box-shadow:var(--shadow);max-width:500px;max-height:70vh;overflow-y:auto;">';
-  html += '<h3 style="font-size:14px;margin-bottom:10px;display:flex;justify-content:space-between;"><span>Quick Add Supplies</span><span style="cursor:pointer;font-size:18px;" onclick="this.parentElement.parentElement.remove()">x</span></h3>';
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">';
-  INV_QUICK_ITEMS.forEach(item => {
-    html += `<button class="btn btn-sm" onclick="quickAddInvItem(${JSON.stringify(item).replace(/"/g,'&quot;')});this.style.background='var(--green-dim)';this.textContent='Added!'" style="text-align:left;font-size:10px;padding:6px 8px;">${item.name} <span style="color:var(--text-muted);">(${item.cat})</span></button>`;
-  });
-  html += '</div><div style="margin-top:8px;font-size:10px;color:var(--text-muted);">Click items to add them to inventory with default quantities.</div></div>';
-  document.body.insertAdjacentHTML('beforeend', html);
+  let html = '<div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--surface-solid);border:1px solid var(--border);border-radius:16px;padding:24px;z-index:10001;box-shadow:0 25px 60px rgba(0,0,0,0.4);max-width:600px;width:90vw;max-height:75vh;overflow-y:auto;">';
+  html += '<h3 style="font-size:15px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;"><span>Quick Add Common Supplies</span><button class="btn btn-sm btn-ghost" onclick="this.closest(\'div[style]\').remove()" style="font-size:18px;padding:2px 8px;">x</button></h3>';
+  html += '<p style="font-size:11px;color:var(--text-muted);margin-bottom:12px;">Click items to add them to your inventory with recommended starting quantities. Green = added.</p>';
+  // Group by category
+  const groups = {};
+  INV_QUICK_ITEMS.forEach(item => { if (!groups[item.cat]) groups[item.cat] = []; groups[item.cat].push(item); });
+  const catNames = {water:'Water & Purification',food:'Food & Cooking',medical:'Medical & First Aid',power:'Power & Batteries',fuel:'Fuel',hygiene:'Hygiene & Sanitation',tools:'Tools & Gear',communications:'Communications'};
+  for (const [cat, items] of Object.entries(groups)) {
+    html += `<div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);margin:10px 0 4px;padding-bottom:3px;border-bottom:1px solid var(--border);">${catNames[cat]||cat}</div>`;
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">';
+    items.forEach(item => {
+      html += `<button class="btn btn-sm" onclick="quickAddInvItem(${JSON.stringify(item).replace(/"/g,String.fromCharCode(38)+'quot;')});this.style.background='var(--green-dim)';this.style.color='var(--green)';this.textContent='Added!';this.disabled=true" style="text-align:left;font-size:11px;padding:6px 10px;">${item.name} <span style="color:var(--text-muted);font-size:10px;">(${item.qty} ${item.unit})</span></button>`;
+    });
+    html += '</div>';
+  }
+  html += '</div>';
+  // Add overlay
+  document.body.insertAdjacentHTML('beforeend', '<div onclick="this.nextSibling.remove();this.remove()" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:10000;"></div>' + html);
 }
 
 async function quickAddInvItem(item) {
@@ -12475,13 +12556,37 @@ function dismissGettingStarted() {
   document.getElementById('getting-started').style.display = 'none';
 }
 
+/* ─── Status Strip ─── */
+async function updateStatusStrip() {
+  try {
+    const [svcs, inv, contacts, alerts] = await Promise.all([
+      fetch('/api/services').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/inventory/summary').then(r=>r.json()).catch(()=>({total:0})),
+      fetch('/api/contacts').then(r=>r.json()).catch(()=>[]),
+      fetch('/api/alerts').then(r=>r.json()).catch(()=>[]),
+    ]);
+    const running = svcs.filter(s=>s.running).length;
+    const installed = svcs.filter(s=>s.installed).length;
+    const el = (id,html) => { const e = document.getElementById(id); if(e) e.innerHTML = html; };
+    el('ss-services', `Services: <strong style="color:${running>0?'var(--green)':'var(--text)'}">${running}/${installed} running</strong>`);
+    el('ss-inventory', `Supplies: <strong style="color:var(--text)">${inv.total||0}</strong>${inv.low_stock>0?` <span style="color:var(--red);">(${inv.low_stock} low)</span>`:''}`);
+    el('ss-contacts', `Contacts: <strong style="color:var(--text)">${contacts.length||0}</strong>`);
+    el('ss-alerts', `Alerts: <strong style="color:${alerts.length>0?'var(--orange)':'var(--text)'}">${alerts.length}</strong>`);
+  } catch(e) {}
+  // Update clock
+  const now = new Date();
+  const timeEl = document.getElementById('ss-time');
+  if (timeEl) timeEl.textContent = now.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'}) + ' ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+}
+
 /* ─── Init ─── */
 // Critical: load immediately
 loadServices();
 loadReadiness();
 // Defer non-critical by 500ms to avoid 11 concurrent fetches on startup
 setTimeout(() => { loadCmdDashboard(); loadServiceQuickLinks(); loadCmdChecklists(); loadReadinessScore(); }, 500);
-setTimeout(() => { loadActivity(); loadContentSummary(); }, 1000);
+setTimeout(() => { loadActivity(); loadContentSummary(); updateStatusStrip(); }, 1000);
+setInterval(() => { if (!document.hidden) updateStatusStrip(); }, 30000);
 let _svcPollTimer = setInterval(() => {
   if (document.hidden) return;
   const activeTab = document.querySelector('.tab.active');

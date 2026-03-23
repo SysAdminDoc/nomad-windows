@@ -13,7 +13,10 @@ from flask import Flask, render_template, jsonify, request, Response
 from werkzeug.utils import secure_filename
 
 from config import get_data_dir, set_data_dir
-from web.catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
+try:
+    from web.catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
+except ImportError:
+    from catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
 from db import get_db, log_activity
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling
 from services.manager import (

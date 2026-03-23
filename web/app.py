@@ -3437,6 +3437,98 @@ def create_app():
             'by_folder': [{'folder': r['folder'] or 'Unsorted', 'count': r['c']} for r in by_folder],
         })
 
+    AUDIO_CATALOG = [
+        # HAM Radio & Communications Training
+        {'title': 'Ham Radio Crash Course - Technician License', 'url': 'https://www.youtube.com/watch?v=Krc15VfkRJA', 'channel': 'Ham Radio Crash Course', 'category': 'radio', 'folder': 'Radio Training'},
+        {'title': 'Emergency Communications - ARES/RACES Intro', 'url': 'https://www.youtube.com/watch?v=9acOfs8gYlk', 'channel': 'Ham Radio 2.0', 'category': 'radio', 'folder': 'Radio Training'},
+        {'title': 'Morse Code Training - Learn CW', 'url': 'https://www.youtube.com/watch?v=D8tPkb98Fkk', 'channel': 'Ham Radio Crash Course', 'category': 'radio', 'folder': 'Radio Training'},
+        # Survival Skills Audio
+        {'title': 'Wilderness Survival Skills - Complete Audio Guide', 'url': 'https://www.youtube.com/watch?v=oBp7LoFxdhU', 'channel': 'Survival On Purpose', 'category': 'survival', 'folder': 'Survival Skills'},
+        {'title': 'Prepper Mindset - Mental Preparedness', 'url': 'https://www.youtube.com/watch?v=qxNjJPHzN-o', 'channel': 'Canadian Prepper', 'category': 'survival', 'folder': 'Survival Skills'},
+        {'title': 'Bushcraft Skills Every Prepper Needs', 'url': 'https://www.youtube.com/watch?v=k4vee-NTkds', 'channel': 'TA Outdoors', 'category': 'bushcraft', 'folder': 'Survival Skills'},
+        # Medical Audio Training
+        {'title': 'Tactical First Aid - TCCC Basics', 'url': 'https://www.youtube.com/watch?v=J6-nFr-pn4A', 'channel': 'Skinny Medic', 'category': 'medical', 'folder': 'Medical Training'},
+        {'title': 'Herbal Medicine Fundamentals', 'url': 'https://www.youtube.com/watch?v=HQdXn_bDiIs', 'channel': 'Survival Dispatch', 'category': 'medical', 'folder': 'Medical Training'},
+        # Homesteading & Self-Reliance
+        {'title': 'Permaculture Design Principles', 'url': 'https://www.youtube.com/watch?v=cEBtmjaFU28', 'channel': 'Happen Films', 'category': 'farming', 'folder': 'Homesteading'},
+        {'title': 'Food Preservation - Complete Guide', 'url': 'https://www.youtube.com/watch?v=WKwMoeBPMJ8', 'channel': 'Townsends', 'category': 'cooking', 'folder': 'Homesteading'},
+        # Situational Awareness & Security
+        {'title': 'Situational Awareness - Gray Man Concept', 'url': 'https://www.youtube.com/watch?v=_sRjSR_B2Bc', 'channel': 'City Prepping', 'category': 'defense', 'folder': 'Security'},
+        {'title': 'Home Defense Strategies', 'url': 'https://www.youtube.com/watch?v=mSCGGr8B0W8', 'channel': 'Warrior Poet Society', 'category': 'defense', 'folder': 'Security'},
+    ]
+
+    @app.route('/api/audio/catalog')
+    def api_audio_catalog():
+        return jsonify(AUDIO_CATALOG)
+
+    # ─── Media Shared Endpoints (favorites, batch) ────────────────────
+
+    @app.route('/api/media/favorite', methods=['POST'])
+    def api_media_favorite():
+        data = request.get_json() or {}
+        media_type = data.get('type', 'videos')
+        media_id = data.get('id')
+        table_map = {'videos': 'videos', 'audio': 'audio', 'books': 'books'}
+        table = table_map.get(media_type)
+        if not table or not media_id:
+            return jsonify({'error': 'Invalid request'}), 400
+        db = get_db()
+        row = db.execute(f'SELECT favorited FROM {table} WHERE id = ?', (media_id,)).fetchone()
+        if row:
+            new_val = 0 if row['favorited'] else 1
+            db.execute(f'UPDATE {table} SET favorited = ? WHERE id = ?', (new_val, media_id))
+            db.commit()
+        db.close()
+        return jsonify({'status': 'toggled', 'favorited': new_val if row else 0})
+
+    @app.route('/api/media/batch-delete', methods=['POST'])
+    def api_media_batch_delete():
+        data = request.get_json() or {}
+        media_type = data.get('type', 'videos')
+        ids = data.get('ids', [])
+        if not ids:
+            return jsonify({'error': 'No IDs provided'}), 400
+        table_map = {'videos': 'videos', 'audio': 'audio', 'books': 'books'}
+        dir_map = {'videos': get_video_dir, 'audio': get_audio_dir, 'books': get_books_dir}
+        table = table_map.get(media_type)
+        get_dir = dir_map.get(media_type)
+        if not table or not get_dir:
+            return jsonify({'error': 'Invalid type'}), 400
+        db = get_db()
+        media_dir = get_dir()
+        deleted = 0
+        for mid in ids:
+            row = db.execute(f'SELECT filename FROM {table} WHERE id = ?', (mid,)).fetchone()
+            if row:
+                filepath = os.path.join(media_dir, row['filename'])
+                if os.path.isfile(filepath):
+                    try:
+                        os.remove(filepath)
+                    except Exception:
+                        pass
+                db.execute(f'DELETE FROM {table} WHERE id = ?', (mid,))
+                deleted += 1
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted', 'count': deleted})
+
+    @app.route('/api/media/batch-move', methods=['POST'])
+    def api_media_batch_move():
+        data = request.get_json() or {}
+        media_type = data.get('type', 'videos')
+        ids = data.get('ids', [])
+        folder = data.get('folder', '')
+        table_map = {'videos': 'videos', 'audio': 'audio', 'books': 'books'}
+        table = table_map.get(media_type)
+        if not table or not ids:
+            return jsonify({'error': 'Invalid request'}), 400
+        db = get_db()
+        for mid in ids:
+            db.execute(f'UPDATE {table} SET folder = ? WHERE id = ?', (folder, mid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'moved', 'count': len(ids)})
+
     # ─── yt-dlp Integration ──────────────────────────────────────────
 
     @app.route('/api/ytdlp/status')

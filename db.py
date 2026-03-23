@@ -489,6 +489,9 @@ def init_db():
         'ALTER TABLE videos ADD COLUMN url TEXT DEFAULT ""',
         'ALTER TABLE videos ADD COLUMN thumbnail TEXT DEFAULT ""',
         'ALTER TABLE videos ADD COLUMN filesize INTEGER DEFAULT 0',
+        'ALTER TABLE videos ADD COLUMN favorited INTEGER DEFAULT 0',
+        'ALTER TABLE audio ADD COLUMN favorited INTEGER DEFAULT 0',
+        'ALTER TABLE books ADD COLUMN favorited INTEGER DEFAULT 0',
     ]:
         try:
             conn.execute(migration)

@@ -1119,7 +1119,7 @@ a { color: var(--accent); text-decoration: none; }
 /* ─── Media Tab ─── */
 .media-layout { display: flex; height: calc(100vh - 80px); overflow: hidden; }
 .media-sidebar { width: 220px; min-width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; overflow: hidden; }
-.media-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+.media-main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; position: relative; }
 .media-topbar { display: flex; justify-content: space-between; align-items: center; padding: 8px 16px; gap: 8px; border-bottom: 1px solid var(--border); background: var(--surface2); flex-wrap: wrap; }
 .media-folder-item { padding: 6px 10px; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; display: flex; justify-content: space-between; align-items: center; transition: background 0.15s; }
 .media-folder-item:hover { background: var(--surface2); }
@@ -1158,6 +1158,9 @@ a { color: var(--accent); text-decoration: none; }
 .media-book-cover { height: 140px; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; color: var(--text-muted); position: relative; }
 .media-book-cover.pdf { background: linear-gradient(135deg, #c0392b 0%, #96281b 100%); color: rgba(255,255,255,0.7); }
 .media-book-cover.epub { background: linear-gradient(135deg, #27ae60 0%, #1e8449 100%); color: rgba(255,255,255,0.7); }
+.media-card.selected, .media-list-row.selected, .media-audio-row.selected, .media-book-card.selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+.media-book-cover.txt { background: linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%); color: rgba(255,255,255,0.7); }
+.media-book-cover.mobi { background: linear-gradient(135deg, #f39c12 0%, #d68910 100%); color: rgba(255,255,255,0.7); }
 @media (max-width: 900px) {
   .media-layout { flex-direction: column; height: auto; }
   .media-sidebar { width: 100%; min-width: 0; max-height: 200px; border-right: none; border-bottom: 1px solid var(--border); }

@@ -740,7 +740,11 @@ body{background:var(--bg);color:var(--text)}
             <button class="btn btn-sm" onclick="toggleMediaCatalog()" id="media-catalog-btn">Catalog</button>
           </div>
           <div style="display:flex;gap:6px;align-items:center;">
-            <input type="text" id="media-search" placeholder="Search..." oninput="filterMediaList()" style="width:140px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;">
+            <select id="media-sort" class="preset-select" style="font-size:11px;width:90px;" onchange="changeMediaSort()">
+              <option value="title">Name</option><option value="date">Newest</option><option value="size">Size</option><option value="favorited">Favorites</option>
+            </select>
+            <input type="text" id="media-search" placeholder="Search..." oninput="filterMediaList()" style="width:120px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;">
+            <button class="btn btn-sm" onclick="toggleMediaSelect()" id="media-select-btn" title="Select multiple items">Select</button>
             <button class="btn btn-sm" onclick="toggleMediaView()" id="media-view-btn" title="Toggle grid/list view">Grid</button>
           </div>
         </div>
@@ -778,6 +782,16 @@ body{background:var(--bg);color:var(--text)}
             </div>
           </div>
           <div id="media-catalog-list"></div>
+        </div>
+
+        <!-- Batch Action Bar -->
+        <div id="media-batch-bar" style="display:none;padding:6px 16px;background:var(--accent);color:#fff;font-size:12px;display:none;justify-content:space-between;align-items:center;">
+          <span id="media-batch-count">0 selected</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.2);color:#fff;" onclick="batchMoveMedia()">Move</button>
+            <button class="btn btn-sm" style="background:rgba(255,0,0,0.6);color:#fff;" onclick="batchDeleteMedia()">Delete</button>
+            <button class="btn btn-sm" style="background:rgba(255,255,255,0.15);color:#fff;" onclick="toggleMediaSelect()">Cancel</button>
+          </div>
         </div>
 
         <!-- Content Area -->
@@ -8835,6 +8849,10 @@ let _mediaCatalogVisible = false;
 let _mediaDlPoll = null;
 let _mediaSub = 'videos'; // videos | audio | books
 let _mediaBookRendition = null;
+let _mediaSort = 'title'; // title | date | size | favorited
+let _mediaSortDir = 'asc';
+let _mediaSelected = new Set();
+let _mediaSelectMode = false;
 
 function switchMediaSub(sub) {
   _mediaSub = sub;
@@ -8914,42 +8932,49 @@ function renderMediaItems() {
     if (search && !v.title.toLowerCase().includes(search) && !(v.category||'').toLowerCase().includes(search) && !(v.author||'').toLowerCase().includes(search)) return false;
     return true;
   });
-  const icons = {videos: '&#9654;', audio: '&#9835;', books: '&#128214;'};
+  filtered = sortMediaItems(filtered);
   if (!filtered.length) {
     const labels = {videos:'videos',audio:'audio files',books:'books'};
+    const icons = {videos:'&#9654;',audio:'&#9835;',books:'&#128214;'};
     el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-muted);"><div style="font-size:32px;margin-bottom:8px;">${icons[_mediaSub]}</div><div style="font-size:13px;font-weight:500;">No ${labels[_mediaSub]}${_mediaFolder?' in this folder':''}</div><div style="font-size:11px;margin-top:4px;">Upload files or browse the catalog to get started</div></div>`;
     return;
   }
   if (_mediaSub === 'books') { renderBooks(el, filtered); return; }
   if (_mediaSub === 'audio') { renderAudio(el, filtered); return; }
   // Videos
+  const selPfx = _mediaSelectMode ? (id) => `<input type="checkbox" ${_mediaSelected.has(id)?'checked':''} onclick="event.stopPropagation();toggleMediaItemSelect(${id})" style="margin-right:6px;">` : () => '';
+  const favBtn = (id, fav) => `<span style="cursor:pointer;font-size:13px;color:${fav?'var(--orange)':'var(--text-muted)'};" onclick="event.stopPropagation();toggleFavorite(${id})" title="${fav?'Unfavorite':'Favorite'}">${fav?'&#9733;':'&#9734;'}</span>`;
   if (_mediaViewGrid) {
     el.innerHTML = '<div class="media-grid">' + filtered.map(v => `
-      <div class="media-card" onclick="playMediaVideo(${v.id},'${escapeAttr(v.filename)}','${escapeAttr(v.title)}')">
-        <div class="media-card-thumb">&#9654;<div class="play-overlay"><span style="font-size:40px;color:#fff;">&#9654;</span></div></div>
+      <div class="media-card${_mediaSelected.has(v.id)?' selected':''}" data-media-id="${v.id}" onclick="${_mediaSelectMode?`toggleMediaItemSelect(${v.id})`:`playMediaVideo(${v.id},'${escapeAttr(v.filename)}','${escapeAttr(v.title)}')`}">
+        <div class="media-card-thumb">&#9654;<div class="play-overlay"><span style="font-size:40px;color:#fff;">&#9654;</span></div>
+          <span style="position:absolute;top:4px;right:4px;" onclick="event.stopPropagation();toggleFavorite(${v.id})">${v.favorited?'&#9733;':''}</span></div>
         <div class="media-card-info"><div class="media-card-title">${escapeHtml(v.title)}</div>
         <div class="media-card-meta"><span class="check-cat">${v.category}</span><span>${v.filesize?formatBytes(v.filesize):''}</span></div></div>
       </div>`).join('') + '</div>';
   } else {
     el.innerHTML = filtered.map(v => `
-      <div class="media-list-row" onclick="playMediaVideo(${v.id},'${escapeAttr(v.filename)}','${escapeAttr(v.title)}')">
-        <div class="media-list-play">&#9654;</div><div class="media-list-title">${escapeHtml(v.title)}</div>
+      <div class="media-list-row${_mediaSelected.has(v.id)?' selected':''}" data-media-id="${v.id}" onclick="${_mediaSelectMode?`toggleMediaItemSelect(${v.id})`:`playMediaVideo(${v.id},'${escapeAttr(v.filename)}','${escapeAttr(v.title)}')`}">
+        ${selPfx(v.id)}<div class="media-list-play">&#9654;</div><div class="media-list-title">${escapeHtml(v.title)}</div>
         <div class="media-list-meta">${v.folder?v.folder+' / ':''}${v.category}</div>
         <div class="media-list-meta">${v.filesize?formatBytes(v.filesize):''}</div>
-        <div class="media-list-actions"><span style="cursor:pointer;color:var(--text-muted);font-size:11px;" onclick="event.stopPropagation();moveMediaItem(${v.id},'videos')" title="Move">&#9776;</span>
+        <div class="media-list-actions">${favBtn(v.id,v.favorited)}
+        <span style="cursor:pointer;color:var(--text-muted);font-size:11px;" onclick="event.stopPropagation();moveMediaItem(${v.id},'videos')" title="Move">&#9776;</span>
         <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="event.stopPropagation();deleteMediaItem(${v.id},'videos')" title="Delete">x</span></div>
       </div>`).join('');
   }
 }
 
 function renderAudio(el, items) {
+  const selPfx = _mediaSelectMode ? (id) => `<input type="checkbox" ${_mediaSelected.has(id)?'checked':''} onclick="event.stopPropagation();toggleMediaItemSelect(${id})" style="margin-right:6px;">` : () => '';
   el.innerHTML = items.map(a => `
-    <div class="media-audio-row" onclick="playMediaAudio(${a.id},'${escapeAttr(a.filename)}','${escapeAttr(a.title)}')">
-      <div class="media-list-play">&#9835;</div>
+    <div class="media-audio-row${_mediaSelected.has(a.id)?' selected':''}" data-media-id="${a.id}" onclick="${_mediaSelectMode?`toggleMediaItemSelect(${a.id})`:`playMediaAudio(${a.id},'${escapeAttr(a.filename)}','${escapeAttr(a.title)}')`}">
+      ${selPfx(a.id)}<div class="media-list-play">&#9835;</div>
       <div class="media-list-title">${escapeHtml(a.title)}</div>
       <div class="media-list-meta">${a.artist?escapeHtml(a.artist)+' &middot; ':''}${a.category}</div>
       <div class="media-list-meta">${a.duration||''} ${a.filesize?formatBytes(a.filesize):''}</div>
       <div class="media-list-actions">
+        <span style="cursor:pointer;font-size:13px;color:${a.favorited?'var(--orange)':'var(--text-muted)'};" onclick="event.stopPropagation();toggleFavorite(${a.id})" title="Favorite">${a.favorited?'&#9733;':'&#9734;'}</span>
         <span style="cursor:pointer;color:var(--text-muted);font-size:11px;" onclick="event.stopPropagation();moveMediaItem(${a.id},'audio')" title="Move">&#9776;</span>
         <span style="cursor:pointer;color:var(--red);font-size:11px;" onclick="event.stopPropagation();deleteMediaItem(${a.id},'audio')" title="Delete">x</span>
       </div>
@@ -8958,8 +8983,11 @@ function renderAudio(el, items) {
 
 function renderBooks(el, items) {
   el.innerHTML = '<div class="media-grid">' + items.map(b => `
-    <div class="media-book-card" onclick="openBook(${b.id},'${escapeAttr(b.filename)}','${escapeAttr(b.title)}','${b.format}')">
-      <div class="media-book-cover ${b.format}">${b.format.toUpperCase()}</div>
+    <div class="media-book-card${_mediaSelected.has(b.id)?' selected':''}" data-media-id="${b.id}" onclick="${_mediaSelectMode?`toggleMediaItemSelect(${b.id})`:`openBook(${b.id},'${escapeAttr(b.filename)}','${escapeAttr(b.title)}','${b.format}')`}">
+      <div class="media-book-cover ${b.format}">
+        ${b.format.toUpperCase()}
+        <span style="position:absolute;top:4px;right:4px;font-size:14px;color:${b.favorited?'var(--orange)':'rgba(255,255,255,0.3)'};" onclick="event.stopPropagation();toggleFavorite(${b.id})">${b.favorited?'&#9733;':'&#9734;'}</span>
+      </div>
       <div class="media-card-info">
         <div class="media-card-title">${escapeHtml(b.title)}</div>
         <div class="media-card-meta"><span>${b.author?escapeHtml(b.author):''}</span><span>${b.filesize?formatBytes(b.filesize):''}</span></div>
@@ -9006,6 +9034,77 @@ async function loadTotalMediaStats() {
 function selectMediaFolder(f) { _mediaFolder = f; loadMediaFolders(); renderMediaItems(); }
 function filterMediaList() { renderMediaItems(); }
 function toggleMediaView() { _mediaViewGrid = !_mediaViewGrid; document.getElementById('media-view-btn').textContent = _mediaViewGrid ? 'Grid' : 'List'; renderMediaItems(); }
+
+function changeMediaSort() {
+  const val = document.getElementById('media-sort').value;
+  if (_mediaSort === val) { _mediaSortDir = _mediaSortDir === 'asc' ? 'desc' : 'asc'; }
+  else { _mediaSort = val; _mediaSortDir = val === 'date' || val === 'size' || val === 'favorited' ? 'desc' : 'asc'; }
+  renderMediaItems();
+}
+
+function sortMediaItems(items) {
+  const dir = _mediaSortDir === 'asc' ? 1 : -1;
+  return [...items].sort((a, b) => {
+    if (_mediaSort === 'favorited') return (b.favorited||0) - (a.favorited||0) || a.title.localeCompare(b.title);
+    if (_mediaSort === 'date') return dir * ((a.id||0) - (b.id||0)) * -1;
+    if (_mediaSort === 'size') return dir * ((a.filesize||0) - (b.filesize||0)) * -1;
+    return dir * a.title.localeCompare(b.title);
+  });
+}
+
+function toggleMediaSelect() {
+  _mediaSelectMode = !_mediaSelectMode;
+  _mediaSelected.clear();
+  document.getElementById('media-select-btn').textContent = _mediaSelectMode ? 'Cancel' : 'Select';
+  document.getElementById('media-batch-bar').style.display = _mediaSelectMode ? 'flex' : 'none';
+  updateBatchCount();
+  renderMediaItems();
+}
+
+function toggleMediaItemSelect(id) {
+  if (_mediaSelected.has(id)) _mediaSelected.delete(id); else _mediaSelected.add(id);
+  updateBatchCount();
+  // Toggle visual
+  const el = document.querySelector(`[data-media-id="${id}"]`);
+  if (el) el.classList.toggle('selected', _mediaSelected.has(id));
+}
+
+function updateBatchCount() {
+  document.getElementById('media-batch-count').textContent = `${_mediaSelected.size} selected`;
+}
+
+async function batchDeleteMedia() {
+  if (!_mediaSelected.size) return;
+  const r = await fetch('/api/media/batch-delete', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({type:_mediaSub, ids:[..._mediaSelected]})});
+  const d = await r.json();
+  toast(`Deleted ${d.count} items`, 'warning');
+  _mediaSelected.clear(); toggleMediaSelect();
+  loadMediaContent(); loadTotalMediaStats();
+}
+
+async function batchMoveMedia() {
+  if (!_mediaSelected.size) return;
+  const foldersMap = {videos:'/api/videos/folders', audio:'/api/audio/folders', books:'/api/books/folders'};
+  let folders = [];
+  try { folders = await (await fetch(foldersMap[_mediaSub])).json(); } catch(e) {}
+  const name = prompt('Move to folder:\n\nExisting: ' + (folders.length ? folders.join(', ') : 'none'));
+  if (name === null) return;
+  await fetch('/api/media/batch-move', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({type:_mediaSub, ids:[..._mediaSelected], folder:name})});
+  toast(`Moved ${_mediaSelected.size} items to ${name||'Unsorted'}`, 'success');
+  _mediaSelected.clear(); toggleMediaSelect();
+  loadMediaContent();
+}
+
+async function toggleFavorite(id) {
+  await fetch('/api/media/favorite', {method:'POST', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({type:_mediaSub, id})});
+  // Update local state
+  const item = _mediaItems.find(i => i.id === id);
+  if (item) item.favorited = item.favorited ? 0 : 1;
+  renderMediaItems();
+}
 
 // ── Playback ──
 function playMediaVideo(id, filename, title) {
@@ -9207,14 +9306,15 @@ function toggleMediaCatalog() {
 
 async function loadActiveCatalog() {
   if (_mediaSub === 'books') { loadBookCatalog(); return; }
-  // Videos catalog (audio shares the same catalog — audio extraction from YouTube)
+  const isAudio = _mediaSub === 'audio';
+  const catalogUrl = isAudio ? '/api/audio/catalog' : '/api/videos/catalog';
   try {
-    const catalog = await (await fetch('/api/videos/catalog')).json();
+    const catalog = await (await fetch(catalogUrl)).json();
     const existing = new Set(_mediaItems.filter(v => v.url).map(v => v.url));
     const el = document.getElementById('media-catalog-list');
-    document.getElementById('media-catalog-title').textContent = _mediaSub === 'audio' ? 'Audio Catalog' : 'Prepper Video Library';
-    document.getElementById('media-catalog-desc').textContent = _mediaSub === 'audio' ? 'Download audio from YouTube videos' : 'Curated survival & preparedness content';
-    document.getElementById('media-catalog-dl-all').onclick = _mediaSub === 'audio' ? downloadAllCatalog : downloadAllCatalog;
+    document.getElementById('media-catalog-title').textContent = isAudio ? 'Audio Catalog' : 'Prepper Video Library';
+    document.getElementById('media-catalog-desc').textContent = isAudio ? 'Survival training, HAM radio, homesteading audio' : 'Curated survival & preparedness videos';
+    document.getElementById('media-catalog-dl-all').onclick = isAudio ? downloadAllAudioCatalog : downloadAllCatalog;
     const groups = {};
     for (const item of catalog) { const f = item.folder||'General'; if (!groups[f]) groups[f]=[]; groups[f].push(item); }
     let html = '';
@@ -9222,7 +9322,7 @@ async function loadActiveCatalog() {
       html += `<div class="catalog-folder-header">${escapeHtml(folder)} (${items.length})</div>`;
       for (const item of items) {
         const downloaded = existing.has(item.url);
-        const dlFn = _mediaSub === 'audio' ? 'downloadCatalogAudio' : 'downloadCatalogItem';
+        const dlFn = isAudio ? 'downloadCatalogAudio' : 'downloadCatalogItem';
         html += `<div class="catalog-item"><div class="catalog-item-info"><div class="catalog-item-title">${escapeHtml(item.title)}</div>
           <div class="catalog-item-meta">${escapeHtml(item.channel)} &middot; ${item.category}</div></div>
           ${downloaded ? '<span style="color:var(--green);font-size:11px;font-weight:600;">Downloaded</span>'
@@ -9302,6 +9402,26 @@ async function downloadAllCatalog() {
     if (d.error) { toast(d.error, 'error'); return; }
     if (d.status === 'all_downloaded') { toast('All catalog content already downloaded!', 'success'); return; }
     toast(`Queued ${d.count} items for download`, 'info'); pollMediaDownloads(d.id);
+  } catch(e) { toast('Failed', 'error'); }
+}
+
+async function downloadAllAudioCatalog() {
+  const s = await (await fetch('/api/ytdlp/status')).json();
+  if (!s.installed) { toast('Install the downloader first', 'warning'); return; }
+  try {
+    const catalog = await (await fetch('/api/audio/catalog')).json();
+    // Download each one as audio
+    let queued = 0;
+    for (const item of catalog) {
+      const existing = _mediaItems.find(a => a.url === item.url);
+      if (existing) continue;
+      const r = await fetch('/api/ytdlp/download-audio', {method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({url:item.url, folder:item.folder, category:item.category})});
+      const d = await r.json();
+      if (d.id) { queued++; pollMediaDownloads(d.id); }
+    }
+    if (queued === 0) toast('All audio catalog items already downloaded!', 'success');
+    else toast(`Queued ${queued} audio downloads`, 'info');
   } catch(e) { toast('Failed', 'error'); }
 }
 

@@ -53,7 +53,7 @@ services/
 ```
 
 ## Version
-v1.0.0 — ~35,000 lines, 231 API routes, 32 DB tables, 19 prep sub-tabs, 38-section user guide
+v1.1.0 — ~38,500 lines, 249 API routes, 36 DB tables, 23 prep sub-tabs, 38-section user guide
 
 ## Run / Build
 ```bash
@@ -90,14 +90,18 @@ git push origin v1.0.0
 ## Service Ports
 Dashboard: 8080, Ollama: 11434, Kiwix: 8888, CyberChef: 8889, Kolibri: 8300, Qdrant: 6333, Stirling: 8443, Node Discovery: UDP 18080
 
-## 19 Preparedness Sub-Tabs (ordered by emergency priority)
-Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Power, Garden, Weather, Guides, Calculators, Procedures, Radio, Quick Ref, Signals, Command Post, Journal, Secure Vault
+## 23 Preparedness Sub-Tabs (ordered by emergency priority)
+Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Power, Garden, Weather, Guides, Calculators, Procedures, Radio, Quick Ref, Signals, Command Post, Journal, Secure Vault, Skills, Ammo, Community, Radiation
 
 ## Key APIs Added
 - `/api/readiness-score` — 7 categories (water/food/medical/security/comms/shelter/planning), letter grades A-F
 - `/api/inventory/<id>/consume` — decrement by daily_usage or custom amount
 - `/api/inventory/batch-consume` — one-click daily consume for all tracked items
-- `/api/data-summary` — record counts across all 32 tables
+- `/api/data-summary` — record counts across all 36 tables
+- `/api/skills` — CRUD + seed 60 defaults across 10 survival categories, proficiency tracking
+- `/api/ammo` + `/api/ammo/summary` — ammunition inventory with caliber-grouped summary cards
+- `/api/community` — community resource registry with trust levels and skills/equipment tracking
+- `/api/radiation` + `/api/radiation/clear` — nuclear dose rate log with cumulative rem tracking
 
 ## 38-Section User Guide
 `showHelp(section)` opens an iframe-based guide with optional scroll-to anchor.
@@ -122,6 +126,9 @@ Sections cover: getting started, all 9 tabs, all 19 prep sub-tabs, AI model sele
 - yt-dlp.exe and ffmpeg.exe are auto-installed to services dir, not bundled
 - epub.js is bundled (`web/static/js/epub.min.js`), PDFs use WebView2's built-in PDF viewer via iframe
 - Book catalog URLs point to Internet Archive — may change or go down
+- `switchPrepSub` is overridden at bottom of script to auto-load new tab data; override must come AFTER original definition
+- ICS form entries (_ics309Entries, _ics214Entries) are JS arrays (not DB) — ephemeral, print-only forms
+- QR code via qrserver.com API — works on LAN with internet; graceful text fallback when offline
 
 ## UX Design Principles
 - All jargon removed — plain English throughout (no Ollama/Kiwix/PMTiles/Sneakernet)

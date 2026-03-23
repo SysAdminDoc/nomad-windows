@@ -126,6 +126,43 @@
 - [ ] Auto-populate — extracted entities written back to structured tables (enhancement)
 - [ ] Multi-collection Qdrant — separate collections per document type (enhancement)
 
+## Phase 11: Competitive Feature Parity
+**Builds on:** All phases, comprehensive competitor analysis against Prepper Disk, Omega Drive, SurvivalNet, ATAK/CivTAK, and offline survival apps
+**Effort:** Large (1 session)
+
+### New Preparedness Sub-Tabs
+- [x] **Skills Tracker** — Self-assessment for 60 survival skills across 10 categories (Fire, Water, Shelter, Food, Navigation, Medical, Communications, Security, Mechanical, Homesteading); proficiency levels none/basic/intermediate/expert; summary dashboard with per-category progress; seed-defaults button
+- [x] **Ammo Inventory** — Track caliber, brand, bullet weight/type, quantity, location; caliber-summary cards with totals; dedicated table with full CRUD
+- [x] **Community Resources** — Registry of local contacts with skills, equipment, trust level (unknown/acquaintance/trusted/inner-circle), distance; for mutual aid network planning
+- [x] **Radiation Dose Tracker** — Log dose rate readings with cumulative rem calculation; reference table (Dose Effects); 7-10 Rule explanation; clear log function
+
+### New Calculator Cards (Calculators sub-tab)
+- [x] **Ballistics Calculator** — Simplified point-mass ballistics for 8 calibers; zero range + wind speed → drop/windage table at 0–500 yd
+- [x] **Composting Calculator** — Browns + greens lbs + pile volume → C:N ratio and pile assessment
+- [x] **Pasture Rotation Calculator** — Acres, animal units, paddocks, season → stocking rate and rotation schedule
+- [x] **Natural Building Calculator** — Adobe / cob / straw bale → material quantities (adobe bricks, cob batches, bales, mortar)
+- [x] **Nuclear Fallout Dose Rate Calculator** — H+1 dose rate, shelter PF, hours since detonation → dose table using 7-10 Rule
+- [x] **Canning & Preservation Calculator** — Food type, lbs, jar size, altitude → jar count + processing time with altitude adjustment
+
+### New Quick Reference Cards (Quick Ref sub-tab)
+- [x] **Emergency Phrase Translator** — 15 critical phrases in 10 languages (ES/FR/DE/PT/RU/AR/ZH/JA/KO/HI) with phonetic pronunciation
+- [x] **Animal Tracks Guide** — Identification for deer, bear, coyote/wolf, turkey, rabbit, raccoon, hog with key tracking rules
+- [x] **Mushroom Identification Guide** — 4 safe edible species + 3 deadly species + spore print color guide
+- [x] **Foraging Calendar** — Month-by-month foraging guide for all 12 months (greens, berries, nuts, roots, mushrooms)
+- [x] **Ham Radio Digital Modes Reference** — JS8Call, Winlink, APRS, FT8, PSK31, Olivia, Meshtastic, RTTY comparison table
+- [x] **Ham License Study Guide** — 6 cards covering privileges, rules, frequencies, safety, propagation, emergency ops
+
+### ICS/NIMS Forms (Command Post sub-tab)
+- [x] **ICS-213 General Message** — Standard fill-and-print message form
+- [x] **ICS-309 Communications Log** — Tabular log of all radio traffic with timestamps; add entries + browser print
+- [x] **ICS-214 Activity Log** — Unit activity log with personnel section; add entries + browser print
+
+### Radio Sub-Tab Enhancements
+- [x] **CHIRP CSV Export** — One-click export of 28 pre-programmed emergency channels as CHIRP-compatible CSV for radio programming software
+
+### Settings Enhancements
+- [x] **LAN QR Code** — Generate QR code for mobile device access via qrserver.com API with text fallback
+
 ---
 
 ## Priority Order Rationale

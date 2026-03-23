@@ -482,6 +482,51 @@ def init_db():
             last_checked TEXT DEFAULT '',
             created_at TEXT DEFAULT (datetime('now'))
         );
+
+        CREATE TABLE IF NOT EXISTS skills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'general',
+            proficiency TEXT DEFAULT 'none',
+            notes TEXT DEFAULT '',
+            last_practiced TEXT DEFAULT '',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS ammo_inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            caliber TEXT NOT NULL,
+            brand TEXT DEFAULT '',
+            bullet_weight TEXT DEFAULT '',
+            bullet_type TEXT DEFAULT '',
+            quantity INTEGER DEFAULT 0,
+            location TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS community_resources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            distance_mi REAL DEFAULT 0,
+            skills TEXT DEFAULT '[]',
+            equipment TEXT DEFAULT '[]',
+            contact TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            trust_level TEXT DEFAULT 'unknown',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS radiation_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            dose_rate_rem REAL NOT NULL,
+            location TEXT DEFAULT '',
+            cumulative_rem REAL DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     conn.commit()
 
@@ -529,6 +574,10 @@ def init_db():
         'CREATE INDEX IF NOT EXISTS idx_patients_contact ON patients(contact_id)',
         'CREATE INDEX IF NOT EXISTS idx_power_log_created ON power_log(created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_access_log_created ON access_log(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_skills_category ON skills(category)',
+        'CREATE INDEX IF NOT EXISTS idx_ammo_caliber ON ammo_inventory(caliber)',
+        'CREATE INDEX IF NOT EXISTS idx_community_trust ON community_resources(trust_level)',
+        'CREATE INDEX IF NOT EXISTS idx_radiation_created ON radiation_log(created_at DESC)',
     ]:
         try:
             conn.execute(idx)

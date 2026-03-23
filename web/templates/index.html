@@ -936,6 +936,10 @@ body{background:var(--bg);color:var(--text)}
       <button class="prep-subtab" data-psub="ops" onclick="switchPrepSub('ops')">Command Post</button>
       <button class="prep-subtab" data-psub="journal" onclick="switchPrepSub('journal')">Journal</button>
       <button class="prep-subtab" data-psub="vault" onclick="switchPrepSub('vault')">Secure Vault</button>
+      <button class="prep-subtab" data-psub="skills" onclick="switchPrepSub('skills')">Skills</button>
+      <button class="prep-subtab" data-psub="ammo" onclick="switchPrepSub('ammo')">Ammo</button>
+      <button class="prep-subtab" data-psub="community" onclick="switchPrepSub('community')">Community</button>
+      <button class="prep-subtab" data-psub="radiation" onclick="switchPrepSub('radiation')">Radiation</button>
     </div>
 
     <!-- Sub: Checklists -->
@@ -1415,6 +1419,126 @@ body{background:var(--bg);color:var(--text)}
           <div id="bob-checklist" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:3px;font-size:11px;margin-bottom:8px;"></div>
           <div class="calc-result" id="bob-result"></div>
         </div>
+
+        <!-- Ballistics Calculator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Ballistics Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Estimate bullet drop, energy, and time-of-flight at range. Reference only — verify with live fire.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Caliber / Load</label>
+              <select id="bal-caliber" onchange="calcBallistics()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="223,55,3240">5.56/.223 55gr FMJ</option>
+                <option value="308,168,2650">7.62/.308 168gr BTHP</option>
+                <option value="30-06,150,2910">30-06 150gr</option>
+                <option value="300blk,125,2220">300 Blackout 125gr</option>
+                <option value="9mm,115,1180">9mm 115gr FMJ</option>
+                <option value="45acp,230,850">.45 ACP 230gr FMJ</option>
+                <option value="22lr,40,1080">.22 LR 40gr LRN</option>
+                <option value="12ga-slug,437,1600">12 Gauge Slug 1oz</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Zero Range (yd)</label><input id="bal-zero" type="number" min="25" max="300" value="100" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcBallistics()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Wind Speed (mph)</label><input id="bal-wind" type="number" min="0" max="50" value="10" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcBallistics()"></div>
+          </div>
+          <div class="calc-result" id="bal-result"></div>
+        </div>
+
+        <!-- Composting Calculator -->
+        <div class="calc-card">
+          <h4>Composting Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Ideal C:N ratio is 25-30:1. Balance greens (nitrogen) with browns (carbon).</div>
+          <div class="calc-row"><label>Browns (lbs)</label><input type="number" id="comp-browns" value="60" min="0" oninput="calcCompost()" style="max-width:100px;"></div>
+          <div class="calc-row"><label>Greens (lbs)</label><input type="number" id="comp-greens" value="40" min="0" oninput="calcCompost()" style="max-width:100px;"></div>
+          <div class="calc-row"><label>Pile volume (cu ft)</label><input type="number" id="comp-vol" value="27" min="1" oninput="calcCompost()" style="max-width:100px;"></div>
+          <div class="calc-result" id="comp-result"></div>
+        </div>
+
+        <!-- Pasture Rotation Calculator -->
+        <div class="calc-card">
+          <h4>Pasture Rotation Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Plan grazing rotations to prevent overgrazing. Minimum rest: 21 days (warm season), 60 days (cool season).</div>
+          <div class="calc-row"><label>Acres available</label><input type="number" id="pr-acres" value="5" min="0.1" step="0.1" oninput="calcPastureRotation()" style="max-width:100px;"></div>
+          <div class="calc-row"><label>Animal units (AU)</label><input type="number" id="pr-au" value="3" min="1" oninput="calcPastureRotation()" style="max-width:100px;"></div>
+          <div class="calc-row"><label>Paddocks</label><input type="number" id="pr-paddocks" value="4" min="2" max="20" oninput="calcPastureRotation()" style="max-width:100px;"></div>
+          <div class="calc-row"><label>Season</label>
+            <select id="pr-season" onchange="calcPastureRotation()" style="flex:1;max-width:180px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;">
+              <option value="warm">Warm season grass</option>
+              <option value="cool">Cool season grass</option>
+            </select></div>
+          <div class="calc-result" id="pr-result"></div>
+        </div>
+
+        <!-- Natural Building Calculator -->
+        <div class="calc-card">
+          <h4>Natural Building Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Estimate materials for adobe, cob, or straw bale construction.</div>
+          <div class="calc-row"><label>Method</label>
+            <select id="nb-method" onchange="calcNaturalBuilding()" style="flex:1;max-width:180px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;">
+              <option value="adobe">Adobe Brick (10×4×14 in)</option>
+              <option value="cob">Cob (monolithic)</option>
+              <option value="strawbale">Straw Bale (2-string, 14×18×36 in)</option>
+            </select></div>
+          <div class="calc-row"><label>Wall length (ft)</label><input type="number" id="nb-length" value="20" min="1" oninput="calcNaturalBuilding()" style="max-width:100px;"></div>
+          <div class="calc-row"><label>Wall height (ft)</label><input type="number" id="nb-height" value="8" min="1" oninput="calcNaturalBuilding()" style="max-width:100px;"></div>
+          <div class="calc-row"><label>Wall thickness (in)</label><input type="number" id="nb-thick" value="14" min="4" oninput="calcNaturalBuilding()" style="max-width:100px;"></div>
+          <div class="calc-result" id="nb-result"></div>
+        </div>
+
+        <!-- Nuclear Fallout Dose Rate Calculator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Nuclear Fallout — Dose Rate & Shelter Assessment (7-10 Rule)</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">The 7-10 Rule: dose rate drops 10x for every 7x increase in time after detonation (H+1 = reference). Enter H+1 dose rate from your dosimeter or reference data.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Dose rate @ H+1 (R/hr)</label><input id="fall-h1" type="number" min="0.001" step="0.001" value="100" style="width:100px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcFallout()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Shelter type</label>
+              <select id="fall-shelter" onchange="calcFallout()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="1">Open (PF 1) — No protection</option>
+                <option value="3">Vehicle (PF 3)</option>
+                <option value="10">Wood frame home (PF 10)</option>
+                <option value="40" selected>Basement (PF 40)</option>
+                <option value="200">Concrete basement / subway (PF 200)</option>
+                <option value="1000">Underground bunker (PF 1000)</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Hours since detonation</label><input id="fall-hours" type="number" min="1" max="720" value="1" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcFallout()"></div>
+          </div>
+          <div class="calc-result" id="fall-result"></div>
+        </div>
+
+        <!-- Canning & Preservation Calculator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Canning & Preservation Calculator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Estimate jar quantities and processing times. Always follow USDA-tested recipes for safety.</div>
+          <div style="display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;align-items:end;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Food type</label>
+              <select id="can-food" onchange="calcCanning()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="tomatoes,2,45,wb">Tomatoes (whole)</option>
+                <option value="green-beans,2,20,pc">Green Beans</option>
+                <option value="corn,2,55,pc">Corn (whole kernel)</option>
+                <option value="peaches,2.5,30,wb">Peaches</option>
+                <option value="applesauce,2.5,20,wb">Applesauce</option>
+                <option value="beef,2,75,pc">Beef / Venison (chunks)</option>
+                <option value="chicken,2,75,pc">Chicken (chunks)</option>
+                <option value="salsa,2,15,wb">Salsa</option>
+                <option value="jam,0.5,10,wb">Jam / Jelly</option>
+                <option value="pickles,1,10,wb">Pickles</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Pounds of produce</label><input id="can-lbs" type="number" min="1" max="500" value="20" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" oninput="calcCanning()"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Jar size</label>
+              <select id="can-jar" onchange="calcCanning()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="0.5">Half-pint (8 oz)</option>
+                <option value="1" selected>Pint (16 oz)</option>
+                <option value="1.5">Quart (32 oz)</option>
+              </select></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Altitude</label>
+              <select id="can-alt" onchange="calcCanning()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;">
+                <option value="0">0–1,000 ft</option>
+                <option value="1000">1,001–3,000 ft</option>
+                <option value="3000">3,001–6,000 ft</option>
+                <option value="6000">6,001+ ft</option>
+              </select></div>
+          </div>
+          <div class="calc-result" id="can-result"></div>
+        </div>
+
       </div>
     </div>
     </div><!-- /psub-calculators -->
@@ -1474,6 +1598,10 @@ body{background:var(--bg);color:var(--text)}
             <tr><td>WWV Time</td><td>2.5, 5, 10, 15, 20 MHz</td><td>NIST time signal + propagation</td><td>Receive only</td></tr>
           </tbody>
         </table>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
+        <button class="btn btn-sm" onclick="exportChirpCSV()" title="Export channel plan as CHIRP-compatible CSV for radio programming">Export CHIRP CSV</button>
+        <span style="font-size:11px;color:var(--text-dim);">Downloads a CHIRP-compatible .csv with all emergency channels for radio programming.</span>
       </div>
     </div>
     </div><!-- /psub-radio -->
@@ -2949,6 +3077,204 @@ body{background:var(--bg);color:var(--text)}
           <div id="shelter-assess" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px;"></div>
           <div id="shelter-score" style="margin-top:8px;font-size:13px;font-weight:600;"></div>
         </div>
+
+        <!-- Emergency Phrase Translator -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Emergency Phrase Translator</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:10px;">Key survival phrases in 10 languages. Phonetic pronunciation shown in brackets.</div>
+          <div style="margin-bottom:8px;"><label style="font-size:11px;color:var(--text-dim);margin-right:8px;">Language:</label>
+            <select id="phrase-lang" onchange="showPhrases()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 10px;border-radius:6px;font-size:12px;outline:none;">
+              <option value="es">Spanish</option>
+              <option value="fr">French</option>
+              <option value="de">German</option>
+              <option value="pt">Portuguese</option>
+              <option value="ru">Russian</option>
+              <option value="ar">Arabic</option>
+              <option value="zh">Mandarin Chinese</option>
+              <option value="ja">Japanese</option>
+              <option value="ko">Korean</option>
+              <option value="hi">Hindi</option>
+            </select>
+          </div>
+          <div id="phrase-output" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:6px;font-size:12px;"></div>
+        </div>
+
+        <!-- Animal Tracks Identification -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Animal Tracks Identification Guide</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Identify wildlife by tracks, gait patterns, and sign. Tracks indicate food, water sources, and potential threats.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;font-size:12px;">
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Deer (White-tailed)</div>
+              <div>Track: Split heart-shape, 2-3.5 in long. 4 toes, 2 dewclaws (rarely show). Front slightly larger than rear. Gait: Walk = straddle stride; Run/Bound = grouped 4-print clusters.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Follow deer trails downhill to water. Beds in thick brush. Active dawn/dusk. Sign: Rubs on saplings, scrapes on ground.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Black Bear</div>
+              <div>Track: 5 toes in arc, claw marks close to toes. Front: 4-6 in wide. Rear: 6-9 in (heel often shows = flat-footed). Pigeon-toed gait. Trail = two parallel lines of prints.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Sign: Claw marks on trees 4-8 ft high, overturned logs, torn beehives. Make noise when hiking. Never run from a black bear — stand ground, make yourself big.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Coyote / Wolf</div>
+              <div>Coyote: 2-3 in oval, 4 toes + claw tips, oval heel pad. Tracks in line (rear foot lands in front print). Wolf: 4-5 in, much larger, same pattern. Distinguished from dog by tighter, more oval shape.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Coyotes follow trails/roads at night. Scat: twisted with fur/bone. Wolf packs leave parallel sets. Both trail-walk efficiently.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Wild Turkey</div>
+              <div>Track: 3 forward toes in fan shape, 4-5 in wide. Small rear toe may show. Stride 10-14 in. Scratchings in leaf litter = feeding sign. Roost droppings under trees.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Most valuable survival bird in North America. Found near open woods/fields. Listen for gobbling at dawn. Set up at wood edge before sunrise. Arrow/snare trap at roost site.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Rabbit / Hare</div>
+              <div>Track: 2 large oval rear feet side-by-side, 2 small round front feet in line behind them. Bound pattern. Rear: 3-4 in. Front: 1 in. Fur in bushes, nibbled vegetation, round pellet scat.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Most abundant survival game. Use wire snares on runways. Set 10-20 snares; expect 20% success rate. Active dawn/dusk. Form-rest in thick vegetation.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Raccoon</div>
+              <div>Track: "Tiny hand" with 5 long toes spread wide. 2-3 in. Front and rear similar. Walk: front and opposite rear print together (like walking on hands). Near water.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Edible — trap or snare near water at night. Carry rabies risk; never handle without protection. Cook to 165°F minimum. Sign: Fish scales/shells at water's edge.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Reading Tracks: Key Rules</div>
+              <div>• Fresh = sharp edges, moist soil, no debris. Old = eroded, dried edges, leaf fall inside.<br>• Follow tracks to water by going downhill where multiple species' tracks converge.<br>• 2-toed (cloven) = deer, hog, pronghorn, bison. 4-toed oval = canine/feline. 5-toed = bear, raccoon, mustelids.<br>• Size + stride + gait pattern = species ID. When in doubt, measure and photograph.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Wild Hog / Feral Pig</div>
+              <div>Track: 2 wide toes (cloven) 2-3 in wide, blunt tips. Dewclaws usually show even in firm soil (unlike deer). Rooting: soil turned up in 1-3 ft patches. Wallows: muddy depressions near water.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">High-calorie survival food (abundant in southeastern US). Boars are dangerous — shoot or spear, never approach with knives only. Cook to 160°F; may carry trichinella.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mushroom Identification Guide -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Mushroom Identification Guide — Safe vs Deadly</h4>
+          <div style="background:var(--red);color:#fff;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:12px;font-weight:600;">RULE: Never eat a mushroom you cannot positively identify with 100% certainty. Cooking does NOT neutralize Amatoxins. When in doubt, do NOT eat it.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;font-size:12px;">
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;border-left:3px solid var(--green);">
+              <div style="font-weight:600;color:var(--green);margin-bottom:4px;">SAFE — Chanterelle</div>
+              <div>Wavy golden-yellow cap (2-5 in), false gills (blunt forking ridges, not true gills — run down stem). White/pale yellow flesh. Fruity apricot smell. Firm texture. Forest floor near oaks/conifers, summer–fall.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Look-alike hazard: Jack-O-Lantern (Omphalotus) is similar orange but has true knife-blade gills and grows in clusters on wood. Glow faintly in dark. Causes severe GI distress.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;border-left:3px solid var(--green);">
+              <div style="font-weight:600;color:var(--green);margin-bottom:4px;">SAFE — Morel</div>
+              <div>Honeycomb-pitted cap (tan to dark brown), hollow stem and cap when cut lengthwise — this is the key test. Spring only (March–May). Near dying elms, ash, apple trees. 2-6 in tall.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Look-alike hazard: False Morel (Gyromitra) is brain-shaped/wrinkled (not pitted), partially hollow (not fully), reddish-brown. Contains gyromitrin — may be fatal. Always cut lengthwise to verify fully hollow.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;border-left:3px solid var(--green);">
+              <div style="font-weight:600;color:var(--green);margin-bottom:4px;">SAFE — Giant Puffball</div>
+              <div>All-white inside when sliced (if any yellow, brown, or gills visible = DO NOT eat). Smooth white exterior, 4-24 in wide. No stem, gills, or cap. Meadows/fields in summer–fall.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Must see all-white interior to confirm. Before eating, slice fully — if you see any shape of a "baby Amanita" forming inside (outline of cap/gills), discard immediately. Young deadly Amanitas can look like small puffballs externally.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;border-left:3px solid var(--green);">
+              <div style="font-weight:600;color:var(--green);margin-bottom:4px;">SAFE — Chicken of the Woods</div>
+              <div>Bright orange-yellow shelving brackets, no gills (pores on underside), grows on living/dead trees. No stem. Sulfur-colored. 4-24+ in wide. Summer–fall. Firm, meaty texture.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Avoid specimens on conifers, black locust, or eucalyptus (may cause reactions). Fresh young growth preferred. No toxic look-alikes share the bright orange + pore combination.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;border-left:3px solid var(--red);">
+              <div style="font-weight:600;color:var(--red);margin-bottom:4px;">DEADLY — Death Cap (Amanita phalloides)</div>
+              <div>Pale green/yellowish/white cap, white gills, white stem with ring (skirt) and bulbous base in a sack (volva). Pleasant taste. Responsible for ~90% of mushroom fatalities worldwide.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Symptoms delayed 6-24 hours — by then lethal liver/kidney damage is already occurring. No antidote. 1 cap = lethal dose for adult. Often mistaken for paddy straw mushroom, edible Amanitas, or button mushrooms.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;border-left:3px solid var(--red);">
+              <div style="font-weight:600;color:var(--red);margin-bottom:4px;">DEADLY — Destroying Angel (Amanita bisporigera)</div>
+              <div>All white: cap, gills, stem, ring, volva. Pure white, pristine appearance. 2-5 in cap. Found near hardwoods. Same toxin as Death Cap (amatoxin).</div>
+              <div style="color:var(--text-dim);margin-top:4px;">The all-white combination + volva (base sack) = never eat. Sometimes confused with edible button mushrooms. Test: edible buttons have pink/brown gills; Destroying Angel always has white gills.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;border-left:3px solid var(--red);">
+              <div style="font-weight:600;color:var(--red);margin-bottom:4px;">DEADLY — Autumn Skullcap (Galerina marginata)</div>
+              <div>Small brown cap (0.5-2.5 in), brown gills, ring on stem. Grows in clusters on rotting wood. Same amatoxins as Death Cap. Often mistaken for edible Honey Mushrooms.</div>
+              <div style="color:var(--text-dim);margin-top:4px;">Key distinction from Honey Mushroom: Galerina has brown spore print; Honey Mushroom has white spore print. Always take a spore print — place cap gill-down on paper for 1 hour.</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--orange);margin-bottom:4px;">Spore Print Guide</div>
+              <div><strong>How:</strong> Place cap gill-down on white AND dark paper for 1-2 hours, then cover with bowl. Remove cap carefully.<br><br><strong>White/cream:</strong> Amanita, Cantharellus, Pleurotus<br><strong>Pink/salmon:</strong> Pluteus, Clitopilus (likely safe edible)<br><strong>Brown:</strong> Galerina (DEADLY), Pholiota, Cortinarius<br><strong>Purple-black:</strong> Coprinus (edible but liquefies), Psathyrella<br><strong>Rusty brown:</strong> Cortinarius (many are toxic)<br><br>Spore print color is one key to identification but not the only test. Always use multiple identification features.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foraging Calendar by Month -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Foraging Calendar — What's Edible by Month (North America)</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Select month to see what's typically harvestable. Varies by region (zone 5-8 average). Always confirm identification before eating.</div>
+          <div style="margin-bottom:10px;display:flex;gap:4px;flex-wrap:wrap;">
+            <button class="btn btn-sm btn-primary" id="forage-btn-1" onclick="showForageMonth(1)">Jan</button>
+            <button class="btn btn-sm" id="forage-btn-2" onclick="showForageMonth(2)">Feb</button>
+            <button class="btn btn-sm" id="forage-btn-3" onclick="showForageMonth(3)">Mar</button>
+            <button class="btn btn-sm" id="forage-btn-4" onclick="showForageMonth(4)">Apr</button>
+            <button class="btn btn-sm" id="forage-btn-5" onclick="showForageMonth(5)">May</button>
+            <button class="btn btn-sm" id="forage-btn-6" onclick="showForageMonth(6)">Jun</button>
+            <button class="btn btn-sm" id="forage-btn-7" onclick="showForageMonth(7)">Jul</button>
+            <button class="btn btn-sm" id="forage-btn-8" onclick="showForageMonth(8)">Aug</button>
+            <button class="btn btn-sm" id="forage-btn-9" onclick="showForageMonth(9)">Sep</button>
+            <button class="btn btn-sm" id="forage-btn-10" onclick="showForageMonth(10)">Oct</button>
+            <button class="btn btn-sm" id="forage-btn-11" onclick="showForageMonth(11)">Nov</button>
+            <button class="btn btn-sm" id="forage-btn-12" onclick="showForageMonth(12)">Dec</button>
+          </div>
+          <div id="forage-output" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;font-size:12px;"></div>
+        </div>
+
+        <!-- Ham Radio Digital Modes Reference -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Ham Radio Digital Modes — Grid-Down Reference</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Key digital modes for grid-down communication. All modes listed work with a radio + soundcard/interface; most are free software.</div>
+          <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:11px;">
+              <thead><tr style="color:var(--text-dim);border-bottom:1px solid var(--border);">
+                <th style="text-align:left;padding:4px 8px;">Mode</th>
+                <th style="text-align:left;padding:4px 8px;">Software</th>
+                <th style="text-align:left;padding:4px 8px;">Band</th>
+                <th style="text-align:left;padding:4px 8px;">Best Use</th>
+                <th style="text-align:left;padding:4px 8px;">Key Freq (USB)</th>
+                <th style="text-align:left;padding:4px 8px;">Notes</th>
+              </tr></thead>
+              <tbody>
+                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;font-weight:600;">JS8Call</td><td style="padding:4px 8px;">JS8Call (free)</td><td style="padding:4px 8px;">HF</td><td style="padding:4px 8px;">Store-and-forward text, mesh relay</td><td style="padding:4px 8px;">7.078 MHz (40m)</td><td style="padding:4px 8px;">Messages queued offline; relay through 3rd station; grid-down ideal</td></tr>
+                <tr style="border-bottom:1px solid var(--border);background:var(--surface2);"><td style="padding:4px 8px;font-weight:600;">Winlink</td><td style="padding:4px 8px;">Winlink Express (free)</td><td style="padding:4px 8px;">HF/VHF</td><td style="padding:4px 8px;">Email with attachments over radio</td><td style="padding:4px 8px;">14.103 MHz (20m)</td><td style="padding:4px 8px;">Global gateway network; ICS forms; ARES/RACES standard</td></tr>
+                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;font-weight:600;">APRS</td><td style="padding:4px 8px;">APRSISCE/32 (free)</td><td style="padding:4px 8px;">VHF</td><td style="padding:4px 8px;">Position reporting, text messages</td><td style="padding:4px 8px;">144.390 MHz (2m)</td><td style="padding:4px 8px;">Beacon your position every few min; seen by all APRS stations in range</td></tr>
+                <tr style="border-bottom:1px solid var(--border);background:var(--surface2);"><td style="padding:4px 8px;font-weight:600;">FT8/FT4</td><td style="padding:4px 8px;">WSJT-X (free)</td><td style="padding:4px 8px;">HF</td><td style="padding:4px 8px;">Weak signal DX contacts</td><td style="padding:4px 8px;">14.074 MHz (20m)</td><td style="padding:4px 8px;">Not conversational — contact only. Proves propagation path exists</td></tr>
+                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;font-weight:600;">PSK31</td><td style="padding:4px 8px;">FLDigi (free)</td><td style="padding:4px 8px;">HF</td><td style="padding:4px 8px;">Keyboard-to-keyboard QSO</td><td style="padding:4px 8px;">14.070 MHz (20m)</td><td style="padding:4px 8px;">Low power, narrow bandwidth; 31 baud; popular for ragchew</td></tr>
+                <tr style="border-bottom:1px solid var(--border);background:var(--surface2);"><td style="padding:4px 8px;font-weight:600;">Olivia</td><td style="padding:4px 8px;">FLDigi (free)</td><td style="padding:4px 8px;">HF</td><td style="padding:4px 8px;">Weak/noisy conditions chat</td><td style="padding:4px 8px;">14.106 MHz (20m)</td><td style="padding:4px 8px;">More robust than PSK31 in interference; used in NBEMS emergency nets</td></tr>
+                <tr style="border-bottom:1px solid var(--border);"><td style="padding:4px 8px;font-weight:600;">Meshtastic</td><td style="padding:4px 8px;">Meshtastic app</td><td style="padding:4px 8px;">LoRa UHF</td><td style="padding:4px 8px;">No-license local mesh text</td><td style="padding:4px 8px;">915 MHz (US)</td><td style="padding:4px 8px;">~$30 hardware; no license; AES-256; 3-15km per hop</td></tr>
+                <tr style="border-bottom:1px solid var(--border);background:var(--surface2);"><td style="padding:4px 8px;font-weight:600;">RTTY</td><td style="padding:4px 8px;">FLDigi (free)</td><td style="padding:4px 8px;">HF</td><td style="padding:4px 8px;">News feeds, weather bulletins</td><td style="padding:4px 8px;">14.095 MHz (20m)</td><td style="padding:4px 8px;">Receive NWS/Coast Guard marine weather text; no TX license needed to receive</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top:8px;font-size:11px;color:var(--text-dim);">Emergency Digital Nets: SATERN (Salvation Army) 14.265 MHz USB | NTSD (National Traffic) 3.625 MHz | WLNKx (Winlink) — check winlink.org/stations. All times UTC.</div>
+        </div>
+
+        <!-- Ham License Study Guide -->
+        <div class="calc-card" style="grid-column:1/-1;">
+          <h4>Ham Radio Technician License — Key Concepts (No-Code Exam)</h4>
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">35-question multiple choice exam. Study free at HamStudy.org or ARRL.org. $15 fee. License is 10 years, renewable.</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:8px;font-size:12px;">
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Privileges (Technician)</div>
+              <div>• All VHF/UHF frequencies (144-148 MHz, 420-450 MHz, etc.)<br>• Limited HF: 80m CW only (3.525 MHz), 40m CW (7.025), 15m CW (21.025), 10m voice (28.300-28.500 MHz)<br>• 200W max on most bands (1.5 kW on 10m)<br>• Repeater use: all VHF/UHF repeaters</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Key Rules to Know</div>
+              <div>• Station ID every 10 min and at end of QSO<br>• No music, obscene language, or false distress calls<br>• Emergencies trump all other traffic — any frequency, any mode<br>• No third-party traffic to/from countries without agreement (e.g., Cuba)<br>• Remote control allowed with proper ID<br>• Monitor before transmitting (QRM avoidance)</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Critical Frequencies</div>
+              <div>• 146.520 FM — National simplex calling (2m)<br>• 446.000 FM — National simplex calling (70cm)<br>• 121.500 MHz — Aviation emergency (receive only)<br>• 156.800 MHz — Marine Ch 16 distress (receive only)<br>• 406.028 MHz — ELT/EPIRB satellite alert<br>• Remember: 2m = 144-148 MHz; 70cm = 420-450 MHz</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Safety & Electrical</div>
+              <div>• RF safety: calculate MPE (Maximum Permissible Exposure)<br>• Grounding: lightning protection, single-point ground<br>• Fuse near battery, not at load — protects wiring<br>• DC wiring: red = positive, black = negative<br>• Coax: center conductor = signal; braid = ground<br>• PL-259 = most common HF/VHF connector</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Propagation Basics</div>
+              <div>• VHF/UHF = line-of-sight (LOS). Repeaters extend range.<br>• HF = skywave via ionosphere. F-layer: 100-300 mi. E-layer: 60-80 mi.<br>• 10m/15m = best daytime DX (solar cycle dependent)<br>• 40m/80m = regional night coverage (NVIS)<br>• Gray line = enhanced propagation at dawn/dusk globally</div>
+            </div>
+            <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+              <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Emergency Operations</div>
+              <div>• ARES (Amateur Radio Emergency Service) — ARRL-organized volunteer net<br>• RACES (Radio Amateur Civil Emergency Service) — government-activated<br>• ICS integration: Net Control = IC, stations = tactical operators<br>• "Break" = interrupt for emergency. "Break Break" = life-threatening emergency.<br>• Always give callsign when breaking into a net</div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
     </div><!-- /psub-reference -->
@@ -3733,6 +4059,91 @@ body{background:var(--bg);color:var(--text)}
         <div id="home-security-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:4px;font-size:11px;"></div>
         <div id="home-security-score" style="margin-top:8px;font-size:13px;font-weight:600;"></div>
       </div>
+
+      <!-- ICS Forms -->
+      <div class="settings-card" style="margin-top:16px;">
+        <h3 style="font-size:13px;">ICS / NIMS Forms</h3>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:12px;">Standard Incident Command System forms used by ARES, CERT, and emergency management agencies. Fill and print.</div>
+        <div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;">
+          <button class="btn btn-sm btn-primary" id="ics-tab-213" onclick="showICSTab('213')">ICS-213 General Message</button>
+          <button class="btn btn-sm" id="ics-tab-309" onclick="showICSTab('309')">ICS-309 Comms Log</button>
+          <button class="btn btn-sm" id="ics-tab-214" onclick="showICSTab('214')">ICS-214 Activity Log</button>
+        </div>
+
+        <!-- ICS-213 General Message -->
+        <div id="ics-213-panel">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">ICS-213: Used for written communications between units during an incident. Fill out and print.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">To:</label><input id="ics213-to" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Name / Position / ICS Section"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">From:</label><input id="ics213-from" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Name / Position / ICS Section"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Subject:</label><input id="ics213-subject" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Message subject"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Date/Time:</label><input id="ics213-datetime" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="YYYY-MM-DD HH:MM"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Incident Name:</label><input id="ics213-incident" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Operation / Incident name"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Priority:</label>
+              <select id="ics213-priority" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;">
+                <option>Routine</option><option>Priority</option><option>Immediate</option>
+              </select></div>
+          </div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Message:</label><textarea id="ics213-message" rows="5" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;resize:vertical;" placeholder="Message text..."></textarea></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Reply by:</label><input id="ics213-replyby" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Reply deadline (optional)"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Reply (if response):</label><input id="ics213-reply" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Response text (if applicable)"></div>
+          </div>
+          <div style="margin-top:10px;display:flex;gap:6px;">
+            <button class="btn btn-sm btn-primary" onclick="printICS213()">Print ICS-213</button>
+            <button class="btn btn-sm" onclick="clearICS213()">Clear</button>
+          </div>
+        </div>
+
+        <!-- ICS-309 Comms Log -->
+        <div id="ics-309-panel" style="display:none;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">ICS-309: Communications log for recording all radio traffic during an incident.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Incident Name:</label><input id="ics309-incident" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Operator Name:</label><input id="ics309-operator" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Station/Freq:</label><input id="ics309-station" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. W1ABC / 146.520 MHz"></div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:10px;margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:6px;">Add Log Entry</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:end;">
+              <div><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:2px;">Time (HH:MM)</label><input id="ics309-time" style="width:80px;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:11px;outline:none;" placeholder="14:30"></div>
+              <div><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:2px;">From</label><input id="ics309-from" style="width:100px;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:11px;outline:none;" placeholder="Callsign/unit"></div>
+              <div><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:2px;">To</label><input id="ics309-to" style="width:100px;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:11px;outline:none;" placeholder="Callsign/unit"></div>
+              <div style="flex:1;min-width:200px;"><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:2px;">Message</label><input id="ics309-msg" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:11px;outline:none;" placeholder="Traffic content"></div>
+              <button class="btn btn-sm btn-primary" onclick="addICS309Entry()">Add</button>
+            </div>
+          </div>
+          <div id="ics309-entries" style="overflow-x:auto;margin-bottom:10px;font-size:11px;"></div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-primary" onclick="printICS309()">Print ICS-309</button>
+            <button class="btn btn-sm" onclick="clearICS309()">Clear Log</button>
+          </div>
+        </div>
+
+        <!-- ICS-214 Activity Log -->
+        <div id="ics-214-panel" style="display:none;">
+          <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">ICS-214: Activity log for tracking personnel assignments and activities during an incident.</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Incident Name:</label><input id="ics214-incident" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Unit/Team Name:</label><input id="ics214-unit" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Unit Leader:</label><input id="ics214-leader" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Operational Period:</label><input id="ics214-period" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. 2024-03-15 0600-1800"></div>
+          </div>
+          <div style="background:var(--surface2);border-radius:6px;padding:10px;margin-bottom:10px;">
+            <div style="font-size:11px;font-weight:600;color:var(--text-dim);margin-bottom:6px;">Add Activity</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:end;">
+              <div><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:2px;">Time</label><input id="ics214-time" style="width:80px;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:11px;outline:none;" placeholder="HH:MM"></div>
+              <div style="flex:1;min-width:200px;"><label style="font-size:10px;color:var(--text-dim);display:block;margin-bottom:2px;">Notable Activity</label><input id="ics214-activity" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);padding:4px 6px;border-radius:4px;font-size:11px;outline:none;" placeholder="Activity description"></div>
+              <button class="btn btn-sm btn-primary" onclick="addICS214Entry()">Add</button>
+            </div>
+          </div>
+          <div id="ics214-entries" style="overflow-x:auto;margin-bottom:10px;font-size:11px;"></div>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm btn-primary" onclick="printICS214()">Print ICS-214</button>
+            <button class="btn btn-sm" onclick="clearICS214()">Clear</button>
+          </div>
+        </div>
+      </div>
     </div>
     </div><!-- /psub-ops -->
 
@@ -3805,6 +4216,144 @@ body{background:var(--bg);color:var(--text)}
       </div>
     </div>
     </div><!-- /psub-family -->
+
+    <!-- Sub: Skills Tracker -->
+    <div id="psub-skills" class="prep-sub">
+    <div class="prep-section">
+      <h3>Survival Skills Self-Assessment</h3>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Track your proficiency across 60+ survival skills. Honest self-assessment reveals your training gaps before you need the skills.</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+        <button class="btn btn-sm btn-primary" onclick="openSkillForm()">+ Add Custom Skill</button>
+        <button class="btn btn-sm" onclick="seedDefaultSkills()">Load Default 60 Skills</button>
+        <div id="skills-filter-btns" style="display:flex;gap:4px;flex-wrap:wrap;"></div>
+        <div id="skills-summary" style="margin-left:auto;font-size:12px;color:var(--text-dim);"></div>
+      </div>
+      <div id="skills-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Skill Name</label><input id="skill-name" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. Shelter building"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Category</label>
+            <select id="skill-cat" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;">
+              <option>Fire</option><option>Water</option><option>Shelter</option><option>Food</option>
+              <option>Navigation</option><option>Medical</option><option>Communications</option>
+              <option>Security</option><option>Mechanical</option><option>Homesteading</option><option>General</option>
+            </select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Proficiency</label>
+            <select id="skill-prof" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;">
+              <option value="none">None — Never practiced</option>
+              <option value="basic">Basic — Know the theory</option>
+              <option value="intermediate">Intermediate — Can do it with effort</option>
+              <option value="expert">Expert — Can teach it</option>
+            </select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Last Practiced</label><input id="skill-practiced" type="date" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
+          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Notes</label><input id="skill-notes" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Training resources, goals, etc."></div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-primary" onclick="saveSkill()">Save</button>
+          <button class="btn btn-sm" onclick="document.getElementById('skill-edit-id').value='';document.getElementById('skills-form').style.display='none'">Cancel</button>
+        </div>
+        <input type="hidden" id="skill-edit-id" value="">
+      </div>
+      <div id="skills-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;"></div>
+    </div>
+    </div><!-- /psub-skills -->
+
+    <!-- Sub: Ammo Inventory -->
+    <div id="psub-ammo" class="prep-sub">
+    <div class="prep-section">
+      <h3>Ammunition Inventory</h3>
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-primary" onclick="openAmmoForm()">+ Add Entry</button>
+        <div id="ammo-summary-bar" style="font-size:12px;color:var(--text-dim);margin-left:auto;"></div>
+      </div>
+      <div id="ammo-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px;margin-bottom:8px;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Caliber *</label><input id="ammo-caliber" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. 9mm, 5.56, .308"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Brand</label><input id="ammo-brand" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. Federal, PMC"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Bullet Weight</label><input id="ammo-weight" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. 115gr, 55gr"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Type</label>
+            <select id="ammo-type" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;">
+              <option>FMJ</option><option>JHP</option><option>SP</option><option>HP</option>
+              <option>BTHP</option><option>Slug</option><option>00 Buck</option><option>Bird Shot</option>
+              <option>LRN</option><option>Tracer</option><option>Subsonic</option><option>Match</option><option>Other</option>
+            </select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Quantity (rounds) *</label><input id="ammo-qty" type="number" min="0" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" value="0"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Storage Location</label><input id="ammo-location" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. Gun safe, cache #1"></div>
+          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Notes</label><input id="ammo-notes" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Lot number, purchase date, etc."></div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-primary" onclick="saveAmmo()">Save</button>
+          <button class="btn btn-sm" onclick="document.getElementById('ammo-edit-id').value='';document.getElementById('ammo-form').style.display='none'">Cancel</button>
+        </div>
+        <input type="hidden" id="ammo-edit-id" value="">
+      </div>
+      <div id="ammo-by-caliber" style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap;"></div>
+      <div id="ammo-list" style="overflow-x:auto;"></div>
+    </div>
+    </div><!-- /psub-ammo -->
+
+    <!-- Sub: Community Resource Registry -->
+    <div id="psub-community" class="prep-sub">
+    <div class="prep-section">
+      <h3>Community Resource Registry</h3>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Document trusted neighbors and community members — who has what skills and equipment. Knowing your neighbors' capabilities multiplies your group's resilience.</div>
+      <button class="btn btn-sm btn-primary" style="margin-bottom:12px;" onclick="openCommunityForm()">+ Add Person</button>
+      <div id="community-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:8px;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Name *</label><input id="comm-name" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Name or identifier"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Distance (miles)</label><input id="comm-dist" type="number" min="0" step="0.1" value="0.1" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Trust Level</label>
+            <select id="comm-trust" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;">
+              <option value="unknown">Unknown</option><option value="acquaintance">Acquaintance</option>
+              <option value="trusted">Trusted</option><option value="inner-circle">Inner Circle</option>
+            </select></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Contact (optional)</label><input id="comm-contact" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Phone / callsign / freq"></div>
+          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Skills (comma-separated)</label><input id="comm-skills" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. nurse, mechanic, ham radio, military, farmer"></div>
+          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Equipment (comma-separated)</label><input id="comm-equip" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. generator, ham radio, tractor, well, solar, medical kit"></div>
+          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Notes</label><textarea id="comm-notes" rows="2" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;resize:vertical;" placeholder="Personality, reliability notes, location, special circumstances..."></textarea></div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <button class="btn btn-sm btn-primary" onclick="saveCommunity()">Save</button>
+          <button class="btn btn-sm" onclick="document.getElementById('comm-edit-id').value='';document.getElementById('community-form').style.display='none'">Cancel</button>
+        </div>
+        <input type="hidden" id="comm-edit-id" value="">
+      </div>
+      <div id="community-skills-summary" style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;font-size:11px;"></div>
+      <div id="community-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;"></div>
+    </div>
+    </div><!-- /psub-community -->
+
+    <!-- Sub: Radiation Log -->
+    <div id="psub-radiation" class="prep-sub">
+    <div class="prep-section">
+      <h3>Radiation Dose Tracker</h3>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Log radiation readings from a Geiger counter or dosimeter. Track cumulative dose to assess safety thresholds.</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px;" id="radiation-dashboard"></div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:end;flex-wrap:wrap;">
+        <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Dose Rate (R/hr or rem/hr) *</label><input id="rad-rate" type="number" min="0" step="0.001" value="" style="width:130px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. 0.5"></div>
+        <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Location</label><input id="rad-location" style="width:140px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Basement, yard, etc."></div>
+        <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Notes</label><input id="rad-notes" style="width:160px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Optional"></div>
+        <button class="btn btn-sm btn-primary" onclick="logRadiation()">Log Reading</button>
+        <button class="btn btn-sm" style="color:var(--red);" onclick="if(confirm('Clear all radiation readings?'))clearRadiation()">Clear Log</button>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;font-size:12px;">
+        <div style="font-weight:600;margin-bottom:6px;">Dose Reference Thresholds</div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px;font-size:11px;">
+          <div><span style="color:var(--green);">●</span> Background: 0.0001–0.001 R/hr (safe indefinitely)</div>
+          <div><span style="color:var(--green);">●</span> &lt;0.1 R/hr: Acceptable for continuous occupancy</div>
+          <div><span style="color:var(--orange);">●</span> 0.1–2 R/hr: Limit exposure. 2 hrs max/day.</div>
+          <div><span style="color:var(--orange);">●</span> 2–10 R/hr: Limit to 30 min. Shelter strongly recommended.</div>
+          <div><span style="color:var(--red);">●</span> 10–100 R/hr: Emergency only. Minutes maximum.</div>
+          <div><span style="color:var(--red);">●</span> &gt;100 R/hr: Lethal zone. Do not enter.</div>
+          <div><span style="color:var(--text-dim);">●</span> Cumulative 25 rem: Possible long-term health effects</div>
+          <div><span style="color:var(--red);">●</span> Cumulative 100 rem: Acute radiation syndrome threshold</div>
+          <div><span style="color:var(--red);">●</span> Cumulative 400 rem: LD50 (lethal to 50% without treatment)</div>
+        </div>
+        <div style="margin-top:8px;font-size:11px;color:var(--text-dim);">7-10 Rule: Fallout intensity drops 90% every 7x time after detonation. H+7hr = 10x less than H+1hr. H+49hr = 100x less. H+2wk = safe for most people to exit shelter briefly.</div>
+      </div>
+      <div id="radiation-log-table" style="overflow-x:auto;font-size:12px;"></div>
+    </div>
+    </div><!-- /psub-radiation -->
+
   </div>
 
   <div id="tab-settings" class="tab-content">
@@ -3896,7 +4445,10 @@ body{background:var(--bg);color:var(--text)}
           </div>
           <div class="setting-row">
             <span class="setting-label">LAN Access</span>
-            <span class="setting-value" id="lan-url-setting">-</span>
+            <span style="display:flex;align-items:center;gap:10px;">
+              <span class="setting-value" id="lan-url-setting">-</span>
+              <button class="btn btn-sm" onclick="showLanQR()" title="Show QR code for mobile access">QR Code</button>
+            </span>
           </div>
           <div class="setting-row">
             <span class="setting-label">Data Directory</span>
@@ -13980,6 +14532,1079 @@ setInterval(() => { if (!document.hidden) pollBroadcast(); }, 5000);
 // Proactive alert system — poll every 60 seconds (backend checks every 5 min)
 setTimeout(loadAlerts, 5000);
 setInterval(() => { if (!document.hidden) loadAlerts(); }, 60000);
+
+// ═══════════════════════════════════════════════════════════════
+// BALLISTICS CALCULATOR
+// ═══════════════════════════════════════════════════════════════
+function calcBallistics() {
+  const sel = document.getElementById('bal-caliber').value.split(',');
+  const name = document.getElementById('bal-caliber').options[document.getElementById('bal-caliber').selectedIndex].text;
+  const bulletWt = parseFloat(sel[1]);
+  const muzzleV = parseFloat(sel[2]);
+  const zeroYd = parseFloat(document.getElementById('bal-zero').value) || 100;
+  const windMph = parseFloat(document.getElementById('bal-wind').value) || 0;
+  // Simple ballistic coefficient approximations by caliber type
+  const bcMap = {'5.56':0.304,'7.62':0.475,'30-06':0.41,'300blk':0.275,'9mm':0.165,'45acp':0.195,'22lr':0.14,'12ga-slug':0.12};
+  const calKey = sel[0];
+  const bc = bcMap[calKey] || 0.3;
+  // Using simplified point-mass ballistics (flat-fire approximation)
+  const g = 32.174; // ft/s²
+  const ranges = [0,50,100,150,200,250,300,400,500];
+  const rows = ranges.map(yd => {
+    const ft = yd * 3;
+    const tof = ft / muzzleV; // simplified
+    const drop_in = -0.5 * g * tof * tof * 12; // inches, negative = below LOS
+    // Velocity at range (simplified exponential decay)
+    const vr = muzzleV * Math.exp(-1.25 * ft / (bc * 1000));
+    const energy = Math.round((bulletWt * vr * vr) / 450437);
+    // Elevation vs zero (drop relative to zero point)
+    const zeroDrop = -0.5 * g * ((zeroYd*3)/muzzleV) * ((zeroYd*3)/muzzleV) * 12;
+    const poi = drop_in - zeroDrop; // POI relative to zero
+    // Wind drift: simplified 10mph right-angle wind = W * T * (V-Vr)/V inches
+    const windDrift = windMph > 0 ? ((windMph/10) * tof * (muzzleV-vr)/muzzleV * 12).toFixed(1) : '0';
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:3px 8px;">${yd}</td>
+      <td style="padding:3px 8px;">${Math.round(vr)}</td>
+      <td style="padding:3px 8px;">${energy}</td>
+      <td style="padding:3px 8px;color:${poi>0?'var(--green)':poi<-3?'var(--orange)':'var(--text)'}">${poi>0?'+':''}${poi.toFixed(1)}"</td>
+      <td style="padding:3px 8px;">${windDrift}"</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('bal-result').innerHTML = `
+    <div style="font-size:11px;color:var(--text-dim);margin-bottom:6px;">${name} | Zero: ${zeroYd}yd | Wind: ${windMph}mph crosswind</div>
+    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="color:var(--text-dim);border-bottom:1px solid var(--border);">
+        <th style="padding:3px 8px;text-align:left;">Range (yd)</th>
+        <th style="padding:3px 8px;text-align:left;">Velocity (fps)</th>
+        <th style="padding:3px 8px;text-align:left;">Energy (ft-lb)</th>
+        <th style="padding:3px 8px;text-align:left;">POI (in)</th>
+        <th style="padding:3px 8px;text-align:left;">Wind Drift (in)</th>
+      </tr></thead><tbody>${rows}</tbody>
+    </table></div>
+    <div style="font-size:10px;color:var(--text-dim);margin-top:4px;">Estimates only. Actual results vary with barrel length, altitude, temperature, and actual BC. Verify with live fire.</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMPOSTING CALCULATOR
+// ═══════════════════════════════════════════════════════════════
+function calcCompost() {
+  const browns = parseFloat(document.getElementById('comp-browns').value) || 0;
+  const greens = parseFloat(document.getElementById('comp-greens').value) || 0;
+  const vol = parseFloat(document.getElementById('comp-vol').value) || 1;
+  if (!browns && !greens) { document.getElementById('comp-result').innerHTML = ''; return; }
+  // C:N ratios: browns ~50:1, greens ~15:1
+  const totalC = browns * 50 + greens * 0;
+  const totalN = browns / 50 + greens / 15;
+  const cnRatio = greens > 0 || browns > 0 ? ((browns * 50 + greens * 15) / (browns + greens)) : 30;
+  // Weighted average C:N
+  const cn = totalN > 0 ? Math.round((browns * 50 + greens * 15) / (browns + greens)) : 50;
+  const ideal = cn >= 25 && cn <= 35;
+  const tooCarbon = cn > 35;
+  const wColor = ideal ? 'var(--green)' : tooCarbon ? 'var(--orange)' : 'var(--red)';
+  const advice = ideal ? 'Ratio is ideal. Pile should heat up within 3-5 days.' :
+    tooCarbon ? `Too much carbon (${cn}:1). Add more greens: kitchen scraps, fresh grass, manure.` :
+    `Too much nitrogen (${cn}:1). Add more browns: dry leaves, cardboard, straw.`;
+  const days = ideal ? '30-60' : tooCarbon ? '90-180' : '45-90';
+  // Volume check — minimum 3×3×3 ft (27 cu ft) for thermophilic composting
+  const volOK = vol >= 27;
+  document.getElementById('comp-result').innerHTML = `
+    <div style="margin-bottom:4px;">C:N Ratio: <strong style="color:${wColor}">${cn}:1</strong> (ideal: 25-35:1)</div>
+    <div style="margin-bottom:4px;color:${wColor}">${advice}</div>
+    <div style="margin-bottom:4px;">Pile Volume: <strong>${vol} cu ft</strong> — ${volOK ? '<span style="color:var(--green)">Sufficient for thermophilic (hot) composting</span>' : '<span style="color:var(--orange)">Too small for hot composting (&lt;27 cu ft). Will cold-compost slowly.</span>'}</div>
+    <div>Estimated decomposition: <strong>${days} days</strong> with regular turning every 3-7 days and adequate moisture (wrung-out sponge consistency).</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PASTURE ROTATION CALCULATOR
+// ═══════════════════════════════════════════════════════════════
+function calcPastureRotation() {
+  const acres = parseFloat(document.getElementById('pr-acres').value) || 1;
+  const au = parseFloat(document.getElementById('pr-au').value) || 1; // Animal Units (1 AU = 1000 lb cow)
+  const paddocks = parseInt(document.getElementById('pr-paddocks').value) || 4;
+  const season = document.getElementById('pr-season').value;
+  // Stocking rate: warm season ~1.5 acres/AU, cool season ~2.5 acres/AU
+  const acresPerAU = season === 'warm' ? 1.5 : 2.5;
+  const restDays = season === 'warm' ? 21 : 60;
+  const grazeDays = restDays / (paddocks - 1);
+  const acresPerPaddock = acres / paddocks;
+  const capacityAU = acresPerPaddock / acresPerAU;
+  const totalCapacity = capacityAU * paddocks;
+  const adequate = au <= totalCapacity * 0.8;
+  document.getElementById('pr-result').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;font-size:12px;">
+      <div>Acres/paddock: <strong>${acresPerPaddock.toFixed(1)}</strong></div>
+      <div>Graze days/paddock: <strong>${grazeDays.toFixed(1)} days</strong></div>
+      <div>Rest period: <strong>${restDays} days</strong></div>
+      <div>Carrying capacity: <strong>${totalCapacity.toFixed(1)} AU total</strong></div>
+      <div style="grid-column:1/-1;color:${adequate?'var(--green)':'var(--red)'}">
+        ${adequate ? `Adequate for ${au} AU. ${((totalCapacity*0.8-au)/totalCapacity*100).toFixed(0)}% below safe stocking limit.` :
+          `Overstocked! Max safe load: ${(totalCapacity*0.8).toFixed(1)} AU. Reduce by ${(au - totalCapacity*0.8).toFixed(1)} AU or add ${Math.ceil((au*acresPerAU*paddocks/0.8 - acres)/acresPerPaddock)} paddocks.`}
+      </div>
+    </div>
+    <div style="margin-top:6px;font-size:11px;color:var(--text-dim);">Rotation schedule: Move to next paddock every ${grazeDays.toFixed(1)} days. Never graze below 3-4 inches (warm season) or 4-5 inches (cool season). One Animal Unit (AU) = 1,000 lb cow or equivalent.</div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NATURAL BUILDING CALCULATOR
+// ═══════════════════════════════════════════════════════════════
+function calcNaturalBuilding() {
+  const method = document.getElementById('nb-method').value;
+  const length = parseFloat(document.getElementById('nb-length').value) || 0;
+  const height = parseFloat(document.getElementById('nb-height').value) || 0;
+  const thick = parseFloat(document.getElementById('nb-thick').value) || 14;
+  const wallArea = length * height; // sq ft
+  let html = '';
+  if (method === 'adobe') {
+    // Standard adobe: 10×4×14 inch brick, ~2-3 lbs clay mix per brick
+    const brickVol = (10/12) * (4/12) * (14/12); // cu ft
+    const wallVol = wallArea * (thick/12); // cu ft
+    const mortarFactor = 0.8; // bricks fill ~80% of wall volume
+    const numBricks = Math.ceil(wallVol * mortarFactor / brickVol);
+    const clayYards = Math.ceil(wallVol * 0.037); // cu yards of clay-sand mix
+    html = `<div><strong>Adobe Brick Wall</strong></div>
+      <div>Wall area: ${wallArea.toFixed(0)} sq ft | Volume: ${(wallVol).toFixed(1)} cu ft</div>
+      <div>Bricks needed: <strong>${numBricks.toLocaleString()}</strong> (10×4×14 in)</div>
+      <div>Clay-sand mix: ~<strong>${clayYards} cu yd</strong> (3 parts sand : 1 part clay : straw)</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Adobe production rate: 100-200 bricks/person/day. Cure 2-4 weeks before laying. Plaster both sides with 1-inch earth plaster. Adobe is not waterproof — roof overhang critical (min 18 in).</div>`;
+  } else if (method === 'cob') {
+    const wallVol = wallArea * (thick/12);
+    const yds = Math.ceil(wallVol / 27);
+    const sand_bags = Math.ceil(yds * 0.6 * 27); // approx
+    html = `<div><strong>Cob Wall (monolithic)</strong></div>
+      <div>Wall area: ${wallArea.toFixed(0)} sq ft | Volume: ${wallVol.toFixed(1)} cu ft (${yds} cu yd)</div>
+      <div>Clay-sand-straw mix: ~<strong>${yds} cu yd</strong></div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Mix: 2 parts subsoil (with clay) + 1 part sand + straw for fiber. Test: squeeze a ball — if it holds shape and doesn't crack when dry, clay content is right. Build in 6-8 inch lifts, allow each to firm before next. Cob is slow — 1-2 cu ft/hour per person.</div>`;
+  } else {
+    // Straw bale: 2-string bale = 14×18×36 inches
+    const baleVol = (14/12) * (18/12) * (36/12); // cu ft
+    const wallVol = wallArea * (thick/12);
+    const numBales = Math.ceil(wallArea / ((36/12) * (18/12))); // bales per sq ft of wall face
+    html = `<div><strong>Straw Bale Wall</strong></div>
+      <div>Wall area: ${wallArea.toFixed(0)} sq ft</div>
+      <div>Bales needed: <strong>${numBales}</strong> (2-string 14×18×36 in)</div>
+      <div>Plaster needed: ~<strong>${Math.ceil(wallArea * 2 * 0.04)} cu yd</strong> (both sides, 1.5 in earth/lime plaster)</div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">Straw bale: R-value ~R-30 (far superior to adobe or cob). Must be kept dry — moisture is fatal. Use a rubble trench foundation raised 18+ inches above grade. Pin bales with rebar stakes. Plaster immediately after stacking to prevent wetting.</div>`;
+  }
+  document.getElementById('nb-result').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// NUCLEAR FALLOUT DOSE CALCULATOR (7-10 Rule)
+// ═══════════════════════════════════════════════════════════════
+function calcFallout() {
+  const h1Rate = parseFloat(document.getElementById('fall-h1').value) || 0;
+  const pf = parseFloat(document.getElementById('fall-shelter').value) || 1;
+  const hours = parseFloat(document.getElementById('fall-hours').value) || 1;
+  if (!h1Rate) { document.getElementById('fall-result').innerHTML = ''; return; }
+  // 7-10 Rule: rate at time T = H1_rate * (T ^ -1.2)
+  const rateAtT = h1Rate * Math.pow(hours, -1.2);
+  const shelteredRate = rateAtT / pf;
+  const exitSafeRate = 2; // R/hr — generally safe for limited exposure
+  const hoursToSafe = Math.pow(h1Rate / exitSafeRate, 1/1.2);
+  const hoursToVerySafe = Math.pow(h1Rate / 0.1, 1/1.2);
+  const colorRate = shelteredRate < 0.5 ? 'var(--green)' : shelteredRate < 5 ? 'var(--orange)' : 'var(--red)';
+  // Dose accumulation estimate for 24h shelter stay
+  let cum24h = 0;
+  for (let h = 1; h <= 24; h++) {
+    cum24h += h1Rate * Math.pow(h, -1.2) / pf;
+  }
+  const rows = [1,2,4,7,12,24,48,168,336,720].map(h => {
+    const rate = h1Rate * Math.pow(h, -1.2);
+    const sRate = (rate / pf).toFixed(3);
+    const safe = rate / pf < 0.1;
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:3px 8px;">H+${h < 24 ? h+'hr' : (h/24)+'d'}</td>
+      <td style="padding:3px 8px;">${rate.toFixed(3)}</td>
+      <td style="padding:3px 8px;color:${parseFloat(sRate)<0.1?'var(--green)':parseFloat(sRate)<2?'var(--orange)':'var(--red)'}">${sRate}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('fall-result').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px;">
+      <div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-dim);">Dose rate now (H+${hours}hr)</div>
+        <div style="font-size:18px;font-weight:700;color:${colorRate}">${shelteredRate.toFixed(3)} R/hr</div>
+        <div style="font-size:10px;color:var(--text-dim);">in shelter (PF ${pf})</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-dim);">Exit viable (&lt;2 R/hr outside)</div>
+        <div style="font-size:16px;font-weight:700;">H+${hoursToSafe.toFixed(1)}hr</div>
+        <div style="font-size:10px;color:var(--text-dim);">after detonation</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-dim);">Freely exit (&lt;0.1 R/hr)</div>
+        <div style="font-size:16px;font-weight:700;">H+${hoursToVerySafe > 720 ? '30+ days' : hoursToVerySafe.toFixed(0)+'hr'}</div>
+        <div style="font-size:10px;color:var(--text-dim);">after detonation</div>
+      </div>
+    </div>
+    <div style="margin-bottom:6px;font-size:11px;">Estimated cumulative dose in 24hr shelter stay: <strong>${cum24h.toFixed(2)} rem</strong> ${cum24h > 25 ? '<span style="color:var(--red)">HIGH — health risk</span>' : cum24h > 5 ? '<span style="color:var(--orange)">moderate</span>' : '<span style="color:var(--green)">low risk</span>'}</div>
+    <div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;font-size:11px;">
+      <thead><tr style="color:var(--text-dim);border-bottom:1px solid var(--border);">
+        <th style="padding:3px 8px;text-align:left;">Time</th>
+        <th style="padding:3px 8px;text-align:left;">Outside (R/hr)</th>
+        <th style="padding:3px 8px;text-align:left;">In Shelter (R/hr)</th>
+      </tr></thead><tbody>${rows}</tbody>
+    </table></div>`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CANNING CALCULATOR
+// ═══════════════════════════════════════════════════════════════
+function calcCanning() {
+  const foodSel = document.getElementById('can-food').value.split(',');
+  const foodName = document.getElementById('can-food').options[document.getElementById('can-food').selectedIndex].text;
+  const lbsPerJar = parseFloat(foodSel[1]);
+  const baseTime = parseInt(foodSel[2]);
+  const method = foodSel[3]; // 'wb' = water bath, 'pc' = pressure canner
+  const lbs = parseFloat(document.getElementById('can-lbs').value) || 0;
+  const jarSize = parseFloat(document.getElementById('can-jar').value);
+  const altitude = parseInt(document.getElementById('can-alt').value) || 0;
+  const numJars = Math.ceil(lbs / (lbsPerJar * jarSize));
+  // Altitude time adjustment for water bath (every 1000 ft above 1000 ft = +5 min)
+  let timeAdj = 0;
+  if (method === 'wb') {
+    if (altitude >= 6000) timeAdj = 20;
+    else if (altitude >= 3000) timeAdj = 10;
+    else if (altitude >= 1000) timeAdj = 5;
+  }
+  // Pressure canner: altitude raises required pressure (not time for most)
+  const finalTime = baseTime + timeAdj;
+  const methodLabel = method === 'wb' ? 'Water Bath Canner' : 'Pressure Canner';
+  const pressurePSI = method === 'pc' ? (altitude >= 6000 ? 15 : altitude >= 2001 ? 12 : 10) : null;
+  document.getElementById('can-result').innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:6px;margin-bottom:8px;">
+      <div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-dim);">Jars needed</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent)">${numJars}</div>
+        <div style="font-size:10px;color:var(--text-dim)">${jarSize===0.5?'half-pints':jarSize===1?'pints':'quarts'}</div>
+      </div>
+      <div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-dim);">Process time</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent)">${finalTime} min</div>
+        <div style="font-size:10px;color:var(--text-dim)">${methodLabel}</div>
+      </div>
+      ${pressurePSI ? `<div style="background:var(--surface2);border-radius:6px;padding:8px;text-align:center;">
+        <div style="font-size:10px;color:var(--text-dim);">Pressure</div>
+        <div style="font-size:22px;font-weight:700;color:var(--accent)">${pressurePSI} PSI</div>
+        <div style="font-size:10px;color:var(--text-dim)">at ${altitude===0?'sea level':altitude+' ft+'}</div>
+      </div>` : ''}
+    </div>
+    <div style="font-size:11px;"><strong>Notes for ${foodName}:</strong> ${method==='wb'?'Water bath canning is safe ONLY for high-acid foods (pH &lt; 4.6). Always use tested recipes. Do not reduce headspace or processing times.':'Pressure canning required for low-acid foods. Botulism spores cannot be destroyed at boiling temperatures (212°F). Pressure canner reaches 240°F+ which kills all pathogens.'}</div>
+    ${timeAdj > 0 ? `<div style="font-size:11px;color:var(--orange);margin-top:4px;">Altitude adjustment: +${timeAdj} min added for ${altitude}+ ft elevation.</div>` : ''}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EMERGENCY PHRASE TRANSLATOR
+// ═══════════════════════════════════════════════════════════════
+const _phrases = {
+  es: {name:'Spanish', phrases: [
+    ['Help!', '¡Ayuda! [ah-YOO-dah]'],
+    ['I need a doctor.', 'Necesito un médico. [neh-seh-SEE-toh oon MEH-dee-koh]'],
+    ['Call an ambulance!', '¡Llame una ambulancia! [YAH-meh OO-nah am-boo-LAN-syah]'],
+    ['I am injured.', 'Estoy herido/a. [es-TOY eh-REE-doh]'],
+    ['Where is the hospital?', '¿Dónde está el hospital? [DON-deh es-TAH el os-pee-TAHL]'],
+    ['Water! / Food!', '¡Agua! / ¡Comida! [AH-gwah / koh-MEE-dah]'],
+    ['I am lost.', 'Estoy perdido/a. [es-TOY pehr-DEE-doh]'],
+    ['Danger! / Fire!', '¡Peligro! / ¡Fuego! [peh-LEE-groh / FWEH-goh]'],
+    ['Police / Military', 'Policía / Ejército [poh-lee-SEE-ah / eh-HEHR-see-toh]'],
+    ['I am American.', 'Soy americano/a. [soy ah-meh-ree-KAH-noh]'],
+    ['Do you speak English?', '¿Habla inglés? [AH-blah een-GLAYS]'],
+    ['Do not shoot!', '¡No dispare! [noh dees-PAH-reh]'],
+    ['I surrender.', 'Me rindo. [meh REEN-doh]'],
+    ['We need shelter.', 'Necesitamos refugio. [neh-seh-see-TAH-mohs reh-FOO-hyoh]'],
+    ['Where is safety?', '¿Dónde está la seguridad? [DON-deh es-TAH lah seh-goo-ree-DAHD]'],
+  ]},
+  fr: {name:'French', phrases: [
+    ['Help!', 'Au secours! [oh suh-KOOR]'],
+    ['I need a doctor.', "J'ai besoin d'un médecin. [zhay buh-ZWAN dun mayd-SAN]"],
+    ['Call an ambulance!', 'Appelez une ambulance! [ah-play OON am-byoo-LAHNS]'],
+    ['I am injured.', 'Je suis blessé(e). [zhuh swee bleh-SAY]'],
+    ['Where is the hospital?', "Où est l'hôpital? [oo ay loh-pee-TAHL]"],
+    ['Water! / Food!', 'De l\'eau! / De la nourriture! [duh LOH / duh lah noo-ree-TOOR]'],
+    ['I am lost.', 'Je suis perdu(e). [zhuh swee pehr-DY]'],
+    ['Danger! / Fire!', 'Danger! / Au feu! [dahn-ZHAY / oh FUH]'],
+    ['Police / Military', 'Police / Militaires [poh-LEES / mee-lee-TEHR]'],
+    ['I am American.', 'Je suis américain(e). [zhuh swee ah-may-ree-KAN]'],
+    ['Do you speak English?', 'Parlez-vous anglais? [par-lay voo ahn-GLAY]'],
+    ['Do not shoot!', 'Ne tirez pas! [nuh tee-RAY pah]'],
+    ['I surrender.', 'Je me rends. [zhuh muh rahn]'],
+    ['We need shelter.', 'Nous avons besoin d\'un abri. [noo zahv-on buh-ZWAN dun ah-BREE]'],
+    ['Where is safety?', 'Où est-il sûr? [oo ay-TEEL syoor]'],
+  ]},
+  de: {name:'German', phrases: [
+    ['Help!', 'Hilfe! [HIL-feh]'],
+    ['I need a doctor.', 'Ich brauche einen Arzt. [ikh BROW-kheh EYE-nen artst]'],
+    ['Call an ambulance!', 'Rufen Sie einen Krankenwagen! [ROO-fen zee EYE-nen KRAN-ken-vah-gen]'],
+    ['I am injured.', 'Ich bin verletzt. [ikh bin fehr-LETST]'],
+    ['Where is the hospital?', 'Wo ist das Krankenhaus? [vo ist das KRAN-ken-hows]'],
+    ['Water! / Food!', 'Wasser! / Essen! [VAS-ser / ES-sen]'],
+    ['I am lost.', 'Ich habe mich verirrt. [ikh HAH-beh mikh fehr-IRT]'],
+    ['Danger! / Fire!', 'Gefahr! / Feuer! [geh-FAR / FOY-er]'],
+    ['Do not shoot!', 'Nicht schießen! [nikht SHEE-sen]'],
+    ['I surrender.', 'Ich ergebe mich. [ikh ehr-GAY-beh mikh]'],
+    ['Do you speak English?', 'Sprechen Sie Englisch? [SHPREH-khen zee ENG-lish]'],
+    ['We need help.', 'Wir brauchen Hilfe. [veer BROW-khen HIL-feh]'],
+    ['I am American.', 'Ich bin Amerikaner(in). [ikh bin ah-meh-ree-KAH-ner]'],
+    ['Where is safety?', 'Wo ist es sicher? [vo ist es ZI-kher]'],
+    ['Police / Military', 'Polizei / Militär [po-lee-TSY / mee-lee-TEHR]'],
+  ]},
+  pt: {name:'Portuguese', phrases: [
+    ['Help!', 'Socorro! [so-KO-hoo]'],
+    ['I need a doctor.', 'Preciso de um médico. [preh-SEE-zoo deh oom MEH-dee-koo]'],
+    ['Call an ambulance!', 'Chame uma ambulância! [SHA-meh OO-mah am-boo-LAN-syah]'],
+    ['I am injured.', 'Estou ferido/a. [es-TOH feh-REE-doo]'],
+    ['Where is the hospital?', 'Onde é o hospital? [ON-deh eh oo os-pee-TAHL]'],
+    ['Water! / Food!', 'Água! / Comida! [AH-gwah / koh-MEE-dah]'],
+    ['Danger! / Fire!', 'Perigo! / Fogo! [peh-REE-goo / FO-goo]'],
+    ['Do not shoot!', 'Não atire! [nowm ah-TEE-reh]'],
+    ['I surrender.', 'Eu me rendo. [eh-oo meh HEN-doo]'],
+    ['Do you speak English?', 'Fala inglês? [FAH-lah een-GLAYS]'],
+    ['I am American.', 'Sou americano/a. [soh ah-meh-ree-KAH-noo]'],
+    ['Police / Military', 'Polícia / Militares [poh-LEE-syah / mee-lee-TAH-rehs]'],
+    ['We need shelter.', 'Precisamos de abrigo. [preh-see-ZAH-mohs deh ah-BREE-goo]'],
+    ['I am lost.', 'Estou perdido/a. [es-TOH pehr-DEE-doo]'],
+    ['Where is safety?', 'Onde é seguro? [ON-deh eh seh-GOO-roo]'],
+  ]},
+  ru: {name:'Russian', phrases: [
+    ['Help!', 'Помогите! [pah-mah-GEE-tye]'],
+    ['I need a doctor.', 'Мне нужен врач. [mnyeh NOO-zhen vrach]'],
+    ['Call an ambulance!', 'Вызовите скорую! [VY-zah-vee-tye SKO-roo-yoo]'],
+    ['I am injured.', 'Я ранен/а. [ya RAH-nyen]'],
+    ['Where is the hospital?', 'Где больница? [gdye bol-NEE-tsah]'],
+    ['Water! / Food!', 'Воды! / Еды! [vah-DY / yeh-DY]'],
+    ['Danger! / Fire!', 'Опасность! / Пожар! [ah-PAS-nost / pah-ZHAR]'],
+    ['Do not shoot!', 'Не стреляйте! [nyeh strye-LYAY-tye]'],
+    ['I surrender.', 'Я сдаюсь. [ya zdah-YOOS]'],
+    ['Do you speak English?', 'Вы говорите по-английски? [vy gah-vah-REE-tye pah-ahng-GLIY-ski]'],
+    ['I am American.', 'Я американец/ка. [ya ah-myer-ee-KAH-nyets]'],
+    ['Police / Military', 'Полиция / Военные [pah-LEE-tsee-yah / vah-YEN-ny-ye]'],
+    ['We need help.', 'Нам нужна помощь. [nam noozh-NAH POH-mahsh]'],
+    ['I am lost.', 'Я заблудился/ась. [ya zah-bloo-DEEL-sya]'],
+    ['Where is safety?', 'Где безопасно? [gdye byez-ah-PAS-nah]'],
+  ]},
+  ar: {name:'Arabic', phrases: [
+    ['Help!', 'النجدة! [an-NAJ-dah]'],
+    ['I need a doctor.', 'أحتاج طبيب. [akh-TAJ ta-BEEB]'],
+    ['Call an ambulance!', 'اتصل بالإسعاف! [IT-ta-sil bil-is-AAF]'],
+    ['I am injured.', 'أنا مجروح. [AH-na maj-ROOH]'],
+    ['Where is the hospital?', 'أين المستشفى؟ [AY-na al-mus-TASH-fa]'],
+    ['Water! / Food!', 'ماء! / طعام! [MA-ah / ta-AAM]'],
+    ['Danger! / Fire!', 'خطر! / حريق! [KHA-tar / ha-REEK]'],
+    ['Do not shoot!', 'لا تطلق النار! [la TUT-liq an-nar]'],
+    ['I surrender.', 'أنا أستسلم. [AH-na as-TAS-lim]'],
+    ['Do you speak English?', 'هل تتكلم الإنجليزية؟ [hal ta-TAK-lam al-ing-lee-ZEE-ya]'],
+    ['I am American.', 'أنا أمريكي. [AH-na am-REE-kee]'],
+    ['Police / Military', 'الشرطة / الجيش [ash-SHUR-ta / al-JAYSH]'],
+    ['We need shelter.', 'نحتاج ملجأ. [nakh-TAJ MAL-ja]'],
+    ['I am lost.', 'أنا ضائع. [AH-na DA-i]'],
+    ['Where is safety?', 'أين الأمان؟ [AY-na al-AH-man]'],
+  ]},
+  zh: {name:'Mandarin Chinese', phrases: [
+    ['Help!', '救命! [jiù mìng]'],
+    ['I need a doctor.', '我需要医生。[wǒ xūyào yīshēng]'],
+    ['Call an ambulance!', '叫救护车! [jiào jiùhùchē]'],
+    ['I am injured.', '我受伤了。[wǒ shòushāng le]'],
+    ['Where is the hospital?', '医院在哪里? [yīyuàn zài nǎlǐ]'],
+    ['Water! / Food!', '水! / 食物! [shuǐ / shíwù]'],
+    ['Danger! / Fire!', '危险! / 火! [wēixiǎn / huǒ]'],
+    ['Do not shoot!', '不要开枪! [bùyào kāiqiāng]'],
+    ['I surrender.', '我投降。[wǒ tóuxiáng]'],
+    ['Do you speak English?', '你会说英语吗? [nǐ huì shuō yīngyǔ ma]'],
+    ['I am American.', '我是美国人。[wǒ shì měiguó rén]'],
+    ['Police / Military', '警察 / 军队 [jǐngchá / jūnduì]'],
+    ['We need help.', '我们需要帮助。[wǒmen xūyào bāngzhù]'],
+    ['I am lost.', '我迷路了。[wǒ mílù le]'],
+    ['Where is safety?', '哪里安全? [nǎlǐ ānquán]'],
+  ]},
+  ja: {name:'Japanese', phrases: [
+    ['Help!', '助けて! [tasu-ke-te]'],
+    ['I need a doctor.', '医者が必要です。[isha ga hitsuyō desu]'],
+    ['Call an ambulance!', '救急車を呼んで! [kyukyusha wo yonde]'],
+    ['I am injured.', '怪我をしています。[kega wo shite imasu]'],
+    ['Where is the hospital?', '病院はどこですか? [byōin wa doko desu ka]'],
+    ['Water! / Food!', '水! / 食べ物! [mizu / tabemono]'],
+    ['Danger! / Fire!', '危険! / 火事! [kiken / kaji]'],
+    ['Do not shoot!', '撃たないで! [uta-nai-de]'],
+    ['I surrender.', '降参します。[kōsan shimasu]'],
+    ['Do you speak English?', '英語を話せますか? [eigo wo hanasemasu ka]'],
+    ['I am American.', '私はアメリカ人です。[watashi wa amerikajin desu]'],
+    ['Police / Military', '警察 / 軍隊 [keisatsu / guntai]'],
+    ['We need help.', '助けが必要です。[tasuke ga hitsuyō desu]'],
+    ['I am lost.', '迷子になりました。[maigo ni narimashita]'],
+    ['Where is safety?', '安全な場所はどこ? [anzen na basho wa doko]'],
+  ]},
+  ko: {name:'Korean', phrases: [
+    ['Help!', '도와주세요! [do-wa-ju-se-yo]'],
+    ['I need a doctor.', '의사가 필요해요. [ui-sa-ga pil-yo-hae-yo]'],
+    ['Call an ambulance!', '구급차를 불러주세요! [gu-geup-cha-reul bul-leo-ju-se-yo]'],
+    ['I am injured.', '다쳤어요. [da-chyeo-sseo-yo]'],
+    ['Where is the hospital?', '병원이 어디예요? [byeong-won-i eo-di-ye-yo]'],
+    ['Water! / Food!', '물! / 음식! [mul / eum-sik]'],
+    ['Danger! / Fire!', '위험! / 불이야! [wi-heom / bur-i-ya]'],
+    ['Do not shoot!', '쏘지 마세요! [sso-ji ma-se-yo]'],
+    ['I surrender.', '항복합니다. [hang-bok-ham-ni-da]'],
+    ['Do you speak English?', '영어 하세요? [yeong-eo ha-se-yo]'],
+    ['I am American.', '저는 미국인입니다. [jeo-neun mi-guk-in-im-ni-da]'],
+    ['Police / Military', '경찰 / 군대 [gyeong-chal / gun-dae]'],
+    ['We need help.', '도움이 필요해요. [do-um-i pil-yo-hae-yo]'],
+    ['I am lost.', '길을 잃었어요. [gil-eul il-eo-sseo-yo]'],
+    ['Where is safety?', '어디가 안전해요? [eo-di-ga an-jeon-hae-yo]'],
+  ]},
+  hi: {name:'Hindi', phrases: [
+    ['Help!', 'मदद करो! [ma-dad ka-ro]'],
+    ['I need a doctor.', 'मुझे डॉक्टर चाहिए। [mu-jhe dok-tar cha-hi-ye]'],
+    ['Call an ambulance!', 'एम्बुलेंस बुलाओ! [em-bu-lens bu-lao]'],
+    ['I am injured.', 'मैं घायल हूँ। [main gha-yal hoon]'],
+    ['Where is the hospital?', 'अस्पताल कहाँ है? [as-pa-tal ka-han hai]'],
+    ['Water! / Food!', 'पानी! / खाना! [pa-ni / kha-na]'],
+    ['Danger! / Fire!', 'खतरा! / आग! [kha-tra / aag]'],
+    ['Do not shoot!', 'गोली मत मारो! [go-li mat ma-ro]'],
+    ['I surrender.', 'मैं आत्मसमर्पण करता हूँ। [main atm-sa-mar-pan kar-ta hoon]'],
+    ['Do you speak English?', 'क्या आप अंग्रेजी बोलते हैं? [kya aap ang-re-ji bol-te hain]'],
+    ['I am American.', 'मैं अमेरिकन हूँ। [main a-me-ri-can hoon]'],
+    ['Police / Military', 'पुलिस / सेना [pu-lis / se-na]'],
+    ['We need help.', 'हमें मदद चाहिए। [ha-men ma-dad cha-hi-ye]'],
+    ['I am lost.', 'मैं खो गया हूँ। [main kho ga-ya hoon]'],
+    ['Where is safety?', 'सुरक्षित जगह कहाँ है? [su-rak-shit ja-gah ka-han hai]'],
+  ]},
+};
+function showPhrases() {
+  const lang = document.getElementById('phrase-lang').value;
+  const data = _phrases[lang];
+  if (!data) return;
+  document.getElementById('phrase-output').innerHTML = data.phrases.map(([eng,trans]) =>
+    `<div style="background:var(--surface2);border-radius:6px;padding:8px 10px;">
+      <div style="font-size:11px;color:var(--text-dim);">${eng}</div>
+      <div style="font-size:13px;font-weight:600;">${trans}</div>
+    </div>`
+  ).join('');
+}
+document.addEventListener('DOMContentLoaded', () => { if(document.getElementById('phrase-output')) showPhrases(); });
+
+// ═══════════════════════════════════════════════════════════════
+// FORAGING CALENDAR
+// ═══════════════════════════════════════════════════════════════
+const _forageData = {
+  1: [{cat:'Bark/Inner Bark',items:['Eastern White Pine (needles for tea, vitamin C)','Birch sap rising (tap inner bark)','Hemlock needles (tea, NOT water hemlock plant)']},
+      {cat:'Roots & Below-Ground',items:['Cattail rhizomes (flour substitute)','Jerusalem Artichoke','Wild Onion / Garlic (dried bulbs)']},
+      {cat:'Nuts/Seeds (cached)',items:['Hickory nuts (stored)','Walnuts (stored)','Acorns (stored/leached)']}],
+  2: [{cat:'Early Greens',items:['Chickweed (first to appear above snow)','Henbit','Hairy Bittercress','Dandelion (first leaves, rosette stage)']},
+      {cat:'Roots',items:['Chicory root','Burdock root (year 1 plants)','Cattail rhizomes (starch peak)']},
+      {cat:'Bark/Sap',items:['Maple sap (sugar maple, February–March before buds open)','Birch sap (late Feb–March)']}],
+  3: [{cat:'Spring Greens',items:['Dandelion (greens + crown)','Chickweed','Violet leaves','Garlic Mustard (invasive, very common)','Nettles (young shoots — cook first)']},
+      {cat:'Shoots',items:["Ramps / Wild Leeks (AKA 'wild garlic', Appalachians+)",'Ostrich Fern fiddleheads (ONLY this species)','Elderberry shoots (young only, cook first)']},
+      {cat:'Roots',items:['Chicory','Burdock (year 1)','Wild Carrot / Queen Anne\'s Lace (NOT poison hemlock!)']}],
+  4: [{cat:'Greens / Shoots',items:['Nettles (peak season — excellent spinach substitute)','Lamb\'s Quarters (emerges mid-spring)','Wood Sorrel','Clover (leaves + flowers)','Watercress (cold, clear running streams)']},
+      {cat:'Flowers',items:["Dandelion flowers (fritters, wine)",'Redbud flowers (edible raw)','Wisteria flowers (edible, ornamental invasive)']},
+      {cat:'Mushrooms',items:['Morel — PEAK season (April–May, deciduous forests, dying elms/ash)','Oyster mushroom (spring flush on dead hardwoods)']}],
+  5: [{cat:'Greens',items:['Lamb\'s Quarters (peak)','Purslane (starts appearing)','Elderberry flowers','Mullein young leaves']},
+      {cat:'Berries (early)',items:['Wild Strawberry (early May, some areas)','Serviceberry / Juneberry (dark purple, tree/shrub)']},
+      {cat:'Mushrooms',items:['Morel (late season, move to higher elevations)','Chicken of the Woods (first flush on oaks)','Giant Puffball']}],
+  6: [{cat:'Berries',items:['Wild Strawberry (peak)','Serviceberry / Juneberry','Black Mulberry (June–July)','Elderberry flowers (make into tea, fritters)']},
+      {cat:'Greens',items:['Purslane (peak, high omega-3s)','Lamb\'s Quarters','Amaranth (leaves and seeds)','Plantain (broadleaf and narrowleaf)']},
+      {cat:'Mushrooms',items:['Chicken of the Woods','Oyster mushroom','Chanterelle (beginning)']}],
+  7: [{cat:'Berries',items:['Blueberry (mid–late July peak)','Wild Black Cherry','Thimbleberry','Black Currant (native species)','Elderberry (flowers → berries forming)']},
+      {cat:'Greens/Seeds',items:['Purslane','Amaranth (seeds starting to form)','Lamb\'s Quarters seeds']},
+      {cat:'Mushrooms',items:['Chanterelle (peak)','Chicken of the Woods','Black Trumpet']}],
+  8: [{cat:'Berries',items:['Blueberry (late)','Blackberry / Dewberry (PEAK)','Wild Plum','Pawpaw (SE US, late August)','Elderberry (ripe, dark purple — must cook)']},
+      {cat:'Seeds/Nuts',items:['Lamb\'s Quarters seeds (highest protein now)','Amaranth seeds (like tiny quinoa)','Sunflower seeds']},
+      {cat:'Mushrooms',items:['Chanterelle','Hen of the Woods / Maitake (starts)','Lobster mushroom']}],
+  9: [{cat:'Berries/Fruits',items:['Pawpaw (PEAK — custard-like, SE US only)','Wild Grape','Autumn Olive (invasive, sweet-tart)','Hawthorn berries (jelly/tea)','Crabapple']},
+      {cat:'Nuts (PEAK)',items:['Hickory nuts (green husks split open)','Black Walnut (green husks, stain hands)','Butternuts','Beechnut']},
+      {cat:'Mushrooms',items:['Hen of the Woods / Maitake (PEAK, base of oaks)','Chicken of the Woods','Giant Puffball (peak fall flush)','Chanterelle (late)']}],
+  10: [{cat:'Nuts (PEAK)',items:['Acorns (all species — leach tannins for edibility)','Hickory nuts (hull and dry)','Black Walnut (hull promptly to prevent black stain)','Chestnuts (American is rare; Chinese chestnut common ornamental)']},
+       {cat:'Fruits/Berries',items:['Persimmon (ONLY after first frost — before frost = inedible astringent)','Crabapple (better after frost)','Rose hips (high vitamin C)','Wild Grape (late)']},
+       {cat:'Mushrooms',items:['Hen of the Woods / Maitake (late)','Oyster mushroom (cold weather flush on dead hardwoods)','Lion\'s Mane (white, tooth-like, on oaks)']}],
+  11: [{cat:'Nuts (stored/late)',items:['Acorns (gather from ground)','Hickory nuts','Beechnuts']},
+       {cat:'Roots',items:['Jerusalem Artichoke (sweeter after frost)','Chicory root','Wild Carrot (root sugars peak in cold)','Burdock root']},
+       {cat:'Bark/Evergreens',items:['Pine needles (fresh, high vitamin C)','Cattail pollen (gone — harvest rhizomes)']}],
+  12: [{cat:'Roots (peak starch)',items:['Cattail rhizomes','Chicory','Burdock','Wild Onion/Garlic bulbs']},
+       {cat:'Evergreens',items:['Eastern White Pine needles (tea — vitamin C)','Spruce needles (tea)','Eastern Hemlock (tree, NOT plant) tips']},
+       {cat:'Nuts (stored)',items:['Acorns','Hickory','Walnut (from storage)']}],
+};
+function showForageMonth(m) {
+  document.querySelectorAll('[id^="forage-btn-"]').forEach(b => b.className = 'btn btn-sm');
+  document.getElementById('forage-btn-' + m).className = 'btn btn-sm btn-primary';
+  const months = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+  const data = _forageData[m] || [];
+  document.getElementById('forage-output').innerHTML = data.map(group =>
+    `<div style="background:var(--surface2);border-radius:6px;padding:10px;">
+      <div style="font-weight:600;color:var(--accent);margin-bottom:6px;">${group.cat}</div>
+      ${group.items.map(i => `<div style="padding:2px 0;font-size:11px;">• ${i}</div>`).join('')}
+    </div>`
+  ).join('') || '<div style="color:var(--text-dim)">No data for this month.</div>';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  const m = new Date().getMonth() + 1;
+  showForageMonth(m);
+});
+
+// ═══════════════════════════════════════════════════════════════
+// SKILLS TRACKER
+// ═══════════════════════════════════════════════════════════════
+let _skills = [];
+const PROF_COLORS = {none:'var(--text-muted)', basic:'var(--orange)', intermediate:'var(--yellow)', expert:'var(--green)'};
+const PROF_LABELS = {none:'None', basic:'Basic', intermediate:'Intermediate', expert:'Expert'};
+async function loadSkills(filterCat) {
+  const resp = await fetch('/api/skills');
+  _skills = await resp.json();
+  renderSkills(filterCat);
+  renderSkillSummary();
+  renderSkillFilterBtns();
+}
+function renderSkillFilterBtns() {
+  const cats = [...new Set(_skills.map(s => s.category))].sort();
+  const el = document.getElementById('skills-filter-btns');
+  if (!el) return;
+  el.innerHTML = '<button class="btn btn-sm" onclick="renderSkills(null)">All</button>' +
+    cats.map(c => `<button class="btn btn-sm" onclick="renderSkills('${c}')">${c}</button>`).join('');
+}
+function renderSkills(filterCat) {
+  const el = document.getElementById('skills-list');
+  if (!el) return;
+  const filtered = filterCat ? _skills.filter(s => s.category === filterCat) : _skills;
+  if (!filtered.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No skills yet. Click "Load Default 60 Skills" to get started.</div>'; return; }
+  el.innerHTML = filtered.map(s => `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+        <div>
+          <div style="font-weight:600;font-size:12px;">${s.name}</div>
+          <div style="font-size:10px;color:var(--text-dim);margin-top:1px;">${s.category}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+          <span style="font-size:10px;font-weight:600;color:${PROF_COLORS[s.proficiency]}">${PROF_LABELS[s.proficiency]}</span>
+          <div style="display:flex;gap:4px;">
+            <button class="btn btn-sm" style="padding:2px 6px;font-size:10px;" onclick="editSkill(${s.id})">Edit</button>
+            <button class="btn btn-sm" style="padding:2px 6px;font-size:10px;color:var(--red);" onclick="deleteSkill(${s.id})">Del</button>
+          </div>
+        </div>
+      </div>
+      ${s.last_practiced ? `<div style="font-size:10px;color:var(--text-dim);margin-top:4px;">Last practiced: ${s.last_practiced}</div>` : ''}
+      ${s.notes ? `<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">${s.notes}</div>` : ''}
+    </div>`).join('');
+}
+function renderSkillSummary() {
+  const el = document.getElementById('skills-summary');
+  if (!el) return;
+  const counts = {none:0,basic:0,intermediate:0,expert:0};
+  _skills.forEach(s => counts[s.proficiency]++);
+  el.innerHTML = `${_skills.length} skills: <span style="color:var(--green)">${counts.expert} Expert</span> · <span style="color:var(--yellow)">${counts.intermediate} Mid</span> · <span style="color:var(--orange)">${counts.basic} Basic</span> · <span style="color:var(--text-muted)">${counts.none} None</span>`;
+}
+function openSkillForm(s) {
+  document.getElementById('skill-name').value = s ? s.name : '';
+  document.getElementById('skill-cat').value = s ? s.category : 'General';
+  document.getElementById('skill-prof').value = s ? s.proficiency : 'none';
+  document.getElementById('skill-practiced').value = s ? s.last_practiced : '';
+  document.getElementById('skill-notes').value = s ? s.notes : '';
+  document.getElementById('skill-edit-id').value = s ? s.id : '';
+  document.getElementById('skills-form').style.display = 'block';
+  document.getElementById('skill-name').focus();
+}
+function editSkill(id) { openSkillForm(_skills.find(s => s.id === id)); }
+async function saveSkill() {
+  const id = document.getElementById('skill-edit-id').value;
+  const body = {
+    name: document.getElementById('skill-name').value.trim(),
+    category: document.getElementById('skill-cat').value,
+    proficiency: document.getElementById('skill-prof').value,
+    last_practiced: document.getElementById('skill-practiced').value,
+    notes: document.getElementById('skill-notes').value.trim(),
+  };
+  if (!body.name) { toast('Skill name required', 'error'); return; }
+  await fetch(id ? `/api/skills/${id}` : '/api/skills', {method: id ? 'PUT' : 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  document.getElementById('skills-form').style.display = 'none';
+  document.getElementById('skill-edit-id').value = '';
+  loadSkills();
+  toast('Skill saved', 'success');
+}
+async function deleteSkill(id) {
+  if (!confirm('Delete this skill?')) return;
+  await fetch(`/api/skills/${id}`, {method:'DELETE'});
+  loadSkills();
+}
+async function seedDefaultSkills() {
+  const r = await fetch('/api/skills/seed-defaults', {method:'POST'});
+  const d = await r.json();
+  if (d.seeded === 0) { toast('Default skills already loaded', 'info'); }
+  else { toast(`Loaded ${d.seeded} default skills`, 'success'); loadSkills(); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// AMMO INVENTORY
+// ═══════════════════════════════════════════════════════════════
+let _ammo = [];
+async function loadAmmo() {
+  const resp = await fetch('/api/ammo');
+  _ammo = await resp.json();
+  renderAmmo();
+  loadAmmoSummary();
+}
+async function loadAmmoSummary() {
+  const r = await fetch('/api/ammo/summary');
+  const d = await r.json();
+  const bar = document.getElementById('ammo-summary-bar');
+  if (bar) bar.innerHTML = `Total: <strong>${d.total.toLocaleString()} rounds</strong> across ${d.by_caliber.length} calibers`;
+  const cal = document.getElementById('ammo-by-caliber');
+  if (cal) cal.innerHTML = d.by_caliber.map(b =>
+    `<div style="background:var(--surface2);border-radius:6px;padding:6px 10px;font-size:11px;text-align:center;">
+      <div style="font-weight:700;font-size:14px;">${b.total}</div>
+      <div style="color:var(--text-dim);">${b.caliber}</div>
+    </div>`).join('');
+}
+function renderAmmo() {
+  const el = document.getElementById('ammo-list');
+  if (!el) return;
+  if (!_ammo.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No ammo logged yet.</div>'; return; }
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr style="color:var(--text-dim);border-bottom:1px solid var(--border);">
+      <th style="padding:6px 8px;text-align:left;">Caliber</th>
+      <th style="padding:6px 8px;text-align:left;">Brand</th>
+      <th style="padding:6px 8px;text-align:left;">Weight/Type</th>
+      <th style="padding:6px 8px;text-align:right;">Qty</th>
+      <th style="padding:6px 8px;text-align:left;">Location</th>
+      <th style="padding:6px 8px;text-align:left;">Notes</th>
+      <th style="padding:6px 8px;text-align:center;">Actions</th>
+    </tr></thead>
+    <tbody>${_ammo.map(a => `
+      <tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:6px 8px;font-weight:600;">${a.caliber}</td>
+        <td style="padding:6px 8px;">${a.brand || '-'}</td>
+        <td style="padding:6px 8px;">${[a.bullet_weight, a.bullet_type].filter(Boolean).join(' ') || '-'}</td>
+        <td style="padding:6px 8px;text-align:right;font-weight:600;">${a.quantity.toLocaleString()}</td>
+        <td style="padding:6px 8px;">${a.location || '-'}</td>
+        <td style="padding:6px 8px;color:var(--text-dim);font-size:11px;">${a.notes || '-'}</td>
+        <td style="padding:6px 8px;text-align:center;display:flex;gap:4px;justify-content:center;">
+          <button class="btn btn-sm" style="padding:2px 6px;font-size:10px;" onclick="editAmmo(${a.id})">Edit</button>
+          <button class="btn btn-sm" style="padding:2px 6px;font-size:10px;color:var(--red);" onclick="deleteAmmo(${a.id})">Del</button>
+        </td>
+      </tr>`).join('')}
+    </tbody></table>`;
+}
+function openAmmoForm(a) {
+  document.getElementById('ammo-caliber').value = a ? a.caliber : '';
+  document.getElementById('ammo-brand').value = a ? a.brand : '';
+  document.getElementById('ammo-weight').value = a ? a.bullet_weight : '';
+  document.getElementById('ammo-type').value = a ? a.bullet_type : 'FMJ';
+  document.getElementById('ammo-qty').value = a ? a.quantity : 0;
+  document.getElementById('ammo-location').value = a ? a.location : '';
+  document.getElementById('ammo-notes').value = a ? a.notes : '';
+  document.getElementById('ammo-edit-id').value = a ? a.id : '';
+  document.getElementById('ammo-form').style.display = 'block';
+}
+function editAmmo(id) { openAmmoForm(_ammo.find(a => a.id === id)); }
+async function saveAmmo() {
+  const id = document.getElementById('ammo-edit-id').value;
+  const body = {
+    caliber: document.getElementById('ammo-caliber').value.trim(),
+    brand: document.getElementById('ammo-brand').value.trim(),
+    bullet_weight: document.getElementById('ammo-weight').value.trim(),
+    bullet_type: document.getElementById('ammo-type').value,
+    quantity: parseInt(document.getElementById('ammo-qty').value) || 0,
+    location: document.getElementById('ammo-location').value.trim(),
+    notes: document.getElementById('ammo-notes').value.trim(),
+  };
+  if (!body.caliber) { toast('Caliber required', 'error'); return; }
+  await fetch(id ? `/api/ammo/${id}` : '/api/ammo', {method: id ? 'PUT' : 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  document.getElementById('ammo-form').style.display = 'none';
+  document.getElementById('ammo-edit-id').value = '';
+  loadAmmo();
+  toast('Saved', 'success');
+}
+async function deleteAmmo(id) {
+  if (!confirm('Delete this entry?')) return;
+  await fetch(`/api/ammo/${id}`, {method:'DELETE'});
+  loadAmmo();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// COMMUNITY RESOURCE REGISTRY
+// ═══════════════════════════════════════════════════════════════
+let _community = [];
+const TRUST_COLORS = {unknown:'var(--text-muted)', acquaintance:'var(--text-dim)', trusted:'var(--orange)', 'inner-circle':'var(--green)'};
+async function loadCommunity() {
+  const r = await fetch('/api/community');
+  _community = await r.json();
+  renderCommunity();
+}
+function renderCommunity() {
+  const el = document.getElementById('community-list');
+  if (!el) return;
+  if (!_community.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">No community members logged yet. Add trusted neighbors and their skills.</div>'; return; }
+  el.innerHTML = _community.map(p => {
+    const skills = JSON.parse(p.skills || '[]');
+    const equip = JSON.parse(p.equipment || '[]');
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-weight:600;">${p.name}</div>
+          <div style="font-size:11px;color:${TRUST_COLORS[p.trust_level]};font-weight:600;">${p.trust_level.charAt(0).toUpperCase()+p.trust_level.slice(1).replace('-',' ')} · ${p.distance_mi} mi away</div>
+        </div>
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-sm" style="padding:2px 6px;font-size:10px;" onclick="editCommunity(${p.id})">Edit</button>
+          <button class="btn btn-sm" style="padding:2px 6px;font-size:10px;color:var(--red);" onclick="deleteCommunity(${p.id})">Del</button>
+        </div>
+      </div>
+      ${skills.length ? `<div style="margin-top:6px;font-size:11px;"><strong>Skills:</strong> ${skills.join(', ')}</div>` : ''}
+      ${equip.length ? `<div style="font-size:11px;"><strong>Equipment:</strong> ${equip.join(', ')}</div>` : ''}
+      ${p.contact ? `<div style="font-size:11px;color:var(--text-dim);">Contact: ${p.contact}</div>` : ''}
+      ${p.notes ? `<div style="font-size:11px;color:var(--text-dim);margin-top:3px;">${p.notes}</div>` : ''}
+    </div>`;
+  }).join('');
+  // Skills summary
+  const allSkills = _community.flatMap(p => JSON.parse(p.skills || '[]'));
+  const skillCounts = {};
+  allSkills.forEach(s => skillCounts[s] = (skillCounts[s]||0)+1);
+  const sumEl = document.getElementById('community-skills-summary');
+  if (sumEl) {
+    const topSkills = Object.entries(skillCounts).sort((a,b) => b[1]-a[1]).slice(0, 10);
+    sumEl.innerHTML = topSkills.length ? '<strong style="font-size:11px;">Top skills in network:</strong> ' +
+      topSkills.map(([s,n]) => `<span style="background:var(--surface2);border-radius:4px;padding:2px 6px;">${s} (${n})</span>`).join('') : '';
+  }
+}
+function openCommunityForm(p) {
+  document.getElementById('comm-name').value = p ? p.name : '';
+  document.getElementById('comm-dist').value = p ? p.distance_mi : '0.1';
+  document.getElementById('comm-trust').value = p ? p.trust_level : 'unknown';
+  document.getElementById('comm-contact').value = p ? p.contact : '';
+  document.getElementById('comm-skills').value = p ? JSON.parse(p.skills||'[]').join(', ') : '';
+  document.getElementById('comm-equip').value = p ? JSON.parse(p.equipment||'[]').join(', ') : '';
+  document.getElementById('comm-notes').value = p ? p.notes : '';
+  document.getElementById('comm-edit-id').value = p ? p.id : '';
+  document.getElementById('community-form').style.display = 'block';
+}
+function editCommunity(id) { openCommunityForm(_community.find(p => p.id === id)); }
+async function saveCommunity() {
+  const id = document.getElementById('comm-edit-id').value;
+  const skillsRaw = document.getElementById('comm-skills').value;
+  const equipRaw = document.getElementById('comm-equip').value;
+  const body = {
+    name: document.getElementById('comm-name').value.trim(),
+    distance_mi: parseFloat(document.getElementById('comm-dist').value) || 0,
+    trust_level: document.getElementById('comm-trust').value,
+    contact: document.getElementById('comm-contact').value.trim(),
+    skills: skillsRaw ? skillsRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+    equipment: equipRaw ? equipRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
+    notes: document.getElementById('comm-notes').value.trim(),
+  };
+  if (!body.name) { toast('Name required', 'error'); return; }
+  await fetch(id ? `/api/community/${id}` : '/api/community', {method: id ? 'PUT' : 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
+  document.getElementById('community-form').style.display = 'none';
+  document.getElementById('comm-edit-id').value = '';
+  loadCommunity();
+  toast('Saved', 'success');
+}
+async function deleteCommunity(id) {
+  if (!confirm('Remove this person?')) return;
+  await fetch(`/api/community/${id}`, {method:'DELETE'});
+  loadCommunity();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RADIATION DOSE TRACKER
+// ═══════════════════════════════════════════════════════════════
+async function loadRadiation() {
+  const r = await fetch('/api/radiation');
+  const d = await r.json();
+  renderRadiationDashboard(d);
+  renderRadiationLog(d.readings);
+}
+function renderRadiationDashboard(d) {
+  const el = document.getElementById('radiation-dashboard');
+  if (!el) return;
+  const latest = d.readings[0];
+  const latestRate = latest ? latest.dose_rate_rem : 0;
+  const colorRate = latestRate < 0.1 ? 'var(--green)' : latestRate < 2 ? 'var(--orange)' : 'var(--red)';
+  const cumColor = d.total_rem < 25 ? 'var(--green)' : d.total_rem < 100 ? 'var(--orange)' : 'var(--red)';
+  el.innerHTML = `
+    <div style="background:var(--surface2);border-radius:6px;padding:10px;text-align:center;">
+      <div style="font-size:10px;color:var(--text-dim);">Latest Reading</div>
+      <div style="font-size:20px;font-weight:700;color:${colorRate}">${latestRate.toFixed(3)}</div>
+      <div style="font-size:10px;color:var(--text-dim);">R/hr</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:6px;padding:10px;text-align:center;">
+      <div style="font-size:10px;color:var(--text-dim);">Cumulative Dose</div>
+      <div style="font-size:20px;font-weight:700;color:${cumColor}">${d.total_rem.toFixed(2)}</div>
+      <div style="font-size:10px;color:var(--text-dim);">rem total</div>
+    </div>
+    <div style="background:var(--surface2);border-radius:6px;padding:10px;text-align:center;">
+      <div style="font-size:10px;color:var(--text-dim);">Total Readings</div>
+      <div style="font-size:20px;font-weight:700;">${d.readings.length}</div>
+      <div style="font-size:10px;color:var(--text-dim);">logged</div>
+    </div>`;
+}
+function renderRadiationLog(readings) {
+  const el = document.getElementById('radiation-log-table');
+  if (!el) return;
+  if (!readings.length) { el.innerHTML = '<div style="color:var(--text-muted);font-size:12px;">No readings logged.</div>'; return; }
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <thead><tr style="color:var(--text-dim);border-bottom:1px solid var(--border);">
+      <th style="padding:4px 8px;text-align:left;">Time</th>
+      <th style="padding:4px 8px;text-align:left;">Rate (R/hr)</th>
+      <th style="padding:4px 8px;text-align:left;">Cumulative (rem)</th>
+      <th style="padding:4px 8px;text-align:left;">Location</th>
+      <th style="padding:4px 8px;text-align:left;">Notes</th>
+    </tr></thead>
+    <tbody>${readings.map(r => {
+      const c = r.dose_rate_rem < 0.1 ? 'var(--green)' : r.dose_rate_rem < 2 ? 'var(--orange)' : 'var(--red)';
+      return `<tr style="border-bottom:1px solid var(--border);">
+        <td style="padding:4px 8px;">${r.created_at.replace('T',' ').slice(0,16)}</td>
+        <td style="padding:4px 8px;font-weight:600;color:${c}">${r.dose_rate_rem.toFixed(3)}</td>
+        <td style="padding:4px 8px;">${r.cumulative_rem.toFixed(3)}</td>
+        <td style="padding:4px 8px;">${r.location || '-'}</td>
+        <td style="padding:4px 8px;color:var(--text-dim);">${r.notes || '-'}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+}
+async function logRadiation() {
+  const rate = parseFloat(document.getElementById('rad-rate').value);
+  if (!rate && rate !== 0) { toast('Enter a dose rate', 'error'); return; }
+  await fetch('/api/radiation', {method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({dose_rate_rem: rate, location: document.getElementById('rad-location').value, notes: document.getElementById('rad-notes').value})});
+  document.getElementById('rad-rate').value = '';
+  loadRadiation();
+  toast('Reading logged', 'success');
+}
+async function clearRadiation() {
+  await fetch('/api/radiation/clear', {method:'POST'});
+  loadRadiation();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ICS FORMS
+// ═══════════════════════════════════════════════════════════════
+let _ics309Entries = [];
+let _ics214Entries = [];
+function showICSTab(tab) {
+  ['213','309','214'].forEach(t => {
+    document.getElementById(`ics-${t}-panel`).style.display = t === tab ? '' : 'none';
+    document.getElementById(`ics-tab-${t}`).className = t === tab ? 'btn btn-sm btn-primary' : 'btn btn-sm';
+  });
+}
+function printICS213() {
+  const to = document.getElementById('ics213-to').value;
+  const from = document.getElementById('ics213-from').value;
+  const subject = document.getElementById('ics213-subject').value;
+  const dt = document.getElementById('ics213-datetime').value || new Date().toLocaleString();
+  const incident = document.getElementById('ics213-incident').value;
+  const priority = document.getElementById('ics213-priority').value;
+  const message = document.getElementById('ics213-message').value;
+  const replyby = document.getElementById('ics213-replyby').value;
+  const reply = document.getElementById('ics213-reply').value;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>ICS-213</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px;}table{width:100%;border-collapse:collapse;}
+  td,th{border:1px solid #000;padding:4px 6px;}h2{text-align:center;}
+  .header-row{background:#ccc;font-weight:bold;text-align:center;font-size:14px;}
+  @media print{body{margin:0.5in;}}</style></head><body>
+  <h2>GENERAL MESSAGE (ICS-213)</h2>
+  <table><tr><td class="header-row" colspan="4">ICS 213</td></tr>
+  <tr><td><strong>To:</strong> ${to}</td><td><strong>From:</strong> ${from}</td><td><strong>Date/Time:</strong> ${dt}</td><td><strong>Priority:</strong> ${priority}</td></tr>
+  <tr><td colspan="2"><strong>Incident Name:</strong> ${incident}</td><td colspan="2"><strong>Subject:</strong> ${subject}</td></tr>
+  <tr><td colspan="4"><strong>Message:</strong><br><br>${message.replace(/\n/g,'<br>')}<br><br><br></td></tr>
+  <tr><td colspan="2"><strong>Reply By:</strong> ${replyby}</td><td colspan="2"><strong>Reply:</strong> ${reply}</td></tr>
+  <tr><td colspan="2"><strong>Approved by (Signature):</strong><br><br><br></td><td colspan="2"><strong>Position/Title:</strong><br></td></tr>
+  </table><br><p style="font-size:10px;text-align:center;">ICS-213 — General Message Form — NIMS Compatible</p>
+  <script>window.print();<\/script></body></html>`);
+  w.document.close();
+}
+function clearICS213() {
+  ['ics213-to','ics213-from','ics213-subject','ics213-datetime','ics213-incident','ics213-message','ics213-replyby','ics213-reply'].forEach(id => document.getElementById(id).value = '');
+}
+function addICS309Entry() {
+  const entry = {
+    time: document.getElementById('ics309-time').value,
+    from: document.getElementById('ics309-from').value,
+    to: document.getElementById('ics309-to').value,
+    msg: document.getElementById('ics309-msg').value,
+  };
+  if (!entry.msg) return;
+  _ics309Entries.push(entry);
+  ['ics309-time','ics309-from','ics309-to','ics309-msg'].forEach(id => document.getElementById(id).value = '');
+  renderICS309Table();
+}
+function renderICS309Table() {
+  const el = document.getElementById('ics309-entries');
+  if (!el) return;
+  if (!_ics309Entries.length) { el.innerHTML = '<div style="color:var(--text-muted);">No entries yet.</div>'; return; }
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="background:var(--surface2);"><th style="padding:3px 6px;text-align:left;">Time</th><th style="padding:3px 6px;text-align:left;">From</th><th style="padding:3px 6px;text-align:left;">To</th><th style="padding:3px 6px;text-align:left;">Message</th><th></th></tr></thead>
+    <tbody>${_ics309Entries.map((e,i) => `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:3px 6px;">${e.time}</td><td style="padding:3px 6px;">${e.from}</td><td style="padding:3px 6px;">${e.to}</td><td style="padding:3px 6px;">${e.msg}</td>
+      <td><button class="btn btn-sm" style="padding:1px 5px;font-size:10px;" onclick="_ics309Entries.splice(${i},1);renderICS309Table()">✕</button></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function printICS309() {
+  const incident = document.getElementById('ics309-incident').value;
+  const operator = document.getElementById('ics309-operator').value;
+  const station = document.getElementById('ics309-station').value;
+  const rows = _ics309Entries.map(e =>
+    `<tr><td>${e.time}</td><td>${e.from}</td><td>${e.to}</td><td>${e.msg}</td></tr>`).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>ICS-309</title>
+  <style>body{font-family:Arial,sans-serif;font-size:11px;margin:20px;}table{width:100%;border-collapse:collapse;}
+  td,th{border:1px solid #000;padding:4px 6px;}h2{text-align:center;}
+  @media print{body{margin:0.5in;}}</style></head><body>
+  <h2>COMMUNICATIONS LOG (ICS-309)</h2>
+  <table><tr><td><strong>Incident Name:</strong> ${incident}</td><td><strong>Operator:</strong> ${operator}</td><td><strong>Station/Freq:</strong> ${station}</td><td><strong>Date:</strong> ${new Date().toLocaleDateString()}</td></tr></table>
+  <br><table><thead><tr><th>Time</th><th>From</th><th>To</th><th>Message/Traffic</th></tr></thead><tbody>${rows}</tbody></table>
+  <br><p><strong>Operator Signature:</strong> ______________________ <strong>Date/Time:</strong> ______________</p>
+  <p style="font-size:10px;text-align:center;">ICS-309 — Communications Log — NIMS Compatible</p>
+  <script>window.print();<\/script></body></html>`);
+  w.document.close();
+}
+function clearICS309() { _ics309Entries = []; renderICS309Table(); }
+function addICS214Entry() {
+  const entry = {time: document.getElementById('ics214-time').value, activity: document.getElementById('ics214-activity').value};
+  if (!entry.activity) return;
+  _ics214Entries.push(entry);
+  ['ics214-time','ics214-activity'].forEach(id => document.getElementById(id).value = '');
+  renderICS214Table();
+}
+function renderICS214Table() {
+  const el = document.getElementById('ics214-entries');
+  if (!el) return;
+  if (!_ics214Entries.length) { el.innerHTML = '<div style="color:var(--text-muted);">No activities yet.</div>'; return; }
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;">
+    <thead><tr style="background:var(--surface2);"><th style="padding:3px 6px;text-align:left;">Time</th><th style="padding:3px 6px;text-align:left;">Notable Activity</th><th></th></tr></thead>
+    <tbody>${_ics214Entries.map((e,i) => `<tr style="border-bottom:1px solid var(--border);">
+      <td style="padding:3px 6px;width:80px;">${e.time}</td><td style="padding:3px 6px;">${e.activity}</td>
+      <td><button class="btn btn-sm" style="padding:1px 5px;font-size:10px;" onclick="_ics214Entries.splice(${i},1);renderICS214Table()">✕</button></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+function printICS214() {
+  const incident = document.getElementById('ics214-incident').value;
+  const unit = document.getElementById('ics214-unit').value;
+  const leader = document.getElementById('ics214-leader').value;
+  const period = document.getElementById('ics214-period').value;
+  const rows = _ics214Entries.map(e => `<tr><td>${e.time}</td><td>${e.activity}</td></tr>`).join('');
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>ICS-214</title>
+  <style>body{font-family:Arial,sans-serif;font-size:11px;margin:20px;}table{width:100%;border-collapse:collapse;}
+  td,th{border:1px solid #000;padding:4px 6px;}h2{text-align:center;}
+  @media print{body{margin:0.5in;}}</style></head><body>
+  <h2>ACTIVITY LOG (ICS-214)</h2>
+  <table><tr><td><strong>Incident Name:</strong> ${incident}</td><td><strong>Unit/Team:</strong> ${unit}</td><td><strong>Leader:</strong> ${leader}</td><td><strong>Op Period:</strong> ${period}</td></tr></table>
+  <br><table><thead><tr><th style="width:100px;">Time</th><th>Notable Activity</th></tr></thead><tbody>${rows}</tbody></table>
+  <br><p><strong>Prepared by:</strong> ______________________ <strong>Date/Time:</strong> ______________</p>
+  <p style="font-size:10px;text-align:center;">ICS-214 — Activity Log — NIMS Compatible</p>
+  <script>window.print();<\/script></body></html>`);
+  w.document.close();
+}
+function clearICS214() { _ics214Entries = []; renderICS214Table(); }
+
+// ═══════════════════════════════════════════════════════════════
+// LAN QR CODE
+// ═══════════════════════════════════════════════════════════════
+function showLanQR() {
+  const urlEl = document.getElementById('lan-url-setting');
+  const url = urlEl ? urlEl.textContent.trim() : '';
+  if (!url || url === '-' || !url.startsWith('http')) {
+    toast('LAN URL not available. Ensure the app is running on a network.', 'error');
+    return;
+  }
+  // Use QR code via qrserver.com (offline fallback: show URL prominently)
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);z-index:99999;display:flex;align-items:center;justify-content:center;';
+  modal.onclick = e => { if (e.target === modal) modal.remove(); };
+  modal.innerHTML = `
+    <div style="background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);padding:24px;text-align:center;max-width:380px;width:90%;">
+      <h3 style="margin:0 0 8px;">Scan to Connect on LAN</h3>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Any device on your local network can access N.O.M.A.D. at:</p>
+      <div style="font-size:14px;font-weight:600;color:var(--accent);margin-bottom:12px;">${url}</div>
+      <canvas id="qr-canvas" width="200" height="200" style="display:block;margin:0 auto 12px;border-radius:8px;background:#fff;"></canvas>
+      <button class="btn btn-sm" onclick="this.closest('[style*=fixed]').remove()">Close</button>
+    </div>`;
+  document.body.appendChild(modal);
+  // Simple QR code generation using a data URL approach (pure JS QR)
+  generateQRCanvas('qr-canvas', url);
+}
+function generateQRCanvas(canvasId, text) {
+  // Use a minimal QR code — encode as URL in img via public API when online, else show text
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  // Draw a placeholder with the URL text if pure-JS QR isn't bundled
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, 200, 200);
+  // Try to load from a local QR generator if available; otherwise display text prominently
+  const img = new Image();
+  img.onload = () => ctx.drawImage(img, 0, 0, 200, 200);
+  img.onerror = () => {
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 11px monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('Open this URL on your device:', 100, 80);
+    ctx.font = '10px monospace';
+    const words = text.split('/');
+    words.forEach((w,i) => ctx.fillText(w, 100, 100 + i*14));
+  };
+  img.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(text)}`;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CHIRP CSV EXPORT
+// ═══════════════════════════════════════════════════════════════
+function exportChirpCSV() {
+  const channels = [
+    // Location,Name,Frequency,Duplex,Offset,Tone,rToneFreq,cToneFreq,DtcsCode,DtcsPolarity,Mode,TStep,Skip,Comment,URCALL,RPT1CALL,RPT2CALL
+    ['0','NOAA-1','162.400000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','NOAA Weather Ch 1','','',''],
+    ['1','NOAA-2','162.425000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','NOAA Weather Ch 2','','',''],
+    ['2','NOAA-3','162.450000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','NOAA Weather Ch 3','','',''],
+    ['3','NOAA-4','162.475000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','NOAA Weather Ch 4','','',''],
+    ['4','NOAA-5','162.500000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','NOAA Weather Ch 5','','',''],
+    ['5','NOAA-6','162.525000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','NOAA Weather Ch 6','','',''],
+    ['6','NOAA-7','162.550000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','NOAA Weather Ch 7','','',''],
+    ['7','FRS-1','462.562500','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','FRS Ch 1 - Rally','','',''],
+    ['8','FRS-3','462.612500','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','FRS Ch 3 - Emergency','','',''],
+    ['9','FRS-7','462.712500','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','FRS Ch 7','','',''],
+    ['10','GMRS-20','462.675000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','GMRS Ch 20 - National Emergency','','',''],
+    ['11','MURS-1','151.820000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','MURS Ch 1','','',''],
+    ['12','MURS-3','151.940000','','0.000000','','88.5','88.5','023','NN','NFM','5.00','','MURS Ch 3','','',''],
+    ['13','CB-9','27.065000','','0.000000','','88.5','88.5','023','NN','AM','5.00','','CB Ch 9 - Emergency','','',''],
+    ['14','CB-19','27.185000','','0.000000','','88.5','88.5','023','NN','AM','5.00','','CB Ch 19 - Truckers','','',''],
+    ['15','2M-CALL','146.520000','','0.000000','','88.5','88.5','023','NN','FM','5.00','','2m National Simplex Calling','','',''],
+    ['16','2M-EMRG','146.550000','','0.000000','','88.5','88.5','023','NN','FM','5.00','','2m Emergency Simplex','','',''],
+    ['17','70CM-CALL','446.000000','','0.000000','','88.5','88.5','023','NN','FM','5.00','','70cm National Simplex Calling','','',''],
+    ['18','MARINE-16','156.800000','','0.000000','','88.5','88.5','023','NN','FM','5.00','','Marine Ch 16 - Distress (RX only)','','',''],
+    ['19','WWV-10','10.000000','','0.000000','','88.5','88.5','023','NN','AM','1.00','','NIST Time Signal WWV 10 MHz','','',''],
+    ['20','WWV-5','5.000000','','0.000000','','88.5','88.5','023','NN','AM','1.00','','NIST Time Signal WWV 5 MHz','','',''],
+    ['21','JS8-40M','7.078000','','0.000000','','88.5','88.5','023','NN','USB','0.50','','JS8Call 40m Emergency Net','','',''],
+    ['22','JS8-20M','14.078000','','0.000000','','88.5','88.5','023','NN','USB','0.50','','JS8Call 20m Net','','',''],
+    ['23','WL-20M','14.103000','','0.000000','','88.5','88.5','023','NN','USB','0.50','','Winlink/APRS 20m','','',''],
+    ['24','SATERN','14.265000','','0.000000','','88.5','88.5','023','NN','USB','0.50','','SATERN Emergency Net 20m','','',''],
+    ['25','HF-40M','7.250000','','0.000000','','88.5','88.5','023','NN','LSB','0.50','','HF 40m Phone Band','','',''],
+    ['26','HF-20M','14.225000','','0.000000','','88.5','88.5','023','NN','USB','0.50','','HF 20m Phone Band','','',''],
+    ['27','HF-80M','3.900000','','0.000000','','88.5','88.5','023','NN','LSB','0.50','','HF 80m Phone Band','','',''],
+  ];
+  const header = 'Location,Name,Frequency,Duplex,Offset,Tone,rToneFreq,cToneFreq,DtcsCode,DtcsPolarity,Mode,TStep,Skip,Comment,URCALL,RPT1CALL,RPT2CALL\n';
+  const csv = header + channels.map(r => r.join(',')).join('\n');
+  const blob = new Blob([csv], {type: 'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'NOMAD_Emergency_Channels.csv';
+  a.click(); URL.revokeObjectURL(url);
+  toast('CHIRP CSV exported', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOAD NEW TABS ON SWITCH
+// ═══════════════════════════════════════════════════════════════
+const _origSwitchPrepSub = switchPrepSub;
+switchPrepSub = function(sub) {
+  _origSwitchPrepSub(sub);
+  if (sub === 'skills') loadSkills();
+  if (sub === 'ammo') loadAmmo();
+  if (sub === 'community') loadCommunity();
+  if (sub === 'radiation') loadRadiation();
+};
+// Init calculators on load
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('bal-caliber')) calcBallistics();
+  if (document.getElementById('comp-browns')) calcCompost();
+  if (document.getElementById('pr-acres')) calcPastureRotation();
+  if (document.getElementById('nb-length')) calcNaturalBuilding();
+  if (document.getElementById('fall-h1')) calcFallout();
+  if (document.getElementById('can-food')) calcCanning();
+});
 </script>
 <div id="shortcuts-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:99999;align-items:center;justify-content:center;" onclick="if(event.target===this)toggleShortcutsHelp()">
   <div style="background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);padding:24px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;">

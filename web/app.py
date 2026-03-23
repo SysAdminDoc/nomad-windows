@@ -6950,6 +6950,254 @@ th {{ background: #eee; font-weight: 700; }}
             return jsonify({'error': f'Not found: {filepath}'}), 404
         return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
 
+    # ─── Skills Tracker ───────────────────────────────────────────────
+
+    @app.route('/api/skills')
+    def api_skills_list():
+        conn = get_db()
+        rows = conn.execute('SELECT * FROM skills ORDER BY category, name').fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/skills', methods=['POST'])
+    def api_skills_create():
+        d = request.json or {}
+        conn = get_db()
+        cur = conn.execute(
+            'INSERT INTO skills (name, category, proficiency, notes, last_practiced) VALUES (?,?,?,?,?)',
+            (d.get('name',''), d.get('category','general'), d.get('proficiency','none'),
+             d.get('notes',''), d.get('last_practiced','')))
+        conn.commit()
+        row = conn.execute('SELECT * FROM skills WHERE id=?', (cur.lastrowid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/skills/<int:sid>', methods=['PUT'])
+    def api_skills_update(sid):
+        d = request.json or {}
+        conn = get_db()
+        conn.execute(
+            'UPDATE skills SET name=?, category=?, proficiency=?, notes=?, last_practiced=?, updated_at=CURRENT_TIMESTAMP WHERE id=?',
+            (d.get('name',''), d.get('category','general'), d.get('proficiency','none'),
+             d.get('notes',''), d.get('last_practiced',''), sid))
+        conn.commit()
+        row = conn.execute('SELECT * FROM skills WHERE id=?', (sid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row) if row else {})
+
+    @app.route('/api/skills/<int:sid>', methods=['DELETE'])
+    def api_skills_delete(sid):
+        conn = get_db()
+        conn.execute('DELETE FROM skills WHERE id=?', (sid,))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+
+    @app.route('/api/skills/seed-defaults', methods=['POST'])
+    def api_skills_seed():
+        """Seed the default 60-skill list if table is empty."""
+        conn = get_db()
+        count = conn.execute('SELECT COUNT(*) FROM skills').fetchone()[0]
+        if count > 0:
+            conn.close()
+            return jsonify({'seeded': 0})
+        defaults = [
+            # Fire
+            ('Fire Starting (friction/bow drill)', 'Fire'), ('Fire Starting (ferro rod)', 'Fire'),
+            ('Fire Starting (flint & steel)', 'Fire'), ('Fire Starting (magnification)', 'Fire'),
+            ('Maintaining a fire for 12+ hours', 'Fire'), ('Building a fire in rain/wind', 'Fire'),
+            # Water
+            ('Water sourcing (streams, dew, transpiration)', 'Water'),
+            ('Water purification (boiling)', 'Water'), ('Water purification (chemical)', 'Water'),
+            ('Water purification (filtration)', 'Water'), ('Rainwater collection setup', 'Water'),
+            ('Solar disinfection (SODIS)', 'Water'),
+            # Shelter
+            ('Debris hut construction', 'Shelter'), ('Tarp shelter rigging', 'Shelter'),
+            ('Cold-weather shelter (snow trench, quinzhee)', 'Shelter'),
+            ('Knot tying (8 essential knots)', 'Shelter'), ('Rope/cordage making', 'Shelter'),
+            # Food
+            ('Foraging wild edibles', 'Food'), ('Identifying poisonous plants', 'Food'),
+            ('Small game trapping (snares)', 'Food'), ('Hunting / firearms proficiency', 'Food'),
+            ('Fishing (without conventional tackle)', 'Food'), ('Food preservation (canning)', 'Food'),
+            ('Food preservation (dehydrating)', 'Food'), ('Food preservation (smoking)', 'Food'),
+            ('Butchering / game processing', 'Food'), ('Gardening (seed-to-harvest)', 'Food'),
+            # Navigation
+            ('Map and compass navigation', 'Navigation'), ('Celestial navigation (stars/sun)', 'Navigation'),
+            ('GPS use and offline mapping', 'Navigation'), ('Dead reckoning', 'Navigation'),
+            ('Terrain association', 'Navigation'), ('Creating a field sketch map', 'Navigation'),
+            # Medical
+            ('CPR (adult, child, infant)', 'Medical'), ('Tourniquet application', 'Medical'),
+            ('Wound packing / pressure bandage', 'Medical'), ('Splinting fractures', 'Medical'),
+            ('Suturing / wound closure (improvised)', 'Medical'),
+            ('Burn treatment', 'Medical'), ('Triage (START method)', 'Medical'),
+            ('Managing shock', 'Medical'), ('Drug interaction awareness', 'Medical'),
+            ('Childbirth assistance', 'Medical'), ('Dental emergency management', 'Medical'),
+            # Communications
+            ('Ham radio operation (Technician)', 'Communications'),
+            ('Ham radio operation (General/HF)', 'Communications'),
+            ('Morse code (sending & receiving)', 'Communications'),
+            ('Meshtastic / LoRa mesh setup', 'Communications'),
+            ('Radio programming (CHIRP)', 'Communications'),
+            ('ICS / ARES net procedures', 'Communications'),
+            # Security
+            ('Threat assessment / situational awareness', 'Security'),
+            ('Perimeter security setup', 'Security'),
+            ('Night operations', 'Security'), ('Gray man / OPSEC', 'Security'),
+            # Mechanical
+            ('Vehicle maintenance (basic)', 'Mechanical'),
+            ('Small engine repair', 'Mechanical'),
+            ('Improvised tool fabrication', 'Mechanical'),
+            ('Electrical / solar system wiring', 'Mechanical'),
+            ('Water system plumbing', 'Mechanical'),
+            # Homesteading
+            ('Livestock care (chickens)', 'Homesteading'),
+            ('Livestock care (goats/pigs/cattle)', 'Homesteading'),
+            ('Composting', 'Homesteading'), ('Seed saving', 'Homesteading'),
+            ('Natural building (adobe/cob)', 'Homesteading'),
+        ]
+        for name, cat in defaults:
+            conn.execute('INSERT OR IGNORE INTO skills (name, category, proficiency) VALUES (?,?,?)',
+                         (name, cat, 'none'))
+        conn.commit()
+        conn.close()
+        return jsonify({'seeded': len(defaults)})
+
+    # ─── Ammo Inventory ───────────────────────────────────────────────
+
+    @app.route('/api/ammo')
+    def api_ammo_list():
+        conn = get_db()
+        rows = conn.execute('SELECT * FROM ammo_inventory ORDER BY caliber, brand').fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/ammo', methods=['POST'])
+    def api_ammo_create():
+        d = request.json or {}
+        conn = get_db()
+        cur = conn.execute(
+            'INSERT INTO ammo_inventory (caliber, brand, bullet_weight, bullet_type, quantity, location, notes) VALUES (?,?,?,?,?,?,?)',
+            (d.get('caliber',''), d.get('brand',''), d.get('bullet_weight',''),
+             d.get('bullet_type',''), int(d.get('quantity',0)), d.get('location',''), d.get('notes','')))
+        conn.commit()
+        row = conn.execute('SELECT * FROM ammo_inventory WHERE id=?', (cur.lastrowid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/ammo/<int:aid>', methods=['PUT'])
+    def api_ammo_update(aid):
+        d = request.json or {}
+        conn = get_db()
+        conn.execute(
+            'UPDATE ammo_inventory SET caliber=?, brand=?, bullet_weight=?, bullet_type=?, quantity=?, location=?, notes=?, updated_at=CURRENT_TIMESTAMP WHERE id=?',
+            (d.get('caliber',''), d.get('brand',''), d.get('bullet_weight',''),
+             d.get('bullet_type',''), int(d.get('quantity',0)), d.get('location',''), d.get('notes',''), aid))
+        conn.commit()
+        row = conn.execute('SELECT * FROM ammo_inventory WHERE id=?', (aid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row) if row else {})
+
+    @app.route('/api/ammo/<int:aid>', methods=['DELETE'])
+    def api_ammo_delete(aid):
+        conn = get_db()
+        conn.execute('DELETE FROM ammo_inventory WHERE id=?', (aid,))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+
+    @app.route('/api/ammo/summary')
+    def api_ammo_summary():
+        conn = get_db()
+        rows = conn.execute(
+            'SELECT caliber, SUM(quantity) as total FROM ammo_inventory GROUP BY caliber ORDER BY total DESC'
+        ).fetchall()
+        total = conn.execute('SELECT SUM(quantity) FROM ammo_inventory').fetchone()[0] or 0
+        conn.close()
+        return jsonify({'by_caliber': [dict(r) for r in rows], 'total': total})
+
+    # ─── Community Resource Registry ──────────────────────────────────
+
+    @app.route('/api/community')
+    def api_community_list():
+        conn = get_db()
+        rows = conn.execute('SELECT * FROM community_resources ORDER BY trust_level DESC, name').fetchall()
+        conn.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/community', methods=['POST'])
+    def api_community_create():
+        d = request.json or {}
+        conn = get_db()
+        import json as _json
+        cur = conn.execute(
+            'INSERT INTO community_resources (name, distance_mi, skills, equipment, contact, notes, trust_level) VALUES (?,?,?,?,?,?,?)',
+            (d.get('name',''), float(d.get('distance_mi',0)),
+             _json.dumps(d.get('skills',[])), _json.dumps(d.get('equipment',[])),
+             d.get('contact',''), d.get('notes',''), d.get('trust_level','unknown')))
+        conn.commit()
+        row = conn.execute('SELECT * FROM community_resources WHERE id=?', (cur.lastrowid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/community/<int:cid>', methods=['PUT'])
+    def api_community_update(cid):
+        d = request.json or {}
+        import json as _json
+        conn = get_db()
+        conn.execute(
+            'UPDATE community_resources SET name=?, distance_mi=?, skills=?, equipment=?, contact=?, notes=?, trust_level=?, updated_at=CURRENT_TIMESTAMP WHERE id=?',
+            (d.get('name',''), float(d.get('distance_mi',0)),
+             _json.dumps(d.get('skills',[])), _json.dumps(d.get('equipment',[])),
+             d.get('contact',''), d.get('notes',''), d.get('trust_level','unknown'), cid))
+        conn.commit()
+        row = conn.execute('SELECT * FROM community_resources WHERE id=?', (cid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row) if row else {})
+
+    @app.route('/api/community/<int:cid>', methods=['DELETE'])
+    def api_community_delete(cid):
+        conn = get_db()
+        conn.execute('DELETE FROM community_resources WHERE id=?', (cid,))
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+
+    # ─── Radiation Dose Log ───────────────────────────────────────────
+
+    @app.route('/api/radiation')
+    def api_radiation_list():
+        conn = get_db()
+        rows = conn.execute('SELECT * FROM radiation_log ORDER BY created_at DESC LIMIT 200').fetchall()
+        total = conn.execute('SELECT SUM(dose_rate_rem) FROM radiation_log').fetchone()[0] or 0
+        conn.close()
+        return jsonify({'readings': [dict(r) for r in rows], 'total_rem': round(total, 4)})
+
+    @app.route('/api/radiation', methods=['POST'])
+    def api_radiation_create():
+        d = request.json or {}
+        conn = get_db()
+        # Compute running cumulative
+        last = conn.execute('SELECT cumulative_rem FROM radiation_log ORDER BY created_at DESC LIMIT 1').fetchone()
+        prev_cum = last['cumulative_rem'] if last else 0
+        new_rate = float(d.get('dose_rate_rem', 0))
+        # cumulative = previous + this reading (assumed per-hour if not specified)
+        new_cum = round(prev_cum + new_rate, 4)
+        cur = conn.execute(
+            'INSERT INTO radiation_log (dose_rate_rem, location, cumulative_rem, notes) VALUES (?,?,?,?)',
+            (new_rate, d.get('location',''), new_cum, d.get('notes','')))
+        conn.commit()
+        row = conn.execute('SELECT * FROM radiation_log WHERE id=?', (cur.lastrowid,)).fetchone()
+        conn.close()
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/radiation/clear', methods=['POST'])
+    def api_radiation_clear():
+        conn = get_db()
+        conn.execute('DELETE FROM radiation_log')
+        conn.commit()
+        conn.close()
+        return jsonify({'ok': True})
+
     # ─── Favicon ──────────────────────────────────────────────────────
 
     @app.route('/favicon.ico')

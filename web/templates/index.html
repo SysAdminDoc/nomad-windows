@@ -4542,7 +4542,7 @@ async function sendChat() {
   const msg = input.value.trim();
   if (!msg) return;
   const model = document.getElementById('model-select').value;
-  if (!model) { toast('No AI model downloaded yet. Click "+ Download AI Model" above to get one.', 'warning'); return; }
+  if (!model) { toast('No AI model available. Opening the download panel...', 'info'); toggleModelPicker(); return; }
 
   input.value = '';
   input.style.height = 'auto';
@@ -4608,9 +4608,18 @@ async function sendChat() {
     renderChat();
   } catch(e) {
     if (e.name !== 'AbortError') {
-      chatMessages[chatMessages.length-1].content = 'Could not reach the AI. Go to the Services tab and make sure AI Chat Assistant is running (green), then try again.';
+      chatMessages[chatMessages.length-1].content = 'Could not reach the AI. Attempting to start the service automatically...';
       chatMessages[chatMessages.length-1].thinking = false;
       renderChat();
+      // Auto-start Ollama
+      ensureOllamaReady().then(ok => {
+        if (ok) {
+          chatMessages[chatMessages.length-1].content = 'AI service restarted. Please send your message again.';
+        } else {
+          chatMessages[chatMessages.length-1].content = 'Could not start the AI service. Check the Home page to make sure AI Chat is installed and try starting it manually.';
+        }
+        renderChat();
+      });
     }
   }
   isSending = false;
@@ -5695,14 +5704,42 @@ async function loadModelPickerList() {
   `).join('');
 }
 
+async function ensureOllamaReady() {
+  // Auto-install and auto-start Ollama if needed — returns true when ready
+  const svcs = _lastServicesData || await (await fetch('/api/services')).json();
+  const svc = svcs.find(s => s.id === 'ollama');
+  if (!svc?.installed) {
+    toast('Installing AI Chat service automatically...', 'info');
+    await installService('ollama');
+    // Wait for install to complete (poll up to 5 min)
+    for (let i = 0; i < 150; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const fresh = await (await fetch('/api/services')).json();
+      const o = fresh.find(s => s.id === 'ollama');
+      if (o?.installed) { _lastServicesData = fresh; break; }
+    }
+    const check = (_lastServicesData || await (await fetch('/api/services')).json()).find(s => s.id === 'ollama');
+    if (!check?.installed) { toast('AI Chat installation is still in progress. Please wait and try again.', 'warning'); return false; }
+  }
+  const current = (_lastServicesData || await (await fetch('/api/services')).json()).find(s => s.id === 'ollama');
+  if (!current?.running) {
+    toast('Starting AI Chat service...', 'info');
+    await startService('ollama');
+    // Wait for it to be ready (up to 30 seconds)
+    for (let i = 0; i < 15; i++) {
+      await new Promise(r => setTimeout(r, 2000));
+      const fresh = await (await fetch('/api/services')).json();
+      const o = fresh.find(s => s.id === 'ollama');
+      if (o?.running) { _lastServicesData = fresh; return true; }
+    }
+    toast('AI Chat service is starting up. Please try again in a moment.', 'warning');
+    return false;
+  }
+  return true;
+}
+
 async function pullModel(name) {
-  // Check if Ollama is running first
-  try {
-    const svcs = _lastServicesData || await (await fetch('/api/services')).json();
-    const ollamaSvc = svcs.find(s => s.id === 'ollama');
-    if (!ollamaSvc?.installed) { toast('Install the AI Chat service first from the Home tab', 'warning'); return; }
-    if (!ollamaSvc?.running) { toast('Start the AI Chat service first — go to Home tab and click Start on Ollama', 'warning'); return; }
-  } catch(e) {}
+  if (!await ensureOllamaReady()) return;
   try {
     const r = await fetch('/api/ai/pull', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})});
     if (!r.ok) { const d = await r.json().catch(()=>({})); toast(d.error || 'Failed to start download', 'error'); return; }
@@ -5720,13 +5757,7 @@ function pullCustomModel() {
 }
 
 async function pullAllModels() {
-  // Check Ollama is running
-  try {
-    const svcs = _lastServicesData || await (await fetch('/api/services')).json();
-    const ollamaSvc = svcs.find(s => s.id === 'ollama');
-    if (!ollamaSvc?.installed) { toast('Install the AI Chat service first from the Home tab', 'warning'); return; }
-    if (!ollamaSvc?.running) { toast('Start the AI Chat service first', 'warning'); return; }
-  } catch(e) {}
+  if (!await ensureOllamaReady()) return;
   // Get all recommended model names
   try {
     const rec = await (await fetch('/api/ai/recommended')).json();

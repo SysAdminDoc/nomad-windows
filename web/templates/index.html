@@ -1237,7 +1237,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Unified Search -->
     <div class="search-bar" style="max-width:500px;margin:16px auto;">
       <span class="search-icon">&#128269;</span>
-      <input id="unified-search" placeholder="Search everything..." oninput="debounceSearch()" onfocus="showSearchResults()" onblur="setTimeout(()=>hideSearchResults(),200)">
+      <input id="unified-search" placeholder="Search supplies, contacts, notes, checklists..." oninput="debounceSearch()" onfocus="showSearchResults()" onblur="setTimeout(()=>hideSearchResults(),200)">
       <div class="search-results" id="search-results"></div>
     </div>
 
@@ -1269,40 +1269,40 @@ a { color: var(--accent); text-decoration: none; }
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'ai-chat\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a7 7 0 0 0-7 7c0 3.5 2.5 6.5 7 13 4.5-6.5 7-9.5 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
         <div class="cc-title">AI Assistant</div>
-        <div class="cc-sub">Powered by Ollama</div>
-        <div class="cc-desc">Local AI chat — situation-aware, 19 presets, file analysis. Runs entirely on your hardware.</div>
+        <div class="cc-sub">Ask Questions Offline</div>
+        <div class="cc-desc">Chat with a private AI that knows your supplies, contacts, and situation. No internet needed.</div>
       </div>
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'kiwix-library\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h5"/></svg></div>
         <div class="cc-title">Information Library</div>
-        <div class="cc-sub">Powered by Kiwix</div>
-        <div class="cc-desc">Offline Wikipedia, medical references, survival guides, Army field manuals, and 100+ content packs.</div>
+        <div class="cc-sub">Offline Encyclopedia &amp; Guides</div>
+        <div class="cc-desc">Wikipedia, medical references, survival guides, and field manuals — all available without internet.</div>
       </div>
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'maps\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg></div>
         <div class="cc-title">Maps</div>
-        <div class="cc-desc">Offline maps with waypoints, zones, measurement tools. 22 regions worldwide. GPX export.</div>
+        <div class="cc-desc">Download maps for your area. Mark locations, measure distances, and navigate without cell service.</div>
       </div>
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'preparedness\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
         <div class="cc-title">Preparedness</div>
-        <div class="cc-desc">Checklists, inventory, contacts, medical, security, power, garden, calculators, guides, protocols, journal, and more — 19 sub-tabs.</div>
+        <div class="cc-desc">Track supplies, contacts, medical info, security, power, food production, and emergency plans — everything your family needs.</div>
       </div>
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'tools\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
         <div class="cc-title">Tools</div>
-        <div class="cc-desc">NukeMap simulator, Meshtastic radio, barcode scanner, video library, guided drills.</div>
+        <div class="cc-desc">Nuclear blast simulator, barcode scanner, training drills, video library, and off-grid radio tools.</div>
       </div>
       <div class="cc-card" onclick="document.querySelector('[data-tab=\'notes\']').click()">
         <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
         <div class="cc-title">Notes</div>
-        <div class="cc-desc">Markdown notes with tags, pinning, live preview, and auto-save.</div>
+        <div class="cc-desc">Write and organize notes, plans, and logs. Auto-saves as you type.</div>
       </div>
       <div class="cc-card cc-card-nuke" onclick="openAppFrame('NukeMap','/nukemap/')">
         <div class="cc-icon">&#9762;</div>
         <div class="cc-title">NukeMap</div>
         <div class="cc-sub">Nuclear Effects Simulator</div>
-        <div class="cc-desc">Blast radius, fallout, shelter analysis, MIRV simulation, WW3 engine — 418 targets, 7 scenarios.</div>
+        <div class="cc-desc">Blast radius, fallout zones, shelter analysis. 418 real-world targets, 7 conflict scenarios.</div>
       </div>
     </div>
 
@@ -1310,8 +1310,8 @@ a { color: var(--accent); text-decoration: none; }
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
       <div id="readiness-bar" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
       <div style="display:flex;gap:6px;">
-        <button class="btn btn-sm btn-primary" onclick="startAllServices()">Start All</button>
-        <button class="btn btn-sm btn-danger" onclick="stopAllServices()">Stop All</button>
+        <button class="btn btn-sm btn-primary" onclick="startAllServices()" title="Start AI Chat, Library, and all installed services">Start All Services</button>
+        <button class="btn btn-sm btn-danger" onclick="stopAllServices()" title="Stop all running services to save resources">Stop All Services</button>
       </div>
     </div>
 
@@ -1324,11 +1324,11 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Welcome Banner (first-run only) -->
     <div class="welcome-banner" id="welcome-banner" style="display:none;">
       <h3 class="shimmer-text">Welcome to N.O.M.A.D.</h3>
-      <p>Your offline-first knowledge and AI command center. Install your first tool to get started.</p>
-      <div style="display:flex;gap:10px;justify-content:center;">
-        <button class="btn btn-primary" onclick="installService('ollama')" style="padding:10px 24px;">Install AI Chat</button>
-        <button class="btn" onclick="installService('kiwix')">Install Encyclopedia</button>
-        <button class="btn" onclick="installService('cyberchef')">Install Data Tools</button>
+      <p>Everything you need for emergency preparedness — works completely offline after setup. Start by installing your first tool below.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="installService('ollama')" style="padding:10px 24px;" title="A private AI you can ask questions — no internet needed">Install AI Chat</button>
+        <button class="btn" onclick="installService('kiwix')" title="Wikipedia, medical guides, and survival references — all offline">Install Encyclopedia</button>
+        <button class="btn" onclick="installService('cyberchef')" title="Encryption, encoding, and data analysis tools">Install Data Tools</button>
       </div>
     </div>
 
@@ -1374,31 +1374,36 @@ a { color: var(--accent); text-decoration: none; }
         <div class="chat-header">
           <div class="chat-header-left">
             <select id="model-select"><option value="">No models</option></select>
-            <select class="preset-select" id="system-preset" onchange="applyPreset()">
-              <option value="">No system prompt</option>
+            <select class="preset-select" id="system-preset" onchange="applyPreset()" title="Choose how the AI responds">
+              <option value="">General (no special role)</option>
+              <option disabled>--- Everyday ---</option>
               <option value="assistant">General Assistant</option>
-              <option value="medical">Medical Advisor</option>
+              <option value="teacher">Teacher / Tutor</option>
               <option value="coding">Coding Helper</option>
-              <option value="survival">Survival Guide</option>
-              <option value="teacher">Teacher/Tutor</option>
               <option value="analyst">Data Analyst</option>
-              <option value="field_medic">Field Medic</option>
-              <option value="ham_radio">HAM Radio Tech</option>
-              <option value="homesteader">Homesteader</option>
-              <option value="water_specialist">Water/Sanitation</option>
-              <option value="tactical">Security/OPSEC</option>
-              <option value="forager">Foraging/Wild Food</option>
+              <option disabled>--- Preparedness ---</option>
+              <option value="survival">Survival Expert</option>
+              <option value="homesteader">Homesteading &amp; Self-Reliance</option>
+              <option value="water_specialist">Water &amp; Sanitation</option>
+              <option value="forager">Foraging &amp; Wild Food</option>
+              <option value="solar_expert">Solar &amp; Off-Grid Power</option>
+              <option value="land_nav">Land Navigation</option>
+              <option value="tactical">Security &amp; Safety</option>
               <option value="nuclear">Nuclear Preparedness</option>
-              <option disabled>--- Scenarios ---</option>
+              <option disabled>--- Medical ---</option>
+              <option value="medical">Medical Advisor</option>
+              <option value="field_medic">Field Medic</option>
+              <option value="herbalist">Medicinal Plants &amp; Herbs</option>
+              <option disabled>--- Communications ---</option>
+              <option value="ham_radio">HAM &amp; Emergency Radio</option>
+              <option disabled>--- Practice Scenarios ---</option>
               <option value="scenario_grid">Scenario: Grid Down</option>
               <option value="scenario_medical">Scenario: Medical Emergency</option>
               <option value="scenario_evacuation">Scenario: Evacuation</option>
-              <option value="solar_expert">Solar Power Expert</option>
-              <option value="land_nav">Land Navigation</option>
-              <option value="herbalist">Medicinal Herbalist</option>
-              <option value="custom">Custom Prompt...</option>
+              <option disabled>--- Advanced ---</option>
+              <option value="custom">Write Your Own Prompt...</option>
             </select>
-            <button class="btn btn-sm" onclick="toggleModelPicker()">+ Get Model</button>
+            <button class="btn btn-sm" onclick="toggleModelPicker()">+ Download AI Model</button>
             <button class="btn btn-sm" onclick="exportConversation()" title="Export to Markdown">Export</button>
           </div>
           <div id="pull-progress-bar" style="display:none;flex:1;max-width:250px;">
@@ -1408,9 +1413,9 @@ a { color: var(--accent); text-decoration: none; }
         </div>
         <div id="model-picker-panel" style="display:none;padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);font-size:12px;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <span style="font-weight:600;">Download an AI Model</span>
+            <span style="font-weight:600;">Download an AI Model <span style="font-weight:400;color:var(--text-muted);font-size:11px;">(downloaded once, works forever offline)</span></span>
             <div style="display:flex;gap:6px;align-items:center;">
-              <button class="btn btn-sm btn-primary" onclick="pullAllModels()" title="Download all recommended models sequentially">Download All</button>
+              <button class="btn btn-sm btn-primary" onclick="pullAllModels()" title="Download all recommended models one at a time">Download All Recommended</button>
               <button class="btn btn-sm btn-ghost" onclick="toggleModelPicker()" style="font-size:16px;padding:2px 6px;">x</button>
             </div>
           </div>
@@ -1432,7 +1437,7 @@ a { color: var(--accent); text-decoration: none; }
           </div>
         </div>
         <div class="kb-panel" id="kb-panel">
-          <label class="kb-toggle"><input type="checkbox" id="sit-context-toggle"> My Situation</label>
+          <label class="kb-toggle" title="When enabled, the AI can see your inventory, contacts, weather, and alerts to give personalized advice"><input type="checkbox" id="sit-context-toggle"> Include My Prep Data</label>
           <label class="kb-toggle"><input type="checkbox" id="kb-toggle" onchange="toggleKB()"> My Documents</label>
           <input type="file" id="kb-file-input" style="display:none;" accept=".pdf,.txt,.md,.csv" onchange="uploadKBFile()">
           <button class="btn btn-sm" onclick="document.getElementById('kb-file-input').click()">Upload Doc</button>
@@ -1546,10 +1551,10 @@ a { color: var(--accent); text-decoration: none; }
     <div id="map-management">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
         <div class="settings-card">
-          <h3 style="display:flex;justify-content:space-between;align-items:center;">Map Regions (PMTiles Extract)
+          <h3 style="display:flex;justify-content:space-between;align-items:center;">Download Regional Maps
             <button class="btn btn-sm btn-primary" onclick="downloadAllMaps()">Download All Regions</button>
           </h3>
-          <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Extract regional map tiles from Protomaps daily planet build. Auto-downloads the <code>pmtiles</code> CLI tool on first use. Each region is extracted by bounding box (max zoom 12).</p>
+          <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Download offline maps for your region. Select an area below and it will be available for navigation without internet. The download tool is installed automatically on first use.</p>
           <div id="map-download-status" style="display:none;margin-bottom:10px;padding:8px 12px;background:var(--surface2);border-radius:8px;font-size:11px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <span id="map-dl-label">Downloading...</span>
@@ -1566,11 +1571,11 @@ a { color: var(--accent); text-decoration: none; }
           <div id="map-files-list"><span style="color:var(--text-dim);font-size:12px;">No maps downloaded yet.</span></div>
           <h3 style="margin-top:16px;">Import Maps</h3>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-            <input id="map-url-input" placeholder="Paste PMTiles URL to download..." style="flex:1;min-width:180px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 10px;border-radius:6px;font-size:11px;outline:none;">
+            <input id="map-url-input" placeholder="Paste a map download URL..." style="flex:1;min-width:180px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 10px;border-radius:6px;font-size:11px;outline:none;">
             <button class="btn btn-sm btn-primary" onclick="downloadMapFromUrl()">Download URL</button>
           </div>
           <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-            <input id="map-file-input" placeholder="Local file path (.pmtiles, .pbf, etc.)" style="flex:1;min-width:180px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 10px;border-radius:6px;font-size:11px;outline:none;">
+            <input id="map-file-input" placeholder="Local map file path" style="flex:1;min-width:180px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 10px;border-radius:6px;font-size:11px;outline:none;">
             <button class="btn btn-sm" onclick="importMapFile()">Import File</button>
           </div>
           <h3 style="margin-top:16px;">Waypoint Distances</h3>
@@ -1592,7 +1597,7 @@ a { color: var(--accent); text-decoration: none; }
           Alternative Map Sources
           <button class="btn btn-sm" onclick="document.getElementById('map-sources-catalog').style.display=document.getElementById('map-sources-catalog').style.display==='none'?'block':'none'">Show/Hide</button>
         </h3>
-        <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Downloadable map data from various providers. PMTiles files work directly with the built-in viewer. Other formats require conversion or external tools.</p>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Additional map data from various providers. Most files work directly with the built-in map viewer.</p>
         <div id="map-sources-catalog" style="display:none;"></div>
       </div>
     </div>
@@ -1677,8 +1682,8 @@ a { color: var(--accent); text-decoration: none; }
 
       <!-- Meshtastic Integration -->
       <div class="settings-card" style="grid-column:1/-1;">
-        <h3>Meshtastic / LoRa Mesh Network</h3>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Connect a Meshtastic LoRa device via USB to enable off-grid mesh messaging. Range: 1-10+ miles depending on terrain and antenna.</div>
+        <h3>Off-Grid Radio Messaging</h3>
+        <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Send messages without cell towers or internet using a Meshtastic radio device. Range: 1-10+ miles. Plug a Meshtastic radio into your USB port to get started.</div>
         <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
           <button class="btn btn-sm btn-primary" onclick="scanMeshtastic()">Scan for Devices</button>
           <span id="mesh-status" style="font-size:11px;color:var(--text-muted);">No device connected</span>
@@ -1690,8 +1695,8 @@ a { color: var(--accent); text-decoration: none; }
         </div>
         <div id="mesh-log" style="max-height:200px;overflow-y:auto;margin-top:8px;font-size:11px;font-family:'Cascadia Code','Consolas',monospace;"></div>
         <div style="margin-top:12px;font-size:11px;color:var(--text-dim);line-height:1.6;">
-          <strong>Setup:</strong> 1. Flash Meshtastic firmware to ESP32/nRF52 device. 2. Connect via USB. 3. Click "Scan for Devices" above.
-          4. Requires Web Serial API (Chrome/Edge). <a href="https://meshtastic.org/" style="color:var(--accent);">meshtastic.org</a>
+          <strong>Setup:</strong> 1. Buy a Meshtastic radio (search "Meshtastic" online). 2. Plug it into your USB port. 3. Click "Scan for Devices" above.
+          Works in Chrome and Edge browsers. <a href="https://meshtastic.org/" style="color:var(--accent);">Learn more at meshtastic.org</a>
         </div>
       </div>
 
@@ -1806,29 +1811,29 @@ a { color: var(--accent); text-decoration: none; }
 
     <!-- Sub-navigation -->
     <div class="prep-subtabs" style="display:flex;gap:2px;margin-bottom:20px;background:var(--surface);border-radius:var(--radius);padding:4px;border:1px solid var(--border);overflow-x:auto;">
-      <button class="prep-subtab active" data-psub="checklists" onclick="switchPrepSub('checklists')">Checklists</button>
-      <button class="prep-subtab" data-psub="incidents" onclick="switchPrepSub('incidents')">Incident Log</button>
-      <button class="prep-subtab" data-psub="inventory" onclick="switchPrepSub('inventory')">Inventory</button>
+      <button class="prep-subtab active" data-psub="inventory" onclick="switchPrepSub('inventory')">Inventory</button>
       <button class="prep-subtab" data-psub="contacts" onclick="switchPrepSub('contacts')">Contacts</button>
-      <button class="prep-subtab" data-psub="calculators" onclick="switchPrepSub('calculators')">Calculators</button>
-      <button class="prep-subtab" data-psub="radio" onclick="switchPrepSub('radio')">Radio Ref</button>
+      <button class="prep-subtab" data-psub="checklists" onclick="switchPrepSub('checklists')">Checklists</button>
       <button class="prep-subtab" data-psub="medical" onclick="switchPrepSub('medical')">Medical</button>
-      <button class="prep-subtab" data-psub="garden" onclick="switchPrepSub('garden')">Garden</button>
-      <button class="prep-subtab" data-psub="power" onclick="switchPrepSub('power')">Power</button>
-      <button class="prep-subtab" data-psub="security" onclick="switchPrepSub('security')">Security</button>
-      <button class="prep-subtab" data-psub="guides" onclick="switchPrepSub('guides')">Guides</button>
-      <button class="prep-subtab" data-psub="reference" onclick="switchPrepSub('reference')">Quick Ref</button>
-      <button class="prep-subtab" data-psub="protocols" onclick="switchPrepSub('protocols')">Protocols</button>
-      <button class="prep-subtab" data-psub="vault" onclick="switchPrepSub('vault')">Vault</button>
-      <button class="prep-subtab" data-psub="weather" onclick="switchPrepSub('weather')">Weather</button>
-      <button class="prep-subtab" data-psub="signals" onclick="switchPrepSub('signals')">Signals</button>
-      <button class="prep-subtab" data-psub="ops" onclick="switchPrepSub('ops')">Operations</button>
-      <button class="prep-subtab" data-psub="journal" onclick="switchPrepSub('journal')">Journal</button>
+      <button class="prep-subtab" data-psub="incidents" onclick="switchPrepSub('incidents')">Incidents</button>
       <button class="prep-subtab" data-psub="family" onclick="switchPrepSub('family')">Family Plan</button>
+      <button class="prep-subtab" data-psub="security" onclick="switchPrepSub('security')">Security</button>
+      <button class="prep-subtab" data-psub="power" onclick="switchPrepSub('power')">Power</button>
+      <button class="prep-subtab" data-psub="garden" onclick="switchPrepSub('garden')">Garden</button>
+      <button class="prep-subtab" data-psub="weather" onclick="switchPrepSub('weather')">Weather</button>
+      <button class="prep-subtab" data-psub="guides" onclick="switchPrepSub('guides')">Guides</button>
+      <button class="prep-subtab" data-psub="calculators" onclick="switchPrepSub('calculators')">Calculators</button>
+      <button class="prep-subtab" data-psub="protocols" onclick="switchPrepSub('protocols')">Procedures</button>
+      <button class="prep-subtab" data-psub="radio" onclick="switchPrepSub('radio')">Radio</button>
+      <button class="prep-subtab" data-psub="reference" onclick="switchPrepSub('reference')">Quick Ref</button>
+      <button class="prep-subtab" data-psub="signals" onclick="switchPrepSub('signals')">Signals</button>
+      <button class="prep-subtab" data-psub="ops" onclick="switchPrepSub('ops')">Command Post</button>
+      <button class="prep-subtab" data-psub="journal" onclick="switchPrepSub('journal')">Journal</button>
+      <button class="prep-subtab" data-psub="vault" onclick="switchPrepSub('vault')">Secure Vault</button>
     </div>
 
     <!-- Sub: Checklists -->
-    <div id="psub-checklists" class="prep-sub active">
+    <div id="psub-checklists" class="prep-sub">
     <div class="prep-section">
       <h3>Emergency Checklists</h3>
       <div class="prep-layout">
@@ -1911,7 +1916,7 @@ a { color: var(--accent); text-decoration: none; }
     </div><!-- /psub-incidents -->
 
     <!-- Sub: Inventory -->
-    <div id="psub-inventory" class="prep-sub">
+    <div id="psub-inventory" class="prep-sub active">
     <div class="prep-section">
       <h3 style="display:flex;justify-content:space-between;align-items:center;">Supply Inventory <button class="btn btn-sm" onclick="openAppFrame('Inventory Report','/api/inventory/print')" title="Printable inventory list">Print</button></h3>
       <div id="inv-alerts" style="margin-bottom:12px;"></div>
@@ -1937,7 +1942,7 @@ a { color: var(--accent); text-decoration: none; }
           <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Quantity</label><input id="inv-qty" type="number" min="0" step="0.5" value="1" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
           <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Unit</label><input id="inv-unit" value="ea" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="ea, lbs, gal, boxes"></div>
           <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Min Qty (alert)</label><input id="inv-min" type="number" min="0" step="0.5" value="0" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
-          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Daily Usage</label><input id="inv-daily" type="number" min="0" step="0.1" value="0" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" title="Daily consumption rate for burn rate tracking"></div>
+          <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Daily Usage</label><input id="inv-daily" type="number" min="0" step="0.1" value="0" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" title="How much you use each day (e.g. 0.5 gallons of water per day)"></div>
           <div><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Expiration</label><input id="inv-exp" type="date" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;"></div>
           <div style="grid-column:span 2;"><label style="color:var(--text-dim);display:block;margin-bottom:3px;">Notes</label><input id="inv-notes" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="Optional notes"></div>
         </div>
@@ -1949,7 +1954,7 @@ a { color: var(--accent); text-decoration: none; }
       </div>
       <!-- Inventory Visualization -->
       <div id="inv-viz" style="margin-bottom:12px;"></div>
-      <!-- Burn Rate Dashboard -->
+      <!-- Supply Consumption Tracker -->
       <div id="burn-rate-dash" style="margin-bottom:16px;"></div>
       <div id="inv-table-wrap" style="overflow-x:auto;">
         <table class="freq-table" id="inv-table">
@@ -4653,7 +4658,7 @@ a { color: var(--accent); text-decoration: none; }
     <!-- Sub: Family Plan -->
     <div id="psub-family" class="prep-sub">
     <div class="prep-section">
-      <h3>Family Emergency Plan</h3>
+      <h3 style="display:flex;justify-content:space-between;align-items:center;">Family Emergency Plan <span style="font-size:10px;color:var(--text-muted);font-weight:400;">Auto-saves as you type</span></h3>
       <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Complete this plan with your household. Print copies (use Print Emergency Card button). Review quarterly. Saved locally.</div>
       <div class="settings-card" style="margin-bottom:12px;">
         <h3 style="font-size:13px;">Meeting Locations</h3>
@@ -4853,7 +4858,7 @@ a { color: var(--accent); text-decoration: none; }
             </span>
           </div>
           <div class="setting-row">
-            <span class="setting-label">Sneakernet Sync</span>
+            <span class="setting-label">USB / Offline Transfer</span>
             <span style="display:flex;gap:6px;">
               <button class="btn btn-sm" onclick="exportSyncPack()">Export Content Pack</button>
               <input type="file" id="sync-import-file" style="display:none;" accept=".zip" onchange="importSyncPack()">
@@ -4869,10 +4874,10 @@ a { color: var(--accent); text-decoration: none; }
       <!-- Federation / Multi-Node Sync -->
       <div class="settings-card" style="grid-column:1/-1;">
         <h3 style="display:flex;justify-content:space-between;align-items:center;">
-          Network Federation
+          Connect Multiple Systems
           <span id="node-id-badge" style="font-size:10px;color:var(--text-muted);font-weight:400;"></span>
         </h3>
-        <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Sync data between multiple N.O.M.A.D. installations on your network. All sync operations merge data — nothing is overwritten.</p>
+        <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Share data between multiple N.O.M.A.D. computers on your network (e.g. sync your base camp with your cabin). Data is merged — nothing gets overwritten.</p>
         <div style="display:flex;gap:8px;margin-bottom:12px;align-items:end;flex-wrap:wrap;">
           <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">This Node's Name</label>
             <input id="node-name-input" style="width:160px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 10px;border-radius:6px;font-size:12px;outline:none;" placeholder="My Base Camp">
@@ -9360,14 +9365,16 @@ async function loadReadinessScore() {
     const fill = document.getElementById('rs-bar-fill');
     fill.style.width = `${d.total}%`;
     fill.style.background = d.total >= 80 ? 'var(--green)' : d.total >= 50 ? 'var(--orange)' : 'var(--red)';
-    const catLabels = {water:'Water',food:'Food',medical:'Medical',security:'Security',comms:'Comms',shelter:'Power & Land',planning:'Planning'};
+    const catLabels = {water:'Water',food:'Food',medical:'Medical',security:'Security',comms:'Communications',shelter:'Power & Land',planning:'Plans & Knowledge'};
     const catMax = {water:20,food:20,medical:15,security:10,comms:10,shelter:10,planning:15};
+    const catLinks = {water:'inventory',food:'inventory',medical:'medical',security:'security',comms:'contacts',shelter:'power',planning:'checklists'};
     const cats = document.getElementById('rs-categories');
     cats.innerHTML = Object.entries(d.categories).map(([k, v]) => {
       const pct = Math.round(v.score / catMax[k] * 100);
       const color = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--orange)' : 'var(--red)';
-      return `<div style="display:flex;align-items:center;gap:6px;" title="${v.detail}">
-        <span style="color:var(--text-dim);min-width:70px;">${catLabels[k] || k}</span>
+      const link = catLinks[k] || 'inventory';
+      return `<div style="display:flex;align-items:center;gap:6px;cursor:pointer;" title="${v.detail} — click to improve" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('${link}'),200)">
+        <span style="color:var(--text-dim);min-width:85px;">${catLabels[k] || k}</span>
         <div style="flex:1;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden;">
           <div style="height:100%;width:${pct}%;background:${color};border-radius:2px;"></div>
         </div>
@@ -10684,7 +10691,7 @@ function showHelp() {
 
   <h2>9 Main Tabs</h2>
   <h3>Home (Services)</h3><p>Command dashboard with proactive alerts, service management, situation overview, content summary, and activity feed. Install, start, stop, and monitor all 6 services. Download sizes shown on Install buttons.</p>
-  <h3>AI Chat</h3><p>Local AI powered by Ollama. 19 system presets (medical, survival, coding, etc). Toggle <strong>"My Situation"</strong> to inject your real inventory, burn rates, incidents, and threat levels into the conversation. Drag-drop files for context. Upload documents for semantic search (RAG). Download All models with one click.</p>
+  <h3>AI Chat</h3><p>Local AI powered by Ollama. 19 system presets (medical, survival, coding, etc). Toggle <strong>"Include My Prep Data"</strong> to inject your real inventory, burn rates, incidents, and threat levels into the conversation. Drag-drop files for context. Upload documents for semantic search (RAG). Download All models with one click.</p>
   <h3>Library</h3><p>100+ downloadable content packs in 14 categories across 3 tiers (Essential / Standard / Comprehensive). Bulk download buttons at top. Each item shows live download state. Upload and view PDFs/ePubs. AI document intelligence classifies, summarizes, and extracts entities from uploaded documents.</p>
   <h3>Maps</h3><p>Offline maps with 10 tools: Drop Pin, Measure, Save Waypoint, Draw Zone, Property Boundary (calculates area in acres + perimeter), Clear Pins, Print Layout, Bookmark, Bearing & Distance, Export GPX. 22 downloadable regions worldwide. Enter coordinates directly (lat,lng) for offline navigation.</p>
   <h3>Notes</h3><p>Markdown notes with tags, pinning, live preview. Export individual notes as .md or all notes as ZIP.</p>
@@ -10718,8 +10725,8 @@ function showHelp() {
   <h2>Proactive Alerts</h2>
   <p>A background engine checks every 5 minutes for: inventory items running low (<7 days supply), expiring items (<14 days), barometric pressure drops (storm warning), and incident clusters (3+ in 48h). Alerts appear in the bell icon in the header. Click <strong>AI Summary</strong> to get a natural language situation report.</p>
 
-  <h2>Network Federation</h2>
-  <p>Sync data between multiple NOMAD installations on your LAN. Go to <strong>Settings > Network Federation</strong>. Click <strong>Scan for Nodes</strong> to find other instances. Click <strong>Push Data</strong> to send your inventory, contacts, checklists, notes, incidents, and waypoints to a peer. Enter an IP manually for cross-subnet connections.</p>
+  <h2>Connect Multiple Systems</h2>
+  <p>Share data between multiple NOMAD computers on your network. Go to <strong>Settings > Connect Multiple Systems</strong>. Click <strong>Scan for Nodes</strong> to find other NOMAD systems. Click <strong>Push Data</strong> to send your inventory, contacts, checklists, notes, incidents, and waypoints to another system. Enter an IP manually for cross-subnet connections.</p>
 
   <h2>Training Scenarios</h2>
   <p>In the <strong>Tools</strong> tab, 4 immersive multi-phase scenarios test your decision-making: Grid Down (7 days), Medical Crisis, Evacuation, Winter Storm. AI generates complications between phases based on your real inventory data. Each run is scored 0-100 with an after-action review.</p>
@@ -10735,7 +10742,7 @@ function showHelp() {
 
   <h2>Data Storage</h2>
   <p>All data is stored in <code>%APPDATA%\\ProjectNOMAD\\</code> (or custom location set in wizard). Use <strong>Settings > Full Backup</strong> to download a ZIP. The <strong>Last Backup</strong> indicator shows how long since your last backup with color coding (green <7d, orange <30d, red >30d).</p>
-  <p><strong>Federation Sync</strong> shares data between NOMAD nodes over LAN. <strong>Sneakernet Sync</strong> exports a portable ZIP for USB transfer.</p>
+  <p><strong>Network Sync</strong> shares data between NOMAD systems over your local network. <strong>USB / Offline Transfer</strong> exports a portable ZIP file you can carry on a USB drive to another system.</p>
   </body></html>`);
 }
 
@@ -12857,12 +12864,12 @@ function updateGettingStarted() {
   const ollama = svcs.find(s => s.id === 'ollama');
   const kiwix = svcs.find(s => s.id === 'kiwix');
   const steps = [
-    {done: ollama?.installed, text: 'Install AI Chat (Ollama)', action: "installService('ollama')"},
-    {done: ollama?.running, text: 'Start AI Chat service', action: "startService('ollama')"},
-    {done: false, text: 'Download an AI model', action: "document.querySelector('[data-tab=\"ai-chat\"]').click();setTimeout(()=>toggleModelPicker(),200)"},
-    {done: kiwix?.installed, text: 'Install Information Library (Kiwix)', action: "installService('kiwix')"},
-    {done: false, text: 'Download content packs from the Library tab', action: "document.querySelector('[data-tab=\"kiwix-library\"]').click()"},
-    {done: false, text: 'Try the Interactive Guides in Preparedness > Guides', action: "document.querySelector('[data-tab=\"preparedness\"]').click();setTimeout(()=>switchPrepSub('guides'),200)"},
+    {done: ollama?.installed, text: 'Install AI Chat (lets you ask questions offline)', action: "installService('ollama')"},
+    {done: ollama?.running, text: 'Start the AI Chat service', action: "startService('ollama')"},
+    {done: false, text: 'Download an AI brain (choose a model for the AI to use)', action: "document.querySelector('[data-tab=\"ai-chat\"]').click();setTimeout(()=>toggleModelPicker(),200)"},
+    {done: kiwix?.installed, text: 'Install the Information Library (offline Wikipedia & guides)', action: "installService('kiwix')"},
+    {done: false, text: 'Download offline content packs (encyclopedia, medical, survival)', action: "document.querySelector('[data-tab=\"kiwix-library\"]').click()"},
+    {done: false, text: 'Try the Interactive Decision Guides (step-by-step emergency help)', action: "document.querySelector('[data-tab=\"preparedness\"]').click();setTimeout(()=>switchPrepSub('guides'),200)"},
   ];
   // Check if any AI models exist
   if (ollama?.running) {

@@ -1,7 +1,7 @@
 # Project N.O.M.A.D. for Windows
 
 ## Overview
-Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) — the most comprehensive offline survival command center available. No Docker required. 6 managed services, proactive AI alerts, 10 interactive decision guides, medical module, training scenarios, food production, multi-node federation, power management, security cameras, AI document intelligence, 38-section user guide, and a premium dark dashboard with 4 themes. All 10 roadmap phases complete.
+Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) — the most comprehensive offline survival command center available. No Docker required. 6 managed services, proactive AI alerts, 13 interactive decision guides, 8 advanced calculators, 30+ quick reference cards, medical module, training scenarios, food production, multi-node federation, power management, security cameras, AI document intelligence, 38-section user guide, and a premium dark dashboard with 4 themes.
 
 ## Tech Stack
 - **Python 3** — Flask web server + pywebview (WebView2) embedded browser
@@ -53,7 +53,7 @@ services/
 ```
 
 ## Version
-v1.2.0 — ~40,500 lines, 265 API routes, 38 DB tables, 25 prep sub-tabs, 38-section user guide
+v1.3.0 — ~50,000 lines, 265 API routes, 38 DB tables, 25 prep sub-tabs, 38-section user guide, 13 decision guides, 8 advanced calculators
 
 ## Run / Build
 ```bash
@@ -112,7 +112,7 @@ Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Powe
 Sections cover: getting started, all 9 tabs, all 19 prep sub-tabs, AI model selection, inventory best practices, printable reports, calculators reference, NukeMap guide, medical/garden/power/security/weather/comms/vault in-depth guides, training scenarios, FAQ, and glossary.
 
 ## Critical Gotchas
-- **DECISION_GUIDES array**: ALL 10 guide objects must be inside the `];`. Placing objects after the closing bracket causes a JS syntax error that kills ALL interactivity. Verify with `node -e "vm.createScript(script)"`.
+- **DECISION_GUIDES array**: ALL 13 guide objects must be inside the `];`. Placing objects after the closing bracket causes a JS syntax error that kills ALL interactivity. Verify with `node -e "vm.createScript(script)"`.
 - **escapeAttr function**: Contains HTML entities (`&amp;`, `&quot;`, `&lt;`) which are correct — browsers do NOT decode entities inside `<script>` tags. Node.js testing with manual HTML decode gives false positives.
 - **FABs must be outside .container**: LAN Chat, Quick Actions, and Timer widgets (position:fixed) must be DOM siblings of .main-content, NOT inside .container. Being inside .container between tab-content divs causes layout interference.
 - **scrollTo on tab switch**: Without `window.scrollTo(0,0)` in the tab click handler, switching from a scrolled-down tab leaves the viewport at the old scroll position, showing blank space.

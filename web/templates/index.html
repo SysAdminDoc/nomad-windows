@@ -1543,6 +1543,160 @@ body{background:var(--bg);color:var(--text)}
 
       </div>
     </div>
+
+    <!-- Row 5: New Medical + Navigation + Agricultural Calculators -->
+    <div class="calc-grid">
+
+      <!-- Burn Surface Area (Rule of Nines) -->
+      <div class="calc-card">
+        <h4>Burn Surface Area (Rule of Nines)</h4>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Check all burned body regions. Determines burn severity and fluid resuscitation need.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;margin-bottom:8px;">
+          <label><input type="checkbox" id="burn-head" onchange="calcBurnArea()"> Head/Neck (9%)</label>
+          <label><input type="checkbox" id="burn-chest" onchange="calcBurnArea()"> Chest (9%)</label>
+          <label><input type="checkbox" id="burn-abdomen" onchange="calcBurnArea()"> Abdomen (9%)</label>
+          <label><input type="checkbox" id="burn-upperback" onchange="calcBurnArea()"> Upper Back (9%)</label>
+          <label><input type="checkbox" id="burn-lowerback" onchange="calcBurnArea()"> Lower Back (9%)</label>
+          <label><input type="checkbox" id="burn-rightarm" onchange="calcBurnArea()"> Right Arm (9%)</label>
+          <label><input type="checkbox" id="burn-leftarm" onchange="calcBurnArea()"> Left Arm (9%)</label>
+          <label><input type="checkbox" id="burn-rightthigh" onchange="calcBurnArea()"> Right Thigh (9%)</label>
+          <label><input type="checkbox" id="burn-rightleg" onchange="calcBurnArea()"> Right Lower Leg (9%)</label>
+          <label><input type="checkbox" id="burn-leftthigh" onchange="calcBurnArea()"> Left Thigh (9%)</label>
+          <label><input type="checkbox" id="burn-leftleg" onchange="calcBurnArea()"> Left Lower Leg (9%)</label>
+          <label><input type="checkbox" id="burn-genitalia" onchange="calcBurnArea()"> Genitalia (1%)</label>
+        </div>
+        <div><label style="font-size:11px;color:var(--text-dim);">Patient weight (kg)</label><input type="number" id="burn-weight" value="70" min="1" oninput="calcBurnArea()" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;margin-left:8px;"></div>
+        <div class="calc-result" id="burn-result" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- IV Drip Rate -->
+      <div class="calc-card">
+        <h4>IV Drip Rate Calculator</h4>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">For manual gravity IV sets in austere conditions.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Volume (mL)</label><input type="number" id="iv-vol" value="1000" min="1" oninput="calcIVDrip()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Time (minutes)</label><input type="number" id="iv-time" value="60" min="1" oninput="calcIVDrip()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Drop Factor (drops/mL)</label>
+            <select id="iv-drops" onchange="calcIVDrip()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;">
+              <option value="10">10 gtt/mL — Macro (blood/thick fluids)</option>
+              <option value="15">15 gtt/mL — Standard macro set</option>
+              <option value="20" selected>20 gtt/mL — Standard set</option>
+              <option value="60">60 gtt/mL — Micro/pediatric set</option>
+            </select>
+          </div>
+        </div>
+        <div class="calc-result" id="iv-result" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- KI Dosage Calculator -->
+      <div class="calc-card">
+        <h4>Potassium Iodide (KI) Dosage</h4>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Protects thyroid from radioactive iodine. Take within 4 hours of exposure (or up to 24h before). Does NOT protect against other radiation.</div>
+        <div id="ki-people-list" style="font-size:12px;"></div>
+        <button class="btn btn-sm" onclick="addKIPerson()" style="margin-top:6px;">+ Add Person</button>
+        <div class="calc-result" id="ki-result" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- Dead Reckoning Navigator -->
+      <div class="calc-card">
+        <h4>Dead Reckoning Navigator</h4>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Estimate position from known start point without GPS.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Start Lat (°N)</label><input type="number" id="dr-lat" value="39.0" step="0.001" oninput="calcDeadReckoning()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Start Lon (°W, negative)</label><input type="number" id="dr-lon" value="-95.0" step="0.001" oninput="calcDeadReckoning()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Bearing (° true)</label><input type="number" id="dr-bearing" value="45" min="0" max="360" oninput="calcDeadReckoning()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Speed (mph)</label><input type="number" id="dr-speed" value="3" min="0.1" step="0.1" oninput="calcDeadReckoning()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Time traveled (hours)</label><input type="number" id="dr-hours" value="2" min="0.1" step="0.1" oninput="calcDeadReckoning()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+        </div>
+        <div class="calc-result" id="dr-result" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- Shelter Protection Factor -->
+      <div class="calc-card">
+        <h4>Shelter Protection Factor</h4>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">PF = how many times shelter reduces radiation dose. PF 10 = 1/10th the outdoor dose.</div>
+        <div id="shpf-layers" style="font-size:12px;margin-bottom:8px;"></div>
+        <button class="btn btn-sm" onclick="addShelterLayer()" style="margin-bottom:8px;">+ Add Layer</button>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:4px;">Geometry bonus:</div>
+        <select id="shpf-geo" onchange="calcShelterPF()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;margin-bottom:8px;">
+          <option value="1">Above-grade room (no geo bonus)</option>
+          <option value="1.5">Corner room / inner room</option>
+          <option value="2">Basement (above grade soil cover)</option>
+          <option value="3">Basement with 24"+ soil above</option>
+          <option value="5">Underground (fully below grade)</option>
+        </select>
+        <div class="calc-result" id="shpf-result"></div>
+      </div>
+
+      <!-- Crop Calorie Planner -->
+      <div class="calc-card">
+        <h4>Survival Garden Calorie Planner</h4>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Estimate calories producible per year from garden area. Based on average yields.</div>
+        <div id="crop-rows" style="font-size:12px;margin-bottom:6px;"></div>
+        <button class="btn btn-sm" onclick="addCropRow()">+ Add Crop</button>
+        <div style="margin-top:8px;"><label style="font-size:11px;color:var(--text-dim);">People to feed:</label> <input type="number" id="crop-people" value="4" min="1" max="100" oninput="calcCropCalories()" style="width:60px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;margin-left:6px;"></div>
+        <div class="calc-result" id="crop-result" style="margin-top:8px;"></div>
+      </div>
+
+      <!-- NVIS / HF Frequency Selector -->
+      <div class="calc-card">
+        <h4>NVIS / HF Frequency Advisor</h4>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">NVIS (Near Vertical Incidence Skywave) provides 30–500 mile regional coverage. No repeater needed.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Solar Cycle Phase</label>
+            <select id="nvis-solar" onchange="calcNVIS()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;">
+              <option value="solar-min">Solar Minimum</option>
+              <option value="solar-rising" selected>Solar Rising (current, ~2025)</option>
+              <option value="solar-max">Solar Maximum</option>
+              <option value="solar-falling">Solar Falling</option>
+            </select>
+          </div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Time of Day</label>
+            <select id="nvis-time" onchange="calcNVIS()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;">
+              <option value="predawn">Pre-dawn (0000–0600)</option>
+              <option value="morning" selected>Morning (0600–1200)</option>
+              <option value="afternoon">Afternoon (1200–1800)</option>
+              <option value="evening">Evening (1800–2400)</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Target range (miles)</label><input type="number" id="nvis-range" value="200" min="30" max="1500" oninput="calcNVIS()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+        </div>
+        <div class="calc-result" id="nvis-result"></div>
+      </div>
+
+      <!-- Medication Weight-Based Dosing -->
+      <div class="calc-card">
+        <h4>Weight-Based Medication Dosing</h4>
+        <div style="font-size:11px;color:var(--text-dim);margin-bottom:8px;">Calculate pediatric or adult doses from mg/kg dosing references. Always verify against current formulary. Not a substitute for medical advice.</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Patient weight</label><input type="number" id="dose-weight" value="20" min="1" oninput="calcWeightDose()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;box-sizing:border-box;"></div>
+          <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Unit</label>
+            <select id="dose-unit" onchange="calcWeightDose()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;">
+              <option value="kg" selected>kg</option>
+              <option value="lb">lbs</option>
+            </select>
+          </div>
+          <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Medication</label>
+            <select id="dose-med" onchange="calcWeightDose()" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:5px;font-size:12px;">
+              <option value="ibu">Ibuprofen (pain/fever) — 5-10 mg/kg q6-8h, max 40mg/kg/day</option>
+              <option value="acetaminophen">Acetaminophen (pain/fever) — 10-15 mg/kg q4-6h, max 75mg/kg/day</option>
+              <option value="amox">Amoxicillin (infection) — 25-45 mg/kg/day ÷ q8h</option>
+              <option value="augmentin">Amoxicillin-Clavulanate — 25-45 mg/kg/day ÷ q12h</option>
+              <option value="azithro">Azithromycin (resp/atypical) — 10 mg/kg day 1, 5 mg/kg days 2-5</option>
+              <option value="cipro">Ciprofloxacin (UTI/GI) — 10-20 mg/kg q12h, max 750mg/dose</option>
+              <option value="doxy">Doxycycline (broad spectrum, age 8+) — 2.2 mg/kg q12h, max 100mg/dose</option>
+              <option value="metronidazole">Metronidazole (anaerobic/GI) — 7.5 mg/kg q8h, max 500mg/dose</option>
+              <option value="diphenhydramine">Diphenhydramine (allergy/sleep) — 1.25 mg/kg q6h, max 50mg/dose</option>
+              <option value="epi">Epinephrine IM (anaphylaxis) — 0.01 mg/kg, max 0.5mg (1:1000 soln, 0.01 mL/kg)</option>
+            </select>
+          </div>
+        </div>
+        <div class="calc-result" id="dose-result" style="margin-top:8px;"></div>
+      </div>
+
+    </div>
+
+    </div>
     </div><!-- /psub-calculators -->
 
     <!-- Sub: Radio -->
@@ -3279,6 +3433,238 @@ body{background:var(--bg);color:var(--text)}
 
       </div>
     </div>
+
+    <!-- ═══ NEW QUICK REFERENCE CARDS ═══ -->
+
+    <!-- CBRN Decontamination Guide -->
+    <div style="background:var(--surface1);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
+      <h4 style="margin:0 0 10px;color:var(--accent);">☢ CBRN Decontamination Guide</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Radiological/Nuclear</div>
+          <div style="font-size:12px;">• Remove and bag outer clothing — eliminates ~80% contamination<br>• Move upwind/uphill/upstream from fallout cloud<br>• Shower with soap and water (no conditioner — binds particles)<br>• Blow nose, wipe eyelids outward, gently clean ears<br>• Do NOT scrub skin — opens pores<br>• Seal contaminated items in plastic bags (do not shake out)<br>• Time-Distance-Shielding: reduce exposure duration first</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:#ff9800;margin-bottom:4px;">Chemical Agents</div>
+          <div style="font-size:12px;">• Nerve agents (GB/VX): immediately remove clothing, irrigate skin with copious water. Use atropine + 2-PAM if available.<br>• Blister agents (Mustard): flush with water within 2 min — delay causes blistering. Do NOT rupture blisters.<br>• Blood agents (CN/CK): remove from exposure, 100% O₂, amyl nitrite<br>• RSDL (Reactive Skin Decon Lotion) or 0.5% bleach solution for skin<br>• M291 SDK kit for military decon</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:#4caf50;margin-bottom:4px;">Biological Agents</div>
+          <div style="font-size:12px;">• Assume exposure: remove clothing, shower with soap<br>• Anthrax: soap/water sufficient for skin decon. Antibiotics (cipro/doxy) within 24-48 hrs<br>• Smallpox: isolate; no field decon — call public health<br>• Ricin: wash skin/eyes with water; no antidote (supportive care)<br>• Botulinum: antitoxin must be given early; clean exposure site<br>• PPE before entering bio-contaminated zone: N95 minimum, eye protection</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Decon Station Layout</div>
+          <div style="font-size:12px;">• HOT zone → WARM zone (decon) → COLD zone<br>• Wind: station must be UPWIND of hot zone<br>• Runoff: contain contaminated water — do NOT let enter waterways<br>• Gross decon: remove clothing, cut-off if needed<br>• Secondary decon: soap-and-water scrub from head to toe<br>• Personnel decon before entering cold zone — always<br>• Medical triage: ABCs first, then decon if unstable</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Water Purification Method Comparison -->
+    <div style="background:var(--surface1);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
+      <h4 style="margin:0 0 10px;color:var(--accent);">💧 Water Purification Method Comparison</h4>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:var(--surface2);color:var(--text-dim);">
+            <th style="padding:7px 10px;text-align:left;">Method</th>
+            <th style="padding:7px 10px;">Bacteria</th>
+            <th style="padding:7px 10px;">Virus</th>
+            <th style="padding:7px 10px;">Protozoa</th>
+            <th style="padding:7px 10px;">Chemicals</th>
+            <th style="padding:7px 10px;">Heavy Metals</th>
+            <th style="padding:7px 10px;">Speed</th>
+            <th style="padding:7px 10px;text-align:left;">Notes</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding:6px 10px;font-weight:600;">Boiling (1 min / 3 min >6500ft)</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;">5–10 min</td><td style="padding:6px 10px;font-size:11px;">Gold standard. Requires fuel. Let cool before drinking.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:6px 10px;font-weight:600;">Chlorine bleach (8 drops/gal, unscented 6%)</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#ff9800;">Partial</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;">30 min</td><td style="padding:6px 10px;font-size:11px;">Cheap, widely available. Ineffective against Cryptosporidium. Double dose for cloudy water.</td></tr>
+            <tr><td style="padding:6px 10px;font-weight:600;">Iodine tablets</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#ff9800;">Partial</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;">30 min</td><td style="padding:6px 10px;font-size:11px;">Compact. Avoid if thyroid issues. Not for >4 weeks continuous use.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:6px 10px;font-weight:600;">Ceramic filter (0.2μm)</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;">Slow</td><td style="padding:6px 10px;font-size:11px;">Cleanable, reusable. Combine with chemical treatment for virus protection.</td></tr>
+            <tr><td style="padding:6px 10px;font-weight:600;">Hollow-fiber filter (LifeStraw/Sawyer)</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;">Fast</td><td style="padding:6px 10px;font-size:11px;">Lightweight, no chemicals. Back-flush to clean. Add chemical for virus.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:6px 10px;font-weight:600;">UV pen (SteriPen)</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;">90 sec</td><td style="padding:6px 10px;font-size:11px;">Needs batteries; useless in turbid water. Pre-filter sediment first.</td></tr>
+            <tr><td style="padding:6px 10px;font-weight:600;">Activated carbon filter</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#ff9800;">Partial</td><td style="text-align:center;">Medium</td><td style="padding:6px 10px;font-size:11px;">Removes taste, odor, chlorine, VOCs. Combine with other methods.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:6px 10px;font-weight:600;">Solar disinfection (SODIS)</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#ff9800;">Partial</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;color:#f44336;">✗</td><td style="text-align:center;">6–48 hrs</td><td style="padding:6px 10px;font-size:11px;">Clear PET bottles in direct sun. WHO-validated for developing world. Free but slow.</td></tr>
+            <tr><td style="padding:6px 10px;font-weight:600;">Reverse osmosis</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;color:#4caf50;">✓</td><td style="text-align:center;">Slow</td><td style="padding:6px 10px;font-size:11px;">Best overall. Requires pressure/pump. Wastes 3–5 gallons per gallon produced.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Best practice: Pre-filter sediment → chemical or UV treatment → carbon filter for taste. Always use redundant methods in crisis.</div>
+    </div>
+
+    <!-- Antibiotic Field Reference -->
+    <div style="background:var(--surface1);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
+      <h4 style="margin:0 0 10px;color:var(--accent);">💊 Antibiotic Field Reference</h4>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:var(--surface2);color:var(--text-dim);">
+            <th style="padding:7px 10px;text-align:left;">Condition</th>
+            <th style="padding:7px 10px;text-align:left;">First Choice</th>
+            <th style="padding:7px 10px;text-align:left;">Alternative</th>
+            <th style="padding:7px 10px;text-align:left;">Notes / Duration</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding:5px 10px;font-weight:600;">Skin infection / cellulitis</td><td style="padding:5px 10px;">Amoxicillin-Clavulanate 875mg BID</td><td style="padding:5px 10px;">Clindamycin 300–450mg TID</td><td style="padding:5px 10px;font-size:11px;">5–7 days. Mark skin border to track spread.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:5px 10px;font-weight:600;">Wound infection (animal bite)</td><td style="padding:5px 10px;">Amoxicillin-Clavulanate 875mg BID</td><td style="padding:5px 10px;">Doxycycline + Metronidazole</td><td style="padding:5px 10px;font-size:11px;">5–10 days. Irrigate wound copiously. Rabies risk assessment.</td></tr>
+            <tr><td style="padding:5px 10px;font-weight:600;">Respiratory / pneumonia</td><td style="padding:5px 10px;">Azithromycin 500mg Day1, 250mg ×4</td><td style="padding:5px 10px;">Doxycycline 100mg BID ×7 days</td><td style="padding:5px 10px;font-size:11px;">Atypical coverage. Chest X-ray if available.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:5px 10px;font-weight:600;">UTI (uncomplicated)</td><td style="padding:5px 10px;">Ciprofloxacin 500mg BID ×3 days</td><td style="padding:5px 10px;">TMP/SMX DS BID ×3 days</td><td style="padding:5px 10px;font-size:11px;">Increase fluids. Pyelonephritis: 14 days, consider fever.</td></tr>
+            <tr><td style="padding:5px 10px;font-weight:600;">GI infection / diarrhea</td><td style="padding:5px 10px;">Ciprofloxacin 500mg BID ×3 days</td><td style="padding:5px 10px;">Azithromycin 1g single dose</td><td style="padding:5px 10px;font-size:11px;">Bloody diarrhea or fever: treat aggressively. Oral rehydration therapy (ORT) critical.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:5px 10px;font-weight:600;">Dental / abscess</td><td style="padding:5px 10px;">Amoxicillin 500mg TID ×7 days</td><td style="padding:5px 10px;">Clindamycin 300mg QID (PCN allergy)</td><td style="padding:5px 10px;font-size:11px;">Metronidazole 500mg TID can be added. Drainage is definitive treatment.</td></tr>
+            <tr><td style="padding:5px 10px;font-weight:600;">Tick-borne (Lyme/RMSF)</td><td style="padding:5px 10px;">Doxycycline 100mg BID ×21 days</td><td style="padding:5px 10px;">Amoxicillin 500mg TID ×21 days</td><td style="padding:5px 10px;font-size:11px;">RMSF: start doxy immediately — delay = death. Lyme: bullseye rash diagnostic.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:5px 10px;font-weight:600;">Anthrax (post-exposure)</td><td style="padding:5px 10px;">Ciprofloxacin 500mg BID ×60 days</td><td style="padding:5px 10px;">Doxycycline 100mg BID ×60 days</td><td style="padding:5px 10px;font-size:11px;">CBRN scenario. Full 60-day course required. Cutaneous: treat 7–10 days.</td></tr>
+            <tr><td style="padding:5px 10px;font-weight:600;">Plague (bubonic)</td><td style="padding:5px 10px;">Doxycycline 100mg BID ×10–14 days</td><td style="padding:5px 10px;">Ciprofloxacin 500mg BID</td><td style="padding:5px 10px;font-size:11px;">Flea vectors. Bubo: do NOT incise (risk of septicemic conversion).</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:#f44336;margin-top:6px;padding:6px;background:rgba(244,67,54,0.08);border-radius:5px;">⚠ These are field reference guidelines for austere/grid-down situations only. Always seek professional medical care when available. Verify drug allergies before administering. This is not medical advice.</div>
+    </div>
+
+    <!-- PACE Communications Plan -->
+    <div style="background:var(--surface1);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
+      <h4 style="margin:0 0 10px;color:var(--accent);">📻 PACE Communications Planning</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:12px;">
+        <div style="background:linear-gradient(135deg,rgba(76,175,80,0.15),rgba(76,175,80,0.05));border:1px solid rgba(76,175,80,0.3);border-radius:8px;padding:12px;">
+          <div style="font-size:20px;margin-bottom:4px;">P</div>
+          <div style="font-weight:700;color:#4caf50;margin-bottom:4px;">Primary</div>
+          <div style="font-size:12px;">Normal, everyday comms method. Highest reliability when infrastructure is intact.<br><br><em>Examples: Cell phone, internet, landline, local repeater</em></div>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(33,150,243,0.15),rgba(33,150,243,0.05));border:1px solid rgba(33,150,243,0.3);border-radius:8px;padding:12px;">
+          <div style="font-size:20px;margin-bottom:4px;">A</div>
+          <div style="font-weight:700;color:#2196f3;margin-bottom:4px;">Alternate</div>
+          <div style="font-size:12px;">If primary fails. Still depends on some infrastructure.<br><br><em>Examples: GMRS radio, FRS, internet via satellite, mesh Wi-Fi node</em></div>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(255,152,0,0.15),rgba(255,152,0,0.05));border:1px solid rgba(255,152,0,0.3);border-radius:8px;padding:12px;">
+          <div style="font-size:20px;margin-bottom:4px;">C</div>
+          <div style="font-weight:700;color:#ff9800;margin-bottom:4px;">Contingency</div>
+          <div style="font-size:12px;">Infrastructure-independent. Requires license or training.<br><br><em>Examples: Amateur HF radio, Meshtastic LoRa mesh, CB radio on 40m, packet radio</em></div>
+        </div>
+        <div style="background:linear-gradient(135deg,rgba(244,67,54,0.15),rgba(244,67,54,0.05));border:1px solid rgba(244,67,54,0.3);border-radius:8px;padding:12px;">
+          <div style="font-size:20px;margin-bottom:4px;">E</div>
+          <div style="font-weight:700;color:#f44336;margin-bottom:4px;">Emergency</div>
+          <div style="font-size:12px;">Last resort. Zero infrastructure. Works in any scenario.<br><br><em>Examples: In-person runner, dead drop, pre-arranged light/mirror signals, flags</em></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Scheduled Check-Ins</div>
+          <div style="font-size:12px;">• Set fixed times: 0800, 1200, 1800 daily (or 2x daily)<br>• Missed check-in = activate next tier in PACE plan<br>• Primary freq + 1 backup freq for each radio tier<br>• Every contact: grid square, status, intentions, next contact time (SMEAC/SALUTE)<br>• Duress code word: innocuous phrase meaning "under duress"</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Key Emergency Frequencies</div>
+          <div style="font-size:12px;">• 146.520 MHz — National VHF FM calling<br>• 156.800 MHz — Marine Ch 16 (distress/calling)<br>• 27.065 MHz — CB Ch 9 (emergency)<br>• 14.300 MHz — HF Maritime Mobile<br>• 14.325 MHz — Hurricane Watch Net<br>• 7.285 MHz — ARES/RACES HF net (region varies)<br>• 3.916 MHz — Pacific Seafarers Net<br>• 121.500 MHz — Aviation guard (ELT/emergency)</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">OPSEC for Comms</div>
+          <div style="font-size:12px;">• Minimize on-air time (DF risk if hostile monitoring)<br>• Use brevity codes for sensitive info<br>• Authentication: challenge-response codes with trusted contacts<br>• Never broadcast location, group size, or resources in plain text<br>• Rotate frequencies on a schedule if threat exists<br>• Face-to-face > radio for operational planning when possible</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMP Hardening Guide -->
+    <div style="background:var(--surface1);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
+      <h4 style="margin:0 0 10px;color:var(--accent);">⚡ EMP / CME Hardening Guide</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">What Gets Damaged</div>
+          <div style="font-size:12px;">• Modern vehicles (post-1980s, with ECUs)<br>• Cell phones, computers, tablets<br>• Grid infrastructure: transformers, SCADA<br>• Modern radios, inverters, charge controllers<br>• Anything with semiconductors, microcontrollers<br><strong style="color:#4caf50;">Survives:</strong> Older mechanical devices, vacuum tubes, pre-electronic vehicles, simple battery-powered devices in Faraday cage</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Faraday Cage Construction</div>
+          <div style="font-size:12px;">• Metal trash can (galvanized steel) with tight-fitting lid<br>• Line inside with cardboard/foam — items must NOT touch metal<br>• Ammo can (military surplus) — excellent natural Faraday cage<br>• Nested: place in bag inside box inside can for extra protection<br>• Duct tape all seams for microwave oven test: place phone inside, call it — if it rings, not sealed<br>• Ground the cage only if connected to a larger structure</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">What to Protect</div>
+          <div style="font-size:12px;">• Backup radio (UV-5R, FRS, CB transceiver)<br>• Solar charge controller + small inverter<br>• Shortwave/AM/FM receiver<br>• Laptop with offline data (this app + reference docs)<br>• USB drives with critical files<br>• Night vision devices<br>• Medical devices (glucometer, pacemaker external)<br>• Spare ignition module/ECU for your vehicle</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Solar Flare / CME Differences</div>
+          <div style="font-size:12px;">• CME gives hours to days warning (monitor NOAA SWPC)<br>• At CME warning: unplug electronics, disconnect antennas from radios<br>• EMP (weapon): no warning, E1/E2/E3 pulses within microseconds<br>• E1 (fastest) destroys semiconductors; E3 (slowest) destroys transformers<br>• Long conductors (power lines, antennas) act as antennas for EMP energy<br>• Disconnect antennas when radio not in use as best practice</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wound Care & Closure Guide -->
+    <div style="background:var(--surface1);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
+      <h4 style="margin:0 0 10px;color:var(--accent);">🩹 Wound Care & Closure Field Guide</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Wound Assessment (DCAP-BTLS)</div>
+          <div style="font-size:12px;">D — Deformity<br>C — Contusion (bruising)<br>A — Abrasion<br>P — Puncture/Penetration<br>B — Burn<br>T — Tenderness<br>L — Laceration<br>S — Swelling<br><br>Check pulse, motor, sensation DISTAL to wound. Consider internal injury if abdomen/chest involved.</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Irrigation (Most Important Step)</div>
+          <div style="font-size:12px;">• "The solution to pollution is dilution"<br>• Minimum 100–300 mL per cm of wound length<br>• Ideal: 18–20 gauge needle + syringe = 8–13 PSI pressure<br>• Solution: clean water or 0.9% saline (preferred)<br>• Dilute betadine (0.5–1%) or chlorhexidine acceptable<br>• Do NOT pack dry gauze into wound — disrupts granulation<br>• Remove all visible debris before closure</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Closure Decision Tree</div>
+          <div style="font-size:12px;"><strong style="color:#4caf50;">Close primarily:</strong> Clean wound, &lt;6 hrs (face &lt;24 hrs), low contamination, good blood supply<br><br><strong style="color:#ff9800;">Delayed primary closure (3–5 days):</strong> Contaminated, crush injury, high-risk infection<br><br><strong style="color:#f44336;">Leave open (heal by secondary intention):</strong> Animal bites, heavily contaminated, abscess, puncture wounds, >12 hrs old in body extremities</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Closure Methods (Field)</div>
+          <div style="font-size:12px;"><strong>Steri-strips / butterfly closures:</strong> Shallow lacerations, low tension. Apply perpendicular to wound.<br><strong>Staples:</strong> Scalp wounds, straight lacerations in hair-bearing areas. Fast.<br><strong>Sutures:</strong> Deep/gaping wounds. Simple interrupted 3-0 or 4-0 nylon.<br><strong>Tissue glue (Dermabond):</strong> Superficial lacerations &lt;4cm, low tension only.<br>Suture removal: Face 5d, scalp 7d, trunk 10d, extremities 10–14d</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:#f44336;margin-bottom:4px;">Signs of Infection — ESCALATE</div>
+          <div style="font-size:12px;">• Increasing redness BEYOND wound margin (cellulitis spreading)<br>• Warmth, purulent discharge, foul odor<br>• Red streaking proximally (lymphangitis — URGENT, bacteremia risk)<br>• Fever >38.5°C (101.3°F)<br>• Crepitus (crackling under skin — gas gangrene emergency)<br>• Wound not healing after 7–10 days<br>→ Start antibiotics, consider wound debridement</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Tetanus Risk</div>
+          <div style="font-size:12px;">High risk wounds: puncture, crush, contaminated with soil/feces/saliva, burns, frostbite, necrotic tissue<br><br>Tetanus prophylaxis needed if: last booster &gt;5 years (high risk) or &gt;10 years (clean wound)<br><br>If no vaccine history: tetanus immune globulin (TIG) + Td vaccine. Field improvisation: maintain strict wound sterility — tetanus is 100% preventable with proper wound care.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Agricultural Calorie Guide -->
+    <div style="background:var(--surface1);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
+      <h4 style="margin:0 0 10px;color:var(--accent);">🌾 Agricultural Calorie & Storage Guide</h4>
+      <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;">
+          <thead><tr style="background:var(--surface2);color:var(--text-dim);">
+            <th style="padding:7px 10px;text-align:left;">Crop</th>
+            <th style="padding:7px 10px;">kcal/lb</th>
+            <th style="padding:7px 10px;">Yield (lbs/100 sq ft)</th>
+            <th style="padding:7px 10px;">Shelf Life (dry)</th>
+            <th style="padding:7px 10px;">Protein</th>
+            <th style="padding:7px 10px;text-align:left;">Notes</th>
+          </tr></thead>
+          <tbody>
+            <tr><td style="padding:5px 10px;font-weight:600;">Wheat (hard red)</td><td style="text-align:center;">1500</td><td style="text-align:center;">30–50</td><td style="text-align:center;color:#4caf50;">25+ yrs</td><td style="text-align:center;">12g/100g</td><td style="padding:5px 10px;font-size:11px;">Requires mill. Most calorie-dense grain per acre.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:5px 10px;font-weight:600;">Corn (field)</td><td style="text-align:center;">1567</td><td style="text-align:center;">50–100</td><td style="text-align:center;color:#4caf50;">10+ yrs</td><td style="text-align:center;">9g/100g</td><td style="padding:5px 10px;font-size:11px;">Nixtamalization improves nutrition. Easy to grow.</td></tr>
+            <tr><td style="padding:5px 10px;font-weight:600;">White rice</td><td style="text-align:center;">1650</td><td style="text-align:center;">20–40</td><td style="text-align:center;color:#4caf50;">25–30 yrs</td><td style="text-align:center;">7g/100g</td><td style="padding:5px 10px;font-size:11px;">Requires paddy conditions for growing. Best stored staple.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:5px 10px;font-weight:600;">Dried beans</td><td style="text-align:center;">1540</td><td style="text-align:center;">15–25</td><td style="text-align:center;color:#4caf50;">25+ yrs</td><td style="text-align:center;">22g/100g</td><td style="padding:5px 10px;font-size:11px;">Protein + fiber. Nitrogen fixer. Complement grains for complete protein.</td></tr>
+            <tr><td style="padding:5px 10px;font-weight:600;">Potatoes</td><td style="text-align:center;">350</td><td style="text-align:center;">150–250</td><td style="text-align:center;color:#ff9800;">2–6 months</td><td style="text-align:center;">2g/100g</td><td style="padding:5px 10px;font-size:11px;">Highest calorie per sq ft. Vitamins C&B6. Short storage.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:5px 10px;font-weight:600;">Sweet potatoes</td><td style="text-align:center;">390</td><td style="text-align:center;">100–200</td><td style="text-align:center;color:#ff9800;">3–6 months</td><td style="text-align:center;">1.6g/100g</td><td style="padding:5px 10px;font-size:11px;">Vit A, drought tolerant. Leaves also edible.</td></tr>
+            <tr><td style="padding:5px 10px;font-weight:600;">Sunflower seeds</td><td style="text-align:center;">2700</td><td style="text-align:center;">10–20</td><td style="text-align:center;color:#4caf50;">2–5 yrs</td><td style="text-align:center;">21g/100g</td><td style="padding:5px 10px;font-size:11px;">Highest calorie density. Oil press yields cooking oil. Easy to grow.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:5px 10px;font-weight:600;">Lentils</td><td style="text-align:center;">1560</td><td style="text-align:center;">10–20</td><td style="text-align:center;color:#4caf50;">25+ yrs</td><td style="text-align:center;">26g/100g</td><td style="padding:5px 10px;font-size:11px;">Fastest-cooking legume (no soaking). Complete amino acid profile with grain.</td></tr>
+            <tr><td style="padding:5px 10px;font-weight:600;">Amaranth (grain)</td><td style="text-align:center;">1690</td><td style="text-align:center;">20–40</td><td style="text-align:center;color:#4caf50;">3–5 yrs</td><td style="text-align:center;">14g/100g</td><td style="padding:5px 10px;font-size:11px;">Complete protein (all essential amino acids). Drought and heat tolerant.</td></tr>
+            <tr style="background:var(--surface2);"><td style="padding:5px 10px;font-weight:600;">Winter squash</td><td style="text-align:center;">215</td><td style="text-align:center;">80–150</td><td style="text-align:center;color:#4caf50;">3–6 months</td><td style="text-align:center;">1g/100g</td><td style="padding:5px 10px;font-size:11px;">Hard shell = long storage without refrigeration. Seeds edible.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="font-size:11px;color:var(--text-dim);margin-top:8px;">A person needs ~2,000 kcal/day = 730,000 kcal/year. Plan for grain+legume+root crop combination for complete nutrition and calorie security. <strong>Three Sisters (corn+beans+squash)</strong> is time-proven — each supports the others' growth.</div>
+    </div>
+
+    <!-- Vehicle Preparedness -->
+    <div style="background:var(--surface1);border:1px solid var(--border);border-radius:8px;padding:16px;margin-top:16px;">
+      <h4 style="margin:0 0 10px;color:var(--accent);">🚗 Vehicle Bug-Out Preparedness</h4>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;">
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">72-Hour Vehicle Kit</div>
+          <div style="font-size:12px;">• Water: 1 gal/person/day (collapsible containers)<br>• Food: MREs or high-calorie bars for 3 days<br>• First aid kit (enhanced with tourniquet, hemostatic gauze)<br>• Change of clothes + rain gear per person<br>• Sleeping bag/emergency bivvy per person<br>• Cash (small bills) — ATMs fail in emergencies<br>• Physical maps (state + region) + compass<br>• Flashlight + extra batteries + headlamp<br>• Multi-tool + fixed blade knife<br>• Fire-starting kit (lighter + matches + ferro rod)</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Mechanical Preparedness</div>
+          <div style="font-size:12px;">• Full spare tire (not donut for long distance) + jack + wrench<br>• Fix-a-Flat + portable air compressor (12V)<br>• Jumper cables or jump pack (lithium, no second car needed)<br>• 2-gallon fuel can (rotated every 6 months)<br>• Coolant, motor oil, brake fluid (quart each)<br>• Duct tape, zip ties, JB Weld<br>• Tow strap + snatch block<br>• Basic tools: wrenches, screwdrivers, pliers<br>• Know your fuse box locations — carry spare fuse set</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">Evacuation Routes (3-Route Rule)</div>
+          <div style="font-size:12px;">• Primary: fastest route to rally point<br>• Alternate: avoids highway choke-points (county roads)<br>• Emergency: off-road capable or opposite direction<br>• Pre-drive all 3 routes before crisis<br>• Note: fuel stops, bridge chokepoints, rally points every 50 mi<br>• Trigger: when to leave vs shelter-in-place decision<br>• "Go Code": agreed signal to evacuate with family/group<br>• Meet-up point if can't reach home first</div>
+        </div>
+        <div style="background:var(--surface2);border-radius:6px;padding:10px;">
+          <div style="font-weight:600;color:var(--accent);margin-bottom:4px;">EMP / Grid-Down Vehicle Notes</div>
+          <div style="font-size:12px;">• Pre-1980 carbureted vehicles more likely to survive EMP<br>• Diesel simpler electronics than gasoline (no ignition system)<br>• Keep older vehicle or motorcycle as backup<br>• Manual choke, points-style ignition most robust<br>• Bicycles: no EMP vulnerability, no fuel needed<br>• Store spare ignition module/ECU in Faraday cage<br>• Fuel: diesel stores longer than gasoline (with stabilizer)</div>
+        </div>
+      </div>
+    </div>
+
     </div><!-- /psub-reference -->
 
     <!-- Sub: Protocols -->
@@ -4631,7 +5017,7 @@ body{background:var(--bg);color:var(--text)}
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
             <div><strong style="color:var(--accent);">25 Prep Sub-Tabs</strong><br>Inventory, Contacts, Checklists, Medical, Incidents, Family, Security, Power, Garden, Weather, Guides, Calculators, Procedures, Radio, Quick Ref, Signals, Ops, Journal, Vault, Skills, Ammo, Community, Radiation, Fuel, Equipment</div>
-            <div><strong style="color:var(--accent);">Key Stats</strong><br>265 API routes, 38 DB tables, 10 decision guides, 15 checklist templates, 4 training scenarios</div>
+            <div><strong style="color:var(--accent);">Key Stats</strong><br>265 API routes, 38 DB tables, 13 decision guides, 8 advanced calculators, 15 checklist templates</div>
           </div>
           <div style="margin:8px 0;">
             <strong style="color:var(--accent);">Keyboard Shortcuts:</strong>
@@ -7132,6 +7518,8 @@ const PRESETS = {
   solar_expert: 'You are an off-grid solar power expert. Help design and troubleshoot solar systems: panel sizing, battery bank calculations (LiFePO4 vs lead-acid), charge controllers (MPPT vs PWM), inverter selection (pure vs modified sine), wiring (series vs parallel, wire gauge), mounting, tilt angles, and maintenance. Calculate loads, autonomy days, and system costs. Cover both portable (camping/bug-out) and permanent (homestead) installations. Include safety: grounding, overcurrent protection, disconnect switches.',
   land_nav: 'You are a land navigation instructor with military and wilderness experience. Teach map reading (topographic contour interpretation, UTM/MGRS grid coordinates, distance estimation), compass use (declination adjustment, triangulation, backstighting), celestial navigation (Polaris, sun methods, Southern Cross), natural navigation (vegetation, wind, animal behavior, terrain association), GPS alternatives, route planning, terrain association, pace counting, and dead reckoning. Provide practical exercises.',
   herbalist: 'You are a medicinal herbalist and ethnobotanist. Advise on growing, harvesting, preparing, and using medicinal plants for common ailments when modern medicine is unavailable. Cover: anti-inflammatory herbs (willow bark, turmeric), antimicrobial plants (garlic, oregano, goldenseal), wound care (yarrow, plantain, aloe), digestive remedies (ginger, peppermint, chamomile), pain relief (valerian, white willow), and immune support (elderberry, echinacea). Include preparation methods: tinctures, teas, poultices, salves, and proper dosing. Always note contraindications and when professional care is critical.',
+  cbrn_specialist: 'You are a CBRN (Chemical, Biological, Radiological, Nuclear) defense specialist. Cover: nuclear blast effects by yield (fireball radius, overpressure zones, thermal radiation, initial nuclear radiation, fallout projection), fallout decay using the 7-10 Rule, shelter protection factors (below-grade concrete PF 100-1000, above-grade frame house PF 3-10), KI dosing by age (adult 130mg, teen 65mg, child 1-12yr 65mg, infant 16-32mg), self-decontamination (remove outer clothing removes 80% of contamination, shower with soap), chemical agent recognition (nerve/blister/choking/blood agents and their antidotes), biological threat indicators, hot zone / warm zone / cold zone protocols, improvised protective equipment, re-entry timing after fallout events. Reference Glasstone & Dolan Effects of Nuclear Weapons, FM 3-11 series, and FEMA 2022 Nuclear Detonation Planning Guide.',
+  comms_planner: 'You are an emergency communications planner specializing in grid-down and austere communications. Cover the PACE model (Primary/Alternate/Contingency/Emergency): help users build layered communication plans. Advise on: local VHF/UHF simplex (146.520 national calling, 446.000 FM), GMRS/FRS for family comms, CB radio for vehicle travel corridors, HF for regional/national reach (40m daytime, 80m nighttime), JS8Call for store-and-forward HF messaging, Winlink P2P for email without internet, APRS for position tracking, Meshtastic LoRa for encrypted neighborhood mesh, signal mirrors and ground-to-air for aircraft, runner protocols for foot messenger plans. Include frequency planning, net check-in procedures, authentication codes, traffic handling, and how to integrate ICS/NIMS radio procedures into group operations.',
 };
 // Load saved custom prompt
 (function() { const cp = localStorage.getItem('nomad-custom-prompt'); if (cp) PRESETS.custom = cp; })();
@@ -11800,11 +12188,11 @@ function showHelp(section) {
   <tr><td><strong>Power</strong></td><td>Energy management</td><td>Device registry for solar panels, batteries, charge controllers, inverters, and generators with specs. Power log (voltage, SOC%, solar/load watts). Autonomy projection dashboard with color-coded gauges (green &gt;7d, orange &gt;3d, red &lt;3d).</td></tr>
   <tr><td><strong>Garden</strong></td><td>Food production</td><td>Garden plots with dimensions and area calculation. Seed inventory with automatic viability tracking (25 species). Harvest log that automatically adds produce to your inventory. Livestock records (10 species) with health event logging. USDA hardiness zone lookup by latitude.</td></tr>
   <tr><td><strong>Weather</strong></td><td>Weather tracking</td><td>Manual weather observations: pressure, temperature, wind, clouds, visibility. Barometric pressure trend analysis for storm prediction. Pressure drops &gt;4 hPa trigger alerts.</td></tr>
-  <tr><td><strong>Guides</strong></td><td>Step-by-step decision trees</td><td>10 interactive guides with 200+ decision nodes: water purification, wound assessment, fire starting, shelter construction, radio setup, food preservation, START triage, power outage response, vehicle emergency, bug-out vs shelter decision. "Ask AI" button at any step. Printable procedure cards. Works fully offline.</td></tr>
+  <tr><td><strong>Guides</strong></td><td>Step-by-step decision trees</td><td>13 interactive guides with 300+ decision nodes: water purification, wound assessment, fire starting, shelter construction, radio setup, food preservation, START triage, power outage response, vehicle emergency, bug-out vs shelter decision, antibiotic selection (symptom-to-treatment), water source assessment (source-to-purification method), and food safety assessment (is this safe to eat?). "Ask AI" button at any step. Works fully offline.</td></tr>
   <tr><td><strong>Calculators</strong></td><td>Survival math</td><td>Water storage, food storage (LDS/FEMA), generator fuel, rainwater harvest, radio range (12 radio types), medication dosage, solar panel sizing, bug-out bag weight, resource planning, travel time, battery life, and bleach dosing calculators.</td></tr>
   <tr><td><strong>Procedures</strong></td><td>Emergency procedures</td><td>17 step-by-step protocols: CPR, bleeding control, water purification, shelter building, fire starting, choking, hypothermia, wound closure, burns, fractures, snake bite, anaphylaxis, dental emergency, psychological first aid, CERT, and natural disaster procedures. Search and expand-all. Printable wallet card.</td></tr>
   <tr><td><strong>Radio</strong></td><td>Frequency reference</td><td>Complete radio frequency table: NOAA weather (7 channels), FRS (22 channels), GMRS, MURS, CB (40 channels), HAM bands (2m, 70cm, HF), and shortwave stations.</td></tr>
-  <tr><td><strong>Quick Ref</strong></td><td>Reference cards</td><td>25+ quick reference topics: NATO phonetic alphabet, Morse code with audio trainer, unit converter, triage protocols, companion planting chart, calorie database, livestock care, WHO essential medicines, knots, navigation, sanitation, wild edibles, EMP protection guide, and OPSEC principles.</td></tr>
+  <tr><td><strong>Quick Ref</strong></td><td>Reference cards</td><td>30+ quick reference topics: NATO phonetic alphabet, Morse code with audio trainer, unit converter, triage protocols, companion planting chart, calorie database, livestock care, WHO essential medicines, knots, navigation, sanitation, wild edibles, CBRN decontamination guide, water purification method comparison, antibiotic field reference, PACE communications planning, EMP/CME hardening guide, wound care &amp; closure field guide, agricultural calorie &amp; storage guide, and vehicle bug-out preparedness.</td></tr>
   <tr><td><strong>Signals</strong></td><td>Emergency signals</td><td>Ground-to-air visual signals, sound signal patterns, smoke signal guide for rescue communication.</td></tr>
   <tr><td><strong>Command Post</strong></td><td>Tactical operations</td><td>Situation Report (SITREP) generator with military format. Message cipher (Caesar, Reverse, Atbash). Infrastructure status tracker (12 utilities). Vehicle readiness board. Threat assessment matrix. After-event review form. Emergency broadcast to all LAN devices. 35-item home security hardening assessment with scoring.</td></tr>
   <tr><td><strong>Journal</strong></td><td>Daily log</td><td>Daily journal entries with mood tracking (5 moods), tag system, chronological timeline, and full export.</td></tr>
@@ -14272,6 +14660,179 @@ const DECISION_GUIDES = [
       personal: {type:'result', style:'danger', text:'Personal threat — leave if you can.\n\n1. If someone is actively threatening you: call 911 first\n2. Do NOT confront — leave the area\n3. Go to a safe person\'s house, police station, or public place\n4. Take your phone, ID, keys, wallet, medications\n5. If children are involved: take them with you\n6. Do NOT announce your destination on social media\n\nIf you cannot leave safely:\n- Lock yourself in a room with a phone\n- Call 911 and stay on the line\n- Barricade the door\n- Identify an alternate exit (window)\n\nAfter the immediate threat:\n- File a police report\n- Document everything (photos, messages, dates)\n- Consider a protective order\n- Change locks and security codes\n- Tell trusted neighbors to watch for the person'},
     }
   },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    id: 'antibiotic_selection',
+    icon: '💊',
+    title: 'Antibiotic Selection Guide',
+    desc: 'Match symptoms to infection type and identify appropriate antibiotic treatment for grid-down medical care.',
+    start: 'start',
+    nodes: {
+      start: {type:'question', text:'What is the primary symptom or infection site?', options:[
+        {label:'Skin: redness, swelling, warmth, possible pus', next:'skin_q1'},
+        {label:'Respiratory: cough, fever, difficulty breathing', next:'resp_q1'},
+        {label:'Urinary: painful urination, frequency, urgency', next:'uti_q1'},
+        {label:'GI: diarrhea, nausea, vomiting, abdominal pain', next:'gi_q1'},
+        {label:'Dental: tooth pain, swollen jaw/gum, abscess', next:'dental_result'},
+        {label:'Wound infection: after injury or surgery', next:'wound_q1'},
+        {label:'Tick bite or rash (bullseye or spreading)', next:'tick_result'},
+      ]},
+      skin_q1: {type:'question', text:'Is there an abscess or pus collection that could be drained?', options:[
+        {label:'Yes — localized pocket of pus', next:'abscess_result'},
+        {label:'No — spreading redness (cellulitis)', next:'skin_q2'},
+      ]},
+      skin_q2: {type:'question', text:'Was there an animal bite or puncture wound involved?', options:[
+        {label:'Yes — animal bite or deep puncture', next:'bite_result'},
+        {label:'No — normal skin/soft tissue', next:'cellulitis_result'},
+      ]},
+      abscess_result: {type:'result', style:'warning', text:'ABSCESS — Drainage is the primary treatment.\n\nStep 1: DRAIN the abscess if possible. Antibiotics alone will not cure a closed abscess.\n- Clean the area with betadine or chlorhexidine\n- Lance with a sterile blade at the most fluctuant (softest) point\n- Express the contents, irrigate the cavity with saline\n- Pack loosely with gauze, change daily\n\nStep 2: Antibiotics (add if spreading/fever):\n- Amoxicillin-Clavulanate 875mg twice daily × 7 days\n- Alternative: Clindamycin 300–450mg three times daily × 7 days\n\nMonitor for red streaking (lymphangitis) → urgent antibiotics if present.\nMonitor for fever, rigors (sepsis) → add antibiotics immediately.'},
+      bite_result: {type:'result', style:'warning', text:'ANIMAL BITE INFECTION\n\nImmediate irrigation is critical — within 30 minutes, copious saline flushing significantly reduces infection risk.\n\nAntibiotics (start within 8 hours of bite, prophylactically):\n- Amoxicillin-Clavulanate 875mg twice daily × 5–7 days\n- Alternative (PCN allergy): Doxycycline 100mg + Metronidazole 500mg, both twice daily\n\nRabies risk: Wild animal (raccoon, bat, fox, skunk) = HIGH. Domestic animal, unknown vaccination = MODERATE.\nIf rabies suspected: RIG + vaccine series is definitive. Field: clean wound thoroughly, begin antibiotics.\n\nTetanus: Update if >5 years since last booster.'},
+      cellulitis_result: {type:'result', style:'success', text:'CELLULITIS (skin/soft tissue infection)\n\nAntibiotics:\n- Amoxicillin-Clavulanate 875mg twice daily × 5–7 days (covers strep and staph)\n- Alternative: Cephalexin 500mg four times daily\n- MRSA suspected (failed 48h treatment, healthcare exposure): Clindamycin 300–450mg TID or TMP/SMX DS twice daily\n\nActions:\n1. Draw margin of redness with pen — reassess every 6–12 hours\n2. Elevate affected limb\n3. Watch for: red streaks, worsening fever, rapidly expanding margins\n4. If no improvement at 48h: change antibiotic class or reassess diagnosis\n\nDo NOT dismiss — untreated cellulitis → sepsis rapidly in immunocompromised.'},
+      resp_q1: {type:'question', text:'How severe is the respiratory illness?', options:[
+        {label:'Mild — productive cough, no high fever', next:'resp_mild'},
+        {label:'Moderate — fever >38.5°C, shortness of breath at rest', next:'resp_mod'},
+        {label:'Severe — cannot lie flat, lips/nails blue, very rapid breathing', next:'resp_severe'},
+      ]},
+      resp_mild: {type:'result', style:'success', text:'MILD RESPIRATORY INFECTION\n\nMost mild respiratory illnesses are VIRAL (colds, flu) — antibiotics will NOT help.\n\nTreat symptoms:\n- Rest, hydration (hot liquids help)\n- Ibuprofen or acetaminophen for fever/body aches\n- Honey + lemon for cough (evidence-based)\n- Steam inhalation for congestion\n\nStart antibiotics ONLY if:\n- Symptoms worsening after 7 days (suggests secondary bacterial infection)\n- Productive cough with green/yellow sputum + fever >38°C\n- Known exposure to bacterial pneumonia\n\nIf antibiotics indicated:\n- Azithromycin 500mg Day 1, then 250mg × 4 days (Z-Pak)\n- Alternative: Doxycycline 100mg twice daily × 7 days'},
+      resp_mod: {type:'result', style:'warning', text:'MODERATE PNEUMONIA — Begin antibiotics.\n\nFirst-line:\n- Azithromycin 500mg Day 1, then 250mg × 4 more days\n- Alternative: Doxycycline 100mg twice daily × 7–10 days\n- For more severe CAP: Amoxicillin-Clavulanate 875mg BID + Azithromycin\n\nSupportive care:\n- Elevate head of bed (30–45°)\n- Encourage deep breathing and coughing every 2 hours\n- Adequate hydration (helps thin secretions)\n- Fever management with antipyretics\n\nWARNING signs requiring urgent escalation:\n- O2 sat <94% (if pulse ox available)\n- Confusion or altered mental status\n- Cyanosis\n- Unable to maintain oral hydration\n- Rapidly worsening over hours'},
+      resp_severe: {type:'result', style:'danger', text:'SEVERE RESPIRATORY DISTRESS — Life-threatening.\n\nThis is beyond field antibiotic management alone.\n\nImmediate actions:\n1. Position: upright, sitting forward (tripod position)\n2. Oxygen if available — high flow\n3. Albuterol inhaler if wheezing (bronchospasm component)\n4. Clear airway — suction if secretions\n\nAntibiotics — start immediately (dual coverage):\n- Azithromycin 500mg + Amoxicillin-Clavulanate 875mg\n- Or: Doxycycline 100mg + Amoxicillin-Clavulanate\n\nFear: Tension pneumothorax (no breath sounds one side), pulmonary edema (frothy pink sputum), severe anaphylaxis — each requires specific immediate intervention.\n\nEvacuate if ANY means available. This patient needs a hospital.'},
+      uti_q1: {type:'question', text:'Does the patient have back/flank pain or fever?', options:[
+        {label:'No — just urinary symptoms (uncomplicated UTI)', next:'uti_result'},
+        {label:'Yes — flank pain and/or fever (kidney involvement)', next:'pyelo_result'},
+      ]},
+      uti_result: {type:'result', style:'success', text:'UNCOMPLICATED UTI\n\nAntibiotics (3-day course):\n- Ciprofloxacin 500mg twice daily × 3 days\n- Alternative: TMP/SMX DS (160/800mg) twice daily × 3 days\n- Alternative: Nitrofurantoin 100mg twice daily × 5 days (not for kidney involvement)\n\nSupportive:\n- Increase water intake to 2–3L/day\n- Phenazopyridine (AZO) 200mg three times daily × 2 days for burning symptom relief (turns urine orange — normal)\n- Avoid caffeine and alcohol during treatment\n\nNo improvement at 48 hours: extend to 7 days or switch antibiotic class.\nNote: Recurrent UTIs in women — consider post-coital prophylaxis.'},
+      pyelo_result: {type:'result', style:'warning', text:'PYELONEPHRITIS (Kidney Infection)\n\nThis is a serious infection requiring full antibiotic course.\n\nAntibiotics (14-day course):\n- Ciprofloxacin 500mg twice daily × 14 days\n- Alternative: TMP/SMX DS twice daily × 14 days\n- Severe: if available, IV Ceftriaxone 1–2g daily for first 3 days then switch to oral\n\nSupportive:\n- Aggressive hydration (3+ liters/day)\n- Ibuprofen or acetaminophen for fever and flank pain\n- Bed rest while febrile\n\nWARNING: If not improving at 72 hours, or if the patient develops low BP, confusion, or rigors — this may be urosepsis. Evacuate if any means available.'},
+      gi_q1: {type:'question', text:'Is there blood in the stool or fever above 38.5°C?', options:[
+        {label:'Yes — bloody diarrhea and/or high fever', next:'gi_severe'},
+        {label:'No — watery diarrhea, cramping, no blood', next:'gi_mild'},
+      ]},
+      gi_mild: {type:'result', style:'success', text:'TRAVELER\'S DIARRHEA / MILD GI INFECTION\n\nMost cases resolve without antibiotics.\n\nPrimary treatment: ORAL REHYDRATION THERAPY (ORT)\n- WHO formula: 1L water + 6 tsp sugar + 1/2 tsp salt\n- Or: Pedialyte, Gatorade diluted 1:1 with water\n- Goal: replace what is lost. Drink 200mL after each loose stool.\n\nAnti-motility (use only without bloody stool/fever):\n- Loperamide (Imodium) 4mg then 2mg after each loose stool (max 16mg/day)\n\nAntibiotics — consider if not improving at 48h:\n- Azithromycin 1g single dose (most effective for traveler\'s diarrhea)\n- Alternative: Ciprofloxacin 500mg twice daily × 3 days\n\nWARN: Avoid antibiotics for E. coli O157:H7 (STEC) if suspected — increases HUS risk.'},
+      gi_severe: {type:'result', style:'danger', text:'SEVERE GI INFECTION — dysentery, invasive bacteria\n\nBloody diarrhea + fever = bacterial dysentery (Salmonella, Shigella, Campylobacter, etc.)\n\nDo NOT use anti-motility agents (loperamide) — can cause toxic megacolon.\n\nOral Rehydration Therapy — aggressive:\n- 1L water + 6 tsp sugar + 1/2 tsp salt every hour until improving\n\nAntibiotics (start immediately):\n- Azithromycin 500mg once daily × 3–5 days\n- Alternative: Ciprofloxacin 500mg twice daily × 3–5 days\n- Giardia/amoeba suspected (cysts, prolonged course): Metronidazole 500mg three times daily × 7–10 days\n\nWARNING — evacuate if:\n- Signs of severe dehydration (no urination 8+ hours, dry mouth, confusion)\n- High fever >39.5°C not responding to antipyretics\n- Abdominal rigidity (peritonitis)\n- Patient cannot maintain oral hydration'},
+      wound_q1: {type:'question', text:'How old is the wound?', options:[
+        {label:'<6 hours old — fresh wound', next:'wound_fresh'},
+        {label:'6–24 hours old, contaminated or high-risk', next:'wound_contam'},
+        {label:'>24 hours with signs of infection (redness, pus, fever)', next:'wound_infected'},
+      ]},
+      wound_fresh: {type:'result', style:'success', text:'FRESH WOUND — Infection prevention.\n\n1. Irrigate aggressively: 100–300mL saline per cm wound length under pressure\n2. Explore and remove all debris\n3. Assess: can be closed? (clean + <6h + not bite/puncture = usually yes)\n\nProphylactic antibiotics: NOT routinely needed for clean wounds.\n\nGive antibiotics for high-risk wounds:\n- Bites (animal or human), punctures, crush injuries, heavily contaminated\n- Amoxicillin-Clavulanate 875mg twice daily × 5–7 days\n\nTetanus: update if >5 years for contaminated, >10 years for clean wounds.\n\nMonitor for infection signs: redness beyond wound margins at 24–48h, warmth, pus, fever.'},
+      wound_contam: {type:'result', style:'warning', text:'CONTAMINATED WOUND (6–24h old)\n\nIrrigation is still effective but more important than ever:\n- Copious saline irrigation, explore and debride\n- Do NOT close primarily — leave open or use delayed primary closure (3–5 days)\n- Pack with moist dressing, change twice daily\n\nStart antibiotics:\n- Amoxicillin-Clavulanate 875mg twice daily × 7–10 days\n- Alternative (PCN allergy): Clindamycin 300mg + Ciprofloxacin 500mg, both twice daily\n\nHuman bite: add Metronidazole 500mg three times daily (anaerobic coverage).\n\nWATCH FOR: Gas gangrene signs (crepitus, rapidly spreading necrosis, extreme pain) → surgical emergency.'},
+      wound_infected: {type:'result', style:'danger', text:'ESTABLISHED WOUND INFECTION\n\nThe window for simple treatment may be closing. Act decisively.\n\nStep 1: Assess depth and severity\n- Superficial (skin only): treat with oral antibiotics\n- Deep / tracking along tissue planes: may need debridement\n- Red streaking (lymphangitis): URGENT — start IV-equivalent doses immediately\n- Crepitus under skin: gas gangrene — life-threatening, needs aggressive debridement\n\nStep 2: Antibiotics\n- Amoxicillin-Clavulanate 875mg twice daily × 10–14 days\n- Add Metronidazole 500mg TID if anaerobic infection suspected (smell, necrosis)\n- MRSA suspected: Clindamycin 450mg TID or TMP/SMX DS BID\n\nWound care:\n- Debride necrotic tissue (anything brown/black/non-bleeding)\n- Irrigate daily, pack open\n- Do NOT close infected wounds\n\nEvacuate if: sepsis signs (fever >39°, fast heart rate, confusion), rapidly spreading despite antibiotics.'},
+      dental_result: {type:'result', style:'warning', text:'DENTAL INFECTION / ABSCESS\n\nDefinitive treatment: dental extraction or root canal. Field care buys time.\n\nAnalgesia (pain control — priority):\n- Ibuprofen 600mg every 6–8 hours (reduces inflammation)\n- Combine with Acetaminophen 1000mg for stronger effect\n- Clove oil (eugenol) — apply to tooth/gum with cotton ball (topical anesthetic)\n\nAntibiotics (start if spreading, fever, or swelling in face/neck):\n- Amoxicillin 500mg three times daily × 7 days\n- PCN allergy: Clindamycin 300mg four times daily × 7 days\n- Can add Metronidazole 500mg TID for additional anaerobic coverage\n\n⚠ DANGER SIGNS — evacuate immediately:\n- Swelling spreading to jaw, neck, or floor of mouth\n- Difficulty swallowing or opening mouth (Ludwig\'s angina)\n- High fever + confusion\nLudwig\'s angina is a life-threatening space infection that can close the airway.'},
+      tick_result: {type:'result', style:'warning', text:'TICK-BORNE ILLNESS / LYME DISEASE\n\nRemove tick properly:\n- Fine-tipped tweezers, grasp as close to skin as possible\n- Pull straight up, no twisting\n- Clean with rubbing alcohol or soap/water\n- Do NOT: burn, petroleum jelly, or twist the tick\n\nBullseye rash (erythema migrans) = Lyme disease, begin treatment immediately:\n- Doxycycline 100mg twice daily × 21 days\n- Alternative (children <8, pregnancy): Amoxicillin 500mg TID × 21 days\n\nRocky Mountain Spotted Fever (RMSF) — fever + rash spreading from wrists/ankles:\n- START DOXYCYCLINE IMMEDIATELY. Do NOT wait for lab confirmation.\n- Doxycycline 100mg twice daily × 7 days (adults and children — risk outweighs dental staining)\n- Delay >5 days dramatically increases mortality\n\nSave tick in sealed bag/container for identification if possible.'},
+    }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    id: 'water_source_assessment',
+    icon: '💧',
+    title: 'Water Source Assessment',
+    desc: 'Assess your water source and determine the appropriate purification method for safe drinking water.',
+    start: 'start',
+    nodes: {
+      start: {type:'question', text:'What is your water source?', options:[
+        {label:'Municipal tap water (grid still up)', next:'tap'},
+        {label:'Well water (your own well)', next:'well_q1'},
+        {label:'Surface water — stream, river, pond, lake', next:'surface_q1'},
+        {label:'Rainwater / roof collection', next:'rain_q1'},
+        {label:'Standing water — puddle, flood water, barrel', next:'standing'},
+        {label:'Unknown or mixed source', next:'unknown'},
+      ]},
+      tap: {type:'result', style:'success', text:'MUNICIPAL TAP WATER — Normally safe, but verify.\n\nIn normal conditions: Drink as-is. Municipalities treat to EPA standards.\n\nIn a crisis/boil advisory:\n- Boil: rolling boil for 1 minute (3 minutes above 6,500 ft) — kills all pathogens\n- Or: Chemical treatment if boiling not possible\n\nPre-treat concerns:\n- Chlorine taste: activated carbon filter (Brita, etc.) removes it\n- Known contamination event (industrial spill, PFAS): bottled water until cleared\n- Infrastructure damaged: treat as surface water until service restored\n\nFor storage: tap water stays safe 6–12 months in sealed clean containers.\nRefill containers every 6 months to maintain freshness.'},
+      well_q1: {type:'question', text:'Is the well protected from surface contamination?', options:[
+        {label:'Yes — sealed casing, no flooding, no nearby septic', next:'well_good'},
+        {label:'Uncertain or no — old well, recent flooding, nearby animals', next:'well_risk'},
+      ]},
+      well_good: {type:'result', style:'success', text:'PROTECTED WELL — Generally safe with basic treatment.\n\nFor a well in good condition:\n- Filter: sediment pre-filter to remove particulates\n- Chemical: small dose of unscented bleach (1/4 tsp per 55 gallons for chlorination)\n- Or: UV treatment for final step\n\nTest annually for: coliform bacteria, nitrates, pH, hardness. More often after flooding.\n\nShock chlorination (after flooding or contamination):\n- Mix 1 cup bleach per 100 gallons of well volume\n- Pour down well, run all taps until bleach smell, let sit 24 hours\n- Flush until chlorine smell gone, then test before drinking\n\nWell pump fails? Manual pitcher pump or rope-bucket for shallow wells (<25 ft). Hand-dug well: minimum 10 ft diameter clay-sealed cap.'},
+      well_risk: {type:'result', style:'warning', text:'WELL — CONTAMINATION RISK. Treat before drinking.\n\nIf well has been flooded or is unprotected:\n1. Do NOT drink without treatment\n2. Collect sample — visual inspection (color, odor, particulates)\n3. Let sediment settle (30 min) then decant or pre-filter\n\nTreatment chain (use all steps for maximum safety):\n1. Pre-filter: coffee filter, cloth, or commercial sediment filter\n2. Boil: 1 minute rolling boil OR\n3. Chemical: 8 drops unscented 6% bleach per gallon, wait 30 min\n4. If available: activated carbon filter for taste\n\nFor flooding contamination (fecal coliform, farm runoff, chemical):\n- Boiling handles pathogens but NOT heavy metals or agricultural chemicals\n- Activated carbon + boiling together covers most scenarios\n- Arsenic/nitrates: requires RO or specific exchange filters'},
+      surface_q1: {type:'question', text:'What is the visual clarity and flow of the water?', options:[
+        {label:'Clear, flowing stream or spring', next:'surface_clear'},
+        {label:'Murky, brown, or slow-moving', next:'surface_murky'},
+        {label:'Green, foul-smelling, algae present', next:'surface_algae'},
+      ]},
+      surface_clear: {type:'result', style:'warning', text:'CLEAR SURFACE WATER — Still requires treatment.\n\nClear does not mean safe. Invisible pathogens (Giardia, Cryptosporidium, bacteria, viruses) are always present in surface water.\n\nRecommended treatment chain:\n1. Pre-filter: coffee filter or cloth (remove particulates)\n2. Filter: 0.1–0.2 micron hollow fiber filter (Sawyer Squeeze, LifeStraw) — removes bacteria and protozoa\n3. Chemical/UV: 8 drops bleach per gallon OR UV pen (60 sec) — handles viruses\n\nFor backcountry streams above human/animal activity: hollow fiber filter alone may be sufficient.\nFor streams near farms, towns, or with wildlife: full chemical + filter treatment recommended.\n\nSprings: generally cleaner but still treat. True springs emerge from ground (not surface runoff).'},
+      surface_murky: {type:'result', style:'warning', text:'MURKY/TURBID SURFACE WATER — Extended treatment needed.\n\nTurbidity blocks UV light and reduces chemical effectiveness. Must clear water first.\n\nStep 1 — Settling:\n- Pour into clean container, let settle 30–60 minutes\n- Gently decant the clear top portion into treatment container\n- Or: coagulation (pinch of alum powder or cactus mucilage per gallon — stirs particles together)\n\nStep 2 — Pre-filter:\n- Multiple layers of cloth, sand, gravel in sequence (improvised sand filter)\n- Or commercial sediment filter cartridge\n\nStep 3 — Purify:\n- Boil 1 minute (most reliable for turbid sources)\n- Or: double chemical dose if boiling not possible (16 drops bleach/gal)\n- UV pen ONLY after water is visually clear\n\nImprovised sand filter: layers (top to bottom): fine sand → coarse sand → gravel → charcoal → output. Slow but effective pre-filter.'},
+      surface_algae: {type:'result', style:'danger', text:'ALGAE / FOUL-SMELLING WATER — Special risks.\n\n⚠ CYANOBACTERIA (blue-green algae) produces CYANOTOXINS.\nBoiling does NOT neutralize cyanotoxins — it INCREASES concentration.\n\nIf water is green, smells musty/earthy, or has surface scum:\n- Do NOT use if any alternative exists\n- Activated carbon filter (charcoal) can remove some cyanotoxins\n- Charcoal + coagulation + settling is best available field method\n- RO membranes remove cyanotoxins (if available)\n\nOther foul odors:\n- Sulfur smell (rotten eggs): usually hydrogen sulfide — aerate by pouring between containers, then treat normally\n- Chemical/petroleum smell: do NOT drink. Activated carbon + multiple-stage treatment only reduces, not eliminates petroleum contamination.\n\nFor genuine survival use: settle, coagulate, filter through activated charcoal, then boil. Better than dehydration.'},
+      rain_q1: {type:'question', text:'What surface was the rainwater collected from?', options:[
+        {label:'Clean tarp, food-grade barrel — first rain discarded', next:'rain_clean'},
+        {label:'Roof — metal or asphalt shingles', next:'rain_roof'},
+      ]},
+      rain_clean: {type:'result', style:'success', text:'RAIN COLLECTION — Clean collection, minimal treatment needed.\n\nClean collection (first-flush discarded, food-grade containers):\n- Filter: coffee filter or cloth to remove particulates and insects\n- Chemically treat: 8 drops bleach per gallon (standard dose)\n- Or UV pen treatment\n\nRainwater is generally soft (low minerals) and free of many contaminants at collection point.\n\nStore in food-grade, opaque containers (prevents algae growth).\nTreat before drinking — especially if collected during or after industrial/agricultural activity.\nConsider activated carbon filter if in industrial area.'},
+      rain_roof: {type:'result', style:'warning', text:'ROOF COLLECTION — Requires full treatment.\n\nRoof water picks up:\n- Asphalt shingles: PAHs (polycyclic aromatic hydrocarbons), not fully removed by boiling\n- Bird/animal droppings: Salmonella, Cryptosporidium, E. coli\n- Metal roofs: copper/zinc leaching\n- Atmospheric pollutants, lead paint (old homes)\n\nTreatment chain:\n1. First-flush diverter: discard first 10–15 min of rain\n2. Pre-filter: coarse screen, then coffee filter\n3. Activated carbon filter: reduces organics and metals\n4. Boil or chemical treatment: final pathogen kill\n\nBest use of roof water for long-term: irrigation, not drinking.\nFor drinking: only if truly no alternative, use full treatment chain.'},
+      standing: {type:'result', style:'danger', text:'STANDING / FLOOD WATER — Extremely high risk.\n\nFlood water contains: sewage, agricultural runoff, industrial chemicals, decomposing organic matter, and often gasoline/oil.\n\nBoiling handles pathogens but NOT: heavy metals, agricultural chemicals, PFAS, petroleum products.\n\nUse only as LAST RESORT:\n1. Collect in container — let settle minimum 2 hours\n2. Filter through multiple cloth layers\n3. Filter through improvised charcoal filter if possible\n4. Add double dose bleach (16 drops/gallon) — wait 30 min\n5. Boil — 1 minute rolling boil\n\nDo NOT use flood water from near farms, industrial sites, or cities for drinking if any alternative exists.\nStanding water from rain (clean tarp/container) is much safer than flood water.\n\nDehydration vs. risk: if your only choice is flood water or severe dehydration, treat aggressively and drink.'},
+      unknown: {type:'result', style:'warning', text:'UNKNOWN WATER SOURCE — Maximum treatment protocol.\n\nWhen source is unknown, use full treatment chain:\n\n1. Visual inspection: color, odor, floating material, sheen (oil), wildlife (if animals avoid it, be cautious)\n2. Sediment filter: cloth, coffee filter, or commercial filter\n3. Settling: 30 min if turbid\n4. Boil: 1 minute rolling boil — handles all biological threats\n5. Carbon filter: reduces chemical contamination if available\n\nImprovised test:\n- Iodine test: if water turns pink/red → may indicate organic contamination\n- Smell test: petroleum → do not use; sulfur → aerate first; bleach → safe to drink\n- Taste test (only after boiling): metallic, bitter, unusual → only drink if dying of thirst\n\nRemember: almost anything biological is killed by boiling. The bigger risk in the field is dehydration. When in doubt — boil it.'},
+    }
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  {
+    id: 'food_safety_assessment',
+    icon: '🥫',
+    title: 'Food Safety Assessment',
+    desc: 'Determine whether stored food, power-out refrigerator items, or foraged/hunted food is safe to eat.',
+    start: 'start',
+    nodes: {
+      start: {type:'question', text:'What type of food are you assessing?', options:[
+        {label:'Canned goods — commercial or home-canned', next:'canned_q1'},
+        {label:'Refrigerated / frozen food (power outage)', next:'fridge_q1'},
+        {label:'Dried / shelf-stable stored food', next:'dry_q1'},
+        {label:'Foraged plants', next:'forage_q1'},
+        {label:'Wild-caught meat / fish', next:'wildmeat_q1'},
+      ]},
+      canned_q1: {type:'question', text:'What does the can or jar look like?', options:[
+        {label:'Normal — no swelling, rust, or damage', next:'canned_check'},
+        {label:'Swollen, leaking, deeply dented (seam/end dent), or spurts liquid on opening', next:'canned_discard'},
+        {label:'Home-canned jar — checking safety', next:'homecanned_q1'},
+      ]},
+      canned_check: {type:'result', style:'success', text:'CANNED GOODS — Likely safe, do a final check.\n\nSigns of safe canned food:\n- Can is not swollen, no leaks, no seam damage\n- No spurting when opened (pressure release = danger)\n- Odor: normal for that food. Sour/fermented smell without pickling intent = discard\n- Color: normal. Unusual colors (pink beans, blue meat) may be safe but verify\n- Texture: normal. Unusual sliminess = discard\n\nIf it passes all checks: heat to 165°F (simmering) before eating — extra insurance.\n\nDate concerns:\n- "Best by" dates on commercial cans = quality, not safety\n- Most commercial canned goods safe 5–10 years past date if stored properly\n- High-acid foods (tomatoes, fruit): 1.5–2 years optimal, still safe beyond\n- Low-acid foods (meat, vegetables): 3–5+ years\n\n"When in doubt, throw it out" applies — but don\'t waste good food on unfounded fear.'},
+      canned_discard: {type:'result', style:'danger', text:'DISCARD — High botulism risk.\n\nSwollen, spurting, or leaking cans indicate gas production — the hallmark of Clostridium botulinum contamination.\n\nBotulism is odorless, tasteless, and extremely lethal. There is NO reliable way to detect it by smell/taste.\n\nDisposal:\n- Do NOT taste to test\n- Do NOT open further — spores can aerosolize\n- Seal entire can in plastic bag, then in another bag\n- Dispose outside — do NOT put in compost\n- Decontaminate any surfaces the can touched with bleach solution (1 tbsp per gallon)\n\nSymptoms of botulism (12–36h post-ingestion):\n- Double vision, drooping eyelids, difficulty speaking/swallowing\n- Descending paralysis\n- EMERGENCY — antitoxin must be given early\n\nNever risk botulism. Never heat to "make safe" — toxin is destroyed at 185°F for 5 min, but the risk of incomplete heating is too high.'},
+      homecanned_q1: {type:'question', text:'How was it canned?', options:[
+        {label:'Pressure canner — vegetables, meat, beans', next:'homecanned_pressure'},
+        {label:'Water bath / steam — high-acid (fruit, tomatoes, pickles, jam)', next:'homecanned_waterbath'},
+        {label:'Unsure of method', next:'homecanned_unknown'},
+      ]},
+      homecanned_pressure: {type:'result', style:'success', text:'HOME PRESSURE-CANNED — Safer method for low-acid foods.\n\nPressure canning reaches 240°F — sufficient to kill botulism spores.\n\nSafety check:\n- Lid sealed firmly (center does not flex when pressed)\n- No unusual odor when opened\n- No spurting, foam, or bubbling\n- Normal color and texture\n\nHeat before eating: bring to a boil for 10 minutes before serving (destroys any toxin if spores somehow survived)\n\nStorage: 1–5 years optimal. Beyond 5 years: inspect carefully and heat-process before eating.'},
+      homecanned_waterbath: {type:'result', style:'warning', text:'HOME WATER-BATH CANNED — Safe for HIGH-ACID foods only.\n\nWater bath reaches only 212°F — cannot kill botulism spores.\nTherefore: ONLY safe for high-acid foods (pH <4.6): fruits, tomatoes (with added acid), pickles, jams.\n\nNEVER water-bath can: green beans, corn, meat, beans, potatoes, pumpkin — these are low-acid and require pressure canning.\n\nFor water-bath canned HIGH-ACID foods:\n- Lid sealed, no unusual odor → safe to eat cold or warm\n\nFor water-bath canned LOW-ACID foods:\n- Do NOT eat regardless of appearance\n- Discard safely (see botulism disposal guidance)\n\nSafety test: press lid center — if it flexes up/down, seal is broken → discard.'},
+      homecanned_unknown: {type:'result', style:'danger', text:'HOME-CANNED, METHOD UNKNOWN — Do not eat low-acid foods.\n\nWithout knowing the method, you cannot verify botulism safety for low-acid foods.\n\nHigh-acid only (fruit, tomatoes with lemon juice, pickles, jam):\n- Check seal (lid does not flex)\n- Check odor (normal for that food)\n- If both pass: likely safe to eat\n\nLow-acid foods (vegetables, meat, beans, corn):\n- Cannot safely eat without pressure canning confirmation\n- Discard if uncertain\n\nWhen in true survival hunger situation:\n- Boil vigorously 10–15 minutes before eating (destroys toxin but not spores)\n- This is an emergency measure, not a safety guarantee'},
+      fridge_q1: {type:'question', text:'How long has the power been out?', options:[
+        {label:'Less than 4 hours', next:'fridge_safe'},
+        {label:'4–24 hours', next:'fridge_check'},
+        {label:'More than 24 hours', next:'fridge_risky'},
+      ]},
+      fridge_safe: {type:'result', style:'success', text:'POWER OUT <4 HOURS — Refrigerator food still safe.\n\nUnopened refrigerator holds 40°F for about 4 hours.\n\nActions:\n- Keep refrigerator CLOSED as much as possible\n- Use perishables in recommended order: meat/seafood first, then dairy/eggs, then produce\n- Consume or cook all meat within 2 hours of opening\n\nFreezer: stays frozen 24–48h unopened (1–2 days full, half-full = 24h). Do not open.\n\nSafety threshold: "40°F or below" — at 40°F+, bacteria multiply rapidly.\nIf you have a thermometer: check before eating. If >40°F for >2 hours = discard perishables.\n\nPriority for cooking first: raw chicken, seafood, ground meat, cut melons.'},
+      fridge_check: {type:'result', style:'warning', text:'POWER OUT 4–24 HOURS — Use judgment.\n\nRefrigerator may have exceeded 40°F. Use temperature as guide:\n- If you have a fridge thermometer and it reads <40°F: still safe\n- Above 40°F for >2 hours: discard perishables\n\nHigh-risk (discard if uncertain):\n- Raw/cooked meat, poultry, seafood\n- Milk, soft cheeses, yogurt, eggs (cracked or room temp)\n- Cut fruits/vegetables, cooked pasta/rice, casseroles\n- Mayo-based salads (potato salad, coleslaw)\n\nGenerally safe even without refrigeration:\n- Hard cheeses (whole block, uncut)\n- Fruits and vegetables (intact, uncut)\n- Butter and margarine\n- Opened fruit juices\n- Peanut butter, jelly, ketchup, mustard, relish\n\n"When in doubt, throw it out" — food poisoning in a grid-down scenario is far worse than hunger.'},
+      fridge_risky: {type:'result', style:'danger', text:'POWER OUT >24 HOURS — Assume perishables unsafe.\n\nRefrigerator contents should be treated as compromised.\n\nDISCARD without smelling/tasting:\n- All raw meat, poultry, seafood, eggs\n- All dairy (milk, soft cheese, sour cream, yogurt)\n- All cooked leftovers\n- All cut fruits/vegetables\n\nMay be SAFE (inspect individually):\n- Whole uncut fruits/vegetables (smell and visually check)\n- Hard cheeses in original wax or sealed packaging\n- Butter (if no obvious mold)\n- Commercial condiments in sealed bottles (ketchup, mustard, etc.)\n\nFreezer: items still containing ice crystals may be refrozen or cooked immediately.\nFreezer items that have thawed completely: cook and eat immediately or discard.\n\nDo NOT rely on smell test for meat — many pathogens (Salmonella, E. coli) are odorless.'},
+      dry_q1: {type:'question', text:'What type of dried/shelf-stable food?', options:[
+        {label:'Commercial sealed (mylar, #10 can, vacuum sealed)', next:'dry_commercial'},
+        {label:'Opened bag/container, been stored for a while', next:'dry_opened'},
+        {label:'Grains, rice, beans from bulk storage', next:'dry_grain'},
+      ]},
+      dry_commercial: {type:'result', style:'success', text:'COMMERCIALLY SEALED DRY FOOD — Long shelf life.\n\nMylar bags with oxygen absorbers, #10 cans: properly stored = 5–25+ years\n\nInspect before opening:\n- Mylar/sealed bag: no holes, tears, or punctures. Bag should be rigid (vacuum) or show slight inward pressure (O2 absorber working)\n- #10 can: check for rust through the can wall, severe dents at seams\n\nAfter opening:\n- Smell: should smell normal for that food type\n- Inspect for insects: weevils, flour beetles — check for movement or webbing\n- Check for moisture damage: clumping, off-color, mold\n\nIf insects present: sift out (food still edible, extra protein), or freeze for 3 days to kill larvae.\nIf mold present on grain/legumes: discard entire batch — mold produces mycotoxins that survive cooking.\nRancid fat smell (in whole grains, nuts): still edible but reduced nutrition and poor taste.'},
+      dry_opened: {type:'result', style:'warning', text:'OPENED DRY STORAGE — Check carefully.\n\nOnce opened, dry storage is vulnerable to:\n- Moisture → mold\n- Oxygen → rancidity in fats\n- Pests → weevils, mice, moths\n\nInspect:\n1. Look for webbing, insects, or droppings\n2. Smell: musty or sour = mold risk; rancid/paint-thinner = oxidized fats\n3. Check for clumping (moisture ingress)\n\nDecision:\n- Insects only (no mold): sift and use — insects and larvae are edible protein\n- Light mold on surface of grain pile: discard top layer, inspect deeper — if mold throughout, discard all\n- Mouse/rodent contamination: discard entire container (hantavirus risk from droppings)\n- Rancid: safe to eat but unpalatable; cook with strong spices\n\nFor prevention: Mylar bags + oxygen absorbers, bay leaves deter insects, keep dry and cool.'},
+      dry_grain: {type:'result', style:'success', text:'BULK GRAIN/RICE/BEAN STORAGE — Assess by inspection.\n\nStorage indicators:\n- Properly stored (cool, dry, sealed): wheat 25+ yrs, white rice 25–30 yrs, beans 25+ yrs, oats 4 yrs, cornmeal 1–2 yrs\n- White rice outlasts brown rice (brown has oils that go rancid)\n\nInspect:\n1. Pour small amount, spread on white surface\n2. Look for: insects, webbing, droppings, clumping\n3. Smell: earthy is ok; musty, sour, or ammonia = problem\n4. Look for grain discoloration: pink/red = mold toxin (discard)\n\nIf good after inspection: rinse, soak 8–24h for legumes, then cook thoroughly.\n\nNixtamalization for corn: boil in lime water (calcium hydroxide or wood ash water) — activates B vitamins, prevents pellagra. Critical for corn-heavy diets.'},
+      forage_q1: {type:'question', text:'How confident are you in the plant identification?', options:[
+        {label:'100% positive ID — multiple cross-referenced sources', next:'forage_sure'},
+        {label:'Mostly sure but some uncertainty', next:'forage_unsure'},
+        {label:'Unknown plant or learning to identify', next:'forage_unknown'},
+      ]},
+      forage_sure: {type:'result', style:'success', text:'KNOWN EDIBLE PLANT — Safe if prepared correctly.\n\nFor confidently identified wild edibles:\n\nPreparation reminders by type:\n- Acorns: leach tannins (soak, change water 3–5x, or boil with multiple water changes) — raw = very bitter and toxic\n- Pokeweed: leaves ONLY when very young and small, boil with 3 water changes — roots/berries lethal\n- Elderberries: cook before eating — raw seeds contain cyanogenic glycosides\n- Fiddlehead ferns: boil 10+ minutes — raw can cause GI illness\n- Nettles: cook, dry, or blend — heat neutralizes sting\n- Dandelion, plantain, lamb\'s quarters, wood sorrel: generally safe raw\n\nHarvesting rules:\n- 100+ feet from roads (lead/petroleum accumulation)\n- Avoid areas with pesticide/herbicide use\n- Away from waterways in flood-prone areas (contamination)\n- Don\'t over-harvest — leave 2/3 for regrowth and wildlife'},
+      forage_unsure: {type:'result', style:'warning', text:'UNCERTAIN IDENTIFICATION — Do not eat without confirmation.\n\nRules for uncertain plants:\n1. Do NOT eat — misidentification kills\n2. Cross-reference at least 3 sources: field guide + regional app + expert confirmation\n3. Look for complete plant: root, stem, leaf, flower, fruit, smell, habitat, season\n\nDeadly lookalikes to know:\n- Wild carrot (Queen Anne\'s Lace) vs. Poison hemlock — one kills; hemlock has purple spots on stem, no carrot smell\n- Wild garlic vs. Death camas — garlic smell is definitive\n- Elderberry vs. Water hemlock — always check habitat and stem cross-section\n- Morels vs. False morels — morel cap is fully attached; false morel has saddle shape\n- Chanterelle vs. Jack-o\'lantern — chanterelle has forking ridges, grows from soil; jack-o\'lantern has gills, grows from wood\n\nIn doubt: starve one more day. Starvation takes weeks; plant toxin can kill in hours.'},
+      forage_unknown: {type:'result', style:'danger', text:'UNKNOWN PLANT — Do not eat.\n\nAlways rule when foraging: "When in doubt, don\'t."\n\nUniversal edibility test (last resort, takes 8 hours):\n1. Separate plant into parts (root, stem, leaf, flower, fruit)\n2. Test ONE part, ONE at a time\n3. Rub on wrist, wait 15 min — if rash, burning, numbness: discard\n4. Hold small piece to lips, wait 3 min — if reaction: discard\n5. Chew pea-sized piece, hold in mouth 15 min, spit — if reaction: discard\n6. Swallow pea-sized piece, wait 8 hours (eat nothing else, drink only water)\n7. If no reaction: that part of that plant may be safe in limited quantities\n\nThis test does NOT work for: mushrooms (skip mushroom edibility tests — use a field guide or don\'t eat them).\n\nEat a small portion first. Wait 24 hours before eating more.\nCaloric return rarely worth the risk of misidentification.'},
+      wildmeat_q1: {type:'question', text:'What type of wild animal?', options:[
+        {label:'Large game (deer, elk, wild boar)', next:'game_large'},
+        {label:'Small game (rabbit, squirrel, fowl)', next:'game_small'},
+        {label:'Fish or freshwater shellfish', next:'fish_q1'},
+      ]},
+      game_large: {type:'result', style:'warning', text:'LARGE GAME — Assess and prepare correctly.\n\nField assessment:\n- Healthy-appearing at time of kill (alert, normal movement)\n- No visible tumors, lesions, spots on organs, or unusual organ color\n- Stomach/intestinal contents not ruptured during field dressing (contaminates meat)\n\nChronic Wasting Disease (CWD) — deer/elk/moose:\n- No evidence of transmission to humans, but precaution advised\n- Wear gloves when field dressing\n- Avoid eating brain, spinal cord, eyes, lymph nodes, spleen\n- Bone-in cuts: bone marrow may contain prions — remove before cooking\n\nWild boar / feral pig:\n- HIGH trichinosis risk — must cook to 160°F internal (no pink meat)\n- Wear gloves: brucellosis transmission through cuts during field dressing\n- Do NOT eat raw or undercooked\n\nCooking temperature: 160°F for game (well-done) kills most pathogens. 165°F for poultry.\nField cooling: gut and cool to <40°F within 2–4 hours to prevent bacterial growth.'},
+      game_small: {type:'result', style:'warning', text:'SMALL GAME — Specific disease risks.\n\nRabbit / Hare:\n- Tularemia risk (Francisella tularensis): wear gloves when field dressing\n- Avoid during late summer (hot weather = higher parasite load)\n- Do NOT eat rabbit with visible spots/lesions on liver\n- Cook thoroughly to 165°F — no pink meat\n- "Rabbit starvation" (protein poisoning): supplement with fat/carbs if rabbit is primary calorie source\n\nSquirrel:\n- Generally safe; same tularemia precautions\n- Botfly larvae (warbles): gross but harmless — remove, cook remaining meat\n\nWild Fowl / Birds:\n- Avian influenza risk: wear mask if handling visibly sick birds\n- Cook to 165°F internal — thoroughly\n- Do NOT eat scavenger birds (vultures, crows) — concentrate toxins\n\nAll small game:\n- Intestinal parasites: thorough cooking (165°F) destroys all\n- Trichinella in some species — 160°F minimum'},
+      fish_q1: {type:'question', text:'Where was the fish/shellfish caught?', options:[
+        {label:'Open clean water — river, lake, ocean, away from industry', next:'fish_clean'},
+        {label:'Near town, downstream from industry, or under advisory', next:'fish_polluted'},
+      ]},
+      fish_clean: {type:'result', style:'success', text:'FISH FROM CLEAN WATER — Safe with standard cooking.\n\nField assessment:\n- Fresh fish: clear eyes, bright red gills, firm flesh, mild ocean/river smell\n- Avoid: cloudy eyes, grey/brown gills, soft mushy flesh, strong ammonia smell\n\nPreparation:\n- Cook to 145°F internal (flesh flakes and is opaque)\n- Anisakis worms: common in many ocean fish — kill by cooking to 145°F or freezing at -4°F for 7 days\n- Filleting: inspect fillets for worms (small white/translucent coils) — remove if found, rest is safe\n\nFreshwater fish (no cooking):\n- Tapeworms in pike, perch, walleye — thorough cooking eliminates risk\n- Raw freshwater fish has high parasite risk — always cook\n\nFreshwater shellfish (mussels, clams in rivers):\n- Much higher contamination risk than ocean shellfish\n- Cook thoroughly: steam until open (>165°F)\n- Do NOT eat those that do not open during cooking'},
+      fish_polluted: {type:'result', style:'danger', text:'FISH FROM POLLUTED WATER — High bioaccumulation risk.\n\nFish bioaccumulate: mercury, PCBs, lead, PFAS, pesticides — cooking does NOT remove these.\n\nAvoid eating if water is:\n- Under consumption advisory (posted at boat ramps, fish advisory websites)\n- Downstream from mines, factories, agriculture\n- Known for algae blooms (cyanotoxins — especially in mussels/shellfish)\n\nIf you must eat (survival):\n- Remove skin and visible fat (bioaccumulation concentrates in fat)\n- Smaller fish accumulate fewer toxins than large predators\n- Avoid bottom-feeders (catfish, carp) from polluted water\n- Do NOT eat shellfish from polluted or closed waters\n\nParalytic Shellfish Poisoning (PSP/red tide):\n- Shellfish during algae bloom can be toxic regardless of cooking\n- Numbness of lips/tongue within 30 min = PSP — no antidote, supportive care only'},
+    }
+  },
 ];
 
 let _guideHistory = [];
@@ -15683,6 +16244,351 @@ function exportChirpCSV() {
   a.click(); URL.revokeObjectURL(url);
   toast('CHIRP CSV exported', 'success');
 }
+
+// ═══════════════════════════════════════════════════════════════
+// CALCULATORS — ADVANCED
+// ═══════════════════════════════════════════════════════════════
+
+// --- Burn Surface Area (Rule of Nines) ---
+function calcBurnArea() {
+  const regions = {
+    'burn-head': 9, 'burn-chest': 9, 'burn-abdomen': 9,
+    'burn-upperback': 9, 'burn-lowerback': 9,
+    'burn-rightarm': 9, 'burn-leftarm': 9,
+    'burn-rightthigh': 9, 'burn-rightleg': 9,
+    'burn-leftthigh': 9, 'burn-leftleg': 9,
+    'burn-genitalia': 1
+  };
+  let tbsa = 0;
+  for (const [id, pct] of Object.entries(regions)) {
+    if (document.getElementById(id) && document.getElementById(id).checked) tbsa += pct;
+  }
+  const weight = parseFloat(document.getElementById('burn-weight').value) || 70;
+  const el = document.getElementById('burn-result');
+  if (!el) return;
+  if (tbsa === 0) { el.innerHTML = '<span style="color:var(--text-dim)">Select burned body regions above.</span>'; return; }
+  const parkland4h = (4 * weight * tbsa).toFixed(0);
+  const first8h = (parkland4h / 2).toFixed(0);
+  const next16h = (parkland4h / 2).toFixed(0);
+  let severity = tbsa < 10 ? 'Minor' : tbsa < 20 ? 'Moderate' : tbsa < 40 ? 'Major' : 'Critical/Life-Threatening';
+  let sev_color = tbsa < 10 ? '#4caf50' : tbsa < 20 ? '#ff9800' : '#f44336';
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div class="stat-card"><div class="stat-value" style="color:${sev_color}">${tbsa}%</div><div class="stat-label">Total Body Surface Area</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:${sev_color}">${severity}</div><div class="stat-label">Burn Severity</div></div>
+    <div class="stat-card" style="grid-column:1/-1;"><div class="stat-label" style="margin-bottom:4px;">Parkland Formula (Total 24h Lactated Ringer's)</div>
+    <div class="stat-value">${Number(parkland4h).toLocaleString()} mL</div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">First 8 hrs from injury: <strong>${Number(first8h).toLocaleString()} mL</strong> &nbsp;|&nbsp; Next 16 hrs: <strong>${Number(next16h).toLocaleString()} mL</strong></div>
+    </div></div>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">⚠ Parkland formula is a guideline. Adjust based on urine output (goal 0.5–1 mL/kg/hr). Seek medical care when possible.</div>`;
+}
+
+// --- IV Drip Rate ---
+function calcIVDrip() {
+  const vol = parseFloat(document.getElementById('iv-vol').value) || 1000;
+  const time = parseFloat(document.getElementById('iv-time').value) || 60;
+  const drops = parseInt(document.getElementById('iv-drops').value) || 20;
+  const el = document.getElementById('iv-result');
+  if (!el) return;
+  const dropsPerMin = (vol * drops / time).toFixed(1);
+  const mlPerHr = (vol / (time / 60)).toFixed(1);
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div class="stat-card"><div class="stat-value">${dropsPerMin}</div><div class="stat-label">Drops / min</div></div>
+    <div class="stat-card"><div class="stat-value">${mlPerHr}</div><div class="stat-label">mL / hour</div></div>
+  </div>
+  <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Count drops in drip chamber for 15 seconds and multiply by 4 to verify rate.</div>`;
+}
+
+// --- KI Dosage ---
+let _kiPersons = [{age:'adult', label:'Adult'}];
+function addKIPerson() {
+  _kiPersons.push({age:'adult', label:'Person ' + (_kiPersons.length + 1)});
+  renderKIPersons();
+}
+function removeKIPerson(idx) {
+  _kiPersons.splice(idx, 1);
+  renderKIPersons();
+}
+function renderKIPersons() {
+  const el = document.getElementById('ki-persons-list');
+  if (!el) return;
+  el.innerHTML = _kiPersons.map((p, i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <input type="text" value="${p.label}" oninput="_kiPersons[${i}].label=this.value" style="width:120px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:5px;font-size:12px;">
+      <select onchange="_kiPersons[${i}].age=this.value;calcKIDosage()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:5px;font-size:12px;">
+        <option value="adult" ${p.age==='adult'?'selected':''}>Adult (≥18 yrs)</option>
+        <option value="teen" ${p.age==='teen'?'selected':''}>Teen 12–18 yrs</option>
+        <option value="child" ${p.age==='child'?'selected':''}>Child 3–12 yrs</option>
+        <option value="toddler" ${p.age==='toddler'?'selected':''}>Toddler 1m–3 yrs</option>
+        <option value="infant" ${p.age==='infant'?'selected':''}>Infant <1 mo</option>
+        <option value="pregnant" ${p.age==='pregnant'?'selected':''}>Pregnant/Nursing</option>
+      </select>
+      ${_kiPersons.length > 1 ? `<button onclick="removeKIPerson(${i})" style="background:none;border:none;color:#f44336;cursor:pointer;font-size:14px;">✕</button>` : ''}
+    </div>`).join('');
+  calcKIDosage();
+}
+function calcKIDosage() {
+  const doses = {
+    adult: {mg: 130, tab: '2 × 65mg tabs or 1 × 130mg tab'},
+    teen: {mg: 65, tab: '1 × 65mg tab'},
+    child: {mg: 65, tab: '½ × 130mg tab or 1 × 65mg tab'},
+    toddler: {mg: 32, tab: '¼ × 130mg tab (~liquid form preferred)'},
+    infant: {mg: 16, tab: '⅛ × 130mg tab (liquid form only)'},
+    pregnant: {mg: 130, tab: '2 × 65mg tabs or 1 × 130mg tab'}
+  };
+  const el = document.getElementById('ki-result');
+  if (!el) return;
+  const rows = _kiPersons.map(p => {
+    const d = doses[p.age] || doses.adult;
+    return `<tr><td>${p.label}</td><td>${p.age.charAt(0).toUpperCase()+p.age.slice(1)}</td><td><strong>${d.mg} mg</strong></td><td style="font-size:11px;">${d.tab}</td></tr>`;
+  }).join('');
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:12px;">
+    <thead><tr style="background:var(--surface2);color:var(--text-dim);">
+      <th style="padding:5px 8px;text-align:left;">Person</th><th style="padding:5px 8px;">Age Group</th><th style="padding:5px 8px;">KI Dose</th><th style="padding:5px 8px;">How to Take</th>
+    </tr></thead><tbody>${rows}</tbody></table>
+    <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">⚠ KI only protects the thyroid from radioactive iodine. Take within 3–4 hrs of exposure. Take with food/water. Do NOT take if allergic to iodine. Repeat daily only on official instruction.</div>`;
+}
+
+// --- Dead Reckoning Navigator ---
+function calcDeadReckoning() {
+  const lat = parseFloat(document.getElementById('dr-lat').value);
+  const lon = parseFloat(document.getElementById('dr-lon').value);
+  const bearing = parseFloat(document.getElementById('dr-bearing').value) || 0;
+  const speed = parseFloat(document.getElementById('dr-speed').value) || 3;
+  const hours = parseFloat(document.getElementById('dr-hours').value) || 1;
+  const el = document.getElementById('dr-result');
+  if (!el) return;
+  if (isNaN(lat) || isNaN(lon)) { el.innerHTML = '<span style="color:var(--text-dim)">Enter start coordinates.</span>'; return; }
+  const distMi = speed * hours;
+  const distKm = distMi * 1.60934;
+  const bearingRad = bearing * Math.PI / 180;
+  const latRad = lat * Math.PI / 180;
+  const deltaLat = distMi * Math.cos(bearingRad) / 69.0;
+  const deltaLon = distMi * Math.sin(bearingRad) / (69.0 * Math.cos(latRad));
+  const newLat = lat + deltaLat;
+  const newLon = lon + deltaLon;
+  const cardinals = ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
+  const card = cardinals[Math.round(bearing / 22.5) % 16];
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div class="stat-card"><div class="stat-value" style="font-size:16px;">${newLat.toFixed(4)}°</div><div class="stat-label">Est. Latitude</div></div>
+    <div class="stat-card"><div class="stat-value" style="font-size:16px;">${newLon.toFixed(4)}°</div><div class="stat-label">Est. Longitude</div></div>
+    <div class="stat-card"><div class="stat-value">${distMi.toFixed(1)} mi</div><div class="stat-label">Distance traveled (${distKm.toFixed(1)} km)</div></div>
+    <div class="stat-card"><div class="stat-value">${bearing}° ${card}</div><div class="stat-label">Direction of travel</div></div>
+  </div>
+  <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Estimated position: <strong>${newLat.toFixed(4)}, ${newLon.toFixed(4)}</strong> — Error accumulates over distance; verify with landmarks/GPS when possible.</div>`;
+}
+
+// --- Shelter Protection Factor ---
+let _shelterLayers = [];
+function addShelterLayer() {
+  _shelterLayers.push({material:'concrete', thickness:8});
+  renderShelterLayers();
+}
+function removeShelterLayer(idx) {
+  _shelterLayers.splice(idx, 1);
+  renderShelterLayers();
+}
+// halving thicknesses in inches (approx for gamma radiation)
+const _hvtData = {
+  concrete: {hvt: 2.2, label: 'Concrete (in)'},
+  earth: {hvt: 3.3, label: 'Earth/Soil (in)'},
+  brick: {hvt: 2.8, label: 'Brick (in)'},
+  steel: {hvt: 0.7, label: 'Steel (in)'},
+  water: {hvt: 7.2, label: 'Water (in)'},
+  wood: {hvt: 11.0, label: 'Wood (in)'},
+  sandbags: {hvt: 3.5, label: 'Sand/Sandbags (in)'},
+  lead: {hvt: 0.5, label: 'Lead (in)'}
+};
+function renderShelterLayers() {
+  const el = document.getElementById('shelter-layers-list');
+  if (!el) return;
+  el.innerHTML = _shelterLayers.map((l, i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <select onchange="_shelterLayers[${i}].material=this.value;calcShelterPF()" style="flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:5px;font-size:12px;">
+        ${Object.entries(_hvtData).map(([k,v])=>`<option value="${k}" ${l.material===k?'selected':''}>${v.label}</option>`).join('')}
+      </select>
+      <input type="number" value="${l.thickness}" min="1" max="120" oninput="_shelterLayers[${i}].thickness=parseFloat(this.value)||1;calcShelterPF()" style="width:70px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:5px;font-size:12px;">
+      <button onclick="removeShelterLayer(${i})" style="background:none;border:none;color:#f44336;cursor:pointer;font-size:14px;">✕</button>
+    </div>`).join('') || '<div style="color:var(--text-dim);font-size:12px;">Add layers above to calculate protection.</div>';
+  calcShelterPF();
+}
+function calcShelterPF() {
+  const el = document.getElementById('shpf-result');
+  if (!el) return;
+  if (_shelterLayers.length === 0) { el.innerHTML = '<span style="color:var(--text-dim)">Add material layers above.</span>'; return; }
+  const geoSel = document.getElementById('shpf-geo');
+  const geoMult = geoSel ? parseFloat(geoSel.value) : 1.0;
+  // PF = product of (2^(thickness/HVT)) for each layer × geometry multiplier
+  let pf = 1;
+  for (const l of _shelterLayers) {
+    const hvt = _hvtData[l.material]?.hvt || 3.3;
+    pf *= Math.pow(2, l.thickness / hvt);
+  }
+  pf = Math.round(pf * geoMult);
+  const outsideDose = 100; // reference cGy
+  const insideDose = (outsideDose / pf).toFixed(2);
+  let rating = pf < 10 ? 'Poor' : pf < 40 ? 'Fair' : pf < 100 ? 'Good' : pf < 1000 ? 'Excellent' : 'Exceptional';
+  let ratingColor = pf < 10 ? '#f44336' : pf < 40 ? '#ff9800' : '#4caf50';
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div class="stat-card"><div class="stat-value" style="color:${ratingColor}">PF ${pf.toLocaleString()}</div><div class="stat-label">Protection Factor</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:${ratingColor}">${rating}</div><div class="stat-label">Rating</div></div>
+    <div class="stat-card" style="grid-column:1/-1;"><div class="stat-label">For every 100 cGy outside, occupants receive approximately:</div>
+    <div class="stat-value" style="font-size:18px;color:${ratingColor}">${insideDose} cGy</div></div>
+  </div>
+  <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">FEMA target: PF ≥ 40. Basements of brick/concrete buildings typically achieve PF 10–40. Expedient fallout shelters with 3ft of earth can reach PF 1000+.</div>`;
+}
+
+// --- Survival Garden Calorie Planner ---
+let _cropRows = [];
+const _cropData = {
+  potato: {name:'Potatoes', cal_per_sqft_yr: 1.5, notes:'High yield, store well'},
+  sweetpotato: {name:'Sweet Potatoes', cal_per_sqft_yr: 1.4, notes:'Very nutritious, drought tolerant'},
+  corn: {name:'Corn (field)', cal_per_sqft_yr: 0.5, notes:'Staple grain, needs space'},
+  beans: {name:'Beans (dry)', cal_per_sqft_yr: 0.3, notes:'Protein + nitrogen fixer'},
+  squash: {name:'Winter Squash', cal_per_sqft_yr: 0.35, notes:'Long storage life'},
+  wheat: {name:'Wheat', cal_per_sqft_yr: 0.25, notes:'Needs grain mill'},
+  kale: {name:'Kale/Greens', cal_per_sqft_yr: 0.15, notes:'Vitamins, year-round'},
+  tomato: {name:'Tomatoes', cal_per_sqft_yr: 0.1, notes:'Vitamin C, versatile'},
+  sunflower: {name:'Sunflowers (seed)', cal_per_sqft_yr: 0.4, notes:'Oil, protein, easy to store'},
+  amaranth: {name:'Amaranth (grain)', cal_per_sqft_yr: 0.35, notes:'Complete protein grain'}
+};
+function addCropRow() {
+  const keys = Object.keys(_cropData);
+  _cropRows.push({crop: keys[_cropRows.length % keys.length], sqft: 100});
+  renderCropRows();
+}
+function removeCropRow(idx) {
+  _cropRows.splice(idx, 1);
+  renderCropRows();
+}
+function renderCropRows() {
+  const el = document.getElementById('crop-rows-list');
+  if (!el) return;
+  el.innerHTML = _cropRows.map((r, i) => `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+      <select onchange="_cropRows[${i}].crop=this.value;calcCropCalories()" style="flex:1;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:5px;font-size:12px;">
+        ${Object.entries(_cropData).map(([k,v])=>`<option value="${k}" ${r.crop===k?'selected':''}>${v.name}</option>`).join('')}
+      </select>
+      <input type="number" value="${r.sqft}" min="1" max="100000" placeholder="sq ft" oninput="_cropRows[${i}].sqft=parseFloat(this.value)||0;calcCropCalories()" style="width:80px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:5px;font-size:12px;">
+      <span style="font-size:11px;color:var(--text-dim);width:80px;">${_cropData[r.crop]?.notes||''}</span>
+      <button onclick="removeCropRow(${i})" style="background:none;border:none;color:#f44336;cursor:pointer;font-size:14px;">✕</button>
+    </div>`).join('') || '<div style="color:var(--text-dim);font-size:12px;">Add crops above.</div>';
+  calcCropCalories();
+}
+function calcCropCalories() {
+  const el = document.getElementById('crop-result');
+  if (!el) return;
+  const people = parseInt(document.getElementById('crop-people').value) || 4;
+  if (_cropRows.length === 0) { el.innerHTML = '<span style="color:var(--text-dim)">Add crop rows above.</span>'; return; }
+  const calPerDayPerson = 2000;
+  const calPerYearPerson = calPerDayPerson * 365;
+  let totalCalYear = 0;
+  const rows = _cropRows.map(r => {
+    const cd = _cropData[r.crop] || {cal_per_sqft_yr: 0.3};
+    const cal = Math.round(r.sqft * cd.cal_per_sqft_yr * 1000);
+    totalCalYear += cal;
+    return `<tr><td>${_cropData[r.crop]?.name||r.crop}</td><td>${r.sqft.toLocaleString()} ft²</td><td>${cal.toLocaleString()}</td><td>${Math.round(cal/calPerYearPerson*10)/10} person-yrs</td></tr>`;
+  }).join('');
+  const personYears = totalCalYear / calPerYearPerson;
+  const pct = Math.round(personYears / people * 100);
+  let pctColor = pct < 50 ? '#f44336' : pct < 90 ? '#ff9800' : '#4caf50';
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+    <div class="stat-card"><div class="stat-value">${Math.round(totalCalYear/1000).toLocaleString()}k</div><div class="stat-label">Total kcal/year</div></div>
+    <div class="stat-card"><div class="stat-value" style="color:${pctColor}">${pct}%</div><div class="stat-label">of ${people}-person calorie need</div></div>
+  </div>
+  <table style="width:100%;border-collapse:collapse;font-size:11px;">
+    <thead><tr style="background:var(--surface2);color:var(--text-dim);"><th style="padding:4px 6px;text-align:left;">Crop</th><th style="padding:4px 6px;">Area</th><th style="padding:4px 6px;">kcal/yr</th><th style="padding:4px 6px;">Person-yrs</th></tr></thead>
+    <tbody>${rows}</tbody></table>
+  <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">Estimates assume good soil, water, weather. Diversify crops for nutrition balance (calories alone ≠ survival).</div>`;
+}
+
+// --- NVIS/HF Frequency Advisor ---
+function calcNVIS() {
+  const solar = document.getElementById('nvis-solar')?.value || 'moderate';
+  const timeOfDay = document.getElementById('nvis-time')?.value || 'day';
+  const rangeMi = parseFloat(document.getElementById('nvis-range')?.value) || 200;
+  const el = document.getElementById('nvis-result');
+  if (!el) return;
+  // NVIS optimal frequency lookup table (MHz)
+  // Based on typical MUF/FOT for NVIS (0-600 mile paths)
+  const table = {
+    high: { // Solar maximum
+      night: {bands: ['80m (3.5–4 MHz)', '160m (1.8–2 MHz)'], mhz: '3.5–4.0', note: 'D-layer absent, 80m/160m best at night'},
+      dawn:  {bands: ['40m (7–7.3 MHz)', '80m (3.5–4 MHz)'], mhz: '7.0–7.3', note: 'Transition — try 40m first'},
+      day:   {bands: ['15m (21–21.45 MHz)', '20m (14–14.35 MHz)', '10m (28–29.7 MHz)'], mhz: '14–21', note: 'High solar flux pushes MUF up; 20/15m strong'},
+      dusk:  {bands: ['40m (7–7.3 MHz)', '20m (14–14.35 MHz)'], mhz: '7–14', note: 'Transition — 40m/20m reliable'}
+    },
+    moderate: {
+      night: {bands: ['80m (3.5–4 MHz)', '40m (7–7.3 MHz)'], mhz: '3.5–7.3', note: '80m primary; 40m works for >200mi'},
+      dawn:  {bands: ['40m (7–7.3 MHz)', '60m (5.33 MHz)'], mhz: '5.3–7.3', note: '40m primary; 60m (US channelized) backup'},
+      day:   {bands: ['40m (7–7.3 MHz)', '20m (14–14.35 MHz)'], mhz: '7–14', note: '40m NVIS reliable for 0–500mi daytime'},
+      dusk:  {bands: ['80m (3.5–4 MHz)', '40m (7–7.3 MHz)'], mhz: '3.5–7.3', note: 'Back to 80m/40m as sun sets'}
+    },
+    low: { // Solar minimum
+      night: {bands: ['160m (1.8–2 MHz)', '80m (3.5–4 MHz)'], mhz: '1.8–4.0', note: 'Low MUF — 160m if available, 80m reliable'},
+      dawn:  {bands: ['80m (3.5–4 MHz)', '60m (5.33 MHz)'], mhz: '3.5–5.4', note: '80m primary at dawn'},
+      day:   {bands: ['40m (7–7.3 MHz)', '80m (3.5–4 MHz)'], mhz: '3.5–7.3', note: 'Low solar flux limits daytime NVIS to 40m'},
+      dusk:  {bands: ['80m (3.5–4 MHz)'], mhz: '3.5–4.0', note: '80m most reliable after sunset'}
+    }
+  };
+  const rec = table[solar]?.[timeOfDay] || table.moderate.day;
+  const longRange = rangeMi > 300;
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr;gap:8px;">
+    <div class="stat-card"><div class="stat-label" style="margin-bottom:4px;">Recommended Bands</div>
+    ${rec.bands.map(b=>`<div style="font-size:14px;font-weight:600;color:var(--accent);">${b}</div>`).join('')}
+    <div style="font-size:11px;color:var(--text-dim);margin-top:4px;">${rec.note}</div></div>
+    <div class="stat-card"><div class="stat-label">Frequency Range</div><div class="stat-value" style="font-size:16px;">${rec.mhz} MHz</div></div>
+    ${longRange ? `<div style="font-size:11px;padding:6px;background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.3);border-radius:6px;color:#ff9800;">⚠ Range >300 mi: NVIS alone may not cover — consider combining with ground-wave or skip propagation. Higher bands (20m/15m) provide broader coverage at expense of shorter ranges.</div>` : ''}
+  </div>
+  <div style="font-size:11px;color:var(--text-dim);margin-top:6px;">NVIS (Near Vertical Incidence Skywave) best for 0–300 mile regional comms. Antenna: horizontal dipole at 0.1–0.25 wavelength height for best overhead angle.</div>`;
+}
+
+// --- Weight-Based Medication Dosing ---
+function calcWeightDose() {
+  const weightRaw = parseFloat(document.getElementById('dose-weight')?.value) || 20;
+  const unit = document.getElementById('dose-unit')?.value || 'kg';
+  const med = document.getElementById('dose-med')?.value || 'amoxicillin';
+  const el = document.getElementById('dose-result');
+  if (!el) return;
+  const weightKg = unit === 'lb' ? weightRaw * 0.453592 : weightRaw;
+  // [dose mg/kg, min mg, max mg, frequency, route, notes]
+  const meds = {
+    amoxicillin: {name:'Amoxicillin', dose_per_kg: 25, min: 250, max: 500, freq: 'Every 8 hours', route: 'PO', notes:'Broad spectrum antibiotic. Standard for respiratory, ear, skin infections.'},
+    amoxiclav: {name:'Amoxicillin-Clavulanate', dose_per_kg: 25, min: 250, max: 875, freq: 'Every 12 hours', route: 'PO', notes:'Add for resistant organisms or animal bites.'},
+    azithromycin: {name:'Azithromycin (Z-Pak)', dose_per_kg: 10, min: 250, max: 500, freq: 'Once daily × 5 days', route: 'PO', notes:'Day 1: loading dose ×2. Useful for atypicals.'},
+    ciprofloxacin: {name:'Ciprofloxacin', dose_per_kg: 10, min: 250, max: 500, freq: 'Every 12 hours', route: 'PO', notes:'UTI, GI infections. Avoid in children <18 (except anthrax/plague).'},
+    doxycycline: {name:'Doxycycline', dose_per_kg: 2.2, min: 100, max: 200, freq: 'Every 12 hours', route: 'PO', notes:'Avoid <8 yrs (stains teeth). Malaria prophylaxis, Lyme, respiratory.'},
+    ibuprofen: {name:'Ibuprofen', dose_per_kg: 10, min: 200, max: 800, freq: 'Every 6–8 hours', route: 'PO', notes:'Anti-inflammatory, antipyretic, analgesic. Take with food.'},
+    acetaminophen: {name:'Acetaminophen (Tylenol)', dose_per_kg: 15, min: 325, max: 1000, freq: 'Every 4–6 hours', route: 'PO', notes:'Max 4g/day adult, 75 mg/kg/day children. Safe with food or empty stomach.'},
+    diphenhydramine: {name:'Diphenhydramine (Benadryl)', dose_per_kg: 1.25, min: 25, max: 50, freq: 'Every 4–6 hours', route: 'PO/IM', notes:'Antihistamine, mild sedation. Mild allergic reactions.'},
+    epinephrine: {name:'Epinephrine (Anaphylaxis)', dose_per_kg: 0.01, min: 0.15, max: 0.5, freq: 'May repeat in 5–15 min', route: 'IM (thigh)', notes:'⚠ ANAPHYLAXIS ONLY. 0.3mg for adults, 0.15mg for <30kg. EpiPen Jr = 0.15mg, EpiPen = 0.3mg. Seek emergency care immediately.'},
+    metronidazole: {name:'Metronidazole (Flagyl)', dose_per_kg: 7.5, min: 250, max: 500, freq: 'Every 8 hours', route: 'PO', notes:'Anaerobic infections, C. diff, giardia, abscess. Avoid alcohol.'}
+  };
+  const m = meds[med] || meds.amoxicillin;
+  let calcDose = Math.round(weightKg * m.dose_per_kg);
+  const clampedDose = Math.max(m.min, Math.min(m.max, calcDose));
+  const wasClamped = calcDose !== clampedDose;
+  const doseColor = med === 'epinephrine' ? '#f44336' : 'var(--accent)';
+  el.innerHTML = `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div class="stat-card"><div class="stat-value" style="color:${doseColor}">${clampedDose} mg</div><div class="stat-label">Single Dose</div></div>
+    <div class="stat-card"><div class="stat-value" style="font-size:13px;">${m.freq}</div><div class="stat-label">Frequency / Route: ${m.route}</div></div>
+  </div>
+  ${wasClamped ? `<div style="font-size:11px;padding:5px;margin-top:6px;background:rgba(255,152,0,0.1);border:1px solid rgba(255,152,0,0.3);border-radius:5px;color:#ff9800;">ℹ Dose clamped to ${calcDose>m.max?'maximum':'minimum'} (calc: ${calcDose}mg → ${clampedDose}mg)</div>` : ''}
+  <div style="font-size:11px;padding:5px;margin-top:6px;background:var(--surface2);border-radius:5px;">${m.notes}</div>
+  <div style="font-size:10px;color:var(--text-dim);margin-top:6px;">⚠ These are reference guidelines only. Drug allergies, renal/hepatic function, interactions, and contraindications must be considered. This is not medical advice.</div>`;
+}
+
+// Initialize calculators on first load
+(function initCalcDefaults() {
+  // Render KI with default 1 adult
+  setTimeout(() => {
+    renderKIPersons();
+    calcIVDrip();
+    calcBurnArea();
+    calcDeadReckoning();
+    calcNVIS();
+    calcWeightDose();
+  }, 500);
+})();
 
 // ═══════════════════════════════════════════════════════════════
 // FUEL STORAGE

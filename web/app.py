@@ -4328,6 +4328,36 @@ def create_app():
          'url': 'https://archive.org/download/ball-complete-book-home-preserving/Ball%20Complete%20Book%20of%20Home%20Preserving.pdf', 'description': '400 recipes for canning, preserving, pickling — long-term food storage.'},
         {'title': 'Square Foot Gardening', 'author': 'Mel Bartholomew', 'format': 'pdf', 'category': 'farming', 'folder': 'Homesteading',
          'url': 'https://archive.org/download/square-foot-gardening/Square%20Foot%20Gardening.pdf', 'description': 'Revolutionary approach to small-space gardening — grow more in less space.'},
+        # Nuclear / CBRN (Public Domain)
+        {'title': 'Nuclear War Survival Skills', 'author': 'Cresson Kearny / ORNL', 'format': 'pdf', 'category': 'survival', 'folder': 'Nuclear & CBRN',
+         'url': 'https://archive.org/download/NuclearWarSurvivalSkillsCressonKearny1987/Nuclear%20War%20Survival%20Skills%20Cresson%20Kearny%201987.pdf', 'description': 'Uncopyrighted Oak Ridge National Laboratory guide — shelters, ventilation, KFM fallout meter construction, radiation protection, food/water. 18 chapters.'},
+        {'title': 'Planning Guide for Response to Nuclear Detonation', 'author': 'FEMA / DHHS', 'format': 'pdf', 'category': 'survival', 'folder': 'Nuclear & CBRN',
+         'url': 'https://www.ready.gov/sites/default/files/2022-09/planning-guidance-for-response-to-nuclear-detonation.pdf', 'description': 'FEMA 2022 edition — blast zones, fallout shelter-in-place timing, evacuation decisions, decontamination, mass care.'},
+        {'title': 'FM 3-11 NBC Defense Operations', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'survival', 'folder': 'Nuclear & CBRN',
+         'url': 'https://irp.fas.org/doddir/army/fm3_11.pdf', 'description': 'Nuclear, biological, and chemical defense — contamination avoidance, protection, decontamination, collective protection.'},
+        # Advanced Military Medical
+        {'title': 'Emergency War Surgery (5th US Revision)', 'author': 'U.S. Army / Borden Institute', 'format': 'pdf', 'category': 'medical', 'folder': 'Medical References',
+         'url': 'https://apps.dtic.mil/sti/tr/pdf/ADA305002.pdf', 'description': 'NATO handbook, free from Borden Institute. Ballistic wound care, burns, blast, cold injury, mass casualties, field surgery. The definitive austere medicine surgical reference.'},
+        {'title': 'Special Forces Medical Handbook (ST 31-91B)', 'author': 'U.S. Army Special Forces', 'format': 'pdf', 'category': 'medical', 'folder': 'Medical References',
+         'url': 'https://archive.org/download/SpecialForcesMedicalHandbook/Special%20Forces%20Medical%20Handbook%20ST%2031-91B.pdf', 'description': 'Gold standard field medicine reference — clinical diagnosis, tropical medicine, trauma, anesthesia, field pharmacy, lab procedures.'},
+        {'title': 'ATP 4-02.5 Casualty Care', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'medical', 'folder': 'Medical References',
+         'url': 'https://archive.org/download/ATP4-25x13/ATP%204-02.5%20Casualty%20Care.pdf', 'description': 'Current Army casualty care doctrine — TCCC protocols, point-of-injury care, blood products, CBRN patient treatment.'},
+        # Navigation & Land Nav
+        {'title': 'FM 3-25.26 Map Reading and Land Navigation', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'survival', 'folder': 'Army Field Manuals',
+         'url': 'https://archive.org/download/fm-3-25.26-map-reading-and-land-navigation/FM%203-25.26%20Map%20Reading%20and%20Land%20Navigation.pdf', 'description': 'Definitive military land navigation — topographic maps, UTM/MGRS coordinates, compass, GPS, field sketching, night navigation.'},
+        # Emergency Management
+        {'title': 'CERT Basic Training Participant Manual', 'author': 'FEMA / Ready.gov', 'format': 'pdf', 'category': 'survival', 'folder': 'FEMA Guides',
+         'url': 'https://www.ready.gov/sites/default/files/2019-12/cert_pm_unit-1.pdf', 'description': 'Community Emergency Response Team curriculum — disaster preparedness, fire suppression, medical operations, light search and rescue, ICS, disaster psychology.'},
+        {'title': 'LDS Preparedness Manual', 'author': 'LDS Church (via ThesurvivalMom)', 'format': 'pdf', 'category': 'survival', 'folder': 'FEMA Guides',
+         'url': 'https://thesurvivalmom.com/wp-content/uploads/2010/08/LDS-Preparedness-Manual.pdf', 'description': 'Comprehensive LDS preparedness guide — 72-hour kits, 3-month food supply, long-term storage (wheat, rice, beans), water, medical, communications, financial.'},
+        # Homesteading & Food Production
+        {'title': 'USDA Complete Guide to Home Canning (2015)', 'author': 'USDA', 'format': 'pdf', 'category': 'cooking', 'folder': 'Homesteading',
+         'url': 'https://archive.org/download/usda-complete-guide-to-home-canning-2015-revision/USDA%20Complete%20Guide%20to%20Home%20Canning%202015%20Revision.pdf', 'description': 'Official USDA safe canning reference — water bath and pressure canning for fruits, vegetables, meats, pickles, jams. Processing times and altitude adjustments.'},
+        # Security & Tactics
+        {'title': 'FM 3-19.30 Physical Security', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'defense', 'folder': 'Army Field Manuals',
+         'url': 'https://irp.fas.org/doddir/army/fm3-19-30.pdf', 'description': 'Physical security planning — threat assessment, perimeter design, access control, barriers, alarms, guard operations.'},
+        {'title': 'FM 20-3 Camouflage, Concealment, and Decoys', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'defense', 'folder': 'Army Field Manuals',
+         'url': 'https://irp.fas.org/doddir/army/fm20-3.pdf', 'description': 'Military camouflage techniques — individual camouflage, vehicle/equipment concealment, decoys, light and noise discipline, thermal signature management.'},
     ]
 
     @app.route('/api/books')
@@ -4853,6 +4883,52 @@ def create_app():
                         'title': f'{item["name"]} below minimum',
                         'message': f'{item["name"]}: {item["quantity"]} {item["unit"]} remaining (minimum: {item["min_quantity"]}). Add to shopping list or resupply.',
                     })
+
+                # 6. Equipment overdue for service
+                try:
+                    overdue_equip = db.execute(
+                        "SELECT name, category, next_service FROM equipment_log WHERE next_service != '' AND next_service < ? AND status != 'non-operational'",
+                        (today,)
+                    ).fetchall()
+                    for eq in overdue_equip:
+                        alerts.append({
+                            'type': 'equipment_service', 'severity': 'warning',
+                            'title': f'{eq["name"]} service overdue',
+                            'message': f'{eq["name"]} ({eq["category"]}) was due for service on {eq["next_service"]}. Service overdue equipment may fail when needed most.',
+                        })
+                except Exception:
+                    pass
+
+                # 7. Expiring fuel (within 30 days)
+                try:
+                    fuel_expiry = (now + timedelta(days=30)).strftime('%Y-%m-%d')
+                    expiring_fuel = db.execute(
+                        "SELECT fuel_type, quantity, unit, expires FROM fuel_storage WHERE expires != '' AND expires <= ? AND expires >= ?",
+                        (fuel_expiry, today)
+                    ).fetchall()
+                    for f in expiring_fuel:
+                        days_left = (datetime.strptime(f['expires'], '%Y-%m-%d') - now).days
+                        sev = 'warning' if days_left > 7 else 'critical'
+                        alerts.append({
+                            'type': 'fuel_expiry', 'severity': sev,
+                            'title': f'{f["fuel_type"]} expiring soon',
+                            'message': f'{f["quantity"]} {f["unit"]} of {f["fuel_type"]} expires in {days_left} days ({f["expires"]}). Use, rotate, or add stabilizer to extend shelf life.',
+                        })
+                except Exception:
+                    pass
+
+                # 8. High cumulative radiation dose
+                try:
+                    rad_row = db.execute('SELECT MAX(cumulative_rem) as max_rem FROM radiation_log').fetchone()
+                    if rad_row and rad_row['max_rem'] and rad_row['max_rem'] >= 25:
+                        sev = 'critical' if rad_row['max_rem'] >= 75 else 'warning'
+                        alerts.append({
+                            'type': 'radiation', 'severity': sev,
+                            'title': f'Cumulative radiation dose: {round(rad_row["max_rem"], 1)} rem',
+                            'message': f'Cumulative radiation exposure has reached {round(rad_row["max_rem"], 1)} rem. {">75 rem: Acute Radiation Syndrome risk." if rad_row["max_rem"] >= 75 else "25-75 rem: Increased cancer risk. Minimize further exposure. Take KI if thyroid threat."} Seek shelter with highest available Protection Factor.',
+                        })
+                except Exception:
+                    pass
 
                 db.close()
 

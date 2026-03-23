@@ -53,7 +53,7 @@ services/
 ```
 
 ## Version
-v1.1.0 — ~38,500 lines, 249 API routes, 36 DB tables, 23 prep sub-tabs, 38-section user guide
+v1.2.0 — ~40,500 lines, 265 API routes, 38 DB tables, 25 prep sub-tabs, 38-section user guide
 
 ## Run / Build
 ```bash
@@ -90,8 +90,8 @@ git push origin v1.0.0
 ## Service Ports
 Dashboard: 8080, Ollama: 11434, Kiwix: 8888, CyberChef: 8889, Kolibri: 8300, Qdrant: 6333, Stirling: 8443, Node Discovery: UDP 18080
 
-## 23 Preparedness Sub-Tabs (ordered by emergency priority)
-Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Power, Garden, Weather, Guides, Calculators, Procedures, Radio, Quick Ref, Signals, Command Post, Journal, Secure Vault, Skills, Ammo, Community, Radiation
+## 25 Preparedness Sub-Tabs (ordered by emergency priority)
+Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Power, Garden, Weather, Guides, Calculators, Procedures, Radio, Quick Ref, Signals, Command Post, Journal, Secure Vault, Skills, Ammo, Community, Radiation, Fuel, Equipment
 
 ## Key APIs Added
 - `/api/readiness-score` — 7 categories (water/food/medical/security/comms/shelter/planning), letter grades A-F
@@ -102,6 +102,9 @@ Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Powe
 - `/api/ammo` + `/api/ammo/summary` — ammunition inventory with caliber-grouped summary cards
 - `/api/community` — community resource registry with trust levels and skills/equipment tracking
 - `/api/radiation` + `/api/radiation/clear` — nuclear dose rate log with cumulative rem tracking
+- `/api/fuel` + `/api/fuel/summary` — fuel storage CRUD with type-grouped totals and expiry tracking
+- `/api/equipment` — equipment maintenance log CRUD with service scheduling and status tracking
+- `/api/search/all` — extended search now includes skills, ammo, and equipment tables
 
 ## 38-Section User Guide
 `showHelp(section)` opens an iframe-based guide with optional scroll-to anchor.
@@ -129,6 +132,9 @@ Sections cover: getting started, all 9 tabs, all 19 prep sub-tabs, AI model sele
 - `switchPrepSub` is overridden at bottom of script to auto-load new tab data; override must come AFTER original definition
 - ICS form entries (_ics309Entries, _ics214Entries) are JS arrays (not DB) — ephemeral, print-only forms
 - QR code via qrserver.com API — works on LAN with internet; graceful text fallback when offline
+- `switchPrepSub` override must call `loadChecklists()` for 'checklists' sub — it doesn't auto-load from the original function
+- Readiness score now factors in: ammo (security), fuel (shelter/power), skills proficiency (planning), trusted community members (planning)
+- Equipment `markServiced()` sends full record with updated last_service + status='operational' via PUT
 
 ## UX Design Principles
 - All jargon removed — plain English throughout (no Ollama/Kiwix/PMTiles/Sneakernet)

@@ -940,6 +940,8 @@ body{background:var(--bg);color:var(--text)}
       <button class="prep-subtab" data-psub="ammo" onclick="switchPrepSub('ammo')">Ammo</button>
       <button class="prep-subtab" data-psub="community" onclick="switchPrepSub('community')">Community</button>
       <button class="prep-subtab" data-psub="radiation" onclick="switchPrepSub('radiation')">Radiation</button>
+      <button class="prep-subtab" data-psub="fuel" onclick="switchPrepSub('fuel')">Fuel</button>
+      <button class="prep-subtab" data-psub="equipment" onclick="switchPrepSub('equipment')">Equipment</button>
     </div>
 
     <!-- Sub: Checklists -->
@@ -4354,6 +4356,97 @@ body{background:var(--bg);color:var(--text)}
     </div>
     </div><!-- /psub-radiation -->
 
+    <div id="psub-fuel" class="prep-sub">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;font-size:15px;">Fuel Storage</h3>
+        <button class="btn btn-sm btn-primary" onclick="openFuelForm()">+ Add Fuel</button>
+      </div>
+      <div id="fuel-summary" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:16px;"></div>
+      <div id="fuel-table" style="overflow-x:auto;font-size:12px;"></div>
+      <!-- Add/Edit Modal -->
+      <div id="fuel-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closeFuelForm()">
+        <div style="background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);padding:20px;width:420px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+          <h4 style="margin:0 0 14px;font-size:14px;" id="fuel-modal-title">Add Fuel Entry</h4>
+          <input type="hidden" id="fuel-id">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Fuel Type *</label>
+              <select id="fuel-type" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;">
+                <option>Gasoline (Regular)</option><option>Gasoline (Premium)</option><option>Diesel</option>
+                <option>Propane</option><option>Kerosene</option><option>Ethanol</option>
+                <option>Butane</option><option>White Gas</option><option>Wood (cords)</option><option>Charcoal</option>
+              </select>
+            </div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Quantity</label><input type="number" id="fuel-qty" min="0" step="0.1" value="5" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Unit</label>
+              <select id="fuel-unit" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;">
+                <option>gallons</option><option>liters</option><option>lbs</option><option>cords</option><option>bags</option>
+              </select>
+            </div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Container</label><input type="text" id="fuel-container" placeholder="5-gal Jerry can" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Location</label><input type="text" id="fuel-location" placeholder="Garage, shed..." style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Date Stored</label><input type="date" id="fuel-stored" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Expires / Rotate By</label><input type="date" id="fuel-expires" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;"></div>
+            <div style="grid-column:1/-1;display:flex;align-items:center;gap:8px;"><input type="checkbox" id="fuel-stabilizer"><label for="fuel-stabilizer" style="font-size:12px;">Fuel stabilizer added (extends shelf life to 2 years)</label></div>
+            <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Notes</label><textarea id="fuel-notes" rows="2" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;resize:vertical;"></textarea></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+            <button class="btn btn-sm btn-ghost" onclick="closeFuelForm()">Cancel</button>
+            <button class="btn btn-sm btn-primary" onclick="saveFuel()">Save</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:11px;color:var(--text-dim);">
+        <strong>Shelf Life Reference:</strong> Gasoline: 3–6 months untreated, up to 2 years with stabilizer &bull; Diesel: 6–12 months &bull; Propane: indefinite (sealed) &bull; Kerosene: 2–5 years &bull; Store in approved containers away from heat sources.
+      </div>
+    </div><!-- /psub-fuel -->
+
+    <div id="psub-equipment" class="prep-sub">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h3 style="margin:0;font-size:15px;">Equipment Maintenance</h3>
+        <button class="btn btn-sm btn-primary" onclick="openEquipForm()">+ Add Equipment</button>
+      </div>
+      <div id="equip-status-row" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+      <div id="equip-table" style="overflow-x:auto;font-size:12px;"></div>
+      <!-- Add/Edit Modal -->
+      <div id="equip-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center;" onclick="if(event.target===this)closeEquipForm()">
+        <div style="background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);padding:20px;width:440px;max-width:95vw;max-height:90vh;overflow-y:auto;">
+          <h4 style="margin:0 0 14px;font-size:14px;" id="equip-modal-title">Add Equipment</h4>
+          <input type="hidden" id="equip-id">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Equipment Name *</label><input type="text" id="equip-name" placeholder="Honda EU2200i Generator" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Category</label>
+              <select id="equip-category" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;">
+                <option value="generator">Generator</option><option value="vehicle">Vehicle</option>
+                <option value="tool">Power Tool</option><option value="communication">Communication</option>
+                <option value="medical">Medical Device</option><option value="water">Water/Filtration</option>
+                <option value="security">Security</option><option value="general">General</option>
+              </select>
+            </div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Status</label>
+              <select id="equip-status" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;">
+                <option value="operational">Operational</option>
+                <option value="needs-service">Needs Service</option>
+                <option value="in-service">In Service</option>
+                <option value="non-operational">Non-Operational</option>
+              </select>
+            </div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Last Service Date</label><input type="date" id="equip-last" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;"></div>
+            <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Next Service Due</label><input type="date" id="equip-next" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;"></div>
+            <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Location</label><input type="text" id="equip-location" placeholder="Garage, storage room..." style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;"></div>
+            <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Service Notes</label><textarea id="equip-service-notes" rows="2" placeholder="Oil type, filter size, torque specs..." style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;resize:vertical;"></textarea></div>
+            <div style="grid-column:1/-1;"><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:3px;">Notes</label><textarea id="equip-notes" rows="2" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:7px 10px;border-radius:6px;font-size:12px;box-sizing:border-box;resize:vertical;"></textarea></div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;justify-content:flex-end;">
+            <button class="btn btn-sm btn-ghost" onclick="closeEquipForm()">Cancel</button>
+            <button class="btn btn-sm btn-primary" onclick="saveEquip()">Save</button>
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:10px;background:var(--surface2);border-radius:var(--radius-sm);font-size:11px;color:var(--text-dim);">
+        <strong>Maintenance Reminders:</strong> Generator: Oil every 50–100 hrs or annually &bull; Vehicle: Oil every 3–5k miles &bull; Chainsaw: Chain, bar oil, air filter each use &bull; Water filters: Per manufacturer spec &bull; Batteries: Test/top-up every 3 months
+      </div>
+    </div><!-- /psub-equipment -->
+
   </div>
 
   <div id="tab-settings" class="tab-content">
@@ -4537,8 +4630,8 @@ body{background:var(--bg);color:var(--text)}
           <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
-            <div><strong style="color:var(--accent);">19 Prep Sub-Tabs</strong><br>Checklists, Incidents, Inventory, Contacts, Security, Power, Garden, Medical, Calculators, Guides, Radio, Quick Ref, Protocols, Vault, Weather, Signals, Ops, Journal, Family</div>
-            <div><strong style="color:var(--accent);">Key Stats</strong><br>228 API routes, 32 DB tables, 10 decision guides, 15 checklist templates, 4 training scenarios</div>
+            <div><strong style="color:var(--accent);">25 Prep Sub-Tabs</strong><br>Inventory, Contacts, Checklists, Medical, Incidents, Family, Security, Power, Garden, Weather, Guides, Calculators, Procedures, Radio, Quick Ref, Signals, Ops, Journal, Vault, Skills, Ammo, Community, Radiation, Fuel, Equipment</div>
+            <div><strong style="color:var(--accent);">Key Stats</strong><br>265 API routes, 38 DB tables, 10 decision guides, 15 checklist templates, 4 training scenarios</div>
           </div>
           <div style="margin:8px 0;">
             <strong style="color:var(--accent);">Keyboard Shortcuts:</strong>
@@ -11558,7 +11651,7 @@ function showHelp(section) {
     <a href="#maps">6. Offline Maps</a>
     <a href="#notes">7. Notes</a>
     <a href="#tools">8. Tools</a>
-    <a href="#prep">9. Preparedness (19 Sub-Tabs)</a>
+    <a href="#prep">9. Preparedness (25 Sub-Tabs)</a>
     <a href="#alerts">10. Proactive Alerts</a>
     <a href="#sync">11. Connecting Multiple Systems</a>
     <a href="#scenarios">12. Training Scenarios</a>
@@ -11694,8 +11787,8 @@ function showHelp(section) {
   <h3>Video Library</h3>
   <p>Upload and organize instructional videos (survival, medical, repair, cooking, etc.) for offline viewing.</p>
 
-  <h2 id="prep">9. Preparedness (19 Sub-Tabs)</h2>
-  <p>The Preparedness section is the heart of N.O.M.A.D. It contains 19 sub-tabs ordered by emergency priority:</p>
+  <h2 id="prep">9. Preparedness (25 Sub-Tabs)</h2>
+  <p>The Preparedness section is the heart of N.O.M.A.D. It contains 25 sub-tabs ordered by emergency priority:</p>
   <table><tr><th>Tab</th><th>What It Does</th><th>Key Features</th></tr>
   <tr><td><strong>Inventory</strong></td><td>Track all your supplies</td><td>Quantities, expiration dates, daily usage tracking, "Days Left" projections, low-stock alerts, shopping list generator, CSV import/export, quick +/- buttons, one-click Daily Consume</td></tr>
   <tr><td><strong>Contacts</strong></td><td>Emergency people directory</td><td>Names, callsigns, roles, skills, blood types, rally points, medical notes. Skills matrix shows coverage gaps. CSV import/export. Quick-add 7 standard emergency numbers.</td></tr>
@@ -11716,6 +11809,12 @@ function showHelp(section) {
   <tr><td><strong>Command Post</strong></td><td>Tactical operations</td><td>Situation Report (SITREP) generator with military format. Message cipher (Caesar, Reverse, Atbash). Infrastructure status tracker (12 utilities). Vehicle readiness board. Threat assessment matrix. After-event review form. Emergency broadcast to all LAN devices. 35-item home security hardening assessment with scoring.</td></tr>
   <tr><td><strong>Journal</strong></td><td>Daily log</td><td>Daily journal entries with mood tracking (5 moods), tag system, chronological timeline, and full export.</td></tr>
   <tr><td><strong>Secure Vault</strong></td><td>Encrypted storage</td><td>AES-256-GCM encrypted entries for sensitive information (passwords, coordinates, account numbers, legal documents). Master password required to unlock. Password generator with strength indicator. Legal document templates.</td></tr>
+  <tr><td><strong>Skills</strong></td><td>Survival skill tracking</td><td>Self-assessment for 60 survival skills across 10 categories: Fire, Water, Shelter, Food, Navigation, Medical, Communications, Security, Mechanical, Homesteading. Proficiency levels: None, Basic, Intermediate, Expert. Category summary dashboard showing coverage. Seed-defaults button to load all 60 skills at once. Skill proficiency counts toward your Readiness Score.</td></tr>
+  <tr><td><strong>Ammo</strong></td><td>Ammunition inventory</td><td>Track ammunition by caliber, brand, bullet weight, bullet type, quantity, and storage location. Caliber-grouped summary cards showing total rounds per caliber. Full CRUD table with search. Ammo reserve contributes to your Security readiness score.</td></tr>
+  <tr><td><strong>Community</strong></td><td>Mutual aid network</td><td>Registry of community members, neighbors, and local resources for mutual aid planning. Track name, distance, skills, equipment, contact info, and trust level (Unknown / Acquaintance / Trusted / Inner-Circle). Trusted community members improve your Planning & Knowledge score.</td></tr>
+  <tr><td><strong>Radiation</strong></td><td>Radiation dose tracking</td><td>Log radiation dose rate readings (R/hr or rem/hr) with cumulative dose calculation. Dashboard shows total accumulated dose, last reading, and time since first reading. Reference table of dose effects. 7-10 Rule explanation for fallout decay. Uses the nuclear 7-10 Rule: fallout drops 90% for every 7x time elapsed since detonation.</td></tr>
+  <tr><td><strong>Fuel</strong></td><td>Fuel storage management</td><td>Track stored gasoline, diesel, propane, kerosene, and other fuels by type, quantity, container, storage location, and expiration date. Stabilizer tracking (extends gasoline shelf life to 2 years). Shelf life reference table. Fuel reserves contribute to your Shelter & Power readiness score. Color-coded expiration warnings.</td></tr>
+  <tr><td><strong>Equipment</strong></td><td>Maintenance log</td><td>Track critical equipment: generators, vehicles, power tools, communications gear, medical devices, and water filtration. Log last service date, next service due, service notes, and operational status. One-click "Mark Serviced" button. Status dashboard shows operational vs. needs-service counts. Color-coded overdue service warnings.</td></tr>
   </table>
 
   <h2 id="alerts">10. Proactive Alerts</h2>
@@ -15586,15 +15685,269 @@ function exportChirpCSV() {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// FUEL STORAGE
+// ═══════════════════════════════════════════════════════════════
+let _fuelData = [];
+
+async function loadFuel() {
+  try {
+    _fuelData = await (await fetch('/api/fuel')).json();
+    renderFuelSummary();
+    renderFuelTable();
+  } catch(e) { console.error('loadFuel', e); }
+}
+
+function renderFuelSummary() {
+  const el = document.getElementById('fuel-summary');
+  if (!el) return;
+  const totals = {};
+  _fuelData.forEach(r => {
+    const k = r.fuel_type + '|' + r.unit;
+    totals[k] = (totals[k] || { type: r.fuel_type, unit: r.unit, total: 0 });
+    totals[k].total += parseFloat(r.quantity) || 0;
+  });
+  const cards = Object.values(totals);
+  if (!cards.length) {
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:8px;">No fuel stored. Add entries to track your fuel reserves.</div>';
+    return;
+  }
+  el.innerHTML = cards.map(c => `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px;text-align:center;">
+      <div style="font-size:18px;font-weight:700;color:var(--accent);">${c.total.toFixed(1)}</div>
+      <div style="font-size:10px;color:var(--text-dim);">${c.unit}</div>
+      <div style="font-size:11px;font-weight:600;margin-top:2px;">${c.type}</div>
+    </div>`).join('');
+}
+
+function renderFuelTable() {
+  const el = document.getElementById('fuel-table');
+  if (!el) return;
+  if (!_fuelData.length) { el.innerHTML = ''; return; }
+  const today = new Date().toISOString().slice(0,10);
+  el.innerHTML = `<table class="data-table" style="width:100%;"><thead><tr>
+    <th>Fuel Type</th><th>Qty</th><th>Container</th><th>Location</th>
+    <th>Stored</th><th>Expires</th><th>Stabilizer</th><th>Actions</th>
+  </tr></thead><tbody>${_fuelData.map(r => {
+    const expired = r.expires && r.expires < today;
+    const expiring = r.expires && !expired && r.expires <= new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+    return `<tr>
+      <td>${r.fuel_type}</td>
+      <td>${parseFloat(r.quantity).toFixed(1)} ${r.unit}</td>
+      <td>${r.container || '—'}</td>
+      <td>${r.location || '—'}</td>
+      <td>${r.date_stored || '—'}</td>
+      <td style="color:${expired?'var(--red)':expiring?'var(--yellow)':'inherit'}">${r.expires || '—'}${expired?' ⚠ EXPIRED':expiring?' ⚠ Soon':''}</td>
+      <td style="text-align:center;">${r.stabilizer_added ? '✓' : ''}</td>
+      <td><button class="btn btn-xs btn-ghost" onclick="editFuel(${r.id})">Edit</button> <button class="btn btn-xs btn-ghost" style="color:var(--red)" onclick="deleteFuel(${r.id})">Del</button></td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function openFuelForm() {
+  document.getElementById('fuel-id').value = '';
+  document.getElementById('fuel-modal-title').textContent = 'Add Fuel Entry';
+  document.getElementById('fuel-type').value = 'Gasoline (Regular)';
+  document.getElementById('fuel-qty').value = '5';
+  document.getElementById('fuel-unit').value = 'gallons';
+  document.getElementById('fuel-container').value = '';
+  document.getElementById('fuel-location').value = '';
+  document.getElementById('fuel-stored').value = new Date().toISOString().slice(0,10);
+  document.getElementById('fuel-expires').value = '';
+  document.getElementById('fuel-stabilizer').checked = false;
+  document.getElementById('fuel-notes').value = '';
+  const m = document.getElementById('fuel-modal');
+  m.style.display = 'flex';
+}
+
+function closeFuelForm() { document.getElementById('fuel-modal').style.display = 'none'; }
+
+function editFuel(id) {
+  const r = _fuelData.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('fuel-id').value = r.id;
+  document.getElementById('fuel-modal-title').textContent = 'Edit Fuel Entry';
+  document.getElementById('fuel-type').value = r.fuel_type;
+  document.getElementById('fuel-qty').value = r.quantity;
+  document.getElementById('fuel-unit').value = r.unit;
+  document.getElementById('fuel-container').value = r.container || '';
+  document.getElementById('fuel-location').value = r.location || '';
+  document.getElementById('fuel-stored').value = r.date_stored || '';
+  document.getElementById('fuel-expires').value = r.expires || '';
+  document.getElementById('fuel-stabilizer').checked = !!r.stabilizer_added;
+  document.getElementById('fuel-notes').value = r.notes || '';
+  document.getElementById('fuel-modal').style.display = 'flex';
+}
+
+async function saveFuel() {
+  const id = document.getElementById('fuel-id').value;
+  const body = {
+    fuel_type: document.getElementById('fuel-type').value,
+    quantity: parseFloat(document.getElementById('fuel-qty').value) || 0,
+    unit: document.getElementById('fuel-unit').value,
+    container: document.getElementById('fuel-container').value,
+    location: document.getElementById('fuel-location').value,
+    date_stored: document.getElementById('fuel-stored').value,
+    expires: document.getElementById('fuel-expires').value,
+    stabilizer_added: document.getElementById('fuel-stabilizer').checked ? 1 : 0,
+    notes: document.getElementById('fuel-notes').value,
+  };
+  const url = id ? `/api/fuel/${id}` : '/api/fuel';
+  const method = id ? 'PUT' : 'POST';
+  await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  closeFuelForm();
+  loadFuel();
+  toast('Fuel entry saved', 'success');
+}
+
+async function deleteFuel(id) {
+  if (!confirm('Delete this fuel entry?')) return;
+  await fetch(`/api/fuel/${id}`, { method: 'DELETE' });
+  loadFuel();
+  toast('Fuel entry deleted', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// EQUIPMENT MAINTENANCE
+// ═══════════════════════════════════════════════════════════════
+let _equipData = [];
+
+async function loadEquipment() {
+  try {
+    _equipData = await (await fetch('/api/equipment')).json();
+    renderEquipStatus();
+    renderEquipTable();
+  } catch(e) { console.error('loadEquipment', e); }
+}
+
+function renderEquipStatus() {
+  const el = document.getElementById('equip-status-row');
+  if (!el) return;
+  const counts = { operational: 0, 'needs-service': 0, 'in-service': 0, 'non-operational': 0 };
+  _equipData.forEach(r => { if (counts[r.status] !== undefined) counts[r.status]++; });
+  const today = new Date().toISOString().slice(0,10);
+  const overdue = _equipData.filter(r => r.next_service && r.next_service < today).length;
+  el.innerHTML = [
+    ['Operational', counts['operational'], 'var(--green)'],
+    ['Needs Service', counts['needs-service'], 'var(--yellow)'],
+    ['Non-Operational', counts['non-operational'], 'var(--red)'],
+    ['Service Overdue', overdue, 'var(--red)'],
+  ].map(([label, count, color]) => count > 0 ? `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;font-size:11px;"><span style="font-weight:700;color:${color};">${count}</span> ${label}</div>` : '').join('');
+}
+
+const _equipCatIcons = { generator:'⚡', vehicle:'🚗', tool:'🔧', communication:'📻', medical:'💊', water:'💧', security:'🔒', general:'⚙️' };
+
+function renderEquipTable() {
+  const el = document.getElementById('equip-table');
+  if (!el) return;
+  if (!_equipData.length) {
+    el.innerHTML = '<div style="color:var(--text-dim);font-size:12px;padding:16px;">No equipment logged. Track generators, vehicles, tools, and critical devices here.</div>';
+    return;
+  }
+  const today = new Date().toISOString().slice(0,10);
+  const statusColors = { 'operational':'var(--green)', 'needs-service':'var(--yellow)', 'in-service':'var(--accent)', 'non-operational':'var(--red)' };
+  el.innerHTML = `<table class="data-table" style="width:100%;"><thead><tr>
+    <th>Equipment</th><th>Category</th><th>Status</th><th>Last Service</th><th>Next Service</th><th>Location</th><th>Actions</th>
+  </tr></thead><tbody>${_equipData.map(r => {
+    const overdue = r.next_service && r.next_service < today;
+    const upcoming = r.next_service && !overdue && r.next_service <= new Date(Date.now()+30*86400000).toISOString().slice(0,10);
+    return `<tr>
+      <td>${_equipCatIcons[r.category]||'⚙️'} <strong>${r.name}</strong>${r.service_notes?`<br><span style="font-size:10px;color:var(--text-dim);">${r.service_notes.slice(0,60)}${r.service_notes.length>60?'...':''}</span>`:''}</td>
+      <td style="text-transform:capitalize;">${r.category}</td>
+      <td><span style="color:${statusColors[r.status]||'inherit'};font-weight:600;text-transform:capitalize;">${r.status.replace('-',' ')}</span></td>
+      <td>${r.last_service || '—'}</td>
+      <td style="color:${overdue?'var(--red)':upcoming?'var(--yellow)':'inherit'}">${r.next_service||'—'}${overdue?' ⚠':upcoming?' ⚡':''}</td>
+      <td>${r.location || '—'}</td>
+      <td><button class="btn btn-xs btn-ghost" onclick="editEquip(${r.id})">Edit</button> <button class="btn btn-xs btn-primary btn-xs" onclick="markServiced(${r.id})" title="Mark serviced today">✓ Serviced</button> <button class="btn btn-xs btn-ghost" style="color:var(--red)" onclick="deleteEquip(${r.id})">Del</button></td>
+    </tr>`;
+  }).join('')}</tbody></table>`;
+}
+
+function openEquipForm() {
+  document.getElementById('equip-id').value = '';
+  document.getElementById('equip-modal-title').textContent = 'Add Equipment';
+  document.getElementById('equip-name').value = '';
+  document.getElementById('equip-category').value = 'generator';
+  document.getElementById('equip-status').value = 'operational';
+  document.getElementById('equip-last').value = '';
+  document.getElementById('equip-next').value = '';
+  document.getElementById('equip-location').value = '';
+  document.getElementById('equip-service-notes').value = '';
+  document.getElementById('equip-notes').value = '';
+  document.getElementById('equip-modal').style.display = 'flex';
+}
+
+function closeEquipForm() { document.getElementById('equip-modal').style.display = 'none'; }
+
+function editEquip(id) {
+  const r = _equipData.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('equip-id').value = r.id;
+  document.getElementById('equip-modal-title').textContent = 'Edit Equipment';
+  document.getElementById('equip-name').value = r.name;
+  document.getElementById('equip-category').value = r.category;
+  document.getElementById('equip-status').value = r.status;
+  document.getElementById('equip-last').value = r.last_service || '';
+  document.getElementById('equip-next').value = r.next_service || '';
+  document.getElementById('equip-location').value = r.location || '';
+  document.getElementById('equip-service-notes').value = r.service_notes || '';
+  document.getElementById('equip-notes').value = r.notes || '';
+  document.getElementById('equip-modal').style.display = 'flex';
+}
+
+async function saveEquip() {
+  const id = document.getElementById('equip-id').value;
+  const body = {
+    name: document.getElementById('equip-name').value.trim(),
+    category: document.getElementById('equip-category').value,
+    status: document.getElementById('equip-status').value,
+    last_service: document.getElementById('equip-last').value,
+    next_service: document.getElementById('equip-next').value,
+    location: document.getElementById('equip-location').value,
+    service_notes: document.getElementById('equip-service-notes').value,
+    notes: document.getElementById('equip-notes').value,
+  };
+  if (!body.name) { toast('Equipment name required', 'warning'); return; }
+  const url = id ? `/api/equipment/${id}` : '/api/equipment';
+  const method = id ? 'PUT' : 'POST';
+  await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  closeEquipForm();
+  loadEquipment();
+  toast('Equipment saved', 'success');
+}
+
+async function markServiced(id) {
+  const r = _equipData.find(x => x.id === id);
+  if (!r) return;
+  const today = new Date().toISOString().slice(0,10);
+  await fetch(`/api/equipment/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ...r, last_service: today, status: 'operational' })
+  });
+  loadEquipment();
+  toast('Marked serviced today', 'success');
+}
+
+async function deleteEquip(id) {
+  if (!confirm('Delete this equipment entry?')) return;
+  await fetch(`/api/equipment/${id}`, { method: 'DELETE' });
+  loadEquipment();
+  toast('Equipment deleted', 'success');
+}
+
+// ═══════════════════════════════════════════════════════════════
 // LOAD NEW TABS ON SWITCH
 // ═══════════════════════════════════════════════════════════════
 const _origSwitchPrepSub = switchPrepSub;
 switchPrepSub = function(sub) {
   _origSwitchPrepSub(sub);
+  if (sub === 'checklists') loadChecklists();
   if (sub === 'skills') loadSkills();
   if (sub === 'ammo') loadAmmo();
   if (sub === 'community') loadCommunity();
   if (sub === 'radiation') loadRadiation();
+  if (sub === 'fuel') loadFuel();
+  if (sub === 'equipment') loadEquipment();
 };
 // Init calculators on load
 document.addEventListener('DOMContentLoaded', () => {

@@ -527,6 +527,35 @@ def init_db():
             notes TEXT DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS fuel_storage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fuel_type TEXT NOT NULL,
+            quantity REAL DEFAULT 0,
+            unit TEXT DEFAULT 'gallons',
+            container TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            stabilizer_added INTEGER DEFAULT 0,
+            date_stored TEXT DEFAULT '',
+            expires TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS equipment_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            last_service TEXT DEFAULT '',
+            next_service TEXT DEFAULT '',
+            service_notes TEXT DEFAULT '',
+            status TEXT DEFAULT 'operational',
+            location TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     conn.commit()
 
@@ -578,6 +607,9 @@ def init_db():
         'CREATE INDEX IF NOT EXISTS idx_ammo_caliber ON ammo_inventory(caliber)',
         'CREATE INDEX IF NOT EXISTS idx_community_trust ON community_resources(trust_level)',
         'CREATE INDEX IF NOT EXISTS idx_radiation_created ON radiation_log(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_fuel_type ON fuel_storage(fuel_type)',
+        'CREATE INDEX IF NOT EXISTS idx_equipment_status ON equipment_log(status)',
+        'CREATE INDEX IF NOT EXISTS idx_equipment_next_service ON equipment_log(next_service)',
     ]:
         try:
             conn.execute(idx)

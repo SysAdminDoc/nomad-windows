@@ -354,6 +354,7 @@ def create_app():
         # Situation-aware context injection
         use_situation = data.get('situation_context', False)
         if use_situation:
+            db_ctx = None
             try:
                 db_ctx = get_db()
                 sit_parts = []
@@ -410,6 +411,10 @@ def create_app():
                         f'You have access to the user\'s current preparedness data. Use this to give specific, actionable advice based on their actual situation:\n\n--- Current Situation ---\n{ctx}\n--- End Situation ---'
             except Exception as e:
                 log.warning(f'Situation context injection failed: {e}')
+            finally:
+                if db_ctx:
+                    try: db_ctx.close()
+                    except: pass
 
         # RAG: inject knowledge base context if enabled
         if use_kb and qdrant.running() and messages:
@@ -3359,6 +3364,7 @@ def create_app():
         import zipfile as zf
         import io
         file = request.files['file']
+        db = None
         try:
             with zf.ZipFile(io.BytesIO(file.read())) as z:
                 if 'manifest.json' not in z.namelist():
@@ -3395,19 +3401,22 @@ def create_app():
                             pass
                     imported[tname] = count
                 db.commit()
-                db.close()
                 return jsonify({'status': 'imported', 'tables': imported})
         except Exception as e:
             return jsonify({'error': str(e)}), 400
+        finally:
+            if db:
+                try: db.close()
+                except: pass
 
     # ─── Community Sharing API ────────────────────────────────────────
 
     @app.route('/api/checklists/<int:cid>/export-json')
     def api_checklist_export_json(cid):
+        db = None
         try:
             db = get_db()
             row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
-            db.close()
             if not row:
                 return jsonify({'error': 'Not found'}), 404
             export = {'type': 'nomad_checklist', 'version': 1,
@@ -3418,12 +3427,17 @@ def create_app():
                            headers={'Content-Disposition': f'attachment; filename="{safe_name}.json"'})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+        finally:
+            if db:
+                try: db.close()
+                except: pass
 
     @app.route('/api/checklists/import-json', methods=['POST'])
     def api_checklist_import_json():
         if 'file' not in request.files:
             return jsonify({'error': 'No file'}), 400
         file = request.files['file']
+        db = None
         try:
             data = json.loads(file.read().decode('utf-8'))
             if data.get('type') != 'nomad_checklist':
@@ -3432,10 +3446,13 @@ def create_app():
             cur = db.execute('INSERT INTO checklists (name, template, items) VALUES (?, ?, ?)',
                              (data['name'], data.get('template', 'imported'), json.dumps(data['items'])))
             db.commit()
-            db.close()
             return jsonify({'status': 'imported', 'id': cur.lastrowid})
         except Exception as e:
             return jsonify({'error': str(e)}), 400
+        finally:
+            if db:
+                try: db.close()
+                except: pass
 
     # ─── Service Health API ───────────────────────────────────────────
 

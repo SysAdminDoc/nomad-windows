@@ -4771,7 +4771,7 @@ function switchTier(ci, tier, btn) {
       _cachedCatalog = catalog;
       const items = catalog[ci]?.tiers?.[tier] || [];
       document.getElementById(`cat-items-${ci}`).innerHTML = renderTierItems(items);
-    });
+    }).catch(()=>{});
   }
 }
 
@@ -6820,7 +6820,7 @@ function showInvForm(item) {
     fetch('/api/inventory/categories').then(r=>r.json()).then(cats => {
       cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
       if (item) sel.value = item.category;
-    });
+    }).catch(()=>{});
   }
 }
 function hideInvForm() { document.getElementById('inv-form').style.display = 'none'; }
@@ -8977,7 +8977,7 @@ function printMapView() {
     // Pull from the saved waypoints
     fetch('/api/waypoints').then(r=>r.json()).then(wps => {
       // Will be populated before print
-    });
+    }).catch(()=>{});
   }
 
   const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>N.O.M.A.D. Map Print</title>

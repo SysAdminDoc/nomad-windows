@@ -468,7 +468,7 @@ a { color: var(--accent); text-decoration: none; }
 }
 
 /* ─── Settings ─── */
-.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 100%; overflow: hidden; }
+.settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 100%; }
 @media (max-width: 800px) { .settings-grid { grid-template-columns: 1fr; } }
 .settings-card {
   background: var(--surface); backdrop-filter: blur(16px);

@@ -4655,16 +4655,34 @@ async function loadModels() {
     if (!models.length) {
       sel.innerHTML = '<option value="">No models yet — click "+ Get Model"</option>';
       setChatReady(false, 'No AI models downloaded');
-      // Poll until models appear (service may still be starting)
       startChatReadyPoll();
     } else {
       sel.innerHTML = models.map(m => `<option value="${m.name}">${m.name} (${(m.size/1e9).toFixed(1)}GB)</option>`).join('');
-      setChatReady(true);
+      // Pre-warm the model — send a tiny request to load it into VRAM
+      setChatReady(false, 'Loading AI model into memory...');
+      warmupModel(models[0].name);
     }
   } catch(e) {
     document.getElementById('model-select').innerHTML = '<option value="">Failed to load models</option>';
     setChatReady(false, 'AI service starting...');
     startChatReadyPoll();
+  }
+}
+
+async function warmupModel(modelName) {
+  try {
+    const resp = await fetch('/api/ai/chat', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({model: modelName, messages: [{role:'user', content:'hi'}]}),
+    });
+    // Read and discard the streaming response
+    const reader = resp.body.getReader();
+    while (true) { const {done} = await reader.read(); if (done) break; }
+    setChatReady(true);
+    toast('AI assistant ready', 'success');
+  } catch(e) {
+    // If warmup fails, still enable chat — the user's first real message will trigger loading
+    setChatReady(true);
   }
 }
 
@@ -4684,10 +4702,11 @@ function startChatReadyPoll() {
     try {
       const models = await (await fetch('/api/ai/models')).json();
       if (models.length) {
+        clearInterval(_chatReadyPoll); _chatReadyPoll = null;
         const sel = document.getElementById('model-select');
         sel.innerHTML = models.map(m => `<option value="${m.name}">${m.name} (${(m.size/1e9).toFixed(1)}GB)</option>`).join('');
-        setChatReady(true);
-        toast('AI assistant ready', 'success');
+        setChatReady(false, 'Loading AI model into memory...');
+        warmupModel(models[0].name);
       }
     } catch {}
   }, 3000);

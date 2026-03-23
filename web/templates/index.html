@@ -5706,36 +5706,42 @@ async function loadModelPickerList() {
 
 async function ensureOllamaReady() {
   // Auto-install and auto-start Ollama if needed — returns true when ready
-  const svcs = _lastServicesData || await (await fetch('/api/services')).json();
-  const svc = svcs.find(s => s.id === 'ollama');
-  if (!svc?.installed) {
-    toast('Installing AI Chat service automatically...', 'info');
-    await installService('ollama');
-    // Wait for install to complete (poll up to 5 min)
-    for (let i = 0; i < 150; i++) {
-      await new Promise(r => setTimeout(r, 2000));
-      const fresh = await (await fetch('/api/services')).json();
-      const o = fresh.find(s => s.id === 'ollama');
-      if (o?.installed) { _lastServicesData = fresh; break; }
+  try {
+    const svcs = await (await fetch('/api/services')).json();
+    const svc = svcs.find(s => s.id === 'ollama');
+    // Already running? Great, we're done
+    if (svc?.installed && svc?.running) return true;
+    // Not installed? Auto-install
+    if (!svc?.installed) {
+      toast('Installing AI Chat service...', 'info');
+      await installService('ollama');
+      // Wait for install (poll up to 3 min)
+      for (let i = 0; i < 90; i++) {
+        await new Promise(r => setTimeout(r, 2000));
+        const fresh = await (await fetch('/api/services')).json();
+        if (fresh.find(s => s.id === 'ollama')?.installed) break;
+      }
+      const check = await (await fetch('/api/services')).json();
+      if (!check.find(s => s.id === 'ollama')?.installed) {
+        toast('AI Chat is still installing. Please wait and try again.', 'warning');
+        return false;
+      }
     }
-    const check = (_lastServicesData || await (await fetch('/api/services')).json()).find(s => s.id === 'ollama');
-    if (!check?.installed) { toast('AI Chat installation is still in progress. Please wait and try again.', 'warning'); return false; }
-  }
-  const current = (_lastServicesData || await (await fetch('/api/services')).json()).find(s => s.id === 'ollama');
-  if (!current?.running) {
+    // Installed but not running? Auto-start
     toast('Starting AI Chat service...', 'info');
     await startService('ollama');
-    // Wait for it to be ready (up to 30 seconds)
-    for (let i = 0; i < 15; i++) {
+    // Wait for ready (up to 20 seconds)
+    for (let i = 0; i < 10; i++) {
       await new Promise(r => setTimeout(r, 2000));
       const fresh = await (await fetch('/api/services')).json();
-      const o = fresh.find(s => s.id === 'ollama');
-      if (o?.running) { _lastServicesData = fresh; return true; }
+      if (fresh.find(s => s.id === 'ollama')?.running) return true;
     }
-    toast('AI Chat service is starting up. Please try again in a moment.', 'warning');
+    toast('AI Chat is starting up. Try again in a moment.', 'warning');
+    return false;
+  } catch(e) {
+    toast('Could not check AI Chat status', 'error');
     return false;
   }
-  return true;
 }
 
 async function pullModel(name) {
@@ -12557,10 +12563,10 @@ function updateGettingStarted() {
   const steps = [
     {done: ollama?.installed, text: 'Install AI Chat (lets you ask questions offline)', action: "installService('ollama')"},
     {done: ollama?.running, text: 'Start the AI Chat service', action: "startService('ollama')"},
-    {done: false, text: 'Download an AI brain (choose a model for the AI to use)', action: "document.querySelector('[data-tab=\"ai-chat\"]').click();setTimeout(()=>toggleModelPicker(),200)"},
+    {done: false, text: 'Download an AI brain (choose a model for the AI to use)', action: "gsGoAIModel()"},
     {done: kiwix?.installed, text: 'Install the Information Library (offline Wikipedia & guides)', action: "installService('kiwix')"},
-    {done: false, text: 'Download offline content packs (encyclopedia, medical, survival)', action: "document.querySelector('[data-tab=\"kiwix-library\"]').click()"},
-    {done: false, text: 'Try the Interactive Decision Guides (step-by-step emergency help)', action: "document.querySelector('[data-tab=\"preparedness\"]').click();setTimeout(()=>switchPrepSub('guides'),200)"},
+    {done: false, text: 'Download offline content packs (encyclopedia, medical, survival)', action: "gsGoLibrary()"},
+    {done: false, text: 'Try the Interactive Decision Guides (step-by-step emergency help)', action: "gsGoGuides()"},
   ];
   // Check if any AI models exist
   if (ollama?.running) {
@@ -12581,6 +12587,17 @@ function renderGS(steps) {
       ${!s.done ? `<button class="btn btn-sm" onclick="${s.action}" style="font-size:10px;padding:2px 8px;margin-left:4px;">Go</button>` : ''}
     </div>
   `).join('');
+}
+function gsGoAIModel() {
+  document.querySelector('[data-tab="ai-chat"]').click();
+  setTimeout(() => toggleModelPicker(), 300);
+}
+function gsGoLibrary() {
+  document.querySelector('[data-tab="kiwix-library"]').click();
+}
+function gsGoGuides() {
+  document.querySelector('[data-tab="preparedness"]').click();
+  setTimeout(() => switchPrepSub('guides'), 300);
 }
 function dismissGettingStarted() {
   localStorage.setItem('nomad-gs-dismissed', '1');

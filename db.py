@@ -10,9 +10,10 @@ def get_db_path():
 
 
 def get_db():
-    conn = sqlite3.connect(get_db_path())
+    conn = sqlite3.connect(get_db_path(), timeout=30)
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA journal_mode=WAL')
+    conn.execute('PRAGMA foreign_keys=ON')
     return conn
 
 
@@ -20,26 +21,33 @@ def log_activity(event: str, service: str = None, detail: str = None, level: str
     """Log an activity event to the DB."""
     try:
         conn = get_db()
-        conn.execute('INSERT INTO activity_log (event, service, detail, level) VALUES (?, ?, ?, ?)',
-                     (event, service, detail, level))
-        conn.commit()
-        conn.close()
+        try:
+            conn.execute('INSERT INTO activity_log (event, service, detail, level) VALUES (?, ?, ?, ?)',
+                         (event, service, detail, level))
+            conn.commit()
+        finally:
+            conn.close()
     except Exception:
         pass
 
 
 def backup_db():
-    """Create a timestamped backup of the database."""
-    import shutil
+    """Create a timestamped backup of the database using SQLite backup API."""
     db_path = get_db_path()
     if not os.path.isfile(db_path):
         return
     backup_dir = os.path.join(os.path.dirname(db_path), 'backups')
     os.makedirs(backup_dir, exist_ok=True)
-    # Keep max 5 backups
     from datetime import datetime
     backup_path = os.path.join(backup_dir, f'nomad_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db')
-    shutil.copy2(db_path, backup_path)
+    # Use SQLite backup API for WAL-safe copies
+    src = sqlite3.connect(db_path, timeout=30)
+    dst = sqlite3.connect(backup_path)
+    try:
+        src.backup(dst)
+    finally:
+        dst.close()
+        src.close()
     # Prune old backups
     backups = sorted(
         [os.path.join(backup_dir, f) for f in os.listdir(backup_dir) if f.endswith('.db')],
@@ -610,6 +618,15 @@ def init_db():
         'CREATE INDEX IF NOT EXISTS idx_fuel_type ON fuel_storage(fuel_type)',
         'CREATE INDEX IF NOT EXISTS idx_equipment_status ON equipment_log(status)',
         'CREATE INDEX IF NOT EXISTS idx_equipment_next_service ON equipment_log(next_service)',
+        'CREATE INDEX IF NOT EXISTS idx_videos_category ON videos(category)',
+        'CREATE INDEX IF NOT EXISTS idx_videos_folder ON videos(folder)',
+        'CREATE INDEX IF NOT EXISTS idx_audio_category ON audio(category)',
+        'CREATE INDEX IF NOT EXISTS idx_audio_folder ON audio(folder)',
+        'CREATE INDEX IF NOT EXISTS idx_books_category ON books(category)',
+        'CREATE INDEX IF NOT EXISTS idx_contacts_role ON contacts(role)',
+        'CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity)',
+        'CREATE INDEX IF NOT EXISTS idx_conversations_model ON conversations(model)',
+        'CREATE INDEX IF NOT EXISTS idx_sync_log_created ON sync_log(created_at DESC)',
     ]:
         try:
             conn.execute(idx)

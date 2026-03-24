@@ -5801,7 +5801,7 @@ function setTheme(theme) {
   localStorage.setItem('nomad-theme', theme);
   document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('active', b.dataset.t === theme));
   updateThemeIndicator(theme);
-  fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({theme})});
+  fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({theme})}).catch(() => {});
 }
 function updateThemeIndicator(theme) {
   const dot = document.getElementById('active-theme-dot');
@@ -6292,6 +6292,7 @@ async function warmupModel(modelName) {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({model: modelName, messages: [{role:'user', content:'hi'}]}),
     });
+    if (!resp.ok) throw new Error('Warmup failed: ' + resp.status);
     // Read and discard the streaming response
     const reader = resp.body.getReader();
     while (true) { const {done} = await reader.read(); if (done) break; }
@@ -7017,7 +7018,10 @@ async function loadMapSources() {
 /* ─── Notes ─── */
 let allNotes = [];
 async function loadNotes() {
-  allNotes = await (await fetch('/api/notes')).json();
+  try {
+    const resp = await fetch('/api/notes');
+    if (resp.ok) allNotes = await resp.json();
+  } catch(e) { allNotes = allNotes || []; }
   renderNotesList();
 }
 function renderNotesList() {
@@ -10959,7 +10963,8 @@ async function loadTotalMediaStats() {
 }
 
 function selectMediaFolder(f) { _mediaFolder = f; loadMediaFolders(); renderMediaItems(); }
-function filterMediaList() { renderMediaItems(); }
+let _filterMediaTimer;
+function filterMediaList() { clearTimeout(_filterMediaTimer); _filterMediaTimer = setTimeout(renderMediaItems, 200); }
 function toggleMediaView() { _mediaViewGrid = !_mediaViewGrid; document.getElementById('media-view-btn').textContent = _mediaViewGrid ? 'Grid' : 'List'; renderMediaItems(); }
 
 function changeMediaSort() {
@@ -12164,13 +12169,17 @@ async function loadChannelBrowser() {
   } catch(e) { document.getElementById('channel-list').innerHTML = '<div style="padding:20px;color:var(--text-muted);">Failed to load channel catalog</div>'; }
 }
 
+let _filterChannelTimer;
 function filterChannels() {
-  const cat = document.getElementById('channel-cat-filter').value;
-  const search = (document.getElementById('channel-search').value || '').toLowerCase();
-  let filtered = _channelData;
-  if (cat) filtered = filtered.filter(c => c.category === cat);
-  if (search) filtered = filtered.filter(c => c.name.toLowerCase().includes(search) || c.focus.toLowerCase().includes(search) || c.category.toLowerCase().includes(search));
-  renderChannels(filtered);
+  clearTimeout(_filterChannelTimer);
+  _filterChannelTimer = setTimeout(() => {
+    const cat = document.getElementById('channel-cat-filter').value;
+    const search = (document.getElementById('channel-search').value || '').toLowerCase();
+    let filtered = _channelData;
+    if (cat) filtered = filtered.filter(c => c.category === cat);
+    if (search) filtered = filtered.filter(c => c.name.toLowerCase().includes(search) || c.focus.toLowerCase().includes(search) || c.category.toLowerCase().includes(search));
+    renderChannels(filtered);
+  }, 200);
 }
 
 function renderChannels(channels) {

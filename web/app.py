@@ -40,7 +40,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '1.8.0'
+VERSION = '1.9.0'
 
 
 def set_version(v):
@@ -3865,13 +3865,15 @@ def create_app():
         if not table or not media_id:
             return jsonify({'error': 'Invalid request'}), 400
         db = get_db()
-        row = db.execute(f'SELECT favorited FROM {table} WHERE id = ?', (media_id,)).fetchone()
-        if row:
-            new_val = 0 if row['favorited'] else 1
-            db.execute(f'UPDATE {table} SET favorited = ? WHERE id = ?', (new_val, media_id))
-            db.commit()
-        db.close()
-        return jsonify({'status': 'toggled', 'favorited': new_val if row else 0})
+        try:
+            row = db.execute(f'SELECT favorited FROM {table} WHERE id = ?', (media_id,)).fetchone()
+            if row:
+                new_val = 0 if row['favorited'] else 1
+                db.execute(f'UPDATE {table} SET favorited = ? WHERE id = ?', (new_val, media_id))
+                db.commit()
+            return jsonify({'status': 'toggled', 'favorited': new_val if row else 0})
+        finally:
+            db.close()
 
     @app.route('/api/media/batch-delete', methods=['POST'])
     def api_media_batch_delete():
@@ -3887,22 +3889,24 @@ def create_app():
         if not table or not get_dir:
             return jsonify({'error': 'Invalid type'}), 400
         db = get_db()
-        media_dir = get_dir()
-        deleted = 0
-        for mid in ids:
-            row = db.execute(f'SELECT filename FROM {table} WHERE id = ?', (mid,)).fetchone()
-            if row:
-                filepath = os.path.join(media_dir, row['filename'])
-                if os.path.isfile(filepath):
-                    try:
-                        os.remove(filepath)
-                    except Exception:
-                        pass
-                db.execute(f'DELETE FROM {table} WHERE id = ?', (mid,))
-                deleted += 1
-        db.commit()
-        db.close()
-        return jsonify({'status': 'deleted', 'count': deleted})
+        try:
+            media_dir = get_dir()
+            deleted = 0
+            for mid in ids:
+                row = db.execute(f'SELECT filename FROM {table} WHERE id = ?', (mid,)).fetchone()
+                if row:
+                    filepath = os.path.join(media_dir, row['filename'])
+                    if os.path.isfile(filepath):
+                        try:
+                            os.remove(filepath)
+                        except Exception:
+                            pass
+                    db.execute(f'DELETE FROM {table} WHERE id = ?', (mid,))
+                    deleted += 1
+            db.commit()
+            return jsonify({'status': 'deleted', 'count': deleted})
+        finally:
+            db.close()
 
     @app.route('/api/media/batch-move', methods=['POST'])
     def api_media_batch_move():
@@ -3915,11 +3919,13 @@ def create_app():
         if not table or not ids:
             return jsonify({'error': 'Invalid request'}), 400
         db = get_db()
-        for mid in ids:
-            db.execute(f'UPDATE {table} SET folder = ? WHERE id = ?', (folder, mid))
-        db.commit()
-        db.close()
-        return jsonify({'status': 'moved', 'count': len(ids)})
+        try:
+            for mid in ids:
+                db.execute(f'UPDATE {table} SET folder = ? WHERE id = ?', (folder, mid))
+            db.commit()
+            return jsonify({'status': 'moved', 'count': len(ids)})
+        finally:
+            db.close()
 
     # ─── yt-dlp Integration ──────────────────────────────────────────
 
@@ -5187,7 +5193,7 @@ def create_app():
         return jsonify({
             'low_items': [dict(r) for r in low_items],
             'expiring_items': [dict(r) for r in expiring_items],
-            'critical_burn': [{'name': r['name'], 'days_left': round(r['quantity']/r['daily_usage'], 1), 'category': r['category']} for r in critical_burn],
+            'critical_burn': [{'name': r['name'], 'days_left': round(r['quantity']/r['daily_usage'], 1) if r['daily_usage'] else 0, 'category': r['category']} for r in critical_burn],
         })
 
     # ─── Proactive Alert System ──────────────────────────────────────

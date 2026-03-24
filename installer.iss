@@ -1,8 +1,8 @@
 ; Project N.O.M.A.D. Inno Setup Script
-; AppVersion: 1.7.0
+; AppVersion: 1.8.0
 
 #define MyAppName "Project N.O.M.A.D."
-#define MyAppVersion "1.7.0"
+#define MyAppVersion "1.8.0"
 #define MyAppPublisher "SysAdminDoc"
 #define MyAppURL "https://github.com/SysAdminDoc/nomad-windows"
 #define MyAppSupportURL "https://github.com/SysAdminDoc/nomad-windows/issues"

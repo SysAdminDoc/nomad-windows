@@ -78,17 +78,19 @@ def install(callback=None):
         os.remove(zip_path)
 
         db = get_db()
-        db.execute('''
-            INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
-            VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
-        ''', (
-            SERVICE_ID, 'Qdrant (Vector DB)',
-            'Vector database for knowledge base semantic search and RAG',
-            'database', 'ai', QDRANT_PORT, install_dir, get_exe_path(),
-            f'http://localhost:{QDRANT_PORT}'
-        ))
-        db.commit()
-        db.close()
+        try:
+            db.execute('''
+                INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+            ''', (
+                SERVICE_ID, 'Qdrant (Vector DB)',
+                'Vector database for knowledge base semantic search and RAG',
+                'database', 'ai', QDRANT_PORT, install_dir, get_exe_path(),
+                f'http://localhost:{QDRANT_PORT}'
+            ))
+            db.commit()
+        finally:
+            db.close()
 
         _download_progress[SERVICE_ID] = {
             'percent': 100, 'status': 'complete', 'error': None,
@@ -132,9 +134,11 @@ def start():
     _processes[SERVICE_ID] = proc
 
     db = get_db()
-    db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
-    db.commit()
-    db.close()
+    try:
+        db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
+        db.commit()
+    finally:
+        db.close()
 
     for _ in range(20):
         if check_port(QDRANT_PORT):

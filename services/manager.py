@@ -259,9 +259,16 @@ def start_process(service_id: str, exe_path: str, args: list[str] = None,
     _processes[service_id] = proc
 
     db = get_db()
-    db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, service_id))
-    db.commit()
-    db.close()
+    try:
+        db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, service_id))
+        db.commit()
+    except Exception as e:
+        log.error(f'Failed to update DB for {service_id}: {e}')
+        proc.terminate()
+        _processes.pop(service_id, None)
+        raise
+    finally:
+        db.close()
 
     log_activity('service_started', service_id, f'PID {proc.pid}')
     return proc.pid
@@ -279,16 +286,18 @@ def stop_process(service_id: str) -> bool:
 
     # Also try by PID from DB
     db = get_db()
-    row = db.execute('SELECT pid FROM services WHERE id = ?', (service_id,)).fetchone()
-    if row and row['pid']:
-        try:
-            os.kill(row['pid'], signal.SIGTERM)
-        except (OSError, ProcessLookupError):
-            pass
+    try:
+        row = db.execute('SELECT pid FROM services WHERE id = ?', (service_id,)).fetchone()
+        if row and row['pid']:
+            try:
+                os.kill(row['pid'], signal.SIGTERM)
+            except (OSError, ProcessLookupError):
+                pass
 
-    db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (service_id,))
-    db.commit()
-    db.close()
+        db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (service_id,))
+        db.commit()
+    finally:
+        db.close()
 
     _processes.pop(service_id, None)
     log_activity('service_stopped', service_id)
@@ -302,8 +311,10 @@ def is_running(service_id: str) -> bool:
         return True
 
     db = get_db()
-    row = db.execute('SELECT pid FROM services WHERE id = ?', (service_id,)).fetchone()
-    db.close()
+    try:
+        row = db.execute('SELECT pid FROM services WHERE id = ?', (service_id,)).fetchone()
+    finally:
+        db.close()
 
     if row and row['pid']:
         if _pid_alive(row['pid']):
@@ -455,9 +466,11 @@ def uninstall_service(service_id: str) -> bool:
         shutil.rmtree(install_dir, ignore_errors=True)
 
     db = get_db()
-    db.execute('DELETE FROM services WHERE id = ?', (service_id,))
-    db.commit()
-    db.close()
+    try:
+        db.execute('DELETE FROM services WHERE id = ?', (service_id,))
+        db.commit()
+    finally:
+        db.close()
 
     _download_progress.pop(service_id, None)
     log_activity('service_uninstalled', service_id)

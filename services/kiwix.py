@@ -729,10 +729,14 @@ def download_zim(url: str, filename: str = None):
 
 def delete_zim(filename: str) -> bool:
     """Delete a ZIM file from the library."""
-    if '..' in filename or '/' in filename or '\\' in filename:
+    if not filename or '..' in filename or '/' in filename or '\\' in filename:
         log.warning(f'Rejected ZIM delete with unsafe filename: {filename}')
         return False
-    path = os.path.join(get_library_dir(), filename)
+    lib_dir = os.path.abspath(get_library_dir())
+    path = os.path.abspath(os.path.join(lib_dir, filename))
+    if not path.startswith(lib_dir + os.sep):
+        log.warning(f'Rejected ZIM delete with path traversal: {path}')
+        return False
     try:
         if os.path.isfile(path):
             os.remove(path)
@@ -770,9 +774,11 @@ def start():
     _processes[SERVICE_ID] = proc
 
     db = get_db()
-    db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
-    db.commit()
-    db.close()
+    try:
+        db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
+        db.commit()
+    finally:
+        db.close()
 
     for _ in range(15):
         if check_port(KIWIX_PORT):

@@ -202,9 +202,11 @@ def _adopt_running_instance():
         pid = int(result.stdout.strip()) if result.returncode == 0 and result.stdout.strip() else None
         if pid:
             db = get_db()
-            db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (pid, SERVICE_ID))
-            db.commit()
-            db.close()
+            try:
+                db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (pid, SERVICE_ID))
+                db.commit()
+            finally:
+                db.close()
             log.info(f'Adopted running Ollama instance (PID {pid})')
     except Exception as e:
         log.warning(f'Could not adopt Ollama PID: {e}')

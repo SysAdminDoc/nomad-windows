@@ -1,10 +1,10 @@
 """
 Curated survival & preparedness content catalog.
-135 YouTube channels across 20 categories, sourced from SURVIVAL-YOUTUBE-REFERENCE.md.
-37 individual tutorial videos + 12 audio training entries.
+200 YouTube channels across 24 categories.
+104+ individual tutorial videos + 55 audio training entries.
 """
 
-# ─── YouTube Channel Catalog (171 channels, 20 categories) ─────────────────
+# ─── YouTube Channel Catalog (200 channels, 24 categories) ─────────────────
 
 CHANNEL_CATALOG = [
     # Wilderness Survival & Bushcraft
@@ -78,6 +78,8 @@ CHANNEL_CATALOG = [
     {'name': 'Nutnfancy', 'focus': 'Gear reviews, tactical philosophy', 'url': 'https://www.youtube.com/@nutnfancy', 'category': 'Self-Defense & Security'},
     {'name': 'FieldCraft Survival', 'focus': 'Tactical skills, wet-weather fire', 'url': 'https://www.youtube.com/@FieldCraftSurvival', 'category': 'Self-Defense & Security'},
     {'name': 'Survival Gear', 'focus': 'Tactical & survival gear reviews (782K)', 'url': 'https://www.youtube.com/@SurvivalGear', 'category': 'Self-Defense & Security'},
+    {'name': 'Garand Thumb', 'focus': 'Military and civilian firearm testing, gear selection, tactics — honest no-BS reviews (2M+)', 'url': 'https://www.youtube.com/@GarandThumb', 'category': 'Self-Defense & Security'},
+    {'name': 'Tactical Rifleman', 'focus': 'Former Special Forces soldiers — real-world tactics, CQB, combat shooting, patrol techniques', 'url': 'https://www.youtube.com/@TacticalRifleman', 'category': 'Self-Defense & Security'},
     # Off-Grid Power & Energy
     {'name': 'DIY Solar Power (Will Prowse)', 'focus': 'DIY solar builds, gear reviews (1M+)', 'url': 'https://www.youtube.com/@WillProwse', 'category': 'Off-Grid Power & Energy'},
     {'name': 'Engineer775', 'focus': 'Off-grid systems, water, solar, heating', 'url': 'https://www.youtube.com/@Engineer775', 'category': 'Off-Grid Power & Energy'},
@@ -133,6 +135,7 @@ CHANNEL_CATALOG = [
     # Knot Tying, Rope Work & Cordage
     {'name': 'ITS Tactical', 'focus': 'Knot of the Week series', 'url': 'https://www.youtube.com/@ITSTactical', 'category': 'Knot Tying & Cordage'},
     {'name': 'TyingItAllTogether', 'focus': 'Fusion knots, advanced tying', 'url': 'https://www.youtube.com/@TyingItAllTogether', 'category': 'Knot Tying & Cordage'},
+    {'name': 'Animated Knots by Grog', 'focus': "World's most comprehensive knot reference — 200+ knots with step-by-step animation, boating/sailing/climbing/survival (1M+)", 'url': 'https://www.youtube.com/@AnimatedKnotsbyGrog', 'category': 'Knot Tying & Cordage'},
     # Wilderness & Outdoor Cooking
     {'name': 'Wilderness Cooking', 'focus': 'Outdoor recipes, survival cooking (4.2M)', 'url': 'https://www.youtube.com/@WildernessCooking', 'category': 'Wilderness Cooking'},
     {'name': 'Men With The Pot', 'focus': 'Open fire and campfire cooking (1.2M)', 'url': 'https://www.youtube.com/@MenWithThePot', 'category': 'Wilderness Cooking'},
@@ -162,6 +165,84 @@ CHANNEL_CATALOG = [
     # Civil Unrest & Societal Collapse
     {'name': 'Frontier Preppers', 'focus': '16 years in Cuba, firsthand tyranny', 'url': 'https://www.youtube.com/@FrontierPreppers', 'category': 'Civil Unrest & Collapse'},
     {'name': 'The Modern Survivalist', 'focus': "Lived through Argentina's collapse", 'url': 'https://www.youtube.com/@TheModernSurvivalist', 'category': 'Civil Unrest & Collapse'},
+    {'name': 'Selco SHTF School', 'focus': 'Survived 1-year siege in Balkan War — real collapse skills, not theory', 'url': 'https://www.youtube.com/@selcoSHTF', 'category': 'Civil Unrest & Collapse'},
+    {'name': 'Peak Prosperity (Chris Martenson)', 'focus': 'PhD biologist — economic collapse, energy depletion, systemic risk, resilience planning with data-driven analysis', 'url': 'https://www.youtube.com/@PeakProsperity', 'category': 'Civil Unrest & Collapse'},
+    # Additional Wilderness Survival & Bushcraft
+    {'name': 'Corporals Corner', 'focus': 'Military-style bushcraft and survival, detailed knife/gear reviews (800K+)', 'url': 'https://www.youtube.com/@CorporalsCorner', 'category': 'Wilderness Survival & Bushcraft'},
+    {'name': 'Reality Survival & Prepping', 'focus': "Dave Canterbury's Pathfinder School — fire, water, shelter, trapping", 'url': 'https://www.youtube.com/@RealitySurvival', 'category': 'Wilderness Survival & Bushcraft'},
+    {'name': 'Les Stroud (Survivorman)', 'focus': 'Real solo survival — no crew, no safety net (Survivorman)', 'url': 'https://www.youtube.com/@LesStroud', 'category': 'Wilderness Survival & Bushcraft'},
+    {'name': 'Brave Wilderness', 'focus': 'Wildlife education — bites, stings, venomous creatures, nature safety (18M+)', 'url': 'https://www.youtube.com/@BraveWilderness', 'category': 'Wilderness Survival & Bushcraft'},
+    {'name': 'Coalcracker Bushcraft', 'focus': 'Appalachian woodland survival, knives, fire craft, traditional crafts', 'url': 'https://www.youtube.com/@CoalcrackerBushcraft', 'category': 'Wilderness Survival & Bushcraft'},
+    {'name': 'Creek Stewart', 'focus': 'EJ Snyder and Creek Stewart survival school, TV host Fat Guys in the Woods', 'url': 'https://www.youtube.com/@CreekStewart', 'category': 'Wilderness Survival & Bushcraft'},
+    # Additional Wild Edible Plants & Foraging
+    {'name': 'Foraging Texas', 'focus': 'Texas and Southwest edible wild plants — detailed regional ID guides', 'url': 'https://www.youtube.com/@ForagingTexas', 'category': 'Wild Edible Plants & Foraging'},
+    {'name': 'WildFoodUK', 'focus': 'UK and European foraging — wild plants, mushrooms, seasonal harvest', 'url': 'https://www.youtube.com/@WildFoodUK', 'category': 'Wild Edible Plants & Foraging'},
+    # Additional Food Preservation & Storage
+    {"name": "Mary's Nest", 'focus': 'Traditional food skills — bone broth, fermenting, sourdough, pantry storage (800K+)', 'url': "https://www.youtube.com/@MarysNest", 'category': 'Food Preservation & Storage'},
+    # Additional Prepper & Emergency Prep
+    {'name': 'The Angry Prepper', 'focus': 'NYC urban prepper — tactical analysis, firearms, no-nonsense content (250K+)', 'url': 'https://www.youtube.com/@TheAngryPrepper', 'category': 'Prepper & Emergency Prep'},
+    {'name': 'Tin Hat Ranch', 'focus': 'Tech-savvy preparedness — comms, solar, privacy, Faraday cages (300K+)', 'url': 'https://www.youtube.com/@TinHatRanch', 'category': 'Prepper & Emergency Prep'},
+    {'name': 'Practical Preppers', 'focus': 'Scott Hunt — resilient EMP/grid-down homesteads, National Geographic featured', 'url': 'https://www.youtube.com/@PracticalPreppers', 'category': 'Prepper & Emergency Prep'},
+    {'name': 'The Prepared', 'focus': 'Evidence-based preparedness — gear reviews, bug-out bags, scenario planning', 'url': 'https://www.youtube.com/@theprepared', 'category': 'Prepper & Emergency Prep'},
+    # Additional Emergency Communications
+    {'name': 'Ham Radio Crash Course', 'focus': 'Best HAM radio exam prep — Technician through Extra class (600K+)', 'url': 'https://www.youtube.com/@HamRadioCrashCourse', 'category': 'Emergency Communications'},
+    {'name': 'Ham Radio 2.0', 'focus': 'Amateur radio operations, EMCOMM, APRS, digital modes', 'url': 'https://www.youtube.com/@HamRadio2', 'category': 'Emergency Communications'},
+    {'name': 'K8MRD Radio Activities', 'focus': 'Emergency communications, ARES/RACES, portable operations', 'url': 'https://www.youtube.com/@K8MRDRadioActivities', 'category': 'Emergency Communications'},
+    {'name': 'Andreas Spiess', 'focus': 'LoRa/LoRaWAN mesh networking, long-range IoT radio for off-grid sensor networks (800K+)', 'url': 'https://www.youtube.com/@AndreasSpiess', 'category': 'Emergency Communications'},
+    {'name': 'KM4ACK (Jason Oleham)', 'focus': 'Raspberry Pi for ham radio — JS8Call, Winlink, digital modes on low power (200K+)', 'url': 'https://www.youtube.com/@KM4ACK', 'category': 'Emergency Communications'},
+    {'name': 'OH8STN Julian OH8STN', 'focus': 'Off-grid solar-powered digital HF radio — JS8Call, Winlink from wilderness', 'url': 'https://www.youtube.com/@OH8STN', 'category': 'Emergency Communications'},
+    # Additional Off-Grid Power & Energy
+    {'name': 'Undecided with Matt Ferrell', 'focus': 'Renewable energy tech — solar, batteries, EVs reviewed objectively (1.5M+)', 'url': 'https://www.youtube.com/@UndecidedMF', 'category': 'Off-Grid Power & Energy'},
+    {'name': 'Hobotech', 'focus': 'Deep-dive power station/solar generator reviews and battery testing', 'url': 'https://www.youtube.com/@hobotech', 'category': 'Off-Grid Power & Energy'},
+    # Additional Natural Disaster Prep
+    {'name': 'USGS Hazards', 'focus': 'Official USGS — real-time earthquake, volcano, landslide, flood monitoring', 'url': 'https://www.youtube.com/@USGSvideo', 'category': 'Natural Disaster Prep'},
+    {'name': 'Storm Highway', 'focus': 'Severe weather photography, lightning, tornadoes, storm chasing safety', 'url': 'https://www.youtube.com/@stormhighway', 'category': 'Natural Disaster Prep'},
+    # Additional Nuclear & CBRN Survival
+    {'name': 'Nuclear Vault', 'focus': 'Archive of US government civil defense and nuclear preparedness films', 'url': 'https://www.youtube.com/@NuclearVault', 'category': 'Nuclear & CBRN Survival'},
+    # Additional Hunting, Trapping & Fishing
+    {'name': 'Shawn Woods', 'focus': 'Primitive trapping, flintknapping, ancient hunting technologies (600K+)', 'url': 'https://www.youtube.com/@ShawnWoods1', 'category': 'Hunting, Trapping & Fishing'},
+    {'name': 'MeatEater', 'focus': 'Steven Rinella — ethical hunting, butchering, wild game cookery (1M+)', 'url': 'https://www.youtube.com/@MeatEaterTV', 'category': 'Hunting, Trapping & Fishing'},
+    # Additional Blacksmithing & Tool Craft
+    {'name': 'Open Source Ecology', 'focus': 'Global Village Construction Set — 50 industrial machines buildable from scratch', 'url': 'https://www.youtube.com/@OpenSourceEcology', 'category': 'Blacksmithing & Tool Craft'},
+    {'name': 'Clickspring', 'focus': 'Precision machining and recreation of ancient tools and mechanisms', 'url': 'https://www.youtube.com/@Clickspring', 'category': 'Blacksmithing & Tool Craft'},
+    # Additional DIY Survival Goods
+    {'name': 'NileRed', 'focus': 'Chemistry from raw materials — synthesizing compounds, extracting elements', 'url': 'https://www.youtube.com/@NileRed', 'category': 'DIY Survival Goods'},
+    # Additional Livestock & Animal Husbandry
+    {'name': 'Becky Goats', 'focus': 'Dairy goat keeping, kidding, milk production, herd health', 'url': 'https://www.youtube.com/@BeckyGoats', 'category': 'Livestock & Animal Husbandry'},
+    # NEW CATEGORY: Permaculture & Regenerative Agriculture
+    {'name': 'Epic Gardening', 'focus': 'Modern intensive food growing — raised beds, hydroponics, seed saving (3M+)', 'url': 'https://www.youtube.com/@EpicGardening', 'category': 'Permaculture & Regenerative Agriculture'},
+    {'name': 'Geoff Lawton Online', 'focus': "World's leading permaculture educator — food forests, water harvesting", 'url': 'https://www.youtube.com/@GeoffLawtonOnline', 'category': 'Permaculture & Regenerative Agriculture'},
+    {'name': 'Paul Wheaton (Permies)', 'focus': 'Permaculture, natural building, rocket mass heaters (permies.com founder)', 'url': 'https://www.youtube.com/@paulwheaton1', 'category': 'Permaculture & Regenerative Agriculture'},
+    {'name': 'Happen Films', 'focus': 'Permaculture documentaries — food forests, regenerative farms worldwide (1M+)', 'url': 'https://www.youtube.com/@happenfilms', 'category': 'Permaculture & Regenerative Agriculture'},
+    {'name': 'Edible Acres', 'focus': 'Food forest establishment, perennial vegetables, resilient growing systems', 'url': 'https://www.youtube.com/@EdibleAcres', 'category': 'Permaculture & Regenerative Agriculture'},
+    {'name': 'Practical Engineering', 'focus': 'Civil and water engineering explained — dams, filtration, infrastructure (5M+)', 'url': 'https://www.youtube.com/@PracticalEngineeringChannel', 'category': 'Permaculture & Regenerative Agriculture'},
+    {'name': 'The Urban Farmer (Curtis Stone)', 'focus': 'High-density market gardening — quarter-acre food production, permanent bed systems, direct sales (600K+)', 'url': 'https://www.youtube.com/@theurbanfarmer', 'category': 'Permaculture & Regenerative Agriculture'},
+    # NEW CATEGORY: Traditional & Primitive Skills
+    {'name': 'Townsends', 'focus': '18th century cooking, crafts, and daily life — historical self-sufficiency (2M+)', 'url': 'https://www.youtube.com/@Townsends', 'category': 'Traditional & Primitive Skills'},
+    {'name': 'Far North Bushcraft And Survival', 'focus': 'Sub-arctic traditional skills, spruce root baskets, hide tanning', 'url': 'https://www.youtube.com/@FarNorthBushcraftAndSurvival', 'category': 'Traditional & Primitive Skills'},
+    {'name': 'Stone Age Man', 'focus': 'Primitive stone tools, flintknapping, bow drill fire from stone-age materials', 'url': 'https://www.youtube.com/@StoneAgeMan', 'category': 'Traditional & Primitive Skills'},
+    {'name': 'Lynx Vilden', 'focus': 'Stone-age living — hide tanning, primitive fire, wild plant use', 'url': 'https://www.youtube.com/@LynxVilden', 'category': 'Traditional & Primitive Skills'},
+    {'name': 'Forgotten Weapons', 'focus': 'Ian McCollum — history and mechanics of rare/obsolete firearms — understand every weapon you might encounter (3M+)', 'url': 'https://www.youtube.com/@ForgottenWeapons', 'category': 'Traditional & Primitive Skills'},
+    {'name': 'Jocko Podcast', 'focus': 'Navy SEAL leadership, discipline, combat mindset, resilience under pressure (1.5M+)', 'url': 'https://www.youtube.com/@JockoPodcast', 'category': 'Prepper & Emergency Prep'},
+    {'name': 'Mark Divine (SEALFIT)', 'focus': 'Unbeatable Mind — combat veteran mental toughness, tactical breathing, stress inoculation', 'url': 'https://www.youtube.com/@MarkDivine', 'category': 'Prepper & Emergency Prep'},
+    # NEW CATEGORY: Meteorology & Weather
+    {'name': 'Ryan Hall Y\'all', 'focus': 'Storm chasing and severe weather education — tornado/hurricane forecasting explained for the public (1.2M+)', 'url': 'https://www.youtube.com/@RyanHallYall', 'category': 'Meteorology & Weather'},
+    {'name': 'Tropical Tidbits', 'focus': 'Best hurricane and severe weather model analysis — spaghetti plots, ensemble forecasting explained for laypeople (400K+)', 'url': 'https://www.youtube.com/@tropicaltidbits', 'category': 'Meteorology & Weather'},
+    {'name': 'The COMET Program', 'focus': 'UCAR/NOAA official meteorology training — atmospheric dynamics, radar interpretation, forecasting theory (100K+)', 'url': 'https://www.youtube.com/@MetEd_COMET', 'category': 'Meteorology & Weather'},
+    {'name': 'NWS Headquarters', 'focus': 'Official NOAA National Weather Service — severe weather warnings, preparedness, weather safety education', 'url': 'https://www.youtube.com/@NWSHeadquarters', 'category': 'Meteorology & Weather'},
+    {'name': 'Cliff Mass Weather', 'focus': 'Pacific NW weather expert — atmospheric rivers, orographic rain, wildfire weather, regional climate patterns', 'url': 'https://www.youtube.com/@CliffMassWeather', 'category': 'Meteorology & Weather'},
+    {'name': 'EFactor Weather', 'focus': 'Independent severe weather forecasting — Midwest tornadoes, derechos, winter storms with model analysis', 'url': 'https://www.youtube.com/@EFactorWeather', 'category': 'Meteorology & Weather'},
+    {'name': 'WeatherNation', 'focus': 'Live severe weather coverage — tornadoes, hurricanes, blizzards without filler or hype (500K+)', 'url': 'https://www.youtube.com/@WeatherNation', 'category': 'Meteorology & Weather'},
+    {'name': 'Reed Timmer', 'focus': 'Extreme meteorologist — intercepts F5 tornadoes, explains atmospheric science of severe weather (500K+)', 'url': 'https://www.youtube.com/@ReedTimmer', 'category': 'Meteorology & Weather'},
+    {'name': 'Meteo 365', 'focus': 'Long-range forecast discussions, El Niño/La Niña impacts, climate pattern analysis for seasonal planning', 'url': 'https://www.youtube.com/@Meteo365', 'category': 'Meteorology & Weather'},
+    {'name': 'iWeatherNet', 'focus': 'Regional US weather forecasting — model interpretation, winter storm coverage, severe weather outlooks', 'url': 'https://www.youtube.com/@iWeatherNet', 'category': 'Meteorology & Weather'},
+    # NEW CATEGORY: Geospatial & Mapping
+    {'name': 'USGS (US Geological Survey)', 'focus': 'Official USGS — topographic maps, earthquake/volcano hazards, water resources, geologic mapping (300K+)', 'url': 'https://www.youtube.com/@USGSgov', 'category': 'Geospatial & Mapping'},
+    {'name': 'GIS Geography', 'focus': 'GIS tutorials — QGIS, cartography, remote sensing, spatial analysis for creating offline maps (200K+)', 'url': 'https://www.youtube.com/@GISGeography', 'category': 'Geospatial & Mapping'},
+    {'name': 'NOAA Satellites and Information', 'focus': 'Official NOAA — satellite imagery, ocean monitoring, remote sensing, climate observation systems', 'url': 'https://www.youtube.com/@NOAASatellites', 'category': 'Geospatial & Mapping'},
+    {'name': 'geodesign', 'focus': 'QGIS and open-source GIS tutorials — processing elevation data, creating offline maps, terrain analysis', 'url': 'https://www.youtube.com/@geodesignchannel', 'category': 'Geospatial & Mapping'},
+    {'name': 'MapScaping', 'focus': 'Geospatial industry interviews — satellite data, terrain modeling, open data sources for offline navigation', 'url': 'https://www.youtube.com/@MapScaping', 'category': 'Geospatial & Mapping'},
+    {'name': 'OpenStreetMap (OSMF)', 'focus': 'Official OSM Foundation — how to download, use, and contribute to the world\'s best offline map dataset', 'url': 'https://www.youtube.com/@openstreetmapfoundation', 'category': 'Geospatial & Mapping'},
 ]
 
 # Category list with counts for UI grouping

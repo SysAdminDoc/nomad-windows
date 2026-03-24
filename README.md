@@ -1,12 +1,12 @@
 <div align="center">
 <img src="project_nomad_logo.png" width="200" height="200"/>
 
-# Project N.O.M.A.D. for Windows v1.0.0
+# Project N.O.M.A.D. for Windows v1.7.0
 ### The Most Complete Offline Survival Command Center Available
 
 **Free. Open Source. No Internet Required After Setup.**
 
-Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ downloadable datasets, situation-aware AI with proactive alerts, tactical operations center, nuclear effects simulator, medical module, food production tracking, multi-node federation, power management, security cameras, and a premium dark dashboard with night vision mode.
+Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ downloadable datasets, situation-aware AI with proactive alerts, tactical operations center, nuclear effects simulator, medical module, food production tracking, multi-node federation, power management, security cameras, built-in BitTorrent client, 200 survival channel browser, curated content catalogs (123 books, 114 videos, 74 audio, 131 torrents), and a premium dark dashboard with night vision mode.
 
 [![Release](https://img.shields.io/github/v/release/SysAdminDoc/nomad-windows?include_prereleases&label=Download&color=blue)](https://github.com/SysAdminDoc/nomad-windows/releases/latest)
 [![Website](https://img.shields.io/badge/Website-projectnomad.us-blue)](https://www.projectnomad.us)
@@ -16,7 +16,7 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 
 ---
 
-> Competitors charge $280+ for a USB stick with curated content (Prepper Disk, Prep Drive). N.O.M.A.D. for Windows does everything they do and 10x more — for free. 50+ map sources, 10 interactive calculators, 25+ reference cards, 17 emergency procedures, 10 interactive decision guides, 15 checklist templates, 4 training scenarios, NukeMap v3.2.0 nuclear simulator, medical module with drug interaction checking, food production tracking, multi-node sync, power management, security cameras, AI document intelligence, a 38-section built-in user guide, and printable emergency reference sheets — the most comprehensive offline prepper command center ever built into a single application.
+> Competitors charge $280+ for a USB stick with curated content (Prepper Disk, Prep Drive). N.O.M.A.D. for Windows does everything they do and 10x more — for free. 50+ map sources, 41 interactive calculators, 37+ reference cards, 17 emergency procedures, 21 interactive decision guides, 15 checklist templates, 4 training scenarios, NukeMap v3.2.0 nuclear simulator, medical module with drug interaction checking, food production tracking, multi-node sync, power management, security cameras, AI document intelligence, built-in BitTorrent client, 200 survival channel browser, curated content catalogs (123 books, 114 videos, 74 audio, 131 torrents), a 38-section built-in user guide, and printable emergency reference sheets — the most comprehensive offline prepper command center ever built into a single application.
 
 **[Download Portable .exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD.exe)** — single file, no install needed, run from anywhere (USB, desktop, etc.)
 
@@ -25,23 +25,24 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 ## What Makes This Different
 
 - **Proactive AI Alerts** — A background engine monitors your inventory burn rates, expiring items, weather pressure drops, and incident clusters every 5 minutes. It surfaces actionable alerts automatically and generates AI situation summaries.
-- **Situation-Aware AI** — The AI knows your actual inventory levels, burn rates, recent incidents, weather, power status, patient conditions, and garden data. It gives advice based on YOUR specific situation with 7 context sources.
-- **Interactive Decision Guides** — 10 step-by-step branching guides with 200+ decision nodes that ask about YOUR water source, wound type, equipment, power situation, or environment and give the exact procedure. Works fully offline without AI.
+- **Situation-Aware AI** — The AI knows your actual inventory levels, burn rates, recent incidents, contacts, threat levels, weather, power status, patient conditions, and garden data. It gives advice based on YOUR specific situation with 7 context sources.
+- **Interactive Decision Guides** — 21 step-by-step branching guides with 300+ decision nodes covering water purification, wound assessment, fire starting, shelter, radio, food preservation, triage, power outage, vehicle emergency, bug-out decisions, antibiotic selection, hypothermia, chest trauma, envenomation, missing person search, wound infection, anaphylaxis, electrical hazard, and drowning. Works fully offline without AI.
 - **Medical Module** — Patient profiles with vitals tracking, wound documentation, 26-pair drug interaction checker, and printable patient care cards. Field hospital capability in software.
 - **Training Scenarios** — Multi-phase survival simulations with AI-generated complications based on your real inventory. Scored after-action reviews track improvement over time.
 - **Food Production** — Garden plots, seed inventory with auto-calculated viability (25 species), harvest logging that feeds directly into supply tracking, livestock health records, USDA hardiness zone lookup.
 - **Multi-Node Federation** — Sync data between N.O.M.A.D. installations on your LAN. UDP peer discovery, one-click push/pull, full sync history.
 - **Complete Command Center** — Full tactical operations with SITREP generator, threat assessment matrix, comms log, incident timeline, daily journal, emergency broadcast, security cameras, power management, and more.
 - **Nuclear Effects Simulator** — Bundled NukeMap v3.2.0 with 418 verified targets, 708 warheads, 7 WW3 scenarios, weapon encyclopedia, and HEMP burst mode.
+- **Media Library** — 200 curated survival channels across 24 categories, video/audio/book library with downloads, built-in BitTorrent client, and curated content catalogs (123 reference books, 114 tutorial videos, 74 training audio, 131 torrent collections).
 - **Night Vision Mode** — Red-on-black theme that preserves scotopic vision during darkness operations. Auto-switches at sunset.
 - **Printable Emergency Reports** — Inventory reports, contact directories, patient care cards, and a comprehensive emergency reference sheet aggregating all critical data.
 - **Getting Started Wizard** — New user onboarding checklist guides you through initial setup step by step.
-- **38-Section User Guide** — Comprehensive built-in reference manual with contextual help icons (?) on every major feature. Covers setup, all 19 sub-tabs, AI model selection, inventory best practices, calculators, medical/power/security guides, troubleshooting, FAQ, and glossary.
+- **38-Section User Guide** — Comprehensive built-in reference manual with contextual help icons (?) on every major feature. Covers setup, all tabs, all 25 sub-tabs, AI model selection, inventory best practices, calculators, medical/power/security guides, troubleshooting, FAQ, and glossary.
 - **Readiness Score** — Cross-module A-F grade (0-100) with 7 clickable categories (water, food, medical, security, communications, power, planning). Click any category to jump directly to that section.
 - **Status Strip** — Persistent bar showing running services, inventory count, contacts, active alerts, and current date/time at a glance.
 - **58 Quick-Add Supplies** — One-click templates for common inventory items across 8 categories (water, food, medical, power, fuel, hygiene, tools, communications) with recommended starting quantities.
 
-## 9 Main Tabs
+## 10 Main Tabs
 
 | Tab | What It Does |
 |-----|-------------|
@@ -50,9 +51,10 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 | **Library** | ZIM content library (100+ datasets) with bulk download (Essential/Standard/Everything) + PDF viewer |
 | **Maps** | Offline maps with 10 tools: waypoints, zones, property boundary, print, bookmark, bearing, measure, GPX export |
 | **Notes** | Markdown notes with tags, pinning, live preview, per-note and bulk export |
+| **Media** | 200 survival channels, video/audio/book library, curated catalogs, downloads, built-in BitTorrent client |
 | **Benchmark** | CPU, memory, disk, AI inference scoring (NOMAD Score 0-100) with trend deltas |
-| **Tools** | NukeMap, Meshtastic, barcode scanner, video library, guided drills, immersive training scenarios |
-| **Preparedness** | 19 sub-tabs of survival tools (see below) |
+| **Tools** | NukeMap, Meshtastic, barcode scanner, guided drills, immersive training scenarios |
+| **Preparedness** | 25 sub-tabs of survival tools (see below) |
 | **Settings** | System monitoring, AI model management, multi-system sync, preferences, backup/restore, data summary |
 
 ## 6 Managed Services
@@ -66,29 +68,45 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 | **Qdrant** | Vector database for document upload and semantic search (RAG) | 6333 |
 | **Stirling PDF** | Merge, split, compress, convert, OCR — 50+ PDF tools | 8443 |
 
-## 19 Preparedness Sub-Tabs (ordered by emergency priority)
+## Media Tab
 
 | Sub-Tab | Features |
 |---------|---------|
-| **Inventory** | Supply tracking with quantities, expiration alerts, daily usage projections, Days Left, shopping list generator, quick-add 58 common items, one-click Daily Consume, +/- quantity buttons, CSV import/export. Harvests auto-feed in from Garden. |
+| **Browse Channels** | 200 curated survival channels across 24 categories. Auto-hides dead channels. Subscriptions, video browsing, search with pagination. |
+| **My Videos** | Upload or download instructional videos. Thumbnail cards, watch + download player, 9 categories. Thumbnails + subtitles auto-downloaded. |
+| **My Audio** | Audio catalog with favorites, batch operations, sorting. MP3 extraction via FFmpeg. |
+| **My Books** | EPUB reader (epub.js) + PDF viewer (WebView2 built-in). Book catalog from Internet Archive. |
+| **Torrent Library** | Built-in BitTorrent client (libtorrent) with live download progress UI. 131 curated torrent collections across 10 categories (survival, maps, weather, radio, textbooks, medical, farming, videos, software, encyclopedias). |
+
+## 25 Preparedness Sub-Tabs (ordered by emergency priority)
+
+| Sub-Tab | Features |
+|---------|---------|
+| **Inventory** | Supply tracking with quantities, expiration alerts, daily usage projections, Days Left, shopping list generator, quick-add 58 common items, one-click Daily Consume, +/- quantity buttons, barcode + cost fields, total value footer, CSV import/export. Harvests auto-feed in from Garden. |
 | **Contacts** | Emergency directory with callsigns, roles, skills, blood types, rally points, medical notes. Skills matrix with gap analysis. CSV import/export. Quick-add 7 standard emergency contacts. |
 | **Checklists** | 15 templates (72hr kit, bug-out bag, vehicle kit, winter storm, CBRN shelter, infant kit, and more). JSON import/export, custom checklists. |
-| **Medical** | Patient profiles linked to contacts. Vital signs tracking (BP, pulse, resp, temp, SpO2, pain, GCS) with color-coded abnormals. Wound documentation (8 types, 4 severities). 26-pair drug interaction checker. Printable patient care cards. |
+| **Medical** | Patient profiles linked to contacts. Vital signs tracking (BP, pulse, resp, temp, SpO2, pain, GCS) with color-coded abnormals. Wound documentation (8 types, 4 severities). 26-pair drug interaction checker. Medical supply status panel (expired/expiring/low-stock grouping). Printable patient care cards. |
 | **Incidents** | Chronological event timeline with severity levels, category filtering, cluster detection. |
 | **Family Plan** | FEMA-style emergency plan: meeting locations, 3 evacuation routes, household members (medical info, blood types), insurance/utility info. Auto-saves as you type. |
 | **Security** | IP camera feeds (MJPEG/snapshot/HLS), access logging (entry/exit/patrol), security dashboard with threat level. Camera URL examples for Reolink, Amcrest, Wyze, ONVIF. |
 | **Power** | Device registry (solar/battery/controller/inverter/generator). Power log (voltage, SOC, watts). Autonomy projection dashboard with color-coded gauges. |
 | **Garden** | Garden plots, seed inventory with auto-viability (25 species), harvest log auto-creates inventory items, livestock records (10 species), USDA hardiness zone lookup. |
 | **Weather** | Barometric pressure journal with automated trend analysis and storm prediction. |
-| **Guides** | 10 interactive decision trees with 200+ nodes. Step-by-step branching Q&A. "Ask AI" at any step. Printable procedure cards. Works fully offline. |
-| **Calculators** | 10+ calculators: water, food storage, generator fuel, rainwater, radio range, medication dosage, solar sizing, BOB weight, resource planning, travel time, battery life, bleach dosing. |
+| **Guides** | 21 interactive decision trees with 300+ nodes. Step-by-step branching Q&A. "Ask AI" at any step. Printable procedure cards. Works fully offline. |
+| **Calculators** | 41 calculators: water needs, food storage, generator runtime, rainwater, radio range, medication dosage, solar sizing, BOB weight, resource planning, travel time, battery life, bleach dosing, ballistics, compost, pasture rotation, natural building, fallout, canning, burn area, IV drip, KI dosage, dead reckoning, shelter protection factor, crop calories, NVIS, weight-based dosing, radiation dose accumulator, dehydration assessment, vital signs assessment, hypothermia assessment, oral rehydration therapy, antibiotic inventory planner, and more. |
 | **Procedures** | 17 emergency procedures: CPR, bleeding, water purification, shelter, fire, choking, hypothermia, wound closure, burns, fractures, snake bite, anaphylaxis, and more. Printable wallet card. |
-| **Radio** | Complete frequency table: NOAA, FRS (22ch), GMRS, MURS, CB, HAM (2m/70cm/HF), shortwave. |
-| **Quick Ref** | 25+ reference cards: NATO alphabet, Morse code trainer, unit converter, triage, companion planting, wild edibles, EMP guide, OPSEC, and more. |
+| **Radio** | Complete frequency table: NOAA, FRS (22ch), GMRS, MURS, CB, HAM (2m/70cm/HF), shortwave. CHIRP export. |
+| **Quick Ref** | 37+ reference cards: NATO phonetic alphabet + Q codes + APCO 10-codes, Morse code trainer, unit converter, triage, companion planting, wild edibles, EMP guide, OPSEC, game processing, ground-to-air signals, improvised shelter, vital signs by age, drug interactions & contraindications, TCCC/MARCH protocol, blood type compatibility, and more. |
 | **Signals** | Ground-to-air emergency signals, sound signal patterns, smoke signal guide. |
-| **Command Post** | Situation Report (SITREP) generator, message cipher, infrastructure tracker, vehicle readiness, threat assessment matrix, after-action review, emergency broadcast, home security assessment. |
+| **Command Post** | Situation Report (SITREP) generator, message cipher, infrastructure tracker, vehicle readiness, threat assessment matrix, after-action review, emergency broadcast, home security assessment, ICS 309/214 forms. |
 | **Journal** | Daily journal entries with mood tracking (5 moods), tag system, chronological timeline, and full export. |
 | **Secure Vault** | AES-256-GCM encrypted storage for passwords, coordinates, sensitive documents. Password generator. |
+| **Skills** | 60 survival skills across 10 categories with proficiency tracking and training recommendations. |
+| **Ammo** | Ammunition inventory with caliber-grouped summary cards. |
+| **Community** | Community resource registry with trust levels and skills/equipment tracking. |
+| **Radiation** | Nuclear dose rate log with cumulative rem tracking and exposure alerts. |
+| **Fuel** | Fuel storage tracking with type-grouped totals and expiry monitoring. |
+| **Equipment** | Equipment maintenance log with service scheduling and status tracking. |
 
 ## AI Features
 
@@ -101,6 +119,7 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 - **RAG pipeline**: Upload documents, auto-embed via nomic-embed-text, semantic search injected into chat
 - **Download All models**: One-click bulk download with sequential queue and progress tracking
 - **4 AI chat starters**: Quick-start conversations for common scenarios
+- **Pre-warmed model**: Ollama model loaded on startup so first chat responds immediately
 
 ## Immersive Training Scenarios
 
@@ -143,7 +162,6 @@ Sync data between multiple N.O.M.A.D. installations:
 - **Immersive Training**: 4 multi-phase scenarios with AI complications and scored reviews
 - **Meshtastic Integration**: Connect LoRa mesh radio devices via Web Serial API
 - **Barcode Scanner**: Camera-based barcode scanning, auto-add to inventory
-- **Offline Video Library**: Upload, categorize (9 categories), and play instructional videos
 - **Guided Emergency Drills**: 6 timed drill scenarios with step checklists and persistent history
 
 ## Content Library
@@ -207,7 +225,7 @@ pyinstaller build.spec
 |-----------|-----------|
 | Window | pywebview + WebView2 |
 | Backend | Flask (0.0.0.0 for LAN access) |
-| Database | SQLite (32 tables, WAL mode, auto-backups, performance indexes) |
+| Database | SQLite (43 tables, WAL mode, auto-backups, performance indexes) |
 | AI | Ollama native + GPU auto-config (NVIDIA/AMD/Intel) |
 | Alerts | Background engine (5-min cycle) + browser notifications |
 | Encryption | AES-256-GCM via Web Crypto API |
@@ -218,6 +236,7 @@ pyinstaller build.spec
 | Power | Device registry, logging, autonomy projections |
 | Security | Camera feeds, access logging, threat dashboard |
 | Documents | AI classification, summarization, entity extraction |
+| Media | yt-dlp + FFmpeg + libtorrent (auto-installed) |
 | Tray | pystray (background operation) |
 | Build | PyInstaller (single exe) + Inno Setup (installer) |
 
@@ -226,7 +245,7 @@ pyinstaller build.spec
 All data stored in `%APPDATA%\ProjectNOMAD\`:
 
 ```
-nomad.db           # SQLite (32 tables)
+nomad.db           # SQLite (43 tables, WAL mode)
 logs/              # Application logs
 backups/           # Automatic DB backups (5 rotation)
 services/          # Service binaries + data
@@ -235,6 +254,8 @@ services/          # Service binaries + data
   pmtiles/         # PMTiles CLI tool
 maps/              # Downloaded map data
 videos/            # Offline video library
+audio/             # Audio files
+books/             # EPUB/PDF library
 library/           # PDF/ePub documents
 kb_uploads/        # Knowledge base documents
 ```
@@ -259,10 +280,10 @@ Both versions share the same core philosophy: an offline-first, self-contained k
 
 | Feature | Description |
 |---------|-------------|
-| **19 Preparedness Sub-Tabs** | Inventory, contacts, checklists, medical, incidents, family plan, security, power, garden, weather, guides, calculators, procedures, radio ref, quick ref, signals, command post, journal, secure vault |
+| **25 Preparedness Sub-Tabs** | Inventory, contacts, checklists, medical, incidents, family plan, security, power, garden, weather, guides, calculators, procedures, radio ref, quick ref, signals, command post, journal, secure vault, skills, ammo, community, radiation, fuel, equipment |
 | **Proactive AI Alerts** | Background engine monitors burn rates, expiring items, pressure drops, incident clusters every 5 minutes |
 | **Readiness Score** | Cross-module A-F grade (0-100) with 7 categories: water, food, medical, security, comms, power, planning |
-| **10 Interactive Decision Guides** | 200+ node step-by-step trees for water, wounds, fire, shelter, radio, food, triage, power outage, vehicle emergency, bug-out decisions |
+| **21 Interactive Decision Guides** | 300+ node step-by-step trees for water, wounds, fire, shelter, radio, food, triage, power outage, vehicle emergency, bug-out decisions, antibiotic selection, water source assessment, food safety assessment, hypothermia, chest trauma, envenomation, missing person, wound infection, anaphylaxis, electrical hazard, drowning |
 | **Medical Module** | Patient records, vitals tracking (BP/pulse/resp/temp/SpO2/pain/GCS), wound log, 26-pair drug interaction checker |
 | **4 Training Scenarios** | Multi-phase simulations (Grid Down, Medical Crisis, Evacuation, Winter Storm) with AI complications and scored reviews |
 | **Food Production** | Garden plots, seed viability tracking (25 species), harvest-to-inventory automation, livestock health records |
@@ -270,8 +291,11 @@ Both versions share the same core philosophy: an offline-first, self-contained k
 | **Security Module** | IP camera viewer (MJPEG/snapshot/HLS), access logging, threat dashboard |
 | **Multi-Node Sync** | LAN auto-discovery + USB offline transfer between N.O.M.A.D. installations |
 | **NukeMap v3.2.0** | Nuclear effects simulator with 418 targets, 708 warheads, 7 WW3 scenarios |
+| **Media Library** | 200 survival channels across 24 categories, video/audio/book library, curated catalogs (123 books, 114 videos, 74 audio), downloads via yt-dlp |
+| **BitTorrent Client** | Built-in libtorrent client with 131 curated torrent collections across 10 categories |
 | **AI Document Intelligence** | Auto-classify, summarize, extract entities, cross-reference contacts |
 | **Encrypted Vault** | AES-256-GCM encrypted storage for passwords, coordinates, sensitive documents |
+| **41 Calculators** | Water needs, food, solar, ballistics, fallout, canning, IV drip, KI dosage, dead reckoning, shelter PF, crop calories, NVIS, radiation dose, dehydration, vital signs, hypothermia, ORT, antibiotic planner, and more |
 | **Daily Inventory Consume** | One-click daily supply tracking with burn rate projections |
 | **Printable Reports** | Inventory, contacts, patient cards, emergency reference sheet, wallet cards |
 | **38-Section User Guide** | Comprehensive built-in reference manual with contextual help icons throughout the app |
@@ -279,7 +303,13 @@ Both versions share the same core philosophy: an offline-first, self-contained k
 | **Situation-Aware AI** | 7 data sources injected into AI context (inventory, weather, alerts, power, patients, garden, contacts) |
 | **15 Checklist Templates** | 72hr kit, bug-out bag, vehicle kit, winter storm, CBRN shelter, infant kit, and more |
 | **17 Emergency Procedures** | CPR, bleeding, burns, fractures, choking, hypothermia, snake bite, and more |
-| **25+ Quick Reference Cards** | NATO alphabet, Morse code, knots, triage, companion planting, wild edibles, and more |
+| **37+ Quick Reference Cards** | NATO alphabet + Q codes + APCO 10-codes, Morse code, knots, triage, companion planting, wild edibles, game processing, vital signs by age, TCCC/MARCH, blood type compatibility, drug interactions, and more |
+| **Skills Tracking** | 60 survival skills across 10 categories with proficiency levels |
+| **Ammo Inventory** | Caliber-grouped ammunition tracking with summary cards |
+| **Radiation Monitoring** | Nuclear dose rate logging with cumulative rem tracking |
+| **Fuel Management** | Fuel storage tracking with type-grouped totals and expiry alerts |
+| **Equipment Maintenance** | Service scheduling and status tracking for all gear |
+| **Community Resources** | Resource registry with trust levels and capability tracking |
 | **Portable Executable** | Single .exe file runs from USB — no installation needed |
 
 ### Platform Differences

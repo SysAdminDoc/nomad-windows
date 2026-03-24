@@ -12,6 +12,7 @@ import time
 import base64
 import threading
 import logging
+from typing import Optional
 
 log = logging.getLogger('nomad.torrent')
 
@@ -26,7 +27,7 @@ except ImportError:
                 'Install with: pip install python-libtorrent')
 
 
-def _extract_hash_from_magnet(magnet: str) -> str | None:
+def _extract_hash_from_magnet(magnet: str) -> Optional[str]:
     """Extract the info-hash hex string from a magnet URI."""
     # Standard hex form
     m = re.search(r'xt=urn:btih:([a-fA-F0-9]{40})', magnet)

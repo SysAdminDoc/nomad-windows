@@ -8201,7 +8201,9 @@ async function doUnifiedSearch() {
   const el = document.getElementById('search-results');
   if (!q) { el.classList.remove('active'); return; }
   try {
-    const r = await (await fetch(`/api/search/all?q=${encodeURIComponent(q)}`)).json();
+    const resp = await fetch(`/api/search/all?q=${encodeURIComponent(q)}`);
+    if (!resp.ok) { el.classList.remove('active'); return; }
+    const r = await resp.json();
     const items = [
       ...r.conversations.map(c => ({...c, type: 'conversation'})),
       ...r.notes.map(n => ({...n, type: 'note'})),
@@ -8222,7 +8224,7 @@ async function doUnifiedSearch() {
       for (const [type, list] of Object.entries(groups)) {
         html += `<div style="padding:4px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);background:var(--surface2);">${typeIcons[type]||''} ${typeLabels[type]||type} (${list.length})</div>`;
         html += list.map(i => `
-          <div class="search-result-item" onmousedown="event.preventDefault()" onclick="openSearchResult('${i.type}',${i.id})">
+          <div class="search-result-item" onmousedown="event.preventDefault()" onclick="openSearchResult('${escapeAttr(i.type)}',${parseInt(i.id)||0})">
             <span>${highlightMatch(i.title, q)}</span>
           </div>
         `).join('');
@@ -8534,7 +8536,7 @@ function switchPrepSub(sub) {
   if (sub === 'incidents') loadIncidents();
   if (sub === 'inventory') { loadInventory(); loadBurnRate(); loadInvViz(); }
   if (sub === 'contacts') { loadContacts(); loadSkillsMatrix(); }
-  if (sub === 'calculators') { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); calcHorizon(); updateCalTracker(); calcPlan(); calcFoodStorage(); calcGenFuel(); calcRainwater(); calcRadioRange(); calcMedDose(); calcSolarSize(); renderBOBChecklist(); calcBOB(); calcHypothermia(); calcORT(); calcAbxInventory(); calcRadDose(); calcWaterNeeds(); calcGenerator(); calcDehydration(); calcVitals(); }
+  if (sub === 'calculators') { try { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); calcHorizon(); updateCalTracker(); calcPlan(); calcFoodStorage(); calcGenFuel(); calcRainwater(); calcRadioRange(); calcMedDose(); calcSolarSize(); renderBOBChecklist(); calcBOB(); calcHypothermia(); calcORT(); calcAbxInventory(); calcRadDose(); calcWaterNeeds(); calcGenerator(); calcDehydration(); calcVitals(); } catch(e) { console.error('Calculator init error:', e); } }
   if (sub === 'vault' && _vaultKey) loadVaultList();
   if (sub === 'weather') loadWeather();
   if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
@@ -9451,7 +9453,9 @@ function toggleTimerPanel() {
 
 async function loadTimers() {
   try {
-    const timers = await (await fetch('/api/timers')).json();
+    const resp = await fetch('/api/timers');
+    if (!resp.ok) return;
+    const timers = await resp.json();
     const el = document.getElementById('timer-list');
     if (!timers.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-muted);padding:20px;font-size:11px;">No active timers. Start one above.</div>'; return; }
     el.innerHTML = timers.map(t => {

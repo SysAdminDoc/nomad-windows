@@ -40,7 +40,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '2.0.0'
+VERSION = '2.1.0'
 
 
 def set_version(v):
@@ -6099,20 +6099,25 @@ If no entities found, respond with: []"""
         data = request.get_json() or {}
         if not data.get('crop'):
             return jsonify({'error': 'Crop name required'}), 400
+        try:
+            qty = max(0, float(data.get('quantity', 0)))
+        except (ValueError, TypeError):
+            qty = 0
         db = get_db()
-        db.execute('INSERT INTO harvest_log (crop, quantity, unit, plot_id, notes) VALUES (?,?,?,?,?)',
-                   (data['crop'], data.get('quantity', 0), data.get('unit', 'lbs'),
-                    data.get('plot_id'), data.get('notes', '')))
-        # Auto-add to inventory
-        existing = db.execute('SELECT id, quantity FROM inventory WHERE name = ? AND category = ?', (data['crop'], 'food')).fetchone()
-        if existing:
-            db.execute('UPDATE inventory SET quantity = quantity + ? WHERE id = ?', (data.get('quantity', 0), existing['id']))
-        else:
-            db.execute('INSERT INTO inventory (name, category, quantity, unit) VALUES (?, ?, ?, ?)',
-                       (data['crop'], 'food', data.get('quantity', 0), data.get('unit', 'lbs')))
-        db.commit()
-        db.close()
-        log_activity('harvest_logged', detail=f'{data.get("quantity", 0)} {data.get("unit", "lbs")} of {data["crop"]}')
+        try:
+            db.execute('INSERT INTO harvest_log (crop, quantity, unit, plot_id, notes) VALUES (?,?,?,?,?)',
+                       (data['crop'], qty, data.get('unit', 'lbs'),
+                        data.get('plot_id'), data.get('notes', '')))
+            existing = db.execute('SELECT id, quantity FROM inventory WHERE name = ? AND category = ?', (data['crop'], 'food')).fetchone()
+            if existing:
+                db.execute('UPDATE inventory SET quantity = quantity + ? WHERE id = ?', (qty, existing['id']))
+            else:
+                db.execute('INSERT INTO inventory (name, category, quantity, unit) VALUES (?, ?, ?, ?)',
+                           (data['crop'], 'food', qty, data.get('unit', 'lbs')))
+            db.commit()
+        finally:
+            db.close()
+        log_activity('harvest_logged', detail=f'{qty} {data.get("unit", "lbs")} of {data["crop"]}')
         return jsonify({'status': 'created', 'inventory_updated': True}), 201
 
     @app.route('/api/livestock')
@@ -7573,28 +7578,40 @@ th {{ background: #eee; font-weight: 700; }}
     @app.route('/api/ammo', methods=['POST'])
     def api_ammo_create():
         d = request.json or {}
+        try:
+            qty = int(d.get('quantity', 0))
+        except (ValueError, TypeError):
+            qty = 0
         conn = get_db()
-        cur = conn.execute(
-            'INSERT INTO ammo_inventory (caliber, brand, bullet_weight, bullet_type, quantity, location, notes) VALUES (?,?,?,?,?,?,?)',
-            (d.get('caliber',''), d.get('brand',''), d.get('bullet_weight',''),
-             d.get('bullet_type',''), int(d.get('quantity',0)), d.get('location',''), d.get('notes','')))
-        conn.commit()
-        row = conn.execute('SELECT * FROM ammo_inventory WHERE id=?', (cur.lastrowid,)).fetchone()
-        conn.close()
-        return jsonify(dict(row)), 201
+        try:
+            cur = conn.execute(
+                'INSERT INTO ammo_inventory (caliber, brand, bullet_weight, bullet_type, quantity, location, notes) VALUES (?,?,?,?,?,?,?)',
+                (d.get('caliber',''), d.get('brand',''), d.get('bullet_weight',''),
+                 d.get('bullet_type',''), qty, d.get('location',''), d.get('notes','')))
+            conn.commit()
+            row = conn.execute('SELECT * FROM ammo_inventory WHERE id=?', (cur.lastrowid,)).fetchone()
+            return jsonify(dict(row)), 201
+        finally:
+            conn.close()
 
     @app.route('/api/ammo/<int:aid>', methods=['PUT'])
     def api_ammo_update(aid):
         d = request.json or {}
+        try:
+            qty = int(d.get('quantity', 0))
+        except (ValueError, TypeError):
+            qty = 0
         conn = get_db()
-        conn.execute(
-            'UPDATE ammo_inventory SET caliber=?, brand=?, bullet_weight=?, bullet_type=?, quantity=?, location=?, notes=?, updated_at=CURRENT_TIMESTAMP WHERE id=?',
-            (d.get('caliber',''), d.get('brand',''), d.get('bullet_weight',''),
-             d.get('bullet_type',''), int(d.get('quantity',0)), d.get('location',''), d.get('notes',''), aid))
-        conn.commit()
-        row = conn.execute('SELECT * FROM ammo_inventory WHERE id=?', (aid,)).fetchone()
-        conn.close()
-        return jsonify(dict(row) if row else {})
+        try:
+            conn.execute(
+                'UPDATE ammo_inventory SET caliber=?, brand=?, bullet_weight=?, bullet_type=?, quantity=?, location=?, notes=?, updated_at=CURRENT_TIMESTAMP WHERE id=?',
+                (d.get('caliber',''), d.get('brand',''), d.get('bullet_weight',''),
+                 d.get('bullet_type',''), qty, d.get('location',''), d.get('notes',''), aid))
+            conn.commit()
+            row = conn.execute('SELECT * FROM ammo_inventory WHERE id=?', (aid,)).fetchone()
+            return jsonify(dict(row) if row else {})
+        finally:
+            conn.close()
 
     @app.route('/api/ammo/<int:aid>', methods=['DELETE'])
     def api_ammo_delete(aid):
@@ -7674,20 +7691,23 @@ th {{ background: #eee; font-weight: 700; }}
     @app.route('/api/radiation', methods=['POST'])
     def api_radiation_create():
         d = request.json or {}
+        try:
+            new_rate = float(d.get('dose_rate_rem', 0))
+        except (ValueError, TypeError):
+            new_rate = 0.0
         conn = get_db()
-        # Compute running cumulative
-        last = conn.execute('SELECT cumulative_rem FROM radiation_log ORDER BY created_at DESC LIMIT 1').fetchone()
-        prev_cum = last['cumulative_rem'] if last else 0
-        new_rate = float(d.get('dose_rate_rem', 0))
-        # cumulative = previous + this reading (assumed per-hour if not specified)
-        new_cum = round(prev_cum + new_rate, 4)
-        cur = conn.execute(
-            'INSERT INTO radiation_log (dose_rate_rem, location, cumulative_rem, notes) VALUES (?,?,?,?)',
-            (new_rate, d.get('location',''), new_cum, d.get('notes','')))
-        conn.commit()
-        row = conn.execute('SELECT * FROM radiation_log WHERE id=?', (cur.lastrowid,)).fetchone()
-        conn.close()
-        return jsonify(dict(row)), 201
+        try:
+            last = conn.execute('SELECT cumulative_rem FROM radiation_log ORDER BY created_at DESC LIMIT 1').fetchone()
+            prev_cum = (last['cumulative_rem'] or 0) if last else 0
+            new_cum = round(prev_cum + new_rate, 4)
+            cur = conn.execute(
+                'INSERT INTO radiation_log (dose_rate_rem, location, cumulative_rem, notes) VALUES (?,?,?,?)',
+                (new_rate, d.get('location',''), new_cum, d.get('notes','')))
+            conn.commit()
+            row = conn.execute('SELECT * FROM radiation_log WHERE id=?', (cur.lastrowid,)).fetchone()
+            return jsonify(dict(row)), 201
+        finally:
+            conn.close()
 
     @app.route('/api/radiation/clear', methods=['POST'])
     def api_radiation_clear():
@@ -7709,30 +7729,42 @@ th {{ background: #eee; font-weight: 700; }}
     @app.route('/api/fuel', methods=['POST'])
     def api_fuel_create():
         d = request.json or {}
+        try:
+            stab = int(d.get('stabilizer_added', 0))
+        except (ValueError, TypeError):
+            stab = 0
         conn = get_db()
-        cur = conn.execute(
-            'INSERT INTO fuel_storage (fuel_type, quantity, unit, container, location, stabilizer_added, date_stored, expires, notes) VALUES (?,?,?,?,?,?,?,?,?)',
-            (d.get('fuel_type',''), d.get('quantity',0), d.get('unit','gallons'),
-             d.get('container',''), d.get('location',''), int(d.get('stabilizer_added',0)),
-             d.get('date_stored',''), d.get('expires',''), d.get('notes','')))
-        conn.commit()
-        row = conn.execute('SELECT * FROM fuel_storage WHERE id=?', (cur.lastrowid,)).fetchone()
-        conn.close()
-        return jsonify(dict(row)), 201
+        try:
+            cur = conn.execute(
+                'INSERT INTO fuel_storage (fuel_type, quantity, unit, container, location, stabilizer_added, date_stored, expires, notes) VALUES (?,?,?,?,?,?,?,?,?)',
+                (d.get('fuel_type',''), d.get('quantity',0), d.get('unit','gallons'),
+                 d.get('container',''), d.get('location',''), stab,
+                 d.get('date_stored',''), d.get('expires',''), d.get('notes','')))
+            conn.commit()
+            row = conn.execute('SELECT * FROM fuel_storage WHERE id=?', (cur.lastrowid,)).fetchone()
+            return jsonify(dict(row)), 201
+        finally:
+            conn.close()
 
     @app.route('/api/fuel/<int:fid>', methods=['PUT'])
     def api_fuel_update(fid):
         d = request.json or {}
+        try:
+            stab = int(d.get('stabilizer_added', 0))
+        except (ValueError, TypeError):
+            stab = 0
         conn = get_db()
-        conn.execute(
-            'UPDATE fuel_storage SET fuel_type=?,quantity=?,unit=?,container=?,location=?,stabilizer_added=?,date_stored=?,expires=?,notes=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',
-            (d.get('fuel_type',''), d.get('quantity',0), d.get('unit','gallons'),
-             d.get('container',''), d.get('location',''), int(d.get('stabilizer_added',0)),
-             d.get('date_stored',''), d.get('expires',''), d.get('notes',''), fid))
-        conn.commit()
-        row = conn.execute('SELECT * FROM fuel_storage WHERE id=?', (fid,)).fetchone()
-        conn.close()
-        return jsonify(dict(row) if row else {})
+        try:
+            conn.execute(
+                'UPDATE fuel_storage SET fuel_type=?,quantity=?,unit=?,container=?,location=?,stabilizer_added=?,date_stored=?,expires=?,notes=?,updated_at=CURRENT_TIMESTAMP WHERE id=?',
+                (d.get('fuel_type',''), d.get('quantity',0), d.get('unit','gallons'),
+                 d.get('container',''), d.get('location',''), stab,
+                 d.get('date_stored',''), d.get('expires',''), d.get('notes',''), fid))
+            conn.commit()
+            row = conn.execute('SELECT * FROM fuel_storage WHERE id=?', (fid,)).fetchone()
+            return jsonify(dict(row) if row else {})
+        finally:
+            conn.close()
 
     @app.route('/api/fuel/<int:fid>', methods=['DELETE'])
     def api_fuel_delete(fid):

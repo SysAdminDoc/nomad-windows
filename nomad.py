@@ -1,5 +1,5 @@
 """
-Project N.O.M.A.D. for Windows v1.7.0
+Project N.O.M.A.D. for Windows v1.8.0
 Node for Offline Media, Archives, and Data
 Native Windows edition — no Docker required.
 """
@@ -51,7 +51,7 @@ from config import get_data_dir
 from web.app import create_app, set_version
 from db import init_db, get_db, log_activity, backup_db
 
-VERSION = '1.7.0'
+VERSION = '1.8.0'
 PORT = 8080
 
 _tray_icon = None
@@ -202,7 +202,8 @@ def health_monitor():
                             db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (sid,))
                             db.commit()
                     else:
-                        log.error(f'Service {sid} crashed — restart limit reached ({3} in 5min)')
+                        from services.manager import MAX_RESTARTS
+                        log.error(f'Service {sid} crashed — restart limit reached ({MAX_RESTARTS} in 5min)')
                         log_activity('service_restart_limit', sid, 'Max restarts exceeded', 'error')
                         db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (sid,))
                         db.commit()
@@ -220,12 +221,14 @@ def health_monitor():
 
 def first_run_check():
     db = get_db()
-    row = db.execute("SELECT value FROM settings WHERE key = 'first_run_complete'").fetchone()
-    if not row:
-        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '0')")
-        db.commit()
-    db.close()
-    return not row or row['value'] != '1'
+    try:
+        row = db.execute("SELECT value FROM settings WHERE key = 'first_run_complete'").fetchone()
+        if not row:
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '0')")
+            db.commit()
+        return not row or row['value'] != '1'
+    finally:
+        db.close()
 
 
 def main():
@@ -266,12 +269,16 @@ def main():
 
     # Wait for Flask to be ready
     import requests
+    flask_ready = False
     for _ in range(30):
         try:
             requests.get(f'http://127.0.0.1:{PORT}/api/health', timeout=1)
+            flask_ready = True
             break
         except Exception:
             time.sleep(0.2)
+    if not flask_ready:
+        log.error('Flask failed to start within 6 seconds — services may not work correctly')
 
     # Auto-start services from previous session
     threading.Thread(target=auto_start_services, daemon=True).start()
@@ -323,9 +330,12 @@ def main():
                 return
             except Exception:
                 time.sleep(0.3)
+        log.error('Flask not reachable after 18 seconds — showing error in window')
+        if _window:
+            _window.load_html('<html><body style="margin:0;background:#060608;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Segoe UI,sans-serif;"><div style="text-align:center;"><h1 style="color:#ff6b6b;font-size:20px;">Failed to Start</h1><p style="color:#55556a;font-size:14px;">The web server did not respond. Check the log file for details.</p></div></body></html>')
 
-    threading.Thread(target=_navigate_when_ready, daemon=True).start()
     _window.events.closing += on_window_closing
+    threading.Thread(target=_navigate_when_ready, daemon=True).start()
 
     webview.start(gui='edgechromium', debug=False)
 

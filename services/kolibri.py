@@ -183,17 +183,19 @@ def install(callback=None):
         )
 
         db = get_db()
-        db.execute('''
-            INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, url)
-            VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)
-        ''', (
-            SERVICE_ID, 'Kolibri (Education)',
-            'Offline education platform — Khan Academy courses, textbooks, and more',
-            'graduation', 'education', KOLIBRI_PORT, install_dir,
-            f'http://localhost:{KOLIBRI_PORT}'
-        ))
-        db.commit()
-        db.close()
+        try:
+            db.execute('''
+                INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, url)
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)
+            ''', (
+                SERVICE_ID, 'Kolibri (Education)',
+                'Offline education platform — Khan Academy courses, textbooks, and more',
+                'graduation', 'education', KOLIBRI_PORT, install_dir,
+                f'http://localhost:{KOLIBRI_PORT}'
+            ))
+            db.commit()
+        finally:
+            db.close()
 
         _download_progress[SERVICE_ID] = {
             'percent': 100, 'status': 'complete', 'error': None,
@@ -233,9 +235,11 @@ def start():
     _processes[SERVICE_ID] = proc
 
     db = get_db()
-    db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
-    db.commit()
-    db.close()
+    try:
+        db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
+        db.commit()
+    finally:
+        db.close()
 
     for _ in range(30):
         if check_port(KOLIBRI_PORT):

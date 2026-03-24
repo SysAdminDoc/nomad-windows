@@ -19,6 +19,7 @@ except Exception:
     try:
         from catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
     except Exception:
+        log.warning('Could not import channel catalog — media features will be limited')
         CHANNEL_CATALOG = []
         CHANNEL_CATEGORIES = []
 from db import get_db, log_activity
@@ -39,7 +40,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '1.7.0'
+VERSION = '1.8.0'
 
 
 def set_version(v):
@@ -100,8 +101,9 @@ def create_app():
                 token = request.headers.get('X-Auth-Token', '')
                 if hashlib.sha256(token.encode()).hexdigest() != row['value']:
                     return jsonify({'error': 'Authentication required'}), 403
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning(f'Auth check failed (denying access): {e}')
+            return jsonify({'error': 'Authentication check failed'}), 503
 
     @app.after_request
     def no_cache(response):
@@ -145,6 +147,7 @@ def create_app():
         return jsonify(services)
 
     _installing = set()
+    _installing_lock = threading.Lock()
 
     @app.route('/api/services/<service_id>/install', methods=['POST'])
     def api_install_service(service_id):
@@ -153,9 +156,10 @@ def create_app():
             return jsonify({'error': 'Unknown service'}), 404
         if mod.is_installed():
             return jsonify({'status': 'already_installed'})
-        if service_id in _installing:
-            return jsonify({'status': 'already_installing'})
-        _installing.add(service_id)
+        with _installing_lock:
+            if service_id in _installing:
+                return jsonify({'status': 'already_installing'})
+            _installing.add(service_id)
 
         def do_install():
             try:
@@ -1013,8 +1017,9 @@ def create_app():
         for m in messages:
             role = 'You' if m['role'] == 'user' else 'AI'
             md += f"**{role}:**\n\n{m.get('content', '')}\n\n---\n\n"
+        safe_title = ''.join(c for c in (convo['title'] or 'export') if c.isalnum() or c in ' _-').strip() or 'export'
         return Response(md, mimetype='text/markdown',
-                       headers={'Content-Disposition': f'attachment; filename="{convo["title"]}.md"'})
+                       headers={'Content-Disposition': f'attachment; filename="{safe_title}.md"'})
 
     # ─── Unified Search API ────────────────────────────────────────────
 
@@ -1447,9 +1452,12 @@ def create_app():
     def api_maps_delete():
         data = request.get_json() or {}
         filename = data.get('filename')
-        if not filename or '..' in filename:
+        if not filename or '..' in filename or '/' in filename or '\\' in filename:
             return jsonify({'error': 'Invalid filename'}), 400
-        path = os.path.join(get_maps_dir(), filename)
+        maps_dir = get_maps_dir()
+        path = os.path.normpath(os.path.join(maps_dir, filename))
+        if not path.startswith(os.path.normpath(maps_dir) + os.sep):
+            return jsonify({'error': 'Invalid filename'}), 400
         try:
             if os.path.isfile(path):
                 os.remove(path)
@@ -1994,7 +2002,10 @@ def create_app():
                     from packaging.version import Version
                     is_newer = Version(latest) > Version(current)
                 except Exception:
-                    is_newer = latest != current and latest > current
+                    try:
+                        is_newer = list(map(int, latest.split('.'))) > list(map(int, current.split('.')))
+                    except (ValueError, AttributeError):
+                        is_newer = latest != current
                 return jsonify({
                     'current': current,
                     'latest': latest,

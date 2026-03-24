@@ -61,17 +61,19 @@ def install(callback=None):
         os.remove(zip_path)
 
         db = get_db()
-        db.execute('''
-            INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, url)
-            VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)
-        ''', (
-            SERVICE_ID, 'CyberChef (Data Tools)',
-            'Encryption, encoding, hashing, and data analysis toolkit',
-            'shield', 'tools', CYBERCHEF_PORT, install_dir,
-            f'http://localhost:{CYBERCHEF_PORT}'
-        ))
-        db.commit()
-        db.close()
+        try:
+            db.execute('''
+                INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, url)
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?)
+            ''', (
+                SERVICE_ID, 'CyberChef (Data Tools)',
+                'Encryption, encoding, hashing, and data analysis toolkit',
+                'shield', 'tools', CYBERCHEF_PORT, install_dir,
+                f'http://localhost:{CYBERCHEF_PORT}'
+            ))
+            db.commit()
+        finally:
+            db.close()
 
         _download_progress[SERVICE_ID] = {'percent': 100, 'status': 'complete', 'error': None}
         log.info('CyberChef installed successfully')
@@ -104,9 +106,11 @@ def start():
     _server_thread.start()
 
     db = get_db()
-    db.execute('UPDATE services SET running = 1 WHERE id = ?', (SERVICE_ID,))
-    db.commit()
-    db.close()
+    try:
+        db.execute('UPDATE services SET running = 1 WHERE id = ?', (SERVICE_ID,))
+        db.commit()
+    finally:
+        db.close()
 
     log.info(f'CyberChef serving on port {CYBERCHEF_PORT}')
 
@@ -118,9 +122,11 @@ def stop():
         _httpd = None
 
     db = get_db()
-    db.execute('UPDATE services SET running = 0 WHERE id = ?', (SERVICE_ID,))
-    db.commit()
-    db.close()
+    try:
+        db.execute('UPDATE services SET running = 0 WHERE id = ?', (SERVICE_ID,))
+        db.commit()
+    finally:
+        db.close()
 
 
 def running():

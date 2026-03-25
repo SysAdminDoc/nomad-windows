@@ -1,4 +1,4 @@
-# Project N.O.M.A.D. for Windows — Implementation Roadmap
+# Project N.O.M.A.D. Desktop — Implementation Roadmap
 
 ## Phase 1: Proactive AI Situational Awareness
 **Builds on:** Existing burn rates, dashboard_critical, weather trend, situation-context AI injection

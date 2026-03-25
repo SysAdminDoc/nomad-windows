@@ -4,8 +4,8 @@
 #define MyAppName "Project N.O.M.A.D."
 #define MyAppVersion "3.2.0"
 #define MyAppPublisher "SysAdminDoc"
-#define MyAppURL "https://github.com/SysAdminDoc/nomad-windows"
-#define MyAppSupportURL "https://github.com/SysAdminDoc/nomad-windows/issues"
+#define MyAppURL "https://github.com/SysAdminDoc/project-nomad-desktop"
+#define MyAppSupportURL "https://github.com/SysAdminDoc/project-nomad-desktop/issues"
 #define MyAppExeName "ProjectNOMAD.exe"
 #define MyAppDescription "Project N.O.M.A.D. -- Your offline-first knowledge and AI command center. No Docker required."
 

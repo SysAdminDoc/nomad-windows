@@ -159,66 +159,14 @@ body{background:var(--bg);color:var(--text)}
   <div id="tab-services" class="tab-content active">
     <div class="lan-banner" id="lan-banner" style="display:none;"></div>
 
-    <!-- Page Header -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div style="width:60px;height:3px;background:var(--accent);border-radius:2px;"></div>
-      <div style="display:flex;gap:6px;">
-        <button class="btn btn-sm" onclick="openAppFrame('Emergency Sheet','/api/emergency-sheet')" title="Print a one-page emergency reference sheet">Emergency Sheet</button>
-        <button class="btn btn-sm" onclick="openAppFrame('Frequency Card','/api/print/freq-card')" title="Printable pocket frequency reference">Freq Card</button>
-        <button class="btn btn-sm" onclick="openAppFrame('Medical Cards','/api/print/medical-cards')" title="Wallet-sized medical cards for each person">Med Cards</button>
-        <button class="btn btn-sm" onclick="openAppFrame('Bug-Out Checklist','/api/print/bug-out-checklist')" title="Printable bug-out grab-and-go checklist">Bug-Out List</button>
-        <button class="btn btn-sm" onclick="showHelp()" title="Open the user guide">User Guide</button>
-      </div>
-    </div>
-
-    <!-- Unified Search -->
-    <div class="search-bar" style="max-width:500px;margin:16px auto;">
-      <span class="search-icon">&#128269;</span>
-      <input id="unified-search" placeholder="Search supplies, contacts, notes, checklists..." oninput="debounceSearch()" onfocus="showSearchResults()" onblur="setTimeout(()=>hideSearchResults(),200)">
-      <div class="search-results" id="search-results"></div>
-    </div>
-
-    <!-- Live Situational Dashboard -->
-    <div id="live-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px;"></div>
-
-    <!-- AI Copilot Strip -->
-    <div id="copilot-strip" style="display:flex;gap:10px;margin-bottom:12px;align-items:stretch;">
-      <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-family:var(--font-data,monospace);">AI COPILOT</span>
-          <div style="flex:1;"></div>
-          <div style="display:flex;gap:4px;flex-wrap:wrap;" id="copilot-quick-btns"></div>
-        </div>
-        <div style="display:flex;gap:6px;">
-          <input type="text" id="copilot-input" placeholder="Ask about your supplies, team, medical, power... (Ctrl+/)" onkeydown="if(event.key==='Enter')askCopilot()" style="flex:1;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;">
-          <button class="btn btn-sm" onclick="voiceInput('copilot-input')" title="Voice input" id="copilot-voice-btn" style="font-size:12px;padding:4px 8px;">&#127908;</button>
-          <button class="btn btn-sm btn-primary" onclick="askCopilot()" style="font-size:10px;">ASK</button>
-        </div>
-        <div id="copilot-answer" style="display:none;font-size:12px;line-height:1.6;color:var(--text-dim);padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border-left:3px solid var(--accent);"></div>
-      </div>
-      <div style="width:260px;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
-        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);margin-bottom:4px;">SUGGESTED ACTIONS</div>
-        <div id="copilot-suggestions" style="flex:1;overflow-y:auto;"></div>
-      </div>
-    </div>
-
-    <!-- Survival Needs Overview -->
-    <div id="needs-overview" style="margin-bottom:16px;">
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);">PREPAREDNESS BY NEED</span>
-        <div style="flex:1;height:1px;background:var(--border);"></div>
-      </div>
-      <div id="needs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;"></div>
-    </div>
-
-    <!-- Needs Detail Modal -->
-    <div id="needs-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:5000;align-items:center;justify-content:center;backdrop-filter:blur(4px);" onclick="if(event.target===this)closeNeedsDetail()">
-      <div style="background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg,var(--shadow));">
-        <div id="needs-detail-header" style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-          <span style="font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;" id="needs-detail-title"></span>
-          <button class="btn btn-sm btn-ghost" onclick="closeNeedsDetail()" style="font-size:14px;">&#10005;</button>
-        </div>
-        <div id="needs-detail-body" style="padding:16px 20px;"></div>
+    <!-- Welcome Banner (first-run only) -->
+    <div class="welcome-banner" id="welcome-banner" style="display:none;">
+      <h3 class="shimmer-text">Welcome to N.O.M.A.D.</h3>
+      <p>Everything you need for emergency preparedness — works completely offline after setup. Start by installing your first tool below.</p>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="installService('ollama')" style="padding:10px 24px;" title="A private AI you can ask questions — no internet needed (~310 MB)">Install AI Chat (~310 MB)</button>
+        <button class="btn" onclick="installService('kiwix')" title="Wikipedia, medical guides, and survival references — all offline (~60 MB)">Install Encyclopedia (~60 MB)</button>
+        <button class="btn" onclick="installService('cyberchef')" title="Encryption, encoding, and data analysis tools (~30 MB)">Install Data Tools (~30 MB)</button>
       </div>
     </div>
 
@@ -235,126 +183,188 @@ body{background:var(--bg);color:var(--text)}
       <div id="gs-steps" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;"></div>
     </div>
 
-    <!-- Command Dashboard Overview (legacy — filled by loadCmdDashboard) -->
-    <div id="cmd-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:12px;min-height:60px;"></div>
+    <!-- ════════════════════════════════════════════════════════════
+         SECTION 1: SEARCH + SITUATIONAL AWARENESS
+         ════════════════════════════════════════════════════════════ -->
 
-    <!-- Readiness Score -->
-    <div id="readiness-score-panel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-bottom:12px;">
-      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
-        <div style="text-align:center;min-width:80px;">
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-dim);font-weight:600;">Readiness <button class="help-icon" onclick="showHelp('readiness')" title="How your score is calculated" style="width:14px;height:14px;font-size:9px;">?</button></div>
-          <div id="rs-grade" style="font-size:32px;font-weight:800;line-height:1.1;margin:2px 0;">--</div>
-          <div id="rs-total" style="font-size:11px;color:var(--text-muted);">0/100</div>
-        </div>
-        <div style="flex:1;min-width:200px;">
-          <div id="rs-bar" style="height:8px;background:var(--surface3);border-radius:4px;overflow:hidden;margin-bottom:8px;">
-            <div id="rs-bar-fill" style="height:100%;border-radius:4px;transition:width 0.6s ease;width:0%;"></div>
+    <!-- Unified Search -->
+    <div class="search-bar" style="max-width:500px;margin:0 auto 16px;">
+      <span class="search-icon">&#128269;</span>
+      <input id="unified-search" placeholder="Search supplies, contacts, notes, checklists..." oninput="debounceSearch()" onfocus="showSearchResults()" onblur="setTimeout(()=>hideSearchResults(),200)">
+      <div class="search-results" id="search-results"></div>
+    </div>
+
+    <!-- Live Situational Dashboard -->
+    <div id="live-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px;"></div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         SECTION 2: READINESS + PREPAREDNESS (two-column layout)
+         ════════════════════════════════════════════════════════════ -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;" class="home-two-col">
+
+      <!-- Left: Readiness Score -->
+      <div id="readiness-score-panel" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+          <div style="text-align:center;min-width:64px;">
+            <div id="rs-grade" style="font-size:36px;font-weight:800;line-height:1;">--</div>
+            <div id="rs-total" style="font-size:10px;color:var(--text-muted);">0/100</div>
           </div>
-          <div id="rs-categories" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:4px;font-size:11px;"></div>
+          <div style="flex:1;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+              <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);">READINESS SCORE</span>
+              <button class="help-icon" onclick="showHelp('readiness')" title="How your score is calculated" style="width:14px;height:14px;font-size:9px;">?</button>
+            </div>
+            <div id="rs-bar" style="height:6px;background:var(--surface3);border-radius:3px;overflow:hidden;">
+              <div id="rs-bar-fill" style="height:100%;border-radius:3px;transition:width 0.6s ease;width:0%;"></div>
+            </div>
+          </div>
         </div>
+        <div id="rs-categories" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:11px;"></div>
+      </div>
+
+      <!-- Right: Survival Needs Grid -->
+      <div id="needs-overview">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+          <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);">PREPAREDNESS BY NEED</span>
+          <div style="flex:1;height:1px;background:var(--border);"></div>
+        </div>
+        <div id="needs-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
       </div>
     </div>
 
-    <div id="cmd-checklists" style="margin-bottom:12px;"></div>
-
-    <!-- Command Center Cards (Original NOMAD Grid Style) -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px;margin-bottom:20px;">
-      <!-- Core Feature Cards -->
-      <div class="cc-card" onclick="document.querySelector('[data-tab=\'ai-chat\']').click()">
-        <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a7 7 0 0 0-7 7c0 3.5 2.5 6.5 7 13 4.5-6.5 7-9.5 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
-        <div class="cc-title">AI Assistant</div>
-        <div class="cc-sub">Ask Questions Offline</div>
-        <div class="cc-desc">Chat with a private AI that knows your supplies, contacts, and situation. No internet needed.</div>
-      </div>
-      <div class="cc-card" onclick="document.querySelector('[data-tab=\'kiwix-library\']').click()">
-        <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h5"/></svg></div>
-        <div class="cc-title">Information Library</div>
-        <div class="cc-sub">Offline Encyclopedia &amp; Guides</div>
-        <div class="cc-desc">Wikipedia, medical references, survival guides, and field manuals — all available without internet.</div>
-      </div>
-      <div class="cc-card" onclick="document.querySelector('[data-tab=\'maps\']').click()">
-        <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg></div>
-        <div class="cc-title">Maps</div>
-        <div class="cc-desc">Download maps for your area. Mark locations, measure distances, and navigate without cell service.</div>
-      </div>
-      <div class="cc-card" onclick="document.querySelector('[data-tab=\'preparedness\']').click()">
-        <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg></div>
-        <div class="cc-title">Preparedness</div>
-        <div class="cc-desc">Track supplies, contacts, medical info, security, power, food production, and emergency plans — everything your family needs.</div>
-      </div>
-      <div class="cc-card" onclick="document.querySelector('[data-tab=\'tools\']').click()">
-        <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
-        <div class="cc-title">Tools</div>
-        <div class="cc-desc">Nuclear blast simulator, barcode scanner, training drills, video library, and off-grid radio tools.</div>
-      </div>
-      <div class="cc-card" onclick="document.querySelector('[data-tab=\'notes\']').click()">
-        <div class="cc-icon"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
-        <div class="cc-title">Notes</div>
-        <div class="cc-desc">Write and organize notes, plans, and logs. Auto-saves as you type.</div>
-      </div>
-      <div class="cc-card cc-card-nuke" onclick="openAppFrame('NukeMap','/nukemap/')">
-        <div class="cc-icon">&#9762;</div>
-        <div class="cc-title">NukeMap</div>
-        <div class="cc-sub">Nuclear Effects Simulator</div>
-        <div class="cc-desc">Blast radius, fallout zones, shelter analysis. 418 real-world targets, 7 conflict scenarios.</div>
+    <!-- Needs Detail Modal -->
+    <div id="needs-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:5000;align-items:center;justify-content:center;backdrop-filter:blur(4px);" onclick="if(event.target===this)closeNeedsDetail()">
+      <div style="background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg,var(--shadow));">
+        <div id="needs-detail-header" style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;" id="needs-detail-title"></span>
+          <button class="btn btn-sm btn-ghost" onclick="closeNeedsDetail()" style="font-size:14px;">&#10005;</button>
+        </div>
+        <div id="needs-detail-body" style="padding:16px 20px;"></div>
       </div>
     </div>
 
-    <!-- Bulk Actions + Readiness -->
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-      <div id="readiness-bar" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+    <!-- ════════════════════════════════════════════════════════════
+         SECTION 3: AI COPILOT
+         ════════════════════════════════════════════════════════════ -->
+    <div id="copilot-strip" style="display:flex;gap:10px;margin-bottom:16px;align-items:stretch;">
+      <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-family:var(--font-data,monospace);">AI COPILOT</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;" id="copilot-quick-btns"></div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="copilot-input" placeholder="Ask about your supplies, team, medical, power... (Ctrl+/)" onkeydown="if(event.key==='Enter')askCopilot()" style="flex:1;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;">
+          <button class="btn btn-sm" onclick="voiceInput('copilot-input')" title="Voice input" id="copilot-voice-btn" style="font-size:12px;padding:4px 8px;">&#127908;</button>
+          <button class="btn btn-sm btn-primary" onclick="askCopilot()" style="font-size:10px;">ASK</button>
+        </div>
+        <div id="copilot-answer" style="display:none;font-size:12px;line-height:1.6;color:var(--text-dim);padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border-left:3px solid var(--accent);"></div>
+      </div>
+      <div style="width:240px;min-width:180px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);margin-bottom:4px;">SUGGESTED ACTIONS</div>
+        <div id="copilot-suggestions" style="flex:1;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
+         SECTION 4: SERVICES & TOOLS
+         ════════════════════════════════════════════════════════════ -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);">SERVICES</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
       <div style="display:flex;gap:6px;">
-        <button class="btn btn-sm btn-primary" onclick="startAllServices()" title="Start AI Chat, Library, and all installed services">Start All Services</button>
-        <button class="btn btn-sm btn-danger" onclick="stopAllServices()" title="Stop all running services to save resources">Stop All Services</button>
+        <button class="btn btn-sm btn-primary" onclick="startAllServices()" title="Start AI Chat, Library, and all installed services" style="font-size:9px;padding:3px 10px;">Start All</button>
+        <button class="btn btn-sm btn-danger" onclick="stopAllServices()" title="Stop all running services to save resources" style="font-size:9px;padding:3px 10px;">Stop All</button>
       </div>
     </div>
 
     <!-- Service Quick Links -->
-    <div id="svc-quicklinks" style="display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;"></div>
-
-    <!-- Content Summary -->
-    <div class="content-summary" id="content-summary"></div>
-
-    <!-- Welcome Banner (first-run only) -->
-    <div class="welcome-banner" id="welcome-banner" style="display:none;">
-      <h3 class="shimmer-text">Welcome to N.O.M.A.D.</h3>
-      <p>Everything you need for emergency preparedness — works completely offline after setup. Start by installing your first tool below.</p>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="installService('ollama')" style="padding:10px 24px;" title="A private AI you can ask questions — no internet needed (~310 MB)">Install AI Chat (~310 MB)</button>
-        <button class="btn" onclick="installService('kiwix')" title="Wikipedia, medical guides, and survival references — all offline (~60 MB)">Install Encyclopedia (~60 MB)</button>
-        <button class="btn" onclick="installService('cyberchef')" title="Encryption, encoding, and data analysis tools (~30 MB)">Install Data Tools (~30 MB)</button>
-      </div>
-    </div>
-
-    <!-- Getting Started Checklist (dismissable) -->
-    <div id="getting-started" style="display:none;background:var(--surface);border:1px solid var(--accent);border-radius:var(--radius);padding:16px 20px;margin-bottom:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-        <span style="font-size:14px;font-weight:600;color:var(--accent);">Getting Started</span>
-        <button class="btn btn-sm btn-ghost" onclick="dismissGettingStarted()" style="font-size:12px;">Dismiss</button>
-      </div>
-      <div style="font-size:12px;line-height:2;" id="gs-items"></div>
-    </div>
+    <div id="svc-quicklinks" style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap;"></div>
 
     <!-- Service Detail Grid -->
     <div class="services-grid" id="services-grid"></div>
 
-    <!-- Activity Feed -->
-    <div class="settings-card" style="margin-top:20px;">
-      <h3 style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        Activity Feed
-        <span style="display:flex;align-items:center;gap:6px;margin-left:auto;">
-          <select id="activity-filter" onchange="loadActivity()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:2px 6px;border-radius:4px;font-size:10px;">
-            <option value="">All Activity</option>
-            <option value="service">Services</option>
-            <option value="inventory">Inventory</option>
-            <option value="medical">Medical</option>
-            <option value="sync">Sync</option>
-          </select>
-          <button class="btn btn-sm" onclick="loadActivity()">Refresh</button>
-        </span>
-      </h3>
-      <div id="activity-feed" style="max-height:200px;overflow-y:auto;margin-top:8px;font-size:11px;"><div style="color:var(--text-muted);font-size:11px;">Loading activity...</div></div>
-    </div>
+    <!-- ════════════════════════════════════════════════════════════
+         SECTION 5: QUICK NAVIGATION + REFERENCE
+         ════════════════════════════════════════════════════════════ -->
+    <details id="home-quick-nav" style="margin-top:16px;margin-bottom:12px;">
+      <summary style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);cursor:pointer;padding:8px 0;list-style:none;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:10px;transition:transform 0.15s;" class="nav-chevron">&#9654;</span>
+        QUICK NAVIGATION &amp; PRINTABLE REFERENCES
+        <span style="flex:1;height:1px;background:var(--border);"></span>
+      </summary>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;padding-top:10px;">
+        <div class="cc-card" onclick="document.querySelector('[data-tab=\'ai-chat\']').click()" style="padding:12px;text-align:center;cursor:pointer;">
+          <div class="cc-icon" style="margin-bottom:4px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a7 7 0 0 0-7 7c0 3.5 2.5 6.5 7 13 4.5-6.5 7-9.5 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg></div>
+          <div style="font-size:11px;font-weight:700;">AI Assistant</div>
+          <div style="font-size:9px;color:var(--text-dim);">Offline AI chat</div>
+        </div>
+        <div class="cc-card" onclick="document.querySelector('[data-tab=\'kiwix-library\']').click()" style="padding:12px;text-align:center;cursor:pointer;">
+          <div class="cc-icon" style="margin-bottom:4px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
+          <div style="font-size:11px;font-weight:700;">Library</div>
+          <div style="font-size:9px;color:var(--text-dim);">Encyclopedia &amp; guides</div>
+        </div>
+        <div class="cc-card" onclick="document.querySelector('[data-tab=\'maps\']').click()" style="padding:12px;text-align:center;cursor:pointer;">
+          <div class="cc-icon" style="margin-bottom:4px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg></div>
+          <div style="font-size:11px;font-weight:700;">Maps</div>
+          <div style="font-size:9px;color:var(--text-dim);">Offline navigation</div>
+        </div>
+        <div class="cc-card" onclick="document.querySelector('[data-tab=\'preparedness\']').click()" style="padding:12px;text-align:center;cursor:pointer;">
+          <div class="cc-icon" style="margin-bottom:4px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+          <div style="font-size:11px;font-weight:700;">Preparedness</div>
+          <div style="font-size:9px;color:var(--text-dim);">Supplies &amp; planning</div>
+        </div>
+        <div class="cc-card" onclick="document.querySelector('[data-tab=\'tools\']').click()" style="padding:12px;text-align:center;cursor:pointer;">
+          <div class="cc-icon" style="margin-bottom:4px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
+          <div style="font-size:11px;font-weight:700;">Tools</div>
+          <div style="font-size:9px;color:var(--text-dim);">Drills &amp; simulators</div>
+        </div>
+        <div class="cc-card" onclick="document.querySelector('[data-tab=\'notes\']').click()" style="padding:12px;text-align:center;cursor:pointer;">
+          <div class="cc-icon" style="margin-bottom:4px;"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div style="font-size:11px;font-weight:700;">Notes</div>
+          <div style="font-size:9px;color:var(--text-dim);">Logs &amp; plans</div>
+        </div>
+        <div class="cc-card cc-card-nuke" onclick="openAppFrame('NukeMap','/nukemap/')" style="padding:12px;text-align:center;cursor:pointer;">
+          <div class="cc-icon" style="margin-bottom:4px;font-size:24px;">&#9762;</div>
+          <div style="font-size:11px;font-weight:700;">NukeMap</div>
+          <div style="font-size:9px;color:var(--text-dim);">Nuclear simulator</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border);margin-top:10px;">
+        <button class="btn btn-sm" onclick="openAppFrame('Emergency Sheet','/api/emergency-sheet')" title="Print a one-page emergency reference sheet" style="font-size:9px;">&#128196; Emergency Sheet</button>
+        <button class="btn btn-sm" onclick="openAppFrame('Frequency Card','/api/print/freq-card')" title="Printable pocket frequency reference" style="font-size:9px;">&#128225; Freq Card</button>
+        <button class="btn btn-sm" onclick="openAppFrame('Medical Cards','/api/print/medical-cards')" title="Wallet-sized medical cards for each person" style="font-size:9px;">&#129658; Med Cards</button>
+        <button class="btn btn-sm" onclick="openAppFrame('Bug-Out Checklist','/api/print/bug-out-checklist')" title="Printable bug-out grab-and-go checklist" style="font-size:9px;">&#127939; Bug-Out List</button>
+        <button class="btn btn-sm" onclick="showHelp()" title="Open the user guide" style="font-size:9px;">&#128214; User Guide</button>
+      </div>
+    </details>
+
+    <!-- ════════════════════════════════════════════════════════════
+         SECTION 6: ACTIVITY LOG
+         ════════════════════════════════════════════════════════════ -->
+    <details style="margin-bottom:12px;">
+      <summary style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);cursor:pointer;padding:8px 0;list-style:none;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:10px;transition:transform 0.15s;" class="nav-chevron">&#9654;</span>
+        ACTIVITY LOG
+        <span style="flex:1;height:1px;background:var(--border);"></span>
+        <select id="activity-filter" onchange="loadActivity()" onclick="event.stopPropagation()" style="background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:2px 6px;border-radius:4px;font-size:9px;">
+          <option value="">All</option>
+          <option value="service">Services</option>
+          <option value="inventory">Inventory</option>
+          <option value="medical">Medical</option>
+          <option value="sync">Sync</option>
+        </select>
+        <button class="btn btn-sm" onclick="event.stopPropagation();loadActivity()" style="font-size:9px;padding:2px 8px;">Refresh</button>
+      </summary>
+      <div id="activity-feed" style="max-height:240px;overflow-y:auto;margin-top:8px;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:11px;"><div style="color:var(--text-muted);font-size:11px;">Loading activity...</div></div>
+    </details>
+
+    <!-- Hidden legacy containers for backward compat -->
+    <div id="cmd-dashboard" style="display:none;"></div>
+    <div id="cmd-checklists" style="display:none;"></div>
+    <div id="readiness-bar" style="display:none;"></div>
+    <div class="content-summary" id="content-summary" style="display:none;"></div>
+    <div id="getting-started" style="display:none;"><div id="gs-items"></div></div>
   </div>
 
   <!-- AI Chat Tab -->
@@ -5730,11 +5740,11 @@ body{background:var(--bg);color:var(--text)}
         <div id="disk-monitor"><div style="color:var(--text-muted);font-size:12px;">Loading disk info...</div></div>
       </div>
       <div class="settings-card" style="grid-column:1/-1;">
-        <h3>About Project N.O.M.A.D. for Windows</h3>
+        <h3>About Project N.O.M.A.D.</h3>
         <div style="font-size:12px;color:var(--text-dim);line-height:1.7;">
-          <p><strong style="color:var(--text);">The most complete offline survival command center available.</strong> Native Windows edition, no Docker required.</p>
+          <p><strong style="color:var(--text);">The most complete offline survival command center available.</strong> Cross-platform desktop edition, no Docker required.</p>
           <p style="margin:4px 0;"><span style="font-size:13px;font-weight:700;color:var(--accent);">v{{ version }}</span></p>
-          <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Windows port by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
+          <p>Based on <a href="https://github.com/Crosstalk-Solutions/project-nomad">Project N.O.M.A.D.</a> by Crosstalk Solutions. Desktop edition by <a href="https://github.com/SysAdminDoc">SysAdminDoc</a>.</p>
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0;font-size:11px;">
             <div><strong style="color:var(--accent);">9 Main Tabs</strong><br>Services, AI Chat, Library, Maps, Notes, Benchmark, Tools, Preparedness, Settings</div>
             <div><strong style="color:var(--accent);">25 Prep Sub-Tabs</strong><br>Inventory, Contacts, Checklists, Medical, Incidents, Family, Security, Power, Garden, Weather, Guides, Calculators, Procedures, Radio, Quick Ref, Signals, Ops, Journal, Vault, Skills, Ammo, Community, Radiation, Fuel, Equipment</div>
@@ -10039,7 +10049,7 @@ async function printFullCard() {
   <tr><td>HAM 2m Call</td><td>146.520</td></tr><tr><td>HAM 2m Emerg</td><td>146.550</td></tr>
   <tr><td>NOAA Weather</td><td>162.400-.550</td></tr></table></div></div>`;
 
-  h += '<div style="text-align:center;margin-top:6px;font-size:8px;color:#999;">N.O.M.A.D. for Windows - Offline Survival Command Center - v' + VERSION + '</div>';
+  h += '<div style="text-align:center;margin-top:6px;font-size:8px;color:#999;">N.O.M.A.D. - Offline Survival Command Center - v' + VERSION + '</div>';
   h += '</body></html>';
   openAppFrameHTML('Emergency Card', h);
 }
@@ -13918,7 +13928,7 @@ body { font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; }
 </div>
 <img src="${dataUrl}" class="map-img" alt="Map">
 <div class="footer">
-  <span>Generated by Project N.O.M.A.D. for Windows</span>
+  <span>Generated by Project N.O.M.A.D.</span>
   <span>Scale approximate at zoom level ${zoom.toFixed(1)}</span>
 </div>
 </body></html>`;
@@ -14648,7 +14658,7 @@ function showHelp(section) {
   .section-icon{margin-right:6px;}
   </style></head><body>
   <h1>Project N.O.M.A.D. User Guide</h1>
-  <p style="font-size:15px;color:${muted};">Version ${VERSION} &mdash; The most complete offline survival command center available for Windows</p>
+  <p style="font-size:15px;color:${muted};">Version ${VERSION} &mdash; The most complete offline survival command center available</p>
   <p>Everything in this software works <strong>completely offline</strong> after initial setup. No cloud accounts, no subscriptions, no data leaves your computer. This guide covers every feature and how to get the most out of it.</p>
 
   <div class="toc">
@@ -14922,7 +14932,7 @@ function showHelp(section) {
   <h3>LAN access from other devices</h3>
   <p>Other devices on your network can access N.O.M.A.D. by opening a browser and going to <code>http://YOUR_IP:8080</code>. Your LAN address is shown in the Settings tab. Make sure your firewall allows port 8080.</p>
   <h3>Need more help?</h3>
-  <p>Visit the <a href="https://github.com/SysAdminDoc/nomad-windows/issues">GitHub Issues</a> page or join the <a href="https://discord.com/invite/crosstalksolutions">Crosstalk Solutions Discord</a> community.</p>
+  <p>Visit the <a href="https://github.com/SysAdminDoc/project-nomad-desktop/issues">GitHub Issues</a> page or join the <a href="https://discord.com/invite/crosstalksolutions">Crosstalk Solutions Discord</a> community.</p>
 
   <h2 id="day-one">19. Day One Checklist</h2>
   <p>If you just installed N.O.M.A.D. and want to be operational as fast as possible, follow this checklist:</p>
@@ -15139,7 +15149,7 @@ function showHelp(section) {
   <h3>Can I share my checklists with friends who also use N.O.M.A.D.?</h3>
   <p>Yes. Go to Preparedness &gt; Checklists, click a checklist, then click <strong>Export JSON</strong>. Send the file to your friend and they can click <strong>Import</strong> to add it to their system. You can also use the sync features to share all data at once.</p>
   <h3>How do I update N.O.M.A.D.?</h3>
-  <p>Download the latest version from the <a href="https://github.com/SysAdminDoc/nomad-windows/releases">releases page</a>. If using the portable exe, just replace the old file with the new one. If using the installer, run the new installer &mdash; it updates in place. Your data is stored separately and is preserved across updates.</p>
+  <p>Download the latest version from the <a href="https://github.com/SysAdminDoc/project-nomad-desktop/releases">releases page</a>. If using the portable exe, just replace the old file with the new one. If using the installer, run the new installer &mdash; it updates in place. Your data is stored separately and is preserved across updates.</p>
   <h3>Why do some features say "Install" before I can use them?</h3>
   <p>N.O.M.A.D. manages several separate tools (AI Chat, Information Library, etc.). Each needs to be downloaded once before use. This keeps the base application small and lets you choose what you need. Most features in the Preparedness tab work immediately with no installation required.</p>
   <h3>The AI gives wrong or unhelpful answers. What should I do?</h3>
@@ -15366,9 +15376,9 @@ function showHelp(section) {
   </table>
 
   <div style="text-align:center;margin-top:40px;padding-top:16px;border-top:2px solid ${border};color:${muted};font-size:12px;">
-    <strong>Project N.O.M.A.D. for Windows v${VERSION}</strong><br>
+    <strong>Project N.O.M.A.D. v${VERSION}</strong><br>
     <a href="https://www.projectnomad.us">projectnomad.us</a> &mdash;
-    <a href="https://github.com/SysAdminDoc/nomad-windows">GitHub</a> &mdash;
+    <a href="https://github.com/SysAdminDoc/project-nomad-desktop">GitHub</a> &mdash;
     <a href="https://discord.com/invite/crosstalksolutions">Discord Community</a><br><br>
     Based on Project N.O.M.A.D. by Crosstalk Solutions. Windows port by SysAdminDoc.<br>
     <em>Knowledge that never goes offline.</em>

@@ -1,7 +1,7 @@
 """
-Project N.O.M.A.D. for Windows v3.1.0
+Project N.O.M.A.D. Desktop v3.2.0
 Node for Offline Media, Archives, and Data
-Native Windows edition — no Docker required.
+Cross-platform desktop edition — no Docker required.
 """
 
 import sys
@@ -9,7 +9,6 @@ import os
 import subprocess
 import threading
 import time
-import ctypes
 import logging
 
 logging.basicConfig(
@@ -338,7 +337,9 @@ def main():
     _window.events.closing += on_window_closing
     threading.Thread(target=_navigate_when_ready, daemon=True).start()
 
-    webview.start(gui='edgechromium', debug=False)
+    from platform_utils import get_webview_gui
+    gui = get_webview_gui()
+    webview.start(gui=gui, debug=False)
 
 
 if __name__ == '__main__':

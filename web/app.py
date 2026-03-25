@@ -13,6 +13,7 @@ from flask import Flask, render_template, jsonify, request, Response
 from werkzeug.utils import secure_filename
 
 from config import get_data_dir, set_data_dir
+from platform_utils import get_data_base
 try:
     from web.catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
 except Exception:
@@ -30,6 +31,7 @@ from services.manager import (
 )
 
 log = logging.getLogger('nomad.web')
+_CREATION_FLAGS = {'creationflags': 0x08000000} if sys.platform == 'win32' else {}
 
 SERVICE_MODULES = {
     'ollama': ollama,
@@ -1212,21 +1214,11 @@ RULES:
             cpu_name = platform.processor()
             cpu_percent = 0
 
-        # GPU detection
-        gpu_name = 'None detected'
-        gpu_vram = ''
-        try:
-            result = subprocess.run(
-                ['nvidia-smi', '--query-gpu=name,memory.total', '--format=csv,noheader,nounits'],
-                capture_output=True, text=True, timeout=5, creationflags=0x08000000,
-            )
-            if result.returncode == 0 and result.stdout.strip():
-                parts = result.stdout.strip().split(', ')
-                gpu_name = parts[0]
-                if len(parts) > 1:
-                    gpu_vram = f'{int(parts[1])} MB'
-        except Exception:
-            pass
+        # GPU detection (cross-platform via platform_utils)
+        from platform_utils import detect_gpu as _detect_gpu
+        _gpu = _detect_gpu()
+        gpu_name = _gpu.get('name', 'None detected')
+        gpu_vram = f'{_gpu["vram_mb"]} MB' if _gpu.get('vram_mb') else ''
 
         # Disk partitions
         disk_devices = []
@@ -1478,14 +1470,9 @@ RULES:
                 hw['cpu_cores'] = psutil.cpu_count()
                 hw['ram_gb'] = round(psutil.virtual_memory().total / (1024**3), 1)
 
-                try:
-                    r = subprocess.run(
-                        ['nvidia-smi', '--query-gpu=name', '--format=csv,noheader'],
-                        capture_output=True, text=True, timeout=5, creationflags=0x08000000,
-                    )
-                    hw['gpu'] = r.stdout.strip() if r.returncode == 0 else 'None'
-                except Exception:
-                    hw['gpu'] = 'None'
+                from platform_utils import detect_gpu as _bench_gpu
+                _bg = _bench_gpu()
+                hw['gpu'] = _bg.get('name', 'None')
 
                 if mode in ('full', 'system'):
                     # CPU benchmark — prime calculation
@@ -1515,7 +1502,7 @@ RULES:
 
                     # Disk benchmark
                     _benchmark_state.update({'progress': 50, 'stage': 'Disk benchmark...'})
-                    test_dir = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD', 'benchmark')
+                    test_dir = os.path.join(get_data_base(), 'ProjectNOMAD', 'benchmark')
                     os.makedirs(test_dir, exist_ok=True)
                     test_file = os.path.join(test_dir, 'bench.tmp')
 
@@ -1645,7 +1632,7 @@ RULES:
     MAPS_DIR_NAME = 'maps'
 
     def get_maps_dir():
-        path = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD', MAPS_DIR_NAME)
+        path = os.path.join(get_data_base(), 'ProjectNOMAD', MAPS_DIR_NAME)
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -1913,41 +1900,64 @@ RULES:
 
     def _get_pmtiles_cli():
         """Get path to pmtiles CLI, auto-downloading if needed."""
+        from platform_utils import exe_name, IS_WINDOWS, IS_MACOS
         services_dir = get_services_dir()
         pmtiles_dir = os.path.join(services_dir, 'pmtiles')
         os.makedirs(pmtiles_dir, exist_ok=True)
-        exe = os.path.join(pmtiles_dir, 'pmtiles.exe')
+        exe = os.path.join(pmtiles_dir, exe_name('pmtiles'))
         if os.path.isfile(exe):
             return exe
         # Download from GitHub releases
         import urllib.request, zipfile, io, json as _json
-        # Resolve latest release asset URL via GitHub API
         api_url = 'https://api.github.com/repos/protomaps/go-pmtiles/releases/latest'
         log.info('Resolving pmtiles CLI release from %s', api_url)
         req = urllib.request.Request(api_url, headers={'User-Agent': 'ProjectNOMAD/3.5.0', 'Accept': 'application/vnd.github+json'})
         with urllib.request.urlopen(req, timeout=30) as resp:
             release = _json.loads(resp.read())
         url = None
+        if IS_WINDOWS:
+            plat_key, arch_key = 'Windows', 'x86_64'
+        elif IS_MACOS:
+            import platform as _plat
+            arch = 'arm64' if _plat.machine() == 'arm64' else 'x86_64'
+            plat_key, arch_key = 'Darwin', arch
+        else:
+            import platform as _plat
+            arch = 'arm64' if _plat.machine() == 'aarch64' else 'x86_64'
+            plat_key, arch_key = 'Linux', arch
         for asset in release.get('assets', []):
-            if 'Windows' in asset['name'] and 'x86_64' in asset['name'] and asset['name'].endswith('.zip'):
+            if plat_key in asset['name'] and arch_key in asset['name']:
                 url = asset['browser_download_url']
                 break
         if not url:
-            log.error('No Windows x86_64 asset found in go-pmtiles release')
+            log.error('No %s %s asset found in go-pmtiles release', plat_key, arch_key)
             return None
         log.info('Downloading pmtiles CLI from %s', url)
         req = urllib.request.Request(url, headers={'User-Agent': 'ProjectNOMAD/3.5.0'})
         with urllib.request.urlopen(req, timeout=120) as resp:
             data = resp.read()
-        with zipfile.ZipFile(io.BytesIO(data)) as zf:
-            for name in zf.namelist():
-                if name.endswith('pmtiles.exe') or name.endswith('pmtiles'):
-                    extracted = zf.extract(name, pmtiles_dir)
-                    # Move to expected location if in subdirectory
-                    if extracted != exe:
-                        shutil.move(extracted, exe)
-                    break
+        binary_name = exe_name('pmtiles') if IS_WINDOWS else 'pmtiles'
+        if url.endswith('.zip'):
+            with zipfile.ZipFile(io.BytesIO(data)) as zf:
+                for name in zf.namelist():
+                    if name.endswith(binary_name):
+                        extracted = zf.extract(name, pmtiles_dir)
+                        if extracted != exe:
+                            shutil.move(extracted, exe)
+                        break
+        elif url.endswith('.tar.gz') or url.endswith('.tgz'):
+            import tarfile
+            with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tf:
+                for name in tf.getnames():
+                    if name.endswith(binary_name):
+                        tf.extract(name, pmtiles_dir)
+                        extracted = os.path.join(pmtiles_dir, name)
+                        if extracted != exe:
+                            shutil.move(extracted, exe)
+                        break
         if os.path.isfile(exe):
+            from platform_utils import make_executable
+            make_executable(exe)
             log.info('pmtiles CLI installed at %s', exe)
             return exe
         return None
@@ -1986,12 +1996,11 @@ RULES:
             _map_downloads[region_id]['progress'] = 10
 
             # Run pmtiles extract with bbox
-            CREATE_NO_WINDOW = 0x08000000
             cmd = [pmtiles_exe, 'extract', source_url, temp_file, f'--bbox={bbox_str}', '--maxzoom=12']
             log.info('Running: %s', ' '.join(cmd))
 
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                    creationflags=CREATE_NO_WINDOW, text=True)
+                                    text=True, **_CREATION_FLAGS)
 
             # Monitor progress from output
             lines = []
@@ -2167,7 +2176,7 @@ RULES:
     # ─── Knowledge Base / RAG API ─────────────────────────────────────
 
     def get_kb_upload_dir():
-        path = os.path.join(os.environ.get('APPDATA', ''), 'ProjectNOMAD', 'kb_uploads')
+        path = os.path.join(get_data_base(), 'ProjectNOMAD', 'kb_uploads')
         os.makedirs(path, exist_ok=True)
         return path
 
@@ -2392,7 +2401,7 @@ RULES:
         """Check GitHub for newer release."""
         try:
             import requests as rq
-            resp = rq.get('https://api.github.com/repos/SysAdminDoc/nomad-windows/releases/latest', timeout=10)
+            resp = rq.get('https://api.github.com/repos/SysAdminDoc/project-nomad-desktop/releases/latest', timeout=10)
             if resp.ok:
                 data = resp.json()
                 latest = data.get('tag_name', '').lstrip('v')
@@ -3192,7 +3201,7 @@ RULES:
         <tr><td>NOAA Weather</td><td>162.400-.550 MHz</td></tr>
         </table>'''
         html += '</div></div>'
-        html += '<div style="text-align:center;margin-top:8px;font-size:9px;color:#999;">Project N.O.M.A.D. for Windows - Offline Survival Command Center</div>'
+        html += '<div style="text-align:center;margin-top:8px;font-size:9px;color:#999;">Project N.O.M.A.D. - Offline Survival Command Center</div>'
         html += '</body></html>'
         return Response(html, mimetype='text/html')
 
@@ -4020,11 +4029,25 @@ RULES:
         return path
 
     def get_ytdlp_path():
-        return os.path.join(get_services_dir(), 'yt-dlp', 'yt-dlp.exe')
+        from platform_utils import IS_WINDOWS, IS_MACOS
+        if IS_WINDOWS:
+            name = 'yt-dlp.exe'
+        elif IS_MACOS:
+            name = 'yt-dlp_macos'
+        else:
+            name = 'yt-dlp_linux'
+        return os.path.join(get_services_dir(), 'yt-dlp', name)
 
     VIDEO_CATEGORIES = ['survival', 'medical', 'repair', 'bushcraft', 'cooking', 'radio', 'farming', 'defense', 'general']
 
-    YTDLP_URL = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe'
+    def _get_ytdlp_url():
+        from platform_utils import IS_WINDOWS, IS_MACOS
+        base = 'https://github.com/yt-dlp/yt-dlp/releases/latest/download/'
+        if IS_WINDOWS:
+            return base + 'yt-dlp.exe'
+        elif IS_MACOS:
+            return base + 'yt-dlp_macos'
+        return base + 'yt-dlp_linux'
 
     _ytdlp_downloads = {}  # id -> {status, percent, title, speed, error}
     _ytdlp_dl_counter = 0
@@ -4474,7 +4497,7 @@ RULES:
         try:
             result = subprocess.run(
                 [exe, '--flat-playlist', '--dump-json', '--playlist-end', '1', url + '/videos'],
-                capture_output=True, text=True, timeout=20, creationflags=0x08000000,
+                capture_output=True, text=True, timeout=20, **_CREATION_FLAGS,
             )
             alive = result.returncode == 0 and bool(result.stdout.strip())
             if not alive:
@@ -4513,7 +4536,7 @@ RULES:
         try:
             result = subprocess.run(
                 [exe, '--flat-playlist', '--dump-json', f'ytsearch{limit}:{query}'],
-                capture_output=True, text=True, timeout=30, creationflags=0x08000000,
+                capture_output=True, text=True, timeout=30, **_CREATION_FLAGS,
             )
             videos = []
             for line in result.stdout.strip().split('\n'):
@@ -4560,7 +4583,7 @@ RULES:
             result = subprocess.run(
                 [exe, '--flat-playlist', '--dump-json', '--playlist-end', str(limit),
                  channel_url + '/videos'],
-                capture_output=True, text=True, timeout=45, creationflags=0x08000000,
+                capture_output=True, text=True, timeout=45, **_CREATION_FLAGS,
             )
             videos = []
             for line in result.stdout.strip().split('\n'):
@@ -4709,7 +4732,7 @@ RULES:
         if installed:
             try:
                 result = subprocess.run([exe, '--version'], capture_output=True, text=True, timeout=5,
-                                        creationflags=0x08000000)
+                                        **_CREATION_FLAGS)
                 version = result.stdout.strip()
             except Exception:
                 pass
@@ -4729,7 +4752,7 @@ RULES:
             try:
                 _ytdlp_install_state.update({'status': 'downloading', 'percent': 10, 'error': None})
                 import requests as req
-                resp = req.get(YTDLP_URL, stream=True, timeout=120, allow_redirects=True)
+                resp = req.get(_get_ytdlp_url(), stream=True, timeout=120, allow_redirects=True)
                 resp.raise_for_status()
                 total = int(resp.headers.get('content-length', 0))
                 downloaded = 0
@@ -4739,6 +4762,8 @@ RULES:
                         downloaded += len(chunk)
                         if total > 0:
                             _ytdlp_install_state['percent'] = int(downloaded / total * 90) + 10
+                from platform_utils import make_executable
+                make_executable(exe)
                 _ytdlp_install_state.update({'status': 'complete', 'percent': 100, 'error': None})
                 log.info('yt-dlp installed')
             except Exception as e:
@@ -4780,7 +4805,7 @@ RULES:
                 _ytdlp_downloads[dl_id]['status'] = 'fetching info'
                 info_result = subprocess.run(
                     [exe, '--no-download', '--print', '%(title)s|||%(duration_string)s|||%(filesize_approx)s', dl_url],
-                    capture_output=True, text=True, timeout=30, creationflags=0x08000000,
+                    capture_output=True, text=True, timeout=30, **_CREATION_FLAGS,
                 )
                 if info_result.returncode != 0:
                     # Video unavailable — report error with clear message
@@ -4803,7 +4828,7 @@ RULES:
                      '--write-subs', '--write-auto-subs', '--sub-langs', 'en', '--convert-subs', 'srt',
                      '-o', output_tmpl, dl_url],
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                    creationflags=0x08000000,
+                    **_CREATION_FLAGS,
                 )
 
                 for line in proc.stdout:
@@ -4939,7 +4964,7 @@ RULES:
                 try:
                     check = subprocess.run(
                         [exe, '--simulate', '--no-playlist', url],
-                        capture_output=True, text=True, timeout=15, creationflags=0x08000000,
+                        capture_output=True, text=True, timeout=15, **_CREATION_FLAGS,
                     )
                     if check.returncode != 0:
                         # URL is dead — search for the video by title instead
@@ -4947,7 +4972,7 @@ RULES:
                         _ytdlp_downloads[queue_id]['title'] = f'[{i+1}/{len(to_download)}] Searching: {title}'
                         search_result = subprocess.run(
                             [exe, '--flat-playlist', '--dump-json', f'ytsearch1:{title}'],
-                            capture_output=True, text=True, timeout=20, creationflags=0x08000000,
+                            capture_output=True, text=True, timeout=20, **_CREATION_FLAGS,
                         )
                         if search_result.returncode == 0 and search_result.stdout.strip():
                             found = json.loads(search_result.stdout.strip().split('\n')[0])
@@ -4970,7 +4995,7 @@ RULES:
                          '--write-subs', '--write-auto-subs', '--sub-langs', 'en', '--convert-subs', 'srt',
                          '-o', output_tmpl, url],
                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
-                        creationflags=0x08000000,
+                        **_CREATION_FLAGS,
                     )
                     for line in proc.stdout:
                         line = line.strip()
@@ -5024,10 +5049,17 @@ RULES:
 
     AUDIO_CATEGORIES = ['general', 'survival', 'medical', 'radio', 'podcast', 'audiobook', 'music', 'training']
 
-    FFMPEG_URL = 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip'
+    def _get_ffmpeg_url():
+        from platform_utils import IS_WINDOWS, IS_MACOS
+        if IS_MACOS:
+            return 'https://evermeet.cx/ffmpeg/getrelease/zip'
+        elif IS_WINDOWS:
+            return 'https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip'
+        return 'https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-amd64-static.tar.xz'
 
     def get_ffmpeg_path():
-        return os.path.join(get_services_dir(), 'ffmpeg', 'ffmpeg.exe')
+        from platform_utils import exe_name
+        return os.path.join(get_services_dir(), 'ffmpeg', exe_name('ffmpeg'))
 
     @app.route('/api/audio')
     def api_audio_list():
@@ -5148,7 +5180,7 @@ RULES:
                 _ytdlp_downloads[dl_id]['status'] = 'fetching info'
                 info_result = subprocess.run(
                     [exe, '--no-download', '--print', '%(title)s|||%(duration_string)s|||%(uploader)s', url],
-                    capture_output=True, text=True, timeout=30, creationflags=0x08000000,
+                    capture_output=True, text=True, timeout=30, **_CREATION_FLAGS,
                 )
                 parts = info_result.stdout.strip().split('|||')
                 audio_title = parts[0] if parts else url
@@ -5171,7 +5203,7 @@ RULES:
                            '-o', output_tmpl, url]
 
                 proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                                        text=True, creationflags=0x08000000)
+                                        text=True, **_CREATION_FLAGS)
                 for line in proc.stdout:
                     line = line.strip()
                     if '[download]' in line and '%' in line:
@@ -5219,28 +5251,49 @@ RULES:
 
         def do_install():
             try:
-                zip_path = os.path.join(ffmpeg_dir, 'ffmpeg.zip')
                 import requests as req
-                resp = req.get(FFMPEG_URL, stream=True, timeout=300, allow_redirects=True)
+                from platform_utils import exe_name, IS_WINDOWS, make_executable
+                url = _get_ffmpeg_url()
+                arc_ext = '.zip' if IS_WINDOWS else ('.tar.xz' if 'tar.xz' in url or 'static' in url else '.zip')
+                arc_path = os.path.join(ffmpeg_dir, 'ffmpeg' + arc_ext)
+                resp = req.get(url, stream=True, timeout=300, allow_redirects=True)
                 resp.raise_for_status()
                 total = int(resp.headers.get('content-length', 0))
                 downloaded = 0
-                with open(zip_path, 'wb') as f:
+                with open(arc_path, 'wb') as f:
                     for chunk in resp.iter_content(chunk_size=131072):
                         f.write(chunk)
                         downloaded += len(chunk)
                         if total > 0:
                             _ffmpeg_install['percent'] = int(downloaded / total * 80)
                 _ffmpeg_install.update({'status': 'extracting', 'percent': 85})
-                import zipfile
-                with zipfile.ZipFile(zip_path, 'r') as zf:
-                    for member in zf.namelist():
-                        basename = os.path.basename(member)
-                        if basename in ('ffmpeg.exe', 'ffprobe.exe'):
-                            data = zf.read(member)
-                            with open(os.path.join(ffmpeg_dir, basename), 'wb') as out:
-                                out.write(data)
-                os.remove(zip_path)
+                ffmpeg_name = exe_name('ffmpeg')
+                ffprobe_name = exe_name('ffprobe')
+                if arc_path.endswith('.zip'):
+                    import zipfile
+                    with zipfile.ZipFile(arc_path, 'r') as zf:
+                        for member in zf.namelist():
+                            basename = os.path.basename(member)
+                            if basename in (ffmpeg_name, ffprobe_name):
+                                data = zf.read(member)
+                                dest = os.path.join(ffmpeg_dir, basename)
+                                with open(dest, 'wb') as out:
+                                    out.write(data)
+                                make_executable(dest)
+                else:
+                    import tarfile
+                    mode = 'r:xz' if arc_path.endswith('.tar.xz') else 'r:gz'
+                    with tarfile.open(arc_path, mode) as tf:
+                        for member in tf.getnames():
+                            basename = os.path.basename(member)
+                            if basename in (ffmpeg_name, ffprobe_name, 'ffmpeg', 'ffprobe'):
+                                tf.extract(member, ffmpeg_dir)
+                                extracted = os.path.join(ffmpeg_dir, member)
+                                dest = os.path.join(ffmpeg_dir, exe_name(basename.split('.')[0]))
+                                if extracted != dest:
+                                    shutil.move(extracted, dest)
+                                make_executable(dest)
+                os.remove(arc_path)
                 _ffmpeg_install.update({'status': 'complete', 'percent': 100})
                 log.info('FFmpeg installed')
             except Exception as e:
@@ -7963,10 +8016,11 @@ th {{ background: #eee; font-weight: 700; }}
         def do_power():
             import time as t
             t.sleep(2)
+            from platform_utils import system_reboot, system_shutdown
             if action == 'reboot':
-                os.system('shutdown /r /t 5 /c "N.O.M.A.D. initiated reboot"')
+                system_reboot()
             else:
-                os.system('shutdown /s /t 5 /c "N.O.M.A.D. initiated shutdown"')
+                system_shutdown()
         threading.Thread(target=do_power, daemon=True).start()
         return jsonify({'status': f'{action} initiated', 'delay': 5})
 
@@ -8641,7 +8695,7 @@ th {{ background: #eee; font-weight: 700; }}
 <div><strong>Radio:</strong> FRS Ch 1 (rally), Ch 3 (emergency). GMRS Ch 20 (emergency). HAM 146.520 MHz (calling).</div>
 <div><strong>Medical:</strong> Direct pressure for bleeding. Tourniquet if limb bleeding won\'t stop. Note time applied.</div>
 </div>
-<div style="text-align:center;margin-top:8px;font-size:8px;color:#666;">Generated by Project N.O.M.A.D. for Windows — projectnomad.us</div>
+<div style="text-align:center;margin-top:8px;font-size:8px;color:#666;">Generated by Project N.O.M.A.D. — projectnomad.us</div>
 </body></html>'''
 
         return html

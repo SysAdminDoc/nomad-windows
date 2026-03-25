@@ -16,8 +16,10 @@ log = logging.getLogger('nomad.kolibri')
 SERVICE_ID = 'kolibri'
 KOLIBRI_PORT = 8300
 
-# Python embeddable package for Windows (portable, no install needed)
-PYTHON_EMBED_URL = 'https://www.python.org/ftp/python/3.12.8/python-3.12.8-embed-amd64.zip'
+# Python embeddable package (portable, Windows only — Linux/macOS use system Python)
+def _get_python_url():
+    from platform_utils import get_python_embed_url
+    return get_python_embed_url()
 GET_PIP_URL = 'https://bootstrap.pypa.io/get-pip.py'
 
 
@@ -33,12 +35,13 @@ def _python_exe():
         return sys.executable
 
     # 2. Check our bundled portable Python
-    bundled = os.path.join(_get_bundled_python_dir(), 'python.exe')
+    from platform_utils import python_binary
+    bundled = os.path.join(_get_bundled_python_dir(), python_binary())
     if os.path.isfile(bundled):
         return bundled
 
     # 3. Check system PATH
-    p = shutil.which('python') or shutil.which('python3')
+    p = shutil.which('python3') or shutil.which('python')
     if p:
         return p
 
@@ -48,30 +51,34 @@ def _python_exe():
 
 def _auto_install_python():
     """Download portable Python embeddable package and set up pip."""
-    import zipfile
+    from platform_utils import extract_archive, python_binary, IS_WINDOWS
     import requests
+
+    url = _get_python_url()
+    if not url:
+        # On Linux/macOS, system Python should be available
+        raise RuntimeError('No portable Python download available for this platform — install Python via your package manager')
 
     py_dir = _get_bundled_python_dir()
     os.makedirs(py_dir, exist_ok=True)
-    zip_path = os.path.join(py_dir, 'python-embed.zip')
+    arc_ext = '.zip' if IS_WINDOWS else '.tgz'
+    zip_path = os.path.join(py_dir, 'python-embed' + arc_ext)
 
     log.info('Auto-downloading portable Python 3.12...')
     try:
         # Download embeddable Python
-        resp = requests.get(PYTHON_EMBED_URL, stream=True, timeout=30)
+        resp = requests.get(url, stream=True, timeout=30)
         resp.raise_for_status()
         with open(zip_path, 'wb') as f:
             for chunk in resp.iter_content(chunk_size=65536):
                 f.write(chunk)
 
         log.info('Extracting Python...')
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            zf.extractall(py_dir)
-        os.remove(zip_path)
+        extract_archive(zip_path, py_dir)
 
-        python_exe = os.path.join(py_dir, 'python.exe')
+        python_exe = os.path.join(py_dir, python_binary())
         if not os.path.isfile(python_exe):
-            raise RuntimeError('Python extracted but python.exe not found')
+            raise RuntimeError('Python extracted but python binary not found')
 
         # Enable pip by modifying the ._pth file to include site-packages
         pth_files = [f for f in os.listdir(py_dir) if f.endswith('._pth')]
@@ -92,10 +99,11 @@ def _auto_install_python():
         with open(get_pip, 'w') as f:
             f.write(resp.text)
 
+        from platform_utils import run_kwargs
         result = subprocess.run(
             [python_exe, get_pip, '--no-warn-script-location'],
             capture_output=True, text=True, timeout=120,
-            creationflags=0x08000000,
+            **run_kwargs(),
         )
         if result.returncode != 0:
             log.warning(f'pip install output: {result.stderr}')
@@ -124,10 +132,11 @@ def get_home_dir():
 
 def is_installed():
     try:
+        from platform_utils import run_kwargs
         result = subprocess.run(
             [_python_exe(), '-m', 'kolibri', '--version'],
             capture_output=True, text=True, timeout=10,
-            creationflags=0x08000000,
+            **run_kwargs(),
         )
         return result.returncode == 0
     except Exception:
@@ -156,17 +165,18 @@ def install(callback=None):
 
         _download_progress[SERVICE_ID].update({'percent': 10, 'speed': 'Installing Kolibri...'})
 
+        from platform_utils import run_kwargs as _run_kwargs
         result = subprocess.run(
             [py, '-m', 'pip', 'install', 'kolibri'],
             capture_output=True, text=True, timeout=600,
-            creationflags=0x08000000,
+            **_run_kwargs(),
         )
         if result.returncode != 0:
             # Try --user fallback
             result = subprocess.run(
                 [py, '-m', 'pip', 'install', '--user', 'kolibri'],
                 capture_output=True, text=True, timeout=600,
-                creationflags=0x08000000,
+                **_run_kwargs(),
             )
             if result.returncode != 0:
                 raise RuntimeError(f'pip install failed: {result.stderr}')
@@ -179,7 +189,7 @@ def install(callback=None):
         subprocess.run(
             [py, '-m', 'kolibri', 'manage', 'migrate', '--noinput'],
             env=env, capture_output=True, text=True, timeout=120,
-            creationflags=0x08000000,
+            **_run_kwargs(),
         )
 
         db = get_db()
@@ -222,13 +232,10 @@ def start():
     env['KOLIBRI_HTTP_PORT'] = str(KOLIBRI_PORT)
     env['KOLIBRI_LISTEN_PORT'] = str(KOLIBRI_PORT)
 
-    CREATE_NO_WINDOW = 0x08000000
+    from platform_utils import popen_kwargs
     proc = subprocess.Popen(
         [_python_exe(), '-m', 'kolibri', 'start', '--foreground', '--port', str(KOLIBRI_PORT)],
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=CREATE_NO_WINDOW,
+        **popen_kwargs(env=env),
     )
 
     from services.manager import register_process

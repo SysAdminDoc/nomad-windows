@@ -13,7 +13,8 @@ log = logging.getLogger('nomad.config')
 
 def get_config_path():
     """Fixed location for config pointer (outside data dir to solve bootstrap)."""
-    base = os.environ.get('LOCALAPPDATA', os.path.expanduser('~'))
+    from platform_utils import get_config_base
+    base = get_config_base()
     return os.path.join(base, 'ProjectNOMAD', 'config.json')
 
 
@@ -46,7 +47,8 @@ def get_data_dir() -> str:
     if data_dir and os.path.isabs(data_dir):
         os.makedirs(data_dir, exist_ok=True)
         return data_dir
-    default = os.path.join(os.environ.get('APPDATA', os.path.expanduser('~')), 'ProjectNOMAD')
+    from platform_utils import get_data_base
+    default = os.path.join(get_data_base(), 'ProjectNOMAD')
     os.makedirs(default, exist_ok=True)
     return default
 

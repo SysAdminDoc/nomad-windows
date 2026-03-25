@@ -1,14 +1,14 @@
 <div align="center">
 <img src="project_nomad_logo.png" width="200" height="200"/>
 
-# Project N.O.M.A.D. for Windows v3.2.0
+# Project N.O.M.A.D. Desktop v3.2.0
 ### The Most Complete Offline Survival Command Center Available
 
 **Free. Open Source. No Internet Required After Setup.**
 
-Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ downloadable datasets, situation-aware AI with proactive alerts and voice input, 3 dashboard modes with 12 live widgets, tactical operations center, nuclear effects simulator, medical module with TCCC/triage, food production with yield analysis, federation v2 with resource marketplace, sensor integration, power management, security cameras, built-in BitTorrent client, 210 survival channels, curated content catalogs (141 books, 131 videos, 102 audio, 152 torrents), and a premium dark dashboard with sparkline charts and night vision mode.
+Cross-platform desktop edition — no Docker, no WSL, no VMs. Runs on Windows, Linux, and macOS. 6 managed services, 100+ downloadable datasets, situation-aware AI with proactive alerts and voice input, 3 dashboard modes with 12 live widgets, tactical operations center, nuclear effects simulator, medical module with TCCC/triage, food production with yield analysis, federation v2 with resource marketplace, sensor integration, power management, security cameras, built-in BitTorrent client, 210 survival channels, curated content catalogs (141 books, 131 videos, 102 audio, 152 torrents), and a premium dark dashboard with sparkline charts and night vision mode.
 
-[![Release](https://img.shields.io/github/v/release/SysAdminDoc/nomad-windows?include_prereleases&label=Download&color=blue)](https://github.com/SysAdminDoc/nomad-windows/releases/latest)
+[![Release](https://img.shields.io/github/v/release/SysAdminDoc/project-nomad-desktop?include_prereleases&label=Download&color=blue)](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest)
 [![Website](https://img.shields.io/badge/Website-projectnomad.us-blue)](https://www.projectnomad.us)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2)](https://discord.com/invite/crosstalksolutions)
 
@@ -16,11 +16,11 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 
 ---
 
-> Competitors charge $280+ for a USB stick with curated content (Prepper Disk, Prep Drive). N.O.M.A.D. for Windows does everything they do and 10x more — for free. 50+ map sources, 41 interactive calculators, 56 reference cards, 17 emergency procedures, 21 interactive decision guides, 15 checklist templates, 4 training scenarios, NukeMap v3.2.0 nuclear simulator, medical module with TCCC/triage and drug interaction checking, food production with yield analysis, federation v2 with resource marketplace, sensor integration, power management, security cameras, AI document intelligence, built-in BitTorrent client, 210 survival channels, curated content catalogs (141 books, 131 videos, 102 audio, 152 torrents), a 38-section built-in user guide, and printable emergency reference sheets — the most comprehensive offline prepper command center ever built into a single application.
+> Competitors charge $280+ for a USB stick with curated content (Prepper Disk, Prep Drive). N.O.M.A.D. Desktop does everything they do and 10x more — for free. 50+ map sources, 41 interactive calculators, 56 reference cards, 17 emergency procedures, 21 interactive decision guides, 15 checklist templates, 4 training scenarios, NukeMap v3.2.0 nuclear simulator, medical module with TCCC/triage and drug interaction checking, food production with yield analysis, federation v2 with resource marketplace, sensor integration, power management, security cameras, AI document intelligence, built-in BitTorrent client, 210 survival channels, curated content catalogs (141 books, 131 videos, 102 audio, 152 torrents), a 38-section built-in user guide, and printable emergency reference sheets — the most comprehensive offline prepper command center ever built into a single application.
 
-**[Download Portable .exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD.exe)** — single file, no install needed, run from anywhere (USB, desktop, etc.)
+**[Download Portable .exe](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest/download/ProjectNOMAD.exe)** — single file, no install needed, run from anywhere (USB, desktop, etc.)
 
-**[Download Installer](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD-Setup.exe)** — installs to Program Files with Start Menu shortcut and desktop icon
+**[Download Installer](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest/download/ProjectNOMAD-Setup.exe)** — installs to Program Files with Start Menu shortcut and desktop icon
 
 ## What Makes This Different
 
@@ -189,19 +189,19 @@ OS dark mode auto-detection applies matching theme on first launch.
 ## Quick Start
 
 ### Option 1: Portable (no install)
-1. Download **[ProjectNOMAD.exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD.exe)**
+1. Download **[ProjectNOMAD.exe](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest/download/ProjectNOMAD.exe)**
 2. Double-click to run — works from USB drives, desktops, anywhere
 3. Follow the setup wizard and getting-started checklist
 
 ### Option 2: Installer
-1. Download **[ProjectNOMAD-Setup.exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD-Setup.exe)**
+1. Download **[ProjectNOMAD-Setup.exe](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest/download/ProjectNOMAD-Setup.exe)**
 2. Run the installer — adds Start Menu shortcut and desktop icon
 3. Launch from Start Menu or desktop
 
 ### Option 3: Run from source
 ```bash
-git clone https://github.com/SysAdminDoc/nomad-windows.git
-cd nomad-windows
+git clone https://github.com/SysAdminDoc/project-nomad-desktop.git
+cd project-nomad-desktop
 python nomad.py
 ```
 Dependencies auto-install on first run.
@@ -262,7 +262,7 @@ kb_uploads/        # Knowledge base documents
 
 ## Original vs Windows Edition
 
-This project is based on [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) by Crosstalk Solutions. The original is a Docker-based Linux application; this is a native Windows port that extends it significantly.
+This project is based on [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) by Crosstalk Solutions. The original is a Docker-based Linux application; this is a cross-platform desktop edition that extends it significantly.
 
 ### What's the Same
 Both versions share the same core philosophy: an offline-first, self-contained knowledge and AI platform. Both include Ollama (AI chat), Kiwix (offline encyclopedia), Kolibri (education), ProtoMaps (offline maps), CyberChef (data tools), and Qdrant (vector search). The visual style and "Command Center" branding are consistent.
@@ -270,7 +270,7 @@ Both versions share the same core philosophy: an offline-first, self-contained k
 ### What the Original Has That We Don't
 | Feature | Original | Windows Edition |
 |---------|----------|-----------------|
-| Platform | Docker on Linux (Ubuntu/Debian) | Native Windows (no Docker) |
+| Platform | Docker on Linux (Ubuntu/Debian) | Native Desktop (no Docker) |
 | Notes | FlatNotes (separate app) | Built-in Markdown notes |
 | Community Benchmark | Online leaderboard at benchmark.projectnomad.us | Local-only benchmark |
 | Multi-user Auth | Planned | Dashboard password |
@@ -316,7 +316,7 @@ Both versions share the same core philosophy: an offline-first, self-contained k
 | | Original | Windows Edition |
 |---|----------|-----------------|
 | Installation | `curl` + bash script, requires Docker | Download .exe and double-click |
-| Runtime | Docker containers on Linux | Native Windows processes |
+| Runtime | Docker containers on Linux | Native processes (Windows/Linux/macOS) |
 | Services | Docker Compose orchestration | Python subprocess management |
 | Database | MySQL | SQLite (zero config) |
 | Frontend | React + Inertia.js + Tailwind | Single-file HTML/CSS/JS |
@@ -327,4 +327,4 @@ Both versions share the same core philosophy: an offline-first, self-contained k
 
 ## Credits
 
-Based on [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) by Crosstalk Solutions. Windows port by [SysAdminDoc](https://github.com/SysAdminDoc).
+Based on [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) by Crosstalk Solutions. Desktop edition by [SysAdminDoc](https://github.com/SysAdminDoc).

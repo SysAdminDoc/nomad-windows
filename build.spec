@@ -1,5 +1,5 @@
 # -*- mode: python ; coding: utf-8 -*-
-# PyInstaller spec for Project N.O.M.A.D. for Windows
+# PyInstaller spec for Project N.O.M.A.D. Desktop
 # Build: pyinstaller build.spec
 
 import os
@@ -17,6 +17,7 @@ a = Analysis(
         ('services', 'services'),
         ('db.py', '.'),
         ('config.py', '.'),
+        ('platform_utils.py', '.'),
     ],
     hiddenimports=[
         'flask',

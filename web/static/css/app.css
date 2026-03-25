@@ -1279,6 +1279,14 @@ a { color: var(--accent); text-decoration: none; }
 .media-book-cover.txt { background: linear-gradient(135deg, #7f8c8d 0%, #5d6d7e 100%); color: rgba(255,255,255,0.7); }
 .media-book-cover.mobi { background: linear-gradient(135deg, #f39c12 0%, #d68910 100%); color: rgba(255,255,255,0.7); }
 
+/* ─── Home Screen Layout ─── */
+.home-two-col { grid-template-columns: 1fr 1fr; }
+@media (max-width: 1000px) { .home-two-col { grid-template-columns: 1fr !important; } }
+details[open] > summary .nav-chevron { transform: rotate(90deg); }
+details > summary::-webkit-details-marker { display: none; }
+#home-quick-nav .cc-card { padding: 12px; min-height: unset; }
+#home-quick-nav .cc-card .cc-icon { margin-bottom: 4px; }
+
 /* ─── Torrent Category Filter Buttons ─── */
 .torrent-cat-btn { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 4px 10px; border-radius: 3px; }
 .torrent-cat-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); box-shadow: 0 1px 6px var(--accent-glow); }

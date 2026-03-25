@@ -1,10 +1,10 @@
-# Project N.O.M.A.D. for Windows
+# Project N.O.M.A.D.
 
 ## Overview
-Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) — the most comprehensive offline survival command center available. No Docker required. 6 managed services, proactive AI alerts, 21 interactive decision guides, 41 calculators, 37+ quick reference cards, medical module, training scenarios, food production, multi-node federation, power management, security cameras, AI document intelligence, built-in BitTorrent client, media library with 210 survival channels, 38-section user guide, and a premium dark dashboard with 4 themes.
+Cross-platform edition of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) — the most comprehensive offline survival command center available. Runs on Windows, Linux, and macOS. No Docker required. 6 managed services, proactive AI alerts, 21 interactive decision guides, 41 calculators, 37+ quick reference cards, medical module, training scenarios, food production, multi-node federation, power management, security cameras, AI document intelligence, built-in BitTorrent client, media library with 210 survival channels, 38-section user guide, and a premium dark dashboard with 4 themes.
 
 ## Tech Stack
-- **Python 3** — Flask web server + pywebview (WebView2) embedded browser
+- **Python 3** — Flask web server + pywebview (WebView2 on Windows, WebKit on macOS, GTK on Linux)
 - **SQLite** — 57 tables, WAL mode, 30s timeout, FK enforcement, SQLite backup API, 65 performance indexes
 - **CSS** — External files: `web/static/css/app.css` (base) + `web/static/css/premium.css` (polish layer)
 - **Native process management** — subprocess for Ollama, kiwix-serve, Kolibri; threading HTTP server for CyberChef
@@ -19,9 +19,10 @@ Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutio
 
 ## Project Structure
 ```
-nomad.py              # Entry point — Flask + WebView2 + tray + health monitor + service autostart
+nomad.py              # Entry point — Flask + pywebview + tray + health monitor + service autostart
+platform_utils.py     # Cross-platform abstraction — subprocess flags, paths, GPU detection, URLs, process management
 db.py                 # SQLite init (57 tables), indexes, migrations (migrations BEFORE indexes)
-config.py             # Data directory management (atomic writes via tmp+replace)
+config.py             # Data directory management (atomic writes via tmp+replace, XDG-aware paths)
 build.spec            # PyInstaller spec for portable exe
 icon.ico              # App icon (multi-size, 16-256px)
 installer.iss         # Inno Setup installer script
@@ -69,13 +70,21 @@ v3.2.0 — ~96,000 lines, 364 API routes, 57 DB tables (65 indexes), 25 prep sub
 - **v2.4.0 — Ops Platform Phase 5-7**: Enhanced maps (map_routes + map_annotations tables, route CRUD, annotation CRUD, minimap-data endpoint, 12 waypoint category icons with elevation tracking), Communications upgrade (freq_database table seeded with 35 standard frequencies — FRS/GMRS/MURS/2m/70cm/HF/Marine/CB/NOAA/Meshtastic, radio_profiles CRUD, comms dashboard API), Medical EHR upgrade (triage_events + handoff_reports tables, patient triage_category + care_phase columns, wound tourniquet_time + intervention_type columns, triage board API, SBAR handoff report generator with print, TCCC MARCH protocol endpoint)
 - **v3.0.0 — Ops Platform Phase 8+10**: Instrumented power & food (sensor_devices + sensor_readings tables, sensor CRUD + time-series query with period filtering, power history charting endpoint, autonomy forecast based on SOC/load/solar trends; planting_calendar table seeded with 31 zone 7 entries including yield_per_sqft and calories_per_lb, garden yield analysis with caloric output and person-days calculation, preservation_log CRUD for canned/dried/frozen tracking), Federation v2 (federation_peers with trust levels observer/member/trusted/admin, federation_offers + federation_requests for resource marketplace, federation_sitboard for aggregated situation from peers, network-map endpoint linking peers to waypoints, auto_sync flag per peer, trust-level CRUD)
 - **v3.2.0 — Deep Bug Hunt (31 fixes)**: SQL injection in sync-receive (column name validation), NameError on catalog import, UnboundLocalError in media favorite toggle, PMTiles OOM (streaming), path traversal Windows case bypass (normcase), radiation total_rem logic fix, escapeAttr single-quote XSS, duplicate formatBytes removal, connection-lost banner null crash, 5 missing safeFetch wrappers, duplicate Ctrl+K handler, bare digit shortcut removal, night mode theme fight fix, saveConversation title overwrite, atomic config writes, init_db connection leak, download resume fix (keep partials), _restart_tracker thread safety, register_process() API (all 5 service modules), torrent session null-deref races, health monitor 90s grace period
+- **v3.2.0 — Home Screen Overhaul**: Reorganized Home tab from 17 unstructured sections into 6 logical groups: (1) Welcome/Getting Started at top, (2) Search + Live Dashboard widgets, (3) Readiness Score + Needs Grid side-by-side, (4) AI Copilot, (5) Services section with inline Start/Stop All, (6) Quick Navigation + Printable References in collapsible `<details>`, (7) Activity Log collapsible. Removed redundant cmd-dashboard (duplicated live widgets), feature card grid collapsed into compact nav, print buttons moved into collapsible section. Added responsive two-column CSS for readiness+needs
+- **v3.2.0 — Cross-Platform Port**: New `platform_utils.py` abstraction layer (~320 lines). Converted all 13 Python files from Windows-only to cross-platform. Subprocess `creationflags` guarded via `popen_kwargs()`/`run_kwargs()`. Hardcoded `.exe` replaced with `exe_name()`. `os.startfile` → `open_folder()`. `ctypes.windll` → `pid_alive()`. PowerShell port queries → `find_pid_on_port()` (uses `lsof`/`ss` on Linux). GPU detection via `lspci` on Linux. Config/data paths use XDG on Linux, `~/Library/Application Support` on macOS. All service download URLs platform-aware via `_get_*_url()` functions. pywebview GUI backend auto-detected per platform
 
 ## Run / Build
 ```bash
-python nomad.py                    # Run from source
-pyinstaller build.spec             # Build portable exe -> dist/ProjectNOMAD.exe
-iscc installer.iss                 # Build installer -> ProjectNOMAD-Setup.exe
+python nomad.py                    # Run from source (any platform)
+pyinstaller build.spec             # Build portable binary (Windows: .exe, Linux/macOS: binary)
+iscc installer.iss                 # Build Windows installer -> ProjectNOMAD-Setup.exe
 ```
+
+### Platform Dependencies
+- **All**: Python 3.10+, pip packages (auto-installed by `_bootstrap()` on first run)
+- **Windows**: WebView2 runtime (comes with Windows 10/11)
+- **Linux**: `python3-gi gir1.2-webkit2-4.1` (for pywebview GTK backend), or Qt5 WebEngine
+- **macOS**: No additional dependencies (uses native WebKit via Cocoa)
 
 ## Release Process
 ```bash
@@ -106,6 +115,15 @@ Dashboard: 8080, Ollama: 11434, Kiwix: 8888, CyberChef: 8889, Kolibri: 8300, Qdr
 ## 11 Main Tabs
 Services, AI Chat, Library, Maps, Notes, Media, Tools, Preparedness, Benchmark, Settings (+ NukeMap opens in-app frame)
 
+## Home Tab Layout (6 sections, top to bottom)
+1. **Welcome / Getting Started** — first-run only, onboarding checklist
+2. **Search + Live Dashboard** — unified search bar + mode-aware widget grid (auto-refresh 30s)
+3. **Readiness + Preparedness** — two-column: readiness score (left) + needs-by-category grid (right); stacks on <1000px
+4. **AI Copilot** — quick-query input with voice + suggested actions panel
+5. **Services** — section header with Start/Stop All buttons, quicklinks, full service grid
+6. **Quick Navigation + References** — collapsible `<details>`: compact nav cards + printable reference buttons
+7. **Activity Log** — collapsible `<details>`: filterable event feed
+
 ## Media Tab (5 sub-tabs)
 - **Browse Channels** — 210 survival channels across 26 categories, auto-hide dead channels
 - **My Videos** — Upload/download/play instructional videos, thumbnail cards, watch+download player; **131 curated tutorial videos** across 14 folders
@@ -129,7 +147,10 @@ Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Powe
 - **Input validation** — int/float conversions on user input (ammo qty, fuel stabilizer, radiation dose) wrapped in try-except with fallback to 0. Harvest quantity forced >= 0.
 - **Calculator tab init** — 30 calculator functions called on tab switch; wrapped in try-catch to prevent blank tab if any single calc fails.
 - **Extra </div> tags** — psub sections can have extra closes that push settings tab outside .container. Always verify nesting after editing prep sub-tabs.
-- **User data dir on G: drive** — config at `%LOCALAPPDATA%\ProjectNOMAD\config.json` → `{"data_dir":"G:\\ProjectNOMAD"}`
+- **Cross-platform abstraction** — ALL platform-specific code goes through `platform_utils.py`. Never use `creationflags`, `os.startfile`, `ctypes.windll`, `powershell`, hardcoded `.exe` extensions, or `%APPDATA%` directly. Use `popen_kwargs()`, `run_kwargs()`, `exe_name()`, `open_folder()`, `find_pid_on_port()`, `get_data_base()` etc.
+- **Config paths** — Windows: `%LOCALAPPDATA%/ProjectNOMAD/config.json`, Linux: `~/.config/ProjectNOMAD/config.json`, macOS: `~/Library/Application Support/ProjectNOMAD/config.json`
+- **Data paths** — Windows: `%APPDATA%/ProjectNOMAD`, Linux: `~/.local/share/ProjectNOMAD`, macOS: `~/Library/Application Support/ProjectNOMAD`
+- **Service download URLs** — each service module has a `_get_*_url()` function that returns platform-appropriate download URLs via `platform_utils`
 - NukeMap: `/nukemap` redirects to `/nukemap/` (trailing slash for relative paths)
 - PyInstaller: `_bootstrap()` must skip when `sys.frozen`
 - DB migrations must run BEFORE index creation

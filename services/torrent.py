@@ -237,11 +237,12 @@ class TorrentManager:
         log.info('Torrent removed: hash=%s delete_files=%s', info_hash, delete_files)
 
     def open_save_folder(self, info_hash: str):
-        """Open the save folder in Windows Explorer."""
+        """Open the save folder in the platform's file manager."""
+        from platform_utils import open_folder
         with self._lock:
             meta = self._meta.get(info_hash, {})
         folder = meta.get('save_path', self.get_save_dir())
-        os.startfile(folder)
+        open_folder(folder)
 
     # ── Monitor thread ────────────────────────────────────────────────
 

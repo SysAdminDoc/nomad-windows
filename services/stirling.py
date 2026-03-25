@@ -35,7 +35,9 @@ def get_jar_path():
     return jar
 
 
-ADOPTIUM_JRE_URL = 'https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse'
+def _get_jre_url():
+    from platform_utils import get_adoptium_jre_url
+    return get_adoptium_jre_url()
 
 
 def _get_bundled_java_dir():
@@ -45,55 +47,62 @@ def _get_bundled_java_dir():
 
 def _find_java():
     """Find a Java runtime. Auto-downloads portable JRE if not found."""
+    from platform_utils import java_binary, IS_WINDOWS
+    java_name = java_binary()
+
     # 1. Check our bundled JRE first
     bundled_dir = _get_bundled_java_dir()
     if os.path.isdir(bundled_dir):
         for root, dirs, files in os.walk(bundled_dir):
-            if 'java.exe' in files:
-                return os.path.join(root, 'java.exe')
+            if java_name in files:
+                return os.path.join(root, java_name)
 
     # 2. Check system PATH
     java = shutil.which('java')
     if java:
         return java
 
-    # 3. Check common Windows paths
-    for base in [os.environ.get('JAVA_HOME', ''), r'C:\Program Files\Java', r'C:\Program Files\Eclipse Adoptium']:
+    # 3. Check common platform paths
+    search_paths = [os.environ.get('JAVA_HOME', '')]
+    if IS_WINDOWS:
+        search_paths += [r'C:\Program Files\Java', r'C:\Program Files\Eclipse Adoptium']
+    else:
+        search_paths += ['/usr/lib/jvm', '/usr/local/lib/jvm']
+    for base in search_paths:
         if base and os.path.isdir(base):
             for root, dirs, files in os.walk(base):
-                if 'java.exe' in files:
-                    return os.path.join(root, 'java.exe')
+                if java_name in files:
+                    return os.path.join(root, java_name)
 
     return None
 
 
 def _auto_install_java():
     """Download a portable Adoptium JRE 21 into our install directory."""
-    import zipfile
+    from platform_utils import extract_archive, IS_WINDOWS
     jre_dir = _get_bundled_java_dir()
     os.makedirs(jre_dir, exist_ok=True)
-    zip_path = os.path.join(jre_dir, 'jre.zip')
+    arc_ext = '.zip' if IS_WINDOWS else '.tar.gz'
+    zip_path = os.path.join(jre_dir, 'jre' + arc_ext)
 
     log.info('Auto-downloading portable Java JRE 21 from Adoptium...')
     try:
-        resp = req.get(ADOPTIUM_JRE_URL, stream=True, timeout=30, allow_redirects=True)
+        resp = req.get(_get_jre_url(), stream=True, timeout=30, allow_redirects=True)
         resp.raise_for_status()
         with open(zip_path, 'wb') as f:
             for chunk in resp.iter_content(chunk_size=65536):
                 f.write(chunk)
 
         log.info('Extracting JRE...')
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            zf.extractall(jre_dir)
-        os.remove(zip_path)
+        extract_archive(zip_path, jre_dir)
 
-        # Find java.exe in extracted tree
+        # Find java in extracted tree
         java = _find_java()
         if java:
             log.info(f'Portable JRE installed: {java}')
             return java
         else:
-            log.error('JRE extracted but java.exe not found')
+            log.error('JRE extracted but java binary not found')
             return None
     except Exception as e:
         log.error(f'Auto-install JRE failed: {e}')
@@ -186,17 +195,13 @@ def start():
     jar = get_jar_path()
     install_dir = get_install_dir()
 
-    CREATE_NO_WINDOW = 0x08000000
+    from platform_utils import popen_kwargs
     env = os.environ.copy()
     env['STIRLING_PDF_DESKTOP_UI'] = 'false'
 
     proc = subprocess.Popen(
         [java, '-jar', jar, f'--server.port={STIRLING_PORT}'],
-        cwd=install_dir,
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=CREATE_NO_WINDOW,
+        **popen_kwargs(cwd=install_dir, env=env),
     )
 
     from services.manager import register_process

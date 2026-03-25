@@ -7,7 +7,7 @@ import logging
 import requests
 from services.manager import (
     get_services_dir, download_file, start_process, stop_process,
-    is_running, check_port, _download_progress, get_ollama_gpu_env
+    is_running, check_port, _download_progress
 )
 from db import get_db
 
@@ -15,7 +15,9 @@ log = logging.getLogger('nomad.ollama')
 
 SERVICE_ID = 'ollama'
 OLLAMA_PORT = 11434
-OLLAMA_URL = 'https://github.com/ollama/ollama/releases/latest/download/ollama-windows-amd64.zip'
+def _get_ollama_url():
+    from platform_utils import get_ollama_url
+    return get_ollama_url()
 DEFAULT_MODEL = 'llama3.2:3b'
 
 _pull_progress = {'status': 'idle', 'model': '', 'percent': 0, 'detail': ''}
@@ -51,7 +53,17 @@ def get_install_dir():
 
 
 def get_exe_path():
-    return os.path.join(get_install_dir(), 'ollama.exe')
+    from platform_utils import exe_name
+    binary = exe_name('ollama')
+    install_dir = get_install_dir()
+    exe = os.path.join(install_dir, binary)
+    if os.path.isfile(exe):
+        return exe
+    # Ollama tarballs may extract to bin/ subdirectory
+    for root, dirs, files in os.walk(install_dir):
+        if binary in files:
+            return os.path.join(root, binary)
+    return exe
 
 
 def is_installed():
@@ -62,7 +74,7 @@ def install(callback=None):
     """Download and install Ollama."""
     install_dir = get_install_dir()
     os.makedirs(install_dir, exist_ok=True)
-    zip_path = os.path.join(install_dir, 'ollama.zip')
+    from platform_utils import IS_WINDOWS, extract_archive, make_executable
 
     _download_progress[SERVICE_ID] = {
         'percent': 0, 'status': 'downloading', 'error': None,
@@ -70,13 +82,12 @@ def install(callback=None):
     }
 
     try:
-        download_file(OLLAMA_URL, zip_path, SERVICE_ID)
-
+        arc_ext = '.zip' if IS_WINDOWS else '.tgz'
+        arc_path = os.path.join(install_dir, 'ollama' + arc_ext)
+        download_file(_get_ollama_url(), arc_path, SERVICE_ID)
         _download_progress[SERVICE_ID]['status'] = 'extracting'
-        import zipfile
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            zf.extractall(install_dir)
-        os.remove(zip_path)
+        extract_archive(arc_path, install_dir)
+        make_executable(get_exe_path())
 
         db = get_db()
         db.execute('''
@@ -118,18 +129,15 @@ def start():
         _kill_port_holder(OLLAMA_PORT)
         time.sleep(1)
 
+    from platform_utils import get_ollama_gpu_env
     env = get_ollama_gpu_env()
     env['OLLAMA_HOST'] = f'0.0.0.0:{OLLAMA_PORT}'
     env['OLLAMA_MODELS'] = models_dir
 
-    CREATE_NO_WINDOW = 0x08000000
+    from platform_utils import popen_kwargs
     proc = subprocess.Popen(
         [get_exe_path(), 'serve'],
-        cwd=get_install_dir(),
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=CREATE_NO_WINDOW,
+        **popen_kwargs(cwd=get_install_dir(), env=env),
     )
 
     from services.manager import register_process
@@ -174,33 +182,21 @@ def running():
 
 def _kill_port_holder(port):
     """Kill whatever process is holding the given port."""
+    from platform_utils import find_pid_on_port, kill_pid
     try:
-        import subprocess as _sp
-        result = _sp.run(
-            ['powershell', '-NoProfile', '-Command',
-             f"(Get-NetTCPConnection -LocalPort {port} -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess"],
-            capture_output=True, text=True, timeout=5, creationflags=0x08000000,
-        )
-        pid = int(result.stdout.strip()) if result.returncode == 0 and result.stdout.strip() else None
+        pid = find_pid_on_port(port)
         if pid and pid > 0:
             log.info(f'Killing PID {pid} holding port {port}')
-            _sp.run(['taskkill', '/F', '/PID', str(pid)],
-                    capture_output=True, timeout=5, creationflags=0x08000000)
+            kill_pid(pid)
     except Exception as e:
         log.warning(f'Could not kill port holder: {e}')
 
 
 def _adopt_running_instance():
     """Update DB/process tracking when Ollama is running but PID tracking is stale."""
+    from platform_utils import find_pid_on_port
     try:
-        # Find the actual Ollama PID via the port
-        import subprocess as _sp
-        result = _sp.run(
-            ['powershell', '-NoProfile', '-Command',
-             f"(Get-NetTCPConnection -LocalPort {OLLAMA_PORT} -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1).OwningProcess"],
-            capture_output=True, text=True, timeout=5, creationflags=0x08000000,
-        )
-        pid = int(result.stdout.strip()) if result.returncode == 0 and result.stdout.strip() else None
+        pid = find_pid_on_port(OLLAMA_PORT)
         if pid:
             db = get_db()
             try:

@@ -33,13 +33,15 @@ def get_storage_dir():
 
 
 def get_exe_path():
+    from platform_utils import exe_name
+    binary = exe_name('qdrant')
     install_dir = get_install_dir()
-    exe = os.path.join(install_dir, 'qdrant.exe')
+    exe = os.path.join(install_dir, binary)
     if os.path.isfile(exe):
         return exe
     for root, dirs, files in os.walk(install_dir):
-        if 'qdrant.exe' in files:
-            return os.path.join(root, 'qdrant.exe')
+        if binary in files:
+            return os.path.join(root, binary)
     return exe
 
 
@@ -51,7 +53,9 @@ def install(callback=None):
     """Download Qdrant from GitHub releases."""
     install_dir = get_install_dir()
     os.makedirs(install_dir, exist_ok=True)
-    zip_path = os.path.join(install_dir, 'qdrant.zip')
+    from platform_utils import get_qdrant_asset_filter, IS_WINDOWS, extract_archive, make_executable
+    arc_ext = '.zip' if IS_WINDOWS else '.tar.gz'
+    zip_path = os.path.join(install_dir, 'qdrant' + arc_ext)
 
     _download_progress[SERVICE_ID] = {
         'percent': 0, 'status': 'downloading', 'error': None,
@@ -62,20 +66,19 @@ def install(callback=None):
         # Resolve download URL from GitHub releases
         rel = req.get(QDRANT_RELEASE_API, timeout=15).json()
         zip_url = None
+        asset_keyword = get_qdrant_asset_filter()
         for asset in rel.get('assets', []):
-            if 'windows' in asset['name'].lower() and asset['name'].endswith('.zip'):
+            if asset_keyword in asset['name'].lower():
                 zip_url = asset['browser_download_url']
                 break
         if not zip_url:
-            raise RuntimeError('Could not find Qdrant download for Windows. Check your internet connection and try again.')
+            raise RuntimeError('Could not find Qdrant download for this platform. Check your internet connection and try again.')
 
         download_file(zip_url, zip_path, SERVICE_ID)
 
         _download_progress[SERVICE_ID]['status'] = 'extracting'
-        import zipfile
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            zf.extractall(install_dir)
-        os.remove(zip_path)
+        extract_archive(zip_path, install_dir)
+        make_executable(get_exe_path())
 
         db = get_db()
         try:
@@ -115,7 +118,7 @@ def start():
     exe = get_exe_path()
     storage = get_storage_dir()
 
-    CREATE_NO_WINDOW = 0x08000000
+    from platform_utils import popen_kwargs
     env = os.environ.copy()
     env['QDRANT__SERVICE__HTTP_PORT'] = str(QDRANT_PORT)
     env['QDRANT__SERVICE__GRPC_PORT'] = str(QDRANT_GRPC_PORT)
@@ -123,11 +126,7 @@ def start():
 
     proc = subprocess.Popen(
         [exe],
-        cwd=os.path.dirname(exe),
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=CREATE_NO_WINDOW,
+        **popen_kwargs(cwd=os.path.dirname(exe), env=env),
     )
 
     from services.manager import register_process

@@ -1,5 +1,5 @@
 """
-Native Windows process manager for N.O.M.A.D. services.
+Cross-platform process manager for N.O.M.A.D. services.
 Downloads, installs, starts, and stops services as native processes.
 Includes dependency graph, auto-restart, download resume, GPU detection.
 """
@@ -57,100 +57,19 @@ _gpu_info = None
 
 
 def detect_gpu() -> dict:
-    """Detect GPU type and capabilities for Ollama configuration."""
+    """Detect GPU type and capabilities (cross-platform)."""
+    from platform_utils import detect_gpu as _detect_gpu
     global _gpu_info
     if _gpu_info is not None:
         return _gpu_info
-
-    info = {'type': 'cpu', 'name': 'None', 'vram_mb': 0, 'cuda': False, 'rocm': False}
-
-    # Try NVIDIA first
-    try:
-        result = subprocess.run(
-            ['nvidia-smi', '--query-gpu=name,memory.total,driver_version', '--format=csv,noheader,nounits'],
-            capture_output=True, text=True, timeout=5, creationflags=0x08000000,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            parts = result.stdout.strip().split(', ')
-            info['type'] = 'nvidia'
-            info['name'] = parts[0]
-            info['vram_mb'] = int(parts[1]) if len(parts) > 1 else 0
-            info['cuda'] = True
-            if len(parts) > 2:
-                info['driver_version'] = parts[2]
-            _gpu_info = info
-            log.info(f'GPU detected: NVIDIA {info["name"]} ({info["vram_mb"]}MB VRAM)')
-            return info
-    except Exception:
-        pass
-
-    # Try AMD
-    try:
-        # Check for AMD via WMI
-        result = subprocess.run(
-            ['powershell', '-NoProfile', '-Command',
-             "Get-WmiObject Win32_VideoController | Where-Object {$_.Name -like '*AMD*' -or $_.Name -like '*Radeon*'} | Select-Object -First 1 -ExpandProperty Name"],
-            capture_output=True, text=True, timeout=5, creationflags=0x08000000,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            info['type'] = 'amd'
-            info['name'] = result.stdout.strip()
-            info['rocm'] = True
-            _gpu_info = info
-            log.info(f'GPU detected: AMD {info["name"]}')
-            return info
-    except Exception:
-        pass
-
-    # Try Intel Arc
-    try:
-        result = subprocess.run(
-            ['powershell', '-NoProfile', '-Command',
-             "Get-WmiObject Win32_VideoController | Where-Object {$_.Name -like '*Intel*Arc*'} | Select-Object -First 1 -ExpandProperty Name"],
-            capture_output=True, text=True, timeout=5, creationflags=0x08000000,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            info['type'] = 'intel'
-            info['name'] = result.stdout.strip()
-            _gpu_info = info
-            log.info(f'GPU detected: Intel {info["name"]}')
-            return info
-    except Exception:
-        pass
-
-    # Fallback: any GPU
-    try:
-        result = subprocess.run(
-            ['powershell', '-NoProfile', '-Command',
-             "Get-WmiObject Win32_VideoController | Select-Object -First 1 -ExpandProperty Name"],
-            capture_output=True, text=True, timeout=5, creationflags=0x08000000,
-        )
-        if result.returncode == 0 and result.stdout.strip():
-            info['name'] = result.stdout.strip()
-    except Exception:
-        pass
-
-    _gpu_info = info
-    return info
+    _gpu_info = _detect_gpu()
+    return _gpu_info
 
 
 def get_ollama_gpu_env() -> dict:
     """Get environment variables for Ollama based on detected GPU."""
-    env = os.environ.copy()
-    gpu = detect_gpu()
-
-    if gpu['type'] == 'nvidia' and gpu['cuda']:
-        # NVIDIA CUDA — Ollama uses this by default, just ensure no blockers
-        env.pop('CUDA_VISIBLE_DEVICES', None)  # Don't restrict
-        log.info('Ollama GPU config: NVIDIA CUDA')
-    elif gpu['type'] == 'amd' and gpu['rocm']:
-        env['HSA_OVERRIDE_GFX_VERSION'] = '11.0.0'  # Common ROCm compatibility
-        log.info('Ollama GPU config: AMD ROCm')
-    else:
-        # CPU only
-        log.info('Ollama GPU config: CPU only')
-
-    return env
+    from platform_utils import get_ollama_gpu_env as _get_gpu_env
+    return _get_gpu_env()
 
 
 # ─── Download with Resume ─────────────────────────────────────────────
@@ -251,14 +170,10 @@ def start_process(service_id: str, exe_path: str, args: list[str] = None,
     cmd = [exe_path] + (args or [])
     log.info(f'Starting {service_id}: {" ".join(cmd)}')
 
-    CREATE_NO_WINDOW = 0x08000000
+    from platform_utils import popen_kwargs
     proc = subprocess.Popen(
         cmd,
-        cwd=cwd,
-        env=env,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=CREATE_NO_WINDOW,
+        **popen_kwargs(cwd=cwd, env=env),
     )
     with _lock:
         _processes[service_id] = proc
@@ -332,23 +247,9 @@ def is_running(service_id: str) -> bool:
 
 
 def _pid_alive(pid: int) -> bool:
-    """Check if a process with the given PID is alive (Windows-compatible)."""
-    try:
-        import ctypes
-        kernel32 = ctypes.windll.kernel32
-        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
-        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
-        if handle:
-            kernel32.CloseHandle(handle)
-            return True
-        return False
-    except Exception:
-        # Fallback for non-Windows
-        try:
-            os.kill(pid, 0)
-            return True
-        except (OSError, ProcessLookupError):
-            return False
+    """Check if a process with the given PID is alive (cross-platform)."""
+    from platform_utils import pid_alive
+    return pid_alive(pid)
 
 
 # ─── Auto-Restart ──────────────────────────────────────────────────────

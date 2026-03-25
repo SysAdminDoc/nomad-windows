@@ -15,7 +15,9 @@ log = logging.getLogger('nomad.kiwix')
 
 SERVICE_ID = 'kiwix'
 KIWIX_PORT = 8888
-KIWIX_TOOLS_URL = 'https://download.kiwix.org/release/kiwix-tools/kiwix-tools_win-x86_64-3.8.1.zip'
+def _get_kiwix_url():
+    from platform_utils import get_kiwix_url
+    return get_kiwix_url()
 STARTER_ZIM_URL = 'https://download.kiwix.org/zim/wikipedia/wikipedia_en_100_mini_2026-01.zim'
 
 # Curated ZIM catalog — comprehensive offline knowledge library
@@ -622,14 +624,16 @@ def get_library_dir():
 
 
 def get_exe_path():
-    """Find kiwix-serve.exe (may be in a subdirectory after extraction)."""
+    """Find kiwix-serve executable (may be in a subdirectory after extraction)."""
+    from platform_utils import exe_name
+    binary = exe_name('kiwix-serve')
     install_dir = get_install_dir()
-    exe = os.path.join(install_dir, 'kiwix-serve.exe')
+    exe = os.path.join(install_dir, binary)
     if os.path.isfile(exe):
         return exe
     for root, dirs, files in os.walk(install_dir):
-        if 'kiwix-serve.exe' in files:
-            return os.path.join(root, 'kiwix-serve.exe')
+        if binary in files:
+            return os.path.join(root, binary)
     return exe
 
 
@@ -641,7 +645,9 @@ def install(callback=None):
     """Download and install kiwix-tools."""
     install_dir = get_install_dir()
     os.makedirs(install_dir, exist_ok=True)
-    zip_path = os.path.join(install_dir, 'kiwix-tools.zip')
+    from platform_utils import IS_WINDOWS, extract_archive, make_executable
+    arc_ext = '.zip' if IS_WINDOWS else '.tar.gz'
+    arc_path = os.path.join(install_dir, 'kiwix-tools' + arc_ext)
 
     _download_progress[SERVICE_ID] = {
         'percent': 0, 'status': 'downloading kiwix-tools', 'error': None,
@@ -649,13 +655,11 @@ def install(callback=None):
     }
 
     try:
-        download_file(KIWIX_TOOLS_URL, zip_path, SERVICE_ID)
+        download_file(_get_kiwix_url(), arc_path, SERVICE_ID)
 
         _download_progress[SERVICE_ID]['status'] = 'extracting'
-        import zipfile
-        with zipfile.ZipFile(zip_path, 'r') as zf:
-            zf.extractall(install_dir)
-        os.remove(zip_path)
+        extract_archive(arc_path, install_dir)
+        make_executable(get_exe_path())
 
         db = get_db()
         db.execute('''
@@ -761,13 +765,10 @@ def start():
     args = ['--port', str(KIWIX_PORT), '--address', '0.0.0.0'] + zim_paths
     exe = get_exe_path()
 
-    CREATE_NO_WINDOW = 0x08000000
+    from platform_utils import popen_kwargs
     proc = subprocess.Popen(
         [exe] + args,
-        cwd=os.path.dirname(exe),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        creationflags=CREATE_NO_WINDOW,
+        **popen_kwargs(cwd=os.path.dirname(exe)),
     )
 
     from services.manager import register_process

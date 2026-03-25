@@ -227,13 +227,8 @@ def download_file(url: str, dest: str, service_id: str = '') -> str:
             'percent': 0, 'status': 'error', 'error': str(e),
             'speed': '', 'downloaded': 0, 'total': 0,
         }
-        # Clean up partial download to prevent disk waste
-        if os.path.isfile(dest):
-            try:
-                os.remove(dest)
-                log.info(f'Cleaned up partial download: {dest}')
-            except OSError:
-                pass
+        # Keep partial file for resume on next attempt
+        log.warning(f'Download failed for {service_id}, partial file kept for resume: {e}')
         raise
 
 
@@ -360,22 +355,23 @@ def _pid_alive(pid: int) -> bool:
 
 def should_restart(service_id: str) -> bool:
     """Check if a service should be auto-restarted (rate-limited)."""
-    now = time.time()
-    timestamps = _restart_tracker.get(service_id, [])
-    # Prune old timestamps outside the window
-    timestamps = [t for t in timestamps if now - t < RESTART_WINDOW]
-    _restart_tracker[service_id] = timestamps
-
-    if len(timestamps) >= MAX_RESTARTS:
-        return False
-    return True
+    with _lock:
+        now = time.time()
+        timestamps = _restart_tracker.get(service_id, [])
+        # Prune old timestamps outside the window
+        timestamps = [t for t in timestamps if now - t < RESTART_WINDOW]
+        _restart_tracker[service_id] = timestamps
+        if len(timestamps) >= MAX_RESTARTS:
+            return False
+        return True
 
 
 def record_restart(service_id: str):
     """Record a restart attempt."""
-    if service_id not in _restart_tracker:
-        _restart_tracker[service_id] = []
-    _restart_tracker[service_id].append(time.time())
+    with _lock:
+        if service_id not in _restart_tracker:
+            _restart_tracker[service_id] = []
+        _restart_tracker[service_id].append(time.time())
 
 
 # ─── Dependency Management ─────────────────────────────────────────────
@@ -425,6 +421,18 @@ def get_shutdown_order() -> list[str]:
 
 
 # ─── Utilities ─────────────────────────────────────────────────────────
+
+def register_process(service_id: str, proc: subprocess.Popen):
+    """Thread-safe registration of a process started by individual service modules."""
+    with _lock:
+        _processes[service_id] = proc
+
+
+def unregister_process(service_id: str):
+    """Thread-safe removal of a process entry."""
+    with _lock:
+        _processes.pop(service_id, None)
+
 
 def get_download_progress(service_id: str) -> dict:
     return _download_progress.get(service_id, {

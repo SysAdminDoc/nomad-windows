@@ -199,8 +199,8 @@ def start():
         creationflags=CREATE_NO_WINDOW,
     )
 
-    from services.manager import _processes
-    _processes[SERVICE_ID] = proc
+    from services.manager import register_process
+    register_process(SERVICE_ID, proc)
 
     db = get_db()
     try:

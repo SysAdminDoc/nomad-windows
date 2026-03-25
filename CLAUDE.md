@@ -5,7 +5,7 @@ Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutio
 
 ## Tech Stack
 - **Python 3** — Flask web server + pywebview (WebView2) embedded browser
-- **SQLite** — 43 tables, WAL mode, 30s timeout, FK enforcement, SQLite backup API, 35 performance indexes
+- **SQLite** — 57 tables, WAL mode, 30s timeout, FK enforcement, SQLite backup API, 65 performance indexes
 - **CSS** — External files: `web/static/css/app.css` (base) + `web/static/css/premium.css` (polish layer)
 - **Native process management** — subprocess for Ollama, kiwix-serve, Kolibri; threading HTTP server for CyberChef
 - **pystray** — system tray icon for background operation
@@ -20,8 +20,8 @@ Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutio
 ## Project Structure
 ```
 nomad.py              # Entry point — Flask + WebView2 + tray + health monitor + service autostart
-db.py                 # SQLite init (43 tables), indexes, migrations (migrations BEFORE indexes)
-config.py             # Data directory management
+db.py                 # SQLite init (57 tables), indexes, migrations (migrations BEFORE indexes)
+config.py             # Data directory management (atomic writes via tmp+replace)
 build.spec            # PyInstaller spec for portable exe
 icon.ico              # App icon (multi-size, 16-256px)
 installer.iss         # Inno Setup installer script
@@ -29,12 +29,12 @@ ROADMAP.md            # 10-phase implementation plan (all complete)
 .github/workflows/
   build.yml           # CI/CD — PyInstaller + Inno Setup, dual artifact release on tag push
 web/
-  app.py              # Flask routes (~311 endpoints) — ~8050 lines
+  app.py              # Flask routes (~364 endpoints) — ~9400 lines
   catalog.py          # Content catalogs (books, videos, audio, torrents)
   static/
     css/
-      app.css         # Base styles (1191 lines) — 4 themes, layout, components
-      premium.css     # Premium polish (557 lines) — glassmorphism, glow effects, micro-interactions, depth
+      app.css         # Base styles (~1282 lines) — 4 themes, layout, components
+      premium.css     # Premium polish (~585 lines) — tactical typography, hazard stripes, micro-interactions
     logo.png          # App logo
     maplibre-gl.js    # Map renderer (bundled)
     maplibre-gl.css   # Map styles (bundled)
@@ -42,10 +42,10 @@ web/
     js/
       epub.min.js     # EPUB reader library (bundled)
   templates/
-    index.html        # HTML + inline theme vars + JS (~19,561 lines)
+    index.html        # HTML + inline theme vars + JS (~20,820 lines)
   nukemap/            # NukeMap v3.2.0 — index.html, 18 JS modules, CSS, data/, lib/leaflet
 services/
-  manager.py          # Process manager — download (with resume), start, stop, track, uninstall
+  manager.py          # Process manager — download (with resume), start, stop, track, uninstall; register_process() for thread-safe tracking
   ollama.py           # Ollama AI
   kiwix.py            # Kiwix
   cyberchef.py        # CyberChef
@@ -56,9 +56,9 @@ services/
 ```
 
 ## Version
-v3.1.0 — ~95,000 lines, 364 API routes, 57 DB tables (65 indexes), 25 prep sub-tabs, 38-section user guide, 21 decision guides, 41 calculators, 56 quick reference cards, 3 dashboard modes, 12 live widgets, AI copilot, 9 survival need categories, 6 printable field documents, route/annotation planning, frequency database (35 seeded), TCCC/triage system, sensor integration, planting calendar (31 seeded), yield analysis, preservation tracking, federation v2, unified search (14 data types), keyboard shortcuts, guided onboarding, system health diagnostics
+v3.2.0 — ~96,000 lines, 364 API routes, 57 DB tables (65 indexes), 25 prep sub-tabs, 38-section user guide, 21 decision guides, 41 calculators, 56 quick reference cards, 3 dashboard modes, 12 expandable live widgets with sparkline charts, AI copilot with voice input, 9 survival need categories, 6 printable field documents, route/annotation planning, interactive frequency manager (35 seeded), TCCC MARCH interactive wizard, triage board with category assignment, SBAR handoff report generator, sensor integration, planting calendar (31 seeded), yield/caloric analysis, preservation log, federation v2 with peer trust management and resource marketplace, unified search (14 types with navigation), keyboard shortcuts, guided onboarding, system health diagnostics
 
-## Audit History (5 rounds)
+## Audit History (7 rounds)
 - **v1.8.0 — Security**: Auth deny-on-failure, thread-safe install lock, path traversal hardening (normpath+startswith on maps/ZIM delete), DB try-finally on all 7 services, stirling stderr crash fix, race conditions (window handler before thread, health monitor MAX_RESTARTS), Flask startup error feedback
 - **v1.9.0 — Frontend+DB**: resp.ok on AI warmup, debounced media/channel filters (200ms), try-catch loadNotes, SQLite backup API (WAL-safe), 30s connection timeout, FK enforcement, 10 new indexes, division-by-zero guard on critical_burn
 - **v2.0.0 — Performance**: requestAnimationFrame debounce on streaming chat rendering, insertAdjacentHTML for mesh/LAN log (O(1) vs O(n^2)), content-summary 4 queries→1, fetch error handlers on map/vault delete, notes CRUD try-finally
@@ -68,6 +68,7 @@ v3.1.0 — ~95,000 lines, 364 API routes, 57 DB tables (65 indexes), 25 prep sub
 - **v2.3.0 — Ops Platform Phase 4+9**: Cross-module intelligence (9 survival need categories with keyword matching — Water, Food, Medical, Shelter, Security, Comms, Power, Navigation, Knowledge; /api/needs overview + /api/needs/<id> detail; needs grid on Home with drill-down modal showing supplies+contacts+books+guides), Print field copies (frequency reference card with standard freqs + team contacts, wallet-sized medical cards per patient, bug-out grab-and-go checklist with rally points)
 - **v2.4.0 — Ops Platform Phase 5-7**: Enhanced maps (map_routes + map_annotations tables, route CRUD, annotation CRUD, minimap-data endpoint, 12 waypoint category icons with elevation tracking), Communications upgrade (freq_database table seeded with 35 standard frequencies — FRS/GMRS/MURS/2m/70cm/HF/Marine/CB/NOAA/Meshtastic, radio_profiles CRUD, comms dashboard API), Medical EHR upgrade (triage_events + handoff_reports tables, patient triage_category + care_phase columns, wound tourniquet_time + intervention_type columns, triage board API, SBAR handoff report generator with print, TCCC MARCH protocol endpoint)
 - **v3.0.0 — Ops Platform Phase 8+10**: Instrumented power & food (sensor_devices + sensor_readings tables, sensor CRUD + time-series query with period filtering, power history charting endpoint, autonomy forecast based on SOC/load/solar trends; planting_calendar table seeded with 31 zone 7 entries including yield_per_sqft and calories_per_lb, garden yield analysis with caloric output and person-days calculation, preservation_log CRUD for canned/dried/frozen tracking), Federation v2 (federation_peers with trust levels observer/member/trusted/admin, federation_offers + federation_requests for resource marketplace, federation_sitboard for aggregated situation from peers, network-map endpoint linking peers to waypoints, auto_sync flag per peer, trust-level CRUD)
+- **v3.2.0 — Deep Bug Hunt (31 fixes)**: SQL injection in sync-receive (column name validation), NameError on catalog import, UnboundLocalError in media favorite toggle, PMTiles OOM (streaming), path traversal Windows case bypass (normcase), radiation total_rem logic fix, escapeAttr single-quote XSS, duplicate formatBytes removal, connection-lost banner null crash, 5 missing safeFetch wrappers, duplicate Ctrl+K handler, bare digit shortcut removal, night mode theme fight fix, saveConversation title overwrite, atomic config writes, init_db connection leak, download resume fix (keep partials), _restart_tracker thread safety, register_process() API (all 5 service modules), torrent session null-deref races, health monitor 90s grace period
 
 ## Run / Build
 ```bash
@@ -79,22 +80,22 @@ iscc installer.iss                 # Build installer -> ProjectNOMAD-Setup.exe
 ## Release Process
 ```bash
 # Tag and push — CI builds both artifacts
-git tag v3.1.0 && git push origin v3.1.0
+git tag v3.2.0 && git push origin v3.2.0
 # Or manual: build locally, then create release
-gh release create v3.1.0 dist/ProjectNOMAD-Portable.exe ProjectNOMAD-Setup.exe --title "Project N.O.M.A.D. v3.1.0"
+gh release create v3.2.0 dist/ProjectNOMAD-Portable.exe ProjectNOMAD-Setup.exe --title "Project N.O.M.A.D. v3.2.0"
 ```
 
 ## CSS Architecture
 - **Inline `<style>` in index.html** — Only theme CSS variables (8 lines). Prevents flash of unstyled content.
 - **web/static/css/app.css** — All base styles (themes, layout, sidebar, cards, forms, tables, etc.)
-- **web/static/css/premium.css** — Visual polish overlay (typography, animations, shadows, hover effects, spring transitions, glass overlays, glow effects, reduced-motion support, print styles)
+- **web/static/css/premium.css** — Visual polish overlay (tactical typography, hazard stripes, animations, shadows, hover effects, spring transitions, glass overlays, glow effects, reduced-motion support, print styles)
 - Build spec includes `('web/static', 'web/static')` which covers the css/ subdirectory.
 
 ## Layout
 - **Sidebar navigation** (fixed left, 240px) with SVG icons, matching original N.O.M.A.D.
 - Collapses on mobile (<900px) with hamburger toggle + overlay
-- Theme switcher + alert bell in sidebar footer
-- **Status strip** at top of content area: services count, inventory total, contacts, alerts, date/time
+- Theme switcher + alert bell + mode switcher in sidebar footer
+- **Status strip** at top of content area: services count, inventory total, contacts, alerts, military time
 - **LAN chat button** at left:260px (not 20px) to avoid covering sidebar footer
 - `window.scrollTo(0, 0)` on every tab switch to prevent blank-space-at-top bug
 - FABs (LAN Chat, Quick Actions, Timer) placed OUTSIDE `.container` div to prevent layout interference
@@ -117,7 +118,7 @@ Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Powe
 
 ## Critical Gotchas
 - **DECISION_GUIDES array**: ALL 21 guide objects must be inside the `];`. Placing objects after the closing bracket causes a JS syntax error that kills ALL interactivity.
-- **escapeAttr function**: Contains HTML entities (`&amp;`, `&quot;`, `&lt;`) which are correct — browsers do NOT decode entities inside `<script>` tags.
+- **escapeAttr function**: Contains HTML entities (`&amp;`, `&quot;`, `&#39;`, `&lt;`) which are correct — browsers do NOT decode entities inside `<script>` tags. Must escape single quotes too for onclick attributes.
 - **FABs must be outside .container**: LAN Chat, Quick Actions, and Timer widgets (position:fixed) must be DOM siblings of .main-content, NOT inside .container.
 - **scrollTo on tab switch**: Without `window.scrollTo(0,0)` in the tab click handler, switching from a scrolled-down tab leaves the viewport at the old scroll position.
 - **Duplicate CSS removed**: Inline `<style>` in index.html now contains ONLY theme variables (8 lines). All component/layout CSS is in external app.css. Don't re-add inline CSS.
@@ -140,6 +141,14 @@ Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Powe
 - `switchPrepSub` override must call `loadChecklists()` for 'checklists' sub — it doesn't auto-load from the original function
 - Readiness score factors in: ammo (security), fuel (shelter/power), skills proficiency (planning), trusted community members (planning)
 - Equipment `markServiced()` sends full record with updated last_service + status='operational' via PUT
+- **Do NOT redefine `formatBytes`** — defined once near line 6118; a second definition silently shadows it with broken behavior (<1024 returns "0 KB")
+- **Service process registration** — service modules MUST use `register_process()` / `unregister_process()` from manager.py, NEVER directly mutate `_processes` dict (thread safety)
+- **Path traversal on Windows** — always use `os.path.normcase()` on BOTH sides of `startswith` checks (Windows paths are case-insensitive)
+- **Config writes** — config.py uses atomic write (tmp file + os.replace) to prevent corruption on crash
+- **Health monitor grace period** — 90 seconds before first check to let auto_start_services finish (Stirling can take 60s+)
+- **Sync-receive column validation** — must validate column names against PRAGMA table_info before INSERT (SQL injection prevention)
+- **PMTiles serving** — must stream large files in chunks, NEVER read() entire file into memory (can be GB+)
+- **Night mode** — uses `_nightModeApplied` flag to only trigger once per day/night transition, not fight manual theme changes
 
 ## UX Design Principles
 - All jargon removed — plain English throughout (no Ollama/Kiwix/PMTiles/Sneakernet)
@@ -149,6 +158,8 @@ Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Powe
 - System presets grouped by category in dropdown
 - Prep sub-tabs ordered by emergency priority (Inventory first)
 - Quick-add templates for 58 common inventory items across 8 categories
-- Status strip shows key metrics at a glance
+- Status strip shows key metrics at a glance (military time format)
 - Debounced search inputs (media filter, channel filter) at 200ms
 - Error feedback on destructive actions (map delete, vault delete, model delete)
+- Keyboard shortcuts: Ctrl+K (search), Ctrl+/ (copilot), Alt+1-9 (tab switch), Escape (close modals), ? (shortcut help)
+- 3 dashboard modes: Command Center, Homestead, Essentials — each with tailored sidebar ordering, widget sets, and copilot suggestions

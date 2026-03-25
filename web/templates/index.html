@@ -190,7 +190,8 @@ body{background:var(--bg);color:var(--text)}
           <div style="display:flex;gap:4px;flex-wrap:wrap;" id="copilot-quick-btns"></div>
         </div>
         <div style="display:flex;gap:6px;">
-          <input type="text" id="copilot-input" placeholder="Ask about your supplies, team, medical, power..." onkeydown="if(event.key==='Enter')askCopilot()" style="flex:1;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;">
+          <input type="text" id="copilot-input" placeholder="Ask about your supplies, team, medical, power... (Ctrl+/)" onkeydown="if(event.key==='Enter')askCopilot()" style="flex:1;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;">
+          <button class="btn btn-sm" onclick="voiceInput('copilot-input')" title="Voice input" id="copilot-voice-btn" style="font-size:12px;padding:4px 8px;">&#127908;</button>
           <button class="btn btn-sm btn-primary" onclick="askCopilot()" style="font-size:10px;">ASK</button>
         </div>
         <div id="copilot-answer" style="display:none;font-size:12px;line-height:1.6;color:var(--text-dim);padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border-left:3px solid var(--accent);"></div>
@@ -5385,6 +5386,27 @@ body{background:var(--bg);color:var(--text)}
       <div id="community-skills-summary" style="margin-bottom:12px;display:flex;gap:6px;flex-wrap:wrap;font-size:11px;"></div>
       <div id="community-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:10px;"></div>
     </div>
+
+    <!-- Federation Network -->
+    <div class="prep-section">
+      <h3>Federation Network</h3>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Connect with other N.O.M.A.D. nodes on your LAN for shared situational awareness, resource coordination, and emergency communication.</div>
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;">
+        <button class="btn btn-sm btn-primary" onclick="showAddPeerForm()">+ ADD PEER</button>
+        <button class="btn btn-sm" onclick="loadFederationPeers()">REFRESH</button>
+        <button class="btn btn-sm" onclick="loadFederationMarketplace()">RESOURCE MARKETPLACE</button>
+      </div>
+      <div id="add-peer-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;display:none;gap:6px;flex-wrap:wrap;align-items:flex-end;">
+        <div><label style="font-size:9px;color:var(--text-muted);display:block;">NODE ID</label><input id="fp-nodeid" placeholder="node-abc123" style="width:140px;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+        <div><label style="font-size:9px;color:var(--text-muted);display:block;">NAME</label><input id="fp-name" placeholder="Neighbor's Node" style="width:140px;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+        <div><label style="font-size:9px;color:var(--text-muted);display:block;">TRUST</label><select id="fp-trust" style="padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"><option value="observer">Observer</option><option value="member">Member</option><option value="trusted">Trusted</option><option value="admin">Admin</option></select></div>
+        <div><label style="font-size:9px;color:var(--text-muted);display:block;">IP</label><input id="fp-ip" placeholder="192.168.1.x" style="width:120px;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+        <button class="btn btn-sm btn-primary" onclick="submitAddPeer()">ADD</button>
+        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('add-peer-form').style.display='none'">CANCEL</button>
+      </div>
+      <div id="federation-peers-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px;"></div>
+      <div id="federation-marketplace" style="display:none;margin-top:16px;"></div>
+    </div>
     </div><!-- /psub-community -->
 
     <!-- Sub: Radiation Log -->
@@ -6070,7 +6092,7 @@ function toast(msg, type='info') {
 
 /* ─── Helpers ─── */
 function escapeHtml(s) { if (s == null) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-function escapeAttr(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+function escapeAttr(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;'); }
 /** Safe fetch wrapper — returns parsed JSON or fallback on error. Usage: const data = await safeFetch('/api/foo', {}, []); */
 async function safeFetch(url, opts = {}, fallback = null) {
   try {
@@ -6404,15 +6426,17 @@ async function uninstallService(id) {
 
 async function startAllServices() {
   toast('Starting all services...', 'info');
-  const r = await (await fetch('/api/services/start-all', {method:'POST'})).json();
-  if (r.started.length) toast(`Started ${r.started.length} service${r.started.length>1?'s':''}`, 'success');
-  if (r.errors.length) r.errors.forEach(e => toast(e, 'error'));
+  const r = await safeFetch('/api/services/start-all', {method:'POST'}, null);
+  if (!r) { toast('Failed to start services', 'error'); return; }
+  if (r.started?.length) toast(`Started ${r.started.length} service${r.started.length>1?'s':''}`, 'success');
+  if (r.errors?.length) r.errors.forEach(e => toast(e, 'error'));
   loadServices();
 }
 async function stopAllServices() {
   toast('Stopping all services...', 'warning');
-  const r = await (await fetch('/api/services/stop-all', {method:'POST'})).json();
-  toast(`Stopped ${r.stopped.length} service${r.stopped.length>1?'s':''}`, 'warning');
+  const r = await safeFetch('/api/services/stop-all', {method:'POST'}, null);
+  if (!r) { toast('Failed to stop services', 'error'); return; }
+  toast(`Stopped ${r.stopped?.length||0} service${(r.stopped?.length||0)>1?'s':''}`, 'warning');
   loadServices();
 }
 
@@ -6643,9 +6667,14 @@ async function finishRename(id, inp) {
 async function saveConversation() {
   if (!currentConvoId) return;
   const model = document.getElementById('model-select').value;
-  const title = chatMessages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat';
+  const payload = {model, messages: chatMessages};
+  // Only set title for brand-new conversations (no custom title yet)
+  const convoEl = document.querySelector(`.conv-item[data-id="${currentConvoId}"]`);
+  if (!convoEl || convoEl.textContent.trim() === 'New Chat') {
+    payload.title = chatMessages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat';
+  }
   await fetch(`/api/conversations/${currentConvoId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({title, model, messages: chatMessages})});
+    body:JSON.stringify(payload)});
   await loadConversations();
 }
 
@@ -6818,7 +6847,8 @@ let _installedZims = new Set();
 let _downloadingZims = new Set();
 
 async function loadZimList() {
-  const zims = await (await fetch('/api/kiwix/zims')).json();
+  const zims = await safeFetch('/api/kiwix/zims', {}, []);
+  if (!zims) return;
   _installedZims = new Set(zims.map(z => z.filename));
 
   // Update library summary
@@ -6837,7 +6867,8 @@ async function loadZimList() {
 }
 
 async function loadZimCatalog() {
-  const catalog = await (await fetch('/api/kiwix/catalog')).json();
+  const catalog = await safeFetch('/api/kiwix/catalog', {}, []);
+  if (!catalog) return;
   _cachedCatalog = catalog;
   renderFullCatalog(catalog);
 }
@@ -7024,8 +7055,8 @@ async function deleteZim(filename) {
 /* ─── Maps ─── */
 async function loadMaps() {
   const [regions, files] = await Promise.all([
-    fetch('/api/maps/regions').then(r=>r.json()),
-    fetch('/api/maps/files').then(r=>r.json()),
+    safeFetch('/api/maps/regions', {}, []),
+    safeFetch('/api/maps/files', {}, []),
   ]);
 
   document.getElementById('region-grid').innerHTML = regions.map(r => `
@@ -7207,8 +7238,8 @@ async function loadMapSources() {
             <div style="display:flex;align-items:center;gap:8px;white-space:nowrap;">
               <span style="color:var(--text-muted);font-size:10px;">${escapeHtml(s.est_size)} · ${escapeHtml(s.format.toUpperCase())}</span>
               ${s.direct
-                ? `<button class="btn btn-sm btn-primary" onclick="document.getElementById('map-url-input').value='${escapeHtml(s.url)}'; downloadMapFromUrl();" style="font-size:9px;padding:2px 8px;">Download</button>`
-                : `<button class="btn btn-sm" onclick="openAppFrame('${escapeHtml(s.name)}', '${escapeHtml(s.url)}')" style="font-size:9px;padding:2px 8px;">Visit</button>`
+                ? `<button class="btn btn-sm btn-primary" onclick="document.getElementById('map-url-input').value='${escapeAttr(s.url)}'; downloadMapFromUrl();" style="font-size:9px;padding:2px 8px;">Download</button>`
+                : `<button class="btn btn-sm" onclick="openAppFrame('${escapeAttr(s.name)}', '${escapeAttr(s.url)}')" style="font-size:9px;padding:2px 8px;">Visit</button>`
               }
             </div>
           </div>
@@ -7576,7 +7607,9 @@ async function checkNetwork() {
         lostBanner.id = 'connection-lost';
         lostBanner.style.cssText = 'position:sticky;top:0;z-index:199;background:var(--red-dim);border-bottom:1px solid var(--red);padding:8px 16px;text-align:center;font-size:12px;font-weight:600;color:var(--red);';
         lostBanner.textContent = 'Connection to backend lost — retrying automatically...';
-        document.querySelector('.header').after(lostBanner);
+        const headerEl = document.querySelector('.status-strip') || document.querySelector('.main-content');
+        if (headerEl) headerEl.prepend(lostBanner);
+        else document.body.prepend(lostBanner);
       }
       lostBanner.style.display = 'block';
     }
@@ -8468,6 +8501,30 @@ function openSearchResult(type, id) {
   } else if (type === 'checklist') {
     document.querySelector('[data-tab="preparedness"]').click();
     setTimeout(() => { switchPrepSub('checklists'); selectChecklist(id); }, 200);
+  } else if (type === 'skill') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => switchPrepSub('skills'), 200);
+  } else if (type === 'ammo') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => switchPrepSub('ammo'), 200);
+  } else if (type === 'equipment') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => switchPrepSub('equipment'), 200);
+  } else if (type === 'waypoint') {
+    document.querySelector('[data-tab="maps"]').click();
+    toast('Waypoint: navigate to it on the map', 'info');
+  } else if (type === 'frequency') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => switchPrepSub('radio'), 200);
+  } else if (type === 'patient') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => switchPrepSub('medical'), 200);
+  } else if (type === 'incident') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => switchPrepSub('incidents'), 200);
+  } else if (type === 'fuel') {
+    document.querySelector('[data-tab="preparedness"]').click();
+    setTimeout(() => switchPrepSub('fuel'), 200);
   }
 }
 
@@ -8722,6 +8779,10 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.getElementById('needs-detail-modal').style.display === 'flex') {
     closeNeedsDetail();
   }
+  const tcccModal = document.getElementById('tccc-modal');
+  if (e.key === 'Escape' && tcccModal && tcccModal.style.display === 'flex') {
+    tcccModal.style.display = 'none';
+  }
 });
 
 /* ─── Global Keyboard Shortcuts ─── */
@@ -8745,13 +8806,7 @@ document.addEventListener('keydown', e => {
     const homeTab = document.querySelector('.tab[data-tab="services"]');
     if (homeTab && !homeTab.classList.contains('active')) homeTab.click();
   }
-  // 1-9 — Quick tab switch (when not typing)
-  if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.altKey && !e.metaKey) {
-    const tabs = document.querySelectorAll('.sidebar-nav .tab[data-tab]');
-    const visibleTabs = [...tabs].filter(t => t.style.display !== 'none');
-    const idx = parseInt(e.key) - 1;
-    if (idx < visibleTabs.length) visibleTabs[idx].click();
-  }
+  // Alt+1-9 handled in second keydown listener below
 });
 
 function printAppFrame() {
@@ -10524,6 +10579,70 @@ async function loadPace() {
   } catch(e) {}
 }
 
+/* ─── Sparkline Chart Renderer ─── */
+function drawSparkline(canvasId, data, color, opts = {}) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas || !data.length) return;
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const w = canvas.width = canvas.offsetWidth * dpr;
+  const h = canvas.height = canvas.offsetHeight * dpr;
+  ctx.scale(dpr, dpr);
+  const cw = canvas.offsetWidth, ch = canvas.offsetHeight;
+  ctx.clearRect(0, 0, cw, ch);
+  const min = opts.min ?? Math.min(...data);
+  const max = opts.max ?? Math.max(...data);
+  const range = max - min || 1;
+  const pad = 2;
+  const stepX = (cw - pad * 2) / Math.max(data.length - 1, 1);
+  // Gradient fill
+  if (opts.fill !== false) {
+    const grad = ctx.createLinearGradient(0, 0, 0, ch);
+    grad.addColorStop(0, color + '30');
+    grad.addColorStop(1, color + '05');
+    ctx.beginPath();
+    ctx.moveTo(pad, ch);
+    data.forEach((v, i) => ctx.lineTo(pad + i * stepX, ch - pad - ((v - min) / range) * (ch - pad * 2)));
+    ctx.lineTo(pad + (data.length - 1) * stepX, ch);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+  }
+  // Line
+  ctx.beginPath();
+  data.forEach((v, i) => {
+    const x = pad + i * stepX;
+    const y = ch - pad - ((v - min) / range) * (ch - pad * 2);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 1.5;
+  ctx.lineJoin = 'round';
+  ctx.stroke();
+  // Current value dot
+  if (data.length > 1) {
+    const lastX = pad + (data.length - 1) * stepX;
+    const lastY = ch - pad - ((data[data.length - 1] - min) / range) * (ch - pad * 2);
+    ctx.beginPath();
+    ctx.arc(lastX, lastY, 2.5, 0, Math.PI * 2);
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+}
+
+// Load sparkline data for dashboard widgets
+async function loadDashboardSparklines() {
+  // Power history sparkline
+  const powerData = await safeFetch('/api/power/history?period=24h', {}, []);
+  if (powerData.length > 1) {
+    const socData = powerData.map(r => r.battery_soc || 0);
+    setTimeout(() => drawSparkline('spark-power', socData, '#f9a825', {min: 0, max: 100}), 100);
+  }
+  // Weather pressure sparkline
+  const weatherData = await safeFetch('/api/dashboard/live', {}, null);
+  // We already have _liveDashData — use that for pressure if available
+}
+
 /* ─── Getting Started Checklist ─── */
 async function loadGettingStarted() {
   const data = await safeFetch('/api/system/getting-started', {}, null);
@@ -10535,14 +10654,25 @@ async function loadGettingStarted() {
   panel.style.display = '';
   document.getElementById('gs-progress-text').textContent = `${data.completed}/${data.total} complete (${data.pct}%)`;
   const el = document.getElementById('gs-steps');
-  el.innerHTML = data.steps.map(s => `
-    <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border-left:3px solid ${s.done ? 'var(--green)' : 'var(--border)'}; ${s.done ? 'opacity:0.5;' : 'cursor:pointer;'}" ${!s.done ? `onclick="document.querySelector('[data-tab=\\'${escapeAttr(s.action)}\\']').click();${s.sub ? `setTimeout(()=>switchPrepSub('${escapeAttr(s.sub)}'),200);` : ''}"` : ''}>
-      <span style="font-size:14px;flex-shrink:0;margin-top:1px;">${s.done ? '&#9745;' : '&#9744;'}</span>
-      <div>
-        <div style="font-weight:700;font-size:11px;${s.done ? 'text-decoration:line-through;' : ''}">${escapeHtml(s.title)}</div>
-        <div style="font-size:9px;color:var(--text-muted);line-height:1.4;margin-top:2px;">${escapeHtml(s.desc)}</div>
-      </div>
-    </div>`).join('');
+  el.innerHTML = data.steps.map((s, i) => {
+    const borderColor = s.done ? 'var(--green)' : 'var(--border)';
+    const clickAttr = s.done ? '' : ' onclick="gsNavigate(' + i + ')"';
+    return '<div style="display:flex;gap:8px;align-items:flex-start;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border-left:3px solid ' + borderColor + ';' + (s.done ? 'opacity:0.5;' : 'cursor:pointer;') + '"' + clickAttr + '>' +
+      '<span style="font-size:14px;flex-shrink:0;margin-top:1px;">' + (s.done ? '&#9745;' : '&#9744;') + '</span>' +
+      '<div><div style="font-weight:700;font-size:11px;' + (s.done ? 'text-decoration:line-through;' : '') + '">' + escapeHtml(s.title) + '</div>' +
+      '<div style="font-size:9px;color:var(--text-muted);line-height:1.4;margin-top:2px;">' + escapeHtml(s.desc) + '</div></div></div>';
+  }).join('');
+  // Store step data for navigation
+  window._gsSteps = data.steps;
+}
+
+function gsNavigate(stepIndex) {
+  const steps = window._gsSteps;
+  if (!steps || !steps[stepIndex]) return;
+  const s = steps[stepIndex];
+  const tabEl = document.querySelector('.tab[data-tab="' + s.action + '"]');
+  if (tabEl) tabEl.click();
+  if (s.sub) setTimeout(function() { switchPrepSub(s.sub); }, 200);
 }
 
 /* ─── Survival Needs Overview ─── */
@@ -10557,7 +10687,7 @@ async function loadNeedsOverview() {
     return `
     <div class="need-card" style="border-left:3px solid ${safeColor};" onclick="openNeedsDetail('${safeId}')">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
-        <span style="font-size:16px;">${escapeHtml(n.icon)}</span>`;
+        <span style="font-size:16px;">${escapeHtml(n.icon)}</span>
         <span style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.3px;">${escapeHtml(n.label)}</span>
       </div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
@@ -10708,6 +10838,13 @@ async function loadLiveDashboard() {
   if (!data) return;
   _liveDashData = data;
   renderLiveDashboard(data);
+  // Restore expanded widget state after re-render
+  if (_expandedWidget) {
+    const detail = document.getElementById('widget-detail-' + _expandedWidget);
+    if (detail) detail.style.display = 'block';
+  }
+  // Load sparklines after DOM update
+  setTimeout(() => loadDashboardSparklines(), 50);
 }
 
 let _expandedWidget = null;
@@ -10808,7 +10945,10 @@ function renderLiveDashboard(d) {
       if (!p.battery_soc && !p.solar_watts) return '';
       return `<div class="live-widget" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('power'),200)">
         <div class="live-widget-label">POWER</div>
-        <div class="live-widget-value">${p.battery_soc != null ? p.battery_soc + '%' : '--'}</div>
+        <div style="display:flex;align-items:flex-end;gap:8px;">
+          <div class="live-widget-value">${p.battery_soc != null ? p.battery_soc + '%' : '--'}</div>
+          <canvas id="spark-power" style="width:80px;height:24px;flex-shrink:0;"></canvas>
+        </div>
         <div class="live-widget-detail">${p.solar_watts ? p.solar_watts + 'W solar' : ''} ${p.load_watts ? '&middot; ' + p.load_watts + 'W load' : ''}</div>
       </div>`;
     },
@@ -11550,11 +11690,7 @@ function renderBooks(el, items) {
     </div>`).join('') + '</div>';
 }
 
-function formatBytes(b) {
-  if (b > 1073741824) return (b/1073741824).toFixed(1)+' GB';
-  if (b > 1048576) return (b/1048576).toFixed(0)+' MB';
-  return (b/1024).toFixed(0)+' KB';
-}
+/* formatBytes defined above — do not redefine */
 
 async function loadMediaFolders() {
   const statsMap = {videos:'/api/videos/stats', audio:'/api/audio/stats', books:'/api/books/stats'};
@@ -14253,18 +14389,25 @@ async function loadDrillHistory() {
 }
 
 /* ─── Night Mode Auto-Switch ─── */
+let _nightModeApplied = false;
 function checkNightMode() {
   const autoNight = localStorage.getItem('nomad-auto-night');
   if (autoNight !== '1') return;
   const hour = new Date().getHours();
   const isNight = hour >= 21 || hour < 6; // 9pm - 6am
   const currentTheme = localStorage.getItem('nomad-theme') || 'nomad';
-  if (isNight && currentTheme !== 'redlight') {
-    localStorage.setItem('nomad-pre-night-theme', currentTheme);
-    setTheme('redlight');
-  } else if (!isNight && currentTheme === 'redlight') {
-    const prev = localStorage.getItem('nomad-pre-night-theme') || 'nomad';
-    setTheme(prev);
+  if (isNight && !_nightModeApplied) {
+    _nightModeApplied = true;
+    if (currentTheme !== 'redlight') {
+      localStorage.setItem('nomad-pre-night-theme', currentTheme);
+      setTheme('redlight');
+    }
+  } else if (!isNight && _nightModeApplied) {
+    _nightModeApplied = false;
+    if (currentTheme === 'redlight') {
+      const prev = localStorage.getItem('nomad-pre-night-theme') || 'nomad';
+      setTheme(prev);
+    }
   }
 }
 checkNightMode();
@@ -15755,15 +15898,8 @@ async function loadCmdChecklists() {
   } catch(e) {}
 }
 
-/* ─── Keyboard Shortcuts ─── */
+/* ─── Keyboard Shortcuts (Alt combos) ─── */
 document.addEventListener('keydown', (e) => {
-  // Ctrl+K = focus search from anywhere
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-    e.preventDefault();
-    document.querySelector('[data-tab="services"]').click();
-    setTimeout(() => document.getElementById('unified-search').focus(), 100);
-    return;
-  }
   // Only if not typing in an input/textarea
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
   if (e.altKey) {
@@ -16166,7 +16302,7 @@ async function loadPlantingCalendar() {
   const el = document.getElementById('planting-calendar-grid');
   const label = document.getElementById('calendar-zone-label');
   if (!el) return;
-  if (label && data.length) label.textContent = `Zone ${data[0].zone}`;
+  if (label && data.length && data[0].zone) label.textContent = `Zone ${data[0].zone}`;
   const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const actionColors = {start_indoor:'#7b1fa2',transplant:'#2e7d32',direct_sow:'#1565c0',plant:'#e65100',harvest:'#c62828'};
   const actionLabels = {start_indoor:'START INDOOR',transplant:'TRANSPLANT',direct_sow:'DIRECT SOW',plant:'PLANT',harvest:'HARVEST'};
@@ -16187,14 +16323,14 @@ async function loadPlantingCalendar() {
 }
 
 async function loadYieldAnalysis() {
-  const data = await safeFetch('/api/garden/yield-analysis', {}, {crops:[], total_calories:0, person_days:0});
+  const data = await safeFetch('/api/garden/yield-analysis', {}, {crops:[], total_calories:0, person_days:0, total_sqft:0});
   const summary = document.getElementById('yield-summary');
   const crops = document.getElementById('yield-crops');
   if (!summary || !crops) return;
   summary.innerHTML = `
-    <div class="live-widget" style="min-width:120px;cursor:default;"><div class="live-widget-label">TOTAL CALORIES</div><div class="live-widget-value">${data.total_calories.toLocaleString()}</div></div>
-    <div class="live-widget" style="min-width:120px;cursor:default;"><div class="live-widget-label">PERSON-DAYS</div><div class="live-widget-value">${data.person_days}</div><div class="live-widget-detail">at 2000 cal/day</div></div>
-    <div class="live-widget" style="min-width:120px;cursor:default;"><div class="live-widget-label">TOTAL AREA</div><div class="live-widget-value">${data.total_sqft}</div><div class="live-widget-detail">sq ft</div></div>`;
+    <div class="live-widget" style="min-width:120px;cursor:default;"><div class="live-widget-label">TOTAL CALORIES</div><div class="live-widget-value">${(data.total_calories||0).toLocaleString()}</div></div>
+    <div class="live-widget" style="min-width:120px;cursor:default;"><div class="live-widget-label">PERSON-DAYS</div><div class="live-widget-value">${data.person_days||0}</div><div class="live-widget-detail">at 2000 cal/day</div></div>
+    <div class="live-widget" style="min-width:120px;cursor:default;"><div class="live-widget-label">TOTAL AREA</div><div class="live-widget-value">${data.total_sqft||0}</div><div class="live-widget-detail">sq ft</div></div>`;
   if (!data.crops.length) {
     crops.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:11px;">No harvests logged yet. Log harvests from the Harvest Log tab to see yield analysis.</div>';
     return;
@@ -16256,8 +16392,11 @@ async function submitPreservation() {
 }
 
 async function deletePreservation(id) {
-  await fetch(`/api/garden/preservation/${id}`, {method:'DELETE'});
-  loadPreservationLog();
+  try {
+    const r = await fetch(`/api/garden/preservation/${id}`, {method:'DELETE'});
+    if (!r.ok) { toast('Delete failed', 'error'); return; }
+    loadPreservationLog();
+  } catch(e) { toast('Delete failed — network error', 'error'); }
 }
 
 async function lookupZone() {
@@ -16696,11 +16835,13 @@ async function loadPatients() {
         ${allergyWarn ? `<div style="color:var(--red);font-size:11px;font-weight:700;">ALLERGIES: ${escapeHtml(allergies)}</div>` : '<div style="color:var(--green);font-size:10px;">NKDA</div>'}
         <div class="cc-field"><strong>Meds:</strong> ${escapeHtml(meds)}</div>
         ${p.conditions?.length ? `<div class="cc-field"><strong>Conditions:</strong> ${escapeHtml(p.conditions.join(', '))}</div>` : ''}
-        <div class="cc-actions">
+        <div class="cc-actions" style="flex-wrap:wrap;">
           <button class="btn btn-sm btn-primary" onclick="openVitalsPanel(${p.id})">Vitals</button>
+          <button class="btn btn-sm" onclick="startTCCC(${p.id})" style="background:var(--red-dim);color:var(--red);border-color:var(--red);">TCCC</button>
+          <button class="btn btn-sm" onclick="generateHandoff(${p.id})">Handoff</button>
           <button class="btn btn-sm" onclick="editPatient(${p.id})">Edit</button>
           <button class="btn btn-sm" onclick="openAppFrame('Patient Card','/api/patients/${p.id}/card')">Card</button>
-          <button class="btn btn-sm btn-danger" onclick="deletePatient(${p.id})">Delete</button>
+          <button class="btn btn-sm btn-danger" onclick="deletePatient(${p.id})">Del</button>
         </div>
       </div>`;
     }).join('');
@@ -19187,7 +19328,7 @@ async function loadTriageBoard() {
   }
   el.innerHTML = catOrder.map(cat => {
     const patients = data.categories[cat] || [];
-    const color = catColors[cat];
+    const color = catColors[cat] || 'var(--text-muted)';
     return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px;min-height:100px;">
       <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${color};text-align:center;padding:4px;border-bottom:2px solid ${color};margin-bottom:6px;font-family:var(--font-data,monospace);">${catLabels[cat]} (${patients.length})</div>
       ${patients.map(p => `<div style="background:var(--surface2);border-left:3px solid ${color};border-radius:var(--radius-sm);padding:6px 8px;margin-bottom:4px;font-size:10px;cursor:pointer;" onclick="changeTriageCategory(${p.id},'${cat}')">
@@ -19231,6 +19372,267 @@ async function setTriageCategory(patientId, category) {
   toast('Triage updated', 'success');
 }
 
+/* ─── Voice Input (Web Speech API) ─── */
+let _voiceRecognition = null;
+function voiceInput(targetInputId) {
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) { toast('Speech recognition not available in this browser', 'warning'); return; }
+  const input = document.getElementById(targetInputId);
+  if (!input) return;
+
+  if (_voiceRecognition) {
+    _voiceRecognition.stop();
+    _voiceRecognition = null;
+    document.querySelectorAll('.voice-active').forEach(b => b.classList.remove('voice-active'));
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = 'en-US';
+  recognition.interimResults = true;
+  recognition.continuous = false;
+  _voiceRecognition = recognition;
+
+  // Visual feedback
+  const btn = document.querySelector(`[onclick*="voiceInput('${targetInputId}')"]`);
+  if (btn) btn.classList.add('voice-active');
+
+  recognition.onresult = (event) => {
+    let transcript = '';
+    for (let i = 0; i < event.results.length; i++) {
+      transcript += event.results[i][0].transcript;
+    }
+    input.value = transcript;
+  };
+
+  recognition.onend = () => {
+    _voiceRecognition = null;
+    if (btn) btn.classList.remove('voice-active');
+    // Auto-submit if it's the copilot
+    if (targetInputId === 'copilot-input' && input.value.trim()) {
+      askCopilot();
+    }
+  };
+
+  recognition.onerror = (e) => {
+    _voiceRecognition = null;
+    if (btn) btn.classList.remove('voice-active');
+    if (e.error !== 'aborted') toast('Voice error: ' + e.error, 'warning');
+  };
+
+  // Clear any stale input to prevent auto-submitting old text on timeout
+  input.value = '';
+  recognition.start();
+  toast('Listening...', 'info');
+}
+
+/* ─── Federation Peer Management UI ─── */
+async function loadFederationPeers() {
+  const peers = await safeFetch('/api/federation/peers', {}, []);
+  const el = document.getElementById('federation-peers-list');
+  if (!el) return;
+  if (!peers.length) {
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">No peers connected. Click "+ ADD PEER" to connect with another N.O.M.A.D. node.</div>';
+    return;
+  }
+  const trustColors = {observer:'var(--text-muted)',member:'var(--accent)',trusted:'var(--green)',admin:'var(--orange)'};
+  el.innerHTML = peers.map(p => `
+    <div class="contact-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div class="cc-name">${escapeHtml(p.node_name || p.node_id)}</div>
+          <div style="font-size:9px;color:var(--text-muted);font-family:var(--font-data,monospace);">${escapeHtml(p.node_id)}</div>
+        </div>
+        <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;padding:2px 8px;border-radius:3px;background:var(--surface2);color:${trustColors[p.trust_level]||'var(--text-muted)'};">${escapeHtml(p.trust_level)}</span>
+      </div>
+      <div class="cc-field" style="margin-top:6px;"><strong>IP:</strong> ${escapeHtml(p.ip||'—')}:${p.port||8080}</div>
+      <div class="cc-field"><strong>Last seen:</strong> ${p.last_seen ? timeAgo(p.last_seen) : 'Never'}</div>
+      <div class="cc-field"><strong>Auto-sync:</strong> ${p.auto_sync ? '<span style="color:var(--green);">ON</span>' : 'OFF'}</div>
+      <div class="cc-actions" style="margin-top:8px;">
+        <select onchange="updatePeerTrust('${escapeAttr(p.node_id)}',this.value)" style="padding:3px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:10px;">
+          ${['observer','member','trusted','admin'].map(t => `<option value="${t}" ${p.trust_level===t?'selected':''}>${t}</option>`).join('')}
+        </select>
+        <button class="btn btn-sm btn-danger" onclick="removePeer('${escapeAttr(p.node_id)}')" style="font-size:9px;">REMOVE</button>
+      </div>
+    </div>`).join('');
+}
+
+function showAddPeerForm() {
+  const form = document.getElementById('add-peer-form');
+  form.style.display = form.style.display === 'flex' ? 'none' : 'flex';
+}
+
+async function submitAddPeer() {
+  const data = {
+    node_id: document.getElementById('fp-nodeid').value.trim(),
+    node_name: document.getElementById('fp-name').value.trim(),
+    trust_level: document.getElementById('fp-trust').value,
+    ip: document.getElementById('fp-ip').value.trim(),
+  };
+  if (!data.node_id) { toast('Node ID required', 'warning'); return; }
+  await fetch('/api/federation/peers', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  document.getElementById('add-peer-form').style.display = 'none';
+  loadFederationPeers();
+  toast('Peer added', 'success');
+}
+
+async function updatePeerTrust(nodeId, trust) {
+  await fetch(`/api/federation/peers/${nodeId}/trust`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({trust_level: trust})});
+  toast('Trust updated', 'success');
+}
+
+async function removePeer(nodeId) {
+  try {
+    const r = await fetch(`/api/federation/peers/${nodeId}`, {method:'DELETE'});
+    if (!r.ok) { toast('Failed to remove peer', 'error'); return; }
+    loadFederationPeers();
+    toast('Peer removed', 'success');
+  } catch(e) { toast('Remove failed — network error', 'error'); }
+}
+
+async function loadFederationMarketplace() {
+  const el = document.getElementById('federation-marketplace');
+  if (!el) return;
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  if (el.style.display === 'none') return;
+  const [offers, requests] = await Promise.all([
+    safeFetch('/api/federation/offers', {}, []),
+    safeFetch('/api/federation/requests', {}, []),
+  ]);
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--green);">OFFERS (Have)</span>
+          <button class="btn btn-sm" onclick="postOffer()" style="font-size:9px;">+ POST</button>
+        </div>
+        ${offers.length ? offers.map(o => `<div style="padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--green);border-radius:var(--radius-sm);margin-bottom:4px;font-size:11px;">
+          <strong>${escapeHtml(o.item_type)}</strong> — ${o.quantity} ${escapeHtml(o.notes||'')}
+        </div>`).join('') : '<div style="font-size:10px;color:var(--text-muted);padding:8px;">No offers posted</div>'}
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;color:var(--orange);">REQUESTS (Need)</span>
+          <button class="btn btn-sm" onclick="postRequest()" style="font-size:9px;">+ POST</button>
+        </div>
+        ${requests.length ? requests.map(r => `<div style="padding:6px 8px;background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--orange);border-radius:var(--radius-sm);margin-bottom:4px;font-size:11px;">
+          <strong>${escapeHtml(r.item_type)}</strong> — ${escapeHtml(r.description)} <span style="color:${r.urgency==='critical'?'var(--red)':'var(--text-muted)'};font-size:9px;text-transform:uppercase;">[${escapeHtml(r.urgency)}]</span>
+        </div>`).join('') : '<div style="font-size:10px;color:var(--text-muted);padding:8px;">No requests posted</div>'}
+      </div>
+    </div>`;
+}
+
+async function postOffer() {
+  const type = prompt('What are you offering? (e.g., diesel, antibiotics, water)');
+  if (!type) return;
+  const qty = prompt('Quantity?') || '0';
+  const notes = prompt('Notes (optional)') || '';
+  await fetch('/api/federation/offers', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({item_type:type, quantity:parseFloat(qty), notes})});
+  loadFederationMarketplace();
+  toast('Offer posted', 'success');
+}
+
+async function postRequest() {
+  const type = prompt('What do you need? (e.g., antibiotics, fuel, medical)');
+  if (!type) return;
+  const desc = prompt('Description?') || '';
+  const urgency = prompt('Urgency? (normal/urgent/critical)') || 'normal';
+  await fetch('/api/federation/requests', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({item_type:type, description:desc, urgency})});
+  loadFederationMarketplace();
+  toast('Request posted', 'success');
+}
+
+/* ─── TCCC MARCH Interactive Wizard ─── */
+let _tcccPatientId = null;
+let _tcccStep = 0;
+let _tcccLog = [];
+let _tcccProtocol = [];
+
+async function startTCCC(patientId) {
+  _tcccPatientId = patientId;
+  _tcccStep = 0;
+  _tcccLog = [];
+  _tcccProtocol = await safeFetch('/api/medical/tccc-protocol', {}, []);
+  if (!_tcccProtocol.length) { toast('Failed to load TCCC protocol', 'error'); return; }
+  const protocol = _tcccProtocol;
+  // Show as modal overlay
+  let modal = document.getElementById('tccc-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'tccc-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:6000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+    document.body.appendChild(modal);
+  }
+  modal.style.display = 'flex';
+  renderTCCCStep(protocol);
+}
+
+function renderTCCCStep(protocol) {
+  const modal = document.getElementById('tccc-modal');
+  if (!modal) return;
+  const step = protocol[_tcccStep];
+  if (!step) { finishTCCC(protocol); return; }
+  const stepColors = {M:'#c62828',A:'#e65100',R:'#1565c0',C:'#6a1b9a',H:'#2e7d32'};
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  modal.innerHTML = `
+    <div style="background:var(--surface-solid);border:2px solid ${stepColors[step.step]};border-radius:var(--radius);max-width:500px;width:90%;max-height:80vh;overflow-y:auto;">
+      <div style="padding:14px 20px;background:${stepColors[step.step]};color:#fff;display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-size:24px;font-weight:800;font-family:var(--font-data,monospace);">${step.step} — ${escapeHtml(step.name)}</div>
+          <div style="font-size:10px;opacity:0.8;">Step ${_tcccStep + 1} of ${protocol.length} &middot; ${now}</div>
+        </div>
+        <button onclick="document.getElementById('tccc-modal').style.display='none'" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;">&#10005;</button>
+      </div>
+      <div style="padding:16px 20px;">
+        ${step.actions.map((a, i) => `
+          <div style="display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-bottom:1px solid var(--border);" id="tccc-action-${i}">
+            <button class="btn btn-sm" onclick="completeTCCCAction(${i}, this)" style="min-width:60px;font-size:9px;flex-shrink:0;">DONE</button>
+            <div style="font-size:12px;line-height:1.6;">${escapeHtml(a)}</div>
+          </div>`).join('')}
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          ${_tcccStep > 0 ? `<button class="btn btn-sm" onclick="_tcccStep--;renderTCCCStep(_tcccProtocol)">&#9664; PREV</button>` : ''}
+          <div style="flex:1;"></div>
+          <button class="btn btn-sm btn-primary" onclick="_tcccStep++;renderTCCCStep(_tcccProtocol)" style="font-size:10px;">
+            ${_tcccStep < protocol.length - 1 ? 'NEXT STEP &#9654;' : 'COMPLETE TCCC'}
+          </button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function completeTCCCAction(idx, btn) {
+  const now = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  btn.textContent = now;
+  btn.style.background = 'var(--green)';
+  btn.style.color = '#fff';
+  btn.style.borderColor = 'var(--green)';
+  btn.disabled = true;
+  _tcccLog.push({step: _tcccStep, action: idx, time: now});
+}
+
+function finishTCCC(protocol) {
+  const modal = document.getElementById('tccc-modal');
+  if (!modal) return;
+  modal.innerHTML = `
+    <div style="background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);max-width:500px;width:90%;padding:24px;text-align:center;">
+      <div style="font-size:32px;margin-bottom:8px;">&#9989;</div>
+      <div style="font-size:16px;font-weight:800;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">TCCC MARCH COMPLETE</div>
+      <div style="font-size:12px;color:var(--text-dim);margin-bottom:16px;">${_tcccLog.length} actions recorded</div>
+      ${_tcccPatientId ? `<button class="btn btn-sm btn-primary" onclick="generateHandoff(${_tcccPatientId});document.getElementById('tccc-modal').style.display='none';" style="margin-right:6px;">GENERATE HANDOFF REPORT</button>` : ''}
+      <button class="btn btn-sm" onclick="document.getElementById('tccc-modal').style.display='none'">CLOSE</button>
+    </div>`;
+}
+
+async function generateHandoff(patientId) {
+  const data = await safeFetch(`/api/medical/handoff/${patientId}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({from_provider:'Field Team',to_provider:'Receiving'})}, null);
+  if (data && data.id) {
+    openAppFrame('SBAR Handoff', `/api/medical/handoff/${data.id}/print`);
+    toast('Handoff report generated', 'success');
+  } else {
+    toast('Failed to generate handoff', 'error');
+  }
+}
+
 /* ─── Frequency Database UI ─── */
 let _freqData = [];
 async function loadFreqDatabase() {
@@ -19272,7 +19674,10 @@ function renderFreqTable() {
 }
 function filterFreqTable() { renderFreqTable(); }
 async function deleteFreq(id) {
-  await fetch(`/api/comms/frequencies/${id}`, {method:'DELETE'});
+  try {
+    const r = await fetch(`/api/comms/frequencies/${id}`, {method:'DELETE'});
+    if (!r.ok) { toast('Delete failed', 'error'); return; }
+  } catch(e) { toast('Delete failed — network error', 'error'); return; }
   loadFreqDatabase();
 }
 function showAddFreqForm() {
@@ -20390,7 +20795,7 @@ switchPrepSub = function(sub) {
   if (sub === 'checklists') loadChecklists();
   if (sub === 'skills') loadSkills();
   if (sub === 'ammo') loadAmmo();
-  if (sub === 'community') loadCommunity();
+  if (sub === 'community') { loadCommunity(); loadFederationPeers(); }
   if (sub === 'radiation') loadRadiation();
   if (sub === 'fuel') loadFuel();
   if (sub === 'equipment') loadEquipment();

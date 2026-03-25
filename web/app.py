@@ -19,7 +19,7 @@ except Exception:
     try:
         from catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
     except Exception:
-        log.warning('Could not import channel catalog — media features will be limited')
+        logging.getLogger('nomad.web').warning('Could not import channel catalog — media features will be limited')
         CHANNEL_CATALOG = []
         CHANNEL_CATEGORIES = []
 from db import get_db, log_activity
@@ -40,7 +40,7 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '3.1.0'
+VERSION = '3.2.0'
 
 
 def set_version(v):
@@ -351,8 +351,9 @@ def create_app():
                             break
                         time.sleep(1)
             finally:
-                _pull_queue.clear()
-                _pull_queue_active = False
+                with _pull_queue_lock:
+                    _pull_queue.clear()
+                    _pull_queue_active = False
 
         threading.Thread(target=do_queue, daemon=True).start()
         return jsonify({'status': 'queued', 'count': len(to_pull), 'models': to_pull})
@@ -444,7 +445,6 @@ def create_app():
                 harvest_count = db_ctx.execute('SELECT COUNT(*) as c FROM harvest_log').fetchone()['c']
                 if harvest_count:
                     sit_parts.append(f'GARDEN: {harvest_count} harvests logged')
-                db_ctx.close()
                 if sit_parts:
                     ctx = '\n'.join(sit_parts)
                     system_prompt = (system_prompt + '\n\n' if system_prompt else '') + \
@@ -1863,7 +1863,7 @@ RULES:
         """Serve local PMTiles files."""
         maps_dir = get_maps_dir()
         safe_path = os.path.normpath(os.path.join(maps_dir, filepath))
-        if not safe_path.startswith(os.path.normpath(maps_dir)):
+        if not os.path.normcase(safe_path).startswith(os.path.normcase(os.path.normpath(maps_dir))):
             return jsonify({'error': 'Forbidden'}), 403
         if not os.path.isfile(safe_path):
             return jsonify({'error': 'Not found'}), 404
@@ -1891,9 +1891,17 @@ RULES:
             resp.headers['Content-Length'] = length
             return resp
 
-        with open(safe_path, 'rb') as f:
-            data = f.read()
-        return Response(data, mimetype='application/octet-stream')
+        def stream_file():
+            with open(safe_path, 'rb') as f:
+                while True:
+                    chunk = f.read(1024 * 1024)  # 1MB chunks
+                    if not chunk:
+                        break
+                    yield chunk
+        resp = Response(stream_file(), mimetype='application/octet-stream')
+        resp.headers['Content-Length'] = file_size
+        resp.headers['Accept-Ranges'] = 'bytes'
+        return resp
 
     @app.route('/api/maps/sources')
     def api_maps_sources():
@@ -3382,14 +3390,16 @@ RULES:
     def api_map_routes_create():
         data = request.get_json() or {}
         db = get_db()
-        db.execute('INSERT INTO map_routes (name, waypoint_ids, distance_km, estimated_time_min, terrain_difficulty, notes) VALUES (?,?,?,?,?,?)',
-                   (data.get('name', 'New Route'), json.dumps(data.get('waypoint_ids', [])),
-                    data.get('distance_km', 0), data.get('estimated_time_min', 0),
-                    data.get('terrain_difficulty', 'moderate'), data.get('notes', '')))
-        db.commit()
-        rid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
-        db.close()
-        return jsonify({'status': 'created', 'id': rid})
+        try:
+            db.execute('INSERT INTO map_routes (name, waypoint_ids, distance_km, estimated_time_min, terrain_difficulty, notes) VALUES (?,?,?,?,?,?)',
+                       (data.get('name', 'New Route'), json.dumps(data.get('waypoint_ids', [])),
+                        data.get('distance_km', 0), data.get('estimated_time_min', 0),
+                        data.get('terrain_difficulty', 'moderate'), data.get('notes', '')))
+            db.commit()
+            rid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            return jsonify({'status': 'created', 'id': rid})
+        finally:
+            db.close()
 
     @app.route('/api/maps/routes/<int:rid>', methods=['DELETE'])
     def api_map_routes_delete(rid):
@@ -3410,13 +3420,15 @@ RULES:
     def api_map_annotations_create():
         data = request.get_json() or {}
         db = get_db()
-        db.execute('INSERT INTO map_annotations (type, geojson, label, color, notes) VALUES (?,?,?,?,?)',
-                   (data.get('type', 'polygon'), json.dumps(data.get('geojson', {})),
-                    data.get('label', ''), data.get('color', '#ff0000'), data.get('notes', '')))
-        db.commit()
-        aid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
-        db.close()
-        return jsonify({'status': 'created', 'id': aid})
+        try:
+            db.execute('INSERT INTO map_annotations (type, geojson, label, color, notes) VALUES (?,?,?,?,?)',
+                       (data.get('type', 'polygon'), json.dumps(data.get('geojson', {})),
+                        data.get('label', ''), data.get('color', '#ff0000'), data.get('notes', '')))
+            db.commit()
+            aid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            return jsonify({'status': 'created', 'id': aid})
+        finally:
+            db.close()
 
     @app.route('/api/maps/annotations/<int:aid>', methods=['DELETE'])
     def api_map_annotations_delete(aid):
@@ -4626,11 +4638,12 @@ RULES:
         db = get_db()
         try:
             row = db.execute(f'SELECT favorited FROM {table} WHERE id = ?', (media_id,)).fetchone()
+            new_val = 0
             if row:
                 new_val = 0 if row['favorited'] else 1
                 db.execute(f'UPDATE {table} SET favorited = ? WHERE id = ?', (new_val, media_id))
                 db.commit()
-            return jsonify({'status': 'toggled', 'favorited': new_val if row else 0})
+            return jsonify({'status': 'toggled', 'favorited': new_val})
         finally:
             db.close()
 
@@ -6708,16 +6721,19 @@ If no entities found, respond with: []"""
         for tname, rows in tables.items():
             if tname not in ALLOWED:
                 continue
+            # Get valid column names from the actual table schema
+            schema_cols = {r[1] for r in db.execute(f"PRAGMA table_info({tname})").fetchall()}
             count = 0
             for row in rows:
                 row.pop('id', None)
                 row.pop('created_at', None)
                 row.pop('updated_at', None)
                 row.pop('_source_node', None)
-                cols = list(row.keys())
-                vals = list(row.values())
-                if not cols:
+                safe_row = {k: v for k, v in row.items() if k in schema_cols}
+                if not safe_row:
                     continue
+                cols = list(safe_row.keys())
+                vals = list(safe_row.values())
                 placeholders = ','.join(['?'] * len(cols))
                 try:
                     db.execute(f'INSERT INTO {tname} ({",".join(cols)}) VALUES ({placeholders})', vals)
@@ -7348,13 +7364,15 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         """Update a patient's triage category and care phase."""
         data = request.get_json() or {}
         db = get_db()
-        if 'triage_category' in data:
-            db.execute('UPDATE patients SET triage_category = ? WHERE id = ?', (data['triage_category'], pid))
-        if 'care_phase' in data:
-            db.execute('UPDATE patients SET care_phase = ? WHERE id = ?', (data['care_phase'], pid))
-        db.commit()
-        db.close()
-        return jsonify({'status': 'updated'})
+        try:
+            if 'triage_category' in data:
+                db.execute('UPDATE patients SET triage_category = ? WHERE id = ?', (data['triage_category'], pid))
+            if 'care_phase' in data:
+                db.execute('UPDATE patients SET care_phase = ? WHERE id = ?', (data['care_phase'], pid))
+            db.commit()
+            return jsonify({'status': 'updated'})
+        finally:
+            db.close()
 
     @app.route('/api/medical/handoff/<int:pid>', methods=['POST'])
     def api_medical_handoff(pid):
@@ -7607,7 +7625,7 @@ th {{ background: #eee; font-weight: 700; }}
             harvests = db.execute('''SELECT crop, SUM(quantity) as total_lbs, COUNT(*) as harvests,
                                      AVG(yield_per_sqft) as avg_yield
                                      FROM harvest_log GROUP BY crop ORDER BY total_lbs DESC''').fetchall()
-            plots = db.execute('SELECT SUM(CASE WHEN width > 0 AND length > 0 THEN width * length ELSE area_sqft END) as total_sqft FROM garden_plots').fetchone()
+            plots = db.execute('SELECT SUM(CASE WHEN width_ft > 0 AND length_ft > 0 THEN width_ft * length_ft ELSE 0 END) as total_sqft FROM garden_plots').fetchone()
             total_sqft = plots['total_sqft'] or 0
 
             # Caloric analysis from planting calendar
@@ -8913,7 +8931,7 @@ th {{ background: #eee; font-weight: 700; }}
                  'action': 'preparedness', 'sub': 'checklists'},
                 {'id': 'ai', 'title': 'Install AI assistant',
                  'desc': 'Download an AI model for offline situation analysis and decision support.',
-                 'done': db.execute("SELECT COUNT(*) as c FROM services WHERE id = 'ollama' AND installed = 1").fetchone()['c'] > 0,
+                 'done': ollama.is_installed(),
                  'action': 'services', 'sub': None},
                 {'id': 'media', 'title': 'Download survival reference content',
                  'desc': 'Videos, audio training, reference books — all available offline.',
@@ -9197,7 +9215,7 @@ th {{ background: #eee; font-weight: 700; }}
     def api_radiation_list():
         conn = get_db()
         rows = conn.execute('SELECT * FROM radiation_log ORDER BY created_at DESC LIMIT 200').fetchall()
-        total = conn.execute('SELECT SUM(dose_rate_rem) FROM radiation_log').fetchone()[0] or 0
+        total = conn.execute('SELECT COALESCE(MAX(cumulative_rem), 0) FROM radiation_log').fetchone()[0] or 0
         conn.close()
         return jsonify({'readings': [dict(r) for r in rows], 'total_rem': round(total, 4)})
 

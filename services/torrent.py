@@ -229,9 +229,11 @@ class TorrentManager:
         with self._lock:
             h = self._handles.pop(info_hash, None)
             self._meta.pop(info_hash, None)
-        if h and h.is_valid() and self._session:
+        with self._lock:
+            session = self._session
+        if h and h.is_valid() and session:
             flags = lt.session.delete_files if delete_files else 0
-            self._session.remove_torrent(h, flags)
+            session.remove_torrent(h, flags)
         log.info('Torrent removed: hash=%s delete_files=%s', info_hash, delete_files)
 
     def open_save_folder(self, info_hash: str):
@@ -255,11 +257,13 @@ class TorrentManager:
         """Background loop: process libtorrent alerts, log completion."""
         while self._monitor_active:
             time.sleep(1)
-            if not self._session:
+            with self._lock:
+                session = self._session
+            if not session:
                 break
 
             try:
-                alerts = self._session.pop_alerts()
+                alerts = session.pop_alerts()
                 for a in alerts:
                     if isinstance(a, lt.torrent_error_alert):
                         ih = str(a.handle.info_hash())

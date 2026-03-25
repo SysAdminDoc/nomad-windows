@@ -69,6 +69,14 @@ def backup_db():
 
 def init_db():
     conn = get_db()
+    try:
+        _init_db_inner(conn)
+    except Exception:
+        conn.close()
+        raise
+
+
+def _init_db_inner(conn):
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS services (
             id TEXT PRIMARY KEY,
@@ -843,5 +851,4 @@ def init_db():
         except Exception:
             pass
     conn.commit()
-
     conn.close()

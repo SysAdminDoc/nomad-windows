@@ -132,13 +132,15 @@ def start():
         creationflags=CREATE_NO_WINDOW,
     )
 
-    from services.manager import _processes
-    _processes[SERVICE_ID] = proc
+    from services.manager import register_process
+    register_process(SERVICE_ID, proc)
 
     db = get_db()
-    db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
-    db.commit()
-    db.close()
+    try:
+        db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
+        db.commit()
+    finally:
+        db.close()
 
     for _ in range(30):
         if check_port(OLLAMA_PORT):
@@ -190,7 +192,6 @@ def _kill_port_holder(port):
 
 def _adopt_running_instance():
     """Update DB/process tracking when Ollama is running but PID tracking is stale."""
-    from services.manager import _processes
     try:
         # Find the actual Ollama PID via the port
         import subprocess as _sp

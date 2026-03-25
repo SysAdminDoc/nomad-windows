@@ -12,10 +12,10 @@
 <script src="/static/js/epub.min.js"></script>
 <style>
 /* Critical: theme variables inline for instant rendering */
-:root,[data-theme="nomad"]{--bg:#f7eedc;--surface:rgba(255,255,255,0.85);--surface-solid:#ffffff;--surface2:#f0e8d4;--surface3:#e5dcc8;--border:rgba(66,68,32,0.18);--text:#1a1a0f;--text-dim:#6b5d4f;--text-muted:#8b7355;--accent:#424420;--accent-hover:#525530;--accent-dim:rgba(66,68,32,0.1);--accent-glow:rgba(66,68,32,0.15);--green:#4a6b2a;--green-dim:rgba(74,107,42,0.12);--red:#994444;--red-dim:rgba(153,68,68,0.1);--orange:#a84a12;--orange-dim:rgba(168,74,18,0.1);--border-hover:rgba(66,68,32,0.3);--purple:#6d7042;--radius:14px;--radius-sm:10px;--shadow:0 8px 30px rgba(100,80,50,0.15);--shadow-sm:0 4px 12px rgba(100,80,50,0.1);--card-text:#fff}
-[data-theme="nightops"]{--bg:#1c1b16;--surface:rgba(42,41,24,0.9);--surface-solid:#2a2918;--surface2:#353420;--surface3:#3d3c2a;--border:rgba(186,186,170,0.12);--border-hover:rgba(186,186,170,0.2);--text:#f7eedc;--text-dim:#afafa5;--text-muted:#8f8f82;--accent:#858a55;--accent-hover:#a5ab7d;--accent-dim:rgba(133,138,85,0.15);--accent-glow:rgba(133,138,85,0.2);--green:#6d7042;--green-dim:rgba(109,112,66,0.2);--red:#b05555;--red-dim:rgba(176,85,85,0.15);--orange:#c85815;--orange-dim:rgba(200,88,21,0.15);--purple:#a5ab7d;--shadow:0 12px 40px rgba(0,0,0,0.5);--shadow-sm:0 4px 12px rgba(0,0,0,0.3);--card-text:#f7eedc}
-[data-theme="redlight"]{--bg:#0a0000;--surface:rgba(20,2,2,0.9);--surface-solid:#140202;--surface2:#1e0404;--surface3:#280606;--border:rgba(255,50,50,0.1);--border-hover:rgba(255,50,50,0.2);--text:#cc3333;--text-dim:#882222;--text-muted:#551515;--accent:#cc2200;--accent-hover:#ee3311;--accent-dim:rgba(204,34,0,0.15);--accent-glow:rgba(204,34,0,0.2);--green:#883322;--green-dim:rgba(136,51,34,0.15);--red:#ff3333;--red-dim:rgba(255,51,51,0.15);--orange:#cc4400;--orange-dim:rgba(204,68,0,0.15);--purple:#993333;--shadow:0 12px 40px rgba(0,0,0,0.8);--shadow-sm:0 4px 12px rgba(0,0,0,0.6);--card-text:#cc3333}
-[data-theme="cyber"]{--bg:#060608;--surface:rgba(18,18,22,0.85);--surface-solid:#121216;--surface2:rgba(24,24,30,0.9);--surface3:#1e1e26;--border:rgba(255,255,255,0.06);--border-hover:rgba(255,255,255,0.12);--text:#e8e8ed;--text-dim:#8888a0;--text-muted:#55556a;--accent:#5b9fff;--accent-hover:#7db4ff;--accent-dim:rgba(91,159,255,0.12);--accent-glow:rgba(91,159,255,0.25);--green:#4caf50;--green-dim:rgba(76,175,80,0.12);--red:#f44336;--red-dim:rgba(244,67,54,0.12);--orange:#ff9800;--orange-dim:rgba(255,152,0,0.12);--purple:#b388ff;--shadow:0 12px 40px rgba(0,0,0,0.6);--shadow-sm:0 4px 12px rgba(0,0,0,0.4);--card-text:#fff}
+:root,[data-theme="nomad"]{--bg:#f0e6d0;--surface:rgba(255,252,245,0.9);--surface-solid:#faf6ee;--surface2:#eae0cc;--surface3:#ddd4be;--border:rgba(66,68,32,0.16);--text:#1a1a0e;--text-dim:#5c5040;--text-muted:#887860;--accent:#4a4d24;--accent-hover:#5a5e30;--accent-dim:rgba(74,77,36,0.08);--accent-glow:rgba(74,77,36,0.12);--green:#4a6b2a;--green-dim:rgba(74,107,42,0.1);--red:#b83030;--red-dim:rgba(184,48,48,0.08);--orange:#c85a10;--orange-dim:rgba(200,90,16,0.08);--border-hover:rgba(66,68,32,0.32);--radius:8px;--radius-sm:5px;--shadow:0 4px 20px rgba(80,60,30,0.1);--shadow-sm:0 1px 6px rgba(80,60,30,0.06);--card-text:#fff}
+[data-theme="nightops"]{--bg:#111008;--surface:rgba(32,31,20,0.94);--surface-solid:#1e1d14;--surface2:#282718;--surface3:#343322;--border:rgba(145,150,96,0.1);--border-hover:rgba(145,150,96,0.22);--text:#e8e0cc;--text-dim:#a09880;--text-muted:#706850;--accent:#919660;--accent-hover:#a8ae78;--accent-dim:rgba(145,150,96,0.1);--accent-glow:rgba(145,150,96,0.18);--green:#6a8030;--green-dim:rgba(106,128,48,0.15);--red:#cc4040;--red-dim:rgba(204,64,64,0.12);--orange:#d87020;--orange-dim:rgba(216,112,32,0.12);--shadow:0 8px 30px rgba(0,0,0,0.6);--shadow-sm:0 1px 8px rgba(0,0,0,0.4);--card-text:#e8e0cc}
+[data-theme="redlight"]{--bg:#060000;--surface:rgba(16,2,2,0.95);--surface-solid:#100101;--surface2:#180303;--surface3:#200505;--border:rgba(255,40,40,0.06);--border-hover:rgba(255,40,40,0.14);--text:#cc3333;--text-dim:#882222;--text-muted:#551515;--accent:#cc2200;--accent-hover:#ee3311;--accent-dim:rgba(204,34,0,0.1);--accent-glow:rgba(204,34,0,0.18);--green:#883322;--green-dim:rgba(136,51,34,0.1);--red:#ff3333;--red-dim:rgba(255,51,51,0.08);--orange:#cc4400;--orange-dim:rgba(204,68,0,0.08);--shadow:0 8px 30px rgba(0,0,0,0.8);--shadow-sm:0 1px 8px rgba(0,0,0,0.6);--card-text:#cc3333}
+[data-theme="cyber"]{--bg:#04040a;--surface:rgba(12,12,20,0.92);--surface-solid:#0a0a14;--surface2:rgba(18,18,28,0.94);--surface3:#161622;--border:rgba(91,159,255,0.06);--border-hover:rgba(91,159,255,0.18);--text:#dcdce8;--text-dim:#6868a0;--text-muted:#404060;--accent:#5b9fff;--accent-hover:#7db4ff;--accent-dim:rgba(91,159,255,0.08);--accent-glow:rgba(91,159,255,0.2);--green:#4caf50;--green-dim:rgba(76,175,80,0.08);--red:#f44336;--red-dim:rgba(244,67,54,0.08);--orange:#ff9800;--orange-dim:rgba(255,152,0,0.08);--shadow:0 8px 30px rgba(0,0,0,0.7);--shadow-sm:0 1px 8px rgba(0,0,0,0.5);--card-text:#fff}
 body{background:var(--bg);color:var(--text)}
 </style>
 </head>
@@ -64,6 +64,7 @@ body{background:var(--bg);color:var(--text)}
     <button class="tab" data-tab="maps">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg></span>
       Maps
+      <span id="badge-maps" class="tab-badge green" style="display:none;"></span>
     </button>
     <button class="tab" data-tab="notes">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
@@ -72,6 +73,7 @@ body{background:var(--bg);color:var(--text)}
     <button class="tab" data-tab="media">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
       Media
+      <span id="badge-media" class="tab-badge green" style="display:none;"></span>
     </button>
     <button class="tab" data-tab="tools">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
@@ -101,12 +103,18 @@ body{background:var(--bg);color:var(--text)}
       <a id="update-banner" href="#" style="display:none;font-size:11px;padding:4px 12px;background:var(--green-dim);color:var(--green);border-radius:20px;font-weight:600;">Update</a>
       <span id="net-status" style="font-size:11px;display:flex;align-items:center;gap:5px;color:var(--text-muted);"></span>
     </div>
-    <div style="display:flex;gap:4px;align-items:center;margin-top:8px;">
+    <div style="display:flex;gap:4px;align-items:center;margin-top:8px;justify-content:space-between;">
       <div class="theme-switcher" title="Switch theme">
         <div class="theme-btn active" data-t="nomad" onclick="setTheme('nomad')" title="NOMAD (Desert)"></div>
         <div class="theme-btn" data-t="nightops" onclick="setTheme('nightops')" title="Night Ops (Dark)" role="button" tabindex="0" aria-label="Night Ops dark theme"></div>
         <div class="theme-btn" data-t="cyber" onclick="setTheme('cyber')" title="Cyber (Blue Dark)" role="button" tabindex="0" aria-label="Cyber blue dark theme"></div>
         <div class="theme-btn" data-t="redlight" onclick="setTheme('redlight')" title="Red Light (Night Vision)" role="button" tabindex="0" aria-label="Red Light night vision theme"></div>
+      </div>
+      <div class="mode-switcher" title="Dashboard mode">
+        <button class="mode-btn active" data-mode="command" onclick="setMode('command')" title="Command Center — full ops dashboard">&#9876;</button>
+        <button class="mode-btn" data-mode="homestead" onclick="setMode('homestead')" title="Homestead — farm & self-reliance focus">&#127793;</button>
+        <button class="mode-btn" data-mode="minimal" onclick="setMode('minimal')" title="Essentials — streamlined basics only">&#9679;</button>
+        <span id="mode-label" style="font-size:9px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;">Command Center</span>
       </div>
     </div>
   </div>
@@ -156,6 +164,9 @@ body{background:var(--bg);color:var(--text)}
       <div style="width:60px;height:3px;background:var(--accent);border-radius:2px;"></div>
       <div style="display:flex;gap:6px;">
         <button class="btn btn-sm" onclick="openAppFrame('Emergency Sheet','/api/emergency-sheet')" title="Print a one-page emergency reference sheet">Emergency Sheet</button>
+        <button class="btn btn-sm" onclick="openAppFrame('Frequency Card','/api/print/freq-card')" title="Printable pocket frequency reference">Freq Card</button>
+        <button class="btn btn-sm" onclick="openAppFrame('Medical Cards','/api/print/medical-cards')" title="Wallet-sized medical cards for each person">Med Cards</button>
+        <button class="btn btn-sm" onclick="openAppFrame('Bug-Out Checklist','/api/print/bug-out-checklist')" title="Printable bug-out grab-and-go checklist">Bug-Out List</button>
         <button class="btn btn-sm" onclick="showHelp()" title="Open the user guide">User Guide</button>
       </div>
     </div>
@@ -167,7 +178,63 @@ body{background:var(--bg);color:var(--text)}
       <div class="search-results" id="search-results"></div>
     </div>
 
-    <!-- Command Dashboard Overview -->
+    <!-- Live Situational Dashboard -->
+    <div id="live-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin-bottom:16px;"></div>
+
+    <!-- AI Copilot Strip -->
+    <div id="copilot-strip" style="display:flex;gap:10px;margin-bottom:12px;align-items:stretch;">
+      <div style="flex:1;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-family:var(--font-data,monospace);">AI COPILOT</span>
+          <div style="flex:1;"></div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;" id="copilot-quick-btns"></div>
+        </div>
+        <div style="display:flex;gap:6px;">
+          <input type="text" id="copilot-input" placeholder="Ask about your supplies, team, medical, power..." onkeydown="if(event.key==='Enter')askCopilot()" style="flex:1;padding:7px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:12px;outline:none;">
+          <button class="btn btn-sm btn-primary" onclick="askCopilot()" style="font-size:10px;">ASK</button>
+        </div>
+        <div id="copilot-answer" style="display:none;font-size:12px;line-height:1.6;color:var(--text-dim);padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border-left:3px solid var(--accent);"></div>
+      </div>
+      <div style="width:260px;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+        <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);margin-bottom:4px;">SUGGESTED ACTIONS</div>
+        <div id="copilot-suggestions" style="flex:1;overflow-y:auto;"></div>
+      </div>
+    </div>
+
+    <!-- Survival Needs Overview -->
+    <div id="needs-overview" style="margin-bottom:16px;">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <span style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);font-family:var(--font-data,monospace);">PREPAREDNESS BY NEED</span>
+        <div style="flex:1;height:1px;background:var(--border);"></div>
+      </div>
+      <div id="needs-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;"></div>
+    </div>
+
+    <!-- Needs Detail Modal -->
+    <div id="needs-detail-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:5000;align-items:center;justify-content:center;backdrop-filter:blur(4px);" onclick="if(event.target===this)closeNeedsDetail()">
+      <div style="background:var(--surface-solid);border:1px solid var(--border);border-radius:var(--radius);max-width:700px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:var(--shadow-lg,var(--shadow));">
+        <div id="needs-detail-header" style="padding:14px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-weight:800;font-size:14px;text-transform:uppercase;letter-spacing:0.5px;" id="needs-detail-title"></span>
+          <button class="btn btn-sm btn-ghost" onclick="closeNeedsDetail()" style="font-size:14px;">&#10005;</button>
+        </div>
+        <div id="needs-detail-body" style="padding:16px 20px;"></div>
+      </div>
+    </div>
+
+    <!-- Getting Started Checklist (hidden once all steps complete) -->
+    <div id="getting-started-panel" style="display:none;margin-bottom:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--gradient-accent,var(--accent));opacity:0.5;"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div>
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent);font-family:var(--font-data,monospace);">GETTING STARTED</div>
+          <div style="font-size:10px;color:var(--text-muted);margin-top:2px;" id="gs-progress-text"></div>
+        </div>
+        <button class="btn btn-sm btn-ghost" onclick="document.getElementById('getting-started-panel').style.display='none'" style="font-size:10px;">DISMISS</button>
+      </div>
+      <div id="gs-steps" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;"></div>
+    </div>
+
+    <!-- Command Dashboard Overview (legacy — filled by loadCmdDashboard) -->
     <div id="cmd-dashboard" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin-bottom:12px;min-height:60px;"></div>
 
     <!-- Readiness Score -->
@@ -734,13 +801,28 @@ body{background:var(--bg);color:var(--text)}
       <div class="media-main">
         <!-- Sub-Tab Bar -->
         <div class="media-subtabs">
-          <button class="media-subtab active" data-msub="channels" onclick="switchMediaSub('channels')">Browse Channels</button>
-          <button class="media-subtab" data-msub="videos" onclick="switchMediaSub('videos')">My Videos</button>
-          <button class="media-subtab" data-msub="audio" onclick="switchMediaSub('audio')">My Audio</button>
-          <button class="media-subtab" data-msub="books" onclick="switchMediaSub('books')">My Books</button>
-          <button class="media-subtab" data-msub="torrents" onclick="switchMediaSub('torrents')">&#9881; Torrent Library</button>
+          <button class="media-subtab active" data-msub="channels" onclick="switchMediaSub('channels')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+            Channels <span class="media-subtab-count" id="mst-channels">210</span>
+          </button>
+          <button class="media-subtab" data-msub="videos" onclick="switchMediaSub('videos')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Videos <span class="media-subtab-count" id="mst-videos"></span>
+          </button>
+          <button class="media-subtab" data-msub="audio" onclick="switchMediaSub('audio')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+            Audio <span class="media-subtab-count" id="mst-audio"></span>
+          </button>
+          <button class="media-subtab" data-msub="books" onclick="switchMediaSub('books')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+            Books <span class="media-subtab-count" id="mst-books"></span>
+          </button>
+          <button class="media-subtab" data-msub="torrents" onclick="switchMediaSub('torrents')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Torrents <span class="media-subtab-count">152</span>
+          </button>
           <div style="flex:1;"></div>
-          <div style="font-size:11px;color:var(--text-muted);padding:6px 12px;" id="media-total-stats"></div>
+          <div style="font-size:10px;color:var(--text-muted);padding:6px 12px;font-family:var(--font-data,monospace);letter-spacing:0.3px;" id="media-total-stats"></div>
         </div>
 
         <!-- Top Bar -->
@@ -829,19 +911,18 @@ body{background:var(--bg);color:var(--text)}
 
         <!-- Channel Browser -->
         <div id="channel-browser" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
-          <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <span style="font-weight:600;font-size:13px;">Survival Channel Library</span>
-            <span style="font-size:11px;color:var(--text-muted);" id="channel-count">171 channels across 20 categories</span>
+          <div style="padding:8px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <span style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Survival Channels</span>
+            <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-data,monospace);" id="channel-count">210 channels &middot; 26 categories</span>
             <div style="flex:1;"></div>
-            <button class="btn btn-sm" onclick="loadSubscriptions()" id="subs-btn" title="My subscriptions">Subscriptions</button>
-            <select id="channel-cat-filter" onchange="filterChannels()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:6px;font-size:11px;">
+            <button class="btn btn-sm" onclick="loadSubscriptions()" id="subs-btn" title="My subscriptions" style="font-size:10px;">SUBSCRIPTIONS</button>
+            <select id="channel-cat-filter" onchange="filterChannels()" style="background:var(--surface);color:var(--text);border:1px solid var(--border);padding:4px 8px;border-radius:var(--radius-sm);font-size:11px;">
               <option value="">All Categories</option>
             </select>
-            <input type="text" id="channel-search" placeholder="Search channels..." oninput="filterChannels()" style="width:160px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;">
-            <div style="display:flex;gap:6px;align-items:center;border-left:1px solid var(--border);padding-left:8px;margin-left:4px;">
-              <input type="text" id="yt-search-input" placeholder="Search YouTube..." onkeydown="if(event.key==='Enter')searchYouTube()" style="width:180px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;">
-              <button class="btn btn-sm btn-primary" onclick="searchYouTube()">Search</button>
-            </div>
+            <input type="text" id="channel-search" placeholder="Filter channels..." oninput="filterChannels()" style="width:140px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;">
+            <span style="width:1px;height:20px;background:var(--border);margin:0 2px;"></span>
+            <input type="text" id="yt-search-input" placeholder="Search YouTube..." onkeydown="if(event.key==='Enter')searchYouTube()" style="width:160px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;">
+            <button class="btn btn-sm btn-primary" onclick="searchYouTube()" style="font-size:10px;">SEARCH YT</button>
           </div>
           <div id="channel-list" style="padding:12px 16px;overflow-y:auto;flex:1;"></div>
           <div id="yt-video-results" style="display:none;padding:12px 16px;overflow-y:auto;flex:1;"></div>
@@ -863,43 +944,47 @@ body{background:var(--bg);color:var(--text)}
 
           <!-- Header bar -->
           <div style="padding:10px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-            <span style="font-weight:600;font-size:13px;">&#9881; Survival Knowledge Torrent Library</span>
-            <span id="torrent-client-badge" style="font-size:10px;padding:2px 7px;border-radius:10px;background:rgba(76,175,80,0.15);color:#4caf50;display:none;">Built-in client active</span>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Offline Knowledge Library</span>
+              <span id="torrent-client-badge" style="font-size:9px;padding:2px 7px;border-radius:3px;background:var(--green-dim);color:var(--green);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;display:none;">Client Active</span>
+            </div>
             <div style="flex:1;"></div>
-            <button class="btn btn-sm" onclick="openTorrentSaveDir()" title="Open downloads folder" style="font-size:11px;">&#128193; Folder</button>
-            <input type="text" id="torrent-search" placeholder="Search..." oninput="filterTorrents()" style="width:130px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;">
+            <span style="font-size:10px;color:var(--text-muted);font-family:var(--font-data,monospace);">152 collections &middot; curated for grid-down scenarios</span>
+            <button class="btn btn-sm" onclick="openTorrentSaveDir()" title="Open downloads folder" style="font-size:10px;">FOLDER</button>
+            <input type="text" id="torrent-search" placeholder="Search collections..." oninput="filterTorrents()" style="width:160px;padding:5px 8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;">
           </div>
 
           <!-- Active downloads panel -->
           <div id="torrent-active-panel" style="display:none;border-bottom:1px solid var(--border);background:var(--surface2);max-height:320px;overflow-y:auto;">
             <div style="padding:6px 16px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);">
-              <span style="font-weight:600;font-size:12px;">Active Downloads</span>
-              <span id="torrent-active-count" style="font-size:11px;color:var(--text-muted);"></span>
+              <span style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.5px;">Active Downloads</span>
+              <span id="torrent-active-count" style="font-size:10px;color:var(--text-muted);font-family:var(--font-data,monospace);"></span>
               <div style="flex:1;"></div>
-              <span id="torrent-total-speed" style="font-size:11px;color:var(--accent);font-weight:600;"></span>
+              <span id="torrent-total-speed" style="font-size:10px;color:var(--accent);font-weight:700;font-family:var(--font-data,monospace);"></span>
             </div>
             <div id="torrent-active-list" style="padding:8px 12px;display:flex;flex-direction:column;gap:6px;"></div>
           </div>
 
           <!-- Category filter bar -->
-          <div style="padding:8px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
-            <button class="btn btn-sm torrent-cat-btn active" data-cat="all" onclick="filterTorrentCat('all')">All (131)</button>
-            <button class="btn btn-sm torrent-cat-btn" data-cat="textbooks" onclick="filterTorrentCat('textbooks')">Textbooks</button>
-            <button class="btn btn-sm torrent-cat-btn" data-cat="encyclopedias" onclick="filterTorrentCat('encyclopedias')">Encyclopedias</button>
-            <button class="btn btn-sm torrent-cat-btn" data-cat="maps" onclick="filterTorrentCat('maps')">Maps</button>
-            <button class="btn btn-sm torrent-cat-btn" data-cat="weather" onclick="filterTorrentCat('weather')">Weather & Climate</button>
+          <div style="padding:6px 16px;border-bottom:1px solid var(--border);background:var(--surface2);display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+            <button class="btn btn-sm torrent-cat-btn active" data-cat="all" onclick="filterTorrentCat('all')">ALL (152)</button>
+            <span style="width:1px;height:16px;background:var(--border);margin:0 2px;"></span>
             <button class="btn btn-sm torrent-cat-btn" data-cat="survival" onclick="filterTorrentCat('survival')">Survival</button>
             <button class="btn btn-sm torrent-cat-btn" data-cat="medical" onclick="filterTorrentCat('medical')">Medical</button>
+            <button class="btn btn-sm torrent-cat-btn" data-cat="maps" onclick="filterTorrentCat('maps')">Maps</button>
+            <button class="btn btn-sm torrent-cat-btn" data-cat="textbooks" onclick="filterTorrentCat('textbooks')">Textbooks</button>
+            <button class="btn btn-sm torrent-cat-btn" data-cat="encyclopedias" onclick="filterTorrentCat('encyclopedias')">Encyclopedias</button>
+            <button class="btn btn-sm torrent-cat-btn" data-cat="weather" onclick="filterTorrentCat('weather')">Weather</button>
             <button class="btn btn-sm torrent-cat-btn" data-cat="farming" onclick="filterTorrentCat('farming')">Farming</button>
-            <button class="btn btn-sm torrent-cat-btn" data-cat="videos" onclick="filterTorrentCat('videos')">Video Libraries</button>
-            <button class="btn btn-sm torrent-cat-btn" data-cat="radio" onclick="filterTorrentCat('radio')">Radio & Comms</button>
+            <button class="btn btn-sm torrent-cat-btn" data-cat="radio" onclick="filterTorrentCat('radio')">Radio</button>
+            <button class="btn btn-sm torrent-cat-btn" data-cat="videos" onclick="filterTorrentCat('videos')">Videos</button>
             <button class="btn btn-sm torrent-cat-btn" data-cat="software" onclick="filterTorrentCat('software')">Software</button>
-            <div style="flex:1;"></div>
-            <span style="font-size:10px;color:var(--text-muted);">Many are 10–500+ GB &middot; for offline knowledge preservation</span>
+            <button class="btn btn-sm torrent-cat-btn" data-cat="repair" onclick="filterTorrentCat('repair')">Repair</button>
+            <button class="btn btn-sm torrent-cat-btn" data-cat="energy" onclick="filterTorrentCat('energy')">Energy</button>
           </div>
 
           <!-- Library grid -->
-          <div id="torrent-list" style="flex:1;overflow-y:auto;padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:10px;align-content:start;">
+          <div id="torrent-list" style="flex:1;overflow-y:auto;padding:12px 16px;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:10px;align-content:start;">
           </div>
         </div>
 
@@ -1977,63 +2062,25 @@ body{background:var(--bg);color:var(--text)}
     <!-- Sub: Radio -->
     <div id="psub-radio" class="prep-sub">
     <div class="prep-section">
-      <h3>Radio Frequency Reference</h3>
-      <div class="settings-card" style="overflow-x:auto;">
-        <table class="freq-table">
+      <h3>Frequency Database</h3>
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap;">
+        <input type="text" id="freq-search" placeholder="Search frequencies..." oninput="filterFreqTable()" style="flex:1;min-width:160px;padding:6px 10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;">
+        <select id="freq-license-filter" onchange="filterFreqTable()" style="padding:5px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;">
+          <option value="">All</option><option value="0">No License</option><option value="1">License Required</option>
+        </select>
+        <button class="btn btn-sm btn-primary" onclick="showAddFreqForm()">+ ADD FREQ</button>
+        <button class="btn btn-sm" onclick="exportChirpCSV()" title="Export CHIRP CSV">EXPORT CHIRP</button>
+        <button class="btn btn-sm" onclick="openAppFrame('Frequency Card','/api/print/freq-card')">PRINT CARD</button>
+      </div>
+      <div class="settings-card" style="overflow-x:auto;padding:0;">
+        <table class="freq-table" id="freq-table-dynamic">
           <thead>
-            <tr><th>Service</th><th>Frequency / Channel</th><th>Notes</th><th>License?</th></tr>
+            <tr><th>FREQ (MHz)</th><th>MODE</th><th>SERVICE</th><th>DESCRIPTION</th><th>LICENSE</th><th>PRI</th><th></th></tr>
           </thead>
-          <tbody>
-            <tr class="freq-section-header"><td colspan="4">Emergency & Weather</td></tr>
-            <tr><td>NOAA Weather</td><td>162.400, 162.425, 162.450, 162.475, 162.500, 162.525, 162.550 MHz</td><td>24/7 weather alerts and forecasts</td><td>Receive only</td></tr>
-            <tr><td>Emergency (analog)</td><td>156.800 MHz (Ch 16)</td><td>Marine emergency & distress</td><td>No (emergency)</td></tr>
-            <tr><td>AM Emergency</td><td>530 kHz, 1610 kHz</td><td>Highway advisory / travel info</td><td>Receive only</td></tr>
-
-            <tr class="freq-section-header"><td colspan="4">FRS (Family Radio Service) -- No License Required</td></tr>
-            <tr><td>FRS Ch 1-7</td><td>462.5625 - 462.7125 MHz</td><td>Shared w/ GMRS. 2W max. Best for short range</td><td>No</td></tr>
-            <tr><td>FRS Ch 8-14</td><td>467.5625 - 467.7125 MHz</td><td>0.5W max. Very short range</td><td>No</td></tr>
-            <tr><td>FRS Ch 15-22</td><td>462.5500 - 462.7250 MHz</td><td>2W max. Added in 2017</td><td>No</td></tr>
-            <tr><td style="color:var(--green);font-weight:600;">FRS Ch 1 (Rally)</td><td>462.5625 MHz</td><td>Common prepper rally channel</td><td>No</td></tr>
-            <tr><td style="color:var(--green);font-weight:600;">FRS Ch 3 (Emergency)</td><td>462.6125 MHz</td><td>Unofficial emergency channel</td><td>No</td></tr>
-
-            <tr class="freq-section-header"><td colspan="4">GMRS (General Mobile Radio Service) -- License Required (no exam)</td></tr>
-            <tr><td>GMRS Ch 15-22</td><td>462.5500 - 462.7250 MHz</td><td>Up to 50W. Repeater capable</td><td>Yes ($35, 10yr)</td></tr>
-            <tr><td>GMRS Repeater In</td><td>467.5500 - 467.7250 MHz</td><td>Repeater input frequencies</td><td>Yes</td></tr>
-            <tr><td style="color:var(--green);font-weight:600;">GMRS Ch 20 (Emergency)</td><td>462.6750 MHz</td><td>National GMRS emergency calling</td><td>Yes</td></tr>
-
-            <tr class="freq-section-header"><td colspan="4">MURS (Multi-Use Radio Service) -- No License Required</td></tr>
-            <tr><td>MURS Ch 1</td><td>151.820 MHz</td><td>2W max. Good building penetration</td><td>No</td></tr>
-            <tr><td>MURS Ch 2</td><td>151.880 MHz</td><td>Less crowded than FRS</td><td>No</td></tr>
-            <tr><td>MURS Ch 3</td><td>151.940 MHz</td><td>Business and personal use</td><td>No</td></tr>
-            <tr><td>MURS Ch 4</td><td>154.570 MHz</td><td>Often used for DRIVEWAY ALERTS</td><td>No</td></tr>
-            <tr><td>MURS Ch 5</td><td>154.600 MHz</td><td>Blue Dot (Walmart/retail)</td><td>No</td></tr>
-
-            <tr class="freq-section-header"><td colspan="4">CB Radio -- No License Required</td></tr>
-            <tr><td>CB Ch 9</td><td>27.065 MHz</td><td>Official emergency channel</td><td>No</td></tr>
-            <tr><td>CB Ch 19</td><td>27.185 MHz</td><td>Trucker / highway channel</td><td>No</td></tr>
-            <tr><td>CB range</td><td>26.965 - 27.405 MHz</td><td>40 channels, 4W AM / 12W SSB</td><td>No</td></tr>
-
-            <tr class="freq-section-header"><td colspan="4">Amateur (HAM) Radio -- License Required (exam)</td></tr>
-            <tr><td>2m Calling</td><td>146.520 MHz FM</td><td>National FM simplex calling freq</td><td>Technician+</td></tr>
-            <tr><td>2m Emergency</td><td>146.550 MHz FM</td><td>Simplex emergency use</td><td>Technician+</td></tr>
-            <tr><td>70cm Calling</td><td>446.000 MHz FM</td><td>UHF simplex calling freq</td><td>Technician+</td></tr>
-            <tr><td>2m Band</td><td>144 - 148 MHz</td><td>Best all-around VHF band</td><td>Technician+</td></tr>
-            <tr><td>70cm Band</td><td>420 - 450 MHz</td><td>UHF, good for urban areas</td><td>Technician+</td></tr>
-            <tr><td>HF 40m</td><td>7.000 - 7.300 MHz</td><td>Regional (100-1000mi), day+night</td><td>General+</td></tr>
-            <tr><td>HF 20m</td><td>14.000 - 14.350 MHz</td><td>Worldwide daytime propagation</td><td>General+</td></tr>
-            <tr><td>HF 80m</td><td>3.500 - 4.000 MHz</td><td>Regional nighttime. ARES/RACES nets</td><td>General+</td></tr>
-
-            <tr class="freq-section-header"><td colspan="4">Shortwave Broadcast (Receive Only)</td></tr>
-            <tr><td>BBC World</td><td>5.875, 9.410, 11.750 MHz</td><td>International news</td><td>Receive only</td></tr>
-            <tr><td>VOA</td><td>9.355, 15.580 MHz</td><td>Voice of America</td><td>Receive only</td></tr>
-            <tr><td>WWV Time</td><td>2.5, 5, 10, 15, 20 MHz</td><td>NIST time signal + propagation</td><td>Receive only</td></tr>
-          </tbody>
+          <tbody id="freq-table-body"></tbody>
         </table>
       </div>
-      <div style="margin-top:10px;display:flex;gap:8px;align-items:center;">
-        <button class="btn btn-sm" onclick="exportChirpCSV()" title="Export channel plan as CHIRP-compatible CSV for radio programming">Export CHIRP CSV</button>
-        <span style="font-size:11px;color:var(--text-dim);">Downloads a CHIRP-compatible .csv with all emergency channels for radio programming.</span>
-      </div>
+      <div id="freq-count" style="margin-top:6px;font-size:10px;color:var(--text-muted);font-family:var(--font-data,monospace);"></div>
     </div>
     </div><!-- /psub-radio -->
 
@@ -2151,11 +2198,41 @@ body{background:var(--bg);color:var(--text)}
       </div>
 
       <!-- Tabs within garden -->
-      <div style="display:flex;gap:4px;margin-bottom:12px;">
+      <div style="display:flex;gap:4px;margin-bottom:12px;flex-wrap:wrap;">
         <button class="btn btn-sm btn-primary" id="garden-tab-plots" onclick="showGardenTab('plots')">Plots</button>
         <button class="btn btn-sm" id="garden-tab-seeds" onclick="showGardenTab('seeds')">Seed Inventory</button>
         <button class="btn btn-sm" id="garden-tab-harvest" onclick="showGardenTab('harvest')">Harvest Log</button>
         <button class="btn btn-sm" id="garden-tab-livestock" onclick="showGardenTab('livestock')">Livestock</button>
+        <button class="btn btn-sm" id="garden-tab-calendar" onclick="showGardenTab('calendar')">Planting Calendar</button>
+        <button class="btn btn-sm" id="garden-tab-yield" onclick="showGardenTab('yield')">Yield Analysis</button>
+        <button class="btn btn-sm" id="garden-tab-preservation" onclick="showGardenTab('preservation')">Preservation</button>
+      </div>
+
+      <!-- Planting Calendar -->
+      <div id="garden-calendar-panel" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);">MONTHLY PLANTING GUIDE</span>
+          <span id="calendar-zone-label" style="font-size:10px;color:var(--text-muted);font-family:var(--font-data,monospace);"></span>
+        </div>
+        <div id="planting-calendar-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;"></div>
+      </div>
+
+      <!-- Yield Analysis -->
+      <div id="garden-yield-panel" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);">YIELD & CALORIC ANALYSIS</span>
+        </div>
+        <div id="yield-summary" style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap;"></div>
+        <div id="yield-crops"></div>
+      </div>
+
+      <!-- Preservation Log -->
+      <div id="garden-preservation-panel" style="display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--accent);">PRESERVATION LOG</span>
+          <button class="btn btn-sm btn-primary" onclick="showAddPreservationForm()" style="font-size:10px;">+ LOG BATCH</button>
+        </div>
+        <div id="preservation-list"></div>
       </div>
 
       <!-- Plots -->
@@ -2216,6 +2293,20 @@ body{background:var(--bg);color:var(--text)}
     <div id="psub-medical" class="prep-sub">
     <div class="prep-section">
       <h3>Medical Module <button class="help-icon" onclick="showHelp('medical-guide')" title="Medical module guide">?</button></h3>
+
+      <!-- Triage Board -->
+      <div style="margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;font-weight:600;color:var(--text-dim);text-transform:uppercase;letter-spacing:.05em;">Triage Board (MCI)</span>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn-sm" onclick="loadTriageBoard()" style="font-size:10px;">REFRESH</button>
+            <button class="btn btn-sm btn-primary" onclick="openAppFrame('TCCC Protocol','/api/medical/tccc-protocol')" style="font-size:10px;">TCCC MARCH</button>
+          </div>
+        </div>
+        <div id="triage-board" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;min-height:80px;">
+          <div style="text-align:center;padding:12px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">Click REFRESH to load triage board</div>
+        </div>
+      </div>
 
       <!-- Medical Supply Status -->
       <div style="margin-bottom:16px;">
@@ -5423,6 +5514,28 @@ body{background:var(--bg);color:var(--text)}
 
   <div id="tab-settings" class="tab-content">
     <div class="settings-grid">
+      <!-- Dashboard Mode Configuration -->
+      <div class="settings-card" style="grid-column:1/-1;">
+        <h3>Dashboard Mode</h3>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+          <div class="mode-option" data-mode-opt="command" onclick="setMode('command')" style="background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all 0.15s;text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;">&#9876;</div>
+            <div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Command Center</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.5;">Full military-style ops dashboard. All modules visible, threat-level focus. 10 live widgets. Security, comms, and incidents prioritized.</div>
+          </div>
+          <div class="mode-option" data-mode-opt="homestead" onclick="setMode('homestead')" style="background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all 0.15s;text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;">&#127793;</div>
+            <div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Homestead</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.5;">Farm & self-reliance focus. Garden, weather, power, and livestock prioritized. 8 live widgets. AI asks about planting and harvests.</div>
+          </div>
+          <div class="mode-option" data-mode-opt="minimal" onclick="setMode('minimal')" style="background:var(--surface2);border:2px solid var(--border);border-radius:var(--radius);padding:14px;cursor:pointer;transition:all 0.15s;text-align:center;">
+            <div style="font-size:24px;margin-bottom:6px;">&#9679;</div>
+            <div style="font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;">Essentials</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:4px;line-height:1.5;">Streamlined basics only. Core survival modules — inventory, contacts, medical, checklists. 4 live widgets. Minimal interface.</div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:var(--text-muted);">Current: <strong id="settings-mode-label" style="color:var(--accent);">Command Center</strong> &middot; Keyboard: 1-9 switches tabs &middot; Ctrl+K search &middot; Ctrl+/ copilot</div>
+      </div>
       <div class="settings-card" style="grid-column:1/-1;">
         <h3>System Monitoring</h3>
         <div class="gauge-row" id="system-gauges"><div style="color:var(--text-muted);font-size:12px;padding:8px 0;">Loading system metrics...</div></div>
@@ -5826,6 +5939,70 @@ document.addEventListener('keydown', e => {
   updateThemeIndicator(saved);
 })();
 
+/* ─── Dashboard Mode System ─── */
+let _dashboardMode = 'command';
+let _dashboardModeConfig = null;
+
+async function setMode(mode) {
+  _dashboardMode = mode;
+  document.documentElement.setAttribute('data-mode', mode);
+  localStorage.setItem('nomad-mode', mode);
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
+  fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({dashboard_mode: mode})}).catch(() => {});
+  // Fetch mode config and apply
+  try {
+    const data = await safeFetch('/api/dashboard/mode', {}, {mode:'command',config:{}});
+    _dashboardModeConfig = data.config;
+    applyModeVisibility();
+    updateCopilotButtons();
+    // Update settings mode panel
+    document.querySelectorAll('.mode-option').forEach(o => o.classList.toggle('active-mode', o.dataset.modeOpt === mode));
+    const settingsLabel = document.getElementById('settings-mode-label');
+    if (settingsLabel && _dashboardModeConfig) settingsLabel.textContent = _dashboardModeConfig.label || mode;
+  } catch(e) {}
+}
+
+function applyModeVisibility() {
+  if (!_dashboardModeConfig) return;
+  const cfg = _dashboardModeConfig;
+  // Sidebar tab visibility
+  const hideTabs = new Set(cfg.sidebar_hide || []);
+  document.querySelectorAll('.sidebar-nav .tab[data-tab]').forEach(tab => {
+    const tabId = tab.dataset.tab;
+    tab.style.display = hideTabs.has(tabId) ? 'none' : '';
+  });
+  // Prep sub-tab visibility
+  const hidePreps = new Set(cfg.prep_hide || []);
+  document.querySelectorAll('.prep-subtab[data-psub]').forEach(btn => {
+    btn.style.display = hidePreps.has(btn.dataset.psub) ? 'none' : '';
+  });
+  // Reorder prep sub-tabs if order specified
+  if (cfg.prep_order && cfg.prep_order.length) {
+    const container = document.querySelector('.prep-subtabs');
+    if (container) {
+      const tabs = {};
+      container.querySelectorAll('.prep-subtab[data-psub]').forEach(b => { tabs[b.dataset.psub] = b; });
+      for (const key of cfg.prep_order) {
+        if (tabs[key]) container.appendChild(tabs[key]);
+      }
+    }
+  }
+  // Update mode indicator
+  const label = document.getElementById('mode-label');
+  if (label) label.textContent = cfg.label || _dashboardMode;
+}
+
+(function initMode() {
+  const validModes = ['command', 'homestead', 'minimal'];
+  let saved = localStorage.getItem('nomad-mode') || 'command';
+  if (!validModes.includes(saved)) saved = 'command';
+  _dashboardMode = saved;
+  document.documentElement.setAttribute('data-mode', saved);
+  document.querySelectorAll('.mode-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === saved));
+  // Defer full config load until after DOM ready
+  setTimeout(() => setMode(saved), 100);
+})();
+
 let chatMessages = [];
 let currentNoteId = null;
 let saveTimer = null;
@@ -5894,6 +6071,14 @@ function toast(msg, type='info') {
 /* ─── Helpers ─── */
 function escapeHtml(s) { if (s == null) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function escapeAttr(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+/** Safe fetch wrapper — returns parsed JSON or fallback on error. Usage: const data = await safeFetch('/api/foo', {}, []); */
+async function safeFetch(url, opts = {}, fallback = null) {
+  try {
+    const r = await fetch(url, opts);
+    if (!r.ok) { console.warn(`Fetch ${url} failed: ${r.status}`); return fallback; }
+    return await r.json();
+  } catch(e) { console.warn(`Fetch ${url} error:`, e.message); return fallback; }
+}
 function copyCode(btn) {
   const code = btn.previousElementSibling.textContent;
   navigator.clipboard.writeText(code).then(() => {
@@ -6389,23 +6574,33 @@ function renderConvoList() {
 }
 async function newConversation() {
   const model = document.getElementById('model-select').value || '';
-  const c = await (await fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Chat', model})})).json();
-  await loadConversations();
-  selectConvo(c.id);
+  try {
+    const r = await fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Chat', model})});
+    if (!r.ok) { toast('Failed to create conversation', 'error'); return; }
+    const c = await r.json();
+    await loadConversations();
+    selectConvo(c.id);
+  } catch(e) { toast('Failed to create conversation', 'error'); }
 }
 async function selectConvo(id) {
   currentConvoId = id;
-  const c = await (await fetch(`/api/conversations/${id}`)).json();
-  chatMessages = JSON.parse(c.messages || '[]');
-  if (c.model) {
-    const sel = document.getElementById('model-select');
-    for (const opt of sel.options) { if (opt.value === c.model) { sel.value = c.model; break; } }
-  }
-  renderChat();
-  renderConvoList();
+  try {
+    const r = await fetch(`/api/conversations/${id}`);
+    if (!r.ok) { toast('Failed to load conversation', 'error'); return; }
+    const c = await r.json();
+    chatMessages = JSON.parse(c.messages || '[]');
+    if (c.model) {
+      const sel = document.getElementById('model-select');
+      for (const opt of sel.options) { if (opt.value === c.model) { sel.value = c.model; break; } }
+    }
+    renderChat();
+    renderConvoList();
+  } catch(e) { toast('Failed to load conversation', 'error'); }
 }
 async function deleteConvo(id) {
-  await fetch(`/api/conversations/${id}`, {method:'DELETE'});
+  try {
+    await fetch(`/api/conversations/${id}`, {method:'DELETE'});
+  } catch(e) { /* network error — continue cleanup */ }
   if (currentConvoId === id) { currentConvoId = null; chatMessages = []; renderChat(); }
   await loadConversations();
 }
@@ -6549,6 +6744,9 @@ async function sendChat() {
         } else {
           chatMessages[chatMessages.length-1].content = 'Could not start the AI service. Check the Home page to make sure AI Chat is installed and try starting it manually.';
         }
+        renderChat();
+      }).catch(() => {
+        chatMessages[chatMessages.length-1].content = 'Failed to contact AI service. Check your connection and try again.';
         renderChat();
       });
     }
@@ -8211,12 +8409,20 @@ async function doUnifiedSearch() {
       ...(r.inventory||[]).map(i => ({...i, type: 'inventory'})),
       ...(r.contacts||[]).map(c => ({...c, type: 'contact'})),
       ...(r.checklists||[]).map(c => ({...c, type: 'checklist'})),
+      ...(r.skills||[]).map(s => ({...s, type: 'skill'})),
+      ...(r.ammo||[]).map(a => ({...a, type: 'ammo'})),
+      ...(r.equipment||[]).map(e => ({...e, type: 'equipment'})),
+      ...(r.waypoints||[]).map(w => ({...w, type: 'waypoint'})),
+      ...(r.frequencies||[]).map(f => ({...f, type: 'frequency'})),
+      ...(r.patients||[]).map(p => ({...p, type: 'patient'})),
+      ...(r.incidents||[]).map(i => ({...i, type: 'incident'})),
+      ...(r.fuel||[]).map(f => ({...f, type: 'fuel'})),
     ];
     if (!items.length) {
-      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No results found for "' + escapeHtml(q) + '"</div>';
+      el.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:12px;">No results for "' + escapeHtml(q) + '" across ' + Object.keys(r).length + ' modules</div>';
     } else {
-      const typeIcons = {inventory:'&#128230;',contact:'&#128100;',note:'&#128196;',conversation:'&#128172;',document:'&#128206;',checklist:'&#9745;'};
-      const typeLabels = {inventory:'Supply',contact:'Contact',note:'Note',conversation:'Chat',document:'Document',checklist:'Checklist'};
+      const typeIcons = {inventory:'&#128230;',contact:'&#128100;',note:'&#128196;',conversation:'&#128172;',document:'&#128206;',checklist:'&#9745;',skill:'&#127919;',ammo:'&#128299;',equipment:'&#128295;',waypoint:'&#128205;',frequency:'&#128225;',patient:'&#9829;',incident:'&#9888;',fuel:'&#9981;'};
+      const typeLabels = {inventory:'Supply',contact:'Contact',note:'Note',conversation:'Chat',document:'Document',checklist:'Checklist',skill:'Skill',ammo:'Ammo',equipment:'Equipment',waypoint:'Waypoint',frequency:'Frequency',patient:'Patient',incident:'Incident',fuel:'Fuel'};
       // Group by type
       const groups = {};
       items.forEach(i => { if (!groups[i.type]) groups[i.type] = []; groups[i.type].push(i); });
@@ -8513,6 +8719,39 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.getElementById('app-frame-overlay').style.display === 'flex') {
     closeAppFrame();
   }
+  if (e.key === 'Escape' && document.getElementById('needs-detail-modal').style.display === 'flex') {
+    closeNeedsDetail();
+  }
+});
+
+/* ─── Global Keyboard Shortcuts ─── */
+document.addEventListener('keydown', e => {
+  // Skip if user is typing in an input/textarea
+  const tag = document.activeElement?.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+  // Ctrl+K — Focus search
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    const search = document.getElementById('unified-search');
+    if (search) { search.focus(); search.select(); }
+  }
+  // Ctrl+/ — Focus copilot
+  if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+    e.preventDefault();
+    const copilot = document.getElementById('copilot-input');
+    if (copilot) { copilot.focus(); copilot.select(); }
+    // Navigate to Home tab if not already there
+    const homeTab = document.querySelector('.tab[data-tab="services"]');
+    if (homeTab && !homeTab.classList.contains('active')) homeTab.click();
+  }
+  // 1-9 — Quick tab switch (when not typing)
+  if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+    const tabs = document.querySelectorAll('.sidebar-nav .tab[data-tab]');
+    const visibleTabs = [...tabs].filter(t => t.style.display !== 'none');
+    const idx = parseInt(e.key) - 1;
+    if (idx < visibleTabs.length) visibleTabs[idx].click();
+  }
 });
 
 function printAppFrame() {
@@ -8539,6 +8778,7 @@ function switchPrepSub(sub) {
   if (sub === 'calculators') { try { calcWater(); calcFood(); calcPower(); calcWatch(); document.getElementById('solar-date').value=new Date().toISOString().slice(0,10); calcSolar(); document.getElementById('moon-date').value=new Date().toISOString().slice(0,10); calcMoon(); convertCoords(); calcTravel(); calcBattery(); calcHorizon(); updateCalTracker(); calcPlan(); calcFoodStorage(); calcGenFuel(); calcRainwater(); calcRadioRange(); calcMedDose(); calcSolarSize(); renderBOBChecklist(); calcBOB(); calcHypothermia(); calcORT(); calcAbxInventory(); calcRadDose(); calcWaterNeeds(); calcGenerator(); calcDehydration(); calcVitals(); } catch(e) { console.error('Calculator init error:', e); } }
   if (sub === 'vault' && _vaultKey) loadVaultList();
   if (sub === 'weather') loadWeather();
+  if (sub === 'radio') { loadFreqDatabase(); }
   if (sub === 'signals') { loadSignalSchedule(); loadCommsLog(); }
   if (sub === 'ops') { loadInfraStatus(); renderVehicles(); calcBleach(); loadThreatMatrix(); renderHomeSecurity(); }
   if (sub === 'family') loadFEP();
@@ -8546,7 +8786,7 @@ function switchPrepSub(sub) {
   if (sub === 'security') { loadSecurityDashboard(); loadCameras(); }
   if (sub === 'power') { loadPowerDashboard(); loadPowerDevices(); updatePowerSpecFields(); }
   if (sub === 'garden') { loadPlots(); lookupZone(); }
-  if (sub === 'medical') { loadPatients(); loadMedicalSupplies(); }
+  if (sub === 'medical') { loadPatients(); loadMedicalSupplies(); loadTriageBoard(); }
   if (sub === 'guides') renderGuideSelector();
   if (sub === 'reference') { convertUnit(); showPlantZone(); loadShelterAssess(); }
 }
@@ -10284,6 +10524,370 @@ async function loadPace() {
   } catch(e) {}
 }
 
+/* ─── Getting Started Checklist ─── */
+async function loadGettingStarted() {
+  const data = await safeFetch('/api/system/getting-started', {}, null);
+  if (!data) return;
+  const panel = document.getElementById('getting-started-panel');
+  if (!panel) return;
+  // Hide if all steps complete
+  if (data.pct >= 100) { panel.style.display = 'none'; return; }
+  panel.style.display = '';
+  document.getElementById('gs-progress-text').textContent = `${data.completed}/${data.total} complete (${data.pct}%)`;
+  const el = document.getElementById('gs-steps');
+  el.innerHTML = data.steps.map(s => `
+    <div style="display:flex;gap:8px;align-items:flex-start;padding:8px 10px;background:var(--surface2);border-radius:var(--radius-sm);border-left:3px solid ${s.done ? 'var(--green)' : 'var(--border)'}; ${s.done ? 'opacity:0.5;' : 'cursor:pointer;'}" ${!s.done ? `onclick="document.querySelector('[data-tab=\\'${escapeAttr(s.action)}\\']').click();${s.sub ? `setTimeout(()=>switchPrepSub('${escapeAttr(s.sub)}'),200);` : ''}"` : ''}>
+      <span style="font-size:14px;flex-shrink:0;margin-top:1px;">${s.done ? '&#9745;' : '&#9744;'}</span>
+      <div>
+        <div style="font-weight:700;font-size:11px;${s.done ? 'text-decoration:line-through;' : ''}">${escapeHtml(s.title)}</div>
+        <div style="font-size:9px;color:var(--text-muted);line-height:1.4;margin-top:2px;">${escapeHtml(s.desc)}</div>
+      </div>
+    </div>`).join('');
+}
+
+/* ─── Survival Needs Overview ─── */
+async function loadNeedsOverview() {
+  const el = document.getElementById('needs-grid');
+  if (!el) return;
+  const data = await safeFetch('/api/needs', {}, {});
+  if (!data || !Object.keys(data).length) { el.innerHTML = ''; return; }
+  el.innerHTML = Object.entries(data).map(([id, n]) => {
+    const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(n.color) ? n.color : 'var(--accent)';
+    const safeId = escapeAttr(id);
+    return `
+    <div class="need-card" style="border-left:3px solid ${safeColor};" onclick="openNeedsDetail('${safeId}')">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+        <span style="font-size:16px;">${escapeHtml(n.icon)}</span>`;
+        <span style="font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:0.3px;">${escapeHtml(n.label)}</span>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${n.inventory > 0 ? `<span class="need-badge">${n.inventory} supplies</span>` : ''}
+        ${n.contacts > 0 ? `<span class="need-badge">${n.contacts} contacts</span>` : ''}
+        ${n.books > 0 ? `<span class="need-badge">${n.books} books</span>` : ''}
+        ${n.guides > 0 ? `<span class="need-badge">${n.guides} guides</span>` : ''}
+        ${n.total === 0 ? `<span class="need-badge" style="color:var(--red);">NO COVERAGE</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openNeedsDetail(needId) {
+  const modal = document.getElementById('needs-detail-modal');
+  const title = document.getElementById('needs-detail-title');
+  const body = document.getElementById('needs-detail-body');
+  modal.style.display = 'flex';
+  title.textContent = 'Loading...';
+  body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">Loading cross-module data...</div>';
+
+  const data = await safeFetch(`/api/needs/${needId}`, {}, null);
+  if (!data) { body.innerHTML = '<div style="color:var(--red);">Failed to load</div>'; return; }
+
+  title.innerHTML = `${data.need.icon} ${escapeHtml(data.need.label)}`;
+
+  let html = '';
+  // Inventory section
+  if (data.inventory.length) {
+    html += `<div class="need-section">
+      <div class="need-section-title">SUPPLIES (${data.inventory.length})</div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">
+        ${data.inventory.map(i => `<span class="need-item-pill">${escapeHtml(i.name)} <strong>${i.quantity} ${i.unit||''}</strong></span>`).join('')}
+      </div>
+    </div>`;
+  }
+  // Contacts section
+  if (data.contacts.length) {
+    html += `<div class="need-section">
+      <div class="need-section-title">TEAM (${data.contacts.length})</div>
+      ${data.contacts.map(c => `<div class="need-item-row"><strong>${escapeHtml(c.name)}</strong> <span style="color:var(--text-muted);">— ${escapeHtml(c.role||'')} ${c.skills ? '&middot; ' + escapeHtml(c.skills) : ''}</span></div>`).join('')}
+    </div>`;
+  }
+  // Books section
+  if (data.books.length) {
+    html += `<div class="need-section">
+      <div class="need-section-title">REFERENCE BOOKS (${data.books.length})</div>
+      ${data.books.map(b => `<div class="need-item-row">${escapeHtml(b.title)} <span style="color:var(--text-muted);font-size:10px;">— ${escapeHtml(b.author||'')}</span></div>`).join('')}
+    </div>`;
+  }
+  // Decision guides
+  if (data.guides.length) {
+    html += `<div class="need-section">
+      <div class="need-section-title">DECISION GUIDES (${data.guides.length})</div>
+      ${data.guides.map(g => `<div class="need-item-row" style="cursor:pointer;color:var(--accent);" onclick="closeNeedsDetail();document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>{switchPrepSub('guides');setTimeout(()=>startGuide('${g.id}'),300)},200)">${escapeHtml(g.title)} &#8594;</div>`).join('')}
+    </div>`;
+  }
+  if (!html) html = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No data matched this need. Add supplies, contacts, or books to see them here.</div>';
+  body.innerHTML = html;
+}
+
+function closeNeedsDetail() {
+  document.getElementById('needs-detail-modal').style.display = 'none';
+}
+
+/* ─── AI Copilot ─── */
+function updateCopilotButtons() {
+  const el = document.getElementById('copilot-quick-btns');
+  if (!el) return;
+  const mode = _dashboardMode || 'command';
+  const modeQuestions = {
+    command: [
+      {q: 'What needs attention today?', label: 'SITREP'},
+      {q: 'What am I low on?', label: 'LOW STOCK'},
+      {q: 'How many days of water do I have?', label: 'WATER'},
+      {q: 'Who is our medic and what medical supplies do we have?', label: 'MEDICAL'},
+      {q: 'Summarize our current threat posture and active alerts', label: 'THREATS'},
+    ],
+    homestead: [
+      {q: 'What should I plant this month?', label: 'PLANTING'},
+      {q: 'How is my garden doing? What was my last harvest?', label: 'HARVEST'},
+      {q: 'What equipment needs service?', label: 'EQUIPMENT'},
+      {q: 'How much fuel do I have and when does it expire?', label: 'FUEL'},
+      {q: 'What food items are expiring soon?', label: 'EXPIRING'},
+    ],
+    minimal: [
+      {q: 'What needs attention today?', label: 'TODAY'},
+      {q: 'What am I low on?', label: 'LOW STOCK'},
+      {q: 'Who are my emergency contacts?', label: 'CONTACTS'},
+    ],
+  };
+  const questions = modeQuestions[mode] || modeQuestions.command;
+  el.innerHTML = questions.map(q =>
+    `<button class="btn btn-sm" onclick="askCopilot('${escapeAttr(q.q)}')" style="font-size:9px;">${escapeHtml(q.label)}</button>`
+  ).join('');
+}
+
+async function askCopilot(question) {
+  const input = document.getElementById('copilot-input');
+  const answerEl = document.getElementById('copilot-answer');
+  if (!answerEl) return;
+  if (!question) question = input?.value?.trim();
+  if (!question) return;
+  if (input) input.value = '';
+  answerEl.style.display = 'block';
+  answerEl.innerHTML = '<span style="color:var(--text-muted);font-style:italic;">Thinking...</span>';
+  try {
+    const r = await fetch('/api/ai/quick-query', {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({question})
+    });
+    if (!r.ok) {
+      const e = await r.json().catch(() => ({}));
+      answerEl.innerHTML = `<span style="color:var(--red);">${escapeHtml(e.error || 'AI service unavailable')}</span>`;
+      return;
+    }
+    const data = await r.json();
+    answerEl.innerHTML = `<div style="margin-bottom:4px;">${escapeHtml(data.answer || 'No answer generated.')}</div>
+      ${data.data_sources?.length ? `<div style="font-size:9px;color:var(--text-muted);margin-top:4px;">Sources: ${data.data_sources.map(s => `<span style="background:var(--surface3);padding:1px 5px;border-radius:2px;margin-right:3px;">${escapeHtml(s)}</span>`).join('')}</div>` : ''}`;
+  } catch(e) {
+    answerEl.innerHTML = '<span style="color:var(--red);">Failed to reach AI service</span>';
+  }
+}
+
+async function loadSuggestedActions() {
+  const el = document.getElementById('copilot-suggestions');
+  if (!el) return;
+  const data = await safeFetch('/api/ai/suggested-actions', {}, {suggestions: []});
+  if (!data.suggestions.length) {
+    el.innerHTML = '<div style="font-size:11px;color:var(--green);text-align:center;padding:12px;">&#10003; All clear — no actions needed</div>';
+    return;
+  }
+  const typeColors = {critical: 'var(--red)', urgent: 'var(--orange)', warning: 'var(--text-dim)'};
+  const typeIcons = {critical: '&#9888;', urgent: '&#9650;', warning: '&#8226;'};
+  el.innerHTML = data.suggestions.map(s => `
+    <div style="display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-bottom:1px solid var(--border);font-size:11px;line-height:1.4;">
+      <span style="color:${typeColors[s.type] || 'var(--text-muted)'};flex-shrink:0;font-size:10px;">${typeIcons[s.type] || '&#8226;'}</span>
+      <span style="color:var(--text-dim);">${escapeHtml(s.action)}</span>
+    </div>`).join('');
+}
+
+/* ─── Live Situational Dashboard ─── */
+let _liveDashTimer = null;
+let _liveDashData = null;
+
+async function loadLiveDashboard() {
+  const data = await safeFetch('/api/dashboard/live', {}, null);
+  if (!data) return;
+  _liveDashData = data;
+  renderLiveDashboard(data);
+}
+
+let _expandedWidget = null;
+function toggleWidgetExpand(widgetId, evt) {
+  if (evt) evt.stopPropagation();
+  const detail = document.getElementById('widget-detail-' + widgetId);
+  if (!detail) return;
+  const isOpen = detail.style.display !== 'none';
+  // Close all
+  document.querySelectorAll('.widget-detail').forEach(d => d.style.display = 'none');
+  if (!isOpen) { detail.style.display = 'block'; _expandedWidget = widgetId; }
+  else { _expandedWidget = null; }
+}
+
+function renderLiveDashboard(d) {
+  const el = document.getElementById('live-dashboard');
+  if (!el) return;
+  const mode = _dashboardMode || 'command';
+
+  // Widget definitions — each mode gets a different set
+  const allWidgets = {
+    'status': () => {
+      const levels = Object.values(d.situation || {});
+      const worst = levels.includes('red') ? 'red' : levels.includes('orange') ? 'orange' : levels.includes('yellow') ? 'yellow' : 'green';
+      const labels = {red:'ALERT',orange:'CONCERN',yellow:'CAUTION',green:'ALL CLEAR'};
+      const colors = {red:'var(--red)',orange:'var(--orange)',yellow:'#c8a800',green:'var(--green)'};
+      const sitEntries = Object.entries(d.situation || {});
+      return `<div class="live-widget" onclick="toggleWidgetExpand('status', event)">
+        <div class="live-widget-label">SITUATION</div>
+        <div class="live-widget-value" style="color:${colors[worst]}">${labels[worst]}</div>
+        <div class="live-widget-detail">${Object.keys(d.situation||{}).length} domains assessed</div>
+      </div>`;
+    },
+    'alerts': () => {
+      const c = d.alerts || {};
+      const color = c.critical > 0 ? 'var(--red)' : c.active > 0 ? 'var(--orange)' : 'var(--green)';
+      return `<div class="live-widget" onclick="toggleAlertBar()">
+        <div class="live-widget-label">ALERTS</div>
+        <div class="live-widget-value" style="color:${color}">${c.active || 0}</div>
+        <div class="live-widget-detail">${c.critical||0} critical</div>
+      </div>`;
+    },
+    'inventory': () => {
+      const inv = d.inventory || {};
+      const burns = inv.burn_rates || [];
+      const color = inv.low_stock > 0 ? 'var(--red)' : inv.expiring_30d > 0 ? 'var(--orange)' : 'var(--green)';
+      const burnHtml = burns.length ? burns.map(b => {
+        const bc = b.days_left < 7 ? 'var(--red)' : b.days_left < 30 ? 'var(--orange)' : 'var(--text-dim)';
+        return `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);font-size:10px;"><span>${escapeHtml(b.name)}</span><strong style="color:${bc}">${b.days_left}d</strong></div>`;
+      }).join('') : '<div style="font-size:10px;color:var(--text-muted);">No burn rate items tracked</div>';
+      return `<div class="live-widget" onclick="toggleWidgetExpand('inventory', event)">
+        <div class="live-widget-label">SUPPLIES <span style="float:right;font-size:8px;opacity:0.5;">&#9660;</span></div>
+        <div class="live-widget-value" style="color:${color}">${inv.total || 0}</div>
+        <div class="live-widget-detail">${inv.low_stock||0} low &middot; ${inv.expiring_30d||0} expiring &middot; ${inv.critical_7d||0} critical</div>
+        <div id="widget-detail-inventory" class="widget-detail" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+          <div style="font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-muted);margin-bottom:4px;">BURN RATE — DAYS REMAINING</div>
+          ${burnHtml}
+          <div style="margin-top:6px;"><button class="btn btn-sm" onclick="event.stopPropagation();document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('inventory'),200)" style="width:100%;font-size:9px;">OPEN INVENTORY &#8594;</button></div>
+        </div>
+      </div>`;
+    },
+    'burn-rate': () => {
+      const burns = (d.inventory || {}).burn_rates || [];
+      if (!burns.length) return '';
+      const worst = burns[0];
+      const color = worst.days_left < 7 ? 'var(--red)' : worst.days_left < 30 ? 'var(--orange)' : 'var(--green)';
+      return `<div class="live-widget" onclick="toggleWidgetExpand('burn', event)">
+        <div class="live-widget-label">CRITICAL SUPPLY</div>
+        <div class="live-widget-value" style="color:${color};font-size:14px;">${escapeHtml(worst.name)}</div>
+        <div class="live-widget-detail" style="color:${color}">${worst.days_left} days remaining</div>
+        <div id="widget-detail-burn" class="widget-detail" style="display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--border);">
+          ${burns.slice(0,5).map(b => `<div style="display:flex;justify-content:space-between;padding:2px 0;font-size:10px;"><span>${escapeHtml(b.name)}</span><span style="color:${b.days_left < 7 ? 'var(--red)' : 'var(--text-dim)'}">${b.days_left}d</span></div>`).join('')}
+        </div>
+      </div>`;
+    },
+    'security': () => {
+      const s = d.security || {};
+      const color = s.incidents_24h > 0 ? 'var(--red)' : 'var(--green)';
+      return `<div class="live-widget" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('security'),200)">
+        <div class="live-widget-label">SECURITY</div>
+        <div class="live-widget-value" style="color:${color}">${s.incidents_24h > 0 ? s.incidents_24h + ' INCIDENTS' : 'SECURE'}</div>
+        <div class="live-widget-detail">${s.cameras||0} cameras &middot; ${s.access_24h||0} access events</div>
+      </div>`;
+    },
+    'weather': () => {
+      const w = d.weather || {};
+      const trend = w.pressure_trend || 'stable';
+      const trendIcon = trend === 'rising' ? '&#9650;' : trend === 'falling' ? '&#9660;' : '&#9644;';
+      const trendColor = trend === 'falling' ? 'var(--orange)' : 'var(--green)';
+      return `<div class="live-widget" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('weather'),200)">
+        <div class="live-widget-label">WEATHER</div>
+        <div class="live-widget-value" style="color:${trendColor}"><span style="font-size:14px;">${trendIcon}</span> ${trend.toUpperCase()}</div>
+        <div class="live-widget-detail">${w.latest?.pressure_hpa ? w.latest.pressure_hpa + ' hPa' : 'No readings'}</div>
+      </div>`;
+    },
+    'power': () => {
+      const p = d.power || {};
+      if (!p.battery_soc && !p.solar_watts) return '';
+      return `<div class="live-widget" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('power'),200)">
+        <div class="live-widget-label">POWER</div>
+        <div class="live-widget-value">${p.battery_soc != null ? p.battery_soc + '%' : '--'}</div>
+        <div class="live-widget-detail">${p.solar_watts ? p.solar_watts + 'W solar' : ''} ${p.load_watts ? '&middot; ' + p.load_watts + 'W load' : ''}</div>
+      </div>`;
+    },
+    'garden': () => {
+      const g = d.garden || {};
+      return `<div class="live-widget" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('garden'),200)">
+        <div class="live-widget-label">FOOD PRODUCTION</div>
+        <div class="live-widget-value">${g.plots||0} plots</div>
+        <div class="live-widget-detail">${g.livestock||0} livestock &middot; ${g.harvests_7d||0} harvests this week</div>
+      </div>`;
+    },
+    'comms': () => {
+      const c = d.comms || {};
+      const lastStr = c.last_contact ? timeAgo(c.last_contact) : 'No contacts';
+      return `<div class="live-widget" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('radio'),200)">
+        <div class="live-widget-label">COMMS</div>
+        <div class="live-widget-value" style="font-size:14px;">${lastStr}</div>
+        <div class="live-widget-detail">${(d.federation||{}).peers_recent||0} peers active</div>
+      </div>`;
+    },
+    'fuel': () => {
+      const f = d.fuel || {};
+      if (!f.total_gallons) return '';
+      return `<div class="live-widget" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('fuel'),200)">
+        <div class="live-widget-label">FUEL RESERVES</div>
+        <div class="live-widget-value">${f.total_gallons} gal</div>
+        <div class="live-widget-detail">${(d.equipment||{}).overdue||0} equipment overdue</div>
+      </div>`;
+    },
+    'contacts': () => {
+      return `<div class="live-widget" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('contacts'),200)">
+        <div class="live-widget-label">TEAM</div>
+        <div class="live-widget-value">${(d.contacts||{}).total||0}</div>
+        <div class="live-widget-detail">${(d.medical||{}).patients||0} patients tracked</div>
+      </div>`;
+    },
+    'medical': () => {
+      const m = d.medical || {};
+      return `<div class="live-widget" onclick="document.querySelector('[data-tab=\\'preparedness\\']').click();setTimeout(()=>switchPrepSub('medical'),200)">
+        <div class="live-widget-label">MEDICAL</div>
+        <div class="live-widget-value">${m.patients||0} patients</div>
+        <div class="live-widget-detail">Active care tracking</div>
+      </div>`;
+    },
+  };
+
+  // Mode-specific widget selection
+  const modeWidgets = {
+    command: ['status','alerts','inventory','burn-rate','security','weather','power','comms','fuel','contacts'],
+    homestead: ['weather','garden','power','inventory','fuel','alerts','contacts','comms'],
+    minimal: ['status','alerts','inventory','burn-rate'],
+  };
+
+  const widgetKeys = modeWidgets[mode] || modeWidgets.command;
+  const html = widgetKeys.map(k => allWidgets[k] ? allWidgets[k]() : '').filter(Boolean).join('');
+  el.innerHTML = html;
+}
+
+function timeAgo(dateStr) {
+  const d = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now - d;
+  const mins = Math.floor(diffMs / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  return days + 'd ago';
+}
+
+function startLiveDashPolling() {
+  if (_liveDashTimer) clearInterval(_liveDashTimer);
+  loadLiveDashboard();
+  _liveDashTimer = setInterval(() => {
+    if (!document.hidden) loadLiveDashboard();
+  }, 30000);
+}
+
 /* ─── Command Dashboard ─── */
 async function loadCmdDashboard() {
   try {
@@ -10819,7 +11423,12 @@ function switchMediaSub(sub) {
   closeBookReader();
   _mediaCatalogVisible = false;
   document.getElementById('media-catalog-panel').style.display = 'none';
-  loadMediaContent();
+  loadMediaContent().then(() => {
+    // Auto-show catalog if library is empty — content up front, not hidden
+    if (_mediaItems.length === 0 && !_mediaCatalogVisible) {
+      toggleMediaCatalog();
+    }
+  });
 }
 
 async function loadMediaTab() {
@@ -10871,7 +11480,14 @@ function renderMediaItems() {
   if (!filtered.length) {
     const labels = {videos:'videos',audio:'audio files',books:'books'};
     const icons = {videos:'&#9654;',audio:'&#9835;',books:'&#128214;'};
-    el.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--text-muted);"><div style="font-size:32px;margin-bottom:8px;">${icons[_mediaSub]}</div><div style="font-size:13px;font-weight:500;">No ${labels[_mediaSub]}${_mediaFolder?' in this folder':''}</div><div style="font-size:11px;margin-top:4px;">Upload files or browse the catalog to get started</div></div>`;
+    const catLabels = {videos:'Video Catalog', audio:'Audio Catalog', books:'Reference Library'};
+    el.innerHTML = `<div style="text-align:center;padding:48px 20px;color:var(--text-muted);">
+      <div style="font-size:36px;margin-bottom:12px;opacity:0.3;">${icons[_mediaSub]}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--text-dim);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px;">No ${labels[_mediaSub]}${_mediaFolder?' in this folder':''}</div>
+      <div style="font-size:12px;margin-top:8px;line-height:1.6;">
+        ${_mediaFolder ? 'Try selecting a different folder or clear the filter.' : `Browse the <strong style="color:var(--accent);cursor:pointer;" onclick="toggleMediaCatalog()">${catLabels[_mediaSub]}</strong> for curated survival content, or upload your own files.`}
+      </div>
+    </div>`;
     return;
   }
   if (_mediaSub === 'books') { renderBooks(el, filtered); return; }
@@ -11859,6 +12475,135 @@ const SURVIVAL_TORRENTS = [
     size: '~1.8 GB', format: 'PDF/Video',
     magnet: 'magnet:?xt=urn:btih:ccdd001122334455667788990011223344556699&dn=Electrical+Systems+Off+Grid+Power&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
   },
+  // Radio — additional collections
+  {
+    id: 'r08', cat: 'radio', title: 'FEMA NIMS Radio Interoperability Library — All 50 States Frequency Plans',
+    desc: 'Complete NIMS radio interoperability documentation — National Interoperability Field Operations Guide (NIFOG), Tactical Interoperable Communications Plans for all 50 states, ICS radio position guides, talk group management, how to join and lead emergency nets during declared disasters and activations.',
+    size: '~450 MB', format: 'PDF',
+    magnet: 'magnet:?xt=urn:btih:ee112233445566778899aabbccddeeff00112233&dn=FEMA+NIMS+Radio+Interoperability+Library&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'r09', cat: 'radio', title: 'Software Defined Radio (SDR) Complete Learning Archive — HackRF, RTL-SDR',
+    desc: 'Everything for SDR — GNU Radio tutorials and flowgraphs, rtl-sdr.com guide collection, SDR# and GQRX configurations, decoding ADS-B aircraft, AIS ships, NOAA weather satellites (APT/METEOR), P25 trunked radio, ACARS, and POCSAG pager traffic. Includes offline scanner frequency databases for all US regions.',
+    size: '~2.1 GB', format: 'PDF/Video/Software',
+    magnet: 'magnet:?xt=urn:btih:ff223344556677889900aabbccddeeff11223344&dn=SDR+Software+Defined+Radio+Learning+Archive&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'r10', cat: 'radio', title: 'ARRL Operating Manual and Reference Archive — Contest, DX, and Emergency',
+    desc: 'Amateur radio operating reference set — ARRL Operating Manual, contest exchange formats, DX entity list and DXCC rules, phonetic alphabet and Q-code reference, RST signal reports, frequency allocation charts for all ITU regions, and proper net protocol for emergency and routine operations.',
+    size: '~800 MB', format: 'PDF',
+    magnet: 'magnet:?xt=urn:btih:aa334455667788990011bbccddeeff2233445566&dn=ARRL+Operating+Manual+Archive&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'r11', cat: 'radio', title: 'Global Shortwave and Number Station Database — 2024 Edition',
+    desc: 'Comprehensive shortwave intelligence — all active shortwave broadcast stations by frequency and country, number station schedules (ENIGMA 2000), VOLMET aviation weather frequencies, maritime traffic, clandestine radio, and propagation prediction data by band and region. Includes historical recordings.',
+    size: '~600 MB', format: 'PDF/Database',
+    magnet: 'magnet:?xt=urn:btih:bb445566778899001122ccddeeff334455667788&dn=Shortwave+Number+Station+Database+2024&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  // Construction & Repair — new category
+  {
+    id: 'cr01', cat: 'repair', title: 'Complete Home Repair and Construction Library — 500+ Guides',
+    desc: 'Comprehensive DIY construction reference — framing, roofing, plumbing rough-in, electrical wiring, concrete and masonry, insulation, window and door installation, flooring, drywall, painting. Includes NEC electrical code guides, building permit procedures, and inspection checklists for owner-builders.',
+    size: '~3.2 GB', format: 'PDF/Video',
+    magnet: 'magnet:?xt=urn:btih:cc556677889900112233ddeeff445566778899aa&dn=Complete+Home+Repair+Construction+Library&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'cr02', cat: 'repair', title: 'Blacksmithing and Metalworking Archive — Forge, Weld, Cast, Heat Treat',
+    desc: 'Metal fabrication from scratch — forge construction and fuel options, hammer technique library, tool steel identification and heat treatment (hardening, tempering, annealing), pattern-welded steel, casting with sand molds, aluminum and bronze foundry work. Includes plans for shop-built tools and anvil stands.',
+    size: '~1.9 GB', format: 'PDF/Video',
+    magnet: 'magnet:?xt=urn:btih:dd667788990011223344eeff5566778899aabbcc&dn=Blacksmithing+Metalworking+Reference+Archive&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'cr03', cat: 'repair', title: 'Haynes and Chilton Auto Repair Manual Collection — 1970s–2020s',
+    desc: 'Vehicle maintenance and repair for 500+ models — engine overhaul, transmission rebuilds, brake service, electrical diagrams, HVAC, suspension and steering. Includes OBD-II diagnostic code references and pre-emissions carbureted engine guides for older vehicles that are easier to maintain off-grid.',
+    size: '~12 GB', format: 'PDF',
+    magnet: 'magnet:?xt=urn:btih:ee778899001122334455ffaa667788990011bbcc&dn=Haynes+Chilton+Auto+Repair+Manuals&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'cr04', cat: 'repair', title: 'Small Engine Repair Manual Library — Generators, Chainsaws, Tillers, Pumps',
+    desc: 'Repair and maintain the engines that power survival tools — Briggs & Stratton, Honda, Kohler, Tecumseh, and Kawasaki service manuals; carburetor rebuild procedures; ignition and magneto diagnosis; governor adjustment; fuel system cleaning; storing engines long-term; winterizing and de-winterizing generators.',
+    size: '~2.4 GB', format: 'PDF',
+    magnet: 'magnet:?xt=urn:btih:ff8899001122334455660011778899aabbccddee&dn=Small+Engine+Repair+Manual+Library&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  // Energy & Power — new category
+  {
+    id: 'en01', cat: 'energy', title: 'Off-Grid Solar Power Complete System Design Library',
+    desc: 'Everything for solar installation — site assessment, panel wiring configurations, charge controller sizing (PWM vs MPPT), battery bank design (lead-acid, LiFePO4, AGM), inverter selection, load calculations, wire sizing and fusing, NEC compliance for off-grid installations, and DIY battery monitoring with Raspberry Pi.',
+    size: '~2.8 GB', format: 'PDF/Video',
+    magnet: 'magnet:?xt=urn:btih:aa9900112233445566778899bbccddee00112233&dn=Off+Grid+Solar+Power+Design+Library&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'en02', cat: 'energy', title: 'Wind and Micro-Hydro Power Systems — Build and Maintain',
+    desc: 'Small-scale renewable energy — wind resource assessment, DIY axial flux turbine construction (Piggott method), micro-hydro site measurement (head and flow), Pelton and Turgo wheel selection, pipeline design, ballast load systems, and integration with battery banks. Includes 50+ real installation case studies.',
+    size: '~1.6 GB', format: 'PDF/Video',
+    magnet: 'magnet:?xt=urn:btih:bbaabb1122334455667788990011ccdd22334455&dn=Wind+MicroHydro+Power+Systems+Library&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'en03', cat: 'energy', title: 'Wood Gasification and Biomass Energy — Generator Conversion Guides',
+    desc: 'Running engines on wood — gasifier design (updraft, downdraft, crossdraft), gas cleaning for tar and moisture, engine carburetor conversion, charcoal production for cleaner syngas, CO safety and ventilation, WWII vehicle gasifier designs, and producer gas generator sizing for home and farm use.',
+    size: '~900 MB', format: 'PDF/Video',
+    magnet: 'magnet:?xt=urn:btih:ccbbcc2233445566778899001122ddee33445566&dn=Wood+Gasification+Biomass+Energy+Guide&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'r08', cat: 'radio', title: 'Antenna Design and Construction Archive — Dipoles, Yagis, Loops, Verticals',
+    desc: 'Complete antenna library — ARRL Antenna Book excerpts, NVIS dipole designs, portable wire antennas, PVC J-pole construction, Yagi dimension calculators, magnetic loop antennas for HOA-restricted areas, ground-plane verticals, random wire with tuner. Build every antenna you might need from hardware store materials.',
+    size: '~2.1 GB', format: 'PDF/eBook',
+    magnet: 'magnet:?xt=urn:btih:dd11ee22ff33aa44bb55cc66dd77ee88ff99aa00&dn=Antenna+Design+Construction+Archive&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'r09', cat: 'radio', title: 'Emergency Frequency Guide — Global HF/VHF/UHF Reference Database',
+    desc: 'Printable frequency lists for every emergency service — FEMA IPAWS, NOAA Weather Radio frequencies by state, Coast Guard, ARES/RACES nets by region, international maritime distress, aviation emergency, railroad, and FRS/GMRS/MURS channel plans. Includes scanner programming files for common receivers.',
+    size: '~450 MB', format: 'PDF/CSV',
+    magnet: 'magnet:?xt=urn:btih:ee22ff33aa44bb55cc66dd77ee88ff99aa00bb11&dn=Emergency+Frequency+Guide+Global&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'r10', cat: 'radio', title: 'Morse Code and CW Training Software Bundle — Koch Method + Practice Files',
+    desc: 'Complete CW training — Koch method trainer software (Windows/Linux), 100+ hours of practice recordings at 5-25 WPM, ARRL code practice MP3s, military speed training progressions, prosign and Q-signal reference cards, and printable Morse alphabet charts.',
+    size: '~800 MB', format: 'Software/MP3/PDF',
+    magnet: 'magnet:?xt=urn:btih:ff33aa44bb55cc66dd77ee88ff99aa00bb11cc22&dn=Morse+Code+CW+Training+Bundle&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'v09', cat: 'videos', title: 'Bushcraft and Wilderness Survival Video Library — 500+ Hours',
+    desc: 'Comprehensive bushcraft video archive — shelter construction (debris hut through log cabin), fire craft (bow drill, hand drill, flint and steel), water procurement and purification, cordage from natural fiber, trapping and snaring, flintknapping, hide tanning, canoe building, and seasonal foraging guides.',
+    size: '~45 GB', format: 'MP4',
+    magnet: 'magnet:?xt=urn:btih:aa44bb55cc66dd77ee88ff99aa00bb11cc22dd33&dn=Bushcraft+Wilderness+Survival+Videos&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'v10', cat: 'videos', title: 'Homesteading Skills Video Collection — Canning, Livestock, Construction',
+    desc: 'Practical homesteading instruction — food preservation (canning, dehydrating, fermenting, smoking), livestock management (chickens, goats, pigs, cattle), beekeeping, soap and candle making, root cellaring, greenhouse construction, well drilling, fencing, and small-scale grain processing.',
+    size: '~38 GB', format: 'MP4',
+    magnet: 'magnet:?xt=urn:btih:bb55cc66dd77ee88ff99aa00bb11cc22dd33ee44&dn=Homesteading+Skills+Video+Collection&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'e10', cat: 'encyclopedias', title: 'Wikipedia Offline — Kiwix ZIM Complete English Archive',
+    desc: 'Full English Wikipedia compressed into Kiwix ZIM format for offline reading — all articles, images, and references. Requires Kiwix reader (included in software category). The most comprehensive single offline knowledge resource available.',
+    size: '~95 GB', format: 'ZIM',
+    magnet: 'magnet:?xt=urn:btih:cc66dd77ee88ff99aa00bb11cc22dd33ee44ff55&dn=Wikipedia+Kiwix+ZIM+English+Complete&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'e11', cat: 'encyclopedias', title: 'Wikimedia Commons — Science, Nature, and Technical Illustrations',
+    desc: 'Curated extract of Wikimedia Commons covering scientific diagrams, anatomical illustrations, botanical drawings, engineering schematics, circuit diagrams, and technical reference images. High-resolution files suitable for printing as reference material.',
+    size: '~18 GB', format: 'JPG/SVG/PDF',
+    magnet: 'magnet:?xt=urn:btih:dd77ee88ff99aa00bb11cc22dd33ee44ff55aa66&dn=Wikimedia+Commons+Science+Technical&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'sw10', cat: 'software', title: 'Raspberry Pi Offline Server Kit — Kiwix, RACHEL, Kolibri, Calibre',
+    desc: 'Complete Raspberry Pi image for running an offline education and reference server — pre-configured Kiwix (Wikipedia, medical references), RACHEL offline content server, Kolibri learning platform, Calibre ebook server. Boot from SD card to serve an entire community with one low-power device.',
+    size: '~64 GB', format: 'IMG/ISO',
+    magnet: 'magnet:?xt=urn:btih:ee88ff99aa00bb11cc22dd33ee44ff55aa66bb77&dn=RasPi+Offline+Server+Kit&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'f11', cat: 'farming', title: 'Permaculture Design Library — Mollison, Holmgren, Hemenway, and Whitefield',
+    desc: 'Complete permaculture design reference — Bill Mollison\'s Designers Manual, David Holmgren\'s principles, Toby Hemenway\'s Gaia Garden, guild plant lists, zone and sector analysis worksheets, water harvesting earthworks, food forest species selection by climate zone, and PDC course materials.',
+    size: '~3.5 GB', format: 'PDF/eBook',
+    magnet: 'magnet:?xt=urn:btih:ff99aa00bb11cc22dd33ee44ff55aa66bb77cc88&dn=Permaculture+Design+Library+Complete&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
+  {
+    id: 'med14', cat: 'medical', title: 'Nursing Procedures and Clinical Skills Video Training — 200+ Hours',
+    desc: 'Comprehensive nursing skills video library — IV insertion, catheterization, wound packing and closure, medication administration, vital sign assessment, patient assessment frameworks, sterile technique, oxygen therapy, suction, chest tube management. Visual guide for performing medical procedures correctly.',
+    size: '~28 GB', format: 'MP4/PDF',
+    magnet: 'magnet:?xt=urn:btih:aa00bb11cc22dd33ee44ff55aa66bb77cc88dd99&dn=Nursing+Clinical+Skills+Videos&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337'
+  },
 ];
 
 let _torrentCatFilter = 'all';
@@ -12107,21 +12852,23 @@ function renderTorrentList() {
     el.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);">No results found</div>';
     return;
   }
-  const catColors = {textbooks:'#2196f3', encyclopedias:'#9c27b0', maps:'#4caf50', survival:'#f44336'};
-  const catLabels = {textbooks:'Textbooks', encyclopedias:'Encyclopedias', maps:'Maps', survival:'Survival'};
+  const catColors = {textbooks:'#2196f3',encyclopedias:'#9c27b0',maps:'#4caf50',survival:'#e65100',medical:'#c62828',weather:'#0277bd',farming:'#558b2f',radio:'#6a1b9a',videos:'#d84315',software:'#37474f',repair:'#795548',energy:'#f9a825'};
+  const catLabels = {textbooks:'TEXTBOOKS',encyclopedias:'ENCYCLOPEDIAS',maps:'MAPS',survival:'SURVIVAL',medical:'MEDICAL',weather:'WEATHER',farming:'FARMING',radio:'RADIO',videos:'VIDEOS',software:'SOFTWARE',repair:'REPAIR',energy:'ENERGY'};
   el.innerHTML = filtered.map(t => `
-    <div id="torrent-card-${t.id}" style="background:var(--surface1);border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+    <div id="torrent-card-${t.id}" style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden;">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:${catColors[t.cat]||'var(--accent)'};opacity:0.5;"></div>
       <div style="display:flex;align-items:flex-start;gap:8px;">
-        <span style="background:${catColors[t.cat]||'var(--accent)'};color:#fff;font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;white-space:nowrap;margin-top:2px;">${catLabels[t.cat]||t.cat}</span>
-        <div style="font-weight:600;font-size:13px;line-height:1.3;">${escapeHtml(t.title)}</div>
+        <span style="background:${catColors[t.cat]||'var(--accent)'};color:#fff;font-size:8px;font-weight:800;padding:2px 6px;border-radius:3px;white-space:nowrap;margin-top:3px;letter-spacing:0.8px;font-family:var(--font-data,monospace);">${catLabels[t.cat]||t.cat.toUpperCase()}</span>
+        <div style="font-weight:700;font-size:13px;line-height:1.35;letter-spacing:-0.01em;">${escapeHtml(t.title)}</div>
       </div>
-      <div style="font-size:11px;color:var(--text-muted);line-height:1.5;">${escapeHtml(t.desc)}</div>
-      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px;">
-        <span style="font-size:10px;color:var(--text-muted);background:var(--surface2);padding:2px 7px;border-radius:10px;">&#128190; ${escapeHtml(t.size)}</span>
-        <span style="font-size:10px;color:var(--text-muted);background:var(--surface2);padding:2px 7px;border-radius:10px;">${escapeHtml(t.format)}</span>
-      </div>
-      <div id="torrent-ctrl-${t.id}" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-        ${_torrentCardControls(t)}
+      <div style="font-size:11px;color:var(--text-dim);line-height:1.6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(t.desc)}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:4px;border-top:1px solid var(--border);">
+        <span style="font-size:9px;color:var(--text-muted);background:var(--surface2);padding:2px 6px;border-radius:3px;font-family:var(--font-data,monospace);font-weight:600;">${escapeHtml(t.size)}</span>
+        <span style="font-size:9px;color:var(--text-muted);background:var(--surface2);padding:2px 6px;border-radius:3px;font-family:var(--font-data,monospace);">${escapeHtml(t.format)}</span>
+        <div style="flex:1;"></div>
+        <div id="torrent-ctrl-${t.id}" style="display:flex;align-items:center;gap:4px;">
+          ${_torrentCardControls(t)}
+        </div>
       </div>
     </div>`).join('');
 }
@@ -12204,20 +12951,23 @@ function renderChannels(channels) {
   }
   let html = '';
   for (const [cat, items] of Object.entries(groups)) {
-    html += `<div style="margin-bottom:16px;">
-      <div style="font-weight:700;font-size:13px;color:var(--accent);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--border);">${escapeHtml(cat)} <span style="font-weight:400;color:var(--text-muted);font-size:11px;">(${items.length})</span></div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:6px;">`;
+    html += `<div style="margin-bottom:20px;">
+      <div style="font-weight:800;font-size:11px;color:var(--accent);margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:0.8px;display:flex;align-items:center;gap:8px;">${escapeHtml(cat)} <span style="font-weight:600;color:var(--text-muted);font-size:10px;font-family:var(--font-data,monospace);background:var(--surface2);padding:1px 6px;border-radius:3px;">${items.length}</span></div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:8px;">`;
     for (const ch of items) {
-      html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
-        <div style="min-width:0;flex:1;">
-          <div style="font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(ch.name)}</div>
-          <div style="font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(ch.focus)}</div>
+      html += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px 14px;display:flex;flex-direction:column;gap:6px;transition:border-color 0.15s;" onmouseenter="this.style.borderColor='var(--border-hover)'" onmouseleave="this.style.borderColor='var(--border)'">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;">
+          <div style="min-width:0;flex:1;">
+            <div style="font-weight:700;font-size:12px;margin-bottom:2px;">${escapeHtml(ch.name)}</div>
+            <div style="font-size:10px;color:var(--text-dim);line-height:1.5;">${escapeHtml(ch.focus)}</div>
+          </div>
         </div>
-        <div style="display:flex;gap:4px;flex-shrink:0;">
-          <button class="btn btn-sm" onclick="event.stopPropagation();subscribeChannel('${escapeAttr(ch.url)}','${escapeAttr(ch.name)}','${escapeAttr(ch.category)}')" title="Subscribe">+</button>
-          <button class="btn btn-sm btn-primary" onclick="browseChannelVideos('${escapeAttr(ch.url)}','${escapeAttr(ch.name)}')" title="Browse videos">Browse</button>
-          <button class="btn btn-sm" onclick="downloadChannelVideo('${escapeAttr(ch.url)}','${escapeAttr(ch.name)}','${escapeAttr(ch.category)}')" title="Download latest videos from this channel">Download</button>
-          <a href="${escapeAttr(ch.url)}" target="_blank" class="btn btn-sm btn-ghost" style="text-decoration:none;" title="Open channel on YouTube">Visit</a>
+        <div style="display:flex;gap:4px;flex-shrink:0;margin-top:auto;">
+          <button class="btn btn-sm btn-primary" onclick="browseChannelVideos('${escapeAttr(ch.url)}','${escapeAttr(ch.name)}')" style="font-size:10px;">BROWSE</button>
+          <button class="btn btn-sm" onclick="downloadChannelVideo('${escapeAttr(ch.url)}','${escapeAttr(ch.name)}','${escapeAttr(ch.category)}')" style="font-size:10px;">DOWNLOAD</button>
+          <button class="btn btn-sm btn-ghost" onclick="event.stopPropagation();subscribeChannel('${escapeAttr(ch.url)}','${escapeAttr(ch.name)}','${escapeAttr(ch.category)}')" title="Subscribe" style="font-size:10px;">+ SUB</button>
+          <div style="flex:1;"></div>
+          <a href="${escapeAttr(ch.url)}" target="_blank" class="btn btn-sm btn-ghost" style="text-decoration:none;font-size:10px;color:var(--text-muted);" title="Open on YouTube">YT &#8599;</a>
         </div>
       </div>`;
     }
@@ -15396,14 +16146,118 @@ async function loadPowerLog() {
 
 /* ─── Food Production Module ─── */
 function showGardenTab(tab) {
-  ['plots','seeds','harvest','livestock'].forEach(t => {
-    document.getElementById(`garden-${t}-panel`).style.display = t === tab ? 'block' : 'none';
-    document.getElementById(`garden-tab-${t}`).className = t === tab ? 'btn btn-sm btn-primary' : 'btn btn-sm';
+  ['plots','seeds','harvest','livestock','calendar','yield','preservation'].forEach(t => {
+    const panel = document.getElementById(`garden-${t}-panel`);
+    const btn = document.getElementById(`garden-tab-${t}`);
+    if (panel) panel.style.display = t === tab ? 'block' : 'none';
+    if (btn) btn.className = t === tab ? 'btn btn-sm btn-primary' : 'btn btn-sm';
   });
   if (tab === 'plots') loadPlots();
   if (tab === 'seeds') loadSeeds();
   if (tab === 'harvest') loadHarvests();
   if (tab === 'livestock') loadLivestockList();
+  if (tab === 'calendar') loadPlantingCalendar();
+  if (tab === 'yield') loadYieldAnalysis();
+  if (tab === 'preservation') loadPreservationLog();
+}
+
+async function loadPlantingCalendar() {
+  const data = await safeFetch('/api/garden/calendar', {}, []);
+  const el = document.getElementById('planting-calendar-grid');
+  const label = document.getElementById('calendar-zone-label');
+  if (!el) return;
+  if (label && data.length) label.textContent = `Zone ${data[0].zone}`;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const actionColors = {start_indoor:'#7b1fa2',transplant:'#2e7d32',direct_sow:'#1565c0',plant:'#e65100',harvest:'#c62828'};
+  const actionLabels = {start_indoor:'START INDOOR',transplant:'TRANSPLANT',direct_sow:'DIRECT SOW',plant:'PLANT',harvest:'HARVEST'};
+  // Group by month
+  const byMonth = {};
+  data.forEach(e => { if (!byMonth[e.month]) byMonth[e.month] = []; byMonth[e.month].push(e); });
+  el.innerHTML = months.map((m, i) => {
+    const entries = byMonth[i + 1] || [];
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px;min-height:80px;">
+      <div style="font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent);margin-bottom:6px;font-family:var(--font-data,monospace);">${m}</div>
+      ${entries.map(e => `<div style="font-size:9px;margin-bottom:3px;padding:2px 4px;border-left:2px solid ${actionColors[e.action]||'var(--text-muted)'};line-height:1.3;">
+        <strong style="color:${actionColors[e.action]||'var(--text-dim)'}">${escapeHtml(e.crop)}</strong>
+        <span style="color:var(--text-muted);"> ${actionLabels[e.action]||e.action}</span>
+      </div>`).join('')}
+      ${!entries.length ? '<div style="font-size:9px;color:var(--text-muted);text-align:center;padding:8px;">—</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+async function loadYieldAnalysis() {
+  const data = await safeFetch('/api/garden/yield-analysis', {}, {crops:[], total_calories:0, person_days:0});
+  const summary = document.getElementById('yield-summary');
+  const crops = document.getElementById('yield-crops');
+  if (!summary || !crops) return;
+  summary.innerHTML = `
+    <div class="live-widget" style="min-width:120px;cursor:default;"><div class="live-widget-label">TOTAL CALORIES</div><div class="live-widget-value">${data.total_calories.toLocaleString()}</div></div>
+    <div class="live-widget" style="min-width:120px;cursor:default;"><div class="live-widget-label">PERSON-DAYS</div><div class="live-widget-value">${data.person_days}</div><div class="live-widget-detail">at 2000 cal/day</div></div>
+    <div class="live-widget" style="min-width:120px;cursor:default;"><div class="live-widget-label">TOTAL AREA</div><div class="live-widget-value">${data.total_sqft}</div><div class="live-widget-detail">sq ft</div></div>`;
+  if (!data.crops.length) {
+    crops.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:11px;">No harvests logged yet. Log harvests from the Harvest Log tab to see yield analysis.</div>';
+    return;
+  }
+  crops.innerHTML = '<table class="freq-table"><thead><tr><th>CROP</th><th>TOTAL LBS</th><th>HARVESTS</th><th>YIELD/SQFT</th><th>CALORIES</th></tr></thead><tbody>' +
+    data.crops.map(c => `<tr><td style="font-weight:600;">${escapeHtml(c.crop)}</td><td style="font-family:var(--font-data,monospace);">${c.total_lbs}</td><td>${c.harvests}</td><td>${c.avg_yield_sqft}</td><td style="font-family:var(--font-data,monospace);font-weight:600;">${c.calories.toLocaleString()}</td></tr>`).join('') +
+    '</tbody></table>';
+}
+
+async function loadPreservationLog() {
+  const data = await safeFetch('/api/garden/preservation', {}, []);
+  const el = document.getElementById('preservation-list');
+  if (!el) return;
+  if (!data.length) {
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:11px;">No preservation batches logged. Click "+ LOG BATCH" to track canned, dried, or frozen food.</div>';
+    return;
+  }
+  const methodColors = {canning:'#c62828',drying:'#e65100',freezing:'#1565c0',fermenting:'#7b1fa2',smoking:'#795548'};
+  el.innerHTML = '<table class="freq-table"><thead><tr><th>CROP</th><th>METHOD</th><th>QTY</th><th>BATCH DATE</th><th>SHELF LIFE</th><th></th></tr></thead><tbody>' +
+    data.map(p => `<tr>
+      <td style="font-weight:600;">${escapeHtml(p.crop)}</td>
+      <td><span style="color:${methodColors[p.method]||'var(--text-dim)'};font-weight:600;text-transform:uppercase;font-size:10px;">${escapeHtml(p.method)}</span></td>
+      <td style="font-family:var(--font-data,monospace);">${p.quantity} ${escapeHtml(p.unit)}</td>
+      <td style="font-family:var(--font-data,monospace);">${escapeHtml(p.batch_date||'—')}</td>
+      <td>${p.shelf_life_months} months</td>
+      <td><button class="btn btn-sm btn-ghost" onclick="deletePreservation(${p.id})" style="color:var(--red);font-size:9px;padding:1px 4px;">&#10005;</button></td>
+    </tr>`).join('') + '</tbody></table>';
+}
+
+function showAddPreservationForm() {
+  const existing = document.getElementById('add-pres-form');
+  if (existing) { existing.remove(); return; }
+  const form = document.createElement('div');
+  form.id = 'add-pres-form';
+  form.style.cssText = 'padding:10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;';
+  form.innerHTML = `
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">CROP</label><input id="ap-crop" placeholder="Tomatoes" style="width:100px;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">METHOD</label><select id="ap-method" style="padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"><option>canning</option><option>drying</option><option>freezing</option><option>fermenting</option><option>smoking</option></select></div>
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">QTY</label><input id="ap-qty" type="number" value="1" min="0" style="width:60px;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">UNIT</label><select id="ap-unit" style="padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"><option>quarts</option><option>pints</option><option>lbs</option><option>gallons</option><option>bags</option></select></div>
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">DATE</label><input id="ap-date" type="date" value="${new Date().toISOString().slice(0,10)}" style="padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">SHELF LIFE (mo)</label><input id="ap-shelf" type="number" value="12" min="1" style="width:50px;padding:4px 6px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+    <button class="btn btn-sm btn-primary" onclick="submitPreservation()">LOG</button>
+    <button class="btn btn-sm btn-ghost" onclick="this.parentElement.remove()">CANCEL</button>`;
+  document.getElementById('preservation-list').parentElement.insertBefore(form, document.getElementById('preservation-list'));
+}
+
+async function submitPreservation() {
+  const data = {
+    crop: document.getElementById('ap-crop').value, method: document.getElementById('ap-method').value,
+    quantity: parseFloat(document.getElementById('ap-qty').value) || 0, unit: document.getElementById('ap-unit').value,
+    batch_date: document.getElementById('ap-date').value, shelf_life_months: parseInt(document.getElementById('ap-shelf').value) || 12,
+  };
+  if (!data.crop) { toast('Crop name required', 'warning'); return; }
+  await fetch('/api/garden/preservation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  document.getElementById('add-pres-form')?.remove();
+  loadPreservationLog();
+  toast('Preservation batch logged', 'success');
+}
+
+async function deletePreservation(id) {
+  await fetch(`/api/garden/preservation/${id}`, {method:'DELETE'});
+  loadPreservationLog();
 }
 
 async function lookupZone() {
@@ -17190,12 +18044,13 @@ function dismissGettingStarted() {
 /* ─── Status Strip ─── */
 async function updateStatusStrip() {
   try {
-    const [svcs, inv, contacts, alerts] = await Promise.all([
-      fetch('/api/services').then(r=>r.json()).catch(()=>[]),
-      fetch('/api/inventory/summary').then(r=>r.json()).catch(()=>({total:0})),
-      fetch('/api/contacts').then(r=>r.json()).catch(()=>[]),
-      fetch('/api/alerts').then(r=>r.json()).catch(()=>[]),
+    const results = await Promise.allSettled([
+      safeFetch('/api/services', {}, []),
+      safeFetch('/api/inventory/summary', {}, {total:0}),
+      safeFetch('/api/contacts', {}, []),
+      safeFetch('/api/alerts', {}, []),
     ]);
+    const [svcs, inv, contacts, alerts] = results.map(r => r.value);
     const running = svcs.filter(s=>s.running).length;
     const installed = svcs.filter(s=>s.installed).length;
     const el = (id,html) => { const e = document.getElementById(id); if(e) e.innerHTML = html; };
@@ -17206,7 +18061,7 @@ async function updateStatusStrip() {
   } catch(e) {}
   // Update situation board status
   try {
-    const allSettings = await (await fetch('/api/settings')).json();
+    const allSettings = await safeFetch('/api/settings', {}, {});
     const sitRaw = allSettings['sit_board'];
     if (sitRaw) {
       const sit = JSON.parse(sitRaw);
@@ -17221,25 +18076,53 @@ async function updateStatusStrip() {
   // Update clock
   const now = new Date();
   const timeEl = document.getElementById('ss-time');
-  if (timeEl) timeEl.textContent = now.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'}) + ' ' + now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  if (timeEl) {
+    const h = String(now.getHours()).padStart(2,'0');
+    const m = String(now.getMinutes()).padStart(2,'0');
+    const dateStr = now.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'});
+    timeEl.textContent = `${dateStr} ${h}${m}L`;
+  }
 }
 
 /* ─── Tab Badges ─── */
 function updateTabBadges() {
-  // Preparedness badge: low stock + expired items + active alerts
-  Promise.all([
-    fetch('/api/inventory/summary').then(r => r.json()).catch(() => ({})),
-    fetch('/api/alerts').then(r => r.json()).catch(() => []),
-  ]).then(([inv, alerts]) => {
-    const lowCount = (inv.low_stock || 0) + (inv.expired || 0) + (alerts.length || 0);
+  // Use live dashboard data if available (avoids extra API calls)
+  const d = _liveDashData;
+
+  // Preparedness badge: low stock + expiring + active alerts
+  if (d) {
+    const inv = d.inventory || {};
+    const alerts = d.alerts || {};
+    const lowCount = (inv.low_stock || 0) + (inv.expiring_30d || 0) + (alerts.active || 0);
     const badge = document.getElementById('badge-preparedness');
     if (badge) {
-      if (lowCount > 0) { badge.textContent = lowCount; badge.style.display = ''; badge.className = 'tab-badge'; }
+      if (lowCount > 0) { badge.textContent = lowCount; badge.style.display = ''; badge.className = 'tab-badge' + (alerts.critical > 0 ? ' red' : ''); }
       else { badge.style.display = 'none'; }
     }
-  });
+    // Maps badge: waypoint count
+    const mapBadge = document.getElementById('badge-maps');
+    if (mapBadge) { mapBadge.style.display = 'none'; }
+    // Media badge: hidden (no count needed)
+    const mediaBadge = document.getElementById('badge-media');
+    if (mediaBadge) { mediaBadge.style.display = 'none'; }
+  } else {
+    // Fallback: fetch from individual endpoints
+    Promise.all([
+      safeFetch('/api/inventory/summary', {}, {}),
+      safeFetch('/api/alerts', {}, []),
+    ]).then(([inv, alerts]) => {
+      const lowCount = (inv.low_stock || 0) + (inv.expired || 0) + (Array.isArray(alerts) ? alerts.length : 0);
+      const badge = document.getElementById('badge-preparedness');
+      if (badge) {
+        if (lowCount > 0) { badge.textContent = lowCount; badge.style.display = ''; badge.className = 'tab-badge'; }
+        else { badge.style.display = 'none'; }
+      }
+    });
+  }
+
   // AI Chat badge: green dot if Ollama running, red dot if not
-  fetch('/api/services').then(r => r.json()).then(svcs => {
+  safeFetch('/api/services', {}, []).then(svcs => {
+    if (!svcs) return;
     const ollama = svcs.find(s => s.id === 'ollama');
     const badge = document.getElementById('badge-ai-chat');
     if (badge) {
@@ -17247,7 +18130,7 @@ function updateTabBadges() {
       badge.innerHTML = '&#9679;';
       badge.className = 'tab-badge ' + (ollama && ollama.running ? 'green' : 'red');
     }
-  }).catch(() => {});
+  });
 }
 
 /* ─── Init ─── */
@@ -17255,7 +18138,7 @@ function updateTabBadges() {
 loadServices();
 loadReadiness();
 // Defer non-critical by 500ms to avoid 11 concurrent fetches on startup
-setTimeout(() => { loadCmdDashboard(); loadServiceQuickLinks(); loadCmdChecklists(); loadReadinessScore(); }, 500);
+setTimeout(() => { startLiveDashPolling(); loadSuggestedActions(); loadNeedsOverview(); loadGettingStarted(); loadCmdDashboard(); loadServiceQuickLinks(); loadCmdChecklists(); loadReadinessScore(); }, 500);
 setTimeout(() => { loadActivity(); loadContentSummary(); updateStatusStrip(); updateTabBadges(); }, 1000);
 setInterval(() => { if (!document.hidden) { updateStatusStrip(); updateTabBadges(); } }, 30000);
 let _svcPollTimer = setInterval(() => {
@@ -18289,6 +19172,141 @@ function generateQRCanvas(canvasId, text) {
 // ═══════════════════════════════════════════════════════════════
 // CHIRP CSV EXPORT
 // ═══════════════════════════════════════════════════════════════
+/* ─── Triage Board UI ─── */
+async function loadTriageBoard() {
+  const data = await safeFetch('/api/medical/triage-board', {}, null);
+  if (!data) return;
+  const el = document.getElementById('triage-board');
+  if (!el) return;
+  const catColors = {immediate:'#c62828',delayed:'#f9a825',minimal:'#2e7d32',expectant:'#424242',unassigned:'var(--text-muted)'};
+  const catLabels = {immediate:'IMMEDIATE',delayed:'DELAYED',minimal:'MINIMAL',expectant:'EXPECTANT'};
+  const catOrder = ['immediate','delayed','minimal','expectant'];
+  if (data.total === 0) {
+    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:11px;grid-column:1/-1;">No patients registered. Add medical profiles below to use triage.</div>';
+    return;
+  }
+  el.innerHTML = catOrder.map(cat => {
+    const patients = data.categories[cat] || [];
+    const color = catColors[cat];
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:8px;min-height:100px;">
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:${color};text-align:center;padding:4px;border-bottom:2px solid ${color};margin-bottom:6px;font-family:var(--font-data,monospace);">${catLabels[cat]} (${patients.length})</div>
+      ${patients.map(p => `<div style="background:var(--surface2);border-left:3px solid ${color};border-radius:var(--radius-sm);padding:6px 8px;margin-bottom:4px;font-size:10px;cursor:pointer;" onclick="changeTriageCategory(${p.id},'${cat}')">
+        <div style="font-weight:700;">${escapeHtml(p.name)}</div>
+        <div style="color:var(--text-muted);font-size:9px;">${p.age ? 'Age '+p.age : ''} ${p.blood_type ? '&middot; '+escapeHtml(p.blood_type) : ''}</div>
+      </div>`).join('')}
+      ${!patients.length ? '<div style="text-align:center;color:var(--text-muted);font-size:9px;padding:12px;">Empty</div>' : ''}
+    </div>`;
+  }).join('');
+  // Show unassigned patients if any
+  const unassigned = data.categories.unassigned || [];
+  if (unassigned.length) {
+    el.innerHTML += `<div style="grid-column:1/-1;background:var(--surface2);border-radius:var(--radius);padding:8px;margin-top:4px;">
+      <div style="font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);margin-bottom:4px;">UNASSIGNED (${unassigned.length}) — Click a patient to assign triage category</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        ${unassigned.map(p => `<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:4px 8px;font-size:10px;cursor:pointer;" onclick="changeTriageCategory(${p.id},'unassigned')"><strong>${escapeHtml(p.name)}</strong></div>`).join('')}
+      </div>
+    </div>`;
+  }
+}
+
+async function changeTriageCategory(patientId, currentCat) {
+  const cats = ['immediate','delayed','minimal','expectant'];
+  const labels = {immediate:'IMMEDIATE (Red)',delayed:'DELAYED (Yellow)',minimal:'MINIMAL (Green)',expectant:'EXPECTANT (Black)'};
+  const options = cats.map(c => `<button class="btn btn-sm" onclick="setTriageCategory(${patientId},'${c}')" style="font-size:10px;${c===currentCat?'border-color:var(--accent);background:var(--accent-dim);':''}">${labels[c]}</button>`).join(' ');
+  const el = document.getElementById('triage-board');
+  // Show inline selector
+  const existing = document.getElementById('triage-picker');
+  if (existing) existing.remove();
+  const picker = document.createElement('div');
+  picker.id = 'triage-picker';
+  picker.style.cssText = 'grid-column:1/-1;background:var(--surface2);border:1px solid var(--accent);border-radius:var(--radius);padding:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;';
+  picker.innerHTML = `<span style="font-size:10px;font-weight:700;">Assign triage:</span> ${options} <button class="btn btn-sm btn-ghost" onclick="this.parentElement.remove()" style="font-size:10px;">Cancel</button>`;
+  el.appendChild(picker);
+}
+
+async function setTriageCategory(patientId, category) {
+  await fetch(`/api/medical/triage/${patientId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({triage_category: category})});
+  document.getElementById('triage-picker')?.remove();
+  loadTriageBoard();
+  toast('Triage updated', 'success');
+}
+
+/* ─── Frequency Database UI ─── */
+let _freqData = [];
+async function loadFreqDatabase() {
+  _freqData = await safeFetch('/api/comms/frequencies', {}, []);
+  renderFreqTable();
+}
+function renderFreqTable() {
+  const body = document.getElementById('freq-table-body');
+  if (!body) return;
+  const search = (document.getElementById('freq-search')?.value || '').toLowerCase();
+  const licFilter = document.getElementById('freq-license-filter')?.value || '';
+  let filtered = _freqData.filter(f => {
+    if (search && !f.service.toLowerCase().includes(search) && !f.description.toLowerCase().includes(search) && !f.notes.toLowerCase().includes(search)) return false;
+    if (licFilter !== '' && String(f.license_required) !== licFilter) return false;
+    return true;
+  });
+  // Group by service type
+  const groups = {};
+  filtered.forEach(f => { const svc = f.service.split(' ')[0]; if (!groups[svc]) groups[svc] = []; groups[svc].push(f); });
+  let html = '';
+  for (const [svc, freqs] of Object.entries(groups)) {
+    freqs.sort((a,b) => a.frequency - b.frequency);
+    for (const f of freqs) {
+      const priColor = f.priority >= 8 ? 'var(--green)' : f.priority >= 5 ? 'var(--text-dim)' : 'var(--text-muted)';
+      html += `<tr>
+        <td style="font-family:var(--font-data,monospace);font-weight:600;">${f.frequency.toFixed(4)}</td>
+        <td>${escapeHtml(f.mode)}</td>
+        <td style="font-weight:600;">${escapeHtml(f.service)}</td>
+        <td>${escapeHtml(f.description)}${f.notes ? ` <span style="color:var(--text-muted);font-size:9px;">(${escapeHtml(f.notes)})</span>` : ''}</td>
+        <td>${f.license_required ? '<span style="color:var(--orange);">YES</span>' : '<span style="color:var(--green);">NO</span>'}</td>
+        <td style="color:${priColor};font-weight:700;text-align:center;">${f.priority}</td>
+        <td><button class="btn btn-sm btn-ghost" onclick="deleteFreq(${f.id})" style="font-size:9px;padding:1px 4px;color:var(--red);">&#10005;</button></td>
+      </tr>`;
+    }
+  }
+  body.innerHTML = html || '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:20px;">No frequencies found</td></tr>';
+  const countEl = document.getElementById('freq-count');
+  if (countEl) countEl.textContent = `${filtered.length} frequencies loaded`;
+}
+function filterFreqTable() { renderFreqTable(); }
+async function deleteFreq(id) {
+  await fetch(`/api/comms/frequencies/${id}`, {method:'DELETE'});
+  loadFreqDatabase();
+}
+function showAddFreqForm() {
+  const existing = document.getElementById('add-freq-form');
+  if (existing) { existing.remove(); return; }
+  const form = document.createElement('div');
+  form.id = 'add-freq-form';
+  form.style.cssText = 'padding:10px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;';
+  form.innerHTML = `
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">FREQ (MHz)</label><input type="number" step="0.001" id="af-freq" style="width:100px;padding:4px 6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">MODE</label><select id="af-mode" style="padding:4px 6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"><option>FM</option><option>AM</option><option>LSB</option><option>USB</option><option>LoRa</option></select></div>
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">SERVICE</label><input type="text" id="af-service" placeholder="e.g. Local Repeater" style="width:140px;padding:4px 6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">DESCRIPTION</label><input type="text" id="af-desc" placeholder="Description" style="width:180px;padding:4px 6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"></div>
+    <div><label style="font-size:9px;color:var(--text-muted);display:block;">LICENSE?</label><select id="af-lic" style="padding:4px 6px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text);font-size:11px;"><option value="0">No</option><option value="1">Yes</option></select></div>
+    <button class="btn btn-sm btn-primary" onclick="submitAddFreq()">ADD</button>
+    <button class="btn btn-sm btn-ghost" onclick="this.parentElement.remove()">CANCEL</button>`;
+  document.getElementById('freq-table-dynamic').parentElement.insertBefore(form, document.getElementById('freq-table-dynamic'));
+}
+async function submitAddFreq() {
+  const data = {
+    frequency: parseFloat(document.getElementById('af-freq').value) || 0,
+    mode: document.getElementById('af-mode').value,
+    service: document.getElementById('af-service').value,
+    description: document.getElementById('af-desc').value,
+    license_required: parseInt(document.getElementById('af-lic').value),
+    priority: 5,
+  };
+  if (!data.frequency || !data.service) { toast('Frequency and service required', 'warning'); return; }
+  await fetch('/api/comms/frequencies', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  document.getElementById('add-freq-form')?.remove();
+  loadFreqDatabase();
+  toast('Frequency added', 'success');
+}
+
 function exportChirpCSV() {
   const channels = [
     // Location,Name,Frequency,Duplex,Offset,Tone,rToneFreq,cToneFreq,DtcsCode,DtcsPolarity,Mode,TStep,Skip,Comment,URCALL,RPT1CALL,RPT2CALL

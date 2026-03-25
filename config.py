@@ -6,6 +6,9 @@ Everything else imports get_data_dir() from here.
 
 import os
 import json
+import logging
+
+log = logging.getLogger('nomad.config')
 
 
 def get_config_path():
@@ -20,8 +23,8 @@ def load_config() -> dict:
         try:
             with open(path, 'r') as f:
                 return json.load(f)
-        except Exception:
-            pass
+        except (json.JSONDecodeError, OSError) as e:
+            log.warning(f'Could not load config from {path}: {e}')
     return {}
 
 

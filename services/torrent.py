@@ -71,25 +71,27 @@ class TorrentManager:
     # ── Session lifecycle ─────────────────────────────────────────────
 
     def _get_session(self):
-        if self._session is None:
-            settings = lt.settings_pack()
-            settings[lt.settings_pack.user_agent] = 'NOMAD/1.3'
-            settings[lt.settings_pack.alert_mask] = (
-                lt.alert.category_t.error_notification |
-                lt.alert.category_t.status_notification |
-                lt.alert.category_t.storage_notification
-            )
-            self._session = lt.session(settings)
-            log.info('libtorrent session created')
-        return self._session
+        with self._lock:
+            if self._session is None:
+                settings = lt.settings_pack()
+                settings[lt.settings_pack.user_agent] = 'NOMAD/1.3'
+                settings[lt.settings_pack.alert_mask] = (
+                    lt.alert.category_t.error_notification |
+                    lt.alert.category_t.status_notification |
+                    lt.alert.category_t.storage_notification
+                )
+                self._session = lt.session(settings)
+                log.info('libtorrent session created')
+            return self._session
 
     def shutdown(self):
         """Gracefully pause session on app exit."""
-        if self._session:
-            log.info('Shutting down libtorrent session')
-            self._monitor_active = False
-            self._session.pause()
-            self._session = None
+        with self._lock:
+            if self._session:
+                log.info('Shutting down libtorrent session')
+                self._monitor_active = False
+                self._session.pause()
+                self._session = None
 
     # ── Public API ────────────────────────────────────────────────────
 
@@ -242,11 +244,12 @@ class TorrentManager:
     # ── Monitor thread ────────────────────────────────────────────────
 
     def _ensure_monitor(self):
-        if not self._monitor_active:
-            self._monitor_active = True
-            t = threading.Thread(target=self._monitor_loop, daemon=True, name='torrent-monitor')
-            t.start()
-            self._monitor_thread = t
+        with self._lock:
+            if not self._monitor_active:
+                self._monitor_active = True
+                t = threading.Thread(target=self._monitor_loop, daemon=True, name='torrent-monitor')
+                t.start()
+                self._monitor_thread = t
 
     def _monitor_loop(self):
         """Background loop: process libtorrent alerts, log completion."""

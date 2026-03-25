@@ -14,6 +14,13 @@ def get_db():
     conn.row_factory = sqlite3.Row
     conn.execute('PRAGMA journal_mode=WAL')
     conn.execute('PRAGMA foreign_keys=ON')
+    # Register on flask.g so teardown_appcontext can auto-close leaked connections
+    try:
+        from flask import g, has_app_context
+        if has_app_context():
+            g._db_conn = conn
+    except Exception:
+        pass
     return conn
 
 
@@ -278,6 +285,162 @@ def init_db():
             lng REAL NOT NULL,
             category TEXT DEFAULT 'general',
             color TEXT DEFAULT '#5b9fff',
+            icon TEXT DEFAULT 'pin',
+            elevation_m REAL,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS sensor_devices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_type TEXT NOT NULL DEFAULT 'manual',
+            name TEXT NOT NULL,
+            connection_type TEXT DEFAULT 'manual',
+            connection_config TEXT DEFAULT '{}',
+            polling_interval_sec INTEGER DEFAULT 300,
+            last_reading TEXT DEFAULT '{}',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS sensor_readings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_id INTEGER NOT NULL,
+            reading_type TEXT NOT NULL,
+            value REAL NOT NULL,
+            unit TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS planting_calendar (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            crop TEXT NOT NULL,
+            zone TEXT DEFAULT '7',
+            month INTEGER NOT NULL,
+            action TEXT NOT NULL,
+            notes TEXT DEFAULT '',
+            yield_per_sqft REAL DEFAULT 0,
+            calories_per_lb REAL DEFAULT 0,
+            days_to_harvest INTEGER DEFAULT 0
+        );
+
+        CREATE TABLE IF NOT EXISTS preservation_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            crop TEXT NOT NULL,
+            method TEXT NOT NULL DEFAULT 'canning',
+            quantity REAL DEFAULT 0,
+            unit TEXT DEFAULT 'quarts',
+            batch_date TEXT DEFAULT '',
+            shelf_life_months INTEGER DEFAULT 12,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS federation_peers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            node_id TEXT NOT NULL UNIQUE,
+            node_name TEXT DEFAULT '',
+            trust_level TEXT DEFAULT 'observer',
+            last_seen TIMESTAMP,
+            last_sync TIMESTAMP,
+            ip TEXT DEFAULT '',
+            port INTEGER DEFAULT 8080,
+            public_key TEXT DEFAULT '',
+            shared_tables TEXT DEFAULT '[]',
+            auto_sync INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS federation_offers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_type TEXT NOT NULL,
+            item_id INTEGER,
+            quantity REAL DEFAULT 0,
+            node_id TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS federation_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_type TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            quantity REAL DEFAULT 0,
+            urgency TEXT DEFAULT 'normal',
+            node_id TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS federation_sitboard (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            node_id TEXT NOT NULL,
+            node_name TEXT DEFAULT '',
+            situation TEXT DEFAULT '{}',
+            alerts TEXT DEFAULT '[]',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS triage_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_name TEXT NOT NULL DEFAULT 'Mass Casualty',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS handoff_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id INTEGER NOT NULL,
+            from_provider TEXT DEFAULT '',
+            to_provider TEXT DEFAULT '',
+            situation TEXT DEFAULT '',
+            background TEXT DEFAULT '',
+            assessment TEXT DEFAULT '',
+            recommendation TEXT DEFAULT '',
+            report_html TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS freq_database (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            frequency REAL NOT NULL,
+            mode TEXT DEFAULT 'FM',
+            bandwidth TEXT DEFAULT '',
+            service TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            region TEXT DEFAULT 'US',
+            license_required INTEGER DEFAULT 0,
+            priority INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS radio_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            radio_model TEXT DEFAULT '',
+            name TEXT NOT NULL,
+            channels TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS map_routes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            waypoint_ids TEXT DEFAULT '[]',
+            distance_km REAL DEFAULT 0,
+            estimated_time_min INTEGER DEFAULT 0,
+            terrain_difficulty TEXT DEFAULT 'moderate',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS map_annotations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            type TEXT DEFAULT 'polygon',
+            geojson TEXT NOT NULL,
+            label TEXT DEFAULT '',
+            color TEXT DEFAULT '#ff0000',
             notes TEXT DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
@@ -585,6 +748,14 @@ def init_db():
         'ALTER TABLE videos ADD COLUMN favorited INTEGER DEFAULT 0',
         'ALTER TABLE audio ADD COLUMN favorited INTEGER DEFAULT 0',
         'ALTER TABLE books ADD COLUMN favorited INTEGER DEFAULT 0',
+        'ALTER TABLE waypoints ADD COLUMN icon TEXT DEFAULT "pin"',
+        'ALTER TABLE waypoints ADD COLUMN elevation_m REAL',
+        'ALTER TABLE harvest_log ADD COLUMN yield_per_sqft REAL DEFAULT 0',
+        'ALTER TABLE power_log ADD COLUMN cumulative_wh REAL DEFAULT 0',
+        'ALTER TABLE patients ADD COLUMN triage_category TEXT DEFAULT ""',
+        'ALTER TABLE patients ADD COLUMN care_phase TEXT DEFAULT ""',
+        'ALTER TABLE wound_log ADD COLUMN tourniquet_time TEXT DEFAULT ""',
+        'ALTER TABLE wound_log ADD COLUMN intervention_type TEXT DEFAULT ""',
     ]:
         try:
             conn.execute(migration)
@@ -627,6 +798,45 @@ def init_db():
         'CREATE INDEX IF NOT EXISTS idx_incidents_severity ON incidents(severity)',
         'CREATE INDEX IF NOT EXISTS idx_conversations_model ON conversations(model)',
         'CREATE INDEX IF NOT EXISTS idx_sync_log_created ON sync_log(created_at DESC)',
+        # Media tables — sorting/search
+        'CREATE INDEX IF NOT EXISTS idx_videos_created ON videos(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_audio_created ON audio(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_books_folder ON books(folder)',
+        # Comms & messaging
+        'CREATE INDEX IF NOT EXISTS idx_lan_messages_created ON lan_messages(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_comms_log_created ON comms_log(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_comms_log_callsign ON comms_log(callsign)',
+        # Drill & training
+        'CREATE INDEX IF NOT EXISTS idx_drill_history_created ON drill_history(created_at DESC)',
+        # Garden & livestock
+        'CREATE INDEX IF NOT EXISTS idx_harvest_log_created ON harvest_log(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_harvest_log_plot ON harvest_log(plot_id)',
+        'CREATE INDEX IF NOT EXISTS idx_seeds_species ON seeds(species)',
+        'CREATE INDEX IF NOT EXISTS idx_livestock_species ON livestock(species)',
+        # Security & power
+        'CREATE INDEX IF NOT EXISTS idx_cameras_status ON cameras(status)',
+        'CREATE INDEX IF NOT EXISTS idx_power_devices_status ON power_devices(status)',
+        # Journal & scenarios
+        'CREATE INDEX IF NOT EXISTS idx_journal_created ON journal(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_scenarios_status ON scenarios(status)',
+        # Fuel & subscriptions
+        'CREATE INDEX IF NOT EXISTS idx_fuel_expires ON fuel_storage(expires)',
+        'CREATE INDEX IF NOT EXISTS idx_subscriptions_channel ON subscriptions(channel_name)',
+        'CREATE INDEX IF NOT EXISTS idx_sensor_readings_device ON sensor_readings(device_id, created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_sensor_readings_type ON sensor_readings(reading_type)',
+        'CREATE INDEX IF NOT EXISTS idx_planting_calendar_zone ON planting_calendar(zone, month)',
+        'CREATE INDEX IF NOT EXISTS idx_preservation_log_crop ON preservation_log(crop)',
+        'CREATE INDEX IF NOT EXISTS idx_preservation_log_date ON preservation_log(batch_date)',
+        'CREATE INDEX IF NOT EXISTS idx_federation_peers_node ON federation_peers(node_id)',
+        'CREATE INDEX IF NOT EXISTS idx_federation_offers_status ON federation_offers(status)',
+        'CREATE INDEX IF NOT EXISTS idx_federation_requests_status ON federation_requests(status)',
+        'CREATE INDEX IF NOT EXISTS idx_federation_sitboard_node ON federation_sitboard(node_id)',
+        'CREATE INDEX IF NOT EXISTS idx_freq_database_service ON freq_database(service)',
+        'CREATE INDEX IF NOT EXISTS idx_freq_database_freq ON freq_database(frequency)',
+        'CREATE INDEX IF NOT EXISTS idx_radio_profiles_name ON radio_profiles(name)',
+        'CREATE INDEX IF NOT EXISTS idx_map_routes_created ON map_routes(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_map_annotations_type ON map_annotations(type)',
+        'CREATE INDEX IF NOT EXISTS idx_waypoints_icon ON waypoints(icon)',
     ]:
         try:
             conn.execute(idx)

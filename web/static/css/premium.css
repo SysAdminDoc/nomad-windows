@@ -1,418 +1,582 @@
 /* ==========================================================================
-   PREMIUM POLISH — Professional visual refinements for N.O.M.A.D.
-   Makes every element feel like paid, polished software.
+   PREMIUM TACTICAL — N.O.M.A.D. command-center aesthetic.
+   Sharp corners, data-dense, military HUD, topo overlays, operator-grade.
    ========================================================================== */
 
-/* ─── Typography Refinements ─── */
+/* ─── Tactical Typography ─── */
 body {
-  font-feature-settings: 'kern' 1, 'liga' 1;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'tnum' 1;
   text-rendering: optimizeLegibility;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
-h1, h2, h3, h4 { letter-spacing: -0.025em; }
+h1, h2, h3, h4 { letter-spacing: -0.02em; font-weight: 700; }
 
-/* ─── Refined Scrollbars ─── */
-::-webkit-scrollbar { width: 5px; height: 5px; }
+/* Data font for numbers, coordinates, frequencies */
+.gauge-value, .bench-score .score-val, .bench-big, .cs-total, .cs-val,
+.media-list-meta, .activity-time, .freq-table td, .incident-time,
+.model-item .model-size, .progress-info {
+  font-family: var(--font-data, 'Cascadia Code', 'Consolas', monospace);
+}
+
+/* ─── Thin Tactical Scrollbars ─── */
+::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-* { scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 1px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+* { scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
 
-/* ─── Selection Color ─── */
+/* ─── Selection ─── */
 ::selection { background: var(--accent); color: #fff; }
 
-/* ─── Polished Sidebar ─── */
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR — Ops Center navigation
+   ═══════════════════════════════════════════════════════════════ */
 .sidebar {
-  background: var(--surface-solid, var(--surface));
-  box-shadow: 2px 0 24px rgba(0,0,0,0.08);
-  backdrop-filter: blur(24px) saturate(1.3);
+  background: var(--sidebar-bg, var(--surface-solid));
+  backdrop-filter: blur(30px) saturate(1.2);
+  -webkit-backdrop-filter: blur(30px) saturate(1.2);
+  border-right: 1px solid var(--border);
 }
 [data-theme="nightops"] .sidebar,
 [data-theme="cyber"] .sidebar,
 [data-theme="redlight"] .sidebar {
-  box-shadow: 2px 0 30px rgba(0,0,0,0.4);
+  box-shadow: 2px 0 40px rgba(0,0,0,0.5);
 }
-.sidebar-header { padding: 24px 20px 16px; }
+
+.sidebar-header { padding: 24px 20px 14px; }
 .sidebar-header img {
-  width: 44px; height: 44px;
+  width: 42px; height: 42px;
   filter: drop-shadow(0 2px 8px var(--accent-glow));
-  transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  transition: all 0.3s ease;
 }
-.sidebar-header:hover img { transform: scale(1.08) rotate(-3deg); }
+.sidebar-header:hover img { transform: scale(1.06); }
 .sidebar-header h1 {
-  font-size: 14px; font-weight: 800; letter-spacing: -0.5px;
-  background: linear-gradient(135deg, var(--text), var(--accent));
+  font-size: 14px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;
+  background: var(--gradient-accent, linear-gradient(135deg, var(--text), var(--accent)));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 .sidebar-divider {
-  height: 1px; margin: 4px 20px;
-  background: linear-gradient(90deg, transparent, var(--border), transparent);
+  height: 1px; margin: 4px 18px;
+  background: linear-gradient(90deg, transparent, var(--border-hover), transparent);
 }
 .sidebar-footer {
-  background: linear-gradient(180deg, transparent, var(--surface2));
+  background: linear-gradient(180deg, transparent 0%, var(--surface2) 100%);
 }
 
-/* ─── Refined Nav Items ─── */
+/* ─── Nav Items — Hard tactical edges ─── */
 .tab {
-  padding: 9px 14px; border-radius: 8px;
-  font-size: 13px; font-weight: 500;
-  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  padding: 9px 14px; border-radius: var(--radius-sm);
+  font-size: 12.5px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.3px;
+  transition: all 0.15s ease;
+  position: relative;
 }
 .tab:hover {
   background: var(--accent-dim);
   transform: translateX(2px);
 }
 .tab.active {
-  font-weight: 600;
-  box-shadow: 0 2px 12px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.12);
+  font-weight: 700;
+  box-shadow: 0 1px 8px var(--accent-glow);
 }
-.tab .tab-icon svg { transition: transform 0.2s; }
-.tab:hover .tab-icon svg { transform: scale(1.1); }
-.tab.active .tab-icon svg { filter: drop-shadow(0 1px 3px rgba(0,0,0,0.3)); }
+.tab .tab-icon svg { transition: transform 0.15s; }
+.tab:hover .tab-icon svg { transform: scale(1.08); }
 
-/* ─── Premium Cards ─── */
+/* Active tab — left accent bar */
+.tab.active::before {
+  content: ""; position: absolute; left: 0; top: 4px; bottom: 4px;
+  width: 3px; border-radius: 0 2px 2px 0;
+  background: var(--gradient-accent, var(--accent));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CARDS — Tactical, data-forward, hard edges
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Command Center Cards — Mission briefing feel */
 .cc-card {
-  border-radius: 16px; padding: 28px 24px;
-  border-width: 1.5px;
+  border-radius: var(--radius); padding: 24px 20px;
+  border-width: 1px;
   position: relative; overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  transition: all 0.2s ease;
 }
 .cc-card::before {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(135deg, var(--accent-dim) 0%, transparent 50%);
-  pointer-events: none;
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--gradient-accent, linear-gradient(90deg, var(--accent), var(--green)));
+  opacity: 0.6;
 }
 .cc-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 16px 48px var(--accent-glow), 0 4px 12px rgba(0,0,0,0.08);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg, var(--shadow));
 }
-.cc-card .cc-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; }
+.cc-card .cc-title { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; }
 .cc-card .cc-sub {
-  font-size: 10px; opacity: 0.7; letter-spacing: 1px;
-  text-transform: uppercase; font-weight: 700;
+  font-size: 9px; opacity: 0.6; letter-spacing: 2px;
+  text-transform: uppercase; font-weight: 800;
+  font-family: var(--font-data, monospace);
 }
-.cc-card .cc-desc { font-size: 12.5px; opacity: 0.9; line-height: 1.6; }
-.cc-card .cc-icon { transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-.cc-card:hover .cc-icon { transform: scale(1.12); }
+.cc-card .cc-desc { font-size: 12px; opacity: 0.85; line-height: 1.6; }
+.cc-card .cc-icon { transition: transform 0.2s ease; }
+.cc-card:hover .cc-icon { transform: scale(1.08); }
 
-/* ─── Premium Service Cards ─── */
+/* Service Cards — Top accent line always visible */
 .service-card {
-  border-radius: 16px; padding: 22px;
-  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
-  position: relative;
+  border-radius: var(--radius); padding: 20px;
+  transition: all 0.2s ease;
+  position: relative; overflow: hidden;
 }
 .service-card::after {
-  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
-  background: linear-gradient(90deg, var(--accent), var(--green));
-  border-radius: 16px 16px 0 0; opacity: 0;
-  transition: opacity 0.3s;
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--gradient-accent, linear-gradient(90deg, var(--accent), var(--green)));
+  opacity: 0.3; transition: opacity 0.2s;
 }
 .service-card:hover::after { opacity: 1; }
 .service-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.12);
-  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--border-hover);
 }
-.service-card h3 { font-weight: 700; }
+.service-card h3 { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; }
 
-/* ─── Premium Buttons ─── */
+/* Settings Cards */
+.settings-card {
+  border-radius: var(--radius); padding: 20px;
+  transition: all 0.15s ease;
+}
+.settings-card:hover {
+  border-color: var(--border-hover);
+}
+.settings-card h3 {
+  font-weight: 800; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 1px; margin-bottom: 14px;
+}
+
+/* Calc Cards */
+.calc-card {
+  border-radius: var(--radius);
+  transition: all 0.15s ease;
+}
+.calc-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-1px);
+}
+.calc-card h4 {
+  font-weight: 800; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.8px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BUTTONS — Military, functional, no-nonsense
+   ═══════════════════════════════════════════════════════════════ */
 .btn {
-  padding: 8px 16px; border-radius: 8px;
-  font-weight: 600; font-size: 12px;
-  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-  position: relative; overflow: hidden;
+  padding: 7px 14px; border-radius: var(--radius-sm);
+  font-weight: 700; font-size: 11px;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  transition: all 0.15s ease;
 }
-.btn::after {
-  content: ""; position: absolute; inset: 0;
-  background: linear-gradient(135deg, var(--accent-dim), transparent);
-  opacity: 0; transition: opacity 0.2s; pointer-events: none;
-}
-.btn:hover::after { opacity: 1; }
+.btn:active { transform: scale(0.97); }
+
 .btn-primary {
   border: none;
-  box-shadow: 0 2px 12px var(--accent-glow);
-  text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+  box-shadow: 0 1px 8px var(--accent-glow);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.2);
 }
 .btn-primary:hover {
-  box-shadow: 0 4px 20px var(--accent-glow);
+  box-shadow: 0 4px 16px var(--accent-glow);
   transform: translateY(-1px);
   filter: brightness(1.08);
 }
 .btn-primary:active { transform: translateY(0); filter: brightness(0.95); }
-.btn-sm { padding: 5px 12px; border-radius: 6px; }
-.btn-danger { transition: all 0.2s; }
-.btn-danger:hover { transform: translateY(-1px); box-shadow: 0 2px 8px var(--red-dim); }
+.btn-sm { padding: 4px 10px; border-radius: 4px; font-size: 10px; }
+.btn-danger:hover { box-shadow: 0 2px 8px var(--red-dim); }
 
-/* ─── Premium Badges ─── */
+/* ═══════════════════════════════════════════════════════════════
+   STATUS — Square tactical indicators
+   ═══════════════════════════════════════════════════════════════ */
 .badge {
-  padding: 4px 12px; border-radius: 20px;
-  font-size: 10px; font-weight: 700; letter-spacing: 0.6px;
+  padding: 4px 10px; border-radius: 4px;
+  font-size: 10px; font-weight: 800; letter-spacing: 0.8px;
   text-transform: uppercase;
+  font-family: var(--font-data, monospace);
 }
 .badge.running {
-  box-shadow: 0 0 0 1px var(--green), 0 2px 10px var(--green-dim);
+  box-shadow: 0 0 0 1px var(--green), 0 0 12px var(--green-dim);
 }
-.badge .dot { width: 7px; height: 7px; box-shadow: 0 0 8px currentColor; }
-
-/* ─── Premium Settings Cards ─── */
-.settings-card {
-  border-radius: 16px; padding: 24px;
-  transition: all 0.25s cubic-bezier(0.4,0,0.2,1);
-}
-.settings-card:hover {
-  border-color: var(--accent);
-  box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-}
-.settings-card h3 {
-  font-size: 14px; font-weight: 700; margin-bottom: 16px;
+.badge .dot {
+  width: 6px; height: 6px; border-radius: 2px;
+  box-shadow: 0 0 4px currentColor, 0 0 8px currentColor;
 }
 
-/* ─── Premium Form Inputs ─── */
+/* Readiness pill — tactical square */
+.readiness-pill { border-radius: var(--radius-sm); }
+.readiness-pill .rdot { border-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PROGRESS BARS — Tactical fill
+   ═══════════════════════════════════════════════════════════════ */
+.progress-bar { height: 4px; border-radius: 2px; }
+.progress-bar .fill {
+  border-radius: 2px;
+  box-shadow: 0 0 8px var(--accent-glow);
+  transition: width 0.4s ease;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GAUGE CARDS — Instrument panel
+   ═══════════════════════════════════════════════════════════════ */
+.gauge-card {
+  border-radius: var(--radius); padding: 16px;
+  transition: all 0.15s ease;
+}
+.gauge-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+.gauge-card .gauge-label {
+  font-size: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700;
+}
+.gauge-card .gauge-value {
+  font-size: 28px; font-weight: 800; letter-spacing: -1px;
+  font-family: var(--font-data, monospace);
+}
+.gauge-card .gauge-bar { height: 3px; border-radius: 1px; }
+.gauge-card .gauge-bar .fill { box-shadow: 0 0 8px currentColor; }
+
+/* ═══════════════════════════════════════════════════════════════
+   CHAT — Tactical comms feel
+   ═══════════════════════════════════════════════════════════════ */
+.chat-container { border-radius: var(--radius); }
+.convo-sidebar { border-radius: var(--radius); }
+.message .avatar {
+  width: 30px; height: 30px; border-radius: var(--radius-sm);
+  font-weight: 800; font-size: 10px;
+  text-transform: uppercase;
+}
+.message .content {
+  border-radius: var(--radius); padding: 10px 14px;
+  font-size: 13px; line-height: 1.7;
+}
+.message.user .content { border-bottom-right-radius: 2px; }
+.message.assistant .content { border-bottom-left-radius: 2px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   FORM INPUTS — Tactical data entry
+   ═══════════════════════════════════════════════════════════════ */
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="hidden"]),
-textarea {
-  transition: border-color 0.2s, box-shadow 0.2s !important;
+textarea, select {
+  transition: border-color 0.15s, box-shadow 0.15s !important;
 }
 input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="hidden"]):focus,
 select:focus,
 textarea:focus {
   border-color: var(--accent) !important;
-  box-shadow: 0 0 0 3px var(--accent-dim) !important;
+  box-shadow: 0 0 0 2px var(--accent-dim), 0 0 12px var(--accent-glow) !important;
   outline: none !important;
 }
-select {
-  transition: border-color 0.2s, box-shadow 0.2s;
+
+/* ═══════════════════════════════════════════════════════════════
+   NOTES — Field notebook
+   ═══════════════════════════════════════════════════════════════ */
+.notes-sidebar { border-radius: var(--radius); }
+.notes-editor { border-radius: var(--radius); }
+.note-item { border-radius: var(--radius-sm); padding: 8px 10px; }
+.note-item.active { border-left: 3px solid var(--accent); background: var(--accent-dim); }
+
+/* ═══════════════════════════════════════════════════════════════
+   PREP SUB-TABS — Ops categories
+   ═══════════════════════════════════════════════════════════════ */
+.prep-subtab {
+  border-radius: var(--radius-sm); font-weight: 700;
+  font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px;
+  transition: all 0.15s ease;
+}
+.prep-subtab.active {
+  box-shadow: 0 1px 8px var(--accent-glow);
 }
 
-/* ─── Premium Progress Bars ─── */
-.progress-bar {
-  height: 5px; border-radius: 10px;
+/* ═══════════════════════════════════════════════════════════════
+   SEARCH — Tactical lookup
+   ═══════════════════════════════════════════════════════════════ */
+.search-bar input {
+  border-radius: var(--radius) !important;
+  padding: 10px 14px 10px 36px !important;
+  font-size: 12px !important;
 }
-.progress-bar .fill {
-  border-radius: 10px;
-  box-shadow: 0 0 12px var(--accent-glow);
-  transition: width 0.4s cubic-bezier(0.4,0,0.2,1);
-}
-
-/* ─── Refined Gauge Cards ─── */
-.gauge-card {
-  border-radius: 14px; padding: 18px;
-  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-}
-.gauge-card:hover {
-  border-color: var(--accent);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-  transform: translateY(-2px);
-}
-.gauge-card .gauge-value { font-size: 30px; font-weight: 800; letter-spacing: -1px; }
-.gauge-card .gauge-bar { height: 5px; border-radius: 10px; }
-
-/* ─── Refined Chat ─── */
-.chat-container { border-radius: 16px; }
-.convo-sidebar { border-radius: 16px; }
-.message .avatar {
-  width: 32px; height: 32px; border-radius: 8px;
-  font-weight: 800;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-.message .content {
-  border-radius: 12px; padding: 12px 16px;
-  font-size: 13.5px; line-height: 1.7;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
-}
-.message.user .content { border-bottom-right-radius: 4px; }
-.message.assistant .content { border-bottom-left-radius: 4px; }
-.chat-input-area textarea {
-  border-radius: 10px; padding: 10px 14px;
-  font-size: 13.5px;
+.search-bar input:focus {
+  box-shadow: 0 0 0 2px var(--accent-dim), 0 4px 12px rgba(0,0,0,0.06) !important;
 }
 
-/* ─── Refined Notes ─── */
-.notes-sidebar { border-radius: 16px; }
-.notes-editor { border-radius: 16px; }
-.note-item { border-radius: 8px; padding: 10px 12px; }
-.note-item.active { border-left: 3px solid var(--accent); }
-
-/* ─── Premium Wizard ─── */
-.wizard-card {
-  border-radius: 24px;
-  box-shadow: 0 25px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.05);
-}
-
-/* ─── Premium Toast ─── */
+/* ═══════════════════════════════════════════════════════════════
+   TOAST — Alert notification
+   ═══════════════════════════════════════════════════════════════ */
 .toast {
-  border-radius: 10px;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   backdrop-filter: blur(16px);
 }
 
-/* ─── Premium Prep Sub-Tabs ─── */
-.prep-subtabs {
-  border-radius: 10px; padding: 5px;
-}
-.prep-subtab {
-  border-radius: 6px; font-weight: 600;
-  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-}
-.prep-subtab.active {
-  box-shadow: 0 2px 10px var(--accent-glow);
-}
-.prep-subtab:hover:not(.active) {
-  transform: translateY(-1px);
-}
-
-/* ─── Premium Protocol Cards ─── */
-.protocol-card { border-radius: 12px; }
-.protocol-header {
-  border-radius: 12px; padding: 14px 18px;
-  transition: all 0.15s;
-}
-
-/* ─── Premium Search ─── */
-.search-bar input {
-  border-radius: 12px !important;
-  padding: 10px 14px 10px 36px !important;
-  font-size: 13px !important;
-  transition: all 0.2s !important;
-}
-.search-bar input:focus {
-  box-shadow: 0 0 0 3px var(--accent-dim), 0 4px 16px rgba(0,0,0,0.08) !important;
-  transform: scale(1.01);
-}
-
-/* ─── Premium Help Icons ─── */
-.help-icon {
-  width: 20px; height: 20px; font-size: 12px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-}
-.help-icon:hover {
-  transform: scale(1.2);
-  box-shadow: 0 2px 12px var(--accent-glow);
-}
-
-/* ─── Premium Alert System ─── */
-.alert-item {
-  border-radius: 8px;
-  transition: background 0.15s;
-}
+/* ═══════════════════════════════════════════════════════════════
+   ALERTS — Threat level indicators
+   ═══════════════════════════════════════════════════════════════ */
+.alert-item { border-radius: var(--radius-sm); padding: 10px 12px; }
+.alert-item:hover { background: var(--surface2); }
 .alert-sev {
-  border-radius: 4px; padding: 2px 8px;
-  font-size: 10px; font-weight: 700;
-  text-transform: uppercase; letter-spacing: 0.5px;
+  border-radius: 3px; padding: 3px 8px;
+  font-size: 9px; font-weight: 800;
+  text-transform: uppercase; letter-spacing: 1px;
+  font-family: var(--font-data, monospace);
+}
+/* Hazard stripe on critical alerts */
+.alert-sev.critical {
+  background: repeating-linear-gradient(
+    -45deg, var(--red-dim), var(--red-dim) 3px,
+    transparent 3px, transparent 6px
+  );
+  border: 1px solid var(--red);
 }
 
-/* ─── Premium Readiness Score ─── */
-#readiness-score-panel {
+/* ═══════════════════════════════════════════════════════════════
+   SITUATION BOARD — DEFCON-style status
+   ═══════════════════════════════════════════════════════════════ */
+.sit-cell {
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+.sit-cell:hover { transform: scale(1.03); }
+.sit-cell .sit-label {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 1px;
+}
+.sit-cell[data-level="green"] { box-shadow: inset 0 0 0 1px rgba(76,175,80,0.2); }
+.sit-cell[data-level="red"] {
+  box-shadow: inset 0 0 0 1px rgba(244,67,54,0.25), 0 0 8px rgba(244,67,54,0.06);
+}
+.sit-cell[data-level="yellow"] {
+  box-shadow: inset 0 0 0 1px rgba(255,235,59,0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INCIDENT LOG — Severity-coded, dense
+   ═══════════════════════════════════════════════════════════════ */
+.incident-sev {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 0.5px;
+}
+/* Critical incidents get hazard stripe */
+.incident-sev.critical {
+  background: repeating-linear-gradient(
+    -45deg, var(--red-dim), var(--red-dim) 2px,
+    transparent 2px, transparent 5px
+  );
+  border: 1px solid var(--red);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DECISION GUIDES — Mission planning
+   ═══════════════════════════════════════════════════════════════ */
+.guide-tile {
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+.guide-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--accent);
+}
+.guide-tile h4 {
+  font-size: 13px; text-transform: uppercase; letter-spacing: 0.3px;
+}
+.guide-option {
+  border-radius: var(--radius-sm);
+  transition: all 0.15s ease;
+}
+.guide-option:hover { transform: translateX(3px); }
+
+/* ═══════════════════════════════════════════════════════════════
+   PROTOCOLS — Emergency procedures
+   ═══════════════════════════════════════════════════════════════ */
+.protocol-card { border-radius: var(--radius); }
+.protocol-header {
+  border-radius: var(--radius); padding: 12px 16px;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FREQUENCY TABLE — Radio reference
+   ═══════════════════════════════════════════════════════════════ */
+.freq-table { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+.freq-table th { padding: 8px 12px; }
+.freq-table td {
+  padding: 6px 12px;
+  font-family: var(--font-data, monospace);
+}
+.freq-table tr:hover td { background: var(--accent-dim); }
+
+/* ═══════════════════════════════════════════════════════════════
+   MEDIA — Content library
+   ═══════════════════════════════════════════════════════════════ */
+.media-card, .media-book-card {
+  border-radius: var(--radius);
+  transition: all 0.2s ease;
+}
+.media-card:hover, .media-book-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
+.media-subtab {
+  text-transform: uppercase; letter-spacing: 0.3px; font-size: 11px; font-weight: 700;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CONTENT SUMMARY — Intel briefing strip
+   ═══════════════════════════════════════════════════════════════ */
+.content-summary {
+  border-radius: var(--radius);
+}
+.content-summary .cs-total {
+  font-size: 22px; font-weight: 800;
+  font-family: var(--font-data, monospace);
+}
+.content-summary .cs-label {
+  text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px; font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   READINESS SCORE — Mission readiness
+   ═══════════════════════════════════════════════════════════════ */
+#readiness-score-panel { border-radius: var(--radius); }
+#rs-grade {
+  text-shadow: 0 2px 12px var(--accent-glow);
+  font-family: var(--font-data, monospace);
+}
+#rs-bar { border-radius: 2px; height: 8px; }
+#rs-bar-fill { border-radius: 2px; box-shadow: 0 0 8px var(--accent-glow); }
+
+/* ═══════════════════════════════════════════════════════════════
+   WIZARD — Onboarding
+   ═══════════════════════════════════════════════════════════════ */
+.wizard-card {
   border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
-}
-#rs-grade { text-shadow: 0 2px 16px var(--accent-glow); }
-#rs-bar { border-radius: 10px; height: 10px; }
-#rs-bar-fill { border-radius: 10px; box-shadow: 0 0 12px var(--accent-glow); }
-
-/* ─── Smooth Page Transitions ─── */
-.tab-content.active {
-  animation: pageIn 0.3s cubic-bezier(0.4,0,0.2,1);
-}
-@keyframes pageIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.04);
 }
 
-/* ─── Premium Loading Shimmer ─── */
+/* ═══════════════════════════════════════════════════════════════
+   WELCOME BANNER — SITREP header
+   ═══════════════════════════════════════════════════════════════ */
+.welcome-banner {
+  border-radius: var(--radius);
+  position: relative; overflow: hidden;
+}
+.welcome-banner::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--gradient-accent, linear-gradient(90deg, var(--accent), var(--green)));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FABS — Quick action buttons
+   ═══════════════════════════════════════════════════════════════ */
+#quick-actions-btn, #lan-chat-btn, #timer-btn {
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.3), 0 0 0 1px var(--border) !important;
+  border-radius: var(--radius) !important;
+}
+#quick-actions-btn:hover, #lan-chat-btn:hover, #timer-btn:hover {
+  transform: scale(1.06) !important;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4) !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MISC — Tactical details
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Shimmer */
 .skeleton {
   background: linear-gradient(90deg, var(--surface3) 25%, var(--surface2) 50%, var(--surface3) 75%);
   background-size: 200% 100%;
   animation: shimmer 2s ease infinite;
 }
 
-/* ─── Premium FABs ─── */
-#quick-actions-btn, #lan-chat-btn, #timer-btn {
-  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1) !important;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.25) !important;
-}
-#quick-actions-btn:hover, #lan-chat-btn:hover, #timer-btn:hover {
-  transform: scale(1.1) !important;
-  box-shadow: 0 6px 28px rgba(0,0,0,0.35) !important;
+/* Checklist items */
+.check-item { border-radius: var(--radius-sm); }
+.check-item:hover { background: var(--surface2); }
+.check-cat {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 0.5px;
 }
 
-/* ─── Inventory Quick Adjust ─── */
+/* Model list */
+.model-item {
+  border-radius: var(--radius-sm); padding: 8px 12px;
+  transition: all 0.1s;
+}
+.model-item:hover { background: var(--surface3); }
+.model-item .model-size { font-family: var(--font-data, monospace); }
+
+/* Qty adjust */
 .qty-adj {
   width: 18px; height: 18px;
   display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 4px;
-  transition: all 0.15s;
+  border-radius: 3px; transition: all 0.1s;
 }
 .qty-adj:hover {
   background: var(--accent); color: #fff;
   transform: scale(1.15);
-  box-shadow: 0 1px 4px var(--accent-glow);
 }
 
-/* ─── Premium Welcome Banner ─── */
-.welcome-banner {
-  border-radius: 20px;
-  box-shadow: 0 8px 32px var(--accent-glow);
-}
-
-/* ─── Content Summary Cards ─── */
-.content-summary {
-  gap: 10px;
-}
-
-/* ─── Refined Frequency Table ─── */
-.freq-table {
-  border-radius: 10px; overflow: hidden;
-  border: 1px solid var(--border);
-}
-.freq-table th {
-  padding: 10px 12px;
-}
-.freq-table td {
-  padding: 8px 12px;
-}
-.freq-table tr:hover td {
-  background: var(--accent-dim);
-}
-
-/* ─── Model Items ─── */
-.model-item {
-  border-radius: 8px; padding: 10px 14px;
+/* Help icons */
+.help-icon {
+  border-radius: var(--radius-sm);
   transition: all 0.15s;
 }
-.model-item:hover {
-  background: var(--surface3);
-  transform: translateX(2px);
+.help-icon:hover {
+  transform: scale(1.15);
 }
 
-/* ─── Checklist Items ─── */
-.check-item {
-  border-radius: 8px;
-  transition: all 0.15s;
-}
-.check-item:hover {
-  background: var(--surface2);
-}
-
-/* ─── Calc Grid Cards ─── */
-.calc-grid .settings-card {
-  transition: all 0.2s;
-}
-.calc-grid .settings-card:hover {
-  transform: translateY(-2px);
+/* Contact cards */
+.contact-card { border-radius: var(--radius); }
+.contact-card:hover { border-color: var(--border-hover); }
+.contact-card .cc-role {
+  font-family: var(--font-data, monospace);
+  text-transform: uppercase; letter-spacing: 0.5px; font-size: 10px;
 }
 
-/* ─── Print Refinements ─── */
+/* Bench scores */
+.bench-score { border-radius: var(--radius-sm); }
+.bench-score:hover { transform: translateY(-1px); }
+.bench-score .score-val { font-family: var(--font-data, monospace); }
+
+/* Page transitions */
+.tab-content.active {
+  animation: pageIn 0.2s ease;
+}
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS STRIP — Ops dashboard footer
+   ═══════════════════════════════════════════════════════════════ */
+#status-strip {
+  font-family: var(--font-data, monospace);
+  font-size: 11px; letter-spacing: 0.3px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PRINT
+   ═══════════════════════════════════════════════════════════════ */
 @media print {
   .sidebar, .sidebar-toggle, .sidebar-overlay,
   #quick-actions-btn, #lan-chat-btn, #timer-btn,
   .help-icon { display: none !important; }
   .main-content { margin-left: 0 !important; }
-  .service-card::after { display: none; }
+  .service-card::after, .cc-card::before { display: none; }
 }
 
-/* ─── Accessibility: Reduced Motion ─── */
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY — Reduced motion
+   ═══════════════════════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

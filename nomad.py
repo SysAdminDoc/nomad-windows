@@ -51,7 +51,7 @@ from config import get_data_dir
 from web.app import create_app, set_version
 from db import init_db, get_db, log_activity, backup_db
 
-VERSION = '3.1.0'
+VERSION = '3.2.0'
 PORT = 8080
 
 _tray_icon = None
@@ -173,9 +173,10 @@ def on_window_closing():
 
 def health_monitor():
     """Background thread: detects crashed services and auto-restarts them."""
-    from services.manager import _processes, should_restart, record_restart
+    from services.manager import unregister_process, should_restart, record_restart
 
-    time.sleep(10)
+    # Wait long enough for auto_start_services to finish (Stirling can take 60s+)
+    time.sleep(90)
     mods = _get_service_modules()
 
     while True:
@@ -191,7 +192,7 @@ def health_monitor():
                         log.warning(f'Service {sid} crashed — attempting auto-restart')
                         log_activity('service_crash_detected', sid, 'Attempting auto-restart', 'warning')
                         record_restart(sid)
-                        _processes.pop(sid, None)
+                        unregister_process(sid)
                         try:
                             mod.start()
                             log.info(f'Service {sid} auto-restarted successfully')
@@ -207,7 +208,7 @@ def health_monitor():
                         log_activity('service_restart_limit', sid, 'Max restarts exceeded', 'error')
                         db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (sid,))
                         db.commit()
-                        _processes.pop(sid, None)
+                        unregister_process(sid)
         except Exception as e:
             log.error(f'Health monitor error: {e}')
         finally:

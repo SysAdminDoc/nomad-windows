@@ -1,12 +1,12 @@
 <div align="center">
 <img src="project_nomad_logo.png" width="200" height="200"/>
 
-# Project N.O.M.A.D. for Windows v1.7.0
+# Project N.O.M.A.D. for Windows v3.2.0
 ### The Most Complete Offline Survival Command Center Available
 
 **Free. Open Source. No Internet Required After Setup.**
 
-Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ downloadable datasets, situation-aware AI with proactive alerts, tactical operations center, nuclear effects simulator, medical module, food production tracking, multi-node federation, power management, security cameras, built-in BitTorrent client, 200 survival channel browser, curated content catalogs (123 books, 114 videos, 74 audio, 131 torrents), and a premium dark dashboard with night vision mode.
+Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ downloadable datasets, situation-aware AI with proactive alerts and voice input, 3 dashboard modes with 12 live widgets, tactical operations center, nuclear effects simulator, medical module with TCCC/triage, food production with yield analysis, federation v2 with resource marketplace, sensor integration, power management, security cameras, built-in BitTorrent client, 210 survival channels, curated content catalogs (141 books, 131 videos, 102 audio, 152 torrents), and a premium dark dashboard with sparkline charts and night vision mode.
 
 [![Release](https://img.shields.io/github/v/release/SysAdminDoc/nomad-windows?include_prereleases&label=Download&color=blue)](https://github.com/SysAdminDoc/nomad-windows/releases/latest)
 [![Website](https://img.shields.io/badge/Website-projectnomad.us-blue)](https://www.projectnomad.us)
@@ -16,7 +16,7 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 
 ---
 
-> Competitors charge $280+ for a USB stick with curated content (Prepper Disk, Prep Drive). N.O.M.A.D. for Windows does everything they do and 10x more — for free. 50+ map sources, 41 interactive calculators, 37+ reference cards, 17 emergency procedures, 21 interactive decision guides, 15 checklist templates, 4 training scenarios, NukeMap v3.2.0 nuclear simulator, medical module with drug interaction checking, food production tracking, multi-node sync, power management, security cameras, AI document intelligence, built-in BitTorrent client, 200 survival channel browser, curated content catalogs (123 books, 114 videos, 74 audio, 131 torrents), a 38-section built-in user guide, and printable emergency reference sheets — the most comprehensive offline prepper command center ever built into a single application.
+> Competitors charge $280+ for a USB stick with curated content (Prepper Disk, Prep Drive). N.O.M.A.D. for Windows does everything they do and 10x more — for free. 50+ map sources, 41 interactive calculators, 56 reference cards, 17 emergency procedures, 21 interactive decision guides, 15 checklist templates, 4 training scenarios, NukeMap v3.2.0 nuclear simulator, medical module with TCCC/triage and drug interaction checking, food production with yield analysis, federation v2 with resource marketplace, sensor integration, power management, security cameras, AI document intelligence, built-in BitTorrent client, 210 survival channels, curated content catalogs (141 books, 131 videos, 102 audio, 152 torrents), a 38-section built-in user guide, and printable emergency reference sheets — the most comprehensive offline prepper command center ever built into a single application.
 
 **[Download Portable .exe](https://github.com/SysAdminDoc/nomad-windows/releases/latest/download/ProjectNOMAD.exe)** — single file, no install needed, run from anywhere (USB, desktop, etc.)
 
@@ -33,7 +33,7 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 - **Multi-Node Federation** — Sync data between N.O.M.A.D. installations on your LAN. UDP peer discovery, one-click push/pull, full sync history.
 - **Complete Command Center** — Full tactical operations with SITREP generator, threat assessment matrix, comms log, incident timeline, daily journal, emergency broadcast, security cameras, power management, and more.
 - **Nuclear Effects Simulator** — Bundled NukeMap v3.2.0 with 418 verified targets, 708 warheads, 7 WW3 scenarios, weapon encyclopedia, and HEMP burst mode.
-- **Media Library** — 200 curated survival channels across 24 categories, video/audio/book library with downloads, built-in BitTorrent client, and curated content catalogs (123 reference books, 114 tutorial videos, 74 training audio, 131 torrent collections).
+- **Media Library** — 210 curated survival channels across 26 categories, video/audio/book library with downloads, built-in BitTorrent client, and curated content catalogs (141 reference books, 131 tutorial videos, 102 training audio, 152 torrent collections).
 - **Night Vision Mode** — Red-on-black theme that preserves scotopic vision during darkness operations. Auto-switches at sunset.
 - **Printable Emergency Reports** — Inventory reports, contact directories, patient care cards, and a comprehensive emergency reference sheet aggregating all critical data.
 - **Getting Started Wizard** — New user onboarding checklist guides you through initial setup step by step.
@@ -46,12 +46,12 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 
 | Tab | What It Does |
 |-----|-------------|
-| **Services** | 6 managed services + command dashboard with proactive alerts and situation overview |
+| **Services** | 6 managed services + 3 dashboard modes with 12 live widgets, sparkline charts, and AI copilot |
 | **AI Chat** | Local AI with 19 presets, situation awareness (7 data sources), file drag-drop, document intelligence |
 | **Library** | ZIM content library (100+ datasets) with bulk download (Essential/Standard/Everything) + PDF viewer |
 | **Maps** | Offline maps with 10 tools: waypoints, zones, property boundary, print, bookmark, bearing, measure, GPX export |
 | **Notes** | Markdown notes with tags, pinning, live preview, per-note and bulk export |
-| **Media** | 200 survival channels, video/audio/book library, curated catalogs, downloads, built-in BitTorrent client |
+| **Media** | 210 survival channels, video/audio/book library, curated catalogs, downloads, built-in BitTorrent client |
 | **Benchmark** | CPU, memory, disk, AI inference scoring (NOMAD Score 0-100) with trend deltas |
 | **Tools** | NukeMap, Meshtastic, barcode scanner, guided drills, immersive training scenarios |
 | **Preparedness** | 25 sub-tabs of survival tools (see below) |
@@ -72,11 +72,11 @@ Native Windows port — no Docker, no WSL, no VMs. 6 managed services, 100+ down
 
 | Sub-Tab | Features |
 |---------|---------|
-| **Browse Channels** | 200 curated survival channels across 24 categories. Auto-hides dead channels. Subscriptions, video browsing, search with pagination. |
+| **Browse Channels** | 210 curated survival channels across 26 categories. Auto-hides dead channels. Subscriptions, video browsing, search with pagination. |
 | **My Videos** | Upload or download instructional videos. Thumbnail cards, watch + download player, 9 categories. Thumbnails + subtitles auto-downloaded. |
 | **My Audio** | Audio catalog with favorites, batch operations, sorting. MP3 extraction via FFmpeg. |
 | **My Books** | EPUB reader (epub.js) + PDF viewer (WebView2 built-in). Book catalog from Internet Archive. |
-| **Torrent Library** | Built-in BitTorrent client (libtorrent) with live download progress UI. 131 curated torrent collections across 10 categories (survival, maps, weather, radio, textbooks, medical, farming, videos, software, encyclopedias). |
+| **Torrent Library** | Built-in BitTorrent client (libtorrent) with live download progress UI. 152 curated torrent collections across 12 categories (survival, maps, weather, radio, textbooks, medical, farming, videos, software, encyclopedias, repair, energy). |
 
 ## 25 Preparedness Sub-Tabs (ordered by emergency priority)
 
@@ -225,7 +225,7 @@ pyinstaller build.spec
 |-----------|-----------|
 | Window | pywebview + WebView2 |
 | Backend | Flask (0.0.0.0 for LAN access) |
-| Database | SQLite (43 tables, WAL mode, auto-backups, performance indexes) |
+| Database | SQLite (57 tables, WAL mode, auto-backups, 65 performance indexes) |
 | AI | Ollama native + GPU auto-config (NVIDIA/AMD/Intel) |
 | Alerts | Background engine (5-min cycle) + browser notifications |
 | Encryption | AES-256-GCM via Web Crypto API |
@@ -245,7 +245,7 @@ pyinstaller build.spec
 All data stored in `%APPDATA%\ProjectNOMAD\`:
 
 ```
-nomad.db           # SQLite (43 tables, WAL mode)
+nomad.db           # SQLite (57 tables, WAL mode)
 logs/              # Application logs
 backups/           # Automatic DB backups (5 rotation)
 services/          # Service binaries + data
@@ -291,8 +291,8 @@ Both versions share the same core philosophy: an offline-first, self-contained k
 | **Security Module** | IP camera viewer (MJPEG/snapshot/HLS), access logging, threat dashboard |
 | **Multi-Node Sync** | LAN auto-discovery + USB offline transfer between N.O.M.A.D. installations |
 | **NukeMap v3.2.0** | Nuclear effects simulator with 418 targets, 708 warheads, 7 WW3 scenarios |
-| **Media Library** | 200 survival channels across 24 categories, video/audio/book library, curated catalogs (123 books, 114 videos, 74 audio), downloads via yt-dlp |
-| **BitTorrent Client** | Built-in libtorrent client with 131 curated torrent collections across 10 categories |
+| **Media Library** | 210 survival channels across 26 categories, video/audio/book library, curated catalogs (141 books, 131 videos, 102 audio), downloads via yt-dlp |
+| **BitTorrent Client** | Built-in libtorrent client with 152 curated torrent collections across 12 categories |
 | **AI Document Intelligence** | Auto-classify, summarize, extract entities, cross-reference contacts |
 | **Encrypted Vault** | AES-256-GCM encrypted storage for passwords, coordinates, sensitive documents |
 | **41 Calculators** | Water needs, food, solar, ballistics, fallout, canning, IV drip, KI dosage, dead reckoning, shelter PF, crop calories, NVIS, radiation dose, dehydration, vital signs, hypothermia, ORT, antibiotic planner, and more |
@@ -303,7 +303,7 @@ Both versions share the same core philosophy: an offline-first, self-contained k
 | **Situation-Aware AI** | 7 data sources injected into AI context (inventory, weather, alerts, power, patients, garden, contacts) |
 | **15 Checklist Templates** | 72hr kit, bug-out bag, vehicle kit, winter storm, CBRN shelter, infant kit, and more |
 | **17 Emergency Procedures** | CPR, bleeding, burns, fractures, choking, hypothermia, snake bite, and more |
-| **37+ Quick Reference Cards** | NATO alphabet + Q codes + APCO 10-codes, Morse code, knots, triage, companion planting, wild edibles, game processing, vital signs by age, TCCC/MARCH, blood type compatibility, drug interactions, and more |
+| **56 Quick Reference Cards** | NATO alphabet + Q codes + APCO 10-codes, Morse code, knots, triage, companion planting, wild edibles, game processing, vital signs by age, TCCC/MARCH, blood type compatibility, drug interactions, and more |
 | **Skills Tracking** | 60 survival skills across 10 categories with proficiency levels |
 | **Ammo Inventory** | Caliber-grouped ammunition tracking with summary cards |
 | **Radiation Monitoring** | Nuclear dose rate logging with cumulative rem tracking |

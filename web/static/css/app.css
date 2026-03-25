@@ -202,6 +202,9 @@ a { color: var(--accent); text-decoration: none; }
   grid-column: span 2;
 }
 
+/* ─── Voice Input Active State ─── */
+.voice-active { background: var(--red) !important; color: #fff !important; border-color: var(--red) !important; animation: pulse 1s ease infinite; }
+
 /* ─── Mode Option Cards (Settings) ─── */
 .mode-option:hover { border-color: var(--accent) !important; }
 .mode-option.active-mode { border-color: var(--accent) !important; background: var(--accent-dim) !important; }

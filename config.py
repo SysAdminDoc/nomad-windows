@@ -31,8 +31,12 @@ def load_config() -> dict:
 def save_config(data: dict):
     path = get_config_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, 'w') as f:
+    tmp_path = path + '.tmp'
+    with open(tmp_path, 'w') as f:
         json.dump(data, f, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    os.replace(tmp_path, path)
 
 
 def get_data_dir() -> str:

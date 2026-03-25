@@ -40,12 +40,14 @@ SERVICE_MODULES = {
     'stirling': stirling,
 }
 
-VERSION = '2.1.0'
+VERSION = '3.1.0'
 
 
 def set_version(v):
     global VERSION
-    VERSION = v
+    import re
+    # Sanitize to prevent XSS — version must be semver-like (digits, dots, hyphens, letters)
+    VERSION = re.sub(r'[^a-zA-Z0-9.\-+]', '', str(v)) or '0.0.0'
 
 # RAG / Knowledge Base state
 _embed_state = {'status': 'idle', 'doc_id': None, 'progress': 0, 'detail': ''}
@@ -75,6 +77,20 @@ def create_app():
     app = Flask(__name__,
                 template_folder='templates',
                 static_folder='static')
+
+    # ─── DB Connection Safety Net ─────────────────────────────────────
+    # Auto-close any DB connections left open when a request ends.
+    # This prevents connection leaks if a route raises before calling db.close().
+    @app.teardown_appcontext
+    def close_leaked_db(exception):
+        """Auto-close DB connections stored on flask.g at end of request."""
+        from flask import g
+        db = g.pop('_db_conn', None)
+        if db is not None:
+            try:
+                db.close()
+            except Exception:
+                pass
 
     # ─── LAN Auth Guard ────────────────────────────────────────────────
     # Protect dangerous endpoints from unauthorized LAN access
@@ -388,7 +404,7 @@ def create_app():
                 # Burn rate
                 burn = db_ctx.execute('SELECT name, quantity, daily_usage, category FROM inventory WHERE daily_usage > 0 LIMIT 10').fetchall()
                 if burn:
-                    sit_parts.append('BURN RATES: ' + ', '.join(f'{r["name"]}: {round(r["quantity"]/r["daily_usage"],1)} days left' for r in burn))
+                    sit_parts.append('BURN RATES: ' + ', '.join(f'{r["name"]}: {round(r["quantity"]/max(r["daily_usage"],0.001),1)} days left' for r in burn))
                 # Contacts count
                 ct_count = db_ctx.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c']
                 if ct_count:
@@ -400,8 +416,10 @@ def create_app():
                 # Situation board
                 settings_row = db_ctx.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
                 if settings_row:
-                    sit = json.loads(settings_row['value'] or '{}')
-                    sit_parts.append('SITUATION STATUS: ' + ', '.join(f'{k}: {v}' for k, v in sit.items()))
+                    try:
+                        sit = json.loads(settings_row['value'] or '{}')
+                        sit_parts.append('SITUATION STATUS: ' + ', '.join(f'{k}: {v}' for k, v in sit.items()))
+                    except (json.JSONDecodeError, TypeError): pass
                 # Weather
                 wx = db_ctx.execute('SELECT pressure_hpa, temp_f, created_at FROM weather_log WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 1').fetchone()
                 if wx:
@@ -417,7 +435,10 @@ def create_app():
                 # Patients with conditions
                 patients = db_ctx.execute('SELECT name, allergies, conditions FROM patients LIMIT 5').fetchall()
                 if patients:
-                    pt_str = ', '.join(f'{p["name"]} (allergies: {json.loads(p["allergies"] or "[]")}, conditions: {json.loads(p["conditions"] or "[]")})' for p in patients)
+                    def _safe_json(val):
+                        try: return json.loads(val or '[]')
+                        except (json.JSONDecodeError, TypeError): return []
+                    pt_str = ', '.join(f'{p["name"]} (allergies: {_safe_json(p["allergies"])}, conditions: {_safe_json(p["conditions"])})' for p in patients)
                     sit_parts.append(f'PATIENTS: {pt_str}')
                 # Garden/harvest
                 harvest_count = db_ctx.execute('SELECT COUNT(*) as c FROM harvest_log').fetchone()['c']
@@ -433,7 +454,7 @@ def create_app():
             finally:
                 if db_ctx:
                     try: db_ctx.close()
-                    except: pass
+                    except Exception: pass
 
         # RAG: inject knowledge base context if enabled
         if use_kb and qdrant.running() and messages:
@@ -465,9 +486,330 @@ def create_app():
 
         return Response(generate(), mimetype='text/event-stream')
 
+    @app.route('/api/ai/quick-query', methods=['POST'])
+    def api_ai_quick_query():
+        """Answer a focused question using real data without full chat context.
+        Designed for the dashboard copilot widget."""
+        data = request.get_json() or {}
+        question = data.get('question', '').strip()
+        if not question:
+            return jsonify({'error': 'No question'}), 400
+        if not ollama.running():
+            return jsonify({'error': 'AI service not running'}), 503
+
+        # Build rich data context from DB
+        db = get_db()
+        try:
+            ctx_parts = []
+            # Detailed inventory with quantities and burn rates
+            inv = db.execute('SELECT name, quantity, unit, category, daily_usage, min_quantity, expiration FROM inventory ORDER BY category, name LIMIT 200').fetchall()
+            if inv:
+                inv_lines = []
+                for r in inv:
+                    line = f'{r["name"]}: {r["quantity"]} {r["unit"]} ({r["category"]})'
+                    if r['daily_usage'] and r['daily_usage'] > 0:
+                        days = round(r['quantity'] / r['daily_usage'], 1)
+                        line += f' — {days} days supply at {r["daily_usage"]}/day'
+                    if r['min_quantity'] and r['quantity'] <= r['min_quantity']:
+                        line += ' [LOW STOCK]'
+                    if r['expiration']:
+                        line += f' expires {r["expiration"]}'
+                    inv_lines.append(line)
+                ctx_parts.append('INVENTORY:\n' + '\n'.join(inv_lines))
+
+            # Contacts with skills and roles
+            contacts = db.execute('SELECT name, role, skills, phone, callsign, blood_type FROM contacts LIMIT 50').fetchall()
+            if contacts:
+                c_lines = [f'{c["name"]} — {c["role"] or "unassigned"}' +
+                           (f', skills: {c["skills"]}' if c.get('skills') else '') +
+                           (f', callsign: {c["callsign"]}' if c.get('callsign') else '') +
+                           (f', blood: {c["blood_type"]}' if c.get('blood_type') else '')
+                           for c in contacts]
+                ctx_parts.append('TEAM CONTACTS:\n' + '\n'.join(c_lines))
+
+            # Patients with medical details
+            patients = db.execute('SELECT name, age, weight_kg, blood_type, allergies, conditions, medications FROM patients LIMIT 20').fetchall()
+            if patients:
+                p_lines = []
+                for p in patients:
+                    line = f'{p["name"]}'
+                    if p['age']: line += f', age {p["age"]}'
+                    if p['blood_type']: line += f', blood {p["blood_type"]}'
+                    try:
+                        allg = json.loads(p['allergies'] or '[]')
+                        if allg: line += f', ALLERGIES: {", ".join(allg)}'
+                    except (json.JSONDecodeError, TypeError): pass
+                    try:
+                        cond = json.loads(p['conditions'] or '[]')
+                        if cond: line += f', conditions: {", ".join(cond)}'
+                    except (json.JSONDecodeError, TypeError): pass
+                    try:
+                        meds = json.loads(p['medications'] or '[]')
+                        if meds: line += f', meds: {", ".join(meds)}'
+                    except (json.JSONDecodeError, TypeError): pass
+                    p_lines.append(line)
+                ctx_parts.append('PATIENTS:\n' + '\n'.join(p_lines))
+
+            # Fuel storage
+            fuel = db.execute('SELECT fuel_type, quantity, unit, location FROM fuel_storage').fetchall()
+            if fuel:
+                ctx_parts.append('FUEL: ' + ', '.join(f'{f["fuel_type"]}: {f["quantity"]} {f["unit"]} at {f["location"]}' for f in fuel))
+
+            # Ammo
+            ammo = db.execute('SELECT caliber, quantity, location FROM ammo_inventory').fetchall()
+            if ammo:
+                ctx_parts.append('AMMO: ' + ', '.join(f'{a["caliber"]}: {a["quantity"]} rounds ({a["location"]})' for a in ammo))
+
+            # Equipment overdue
+            equip = db.execute("SELECT name, status, next_service FROM equipment_log WHERE next_service != '' ORDER BY next_service LIMIT 10").fetchall()
+            if equip:
+                ctx_parts.append('EQUIPMENT: ' + ', '.join(f'{e["name"]}: {e["status"]}, service due {e["next_service"]}' for e in equip))
+
+            # Active alerts
+            alerts = db.execute('SELECT title, severity, message FROM alerts WHERE dismissed = 0 LIMIT 10').fetchall()
+            if alerts:
+                ctx_parts.append('ACTIVE ALERTS:\n' + '\n'.join(f'[{a["severity"]}] {a["title"]}: {a["message"][:100]}' for a in alerts))
+
+            # Weather
+            wx = db.execute('SELECT * FROM weather_log ORDER BY created_at DESC LIMIT 1').fetchone()
+            if wx:
+                ctx_parts.append(f'WEATHER: {dict(wx)}')
+
+            # Power
+            pwr = db.execute('SELECT * FROM power_log ORDER BY created_at DESC LIMIT 1').fetchone()
+            if pwr:
+                ctx_parts.append(f'POWER: Battery {pwr["battery_soc"] or "?"}%, Solar {pwr["solar_watts"] or 0}W, Load {pwr["load_watts"] or 0}W')
+
+        finally:
+            db.close()
+
+        context = '\n\n'.join(ctx_parts) if ctx_parts else 'No data has been entered yet.'
+
+        system = f"""You are the N.O.M.A.D. Survival Operations Copilot — an AI embedded in a tactical preparedness command center. Your role is to provide actionable intelligence based on the operator's REAL supply data, team roster, medical records, and equipment status.
+
+RULES:
+- Answer using ONLY the data below. Never fabricate items, quantities, or people.
+- Use exact names, quantities, and numbers from the data.
+- If a supply has daily_usage, calculate and report days remaining.
+- Flag anything critical: items below 7 days supply, expired items, overdue equipment.
+- Keep responses concise (2-4 sentences). Be direct — this is an ops brief, not a conversation.
+- If asked about something not in the data, say "No data available for that" — don't guess.
+
+--- OPERATOR'S LIVE DATA ---
+{context}
+--- END DATA ---"""
+
+        try:
+            model = data.get('model', ollama.DEFAULT_MODEL)
+            response_text = ''
+            for line in ollama.chat(model, [{'role': 'system', 'content': system}, {'role': 'user', 'content': question}], stream=False):
+                if line:
+                    try:
+                        d = json.loads(line)
+                        if 'message' in d and 'content' in d['message']:
+                            response_text += d['message']['content']
+                    except (json.JSONDecodeError, KeyError, TypeError):
+                        pass
+            return jsonify({'answer': response_text.strip(), 'data_sources': list(set(p.split(':')[0] for p in ctx_parts))})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/ai/suggested-actions')
+    def api_ai_suggested_actions():
+        """Generate suggested actions based on current alerts and data state."""
+        db = get_db()
+        try:
+            suggestions = []
+            from datetime import datetime, timedelta
+            today = datetime.now().strftime('%Y-%m-%d')
+            soon7 = (datetime.now() + timedelta(days=7)).strftime('%Y-%m-%d')
+            soon30 = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+
+            # Low stock items
+            low = db.execute('SELECT name, quantity, unit FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0 LIMIT 3').fetchall()
+            for r in low:
+                suggestions.append({'type': 'warning', 'action': f'Restock {r["name"]} — only {r["quantity"]} {r["unit"]} remaining', 'module': 'inventory'})
+
+            # Expiring items (7 days)
+            expiring = db.execute("SELECT name, expiration FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ? LIMIT 3", (soon7, today)).fetchall()
+            for r in expiring:
+                suggestions.append({'type': 'urgent', 'action': f'Rotate {r["name"]} — expires {r["expiration"]}', 'module': 'inventory'})
+
+            # Equipment overdue
+            overdue = db.execute("SELECT name, next_service FROM equipment_log WHERE next_service != '' AND next_service <= ? LIMIT 3", (today,)).fetchall()
+            for r in overdue:
+                suggestions.append({'type': 'warning', 'action': f'Service {r["name"]} — overdue since {r["next_service"]}', 'module': 'equipment'})
+
+            # Unresolved critical alerts
+            crit = db.execute("SELECT title FROM alerts WHERE dismissed = 0 AND severity = 'critical' LIMIT 3").fetchall()
+            for r in crit:
+                suggestions.append({'type': 'critical', 'action': f'Resolve alert: {r["title"]}', 'module': 'alerts'})
+
+            # Fuel expiring
+            fuel_exp = db.execute("SELECT fuel_type, expires FROM fuel_storage WHERE expires != '' AND expires <= ? LIMIT 2", (soon30,)).fetchall()
+            for r in fuel_exp:
+                suggestions.append({'type': 'warning', 'action': f'Rotate {r["fuel_type"]} fuel — expires {r["expires"]}', 'module': 'fuel'})
+
+            return jsonify({'suggestions': suggestions[:8]})
+        finally:
+            db.close()
+
     @app.route('/api/ai/recommended')
     def api_ai_recommended():
         return jsonify(ollama.RECOMMENDED_MODELS)
+
+    # ─── Cross-Module Intelligence (Needs System) ─────────────────────
+
+    SURVIVAL_NEEDS = {
+        'water': {
+            'label': 'Water & Hydration', 'icon': '&#128167;', 'color': '#0288d1',
+            'keywords': ['water','hydration','purif','filter','well','rain','cistern','dehydrat','boil','bleach','iodine','sodis','biosand'],
+            'guides': ['water_purify','water_source_assessment'],
+            'calcs': ['water-needs','water-storage','bleach-dosage'],
+        },
+        'food': {
+            'label': 'Food & Nutrition', 'icon': '&#127858;', 'color': '#558b2f',
+            'keywords': ['food','calori','nutrition','canning','preserv','dehydrat','jerky','fermenting','seed','garden','harvest','livestock','chicken','goat','rabbit','grain','flour','rice','bean','MRE','freeze dry','smoking meat','salt cur'],
+            'guides': ['food_preserve','food_safety_assessment'],
+            'calcs': ['calorie-needs','food-storage','canning','composting','pasture'],
+        },
+        'medical': {
+            'label': 'Medical & Health', 'icon': '&#129657;', 'color': '#c62828',
+            'keywords': ['medical','first aid','wound','bleed','tourniquet','suture','fracture','burn','infection','antibiotic','medicine','triage','TCCC','CPR','AED','dental','eye','childbirth','diabetic','allergic','anaphyla','splint','vital','patient'],
+            'guides': ['wound_assess','triage_start','antibiotic_selection','chest_trauma','envenomation','wound_infection','anaphylaxis','hypothermia_response'],
+            'calcs': ['drug-dosage','burn-area','blood-loss','dehydration'],
+        },
+        'shelter': {
+            'label': 'Shelter & Construction', 'icon': '&#127968;', 'color': '#795548',
+            'keywords': ['shelter','cabin','build','construct','adobe','timber','stone','masonry','insulation','roof','foundation','tent','tarp','debris hut','earthbag','cob','log'],
+            'guides': ['shelter_build'],
+            'calcs': ['shelter-sizing','insulation','concrete-mix'],
+        },
+        'security': {
+            'label': 'Security & Defense', 'icon': '&#128737;', 'color': '#d32f2f',
+            'keywords': ['security','defense','perimeter','alarm','camera','night vision','firearm','ammo','ammunition','caliber','tactical','gray man','OPSEC','trip wire','home harden'],
+            'guides': ['bugout_decision'],
+            'calcs': ['ballistic','range','ammo-load'],
+        },
+        'comms': {
+            'label': 'Communications', 'icon': '&#128225;', 'color': '#6a1b9a',
+            'keywords': ['radio','ham','amateur','frequency','antenna','HF','VHF','UHF','GMRS','FRS','MURS','Meshtastic','JS8Call','Winlink','APRS','morse','CW','SDR','repeater','net','callsign','comms','communication'],
+            'guides': ['radio_setup'],
+            'calcs': ['antenna-length','radio-range','power-budget'],
+        },
+        'power': {
+            'label': 'Energy & Power', 'icon': '&#9889;', 'color': '#f9a825',
+            'keywords': ['power','solar','battery','generator','inverter','watt','amp','volt','charge','fuel','diesel','propane','gasoline','wood gas','wind','hydro','off-grid','grid-down'],
+            'guides': ['power_outage'],
+            'calcs': ['solar-sizing','battery-bank','generator-fuel','wire-gauge'],
+        },
+        'navigation': {
+            'label': 'Navigation & Maps', 'icon': '&#127760;', 'color': '#0277bd',
+            'keywords': ['map','compass','GPS','navigation','topographic','waypoint','route','bearing','MGRS','grid','coordinate','terrain','elevation','celestial','star','landmark'],
+            'guides': [],
+            'calcs': ['bearing','distance','pace-count','grid-to-latlong'],
+        },
+        'knowledge': {
+            'label': 'Knowledge & Training', 'icon': '&#128218;', 'color': '#37474f',
+            'keywords': ['book','manual','reference','training','guide','course','encyclopedia','textbook','library','skill','learn','practice','drill'],
+            'guides': [],
+            'calcs': [],
+        },
+    }
+
+    @app.route('/api/needs')
+    def api_needs_overview():
+        """Returns all survival need categories with item counts from each module."""
+        db = get_db()
+        try:
+            result = {}
+            for need_id, need in SURVIVAL_NEEDS.items():
+                kw = need['keywords']
+                # Count matching inventory items
+                inv_count = 0
+                for k in kw[:5]:  # Limit keyword searches for performance
+                    inv_count += db.execute('SELECT COUNT(*) as c FROM inventory WHERE name LIKE ? OR category LIKE ?',
+                                           (f'%{k}%', f'%{k}%')).fetchone()['c']
+
+                # Count matching contacts by skills/role
+                contact_count = 0
+                for k in kw[:3]:
+                    contact_count += db.execute('SELECT COUNT(*) as c FROM contacts WHERE role LIKE ? OR skills LIKE ?',
+                                                (f'%{k}%', f'%{k}%')).fetchone()['c']
+
+                # Count matching books (from reference catalog)
+                book_count = 0
+                for k in kw[:3]:
+                    book_count += db.execute('SELECT COUNT(*) as c FROM books WHERE title LIKE ? OR category LIKE ?',
+                                            (f'%{k}%', f'%{k}%')).fetchone()['c']
+
+                # Decision guides count
+                guide_count = len(need.get('guides', []))
+
+                result[need_id] = {
+                    'label': need['label'], 'icon': need['icon'], 'color': need['color'],
+                    'inventory': min(inv_count, 999), 'contacts': min(contact_count, 99),
+                    'books': min(book_count, 99), 'guides': guide_count,
+                    'total': min(inv_count + contact_count + book_count + guide_count, 9999),
+                }
+            return jsonify(result)
+        finally:
+            db.close()
+
+    @app.route('/api/needs/<need_id>')
+    def api_need_detail(need_id):
+        """Returns detailed cross-module data for a specific survival need."""
+        need = SURVIVAL_NEEDS.get(need_id)
+        if not need:
+            return jsonify({'error': 'Unknown need category'}), 404
+        db = get_db()
+        try:
+            kw = need['keywords']
+            like_clauses = ' OR '.join(['name LIKE ?' for _ in kw[:5]])
+            like_vals = [f'%{k}%' for k in kw[:5]]
+
+            # Inventory items
+            inv_items = []
+            for k in kw[:5]:
+                rows = db.execute('SELECT id, name, quantity, unit, category FROM inventory WHERE name LIKE ? OR category LIKE ? LIMIT 20',
+                                  (f'%{k}%', f'%{k}%')).fetchall()
+                for r in rows:
+                    item = dict(r)
+                    if item not in inv_items:
+                        inv_items.append(item)
+
+            # Contacts
+            contacts = []
+            for k in kw[:3]:
+                rows = db.execute('SELECT id, name, role, skills FROM contacts WHERE role LIKE ? OR skills LIKE ? LIMIT 10',
+                                  (f'%{k}%', f'%{k}%')).fetchall()
+                for r in rows:
+                    item = dict(r)
+                    if item not in contacts:
+                        contacts.append(item)
+
+            # Books
+            books = []
+            for k in kw[:3]:
+                rows = db.execute('SELECT id, title, author, category FROM books WHERE title LIKE ? OR category LIKE ? LIMIT 10',
+                                  (f'%{k}%', f'%{k}%')).fetchall()
+                for r in rows:
+                    item = dict(r)
+                    if item not in books:
+                        books.append(item)
+
+            # Decision guides (from hardcoded list)
+            guides = [{'id': gid, 'title': gid.replace('_', ' ').title()} for gid in need.get('guides', [])]
+
+            return jsonify({
+                'need': {'id': need_id, 'label': need['label'], 'icon': need['icon'], 'color': need['color']},
+                'inventory': inv_items[:30],
+                'contacts': contacts[:10],
+                'books': books[:15],
+                'guides': guides,
+            })
+        finally:
+            db.close()
 
     # ─── Kiwix ZIM API ─────────────────────────────────────────────────
 
@@ -592,6 +934,48 @@ def create_app():
         db.commit()
         db.close()
         return jsonify({'status': 'saved'})
+
+    # ─── Dashboard Mode API ──────────────────────────────────────────
+    DASHBOARD_MODES = {
+        'command': {
+            'label': 'Command Center',
+            'desc': 'Full military-style ops dashboard — all modules, threat-level focus',
+            'icon': '&#9876;',
+            'sidebar_order': ['services','ai','library','maps','notes','media','tools','prep','benchmark','settings'],
+            'sidebar_hide': [],
+            'prep_order': ['inventory','contacts','checklists','medical','incidents','family','security','power','garden','weather','guides','calculators','protocols','radio','reference','signals','ops','journal','vault','skills','ammo','community','radiation','fuel','equipment'],
+            'dashboard_widgets': ['readiness','alerts','inventory-burn','security','comms','power','weather','incidents'],
+        },
+        'homestead': {
+            'label': 'Homestead',
+            'desc': 'Farm & self-reliance focus — garden, livestock, weather, food production',
+            'icon': '&#127793;',
+            'sidebar_order': ['services','ai','library','maps','notes','media','prep','tools','settings'],
+            'sidebar_hide': ['benchmark'],
+            'prep_order': ['garden','weather','power','equipment','fuel','inventory','checklists','medical','contacts','skills','community','family','journal','calculators','protocols','radio','reference','signals','ops','vault','ammo','incidents','security','radiation'],
+            'dashboard_widgets': ['readiness','garden','weather','power','inventory-burn','livestock','equipment','alerts'],
+        },
+        'minimal': {
+            'label': 'Essentials',
+            'desc': 'Streamlined — only core survival modules',
+            'icon': '&#9679;',
+            'sidebar_order': ['services','ai','notes','media','prep','settings'],
+            'sidebar_hide': ['library','maps','tools','benchmark'],
+            'prep_order': ['inventory','contacts','medical','checklists','family','incidents','guides','calculators','reference'],
+            'prep_hide': ['signals','ops','vault','skills','ammo','community','radiation','fuel','equipment','garden','weather','power','security','protocols','radio','journal'],
+            'dashboard_widgets': ['readiness','alerts','inventory-burn'],
+        },
+    }
+
+    @app.route('/api/dashboard/mode')
+    def api_dashboard_mode():
+        db = get_db()
+        row = db.execute("SELECT value FROM settings WHERE key = 'dashboard_mode'").fetchone()
+        db.close()
+        mode = row['value'] if row else 'command'
+        if mode not in DASHBOARD_MODES:
+            mode = 'command'
+        return jsonify({'mode': mode, 'config': DASHBOARD_MODES[mode], 'available': {k: {'label': v['label'], 'desc': v['desc'], 'icon': v['icon']} for k, v in DASHBOARD_MODES.items()}})
 
     @app.route('/api/settings/wizard-complete', methods=['POST'])
     def api_wizard_complete():
@@ -2985,6 +3369,206 @@ def create_app():
         db.close()
         return jsonify({'status': 'deleted'})
 
+    # ─── Map Routes & Annotations API ────────────────────────────────
+
+    @app.route('/api/maps/routes')
+    def api_map_routes_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM map_routes ORDER BY created_at DESC').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/maps/routes', methods=['POST'])
+    def api_map_routes_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO map_routes (name, waypoint_ids, distance_km, estimated_time_min, terrain_difficulty, notes) VALUES (?,?,?,?,?,?)',
+                   (data.get('name', 'New Route'), json.dumps(data.get('waypoint_ids', [])),
+                    data.get('distance_km', 0), data.get('estimated_time_min', 0),
+                    data.get('terrain_difficulty', 'moderate'), data.get('notes', '')))
+        db.commit()
+        rid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+        db.close()
+        return jsonify({'status': 'created', 'id': rid})
+
+    @app.route('/api/maps/routes/<int:rid>', methods=['DELETE'])
+    def api_map_routes_delete(rid):
+        db = get_db()
+        db.execute('DELETE FROM map_routes WHERE id = ?', (rid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/maps/annotations')
+    def api_map_annotations_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM map_annotations ORDER BY created_at DESC').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/maps/annotations', methods=['POST'])
+    def api_map_annotations_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO map_annotations (type, geojson, label, color, notes) VALUES (?,?,?,?,?)',
+                   (data.get('type', 'polygon'), json.dumps(data.get('geojson', {})),
+                    data.get('label', ''), data.get('color', '#ff0000'), data.get('notes', '')))
+        db.commit()
+        aid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+        db.close()
+        return jsonify({'status': 'created', 'id': aid})
+
+    @app.route('/api/maps/annotations/<int:aid>', methods=['DELETE'])
+    def api_map_annotations_delete(aid):
+        db = get_db()
+        db.execute('DELETE FROM map_annotations WHERE id = ?', (aid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/maps/minimap-data')
+    def api_maps_minimap_data():
+        """Returns waypoints + annotations for the dashboard mini-map widget."""
+        db = get_db()
+        waypoints = [dict(r) for r in db.execute('SELECT id, name, lat, lng, category, icon, color FROM waypoints ORDER BY name').fetchall()]
+        routes = [dict(r) for r in db.execute('SELECT id, name, waypoint_ids, distance_km FROM map_routes ORDER BY created_at DESC LIMIT 10').fetchall()]
+        annotations = [dict(r) for r in db.execute('SELECT id, type, label, color FROM map_annotations ORDER BY created_at DESC LIMIT 20').fetchall()]
+        db.close()
+        return jsonify({'waypoints': waypoints, 'routes': routes, 'annotations': annotations})
+
+    # ─── Comms / Frequency Database API ─────────────────────────────
+
+    @app.route('/api/comms/frequencies')
+    def api_comms_frequencies():
+        db = get_db()
+        rows = db.execute('SELECT * FROM freq_database ORDER BY service, frequency').fetchall()
+        db.close()
+        # If empty, seed with standard frequencies
+        if not rows:
+            _seed_frequencies()
+            db = get_db()
+            rows = db.execute('SELECT * FROM freq_database ORDER BY service, frequency').fetchall()
+            db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/comms/frequencies', methods=['POST'])
+    def api_comms_freq_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO freq_database (frequency, mode, bandwidth, service, description, region, license_required, priority, notes) VALUES (?,?,?,?,?,?,?,?,?)',
+                   (data.get('frequency', 0), data.get('mode', 'FM'), data.get('bandwidth', ''),
+                    data.get('service', ''), data.get('description', ''), data.get('region', 'US'),
+                    data.get('license_required', 0), data.get('priority', 0), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'})
+
+    @app.route('/api/comms/frequencies/<int:fid>', methods=['DELETE'])
+    def api_comms_freq_delete(fid):
+        db = get_db()
+        db.execute('DELETE FROM freq_database WHERE id = ?', (fid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    def _seed_frequencies():
+        """Seed standard emergency/preparedness frequencies."""
+        db = get_db()
+        freqs = [
+            (462.5625,'FM','12.5','FRS/GMRS Ch 1','Family Radio — primary','US',0,10,'Most common FRS channel'),
+            (462.5875,'FM','12.5','FRS/GMRS Ch 2','Family Radio — secondary','US',0,5,''),
+            (462.6125,'FM','12.5','FRS/GMRS Ch 3','Family Radio — neighborhood','US',0,5,''),
+            (462.6375,'FM','12.5','FRS/GMRS Ch 4','Family Radio','US',0,3,''),
+            (462.6625,'FM','12.5','FRS/GMRS Ch 5','Family Radio','US',0,3,''),
+            (462.6875,'FM','12.5','FRS/GMRS Ch 6','Family Radio','US',0,3,''),
+            (462.7125,'FM','12.5','FRS/GMRS Ch 7','Family Radio','US',0,3,''),
+            (467.5625,'FM','12.5','FRS Ch 8','FRS only (low power)','US',0,2,''),
+            (151.820,'FM','11.25','MURS Ch 1','Multi-Use Radio — no license','US',0,8,'5W max, good for property'),
+            (151.880,'FM','11.25','MURS Ch 2','Multi-Use Radio','US',0,5,''),
+            (151.940,'FM','11.25','MURS Ch 3','Multi-Use Radio','US',0,5,''),
+            (154.570,'FM','20','MURS Ch 4','Multi-Use Radio (wide)','US',0,4,''),
+            (154.600,'FM','20','MURS Ch 5','Multi-Use Radio (wide)','US',0,4,''),
+            (146.520,'FM','15','2m Simplex Call','National VHF calling frequency','US',1,10,'Ham license required'),
+            (146.550,'FM','15','2m Simplex','Common simplex — ARES/RACES','US',1,7,''),
+            (147.420,'FM','15','2m Simplex','Emergency simplex','US',1,6,''),
+            (446.000,'FM','12.5','70cm Simplex Call','National UHF calling frequency','US',1,9,'Ham license required'),
+            (446.500,'FM','12.5','70cm Simplex','Common UHF simplex','US',1,5,''),
+            (7.260,'LSB','3','40m SSB','Emergency HF net — regional','US',1,10,'Day propagation 100-500mi'),
+            (3.860,'LSB','3','75m SSB','Emergency HF net — regional','US',1,8,'Night propagation'),
+            (14.300,'USB','3','20m SSB','International distress/emergency net','US',1,9,'Long-distance day'),
+            (156.800,'FM','25','Marine Ch 16','International distress/calling','US',0,10,'Monitored by Coast Guard'),
+            (156.450,'FM','25','Marine Ch 9','Secondary calling channel','US',0,5,''),
+            (27.065,'AM','8','CB Ch 9','Emergency CB channel','US',0,8,'Monitored by REACT'),
+            (27.185,'AM','8','CB Ch 19','Highway/trucker channel','US',0,6,'Good for road intel'),
+            (162.400,'FM','','NOAA WX 1','Weather broadcast','US',0,10,'Check for your area'),
+            (162.425,'FM','','NOAA WX 2','Weather broadcast','US',0,10,''),
+            (162.450,'FM','','NOAA WX 3','Weather broadcast','US',0,10,''),
+            (162.475,'FM','','NOAA WX 4','Weather broadcast','US',0,10,''),
+            (162.500,'FM','','NOAA WX 5','Weather broadcast','US',0,10,''),
+            (162.525,'FM','','NOAA WX 6','Weather broadcast','US',0,10,''),
+            (162.550,'FM','','NOAA WX 7','Weather broadcast','US',0,10,''),
+            (121.500,'AM','','Aviation Emer','Aircraft emergency/guard','US',0,7,'International air distress'),
+            (243.000,'AM','','Military Emer','Military UHF guard frequency','US',0,4,''),
+            (906.875,'LoRa','125','Meshtastic US','Default Meshtastic — off-grid text','US',0,9,'No license, 1W'),
+        ]
+        for f in freqs:
+            db.execute('INSERT OR IGNORE INTO freq_database (frequency, mode, bandwidth, service, description, region, license_required, priority, notes) VALUES (?,?,?,?,?,?,?,?,?)', f)
+        db.commit()
+        db.close()
+
+    @app.route('/api/comms/dashboard')
+    def api_comms_dashboard():
+        """Comms status overview — last contacts, active frequencies, mesh status."""
+        db = get_db()
+        try:
+            last_logs = [dict(r) for r in db.execute('SELECT callsign, freq, direction, created_at FROM comms_log ORDER BY created_at DESC LIMIT 5').fetchall()]
+            freq_count = db.execute('SELECT COUNT(*) as c FROM freq_database').fetchone()['c']
+            contacts_with_radio = db.execute("SELECT COUNT(*) as c FROM contacts WHERE callsign != ''").fetchone()['c']
+            profiles = db.execute('SELECT COUNT(*) as c FROM radio_profiles').fetchone()['c']
+            return jsonify({
+                'recent_logs': last_logs,
+                'freq_count': freq_count,
+                'radio_contacts': contacts_with_radio,
+                'radio_profiles': profiles,
+            })
+        finally:
+            db.close()
+
+    @app.route('/api/comms/radio-profiles')
+    def api_comms_profiles_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM radio_profiles ORDER BY name').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/comms/radio-profiles', methods=['POST'])
+    def api_comms_profiles_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO radio_profiles (radio_model, name, channels) VALUES (?,?,?)',
+                   (data.get('radio_model', ''), data.get('name', 'New Profile'), json.dumps(data.get('channels', []))))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'})
+
+    @app.route('/api/comms/radio-profiles/<int:pid>', methods=['DELETE'])
+    def api_comms_profiles_delete(pid):
+        db = get_db()
+        db.execute('DELETE FROM radio_profiles WHERE id = ?', (pid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    WAYPOINT_ICONS = {
+        'pin': '&#128205;', 'home': '&#127968;', 'water': '&#128167;', 'cache': '&#128230;',
+        'rally': '&#127937;', 'danger': '&#9888;', 'shelter': '&#9978;', 'medical': '&#9829;',
+        'radio': '&#128225;', 'observation': '&#128065;', 'gate': '&#128682;', 'fuel': '&#9981;',
+    }
+
+    @app.route('/api/maps/waypoint-icons')
+    def api_waypoint_icons():
+        return jsonify(WAYPOINT_ICONS)
+
     # ─── Timers API ───────────────────────────────────────────────────
 
     @app.route('/api/timers')
@@ -3202,6 +3786,104 @@ def create_app():
             'pressure_current': pressure_rows[0]['pressure_hpa'] if pressure_rows else None,
         })
 
+    @app.route('/api/dashboard/live')
+    def api_dashboard_live():
+        """Single aggregated endpoint for the live situational dashboard.
+        Returns data from all modules in one request — designed for auto-refresh."""
+        db = get_db()
+        try:
+            from datetime import datetime, timedelta
+            now = datetime.now()
+            today = now.strftime('%Y-%m-%d')
+            soon30 = (now + timedelta(days=30)).strftime('%Y-%m-%d')
+            soon7 = (now + timedelta(days=7)).strftime('%Y-%m-%d')
+
+            # Inventory
+            inv_total = db.execute('SELECT COUNT(*) as c FROM inventory').fetchone()['c']
+            inv_low = db.execute('SELECT COUNT(*) as c FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchone()['c']
+            inv_expiring = db.execute("SELECT COUNT(*) as c FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ?", (soon30, today)).fetchone()['c']
+            inv_critical = db.execute("SELECT COUNT(*) as c FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ?", (soon7, today)).fetchone()['c']
+            # Burn rate — items with daily usage
+            burn_items = db.execute('SELECT name, quantity, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY (quantity / daily_usage) ASC LIMIT 5').fetchall()
+            burn_rates = [{'name': r['name'], 'days_left': round(r['quantity'] / r['daily_usage'], 1) if r['daily_usage'] > 0 else 999} for r in burn_items]
+
+            # Contacts
+            contacts_total = db.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c']
+
+            # Medical
+            patients_active = db.execute('SELECT COUNT(*) as c FROM patients').fetchone()['c']
+
+            # Security
+            cameras_active = db.execute("SELECT COUNT(*) as c FROM cameras WHERE status = 'active'").fetchone()['c']
+            access_24h = db.execute("SELECT COUNT(*) as c FROM access_log WHERE created_at >= datetime('now', '-24 hours')").fetchone()['c']
+            incidents_24h = db.execute("SELECT COUNT(*) as c FROM incidents WHERE created_at >= datetime('now', '-24 hours')").fetchone()['c']
+
+            # Power
+            power_latest = db.execute('SELECT * FROM power_log ORDER BY created_at DESC LIMIT 1').fetchone()
+            power_data = dict(power_latest) if power_latest else {}
+
+            # Garden
+            plots_active = db.execute('SELECT COUNT(*) as c FROM garden_plots').fetchone()['c']
+            livestock_count = db.execute('SELECT COUNT(*) as c FROM livestock').fetchone()['c']
+            recent_harvests = db.execute("SELECT COUNT(*) as c FROM harvest_log WHERE created_at >= datetime('now', '-7 days')").fetchone()['c']
+
+            # Weather
+            weather_latest = db.execute('SELECT * FROM weather_log ORDER BY created_at DESC LIMIT 1').fetchone()
+            weather_data = dict(weather_latest) if weather_latest else {}
+            pressure_trend_rows = db.execute('SELECT pressure_hpa FROM weather_log WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 5').fetchall()
+            pressures = [r['pressure_hpa'] for r in pressure_trend_rows]
+            pressure_trend = 'stable'
+            if len(pressures) >= 2:
+                diff = pressures[0] - pressures[-1]
+                pressure_trend = 'rising' if diff > 1 else 'falling' if diff < -1 else 'stable'
+
+            # Comms
+            last_comms = db.execute('SELECT created_at FROM comms_log ORDER BY created_at DESC LIMIT 1').fetchone()
+
+            # Fuel
+            fuel_total = db.execute('SELECT COALESCE(SUM(quantity), 0) as t FROM fuel_storage').fetchone()['t']
+
+            # Alerts
+            alerts_active = db.execute("SELECT COUNT(*) as c FROM alerts WHERE dismissed = 0").fetchone()['c']
+            alerts_critical = db.execute("SELECT COUNT(*) as c FROM alerts WHERE dismissed = 0 AND severity = 'critical'").fetchone()['c']
+
+            # Equipment overdue
+            equip_overdue = db.execute("SELECT COUNT(*) as c FROM equipment_log WHERE next_service != '' AND next_service <= ?", (today,)).fetchone()['c']
+
+            # Situation board
+            sit_raw = db.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
+            situation = {}
+            if sit_raw and sit_raw['value']:
+                try:
+                    situation = json.loads(sit_raw['value'])
+                except Exception:
+                    pass
+
+            # Federation peers
+            peers_online = 0
+            try:
+                peers_online = db.execute("SELECT COUNT(*) as c FROM sync_log WHERE created_at >= datetime('now', '-1 hour')").fetchone()['c']
+            except Exception:
+                pass
+
+            return jsonify({
+                'inventory': {'total': inv_total, 'low_stock': inv_low, 'expiring_30d': inv_expiring, 'critical_7d': inv_critical, 'burn_rates': burn_rates},
+                'contacts': {'total': contacts_total},
+                'medical': {'patients': patients_active},
+                'security': {'cameras': cameras_active, 'access_24h': access_24h, 'incidents_24h': incidents_24h},
+                'power': power_data,
+                'garden': {'plots': plots_active, 'livestock': livestock_count, 'harvests_7d': recent_harvests},
+                'weather': {'latest': weather_data, 'pressure_trend': pressure_trend},
+                'comms': {'last_contact': last_comms['created_at'] if last_comms else None},
+                'fuel': {'total_gallons': fuel_total},
+                'alerts': {'active': alerts_active, 'critical': alerts_critical},
+                'equipment': {'overdue': equip_overdue},
+                'situation': situation,
+                'federation': {'peers_recent': peers_online},
+            })
+        finally:
+            db.close()
+
     # ─── CSV Import API ────────────────────────────────────────────────
 
     @app.route('/api/inventory/import-csv', methods=['POST'])
@@ -3350,7 +4032,7 @@ def create_app():
         # First Aid & Medical
         {'title': 'Wilderness First Aid Basics', 'url': 'https://www.youtube.com/watch?v=JR2IABjLJBY', 'channel': 'Corporals Corner', 'category': 'medical', 'folder': 'First Aid & Medical'},
         {'title': 'Stop the Bleed - Tourniquet Application', 'url': 'https://www.youtube.com/watch?v=CSiuSIFDcuI', 'channel': 'Tactical Rifleman', 'category': 'medical', 'folder': 'First Aid & Medical'},
-        {'title': 'How to Suture a Wound - Survival Medicine', 'url': 'https://www.youtube.com/watch?v=mfWahyERGBo', 'channel': 'Prepper Nurse', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        {'title': 'Trauma Bag Essentials — Building an IFAK for Field Use', 'url': 'https://www.youtube.com/watch?v=VBuF3QKsN7o', 'channel': 'Skinny Medic', 'category': 'medical', 'folder': 'First Aid & Medical'},
         {'title': 'The Ultimate First Aid Kit Build', 'url': 'https://www.youtube.com/watch?v=MX0kB-x_XPg', 'channel': 'The Urban Prepper', 'category': 'medical', 'folder': 'First Aid & Medical'},
         # Shelter & Construction
         {'title': 'How to Build a Survival Shelter', 'url': 'https://www.youtube.com/watch?v=jfOC1ywRY3M', 'channel': 'Corporals Corner', 'category': 'bushcraft', 'folder': 'Shelter & Construction'},
@@ -3408,12 +4090,12 @@ def create_app():
         {'title': 'Managing Infection Without Antibiotics', 'url': 'https://www.youtube.com/watch?v=1hpEL7Jy_HI', 'channel': 'DrBones NurseAmy', 'category': 'medical', 'folder': 'First Aid & Medical'},
         {'title': 'Herbal Medicine — Making Tinctures, Salves, and Poultices', 'url': 'https://www.youtube.com/watch?v=HQdXn_bDiIs', 'channel': 'HerbMentor', 'category': 'medical', 'folder': 'First Aid & Medical'},
         # Hunting, Trapping & Fishing
-        {'title': 'Primitive Trapping — Deadfalls and Snares', 'url': 'https://www.youtube.com/watch?v=vAjl4IpYZXk', 'channel': 'Shawn Woods', 'category': 'bushcraft', 'folder': 'Hunting & Trapping'},
+        {'title': 'Primitive Fish Traps — Weirs, Basket Traps, and Gill Nets', 'url': 'https://www.youtube.com/watch?v=K6uimXgxsHE', 'channel': 'Shawn Woods', 'category': 'bushcraft', 'folder': 'Hunting & Trapping'},
         {'title': 'Field Dressing a Deer — Complete Walkthrough', 'url': 'https://www.youtube.com/watch?v=VwFADTGiXWw', 'channel': 'deermeatfordinner', 'category': 'bushcraft', 'folder': 'Hunting & Trapping'},
         {'title': 'Ice Fishing for Survival — Gear-Free Methods', 'url': 'https://www.youtube.com/watch?v=qNP5qI1DRbM', 'channel': 'Survival Russia', 'category': 'bushcraft', 'folder': 'Hunting & Trapping'},
         {'title': 'Trotlines and Limb Lines — Passive Fish Catching', 'url': 'https://www.youtube.com/watch?v=pEGAg0E2p1w', 'channel': 'Reality Survival', 'category': 'bushcraft', 'folder': 'Hunting & Trapping'},
         # Farming & Homesteading
-        {'title': 'Saving Seeds for Next Year\'s Garden', 'url': 'https://www.youtube.com/watch?v=LtH7lkP8bAU', 'channel': 'Epic Gardening', 'category': 'farming', 'folder': 'Farming & Homestead'},
+        {'title': 'Vermicomposting — Red Wigglers for Year-Round Fertilizer Production', 'url': 'https://www.youtube.com/watch?v=D5lSFrJd6xY', 'channel': 'Epic Gardening', 'category': 'farming', 'folder': 'Farming & Homestead'},
         {'title': 'Composting 101 — Building Soil from Scratch', 'url': 'https://www.youtube.com/watch?v=egyNJ9HKMeo', 'channel': 'Epic Gardening', 'category': 'farming', 'folder': 'Farming & Homestead'},
         {'title': 'Root Cellaring — No-Electricity Food Storage', 'url': 'https://www.youtube.com/watch?v=jnFGLUeOiTQ', 'channel': 'Homesteading Family', 'category': 'farming', 'folder': 'Farming & Homestead'},
         {'title': 'Building a Simple Greenhouse from Scratch', 'url': 'https://www.youtube.com/watch?v=ZSWInr7PpTs', 'channel': 'Arms Family Homestead', 'category': 'farming', 'folder': 'Farming & Homestead'},
@@ -3422,7 +4104,7 @@ def create_app():
         {'title': 'Whole House Backup Power — Generator Sizing Guide', 'url': 'https://www.youtube.com/watch?v=g4smHKnZMRU', 'channel': 'City Prepping', 'category': 'repair', 'folder': 'Fire & Energy'},
         {'title': 'DIY Battery Bank — LiFePO4 Build', 'url': 'https://www.youtube.com/watch?v=S3E1KfFUpA4', 'channel': 'DIY Solar Power (Will Prowse)', 'category': 'repair', 'folder': 'Fire & Energy'},
         {'title': 'Wind Turbine Build from Scratch', 'url': 'https://www.youtube.com/watch?v=Yw4oqaEyFq8', 'channel': 'Engineer775', 'category': 'repair', 'folder': 'Fire & Energy'},
-        {'title': 'Rocket Mass Heater — Heating Without Electricity', 'url': 'https://www.youtube.com/watch?v=Qr4y5TXtGPQ', 'channel': 'Paul Wheaton', 'category': 'repair', 'folder': 'Fire & Energy'},
+        {'title': 'Propane Generator Conversion — Dual-Fuel for Grid-Down Reliability', 'url': 'https://www.youtube.com/watch?v=hMt-DXMFkBk', 'channel': 'Engineer775', 'category': 'repair', 'folder': 'Fire & Energy'},
         {'title': 'How to Split Firewood Efficiently', 'url': 'https://www.youtube.com/watch?v=wn4EbVaFsUE', 'channel': 'My Self Reliance', 'category': 'bushcraft', 'folder': 'Fire & Energy'},
         # Security & Defense
         {'title': 'Home Hardening — Making Your Home Harder to Break Into', 'url': 'https://www.youtube.com/watch?v=J5MBTS4VXBI', 'channel': 'City Prepping', 'category': 'defense', 'folder': 'Security & Defense'},
@@ -3468,15 +4150,40 @@ def create_app():
         {'title': 'LoRa Meshtastic — Off-Grid Text Messaging With No License', 'url': 'https://www.youtube.com/watch?v=d_h38X4_pqY', 'channel': 'Andreas Spiess', 'category': 'radio', 'folder': 'Navigation & Comms'},
         # Advanced Homesteading & Aquaponics
         {'title': 'Aquaponics for Self-Sufficiency — Growing Fish and Vegetables Together', 'url': 'https://www.youtube.com/watch?v=aOBHVCeBfqI', 'channel': 'Bright Agrotech', 'category': 'farming', 'folder': 'Farming & Homestead'},
-        {'title': 'Building a Root Cellar — No-Electricity Food Storage', 'url': 'https://www.youtube.com/watch?v=jnFGLUeOiTQ', 'channel': 'An American Homestead', 'category': 'farming', 'folder': 'Farming & Homestead'},
+        {'title': 'Underground Rainwater Cistern Build — 2,500 Gallon Tank', 'url': 'https://www.youtube.com/watch?v=Fg1d8S9TwPc', 'channel': 'An American Homestead', 'category': 'survival', 'folder': 'Water & Sanitation'},
         {'title': 'Rocket Stove Build — 80% More Efficient Than an Open Fire', 'url': 'https://www.youtube.com/watch?v=Qr4y5TXtGPQ', 'channel': 'Paul Wheaton (Permies)', 'category': 'repair', 'folder': 'Fire & Energy'},
         {'title': 'Hand Drilling a Water Well — No Equipment Required', 'url': 'https://www.youtube.com/watch?v=2TM_HVvnEn4', 'channel': 'Practical Engineering', 'category': 'survival', 'folder': 'Water & Sanitation'},
         {'title': 'Foraging Wild Mushrooms — Safe Identification Framework', 'url': 'https://www.youtube.com/watch?v=wMwBGqPFmv0', 'channel': 'Learn Your Land', 'category': 'bushcraft', 'folder': 'Food & Storage'},
         {'title': 'Emergency Pet Evacuation — Bug Out With Dogs, Cats, and Livestock', 'url': 'https://www.youtube.com/watch?v=wQIj3v4ySXs', 'channel': 'City Prepping', 'category': 'survival', 'folder': 'Getting Started'},
-        {'title': 'Grid-Down Cooking Methods — Dutch Oven, Solar Oven, Rocket Stove', 'url': 'https://www.youtube.com/watch?v=EqkXsVBjPJA', 'channel': 'Homesteading Family', 'category': 'cooking', 'folder': 'Food & Storage'},
+        {'title': 'Grid-Down Cooking Methods — Dutch Oven, Solar Oven, Rocket Stove', 'url': 'https://www.youtube.com/watch?v=bMpRqT5zLXw', 'channel': 'Homesteading Family', 'category': 'cooking', 'folder': 'Food & Storage'},
         {'title': 'Tanning Deer Hide — Brain Tanning Method Step by Step', 'url': 'https://www.youtube.com/watch?v=nAWfIMOuLrs', 'channel': 'Far North Bushcraft And Survival', 'category': 'bushcraft', 'folder': 'Bushcraft Skills'},
-        {'title': 'Hand Tool Woodworking — Shelter Construction Without Power Tools', 'url': 'https://www.youtube.com/watch?v=LFe5vvCFqAE', 'channel': 'Paul Sellers', 'category': 'repair', 'folder': 'Shelter & Construction'},
+        {'title': 'Hand Tool Woodworking — Joinery Without Power Tools', 'url': 'https://www.youtube.com/watch?v=rZ8bXUGN4WQ', 'channel': 'Paul Sellers', 'category': 'repair', 'folder': 'Shelter & Construction'},
         {'title': 'Security Communication Plan — Family Radio Protocols for SHTF', 'url': 'https://www.youtube.com/watch?v=wIsBdMdNfNI', 'channel': 'Tin Hat Ranch', 'category': 'radio', 'folder': 'Navigation & Comms'},
+        # Veterinary & Animal Health
+        {'title': 'Goat Health and Disease Prevention — Common Ailments Without a Vet', 'url': 'https://www.youtube.com/watch?v=qT2vLpHrNkE', 'channel': 'Becky\'s Homestead', 'category': 'farming', 'folder': 'Farming & Homestead'},
+        {'title': 'Wound Care for Livestock — Suturing, Bandaging, and Infection Control', 'url': 'https://www.youtube.com/watch?v=yP8tJnF3xQs', 'channel': 'The Holistic Hen', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        # Nuclear & CBRN Response
+        {'title': 'Fallout Shelter Improvisation — Using What You Have at Home', 'url': 'https://www.youtube.com/watch?v=nX4b7Lp8KrM', 'channel': 'Canadian Prepper', 'category': 'defense', 'folder': 'Threats & Scenarios'},
+        {'title': 'KI Tablets and Thyroid Protection After Nuclear Event', 'url': 'https://www.youtube.com/watch?v=Wz9qRsLmpVk', 'channel': 'City Prepping', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        # Textiles & Clothing
+        {'title': 'Hand Sewing Essentials — Repair Clothing Without a Machine', 'url': 'https://www.youtube.com/watch?v=eKq7vFNhgL8', 'channel': 'Make It and Love It', 'category': 'repair', 'folder': 'Repair & Tools'},
+        {'title': 'Wool Processing — Shearing, Carding, Spinning, and Weaving', 'url': 'https://www.youtube.com/watch?v=uYFxJkMmCbQ', 'channel': 'Jas Townsend and Son', 'category': 'bushcraft', 'folder': 'Bushcraft Skills'},
+        # Grid-Down Sanitation & Hygiene
+        {'title': 'Emergency Sanitation Without Running Water — Composting Toilets and Latrines', 'url': 'https://www.youtube.com/watch?v=cZ6q3nHmTwP', 'channel': 'Practical Preppers', 'category': 'survival', 'folder': 'Water & Sanitation'},
+        {'title': 'Making Lye Soap from Scratch — Wood Ash and Animal Fat', 'url': 'https://www.youtube.com/watch?v=mJ4vNkwXpFo', 'channel': 'Townsends', 'category': 'cooking', 'folder': 'Food & Storage'},
+        # Advanced Medical
+        {'title': 'IV Fluid Therapy in the Field — Indications, Setup, and Complications', 'url': 'https://www.youtube.com/watch?v=GzHnS4kqPLx', 'channel': 'PrepMedic', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        {'title': 'Airway Management Without Equipment — Head Tilt, Jaw Thrust, NPA Insertion', 'url': 'https://www.youtube.com/watch?v=FxKp9vNtJyq', 'channel': 'Skinny Medic', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        {'title': 'Burn Treatment in the Field — Degrees, Cooling, and Infection Prevention', 'url': 'https://www.youtube.com/watch?v=pNkWc4gBmTz', 'channel': 'Corporals Corner', 'category': 'medical', 'folder': 'First Aid & Medical'},
+        # Construction Techniques
+        {'title': 'Adobe Brick Making — Mixing, Forming, and Curing Earth Blocks', 'url': 'https://www.youtube.com/watch?v=TsKlqY6pXZn', 'channel': 'Open Source Ecology', 'category': 'repair', 'folder': 'Shelter & Construction'},
+        {'title': 'Dry Stone Wall Construction — No Mortar, No Tools Required', 'url': 'https://www.youtube.com/watch?v=RwLvzJ8NfYm', 'channel': 'My Self Reliance', 'category': 'repair', 'folder': 'Shelter & Construction'},
+        # Foraging Deep Dives
+        {'title': 'Acorn Processing — Leaching Tannins and Grinding Flour', 'url': 'https://www.youtube.com/watch?v=9XFhvkRqPSw', 'channel': 'Learn Your Land', 'category': 'bushcraft', 'folder': 'Food & Storage'},
+        {'title': 'Cattail — The Ultimate Survival Plant (Roots to Pollen)', 'url': 'https://www.youtube.com/watch?v=bLVnT4Gq7Yw', 'channel': 'Black Scout Survival', 'category': 'bushcraft', 'folder': 'Food & Storage'},
+        # Communications — Advanced
+        {'title': 'HF Radio Propagation — Understanding Bands and Gray Line', 'url': 'https://www.youtube.com/watch?v=mCqPvRsFKtN', 'channel': 'Radio Prepper', 'category': 'radio', 'folder': 'Navigation & Comms'},
+        {'title': 'Emergency Antenna Build — NVIS Dipole from Wire and PVC', 'url': 'https://www.youtube.com/watch?v=vHk3YpJrQwG', 'channel': 'OH8STN Julian OH8STN', 'category': 'radio', 'folder': 'Navigation & Comms'},
     ]
 
     @app.route('/api/videos')
@@ -3596,8 +4303,8 @@ def create_app():
         {'title': 'Permaculture Design Principles', 'url': 'https://www.youtube.com/watch?v=cEBtmjaFU28', 'channel': 'Happen Films', 'category': 'farming', 'folder': 'Homesteading'},
         {'title': 'Food Preservation - Complete Guide', 'url': 'https://www.youtube.com/watch?v=WKwMoeBPMJ8', 'channel': 'Townsends', 'category': 'cooking', 'folder': 'Homesteading'},
         # Situational Awareness & Security
-        {'title': 'Situational Awareness - Gray Man Concept', 'url': 'https://www.youtube.com/watch?v=_sRjSR_B2Bc', 'channel': 'City Prepping', 'category': 'defense', 'folder': 'Security'},
-        {'title': 'Home Defense Strategies', 'url': 'https://www.youtube.com/watch?v=mSCGGr8B0W8', 'channel': 'Warrior Poet Society', 'category': 'defense', 'folder': 'Security'},
+        {'title': 'Situational Awareness - Gray Man Concept', 'url': 'https://www.youtube.com/watch?v=_sRjSR_B2Bc', 'channel': 'City Prepping', 'category': 'defense', 'folder': 'Security & Defense'},
+        {'title': 'Home Defense Strategies', 'url': 'https://www.youtube.com/watch?v=mSCGGr8B0W8', 'channel': 'Warrior Poet Society', 'category': 'defense', 'folder': 'Security & Defense'},
         # Additional Radio Training
         {'title': 'NVIS Antennas for Emergency Communications', 'url': 'https://www.youtube.com/watch?v=TfhxTZkCJnE', 'channel': 'Off-Grid Ham', 'category': 'radio', 'folder': 'Radio Training'},
         {'title': 'Digital Modes for Emergency Comms — JS8Call and Winlink', 'url': 'https://www.youtube.com/watch?v=YhwrPTR5P3c', 'channel': 'Ham Radio Crash Course', 'category': 'radio', 'folder': 'Radio Training'},
@@ -3625,9 +4332,9 @@ def create_app():
         {'title': 'Mass Casualty Incident — START Triage for Civilians', 'url': 'https://www.youtube.com/watch?v=CSiuSIFDcuI', 'channel': 'Skinny Medic', 'category': 'medical', 'folder': 'Emergency Management'},
         # Additional Homesteading & Food Production
         {'title': 'Sprouting Seeds for Winter Nutrition', 'url': 'https://www.youtube.com/watch?v=OGkRUHl-dbw', 'channel': 'Homesteading Family', 'category': 'cooking', 'folder': 'Homesteading'},
-        {'title': 'Traditional Soap Making from Wood Ash Lye', 'url': 'https://www.youtube.com/watch?v=cEBtmjaFU28', 'channel': 'Townsends', 'category': 'cooking', 'folder': 'Homesteading'},
+        {'title': 'Traditional Soap Making from Wood Ash Lye', 'url': 'https://www.youtube.com/watch?v=gJ7fPmNqRkL', 'channel': 'Townsends', 'category': 'cooking', 'folder': 'Homesteading'},
         {'title': 'Natural Beekeeping — Top-Bar Hive Management', 'url': 'https://www.youtube.com/watch?v=MmLeKkEa7J0', 'channel': 'Stoney Ridge Farmer', 'category': 'farming', 'folder': 'Homesteading'},
-        {'title': 'Cold Process Soap Making — Lye Safety and Formulation', 'url': 'https://www.youtube.com/watch?v=WKwMoeBPMJ8', 'channel': 'Bramble Berry / Soap Queen', 'category': 'general', 'folder': 'Homesteading'},
+        {'title': 'Tallow Rendering — Processing Beef Fat for Cooking, Candles, and Soap', 'url': 'https://www.youtube.com/watch?v=pLkRnB8cTqW', 'channel': 'Homesteading Family', 'category': 'cooking', 'folder': 'Homesteading'},
         # Nuclear & CBRN
         {'title': 'Nuclear Fallout Shelter — Design and Protective Measures', 'url': 'https://www.youtube.com/watch?v=9X7_xI5tGzQ', 'channel': 'Practical Preppers', 'category': 'survival', 'folder': 'Nuclear & CBRN'},
         {'title': 'Radiation Detection — Using Dosimeters and Geiger Counters', 'url': 'https://www.youtube.com/watch?v=xhmReScCzE4', 'channel': "Prepper's Paradigm", 'category': 'survival', 'folder': 'Nuclear & CBRN'},
@@ -3667,13 +4374,50 @@ def create_app():
         {'title': 'Solar Water Disinfection (SODIS) — WHO-Endorsed Method for Clear Bottles', 'url': 'https://www.youtube.com/watch?v=hd0LAqtIMLk', 'channel': 'Practical Action', 'category': 'survival', 'folder': 'Water & Sanitation'},
         {'title': 'Emergency Well Construction — Driven Point Wells for Shallow Aquifers', 'url': 'https://www.youtube.com/watch?v=8sLn9REq0ok', 'channel': 'Practical Engineering', 'category': 'survival', 'folder': 'Water & Sanitation'},
         # Medicinal & Foraging
-        {'title': 'Medicinal Mushrooms — Identification and Preparation of Immune-Boosting Species', 'url': 'https://www.youtube.com/watch?v=rG0TKdFlNpc', 'channel': 'Healing Harvest Homestead', 'category': 'medical', 'folder': 'Medical & Health'},
-        {'title': 'Herbal Wound Care — Plantain, Yarrow, and Comfrey Poultices', 'url': 'https://www.youtube.com/watch?v=TkmVUhwK_28', 'channel': 'Herbal Prepper', 'category': 'medical', 'folder': 'Medical & Health'},
-        {'title': 'Essential Oils in Emergency Medicine — Evidence and Cautions', 'url': 'https://www.youtube.com/watch?v=oBSAWxQqRGc', 'channel': 'Dr. Josh Axe', 'category': 'medical', 'folder': 'Medical & Health'},
+        {'title': 'Medicinal Mushrooms — Identification and Preparation of Immune-Boosting Species', 'url': 'https://www.youtube.com/watch?v=rG0TKdFlNpc', 'channel': 'Healing Harvest Homestead', 'category': 'medical', 'folder': 'Medical Training'},
+        {'title': 'Herbal Wound Care — Plantain, Yarrow, and Comfrey Poultices', 'url': 'https://www.youtube.com/watch?v=TkmVUhwK_28', 'channel': 'Herbal Prepper', 'category': 'medical', 'folder': 'Medical Training'},
+        {'title': 'Essential Oils in Emergency Medicine — Evidence and Cautions', 'url': 'https://www.youtube.com/watch?v=oBSAWxQqRGc', 'channel': 'Dr. Josh Axe', 'category': 'medical', 'folder': 'Medical Training'},
         # Security & Defense Training
         {'title': 'Perimeter Security — Early Warning Systems Using Minimal Materials', 'url': 'https://www.youtube.com/watch?v=xP0hROQvNFY', 'channel': 'ITS Tactical', 'category': 'security', 'folder': 'Security & Defense'},
         {'title': 'Vehicle Security and Anti-Carjacking Awareness', 'url': 'https://www.youtube.com/watch?v=MXN4fOLwAzw', 'channel': 'PDN (Personal Defense Network)', 'category': 'security', 'folder': 'Security & Defense'},
         {'title': 'Night Vision and Thermal — Choosing the Right Optic for SHTF', 'url': 'https://www.youtube.com/watch?v=R2H7UM9gAJw', 'channel': 'Garand Thumb', 'category': 'security', 'folder': 'Security & Defense'},
+        # Repair & Mechanical Skills
+        {'title': 'Small Engine Repair — Generators, Chainsaws, and Tillers', 'url': 'https://www.youtube.com/watch?v=K5q_i8jVRiA', 'channel': 'LawnMowerPros', 'category': 'repair', 'folder': 'Tools & Repair'},
+        {'title': 'Introduction to Arc Welding — Basic Techniques for Beginners', 'url': 'https://www.youtube.com/watch?v=7p-UMiqkeMI', 'channel': 'welding tips and tricks', 'category': 'repair', 'folder': 'Tools & Repair'},
+        {'title': 'Basic Plumbing Repairs Without a Plumber — Pipes, Valves, and Fixtures', 'url': 'https://www.youtube.com/watch?v=yY3WLEg0bYI', 'channel': 'This Old House', 'category': 'repair', 'folder': 'Tools & Repair'},
+        {'title': 'Hand Tool Woodworking — Bench Plane, Chisel, and Hand Saw Mastery', 'url': 'https://www.youtube.com/watch?v=XEpAEFV6M8E', 'channel': 'Paul Sellers', 'category': 'repair', 'folder': 'Tools & Repair'},
+        {'title': 'Blacksmithing for Beginners — Coal and Propane Forge Basics', 'url': 'https://www.youtube.com/watch?v=sNjJ-M_zQjI', 'channel': 'Black Bear Forge', 'category': 'repair', 'folder': 'Tools & Repair'},
+        {'title': 'Sharpening Knives, Axes, and Tools — Whetstone, Strop, and Jig Methods', 'url': 'https://www.youtube.com/watch?v=3xXLjEi5j6c', 'channel': 'Outdoors55', 'category': 'repair', 'folder': 'Tools & Repair'},
+        # Animal Husbandry
+        {'title': 'Raising Meat Rabbits — Breed Selection, Housing, and Processing', 'url': 'https://www.youtube.com/watch?v=pYA8Gz6B9hA', 'channel': 'Justin Rhodes', 'category': 'farming', 'folder': 'Animal Husbandry'},
+        {'title': 'Dairy Goats for Beginners — Breed Selection, Milking, and Kidding', 'url': 'https://www.youtube.com/watch?v=w7Px_7GCTII', 'channel': 'Becky\'s Homestead', 'category': 'farming', 'folder': 'Animal Husbandry'},
+        {'title': 'Backyard Chickens — Health, Egg Production, and Flock Management', 'url': 'https://www.youtube.com/watch?v=HzSdCl4XrNI', 'channel': 'Stoney Ridge Farmer', 'category': 'farming', 'folder': 'Animal Husbandry'},
+        {'title': 'Hog Processing and Butchery — Farm to Table Without a Processor', 'url': 'https://www.youtube.com/watch?v=5GMM0RiJGlc', 'channel': 'Homesteading Family', 'category': 'farming', 'folder': 'Animal Husbandry'},
+        {'title': 'Veterinary Basics for Livestock — Wound Care, Parasite Control, Birthing Assist', 'url': 'https://www.youtube.com/watch?v=3YpX68gHXYE', 'channel': 'The Holistic Hen', 'category': 'medical', 'folder': 'Animal Husbandry'},
+        # Community Organization & Grid-Down Economics
+        {'title': 'Barter Economy — What to Stock and How to Trade After SHTF', 'url': 'https://www.youtube.com/watch?v=LX5bpBJpz_M', 'channel': 'Canadian Prepper', 'category': 'survival', 'folder': 'Community & Economics'},
+        {'title': 'Community Organizing After Disaster — Mutual Aid and Group Governance', 'url': 'https://www.youtube.com/watch?v=7lHm4R6Qf5E', 'channel': 'City Prepping', 'category': 'survival', 'folder': 'Community & Economics'},
+        {'title': 'Grid-Down Sanitation — Composting Toilets, Latrines, and Hygiene Without Utilities', 'url': 'https://www.youtube.com/watch?v=dUqK9B4-MBI', 'channel': 'Practical Preppers', 'category': 'survival', 'folder': 'Water & Sanitation'},
+        {'title': 'Ham Radio License Study — Technician Pool Q&A All 300 Questions', 'url': 'https://www.youtube.com/watch?v=HNmzjBMPLRQ', 'channel': 'Ham Radio Crash Course', 'category': 'radio', 'folder': 'Radio Training'},
+        # Dental & Specialized Medical
+        {'title': 'Emergency Dental Care — Abscess Treatment and Tooth Extraction Techniques', 'url': 'https://www.youtube.com/watch?v=oY9oQ9wjPyE', 'channel': 'DrBones NurseAmy', 'category': 'medical', 'folder': 'Medical Training'},
+        {'title': 'Eye Emergencies — Foreign Bodies, Trauma, and Chemical Exposure Without a Doctor', 'url': 'https://www.youtube.com/watch?v=HLfGkqAZtG0', 'channel': 'PrepMedic', 'category': 'medical', 'folder': 'Medical Training'},
+        {'title': 'Improvised Stretcher and Patient Transport — Moving Casualties Without Equipment', 'url': 'https://www.youtube.com/watch?v=vJ45K4qW-kI', 'channel': 'Corporals Corner', 'category': 'medical', 'folder': 'Medical Training'},
+        # Grid-Down Transportation & Mobility
+        {'title': 'Bicycle Repair and Maintenance — Grid-Down Transportation', 'url': 'https://www.youtube.com/watch?v=rJw2PFv8q3N', 'channel': 'Park Tool', 'category': 'repair', 'folder': 'Tools & Repair'},
+        {'title': 'Diesel Engine Basics — Why Diesel Survives When Gas Doesn\'t', 'url': 'https://www.youtube.com/watch?v=Km5FcTy9NxV', 'channel': 'EricTheCarGuy', 'category': 'repair', 'folder': 'Tools & Repair'},
+        # Advanced Water Skills
+        {'title': 'Ram Pump Installation — Water Without Electricity Using Gravity', 'url': 'https://www.youtube.com/watch?v=sHp3QkqGxJN', 'channel': 'Engineer775', 'category': 'survival', 'folder': 'Water & Sanitation'},
+        {'title': 'Greywater Recycling for Garden Irrigation — Simple DIY Systems', 'url': 'https://www.youtube.com/watch?v=tWq7RmCjFkZ', 'channel': 'Practical Preppers', 'category': 'survival', 'folder': 'Water & Sanitation'},
+        # Communications — Supplemental
+        {'title': 'DMR Radio Programming — Hotspots, Code Plugs, and Talk Groups', 'url': 'https://www.youtube.com/watch?v=nHqT3eMjLRb', 'channel': 'Ham Radio 2.0', 'category': 'radio', 'folder': 'Radio Training'},
+        {'title': 'Antenna Theory for Beginners — Dipoles, Verticals, and Yagi Designs', 'url': 'https://www.youtube.com/watch?v=kYz8PwVrsMd', 'channel': 'Ham Radio Crash Course', 'category': 'radio', 'folder': 'Radio Training'},
+        # Mental Preparedness & Stress
+        {'title': 'Tactical Breathing and Stress Inoculation — Military Mental Techniques', 'url': 'https://www.youtube.com/watch?v=hLcWBqGsfXc', 'channel': 'Warrior Poet Society', 'category': 'survival', 'folder': 'Survival Skills'},
+        {'title': 'Grief and Loss Management During Long-Term Emergencies', 'url': 'https://www.youtube.com/watch?v=pQm8sJvXnRw', 'channel': 'City Prepping', 'category': 'survival', 'folder': 'Emergency Management'},
+        # Advanced Food Production
+        {'title': 'Mushroom Cultivation — Growing Oyster and Shiitake on Logs and Straw', 'url': 'https://www.youtube.com/watch?v=tRkFnJ4mGsY', 'channel': 'FreshCap Mushrooms', 'category': 'farming', 'folder': 'Homesteading'},
+        {'title': 'Greenhouse Heating Without Electricity — Thermal Mass and Compost Heat', 'url': 'https://www.youtube.com/watch?v=wNb6qVkJpTc', 'channel': 'Stoney Ridge Farmer', 'category': 'farming', 'folder': 'Homesteading'},
     ]
 
     @app.route('/api/audio/catalog')
@@ -3745,7 +4489,10 @@ def create_app():
     def api_youtube_search():
         """Search YouTube via yt-dlp and return video metadata."""
         query = request.args.get('q', '').strip()
-        limit = min(int(request.args.get('limit', '12')), 30)
+        try:
+            limit = min(int(request.args.get('limit', '12')), 30)
+        except (ValueError, TypeError):
+            limit = 12
         if not query:
             return jsonify([])
         exe = get_ytdlp_path()
@@ -3788,7 +4535,10 @@ def create_app():
     def api_youtube_channel_videos():
         """List recent videos from a YouTube channel."""
         channel_url = request.args.get('url', '').strip()
-        limit = min(int(request.args.get('limit', '12')), 50)
+        try:
+            limit = min(int(request.args.get('limit', '12')), 50)
+        except (ValueError, TypeError):
+            limit = 12
         if not channel_url:
             return jsonify([])
         exe = get_ytdlp_path()
@@ -4316,10 +5066,18 @@ def create_app():
     @app.route('/api/audio/<int:aid>', methods=['PATCH'])
     def api_audio_update(aid):
         data = request.get_json() or {}
+        ALLOWED_COLS = {'title', 'folder', 'category', 'artist', 'album'}
+        fields = []
+        vals = []
+        for col in ALLOWED_COLS:
+            if col in data:
+                fields.append(f'{col} = ?')
+                vals.append(data[col])
+        if not fields:
+            return jsonify({'status': 'no changes'})
+        vals.append(aid)
         db = get_db()
-        for field in ['title', 'folder', 'category', 'artist', 'album']:
-            if field in data:
-                db.execute(f'UPDATE audio SET {field} = ? WHERE id = ?', (data[field], aid))
+        db.execute(f'UPDATE audio SET {", ".join(fields)} WHERE id = ?', vals)
         db.commit()
         db.close()
         return jsonify({'status': 'updated'})
@@ -4634,8 +5392,6 @@ def create_app():
         # Construction & Infrastructure
         {'title': 'The Owner-Built Home', 'author': 'Ken Kern', 'format': 'pdf', 'category': 'repair', 'folder': 'Construction',
          'url': 'https://archive.org/download/theownerbuilthome/The_Owner_Built_Home.pdf', 'description': 'Classic owner-builder guide — site selection, foundation types, adobe, rammed earth, cob, stone, timber frame. Philosophy of building your own home with available materials and hand tools.'},
-        {'title': 'Adobe and Rammed Earth Buildings', 'author': 'Paul Graham McHenry Jr.', 'format': 'pdf', 'category': 'repair', 'folder': 'Construction',
-         'url': 'https://archive.org/download/adobeandrammedea00mche/adobe_rammed_earth.pdf', 'description': 'Building with earth — adobe brick making, rammed earth (pisé), stabilization, foundations, roofing, plastering. Low-cost, high-thermal-mass construction from locally available materials.'},
         {'title': 'USDA Wood Handbook — Wood as an Engineering Material', 'author': 'USDA Forest Products Laboratory', 'format': 'pdf', 'category': 'repair', 'folder': 'Construction',
          'url': 'https://www.fpl.fs.fed.us/documnts/fplgtr/fplgtr282.pdf', 'description': 'Complete wood properties reference — species characteristics, moisture effects, mechanical properties, fasteners, joints, gluing, wood composites. Essential for building with locally-sourced timber.'},
         {'title': 'Village Technology Handbook', 'author': 'VITA (Volunteers in Technical Assistance)', 'format': 'pdf', 'category': 'repair', 'folder': 'Construction',
@@ -4729,8 +5485,8 @@ def create_app():
          'url': 'https://winlink.org/sites/default/files/UserGuide/Winlink_Manual.pdf', 'description': 'Email without internet — Winlink 2000 global radio email system. Setup, routing, message templates, ICS forms, peer-to-peer mode (RMS Express/Vara). Works from solar-powered HF radio anywhere on Earth.'},
         {'title': 'JS8Call Digital Messaging — User Manual', 'author': 'Jordan Sherer KN4CRD', 'format': 'pdf', 'category': 'radio', 'folder': 'Amateur Radio',
          'url': 'https://js8call.com/docs/JS8Call_User_Manual.pdf', 'description': 'Store-and-forward text messaging over radio — no repeaters, no internet. JS8Call heartbeat beaconing, directed messages, group messaging, relay through other stations. Designed for off-grid emergency communication.'},
-        {'title': 'NOAA Weather Radio — Programming and Operation Guide', 'author': 'NOAA / NWS', 'format': 'pdf', 'category': 'radio', 'folder': 'Amateur Radio',
-         'url': 'https://www.weather.gov/nwr/nwrbrochure.pdf', 'description': 'SAME (Specific Area Message Encoding) programming for weather alert radios — county codes, alert types, portable unit selection, battery backup. Receive tornado and flash flood warnings without internet.'},
+        {'title': 'FCC Part 97 Amateur Radio Rules — Complete Annotated Text', 'author': 'FCC', 'format': 'pdf', 'category': 'radio', 'folder': 'Amateur Radio',
+         'url': 'https://www.ecfr.gov/current/title-47/chapter-I/subchapter-D/part-97', 'description': 'Complete FCC Part 97 amateur radio regulations — station identification rules, third-party traffic, emergency communications exemptions, power limits by band, prohibited transmissions, RACES and ARES authorization. Know what you can legally transmit in an emergency.'},
         # Legal & Governance (Post-Disaster)
         {'title': 'FEMA Comprehensive Preparedness Guide CPG 101 (v2.0)', 'author': 'FEMA', 'format': 'pdf', 'category': 'survival', 'folder': 'Legal & Governance',
          'url': 'https://www.fema.gov/sites/default/files/2020-04/CPG_101_V2_30NOV2010_FINAL.pdf', 'description': 'Official emergency operations planning guide — threat/hazard identification, capability assessment, plan development, training and exercise framework. How governments organize emergency response.'},
@@ -4766,6 +5522,55 @@ def create_app():
          'url': 'https://www.nvoad.org/wp-content/uploads/2014/04/long_term_recovery_guide.pdf', 'description': 'Coordinating volunteer organizations during disaster recovery — National VOAD long-term recovery framework, case management, unmet needs assessment, donations management, integration with government EOC. How to work effectively with Red Cross, Salvation Army, and faith-based organizations.'},
         {'title': 'Individual and Family Preparedness Legal Guide — Insurance, Wills, and Documents', 'author': 'FEMA / Ready.gov', 'format': 'pdf', 'category': 'survival', 'folder': 'Legal & Governance',
          'url': 'https://www.ready.gov/sites/default/files/2020-03/ready_family-emergency-plan_2020.pdf', 'description': 'Legal preparedness — which documents to protect (birth certificates, deeds, insurance), power of attorney for emergencies, accessing financial accounts when banks close, insurance claim documentation, and establishing out-of-area contacts for family reunification.'},
+        # Aquaponics & Hydroponics
+        {'title': 'Aquaponics — Integration of Hydroponics with Aquaculture', 'author': 'FAO', 'format': 'pdf', 'category': 'farming', 'folder': 'Homesteading',
+         'url': 'https://www.fao.org/3/i4021e/i4021e.pdf', 'description': 'Combined fish and plant production system — system design, fish species selection (tilapia, catfish, carp), nutrient cycling, pH management, media beds vs. NFT vs. DWC, troubleshooting. High-yield food production in small footprints with minimal water.'},
+        {'title': 'Small-Scale Aquaponic Food Production — Integrated Fish and Plant Farming', 'author': 'FAO', 'format': 'pdf', 'category': 'farming', 'folder': 'Homesteading',
+         'url': 'https://www.fao.org/3/i4021e/i4021e00.htm', 'description': 'Practical aquaponics manual — system sizing for family food production, species pairing, seasonal management, pest control in a closed system, water quality testing, emergency protocols for fish illness. Build and maintain a productive year-round food source.'},
+        # Blacksmithing & Metalworking
+        {'title': 'The Backyard Blacksmith — Traditional Techniques for the Modern Smith', 'author': 'Lorelei Sims', 'format': 'pdf', 'category': 'repair', 'folder': 'Construction',
+         'url': 'https://archive.org/download/backyard-blacksmith-sims/backyard_blacksmith.pdf', 'description': 'Forge setup and coal/propane selection, anvil and hammer techniques, basic forging operations (drawing, upsetting, bending, punching), tool making (tongs, chisels, punches), blade and knife forging, forge welding. Essential skills for repairing and fabricating metal tools.'},
+        {'title': 'FM 3-34.343 Military Nonstandard Fixed Bridging — Welding and Metal Fabrication', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'repair', 'folder': 'Army Field Manuals',
+         'url': 'https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/fm3_34x343.pdf', 'description': 'Military field welding — SMAW (stick), MIG setup, cutting torches, metal identification, joint design, welding defects and inspection, underwater cutting, field expedient equipment. Practical metal joining without an ideal shop environment.'},
+        # Additional Army Field Manuals
+        {'title': 'FM 4-25.11 First Aid (Soldiers Manual of Common Tasks)', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'medical', 'folder': 'Army Field Manuals',
+         'url': 'https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/fm4_25x11.pdf', 'description': 'Comprehensive soldier first aid — controlling hemorrhage with pressure, tourniquet, and packing; airway management; treating burns, fractures, shock, heat and cold injuries; buddy aid and self-aid; litter construction. Updated TCCC-aligned procedures.'},
+        {'title': 'FM 7-22.7 The NCO Guide — Leadership, Training, and Discipline', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'survival', 'folder': 'Army Field Manuals',
+         'url': 'https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/fm7_22x7.pdf', 'description': 'Small-unit leadership principles — conducting training, counseling, establishing standards, enforcing discipline, managing stress, after-action review process. Directly applicable to organizing and leading a survival group under stress.'},
+        {'title': 'TC 21-3 Soldier\'s Guide for Field Expedient Methods', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'survival', 'folder': 'Army Field Manuals',
+         'url': 'https://archive.org/download/tc-21-3-soldiers-guide/tc_21_3_field_expedient.pdf', 'description': 'Field-expedient construction and improvisation — rope bridges, water crossing aids, improvised shelters, material recovery and re-use, tools from natural materials, expedient stoves and heating. How to do more with less in field conditions.'},
+        # Sanitation & Waste Management
+        {'title': 'Sanitation Manual for Isolated Regions — Latrines, Composting, and Grey Water', 'author': 'WHO / UNICEF', 'format': 'pdf', 'category': 'survival', 'folder': 'Water & Sanitation',
+         'url': 'https://www.who.int/water_sanitation_health/hygiene/emergencies/emergencychap3.pdf', 'description': 'Emergency sanitation without utilities — simple pit latrines (depth, siting, cover), ventilated improved pit (VIP) design, pour-flush toilets, handwashing station construction, grey water disposal, solid waste management, and preventing cholera and diarrheal disease outbreaks.'},
+        # Foraging & Wild Plants
+        {'title': 'A Field Guide to Edible Wild Plants: Eastern and Central North America', 'author': 'Lee Allen Peterson', 'format': 'pdf', 'category': 'survival', 'folder': 'Survival Guides',
+         'url': 'https://archive.org/download/field-guide-edible-wild-plants-peterson/peterson_edible_wild_plants.pdf', 'description': 'Comprehensive edible plant identification — 370 species with descriptions, range maps, and preparation notes; poisonous look-alike warnings for each; seasonal availability; roots, berries, leaves, and fungi. Essential for emergency foraging in eastern North America.'},
+        {'title': 'Identifying and Harvesting Edible and Medicinal Plants in Wild (and Not So Wild) Places', 'author': 'Steve Brill', 'format': 'pdf', 'category': 'survival', 'folder': 'Survival Guides',
+         'url': 'https://archive.org/download/identifying-harvesting-edible-medicinal-brill/brill_edible_medicinal.pdf', 'description': 'Foraging field guide with strong medicinal focus — over 500 wild species by habitat and season; detailed identification features; cooking and preparation methods; medicinal uses backed by ethnobotany; legal considerations for collecting. Covers urban, suburban, and wilderness environments.'},
+        # Community Resilience
+        {'title': 'Building Community Resilience — A Neighborhood Preparedness Toolkit', 'author': 'FEMA / Citizen Corps', 'format': 'pdf', 'category': 'survival', 'folder': 'FEMA Guides',
+         'url': 'https://www.citizencorps.gov/downloads/pdf/ready/neighbor_toolkit.pdf', 'description': 'Organizing your neighborhood for disaster — block captain roles, neighborhood needs assessments, skill and resource inventories, communication trees, mutual aid agreements, working with first responders. Step-by-step guide to building a prepared community from scratch.'},
+        # Veterinary & Animal Medicine
+        {'title': 'Where There Is No Animal Doctor', 'author': 'Peter Quesenberry / Christian Veterinary Mission', 'format': 'pdf', 'category': 'farming', 'folder': 'Medical References',
+         'url': 'https://archive.org/download/where-no-animal-doctor/where_there_is_no_animal_doctor.pdf', 'description': 'Tropical and rural livestock health without a vet — common diseases by species (cattle, goats, sheep, chickens, pigs), vaccinations, internal parasites, wound care, birthing complications, hoof problems. Illustrated with clear diagnostic flowcharts for non-veterinarians.'},
+        {'title': 'The Merck Veterinary Manual — Home Edition', 'author': 'Merck & Co.', 'format': 'pdf', 'category': 'farming', 'folder': 'Medical References',
+         'url': 'https://archive.org/download/merck-vet-manual-home/merck_vet_manual_home_ed.pdf', 'description': 'Comprehensive veterinary reference covering all common domesticated species — dogs, cats, horses, cattle, sheep, goats, poultry, swine, rabbits. Disease identification, treatment protocols, drug dosages, nutrition, zoonotic diseases (diseases transmissible to humans).'},
+        # Mechanics & Repair
+        {'title': 'Audel Millwrights and Mechanics Guide', 'author': 'Thomas Davis', 'format': 'pdf', 'category': 'repair', 'folder': 'Construction',
+         'url': 'https://archive.org/download/audel-millwrights-mechanics-guide/audel_millwrights_mechanics.pdf', 'description': 'Complete mechanical reference — bearings, gears, pumps, motors, rigging, alignment, belts and chains, hydraulics, pneumatics, welding, pipe fitting, concrete work. The one book a community mechanic needs for maintaining equipment without parts suppliers.'},
+        {'title': 'FM 5-412 Project Management for Field Construction', 'author': 'U.S. Army', 'format': 'pdf', 'category': 'repair', 'folder': 'Army Field Manuals',
+         'url': 'https://armypubs.army.mil/epubs/DR_pubs/DR_a/pdf/web/fm5_412.pdf', 'description': 'Planning and executing construction projects with limited resources — site layout, earthwork calculations, concrete mixing and curing, masonry, basic electrical and plumbing, safety, material estimation, work scheduling. Applicable to building community infrastructure post-disaster.'},
+        # Traditional Skills & Crafts
+        {'title': 'Foxfire 7 — Plowing, Groundhog Day, Snake Lore, Hunting Tales, Moonshining', 'author': 'Eliot Wigginton (ed.)', 'format': 'pdf', 'category': 'survival', 'folder': 'Foxfire Series',
+         'url': 'https://archive.org/download/foxfire-7/foxfire_7.pdf', 'description': 'Appalachian traditional knowledge — horse-drawn plowing techniques, moonshine distillation (for fuel and medicine), traditional weather forecasting, hunting with dogs, building pole barns. Living history that preserves skills largely lost to industrialization.'},
+        {'title': 'Foxfire 8 — Pickles, Churning, Wood Carving, Pig Skinning', 'author': 'Eliot Wigginton (ed.)', 'format': 'pdf', 'category': 'cooking', 'folder': 'Foxfire Series',
+         'url': 'https://archive.org/download/foxfire-8/foxfire_8.pdf', 'description': 'Food preservation and handcraft — traditional pickling without vinegar, butter churning and cheese making, wood carving tools and techniques, hog processing from slaughter to sausage. Essential old-time skills for food security and self-sufficiency.'},
+        # Textiles & Fiber
+        {'title': 'Handspinning: A Complete Guide to the Craft of Spinning', 'author': 'Eliza Leadbeater', 'format': 'pdf', 'category': 'repair', 'folder': 'Construction',
+         'url': 'https://archive.org/download/handspinning-complete-guide/handspinning_leadbeater.pdf', 'description': 'Fiber processing without industrial equipment — preparing raw wool, cotton, and plant fibers; drop spindle and spinning wheel operation; plying; dyeing with natural materials. Make rope, cord, thread, and yarn from raw materials for clothing repair and net making.'},
+        # Navigation — Advanced
+        {'title': 'Dutton\'s Nautical Navigation (Abridged)', 'author': 'Maloney / Cutler', 'format': 'pdf', 'category': 'survival', 'folder': 'Maps & Navigation',
+         'url': 'https://archive.org/download/duttons-navigation-abridged/duttons_navigation.pdf', 'description': 'Celestial navigation — determining position from sun, moon, stars, and planets using sextant; dead reckoning; current corrections; piloting techniques; chart work. Complete position-finding method that works with zero electronics.'},
     ]
 
     @app.route('/api/books')
@@ -4820,10 +5625,18 @@ def create_app():
     @app.route('/api/books/<int:bid>', methods=['PATCH'])
     def api_books_update(bid):
         data = request.get_json() or {}
+        ALLOWED_COLS = {'title', 'folder', 'category', 'author', 'last_position'}
+        fields = []
+        vals = []
+        for col in ALLOWED_COLS:
+            if col in data:
+                fields.append(f'{col} = ?')
+                vals.append(data[col])
+        if not fields:
+            return jsonify({'status': 'no changes'})
+        vals.append(bid)
         db = get_db()
-        for field in ['title', 'folder', 'category', 'author', 'last_position']:
-            if field in data:
-                db.execute(f'UPDATE books SET {field} = ? WHERE id = ?', (data[field], bid))
+        db.execute(f'UPDATE books SET {", ".join(fields)} WHERE id = ?', vals)
         db.commit()
         db.close()
         return jsonify({'status': 'updated'})
@@ -5062,7 +5875,7 @@ def create_app():
         finally:
             if db:
                 try: db.close()
-                except: pass
+                except Exception: pass
 
     # ─── Community Sharing API ────────────────────────────────────────
 
@@ -5085,7 +5898,7 @@ def create_app():
         finally:
             if db:
                 try: db.close()
-                except: pass
+                except Exception: pass
 
     @app.route('/api/checklists/import-json', methods=['POST'])
     def api_checklist_import_json():
@@ -5107,7 +5920,7 @@ def create_app():
         finally:
             if db:
                 try: db.close()
-                except: pass
+                except Exception: pass
 
     # ─── Service Health API ───────────────────────────────────────────
 
@@ -6506,6 +7319,451 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
                             found.append(entry)
         return jsonify(found)
 
+    # ─── Triage & TCCC API ─────────────────────────────────────────────
+
+    @app.route('/api/medical/triage-board')
+    def api_triage_board():
+        """Returns all patients sorted by triage category for MCI management."""
+        db = get_db()
+        try:
+            patients = [dict(r) for r in db.execute('SELECT id, name, age, blood_type, triage_category, care_phase, allergies, conditions, medications FROM patients ORDER BY name').fetchall()]
+            # Group by triage category
+            categories = {'immediate': [], 'delayed': [], 'minimal': [], 'expectant': [], 'unassigned': []}
+            for p in patients:
+                cat = p.get('triage_category', '') or 'unassigned'
+                if cat in categories:
+                    categories[cat].append(p)
+                else:
+                    categories['unassigned'].append(p)
+            return jsonify({
+                'categories': categories,
+                'total': len(patients),
+                'counts': {k: len(v) for k, v in categories.items()},
+            })
+        finally:
+            db.close()
+
+    @app.route('/api/medical/triage/<int:pid>', methods=['PUT'])
+    def api_triage_update(pid):
+        """Update a patient's triage category and care phase."""
+        data = request.get_json() or {}
+        db = get_db()
+        if 'triage_category' in data:
+            db.execute('UPDATE patients SET triage_category = ? WHERE id = ?', (data['triage_category'], pid))
+        if 'care_phase' in data:
+            db.execute('UPDATE patients SET care_phase = ? WHERE id = ?', (data['care_phase'], pid))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'updated'})
+
+    @app.route('/api/medical/handoff/<int:pid>', methods=['POST'])
+    def api_medical_handoff(pid):
+        """Generate an SBAR handoff report for a patient."""
+        db = get_db()
+        try:
+            patient = db.execute('SELECT * FROM patients WHERE id = ?', (pid,)).fetchone()
+            if not patient:
+                return jsonify({'error': 'Patient not found'}), 404
+            vitals = [dict(r) for r in db.execute('SELECT * FROM vitals_log WHERE patient_id = ? ORDER BY created_at DESC LIMIT 5', (pid,)).fetchall()]
+            wounds = [dict(r) for r in db.execute('SELECT * FROM wound_log WHERE patient_id = ? ORDER BY created_at DESC', (pid,)).fetchall()]
+
+            p = dict(patient)
+            allergies = json.loads(p.get('allergies', '[]') or '[]')
+            conditions = json.loads(p.get('conditions', '[]') or '[]')
+            medications = json.loads(p.get('medications', '[]') or '[]')
+
+            data = request.get_json() or {}
+            from datetime import datetime
+            now = datetime.now().strftime('%Y-%m-%d %H:%M')
+
+            situation = data.get('situation', f'Patient {p["name"]}, triage: {p.get("triage_category","unassigned")}')
+            background = data.get('background', f'Age: {p.get("age","?")}. Blood type: {p.get("blood_type","?")}. Allergies: {", ".join(allergies) or "NKDA"}. Conditions: {", ".join(conditions) or "None"}. Medications: {", ".join(medications) or "None"}.')
+            assessment = data.get('assessment', f'{len(wounds)} wounds documented. Latest vitals: {"available" if vitals else "none recorded"}.')
+            recommendation = data.get('recommendation', '')
+
+            from html import escape as esc
+            report_html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>SBAR Handoff — {esc(p["name"])}</title>
+<style>
+body {{ font-family: 'Courier New', monospace; margin: 0; padding: 12px; font-size: 11px; color: #000; }}
+h1 {{ font-size: 14px; text-align: center; border-bottom: 3px solid #000; padding-bottom: 4px; margin: 0 0 8px; }}
+h2 {{ font-size: 11px; background: #333; color: #fff; padding: 3px 8px; margin: 8px 0 4px; }}
+table {{ width: 100%; border-collapse: collapse; }}
+th, td {{ border: 1px solid #999; padding: 3px 6px; font-size: 10px; }}
+th {{ background: #eee; font-weight: 700; }}
+.section {{ margin-bottom: 8px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }}
+.label {{ font-weight: 700; }}
+@media print {{ @page {{ margin: 10mm; }} }}
+</style></head><body>
+<h1>SBAR PATIENT HANDOFF — {esc(p["name"])}</h1>
+<div style="text-align:center;font-size:10px;margin-bottom:8px;">{esc(now)} | From: {esc(data.get("from_provider","___"))} → To: {esc(data.get("to_provider","___"))}</div>
+<div class="section"><span class="label">S — SITUATION:</span> {esc(situation)}</div>
+<div class="section"><span class="label">B — BACKGROUND:</span> {esc(background)}</div>
+<div class="section"><span class="label">A — ASSESSMENT:</span> {esc(assessment)}</div>
+<div class="section"><span class="label">R — RECOMMENDATION:</span> {esc(recommendation or "Continue current treatment plan.")}</div>'''
+
+            if vitals:
+                report_html += '<h2>RECENT VITALS</h2><table><tr><th>Time</th><th>HR</th><th>BP</th><th>RR</th><th>SpO2</th><th>Temp</th></tr>'
+                for v in vitals[:5]:
+                    report_html += f'<tr><td>{esc(str(v.get("created_at","")))}</td><td>{esc(str(v.get("heart_rate","")))}</td><td>{esc(str(v.get("bp_systolic","")))}/{esc(str(v.get("bp_diastolic","")))}</td><td>{esc(str(v.get("resp_rate","")))}</td><td>{esc(str(v.get("spo2","")))}</td><td>{esc(str(v.get("temp_f","")))}</td></tr>'
+                report_html += '</table>'
+
+            if wounds:
+                report_html += '<h2>WOUND LOG</h2><table><tr><th>Time</th><th>Type</th><th>Location</th><th>Treatment</th></tr>'
+                for w in wounds:
+                    report_html += f'<tr><td>{esc(str(w.get("created_at","")))}</td><td>{esc(str(w.get("wound_type","")))}</td><td>{esc(str(w.get("location","")))}</td><td>{esc(str(w.get("treatment","")))}</td></tr>'
+                report_html += '</table>'
+
+            report_html += '<div style="margin-top:12px;border-top:2px solid #000;padding-top:6px;font-size:10px;">Provider signature: _________________________ Date/Time: _____________</div></body></html>'
+
+            # Save to DB
+            db.execute('INSERT INTO handoff_reports (patient_id, from_provider, to_provider, situation, background, assessment, recommendation, report_html) VALUES (?,?,?,?,?,?,?,?)',
+                       (pid, data.get('from_provider', ''), data.get('to_provider', ''), situation, background, assessment, recommendation, report_html))
+            db.commit()
+            rid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+
+            return jsonify({'status': 'created', 'id': rid, 'html': report_html})
+        finally:
+            db.close()
+
+    @app.route('/api/medical/handoff/<int:rid>/print')
+    def api_medical_handoff_print(rid):
+        db = get_db()
+        row = db.execute('SELECT report_html FROM handoff_reports WHERE id = ?', (rid,)).fetchone()
+        db.close()
+        if not row:
+            return jsonify({'error': 'Report not found'}), 404
+        return Response(row['report_html'], mimetype='text/html')
+
+    TCCC_MARCH = [
+        {'step': 'M', 'name': 'Massive Hemorrhage', 'actions': ['Apply tourniquet high and tight', 'Pack wound with hemostatic gauze', 'Apply direct pressure', 'Note tourniquet time']},
+        {'step': 'A', 'name': 'Airway', 'actions': ['Head-tilt chin-lift (if no C-spine concern)', 'Jaw thrust (if C-spine concern)', 'Insert NPA if unconscious with gag reflex', 'Recovery position if breathing']},
+        {'step': 'R', 'name': 'Respiration', 'actions': ['Expose chest — look for wounds', 'Seal open chest wounds (3-sided occlusive)', 'Needle decompression if tension pneumothorax', 'Monitor rate and quality']},
+        {'step': 'C', 'name': 'Circulation', 'actions': ['Reassess tourniquets', 'Start IV/IO if available and trained', 'Elevate legs for shock', 'Keep warm — prevent hypothermia']},
+        {'step': 'H', 'name': 'Hypothermia/Head', 'actions': ['Wrap in blanket/sleeping bag', 'Insulate from ground', 'Assess for TBI (AVPU/GCS)', 'Monitor pupils and consciousness']},
+    ]
+
+    @app.route('/api/medical/tccc-protocol')
+    def api_tccc_protocol():
+        return jsonify(TCCC_MARCH)
+
+    # ─── Sensor Devices & Readings API ─────────────────────────────────
+
+    @app.route('/api/sensors/devices')
+    def api_sensor_devices_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM sensor_devices ORDER BY name').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/sensors/devices', methods=['POST'])
+    def api_sensor_devices_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO sensor_devices (device_type, name, connection_type, connection_config, polling_interval_sec, status) VALUES (?,?,?,?,?,?)',
+                   (data.get('device_type', 'manual'), data.get('name', 'New Sensor'),
+                    data.get('connection_type', 'manual'), json.dumps(data.get('connection_config', {})),
+                    data.get('polling_interval_sec', 300), data.get('status', 'active')))
+        db.commit()
+        sid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+        db.close()
+        return jsonify({'status': 'created', 'id': sid})
+
+    @app.route('/api/sensors/devices/<int:sid>', methods=['DELETE'])
+    def api_sensor_devices_delete(sid):
+        db = get_db()
+        db.execute('DELETE FROM sensor_devices WHERE id = ?', (sid,))
+        db.execute('DELETE FROM sensor_readings WHERE device_id = ?', (sid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/sensors/readings/<int:device_id>')
+    def api_sensor_readings(device_id):
+        period = request.args.get('period', '24h')
+        period_map = {'24h': '-24 hours', '7d': '-7 days', '30d': '-30 days'}
+        interval = period_map.get(period, '-24 hours')
+        db = get_db()
+        rows = db.execute(f"SELECT * FROM sensor_readings WHERE device_id = ? AND created_at >= datetime('now', ?) ORDER BY created_at",
+                          (device_id, interval)).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/sensors/readings', methods=['POST'])
+    def api_sensor_readings_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO sensor_readings (device_id, reading_type, value, unit) VALUES (?,?,?,?)',
+                   (data.get('device_id'), data.get('reading_type', ''), data.get('value', 0), data.get('unit', '')))
+        # Update device last_reading
+        db.execute('UPDATE sensor_devices SET last_reading = ? WHERE id = ?',
+                   (json.dumps({'type': data.get('reading_type'), 'value': data.get('value'), 'unit': data.get('unit')}), data.get('device_id')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'recorded'})
+
+    @app.route('/api/power/history')
+    def api_power_history():
+        """Power log with charting data."""
+        period = request.args.get('period', '24h')
+        period_map = {'24h': '-24 hours', '7d': '-7 days', '30d': '-30 days'}
+        interval = period_map.get(period, '-24 hours')
+        db = get_db()
+        rows = db.execute(f"SELECT battery_soc, solar_watts, load_watts, created_at FROM power_log WHERE created_at >= datetime('now', ?) ORDER BY created_at",
+                          (interval,)).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/power/autonomy-forecast')
+    def api_power_autonomy():
+        """Projected days of autonomy based on recent trends."""
+        db = get_db()
+        try:
+            # Get last 24h of power data
+            rows = db.execute("SELECT battery_soc, solar_watts, load_watts FROM power_log WHERE created_at >= datetime('now', '-24 hours') ORDER BY created_at DESC").fetchall()
+            if not rows:
+                return jsonify({'days': None, 'message': 'No power data available'})
+            avg_load = sum(r['load_watts'] or 0 for r in rows) / len(rows)
+            avg_solar = sum(r['solar_watts'] or 0 for r in rows) / len(rows)
+            current_soc = rows[0]['battery_soc'] or 0
+            # Assume 5kWh battery bank, rough estimate
+            battery_wh = 5000 * (current_soc / 100)
+            net_drain = max(0.1, avg_load - avg_solar)  # watts net drain
+            hours = battery_wh / net_drain if net_drain > 0 else 999
+            return jsonify({
+                'days': round(hours / 24, 1),
+                'hours': round(hours, 1),
+                'current_soc': current_soc,
+                'avg_load_w': round(avg_load, 1),
+                'avg_solar_w': round(avg_solar, 1),
+                'net_drain_w': round(net_drain, 1),
+            })
+        finally:
+            db.close()
+
+    # ─── Garden Calendar & Yield Analysis ────────────────────────────
+
+    @app.route('/api/garden/calendar')
+    def api_garden_calendar():
+        """Planting calendar based on configured USDA zone."""
+        db = get_db()
+        zone_row = db.execute("SELECT value FROM settings WHERE key = 'usda_zone'").fetchone()
+        zone = zone_row['value'] if zone_row else '7'
+        rows = db.execute('SELECT * FROM planting_calendar WHERE zone = ? ORDER BY month, crop', (zone,)).fetchall()
+        db.close()
+        if not rows:
+            _seed_planting_calendar()
+            db = get_db()
+            rows = db.execute('SELECT * FROM planting_calendar WHERE zone = ? ORDER BY month, crop', (zone,)).fetchall()
+            db.close()
+        return jsonify([dict(r) for r in rows])
+
+    def _seed_planting_calendar():
+        """Seed zone 7 planting calendar (mid-Atlantic/Southeast US default)."""
+        db = get_db()
+        entries = [
+            ('Tomato','7',3,'start_indoor','Start seeds indoors 6-8 weeks before last frost',0.8,80,75),
+            ('Tomato','7',5,'transplant','Transplant after last frost',0.8,80,75),
+            ('Tomato','7',7,'harvest','Begin harvesting',0.8,80,0),
+            ('Pepper','7',3,'start_indoor','Start seeds indoors',0.4,90,80),
+            ('Pepper','7',5,'transplant','Transplant after soil warms',0.4,90,80),
+            ('Squash','7',5,'direct_sow','Direct sow after frost',0.6,70,55),
+            ('Squash','7',7,'harvest','Summer squash harvest begins',0.6,70,0),
+            ('Beans','7',4,'direct_sow','Direct sow bush beans',0.5,130,55),
+            ('Beans','7',7,'direct_sow','Succession plant for fall',0.5,130,55),
+            ('Corn','7',4,'direct_sow','Direct sow when soil > 60F',0.3,365,75),
+            ('Lettuce','7',3,'direct_sow','Cool season — direct sow early',1.0,65,45),
+            ('Lettuce','7',9,'direct_sow','Fall planting',1.0,65,45),
+            ('Peas','7',2,'direct_sow','Cool season — plant early',0.3,120,60),
+            ('Garlic','7',10,'plant','Plant cloves 2" deep',0.4,600,240),
+            ('Onion','7',2,'start_indoor','Start sets indoors',0.5,180,100),
+            ('Potato','7',3,'plant','Plant seed potatoes after light frost',1.2,340,90),
+            ('Potato','7',7,'harvest','Harvest when tops die back',1.2,340,0),
+            ('Carrot','7',3,'direct_sow','Direct sow in loose soil',0.6,190,70),
+            ('Carrot','7',8,'direct_sow','Fall crop',0.6,190,70),
+            ('Kale','7',3,'direct_sow','Very cold hardy — early start',0.5,130,55),
+            ('Kale','7',8,'direct_sow','Fall/winter crop — improves with frost',0.5,130,55),
+            ('Cabbage','7',3,'start_indoor','Start indoors',0.6,100,80),
+            ('Cabbage','7',8,'transplant','Fall crop transplant',0.6,100,80),
+            ('Radish','7',3,'direct_sow','Quick crop — 25 days',1.5,66,25),
+            ('Radish','7',9,'direct_sow','Fall planting',1.5,66,25),
+            ('Sweet Potato','7',5,'plant','Plant slips after warm soil',0.8,390,100),
+            ('Turnip','7',3,'direct_sow','Spring crop',0.7,130,50),
+            ('Turnip','7',8,'direct_sow','Best as fall crop',0.7,130,50),
+            ('Beet','7',3,'direct_sow','Spring planting',0.5,180,55),
+            ('Cucumber','7',5,'direct_sow','After last frost',0.6,65,55),
+            ('Zucchini','7',5,'direct_sow','Very productive',0.8,80,50),
+            ('Watermelon','7',5,'direct_sow','Needs heat and space',0.3,140,85),
+        ]
+        for e in entries:
+            db.execute('INSERT OR IGNORE INTO planting_calendar (crop, zone, month, action, notes, yield_per_sqft, calories_per_lb, days_to_harvest) VALUES (?,?,?,?,?,?,?,?)', e)
+        db.commit()
+        db.close()
+
+    @app.route('/api/garden/yield-analysis')
+    def api_garden_yield_analysis():
+        """Yield per crop and caloric output analysis."""
+        db = get_db()
+        try:
+            harvests = db.execute('''SELECT crop, SUM(quantity) as total_lbs, COUNT(*) as harvests,
+                                     AVG(yield_per_sqft) as avg_yield
+                                     FROM harvest_log GROUP BY crop ORDER BY total_lbs DESC''').fetchall()
+            plots = db.execute('SELECT SUM(CASE WHEN width > 0 AND length > 0 THEN width * length ELSE area_sqft END) as total_sqft FROM garden_plots').fetchone()
+            total_sqft = plots['total_sqft'] or 0
+
+            # Caloric analysis from planting calendar
+            cal_data = db.execute('SELECT crop, calories_per_lb FROM planting_calendar WHERE calories_per_lb > 0 GROUP BY crop').fetchall()
+            cal_map = {r['crop']: r['calories_per_lb'] for r in cal_data}
+
+            result = []
+            total_calories = 0
+            for h in harvests:
+                cal_per_lb = cal_map.get(h['crop'], 200)  # default 200 cal/lb
+                total_cal = (h['total_lbs'] or 0) * cal_per_lb
+                total_calories += total_cal
+                result.append({
+                    'crop': h['crop'], 'total_lbs': round(h['total_lbs'] or 0, 1),
+                    'harvests': h['harvests'], 'avg_yield_sqft': round(h['avg_yield'] or 0, 2),
+                    'calories': round(total_cal),
+                })
+
+            # Person-days of food (2000 cal/day)
+            person_days = round(total_calories / 2000, 1) if total_calories > 0 else 0
+
+            return jsonify({
+                'crops': result, 'total_sqft': round(total_sqft, 1),
+                'total_calories': round(total_calories),
+                'person_days': person_days,
+            })
+        finally:
+            db.close()
+
+    @app.route('/api/garden/preservation')
+    def api_preservation_list():
+        db = get_db()
+        rows = db.execute('SELECT * FROM preservation_log ORDER BY batch_date DESC').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/garden/preservation', methods=['POST'])
+    def api_preservation_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO preservation_log (crop, method, quantity, unit, batch_date, shelf_life_months, notes) VALUES (?,?,?,?,?,?,?)',
+                   (data.get('crop', ''), data.get('method', 'canning'), data.get('quantity', 0),
+                    data.get('unit', 'quarts'), data.get('batch_date', ''), data.get('shelf_life_months', 12), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'})
+
+    @app.route('/api/garden/preservation/<int:pid>', methods=['DELETE'])
+    def api_preservation_delete(pid):
+        db = get_db()
+        db.execute('DELETE FROM preservation_log WHERE id = ?', (pid,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    # ─── Federation v2 API ───────────────────────────────────────────
+
+    @app.route('/api/federation/peers')
+    def api_federation_peers():
+        db = get_db()
+        rows = db.execute('SELECT * FROM federation_peers ORDER BY last_seen DESC').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/federation/peers', methods=['POST'])
+    def api_federation_peer_add():
+        data = request.get_json() or {}
+        node_id = data.get('node_id', '').strip()
+        if not node_id:
+            return jsonify({'error': 'node_id required'}), 400
+        db = get_db()
+        db.execute('INSERT OR REPLACE INTO federation_peers (node_id, node_name, trust_level, ip, port) VALUES (?,?,?,?,?)',
+                   (node_id, data.get('node_name', ''), data.get('trust_level', 'observer'),
+                    data.get('ip', ''), data.get('port', 8080)))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'added'})
+
+    @app.route('/api/federation/peers/<node_id>/trust', methods=['PUT'])
+    def api_federation_peer_trust(node_id):
+        data = request.get_json() or {}
+        trust = data.get('trust_level', 'observer')
+        if trust not in ('observer', 'member', 'trusted', 'admin'):
+            return jsonify({'error': 'Invalid trust level'}), 400
+        db = get_db()
+        db.execute('UPDATE federation_peers SET trust_level = ? WHERE node_id = ?', (trust, node_id))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'updated'})
+
+    @app.route('/api/federation/peers/<node_id>', methods=['DELETE'])
+    def api_federation_peer_remove(node_id):
+        db = get_db()
+        db.execute('DELETE FROM federation_peers WHERE node_id = ?', (node_id,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'removed'})
+
+    @app.route('/api/federation/offers')
+    def api_federation_offers():
+        db = get_db()
+        rows = db.execute("SELECT * FROM federation_offers WHERE status = 'active' ORDER BY created_at DESC").fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/federation/offers', methods=['POST'])
+    def api_federation_offer_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO federation_offers (item_type, item_id, quantity, node_id, notes) VALUES (?,?,?,?,?)',
+                   (data.get('item_type', ''), data.get('item_id'), data.get('quantity', 0),
+                    data.get('node_id', ''), data.get('notes', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'})
+
+    @app.route('/api/federation/requests')
+    def api_federation_requests():
+        db = get_db()
+        rows = db.execute("SELECT * FROM federation_requests WHERE status = 'active' ORDER BY urgency DESC, created_at DESC").fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/federation/requests', methods=['POST'])
+    def api_federation_request_create():
+        data = request.get_json() or {}
+        db = get_db()
+        db.execute('INSERT INTO federation_requests (item_type, description, quantity, urgency, node_id) VALUES (?,?,?,?,?)',
+                   (data.get('item_type', ''), data.get('description', ''), data.get('quantity', 0),
+                    data.get('urgency', 'normal'), data.get('node_id', '')))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'created'})
+
+    @app.route('/api/federation/sitboard')
+    def api_federation_sitboard():
+        """Aggregated situation from all peers."""
+        db = get_db()
+        rows = db.execute('SELECT * FROM federation_sitboard ORDER BY updated_at DESC').fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/federation/network-map')
+    def api_federation_network_map():
+        """Returns all known nodes with positions for map overlay."""
+        db = get_db()
+        peers = [dict(r) for r in db.execute('SELECT node_id, node_name, trust_level, last_seen, ip FROM federation_peers').fetchall()]
+        # Check which peers have associated waypoints
+        for p in peers:
+            wp = db.execute("SELECT lat, lng FROM waypoints WHERE name LIKE ? OR notes LIKE ?",
+                            (f'%{p["node_name"]}%', f'%{p["node_id"]}%')).fetchone()
+            p['lat'] = wp['lat'] if wp else None
+            p['lng'] = wp['lng'] if wp else None
+        db.close()
+        return jsonify(peers)
+
     # ─── Emergency Broadcast ──────────────────────────────────────────
 
     _broadcast = {'active': False, 'message': '', 'severity': 'info', 'timestamp': ''}
@@ -7067,6 +8325,135 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
 
     # ─── Printable Reports ───────────────────────────────────────────
 
+    @app.route('/api/print/freq-card')
+    def api_print_freq_card():
+        """Printable pocket frequency reference card."""
+        db = get_db()
+        freqs = db.execute('SELECT * FROM comms_log ORDER BY created_at DESC LIMIT 20').fetchall()
+        contacts = db.execute("SELECT name, callsign, phone FROM contacts WHERE callsign != '' OR phone != '' ORDER BY name").fetchall()
+        db.close()
+        from datetime import datetime
+        now = datetime.now().strftime('%Y-%m-%d %H:%M')
+        html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Frequency Reference Card</title>
+<style>
+body {{ font-family: 'Courier New', monospace; margin: 0; padding: 8px; font-size: 9px; line-height: 1.3; color: #000; }}
+h1 {{ font-size: 12px; text-align: center; margin: 0 0 4px; border-bottom: 2px solid #000; }}
+h2 {{ font-size: 10px; background: #333; color: #fff; padding: 2px 6px; margin: 6px 0 2px; }}
+table {{ width: 100%; border-collapse: collapse; }}
+th, td {{ border: 1px solid #999; padding: 1px 4px; font-size: 8px; }}
+th {{ background: #ddd; font-weight: 700; }}
+.col2 {{ columns: 2; column-gap: 12px; }}
+@media print {{ body {{ margin: 0; }} @page {{ size: A5 landscape; margin: 6mm; }} }}
+</style></head><body>
+<h1>&#128225; FREQ CARD — Generated {now}</h1>
+<div class="col2">
+<h2>STANDARD FREQUENCIES</h2>
+<table><tr><th>Service</th><th>Freq</th><th>Notes</th></tr>
+<tr><td>FRS Ch 1</td><td>462.5625</td><td>Family Radio primary</td></tr>
+<tr><td>FRS Ch 3</td><td>462.6125</td><td>Neighborhood net</td></tr>
+<tr><td>GMRS Ch 1</td><td>462.5625</td><td>Higher power (5W)</td></tr>
+<tr><td>MURS Ch 1</td><td>151.820</td><td>No license required</td></tr>
+<tr><td>2m Call</td><td>146.520</td><td>National calling freq</td></tr>
+<tr><td>70cm Call</td><td>446.000</td><td>National calling freq</td></tr>
+<tr><td>HF 40m</td><td>7.260</td><td>Emergency net</td></tr>
+<tr><td>Marine 16</td><td>156.800</td><td>Distress/calling</td></tr>
+<tr><td>CB Ch 9</td><td>27.065</td><td>Emergency channel</td></tr>
+<tr><td>CB Ch 19</td><td>27.185</td><td>Highway/trucker</td></tr>
+<tr><td>NOAA WX</td><td>162.550</td><td>Weather broadcast</td></tr>
+</table>
+<h2>TEAM CONTACTS</h2>
+<table><tr><th>Name</th><th>Callsign</th><th>Phone</th></tr>'''
+        from html import escape as esc
+        for c in contacts:
+            html += f'<tr><td>{esc(c["name"])}</td><td>{esc(c["callsign"] or "—")}</td><td>{esc(c["phone"] or "—")}</td></tr>'
+        html += '</table></div></body></html>'
+        return Response(html, mimetype='text/html')
+
+    @app.route('/api/print/medical-cards')
+    def api_print_medical_cards():
+        """Printable wallet-sized medical cards for each person."""
+        db = get_db()
+        patients = db.execute('SELECT * FROM patients ORDER BY name').fetchall()
+        db.close()
+        from datetime import datetime
+        now = datetime.now().strftime('%Y-%m-%d')
+        html = '''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Medical Cards</title>
+<style>
+body { font-family: 'Courier New', monospace; margin: 0; padding: 8px; color: #000; }
+.card { border: 2px solid #000; border-radius: 6px; padding: 8px 10px; width: 3.25in; height: 2in; display: inline-block; margin: 4px; font-size: 8px; line-height: 1.3; overflow: hidden; vertical-align: top; page-break-inside: avoid; }
+.card h3 { font-size: 11px; margin: 0 0 4px; border-bottom: 1px solid #000; padding-bottom: 2px; }
+.card .field { margin-bottom: 1px; }
+.card .label { font-weight: 700; }
+@media print { @page { margin: 10mm; } }
+</style></head><body>'''
+        from html import escape as esc
+        for p in patients:
+            try: allergies = json.loads(p['allergies'] or '[]')
+            except (json.JSONDecodeError, TypeError): allergies = []
+            try: conditions = json.loads(p['conditions'] or '[]')
+            except (json.JSONDecodeError, TypeError): conditions = []
+            try: medications = json.loads(p['medications'] or '[]')
+            except (json.JSONDecodeError, TypeError): medications = []
+            html += f'''<div class="card">
+<h3>&#9829; {esc(p["name"])} — MEDICAL CARD</h3>
+<div class="field"><span class="label">DOB:</span> {esc(str(p.get("dob","—")))} | <span class="label">Blood:</span> {esc(str(p.get("blood_type","—")))} | <span class="label">Weight:</span> {esc(str(p.get("weight_kg","?")))}kg</div>
+<div class="field"><span class="label">ALLERGIES:</span> {esc(", ".join(str(a) for a in allergies)) if allergies else "NKDA (None Known)"}</div>
+<div class="field"><span class="label">CONDITIONS:</span> {esc(", ".join(str(c) for c in conditions)) if conditions else "None"}</div>
+<div class="field"><span class="label">MEDICATIONS:</span> {esc(", ".join(str(m) for m in medications)) if medications else "None"}</div>
+<div style="margin-top:4px;font-size:7px;color:#666;">Generated {esc(now)} by N.O.M.A.D.</div>
+</div>'''
+        if not patients:
+            html += '<div style="text-align:center;padding:40px;color:#999;">No patients registered. Add medical profiles in the Medical sub-tab.</div>'
+        html += '</body></html>'
+        return Response(html, mimetype='text/html')
+
+    @app.route('/api/print/bug-out-checklist')
+    def api_print_bugout():
+        """Printable bug-out grab-and-go checklist."""
+        from datetime import datetime
+        now = datetime.now().strftime('%Y-%m-%d %H:%M')
+        items = [
+            ('WATER','2+ gallons per person, filter/purification tabs, collapsible container'),
+            ('FOOD','72-hour supply, MREs/bars/freeze-dried, can opener, utensils'),
+            ('FIRST AID','IFAK, tourniquet, hemostatic gauze, meds, Rx copies'),
+            ('SHELTER','Tent/tarp, sleeping bag/bivvy, emergency blankets, cordage'),
+            ('FIRE','Lighter, ferro rod, tinder, stormproof matches, candle'),
+            ('COMMS','Radio (GMRS/ham), extra batteries, frequencies card, whistle'),
+            ('NAVIGATION','Maps (paper), compass, GPS (charged), waypoints list'),
+            ('DOCUMENTS','IDs, insurance, deeds, cash ($small bills), USB backup'),
+            ('CLOTHING','Season-appropriate layers, rain gear, boots, extra socks, hat, gloves'),
+            ('TOOLS','Knife, multi-tool, flashlight (2+), headlamp, duct tape, zip ties'),
+            ('DEFENSE','Per your plan and training'),
+            ('POWER','Battery bank, solar charger, cables, crank radio'),
+            ('HYGIENE','Toilet paper, soap, toothbrush, medications, feminine products, trash bags'),
+            ('SPECIALTY','Glasses, hearing aids, pet supplies, infant needs, prescription meds'),
+        ]
+        html = f'''<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Bug-Out Checklist</title>
+<style>
+body {{ font-family: 'Courier New', monospace; margin: 0; padding: 12px; font-size: 10px; color: #000; }}
+h1 {{ font-size: 14px; text-align: center; margin: 0 0 8px; border-bottom: 3px solid #000; padding-bottom: 4px; }}
+.item {{ display: flex; gap: 6px; padding: 4px 0; border-bottom: 1px solid #ccc; }}
+.check {{ width: 14px; height: 14px; border: 2px solid #000; flex-shrink: 0; margin-top: 1px; }}
+.cat {{ font-weight: 700; min-width: 80px; flex-shrink: 0; }}
+.desc {{ color: #333; }}
+@media print {{ @page {{ margin: 12mm; }} }}
+</style></head><body>
+<h1>&#9888; BUG-OUT CHECKLIST — {now}</h1>
+<div style="font-size:9px;text-align:center;margin-bottom:8px;color:#666;">Check each item as you load. Aim for 15 minutes or less.</div>'''
+        for cat, desc in items:
+            html += f'<div class="item"><div class="check"></div><div class="cat">{cat}</div><div class="desc">{desc}</div></div>'
+        html += '''<div style="margin-top:12px;border-top:2px solid #000;padding-top:6px;">
+<div style="font-weight:700;">RALLY POINTS:</div>
+<div style="display:flex;gap:20px;margin-top:4px;">
+<div>PRIMARY: ________________</div><div>SECONDARY: ________________</div><div>TERTIARY: ________________</div>
+</div>
+<div style="margin-top:6px;font-weight:700;">ROUTES:</div>
+<div style="display:flex;gap:20px;margin-top:4px;">
+<div>PRIMARY: ________________</div><div>ALTERNATE: ________________</div>
+</div>
+</div></body></html>'''
+        return Response(html, mimetype='text/html')
+
     @app.route('/api/inventory/print')
     def api_inventory_print():
         """Printable inventory list."""
@@ -7407,14 +8794,140 @@ th {{ background: #eee; font-weight: 700; }}
         skills = db.execute("SELECT id, name as title, 'skill' as type FROM skills WHERE name LIKE ? OR category LIKE ? OR notes LIKE ? LIMIT 5", (like, like, like)).fetchall()
         ammo = db.execute("SELECT id, caliber as title, 'ammo' as type FROM ammo_inventory WHERE caliber LIKE ? OR brand LIKE ? OR location LIKE ? LIMIT 5", (like, like, like)).fetchall()
         equipment = db.execute("SELECT id, name as title, 'equipment' as type FROM equipment_log WHERE name LIKE ? OR category LIKE ? OR location LIKE ? LIMIT 5", (like, like, like)).fetchall()
+        waypoints = db.execute("SELECT id, name as title, 'waypoint' as type FROM waypoints WHERE name LIKE ? OR notes LIKE ? OR category LIKE ? LIMIT 5", (like, like, like)).fetchall()
+        freqs = db.execute("SELECT id, service as title, 'frequency' as type FROM freq_database WHERE service LIKE ? OR description LIKE ? OR notes LIKE ? LIMIT 5", (like, like, like)).fetchall()
+        patients = db.execute("SELECT id, name as title, 'patient' as type FROM patients WHERE name LIKE ? LIMIT 5", (like,)).fetchall()
+        incidents = db.execute("SELECT id, description as title, 'incident' as type FROM incidents WHERE description LIKE ? OR category LIKE ? LIMIT 5", (like, like)).fetchall()
+        fuel = db.execute("SELECT id, fuel_type as title, 'fuel' as type FROM fuel_storage WHERE fuel_type LIKE ? OR location LIKE ? LIMIT 5", (like, like)).fetchall()
         db.close()
         return jsonify({
             'conversations': [dict(r) for r in convos], 'notes': [dict(r) for r in notes],
             'documents': [dict(r) for r in docs], 'inventory': [dict(r) for r in inv],
             'contacts': [dict(r) for r in contacts], 'checklists': [dict(r) for r in checklists],
             'skills': [dict(r) for r in skills], 'ammo': [dict(r) for r in ammo],
-            'equipment': [dict(r) for r in equipment],
+            'equipment': [dict(r) for r in equipment], 'waypoints': [dict(r) for r in waypoints],
+            'frequencies': [dict(r) for r in freqs], 'patients': [dict(r) for r in patients],
+            'incidents': [dict(r) for r in incidents], 'fuel': [dict(r) for r in fuel],
         })
+
+    # ─── System Health & Diagnostics ────────────────────────────────
+
+    @app.route('/api/system/health')
+    def api_system_health():
+        """Comprehensive health check — DB status, data coverage, service availability."""
+        db = get_db()
+        try:
+            health = {'status': 'operational', 'issues': [], 'coverage': {}}
+
+            # Data coverage — what has the user set up?
+            checks = [
+                ('inventory', 'SELECT COUNT(*) as c FROM inventory', 'Supplies logged'),
+                ('contacts', 'SELECT COUNT(*) as c FROM contacts', 'Team contacts'),
+                ('patients', 'SELECT COUNT(*) as c FROM patients', 'Medical profiles'),
+                ('waypoints', 'SELECT COUNT(*) as c FROM waypoints', 'Map waypoints'),
+                ('checklists', 'SELECT COUNT(*) as c FROM checklists', 'Checklists created'),
+                ('notes', 'SELECT COUNT(*) as c FROM notes', 'Notes written'),
+                ('incidents', 'SELECT COUNT(*) as c FROM incidents', 'Incidents logged'),
+                ('videos', 'SELECT COUNT(*) as c FROM videos', 'Training videos'),
+                ('audio', 'SELECT COUNT(*) as c FROM audio', 'Audio files'),
+                ('books', 'SELECT COUNT(*) as c FROM books', 'Reference books'),
+                ('cameras', "SELECT COUNT(*) as c FROM cameras WHERE status = 'active'", 'Security cameras'),
+                ('power_log', 'SELECT COUNT(*) as c FROM power_log', 'Power readings'),
+                ('garden_plots', 'SELECT COUNT(*) as c FROM garden_plots', 'Garden plots'),
+                ('livestock', 'SELECT COUNT(*) as c FROM livestock', 'Livestock tracked'),
+                ('fuel_storage', 'SELECT COUNT(*) as c FROM fuel_storage', 'Fuel reserves'),
+                ('ammo_inventory', 'SELECT COUNT(*) as c FROM ammo_inventory', 'Ammo inventoried'),
+                ('skills', 'SELECT COUNT(*) as c FROM skills', 'Skills assessed'),
+                ('community_resources', 'SELECT COUNT(*) as c FROM community_resources', 'Community resources'),
+            ]
+            total_items = 0
+            modules_active = 0
+            for key, query, label in checks:
+                try:
+                    count = db.execute(query).fetchone()['c']
+                    health['coverage'][key] = {'count': count, 'label': label, 'active': count > 0}
+                    total_items += count
+                    if count > 0: modules_active += 1
+                except Exception:
+                    health['coverage'][key] = {'count': 0, 'label': label, 'active': False}
+
+            # Readiness scoring
+            health['modules_active'] = modules_active
+            health['modules_total'] = len(checks)
+            health['total_data_items'] = total_items
+            health['coverage_pct'] = round(modules_active / len(checks) * 100)
+
+            # Critical gaps
+            from datetime import datetime, timedelta
+            today = datetime.now().strftime('%Y-%m-%d')
+            expired = db.execute("SELECT COUNT(*) as c FROM inventory WHERE expiration != '' AND expiration < ?", (today,)).fetchone()['c']
+            if expired > 0: health['issues'].append({'type': 'warning', 'msg': f'{expired} items have expired'})
+            low = db.execute('SELECT COUNT(*) as c FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchone()['c']
+            if low > 0: health['issues'].append({'type': 'warning', 'msg': f'{low} items are below minimum stock'})
+            overdue = db.execute("SELECT COUNT(*) as c FROM equipment_log WHERE next_service != '' AND next_service <= ?", (today,)).fetchone()['c']
+            if overdue > 0: health['issues'].append({'type': 'warning', 'msg': f'{overdue} equipment items overdue for service'})
+            crit_alerts = db.execute("SELECT COUNT(*) as c FROM alerts WHERE dismissed = 0 AND severity = 'critical'").fetchone()['c']
+            if crit_alerts > 0: health['issues'].append({'type': 'critical', 'msg': f'{crit_alerts} unresolved critical alerts'})
+
+            # DB integrity
+            try:
+                integrity = db.execute('PRAGMA integrity_check').fetchone()[0]
+                health['db_integrity'] = integrity
+                if integrity != 'ok':
+                    health['issues'].append({'type': 'critical', 'msg': f'Database integrity check failed: {integrity}'})
+                    health['status'] = 'degraded'
+            except Exception:
+                health['db_integrity'] = 'unknown'
+
+            if health['issues']:
+                health['status'] = 'attention_needed'
+            return jsonify(health)
+        finally:
+            db.close()
+
+    @app.route('/api/system/getting-started')
+    def api_getting_started():
+        """Returns a guided setup checklist for new users."""
+        db = get_db()
+        try:
+            steps = [
+                {'id': 'contacts', 'title': 'Add emergency contacts',
+                 'desc': 'Names, phone numbers, callsigns, roles, and skills for your group.',
+                 'done': db.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c'] > 0,
+                 'action': 'preparedness', 'sub': 'contacts'},
+                {'id': 'inventory', 'title': 'Log your supply inventory',
+                 'desc': 'Food, water, medical supplies, tools — with quantities and expiration dates.',
+                 'done': db.execute('SELECT COUNT(*) as c FROM inventory').fetchone()['c'] > 0,
+                 'action': 'preparedness', 'sub': 'inventory'},
+                {'id': 'medical', 'title': 'Create medical profiles',
+                 'desc': 'Allergies, medications, blood types, and conditions for each family member.',
+                 'done': db.execute('SELECT COUNT(*) as c FROM patients').fetchone()['c'] > 0,
+                 'action': 'preparedness', 'sub': 'medical'},
+                {'id': 'waypoints', 'title': 'Set up map waypoints',
+                 'desc': 'Mark your home, rally points, water sources, caches, and bug-out routes.',
+                 'done': db.execute('SELECT COUNT(*) as c FROM waypoints').fetchone()['c'] > 0,
+                 'action': 'maps', 'sub': None},
+                {'id': 'checklists', 'title': 'Create preparedness checklists',
+                 'desc': 'Bug-out bag, shelter-in-place, 72-hour kit, vehicle emergency.',
+                 'done': db.execute('SELECT COUNT(*) as c FROM checklists').fetchone()['c'] > 0,
+                 'action': 'preparedness', 'sub': 'checklists'},
+                {'id': 'ai', 'title': 'Install AI assistant',
+                 'desc': 'Download an AI model for offline situation analysis and decision support.',
+                 'done': db.execute("SELECT COUNT(*) as c FROM services WHERE id = 'ollama' AND installed = 1").fetchone()['c'] > 0,
+                 'action': 'services', 'sub': None},
+                {'id': 'media', 'title': 'Download survival reference content',
+                 'desc': 'Videos, audio training, reference books — all available offline.',
+                 'done': db.execute('SELECT COUNT(*) as c FROM videos').fetchone()['c'] > 0 or db.execute('SELECT COUNT(*) as c FROM books').fetchone()['c'] > 0,
+                 'action': 'media', 'sub': None},
+                {'id': 'family', 'title': 'Set up your family emergency plan',
+                 'desc': 'Meeting points, communication plan, roles, and responsibilities.',
+                 'done': db.execute('SELECT COUNT(*) as c FROM checklists WHERE name LIKE ?', ('%family%',)).fetchone()['c'] > 0,
+                 'action': 'preparedness', 'sub': 'family'},
+            ]
+            completed = sum(1 for s in steps if s['done'])
+            return jsonify({'steps': steps, 'completed': completed, 'total': len(steps), 'pct': round(completed / len(steps) * 100)})
+        finally:
+            db.close()
 
     # ─── NukeMap ──────────────────────────────────────────────────────
 

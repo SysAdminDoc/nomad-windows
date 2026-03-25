@@ -93,6 +93,14 @@ def start():
     if running():
         return
 
+    # Clean up any stale server instance before starting fresh
+    if _httpd is not None:
+        try:
+            _httpd.shutdown()
+        except Exception:
+            pass
+        _httpd = None
+
     install_dir = get_install_dir()
 
     class QuietHandler(http.server.SimpleHTTPRequestHandler):

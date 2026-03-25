@@ -1,10 +1,10 @@
 """
 Curated survival & preparedness content catalog.
-200 YouTube channels across 24 categories.
-104+ individual tutorial videos + 55 audio training entries.
+210 YouTube channels across 26 categories.
+131 tutorial videos + 102 audio training entries.
 """
 
-# ─── YouTube Channel Catalog (200 channels, 24 categories) ─────────────────
+# ─── YouTube Channel Catalog (210 channels, 26 categories) ─────────────────
 
 CHANNEL_CATALOG = [
     # Wilderness Survival & Bushcraft
@@ -243,6 +243,18 @@ CHANNEL_CATALOG = [
     {'name': 'geodesign', 'focus': 'QGIS and open-source GIS tutorials — processing elevation data, creating offline maps, terrain analysis', 'url': 'https://www.youtube.com/@geodesignchannel', 'category': 'Geospatial & Mapping'},
     {'name': 'MapScaping', 'focus': 'Geospatial industry interviews — satellite data, terrain modeling, open data sources for offline navigation', 'url': 'https://www.youtube.com/@MapScaping', 'category': 'Geospatial & Mapping'},
     {'name': 'OpenStreetMap (OSMF)', 'focus': 'Official OSM Foundation — how to download, use, and contribute to the world\'s best offline map dataset', 'url': 'https://www.youtube.com/@openstreetmapfoundation', 'category': 'Geospatial & Mapping'},
+    # NEW CATEGORY: Water & Sanitation
+    {'name': 'Practical Engineering', 'focus': 'Civil engineer Grady Hillhouse — water treatment, wells, sewage, infrastructure explained clearly (4M+)', 'url': 'https://www.youtube.com/@PracticalEngineeringChannel', 'category': 'Water & Sanitation'},
+    {'name': 'CAWST Centre for Affordable Water', 'focus': 'WHO-endorsed water treatment for developing contexts — biosand filters, SODIS, ceramic filters, chlorination', 'url': 'https://www.youtube.com/@CAWSTorg', 'category': 'Water & Sanitation'},
+    {'name': 'Open Source Ecology', 'focus': 'GVCS civilization toolkit — tractor, well drill, CEB press, sawmill — reproducible machines for off-grid living (300K+)', 'url': 'https://www.youtube.com/@OpenSourceEcology', 'category': 'Water & Sanitation'},
+    {'name': 'Rain Bird Academy', 'focus': 'Irrigation system design and installation — drip, sprinkler, grey water reuse for food production', 'url': 'https://www.youtube.com/@RainBirdCorp', 'category': 'Water & Sanitation'},
+    {'name': 'Benson Filtration', 'focus': 'Residential well water treatment — iron removal, softeners, whole-house filters, reverse osmosis explained', 'url': 'https://www.youtube.com/@BensonFiltration', 'category': 'Water & Sanitation'},
+    # NEW CATEGORY: Mental Resilience & Leadership
+    {'name': 'Extreme Ownership (Jocko Willink)', 'focus': 'Navy SEAL leadership — discipline, decentralized command, stress decision-making (2.5M+)', 'url': 'https://www.youtube.com/@jockowillink', 'category': 'Mental Resilience & Leadership'},
+    {'name': 'Andy Stumpf', 'focus': 'Former SEAL Team 6 — mindset under extreme stress, high-performance habits, crisis management', 'url': 'https://www.youtube.com/@AndyStumpf', 'category': 'Mental Resilience & Leadership'},
+    {'name': 'The Psychological Health Center', 'focus': 'FEMA psychological first aid training — crisis counseling, trauma-informed care, community resilience after disasters', 'url': 'https://www.youtube.com/@PsychologicalHealthCenter', 'category': 'Mental Resilience & Leadership'},
+    {'name': 'Huberman Lab', 'focus': 'Stanford neuroscientist — stress inoculation protocols, sleep optimization, focus tools applicable to high-stress survival scenarios (5M+)', 'url': 'https://www.youtube.com/@hubermanlab', 'category': 'Mental Resilience & Leadership'},
+    {'name': 'The Tim Kennedy Project', 'focus': 'Army Ranger / UFC fighter — physical and mental preparedness, defense mindset, training under duress', 'url': 'https://www.youtube.com/@TimKennedyMMA', 'category': 'Mental Resilience & Leadership'},
 ]
 
 # Category list with counts for UI grouping

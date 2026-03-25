@@ -1,7 +1,7 @@
 # Project N.O.M.A.D. for Windows
 
 ## Overview
-Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) — the most comprehensive offline survival command center available. No Docker required. 6 managed services, proactive AI alerts, 21 interactive decision guides, 41 calculators, 37+ quick reference cards, medical module, training scenarios, food production, multi-node federation, power management, security cameras, AI document intelligence, built-in BitTorrent client, media library with 200 survival channels, 38-section user guide, and a premium dark dashboard with 4 themes.
+Native Windows port of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) — the most comprehensive offline survival command center available. No Docker required. 6 managed services, proactive AI alerts, 21 interactive decision guides, 41 calculators, 37+ quick reference cards, medical module, training scenarios, food production, multi-node federation, power management, security cameras, AI document intelligence, built-in BitTorrent client, media library with 210 survival channels, 38-section user guide, and a premium dark dashboard with 4 themes.
 
 ## Tech Stack
 - **Python 3** — Flask web server + pywebview (WebView2) embedded browser
@@ -29,12 +29,12 @@ ROADMAP.md            # 10-phase implementation plan (all complete)
 .github/workflows/
   build.yml           # CI/CD — PyInstaller + Inno Setup, dual artifact release on tag push
 web/
-  app.py              # Flask routes (~311 endpoints) — ~7900 lines
+  app.py              # Flask routes (~311 endpoints) — ~8050 lines
   catalog.py          # Content catalogs (books, videos, audio, torrents)
   static/
     css/
-      app.css         # Base styles (1173 lines) — themes, layout, components
-      premium.css     # Premium polish (421 lines) — animations, shadows, hover effects
+      app.css         # Base styles (1191 lines) — 4 themes, layout, components
+      premium.css     # Premium polish (557 lines) — glassmorphism, glow effects, micro-interactions, depth
     logo.png          # App logo
     maplibre-gl.js    # Map renderer (bundled)
     maplibre-gl.css   # Map styles (bundled)
@@ -42,7 +42,7 @@ web/
     js/
       epub.min.js     # EPUB reader library (bundled)
   templates/
-    index.html        # HTML + inline theme vars + JS (~19,400 lines)
+    index.html        # HTML + inline theme vars + JS (~19,561 lines)
   nukemap/            # NukeMap v3.2.0 — index.html, 18 JS modules, CSS, data/, lib/leaflet
 services/
   manager.py          # Process manager — download (with resume), start, stop, track, uninstall
@@ -56,13 +56,18 @@ services/
 ```
 
 ## Version
-v2.1.0 — ~82,000 lines, 311 API routes, 43 DB tables, 25 prep sub-tabs, 38-section user guide, 21 decision guides, 41 calculators
+v3.1.0 — ~95,000 lines, 364 API routes, 57 DB tables (65 indexes), 25 prep sub-tabs, 38-section user guide, 21 decision guides, 41 calculators, 56 quick reference cards, 3 dashboard modes, 12 live widgets, AI copilot, 9 survival need categories, 6 printable field documents, route/annotation planning, frequency database (35 seeded), TCCC/triage system, sensor integration, planting calendar (31 seeded), yield analysis, preservation tracking, federation v2, unified search (14 data types), keyboard shortcuts, guided onboarding, system health diagnostics
 
-## Audit History (4 rounds)
+## Audit History (5 rounds)
 - **v1.8.0 — Security**: Auth deny-on-failure, thread-safe install lock, path traversal hardening (normpath+startswith on maps/ZIM delete), DB try-finally on all 7 services, stirling stderr crash fix, race conditions (window handler before thread, health monitor MAX_RESTARTS), Flask startup error feedback
 - **v1.9.0 — Frontend+DB**: resp.ok on AI warmup, debounced media/channel filters (200ms), try-catch loadNotes, SQLite backup API (WAL-safe), 30s connection timeout, FK enforcement, 10 new indexes, division-by-zero guard on critical_burn
 - **v2.0.0 — Performance**: requestAnimationFrame debounce on streaming chat rendering, insertAdjacentHTML for mesh/LAN log (O(1) vs O(n^2)), content-summary 4 queries→1, fetch error handlers on map/vault delete, notes CRUD try-finally
 - **v2.1.0 — Input Validation**: Safe int/float with try-except on ammo/fuel/radiation routes, NULL coalescing on cumulative_rem, harvest quantity >= 0 validation, search escapeAttr+parseInt, timer resp.ok, calculator tab try-catch (30 init calls)
+- **v2.1.0 — Deep Audit**: teardown_appcontext DB safety net, PATCH endpoint ALLOWED_COLS pattern, set_version() XSS sanitization, safeFetch() utility + Promise.allSettled, CSS cleanup (--glass/--purple removed, focus states), CyberChef stale server cleanup, config.py specific exception types, manager.py thread locks on _processes dict + partial download cleanup, torrent.py session/monitor race condition fixes, +18 DB performance indexes (35→53), content catalogs: 210 channels, 131 videos, 102 audio, 141 books, 152 torrents
+- **v2.2.0 — Ops Platform Phase 1-3**: Dashboard mode system (Command Center/Homestead/Essentials — sidebar/prep reordering, mode-aware widget sets), Live situational dashboard (/api/dashboard/live aggregates 12 modules, 12 widget types, auto-refresh 30s), AI copilot integration (quick-query with real inventory/contacts/medical/fuel/ammo data, suggested actions from alerts/expiring/overdue, pre-built question buttons on dashboard)
+- **v2.3.0 — Ops Platform Phase 4+9**: Cross-module intelligence (9 survival need categories with keyword matching — Water, Food, Medical, Shelter, Security, Comms, Power, Navigation, Knowledge; /api/needs overview + /api/needs/<id> detail; needs grid on Home with drill-down modal showing supplies+contacts+books+guides), Print field copies (frequency reference card with standard freqs + team contacts, wallet-sized medical cards per patient, bug-out grab-and-go checklist with rally points)
+- **v2.4.0 — Ops Platform Phase 5-7**: Enhanced maps (map_routes + map_annotations tables, route CRUD, annotation CRUD, minimap-data endpoint, 12 waypoint category icons with elevation tracking), Communications upgrade (freq_database table seeded with 35 standard frequencies — FRS/GMRS/MURS/2m/70cm/HF/Marine/CB/NOAA/Meshtastic, radio_profiles CRUD, comms dashboard API), Medical EHR upgrade (triage_events + handoff_reports tables, patient triage_category + care_phase columns, wound tourniquet_time + intervention_type columns, triage board API, SBAR handoff report generator with print, TCCC MARCH protocol endpoint)
+- **v3.0.0 — Ops Platform Phase 8+10**: Instrumented power & food (sensor_devices + sensor_readings tables, sensor CRUD + time-series query with period filtering, power history charting endpoint, autonomy forecast based on SOC/load/solar trends; planting_calendar table seeded with 31 zone 7 entries including yield_per_sqft and calories_per_lb, garden yield analysis with caloric output and person-days calculation, preservation_log CRUD for canned/dried/frozen tracking), Federation v2 (federation_peers with trust levels observer/member/trusted/admin, federation_offers + federation_requests for resource marketplace, federation_sitboard for aggregated situation from peers, network-map endpoint linking peers to waypoints, auto_sync flag per peer, trust-level CRUD)
 
 ## Run / Build
 ```bash
@@ -74,9 +79,9 @@ iscc installer.iss                 # Build installer -> ProjectNOMAD-Setup.exe
 ## Release Process
 ```bash
 # Tag and push — CI builds both artifacts
-git tag v2.1.0 && git push origin v2.1.0
+git tag v3.1.0 && git push origin v3.1.0
 # Or manual: build locally, then create release
-gh release create v2.1.0 dist/ProjectNOMAD-Portable.exe ProjectNOMAD-Setup.exe --title "Project N.O.M.A.D. v2.1.0"
+gh release create v3.1.0 dist/ProjectNOMAD-Portable.exe ProjectNOMAD-Setup.exe --title "Project N.O.M.A.D. v3.1.0"
 ```
 
 ## CSS Architecture
@@ -101,11 +106,11 @@ Dashboard: 8080, Ollama: 11434, Kiwix: 8888, CyberChef: 8889, Kolibri: 8300, Qdr
 Services, AI Chat, Library, Maps, Notes, Media, Tools, Preparedness, Benchmark, Settings (+ NukeMap opens in-app frame)
 
 ## Media Tab (5 sub-tabs)
-- **Browse Channels** — 200 survival channels across 24 categories, auto-hide dead channels
-- **My Videos** — Upload/download/play instructional videos, thumbnail cards, watch+download player
-- **My Audio** — Audio catalog with favorites, batch operations, sorting
-- **My Books** — EPUB/PDF reader, book catalog
-- **Torrent Library** — Built-in BitTorrent client (libtorrent) with live progress UI, awesome-survival collection
+- **Browse Channels** — 210 survival channels across 26 categories, auto-hide dead channels
+- **My Videos** — Upload/download/play instructional videos, thumbnail cards, watch+download player; **131 curated tutorial videos** across 14 folders
+- **My Audio** — Audio catalog with favorites, batch operations, sorting; **102 training audio entries** across 13 folders
+- **My Books** — EPUB/PDF reader, book catalog; **141 reference books** (archive.org/govt URLs) across 16 folders
+- **Torrent Library** — Built-in BitTorrent client (libtorrent) with live progress UI; **152 curated torrent collections** across 12 categories (survival/maps/weather/radio/textbooks/medical/farming/videos/software/encyclopedias/repair/energy)
 
 ## 25 Preparedness Sub-Tabs (ordered by emergency priority)
 Inventory, Contacts, Checklists, Medical, Incidents, Family Plan, Security, Power, Garden, Weather, Guides, Calculators, Procedures, Radio, Quick Ref, Signals, Command Post, Journal, Secure Vault, Skills, Ammo, Community, Radiation, Fuel, Equipment

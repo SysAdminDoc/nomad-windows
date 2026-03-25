@@ -18,9 +18,10 @@ from config import get_data_dir
 
 log = logging.getLogger('nomad.manager')
 
-# Track running processes
+# Track running processes — guarded by _lock for thread safety
 _processes: dict[str, subprocess.Popen] = {}
 _download_progress: dict[str, dict] = {}
+_lock = threading.Lock()
 
 # Service dependency graph: service -> list of services it requires
 DEPENDENCIES = {
@@ -226,6 +227,13 @@ def download_file(url: str, dest: str, service_id: str = '') -> str:
             'percent': 0, 'status': 'error', 'error': str(e),
             'speed': '', 'downloaded': 0, 'total': 0,
         }
+        # Clean up partial download to prevent disk waste
+        if os.path.isfile(dest):
+            try:
+                os.remove(dest)
+                log.info(f'Cleaned up partial download: {dest}')
+            except OSError:
+                pass
         raise
 
 
@@ -241,8 +249,9 @@ def extract_zip(zip_path: str, dest_dir: str):
 def start_process(service_id: str, exe_path: str, args: list[str] = None,
                   cwd: str = None, port: int = None, env: dict = None) -> int:
     """Start a native process and track it."""
-    if service_id in _processes and _processes[service_id].poll() is None:
-        return _processes[service_id].pid
+    with _lock:
+        if service_id in _processes and _processes[service_id].poll() is None:
+            return _processes[service_id].pid
 
     cmd = [exe_path] + (args or [])
     log.info(f'Starting {service_id}: {" ".join(cmd)}')
@@ -256,7 +265,8 @@ def start_process(service_id: str, exe_path: str, args: list[str] = None,
         stderr=subprocess.DEVNULL,
         creationflags=CREATE_NO_WINDOW,
     )
-    _processes[service_id] = proc
+    with _lock:
+        _processes[service_id] = proc
 
     db = get_db()
     try:
@@ -276,7 +286,8 @@ def start_process(service_id: str, exe_path: str, args: list[str] = None,
 
 def stop_process(service_id: str) -> bool:
     """Stop a tracked process."""
-    proc = _processes.get(service_id)
+    with _lock:
+        proc = _processes.get(service_id)
     if proc and proc.poll() is None:
         proc.terminate()
         try:
@@ -299,14 +310,16 @@ def stop_process(service_id: str) -> bool:
     finally:
         db.close()
 
-    _processes.pop(service_id, None)
+    with _lock:
+        _processes.pop(service_id, None)
     log_activity('service_stopped', service_id)
     return True
 
 
 def is_running(service_id: str) -> bool:
     """Check if a service process is alive."""
-    proc = _processes.get(service_id)
+    with _lock:
+        proc = _processes.get(service_id)
     if proc and proc.poll() is None:
         return True
 

@@ -1,5 +1,5 @@
 """
-Project N.O.M.A.D. for Windows v2.1.0
+Project N.O.M.A.D. for Windows v3.1.0
 Node for Offline Media, Archives, and Data
 Native Windows edition — no Docker required.
 """
@@ -39,7 +39,7 @@ def _bootstrap():
                 try:
                     subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
                     break
-                except Exception:
+                except (subprocess.CalledProcessError, FileNotFoundError, OSError):
                     continue
 
 _bootstrap()
@@ -51,7 +51,7 @@ from config import get_data_dir
 from web.app import create_app, set_version
 from db import init_db, get_db, log_activity, backup_db
 
-VERSION = '2.1.0'
+VERSION = '3.1.0'
 PORT = 8080
 
 _tray_icon = None
@@ -117,14 +117,14 @@ def tray_quit(icon, item):
     try:
         from services.torrent import get_manager as _tm
         _tm().shutdown()
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning(f'Torrent manager shutdown error: {e}')
 
     # Final DB backup
     try:
         backup_db()
-    except Exception:
-        pass
+    except Exception as e:
+        log.warning(f'Final DB backup failed: {e}')
 
     icon.stop()
     if _window:

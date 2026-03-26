@@ -2,7 +2,11 @@
 
 import sqlite3
 import os
+import logging
+from contextlib import contextmanager
 from config import get_data_dir
+
+_log = logging.getLogger('nomad.db')
 
 
 def get_db_path():
@@ -24,18 +28,31 @@ def get_db():
     return conn
 
 
+@contextmanager
+def db_session():
+    """Context manager for DB connections with automatic close.
+
+    Usage:
+        with db_session() as db:
+            db.execute(...)
+            db.commit()
+    """
+    conn = get_db()
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
 def log_activity(event: str, service: str = None, detail: str = None, level: str = 'info'):
     """Log an activity event to the DB."""
     try:
-        conn = get_db()
-        try:
+        with db_session() as conn:
             conn.execute('INSERT INTO activity_log (event, service, detail, level) VALUES (?, ?, ?, ?)',
                          (event, service, detail, level))
             conn.commit()
-        finally:
-            conn.close()
-    except Exception:
-        pass
+    except Exception as e:
+        _log.debug(f'Failed to log activity: {e}')
 
 
 def backup_db():
@@ -49,11 +66,13 @@ def backup_db():
     backup_path = os.path.join(backup_dir, f'nomad_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db')
     # Use SQLite backup API for WAL-safe copies
     src = sqlite3.connect(db_path, timeout=30)
-    dst = sqlite3.connect(backup_path)
     try:
-        src.backup(dst)
+        dst = sqlite3.connect(backup_path)
+        try:
+            src.backup(dst)
+        finally:
+            dst.close()
     finally:
-        dst.close()
         src.close()
     # Prune old backups
     backups = sorted(
@@ -71,9 +90,8 @@ def init_db():
     conn = get_db()
     try:
         _init_db_inner(conn)
-    except Exception:
+    finally:
         conn.close()
-        raise
 
 
 def _init_db_inner(conn):
@@ -735,6 +753,235 @@ def _init_db_inner(conn):
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+
+        CREATE TABLE IF NOT EXISTS scheduled_tasks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'custom',
+            recurrence TEXT DEFAULT 'once',
+            next_due TIMESTAMP,
+            assigned_to TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            completed_count INTEGER DEFAULT 0,
+            last_completed TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS mesh_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            from_node TEXT DEFAULT '',
+            to_node TEXT DEFAULT '',
+            message TEXT NOT NULL,
+            channel TEXT DEFAULT '',
+            rssi REAL,
+            snr REAL,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ═══ v5.0 Phase 1: AI Chat — KB Workspaces & Conversation Branching ═══ */
+        CREATE TABLE IF NOT EXISTS kb_workspaces (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            watch_folder TEXT DEFAULT '',
+            auto_index INTEGER DEFAULT 0,
+            doc_count INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS conversation_branches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            conversation_id INTEGER NOT NULL,
+            parent_message_idx INTEGER NOT NULL DEFAULT 0,
+            messages TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ═══ v5.0 Phase 3: Inventory — Photos, Check-out, Locations ═══ */
+        CREATE TABLE IF NOT EXISTS inventory_photos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            inventory_id INTEGER NOT NULL,
+            filename TEXT NOT NULL,
+            caption TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS inventory_checkouts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            inventory_id INTEGER NOT NULL,
+            checked_out_to TEXT NOT NULL,
+            quantity REAL DEFAULT 1,
+            reason TEXT DEFAULT '',
+            checked_out_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            returned_at TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS shopping_list (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT '',
+            quantity_needed REAL DEFAULT 0,
+            unit TEXT DEFAULT 'ea',
+            inventory_id INTEGER,
+            purchased INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ═══ v5.0 Phase 5: Notes — Tags, Links, Templates ═══ */
+        CREATE TABLE IF NOT EXISTS note_tags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            note_id INTEGER NOT NULL,
+            tag TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(note_id, tag)
+        );
+
+        CREATE TABLE IF NOT EXISTS note_links (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_note_id INTEGER NOT NULL,
+            target_note_id INTEGER NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(source_note_id, target_note_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS note_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            content TEXT DEFAULT '',
+            icon TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ═══ v5.0 Phase 6: Media — Playback Progress & Playlists ═══ */
+        CREATE TABLE IF NOT EXISTS media_progress (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            media_type TEXT NOT NULL,
+            media_id INTEGER NOT NULL,
+            position_sec REAL DEFAULT 0,
+            duration_sec REAL DEFAULT 0,
+            completed INTEGER DEFAULT 0,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(media_type, media_id)
+        );
+
+        CREATE TABLE IF NOT EXISTS playlists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            media_type TEXT DEFAULT 'audio',
+            items TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ═══ v5.0 Phase 7: Medical — Drug Interactions ═══ */
+        CREATE TABLE IF NOT EXISTS drug_interactions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            drug_a TEXT NOT NULL,
+            drug_b TEXT NOT NULL,
+            severity TEXT DEFAULT 'moderate',
+            description TEXT DEFAULT '',
+            recommendation TEXT DEFAULT ''
+        );
+
+        CREATE TABLE IF NOT EXISTS wound_photos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            wound_id INTEGER NOT NULL,
+            filename TEXT NOT NULL,
+            caption TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ═══ v5.0 Phase 9: Weather — Readings & Predictions ═══ */
+        CREATE TABLE IF NOT EXISTS weather_readings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source TEXT DEFAULT 'manual',
+            pressure_hpa REAL,
+            temp_f REAL,
+            humidity REAL,
+            wind_dir TEXT DEFAULT '',
+            wind_speed_mph REAL,
+            prediction TEXT DEFAULT '',
+            zambretti_code INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ═══ v5.0 Phase 10: LAN & Mesh — Channels, Presence, File Transfer ═══ */
+        CREATE TABLE IF NOT EXISTS lan_channels (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            description TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS lan_presence (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            node_name TEXT NOT NULL,
+            ip TEXT NOT NULL,
+            status TEXT DEFAULT 'online',
+            version TEXT DEFAULT '',
+            last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(ip)
+        );
+
+        CREATE TABLE IF NOT EXISTS lan_transfers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            filename TEXT NOT NULL,
+            file_size INTEGER DEFAULT 0,
+            direction TEXT DEFAULT 'incoming',
+            peer_ip TEXT DEFAULT '',
+            peer_name TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            progress REAL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ═══ v5.0 Phase 11: Garden — Companions, Seed Inventory, Pest Guide ═══ */
+        CREATE TABLE IF NOT EXISTS companion_plants (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plant_a TEXT NOT NULL,
+            plant_b TEXT NOT NULL,
+            relationship TEXT DEFAULT 'companion',
+            notes TEXT DEFAULT ''
+        );
+
+        CREATE TABLE IF NOT EXISTS seed_inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            species TEXT NOT NULL,
+            variety TEXT DEFAULT '',
+            quantity INTEGER DEFAULT 0,
+            unit TEXT DEFAULT 'seeds',
+            viability_pct REAL DEFAULT 90,
+            year_acquired INTEGER,
+            source TEXT DEFAULT '',
+            days_to_maturity INTEGER,
+            planting_depth_in REAL,
+            spacing_in REAL,
+            sun_requirement TEXT DEFAULT 'full',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS pest_guide (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            pest_type TEXT DEFAULT 'insect',
+            affects TEXT DEFAULT '',
+            symptoms TEXT DEFAULT '',
+            treatment TEXT DEFAULT '',
+            prevention TEXT DEFAULT '',
+            image_url TEXT DEFAULT ''
+        );
+
+        /* ═══ v5.0 Phase 12: Benchmark — Extended Test Types ═══ */
+        CREATE TABLE IF NOT EXISTS benchmark_results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            test_type TEXT NOT NULL DEFAULT 'full',
+            scores TEXT DEFAULT '{}',
+            hardware TEXT DEFAULT '{}',
+            details TEXT DEFAULT '{}',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     conn.commit()
 
@@ -764,12 +1011,34 @@ def _init_db_inner(conn):
         'ALTER TABLE patients ADD COLUMN care_phase TEXT DEFAULT ""',
         'ALTER TABLE wound_log ADD COLUMN tourniquet_time TEXT DEFAULT ""',
         'ALTER TABLE wound_log ADD COLUMN intervention_type TEXT DEFAULT ""',
+        # v5.0 migrations
+        'ALTER TABLE inventory ADD COLUMN lot_number TEXT DEFAULT ""',
+        'ALTER TABLE inventory ADD COLUMN photo_path TEXT DEFAULT ""',
+        'ALTER TABLE inventory ADD COLUMN checked_out_to TEXT DEFAULT ""',
+        'ALTER TABLE documents ADD COLUMN workspace_id INTEGER DEFAULT 0',
+        'ALTER TABLE notes ADD COLUMN template TEXT DEFAULT ""',
+        'ALTER TABLE notes ADD COLUMN is_journal INTEGER DEFAULT 0',
+        'ALTER TABLE conversations ADD COLUMN branch_count INTEGER DEFAULT 0',
+        'ALTER TABLE videos ADD COLUMN subtitle_path TEXT DEFAULT ""',
+        'ALTER TABLE audio ADD COLUMN album_art TEXT DEFAULT ""',
+        'ALTER TABLE books ADD COLUMN total_pages INTEGER DEFAULT 0',
+        'ALTER TABLE patients ADD COLUMN photo_path TEXT DEFAULT ""',
+        'ALTER TABLE weather_log ADD COLUMN humidity REAL',
+        'ALTER TABLE weather_log ADD COLUMN prediction TEXT DEFAULT ""',
+        'ALTER TABLE benchmarks ADD COLUMN test_type TEXT DEFAULT "full"',
+        'ALTER TABLE benchmarks ADD COLUMN storage_read_mbps REAL DEFAULT 0',
+        'ALTER TABLE benchmarks ADD COLUMN storage_write_mbps REAL DEFAULT 0',
+        'ALTER TABLE benchmarks ADD COLUMN net_throughput_mbps REAL DEFAULT 0',
+        'ALTER TABLE freq_database ADD COLUMN channel_name TEXT DEFAULT ""',
+        'ALTER TABLE freq_database ADD COLUMN tone_freq REAL',
+        'ALTER TABLE map_routes ADD COLUMN gpx_data TEXT DEFAULT ""',
+        'ALTER TABLE map_routes ADD COLUMN elevation_profile TEXT DEFAULT "[]"',
     ]:
         try:
             conn.execute(migration)
             conn.commit()
-        except Exception:
-            pass
+        except sqlite3.OperationalError:
+            pass  # Column already exists
 
     # Performance indexes (after migrations so columns exist)
     for idx in [
@@ -845,10 +1114,56 @@ def _init_db_inner(conn):
         'CREATE INDEX IF NOT EXISTS idx_map_routes_created ON map_routes(created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_map_annotations_type ON map_annotations(type)',
         'CREATE INDEX IF NOT EXISTS idx_waypoints_icon ON waypoints(icon)',
+        # Scheduled tasks
+        'CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_due ON scheduled_tasks(next_due)',
+        'CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_category ON scheduled_tasks(category)',
+        'CREATE INDEX IF NOT EXISTS idx_scheduled_tasks_assigned ON scheduled_tasks(assigned_to)',
+        # Mesh messages
+        'CREATE INDEX IF NOT EXISTS idx_mesh_messages_timestamp ON mesh_messages(timestamp DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_mesh_messages_channel ON mesh_messages(channel)',
+        # Additional performance indexes
+        'CREATE INDEX IF NOT EXISTS idx_activity_log_event ON activity_log(event)',
+        'CREATE INDEX IF NOT EXISTS idx_activity_log_service ON activity_log(service, created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_documents_status ON documents(status)',
+        'CREATE INDEX IF NOT EXISTS idx_documents_category ON documents(doc_category)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_name ON inventory(name)',
+        'CREATE INDEX IF NOT EXISTS idx_triage_events_status ON triage_events(status)',
+        'CREATE INDEX IF NOT EXISTS idx_handoff_patient ON handoff_reports(patient_id, created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_patients_triage ON patients(triage_category)',
+        'CREATE INDEX IF NOT EXISTS idx_vault_entries_created ON vault_entries(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_services_state ON services(installed, running)',
+        # v5.0 indexes
+        'CREATE INDEX IF NOT EXISTS idx_kb_workspaces_name ON kb_workspaces(name)',
+        'CREATE INDEX IF NOT EXISTS idx_conversation_branches_conv ON conversation_branches(conversation_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_photos_inv ON inventory_photos(inventory_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_checkouts_inv ON inventory_checkouts(inventory_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_checkouts_open ON inventory_checkouts(returned_at)',
+        'CREATE INDEX IF NOT EXISTS idx_shopping_list_purchased ON shopping_list(purchased)',
+        'CREATE INDEX IF NOT EXISTS idx_note_tags_note ON note_tags(note_id)',
+        'CREATE INDEX IF NOT EXISTS idx_note_tags_tag ON note_tags(tag)',
+        'CREATE INDEX IF NOT EXISTS idx_note_links_source ON note_links(source_note_id)',
+        'CREATE INDEX IF NOT EXISTS idx_note_links_target ON note_links(target_note_id)',
+        'CREATE INDEX IF NOT EXISTS idx_media_progress_lookup ON media_progress(media_type, media_id)',
+        'CREATE INDEX IF NOT EXISTS idx_playlists_type ON playlists(media_type)',
+        'CREATE INDEX IF NOT EXISTS idx_drug_interactions_a ON drug_interactions(drug_a)',
+        'CREATE INDEX IF NOT EXISTS idx_drug_interactions_b ON drug_interactions(drug_b)',
+        'CREATE INDEX IF NOT EXISTS idx_wound_photos_wound ON wound_photos(wound_id)',
+        'CREATE INDEX IF NOT EXISTS idx_weather_readings_created ON weather_readings(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_weather_readings_source ON weather_readings(source)',
+        'CREATE INDEX IF NOT EXISTS idx_lan_channels_name ON lan_channels(name)',
+        'CREATE INDEX IF NOT EXISTS idx_lan_presence_ip ON lan_presence(ip)',
+        'CREATE INDEX IF NOT EXISTS idx_lan_transfers_status ON lan_transfers(status)',
+        'CREATE INDEX IF NOT EXISTS idx_companion_plants_a ON companion_plants(plant_a)',
+        'CREATE INDEX IF NOT EXISTS idx_seed_inventory_species ON seed_inventory(species)',
+        'CREATE INDEX IF NOT EXISTS idx_pest_guide_type ON pest_guide(pest_type)',
+        'CREATE INDEX IF NOT EXISTS idx_benchmark_results_type ON benchmark_results(test_type)',
+        'CREATE INDEX IF NOT EXISTS idx_benchmark_results_created ON benchmark_results(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_lot ON inventory(lot_number)',
+        'CREATE INDEX IF NOT EXISTS idx_documents_workspace ON documents(workspace_id)',
+        'CREATE INDEX IF NOT EXISTS idx_notes_journal ON notes(is_journal, created_at DESC)',
     ]:
         try:
             conn.execute(idx)
-        except Exception:
-            pass
+        except sqlite3.OperationalError:
+            pass  # Index already exists or related issue
     conn.commit()
-    conn.close()

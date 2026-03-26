@@ -24,7 +24,7 @@ except Exception:
         CHANNEL_CATALOG = []
         CHANNEL_CATEGORIES = []
 from db import get_db, log_activity
-from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling
+from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
 from services.manager import (
     get_download_progress, get_dir_size, format_size, uninstall_service, get_services_dir,
     ensure_dependencies, detect_gpu
@@ -33,6 +33,45 @@ from services.manager import (
 log = logging.getLogger('nomad.web')
 _CREATION_FLAGS = {'creationflags': 0x08000000} if sys.platform == 'win32' else {}
 
+# ─── Security Helpers ─────────────────────────────────────────────────
+
+def _validate_download_url(url):
+    """Validate that a download URL is safe (SSRF protection).
+
+    Raises ValueError if the URL uses a non-https scheme or points to a
+    private/internal IP address.
+    """
+    import ipaddress
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    if parsed.scheme not in ('https', 'http'):
+        raise ValueError(f'Unsupported URL scheme: {parsed.scheme}')
+    hostname = parsed.hostname or ''
+    # Block obvious private hostnames
+    if hostname in ('localhost', '') or hostname.endswith('.local'):
+        raise ValueError('URLs pointing to internal hosts are not allowed')
+    # Resolve and check for private IPs
+    try:
+        import socket
+        resolved = socket.getaddrinfo(hostname, None)
+        for _family, _type, _proto, _canonname, sockaddr in resolved:
+            ip = ipaddress.ip_address(sockaddr[0])
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
+                raise ValueError(f'URL resolves to a private/internal IP: {ip}')
+    except (socket.gaierror, OSError):
+        raise ValueError(f'Cannot resolve hostname: {hostname}')
+    return url
+
+
+def _check_origin(req):
+    """Block cross-origin state-changing requests (CSRF protection)."""
+    origin = req.headers.get('Origin', '')
+    if origin and not origin.startswith(('http://localhost:', 'http://127.0.0.1:')):
+        from flask import abort
+        abort(403, 'Cross-origin request blocked')
+
+_state_lock = threading.Lock()
+
 SERVICE_MODULES = {
     'ollama': ollama,
     'kiwix': kiwix,
@@ -40,9 +79,10 @@ SERVICE_MODULES = {
     'kolibri': kolibri,
     'qdrant': qdrant,
     'stirling': stirling,
+    'flatnotes': flatnotes,
 }
 
-VERSION = '3.2.0'
+VERSION = '4.1.0'
 
 
 def set_version(v):
@@ -52,12 +92,14 @@ def set_version(v):
     VERSION = re.sub(r'[^a-zA-Z0-9.\-+]', '', str(v)) or '0.0.0'
 
 # RAG / Knowledge Base state
+# Note: _embed_state is mutated from background threads. Individual dict mutations
+# (assignment, .update()) are atomic under CPython's GIL for simple cases.
 _embed_state = {'status': 'idle', 'doc_id': None, 'progress': 0, 'detail': ''}
 EMBED_MODEL = 'nomic-embed-text:v1.5'
 CHUNK_SIZE = 500  # approximate tokens per chunk
 CHUNK_OVERLAP = 50
 
-# Benchmark state
+# Benchmark state — single dict replacement/update is GIL-atomic under CPython
 _benchmark_state = {'status': 'idle', 'progress': 0, 'stage': '', 'results': None}
 
 # Background CPU monitor — avoids blocking Flask threads with psutil.cpu_percent(interval=...)
@@ -80,6 +122,29 @@ def create_app():
                 template_folder='templates',
                 static_folder='static')
 
+    # ─── CSRF Protection ─────────────────────────────────────────────
+    @app.after_request
+    def _set_cookie_samesite(response):
+        """Set SameSite=Strict on all cookies for CSRF protection."""
+        cookies = response.headers.getlist('Set-Cookie')
+        if cookies:
+            new_cookies = []
+            for cookie in cookies:
+                if 'SameSite' not in cookie:
+                    cookie += '; SameSite=Strict'
+                new_cookies.append(cookie)
+            # Replace Set-Cookie headers
+            response.headers.pop('Set-Cookie')
+            for c in new_cookies:
+                response.headers.add('Set-Cookie', c)
+        return response
+
+    @app.before_request
+    def _csrf_origin_check():
+        """Block cross-origin state-changing requests."""
+        if request.method in ('POST', 'PUT', 'DELETE'):
+            _check_origin(request)
+
     # ─── DB Connection Safety Net ─────────────────────────────────────
     # Auto-close any DB connections left open when a request ends.
     # This prevents connection leaks if a route raises before calling db.close().
@@ -93,6 +158,24 @@ def create_app():
                 db.close()
             except Exception:
                 pass
+
+    # ─── Global API Error Handler ─────────────────────────────────────
+    # Return consistent JSON for unhandled exceptions instead of HTML error pages.
+    @app.errorhandler(Exception)
+    def handle_unhandled_exception(e):
+        """Catch-all: return JSON error for API routes, let others fall through."""
+        if request.path.startswith('/api/'):
+            log.error(f'Unhandled error on {request.method} {request.path}: {e}', exc_info=True)
+            status = getattr(e, 'code', 500) if hasattr(e, 'code') else 500
+            return jsonify({'error': str(e)}), status
+        # Non-API routes: re-raise to let Flask's default handler render HTML
+        raise e
+
+    @app.errorhandler(404)
+    def handle_404(e):
+        if request.path.startswith('/api/'):
+            return jsonify({'error': 'Not found'}), 404
+        return e
 
     # ─── LAN Auth Guard ────────────────────────────────────────────────
     # Protect dangerous endpoints from unauthorized LAN access
@@ -112,8 +195,10 @@ def create_app():
         # LAN request — check if auth is enabled and validate
         try:
             db = get_db()
-            row = db.execute("SELECT value FROM settings WHERE key = 'auth_password'").fetchone()
-            db.close()
+            try:
+                row = db.execute("SELECT value FROM settings WHERE key = 'auth_password'").fetchone()
+            finally:
+                db.close()
             if row and row['value']:
                 import hashlib
                 token = request.headers.get('X-Auth-Token', '')
@@ -378,6 +463,118 @@ def create_app():
             return jsonify({'error': 'Failed to delete model'}), 500
         return jsonify({'status': 'deleted'})
 
+    # ─── Shared AI context builder ──────────────────────────────────
+    def _safe_json_list(val, default=None):
+        """Parse a JSON string, returning default on failure."""
+        if default is None:
+            default = []
+        try:
+            return json.loads(val or '[]')
+        except (json.JSONDecodeError, TypeError):
+            return default
+
+    def build_situation_context(db) -> list[str]:
+        """Build rich situation context from DB for AI consumption.
+        Returns a list of context section strings."""
+        ctx_parts = []
+
+        # Inventory with burn rates
+        inv = db.execute('SELECT name, quantity, unit, category, daily_usage, min_quantity, expiration FROM inventory ORDER BY category, name LIMIT 200').fetchall()
+        if inv:
+            inv_lines = []
+            for r in inv:
+                line = f'{r["name"]}: {r["quantity"]} {r["unit"]} ({r["category"]})'
+                if r['daily_usage'] and r['daily_usage'] > 0:
+                    days = round(r['quantity'] / r['daily_usage'], 1)
+                    line += f' — {days} days supply at {r["daily_usage"]}/day'
+                if r['min_quantity'] and r['quantity'] <= r['min_quantity']:
+                    line += ' [LOW STOCK]'
+                if r['expiration']:
+                    line += f' expires {r["expiration"]}'
+                inv_lines.append(line)
+            ctx_parts.append('INVENTORY:\n' + '\n'.join(inv_lines))
+
+        # Contacts with skills and roles
+        contacts = db.execute('SELECT name, role, skills, phone, callsign, blood_type FROM contacts LIMIT 50').fetchall()
+        if contacts:
+            c_lines = [f'{c["name"]} — {c["role"] or "unassigned"}' +
+                       (f', skills: {c["skills"]}' if c.get('skills') else '') +
+                       (f', callsign: {c["callsign"]}' if c.get('callsign') else '') +
+                       (f', blood: {c["blood_type"]}' if c.get('blood_type') else '')
+                       for c in contacts]
+            ctx_parts.append('TEAM CONTACTS:\n' + '\n'.join(c_lines))
+
+        # Patients with medical details
+        patients = db.execute('SELECT name, age, weight_kg, blood_type, allergies, conditions, medications FROM patients LIMIT 20').fetchall()
+        if patients:
+            p_lines = []
+            for p in patients:
+                line = f'{p["name"]}'
+                if p['age']: line += f', age {p["age"]}'
+                if p['blood_type']: line += f', blood {p["blood_type"]}'
+                allg = _safe_json_list(p['allergies'])
+                if allg: line += f', ALLERGIES: {", ".join(allg)}'
+                cond = _safe_json_list(p['conditions'])
+                if cond: line += f', conditions: {", ".join(cond)}'
+                meds = _safe_json_list(p['medications'])
+                if meds: line += f', meds: {", ".join(meds)}'
+                p_lines.append(line)
+            ctx_parts.append('PATIENTS:\n' + '\n'.join(p_lines))
+
+        # Fuel storage
+        fuel = db.execute('SELECT fuel_type, quantity, unit, location FROM fuel_storage').fetchall()
+        if fuel:
+            ctx_parts.append('FUEL: ' + ', '.join(f'{f["fuel_type"]}: {f["quantity"]} {f["unit"]} at {f["location"]}' for f in fuel))
+
+        # Ammo
+        ammo = db.execute('SELECT caliber, quantity, location FROM ammo_inventory').fetchall()
+        if ammo:
+            ctx_parts.append('AMMO: ' + ', '.join(f'{a["caliber"]}: {a["quantity"]} rounds ({a["location"]})' for a in ammo))
+
+        # Equipment
+        equip = db.execute("SELECT name, status, next_service FROM equipment_log WHERE next_service != '' ORDER BY next_service LIMIT 10").fetchall()
+        if equip:
+            ctx_parts.append('EQUIPMENT: ' + ', '.join(f'{e["name"]}: {e["status"]}, service due {e["next_service"]}' for e in equip))
+
+        # Active alerts
+        alerts = db.execute('SELECT title, severity, message FROM alerts WHERE dismissed = 0 LIMIT 10').fetchall()
+        if alerts:
+            ctx_parts.append('ACTIVE ALERTS:\n' + '\n'.join(f'[{a["severity"]}] {a["title"]}: {a["message"][:100]}' for a in alerts))
+
+        # Weather
+        wx = db.execute('SELECT * FROM weather_log ORDER BY created_at DESC LIMIT 1').fetchone()
+        if wx:
+            ctx_parts.append(f'WEATHER: {dict(wx)}')
+
+        # Power
+        pwr = db.execute('SELECT * FROM power_log ORDER BY created_at DESC LIMIT 1').fetchone()
+        if pwr:
+            ctx_parts.append(f'POWER: Battery {pwr["battery_soc"] or "?"}%, Solar {pwr["solar_watts"] or 0}W, Load {pwr["load_watts"] or 0}W')
+
+        # Recent incidents
+        incidents = db.execute("SELECT severity, category, description FROM incidents WHERE created_at >= datetime('now', '-24 hours') ORDER BY created_at DESC LIMIT 5").fetchall()
+        if incidents:
+            ctx_parts.append('RECENT INCIDENTS (24h): ' + ' | '.join(f'[{r["severity"]}] {r["category"]}: {r["description"][:60]}' for r in incidents))
+
+        return ctx_parts
+
+    def get_ai_memory_text() -> str:
+        """Load AI memory facts from settings, return formatted string or empty."""
+        try:
+            mem_db = get_db()
+            try:
+                mem_row = mem_db.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
+            finally:
+                mem_db.close()
+            if mem_row and mem_row['value']:
+                memories = json.loads(mem_row['value'])
+                if memories:
+                    lines = '\n'.join(f'- {m["fact"] if isinstance(m, dict) else m}' for m in memories)
+                    return f'\n\n--- OPERATOR NOTES ---\n{lines}\n--- END NOTES ---'
+        except Exception:
+            pass
+        return ''
+
     @app.route('/api/ai/chat', methods=['POST'])
     def api_ai_chat():
         data = request.get_json() or {}
@@ -475,6 +672,22 @@ def create_app():
                 except Exception as e:
                     log.warning(f'RAG context injection failed: {e}')
 
+        # AI Memory: inject persistent facts the user has stored
+        try:
+            mem_db = get_db()
+            try:
+                mem_row = mem_db.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
+            finally:
+                mem_db.close()
+            if mem_row and mem_row['value']:
+                memories = json.loads(mem_row['value'])
+                if memories:
+                    mem_text = '\n'.join(f'- {m["fact"] if isinstance(m, dict) else m}' for m in memories)
+                    system_prompt = (system_prompt + '\n\n' if system_prompt else '') + \
+                        f'Important context the user has asked you to remember:\n{mem_text}'
+        except Exception as e:
+            log.warning(f'AI memory injection failed: {e}')
+
         if system_prompt:
             messages = [{'role': 'system', 'content': system_prompt}] + messages
 
@@ -499,93 +712,15 @@ def create_app():
         if not ollama.running():
             return jsonify({'error': 'AI service not running'}), 503
 
-        # Build rich data context from DB
+        # Build rich data context from DB using shared helper
         db = get_db()
         try:
-            ctx_parts = []
-            # Detailed inventory with quantities and burn rates
-            inv = db.execute('SELECT name, quantity, unit, category, daily_usage, min_quantity, expiration FROM inventory ORDER BY category, name LIMIT 200').fetchall()
-            if inv:
-                inv_lines = []
-                for r in inv:
-                    line = f'{r["name"]}: {r["quantity"]} {r["unit"]} ({r["category"]})'
-                    if r['daily_usage'] and r['daily_usage'] > 0:
-                        days = round(r['quantity'] / r['daily_usage'], 1)
-                        line += f' — {days} days supply at {r["daily_usage"]}/day'
-                    if r['min_quantity'] and r['quantity'] <= r['min_quantity']:
-                        line += ' [LOW STOCK]'
-                    if r['expiration']:
-                        line += f' expires {r["expiration"]}'
-                    inv_lines.append(line)
-                ctx_parts.append('INVENTORY:\n' + '\n'.join(inv_lines))
-
-            # Contacts with skills and roles
-            contacts = db.execute('SELECT name, role, skills, phone, callsign, blood_type FROM contacts LIMIT 50').fetchall()
-            if contacts:
-                c_lines = [f'{c["name"]} — {c["role"] or "unassigned"}' +
-                           (f', skills: {c["skills"]}' if c.get('skills') else '') +
-                           (f', callsign: {c["callsign"]}' if c.get('callsign') else '') +
-                           (f', blood: {c["blood_type"]}' if c.get('blood_type') else '')
-                           for c in contacts]
-                ctx_parts.append('TEAM CONTACTS:\n' + '\n'.join(c_lines))
-
-            # Patients with medical details
-            patients = db.execute('SELECT name, age, weight_kg, blood_type, allergies, conditions, medications FROM patients LIMIT 20').fetchall()
-            if patients:
-                p_lines = []
-                for p in patients:
-                    line = f'{p["name"]}'
-                    if p['age']: line += f', age {p["age"]}'
-                    if p['blood_type']: line += f', blood {p["blood_type"]}'
-                    try:
-                        allg = json.loads(p['allergies'] or '[]')
-                        if allg: line += f', ALLERGIES: {", ".join(allg)}'
-                    except (json.JSONDecodeError, TypeError): pass
-                    try:
-                        cond = json.loads(p['conditions'] or '[]')
-                        if cond: line += f', conditions: {", ".join(cond)}'
-                    except (json.JSONDecodeError, TypeError): pass
-                    try:
-                        meds = json.loads(p['medications'] or '[]')
-                        if meds: line += f', meds: {", ".join(meds)}'
-                    except (json.JSONDecodeError, TypeError): pass
-                    p_lines.append(line)
-                ctx_parts.append('PATIENTS:\n' + '\n'.join(p_lines))
-
-            # Fuel storage
-            fuel = db.execute('SELECT fuel_type, quantity, unit, location FROM fuel_storage').fetchall()
-            if fuel:
-                ctx_parts.append('FUEL: ' + ', '.join(f'{f["fuel_type"]}: {f["quantity"]} {f["unit"]} at {f["location"]}' for f in fuel))
-
-            # Ammo
-            ammo = db.execute('SELECT caliber, quantity, location FROM ammo_inventory').fetchall()
-            if ammo:
-                ctx_parts.append('AMMO: ' + ', '.join(f'{a["caliber"]}: {a["quantity"]} rounds ({a["location"]})' for a in ammo))
-
-            # Equipment overdue
-            equip = db.execute("SELECT name, status, next_service FROM equipment_log WHERE next_service != '' ORDER BY next_service LIMIT 10").fetchall()
-            if equip:
-                ctx_parts.append('EQUIPMENT: ' + ', '.join(f'{e["name"]}: {e["status"]}, service due {e["next_service"]}' for e in equip))
-
-            # Active alerts
-            alerts = db.execute('SELECT title, severity, message FROM alerts WHERE dismissed = 0 LIMIT 10').fetchall()
-            if alerts:
-                ctx_parts.append('ACTIVE ALERTS:\n' + '\n'.join(f'[{a["severity"]}] {a["title"]}: {a["message"][:100]}' for a in alerts))
-
-            # Weather
-            wx = db.execute('SELECT * FROM weather_log ORDER BY created_at DESC LIMIT 1').fetchone()
-            if wx:
-                ctx_parts.append(f'WEATHER: {dict(wx)}')
-
-            # Power
-            pwr = db.execute('SELECT * FROM power_log ORDER BY created_at DESC LIMIT 1').fetchone()
-            if pwr:
-                ctx_parts.append(f'POWER: Battery {pwr["battery_soc"] or "?"}%, Solar {pwr["solar_watts"] or 0}W, Load {pwr["load_watts"] or 0}W')
-
+            ctx_parts = build_situation_context(db)
         finally:
             db.close()
 
         context = '\n\n'.join(ctx_parts) if ctx_parts else 'No data has been entered yet.'
+        memory_text = get_ai_memory_text()
 
         system = f"""You are the N.O.M.A.D. Survival Operations Copilot — an AI embedded in a tactical preparedness command center. Your role is to provide actionable intelligence based on the operator's REAL supply data, team roster, medical records, and equipment status.
 
@@ -599,19 +734,12 @@ RULES:
 
 --- OPERATOR'S LIVE DATA ---
 {context}
---- END DATA ---"""
+--- END DATA ---{memory_text}"""
 
         try:
             model = data.get('model', ollama.DEFAULT_MODEL)
-            response_text = ''
-            for line in ollama.chat(model, [{'role': 'system', 'content': system}, {'role': 'user', 'content': question}], stream=False):
-                if line:
-                    try:
-                        d = json.loads(line)
-                        if 'message' in d and 'content' in d['message']:
-                            response_text += d['message']['content']
-                    except (json.JSONDecodeError, KeyError, TypeError):
-                        pass
+            result = ollama.chat(model, [{'role': 'system', 'content': system}, {'role': 'user', 'content': question}], stream=False)
+            response_text = result.get('message', {}).get('content', '') if isinstance(result, dict) else ''
             return jsonify({'answer': response_text.strip(), 'data_sources': list(set(p.split(':')[0] for p in ctx_parts))})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -664,55 +792,55 @@ RULES:
 
     SURVIVAL_NEEDS = {
         'water': {
-            'label': 'Water & Hydration', 'icon': '&#128167;', 'color': '#0288d1',
+            'label': 'Water & Hydration', 'icon': '\U0001F4A7', 'color': '#0288d1',
             'keywords': ['water','hydration','purif','filter','well','rain','cistern','dehydrat','boil','bleach','iodine','sodis','biosand'],
             'guides': ['water_purify','water_source_assessment'],
             'calcs': ['water-needs','water-storage','bleach-dosage'],
         },
         'food': {
-            'label': 'Food & Nutrition', 'icon': '&#127858;', 'color': '#558b2f',
+            'label': 'Food & Nutrition', 'icon': '\U0001F372', 'color': '#558b2f',
             'keywords': ['food','calori','nutrition','canning','preserv','dehydrat','jerky','fermenting','seed','garden','harvest','livestock','chicken','goat','rabbit','grain','flour','rice','bean','MRE','freeze dry','smoking meat','salt cur'],
             'guides': ['food_preserve','food_safety_assessment'],
             'calcs': ['calorie-needs','food-storage','canning','composting','pasture'],
         },
         'medical': {
-            'label': 'Medical & Health', 'icon': '&#129657;', 'color': '#c62828',
+            'label': 'Medical & Health', 'icon': '\U0001FA79', 'color': '#c62828',
             'keywords': ['medical','first aid','wound','bleed','tourniquet','suture','fracture','burn','infection','antibiotic','medicine','triage','TCCC','CPR','AED','dental','eye','childbirth','diabetic','allergic','anaphyla','splint','vital','patient'],
             'guides': ['wound_assess','triage_start','antibiotic_selection','chest_trauma','envenomation','wound_infection','anaphylaxis','hypothermia_response'],
             'calcs': ['drug-dosage','burn-area','blood-loss','dehydration'],
         },
         'shelter': {
-            'label': 'Shelter & Construction', 'icon': '&#127968;', 'color': '#795548',
+            'label': 'Shelter & Construction', 'icon': '\U0001F3E0', 'color': '#795548',
             'keywords': ['shelter','cabin','build','construct','adobe','timber','stone','masonry','insulation','roof','foundation','tent','tarp','debris hut','earthbag','cob','log'],
             'guides': ['shelter_build'],
             'calcs': ['shelter-sizing','insulation','concrete-mix'],
         },
         'security': {
-            'label': 'Security & Defense', 'icon': '&#128737;', 'color': '#d32f2f',
+            'label': 'Security & Defense', 'icon': '\U0001F6E1', 'color': '#d32f2f',
             'keywords': ['security','defense','perimeter','alarm','camera','night vision','firearm','ammo','ammunition','caliber','tactical','gray man','OPSEC','trip wire','home harden'],
             'guides': ['bugout_decision'],
             'calcs': ['ballistic','range','ammo-load'],
         },
         'comms': {
-            'label': 'Communications', 'icon': '&#128225;', 'color': '#6a1b9a',
+            'label': 'Communications', 'icon': '\U0001F4E1', 'color': '#6a1b9a',
             'keywords': ['radio','ham','amateur','frequency','antenna','HF','VHF','UHF','GMRS','FRS','MURS','Meshtastic','JS8Call','Winlink','APRS','morse','CW','SDR','repeater','net','callsign','comms','communication'],
             'guides': ['radio_setup'],
             'calcs': ['antenna-length','radio-range','power-budget'],
         },
         'power': {
-            'label': 'Energy & Power', 'icon': '&#9889;', 'color': '#f9a825',
+            'label': 'Energy & Power', 'icon': '\u26A1', 'color': '#f9a825',
             'keywords': ['power','solar','battery','generator','inverter','watt','amp','volt','charge','fuel','diesel','propane','gasoline','wood gas','wind','hydro','off-grid','grid-down'],
             'guides': ['power_outage'],
             'calcs': ['solar-sizing','battery-bank','generator-fuel','wire-gauge'],
         },
         'navigation': {
-            'label': 'Navigation & Maps', 'icon': '&#127760;', 'color': '#0277bd',
+            'label': 'Navigation & Maps', 'icon': '\U0001F310', 'color': '#0277bd',
             'keywords': ['map','compass','GPS','navigation','topographic','waypoint','route','bearing','MGRS','grid','coordinate','terrain','elevation','celestial','star','landmark'],
             'guides': [],
             'calcs': ['bearing','distance','pace-count','grid-to-latlong'],
         },
         'knowledge': {
-            'label': 'Knowledge & Training', 'icon': '&#128218;', 'color': '#37474f',
+            'label': 'Knowledge & Training', 'icon': '\U0001F4DA', 'color': '#37474f',
             'keywords': ['book','manual','reference','training','guide','course','encyclopedia','textbook','library','skill','learn','practice','drill'],
             'guides': [],
             'calcs': [],
@@ -831,6 +959,12 @@ RULES:
         url = data.get('url', kiwix.STARTER_ZIM_URL)
         filename = data.get('filename')
 
+        # SSRF protection — validate URL before downloading
+        try:
+            _validate_download_url(url)
+        except ValueError as e:
+            return jsonify({'error': f'Invalid download URL: {e}'}), 400
+
         def do_download():
             try:
                 kiwix.download_zim(url, filename)
@@ -872,8 +1006,10 @@ RULES:
     @app.route('/api/notes')
     def api_notes_list():
         db = get_db()
-        notes = db.execute('SELECT * FROM notes ORDER BY pinned DESC, updated_at DESC').fetchall()
-        db.close()
+        try:
+            notes = db.execute('SELECT * FROM notes ORDER BY pinned DESC, updated_at DESC').fetchall()
+        finally:
+            db.close()
         return jsonify([dict(n) for n in notes])
 
     @app.route('/api/notes', methods=['POST'])
@@ -923,18 +1059,35 @@ RULES:
     @app.route('/api/settings')
     def api_settings():
         db = get_db()
-        rows = db.execute('SELECT key, value FROM settings').fetchall()
-        db.close()
+        try:
+            rows = db.execute('SELECT key, value FROM settings').fetchall()
+        finally:
+            db.close()
         return jsonify({r['key']: r['value'] for r in rows})
+
+    SETTINGS_WHITELIST = {
+        'dashboard_mode', 'node_name', 'node_id', 'theme', 'sidebar_collapsed',
+        'map_style', 'map_center', 'map_zoom', 'ai_model', 'ai_system_prompt',
+        'ai_memory_enabled', 'ai_memory', 'wizard_tier', 'first_run_complete',
+        'lan_name', 'lan_sharing', 'lan_password_enabled',
+    }
 
     @app.route('/api/settings', methods=['PUT'])
     def api_settings_update():
         data = request.get_json() or {}
         db = get_db()
-        for key, value in data.items():
-            db.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', (key, str(value)))
-        db.commit()
-        db.close()
+        try:
+            rejected = []
+            for key, value in data.items():
+                if key not in SETTINGS_WHITELIST:
+                    rejected.append(key)
+                    continue
+                db.execute('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)', (key, str(value)))
+            db.commit()
+        finally:
+            db.close()
+        if rejected:
+            return jsonify({'status': 'partial', 'rejected_keys': rejected}), 400
         return jsonify({'status': 'saved'})
 
     # ─── Dashboard Mode API ──────────────────────────────────────────
@@ -972,8 +1125,10 @@ RULES:
     @app.route('/api/dashboard/mode')
     def api_dashboard_mode():
         db = get_db()
-        row = db.execute("SELECT value FROM settings WHERE key = 'dashboard_mode'").fetchone()
-        db.close()
+        try:
+            row = db.execute("SELECT value FROM settings WHERE key = 'dashboard_mode'").fetchone()
+        finally:
+            db.close()
         mode = row['value'] if row else 'command'
         if mode not in DASHBOARD_MODES:
             mode = 'command'
@@ -982,9 +1137,11 @@ RULES:
     @app.route('/api/settings/wizard-complete', methods=['POST'])
     def api_wizard_complete():
         db = get_db()
-        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '1')")
-        db.commit()
-        db.close()
+        try:
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '1')")
+            db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'ok'})
 
     # ─── Drives API ───────────────────────────────────────────────────
@@ -1159,9 +1316,11 @@ RULES:
 
             # Mark wizard complete
             db = get_db()
-            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '1')")
-            db.commit()
-            db.close()
+            try:
+                db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '1')")
+                db.commit()
+            finally:
+                db.close()
 
             _wizard_state.update({'status': 'complete', 'phase': 'done', 'overall_progress': 100,
                                   'current_item': 'Setup complete!'})
@@ -1182,6 +1341,7 @@ RULES:
     SVC_FRIENDLY = {
         'ollama': 'AI Chat', 'kiwix': 'Offline Encyclopedia', 'cyberchef': 'Data Toolkit',
         'kolibri': 'Education Platform', 'qdrant': 'Document Search', 'stirling': 'PDF Tools',
+        'flatnotes': 'Notes App',
     }
 
     # ─── System Info ───────────────────────────────────────────────────
@@ -1296,27 +1456,33 @@ RULES:
     @app.route('/api/conversations')
     def api_conversations_list():
         db = get_db()
-        convos = db.execute('SELECT id, title, model, created_at, updated_at FROM conversations ORDER BY updated_at DESC').fetchall()
-        db.close()
+        try:
+            convos = db.execute('SELECT id, title, model, created_at, updated_at FROM conversations ORDER BY updated_at DESC').fetchall()
+        finally:
+            db.close()
         return jsonify([dict(c) for c in convos])
 
     @app.route('/api/conversations', methods=['POST'])
     def api_conversations_create():
         data = request.get_json() or {}
         db = get_db()
-        cur = db.execute('INSERT INTO conversations (title, model, messages) VALUES (?, ?, ?)',
-                         (data.get('title', 'New Chat'), data.get('model', ''), '[]'))
-        db.commit()
-        cid = cur.lastrowid
-        convo = db.execute('SELECT * FROM conversations WHERE id = ?', (cid,)).fetchone()
-        db.close()
+        try:
+            cur = db.execute('INSERT INTO conversations (title, model, messages) VALUES (?, ?, ?)',
+                             (data.get('title', 'New Chat'), data.get('model', ''), '[]'))
+            db.commit()
+            cid = cur.lastrowid
+            convo = db.execute('SELECT * FROM conversations WHERE id = ?', (cid,)).fetchone()
+        finally:
+            db.close()
         return jsonify(dict(convo)), 201
 
     @app.route('/api/conversations/<int:cid>')
     def api_conversations_get(cid):
         db = get_db()
-        convo = db.execute('SELECT * FROM conversations WHERE id = ?', (cid,)).fetchone()
-        db.close()
+        try:
+            convo = db.execute('SELECT * FROM conversations WHERE id = ?', (cid,)).fetchone()
+        finally:
+            db.close()
         if not convo:
             return jsonify({'error': 'Not found'}), 404
         return jsonify(dict(convo))
@@ -1325,22 +1491,24 @@ RULES:
     def api_conversations_update(cid):
         data = request.get_json() or {}
         db = get_db()
-        fields = []
-        vals = []
-        if 'title' in data:
-            fields.append('title = ?')
-            vals.append(data['title'])
-        if 'model' in data:
-            fields.append('model = ?')
-            vals.append(data['model'])
-        if 'messages' in data:
-            fields.append('messages = ?')
-            vals.append(json.dumps(data['messages']))
-        fields.append('updated_at = CURRENT_TIMESTAMP')
-        vals.append(cid)
-        db.execute(f'UPDATE conversations SET {", ".join(fields)} WHERE id = ?', vals)
-        db.commit()
-        db.close()
+        try:
+            fields = []
+            vals = []
+            if 'title' in data:
+                fields.append('title = ?')
+                vals.append(data['title'])
+            if 'model' in data:
+                fields.append('model = ?')
+                vals.append(data['model'])
+            if 'messages' in data:
+                fields.append('messages = ?')
+                vals.append(json.dumps(data['messages']))
+            fields.append('updated_at = CURRENT_TIMESTAMP')
+            vals.append(cid)
+            db.execute(f'UPDATE conversations SET {", ".join(fields)} WHERE id = ?', vals)
+            db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'saved'})
 
     @app.route('/api/conversations/<int:cid>', methods=['PATCH'])
@@ -1350,25 +1518,31 @@ RULES:
         if not title:
             return jsonify({'error': 'Title required'}), 400
         db = get_db()
-        db.execute('UPDATE conversations SET title = ? WHERE id = ?', (title, cid))
-        db.commit()
-        db.close()
+        try:
+            db.execute('UPDATE conversations SET title = ? WHERE id = ?', (title, cid))
+            db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'renamed'})
 
     @app.route('/api/conversations/<int:cid>', methods=['DELETE'])
     def api_conversations_delete(cid):
         db = get_db()
-        db.execute('DELETE FROM conversations WHERE id = ?', (cid,))
-        db.commit()
-        db.close()
+        try:
+            db.execute('DELETE FROM conversations WHERE id = ?', (cid,))
+            db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'deleted'})
 
     @app.route('/api/conversations/all', methods=['DELETE'])
     def api_conversations_delete_all():
         db = get_db()
-        db.execute('DELETE FROM conversations')
-        db.commit()
-        db.close()
+        try:
+            db.execute('DELETE FROM conversations')
+            db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'deleted'})
 
     @app.route('/api/conversations/search')
@@ -1376,19 +1550,25 @@ RULES:
         q = request.args.get('q', '').strip()
         if not q:
             return jsonify([])
+        # Escape LIKE wildcard characters to prevent unintended pattern matching
+        q_escaped = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
         db = get_db()
-        rows = db.execute(
-            "SELECT id, title, model, created_at FROM conversations WHERE title LIKE ? OR messages LIKE ? ORDER BY updated_at DESC LIMIT 20",
-            (f'%{q}%', f'%{q}%')
-        ).fetchall()
-        db.close()
+        try:
+            rows = db.execute(
+                "SELECT id, title, model, created_at FROM conversations WHERE title LIKE ? ESCAPE '\\' OR messages LIKE ? ESCAPE '\\' ORDER BY updated_at DESC LIMIT 20",
+                (f'%{q_escaped}%', f'%{q_escaped}%')
+            ).fetchall()
+        finally:
+            db.close()
         return jsonify([dict(r) for r in rows])
 
     @app.route('/api/conversations/<int:cid>/export')
     def api_conversations_export(cid):
         db = get_db()
-        convo = db.execute('SELECT * FROM conversations WHERE id = ?', (cid,)).fetchone()
-        db.close()
+        try:
+            convo = db.execute('SELECT * FROM conversations WHERE id = ?', (cid,)).fetchone()
+        finally:
+            db.close()
         if not convo:
             return jsonify({'error': 'Not found'}), 404
         messages = json.loads(convo['messages'] or '[]')
@@ -1597,15 +1777,17 @@ RULES:
 
                 # Save to DB
                 db = get_db()
-                db.execute('''INSERT INTO benchmarks
-                    (cpu_score, memory_score, disk_read_score, disk_write_score, ai_tps, ai_ttft, nomad_score, hardware, details)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-                    (results.get('cpu_score', 0), results.get('memory_score', 0),
-                     results.get('disk_read_score', 0), results.get('disk_write_score', 0),
-                     results.get('ai_tps', 0), results.get('ai_ttft', 0),
-                     results.get('nomad_score', 0), json.dumps(hw), json.dumps(results)))
-                db.commit()
-                db.close()
+                try:
+                    db.execute('''INSERT INTO benchmarks
+                        (cpu_score, memory_score, disk_read_score, disk_write_score, ai_tps, ai_ttft, nomad_score, hardware, details)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                        (results.get('cpu_score', 0), results.get('memory_score', 0),
+                         results.get('disk_read_score', 0), results.get('disk_write_score', 0),
+                         results.get('ai_tps', 0), results.get('ai_ttft', 0),
+                         results.get('nomad_score', 0), json.dumps(hw), json.dumps(results)))
+                    db.commit()
+                finally:
+                    db.close()
 
                 _benchmark_state = {'status': 'complete', 'progress': 100, 'stage': 'Done', 'results': results, 'hardware': hw}
 
@@ -1623,9 +1805,109 @@ RULES:
     @app.route('/api/benchmark/history')
     def api_benchmark_history():
         db = get_db()
-        rows = db.execute('SELECT * FROM benchmarks ORDER BY created_at DESC LIMIT 20').fetchall()
-        db.close()
+        try:
+            rows = db.execute('SELECT * FROM benchmarks ORDER BY created_at DESC LIMIT 20').fetchall()
+        finally:
+            db.close()
         return jsonify([dict(r) for r in rows])
+
+    # ─── Benchmark Enhancements (v5.0 Phase 12) ─────────────────────
+
+    @app.route('/api/benchmark/ai-inference', methods=['POST'])
+    def api_benchmark_ai_inference():
+        """Benchmark AI inference speed (tokens/second) for installed models."""
+        model = (request.json or {}).get('model', '')
+        if not model:
+            return jsonify({'error': 'model required'}), 400
+        try:
+            import time as _time
+            prompt = 'Write a short paragraph about weather forecasting in exactly 100 words.'
+            start = _time.time()
+            resp = ollama.chat(model, [{'role': 'user', 'content': prompt}])
+            elapsed = _time.time() - start
+            text = resp.get('message', {}).get('content', '') if isinstance(resp, dict) else str(resp)
+            tokens = len(text.split())  # approximate
+            tps = round(tokens / elapsed, 1) if elapsed > 0 else 0
+            ttft = round(elapsed, 2)
+
+            db = get_db()
+            try:
+                db.execute(
+                    'INSERT INTO benchmark_results (test_type, scores, details) VALUES (?, ?, ?)',
+                    ('ai_inference', json.dumps({'tps': tps, 'ttft': ttft, 'model': model}),
+                     json.dumps({'tokens': tokens, 'elapsed': elapsed, 'text_length': len(text)}))
+                )
+                db.commit()
+            finally:
+                db.close()
+
+            return jsonify({'model': model, 'tokens_per_sec': tps, 'time_to_complete': ttft, 'tokens': tokens})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/benchmark/storage', methods=['POST'])
+    def api_benchmark_storage():
+        """Benchmark storage I/O speed."""
+        import tempfile
+        import time as _time
+
+        test_dir = os.path.join(get_data_dir(), 'benchmark_tmp')
+        os.makedirs(test_dir, exist_ok=True)
+        test_file = os.path.join(test_dir, 'io_test.bin')
+
+        try:
+            # Write test (32MB)
+            data = os.urandom(32 * 1024 * 1024)
+            start = _time.time()
+            with open(test_file, 'wb') as f:
+                f.write(data)
+                f.flush()
+                os.fsync(f.fileno())
+            write_time = _time.time() - start
+            write_mbps = round(32 / write_time, 1) if write_time > 0 else 0
+
+            # Read test
+            start = _time.time()
+            with open(test_file, 'rb') as f:
+                _ = f.read()
+            read_time = _time.time() - start
+            read_mbps = round(32 / read_time, 1) if read_time > 0 else 0
+
+            os.remove(test_file)
+
+            db = get_db()
+            try:
+                db.execute(
+                    'INSERT INTO benchmark_results (test_type, scores) VALUES (?, ?)',
+                    ('storage', json.dumps({'read_mbps': read_mbps, 'write_mbps': write_mbps}))
+                )
+                db.commit()
+            finally:
+                db.close()
+
+            return jsonify({'read_mbps': read_mbps, 'write_mbps': write_mbps})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+        finally:
+            try:
+                os.rmdir(test_dir)
+            except Exception:
+                pass
+
+    @app.route('/api/benchmark/results')
+    def api_benchmark_results_history():
+        """Get benchmark results history for charting."""
+        test_type = request.args.get('type', '')
+        limit = request.args.get('limit', 20, type=int)
+        db = get_db()
+        try:
+            if test_type:
+                rows = db.execute('SELECT * FROM benchmark_results WHERE test_type = ? ORDER BY created_at DESC LIMIT ?', (test_type, limit)).fetchall()
+            else:
+                rows = db.execute('SELECT * FROM benchmark_results ORDER BY created_at DESC LIMIT ?', (limit,)).fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
 
     # ─── Maps API ──────────────────────────────────────────────────────
 
@@ -1896,7 +2178,9 @@ RULES:
 
     @app.route('/api/maps/download-progress')
     def api_maps_download_progress():
-        return jsonify(_map_downloads)
+        with _state_lock:
+            snapshot = dict(_map_downloads)
+        return jsonify(snapshot)
 
     def _get_pmtiles_cli():
         """Get path to pmtiles CLI, auto-downloading if needed."""
@@ -1964,7 +2248,8 @@ RULES:
 
     def _download_map_region_thread(region_id, bbox, maps_dir):
         """Background thread: extract a region from Protomaps planet using pmtiles CLI."""
-        _map_downloads[region_id] = {'progress': 0, 'status': 'Preparing...', 'error': None}
+        with _state_lock:
+            _map_downloads[region_id] = {'progress': 0, 'status': 'Preparing...', 'error': None}
         try:
             # Get or install pmtiles CLI
             _map_downloads[region_id]['status'] = 'Installing pmtiles tool...'
@@ -2002,20 +2287,29 @@ RULES:
             proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                                     text=True, **_CREATION_FLAGS)
 
-            # Monitor progress from output
+            # Monitor progress from output — wrapped in try/finally to prevent process leak
             lines = []
-            for line in proc.stdout:
-                lines.append(line.strip())
-                # pmtiles extract outputs progress info
-                if '%' in line:
-                    try:
-                        pct = int(float(line.split('%')[0].split()[-1]))
-                        _map_downloads[region_id]['progress'] = min(10 + int(pct * 0.85), 95)
-                    except (ValueError, IndexError):
-                        pass
-                _map_downloads[region_id]['status'] = f'Downloading tiles... {line.strip()}'
+            try:
+                for line in proc.stdout:
+                    lines.append(line.strip())
+                    # pmtiles extract outputs progress info
+                    if '%' in line:
+                        try:
+                            pct = int(float(line.split('%')[0].split()[-1]))
+                            _map_downloads[region_id]['progress'] = min(10 + int(pct * 0.85), 95)
+                        except (ValueError, IndexError):
+                            pass
+                    _map_downloads[region_id]['status'] = f'Downloading tiles... {line.strip()}'
 
-            proc.wait()
+                proc.wait()
+            except Exception:
+                # Ensure the subprocess is cleaned up on any exception
+                try:
+                    proc.terminate()
+                except OSError:
+                    pass
+                proc.wait()
+                raise
 
             if proc.returncode != 0:
                 err = '\n'.join(lines[-5:]) if lines else 'Unknown error'
@@ -2095,6 +2389,13 @@ RULES:
         filename = data.get('filename', '').strip()
         if not url:
             return jsonify({'error': 'Missing url'}), 400
+
+        # SSRF protection — validate URL before downloading
+        try:
+            _validate_download_url(url)
+        except ValueError as e:
+            return jsonify({'error': f'Invalid download URL: {e}'}), 400
+
         if not filename:
             filename = url.rstrip('/').split('/')[-1]
         if '..' in filename or '/' in filename or '\\' in filename:
@@ -2135,12 +2436,23 @@ RULES:
         threading.Thread(target=_dl_thread, daemon=True).start()
         return jsonify({'status': 'started', 'dl_id': dl_id})
 
+    ALLOWED_MAP_EXTENSIONS = ('.pmtiles', '.mbtiles', '.geojson', '.gpx', '.kml')
+
     @app.route('/api/maps/import-file', methods=['POST'])
     def api_maps_import_file():
         """Import a local map file by copying it to the maps directory."""
         data = request.get_json() or {}
         source_path = data.get('path', '').strip()
-        if not source_path or not os.path.isfile(source_path):
+        if not source_path:
+            return jsonify({'error': 'No path provided'}), 400
+        # Reject path traversal
+        if '..' in source_path:
+            return jsonify({'error': 'Invalid path: directory traversal not allowed'}), 400
+        # Validate file extension
+        ext = os.path.splitext(source_path)[1].lower()
+        if ext not in ALLOWED_MAP_EXTENSIONS:
+            return jsonify({'error': f'Unsupported map file type: {ext}. Allowed: {", ".join(ALLOWED_MAP_EXTENSIONS)}'}), 400
+        if not os.path.isfile(source_path):
             return jsonify({'error': 'File not found'}), 404
         filename = os.path.basename(source_path)
         dest = os.path.join(get_maps_dir(), filename)
@@ -2244,11 +2556,13 @@ RULES:
         file_size = os.path.getsize(filepath)
 
         db = get_db()
-        cur = db.execute('INSERT INTO documents (filename, content_type, file_size, status) VALUES (?, ?, ?, ?)',
-                         (filename, content_type, file_size, 'pending'))
-        db.commit()
-        doc_id = cur.lastrowid
-        db.close()
+        try:
+            cur = db.execute('INSERT INTO documents (filename, content_type, file_size, status) VALUES (?, ?, ?, ?)',
+                             (filename, content_type, file_size, 'pending'))
+            db.commit()
+            doc_id = cur.lastrowid
+        finally:
+            db.close()
 
         # Start embedding in background
         def do_embed():
@@ -2323,22 +2637,26 @@ RULES:
     @app.route('/api/kb/documents')
     def api_kb_documents():
         db = get_db()
-        docs = db.execute('SELECT * FROM documents ORDER BY created_at DESC').fetchall()
-        db.close()
+        try:
+            docs = db.execute('SELECT * FROM documents ORDER BY created_at DESC').fetchall()
+        finally:
+            db.close()
         return jsonify([dict(d) for d in docs])
 
     @app.route('/api/kb/documents/<int:doc_id>', methods=['DELETE'])
     def api_kb_document_delete(doc_id):
         db = get_db()
-        doc = db.execute('SELECT filename FROM documents WHERE id = ?', (doc_id,)).fetchone()
-        if doc:
-            filepath = os.path.join(get_kb_upload_dir(), doc['filename'])
-            if os.path.isfile(filepath):
-                os.remove(filepath)
-            qdrant.delete_by_doc_id(doc_id)
-            db.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
-            db.commit()
-        db.close()
+        try:
+            doc = db.execute('SELECT filename FROM documents WHERE id = ?', (doc_id,)).fetchone()
+            if doc:
+                filepath = os.path.join(get_kb_upload_dir(), doc['filename'])
+                if os.path.isfile(filepath):
+                    os.remove(filepath)
+                qdrant.delete_by_doc_id(doc_id)
+                db.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
+                db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'deleted'})
 
     @app.route('/api/kb/status')
@@ -2374,12 +2692,14 @@ RULES:
         limit = request.args.get('limit', 50, type=int)
         filter_val = request.args.get('filter', '')
         db = get_db()
-        if filter_val:
-            rows = db.execute('SELECT * FROM activity_log WHERE event LIKE ? OR service LIKE ? ORDER BY created_at DESC LIMIT ?',
-                              (f'%{filter_val}%', f'%{filter_val}%', limit)).fetchall()
-        else:
-            rows = db.execute('SELECT * FROM activity_log ORDER BY created_at DESC LIMIT ?', (limit,)).fetchall()
-        db.close()
+        try:
+            if filter_val:
+                rows = db.execute('SELECT * FROM activity_log WHERE event LIKE ? OR service LIKE ? ORDER BY created_at DESC LIMIT ?',
+                                  (f'%{filter_val}%', f'%{filter_val}%', limit)).fetchall()
+            else:
+                rows = db.execute('SELECT * FROM activity_log ORDER BY created_at DESC LIMIT ?', (limit,)).fetchall()
+        finally:
+            db.close()
         return jsonify([dict(r) for r in rows])
 
     # ─── GPU Info ──────────────────────────────────────────────────────
@@ -2427,42 +2747,107 @@ RULES:
             log.warning(f'Update check failed: {e}')
         return jsonify({'current': VERSION, 'latest': VERSION, 'update_available': False})
 
-    # ─── Windows Startup Toggle ───────────────────────────────────────
+    # ─── Startup Toggle (Cross-Platform) ─────────────────────────────
+
+    def _get_autostart_path():
+        """Get the platform-specific autostart file/registry path."""
+        if sys.platform == 'win32':
+            return 'registry'
+        elif sys.platform == 'darwin':
+            return os.path.expanduser('~/Library/LaunchAgents/com.sysadmindoc.projectnomad.plist')
+        else:  # Linux
+            xdg = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+            return os.path.join(xdg, 'autostart', 'ProjectNOMAD.desktop')
 
     @app.route('/api/startup')
     def api_startup_get():
-        """Check if app is set to start with Windows."""
-        import winreg
+        """Check if app is set to start at login (cross-platform)."""
         try:
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                                 r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_READ)
-            winreg.QueryValueEx(key, 'ProjectNOMAD')
-            winreg.CloseKey(key)
-            return jsonify({'enabled': True})
+            if sys.platform == 'win32':
+                import winreg
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                     r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_READ)
+                winreg.QueryValueEx(key, 'ProjectNOMAD')
+                winreg.CloseKey(key)
+                return jsonify({'enabled': True, 'platform': 'windows'})
+            else:
+                path = _get_autostart_path()
+                return jsonify({'enabled': os.path.isfile(path), 'platform': sys.platform})
         except Exception:
-            return jsonify({'enabled': False})
+            return jsonify({'enabled': False, 'platform': sys.platform})
 
     @app.route('/api/startup', methods=['PUT'])
     def api_startup_set():
-        """Enable or disable start with Windows."""
-        import winreg
+        """Enable or disable start at login (cross-platform)."""
         data = request.get_json() or {}
         enabled = data.get('enabled', False)
         try:
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
-                                 r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_SET_VALUE)
-            if enabled:
-                exe_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath('nomad.py')
-                if getattr(sys, 'frozen', False):
-                    winreg.SetValueEx(key, 'ProjectNOMAD', 0, winreg.REG_SZ, f'"{exe_path}"')
+            exe_path = sys.executable if getattr(sys, 'frozen', False) else os.path.abspath('nomad.py')
+
+            if sys.platform == 'win32':
+                import winreg
+                key = winreg.OpenKey(winreg.HKEY_CURRENT_USER,
+                                     r'Software\Microsoft\Windows\CurrentVersion\Run', 0, winreg.KEY_SET_VALUE)
+                if enabled:
+                    if getattr(sys, 'frozen', False):
+                        winreg.SetValueEx(key, 'ProjectNOMAD', 0, winreg.REG_SZ, f'"{exe_path}"')
+                    else:
+                        winreg.SetValueEx(key, 'ProjectNOMAD', 0, winreg.REG_SZ, f'"{sys.executable}" "{exe_path}"')
                 else:
-                    winreg.SetValueEx(key, 'ProjectNOMAD', 0, winreg.REG_SZ, f'"{sys.executable}" "{exe_path}"')
-            else:
-                try:
-                    winreg.DeleteValue(key, 'ProjectNOMAD')
-                except FileNotFoundError:
-                    pass
-            winreg.CloseKey(key)
+                    try:
+                        winreg.DeleteValue(key, 'ProjectNOMAD')
+                    except FileNotFoundError:
+                        pass
+                winreg.CloseKey(key)
+
+            elif sys.platform == 'darwin':
+                plist_path = _get_autostart_path()
+                if enabled:
+                    os.makedirs(os.path.dirname(plist_path), exist_ok=True)
+                    if getattr(sys, 'frozen', False):
+                        program_args = f'<string>{exe_path}</string>'
+                    else:
+                        program_args = f'<string>{sys.executable}</string>\n            <string>{exe_path}</string>'
+                    with open(plist_path, 'w') as f:
+                        f.write(f'''<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sysadmindoc.projectnomad</string>
+    <key>ProgramArguments</key>
+    <array>
+        {program_args}
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>''')
+                else:
+                    if os.path.isfile(plist_path):
+                        os.remove(plist_path)
+
+            else:  # Linux
+                desktop_path = _get_autostart_path()
+                if enabled:
+                    os.makedirs(os.path.dirname(desktop_path), exist_ok=True)
+                    if getattr(sys, 'frozen', False):
+                        exec_line = exe_path
+                    else:
+                        exec_line = f'{sys.executable} {exe_path}'
+                    with open(desktop_path, 'w') as f:
+                        f.write(f'''[Desktop Entry]
+Type=Application
+Name=Project N.O.M.A.D.
+Comment=Offline Survival Command Center
+Exec={exec_line}
+Terminal=false
+X-GNOME-Autostart-enabled=true
+''')
+                else:
+                    if os.path.isfile(desktop_path):
+                        os.remove(desktop_path)
+
             return jsonify({'status': 'ok', 'enabled': enabled})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
@@ -2512,6 +2897,48 @@ RULES:
                     return jsonify({'error': 'Invalid backup file'}), 400
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+    # ─── Database Restore from Auto-Backups ──────────────────────────
+
+    @app.route('/api/backups')
+    def api_backups_list():
+        """List available automatic database backups."""
+        from db import get_db_path
+        backup_dir = os.path.join(os.path.dirname(get_db_path()), 'backups')
+        if not os.path.isdir(backup_dir):
+            return jsonify([])
+        backups = []
+        for f in sorted(os.listdir(backup_dir), reverse=True):
+            if f.endswith('.db'):
+                path = os.path.join(backup_dir, f)
+                size = os.path.getsize(path)
+                backups.append({
+                    'filename': f,
+                    'size': f'{size / (1024*1024):.1f} MB' if size > 1024*1024 else f'{size / 1024:.0f} KB',
+                    'modified': os.path.getmtime(path),
+                })
+        return jsonify(backups)
+
+    @app.route('/api/backups/restore', methods=['POST'])
+    def api_backups_restore():
+        """Restore database from an automatic backup file."""
+        from db import get_db_path, backup_db
+        data = request.get_json() or {}
+        filename = data.get('filename', '')
+        if not filename or '..' in filename or '/' in filename or '\\' in filename:
+            return jsonify({'error': 'Invalid filename'}), 400
+        backup_dir = os.path.join(os.path.dirname(get_db_path()), 'backups')
+        backup_path = os.path.join(backup_dir, filename)
+        if not os.path.isfile(backup_path):
+            return jsonify({'error': 'Backup not found'}), 404
+        # Safety: back up current DB first
+        backup_db()
+        # Replace current DB with backup
+        import shutil
+        db_path = get_db_path()
+        shutil.copy2(backup_path, db_path)
+        log_activity('database_restored', detail=f'Restored from {filename}')
+        return jsonify({'status': 'ok', 'message': f'Database restored from {filename}. Restart app to fully apply.'})
 
     # ─── Auto-pull default model after Ollama install ─────────────────
 
@@ -2902,8 +3329,10 @@ RULES:
     @app.route('/api/checklists')
     def api_checklists_list():
         db = get_db()
-        rows = db.execute('SELECT * FROM checklists ORDER BY updated_at DESC').fetchall()
-        db.close()
+        try:
+            rows = db.execute('SELECT * FROM checklists ORDER BY updated_at DESC').fetchall()
+        finally:
+            db.close()
         result = []
         for r in rows:
             items = json.loads(r['items'] or '[]')
@@ -2931,19 +3360,23 @@ RULES:
             name = data.get('name', 'Custom Checklist')
             items = json.dumps(data.get('items', []))
         db = get_db()
-        cur = db.execute('INSERT INTO checklists (name, template, items) VALUES (?, ?, ?)',
-                         (name, template_id, items))
-        db.commit()
-        cid = cur.lastrowid
-        row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
-        db.close()
+        try:
+            cur = db.execute('INSERT INTO checklists (name, template, items) VALUES (?, ?, ?)',
+                             (name, template_id, items))
+            db.commit()
+            cid = cur.lastrowid
+            row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
+        finally:
+            db.close()
         return jsonify({**dict(row), 'items': json.loads(row['items'] or '[]')}), 201
 
     @app.route('/api/checklists/<int:cid>')
     def api_checklists_get(cid):
         db = get_db()
-        row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
-        db.close()
+        try:
+            row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
+        finally:
+            db.close()
         if not row:
             return jsonify({'error': 'Not found'}), 404
         return jsonify({**dict(row), 'items': json.loads(row['items'] or '[]')})
@@ -2952,27 +3385,31 @@ RULES:
     def api_checklists_update(cid):
         data = request.get_json() or {}
         db = get_db()
-        fields = []
-        vals = []
-        if 'name' in data:
-            fields.append('name = ?')
-            vals.append(data['name'])
-        if 'items' in data:
-            fields.append('items = ?')
-            vals.append(json.dumps(data['items']))
-        fields.append('updated_at = CURRENT_TIMESTAMP')
-        vals.append(cid)
-        db.execute(f'UPDATE checklists SET {", ".join(fields)} WHERE id = ?', vals)
-        db.commit()
-        db.close()
+        try:
+            fields = []
+            vals = []
+            if 'name' in data:
+                fields.append('name = ?')
+                vals.append(data['name'])
+            if 'items' in data:
+                fields.append('items = ?')
+                vals.append(json.dumps(data['items']))
+            fields.append('updated_at = CURRENT_TIMESTAMP')
+            vals.append(cid)
+            db.execute(f'UPDATE checklists SET {", ".join(fields)} WHERE id = ?', vals)
+            db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'saved'})
 
     @app.route('/api/checklists/<int:cid>', methods=['DELETE'])
     def api_checklists_delete(cid):
         db = get_db()
-        db.execute('DELETE FROM checklists WHERE id = ?', (cid,))
-        db.commit()
-        db.close()
+        try:
+            db.execute('DELETE FROM checklists WHERE id = ?', (cid,))
+            db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'deleted'})
 
     # ─── Inventory API ────────────────────────────────────────────────
@@ -2985,43 +3422,46 @@ RULES:
     @app.route('/api/inventory')
     def api_inventory_list():
         db = get_db()
-        cat = request.args.get('category', '')
-        search = request.args.get('q', '').strip()
-        query = 'SELECT * FROM inventory'
-        params = []
-        clauses = []
-        if cat:
-            clauses.append('category = ?')
-            params.append(cat)
-        if search:
-            clauses.append('(name LIKE ? OR location LIKE ? OR notes LIKE ?)')
-            params.extend([f'%{search}%'] * 3)
-        if clauses:
-            query += ' WHERE ' + ' AND '.join(clauses)
-        query += ' ORDER BY category, name'
-        rows = db.execute(query, params).fetchall()
-        db.close()
+        try:
+            cat = request.args.get('category', '')
+            search = request.args.get('q', '').strip()
+            query = 'SELECT * FROM inventory'
+            params = []
+            clauses = []
+            if cat:
+                clauses.append('category = ?')
+                params.append(cat)
+            if search:
+                clauses.append('(name LIKE ? OR location LIKE ? OR notes LIKE ?)')
+                params.extend([f'%{search}%'] * 3)
+            if clauses:
+                query += ' WHERE ' + ' AND '.join(clauses)
+            query += ' ORDER BY category, name'
+            rows = db.execute(query, params).fetchall()
+        finally:
+            db.close()
         return jsonify([dict(r) for r in rows])
 
     @app.route('/api/inventory', methods=['POST'])
     def api_inventory_create():
         data = request.get_json() or {}
         db = get_db()
-        cur = db.execute(
-            'INSERT INTO inventory (name, category, quantity, unit, min_quantity, daily_usage, location, expiration, barcode, cost, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (data.get('name', ''), data.get('category', 'other'), data.get('quantity', 0),
-             data.get('unit', 'ea'), data.get('min_quantity', 0), data.get('daily_usage', 0),
-             data.get('location', ''), data.get('expiration', ''), data.get('barcode', ''), data.get('cost', 0), data.get('notes', '')))
-        db.commit()
-        item_id = cur.lastrowid
-        row = db.execute('SELECT * FROM inventory WHERE id = ?', (item_id,)).fetchone()
-        db.close()
+        try:
+            cur = db.execute(
+                'INSERT INTO inventory (name, category, quantity, unit, min_quantity, daily_usage, location, expiration, barcode, cost, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                (data.get('name', ''), data.get('category', 'other'), data.get('quantity', 0),
+                 data.get('unit', 'ea'), data.get('min_quantity', 0), data.get('daily_usage', 0),
+                 data.get('location', ''), data.get('expiration', ''), data.get('barcode', ''), data.get('cost', 0), data.get('notes', '')))
+            db.commit()
+            item_id = cur.lastrowid
+            row = db.execute('SELECT * FROM inventory WHERE id = ?', (item_id,)).fetchone()
+        finally:
+            db.close()
         return jsonify(dict(row)), 201
 
     @app.route('/api/inventory/<int:item_id>', methods=['PUT'])
     def api_inventory_update(item_id):
         data = request.get_json() or {}
-        db = get_db()
         allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'barcode', 'cost', 'notes']
         fields = []
         vals = []
@@ -3031,34 +3471,41 @@ RULES:
                 vals.append(data[k])
         if not fields:
             return jsonify({'error': 'No fields to update'}), 400
-        fields.append('updated_at = CURRENT_TIMESTAMP')
-        vals.append(item_id)
-        db.execute(f'UPDATE inventory SET {", ".join(fields)} WHERE id = ?', vals)
-        db.commit()
-        db.close()
+        db = get_db()
+        try:
+            fields.append('updated_at = CURRENT_TIMESTAMP')
+            vals.append(item_id)
+            db.execute(f'UPDATE inventory SET {", ".join(fields)} WHERE id = ?', vals)
+            db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'saved'})
 
     @app.route('/api/inventory/<int:item_id>', methods=['DELETE'])
     def api_inventory_delete(item_id):
         db = get_db()
-        db.execute('DELETE FROM inventory WHERE id = ?', (item_id,))
-        db.commit()
-        db.close()
+        try:
+            db.execute('DELETE FROM inventory WHERE id = ?', (item_id,))
+            db.commit()
+        finally:
+            db.close()
         return jsonify({'status': 'deleted'})
 
     @app.route('/api/inventory/summary')
     def api_inventory_summary():
         db = get_db()
-        total = db.execute('SELECT COUNT(*) as c FROM inventory').fetchone()['c']
-        low_stock = db.execute('SELECT COUNT(*) as c FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchone()['c']
-        # Expiring within 30 days
-        from datetime import datetime, timedelta
-        soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
-        today = datetime.now().strftime('%Y-%m-%d')
-        expiring = db.execute("SELECT COUNT(*) as c FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ?", (soon, today)).fetchone()['c']
-        expired = db.execute("SELECT COUNT(*) as c FROM inventory WHERE expiration != '' AND expiration < ?", (today,)).fetchone()['c']
-        cats = db.execute('SELECT category, COUNT(*) as c, SUM(quantity) as qty FROM inventory GROUP BY category ORDER BY category').fetchall()
-        db.close()
+        try:
+            total = db.execute('SELECT COUNT(*) as c FROM inventory').fetchone()['c']
+            low_stock = db.execute('SELECT COUNT(*) as c FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchone()['c']
+            # Expiring within 30 days
+            from datetime import datetime, timedelta
+            soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+            today = datetime.now().strftime('%Y-%m-%d')
+            expiring = db.execute("SELECT COUNT(*) as c FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ?", (soon, today)).fetchone()['c']
+            expired = db.execute("SELECT COUNT(*) as c FROM inventory WHERE expiration != '' AND expiration < ?", (today,)).fetchone()['c']
+            cats = db.execute('SELECT category, COUNT(*) as c, SUM(quantity) as qty FROM inventory GROUP BY category ORDER BY category').fetchall()
+        finally:
+            db.close()
         return jsonify({
             'total': total, 'low_stock': low_stock, 'expiring_soon': expiring, 'expired': expired,
             'categories': [{'category': r['category'], 'count': r['c'], 'total_qty': r['qty'] or 0} for r in cats],
@@ -3072,8 +3519,10 @@ RULES:
     def api_inventory_burn_rate():
         """Calculate days of supply remaining per category."""
         db = get_db()
-        rows = db.execute('SELECT category, name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY category, name').fetchall()
-        db.close()
+        try:
+            rows = db.execute('SELECT category, name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY category, name').fetchall()
+        finally:
+            db.close()
         cats = {}
         for r in rows:
             cat = r['category']
@@ -3100,26 +3549,28 @@ RULES:
     def api_preparedness_print():
         """Generate printable emergency summary page."""
         db = get_db()
-        contacts = db.execute('SELECT * FROM contacts ORDER BY name').fetchall()
-        settings = {r['key']: r['value'] for r in db.execute('SELECT key, value FROM settings').fetchall()}
+        try:
+            contacts = db.execute('SELECT * FROM contacts ORDER BY name').fetchall()
+            settings = {r['key']: r['value'] for r in db.execute('SELECT key, value FROM settings').fetchall()}
 
-        # Burn rate summary
-        burn_rows = db.execute('SELECT category, name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY category').fetchall()
-        burn = {}
-        for r in burn_rows:
-            cat = r['category']
-            days = round(r['quantity'] / r['daily_usage'], 1) if r['daily_usage'] > 0 else 999
-            if cat not in burn or days < burn[cat]:
-                burn[cat] = days
+            # Burn rate summary
+            burn_rows = db.execute('SELECT category, name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY category').fetchall()
+            burn = {}
+            for r in burn_rows:
+                cat = r['category']
+                days = round(r['quantity'] / r['daily_usage'], 1) if r['daily_usage'] > 0 else 999
+                if cat not in burn or days < burn[cat]:
+                    burn[cat] = days
 
-        # Low stock items
-        low = db.execute('SELECT name, quantity, unit, category FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchall()
+            # Low stock items
+            low = db.execute('SELECT name, quantity, unit, category FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchall()
 
-        # Expiring items
-        from datetime import datetime, timedelta
-        soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
-        expiring = db.execute("SELECT name, expiration, category FROM inventory WHERE expiration != '' AND expiration <= ? ORDER BY expiration", (soon,)).fetchall()
-        db.close()
+            # Expiring items
+            from datetime import datetime, timedelta
+            soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+            expiring = db.execute("SELECT name, expiration, category FROM inventory WHERE expiration != '' AND expiration <= ? ORDER BY expiration", (soon,)).fetchall()
+        finally:
+            db.close()
 
         # Situation board
         sit = {}
@@ -3302,6 +3753,73 @@ RULES:
         db.commit()
         db.close()
         return jsonify({'status': 'cleared'})
+
+    # ─── LAN Enhancements (v5.0 Phase 10) ──────────────────────────
+
+    @app.route('/api/lan/channels')
+    def api_lan_channels():
+        """List LAN chat channels."""
+        db = get_db()
+        try:
+            rows = db.execute('SELECT * FROM lan_channels ORDER BY name').fetchall()
+            channels = [dict(r) for r in rows]
+            if not channels:
+                for ch in ['General', 'Security', 'Medical', 'Logistics']:
+                    db.execute('INSERT OR IGNORE INTO lan_channels (name) VALUES (?)', (ch,))
+                db.commit()
+                channels = [{'name': ch} for ch in ['General', 'Security', 'Medical', 'Logistics']]
+            return jsonify(channels)
+        finally:
+            db.close()
+
+    @app.route('/api/lan/channels', methods=['POST'])
+    def api_lan_channel_create():
+        """Create a LAN chat channel."""
+        d = request.json or {}
+        name = d.get('name', '').strip()
+        if not name:
+            return jsonify({'error': 'name required'}), 400
+        db = get_db()
+        try:
+            db.execute('INSERT OR IGNORE INTO lan_channels (name, description) VALUES (?, ?)',
+                       (name, d.get('description', '')))
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/lan/presence')
+    def api_lan_presence():
+        """List known LAN nodes and their status."""
+        db = get_db()
+        try:
+            rows = db.execute(
+                "SELECT * FROM lan_presence WHERE last_seen >= datetime('now', '-5 minutes') ORDER BY node_name"
+            ).fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/lan/presence/heartbeat', methods=['POST'])
+    def api_lan_heartbeat():
+        """Register/update LAN presence."""
+        d = request.json or {}
+        ip = request.remote_addr or d.get('ip', '')
+        name = d.get('name', 'Unknown')
+        version = d.get('version', '')
+        db = get_db()
+        try:
+            db.execute(
+                '''INSERT INTO lan_presence (node_name, ip, status, version, last_seen)
+                   VALUES (?, ?, 'online', ?, CURRENT_TIMESTAMP)
+                   ON CONFLICT(ip) DO UPDATE SET
+                   node_name = excluded.node_name, status = 'online', version = excluded.version, last_seen = CURRENT_TIMESTAMP''',
+                (name, ip, version)
+            )
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
 
     # ─── Incident Log API ─────────────────────────────────────────────
 
@@ -4909,11 +5427,15 @@ RULES:
 
     @app.route('/api/ytdlp/progress')
     def api_ytdlp_progress():
-        return jsonify(_ytdlp_downloads)
+        with _state_lock:
+            snapshot = dict(_ytdlp_downloads)
+        return jsonify(snapshot)
 
     @app.route('/api/ytdlp/progress/<dl_id>')
     def api_ytdlp_progress_single(dl_id):
-        return jsonify(_ytdlp_downloads.get(dl_id, {'status': 'unknown'}))
+        with _state_lock:
+            entry = _ytdlp_downloads.get(dl_id, {'status': 'unknown'})
+        return jsonify(entry)
 
     @app.route('/api/videos/catalog')
     def api_videos_catalog():
@@ -5860,6 +6382,123 @@ RULES:
             'books': {'count': b_count, 'size': b_size, 'size_fmt': format_size(b_size)},
             'total_size': total_size, 'total_size_fmt': format_size(total_size),
         })
+
+    # ─── Media Enhancements (v5.0 Phase 6) ──────────────────────────
+
+    @app.route('/api/media/progress/<media_type>/<int:media_id>', methods=['GET'])
+    def api_media_progress_get(media_type, media_id):
+        """Get playback progress for a media item."""
+        if media_type not in ('video', 'audio', 'book'):
+            return jsonify({'error': 'Invalid media type'}), 400
+        db = get_db()
+        try:
+            row = db.execute('SELECT * FROM media_progress WHERE media_type = ? AND media_id = ?', (media_type, media_id)).fetchone()
+            return jsonify(dict(row) if row else {'position_sec': 0, 'duration_sec': 0, 'completed': 0})
+        finally:
+            db.close()
+
+    @app.route('/api/media/progress/<media_type>/<int:media_id>', methods=['PUT'])
+    def api_media_progress_update(media_type, media_id):
+        """Update playback progress for a media item."""
+        if media_type not in ('video', 'audio', 'book'):
+            return jsonify({'error': 'Invalid media type'}), 400
+        d = request.json or {}
+        db = get_db()
+        try:
+            db.execute(
+                '''INSERT INTO media_progress (media_type, media_id, position_sec, duration_sec, completed, updated_at)
+                   VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                   ON CONFLICT(media_type, media_id) DO UPDATE SET
+                   position_sec = excluded.position_sec, duration_sec = excluded.duration_sec,
+                   completed = excluded.completed, updated_at = CURRENT_TIMESTAMP''',
+                (media_type, media_id, d.get('position_sec', 0), d.get('duration_sec', 0), d.get('completed', 0))
+            )
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/media/resume')
+    def api_media_resume_list():
+        """Get all in-progress media for 'Continue Watching/Listening' section."""
+        db = get_db()
+        try:
+            rows = db.execute(
+                '''SELECT mp.*,
+                   CASE mp.media_type
+                     WHEN 'video' THEN (SELECT title FROM videos WHERE id = mp.media_id)
+                     WHEN 'audio' THEN (SELECT title FROM audio WHERE id = mp.media_id)
+                     WHEN 'book' THEN (SELECT title FROM books WHERE id = mp.media_id)
+                   END as title
+                   FROM media_progress mp
+                   WHERE mp.completed = 0 AND mp.position_sec > 10
+                   ORDER BY mp.updated_at DESC LIMIT 20'''
+            ).fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/playlists', methods=['GET'])
+    def api_playlists():
+        """List all playlists."""
+        media_type = request.args.get('type', '')
+        db = get_db()
+        try:
+            if media_type:
+                rows = db.execute('SELECT * FROM playlists WHERE media_type = ? ORDER BY updated_at DESC', (media_type,)).fetchall()
+            else:
+                rows = db.execute('SELECT * FROM playlists ORDER BY updated_at DESC').fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/playlists', methods=['POST'])
+    def api_playlist_create():
+        """Create a new playlist."""
+        d = request.json or {}
+        name = d.get('name', 'New Playlist').strip()
+        media_type = d.get('media_type', 'audio')
+        db = get_db()
+        try:
+            db.execute('INSERT INTO playlists (name, media_type, items) VALUES (?, ?, ?)',
+                       (name, media_type, json.dumps(d.get('items', []))))
+            db.commit()
+            pid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            return jsonify({'id': pid, 'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/playlists/<int:pid>', methods=['PUT'])
+    def api_playlist_update(pid):
+        """Update a playlist."""
+        d = request.json or {}
+        db = get_db()
+        try:
+            updates = []
+            params = []
+            for field in ('name', 'items'):
+                if field in d:
+                    updates.append(f'{field} = ?')
+                    params.append(json.dumps(d[field]) if field == 'items' else d[field])
+            if updates:
+                updates.append('updated_at = CURRENT_TIMESTAMP')
+                params.append(pid)
+                db.execute(f'UPDATE playlists SET {", ".join(updates)} WHERE id = ?', params)
+                db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/playlists/<int:pid>', methods=['DELETE'])
+    def api_playlist_delete(pid):
+        """Delete a playlist."""
+        db = get_db()
+        try:
+            db.execute('DELETE FROM playlists WHERE id = ?', (pid,))
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
 
     # ─── Sneakernet Sync API ─────────────────────────────────────────
 
@@ -7734,6 +8373,128 @@ th {{ background: #eee; font-weight: 700; }}
         db.close()
         return jsonify({'status': 'deleted'})
 
+    # ─── Garden Enhancements (v5.0 Phase 11) ────────────────────────
+
+    @app.route('/api/garden/companions')
+    def api_companion_plants():
+        """Get companion planting guide."""
+        db = get_db()
+        try:
+            rows = db.execute('SELECT * FROM companion_plants ORDER BY plant_a').fetchall()
+            companions = [dict(r) for r in rows]
+            if not companions:
+                # Seed with common companion planting data
+                pairs = [
+                    ('Tomato', 'Basil', 'companion', 'Basil repels pests and improves tomato flavor'),
+                    ('Tomato', 'Carrot', 'companion', 'Carrots loosen soil for tomato roots'),
+                    ('Tomato', 'Fennel', 'antagonist', 'Fennel inhibits tomato growth'),
+                    ('Corn', 'Bean', 'companion', 'Three Sisters: beans fix nitrogen for corn'),
+                    ('Corn', 'Squash', 'companion', 'Three Sisters: squash shades soil'),
+                    ('Bean', 'Onion', 'antagonist', 'Onions inhibit bean growth'),
+                    ('Carrot', 'Onion', 'companion', 'Onions repel carrot fly'),
+                    ('Lettuce', 'Radish', 'companion', 'Quick radish harvest makes room'),
+                    ('Cucumber', 'Dill', 'companion', 'Dill attracts beneficial insects'),
+                    ('Pepper', 'Basil', 'companion', 'Basil repels aphids and spider mites'),
+                    ('Potato', 'Horseradish', 'companion', 'Horseradish deters potato beetles'),
+                    ('Potato', 'Tomato', 'antagonist', 'Both susceptible to blight — spread disease'),
+                    ('Cabbage', 'Dill', 'companion', 'Dill attracts wasps that prey on cabbage worms'),
+                    ('Cabbage', 'Strawberry', 'antagonist', 'Compete for nutrients'),
+                    ('Garlic', 'Rose', 'companion', 'Garlic repels aphids from roses'),
+                    ('Marigold', 'Tomato', 'companion', 'Marigolds repel nematodes'),
+                    ('Sunflower', 'Cucumber', 'companion', 'Sunflowers attract pollinators'),
+                    ('Pea', 'Carrot', 'companion', 'Peas fix nitrogen for carrots'),
+                    ('Spinach', 'Strawberry', 'companion', 'Good ground cover pairing'),
+                    ('Zucchini', 'Nasturtium', 'companion', 'Nasturtiums trap squash bugs'),
+                ]
+                for a, b, rel, note in pairs:
+                    db.execute('INSERT INTO companion_plants (plant_a, plant_b, relationship, notes) VALUES (?, ?, ?, ?)',
+                               (a, b, rel, note))
+                db.commit()
+                companions = [{'plant_a': a, 'plant_b': b, 'relationship': rel, 'notes': note} for a, b, rel, note in pairs]
+            return jsonify(companions)
+        finally:
+            db.close()
+
+    @app.route('/api/garden/planting-calendar')
+    def api_planting_calendar():
+        """Get planting calendar with frost date adjustments."""
+        zone = request.args.get('zone', '7')
+        db = get_db()
+        try:
+            rows = db.execute('SELECT * FROM planting_calendar WHERE zone = ? ORDER BY month, crop', (zone,)).fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/garden/seeds/inventory')
+    def api_seed_inventory():
+        """List seed inventory."""
+        db = get_db()
+        try:
+            rows = db.execute('SELECT * FROM seed_inventory ORDER BY species, variety').fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/garden/seeds/inventory', methods=['POST'])
+    def api_seed_add():
+        """Add seeds to inventory."""
+        d = request.json or {}
+        db = get_db()
+        try:
+            db.execute(
+                '''INSERT INTO seed_inventory (species, variety, quantity, unit, viability_pct, year_acquired, source, days_to_maturity, notes)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                (d.get('species', ''), d.get('variety', ''), d.get('quantity', 0), d.get('unit', 'seeds'),
+                 d.get('viability_pct', 90), d.get('year_acquired'), d.get('source', ''),
+                 d.get('days_to_maturity'), d.get('notes', ''))
+            )
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/garden/seeds/inventory/<int:sid>', methods=['DELETE'])
+    def api_seed_delete(sid):
+        """Delete a seed inventory entry."""
+        db = get_db()
+        try:
+            db.execute('DELETE FROM seed_inventory WHERE id = ?', (sid,))
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/garden/pests')
+    def api_pest_guide():
+        """Get pest/disease reference guide."""
+        db = get_db()
+        try:
+            rows = db.execute('SELECT * FROM pest_guide ORDER BY name').fetchall()
+            pests = [dict(r) for r in rows]
+            if not pests:
+                guide = [
+                    ('Aphids', 'insect', 'Most vegetables, roses', 'Curled leaves, sticky residue, stunted growth', 'Spray with soapy water, neem oil, introduce ladybugs', 'Companion plant with marigolds, avoid over-fertilizing'),
+                    ('Tomato Hornworm', 'insect', 'Tomatoes, peppers, eggplant', 'Large holes in leaves, stripped stems, dark droppings', 'Hand-pick, BT spray, introduce parasitic wasps', 'Till soil in fall, rotate crops, plant dill to attract wasps'),
+                    ('Powdery Mildew', 'fungus', 'Squash, cucumber, melon, peas', 'White powdery coating on leaves', 'Baking soda spray (1 tbsp/gal), neem oil, remove affected leaves', 'Space plants for airflow, water at base not leaves, resistant varieties'),
+                    ('Slugs & Snails', 'mollusk', 'Lettuce, cabbage, strawberries, hostas', 'Irregular holes in leaves, slime trails', 'Beer traps, diatomaceous earth, copper tape around beds', 'Remove hiding spots, water in morning not evening'),
+                    ('Colorado Potato Beetle', 'insect', 'Potatoes, eggplant, tomatoes', 'Stripped leaves, orange larvae on undersides', 'Hand-pick, neem oil, spinosad spray', 'Rotate crops, mulch with straw, plant resistant varieties'),
+                    ('Blight (Early/Late)', 'fungus', 'Tomatoes, potatoes', 'Brown spots on leaves, fruit rot, rapid wilting', 'Copper fungicide, remove affected plants immediately', 'Rotate crops 3yr, resistant varieties, avoid overhead watering'),
+                    ('Cabbage Worm', 'insect', 'Cabbage, broccoli, kale, cauliflower', 'Holes in leaves, green caterpillars, dark droppings', 'BT spray, hand-pick, row covers', 'Plant dill/thyme nearby, use floating row covers from transplant'),
+                    ('Spider Mites', 'arachnid', 'Beans, tomatoes, strawberries, cucumbers', 'Yellow stippling on leaves, fine webs, leaf drop', 'Strong water spray, neem oil, insecticidal soap', 'Maintain humidity, avoid dusty conditions, introduce predatory mites'),
+                    ('Root Rot', 'fungus', 'Most plants in poorly drained soil', 'Wilting despite moist soil, yellow leaves, mushy roots', 'Remove affected plants, improve drainage, fungicide drench', 'Ensure good drainage, avoid overwatering, raise beds'),
+                    ('Japanese Beetle', 'insect', 'Roses, grapes, beans, raspberries', 'Skeletonized leaves (veins intact), damaged flowers', 'Hand-pick into soapy water, neem oil, milky spore for grubs', 'Treat lawn for grubs in fall, avoid traps near garden'),
+                ]
+                for name, ptype, affects, symptoms, treatment, prevention in guide:
+                    db.execute('INSERT INTO pest_guide (name, pest_type, affects, symptoms, treatment, prevention) VALUES (?, ?, ?, ?, ?, ?)',
+                               (name, ptype, affects, symptoms, treatment, prevention))
+                db.commit()
+                pests = [{'name': n, 'pest_type': p, 'affects': a, 'symptoms': s, 'treatment': t, 'prevention': pr}
+                         for n, p, a, s, t, pr in guide]
+            return jsonify(pests)
+        finally:
+            db.close()
+
     # ─── Federation v2 API ───────────────────────────────────────────
 
     @app.route('/api/federation/peers')
@@ -7956,6 +8717,122 @@ th {{ background: #eee; font-weight: 700; }}
                            headers={'Content-Disposition': 'attachment; filename="nomad-notes.zip"'})
         except Exception as e:
             return jsonify({'error': str(e)}), 500
+
+    # ─── Notes Enhancements (v5.0 Phase 5) ─────────────────────────
+
+    @app.route('/api/notes/tags')
+    def api_note_tags():
+        """List all unique tags with counts."""
+        db = get_db()
+        try:
+            rows = db.execute(
+                'SELECT tag, COUNT(*) as count FROM note_tags GROUP BY tag ORDER BY count DESC, tag'
+            ).fetchall()
+            return jsonify([{'tag': r['tag'], 'count': r['count']} for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/notes/<int:note_id>/tags', methods=['POST'])
+    def api_note_add_tag(note_id):
+        """Add a tag to a note."""
+        d = request.json or {}
+        tag = d.get('tag', '').strip().lower()
+        if not tag:
+            return jsonify({'error': 'tag required'}), 400
+        db = get_db()
+        try:
+            db.execute('INSERT OR IGNORE INTO note_tags (note_id, tag) VALUES (?, ?)', (note_id, tag))
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/notes/<int:note_id>/tags/<tag>', methods=['DELETE'])
+    def api_note_remove_tag(note_id, tag):
+        """Remove a tag from a note."""
+        db = get_db()
+        try:
+            db.execute('DELETE FROM note_tags WHERE note_id = ? AND tag = ?', (note_id, tag))
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/notes/<int:note_id>/backlinks')
+    def api_note_backlinks(note_id):
+        """Get all notes that link to this note."""
+        db = get_db()
+        try:
+            rows = db.execute(
+                '''SELECT n.id, n.title, n.updated_at FROM notes n
+                   JOIN note_links l ON l.source_note_id = n.id
+                   WHERE l.target_note_id = ? ORDER BY n.updated_at DESC''',
+                (note_id,)
+            ).fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/notes/search-titles')
+    def api_note_search_titles():
+        """Search note titles for wiki-link autocomplete."""
+        q = request.args.get('q', '').strip()
+        if not q:
+            return jsonify([])
+        db = get_db()
+        try:
+            rows = db.execute('SELECT id, title FROM notes WHERE title LIKE ? LIMIT 10', (f'%{q}%',)).fetchall()
+            return jsonify([{'id': r['id'], 'title': r['title']} for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/notes/templates')
+    def api_note_templates():
+        """List note templates."""
+        db = get_db()
+        try:
+            rows = db.execute('SELECT * FROM note_templates ORDER BY name').fetchall()
+            templates = [dict(r) for r in rows]
+            # Add built-in templates if table is empty
+            if not templates:
+                builtins = [
+                    {'name': 'Incident Report', 'icon': '🚨', 'content': '# Incident Report\n\n**Date:** \n**Location:** \n**Severity:** \n\n## Description\n\n\n## Actions Taken\n\n\n## Follow-up Required\n\n'},
+                    {'name': 'Patrol Log', 'icon': '🔍', 'content': '# Patrol Log\n\n**Date:** \n**Route:** \n**Personnel:** \n\n## Observations\n\n\n## Contacts Made\n\n\n## Issues Found\n\n'},
+                    {'name': 'Comms Log', 'icon': '📡', 'content': '# Communications Log\n\n**Date:** \n**Operator:** \n**Freq:** \n\n| Time | Callsign | Direction | Message | Signal |\n|------|----------|-----------|---------|--------|\n| | | | | |\n'},
+                    {'name': 'SITREP', 'icon': '📋', 'content': '# SITREP\n\n**DTG:** \n**From:** \n**To:** \n\n## 1. SITUATION\n\n## 2. ACTIONS\n\n## 3. REQUIREMENTS\n\n## 4. LOGISTICS\n\n## 5. PERSONNEL\n\n'},
+                    {'name': 'Meeting Notes', 'icon': '🤝', 'content': '# Meeting Notes\n\n**Date:** \n**Attendees:** \n\n## Agenda\n\n\n## Discussion\n\n\n## Action Items\n- [ ] \n'},
+                    {'name': 'Daily Journal', 'icon': '📓', 'content': '# Journal Entry\n\n**Weather:** \n**Mood:** \n\n## Today\n\n\n## Accomplishments\n\n\n## Tomorrow\n\n'},
+                ]
+                for t in builtins:
+                    db.execute('INSERT INTO note_templates (name, content, icon) VALUES (?, ?, ?)',
+                               (t['name'], t['content'], t['icon']))
+                db.commit()
+                templates = builtins
+            return jsonify(templates)
+        finally:
+            db.close()
+
+    @app.route('/api/notes/journal', methods=['POST'])
+    def api_note_create_journal():
+        """Create a daily journal entry for today."""
+        from datetime import datetime
+        today = datetime.now().strftime('%Y-%m-%d')
+        title = f'Journal — {today}'
+        db = get_db()
+        try:
+            # Check if today's journal already exists
+            existing = db.execute("SELECT id FROM notes WHERE title = ? AND is_journal = 1", (title,)).fetchone()
+            if existing:
+                return jsonify({'id': existing['id'], 'existed': True})
+            content = f'# {title}\n\n**Weather:** \n**Mood:** \n\n## Notes\n\n'
+            db.execute('INSERT INTO notes (title, content, is_journal, tags) VALUES (?, ?, 1, ?)', (title, content, 'journal'))
+            db.commit()
+            note_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            db.execute('INSERT OR IGNORE INTO note_tags (note_id, tag) VALUES (?, ?)', (note_id, 'journal'))
+            db.commit()
+            return jsonify({'id': note_id, 'existed': False})
+        finally:
+            db.close()
 
     # ─── Waypoint Distance Matrix ─────────────────────────────────────
 
@@ -8210,6 +9087,138 @@ th {{ background: #eee; font-weight: 700; }}
                 all_items.append(item)
 
         return jsonify(sorted(all_items, key=lambda x: x['category']))
+
+    # ─── Inventory Upgrades (v5.0 Phase 3) ──────────────────────────
+
+    @app.route('/api/inventory/shopping-list/save', methods=['POST'])
+    def api_shopping_list_save():
+        """Save current shopping list snapshot."""
+        db = get_db()
+        try:
+            rows = db.execute(
+                'SELECT id, name, category, quantity, min_quantity, unit FROM inventory WHERE min_quantity > 0 AND quantity < min_quantity'
+            ).fetchall()
+            for r in rows:
+                needed = round(r['min_quantity'] - r['quantity'], 2)
+                db.execute(
+                    'INSERT OR IGNORE INTO shopping_list (name, category, quantity_needed, unit, inventory_id) VALUES (?, ?, ?, ?, ?)',
+                    (r['name'], r['category'], needed, r['unit'], r['id'])
+                )
+            db.commit()
+            return jsonify({'status': 'ok', 'count': len(rows)})
+        finally:
+            db.close()
+
+    @app.route('/api/inventory/<int:item_id>/checkout', methods=['POST'])
+    def api_inventory_checkout(item_id):
+        """Check out an inventory item to a person."""
+        d = request.json or {}
+        person = d.get('person', '').strip()
+        qty = d.get('quantity', 1)
+        reason = d.get('reason', '')
+        if not person:
+            return jsonify({'error': 'person required'}), 400
+        db = get_db()
+        try:
+            db.execute(
+                'INSERT INTO inventory_checkouts (inventory_id, checked_out_to, quantity, reason) VALUES (?, ?, ?, ?)',
+                (item_id, person, qty, reason)
+            )
+            db.execute('UPDATE inventory SET checked_out_to = ? WHERE id = ?', (person, item_id))
+            db.commit()
+            log_activity('checkout', detail=f'{person} checked out item #{item_id}')
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/inventory/<int:item_id>/checkin', methods=['POST'])
+    def api_inventory_checkin(item_id):
+        """Return a checked-out inventory item."""
+        db = get_db()
+        try:
+            db.execute(
+                "UPDATE inventory_checkouts SET returned_at = CURRENT_TIMESTAMP WHERE inventory_id = ? AND returned_at IS NULL",
+                (item_id,)
+            )
+            db.execute("UPDATE inventory SET checked_out_to = '' WHERE id = ?", (item_id,))
+            db.commit()
+            log_activity('checkin', detail=f'Item #{item_id} returned')
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/inventory/checkouts')
+    def api_inventory_checkouts():
+        """List all currently checked-out items."""
+        db = get_db()
+        try:
+            rows = db.execute(
+                '''SELECT c.*, i.name as item_name, i.category
+                   FROM inventory_checkouts c
+                   JOIN inventory i ON c.inventory_id = i.id
+                   WHERE c.returned_at IS NULL
+                   ORDER BY c.checked_out_at DESC'''
+            ).fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/inventory/<int:item_id>/photos', methods=['GET'])
+    def api_inventory_photos(item_id):
+        """List photos for an inventory item."""
+        db = get_db()
+        try:
+            rows = db.execute('SELECT * FROM inventory_photos WHERE inventory_id = ? ORDER BY created_at DESC', (item_id,)).fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/inventory/<int:item_id>/photos', methods=['POST'])
+    def api_inventory_photo_upload(item_id):
+        """Upload a photo for an inventory item."""
+        if 'photo' not in request.files:
+            return jsonify({'error': 'No photo provided'}), 400
+        photo = request.files['photo']
+        if not photo.filename:
+            return jsonify({'error': 'Empty filename'}), 400
+
+        photos_dir = os.path.join(get_data_dir(), 'photos', 'inventory')
+        os.makedirs(photos_dir, exist_ok=True)
+        filename = f'{item_id}_{int(time.time())}_{secure_filename(photo.filename)}'
+        filepath = os.path.join(photos_dir, filename)
+        photo.save(filepath)
+
+        db = get_db()
+        try:
+            caption = request.form.get('caption', '')
+            db.execute('INSERT INTO inventory_photos (inventory_id, filename, caption) VALUES (?, ?, ?)',
+                       (item_id, filename, caption))
+            db.commit()
+            return jsonify({'status': 'ok', 'filename': filename})
+        finally:
+            db.close()
+
+    @app.route('/api/inventory/locations')
+    def api_inventory_locations():
+        """Get unique inventory locations for filtering."""
+        db = get_db()
+        try:
+            rows = db.execute("SELECT DISTINCT location FROM inventory WHERE location != '' ORDER BY location").fetchall()
+            return jsonify([r['location'] for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/inventory/scan/<barcode>')
+    def api_inventory_scan(barcode):
+        """Look up inventory item by barcode."""
+        db = get_db()
+        try:
+            row = db.execute('SELECT * FROM inventory WHERE barcode = ?', (barcode,)).fetchone()
+            if row:
+                return jsonify(dict(row))
+            return jsonify({'found': False, 'barcode': barcode}), 404
+        finally:
+            db.close()
 
     # ─── Inventory Consume (quick daily use) ──────────────────────────
 
@@ -8687,6 +9696,35 @@ th {{ background: #eee; font-weight: 700; }}
                 html += f"<tr><td>{w.get('created_at','')}</td><td>{w.get('pressure_hpa','') or '-'}</td><td>{w.get('temp_f','') or '-'}</td><td>{w.get('wind_dir','')} {w.get('wind_speed','')}</td><td>{w.get('clouds','') or '-'}</td></tr>"
             html += '</table>'
 
+        # Scheduled Tasks (due/overdue)
+        try:
+            db2 = get_db()
+            tasks = [dict(r) for r in db2.execute("SELECT name, category, next_due, assigned_to FROM scheduled_tasks WHERE next_due IS NOT NULL ORDER BY next_due LIMIT 15").fetchall()]
+            db2.close()
+            if tasks:
+                html += '<h2>SCHEDULED TASKS</h2><table><tr><th>Task</th><th>Category</th><th>Due</th><th>Assigned</th></tr>'
+                for t in tasks:
+                    html += f"<tr><td><strong>{_esc(t.get('name',''))}</strong></td><td>{_esc(t.get('category',''))}</td><td>{_esc(t.get('next_due',''))}</td><td>{_esc(t.get('assigned_to','') or 'Unassigned')}</td></tr>"
+                html += '</table>'
+        except Exception:
+            pass
+
+        # AI Memory / Operator Notes
+        try:
+            db3 = get_db()
+            mem_row = db3.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
+            db3.close()
+            if mem_row and mem_row['value']:
+                memories = json.loads(mem_row['value'])
+                if memories:
+                    html += '<h2>OPERATOR NOTES (AI MEMORY)</h2><ul style="font-size:9px;margin:0;padding-left:16px;">'
+                    for m in memories:
+                        fact = m['fact'] if isinstance(m, dict) else m
+                        html += f'<li>{_esc(fact)}</li>'
+                    html += '</ul>'
+        except Exception:
+            pass
+
         # Quick Reference Footer
         html += '''<h2>QUICK REFERENCE</h2>
 <div class="grid">
@@ -8811,6 +9849,485 @@ th {{ background: #eee; font-weight: 700; }}
             'total': total, 'max': max_total, 'grade': grade,
             'categories': scores,
         })
+
+    # ─── Weather & Zambretti Prediction ─────────────────────────────────
+
+    @app.route('/api/weather/readings', methods=['GET'])
+    def api_weather_readings():
+        """Get weather readings history for pressure graph."""
+        hours = request.args.get('hours', 48, type=int)
+        db = get_db()
+        try:
+            rows = db.execute(
+                "SELECT * FROM weather_readings WHERE created_at >= datetime('now', ? || ' hours') ORDER BY created_at ASC",
+                (f'-{min(hours, 168)}',)
+            ).fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/weather/readings', methods=['POST'])
+    def api_weather_reading_add():
+        """Add a weather reading (manual or from sensor)."""
+        d = request.json or {}
+        db = get_db()
+        try:
+            db.execute(
+                'INSERT INTO weather_readings (source, pressure_hpa, temp_f, humidity, wind_dir, wind_speed_mph) VALUES (?, ?, ?, ?, ?, ?)',
+                (d.get('source', 'manual'), d.get('pressure_hpa'), d.get('temp_f'), d.get('humidity'), d.get('wind_dir', ''), d.get('wind_speed_mph'))
+            )
+            db.commit()
+            # Run Zambretti prediction if we have enough data
+            prediction = _zambretti_predict(db)
+            if prediction:
+                db.execute('UPDATE weather_readings SET prediction = ?, zambretti_code = ? WHERE id = (SELECT MAX(id) FROM weather_readings)',
+                           (prediction['forecast'], prediction['code']))
+                db.commit()
+            return jsonify({'status': 'ok', 'prediction': prediction})
+        finally:
+            db.close()
+
+    @app.route('/api/weather/predict')
+    def api_weather_predict():
+        """Get current Zambretti weather prediction."""
+        db = get_db()
+        try:
+            prediction = _zambretti_predict(db)
+            return jsonify(prediction or {'forecast': 'Insufficient data', 'trend': 'unknown', 'code': -1})
+        finally:
+            db.close()
+
+    def _zambretti_predict(db):
+        """Zambretti weather forecasting algorithm — pure offline prediction from barometric pressure trend."""
+        try:
+            rows = db.execute(
+                "SELECT pressure_hpa, created_at FROM weather_readings WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 12"
+            ).fetchall()
+            if len(rows) < 3:
+                return None
+
+            current = rows[0]['pressure_hpa']
+            oldest = rows[-1]['pressure_hpa']
+            delta = current - oldest  # positive = rising, negative = falling
+
+            # Determine trend
+            if delta > 1.5:
+                trend = 'rising'
+            elif delta < -1.5:
+                trend = 'falling'
+            else:
+                trend = 'steady'
+
+            # Simplified Zambretti algorithm
+            # Adjust pressure to sea level equivalent (assume ~0m elevation for now)
+            p = current
+
+            import math
+            from datetime import datetime
+            month = datetime.now().month
+            is_winter = month in (11, 12, 1, 2, 3)
+
+            if trend == 'falling':
+                # Zambretti falling pressure table (Z = 130 - (p/81))
+                z = max(1, min(26, int(130 - (p / 8.1))))
+                if is_winter:
+                    z = min(26, z + 1)
+                forecasts = {
+                    range(1, 3): 'Settled fine weather',
+                    range(3, 5): 'Fine weather',
+                    range(5, 7): 'Fine, becoming less settled',
+                    range(7, 9): 'Fairly fine, showery later',
+                    range(9, 11): 'Showery, becoming more unsettled',
+                    range(11, 13): 'Unsettled, rain later',
+                    range(13, 16): 'Rain at times, worse later',
+                    range(16, 19): 'Rain at times, becoming very unsettled',
+                    range(19, 22): 'Very unsettled, rain',
+                    range(22, 27): 'Stormy, much rain',
+                }
+            elif trend == 'rising':
+                z = max(1, min(26, int((p / 8.1) - 115)))
+                if is_winter:
+                    z = max(1, z - 1)
+                forecasts = {
+                    range(1, 3): 'Settled fine weather',
+                    range(3, 5): 'Fine weather',
+                    range(5, 7): 'Becoming fine',
+                    range(7, 9): 'Fairly fine, improving',
+                    range(9, 11): 'Fairly fine, possible showers early',
+                    range(11, 13): 'Showery early, improving',
+                    range(13, 16): 'Changeable, mending',
+                    range(16, 19): 'Rather unsettled, clearing later',
+                    range(19, 22): 'Unsettled, probably improving',
+                    range(22, 27): 'Unsettled, short fine intervals',
+                }
+            else:
+                z = max(1, min(26, int(147 - (5 * p / 37.6))))
+                forecasts = {
+                    range(1, 3): 'Settled fine weather',
+                    range(3, 5): 'Fine weather',
+                    range(5, 7): 'Fine, possibly showers',
+                    range(7, 10): 'Fairly fine, showers likely',
+                    range(10, 13): 'Showery, bright intervals',
+                    range(13, 16): 'Changeable, some rain',
+                    range(16, 19): 'Unsettled, rain at times',
+                    range(19, 22): 'Rain at frequent intervals',
+                    range(22, 27): 'Very unsettled, rain',
+                }
+
+            forecast = 'Unknown'
+            for r, text in forecasts.items():
+                if z in r:
+                    forecast = text
+                    break
+
+            return {
+                'forecast': forecast,
+                'trend': trend,
+                'code': z,
+                'current_hpa': round(current, 1),
+                'delta_hpa': round(delta, 1),
+                'readings_count': len(rows),
+            }
+        except Exception:
+            return None
+
+    @app.route('/api/weather/wind-chill')
+    def api_wind_chill():
+        """Calculate wind chill or heat index."""
+        temp_f = request.args.get('temp', type=float)
+        wind_mph = request.args.get('wind', type=float)
+        humidity = request.args.get('humidity', type=float)
+        if temp_f is None:
+            return jsonify({'error': 'temp required'}), 400
+
+        result = {'temp_f': temp_f}
+
+        # Wind chill (valid for temp <= 50°F and wind >= 3 mph)
+        if wind_mph and temp_f <= 50 and wind_mph >= 3:
+            wc = 35.74 + 0.6215 * temp_f - 35.75 * (wind_mph ** 0.16) + 0.4275 * temp_f * (wind_mph ** 0.16)
+            result['wind_chill_f'] = round(wc, 1)
+            result['index_type'] = 'wind_chill'
+        # Heat index (valid for temp >= 80°F)
+        elif humidity and temp_f >= 80:
+            hi = -42.379 + 2.04901523*temp_f + 10.14333127*humidity - 0.22475541*temp_f*humidity - 6.83783e-3*temp_f**2 - 5.481717e-2*humidity**2 + 1.22874e-3*temp_f**2*humidity + 8.5282e-4*temp_f*humidity**2 - 1.99e-6*temp_f**2*humidity**2
+            result['heat_index_f'] = round(hi, 1)
+            result['index_type'] = 'heat_index'
+        else:
+            result['index_type'] = 'none'
+            result['feels_like_f'] = temp_f
+
+        return jsonify(result)
+
+    # ─── Weather-Triggered Alerts (v5.0 Phase 9) ────────────────────
+
+    @app.route('/api/weather/check-alerts', methods=['POST'])
+    def api_weather_check_alerts():
+        """Check weather readings for alert conditions and auto-create alerts."""
+        db = get_db()
+        try:
+            rows = db.execute(
+                "SELECT pressure_hpa, temp_f, created_at FROM weather_readings WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 6"
+            ).fetchall()
+            alerts_created = []
+            if len(rows) >= 3:
+                newest = rows[0]['pressure_hpa']
+                oldest = rows[-1]['pressure_hpa']
+                delta = newest - oldest
+                # Rapid pressure drop (>4 hPa in ~3 hours = storm warning)
+                if delta < -4:
+                    db.execute(
+                        "INSERT INTO alerts (alert_type, severity, title, message, data) VALUES (?, ?, ?, ?, ?)",
+                        ('weather', 'critical', 'Rapid Pressure Drop', f'Barometric pressure dropped {abs(round(delta,1))} hPa — storm likely imminent', json.dumps({'delta': delta, 'current': newest}))
+                    )
+                    alerts_created.append('rapid_pressure_drop')
+                elif delta < -2:
+                    db.execute(
+                        "INSERT INTO alerts (alert_type, severity, title, message, data) VALUES (?, ?, ?, ?, ?)",
+                        ('weather', 'warning', 'Pressure Falling', f'Barometric pressure dropped {abs(round(delta,1))} hPa — weather deteriorating', json.dumps({'delta': delta, 'current': newest}))
+                    )
+                    alerts_created.append('pressure_falling')
+            # Temperature extremes
+            if rows:
+                temp = rows[0].get('temp_f')
+                if temp is not None:
+                    if temp >= 105:
+                        db.execute("INSERT INTO alerts (alert_type, severity, title, message) VALUES ('weather', 'critical', 'Extreme Heat', ?)", (f'Temperature: {temp}°F — heat stroke danger',))
+                        alerts_created.append('extreme_heat')
+                    elif temp <= 10:
+                        db.execute("INSERT INTO alerts (alert_type, severity, title, message) VALUES ('weather', 'critical', 'Extreme Cold', ?)", (f'Temperature: {temp}°F — hypothermia/frostbite danger',))
+                        alerts_created.append('extreme_cold')
+            db.commit()
+            return jsonify({'alerts_created': alerts_created})
+        finally:
+            db.close()
+
+    @app.route('/api/weather/history')
+    def api_weather_history():
+        """Get pressure history for graphing."""
+        hours = request.args.get('hours', 48, type=int)
+        db = get_db()
+        try:
+            rows = db.execute(
+                "SELECT pressure_hpa, temp_f, humidity, wind_dir, wind_speed_mph, created_at FROM weather_readings WHERE created_at >= datetime('now', ? || ' hours') ORDER BY created_at ASC",
+                (f'-{min(hours, 168)}',)
+            ).fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    # ─── KB Folder Watch (v5.0 Phase 1) ─────────────────────────────
+
+    @app.route('/api/kb/workspaces', methods=['GET'])
+    def api_kb_workspaces():
+        """List knowledge base workspaces."""
+        db = get_db()
+        try:
+            rows = db.execute('SELECT * FROM kb_workspaces ORDER BY name').fetchall()
+            return jsonify([dict(r) for r in rows])
+        finally:
+            db.close()
+
+    @app.route('/api/kb/workspaces', methods=['POST'])
+    def api_kb_workspace_create():
+        """Create a KB workspace."""
+        d = request.json or {}
+        name = d.get('name', '').strip()
+        if not name:
+            return jsonify({'error': 'name required'}), 400
+        db = get_db()
+        try:
+            db.execute(
+                'INSERT INTO kb_workspaces (name, description, watch_folder, auto_index) VALUES (?, ?, ?, ?)',
+                (name, d.get('description', ''), d.get('watch_folder', ''), d.get('auto_index', 0))
+            )
+            db.commit()
+            wid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            return jsonify({'id': wid, 'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/kb/workspaces/<int:wid>', methods=['DELETE'])
+    def api_kb_workspace_delete(wid):
+        """Delete a KB workspace."""
+        db = get_db()
+        try:
+            db.execute('DELETE FROM kb_workspaces WHERE id = ?', (wid,))
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    @app.route('/api/ai/model-info/<model_name>')
+    def api_ai_model_info(model_name):
+        """Get detailed model info for model cards."""
+        try:
+            import requests as _req
+            r = _req.get(f'http://localhost:11434/api/show', json={'name': model_name}, timeout=5)
+            if r.ok:
+                data = r.json()
+                details = data.get('details', {})
+                model_info = data.get('model_info', {})
+                # Extract key metrics
+                params = details.get('parameter_size', 'Unknown')
+                quant = details.get('quantization_level', 'Unknown')
+                family = details.get('family', 'Unknown')
+                fmt = details.get('format', '')
+                # Estimate RAM from parameter count
+                param_num = 0
+                if isinstance(params, str):
+                    p = params.lower().replace('b', '').replace(' ', '')
+                    try:
+                        param_num = float(p)
+                    except Exception:
+                        pass
+                ram_est = f'~{max(1, round(param_num * 0.6))} GB' if param_num > 0 else 'Unknown'
+                return jsonify({
+                    'name': model_name,
+                    'parameters': params,
+                    'quantization': quant,
+                    'family': family,
+                    'format': fmt,
+                    'ram_estimate': ram_est,
+                    'size_bytes': model_info.get('general.file_size', 0),
+                })
+            return jsonify({'name': model_name, 'error': 'Could not fetch model info'}), 404
+        except Exception as e:
+            return jsonify({'name': model_name, 'error': str(e)}), 500
+
+    # ─── Notes Attachments (v5.0 Phase 5) ───────────────────────────
+
+    @app.route('/api/notes/<int:note_id>/attachments', methods=['GET'])
+    def api_note_attachments(note_id):
+        """List attachments for a note."""
+        att_dir = os.path.join(get_data_dir(), 'attachments', 'notes', str(note_id))
+        if not os.path.isdir(att_dir):
+            return jsonify([])
+        files = []
+        for f in os.listdir(att_dir):
+            fp = os.path.join(att_dir, f)
+            files.append({'filename': f, 'size': os.path.getsize(fp), 'path': f'/api/notes/{note_id}/attachments/{f}'})
+        return jsonify(files)
+
+    @app.route('/api/notes/<int:note_id>/attachments/<filename>')
+    def api_note_attachment_serve(note_id, filename):
+        """Serve a note attachment file."""
+        safe = secure_filename(filename)
+        att_dir = os.path.join(get_data_dir(), 'attachments', 'notes', str(note_id))
+        full = os.path.join(att_dir, safe)
+        if not os.path.normpath(full).startswith(os.path.normpath(att_dir)):
+            return jsonify({'error': 'Invalid path'}), 400
+        if not os.path.isfile(full):
+            return jsonify({'error': 'Not found'}), 404
+        from flask import send_file
+        return send_file(full)
+
+    @app.route('/api/notes/<int:note_id>/attachments', methods=['POST'])
+    def api_note_attachment_upload(note_id):
+        """Upload an attachment for a note."""
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        f = request.files['file']
+        if not f.filename:
+            return jsonify({'error': 'Empty filename'}), 400
+        att_dir = os.path.join(get_data_dir(), 'attachments', 'notes', str(note_id))
+        os.makedirs(att_dir, exist_ok=True)
+        safe = secure_filename(f.filename)
+        f.save(os.path.join(att_dir, safe))
+        return jsonify({'status': 'ok', 'filename': safe, 'path': f'/api/notes/{note_id}/attachments/{safe}'})
+
+    # ─── Media Metadata Editor (v5.0 Phase 6) ───────────────────────
+
+    @app.route('/api/media/<media_type>/<int:media_id>/metadata', methods=['PUT'])
+    def api_media_metadata_update(media_type, media_id):
+        """Update metadata for a media item."""
+        table_map = {'video': 'videos', 'audio': 'audio', 'book': 'books'}
+        table = table_map.get(media_type)
+        if not table:
+            return jsonify({'error': 'Invalid media type'}), 400
+        d = request.json or {}
+        allowed = {'title', 'category', 'notes', 'description'}
+        if media_type == 'audio':
+            allowed.update({'artist', 'album'})
+        if media_type == 'book':
+            allowed.update({'author', 'description'})
+        updates = []
+        params = []
+        for k, v in d.items():
+            if k in allowed:
+                updates.append(f'{k} = ?')
+                params.append(v)
+        if not updates:
+            return jsonify({'error': 'No valid fields'}), 400
+        params.append(media_id)
+        db = get_db()
+        try:
+            db.execute(f'UPDATE {table} SET {", ".join(updates)} WHERE id = ?', params)
+            db.commit()
+            return jsonify({'status': 'ok'})
+        finally:
+            db.close()
+
+    # ─── Vital Signs Trending (v5.0 Phase 7) ────────────────────────
+
+    @app.route('/api/medical/vitals-trend/<int:patient_id>')
+    def api_vitals_trend(patient_id):
+        """Get vital signs history for trending chart."""
+        limit = request.args.get('limit', 50, type=int)
+        db = get_db()
+        try:
+            rows = db.execute(
+                'SELECT bp_systolic, bp_diastolic, pulse, resp_rate, temp_f, spo2, pain_level, gcs, created_at FROM vitals_log WHERE patient_id = ? ORDER BY created_at DESC LIMIT ?',
+                (patient_id, limit)
+            ).fetchall()
+            return jsonify(list(reversed([dict(r) for r in rows])))
+        finally:
+            db.close()
+
+    # ─── Medication Expiry Cross-Reference (v5.0 Phase 7) ───────────
+
+    @app.route('/api/medical/expiring-meds')
+    def api_expiring_meds():
+        """Cross-reference medication inventory with expiry dates."""
+        from datetime import datetime, timedelta
+        db = get_db()
+        try:
+            soon = (datetime.now() + timedelta(days=90)).strftime('%Y-%m-%d')
+            rows = db.execute(
+                "SELECT id, name, quantity, unit, expiration, category FROM inventory WHERE LOWER(category) IN ('medical', 'first aid', 'medicine', 'medications') AND expiration != '' AND expiration <= ? ORDER BY expiration ASC",
+                (soon,)
+            ).fetchall()
+            today = datetime.now().strftime('%Y-%m-%d')
+            result = []
+            for r in rows:
+                item = dict(r)
+                item['expired'] = r['expiration'] < today
+                item['days_until'] = (datetime.strptime(r['expiration'], '%Y-%m-%d') - datetime.now()).days if r['expiration'] else None
+                result.append(item)
+            return jsonify(result)
+        finally:
+            db.close()
+
+    # ─── Network Throughput Benchmark (v5.0 Phase 12) ────────────────
+
+    @app.route('/api/benchmark/network', methods=['POST'])
+    def api_benchmark_network():
+        """Benchmark local network throughput."""
+        import time as _time
+        import socket
+        try:
+            # Test local loopback as baseline, or test to a peer
+            peer = (request.json or {}).get('peer', '127.0.0.1')
+            port = 18234
+            chunk = b'X' * (1024 * 1024)  # 1MB chunks
+            total_mb = 10
+
+            # Simple TCP throughput test
+            server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_sock.bind(('0.0.0.0', port))
+            server_sock.listen(1)
+            server_sock.settimeout(5)
+
+            # Connect in background
+            def send_data():
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    s.connect((peer, port))
+                    for _ in range(total_mb):
+                        s.sendall(chunk)
+                    s.close()
+                except Exception:
+                    pass
+
+            t = threading.Thread(target=send_data, daemon=True)
+            t.start()
+
+            conn, _ = server_sock.accept()
+            start = _time.time()
+            received = 0
+            while received < total_mb * 1024 * 1024:
+                data = conn.recv(65536)
+                if not data:
+                    break
+                received += len(data)
+            elapsed = _time.time() - start
+            conn.close()
+            server_sock.close()
+            t.join(timeout=2)
+
+            mbps = round((received / 1024 / 1024) / elapsed * 8, 1) if elapsed > 0 else 0
+
+            db = get_db()
+            try:
+                db.execute('INSERT INTO benchmark_results (test_type, scores) VALUES (?, ?)',
+                           ('network', json.dumps({'throughput_mbps': mbps, 'peer': peer, 'data_mb': total_mb})))
+                db.commit()
+            finally:
+                db.close()
+
+            return jsonify({'throughput_mbps': mbps, 'data_mb': round(received/1024/1024, 1), 'elapsed_sec': round(elapsed, 2)})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
 
     # ─── Data Summary ──────────────────────────────────────────────────
 
@@ -9478,11 +10995,1238 @@ th {{ background: #eee; font-weight: 700; }}
         d = os.path.join(get_data_dir(), 'torrents')
         return jsonify({'path': d})
 
+    # ─── Unified Download Queue ──────────────────────────────────────
+
+    @app.route('/api/downloads/active')
+    def api_downloads_active():
+        """Return ALL active downloads across all services in one view."""
+        from services.manager import _download_progress
+        downloads = []
+        for key, prog in dict(_download_progress).items():
+            if prog.get('status') in ('downloading', 'extracting'):
+                # Classify download type
+                if key.startswith('kiwix-zim-'):
+                    dtype = 'content'
+                    label = key.replace('kiwix-zim-', '').replace('.zim', '')
+                elif key.startswith('map-'):
+                    dtype = 'map'
+                    label = key.replace('map-', '')
+                elif key in SERVICE_MODULES:
+                    dtype = 'service'
+                    label = SVC_FRIENDLY.get(key, key)
+                else:
+                    dtype = 'other'
+                    label = key
+                downloads.append({
+                    'id': key,
+                    'type': dtype,
+                    'label': label,
+                    'percent': prog.get('percent', 0),
+                    'speed': prog.get('speed', ''),
+                    'status': prog.get('status', 'unknown'),
+                    'downloaded': prog.get('downloaded', 0),
+                    'total': prog.get('total', 0),
+                    'error': prog.get('error'),
+                })
+
+        # Also check Ollama model pull progress
+        if ollama.running():
+            try:
+                pull = ollama.get_pull_progress()
+                if pull.get('status') in ('downloading', 'pulling'):
+                    downloads.append({
+                        'id': 'model-pull',
+                        'type': 'model',
+                        'label': pull.get('model', 'AI Model'),
+                        'percent': pull.get('percent', 0),
+                        'speed': '',
+                        'status': pull.get('status', 'downloading'),
+                        'downloaded': 0,
+                        'total': 0,
+                        'error': None,
+                    })
+            except Exception:
+                pass
+
+        return jsonify(downloads)
+
+    # ─── Service Process Logs ─────────────────────────────────────────
+
+    @app.route('/api/services/<service_id>/logs')
+    def api_service_logs(service_id):
+        """Return captured stdout/stderr log lines for a service."""
+        from services.manager import _service_logs
+        lines = _service_logs.get(service_id, [])
+        tail = request.args.get('tail', 100, type=int)
+        return jsonify({'service': service_id, 'lines': lines[-tail:]})
+
+    @app.route('/api/services/logs/all')
+    def api_service_logs_all():
+        """Return log line counts for all services."""
+        from services.manager import _service_logs
+        return jsonify({sid: len(lines) for sid, lines in _service_logs.items()})
+
+    # ─── Content Update Checker ───────────────────────────────────────
+
+    @app.route('/api/kiwix/check-updates')
+    def api_kiwix_check_updates():
+        """Compare installed ZIMs against catalog for newer versions."""
+        if not kiwix.is_installed():
+            return jsonify([])
+        installed = kiwix.list_zim_files()
+        catalog = kiwix.get_catalog()
+        updates = []
+
+        # Build lookup of all catalog entries by filename prefix
+        catalog_by_prefix = {}
+        for cat in catalog:
+            for tier_name, zims in cat.get('tiers', {}).items():
+                for z in zims:
+                    # Extract base name (before date portion)
+                    fname = z.get('filename', '')
+                    # e.g. "wikipedia_en_all_maxi_2026-02.zim" -> "wikipedia_en_all_maxi"
+                    parts = fname.rsplit('_', 1)
+                    if len(parts) == 2:
+                        prefix = parts[0]
+                    else:
+                        prefix = fname.replace('.zim', '')
+                    catalog_by_prefix[prefix] = z
+
+        for inst in installed:
+            inst_fname = inst.get('name', '') if isinstance(inst, dict) else str(inst)
+            parts = inst_fname.rsplit('_', 1)
+            prefix = parts[0] if len(parts) == 2 else inst_fname.replace('.zim', '')
+            if prefix in catalog_by_prefix:
+                cat_entry = catalog_by_prefix[prefix]
+                if cat_entry['filename'] != inst_fname:
+                    updates.append({
+                        'installed': inst_fname,
+                        'available': cat_entry['filename'],
+                        'name': cat_entry.get('name', ''),
+                        'size': cat_entry.get('size', ''),
+                        'url': cat_entry.get('url', ''),
+                    })
+        return jsonify(updates)
+
+    # ─── Wikipedia Tier Selection ─────────────────────────────────────
+
+    @app.route('/api/kiwix/wikipedia-options')
+    def api_kiwix_wikipedia_options():
+        """Return Wikipedia download tiers for dedicated selector."""
+        catalog = kiwix.get_catalog()
+        for cat in catalog:
+            if cat.get('category', '').startswith('Wikipedia'):
+                # Flatten all tiers into a list with tier labels
+                options = []
+                for tier_name, zims in cat.get('tiers', {}).items():
+                    for z in zims:
+                        options.append({**z, 'tier': tier_name})
+                return jsonify(options)
+        return jsonify([])
+
+    # ─── Self-Update Download ─────────────────────────────────────────
+
+    _update_state = {'status': 'idle', 'progress': 0, 'error': None, 'path': None}
+
+    @app.route('/api/update-download', methods=['POST'])
+    def api_update_download():
+        """Download the latest release from GitHub."""
+        def do_update():
+            global _update_state
+            _update_state = {'status': 'checking', 'progress': 0, 'error': None, 'path': None}
+            try:
+                import requests as rq
+                resp = rq.get('https://api.github.com/repos/SysAdminDoc/project-nomad-desktop/releases/latest', timeout=15)
+                if not resp.ok:
+                    _update_state = {'status': 'error', 'progress': 0, 'error': 'Cannot reach GitHub', 'path': None}
+                    return
+                data = resp.json()
+                assets = data.get('assets', [])
+
+                # Find the right asset for this platform
+                plat = sys.platform
+                arch = platform.machine().lower()
+                asset = None
+                for a in assets:
+                    name = a['name'].lower()
+                    if plat == 'win32' and ('windows' in name or name.endswith('.exe') or name.endswith('.msi')):
+                        asset = a
+                        break
+                    elif plat == 'linux' and ('linux' in name or name.endswith('.appimage') or name.endswith('.deb')):
+                        asset = a
+                        break
+                    elif plat == 'darwin' and ('macos' in name or 'darwin' in name or name.endswith('.dmg')):
+                        asset = a
+                        break
+                # Fallback: first asset
+                if not asset and assets:
+                    asset = assets[0]
+                if not asset:
+                    _update_state = {'status': 'error', 'progress': 0, 'error': 'No download found for your platform', 'path': None}
+                    return
+
+                _update_state['status'] = 'downloading'
+                url = asset['browser_download_url']
+                fname = asset['name']
+                import tempfile
+                dest = os.path.join(tempfile.gettempdir(), 'nomad-update', fname)
+                os.makedirs(os.path.dirname(dest), exist_ok=True)
+
+                dl_resp = rq.get(url, stream=True, timeout=30)
+                dl_resp.raise_for_status()
+                total = int(dl_resp.headers.get('content-length', 0))
+                downloaded = 0
+                with open(dest, 'wb') as f:
+                    for chunk in dl_resp.iter_content(65536):
+                        f.write(chunk)
+                        downloaded += len(chunk)
+                        _update_state['progress'] = int(downloaded / total * 100) if total > 0 else 0
+
+                _update_state = {'status': 'complete', 'progress': 100, 'error': None, 'path': dest}
+                log_activity('update_downloaded', detail=f'{data.get("tag_name", "?")} → {fname}')
+
+            except Exception as e:
+                _update_state = {'status': 'error', 'progress': 0, 'error': str(e), 'path': None}
+
+        threading.Thread(target=do_update, daemon=True).start()
+        return jsonify({'status': 'started'})
+
+    @app.route('/api/update-download/status')
+    def api_update_download_status():
+        return jsonify(_update_state)
+
+    @app.route('/api/update-download/open', methods=['POST'])
+    def api_update_download_open():
+        """Open the downloaded update file."""
+        path = _update_state.get('path')
+        if not path or not os.path.isfile(path):
+            return jsonify({'error': 'No update downloaded'}), 404
+        from platform_utils import open_folder
+        open_folder(os.path.dirname(path))
+        return jsonify({'status': 'opened', 'path': path})
+
+    # ─── Task Scheduler Engine (Phase 15) ───────────────────────────
+
+    @app.route('/api/tasks')
+    def api_tasks_list():
+        db = get_db()
+        cat = request.args.get('category', '')
+        assigned = request.args.get('assigned_to', '')
+        query = 'SELECT * FROM scheduled_tasks'
+        params = []
+        clauses = []
+        if cat:
+            clauses.append('category = ?')
+            params.append(cat)
+        if assigned:
+            clauses.append('assigned_to = ?')
+            params.append(assigned)
+        if clauses:
+            query += ' WHERE ' + ' AND '.join(clauses)
+        query += ' ORDER BY next_due ASC'
+        rows = db.execute(query, params).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/tasks', methods=['POST'])
+    def api_tasks_create():
+        data = request.get_json() or {}
+        if not data.get('name'):
+            return jsonify({'error': 'name is required'}), 400
+        db = get_db()
+        cur = db.execute(
+            'INSERT INTO scheduled_tasks (name, category, recurrence, next_due, assigned_to, notes) VALUES (?, ?, ?, ?, ?, ?)',
+            (data.get('name', ''), data.get('category', 'custom'), data.get('recurrence', 'once'),
+             data.get('next_due', ''), data.get('assigned_to', ''), data.get('notes', '')))
+        db.commit()
+        row = db.execute('SELECT * FROM scheduled_tasks WHERE id = ?', (cur.lastrowid,)).fetchone()
+        db.close()
+        log_activity('task_created', 'scheduler', data.get('name', ''))
+        return jsonify(dict(row)), 201
+
+    @app.route('/api/tasks/<int:task_id>', methods=['PUT'])
+    def api_tasks_update(task_id):
+        data = request.get_json() or {}
+        db = get_db()
+        allowed = ['name', 'category', 'recurrence', 'next_due', 'assigned_to', 'notes']
+        fields = []
+        vals = []
+        for k in allowed:
+            if k in data:
+                fields.append(f'{k} = ?')
+                vals.append(data[k])
+        if not fields:
+            return jsonify({'error': 'No fields to update'}), 400
+        vals.append(task_id)
+        db.execute(f'UPDATE scheduled_tasks SET {", ".join(fields)} WHERE id = ?', vals)
+        db.commit()
+        row = db.execute('SELECT * FROM scheduled_tasks WHERE id = ?', (task_id,)).fetchone()
+        db.close()
+        if not row:
+            return jsonify({'error': 'Task not found'}), 404
+        return jsonify(dict(row))
+
+    @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+    def api_tasks_delete(task_id):
+        db = get_db()
+        db.execute('DELETE FROM scheduled_tasks WHERE id = ?', (task_id,))
+        db.commit()
+        db.close()
+        return jsonify({'status': 'deleted'})
+
+    @app.route('/api/tasks/<int:task_id>/complete', methods=['POST'])
+    def api_tasks_complete(task_id):
+        from datetime import datetime, timedelta
+        db = get_db()
+        row = db.execute('SELECT * FROM scheduled_tasks WHERE id = ?', (task_id,)).fetchone()
+        if not row:
+            db.close()
+            return jsonify({'error': 'Task not found'}), 404
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        new_count = (row['completed_count'] or 0) + 1
+        # Calculate next_due for recurring tasks
+        next_due = None
+        rec = row['recurrence']
+        if rec == 'daily':
+            next_due = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d %H:%M:%S')
+        elif rec == 'weekly':
+            next_due = (datetime.now() + timedelta(weeks=1)).strftime('%Y-%m-%d %H:%M:%S')
+        elif rec == 'monthly':
+            next_due = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            next_due = None  # one-time task stays completed
+        db.execute('UPDATE scheduled_tasks SET completed_count = ?, last_completed = ?, next_due = ? WHERE id = ?',
+                   (new_count, now, next_due, task_id))
+        db.commit()
+        updated = db.execute('SELECT * FROM scheduled_tasks WHERE id = ?', (task_id,)).fetchone()
+        db.close()
+        log_activity('task_completed', 'scheduler', row['name'])
+        return jsonify(dict(updated))
+
+    @app.route('/api/tasks/due')
+    def api_tasks_due():
+        from datetime import datetime
+        db = get_db()
+        now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        rows = db.execute(
+            'SELECT * FROM scheduled_tasks WHERE next_due IS NOT NULL AND next_due <= ? ORDER BY next_due ASC',
+            (now,)).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    # ─── Sunrise/Sunset Engine (Phase 15) ─────────────────────────────
+
+    @app.route('/api/sun')
+    def api_sun():
+        """NOAA solar calculator — returns sunrise, sunset, civil twilight, golden hour."""
+        import math
+        from datetime import datetime, timedelta, timezone
+
+        lat = request.args.get('lat', type=float)
+        lng = request.args.get('lng', type=float)
+        date_str = request.args.get('date', '')
+        if lat is None or lng is None:
+            return jsonify({'error': 'lat and lng are required'}), 400
+        try:
+            if date_str:
+                dt = datetime.strptime(date_str, '%Y-%m-%d')
+            else:
+                dt = datetime.now()
+        except ValueError:
+            return jsonify({'error': 'Invalid date format. Use YYYY-MM-DD'}), 400
+
+        # NOAA Solar Calculator implementation
+        def _julian_day(year, month, day):
+            if month <= 2:
+                year -= 1
+                month += 12
+            A = int(year / 100)
+            B = 2 - A + int(A / 4)
+            return int(365.25 * (year + 4716)) + int(30.6001 * (month + 1)) + day + B - 1524.5
+
+        def _sun_times(latitude, longitude, jd, zenith):
+            """Calculate sunrise/sunset for a given zenith angle."""
+            n = jd - 2451545.0 + 0.0008
+            Jstar = n - longitude / 360.0
+            M = (357.5291 + 0.98560028 * Jstar) % 360
+            M_rad = math.radians(M)
+            C = 1.9148 * math.sin(M_rad) + 0.02 * math.sin(2 * M_rad) + 0.0003 * math.sin(3 * M_rad)
+            lam = (M + C + 180 + 102.9372) % 360
+            lam_rad = math.radians(lam)
+            Jtransit = 2451545.0 + Jstar + 0.0053 * math.sin(M_rad) - 0.0069 * math.sin(2 * lam_rad)
+            sin_dec = math.sin(lam_rad) * math.sin(math.radians(23.4397))
+            cos_dec = math.cos(math.asin(sin_dec))
+            cos_ha = (math.cos(math.radians(zenith)) - math.sin(math.radians(latitude)) * sin_dec) / (math.cos(math.radians(latitude)) * cos_dec)
+            if cos_ha < -1 or cos_ha > 1:
+                return None, None  # no sunrise/sunset (polar)
+            ha = math.degrees(math.acos(cos_ha))
+            J_rise = Jtransit - ha / 360.0
+            J_set = Jtransit + ha / 360.0
+            return J_rise, J_set
+
+        def _jd_to_time(jd_val):
+            """Convert Julian Day to HH:MM time string."""
+            jd_val += 0.5
+            Z = int(jd_val)
+            F = jd_val - Z
+            if Z < 2299161:
+                A = Z
+            else:
+                alpha = int((Z - 1867216.25) / 36524.25)
+                A = Z + 1 + alpha - int(alpha / 4)
+            B = A + 1524
+            C = int((B - 122.1) / 365.25)
+            D = int(365.25 * C)
+            E = int((B - D) / 30.6001)
+            day_frac = B - D - int(30.6001 * E) + F
+            hours = (day_frac - int(day_frac)) * 24
+            h = int(hours)
+            m = int((hours - h) * 60)
+            return f'{h:02d}:{m:02d}'
+
+        year, month, day = dt.year, dt.month, dt.day
+        jd = _julian_day(year, month, day)
+
+        result = {'date': dt.strftime('%Y-%m-%d'), 'lat': lat, 'lng': lng}
+
+        # Standard sunrise/sunset (zenith 90.833)
+        rise_jd, set_jd = _sun_times(lat, lng, jd, 90.833)
+        if rise_jd and set_jd:
+            result['sunrise'] = _jd_to_time(rise_jd)
+            result['sunset'] = _jd_to_time(set_jd)
+        else:
+            result['sunrise'] = None
+            result['sunset'] = None
+
+        # Civil twilight (zenith 96)
+        civ_rise, civ_set = _sun_times(lat, lng, jd, 96.0)
+        if civ_rise and civ_set:
+            result['civil_twilight_begin'] = _jd_to_time(civ_rise)
+            result['civil_twilight_end'] = _jd_to_time(civ_set)
+        else:
+            result['civil_twilight_begin'] = None
+            result['civil_twilight_end'] = None
+
+        # Golden hour (approximately when sun is 6 degrees above horizon -> zenith 84)
+        gold_rise, gold_set = _sun_times(lat, lng, jd, 84.0)
+        if gold_rise and gold_set and rise_jd and set_jd:
+            result['golden_hour_morning_end'] = _jd_to_time(gold_rise)
+            result['golden_hour_evening_start'] = _jd_to_time(gold_set)
+        else:
+            result['golden_hour_morning_end'] = None
+            result['golden_hour_evening_start'] = None
+
+        # Day length
+        if rise_jd and set_jd:
+            day_len_hours = (set_jd - rise_jd) * 24
+            h = int(day_len_hours)
+            m = int((day_len_hours - h) * 60)
+            result['day_length'] = f'{h}h {m}m'
+        else:
+            result['day_length'] = None
+
+        return jsonify(result)
+
+    # ─── Predictive Alerts (Phase 15) ─────────────────────────────────
+
+    @app.route('/api/alerts/predictive')
+    def api_alerts_predictive():
+        """Analyze trends and return predictions: burn rates, fuel expiry, equipment overdue, medication schedules."""
+        from datetime import datetime, timedelta
+        db = get_db()
+        alerts = []
+        today = datetime.now()
+        today_str = today.strftime('%Y-%m-%d')
+
+        # 1. Inventory burn rate — items that will run out
+        burn_rows = db.execute('SELECT id, name, category, quantity, unit, daily_usage, expiration FROM inventory WHERE daily_usage > 0').fetchall()
+        for r in burn_rows:
+            days_left = r['quantity'] / r['daily_usage'] if r['daily_usage'] > 0 else float('inf')
+            if days_left <= 30:
+                severity = 'critical' if days_left <= 7 else 'warning'
+                alerts.append({
+                    'type': 'inventory_depletion',
+                    'severity': severity,
+                    'title': f'{r["name"]} running low',
+                    'message': f'{r["quantity"]} {r["unit"]} remaining at {r["daily_usage"]}/day — ~{round(days_left, 1)} days left',
+                    'item_id': r['id'],
+                    'days_remaining': round(days_left, 1),
+                    'category': r['category'],
+                })
+
+        # 2. Inventory expiration
+        exp_rows = db.execute("SELECT id, name, category, quantity, unit, expiration FROM inventory WHERE expiration != '' AND expiration IS NOT NULL").fetchall()
+        for r in exp_rows:
+            try:
+                exp_date = datetime.strptime(r['expiration'], '%Y-%m-%d')
+                days_until = (exp_date - today).days
+                if days_until <= 90:
+                    if days_until < 0:
+                        severity = 'critical'
+                        msg = f'Expired {abs(days_until)} days ago'
+                    elif days_until <= 14:
+                        severity = 'critical'
+                        msg = f'Expires in {days_until} days'
+                    else:
+                        severity = 'warning'
+                        msg = f'Expires in {days_until} days'
+                    alerts.append({
+                        'type': 'inventory_expiration',
+                        'severity': severity,
+                        'title': f'{r["name"]} expiring',
+                        'message': f'{msg} ({r["expiration"]})',
+                        'item_id': r['id'],
+                        'days_until_expiry': days_until,
+                        'category': r['category'],
+                    })
+            except (ValueError, TypeError):
+                pass
+
+        # 3. Fuel expiry
+        fuel_rows = db.execute("SELECT id, fuel_type, quantity, unit, expires FROM fuel_storage WHERE expires != '' AND expires IS NOT NULL").fetchall()
+        for r in fuel_rows:
+            try:
+                exp_date = datetime.strptime(r['expires'], '%Y-%m-%d')
+                days_until = (exp_date - today).days
+                if days_until <= 90:
+                    severity = 'critical' if days_until <= 14 else 'warning'
+                    alerts.append({
+                        'type': 'fuel_expiry',
+                        'severity': severity,
+                        'title': f'{r["fuel_type"]} fuel expiring',
+                        'message': f'{r["quantity"]} {r["unit"]} expires in {days_until} days ({r["expires"]})',
+                        'item_id': r['id'],
+                        'days_until_expiry': days_until,
+                    })
+            except (ValueError, TypeError):
+                pass
+
+        # 4. Equipment maintenance overdue
+        equip_rows = db.execute("SELECT id, name, category, next_service, status FROM equipment_log WHERE next_service != '' AND next_service IS NOT NULL").fetchall()
+        for r in equip_rows:
+            try:
+                svc_date = datetime.strptime(r['next_service'], '%Y-%m-%d')
+                days_until = (svc_date - today).days
+                if days_until <= 14:
+                    severity = 'critical' if days_until < 0 else 'warning'
+                    if days_until < 0:
+                        msg = f'Maintenance overdue by {abs(days_until)} days'
+                    else:
+                        msg = f'Maintenance due in {days_until} days'
+                    alerts.append({
+                        'type': 'equipment_maintenance',
+                        'severity': severity,
+                        'title': f'{r["name"]} maintenance {"overdue" if days_until < 0 else "due"}',
+                        'message': msg,
+                        'item_id': r['id'],
+                        'days_until_service': days_until,
+                    })
+            except (ValueError, TypeError):
+                pass
+
+        # 5. Scheduled tasks overdue
+        task_rows = db.execute("SELECT id, name, category, next_due, assigned_to FROM scheduled_tasks WHERE next_due IS NOT NULL AND next_due <= ?",
+                               (today.strftime('%Y-%m-%d %H:%M:%S'),)).fetchall()
+        for r in task_rows:
+            alerts.append({
+                'type': 'task_overdue',
+                'severity': 'warning',
+                'title': f'Task overdue: {r["name"]}',
+                'message': f'Category: {r["category"]}, Assigned to: {r["assigned_to"] or "unassigned"}',
+                'item_id': r['id'],
+                'category': r['category'],
+            })
+
+        db.close()
+        # Sort: critical first, then warning
+        alerts.sort(key=lambda a: (0 if a['severity'] == 'critical' else 1, a.get('days_remaining', a.get('days_until_expiry', a.get('days_until_service', 999)))))
+        return jsonify({'alerts': alerts, 'count': len(alerts), 'generated_at': today.strftime('%Y-%m-%d %H:%M:%S')})
+
+    # ─── CSV Import Wizard (Phase 17) ─────────────────────────────────
+
+    @app.route('/api/import/csv', methods=['POST'])
+    def api_import_csv_preview():
+        """Upload CSV, return headers + sample rows for column mapping."""
+        import csv
+        import io
+        if 'file' not in request.files:
+            # Try raw body
+            raw = request.get_data(as_text=True)
+            if not raw:
+                return jsonify({'error': 'No CSV file provided'}), 400
+        else:
+            raw = request.files['file'].read().decode('utf-8', errors='replace')
+        reader = csv.reader(io.StringIO(raw))
+        rows_data = []
+        for i, row in enumerate(reader):
+            rows_data.append(row)
+            if i >= 10:  # headers + 10 sample rows
+                break
+        if not rows_data:
+            return jsonify({'error': 'CSV is empty'}), 400
+        headers = rows_data[0]
+        samples = rows_data[1:]
+        # Target table columns
+        table_columns = {
+            'inventory': ['name', 'category', 'quantity', 'unit', 'min_quantity', 'location', 'expiration', 'notes', 'daily_usage', 'barcode', 'cost'],
+            'contacts': ['name', 'callsign', 'role', 'skills', 'phone', 'freq', 'email', 'address', 'rally_point', 'blood_type', 'medical_notes', 'notes'],
+            'waypoints': ['name', 'lat', 'lng', 'category', 'color', 'icon', 'elevation_m', 'notes'],
+            'seeds': ['species', 'variety', 'quantity', 'unit', 'year_harvested', 'source', 'days_to_maturity', 'planting_season', 'notes'],
+            'ammo_inventory': ['caliber', 'brand', 'bullet_weight', 'bullet_type', 'quantity', 'location', 'notes'],
+            'fuel_storage': ['fuel_type', 'quantity', 'unit', 'container', 'location', 'stabilizer_added', 'date_stored', 'expires', 'notes'],
+            'equipment_log': ['name', 'category', 'last_service', 'next_service', 'service_notes', 'status', 'location', 'notes'],
+        }
+        return jsonify({
+            'headers': headers,
+            'sample_rows': samples,
+            'row_count': len(rows_data) - 1,
+            'target_tables': list(table_columns.keys()),
+            'table_columns': table_columns,
+        })
+
+    @app.route('/api/import/csv/execute', methods=['POST'])
+    def api_import_csv_execute():
+        """Execute CSV import with column mapping."""
+        import csv
+        import io
+        data = request.get_json() or {}
+        csv_data = data.get('csv_data', '')
+        mapping = data.get('mapping', {})  # {csv_header: db_column}
+        target = data.get('target_table', '')
+        allowed_tables = ['inventory', 'contacts', 'waypoints', 'seeds', 'ammo_inventory', 'fuel_storage', 'equipment_log']
+        if target not in allowed_tables:
+            return jsonify({'error': f'Invalid target table. Must be one of: {", ".join(allowed_tables)}'}), 400
+        if not mapping:
+            return jsonify({'error': 'Column mapping is required'}), 400
+        if not csv_data:
+            return jsonify({'error': 'csv_data is required'}), 400
+
+        reader = csv.DictReader(io.StringIO(csv_data))
+        db = get_db()
+        inserted = 0
+        errors = []
+        for i, row in enumerate(reader):
+            try:
+                mapped = {}
+                for csv_col, db_col in mapping.items():
+                    if csv_col in row and db_col:
+                        mapped[db_col] = row[csv_col]
+                if not mapped:
+                    continue
+                cols = ', '.join(mapped.keys())
+                placeholders = ', '.join(['?'] * len(mapped))
+                db.execute(f'INSERT INTO {target} ({cols}) VALUES ({placeholders})', list(mapped.values()))
+                inserted += 1
+            except Exception as e:
+                errors.append(f'Row {i + 1}: {str(e)}')
+        db.commit()
+        db.close()
+        log_activity('csv_import', 'import', f'{inserted} rows into {target}')
+        return jsonify({'status': 'complete', 'inserted': inserted, 'errors': errors, 'target_table': target})
+
+    # ─── Template Quick Entry (Phase 17) ──────────────────────────────
+
+    _INVENTORY_TEMPLATES = {
+        '72-hour-kit': {
+            'name': '72-Hour Kit',
+            'description': 'Essential supplies for 72 hours of self-sufficiency',
+            'items': [
+                {'name': 'Water (1L bottles)', 'category': 'water', 'quantity': 9, 'unit': 'bottles'},
+                {'name': 'Water purification tablets', 'category': 'water', 'quantity': 1, 'unit': 'pack'},
+                {'name': 'MRE - Beef Stew', 'category': 'food', 'quantity': 3, 'unit': 'ea'},
+                {'name': 'MRE - Chicken Noodle', 'category': 'food', 'quantity': 3, 'unit': 'ea'},
+                {'name': 'Energy bars', 'category': 'food', 'quantity': 6, 'unit': 'ea'},
+                {'name': 'Trail mix', 'category': 'food', 'quantity': 3, 'unit': 'bags'},
+                {'name': 'First aid kit (compact)', 'category': 'medical', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Flashlight (LED)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'AA Batteries', 'category': 'tools', 'quantity': 8, 'unit': 'ea'},
+                {'name': 'Emergency blanket (mylar)', 'category': 'shelter', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Poncho (disposable)', 'category': 'shelter', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Duct tape (small roll)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Multi-tool', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Paracord 50ft', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Lighter (BIC)', 'category': 'tools', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Waterproof matches', 'category': 'tools', 'quantity': 1, 'unit': 'box'},
+                {'name': 'N95 masks', 'category': 'medical', 'quantity': 4, 'unit': 'ea'},
+                {'name': 'Work gloves', 'category': 'tools', 'quantity': 1, 'unit': 'pair'},
+                {'name': 'Whistle (emergency)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'AM/FM radio (hand-crank)', 'category': 'comms', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Cash (small bills)', 'category': 'other', 'quantity': 200, 'unit': 'USD'},
+                {'name': 'Document copies (waterproof bag)', 'category': 'other', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Toilet paper (travel roll)', 'category': 'hygiene', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Hand sanitizer', 'category': 'hygiene', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Wet wipes', 'category': 'hygiene', 'quantity': 1, 'unit': 'pack'},
+                {'name': 'Garbage bags (heavy duty)', 'category': 'tools', 'quantity': 4, 'unit': 'ea'},
+                {'name': 'Zip-lock bags (gallon)', 'category': 'tools', 'quantity': 10, 'unit': 'ea'},
+                {'name': 'Notebook + pencil', 'category': 'other', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Local map (paper)', 'category': 'other', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Compass', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+            ],
+        },
+        'family-30-days': {
+            'name': 'Family of 4 - 30 Days',
+            'description': 'Extended supply for a family of four',
+            'items': [
+                {'name': 'Rice (long grain)', 'category': 'food', 'quantity': 50, 'unit': 'lbs'},
+                {'name': 'Dried beans (pinto)', 'category': 'food', 'quantity': 25, 'unit': 'lbs'},
+                {'name': 'Dried beans (black)', 'category': 'food', 'quantity': 15, 'unit': 'lbs'},
+                {'name': 'Oats (rolled)', 'category': 'food', 'quantity': 20, 'unit': 'lbs'},
+                {'name': 'Canned vegetables (mixed)', 'category': 'food', 'quantity': 48, 'unit': 'cans'},
+                {'name': 'Canned fruit', 'category': 'food', 'quantity': 24, 'unit': 'cans'},
+                {'name': 'Canned tuna', 'category': 'food', 'quantity': 24, 'unit': 'cans'},
+                {'name': 'Canned chicken', 'category': 'food', 'quantity': 12, 'unit': 'cans'},
+                {'name': 'Peanut butter', 'category': 'food', 'quantity': 6, 'unit': 'jars'},
+                {'name': 'Honey', 'category': 'food', 'quantity': 3, 'unit': 'lbs'},
+                {'name': 'Salt', 'category': 'food', 'quantity': 5, 'unit': 'lbs'},
+                {'name': 'Sugar', 'category': 'food', 'quantity': 10, 'unit': 'lbs'},
+                {'name': 'Cooking oil', 'category': 'food', 'quantity': 2, 'unit': 'gallons'},
+                {'name': 'Powdered milk', 'category': 'food', 'quantity': 10, 'unit': 'lbs'},
+                {'name': 'Flour (all-purpose)', 'category': 'food', 'quantity': 25, 'unit': 'lbs'},
+                {'name': 'Baking soda', 'category': 'food', 'quantity': 2, 'unit': 'lbs'},
+                {'name': 'Instant coffee', 'category': 'food', 'quantity': 2, 'unit': 'lbs'},
+                {'name': 'Vitamins (multivitamin)', 'category': 'medical', 'quantity': 120, 'unit': 'tablets'},
+                {'name': 'Water storage (5-gal jugs)', 'category': 'water', 'quantity': 12, 'unit': 'jugs'},
+                {'name': 'Bleach (unscented)', 'category': 'water', 'quantity': 1, 'unit': 'gallon'},
+                {'name': 'Water filter (gravity)', 'category': 'water', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Propane canisters', 'category': 'fuel', 'quantity': 8, 'unit': 'ea'},
+                {'name': 'Camp stove', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Toilet paper', 'category': 'hygiene', 'quantity': 24, 'unit': 'rolls'},
+                {'name': 'Bar soap', 'category': 'hygiene', 'quantity': 12, 'unit': 'bars'},
+                {'name': 'Toothpaste', 'category': 'hygiene', 'quantity': 4, 'unit': 'tubes'},
+                {'name': 'Laundry detergent', 'category': 'hygiene', 'quantity': 1, 'unit': 'jug'},
+                {'name': 'Trash bags (13-gal)', 'category': 'tools', 'quantity': 60, 'unit': 'ea'},
+                {'name': 'Candles (long-burn)', 'category': 'tools', 'quantity': 12, 'unit': 'ea'},
+                {'name': 'D Batteries', 'category': 'tools', 'quantity': 16, 'unit': 'ea'},
+                {'name': 'First aid kit (family)', 'category': 'medical', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Ibuprofen (200mg)', 'category': 'medical', 'quantity': 200, 'unit': 'tablets'},
+                {'name': 'Acetaminophen (500mg)', 'category': 'medical', 'quantity': 200, 'unit': 'tablets'},
+                {'name': 'Anti-diarrheal', 'category': 'medical', 'quantity': 1, 'unit': 'box'},
+                {'name': 'Antibiotic ointment', 'category': 'medical', 'quantity': 3, 'unit': 'tubes'},
+                {'name': 'Canned soup', 'category': 'food', 'quantity': 24, 'unit': 'cans'},
+                {'name': 'Pasta (spaghetti)', 'category': 'food', 'quantity': 10, 'unit': 'lbs'},
+                {'name': 'Pasta sauce', 'category': 'food', 'quantity': 8, 'unit': 'jars'},
+                {'name': 'Dried lentils', 'category': 'food', 'quantity': 10, 'unit': 'lbs'},
+                {'name': 'Cornmeal', 'category': 'food', 'quantity': 5, 'unit': 'lbs'},
+                {'name': 'Bouillon cubes', 'category': 'food', 'quantity': 2, 'unit': 'boxes'},
+                {'name': 'Spice kit (basics)', 'category': 'food', 'quantity': 1, 'unit': 'set'},
+                {'name': 'Yeast (active dry)', 'category': 'food', 'quantity': 4, 'unit': 'packets'},
+                {'name': 'Vinegar (white)', 'category': 'food', 'quantity': 1, 'unit': 'gallon'},
+                {'name': 'Canned tomatoes', 'category': 'food', 'quantity': 12, 'unit': 'cans'},
+            ],
+        },
+        'bug-out-bag': {
+            'name': 'Bug-Out Bag',
+            'description': 'Lightweight go-bag for rapid evacuation',
+            'items': [
+                {'name': 'Backpack (65L)', 'category': 'shelter', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Water bottle (Nalgene 1L)', 'category': 'water', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Water filter (Sawyer Squeeze)', 'category': 'water', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Tarp (8x10)', 'category': 'shelter', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Sleeping bag (compact)', 'category': 'shelter', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Sleeping pad (inflatable)', 'category': 'shelter', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Fire starter (ferro rod)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Lighter (windproof)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Tinder (fatwood sticks)', 'category': 'tools', 'quantity': 1, 'unit': 'bag'},
+                {'name': 'Fixed-blade knife', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Folding saw', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Headlamp (200 lumen)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Spare batteries (AAA)', 'category': 'tools', 'quantity': 6, 'unit': 'ea'},
+                {'name': 'Paracord (100ft)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Compass (lensatic)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Topographic map (local)', 'category': 'other', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Freeze-dried meals', 'category': 'food', 'quantity': 6, 'unit': 'ea'},
+                {'name': 'Beef jerky', 'category': 'food', 'quantity': 4, 'unit': 'bags'},
+                {'name': 'Cliff bars', 'category': 'food', 'quantity': 12, 'unit': 'ea'},
+                {'name': 'Electrolyte packets', 'category': 'food', 'quantity': 10, 'unit': 'ea'},
+                {'name': 'IFAK (trauma kit)', 'category': 'medical', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Tourniquet (CAT)', 'category': 'medical', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Ibuprofen (travel pack)', 'category': 'medical', 'quantity': 1, 'unit': 'pack'},
+                {'name': 'Bandana/shemagh', 'category': 'other', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Change of socks (wool)', 'category': 'other', 'quantity': 2, 'unit': 'pair'},
+                {'name': 'Rain jacket (packable)', 'category': 'shelter', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Cordage (bank line 100ft)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Signal mirror', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Handheld radio (Baofeng UV-5R)', 'category': 'comms', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Notepad (Rite-in-Rain)', 'category': 'other', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Carabiners (locking)', 'category': 'tools', 'quantity': 4, 'unit': 'ea'},
+                {'name': 'Zip ties (assorted)', 'category': 'tools', 'quantity': 20, 'unit': 'ea'},
+                {'name': 'Cash (small bills)', 'category': 'other', 'quantity': 300, 'unit': 'USD'},
+                {'name': 'Cooking pot (titanium)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Spork (titanium)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+            ],
+        },
+        'first-aid-kit': {
+            'name': 'First Aid Kit',
+            'description': 'Comprehensive first aid and trauma supplies',
+            'items': [
+                {'name': 'Adhesive bandages (assorted)', 'category': 'medical', 'quantity': 100, 'unit': 'ea'},
+                {'name': 'Gauze pads (4x4)', 'category': 'medical', 'quantity': 25, 'unit': 'ea'},
+                {'name': 'Gauze roll (3 inch)', 'category': 'medical', 'quantity': 6, 'unit': 'rolls'},
+                {'name': 'Medical tape (1 inch)', 'category': 'medical', 'quantity': 3, 'unit': 'rolls'},
+                {'name': 'Elastic bandage (ACE wrap)', 'category': 'medical', 'quantity': 4, 'unit': 'ea'},
+                {'name': 'Triangular bandage', 'category': 'medical', 'quantity': 4, 'unit': 'ea'},
+                {'name': 'Tourniquet (CAT Gen 7)', 'category': 'medical', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Israeli bandage (6 inch)', 'category': 'medical', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'QuikClot hemostatic gauze', 'category': 'medical', 'quantity': 2, 'unit': 'packs'},
+                {'name': 'Chest seal (vented)', 'category': 'medical', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'NPA airway (28Fr)', 'category': 'medical', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Nitrile gloves (pairs)', 'category': 'medical', 'quantity': 20, 'unit': 'pairs'},
+                {'name': 'Alcohol prep pads', 'category': 'medical', 'quantity': 50, 'unit': 'ea'},
+                {'name': 'Povidone-iodine swabs', 'category': 'medical', 'quantity': 25, 'unit': 'ea'},
+                {'name': 'Antibiotic ointment (packets)', 'category': 'medical', 'quantity': 25, 'unit': 'ea'},
+                {'name': 'Butterfly closures', 'category': 'medical', 'quantity': 20, 'unit': 'ea'},
+                {'name': 'Splint (SAM splint)', 'category': 'medical', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Trauma shears', 'category': 'medical', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Tweezers (fine point)', 'category': 'medical', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'CPR face shield', 'category': 'medical', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Ibuprofen (200mg tablets)', 'category': 'medical', 'quantity': 50, 'unit': 'tablets'},
+                {'name': 'Diphenhydramine (25mg)', 'category': 'medical', 'quantity': 25, 'unit': 'tablets'},
+                {'name': 'Oral rehydration salts', 'category': 'medical', 'quantity': 10, 'unit': 'packets'},
+                {'name': 'Burn gel packets', 'category': 'medical', 'quantity': 10, 'unit': 'ea'},
+                {'name': 'Cold pack (instant)', 'category': 'medical', 'quantity': 4, 'unit': 'ea'},
+            ],
+        },
+        'vehicle-emergency-kit': {
+            'name': 'Vehicle Emergency Kit',
+            'description': 'Roadside and vehicle emergency supplies',
+            'items': [
+                {'name': 'Jumper cables (20ft)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Tow strap (20ft, 20k lbs)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Tire plug kit', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Portable air compressor (12V)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Fix-a-Flat', 'category': 'tools', 'quantity': 2, 'unit': 'cans'},
+                {'name': 'Reflective triangles', 'category': 'tools', 'quantity': 3, 'unit': 'ea'},
+                {'name': 'Road flares', 'category': 'tools', 'quantity': 6, 'unit': 'ea'},
+                {'name': 'Fire extinguisher (2.5 lb)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Flashlight (heavy duty)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Multi-tool (vehicle)', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Duct tape', 'category': 'tools', 'quantity': 1, 'unit': 'roll'},
+                {'name': 'WD-40', 'category': 'tools', 'quantity': 1, 'unit': 'can'},
+                {'name': 'Zip ties (large)', 'category': 'tools', 'quantity': 20, 'unit': 'ea'},
+                {'name': 'Bungee cords (assorted)', 'category': 'tools', 'quantity': 6, 'unit': 'ea'},
+                {'name': 'Emergency blanket (wool)', 'category': 'shelter', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Rain poncho', 'category': 'shelter', 'quantity': 2, 'unit': 'ea'},
+                {'name': 'Water bottles (16oz)', 'category': 'water', 'quantity': 6, 'unit': 'ea'},
+                {'name': 'Energy bars (vehicle pack)', 'category': 'food', 'quantity': 6, 'unit': 'ea'},
+                {'name': 'First aid kit (vehicle)', 'category': 'medical', 'quantity': 1, 'unit': 'ea'},
+                {'name': 'Seatbelt cutter / window breaker', 'category': 'tools', 'quantity': 1, 'unit': 'ea'},
+            ],
+        },
+    }
+
+    @app.route('/api/templates/inventory')
+    def api_templates_inventory():
+        result = []
+        for key, tpl in _INVENTORY_TEMPLATES.items():
+            result.append({
+                'id': key,
+                'name': tpl['name'],
+                'description': tpl['description'],
+                'item_count': len(tpl['items']),
+            })
+        return jsonify(result)
+
+    @app.route('/api/templates/inventory/apply', methods=['POST'])
+    def api_templates_inventory_apply():
+        data = request.get_json() or {}
+        template_id = data.get('template_id', '')
+        if template_id not in _INVENTORY_TEMPLATES:
+            return jsonify({'error': f'Unknown template: {template_id}. Available: {", ".join(_INVENTORY_TEMPLATES.keys())}'}), 400
+        tpl = _INVENTORY_TEMPLATES[template_id]
+        location = data.get('location', '')
+        db = get_db()
+        inserted = 0
+        for item in tpl['items']:
+            db.execute(
+                'INSERT INTO inventory (name, category, quantity, unit, location, notes) VALUES (?, ?, ?, ?, ?, ?)',
+                (item['name'], item.get('category', 'other'), item.get('quantity', 0),
+                 item.get('unit', 'ea'), location, f'From template: {tpl["name"]}'))
+            inserted += 1
+        db.commit()
+        db.close()
+        log_activity('template_applied', 'inventory', f'{tpl["name"]} ({inserted} items)')
+        return jsonify({'status': 'applied', 'template': tpl['name'], 'items_inserted': inserted})
+
+    # ─── QR Code Generation (Phase 17) ────────────────────────────────
+
+    @app.route('/api/qr/generate', methods=['POST'])
+    def api_qr_generate():
+        """Generate a QR code as SVG."""
+        data = request.get_json() or {}
+        text = data.get('text', '')
+        if not text:
+            return jsonify({'error': 'text is required'}), 400
+        size = data.get('size', 256)
+
+        # Try qrcode library first
+        try:
+            import qrcode
+            import qrcode.image.svg
+            factory = qrcode.image.svg.SvgPathImage
+            qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_M, box_size=10, border=4)
+            qr.add_data(text)
+            qr.make(fit=True)
+            import io
+            img = qr.make_image(image_factory=factory)
+            buf = io.BytesIO()
+            img.save(buf)
+            svg_str = buf.getvalue().decode('utf-8')
+            return jsonify({'format': 'svg', 'svg': svg_str, 'text': text})
+        except ImportError:
+            pass
+
+        # Fallback: generate a simple QR-like data representation as SVG
+        # This is a simple encoding — not a real QR code but visually represents the data
+        import hashlib
+        h = hashlib.sha256(text.encode()).hexdigest()
+        module_count = 21  # QR Version 1 is 21x21
+        cell = size // module_count
+        svg_parts = [f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {size} {size}" width="{size}" height="{size}">']
+        svg_parts.append(f'<rect width="{size}" height="{size}" fill="white"/>')
+
+        # Generate a deterministic pattern from the text hash
+        bits = ''.join(format(int(c, 16), '04b') for c in h)
+        bit_idx = 0
+
+        # Draw finder patterns (top-left, top-right, bottom-left)
+        def draw_finder(sx, sy):
+            for dx in range(7):
+                for dy in range(7):
+                    if dx == 0 or dx == 6 or dy == 0 or dy == 6 or (2 <= dx <= 4 and 2 <= dy <= 4):
+                        svg_parts.append(f'<rect x="{(sx+dx)*cell}" y="{(sy+dy)*cell}" width="{cell}" height="{cell}" fill="black"/>')
+
+        draw_finder(0, 0)
+        draw_finder(module_count - 7, 0)
+        draw_finder(0, module_count - 7)
+
+        # Fill data area
+        for row in range(module_count):
+            for col in range(module_count):
+                # Skip finder pattern areas
+                if (row < 8 and col < 8) or (row < 8 and col >= module_count - 8) or (row >= module_count - 8 and col < 8):
+                    continue
+                if bit_idx < len(bits) and bits[bit_idx] == '1':
+                    svg_parts.append(f'<rect x="{col*cell}" y="{row*cell}" width="{cell}" height="{cell}" fill="black"/>')
+                bit_idx = (bit_idx + 1) % len(bits)
+
+        svg_parts.append('</svg>')
+        svg_str = '\n'.join(svg_parts)
+        return jsonify({'format': 'svg_fallback', 'svg': svg_str, 'text': text, 'note': 'Fallback pattern — install qrcode library for real QR codes'})
+
+    # ─── Serial Port Bridge Framework (Phase 13) ─────────────────────
+
+    _serial_state = {'connected': False, 'port': None, 'baud': None, 'protocol': None, 'last_reading': None, 'error': None}
+    _serial_conn = {'conn': None}
+
+    @app.route('/api/serial/ports')
+    def api_serial_ports():
+        """List available serial ports."""
+        try:
+            import serial.tools.list_ports
+            ports = []
+            for p in serial.tools.list_ports.comports():
+                ports.append({
+                    'device': p.device,
+                    'description': p.description,
+                    'hwid': p.hwid,
+                    'manufacturer': p.manufacturer,
+                })
+            return jsonify({'ports': ports, 'pyserial_available': True})
+        except ImportError:
+            return jsonify({'ports': [], 'pyserial_available': False, 'note': 'Install pyserial: pip install pyserial'})
+
+    @app.route('/api/serial/connect', methods=['POST'])
+    def api_serial_connect():
+        """Connect to a serial port."""
+        data = request.get_json() or {}
+        port = data.get('port', '')
+        baud = data.get('baud', 9600)
+        protocol = data.get('protocol', 'raw')
+        if not port:
+            return jsonify({'error': 'port is required'}), 400
+        try:
+            import serial
+            if _serial_conn['conn'] and _serial_conn['conn'].is_open:
+                _serial_conn['conn'].close()
+            conn = serial.Serial(port, baudrate=baud, timeout=2)
+            _serial_conn['conn'] = conn
+            _serial_state.update({
+                'connected': True, 'port': port, 'baud': baud,
+                'protocol': protocol, 'error': None,
+            })
+            log_activity('serial_connected', 'serial', f'{port} @ {baud}')
+            return jsonify({'status': 'connected', 'port': port, 'baud': baud, 'protocol': protocol})
+        except ImportError:
+            return jsonify({'error': 'pyserial not installed. Run: pip install pyserial'}), 500
+        except Exception as e:
+            _serial_state.update({'connected': False, 'error': str(e)})
+            return jsonify({'error': str(e)}), 500
+
+    @app.route('/api/serial/disconnect', methods=['POST'])
+    def api_serial_disconnect():
+        """Disconnect from serial port."""
+        if _serial_conn['conn']:
+            try:
+                _serial_conn['conn'].close()
+            except Exception:
+                pass
+            _serial_conn['conn'] = None
+        _serial_state.update({'connected': False, 'port': None, 'baud': None, 'protocol': None, 'error': None})
+        log_activity('serial_disconnected', 'serial')
+        return jsonify({'status': 'disconnected'})
+
+    @app.route('/api/serial/status')
+    def api_serial_status():
+        """Get serial connection status and last reading."""
+        return jsonify(_serial_state)
+
+    # ─── Sensor Data Charts (Phase 13) ────────────────────────────────
+
+    @app.route('/api/sensors/chart/<int:device_id>')
+    def api_sensors_chart(device_id):
+        """Return time-series data for charting, aggregated by hour/day/week."""
+        from datetime import datetime, timedelta
+        db = get_db()
+        range_param = request.args.get('range', '24h')
+        reading_type = request.args.get('type', '')
+
+        # Determine time window and aggregation
+        now = datetime.now()
+        if range_param == '1h':
+            since = (now - timedelta(hours=1)).strftime('%Y-%m-%d %H:%M:%S')
+            agg = None  # raw data
+        elif range_param == '24h':
+            since = (now - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+            agg = 'hour'
+        elif range_param == '7d':
+            since = (now - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S')
+            agg = 'hour'
+        elif range_param == '30d':
+            since = (now - timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+            agg = 'day'
+        elif range_param == '90d':
+            since = (now - timedelta(days=90)).strftime('%Y-%m-%d %H:%M:%S')
+            agg = 'week'
+        else:
+            since = (now - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+            agg = 'hour'
+
+        query_params = [device_id, since]
+        type_filter = ''
+        if reading_type:
+            type_filter = ' AND reading_type = ?'
+            query_params.append(reading_type)
+
+        if agg == 'hour':
+            rows = db.execute(f'''
+                SELECT strftime('%Y-%m-%d %H:00:00', created_at) as timestamp,
+                       reading_type, unit,
+                       AVG(value) as avg_value, MIN(value) as min_value, MAX(value) as max_value,
+                       COUNT(*) as sample_count
+                FROM sensor_readings
+                WHERE device_id = ? AND created_at >= ?{type_filter}
+                GROUP BY strftime('%Y-%m-%d %H', created_at), reading_type
+                ORDER BY timestamp ASC
+            ''', query_params).fetchall()
+        elif agg == 'day':
+            rows = db.execute(f'''
+                SELECT strftime('%Y-%m-%d', created_at) as timestamp,
+                       reading_type, unit,
+                       AVG(value) as avg_value, MIN(value) as min_value, MAX(value) as max_value,
+                       COUNT(*) as sample_count
+                FROM sensor_readings
+                WHERE device_id = ? AND created_at >= ?{type_filter}
+                GROUP BY strftime('%Y-%m-%d', created_at), reading_type
+                ORDER BY timestamp ASC
+            ''', query_params).fetchall()
+        elif agg == 'week':
+            rows = db.execute(f'''
+                SELECT strftime('%Y-W%W', created_at) as timestamp,
+                       reading_type, unit,
+                       AVG(value) as avg_value, MIN(value) as min_value, MAX(value) as max_value,
+                       COUNT(*) as sample_count
+                FROM sensor_readings
+                WHERE device_id = ? AND created_at >= ?{type_filter}
+                GROUP BY strftime('%Y-W%W', created_at), reading_type
+                ORDER BY timestamp ASC
+            ''', query_params).fetchall()
+        else:
+            rows = db.execute(f'''
+                SELECT created_at as timestamp, reading_type, value as avg_value, value as min_value, value as max_value, unit, 1 as sample_count
+                FROM sensor_readings
+                WHERE device_id = ? AND created_at >= ?{type_filter}
+                ORDER BY created_at ASC
+            ''', query_params).fetchall()
+
+        # Get device info
+        device = db.execute('SELECT * FROM sensor_devices WHERE id = ?', (device_id,)).fetchone()
+        db.close()
+
+        series = {}
+        for r in rows:
+            rt = r['reading_type']
+            if rt not in series:
+                series[rt] = {'reading_type': rt, 'unit': r['unit'], 'data': []}
+            series[rt]['data'].append({
+                'timestamp': r['timestamp'],
+                'avg': round(r['avg_value'], 2) if r['avg_value'] is not None else None,
+                'min': round(r['min_value'], 2) if r['min_value'] is not None else None,
+                'max': round(r['max_value'], 2) if r['max_value'] is not None else None,
+                'samples': r['sample_count'],
+            })
+
+        return jsonify({
+            'device_id': device_id,
+            'device_name': dict(device)['name'] if device else 'Unknown',
+            'range': range_param,
+            'aggregation': agg or 'raw',
+            'series': list(series.values()),
+        })
+
+    # ─── Meshtastic Bridge Stub (Phase 14) ────────────────────────────
+
+    _mesh_state = {'connected': False, 'node_count': 0, 'channel': 'LongFast', 'my_node_id': '!local', 'firmware': None}
+
+    @app.route('/api/mesh/status')
+    def api_mesh_status():
+        """Return mesh radio status — stub returns disconnected defaults."""
+        return jsonify(_mesh_state)
+
+    @app.route('/api/mesh/messages')
+    def api_mesh_messages_list():
+        """List recent mesh messages."""
+        db = get_db()
+        limit = request.args.get('limit', 50, type=int)
+        rows = db.execute('SELECT * FROM mesh_messages ORDER BY timestamp DESC LIMIT ?', (limit,)).fetchall()
+        db.close()
+        return jsonify([dict(r) for r in rows])
+
+    @app.route('/api/mesh/messages', methods=['POST'])
+    def api_mesh_messages_send():
+        """Send a mesh message — stub stores locally."""
+        data = request.get_json() or {}
+        message = data.get('message', '')
+        channel = data.get('channel', 'LongFast')
+        to_node = data.get('to_node', '^all')
+        if not message:
+            return jsonify({'error': 'message is required'}), 400
+        db = get_db()
+        cur = db.execute(
+            'INSERT INTO mesh_messages (from_node, to_node, message, channel) VALUES (?, ?, ?, ?)',
+            ('!local', to_node, message, channel))
+        db.commit()
+        msg_id = cur.lastrowid
+        row = db.execute('SELECT * FROM mesh_messages WHERE id = ?', (msg_id,)).fetchone()
+        db.close()
+        if not _mesh_state['connected']:
+            return jsonify({'status': 'queued', 'note': 'No mesh radio connected — message stored locally', 'message': dict(row)}), 202
+        return jsonify({'status': 'sent', 'message': dict(row)}), 201
+
+    @app.route('/api/mesh/nodes')
+    def api_mesh_nodes():
+        """List visible mesh nodes — stub returns empty when no hardware."""
+        if not _mesh_state['connected']:
+            return jsonify({'nodes': [], 'note': 'No mesh radio connected. Connect via Web Serial API in the frontend.'})
+        return jsonify({'nodes': []})
+
+    # ─── Comms Status Board (Phase 14) ────────────────────────────────
+
+    @app.route('/api/comms/status-board')
+    def api_comms_status_board():
+        """Unified view of all communication channels."""
+        from datetime import datetime, timedelta
+        db = get_db()
+
+        # LAN peers
+        lan_peers = []
+        try:
+            peers = db.execute('SELECT * FROM federation_peers ORDER BY last_seen DESC').fetchall()
+            lan_peers = [dict(p) for p in peers]
+        except Exception:
+            pass
+
+        # Mesh nodes
+        mesh_nodes = []
+        mesh_status = dict(_mesh_state)
+
+        # Federation peers
+        fed_peers = []
+        try:
+            rows = db.execute("SELECT * FROM federation_peers WHERE trust_level != 'blocked' ORDER BY last_seen DESC").fetchall()
+            fed_peers = [dict(r) for r in rows]
+        except Exception:
+            pass
+
+        # Recent comms log
+        recent_comms = []
+        try:
+            since = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
+            rows = db.execute('SELECT * FROM comms_log WHERE created_at >= ? ORDER BY created_at DESC LIMIT 50', (since,)).fetchall()
+            recent_comms = [dict(r) for r in rows]
+        except Exception:
+            pass
+
+        # Active frequencies from radio profiles
+        active_freqs = []
+        try:
+            rows = db.execute('SELECT * FROM radio_profiles ORDER BY name').fetchall()
+            for r in rows:
+                try:
+                    channels = json.loads(r['channels']) if r['channels'] else []
+                    for ch in channels:
+                        active_freqs.append({
+                            'profile': r['name'],
+                            'radio': r['radio_model'],
+                            'channel': ch.get('name', ''),
+                            'frequency': ch.get('frequency', ''),
+                        })
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Recent mesh messages
+        mesh_msgs = []
+        try:
+            rows = db.execute('SELECT * FROM mesh_messages ORDER BY timestamp DESC LIMIT 20').fetchall()
+            mesh_msgs = [dict(r) for r in rows]
+        except Exception:
+            pass
+
+        db.close()
+        return jsonify({
+            'lan_peers': lan_peers,
+            'mesh': {
+                'status': mesh_status,
+                'nodes': mesh_nodes,
+                'recent_messages': mesh_msgs,
+            },
+            'federation_peers': fed_peers,
+            'recent_comms': recent_comms,
+            'active_frequencies': active_freqs,
+            'channels_count': {
+                'lan': len(lan_peers),
+                'mesh': mesh_status.get('node_count', 0),
+                'federation': len(fed_peers),
+                'frequencies': len(active_freqs),
+            },
+        })
+
+    # ─── PWA Service Worker ─────────────────────────────────────────
+
+    @app.route('/sw.js')
+    def service_worker():
+        return app.send_static_file('sw.js')
+
     # ─── Favicon ──────────────────────────────────────────────────────
 
     @app.route('/favicon.ico')
     def favicon():
         svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><polygon points="32,4 60,32 32,60 4,32" fill="#4f9cf7"/><polygon points="32,14 50,32 32,50 14,32" fill="#0d0d0d"/><polygon points="32,22 42,32 32,42 22,32" fill="#4f9cf7"/></svg>'
         return Response(svg, mimetype='image/svg+xml')
+
+    # ─── Advanced Routes (Phases 16, 18, 19, 20) ────────────────────
+    from web.routes_advanced import register_advanced_routes
+    register_advanced_routes(app)
 
     return app

@@ -10,10 +10,15 @@ import subprocess
 import threading
 import time
 import logging
+from logging.handlers import RotatingFileHandler
+
+LOG_FORMAT = '%(asctime)s [%(name)s] %(levelname)s: %(message)s'
+MAX_LOG_BYTES = 5 * 1024 * 1024  # 5 MB per file
+LOG_BACKUP_COUNT = 3
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s [%(name)s] %(levelname)s: %(message)s',
+    format=LOG_FORMAT,
     handlers=[logging.StreamHandler()],
 )
 log = logging.getLogger('nomad')
@@ -50,7 +55,7 @@ from config import get_data_dir
 from web.app import create_app, set_version
 from db import init_db, get_db, log_activity, backup_db
 
-VERSION = '3.2.0'
+VERSION = '4.1.0'
 PORT = 8080
 
 _tray_icon = None
@@ -128,7 +133,13 @@ def tray_quit(icon, item):
     icon.stop()
     if _window:
         _window.destroy()
-    os._exit(0)
+    # Flush log handlers before exiting
+    for handler in logging.getLogger().handlers:
+        try:
+            handler.flush()
+        except Exception:
+            pass
+    sys.exit(0)
 
 
 def setup_tray():
@@ -234,9 +245,11 @@ def first_run_check():
 def main():
     os.makedirs(get_data_dir(), exist_ok=True)
 
-    # File logging
-    file_handler = logging.FileHandler(get_log_path(), encoding='utf-8')
-    file_handler.setFormatter(logging.Formatter('%(asctime)s [%(name)s] %(levelname)s: %(message)s'))
+    # File logging with rotation (5 MB max, keep 3 backups)
+    file_handler = RotatingFileHandler(
+        get_log_path(), maxBytes=MAX_LOG_BYTES, backupCount=LOG_BACKUP_COUNT, encoding='utf-8'
+    )
+    file_handler.setFormatter(logging.Formatter(LOG_FORMAT))
     logging.getLogger().addHandler(file_handler)
 
     init_db()
@@ -325,14 +338,22 @@ def main():
         for _ in range(60):
             try:
                 rq.get(f'http://127.0.0.1:{PORT}/api/health', timeout=1)
-                if _window:
-                    _window.load_url(start_url)
+                w = _window
+                if w:
+                    try:
+                        w.load_url(start_url)
+                    except Exception:
+                        pass
                 return
             except Exception:
                 time.sleep(0.3)
         log.error('Flask not reachable after 18 seconds — showing error in window')
-        if _window:
-            _window.load_html('<html><body style="margin:0;background:#060608;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Segoe UI,sans-serif;"><div style="text-align:center;"><h1 style="color:#ff6b6b;font-size:20px;">Failed to Start</h1><p style="color:#55556a;font-size:14px;">The web server did not respond. Check the log file for details.</p></div></body></html>')
+        w = _window
+        if w:
+            try:
+                w.load_html('<html><body style="margin:0;background:#060608;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Segoe UI,sans-serif;"><div style="text-align:center;"><h1 style="color:#ff6b6b;font-size:20px;">Failed to Start</h1><p style="color:#55556a;font-size:14px;">The web server did not respond. Check the log file for details.</p></div></body></html>')
+            except Exception:
+                pass
 
     _window.events.closing += on_window_closing
     threading.Thread(target=_navigate_when_ready, daemon=True).start()

@@ -21,6 +21,8 @@ log = logging.getLogger('nomad.manager')
 # Track running processes — guarded by _lock for thread safety
 _processes: dict[str, subprocess.Popen] = {}
 _download_progress: dict[str, dict] = {}
+_service_logs: dict[str, list[str]] = {}
+_SERVICE_LOG_MAX = 500
 _lock = threading.Lock()
 
 # Service dependency graph: service -> list of services it requires
@@ -152,29 +154,57 @@ def download_file(url: str, dest: str, service_id: str = '') -> str:
 
 
 def extract_zip(zip_path: str, dest_dir: str):
-    """Extract a zip file."""
+    """Extract a zip file with path traversal protection."""
+    dest = os.path.realpath(dest_dir)
     with zipfile.ZipFile(zip_path, 'r') as zf:
+        for member in zf.infolist():
+            member_path = os.path.realpath(os.path.join(dest, member.filename))
+            if not member_path.startswith(dest + os.sep) and member_path != dest:
+                raise ValueError(f'Zip Slip detected: {member.filename} escapes {dest_dir}')
         zf.extractall(dest_dir)
     os.remove(zip_path)
 
 
 # ─── Process Management ────────────────────────────────────────────────
 
-def start_process(service_id: str, exe_path: str, args: list[str] = None,
+def start_process(service_id: str, exe_path, args: list[str] = None,
                   cwd: str = None, port: int = None, env: dict = None) -> int:
-    """Start a native process and track it."""
+    """Start a native process and track it. Captures stdout/stderr for log viewer."""
     with _lock:
         if service_id in _processes and _processes[service_id].poll() is None:
             return _processes[service_id].pid
 
-    cmd = [exe_path] + (args or [])
+    # Support exe_path as either a string or a list (for [python, -m, module] style)
+    if isinstance(exe_path, list):
+        cmd = exe_path + (args or [])
+    else:
+        cmd = [exe_path] + (args or [])
     log.info(f'Starting {service_id}: {" ".join(cmd)}')
 
     from platform_utils import popen_kwargs
+    # Capture stdout/stderr with PIPE for log viewer
     proc = subprocess.Popen(
         cmd,
-        **popen_kwargs(cwd=cwd, env=env),
+        **popen_kwargs(cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT),
     )
+
+    # Start background thread to read output into _service_logs
+    _service_logs.setdefault(service_id, [])
+    def _read_output():
+        try:
+            for line in iter(proc.stdout.readline, b''):
+                if not line:
+                    break
+                decoded = line.decode('utf-8', errors='replace').rstrip('\n\r')
+                if decoded:
+                    logs = _service_logs.setdefault(service_id, [])
+                    logs.append(decoded)
+                    if len(logs) > _SERVICE_LOG_MAX:
+                        del logs[:len(logs) - _SERVICE_LOG_MAX]
+        except Exception:
+            pass
+    threading.Thread(target=_read_output, daemon=True).start()
+
     with _lock:
         _processes[service_id] = proc
 
@@ -203,17 +233,22 @@ def stop_process(service_id: str) -> bool:
         try:
             proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
+            log.warning(f'{service_id} did not terminate within 10s, sending SIGKILL')
             proc.kill()
 
-    # Also try by PID from DB
+    # Also try by PID from DB — but only if we didn't already stop a tracked process
     db = get_db()
     try:
         row = db.execute('SELECT pid FROM services WHERE id = ?', (service_id,)).fetchone()
-        if row and row['pid']:
-            try:
-                os.kill(row['pid'], signal.SIGTERM)
-            except (OSError, ProcessLookupError):
-                pass
+        if row and row['pid'] and not proc:
+            # Only kill DB-tracked PID if we didn't already have a tracked process,
+            # to avoid killing a recycled PID
+            from platform_utils import pid_alive
+            if pid_alive(row['pid']):
+                try:
+                    os.kill(row['pid'], signal.SIGTERM)
+                except (OSError, ProcessLookupError):
+                    pass
 
         db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (service_id,))
         db.commit()
@@ -352,6 +387,44 @@ def check_port(port: int) -> bool:
         return False
 
 
+def wait_for_port(port: int, timeout: float = 30, interval: float = 1.0) -> bool:
+    """Block until a port is accepting connections, or timeout.
+
+    Returns True if port became available, False if timed out.
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        if check_port(port):
+            return True
+        time.sleep(interval)
+    return False
+
+
+# Service health endpoints — used by is_healthy() for deeper checks
+SERVICE_HEALTH_URLS = {
+    'ollama': ('http://127.0.0.1:11434/api/tags', 200),
+    'kiwix': ('http://127.0.0.1:8888/', 200),
+    'qdrant': ('http://127.0.0.1:6333/healthz', 200),
+    'stirling': ('http://127.0.0.1:8443/', 200),
+    'cyberchef': ('http://127.0.0.1:8081/', 200),
+}
+
+
+def is_healthy(service_id: str, timeout: float = 3.0) -> bool:
+    """Check if a service is alive AND responding on its HTTP endpoint."""
+    if not is_running(service_id):
+        return False
+    health = SERVICE_HEALTH_URLS.get(service_id)
+    if not health:
+        return True  # No health endpoint defined — PID check is all we can do
+    url, expected_status = health
+    try:
+        resp = requests.get(url, timeout=timeout)
+        return resp.status_code == expected_status
+    except Exception:
+        return False
+
+
 def get_dir_size(path: str) -> int:
     """Get total size of a directory in bytes."""
     total = 0
@@ -395,6 +468,9 @@ def uninstall_service(service_id: str) -> bool:
         db.close()
 
     _download_progress.pop(service_id, None)
+    with _lock:
+        _service_logs.pop(service_id, None)
+        _restart_tracker.pop(service_id, None)
     log_activity('service_uninstalled', service_id)
     log.info(f'Uninstalled {service_id}')
     return True

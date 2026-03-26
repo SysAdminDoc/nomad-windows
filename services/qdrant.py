@@ -64,7 +64,9 @@ def install(callback=None):
 
     try:
         # Resolve download URL from GitHub releases
-        rel = req.get(QDRANT_RELEASE_API, timeout=15).json()
+        resp = req.get(QDRANT_RELEASE_API, timeout=15)
+        resp.raise_for_status()
+        rel = resp.json()
         zip_url = None
         asset_keyword = get_qdrant_asset_filter()
         for asset in rel.get('assets', []):
@@ -112,6 +114,9 @@ def install(callback=None):
 
 def start():
     """Start Qdrant server."""
+    if running():
+        log.info('Qdrant is already running')
+        return
     if not is_installed():
         raise RuntimeError('Qdrant is not installed')
 
@@ -168,7 +173,7 @@ def ensure_collection():
         pass
 
     try:
-        req.put(
+        r = req.put(
             f'http://localhost:{QDRANT_PORT}/collections/{COLLECTION_NAME}',
             json={
                 'vectors': {
@@ -178,6 +183,9 @@ def ensure_collection():
             },
             timeout=10,
         )
+        if not r.ok:
+            log.error(f'Failed to create collection (HTTP {r.status_code}): {r.text}')
+            return False
         log.info(f'Created Qdrant collection: {COLLECTION_NAME}')
         return True
     except Exception as e:
@@ -188,11 +196,14 @@ def ensure_collection():
 def upsert_vectors(points: list[dict]):
     """Upsert points into the KB collection. Each point: {id, vector, payload}."""
     try:
-        req.put(
+        r = req.put(
             f'http://localhost:{QDRANT_PORT}/collections/{COLLECTION_NAME}/points',
             json={'points': points},
             timeout=30,
         )
+        if not r.ok:
+            log.error(f'Qdrant upsert HTTP {r.status_code}: {r.text}')
+            return False
         return True
     except Exception as e:
         log.error(f'Qdrant upsert failed: {e}')
@@ -221,7 +232,7 @@ def search(vector: list[float], limit: int = 5) -> list[dict]:
 def delete_by_doc_id(doc_id: int):
     """Delete all vectors for a given document ID."""
     try:
-        req.post(
+        r = req.post(
             f'http://localhost:{QDRANT_PORT}/collections/{COLLECTION_NAME}/points/delete',
             json={
                 'filter': {
@@ -230,6 +241,9 @@ def delete_by_doc_id(doc_id: int):
             },
             timeout=10,
         )
+        if not r.ok:
+            log.error(f'Qdrant delete HTTP {r.status_code}: {r.text}')
+            return False
         return True
     except Exception as e:
         log.error(f'Qdrant delete failed: {e}')

@@ -128,7 +128,9 @@ def install(callback=None):
 
     try:
         # Resolve download URL from GitHub releases
-        rel = req.get(STIRLING_RELEASE_API, timeout=15).json()
+        resp = req.get(STIRLING_RELEASE_API, timeout=15)
+        resp.raise_for_status()
+        rel = resp.json()
         jar_url = None
         for asset in rel.get('assets', []):
             # Get the standalone jar (not -with-login, not -server)
@@ -153,17 +155,19 @@ def install(callback=None):
             _auto_install_java()
 
         db = get_db()
-        db.execute('''
-            INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
-            VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
-        ''', (
-            SERVICE_ID, 'Stirling PDF',
-            'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools',
-            'file', 'tools', STIRLING_PORT, install_dir, jar_path,
-            f'http://localhost:{STIRLING_PORT}'
-        ))
-        db.commit()
-        db.close()
+        try:
+            db.execute('''
+                INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+            ''', (
+                SERVICE_ID, 'Stirling PDF',
+                'Offline PDF toolkit — merge, split, compress, convert, OCR, and 50+ tools',
+                'file', 'tools', STIRLING_PORT, install_dir, jar_path,
+                f'http://localhost:{STIRLING_PORT}'
+            ))
+            db.commit()
+        finally:
+            db.close()
 
         _download_progress[SERVICE_ID] = {
             'percent': 100, 'status': 'complete', 'error': None,
@@ -182,6 +186,9 @@ def install(callback=None):
 
 def start():
     """Start Stirling-PDF server via Java. Auto-downloads JRE if needed."""
+    if running():
+        log.info('Stirling-PDF is already running')
+        return
     if not is_installed():
         raise RuntimeError('Stirling-PDF is not installed')
 

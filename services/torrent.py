@@ -37,7 +37,7 @@ def _extract_hash_from_magnet(magnet: str) -> Optional[str]:
     m = re.search(r'xt=urn:btih:([a-zA-Z2-7]{32})', magnet)
     if m:
         try:
-            return base64.b32decode(m.group(1).upper() + '======').hex()
+            return base64.b32decode(m.group(1).upper()).hex()
         except Exception:
             pass
     return None
@@ -60,7 +60,7 @@ class TorrentManager:
 
     def __init__(self):
         self._session = None
-        self._lock = threading.Lock()
+        self._lock = threading.RLock()
         # hash -> lt handle
         self._handles: dict[str, object] = {}
         # hash -> metadata dict
@@ -92,6 +92,8 @@ class TorrentManager:
                 self._monitor_active = False
                 self._session.pause()
                 self._session = None
+            self._handles.clear()
+            self._meta.clear()
 
     # ── Public API ────────────────────────────────────────────────────
 
@@ -131,8 +133,7 @@ class TorrentManager:
 
         save_path = self.get_save_dir()
 
-        with self._lock:
-            ses = self._get_session()
+        ses = self._get_session()
 
         atp = lt.parse_magnet_uri(magnet)
         atp.save_path = save_path
@@ -141,7 +142,7 @@ class TorrentManager:
         atp.flags |= lt.torrent_flags.sequential_download
 
         with self._lock:
-            handle = self._session.add_torrent(atp)
+            handle = ses.add_torrent(atp)
             handle.resume()
             self._handles[info_hash] = handle
             self._meta[info_hash] = {
@@ -229,7 +230,6 @@ class TorrentManager:
         with self._lock:
             h = self._handles.pop(info_hash, None)
             self._meta.pop(info_hash, None)
-        with self._lock:
             session = self._session
         if h and h.is_valid() and session:
             flags = lt.session.delete_files if delete_files else 0

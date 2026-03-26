@@ -73,14 +73,31 @@ def python_binary() -> str:
 
 # ─── File/Folder Opening ─────────────────────────────────────────────
 
+def find_system_python() -> str | None:
+    """Find a system Python 3 executable (for venv creation in frozen apps)."""
+    import shutil
+    for name in ('python3', 'python'):
+        path = shutil.which(name)
+        if path:
+            try:
+                result = subprocess.run([path, '--version'], capture_output=True, text=True, timeout=5)
+                if result.returncode == 0 and 'Python 3' in result.stdout:
+                    return path
+            except Exception:
+                continue
+    return None
+
+
 def open_folder(path: str):
     """Open a folder in the platform's file manager."""
     if IS_WINDOWS:
         os.startfile(path)
     elif IS_MACOS:
-        subprocess.Popen(['open', path])
+        proc = subprocess.Popen(['open', path])
+        proc.wait()
     else:
-        subprocess.Popen(['xdg-open', path])
+        proc = subprocess.Popen(['xdg-open', path])
+        proc.wait()
 
 
 # ─── Process Management ──────────────────────────────────────────────
@@ -92,16 +109,33 @@ def pid_alive(pid: int) -> bool:
             import ctypes
             kernel32 = ctypes.windll.kernel32
             PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+            STILL_ACTIVE = 259
             handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid)
             if handle:
-                kernel32.CloseHandle(handle)
-                return True
+                try:
+                    exit_code = ctypes.c_ulong()
+                    if kernel32.GetExitCodeProcess(handle, ctypes.byref(exit_code)):
+                        return exit_code.value == STILL_ACTIVE
+                    return True  # couldn't query exit code, assume alive
+                finally:
+                    kernel32.CloseHandle(handle)
             return False
         except Exception:
             pass
     # Unix fallback (also used if Windows ctypes fails)
     try:
         os.kill(pid, 0)
+        # Check for zombie processes on Linux
+        if IS_LINUX:
+            try:
+                with open(f'/proc/{pid}/status', 'r') as f:
+                    for line in f:
+                        if line.startswith('State:'):
+                            if 'Z' in line.split(':')[1]:
+                                return False  # zombie process
+                            break
+            except (OSError, IOError):
+                pass
         return True
     except (OSError, ProcessLookupError):
         return False
@@ -201,13 +235,13 @@ def detect_gpu() -> dict:
     if IS_WINDOWS:
         # Try AMD/Intel via WMI (Windows only)
         for pattern, gpu_type, flag in [
-            ("*AMD*' -or $_.Name -like '*Radeon*", 'amd', 'rocm'),
+            ("*AMD*\" -or $_.Name -like \"*Radeon*", 'amd', 'rocm'),
             ("*Intel*Arc*", 'intel', None),
         ]:
             try:
                 result = subprocess.run(
                     ['powershell', '-NoProfile', '-Command',
-                     f"Get-WmiObject Win32_VideoController | Where-Object {{$_.Name -like '{pattern}'}} | Select-Object -First 1 -ExpandProperty Name"],
+                     f'Get-WmiObject Win32_VideoController | Where-Object {{$_.Name -like "{pattern}"}} | Select-Object -First 1 -ExpandProperty Name'],
                     **run_kwargs(capture_output=True, text=True, timeout=5)
                 )
                 if result.returncode == 0 and result.stdout.strip():
@@ -236,19 +270,23 @@ def detect_gpu() -> dict:
                 ['lspci'], capture_output=True, text=True, timeout=5
             )
             if result.returncode == 0:
+                # Prefer discrete GPU over integrated — scan all VGA/3D/display entries
+                best_gpu = None
                 for line in result.stdout.splitlines():
                     ll = line.lower()
                     if 'vga' in ll or '3d' in ll or 'display' in ll:
+                        gpu_name = line.split(': ', 1)[-1] if ': ' in line else line
                         if 'amd' in ll or 'radeon' in ll:
-                            info['type'] = 'amd'
-                            info['name'] = line.split(': ', 1)[-1] if ': ' in line else line
-                            info['rocm'] = True
+                            best_gpu = {'type': 'amd', 'name': gpu_name, 'rocm': True}
                         elif 'intel' in ll and 'arc' in ll:
-                            info['type'] = 'intel'
-                            info['name'] = line.split(': ', 1)[-1] if ': ' in line else line
-                        elif 'intel' in ll:
-                            info['name'] = line.split(': ', 1)[-1] if ': ' in line else line
-                        break
+                            best_gpu = {'type': 'intel', 'name': gpu_name}
+                        elif best_gpu is None:
+                            best_gpu = {'type': info['type'], 'name': gpu_name}
+                if best_gpu:
+                    info['type'] = best_gpu.get('type', info['type'])
+                    info['name'] = best_gpu['name']
+                    if best_gpu.get('rocm'):
+                        info['rocm'] = True
         except Exception:
             pass
 
@@ -290,11 +328,12 @@ def get_ollama_url() -> str:
 
 
 def get_kiwix_url() -> str:
+    arch = 'aarch64' if _arch() == 'arm64' else 'x86_64'
     if IS_MACOS:
-        return 'https://download.kiwix.org/release/kiwix-tools/kiwix-tools_macos-x86_64-3.8.1.tar.gz'
+        return f'https://download.kiwix.org/release/kiwix-tools/kiwix-tools_macos-{arch}-3.8.1.tar.gz'
     elif IS_LINUX:
-        return 'https://download.kiwix.org/release/kiwix-tools/kiwix-tools_linux-x86_64-3.8.1.tar.gz'
-    return 'https://download.kiwix.org/release/kiwix-tools/kiwix-tools_win-x86_64-3.8.1.zip'
+        return f'https://download.kiwix.org/release/kiwix-tools/kiwix-tools_linux-{arch}-3.8.1.tar.gz'
+    return f'https://download.kiwix.org/release/kiwix-tools/kiwix-tools_win-{arch}-3.8.1.zip'
 
 
 def get_adoptium_jre_url() -> str:
@@ -303,13 +342,15 @@ def get_adoptium_jre_url() -> str:
         return f'https://api.adoptium.net/v3/binary/latest/21/ga/mac/{arch}/jre/hotspot/normal/eclipse'
     elif IS_LINUX:
         return f'https://api.adoptium.net/v3/binary/latest/21/ga/linux/{arch}/jre/hotspot/normal/eclipse'
-    return 'https://api.adoptium.net/v3/binary/latest/21/ga/windows/x64/jre/hotspot/normal/eclipse'
+    win_arch = 'aarch64' if _arch() == 'arm64' else 'x64'
+    return f'https://api.adoptium.net/v3/binary/latest/21/ga/windows/{win_arch}/jre/hotspot/normal/eclipse'
 
 
 def get_python_embed_url() -> str | None:
     """Python embeddable package — only available on Windows."""
     if IS_WINDOWS:
-        return 'https://www.python.org/ftp/python/3.12.8/python-3.12.8-embed-amd64.zip'
+        win_arch = 'arm64' if _arch() == 'arm64' else 'amd64'
+        return f'https://www.python.org/ftp/python/3.12.8/python-3.12.8-embed-{win_arch}.zip'
     return None  # Linux/macOS use system Python
 
 
@@ -367,29 +408,60 @@ def get_data_base() -> str:
 
 # ─── Archive Extraction ────────────────────────────────────────────
 
+def _safe_zip_extract(zf, dest_dir: str):
+    """Extract zip with Zip Slip protection — reject entries that escape dest_dir."""
+    dest = os.path.realpath(dest_dir)
+    for member in zf.infolist():
+        member_path = os.path.realpath(os.path.join(dest, member.filename))
+        if not member_path.startswith(dest + os.sep) and member_path != dest:
+            raise ValueError(f'Zip Slip detected: {member.filename} escapes {dest_dir}')
+    zf.extractall(dest_dir)
+
+
+def _safe_tar_extract(tf, dest_dir: str):
+    """Extract tar with path traversal protection — reject entries that escape dest_dir."""
+    dest = os.path.realpath(dest_dir)
+    for member in tf.getmembers():
+        member_path = os.path.realpath(os.path.join(dest, member.name))
+        if not member_path.startswith(dest + os.sep) and member_path != dest:
+            raise ValueError(f'Path traversal detected: {member.name} escapes {dest_dir}')
+        if member.issym() or member.islnk():
+            link_target = os.path.realpath(os.path.join(dest, member.linkname))
+            if not link_target.startswith(dest + os.sep) and link_target != dest:
+                raise ValueError(f'Symlink traversal detected: {member.name} -> {member.linkname}')
+    tf.extractall(dest_dir)
+
+
 def extract_archive(archive_path: str, dest_dir: str):
-    """Extract a .zip, .tar.gz, or .tar.xz archive."""
+    """Extract a .zip, .tar.gz, .tar.xz, or .tar.bz2 archive with path traversal protection."""
     if archive_path.endswith('.zip'):
         import zipfile
         with zipfile.ZipFile(archive_path, 'r') as zf:
-            zf.extractall(dest_dir)
+            _safe_zip_extract(zf, dest_dir)
             # zipfile does not preserve Unix permissions — fix execute bits
             if not IS_WINDOWS:
                 for info in zf.infolist():
                     extracted = os.path.join(dest_dir, info.filename)
                     if not info.is_dir() and os.path.isfile(extracted):
-                        # Restore Unix permissions from external_attr if present
                         unix_mode = info.external_attr >> 16
                         if unix_mode:
                             os.chmod(extracted, unix_mode)
-    elif archive_path.endswith(('.tar.gz', '.tgz', '.tar.xz')):
+    elif archive_path.endswith(('.tar.gz', '.tgz', '.tar.xz', '.tar.bz2')):
         import tarfile
-        mode = 'r:xz' if archive_path.endswith('.tar.xz') else 'r:gz'
+        if archive_path.endswith('.tar.xz'):
+            mode = 'r:xz'
+        elif archive_path.endswith('.tar.bz2'):
+            mode = 'r:bz2'
+        else:
+            mode = 'r:gz'
         with tarfile.open(archive_path, mode) as tf:
-            tf.extractall(dest_dir)
+            _safe_tar_extract(tf, dest_dir)
     else:
         raise ValueError(f'Unknown archive format: {archive_path}')
-    os.remove(archive_path)
+    try:
+        os.remove(archive_path)
+    except OSError as e:
+        log.warning(f'Could not remove archive after extraction: {e}')
 
 
 def install_binary(src_path: str, dest_path: str):

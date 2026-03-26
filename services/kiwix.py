@@ -662,17 +662,19 @@ def install(callback=None):
         make_executable(get_exe_path())
 
         db = get_db()
-        db.execute('''
-            INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
-            VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
-        ''', (
-            SERVICE_ID, 'Kiwix (Information Library)',
-            'Offline Wikipedia, medical references, survival guides, and ebooks',
-            'book', 'knowledge', KIWIX_PORT, install_dir, get_exe_path(),
-            f'http://localhost:{KIWIX_PORT}'
-        ))
-        db.commit()
-        db.close()
+        try:
+            db.execute('''
+                INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+            ''', (
+                SERVICE_ID, 'Kiwix (Information Library)',
+                'Offline Wikipedia, medical references, survival guides, and ebooks',
+                'book', 'knowledge', KIWIX_PORT, install_dir, get_exe_path(),
+                f'http://localhost:{KIWIX_PORT}'
+            ))
+            db.commit()
+        finally:
+            db.close()
 
         _download_progress[SERVICE_ID] = {
             'percent': 100, 'status': 'complete', 'error': None,
@@ -696,11 +698,14 @@ def list_zim_files():
     for f in os.listdir(library_dir):
         if f.endswith('.zim'):
             path = os.path.join(library_dir, f)
-            zims.append({
-                'filename': f,
-                'path': path,
-                'size_mb': round(os.path.getsize(path) / (1024 * 1024), 1),
-            })
+            try:
+                zims.append({
+                    'filename': f,
+                    'path': path,
+                    'size_mb': round(os.path.getsize(path) / (1024 * 1024), 1),
+                })
+            except OSError:
+                pass  # Broken symlink or file deleted between listdir and getsize
     return zims
 
 
@@ -726,7 +731,14 @@ def download_zim(url: str, filename: str = None):
     """Download a ZIM file to the library directory."""
     if not filename:
         filename = url.split('/')[-1]
-    dest = os.path.join(get_library_dir(), filename)
+    # Sanitize filename to prevent path traversal
+    filename = os.path.basename(filename)
+    if not filename or '..' in filename:
+        raise ValueError(f'Invalid ZIM filename: {filename}')
+    lib_dir = os.path.abspath(get_library_dir())
+    dest = os.path.abspath(os.path.join(lib_dir, filename))
+    if not dest.startswith(lib_dir + os.sep):
+        raise ValueError(f'Path traversal detected in filename: {filename}')
     download_file(url, dest, f'kiwix-zim-{filename}')
     return dest
 

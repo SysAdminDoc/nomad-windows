@@ -10,6 +10,10 @@ import logging
 
 log = logging.getLogger('nomad.config')
 
+# Config cache — avoids re-reading config.json from disk on every get_data_dir() call
+_config_cache = None
+_config_mtime = 0
+
 
 def get_config_path():
     """Fixed location for config pointer (outside data dir to solve bootstrap)."""
@@ -19,17 +23,45 @@ def get_config_path():
 
 
 def load_config() -> dict:
+    global _config_cache, _config_mtime
     path = get_config_path()
-    if os.path.isfile(path):
-        try:
-            with open(path, 'r') as f:
-                return json.load(f)
-        except (json.JSONDecodeError, OSError) as e:
-            log.warning(f'Could not load config from {path}: {e}')
-    return {}
+    if not os.path.isfile(path):
+        return {}
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        return _config_cache if _config_cache is not None else {}
+    # Return cached version if file hasn't changed
+    if _config_cache is not None and mtime == _config_mtime:
+        return _config_cache
+    try:
+        with open(path, 'r') as f:
+            _config_cache = json.load(f)
+            _config_mtime = mtime
+            return _config_cache
+    except (json.JSONDecodeError, OSError) as e:
+        log.warning(f'Could not load config from {path}: {e}')
+        # Try recovering from .tmp backup
+        tmp_path = path + '.tmp'
+        if os.path.isfile(tmp_path):
+            try:
+                with open(tmp_path, 'r') as f:
+                    data = json.load(f)
+                log.info(f'Recovered config from {tmp_path}')
+                _config_cache = data
+                return data
+            except (json.JSONDecodeError, OSError):
+                pass
+    return _config_cache if _config_cache is not None else {}
+
+
+def get_config_value(key: str, default=None):
+    """Get a single config value with a default."""
+    return load_config().get(key, default)
 
 
 def save_config(data: dict):
+    global _config_cache, _config_mtime
     path = get_config_path()
     os.makedirs(os.path.dirname(path), exist_ok=True)
     tmp_path = path + '.tmp'
@@ -37,7 +69,23 @@ def save_config(data: dict):
         json.dump(data, f, indent=2)
         f.flush()
         os.fsync(f.fileno())
-    os.replace(tmp_path, path)
+    import sys
+    try:
+        os.replace(tmp_path, path)
+    except PermissionError:
+        if sys.platform == 'win32':
+            # Windows: retry once — antivirus may briefly lock the file
+            import time as _time
+            _time.sleep(0.1)
+            os.replace(tmp_path, path)
+        else:
+            raise
+    # Update cache immediately so subsequent reads are consistent
+    _config_cache = data
+    try:
+        _config_mtime = os.path.getmtime(path)
+    except OSError:
+        _config_mtime = 0
 
 
 def get_data_dir() -> str:
@@ -57,6 +105,14 @@ def set_data_dir(path: str):
     """Set a custom data directory. Only call during first-run wizard."""
     path = os.path.abspath(path)
     os.makedirs(path, exist_ok=True)
+    # Validate directory is writable
+    test_file = os.path.join(path, '.nomad_write_test')
+    try:
+        with open(test_file, 'w') as f:
+            f.write('test')
+        os.remove(test_file)
+    except OSError as e:
+        raise ValueError(f'Data directory is not writable: {path} — {e}')
     cfg = load_config()
     cfg['data_dir'] = path
     save_config(cfg)

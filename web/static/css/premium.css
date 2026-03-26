@@ -18,12 +18,11 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; font-weight: 700; }
   font-family: var(--font-data, 'Cascadia Code', 'Consolas', monospace);
 }
 
-/* ─── Thin Tactical Scrollbars ─── */
-::-webkit-scrollbar { width: 4px; height: 4px; }
+/* ─── Thin Tactical Scrollbars (matches app.css) ─── */
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 1px; }
+::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 2px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
-* { scrollbar-width: thin; scrollbar-color: var(--border-hover) transparent; }
 
 /* ─── Selection ─── */
 ::selection { background: var(--accent); color: #fff; }
@@ -43,7 +42,7 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; font-weight: 700; }
   box-shadow: 2px 0 40px rgba(0,0,0,0.5);
 }
 
-.sidebar-header { padding: 24px 20px 14px; }
+.sidebar-header { padding: 28px 22px 18px; }
 .sidebar-header img {
   width: 42px; height: 42px;
   filter: drop-shadow(0 2px 8px var(--accent-glow));
@@ -66,7 +65,7 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; font-weight: 700; }
 
 /* ─── Nav Items — Hard tactical edges ─── */
 .tab {
-  padding: 9px 14px; border-radius: var(--radius-sm);
+  padding: 11px 16px; border-radius: var(--radius-sm);
   font-size: 12.5px; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.3px;
   transition: all 0.15s ease;
@@ -96,7 +95,7 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; font-weight: 700; }
 
 /* Command Center Cards — Mission briefing feel */
 .cc-card {
-  border-radius: var(--radius); padding: 24px 20px;
+  border-radius: var(--radius); padding: 28px 24px;
   border-width: 1px;
   position: relative; overflow: hidden;
   transition: all 0.2s ease;
@@ -122,7 +121,7 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; font-weight: 700; }
 
 /* Service Cards — Top accent line always visible */
 .service-card {
-  border-radius: var(--radius); padding: 20px;
+  border-radius: var(--radius); padding: 24px;
   transition: all 0.2s ease;
   position: relative; overflow: hidden;
 }
@@ -141,7 +140,7 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; font-weight: 700; }
 
 /* Settings Cards */
 .settings-card {
-  border-radius: var(--radius); padding: 20px;
+  border-radius: var(--radius); padding: 24px;
   transition: all 0.15s ease;
 }
 .settings-card:hover {
@@ -226,7 +225,7 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; font-weight: 700; }
    GAUGE CARDS — Instrument panel
    ═══════════════════════════════════════════════════════════════ */
 .gauge-card {
-  border-radius: var(--radius); padding: 16px;
+  border-radius: var(--radius); padding: 20px;
   transition: all 0.15s ease;
 }
 .gauge-card:hover {
@@ -254,7 +253,7 @@ h1, h2, h3, h4 { letter-spacing: -0.02em; font-weight: 700; }
   text-transform: uppercase;
 }
 .message .content {
-  border-radius: var(--radius); padding: 10px 14px;
+  border-radius: var(--radius); padding: 12px 16px;
   font-size: 13px; line-height: 1.7;
 }
 .message.user .content { border-bottom-right-radius: 2px; }
@@ -280,7 +279,7 @@ textarea:focus {
    ═══════════════════════════════════════════════════════════════ */
 .notes-sidebar { border-radius: var(--radius); }
 .notes-editor { border-radius: var(--radius); }
-.note-item { border-radius: var(--radius-sm); padding: 8px 10px; }
+.note-item { border-radius: var(--radius-sm); padding: 10px 14px; }
 .note-item.active { border-left: 3px solid var(--accent); background: var(--accent-dim); }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -319,7 +318,7 @@ textarea:focus {
 /* ═══════════════════════════════════════════════════════════════
    ALERTS — Threat level indicators
    ═══════════════════════════════════════════════════════════════ */
-.alert-item { border-radius: var(--radius-sm); padding: 10px 12px; }
+.alert-item { border-radius: var(--radius-sm); padding: 12px 16px; }
 .alert-item:hover { background: var(--surface2); }
 .alert-sev {
   border-radius: 3px; padding: 3px 8px;
@@ -376,7 +375,7 @@ textarea:focus {
    DECISION GUIDES — Mission planning
    ═══════════════════════════════════════════════════════════════ */
 .guide-tile {
-  border-radius: var(--radius);
+  border-radius: var(--radius); padding: 22px;
   transition: all 0.2s ease;
 }
 .guide-tile:hover {
@@ -398,7 +397,7 @@ textarea:focus {
    ═══════════════════════════════════════════════════════════════ */
 .protocol-card { border-radius: var(--radius); }
 .protocol-header {
-  border-radius: var(--radius); padding: 12px 16px;
+  border-radius: var(--radius); padding: 14px 20px;
   font-size: 12px; text-transform: uppercase; letter-spacing: 0.3px;
 }
 
@@ -406,9 +405,9 @@ textarea:focus {
    FREQUENCY TABLE — Radio reference
    ═══════════════════════════════════════════════════════════════ */
 .freq-table { border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
-.freq-table th { padding: 8px 12px; }
+.freq-table th { padding: 10px 14px; }
 .freq-table td {
-  padding: 6px 12px;
+  padding: 8px 14px;
   font-family: var(--font-data, monospace);
 }
 .freq-table tr:hover td { background: var(--accent-dim); }
@@ -507,7 +506,7 @@ textarea:focus {
 
 /* Model list */
 .model-item {
-  border-radius: var(--radius-sm); padding: 8px 12px;
+  border-radius: var(--radius-sm); padding: 10px 14px;
   transition: all 0.1s;
 }
 .model-item:hover { background: var(--surface3); }
@@ -572,6 +571,139 @@ textarea:focus {
   .help-icon { display: none !important; }
   .main-content { margin-left: 0 !important; }
   .service-card::after, .cc-card::before { display: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SIDEBAR GROUP LABELS — Tactical section dividers
+   ═══════════════════════════════════════════════════════════════ */
+.sidebar-group-label {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 2px;
+  position: relative;
+}
+.sidebar-group-label::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-hover), transparent);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   STATUS STRIP PILLS — Tactical indicators
+   ═══════════════════════════════════════════════════════════════ */
+.ss-pill {
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  border-radius: 4px;
+}
+.ss-pill .ss-dot {
+  border-radius: 2px;
+  box-shadow: 0 0 4px currentColor;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COPILOT DOCK — Command line feel
+   ═══════════════════════════════════════════════════════════════ */
+.copilot-dock {
+  backdrop-filter: blur(20px) saturate(1.2);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+}
+.copilot-dock-label {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 1.5px;
+}
+.copilot-dock-bar input {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 0.2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SERVICE STATUS — Tactical readiness indicators
+   ═══════════════════════════════════════════════════════════════ */
+.service-card.svc-running::after { opacity: 1; }
+.service-card.svc-not-installed::after { opacity: 0; }
+
+/* ═══════════════════════════════════════════════════════════════
+   NEED PROGRESS — Thin tactical bars
+   ═══════════════════════════════════════════════════════════════ */
+.need-progress-fill {
+  box-shadow: 0 0 6px currentColor;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BENTO GRID — Dashboard zones
+   ═══════════════════════════════════════════════════════════════ */
+.bento-grid > * {
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CUSTOMIZE PANEL — Settings flyout
+   ═══════════════════════════════════════════════════════════════ */
+.customize-panel {
+  backdrop-filter: blur(30px) saturate(1.2);
+  -webkit-backdrop-filter: blur(30px) saturate(1.2);
+}
+.customize-panel-header h2 {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 2px;
+}
+.customize-section-title {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 1.5px;
+  position: relative;
+}
+.customize-theme-card {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 0.8px;
+}
+.customize-row label {
+  letter-spacing: 0.2px;
+}
+.toggle-slider {
+  border-radius: 3px;
+}
+.toggle-slider::before {
+  border-radius: 2px;
+}
+.sidebar-customize-btn {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 1px;
+  border-radius: var(--radius-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SECTION HEADER LABELS — Tactical text
+   ═══════════════════════════════════════════════════════════════ */
+.section-header-label {
+  font-family: var(--font-data, monospace);
+  letter-spacing: 1.5px;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY POLISH — Breathing room for list items
+   ═══════════════════════════════════════════════════════════════ */
+.convo-item, .note-item, .prep-item, .catalog-item, .media-folder-item {
+  letter-spacing: 0.1px;
+}
+.activity-item, .incident-item, .check-item {
+  letter-spacing: 0.1px;
+}
+
+/* --- Premium Vertical Rhythm --- */
+.section-header {
+  padding-top: 12px;
+  margin-bottom: 16px;
+}
+.section-header::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-hover), transparent);
 }
 
 /* ═══════════════════════════════════════════════════════════════

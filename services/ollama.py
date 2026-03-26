@@ -90,16 +90,18 @@ def install(callback=None):
         make_executable(get_exe_path())
 
         db = get_db()
-        db.execute('''
-            INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
-            VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
-        ''', (
-            SERVICE_ID, 'Ollama (AI Chat)', 'Local AI chat powered by large language models',
-            'brain', 'ai', OLLAMA_PORT, install_dir, get_exe_path(),
-            f'http://localhost:{OLLAMA_PORT}'
-        ))
-        db.commit()
-        db.close()
+        try:
+            db.execute('''
+                INSERT OR REPLACE INTO services (id, name, description, icon, category, installed, port, install_path, exe_path, url)
+                VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?)
+            ''', (
+                SERVICE_ID, 'Ollama (AI Chat)', 'Local AI chat powered by large language models',
+                'brain', 'ai', OLLAMA_PORT, install_dir, get_exe_path(),
+                f'http://localhost:{OLLAMA_PORT}'
+            ))
+            db.commit()
+        finally:
+            db.close()
 
         _download_progress[SERVICE_ID] = {
             'percent': 100, 'status': 'complete', 'error': None,
@@ -310,16 +312,31 @@ def delete_model(model_name: str) -> bool:
 
 
 def chat(model: str, messages: list[dict], stream: bool = True):
-    """Send chat request to Ollama."""
-    resp = requests.post(
-        f'http://localhost:{OLLAMA_PORT}/api/chat',
-        json={'model': model, 'messages': messages, 'stream': stream},
-        stream=stream,
-        timeout=300,
-    )
-    resp.raise_for_status()
+    """Send chat request to Ollama. Caller must consume or close the response for streaming."""
+    try:
+        resp = requests.post(
+            f'http://localhost:{OLLAMA_PORT}/api/chat',
+            json={'model': model, 'messages': messages, 'stream': stream},
+            stream=stream,
+            timeout=300,
+        )
+    except requests.ConnectionError:
+        raise RuntimeError('AI service is not running. Start Ollama from the Home tab.')
+    except requests.Timeout:
+        raise RuntimeError('AI request timed out. The model may be too large for your system.')
+    try:
+        resp.raise_for_status()
+    except requests.HTTPError as e:
+        if e.response is not None and e.response.status_code == 404:
+            raise RuntimeError(f'Model "{model}" not found. Pull it first from the AI Models tab.')
+        raise
 
     if stream:
-        return resp.iter_lines()
+        def _streaming_lines():
+            try:
+                yield from resp.iter_lines()
+            finally:
+                resp.close()
+        return _streaming_lines()
     else:
         return resp.json()

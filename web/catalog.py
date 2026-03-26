@@ -190,7 +190,7 @@ CHANNEL_CATALOG = [
     {'name': 'K8MRD Radio Activities', 'focus': 'Emergency communications, ARES/RACES, portable operations', 'url': 'https://www.youtube.com/@K8MRDRadioActivities', 'category': 'Emergency Communications'},
     {'name': 'Andreas Spiess', 'focus': 'LoRa/LoRaWAN mesh networking, long-range IoT radio for off-grid sensor networks (800K+)', 'url': 'https://www.youtube.com/@AndreasSpiess', 'category': 'Emergency Communications'},
     {'name': 'KM4ACK (Jason Oleham)', 'focus': 'Raspberry Pi for ham radio — JS8Call, Winlink, digital modes on low power (200K+)', 'url': 'https://www.youtube.com/@KM4ACK', 'category': 'Emergency Communications'},
-    {'name': 'OH8STN Julian OH8STN', 'focus': 'Off-grid solar-powered digital HF radio — JS8Call, Winlink from wilderness', 'url': 'https://www.youtube.com/@OH8STN', 'category': 'Emergency Communications'},
+    # OH8STN already listed above as 'Off-Grid Ham'
     # Additional Off-Grid Power & Energy
     {'name': 'Undecided with Matt Ferrell', 'focus': 'Renewable energy tech — solar, batteries, EVs reviewed objectively (1.5M+)', 'url': 'https://www.youtube.com/@UndecidedMF', 'category': 'Off-Grid Power & Energy'},
     {'name': 'Hobotech', 'focus': 'Deep-dive power station/solar generator reviews and battery testing', 'url': 'https://www.youtube.com/@hobotech', 'category': 'Off-Grid Power & Energy'},
@@ -244,9 +244,9 @@ CHANNEL_CATALOG = [
     {'name': 'MapScaping', 'focus': 'Geospatial industry interviews — satellite data, terrain modeling, open data sources for offline navigation', 'url': 'https://www.youtube.com/@MapScaping', 'category': 'Geospatial & Mapping'},
     {'name': 'OpenStreetMap (OSMF)', 'focus': 'Official OSM Foundation — how to download, use, and contribute to the world\'s best offline map dataset', 'url': 'https://www.youtube.com/@openstreetmapfoundation', 'category': 'Geospatial & Mapping'},
     # NEW CATEGORY: Water & Sanitation
-    {'name': 'Practical Engineering', 'focus': 'Civil engineer Grady Hillhouse — water treatment, wells, sewage, infrastructure explained clearly (4M+)', 'url': 'https://www.youtube.com/@PracticalEngineeringChannel', 'category': 'Water & Sanitation'},
+    # Practical Engineering already listed under Permaculture
     {'name': 'CAWST Centre for Affordable Water', 'focus': 'WHO-endorsed water treatment for developing contexts — biosand filters, SODIS, ceramic filters, chlorination', 'url': 'https://www.youtube.com/@CAWSTorg', 'category': 'Water & Sanitation'},
-    {'name': 'Open Source Ecology', 'focus': 'GVCS civilization toolkit — tractor, well drill, CEB press, sawmill — reproducible machines for off-grid living (300K+)', 'url': 'https://www.youtube.com/@OpenSourceEcology', 'category': 'Water & Sanitation'},
+    # Open Source Ecology already listed under Blacksmithing & Tool Craft
     {'name': 'Rain Bird Academy', 'focus': 'Irrigation system design and installation — drip, sprinkler, grey water reuse for food production', 'url': 'https://www.youtube.com/@RainBirdCorp', 'category': 'Water & Sanitation'},
     {'name': 'Benson Filtration', 'focus': 'Residential well water treatment — iron removal, softeners, whole-house filters, reverse osmosis explained', 'url': 'https://www.youtube.com/@BensonFiltration', 'category': 'Water & Sanitation'},
     # NEW CATEGORY: Mental Resilience & Leadership

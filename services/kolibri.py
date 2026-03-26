@@ -96,8 +96,9 @@ def _auto_install_python():
         log.info('Installing pip...')
         get_pip = os.path.join(py_dir, 'get-pip.py')
         resp = requests.get(GET_PIP_URL, timeout=30)
-        with open(get_pip, 'w') as f:
-            f.write(resp.text)
+        resp.raise_for_status()
+        with open(get_pip, 'wb') as f:
+            f.write(resp.content)
 
         from platform_utils import run_kwargs
         result = subprocess.run(
@@ -186,11 +187,13 @@ def install(callback=None):
         # Run initial provisioning
         env = os.environ.copy()
         env['KOLIBRI_HOME'] = get_home_dir()
-        subprocess.run(
+        migrate_result = subprocess.run(
             [py, '-m', 'kolibri', 'manage', 'migrate', '--noinput'],
             env=env, capture_output=True, text=True, timeout=120,
             **_run_kwargs(),
         )
+        if migrate_result.returncode != 0:
+            log.warning(f'Kolibri migrate failed (exit {migrate_result.returncode}): {migrate_result.stderr}')
 
         db = get_db()
         try:

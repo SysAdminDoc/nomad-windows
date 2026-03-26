@@ -51,13 +51,16 @@ def install(callback=None):
                 zip_url = asset['browser_download_url']
                 break
         if not zip_url:
+            if not rel.get('assets'):
+                raise RuntimeError('No CyberChef release assets found')
             zip_url = rel['assets'][0]['browser_download_url']
         download_file(zip_url, zip_path, SERVICE_ID)
 
         _download_progress[SERVICE_ID]['status'] = 'extracting'
+        from platform_utils import _safe_zip_extract
         import zipfile
         with zipfile.ZipFile(zip_path, 'r') as zf:
-            zf.extractall(install_dir)
+            _safe_zip_extract(zf, install_dir)
         os.remove(zip_path)
 
         db = get_db()
@@ -109,7 +112,11 @@ def start():
         def log_message(self, format, *args):
             pass  # Suppress request logs
 
-    _httpd = http.server.HTTPServer(('0.0.0.0', CYBERCHEF_PORT), QuietHandler)
+    try:
+        _httpd = http.server.HTTPServer(('0.0.0.0', CYBERCHEF_PORT), QuietHandler)
+    except OSError as e:
+        _httpd = None
+        raise RuntimeError(f'CyberChef port {CYBERCHEF_PORT} already in use: {e}')
     _server_thread = threading.Thread(target=_httpd.serve_forever, daemon=True)
     _server_thread.start()
 
@@ -138,4 +145,4 @@ def stop():
 
 
 def running():
-    return check_port(CYBERCHEF_PORT)
+    return _httpd is not None and check_port(CYBERCHEF_PORT)

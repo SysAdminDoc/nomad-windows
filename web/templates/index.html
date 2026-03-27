@@ -1090,17 +1090,7 @@ body{background:var(--bg);color:var(--text)}
         </div>
       </div>
 
-      <!-- Barcode Scanner -->
-      <div class="settings-card">
-        <h3>Barcode Scanner</h3>
-        <div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">Scan barcodes to quickly add items to inventory. Requires camera permission.</div>
-        <div style="display:flex;gap:6px;margin-bottom:8px;">
-          <button class="btn btn-sm btn-primary" onclick="startBarcodeScanner()">Start Scanner</button>
-          <button class="btn btn-sm" onclick="stopBarcodeScanner()">Stop</button>
-        </div>
-        <video id="barcode-video" style="width:100%;max-height:200px;border-radius:var(--radius-sm);background:#000;display:none;" autoplay></video>
-        <div id="barcode-result" style="margin-top:8px;font-size:12px;"></div>
-      </div>
+      <!-- Barcode Scanner (opens via modal from inventory) -->
 
       <!-- Video Library moved to Media tab -->
 
@@ -2377,11 +2367,11 @@ body{background:var(--bg);color:var(--text)}
       </div>
       <div class="calc-row">
         <label>Load (% of capacity)</label>
-        <input id="gen-load" type="number" min="1" max="100" value="50" oninput="calcGenerator()">
+        <input id="gen2-load" type="number" min="1" max="100" value="50" oninput="calcGenerator()">
       </div>
       <div class="calc-row">
         <label>Fuel Type</label>
-        <select id="gen-fuel" onchange="calcGenerator()">
+        <select id="gen2-fuel" onchange="calcGenerator()">
           <option value="gasoline">Gasoline</option>
           <option value="propane">Propane</option>
           <option value="diesel">Diesel</option>
@@ -2390,10 +2380,10 @@ body{background:var(--bg);color:var(--text)}
       </div>
       <div class="calc-row">
         <label>Fuel on Hand</label>
-        <input id="gen-fuel-qty" type="number" min="0" step="any" value="20" oninput="calcGenerator()">
-        <span id="gen-fuel-unit" style="color:var(--text-dim);font-size:11px;margin-left:4px;">gallons</span>
+        <input id="gen2-fuel-qty" type="number" min="0" step="any" value="20" oninput="calcGenerator()">
+        <span id="gen2-fuel-unit" style="color:var(--text-dim);font-size:11px;margin-left:4px;">gallons</span>
       </div>
-      <div class="calc-result" id="gen-result" style="margin-top:8px;"></div>
+      <div class="calc-result" id="gen2-result" style="margin-top:8px;"></div>
     </div>
 
     <!-- Dehydration Assessment -->
@@ -6099,7 +6089,7 @@ body{background:var(--bg);color:var(--text)}
       <div style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">Log radiation readings from a Geiger counter or dosimeter. Track cumulative dose to assess safety thresholds.</div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px;" id="radiation-dashboard"></div>
       <div style="display:flex;gap:8px;margin-bottom:12px;align-items:end;flex-wrap:wrap;">
-        <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Dose Rate (R/hr or rem/hr) *</label><input id="rad-rate" type="number" min="0" step="0.001" value="" style="width:130px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. 0.5"></div>
+        <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Dose Rate (R/hr or rem/hr) *</label><input id="rad-log-rate" type="number" min="0" step="0.001" value="" style="width:130px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="e.g. 0.5"></div>
         <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Location</label><input id="rad-location" style="width:140px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Basement, yard, etc."></div>
         <div><label style="font-size:11px;color:var(--text-dim);display:block;margin-bottom:2px;">Notes</label><input id="rad-notes" style="width:160px;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:6px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Optional"></div>
         <button class="btn btn-sm btn-primary" onclick="logRadiation()">Log Reading</button>
@@ -6571,7 +6561,7 @@ body{background:var(--bg);color:var(--text)}
         <div id="watch-form" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;margin-bottom:12px;">
           <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:12px;">
             <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Schedule Name</label><input id="watch-name" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;" placeholder="Alpha Rotation" value="Watch Schedule"></div>
-            <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Start Date *</label><input id="watch-start" type="date" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
+            <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Start Date *</label><input id="watch-start-date" type="date" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
             <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">End Date</label><input id="watch-end" type="date" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;"></div>
             <div><label style="color:var(--text-dim);display:block;margin-bottom:2px;">Shift Duration</label><select id="watch-shift-hours" style="width:100%;background:var(--surface2);color:var(--text);border:1px solid var(--border);padding:5px 8px;border-radius:6px;font-size:12px;outline:none;">
               <option value="2">2 hours</option><option value="4" selected>4 hours</option><option value="6">6 hours</option><option value="8">8 hours</option><option value="12">12 hours</option>
@@ -19195,7 +19185,7 @@ function showHelp(section) {
     <a href="#glossary">41. Glossary</a>
   </div>
 
-  <h2 id="getting-started">1. Getting Started</h2>
+  <h2 id="guide-getting-started">1. Getting Started</h2>
   <p>When you first open N.O.M.A.D., the Setup Wizard walks you through picking a storage drive and choosing what to download. You can re-run it anytime from <strong>Settings &gt; Re-run Setup Wizard</strong>.</p>
   <h3>Recommended First Steps</h3>
   <div class="step"><div class="step-num">1</div><div class="step-text"><strong>Install AI Chat</strong> &mdash; Click "Install AI Chat" on the Home page. This downloads the AI engine (~310 MB). Takes 2-5 minutes.</div></div>
@@ -24546,11 +24536,11 @@ function renderRadiationLog(readings) {
     }).join('')}</tbody></table>`;
 }
 async function logRadiation() {
-  const rate = parseFloat(document.getElementById('rad-rate').value);
+  const rate = parseFloat(document.getElementById('rad-log-rate').value);
   if (!rate && rate !== 0) { toast('Enter a dose rate', 'error'); return; }
   await fetch('/api/radiation', {method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({dose_rate_rem: rate, location: document.getElementById('rad-location').value, notes: document.getElementById('rad-notes').value})});
-  document.getElementById('rad-rate').value = '';
+  document.getElementById('rad-log-rate').value = '';
   loadRadiation();
   toast('Reading logged', 'success');
 }
@@ -26337,11 +26327,11 @@ function calcWaterNeeds() {
 // ═══════════════════════════════════════════════════════════════
 function calcGenerator() {
   const watts = parseFloat(document.getElementById('gen-watts').value) || 0;
-  const loadPct = parseFloat(document.getElementById('gen-load').value) || 50;
-  const fuelType = document.getElementById('gen-fuel').value;
-  const fuelQty = parseFloat(document.getElementById('gen-fuel-qty').value) || 0;
-  const unitEl = document.getElementById('gen-fuel-unit');
-  const el = document.getElementById('gen-result');
+  const loadPct = parseFloat(document.getElementById('gen2-load').value) || 50;
+  const fuelType = document.getElementById('gen2-fuel').value;
+  const fuelQty = parseFloat(document.getElementById('gen2-fuel-qty').value) || 0;
+  const unitEl = document.getElementById('gen2-fuel-unit');
+  const el = document.getElementById('gen2-result');
 
   // Fuel consumption rates at 100% load (gal/hr per 1000W) — typical values
   const fuelData = {
@@ -26892,7 +26882,7 @@ async function loadWatchSchedules() {
 
 async function createWatchSchedule() {
   const name = document.getElementById('watch-name').value.trim() || 'Watch Schedule';
-  const start_date = document.getElementById('watch-start').value;
+  const start_date = document.getElementById('watch-start-date').value;
   const end_date = document.getElementById('watch-end').value;
   const shift_duration_hours = parseInt(document.getElementById('watch-shift-hours').value);
   const personnelText = document.getElementById('watch-personnel').value.trim();

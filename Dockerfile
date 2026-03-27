@@ -4,7 +4,7 @@ FROM python:3.12-slim
 
 LABEL maintainer="Project N.O.M.A.D." \
       description="Offline survival command center — headless server mode" \
-      version="5.0.0"
+      version="1.0.0"
 
 # System deps for pyserial, Pillow, crypto
 RUN apt-get update && apt-get install -y --no-install-recommends \

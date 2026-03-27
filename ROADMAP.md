@@ -1,6 +1,6 @@
 # Project N.O.M.A.D. Desktop — Implementation Roadmap
 
-> **Current**: v5.3.0 — 566 routes, 89 tables, 8 managed services, 25 prep sub-tabs, 21 decision guides, 42 calculators, 56 quick reference cards, 5 themes, 3 dashboard modes, full cross-platform support (Windows/Linux/macOS/Docker), mobile-responsive bottom nav, barcode scanner, AI vision inventory, contour maps, motion detection, solar forecast, auto-backups, analytics dashboards, a11y/WCAG improvements, theme-aware map tiles, customizable dashboard widgets, SSE real-time events, i18n (10 languages)
+> **Current**: v1.0.0 — 566 routes, 89 tables, 8 managed services, 25 prep sub-tabs, 21 decision guides, 42 calculators, 56 quick reference cards, 5 themes, 3 dashboard modes, full cross-platform support (Windows/Linux/macOS/Docker), mobile-responsive bottom nav, barcode scanner, AI vision inventory, contour maps, motion detection, solar forecast, auto-backups, analytics dashboards, a11y/WCAG improvements, theme-aware map tiles, customizable dashboard widgets, SSE real-time events, i18n (10 languages)
 
 ---
 

@@ -48,7 +48,7 @@ _bootstrap()
 from db import init_db, log_activity
 from web.app import create_app
 
-VERSION = '5.0.0'
+VERSION = '1.0.0'
 PORT = int(os.environ.get('NOMAD_PORT', 8080))
 
 

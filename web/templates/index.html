@@ -12456,7 +12456,7 @@ async function loadLanPresence() {
   const el = document.getElementById('lan-presence-list');
   if (!el) return;
   // Send our own heartbeat
-  safeFetch('/api/lan/presence/heartbeat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name: localStorage.getItem('nomad-node-name') || 'This Node', version: '4.1.0'})});
+  safeFetch('/api/lan/presence/heartbeat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name: localStorage.getItem('nomad-node-name') || 'This Node', version: '{{ version }}'})});
   const nodes = await safeFetch('/api/lan/presence', {}, []);
   if (!nodes.length) { el.textContent = 'Only you'; return; }
   el.innerHTML = nodes.map(n => `<span style="display:inline-flex;align-items:center;gap:3px;padding:1px 6px;background:var(--green-dim);color:var(--green);border-radius:10px;font-weight:600;"><span style="width:5px;height:5px;border-radius:50%;background:var(--green);"></span>${escapeHtml(n.node_name)}</span>`).join('');

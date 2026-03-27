@@ -129,7 +129,7 @@ def _cpu_monitor():
         except Exception:
             pass
 
-threading.Thread(target=_cpu_monitor, daemon=True).start()
+_cpu_monitor_started = False
 
 
 # ─── Build Bundle Manifest Helper ──────────────────────────────────────
@@ -156,12 +156,17 @@ def _load_bundle_manifest():
 
 
 def create_app():
+    global _cpu_monitor_started
+    if not _cpu_monitor_started:
+        _cpu_monitor_started = True
+        threading.Thread(target=_cpu_monitor, daemon=True).start()
+
     app = Flask(__name__,
                 template_folder='templates',
                 static_folder='static')
     app.config['MAX_CONTENT_LENGTH'] = Config.MAX_CONTENT_LENGTH
-    # DEBUG defaults to True for development; set NOMAD_DEBUG=0 in production
-    app.config['DEBUG'] = os.environ.get('NOMAD_DEBUG', '1') != '0'
+    # DEBUG off by default; set NOMAD_DEBUG=1 to enable for development
+    app.config['DEBUG'] = os.environ.get('NOMAD_DEBUG', '0') == '1'
     app.secret_key = Config.secret_key()
 
     # ─── Rate Limiting (optional) ─────────────────────────────────────
@@ -232,10 +237,7 @@ def create_app():
         remote = request.remote_addr or ''
         if remote in ('127.0.0.1', '::1', 'localhost'):
             return
-        # Exempt requests without a session (e.g. pure API clients on LAN)
         from flask import session
-        if 'csrf_token' not in session:
-            return
         token = request.headers.get('X-CSRF-Token', '')
         if not token or token != session.get('csrf_token'):
             from flask import abort
@@ -285,27 +287,18 @@ def create_app():
         return e
 
     # ─── LAN Auth Guard ────────────────────────────────────────────────
-    # Protect dangerous endpoints from unauthorized LAN access
-    PROTECTED_ENDPOINTS = {
-        'api_system_shutdown', 'api_sync_export', 'api_export_all',
-        'api_export_config', 'api_uninstall_service',
-    }
-
     @app.before_request
     def check_lan_auth():
-        """Block protected endpoints from non-localhost requests when auth is enabled."""
-        if request.endpoint not in PROTECTED_ENDPOINTS:
+        """Require auth token for state-changing LAN requests when password is set."""
+        if request.method not in ('POST', 'PUT', 'DELETE'):
             return
         remote = request.remote_addr or ''
         if remote in ('127.0.0.1', '::1', 'localhost'):
             return
-        # LAN request — check if auth is enabled and validate
+        # LAN request with mutating method — check if auth is enabled
         try:
-            db = get_db()
-            try:
+            with db_session() as db:
                 row = db.execute("SELECT value FROM settings WHERE key = 'auth_password'").fetchone()
-            finally:
-                db.close()
             if row and row['value']:
                 import hashlib, hmac
                 token = request.headers.get('X-Auth-Token', '')
@@ -313,7 +306,7 @@ def create_app():
                     return jsonify({'error': 'Authentication required'}), 403
         except Exception as e:
             log.warning(f'Auth check failed (denying access): {e}')
-            return jsonify({'error': 'Authentication check failed'}), 503
+            return jsonify({'error': 'Auth check failed'}), 403
 
     @app.after_request
     def no_cache(response):

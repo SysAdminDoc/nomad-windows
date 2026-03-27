@@ -3,10 +3,16 @@ __pycache__/
 *.pyo
 *.egg-info/
 dist/
+dist2/
+dist_release/
 build/
 screenshot*.png
 .env
 ProjectNOMAD-Setup.exe
+ProjectNOMAD.exe
 .qdrant-initialized
 node_modules/
 web/static/dist/
+*.spec.bak
+.venv/
+venv/

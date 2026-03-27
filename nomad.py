@@ -24,29 +24,25 @@ logging.basicConfig(
 log = logging.getLogger('nomad')
 
 
-def _bootstrap():
-    """Auto-install dependencies before imports. Skipped when running as frozen exe."""
+def _check_deps():
+    """Verify required dependencies are installed. Log errors for missing ones."""
     if getattr(sys, 'frozen', False):
-        return
-    deps = ['flask', 'requests', 'webview', 'PIL', 'pystray', 'psutil', 'PyPDF2']
-    pkg_names = {'webview': 'pywebview', 'PIL': 'pillow', 'pystray': 'pystray', 'psutil': 'psutil', 'PyPDF2': 'PyPDF2'}
-    for dep in deps:
+        return  # Bundled exe has everything
+    missing = []
+    deps = {'flask': 'flask', 'requests': 'requests', 'webview': 'pywebview',
+            'PIL': 'pillow', 'pystray': 'pystray', 'psutil': 'psutil'}
+    for module, package in deps.items():
         try:
-            __import__(dep)
+            __import__(module)
         except ImportError:
-            pkg = pkg_names.get(dep, dep)
-            for cmd in [
-                [sys.executable, '-m', 'pip', 'install', pkg],
-                [sys.executable, '-m', 'pip', 'install', '--user', pkg],
-                [sys.executable, '-m', 'pip', 'install', '--break-system-packages', pkg],
-            ]:
-                try:
-                    subprocess.check_call(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                    break
-                except (subprocess.CalledProcessError, FileNotFoundError, OSError):
-                    continue
+            missing.append(package)
+    if missing:
+        print(f'ERROR: Missing required packages: {", ".join(missing)}')
+        print(f'Install with: pip install {" ".join(missing)}')
+        print(f'Or install all: pip install -r requirements.txt')
+        sys.exit(1)
 
-_bootstrap()
+_check_deps()
 
 import webview
 import pystray

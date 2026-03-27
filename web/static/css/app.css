@@ -1,4 +1,5 @@
 /* ─── NOMAD Theme (Default — Desert/Tactical) ─── */
+/* Base vars duplicated in index.html inline <style> for FOUC prevention. Keep both in sync. */
 :root, [data-theme="nomad"] {
   --bg: #f0e6d0;
   --surface: rgba(255,252,245,0.9);

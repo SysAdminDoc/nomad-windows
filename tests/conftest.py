@@ -13,9 +13,9 @@ if PROJECT_ROOT not in sys.path:
 
 
 @pytest.fixture()
-def app(tmp_path):
+def app():
     """Create a Flask app backed by a temporary SQLite database."""
-    db_dir = str(tmp_path)
+    db_dir = tempfile.mkdtemp(prefix='nomad_test_')
 
     # Point config at temp directory before any imports touch it
     import config
@@ -38,6 +38,9 @@ def app(tmp_path):
 
     # Restore
     config.get_data_dir = original_get_data_dir
+    # Cleanup temp dir
+    import shutil
+    shutil.rmtree(db_dir, ignore_errors=True)
 
 
 @pytest.fixture()

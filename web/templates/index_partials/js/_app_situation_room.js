@@ -1,7 +1,7 @@
 /* ─── Situation Room v4 — World Monitor Intelligence Dashboard ─── */
 
 let _sitroomMap = null;
-let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [], pipelines: [], waterways: [], spaceports: [], shipping: [], ucdp: [], airports: [], fincenters: [], mining: [], techHQs: [], diseases: [], radiation: [], protests: [], ships: [], cloudRegions: [], exchanges: [], commodityHubs: [] };
+let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [], pipelines: [], waterways: [], spaceports: [], shipping: [], ucdp: [], airports: [], fincenters: [], mining: [], techHQs: [], diseases: [], radiation: [], protests: [], ships: [], cloudRegions: [], exchanges: [], commodityHubs: [], startupHubs: [] };
 let _sitroomRadarLayer = null; // RainViewer radar tile layer state
 let _sitroomNewsOffset = 0;
 const SITROOM_NEWS_PAGE = 50;
@@ -118,6 +118,11 @@ function _sitroomRefreshPanels() {
   loadSitroomBreakingDetection();
   loadSitroomNewsClusters();
   loadSitroomSourceHealth();
+  loadSitroomCableHealth();
+  loadSitroomAnomalies();
+  loadSitroomAlertHistory();
+  loadSitroomEnhancedSignals();
+  loadSitroomGulfEcon();
   _checkCriticalAlerts();
   loadSitroomLiveChannels();
 }
@@ -730,6 +735,24 @@ const _COMMODITY_HUBS = [
   {lat:40.65,lng:109.97,name:'Baotou (Rare Earth Capital)'},{lat:-12.04,lng:26.40,name:'Copper Belt (DRC/Zambia)'},
   {lat:69.35,lng:88.21,name:'Norilsk (Nickel/Palladium)'},{lat:-20.65,lng:118.55,name:'Pilbara (Iron Ore)'},
 ];
+const _STARTUP_HUBS = [
+  {lat:37.39,lng:-122.08,name:'Silicon Valley, US'},{lat:40.75,lng:-73.98,name:'NYC Tech, US'},
+  {lat:42.36,lng:-71.06,name:'Boston/Cambridge, US'},{lat:47.61,lng:-122.33,name:'Seattle, US'},
+  {lat:30.27,lng:-97.74,name:'Austin TX, US'},{lat:25.76,lng:-80.19,name:'Miami, US'},
+  {lat:51.52,lng:-0.08,name:'Silicon Roundabout, London'},{lat:52.52,lng:13.41,name:'Berlin, Germany'},
+  {lat:48.86,lng:2.35,name:'Station F, Paris'},{lat:59.33,lng:18.07,name:'Stockholm, Sweden'},
+  {lat:52.37,lng:4.90,name:'Amsterdam, Netherlands'},{lat:55.68,lng:12.57,name:'Copenhagen, Denmark'},
+  {lat:60.17,lng:24.94,name:'Helsinki/Slush, Finland'},{lat:41.39,lng:2.17,name:'Barcelona, Spain'},
+  {lat:53.35,lng:-6.26,name:'Dublin, Ireland'},{lat:47.37,lng:8.54,name:'Crypto Valley, Zurich'},
+  {lat:32.07,lng:34.78,name:'Tel Aviv, Israel'},{lat:12.97,lng:77.59,name:'Bangalore, India'},
+  {lat:19.08,lng:72.88,name:'Mumbai, India'},{lat:1.30,lng:103.85,name:'Singapore'},
+  {lat:22.28,lng:114.17,name:'Hong Kong/Shenzhen'},{lat:31.23,lng:121.47,name:'Shanghai, China'},
+  {lat:39.91,lng:116.39,name:'Zhongguancun, Beijing'},{lat:37.57,lng:126.98,name:'Gangnam, Seoul'},
+  {lat:35.68,lng:139.69,name:'Shibuya, Tokyo'},{lat:-33.87,lng:151.21,name:'Sydney, Australia'},
+  {lat:43.65,lng:-79.38,name:'MaRS, Toronto'},{lat:-23.55,lng:-46.63,name:'Sao Paulo, Brazil'},
+  {lat:6.52,lng:3.38,name:'Yaba/Lagos, Nigeria'},{lat:-1.29,lng:36.82,name:'iHub, Nairobi'},
+  {lat:-33.93,lng:18.42,name:'Cape Town, South Africa'},{lat:25.20,lng:55.27,name:'Dubai/DIFC, UAE'},
+];
 
 function initSitroomMap() {
   const container = document.getElementById('sitroom-map');
@@ -996,6 +1019,12 @@ async function loadSitroomMapData() {
     _COMMODITY_HUBS.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'commodity_hub'}, 'commodityHubs'));
   } else { clearSitroomMarkers('commodityHubs'); }
 
+  // Startup Hubs (static)
+  if (document.getElementById('sitroom-layer-startupHubs')?.checked) {
+    clearSitroomMarkers('startupHubs');
+    _STARTUP_HUBS.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'startup_hub'}, 'startupHubs'));
+  } else { clearSitroomMarkers('startupHubs'); }
+
   // Weather radar overlay (RainViewer tile layer)
   _toggleWeatherRadar();
 }
@@ -1065,7 +1094,7 @@ function addSitroomMarker(ev, layerType) {
   if (!_sitroomMap) return;
   // Skip if would cluster with existing marker at this zoom
   if (_shouldCluster(ev.lat, ev.lng, layerType)) return;
-  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88', cables: '#3388ff', datacenters: '#aa66ff', pipelines: '#cc8844', waterways: '#00ddff', spaceports: '#ff66ff', shipping: '#88ccaa', ucdp: '#dd2222', airports: '#cccccc', fincenters: '#44dd88', mining: '#cc8844', techHQs: '#44aadd', diseases: '#ff44ff', radiation: '#66ff00', protests: '#ffcc00', ships: '#22bbdd', cloudRegions: '#6688ff', exchanges: '#ddaa22', commodityHubs: '#dd8866' };
+  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88', cables: '#3388ff', datacenters: '#aa66ff', pipelines: '#cc8844', waterways: '#00ddff', spaceports: '#ff66ff', shipping: '#88ccaa', ucdp: '#dd2222', airports: '#cccccc', fincenters: '#44dd88', mining: '#cc8844', techHQs: '#44aadd', diseases: '#ff44ff', radiation: '#66ff00', protests: '#ffcc00', ships: '#22bbdd', cloudRegions: '#6688ff', exchanges: '#ddaa22', commodityHubs: '#dd8866', startupHubs: '#ff88dd' };
   const color = colors[layerType] || '#ffffff';
   let size = layerType === 'aviation' ? 5 : 8;
   if (ev.magnitude) size = Math.max(6, Math.min(24, ev.magnitude * 3));
@@ -2879,6 +2908,125 @@ document.addEventListener('click', e => {
   const card = head.closest('.sr-card');
   if (card) card.classList.toggle('collapsed');
 });
+
+/* ─── P3: Cable Health Card ─── */
+async function loadSitroomCableHealth() {
+  const el = document.getElementById('sitroom-cable-health');
+  if (!el) return;
+  const d = await safeFetch('/api/sitroom/cable-health', {}, null);
+  if (!d) { el.innerHTML = '<div class="sitroom-empty">No data</div>'; return; }
+  let html = '';
+  (d.cables || []).forEach(c => {
+    const color = c.status === 'operational' ? '#44dd88' : '#ff4444';
+    const icon = c.status === 'operational' ? '&#9679;' : '&#9888;';
+    html += `<div class="sr-feed-item"><span style="color:${color};font-size:10px">${icon}</span>
+      <span class="sr-feed-title">${escapeHtml(c.name)}</span>
+      <span class="sr-feed-source">${escapeHtml(c.route)}</span></div>`;
+    if (c.alert_title) html += `<div class="sr-feed-item" style="padding-left:20px;color:#ff8800;font-size:10px">${escapeHtml(c.alert_title)}</div>`;
+  });
+  if (d.related_news && d.related_news.length) {
+    html += '<div class="sr-mini-label" style="margin-top:8px">Related News</div>';
+    d.related_news.slice(0, 3).forEach(n => {
+      html += `<div class="sr-feed-item"><span class="sr-feed-title">${escapeHtml(n.title)}</span></div>`;
+    });
+  }
+  el.innerHTML = html || '<div class="sitroom-empty">All cables operational</div>';
+}
+
+/* ─── P3: Anomaly Detection Card ─── */
+async function loadSitroomAnomalies() {
+  const el = document.getElementById('sitroom-anomalies');
+  if (!el) return;
+  const d = await safeFetch('/api/sitroom/anomalies', {}, null);
+  if (!d || !d.anomalies || !d.anomalies.length) {
+    el.innerHTML = '<div class="sr-feed-item" style="color:#44dd88">No anomalies detected</div>';
+    return;
+  }
+  let html = '';
+  d.anomalies.forEach(a => {
+    const colors = {critical:'#ff0000',high:'#ff4444',medium:'#ffaa00',low:'#888'};
+    const c = colors[a.severity] || '#888';
+    html += `<div class="sr-feed-item" style="border-left:3px solid ${c}">
+      <span class="sr-feed-badge" style="background:${c};color:#000;font-size:9px;padding:1px 4px;border-radius:2px">${escapeHtml(a.severity.toUpperCase())}</span>
+      <span class="sr-feed-title">${escapeHtml(a.message)}</span></div>`;
+  });
+  el.innerHTML = html;
+}
+
+/* ─── P3: Alert History Card ─── */
+async function loadSitroomAlertHistory() {
+  const el = document.getElementById('sitroom-alert-history');
+  if (!el) return;
+  const d = await safeFetch('/api/sitroom/alert-history', {}, null);
+  if (!d) { el.innerHTML = '<div class="sitroom-empty">No history</div>'; return; }
+  let html = '';
+  if (d.earthquake_history && d.earthquake_history.length) {
+    html += '<div class="sr-mini-label">Earthquakes (7-day)</div><div class="sr-sparkline-row">';
+    d.earthquake_history.reverse().forEach(day => {
+      const h = Math.max(3, Math.min(30, (day.count || 0) / 2));
+      html += `<div class="sr-spark-bar" style="height:${h}px;background:#ff4444" title="${day.day}: ${day.count} quakes, max M${day.max_mag || '?'}"></div>`;
+    });
+    html += '</div>';
+  }
+  if (d.news_volume_24h && d.news_volume_24h.length) {
+    html += '<div class="sr-mini-label" style="margin-top:8px">News Volume (24h by category)</div>';
+    d.news_volume_24h.slice(0, 8).forEach(cat => {
+      const w = Math.min(100, (cat.count / (d.news_volume_24h[0].count || 1)) * 100);
+      html += `<div style="display:flex;gap:6px;align-items:center;font-size:10px;margin:2px 0">
+        <span style="width:70px;color:#aaa">${escapeHtml(cat.category || '?')}</span>
+        <div style="flex:1;background:#222;height:8px;border-radius:4px"><div style="width:${w}%;height:100%;background:#4aedc4;border-radius:4px"></div></div>
+        <span style="color:#888;width:25px;text-align:right">${cat.count}</span></div>`;
+    });
+  }
+  el.innerHTML = html || '<div class="sitroom-empty">No history</div>';
+}
+
+/* ─── P3: Enhanced Signals Card ─── */
+async function loadSitroomEnhancedSignals() {
+  const el = document.getElementById('sitroom-enhanced-signals');
+  if (!el) return;
+  const d = await safeFetch('/api/sitroom/enhanced-signals', {}, null);
+  if (!d || !d.signals || !d.signals.length) {
+    el.innerHTML = '<div class="sitroom-empty">No signals detected</div>';
+    return;
+  }
+  let html = '';
+  d.signals.forEach(s => {
+    const confColors = {high:'#44dd88',medium:'#ffaa00',low:'#888'};
+    const c = confColors[s.confidence] || '#888';
+    html += `<div class="sr-feed-item" style="border-left:3px solid ${c}">
+      <span class="sr-feed-badge" style="background:${c};color:#000;font-size:9px;padding:1px 4px;border-radius:2px">${escapeHtml(s.confidence)}</span>
+      <span class="sr-feed-title">${escapeHtml(s.title)}</span>
+      <span class="sr-feed-source">${escapeHtml(s.signal_type)} (${s.corroborating_signals}x)</span></div>`;
+  });
+  el.innerHTML = html;
+}
+
+/* ─── P3: Gulf Economies Card ─── */
+async function loadSitroomGulfEcon() {
+  const el = document.getElementById('sitroom-gulf-econ');
+  if (!el) return;
+  const d = await safeFetch('/api/sitroom/gulf-economies', {}, null);
+  if (!d) { el.innerHTML = '<div class="sitroom-empty">No data</div>'; return; }
+  let html = '';
+  if (d.oil_markets && d.oil_markets.length) {
+    html += '<div class="sr-mini-label">Oil Markets</div>';
+    d.oil_markets.forEach(m => {
+      const chg = m.change_24h || 0;
+      const color = chg >= 0 ? '#44dd88' : '#ff4444';
+      html += `<div class="sr-feed-item"><span class="sr-feed-title">${escapeHtml(m.symbol)}</span>
+        <span style="color:${color}">$${m.price} (${chg >= 0 ? '+' : ''}${chg.toFixed(1)}%)</span></div>`;
+    });
+  }
+  if (d.news && d.news.length) {
+    html += '<div class="sr-mini-label" style="margin-top:8px">GCC Headlines</div>';
+    d.news.slice(0, 8).forEach(n => {
+      html += `<div class="sr-feed-item"><span class="sr-feed-source">${escapeHtml(n.source_name || '')}</span>
+        <span class="sr-feed-title">${escapeHtml(n.title)}</span></div>`;
+    });
+  }
+  el.innerHTML = html || '<div class="sitroom-empty">No Gulf data</div>';
+}
 
 // Country brief select
 document.addEventListener('change', e => {

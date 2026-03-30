@@ -3624,3 +3624,321 @@ def api_sitroom_source_health():
         'summary': {'live': live, 'stale': stale, 'unavailable': down, 'total': len(sources)},
         'is_refreshing': is_running,
     })
+
+
+@situation_room_bp.route('/api/sitroom/cable-health')
+def api_sitroom_cable_health():
+    """Monitor undersea cable health from outage data and news."""
+    with db_session() as db:
+        # Check for cable-related news
+        cable_news = db.execute(
+            "SELECT title, link, source_name, cached_at FROM sitroom_news "
+            "WHERE LOWER(title) LIKE '%undersea cable%' OR LOWER(title) LIKE '%submarine cable%' "
+            "OR LOWER(title) LIKE '%internet cable%' OR LOWER(title) LIKE '%fiber optic%' "
+            "OR LOWER(title) LIKE '%cable cut%' OR LOWER(title) LIKE '%cable damage%' "
+            "ORDER BY cached_at DESC LIMIT 10"
+        ).fetchall()
+        # Check internet outage data for cable-related incidents
+        outages = db.execute(
+            "SELECT title, detail_json FROM sitroom_events WHERE event_type = 'internet_outage' "
+            "ORDER BY cached_at DESC LIMIT 10"
+        ).fetchall()
+
+    # Major cable systems and their status (based on news)
+    cables = [
+        {'name': 'AAE-1 (Asia-Africa-Europe)', 'route': 'Singapore-Marseille', 'status': 'operational'},
+        {'name': 'SEACOM', 'route': 'Mumbai-Marseille via SA', 'status': 'operational'},
+        {'name': 'FLAG Europe-Asia', 'route': 'UK-Japan', 'status': 'operational'},
+        {'name': 'TAT-14', 'route': 'US-Europe (Atlantic)', 'status': 'operational'},
+        {'name': 'APG', 'route': 'Japan-Singapore', 'status': 'operational'},
+        {'name': 'PEACE Cable', 'route': 'Pakistan-France via Egypt', 'status': 'operational'},
+        {'name': 'EASSy', 'route': 'East Africa coast', 'status': 'operational'},
+        {'name': 'SAT-3/WASC', 'route': 'West Africa-Europe', 'status': 'operational'},
+        {'name': 'SEA-ME-WE 6', 'route': 'Singapore-Marseille (new)', 'status': 'operational'},
+        {'name': 'Google Equiano', 'route': 'Portugal-South Africa', 'status': 'operational'},
+        {'name': 'META 2Africa', 'route': 'Africa circumnavigation', 'status': 'operational'},
+        {'name': 'Hawaiki', 'route': 'Australia-US via NZ', 'status': 'operational'},
+    ]
+
+    # Mark any as degraded if relevant news exists
+    for c in cables:
+        for n in cable_news:
+            if any(part.lower() in dict(n)['title'].lower() for part in c['name'].split()):
+                c['status'] = 'alert'
+                c['alert_title'] = dict(n)['title']
+
+    return jsonify({
+        'cables': cables,
+        'related_news': [dict(r) for r in cable_news],
+        'outage_count': len(list(outages)),
+    })
+
+
+@situation_room_bp.route('/api/sitroom/anomalies')
+def api_sitroom_anomalies():
+    """Detect temporal anomalies across all metrics (deviation from baseline)."""
+    anomalies = []
+
+    with db_session() as db:
+        # Check for unusual earthquake activity (more than 5 M4+ in last 6h)
+        quake_count = db.execute(
+            "SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'earthquake' AND magnitude >= 4 "
+            "AND cached_at > datetime('now', '-6 hours')"
+        ).fetchone()[0]
+        if quake_count > 5:
+            anomalies.append({'type': 'seismic', 'severity': 'high',
+                              'message': f'{quake_count} M4+ earthquakes in last 6 hours (baseline: 2-3)',
+                              'value': quake_count, 'baseline': 3})
+
+        # Check for unusual fire activity
+        fire_count = db.execute(
+            "SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'fire'"
+        ).fetchone()[0]
+        if fire_count > 400:
+            anomalies.append({'type': 'fire', 'severity': 'medium',
+                              'message': f'{fire_count} active fires detected (baseline: 200-300)',
+                              'value': fire_count, 'baseline': 250})
+
+        # Check for market anomalies (any index >3% move)
+        market_anomalies = db.execute(
+            "SELECT symbol, change_24h FROM sitroom_markets WHERE ABS(change_24h) > 3 "
+            "AND market_type = 'index'"
+        ).fetchall()
+        for m in market_anomalies:
+            d = dict(m)
+            anomalies.append({'type': 'market', 'severity': 'high' if abs(d['change_24h']) > 5 else 'medium',
+                              'message': f"{d['symbol']} moved {d['change_24h']:+.1f}% (threshold: 3%)",
+                              'value': d['change_24h'], 'baseline': 0})
+
+        # Check stablecoin depeg
+        stables = db.execute(
+            "SELECT symbol, price FROM sitroom_markets WHERE market_type = 'stablecoin' AND ABS(price - 1.0) > 0.005"
+        ).fetchall()
+        for s in stables:
+            d = dict(s)
+            anomalies.append({'type': 'stablecoin', 'severity': 'high' if abs(d['price'] - 1.0) > 0.02 else 'medium',
+                              'message': f"{d['symbol']} at ${d['price']:.4f} (depeg threshold: $0.005)",
+                              'value': d['price'], 'baseline': 1.0})
+
+        # Check for OREF alert surge
+        oref_count = db.execute(
+            "SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'oref_alert' "
+            "AND cached_at > datetime('now', '-1 hours')"
+        ).fetchone()[0]
+        if oref_count > 10:
+            anomalies.append({'type': 'oref', 'severity': 'critical',
+                              'message': f'{oref_count} OREF alerts in last hour (surge detected)',
+                              'value': oref_count, 'baseline': 0})
+
+    anomalies.sort(key=lambda a: {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}.get(a['severity'], 4))
+    return jsonify({'anomalies': anomalies, 'count': len(anomalies)})
+
+
+@situation_room_bp.route('/api/sitroom/stock-analysis/<symbol>')
+def api_sitroom_stock_analysis(symbol):
+    """Return analysis data for a specific stock/index symbol."""
+    # Sanitize symbol
+    symbol = re.sub(r'[^A-Z0-9.=^-]', '', symbol.upper())[:20]
+    if not symbol:
+        return jsonify({'error': 'Invalid symbol'}), 400
+
+    result = {'symbol': symbol}
+
+    # Check cached market data
+    with db_session() as db:
+        row = db.execute("SELECT * FROM sitroom_markets WHERE UPPER(symbol) = ?", (symbol,)).fetchone()
+        if row:
+            result['current'] = dict(row)
+
+        # Related news
+        news = db.execute(
+            "SELECT title, link, source_name FROM sitroom_news "
+            "WHERE LOWER(title) LIKE ? ORDER BY cached_at DESC LIMIT 10",
+            (f'%{symbol.lower()}%',)
+        ).fetchall()
+        result['news'] = [dict(r) for r in news]
+
+    # Try Yahoo Finance for more data
+    try:
+        resp = requests.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}',
+                            params={'interval': '1d', 'range': '1mo'},
+                            timeout=10, headers={**_REQ_HEADERS, 'Accept': 'application/json'})
+        if resp.ok:
+            data = resp.json()
+            meta = data.get('chart', {}).get('result', [{}])[0].get('meta', {})
+            result['name'] = meta.get('shortName', meta.get('symbol', symbol))
+            result['exchange'] = meta.get('exchangeName', '')
+            result['currency'] = meta.get('currency', 'USD')
+            result['prev_close'] = meta.get('chartPreviousClose', 0)
+            result['regular_price'] = meta.get('regularMarketPrice', 0)
+            # Get price history
+            ts = data.get('chart', {}).get('result', [{}])[0]
+            closes = (ts.get('indicators', {}).get('quote', [{}])[0].get('close') or [])
+            result['price_history'] = [round(c, 2) if c else None for c in closes[-30:]]
+    except Exception:
+        pass
+
+    return jsonify(result)
+
+
+@situation_room_bp.route('/api/sitroom/consumer-prices')
+def api_sitroom_consumer_prices():
+    """Return consumer price comparison data (Big Mac + fuel)."""
+    result = {'bigmac': [], 'fuel': []}
+
+    with db_session() as db:
+        # Big Mac data (if cached)
+        bm = db.execute(
+            "SELECT title, detail_json FROM sitroom_events WHERE event_type = 'bigmac' ORDER BY title LIMIT 50"
+        ).fetchall()
+        for r in bm:
+            d = dict(r)
+            try:
+                detail = json.loads(d.get('detail_json', '{}'))
+                result['bigmac'].append({'country': d['title'], **detail})
+            except Exception:
+                pass
+
+        # Fuel price data (if cached)
+        fuel = db.execute(
+            "SELECT title, detail_json FROM sitroom_events WHERE event_type = 'fuel_price' ORDER BY title LIMIT 50"
+        ).fetchall()
+        for r in fuel:
+            d = dict(r)
+            try:
+                detail = json.loads(d.get('detail_json', '{}'))
+                result['fuel'].append({'region': d['title'], **detail})
+            except Exception:
+                pass
+
+    return jsonify(result)
+
+
+@situation_room_bp.route('/api/sitroom/gulf-economies')
+def api_sitroom_gulf_economies():
+    """Return GCC economic indicators from cached data."""
+    gcc_countries = ['saudi', 'uae', 'qatar', 'kuwait', 'bahrain', 'oman']
+
+    with db_session() as db:
+        news = db.execute(
+            "SELECT title, link, source_name, category FROM sitroom_news WHERE " +
+            " OR ".join(f"LOWER(title) LIKE '%{c}%'" for c in gcc_countries) +
+            " ORDER BY cached_at DESC LIMIT 30"
+        ).fetchall()
+        # Oil-related market data
+        oil = db.execute(
+            "SELECT symbol, price, change_24h FROM sitroom_markets WHERE LOWER(symbol) LIKE '%oil%' OR LOWER(symbol) LIKE '%brent%'"
+        ).fetchall()
+
+    return jsonify({
+        'news': [dict(r) for r in news],
+        'oil_markets': [dict(r) for r in oil],
+        'gcc_countries': ['Saudi Arabia', 'UAE', 'Qatar', 'Kuwait', 'Bahrain', 'Oman'],
+    })
+
+
+@situation_room_bp.route('/api/sitroom/enhanced-signals')
+def api_sitroom_enhanced_signals():
+    """Enhanced cross-source signal detection with confidence scoring."""
+    with db_session() as db:
+        # Get correlation data
+        corr_rows = db.execute(
+            "SELECT * FROM sitroom_events WHERE event_type = 'correlation' ORDER BY magnitude DESC LIMIT 20"
+        ).fetchall()
+
+        # Count data points per signal type for confidence
+        signal_counts = {}
+        for r in corr_rows:
+            d = dict(r)
+            try:
+                detail = json.loads(d.get('detail_json', '{}'))
+                signal_type = detail.get('signal_type', 'unknown')
+                if signal_type not in signal_counts:
+                    signal_counts[signal_type] = 0
+                signal_counts[signal_type] += 1
+            except Exception:
+                pass
+
+    signals = []
+    for r in corr_rows:
+        d = dict(r)
+        try:
+            detail = json.loads(d.get('detail_json', '{}'))
+            signal_type = detail.get('signal_type', 'unknown')
+            count = signal_counts.get(signal_type, 1)
+            # Confidence based on number of corroborating signals
+            confidence = 'high' if count >= 3 else 'medium' if count >= 2 else 'low'
+            signals.append({
+                'title': d['title'],
+                'signal_type': signal_type,
+                'strength': d.get('magnitude', 0),
+                'confidence': confidence,
+                'corroborating_signals': count,
+                'detail': detail,
+            })
+        except Exception:
+            pass
+
+    return jsonify({'signals': signals[:15], 'count': len(signals)})
+
+
+@situation_room_bp.route('/api/sitroom/timeline/<country>')
+def api_sitroom_country_timeline(country):
+    """Return a chronological timeline of events for a specific country."""
+    country_lower = country.lower()
+    with db_session() as db:
+        events = db.execute(
+            "SELECT title, event_type, magnitude, cached_at FROM sitroom_events "
+            "WHERE LOWER(title) LIKE ? ORDER BY cached_at DESC LIMIT 50",
+            (f'%{country_lower}%',)
+        ).fetchall()
+        news = db.execute(
+            "SELECT title, category, source_name, cached_at FROM sitroom_news "
+            "WHERE LOWER(title) LIKE ? ORDER BY cached_at DESC LIMIT 50",
+            (f'%{country_lower}%',)
+        ).fetchall()
+
+    timeline = []
+    for r in events:
+        d = dict(r)
+        timeline.append({'type': 'event', 'event_type': d.get('event_type', ''),
+                         'title': d['title'], 'time': d.get('cached_at', ''),
+                         'magnitude': d.get('magnitude')})
+    for r in news:
+        d = dict(r)
+        timeline.append({'type': 'news', 'category': d.get('category', ''),
+                         'title': d['title'], 'time': d.get('cached_at', ''),
+                         'source': d.get('source_name', '')})
+
+    timeline.sort(key=lambda x: x.get('time', ''), reverse=True)
+    return jsonify({'country': country, 'timeline': timeline[:50], 'count': len(timeline)})
+
+
+@situation_room_bp.route('/api/sitroom/alert-history')
+def api_sitroom_alert_history():
+    """Return historical alert data for trend analysis."""
+    with db_session() as db:
+        # Earthquake history (last 7 days, grouped by day)
+        quakes = db.execute(
+            "SELECT DATE(cached_at) as day, COUNT(*) as count, MAX(magnitude) as max_mag "
+            "FROM sitroom_events WHERE event_type = 'earthquake' "
+            "GROUP BY DATE(cached_at) ORDER BY day DESC LIMIT 7"
+        ).fetchall()
+        # Fire history
+        fires = db.execute(
+            "SELECT DATE(cached_at) as day, COUNT(*) as count "
+            "FROM sitroom_events WHERE event_type = 'fire' "
+            "GROUP BY DATE(cached_at) ORDER BY day DESC LIMIT 7"
+        ).fetchall()
+        # News volume by category
+        news_vol = db.execute(
+            "SELECT category, COUNT(*) as count FROM sitroom_news "
+            "WHERE cached_at > datetime('now', '-24 hours') "
+            "GROUP BY category ORDER BY count DESC LIMIT 15"
+        ).fetchall()
+
+    return jsonify({
+        'earthquake_history': [dict(r) for r in quakes],
+        'fire_history': [dict(r) for r in fires],
+        'news_volume_24h': [dict(r) for r in news_vol],
+    })

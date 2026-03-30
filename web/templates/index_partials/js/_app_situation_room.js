@@ -199,6 +199,14 @@ const _NUCLEAR_SITES = [
   {lat:48.52,lng:10.43,name:'Gundremmingen, Germany'},{lat:42.86,lng:141.64,name:'Tomari, Japan'},
   {lat:37.42,lng:126.99,name:'Wolsong, South Korea'},{lat:21.67,lng:69.33,name:'Kakrapar, India'},
   {lat:-34.00,lng:18.72,name:'Koeberg, South Africa'},{lat:30.44,lng:30.05,name:'El Dabaa, Egypt'},
+  {lat:44.93,lng:-93.16,name:'Prairie Island, US'},{lat:43.59,lng:-116.05,name:'INL Idaho, US'},
+  {lat:35.10,lng:-106.62,name:'Sandia Labs, US'},{lat:34.35,lng:-118.02,name:'LLNL, US'},
+  {lat:51.82,lng:-1.31,name:'Harwell, UK'},{lat:54.43,lng:-3.50,name:'Sellafield, UK'},
+  {lat:46.20,lng:6.04,name:'CERN, Switzerland'},{lat:43.71,lng:7.27,name:'ITER, France'},
+  {lat:37.24,lng:127.02,name:'KAERI, South Korea'},{lat:24.10,lng:54.62,name:'Barakah, UAE'},
+  {lat:50.70,lng:3.90,name:'Doel, Belgium'},{lat:51.33,lng:3.71,name:'Borssele, Netherlands'},
+  {lat:59.44,lng:24.48,name:'Paldiski, Estonia'},{lat:56.43,lng:30.60,name:'Sosnovy Bor, Russia'},
+  {lat:44.14,lng:20.65,name:'Vinca, Serbia'},{lat:36.52,lng:140.60,name:'Tokai-2, Japan'},
 ];
 const _MILITARY_BASES = [
   {lat:36.77,lng:-76.29,name:'Norfolk Naval, US'},{lat:32.87,lng:-117.14,name:'Camp Pendleton, US'},
@@ -221,6 +229,15 @@ const _MILITARY_BASES = [
   {lat:49.95,lng:7.26,name:'Ramstein AB, Germany'},{lat:-7.32,lng:72.41,name:'Diego Garcia, BIOT'},
   {lat:13.05,lng:77.51,name:'Yelahanka AFB, India'},{lat:30.63,lng:32.34,name:'El Gorah MFO, Egypt'},
   {lat:71.29,lng:-156.77,name:'Utqiagvik/Barrow, US'},{lat:42.43,lng:-71.22,name:'Hanscom AFB, US'},
+  {lat:35.05,lng:136.88,name:'Yokota AB, Japan'},{lat:26.35,lng:127.77,name:'Kadena AB, Okinawa'},
+  {lat:38.71,lng:-104.78,name:'Fort Carson, US'},{lat:31.38,lng:-100.42,name:'Goodfellow AFB, US'},
+  {lat:30.24,lng:67.00,name:'Quetta Cantonment, Pakistan'},{lat:34.95,lng:69.27,name:'Bagram, Afghanistan'},
+  {lat:38.95,lng:-92.33,name:'Fort Leonard Wood, US'},{lat:-2.17,lng:-79.92,name:'Manta FOL, Ecuador'},
+  {lat:68.43,lng:17.39,name:'Bardufoss, Norway'},{lat:64.84,lng:25.42,name:'Oulu, Finland'},
+  {lat:56.94,lng:24.11,name:'Adazi, Latvia'},{lat:54.52,lng:18.53,name:'Gdynia Naval, Poland'},
+  {lat:38.50,lng:44.52,name:'Incirlik, Turkey'},{lat:11.20,lng:43.14,name:'Camp Lemonnier 2, Djibouti'},
+  {lat:-25.70,lng:28.23,name:'Waterkloof AFB, South Africa'},{lat:6.22,lng:-75.59,name:'Rionegro, Colombia'},
+  {lat:14.49,lng:121.00,name:'Fort Bonifacio, Philippines'},{lat:-31.40,lng:-64.18,name:'Cordoba AB, Argentina'},
 ];
 
 const _CABLE_LANDINGS = [
@@ -250,6 +267,15 @@ const _DATA_CENTERS = [
   {lat:39.91,lng:116.39,name:'Beijing, China'},{lat:-33.45,lng:-70.67,name:'Santiago, Chile'},
   {lat:6.52,lng:3.38,name:'Lagos, Nigeria'},{lat:30.04,lng:31.24,name:'Cairo, Egypt'},
   {lat:-1.29,lng:36.82,name:'Nairobi, Kenya'},{lat:35.69,lng:51.39,name:'Tehran, Iran'},
+  {lat:14.60,lng:120.98,name:'Manila, Philippines'},{lat:3.14,lng:101.69,name:'Kuala Lumpur, Malaysia'},
+  {lat:41.01,lng:28.98,name:'Istanbul, Turkey'},{lat:25.04,lng:121.57,name:'Taipei, Taiwan'},
+  {lat:4.60,lng:-74.08,name:'Bogota, Colombia'},{lat:12.97,lng:77.59,name:'Bangalore, India'},
+  {lat:-6.21,lng:106.85,name:'Jakarta, Indonesia'},{lat:48.86,lng:2.35,name:'Paris FR, France'},
+  {lat:34.05,lng:-118.24,name:'Los Angeles CA, US'},{lat:23.81,lng:90.41,name:'Dhaka, Bangladesh'},
+  {lat:31.95,lng:35.95,name:'Amman, Jordan'},{lat:33.89,lng:35.50,name:'Beirut, Lebanon'},
+  {lat:59.93,lng:30.32,name:'St Petersburg, Russia'},{lat:43.07,lng:-89.40,name:'Madison WI, US'},
+  {lat:35.68,lng:51.42,name:'Tehran DC2, Iran'},{lat:-34.60,lng:-58.38,name:'Buenos Aires, Argentina'},
+  {lat:28.63,lng:77.22,name:'New Delhi, India'},{lat:55.68,lng:12.57,name:'Copenhagen, Denmark'},
 ];
 
 const _PIPELINE_HUBS = [
@@ -261,6 +287,11 @@ const _PIPELINE_HUBS = [
   {lat:51.88,lng:55.10,name:'Druzhba Pipeline Hub, RU'},{lat:52.52,lng:104.30,name:'ESPO Pipeline, RU'},
   {lat:39.91,lng:116.39,name:'China Gas Hub, Beijing'},{lat:29.76,lng:-95.37,name:'Houston Pipeline Hub, US'},
   {lat:30.07,lng:-89.93,name:'Gulf Coast LOOP, US'},{lat:51.05,lng:-114.07,name:'Alberta Pipeline Hub, CA'},
+  {lat:55.76,lng:49.12,name:'Kazan Junction, RU'},{lat:41.69,lng:44.80,name:'BTC Tbilisi, Georgia'},
+  {lat:36.80,lng:34.63,name:'Ceyhan Terminal, Turkey'},{lat:26.72,lng:49.98,name:'Ras Tanura, SA'},
+  {lat:27.17,lng:56.27,name:'Bandar Abbas, Iran'},{lat:23.59,lng:58.54,name:'Mina al-Fahal, Oman'},
+  {lat:4.64,lng:-74.10,name:'Cano Limon, Colombia'},{lat:-23.96,lng:-46.33,name:'Santos Oil Port, Brazil'},
+  {lat:43.24,lng:76.95,name:'Almaty CPC, Kazakhstan'},{lat:34.66,lng:135.43,name:'Osaka Terminals, Japan'},
 ];
 const _STRATEGIC_WATERWAYS = [
   {lat:30.45,lng:32.35,name:'Suez Canal, Egypt'},{lat:12.60,lng:43.15,name:'Bab el-Mandeb Strait'},

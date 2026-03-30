@@ -85,6 +85,18 @@ function _sitroomRefreshPanels() {
   _loadKeywordCard('sitroom-rd-signal', '/api/sitroom/rd-signal', 'articles');
   _loadKeywordCard('sitroom-chokepoints', '/api/sitroom/chokepoints', 'articles');
   _loadKeywordCard('sitroom-fin-regulation', '/api/sitroom/fin-regulation', 'articles');
+  _loadKeywordCard('sitroom-ipo', '/api/sitroom/keyword-search/ipo|spac|listing|public offering', 'articles');
+  _loadKeywordCard('sitroom-derivatives', '/api/sitroom/keyword-search/options|futures|derivatives|swap|hedge', 'articles');
+  _loadKeywordCard('sitroom-hedgefunds', '/api/sitroom/keyword-search/hedge fund|private equity|venture capital|buyout|acquisition', 'articles');
+  _loadKeywordCard('sitroom-progress', '/api/sitroom/keyword-search/progress|milestone|achievement|record|breakthrough', 'articles');
+  _loadKeywordCard('sitroom-breakthroughs', '/api/sitroom/keyword-search/breakthrough|discovery|innovation|cure|first ever', 'articles');
+  _loadKeywordCard('sitroom-tech-events', '/api/sitroom/keyword-search/conference|summit|expo|keynote|launch event|developer conference', 'articles');
+  _loadKeywordCard('sitroom-escalation', '/api/sitroom/keyword-search/escalation|mobilization|nuclear threat|missile launch|invasion|troops deployed', 'articles');
+  _loadKeywordCard('sitroom-btc-etf', '/api/sitroom/keyword-search/bitcoin etf|btc etf|crypto etf|spot etf|etf flow', 'articles');
+  _loadKeywordCard('sitroom-fintech', '/api/sitroom/keyword-search/fintech|neobank|digital bank|payment|stripe|square|paypal', 'articles');
+  _loadKeywordCard('sitroom-internet-health', '/api/sitroom/keyword-search/internet outage|dns|bgp|cdn|ddos|cloudflare|bandwidth', 'articles');
+  loadSitroomPopExposure();
+  loadSitroomMarketBriefInit();
   loadSitroomLayoffs();
   loadSitroomAirline();
   loadSitroomSupplyChain();
@@ -1581,6 +1593,39 @@ async function _loadCategoryCard(elId, category) {
   </div>`).join('');
 }
 
+/* ─── Population Exposure ─── */
+async function loadSitroomPopExposure() {
+  const d = await safeFetch('/api/sitroom/pop-exposure', {}, null);
+  const el = document.getElementById('sitroom-pop-exposure');
+  if (!el) return;
+  if (!d || !d.exposures?.length) { el.innerHTML = '<div class="sr-empty">No M5+ earthquakes for exposure calc</div>'; return; }
+  el.innerHTML = '<div class="sr-humanitarian-grid">' + d.exposures.map(e =>
+    `<div class="sr-humanitarian-stat">
+      <div class="sr-humanitarian-val" style="font-size:14px;color:${e.magnitude >= 6 ? '#e05050' : '#d4a017'}">${(e.estimated_population/1000).toFixed(0)}K</div>
+      <div class="sr-humanitarian-lbl">M${e.magnitude.toFixed(1)} ~${e.radius_km}km</div>
+    </div>`
+  ).join('') + '</div>';
+}
+
+/* ─── Daily Market Brief ─── */
+function loadSitroomMarketBriefInit() { /* loaded on demand via button */ }
+async function _generateMarketBrief() {
+  const el = document.getElementById('sitroom-market-brief');
+  if (!el) return;
+  el.innerHTML = '<div class="sr-empty"><div class="sr-radar"></div>Generating brief...</div>';
+  try {
+    const resp = await fetch('/api/sitroom/market-brief', {method:'POST'});
+    const d = await resp.json();
+    if (d.brief) {
+      let h = escapeHtml(d.brief);
+      h = h.replace(/^### (.*?)$/gm, '<h4 style="color:#4aedc4;margin:6px 0 3px;font-size:10px;letter-spacing:0.08em">$1</h4>');
+      h = h.replace(/^## (.*?)$/gm, '<h3 style="color:#e0e4e8;margin:8px 0 4px;font-size:12px">$1</h3>');
+      h = h.replace(/\n/g, '<br>');
+      el.innerHTML = '<div style="padding:8px 12px;font-size:10px;line-height:1.5;color:#c8ccd0">' + h + '</div>';
+    }
+  } catch(e) { el.innerHTML = '<div class="sr-empty">Failed to generate brief</div>'; }
+}
+
 /* ─── Generic Keyword Card Loader ─── */
 async function _loadKeywordCard(elId, apiUrl, dataKey) {
   const d = await safeFetch(apiUrl, {}, null);
@@ -2217,6 +2262,7 @@ document.addEventListener('click', e => {
   if (a === 'toggle-globe') _toggleGlobe();
   if (a === 'export-report') _exportSitroomReport();
   if (a === 'generate-briefing') _generateAiBriefing();
+  if (a === 'gen-market-brief') _generateMarketBrief();
   if (a === 'add-monitor') _promptAddMonitor();
   if (a === 'delete-monitor') _deleteMonitor(ctrl.dataset.monitorId);
   if (a === 'playback-live') {

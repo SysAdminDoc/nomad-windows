@@ -2128,6 +2128,71 @@ def api_sitroom_category_feed(category):
     return jsonify({'articles': [dict(r) for r in rows], 'count': len(rows)})
 
 
+@situation_room_bp.route('/api/sitroom/keyword-search/<path:keywords>')
+def api_sitroom_keyword_search(keywords):
+    """Search news by pipe-separated keywords."""
+    kws = [k.strip() for k in keywords.split('|') if k.strip()]
+    if not kws:
+        return jsonify({'articles': [], 'count': 0})
+    conditions = ' OR '.join(['LOWER(title) LIKE ?' for _ in kws])
+    params = [f'%{k.lower()}%' for k in kws]
+    with db_session() as db:
+        rows = db.execute(f"SELECT title, link, source_name FROM sitroom_news WHERE {conditions} ORDER BY cached_at DESC LIMIT 15", params).fetchall()
+    return jsonify({'articles': [dict(r) for r in rows], 'count': len(rows)})
+
+
+@situation_room_bp.route('/api/sitroom/pop-exposure')
+def api_sitroom_pop_exposure():
+    """Estimate population exposure to major events."""
+    # Rough population density estimates for earthquake regions
+    with db_session() as db:
+        quakes = db.execute(
+            "SELECT title, magnitude, lat, lng FROM sitroom_events WHERE event_type = 'earthquake' AND magnitude >= 5 ORDER BY magnitude DESC LIMIT 5"
+        ).fetchall()
+    exposures = []
+    for q in quakes:
+        mag = dict(q)['magnitude'] or 0
+        # Very rough estimate: radius in km ~ 10^(mag-3), pop density ~50/km2 average
+        radius_km = min(500, 10 ** max(0, mag - 3))
+        area = 3.14159 * radius_km * radius_km
+        est_pop = int(area * 50)  # rough global average density
+        exposures.append({'title': dict(q)['title'], 'magnitude': mag,
+                          'radius_km': round(radius_km), 'estimated_population': est_pop})
+    return jsonify({'exposures': exposures, 'count': len(exposures)})
+
+
+@situation_room_bp.route('/api/sitroom/market-brief', methods=['POST'])
+def api_sitroom_market_brief():
+    """Generate daily market brief."""
+    with db_session() as db:
+        markets = db.execute("SELECT symbol, price, change_24h, market_type FROM sitroom_markets ORDER BY market_type, symbol").fetchall()
+        fin_news = db.execute("SELECT title FROM sitroom_news WHERE category IN ('Finance', 'Crypto') ORDER BY cached_at DESC LIMIT 10").fetchall()
+
+    brief = "## DAILY MARKET BRIEF\n\n"
+    # Group by type
+    by_type = {}
+    for m in markets:
+        t = dict(m)['market_type']
+        if t not in by_type:
+            by_type[t] = []
+        by_type[t].append(dict(m))
+
+    for mtype, items in by_type.items():
+        brief += f"### {mtype.upper()}\n"
+        for m in items:
+            ch = m['change_24h'] or 0
+            arrow = '+' if ch >= 0 else ''
+            brief += f"- {m['symbol']}: ${m['price']:.2f} ({arrow}{ch:.1f}%)\n"
+        brief += "\n"
+
+    if fin_news:
+        brief += "### KEY HEADLINES\n"
+        for n in fin_news[:5]:
+            brief += f"- {dict(n)['title']}\n"
+
+    return jsonify({'brief': brief})
+
+
 @situation_room_bp.route('/api/sitroom/rd-signal')
 def api_sitroom_rd_signal():
     """Return defense R&D / patent signal news."""

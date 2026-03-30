@@ -65,6 +65,10 @@ function _sitroomRefreshPanels() {
   loadSitroomServiceStatus();
   loadSitroomBigMac();
   loadSitroomRenewable();
+  loadSitroomGithub();
+  loadSitroomFuel();
+  loadSitroomIntelGap();
+  loadSitroomHumanitarian();
   _checkCriticalAlerts();
   loadSitroomLiveChannels();
 }
@@ -1461,6 +1465,72 @@ function _showSitroomAlert(type, message) {
   stack.appendChild(toast);
   // Auto-dismiss after 15s
   setTimeout(() => { if (toast.parentElement) toast.remove(); }, 15000);
+}
+
+/* ─── GitHub Trending ─── */
+async function loadSitroomGithub() {
+  const d = await safeFetch('/api/sitroom/github-trending', {}, null);
+  const el = document.getElementById('sitroom-github');
+  if (!el) return;
+  if (!d || !d.repos?.length) { el.innerHTML = '<div class="sr-empty">No GitHub data</div>'; return; }
+  el.innerHTML = d.repos.map(r => {
+    let det = {}; try { det = r.detail_json ? JSON.parse(r.detail_json) : {}; } catch(e) {}
+    return `<div class="sitroom-news-item">
+      <span class="sitroom-news-cat" style="background:#1a1a30;color:#8888dd">${escapeHtml(det.language || '?')}</span>
+      <div class="sitroom-news-body">
+        <a href="${escapeAttr(r.source_url || '#')}" target="_blank" rel="noopener" class="sitroom-news-title">${escapeHtml(r.title || '')}</a>
+        <div class="sitroom-news-meta">${(r.magnitude||0).toLocaleString()} stars${det.forks ? ' | ' + det.forks + ' forks' : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── Fuel Prices ─── */
+async function loadSitroomFuel() {
+  const d = await safeFetch('/api/sitroom/fuel-prices', {}, null);
+  const el = document.getElementById('sitroom-fuel');
+  if (!el) return;
+  if (!d || !d.prices?.length) { el.innerHTML = '<div class="sr-empty">No fuel data</div>'; return; }
+  el.innerHTML = d.prices.map(p => {
+    let det = {}; try { det = p.detail_json ? JSON.parse(p.detail_json) : {}; } catch(e) {}
+    return `<div style="text-align:center;padding:16px">
+      <div style="font-size:28px;font-weight:700;color:#d4a017">$${(p.magnitude||0).toFixed(2)}</div>
+      <div style="font-size:9px;color:#555;letter-spacing:0.1em;margin-top:2px">${escapeHtml(p.title || 'US GASOLINE')}</div>
+      <div style="font-size:8px;color:#333;margin-top:4px">${escapeHtml(det.period || '')}</div>
+    </div>`;
+  }).join('');
+}
+
+/* ─── Intelligence Gap ─── */
+async function loadSitroomIntelGap() {
+  const d = await safeFetch('/api/sitroom/intelligence-gap', {}, null);
+  const el = document.getElementById('sitroom-intel-gap');
+  if (!el) return;
+  if (!d || !d.gaps?.length) { el.innerHTML = '<div class="sr-empty">No gap data</div>'; return; }
+  el.innerHTML = d.gaps.map(g => {
+    const ageStr = g.age ? (g.age < 60 ? g.age + 's' : g.age < 3600 ? Math.floor(g.age/60) + 'm' : Math.floor(g.age/3600) + 'h') : 'never';
+    return `<div class="sr-gap-row">
+      <span class="sr-gap-dot ${g.status}"></span>
+      <span class="sr-gap-label">${escapeHtml(g.label)}</span>
+      <span class="sr-gap-age">${ageStr}</span>
+    </div>`;
+  }).join('');
+}
+
+/* ─── Humanitarian Summary ─── */
+async function loadSitroomHumanitarian() {
+  const d = await safeFetch('/api/sitroom/humanitarian-summary', {}, null);
+  const el = document.getElementById('sitroom-humanitarian');
+  if (!el) return;
+  if (!d) { el.innerHTML = '<div class="sr-empty">No data</div>'; return; }
+  el.innerHTML = `<div class="sr-humanitarian-grid">
+    <div class="sr-humanitarian-stat"><div class="sr-humanitarian-val">${d.active_conflicts || 0}</div><div class="sr-humanitarian-lbl">Conflicts</div></div>
+    <div class="sr-humanitarian-stat"><div class="sr-humanitarian-val">${d.active_fires || 0}</div><div class="sr-humanitarian-lbl">Fires</div></div>
+    <div class="sr-humanitarian-stat"><div class="sr-humanitarian-val">${d.severe_weather || 0}</div><div class="sr-humanitarian-lbl">Weather</div></div>
+    <div class="sr-humanitarian-stat"><div class="sr-humanitarian-val">${d.significant_quakes || 0}</div><div class="sr-humanitarian-lbl">M5+ Quakes</div></div>
+    <div class="sr-humanitarian-stat"><div class="sr-humanitarian-val">${d.disease_outbreaks || 0}</div><div class="sr-humanitarian-lbl">Outbreaks</div></div>
+    <div class="sr-humanitarian-stat"><div class="sr-humanitarian-val">${d.displacement_records || 0}</div><div class="sr-humanitarian-lbl">Displaced</div></div>
+  </div>`;
 }
 
 /* ─── Big Mac Index ─── */

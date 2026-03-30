@@ -515,6 +515,23 @@
 .sitroom-custom-feed-name { font-weight: 600; color: #c8ccd0; }
 .sr-feed-stats { font-size: 8px; color: #333; padding: 3px 12px 6px; }
 
+/* ─── Intelligence Gap ─── */
+.sr-gap-row { display: flex; align-items: center; gap: 6px; padding: 3px 12px; border-bottom: 1px solid #151515; font-size: 10px; }
+.sr-gap-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.sr-gap-dot.fresh { background: #44ff88; }
+.sr-gap-dot.stale { background: #ffaa00; }
+.sr-gap-dot.old { background: #ff4444; }
+.sr-gap-dot.missing { background: #333; border: 1px solid #555; }
+.sr-gap-label { flex: 1; color: #888; }
+.sr-gap-age { font-size: 8px; color: #555; width: 50px; text-align: right; }
+
+/* ─── Humanitarian Stats ─── */
+.sr-humanitarian-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; height: 100%; }
+.sr-humanitarian-stat { text-align: center; padding: 12px 4px; border-right: 1px solid #1e1e1e; border-bottom: 1px solid #1e1e1e; }
+.sr-humanitarian-stat:nth-child(3n) { border-right: none; }
+.sr-humanitarian-val { font-size: 20px; font-weight: 700; color: #e0e4e8; }
+.sr-humanitarian-lbl { font-size: 7px; letter-spacing: 0.1em; color: #555; margin-top: 2px; text-transform: uppercase; }
+
 /* ─── Correlation Signals ─── */
 .sr-corr-signal {
   padding: 8px 12px; border-bottom: 1px solid #1e1e1e; border-left: 3px solid;

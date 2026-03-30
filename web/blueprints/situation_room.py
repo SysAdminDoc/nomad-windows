@@ -71,6 +71,7 @@ FETCH_COOLDOWN = {
     'yield_curve': 3600, 'stablecoins': 600, 'correlation': 300,
     'service_status': 300, 'social_velocity': 600,
     'renewable': 3600, 'bigmac': 86400,
+    'github_trending': 3600, 'fuel_prices': 7200,
 }
 
 # ─── Live YouTube Channels ────────────────────────────────────────────
@@ -1428,6 +1429,75 @@ def _fetch_bigmac_index():
     log.info(f"Situation Room: cached {len(latest)} Big Mac Index entries")
 
 
+def _fetch_github_trending():
+    """Fetch GitHub trending repositories."""
+    if not _can_fetch('github_trending'):
+        return
+    _set_last_fetch('github_trending')
+    try:
+        resp = requests.get('https://api.github.com/search/repositories',
+                            params={'q': 'created:>' + (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'),
+                                    'sort': 'stars', 'order': 'desc', 'per_page': 15},
+                            timeout=15, headers={**_REQ_HEADERS, 'Accept': 'application/vnd.github.v3+json'})
+        if not resp.ok:
+            return
+        data = resp.json()
+    except Exception as e:
+        log.debug(f"GitHub trending fetch failed: {e}")
+        return
+
+    items = data.get('items', [])
+    if not items:
+        return
+
+    with db_session() as db:
+        db.execute("DELETE FROM sitroom_events WHERE event_type = 'github_trending'")
+        for repo in items[:15]:
+            eid = hashlib.sha256(str(repo.get('id', '')).encode()).hexdigest()[:16]
+            db.execute('''INSERT OR IGNORE INTO sitroom_events
+                (event_id, event_type, title, magnitude, lat, lng, event_time, source_url, detail_json)
+                VALUES (?, ?, ?, ?, 0, 0, 0, ?, ?)''',
+                (eid, 'github_trending', repo.get('full_name', ''),
+                 repo.get('stargazers_count', 0), repo.get('html_url', ''),
+                 json.dumps({'description': (repo.get('description') or '')[:300],
+                             'language': repo.get('language', ''), 'stars': repo.get('stargazers_count', 0),
+                             'forks': repo.get('forks_count', 0), 'created': repo.get('created_at', '')})))
+        db.commit()
+    log.info(f"Situation Room: cached {len(items)} GitHub trending repos")
+
+
+def _fetch_fuel_prices():
+    """Fetch fuel/gas price data from EIA."""
+    if not _can_fetch('fuel_prices'):
+        return
+    _set_last_fetch('fuel_prices')
+    try:
+        # US gasoline prices from EIA
+        resp = requests.get('https://api.eia.gov/v2/petroleum/pri/gnd/data/',
+                            params={'api_key': 'DEMO_KEY', 'frequency': 'weekly', 'data[0]': 'value',
+                                    'facets[product][]': 'EPM0', 'facets[duession][]': 'NUS',
+                                    'sort[0][column]': 'period', 'sort[0][direction]': 'desc', 'length': '1'},
+                            timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
+        if resp.ok:
+            rows = resp.json().get('response', {}).get('data', [])
+            if rows:
+                with db_session() as db:
+                    db.execute("DELETE FROM sitroom_events WHERE event_type = 'fuel_price'")
+                    for r in rows[:5]:
+                        eid = hashlib.sha256(f"fuel:{r.get('period','')}".encode()).hexdigest()[:16]
+                        db.execute('''INSERT OR IGNORE INTO sitroom_events
+                            (event_id, event_type, title, magnitude, lat, lng, event_time, detail_json)
+                            VALUES (?, ?, ?, ?, 0, 0, 0, ?)''',
+                            (eid, 'fuel_price', f"US Gasoline ({r.get('area-name', 'National')})",
+                             float(r.get('value', 0)),
+                             json.dumps({'price': r.get('value', ''), 'period': r.get('period', ''),
+                                         'product': r.get('product-name', ''), 'area': r.get('area-name', '')})))
+                    db.commit()
+                log.info(f"Situation Room: cached fuel price data")
+    except Exception as e:
+        log.debug(f"Fuel prices fetch failed: {e}")
+
+
 def _fetch_service_status():
     """Fetch cloud service status from public status pages."""
     if not _can_fetch('service_status'):
@@ -1587,6 +1657,8 @@ def refresh_all_feeds():
             _fetch_social_velocity()
             _fetch_renewable_energy()
             _fetch_bigmac_index()
+            _fetch_github_trending()
+            _fetch_fuel_prices()
             _compute_correlations()
         except Exception as e:
             log.exception(f"Situation Room refresh error: {e}")
@@ -1896,6 +1968,71 @@ def api_sitroom_diseases():
     with db_session() as db:
         rows = db.execute("SELECT * FROM sitroom_events WHERE event_type = 'disease' ORDER BY cached_at DESC LIMIT 30").fetchall()
     return jsonify({'outbreaks': [dict(r) for r in rows], 'count': len(rows)})
+
+
+@situation_room_bp.route('/api/sitroom/github-trending')
+def api_sitroom_github_trending():
+    """Return GitHub trending repositories."""
+    with db_session() as db:
+        rows = db.execute("SELECT * FROM sitroom_events WHERE event_type = 'github_trending' ORDER BY magnitude DESC LIMIT 15").fetchall()
+    return jsonify({'repos': [dict(r) for r in rows], 'count': len(rows)})
+
+
+@situation_room_bp.route('/api/sitroom/fuel-prices')
+def api_sitroom_fuel_prices():
+    """Return fuel price data."""
+    with db_session() as db:
+        rows = db.execute("SELECT * FROM sitroom_events WHERE event_type = 'fuel_price' ORDER BY cached_at DESC LIMIT 5").fetchall()
+    return jsonify({'prices': [dict(r) for r in rows], 'count': len(rows)})
+
+
+@situation_room_bp.route('/api/sitroom/intelligence-gap')
+def api_sitroom_intelligence_gap():
+    """Detect which data sources are stale or missing."""
+    gaps = []
+    last, _ = _get_state()
+    now = datetime.now()
+    source_labels = {
+        'rss': 'News Feeds', 'earthquakes': 'Seismic Data', 'weather_alerts': 'Weather Alerts',
+        'markets': 'Market Data', 'conflicts': 'Crisis Events', 'aviation': 'Aircraft Tracking',
+        'space_weather': 'Space Weather', 'volcanoes': 'Volcanic Activity', 'predictions': 'Prediction Markets',
+        'fires': 'Fire Detection', 'disease_outbreaks': 'Disease Outbreaks', 'internet_outages': 'Internet Outages',
+        'radiation': 'Radiation Monitoring', 'gdelt_trending': 'GDELT Intelligence', 'sanctions': 'Sanctions Data',
+        'displacement': 'Displacement Data', 'ucdp': 'Armed Conflicts', 'cyber_threats': 'Cyber Threats',
+        'yield_curve': 'Yield Curve', 'stablecoins': 'Stablecoins', 'correlation': 'Correlation Engine',
+        'service_status': 'Service Status', 'social_velocity': 'Social Velocity',
+        'renewable': 'Renewable Energy', 'bigmac': 'Big Mac Index',
+        'github_trending': 'GitHub Trending', 'fuel_prices': 'Fuel Prices',
+    }
+    for source, label in source_labels.items():
+        last_time = last.get(source)
+        cooldown = FETCH_COOLDOWN.get(source, 300)
+        if not last_time:
+            gaps.append({'source': source, 'label': label, 'status': 'missing', 'age': None})
+        else:
+            age_sec = (now - last_time).total_seconds()
+            status = 'fresh' if age_sec < cooldown * 2 else 'stale' if age_sec < cooldown * 5 else 'old'
+            gaps.append({'source': source, 'label': label, 'status': status, 'age': int(age_sec)})
+    return jsonify({'gaps': gaps, 'total': len(gaps),
+                    'missing': sum(1 for g in gaps if g['status'] == 'missing'),
+                    'stale': sum(1 for g in gaps if g['status'] == 'stale')})
+
+
+@situation_room_bp.route('/api/sitroom/humanitarian-summary')
+def api_sitroom_humanitarian_summary():
+    """Return aggregate humanitarian statistics."""
+    with db_session() as db:
+        displacement = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'displacement'").fetchone()[0]
+        disease = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'disease'").fetchone()[0]
+        conflicts = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type IN ('conflict', 'ucdp_conflict')").fetchone()[0]
+        fires = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'fire'").fetchone()[0]
+        weather = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'weather_alert'").fetchone()[0]
+        quakes_big = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'earthquake' AND magnitude >= 5").fetchone()[0]
+    return jsonify({
+        'displacement_records': displacement, 'disease_outbreaks': disease,
+        'active_conflicts': conflicts, 'active_fires': fires,
+        'severe_weather': weather, 'significant_quakes': quakes_big,
+    })
 
 
 @situation_room_bp.route('/api/sitroom/renewable')

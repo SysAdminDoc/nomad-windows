@@ -69,6 +69,8 @@ function _sitroomRefreshPanels() {
   loadSitroomFuel();
   loadSitroomProductHunt();
   loadSitroomEarnings();
+  loadSitroomCentralBanks();
+  loadSitroomArxiv();
   loadSitroomLayoffs();
   loadSitroomAirline();
   loadSitroomSupplyChain();
@@ -1549,6 +1551,34 @@ async function loadSitroomSentiment() {
         <div class="sr-sentiment-neg" style="width:${negPct}%">${negPct}%</div>
       </div>
     </div>`;
+}
+
+/* ─── Central Bank Watch ─── */
+async function loadSitroomCentralBanks() {
+  const d = await safeFetch('/api/sitroom/central-banks', {}, null);
+  const el = document.getElementById('sitroom-central-banks');
+  if (!el) return;
+  if (!d || !d.articles?.length) { el.innerHTML = '<div class="sr-empty">No central bank data</div>'; return; }
+  el.innerHTML = d.articles.map(a => `<div class="sitroom-news-item">
+    <span class="sitroom-news-cat" style="background:#0a2a20;color:#44dd88">${escapeHtml(a.source_name || '')}</span>
+    <div class="sitroom-news-body">
+      <a href="${escapeAttr(a.link || '#')}" target="_blank" rel="noopener" class="sitroom-news-title">${escapeHtml(a.title)}</a>
+    </div>
+  </div>`).join('');
+}
+
+/* ─── AI Research (ArXiv) ─── */
+async function loadSitroomArxiv() {
+  const d = await safeFetch('/api/sitroom/ai-research', {}, null);
+  const el = document.getElementById('sitroom-arxiv');
+  if (!el) return;
+  if (!d || !d.papers?.length) { el.innerHTML = '<div class="sr-empty">No ArXiv data</div>'; return; }
+  el.innerHTML = d.papers.map(p => `<div class="sitroom-news-item">
+    <span class="sitroom-news-cat" style="background:#1a1040;color:#aa88ff">AI</span>
+    <div class="sitroom-news-body">
+      <a href="${escapeAttr(p.link || '#')}" target="_blank" rel="noopener" class="sitroom-news-title">${escapeHtml(p.title)}</a>
+    </div>
+  </div>`).join('');
 }
 
 /* ─── Layoffs Tracker ─── */

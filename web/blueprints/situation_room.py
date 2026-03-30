@@ -73,6 +73,7 @@ FETCH_COOLDOWN = {
     'renewable': 3600, 'bigmac': 86400,
     'github_trending': 3600, 'fuel_prices': 7200,
     'product_hunt': 3600, 'macro_stress': 3600,
+    'central_banks': 3600, 'arxiv_papers': 7200,
 }
 
 # ─── Live YouTube Channels ────────────────────────────────────────────
@@ -1430,6 +1431,59 @@ def _fetch_bigmac_index():
     log.info(f"Situation Room: cached {len(latest)} Big Mac Index entries")
 
 
+def _fetch_central_banks():
+    """Fetch central bank news and policy updates."""
+    if not _can_fetch('central_banks'):
+        return
+    _set_last_fetch('central_banks')
+    articles = []
+    cb_feeds = [
+        {'name': 'Federal Reserve', 'url': 'https://www.federalreserve.gov/feeds/press_all.xml', 'category': 'Central Banks'},
+        {'name': 'ECB Press', 'url': 'https://www.ecb.europa.eu/rss/press.html', 'category': 'Central Banks'},
+        {'name': 'BOE News', 'url': 'https://www.bankofengland.co.uk/rss/news', 'category': 'Central Banks'},
+    ]
+    for feed in cb_feeds:
+        items = _fetch_single_feed(feed)
+        articles.extend(items)
+    if articles:
+        with db_session() as db:
+            for a in articles[:15]:
+                content_hash = hashlib.sha256((a['title'] + a['link']).encode()).hexdigest()[:32]
+                db.execute('''INSERT OR REPLACE INTO sitroom_news
+                    (content_hash, title, link, description, published, source_name, category, source_type, cached_at)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'rss', CURRENT_TIMESTAMP)''',
+                    (content_hash, a['title'], a['link'], a['description'], a['published'], a['source'], 'Central Banks'))
+            db.commit()
+        log.info(f"Situation Room: cached {len(articles)} central bank items")
+
+
+def _fetch_arxiv_papers():
+    """Fetch latest AI research papers from ArXiv."""
+    if not _can_fetch('arxiv_papers'):
+        return
+    _set_last_fetch('arxiv_papers')
+    try:
+        resp = requests.get('https://export.arxiv.org/api/query',
+                            params={'search_query': 'cat:cs.AI+OR+cat:cs.LG', 'start': 0,
+                                    'max_results': 15, 'sortBy': 'submittedDate', 'sortOrder': 'descending'},
+                            timeout=15, headers=_REQ_HEADERS)
+        if not resp.ok:
+            return
+        items = _parse_feed(resp.text, 'ArXiv', 'AI Research')
+        if items:
+            with db_session() as db:
+                for a in items[:15]:
+                    content_hash = hashlib.sha256((a['title'] + a['link']).encode()).hexdigest()[:32]
+                    db.execute('''INSERT OR REPLACE INTO sitroom_news
+                        (content_hash, title, link, description, published, source_name, category, source_type, cached_at)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, 'rss', CURRENT_TIMESTAMP)''',
+                        (content_hash, a['title'][:300], a['link'], a['description'][:500], a['published'], 'ArXiv', 'AI Research'))
+                db.commit()
+            log.info(f"Situation Room: cached {len(items)} ArXiv papers")
+    except Exception as e:
+        log.debug(f"ArXiv fetch failed: {e}")
+
+
 def _fetch_macro_stress():
     """Fetch macro stress indicators from FRED (St. Louis Fed)."""
     if not _can_fetch('macro_stress'):
@@ -1733,6 +1787,8 @@ def refresh_all_feeds():
             _fetch_fuel_prices()
             _fetch_product_hunt()
             _fetch_macro_stress()
+            _fetch_central_banks()
+            _fetch_arxiv_papers()
             _compute_correlations()
         except Exception as e:
             log.exception(f"Situation Room refresh error: {e}")
@@ -2042,6 +2098,22 @@ def api_sitroom_diseases():
     with db_session() as db:
         rows = db.execute("SELECT * FROM sitroom_events WHERE event_type = 'disease' ORDER BY cached_at DESC LIMIT 30").fetchall()
     return jsonify({'outbreaks': [dict(r) for r in rows], 'count': len(rows)})
+
+
+@situation_room_bp.route('/api/sitroom/central-banks')
+def api_sitroom_central_banks():
+    """Return central bank news and policy."""
+    with db_session() as db:
+        rows = db.execute("SELECT * FROM sitroom_news WHERE category = 'Central Banks' ORDER BY cached_at DESC LIMIT 15").fetchall()
+    return jsonify({'articles': [dict(r) for r in rows], 'count': len(rows)})
+
+
+@situation_room_bp.route('/api/sitroom/ai-research')
+def api_sitroom_ai_research():
+    """Return AI research papers from ArXiv."""
+    with db_session() as db:
+        rows = db.execute("SELECT * FROM sitroom_news WHERE category = 'AI Research' ORDER BY cached_at DESC LIMIT 15").fetchall()
+    return jsonify({'papers': [dict(r) for r in rows], 'count': len(rows)})
 
 
 @situation_room_bp.route('/api/sitroom/macro-stress')

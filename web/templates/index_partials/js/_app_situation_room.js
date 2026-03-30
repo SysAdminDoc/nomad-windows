@@ -26,6 +26,8 @@ function initSituationRoom() {
   _initSitroomWorldClock();
   _initSitroomSearch();
   _initRefreshBar();
+  _initPanelDragReorder();
+  _restorePanelOrder();
   _sitroomAutoRefreshIfEmpty();
   if (_sitroomAutoTimer) clearInterval(_sitroomAutoTimer);
   _sitroomAutoTimer = setInterval(_sitroomRefreshPanels, 60000);
@@ -528,7 +530,7 @@ async function loadSitroomNews(append) {
     return;
   }
   const html = d.articles.map(a => `<div class="sitroom-news-item">
-    <span class="sitroom-news-cat">${escapeHtml(a.category || '')}</span>
+    <span class="sitroom-news-cat" data-cat="${escapeAttr(a.category || '')}">${escapeHtml(a.category || '')}</span>
     <div class="sitroom-news-body">
       <a href="${escapeAttr(a.link || '#')}" target="_blank" rel="noopener" class="sitroom-news-title">${escapeHtml(a.title)}</a>
       <div class="sitroom-news-meta">${escapeHtml(a.source_name || '')} ${a.published ? '| ' + escapeHtml(a.published) : ''}</div>
@@ -947,6 +949,76 @@ async function loadSitroomDiseases() {
   }).join('');
 }
 
+/* ─── Panel Drag Reorder ─── */
+function _initPanelDragReorder() {
+  const grid = document.getElementById('sr-cards-anchor');
+  if (!grid) return;
+  grid.querySelectorAll('.sr-card').forEach((card, i) => {
+    card.setAttribute('draggable', 'true');
+    card.dataset.panelIdx = i;
+    card.addEventListener('dragstart', e => {
+      card.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', i);
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      grid.querySelectorAll('.sr-card').forEach(c => c.classList.remove('drag-over'));
+      _savePanelOrder();
+    });
+    card.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; card.classList.add('drag-over'); });
+    card.addEventListener('dragleave', () => card.classList.remove('drag-over'));
+    card.addEventListener('drop', e => {
+      e.preventDefault(); card.classList.remove('drag-over');
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+      const cards = [...grid.querySelectorAll('.sr-card')];
+      const fromCard = cards[fromIdx];
+      if (fromCard && fromCard !== card) {
+        const rect = card.getBoundingClientRect();
+        const after = e.clientY > rect.top + rect.height / 2;
+        if (after) card.after(fromCard); else card.before(fromCard);
+      }
+    });
+  });
+}
+
+function _savePanelOrder() {
+  const grid = document.getElementById('sr-cards-anchor');
+  if (!grid) return;
+  const order = [...grid.querySelectorAll('.sr-card')].map(c => {
+    const head = c.querySelector('.sr-card-head');
+    return head ? head.textContent.trim().substring(0, 30) : '';
+  });
+  try { localStorage.setItem('sr-panel-order', JSON.stringify(order)); } catch(e) {}
+}
+
+function _restorePanelOrder() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('sr-panel-order'));
+    if (!saved || !saved.length) return;
+    const grid = document.getElementById('sr-cards-anchor');
+    if (!grid) return;
+    const cards = [...grid.querySelectorAll('.sr-card')];
+    const byTitle = {};
+    cards.forEach(c => {
+      const head = c.querySelector('.sr-card-head');
+      if (head) byTitle[head.textContent.trim().substring(0, 30)] = c;
+    });
+    saved.forEach(title => {
+      if (byTitle[title]) grid.appendChild(byTitle[title]);
+    });
+  } catch(e) {}
+}
+
+/* ─── Map Fullscreen ─── */
+function _toggleMapFullscreen() {
+  const wrap = document.querySelector('.sr-map-wrap');
+  if (!wrap) return;
+  wrap.classList.toggle('fullscreen');
+  setTimeout(_sitroomResizeMap, 100);
+  setTimeout(_sitroomResizeMap, 500);
+}
+
 /* ─── Auto-Refresh Progress Bar ─── */
 function _initRefreshBar() {
   const bar = document.getElementById('sr-refresh-bar');
@@ -991,11 +1063,21 @@ function _initSitroomWorldClock() {
 /* ─── Search Modal (Ctrl+K) ─── */
 function _initSitroomSearch() {
   document.addEventListener('keydown', e => {
+    // Don't handle shortcuts when typing in inputs
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
+      if (e.key === 'Escape') _toggleSitroomSearch(false);
+      return;
+    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
       _toggleSitroomSearch(true);
     }
-    if (e.key === 'Escape') _toggleSitroomSearch(false);
+    if (e.key === 'Escape') { _toggleSitroomSearch(false); const cp = document.getElementById('sr-country-panel'); if (cp) cp.hidden = true; }
+    // Keyboard shortcuts (only when SR tab is active)
+    const srTab = document.getElementById('tab-situation-room');
+    if (!srTab?.classList.contains('active')) return;
+    if (e.key === 'f' || e.key === 'F') _toggleMapFullscreen();
+    if (e.key === 'r' || e.key === 'R') refreshSitroomFeeds();
   });
 }
 
@@ -1221,6 +1303,7 @@ document.addEventListener('click', e => {
     if (cp) cp.hidden = true;
   }
   if (a === 'open-search') _toggleSitroomSearch(true);
+  if (a === 'toggle-map-fullscreen') _toggleMapFullscreen();
 });
 
 document.getElementById('sitroom-news-category')?.addEventListener('change', () => loadSitroomNews());

@@ -296,6 +296,48 @@
 .sr-heatmap-cell-name { font-size: 7px; color: rgba(255,255,255,0.7); display: block; margin-bottom: 2px; }
 .sr-heatmap-cell-val { font-size: 11px; font-weight: 700; }
 
+/* ─── Panel Drag Reorder ─── */
+.sr-card[draggable="true"] { cursor: grab; }
+.sr-card.dragging { opacity: 0.4; outline: 1px dashed #0f5040; }
+.sr-card.drag-over { outline: 2px solid #4aedc4; outline-offset: -2px; }
+
+/* ─── Data Freshness Badge ─── */
+.sr-card-fresh { display: inline-block; width: 5px; height: 5px; border-radius: 50%; margin-left: 6px; vertical-align: middle; }
+.sr-card-fresh.fresh { background: #44ff88; box-shadow: 0 0 4px #44ff88; }
+.sr-card-fresh.stale { background: #ffaa00; }
+.sr-card-fresh.old { background: #ff4444; }
+
+/* ─── Map Fullscreen ─── */
+.sr-map-wrap.fullscreen {
+  position: fixed !important; top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 1000; margin: 0; width: 100vw; height: 100vh;
+  min-height: 100vh; flex: none;
+}
+.sr-map-fullscreen-btn {
+  position: absolute; top: 8px; left: 12px; z-index: 10;
+  font-size: 14px; padding: 4px 8px; background: rgba(10,10,10,0.9);
+  border: 1px solid #2a2a2a; border-radius: 4px; color: #888; cursor: pointer;
+}
+.sr-map-fullscreen-btn:hover { color: #e0e4e8; border-color: #3a3a3a; }
+
+/* ─── News Category Colors ─── */
+.sitroom-news-cat[data-cat="World"] { background: #0f5040; }
+.sitroom-news-cat[data-cat="US"] { background: #1a1a60; }
+.sitroom-news-cat[data-cat="Europe"] { background: #2a1a50; }
+.sitroom-news-cat[data-cat="Middle East"] { background: #5a2a10; }
+.sitroom-news-cat[data-cat="Asia-Pacific"] { background: #0a3a3a; }
+.sitroom-news-cat[data-cat="Africa"] { background: #3a2a0a; }
+.sitroom-news-cat[data-cat="Tech"] { background: #1a2a40; }
+.sitroom-news-cat[data-cat="Cyber"] { background: #2a1030; }
+.sitroom-news-cat[data-cat="Defense"] { background: #2a1515; }
+.sitroom-news-cat[data-cat="Finance"] { background: #0a2a1a; }
+.sitroom-news-cat[data-cat="Crypto"] { background: #2a2a0a; }
+.sitroom-news-cat[data-cat="Health"] { background: #1a2a20; }
+.sitroom-news-cat[data-cat="Disaster"] { background: #3a1010; }
+.sitroom-news-cat[data-cat="Geopolitics"] { background: #201030; }
+.sitroom-news-cat[data-cat="Science"] { background: #0a1a30; }
+.sitroom-news-cat[data-cat="Energy"] { background: #2a2010; }
+
 /* ─── Panel Collapse ─── */
 .sr-card.collapsed .sr-card-body,
 .sr-card.collapsed .sr-load-more { display: none; }

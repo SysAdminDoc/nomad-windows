@@ -1,7 +1,7 @@
 /* ─── Situation Room v2 — Global Intelligence Dashboard ─── */
 
 let _sitroomMap = null;
-let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [] };
+let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [], pipelines: [], waterways: [], spaceports: [] };
 let _sitroomNewsOffset = 0;
 const SITROOM_NEWS_PAGE = 50;
 let _sitroomAutoTimer = null;
@@ -41,6 +41,7 @@ function _sitroomRefreshPanels() {
   loadSitroomRadiation();
   loadSitroomTrending();
   loadSitroomSanctions();
+  loadSitroomDisplacement();
   loadSitroomLiveChannels();
 }
 
@@ -166,6 +167,36 @@ const _DATA_CENTERS = [
   {lat:-23.55,lng:-46.63,name:'Sao Paulo, Brazil'},{lat:45.50,lng:-73.57,name:'Montreal, Canada'},
   {lat:47.61,lng:-122.33,name:'Seattle WA, US'},{lat:33.75,lng:-84.39,name:'Atlanta GA, US'},
   {lat:41.88,lng:-87.63,name:'Chicago IL, US'},{lat:32.78,lng:-96.80,name:'Dallas TX, US'},
+];
+
+const _PIPELINE_HUBS = [
+  {lat:51.50,lng:3.60,name:'Rotterdam Pipeline Hub, NL'},{lat:60.39,lng:5.32,name:'Bergen Gas Hub, NO'},
+  {lat:56.15,lng:10.21,name:'Denmark Gas Junction'},{lat:41.01,lng:28.98,name:'TurkStream Landing, TR'},
+  {lat:54.32,lng:13.09,name:'Nord Stream Landing, DE'},{lat:36.80,lng:10.18,name:'TransMed Pipeline, TN'},
+  {lat:31.25,lng:32.31,name:'East Med Gas Hub, EG'},{lat:40.41,lng:49.87,name:'BTC Pipeline, AZ'},
+  {lat:29.37,lng:47.97,name:'Kuwait Oil Hub'},{lat:26.22,lng:50.55,name:'Bahrain Oil Hub'},
+  {lat:51.88,lng:55.10,name:'Druzhba Pipeline Hub, RU'},{lat:52.52,lng:104.30,name:'ESPO Pipeline, RU'},
+  {lat:39.91,lng:116.39,name:'China Gas Hub, Beijing'},{lat:29.76,lng:-95.37,name:'Houston Pipeline Hub, US'},
+  {lat:30.07,lng:-89.93,name:'Gulf Coast LOOP, US'},{lat:51.05,lng:-114.07,name:'Alberta Pipeline Hub, CA'},
+];
+const _STRATEGIC_WATERWAYS = [
+  {lat:30.45,lng:32.35,name:'Suez Canal, Egypt'},{lat:12.60,lng:43.15,name:'Bab el-Mandeb Strait'},
+  {lat:26.57,lng:56.25,name:'Strait of Hormuz'},{lat:1.25,lng:103.75,name:'Strait of Malacca'},
+  {lat:41.17,lng:29.07,name:'Bosphorus Strait, Turkey'},{lat:9.08,lng:-79.68,name:'Panama Canal'},
+  {lat:35.97,lng:-5.50,name:'Strait of Gibraltar'},{lat:36.95,lng:22.48,name:'Cape Matapan, Greece'},
+  {lat:-34.62,lng:20.00,name:'Cape of Good Hope'},{lat:-54.80,lng:-68.30,name:'Drake Passage'},
+  {lat:61.10,lng:-45.00,name:'Denmark Strait'},{lat:54.00,lng:7.90,name:'Kiel Canal, Germany'},
+  {lat:48.40,lng:-4.50,name:'English Channel entrance'},{lat:10.40,lng:107.00,name:'South China Sea chokepoint'},
+];
+const _SPACEPORTS = [
+  {lat:28.57,lng:-80.65,name:'Kennedy Space Center, US'},{lat:34.63,lng:-120.63,name:'Vandenberg SFB, US'},
+  {lat:45.92,lng:63.34,name:'Baikonur Cosmodrome, KZ'},{lat:62.93,lng:40.58,name:'Plesetsk, Russia'},
+  {lat:5.24,lng:-52.77,name:'Guiana Space Centre, FR'},{lat:19.61,lng:110.95,name:'Wenchang, China'},
+  {lat:40.96,lng:100.30,name:'Jiuquan, China'},{lat:28.25,lng:102.03,name:'Xichang, China'},
+  {lat:13.72,lng:80.23,name:'Satish Dhawan, India'},{lat:31.25,lng:131.08,name:'Tanegashima, Japan'},
+  {lat:-2.95,lng:40.21,name:'Luigi Broglio, Kenya (San Marco)'},{lat:28.24,lng:-16.64,name:'El Hierro (proposed), Spain'},
+  {lat:25.99,lng:-97.15,name:'SpaceX Starbase, US'},{lat:-31.04,lng:136.50,name:'Woomera, Australia'},
+  {lat:57.44,lng:-4.26,name:'Sutherland Spaceport, UK'},{lat:69.30,lng:16.02,name:'Andoya, Norway'},
 ];
 
 function initSitroomMap() {
@@ -297,6 +328,24 @@ async function loadSitroomMapData() {
         event_type: 'datacenter', magnitude: null, depth_km: null}, 'datacenters');
     });
   } else { clearSitroomMarkers('datacenters'); }
+
+  // Pipeline hubs (static)
+  if (document.getElementById('sitroom-layer-pipelines')?.checked) {
+    clearSitroomMarkers('pipelines');
+    _PIPELINE_HUBS.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'pipeline'}, 'pipelines'));
+  } else { clearSitroomMarkers('pipelines'); }
+
+  // Strategic waterways (static)
+  if (document.getElementById('sitroom-layer-waterways')?.checked) {
+    clearSitroomMarkers('waterways');
+    _STRATEGIC_WATERWAYS.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'waterway'}, 'waterways'));
+  } else { clearSitroomMarkers('waterways'); }
+
+  // Spaceports (static)
+  if (document.getElementById('sitroom-layer-spaceports')?.checked) {
+    clearSitroomMarkers('spaceports');
+    _SPACEPORTS.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'spaceport'}, 'spaceports'));
+  } else { clearSitroomMarkers('spaceports'); }
 }
 
 function clearSitroomMarkers(layerType) {
@@ -306,7 +355,7 @@ function clearSitroomMarkers(layerType) {
 
 function addSitroomMarker(ev, layerType) {
   if (!_sitroomMap) return;
-  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88', cables: '#3388ff', datacenters: '#aa66ff' };
+  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88', cables: '#3388ff', datacenters: '#aa66ff', pipelines: '#cc8844', waterways: '#00ddff', spaceports: '#ff66ff' };
   const color = colors[layerType] || '#ffffff';
   let size = layerType === 'aviation' ? 5 : 8;
   if (ev.magnitude) size = Math.max(6, Math.min(24, ev.magnitude * 3));
@@ -652,7 +701,7 @@ async function loadSitroomCII() {
   el.innerHTML = sorted.map(c => {
     const cls = c.score >= 60 ? 'sr-cii-high' : c.score >= 30 ? 'sr-cii-med' : 'sr-cii-low';
     const color = c.score >= 60 ? '#e05050' : c.score >= 30 ? '#d4a017' : '#2aad94';
-    return `<div class="sr-cii-row">
+    return `<div class="sr-cii-row" style="cursor:pointer" data-cii-country="${escapeAttr(c.country)}">
       <span class="sr-cii-country">${escapeHtml(c.country)}</span>
       <div class="sr-cii-bar"><div class="sr-cii-bar-fill" style="width:${(c.score/maxScore*100).toFixed(0)}%;background:${color}"></div></div>
       <span class="sr-cii-score ${cls}">${c.score}</span>
@@ -850,6 +899,76 @@ async function loadSitroomSanctions() {
   }).join('');
 }
 
+/* ─── UNHCR Displacement ─── */
+async function loadSitroomDisplacement() {
+  const d = await safeFetch('/api/sitroom/displacement', {}, null);
+  const el = document.getElementById('sitroom-displacement');
+  if (!el) return;
+  if (!d || !d.records?.length) { el.innerHTML = '<div class="sr-empty">No displacement data</div>'; return; }
+  el.innerHTML = d.records.map(r => {
+    let det = {}; try { det = r.detail_json ? JSON.parse(r.detail_json) : {}; } catch(e) {}
+    return `<div class="sitroom-event-item">
+      <div class="sitroom-event-info">
+        <div class="sitroom-event-title">${escapeHtml(r.title || '')}</div>
+        <div class="sitroom-event-meta">${det.recognized ? 'Recognized: ' + Number(det.recognized).toLocaleString() : ''}${det.year ? ' | ' + escapeHtml(String(det.year)) : ''}</div>
+      </div>
+      ${r.source_url ? `<a href="${escapeAttr(r.source_url)}" target="_blank" rel="noopener" class="sitroom-event-link">&#8599;</a>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/* ─── Country Deep Dive ─── */
+async function openCountryDeepDive(country) {
+  const panel = document.getElementById('sr-country-panel');
+  const nameEl = document.getElementById('sr-country-name');
+  const body = document.getElementById('sr-country-body');
+  if (!panel || !body) return;
+  nameEl.textContent = country.toUpperCase();
+  panel.hidden = false;
+  body.innerHTML = '<div class="sr-empty"><div class="sr-radar"></div>Loading intelligence...</div>';
+
+  const d = await safeFetch('/api/sitroom/country/' + encodeURIComponent(country), {}, null);
+  if (!d) { body.innerHTML = '<div class="sr-empty">No data available</div>'; return; }
+
+  let html = '';
+
+  // Event summary
+  if (d.event_summary && Object.keys(d.event_summary).length) {
+    html += '<div class="sr-country-section"><div class="sr-country-section-title">EVENT SIGNALS</div>';
+    for (const [type, count] of Object.entries(d.event_summary)) {
+      html += `<div class="sr-country-stat"><span>${escapeHtml(type.replace(/_/g, ' '))}</span><span class="sr-country-stat-val">${count}</span></div>`;
+    }
+    html += '</div>';
+  }
+
+  // Recent quakes
+  if (d.recent_quakes?.length) {
+    html += '<div class="sr-country-section"><div class="sr-country-section-title">SEISMIC ACTIVITY</div>';
+    d.recent_quakes.forEach(q => {
+      html += `<div class="sr-country-stat"><span>${escapeHtml(q.title || '')}</span><span class="sr-country-stat-val">M${q.magnitude || '?'}</span></div>`;
+    });
+    html += '</div>';
+  }
+
+  // Recent news
+  if (d.recent_news?.length) {
+    html += '<div class="sr-country-section"><div class="sr-country-section-title">RECENT INTELLIGENCE</div>';
+    d.recent_news.forEach(n => {
+      html += `<div class="sitroom-news-item" style="padding:3px 0">
+        <span class="sitroom-news-cat">${escapeHtml(n.category || '')}</span>
+        <div class="sitroom-news-body">
+          <a href="${escapeAttr(n.link || '#')}" target="_blank" rel="noopener" class="sitroom-news-title">${escapeHtml(n.title)}</a>
+          <div class="sitroom-news-meta">${escapeHtml(n.source_name || '')}</div>
+        </div>
+      </div>`;
+    });
+    html += '</div>';
+  }
+
+  if (!html) html = '<div class="sr-empty">No intelligence signals for this country</div>';
+  body.innerHTML = html;
+}
+
 /* ─── Live YouTube Channels ─── */
 let _sitroomChannelsLoaded = false;
 async function loadSitroomLiveChannels() {
@@ -885,11 +1004,21 @@ document.addEventListener('click', e => {
     const fp = document.getElementById('sr-feed-panel');
     if (fp) { fp.hidden = !fp.hidden; if (!fp.hidden) loadSitroomFeeds(); }
   }
+  if (a === 'close-country') {
+    const cp = document.getElementById('sr-country-panel');
+    if (cp) cp.hidden = true;
+  }
 });
 
 document.getElementById('sitroom-news-category')?.addEventListener('change', () => loadSitroomNews());
 document.getElementById('sitroom-quake-filter')?.addEventListener('change', () => renderSitroomQuakes());
 document.querySelectorAll('[data-sitroom-layer]').forEach(cb => cb.addEventListener('change', () => loadSitroomMapData()));
+
+// CII country click -> deep dive
+document.addEventListener('click', e => {
+  const row = e.target.closest('[data-cii-country]');
+  if (row) openCountryDeepDive(row.dataset.ciiCountry);
+});
 
 // Live channel button clicks
 document.addEventListener('click', e => {

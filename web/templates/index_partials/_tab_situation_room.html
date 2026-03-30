@@ -56,6 +56,9 @@
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-bases" data-sitroom-layer="bases"> Mil. Bases</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-cables" data-sitroom-layer="cables"> Cables</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-datacenters" data-sitroom-layer="datacenters"> Data Ctrs</label>
+        <label class="sr-layer"><input type="checkbox" id="sitroom-layer-pipelines" data-sitroom-layer="pipelines"> Pipelines</label>
+        <label class="sr-layer"><input type="checkbox" id="sitroom-layer-waterways" data-sitroom-layer="waterways"> Waterways</label>
+        <label class="sr-layer"><input type="checkbox" id="sitroom-layer-spaceports" data-sitroom-layer="spaceports"> Space</label>
       </div>
       <div id="sitroom-map" class="sr-map" role="img" aria-label="Global event map"></div>
       <div class="sr-map-resize" id="sr-map-resize" title="Drag to resize map"></div>
@@ -175,6 +178,12 @@
         <div id="sitroom-sanctions" class="sr-card-body sr-scroll"><div class="sr-empty">Loading...</div></div>
       </div>
 
+      <!-- Humanitarian / Displacement -->
+      <div class="sr-card">
+        <div class="sr-card-head">DISPLACEMENT (UNHCR)</div>
+        <div id="sitroom-displacement" class="sr-card-body sr-scroll"><div class="sr-empty">Loading...</div></div>
+      </div>
+
     </div>
 
     <!-- Feed Manager Panel (toggled from header gear) -->
@@ -191,5 +200,16 @@
       </div>
       <div id="sitroom-custom-feeds-list" class="sr-custom-feeds"></div>
       <div class="sr-feed-stats"><span id="sitroom-builtin-count">0</span> built-in | <span id="sitroom-custom-count">0</span> custom</div>
+    </div>
+
+    <!-- Country Deep Dive Panel (slide-in from right) -->
+    <div class="sr-country-panel" id="sr-country-panel" hidden>
+      <div class="sr-country-panel-head">
+        <span id="sr-country-name">COUNTRY</span>
+        <button class="sr-btn sr-btn-ghost" data-sitroom-action="close-country" aria-label="Close">&#10005;</button>
+      </div>
+      <div class="sr-country-panel-body" id="sr-country-body">
+        <div class="sr-empty">Select a country from the CII panel</div>
+      </div>
     </div>
   </div>

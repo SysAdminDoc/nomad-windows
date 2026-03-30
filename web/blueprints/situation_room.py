@@ -67,6 +67,7 @@ FETCH_COOLDOWN = {
     'fires': 600, 'disease_outbreaks': 1800,
     'internet_outages': 600,
     'radiation': 1800, 'gdelt_trending': 600, 'sanctions': 3600,
+    'displacement': 7200,
 }
 
 # ─── Live YouTube Channels ────────────────────────────────────────────
@@ -985,6 +986,62 @@ def _fetch_sanctions():
     log.info(f"Situation Room: cached {len(articles)} sanctions/trade items")
 
 
+def _fetch_displacement():
+    """Fetch UNHCR displacement/refugee data."""
+    if not _can_fetch('displacement'):
+        return
+    _set_last_fetch('displacement')
+    try:
+        # UNHCR population statistics API (public, CC BY 4.0)
+        resp = requests.get('https://api.unhcr.org/population/v1/asylum-decisions/',
+                            params={'limit': 20, 'yearFrom': 2024, 'sort': 'decisions_recognized desc'},
+                            timeout=_REQ_TIMEOUT, headers={**_REQ_HEADERS, 'Accept': 'application/json'})
+        if not resp.ok:
+            # Fallback: use UNHCR RSS
+            resp2 = requests.get('https://www.unhcr.org/rss/news.xml',
+                                 timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
+            if resp2.ok:
+                items = _parse_feed(resp2.text, 'UNHCR', 'Displacement')
+                with db_session() as db:
+                    db.execute("DELETE FROM sitroom_events WHERE event_type = 'displacement'")
+                    for a in items[:20]:
+                        eid = hashlib.sha256((a['title'] + a.get('link', '')).encode()).hexdigest()[:16]
+                        db.execute('''INSERT OR IGNORE INTO sitroom_events
+                            (event_id, event_type, title, lat, lng, event_time, source_url, detail_json)
+                            VALUES (?, ?, ?, 0, 0, 0, ?, ?)''',
+                            (eid, 'displacement', a['title'][:500], a.get('link', ''),
+                             json.dumps({'published': a.get('published', ''), 'source': 'UNHCR'})))
+                    db.commit()
+                log.info(f"Situation Room: cached {len(items)} displacement items (RSS fallback)")
+            return
+        data = resp.json()
+    except Exception as e:
+        log.debug(f"UNHCR fetch failed: {e}")
+        return
+
+    items = data.get('items', [])
+    if not items:
+        return
+
+    with db_session() as db:
+        db.execute("DELETE FROM sitroom_events WHERE event_type = 'displacement'")
+        for item in items[:20]:
+            country = item.get('country_of_origin_en', item.get('country_of_origin', ''))
+            asylum = item.get('country_of_asylum_en', item.get('country_of_asylum', ''))
+            recognized = item.get('decisions_recognized', 0)
+            total = item.get('decisions_total', 0)
+            eid = hashlib.sha256(f"disp:{country}:{asylum}".encode()).hexdigest()[:16]
+            db.execute('''INSERT OR IGNORE INTO sitroom_events
+                (event_id, event_type, title, magnitude, lat, lng, event_time, detail_json)
+                VALUES (?, ?, ?, ?, 0, 0, 0, ?)''',
+                (eid, 'displacement', f"{country} -> {asylum}",
+                 recognized or 0,
+                 json.dumps({'origin': country, 'asylum': asylum, 'recognized': recognized,
+                             'total': total, 'year': item.get('year', '')})))
+        db.commit()
+    log.info(f"Situation Room: cached {len(items)} displacement records")
+
+
 # ─── Refresh Orchestrator ──────────────────────────────────────────────
 
 def refresh_all_feeds():
@@ -1012,6 +1069,7 @@ def refresh_all_feeds():
             _fetch_radiation()
             _fetch_gdelt_trending()
             _fetch_sanctions()
+            _fetch_displacement()
         except Exception as e:
             log.exception(f"Situation Room refresh error: {e}")
         finally:
@@ -1341,6 +1399,41 @@ def api_sitroom_sanctions():
     with db_session() as db:
         rows = db.execute("SELECT * FROM sitroom_events WHERE event_type = 'sanctions' ORDER BY cached_at DESC LIMIT 20").fetchall()
     return jsonify({'items': [dict(r) for r in rows], 'count': len(rows)})
+
+
+@situation_room_bp.route('/api/sitroom/displacement')
+def api_sitroom_displacement():
+    """Return UNHCR displacement data."""
+    with db_session() as db:
+        rows = db.execute("SELECT * FROM sitroom_events WHERE event_type = 'displacement' ORDER BY magnitude DESC LIMIT 20").fetchall()
+    return jsonify({'records': [dict(r) for r in rows], 'count': len(rows)})
+
+
+@situation_room_bp.route('/api/sitroom/country/<country>')
+def api_sitroom_country_deep_dive(country):
+    """Return aggregated intelligence for a specific country."""
+    with db_session() as db:
+        # Events mentioning this country
+        events = db.execute(
+            "SELECT event_type, COUNT(*) as cnt FROM sitroom_events WHERE detail_json LIKE ? GROUP BY event_type",
+            (f'%{country}%',)).fetchall()
+
+        # News mentioning this country
+        news = db.execute(
+            "SELECT title, link, category, source_name FROM sitroom_news WHERE title LIKE ? OR description LIKE ? ORDER BY cached_at DESC LIMIT 15",
+            (f'%{country}%', f'%{country}%')).fetchall()
+
+        # Earthquakes near this country
+        quakes = db.execute(
+            "SELECT title, magnitude FROM sitroom_events WHERE event_type = 'earthquake' AND title LIKE ? ORDER BY magnitude DESC LIMIT 5",
+            (f'%{country}%',)).fetchall()
+
+    return jsonify({
+        'country': country,
+        'event_summary': {dict(e)['event_type']: dict(e)['cnt'] for e in events},
+        'recent_news': [dict(r) for r in news],
+        'recent_quakes': [dict(r) for r in quakes],
+    })
 
 
 @situation_room_bp.route('/api/sitroom/internet-outages')

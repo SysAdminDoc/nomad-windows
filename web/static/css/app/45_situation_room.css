@@ -329,6 +329,28 @@
 .sitroom-custom-feed-name { font-weight: 600; color: #c8ccd0; }
 .sr-feed-stats { font-size: 8px; color: #333; padding: 3px 12px 6px; }
 
+/* ─── Country Deep Dive Panel (slide-in right) ─── */
+.sr-country-panel {
+  position: absolute; top: 0; right: 0; bottom: 0; z-index: 200;
+  width: 380px; max-width: 90%;
+  background: #0e0e0e; border-left: 1px solid #2a2a2a;
+  box-shadow: -8px 0 32px rgba(0,0,0,0.6);
+  display: flex; flex-direction: column;
+  transform: translateX(100%); transition: transform 0.25s ease;
+}
+.sr-country-panel:not([hidden]) { transform: translateX(0); }
+.sr-country-panel[hidden] { display: flex; transform: translateX(100%); pointer-events: none; }
+.sr-country-panel-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 14px; font-size: 13px; font-weight: 700; letter-spacing: 0.12em;
+  color: #e0e4e8; border-bottom: 1px solid #2a2a2a; background: #111; flex-shrink: 0;
+}
+.sr-country-panel-body { flex: 1; overflow-y: auto; padding: 0; }
+.sr-country-section { padding: 10px 14px; border-bottom: 1px solid #1e1e1e; }
+.sr-country-section-title { font-size: 8px; font-weight: 700; letter-spacing: 0.12em; color: #555; margin-bottom: 6px; text-transform: uppercase; }
+.sr-country-stat { display: flex; justify-content: space-between; font-size: 11px; padding: 2px 0; color: #c8ccd0; }
+.sr-country-stat-val { font-weight: 700; }
+
 /* ─── Feed Manager Panel (overlay) ─── */
 .sr-feed-panel {
   position: absolute; top: 68px; right: 12px; z-index: 100;

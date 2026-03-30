@@ -15,6 +15,7 @@
       </div>
       <div class="sr-header-right">
         <span id="sitroom-last-update" class="sr-ts"></span>
+        <span id="sitroom-threat-level" class="sr-threat-badge" title="Composite threat level">LEVEL 5</span>
         <span id="sitroom-online-badge" class="sitroom-badge sitroom-badge-offline">OFFLINE</span>
         <button class="sr-btn" data-sitroom-action="toggle-feeds" title="Manage feeds">&#9881;</button>
         <button class="sr-btn sr-btn-accent" id="sitroom-refresh-btn" data-sitroom-action="refresh">REFRESH</button>
@@ -49,6 +50,8 @@
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-fires" data-sitroom-layer="fires"> Fires</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-nuclear" data-sitroom-layer="nuclear"> Nuclear</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-bases" data-sitroom-layer="bases"> Mil. Bases</label>
+        <label class="sr-layer"><input type="checkbox" id="sitroom-layer-cables" data-sitroom-layer="cables"> Cables</label>
+        <label class="sr-layer"><input type="checkbox" id="sitroom-layer-datacenters" data-sitroom-layer="datacenters"> Data Ctrs</label>
       </div>
       <div id="sitroom-map" class="sr-map" role="img" aria-label="Global event map"></div>
       <div class="sr-map-resize" id="sr-map-resize" title="Drag to resize map"></div>
@@ -127,6 +130,12 @@
       <div class="sr-card">
         <div class="sr-card-head">DISEASE OUTBREAKS (WHO)</div>
         <div id="sitroom-diseases-list" class="sr-card-body sr-scroll"><div class="sr-empty">Loading...</div></div>
+      </div>
+
+      <!-- Internet Outages -->
+      <div class="sr-card">
+        <div class="sr-card-head">INTERNET DISRUPTIONS</div>
+        <div id="sitroom-outages-list" class="sr-card-body sr-scroll"><div class="sr-empty">Loading...</div></div>
       </div>
 
       <!-- Country Intelligence Index -->

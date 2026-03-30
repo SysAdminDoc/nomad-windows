@@ -65,6 +65,7 @@ FETCH_COOLDOWN = {
     'markets': 300, 'conflicts': 600, 'aviation': 180,
     'space_weather': 300, 'volcanoes': 3600, 'predictions': 600,
     'fires': 600, 'disease_outbreaks': 1800,
+    'internet_outages': 600,
 }
 
 # ─── Live YouTube Channels ────────────────────────────────────────────
@@ -442,10 +443,11 @@ def _fetch_market_data():
 
     # Crypto (CoinGecko)
     try:
-        resp = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana&vs_currencies=usd&include_24hr_change=true',
+        resp = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,ripple,cardano,dogecoin&vs_currencies=usd&include_24hr_change=true',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            names = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL'}
+            names = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL',
+                     'binancecoin': 'BNB', 'ripple': 'XRP', 'cardano': 'ADA', 'dogecoin': 'DOGE'}
             for coin, vals in resp.json().items():
                 markets.append({'symbol': names.get(coin, coin.upper()), 'price': vals.get('usd', 0),
                                 'change_24h': round(vals.get('usd_24h_change') or 0, 2), 'market_type': 'crypto'})
@@ -781,6 +783,66 @@ def _fetch_fires():
     log.info(f"Situation Room: cached {len(fires)} fire detections")
 
 
+def _fetch_internet_outages():
+    """Fetch internet outage/disruption data from public sources."""
+    if not _can_fetch('internet_outages'):
+        return
+    _set_last_fetch('internet_outages')
+
+    outages = []
+
+    # Cloudflare Radar - public outage summary (no auth for basic data)
+    try:
+        resp = requests.get('https://radar.cloudflare.com/api/v1/annotations/outages?dateRange=1d&format=json',
+                            timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
+        if resp.ok:
+            data = resp.json()
+            for item in (data.get('annotations', []) or data.get('result', {}).get('annotations', []))[:30]:
+                outages.append({
+                    'title': item.get('description', item.get('eventType', 'Internet disruption')),
+                    'country': item.get('locations', item.get('asns', '')),
+                    'start': item.get('startDate', ''),
+                    'end': item.get('endDate', ''),
+                    'scope': item.get('scope', ''),
+                })
+    except Exception as e:
+        log.debug(f"Cloudflare Radar failed: {e}")
+
+    # Fallback: IODA (Internet Outage Detection and Analysis) from Georgia Tech
+    if not outages:
+        try:
+            resp = requests.get('https://api.ioda.inetintel.cc.gatech.edu/v2/alerts/ongoing',
+                                timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
+            if resp.ok:
+                data = resp.json()
+                for alert in (data.get('data', []))[:20]:
+                    outages.append({
+                        'title': f"Internet disruption: {alert.get('entityName', 'Unknown')}",
+                        'country': alert.get('entityName', ''),
+                        'start': alert.get('time', ''),
+                        'end': '',
+                        'scope': alert.get('level', ''),
+                    })
+        except Exception as e:
+            log.debug(f"IODA fallback failed: {e}")
+
+    if not outages:
+        return
+
+    with db_session() as db:
+        db.execute("DELETE FROM sitroom_events WHERE event_type = 'internet_outage'")
+        for o in outages:
+            eid = hashlib.sha256((o['title'] + o.get('start', '')).encode()).hexdigest()[:16]
+            db.execute('''INSERT OR IGNORE INTO sitroom_events
+                (event_id, event_type, title, lat, lng, event_time, detail_json)
+                VALUES (?, ?, ?, 0, 0, 0, ?)''',
+                (eid, 'internet_outage', o['title'][:500],
+                 json.dumps({'country': o.get('country', ''), 'start': o.get('start', ''),
+                             'end': o.get('end', ''), 'scope': o.get('scope', '')})))
+        db.commit()
+    log.info(f"Situation Room: cached {len(outages)} internet outages")
+
+
 def _fetch_disease_outbreaks():
     """Fetch disease outbreak data from WHO RSS."""
     if not _can_fetch('disease_outbreaks'):
@@ -835,6 +897,7 @@ def refresh_all_feeds():
             _fetch_predictions()
             _fetch_fires()
             _fetch_disease_outbreaks()
+            _fetch_internet_outages()
         except Exception as e:
             log.exception(f"Situation Room refresh error: {e}")
         finally:
@@ -975,7 +1038,8 @@ def api_sitroom_summary():
             (SELECT COUNT(*) FROM sitroom_predictions WHERE active = 1) as predictions,
             (SELECT COUNT(*) FROM sitroom_custom_feeds) as custom_feeds,
             (SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'fire') as fires,
-            (SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'disease') as diseases
+            (SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'disease') as diseases,
+            (SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'internet_outage') as outages
         ''').fetchone()
 
         top_quakes = db.execute(
@@ -995,6 +1059,7 @@ def api_sitroom_summary():
         'volcano_count': counts['volcanoes'], 'prediction_count': counts['predictions'],
         'custom_feed_count': counts['custom_feeds'],
         'fire_count': counts['fires'], 'disease_count': counts['diseases'],
+        'outage_count': counts['outages'],
         'top_earthquakes': [dict(r) for r in top_quakes],
         'markets': [dict(r) for r in market_rows],
         'space_weather': space_weather,
@@ -1138,6 +1203,14 @@ def api_sitroom_diseases():
     with db_session() as db:
         rows = db.execute("SELECT * FROM sitroom_events WHERE event_type = 'disease' ORDER BY cached_at DESC LIMIT 30").fetchall()
     return jsonify({'outbreaks': [dict(r) for r in rows], 'count': len(rows)})
+
+
+@situation_room_bp.route('/api/sitroom/internet-outages')
+def api_sitroom_internet_outages():
+    """Return cached internet outage data."""
+    with db_session() as db:
+        rows = db.execute("SELECT * FROM sitroom_events WHERE event_type = 'internet_outage' ORDER BY cached_at DESC LIMIT 30").fetchall()
+    return jsonify({'outages': [dict(r) for r in rows], 'count': len(rows)})
 
 
 @situation_room_bp.route('/api/sitroom/live-channels')

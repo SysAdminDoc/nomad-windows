@@ -1,7 +1,7 @@
 /* ─── Situation Room v2 — Global Intelligence Dashboard ─── */
 
 let _sitroomMap = null;
-let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [] };
+let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [] };
 let _sitroomNewsOffset = 0;
 const SITROOM_NEWS_PAGE = 50;
 let _sitroomAutoTimer = null;
@@ -36,6 +36,7 @@ function _sitroomRefreshPanels() {
   renderSitroomBreakingNews();
   loadSitroomFires();
   loadSitroomDiseases();
+  loadSitroomOutages();
   loadSitroomLiveChannels();
 }
 
@@ -136,6 +137,31 @@ const _MILITARY_BASES = [
   {lat:36.07,lng:120.38,name:'Qingdao, China'},{lat:30.00,lng:122.15,name:'Zhoushan, China'},
   {lat:37.47,lng:126.62,name:'Pyeongtaek/Osan, S. Korea'},{lat:51.28,lng:-0.77,name:'Aldershot, UK'},
   {lat:48.73,lng:44.50,name:'Volgograd, Russia'},{lat:55.01,lng:82.93,name:'Novosibirsk, Russia'},
+];
+
+const _CABLE_LANDINGS = [
+  {lat:50.95,lng:1.85,name:'Calais Cable Landing, FR'},{lat:51.13,lng:1.32,name:'Dover Cable Landing, UK'},
+  {lat:40.57,lng:-73.97,name:'NYC Cable Hub, US'},{lat:37.78,lng:-122.41,name:'SF Cable Hub, US'},
+  {lat:25.77,lng:-80.19,name:'Miami Cable Hub, US'},{lat:22.28,lng:114.17,name:'Hong Kong Cable Hub'},
+  {lat:1.29,lng:103.85,name:'Singapore Cable Hub'},{lat:35.68,lng:139.77,name:'Tokyo Cable Hub, JP'},
+  {lat:-33.87,lng:151.21,name:'Sydney Cable Hub, AU'},{lat:6.45,lng:3.39,name:'Lagos Cable Hub, NG'},
+  {lat:32.08,lng:34.78,name:'Tel Aviv Cable Hub, IL'},{lat:25.20,lng:55.27,name:'Dubai Cable Hub, UAE'},
+  {lat:13.08,lng:80.28,name:'Chennai Cable Hub, IN'},{lat:4.62,lng:-74.07,name:'Bogota Cable Landing, CO'},
+  {lat:-22.91,lng:-43.17,name:'Rio Cable Hub, BR'},{lat:51.50,lng:0.08,name:'London Docklands Hub, UK'},
+  {lat:52.37,lng:4.90,name:'Amsterdam Cable Hub, NL'},{lat:60.17,lng:24.94,name:'Helsinki Cable Hub, FI'},
+  {lat:59.33,lng:18.07,name:'Stockholm Cable Hub, SE'},{lat:36.20,lng:-5.37,name:'Gibraltar Cable Hub'},
+];
+const _DATA_CENTERS = [
+  {lat:39.04,lng:-77.49,name:'Ashburn VA, US (largest cluster)'},{lat:37.37,lng:-121.92,name:'Santa Clara CA, US'},
+  {lat:53.35,lng:-6.26,name:'Dublin, Ireland (EU hub)'},{lat:50.11,lng:8.68,name:'Frankfurt, Germany'},
+  {lat:52.37,lng:4.90,name:'Amsterdam, Netherlands'},{lat:51.50,lng:-0.12,name:'London, UK'},
+  {lat:59.33,lng:18.07,name:'Stockholm, Sweden'},{lat:1.35,lng:103.82,name:'Singapore'},
+  {lat:35.68,lng:139.69,name:'Tokyo, Japan'},{lat:22.32,lng:114.17,name:'Hong Kong'},
+  {lat:37.57,lng:126.98,name:'Seoul, South Korea'},{lat:-33.87,lng:151.21,name:'Sydney, Australia'},
+  {lat:25.20,lng:55.27,name:'Dubai, UAE'},{lat:19.08,lng:72.88,name:'Mumbai, India'},
+  {lat:-23.55,lng:-46.63,name:'Sao Paulo, Brazil'},{lat:45.50,lng:-73.57,name:'Montreal, Canada'},
+  {lat:47.61,lng:-122.33,name:'Seattle WA, US'},{lat:33.75,lng:-84.39,name:'Atlanta GA, US'},
+  {lat:41.88,lng:-87.63,name:'Chicago IL, US'},{lat:32.78,lng:-96.80,name:'Dallas TX, US'},
 ];
 
 function initSitroomMap() {
@@ -249,6 +275,24 @@ async function loadSitroomMapData() {
         event_type: 'military_base', magnitude: null, depth_km: null}, 'bases');
     });
   } else { clearSitroomMarkers('bases'); }
+
+  // Undersea cable landings (static)
+  if (document.getElementById('sitroom-layer-cables')?.checked) {
+    clearSitroomMarkers('cables');
+    _CABLE_LANDINGS.forEach(s => {
+      addSitroomMarker({lat: s.lat, lng: s.lng, title: s.name,
+        event_type: 'cable', magnitude: null, depth_km: null}, 'cables');
+    });
+  } else { clearSitroomMarkers('cables'); }
+
+  // Data centers (static)
+  if (document.getElementById('sitroom-layer-datacenters')?.checked) {
+    clearSitroomMarkers('datacenters');
+    _DATA_CENTERS.forEach(s => {
+      addSitroomMarker({lat: s.lat, lng: s.lng, title: s.name,
+        event_type: 'datacenter', magnitude: null, depth_km: null}, 'datacenters');
+    });
+  } else { clearSitroomMarkers('datacenters'); }
 }
 
 function clearSitroomMarkers(layerType) {
@@ -258,7 +302,7 @@ function clearSitroomMarkers(layerType) {
 
 function addSitroomMarker(ev, layerType) {
   if (!_sitroomMap) return;
-  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88' };
+  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88', cables: '#3388ff', datacenters: '#aa66ff' };
   const color = colors[layerType] || '#ffffff';
   let size = layerType === 'aviation' ? 5 : 8;
   if (ev.magnitude) size = Math.max(6, Math.min(24, ev.magnitude * 3));
@@ -309,6 +353,7 @@ async function loadSitroomSummary() {
   renderSitroomMarketRibbon(d.markets || []);
   renderSitroomFearGreed(d.markets || []);
   renderSitroomSpaceWeather(d.space_weather);
+  _updateThreatLevel(d);
   renderSitroomQuakes();
   loadSitroomWeather();
   loadSitroomPredictions();
@@ -626,6 +671,52 @@ async function loadSitroomIntelFeed() {
       <div class="sr-intel-meta">${escapeHtml(a.source_name || '')}</div>
     </div>
   </div>`).join('');
+}
+
+/* ─── Threat Level (DEFCON-style composite) ─── */
+function _updateThreatLevel(d) {
+  const el = document.getElementById('sitroom-threat-level');
+  if (!el) return;
+  // Composite score from event counts
+  let score = 0;
+  score += Math.min(20, (d.earthquake_count || 0) * 2);
+  score += Math.min(15, (d.weather_alert_count || 0));
+  score += Math.min(25, (d.conflict_count || 0) * 3);
+  score += Math.min(15, (d.fire_count || 0) / 10);
+  score += Math.min(10, (d.disease_count || 0) * 2);
+  score += Math.min(10, (d.outage_count || 0) * 3);
+  // Space weather
+  if (d.space_weather) {
+    const g = d.space_weather.G || {}; const s = d.space_weather.S || {}; const r = d.space_weather.R || {};
+    score += ((g.Scale || 0) + (s.Scale || 0) + (r.Scale || 0)) * 2;
+  }
+  // Map to DEFCON-style 1-5 (5 = lowest threat)
+  let level = 5;
+  if (score >= 60) level = 1;
+  else if (score >= 40) level = 2;
+  else if (score >= 25) level = 3;
+  else if (score >= 10) level = 4;
+  const labels = {1:'CRITICAL',2:'SEVERE',3:'ELEVATED',4:'GUARDED',5:'NORMAL'};
+  el.textContent = labels[level];
+  el.setAttribute('data-level', level);
+}
+
+/* ─── Internet Outages ─── */
+async function loadSitroomOutages() {
+  const d = await safeFetch('/api/sitroom/internet-outages', {}, null);
+  const el = document.getElementById('sitroom-outages-list');
+  if (!el) return;
+  if (!d || !d.outages?.length) { el.innerHTML = '<div class="sr-empty">No internet disruptions</div>'; return; }
+  el.innerHTML = d.outages.map(o => {
+    let det = {}; try { det = o.detail_json ? JSON.parse(o.detail_json) : {}; } catch(e) {}
+    return `<div class="sitroom-event-item">
+      <span class="sitroom-mag" style="background:#3388ff;color:#fff">NET</span>
+      <div class="sitroom-event-info">
+        <div class="sitroom-event-title" title="${escapeAttr(o.title || '')}">${escapeHtml(o.title || 'Disruption')}</div>
+        <div class="sitroom-event-meta">${det.country ? escapeHtml(det.country) : ''}${det.start ? ' | ' + escapeHtml(det.start) : ''}${det.scope ? ' | ' + escapeHtml(det.scope) : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 /* ─── Fear & Greed Gauge ─── */

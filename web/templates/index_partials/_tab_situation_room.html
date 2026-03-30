@@ -1,6 +1,9 @@
   <!-- Situation Room Tab -->
   <div id="tab-situation-room" class="tab-content active">
 
+    <!-- Auto-Refresh Progress Bar -->
+    <div class="sr-refresh-bar" id="sr-refresh-bar"></div>
+
     <!-- Breaking News Banner -->
     <div class="sr-breaking" id="sr-breaking">
       <span class="sr-breaking-badge">BREAKING</span>
@@ -21,6 +24,7 @@
         <span id="sitroom-threat-level" class="sr-threat-badge" title="Composite threat level">LEVEL 5</span>
         <span class="sr-status-dot" id="sr-status-dot" title="Data status"></span>
         <span id="sitroom-online-badge" class="sitroom-badge sitroom-badge-offline">OFFLINE</span>
+        <button class="sr-btn" data-sitroom-action="open-search" title="Search (Ctrl+K)">&#128269; Search</button>
         <button class="sr-btn" data-sitroom-action="toggle-feeds" title="Manage feeds">&#9881;</button>
         <button class="sr-btn sr-btn-accent" id="sitroom-refresh-btn" data-sitroom-action="refresh">REFRESH</button>
       </div>
@@ -188,6 +192,12 @@
         <div id="sitroom-sanctions" class="sr-card-body sr-scroll"><div class="sr-empty">Loading...</div></div>
       </div>
 
+      <!-- World Clock -->
+      <div class="sr-card">
+        <div class="sr-card-head">WORLD CLOCK</div>
+        <div id="sitroom-world-clock" class="sr-card-body sr-clock-grid"></div>
+      </div>
+
       <!-- Humanitarian / Displacement -->
       <div class="sr-card">
         <div class="sr-card-head">DISPLACEMENT (UNHCR)</div>
@@ -220,6 +230,15 @@
       </div>
       <div class="sr-country-panel-body" id="sr-country-body">
         <div class="sr-empty">Select a country from the CII panel</div>
+      </div>
+    </div>
+
+    <!-- Search Modal -->
+    <div class="sr-search-overlay" id="sr-search-overlay" hidden>
+      <div class="sr-search-modal">
+        <input type="text" id="sr-search-input" class="sr-search-input" placeholder="Search news, events, countries..." autocomplete="off" spellcheck="false">
+        <div class="sr-search-results" id="sr-search-results"></div>
+        <div class="sr-search-hint">ESC to close &bull; Type to search cached data</div>
       </div>
     </div>
   </div>

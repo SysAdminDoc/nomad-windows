@@ -23,6 +23,9 @@ function initSituationRoom() {
   initSitroomMap();
   _initSitroomMapResize();
   _initSitroomClock();
+  _initSitroomWorldClock();
+  _initSitroomSearch();
+  _initRefreshBar();
   _sitroomAutoRefreshIfEmpty();
   if (_sitroomAutoTimer) clearInterval(_sitroomAutoTimer);
   _sitroomAutoTimer = setInterval(_sitroomRefreshPanels, 60000);
@@ -944,6 +947,100 @@ async function loadSitroomDiseases() {
   }).join('');
 }
 
+/* ─── Auto-Refresh Progress Bar ─── */
+function _initRefreshBar() {
+  const bar = document.getElementById('sr-refresh-bar');
+  if (bar) bar.classList.add('active');
+}
+
+/* ─── World Clock ─── */
+const _WORLD_CLOCK_ZONES = [
+  {city:'New York',tz:'America/New_York'},{city:'London',tz:'Europe/London'},
+  {city:'Paris',tz:'Europe/Paris'},{city:'Moscow',tz:'Europe/Moscow'},
+  {city:'Dubai',tz:'Asia/Dubai'},{city:'Mumbai',tz:'Asia/Kolkata'},
+  {city:'Beijing',tz:'Asia/Shanghai'},{city:'Tokyo',tz:'Asia/Tokyo'},
+  {city:'Sydney',tz:'Australia/Sydney'},{city:'Los Angeles',tz:'America/Los_Angeles'},
+  {city:'Chicago',tz:'America/Chicago'},{city:'Sao Paulo',tz:'America/Sao_Paulo'},
+];
+
+function _initSitroomWorldClock() {
+  const el = document.getElementById('sitroom-world-clock');
+  if (!el) return;
+  const render = () => {
+    const now = new Date();
+    el.innerHTML = _WORLD_CLOCK_ZONES.map(z => {
+      try {
+        const opts = {timeZone: z.tz, hour: '2-digit', minute: '2-digit', hour12: false};
+        const dateOpts = {timeZone: z.tz, month: 'short', day: 'numeric'};
+        const time = now.toLocaleTimeString('en-US', opts);
+        const date = now.toLocaleDateString('en-US', dateOpts);
+        const hour = parseInt(time.split(':')[0]);
+        const isNight = hour < 6 || hour >= 20;
+        return `<div class="sr-clock-cell${isNight ? ' night' : ''}">
+          <div class="sr-clock-city">${z.city}</div>
+          <div class="sr-clock-time">${time}</div>
+          <div class="sr-clock-date">${date}</div>
+        </div>`;
+      } catch(e) { return ''; }
+    }).join('');
+  };
+  render();
+  setInterval(render, 30000);
+}
+
+/* ─── Search Modal (Ctrl+K) ─── */
+function _initSitroomSearch() {
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      _toggleSitroomSearch(true);
+    }
+    if (e.key === 'Escape') _toggleSitroomSearch(false);
+  });
+}
+
+function _toggleSitroomSearch(show) {
+  const overlay = document.getElementById('sr-search-overlay');
+  const input = document.getElementById('sr-search-input');
+  if (!overlay) return;
+  overlay.hidden = !show;
+  if (show) { input.value = ''; input.focus(); document.getElementById('sr-search-results').innerHTML = ''; }
+}
+
+let _searchDebounce = null;
+async function _sitroomDoSearch(query) {
+  const results = document.getElementById('sr-search-results');
+  if (!results) return;
+  if (!query || query.length < 2) { results.innerHTML = ''; return; }
+
+  const d = await safeFetch('/api/sitroom/news?limit=20&category=', {}, null);
+  const ev = await safeFetch('/api/sitroom/events?limit=100', {}, null);
+  const q = query.toLowerCase();
+  let html = '';
+
+  // Search news
+  if (d?.articles) {
+    d.articles.filter(a => (a.title || '').toLowerCase().includes(q)).slice(0, 8).forEach(a => {
+      html += `<a href="${escapeAttr(a.link || '#')}" target="_blank" rel="noopener" class="sr-search-result">
+        <span class="sr-search-result-type">${escapeHtml(a.category || 'NEWS')}</span>
+        <span class="sr-search-result-title">${escapeHtml(a.title)}</span>
+      </a>`;
+    });
+  }
+
+  // Search events
+  if (ev?.events) {
+    ev.events.filter(e => (e.title || '').toLowerCase().includes(q)).slice(0, 5).forEach(e => {
+      html += `<div class="sr-search-result" onclick="if(_sitroomMap){_sitroomMap.flyTo({center:[${e.lng||0},${e.lat||0}],zoom:6});_toggleSitroomSearch(false)}">
+        <span class="sr-search-result-type" style="background:#3a1515;color:#e05050">${escapeHtml(e.event_type || 'EVENT')}</span>
+        <span class="sr-search-result-title">${escapeHtml(e.title)}</span>
+      </div>`;
+    });
+  }
+
+  results.innerHTML = html || '<div class="sr-empty" style="padding:12px">No results</div>';
+}
+
 /* ─── UTC Clock ─── */
 function _initSitroomClock() {
   const el = document.getElementById('sr-utc-clock');
@@ -1123,6 +1220,7 @@ document.addEventListener('click', e => {
     const cp = document.getElementById('sr-country-panel');
     if (cp) cp.hidden = true;
   }
+  if (a === 'open-search') _toggleSitroomSearch(true);
 });
 
 document.getElementById('sitroom-news-category')?.addEventListener('change', () => loadSitroomNews());
@@ -1130,6 +1228,17 @@ document.getElementById('sitroom-quake-filter')?.addEventListener('change', () =
 document.querySelectorAll('[data-sitroom-layer]').forEach(cb => cb.addEventListener('change', () => {
   loadSitroomMapData(); _updateMapLegend(); _renderDayNight();
 }));
+
+// Search input handler
+document.getElementById('sr-search-input')?.addEventListener('input', e => {
+  clearTimeout(_searchDebounce);
+  _searchDebounce = setTimeout(() => _sitroomDoSearch(e.target.value.trim()), 300);
+});
+
+// Search overlay click-to-close
+document.getElementById('sr-search-overlay')?.addEventListener('click', e => {
+  if (e.target.id === 'sr-search-overlay') _toggleSitroomSearch(false);
+});
 
 // Panel collapse on header click (but not on buttons/selects inside header)
 document.addEventListener('click', e => {

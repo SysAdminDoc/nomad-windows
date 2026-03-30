@@ -41,6 +41,18 @@
 }
 @media (max-width: 900px) { #tab-situation-room { margin: -20px -16px; width: calc(100% + 32px); } }
 
+/* ─── Auto-Refresh Progress Bar ─── */
+.sr-refresh-bar {
+  height: 2px; background: transparent; flex-shrink: 0; position: relative; overflow: hidden;
+}
+.sr-refresh-bar::after {
+  content: ''; position: absolute; top: 0; left: 0; height: 100%;
+  background: linear-gradient(90deg, transparent, #0f5040, #4aedc4, #0f5040, transparent);
+  width: 0%; transition: width 1s linear;
+}
+.sr-refresh-bar.active::after { animation: sr-refresh-sweep 60s linear infinite; }
+@keyframes sr-refresh-sweep { 0%{width:0%} 100%{width:100%} }
+
 /* ─── Breaking News ─── */
 .sr-breaking {
   display: flex; align-items: center; gap: 10px; padding: 0 12px; height: 26px;
@@ -373,6 +385,44 @@
 .sitroom-custom-feed-item { display: flex; align-items: center; gap: 8px; padding: 3px 0; border-bottom: 1px solid #1e1e1e; font-size: 11px; }
 .sitroom-custom-feed-name { font-weight: 600; color: #c8ccd0; }
 .sr-feed-stats { font-size: 8px; color: #333; padding: 3px 12px 6px; }
+
+/* ─── Search Modal ─── */
+.sr-search-overlay {
+  position: absolute; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.7); display: flex; align-items: flex-start; justify-content: center;
+  padding-top: 12vh;
+}
+.sr-search-overlay[hidden] { display: none; }
+.sr-search-modal {
+  width: 520px; max-width: 90%; background: #141414; border: 1px solid #2a2a2a;
+  border-radius: 8px; box-shadow: 0 20px 60px rgba(0,0,0,0.8); overflow: hidden;
+}
+.sr-search-input {
+  width: 100%; padding: 14px 18px; font-family: inherit; font-size: 14px;
+  background: #141414; border: none; border-bottom: 1px solid #2a2a2a;
+  color: #e0e4e8; outline: none;
+}
+.sr-search-input::placeholder { color: #555; }
+.sr-search-results { max-height: 360px; overflow-y: auto; }
+.sr-search-result {
+  display: flex; align-items: center; gap: 10px; padding: 8px 18px;
+  border-bottom: 1px solid #1e1e1e; cursor: pointer; transition: background 0.1s;
+}
+.sr-search-result:hover { background: #1a1a1a; }
+.sr-search-result-type { font-size: 7px; font-weight: 700; letter-spacing: 0.06em; padding: 1px 5px; border-radius: 2px; background: #0f5040; color: #4aedc4; flex-shrink: 0; }
+.sr-search-result-title { font-size: 12px; color: #c8ccd0; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sr-search-hint { padding: 6px 18px; font-size: 9px; color: #333; border-top: 1px solid #1e1e1e; }
+
+/* ─── World Clock ─── */
+.sr-clock-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 0; }
+.sr-clock-cell {
+  text-align: center; padding: 10px 4px; border-right: 1px solid #1e1e1e; border-bottom: 1px solid #1e1e1e;
+}
+.sr-clock-city { font-size: 7px; letter-spacing: 0.08em; color: #555; text-transform: uppercase; }
+.sr-clock-time { font-size: 16px; font-weight: 700; color: #e0e4e8; margin: 2px 0; }
+.sr-clock-date { font-size: 8px; color: #444; }
+.sr-clock-cell.night { background: #080810; }
+.sr-clock-cell.night .sr-clock-time { color: #8888aa; }
 
 /* ─── Country Deep Dive Panel (slide-in right) ─── */
 .sr-country-panel {

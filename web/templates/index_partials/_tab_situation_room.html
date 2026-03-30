@@ -65,6 +65,8 @@
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-waterways" data-sitroom-layer="waterways"> Waterways</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-spaceports" data-sitroom-layer="spaceports"> Space</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-daynight" data-sitroom-layer="daynight"> Day/Night</label>
+        <span class="sr-map-toolbar-sep"></span>
+        <button class="sr-btn sr-btn-globe" id="sr-globe-toggle" data-sitroom-action="toggle-globe" title="Toggle 2D/3D Globe">3D</button>
       </div>
       <button class="sr-map-fullscreen-btn" id="sr-map-fullscreen" data-sitroom-action="toggle-map-fullscreen" title="Toggle fullscreen map (F)">&#x26F6;</button>
       <!-- Map Legend -->
@@ -167,6 +169,12 @@
           <div class="sr-cii-intro">Composite risk scoring from earthquake, weather, conflict, and news signal density per country.</div>
           <div id="sr-cii-list"></div>
         </div>
+      </div>
+
+      <!-- Event Timeline -->
+      <div class="sr-card sr-card-wide">
+        <div class="sr-card-head">EVENT TIMELINE</div>
+        <div id="sitroom-timeline" class="sr-card-body sr-timeline-body"><div class="sr-empty">Loading...</div></div>
       </div>
 
       <!-- Intel Feed -->

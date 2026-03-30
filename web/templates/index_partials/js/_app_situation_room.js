@@ -1,4 +1,4 @@
-/* ─── Situation Room v2 — Global Intelligence Dashboard ─── */
+/* ─── Situation Room v4 — World Monitor Intelligence Dashboard ─── */
 
 let _sitroomMap = null;
 let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [], pipelines: [], waterways: [], spaceports: [] };
@@ -216,6 +216,8 @@ function initSitroomMap() {
     _sitroomMap.on('load', () => {
       _sitroomResizeMap();
       loadSitroomMapData();
+      _updateMapLegend();
+      setTimeout(_renderDayNight, 500);
     });
     // Resize on window resize for full-bleed flex layout
     window.addEventListener('resize', _sitroomResizeMap);
@@ -406,8 +408,10 @@ async function loadSitroomSummary() {
   renderSitroomMarkets(d.markets || []);
   renderSitroomMarketRibbon(d.markets || []);
   renderSitroomFearGreed(d.markets || []);
+  renderSitroomSectorHeatmap(d.markets || []);
   renderSitroomSpaceWeather(d.space_weather);
   _updateThreatLevel(d);
+  _updateStatusDot(d);
   renderSitroomQuakes();
   loadSitroomWeather();
   loadSitroomPredictions();
@@ -649,10 +653,25 @@ function _timeAgo(date) {
 async function renderSitroomBreakingNews() {
   const el = document.getElementById('sr-breaking-text');
   if (!el) return;
-  const d = await safeFetch('/api/sitroom/news?limit=15', {}, null);
-  if (!d || !d.articles?.length) { el.textContent = 'No breaking news'; return; }
-  const text = d.articles.map(a => escapeHtml(a.title)).join('  ///  ');
-  el.innerHTML = text + '  ///  ' + text; // duplicate for seamless scroll
+  const items = [];
+
+  // High-magnitude earthquakes
+  const eq = await safeFetch('/api/sitroom/earthquakes?min_magnitude=5', {}, null);
+  if (eq?.earthquakes) {
+    eq.earthquakes.slice(0, 3).forEach(q => {
+      items.push('EARTHQUAKE M' + (q.magnitude||0).toFixed(1) + ' - ' + (q.title||'Unknown'));
+    });
+  }
+
+  // Latest news headlines
+  const d = await safeFetch('/api/sitroom/news?limit=12', {}, null);
+  if (d?.articles) {
+    d.articles.forEach(a => items.push(a.title));
+  }
+
+  if (!items.length) { el.textContent = 'No breaking news'; return; }
+  const text = items.map(t => escapeHtml(t)).join('  ///  ');
+  el.innerHTML = text + '  ///  ' + text;
 }
 
 /* ─── Market Ribbon ─── */
@@ -725,6 +744,102 @@ async function loadSitroomIntelFeed() {
       <div class="sr-intel-meta">${escapeHtml(a.source_name || '')}</div>
     </div>
   </div>`).join('');
+}
+
+/* ─── Status Dot ─── */
+function _updateStatusDot(d) {
+  const dot = document.getElementById('sr-status-dot');
+  if (!dot) return;
+  const hasData = (d.news_count || 0) > 0;
+  dot.className = 'sr-status-dot ' + (hasData ? 'live' : '');
+  dot.title = hasData ? 'Live data cached' : 'No data';
+}
+
+/* ─── Sector Heatmap ─── */
+function renderSitroomSectorHeatmap(markets) {
+  const el = document.getElementById('sitroom-sector-heatmap');
+  if (!el) return;
+  const sectors = markets.filter(m => m.market_type === 'sector');
+  if (!sectors.length) { el.innerHTML = '<div class="sr-empty">No sector data</div>'; return; }
+  el.innerHTML = sectors.map(s => {
+    const ch = s.change_24h || 0;
+    const intensity = Math.min(1, Math.abs(ch) / 3);
+    const bg = ch >= 0
+      ? `rgba(74,237,196,${0.1 + intensity * 0.4})`
+      : `rgba(224,80,80,${0.1 + intensity * 0.4})`;
+    const color = ch >= 0 ? '#4aedc4' : '#e05050';
+    return `<div class="sr-heatmap-cell" style="background:${bg}">
+      <span class="sr-heatmap-cell-name">${escapeHtml(s.symbol)}</span>
+      <span class="sr-heatmap-cell-val" style="color:${color}">${ch >= 0 ? '+' : ''}${ch.toFixed(1)}%</span>
+    </div>`;
+  }).join('');
+}
+
+/* ─── Map Legend ─── */
+function _updateMapLegend() {
+  const el = document.getElementById('sr-map-legend');
+  if (!el) return;
+  const layers = {
+    quakes: {color:'#ff4444',label:'Quakes'}, weather: {color:'#ffaa00',label:'Weather'},
+    conflicts: {color:'#ff6600',label:'Crises'}, aviation: {color:'#44aaff',label:'Aircraft'},
+    volcanoes: {color:'#ff3366',label:'Volcanoes'}, fires: {color:'#ff8800',label:'Fires'},
+    nuclear: {color:'#ffff00',label:'Nuclear'}, bases: {color:'#44ff88',label:'Mil. Bases'},
+    cables: {color:'#3388ff',label:'Cables'}, datacenters: {color:'#aa66ff',label:'Data Ctrs'},
+    pipelines: {color:'#cc8844',label:'Pipelines'}, waterways: {color:'#00ddff',label:'Waterways'},
+    spaceports: {color:'#ff66ff',label:'Spaceports'},
+  };
+  const active = [];
+  document.querySelectorAll('[data-sitroom-layer]').forEach(cb => {
+    if (cb.checked && layers[cb.dataset.sitroomLayer]) {
+      const l = layers[cb.dataset.sitroomLayer];
+      active.push(`<span class="sr-legend-item"><span class="sr-legend-dot" style="background:${l.color}"></span>${l.label}</span>`);
+    }
+  });
+  el.innerHTML = active.join('');
+}
+
+/* ─── Day/Night Terminator ─── */
+let _sitroomDayNightCanvas = null;
+function _renderDayNight() {
+  const mapEl = document.getElementById('sitroom-map');
+  if (!mapEl || !_sitroomMap) return;
+  const checked = document.getElementById('sitroom-layer-daynight')?.checked;
+  let canvas = _sitroomDayNightCanvas;
+  if (!checked) {
+    if (canvas) { canvas.remove(); _sitroomDayNightCanvas = null; }
+    return;
+  }
+  if (!canvas) {
+    canvas = document.createElement('canvas');
+    canvas.className = 'sr-daynight-overlay';
+    canvas.width = mapEl.offsetWidth; canvas.height = mapEl.offsetHeight;
+    mapEl.parentElement.appendChild(canvas);
+    _sitroomDayNightCanvas = canvas;
+  }
+  canvas.width = mapEl.offsetWidth; canvas.height = mapEl.offsetHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // Compute subsolar point
+  const now = new Date();
+  const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+  const declination = -23.44 * Math.cos((360 / 365) * (dayOfYear + 10) * Math.PI / 180);
+  const hourAngle = ((now.getUTCHours() + now.getUTCMinutes() / 60) / 24 * 360) - 180;
+
+  // Draw night overlay using map projection
+  const bounds = _sitroomMap.getBounds();
+  const w = canvas.width, h = canvas.height;
+  ctx.fillStyle = 'rgba(0,0,20,0.5)';
+  for (let px = 0; px < w; px += 4) {
+    for (let py = 0; py < h; py += 4) {
+      const lng = bounds.getWest() + (px / w) * (bounds.getEast() - bounds.getWest());
+      const lat = bounds.getNorth() - (py / h) * (bounds.getNorth() - bounds.getSouth());
+      const latR = lat * Math.PI / 180, decR = declination * Math.PI / 180;
+      const ha = (lng - hourAngle) * Math.PI / 180;
+      const sinAlt = Math.sin(latR) * Math.sin(decR) + Math.cos(latR) * Math.cos(decR) * Math.cos(ha);
+      if (sinAlt < 0) ctx.fillRect(px, py, 4, 4);
+    }
+  }
 }
 
 /* ─── Threat Level (DEFCON-style composite) ─── */
@@ -1012,7 +1127,18 @@ document.addEventListener('click', e => {
 
 document.getElementById('sitroom-news-category')?.addEventListener('change', () => loadSitroomNews());
 document.getElementById('sitroom-quake-filter')?.addEventListener('change', () => renderSitroomQuakes());
-document.querySelectorAll('[data-sitroom-layer]').forEach(cb => cb.addEventListener('change', () => loadSitroomMapData()));
+document.querySelectorAll('[data-sitroom-layer]').forEach(cb => cb.addEventListener('change', () => {
+  loadSitroomMapData(); _updateMapLegend(); _renderDayNight();
+}));
+
+// Panel collapse on header click (but not on buttons/selects inside header)
+document.addEventListener('click', e => {
+  const head = e.target.closest('.sr-card-head');
+  if (!head) return;
+  if (e.target.closest('button, select, input, a, .sr-channel-btns')) return;
+  const card = head.closest('.sr-card');
+  if (card) card.classList.toggle('collapsed');
+});
 
 // CII country click -> deep dive
 document.addEventListener('click', e => {

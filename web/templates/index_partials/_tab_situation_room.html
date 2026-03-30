@@ -19,6 +19,7 @@
       <div class="sr-header-right">
         <span id="sitroom-last-update" class="sr-ts"></span>
         <span id="sitroom-threat-level" class="sr-threat-badge" title="Composite threat level">LEVEL 5</span>
+        <span class="sr-status-dot" id="sr-status-dot" title="Data status"></span>
         <span id="sitroom-online-badge" class="sitroom-badge sitroom-badge-offline">OFFLINE</span>
         <button class="sr-btn" data-sitroom-action="toggle-feeds" title="Manage feeds">&#9881;</button>
         <button class="sr-btn sr-btn-accent" id="sitroom-refresh-btn" data-sitroom-action="refresh">REFRESH</button>
@@ -59,7 +60,10 @@
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-pipelines" data-sitroom-layer="pipelines"> Pipelines</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-waterways" data-sitroom-layer="waterways"> Waterways</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-spaceports" data-sitroom-layer="spaceports"> Space</label>
+        <label class="sr-layer"><input type="checkbox" id="sitroom-layer-daynight" data-sitroom-layer="daynight"> Day/Night</label>
       </div>
+      <!-- Map Legend -->
+      <div class="sr-map-legend" id="sr-map-legend"></div>
       <div id="sitroom-map" class="sr-map" role="img" aria-label="Global event map"></div>
       <div class="sr-map-resize" id="sr-map-resize" title="Drag to resize map"></div>
     </div>
@@ -81,6 +85,12 @@
       <div class="sr-card">
         <div class="sr-card-head">MARKETS &amp; INDICES</div>
         <div id="sitroom-market-ticker" class="sr-card-body sr-market-grid"><div class="sr-empty">Loading...</div></div>
+      </div>
+
+      <!-- Sector Heatmap -->
+      <div class="sr-card">
+        <div class="sr-card-head">SECTOR HEATMAP</div>
+        <div id="sitroom-sector-heatmap" class="sr-card-body sr-heatmap-grid"><div class="sr-empty">Loading...</div></div>
       </div>
 
       <!-- Fear & Greed -->

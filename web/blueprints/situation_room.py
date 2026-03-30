@@ -443,6 +443,25 @@ def _fetch_market_data():
         except Exception as e:
             log.debug(f"Yahoo Finance {sym} failed: {e}")
 
+    # Sector ETFs via Yahoo Finance
+    sector_symbols = {
+        'XLK': 'Tech', 'XLF': 'Finance', 'XLE': 'Energy', 'XLV': 'Health',
+        'XLI': 'Industrial', 'XLP': 'Staples', 'XLY': 'Discretion.',
+        'XLU': 'Utilities', 'XLRE': 'Real Est.', 'XLB': 'Materials', 'XLC': 'Comms',
+    }
+    for sym, name in sector_symbols.items():
+        try:
+            resp = requests.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}',
+                                params={'range': '1d', 'interval': '5m'}, timeout=8, headers=_REQ_HEADERS)
+            if resp.ok:
+                meta = resp.json().get('chart', {}).get('result', [{}])[0].get('meta', {})
+                price = meta.get('regularMarketPrice', 0)
+                prev = meta.get('previousClose', 0)
+                change = ((price - prev) / prev * 100) if prev else 0
+                markets.append({'symbol': name, 'price': price, 'change_24h': round(change, 2), 'market_type': 'sector', 'label': sym})
+        except Exception:
+            pass
+
     # Crypto (CoinGecko)
     try:
         resp = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,ripple,cardano,dogecoin&vs_currencies=usd&include_24hr_change=true',

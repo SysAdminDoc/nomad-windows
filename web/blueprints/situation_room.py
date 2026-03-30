@@ -5016,3 +5016,135 @@ def api_sitroom_situation_snapshot():
         'is_refreshing': is_running,
         'snapshot_time': datetime.now().isoformat(),
     })
+
+
+# ─── P5: Variant Panel Endpoints ────────────────────────────────────
+
+@situation_room_bp.route('/api/sitroom/tech-readiness')
+def api_sitroom_tech_readiness():
+    """Tech Readiness Index — composite score from tech signals."""
+    with db_session() as db:
+        github_count = db.execute(
+            "SELECT COUNT(*) FROM sitroom_news WHERE category = 'Developer' OR category = 'AI Research'"
+        ).fetchone()[0]
+        cyber_count = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'cyber_threat'").fetchone()[0]
+        outage_count = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'internet_outage'").fetchone()[0]
+        ai_news = db.execute(
+            "SELECT COUNT(*) FROM sitroom_news WHERE LOWER(title) LIKE '%ai %' OR LOWER(title) LIKE '%artificial intelligence%' OR LOWER(title) LIKE '%machine learning%'"
+        ).fetchone()[0]
+    # Compute readiness (higher = more active tech sector)
+    innovation = min(10, github_count // 5 + ai_news // 3)
+    security = max(0, 10 - cyber_count)
+    stability = max(0, 10 - outage_count * 2)
+    overall = round((innovation * 0.4 + security * 0.3 + stability * 0.3), 1)
+    return jsonify({
+        'overall': overall,
+        'dimensions': {
+            'innovation': innovation, 'security': security, 'stability': stability,
+        },
+        'raw': {'github_trending': github_count, 'cyber_threats': cyber_count,
+                'outages': outage_count, 'ai_mentions': ai_news},
+    })
+
+
+@situation_room_bp.route('/api/sitroom/todays-hero')
+def api_sitroom_todays_hero():
+    """Today's Hero spotlight — find the most positive story."""
+    positive_words = ['hero', 'rescue', 'saved', 'donated', 'volunteer', 'miracle',
+                      'recovery', 'survived', 'breakthrough', 'peace', 'reunited',
+                      'discovered', 'cured', 'freed', 'restored']
+    with db_session() as db:
+        rows = db.execute(
+            "SELECT title, link, source_name FROM sitroom_news ORDER BY cached_at DESC LIMIT 500"
+        ).fetchall()
+    best = None
+    best_score = 0
+    for r in rows:
+        d = dict(r)
+        title_l = d['title'].lower()
+        score = sum(1 for w in positive_words if w in title_l)
+        if score > best_score:
+            best_score = score
+            best = d
+    return jsonify({'hero': best, 'score': best_score})
+
+
+@situation_room_bp.route('/api/sitroom/five-good-things')
+def api_sitroom_five_good_things():
+    """5 Good Things digest — curated positive news stories."""
+    positive_kw = ['breakthrough', 'peace', 'record', 'milestone', 'saved',
+                   'recovered', 'donated', 'clean energy', 'cure', 'growth',
+                   'progress', 'achievement', 'conservation', 'restored', 'renewable',
+                   'vaccine', 'rescued', 'volunteered', 'invented', 'discovery']
+    conditions = ' OR '.join([f"LOWER(title) LIKE '%{w}%'" for w in positive_kw])
+    with db_session() as db:
+        rows = db.execute(
+            f"SELECT title, link, source_name, category FROM sitroom_news WHERE {conditions} "
+            f"ORDER BY cached_at DESC LIMIT 20"
+        ).fetchall()
+    # Score and pick top 5
+    results = []
+    for r in rows:
+        d = dict(r)
+        score = sum(1 for w in positive_kw if w in d['title'].lower())
+        results.append({**d, 'positivity_score': score})
+    results.sort(key=lambda x: x['positivity_score'], reverse=True)
+    return jsonify({'good_things': results[:5], 'total_positive': len(results)})
+
+
+@situation_room_bp.route('/api/sitroom/central-bank-calendar')
+def api_sitroom_central_bank_calendar():
+    """Enhanced Central Bank Watch with rate decision calendar."""
+    # Major central bank meetings (approximate schedule)
+    calendar = [
+        {'bank': 'Federal Reserve (FOMC)', 'frequency': '8x/year', 'next_approx': 'See fed.gov'},
+        {'bank': 'European Central Bank', 'frequency': '8x/year', 'next_approx': 'See ecb.europa.eu'},
+        {'bank': 'Bank of England', 'frequency': '8x/year', 'next_approx': 'See bankofengland.co.uk'},
+        {'bank': 'Bank of Japan', 'frequency': '8x/year', 'next_approx': 'See boj.or.jp'},
+        {'bank': 'People\'s Bank of China', 'frequency': 'Monthly', 'next_approx': 'See pbc.gov.cn'},
+        {'bank': 'Reserve Bank of Australia', 'frequency': '11x/year', 'next_approx': 'See rba.gov.au'},
+        {'bank': 'Reserve Bank of India', 'frequency': '6x/year', 'next_approx': 'See rbi.org.in'},
+        {'bank': 'Swiss National Bank', 'frequency': '4x/year', 'next_approx': 'See snb.ch'},
+    ]
+    with db_session() as db:
+        cb_news = db.execute(
+            "SELECT title, source_name FROM sitroom_news WHERE "
+            "LOWER(title) LIKE '%rate decision%' OR LOWER(title) LIKE '%rate cut%' "
+            "OR LOWER(title) LIKE '%rate hike%' OR LOWER(title) LIKE '%interest rate%' "
+            "OR LOWER(title) LIKE '%monetary policy%' OR LOWER(title) LIKE '%central bank%' "
+            "ORDER BY cached_at DESC LIMIT 10"
+        ).fetchall()
+    return jsonify({'calendar': calendar, 'news': [dict(r) for r in cb_news]})
+
+
+@situation_room_bp.route('/api/sitroom/country-timeline-visual/<country>')
+def api_sitroom_country_timeline_visual(country):
+    """Visual timeline data for a country — events + news binned by day."""
+    country_lower = country.lower()
+    with db_session() as db:
+        events = db.execute(
+            "SELECT title, event_type, magnitude, DATE(cached_at) as day FROM sitroom_events "
+            "WHERE LOWER(title) LIKE ? GROUP BY title ORDER BY cached_at DESC LIMIT 100",
+            (f'%{country_lower}%',)
+        ).fetchall()
+        news = db.execute(
+            "SELECT title, category, source_name, DATE(cached_at) as day FROM sitroom_news "
+            "WHERE LOWER(title) LIKE ? ORDER BY cached_at DESC LIMIT 100",
+            (f'%{country_lower}%',)
+        ).fetchall()
+    # Bin by day
+    days = {}
+    for r in events:
+        d = dict(r)
+        day = d.get('day', 'unknown')
+        if day not in days: days[day] = {'events': [], 'news': []}
+        days[day]['events'].append(d)
+    for r in news:
+        d = dict(r)
+        day = d.get('day', 'unknown')
+        if day not in days: days[day] = {'events': [], 'news': []}
+        days[day]['news'].append(d)
+    timeline = [{'date': k, 'events': v['events'][:5], 'news': v['news'][:5],
+                  'event_count': len(v['events']), 'news_count': len(v['news'])}
+                 for k, v in sorted(days.items(), reverse=True)]
+    return jsonify({'country': country, 'timeline': timeline[:14]})

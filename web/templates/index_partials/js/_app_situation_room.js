@@ -127,6 +127,10 @@ function _sitroomRefreshPanels() {
   loadSitroomSpecies();
   loadSitroomAptGroups();
   loadSitroomSnapshot();
+  loadSitroomTechReadiness();
+  loadSitroomTodaysHero();
+  loadSitroomGoodThings();
+  loadSitroomCbCalendar();
   _checkCriticalAlerts();
   _updateDataFreshness();
   _checkQuakeAlerts();
@@ -1378,17 +1382,29 @@ function clearSitroomMarkers(layerType) {
   if (arr) { arr.forEach(m => m.remove()); arr.length = 0; }
 }
 
-/* ─── Simple Marker Clustering ─── */
+/* ─── Enhanced Marker Clustering (Supercluster-inspired) ─── */
 let _sitroomClusterGrid = {};
+let _sitroomClusterCounts = {};
 function _shouldCluster(lat, lng, layerType) {
   if (!_sitroomMap) return false;
   const zoom = _sitroomMap.getZoom();
-  if (zoom > 6) return false; // No clustering at high zoom
-  const gridSize = Math.max(1, 8 - zoom); // Larger grid at lower zoom
+  if (zoom > 8) return false; // No clustering at high zoom
+  // Adaptive grid — tighter at medium zoom, wider at low zoom
+  const gridSize = zoom < 3 ? 10 : zoom < 5 ? 5 : zoom < 7 ? 2 : 1;
   const key = `${layerType}:${Math.round(lat/gridSize)}:${Math.round(lng/gridSize)}`;
-  if (_sitroomClusterGrid[key]) return true;
+  if (_sitroomClusterGrid[key]) {
+    _sitroomClusterCounts[key] = (_sitroomClusterCounts[key] || 1) + 1;
+    return true;
+  }
   _sitroomClusterGrid[key] = true;
+  _sitroomClusterCounts[key] = 1;
   return false;
+}
+function _getClusterCount(lat, lng, layerType) {
+  const zoom = _sitroomMap ? _sitroomMap.getZoom() : 2;
+  const gridSize = zoom < 3 ? 10 : zoom < 5 ? 5 : zoom < 7 ? 2 : 1;
+  const key = `${layerType}:${Math.round(lat/gridSize)}:${Math.round(lng/gridSize)}`;
+  return _sitroomClusterCounts[key] || 1;
 }
 
 function addSitroomMarker(ev, layerType) {
@@ -3398,6 +3414,77 @@ async function loadSitroomSpecies() {
     });
   }
   el.innerHTML = html || '<div class="sitroom-empty">No species data</div>';
+}
+
+/* ─── P5: Tech Readiness Card ─── */
+async function loadSitroomTechReadiness() {
+  const el = document.getElementById('sitroom-tech-readiness');
+  if (!el) return;
+  const d = await safeFetch('/api/sitroom/tech-readiness', {}, null);
+  if (!d) { el.innerHTML = '<div class="sitroom-empty">No data</div>'; return; }
+  const c = d.overall >= 7 ? '#44dd88' : d.overall >= 4 ? '#ffaa00' : '#ff4444';
+  let html = `<div style="text-align:center;padding:12px 0">
+    <div style="font-size:28px;font-weight:bold;color:${c}">${d.overall}/10</div>
+    <div style="font-size:10px;color:#888;margin-top:2px">Tech Readiness Score</div>
+  </div><div style="display:flex;gap:4px;padding:0 8px 8px">`;
+  for (const [name, val] of Object.entries(d.dimensions || {})) {
+    const w = val * 10;
+    const bc = val >= 7 ? '#44dd88' : val >= 4 ? '#ffaa00' : '#ff4444';
+    html += `<div style="flex:1;text-align:center"><div style="font-size:9px;color:#666;text-transform:uppercase">${name}</div>
+      <div style="background:#111;height:6px;border-radius:3px;margin-top:2px"><div style="width:${w}%;height:100%;background:${bc};border-radius:3px"></div></div>
+      <div style="font-size:10px;color:#aaa;margin-top:1px">${val}</div></div>`;
+  }
+  html += '</div>';
+  el.innerHTML = html;
+}
+
+/* ─── P5: Today's Hero Card ─── */
+async function loadSitroomTodaysHero() {
+  const el = document.getElementById('sitroom-todays-hero');
+  if (!el) return;
+  const d = await safeFetch('/api/sitroom/todays-hero', {}, null);
+  if (!d || !d.hero) { el.innerHTML = '<div class="sitroom-empty">No hero story found today</div>'; return; }
+  el.innerHTML = `<div style="padding:12px;border-left:3px solid #44dd88">
+    <a href="${escapeHtml(d.hero.link || '#')}" target="_blank" style="color:#4aedc4;font-size:12px;text-decoration:none">${escapeHtml(d.hero.title)}</a>
+    <div style="font-size:10px;color:#666;margin-top:4px">${escapeHtml(d.hero.source_name || '')} | Positivity: ${d.score}/10</div>
+  </div>`;
+}
+
+/* ─── P5: 5 Good Things Card ─── */
+async function loadSitroomGoodThings() {
+  const el = document.getElementById('sitroom-good-things');
+  if (!el) return;
+  const d = await safeFetch('/api/sitroom/five-good-things', {}, null);
+  if (!d || !d.good_things || !d.good_things.length) { el.innerHTML = '<div class="sitroom-empty">No good news found</div>'; return; }
+  let html = '';
+  d.good_things.forEach((g, i) => {
+    html += `<div class="sr-feed-item" style="border-left:3px solid #44dd88">
+      <span style="color:#44dd88;font-weight:bold;margin-right:4px">${i + 1}.</span>
+      <a href="${escapeHtml(g.link || '#')}" target="_blank" class="sr-feed-title">${escapeHtml(g.title)}</a>
+      <span class="sr-feed-source">${escapeHtml(g.source_name || '')}</span>
+    </div>`;
+  });
+  el.innerHTML = html;
+}
+
+/* ─── P5: Central Bank Calendar Card ─── */
+async function loadSitroomCbCalendar() {
+  const el = document.getElementById('sitroom-cb-calendar');
+  if (!el) return;
+  const d = await safeFetch('/api/sitroom/central-bank-calendar', {}, null);
+  if (!d) { el.innerHTML = '<div class="sitroom-empty">No data</div>'; return; }
+  let html = '<table class="sr-table"><tr><th>Bank</th><th>Frequency</th></tr>';
+  (d.calendar || []).forEach(cb => {
+    html += `<tr><td>${escapeHtml(cb.bank)}</td><td>${escapeHtml(cb.frequency)}</td></tr>`;
+  });
+  html += '</table>';
+  if (d.news && d.news.length) {
+    html += '<div class="sr-mini-label" style="margin-top:8px">Rate Decision News</div>';
+    d.news.slice(0, 5).forEach(n => {
+      html += `<div class="sr-feed-item"><span class="sr-feed-title">${escapeHtml(n.title)}</span></div>`;
+    });
+  }
+  el.innerHTML = html;
 }
 
 /* ─── P7: APT Groups Card ─── */

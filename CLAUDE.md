@@ -264,19 +264,17 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **E-ink display mode** — New `[data-theme="eink"]` CSS theme: pure black/white, no shadows/gradients/animations, 2px solid borders, grayscale images, 16px base font, high contrast; theme button added to all 3 theme switcher locations + customize panel
   - **Dead drop encrypted USB messaging** — `dead_drop_messages` table; `POST /api/deaddrop/compose` encrypts message with XOR (SHA-256 derived key) + checksum verification; `POST /api/deaddrop/decrypt` decrypts with secret validation; `POST /api/deaddrop/import` stores encrypted messages; `GET /api/deaddrop/messages` lists received; compose UI with recipient/message/secret fields, download as JSON for USB transfer; import with inline decryption prompt
 
-- **v5.5.0 — Situation Room v3 (World Monitor-inspired)**:
-  - **New default landing tab** — "Situation Room" replaces Home as the primary dashboard; Home moves to secondary position in sidebar
-  - **Blueprint**: `web/blueprints/situation_room.py` — 17 API routes, 9 background fetch workers
-  - **9 data sources (all free, no API keys)**: 35+ RSS feeds (12 categories), USGS earthquakes, NWS severe weather, GDACS crises (dynamic 90-day window), Yahoo Finance stock indices (S&P 500/NASDAQ/DOW), CoinGecko crypto (BTC/ETH/SOL), metals.dev+EIA commodities (gold/silver/oil), OpenSky Network aircraft ADS-B (500 cap), NOAA SWPC space weather (Kp index, G/S/R storm scales, solar flares), Smithsonian GVP volcanic eruptions, Polymarket prediction markets (top 20), Fear & Greed Index
-  - **Parallel RSS fetching** — ThreadPoolExecutor with 8 workers, 90s timeout; custom feeds from DB included; UPSERT dedup with 2000 article cap
-  - **Full audit (35+ bugs fixed)**: custom feeds never fetched (B1), DELETE-then-INSERT data loss (B2), thread-unsafe state (B3), hardcoded GDACS date (B4), non-deterministic hash (B5), safeFetch misuse (returns JSON not Response), category dropdown reset (B11), SSRF protection (E1/S1), error message leaks (S2), heading regex order (S4), CSS specificity bug (.utility-panel-shell display:flex vs .is-hidden display:none)
-  - **World Monitor dark aesthetic** — Deep black (#060608) with teal (#0f5040/#4aedc4) accents, monospace typography (SF Mono/Cascadia Code), full-width map (50vh), grid card layout (auto-fill 320px), 1px card gaps, compact ticker strip, full-bleed breakout from .container padding
-  - **UI widgets**: Markets & Commodities (8+ tickers), Seismic Activity (magnitude filter), Severe Weather, Space Weather (R/S/G NOAA scales), Prediction Markets (yes/no bars), AI Intelligence Briefing, News Feed (category filter, pagination), Custom Feed Manager
-  - **Map layers**: Earthquakes (red), Weather (orange), Crises (orange), Aircraft (blue), Volcanoes (pink) — all toggleable
-  - **Copilot dock** hidden on Situation Room tab, restored on tab switch
-  - **Auto-refresh** on first visit when no data cached; 60s polling; status-based refresh polling (3s)
-  - **DB migrations**: `002_situation_room_tables.sql` (5 tables, 8 indexes), `003_situation_room_v2.sql` (4 tables, 7 indexes)
-  - **Critical gotchas**: safeFetch returns JSON not Response; full-bleed uses `margin:-34px -42px; width:calc(100%+84px)`; .utility-panel-shell.is-hidden needs `!important`; MapLibre needs resize() after init
+- **v5.5.0 → v4.8 — Situation Room (World Monitor port)**:
+  - **Pure World Monitor dashboard** — default landing tab, full-bleed flex layout filling all available space
+  - **Blueprint**: `web/blueprints/situation_room.py` — 28 API routes, 15 background fetch workers
+  - **18 data sources (all free, no API keys)**: 100+ RSS feeds (20 categories), USGS earthquakes, NWS severe weather, GDACS crises, Yahoo Finance (indices + forex + sectors), CoinGecko (7 crypto), metals.dev+EIA commodities, OpenSky aircraft ADS-B, NOAA SWPC space weather, Smithsonian GVP volcanoes, Polymarket predictions, Fear & Greed Index, NASA FIRMS fires, WHO disease outbreaks, Cloudflare/IODA internet outages, Safecast radiation monitoring, GDELT trending topics, OFAC sanctions, UNHCR displacement
+  - **14 map layers** (+day/night): earthquakes, weather, crises, aviation, volcanoes, fires, nuclear sites (25), military bases (32), undersea cables (20), data centers (20), pipelines (16), waterways (14), spaceports (16), day/night terminator
+  - **3D globe** via MapLibre GL v4.7.1 native globe projection (2D/3D toggle)
+  - **22 UI cards**: news (w/ category colors), markets (~40 symbols), sector heatmap (11 ETFs), F&G gauge, seismic, space weather, severe weather, predictions, live YouTube channels (12), fires, diseases, internet outages, radiation watch, GDELT trending, sanctions, displacement, CII, intel feed, world clock (12 zones), event timeline
+  - **Interactive features**: command palette (Ctrl+K), country deep dive (slide-in panel), panel drag reorder (localStorage), panel collapse, map resize drag, map fullscreen (F key), map legend, scrolling market ribbon, DEFCON threat badge, UTC clock, auto-refresh progress bar, status dot with pulse, breaking news with earthquake priority, keyboard shortcuts (F/R/Ctrl+K/ESC)
+  - **189 static infrastructure points** across 8 categories
+  - **Full audit (35+ bugs fixed)**: safeFetch misuse, UPSERT pattern, thread safety, SSRF protection, CSS specificity
+  - **DB migrations**: `002_situation_room_tables.sql` + `003_situation_room_v2.sql`
 
 ## Run / Build
 ```bash

@@ -34,6 +34,7 @@ function initSituationRoom() {
   _restorePanelOrder();
   _sitroomAutoRefreshIfEmpty();
   _initSmartPollLoop();
+  _initAnalysisWorker();
 }
 
 function _sitroomRefreshPanels() {
@@ -3534,6 +3535,82 @@ async function loadSitroomSnapshot() {
   if (d.max_magnitude) {
     html += `<div style="text-align:center;font-size:10px;color:#888;padding:4px">Max quake: M${d.max_magnitude} | ${d.is_refreshing ? 'Refreshing...' : 'Idle'}</div>`;
   }
+  el.innerHTML = html;
+}
+
+/* ─── P6: Web Worker for Analysis ─── */
+let _sitroomWorker = null;
+function _initAnalysisWorker() {
+  if (_sitroomWorker || typeof Worker === 'undefined') return;
+  // Inline worker using Blob URL (no separate file needed)
+  const workerCode = `
+    self.onmessage = function(e) {
+      const {type, data} = e.data;
+      if (type === 'cluster-news') {
+        const articles = data;
+        const wordSets = articles.map(a => {
+          const words = new Set(a.title.toLowerCase().replace(/[^\\w\\s]/g, '').split(/\\s+/));
+          words.delete(''); words.delete('the'); words.delete('and'); words.delete('for');
+          return words;
+        });
+        const used = new Set();
+        const clusters = [];
+        for (let i = 0; i < articles.length; i++) {
+          if (used.has(i)) continue;
+          const cluster = [articles[i]];
+          used.add(i);
+          for (let j = i + 1; j < articles.length && cluster.length < 8; j++) {
+            if (used.has(j)) continue;
+            const inter = [...wordSets[i]].filter(w => wordSets[j].has(w)).length;
+            const union = new Set([...wordSets[i], ...wordSets[j]]).size;
+            if (union > 0 && inter / union > 0.35) { cluster.push(articles[j]); used.add(j); }
+          }
+          if (cluster.length >= 2) {
+            clusters.push({label: cluster[0].title, count: cluster.length,
+              sources: [...new Set(cluster.map(c => c.source_name).filter(Boolean))],
+              articles: cluster.slice(0, 5)});
+          }
+        }
+        clusters.sort((a, b) => b.count - a.count);
+        self.postMessage({type: 'cluster-result', clusters: clusters.slice(0, 20)});
+      }
+      if (type === 'sentiment-scan') {
+        const titles = data;
+        const pos = ['peace','agreement','growth','recovery','breakthrough','deal','progress','ceasefire'];
+        const neg = ['attack','killed','war','crisis','crash','explosion','collapse','sanctions','missile'];
+        let posCount = 0, negCount = 0;
+        titles.forEach(t => {
+          const tl = t.toLowerCase();
+          if (pos.some(w => tl.includes(w))) posCount++;
+          if (neg.some(w => tl.includes(w))) negCount++;
+        });
+        self.postMessage({type: 'sentiment-result', positive: posCount, negative: negCount, total: titles.length});
+      }
+    };
+  `;
+  try {
+    const blob = new Blob([workerCode], {type: 'application/javascript'});
+    _sitroomWorker = new Worker(URL.createObjectURL(blob));
+    _sitroomWorker.onmessage = function(e) {
+      if (e.data.type === 'cluster-result') {
+        _renderWorkerClusters(e.data.clusters);
+      }
+    };
+  } catch (err) { /* Web Workers not available */ }
+}
+
+function _renderWorkerClusters(clusters) {
+  const el = document.getElementById('sitroom-news-clusters');
+  if (!el || !clusters.length) return;
+  let html = '';
+  clusters.forEach(c => {
+    const sources = (c.sources || []).join(', ');
+    html += `<div class="sr-feed-item" style="border-left:3px solid #4aedc4">
+      <span class="sr-feed-badge" style="background:#4aedc4;color:#000;font-size:9px;padding:1px 4px;border-radius:2px">${c.count}x</span>
+      <span class="sr-feed-title">${escapeHtml(c.label)}</span>
+      <span class="sr-feed-source">${escapeHtml(sources)}</span>
+    </div>`;
+  });
   el.innerHTML = html;
 }
 

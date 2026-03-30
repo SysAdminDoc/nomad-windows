@@ -1,9 +1,12 @@
-const CACHE_NAME = 'nomad-v1';
+const CACHE_NAME = 'nomad-v2';
+const SITROOM_CACHE = 'nomad-sitroom-v1';
+const SITROOM_CACHE_TTL = 300000; // 5 minutes
 
 const STATIC_ASSETS = [
   '/static/manifest.json',
   '/static/css/app.css',
   '/static/css/premium.css',
+  '/static/css/app/45_situation_room.css',
   '/static/logo.png',
   '/static/maplibre-gl.js',
   '/static/maplibre-gl.css',
@@ -32,7 +35,34 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Network-first for API calls
+  // Situation Room API — dedicated cache with TTL for offline intelligence
+  if (url.pathname.startsWith('/api/sitroom/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const clone = response.clone();
+          caches.open(SITROOM_CACHE).then(cache => {
+            const headers = new Headers(clone.headers);
+            headers.set('sw-cached-at', Date.now().toString());
+            const cachedResponse = new Response(clone.body, {status: clone.status, statusText: clone.statusText, headers});
+            cache.put(event.request, cachedResponse);
+          });
+          return response;
+        })
+        .catch(() => {
+          return caches.open(SITROOM_CACHE).then(cache =>
+            cache.match(event.request).then(cached => {
+              if (cached) return cached;
+              return new Response(JSON.stringify({error: 'Offline', cached: false}),
+                {status: 503, headers: {'Content-Type': 'application/json'}});
+            })
+          );
+        })
+    );
+    return;
+  }
+
+  // Other API calls — network-first with general cache fallback
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request)

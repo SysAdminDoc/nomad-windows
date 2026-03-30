@@ -319,6 +319,31 @@ RSS_FEEDS = {
         {'name': 'News24 SA', 'url': 'https://feeds.24.com/articles/news24/TopStories/rss', 'category': 'Africa'},
         {'name': 'Punch Nigeria', 'url': 'https://punchng.com/feed/', 'category': 'Africa'},
         {'name': 'Buenos Aires Times', 'url': 'https://www.batimes.com.ar/feed', 'category': 'Latin America'},
+        # Expanded regional language feeds (P7)
+        {'name': 'Le Monde', 'url': 'https://www.lemonde.fr/rss/une.xml', 'category': 'Europe'},
+        {'name': 'Die Welt', 'url': 'https://www.welt.de/feeds/latest.rss', 'category': 'Europe'},
+        {'name': 'Corriere della Sera', 'url': 'https://xml2.corrieredellasera.it/rss/homepage.xml', 'category': 'Europe'},
+        {'name': 'Asahi Shimbun', 'url': 'https://www.asahi.com/ajw/rss.xml', 'category': 'Asia-Pacific'},
+        {'name': 'Yonhap (Korea)', 'url': 'https://en.yna.co.kr/RSS/news.xml', 'category': 'Asia-Pacific'},
+        {'name': 'NDTV India', 'url': 'https://feeds.feedburner.com/ndtvnews-top-stories', 'category': 'Asia-Pacific'},
+        {'name': 'Dawn Pakistan', 'url': 'https://www.dawn.com/feed', 'category': 'Asia-Pacific'},
+        {'name': 'Bangkok Post', 'url': 'https://www.bangkokpost.com/rss/data/topstories.xml', 'category': 'Asia-Pacific'},
+        {'name': 'VnExpress Intl', 'url': 'https://e.vnexpress.net/rss/news/latest.rss', 'category': 'Asia-Pacific'},
+        {'name': 'Haaretz', 'url': 'https://www.haaretz.com/cmlink/1.628765', 'category': 'Middle East'},
+        {'name': 'Arab News', 'url': 'https://www.arabnews.com/rss.xml', 'category': 'Middle East'},
+        {'name': 'Tehran Times', 'url': 'https://www.tehrantimes.com/rss', 'category': 'Middle East'},
+        {'name': 'Daily Sabah', 'url': 'https://www.dailysabah.com/rssFeed/todays-headlines', 'category': 'Middle East'},
+        {'name': 'Folha de S.Paulo', 'url': 'https://feeds.folha.uol.com.br/mundo/rss091.xml', 'category': 'Latin America'},
+        {'name': 'Mexico News Daily', 'url': 'https://mexiconewsdaily.com/feed/', 'category': 'Latin America'},
+        {'name': 'Daily Nation Kenya', 'url': 'https://nation.africa/rss/news', 'category': 'Africa'},
+        {'name': 'The East African', 'url': 'https://www.theeastafrican.co.ke/rss', 'category': 'Africa'},
+        {'name': 'Mail & Guardian SA', 'url': 'https://mg.co.za/feed/', 'category': 'Africa'},
+        {'name': 'Nikkei Asia', 'url': 'https://asia.nikkei.com/rss', 'category': 'Asia-Pacific'},
+        {'name': 'South China Morning Post', 'url': 'https://www.scmp.com/rss/91/feed', 'category': 'Asia-Pacific'},
+        {'name': 'Kathimerini (Greece)', 'url': 'https://www.ekathimerini.com/rss', 'category': 'Europe'},
+        {'name': 'Aftenposten (Norway)', 'url': 'https://www.aftenposten.no/rss', 'category': 'Europe'},
+        {'name': 'RBC (Russia)', 'url': 'https://rssexport.rbc.ru/rbcnews/news/30/full.rss', 'category': 'Europe'},
+        {'name': 'Globo (Brazil)', 'url': 'https://g1.globo.com/rss/g1/', 'category': 'Latin America'},
     ],
     'layoffs': [
         {'name': 'Layoffs.fyi', 'url': 'https://layoffs.fyi/feed/', 'category': 'Layoffs'},
@@ -5148,3 +5173,55 @@ def api_sitroom_country_timeline_visual(country):
                   'event_count': len(v['events']), 'news_count': len(v['news'])}
                  for k, v in sorted(days.items(), reverse=True)]
     return jsonify({'country': country, 'timeline': timeline[:14]})
+
+
+@situation_room_bp.route('/api/sitroom/commands')
+def api_sitroom_commands():
+    """Return available command palette entries for power users."""
+    commands = [
+        {'cmd': '/refresh', 'desc': 'Refresh all data feeds', 'action': 'refreshSitroomFeeds()'},
+        {'cmd': '/search <query>', 'desc': 'Search all cached data', 'action': 'openSitroomSearch()'},
+        {'cmd': '/country <name>', 'desc': 'Open country deep dive', 'action': 'openCountryDeepDive(name)'},
+        {'cmd': '/brief <country>', 'desc': 'Generate AI country brief', 'action': 'loadSitroomCountryBrief(country)'},
+        {'cmd': '/deduction', 'desc': 'Run AI situation deduction', 'action': 'runSitroomDeduction()'},
+        {'cmd': '/export csv', 'desc': 'Export news as CSV', 'action': 'window.open("/api/sitroom/export-csv")'},
+        {'cmd': '/export json', 'desc': 'Export all data as JSON', 'action': 'window.open("/api/sitroom/export-json")'},
+        {'cmd': '/fullscreen', 'desc': 'Toggle map fullscreen', 'action': 'toggleMapFullscreen()'},
+        {'cmd': '/globe', 'desc': 'Toggle 3D globe view', 'action': 'toggleSitroomGlobe()'},
+        {'cmd': '/layers', 'desc': 'Open layer panel', 'action': 'toggleLayerPanel()'},
+        {'cmd': '/threat', 'desc': 'Show threat level', 'action': 'loadSitroomThreatLevel()'},
+        {'cmd': '/anomalies', 'desc': 'Check for anomalies', 'action': 'loadSitroomAnomalies()'},
+        {'cmd': '/watch <keyword>', 'desc': 'Add keyword to watchlist', 'action': 'addToWatchlist(keyword)'},
+        {'cmd': '/sources', 'desc': 'Show source health', 'action': 'loadSitroomSourceHealth()'},
+        {'cmd': '/version', 'desc': 'Show version info', 'action': 'showSitroomVersion()'},
+    ]
+    return jsonify({'commands': commands, 'count': len(commands)})
+
+
+@situation_room_bp.route('/api/sitroom/mcp-capabilities')
+def api_sitroom_mcp_capabilities():
+    """MCP-compatible capability manifest for AI agent integration."""
+    return jsonify({
+        'name': 'NOMAD Situation Room',
+        'version': '6.21',
+        'protocol': 'mcp-v1',
+        'capabilities': {
+            'news': {'search': True, 'cluster': True, 'export': True, 'categories': True},
+            'events': {'geojson': True, 'filter_by_type': True, 'timeline': True},
+            'markets': {'realtime': True, 'sectors': True, 'forex': True, 'crypto': True},
+            'intelligence': {'country_brief': True, 'deduction': True, 'breaking': True, 'signals': True},
+            'maps': {'layers': 45, 'static_points': 1275, 'geojson_export': True},
+            'analysis': {'clustering': True, 'anomaly_detection': True, 'sentiment': True, 'correlation': True},
+            'alerts': {'oref': True, 'earthquakes': True, 'weather': True, 'cyber': True},
+        },
+        'endpoints': {
+            'search': '/api/sitroom/search',
+            'news': '/api/sitroom/news',
+            'events': '/api/sitroom/events',
+            'country_brief': '/api/sitroom/country-brief/<country>',
+            'deduction': '/api/sitroom/deduction',
+            'snapshot': '/api/sitroom/situation-snapshot',
+            'export_json': '/api/sitroom/export-json',
+            'geojson': '/api/sitroom/events-geojson',
+        },
+    })

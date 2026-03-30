@@ -47,8 +47,11 @@
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-aviation" data-sitroom-layer="aviation"> Aviation</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-volcanoes" data-sitroom-layer="volcanoes"> Volcanoes</label>
         <label class="sr-layer"><input type="checkbox" id="sitroom-layer-fires" data-sitroom-layer="fires"> Fires</label>
+        <label class="sr-layer"><input type="checkbox" id="sitroom-layer-nuclear" data-sitroom-layer="nuclear"> Nuclear</label>
+        <label class="sr-layer"><input type="checkbox" id="sitroom-layer-bases" data-sitroom-layer="bases"> Mil. Bases</label>
       </div>
       <div id="sitroom-map" class="sr-map" role="img" aria-label="Global event map"></div>
+      <div class="sr-map-resize" id="sr-map-resize" title="Drag to resize map"></div>
     </div>
 
     <!-- Card Grid -->
@@ -68,6 +71,12 @@
       <div class="sr-card">
         <div class="sr-card-head">MARKETS &amp; INDICES</div>
         <div id="sitroom-market-ticker" class="sr-card-body sr-market-grid"><div class="sr-empty">Loading...</div></div>
+      </div>
+
+      <!-- Fear & Greed -->
+      <div class="sr-card">
+        <div class="sr-card-head">FEAR &amp; GREED INDEX</div>
+        <div id="sitroom-fear-greed" class="sr-card-body sr-fear-greed-body"><div class="sr-empty">Loading...</div></div>
       </div>
 
       <!-- Seismic Activity -->

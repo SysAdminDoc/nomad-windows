@@ -1,7 +1,7 @@
 /* ─── Situation Room v2 — Global Intelligence Dashboard ─── */
 
 let _sitroomMap = null;
-let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [] };
+let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [] };
 let _sitroomNewsOffset = 0;
 const SITROOM_NEWS_PAGE = 50;
 let _sitroomAutoTimer = null;
@@ -21,6 +21,7 @@ function initSituationRoom() {
   _sitroomInitDone = true;
   _sitroomRefreshPanels();
   initSitroomMap();
+  _initSitroomMapResize();
   _sitroomAutoRefreshIfEmpty();
   if (_sitroomAutoTimer) clearInterval(_sitroomAutoTimer);
   _sitroomAutoTimer = setInterval(_sitroomRefreshPanels, 60000);
@@ -76,6 +77,66 @@ function _restoreCopilotDock() {
 function _sitroomResizeMap() {
   if (_sitroomMap) { _sitroomMap.resize(); }
 }
+
+/* ─── Map Resize Drag Handle ─── */
+function _initSitroomMapResize() {
+  const handle = document.getElementById('sr-map-resize');
+  const mapWrap = document.querySelector('.sr-map-wrap');
+  if (!handle || !mapWrap) return;
+  let startY = 0, startH = 0, dragging = false;
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault(); dragging = true; startY = e.clientY; startH = mapWrap.offsetHeight;
+    handle.classList.add('dragging');
+    document.body.style.cursor = 'ns-resize'; document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', e => {
+    if (!dragging) return;
+    const newH = Math.max(150, Math.min(window.innerHeight - 200, startH + (e.clientY - startY)));
+    mapWrap.style.flex = 'none'; mapWrap.style.height = newH + 'px';
+    _sitroomResizeMap();
+  });
+  document.addEventListener('mouseup', () => {
+    if (!dragging) return; dragging = false;
+    handle.classList.remove('dragging');
+    document.body.style.cursor = ''; document.body.style.userSelect = '';
+    _sitroomResizeMap();
+  });
+}
+
+/* ─── Static Map Data: Nuclear Sites & Military Bases ─── */
+const _NUCLEAR_SITES = [
+  {lat:51.39,lng:-1.32,name:'Aldermaston, UK'},{lat:48.86,lng:2.35,name:'CEA, France'},
+  {lat:38.46,lng:-105.0,name:'NORAD, US'},{lat:35.74,lng:139.72,name:'Tokai, Japan'},
+  {lat:55.75,lng:37.62,name:'Kurchatov Inst, Russia'},{lat:39.91,lng:116.39,name:'CIAE, China'},
+  {lat:33.73,lng:73.05,name:'PAEC, Pakistan'},{lat:28.61,lng:77.21,name:'BARC, India'},
+  {lat:32.07,lng:34.78,name:'Dimona, Israel'},{lat:35.37,lng:51.42,name:'Tehran NRC, Iran'},
+  {lat:39.03,lng:125.75,name:'Yongbyon, DPRK'},{lat:47.62,lng:-122.35,name:'Hanford, US'},
+  {lat:35.89,lng:-84.31,name:'Oak Ridge, US'},{lat:33.68,lng:-106.47,name:'White Sands, US'},
+  {lat:36.95,lng:-116.05,name:'Nevada Test Site, US'},{lat:50.10,lng:36.23,name:'Kharkiv NPI, Ukraine'},
+  {lat:57.74,lng:59.98,name:'Mayak, Russia'},{lat:61.26,lng:73.36,name:'Seversk, Russia'},
+  {lat:41.18,lng:69.24,name:'Tashkent, Uzbekistan'},{lat:45.94,lng:-119.04,name:'Columbia Gen, US'},
+  {lat:51.56,lng:-0.73,name:'Burghfield, UK'},{lat:44.26,lng:26.06,name:'Cernavoda, Romania'},
+  {lat:46.46,lng:30.66,name:'Odesa NPP, Ukraine'},{lat:51.39,lng:30.10,name:'Chernobyl, Ukraine'},
+  {lat:47.51,lng:34.59,name:'Zaporizhzhia NPP, Ukraine'},
+];
+const _MILITARY_BASES = [
+  {lat:36.77,lng:-76.29,name:'Norfolk Naval, US'},{lat:32.87,lng:-117.14,name:'Camp Pendleton, US'},
+  {lat:38.95,lng:-77.45,name:'Dulles/CIA, US'},{lat:38.87,lng:-77.06,name:'Pentagon, US'},
+  {lat:26.30,lng:50.21,name:'NSA Bahrain'},{lat:25.41,lng:51.25,name:'Al Udeid, Qatar'},
+  {lat:24.43,lng:54.65,name:'Al Dhafra, UAE'},{lat:11.55,lng:43.15,name:'Camp Lemonnier, Djibouti'},
+  {lat:36.15,lng:-5.35,name:'Gibraltar'},{lat:35.09,lng:33.27,name:'Akrotiri, Cyprus'},
+  {lat:37.09,lng:24.94,name:'Souda Bay, Greece'},{lat:41.05,lng:28.95,name:'Incirlik, Turkey'},
+  {lat:49.20,lng:-2.13,name:'HMNB Devonport, UK'},{lat:48.45,lng:-4.42,name:'Brest Naval, France'},
+  {lat:35.45,lng:139.35,name:'Yokosuka, Japan'},{lat:33.45,lng:126.57,name:'Jeju, South Korea'},
+  {lat:1.35,lng:103.82,name:'Changi Naval, Singapore'},{lat:-34.73,lng:138.57,name:'Edinburgh, Australia'},
+  {lat:21.35,lng:-157.95,name:'Pearl Harbor, US'},{lat:22.32,lng:114.17,name:'Stonecutters Island, HK'},
+  {lat:59.95,lng:30.32,name:'Kronstadt, Russia'},{lat:44.62,lng:33.53,name:'Sevastopol, Russia'},
+  {lat:69.08,lng:33.42,name:'Severomorsk, Russia'},{lat:53.01,lng:158.65,name:'Petropavlovsk, Russia'},
+  {lat:18.27,lng:109.58,name:'Yulin, China'},{lat:38.05,lng:121.37,name:'Lushun, China'},
+  {lat:36.07,lng:120.38,name:'Qingdao, China'},{lat:30.00,lng:122.15,name:'Zhoushan, China'},
+  {lat:37.47,lng:126.62,name:'Pyeongtaek/Osan, S. Korea'},{lat:51.28,lng:-0.77,name:'Aldershot, UK'},
+  {lat:48.73,lng:44.50,name:'Volgograd, Russia'},{lat:55.01,lng:82.93,name:'Novosibirsk, Russia'},
+];
 
 function initSitroomMap() {
   const container = document.getElementById('sitroom-map');
@@ -170,6 +231,24 @@ async function loadSitroomMapData() {
       });
     }
   }
+
+  // Nuclear sites layer (static data)
+  if (document.getElementById('sitroom-layer-nuclear')?.checked) {
+    clearSitroomMarkers('nuclear');
+    _NUCLEAR_SITES.forEach(s => {
+      addSitroomMarker({lat: s.lat, lng: s.lng, title: s.name,
+        event_type: 'nuclear', magnitude: null, depth_km: null}, 'nuclear');
+    });
+  } else { clearSitroomMarkers('nuclear'); }
+
+  // Military bases layer (static data)
+  if (document.getElementById('sitroom-layer-bases')?.checked) {
+    clearSitroomMarkers('bases');
+    _MILITARY_BASES.forEach(s => {
+      addSitroomMarker({lat: s.lat, lng: s.lng, title: s.name,
+        event_type: 'military_base', magnitude: null, depth_km: null}, 'bases');
+    });
+  } else { clearSitroomMarkers('bases'); }
 }
 
 function clearSitroomMarkers(layerType) {
@@ -179,7 +258,7 @@ function clearSitroomMarkers(layerType) {
 
 function addSitroomMarker(ev, layerType) {
   if (!_sitroomMap) return;
-  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800' };
+  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88' };
   const color = colors[layerType] || '#ffffff';
   let size = layerType === 'aviation' ? 5 : 8;
   if (ev.magnitude) size = Math.max(6, Math.min(24, ev.magnitude * 3));
@@ -228,6 +307,7 @@ async function loadSitroomSummary() {
 
   renderSitroomMarkets(d.markets || []);
   renderSitroomMarketRibbon(d.markets || []);
+  renderSitroomFearGreed(d.markets || []);
   renderSitroomSpaceWeather(d.space_weather);
   renderSitroomQuakes();
   loadSitroomWeather();
@@ -546,6 +626,25 @@ async function loadSitroomIntelFeed() {
       <div class="sr-intel-meta">${escapeHtml(a.source_name || '')}</div>
     </div>
   </div>`).join('');
+}
+
+/* ─── Fear & Greed Gauge ─── */
+function renderSitroomFearGreed(markets) {
+  const el = document.getElementById('sitroom-fear-greed');
+  if (!el) return;
+  const fg = markets.find(m => m.symbol === 'FEAR_GREED');
+  if (!fg) { el.innerHTML = '<div class="sr-empty">No Fear & Greed data</div>'; return; }
+  const val = fg.price || 50;
+  const label = fg.label || (val <= 25 ? 'Extreme Fear' : val <= 45 ? 'Fear' : val <= 55 ? 'Neutral' : val <= 75 ? 'Greed' : 'Extreme Greed');
+  const color = val <= 25 ? '#e05050' : val <= 45 ? '#d4a017' : val <= 55 ? '#888' : val <= 75 ? '#2aad94' : '#4aedc4';
+  // Needle rotation: 0=left (-90deg), 100=right (90deg)
+  const deg = -90 + (val / 100) * 180;
+  el.innerHTML = `<div class="sr-fg-gauge">
+    <div class="sr-fg-arc"></div>
+    <div class="sr-fg-needle" style="transform:rotate(${deg}deg)"></div>
+  </div>
+  <div class="sr-fg-value" style="color:${color}">${val}</div>
+  <div class="sr-fg-label">${escapeHtml(label.toUpperCase())}</div>`;
 }
 
 /* ─── Fires ─── */

@@ -418,8 +418,14 @@ def _fetch_market_data():
     _set_last_fetch('markets')
     markets = []
 
-    # Yahoo Finance — stock indices (S&P 500, NASDAQ, Dow Jones)
-    yf_symbols = {'^GSPC': 'S&P 500', '^IXIC': 'NASDAQ', '^DJI': 'DOW JONES'}
+    # Yahoo Finance — stock indices + forex pairs
+    yf_symbols = {
+        '^GSPC': 'S&P 500', '^IXIC': 'NASDAQ', '^DJI': 'DOW JONES',
+        '^FTSE': 'FTSE 100', '^GDAXI': 'DAX', '^N225': 'NIKKEI 225',
+        '^HSI': 'HANG SENG', '^STOXX50E': 'EURO STOXX 50',
+        'EURUSD=X': 'EUR/USD', 'GBPUSD=X': 'GBP/USD', 'USDJPY=X': 'USD/JPY',
+        'DX-Y.NYB': 'DXY (USD)',
+    }
     for sym, name in yf_symbols.items():
         try:
             resp = requests.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}',
@@ -429,7 +435,8 @@ def _fetch_market_data():
                 price = meta.get('regularMarketPrice', 0)
                 prev = meta.get('previousClose', 0)
                 change = ((price - prev) / prev * 100) if prev else 0
-                markets.append({'symbol': name, 'price': price, 'change_24h': round(change, 2), 'market_type': 'index'})
+                mtype = 'forex' if '/' in name or 'DXY' in name else 'index'
+                markets.append({'symbol': name, 'price': price, 'change_24h': round(change, 2), 'market_type': mtype})
         except Exception as e:
             log.debug(f"Yahoo Finance {sym} failed: {e}")
 

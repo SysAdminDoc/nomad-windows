@@ -1,7 +1,7 @@
 /* ─── Situation Room v4 — World Monitor Intelligence Dashboard ─── */
 
 let _sitroomMap = null;
-let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [], pipelines: [], waterways: [], spaceports: [], shipping: [], ucdp: [], airports: [], fincenters: [] };
+let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [], pipelines: [], waterways: [], spaceports: [], shipping: [], ucdp: [], airports: [], fincenters: [], mining: [], techHQs: [] };
 let _sitroomNewsOffset = 0;
 const SITROOM_NEWS_PAGE = 50;
 let _sitroomAutoTimer = null;
@@ -344,6 +344,30 @@ const _FINANCIAL_CENTERS = [
   {lat:19.08,lng:72.88,name:'Dalal Street, Mumbai'},{lat:37.57,lng:126.98,name:'Yeouido, Seoul'},
   {lat:-23.55,lng:-46.64,name:'Faria Lima, Sao Paulo'},{lat:52.37,lng:4.90,name:'Zuidas, Amsterdam'},
 ];
+const _MINING_SITES = [
+  {lat:-22.34,lng:-68.93,name:'Escondida, Chile (copper)'},{lat:-29.78,lng:137.77,name:'Olympic Dam, Australia (uranium/copper)'},
+  {lat:-21.27,lng:-70.04,name:'Collahuasi, Chile (copper)'},{lat:37.13,lng:-113.55,name:'Iron County, US (iron)'},
+  {lat:-31.42,lng:159.07,name:'Lord Howe, Pacific'},{lat:62.45,lng:114.37,name:'Diavik, Canada (diamond)'},
+  {lat:-6.02,lng:106.05,name:'Grasberg, Indonesia (gold/copper)'},{lat:-20.65,lng:118.55,name:'Pilbara, Australia (iron)'},
+  {lat:47.30,lng:87.90,name:'Altay, China (rare earth)'},{lat:40.65,lng:109.97,name:'Baotou, China (rare earth)'},
+  {lat:-26.20,lng:27.95,name:'Witwatersrand, South Africa (gold)'},{lat:56.30,lng:60.61,name:'Ural Mountains, Russia (nickel)'},
+  {lat:69.35,lng:88.21,name:'Norilsk, Russia (nickel/palladium)'},{lat:-15.45,lng:28.28,name:'Lumwana, Zambia (copper)'},
+  {lat:-12.04,lng:26.40,name:'Konkola, Zambia (copper)'},{lat:60.03,lng:-112.47,name:'Athabasca, Canada (oil sands)'},
+  {lat:-9.42,lng:147.12,name:'Ok Tedi, PNG (gold/copper)'},{lat:51.46,lng:59.00,name:'Gai, Russia (copper)'},
+  {lat:7.35,lng:-2.33,name:'Obuasi, Ghana (gold)'},{lat:11.43,lng:-12.28,name:'Simandou, Guinea (iron)'},
+];
+const _TECH_HQS = [
+  {lat:37.39,lng:-122.08,name:'Google, Mountain View'},{lat:37.48,lng:-122.14,name:'Meta, Menlo Park'},
+  {lat:37.33,lng:-122.01,name:'Apple, Cupertino'},{lat:47.64,lng:-122.13,name:'Microsoft, Redmond'},
+  {lat:47.62,lng:-122.34,name:'Amazon, Seattle'},{lat:37.79,lng:-122.39,name:'Salesforce, San Francisco'},
+  {lat:37.56,lng:-122.27,name:'Tesla, Palo Alto'},{lat:30.27,lng:-97.74,name:'Tesla GF, Austin'},
+  {lat:37.42,lng:-122.17,name:'NVIDIA, Santa Clara'},{lat:37.40,lng:-121.96,name:'Intel, Santa Clara'},
+  {lat:25.04,lng:121.57,name:'TSMC, Hsinchu'},{lat:37.57,lng:126.98,name:'Samsung, Seoul'},
+  {lat:35.68,lng:139.69,name:'Sony, Tokyo'},{lat:22.28,lng:114.17,name:'Tencent, Shenzhen'},
+  {lat:30.27,lng:120.15,name:'Alibaba, Hangzhou'},{lat:39.98,lng:116.31,name:'ByteDance, Beijing'},
+  {lat:51.50,lng:-0.08,name:'DeepMind, London'},{lat:48.86,lng:2.35,name:'Mistral AI, Paris'},
+  {lat:52.52,lng:13.41,name:'SAP, Berlin'},{lat:12.97,lng:77.64,name:'Infosys, Bangalore'},
+];
 
 function initSitroomMap() {
   const container = document.getElementById('sitroom-map');
@@ -526,6 +550,18 @@ async function loadSitroomMapData() {
     clearSitroomMarkers('fincenters');
     _FINANCIAL_CENTERS.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'finance'}, 'fincenters'));
   } else { clearSitroomMarkers('fincenters'); }
+
+  // Mining sites (static)
+  if (document.getElementById('sitroom-layer-mining')?.checked) {
+    clearSitroomMarkers('mining');
+    _MINING_SITES.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'mining'}, 'mining'));
+  } else { clearSitroomMarkers('mining'); }
+
+  // Tech HQs (static)
+  if (document.getElementById('sitroom-layer-techHQs')?.checked) {
+    clearSitroomMarkers('techHQs');
+    _TECH_HQS.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'tech_hq'}, 'techHQs'));
+  } else { clearSitroomMarkers('techHQs'); }
 }
 
 function clearSitroomMarkers(layerType) {
@@ -550,7 +586,7 @@ function addSitroomMarker(ev, layerType) {
   if (!_sitroomMap) return;
   // Skip if would cluster with existing marker at this zoom
   if (_shouldCluster(ev.lat, ev.lng, layerType)) return;
-  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88', cables: '#3388ff', datacenters: '#aa66ff', pipelines: '#cc8844', waterways: '#00ddff', spaceports: '#ff66ff', shipping: '#88ccaa', ucdp: '#dd2222', airports: '#cccccc', fincenters: '#44dd88' };
+  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88', cables: '#3388ff', datacenters: '#aa66ff', pipelines: '#cc8844', waterways: '#00ddff', spaceports: '#ff66ff', shipping: '#88ccaa', ucdp: '#dd2222', airports: '#cccccc', fincenters: '#44dd88', mining: '#cc8844', techHQs: '#44aadd' };
   const color = colors[layerType] || '#ffffff';
   let size = layerType === 'aviation' ? 5 : 8;
   if (ev.magnitude) size = Math.max(6, Math.min(24, ev.magnitude * 3));
@@ -1052,6 +1088,7 @@ function _updateMapLegend() {
     spaceports: {color:'#ff66ff',label:'Spaceports'}, shipping: {color:'#88ccaa',label:'Shipping'},
     ucdp: {color:'#dd2222',label:'Armed Conflicts'},
     airports: {color:'#cccccc',label:'Airports'}, fincenters: {color:'#44dd88',label:'Finance'},
+    mining: {color:'#cc8844',label:'Mining'}, techHQs: {color:'#44aadd',label:'Tech HQs'},
   };
   const active = [];
   document.querySelectorAll('[data-sitroom-layer]').forEach(cb => {

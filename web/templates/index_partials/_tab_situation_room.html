@@ -1,7 +1,7 @@
   <!-- Situation Room Tab -->
   <div id="tab-situation-room" class="tab-content active">
 
-    <!-- Header Bar -->
+    <!-- Header -->
     <div class="sitroom-header">
       <div class="sitroom-header-left">
         <div class="section-header-label sitroom-kicker">SITUATION ROOM</div>
@@ -16,58 +16,42 @@
 
     <!-- Status Strip -->
     <div class="sitroom-status-strip" id="sitroom-status-strip">
-      <div class="sitroom-stat" data-sitroom-filter="news">
-        <span class="sitroom-stat-value" id="sitroom-stat-news">--</span>
-        <span class="sitroom-stat-label">Headlines</span>
-      </div>
-      <div class="sitroom-stat" data-sitroom-filter="earthquakes">
-        <span class="sitroom-stat-value" id="sitroom-stat-quakes">--</span>
-        <span class="sitroom-stat-label">Earthquakes</span>
-      </div>
-      <div class="sitroom-stat" data-sitroom-filter="weather">
-        <span class="sitroom-stat-value" id="sitroom-stat-weather">--</span>
-        <span class="sitroom-stat-label">Weather Alerts</span>
-      </div>
-      <div class="sitroom-stat" data-sitroom-filter="conflicts">
-        <span class="sitroom-stat-value" id="sitroom-stat-conflicts">--</span>
-        <span class="sitroom-stat-label">GDACS Events</span>
-      </div>
-      <div class="sitroom-stat" data-sitroom-filter="markets">
-        <span class="sitroom-stat-value" id="sitroom-stat-markets">--</span>
-        <span class="sitroom-stat-label">Markets</span>
-      </div>
+      <div class="sitroom-stat"><span class="sitroom-stat-value" id="sitroom-stat-news">--</span><span class="sitroom-stat-label">Headlines</span></div>
+      <div class="sitroom-stat"><span class="sitroom-stat-value" id="sitroom-stat-quakes">--</span><span class="sitroom-stat-label">Earthquakes</span></div>
+      <div class="sitroom-stat"><span class="sitroom-stat-value" id="sitroom-stat-weather">--</span><span class="sitroom-stat-label">Weather</span></div>
+      <div class="sitroom-stat"><span class="sitroom-stat-value" id="sitroom-stat-conflicts">--</span><span class="sitroom-stat-label">Crises</span></div>
+      <div class="sitroom-stat"><span class="sitroom-stat-value" id="sitroom-stat-markets">--</span><span class="sitroom-stat-label">Markets</span></div>
+      <div class="sitroom-stat"><span class="sitroom-stat-value" id="sitroom-stat-aircraft">--</span><span class="sitroom-stat-label">Aircraft</span></div>
+      <div class="sitroom-stat"><span class="sitroom-stat-value" id="sitroom-stat-volcanoes">--</span><span class="sitroom-stat-label">Volcanoes</span></div>
+      <div class="sitroom-stat"><span class="sitroom-stat-value" id="sitroom-stat-predictions">--</span><span class="sitroom-stat-label">Predictions</span></div>
     </div>
 
     <!-- Main Grid -->
     <div class="sitroom-grid">
 
-      <!-- LEFT COLUMN: Globe Map + Events -->
+      <!-- LEFT COLUMN -->
       <div class="sitroom-col-main">
 
-        <!-- Globe / Event Map -->
+        <!-- Event Map -->
         <div class="sitroom-panel sitroom-map-panel">
           <div class="sitroom-panel-header">
             <span class="section-header-label">GLOBAL EVENT MAP</span>
             <div class="sitroom-map-controls">
-              <label class="sitroom-layer-toggle">
-                <input type="checkbox" id="sitroom-layer-quakes" checked data-sitroom-layer="earthquakes"> Quakes
-              </label>
-              <label class="sitroom-layer-toggle">
-                <input type="checkbox" id="sitroom-layer-weather" checked data-sitroom-layer="weather"> Weather
-              </label>
-              <label class="sitroom-layer-toggle">
-                <input type="checkbox" id="sitroom-layer-conflicts" checked data-sitroom-layer="conflicts"> Crises
-              </label>
+              <label class="sitroom-layer-toggle"><input type="checkbox" id="sitroom-layer-quakes" checked data-sitroom-layer="earthquakes"> Quakes</label>
+              <label class="sitroom-layer-toggle"><input type="checkbox" id="sitroom-layer-weather" checked data-sitroom-layer="weather"> Weather</label>
+              <label class="sitroom-layer-toggle"><input type="checkbox" id="sitroom-layer-conflicts" checked data-sitroom-layer="conflicts"> Crises</label>
+              <label class="sitroom-layer-toggle"><input type="checkbox" id="sitroom-layer-aviation" data-sitroom-layer="aviation"> Aircraft</label>
+              <label class="sitroom-layer-toggle"><input type="checkbox" id="sitroom-layer-volcanoes" data-sitroom-layer="volcanoes"> Volcanoes</label>
             </div>
           </div>
-          <div id="sitroom-map" class="sitroom-map-container"></div>
+          <div id="sitroom-map" class="sitroom-map-container" role="img" aria-label="Global event map showing earthquakes, weather alerts, crises, aircraft, and volcanoes"></div>
         </div>
 
-        <!-- Earthquake Feed -->
+        <!-- Seismic Activity -->
         <div class="sitroom-panel" id="sitroom-quake-panel">
           <div class="sitroom-panel-header">
             <span class="section-header-label">SEISMIC ACTIVITY</span>
-            <select id="sitroom-quake-filter" class="sitroom-select" data-sitroom-action="filter-quakes">
+            <select id="sitroom-quake-filter" class="sitroom-select" aria-label="Filter earthquakes by magnitude">
               <option value="0">All magnitudes</option>
               <option value="3">M3.0+</option>
               <option value="4" selected>M4.0+</option>
@@ -75,34 +59,36 @@
               <option value="6">M6.0+</option>
             </select>
           </div>
-          <div id="sitroom-quake-list" class="sitroom-event-list">
-            <div class="sitroom-empty">No earthquake data — click Refresh Feeds to fetch</div>
-          </div>
+          <div id="sitroom-quake-list" class="sitroom-event-list"><div class="sitroom-empty">No earthquake data</div></div>
         </div>
 
         <!-- Weather Alerts -->
         <div class="sitroom-panel" id="sitroom-weather-panel">
-          <div class="sitroom-panel-header">
-            <span class="section-header-label">SEVERE WEATHER</span>
-          </div>
-          <div id="sitroom-weather-list" class="sitroom-event-list">
-            <div class="sitroom-empty">No weather alerts cached</div>
-          </div>
+          <div class="sitroom-panel-header"><span class="section-header-label">SEVERE WEATHER</span></div>
+          <div id="sitroom-weather-list" class="sitroom-event-list"><div class="sitroom-empty">No weather alerts</div></div>
         </div>
 
       </div>
 
-      <!-- RIGHT COLUMN: News + Markets + Briefing -->
+      <!-- RIGHT COLUMN -->
       <div class="sitroom-col-side">
 
-        <!-- Market Ticker -->
+        <!-- Markets -->
         <div class="sitroom-panel sitroom-market-panel">
-          <div class="sitroom-panel-header">
-            <span class="section-header-label">MARKETS</span>
-          </div>
-          <div id="sitroom-market-ticker" class="sitroom-market-grid">
-            <div class="sitroom-empty">No market data cached</div>
-          </div>
+          <div class="sitroom-panel-header"><span class="section-header-label">MARKETS &amp; COMMODITIES</span></div>
+          <div id="sitroom-market-ticker" class="sitroom-market-grid"><div class="sitroom-empty">No market data</div></div>
+        </div>
+
+        <!-- Space Weather -->
+        <div class="sitroom-panel">
+          <div class="sitroom-panel-header"><span class="section-header-label">SPACE WEATHER</span></div>
+          <div id="sitroom-space-weather"><div class="sitroom-empty">No space weather data</div></div>
+        </div>
+
+        <!-- Prediction Markets -->
+        <div class="sitroom-panel">
+          <div class="sitroom-panel-header"><span class="section-header-label">PREDICTION MARKETS</span></div>
+          <div id="sitroom-predictions-list" class="sitroom-predictions-body"><div class="sitroom-empty">No prediction data</div></div>
         </div>
 
         <!-- AI Briefing -->
@@ -111,30 +97,22 @@
             <span class="section-header-label">AI INTELLIGENCE BRIEFING</span>
             <button class="btn btn-sm" id="sitroom-gen-briefing" data-sitroom-action="generate-briefing">Generate</button>
           </div>
-          <div id="sitroom-briefing-content" class="sitroom-briefing-body">
-            <div class="sitroom-empty">Click Generate to create an AI-powered situation report from current data</div>
-          </div>
+          <div id="sitroom-briefing-content" class="sitroom-briefing-body"><div class="sitroom-empty">Click Generate to create an AI situation report</div></div>
         </div>
 
         <!-- News Feed -->
         <div class="sitroom-panel sitroom-news-panel">
           <div class="sitroom-panel-header">
             <span class="section-header-label">NEWS FEED</span>
-            <select id="sitroom-news-category" class="sitroom-select" data-sitroom-action="filter-news">
-              <option value="">All Categories</option>
-            </select>
+            <select id="sitroom-news-category" class="sitroom-select" aria-label="Filter news by category"><option value="">All Categories</option></select>
           </div>
-          <div id="sitroom-news-list" class="sitroom-news-feed">
-            <div class="sitroom-empty">No news cached — click Refresh Feeds to pull from RSS sources</div>
-          </div>
+          <div id="sitroom-news-list" class="sitroom-news-feed"><div class="sitroom-empty">No news cached</div></div>
           <button class="btn btn-sm btn-ghost sitroom-load-more" id="sitroom-news-more" data-sitroom-action="load-more-news" style="display:none">Load More</button>
         </div>
 
         <!-- Custom Feeds -->
         <details class="sitroom-panel sitroom-feeds-panel">
-          <summary class="sitroom-panel-header sitroom-panel-header-collapsible">
-            <span class="section-header-label">MANAGE FEEDS</span>
-          </summary>
+          <summary class="sitroom-panel-header sitroom-panel-header-collapsible"><span class="section-header-label">MANAGE FEEDS</span></summary>
           <div class="sitroom-feeds-body">
             <div class="sitroom-add-feed-form">
               <input type="text" id="sitroom-feed-name" placeholder="Feed name" class="sitroom-input" maxlength="200">
@@ -143,10 +121,7 @@
               <button class="btn btn-sm btn-primary" data-sitroom-action="add-feed">Add Feed</button>
             </div>
             <div id="sitroom-custom-feeds-list" class="sitroom-custom-list"></div>
-            <div class="sitroom-feed-stats">
-              <span id="sitroom-builtin-count">0</span> built-in feeds |
-              <span id="sitroom-custom-count">0</span> custom feeds
-            </div>
+            <div class="sitroom-feed-stats"><span id="sitroom-builtin-count">0</span> built-in | <span id="sitroom-custom-count">0</span> custom feeds</div>
           </div>
         </details>
 

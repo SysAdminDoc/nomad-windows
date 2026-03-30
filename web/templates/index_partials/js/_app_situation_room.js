@@ -1,7 +1,7 @@
 /* ─── Situation Room v4 — World Monitor Intelligence Dashboard ─── */
 
 let _sitroomMap = null;
-let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [], pipelines: [], waterways: [], spaceports: [] };
+let _sitroomMarkers = { earthquakes: [], weather: [], conflicts: [], aviation: [], volcanoes: [], fires: [], nuclear: [], bases: [], cables: [], datacenters: [], pipelines: [], waterways: [], spaceports: [], shipping: [] };
 let _sitroomNewsOffset = 0;
 const SITROOM_NEWS_PAGE = 50;
 let _sitroomAutoTimer = null;
@@ -217,6 +217,16 @@ const _SPACEPORTS = [
   {lat:25.99,lng:-97.15,name:'SpaceX Starbase, US'},{lat:-31.04,lng:136.50,name:'Woomera, Australia'},
   {lat:57.44,lng:-4.26,name:'Sutherland Spaceport, UK'},{lat:69.30,lng:16.02,name:'Andoya, Norway'},
 ];
+const _SHIPPING_HUBS = [
+  {lat:31.23,lng:121.47,name:'Shanghai, China (#1 port)'},{lat:1.26,lng:103.84,name:'Singapore (#2 port)'},
+  {lat:22.25,lng:114.17,name:'Hong Kong/Shenzhen'},{lat:35.44,lng:129.37,name:'Busan, South Korea'},
+  {lat:51.90,lng:4.50,name:'Rotterdam, Netherlands'},{lat:53.55,lng:9.99,name:'Hamburg, Germany'},
+  {lat:37.95,lng:23.63,name:'Piraeus, Greece'},{lat:29.95,lng:32.56,name:'Port Said, Egypt (Suez)'},
+  {lat:25.28,lng:55.30,name:'Jebel Ali, UAE'},{lat:40.68,lng:-74.04,name:'NY/NJ Port, US'},
+  {lat:33.75,lng:-118.28,name:'Long Beach/LA, US'},{lat:12.98,lng:80.18,name:'Chennai, India'},
+  {lat:-33.86,lng:151.21,name:'Sydney, Australia'},{lat:-23.95,lng:-46.30,name:'Santos, Brazil'},
+  {lat:35.45,lng:139.65,name:'Yokohama, Japan'},{lat:22.84,lng:108.37,name:'Qinzhou, China'},
+];
 
 function initSitroomMap() {
   const container = document.getElementById('sitroom-map');
@@ -367,6 +377,12 @@ async function loadSitroomMapData() {
     clearSitroomMarkers('spaceports');
     _SPACEPORTS.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'spaceport'}, 'spaceports'));
   } else { clearSitroomMarkers('spaceports'); }
+
+  // Shipping hubs (static)
+  if (document.getElementById('sitroom-layer-shipping')?.checked) {
+    clearSitroomMarkers('shipping');
+    _SHIPPING_HUBS.forEach(s => addSitroomMarker({lat:s.lat,lng:s.lng,title:s.name,event_type:'shipping'}, 'shipping'));
+  } else { clearSitroomMarkers('shipping'); }
 }
 
 function clearSitroomMarkers(layerType) {
@@ -376,7 +392,7 @@ function clearSitroomMarkers(layerType) {
 
 function addSitroomMarker(ev, layerType) {
   if (!_sitroomMap) return;
-  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88', cables: '#3388ff', datacenters: '#aa66ff', pipelines: '#cc8844', waterways: '#00ddff', spaceports: '#ff66ff' };
+  const colors = { earthquakes: '#ff4444', weather: '#ffaa00', conflicts: '#ff6600', aviation: '#44aaff', volcanoes: '#ff3366', fires: '#ff8800', nuclear: '#ffff00', bases: '#44ff88', cables: '#3388ff', datacenters: '#aa66ff', pipelines: '#cc8844', waterways: '#00ddff', spaceports: '#ff66ff', shipping: '#88ccaa' };
   const color = colors[layerType] || '#ffffff';
   let size = layerType === 'aviation' ? 5 : 8;
   if (ev.magnitude) size = Math.max(6, Math.min(24, ev.magnitude * 3));
@@ -531,6 +547,22 @@ async function loadSitroomPredictions() {
   }).join('');
 }
 
+/* ─── News Deduplication ─── */
+function _dedupeHeadlines(articles) {
+  if (!articles || articles.length < 2) return articles;
+  const seen = [];
+  return articles.filter(a => {
+    const words = new Set((a.title || '').toLowerCase().replace(/[^a-z0-9 ]/g, '').split(/\s+/).filter(w => w.length > 3));
+    for (const prev of seen) {
+      const inter = [...words].filter(w => prev.has(w)).length;
+      const union = new Set([...words, ...prev]).size;
+      if (union > 0 && inter / union > 0.6) return false; // >60% word overlap = duplicate
+    }
+    seen.push(words);
+    return true;
+  });
+}
+
 /* ─── News ─── */
 async function loadSitroomNews(append) {
   if (!append) _sitroomNewsOffset = 0;
@@ -543,7 +575,9 @@ async function loadSitroomNews(append) {
     if (!append) { list.innerHTML = '<div class="sitroom-empty">No news cached — click Refresh Feeds</div>'; if (more) more.style.display = 'none'; }
     return;
   }
-  const html = d.articles.map(a => `<div class="sitroom-news-item">
+  // Deduplicate similar headlines (Jaccard similarity on word sets)
+  const deduped = _dedupeHeadlines(d.articles);
+  const html = deduped.map(a => `<div class="sitroom-news-item">
     <span class="sitroom-news-cat" data-cat="${escapeAttr(a.category || '')}">${escapeHtml(a.category || '')}</span>
     <div class="sitroom-news-body">
       <a href="${escapeAttr(a.link || '#')}" target="_blank" rel="noopener" class="sitroom-news-title">${escapeHtml(a.title)}</a>
@@ -551,7 +585,7 @@ async function loadSitroomNews(append) {
     </div>
   </div>`).join('');
   if (append) list.insertAdjacentHTML('beforeend', html); else list.innerHTML = html;
-  _sitroomNewsOffset += d.articles.length;
+  _sitroomNewsOffset += deduped.length;
   if (more) more.style.display = _sitroomNewsOffset < (d.total || 0) ? '' : 'none';
 }
 
@@ -715,25 +749,52 @@ function renderSitroomMarketRibbon(markets) {
 async function loadSitroomCII() {
   const el = document.getElementById('sr-cii-list');
   if (!el) return;
-  // Compute CII from event data — count events per country
+  // Compute CII from events + news signal density per country
   const events = await safeFetch('/api/sitroom/events?limit=500', {}, null);
-  if (!events || !events.events?.length) { el.innerHTML = '<div class="sr-empty">No data for CII</div>'; return; }
+  const newsData = await safeFetch('/api/sitroom/news?limit=200', {}, null);
+  if ((!events || !events.events?.length) && (!newsData || !newsData.articles?.length)) {
+    el.innerHTML = '<div class="sr-empty">No data for CII</div>'; return;
+  }
   const countryScores = {};
-  events.events.forEach(ev => {
-    let det = {};
-    try { det = ev.detail_json ? JSON.parse(ev.detail_json) : {}; } catch(e) {}
-    const country = det.country || 'Unknown';
-    if (country === 'Unknown' || !country) return;
-    if (!countryScores[country]) countryScores[country] = { events: 0, severity: 0 };
+  const _addCountry = (country, points, sev, type) => {
+    if (!country || country === 'Unknown') return;
+    if (!countryScores[country]) countryScores[country] = { events: 0, severity: 0, types: {} };
     countryScores[country].events++;
-    if (ev.magnitude) countryScores[country].severity += ev.magnitude;
-    if (det.severity === 'Extreme') countryScores[country].severity += 5;
-    if (det.severity === 'Severe') countryScores[country].severity += 3;
-    if (det.alert_level === 'Red') countryScores[country].severity += 4;
-    if (det.alert_level === 'Orange') countryScores[country].severity += 2;
-  });
+    countryScores[country].severity += sev;
+    countryScores[country].types[type] = (countryScores[country].types[type] || 0) + 1;
+  };
+  // Score from events
+  if (events?.events) {
+    events.events.forEach(ev => {
+      let det = {}; try { det = ev.detail_json ? JSON.parse(ev.detail_json) : {}; } catch(e) {}
+      const country = det.country || '';
+      let sev = 0;
+      if (ev.magnitude) sev += ev.magnitude;
+      if (det.severity === 'Extreme') sev += 5;
+      if (det.severity === 'Severe') sev += 3;
+      if (det.alert_level === 'Red') sev += 4;
+      if (det.alert_level === 'Orange') sev += 2;
+      if (ev.event_type === 'fire') sev += 0.5;
+      if (ev.event_type === 'disease') sev += 3;
+      if (ev.event_type === 'internet_outage') sev += 2;
+      _addCountry(country, 1, sev, ev.event_type || 'unknown');
+    });
+  }
+  // Boost from news mentions (scan titles for country names)
+  if (newsData?.articles) {
+    const knownCountries = Object.keys(countryScores);
+    newsData.articles.forEach(a => {
+      const title = (a.title || '').toLowerCase();
+      knownCountries.forEach(c => {
+        if (title.includes(c.toLowerCase())) {
+          countryScores[c].severity += 0.5;
+          countryScores[c].types['news'] = (countryScores[c].types['news'] || 0) + 1;
+        }
+      });
+    });
+  }
   const sorted = Object.entries(countryScores)
-    .map(([c, s]) => ({ country: c, score: Math.min(100, Math.round(s.events * 3 + s.severity * 2)), events: s.events }))
+    .map(([c, s]) => ({ country: c, score: Math.min(100, Math.round(s.events * 3 + s.severity * 2)), events: s.events, types: s.types }))
     .sort((a, b) => b.score - a.score)
     .slice(0, 20);
   if (!sorted.length) { el.innerHTML = '<div class="sr-empty">No country data</div>'; return; }
@@ -741,8 +802,19 @@ async function loadSitroomCII() {
   el.innerHTML = sorted.map(c => {
     const cls = c.score >= 60 ? 'sr-cii-high' : c.score >= 30 ? 'sr-cii-med' : 'sr-cii-low';
     const color = c.score >= 60 ? '#e05050' : c.score >= 30 ? '#d4a017' : '#2aad94';
+    // Signal type icons
+    const typeIcons = [];
+    if (c.types.earthquake) typeIcons.push('<span title="Seismic" style="color:#ff4444">S</span>');
+    if (c.types.conflict) typeIcons.push('<span title="Crisis" style="color:#ff6600">C</span>');
+    if (c.types.weather_alert) typeIcons.push('<span title="Weather" style="color:#ffaa00">W</span>');
+    if (c.types.fire) typeIcons.push('<span title="Fires" style="color:#ff8800">F</span>');
+    if (c.types.disease) typeIcons.push('<span title="Disease" style="color:#44aa44">D</span>');
+    if (c.types.internet_outage) typeIcons.push('<span title="Outage" style="color:#3388ff">O</span>');
+    if (c.types.news) typeIcons.push('<span title="News mentions" style="color:#888">N</span>');
+    const signals = typeIcons.length ? `<span class="sr-cii-signals">${typeIcons.join('')}</span>` : '';
     return `<div class="sr-cii-row" style="cursor:pointer" data-cii-country="${escapeAttr(c.country)}">
       <span class="sr-cii-country">${escapeHtml(c.country)}</span>
+      ${signals}
       <div class="sr-cii-bar"><div class="sr-cii-bar-fill" style="width:${(c.score/maxScore*100).toFixed(0)}%;background:${color}"></div></div>
       <span class="sr-cii-score ${cls}">${c.score}</span>
     </div>`;
@@ -807,7 +879,7 @@ function _updateMapLegend() {
     nuclear: {color:'#ffff00',label:'Nuclear'}, bases: {color:'#44ff88',label:'Mil. Bases'},
     cables: {color:'#3388ff',label:'Cables'}, datacenters: {color:'#aa66ff',label:'Data Ctrs'},
     pipelines: {color:'#cc8844',label:'Pipelines'}, waterways: {color:'#00ddff',label:'Waterways'},
-    spaceports: {color:'#ff66ff',label:'Spaceports'},
+    spaceports: {color:'#ff66ff',label:'Spaceports'}, shipping: {color:'#88ccaa',label:'Shipping'},
   };
   const active = [];
   document.querySelectorAll('[data-sitroom-layer]').forEach(cb => {
@@ -1348,6 +1420,13 @@ async function openCountryDeepDive(country) {
   if (!d) { body.innerHTML = '<div class="sr-empty">No data available</div>'; return; }
 
   let html = '';
+
+  // Overview stats
+  html += `<div class="sr-country-section"><div class="sr-country-section-title">OVERVIEW</div>
+    <div class="sr-country-stat"><span>Total Events</span><span class="sr-country-stat-val">${d.total_events || 0}</span></div>
+    <div class="sr-country-stat"><span>Signal Types</span><span class="sr-country-stat-val">${Object.keys(d.event_summary || {}).length}</span></div>
+    <div class="sr-country-stat"><span>News Mentions</span><span class="sr-country-stat-val">${(d.recent_news || []).length}</span></div>
+  </div>`;
 
   // Event summary
   if (d.event_summary && Object.keys(d.event_summary).length) {

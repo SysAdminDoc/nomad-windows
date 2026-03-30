@@ -1527,11 +1527,21 @@ def api_sitroom_country_deep_dive(country):
             "SELECT title, magnitude FROM sitroom_events WHERE event_type = 'earthquake' AND title LIKE ? ORDER BY magnitude DESC LIMIT 5",
             (f'%{country}%',)).fetchall()
 
+        # Market data for context
+        markets = db.execute('SELECT symbol, price, change_24h FROM sitroom_markets ORDER BY market_type LIMIT 10').fetchall()
+
+        # Total event count
+        total_events = db.execute(
+            "SELECT COUNT(*) FROM sitroom_events WHERE detail_json LIKE ?",
+            (f'%{country}%',)).fetchone()[0]
+
     return jsonify({
         'country': country,
+        'total_events': total_events,
         'event_summary': {dict(e)['event_type']: dict(e)['cnt'] for e in events},
         'recent_news': [dict(r) for r in news],
         'recent_quakes': [dict(r) for r in quakes],
+        'global_markets': [dict(r) for r in markets[:5]],
     })
 
 

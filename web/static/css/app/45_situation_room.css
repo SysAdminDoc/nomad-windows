@@ -417,6 +417,7 @@
 .sr-cii-low { background: #0f5040; color: #4aedc4; }
 .sr-cii-med { background: #3a3010; color: #d4a017; }
 .sr-cii-high { background: #3a1515; color: #e05050; }
+.sr-cii-signals { display: flex; gap: 2px; font-size: 7px; font-weight: 800; letter-spacing: 0; flex-shrink: 0; }
 .sr-cii-bar { width: 70px; height: 3px; background: #1e1e1e; border-radius: 1px; overflow: hidden; }
 .sr-cii-bar-fill { height: 100%; border-radius: 1px; }
 

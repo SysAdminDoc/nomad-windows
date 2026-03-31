@@ -563,6 +563,14 @@
   background: #0a0a0c;
 }
 
+/* Floating action panels hidden globally — declutter all pages */
+#quick-actions-menu,
+#timer-panel,
+#lan-chat-panel,
+#copilot-dock {
+  display: none !important;
+}
+
 /* Workspace context bar + inspector hidden globally — declutter all pages */
 .workspace-context-bar,
 .workspace-inspector {

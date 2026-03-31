@@ -1,17 +1,27 @@
-  <div id="tab-viptrack" class="tab-content{% if active_tab == 'viptrack' %} active{% endif %}">
+  <div id="tab-viptrack" class="tab-content{% if active_tab == 'viptrack' %} active{% endif %}" style="padding:0!important;margin:0!important;overflow:hidden;">
     <style>
       #tab-viptrack {
         padding: 0 !important;
         margin: 0 !important;
-        overflow: hidden;
+        overflow: hidden !important;
+        position: relative;
+        width: 100% !important;
+        height: calc(100vh - 20px) !important;
+        min-height: calc(100vh - 20px) !important;
       }
-      #tab-viptrack .nomad-embedded-app {
+      /* Kill container padding when VIPTrack is the active tab */
+      .container:has(#tab-viptrack.active) {
+        padding: 0 !important;
+      }
+      #tab-viptrack .vt-frame {
+        position: absolute;
+        inset: 0;
         width: 100%;
-        height: calc(100vh - 20px);
+        height: 100%;
         border: none;
         display: block;
         background: #1a1a2e;
       }
     </style>
-    <iframe src="/viptrack/" class="nomad-embedded-app" title="VIPTrack — Military & VIP Flight Tracker"></iframe>
+    <iframe src="/viptrack/" class="vt-frame" title="VIPTrack — Military & VIP Flight Tracker" allowfullscreen></iframe>
   </div>

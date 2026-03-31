@@ -264,6 +264,14 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **E-ink display mode** — New `[data-theme="eink"]` CSS theme: pure black/white, no shadows/gradients/animations, 2px solid borders, grayscale images, 16px base font, high contrast; theme button added to all 3 theme switcher locations + customize panel
   - **Dead drop encrypted USB messaging** — `dead_drop_messages` table; `POST /api/deaddrop/compose` encrypts message with XOR (SHA-256 derived key) + checksum verification; `POST /api/deaddrop/decrypt` decrypts with secret validation; `POST /api/deaddrop/import` stores encrypted messages; `GET /api/deaddrop/messages` lists received; compose UI with recipient/message/secret fields, download as JSON for USB transfer; import with inline decryption prompt
 
+- **v6.24 — Full Codebase Audit + Situation Room Declutter (40 bugfixes, UI overhaul)**:
+  - **Security fixes (8)**: Removed orphaned `/api/broadcast` route that mapped GET→shutdown handler; SQL injection f-strings→parameterized queries in 3 sitroom endpoints (gulf-economies, region-overview, five-good-things); SSRF in webhook-test/webhook-config with proper `ipaddress` validation (private/loopback/link-local/reserved); path traversal `normcase()` on NukeMap+VIPTrack Windows checks; XSS `escapeHtml()`→`escapeAttr()` in 4 href attributes
+  - **Crash fixes (12)**: Missing imports in `media.py` (safe_table/safe_columns/build_update), `system.py` (broadcast_event, detect_gpu alias), `services.py` (sys/platform + SVC_FRIENDLY dict); `_schedule_auto_backup` stored on `app.config` for blueprint access; 3 `import ollama` (pip pkg→services module) in country-brief/deduction/ai-models; removed duplicate POST `/api/sitroom/ai-briefing`; try-catch for OREF JSON.parse, updateCustomizeTheme typeof guard; `_safe_float()` helper for yield curve + fuel price + predictions
+  - **Data fixes (8)**: Backup encryption switched SHA-256→PBKDF2HMAC to match restore; checklist PDF `done`→`checked` key; alert engine try-catch on malformed dates; Fear&Greed symbol mismatch `'Fear & Greed'`→`'FEAR_GREED'`; social velocity SQL GROUP BY/SELECT aligned; correlation engine null guard on oil price; export UTC timestamp; apt-groups removed non-existent `source_name` column
+  - **Infrastructure fixes (6)**: `db.py` index on correct column (`parent_id`→`conversation_id, parent_message_idx`); `nomad_headless.py` config merge instead of overwrite; `kb.py` embed state uses `web.state` module ref; `ai.py` training datasets reads `conversations.messages` JSON; `platform_utils.py` pid_alive Windows fallthrough; `nomad.py` log_activity wrapped in try-catch for shutdown safety
+  - **JS fixes (4)**: `let` TDZ crash in `_app_workspace_memory.js` — `buildWorkspaceResumeEntry` accessed `_sitroomDeskPreset` before init, killed entire script block preventing Situation Room from loading; `.reverse()` copy to avoid mutating API response; OREF JSON.parse try-catch; `updateCustomizeTheme` typeof guard
+  - **Situation Room UI overhaul**: Removed analyst desk panel, workspace chrome (desk presets, posture bar, saved desks), map command brief overlay, active layers legend, playback bar, 3D globe button (MapLibre v4 lacks `setProjection`), workspace inspector/context bar. Breaking banner: badge as wall with box-shadow, scroll speed 80s→40s. Map: full-width edge-to-edge, taller (50vh), no gradient overlays. Cards: uniform 320px height, consistent auto-fill grid. Scalable layout: container padding 0, width 100%, responsive breakpoints for 2000px+/2560px+ monitors
+
 - **v6.15 — Situation Room (Exceeds World Monitor)**:
   - **World Monitor+ dashboard** — default landing tab, full-bleed flex layout, ~9,070 lines of code
   - **Blueprint**: `web/blueprints/situation_room.py` — 149 API routes, 34 background fetch workers
@@ -297,6 +305,7 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **P6 virtual scroll**: VirtualList implementation for news cards (row-height based lazy rendering)
   - **Additional endpoints**: conflict-intensity scoring, media-bias/source diversity, language coverage, escalation-tracker, food-security, water-stress, climate-signals
   - **WM parity status**: ALL metrics exceed World Monitor. 149 API routes (124%), 45 map layers (100%), 1,275 static points (142%), 108+ cards (126%), 36 data sources (120%), 34 workers (155%), 43 OSINT channels (96%), 35+ interactive features (117%). ~11,237 lines.
+  - **v6.24 UI**: Decluttered — no analyst desk, no workspace chrome, no map overlays. Clean operational layout: breaking banner → compact header → ticker → market ribbon → full-width map → uniform card grid. Scalable to ultrawide monitors (2560px+). MapLibre v4.7.1 (no globe projection support).
 
 ## Run / Build
 ```bash
@@ -387,6 +396,8 @@ Category navigation: top row = 5 category buttons, bottom row = sub-tabs within 
 
 ## Critical Gotchas
 - **DECISION_GUIDES array**: ALL 21 guide objects must be inside the `];`. Placing objects after the closing bracket causes a JS syntax error that kills ALL interactivity.
+- **`let` TDZ in workspace_memory.js** — `_app_workspace_memory.js` loads BEFORE `_app_situation_room.js`. Any `typeof _sitroomXxx !== 'undefined'` check on a `let`-declared variable throws `ReferenceError` (temporal dead zone), NOT `undefined`. Must use try-catch around sitroom variable access in workspace_memory. An uncaught TDZ error kills the ENTIRE inline `<script>` block, preventing all subsequent JS files from executing.
+- **MapLibre v4.7.1 globe** — `setProjection({type: 'globe'})` does NOT exist in this build. 3D globe button hidden via CSS. Would need MapLibre v5+ for globe projection support.
 - **escapeAttr function**: Contains HTML entities (`&amp;`, `&quot;`, `&#39;`, `&lt;`) which are correct — browsers do NOT decode entities inside `<script>` tags. Must escape single quotes too for onclick attributes.
 - **FABs must be outside .container**: LAN Chat, Quick Actions, and Timer widgets (position:fixed) must be DOM siblings of .main-content, NOT inside .container.
 - **scrollTo on tab switch**: Without `window.scrollTo(0,0)` in the tab click handler, switching from a scrolled-down tab leaves the viewport at the old scroll position.

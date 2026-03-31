@@ -148,10 +148,12 @@ function activateWorkspaceTab(tab) {
   if (tabId === 'preparedness') { loadPrepTab(); }
   if (tabId === 'readiness') { loadReadinessScore(); loadReadinessNeeds(); }
   if (tabId === 'situation-room') { initSituationRoom(); }
-  // Lazy-load embedded app iframes on first visit
-  const embeddedFrame = tabContent.querySelector('.embedded-app-frame[data-src]');
-  if (embeddedFrame && embeddedFrame.src === 'about:blank') {
-    embeddedFrame.src = embeddedFrame.dataset.src;
+  // Native tab visibility callbacks (NukeMap, VIPTrack)
+  if (window._nomadTabCallbacks && window._nomadTabCallbacks[tabId]) {
+    try { window._nomadTabCallbacks[tabId](); } catch(e) {}
+  }
+  if (typeof window.nukemapOnVisible === 'function' && tabId === 'nukemap') {
+    try { window.nukemapOnVisible(); } catch(e) {}
   }
   if (tabId !== 'situation-room' && typeof _restoreCopilotDock === 'function') { _restoreCopilotDock(); }
   if (typeof syncWorkspaceUrlState === 'function') syncWorkspaceUrlState();

@@ -1,3 +1,1902 @@
-  <div id="tab-nukemap" class="tab-content active">
-    <iframe src="/nukemap/" class="embedded-app-frame" title="NukeMap — Nuclear Effects Simulator"></iframe>
+  <!-- NukeMap Tab — Native Integration -->
+  <div id="tab-nukemap" class="tab-content{% if active_tab == 'nukemap' %} active{% endif %}">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="/nukemap/lib/leaflet.css"/>
+
+    <!-- NukeMap NOMAD Theme Override (scoped) -->
+    <style>
+      /* ── NukeMap CSS Variables — remap Catppuccin to NOMAD-native scope ── */
+      #tab-nukemap {
+        --base: #0a0a0c;
+        --mantle: #0e1014;
+        --crust: #0a0a0c;
+        --surface0: #12171c;
+        --surface1: #1a2028;
+        --surface2: #232c35;
+        --overlay0: #6c7a8a;
+        --overlay1: #8a95a5;
+        --text: #c8ccd0;
+        --subtext0: #a0a8b0;
+        --subtext1: #b8bfc8;
+        --red: #f38ba8;
+        --maroon: #eba0ac;
+        --peach: #fab387;
+        --yellow: #f9e2af;
+        --green: #4aedc4;
+        --teal: #4aedc4;
+        --blue: #4aedc4;
+        --lavender: #b4befe;
+        --mauve: #cba6f7;
+        --pink: #f5c2e7;
+        --flamingo: #f2cdcd;
+        --rosewater: #f5e0dc;
+        --sky: #89dceb;
+        --glass: rgba(10,10,12,0.92);
+        --glass-border: rgba(35,44,53,0.6);
+        --glass-hover: rgba(18,23,28,0.95);
+        --panel-w: 360px;
+        --radius: 10px;
+        --radius-sm: 6px;
+        --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #0a0a0c;
+        font-family: var(--font-data, 'Cascadia Code', 'Consolas', monospace);
+        color: #c8ccd0;
+      }
+
+      /* ── Map Container ── */
+      #tab-nukemap #nk-map {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
+      #tab-nukemap .leaflet-container { background: #0a0a0c !important; }
+      #tab-nukemap .leaflet-control-zoom { border: none !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important; }
+      #tab-nukemap .leaflet-control-zoom a {
+        background: #12171c !important; color: #c8ccd0 !important; border-color: #1a2028 !important;
+        width: 34px !important; height: 34px !important; line-height: 34px !important; font-size: 16px !important;
+      }
+      #tab-nukemap .leaflet-control-zoom a:hover { background: #1a2028 !important; }
+      #tab-nukemap .leaflet-control-attribution { display: none !important; }
+      #tab-nukemap .leaflet-popup-content-wrapper {
+        background: #12171c; color: #c8ccd0; border-radius: 6px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5); border: 1px solid #1a2028;
+      }
+      #tab-nukemap .leaflet-popup-tip { background: #12171c; }
+      #tab-nukemap .leaflet-popup-content { margin: 12px 16px; font-size: 13px; line-height: 1.6; }
+      #tab-nukemap .leaflet-popup-close-button { color: #6c7a8a !important; font-size: 18px !important; }
+      #tab-nukemap .leaflet-popup-close-button:hover { color: #c8ccd0 !important; }
+      #tab-nukemap .leaflet-control-scale-line {
+        background: rgba(10,10,12,0.92) !important; backdrop-filter: blur(8px);
+        border-color: #1a2028 !important; color: #8a95a5 !important;
+        font-size: 10px !important; line-height: 1.4 !important;
+        padding: 1px 6px !important; border-radius: 3px !important;
+      }
+
+      /* ── Panel ── */
+      #tab-nukemap #nk-panel {
+        position: absolute; top: 0; left: 0; bottom: 0; width: var(--panel-w);
+        z-index: 1000; background: rgba(10,10,12,0.94); backdrop-filter: blur(24px) saturate(1.5);
+        border-right: 1px solid #232c35; display: flex; flex-direction: column; overflow: hidden;
+        transition: transform .35s cubic-bezier(.4,0,.2,1);
+      }
+      #tab-nukemap #nk-panel.collapsed { transform: translateX(calc(-1 * var(--panel-w) + 48px)); }
+      #tab-nukemap #nk-panel.collapsed .panel-content { opacity: 0; pointer-events: none; }
+
+      #tab-nukemap #nk-panel-toggle {
+        position: absolute; top: 12px; right: -40px; z-index: 10;
+        width: 36px; height: 36px; border-radius: 0 6px 6px 0;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(10px);
+        border: 1px solid #232c35; border-left: none; color: #c8ccd0;
+        cursor: pointer; display: flex; align-items: center; justify-content: center;
+        font-size: 16px; transition: background-color .2s, color .2s;
+      }
+      #tab-nukemap #nk-panel-toggle:hover { background: rgba(18,23,28,0.95); }
+
+      #tab-nukemap .panel-content { display: flex; flex-direction: column; height: 100%; overflow: hidden; transition: opacity .25s; }
+
+      /* ── Panel Header ── */
+      #tab-nukemap .panel-header {
+        padding: 14px 18px 12px; border-bottom: 1px solid #232c35; flex-shrink: 0;
+      }
+      #tab-nukemap .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+      #tab-nukemap .brand-icon {
+        width: 36px; height: 36px; border-radius: 10px;
+        background: linear-gradient(135deg, #f38ba8, #fab387);
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 12px rgba(243,139,168,0.3); position: relative; overflow: hidden;
+      }
+      #tab-nukemap .brand-icon::after {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.15));
+      }
+      #tab-nukemap .brand-icon svg { width: 18px; height: 18px; fill: #0a0a0c; }
+      #tab-nukemap .brand-text { font-size: 20px; font-weight: 700; letter-spacing: -0.5px; }
+      #tab-nukemap .brand-text span { color: #f38ba8; }
+      #tab-nukemap .brand-ver {
+        font-size: 10px; color: #6c7a8a; margin-left: auto; font-weight: 600;
+        padding: 2px 8px; background: #12171c; border-radius: 10px;
+      }
+
+      /* ── Search ── */
+      #tab-nukemap .search-wrap { position: relative; }
+      #tab-nukemap #nk-search {
+        width: 100%; padding: 8px 14px 8px 34px; border-radius: 6px;
+        background: #12171c; border: 1px solid #1a2028; color: #c8ccd0;
+        font-size: 13px; outline: none; transition: border-color .2s, box-shadow .2s;
+        font-family: inherit;
+      }
+      #tab-nukemap #nk-search:focus { border-color: #4aedc4; box-shadow: 0 0 0 3px rgba(74,237,196,0.12); }
+      #tab-nukemap #nk-search::placeholder { color: #6c7a8a; }
+      #tab-nukemap .search-icon {
+        position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+        color: #6c7a8a; pointer-events: none;
+      }
+      #tab-nukemap .search-icon svg { width: 14px; height: 14px; fill: currentColor; }
+      #tab-nukemap #nk-search-results {
+        position: absolute; top: calc(100% + 2px); left: 0; right: 0;
+        max-height: 300px; overflow-y: auto; background: #12171c;
+        border: 1px solid #1a2028; border-radius: 6px; display: none;
+        z-index: 100; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        scrollbar-width: thin; scrollbar-color: #1a2028 transparent;
+      }
+      #tab-nukemap #nk-search-results.active { display: block; }
+      #tab-nukemap .nk-sr-item {
+        padding: 8px 12px; cursor: pointer; display: flex; justify-content: space-between;
+        align-items: center; border-bottom: 1px solid rgba(35,44,53,0.3); font-size: 12px;
+        transition: background .12s;
+      }
+      #tab-nukemap .nk-sr-item:last-child { border-bottom: none; }
+      #tab-nukemap .nk-sr-item:hover, #tab-nukemap .nk-sr-item.selected { background: #1a2028; }
+      #tab-nukemap .sr-name { font-weight: 600; }
+      #tab-nukemap .sr-detail { color: #8a95a5; font-size: 10px; margin-top: 1px; }
+      #tab-nukemap .sr-pop { color: #6c7a8a; font-size: 10px; font-variant-numeric: tabular-nums; }
+
+      /* ── Panel Body ── */
+      #tab-nukemap .panel-body {
+        flex: 1; overflow-y: auto; padding: 12px 16px 20px;
+        scrollbar-width: thin; scrollbar-color: #1a2028 transparent;
+      }
+      #tab-nukemap .panel-body::-webkit-scrollbar { width: 5px; }
+      #tab-nukemap .panel-body::-webkit-scrollbar-track { background: transparent; }
+      #tab-nukemap .panel-body::-webkit-scrollbar-thumb { background: #1a2028; border-radius: 3px; }
+
+      /* ── Sections ── */
+      #tab-nukemap .section { margin-bottom: 16px; }
+      #tab-nukemap .section-title {
+        font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px;
+        color: #6c7a8a; margin-bottom: 7px; display: flex; align-items: center; gap: 8px;
+      }
+      #tab-nukemap .section-title::after {
+        content: ''; flex: 1; height: 1px;
+        background: linear-gradient(90deg, #1a2028, transparent);
+      }
+      #tab-nukemap .section-title.collapsible { cursor: pointer; user-select: none; }
+      #tab-nukemap .section-title.collapsible::before {
+        content: '\25BE'; font-size: 10px; transition: transform .2s;
+        display: inline-block; width: 10px; text-align: center;
+      }
+      #tab-nukemap .section-title.collapsible.collapsed::before { transform: rotate(-90deg); }
+      #tab-nukemap .section.sec-collapsed > *:not(.section-title) { display: none !important; }
+
+      /* ── Tabs (inner NukeMap tabs) ── */
+      #tab-nukemap .nk-tabs {
+        display: flex; gap: 2px; background: #12171c; border-radius: 6px;
+        padding: 2px; margin-bottom: 12px;
+      }
+      #tab-nukemap .nk-tab {
+        flex: 1; padding: 6px 4px; border-radius: 5px; background: transparent;
+        border: none; color: #8a95a5; font-size: 10px; font-weight: 700;
+        cursor: pointer; transition: background-color .2s, color .2s, box-shadow .2s;
+        text-align: center; text-transform: uppercase; letter-spacing: 0.5px;
+        font-family: inherit;
+      }
+      #tab-nukemap .nk-tab.active {
+        background: #1a2028; color: #c8ccd0;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+      }
+      #tab-nukemap .nk-tab:hover:not(.active) { color: #a0a8b0; }
+      #tab-nukemap .nk-tab-content { display: none; }
+      #tab-nukemap .nk-tab-content.active { display: block; }
+
+      /* ── Controls ── */
+      #tab-nukemap .weapon-filter {
+        width: 100%; padding: 5px 10px; margin-bottom: 4px; border-radius: 6px;
+        background: #12171c; border: 1px solid #1a2028; color: #c8ccd0;
+        font-size: 10px; outline: none; font-family: inherit;
+      }
+      #tab-nukemap .weapon-filter:focus { border-color: #4aedc4; }
+      #tab-nukemap .weapon-filter::placeholder { color: #6c7a8a; }
+      #tab-nukemap .select-wrap { position: relative; margin-bottom: 8px; }
+      #tab-nukemap .custom-select {
+        width: 100%; padding: 8px 36px 8px 12px; border-radius: 6px;
+        background: #12171c; border: 1px solid #1a2028; color: #c8ccd0;
+        font-size: 12px; cursor: pointer; outline: none;
+        appearance: none; -webkit-appearance: none; font-family: inherit;
+      }
+      #tab-nukemap .custom-select:focus { border-color: #4aedc4; }
+      #tab-nukemap .select-arrow {
+        position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+        color: #6c7a8a; pointer-events: none;
+      }
+      #tab-nukemap .select-arrow svg { width: 10px; height: 10px; fill: currentColor; }
+      #tab-nukemap .yield-row { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+      #tab-nukemap .yield-display {
+        min-width: 80px; text-align: right; font-size: 22px; font-weight: 800;
+        font-variant-numeric: tabular-nums; color: #fab387; line-height: 1;
+      }
+      #tab-nukemap .yield-unit { font-size: 11px; font-weight: 600; color: #8a95a5; }
+      #tab-nukemap #nk-yield-slider {
+        flex: 1; -webkit-appearance: none; appearance: none; height: 5px;
+        border-radius: 3px;
+        background: linear-gradient(90deg, #4aedc4 0%, #f9e2af 40%, #fab387 70%, #f38ba8 100%);
+        outline: none; cursor: pointer;
+      }
+      #tab-nukemap #nk-yield-slider::-webkit-slider-thumb {
+        -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%;
+        background: #c8ccd0; border: 2px solid #12171c; cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.4); transition: transform .15s;
+      }
+      #tab-nukemap #nk-yield-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+      #tab-nukemap #nk-yield-slider::-moz-range-thumb {
+        width: 18px; height: 18px; border-radius: 50%; background: #c8ccd0;
+        border: 2px solid #12171c; cursor: pointer;
+      }
+      #tab-nukemap .yield-labels {
+        display: flex; justify-content: space-between; font-size: 9px;
+        color: #6c7a8a; margin-bottom: 8px; padding: 0 2px;
+      }
+      #tab-nukemap .yield-input-row { display: flex; gap: 6px; margin-bottom: 8px; }
+      #tab-nukemap #nk-yield-input {
+        width: 80px; padding: 5px 8px; border-radius: 6px; background: #12171c;
+        border: 1px solid #1a2028; color: #fab387; font-size: 12px; font-weight: 600;
+        outline: none; text-align: right; font-family: inherit;
+      }
+      #tab-nukemap #nk-yield-input:focus { border-color: #4aedc4; }
+      #tab-nukemap #nk-yield-unit-select {
+        padding: 5px 8px; border-radius: 6px; background: #12171c;
+        border: 1px solid #1a2028; color: #c8ccd0; font-size: 12px;
+        outline: none; cursor: pointer; font-family: inherit;
+      }
+      #tab-nukemap .burst-options { display: flex; gap: 5px; margin-bottom: 8px; }
+      #tab-nukemap .burst-btn {
+        flex: 1; padding: 6px 4px; border-radius: 6px; background: #12171c;
+        border: 1px solid #1a2028; color: #a0a8b0; font-size: 11px; font-weight: 600;
+        cursor: pointer; text-align: center;
+        transition: background-color .2s, color .2s, border-color .2s, box-shadow .2s;
+        font-family: inherit;
+      }
+      #tab-nukemap .burst-btn.active {
+        background: #1a2028; color: #c8ccd0; border-color: #4aedc4;
+        box-shadow: 0 0 0 1px rgba(74,237,196,0.2);
+      }
+      #tab-nukemap .burst-btn:hover:not(.active) { background: rgba(35,44,53,0.5); color: #c8ccd0; }
+      #tab-nukemap .compact-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+      #tab-nukemap .compact-row label { font-size: 11px; color: #a0a8b0; white-space: nowrap; min-width: 50px; }
+      #tab-nukemap .compact-input {
+        flex: 1; max-width: 80px; padding: 5px 8px; border-radius: 6px; background: #12171c;
+        border: 1px solid #1a2028; color: #c8ccd0; font-size: 12px;
+        outline: none; text-align: right; font-family: inherit;
+      }
+      #tab-nukemap .compact-input:focus { border-color: #4aedc4; }
+      #tab-nukemap .compact-row .unit { font-size: 10px; color: #6c7a8a; }
+
+      /* ── Detonate Button ── */
+      #tab-nukemap #nk-detonate-btn {
+        width: 100%; padding: 12px; border-radius: 6px; border: none;
+        background: linear-gradient(135deg, #f38ba8, #e64553); color: #0a0a0c;
+        font-size: 14px; font-weight: 800; cursor: pointer; letter-spacing: 1px;
+        transition: transform .2s, box-shadow .2s, opacity .2s;
+        box-shadow: 0 4px 16px rgba(243,139,168,0.25); text-transform: uppercase;
+        position: relative; overflow: hidden; font-family: inherit;
+      }
+      #tab-nukemap #nk-detonate-btn::before {
+        content: ''; position: absolute; inset: 0;
+        background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.1)); pointer-events: none;
+      }
+      #tab-nukemap #nk-detonate-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(243,139,168,0.35); }
+      #tab-nukemap #nk-detonate-btn:active { transform: translateY(0); }
+
+      /* ── Secondary Buttons ── */
+      #tab-nukemap .btn-row { display: flex; gap: 5px; margin-top: 5px; }
+      #tab-nukemap .btn-secondary {
+        flex: 1; padding: 7px; border-radius: 6px; border: 1px solid #1a2028;
+        background: transparent; color: #a0a8b0; font-size: 10px; font-weight: 600;
+        cursor: pointer; transition: background-color .15s, color .15s, border-color .15s;
+        font-family: inherit;
+      }
+      #tab-nukemap .btn-secondary:hover { background: #12171c; color: #c8ccd0; }
+
+      /* ── Toggles ── */
+      #tab-nukemap .toggle-row {
+        display: flex; align-items: center; gap: 8px; margin-top: 6px;
+        cursor: pointer; user-select: none;
+      }
+      #tab-nukemap .toggle-row input { display: none; }
+      #tab-nukemap .tg-slider {
+        width: 30px; height: 16px; border-radius: 8px; background: #1a2028;
+        position: relative; transition: background .2s; flex-shrink: 0;
+      }
+      #tab-nukemap .tg-slider::after {
+        content: ''; position: absolute; top: 2px; left: 2px;
+        width: 12px; height: 12px; border-radius: 50%; background: #6c7a8a;
+        transition: left .2s, background-color .2s;
+      }
+      #tab-nukemap .toggle-row input:checked + .tg-slider { background: #0f5040; }
+      #tab-nukemap .toggle-row input:checked + .tg-slider::after { left: 16px; background: #4aedc4; }
+      #tab-nukemap .tg-label { font-size: 10px; color: #a0a8b0; font-weight: 600; }
+
+      /* ── Wind ── */
+      #tab-nukemap .wind-wrap {
+        display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+        padding: 8px; background: #12171c; border-radius: 6px; border: 1px solid #1a2028;
+      }
+      #tab-nukemap .wind-compass {
+        width: 48px; height: 48px; border-radius: 50%; background: #0e1014;
+        border: 2px solid #1a2028; position: relative; cursor: pointer; flex-shrink: 0;
+      }
+      #tab-nukemap .wind-compass::before {
+        content: 'N'; position: absolute; top: 2px; left: 50%; transform: translateX(-50%);
+        font-size: 7px; font-weight: 700; color: #6c7a8a;
+      }
+      #tab-nukemap .wind-arrow {
+        position: absolute; top: 50%; left: 50%; width: 2px; height: 16px;
+        background: #4aedc4; transform-origin: bottom center; border-radius: 2px;
+        margin-left: -1px; margin-top: -16px; transition: transform .15s;
+      }
+      #tab-nukemap .wind-arrow::after {
+        content: ''; position: absolute; top: -3px; left: 50%; transform: translateX(-50%);
+        border-left: 4px solid transparent; border-right: 4px solid transparent;
+        border-bottom: 5px solid #4aedc4;
+      }
+      #tab-nukemap .wind-info { flex: 1; font-size: 10px; }
+      #tab-nukemap .wind-info label { color: #a0a8b0; display: block; margin-bottom: 3px; font-weight: 600; }
+      #tab-nukemap .wind-speed-row { display: flex; gap: 5px; align-items: center; }
+      #tab-nukemap #nk-wind-speed {
+        width: 55px; padding: 4px 6px; border-radius: 5px; background: #0e1014;
+        border: 1px solid #1a2028; color: #c8ccd0; font-size: 11px;
+        outline: none; text-align: right; font-family: inherit;
+      }
+      #tab-nukemap .wind-dir-label { color: #6c7a8a; font-size: 9px; margin-top: 2px; }
+
+      /* ── Legend ── */
+      #tab-nukemap .legend-item {
+        display: flex; align-items: center; gap: 7px; padding: 5px 0;
+        border-bottom: 1px solid rgba(35,44,53,0.2); font-size: 11px; transition: opacity .2s;
+      }
+      #tab-nukemap .legend-item:last-child { border-bottom: none; }
+      #tab-nukemap .legend-item.dimmed { opacity: 0.3; }
+      #tab-nukemap .legend-dot {
+        width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0;
+        box-shadow: 0 0 6px rgba(0,0,0,0.3);
+      }
+      #tab-nukemap .legend-label { flex: 1; color: #b8bfc8; font-weight: 600; line-height: 1.2; font-size: 10px; }
+      #tab-nukemap .legend-desc { font-size: 8px; color: #6c7a8a; font-weight: 400; display: block; margin-top: 1px; }
+      #tab-nukemap .legend-value { color: #8a95a5; font-variant-numeric: tabular-nums; font-size: 10px; text-align: right; line-height: 1.3; }
+      #tab-nukemap .legend-area { font-size: 8px; color: #6c7a8a; display: block; }
+      #tab-nukemap .legend-pop { font-size: 7px; color: #6c7a8a; display: block; font-weight: 400; }
+      #tab-nukemap .legend-eye {
+        width: 16px; height: 16px; border-radius: 4px; border: 1px solid #1a2028;
+        background: transparent; color: #8a95a5; cursor: pointer; font-size: 8px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        transition: background-color .15s, color .15s, border-color .15s;
+      }
+      #tab-nukemap .legend-eye.on { background: #1a2028; color: #c8ccd0; }
+
+      /* ── Stats ── */
+      #tab-nukemap .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+      #tab-nukemap .stat-card {
+        padding: 10px; border-radius: 6px; background: #12171c; border: 1px solid #1a2028;
+      }
+      #tab-nukemap .stat-label {
+        font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px;
+        color: #6c7a8a; margin-bottom: 2px; font-weight: 600;
+      }
+      #tab-nukemap .stat-value {
+        font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1;
+      }
+      #tab-nukemap .stat-value.deaths { color: #f38ba8; }
+      #tab-nukemap .stat-value.injuries { color: #fab387; }
+      #tab-nukemap .stat-value.total { color: #f9e2af; }
+      #tab-nukemap .stat-sub { font-size: 9px; color: #6c7a8a; margin-top: 2px; }
+      #tab-nukemap .stat-card.wide { grid-column: 1 / -1; }
+
+      /* ── Cloud / Crater / Timeline ── */
+      #tab-nukemap .cloud-panel {
+        padding: 8px 10px; border-radius: 6px; background: #12171c; border: 1px solid #1a2028;
+      }
+      #tab-nukemap .cloud-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 11px; }
+      #tab-nukemap .cloud-row .cl { color: #a0a8b0; }
+      #tab-nukemap .cloud-row .cv { color: #c8ccd0; font-weight: 600; font-variant-numeric: tabular-nums; }
+      #tab-nukemap .tl-item {
+        display: flex; gap: 8px; padding: 4px 0; font-size: 10px;
+        border-left: 2px solid #1a2028; margin-left: 5px; padding-left: 12px; position: relative;
+      }
+      #tab-nukemap .tl-item::before {
+        content: ''; position: absolute; left: -4px; top: 8px;
+        width: 6px; height: 6px; border-radius: 50%; background: #232c35;
+      }
+      #tab-nukemap .tl-item:first-child::before { background: #f5e0dc; }
+      #tab-nukemap .tl-time { color: #fab387; font-weight: 700; min-width: 50px; font-variant-numeric: tabular-nums; }
+      #tab-nukemap .tl-desc { color: #a0a8b0; }
+
+      /* ── Shelter ── */
+      #tab-nukemap .shelter-zone {
+        margin-bottom: 10px; padding: 8px; background: #12171c;
+        border-radius: 6px; border: 1px solid #1a2028;
+      }
+      #tab-nukemap .sz-header { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 10px; }
+      #tab-nukemap .sz-dist { font-weight: 700; color: #fab387; }
+      #tab-nukemap .sz-label { color: #6c7a8a; }
+      #tab-nukemap .sz-bar-row { display: flex; align-items: center; gap: 6px; margin-bottom: 3px; font-size: 9px; }
+      #tab-nukemap .sz-name { min-width: 90px; color: #a0a8b0; font-weight: 500; }
+      #tab-nukemap .sz-bar { flex: 1; height: 8px; background: #0e1014; border-radius: 4px; overflow: hidden; }
+      #tab-nukemap .sz-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+      #tab-nukemap .sz-fill.safe { background: #4aedc4; }
+      #tab-nukemap .sz-fill.risk { background: #f9e2af; }
+      #tab-nukemap .sz-fill.dead { background: #f38ba8; }
+      #tab-nukemap .sz-pct { min-width: 28px; text-align: right; font-weight: 600; color: #8a95a5; font-variant-numeric: tabular-nums; }
+
+      /* ── Presets ── */
+      #tab-nukemap .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+      #tab-nukemap .preset-chip {
+        padding: 6px 8px; border-radius: 6px; background: #12171c; border: 1px solid #1a2028;
+        color: #a0a8b0; font-size: 10px; cursor: pointer; text-align: center;
+        transition: background-color .15s, color .15s, border-color .15s; font-weight: 600;
+      }
+      #tab-nukemap .preset-chip:hover { background: #1a2028; color: #c8ccd0; border-color: #232c35; }
+      #tab-nukemap .preset-chip .chip-yield { display: block; font-size: 9px; color: #6c7a8a; margin-top: 1px; font-weight: 500; }
+      #tab-nukemap .preset-chip.mirv-active { border-color: #f38ba8; background: rgba(243,139,168,0.1); color: #f38ba8; }
+
+      /* ── Quick Targets ── */
+      #tab-nukemap .target-pills { display: flex; flex-wrap: wrap; gap: 3px; }
+      #tab-nukemap .target-pill {
+        padding: 3px 9px; border-radius: 20px; background: #12171c; border: 1px solid #1a2028;
+        color: #a0a8b0; font-size: 9px; cursor: pointer;
+        transition: background-color .15s, color .15s, border-color .15s;
+        font-weight: 600; white-space: nowrap;
+      }
+      #tab-nukemap .target-pill:hover { background: #1a2028; color: #c8ccd0; border-color: #232c35; }
+
+      /* ── Detonation List ── */
+      #tab-nukemap .det-item {
+        display: flex; align-items: center; gap: 5px; padding: 4px 7px;
+        margin-bottom: 3px; background: #12171c; border-radius: 6px;
+        font-size: 10px; border: 1px solid #1a2028;
+      }
+      #tab-nukemap .det-idx {
+        width: 16px; height: 16px; border-radius: 50%; background: #f38ba8;
+        color: #0a0a0c; font-size: 8px; font-weight: 700;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      }
+      #tab-nukemap .det-info { flex: 1; display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+      #tab-nukemap .det-name { color: #b8bfc8; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      #tab-nukemap .det-weapon { color: #6c7a8a; font-size: 8px; font-weight: 500; }
+      #tab-nukemap .det-yield { color: #fab387; font-weight: 700; font-size: 9px; white-space: nowrap; }
+      #tab-nukemap .det-remove {
+        width: 16px; height: 16px; border-radius: 4px; border: none;
+        background: transparent; color: #6c7a8a; cursor: pointer; font-size: 13px;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      }
+      #tab-nukemap .det-remove:hover { background: #f38ba8; color: #0a0a0c; }
+      #tab-nukemap .det-badge {
+        font-size: 7px; font-weight: 800; color: #4aedc4; background: rgba(74,237,196,0.15);
+        padding: 1px 4px; border-radius: 3px; letter-spacing: 0.5px;
+      }
+
+      /* ── Compare ── */
+      #tab-nukemap .compare-table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 6px; }
+      #tab-nukemap .compare-table th {
+        padding: 4px 6px; text-align: left; font-size: 9px; text-transform: uppercase;
+        letter-spacing: 0.5px; border-bottom: 1px solid #1a2028; font-weight: 700;
+      }
+      #tab-nukemap .compare-table td { padding: 3px 6px; border-bottom: 1px solid rgba(35,44,53,0.2); }
+      #tab-nukemap .ct-label { color: #8a95a5; font-weight: 600; }
+      #tab-nukemap .ct-a { color: #4aedc4; font-weight: 600; font-variant-numeric: tabular-nums; }
+      #tab-nukemap .ct-b { color: #fab387; font-weight: 600; font-variant-numeric: tabular-nums; }
+      #tab-nukemap .compare-selects { display: flex; gap: 6px; margin-bottom: 6px; }
+      #tab-nukemap .compare-selects select {
+        flex: 1; padding: 5px 8px; border-radius: 6px; background: #12171c;
+        border: 1px solid #1a2028; color: #c8ccd0; font-size: 10px; outline: none; font-family: inherit;
+      }
+
+      /* ── Share ── */
+      #tab-nukemap .share-row { display: flex; gap: 5px; align-items: center; }
+      #tab-nukemap #nk-share-input {
+        flex: 1; padding: 5px 8px; border-radius: 6px; background: #12171c;
+        border: 1px solid #1a2028; color: #c8ccd0; font-size: 10px;
+        outline: none; font-family: monospace;
+      }
+      #tab-nukemap .share-copy {
+        padding: 5px 10px; border-radius: 6px; background: #4aedc4; border: none;
+        color: #0a0a0c; font-size: 10px; font-weight: 700; cursor: pointer;
+      }
+
+      /* ── MIRV ── */
+      #tab-nukemap .mirv-status { font-size: 10px; color: #6c7a8a; margin-bottom: 6px; padding: 4px 0; }
+
+      /* ── Info Bar ── */
+      #tab-nukemap #nk-info-bar {
+        position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+        z-index: 1000; background: rgba(10,10,12,0.92); backdrop-filter: blur(20px) saturate(1.5);
+        border: 1px solid #232c35; border-radius: 10px; padding: 8px 16px;
+        display: none; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        max-width: calc(100% - var(--panel-w) - 30px);
+      }
+      #tab-nukemap #nk-info-bar.active { display: flex; align-items: center; gap: 14px; }
+      #tab-nukemap .ib-stat { text-align: center; }
+      #tab-nukemap .ib-val { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
+      #tab-nukemap .ib-lbl { font-size: 8px; color: #6c7a8a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+      #tab-nukemap .ib-div { width: 1px; height: 24px; background: #1a2028; }
+
+      /* ── Coords ── */
+      #tab-nukemap #nk-coords {
+        position: absolute; bottom: 14px; right: 14px; z-index: 999;
+        padding: 3px 8px; border-radius: 6px; background: rgba(10,10,12,0.92);
+        backdrop-filter: blur(10px); border: 1px solid #232c35;
+        font-size: 10px; color: #8a95a5; font-variant-numeric: tabular-nums;
+        user-select: none; cursor: pointer; transition: color .2s, border-color .2s;
+      }
+      #tab-nukemap #nk-coords:hover { color: #c8ccd0; border-color: #4aedc4; }
+
+      /* ── Badges & Counters ── */
+      #tab-nukemap #nk-offline-badge {
+        position: absolute; top: 12px; right: 12px; z-index: 1000;
+        padding: 4px 10px; border-radius: 20px; font-size: 10px; font-weight: 600;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(10px);
+        border: 1px solid #232c35; color: #8a95a5; display: none;
+      }
+      #tab-nukemap #nk-offline-badge.show { display: flex; align-items: center; gap: 5px; }
+      #tab-nukemap .ob-dot { width: 7px; height: 7px; border-radius: 50%; }
+      #tab-nukemap .ob-dot.on { background: #4aedc4; }
+      #tab-nukemap .ob-dot.off { background: #f38ba8; }
+      #tab-nukemap #nk-det-counter {
+        position: absolute; top: 12px; left: var(--panel-w); margin-left: 14px;
+        z-index: 999; padding: 4px 12px; border-radius: 20px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(10px);
+        border: 1px solid #232c35; font-size: 11px; color: #c8ccd0;
+        font-weight: 700; display: none;
+      }
+      #tab-nukemap #nk-det-counter-num {
+        color: #f38ba8; font-size: 14px; font-weight: 900;
+        margin-right: 4px; font-variant-numeric: tabular-nums;
+      }
+      #tab-nukemap .dc-label {
+        color: #6c7a8a; font-size: 9px; font-weight: 600;
+        text-transform: uppercase; letter-spacing: 0.5px;
+      }
+
+      /* ── Flash ── */
+      @keyframes nuke-flash { 0%{opacity:0} 3%{opacity:1} 10%{opacity:0.7} 20%{opacity:0.3} 100%{opacity:0} }
+      #tab-nukemap #nk-flash {
+        position: absolute; inset: 0; z-index: 9999; background: white;
+        pointer-events: none; opacity: 0;
+      }
+      #tab-nukemap #nk-flash.active { animation: nuke-flash 2s ease-out forwards; }
+
+      /* ── GZ Marker ── */
+      #tab-nukemap .gz-marker { width: 28px; height: 28px; position: relative; }
+      #tab-nukemap .gz-outer {
+        width: 28px; height: 28px; border-radius: 50%; border: 2px solid #f38ba8;
+        background: rgba(243,139,168,0.15); position: absolute;
+        animation: gz-pulse 2s ease-out infinite;
+      }
+      #tab-nukemap .gz-inner {
+        width: 8px; height: 8px; border-radius: 50%; background: #f38ba8;
+        position: absolute; top: 10px; left: 10px; box-shadow: 0 0 8px #f38ba8;
+      }
+      @keyframes gz-pulse { 0%{transform:scale(1);opacity:1} 100%{transform:scale(2);opacity:0} }
+
+      /* ── Ring tooltips / labels ── */
+      #tab-nukemap .ring-tooltip {
+        position: absolute; z-index: 10000; padding: 8px 12px; border-radius: 6px;
+        background: #0a0a0c; border: 1px solid #1a2028; color: #c8ccd0;
+        font-size: 11px; pointer-events: none; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        line-height: 1.5; max-width: 260px;
+      }
+      #tab-nukemap .ring-tooltip .rt-title { font-weight: 700; margin-bottom: 2px; }
+      #tab-nukemap .ring-tooltip .rt-desc { color: #8a95a5; font-size: 10px; }
+      #tab-nukemap .ring-label { background: none !important; border: none !important; }
+      #tab-nukemap .rl-tag {
+        display: inline-block; padding: 2px 7px; border-radius: 4px;
+        background: rgba(10,10,12,0.85); border: 1px solid;
+        font-size: 9px; font-weight: 700; white-space: nowrap; backdrop-filter: blur(4px);
+      }
+      #tab-nukemap .rl-dist { margin-left: 4px; opacity: 0.6; font-weight: 500; }
+      #tab-nukemap .crosshair, #tab-nukemap .crosshair .leaflet-interactive { cursor: crosshair !important; }
+      #tab-nukemap .mushroom-overlay { pointer-events: none; }
+      #tab-nukemap .burn-scar { mix-blend-mode: multiply; }
+      #tab-nukemap .gz-draggable { cursor: grab !important; }
+      #tab-nukemap .gz-draggable:active { cursor: grabbing !important; }
+
+      /* ── Distance tools ── */
+      #tab-nukemap .dist-indicator {
+        position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+        z-index: 1001; padding: 5px 14px; border-radius: 20px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(12px);
+        border: 1px solid #232c35; font-size: 11px; font-weight: 700;
+        color: #fab387; display: none; font-variant-numeric: tabular-nums;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      }
+      #tab-nukemap .dist-ring-label { background: none !important; border: none !important; }
+      #tab-nukemap .dist-ring-label span {
+        font-size: 8px; color: #6c7a8a; background: rgba(10,10,12,0.7);
+        padding: 1px 4px; border-radius: 3px; font-weight: 600;
+      }
+      #tab-nukemap .measure-label { background: none !important; border: none !important; }
+      #tab-nukemap .ml-tag {
+        display: inline-block; padding: 2px 8px; border-radius: 4px;
+        background: rgba(74,237,196,0.9); color: #0a0a0c;
+        font-size: 10px; font-weight: 700; white-space: nowrap;
+      }
+
+      /* ── WW3 ── */
+      #tab-nukemap .btn-ww3-launch {
+        flex: 2; padding: 8px; border-radius: 6px; border: none;
+        background: linear-gradient(135deg, #f38ba8, #fab387); color: #0a0a0c;
+        font-size: 11px; font-weight: 800; cursor: pointer; letter-spacing: 0.5px;
+        transition: transform .2s, box-shadow .2s, opacity .2s; text-transform: uppercase;
+        font-family: inherit;
+      }
+      #tab-nukemap .btn-ww3-launch:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(243,139,168,0.3); }
+      #tab-nukemap .ww3-arc { pointer-events: none; }
+      #tab-nukemap #nk-ww3-hud {
+        position: absolute; top: 12px; left: 50%; transform: translateX(-50%);
+        z-index: 1001; display: none; align-items: center; gap: 0;
+        padding: 6px 14px; border-radius: 10px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(20px);
+        border: 1px solid rgba(243,139,168,0.3);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 60px rgba(243,139,168,0.08);
+      }
+      #tab-nukemap .ww3-hud-item { text-align: center; padding: 0 10px; }
+      #tab-nukemap .ww3-hud-val { display: block; font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.2; }
+      #tab-nukemap .ww3-hud-lbl { font-size: 7px; color: rgba(166,173,200,0.6); text-transform: uppercase; letter-spacing: 1px; font-weight: 600; }
+      #tab-nukemap .ww3-hud-sep { width: 1px; height: 28px; background: rgba(35,44,53,0.5); }
+      #tab-nukemap #nk-ww3-winter {
+        position: absolute; inset: 0; z-index: 400; background: rgba(0,0,0,0.7);
+        pointer-events: none; transition: opacity 2s ease; display: none; mix-blend-mode: multiply;
+      }
+      #tab-nukemap .ww3-gz { border-radius: 50%; background: rgba(243,139,168,0.5); border: 1px solid rgba(243,139,168,0.8); box-shadow: 0 0 6px rgba(243,139,168,0.3); }
+      #tab-nukemap #nk-ww3-defcon {
+        position: absolute; top: 56px; right: 14px; z-index: 1002; display: none;
+        padding: 6px 16px; border-radius: 6px; background: rgba(10,10,12,0.95);
+        border: 2px solid currentColor; font-size: 18px; font-weight: 900;
+        letter-spacing: 3px; text-shadow: 0 0 10px currentColor;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+      }
+      #tab-nukemap #nk-ww3-toasts {
+        position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+        z-index: 1002; display: flex; flex-direction: column-reverse;
+        align-items: center; gap: 4px; pointer-events: none;
+      }
+      #tab-nukemap .ww3-toast {
+        padding: 4px 16px; border-radius: 4px; background: rgba(243,139,168,0.9);
+        color: #0a0a0c; font-size: 11px; font-weight: 900; letter-spacing: 2px;
+        white-space: nowrap; animation: toast-in 0.3s ease-out, toast-out 0.5s ease-in 2.5s forwards;
+      }
+      @keyframes toast-in { 0%{opacity:0;transform:translateY(10px) scale(0.9)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+      @keyframes toast-out { 0%{opacity:1} 100%{opacity:0;transform:translateY(-10px)} }
+      #tab-nukemap #nk-ww3-legend {
+        position: absolute; bottom: 50px; right: 14px; z-index: 1001; display: none;
+        padding: 8px 12px; border-radius: 6px; background: rgba(10,10,12,0.92);
+        backdrop-filter: blur(16px); border: 1px solid rgba(35,44,53,0.5);
+        font-size: 9px; color: #a0a8b0; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+      }
+      #tab-nukemap .ww3-leg-title { font-size: 8px; font-weight: 700; color: #6c7a8a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 3px; }
+      #tab-nukemap .ww3-leg-row { display: flex; align-items: center; gap: 6px; padding: 1px 0; font-weight: 500; }
+      #tab-nukemap .ww3-leg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+      #tab-nukemap .ww3-summary { background: #12171c; border: 1px solid #1a2028; border-radius: 6px; padding: 10px; font-size: 11px; }
+      #tab-nukemap .ww3-sum-title { text-align: center; font-size: 12px; font-weight: 900; color: #f38ba8; letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase; }
+      #tab-nukemap .ww3-sum-row { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid rgba(35,44,53,0.2); font-weight: 600; }
+      #tab-nukemap .ww3-sum-row:last-of-type { border-bottom: none; }
+      #tab-nukemap .ww3-sum-row span:first-child { color: #a0a8b0; }
+      #tab-nukemap .ww3-sum-note { font-size: 9px; color: #6c7a8a; margin-top: 8px; font-style: italic; line-height: 1.4; text-align: center; }
+
+      /* ── Quick Weapons Bar ── */
+      #tab-nukemap #nk-quick-weapons {
+        position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
+        z-index: 999; display: flex; gap: 3px; padding: 4px; border-radius: 10px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(20px) saturate(1.5);
+        border: 1px solid #232c35; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        max-width: calc(100% - var(--panel-w) - 30px);
+      }
+      #tab-nukemap .qw-chip {
+        padding: 4px 10px; border-radius: 6px; background: transparent;
+        border: 1px solid #1a2028; color: #a0a8b0; font-size: 9px;
+        cursor: pointer; transition: background-color .15s, color .15s, border-color .15s;
+        display: flex; flex-direction: column; align-items: center; gap: 1px; line-height: 1.2;
+        font-family: inherit;
+      }
+      #tab-nukemap .qw-chip:hover { background: #12171c; color: #c8ccd0; border-color: #232c35; }
+      #tab-nukemap .qw-chip.qw-active { background: #1a2028; color: #fab387; border-color: #fab387; }
+      #tab-nukemap .qw-name { font-weight: 700; font-size: 9px; }
+      #tab-nukemap .qw-yield { font-size: 8px; color: #6c7a8a; font-weight: 500; }
+      #tab-nukemap .qw-chip.qw-active .qw-yield { color: #fab387; }
+
+      /* ── WW3 Quick Button ── */
+      #tab-nukemap #nk-ww3-quick-btn {
+        position: absolute; bottom: 38px; right: 14px; z-index: 1000;
+        padding: 6px 14px; border-radius: 6px; border: none;
+        background: linear-gradient(135deg, #f38ba8, #fab387); color: #0a0a0c;
+        font-size: 11px; font-weight: 900; cursor: pointer; letter-spacing: 2px;
+        box-shadow: 0 4px 16px rgba(243,139,168,0.3);
+        transition: transform .2s, box-shadow .2s, opacity .2s; text-transform: uppercase;
+        font-family: inherit;
+      }
+      #tab-nukemap #nk-ww3-quick-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(243,139,168,0.4); }
+
+      /* ── Fullscreen / Map Switcher ── */
+      #tab-nukemap #nk-fullscreen-btn {
+        position: absolute; top: 12px; right: 50px; z-index: 999;
+        width: 32px; height: 32px; border-radius: 6px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(10px);
+        border: 1px solid #232c35; color: #8a95a5; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background-color .2s, color .2s; padding: 0;
+      }
+      #tab-nukemap #nk-fullscreen-btn:hover { background: rgba(18,23,28,0.95); color: #c8ccd0; }
+      #tab-nukemap #nk-map-switcher { position: absolute; top: 12px; right: 88px; z-index: 999; }
+      #tab-nukemap .ms-toggle {
+        width: 32px; height: 32px; border-radius: 6px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(10px);
+        border: 1px solid #232c35; color: #8a95a5; cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background-color .2s, color .2s; padding: 0;
+      }
+      #tab-nukemap .ms-toggle:hover { background: rgba(18,23,28,0.95); color: #c8ccd0; }
+      #tab-nukemap .ms-toggle.open { background: #1a2028; color: #c8ccd0; border-color: #4aedc4; }
+      #tab-nukemap .ms-panel {
+        display: none; position: absolute; top: 38px; right: 0; min-width: 130px;
+        background: rgba(10,10,12,0.95); backdrop-filter: blur(20px) saturate(1.5);
+        border: 1px solid #232c35; border-radius: 6px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5); padding: 5px;
+        flex-direction: column; gap: 2px; z-index: 1000;
+      }
+      #tab-nukemap .ms-panel.open { display: flex; }
+      #tab-nukemap .ms-btn {
+        padding: 6px 10px; border-radius: 5px; background: transparent;
+        border: 1px solid transparent; color: #a0a8b0; font-size: 10px; font-weight: 600;
+        cursor: pointer; text-align: left;
+        transition: background-color .12s, color .12s, border-color .12s; white-space: nowrap;
+        font-family: inherit;
+      }
+      #tab-nukemap .ms-btn:hover { background: #12171c; color: #c8ccd0; }
+      #tab-nukemap .ms-btn.active { background: #1a2028; color: #c8ccd0; border-color: #4aedc4; }
+
+      /* ── Fact Banner ── */
+      #tab-nukemap #nk-fact-banner {
+        position: absolute; top: 50px; left: var(--panel-w); margin-left: 14px;
+        z-index: 998; max-width: 380px; padding: 6px 14px; border-radius: 10px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(16px);
+        border: 1px solid #232c35; font-size: 10px; color: #a0a8b0;
+        display: none; text-align: left; line-height: 1.4;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5); cursor: pointer;
+      }
+      #tab-nukemap #nk-fact-banner.show { display: block; }
+      #tab-nukemap .fact-label { font-size: 9px; font-weight: 700; color: #6c7a8a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2px; }
+
+      /* ── Screenshot mode ── */
+      #tab-nukemap #nk-screenshot-hint {
+        position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+        z-index: 10000; padding: 8px 20px; border-radius: 10px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(12px);
+        border: 1px solid #232c35; font-size: 12px; color: #8a95a5;
+        display: none; cursor: pointer;
+      }
+
+      /* ── Detonation Toast ── */
+      #tab-nukemap .det-toast {
+        position: absolute; top: 12px; right: 130px; transform: translateY(-20px);
+        z-index: 1003; padding: 8px 18px; border-radius: 10px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(20px);
+        border: 1px solid rgba(243,139,168,0.3);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5); font-size: 12px; color: #c8ccd0;
+        white-space: nowrap; opacity: 0;
+        transition: opacity 0.4s cubic-bezier(.4,0,.2,1), transform 0.4s cubic-bezier(.4,0,.2,1);
+        pointer-events: none;
+      }
+      #tab-nukemap .det-toast.show { opacity: 1; transform: translateY(0); }
+      #tab-nukemap .dt-yield { font-weight: 800; color: #fab387; font-size: 14px; }
+      #tab-nukemap .dt-loc { color: #b8bfc8; margin-left: 6px; }
+      #tab-nukemap .dt-hiro { color: #cba6f7; font-weight: 600; margin-left: 6px; font-size: 10px; opacity: 0.8; }
+
+      /* ── Export Buttons ── */
+      #tab-nukemap .export-btn {
+        padding: 7px 14px; border-radius: 6px; background: #4aedc4; border: none;
+        color: #0a0a0c; font-size: 10px; font-weight: 700; cursor: pointer;
+        transition: opacity .15s, transform .15s; width: 100%; font-family: inherit;
+      }
+      #tab-nukemap .export-btn:hover { opacity: 0.85; transform: translateY(-1px); }
+
+      /* ── Layer switcher ── */
+      #tab-nukemap .layer-switcher { display: flex; gap: 3px; flex-wrap: wrap; }
+      #tab-nukemap .layer-btn {
+        padding: 5px 10px; border-radius: 5px; background: #12171c;
+        border: 1px solid #1a2028; color: #a0a8b0; font-size: 9px; font-weight: 600;
+        cursor: pointer; transition: background-color .15s, color .15s, border-color .15s;
+        font-family: inherit;
+      }
+      #tab-nukemap .layer-btn.active { background: #1a2028; color: #c8ccd0; border-color: #4aedc4; }
+      #tab-nukemap .layer-btn:hover:not(.active) { background: rgba(35,44,53,0.5); }
+
+      /* ── Misc panels (radiation decay, PSI, scenarios, dose, etc.) ── */
+      #tab-nukemap .rd-header { font-size: 10px; font-weight: 700; color: #fab387; margin-bottom: 6px; }
+      #tab-nukemap .rd-table, #tab-nukemap .psi-table, #tab-nukemap .zone-table,
+      #tab-nukemap .surv-table, #tab-nukemap .escape-table, #tab-nukemap .dose-detail {
+        background: #12171c; border-radius: 6px; border: 1px solid #1a2028; overflow: hidden;
+      }
+      #tab-nukemap .rd-row, #tab-nukemap .psi-row, #tab-nukemap .zt-row,
+      #tab-nukemap .surv-row, #tab-nukemap .esc-row, #tab-nukemap .dose-row {
+        display: flex; padding: 3px 8px; font-size: 10px;
+        border-bottom: 1px solid rgba(35,44,53,0.2);
+      }
+      #tab-nukemap .rd-row:last-child, #tab-nukemap .psi-row:last-child,
+      #tab-nukemap .zt-row:last-child, #tab-nukemap .surv-row:last-child,
+      #tab-nukemap .esc-row:last-child, #tab-nukemap .dose-row:last-child { border-bottom: none; }
+      #tab-nukemap .rd-head, #tab-nukemap .psi-head, #tab-nukemap .zt-head,
+      #tab-nukemap .surv-head, #tab-nukemap .esc-head {
+        font-weight: 700; color: #6c7a8a; text-transform: uppercase; font-size: 9px;
+        background: #0e1014;
+      }
+      #tab-nukemap .rd-row span, #tab-nukemap .psi-row span, #tab-nukemap .zt-row span,
+      #tab-nukemap .surv-row span, #tab-nukemap .esc-row span { flex: 1; font-variant-numeric: tabular-nums; }
+
+      /* ── Scenario chips ── */
+      #tab-nukemap .scenario-chip {
+        padding: 8px 10px; border-radius: 6px; background: #12171c;
+        border: 1px solid #1a2028; cursor: pointer;
+        transition: background-color .15s, border-color .15s; margin-bottom: 4px;
+      }
+      #tab-nukemap .scenario-chip:hover { background: #1a2028; border-color: #232c35; }
+      #tab-nukemap .scenario-chip .sc-name { font-size: 11px; font-weight: 700; color: #c8ccd0; }
+      #tab-nukemap .scenario-chip .sc-desc { font-size: 9px; color: #6c7a8a; margin-top: 1px; }
+
+      /* ── Various detail panels ── */
+      #tab-nukemap .ds-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+      #tab-nukemap .ds-card { padding: 8px; border-radius: 6px; background: #12171c; border: 1px solid #1a2028; text-align: center; }
+      #tab-nukemap .ds-val { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
+      #tab-nukemap .ds-label { font-size: 8px; color: #6c7a8a; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+      #tab-nukemap .wi-card { background: #12171c; border-radius: 6px; border: 1px solid #1a2028; padding: 8px 10px; font-size: 10px; }
+      #tab-nukemap .wi-row { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid rgba(35,44,53,0.2); }
+      #tab-nukemap .wi-row:last-child { border-bottom: none; }
+      #tab-nukemap .wi-label { color: #6c7a8a; font-weight: 600; }
+      #tab-nukemap .wi-val { color: #c8ccd0; font-weight: 500; }
+      #tab-nukemap .emp-list, #tab-nukemap .sc-list, #tab-nukemap .conv-list,
+      #tab-nukemap .nearby-list, #tab-nukemap .bldg-list, #tab-nukemap .guide-list,
+      #tab-nukemap .ground-report { display: flex; flex-direction: column; gap: 4px; }
+      #tab-nukemap .emp-item, #tab-nukemap .sc-item, #tab-nukemap .nearby-item,
+      #tab-nukemap .bldg-item, #tab-nukemap .guide-item {
+        padding: 6px 8px; background: #12171c; border-radius: 6px;
+        border: 1px solid #1a2028; font-size: 10px;
+      }
+      #tab-nukemap .seismic-panel {
+        text-align: center; padding: 10px; background: #12171c;
+        border-radius: 6px; border: 1px solid #1a2028;
+      }
+      #tab-nukemap .seis-mag { font-size: 36px; font-weight: 900; color: #fab387; font-variant-numeric: tabular-nums; line-height: 1; }
+      #tab-nukemap .seis-label { font-size: 9px; color: #6c7a8a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+      #tab-nukemap .dose-val { font-size: 32px; font-weight: 900; color: #fab387; font-variant-numeric: tabular-nums; line-height: 1; }
+      #tab-nukemap .dose-prognosis { font-size: 11px; font-weight: 700; padding: 6px 10px; border-radius: 6px; background: #12171c; margin: 6px 0; }
+
+      /* ── Altitude SVG / Cloud compare SVG / Crater SVG ── */
+      #tab-nukemap .alt-svg, #tab-nukemap .cloud-compare-svg, #tab-nukemap .crater-svg {
+        width: 100%; height: auto; background: #0e1014; border-radius: 6px; border: 1px solid #1a2028;
+      }
+
+      /* ── Survival probability colors ── */
+      #tab-nukemap .surv-pct.safe { color: #4aedc4; }
+      #tab-nukemap .surv-pct.risk { color: #f9e2af; }
+      #tab-nukemap .surv-pct.dead { color: #f38ba8; }
+
+      /* ── Experience report ── */
+      #tab-nukemap .exp-report { min-width: 260px; }
+      #tab-nukemap .exp-dist { font-size: 22px; font-weight: 800; color: #fab387; font-variant-numeric: tabular-nums; }
+      #tab-nukemap .exp-from { font-size: 10px; color: #6c7a8a; text-transform: uppercase; letter-spacing: 1px; }
+      #tab-nukemap .exp-survival { padding: 8px; border-radius: 6px; border-left: 3px solid; background: #0e1014; margin-bottom: 8px; }
+      #tab-nukemap .exp-advice { margin-top: 8px; padding: 8px; background: #12171c; border-radius: 6px; font-size: 10px; color: #a0a8b0; line-height: 1.5; }
+      #tab-nukemap .exp-advice-title { font-weight: 700; color: #f9e2af; margin-bottom: 2px; text-transform: uppercase; font-size: 9px; letter-spacing: 0.5px; }
+
+      /* ── Flight time ── */
+      #tab-nukemap .flight-result { font-size: 11px; }
+      #tab-nukemap .fl-time { font-size: 16px; font-weight: 800; color: #f38ba8; }
+      #tab-nukemap .flight-phases { margin: 6px 0; display: flex; flex-direction: column; gap: 3px; }
+      #tab-nukemap .fl-bar { height: 6px; border-radius: 3px; min-width: 4px; }
+
+      /* ── Yield chart ── */
+      #tab-nukemap .yield-chart { display: flex; flex-direction: column; gap: 4px; }
+      #tab-nukemap .yc-bar-wrap { flex: 1; height: 8px; background: #0e1014; border-radius: 4px; overflow: hidden; }
+      #tab-nukemap .yc-bar { height: 100%; background: #232c35; border-radius: 4px; transition: width .5s; }
+      #tab-nukemap .yc-row.yc-current .yc-bar { background: #fab387 !important; }
+
+      /* ── Nuclear winter ── */
+      #tab-nukemap .nw-temp { font-size: 15px; font-weight: 800; color: #89dceb; }
+      #tab-nukemap .nw-severity { text-align: center; font-size: 12px; font-weight: 800; padding: 6px; margin-top: 6px; text-transform: uppercase; letter-spacing: 1px; }
+
+      /* ── GPS ── */
+      #tab-nukemap .gps-report { text-align: center; padding: 8px; }
+      #tab-nukemap .gps-status { font-size: 20px; font-weight: 900; letter-spacing: 2px; }
+      #tab-nukemap .gps-dist { font-size: 12px; color: #fab387; font-weight: 600; margin: 4px 0; }
+      #tab-nukemap .gps-coords { font-size: 9px; color: #6c7a8a; font-family: monospace; }
+
+      /* ── Save/Load ── */
+      #tab-nukemap .save-row { display: flex; gap: 5px; align-items: center; }
+      #tab-nukemap .saved-item {
+        display: flex; align-items: center; gap: 5px; padding: 5px 8px;
+        margin-bottom: 3px; background: #12171c; border-radius: 6px;
+        border: 1px solid #1a2028; font-size: 10px; cursor: pointer;
+        transition: background-color .12s, border-color .12s;
+      }
+      #tab-nukemap .saved-item:hover { background: #1a2028; border-color: #232c35; }
+      #tab-nukemap .si-name { flex: 1; font-weight: 600; color: #c8ccd0; }
+      #tab-nukemap .si-del:hover { background: #f38ba8; color: #0a0a0c; }
+
+      /* ── Encyclopedia ── */
+      #tab-nukemap .enc-country-name {
+        font-size: 10px; font-weight: 700; color: #6c7a8a; text-transform: uppercase;
+        letter-spacing: 1px; margin-bottom: 4px; display: flex; align-items: center; gap: 6px;
+      }
+      #tab-nukemap .enc-country-name::after { content: ''; flex: 1; height: 1px; background: #1a2028; }
+      #tab-nukemap .enc-weapon {
+        display: flex; align-items: center; gap: 8px; padding: 5px 8px; margin-bottom: 2px;
+        background: #12171c; border-radius: 5px; border: 1px solid #1a2028;
+        cursor: pointer; transition: background-color .12s, border-color .12s; font-size: 10px;
+      }
+      #tab-nukemap .enc-weapon:hover { background: #1a2028; border-color: #232c35; }
+      #tab-nukemap .enc-weapon.enc-selected { border-color: #fab387; background: rgba(250,179,135,0.08); }
+      #tab-nukemap .enc-w-name { flex: 1; font-weight: 600; color: #c8ccd0; }
+      #tab-nukemap .enc-w-yield { color: #fab387; font-weight: 700; font-variant-numeric: tabular-nums; min-width: 50px; text-align: right; }
+      #tab-nukemap .glossary-list { display: flex; flex-direction: column; gap: 3px; }
+      #tab-nukemap .gloss-item { padding: 5px 8px; background: #12171c; border-radius: 5px; font-size: 10px; }
+      #tab-nukemap .gloss-term { font-weight: 700; color: #4aedc4; margin-right: 6px; }
+      #tab-nukemap .gloss-def { color: #a0a8b0; line-height: 1.4; }
+
+      /* ── HEMP info ── */
+      #tab-nukemap .hemp-info { padding: 6px 8px; background: rgba(74,237,196,0.06); border: 1px solid rgba(74,237,196,0.15); border-radius: 6px; margin-top: 6px; }
+
+      /* ── Welcome Overlay ── */
+      #tab-nukemap #nk-welcome-overlay {
+        position: absolute; inset: 0; z-index: 10001;
+        background: rgba(10,10,12,0.88); backdrop-filter: blur(12px);
+        display: flex; align-items: center; justify-content: center;
+      }
+      #tab-nukemap #nk-welcome-overlay.hidden { display: none; }
+      #tab-nukemap .welcome-card {
+        max-width: 420px; width: 90%; background: #0e1014;
+        border: 1px solid #1a2028; border-radius: 10px;
+        padding: 28px 24px 20px; box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+      }
+      #tab-nukemap .welcome-header { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+      #tab-nukemap .welcome-icon {
+        width: 42px; height: 42px; border-radius: 12px;
+        background: linear-gradient(135deg, #f38ba8, #fab387);
+        display: flex; align-items: center; justify-content: center;
+        box-shadow: 0 4px 16px rgba(243,139,168,0.3);
+      }
+      #tab-nukemap .welcome-icon svg { width: 22px; height: 22px; color: #0a0a0c; }
+      #tab-nukemap .welcome-title { font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+      #tab-nukemap .welcome-title span { color: #f38ba8; }
+      #tab-nukemap .ws-num {
+        width: 22px; height: 22px; border-radius: 50%; background: #12171c;
+        color: #fab387; font-size: 11px; font-weight: 800;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      }
+      #tab-nukemap .ws-text { font-size: 12px; color: #b8bfc8; line-height: 1.4; }
+      #tab-nukemap .welcome-features { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 12px; }
+      #tab-nukemap .wf-tag {
+        padding: 3px 9px; border-radius: 20px; background: #12171c;
+        border: 1px solid #1a2028; color: #8a95a5; font-size: 9px; font-weight: 600;
+      }
+      #tab-nukemap .welcome-dismiss {
+        width: 100%; padding: 12px; border-radius: 6px; border: none;
+        background: linear-gradient(135deg, #f38ba8, #e64553); color: #0a0a0c;
+        font-size: 14px; font-weight: 800; cursor: pointer; letter-spacing: 1px;
+        text-transform: uppercase; transition: transform .2s, box-shadow .2s;
+        box-shadow: 0 4px 16px rgba(243,139,168,0.25); font-family: inherit;
+      }
+      #tab-nukemap .welcome-dismiss:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(243,139,168,0.35); }
+      #tab-nukemap .welcome-remember { display: flex; align-items: center; gap: 6px; margin-top: 8px; font-size: 10px; color: #6c7a8a; cursor: pointer; justify-content: center; }
+      #tab-nukemap .welcome-remember input { accent-color: #4aedc4; }
+
+      /* ── Fallout contour labels ── */
+      #tab-nukemap .fallout-contour-label { background: none !important; border: none !important; }
+      #tab-nukemap .fallout-contour-label span { font-size: 8px; font-weight: 700; background: rgba(10,10,12,0.8); padding: 1px 4px; border-radius: 3px; }
+
+      /* ── Loading overlay ── */
+      #tab-nukemap #nk-loading-overlay {
+        position: absolute; inset: 0; z-index: 10000; background: #0a0a0c;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        gap: 16px; transition: opacity 0.5s ease;
+      }
+      #tab-nukemap #nk-loading-overlay.hidden { opacity: 0; pointer-events: none; }
+      #tab-nukemap .loading-spinner {
+        width: 40px; height: 40px; border: 3px solid #1a2028;
+        border-top-color: #f38ba8; border-radius: 50%; animation: spin 0.8s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      #tab-nukemap .loading-text { font-size: 13px; color: #8a95a5; font-weight: 600; letter-spacing: 1px; }
+
+      /* ── Ground report zones ── */
+      #tab-nukemap .gr-zone { background: #12171c; border-radius: 6px; border: 1px solid #1a2028; overflow: hidden; }
+      #tab-nukemap .gr-header { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: #0e1014; border-bottom: 1px solid #1a2028; }
+      #tab-nukemap .gr-label { font-weight: 700; color: #c8ccd0; font-size: 11px; }
+      #tab-nukemap .gr-dist { font-size: 9px; color: #fab387; font-weight: 600; font-variant-numeric: tabular-nums; }
+      #tab-nukemap .gr-row { display: flex; gap: 8px; padding: 4px 10px; font-size: 10px; border-bottom: 1px solid rgba(35,44,53,0.15); }
+      #tab-nukemap .gr-row:last-child { border-bottom: none; }
+      #tab-nukemap .gr-sense { min-width: 42px; font-weight: 700; color: #4aedc4; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; }
+      #tab-nukemap .gr-desc { color: #a0a8b0; line-height: 1.5; flex: 1; }
+
+      /* ── Blast wave arrival ── */
+      #tab-nukemap .blast-arrival-indicator {
+        position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+        z-index: 1001; padding: 5px 14px; border-radius: 20px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(12px); border: 1px solid #232c35;
+        font-size: 11px; font-weight: 700; display: none; font-variant-numeric: tabular-nums;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5); white-space: nowrap;
+      }
+      #tab-nukemap .ba-time { color: #fab387; font-size: 13px; }
+
+      /* ── Yield preview circle ── */
+      #tab-nukemap .yield-preview-ring { pointer-events: none !important; z-index: 399; }
+
+      /* ── Test timeline ── */
+      #tab-nukemap .test-tooltip {
+        background: #12171c !important; color: #c8ccd0 !important;
+        border: 1px solid #1a2028 !important; border-radius: 6px !important;
+        font-size: 11px !important; box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+        padding: 6px 10px !important;
+      }
+      #tab-nukemap .test-timeline-year {
+        position: absolute; bottom: 80px; left: 50%; transform: translateX(-50%);
+        z-index: 1002; padding: 8px 20px; border-radius: 10px;
+        background: rgba(10,10,12,0.92); backdrop-filter: blur(16px);
+        border: 1px solid #232c35; font-size: 13px; font-weight: 700;
+        color: #c8ccd0; box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        white-space: nowrap; letter-spacing: 0.5px;
+      }
+
+      /* ── Print ── */
+      @media print {
+        #tab-nukemap #nk-panel, #tab-nukemap #nk-info-bar, #tab-nukemap #nk-coords,
+        #tab-nukemap #nk-offline-badge, #tab-nukemap #nk-quick-weapons,
+        #tab-nukemap #nk-fullscreen-btn, #tab-nukemap #nk-map-switcher,
+        #tab-nukemap #nk-fact-banner, #tab-nukemap #nk-screenshot-hint { display: none !important; }
+      }
+    </style>
+
+    <!-- NukeMap HTML Content -->
+    <div id="nk-map"></div>
+    <div id="nk-loading-overlay"><div class="loading-spinner"></div><div class="loading-text">Loading NukeMap...</div></div>
+    <div id="nk-welcome-overlay">
+      <div class="welcome-card">
+        <div class="welcome-header">
+          <div class="welcome-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
+          <div class="welcome-title">Nuke<span>Map</span> v3.3.0</div>
+        </div>
+        <div class="welcome-body">
+          <div class="welcome-step"><span class="ws-num">1</span><span class="ws-text">Search for a city or click a quick target pill</span></div>
+          <div class="welcome-step"><span class="ws-num">2</span><span class="ws-text">Select a weapon or use the quick bar at the bottom</span></div>
+          <div class="welcome-step"><span class="ws-num">3</span><span class="ws-text">Click anywhere on the map to detonate</span></div>
+          <div class="welcome-step"><span class="ws-num">4</span><span class="ws-text">Explore effects, casualties, shelter analysis, and more</span></div>
+          <div class="welcome-features">
+            <span class="wf-tag">32 Weapons</span>
+            <span class="wf-tag">WW3 Simulation</span>
+            <span class="wf-tag">MIRV Strikes</span>
+            <span class="wf-tag">Fallout Modeling</span>
+            <span class="wf-tag">Shelter Analysis</span>
+            <span class="wf-tag">12 Map Styles</span>
+          </div>
+        </div>
+        <button class="welcome-dismiss" id="nk-welcome-dismiss">Start Exploring</button>
+        <label class="welcome-remember"><input type="checkbox" id="nk-welcome-noshow" checked/> Don't show again</label>
+      </div>
+    </div>
+    <div id="nk-flash"></div>
+    <div id="nk-coords">--</div>
+    <div id="nk-offline-badge"><span class="ob-dot"></span><span class="ob-lbl">Online</span></div>
+    <div id="nk-det-counter" style="display:none"><span id="nk-det-counter-num">0</span><span class="dc-label">strikes</span></div>
+
+    <div id="nk-panel">
+      <button id="nk-panel-toggle" title="Toggle panel">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1.5H2zm0 4.25h12v1.5H2zm0 4.25h12v1.5H2z"/></svg>
+      </button>
+      <div class="panel-content">
+        <div class="panel-header">
+          <div class="brand">
+            <div class="brand-icon">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
+            </div>
+            <div class="brand-text">Nuke<span>Map</span></div>
+            <div class="brand-ver">v3.3.0</div>
+          </div>
+          <div class="search-wrap">
+            <span class="search-icon"><svg viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></span>
+            <input type="text" id="nk-search" placeholder="City, ZIP code, base, or coordinates..." autocomplete="off" spellcheck="false"/>
+            <div id="nk-search-results"></div>
+          </div>
+        </div>
+
+        <div class="panel-body">
+          <div class="section">
+            <div class="section-title">Quick Targets</div>
+            <div class="target-pills" id="nk-target-pills"></div>
+          </div>
+
+          <div class="nk-tabs" id="nk-main-tabs">
+            <button class="nk-tab active" data-nktab="weapon">Weapon</button>
+            <button class="nk-tab" data-nktab="effects">Effects</button>
+            <button class="nk-tab" data-nktab="results">Results</button>
+            <button class="nk-tab" data-nktab="tools">Tools</button>
+            <button class="nk-tab" data-nktab="encyclopedia">Info</button>
+          </div>
+
+          <!-- ===== WEAPON TAB ===== -->
+          <div class="nk-tab-content active" id="nk-tab-weapon">
+            <div class="section">
+              <div class="section-title">Warhead</div>
+              <input type="text" id="nk-weapon-filter" class="weapon-filter" placeholder="Filter weapons..." autocomplete="off" spellcheck="false"/>
+              <div class="select-wrap">
+                <select class="custom-select" id="nk-weapon-select"></select>
+                <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
+              </div>
+              <div class="yield-row">
+                <input type="range" id="nk-yield-slider" min="0" max="1000" value="280" step="1"/>
+                <div class="yield-display"><span id="nk-yield-val">15</span> <span class="yield-unit" id="nk-yield-unit">kT</span></div>
+              </div>
+              <div class="yield-labels"><span>0.001 kT</span><span>100 MT</span></div>
+              <div class="yield-input-row">
+                <input type="number" id="nk-yield-input" value="15" min="0.001" step="any"/>
+                <select id="nk-yield-unit-select"><option value="kt" selected>kT</option><option value="mt">MT</option><option value="t">tons</option></select>
+              </div>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Detonation</div>
+              <div class="burst-options">
+                <button class="burst-btn active" data-burst="airburst">Airburst</button>
+                <button class="burst-btn" data-burst="surface">Surface</button>
+                <button class="burst-btn" data-burst="custom">Custom</button>
+                <button class="burst-btn" data-burst="hemp">HEMP</button>
+              </div>
+              <div class="hemp-info" id="nk-hemp-info" style="display:none">
+                <div style="font-size:9px;color:#4aedc4;font-weight:600;margin-bottom:3px">High-Altitude EMP (HEMP)</div>
+                <div style="font-size:9px;color:#6c7a8a;line-height:1.4">Detonation at 400 km altitude. No blast/thermal damage at ground level. Generates massive EMP covering ~2,200 km radius (~continent-scale). Gamma rays interact with upper atmosphere to produce E1/E2/E3 electromagnetic pulses.</div>
+              </div>
+              <div class="compact-row" id="nk-height-row" style="display:none">
+                <label>Height</label><input type="number" class="compact-input" id="nk-burst-height" value="0" min="0"/><span class="unit">m</span>
+              </div>
+              <div class="compact-row" id="nk-fission-row">
+                <label>Fission</label><input type="number" class="compact-input" id="nk-fission-pct" value="50" min="0" max="100"/><span class="unit">%</span>
+              </div>
+              <div id="nk-wind-wrap" style="display:none">
+                <div class="wind-wrap">
+                  <div class="wind-compass" id="nk-wind-compass"><div class="wind-arrow" id="nk-wind-arrow"></div></div>
+                  <div class="wind-info">
+                    <label>Wind (fallout)</label>
+                    <div class="wind-speed-row"><input type="number" id="nk-wind-speed" value="24" min="0" max="300"/><span class="unit">km/h</span></div>
+                    <div class="wind-dir-label" id="nk-wind-dir-label">From N (0deg)</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <button id="nk-detonate-btn">DETONATE</button>
+              <div class="btn-row">
+                <button class="btn-secondary" id="nk-undo-btn">Undo Last</button>
+                <button class="btn-secondary" id="nk-clear-btn">Clear All</button>
+                <button class="btn-secondary" id="nk-share-btn">Share Link</button>
+              </div>
+              <label class="toggle-row"><input type="checkbox" id="nk-multi-check"/><span class="tg-slider"></span><span class="tg-label">Multiple detonations</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-sound-check" checked/><span class="tg-slider"></span><span class="tg-label">Sound effects</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-cloud-toggle"/><span class="tg-slider"></span><span class="tg-label">3D mushroom cloud</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-heatmap-check"/><span class="tg-slider"></span><span class="tg-label" id="nk-heatmap-label">Population heatmap</span></label>
+            </div>
+
+            <div class="section">
+              <div class="section-title">Weapon Presets</div>
+              <div class="preset-grid" id="nk-preset-grid"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">Historical Detonations</div>
+              <div class="preset-grid" id="nk-historical-grid"></div>
+            </div>
+          </div>
+
+          <!-- ===== EFFECTS TAB ===== -->
+          <div class="nk-tab-content" id="nk-tab-effects">
+            <div class="section" id="nk-legend-section">
+              <div class="section-title">Effect Rings</div>
+              <div id="nk-legend-items"><div style="color:#6c7a8a;font-size:12px;padding:10px 0">Detonate a weapon to see effects</div></div>
+            </div>
+            <div class="section" id="nk-cloud-section" style="display:none">
+              <div class="section-title">Mushroom Cloud</div>
+              <div class="cloud-panel" id="nk-cloud-panel"></div>
+            </div>
+            <div class="section" id="nk-timeline-section" style="display:none">
+              <div class="section-title">Event Timeline</div>
+              <div class="timeline" id="nk-timeline"></div>
+            </div>
+            <div class="section" id="nk-crater-section" style="display:none">
+              <div class="section-title">Crater</div>
+              <div class="cloud-panel" id="nk-crater-panel"></div>
+            </div>
+            <div class="section" id="nk-shelter-section" style="display:none">
+              <div class="section-title">Shelter Survival Analysis</div>
+              <div id="nk-shelter-content"></div>
+            </div>
+            <div class="section" id="nk-altitude-section" style="display:none">
+              <div class="section-title">Altitude Cross-Section</div>
+              <div id="nk-altitude-profile"></div>
+            </div>
+            <div class="section" id="nk-zonecas-section" style="display:none">
+              <div class="section-title">Casualties by Zone</div>
+              <div id="nk-zonecas-content"></div>
+            </div>
+            <div class="section" id="nk-destruction-section" style="display:none">
+              <div class="section-title">Destruction Statistics</div>
+              <div id="nk-destruction-content"></div>
+            </div>
+            <div class="section" id="nk-emp-section" style="display:none">
+              <div class="section-title">EMP Effects Detail</div>
+              <div id="nk-emp-content"></div>
+            </div>
+            <div class="section" id="nk-survival-section" style="display:none">
+              <div class="section-title">Survival Probability by Distance</div>
+              <div id="nk-survival-content"></div>
+            </div>
+            <div class="section" id="nk-weaponinfo-section" style="display:none">
+              <div class="section-title">Weapon Specifications</div>
+              <div id="nk-weaponinfo-content"></div>
+            </div>
+            <div class="section" id="nk-seismic-section" style="display:none">
+              <div class="section-title">Seismic Equivalent</div>
+              <div id="nk-seismic-content"></div>
+            </div>
+            <div class="section" id="nk-conventional-section" style="display:none">
+              <div class="section-title">Conventional Weapon Equivalent</div>
+              <div id="nk-conventional-content"></div>
+            </div>
+            <div class="section" id="nk-bldgdmg-section" style="display:none">
+              <div class="section-title">Building Damage by Overpressure</div>
+              <div id="nk-bldgdmg-content"></div>
+            </div>
+            <div class="section" id="nk-sizecompare-section" style="display:none">
+              <div class="section-title">Size Comparisons</div>
+              <div id="nk-sizecompare-content"></div>
+            </div>
+            <div class="section" id="nk-escape-section" style="display:none">
+              <div class="section-title">Escape Time</div>
+              <div id="nk-escape-content"></div>
+            </div>
+            <div class="section" id="nk-nearby-section" style="display:none">
+              <div class="section-title">Nearby Strategic Targets</div>
+              <div id="nk-nearby-content"></div>
+            </div>
+            <div class="section" id="nk-ground-section" style="display:none">
+              <div class="section-title">Ground-Level Experience</div>
+              <div style="font-size:10px;color:#6c7a8a;margin-bottom:6px">What you would see, hear, and feel at each distance from ground zero.</div>
+              <div id="nk-ground-content"></div>
+            </div>
+            <div class="section" id="nk-cloudcompare-section" style="display:none">
+              <div class="section-title">Mushroom Cloud Height</div>
+              <div id="nk-cloudcompare-content"></div>
+            </div>
+            <div class="section" id="nk-guide-section" style="display:none">
+              <div class="section-title">Emergency Action Guide</div>
+              <div id="nk-guide-content"></div>
+            </div>
+          </div>
+
+          <!-- ===== RESULTS TAB ===== -->
+          <div class="nk-tab-content" id="nk-tab-results">
+            <div class="section">
+              <div class="section-title">Estimated Casualties</div>
+              <div class="stat-grid">
+                <div class="stat-card"><div class="stat-label">Fatalities</div><div class="stat-value deaths" id="nk-stat-deaths">--</div></div>
+                <div class="stat-card"><div class="stat-label">Injuries</div><div class="stat-value injuries" id="nk-stat-injuries">--</div></div>
+                <div class="stat-card"><div class="stat-label">Total Affected</div><div class="stat-value total" id="nk-stat-total">--</div></div>
+                <div class="stat-card"><div class="stat-label">Total Yield</div><div class="stat-value" id="nk-stat-yield" style="color:#cba6f7">--</div></div>
+                <div class="stat-card wide"><div class="stat-sub" id="nk-stat-note">Detonate a weapon to see estimates</div></div>
+              </div>
+            </div>
+            <div class="section" id="nk-dets-section" style="display:none">
+              <div class="section-title">Active Detonations</div>
+              <div id="nk-dets-list"></div>
+            </div>
+            <div class="section" id="nk-share-section" style="display:none">
+              <div class="section-title">Share Results</div>
+              <div class="share-row"><input type="text" id="nk-share-input" readonly/><button class="share-copy" id="nk-share-copy">Copy Link</button></div>
+              <div class="btn-row" style="margin-top:5px">
+                <button class="btn-secondary" id="nk-share-text">Copy Summary</button>
+                <button class="btn-secondary" id="nk-share-native" style="display:none">Share</button>
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-title">Save / Load Scenario</div>
+              <div style="font-size:10px;color:#6c7a8a;margin-bottom:6px">Save current detonations to browser storage for later.</div>
+              <div class="save-row">
+                <input type="text" id="nk-save-name" class="compact-input" placeholder="Scenario name..." style="flex:1;max-width:none;text-align:left"/>
+                <button class="btn-secondary" id="nk-save-btn" style="flex:0;white-space:nowrap">Save</button>
+              </div>
+              <div id="nk-saved-list" style="margin-top:6px"></div>
+            </div>
+          </div>
+
+          <!-- ===== TOOLS TAB ===== -->
+          <div class="nk-tab-content" id="nk-tab-tools">
+            <div class="section">
+              <div class="section-title">MIRV Strike</div>
+              <div class="mirv-status" id="nk-mirv-status">Select a MIRV preset, then click the map</div>
+              <div class="preset-grid" id="nk-mirv-grid"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">Weapon Comparison</div>
+              <div class="compare-selects">
+                <select id="nk-compare-a"></select>
+                <span style="color:#6c7a8a;font-size:11px;font-weight:700">vs</span>
+                <select id="nk-compare-b"></select>
+              </div>
+              <div class="btn-row" style="margin-top:0">
+                <button class="btn-secondary" id="nk-compare-go">Compare</button>
+                <button class="btn-secondary" id="nk-compare-clear">Clear</button>
+              </div>
+              <div id="nk-compare-result"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">What Would I Experience?</div>
+              <div style="font-size:10px;color:#6c7a8a;margin-bottom:6px">Enable, then click anywhere on the map to see a detailed report of effects at that distance from ground zero.</div>
+              <label class="toggle-row"><input type="checkbox" id="nk-experience-check"/><span class="tg-slider"></span><span class="tg-label">Experience mode</span></label>
+            </div>
+            <div class="section">
+              <div class="section-title">Measure Distance</div>
+              <div style="font-size:10px;color:#6c7a8a;margin-bottom:6px">Enable, then click two or more points on the map to measure distances.</div>
+              <div class="btn-row">
+                <button class="btn-secondary" id="nk-measure-toggle">Enable Ruler</button>
+                <button class="btn-secondary" id="nk-measure-clear">Clear</button>
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-title">WW3 Simulation</div>
+              <div style="font-size:10px;color:#6c7a8a;margin-bottom:6px">Full-scale nuclear exchange with animated missile arcs, phased escalation, and live casualty tracking.</div>
+              <div class="select-wrap">
+                <select class="custom-select" id="nk-ww3-scenario"><option value="">Select scenario...</option></select>
+                <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
+              </div>
+              <div id="nk-ww3-scenario-desc" style="font-size:9px;color:#6c7a8a;margin-bottom:6px"></div>
+              <div class="compact-row" style="margin-bottom:4px">
+                <label>Speed</label>
+                <select class="compact-input" id="nk-ww3-speed" style="max-width:80px;text-align:left">
+                  <option value="1">1x</option><option value="2">2x</option>
+                  <option value="5" selected>5x</option><option value="10">10x</option>
+                </select>
+              </div>
+              <div class="btn-row" style="margin-top:0">
+                <button class="btn-ww3-launch" id="nk-ww3-launch">LAUNCH SIMULATION</button>
+                <button class="btn-secondary" id="nk-ww3-pause" style="display:none">Pause</button>
+                <button class="btn-secondary" id="nk-ww3-stop">Stop</button>
+              </div>
+              <div id="nk-ww3-phase" style="font-size:10px;color:#cba6f7;font-weight:700;margin-top:6px">Simulation idle</div>
+              <div id="nk-ww3-stats" style="margin-top:6px"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">Attack Scenarios</div>
+              <div id="nk-scenario-list"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">Missile Flight Time</div>
+              <div class="compact-row">
+                <label>Type</label>
+                <select class="compact-input" id="nk-missile-type" style="max-width:120px;text-align:left">
+                  <option value="icbm">ICBM</option><option value="slbm">SLBM</option>
+                  <option value="irbm">IRBM</option><option value="srbm">SRBM</option>
+                </select>
+              </div>
+              <div style="font-size:10px;color:#6c7a8a;margin-bottom:6px">Uses last detonation as target. Calculates from major launch sites.</div>
+              <div class="btn-row">
+                <button class="btn-secondary" id="nk-flight-us">From US</button>
+                <button class="btn-secondary" id="nk-flight-ru">From Russia</button>
+                <button class="btn-secondary" id="nk-flight-cn">From China</button>
+              </div>
+              <div id="nk-flight-result"></div>
+            </div>
+            <div class="section" id="nk-yieldchart-section" style="display:none">
+              <div class="section-title">Yield Comparison</div>
+              <div id="nk-yield-chart"></div>
+            </div>
+            <div class="section" id="nk-nw-section" style="display:none">
+              <div class="section-title">Nuclear Winter Estimate</div>
+              <div id="nk-nw-result"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">Map Style</div>
+              <div class="layer-switcher" id="nk-layer-switcher">
+                <button class="layer-btn active" data-layer="dark">Dark</button>
+                <button class="layer-btn" data-layer="darkClean">Dark Clean</button>
+                <button class="layer-btn" data-layer="satellite">Satellite</button>
+                <button class="layer-btn" data-layer="satLabels">Satellite + Labels</button>
+                <button class="layer-btn" data-layer="terrain">Terrain</button>
+                <button class="layer-btn" data-layer="osm">OpenStreetMap</button>
+                <button class="layer-btn" data-layer="voyager">Voyager</button>
+                <button class="layer-btn" data-layer="positron">Light</button>
+              </div>
+            </div>
+            <div class="section" id="nk-raddecay-section" style="display:none">
+              <div class="section-title">Radiation Decay (Fallout)</div>
+              <div class="compact-row">
+                <label>Distance</label>
+                <input type="number" class="compact-input" id="nk-raddecay-dist" value="10" min="0.1" step="any"/>
+                <span class="unit">km</span>
+                <button class="btn-secondary" id="nk-raddecay-calc" style="flex:0;padding:5px 10px">Calc</button>
+              </div>
+              <div id="nk-raddecay-result"></div>
+            </div>
+            <div class="section" id="nk-psi-section" style="display:none">
+              <div class="section-title">Overpressure Table</div>
+              <div id="nk-psi-result"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">Overlays</div>
+              <label class="toggle-row"><input type="checkbox" id="nk-ringlabels-check" checked/><span class="tg-slider"></span><span class="tg-label">Ring labels on map</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-distrings-check"/><span class="tg-slider"></span><span class="tg-label">Distance reference rings</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-distfromgz-check"/><span class="tg-slider"></span><span class="tg-label">Distance from GZ on hover</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-thermal-check"/><span class="tg-slider"></span><span class="tg-label">Thermal flash gradient</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-falloutanim-check"/><span class="tg-slider"></span><span class="tg-label">Animated fallout particles</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-screenshot-check"/><span class="tg-slider"></span><span class="tg-label">Screenshot mode (hide UI)</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-draggable-check"/><span class="tg-slider"></span><span class="tg-label">Draggable ground zero</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-blastwaveinfo-check"/><span class="tg-slider"></span><span class="tg-label">Blast wave arrival on hover</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-radoverlay-check"/><span class="tg-slider"></span><span class="tg-label">Radiation intensity overlay</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-dmgheatmap-check"/><span class="tg-slider"></span><span class="tg-label">Aggregate damage heatmap</span></label>
+            </div>
+            <div class="section" id="nk-dosecalc-section" style="display:none">
+              <div class="section-title">Radiation Dose Calculator</div>
+              <div style="font-size:10px;color:#6c7a8a;margin-bottom:6px">Estimate cumulative dose based on time spent at a distance from ground zero after a surface burst.</div>
+              <div class="compact-row">
+                <label>Distance</label>
+                <input type="number" class="compact-input" id="nk-dose-dist" value="5" min="0.1" step="any"/>
+                <span class="unit">km</span>
+              </div>
+              <div class="compact-row">
+                <label>Arrive at</label>
+                <input type="number" class="compact-input" id="nk-dose-arrive" value="1" min="0.1" step="any"/>
+                <span class="unit">hr after</span>
+              </div>
+              <div class="compact-row">
+                <label>Stay for</label>
+                <input type="number" class="compact-input" id="nk-dose-stay" value="4" min="0.1" step="any"/>
+                <span class="unit">hours</span>
+              </div>
+              <button class="btn-secondary" id="nk-dose-calc" style="width:100%;margin-top:4px">Calculate Dose</button>
+              <div id="nk-dose-result" style="margin-top:6px"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">Am I Safe? (GPS)</div>
+              <div style="font-size:10px;color:#6c7a8a;margin-bottom:6px">Uses your browser location to check against the last detonation.</div>
+              <button class="btn-secondary" id="nk-gps-check" style="width:100%">Check My Location</button>
+              <div id="nk-gps-result" style="margin-top:6px"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">Immersive</div>
+              <label class="toggle-row"><input type="checkbox" id="nk-night-check"/><span class="tg-slider"></span><span class="tg-label" id="nk-night-label">Night mode (flash blindness)</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-geiger-check"/><span class="tg-slider"></span><span class="tg-label">Geiger counter (hover audio)</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-shockwave-check" checked/><span class="tg-slider"></span><span class="tg-label">Shockwave ring animation</span></label>
+              <label class="toggle-row"><input type="checkbox" id="nk-contours-check"/><span class="tg-slider"></span><span class="tg-label">Fallout dose contour lines</span></label>
+              <div id="nk-fallout-timelapse" style="display:none;margin-top:6px">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:9px;color:#6c7a8a;font-weight:600;min-width:28px" id="nk-ft-label">1 hr</span>
+                  <input type="range" id="nk-ft-slider" min="1" max="48" value="1" step="1" style="flex:1;accent-color:#f9e2af"/>
+                  <button class="btn-secondary" id="nk-ft-play" style="flex:0;padding:4px 8px;font-size:9px">Play</button>
+                </div>
+                <div style="font-size:9px;color:#6c7a8a;margin-top:2px" id="nk-ft-info">Fallout extent at 1 hour after detonation</div>
+              </div>
+              <label class="toggle-row"><input type="checkbox" id="nk-testdb-check"/><span class="tg-slider"></span><span class="tg-label">Show historic nuclear tests</span></label>
+              <div class="btn-row" style="margin-top:4px">
+                <button class="btn-secondary" id="nk-test-timeline-btn">Play Test Timeline</button>
+                <button class="btn-secondary" id="nk-test-timeline-stop">Stop</button>
+              </div>
+            </div>
+            <div class="section">
+              <div class="section-title">Export</div>
+              <button class="export-btn" id="nk-export-png" style="margin-bottom:5px">Export Map as PNG</button>
+              <button class="export-btn" id="nk-export-kml" style="background:#cba6f7;margin-bottom:5px">Export to Google Earth (KML)</button>
+              <button class="export-btn" id="nk-export-json" style="background:#4aedc4;margin-bottom:5px">Export Data as JSON</button>
+              <button class="export-btn" id="nk-export-report" style="background:#4aedc4">Generate Summary Report</button>
+            </div>
+          </div>
+
+          <!-- ===== ENCYCLOPEDIA TAB ===== -->
+          <div class="nk-tab-content" id="nk-tab-encyclopedia">
+            <div class="section">
+              <div class="section-title">Weapon Arsenal</div>
+              <div style="font-size:10px;color:#6c7a8a;margin-bottom:8px">Browse all weapons by country. Click to select.</div>
+              <div id="nk-encyclopedia-list"></div>
+            </div>
+            <div class="section">
+              <div class="section-title">Nuclear Glossary</div>
+              <div class="glossary-list">
+                <div class="gloss-item"><span class="gloss-term">Yield</span><span class="gloss-def">Total energy released, measured in kilotons (kT) or megatons (MT) of TNT equivalent.</span></div>
+                <div class="gloss-item"><span class="gloss-term">Airburst</span><span class="gloss-def">Detonation at optimal altitude to maximize blast damage. No crater, minimal fallout.</span></div>
+                <div class="gloss-item"><span class="gloss-term">Surface Burst</span><span class="gloss-def">Detonation at ground level. Creates crater, produces heavy radioactive fallout.</span></div>
+                <div class="gloss-item"><span class="gloss-term">HEMP</span><span class="gloss-def">High-altitude Electromagnetic Pulse. Detonation at 30-400+ km altitude creates continent-scale EMP with no blast damage at ground level.</span></div>
+                <div class="gloss-item"><span class="gloss-term">MIRV</span><span class="gloss-def">Multiple Independently-targetable Reentry Vehicle. Single missile carries multiple warheads aimed at different targets.</span></div>
+                <div class="gloss-item"><span class="gloss-term">Overpressure (psi)</span><span class="gloss-def">Air pressure above normal atmospheric. 5 psi collapses most buildings. 20 psi destroys reinforced concrete.</span></div>
+                <div class="gloss-item"><span class="gloss-term">Fallout</span><span class="gloss-def">Radioactive debris carried downwind after surface burst. Most dangerous in first 48 hours (7:10 decay rule).</span></div>
+                <div class="gloss-item"><span class="gloss-term">Firestorm</span><span class="gloss-def">Self-sustaining fire with hurricane-force inward winds. Consumes all oxygen in the area. Occurred at Hiroshima.</span></div>
+                <div class="gloss-item"><span class="gloss-term">Fission</span><span class="gloss-def">Splitting heavy atoms (U-235, Pu-239). Powers all nuclear weapons. Pure fission weapons: up to ~500 kT.</span></div>
+                <div class="gloss-item"><span class="gloss-term">Thermonuclear</span><span class="gloss-def">Two-stage design using fission primary to ignite fusion secondary. No theoretical yield limit. Most modern weapons.</span></div>
+                <div class="gloss-item"><span class="gloss-term">CEP</span><span class="gloss-def">Circular Error Probable. Radius within which 50% of warheads land. Modern ICBMs: ~100-200m. GPS-guided bombs: ~30m.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button id="nk-ww3-quick-btn" title="Launch WW3 Simulation">WW3</button>
+    <div id="nk-quick-weapons">
+      <button class="qw-chip" data-kt="15" data-name="Hiroshima"><span class="qw-name">Hiroshima</span><span class="qw-yield">15 kT</span></button>
+      <button class="qw-chip" data-kt="100" data-name="W76-1"><span class="qw-name">W76-1</span><span class="qw-yield">100 kT</span></button>
+      <button class="qw-chip" data-kt="455" data-name="W88"><span class="qw-name">W88</span><span class="qw-yield">455 kT</span></button>
+      <button class="qw-chip" data-kt="800" data-name="Sarmat"><span class="qw-name">Sarmat</span><span class="qw-yield">800 kT</span></button>
+      <button class="qw-chip" data-kt="1200" data-name="B83"><span class="qw-name">B83</span><span class="qw-yield">1.2 MT</span></button>
+      <button class="qw-chip" data-kt="50000" data-name="Tsar Bomba"><span class="qw-name">Tsar</span><span class="qw-yield">50 MT</span></button>
+    </div>
+    <div id="nk-info-bar"></div>
+    <button id="nk-fullscreen-btn" title="Toggle fullscreen"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M1.5 1h4v1.5h-2.793l3.147 3.146-1.061 1.061L1.5 3.414V6.5H0V1.5A.5.5 0 01.5 1h1zm13 0h-4v1.5h2.793L10.146 5.646l1.061 1.061L14.5 3.414V6.5H16V1.5a.5.5 0 00-.5-.5h-1zM1.5 15h4v-1.5H2.707l3.147-3.146-1.061-1.061L1.5 12.586V9.5H0v5a.5.5 0 00.5.5h1zm13 0h-4v-1.5h2.793l-3.147-3.146 1.061-1.061L14.5 12.586V9.5H16v5a.5.5 0 01-.5.5h-1z"/></svg></button>
+    <div id="nk-map-switcher">
+      <button class="ms-toggle" id="nk-ms-toggle" title="Change map style"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0L1 4v8l7 4 7-4V4L8 0zm0 1.25L13.5 4.5 8 7.75 2.5 4.5 8 1.25zM2 5.5l5.5 3v5.75L2 11V5.5zm6.5 8.75V8.5L14 5.5V11l-5.5 3.25z"/></svg></button>
+      <div class="ms-panel" id="nk-ms-panel">
+        <button class="ms-btn active" data-layer="dark">Dark</button>
+        <button class="ms-btn" data-layer="darkClean">Dark Clean</button>
+        <button class="ms-btn" data-layer="satellite">Satellite</button>
+        <button class="ms-btn" data-layer="satLabels">Sat+Labels</button>
+        <button class="ms-btn" data-layer="terrain">Terrain</button>
+        <button class="ms-btn" data-layer="osm">OSM</button>
+        <button class="ms-btn" data-layer="voyager">Voyager</button>
+        <button class="ms-btn" data-layer="positron">Light</button>
+      </div>
+    </div>
+    <div id="nk-screenshot-hint">Click here or press Escape to exit screenshot mode</div>
+    <div id="nk-fact-banner"><div class="fact-label">Did You Know?</div><span id="nk-fact-text"></span></div>
+
+    <!-- NukeMap ID Remapping Shim — rewire getElementById to nk- prefixed IDs -->
+    <script>
+    (function() {
+      'use strict';
+      // Build map of original NukeMap IDs to nk-prefixed IDs
+      const ID_MAP = {
+        'map': 'nk-map',
+        'loading-overlay': 'nk-loading-overlay',
+        'welcome-overlay': 'nk-welcome-overlay',
+        'welcome-dismiss': 'nk-welcome-dismiss',
+        'welcome-noshow': 'nk-welcome-noshow',
+        'flash': 'nk-flash',
+        'coords': 'nk-coords',
+        'offline-badge': 'nk-offline-badge',
+        'det-counter': 'nk-det-counter',
+        'det-counter-num': 'nk-det-counter-num',
+        'panel': 'nk-panel',
+        'panel-toggle': 'nk-panel-toggle',
+        'search': 'nk-search',
+        'search-results': 'nk-search-results',
+        'target-pills': 'nk-target-pills',
+        'main-tabs': 'nk-main-tabs',
+        'tab-weapon': 'nk-tab-weapon',
+        'tab-effects': 'nk-tab-effects',
+        'tab-results': 'nk-tab-results',
+        'tab-tools': 'nk-tab-tools',
+        'tab-encyclopedia': 'nk-tab-encyclopedia',
+        'weapon-filter': 'nk-weapon-filter',
+        'weapon-select': 'nk-weapon-select',
+        'yield-slider': 'nk-yield-slider',
+        'yield-val': 'nk-yield-val',
+        'yield-unit': 'nk-yield-unit',
+        'yield-input': 'nk-yield-input',
+        'yield-unit-select': 'nk-yield-unit-select',
+        'hemp-info': 'nk-hemp-info',
+        'height-row': 'nk-height-row',
+        'burst-height': 'nk-burst-height',
+        'fission-row': 'nk-fission-row',
+        'fission-pct': 'nk-fission-pct',
+        'wind-wrap': 'nk-wind-wrap',
+        'wind-compass': 'nk-wind-compass',
+        'wind-arrow': 'nk-wind-arrow',
+        'wind-speed': 'nk-wind-speed',
+        'wind-dir-label': 'nk-wind-dir-label',
+        'detonate-btn': 'nk-detonate-btn',
+        'undo-btn': 'nk-undo-btn',
+        'clear-btn': 'nk-clear-btn',
+        'share-btn': 'nk-share-btn',
+        'multi-check': 'nk-multi-check',
+        'sound-check': 'nk-sound-check',
+        'cloud-toggle': 'nk-cloud-toggle',
+        'heatmap-check': 'nk-heatmap-check',
+        'heatmap-label': 'nk-heatmap-label',
+        'preset-grid': 'nk-preset-grid',
+        'historical-grid': 'nk-historical-grid',
+        'legend-section': 'nk-legend-section',
+        'legend-items': 'nk-legend-items',
+        'cloud-section': 'nk-cloud-section',
+        'cloud-panel': 'nk-cloud-panel',
+        'timeline-section': 'nk-timeline-section',
+        'timeline': 'nk-timeline',
+        'crater-section': 'nk-crater-section',
+        'crater-panel': 'nk-crater-panel',
+        'shelter-section': 'nk-shelter-section',
+        'shelter-content': 'nk-shelter-content',
+        'altitude-section': 'nk-altitude-section',
+        'altitude-profile': 'nk-altitude-profile',
+        'zonecas-section': 'nk-zonecas-section',
+        'zonecas-content': 'nk-zonecas-content',
+        'destruction-section': 'nk-destruction-section',
+        'destruction-content': 'nk-destruction-content',
+        'emp-section': 'nk-emp-section',
+        'emp-content': 'nk-emp-content',
+        'survival-section': 'nk-survival-section',
+        'survival-content': 'nk-survival-content',
+        'weaponinfo-section': 'nk-weaponinfo-section',
+        'weaponinfo-content': 'nk-weaponinfo-content',
+        'seismic-section': 'nk-seismic-section',
+        'seismic-content': 'nk-seismic-content',
+        'conventional-section': 'nk-conventional-section',
+        'conventional-content': 'nk-conventional-content',
+        'bldgdmg-section': 'nk-bldgdmg-section',
+        'bldgdmg-content': 'nk-bldgdmg-content',
+        'sizecompare-section': 'nk-sizecompare-section',
+        'sizecompare-content': 'nk-sizecompare-content',
+        'escape-section': 'nk-escape-section',
+        'escape-content': 'nk-escape-content',
+        'nearby-section': 'nk-nearby-section',
+        'nearby-content': 'nk-nearby-content',
+        'ground-section': 'nk-ground-section',
+        'ground-content': 'nk-ground-content',
+        'cloudcompare-section': 'nk-cloudcompare-section',
+        'cloudcompare-content': 'nk-cloudcompare-content',
+        'guide-section': 'nk-guide-section',
+        'guide-content': 'nk-guide-content',
+        'stat-deaths': 'nk-stat-deaths',
+        'stat-injuries': 'nk-stat-injuries',
+        'stat-total': 'nk-stat-total',
+        'stat-yield': 'nk-stat-yield',
+        'stat-note': 'nk-stat-note',
+        'dets-section': 'nk-dets-section',
+        'dets-list': 'nk-dets-list',
+        'share-section': 'nk-share-section',
+        'share-input': 'nk-share-input',
+        'share-copy': 'nk-share-copy',
+        'share-text': 'nk-share-text',
+        'share-native': 'nk-share-native',
+        'save-name': 'nk-save-name',
+        'save-btn': 'nk-save-btn',
+        'saved-list': 'nk-saved-list',
+        'mirv-status': 'nk-mirv-status',
+        'mirv-grid': 'nk-mirv-grid',
+        'compare-a': 'nk-compare-a',
+        'compare-b': 'nk-compare-b',
+        'compare-go': 'nk-compare-go',
+        'compare-clear': 'nk-compare-clear',
+        'compare-result': 'nk-compare-result',
+        'experience-check': 'nk-experience-check',
+        'measure-toggle': 'nk-measure-toggle',
+        'measure-clear': 'nk-measure-clear',
+        'ww3-scenario': 'nk-ww3-scenario',
+        'ww3-scenario-desc': 'nk-ww3-scenario-desc',
+        'ww3-speed': 'nk-ww3-speed',
+        'ww3-launch': 'nk-ww3-launch',
+        'ww3-pause': 'nk-ww3-pause',
+        'ww3-stop': 'nk-ww3-stop',
+        'ww3-phase': 'nk-ww3-phase',
+        'ww3-stats': 'nk-ww3-stats',
+        'ww3-quick-btn': 'nk-ww3-quick-btn',
+        'scenario-list': 'nk-scenario-list',
+        'missile-type': 'nk-missile-type',
+        'flight-us': 'nk-flight-us',
+        'flight-ru': 'nk-flight-ru',
+        'flight-cn': 'nk-flight-cn',
+        'flight-result': 'nk-flight-result',
+        'yieldchart-section': 'nk-yieldchart-section',
+        'yield-chart': 'nk-yield-chart',
+        'nw-section': 'nk-nw-section',
+        'nw-result': 'nk-nw-result',
+        'layer-switcher': 'nk-layer-switcher',
+        'raddecay-section': 'nk-raddecay-section',
+        'raddecay-dist': 'nk-raddecay-dist',
+        'raddecay-calc': 'nk-raddecay-calc',
+        'raddecay-result': 'nk-raddecay-result',
+        'psi-section': 'nk-psi-section',
+        'psi-result': 'nk-psi-result',
+        'ringlabels-check': 'nk-ringlabels-check',
+        'distrings-check': 'nk-distrings-check',
+        'distfromgz-check': 'nk-distfromgz-check',
+        'thermal-check': 'nk-thermal-check',
+        'falloutanim-check': 'nk-falloutanim-check',
+        'screenshot-check': 'nk-screenshot-check',
+        'draggable-check': 'nk-draggable-check',
+        'blastwaveinfo-check': 'nk-blastwaveinfo-check',
+        'radoverlay-check': 'nk-radoverlay-check',
+        'dmgheatmap-check': 'nk-dmgheatmap-check',
+        'dosecalc-section': 'nk-dosecalc-section',
+        'dose-dist': 'nk-dose-dist',
+        'dose-arrive': 'nk-dose-arrive',
+        'dose-stay': 'nk-dose-stay',
+        'dose-calc': 'nk-dose-calc',
+        'dose-result': 'nk-dose-result',
+        'gps-check': 'nk-gps-check',
+        'gps-result': 'nk-gps-result',
+        'night-check': 'nk-night-check',
+        'night-label': 'nk-night-label',
+        'geiger-check': 'nk-geiger-check',
+        'shockwave-check': 'nk-shockwave-check',
+        'contours-check': 'nk-contours-check',
+        'fallout-timelapse': 'nk-fallout-timelapse',
+        'ft-label': 'nk-ft-label',
+        'ft-slider': 'nk-ft-slider',
+        'ft-play': 'nk-ft-play',
+        'ft-info': 'nk-ft-info',
+        'testdb-check': 'nk-testdb-check',
+        'test-timeline-btn': 'nk-test-timeline-btn',
+        'test-timeline-stop': 'nk-test-timeline-stop',
+        'export-png': 'nk-export-png',
+        'export-kml': 'nk-export-kml',
+        'export-json': 'nk-export-json',
+        'export-report': 'nk-export-report',
+        'encyclopedia-list': 'nk-encyclopedia-list',
+        'fullscreen-btn': 'nk-fullscreen-btn',
+        'map-switcher': 'nk-map-switcher',
+        'ms-toggle': 'nk-ms-toggle',
+        'ms-panel': 'nk-ms-panel',
+        'screenshot-hint': 'nk-screenshot-hint',
+        'fact-banner': 'nk-fact-banner',
+        'fact-text': 'nk-fact-text',
+        'info-bar': 'nk-info-bar',
+        'quick-weapons': 'nk-quick-weapons',
+        'ww3-hud': 'nk-ww3-hud',
+        'ww3-winter': 'nk-ww3-winter',
+        'ww3-defcon': 'nk-ww3-defcon',
+        'ww3-toasts': 'nk-ww3-toasts',
+        'ww3-legend': 'nk-ww3-legend',
+      };
+
+      // Override getElementById to transparently remap NukeMap IDs
+      const _origGetById = document.getElementById.bind(document);
+      document.getElementById = function(id) {
+        // If a nk-prefixed element exists, return it for the original ID lookup
+        const mapped = ID_MAP[id];
+        if (mapped) {
+          const el = _origGetById(mapped);
+          if (el) return el;
+        }
+        return _origGetById(id);
+      };
+
+      // Also handle querySelector for NukeMap's tab system (data-tab -> data-nktab)
+      const _origQSA = document.querySelectorAll.bind(document);
+      const _origQS = document.querySelector.bind(document);
+
+      // NukeMap uses querySelector('.burst-btn.active') and querySelectorAll('.tab')
+      // These will work naturally since the classes remain the same within #tab-nukemap
+
+      // Expose a function to restore getElementById when NukeMap tab is deactivated
+      window._nkRestoreGetById = function() {
+        document.getElementById = _origGetById;
+      };
+      window._nkPatchGetById = function() {
+        document.getElementById = function(id) {
+          const mapped = ID_MAP[id];
+          if (mapped) {
+            const el = _origGetById(mapped);
+            if (el) return el;
+          }
+          return _origGetById(id);
+        };
+      };
+
+      // Store the original for cleanup
+      window._nkOrigGetById = _origGetById;
+    })();
+    </script>
+
+    <!-- NukeMap tab switching (inner tabs, not NOMAD tabs) -->
+    <script>
+    (function() {
+      'use strict';
+      const tabContainer = document.getElementById('nk-main-tabs');
+      if (!tabContainer) return;
+
+      tabContainer.addEventListener('click', function(e) {
+        const btn = e.target.closest('.nk-tab');
+        if (!btn) return;
+        const tabName = btn.dataset.nktab;
+        if (!tabName) return;
+
+        // Deactivate all inner tabs
+        tabContainer.querySelectorAll('.nk-tab').forEach(t => t.classList.remove('active'));
+        btn.classList.add('active');
+
+        // Show the corresponding content
+        const nukemapRoot = document.getElementById('tab-nukemap');
+        nukemapRoot.querySelectorAll('.nk-tab-content').forEach(c => c.classList.remove('active'));
+        const target = document.getElementById('nk-tab-' + tabName);
+        if (target) target.classList.add('active');
+      });
+    })();
+    </script>
+
+    <!-- Leaflet Library -->
+    <script src="/nukemap/lib/leaflet.js"></script>
+
+    <!-- NukeMap Modules (order matters) -->
+    <script src="/nukemap/js/data.js"></script>
+    <script src="/nukemap/js/physics.js"></script>
+    <script src="/nukemap/js/search.js"></script>
+    <script src="/nukemap/js/effects.js"></script>
+    <script src="/nukemap/js/animation.js"></script>
+    <script src="/nukemap/js/sound.js"></script>
+    <script src="/nukemap/js/mushroom3d.js"></script>
+    <script src="/nukemap/js/mirv.js"></script>
+    <script src="/nukemap/js/shelter.js"></script>
+    <script src="/nukemap/js/compare.js"></script>
+    <script src="/nukemap/js/heatmap.js"></script>
+    <script src="/nukemap/js/extras.js"></script>
+    <script src="/nukemap/js/advanced.js"></script>
+    <script src="/nukemap/js/premium.js"></script>
+    <script src="/nukemap/js/immersive.js"></script>
+    <script src="/nukemap/js/ww3.js"></script>
+    <script src="/nukemap/js/app.js"></script>
+
+    <!-- NukeMap Tab Visibility Handler -->
+    <script>
+    (function() {
+      'use strict';
+      // When the NukeMap tab becomes visible, invalidate map size
+      // The NOMAD tab system will call this or we observe via MutationObserver
+      let _nkMapReady = false;
+
+      function onNukeMapVisible() {
+        window._nkPatchGetById();
+        if (window.NM && window.NM._map) {
+          setTimeout(function() {
+            window.NM._map.invalidateSize();
+          }, 100);
+        }
+      }
+
+      function onNukeMapHidden() {
+        if (window._nkRestoreGetById) window._nkRestoreGetById();
+      }
+
+      // Observe the tab-nukemap div for class changes (active/inactive)
+      const tabEl = document._nkOrigGetById ? document._nkOrigGetById('tab-nukemap') : document.getElementById('tab-nukemap');
+      if (tabEl) {
+        const observer = new MutationObserver(function(mutations) {
+          for (const m of mutations) {
+            if (m.attributeName === 'class') {
+              if (tabEl.classList.contains('active')) {
+                onNukeMapVisible();
+              } else {
+                onNukeMapHidden();
+              }
+            }
+          }
+        });
+        observer.observe(tabEl, { attributes: true, attributeFilter: ['class'] });
+
+        // If already active on load
+        if (tabEl.classList.contains('active')) {
+          // The scripts above will auto-init via DOMContentLoaded or immediate call
+          // Just ensure map resize after a brief delay
+          setTimeout(onNukeMapVisible, 500);
+        }
+      }
+
+      // Also expose for external callers
+      window.nukemapOnVisible = onNukeMapVisible;
+      window.nukemapOnHidden = onNukeMapHidden;
+    })();
+    </script>
+
   </div>

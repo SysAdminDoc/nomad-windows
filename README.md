@@ -3,9 +3,9 @@
 
 # NOMAD Field Desk
 
-### Offline Preparedness & Intelligence Workspace
+### Local-First Preparedness & Intelligence Workspace
 
-**Free. Open Source. No Internet Required After Setup.**
+**Free. Open Source. Runs on your machine.**
 
 [![Release](https://img.shields.io/github/v/release/SysAdminDoc/project-nomad-desktop?include_prereleases&label=Download&color=blue)](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2)](https://discord.com/invite/crosstalksolutions)
@@ -14,7 +14,7 @@
 
 ---
 
-> Cross-platform desktop app for Windows, Linux, and macOS. No Docker. No cloud. Everything runs locally.
+> Cross-platform desktop app for Windows, Linux, and macOS. No Docker. No cloud subscriptions. All data stays on your machine. Live intelligence features use internet; AI, maps, reference, and cached data work offline.
 
 **[Download for Windows](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest)** (portable exe, no install needed)
 
@@ -22,11 +22,11 @@
 
 ## What Is It
 
-NOMAD Field Desk is a self-contained desktop workspace for offline preparedness, intelligence monitoring, and field operations. It bundles 8 managed services, 600+ API routes, and 95+ database tables into a single portable executable.
+NOMAD Field Desk is a local-first desktop workspace for preparedness, real-time intelligence monitoring, and field operations. It bundles 8 managed services, 600+ API routes, and 95+ database tables into a single portable executable. Live features (Situation Room feeds, VIPTrack, market data) use internet when available; AI chat, maps, reference materials, and all cached data work fully offline.
 
 ### Core Features
 
-**Situation Room** — Global intelligence dashboard with 108+ cards, 36 data sources, 149 API routes, 45 map layers, 1,275 infrastructure points, and 435+ RSS feeds. Tracks earthquakes, severe weather, armed conflicts, cyber threats, disease outbreaks, satellite fires, market indices, crypto, commodities, prediction markets, space weather, and more. All data cached offline. No API keys needed.
+**Situation Room** — Real-time global intelligence dashboard with 108+ cards, 36 data sources, 149 API routes, 45 map layers, 1,275 infrastructure points, and 435+ RSS feeds. Tracks earthquakes, severe weather, armed conflicts, cyber threats, disease outbreaks, satellite fires, market indices, crypto, commodities, prediction markets, space weather, and more. All data cached locally for offline access. No API keys needed.
 
 **NukeMap** — Nuclear effects simulator with 32 warheads, WW3 simulation (418 targets, 708 warheads), MIRV strikes, fallout modeling, shelter survival analysis, and 12 map styles. Physics based on Glasstone & Dolan.
 

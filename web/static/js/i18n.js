@@ -9,20 +9,28 @@ const NomadI18n = {
     _fallback: {},
 
     async init() {
-        // Load saved language preference
-        try {
-            const resp = await fetch('/api/i18n/language');
-            const data = await resp.json();
-            this._lang = data.language || 'en';
-        } catch(e) {
-            this._lang = 'en';
+        const bootstrap = window.__NOMAD_I18N_BOOTSTRAP;
+        if (bootstrap && bootstrap.lang && bootstrap.translations) {
+            this._lang = bootstrap.lang || 'en';
+            this._translations = bootstrap.translations || {};
+            this._fallback = bootstrap.fallback || (this._lang === 'en' ? this._translations : {});
+        } else {
+            try {
+                const resp = await fetch('/api/i18n/language');
+                const data = await resp.json();
+                this._lang = data.language || 'en';
+            } catch(e) {
+                this._lang = 'en';
+            }
+            await this.loadTranslations(this._lang);
         }
-        await this.loadTranslations(this._lang);
         this.applyTranslations();
         loadLanguageSelector();
     },
 
     async loadTranslations(lang) {
+        this._translations = {};
+        this._fallback = {};
         try {
             const resp = await fetch(`/api/i18n/translations/${lang}`);
             if (resp.ok) {
@@ -36,6 +44,8 @@ const NomadI18n = {
                     const fbData = await fbResp.json();
                     this._fallback = fbData.translations || {};
                 }
+            } else {
+                this._fallback = this._translations;
             }
         } catch(e) {
             console.error('[i18n] Failed to load translations:', e);
@@ -62,10 +72,17 @@ const NomadI18n = {
         } catch(e) {}
         this._lang = lang;
         await this.loadTranslations(lang);
+        window.__NOMAD_I18N_BOOTSTRAP = {
+            lang: this._lang,
+            translations: this._translations,
+            fallback: this._fallback
+        };
         this.applyTranslations();
     },
 
     applyTranslations() {
+        document.documentElement.lang = this._lang;
+        document.documentElement.dir = this._lang === 'ar' ? 'rtl' : 'ltr';
         // Update all elements with data-i18n attribute
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
@@ -84,8 +101,6 @@ const NomadI18n = {
         document.querySelectorAll('[data-i18n-aria]').forEach(el => {
             el.setAttribute('aria-label', this.t(el.getAttribute('data-i18n-aria')));
         });
-        // Set document direction for RTL languages
-        document.documentElement.dir = this._lang === 'ar' ? 'rtl' : 'ltr';
     },
 
     get currentLang() { return this._lang; }

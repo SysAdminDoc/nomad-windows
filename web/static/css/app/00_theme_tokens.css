@@ -67,9 +67,9 @@
   --surface: rgba(24,29,36,0.86);
   --surface-solid: #151a22;
   --surface2: #1d2430;
-  --surface3: #273140;
-  --surface-strong: #1a212c;
-  --surface-panel: rgba(18,22,29,0.92);
+  --surface3: #222d3a;
+  --surface-strong: #161d27;
+  --surface-panel: rgba(14,18,24,0.94);
   --border: rgba(255,255,255,0.08);
   --border-hover: rgba(216,178,111,0.28);
   --text: #edf2f7;
@@ -100,12 +100,12 @@
   --glow: 0 0 28px rgba(208,168,109,0.16);
   --gradient-accent: linear-gradient(135deg, #8b6841, #dfb377);
   --gradient-card: linear-gradient(180deg, rgba(25,30,38,0.98), rgba(19,23,31,0.94));
-  --sidebar-bg: rgba(10,14,20,0.94);
+  --sidebar-bg: rgba(8,12,18,0.96);
   --surface-overlay: linear-gradient(180deg, rgba(27,34,45,0.98), rgba(19,24,33,0.94));
   --surface-overlay-soft: linear-gradient(180deg, rgba(34,42,54,0.94), rgba(23,29,38,0.9));
-  --surface-field: rgba(30,38,50,0.94);
-  --surface-field-soft: rgba(36,44,56,0.82);
-  --panel-highlight: rgba(255,255,255,0.04);
+  --surface-field: rgba(24,31,42,0.98);
+  --surface-field-soft: rgba(28,36,48,0.84);
+  --panel-highlight: rgba(255,255,255,0.02);
   --shadow-panel: 0 24px 56px rgba(0,0,0,0.28);
   --shadow-floating: 0 30px 72px rgba(0,0,0,0.34);
   --overlay-scrim: rgba(4,7,12,0.58);
@@ -122,9 +122,9 @@
   --surface: rgba(29,18,18,0.86);
   --surface-solid: #1d1414;
   --surface2: #281b1b;
-  --surface3: #372525;
-  --surface-strong: #241717;
-  --surface-panel: rgba(25,17,17,0.92);
+  --surface3: #2f2020;
+  --surface-strong: #1f1414;
+  --surface-panel: rgba(21,14,14,0.94);
   --border: rgba(255,255,255,0.07);
   --border-hover: rgba(223,133,92,0.28);
   --text: #f4e7e2;
@@ -155,12 +155,12 @@
   --glow: 0 0 24px rgba(223,133,92,0.16);
   --gradient-accent: linear-gradient(135deg, #8a4c33, #de8a60);
   --gradient-card: linear-gradient(180deg, rgba(32,20,20,0.98), rgba(25,16,16,0.95));
-  --sidebar-bg: rgba(20,13,13,0.95);
+  --sidebar-bg: rgba(15,10,10,0.96);
   --surface-overlay: linear-gradient(180deg, rgba(40,24,24,0.98), rgba(30,18,18,0.94));
   --surface-overlay-soft: linear-gradient(180deg, rgba(48,28,28,0.92), rgba(35,21,21,0.88));
-  --surface-field: rgba(42,26,26,0.94);
-  --surface-field-soft: rgba(50,30,30,0.8);
-  --panel-highlight: rgba(255,255,255,0.045);
+  --surface-field: rgba(34,21,21,0.98);
+  --surface-field-soft: rgba(40,24,24,0.82);
+  --panel-highlight: rgba(255,255,255,0.02);
   --shadow-panel: 0 24px 58px rgba(0,0,0,0.3);
   --shadow-floating: 0 32px 76px rgba(0,0,0,0.36);
   --overlay-scrim: rgba(10,5,5,0.56);
@@ -177,9 +177,9 @@
   --surface: rgba(18,26,38,0.84);
   --surface-solid: #131c29;
   --surface2: #1b2636;
-  --surface3: #27354b;
-  --surface-strong: #172232;
-  --surface-panel: rgba(16,23,35,0.92);
+  --surface3: #223044;
+  --surface-strong: #142030;
+  --surface-panel: rgba(13,19,29,0.94);
   --border: rgba(255,255,255,0.075);
   --border-hover: rgba(108,163,255,0.28);
   --text: #edf4ff;
@@ -210,12 +210,12 @@
   --glow: 0 0 30px rgba(113,168,255,0.16);
   --gradient-accent: linear-gradient(135deg, #4670bf, #8fc2ff);
   --gradient-card: linear-gradient(180deg, rgba(21,29,42,0.98), rgba(16,23,34,0.95));
-  --sidebar-bg: rgba(8,14,24,0.94);
+  --sidebar-bg: rgba(6,11,19,0.96);
   --surface-overlay: linear-gradient(180deg, rgba(24,34,50,0.98), rgba(16,24,37,0.94));
   --surface-overlay-soft: linear-gradient(180deg, rgba(30,43,62,0.92), rgba(18,27,41,0.88));
-  --surface-field: rgba(28,39,57,0.94);
-  --surface-field-soft: rgba(36,50,71,0.8);
-  --panel-highlight: rgba(255,255,255,0.04);
+  --surface-field: rgba(23,34,50,0.98);
+  --surface-field-soft: rgba(30,44,63,0.82);
+  --panel-highlight: rgba(255,255,255,0.02);
   --shadow-panel: 0 24px 58px rgba(0,0,0,0.28);
   --shadow-floating: 0 30px 74px rgba(0,0,0,0.34);
   --overlay-scrim: rgba(3,8,14,0.58);
@@ -331,6 +331,74 @@
   --space-xl: 32px;
   --space-2xl: 48px;
   --space-3xl: 64px;
+  /* Density defaults */
+  --density-sidebar-width: 244px;
+  --density-sidebar-header-pad: 18px 18px 12px;
+  --density-sidebar-nav-pad: 10px 12px;
+  --density-sidebar-context-pad: 10px;
+  --density-sidebar-footer-pad: 12px 14px 14px;
+  --density-main-pad-top: 20px;
+  --density-main-pad-x: 28px;
+  --density-main-pad-bottom: 92px;
+  --density-panel-pad: 16px;
+  --density-panel-pad-lg: 20px;
+  --density-launch-pad: 22px 24px;
+  --density-card-gap: 12px;
+  --density-grid-gap: 14px;
+  --density-tab-min-height: 38px;
+  --density-btn-pad: 5px 11px;
+  --density-btn-sm-pad: 3px 8px;
+  --density-service-card-pad: 18px 18px 14px;
+  --density-service-card-min: 188px;
+  --density-chip-min-height: 28px;
+  --density-console-gap: 12px;
+  --density-console-kicker-size: 10px;
+}
+
+[data-density="comfortable"] {
+  --density-sidebar-width: 256px;
+  --density-sidebar-header-pad: 22px 20px 14px;
+  --density-sidebar-nav-pad: 12px 14px;
+  --density-sidebar-context-pad: 12px;
+  --density-sidebar-footer-pad: 14px 16px 16px;
+  --density-main-pad-top: 24px;
+  --density-main-pad-x: 32px;
+  --density-main-pad-bottom: 104px;
+  --density-panel-pad: 18px;
+  --density-panel-pad-lg: 24px;
+  --density-launch-pad: 26px 28px;
+  --density-card-gap: 14px;
+  --density-grid-gap: 16px;
+  --density-tab-min-height: 42px;
+  --density-btn-pad: 6px 12px;
+  --density-btn-sm-pad: 4px 9px;
+  --density-service-card-pad: 20px 20px 16px;
+  --density-service-card-min: 204px;
+  --density-chip-min-height: 30px;
+  --density-console-gap: 14px;
+}
+
+[data-density="ultra"] {
+  --density-sidebar-width: 232px;
+  --density-sidebar-header-pad: 14px 14px 10px;
+  --density-sidebar-nav-pad: 8px 10px;
+  --density-sidebar-context-pad: 8px;
+  --density-sidebar-footer-pad: 10px 12px 12px;
+  --density-main-pad-top: 16px;
+  --density-main-pad-x: 22px;
+  --density-main-pad-bottom: 84px;
+  --density-panel-pad: 12px;
+  --density-panel-pad-lg: 16px;
+  --density-launch-pad: 18px 20px;
+  --density-card-gap: 10px;
+  --density-grid-gap: 12px;
+  --density-tab-min-height: 34px;
+  --density-btn-pad: 4px 10px;
+  --density-btn-sm-pad: 2px 7px;
+  --density-service-card-pad: 14px 14px 12px;
+  --density-service-card-min: 170px;
+  --density-chip-min-height: 24px;
+  --density-console-gap: 10px;
 }
 
 * { margin:0; padding:0; box-sizing:border-box; }

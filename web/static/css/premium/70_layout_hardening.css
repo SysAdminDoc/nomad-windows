@@ -4,6 +4,9 @@
   --app-bottom-clearance: 112px;
   --floating-fab-bottom: 20px;
   --floating-panel-bottom: 80px;
+  --page-max-width: 2140px;
+  --page-edge-gutter: clamp(18px, 2vw, 40px);
+  --page-inner-gutter: clamp(12px, 1.2vw, 22px);
 }
 
 #tab-services.active {
@@ -130,7 +133,7 @@
 .home-surface-panel {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
 .home-doc-grid {
@@ -561,7 +564,7 @@
 
 .tab-content.active.workspace-stack {
   display: grid;
-  gap: clamp(16px, 1.8vw, 20px);
+  gap: clamp(12px, 1.35vw, 16px);
   align-content: start;
 }
 
@@ -572,15 +575,15 @@
 .workspace-panel {
   margin: 0;
   min-width: 0;
-  padding: 14px 18px !important;
+  padding: 12px 14px !important;
   border: 1px solid color-mix(in srgb, var(--border-hover) 34%, var(--border)) !important;
-  border-radius: 20px;
+  border-radius: 18px;
   background: var(--surface-overlay) !important;
   box-shadow: var(--shadow-panel);
 }
 
 .workspace-panel-tight {
-  padding: 14px 16px !important;
+  padding: 10px 12px !important;
 }
 
 .workspace-panel-accent {
@@ -590,7 +593,7 @@
 .workspace-toolbar {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
   min-width: 0;
 }
@@ -661,7 +664,7 @@
 }
 
 .workspace-stack-section {
-  margin-top: 16px;
+  margin-top: 12px;
 }
 
 .workspace-callout {
@@ -2210,9 +2213,11 @@ body {
 }
 
 .container {
-  width: min(100%, 1520px);
-  padding-inline: clamp(16px, 3vw, 36px);
-  padding-bottom: calc(var(--app-bottom-clearance) + 28px);
+  box-sizing: border-box;
+  width: min(calc(100% - (var(--page-edge-gutter) * 2)), var(--page-max-width));
+  margin-inline: auto;
+  padding-inline: var(--page-inner-gutter);
+  padding-bottom: calc(var(--app-bottom-clearance) + 20px);
 }
 
 #broadcast-banner {
@@ -2274,7 +2279,7 @@ body {
 }
 
 .bento-grid {
-  grid-template-columns: minmax(0, 3fr) minmax(320px, 2fr);
+  grid-template-columns: minmax(0, 3.35fr) minmax(320px, 1.85fr);
   align-items: start;
 }
 

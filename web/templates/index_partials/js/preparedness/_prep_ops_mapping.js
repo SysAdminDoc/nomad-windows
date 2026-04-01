@@ -2,6 +2,27 @@
 let _timerPanelOpen = false;
 let _timerPoll = null;
 
+function startTimerPolling() {
+  if (_timerPoll) return;
+  if (window.NomadShellRuntime) {
+    _timerPoll = window.NomadShellRuntime.startInterval('utility.timers', loadTimers, 1000, {
+      requireVisible: true,
+    });
+    return;
+  }
+  _timerPoll = setInterval(() => {
+    if (!document.hidden) loadTimers();
+  }, 1000);
+}
+
+function stopTimerPolling() {
+  if (_timerPoll) {
+    clearInterval(_timerPoll);
+    _timerPoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('utility.timers');
+}
+
 function toggleTimerPanel() {
   _timerPanelOpen = !_timerPanelOpen;
   const panel = document.getElementById('timer-panel');
@@ -10,7 +31,9 @@ function toggleTimerPanel() {
     _lanChatOpen = false;
     setShellVisibility(document.getElementById('lan-chat-panel'), false);
     setUtilityDockButtonExpanded('chat', false);
-    if (_lanPoll) { clearInterval(_lanPoll); _lanPoll = null; }
+    if (typeof stopLanMessagePolling === 'function') stopLanMessagePolling();
+    else if (_lanPoll) { clearInterval(_lanPoll); _lanPoll = null; }
+    if (typeof stopLanPresencePolling === 'function') stopLanPresencePolling();
     _qaOpen = false;
     setShellVisibility(document.getElementById('quick-actions-menu'), false);
     setUtilityDockButtonExpanded('actions', false);
@@ -19,9 +42,9 @@ function toggleTimerPanel() {
   if (button) button.setAttribute('aria-expanded', _timerPanelOpen ? 'true' : 'false');
   if (_timerPanelOpen) {
     loadTimers();
-    if (!_timerPoll) _timerPoll = setInterval(loadTimers, 1000);
+    startTimerPolling();
   } else {
-    if (_timerPoll) { clearInterval(_timerPoll); _timerPoll = null; }
+    stopTimerPolling();
   }
 }
 

@@ -91,7 +91,7 @@ function startMapDownloadPolling() {
   if (_mapDlPollTimer) return;
   const statusEl = document.getElementById('map-download-status');
   if (statusEl) statusEl.style.display = 'block';
-  _mapDlPollTimer = setInterval(async () => {
+  const poll = async () => {
     try {
       const progress = await (await fetch('/api/maps/download-progress')).json();
       const active = Object.entries(progress).filter(([, v]) => v.progress > 0 && v.progress < 100);
@@ -116,8 +116,9 @@ function startMapDownloadPolling() {
       } else {
         // No active downloads
         if (statusEl) statusEl.style.display = 'none';
-        clearInterval(_mapDlPollTimer);
+        if (_mapDlPollTimer) clearInterval(_mapDlPollTimer);
         _mapDlPollTimer = null;
+        window.NomadShellRuntime?.stopInterval('maps.download-progress');
         loadMaps(); // Refresh the map list
         // Show any errors
         for (const [id, info] of errors) {
@@ -128,7 +129,15 @@ function startMapDownloadPolling() {
         if (completed.length > 0) toast(`${completed.length} map region(s) downloaded successfully!`, 'success');
       }
     } catch (e) { /* ignore polling errors */ }
-  }, 2000);
+  };
+  if (window.NomadShellRuntime) {
+    _mapDlPollTimer = window.NomadShellRuntime.startInterval('maps.download-progress', poll, 2000, {
+      tabId: 'maps',
+      requireVisible: true,
+    });
+    return;
+  }
+  _mapDlPollTimer = setInterval(poll, 2000);
 }
 
 async function downloadMapFromUrl() {
@@ -347,22 +356,32 @@ async function runBenchmark(mode) {
 let _benchPoll = null;
 function pollBenchmark() {
   if (_benchPoll) clearInterval(_benchPoll);
-  _benchPoll = setInterval(async () => {
+  window.NomadShellRuntime?.stopInterval('benchmark.status');
+  const poll = async () => {
     const s = await (await fetch('/api/benchmark/status')).json();
     document.getElementById('bench-fill').style.width = s.progress + '%';
     document.getElementById('bench-stage').textContent = s.stage;
     document.getElementById('bench-pct').textContent = s.progress + '%';
 
     if (s.status === 'complete' || s.status === 'error') {
-      clearInterval(_benchPoll);
+      if (_benchPoll) clearInterval(_benchPoll);
       _benchPoll = null;
+      window.NomadShellRuntime?.stopInterval('benchmark.status');
       document.getElementById('bench-run-btn').disabled = false;
       document.getElementById('bench-progress').style.display = 'none';
       if (s.status === 'complete' && s.results) showBenchResults(s.results);
       if (s.status === 'error') toast('Benchmark failed: ' + s.stage, 'error');
       loadBenchHistory();
     }
-  }, 1000);
+  };
+  if (window.NomadShellRuntime) {
+    _benchPoll = window.NomadShellRuntime.startInterval('benchmark.status', poll, 1000, {
+      tabId: 'benchmark',
+      requireVisible: true,
+    });
+    return;
+  }
+  _benchPoll = setInterval(poll, 1000);
 }
 
 function showBenchResults(r) {
@@ -573,8 +592,8 @@ async function loadSystemInfo() {
 let _liveGaugeInt = null;
 function startLiveGauges() {
   if (_liveGaugeInt) clearInterval(_liveGaugeInt);
-  _liveGaugeInt = setInterval(async () => {
-    if (!document.getElementById('tab-settings').classList.contains('active')) { clearInterval(_liveGaugeInt); _liveGaugeInt = null; return; }
+  window.NomadShellRuntime?.stopInterval('settings.live-gauges');
+  const poll = async () => {
     try {
       const l = await (await fetch('/api/system/live')).json();
       const gauges = document.querySelectorAll('#system-gauges .gauge-card');
@@ -592,6 +611,17 @@ function startLiveGauges() {
       const vals = document.querySelectorAll('#system-gauges .gauge-card .gauge-value');
       vals.forEach(g => { if (!g.textContent.endsWith('?')) g.textContent += ' ?'; });
     }
+  };
+  if (window.NomadShellRuntime) {
+    _liveGaugeInt = window.NomadShellRuntime.startInterval('settings.live-gauges', poll, 3000, {
+      tabId: 'settings',
+      requireVisible: true,
+    });
+    return;
+  }
+  _liveGaugeInt = setInterval(async () => {
+    if (!document.getElementById('tab-settings').classList.contains('active')) { clearInterval(_liveGaugeInt); _liveGaugeInt = null; return; }
+    await poll();
   }, 3000);
 }
 
@@ -658,21 +688,28 @@ async function checkNetwork() {
     _backendFailCount = 0;
     const el = document.getElementById('net-status');
     const label = n.online ? 'Online' : 'Offline';
-    el.innerHTML = `<span class="network-status-inline ${n.online ? 'is-online' : 'is-offline'}"><span class="network-status-dot"></span><span>${label} &middot; ${escapeHtml(n.lan_ip)}</span></span>`;
+    if (el) {
+      el.innerHTML = `<span class="network-status-inline ${n.online ? 'is-online' : 'is-offline'}"><span class="network-status-dot"></span><span>${label} &middot; ${escapeHtml(n.lan_ip)}</span></span>`;
+    }
     // Clear connection-lost banner if it was shown
     const lostBanner = document.getElementById('connection-lost');
     if (lostBanner) lostBanner.style.display = 'none';
     // LAN banner
     const banner = document.getElementById('lan-banner');
-    if (n.lan_ip !== '127.0.0.1') {
+    if (banner && n.lan_ip !== '127.0.0.1') {
       banner.style.display = 'flex';
       banner.innerHTML = `Access from other devices on your network: <a href="${escapeAttr(n.dashboard_url)}">${escapeHtml(n.dashboard_url)}</a>`;
+    } else if (banner) {
+      banner.style.display = 'none';
+      banner.innerHTML = '';
     }
   } catch(e) {
     _backendFailCount++;
     if (_backendFailCount >= 2) {
       const el = document.getElementById('net-status');
-      el.innerHTML = '<span class="network-status-inline is-offline"><span class="network-status-dot"></span><span>Disconnected</span></span>';
+      if (el) {
+        el.innerHTML = '<span class="network-status-inline is-offline"><span class="network-status-dot"></span><span>Disconnected</span></span>';
+      }
       // Show connection-lost banner
       let lostBanner = document.getElementById('connection-lost');
       if (!lostBanner) {
@@ -680,7 +717,9 @@ async function checkNetwork() {
         lostBanner.id = 'connection-lost';
         lostBanner.className = 'connection-lost-banner';
         lostBanner.textContent = 'Connection to backend lost — retrying automatically...';
-        const headerEl = document.querySelector('.status-strip') || document.querySelector('.main-content');
+        const headerEl = Array.from(document.querySelectorAll('.status-strip'))
+          .find((candidate) => !candidate.hidden && getComputedStyle(candidate).display !== 'none')
+          || document.querySelector('.main-content');
         if (headerEl) headerEl.prepend(lostBanner);
         else document.body.prepend(lostBanner);
       }

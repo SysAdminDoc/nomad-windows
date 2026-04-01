@@ -152,9 +152,12 @@ function activateWorkspaceTab(tab) {
   window.NOMAD_ACTIVE_TAB = tabId;
   updateSidebarSubs();
   window.scrollTo(0, 0);
+  if (tabId === 'services' && typeof refreshServicesWorkspacePanels === 'function') {
+    refreshServicesWorkspacePanels();
+  }
   if (tabId === 'ai-chat') { loadModels(); loadConversations(); pollPullProgress(); }
   if (tabId === 'notes') loadNotes();
-  if (tabId === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); loadLogViewer(); loadDiskMonitor(); loadStartupState(); loadOllamaHost(); updateLastBackup(); loadNodeIdentity(); loadSyncLog(); loadConflicts(); loadGroupExercises(); loadDataSummary(); loadTrainingDatasets(); loadTrainingJobs(); loadBackups(); loadBackupConfig(); }
+  if (tabId === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); loadLogViewer(); loadDiskMonitor(); loadStartupState(); loadOllamaHost(); updateLastBackup(); loadNodeIdentity(); loadSyncLog(); loadConflicts(); loadGroupExercises(); loadDataSummary(); loadTrainingDatasets(); loadTrainingJobs(); loadBackups(); loadBackupConfig(); if (typeof refreshSettingsWorkspacePanels === 'function') refreshSettingsWorkspacePanels(); }
   if (tabId === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); loadPDFList(); loadWikipediaTiers(); }
   if (tabId === 'maps') { loadMaps(); loadWPDistances(); loadMapSources(); renderMapBookmarks(); loadSavedRoutes(); }
   if (tabId === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
@@ -224,6 +227,31 @@ function setUIZoom(level) {
   const z = localStorage.getItem('nomad-ui-zoom') || 'default';
   setUIZoom(z);
 })();
+
+/* ─── Density Control ─── */
+const DENSITY_LEVELS = ['ultra', 'compact', 'comfortable'];
+
+function setDensity(level) {
+  const safeLevel = DENSITY_LEVELS.includes(level) ? level : 'compact';
+  document.documentElement.setAttribute('data-density', safeLevel);
+  localStorage.setItem('nomad-density', safeLevel);
+  DENSITY_LEVELS.forEach((densityLevel) => {
+    const btn = document.getElementById(`cust-density-${densityLevel}`);
+    if (!btn) return;
+    btn.classList.toggle('btn-primary', densityLevel === safeLevel);
+    btn.classList.toggle('btn-sm', true);
+    btn.setAttribute('aria-pressed', densityLevel === safeLevel ? 'true' : 'false');
+  });
+  if (typeof updateCustomizeDensity === 'function') {
+    updateCustomizeDensity();
+  }
+}
+
+(function initDensity() {
+  const density = localStorage.getItem('nomad-density') || 'compact';
+  setDensity(density);
+})();
+
 function updateThemeIndicator(theme) {
   const dot = document.getElementById('active-theme-dot');
   const label = document.getElementById('active-theme-label');
@@ -325,6 +353,260 @@ function applyModeVisibility() {
   // Defer full config load until after DOM ready
   setTimeout(() => setMode(saved), 100);
 })();
+
+/* ─── Shell Runtime ─── */
+function normalizeShellRuntimeUrl(url) {
+  try {
+    const parsed = new URL(String(url || ''), window.location.origin);
+    return `${parsed.pathname}${parsed.search}`;
+  } catch (_) {
+    return String(url || '');
+  }
+}
+
+function createShellRuntime() {
+  const intervals = new Map();
+  const listeners = new Set();
+  const recentFetches = [];
+  let inflightFetches = 0;
+
+  function getActiveTab() {
+    return window.NOMAD_ACTIVE_TAB
+      || document.querySelector('.tab.active')?.dataset.tab
+      || getWorkspacePageTab()
+      || '';
+  }
+
+  function shouldRun(options = {}) {
+    if (options.requireVisible !== false && document.hidden) return false;
+    if (options.tabId && getActiveTab() !== options.tabId) return false;
+    return true;
+  }
+
+  function snapshot() {
+    return {
+      activeTab: getActiveTab(),
+      hidden: document.hidden,
+      inflightFetches,
+      intervals: Array.from(intervals.values())
+        .map(({ timerId, ...record }) => ({ ...record }))
+        .sort((left, right) => left.name.localeCompare(right.name)),
+      recentFetches: recentFetches.slice(0, 10),
+    };
+  }
+
+  function notify() {
+    const state = snapshot();
+    listeners.forEach((listener) => {
+      try {
+        listener(state);
+      } catch (_) {}
+    });
+  }
+
+  function startInterval(name, callback, ms, options = {}) {
+    if (!name || typeof callback !== 'function') return null;
+    stopInterval(name);
+    const record = {
+      name,
+      tabId: options.tabId || '',
+      requireVisible: options.requireVisible !== false,
+      intervalMs: ms,
+      lastRunAt: 0,
+      runCount: 0,
+      timerId: null,
+    };
+    const runner = () => {
+      if (!shouldRun(record)) return;
+      record.lastRunAt = Date.now();
+      record.runCount += 1;
+      notify();
+      try {
+        const result = callback();
+        if (result && typeof result.catch === 'function') {
+          result.catch((error) => console.warn(`Interval ${name} failed:`, error));
+        }
+      } catch (error) {
+        console.warn(`Interval ${name} failed:`, error);
+      }
+    };
+    record.timerId = setInterval(runner, ms);
+    intervals.set(name, record);
+    notify();
+    return record.timerId;
+  }
+
+  function stopInterval(name) {
+    const record = intervals.get(name);
+    if (!record) return;
+    clearInterval(record.timerId);
+    intervals.delete(name);
+    notify();
+  }
+
+  function trackFetchStart(url, method) {
+    inflightFetches += 1;
+    const entry = {
+      method: String(method || 'GET').toUpperCase(),
+      status: 'Pending',
+      ok: null,
+      url: normalizeShellRuntimeUrl(url),
+      startedAt: Date.now(),
+      finishedAt: 0,
+    };
+    recentFetches.unshift(entry);
+    if (recentFetches.length > 12) recentFetches.length = 12;
+    notify();
+    return entry;
+  }
+
+  function trackFetchEnd(entry, status, ok) {
+    inflightFetches = Math.max(0, inflightFetches - 1);
+    if (entry) {
+      entry.status = String(status || 'ERR');
+      entry.ok = !!ok;
+      entry.finishedAt = Date.now();
+    }
+    notify();
+  }
+
+  function subscribe(listener) {
+    if (typeof listener !== 'function') return () => {};
+    listeners.add(listener);
+    listener(snapshot());
+    return () => listeners.delete(listener);
+  }
+
+  document.addEventListener('visibilitychange', notify);
+
+  return {
+    getActiveTab,
+    isTabActive(tabId) {
+      return !tabId || getActiveTab() === tabId;
+    },
+    shouldRun,
+    startInterval,
+    stopInterval,
+    trackFetchStart,
+    trackFetchEnd,
+    subscribe,
+    snapshot,
+    notify,
+  };
+}
+
+window.NomadShellRuntime = window.NomadShellRuntime || createShellRuntime();
+
+if (typeof window.fetch === 'function' && !window.__nomadFetchInstrumented) {
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = (...args) => {
+    const [resource, init] = args;
+    const url = typeof resource === 'string'
+      ? resource
+      : resource?.url || '';
+    const method = init?.method || resource?.method || 'GET';
+    const fetchEntry = window.NomadShellRuntime.trackFetchStart(url, method);
+    return originalFetch(...args)
+      .then((response) => {
+        window.NomadShellRuntime.trackFetchEnd(fetchEntry, response.status, response.ok);
+        return response;
+      })
+      .catch((error) => {
+        window.NomadShellRuntime.trackFetchEnd(fetchEntry, 'ERR', false);
+        throw error;
+      });
+  };
+  window.__nomadFetchInstrumented = true;
+}
+
+let _shellHealthUnsubscribe = null;
+
+function formatShellRuntimeAge(timestamp) {
+  if (!timestamp) return 'idle';
+  const seconds = Math.max(0, Math.round((Date.now() - timestamp) / 1000));
+  if (seconds < 60) return `${seconds}s ago`;
+  const minutes = Math.round(seconds / 60);
+  return `${minutes}m ago`;
+}
+
+function renderShellHealth(snapshot = window.NomadShellRuntime?.snapshot?.()) {
+  const overlay = document.getElementById('shell-health-overlay');
+  if (!overlay || overlay.hidden || !snapshot) return;
+  const activeTab = document.getElementById('shell-health-active-tab');
+  const visibility = document.getElementById('shell-health-visibility');
+  const fetchState = document.getElementById('shell-health-fetch-state');
+  const intervalCount = document.getElementById('shell-health-interval-count');
+  const requestCount = document.getElementById('shell-health-request-count');
+  const intervalsEl = document.getElementById('shell-health-intervals');
+  const requestsEl = document.getElementById('shell-health-requests');
+
+  if (activeTab) activeTab.textContent = `Desk: ${snapshot.activeTab || 'unknown'}`;
+  if (visibility) visibility.textContent = snapshot.hidden ? 'Window hidden' : 'Window visible';
+  if (fetchState) fetchState.textContent = snapshot.inflightFetches > 0 ? `${snapshot.inflightFetches} fetches in flight` : 'No active fetches';
+  if (intervalCount) intervalCount.textContent = `${snapshot.intervals.length} active`;
+  if (requestCount) requestCount.textContent = `${snapshot.recentFetches.length} recent`;
+
+  if (intervalsEl) {
+    intervalsEl.innerHTML = snapshot.intervals.length
+      ? snapshot.intervals.map((interval) => `
+        <div class="shell-health-row">
+          <div class="shell-health-row-main">
+            <span class="shell-health-row-title">${escapeHtml(interval.name)}</span>
+            <span class="shell-health-row-meta">${interval.intervalMs}ms${interval.tabId ? ` · ${escapeHtml(interval.tabId)}` : ''}${interval.requireVisible ? ' · visible' : ''}</span>
+          </div>
+          <span class="shell-health-row-meta">${interval.runCount} runs · ${escapeHtml(formatShellRuntimeAge(interval.lastRunAt))}</span>
+        </div>
+      `).join('')
+      : '<div class="shell-health-empty">No runtime intervals are registered right now.</div>';
+  }
+
+  if (requestsEl) {
+    requestsEl.innerHTML = snapshot.recentFetches.length
+      ? snapshot.recentFetches.map((request) => `
+        <div class="shell-health-row">
+          <div class="shell-health-row-main">
+            <span class="shell-health-row-title">${escapeHtml(request.method)} ${escapeHtml(request.url)}</span>
+            <span class="shell-health-row-meta">${request.ok === false ? 'Request failed' : request.ok === true ? 'Completed' : 'Pending'}</span>
+          </div>
+          <span class="shell-health-row-meta">${escapeHtml(request.status)} · ${escapeHtml(formatShellRuntimeAge(request.finishedAt || request.startedAt))}</span>
+        </div>
+      `).join('')
+      : '<div class="shell-health-empty">No recent fetches yet for this session.</div>';
+  }
+}
+
+function toggleShellHealth(force) {
+  const overlay = document.getElementById('shell-health-overlay');
+  if (!overlay) return;
+  const shouldOpen = typeof force === 'boolean' ? force : overlay.hidden;
+  if (!shouldOpen) {
+    overlay.hidden = true;
+    overlay.classList.add('is-hidden');
+    if (_shellHealthUnsubscribe) {
+      _shellHealthUnsubscribe();
+      _shellHealthUnsubscribe = null;
+    }
+    return;
+  }
+  overlay.hidden = false;
+  overlay.classList.remove('is-hidden');
+  renderShellHealth();
+  if (_shellHealthUnsubscribe) _shellHealthUnsubscribe();
+  _shellHealthUnsubscribe = window.NomadShellRuntime.subscribe(renderShellHealth);
+}
+
+document.addEventListener('keydown', (event) => {
+  if (event.defaultPrevented) return;
+  if (event.key === 'Escape' && !document.getElementById('shell-health-overlay')?.hidden) {
+    event.preventDefault();
+    toggleShellHealth(false);
+    return;
+  }
+  if (event.ctrlKey && event.altKey && event.key.toLowerCase() === 'h') {
+    event.preventDefault();
+    toggleShellHealth();
+  }
+});
 
 let chatMessages = [];
 let currentNoteId = null;

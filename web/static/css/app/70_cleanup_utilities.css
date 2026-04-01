@@ -233,7 +233,8 @@
 
 /* Inline Style Extraction Utilities */
 .is-hidden {
-  display: none;
+  display: none !important;
+  pointer-events: none !important;
 }
 
 .is-zero-width {

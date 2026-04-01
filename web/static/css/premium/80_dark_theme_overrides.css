@@ -449,3 +449,161 @@
   border-color: color-mix(in srgb, var(--border-hover) 34%, var(--border));
   box-shadow: var(--shadow-floating);
 }
+
+/* Dark-theme de-gloss refinement
+   Keeps dark surfaces cohesive instead of layering pale glass over every panel.
+*/
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) body {
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 8%, transparent), transparent 30%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface3) 18%, transparent), transparent 24%),
+    var(--bg) !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) .main-content {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface2) 8%, transparent), transparent 16%),
+    transparent !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) .sidebar {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface3) 14%, transparent), transparent 18%),
+    color-mix(in srgb, var(--sidebar-bg, var(--surface-solid)) 96%, black 4%) !important;
+  border-right-color: color-mix(in srgb, var(--border-hover) 18%, var(--border)) !important;
+  box-shadow: 12px 0 32px rgba(0,0,0,0.34) !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) :is(
+  .sidebar-context-hub,
+  .workspace-context-bar,
+  .workspace-inspector,
+  .sidebar-context-card,
+  .sidebar-footer,
+  .sidebar-footer .shell-status-inline,
+  .sidebar-footer .shell-flag,
+  .sidebar-footer .theme-switcher,
+  .sidebar-footer .mode-switcher,
+  #status-strip,
+  .ss-pill,
+  .workspace-inspector-action,
+  .workspace-inspector-spotlight
+) {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface3) 8%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-solid) 96%, black 4%) !important;
+  border-color: color-mix(in srgb, var(--border-hover) 18%, var(--border)) !important;
+  box-shadow: 0 16px 36px rgba(0,0,0,0.24) !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) :is(
+  .cc-card,
+  .service-card,
+  .settings-card,
+  .workspace-panel,
+  .home-panel-shell,
+  #live-dashboard,
+  #home-quick-nav,
+  #home-activity,
+  .need-card,
+  .live-widget,
+  .chat-container,
+  .notes-editor,
+  .media-main,
+  .prep-main,
+  .convo-sidebar,
+  .notes-sidebar,
+  .media-sidebar,
+  .prep-sidebar,
+  .readiness-panel,
+  .customize-panel,
+  .customize-section,
+  .map-controls,
+  .map-viewer-shell,
+  .settings-form-shell,
+  .settings-detail-shell,
+  .settings-list-shell,
+  .settings-result-shell,
+  .tools-card,
+  .utility-panel,
+  .utility-panel-shell
+) {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface3) 10%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-panel) 97%, black 3%) !important;
+  border-color: color-mix(in srgb, var(--border-hover) 20%, var(--border)) !important;
+  box-shadow: 0 18px 36px rgba(0,0,0,0.24) !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) :is(
+  .convo-sidebar-header,
+  .notes-sidebar-header,
+  .prep-sidebar-header,
+  .chat-header,
+  .notes-editor-header,
+  .prep-main-header,
+  .media-topbar,
+  .media-subtabs,
+  .customize-panel-header,
+  .settings-panel-header,
+  .utility-panel-header,
+  .alert-bar-header,
+  .home-modal-header
+) {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface3) 8%, transparent), transparent 100%),
+    color-mix(in srgb, var(--surface-strong) 96%, black 4%) !important;
+  border-color: color-mix(in srgb, var(--border-hover) 18%, var(--border)) !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) :is(
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea,
+  .utility-panel-input,
+  .utility-panel-select,
+  .activity-filter-select,
+  .chat-header input,
+  .chat-header select,
+  .media-topbar input,
+  .notes-editor-header input,
+  .notes-editor-header #note-tags,
+  .preset-select,
+  #activity-filter,
+  .map-geocode-input,
+  .benchmark-tag-input,
+  .mesh-compose-input
+) {
+  background: var(--surface-field) !important;
+  border-color: color-mix(in srgb, var(--border-hover) 18%, var(--border)) !important;
+  box-shadow: none !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) .tab:hover {
+  background: color-mix(in srgb, var(--accent-dim) 42%, var(--surface-solid)) !important;
+  border-color: color-mix(in srgb, var(--accent) 12%, var(--border)) !important;
+  box-shadow: none !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) .tab.active {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent-dim) 68%, transparent), transparent 68%),
+    color-mix(in srgb, var(--surface-solid) 94%, black 6%) !important;
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border)) !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,0.24) !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) .welcome-banner {
+  border-color: color-mix(in srgb, var(--accent) 16%, var(--border)) !important;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 14%, transparent), transparent 38%),
+    linear-gradient(135deg, color-mix(in srgb, var(--surface-solid) 98%, black 2%), color-mix(in srgb, var(--surface2) 90%, black 10%)) !important;
+  box-shadow: 0 28px 56px rgba(0,0,0,0.28) !important;
+}
+
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) .welcome-banner::before {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 8%, transparent), transparent 32%),
+    var(--topo-pattern, none) !important;
+  opacity: 0.18 !important;
+}

@@ -41,7 +41,7 @@
     <!-- ════════════════════════════════════════════════════════════
          SEARCH BAR
          ════════════════════════════════════════════════════════════ -->
-    <div class="home-launch-deck">
+    <div id="services-launch" class="home-launch-deck">
       <div class="home-launch-main">
         <div class="home-launch-hero home-surface-panel">
           <div class="home-launch-head">
@@ -196,16 +196,42 @@
     <!-- ════════════════════════════════════════════════════════════
          SERVICES & TOOLS
          ════════════════════════════════════════════════════════════ -->
-    <div class="section-header services-toolbar home-toolbar">
-      <span class="section-header-label">SERVICES</span>
-      <div class="section-divider section-divider-grow"></div>
-      <div class="services-toolbar-actions home-toolbar-actions">
-        <button class="btn btn-sm btn-primary compact-action-btn" data-shell-action="start-all-services" title="Start AI Chat, Library, and all installed services">Start All</button>
-        <button class="btn btn-sm btn-danger compact-action-btn" data-shell-action="stop-all-services" title="Stop all running services to save resources">Stop All</button>
+    <div id="services-console" class="home-panel-shell home-surface-panel services-console-panel">
+      <div class="home-panel-accent"></div>
+      <div class="section-header services-toolbar home-toolbar">
+        <span class="section-header-label">SERVICES CONSOLE</span>
+        <div class="section-divider section-divider-grow"></div>
+        <div class="services-toolbar-actions home-toolbar-actions">
+          <button class="btn btn-sm btn-primary compact-action-btn" data-shell-action="start-all-services" title="Start AI Chat, Library, and all installed services">Start All</button>
+          <button class="btn btn-sm btn-danger compact-action-btn" data-shell-action="stop-all-services" title="Stop all running services to save resources">Stop All</button>
+        </div>
+      </div>
+      <div class="services-console-grid">
+        <div class="services-console-summary-stack">
+          <div class="services-console-block">
+            <div class="services-console-kicker">Instant Status</div>
+            <div id="readiness-bar" class="services-console-readiness"></div>
+          </div>
+          <div class="services-console-block">
+            <div class="services-console-kicker">Running Service Shortcuts</div>
+            <div id="svc-quicklinks" class="service-quicklinks services-console-quicklinks"></div>
+          </div>
+          <div class="services-console-block">
+            <div class="services-console-kicker">Command Snapshot</div>
+            <div id="cmd-dashboard" class="prep-dashboard-grid utility-summary-grid services-console-metrics"></div>
+          </div>
+          <div class="services-console-block">
+            <div class="services-console-kicker">Checklist Momentum</div>
+            <div id="cmd-checklists" class="services-console-checklists"></div>
+          </div>
+          <div class="services-console-block">
+            <div class="services-console-kicker">Offline Footprint</div>
+            <div class="content-summary services-console-summary" id="content-summary"></div>
+          </div>
+        </div>
+        <div class="services-grid" id="services-grid"></div>
       </div>
     </div>
-    <div id="svc-quicklinks" class="service-quicklinks"></div>
-    <div class="services-grid" id="services-grid"></div>
 
     <!-- ════════════════════════════════════════════════════════════
          BENTO ROW 3: FIELD DOCUMENTS + ACTIVITY LOG (side by side)
@@ -275,12 +301,5 @@
         <div id="activity-feed" class="activity-feed-shell"><div class="activity-feed-empty">Loading activity...</div></div>
       </div>
     </div>
-
-    <!-- Hidden legacy containers for backward compat -->
-<div id="cmd-dashboard" class="prep-dashboard-grid utility-summary-grid is-hidden"></div>
-    <div id="cmd-checklists" class="is-hidden"></div>
-    <div id="readiness-bar" class="is-hidden"></div>
-    <div class="content-summary is-hidden" id="content-summary"></div>
-    <div id="getting-started" class="is-hidden"><div id="gs-items"></div></div>
   </div>
 

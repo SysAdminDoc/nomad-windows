@@ -6,6 +6,9 @@ let _sitroomRadarLayer = null; // RainViewer radar tile layer state
 let _sitroomNewsOffset = 0;
 const SITROOM_NEWS_PAGE = 50;
 let _sitroomAutoTimer = null;
+let _sitroomClockTimer = null;
+let _sitroomWorldClockTimer = null;
+let _sitroomRefreshPollTimer = null;
 let _sitroomIsGlobe = false;
 let _sitroomAlertsSeen = new Set();
 let _sitroomInitDone = false;
@@ -498,6 +501,12 @@ function initSituationRoom() {
   _initCardResize();
 }
 
+function _isSitroomActive() {
+  if (window.NomadShellRuntime?.isTabActive?.('situation-room')) return true;
+  if (window.NOMAD_ACTIVE_TAB) return window.NOMAD_ACTIVE_TAB === 'situation-room';
+  return document.getElementById('tab-situation-room')?.classList.contains('active') || false;
+}
+
 function _sitroomRefreshPanels() {
   loadSitroomSummary();
   loadSitroomNews();
@@ -621,6 +630,9 @@ function _closeSitroomOverlays() {
     const el = document.getElementById(id);
     if (el) { el.classList.add('is-hidden'); el.hidden = true; }
   });
+  if (typeof stopLanMessagePolling === 'function') stopLanMessagePolling();
+  if (typeof stopLanPresencePolling === 'function') stopLanPresencePolling();
+  if (typeof stopTimerPolling === 'function') stopTimerPolling();
   if (typeof setUtilityDockButtonExpanded === 'function') {
     setUtilityDockButtonExpanded('chat', false);
     setUtilityDockButtonExpanded('timer', false);
@@ -3007,16 +3019,36 @@ async function refreshSitroomFeeds() {
 
 function _pollSitroomRefresh() {
   let attempts = 0;
-  const poll = setInterval(async () => {
+  const poll = async () => {
     attempts++;
     const d = await safeFetch('/api/sitroom/status', {}, null);
     if (!d) return;
     if (!d.refreshing || attempts >= 20) {
-      clearInterval(poll);
+      if (_sitroomRefreshPollTimer) {
+        clearInterval(_sitroomRefreshPollTimer);
+        _sitroomRefreshPollTimer = null;
+      }
+      window.NomadShellRuntime?.stopInterval('sitroom.refresh-status');
       _sitroomRefreshPanels();
       return;
     }
     if (attempts % 3 === 0) _sitroomRefreshPanels(); // partial updates every ~9s
+  };
+  if (_sitroomRefreshPollTimer) {
+    clearInterval(_sitroomRefreshPollTimer);
+    _sitroomRefreshPollTimer = null;
+  }
+  window.NomadShellRuntime?.stopInterval('sitroom.refresh-status');
+  if (window.NomadShellRuntime) {
+    _sitroomRefreshPollTimer = window.NomadShellRuntime.startInterval('sitroom.refresh-status', poll, 3000, {
+      tabId: 'situation-room',
+      requireVisible: true,
+    });
+    return;
+  }
+  _sitroomRefreshPollTimer = setInterval(() => {
+    if (!_isSitroomActive() || document.hidden) return;
+    poll();
   }, 3000);
 }
 
@@ -3522,7 +3554,22 @@ function _initSitroomWorldClock() {
     }).join('');
   };
   render();
-  setInterval(render, 30000);
+  if (_sitroomWorldClockTimer) {
+    clearInterval(_sitroomWorldClockTimer);
+    _sitroomWorldClockTimer = null;
+  }
+  window.NomadShellRuntime?.stopInterval('sitroom.world-clock');
+  if (window.NomadShellRuntime) {
+    _sitroomWorldClockTimer = window.NomadShellRuntime.startInterval('sitroom.world-clock', render, 30000, {
+      tabId: 'situation-room',
+      requireVisible: true,
+    });
+    return;
+  }
+  _sitroomWorldClockTimer = setInterval(() => {
+    if (!_isSitroomActive() || document.hidden) return;
+    render();
+  }, 30000);
 }
 
 /* ─── Search Modal (desk-local search) ─── */
@@ -3613,7 +3660,22 @@ function _initSitroomClock() {
     el.textContent = now.toUTCString().replace('GMT', 'UTC');
   };
   tick();
-  setInterval(tick, 1000);
+  if (_sitroomClockTimer) {
+    clearInterval(_sitroomClockTimer);
+    _sitroomClockTimer = null;
+  }
+  window.NomadShellRuntime?.stopInterval('sitroom.utc-clock');
+  if (window.NomadShellRuntime) {
+    _sitroomClockTimer = window.NomadShellRuntime.startInterval('sitroom.utc-clock', tick, 1000, {
+      tabId: 'situation-room',
+      requireVisible: true,
+    });
+    return;
+  }
+  _sitroomClockTimer = setInterval(() => {
+    if (!_isSitroomActive() || document.hidden) return;
+    tick();
+  }, 1000);
 }
 
 /* ─── Radiation Watch ─── */
@@ -5115,22 +5177,32 @@ let _sitroomPollInterval = 60000;
 let _sitroomPollFailures = 0;
 let _smartPollListenerAdded = false;
 function _initSmartPollLoop() {
-  if (_sitroomAutoTimer) clearInterval(_sitroomAutoTimer);
-  if (_smartPollListenerAdded) { _sitroomAutoTimer = setInterval(_smartPoll, _sitroomPollInterval); return; }
-  _smartPollListenerAdded = true;
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-      if (_sitroomAutoTimer) { clearInterval(_sitroomAutoTimer); _sitroomAutoTimer = null; }
-    } else {
-      _sitroomRefreshPanels(); // Immediate refresh on return
-      _sitroomAutoTimer = setInterval(_smartPoll, _sitroomPollInterval);
-    }
-  });
-  _sitroomAutoTimer = setInterval(_smartPoll, _sitroomPollInterval);
+  if (_sitroomAutoTimer) {
+    clearInterval(_sitroomAutoTimer);
+    _sitroomAutoTimer = null;
+  }
+  window.NomadShellRuntime?.stopInterval('sitroom.smart-poll');
+  if (!_smartPollListenerAdded) {
+    _smartPollListenerAdded = true;
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && _isSitroomActive()) _sitroomRefreshPanels();
+    });
+  }
+  if (window.NomadShellRuntime) {
+    _sitroomAutoTimer = window.NomadShellRuntime.startInterval('sitroom.smart-poll', _smartPoll, _sitroomPollInterval, {
+      tabId: 'situation-room',
+      requireVisible: true,
+    });
+    return;
+  }
+  _sitroomAutoTimer = setInterval(() => {
+    if (!_isSitroomActive() || document.hidden) return;
+    _smartPoll();
+  }, _sitroomPollInterval);
 }
 
 function _smartPoll() {
-  if (document.hidden) return; // Skip if tab not visible
+  if (document.hidden || !_isSitroomActive()) return;
   _sitroomRefreshPanels();
   // Exponential backoff on repeated empty data
   _sitroomPollFailures = Math.max(0, _sitroomPollFailures - 1);

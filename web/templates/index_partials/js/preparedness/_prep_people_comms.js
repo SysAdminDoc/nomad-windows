@@ -168,11 +168,58 @@ async function decryptLanMessage(encoded) {
 /* ─── LAN Chat ─── */
 let _lanChatOpen = false;
 let _lanPoll = null;
+let _lanPresencePoll = null;
 let _lanLastId = 0;
 let _lanChatCompact = true;
 
 function utilityEmptyState(message) {
   return `<div class="utility-empty-state">${escapeHtml(message)}</div>`;
+}
+
+function startLanMessagePolling() {
+  if (_lanPoll) return;
+  if (window.NomadShellRuntime) {
+    _lanPoll = window.NomadShellRuntime.startInterval('utility.lan-messages', pollLanMessages, 3000, {
+      requireVisible: true,
+    });
+    return;
+  }
+  _lanPoll = setInterval(() => {
+    if (!document.hidden) pollLanMessages();
+  }, 3000);
+}
+
+function stopLanMessagePolling() {
+  if (_lanPoll) {
+    clearInterval(_lanPoll);
+    _lanPoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('utility.lan-messages');
+}
+
+function startLanPresencePolling() {
+  if (_lanPresencePoll) return;
+  const refreshPresence = () => {
+    const panel = document.getElementById('lan-chat-panel');
+    if (isShellVisible(panel)) loadLanPresence();
+  };
+  if (window.NomadShellRuntime) {
+    _lanPresencePoll = window.NomadShellRuntime.startInterval('utility.lan-presence', refreshPresence, 15000, {
+      requireVisible: true,
+    });
+    return;
+  }
+  _lanPresencePoll = setInterval(() => {
+    if (!document.hidden) refreshPresence();
+  }, 15000);
+}
+
+function stopLanPresencePolling() {
+  if (_lanPresencePoll) {
+    clearInterval(_lanPresencePoll);
+    _lanPresencePoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('utility.lan-presence');
 }
 
 function setLanChatCompact(compact) {
@@ -205,7 +252,8 @@ function toggleLanChat() {
     _timerPanelOpen = false;
     setShellVisibility(document.getElementById('timer-panel'), false);
     setUtilityDockButtonExpanded('timer', false);
-    if (_timerPoll) { clearInterval(_timerPoll); _timerPoll = null; }
+    if (typeof stopTimerPolling === 'function') stopTimerPolling();
+    else if (_timerPoll) { clearInterval(_timerPoll); _timerPoll = null; }
   }
   setShellVisibility(panel, _lanChatOpen);
   if (button) button.setAttribute('aria-expanded', _lanChatOpen ? 'true' : 'false');
@@ -216,10 +264,12 @@ function toggleLanChat() {
     loadLanMessages();
     loadLanChannels();
     loadLanPresence();
-    if (!_lanPoll) _lanPoll = setInterval(pollLanMessages, 3000);
+    startLanMessagePolling();
+    startLanPresencePolling();
   } else {
     setLanChatCompact(true);
-    if (_lanPoll) { clearInterval(_lanPoll); _lanPoll = null; }
+    stopLanMessagePolling();
+    stopLanPresencePolling();
   }
 }
 
@@ -235,10 +285,6 @@ async function loadLanPresence() {
   }
   el.innerHTML = nodes.map(n => `<span class="utility-presence-pill"><span class="utility-presence-dot"></span><span>${escapeHtml(n.node_name)}</span></span>`).join('');
 }
-setInterval(() => {
-  const panel = document.getElementById('lan-chat-panel');
-  if (isShellVisible(panel)) loadLanPresence();
-}, 15000);
 
 async function loadLanMessages() {
   try {

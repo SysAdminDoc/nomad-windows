@@ -1,18 +1,18 @@
 /* Settings workspace */
 .settings-workspace {
   display: grid;
-  gap: 18px;
+  gap: 12px;
 }
 
 .settings-workspace-grid {
-  gap: 18px !important;
+  gap: 12px !important;
 }
 
 .settings-command-deck {
   display: grid;
-  gap: 14px;
-  padding: 20px 22px;
-  border-radius: 24px;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 18px;
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 40%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 92%, transparent));
@@ -23,13 +23,13 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .settings-command-copy {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   max-width: 72ch;
 }
 
@@ -39,7 +39,7 @@
 
 .settings-command-title {
   margin: 0;
-  font-size: clamp(24px, 2.25vw, 34px);
+  font-size: clamp(20px, 1.8vw, 28px);
   line-height: 1.06;
   letter-spacing: -0.04em;
   color: var(--text);
@@ -48,26 +48,26 @@
 .settings-command-text {
   margin: 0;
   color: var(--text-dim);
-  line-height: 1.65;
+  line-height: 1.5;
 }
 
 .settings-command-actions,
 .settings-command-pills {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .settings-command-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 28px;
-  padding: 0 11px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -77,7 +77,7 @@
   border: 1px solid color-mix(in srgb, var(--border-hover) 34%, var(--border)) !important;
   background: var(--surface-overlay) !important;
   box-shadow: var(--shadow-panel);
-  border-radius: 22px;
+  border-radius: 18px;
 }
 
 .settings-workspace .settings-card > h3,
@@ -98,13 +98,13 @@
   position: relative;
   z-index: 1;
   display: grid;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .settings-hero-title {
   margin: 0;
-  font-size: clamp(22px, 2vw, 30px) !important;
+  font-size: clamp(20px, 1.7vw, 26px) !important;
   font-weight: 700 !important;
   letter-spacing: -0.03em !important;
   text-transform: none !important;
@@ -134,13 +134,13 @@
 
 .settings-memory-card {
   display: grid;
-  gap: 18px;
+  gap: 14px;
   overflow: hidden;
 }
 
 .settings-memory-head {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   justify-content: space-between;
   align-items: flex-start;
   flex-wrap: wrap;
@@ -148,7 +148,7 @@
 
 .settings-memory-copy {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   max-width: 74ch;
 }
 
@@ -162,22 +162,22 @@
 
 .settings-memory-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .settings-memory-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .settings-memory-stat {
   display: grid;
   gap: 6px;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--surface-overlay-soft);
 }
 
@@ -197,28 +197,28 @@
 
 .settings-memory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
 }
 
 .settings-memory-section {
   display: grid;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
 .settings-memory-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
 }
 
 .settings-memory-card-item {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   width: 100%;
-  padding: 14px;
+  padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: 14px;
   background: var(--surface-overlay-soft);
   color: inherit;
   text-align: left;
@@ -251,13 +251,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
+  gap: 8px;
 }
 
 .settings-memory-item-titleline {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   min-width: 0;
 }
 
@@ -284,8 +284,8 @@
 .settings-memory-item-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 22px;
-  padding: 0 8px;
+  min-height: 20px;
+  padding: 0 7px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
@@ -312,7 +312,7 @@
 .settings-memory-item-copy {
   color: var(--text-dim);
   font-size: 11px;
-  line-height: 1.55;
+  line-height: 1.45;
 }
 
 .settings-memory-item-meta {
@@ -338,7 +338,7 @@
   background:
     var(--surface-overlay-soft) !important;
   border-color: var(--border) !important;
-  border-radius: 18px !important;
+  border-radius: 14px !important;
   box-shadow: 0 12px 26px rgba(0,0,0,0.05);
 }
 
@@ -370,7 +370,7 @@
 }
 
 .settings-workspace .setting-row {
-  padding: 12px 0;
+  padding: 10px 0;
   border-bottom-color: var(--border);
 }
 

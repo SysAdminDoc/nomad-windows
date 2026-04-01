@@ -696,11 +696,23 @@ function timeAgo(dateStr) {
 
 function startLiveDashPolling() {
   if (_liveDashTimer) clearInterval(_liveDashTimer);
+  window.NomadShellRuntime?.stopInterval('services.live-dashboard');
   const workspace = document.getElementById('dash-workspace');
   const liveDashboard = document.getElementById('live-dashboard');
   const widgetContainer = document.getElementById('dash-live-widgets');
   if (!workspace && !liveDashboard && !widgetContainer) return;
   loadLiveDashboard();
+  const pollLiveDashboard = () => {
+    if (workspace && !workspace.classList.contains('active') && !liveDashboard) return;
+    loadLiveDashboard();
+  };
+  if (window.NomadShellRuntime) {
+    _liveDashTimer = window.NomadShellRuntime.startInterval('services.live-dashboard', pollLiveDashboard, 30000, {
+      tabId: liveDashboard ? 'services' : '',
+      requireVisible: true,
+    });
+    return;
+  }
   _liveDashTimer = setInterval(() => {
     if (!document.getElementById('dash-workspace')?.classList.contains('active')) return;
     if (!document.hidden) loadLiveDashboard();

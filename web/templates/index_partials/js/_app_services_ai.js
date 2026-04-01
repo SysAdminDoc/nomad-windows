@@ -18,17 +18,18 @@ const SVC = {
 };
 
 let _servicesLoaded = false;
-async function loadServices() {
+async function loadServices(servicesData = null) {
   const grid = document.getElementById('services-grid');
   if (!grid) return;
   if (!_servicesLoaded) {
     grid.innerHTML = Array(6).fill('<div class="skeleton skeleton-card"></div>').join('');
   }
   try {
-    const services = await (await fetch('/api/services')).json();
+    const services = Array.isArray(servicesData)
+      ? servicesData
+      : await (await fetch('/api/services')).json();
     _lastServicesData = services;
     _servicesLoaded = true;
-    updateGettingStarted();
     grid.innerHTML = services.map(s => {
       const info = SVC[s.id] || { name:s.id, desc:'' };
       const prog = s.progress || {};

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ current_lang }}" dir="{{ 'rtl' if is_rtl else 'ltr' }}">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,10 +8,18 @@
 <title>{{ page_title }} · NOMAD Field Desk v{{ version }}</title>
 <script>
 (() => {
+  const i18n = {{ i18n_bootstrap|tojson }};
+  window.__NOMAD_I18N_BOOTSTRAP = i18n;
+  if (i18n && i18n.lang) {
+    document.documentElement.lang = i18n.lang;
+    document.documentElement.dir = i18n.lang === 'ar' ? 'rtl' : 'ltr';
+  }
   try {
     const savedTheme = localStorage.getItem('nomad-theme');
+    const savedDensity = localStorage.getItem('nomad-density') || 'compact';
     const prefersDark = window.matchMedia?.('(prefers-color-scheme: dark)').matches;
     const theme = savedTheme || (prefersDark ? 'nightops' : 'nomad');
+    document.documentElement.setAttribute('data-density', savedDensity);
     if (theme && theme !== 'nomad') {
       document.documentElement.setAttribute('data-theme', theme);
     }

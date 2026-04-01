@@ -24,13 +24,13 @@
     <!-- Home -->
     <button class="tab{% if active_tab == 'services' %} active{% endif %}" data-tab="services">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
-      <span data-i18n="nav.dashboard">Home</span>
+      <span data-i18n="nav.home">{{ tr('nav.home', 'Home') }}</span>
     </button>
 
     <!-- Readiness -->
     <button class="tab{% if active_tab == 'readiness' %} active{% endif %}" data-tab="readiness">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span>
-      <span data-i18n="dashboard.status">Readiness</span>
+      <span data-i18n="nav.readiness">{{ tr('nav.readiness', 'Readiness') }}</span>
     </button>
 
     <div class="sidebar-group-label">
@@ -41,20 +41,20 @@
     <!-- Preparedness -->
     <button class="tab{% if active_tab == 'preparedness' %} active{% endif %}" data-tab="preparedness">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></span>
-      <span data-i18n="nav.inventory">Preparedness</span>
+      <span data-i18n="nav.preparedness">{{ tr('nav.preparedness', 'Preparedness') }}</span>
       <span id="badge-preparedness" class="tab-badge is-hidden"></span>
     </button>
     <!-- Maps -->
     <button class="tab{% if active_tab == 'maps' %} active{% endif %}" data-tab="maps">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l6-3 6 3 6-3v13l-6 3-6-3-6 3z"/><path d="M9 4v13M15 7v13"/></svg></span>
-      <span data-i18n="nav.maps">Maps</span>
+      <span data-i18n="nav.maps">{{ tr('nav.maps', 'Maps') }}</span>
       <span id="badge-maps" class="tab-badge green is-hidden"></span>
     </button>
 
     <!-- Tools -->
     <button class="tab{% if active_tab == 'tools' %} active{% endif %}" data-tab="tools">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
-      <span data-i18n="nav.tools">Tools</span>
+      <span data-i18n="nav.tools">{{ tr('nav.tools', 'Tools') }}</span>
     </button>
 
     <!-- NukeMap -->
@@ -76,19 +76,19 @@
     <!-- Library -->
     <button class="tab{% if active_tab == 'kiwix-library' %} active{% endif %}" data-tab="kiwix-library">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></span>
-      <span data-i18n="nav.skills">Library</span>
+      <span data-i18n="nav.library">{{ tr('nav.library', 'Library') }}</span>
     </button>
 
     <!-- Notes -->
     <button class="tab{% if active_tab == 'notes' %} active{% endif %}" data-tab="notes">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
-      <span data-i18n="nav.notes">Notes</span>
+      <span data-i18n="nav.notes">{{ tr('nav.notes', 'Notes') }}</span>
     </button>
 
     <!-- Media -->
     <button class="tab{% if active_tab == 'media' %} active{% endif %}" data-tab="media">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
-      <span data-i18n="nav.incidents">Media</span>
+      <span data-i18n="nav.media">{{ tr('nav.media', 'Media') }}</span>
       <span id="badge-media" class="tab-badge green is-hidden"></span>
     </button>
 
@@ -99,7 +99,7 @@
     <!-- AI Assistant -->
     <button class="tab{% if active_tab == 'ai-chat' %} active{% endif %}" data-tab="ai-chat">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-      <span data-i18n="nav.comms">Copilot</span>
+      <span data-i18n="nav.copilot">{{ tr('nav.copilot', 'Copilot') }}</span>
       <span id="badge-ai-chat" class="tab-badge is-hidden"></span>
     </button>
 
@@ -110,12 +110,12 @@
     <!-- Diagnostics -->
     <button class="tab{% if active_tab == 'benchmark' %} active{% endif %}" data-tab="benchmark">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg></span>
-      <span data-i18n="dashboard.overview">Diagnostics</span>
+      <span data-i18n="nav.diagnostics">{{ tr('nav.diagnostics', 'Diagnostics') }}</span>
     </button>
     <!-- Settings -->
     <button class="tab{% if active_tab == 'settings' %} active{% endif %}" data-tab="settings">
       <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-      <span data-i18n="nav.settings">Settings</span>
+      <span data-i18n="nav.settings">{{ tr('nav.settings', 'Settings') }}</span>
     </button>
   </div>
   <div id="sidebar-context-hub" class="sidebar-context-hub">
@@ -225,6 +225,16 @@
       </div>
     </div>
 
+    <!-- Density -->
+    <div class="customize-section">
+      <div class="customize-section-title">Density</div>
+      <div class="customize-zoom-row customize-density-row">
+        <button class="btn btn-sm" data-density-level="ultra" data-customize-density="true" id="cust-density-ultra" aria-pressed="false">Ultra-Compact</button>
+        <button class="btn btn-sm" data-density-level="compact" data-customize-density="true" id="cust-density-compact" aria-pressed="true">Compact</button>
+        <button class="btn btn-sm" data-density-level="comfortable" data-customize-density="true" id="cust-density-comfortable" aria-pressed="false">Comfortable</button>
+      </div>
+    </div>
+
     <!-- Dashboard Mode -->
     <div class="customize-section">
       <div class="customize-section-title">Dashboard Mode</div>
@@ -277,16 +287,14 @@
 
     <!-- Home Page Sections -->
     <div class="customize-section">
-      <div class="customize-section-title">Home Page Sections</div>
+      <div class="customize-section-title">Services Home Sections</div>
       <div id="cust-home-sections">
-        <div class="customize-row"><label><span class="cust-icon">&#128269;</span> Search Bar</label><label class="toggle-switch"><input name="search_bar" type="checkbox" checked data-cust-section="search-bar" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
+        <div class="customize-row"><label><span class="cust-icon">&#128269;</span> Mission Control</label><label class="toggle-switch"><input name="services_launch" type="checkbox" checked data-cust-section="services-launch" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
         <div class="customize-row"><label><span class="cust-icon">&#128200;</span> Situation Dashboard</label><label class="toggle-switch"><input name="live_dashboard" type="checkbox" checked data-cust-section="live-dashboard" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
         <div class="customize-row"><label><span class="cust-icon">&#128737;</span> Preparedness By Need</label><label class="toggle-switch"><input name="needs_overview" type="checkbox" checked data-cust-section="needs-overview" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
-        <div class="customize-row"><label><span class="cust-icon">&#9881;</span> Services Grid</label><label class="toggle-switch"><input name="services_grid" type="checkbox" checked data-cust-section="services-grid" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
+        <div class="customize-row"><label><span class="cust-icon">&#9881;</span> Services Console</label><label class="toggle-switch"><input name="services_console" type="checkbox" checked data-cust-section="services-console" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
         <div class="customize-row"><label><span class="cust-icon">&#128214;</span> Field Documents</label><label class="toggle-switch"><input name="home_quick_nav" type="checkbox" checked data-cust-section="home-quick-nav" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
         <div class="customize-row"><label><span class="cust-icon">&#128196;</span> Activity Log</label><label class="toggle-switch"><input name="home_activity" type="checkbox" checked data-cust-section="home-activity" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
-        <div class="customize-row"><label><span class="cust-icon">&#129302;</span> AI Copilot Dock</label><label class="toggle-switch"><input name="copilot_dock" type="checkbox" checked data-cust-section="copilot-dock" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
-        <div class="customize-row"><label><span class="cust-icon">&#128203;</span> Status Strip</label><label class="toggle-switch"><input name="status_strip" type="checkbox" checked data-cust-section="status-strip" data-change-action="toggle-home-section"><span class="toggle-slider"></span></label></div>
       </div>
     </div>
 
@@ -320,8 +328,41 @@
   <div id="alert-items" class="alert-items"></div>
 </div>
 
+<div id="shell-health-overlay" class="shell-health-overlay is-hidden" data-backdrop-close="shell-health" hidden>
+  <div class="shell-health-card" role="dialog" aria-label="Shell health" aria-modal="true">
+    <div class="shell-health-header">
+      <div class="shell-health-copy">
+        <div class="shell-health-kicker">Shell Runtime</div>
+        <h2>Intervals, fetches, and current workspace state</h2>
+      </div>
+      <button type="button" class="btn btn-sm btn-ghost shell-health-close" data-shell-action="toggle-shell-health" aria-label="Close shell health">&#10005;</button>
+    </div>
+    <div class="shell-health-meta">
+      <span id="shell-health-active-tab" class="shell-health-pill"></span>
+      <span id="shell-health-visibility" class="shell-health-pill"></span>
+      <span id="shell-health-fetch-state" class="shell-health-pill"></span>
+    </div>
+    <div class="shell-health-grid">
+      <section class="shell-health-section">
+        <div class="shell-health-section-head">
+          <span class="shell-health-section-title">Active Intervals</span>
+          <span id="shell-health-interval-count" class="shell-health-count"></span>
+        </div>
+        <div id="shell-health-intervals" class="shell-health-list"></div>
+      </section>
+      <section class="shell-health-section">
+        <div class="shell-health-section-head">
+          <span class="shell-health-section-title">Recent Fetches</span>
+          <span id="shell-health-request-count" class="shell-health-count"></span>
+        </div>
+        <div id="shell-health-requests" class="shell-health-list"></div>
+      </section>
+    </div>
+  </div>
+</div>
+
 <!-- Persistent Status Strip -->
-<div id="status-strip" class="status-strip">
+<div id="status-strip" class="status-strip" hidden>
   <button type="button" class="ss-pill" id="ss-services" title="Running services" data-tab-target="services"><span class="ss-dot ss-dot--green"></span>Services: <strong>-</strong></button>
   <button type="button" class="ss-pill" id="ss-inventory" title="Total inventory items" data-tab-target="preparedness" data-prep-sub="inventory"><span class="ss-dot ss-dot--accent"></span>Supplies: <strong>-</strong></button>
   <button type="button" class="ss-pill" id="ss-contacts" title="Emergency contacts" data-tab-target="preparedness" data-prep-sub="contacts"><span class="ss-dot ss-dot--accent"></span>Contacts: <strong>-</strong></button>
@@ -331,7 +372,7 @@
   <span id="ss-time" class="status-strip-time"></span>
 </div>
 
-<div id="workspace-context-bar" class="workspace-context-bar">
+<div id="workspace-context-bar" class="workspace-context-bar" hidden>
   <div class="workspace-context-copy">
     <div class="workspace-context-topline">
       <span id="workspace-context-group" class="workspace-context-group">Briefing</span>
@@ -349,7 +390,6 @@
     </div>
     <div id="workspace-context-quick-actions" class="workspace-context-quick-actions"></div>
     <div class="workspace-context-meta-actions">
-      <button id="workspace-context-guide-btn" type="button" class="btn btn-sm btn-ghost" data-workspace-context-action="open-guide" aria-controls="workspace-inspector" aria-expanded="false">Workspace Guide</button>
       <button id="workspace-context-launch-btn" type="button" class="btn btn-sm" data-workspace-context-action="set-launch">Set Launch Context</button>
       <button id="workspace-context-pin-btn" type="button" class="btn btn-sm btn-primary" data-workspace-context-action="toggle-pin">Pin Current Context</button>
       <button type="button" class="btn btn-sm" data-tab-target="services" data-scroll-target="home-continue-panel">Open Home Shelf</button>
@@ -357,21 +397,5 @@
     </div>
   </div>
 </div>
-
-<aside id="workspace-inspector" class="workspace-inspector" aria-labelledby="workspace-inspector-title" hidden>
-  <div class="workspace-inspector-head">
-    <div class="workspace-inspector-copy">
-      <span id="workspace-inspector-kicker" class="workspace-inspector-kicker">Workspace Guide</span>
-      <h3 id="workspace-inspector-title" class="workspace-inspector-title">Use this desk with less guesswork.</h3>
-      <div id="workspace-inspector-meta" class="workspace-inspector-meta">Docked guidance that stays visible while you keep working.</div>
-      <p id="workspace-inspector-summary" class="workspace-inspector-summary">Open a workspace guide to understand what this surface is best for, what to do first, and which next moves are worth taking.</p>
-    </div>
-    <div class="workspace-inspector-head-actions">
-      <button type="button" class="btn btn-sm btn-ghost workspace-inspector-close-btn" data-workspace-guide-action="close" aria-label="Close workspace guide">Close</button>
-    </div>
-  </div>
-  <div id="workspace-inspector-body" class="workspace-inspector-body"></div>
-  <div id="workspace-inspector-actions" class="workspace-inspector-actions"></div>
-</aside>
 
 <div class="container">

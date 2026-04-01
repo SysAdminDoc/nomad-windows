@@ -1307,10 +1307,21 @@ async function checkTorrentClient() {
 // ── Polling ───────────────────────────────────────────────────────────────
 function startTorrentPolling() {
   if (_torrentPollTimer) return;
+  if (window.NomadShellRuntime) {
+    _torrentPollTimer = window.NomadShellRuntime.startInterval('media.torrent-status', pollTorrentStatus, 2000, {
+      tabId: 'media',
+      requireVisible: true,
+    });
+    return;
+  }
   _torrentPollTimer = setInterval(pollTorrentStatus, 2000);
 }
 function stopTorrentPolling() {
-  if (_torrentPollTimer) { clearInterval(_torrentPollTimer); _torrentPollTimer = null; }
+  if (_torrentPollTimer) {
+    clearInterval(_torrentPollTimer);
+    _torrentPollTimer = null;
+  }
+  window.NomadShellRuntime?.stopInterval('media.torrent-status');
 }
 
 async function pollTorrentStatus() {
@@ -3608,7 +3619,11 @@ function checkNightMode() {
   }
 }
 checkNightMode();
-setInterval(checkNightMode, 60000);
+if (window.NomadShellRuntime) {
+  window.NomadShellRuntime.startInterval('shell.auto-night', checkNightMode, 60000, { requireVisible: true });
+} else {
+  setInterval(checkNightMode, 60000);
+}
 
 /* ─── Inventory Visualization ─── */
 async function loadInvViz() {

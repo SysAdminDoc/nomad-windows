@@ -56,12 +56,13 @@ document.addEventListener('mousedown', e => {
 });
 
 document.addEventListener('click', e => {
-  const control = e.target.closest('[data-shell-action], [data-stop-propagation], [data-tab-target], [data-help], [data-theme-select], [data-customize-theme], [data-zoom-level], [data-garden-tab], [data-protocol-toggle], [data-protocol-bulk], [data-mode-select], [data-prep-category], [data-prep-sub-switch], [data-checklist-template], [data-checklist-id], [data-checklist-delete], [data-check-item], [data-app-frame-url], [data-backdrop-close], [data-click-target], [data-chat-action], [data-starter-prompt], [data-media-sub-switch], [data-media-action], [data-torrent-cat], [data-branch-switch], [data-library-action], [data-zim-tier], [data-map-action], [data-map-download-url], [data-note-action], [data-benchmark-mode], [data-benchmark-action], [data-tool-action], [data-drill-type], [data-prep-action], [data-sit-domain], [data-security-tab], [data-power-tab], [data-med-ref], [data-dtmf-key]');
+  const control = e.target.closest('[data-shell-action], [data-stop-propagation], [data-tab-target], [data-help], [data-theme-select], [data-customize-theme], [data-zoom-level], [data-density-level], [data-garden-tab], [data-protocol-toggle], [data-protocol-bulk], [data-mode-select], [data-prep-category], [data-prep-sub-switch], [data-checklist-template], [data-checklist-id], [data-checklist-delete], [data-check-item], [data-app-frame-url], [data-backdrop-close], [data-click-target], [data-chat-action], [data-starter-prompt], [data-media-sub-switch], [data-media-action], [data-torrent-cat], [data-branch-switch], [data-library-action], [data-zim-tier], [data-map-action], [data-map-download-url], [data-note-action], [data-benchmark-mode], [data-benchmark-action], [data-tool-action], [data-drill-type], [data-prep-action], [data-sit-domain], [data-security-tab], [data-power-tab], [data-med-ref], [data-dtmf-key]');
   if (!control) return;
   if (control.dataset.backdropClose !== undefined) {
     if (e.target !== control) return;
     if (control.dataset.backdropClose === 'needs-detail') closeNeedsDetail();
     if (control.dataset.backdropClose === 'widget-config') closeWidgetManager();
+    if (control.dataset.backdropClose === 'shell-health') toggleShellHealth(false);
     if (control.dataset.backdropClose === 'fuel-modal') closeFuelForm();
     if (control.dataset.backdropClose === 'equip-modal') closeEquipForm();
     if (control.dataset.backdropClose === 'csv-import-modal') closeCSVImportModal();
@@ -87,6 +88,7 @@ document.addEventListener('click', e => {
   if (action === 'toggle-shortcuts') { toggleCommandPalette(false); toggleShortcutsHelp(); return; }
   if (action === 'toggle-alert-bar') { toggleAlertBar(); return; }
   if (action === 'toggle-customize-panel') { toggleCustomizePanel(); return; }
+  if (action === 'toggle-shell-health') { toggleShellHealth(); return; }
   if (action === 'open-widget-manager') { openWidgetManager(); return; }
   if (action === 'close-widget-manager') { closeWidgetManager(); return; }
   if (action === 'reset-widget-config') { resetWidgetConfig(); return; }
@@ -260,17 +262,6 @@ document.addEventListener('click', e => {
   if (action === 'wiz-select-drive') { wizSelectDrive(control.dataset.drivePath); return; }
   if (action === 'wiz-select-tier') { wizSelectTier(control.dataset.tierId); return; }
   if (action === 'run-training-job') { runTrainingJob(Number(control.dataset.trainingJobId)); return; }
-  if (action === 'run-gs-action') {
-    switch (control.dataset.gsAction) {
-      case 'install-ollama': installService('ollama'); break;
-      case 'start-ollama': startService('ollama'); break;
-      case 'open-ai-model': gsGoAIModel(); break;
-      case 'install-kiwix': installService('kiwix'); break;
-      case 'open-library': gsGoLibrary(); break;
-      case 'open-guides': gsGoGuides(); break;
-    }
-    return;
-  }
   if (action === 'close-add-item-form') {
     const form = document.getElementById('add-item-form');
     if (form) form.remove();
@@ -888,6 +879,7 @@ document.addEventListener('click', e => {
   if (control.dataset.themeSelect) { setTheme(control.dataset.themeSelect); return; }
   if (control.dataset.customizeTheme) { setTheme(control.dataset.customizeTheme); return; }
   if (control.dataset.zoomLevel) { setUIZoom(control.dataset.zoomLevel); return; }
+  if (control.dataset.densityLevel) { setDensity(control.dataset.densityLevel); return; }
   if (control.dataset.appFrameUrl) { openAppFrame(control.dataset.appFrameTitle || 'Document', control.dataset.appFrameUrl); return; }
   if (control.dataset.gardenTab) { showGardenTab(control.dataset.gardenTab); return; }
   if (control.dataset.protocolToggle !== undefined) { toggleProtocol(control); return; }

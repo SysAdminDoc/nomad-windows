@@ -1,35 +1,117 @@
 /* ─── Init ─── */
-// Critical: load immediately
-loadServices();
-loadReadiness();
+function getActiveWorkspaceTab() {
+  return window.NOMAD_ACTIVE_TAB || document.querySelector('.tab.active')?.dataset.tab || '';
+}
+
+function isWorkspaceTabActive(tabId) {
+  return getActiveWorkspaceTab() === tabId;
+}
+
+function hasVisibleStatusStrip() {
+  return Array.from(document.querySelectorAll('.status-strip'))
+    .some(candidate => candidate && !candidate.hidden && getComputedStyle(candidate).display !== 'none');
+}
+
+async function loadServicesWorkspaceCore() {
+  const servicesData = await safeFetch('/api/services', {}, []);
+  if (!Array.isArray(servicesData)) return [];
+  loadServices(servicesData);
+  loadReadiness(servicesData);
+  loadServiceQuickLinks(servicesData);
+  return servicesData;
+}
+
+function refreshServicesWorkspacePanels() {
+  loadServicesWorkspaceCore();
+  loadWidgetConfig().then(() => startLiveDashPolling());
+  loadNeedsOverview();
+  loadGettingStarted();
+  loadCmdDashboard();
+  loadCmdChecklists();
+  loadActivity();
+  loadContentSummary();
+  pollDownloadQueue();
+}
+
+function refreshSettingsWorkspacePanels() {
+  loadSuggestedActions();
+}
+
+window.refreshServicesWorkspacePanels = refreshServicesWorkspacePanels;
+window.refreshSettingsWorkspacePanels = refreshSettingsWorkspacePanels;
+
+// Critical: only load the visible workspace up front.
+const _startupWorkspaceTab = getActiveWorkspaceTab();
+if (_startupWorkspaceTab === 'services') {
+  loadServicesWorkspaceCore();
+}
 // Situation Room is heavy; only boot it on routes where it is actually active.
-const _startupWorkspaceTab = window.NOMAD_ACTIVE_TAB || document.querySelector('.tab.active')?.dataset.tab || '';
 if (_startupWorkspaceTab === 'situation-room') {
   requestAnimationFrame(() => { initSituationRoom(); });
 }
-// Defer non-critical by 500ms to avoid 11 concurrent fetches on startup
-setTimeout(() => { loadWidgetConfig().then(() => startLiveDashPolling()); loadSuggestedActions(); loadNeedsOverview(); loadGettingStarted(); loadCmdDashboard(); loadServiceQuickLinks(); loadCmdChecklists(); }, 500);
-setTimeout(() => { loadActivity(); loadContentSummary(); updateStatusStrip(); updateTabBadges(); }, 1000);
-setInterval(() => { if (!document.hidden) { updateStatusStrip(); updateTabBadges(); pollDownloadQueue(); } }, 30000);
-// Poll download queue more frequently when active
-setInterval(() => { if (!document.hidden) pollDownloadQueue(); }, 5000);
-let _svcPollTimer = setInterval(() => {
-  if (document.hidden) return;
-  const activeTab = document.querySelector('.tab.active');
-  if (activeTab && activeTab.dataset.tab === 'services') {
-    loadServices(); loadReadiness(); loadCmdDashboard(); loadServiceQuickLinks();
-  } else {
-    loadServices(); // lightweight status update for readiness indicators
+// Defer secondary workspace data so non-home launches do not fetch hidden panels.
+setTimeout(() => {
+  if (isWorkspaceTabActive('services')) {
+    loadServicesWorkspaceCore();
+    loadWidgetConfig().then(() => startLiveDashPolling());
+    loadNeedsOverview();
+    loadGettingStarted();
+    loadCmdDashboard();
+    loadCmdChecklists();
   }
-}, 8000);
+  if (isWorkspaceTabActive('settings')) refreshSettingsWorkspacePanels();
+}, 500);
+setTimeout(() => {
+  if (isWorkspaceTabActive('services')) {
+    loadActivity();
+    loadContentSummary();
+  }
+  if (hasVisibleStatusStrip()) updateStatusStrip();
+  updateTabBadges();
+}, 1000);
+const shellRuntime = window.NomadShellRuntime;
+if (shellRuntime) {
+  shellRuntime.startInterval('shell.status-strip', () => {
+    if (hasVisibleStatusStrip()) updateStatusStrip();
+    updateTabBadges();
+  }, 30000, { requireVisible: true });
+  shellRuntime.startInterval('services.download-queue', () => {
+    pollDownloadQueue();
+  }, 5000, { tabId: 'services', requireVisible: true });
+  shellRuntime.startInterval('services.workspace-refresh', () => {
+    loadServicesWorkspaceCore();
+    loadCmdDashboard();
+  }, 8000, { tabId: 'services', requireVisible: true });
+  shellRuntime.startInterval('shell.network', () => {
+    checkNetwork();
+  }, 30000, { requireVisible: true });
+  shellRuntime.startInterval('shell.broadcast', () => {
+    pollBroadcast();
+  }, 5000, { requireVisible: true });
+} else {
+  setInterval(() => {
+    if (!document.hidden) {
+      if (hasVisibleStatusStrip()) updateStatusStrip();
+      updateTabBadges();
+    }
+  }, 30000);
+  setInterval(() => {
+    if (!document.hidden && isWorkspaceTabActive('services')) pollDownloadQueue();
+  }, 5000);
+  setInterval(() => {
+    if (document.hidden || !isWorkspaceTabActive('services')) return;
+    loadServicesWorkspaceCore();
+    loadCmdDashboard();
+  }, 8000);
+  setInterval(() => { if (!document.hidden) checkNetwork(); }, 30000);
+  setInterval(() => { if (!document.hidden) pollBroadcast(); }, 5000);
+}
 checkNetwork();
-setInterval(() => { if (!document.hidden) checkNetwork(); }, 30000);
 checkWizard();
 checkForUpdate();
 loadStartupState();
-pollDownloadQueue();
+if (_startupWorkspaceTab === 'services') pollDownloadQueue();
 pollBroadcast();
-setInterval(() => { if (!document.hidden) pollBroadcast(); }, 5000);
 
 // Proactive alert system — handled via NomadEvents 'alert_check' event
 setTimeout(loadAlerts, 5000);
@@ -4105,9 +4187,32 @@ async function loadVitalsTrend(patientId) {
 /* ─── NomadI18n + loadLanguageSelector: loaded from /static/js/i18n.js ─── */
 
 // PWA Service Worker
-if ('serviceWorker' in navigator) {
+// In the desktop app, stale WebView2 service-worker caches can leave the UI on a
+// mismatched frontend bundle after upgrades. Keep SW support for real browsers,
+// but actively remove it inside pywebview.
+async function configureNomadServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  const isDesktopWebview = !!window.pywebview;
+  if (isDesktopWebview) {
+    try {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map(reg => reg.unregister()));
+      if ('caches' in window) {
+        const cacheKeys = await caches.keys();
+        const nomadCaches = cacheKeys.filter(key => key.startsWith('nomad-'));
+        await Promise.all(nomadCaches.map(key => caches.delete(key)));
+      }
+      if (navigator.serviceWorker.controller && !sessionStorage.getItem('nomad-desktop-sw-reset')) {
+        sessionStorage.setItem('nomad-desktop-sw-reset', '1');
+        window.location.reload();
+      }
+    } catch (_) {}
+    return;
+  }
   navigator.serviceWorker.register('/static/sw.js').catch(() => {});
 }
+
+configureNomadServiceWorker();
 
 // Initialize IndexedDB offline sync
 try { OfflineSync.startAutoSync(300000); } catch(e) { console.warn('OfflineSync init failed:', e); }

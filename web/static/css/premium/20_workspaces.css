@@ -2,7 +2,7 @@
 .chat-layout,
 .notes-layout,
 .media-layout {
-  gap: 18px;
+  gap: 12px;
 }
 
 .chat-container,
@@ -21,7 +21,7 @@
 .convo-sidebar,
 .notes-sidebar,
 .prep-sidebar {
-  border-radius: 18px !important;
+  border-radius: 16px !important;
   overflow: hidden;
 }
 
@@ -33,10 +33,10 @@
 .library-command-deck,
 .notes-command-deck {
   display: grid;
-  gap: 14px;
-  padding: 18px 20px;
+  gap: 10px;
+  padding: 14px 16px;
   border: 1px solid color-mix(in srgb, var(--border-hover) 34%, var(--border));
-  border-radius: 22px;
+  border-radius: 18px;
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 38%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 90%, transparent));
@@ -48,14 +48,14 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .library-command-copy,
 .notes-command-copy {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   max-width: 72ch;
 }
 
@@ -67,7 +67,7 @@
 .library-command-title,
 .notes-command-title {
   margin: 0;
-  font-size: clamp(22px, 2.1vw, 32px);
+  font-size: clamp(20px, 1.8vw, 28px);
   line-height: 1.06;
   letter-spacing: -0.04em;
   color: var(--text);
@@ -77,20 +77,20 @@
 .notes-command-text {
   margin: 0;
   color: var(--text-dim);
-  line-height: 1.65;
+  line-height: 1.5;
 }
 
 .library-command-actions,
 .notes-command-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .library-command-pills,
 .notes-command-pills {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
@@ -98,13 +98,13 @@
 .notes-command-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -112,8 +112,8 @@
 
 .media-command-deck {
   display: grid;
-  gap: 14px;
-  padding: 18px 18px 16px;
+  gap: 10px;
+  padding: 14px 14px 12px;
   border-bottom: 1px solid var(--border);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 38%),
@@ -124,13 +124,13 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .media-command-copy {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   max-width: 72ch;
 }
 
@@ -140,7 +140,7 @@
 
 .media-command-title {
   margin: 0;
-  font-size: clamp(22px, 2.1vw, 32px);
+  font-size: clamp(20px, 1.8vw, 28px);
   line-height: 1.06;
   letter-spacing: -0.04em;
   color: var(--text);
@@ -149,31 +149,31 @@
 .media-command-text {
   margin: 0;
   color: var(--text-dim);
-  line-height: 1.65;
+  line-height: 1.5;
 }
 
 .media-command-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .media-command-pills {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .media-command-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -194,15 +194,15 @@
 .convo-sidebar-header,
 .notes-sidebar-header,
 .prep-sidebar-header {
-  padding: 14px 16px;
+  padding: 10px 12px;
 }
 
 .convo-sidebar-header span,
 .notes-sidebar-header span,
 .prep-sidebar-header span,
 .prep-main-header h4 {
-  font-size: 12px;
-  letter-spacing: 0.12em;
+  font-size: 11px;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-muted);
 }
@@ -239,15 +239,15 @@
 .notes-list,
 .prep-list,
 #media-folder-list {
-  padding: 10px;
+  padding: 8px;
 }
 
 .convo-item,
 .note-item,
 .prep-item,
 .media-folder-item {
-  border-radius: 12px;
-  margin-bottom: 6px;
+  border-radius: 10px;
+  margin-bottom: 4px;
   transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
 }
 
@@ -276,13 +276,13 @@
 }
 
 .notes-editor-header {
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
 }
 
 .notes-editor-header input {
-  min-height: 40px;
+  min-height: 36px;
 }
 
 #note-title {
@@ -295,7 +295,7 @@
 }
 
 .notes-word-count {
-  padding: 0 14px 12px;
+  padding: 0 12px 10px;
   color: var(--text-muted);
 }
 
@@ -303,22 +303,22 @@
 .notes-editor-header,
 .prep-main-header,
 .media-topbar {
-  padding: 14px 18px;
+  padding: 10px 14px;
 }
 
 .chat-header {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .chat-header-shell {
   display: grid;
-  gap: 14px;
+  gap: 10px;
 }
 
 .chat-header-intro {
   display: grid;
-  gap: 8px;
+  gap: 6px;
 }
 
 .chat-header-title-row {
@@ -330,7 +330,7 @@
 }
 
 .chat-header-title {
-  font-size: clamp(18px, 1.8vw, 26px);
+  font-size: clamp(16px, 1.45vw, 22px);
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1.08;
@@ -340,13 +340,13 @@
 .chat-header-state {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
   background: color-mix(in srgb, var(--accent-dim) 66%, var(--surface-solid));
   color: var(--accent);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -355,12 +355,12 @@
 .chat-header-copy {
   max-width: 72ch;
   color: var(--text-dim);
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .chat-header-control-strip {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   align-items: center;
   flex-wrap: wrap;
 }
@@ -370,31 +370,31 @@
   justify-content: center;
   flex-wrap: wrap;
   gap: 8px;
-  margin: 14px 0 18px;
+  margin: 10px 0 14px;
 }
 
 .chat-empty-highlight {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .chat-starter-grid {
-  gap: 10px;
+  gap: 8px;
 }
 
 .chat-starter-btn {
-  min-height: 40px;
-  border-radius: 14px;
+  min-height: 36px;
+  border-radius: 12px;
   border-color: color-mix(in srgb, var(--border-hover) 32%, var(--border));
   background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
 }
@@ -411,11 +411,11 @@
 }
 
 .message {
-  margin-bottom: 14px;
+  margin-bottom: 10px;
 }
 
 .message .content {
-  border-radius: 16px;
+  border-radius: 14px;
   box-shadow: var(--shadow-sm);
 }
 
@@ -430,8 +430,8 @@
 
 .notes-editor textarea,
 .notes-preview {
-  padding: 18px 20px;
-  font-size: 13px;
+  padding: 14px 16px;
+  font-size: 12.5px;
 }
 
 .notes-editor-split textarea {
@@ -439,15 +439,15 @@
 }
 
 .media-subtabs {
-  padding: 8px 10px;
-  gap: 8px;
+  padding: 6px 8px;
+  gap: 6px;
   overflow-x: auto;
 }
 
 .media-subtab {
   border-radius: 999px;
   border-bottom: none !important;
-  padding: 10px 14px;
+  padding: 8px 12px;
 }
 
 .media-subtab:hover {
@@ -460,7 +460,7 @@
 }
 
 .media-topbar {
-  gap: 12px;
+  gap: 10px;
 }
 
 #media-ytdlp-banner,
@@ -472,34 +472,34 @@
 }
 
 .prep-layout {
-  gap: 18px;
+  gap: 12px;
 }
 
 .prep-main {
-  border-radius: 18px;
+  border-radius: 16px;
   border: 1px solid color-mix(in srgb, var(--border-hover) 34%, var(--border)) !important;
   background: var(--surface-overlay) !important;
   box-shadow: var(--shadow-panel);
 }
 
 .prep-progress-bar {
-  margin: 0 18px !important;
-  height: 6px;
+  margin: 0 14px !important;
+  height: 5px;
   border-radius: 999px;
 }
 
 .prep-checklist {
-  padding: 14px 18px;
+  padding: 12px 14px;
 }
 
 .check-item {
-  padding: 12px 0;
+  padding: 10px 0;
   border-bottom-color: var(--border);
 }
 
 .notes-layout,
 .chat-layout {
-  min-height: calc(100vh - 185px);
+  min-height: calc(100vh - 168px);
 }
 
 @media (max-width: 1180px) {

@@ -238,6 +238,46 @@ def create_app():
         with _cache_lock:
             _api_cache[key] = {'val': val, 'ts': time.time()}
 
+    try:
+        from web.translations import SUPPORTED_LANGUAGES, TRANSLATIONS
+    except ImportError:
+        from translations import SUPPORTED_LANGUAGES, TRANSLATIONS
+
+    def _get_current_language():
+        lang = 'en'
+        try:
+            with db_session() as db:
+                row = db.execute("SELECT value FROM settings WHERE key = 'language'").fetchone()
+                lang = (row['value'] if row else 'en') or 'en'
+        except Exception:
+            lang = 'en'
+        return lang if lang in SUPPORTED_LANGUAGES else 'en'
+
+    def _get_template_i18n_context():
+        current_lang = _get_current_language()
+        fallback_translations = TRANSLATIONS.get('en', {})
+        current_translations = TRANSLATIONS.get(current_lang, fallback_translations)
+
+        def _tr(key, default=''):
+            return current_translations.get(key) or fallback_translations.get(key) or default or key
+
+        return {
+            'current_lang': current_lang,
+            'is_rtl': current_lang == 'ar',
+            'current_translations': current_translations,
+            'fallback_translations': fallback_translations,
+            'i18n_bootstrap': {
+                'lang': current_lang,
+                'translations': current_translations,
+                'fallback': fallback_translations,
+            },
+            'tr': _tr,
+        }
+
+    @app.context_processor
+    def _inject_i18n_context():
+        return _get_template_i18n_context()
+
     # ─── CSRF Protection ─────────────────────────────────────────────
     @app.after_request
     def _set_cookie_samesite(response):
@@ -5740,12 +5780,6 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         broadcast_event('alert', {'level': 'info', 'message': 'SSE test event'})
         return jsonify({'status': 'sent', 'clients': len(_sse_clients)})
 
-    # ─── Internationalization (i18n) ─────────────────────────────────────
-    try:
-        from web.translations import SUPPORTED_LANGUAGES, TRANSLATIONS
-    except ImportError:
-        from translations import SUPPORTED_LANGUAGES, TRANSLATIONS
-
     @app.route('/api/i18n/languages')
     def api_i18n_languages():
         return jsonify({'languages': SUPPORTED_LANGUAGES})
@@ -5758,13 +5792,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
 
     @app.route('/api/i18n/language', methods=['GET'])
     def api_i18n_get_language():
-        try:
-            with db_session() as db:
-                row = db.execute("SELECT value FROM settings WHERE key = 'language'").fetchone()
-                lang = row['value'] if row else 'en'
-        except Exception:
-            lang = 'en'
-        return jsonify({'language': lang})
+        return jsonify({'language': _get_current_language()})
 
     @app.route('/api/i18n/language', methods=['POST'])
     def api_i18n_set_language():

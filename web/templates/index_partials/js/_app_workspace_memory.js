@@ -1465,7 +1465,7 @@ function renderWorkspaceContextBar() {
   const launchBtn = document.getElementById('workspace-context-launch-btn');
   const pinBtn = document.getElementById('workspace-context-pin-btn');
   const quickActionsEl = document.getElementById('workspace-context-quick-actions');
-  if (!groupEl || !detailEl || !stateEl || !previousBtn || !titleEl || !summaryEl || !guideBtn || !launchBtn || !pinBtn || !quickActionsEl) return;
+  if (!groupEl || !detailEl || !stateEl || !previousBtn || !titleEl || !summaryEl || !launchBtn || !pinBtn || !quickActionsEl) return;
   const descriptor = buildWorkspaceContextDescriptor();
   const current = descriptor.trackableEntry;
   const state = getWorkspaceResumeState();
@@ -1492,10 +1492,12 @@ function renderWorkspaceContextBar() {
   pinBtn.disabled = !current;
   pinBtn.textContent = current ? (currentPinned ? 'Unpin Current Context' : 'Pin Current Context') : 'Pin Current Context';
   pinBtn.setAttribute('aria-pressed', current && currentPinned ? 'true' : 'false');
-  const inspector = document.getElementById('workspace-inspector');
-  const guideOpen = !!inspector && !inspector.hidden;
-  guideBtn.textContent = guideOpen ? 'Hide Guide' : 'Workspace Guide';
-  guideBtn.setAttribute('aria-expanded', guideOpen ? 'true' : 'false');
+  if (guideBtn) {
+    const inspector = document.getElementById('workspace-inspector');
+    const guideOpen = !!inspector && !inspector.hidden;
+    guideBtn.textContent = guideOpen ? 'Hide Guide' : 'Workspace Guide';
+    guideBtn.setAttribute('aria-expanded', guideOpen ? 'true' : 'false');
+  }
 }
 
 function renderHomeContinueWorking() {
@@ -1931,7 +1933,6 @@ function getCommandPaletteCommands() {
     {id: 'prep-care', section: 'Preparedness Lanes', title: 'Preparedness: Care & People', subtitle: 'Medical, contacts, family plans, and community', keywords: 'preparedness care people medical contacts family community', icon: '&#10010;', priority: 88, run: () => openPreparednessWorkspace('medical')},
     {id: 'prep-protect', section: 'Preparedness Lanes', title: 'Preparedness: Protect & Secure', subtitle: 'Security, comms, vault, and exposure threats', keywords: 'preparedness protect security comms vault secure', icon: '&#128737;', priority: 86, run: () => openPreparednessWorkspace('security')},
     {id: 'prep-learn', section: 'Preparedness Lanes', title: 'Preparedness: Reference & Planning', subtitle: 'Guides, calculators, and procedures', keywords: 'preparedness guides calculators planning procedures', icon: '&#128214;', priority: 84, run: () => openPreparednessWorkspace('guides')},
-    {id: 'act-open-guide', section: 'Quick Actions', title: `Open ${descriptor.title} Guide`, subtitle: `Get oriented inside ${descriptor.detail || descriptor.title} without leaving the current desk`, keywords: `workspace guide orientation ${descriptor.title} ${descriptor.detail || ''}`, icon: '&#9432;', priority: 83, run: () => openWorkspaceInspector()},
     {id: 'act-new-note', section: 'Quick Actions', title: 'Create New Note', subtitle: 'Start a fresh working note in the notes workspace', keywords: 'new note write scratchpad journal', icon: '&#10010;', priority: 82, run: () => { openWorkspaceTab('notes'); setTimeout(() => { if (typeof createNote === 'function') createNote(); }, 180); }},
     {id: 'act-new-conversation', section: 'Quick Actions', title: 'Start New Copilot Conversation', subtitle: 'Open Copilot and begin a fresh thread', keywords: 'new conversation chat copilot ai', icon: '&#9998;', priority: 80, run: () => { openWorkspaceTab('ai-chat'); setTimeout(() => { document.querySelector('[data-chat-action="new-conversation"]')?.click(); }, 180); }},
     {id: 'act-open-timers', section: 'Quick Actions', title: 'Open Timers', subtitle: 'Bring up quick timers without changing workspace', keywords: 'timers countdown reminders', icon: '&#9202;', priority: 78, run: () => { if (typeof toggleTimerPanel === 'function') toggleTimerPanel(); }},
@@ -1939,6 +1940,7 @@ function getCommandPaletteCommands() {
     {id: 'act-open-quick', section: 'Quick Actions', title: 'Open Quick Actions', subtitle: 'Launch the compact action tray for rapid logging', keywords: 'quick actions tray incident note weather', icon: '&#43;', priority: 74, run: () => { if (typeof toggleQuickActions === 'function') toggleQuickActions(); }},
     {id: 'act-open-docs', section: 'Quick Actions', title: 'Open Keyboard Shortcuts', subtitle: 'Review navigation and command shortcuts', keywords: 'shortcuts help keyboard', icon: '&#63;', priority: 70, run: () => { if (typeof toggleShortcutsHelp === 'function') toggleShortcutsHelp(); }},
     {id: 'act-library-docs', section: 'Quick Actions', title: 'Open Document Shelf', subtitle: 'Jump directly to uploaded field documents', keywords: 'documents pdf epub library shelf', icon: '&#128206;', priority: 68, run: () => openLibraryWorkspace('doc-library')},
+    {id: 'act-shell-health', section: 'Quick Actions', title: 'Open Shell Health', subtitle: 'Inspect active timers, fetches, and workspace runtime', keywords: 'shell health debug intervals fetch runtime', icon: '&#128202;', priority: 67, run: () => { if (typeof toggleShellHealth === 'function') toggleShellHealth(true); }},
     {id: 'act-media-downloads', section: 'Quick Actions', title: 'Open Media Downloads', subtitle: 'Jump into the download queue and library state', keywords: 'media downloads queue yt-dlp', icon: '&#11015;', priority: 66, run: () => { openMediaWorkspace('videos'); setTimeout(() => document.querySelector('[data-media-action="toggle-queue"]')?.click(), 220); }},
   ];
   const prepCommands = typeof getPrepWorkspacePaletteCommands === 'function'
@@ -2073,9 +2075,11 @@ function openSearchResult(type, id) {
 
 /* ─── Content Summary ─── */
 async function loadContentSummary() {
+  const el = document.getElementById('content-summary');
+  if (!el) return;
   try {
     const s = await (await fetch('/api/content-summary')).json();
-    document.getElementById('content-summary').innerHTML = `
+    el.innerHTML = `
       <div>
         <div class="cs-total">${s.total_size}</div>
         <div class="cs-label">Offline Knowledge</div>
@@ -2087,7 +2091,7 @@ async function loadContentSummary() {
       <div class="cs-stat"><div class="cs-val">${s.notes}</div><div class="cs-label">Notes</div></div>
     `;
   } catch(e) {
-    document.getElementById('content-summary').innerHTML = '<div class="cs-label content-summary-empty">Content summary unavailable</div>';
+    el.innerHTML = '<div class="cs-label content-summary-empty">Content summary unavailable</div>';
   }
 }
 
@@ -2182,9 +2186,13 @@ async function loadDiskMonitor() {
 }
 
 /* ─── Mission Readiness ─── */
-async function loadReadiness() {
+async function loadReadiness(servicesData = null) {
+  const el = document.getElementById('readiness-bar');
+  if (!el) return;
   try {
-    const services = await (await fetch('/api/services')).json();
+    const services = Array.isArray(servicesData)
+      ? servicesData
+      : await (await fetch('/api/services')).json();
     const caps = [
       {id:'ollama', label:'AI Chat', need:['ollama']},
       {id:'kiwix', label:'Library', need:['kiwix']},
@@ -2196,7 +2204,7 @@ async function loadReadiness() {
     const svcMap = {};
     services.forEach(s => svcMap[s.id] = s);
 
-    document.getElementById('readiness-bar').innerHTML = caps.map(c => {
+    el.innerHTML = caps.map(c => {
       const allInstalled = c.need.every(n => svcMap[n]?.installed);
       const allRunning = c.need.every(n => svcMap[n]?.running);
       const cls = allRunning ? 'ready' : allInstalled ? 'partial' : 'offline';
@@ -2204,7 +2212,7 @@ async function loadReadiness() {
       return `<div class="readiness-pill ${cls}"><span class="rdot"></span>${c.label}: ${label}</div>`;
     }).join('');
   } catch(e) {
-    document.getElementById('readiness-bar').innerHTML = '';
+    el.innerHTML = '';
   }
 }
 
@@ -2294,9 +2302,11 @@ async function openUpdateFolder() {
 
 /* ─── Startup Toggle ─── */
 async function loadStartupState() {
+  const toggle = document.getElementById('startup-toggle');
+  if (!toggle) return;
   try {
     const s = await (await fetch('/api/startup')).json();
-    document.getElementById('startup-toggle').checked = s.enabled;
+    toggle.checked = s.enabled;
   } catch(e) {}
 }
 
@@ -2308,10 +2318,11 @@ async function toggleStartup() {
 
 /* ─── Unified Download Queue ─── */
 async function pollDownloadQueue() {
+  const banner = document.getElementById('download-queue-banner');
+  const itemsEl = document.getElementById('download-queue-items');
+  if (!banner || !itemsEl) return;
   try {
     const downloads = await (await fetch('/api/downloads/active')).json();
-    const banner = document.getElementById('download-queue-banner');
-    const itemsEl = document.getElementById('download-queue-items');
     if (!downloads.length) { banner.style.display = 'none'; return; }
     banner.style.display = 'block';
     itemsEl.innerHTML = downloads.map(d => {

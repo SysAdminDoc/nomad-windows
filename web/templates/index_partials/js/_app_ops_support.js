@@ -910,7 +910,9 @@ async function pollBroadcast() {
       banner.style.display = 'none';
       _dismissedBroadcastTs = null;
     }
-  } catch(e) {}
+  } catch(e) {
+    block?.classList.add('is-empty');
+  }
 }
 
 /* ─── Resource Allocation Planner ─── */
@@ -1264,11 +1266,14 @@ function toggleQuickActions() {
     _lanChatOpen = false;
     setShellVisibility(document.getElementById('lan-chat-panel'), false);
     setUtilityDockButtonExpanded('chat', false);
-    if (_lanPoll) { clearInterval(_lanPoll); _lanPoll = null; }
+    if (typeof stopLanMessagePolling === 'function') stopLanMessagePolling();
+    else if (_lanPoll) { clearInterval(_lanPoll); _lanPoll = null; }
+    if (typeof stopLanPresencePolling === 'function') stopLanPresencePolling();
     _timerPanelOpen = false;
     setShellVisibility(document.getElementById('timer-panel'), false);
     setUtilityDockButtonExpanded('timer', false);
-    if (_timerPoll) { clearInterval(_timerPoll); _timerPoll = null; }
+    if (typeof stopTimerPolling === 'function') stopTimerPolling();
+    else if (_timerPoll) { clearInterval(_timerPoll); _timerPoll = null; }
   }
   setShellVisibility(menu, _qaOpen);
   if (button) button.setAttribute('aria-expanded', _qaOpen ? 'true' : 'false');
@@ -1337,16 +1342,27 @@ async function loadWPDistances() {
     });
     html += '</tbody></table>';
     el.innerHTML = html;
-  } catch(e) {}
+  } catch(e) {
+    block?.classList.add('is-empty');
+  }
 }
 
 /* ─── Service Quick Links ─── */
-async function loadServiceQuickLinks() {
+async function loadServiceQuickLinks(servicesData = null) {
+  const el = document.getElementById('svc-quicklinks');
+  if (!el) return;
+  const block = el.closest('.services-console-block');
   try {
-    const services = await (await fetch('/api/services')).json();
+    const services = Array.isArray(servicesData)
+      ? servicesData
+      : await (await fetch('/api/services')).json();
     const running = services.filter(s => s.running && s.port);
-    const el = document.getElementById('svc-quicklinks');
-    if (!running.length) { el.innerHTML = ''; return; }
+    if (!running.length) {
+      el.innerHTML = '';
+      block?.classList.add('is-empty');
+      return;
+    }
+    block?.classList.remove('is-empty');
     const names = {ollama:'AI Chat',kiwix:'Library',cyberchef:'CyberChef',kolibri:'Kolibri',stirling:'PDF Tools'};
     el.innerHTML = running.filter(s => s.id !== 'qdrant').map(s => {
       if (s.id === 'ollama') return `<button class="btn btn-sm btn-open-svc btn-open-svc-compact" data-tab-target="ai-chat">Open AI Chat</button>`;
@@ -1357,10 +1373,17 @@ async function loadServiceQuickLinks() {
 
 /* ─── Dashboard Checklist Progress ─── */
 async function loadCmdChecklists() {
+  const el = document.getElementById('cmd-checklists');
+  if (!el) return;
+  const block = el.closest('.services-console-block');
   try {
     const cls = await (await fetch('/api/dashboard/checklists')).json();
-    const el = document.getElementById('cmd-checklists');
-    if (!cls.length) { el.innerHTML = ''; return; }
+    if (!cls.length) {
+      el.innerHTML = '';
+      block?.classList.add('is-empty');
+      return;
+    }
+    block?.classList.remove('is-empty');
     el.innerHTML = '<div class="cmd-checklist-list">' + cls.map(c => {
       const color = c.pct === 100 ? 'var(--green)' : c.pct >= 50 ? 'var(--accent)' : 'var(--orange)';
       return `<div class="cmd-checklist-shortcut cmd-checklist-card" role="button" tabindex="0" data-tab-target="preparedness" data-prep-sub="checklists" data-checklist-focus="${c.id}" style="--checklist-pct:${c.pct}%;--checklist-tone:${color};">
@@ -4415,58 +4438,11 @@ async function generateAlertSummary() {
   btn.textContent = 'AI Summary';
 }
 
-/* ─── Getting Started Checklist ─── */
-function updateGettingStarted() {
-  if (localStorage.getItem('nomad-gs-dismissed') === '1') return;
-  const svcs = _lastServicesData || [];
-  const ollama = svcs.find(s => s.id === 'ollama');
-  const kiwix = svcs.find(s => s.id === 'kiwix');
-  const steps = [
-    {done: ollama?.installed, text: 'Install AI Chat (lets you ask questions offline)', actionKey: 'install-ollama'},
-    {done: ollama?.running, text: 'Start the AI Chat service', actionKey: 'start-ollama'},
-    {done: false, text: 'Download an AI brain (choose a model for the AI to use)', actionKey: 'open-ai-model'},
-    {done: kiwix?.installed, text: 'Install the Information Library (offline Wikipedia & guides)', actionKey: 'install-kiwix'},
-    {done: false, text: 'Download offline content packs (encyclopedia, medical, survival)', actionKey: 'open-library'},
-    {done: false, text: 'Try the Interactive Decision Guides (step-by-step emergency help)', actionKey: 'open-guides'},
-  ];
-  // Check if any AI models exist
-  if (ollama?.running) {
-    fetch('/api/ai/models').then(r=>r.json()).then(models => { steps[2].done = models.length > 0; renderGS(steps); }).catch(()=>renderGS(steps));
-  } else {
-    renderGS(steps);
-  }
-}
-function renderGS(steps) {
-  const allDone = steps.every(s => s.done);
-  if (allDone) { document.getElementById('getting-started').style.display = 'none'; return; }
-  document.getElementById('getting-started').style.display = 'block';
-  const el = document.getElementById('gs-items');
-  el.innerHTML = steps.map((s, i) => `
-    <div class="gs-step-row${s.done ? ' gs-step-row-complete' : ''}">
-      <span class="gs-step-index${s.done ? ' gs-step-index-done' : ''}">${s.done ? '&#10003;' : (i+1)+'.'}</span>
-      <span class="gs-step-text">${s.text}</span>
-      ${!s.done ? `<button type="button" class="btn btn-sm gs-step-action" data-shell-action="run-gs-action" data-gs-action="${s.actionKey}">Go</button>` : ''}
-    </div>
-  `).join('');
-}
-function gsGoAIModel() {
-  document.querySelector('[data-tab="ai-chat"]')?.click();
-  setTimeout(() => toggleModelPicker(), 300);
-}
-function gsGoLibrary() {
-  document.querySelector('[data-tab="kiwix-library"]')?.click();
-}
-function gsGoGuides() {
-  document.querySelector('[data-tab="preparedness"]')?.click();
-  setTimeout(() => switchPrepSub('guides'), 300);
-}
-function dismissGettingStarted() {
-  localStorage.setItem('nomad-gs-dismissed', '1');
-  document.getElementById('getting-started').style.display = 'none';
-}
-
 /* ─── Status Strip ─── */
 async function updateStatusStrip() {
+  const hasVisibleStrip = Array.from(document.querySelectorAll('.status-strip'))
+    .some(candidate => candidate && !candidate.hidden && getComputedStyle(candidate).display !== 'none');
+  if (!hasVisibleStrip) return;
   try {
     const results = await Promise.allSettled([
       safeFetch('/api/services', {}, []),
@@ -4558,6 +4534,75 @@ function updateTabBadges() {
 }
 
 /* ─── Customize Panel ─── */
+const CUSTOMIZE_SECTION_ALIASES = {
+  'search-bar': 'services-launch',
+  'services-grid': 'services-console',
+  'copilot-dock': null,
+};
+
+function normalizeCustomizeSectionId(sectionId) {
+  if (Object.prototype.hasOwnProperty.call(CUSTOMIZE_SECTION_ALIASES, sectionId)) {
+    return CUSTOMIZE_SECTION_ALIASES[sectionId];
+  }
+  return sectionId;
+}
+
+function normalizeCustomizeState(state) {
+  const hiddenTabs = Array.isArray(state?.hiddenTabs)
+    ? state.hiddenTabs.filter(Boolean)
+    : [];
+  const hiddenSections = Array.isArray(state?.hiddenSections)
+    ? state.hiddenSections
+      .map(normalizeCustomizeSectionId)
+      .filter(Boolean)
+    : [];
+  return {
+    hiddenTabs: Array.from(new Set(hiddenTabs)),
+    hiddenSections: Array.from(new Set(hiddenSections)),
+  };
+}
+
+function getStoredCustomizeState() {
+  try {
+    const raw = localStorage.getItem('nomad-customize');
+    if (!raw) return normalizeCustomizeState({});
+    return normalizeCustomizeState(JSON.parse(raw));
+  } catch (_) {
+    return normalizeCustomizeState({});
+  }
+}
+
+function setCustomizeTabVisibility(tabId, visible) {
+  const tabBtn = document.querySelector(`.tab[data-tab="${tabId}"]`);
+  if (tabBtn) tabBtn.style.display = visible ? '' : 'none';
+  const subMenu = document.querySelector(`.sidebar-sub[data-parent="${tabId}"]`);
+  if (subMenu) subMenu.style.display = visible ? '' : 'none';
+}
+
+function setCustomizeSectionVisibility(sectionId, visible) {
+  const resolvedId = normalizeCustomizeSectionId(sectionId);
+  if (!resolvedId) return;
+  const el = document.getElementById(resolvedId);
+  if (el) el.style.display = visible ? '' : 'none';
+  if (typeof syncViewportChrome === 'function') {
+    requestAnimationFrame(syncViewportChrome);
+  }
+}
+
+function applyCustomizeState(state) {
+  const normalized = normalizeCustomizeState(state);
+  document.querySelectorAll('[data-cust-tab]').forEach(cb => {
+    const hidden = normalized.hiddenTabs.includes(cb.dataset.custTab);
+    cb.checked = !hidden;
+    setCustomizeTabVisibility(cb.dataset.custTab, !hidden);
+  });
+  document.querySelectorAll('[data-cust-section]').forEach(cb => {
+    const hidden = normalized.hiddenSections.includes(cb.dataset.custSection);
+    cb.checked = !hidden;
+    setCustomizeSectionVisibility(cb.dataset.custSection, !hidden);
+  });
+}
+
 function toggleCustomizePanel() {
   const panel = document.getElementById('customize-panel');
   const overlay = document.getElementById('customize-overlay');
@@ -4572,6 +4617,7 @@ function toggleCustomizePanel() {
     requestAnimationFrame(() => panel.classList.add('open'));
     updateCustomizeTheme();
     updateCustomizeZoom();
+    updateCustomizeDensity();
     updateCustomizeMode();
     loadCustomizeState();
   }
@@ -4590,6 +4636,14 @@ function updateCustomizeZoom() {
   });
 }
 
+function updateCustomizeDensity() {
+  const current = localStorage.getItem('nomad-density') || 'compact';
+  ['ultra', 'compact', 'comfortable'].forEach(level => {
+    const btn = document.getElementById('cust-density-' + level);
+    if (btn) btn.className = current === level ? 'btn btn-sm btn-primary' : 'btn btn-sm';
+  });
+}
+
 function updateCustomizeMode() {
   const current = localStorage.getItem('nomad-mode') || 'command';
   document.querySelectorAll('[data-cust-mode]').forEach(el => {
@@ -4603,101 +4657,46 @@ function updateCustomizeMode() {
 function toggleSidebarItem(checkbox) {
   const tabId = checkbox.dataset.custTab;
   const visible = checkbox.checked;
-  // Hide/show the sidebar tab button and its sub-menu
-  const tabBtn = document.querySelector(`.tab[data-tab="${tabId}"]`);
-  if (tabBtn) tabBtn.style.display = visible ? '' : 'none';
-  const subMenu = document.querySelector(`.sidebar-sub[data-parent="${tabId}"]`);
-  if (subMenu) subMenu.style.display = visible ? '' : 'none';
-  // Save preference
+  setCustomizeTabVisibility(tabId, visible);
   saveCustomizeState();
 }
 
 function toggleHomeSection(checkbox) {
   const sectionId = checkbox.dataset.custSection;
   const visible = checkbox.checked;
-  // Handle special cases for sections inside bento grid
-  const el = document.getElementById(sectionId);
-  if (el) el.style.display = visible ? '' : 'none';
-  // Handle search bar (it's a class-based element inside the tab)
-  if (sectionId === 'search-bar') {
-    const sb = document.querySelector('#tab-services .search-bar');
-    if (sb) sb.style.display = visible ? '' : 'none';
-  }
+  setCustomizeSectionVisibility(sectionId, visible);
   saveCustomizeState();
 }
 
 function saveCustomizeState() {
-  const state = {
+  const state = normalizeCustomizeState({
     hiddenTabs: [],
     hiddenSections: [],
-  };
+  });
   document.querySelectorAll('[data-cust-tab]').forEach(cb => {
     if (!cb.checked) state.hiddenTabs.push(cb.dataset.custTab);
   });
   document.querySelectorAll('[data-cust-section]').forEach(cb => {
     if (!cb.checked) state.hiddenSections.push(cb.dataset.custSection);
   });
-  localStorage.setItem('nomad-customize', JSON.stringify(state));
+  localStorage.setItem('nomad-customize', JSON.stringify(normalizeCustomizeState(state)));
 }
 
 function loadCustomizeState() {
-  try {
-    const raw = localStorage.getItem('nomad-customize');
-    if (!raw) return;
-    const state = JSON.parse(raw);
-    // Restore tab toggles
-    if (state.hiddenTabs) {
-      document.querySelectorAll('[data-cust-tab]').forEach(cb => {
-        const hidden = state.hiddenTabs.includes(cb.dataset.custTab);
-        cb.checked = !hidden;
-        const tabBtn = document.querySelector(`.tab[data-tab="${cb.dataset.custTab}"]`);
-        if (tabBtn) tabBtn.style.display = hidden ? 'none' : '';
-        const subMenu = document.querySelector(`.sidebar-sub[data-parent="${cb.dataset.custTab}"]`);
-        if (subMenu) subMenu.style.display = hidden ? 'none' : '';
-      });
-    }
-    // Restore section toggles
-    if (state.hiddenSections) {
-      document.querySelectorAll('[data-cust-section]').forEach(cb => {
-        const hidden = state.hiddenSections.includes(cb.dataset.custSection);
-        cb.checked = !hidden;
-        const el = document.getElementById(cb.dataset.custSection);
-        if (el) el.style.display = hidden ? 'none' : '';
-        if (cb.dataset.custSection === 'search-bar') {
-          const sb = document.querySelector('#tab-services .search-bar');
-          if (sb) sb.style.display = hidden ? 'none' : '';
-        }
-      });
-    }
-  } catch(e) {}
+  applyCustomizeState(getStoredCustomizeState());
 }
 
 function resetCustomization() {
   localStorage.removeItem('nomad-customize');
-  // Show all tabs
-  document.querySelectorAll('[data-cust-tab]').forEach(cb => {
-    cb.checked = true;
-    const tabBtn = document.querySelector(`.tab[data-tab="${cb.dataset.custTab}"]`);
-    if (tabBtn) tabBtn.style.display = '';
-    const subMenu = document.querySelector(`.sidebar-sub[data-parent="${cb.dataset.custTab}"]`);
-    if (subMenu) subMenu.style.display = '';
-  });
-  // Show all sections
-  document.querySelectorAll('[data-cust-section]').forEach(cb => {
-    cb.checked = true;
-    const el = document.getElementById(cb.dataset.custSection);
-    if (el) el.style.display = '';
-    if (cb.dataset.custSection === 'search-bar') {
-      const sb = document.querySelector('#tab-services .search-bar');
-      if (sb) sb.style.display = '';
-    }
-  });
+  applyCustomizeState({});
   // Reset theme and zoom
   setTheme('nomad');
   setUIZoom('default');
+  setDensity('compact');
   setMode('command');
   updateCustomizeTheme();
   updateCustomizeZoom();
+  updateCustomizeDensity();
   updateCustomizeMode();
   toast('All customizations reset to defaults', 'success');
 }
@@ -4712,28 +4711,5 @@ document.addEventListener('keydown', (e) => {
 
 // Apply saved customization on page load
 document.addEventListener('DOMContentLoaded', () => {
-  try {
-    const raw = localStorage.getItem('nomad-customize');
-    if (!raw) return;
-    const state = JSON.parse(raw);
-    if (state.hiddenTabs) {
-      state.hiddenTabs.forEach(tabId => {
-        const tabBtn = document.querySelector(`.tab[data-tab="${tabId}"]`);
-        if (tabBtn) tabBtn.style.display = 'none';
-        const subMenu = document.querySelector(`.sidebar-sub[data-parent="${tabId}"]`);
-        if (subMenu) subMenu.style.display = 'none';
-      });
-    }
-    if (state.hiddenSections) {
-      state.hiddenSections.forEach(sectionId => {
-        const el = document.getElementById(sectionId);
-        if (el) el.style.display = 'none';
-        if (sectionId === 'search-bar') {
-          const sb = document.querySelector('#tab-services .search-bar');
-          if (sb) sb.style.display = 'none';
-        }
-      });
-    }
-  } catch(e) {}
+  applyCustomizeState(getStoredCustomizeState());
 });
-

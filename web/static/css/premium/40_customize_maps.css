@@ -120,22 +120,22 @@
 
 .map-command-deck {
   display: grid;
-  gap: 16px;
-  padding: 22px 24px;
-  border-radius: 24px;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 18px;
 }
 
 .map-command-deck-head {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 18px;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
 .map-command-copy {
   display: grid;
-  gap: 8px;
+  gap: 6px;
   max-width: 70ch;
 }
 
@@ -145,7 +145,7 @@
 
 .map-command-title {
   margin: 0;
-  font-size: clamp(22px, 2.4vw, 34px);
+  font-size: clamp(20px, 1.9vw, 28px);
   line-height: 1.05;
   letter-spacing: -0.04em;
   color: var(--text);
@@ -154,41 +154,41 @@
 .map-command-text {
   margin: 0;
   color: var(--text-dim);
-  line-height: 1.65;
+  line-height: 1.5;
 }
 
 .map-command-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: wrap;
 }
 
 .map-command-chips {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: wrap;
 }
 
 .map-command-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 26px;
-  padding: 0 10px;
+  min-height: 24px;
+  padding: 0 8px;
   border-radius: 999px;
   border: 1px solid var(--border);
   background: var(--surface-field);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .map-controls {
-  padding: 14px 16px;
-  border-radius: 20px;
-  gap: 10px;
-  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 .map-controls-title {
@@ -213,16 +213,16 @@
 
 .map-viewer-shell {
   position: relative;
-  padding: 14px;
-  border-radius: 22px;
+  padding: 12px;
+  border-radius: 18px;
 }
 
 .map-search {
-  top: 24px;
-  left: 24px;
+  top: 16px;
+  left: 16px;
   z-index: 3;
-  padding: 6px;
-  border-radius: 16px;
+  padding: 5px;
+  border-radius: 14px;
   background: var(--surface-field);
   box-shadow: var(--shadow-panel);
   backdrop-filter: blur(14px);

@@ -1,5 +1,5 @@
-const CACHE_NAME = 'nomad-v3';
-const SITROOM_CACHE = 'nomad-sitroom-v1';
+const CACHE_NAME = 'nomad-v4';
+const SITROOM_CACHE = 'nomad-sitroom-v2';
 const SITROOM_CACHE_TTL = 300000; // 5 minutes
 
 const STATIC_ASSETS = [

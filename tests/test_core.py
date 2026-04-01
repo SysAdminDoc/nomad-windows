@@ -132,8 +132,8 @@ class TestErrorHandler:
         assert 'Pinned Contexts' in html
         assert 'Recent Context' in html
         assert 'id="command-palette-overlay" class="command-palette-overlay" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" hidden' in html
-        assert 'id="workspace-context-bar" class="workspace-context-bar"' in html
-        assert 'id="workspace-inspector" class="workspace-inspector"' in html
+        assert 'id="workspace-context-bar" class="workspace-context-bar" hidden' in html
+        assert 'id="workspace-inspector"' not in html
         assert 'id="sidebar-context-hub"' in html
         assert 'Quick Return' in html
         assert 'Keep your active desk and pinned contexts within reach from any workspace.' in html
@@ -178,8 +178,8 @@ class TestErrorHandler:
         home_html = self._html(client, '/')
         assert '"services": "/"' in home_html
         assert 'window.NOMAD_ALLOW_LAUNCH_RESTORE = true;' in home_html
-        assert 'id="workspace-context-bar" class="workspace-context-bar"' in home_html
-        assert 'id="workspace-inspector" class="workspace-inspector"' in home_html
+        assert 'id="workspace-context-bar" class="workspace-context-bar" hidden' in home_html
+        assert 'id="workspace-inspector"' not in home_html
 
         prep_html = self._html(client, '/preparedness')
         assert 'window.NOMAD_ACTIVE_TAB = "preparedness";' in prep_html
@@ -217,6 +217,24 @@ class TestErrorHandler:
         assert 'data-workspace-memory-action="set-launch-current"' in settings_html
         assert 'id="settings-memory-launch"' in settings_html
         assert 'id="settings-memory-pinned"' in settings_html
+
+    def test_workspace_page_bootstraps_saved_language_before_runtime_init(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('language', 'es')")
+        db.commit()
+
+        html = self._html(client, '/preparedness')
+
+        assert '<html lang="es" dir="ltr">' in html
+        assert 'const i18n = {' in html
+        assert '"lang": "es"' in html
+        assert 'window.__NOMAD_I18N_BOOTSTRAP = i18n;' in html
+        assert 'data-i18n="nav.home">Inicio<' in html
+        assert 'data-i18n="nav.readiness">Estado<' in html
+        assert 'data-i18n="nav.preparedness">Preparación<' in html
+        assert 'data-i18n="nav.library">Biblioteca<' in html
+        assert 'data-i18n="nav.media">Medios<' in html
+        assert 'data-i18n="nav.copilot">Copiloto<' in html
+        assert 'data-i18n="nav.diagnostics">Diagnósticos<' in html
 
     def test_shared_css_avoids_transition_all(self):
         css_root = REPO_ROOT / 'web' / 'static' / 'css'
@@ -396,7 +414,7 @@ class TestErrorHandler:
         assert 'data-tab-target="preparedness" data-prep-sub="inventory"' in home_html
         assert 'data-tab-target="services"' in home_html
         assert 'data-stop-propagation' in home_html
-        assert 'id="workspace-context-bar" class="workspace-context-bar"' in home_html
+        assert 'id="workspace-context-bar" class="workspace-context-bar" hidden' in home_html
         assert 'id="command-palette-overlay" class="command-palette-overlay"' in home_html
 
         notes_html = self._html(client, '/notes')
@@ -404,12 +422,14 @@ class TestErrorHandler:
         assert 'data-note-action="select-note"' in notes_html
         assert 'data-note-action="apply-note-template"' in notes_html
         assert 'class="note-item-head"' in notes_html
+        assert 'data-workspace-guide-target="notes"' not in notes_html
 
         media_html = self._html(client, '/media')
         assert 'data-media-sub-switch="channels"' in media_html
         assert 'data-media-action="download-url"' in media_html
         assert 'data-media-action="resume-media"' in media_html
         assert 'class="media-download-item"' in media_html
+        assert 'data-workspace-guide-target="media"' not in media_html
 
         maps_html = self._html(client, '/maps')
         assert 'data-map-action="toggle-map-view"' in maps_html

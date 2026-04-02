@@ -118,9 +118,15 @@ class TestErrorHandler:
         assert 'href="/"' in html
         assert 'window.NOMAD_ACTIVE_TAB = "services";' in html
         assert 'window.NOMAD_ALLOW_LAUNCH_RESTORE = true;' in html
+        assert 'window.NOMAD_FIRST_RUN_COMPLETE = false;' in html
+        assert 'window.NOMAD_WIZARD_SHOULD_LAUNCH = true;' in html
         assert 'Welcome to NOMAD' in html
         assert 'Start Using NOMAD' in html
         assert 'data-tab-target="services"' in html
+        assert 'id="gs-resume-setup-btn"' in html
+        assert 'id="gs-onboarding-note"' in html
+        assert 'id="wiz-mini-banner"' in html
+        assert 'data-shell-action="restore-wizard"' in html
         assert 'name="unified_search"' in html
         assert 'aria-labelledby="shortcuts-title"' in html
         assert 'data-mode-select="command"' in html
@@ -174,7 +180,8 @@ class TestErrorHandler:
             assert unique_marker in html
             if path == '/viptrack-tab':
                 assert 'Live military and VIP air traffic' in html
-                assert 'src="/viptrack/?embed=nomad"' in html
+                assert 'data-src="/viptrack/?embed=nomad"' in html
+                assert 'loading="lazy"' in html
             for absent in absent_tabs:
                 assert f'id="{absent}"' not in html
 
@@ -239,6 +246,18 @@ class TestErrorHandler:
         assert 'data-i18n="nav.media">Medios<' in html
         assert 'data-i18n="nav.copilot">Copiloto<' in html
         assert 'data-i18n="nav.diagnostics">Diagnósticos<' in html
+
+    def test_workspace_page_bootstraps_onboarding_state(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '1')")
+        db.commit()
+
+        settings_html = self._html(client, '/settings')
+        home_html = self._html(client, '/')
+
+        assert 'window.NOMAD_FIRST_RUN_COMPLETE = true;' in settings_html
+        assert 'window.NOMAD_WIZARD_SHOULD_LAUNCH = false;' in settings_html
+        assert 'window.NOMAD_FIRST_RUN_COMPLETE = true;' in home_html
+        assert 'window.NOMAD_WIZARD_SHOULD_LAUNCH = false;' in home_html
 
     def test_shared_css_avoids_transition_all(self):
         css_root = REPO_ROOT / 'web' / 'static' / 'css'
@@ -311,7 +330,14 @@ class TestErrorHandler:
     def test_embedded_tool_pages_keep_zoom_enabled_and_status_regions(self):
         viptrack_text = (REPO_ROOT / 'web' / 'viptrack' / 'index.html').read_text(encoding='utf-8')
         nukemap_text = (REPO_ROOT / 'web' / 'nukemap' / 'index.html').read_text(encoding='utf-8')
+        nukemap_app_text = (REPO_ROOT / 'web' / 'nukemap' / 'js' / 'app.js').read_text(encoding='utf-8')
+        nukemap_extras_text = (REPO_ROOT / 'web' / 'nukemap' / 'js' / 'extras.js').read_text(encoding='utf-8')
+        offline_atlas_text = (REPO_ROOT / 'web' / 'nukemap' / 'data' / 'offline_atlas.json').read_text(encoding='utf-8')
         nukemap_partial = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_nukemap.html').read_text(encoding='utf-8')
+        viptrack_partial = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_viptrack.html').read_text(encoding='utf-8')
+        viptrack_leaflet_js = REPO_ROOT / 'web' / 'viptrack' / 'lib' / 'leaflet.js'
+        viptrack_leaflet_css = REPO_ROOT / 'web' / 'viptrack' / 'lib' / 'leaflet.css'
+        viptrack_pako = REPO_ROOT / 'web' / 'viptrack' / 'lib' / 'pako.min.js'
 
         assert 'maximum-scale=1.0' not in viptrack_text
         assert 'user-scalable=no' not in viptrack_text
@@ -330,7 +356,126 @@ class TestErrorHandler:
         assert 'role="status" aria-live="polite" aria-atomic="true"' in nukemap_partial
         assert '@media (prefers-reduced-motion: reduce)' in viptrack_text
         assert '@media (prefers-reduced-motion: reduce)' in nukemap_partial
+        assert '/viptrack/lib/leaflet.css' in viptrack_text
+        assert '/viptrack/lib/leaflet.js' in viptrack_text
+        assert '/viptrack/lib/pako.min.js' in viptrack_text
+        assert viptrack_leaflet_js.exists()
+        assert viptrack_leaflet_css.exists()
+        assert viptrack_pako.exists()
         assert viptrack_text.index('const searchSystem = {') < viptrack_text.index('searchSystem.init();')
+        assert 'body.day-mode .aircraft-marker.vip .sprite-icon' in viptrack_text
+        assert 'refreshAircraftMarkerTheme()' in viptrack_text
+        assert '_clearPausableInterval' in viptrack_text
+        assert "_setPausableInterval(() => this.checkConnection(), 30000, 'offlineConnection')" in viptrack_text
+        assert 'pauseWorkspaceActivity()' in viptrack_text
+        assert 'onHidden()' in viptrack_text
+        assert "const OFFLINE_ATLAS_STORAGE_KEY = 'nomad-offline-atlas-cache';" in viptrack_text
+        assert "const OFFLINE_ATLAS_URL = '/nukemap/data/offline_atlas.json';" in viptrack_text
+        assert 'onboardAtlasStatus' in viptrack_text
+        assert 'offlineAtlasStatus' in viptrack_text
+        assert 'installOfflineAtlasBtn' in viptrack_text
+        assert 'Enhanced offline basemap ready. VIPTrack now has real coastlines, country borders, state and province outlines, lakes, rivers, and place labels offline.' in viptrack_text
+        assert 'offlineAtlasReady: !!offlineAtlasData' in viptrack_text
+        assert 'window.NomadEmbeddedWorkspaceState?.save?.(tabId, snapshot);' in viptrack_partial
+        assert "persistFrameSnapshot('tab-hidden')" in viptrack_partial
+        assert 'NM.getHostSnapshot = function()' in nukemap_app_text
+        assert 'nomad-offline-atlas-cache' in nukemap_app_text
+        assert 'NM.installOfflineAtlas = function()' in nukemap_app_text
+        assert 'NM.buildOfflineAtlasLayer = function(theme)' in nukemap_app_text
+        assert 'data-src="/viptrack/?embed=nomad"' in viptrack_partial
+        assert 'loading="lazy"' in viptrack_partial
+        assert 'aria-busy="true"' in viptrack_partial
+        assert 'ensureFrameLoaded()' in viptrack_partial
+        assert '_nomadTabLeaveCallbacks[tabId]' in viptrack_partial
+        assert 'NM.ensureZipcodesLoaded = function()' in nukemap_app_text
+        assert 'NM.syncAmbientUi = function(options = {})' in nukemap_app_text
+        assert 'offlineAtlas: NM.buildOfflineAtlasLayer?.(' in nukemap_extras_text
+        assert 'refreshOfflineAtlasLayer()' in nukemap_extras_text
+        assert "document.querySelector('script[data-nukemap-zipcodes=\"true\"]')" in nukemap_app_text
+        assert 'welcome-atlas-status' in nukemap_text
+        assert 'welcome-atlas-status' in nukemap_partial
+        assert 'data-layer="offlineAtlas"' in nukemap_text
+        assert 'data-layer="offlineAtlas"' in nukemap_partial
+        assert '"version":"2026-04-02.3"' in offline_atlas_text
+        assert '"dataset":"Natural Earth 1:50m"' in offline_atlas_text
+        assert '"countryBorders":[' in offline_atlas_text
+        assert '"admin1Borders":[' in offline_atlas_text
+        assert '"lakes":[' in offline_atlas_text
+        assert '"rivers":[' in offline_atlas_text
+        assert '"places":[' in offline_atlas_text
+        assert "window.NomadEmbeddedWorkspaceState?.save?.('nukemap', snapshot);" in nukemap_partial
+        assert '_nomadTabLeaveCallbacks.nukemap' in nukemap_partial
+
+    def test_long_running_workspace_polls_use_shared_runtime_guards(self):
+        services_ai_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
+        media_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_media_maps_sync.js').read_text(encoding='utf-8')
+        ops_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_ops_support.js').read_text(encoding='utf-8')
+        workspaces_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
+        memory_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspace_memory.js').read_text(encoding='utf-8')
+
+        assert "NomadShellRuntime?.stopInterval('services.install-progress')" in services_ai_text
+        assert "NomadShellRuntime.startInterval('services.install-progress'" in services_ai_text
+        assert "NomadShellRuntime.startInterval('ai-chat.model-ready'" in services_ai_text
+        assert "NomadShellRuntime.startInterval('ai-chat.pull-progress'" in services_ai_text
+        assert "NomadShellRuntime.startInterval('library.zim-downloads'" in services_ai_text
+
+        assert "NomadShellRuntime.startInterval('media.ytdlp-install'" in media_text
+        assert "NomadShellRuntime.startInterval('media.download-progress'" in media_text
+        assert 'startMediaDownloadPolling(watchId);' in media_text
+        assert "NomadShellRuntime?.stopInterval('media.download-progress')" in media_text
+        assert "NomadShellRuntime.startInterval('preparedness.motion-status'" in ops_text
+        assert "NomadShellRuntime.startInterval('preparedness.camera-snapshots'" in ops_text
+        assert 'startCameraSnapshotRefresh(cameras);' in ops_text
+        assert "cameras.filter(c => c.stream_type === 'snapshot').forEach(c => {" not in ops_text
+        assert "NomadShellRuntime.startInterval('shell.auto-backup'" in ops_text
+
+        assert "NomadShellRuntime.startInterval('wizard.progress'" in workspaces_text
+        assert "NomadShellRuntime.startInterval('ai-chat.kb-embed'" in workspaces_text
+        assert "NomadShellRuntime.startInterval(`ai-chat.kb-analyze.${id}`" in workspaces_text
+        assert "NomadShellRuntime?.stopInterval('wizard.progress')" in workspaces_text
+        assert "NomadShellRuntime.startInterval('settings.update-download'" in memory_text
+        assert "NomadShellRuntime?.stopInterval('settings.update-download')" in memory_text
+
+    def test_media_workspace_uses_visibility_helper_for_hidden_panels(self):
+        media_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_media_maps_sync.js').read_text(encoding='utf-8')
+
+        assert "function setMediaVisibility(target, visible, displayValue = '') {" in media_text
+        assert "function isMediaVisible(target) {" in media_text
+        assert "setMediaVisibility(channelBrowser, true, 'flex');" in media_text
+        assert "setMediaVisibility(results, true);" in media_text
+        assert "setMediaVisibility('yt-video-results', false);" in media_text
+        assert "setMediaVisibility('channel-list', true);" in media_text
+        assert "setMediaVisibility('media-catalog-panel', _mediaCatalogVisible);" in media_text
+
+    def test_onboarding_runtime_uses_real_first_run_state_and_shell_visibility_helpers(self):
+        services_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_services.html').read_text(encoding='utf-8')
+        overlays_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_utility_overlays.html').read_text(encoding='utf-8')
+        readiness_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_dashboard_readiness.js').read_text(encoding='utf-8')
+        services_ai_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
+        workspaces_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
+
+        assert 'id="gs-resume-setup-btn"' in services_text
+        assert 'id="gs-onboarding-note"' in services_text
+        assert 'id="wiz-mini-banner"' in overlays_text
+        assert "window.NOMAD_FIRST_RUN_COMPLETE === false" in readiness_text
+        assert "window.NOMAD_FIRST_RUN_COMPLETE === false" in services_ai_text
+        assert 'setWizardSectionVisibility(' in workspaces_text
+        assert 'persistOnboardingComplete()' in workspaces_text
+        assert 'clearWizardUrlFlag()' in workspaces_text
+        assert "fetch('/api/settings/wizard-complete', {method: 'POST'})" in workspaces_text
+        assert "setShellVisibility(document.getElementById('wiz-mini-banner'), true);" in workspaces_text
+        assert "setShellVisibility(document.getElementById('wiz-mini-banner'), false);" in workspaces_text
+        assert "fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tour_complete:'1'})});" not in workspaces_text
+
+    def test_shared_shell_runtime_skips_route_specific_ui_when_missing(self):
+        ops_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_ops_support.js').read_text(encoding='utf-8')
+        memory_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspace_memory.js').read_text(encoding='utf-8')
+
+        assert "if (!banner) return;" in ops_text
+        assert "if (!badge && !bar && !items && !count) return;" in ops_text
+        assert "if (!preparednessBadge && !mapsBadge && !mediaBadge && !aiBadge) return;" in ops_text
+        assert "if (typeof _lastServicesData !== 'undefined' && Array.isArray(_lastServicesData) && _lastServicesData.length)" in ops_text
+        assert "if (!banner && !dlBtn && !statusEl) return;" in memory_text
 
     def test_app_css_is_split_into_ordered_import_manifest(self):
         manifest = REPO_ROOT / 'web' / 'static' / 'css' / 'app.css'

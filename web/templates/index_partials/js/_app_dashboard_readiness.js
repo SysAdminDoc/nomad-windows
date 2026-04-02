@@ -62,13 +62,38 @@ async function loadDashboardSparklines() {
 }
 
 /* ─── Getting Started Checklist ─── */
+function updateGettingStartedPresentation(data) {
+  const onboardingIncomplete = window.NOMAD_FIRST_RUN_COMPLETE === false;
+  const kicker = document.getElementById('gs-panel-kicker');
+  const note = document.getElementById('gs-onboarding-note');
+  const resumeBtn = document.getElementById('gs-resume-setup-btn');
+
+  if (kicker) {
+    kicker.textContent = onboardingIncomplete ? 'CONTINUE SETUP' : 'GETTING STARTED';
+  }
+  if (resumeBtn) {
+    setShellVisibility(resumeBtn, onboardingIncomplete);
+  }
+  if (!note) return;
+
+  if (onboardingIncomplete) {
+    note.innerHTML = `Guided setup is still the fastest way to finish your offline workspace. Resume setup to choose storage, install tools, and download content without hunting through tabs.`;
+    setShellVisibility(note, true);
+    return;
+  }
+
+  note.textContent = '';
+  setShellVisibility(note, false);
+}
+
 async function loadGettingStarted() {
   const panel = document.getElementById('getting-started-panel');
   if (!panel) return;
   const data = await safeFetch('/api/system/getting-started', {}, null);
   if (!data) return;
+  updateGettingStartedPresentation(data);
   // Hide if all steps complete
-  if (data.pct >= 100) { panel.style.display = 'none'; return; }
+  if (data.pct >= 100 && window.NOMAD_FIRST_RUN_COMPLETE !== false) { panel.style.display = 'none'; return; }
   panel.style.display = '';
   document.getElementById('gs-progress-text').textContent = `${data.completed}/${data.total} complete (${data.pct}%)`;
   const el = document.getElementById('gs-steps');

@@ -119,6 +119,49 @@ function hasWorkspaceTabContent(tabId) {
   return !!document.getElementById(`tab-${tabId}`);
 }
 
+const NOMAD_EMBEDDED_WORKSPACE_STATE_KEY = 'nomad-embedded-workspace-state';
+
+function loadEmbeddedWorkspaceStates() {
+  try {
+    return JSON.parse(sessionStorage.getItem(NOMAD_EMBEDDED_WORKSPACE_STATE_KEY) || '{}') || {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function createEmbeddedWorkspaceStateStore() {
+  let cache = loadEmbeddedWorkspaceStates();
+
+  function persist() {
+    try {
+      sessionStorage.setItem(NOMAD_EMBEDDED_WORKSPACE_STATE_KEY, JSON.stringify(cache));
+    } catch (_) {}
+    window.NomadShellRuntime?.notify?.();
+  }
+
+  return {
+    save(tabId, snapshot) {
+      if (!tabId || !snapshot || typeof snapshot !== 'object') return null;
+      cache[tabId] = { tabId, updatedAt: Date.now(), ...snapshot };
+      persist();
+      return cache[tabId];
+    },
+    get(tabId) {
+      return tabId ? cache[tabId] || null : null;
+    },
+    all() {
+      return { ...cache };
+    },
+    clear(tabId) {
+      if (!tabId || !cache[tabId]) return;
+      delete cache[tabId];
+      persist();
+    },
+  };
+}
+
+window.NomadEmbeddedWorkspaceState = window.NomadEmbeddedWorkspaceState || createEmbeddedWorkspaceStateStore();
+
 function buildWorkspaceUrl(tabId, options = {}) {
   const route = getWorkspaceRouteMap()[tabId] || window.location.pathname || '/';
   const url = new URL(route, window.location.origin);
@@ -138,13 +181,22 @@ function navigateToWorkspace(tabId, options = {}) {
   window.location.assign(buildWorkspaceUrl(tabId, options));
 }
 
+function runWorkspaceLeaveCallback(tabId) {
+  if (!tabId || !window._nomadTabLeaveCallbacks || !window._nomadTabLeaveCallbacks[tabId]) return;
+  try {
+    window._nomadTabLeaveCallbacks[tabId]();
+  } catch (e) {}
+}
+
 function activateWorkspaceTab(tab) {
   const tabId = tab.dataset.tab;
+  const previousTabId = window.NOMAD_ACTIVE_TAB || document.querySelector('.tab.active')?.dataset.tab || '';
   const tabContent = document.getElementById('tab-' + tabId);
   if (!tabContent) {
     navigateToWorkspace(tabId);
     return false;
   }
+  if (previousTabId && previousTabId !== tabId) runWorkspaceLeaveCallback(previousTabId);
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   tab.classList.add('active');
@@ -187,6 +239,11 @@ function openWorkspaceRouteAware(tabId, options = {}) {
   navigateToWorkspace(tabId, options);
   return false;
 }
+
+window.addEventListener('pagehide', () => {
+  const activeTab = window.NOMAD_ACTIVE_TAB || document.querySelector('.tab.active')?.dataset.tab || '';
+  runWorkspaceLeaveCallback(activeTab);
+});
 
 function setTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
@@ -532,19 +589,24 @@ function formatShellRuntimeAge(timestamp) {
 function renderShellHealth(snapshot = window.NomadShellRuntime?.snapshot?.()) {
   const overlay = document.getElementById('shell-health-overlay');
   if (!overlay || overlay.hidden || !snapshot) return;
+  const embeddedStates = Object.values(window.NomadEmbeddedWorkspaceState?.all?.() || {})
+    .sort((left, right) => String(left.tabId || '').localeCompare(String(right.tabId || '')));
   const activeTab = document.getElementById('shell-health-active-tab');
   const visibility = document.getElementById('shell-health-visibility');
   const fetchState = document.getElementById('shell-health-fetch-state');
   const intervalCount = document.getElementById('shell-health-interval-count');
   const requestCount = document.getElementById('shell-health-request-count');
+  const embeddedCount = document.getElementById('shell-health-embedded-count');
   const intervalsEl = document.getElementById('shell-health-intervals');
   const requestsEl = document.getElementById('shell-health-requests');
+  const embeddedEl = document.getElementById('shell-health-embedded');
 
   if (activeTab) activeTab.textContent = `Desk: ${snapshot.activeTab || 'unknown'}`;
   if (visibility) visibility.textContent = snapshot.hidden ? 'Window hidden' : 'Window visible';
   if (fetchState) fetchState.textContent = snapshot.inflightFetches > 0 ? `${snapshot.inflightFetches} fetches in flight` : 'No active fetches';
   if (intervalCount) intervalCount.textContent = `${snapshot.intervals.length} active`;
   if (requestCount) requestCount.textContent = `${snapshot.recentFetches.length} recent`;
+  if (embeddedCount) embeddedCount.textContent = `${embeddedStates.length} tracked`;
 
   if (intervalsEl) {
     intervalsEl.innerHTML = snapshot.intervals.length
@@ -572,6 +634,20 @@ function renderShellHealth(snapshot = window.NomadShellRuntime?.snapshot?.()) {
         </div>
       `).join('')
       : '<div class="shell-health-empty">No recent fetches yet for this session.</div>';
+  }
+
+  if (embeddedEl) {
+    embeddedEl.innerHTML = embeddedStates.length
+      ? embeddedStates.map((state) => `
+        <div class="shell-health-row">
+          <div class="shell-health-row-main">
+            <span class="shell-health-row-title">${escapeHtml(state.tabId || 'embedded')}</span>
+            <span class="shell-health-row-meta">${state.tabPaused ? 'paused' : 'active'}${state.reason ? ` · ${escapeHtml(state.reason)}` : ''}</span>
+          </div>
+          <span class="shell-health-row-meta">${escapeHtml(formatShellRuntimeAge(state.updatedAt || state.savedAt))}</span>
+        </div>
+      `).join('')
+      : '<div class="shell-health-empty">No embedded workspace state has been captured yet.</div>';
   }
 }
 

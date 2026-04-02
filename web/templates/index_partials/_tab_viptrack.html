@@ -112,6 +112,22 @@
         border-radius: inherit;
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
+      #tab-viptrack #viptrack-stage.is-loading::before {
+        content: 'Loading VIPTrack…';
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        z-index: 1;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--vt-app-surface-panel) 92%, transparent);
+        border: 1px solid color-mix(in srgb, var(--vt-app-border) 80%, var(--vt-app-accent) 20%);
+        color: var(--vt-app-text-dim);
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        box-shadow: var(--vt-app-shadow);
+      }
       #tab-viptrack .vt-frame {
         position: absolute;
         inset: 0;
@@ -120,6 +136,11 @@
         border: none;
         display: block;
         background: #10141b;
+        opacity: 1;
+        transition: opacity 0.18s ease;
+      }
+      #tab-viptrack #viptrack-stage.is-loading .vt-frame {
+        opacity: 0;
       }
 
       @media (max-width: 1024px) {
@@ -165,9 +186,11 @@
       <div id="viptrack-stage">
         <iframe
           id="viptrack-frame"
-          src="/viptrack/?embed=nomad"
+          data-src="/viptrack/?embed=nomad"
           class="vt-frame"
           title="VIPTrack — Military & VIP Flight Tracker"
+          aria-busy="true"
+          loading="lazy"
           allowfullscreen
         ></iframe>
       </div>
@@ -209,6 +232,38 @@
           };
         }
 
+        function getFrameSource() {
+          return frame?.dataset.src || '';
+        }
+
+        function persistFrameSnapshot(reason) {
+          const snapshot = {
+            reason: reason || '',
+            route: window.location.pathname || '',
+            href: window.location.href || '',
+            frameLoaded: frame?.getAttribute('src') === getFrameSource(),
+            frameSrc: frame?.getAttribute('src') || '',
+            ariaBusy: frame?.getAttribute('aria-busy') || 'false',
+            savedAt: Date.now(),
+          };
+          try {
+            const hostSnapshot = frame?.contentWindow?.VIPTrackHost?.getSnapshot?.();
+            if (hostSnapshot) Object.assign(snapshot, hostSnapshot);
+          } catch (error) {}
+          window.NomadEmbeddedWorkspaceState?.save?.(tabId, snapshot);
+          return snapshot;
+        }
+
+        function ensureFrameLoaded() {
+          const targetSrc = getFrameSource();
+          if (!frame || !targetSrc) return false;
+          if (frame.getAttribute('src') === targetSrc) return false;
+          stage?.classList.add('is-loading');
+          frame.setAttribute('aria-busy', 'true');
+          frame.setAttribute('src', targetSrc);
+          return true;
+        }
+
         function pushThemeToFrame() {
           const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('nomad-theme') || 'nightops';
           if (themeLabel) themeLabel.textContent = THEME_NAMES[theme] || theme;
@@ -230,7 +285,19 @@
         }
 
         if (frame) {
-          frame.addEventListener('load', syncThemeSoon);
+          frame.addEventListener('load', function () {
+            if (frame.getAttribute('src') !== getFrameSource()) return;
+            stage?.classList.remove('is-loading');
+            frame.setAttribute('aria-busy', 'false');
+            syncThemeSoon();
+            persistFrameSnapshot('frame-load');
+            setTimeout(() => {
+              try {
+                frame?.contentWindow?.VIPTrackHost?.onVisible?.();
+              } catch (error) {}
+              persistFrameSnapshot('frame-visible');
+            }, 80);
+          });
         }
 
         if (stage && typeof ResizeObserver !== 'undefined') {
@@ -252,14 +319,26 @@
 
         window._nomadTabCallbacks = window._nomadTabCallbacks || {};
         window._nomadTabCallbacks[tabId] = function () {
-          syncThemeSoon();
+          const startedBoot = ensureFrameLoaded();
+          if (!startedBoot) syncThemeSoon();
           try {
-            frame?.contentWindow?.VIPTrackHost?.onVisible?.();
+            if (!startedBoot) frame?.contentWindow?.VIPTrackHost?.onVisible?.();
           } catch (error) {}
+          setTimeout(() => { persistFrameSnapshot(startedBoot ? 'tab-boot' : 'tab-visible'); }, startedBoot ? 140 : 40);
+        };
+        window._nomadTabLeaveCallbacks = window._nomadTabLeaveCallbacks || {};
+        window._nomadTabLeaveCallbacks[tabId] = function () {
+          try {
+            frame?.contentWindow?.VIPTrackHost?.onHidden?.();
+          } catch (error) {}
+          persistFrameSnapshot('tab-hidden');
         };
 
         if (document.getElementById('tab-viptrack')?.classList.contains('active')) {
-          syncThemeSoon();
+          if (!ensureFrameLoaded()) {
+            syncThemeSoon();
+            setTimeout(() => { persistFrameSnapshot('route-active'); }, 40);
+          }
         }
       })();
     </script>

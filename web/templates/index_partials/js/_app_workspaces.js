@@ -734,16 +734,80 @@ let _wizDrivePath = '';
 let _wizTier = 'essential';
 let _wizTiers = {};
 
-async function checkWizard() {
-  if (new URLSearchParams(location.search).has('wizard')) {
-    setShellVisibility(document.getElementById('wizard'), true);
+function setWizardSectionVisibility(target, visible, display = 'block') {
+  const el = typeof target === 'string' ? document.getElementById(target) : target;
+  if (!el) return null;
+  el.classList.toggle('is-hidden', !visible);
+  el.hidden = !visible;
+  if (visible) {
+    el.style.display = display;
+  } else {
+    el.style.removeProperty('display');
   }
+  return el;
+}
+
+function clearWizardUrlFlag() {
+  const url = new URL(window.location.href);
+  if (!url.searchParams.has('wizard')) return;
+  url.searchParams.delete('wizard');
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+}
+
+function refreshOnboardingSurfaces() {
+  if (typeof loadServices === 'function' && isWorkspaceTabActive('services')) {
+    loadServices();
+  }
+  if (typeof loadGettingStarted === 'function' && isWorkspaceTabActive('services')) {
+    loadGettingStarted();
+  }
+}
+
+async function persistOnboardingComplete() {
+  if (window.NOMAD_FIRST_RUN_COMPLETE === true) return;
+  window.NOMAD_FIRST_RUN_COMPLETE = true;
+  window.NOMAD_WIZARD_SHOULD_LAUNCH = false;
+  refreshOnboardingSurfaces();
+  try {
+    await fetch('/api/settings/wizard-complete', {method: 'POST'});
+  } catch (_) {}
+}
+
+async function checkWizard() {
+  const forced = new URLSearchParams(location.search).has('wizard');
+  const shouldAutoLaunch = forced || (window.NOMAD_WIZARD_SHOULD_LAUNCH && isWorkspaceTabActive('services'));
+  if (!shouldAutoLaunch) return;
+
+  const wizard = document.getElementById('wizard');
+  if (!wizard) return;
+
+  try {
+    const state = await (await fetch('/api/wizard/progress')).json();
+    if (state?.status === 'running') {
+      setShellVisibility(wizard, true);
+      setShellVisibility(document.getElementById('wiz-mini-banner'), false);
+      wizGoPage(4);
+      wizPollProgress();
+      return;
+    }
+    if (state?.status === 'complete' && window.NOMAD_FIRST_RUN_COMPLETE === false) {
+      setShellVisibility(wizard, true);
+      setShellVisibility(document.getElementById('wiz-mini-banner'), false);
+      await wizShowComplete(state);
+      return;
+    }
+  } catch (_) {
+    // Fall back to the welcome page if progress state is unavailable.
+  }
+
+  wizGoPage(1);
+  setShellVisibility(wizard, true);
+  setShellVisibility(document.getElementById('wiz-mini-banner'), false);
 }
 
 function wizGoPage(n) {
   for (let i = 1; i <= 5; i++) {
-    const el = document.getElementById('wiz-page-' + i);
-    if (el) el.style.display = i === n ? 'grid' : 'none';
+    setWizardSectionVisibility('wiz-page-' + i, i === n, 'grid');
   }
   if (n === 2) wizLoadDrives();
   if (n === 3) wizLoadTiers();
@@ -751,14 +815,29 @@ function wizGoPage(n) {
 
 function setWizardStorageStatus(message, success = false) {
   const el = document.getElementById('wiz-storage-status');
+  const nextBtn = document.getElementById('wiz-storage-next');
   if (!el) return;
   el.textContent = message;
   el.classList.toggle('wizard-status-line-success', success);
+  if (nextBtn) nextBtn.disabled = !success;
 }
 
 async function wizLoadDrives() {
-  const drives = await (await fetch('/api/drives')).json();
   const el = document.getElementById('wiz-drives');
+  if (!el) return;
+  let drives = [];
+  try {
+    drives = await (await fetch('/api/drives')).json();
+  } catch (_) {
+    el.innerHTML = '<div class="utility-empty-state">Unable to list storage locations right now. You can retry or enter a custom path.</div>';
+    setWizardStorageStatus('Storage scan failed. Enter a custom path or retry.', false);
+    return;
+  }
+  if (!Array.isArray(drives) || !drives.length) {
+    el.innerHTML = '<div class="utility-empty-state">No writable drives were detected yet. Enter a custom path to continue.</div>';
+    setWizardStorageStatus('Enter a custom path to continue.', false);
+    return;
+  }
   let bestDrive = drives[0];
   drives.forEach(d => {
     if (d.free > (bestDrive?.free || 0)) bestDrive = d;
@@ -784,8 +863,13 @@ async function wizLoadDrives() {
 function wizSelectDrive(path) { _wizDrivePath = path; wizLoadDrives(); }
 
 function wizSetCustomPath() {
-  const path = document.getElementById('wiz-custom-path').value.trim();
-  if (!path) return;
+  const input = document.getElementById('wiz-custom-path');
+  const path = input?.value?.trim() || '';
+  if (!path) {
+    setWizardStorageStatus('Enter a folder path first.', false);
+    input?.focus();
+    return;
+  }
   _wizDrivePath = path.endsWith('\\') ? path : path + '\\';
   setWizardStorageStatus('Custom path: ' + _wizDrivePath + 'NOMADFieldDesk\\', true);
 }
@@ -796,8 +880,16 @@ let _wizCustomModels = [];
 let _wizCustomZims = [];
 
 async function wizLoadTiers() {
-  _wizTiers = await (await fetch('/api/content-tiers')).json();
   const el = document.getElementById('wiz-tiers');
+  if (!el) return;
+  try {
+    _wizTiers = await (await fetch('/api/content-tiers')).json();
+  } catch (_) {
+    el.innerHTML = '<div class="utility-empty-state">Could not load setup profiles. Retry from Services or come back later.</div>';
+    setWizardSectionVisibility('wiz-tier-detail', false);
+    setWizardSectionVisibility('wiz-custom-panel', false);
+    return;
+  }
   const tierOrder = ['essential','standard','maximum','custom'];
   const tierIcons = {essential:'&#9733;', standard:'&#9733;&#9733;', maximum:'&#9733;&#9733;&#9733;', custom:'&#9881;'};
   const tierColors = {essential:'var(--green)', standard:'var(--accent)', maximum:'var(--purple)', custom:'var(--orange)'};
@@ -824,13 +916,12 @@ async function wizLoadTiers() {
       + '</button>';
   }).join('');
   // Show/hide custom panel and tier detail
-  const customPanel = document.getElementById('wiz-custom-panel');
   if (_wizTier === 'custom') {
-    customPanel.style.display = 'block';
-    document.getElementById('wiz-tier-detail').style.display = 'none';
+    setWizardSectionVisibility('wiz-custom-panel', true);
+    setWizardSectionVisibility('wiz-tier-detail', false);
     wizBuildCustomPanel();
   } else {
-    customPanel.style.display = 'none';
+    setWizardSectionVisibility('wiz-custom-panel', false);
     wizShowTierDetail();
   }
 }
@@ -915,7 +1006,8 @@ function wizSelectTier(tid) { _wizTier = tid; wizLoadTiers(); }
 
 function wizShowTierDetail() {
   const t = _wizTiers[_wizTier]; if (!t) return;
-  const el = document.getElementById('wiz-tier-detail'); el.style.display = 'block';
+  const el = setWizardSectionVisibility('wiz-tier-detail', true);
+  if (!el) return;
   const cats = {};
   (t.zims || []).forEach(z => { if (!cats[z.category]) cats[z.category] = []; cats[z.category].push(z); });
   el.innerHTML = '<div class="wizard-tier-detail-shell">'
@@ -945,7 +1037,17 @@ async function wizStartSetup() {
     zims = t.zims;
     models = t.models;
   }
+
+  if (![services, zims, models].some(items => Array.isArray(items) && items.length)) {
+    toast('Select at least one service, model, or content pack before starting setup.', 'warning');
+    return;
+  }
+
+  window.NOMAD_WIZARD_SHOULD_LAUNCH = true;
   wizGoPage(4);
+  setWizardSectionVisibility('wiz-errors', false);
+  setWizardSectionVisibility('wiz-stall-help', false);
+  setShellVisibility(document.getElementById('wiz-mini-banner'), false);
   if (_wizDrivePath) {
     await fetch('/api/settings/data-dir', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path: _wizDrivePath})});
   }
@@ -971,56 +1073,77 @@ function wizRestore() {
 let _wizPollInt = null;
 let _wizLastProgress = 0;
 let _wizStallCount = 0;
+function stopWizardProgressPoll() {
+  if (_wizPollInt) {
+    clearInterval(_wizPollInt);
+    _wizPollInt = null;
+  }
+  window.NomadShellRuntime?.stopInterval('wizard.progress');
+}
 function wizPollProgress() {
-  if (_wizPollInt) clearInterval(_wizPollInt);
+  stopWizardProgressPoll();
   _wizLastProgress = 0;
   _wizStallCount = 0;
-  _wizPollInt = setInterval(async () => {
+  const runner = async () => {
     try {
-    const s = await (await fetch('/api/wizard/progress')).json();
-    document.getElementById('wiz-overall-fill').style.width = s.overall_progress + '%';
-    document.getElementById('wiz-overall-pct').textContent = s.overall_progress + '%';
-    document.getElementById('wiz-current-item').textContent = s.current_item || '...';
-    document.getElementById('wiz-item-fill').style.width = s.item_progress + '%';
-    document.getElementById('wiz-item-pct').textContent = s.item_progress + '%';
-    // Update mini banner too
-    document.getElementById('wiz-mini-pct').textContent = s.overall_progress + '%';
-    document.getElementById('wiz-mini-fill').style.width = s.overall_progress + '%';
-    document.getElementById('wiz-mini-item').textContent = s.current_item || '...';
-    const phaseNames = {services:'Installing tools...', starting:'Starting services...', content:'Downloading offline content...', models:'Downloading AI models...', done:'Complete!'};
-    document.getElementById('wiz-phase-label').textContent = phaseNames[s.phase] || s.phase;
-    // Detect stall — show help after 60 seconds of no progress change
-    if (s.overall_progress === _wizLastProgress && s.item_progress === 0) {
-      _wizStallCount++;
-      if (_wizStallCount > 30) { // 30 polls * 2s = 60 seconds
-        document.getElementById('wiz-stall-help').style.display = 'block';
+      const s = await (await fetch('/api/wizard/progress')).json();
+      document.getElementById('wiz-overall-fill').style.width = s.overall_progress + '%';
+      document.getElementById('wiz-overall-pct').textContent = s.overall_progress + '%';
+      document.getElementById('wiz-current-item').textContent = s.current_item || '...';
+      document.getElementById('wiz-item-fill').style.width = s.item_progress + '%';
+      document.getElementById('wiz-item-pct').textContent = s.item_progress + '%';
+      document.getElementById('wiz-mini-pct').textContent = s.overall_progress + '%';
+      document.getElementById('wiz-mini-fill').style.width = s.overall_progress + '%';
+      document.getElementById('wiz-mini-item').textContent = s.current_item || '...';
+
+      const phaseNames = {services:'Installing tools...', starting:'Starting services...', content:'Downloading offline content...', models:'Downloading AI models...', done:'Complete!'};
+      document.getElementById('wiz-phase-label').textContent = phaseNames[s.phase] || s.phase;
+
+      if (s.overall_progress === _wizLastProgress && s.item_progress === 0) {
+        _wizStallCount++;
+      } else {
+        _wizStallCount = 0;
+        _wizLastProgress = s.overall_progress;
       }
-    } else {
-      _wizStallCount = 0;
-      _wizLastProgress = s.overall_progress;
-      document.getElementById('wiz-stall-help').style.display = 'none';
-    }
-    if (s.completed.length) {
-      document.getElementById('wiz-completed-list').innerHTML = s.completed.map(c =>
+      setWizardSectionVisibility('wiz-stall-help', _wizStallCount > 30);
+
+      document.getElementById('wiz-completed-list').innerHTML = (s.completed || []).map(c =>
         `<div class="wizard-complete-row"><span class="wizard-complete-icon">&#10003;</span><span>${escapeHtml(c)}</span></div>`).join('');
-    }
-    if (s.errors.length) {
-      const errEl = document.getElementById('wiz-errors'); errEl.style.display = 'block';
-      errEl.innerHTML = s.errors.map(e => `<div class="wizard-error-row">&#10007; ${escapeHtml(e)}</div>`).join('');
-    }
-    if (s.status === 'complete') {
-      clearInterval(_wizPollInt); _wizPollInt = null;
-      setShellVisibility(document.getElementById('wiz-mini-banner'), false);
-      if (_wizMinimized) { _wizMinimized = false; setShellVisibility(document.getElementById('wizard'), true); }
-      setTimeout(() => wizShowComplete(s), 1000);
-    }
+
+      const errEl = document.getElementById('wiz-errors');
+      if ((s.errors || []).length) {
+        setWizardSectionVisibility(errEl, true);
+        errEl.innerHTML = s.errors.map(e => `<div class="wizard-error-row">&#10007; ${escapeHtml(e)}</div>`).join('');
+      } else if (errEl) {
+        errEl.innerHTML = '';
+        setWizardSectionVisibility(errEl, false);
+      }
+
+      if (s.status === 'complete') {
+        stopWizardProgressPoll();
+        setShellVisibility(document.getElementById('wiz-mini-banner'), false);
+        if (_wizMinimized) {
+          _wizMinimized = false;
+          setShellVisibility(document.getElementById('wizard'), true);
+        }
+        setTimeout(() => wizShowComplete(s), 1000);
+      }
     } catch(e) { /* poll error — server may be busy */ }
-  }, 2000);
+  };
+  if (window.NomadShellRuntime) {
+    _wizPollInt = window.NomadShellRuntime.startInterval('wizard.progress', runner, 2000, {
+      requireVisible: true,
+    });
+    runner();
+    return;
+  }
+  _wizPollInt = setInterval(runner, 2000);
+  runner();
 }
 
 function wizSkipToComplete() {
-  if (_wizPollInt) { clearInterval(_wizPollInt); _wizPollInt = null; }
-  fetch('/api/settings/wizard-complete', {method:'POST'});
+  stopWizardProgressPoll();
+  persistOnboardingComplete();
   wizShowComplete({completed:[], errors:['Setup was skipped — you can install services and content manually from the Services and Library tabs.']});
 }
 
@@ -1041,25 +1164,30 @@ async function wizShowComplete(state) {
       <div class="wizard-summary-number ${state.errors.length === 0 ? 'wizard-summary-number-green' : 'wizard-summary-number-warning'}">${state.errors.length===0?'All Clear':state.errors.length+' Issues'}</div><div class="wizard-summary-label">Status</div>
     </div>`;
   if (state.errors.length) {
-    document.getElementById('wiz-error-summary').style.display = 'block';
+    setWizardSectionVisibility('wiz-error-summary', true);
     document.getElementById('wiz-error-summary').innerHTML = `<div class="wizard-error-summary-card">`
       + state.errors.map(e => `<div class="wizard-error-row">&#10007; ${escapeHtml(e)}</div>`).join('') + `</div>`;
   } else {
-    document.getElementById('wiz-error-summary').style.display = 'none';
+    setWizardSectionVisibility('wiz-error-summary', false);
     document.getElementById('wiz-error-summary').innerHTML = '';
   }
 }
 
 function skipWizard() {
+  stopWizardProgressPoll();
   setShellVisibility(document.getElementById('wizard'), false);
-  history.replaceState(null, '', '/');
-  fetch('/api/settings/wizard-complete', {method:'POST'});
+  setShellVisibility(document.getElementById('wiz-mini-banner'), false);
+  clearWizardUrlFlag();
+  persistOnboardingComplete();
 }
 
 function closeTourWizard() {
+  stopWizardProgressPoll();
   setShellVisibility(document.getElementById('wizard'), false);
-  history.replaceState(null, '', '/');
-  loadServices();
+  setShellVisibility(document.getElementById('wiz-mini-banner'), false);
+  clearWizardUrlFlag();
+  persistOnboardingComplete();
+  refreshOnboardingSurfaces();
 }
 
 /* ─── Guided Tour ─── */
@@ -1074,8 +1202,10 @@ const TOUR_STEPS = [
 let _tourStep = 0;
 
 function startTour() {
+  persistOnboardingComplete();
   setShellVisibility(document.getElementById('wizard'), false);
-  history.replaceState(null, '', '/');
+  setShellVisibility(document.getElementById('wiz-mini-banner'), false);
+  clearWizardUrlFlag();
   _tourStep = 0;
   setShellVisibility(document.getElementById('tour-overlay'), true);
   showTourStep();
@@ -1111,7 +1241,6 @@ function tourNext() {
 function tourSkip() {
   setShellVisibility(document.getElementById('tour-overlay'), false);
   document.querySelector('[data-tab="services"]')?.click();
-  fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tour_complete:'1'})});
 }
 
 /* ─── Inline Model Picker ─── */
@@ -1301,17 +1430,32 @@ async function uploadKBFile() {
 }
 
 let _kbPoll = null;
+function stopKBPoll() {
+  if (_kbPoll) {
+    clearInterval(_kbPoll);
+    _kbPoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('ai-chat.kb-embed');
+}
 function pollKBEmbed() {
   if (_kbPoll) return;
-  _kbPoll = setInterval(async () => {
+  const runner = async () => {
     const s = await (await fetch('/api/kb/status')).json();
     if (s.status === 'complete' || s.status === 'error' || s.status === 'idle') {
-      clearInterval(_kbPoll); _kbPoll = null;
+      stopKBPoll();
       if (s.status === 'complete') toast('Document embedded!', 'success');
       if (s.status === 'error') toast('Embedding failed: ' + s.detail, 'error');
       loadKBDocs();
     }
-  }, 2000);
+  };
+  if (window.NomadShellRuntime) {
+    _kbPoll = window.NomadShellRuntime.startInterval('ai-chat.kb-embed', runner, 2000, {
+      tabId: 'ai-chat',
+      requireVisible: true,
+    });
+    return;
+  }
+  _kbPoll = setInterval(runner, 2000);
 }
 
 async function deleteKBDoc(id) {
@@ -1328,15 +1472,31 @@ async function analyzeDoc(id) {
   await fetch(`/api/kb/documents/${id}/analyze`, {method:'POST'});
   // Poll for completion
   let polls = 0;
-  const poll = setInterval(async () => {
+  let poll = null;
+  const stopPoll = () => {
+    if (poll) {
+      clearInterval(poll);
+      poll = null;
+    }
+    window.NomadShellRuntime?.stopInterval(`ai-chat.kb-analyze.${id}`);
+  };
+  const runner = async () => {
     polls++;
     const d = await (await fetch(`/api/kb/documents/${id}/details`)).json();
     if (d.doc_category || polls > 30) {
-      clearInterval(poll);
+      stopPoll();
       toast(`Document analyzed: ${d.doc_category || 'complete'}`, 'success');
       loadKBDocs();
     }
-  }, 2000);
+  };
+  if (window.NomadShellRuntime) {
+    poll = window.NomadShellRuntime.startInterval(`ai-chat.kb-analyze.${id}`, runner, 2000, {
+      tabId: 'ai-chat',
+      requireVisible: true,
+    });
+    return;
+  }
+  poll = setInterval(runner, 2000);
 }
 
 async function showDocDetails(id) {

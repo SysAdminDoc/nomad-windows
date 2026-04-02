@@ -80,8 +80,8 @@
         --glass-hover: color-mix(in srgb,var(--surface1) 90%,var(--nk-app-accent) 10%);
         --shadow-lg: var(--nk-app-shadow-lg);
         --stage-edge-gap: clamp(16px, 1.1vw, 24px);
-        --map-safe-left: calc(var(--panel-w) + var(--stage-edge-gap));
-        --map-safe-right: var(--stage-edge-gap);
+        --map-safe-left: var(--stage-edge-gap);
+        --map-safe-right: calc(var(--panel-w) + var(--stage-edge-gap));
         --map-safe-width: calc(100% - var(--map-safe-left) - var(--map-safe-right));
         --map-safe-center: calc(var(--map-safe-left) + (var(--map-safe-width) / 2));
 
@@ -94,13 +94,13 @@
         border-radius: clamp(18px, 2vw, 28px);
         border:1px solid color-mix(in srgb,var(--glass-border) 78%,var(--nk-app-accent) 22%);
         background:
-          radial-gradient(circle at top right,color-mix(in srgb,var(--nk-app-accent) 12%,transparent),transparent 34%),
+          radial-gradient(circle at top left,color-mix(in srgb,var(--nk-app-accent) 12%,transparent),transparent 34%),
           linear-gradient(180deg,color-mix(in srgb,var(--mantle) 92%,transparent),color-mix(in srgb,var(--base) 96%,transparent));
         box-shadow:var(--nk-app-shadow-lg);
         isolation:isolate;
       }
       #tab-nukemap #nukemap-stage.panel-collapsed{
-        --map-safe-left: calc(48px + var(--stage-edge-gap));
+        --map-safe-right: calc(48px + var(--stage-edge-gap));
       }
       #tab-nukemap #nukemap-stage:fullscreen,
       #tab-nukemap #nukemap-stage:-webkit-full-screen{width:100%;height:100vh;min-height:100vh;margin-inline:0;border-radius:0}
@@ -127,10 +127,10 @@
       #tab-nukemap .leaflet-popup-close-button:hover{color:var(--text)!important}
 
       /* Panel */
-      #tab-nukemap #panel{position:absolute;top:0;left:0;bottom:0;width:var(--panel-w);z-index:1000;background:var(--glass);backdrop-filter:blur(24px) saturate(1.5);border-right:1px solid var(--glass-border);display:flex;flex-direction:column;overflow:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1)}
-      #tab-nukemap #panel.collapsed{transform:translateX(calc(-1 * var(--panel-w) + 48px))}
+      #tab-nukemap #panel{position:absolute;top:0;right:0;bottom:0;width:var(--panel-w);z-index:1000;background:var(--glass);backdrop-filter:blur(24px) saturate(1.5);border-left:1px solid var(--glass-border);display:flex;flex-direction:column;overflow:hidden;transition:transform .35s cubic-bezier(.4,0,.2,1)}
+      #tab-nukemap #panel.collapsed{transform:translateX(calc(var(--panel-w) - 48px))}
       #tab-nukemap #panel.collapsed .panel-content{opacity:0;pointer-events:none}
-      #tab-nukemap #panel-toggle{position:absolute;top:12px;right:-40px;z-index:10;width:36px;height:36px;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);border-left:none;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background-color .2s,color .2s,border-color .2s}
+      #tab-nukemap #panel-toggle{position:absolute;top:12px;left:-40px;z-index:10;width:36px;height:36px;border-radius:var(--radius-sm) 0 0 var(--radius-sm);background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);border-right:none;color:var(--text);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:background-color .2s,color .2s,border-color .2s}
       #tab-nukemap #panel-toggle:hover{background:var(--glass-hover)}
       #tab-nukemap .panel-content{display:flex;flex-direction:column;height:100%;overflow:hidden;transition:opacity .25s}
 
@@ -347,17 +347,18 @@
       #tab-nukemap .ib-div{width:1px;height:24px;background:var(--surface1)}
 
       /* Coords */
-      #tab-nukemap #coords{position:absolute;bottom:14px;right:14px;z-index:999;padding:3px 8px;border-radius:6px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);font-size:10px;color:var(--overlay1);font-variant-numeric:tabular-nums;font-family:'Segoe UI',monospace;user-select:none;cursor:pointer;transition:color .2s,border-color .2s}
+      #tab-nukemap #coords{position:absolute;bottom:50px;left:var(--map-safe-left);z-index:999;padding:3px 8px;border-radius:6px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);font-size:10px;color:var(--overlay1);font-variant-numeric:tabular-nums;font-family:'Segoe UI',monospace;user-select:none;cursor:pointer;transition:color .2s,border-color .2s}
       #tab-nukemap #coords:hover{color:var(--text);border-color:var(--blue)}
       #tab-nukemap #coords.copied{color:var(--green)!important;border-color:var(--green)!important}
       #tab-nukemap #coords.copied::after{content:'Copied!';position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--green);font-weight:700;white-space:nowrap}
 
       /* Badge */
-      #tab-nukemap #offline-badge{position:absolute;top:12px;right:12px;z-index:1000;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);color:var(--overlay1);display:none}
-      #tab-nukemap #offline-badge.show{display:flex;align-items:center;gap:5px}
-      #tab-nukemap .ob-dot{width:7px;height:7px;border-radius:50%}
-      #tab-nukemap .ob-dot.on{background:var(--green)}
-      #tab-nukemap .ob-dot.off{background:var(--red)}
+      #tab-nukemap #offline-badge{position:absolute;top:46px;left:var(--map-safe-left);z-index:1000;padding:4px 10px;border-radius:20px;font-size:10px;font-weight:600;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);color:var(--overlay1);display:none}
+#tab-nukemap #offline-badge.show{display:flex;align-items:center;gap:5px}
+#tab-nukemap .ob-dot{width:7px;height:7px;border-radius:50%}
+#tab-nukemap .ob-dot.on{background:var(--green)}
+#tab-nukemap .ob-dot.off{background:var(--red)}
+#tab-nukemap .ob-dot.atlas{background:var(--teal)}
 
       /* Detonation counter */
       #tab-nukemap #det-counter{position:absolute;top:12px;left:var(--map-safe-left);z-index:999;padding:4px 12px;border-radius:20px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);font-size:11px;color:var(--text);font-weight:700;display:none}
@@ -492,7 +493,7 @@
       #tab-nukemap .scenario-chip .sc-desc{font-size:9px;color:var(--overlay0);margin-top:1px}
 
       /* Fact banner */
-      #tab-nukemap #fact-banner{position:absolute;top:50px;left:var(--map-safe-left);z-index:998;max-width:min(380px, calc(var(--map-safe-width) - 16px));padding:6px 14px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-border);font-size:10px;color:var(--subtext0);display:none;text-align:left;line-height:1.4;box-shadow:var(--shadow-lg);cursor:pointer}
+      #tab-nukemap #fact-banner{position:absolute;top:118px;left:var(--map-safe-left);z-index:998;max-width:min(380px, calc(var(--map-safe-width) - 16px));padding:6px 14px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-border);font-size:10px;color:var(--subtext0);display:none;text-align:left;line-height:1.4;box-shadow:var(--shadow-lg);cursor:pointer}
       #tab-nukemap #fact-banner.show{display:block;animation:factFade 0.5s ease-out}
       @keyframes factFade{0%{opacity:0;transform:translateX(10px)}100%{opacity:1;transform:translateX(0)}}
       #tab-nukemap .fact-label{font-size:9px;font-weight:700;color:var(--overlay0);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
@@ -616,7 +617,7 @@
       #tab-nukemap .ww3-warhead{filter:drop-shadow(0 0 4px rgba(255,255,255,0.6))}
 
       /* DEFCON indicator */
-      #tab-nukemap #ww3-defcon{position:absolute;top:56px;right:14px;z-index:1002;display:none;padding:6px 16px;border-radius:6px;background:var(--glass);border:2px solid currentColor;font-size:18px;font-weight:900;letter-spacing:3px;font-family:'Segoe UI',system-ui,monospace;text-shadow:0 0 10px currentColor;box-shadow:0 0 20px rgba(0,0,0,0.5)}
+      #tab-nukemap #ww3-defcon{position:absolute;top:12px;left:var(--map-safe-left);z-index:1002;display:none;padding:6px 16px;border-radius:6px;background:var(--glass);border:2px solid currentColor;font-size:18px;font-weight:900;letter-spacing:3px;font-family:'Segoe UI',system-ui,monospace;text-shadow:0 0 10px currentColor;box-shadow:0 0 20px rgba(0,0,0,0.5)}
       #tab-nukemap .ww3-defcon-flash{animation:defcon-flash 0.8s ease-out}
       @keyframes defcon-flash{0%{transform:scale(1.3);opacity:0.5}50%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:1}}
 
@@ -627,7 +628,7 @@
       @keyframes toast-out{0%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
 
       /* WW3 Map Legend */
-      #tab-nukemap #ww3-legend{position:absolute;bottom:50px;right:14px;z-index:1001;display:none;padding:8px 12px;border-radius:var(--radius-sm);background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-border);font-size:9px;color:var(--subtext0);box-shadow:var(--shadow-lg)}
+      #tab-nukemap #ww3-legend{position:absolute;bottom:50px;left:var(--map-safe-left);z-index:1001;display:none;padding:8px 12px;border-radius:var(--radius-sm);background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-border);font-size:9px;color:var(--subtext0);box-shadow:var(--shadow-lg)}
       #tab-nukemap .ww3-leg-title{font-size:8px;font-weight:700;color:var(--overlay0);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
       #tab-nukemap .ww3-leg-row{display:flex;align-items:center;gap:6px;padding:1px 0;font-weight:500}
       #tab-nukemap .ww3-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -644,22 +645,22 @@
       #tab-nukemap .leaflet-control-scale-line{background:var(--glass)!important;backdrop-filter:blur(8px);border-color:var(--surface1)!important;color:var(--overlay1)!important;font-size:10px!important;line-height:1.4!important;padding:1px 6px!important;border-radius:3px!important}
 
       /* Detonation toast */
-      #tab-nukemap .det-toast{position:absolute;top:12px;right:130px;transform:translateY(-20px);z-index:1003;padding:8px 18px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(20px);border:1px solid color-mix(in srgb,var(--glass-border) 74%,var(--red) 26%);box-shadow:0 8px 32px rgba(0,0,0,0.5);font-size:12px;color:var(--text);white-space:nowrap;opacity:0;transition:opacity 0.4s cubic-bezier(.4,0,.2,1),transform 0.4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+      #tab-nukemap .det-toast{position:absolute;top:12px;left:calc(var(--map-safe-left) + 132px);transform:translateY(-20px);z-index:1003;padding:8px 18px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(20px);border:1px solid color-mix(in srgb,var(--glass-border) 74%,var(--red) 26%);box-shadow:0 8px 32px rgba(0,0,0,0.5);font-size:12px;color:var(--text);white-space:nowrap;opacity:0;transition:opacity 0.4s cubic-bezier(.4,0,.2,1),transform 0.4s cubic-bezier(.4,0,.2,1);pointer-events:none}
       #tab-nukemap .det-toast.show{opacity:1;transform:translateY(0)}
       #tab-nukemap .dt-yield{font-weight:800;color:var(--peach);font-size:14px}
       #tab-nukemap .dt-loc{color:var(--subtext1);margin-left:6px}
       #tab-nukemap .dt-hiro{color:var(--mauve);font-weight:600;margin-left:6px;font-size:10px;opacity:0.8}
 
       /* Fullscreen button */
-      #tab-nukemap #fullscreen-btn{position:absolute;top:12px;right:50px;z-index:999;width:32px;height:32px;border-radius:var(--radius-sm);background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);color:var(--overlay1);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background-color .2s,color .2s,border-color .2s;padding:0}
+      #tab-nukemap #fullscreen-btn{position:absolute;top:80px;left:calc(var(--map-safe-left) + 38px);z-index:999;width:32px;height:32px;border-radius:var(--radius-sm);background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);color:var(--overlay1);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background-color .2s,color .2s,border-color .2s;padding:0}
       #tab-nukemap #fullscreen-btn:hover{background:var(--glass-hover);color:var(--text)}
 
       /* Floating map switcher */
-      #tab-nukemap #map-switcher{position:absolute;top:12px;right:88px;z-index:999}
+      #tab-nukemap #map-switcher{position:absolute;top:80px;left:var(--map-safe-left);z-index:999}
       #tab-nukemap .ms-toggle{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);color:var(--overlay1);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background-color .2s,color .2s,border-color .2s;padding:0}
       #tab-nukemap .ms-toggle:hover{background:var(--glass-hover);color:var(--text)}
       #tab-nukemap .ms-toggle.open{background:var(--surface1);color:var(--text);border-color:var(--blue)}
-      #tab-nukemap .ms-panel{display:none;position:absolute;top:38px;right:0;min-width:130px;background:color-mix(in srgb,var(--glass) 94%,transparent);backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--glass-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);padding:5px;flex-direction:column;gap:2px;animation:msPanelIn .2s ease-out;z-index:1000}
+      #tab-nukemap .ms-panel{display:none;position:absolute;top:38px;left:0;min-width:130px;background:color-mix(in srgb,var(--glass) 94%,transparent);backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--glass-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);padding:5px;flex-direction:column;gap:2px;animation:msPanelIn .2s ease-out;z-index:1000}
       #tab-nukemap .ms-panel.open{display:flex}
       @keyframes msPanelIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
       #tab-nukemap .ms-btn{padding:6px 10px;border-radius:5px;background:transparent;border:1px solid transparent;color:var(--subtext0);font-size:10px;font-weight:600;cursor:pointer;text-align:left;transition:background-color .12s,color .12s,border-color .12s;white-space:nowrap}
@@ -691,7 +692,7 @@
       #tab-nukemap .dose-note{font-size:9px;color:var(--overlay0);margin-top:6px;font-style:italic;text-align:center}
 
       /* WW3 quick launch button */
-      #tab-nukemap #ww3-quick-btn{position:absolute;bottom:38px;right:14px;z-index:1000;padding:6px 14px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,#f38ba8,#fab387);color:var(--crust);font-size:11px;font-weight:900;cursor:pointer;letter-spacing:2px;box-shadow:0 4px 16px rgba(243,139,168,0.3);transition:transform .2s,box-shadow .2s,opacity .2s;text-transform:uppercase}
+      #tab-nukemap #ww3-quick-btn{position:absolute;bottom:38px;left:var(--map-safe-left);z-index:1000;padding:6px 14px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,#f38ba8,#fab387);color:var(--crust);font-size:11px;font-weight:900;cursor:pointer;letter-spacing:2px;box-shadow:0 4px 16px rgba(243,139,168,0.3);transition:transform .2s,box-shadow .2s,opacity .2s;text-transform:uppercase}
       #tab-nukemap #ww3-quick-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(243,139,168,0.4)}
 
       /* Quick weapon bar */
@@ -716,9 +717,9 @@
       #tab-nukemap .legend-pop{font-size:7px;color:var(--overlay0);display:block;font-weight:400}
 
       /* Welcome overlay */
-      #tab-nukemap #welcome-overlay{position:absolute;top:18px;right:18px;left:auto;bottom:auto;z-index:10001;width:min(390px, calc(var(--map-safe-width) - 18px));display:block;pointer-events:none}
+      #tab-nukemap #welcome-overlay{position:absolute;top:18px;left:18px;right:auto;bottom:auto;z-index:10001;width:min(390px, calc(var(--map-safe-width) - 18px));display:block;pointer-events:none}
       #tab-nukemap #welcome-overlay.hidden{display:none}
-      #tab-nukemap .welcome-card{width:100%;margin-left:auto;background:color-mix(in srgb,var(--glass) 96%,transparent);border:1px solid color-mix(in srgb,var(--glass-border) 76%,var(--nk-app-accent) 24%);border-radius:calc(var(--radius) + 2px);padding:18px 18px 14px;box-shadow:0 24px 64px rgba(0,0,0,0.4);pointer-events:auto;animation:welcomeSlide .3s ease-out}
+      #tab-nukemap .welcome-card{width:100%;margin-right:auto;background:color-mix(in srgb,var(--glass) 96%,transparent);border:1px solid color-mix(in srgb,var(--glass-border) 76%,var(--nk-app-accent) 24%);border-radius:calc(var(--radius) + 2px);padding:18px 18px 14px;box-shadow:0 24px 64px rgba(0,0,0,0.4);pointer-events:auto;animation:welcomeSlide .3s ease-out}
       @keyframes welcomeSlide{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
       #tab-nukemap .welcome-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
       #tab-nukemap .welcome-icon{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--red),var(--peach));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(243,139,168,0.25)}
@@ -731,10 +732,15 @@
       #tab-nukemap .ws-text{font-size:12px;color:var(--subtext1);line-height:1.4}
       #tab-nukemap .welcome-features{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
       #tab-nukemap .wf-tag{padding:3px 9px;border-radius:20px;background:var(--surface0);border:1px solid var(--surface1);color:var(--overlay1);font-size:9px;font-weight:600}
-      #tab-nukemap .welcome-dismiss{width:100%;padding:11px 12px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,var(--red),#e64553);color:var(--crust);font-size:13px;font-weight:800;cursor:pointer;letter-spacing:0.9px;text-transform:uppercase;transition:transform .2s,box-shadow .2s,opacity .2s;box-shadow:0 4px 16px rgba(243,139,168,0.25)}
-      #tab-nukemap .welcome-dismiss:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(243,139,168,0.35)}
-      #tab-nukemap .welcome-remember{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:10px;color:var(--overlay0);cursor:pointer;justify-content:center}
-      #tab-nukemap .welcome-remember input{accent-color:var(--blue)}
+#tab-nukemap .welcome-dismiss{width:100%;padding:11px 12px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,var(--red),#e64553);color:var(--crust);font-size:13px;font-weight:800;cursor:pointer;letter-spacing:0.9px;text-transform:uppercase;transition:transform .2s,box-shadow .2s,opacity .2s;box-shadow:0 4px 16px rgba(243,139,168,0.25)}
+#tab-nukemap .welcome-dismiss:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(243,139,168,0.35)}
+#tab-nukemap .welcome-dismiss:disabled{opacity:.72;cursor:progress;transform:none;box-shadow:0 3px 12px rgba(243,139,168,0.18)}
+#tab-nukemap .welcome-remember{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:10px;color:var(--overlay0);cursor:pointer;justify-content:center}
+#tab-nukemap .welcome-remember input{accent-color:var(--blue)}
+#tab-nukemap .welcome-atlas-status{margin:12px 0 10px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid color-mix(in srgb,var(--glass-border) 76%,transparent);background:color-mix(in srgb,var(--surface0) 76%,transparent);font-size:11px;line-height:1.45;color:var(--subtext0)}
+#tab-nukemap .welcome-atlas-status[data-state="installing"]{border-color:color-mix(in srgb,var(--blue) 40%,var(--glass-border));color:var(--text)}
+#tab-nukemap .welcome-atlas-status[data-state="ready"]{border-color:color-mix(in srgb,var(--green) 42%,var(--glass-border));color:var(--text)}
+#tab-nukemap .welcome-atlas-status[data-state="error"]{border-color:color-mix(in srgb,var(--red) 42%,var(--glass-border));color:var(--text)}
 
       /* Conventional weapon equivalents */
       #tab-nukemap .conv-list{display:flex;flex-direction:column;gap:3px}
@@ -924,9 +930,10 @@
             <span class="wf-tag">MIRV Strikes</span>
             <span class="wf-tag">Fallout Modeling</span>
             <span class="wf-tag">Shelter Analysis</span>
-            <span class="wf-tag">12 Map Styles</span>
+                <span class="wf-tag">Offline Basemap</span>
           </div>
         </div>
+                <div class="welcome-atlas-status" id="welcome-atlas-status" data-state="missing" role="status" aria-live="polite" aria-atomic="true">NukeMap will install the enhanced offline basemap before you start so the map has real boundaries and labels offline.</div>
         <button class="welcome-dismiss" id="welcome-dismiss" type="button">Start Exploring</button>
         <label class="welcome-remember"><input type="checkbox" id="welcome-noshow" name="welcome-noshow" checked/> Don't show again</label>
       </div>
@@ -1276,7 +1283,8 @@
             <div class="section">
               <div class="section-title">Map Style</div>
               <div class="layer-switcher" id="layer-switcher">
-                <button class="layer-btn active" data-layer="dark">Dark</button>
+              <button class="layer-btn active" data-layer="offlineAtlas">Offline Basemap</button>
+                <button class="layer-btn" data-layer="dark">Dark</button>
                 <button class="layer-btn" data-layer="darkClean">Dark Clean</button>
                 <button class="layer-btn" data-layer="satellite">Satellite</button>
                 <button class="layer-btn" data-layer="satLabels">Satellite + Labels</button>
@@ -1425,7 +1433,8 @@
     <div id="map-switcher">
       <button class="ms-toggle" id="ms-toggle" title="Change map style" aria-label="Change map style"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0L1 4v8l7 4 7-4V4L8 0zm0 1.25L13.5 4.5 8 7.75 2.5 4.5 8 1.25zM2 5.5l5.5 3v5.75L2 11V5.5zm6.5 8.75V8.5L14 5.5V11l-5.5 3.25z"/></svg></button>
       <div class="ms-panel" id="ms-panel">
-        <button class="ms-btn active" data-layer="dark">Dark</button>
+          <button class="ms-btn active" data-layer="offlineAtlas">Offline Basemap</button>
+        <button class="ms-btn" data-layer="dark">Dark</button>
         <button class="ms-btn" data-layer="darkClean">Dark Clean</button>
         <button class="ms-btn" data-layer="satellite">Satellite</button>
         <button class="ms-btn" data-layer="satLabels">Sat+Labels</button>
@@ -1527,9 +1536,25 @@
           ? NM.getThemeMapLayerName(theme)
           : ({nomad: 'terrain', nightops: 'dark', cyber: 'darkClean', redlight: 'dark', eink: 'positron'})[theme] || 'terrain';
 
-        if (navigator.onLine && NM.LayerSwitcher.layers && NM.LayerSwitcher.layers[targetLayer] && NM.LayerSwitcher.current !== targetLayer) {
+        if (typeof NM.LayerSwitcher.applyTheme === 'function') {
+          NM.LayerSwitcher.applyTheme(theme);
+        }
+
+        if (NM.LayerSwitcher.layers && NM.LayerSwitcher.layers[targetLayer] && NM.LayerSwitcher.current !== targetLayer) {
           NM.LayerSwitcher.switchTo(targetLayer);
         }
+      }
+
+      function persistNukemapSnapshot(reason) {
+        if (!(window.NM && typeof NM.getHostSnapshot === 'function')) return null;
+        var snapshot = Object.assign({
+          reason: reason || '',
+          route: window.location.pathname || '',
+          href: window.location.href || '',
+          savedAt: Date.now()
+        }, NM.getHostSnapshot());
+        window.NomadEmbeddedWorkspaceState?.save?.('nukemap', snapshot);
+        return snapshot;
       }
 
       window.NM = window.NM || {};
@@ -1537,6 +1562,13 @@
       window.nukemapOnVisible = function() {
         refreshMapLayout();
         syncTheme();
+        if (typeof NM.syncAmbientUi === 'function') NM.syncAmbientUi({immediate: true});
+        persistNukemapSnapshot('tab-visible');
+      };
+      window._nomadTabLeaveCallbacks = window._nomadTabLeaveCallbacks || {};
+      window._nomadTabLeaveCallbacks.nukemap = function() {
+        if (typeof NM.syncAmbientUi === 'function') NM.syncAmbientUi({immediate: false});
+        persistNukemapSnapshot('tab-hidden');
       };
 
       if (typeof ResizeObserver === 'function') {
@@ -1563,8 +1595,14 @@
 
       syncPanelState();
       syncTheme();
-      setTimeout(refreshMapLayout, 60);
-      setTimeout(refreshMapLayout, 260);
+      setTimeout(function() {
+        refreshMapLayout();
+        persistNukemapSnapshot('init');
+      }, 60);
+      setTimeout(function() {
+        refreshMapLayout();
+        persistNukemapSnapshot('settled');
+      }, 260);
     })();
     </script>
 

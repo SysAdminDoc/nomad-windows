@@ -111,7 +111,8 @@ async function loadServices(servicesData = null) {
     // Welcome banner if nothing is installed
     const anyInstalled = services.some(s => s.installed);
     const welcomeEl = document.getElementById('welcome-banner');
-    setShellVisibility(welcomeEl, !anyInstalled);
+    const onboardingIncomplete = window.NOMAD_FIRST_RUN_COMPLETE === false;
+    setShellVisibility(welcomeEl, !onboardingIncomplete && !anyInstalled);
   } catch(e) {
     // error logged silently
     if (!_servicesLoaded) {
@@ -205,13 +206,20 @@ let _pollInt = null;
 let _lastServicesData = [];
 let _prevInstalling = new Set();
 let _pollCount = 0;
+function stopServicesPolling() {
+  if (_pollInt) {
+    clearInterval(_pollInt);
+    _pollInt = null;
+  }
+  window.NomadShellRuntime?.stopInterval('services.install-progress');
+}
 function pollServices() {
   if (_pollInt) return;
   _pollCount = 0;
-  _pollInt = setInterval(async () => {
+  const runner = async () => {
     _pollCount++;
     if (_pollCount > 1200) { // 30 min at 1.5s interval
-      clearInterval(_pollInt); _pollInt = null;
+      stopServicesPolling();
       toast('Service install polling timed out after 30 minutes', 'warning');
       return;
     }
@@ -236,13 +244,28 @@ function pollServices() {
       }
     });
     _prevInstalling = nowInstalling;
-    if (!nowInstalling.size) { clearInterval(_pollInt); _pollInt = null; }
-  }, 1500);
+    if (!nowInstalling.size) stopServicesPolling();
+  };
+  if (window.NomadShellRuntime) {
+    _pollInt = window.NomadShellRuntime.startInterval('services.install-progress', runner, 1500, {
+      tabId: 'services',
+      requireVisible: true,
+    });
+    return;
+  }
+  _pollInt = setInterval(runner, 1500);
 }
 
 /* ─── AI Chat ─── */
 let _chatReady = false;
 let _chatReadyPoll = null;
+function stopChatReadyPoll() {
+  if (_chatReadyPoll) {
+    clearInterval(_chatReadyPoll);
+    _chatReadyPoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('ai-chat.model-ready');
+}
 
 async function loadModels() {
   try {
@@ -290,36 +313,51 @@ function setChatReady(ready, reason) {
   const input = document.getElementById('chat-input');
   if (btn) btn.disabled = !ready;
   if (input) { input.disabled = !ready; input.placeholder = ready ? 'Type a message... (Enter to send, Shift+Enter for newline, drop files)' : (reason || 'AI service starting...'); }
-  if (ready && _chatReadyPoll) { clearInterval(_chatReadyPoll); _chatReadyPoll = null; }
+  if (ready) stopChatReadyPoll();
 }
 
 function startChatReadyPoll() {
   if (_chatReadyPoll) return;
-  _chatReadyPoll = setInterval(async () => {
+  const runner = async () => {
     try {
       const models = await (await fetch('/api/ai/models')).json();
       if (models.length) {
-        clearInterval(_chatReadyPoll); _chatReadyPoll = null;
+        stopChatReadyPoll();
         const sel = document.getElementById('model-select');
         sel.innerHTML = models.map(m => `<option value="${escapeAttr(m.name)}">${escapeHtml(m.name)} (${(m.size/1e9).toFixed(1)}GB)</option>`).join('');
         setChatReady(false, 'Loading AI model into memory...');
         warmupModel(models[0].name);
       }
     } catch {}
-  }, 3000);
+  };
+  if (window.NomadShellRuntime) {
+    _chatReadyPoll = window.NomadShellRuntime.startInterval('ai-chat.model-ready', runner, 3000, {
+      tabId: 'ai-chat',
+      requireVisible: true,
+    });
+    return;
+  }
+  _chatReadyPoll = setInterval(runner, 3000);
 }
 
 /* managePullModel replaced by inline model picker */
 
 let _pullPoll = null;
 let _pullPollCount = 0;
+function stopPullProgressPolling() {
+  if (_pullPoll) {
+    clearInterval(_pullPoll);
+    _pullPoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('ai-chat.pull-progress');
+}
 function pollPullProgress() {
   if (_pullPoll) return;
   _pullPollCount = 0;
-  _pullPoll = setInterval(async () => {
+  const runner = async () => {
     _pullPollCount++;
     if (_pullPollCount > 1800) { // 30 min at 1s interval
-      clearInterval(_pullPoll); _pullPoll = null;
+      stopPullProgressPolling();
       toast('Model pull polling timed out after 30 minutes', 'warning');
       return;
     }
@@ -343,13 +381,21 @@ function pollPullProgress() {
       if (p.status === 'error') toast(`Model pull failed: ${p.detail}`, 'error');
       if (!p.queue_active) {
         bar.style.display = 'none';
-        clearInterval(_pullPoll); _pullPoll = null;
+        stopPullProgressPolling();
         if (p.queue?.length > 0) toast('All queued models finished downloading!', 'success');
         loadModelManager();
       }
     }
     } catch(e) {}
-  }, 1000);
+  };
+  if (window.NomadShellRuntime) {
+    _pullPoll = window.NomadShellRuntime.startInterval('ai-chat.pull-progress', runner, 1000, {
+      tabId: 'ai-chat',
+      requireVisible: true,
+    });
+    return;
+  }
+  _pullPoll = setInterval(runner, 1000);
 }
 
 /* ─── Conversations ─── */
@@ -1020,6 +1066,13 @@ async function downloadZimItem(btn, url, filename) {
 }
 
 let _zimQueuePoll = null;
+function stopZimQueuePoll() {
+  if (_zimQueuePoll) {
+    clearInterval(_zimQueuePoll);
+    _zimQueuePoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('library.zim-downloads');
+}
 async function loadZimDownloads() {
   try {
     const downloads = await (await fetch('/api/kiwix/zim-downloads')).json();
@@ -1054,7 +1107,7 @@ async function loadZimDownloads() {
     if (errors.length && _cachedCatalog) renderFullCatalog(_cachedCatalog);
     if (!active.length && !errors.length) {
       queueEl.style.display = 'none';
-      if (_zimQueuePoll) { clearInterval(_zimQueuePoll); _zimQueuePoll = null; }
+      stopZimQueuePoll();
       return;
     }
     queueEl.style.display = 'block';
@@ -1077,10 +1130,18 @@ async function loadZimDownloads() {
 
 function startZimQueuePoll() {
   if (_zimQueuePoll) return;
-  _zimQueuePoll = setInterval(async () => {
+  const runner = async () => {
     await loadZimDownloads();
     await loadZimList();
-  }, 2000);
+  };
+  if (window.NomadShellRuntime) {
+    _zimQueuePoll = window.NomadShellRuntime.startInterval('library.zim-downloads', runner, 2000, {
+      tabId: 'kiwix-library',
+      requireVisible: true,
+    });
+    return;
+  }
+  _zimQueuePoll = setInterval(runner, 2000);
 }
 
 async function deleteZim(filename) {

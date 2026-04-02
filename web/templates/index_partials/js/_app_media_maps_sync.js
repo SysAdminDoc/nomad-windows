@@ -4,12 +4,147 @@ let _mediaFolder = '';
 let _mediaViewGrid = true;
 let _mediaCatalogVisible = false;
 let _mediaDlPoll = null;
+let _mediaDlPollDelay = null;
+let _mediaDlWatchId = null;
+let _mediaYtdlpInstallPoll = null;
 let _mediaSub = 'channels'; // videos | audio | books | channels
 let _mediaBookRendition = null;
 let _mediaSort = 'title'; // title | date | size | favorited
 let _mediaSortDir = 'asc';
 let _mediaSelected = new Set();
 let _mediaSelectMode = false;
+
+function setMediaVisibility(target, visible, displayValue = '') {
+  const el = typeof target === 'string' ? document.getElementById(target) : target;
+  if (!el) return null;
+  el.classList.toggle('is-hidden', !visible);
+  el.hidden = !visible;
+  if (visible) {
+    if (displayValue) el.style.display = displayValue;
+    else el.style.removeProperty('display');
+  } else {
+    el.style.display = 'none';
+  }
+  return el;
+}
+
+function isMediaVisible(target) {
+  const el = typeof target === 'string' ? document.getElementById(target) : target;
+  if (!el) return false;
+  const style = window.getComputedStyle(el);
+  return !el.hidden && !el.classList.contains('is-hidden') && style.display !== 'none' && style.visibility !== 'hidden';
+}
+
+function stopMediaYtdlpInstallPolling() {
+  if (_mediaYtdlpInstallPoll) {
+    clearInterval(_mediaYtdlpInstallPoll);
+    _mediaYtdlpInstallPoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('media.ytdlp-install');
+}
+
+async function runMediaYtdlpInstallPoll() {
+  const fill = document.getElementById('ytdlp-install-fill');
+  const progress = document.getElementById('ytdlp-install-progress');
+  if (!fill || !progress) {
+    stopMediaYtdlpInstallPolling();
+    return;
+  }
+  try {
+    const p = await (await fetch('/api/ytdlp/install-progress')).json();
+    fill.style.width = `${p.percent || 0}%`;
+    if (p.status === 'complete') {
+      stopMediaYtdlpInstallPolling();
+      toast('Downloader installed!', 'success');
+      setMediaVisibility(progress, false);
+      checkYtdlpStatus();
+    } else if (p.status === 'error') {
+      stopMediaYtdlpInstallPolling();
+      toast('Install failed: ' + (p.error || ''), 'error');
+      setMediaVisibility(progress, false);
+    }
+  } catch (e) {}
+}
+
+function startMediaYtdlpInstallPolling() {
+  if (_mediaYtdlpInstallPoll) return;
+  if (window.NomadShellRuntime) {
+    _mediaYtdlpInstallPoll = window.NomadShellRuntime.startInterval('media.ytdlp-install', runMediaYtdlpInstallPoll, 1000, {
+      tabId: 'media',
+      requireVisible: true,
+    });
+    return;
+  }
+  _mediaYtdlpInstallPoll = setInterval(runMediaYtdlpInstallPoll, 1000);
+}
+
+function stopMediaDownloadPolling() {
+  if (_mediaDlPollDelay) {
+    clearTimeout(_mediaDlPollDelay);
+    _mediaDlPollDelay = null;
+  }
+  if (_mediaDlPoll) {
+    clearInterval(_mediaDlPoll);
+    _mediaDlPoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('media.download-progress');
+}
+
+async function runMediaDownloadPoll() {
+  const bar = document.getElementById('media-dl-progress');
+  if (!bar) {
+    stopMediaDownloadPolling();
+    return;
+  }
+  try {
+    const all = await (await fetch('/api/ytdlp/progress')).json();
+    let active = null;
+    for (const [id, p] of Object.entries(all)) {
+      if (_mediaDlWatchId && id === _mediaDlWatchId) { active = p; break; }
+      if (['downloading','queued','merging','fetching info','starting'].includes(p.status)) active = p;
+    }
+    if (active) {
+      document.getElementById('media-dl-title').textContent = active.title || 'Downloading...';
+      document.getElementById('media-dl-fill').style.width = active.percent + '%';
+      document.getElementById('media-dl-speed').textContent = active.speed || '';
+      if (isMediaVisible('dl-queue-panel')) refreshDlQueue();
+      if (active.status === 'complete') {
+        toast('Download complete: ' + active.title, 'success');
+        setMediaVisibility(bar, false);
+        _mediaDlWatchId = null;
+        stopMediaDownloadPolling();
+        loadMediaContent(); loadTotalMediaStats();
+      } else if (active.status === 'error') {
+        toast('Download failed: ' + (active.error || ''), 'error');
+        setMediaVisibility(bar, false);
+        _mediaDlWatchId = null;
+        stopMediaDownloadPolling();
+      }
+    } else {
+      setMediaVisibility(bar, false);
+      _mediaDlWatchId = null;
+      stopMediaDownloadPolling();
+      loadMediaContent(); loadTotalMediaStats();
+    }
+  } catch (e) {}
+}
+
+function startMediaDownloadPolling(watchId) {
+  if (watchId) _mediaDlWatchId = watchId;
+  if (_mediaDlPoll || _mediaDlPollDelay) return;
+  const startRunner = () => {
+    _mediaDlPollDelay = null;
+    if (window.NomadShellRuntime) {
+      _mediaDlPoll = window.NomadShellRuntime.startInterval('media.download-progress', runMediaDownloadPoll, 1500, {
+        tabId: 'media',
+        requireVisible: true,
+      });
+      return;
+    }
+    _mediaDlPoll = setInterval(runMediaDownloadPoll, 1500);
+  };
+  _mediaDlPollDelay = setTimeout(startRunner, 500);
+}
 
 function switchMediaSub(sub) {
   _mediaSub = sub;
@@ -26,33 +161,36 @@ function switchMediaSub(sub) {
   const topbar = document.getElementById('media-topbar');
   const sidebar = document.querySelector('.media-sidebar');
   if (sub === 'channels') {
-    channelBrowser.style.display = 'flex';
-    torrentBrowser.style.display = 'none';
-    contentArea.style.display = 'none';
-    topbar.style.display = 'none';
-    sidebar.style.display = 'none';
-    document.getElementById('media-catalog-panel').style.display = 'none';
+    setMediaVisibility(channelBrowser, true, 'flex');
+    setMediaVisibility(torrentBrowser, false);
+    setMediaVisibility(contentArea, false);
+    setMediaVisibility(topbar, false);
+    setMediaVisibility(sidebar, false);
+    setMediaVisibility('media-catalog-panel', false);
+    backToChannels();
+    closeYtWatch();
     loadChannelBrowser();
     return;
   }
   if (sub === 'torrents') {
-    channelBrowser.style.display = 'none';
-    torrentBrowser.style.display = 'flex';
-    contentArea.style.display = 'none';
-    topbar.style.display = 'none';
-    sidebar.style.display = 'none';
-    document.getElementById('media-catalog-panel').style.display = 'none';
+    setMediaVisibility(channelBrowser, false);
+    setMediaVisibility(torrentBrowser, true, 'flex');
+    setMediaVisibility(contentArea, false);
+    setMediaVisibility(topbar, false);
+    setMediaVisibility(sidebar, false);
+    setMediaVisibility('media-catalog-panel', false);
+    closeYtWatch();
     checkTorrentClient();
     pollTorrentStatus().then(() => renderTorrentList());
     // Resume polling if there were active downloads
     if (Object.keys(_torrentStatuses).length > 0) startTorrentPolling();
     return;
   }
-  channelBrowser.style.display = 'none';
-  torrentBrowser.style.display = 'none';
-  contentArea.style.display = '';
-  topbar.style.display = '';
-  sidebar.style.display = '';
+  setMediaVisibility(channelBrowser, false);
+  setMediaVisibility(torrentBrowser, false);
+  setMediaVisibility(contentArea, true);
+  setMediaVisibility(topbar, true);
+  setMediaVisibility(sidebar, true);
   if (sub === 'videos') {
     urlInput.placeholder = 'Paste YouTube URL to download video...';
     fileInput.setAttribute('accept', 'video/*');
@@ -66,14 +204,14 @@ function switchMediaSub(sub) {
   } else {
     urlInput.placeholder = 'Not applicable for books — use Upload or browse the Reference Library';
     fileInput.setAttribute('accept', '.pdf,.epub,.mobi,.txt');
-    dlBtn.style.display = 'none';
+    setMediaVisibility(dlBtn, false);
     catBtn.textContent = 'Reference Library';
   }
-  if (sub !== 'books') dlBtn.style.display = '';
+  if (sub !== 'books') setMediaVisibility(dlBtn, true);
   closeMediaPlayer();
   closeBookReader();
   _mediaCatalogVisible = false;
-  document.getElementById('media-catalog-panel').style.display = 'none';
+  setMediaVisibility('media-catalog-panel', false);
   loadMediaContent().then(() => {
     // Auto-show catalog if library is empty — content up front, not hidden
     if (_mediaItems.length === 0 && !_mediaCatalogVisible) {
@@ -93,8 +231,8 @@ async function loadMediaContinue() {
   const wrap = document.getElementById('media-continue');
   if (!el || !wrap) return;
   const items = await safeFetch('/api/media/resume', {}, []);
-  if (!items.length) { wrap.style.display = 'none'; return; }
-  wrap.style.display = 'block';
+  if (!items.length) { setMediaVisibility(wrap, false); return; }
+  setMediaVisibility(wrap, true);
   el.innerHTML = items.map(item => {
     const pct = item.duration_sec > 0 ? Math.round(item.position_sec / item.duration_sec * 100) : 0;
     const icon = item.media_type === 'video' ? '▶' : item.media_type === 'audio' ? '♫' : '📖';
@@ -118,7 +256,8 @@ function resumeMedia(type, id) {
 async function checkYtdlpStatus() {
   try {
     const s = await (await fetch('/api/ytdlp/status')).json();
-    document.getElementById('media-ytdlp-banner').style.display = s.installed ? 'none' : 'block';
+    setMediaVisibility('media-ytdlp-banner', !s.installed);
+    if (s.installed) setMediaVisibility('ytdlp-install-progress', false);
   } catch(e) {}
 }
 
@@ -128,13 +267,8 @@ async function installYtdlp() {
     const d = await r.json();
     if (d.status === 'already_installed') { toast('Downloader already installed', 'info'); checkYtdlpStatus(); return; }
     toast('Installing downloader...', 'info');
-    document.getElementById('ytdlp-install-progress').style.display = 'block';
-    const poll = setInterval(async () => {
-      const p = await (await fetch('/api/ytdlp/install-progress')).json();
-      document.getElementById('ytdlp-install-fill').style.width = p.percent + '%';
-      if (p.status === 'complete') { clearInterval(poll); toast('Downloader installed!', 'success'); document.getElementById('ytdlp-install-progress').style.display = 'none'; checkYtdlpStatus(); }
-      else if (p.status === 'error') { clearInterval(poll); toast('Install failed: ' + (p.error||''), 'error'); document.getElementById('ytdlp-install-progress').style.display = 'none'; }
-    }, 1000);
+    setMediaVisibility('ytdlp-install-progress', true);
+    startMediaYtdlpInstallPolling();
   } catch(e) { toast('Install failed', 'error'); }
 }
 
@@ -288,7 +422,7 @@ function toggleMediaSelect() {
   _mediaSelectMode = !_mediaSelectMode;
   _mediaSelected.clear();
   document.getElementById('media-select-btn').textContent = _mediaSelectMode ? 'Cancel' : 'Select';
-  document.getElementById('media-batch-bar').style.display = _mediaSelectMode ? 'flex' : 'none';
+  setMediaVisibility('media-batch-bar', _mediaSelectMode, 'flex');
   updateBatchCount();
   renderMediaItems();
 }
@@ -1300,7 +1434,7 @@ async function checkTorrentClient() {
     _torrentClientAvail = !!d.available;
   } catch(e) { _torrentClientAvail = false; }
   const badge = document.getElementById('torrent-client-badge');
-  if (badge) badge.style.display = _torrentClientAvail ? '' : 'none';
+  setMediaVisibility(badge, _torrentClientAvail);
   return _torrentClientAvail;
 }
 
@@ -1351,8 +1485,8 @@ function updateActiveDownloadsPanel() {
   if (!panel || !listEl) return;
 
   const all = Object.values(_torrentStatuses);
-  if (all.length === 0) { panel.style.display = 'none'; return; }
-  panel.style.display = '';
+  if (all.length === 0) { setMediaVisibility(panel, false); return; }
+  setMediaVisibility(panel, true);
 
   const totalDl = all.reduce((s, x) => s + (x.dl_rate || 0), 0);
   const active = all.filter(x => x.state !== 'Finished' && x.state !== 'Seeding').length;
@@ -1699,7 +1833,8 @@ async function searchYouTube() {
   _ytSearchLimit = 15;
   const results = document.getElementById('yt-video-results');
   const channels = document.getElementById('channel-list');
-  results.style.display = ''; channels.style.display = 'none';
+  setMediaVisibility(results, true);
+  setMediaVisibility(channels, false);
   results.innerHTML = mediaBrowserLoadingHtml('Searching YouTube...');
   try {
     const resp = await fetch(`/api/youtube/search?q=${encodeURIComponent(q)}&limit=${_ytSearchLimit}`);
@@ -1727,7 +1862,8 @@ async function browseChannelVideos(channelUrl, channelName) {
   _channelBrowsing = true;
   const results = document.getElementById('yt-video-results');
   const channels = document.getElementById('channel-list');
-  results.style.display = ''; channels.style.display = 'none';
+  setMediaVisibility(results, true);
+  setMediaVisibility(channels, false);
   results.innerHTML = mediaBrowserLoadingHtml(`Loading videos from ${channelName}…`);
   try {
     const videos = await (await fetch(`/api/youtube/channel-videos?url=${encodeURIComponent(channelUrl)}&limit=15`)).json();
@@ -1816,8 +1952,8 @@ function renderVideoResults(videos, heading) {
 }
 
 function backToChannels() {
-  document.getElementById('yt-video-results').style.display = 'none';
-  document.getElementById('channel-list').style.display = '';
+  setMediaVisibility('yt-video-results', false);
+  setMediaVisibility('channel-list', true);
 }
 
 function watchAndDownload(url, title, videoId) {
@@ -1827,7 +1963,7 @@ function watchAndDownload(url, title, videoId) {
   document.getElementById('yt-watch-title').textContent = title;
   document.getElementById('yt-watch-dl-status').textContent = 'Downloading...';
   frame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
-  panel.style.display = '';
+  setMediaVisibility(panel, true);
   // Start download in background
   downloadYtVideo(url, title).then(() => {
     document.getElementById('yt-watch-dl-status').textContent = 'Saved locally';
@@ -1838,7 +1974,7 @@ function closeYtWatch() {
   const panel = document.getElementById('yt-watch-panel');
   const frame = document.getElementById('yt-watch-frame');
   frame.src = '';
-  panel.style.display = 'none';
+  setMediaVisibility(panel, false);
 }
 
 async function downloadYtVideo(url, title) {
@@ -1877,11 +2013,11 @@ function playMediaVideo(id, filename, title) {
   const player = document.getElementById('media-player');
   const video = document.getElementById('media-video-el');
   const audio = document.getElementById('media-audio-el');
-  audio.style.display = 'none'; audio.pause();
-  video.style.display = 'block';
+  setMediaVisibility(audio, false); audio.pause();
+  setMediaVisibility(video, true, 'block');
   document.getElementById('media-player-title').textContent = title;
   video.src = `/api/videos/serve/${encodeURIComponent(filename)}`;
-  player.style.display = 'block';
+  setMediaVisibility(player, true);
   video.play();
   // Check for subtitle file (.srt/.vtt alongside the video)
   checkVideoSubtitles(filename);
@@ -1891,7 +2027,7 @@ async function checkVideoSubtitles(filename) {
   const subStatus = document.getElementById('subtitle-status');
   const track = document.getElementById('media-video-subs');
   if (!subStatus || !track) return;
-  subStatus.style.display = 'none';
+  setMediaVisibility(subStatus, false);
   track.src = '';
   // Try .vtt first, then .srt — the backend serves from the same directory
   const base = filename.replace(/\.[^.]+$/, '');
@@ -1900,7 +2036,7 @@ async function checkVideoSubtitles(filename) {
       const resp = await fetch(`/api/videos/serve/${encodeURIComponent(base + ext)}`, {method: 'HEAD'});
       if (resp.ok) {
         track.src = `/api/videos/serve/${encodeURIComponent(base + ext)}`;
-        subStatus.style.display = 'block';
+        setMediaVisibility(subStatus, true);
         subStatus.textContent = 'Subtitles available (' + ext.slice(1).toUpperCase() + ')';
         // Enable the track
         const video = document.getElementById('media-video-el');
@@ -1917,11 +2053,11 @@ function playMediaAudio(id, filename, title) {
   const player = document.getElementById('media-player');
   const video = document.getElementById('media-video-el');
   const audio = document.getElementById('media-audio-el');
-  video.style.display = 'none'; video.pause();
-  audio.style.display = 'block';
+  setMediaVisibility(video, false); video.pause();
+  setMediaVisibility(audio, true, 'block');
   document.getElementById('media-player-title').textContent = title;
   audio.src = `/api/audio/serve/${encodeURIComponent(filename)}`;
-  player.style.display = 'block';
+  setMediaVisibility(player, true);
   audio.play();
   // Show chapter markers once duration is known
   audio.addEventListener('loadedmetadata', function _chapHandler() {
@@ -1938,9 +2074,10 @@ function closeMediaPlayer() {
   document.getElementById('media-audio-el').pause();
   document.getElementById('media-video-el').src = '';
   document.getElementById('media-audio-el').src = '';
-  document.getElementById('media-player').style.display = 'none';
+  setMediaVisibility('media-player', false);
   const chapPanel = document.getElementById('audio-chapters-panel');
-  if (chapPanel) chapPanel.style.display = 'none';
+  setMediaVisibility(chapPanel, false);
+  setMediaVisibility('subtitle-status', false);
 }
 
 // ── Audiobook Chapter Navigation ──
@@ -1962,8 +2099,8 @@ function showAudioChapters(durationSec) {
   const list = document.getElementById('audio-chapters-list');
   if (!panel || !list) return;
   const chapters = generateChapters(durationSec);
-  if (!chapters.length) { panel.style.display = 'none'; return; }
-  panel.style.display = 'block';
+  if (!chapters.length) { setMediaVisibility(panel, false); return; }
+  setMediaVisibility(panel, true);
   list.innerHTML = chapters.map(c =>
     `<div class="audio-chapter-item" role="button" tabindex="0" data-media-action="seek-audio-chapter" data-audio-time="${c.time}">
       <span class="runtime-mono-cell-strong text-accent">${c.label}</span>
@@ -1983,13 +2120,14 @@ function openBook(id, filename, title, format) {
   const content = document.getElementById('book-reader-content');
   const pdfFrame = document.getElementById('book-pdf-frame');
   document.getElementById('book-reader-title').textContent = title;
-  reader.style.display = 'flex';
+  setMediaVisibility(reader, true, 'flex');
 
   if (format === 'epub') {
-    content.style.display = 'block'; pdfFrame.style.display = 'none';
+    setMediaVisibility(content, true, 'block');
+    setMediaVisibility(pdfFrame, false);
     content.innerHTML = '';
-    document.getElementById('book-prev-btn').style.display = '';
-    document.getElementById('book-next-btn').style.display = '';
+    setMediaVisibility('book-prev-btn', true);
+    setMediaVisibility('book-next-btn', true);
     if (typeof ePub !== 'undefined') {
       const book = ePub(`/api/books/serve/${encodeURIComponent(filename)}`);
       _mediaBookRendition = book.renderTo(content, {width:'100%', height:'100%', flow:'paginated', spread:'none'});
@@ -2003,16 +2141,17 @@ function openBook(id, filename, title, format) {
     }
   } else {
     // PDF — use iframe (WebView2 has built-in PDF viewer)
-    content.style.display = 'none'; pdfFrame.style.display = 'flex';
-    document.getElementById('book-prev-btn').style.display = 'none';
-    document.getElementById('book-next-btn').style.display = 'none';
+    setMediaVisibility(content, false);
+    setMediaVisibility(pdfFrame, true, 'flex');
+    setMediaVisibility('book-prev-btn', false);
+    setMediaVisibility('book-next-btn', false);
     document.getElementById('book-reader-loc').textContent = '';
     pdfFrame.src = `/api/books/serve/${encodeURIComponent(filename)}`;
   }
 }
 
 function closeBookReader() {
-  document.getElementById('media-book-reader').style.display = 'none';
+  setMediaVisibility('media-book-reader', false);
   document.getElementById('book-reader-content').innerHTML = '';
   document.getElementById('book-pdf-frame').src = '';
   _mediaBookRendition = null;
@@ -2078,45 +2217,19 @@ async function downloadMediaURL() {
 }
 
 function pollMediaDownloads(watchId) {
-  if (_mediaDlPoll) clearInterval(_mediaDlPoll);
   const bar = document.getElementById('media-dl-progress');
-  bar.style.display = 'block';
+  setMediaVisibility(bar, true);
   document.getElementById('media-dl-title').textContent = 'Starting download...';
   document.getElementById('media-dl-fill').style.width = '0%';
-  // Delay first poll to let backend initialize the download entry
-  setTimeout(() => { _mediaDlPoll = setInterval(async () => {
-    try {
-      const all = await (await fetch('/api/ytdlp/progress')).json();
-      let active = null;
-      for (const [id, p] of Object.entries(all)) {
-        if (watchId && id === watchId) { active = p; break; }
-        if (['downloading','queued','merging','fetching info','starting'].includes(p.status)) active = p;
-      }
-      if (active) {
-        document.getElementById('media-dl-title').textContent = active.title || 'Downloading...';
-        document.getElementById('media-dl-fill').style.width = active.percent + '%';
-        document.getElementById('media-dl-speed').textContent = active.speed || '';
-        if (document.getElementById('dl-queue-panel').style.display !== 'none') refreshDlQueue();
-        if (active.status === 'complete') {
-          toast('Download complete: ' + active.title, 'success');
-          bar.style.display = 'none'; clearInterval(_mediaDlPoll); _mediaDlPoll = null;
-          loadMediaContent(); loadTotalMediaStats();
-        } else if (active.status === 'error') {
-          toast('Download failed: ' + (active.error||''), 'error');
-          bar.style.display = 'none'; clearInterval(_mediaDlPoll); _mediaDlPoll = null;
-        }
-      } else {
-        bar.style.display = 'none'; clearInterval(_mediaDlPoll); _mediaDlPoll = null;
-        loadMediaContent(); loadTotalMediaStats();
-      }
-    } catch(e) {}
-  }, 1500); }, 500);
+  stopMediaDownloadPolling();
+  startMediaDownloadPolling(watchId);
 }
 
 function toggleDlQueue() {
   const panel = document.getElementById('dl-queue-panel');
-  panel.style.display = panel.style.display === 'none' ? '' : 'none';
-  if (panel.style.display !== 'none') refreshDlQueue();
+  const nextVisible = !isMediaVisible(panel);
+  setMediaVisibility(panel, nextVisible);
+  if (nextVisible) refreshDlQueue();
 }
 
 async function refreshDlQueue() {
@@ -2162,7 +2275,8 @@ async function unsubscribeChannel(id, name) {
 async function loadSubscriptions() {
   const results = document.getElementById('yt-video-results');
   const channels = document.getElementById('channel-list');
-  results.style.display = 'none'; channels.style.display = '';
+  setMediaVisibility(results, false);
+  setMediaVisibility(channels, true);
   try {
     const subs = await (await fetch('/api/subscriptions')).json();
     if (!subs.length) {
@@ -2221,7 +2335,7 @@ async function uploadMediaFiles() {
 // ── Catalogs ──
 function toggleMediaCatalog() {
   _mediaCatalogVisible = !_mediaCatalogVisible;
-  document.getElementById('media-catalog-panel').style.display = _mediaCatalogVisible ? 'block' : 'none';
+  setMediaVisibility('media-catalog-panel', _mediaCatalogVisible);
   if (_mediaCatalogVisible) loadActiveCatalog();
 }
 

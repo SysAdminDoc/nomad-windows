@@ -2245,17 +2245,20 @@ async function loadActivity() {
 
 /* ─── Update Checker ─── */
 async function checkForUpdate() {
+  const banner = document.getElementById('update-banner');
+  const dlBtn = document.getElementById('update-download-btn');
+  const statusEl = document.getElementById('update-status-text');
+  if (!banner && !dlBtn && !statusEl) return;
   try {
     const u = await (await fetch('/api/update-check')).json();
     if (u.update_available) {
-      const banner = document.getElementById('update-banner');
-      banner.style.display = 'inline-flex';
-      banner.textContent = `Update: v${u.latest}`;
-      banner.href = u.download_url;
+      if (banner) {
+        banner.style.display = 'inline-flex';
+        banner.textContent = `Update: v${u.latest}`;
+        banner.href = u.download_url;
+      }
       // Show download button in Settings About section
-      const dlBtn = document.getElementById('update-download-btn');
       if (dlBtn) { dlBtn.style.display = 'inline-flex'; }
-      const statusEl = document.getElementById('update-status-text');
       if (statusEl) { statusEl.textContent = `v${u.latest} available`; statusEl.style.color = 'var(--green)'; }
     }
   } catch(e) {}
@@ -2270,8 +2273,18 @@ async function downloadUpdate() {
   pollUpdateProgress();
 }
 
+let _updateDownloadPoll = null;
+function stopUpdateProgressPoll() {
+  if (_updateDownloadPoll) {
+    clearInterval(_updateDownloadPoll);
+    _updateDownloadPoll = null;
+  }
+  window.NomadShellRuntime?.stopInterval('settings.update-download');
+}
+
 function pollUpdateProgress() {
-  const poll = setInterval(async () => {
+  stopUpdateProgressPoll();
+  const runner = async () => {
     try {
       const s = await (await fetch('/api/update-download/status')).json();
       document.getElementById('update-progress-pct').textContent = s.progress + '%';
@@ -2280,20 +2293,28 @@ function pollUpdateProgress() {
         s.status === 'checking' ? 'Checking for update…' :
         s.status === 'downloading' ? 'Downloading update…' : s.status;
       if (s.status === 'complete') {
-        clearInterval(poll);
+        stopUpdateProgressPoll();
         document.getElementById('update-progress-bar').style.display = 'none';
         document.getElementById('update-complete-msg').style.display = 'block';
         document.getElementById('update-download-btn').style.display = 'none';
         toast('Update downloaded successfully', 'success');
       } else if (s.status === 'error') {
-        clearInterval(poll);
+        stopUpdateProgressPoll();
         document.getElementById('update-progress-bar').style.display = 'none';
         document.getElementById('update-download-btn').disabled = false;
         document.getElementById('update-download-btn').textContent = 'Retry Download';
         toast('Update failed: ' + (s.error || 'Unknown error'), 'error');
       }
-    } catch(e) { clearInterval(poll); }
-  }, 1000);
+    } catch(e) { stopUpdateProgressPoll(); }
+  };
+  if (window.NomadShellRuntime) {
+    _updateDownloadPoll = window.NomadShellRuntime.startInterval('settings.update-download', runner, 1000, {
+      tabId: 'settings',
+      requireVisible: true,
+    });
+    return;
+  }
+  _updateDownloadPoll = setInterval(runner, 1000);
 }
 
 async function openUpdateFolder() {

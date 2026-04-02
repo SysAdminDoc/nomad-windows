@@ -5,11 +5,525 @@ window.NM = window.NM || {};
 'use strict';
 
 let map, currentDets = [], windAngle = 0, multiMode = false, mirvMode = false, currentMirvPreset = null;
+let factRotationIntervalId = 0, factHideTimeoutId = 0, zipcodesLoadRequested = false, nukemapTabObserver = null;
+let factIdx = Math.floor(Math.random() * NM.Facts.length);
+const OFFLINE_ATLAS_STORAGE_KEY = 'nomad-offline-atlas-cache';
+const OFFLINE_ATLAS_VERSION = '2026-04-02.3';
+const OFFLINE_ATLAS_URL = '/nukemap/data/offline_atlas.json';
+let offlineAtlasInstallPromise = null;
+let offlineAtlasData = null;
+let offlineAtlasState = 'missing';
+let offlineAtlasError = '';
 NM._nightMode = false;
 NM.getUiRoot = function() {
   return document.getElementById('nukemap-stage') || document.getElementById('tab-nukemap') || document.body;
 };
+
+function setOfflineAtlasState(state, error) {
+  offlineAtlasState = state;
+  offlineAtlasError = error || '';
+}
+window.localStorage?.removeItem('nukemap-offline-atlas-cache');
+window.localStorage?.removeItem('viptrack-offline-atlas-cache');
+
+function normalizeAtlasFlatFeature(feature, extraKeys = []) {
+  if (!feature || !Array.isArray(feature.points) || feature.points.length < 4) return null;
+  const points = feature.points.map((value) => Number(value));
+  if (points.some((value) => !Number.isFinite(value))) return null;
+  let bbox = Array.isArray(feature.bbox) && feature.bbox.length === 4
+    ? feature.bbox.map((value) => Number(value))
+    : null;
+  if (!bbox || bbox.some((value) => !Number.isFinite(value))) {
+    let minLng = 999;
+    let minLat = 999;
+    let maxLng = -999;
+    let maxLat = -999;
+    for (let idx = 0; idx < points.length; idx += 2) {
+      const lng = points[idx];
+      const lat = points[idx + 1];
+      minLng = Math.min(minLng, lng);
+      minLat = Math.min(minLat, lat);
+      maxLng = Math.max(maxLng, lng);
+      maxLat = Math.max(maxLat, lat);
+    }
+    bbox = [minLng, minLat, maxLng, maxLat];
+  }
+  const normalized = {
+    minZoom: Number.isFinite(Number(feature.minZoom)) ? Number(feature.minZoom) : null,
+    bbox,
+    points,
+  };
+  extraKeys.forEach((key) => {
+    if (feature[key] !== undefined && feature[key] !== null && feature[key] !== '') {
+      normalized[key] = feature[key];
+    }
+  });
+  return normalized;
+}
+
+function normalizeOfflineAtlas(atlas) {
+  if (
+    !atlas ||
+    !Array.isArray(atlas.land) ||
+    !Array.isArray(atlas.coastlines) ||
+    !Array.isArray(atlas.countryBorders) ||
+    !Array.isArray(atlas.admin1Borders) ||
+    !Array.isArray(atlas.lakes) ||
+    !Array.isArray(atlas.rivers) ||
+    !Array.isArray(atlas.places)
+  ) return null;
+  return {
+    version: atlas.version || OFFLINE_ATLAS_VERSION,
+    source: atlas.source || null,
+    land: atlas.land.map((feature) => normalizeAtlasFlatFeature(feature)).filter(Boolean),
+    lakes: atlas.lakes.map((feature) => normalizeAtlasFlatFeature(feature, ['name'])).filter(Boolean),
+    coastlines: atlas.coastlines.map((feature) => normalizeAtlasFlatFeature(feature)).filter(Boolean),
+    countryBorders: atlas.countryBorders.map((feature) => normalizeAtlasFlatFeature(feature, ['name'])).filter(Boolean),
+    admin1Borders: atlas.admin1Borders.map((feature) => normalizeAtlasFlatFeature(feature, ['name', 'adm0_name'])).filter(Boolean),
+    rivers: atlas.rivers.map((feature) => normalizeAtlasFlatFeature(feature, ['name'])).filter(Boolean),
+    places: atlas.places.filter((place) =>
+      typeof place?.lat === 'number' &&
+      typeof place?.lng === 'number' &&
+      place?.name
+    ).map((place) => ({
+      name: place.name,
+      lat: Number(place.lat),
+      lng: Number(place.lng),
+      pop: Number(place.pop) || 0,
+      rank: Number(place.rank) || 5,
+      minZoom: Number.isFinite(Number(place.minZoom)) ? Number(place.minZoom) : null,
+      capital: !!place.capital,
+      world: !!place.world,
+      adm0: place.adm0 || '',
+    })),
+  };
+}
+
+function loadOfflineAtlasFromStorage() {
+  try {
+    const raw = window.localStorage?.getItem(OFFLINE_ATLAS_STORAGE_KEY);
+    if (!raw) {
+      setOfflineAtlasState('missing');
+      return null;
+    }
+    const parsed = normalizeOfflineAtlas(JSON.parse(raw));
+    if (!parsed || parsed.version !== OFFLINE_ATLAS_VERSION) {
+      window.localStorage?.removeItem(OFFLINE_ATLAS_STORAGE_KEY);
+      setOfflineAtlasState('missing');
+      return null;
+    }
+    offlineAtlasData = parsed;
+    setOfflineAtlasState('ready');
+    return parsed;
+  } catch (_error) {
+    offlineAtlasData = null;
+    setOfflineAtlasState('missing');
+    return null;
+  }
+}
+
+function persistOfflineAtlas(atlas) {
+  const normalized = normalizeOfflineAtlas(atlas);
+  if (!normalized) throw new Error('Offline atlas data is invalid.');
+  normalized.version = OFFLINE_ATLAS_VERSION;
+  offlineAtlasData = normalized;
+  window.localStorage?.setItem(OFFLINE_ATLAS_STORAGE_KEY, JSON.stringify(normalized));
+  setOfflineAtlasState('ready');
+  return normalized;
+}
+
+loadOfflineAtlasFromStorage();
+
+NM.hasOfflineAtlas = function() {
+  return !!offlineAtlasData;
+};
+NM.getOfflineAtlasData = function() {
+  return offlineAtlasData;
+};
+NM.getOfflineAtlasState = function() {
+  return {
+    ready: !!offlineAtlasData,
+    state: offlineAtlasState,
+    error: offlineAtlasError,
+    version: offlineAtlasData?.version || null
+  };
+};
+NM.isOfflineAtlasInstalling = function() {
+  return offlineAtlasState === 'installing';
+};
+NM.projectLngToTileX = function(lng, zoom) {
+  return Math.pow(2, zoom) * ((lng + 180) / 360);
+};
+NM.projectLatToTileY = function(lat, zoom) {
+  const safeLat = Math.max(-85.05112878, Math.min(85.05112878, lat));
+  const radians = safeLat * Math.PI / 180;
+  return Math.pow(2, zoom) * (1 - (Math.log(Math.tan(radians) + 1 / Math.cos(radians)) / Math.PI)) / 2;
+};
+NM.projectTileXToLng = function(tileX, zoom) {
+  return (tileX / Math.pow(2, zoom)) * 360 - 180;
+};
+NM.projectTileYToLat = function(tileY, zoom) {
+  const n = Math.PI - (2 * Math.PI * tileY) / Math.pow(2, zoom);
+  return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+};
+NM.getOfflineAtlasPalette = function(theme) {
+  const activeTheme = theme || document.documentElement.getAttribute('data-theme') || 'nomad';
+  const palettes = {
+    nomad: {
+      ocean: '#d7e4f0',
+      grid: 'rgba(86, 104, 129, 0.16)',
+      land: '#f8fbfd',
+      coast: '#51657a',
+      countryBorder: 'rgba(70, 89, 112, 0.62)',
+      admin1Border: 'rgba(124, 144, 168, 0.38)',
+      lake: '#c7dcf4',
+      river: 'rgba(102, 145, 196, 0.58)',
+      city: '#1c2d3f',
+      capital: '#0f1722',
+      cityHalo: 'rgba(255, 255, 255, 0.92)',
+      label: '#162132',
+      labelHalo: 'rgba(255, 255, 255, 0.96)'
+    },
+    nightops: {
+      ocean: '#071018',
+      grid: 'rgba(131, 160, 194, 0.15)',
+      land: '#172433',
+      coast: '#94bae8',
+      countryBorder: 'rgba(171, 201, 237, 0.74)',
+      admin1Border: 'rgba(109, 135, 164, 0.42)',
+      lake: '#102338',
+      river: 'rgba(107, 155, 214, 0.6)',
+      city: '#f0c27a',
+      capital: '#ffe0ae',
+      cityHalo: 'rgba(7, 16, 24, 0.92)',
+      label: '#e4f0ff',
+      labelHalo: 'rgba(7, 16, 24, 0.98)'
+    },
+    cyber: {
+      ocean: '#07131e',
+      grid: 'rgba(110, 199, 255, 0.15)',
+      land: '#133043',
+      coast: '#6ed6ff',
+      countryBorder: 'rgba(135, 223, 255, 0.7)',
+      admin1Border: 'rgba(90, 165, 196, 0.38)',
+      lake: '#0f2232',
+      river: 'rgba(83, 195, 231, 0.64)',
+      city: '#bff264',
+      capital: '#f7ffb4',
+      cityHalo: 'rgba(7, 19, 30, 0.93)',
+      label: '#e2f8ff',
+      labelHalo: 'rgba(7, 19, 30, 0.98)'
+    },
+    redlight: {
+      ocean: '#190d13',
+      grid: 'rgba(255, 169, 169, 0.14)',
+      land: '#2a151d',
+      coast: '#ff9b90',
+      countryBorder: 'rgba(255, 180, 168, 0.66)',
+      admin1Border: 'rgba(184, 109, 109, 0.34)',
+      lake: '#24161c',
+      river: 'rgba(255, 149, 120, 0.38)',
+      city: '#ffd39a',
+      capital: '#fff0cc',
+      cityHalo: 'rgba(25, 13, 19, 0.92)',
+      label: '#ffe9de',
+      labelHalo: 'rgba(25, 13, 19, 0.97)'
+    },
+    eink: {
+      ocean: '#f1f0eb',
+      grid: 'rgba(44, 44, 44, 0.12)',
+      land: '#ffffff',
+      coast: '#202020',
+      countryBorder: 'rgba(37, 37, 37, 0.58)',
+      admin1Border: 'rgba(92, 92, 92, 0.32)',
+      lake: '#e2e5ea',
+      river: 'rgba(88, 88, 88, 0.24)',
+      city: '#111111',
+      capital: '#000000',
+      cityHalo: 'rgba(243, 242, 237, 0.96)',
+      label: '#111111',
+      labelHalo: 'rgba(243, 242, 237, 0.98)'
+    }
+  };
+  return palettes[activeTheme] || palettes.nomad;
+};
+NM.buildOfflineAtlasLayer = function(theme) {
+  const OfflineAtlasLayer = L.GridLayer.extend({
+    initialize(options = {}) {
+      this._theme = options.theme || document.documentElement.getAttribute('data-theme') || 'nomad';
+      L.GridLayer.prototype.initialize.call(this, Object.assign({
+        attribution: 'Offline atlas | Natural Earth | NukeMap',
+        maxZoom: 12,
+        tileSize: 256,
+        updateWhenIdle: true
+      }, options));
+    },
+    createTile(coords) {
+      const tile = document.createElement('canvas');
+      const size = this.getTileSize();
+      const context = tile.getContext('2d');
+      const zoom = coords.z;
+      const atlas = NM.getOfflineAtlasData();
+      const palette = NM.getOfflineAtlasPalette(this._theme);
+      const fallbackLand = Object.entries(NM.WORLD || {}).map(([id, points]) => ({
+        id,
+        minZoom: 0,
+        bbox: null,
+        points: points.flat(),
+      }));
+      const land = atlas?.land?.length ? atlas.land : fallbackLand;
+      const lakes = atlas?.lakes || [];
+      const coastlines = atlas?.coastlines || [];
+      const countryBorders = atlas?.countryBorders || [];
+      const admin1Borders = atlas?.admin1Borders || [];
+      const rivers = atlas?.rivers || [];
+      const places = atlas?.places || [];
+      const wrapOffsets = [-1, 0, 1];
+      const tileBounds = {
+        west: NM.projectTileXToLng(coords.x, zoom),
+        east: NM.projectTileXToLng(coords.x + 1, zoom),
+        north: NM.projectTileYToLat(coords.y, zoom),
+        south: NM.projectTileYToLat(coords.y + 1, zoom),
+      };
+      const shouldRenderFeature = (feature, fallbackMinZoom = 0) => {
+        const minZoom = Number.isFinite(feature?.minZoom) ? feature.minZoom : fallbackMinZoom;
+        return zoom >= Math.max(0, Math.floor(minZoom));
+      };
+      const bboxVisible = (bbox, wrapOffset = 0, padding = 0) => {
+        if (!Array.isArray(bbox) || bbox.length !== 4) return true;
+        const west = bbox[0] + wrapOffset * 360;
+        const south = bbox[1];
+        const east = bbox[2] + wrapOffset * 360;
+        const north = bbox[3];
+        return !(
+          east < tileBounds.west - padding ||
+          west > tileBounds.east + padding ||
+          north < tileBounds.south - padding ||
+          south > tileBounds.north + padding
+        );
+      };
+      const drawPath = (points, wrapOffset, closePath) => {
+        context.beginPath();
+        let firstPoint = true;
+        for (let idx = 0; idx < points.length; idx += 2) {
+          const lng = points[idx];
+          const lat = points[idx + 1];
+          const pixelX = (NM.projectLngToTileX(lng + wrapOffset * 360, zoom) - coords.x) * size.x;
+          const pixelY = (NM.projectLatToTileY(lat, zoom) - coords.y) * size.y;
+          if (firstPoint) {
+            context.moveTo(pixelX, pixelY);
+            firstPoint = false;
+          } else {
+            context.lineTo(pixelX, pixelY);
+          }
+        }
+        if (closePath) context.closePath();
+        return !firstPoint;
+      };
+      const drawPolygonFeature = (feature, wrapOffset) => {
+        if (!shouldRenderFeature(feature) || !bboxVisible(feature.bbox, wrapOffset, 1.2)) return;
+        if (drawPath(feature.points, wrapOffset, true)) context.fill();
+      };
+      const drawLineFeature = (feature, wrapOffset) => {
+        if (!shouldRenderFeature(feature) || !bboxVisible(feature.bbox, wrapOffset, 1.4)) return;
+        if (drawPath(feature.points, wrapOffset, false)) context.stroke();
+      };
+
+      tile.width = size.x;
+      tile.height = size.y;
+      context.fillStyle = palette.ocean;
+      context.fillRect(0, 0, size.x, size.y);
+
+      const gridStep = zoom < 2 ? 45 : zoom < 4 ? 30 : zoom < 6 ? 15 : 10;
+      context.strokeStyle = palette.grid;
+      context.lineWidth = 0.6;
+      for (let lat = -80; lat <= 80; lat += gridStep) {
+        const y = (NM.projectLatToTileY(lat, zoom) - coords.y) * size.y;
+        if (y < -size.y || y > size.y * 2) continue;
+        context.beginPath();
+        context.moveTo(0, y);
+        context.lineTo(size.x, y);
+        context.stroke();
+      }
+      for (let lng = -180; lng <= 180; lng += gridStep) {
+        wrapOffsets.forEach((wrapOffset) => {
+          const x = (NM.projectLngToTileX(lng + wrapOffset * 360, zoom) - coords.x) * size.x;
+          if (x < -size.x || x > size.x * 2) return;
+          context.beginPath();
+          context.moveTo(x, 0);
+          context.lineTo(x, size.y);
+          context.stroke();
+        });
+      }
+
+      context.fillStyle = palette.land;
+      land.forEach((feature) => {
+        wrapOffsets.forEach((wrapOffset) => drawPolygonFeature(feature, wrapOffset));
+      });
+
+      if (lakes.length) {
+        context.fillStyle = palette.lake;
+        lakes.forEach((feature) => {
+          wrapOffsets.forEach((wrapOffset) => drawPolygonFeature(feature, wrapOffset));
+        });
+      }
+
+      if (rivers.length && zoom >= 2) {
+        context.strokeStyle = palette.river;
+        context.lineWidth = zoom >= 5 ? 1.35 : zoom >= 3 ? 1 : 0.75;
+        rivers.forEach((feature) => {
+          wrapOffsets.forEach((wrapOffset) => drawLineFeature(feature, wrapOffset));
+        });
+      }
+
+      context.strokeStyle = palette.coast;
+      context.lineWidth = zoom >= 4 ? 1.5 : 1.1;
+      coastlines.forEach((feature) => {
+        wrapOffsets.forEach((wrapOffset) => drawLineFeature(feature, wrapOffset));
+      });
+
+      if (countryBorders.length) {
+        context.strokeStyle = palette.countryBorder;
+        context.lineWidth = zoom >= 4 ? 1.05 : 0.85;
+        countryBorders.forEach((feature) => {
+          wrapOffsets.forEach((wrapOffset) => drawLineFeature(feature, wrapOffset));
+        });
+      }
+
+      if (admin1Borders.length && zoom >= 3) {
+        context.strokeStyle = palette.admin1Border;
+        context.lineWidth = zoom >= 6 ? 0.9 : 0.65;
+        admin1Borders.forEach((feature) => {
+          wrapOffsets.forEach((wrapOffset) => drawLineFeature(feature, wrapOffset));
+        });
+      }
+
+      if (places.length) {
+        const shouldShowPlace = (place) => {
+          const datasetZoom = Number.isFinite(place.minZoom) ? Math.max(0, Math.floor(place.minZoom)) : 0;
+          const placeZoom = place.world ? 1 : place.capital ? 2 : place.pop >= 5000000 ? 2 : place.pop >= 1000000 ? 3 : place.pop >= 250000 ? 4 : 5;
+          return zoom >= Math.max(datasetZoom, placeZoom);
+        };
+        context.textBaseline = 'middle';
+        context.lineJoin = 'round';
+        context.lineCap = 'round';
+        wrapOffsets.forEach((wrapOffset) => {
+          places.forEach((place) => {
+            if (!shouldShowPlace(place)) return;
+            const x = (NM.projectLngToTileX(place.lng + wrapOffset * 360, zoom) - coords.x) * size.x;
+            const y = (NM.projectLatToTileY(place.lat, zoom) - coords.y) * size.y;
+            if (x < -60 || x > size.x + 60 || y < -20 || y > size.y + 24) return;
+            const important = place.capital || place.world || place.pop >= 5000000;
+            const dotRadius = zoom >= 5 ? (important ? 2.8 : 2.1) : (important ? 2.3 : 1.8);
+            context.fillStyle = palette.cityHalo;
+            context.beginPath();
+            context.arc(x, y, dotRadius + 1.2, 0, Math.PI * 2);
+            context.fill();
+            context.fillStyle = important ? palette.capital : palette.city;
+            context.beginPath();
+            context.arc(x, y, dotRadius, 0, Math.PI * 2);
+            context.fill();
+            const fontSize = zoom >= 6 ? 11 : zoom >= 4 ? 10 : 9;
+            context.font = `${important ? 600 : 500} ${fontSize}px "Segoe UI", sans-serif`;
+            context.lineWidth = 3;
+            context.strokeStyle = palette.labelHalo;
+            context.strokeText(place.name, x + dotRadius + 4, y);
+            context.fillStyle = palette.label;
+            context.fillText(place.name, x + dotRadius + 4, y);
+          });
+        });
+      }
+
+      return tile;
+    },
+    setTheme(themeName) {
+      this._theme = themeName || this._theme;
+      this.redraw();
+    },
+    syncAtlas() {
+      this.redraw();
+    }
+  });
+
+  return new OfflineAtlasLayer({ theme });
+};
+NM.installOfflineAtlas = function() {
+  if (offlineAtlasData) {
+    NM.refreshOfflineAtlasUi?.();
+    return Promise.resolve(offlineAtlasData);
+  }
+  if (offlineAtlasInstallPromise) return offlineAtlasInstallPromise;
+  setOfflineAtlasState('installing');
+  NM.refreshOfflineAtlasUi?.();
+  offlineAtlasInstallPromise = fetch(OFFLINE_ATLAS_URL, { cache: 'no-store' })
+    .then((response) => {
+      if (!response.ok) throw new Error(`Offline basemap install failed (${response.status}).`);
+      return response.json();
+    })
+    .then((atlas) => {
+      const storedAtlas = persistOfflineAtlas(atlas);
+      NM.LayerSwitcher?.refreshOfflineAtlasLayer?.();
+      NM.LayerSwitcher?.applyTheme?.(document.documentElement.getAttribute('data-theme') || 'nomad');
+      NM.switchToPreferredMapLayer?.('offline-atlas-ready');
+      NM.refreshOfflineAtlasUi?.();
+      showBadge('atlas', 'Offline Basemap Ready');
+      return storedAtlas;
+    })
+    .catch((error) => {
+      offlineAtlasData = null;
+      setOfflineAtlasState('error', error?.message || 'Offline basemap install failed.');
+      NM.refreshOfflineAtlasUi?.();
+      throw error;
+    })
+    .finally(() => {
+      offlineAtlasInstallPromise = null;
+    });
+  return offlineAtlasInstallPromise;
+};
+NM.ensureOfflineAtlas = function() {
+  if (offlineAtlasData) {
+    NM.refreshOfflineAtlasUi?.();
+    return Promise.resolve(offlineAtlasData);
+  }
+  return NM.installOfflineAtlas();
+};
+NM.refreshOfflineAtlasUi = function() {
+  const status = document.getElementById('welcome-atlas-status');
+  const button = document.getElementById('welcome-dismiss');
+  const ready = !!offlineAtlasData;
+  const installing = offlineAtlasState === 'installing';
+  const failed = offlineAtlasState === 'error';
+  if (status) {
+    status.dataset.state = ready ? 'ready' : installing ? 'installing' : failed ? 'error' : 'missing';
+    if (ready) {
+      status.textContent = 'Enhanced offline basemap ready. NukeMap now has real coastlines, country borders, state and province outlines, lakes, rivers, and place labels offline.';
+    } else if (installing) {
+      status.textContent = 'Installing the enhanced offline basemap with real boundaries and labels so NukeMap stays usable without internet.';
+    } else if (failed) {
+      status.textContent = offlineAtlasError || 'Offline basemap install failed. Retry to restore the enhanced offline map.';
+    } else {
+      status.textContent = 'NukeMap will install the enhanced offline basemap before you start so the map is available with proper boundaries and labels.';
+    }
+  }
+  if (button) {
+    if (ready) {
+      button.disabled = false;
+      button.textContent = 'Start Exploring';
+    } else if (installing) {
+      button.disabled = true;
+      button.textContent = 'Installing Offline Basemap…';
+    } else if (failed) {
+      button.disabled = false;
+      button.textContent = 'Retry Basemap Install';
+    } else {
+      button.disabled = false;
+      button.textContent = 'Install Basemap & Start';
+    }
+  }
+};
 NM.getThemeMapLayerName = function(theme) {
+  if (NM.hasOfflineAtlas()) return 'offlineAtlas';
+  if (!navigator.onLine) return 'offlineAtlas';
   return ({
     nomad: 'terrain',
     nightops: 'dark',
@@ -21,10 +535,130 @@ NM.getThemeMapLayerName = function(theme) {
 NM.isStandaloneRoute = function() {
   return /^\/nukemap(?:\/|$)/.test(window.location.pathname || '');
 };
+NM.queryUiAll = function(selector) {
+  const root = document.getElementById('tab-nukemap') || document;
+  return [...root.querySelectorAll(selector)];
+};
+NM.queryUi = function(selector) {
+  const root = document.getElementById('tab-nukemap') || document;
+  return root.querySelector(selector);
+};
+NM.protectOverlayInteractions = function(selectors) {
+  if (!window.L?.DomEvent) return;
+  selectors.forEach((selector) => {
+    const el = document.querySelector(selector);
+    if (!el) return;
+    L.DomEvent.disableClickPropagation(el);
+    L.DomEvent.disableScrollPropagation(el);
+  });
+};
+NM.isWorkspaceVisible = function() {
+  const tabRoot = document.getElementById('tab-nukemap');
+  if (tabRoot) return tabRoot.classList.contains('active') && document.visibilityState === 'visible';
+  return document.visibilityState === 'visible';
+};
+NM.ensureZipcodesLoaded = function() {
+  if (zipcodesLoadRequested || NM.ZIPDB) return false;
+  if (document.querySelector('script[data-nukemap-zipcodes="true"]')) {
+    zipcodesLoadRequested = true;
+    return false;
+  }
+  zipcodesLoadRequested = true;
+  const script = document.createElement('script');
+  script.src = '/nukemap/js/zipcodes.js';
+  script.async = true;
+  script.dataset.nukemapZipcodes = 'true';
+  script.addEventListener('error', () => { zipcodesLoadRequested = false; });
+  document.body.appendChild(script);
+  return true;
+};
+NM.stopFactRotation = function() {
+  if (factRotationIntervalId) {
+    clearInterval(factRotationIntervalId);
+    factRotationIntervalId = 0;
+  }
+  if (factHideTimeoutId) {
+    clearTimeout(factHideTimeoutId);
+    factHideTimeoutId = 0;
+  }
+  const banner = document.getElementById('fact-banner');
+  if (banner) banner.classList.remove('show');
+};
+NM.startFactRotation = function(options = {}) {
+  if (!NM.isWorkspaceVisible()) return;
+  if (!factRotationIntervalId || options.immediate) showFact();
+  if (factRotationIntervalId) return;
+  factRotationIntervalId = setInterval(showFact, 30000);
+};
+NM.syncAmbientUi = function(options = {}) {
+  if (NM.isWorkspaceVisible()) {
+    NM.ensureZipcodesLoaded();
+    NM.startFactRotation({ immediate: !!options.immediate });
+  } else {
+    NM.stopFactRotation();
+  }
+};
+NM.getHostSnapshot = function() {
+  return {
+    embedded: !NM.isStandaloneRoute(),
+    workspaceVisible: NM.isWorkspaceVisible(),
+    mapReady: !!NM._map,
+    currentLayer: NM.LayerSwitcher?.current || null,
+    offlineAtlasReady: NM.hasOfflineAtlas(),
+    offlineAtlasInstalling: NM.isOfflineAtlasInstalling(),
+    zipcodesLoaded: !!NM.ZIPDB,
+    zipcodesRequested: !!zipcodesLoadRequested,
+    factRotationActive: !!factRotationIntervalId,
+    factVisible: !!document.getElementById('fact-banner')?.classList.contains('show'),
+    nightMode: !!NM._nightMode,
+  };
+};
+
+function getTabButtons() {
+  const embeddedRoot = document.getElementById('tab-nukemap');
+  if (embeddedRoot) {
+    const embeddedTabs = embeddedRoot.querySelectorAll('.nk-tab');
+    if (embeddedTabs.length) return [...embeddedTabs];
+  }
+  return [...document.querySelectorAll('.tab')];
+}
+
+function getTabPanes() {
+  const embeddedRoot = document.getElementById('tab-nukemap');
+  if (embeddedRoot) {
+    const embeddedPanes = embeddedRoot.querySelectorAll('.nk-tab-pane');
+    if (embeddedPanes.length) return [...embeddedPanes];
+  }
+  return [...document.querySelectorAll('.tab-content')];
+}
+
+function showFact() {
+  const banner = $('fact-banner');
+  const text = $('fact-text');
+  if (!banner || !text) return;
+  if (factHideTimeoutId) clearTimeout(factHideTimeoutId);
+  text.textContent = NM.Facts[factIdx % NM.Facts.length];
+  banner.classList.add('show');
+  factIdx++;
+  factHideTimeoutId = setTimeout(() => {
+    banner.classList.remove('show');
+    factHideTimeoutId = 0;
+  }, 12000);
+}
 
 // ---- MAP INIT ----
 function initMap() {
   map = L.map('map', {center: [39.83, -98.58], zoom: 5, zoomControl: true, attributionControl: true, zoomSnap: 0.5});
+  NM.protectOverlayInteractions([
+    '#panel',
+    '#welcome-overlay',
+    '#flash',
+    '#coords',
+    '#offline-badge',
+    '#det-counter',
+    '#ms-panel',
+    '#search-results'
+  ]);
   L.control.scale({position: 'bottomleft', imperial: true, metric: true, maxWidth: 200}).addTo(map);
   NM._map = map; // expose for mushroom3d positioning
   const dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -49,7 +683,7 @@ function initMap() {
     _l2y(lat, z) { const n = Math.pow(2, z), r = lat * Math.PI / 180; return n * (1 - (Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI)) / 2; },
     _l2x(lng, z) { return Math.pow(2, z) * ((lng + 180) / 360); }
   });
-  const offline = new Offline('', {maxZoom: 12, attribution: 'Offline | NukeMap'});
+  const offline = new Offline('', {maxZoom: 12, attribution: 'Offline fallback | NukeMap'});
 
   let loaded = false;
   dark.on('tileerror', () => { if (!loaded) { loaded = true; map.removeLayer(dark); offline.addTo(map); showBadge(false); } });
@@ -82,10 +716,13 @@ function initMap() {
   loadFromURL();
 }
 
-function showBadge(on) {
+function showBadge(on, labelText) {
   const b = document.getElementById('offline-badge'), d = b.querySelector('.ob-dot'), l = b.querySelector('.ob-lbl');
-  b.classList.add('show'); d.className = 'ob-dot ' + (on ? 'on' : 'off'); l.textContent = on ? 'Online' : 'Offline';
-  if (on) setTimeout(() => b.classList.remove('show'), 3000);
+  const state = typeof on === 'string' ? on : (on ? 'on' : 'off');
+  b.classList.add('show');
+  d.className = 'ob-dot ' + state;
+  l.textContent = labelText || (state === 'on' ? 'Online' : state === 'atlas' ? 'Offline Basemap Ready' : 'Offline');
+  if (state !== 'off') setTimeout(() => b.classList.remove('show'), 3200);
 }
 
 // ---- MAP CLICK ----
@@ -305,8 +942,19 @@ function triggerDetonation(lat, lng) {
 
 // ---- UI HELPERS ----
 function $(id) { return document.getElementById(id); }
+
+NM.switchToPreferredMapLayer = function() {
+  const theme = document.documentElement.getAttribute('data-theme') || 'nomad';
+  const preferredLayer = NM.getThemeMapLayerName(theme);
+  const preferredMapLayer = NM.LayerSwitcher?.layers?.[preferredLayer];
+  if (!preferredMapLayer || typeof NM.LayerSwitcher?.switchTo !== 'function') return false;
+  if (typeof preferredMapLayer.once === 'function' && NM.dismissLoading) preferredMapLayer.once('load', NM.dismissLoading);
+  NM.LayerSwitcher.applyTheme?.(theme);
+  if (NM.LayerSwitcher.current !== preferredLayer) NM.LayerSwitcher.switchTo(preferredLayer);
+  return true;
+};
 function getYield() { return NM.sliderToYield(+$('yield-slider').value); }
-function getBurst() { return document.querySelector('.burst-btn.active')?.dataset.burst || 'airburst'; }
+function getBurst() { return NM.queryUi('.burst-btn.active')?.dataset.burst || 'airburst'; }
 
 function setYield(kt) {
   $('yield-slider').value = NM.yieldToSlider(kt);
@@ -331,7 +979,11 @@ function syncYieldInput(kt) {
 // ---- CONTROLS INIT ----
 function initControls() {
   // Tabs
-  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
+  getTabButtons().forEach((tabButton) => {
+    const tabId = tabButton.dataset.nktab || tabButton.dataset.tab;
+    if (!tabId) return;
+    tabButton.addEventListener('click', () => switchTab(tabId));
+  });
 
   // Weapon select (grouped by country)
   const sel = $('weapon-select');
@@ -389,8 +1041,8 @@ function initControls() {
   syncYieldInput(NM.sliderToYield(+$('yield-slider').value));
 
   // Burst buttons
-  document.querySelectorAll('.burst-btn').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('.burst-btn').forEach(x => x.classList.remove('active'));
+  NM.queryUiAll('.burst-btn').forEach(b => b.addEventListener('click', () => {
+    NM.queryUiAll('.burst-btn').forEach(x => x.classList.remove('active'));
     b.classList.add('active');
     $('height-row').style.display = b.dataset.burst === 'custom' ? '' : 'none';
     $('wind-wrap').style.display = b.dataset.burst === 'surface' ? '' : 'none';
@@ -469,15 +1121,10 @@ function initControls() {
   // ---- EXTRAS ----
   NM.DistanceIndicator.init();
   NM.LayerSwitcher.init(map);
-  if (navigator.onLine) {
-    const preferredLayer = NM.getThemeMapLayerName(document.documentElement.getAttribute('data-theme') || 'nomad');
-    const preferredTileLayer = NM.LayerSwitcher.layers[preferredLayer];
-    if (preferredTileLayer && NM.dismissLoading) preferredTileLayer.once('load', NM.dismissLoading);
-    NM.LayerSwitcher.switchTo(preferredLayer);
-  }
+  NM.switchToPreferredMapLayer();
 
   // Layer switcher buttons (panel)
-  document.querySelectorAll('#layer-switcher .layer-btn').forEach(btn => {
+  NM.queryUiAll('#layer-switcher .layer-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       NM.LayerSwitcher.switchTo(btn.dataset.layer);
     });
@@ -491,7 +1138,7 @@ function initControls() {
     $('ms-panel').classList.toggle('open', !isOpen);
   });
   $('ms-panel').addEventListener('click', e => e.stopPropagation());
-  document.querySelectorAll('.ms-btn').forEach(btn => {
+  NM.queryUiAll('.ms-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
       NM.LayerSwitcher.switchTo(btn.dataset.layer);
@@ -588,7 +1235,7 @@ function initControls() {
         sc.dets.forEach((d, i) => {
           setTimeout(() => {
             setYield(d.yield_kt);
-            document.querySelectorAll('.burst-btn').forEach(b => b.classList.toggle('active', b.dataset.burst === d.burst));
+              NM.queryUiAll('.burst-btn').forEach(b => b.classList.toggle('active', b.dataset.burst === d.burst));
             $('wind-wrap').style.display = d.burst === 'surface' ? '' : 'none';
             triggerDetonation(d.lat, d.lng);
           }, i * 600);
@@ -766,13 +1413,13 @@ function initControls() {
   });
 
   // Quick weapon bar
-  document.querySelectorAll('.qw-chip').forEach(chip => {
+  NM.queryUiAll('.qw-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const kt = +chip.dataset.kt;
       setYield(kt);
       const i = NM.WEAPONS.findIndex(w => Math.abs(w.yield_kt - kt) < 0.01);
       if (i >= 0) $('weapon-select').value = i;
-      document.querySelectorAll('.qw-chip').forEach(c => c.classList.remove('qw-active'));
+      NM.queryUiAll('.qw-chip').forEach(c => c.classList.remove('qw-active'));
       chip.classList.add('qw-active');
     });
   });
@@ -794,22 +1441,36 @@ function initControls() {
   initEncyclopedia();
 
   // Rotating facts banner
-  let factIdx = Math.floor(Math.random() * NM.Facts.length);
-  function showFact() {
-    const banner = $('fact-banner');
-    $('fact-text').textContent = NM.Facts[factIdx % NM.Facts.length];
-    banner.classList.add('show');
-    factIdx++;
-    setTimeout(() => banner.classList.remove('show'), 12000);
+  $('fact-banner')?.addEventListener('click', () => {
+    $('fact-banner')?.classList.remove('show');
+    showFact();
+  });
+  document.addEventListener('visibilitychange', () => {
+    NM.syncAmbientUi({ immediate: document.visibilityState === 'visible' });
+  });
+  const tabRoot = document.getElementById('tab-nukemap');
+  if (tabRoot && typeof MutationObserver === 'function' && !nukemapTabObserver) {
+    nukemapTabObserver = new MutationObserver(() => {
+      NM.syncAmbientUi({ immediate: tabRoot.classList.contains('active') });
+    });
+    nukemapTabObserver.observe(tabRoot, { attributes: true, attributeFilter: ['class'] });
   }
-  showFact();
-  setInterval(showFact, 30000);
-  $('fact-banner').addEventListener('click', () => { $('fact-banner').classList.remove('show'); showFact(); });
+  NM.syncAmbientUi({ immediate: true });
 }
 
 function switchTab(id) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
-  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + id));
+  const tabButtons = getTabButtons();
+  const tabPanes = getTabPanes();
+  const paneId = tabPanes.some((pane) => pane.classList.contains('nk-tab-pane')) ? 'nk-pane-' + id : 'tab-' + id;
+  const hasTargetPane = tabPanes.some((pane) => pane.id === paneId);
+
+  if (!hasTargetPane) return;
+
+  tabButtons.forEach((tabButton) => {
+    const tabId = tabButton.dataset.nktab || tabButton.dataset.tab;
+    tabButton.classList.toggle('active', tabId === id);
+  });
+  tabPanes.forEach((pane) => pane.classList.toggle('active', pane.id === paneId));
 }
 
 // ---- MIRV ----
@@ -896,7 +1557,7 @@ function initHistorical() {
     ch.innerHTML = `${NM.esc(h.name)}<span class="chip-yield">${h.year} \u2014 ${NM.fmtYield(h.yield_kt)}</span>`;
     ch.addEventListener('click', () => {
       setYield(h.yield_kt);
-      document.querySelectorAll('.burst-btn').forEach(b => b.classList.toggle('active', b.dataset.burst === h.burst));
+      NM.queryUiAll('.burst-btn').forEach(b => b.classList.toggle('active', b.dataset.burst === h.burst));
       $('height-row').style.display = h.burst === 'custom' ? '' : 'none';
       $('wind-wrap').style.display = h.burst === 'surface' ? '' : 'none';
       if (h.height) $('burst-height').value = h.height;
@@ -910,6 +1571,7 @@ function initHistorical() {
 function initSearch() {
   const inp = $('search'), res = $('search-results'); let si = -1;
   inp.addEventListener('input', () => {
+    NM.ensureZipcodesLoaded();
     const items = NM.searchLocations(inp.value); si = -1;
     if (!items.length) { res.classList.remove('active'); return; }
     res.innerHTML = items.map((it, i) => `<div class="sr-item" data-idx="${i}"><div><div class="sr-name">${it.isTarget ? '<span style="color:var(--red);font-size:8px;margin-right:3px">&#9733;</span>' : ''}${NM.esc(it.name)}</div><div class="sr-detail">${NM.esc(it.detail)}</div></div>${it.pop ? `<div class="sr-pop">${NM.fmtNum(it.pop)}</div>` : ''}</div>`).join('');
@@ -918,7 +1580,10 @@ function initSearch() {
   });
   inp.addEventListener('keydown', e => { const items = res.querySelectorAll('.sr-item'); if (!items.length) return; if (e.key === 'ArrowDown') { e.preventDefault(); si = Math.min(si + 1, items.length - 1); items.forEach((el, i) => el.classList.toggle('selected', i === si)); } else if (e.key === 'ArrowUp') { e.preventDefault(); si = Math.max(si - 1, 0); items.forEach((el, i) => el.classList.toggle('selected', i === si)); } else if (e.key === 'Enter') { e.preventDefault(); (si >= 0 ? items[si] : items[0])?.click(); } else if (e.key === 'Escape') { res.classList.remove('active'); inp.blur(); } });
   inp.addEventListener('blur', () => setTimeout(() => res.classList.remove('active'), 200));
-  inp.addEventListener('focus', () => { if (inp.value.trim()) inp.dispatchEvent(new Event('input')); });
+  inp.addEventListener('focus', () => {
+    NM.ensureZipcodesLoaded();
+    if (inp.value.trim()) inp.dispatchEvent(new Event('input'));
+  });
 }
 
 function selectResult(it) {
@@ -1157,9 +1822,15 @@ function resetPanels() {
 
 // ---- URL STATE ----
 function updateURL() {
-  if (!currentDets.length) { history.replaceState(null, '', location.pathname); return; }
+  const url = new URL(window.location.href);
+  if (!currentDets.length) {
+    url.searchParams.delete('d');
+    history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+    return;
+  }
   const params = currentDets.map(d => `${d.lat.toFixed(4)},${d.lng.toFixed(4)},${d.yieldKt},${d.burstType[0]}`).join(';');
-  history.replaceState(null, '', `?d=${params}`);
+  url.searchParams.set('d', params);
+  history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
 }
 
 function loadFromURL() {
@@ -1171,7 +1842,7 @@ function loadFromURL() {
     if (lat && lng && y) {
       const burst = bt === 's' ? 'surface' : bt === 'c' ? 'custom' : 'airburst';
       setYield(+y);
-      document.querySelectorAll('.burst-btn').forEach(b => b.classList.toggle('active', b.dataset.burst === burst));
+      NM.queryUiAll('.burst-btn').forEach(b => b.classList.toggle('active', b.dataset.burst === burst));
       triggerDetonation(+lat, +lng);
     }
   });
@@ -1335,7 +2006,7 @@ function loadScenario(s) {
     s.dets.forEach((d, i) => {
       setTimeout(() => {
         setYield(d.yieldKt);
-        document.querySelectorAll('.burst-btn').forEach(b => b.classList.toggle('active', b.dataset.burst === d.burstType));
+        NM.queryUiAll('.burst-btn').forEach(b => b.classList.toggle('active', b.dataset.burst === d.burstType));
         $('wind-wrap').style.display = d.burstType === 'surface' ? '' : 'none';
         triggerDetonation(d.lat, d.lng);
       }, i * 400);
@@ -1388,24 +2059,32 @@ function init() {
     navigator.serviceWorker.register('/nukemap/sw.js').catch(() => {});
   }
 
-  // Lazy-load ZIP code database (1.5MB) after app is interactive
-  setTimeout(() => {
-    const s = document.createElement('script');
-    s.src = '/nukemap/js/zipcodes.js';
-    document.body.appendChild(s);
-  }, 2000);
-
   // Welcome overlay
   const wo = $('welcome-overlay');
   const hasUrlDets = new URLSearchParams(location.search).get('d');
+  const ensureAtlasReady = async () => {
+    if (NM.hasOfflineAtlas()) return true;
+    try {
+      await NM.ensureOfflineAtlas();
+      return NM.hasOfflineAtlas();
+    } catch (_error) {
+      return false;
+    }
+  };
   const dismissWelcome = () => {
     if (!wo || wo.classList.contains('hidden')) return;
     if ($('welcome-noshow')?.checked) localStorage.setItem('nukemap-welcomed', '1');
     wo.classList.add('hidden');
   };
+  NM.refreshOfflineAtlasUi();
   if (wo && !localStorage.getItem('nukemap-welcomed') && !hasUrlDets) {
     wo.style.display = '';
-    $('welcome-dismiss').addEventListener('click', () => {
+    NM.ensureOfflineAtlas().catch(() => {});
+    $('welcome-dismiss').addEventListener('click', async () => {
+      if (!(await ensureAtlasReady())) {
+        NM.refreshOfflineAtlasUi();
+        return;
+      }
       dismissWelcome();
       // Demo detonation on first visit
       if (!currentDets.length) {
@@ -1418,7 +2097,14 @@ function init() {
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape') dismissWelcome();
     });
-  } else if (wo) wo.classList.add('hidden');
+  } else {
+    if (wo) wo.classList.add('hidden');
+    if (!NM.hasOfflineAtlas()) {
+      setTimeout(() => {
+        NM.ensureOfflineAtlas().catch(() => {});
+      }, hasUrlDets ? 180 : 60);
+    }
+  }
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

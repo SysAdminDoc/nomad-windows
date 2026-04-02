@@ -119,9 +119,30 @@
   z-index: 1;
 }
 
+.onboarding-panel-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
 .onboarding-panel-progress,
 .download-banner-items {
   color: var(--text-dim);
+}
+
+.onboarding-panel-note {
+  position: relative;
+  z-index: 1;
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, var(--border));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-dim) 68%, transparent);
+  color: var(--text-dim);
+  font-size: 12px;
+  line-height: 1.6;
 }
 
 .onboarding-steps {

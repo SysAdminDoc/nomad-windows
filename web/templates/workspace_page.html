@@ -75,6 +75,8 @@
 window.NOMAD_ACTIVE_TAB = {{ active_tab|tojson }};
 window.NOMAD_WORKSPACE_ROUTES = {{ workspace_routes|tojson }};
 window.NOMAD_ALLOW_LAUNCH_RESTORE = {{ allow_launch_restore|tojson }};
+window.NOMAD_FIRST_RUN_COMPLETE = {{ first_run_complete|tojson }};
+window.NOMAD_WIZARD_SHOULD_LAUNCH = {{ wizard_should_launch|tojson }};
 </script>
 <script>
 {% include 'index_partials/_app_inline.js' %}

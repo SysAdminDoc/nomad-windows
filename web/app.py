@@ -494,9 +494,19 @@ def create_app():
 
     workspace_routes = {tab: meta['route'] for tab, meta in workspace_pages.items()}
 
+    def _is_first_run_complete():
+        try:
+            with db_session() as db:
+                row = db.execute("SELECT value FROM settings WHERE key = 'first_run_complete'").fetchone()
+        except Exception:
+            row = None
+        value = (row['value'] if row else '') or ''
+        return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
+
     def _render_workspace_page(tab_id, allow_launch_restore=False):
         meta = workspace_pages[tab_id]
         manifest = _load_bundle_manifest()
+        first_run_complete = _is_first_run_complete()
         return render_template(
             'workspace_page.html',
             version=VERSION,
@@ -507,6 +517,8 @@ def create_app():
             workspace_partial=meta['partial'],
             workspace_routes=workspace_routes,
             allow_launch_restore=allow_launch_restore,
+            first_run_complete=first_run_complete,
+            wizard_should_launch=(tab_id == 'services' and not first_run_complete),
         )
 
     @app.route('/')

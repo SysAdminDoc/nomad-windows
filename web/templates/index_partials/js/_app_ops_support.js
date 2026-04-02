@@ -815,14 +815,22 @@ function saveAutoBackup() {
 }
 function setupAutoBackup(interval) {
   if (_autoBackupTimer) { clearInterval(_autoBackupTimer); _autoBackupTimer = null; }
+  window.NomadShellRuntime?.stopInterval('shell.auto-backup');
   if (interval > 0) {
-    _autoBackupTimer = setInterval(async () => {
+    const runner = async () => {
       if (document.hidden) return;
       try {
         const resp = await fetch('/api/export-config');
         if (resp.ok) toast('Auto backup completed', 'info');
       } catch(e) {}
-    }, interval * 1000);
+    };
+    if (window.NomadShellRuntime) {
+      _autoBackupTimer = window.NomadShellRuntime.startInterval('shell.auto-backup', runner, interval * 1000, {
+        requireVisible: true,
+      });
+      return;
+    }
+    _autoBackupTimer = setInterval(runner, interval * 1000);
   }
 }
 (function() {
@@ -877,19 +885,22 @@ async function sendBroadcast() {
 async function clearBroadcast() {
   await fetch('/api/broadcast/clear', {method:'POST'});
   toast('Broadcast cleared');
-  document.getElementById('broadcast-banner').style.display = 'none';
+  const banner = document.getElementById('broadcast-banner');
+  if (banner) banner.style.display = 'none';
 }
 
 let _dismissedBroadcastTs = null;
 function dismissBroadcast() {
   _dismissedBroadcastTs = window._lastBroadcastTs;
-  document.getElementById('broadcast-banner').style.display = 'none';
+  const banner = document.getElementById('broadcast-banner');
+  if (banner) banner.style.display = 'none';
 }
 
 async function pollBroadcast() {
+  const banner = document.getElementById('broadcast-banner');
+  if (!banner) return;
   try {
     const b = await (await fetch('/api/broadcast')).json();
-    const banner = document.getElementById('broadcast-banner');
     if (b.active && b.message) {
       // Don't re-show a dismissed broadcast
       if (_dismissedBroadcastTs === b.timestamp) return;
@@ -1490,22 +1501,72 @@ function prepEmptyBlock(message) {
   return `<div class="prep-table-empty prep-empty-block">${message}</div>`;
 }
 
+let _cameraRefreshTimers = {};
+let _cameraSnapshotCameras = [];
+
+function isSecurityCameraPanelActive() {
+  const prepRoot = document.getElementById('tab-preparedness');
+  const cameraPanel = document.getElementById('security-cameras-panel');
+  if (!cameraPanel) return false;
+  const prepVisible = !prepRoot || prepRoot.classList.contains('active');
+  return prepVisible && getComputedStyle(cameraPanel).display !== 'none';
+}
+
+function refreshSnapshotCameraFeeds() {
+  if (!isSecurityCameraPanelActive()) return;
+  _cameraSnapshotCameras.forEach(c => {
+    const img = document.getElementById(`cam-feed-${c.id}`);
+    if (img) img.src = `${c.url}?t=${Date.now()}`;
+  });
+}
+
+function stopCameraSnapshotRefresh() {
+  Object.values(_cameraRefreshTimers).forEach(t => clearInterval(t));
+  _cameraRefreshTimers = {};
+  window.NomadShellRuntime?.stopInterval('preparedness.camera-snapshots');
+}
+
+function startCameraSnapshotRefresh(cameras) {
+  stopCameraSnapshotRefresh();
+  _cameraSnapshotCameras = Array.isArray(cameras)
+    ? cameras.filter(c => c.stream_type === 'snapshot')
+    : [];
+  if (!_cameraSnapshotCameras.length) return;
+  if (window.NomadShellRuntime) {
+    _cameraRefreshTimers.runtime = window.NomadShellRuntime.startInterval('preparedness.camera-snapshots', refreshSnapshotCameraFeeds, 5000, {
+      tabId: 'preparedness',
+      requireVisible: true,
+    });
+    return;
+  }
+  _cameraRefreshTimers.fallback = setInterval(refreshSnapshotCameraFeeds, 5000);
+}
+
 function showSecurityTab(tab) {
   ['cameras','access'].forEach(t => {
     document.getElementById(`security-${t}-panel`).style.display = t === tab ? 'block' : 'none';
     document.getElementById(`sec-tab-${t}`).className = t === tab ? 'btn btn-sm prep-utility-tab prep-utility-tab-active' : 'btn btn-sm prep-utility-tab';
   });
   if (tab === 'cameras') { loadCameras(); loadMotionStatus(); _startMotionPolling(); }
-  else { _stopMotionPolling(); }
+  else { _stopMotionPolling(); stopCameraSnapshotRefresh(); }
   if (tab === 'access') loadAccessLog();
 }
 
 function _startMotionPolling() {
   _stopMotionPolling();
-  _motionStatusInterval = setInterval(loadMotionStatus, 10000);
+  const runner = () => { if (isSecurityCameraPanelActive()) loadMotionStatus(); };
+  if (window.NomadShellRuntime) {
+    _motionStatusInterval = window.NomadShellRuntime.startInterval('preparedness.motion-status', runner, 10000, {
+      tabId: 'preparedness',
+      requireVisible: true,
+    });
+    return;
+  }
+  _motionStatusInterval = setInterval(runner, 10000);
 }
 function _stopMotionPolling() {
   if (_motionStatusInterval) { clearInterval(_motionStatusInterval); _motionStatusInterval = null; }
+  window.NomadShellRuntime?.stopInterval('preparedness.motion-status');
 }
 
 async function loadSecurityDashboard() {
@@ -1522,15 +1583,11 @@ const secColors = {green:'var(--green)',yellow:'var(--warning)',orange:'var(--or
   } catch(e) {}
 }
 
-let _cameraRefreshTimers = {};
-
 async function loadCameras() {
   try {
     const cameras = await (await fetch('/api/security/cameras')).json();
     const el = document.getElementById('camera-grid');
-    // Clear old refresh timers
-    Object.values(_cameraRefreshTimers).forEach(t => clearInterval(t));
-    _cameraRefreshTimers = {};
+    stopCameraSnapshotRefresh();
     if (!cameras.length) {
       el.innerHTML = `<div class="prep-camera-empty">${prepEmptyBlock('No cameras registered. Add IP cameras above to view live feeds.')}</div>`;
       return;
@@ -1562,13 +1619,7 @@ async function loadCameras() {
       </div>`;
     }).join('');
 
-    // Auto-refresh snapshot cameras every 5 seconds
-    cameras.filter(c => c.stream_type === 'snapshot').forEach(c => {
-      _cameraRefreshTimers[c.id] = setInterval(() => {
-        const img = document.getElementById(`cam-feed-${c.id}`);
-        if (img) img.src = `${c.url}?t=${Date.now()}`;
-      }, 5000);
-    });
+    startCameraSnapshotRefresh(cameras);
   } catch(e) {}
 }
 
@@ -1590,7 +1641,6 @@ async function addCamera() {
 async function deleteCamera(id) {
   await fetch(`/api/security/cameras/${id}`, {method:'DELETE'});
   toast('Camera removed', 'warning');
-  if (_cameraRefreshTimers[id]) { clearInterval(_cameraRefreshTimers[id]); delete _cameraRefreshTimers[id]; }
   loadCameras();
   loadSecurityDashboard();
 }
@@ -4341,26 +4391,29 @@ let _alertBarVisible = false;
 let _lastAlertCount = 0;
 
 async function loadAlerts() {
+  const badge = document.getElementById('alert-badge');
+  const bar = document.getElementById('alert-bar');
+  const items = document.getElementById('alert-items');
+  const count = document.getElementById('alert-count');
+  if (!badge && !bar && !items && !count) return;
   try {
     const alerts = await (await fetch('/api/alerts')).json();
-    const badge = document.getElementById('alert-badge');
-    const bar = document.getElementById('alert-bar');
-    const items = document.getElementById('alert-items');
-    const count = document.getElementById('alert-count');
 
     if (!alerts.length) {
-      badge.style.display = 'none';
-      if (_alertBarVisible && !items.innerHTML.includes('All clear')) {
+      if (badge) badge.style.display = 'none';
+      if (_alertBarVisible && items && !items.innerHTML.includes('All clear')) {
         items.innerHTML = '<div class="alert-clear-state">All clear. No active alerts.</div>';
       }
-      count.textContent = '';
+      if (count) count.textContent = '';
       return;
     }
 
     // Update badge
-    badge.style.display = 'block';
-    badge.textContent = alerts.length;
-    count.textContent = `(${alerts.length})`;
+    if (badge) {
+      badge.style.display = 'block';
+      badge.textContent = alerts.length;
+    }
+    if (count) count.textContent = `(${alerts.length})`;
 
     // Notify on NEW alerts (ones we haven't seen before)
     if (alerts.length > _lastAlertCount && _lastAlertCount > 0) {
@@ -4372,7 +4425,7 @@ sendNotification('NOMAD Alert', newest.title);
     _lastAlertCount = alerts.length;
 
     // Auto-show bar on first critical alert
-    if (!_alertBarVisible && alerts.some(a => a.severity === 'critical')) {
+    if (bar && !_alertBarVisible && alerts.some(a => a.severity === 'critical')) {
       _alertBarVisible = true;
       bar.style.display = 'block';
     }
@@ -4380,25 +4433,29 @@ sendNotification('NOMAD Alert', newest.title);
     // Render alert items
     const sevOrder = {critical: 0, warning: 1, info: 2};
     alerts.sort((a, b) => (sevOrder[a.severity] || 9) - (sevOrder[b.severity] || 9));
-    items.innerHTML = alerts.map(a => `
-      <div class="alert-item">
-        <span class="alert-sev ${a.severity}">${a.severity}</span>
-        <div class="alert-body">
-          <div class="alert-title">${escapeHtml(a.title)}</div>
-          <div class="alert-msg">${escapeHtml(a.message)}</div>
+    if (items) {
+      items.innerHTML = alerts.map(a => `
+        <div class="alert-item">
+          <span class="alert-sev ${a.severity}">${a.severity}</span>
+          <div class="alert-body">
+            <div class="alert-title">${escapeHtml(a.title)}</div>
+            <div class="alert-msg">${escapeHtml(a.message)}</div>
+          </div>
+          <button type="button" class="alert-dismiss alert-dismiss-link" data-shell-action="snooze-alert" data-alert-id="${a.id}" title="Snooze 1hr">snooze</button>
+          <button type="button" class="alert-dismiss" data-shell-action="dismiss-alert" data-alert-id="${a.id}" title="Dismiss" aria-label="Dismiss alert">x</button>
         </div>
-        <button type="button" class="alert-dismiss alert-dismiss-link" data-shell-action="snooze-alert" data-alert-id="${a.id}" title="Snooze 1hr">snooze</button>
-        <button type="button" class="alert-dismiss" data-shell-action="dismiss-alert" data-alert-id="${a.id}" title="Dismiss" aria-label="Dismiss alert">x</button>
-      </div>
-    `).join('');
+      `).join('');
+    }
     // Append predictive alerts
-    loadPredictiveAlerts();
+    if (items) loadPredictiveAlerts();
   } catch(e) {}
 }
 
 function toggleAlertBar() {
+  const bar = document.getElementById('alert-bar');
+  if (!bar) return;
   _alertBarVisible = !_alertBarVisible;
-  document.getElementById('alert-bar').style.display = _alertBarVisible ? 'block' : 'none';
+  bar.style.display = _alertBarVisible ? 'block' : 'none';
   if (_alertBarVisible) loadAlerts();
 }
 
@@ -4415,7 +4472,8 @@ async function dismissAlert(id) {
 
 async function dismissAllAlerts() {
   await fetch('/api/alerts/dismiss-all', {method:'POST'});
-  document.getElementById('alert-summary-panel').style.display = 'none';
+  const panel = document.getElementById('alert-summary-panel');
+  if (panel) panel.style.display = 'none';
   loadAlerts();
   toast('All alerts dismissed', 'info');
 }
@@ -4486,51 +4544,54 @@ async function updateStatusStrip() {
 
 /* ─── Tab Badges ─── */
 function updateTabBadges() {
+  const preparednessBadge = document.getElementById('badge-preparedness');
+  const mapsBadge = document.getElementById('badge-maps');
+  const mediaBadge = document.getElementById('badge-media');
+  const aiBadge = document.getElementById('badge-ai-chat');
+  if (!preparednessBadge && !mapsBadge && !mediaBadge && !aiBadge) return;
+
   // Use live dashboard data if available (avoids extra API calls)
   const d = _liveDashData;
 
   // Preparedness badge: low stock + expiring + active alerts
-  if (d) {
+  if (d && (preparednessBadge || mapsBadge || mediaBadge)) {
     const inv = d.inventory || {};
     const alerts = d.alerts || {};
     const lowCount = (inv.low_stock || 0) + (inv.expiring_30d || 0) + (alerts.active || 0);
-    const badge = document.getElementById('badge-preparedness');
-    if (badge) {
-      if (lowCount > 0) { badge.textContent = lowCount; badge.style.display = ''; badge.className = 'tab-badge' + (alerts.critical > 0 ? ' red' : ''); }
-      else { badge.style.display = 'none'; }
+    if (preparednessBadge) {
+      if (lowCount > 0) { preparednessBadge.textContent = lowCount; preparednessBadge.style.display = ''; preparednessBadge.className = 'tab-badge' + (alerts.critical > 0 ? ' red' : ''); }
+      else { preparednessBadge.style.display = 'none'; }
     }
     // Maps badge: waypoint count
-    const mapBadge = document.getElementById('badge-maps');
-    if (mapBadge) { mapBadge.style.display = 'none'; }
+    if (mapsBadge) { mapsBadge.style.display = 'none'; }
     // Media badge: hidden (no count needed)
-    const mediaBadge = document.getElementById('badge-media');
     if (mediaBadge) { mediaBadge.style.display = 'none'; }
-  } else {
+  } else if (preparednessBadge) {
     // Fallback: fetch from individual endpoints
     Promise.all([
       safeFetch('/api/inventory/summary', {}, {}),
       safeFetch('/api/alerts', {}, []),
     ]).then(([inv, alerts]) => {
       const lowCount = (inv.low_stock || 0) + (inv.expired || 0) + (Array.isArray(alerts) ? alerts.length : 0);
-      const badge = document.getElementById('badge-preparedness');
-      if (badge) {
-        if (lowCount > 0) { badge.textContent = lowCount; badge.style.display = ''; badge.className = 'tab-badge'; }
-        else { badge.style.display = 'none'; }
-      }
+      if (lowCount > 0) { preparednessBadge.textContent = lowCount; preparednessBadge.style.display = ''; preparednessBadge.className = 'tab-badge'; }
+      else { preparednessBadge.style.display = 'none'; }
     });
   }
 
   // AI Chat badge: green dot if Ollama running, red dot if not
-  safeFetch('/api/services', {}, []).then(svcs => {
-    if (!svcs) return;
+  if (!aiBadge) return;
+  const applyAiBadge = (svcs) => {
+    if (!Array.isArray(svcs)) return;
     const ollama = svcs.find(s => s.id === 'ollama');
-    const badge = document.getElementById('badge-ai-chat');
-    if (badge) {
-      badge.style.display = '';
-      badge.innerHTML = '&#9679;';
-      badge.className = 'tab-badge ' + (ollama && ollama.running ? 'green' : 'red');
-    }
-  });
+    aiBadge.style.display = '';
+    aiBadge.innerHTML = '&#9679;';
+    aiBadge.className = 'tab-badge ' + (ollama && ollama.running ? 'green' : 'red');
+  };
+  if (typeof _lastServicesData !== 'undefined' && Array.isArray(_lastServicesData) && _lastServicesData.length) {
+    applyAiBadge(_lastServicesData);
+    return;
+  }
+  safeFetch('/api/services', {}, []).then(applyAiBadge);
 }
 
 /* ─── Customize Panel ─── */

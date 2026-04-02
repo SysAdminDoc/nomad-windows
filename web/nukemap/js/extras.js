@@ -123,6 +123,7 @@ NM.LayerSwitcher = {
 
   init(map) {
     this.layers = {
+      offlineAtlas: NM.buildOfflineAtlasLayer?.(document.documentElement.getAttribute('data-theme') || 'nomad'),
       dark:       L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {attribution:'&copy; OSM &copy; CARTO',subdomains:'abcd',maxZoom:19}),
       darkClean:  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {attribution:'&copy; CARTO',subdomains:'abcd',maxZoom:19}),
       satellite:  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {attribution:'&copy; Esri',maxZoom:19}),
@@ -136,13 +137,24 @@ NM.LayerSwitcher = {
     this._labelOverlay = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {subdomains:'abcd',maxZoom:19,pane:'shadowPane'});
     this.map = map;
   },
+  refreshOfflineAtlasLayer() {
+    if (!this.layers.offlineAtlas && typeof NM.buildOfflineAtlasLayer === 'function') {
+      this.layers.offlineAtlas = NM.buildOfflineAtlasLayer(document.documentElement.getAttribute('data-theme') || 'nomad');
+    }
+    this.layers.offlineAtlas?.syncAtlas?.();
+  },
+  applyTheme(theme) {
+    this.layers.offlineAtlas?.setTheme?.(theme);
+  },
 
   switchTo(name) {
     if (!this.layers[name]) return;
+    this.refreshOfflineAtlasLayer();
+    this.applyTheme(document.documentElement.getAttribute('data-theme') || 'nomad');
     // Remove ALL tile layers (including initial dark layer and any overlays)
     const toRemove = [];
     this.map.eachLayer(l => {
-      if (l._url !== undefined && l._tiles !== undefined) toRemove.push(l); // duck-type check for tile layers
+      if ((l._url !== undefined && l._tiles !== undefined) || typeof l.createTile === 'function') toRemove.push(l);
     });
     toRemove.forEach(l => this.map.removeLayer(l));
     // Add selected tile layer
@@ -151,8 +163,10 @@ NM.LayerSwitcher = {
     if (name === 'satLabels') this._labelOverlay.addTo(this.map);
     this.current = name;
     // Update active state in both switchers
-    document.querySelectorAll('.ms-btn').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
-    document.querySelectorAll('#layer-switcher .layer-btn').forEach(b => b.classList.toggle('active', b.dataset.layer === name));
+    const uiButtons = NM.queryUiAll ? NM.queryUiAll('.ms-btn') : [...document.querySelectorAll('.ms-btn')];
+    const layerButtons = NM.queryUiAll ? NM.queryUiAll('#layer-switcher .layer-btn') : [...document.querySelectorAll('#layer-switcher .layer-btn')];
+    uiButtons.forEach(b => b.classList.toggle('active', b.dataset.layer === name));
+    layerButtons.forEach(b => b.classList.toggle('active', b.dataset.layer === name));
   }
 };
 

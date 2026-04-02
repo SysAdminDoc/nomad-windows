@@ -21,11 +21,15 @@
       <div class="onboarding-panel-accent home-panel-accent"></div>
       <div class="onboarding-panel-header home-panel-header">
         <div class="onboarding-panel-copy">
-          <div class="section-header-label onboarding-panel-kicker home-panel-kicker">GETTING STARTED</div>
+          <div id="gs-panel-kicker" class="section-header-label onboarding-panel-kicker home-panel-kicker">GETTING STARTED</div>
           <div class="onboarding-panel-progress" id="gs-progress-text"></div>
         </div>
-        <button class="btn btn-sm btn-ghost home-panel-compact-btn" data-hide-target="getting-started-panel">DISMISS</button>
+        <div class="onboarding-panel-actions">
+          <button id="gs-resume-setup-btn" class="btn btn-sm btn-primary compact-action-btn is-hidden" type="button" data-shell-action="rerun-setup-wizard">Resume Setup</button>
+          <button class="btn btn-sm btn-ghost home-panel-compact-btn" data-hide-target="getting-started-panel">DISMISS</button>
+        </div>
       </div>
+      <div id="gs-onboarding-note" class="onboarding-panel-note is-hidden"></div>
       <div id="gs-steps" class="onboarding-steps home-auto-grid"></div>
     </div>
 

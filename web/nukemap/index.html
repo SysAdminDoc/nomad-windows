@@ -40,9 +40,10 @@
         <span class="wf-tag">MIRV Strikes</span>
         <span class="wf-tag">Fallout Modeling</span>
         <span class="wf-tag">Shelter Analysis</span>
-        <span class="wf-tag">12 Map Styles</span>
+        <span class="wf-tag">Offline Basemap</span>
       </div>
     </div>
+        <div class="welcome-atlas-status" id="welcome-atlas-status" data-state="missing" role="status" aria-live="polite" aria-atomic="true">NukeMap will install the enhanced offline basemap before you start so the map has real boundaries and labels offline.</div>
     <button class="welcome-dismiss" id="welcome-dismiss" type="button">Start Exploring</button>
     <label class="welcome-remember"><input type="checkbox" id="welcome-noshow" checked/> Don't show again</label>
   </div>
@@ -390,12 +391,13 @@
 
         <!-- Map Layers -->
         <div class="section">
-          <div class="section-title">Map Style</div>
-          <div class="layer-switcher" id="layer-switcher">
-            <button class="layer-btn active" data-layer="dark">Dark</button>
-            <button class="layer-btn" data-layer="darkClean">Dark Clean</button>
-            <button class="layer-btn" data-layer="satellite">Satellite</button>
-            <button class="layer-btn" data-layer="satLabels">Satellite + Labels</button>
+        <div class="section-title">Map Style</div>
+        <div class="layer-switcher" id="layer-switcher">
+      <button class="layer-btn active" data-layer="offlineAtlas">Offline Basemap</button>
+          <button class="layer-btn" data-layer="dark">Dark</button>
+          <button class="layer-btn" data-layer="darkClean">Dark Clean</button>
+          <button class="layer-btn" data-layer="satellite">Satellite</button>
+          <button class="layer-btn" data-layer="satLabels">Satellite + Labels</button>
             <button class="layer-btn" data-layer="terrain">Terrain</button>
             <button class="layer-btn" data-layer="osm">OpenStreetMap</button>
             <button class="layer-btn" data-layer="voyager">Voyager</button>
@@ -541,7 +543,8 @@
 <div id="map-switcher">
   <button class="ms-toggle" id="ms-toggle" title="Change map style"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0L1 4v8l7 4 7-4V4L8 0zm0 1.25L13.5 4.5 8 7.75 2.5 4.5 8 1.25zM2 5.5l5.5 3v5.75L2 11V5.5zm6.5 8.75V8.5L14 5.5V11l-5.5 3.25z"/></svg></button>
   <div class="ms-panel" id="ms-panel">
-    <button class="ms-btn active" data-layer="dark">Dark</button>
+  <button class="ms-btn active" data-layer="offlineAtlas">Offline Basemap</button>
+    <button class="ms-btn" data-layer="dark">Dark</button>
     <button class="ms-btn" data-layer="darkClean">Dark Clean</button>
     <button class="ms-btn" data-layer="satellite">Satellite</button>
     <button class="ms-btn" data-layer="satLabels">Sat+Labels</button>

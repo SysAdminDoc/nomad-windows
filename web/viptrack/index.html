@@ -23,18 +23,17 @@
     <link rel="dns-prefetch" href="https://api.adsb.one">
     <link rel="dns-prefetch" href="https://api.adsb.lol">
     <link rel="dns-prefetch" href="https://api.airplanes.live">
-    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="preconnect" href="https://raw.githubusercontent.com" crossorigin>
-    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="preload" href="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/silhouettes/aircraft.png" as="image">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" as="style">
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js" as="script">
+    <link rel="preload" href="/viptrack/lib/leaflet.css" as="style">
+    <link rel="preload" href="/viptrack/lib/leaflet.js" as="script">
+    <link rel="preload" href="/viptrack/lib/pako.min.js" as="script">
     <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo.ico">
     <link rel="icon" type="image/png" sizes="16x16" href="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-32x32.png">
     <link rel="icon" type="image/png" sizes="48x48" href="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-48x48.png">
     <link rel="apple-touch-icon" sizes="128x128" href="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-128x128.png">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css" />
+    <link rel="stylesheet" href="/viptrack/lib/leaflet.css" />
     <style>
         :root {
             --bg: #1a1a2e;
@@ -195,10 +194,11 @@
         .aircraft-marker { transition: none; }
         .aircraft-marker.selected { z-index: 10000 !important; }
         .aircraft-marker .sprite-icon { image-rendering: auto; }
-        .aircraft-marker.interesting { z-index: 5000 !important; }
-        .aircraft-marker.vip { z-index: 6000 !important; }
-        .aircraft-marker.vip .sprite-icon { filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(35deg) brightness(1.2) drop-shadow(0 0 3px #ffd700) !important; }
-        .aircraft-marker.dimmed .sprite-icon { opacity: 0.4; }
+.aircraft-marker.interesting { z-index: 5000 !important; }
+.aircraft-marker.vip { z-index: 6000 !important; }
+.aircraft-marker.vip .sprite-icon { filter: brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(35deg) brightness(1.2) drop-shadow(0 0 3px #ffd700) !important; }
+body.day-mode .aircraft-marker.vip .sprite-icon { filter: brightness(0) invert(0.26) sepia(1) saturate(7) hue-rotate(18deg) brightness(0.92) contrast(1.28) drop-shadow(0 0 2px rgba(143, 104, 54, 0.32)) !important; }
+.aircraft-marker.dimmed .sprite-icon { opacity: 0.4; }
         /* Phase 13: Multi-Select Mode */
         .toolbar-count { font-size: 13px; font-weight: 600; color: var(--text); min-width: 80px; }
         .toolbar-count span { color: var(--accent); }
@@ -1197,11 +1197,20 @@
         .onboard-icon svg { width: 28px; height: 28px; color: var(--accent); }
         .onboard-title { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
         .onboard-desc { font-size: 13px; color: var(--text-dim); line-height: 1.5; margin-bottom: 20px; }
+        .onboard-atlas-status,
+        .offline-atlas-status { margin-bottom: 18px; padding: 11px 13px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg-darker); color: var(--text-dim); font-size: 12px; line-height: 1.5; text-align: left; }
+        .onboard-atlas-status[data-state="ready"],
+        .offline-atlas-status[data-state="ready"] { border-color: rgba(74, 222, 128, 0.35); color: var(--text); background: rgba(74, 222, 128, 0.08); }
+        .onboard-atlas-status[data-state="installing"],
+        .offline-atlas-status[data-state="installing"] { border-color: rgba(255, 213, 0, 0.28); color: var(--text); }
+        .onboard-atlas-status[data-state="error"],
+        .offline-atlas-status[data-state="error"] { border-color: rgba(239, 68, 68, 0.35); color: var(--text); background: rgba(239, 68, 68, 0.08); }
         .onboard-tips { text-align: left; margin-bottom: 20px; }
         .onboard-tip { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 12px; color: var(--text-dim); }
         .onboard-tip-num { width: 22px; height: 22px; border-radius: 50%; background: rgba(0,210,150,0.12); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
         .onboard-btn { padding: 10px 32px; background: var(--accent); color: #000; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s; }
         .onboard-btn:hover { opacity: 0.9; }
+        .onboard-btn:disabled { opacity: 0.6; cursor: progress; }
 
         /* ============ UI OVERHAUL: LOADING OVERLAY ============ */
         #loadingOverlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 800; pointer-events: none; transition: opacity 0.5s; }
@@ -1429,11 +1438,12 @@ if ('serviceWorker' in navigator) {
             const regs = await navigator.serviceWorker.getRegistrations();
             for (const r of regs) await r.unregister();
             const swCode = `
-                const CACHE_NAME = 'viptrack-v4.14';
+                const CACHE_NAME = 'viptrack-v4.15';
                 const STATIC_ASSETS = [
-                    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css',
-                    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js',
-                    'https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js',
+                    '/viptrack/lib/leaflet.css',
+                    '/viptrack/lib/leaflet.js',
+                    '/viptrack/lib/pako.min.js',
+                    '/nukemap/data/offline_atlas.json',
                     'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/silhouettes/aircraft.png',
                     'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo.ico',
                     'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-16x16.png',
@@ -1499,7 +1509,7 @@ if ('serviceWorker' in navigator) {
                         return;
                     }
                     
-                    // Cache-first for CDN static assets (Leaflet, pako, logos, sprites)
+                    // Cache-first for bundled/static assets (Leaflet, pako, atlas, logos, sprites)
                     if (STATIC_ASSETS.some(a => event.request.url.includes(a)) ||
                         url.hostname.includes('cdnjs.cloudflare.com') ||
                         (url.hostname.includes('githubusercontent.com') && url.pathname.includes('/logo/'))) {
@@ -1611,12 +1621,13 @@ if ('serviceWorker' in navigator) {
             <div class="onboard-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 110-14h8.5"/><polyline points="21 12 17 8 21 12 17 16"/></svg></div>
             <div class="onboard-title">VIPTrack Brief</div>
             <div class="onboard-desc">A cleaner live view for military and VIP traffic inside NOMAD.</div>
+                <div class="onboard-atlas-status" id="onboardAtlasStatus" data-state="missing" role="status" aria-live="polite" aria-atomic="true">Installing the enhanced offline basemap so VIPTrack can keep real boundaries and labels available without internet.</div>
             <div class="onboard-tips">
                 <div class="onboard-tip"><span class="onboard-tip-num">1</span><span>Search by callsign, tail, hex, airport, or airline.</span></div>
                 <div class="onboard-tip"><span class="onboard-tip-num">2</span><span>Use All, Mil, and VIP to tighten the feed fast.</span></div>
                 <div class="onboard-tip"><span class="onboard-tip-num">3</span><span>Open any aircraft for route, specs, and watch status.</span></div>
             </div>
-            <button class="onboard-btn" id="onboardDismiss">Begin</button>
+                <button class="onboard-btn" id="onboardDismiss" disabled>Preparing Offline Basemap…</button>
         </div>
     </div>
     
@@ -1956,7 +1967,12 @@ if ('serviceWorker' in navigator) {
             <div class="settings-section-title">Data Sources (Phase 16)</div>
             <div id="dataSourceList" style="font-size: 11px; margin-bottom: 10px;"></div>
             <button class="btn-secondary" id="checkSourcesBtn" style="width: 100%; margin-bottom: 8px;">Check All Sources</button>
-            <button class="btn-secondary" id="clearOfflineCacheBtn" style="width: 100%;">Clear Offline Cache</button>
+        </div>
+        <div class="settings-section">
+            <div class="settings-section-title">Offline Map</div>
+                    <div class="offline-atlas-status" id="offlineAtlasStatus" data-state="missing" role="status" aria-live="polite" aria-atomic="true">VIPTrack will install the enhanced offline basemap and prefer it whenever it is available.</div>
+                    <button class="btn-secondary" id="installOfflineAtlasBtn" style="width: 100%; margin-bottom: 8px;">Install Offline Basemap</button>
+            <button class="btn-secondary" id="clearOfflineCacheBtn" style="width: 100%;">Clear Offline Data</button>
         </div>
     </div>
     <div class="bottom-panels" id="bottomPanels" aria-label="Saved locations and watchlist panels" aria-hidden="true">
@@ -1990,8 +2006,8 @@ if ('serviceWorker' in navigator) {
         </div>
     </div>
     <div class="toast info" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
+    <script src="/viptrack/lib/leaflet.js"></script>
+    <script src="/viptrack/lib/pako.min.js"></script>
     <script>
     // ============================================================
     // SKYTRACK v4.2 - Full Featured Aviation Intelligence Platform
@@ -2269,6 +2285,17 @@ if ('serviceWorker' in navigator) {
         _pausableIntervals.push(entry);
         return entry;
     }
+    function _clearPausableInterval(entry) {
+        if (!entry) return;
+        if (entry.id) {
+            clearInterval(entry.id);
+            entry.id = null;
+        }
+        const index = _pausableIntervals.indexOf(entry);
+        if (index >= 0) {
+            _pausableIntervals.splice(index, 1);
+        }
+    }
     function _pauseAllIntervals() {
         _pausableIntervals.forEach(entry => { if (entry.id) { clearInterval(entry.id); entry.id = null; } });
     }
@@ -2282,20 +2309,28 @@ if ('serviceWorker' in navigator) {
     function _stopFetchInterval() {
         if (_fetchIntervalId) { clearInterval(_fetchIntervalId); _fetchIntervalId = null; }
     }
+    function pauseWorkspaceActivity() {
+        _tabPaused = true;
+        _stopFetchInterval();
+        _pauseAllIntervals();
+    }
+    function resumeWorkspaceActivity(options = {}) {
+        _tabPaused = false;
+        _resumeAllIntervals();
+        if (map) {
+            _startFetchInterval();
+            if (options.forceRefresh || Date.now() - lastFetchTime > CONFIG.refreshInterval * 1.5) {
+                loadAircraft();
+            }
+        }
+    }
     document.addEventListener('visibilitychange', () => {
         if (perfUtils.isTabVisible()) {
             _dbg('Tab visible - resuming updates');
-            _tabPaused = false;
-            _resumeAllIntervals();
-            if (map) {
-                _startFetchInterval();
-                if (Date.now() - lastFetchTime > CONFIG.refreshInterval * 1.5) loadAircraft();
-            }
+            resumeWorkspaceActivity();
         } else {
             _dbg('Tab hidden - pausing all intervals');
-            _tabPaused = true;
-            _stopFetchInterval();
-            _pauseAllIntervals();
+            pauseWorkspaceActivity();
         }
     });
 
@@ -2366,7 +2401,7 @@ if ('serviceWorker' in navigator) {
                 this.handleOffline();
             }
             
-            setInterval(() => this.checkConnection(), 30000);
+            _setPausableInterval(() => this.checkConnection(), 30000, 'offlineConnection');
             this.loadCachedData();
             this.loadSyncQueue();
         },
@@ -2559,7 +2594,7 @@ if ('serviceWorker' in navigator) {
         healthCheckInterval: null,
         
         init() {
-            this.healthCheckInterval = setInterval(() => this.checkAllSources(), 60000);
+            this.healthCheckInterval = _setPausableInterval(() => this.checkAllSources(), 60000, 'dataSourceHealth');
             setTimeout(() => this.checkAllSources(), 5000);
         },
         
@@ -2936,7 +2971,7 @@ if ('serviceWorker' in navigator) {
     };
 
     // Reset error counts periodically
-    setInterval(() => errorRecovery.resetCounts(), 300000);
+    _setPausableInterval(() => errorRecovery.resetCounts(), 300000, 'errorRecoveryReset');
 
     // ============ INDEXEDDB STORAGE ============
     const skytrackDB = {
@@ -3145,12 +3180,12 @@ if ('serviceWorker' in navigator) {
                 () => {},
                 { enableHighAccuracy: false }
             );
-            setInterval(() => {
+            _setPausableInterval(() => {
                 navigator.geolocation.getCurrentPosition(
                     pos => { this.userLocation = { lat: pos.coords.latitude, lon: pos.coords.longitude }; },
                     () => {}
                 );
-            }, 60000);
+            }, 60000, 'locationTracking');
         },
         
         async saveWatchlist() {
@@ -4848,17 +4883,20 @@ if ('serviceWorker' in navigator) {
     const EMBED_MODE = window.VIPTRACK_EMBED_MODE === true;
     const HAS_SHARED_CONTEXT = window.VIPTRACK_SHARED_CONTEXT === true;
     const HOST_THEME_CONFIG = {
-        nomad: { tone: 'light', mapStyle: 'esri-light', accent: '#8f6836' },
-        eink: { tone: 'light', mapStyle: 'esri-light', accent: '#111111' },
-        nightops: { tone: 'dark', mapStyle: 'esri-gray', accent: '#d0a86d' },
-        cyber: { tone: 'dark', mapStyle: 'esri-gray', accent: '#71a8ff' },
-        redlight: { tone: 'dark', mapStyle: 'esri-gray', accent: '#df855c' }
+        nomad: { tone: 'light', mapStyle: 'offline-atlas', accent: '#8f6836' },
+        eink: { tone: 'light', mapStyle: 'offline-atlas', accent: '#111111' },
+        nightops: { tone: 'dark', mapStyle: 'offline-atlas', accent: '#d0a86d' },
+        cyber: { tone: 'dark', mapStyle: 'offline-atlas', accent: '#71a8ff' },
+        redlight: { tone: 'dark', mapStyle: 'offline-atlas', accent: '#df855c' }
     };
     const BASEMAP_DEFS = {
         'esri-gray': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', maxZoom: 16 },
         'esri-light': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', maxZoom: 16 }
     };
-    const hostThemeState = { theme: 'nightops', tone: 'dark', mapStyle: 'esri-gray', density: 'compact' };
+    const OFFLINE_ATLAS_STORAGE_KEY = 'nomad-offline-atlas-cache';
+    const OFFLINE_ATLAS_VERSION = '2026-04-02.3';
+    const OFFLINE_ATLAS_URL = '/nukemap/data/offline_atlas.json';
+    const hostThemeState = { theme: 'nightops', tone: 'dark', mapStyle: 'offline-atlas', density: 'compact' };
     let map, currentBaseMap, aircraftCache = {}, markers = {}, trailLine = null, selectedHex = null;
     
     // Cached DOM references for hot-path access
@@ -4867,8 +4905,137 @@ if ('serviceWorker' in navigator) {
     let lastFetchTime = 0, fetchInProgress = false, lastSuccessfulSource = null, lastSuccessfulProxy = 0, animationRunning = false;
     const aircraftAnimation = {}, photoCache = {}, photoFailCache = {};
     let bookmarks = [];
-    const settings = { mapStyle: 'esri-gray', showLabels: false, altitudeColors: true, showWiki: true, filter: 'mil-vip', followMode: false, compactMode: false };
+    const settings = { mapStyle: 'offline-atlas', showLabels: false, altitudeColors: true, showWiki: true, filter: 'mil-vip', followMode: false, compactMode: false };
     const baseMaps = {};
+    let offlineAtlasInstallPromise = null;
+    let offlineAtlasData = null;
+    let offlineAtlasState = 'missing';
+    let offlineAtlasError = '';
+
+    function setOfflineAtlasState(state, error = '') {
+        offlineAtlasState = state;
+        offlineAtlasError = error || '';
+    }
+    window.localStorage?.removeItem('nukemap-offline-atlas-cache');
+    window.localStorage?.removeItem('viptrack-offline-atlas-cache');
+    function normalizeAtlasFlatFeature(feature, extraKeys = []) {
+        if (!feature || !Array.isArray(feature.points) || feature.points.length < 4) return null;
+        const points = feature.points.map((value) => Number(value));
+        if (points.some((value) => !Number.isFinite(value))) return null;
+        let bbox = Array.isArray(feature.bbox) && feature.bbox.length === 4
+            ? feature.bbox.map((value) => Number(value))
+            : null;
+        if (!bbox || bbox.some((value) => !Number.isFinite(value))) {
+            let minLng = 999;
+            let minLat = 999;
+            let maxLng = -999;
+            let maxLat = -999;
+            for (let idx = 0; idx < points.length; idx += 2) {
+                const lng = points[idx];
+                const lat = points[idx + 1];
+                minLng = Math.min(minLng, lng);
+                minLat = Math.min(minLat, lat);
+                maxLng = Math.max(maxLng, lng);
+                maxLat = Math.max(maxLat, lat);
+            }
+            bbox = [minLng, minLat, maxLng, maxLat];
+        }
+        const normalized = {
+            minZoom: Number.isFinite(Number(feature.minZoom)) ? Number(feature.minZoom) : null,
+            bbox,
+            points,
+        };
+        extraKeys.forEach((key) => {
+            if (feature[key] !== undefined && feature[key] !== null && feature[key] !== '') {
+                normalized[key] = feature[key];
+            }
+        });
+        return normalized;
+    }
+    function normalizeOfflineAtlas(atlas) {
+        if (
+            !atlas ||
+            !Array.isArray(atlas.land) ||
+            !Array.isArray(atlas.coastlines) ||
+            !Array.isArray(atlas.countryBorders) ||
+            !Array.isArray(atlas.admin1Borders) ||
+            !Array.isArray(atlas.lakes) ||
+            !Array.isArray(atlas.rivers) ||
+            !Array.isArray(atlas.places)
+        ) return null;
+        return {
+            version: atlas.version || OFFLINE_ATLAS_VERSION,
+            source: atlas.source || null,
+            land: atlas.land.map((feature) => normalizeAtlasFlatFeature(feature)).filter(Boolean),
+            lakes: atlas.lakes.map((feature) => normalizeAtlasFlatFeature(feature, ['name'])).filter(Boolean),
+            coastlines: atlas.coastlines.map((feature) => normalizeAtlasFlatFeature(feature)).filter(Boolean),
+            countryBorders: atlas.countryBorders.map((feature) => normalizeAtlasFlatFeature(feature, ['name'])).filter(Boolean),
+            admin1Borders: atlas.admin1Borders.map((feature) => normalizeAtlasFlatFeature(feature, ['name', 'adm0_name'])).filter(Boolean),
+            rivers: atlas.rivers.map((feature) => normalizeAtlasFlatFeature(feature, ['name'])).filter(Boolean),
+            places: atlas.places.filter((place) =>
+                typeof place?.lat === 'number' &&
+                typeof place?.lng === 'number' &&
+                place?.name
+            ).map((place) => ({
+                name: place.name,
+                lat: Number(place.lat),
+                lng: Number(place.lng),
+                pop: Number(place.pop) || 0,
+                rank: Number(place.rank) || 5,
+                minZoom: Number.isFinite(Number(place.minZoom)) ? Number(place.minZoom) : null,
+                capital: !!place.capital,
+                world: !!place.world,
+                adm0: place.adm0 || '',
+            }))
+        };
+    }
+    function loadOfflineAtlasFromStorage() {
+        try {
+            const raw = window.localStorage?.getItem(OFFLINE_ATLAS_STORAGE_KEY);
+            if (!raw) {
+                setOfflineAtlasState('missing');
+                return null;
+            }
+            const parsed = normalizeOfflineAtlas(JSON.parse(raw));
+            if (!parsed || parsed.version !== OFFLINE_ATLAS_VERSION) {
+                window.localStorage?.removeItem(OFFLINE_ATLAS_STORAGE_KEY);
+                setOfflineAtlasState('missing');
+                return null;
+            }
+            offlineAtlasData = parsed;
+            setOfflineAtlasState('ready');
+            return parsed;
+        } catch (_error) {
+            offlineAtlasData = null;
+            setOfflineAtlasState('missing');
+            return null;
+        }
+    }
+    function persistOfflineAtlas(atlas) {
+        const normalized = normalizeOfflineAtlas(atlas);
+        if (!normalized) throw new Error('Offline atlas data is invalid.');
+        normalized.version = OFFLINE_ATLAS_VERSION;
+        offlineAtlasData = normalized;
+        window.localStorage?.setItem(OFFLINE_ATLAS_STORAGE_KEY, JSON.stringify(normalized));
+        setOfflineAtlasState('ready');
+        return normalized;
+    }
+    function clearOfflineAtlasCache() {
+        window.localStorage?.removeItem(OFFLINE_ATLAS_STORAGE_KEY);
+        offlineAtlasData = null;
+        setOfflineAtlasState('missing');
+        const atlasLayer = baseMaps['offline-atlas'];
+        if (atlasLayer && map && map.hasLayer(atlasLayer)) {
+            map.removeLayer(atlasLayer);
+        }
+        delete baseMaps['offline-atlas'];
+        if (currentBaseMap === 'offline-atlas') {
+            currentBaseMap = null;
+        }
+        refreshOfflineAtlasUi();
+    }
+    loadOfflineAtlasFromStorage();
+
     function getHostTheme(themeName) { return HOST_THEME_CONFIG[themeName] || HOST_THEME_CONFIG.nightops; }
     function setThemeMetaColor(color) {
         const meta = document.querySelector('meta[name="theme-color"]');
@@ -4909,8 +5076,423 @@ if ('serviceWorker' in navigator) {
             return null;
         }
     }
+    function getThemeFallbackMapStyle(styleKey) {
+        if (styleKey === 'esri-light' || styleKey === 'esri-gray') return styleKey;
+        return hostThemeState.tone === 'light' ? 'esri-light' : 'esri-gray';
+    }
+    function resolveMapStyle(styleKey) {
+        if (styleKey === 'offline-atlas') {
+            return offlineAtlasData ? 'offline-atlas' : getThemeFallbackMapStyle();
+        }
+        if (BASEMAP_DEFS[styleKey]) return styleKey;
+        return offlineAtlasData ? 'offline-atlas' : getThemeFallbackMapStyle();
+    }
+    function getOfflineAtlasState() {
+        return {
+            ready: !!offlineAtlasData,
+            state: offlineAtlasState,
+            error: offlineAtlasError,
+            version: offlineAtlasData?.version || null
+        };
+    }
+    function projectLngToTileX(lng, zoom) {
+        return Math.pow(2, zoom) * ((lng + 180) / 360);
+    }
+    function projectLatToTileY(lat, zoom) {
+        const safeLat = Math.max(-85.05112878, Math.min(85.05112878, lat));
+        const radians = safeLat * Math.PI / 180;
+        return Math.pow(2, zoom) * (1 - (Math.log(Math.tan(radians) + 1 / Math.cos(radians)) / Math.PI)) / 2;
+    }
+    function projectTileXToLng(tileX, zoom) {
+        return (tileX / Math.pow(2, zoom)) * 360 - 180;
+    }
+    function projectTileYToLat(tileY, zoom) {
+        const n = Math.PI - (2 * Math.PI * tileY) / Math.pow(2, zoom);
+        return (180 / Math.PI) * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n)));
+    }
+    function getOfflineAtlasPalette(themeName) {
+        const activeTheme = themeName || hostThemeState.theme || 'nightops';
+        const palettes = {
+            nomad: {
+                ocean: '#d7e4f0',
+                grid: 'rgba(86, 104, 129, 0.16)',
+                land: '#f8fbfd',
+                coast: '#51657a',
+                countryBorder: 'rgba(70, 89, 112, 0.62)',
+                admin1Border: 'rgba(124, 144, 168, 0.38)',
+                lake: '#c7dcf4',
+                river: 'rgba(102, 145, 196, 0.58)',
+                city: '#1c2d3f',
+                capital: '#0f1722',
+                cityHalo: 'rgba(255, 255, 255, 0.92)',
+                label: '#162132',
+                labelHalo: 'rgba(255, 255, 255, 0.96)'
+            },
+            nightops: {
+                ocean: '#071018',
+                grid: 'rgba(131, 160, 194, 0.15)',
+                land: '#172433',
+                coast: '#94bae8',
+                countryBorder: 'rgba(171, 201, 237, 0.74)',
+                admin1Border: 'rgba(109, 135, 164, 0.42)',
+                lake: '#102338',
+                river: 'rgba(107, 155, 214, 0.6)',
+                city: '#f0c27a',
+                capital: '#ffe0ae',
+                cityHalo: 'rgba(7, 16, 24, 0.92)',
+                label: '#e4f0ff',
+                labelHalo: 'rgba(7, 16, 24, 0.98)'
+            },
+            cyber: {
+                ocean: '#07131e',
+                grid: 'rgba(110, 199, 255, 0.15)',
+                land: '#133043',
+                coast: '#6ed6ff',
+                countryBorder: 'rgba(135, 223, 255, 0.7)',
+                admin1Border: 'rgba(90, 165, 196, 0.38)',
+                lake: '#0f2232',
+                river: 'rgba(83, 195, 231, 0.64)',
+                city: '#bff264',
+                capital: '#f7ffb4',
+                cityHalo: 'rgba(7, 19, 30, 0.93)',
+                label: '#e2f8ff',
+                labelHalo: 'rgba(7, 19, 30, 0.98)'
+            },
+            redlight: {
+                ocean: '#190d13',
+                grid: 'rgba(255, 169, 169, 0.14)',
+                land: '#2a151d',
+                coast: '#ff9b90',
+                countryBorder: 'rgba(255, 180, 168, 0.66)',
+                admin1Border: 'rgba(184, 109, 109, 0.34)',
+                lake: '#24161c',
+                river: 'rgba(255, 149, 120, 0.38)',
+                city: '#ffd39a',
+                capital: '#fff0cc',
+                cityHalo: 'rgba(25, 13, 19, 0.92)',
+                label: '#ffe9de',
+                labelHalo: 'rgba(25, 13, 19, 0.97)'
+            },
+            eink: {
+                ocean: '#f1f0eb',
+                grid: 'rgba(44, 44, 44, 0.12)',
+                land: '#ffffff',
+                coast: '#202020',
+                countryBorder: 'rgba(37, 37, 37, 0.58)',
+                admin1Border: 'rgba(92, 92, 92, 0.32)',
+                lake: '#e2e5ea',
+                river: 'rgba(88, 88, 88, 0.24)',
+                city: '#111111',
+                capital: '#000000',
+                cityHalo: 'rgba(243, 242, 237, 0.96)',
+                label: '#111111',
+                labelHalo: 'rgba(243, 242, 237, 0.98)'
+            }
+        };
+        return palettes[activeTheme] || palettes.nightops;
+    }
+    function buildOfflineAtlasLayer(themeName) {
+        const OfflineAtlasLayer = L.GridLayer.extend({
+            initialize(options = {}) {
+                this._theme = options.theme || hostThemeState.theme || 'nightops';
+                L.GridLayer.prototype.initialize.call(this, Object.assign({
+                    attribution: 'Offline atlas | Natural Earth | VIPTrack',
+                    maxZoom: 11,
+                    tileSize: 256,
+                    updateWhenIdle: true
+                }, options));
+            },
+            createTile(coords) {
+                const tile = document.createElement('canvas');
+                const size = this.getTileSize();
+                const context = tile.getContext('2d');
+                const zoom = coords.z;
+                const atlas = offlineAtlasData;
+                const palette = getOfflineAtlasPalette(this._theme);
+                const land = atlas?.land || [];
+                const lakes = atlas?.lakes || [];
+                const coastlines = atlas?.coastlines || [];
+                const countryBorders = atlas?.countryBorders || [];
+                const admin1Borders = atlas?.admin1Borders || [];
+                const rivers = atlas?.rivers || [];
+                const places = atlas?.places || [];
+                const wrapOffsets = [-1, 0, 1];
+                const tileBounds = {
+                    west: projectTileXToLng(coords.x, zoom),
+                    east: projectTileXToLng(coords.x + 1, zoom),
+                    north: projectTileYToLat(coords.y, zoom),
+                    south: projectTileYToLat(coords.y + 1, zoom),
+                };
+                const shouldRenderFeature = (feature, fallbackMinZoom = 0) => {
+                    const minZoom = Number.isFinite(feature?.minZoom) ? feature.minZoom : fallbackMinZoom;
+                    return zoom >= Math.max(0, Math.floor(minZoom));
+                };
+                const bboxVisible = (bbox, wrapOffset = 0, padding = 0) => {
+                    if (!Array.isArray(bbox) || bbox.length !== 4) return true;
+                    const west = bbox[0] + wrapOffset * 360;
+                    const south = bbox[1];
+                    const east = bbox[2] + wrapOffset * 360;
+                    const north = bbox[3];
+                    return !(
+                        east < tileBounds.west - padding ||
+                        west > tileBounds.east + padding ||
+                        north < tileBounds.south - padding ||
+                        south > tileBounds.north + padding
+                    );
+                };
+                const drawPath = (points, wrapOffset, closePath) => {
+                    context.beginPath();
+                    let firstPoint = true;
+                    for (let idx = 0; idx < points.length; idx += 2) {
+                        const lng = points[idx];
+                        const lat = points[idx + 1];
+                        const pixelX = (projectLngToTileX(lng + wrapOffset * 360, zoom) - coords.x) * size.x;
+                        const pixelY = (projectLatToTileY(lat, zoom) - coords.y) * size.y;
+                        if (firstPoint) {
+                            context.moveTo(pixelX, pixelY);
+                            firstPoint = false;
+                        } else {
+                            context.lineTo(pixelX, pixelY);
+                        }
+                    }
+                    if (closePath) context.closePath();
+                    return !firstPoint;
+                };
+                const drawPolygonFeature = (feature, wrapOffset) => {
+                    if (!shouldRenderFeature(feature) || !bboxVisible(feature.bbox, wrapOffset, 1.2)) return;
+                    if (drawPath(feature.points, wrapOffset, true)) context.fill();
+                };
+                const drawLineFeature = (feature, wrapOffset) => {
+                    if (!shouldRenderFeature(feature) || !bboxVisible(feature.bbox, wrapOffset, 1.4)) return;
+                    if (drawPath(feature.points, wrapOffset, false)) context.stroke();
+                };
+
+                tile.width = size.x;
+                tile.height = size.y;
+                context.fillStyle = palette.ocean;
+                context.fillRect(0, 0, size.x, size.y);
+
+                const gridStep = zoom < 2 ? 45 : zoom < 4 ? 30 : zoom < 6 ? 15 : 10;
+                context.strokeStyle = palette.grid;
+                context.lineWidth = 0.6;
+                for (let lat = -80; lat <= 80; lat += gridStep) {
+                    const y = (projectLatToTileY(lat, zoom) - coords.y) * size.y;
+                    if (y < -size.y || y > size.y * 2) continue;
+                    context.beginPath();
+                    context.moveTo(0, y);
+                    context.lineTo(size.x, y);
+                    context.stroke();
+                }
+                for (let lng = -180; lng <= 180; lng += gridStep) {
+                    wrapOffsets.forEach((wrapOffset) => {
+                        const x = (projectLngToTileX(lng + wrapOffset * 360, zoom) - coords.x) * size.x;
+                        if (x < -size.x || x > size.x * 2) return;
+                        context.beginPath();
+                        context.moveTo(x, 0);
+                        context.lineTo(x, size.y);
+                        context.stroke();
+                    });
+                }
+
+                context.fillStyle = palette.land;
+                land.forEach((feature) => {
+                    wrapOffsets.forEach((wrapOffset) => drawPolygonFeature(feature, wrapOffset));
+                });
+
+                if (lakes.length) {
+                    context.fillStyle = palette.lake;
+                    lakes.forEach((feature) => {
+                        wrapOffsets.forEach((wrapOffset) => drawPolygonFeature(feature, wrapOffset));
+                    });
+                }
+
+                if (rivers.length && zoom >= 2) {
+                    context.strokeStyle = palette.river;
+                    context.lineWidth = zoom >= 5 ? 1.35 : zoom >= 3 ? 1 : 0.75;
+                    rivers.forEach((feature) => {
+                        wrapOffsets.forEach((wrapOffset) => drawLineFeature(feature, wrapOffset));
+                    });
+                }
+
+                context.strokeStyle = palette.coast;
+                context.lineWidth = zoom >= 4 ? 1.5 : 1.1;
+                coastlines.forEach((feature) => {
+                    wrapOffsets.forEach((wrapOffset) => drawLineFeature(feature, wrapOffset));
+                });
+
+                if (countryBorders.length) {
+                    context.strokeStyle = palette.countryBorder;
+                    context.lineWidth = zoom >= 4 ? 1.05 : 0.85;
+                    countryBorders.forEach((feature) => {
+                        wrapOffsets.forEach((wrapOffset) => drawLineFeature(feature, wrapOffset));
+                    });
+                }
+
+                if (admin1Borders.length && zoom >= 3) {
+                    context.strokeStyle = palette.admin1Border;
+                    context.lineWidth = zoom >= 6 ? 0.9 : 0.65;
+                    admin1Borders.forEach((feature) => {
+                        wrapOffsets.forEach((wrapOffset) => drawLineFeature(feature, wrapOffset));
+                    });
+                }
+
+                if (places.length) {
+                    const shouldShowPlace = (place) => {
+                        const datasetZoom = Number.isFinite(place.minZoom) ? Math.max(0, Math.floor(place.minZoom)) : 0;
+                        const placeZoom = place.world ? 1 : place.capital ? 2 : place.pop >= 5000000 ? 2 : place.pop >= 1000000 ? 3 : place.pop >= 250000 ? 4 : 5;
+                        return zoom >= Math.max(datasetZoom, placeZoom);
+                    };
+                    context.textBaseline = 'middle';
+                    context.lineJoin = 'round';
+                    context.lineCap = 'round';
+                    wrapOffsets.forEach((wrapOffset) => {
+                        places.forEach((place) => {
+                            if (!shouldShowPlace(place)) return;
+                            const x = (projectLngToTileX(place.lng + wrapOffset * 360, zoom) - coords.x) * size.x;
+                            const y = (projectLatToTileY(place.lat, zoom) - coords.y) * size.y;
+                            if (x < -60 || x > size.x + 60 || y < -20 || y > size.y + 24) return;
+                            const important = place.capital || place.world || place.pop >= 5000000;
+                            const dotRadius = zoom >= 5 ? (important ? 2.8 : 2.1) : (important ? 2.3 : 1.8);
+                            context.fillStyle = palette.cityHalo;
+                            context.beginPath();
+                            context.arc(x, y, dotRadius + 1.2, 0, Math.PI * 2);
+                            context.fill();
+                            context.fillStyle = important ? palette.capital : palette.city;
+                            context.beginPath();
+                            context.arc(x, y, dotRadius, 0, Math.PI * 2);
+                            context.fill();
+                            const fontSize = zoom >= 6 ? 11 : zoom >= 4 ? 10 : 9;
+                            context.font = `${important ? 600 : 500} ${fontSize}px "Segoe UI", sans-serif`;
+                            context.lineWidth = 3;
+                            context.strokeStyle = palette.labelHalo;
+                            context.strokeText(place.name, x + dotRadius + 4, y);
+                            context.fillStyle = palette.label;
+                            context.fillText(place.name, x + dotRadius + 4, y);
+                        });
+                    });
+                }
+
+                return tile;
+            },
+            setTheme(themeName) {
+                this._theme = themeName || this._theme;
+                this.redraw();
+            },
+            syncAtlas() {
+                this.redraw();
+            }
+        });
+        return new OfflineAtlasLayer({ theme: themeName });
+    }
+    function refreshOfflineAtlasLayer() {
+        const atlasLayer = baseMaps['offline-atlas'];
+        if (!atlasLayer) return;
+        atlasLayer.setTheme?.(hostThemeState.theme || 'nightops');
+        atlasLayer.syncAtlas?.();
+    }
+    function refreshOfflineAtlasUi() {
+        const state = getOfflineAtlasState();
+        const ready = state.ready;
+        const installing = state.state === 'installing';
+        const failed = state.state === 'error';
+        const statusText = ready
+            ? 'Enhanced offline basemap ready. VIPTrack now has real coastlines, country borders, state and province outlines, lakes, rivers, and place labels offline.'
+            : installing
+                ? 'Installing the enhanced offline basemap with real boundaries and labels so VIPTrack keeps a full map available offline.'
+                : failed
+                    ? (state.error || 'Offline basemap install failed. Retry to restore the enhanced offline map.')
+                    : 'VIPTrack will install the enhanced offline basemap and prefer it whenever it is available.';
+
+        ['offlineAtlasStatus', 'onboardAtlasStatus'].forEach((id) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.dataset.state = ready ? 'ready' : installing ? 'installing' : failed ? 'error' : 'missing';
+            el.textContent = statusText;
+        });
+
+        const installButton = document.getElementById('installOfflineAtlasBtn');
+        if (installButton) {
+            installButton.disabled = installing;
+            installButton.textContent = ready
+                ? 'Reinstall Offline Basemap'
+                : installing
+                    ? 'Installing Offline Basemap…'
+                    : failed
+                        ? 'Retry Basemap Install'
+                        : 'Install Offline Basemap';
+        }
+
+        const beginButton = document.getElementById('onboardDismiss');
+        if (beginButton) {
+            beginButton.disabled = installing;
+            beginButton.textContent = ready
+                ? 'Open VIPTrack'
+                : installing
+                    ? 'Installing Offline Basemap…'
+                    : failed
+                        ? 'Retry Basemap Install'
+                        : 'Install Offline Basemap';
+        }
+    }
+    function switchToPreferredMapStyle() {
+        applyBaseMap(EMBED_MODE ? hostThemeState.mapStyle : settings.mapStyle);
+        refreshViptrackLayout();
+    }
+    function installOfflineAtlas(options = {}) {
+        if (offlineAtlasData && !options.force) {
+            refreshOfflineAtlasUi();
+            return Promise.resolve(offlineAtlasData);
+        }
+        if (offlineAtlasInstallPromise && !options.force) return offlineAtlasInstallPromise;
+
+        if (options.force && offlineAtlasInstallPromise) {
+            return offlineAtlasInstallPromise;
+        }
+
+        setOfflineAtlasState('installing');
+        refreshOfflineAtlasUi();
+        offlineAtlasInstallPromise = fetch(OFFLINE_ATLAS_URL, { cache: 'no-store' })
+            .then((response) => {
+                if (!response.ok) throw new Error(`Offline basemap install failed (${response.status}).`);
+                return response.json();
+            })
+            .then((atlas) => {
+                const storedAtlas = persistOfflineAtlas(atlas);
+                refreshOfflineAtlasLayer();
+                switchToPreferredMapStyle();
+                refreshOfflineAtlasUi();
+                if (options.announce) toast('Offline basemap ready');
+                return storedAtlas;
+            })
+            .catch((error) => {
+                offlineAtlasData = null;
+                setOfflineAtlasState('error', error?.message || 'Offline basemap install failed.');
+                refreshOfflineAtlasUi();
+                if (options.announce) toast('Offline basemap install failed');
+                throw error;
+            })
+            .finally(() => {
+                offlineAtlasInstallPromise = null;
+            });
+        return offlineAtlasInstallPromise;
+    }
+    function ensureOfflineAtlas(options = {}) {
+        if (offlineAtlasData && !options.force) {
+            refreshOfflineAtlasUi();
+            return Promise.resolve(offlineAtlasData);
+        }
+        return installOfflineAtlas(options);
+    }
     function ensureBaseMap(styleKey) {
-        const nextKey = BASEMAP_DEFS[styleKey] ? styleKey : 'esri-gray';
+        const nextKey = resolveMapStyle(styleKey);
+        if (nextKey === 'offline-atlas') {
+            if (!baseMaps[nextKey]) {
+                baseMaps[nextKey] = buildOfflineAtlasLayer(hostThemeState.theme || 'nightops');
+            } else {
+                baseMaps[nextKey].setTheme?.(hostThemeState.theme || 'nightops');
+            }
+            return baseMaps[nextKey];
+        }
         if (!baseMaps[nextKey]) {
             const config = BASEMAP_DEFS[nextKey];
             baseMaps[nextKey] = L.tileLayer(config.url, { maxZoom: config.maxZoom });
@@ -4919,8 +5501,11 @@ if ('serviceWorker' in navigator) {
     }
     function applyBaseMap(styleKey) {
         if (!map) return;
-        const nextKey = BASEMAP_DEFS[styleKey] ? styleKey : 'esri-gray';
+        const nextKey = resolveMapStyle(styleKey);
         const nextLayer = ensureBaseMap(nextKey);
+        if (nextKey === 'offline-atlas') {
+            nextLayer.setTheme?.(hostThemeState.theme || 'nightops');
+        }
         if (currentBaseMap === nextKey && map.hasLayer(nextLayer)) return;
         if (currentBaseMap && baseMaps[currentBaseMap] && map.hasLayer(baseMaps[currentBaseMap])) {
             map.removeLayer(baseMaps[currentBaseMap]);
@@ -5557,8 +6142,20 @@ if ('serviceWorker' in navigator) {
     function saveAircraftCache() { try { const d = { ts: Date.now(), ac: {} }; const keys = Object.keys(aircraftCache); for (let i = 0; i < keys.length; i++) { const h = keys[i], a = aircraftCache[h]; d.ac[h] = { hex: a.hex, flight: a.flight, r: a.r, t: a.t, desc: a.desc, ownOp: a.ownOp, lat: a.lat, lon: a.lon, alt_baro: a.alt_baro, gs: a.gs, track: a.track, baro_rate: a.baro_rate, squawk: a.squawk, category: a.category, dbFlags: a.dbFlags, from: a.from, to: a.to, lastSeen: a.lastSeen, history: a.history?.slice(-50) || [] }; } localStorage.setItem('viptrack_aircraft', JSON.stringify(d)); } catch(e){} }
     function loadAircraftCache() { try { const s = localStorage.getItem('viptrack_aircraft'); if (s) { const d = JSON.parse(s); if (Date.now() - d.ts < CONFIG.cacheExpiry) { aircraftCache = d.ac; return true; } } } catch(e){} return false; }
     function saveSettings() { localStorage.setItem('viptrack_settings_v3', JSON.stringify(settings)); }
-    function loadSettings() { try { const s = localStorage.getItem('viptrack_settings_v3'); if (s) Object.assign(settings, JSON.parse(s)); } catch(e){} // VIPTrack: clamp filter to mil-vip subset
-        if (!['mil-vip','military','vip'].includes(settings.filter)) settings.filter = 'mil-vip'; }
+    function loadSettings() {
+        try {
+            const raw = localStorage.getItem('viptrack_settings_v3');
+            const parsed = raw ? JSON.parse(raw) : null;
+            if (parsed) Object.assign(settings, parsed);
+            if (!parsed || parsed.mapStyle === undefined || parsed.mapStyle === 'esri-gray' || parsed.mapStyle === 'esri-light') {
+                settings.mapStyle = 'offline-atlas';
+            } else if (!['offline-atlas', 'esri-gray', 'esri-light'].includes(settings.mapStyle)) {
+                settings.mapStyle = 'offline-atlas';
+            }
+        } catch (e) {}
+        // VIPTrack: clamp filter to mil-vip subset
+        if (!['mil-vip','military','vip'].includes(settings.filter)) settings.filter = 'mil-vip';
+    }
     function escapeHtml(value) { return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
     function escapeAttr(value) { return escapeHtml(value); }
     function syncPressedButtonState(id, pressed, labels) {
@@ -5586,6 +6183,122 @@ if ('serviceWorker' in navigator) {
                 el.setAttribute('aria-label', text);
             }
         }
+    }
+    function setSettingsPanelOpen(expanded) {
+        const panel = document.getElementById('settingsPanel');
+        if (!panel) return false;
+        panel.classList.toggle('show', !!expanded);
+        panel.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+        syncExpandedButtonState('settingsBtn', !!expanded, { on: 'Close settings', off: 'Open settings' });
+        return !!expanded;
+    }
+    function setBottomPanelsOpen(expanded) {
+        const panels = document.getElementById('bottomPanels');
+        if (!panels) return false;
+        panels.classList.toggle('visible', !!expanded);
+        panels.setAttribute('aria-hidden', expanded ? 'false' : 'true');
+        syncExpandedButtonState('panelsBtn', !!expanded, {
+            on: 'Hide saved locations and watchlist',
+            off: 'Show saved locations and watchlist'
+        });
+        return !!expanded;
+    }
+    function protectMapOverlayInteractions() {
+        if (!window.L?.DomEvent) return;
+        [
+            document.querySelector('.header'),
+            document.getElementById('filterBar'),
+            document.getElementById('searchDropdown'),
+            document.getElementById('settingsPanel'),
+            document.getElementById('bottomPanels'),
+            document.getElementById('sidebarWrapper'),
+            document.getElementById('bookmarkModal'),
+            document.getElementById('onboardOverlay'),
+            document.getElementById('installPrompt')
+        ].forEach((el) => {
+            if (!el) return;
+            L.DomEvent.disableClickPropagation(el);
+            L.DomEvent.disableScrollPropagation(el);
+        });
+    }
+    function bindTopBarActions() {
+        const bindOnce = (id, handler) => {
+            const el = document.getElementById(id);
+            if (!el || el.dataset.viptrackBound === 'true') return;
+            el.addEventListener('click', handler);
+            el.dataset.viptrackBound = 'true';
+        };
+        bindOnce('labelBtn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            settings.showLabels = !settings.showLabels;
+            syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' });
+            document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels);
+            saveSettings();
+            updateMarkers();
+        });
+        bindOnce('locateBtn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            geolocate();
+        });
+        bindOnce('followBtn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            settings.followMode = !settings.followMode;
+            syncPressedButtonState('followBtn', settings.followMode, { on: 'Disable follow mode', off: 'Enable follow mode' });
+            saveSettings();
+            toast(settings.followMode ? 'Follow mode ON' : 'Follow mode OFF');
+            if (settings.followMode && selectedHex) {
+                const ac = aircraftCache[selectedHex];
+                if (ac?.lat !== undefined) map.panTo([ac.lat, ac.lon]);
+            }
+        });
+        bindOnce('settingsBtn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            searchSystem.close();
+            setBottomPanelsOpen(false);
+            const isOpen = !_el('settingsPanel').classList.contains('show');
+            setSettingsPanelOpen(isOpen);
+            if (isOpen) deselectAircraft();
+        });
+        bindOnce('panelsBtn', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            searchSystem.close();
+            setSettingsPanelOpen(false);
+            setBottomPanelsOpen(!document.getElementById('bottomPanels').classList.contains('visible'));
+        });
+    }
+    function bindCoreViewActions() {
+        const infoClose = document.getElementById('infoClose');
+        if (infoClose && infoClose.dataset.viptrackBound !== 'true') {
+            infoClose.addEventListener('click', deselectAircraft);
+            infoClose.dataset.viptrackBound = 'true';
+        }
+        document.querySelectorAll('.tab-btn').forEach((btn) => {
+            if (btn.dataset.viptrackBound === 'true') return;
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach((c) => c.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1)).classList.add('active');
+            });
+            btn.dataset.viptrackBound = 'true';
+        });
+        document.querySelectorAll('.filter-btn').forEach((btn) => {
+            if (btn.dataset.viptrackBound === 'true') return;
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                settings.filter = btn.dataset.filter;
+                syncPrimaryFilterButtons(settings.filter);
+                updateMarkers();
+                shareManager.updateUrl();
+            });
+            btn.dataset.viptrackBound = 'true';
+        });
     }
     function syncPrimaryFilterButtons(activeFilter) {
         document.querySelectorAll('.filter-btn').forEach((button) => {
@@ -5775,11 +6488,13 @@ if ('serviceWorker' in navigator) {
 
     function initMap() {
         map = L.map('map', { center: CONFIG.center, zoom: CONFIG.zoom, zoomControl: true, preferCanvas: true, zoomSnap: 1, zoomDelta: 1, worldCopyJump: true });
+        ensureBaseMap('offline-atlas');
         ensureBaseMap('esri-gray');
         ensureBaseMap('esri-light');
         applyBaseMap(EMBED_MODE ? hostThemeState.mapStyle : settings.mapStyle);
         let moveTimeout; map.on('moveend', () => { clearTimeout(moveTimeout); moveTimeout = setTimeout(() => { loadAircraft(); }, 800); saveMapPosition(); });
-        map.on('click', () => { deselectAircraft(); _el('settingsPanel').classList.remove('show'); _el('settingsPanel').setAttribute('aria-hidden', 'true'); syncExpandedButtonState('settingsBtn', false, { on: 'Close settings', off: 'Open settings' }); });
+        protectMapOverlayInteractions();
+        map.on('click', () => { deselectAircraft(); setSettingsPanelOpen(false); });
     }
 
 
@@ -6174,6 +6889,23 @@ if ('serviceWorker' in navigator) {
     }
 
     function getAltitudeCSSFilter(alt, selected) {
+        const lightMode = document.body?.classList.contains('day-mode');
+        if (lightMode) {
+            if (selected) return 'brightness(0) invert(0.24) sepia(1) saturate(8) hue-rotate(165deg) brightness(0.88) contrast(1.35) drop-shadow(0 0 2px rgba(28, 94, 136, 0.35))';
+            if (alt === 'ground' || alt === 0) return 'brightness(0) invert(0.28) sepia(0.18) saturate(0.45) contrast(1.22)';
+            if (typeof alt !== 'number') return 'brightness(0) invert(0.24) contrast(1.2)';
+            const a = Math.max(0, Math.min(alt, 50000));
+            if (a < 1000) return 'brightness(0) invert(0.24) sepia(1) saturate(4.5) hue-rotate(72deg) brightness(0.76) contrast(1.26)';
+            if (a < 5000) return 'brightness(0) invert(0.3) sepia(1) saturate(4.5) hue-rotate(58deg) brightness(0.8) contrast(1.24)';
+            if (a < 10000) return 'brightness(0) invert(0.38) sepia(1) saturate(4.2) hue-rotate(36deg) brightness(0.84) contrast(1.2)';
+            if (a < 15000) return 'brightness(0) invert(0.42) sepia(1) saturate(4) hue-rotate(18deg) brightness(0.86) contrast(1.18)';
+            if (a < 20000) return 'brightness(0) invert(0.36) sepia(1) saturate(5) hue-rotate(2deg) brightness(0.82) contrast(1.18)';
+            if (a < 25000) return 'brightness(0) invert(0.3) sepia(1) saturate(5.2) hue-rotate(348deg) brightness(0.8) contrast(1.18)';
+            if (a < 30000) return 'brightness(0) invert(0.26) sepia(1) saturate(5.5) hue-rotate(332deg) brightness(0.78) contrast(1.2)';
+            if (a < 35000) return 'brightness(0) invert(0.28) sepia(1) saturate(5) hue-rotate(314deg) brightness(0.8) contrast(1.18)';
+            if (a < 40000) return 'brightness(0) invert(0.25) sepia(1) saturate(5) hue-rotate(286deg) brightness(0.78) contrast(1.2)';
+            return 'brightness(0) invert(0.3) sepia(1) saturate(4.5) hue-rotate(266deg) brightness(0.82) contrast(1.18)';
+        }
         if (selected) return 'brightness(0) invert(1) sepia(1) saturate(5) hue-rotate(140deg) brightness(1.1) drop-shadow(0 0 4px cyan)';
         if (alt === 'ground' || alt === 0) return 'brightness(0) invert(0.55) sepia(0.3) saturate(0.5)';
         if (typeof alt !== 'number') return 'brightness(0) invert(0.85)';
@@ -6191,6 +6923,10 @@ if ('serviceWorker' in navigator) {
     }
 
     const _iconCache = {};
+    function refreshAircraftMarkerTheme() {
+        Object.keys(_iconCache).forEach((hex) => { delete _iconCache[hex]; });
+        updateMarkers();
+    }
     function _iconHash(ac) {
         const alt = ac.alt_baro;
         let altBand = 0;
@@ -6199,7 +6935,8 @@ if ('serviceWorker' in navigator) {
         const rot = Math.round((ac.track || 0) / 5) * 5;
         const sel = ac.hex === selectedHex ? 1 : 0;
         const lbl = settings.showLabels ? 1 : 0;
-        return ac.hex + '|' + altBand + '|' + rot + '|' + sel + '0' + lbl + '|' + (ac.flight || '') + '|' + (ac.t || '');
+        const tone = document.body?.classList.contains('day-mode') ? 'light' : 'dark';
+        return ac.hex + '|' + altBand + '|' + rot + '|' + sel + '0' + lbl + '|' + tone + '|' + (ac.flight || '') + '|' + (ac.t || '');
     }
 
     function createIcon(ac) {
@@ -6907,9 +7644,7 @@ if ('serviceWorker' in navigator) {
         updateExternalLinks(ac);
         
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelector('.tab-btn[data-tab="overview"]').classList.add('active'); document.getElementById('tabOverview').classList.add('active');
-        _el('settingsPanel').classList.remove('show');
-        _el('settingsPanel').setAttribute('aria-hidden', 'true');
-        syncExpandedButtonState('settingsBtn', false, { on: 'Close settings', off: 'Open settings' });
+        setSettingsPanelOpen(false);
         // Move panel into sidebar wrapper and show
         const _sbw = _el('sidebarWrapper');
         const _pnl = _el('infoPanel');
@@ -6934,30 +7669,8 @@ if ('serviceWorker' in navigator) {
 
     // ============ UI HANDLERS ============
     function initUI() {
-        document.getElementById('infoClose').addEventListener('click', deselectAircraft);
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); btn.classList.add('active'); document.getElementById('tab' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1)).classList.add('active'); }));
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                settings.filter = btn.dataset.filter;
-                syncPrimaryFilterButtons(settings.filter);
-                updateMarkers();
-                shareManager.updateUrl();
-            });
-        });
-        document.getElementById('labelBtn').addEventListener('click', function() { settings.showLabels = !settings.showLabels; syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' }); document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels); saveSettings(); updateMarkers(); });
-        document.getElementById('locateBtn').addEventListener('click', geolocate);
-        document.getElementById('followBtn')?.addEventListener('click', function() {
-            settings.followMode = !settings.followMode;
-            syncPressedButtonState('followBtn', settings.followMode, { on: 'Disable follow mode', off: 'Enable follow mode' });
-            saveSettings();
-            
-            toast(settings.followMode ? 'Follow mode ON' : 'Follow mode OFF');
-            if (settings.followMode && selectedHex) {
-                const ac = aircraftCache[selectedHex];
-                if (ac?.lat !== undefined) map.panTo([ac.lat, ac.lon]);
-            }
-        });
-        document.getElementById('settingsBtn').addEventListener('click', () => { const panel = _el('settingsPanel'); const isOpen = panel.classList.toggle('show'); panel.setAttribute('aria-hidden', isOpen ? 'false' : 'true'); syncExpandedButtonState('settingsBtn', isOpen, { on: 'Close settings', off: 'Open settings' }); deselectAircraft(); });
+        bindCoreViewActions();
+        bindTopBarActions();
         document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels); document.getElementById('toggleLabels').addEventListener('click', function() { settings.showLabels = !settings.showLabels; this.classList.toggle('on', settings.showLabels); syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' }); saveSettings(); updateMarkers(); });
         document.getElementById('toggleAltColors').classList.toggle('on', settings.altitudeColors); document.getElementById('toggleAltColors').addEventListener('click', function() { settings.altitudeColors = !settings.altitudeColors; this.classList.toggle('on', settings.altitudeColors); saveSettings(); if (selectedHex) loadTrail(selectedHex); });
         document.getElementById('toggleWiki').classList.toggle('on', settings.showWiki); document.getElementById('toggleWiki').addEventListener('click', function() { settings.showWiki = !settings.showWiki; this.classList.toggle('on', settings.showWiki); saveSettings(); });
@@ -6966,14 +7679,13 @@ if ('serviceWorker' in navigator) {
         document.getElementById('bookmarkSaveBtn').addEventListener('click', () => { const name = document.getElementById('bookmarkNameInput').value.trim(); if (name) { addBookmark(name); document.getElementById('bookmarkModal').classList.remove('show'); } else toast('Enter name'); });
         document.getElementById('bookmarkNameInput').addEventListener('keypress', e => { if (e.key === 'Enter') { const name = e.target.value.trim(); if (name) { addBookmark(name); document.getElementById('bookmarkModal').classList.remove('show'); } } });
         document.getElementById('bookmarkModal').addEventListener('click', e => { if (e.target.id === 'bookmarkModal') document.getElementById('bookmarkModal').classList.remove('show'); });
-        document.getElementById('panelsBtn')?.addEventListener('click', () => { const bp = document.getElementById('bottomPanels'); bp.classList.toggle('visible'); const visible = bp.classList.contains('visible'); bp.setAttribute('aria-hidden', visible ? 'false' : 'true'); syncExpandedButtonState('panelsBtn', visible, { on: 'Hide saved locations and watchlist', off: 'Show saved locations and watchlist' }); });
         
         syncPrimaryFilterButtons(settings.filter);
         syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' });
         syncPressedButtonState('followBtn', settings.followMode, { on: 'Disable follow mode', off: 'Enable follow mode' });
         syncPressedButtonState('watchBtn', false, { on: 'Remove selected aircraft from watchlist', off: 'Add selected aircraft to watchlist' });
-        syncExpandedButtonState('settingsBtn', false, { on: 'Close settings', off: 'Open settings' });
-        syncExpandedButtonState('panelsBtn', false, { on: 'Hide saved locations and watchlist', off: 'Show saved locations and watchlist' });
+        setSettingsPanelOpen(false);
+        setBottomPanelsOpen(false);
         
         // Watch button handler
         document.getElementById('watchBtn')?.addEventListener('click', function() {
@@ -7032,12 +7744,20 @@ if ('serviceWorker' in navigator) {
             updateDataSourceList();
             toast('Source check complete');
         });
+
+        document.getElementById('installOfflineAtlasBtn')?.addEventListener('click', async () => {
+            try {
+                await installOfflineAtlas({ force: !!offlineAtlasData, announce: true });
+            } catch (e) {}
+        });
         
         document.getElementById('clearOfflineCacheBtn')?.addEventListener('click', async () => {
             try {
                 await skytrackDB.saveDatabase('offlineCache', null, 0);
                 offlineManager.offlineData = null;
-                toast('Offline cache cleared');
+                clearOfflineAtlasCache();
+                switchToPreferredMapStyle();
+                toast('Offline data cleared');
             } catch (e) {
                 toast('Failed to clear cache');
             }
@@ -7057,6 +7777,7 @@ if ('serviceWorker' in navigator) {
                     '<span style="color:' + statusColor + '">' + s.status + ' (' + (s.latency < 9999 ? s.latency + 'ms' : '--') + ')</span>' +
                     '</div>';
             }).join('');
+            refreshOfflineAtlasUi();
         }
         
         // Update list when settings panel opens
@@ -7712,6 +8433,8 @@ if ('serviceWorker' in navigator) {
     };
 
     searchSystem.init();
+    bindCoreViewActions();
+    bindTopBarActions();
 
     // ============ PHASE 5: URL DEEP LINKING & SHARE ============
     const shareManager = {
@@ -7720,8 +8443,12 @@ if ('serviceWorker' in navigator) {
         // Build URL from current state
         buildUrl(overrides = {}) {
             const params = new URLSearchParams();
+            const currentParams = new URLSearchParams(window.location.search);
             const hex = overrides.hex !== undefined ? overrides.hex : selectedHex;
             const filter = overrides.filter !== undefined ? overrides.filter : settings.filter;
+
+            const embedMode = currentParams.get('embed');
+            if (embedMode) params.set('embed', embedMode);
             
             if (hex) params.set('hex', hex);
             if (filter && filter !== 'all') params.set('filter', filter);
@@ -7880,7 +8607,12 @@ if ('serviceWorker' in navigator) {
         });
         hostThemeState.theme = 'nightops';
         hostThemeState.tone = 'dark';
-        hostThemeState.mapStyle = 'esri-gray';
+        hostThemeState.mapStyle = 'offline-atlas';
+        if (map) {
+            applyBaseMap(hostThemeState.mapStyle);
+            refreshAircraftMarkerTheme();
+            refreshViptrackLayout();
+        }
     }
     function applyNomadTheme(themeName, palette = null) {
         const theme = getHostTheme(themeName);
@@ -7917,6 +8649,7 @@ if ('serviceWorker' in navigator) {
         });
         if (map) {
             applyBaseMap(theme.mapStyle);
+            refreshAircraftMarkerTheme();
             refreshViptrackLayout();
         }
         return theme;
@@ -7932,7 +8665,11 @@ if ('serviceWorker' in navigator) {
         refreshLayout: refreshViptrackLayout,
         onVisible() {
             syncEmbeddedThemeFromParent();
+            resumeWorkspaceActivity({ forceRefresh: EMBED_MODE });
             refreshViptrackLayout();
+        },
+        onHidden() {
+            pauseWorkspaceActivity();
         },
         getSnapshot() {
             return {
@@ -7940,7 +8677,12 @@ if ('serviceWorker' in navigator) {
                 theme: hostThemeState.theme,
                 density: hostThemeState.density,
                 mapStyle: currentBaseMap || hostThemeState.mapStyle,
-                dayMode: document.body?.classList.contains('day-mode') || false
+                offlineAtlasReady: !!offlineAtlasData,
+                offlineAtlasInstalling: offlineAtlasState === 'installing',
+                dayMode: document.body?.classList.contains('day-mode') || false,
+                fetchIntervalActive: !!_fetchIntervalId,
+                pausableActive: _pausableIntervals.filter((entry) => !!entry.id).length,
+                tabPaused: !!_tabPaused
             };
         }
     };
@@ -9063,20 +9805,20 @@ if ('serviceWorker' in navigator) {
     errorRecovery.init();
     
     // Phase 16: Cache positions periodically when online
-    setInterval(() => {
+    _setPausableInterval(() => {
         if (offlineManager.isOnline) {
             offlineManager.cachePositions();
         }
-    }, 60000);
+    }, 60000, 'offlineCache');
     
     // Phase 16: Log circuit breaker states periodically for debugging
-    setInterval(() => {
+    _setPausableInterval(() => {
         const states = Object.entries(circuitBreakers).map(([name, cb]) => {
             const state = cb.getState();
             return name + ':' + state.state;
         }).join(', ');
         _dbg('Circuit breakers:', states);
-    }, 120000);
+    }, 120000, 'circuitDebug');
     
     // Phase 16: Keyboard shortcut for data source stats (Ctrl+Shift+D)
     document.addEventListener('keydown', (e) => {
@@ -9132,40 +9874,63 @@ if ('serviceWorker' in navigator) {
 
     // ============ UI OVERHAUL: INITIALIZATION ============
     (function initUIOverhaul() {
+        refreshOfflineAtlasUi();
 
         // --- Onboarding ---
-        if (!localStorage.getItem('viptrack_onboarded') && !HAS_SHARED_CONTEXT) {
-            const overlay = document.getElementById('onboardOverlay');
-            if (overlay) {
-                setTimeout(() => overlay.classList.add('show'), EMBED_MODE ? 850 : 1500);
-                document.getElementById('onboardDismiss')?.addEventListener('click', () => {
-                    overlay.classList.remove('show');
-                    localStorage.setItem('viptrack_onboarded', '1');
-                    if (EMBED_MODE) setTimeout(() => refreshViptrackLayout(), 120);
-                });
+        const overlay = document.getElementById('onboardOverlay');
+        const onboardButton = document.getElementById('onboardDismiss');
+        const showOnboarding = !localStorage.getItem('viptrack_onboarded') && !HAS_SHARED_CONTEXT;
+        if (showOnboarding && overlay) {
+            setTimeout(() => overlay.classList.add('show'), EMBED_MODE ? 850 : 1500);
+        }
+        onboardButton?.addEventListener('click', async () => {
+            if (!offlineAtlasData) {
+                try {
+                    await installOfflineAtlas({ announce: true });
+                } catch (e) {}
+                return;
             }
+            if (overlay) overlay.classList.remove('show');
+            localStorage.setItem('viptrack_onboarded', '1');
+            if (EMBED_MODE) setTimeout(() => refreshViptrackLayout(), 120);
+        });
+        if (showOnboarding) {
+            ensureOfflineAtlas().catch(() => {});
+        } else {
+            ensureOfflineAtlas().catch(() => {});
         }
         
         // --- Loading Overlay ---
         const loadingOverlay = document.getElementById('loadingOverlay');
         if (loadingOverlay) {
-            const checkLoaded = setInterval(() => {
+            let overlayHidden = false;
+            let checkLoaded = null;
+            let overlayHideTimer = 0;
+            let overlayCleanupTimer = 0;
+            let overlayForceTimer = 0;
+            const dismissLoadingOverlay = () => {
+                if (overlayHidden) return;
+                overlayHidden = true;
+                _clearPausableInterval(checkLoaded);
+                if (overlayHideTimer) clearTimeout(overlayHideTimer);
+                if (overlayCleanupTimer) clearTimeout(overlayCleanupTimer);
+                if (overlayForceTimer) clearTimeout(overlayForceTimer);
+                loadingOverlay.classList.add('hidden');
+                overlayCleanupTimer = setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+                if (EMBED_MODE) refreshViptrackLayout();
+            };
+            checkLoaded = _setPausableInterval(() => {
                 const count = Object.keys(aircraftCache).filter(h => aircraftCache[h].lat !== undefined).length;
                 const loadText = document.getElementById('loadingText');
                 if (count > 0) {
                     if (loadText) loadText.textContent = count + ' aircraft found';
-                    setTimeout(() => loadingOverlay.classList.add('hidden'), 800);
-                    setTimeout(() => { loadingOverlay.style.display = 'none'; }, 1300);
-                    clearInterval(checkLoaded);
-                    if (EMBED_MODE) setTimeout(() => refreshViptrackLayout(), 160);
+                    if (!overlayHideTimer) {
+                        overlayHideTimer = setTimeout(dismissLoadingOverlay, 800);
+                    }
                 }
-            }, 500);
+            }, 500, 'loadingOverlay');
             // Force hide after 15s
-            setTimeout(() => {
-                loadingOverlay.classList.add('hidden');
-                setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
-                if (EMBED_MODE) refreshViptrackLayout();
-            }, 15000);
+            overlayForceTimer = setTimeout(dismissLoadingOverlay, 15000);
         }
         
         // --- Info Panel QuickGlance ---

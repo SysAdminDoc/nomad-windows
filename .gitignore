@@ -30,8 +30,6 @@ test_runtime/
 test_runtime_probe/
 playwright-report/
 test-results/
-playwright.config.mjs
-tests/ui/
 
 # Internal docs (keep locally, not in repo)
 CLAUDE.md
@@ -41,9 +39,6 @@ OFFLINE-DATASETS.md
 SURVIVAL-YOUTUBE-REFERENCE.md
 docs/schema.md
 
-# Build tooling not used
-esbuild.config.mjs
-package.json
-package-lock.json
+# Local one-off tooling not used by the app/runtime
 scripts/audit_tables.py
 project_nomad_logo.png

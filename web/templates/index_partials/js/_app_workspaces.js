@@ -40,7 +40,8 @@ async function loadMaps() {
 }
 
 function deleteMap(filename, btn) {
-  if (!btn) btn = event.target;
+  if (!btn) btn = (typeof event !== 'undefined' && event) ? event.target : null;
+  if (!btn) return;
   if (!btn.dataset.confirm) {
     btn.dataset.confirm = '1';
     const orig = btn.textContent;

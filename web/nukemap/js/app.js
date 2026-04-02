@@ -6,6 +6,21 @@ window.NM = window.NM || {};
 
 let map, currentDets = [], windAngle = 0, multiMode = false, mirvMode = false, currentMirvPreset = null;
 NM._nightMode = false;
+NM.getUiRoot = function() {
+  return document.getElementById('nukemap-stage') || document.getElementById('tab-nukemap') || document.body;
+};
+NM.getThemeMapLayerName = function(theme) {
+  return ({
+    nomad: 'terrain',
+    nightops: 'dark',
+    cyber: 'darkClean',
+    redlight: 'dark',
+    eink: 'positron'
+  })[theme] || 'terrain';
+};
+NM.isStandaloneRoute = function() {
+  return /^\/nukemap(?:\/|$)/.test(window.location.pathname || '');
+};
 
 // ---- MAP INIT ----
 function initMap() {
@@ -53,7 +68,12 @@ function initMap() {
   // Dismiss loading overlay once first tile loads
   const lo = document.getElementById('loading-overlay');
   if (lo) {
-    const dismiss = () => { lo.classList.add('hidden'); setTimeout(() => lo.remove(), 600); };
+    const dismiss = () => {
+      if (!lo.isConnected) return;
+      lo.classList.add('hidden');
+      setTimeout(() => lo.remove(), 600);
+    };
+    NM.dismissLoading = dismiss;
     dark.once('load', dismiss);
     setTimeout(dismiss, 4000); // fallback
   }
@@ -411,7 +431,16 @@ function initControls() {
   });
 
   // Panel toggle
-  $('panel-toggle').addEventListener('click', () => $('panel').classList.toggle('collapsed'));
+  $('panel-toggle').addEventListener('click', () => {
+    const panel = $('panel');
+    panel.classList.toggle('collapsed');
+    const expanded = !panel.classList.contains('collapsed');
+    $('panel-toggle').setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    $('panel-toggle').setAttribute('aria-label', expanded ? 'Collapse control panel' : 'Expand control panel');
+    $('panel-toggle').setAttribute('title', expanded ? 'Collapse control panel' : 'Expand control panel');
+    document.getElementById('nukemap-stage')?.classList.toggle('panel-collapsed', panel.classList.contains('collapsed'));
+    NM.scheduleLayoutRefresh?.();
+  });
 
   // Coords click-to-copy
   $('coords').addEventListener('click', () => {
@@ -440,6 +469,12 @@ function initControls() {
   // ---- EXTRAS ----
   NM.DistanceIndicator.init();
   NM.LayerSwitcher.init(map);
+  if (navigator.onLine) {
+    const preferredLayer = NM.getThemeMapLayerName(document.documentElement.getAttribute('data-theme') || 'nomad');
+    const preferredTileLayer = NM.LayerSwitcher.layers[preferredLayer];
+    if (preferredTileLayer && NM.dismissLoading) preferredTileLayer.once('load', NM.dismissLoading);
+    NM.LayerSwitcher.switchTo(preferredLayer);
+  }
 
   // Layer switcher buttons (panel)
   document.querySelectorAll('#layer-switcher .layer-btn').forEach(btn => {
@@ -900,7 +935,7 @@ function updateDetsList() {
     const nm = nc && nc.dist < 50 ? nc.name : `${d.lat.toFixed(2)}, ${d.lng.toFixed(2)}`;
     const el = document.createElement('div'); el.className = 'det-item';
     const wShort = d.weapon ? d.weapon.split('(')[0].trim() : '';
-    el.innerHTML = `<span class="det-idx">${i + 1}</span><div class="det-info"><span class="det-name">${NM.esc(nm)}</span><span class="det-weapon">${NM.esc(wShort)}</span></div>${d.isHEMP ? '<span class="det-badge">HEMP</span>' : ''}<span class="det-yield">${NM.fmtYield(d.yieldKt)}</span><button class="det-remove" data-i="${i}">&times;</button>`;
+    el.innerHTML = `<span class="det-idx">${i + 1}</span><div class="det-info"><span class="det-name">${NM.esc(nm)}</span><span class="det-weapon">${NM.esc(wShort)}</span></div>${d.isHEMP ? '<span class="det-badge">HEMP</span>' : ''}<span class="det-yield">${NM.fmtYield(d.yieldKt)}</span><button class="det-remove" type="button" data-i="${i}" aria-label="Remove detonation ${i + 1}">&times;</button>`;
     el.querySelector('.det-remove').addEventListener('click', e => { e.stopPropagation(); removeDet(i); });
     el.addEventListener('click', e => { if (!e.target.classList.contains('det-remove')) map.flyTo([d.lat, d.lng], map.getZoom(), {duration: 0.6}); });
     list.appendChild(el);
@@ -927,11 +962,14 @@ function updateLegend(det) {
     const def = NM.EFFECTS_DEF.find(d => d.id === it.id); if (!def) return;
     const div = document.createElement('div'); div.className = 'legend-item';
     const popEst = Math.round(Math.PI * it.r * it.r * (det.casualties.density || 40));
-    div.innerHTML = `<div class="legend-dot" style="background:${it.color}"></div><div class="legend-label">${def.label}<span class="legend-desc">${def.desc.split('.')[0]}</span><span class="legend-pop">~${NM.fmtNum(popEst)} people in zone</span></div><div class="legend-value">${NM.fmtR(it.r)}<span class="legend-area">${NM.fmtArea(it.r)}</span></div><button class="legend-eye on" data-eid="${it.id}">&#10003;</button>`;
+    div.innerHTML = `<div class="legend-dot" style="background:${it.color}"></div><div class="legend-label">${def.label}<span class="legend-desc">${def.desc.split('.')[0]}</span><span class="legend-pop">~${NM.fmtNum(popEst)} people in zone</span></div><div class="legend-value">${NM.fmtR(it.r)}<span class="legend-area">${NM.fmtArea(it.r)}</span></div><button class="legend-eye on" type="button" data-eid="${it.id}" aria-label="Hide ${def.label} ring" aria-pressed="true">&#10003;</button>`;
     div.querySelector('.legend-eye').addEventListener('click', ev => {
       const btn = ev.currentTarget; btn.classList.toggle('on');
       div.classList.toggle('dimmed', !btn.classList.contains('on'));
       toggleEffect(it.id, btn.classList.contains('on'));
+      btn.setAttribute('aria-pressed', btn.classList.contains('on') ? 'true' : 'false');
+      btn.setAttribute('aria-label', `${btn.classList.contains('on') ? 'Hide' : 'Show'} ${def.label} ring`);
+      btn.innerHTML = btn.classList.contains('on') ? '&#10003;' : '&#9675;';
     });
     c.appendChild(div);
   });
@@ -1015,7 +1053,7 @@ function updateNearbyTargets(det) {
     html += `<div class="nearby-item${inBlast ? ' nearby-hit' : ''}">
       <div class="nb-header"><span class="nb-type" style="color:${c}">${typeLabels[t.type] || t.type}</span><span class="nb-dist">${NM.fmtR(t.dist)}</span></div>
       <div class="nb-name">${NM.esc(t.name)}</div>
-      ${t.cat ? `<div class="nb-cat">${NM.esc(t.cat.substring(0, 80))}${t.cat.length > 80 ? '...' : ''}</div>` : ''}
+                ${t.cat ? `<div class="nb-cat">${NM.esc(t.cat.substring(0, 80))}${t.cat.length > 80 ? '…' : ''}</div>` : ''}
       ${inBlast ? '<div class="nb-status">WITHIN BLAST ZONE</div>' : ''}
     </div>`;
   }
@@ -1282,7 +1320,7 @@ function renderSavedList() {
   list.innerHTML = '';
   saves.forEach((s, i) => {
     const el = document.createElement('div'); el.className = 'saved-item';
-    el.innerHTML = `<span class="si-name">${NM.esc(s.name)}</span><span class="si-meta">${s.dets.length} det${s.dets.length > 1 ? 's' : ''}</span><button class="si-del" data-i="${i}">&times;</button>`;
+    el.innerHTML = `<span class="si-name">${NM.esc(s.name)}</span><span class="si-meta">${s.dets.length} det${s.dets.length > 1 ? 's' : ''}</span><button class="si-del" type="button" data-i="${i}" aria-label="Delete scenario ${NM.esc(s.name)}">&times;</button>`;
     el.addEventListener('click', e => { if (!e.target.classList.contains('si-del')) loadScenario(s); });
     el.querySelector('.si-del').addEventListener('click', e => { e.stopPropagation(); deleteSave(i); });
     list.appendChild(el);
@@ -1320,19 +1358,24 @@ function showDetToast(det) {
   const hiroStr = hiro >= 10 ? hiro.toFixed(0) + 'x Hiroshima' : hiro >= 1 ? hiro.toFixed(1) + 'x Hiroshima' : '';
   const el = document.createElement('div');
   el.className = 'det-toast';
+  el.setAttribute('role', 'status');
+  el.setAttribute('aria-live', 'polite');
+  el.setAttribute('aria-atomic', 'true');
   el.innerHTML = `<span class="dt-yield">${NM.fmtYield(det.yieldKt)}</span> <span class="dt-loc">${NM.esc(loc)}</span>${hiroStr ? ` <span class="dt-hiro">${hiroStr}</span>` : ''}`;
-  document.body.appendChild(el);
+  NM.getUiRoot().appendChild(el);
   requestAnimationFrame(() => el.classList.add('show'));
   setTimeout(() => { el.classList.remove('show'); setTimeout(() => el.remove(), 500); }, 3000);
 }
 
 // ---- FULLSCREEN ----
 function toggleFullscreen() {
+  const root = document.getElementById('nukemap-stage') || document.documentElement;
   if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen?.() || document.documentElement.webkitRequestFullscreen?.();
+    root.requestFullscreen?.() || root.webkitRequestFullscreen?.();
   } else {
     document.exitFullscreen?.() || document.webkitExitFullscreen?.();
   }
+  setTimeout(() => NM.scheduleLayoutRefresh?.(), 180);
 }
 
 // ---- INIT ----
@@ -1341,28 +1384,39 @@ function init() {
   NM.Mushroom3D.init();
   initMap();
   initControls();
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+  if ('serviceWorker' in navigator && NM.isStandaloneRoute() && !window.pywebview) {
+    navigator.serviceWorker.register('/nukemap/sw.js').catch(() => {});
+  }
 
   // Lazy-load ZIP code database (1.5MB) after app is interactive
   setTimeout(() => {
-    const s = document.createElement('script'); s.src = 'js/zipcodes.js'; document.body.appendChild(s);
+    const s = document.createElement('script');
+    s.src = '/nukemap/js/zipcodes.js';
+    document.body.appendChild(s);
   }, 2000);
 
   // Welcome overlay
   const wo = $('welcome-overlay');
   const hasUrlDets = new URLSearchParams(location.search).get('d');
-  if (wo && !localStorage.getItem('nukemap-welcomed')) {
+  const dismissWelcome = () => {
+    if (!wo || wo.classList.contains('hidden')) return;
+    if ($('welcome-noshow')?.checked) localStorage.setItem('nukemap-welcomed', '1');
+    wo.classList.add('hidden');
+  };
+  if (wo && !localStorage.getItem('nukemap-welcomed') && !hasUrlDets) {
     wo.style.display = '';
     $('welcome-dismiss').addEventListener('click', () => {
-      if ($('welcome-noshow').checked) localStorage.setItem('nukemap-welcomed', '1');
-      wo.classList.add('hidden');
+      dismissWelcome();
       // Demo detonation on first visit
-      if (!hasUrlDets && !currentDets.length) {
+      if (!currentDets.length) {
         setTimeout(() => {
           map.flyTo([40.7128, -74.006], 11, {duration: 1.2});
           setTimeout(() => { setYield(455); triggerDetonation(40.7128, -74.006); }, 1400);
         }, 300);
       }
+    });
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape') dismissWelcome();
     });
   } else if (wo) wo.classList.add('hidden');
 }

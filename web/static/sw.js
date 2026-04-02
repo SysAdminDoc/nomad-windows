@@ -58,7 +58,7 @@ self.addEventListener('install', event => {
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
-      Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
+      Promise.all(keys.filter(k => k !== CACHE_NAME && k !== SITROOM_CACHE).map(k => caches.delete(k)))
     )
   );
   self.clients.claim();
@@ -94,17 +94,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Other API calls — network-first with general cache fallback
+  // Other API calls — network-first with general cache fallback (GET only)
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(
-      fetch(event.request)
-        .then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => caches.match(event.request))
-    );
+    if (event.request.method === 'GET') {
+      event.respondWith(
+        fetch(event.request)
+          .then(response => {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            return response;
+          })
+          .catch(() => caches.match(event.request))
+      );
+    }
     return;
   }
 

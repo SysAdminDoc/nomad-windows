@@ -10,6 +10,10 @@
   --shadow-lg:0 8px 32px rgba(0,0,0,0.4);
 }
 html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--crust);color:var(--text)}
+:where(button,input,select,textarea,a,.leaflet-control-zoom a):focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+}
 #map{position:absolute;inset:0;z-index:1}
 .leaflet-container{background:var(--crust)!important}
 .leaflet-control-zoom{border:none!important;box-shadow:var(--shadow-lg)!important}

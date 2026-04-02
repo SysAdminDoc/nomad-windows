@@ -621,7 +621,7 @@ NM.TestTimeline = {
     const yearEl = document.createElement('div');
     yearEl.className = 'test-timeline-year';
     yearEl.id = 'tt-year';
-    document.body.appendChild(yearEl);
+    (NM.getUiRoot ? NM.getUiRoot() : document.body).appendChild(yearEl);
 
     let idx = 0;
     const tick = () => {
@@ -760,9 +760,10 @@ NM.BlastArrival = {
   active: false, el: null, _handler: null,
 
   init() {
-    this.el = document.createElement('div');
+    this.el = document.getElementById('blast-arrival-indicator') || document.createElement('div');
+    this.el.id = 'blast-arrival-indicator';
     this.el.className = 'blast-arrival-indicator';
-    document.body.appendChild(this.el);
+    if (!this.el.isConnected) (NM.getUiRoot ? NM.getUiRoot() : document.body).appendChild(this.el);
   },
 
   start(map) {

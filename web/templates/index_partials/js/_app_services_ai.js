@@ -77,17 +77,17 @@ async function loadServices(servicesData = null) {
 
       let prereqHtml = '';
       if (!s.installed && info.requires) {
-        prereqHtml = `<div class="svc-prereq">Requires: ${info.requires}</div>`;
+        prereqHtml = `<div class="svc-prereq">Requires: ${escapeHtml(info.requires)}</div>`;
       }
 
       let hintHtml = '';
       if (s.installed && !s.running && info.hint) {
-        hintHtml = `<div class="service-hint-note">${info.hint}</div>`;
+        hintHtml = `<div class="service-hint-note">${escapeHtml(info.hint)}</div>`;
       }
 
       let tipHtml = '';
       if (s.running && info.tip) {
-        tipHtml = `<div class="service-tip-note">${info.tip}</div>`;
+        tipHtml = `<div class="service-tip-note">${escapeHtml(info.tip)}</div>`;
       }
 
       const icon = SVC_ICONS[s.id] || '';
@@ -248,6 +248,7 @@ async function loadModels() {
   try {
     const models = await (await fetch('/api/ai/models')).json();
     const sel = document.getElementById('model-select');
+    if (!sel) return;
     if (!models.length) {
       sel.innerHTML = '<option value="">No models yet — click "+ Get Model"</option>';
       setChatReady(false, 'No AI models downloaded');
@@ -482,9 +483,9 @@ async function sendChat() {
   const model = document.getElementById('model-select').value;
   if (!model) { toast('No AI model available. Opening the download panel...', 'info'); toggleModelPicker(); return; }
 
+  isSending = true;
   input.value = '';
   input.style.height = 'auto';
-  isSending = true;
   _chatAbortCtrl = new AbortController();
   document.getElementById('send-btn').disabled = true;
   document.getElementById('stop-btn').style.display = '';

@@ -145,7 +145,7 @@ def tray_quit(icon, item):
             handler.flush()
         except Exception:
             pass
-    sys.exit(0)
+    os._exit(0)
 
 
 def setup_tray():

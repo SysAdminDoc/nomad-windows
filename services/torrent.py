@@ -86,14 +86,20 @@ class TorrentManager:
 
     def shutdown(self):
         """Gracefully pause session on app exit."""
+        monitor = None
         with self._lock:
+            self._monitor_active = False
+            monitor = self._monitor_thread
+            self._monitor_thread = None
             if self._session:
                 log.info('Shutting down libtorrent session')
-                self._monitor_active = False
                 self._session.pause()
                 self._session = None
             self._handles.clear()
             self._meta.clear()
+        # Wait for monitor thread to exit outside the lock
+        if monitor and monitor.is_alive():
+            monitor.join(timeout=5)
 
     # ── Public API ────────────────────────────────────────────────────
 

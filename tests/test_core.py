@@ -104,14 +104,14 @@ class TestErrorHandler:
         assert '<title>Home · NOMAD Field Desk v' in html
         assert 'src="/static/nomad-mark.svg"' in html
         assert 'alt="NOMAD logo"' in html
-        assert 'class="sidebar-brand-kicker">Desktop Operations Workspace<' in html
+        assert 'class="sidebar-brand-kicker">Field Operations Desk<' in html
         assert 'class="sidebar-group-title">Briefing<' in html
-        assert 'Orient, assess, and decide what matters now.' in html
+        assert 'Orient, assess, decide.' in html
         assert 'class="sidebar-group-title">Operations<' in html
-        assert 'Run field workflows, act on risk, and manage resources.' in html
+        assert 'Run fieldwork, act on risk, manage resources.' in html
         assert 'class="sidebar-group-title">Knowledge<' in html
         assert 'class="sidebar-group-title">Assistant<' in html
-        assert 'Context-aware help, drafting, and operational copiloting.' in html
+        assert 'Drafting, synthesis, and copiloting.' in html
         assert 'class="sidebar-group-title">System<' in html
         assert '>Diagnostics</span>' in html
         assert '>Copilot</span>' in html
@@ -126,17 +126,17 @@ class TestErrorHandler:
         assert 'data-mode-select="command"' in html
         assert 'class="home-launch-deck"' in html
         assert 'class="home-launch-hero home-surface-panel"' in html
-        assert 'MISSION CONTROL' in html
-        assert 'Start from the desk you actually need right now.' in html
+        assert 'COMMAND DESK' in html
+        assert 'Search, switch lanes, or resume live work.' in html
         assert 'id="home-continue-panel" class="home-continue-panel home-surface-panel"' in html
-        assert 'Pinned Contexts' in html
-        assert 'Recent Context' in html
+        assert 'Pinned' in html
+        assert 'Recent' in html
         assert 'id="command-palette-overlay" class="command-palette-overlay" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" hidden' in html
         assert 'id="workspace-context-bar" class="workspace-context-bar" hidden' in html
         assert 'id="workspace-inspector"' not in html
         assert 'id="sidebar-context-hub"' in html
-        assert 'Quick Return' in html
-        assert 'Keep your active desk and pinned contexts within reach from any workspace.' in html
+        assert 'Return' in html
+        assert 'Keep pinned desks and your active context within reach.' in html
         assert 'id="mobile-bottom-nav"' not in html
         assert 'data-shell-action="open-mobile-drawer"' not in html
         assert 'class="sidebar-toggle"' not in html
@@ -165,12 +165,16 @@ class TestErrorHandler:
             ('/copilot', 'Copilot · NOMAD Field Desk', 'tab-ai-chat', 'COPILOT WORKSPACE', ['tab-settings', 'tab-preparedness', 'tab-media']),
             ('/settings', 'Settings · NOMAD Field Desk', 'tab-settings', 'class="settings-command-deck workspace-panel"', ['tab-services', 'tab-situation-room', 'tab-media']),
             ('/diagnostics', 'Diagnostics · NOMAD Field Desk', 'tab-benchmark', 'class="benchmark-command-deck workspace-panel"', ['tab-settings', 'tab-preparedness', 'tab-media']),
+            ('/viptrack-tab', 'VIPTrack · NOMAD Field Desk', 'tab-viptrack', 'id="viptrack-stage"', ['tab-services', 'tab-settings', 'tab-media']),
         ]
         for path, title, tab_id, unique_marker, absent_tabs in pages:
             html = self._html(client, path)
             assert title in html
             assert f'id="{tab_id}"' in html
             assert unique_marker in html
+            if path == '/viptrack-tab':
+                assert 'Live military and VIP air traffic' in html
+                assert 'src="/viptrack/?embed=nomad"' in html
             for absent in absent_tabs:
                 assert f'id="{absent}"' not in html
 
@@ -303,6 +307,30 @@ class TestErrorHandler:
         assert 'outline: none' not in combined
         assert 'outline:none' not in combined
         assert ':focus-visible' in combined
+
+    def test_embedded_tool_pages_keep_zoom_enabled_and_status_regions(self):
+        viptrack_text = (REPO_ROOT / 'web' / 'viptrack' / 'index.html').read_text(encoding='utf-8')
+        nukemap_text = (REPO_ROOT / 'web' / 'nukemap' / 'index.html').read_text(encoding='utf-8')
+        nukemap_partial = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_nukemap.html').read_text(encoding='utf-8')
+
+        assert 'maximum-scale=1.0' not in viptrack_text
+        assert 'user-scalable=no' not in viptrack_text
+        assert 'user-scalable=no' not in nukemap_text
+        assert 'transition: all' not in viptrack_text
+        assert 'aria-label="Clear search"' in viptrack_text
+        assert 'role="tablist"' in viptrack_text
+        assert 'aria-controls="bottomPanels"' in viptrack_text
+        assert 'aria-controls="settingsPanel"' in viptrack_text
+        assert 'role="status" aria-live="polite" aria-atomic="true"' in viptrack_text
+        assert 'aria-controls="panel"' in nukemap_text
+        assert 'aria-expanded="true"' in nukemap_text
+        assert 'Select scenario…' in nukemap_text
+        assert 'Select scenario...' not in nukemap_text
+        assert 'role="status" aria-live="polite" aria-atomic="true"' in nukemap_text
+        assert 'role="status" aria-live="polite" aria-atomic="true"' in nukemap_partial
+        assert '@media (prefers-reduced-motion: reduce)' in viptrack_text
+        assert '@media (prefers-reduced-motion: reduce)' in nukemap_partial
+        assert viptrack_text.index('const searchSystem = {') < viptrack_text.index('searchSystem.init();')
 
     def test_app_css_is_split_into_ordered_import_manifest(self):
         manifest = REPO_ROOT / 'web' / 'static' / 'css' / 'app.css'

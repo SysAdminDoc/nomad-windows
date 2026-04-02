@@ -93,9 +93,11 @@ def open_folder(path: str):
     if IS_WINDOWS:
         os.startfile(path)
     elif IS_MACOS:
-        subprocess.Popen(['open', path])
+        proc = subprocess.Popen(['open', path])
+        proc.wait()
     else:
-        subprocess.Popen(['xdg-open', path])
+        proc = subprocess.Popen(['xdg-open', path])
+        proc.wait()
 
 
 # ─── Process Management ──────────────────────────────────────────────

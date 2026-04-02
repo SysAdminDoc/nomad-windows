@@ -1,17 +1,116 @@
-  <div id="tab-viptrack" class="tab-content{% if active_tab == 'viptrack' %} active{% endif %}" style="padding:0!important;margin:0!important;overflow:hidden;">
+  <div id="tab-viptrack" class="tab-content{% if active_tab == 'viptrack' %} active{% endif %}">
     <style>
       #tab-viptrack {
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
+        --vt-app-bg: var(--bg, #0c1016);
+        --vt-app-surface: var(--surface, rgba(24, 29, 36, 0.84));
+        --vt-app-surface-solid: var(--surface-solid, #151a22);
+        --vt-app-surface2: var(--surface2, #1d2430);
+        --vt-app-surface3: var(--surface3, #222d3a);
+        --vt-app-surface-panel: var(--surface-panel, rgba(14, 18, 24, 0.94));
+        --vt-app-border: var(--border, rgba(255, 255, 255, 0.08));
+        --vt-app-text: var(--text, #edf2f7);
+        --vt-app-text-dim: var(--text-dim, #a3b2c7);
+        --vt-app-text-muted: var(--text-muted, #8e9aae);
+        --vt-app-accent: var(--accent, #71a8ff);
+        --vt-app-shadow: var(--shadow, 0 20px 48px rgba(0, 0, 0, 0.42));
+        --vt-app-shadow-lg: var(--shadow-lg, 0 36px 90px rgba(0, 0, 0, 0.55));
+
         position: relative;
-        width: 100% !important;
-        height: calc(100vh - 20px) !important;
-        min-height: calc(100vh - 20px) !important;
+        width: 100%;
+        min-height: 0;
+        height: auto;
+        overflow: visible;
+        padding: clamp(6px, 0.8vw, 12px) 0 calc(var(--app-bottom-clearance, 0px) + 16px);
+        color: var(--vt-app-text);
+        font-family: inherit;
       }
-      /* Kill container padding when VIPTrack is the active tab */
-      .container:has(#tab-viptrack.active) {
-        padding: 0 !important;
+
+      #tab-viptrack .viptrack-shell { display: grid; gap: 12px; }
+      #tab-viptrack .viptrack-framebar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-inline: 2px;
+      }
+      #tab-viptrack .viptrack-framebar-copy {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+        min-width: 0;
+      }
+      #tab-viptrack .viptrack-kicker {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--vt-app-text-muted);
+      }
+      #tab-viptrack .viptrack-framebar-title {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+        min-width: 0;
+      }
+      #tab-viptrack .viptrack-framebar-title h2 {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: var(--vt-app-text);
+      }
+      #tab-viptrack .viptrack-framebar-title span {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--vt-app-text-dim);
+        white-space: nowrap;
+      }
+      #tab-viptrack .viptrack-theme-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--vt-app-surface-panel) 92%, transparent);
+        border: 1px solid color-mix(in srgb, var(--vt-app-border) 82%, var(--vt-app-accent) 18%);
+        box-shadow: var(--vt-app-shadow);
+      }
+      #tab-viptrack .viptrack-theme-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--vt-app-accent);
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--vt-app-accent) 22%, transparent);
+      }
+      #tab-viptrack .viptrack-theme-label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--vt-app-text);
+      }
+
+      #tab-viptrack #viptrack-stage {
+        position: relative;
+        width: calc(100% + (var(--page-inner-gutter, 18px) * 2));
+        height: min(1180px, max(700px, calc(100vh - 176px)));
+        min-height: 700px;
+        margin-inline: calc(var(--page-inner-gutter, 18px) * -1);
+        overflow: hidden;
+        border-radius: clamp(18px, 2vw, 28px);
+        border: 1px solid color-mix(in srgb, var(--vt-app-border) 78%, var(--vt-app-accent) 22%);
+        background:
+          radial-gradient(circle at top right, color-mix(in srgb, var(--vt-app-accent) 12%, transparent), transparent 34%),
+          linear-gradient(180deg, color-mix(in srgb, var(--vt-app-surface-panel) 76%, #090c11), color-mix(in srgb, var(--vt-app-bg) 94%, #05080c));
+        box-shadow: var(--vt-app-shadow-lg);
+        isolation: isolate;
+      }
+      #tab-viptrack #viptrack-stage::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        border-radius: inherit;
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
       #tab-viptrack .vt-frame {
         position: absolute;
@@ -20,8 +119,148 @@
         height: 100%;
         border: none;
         display: block;
-        background: #1a1a2e;
+        background: #10141b;
+      }
+
+      @media (max-width: 1024px) {
+        #tab-viptrack #viptrack-stage {
+          height: max(640px, calc(100vh - 160px));
+          min-height: 640px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        #tab-viptrack {
+          padding-bottom: calc(var(--app-bottom-clearance, 0px) + 12px);
+        }
+        #tab-viptrack .viptrack-framebar {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+        #tab-viptrack #viptrack-stage {
+          width: 100%;
+          height: calc(100vh - 150px);
+          min-height: 560px;
+          margin-inline: 0;
+          border-radius: 20px;
+        }
       }
     </style>
-    <iframe src="/viptrack/" class="vt-frame" title="VIPTrack — Military & VIP Flight Tracker" allowfullscreen></iframe>
+
+    <div class="viptrack-shell">
+      <div class="viptrack-framebar">
+        <div class="viptrack-framebar-copy">
+          <span class="viptrack-kicker">Air Ops</span>
+          <div class="viptrack-framebar-title">
+            <h2>VIPTrack</h2>
+            <span>Live military and VIP air traffic</span>
+          </div>
+        </div>
+        <div class="viptrack-theme-chip" aria-label="VIPTrack theme">
+          <span class="viptrack-theme-dot"></span>
+          <span class="viptrack-theme-label" id="viptrack-theme-label">Midnight (Dark)</span>
+        </div>
+      </div>
+
+      <div id="viptrack-stage">
+        <iframe
+          id="viptrack-frame"
+          src="/viptrack/?embed=nomad"
+          class="vt-frame"
+          title="VIPTrack — Military & VIP Flight Tracker"
+          allowfullscreen
+        ></iframe>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const tabId = 'viptrack';
+        const frame = document.getElementById('viptrack-frame');
+        const themeLabel = document.getElementById('viptrack-theme-label');
+        const stage = document.getElementById('viptrack-stage');
+        const THEME_NAMES = {
+          nomad: 'Atlas (Light)',
+          nightops: 'Midnight (Dark)',
+          cyber: 'Cobalt (Blue Steel)',
+          redlight: 'Ember (Warm Dark)',
+          eink: 'Paper (E-Ink)',
+        };
+
+        function getThemePalette() {
+          const styles = getComputedStyle(document.documentElement);
+          return {
+            density: document.documentElement.getAttribute('data-density') || localStorage.getItem('nomad-density') || 'compact',
+            bg: styles.getPropertyValue('--bg').trim(),
+            surface: styles.getPropertyValue('--surface').trim(),
+            surfaceSolid: styles.getPropertyValue('--surface-solid').trim(),
+            surface2: styles.getPropertyValue('--surface2').trim(),
+            surface3: styles.getPropertyValue('--surface3').trim(),
+            surfacePanel: styles.getPropertyValue('--surface-panel').trim(),
+            text: styles.getPropertyValue('--text').trim(),
+            textDim: styles.getPropertyValue('--text-dim').trim(),
+            textMuted: styles.getPropertyValue('--text-muted').trim(),
+            accent: styles.getPropertyValue('--accent').trim(),
+            green: styles.getPropertyValue('--green').trim(),
+            orange: styles.getPropertyValue('--orange').trim(),
+            warning: styles.getPropertyValue('--warning').trim(),
+            red: styles.getPropertyValue('--red').trim(),
+            border: styles.getPropertyValue('--border').trim(),
+          };
+        }
+
+        function pushThemeToFrame() {
+          const theme = document.documentElement.getAttribute('data-theme') || localStorage.getItem('nomad-theme') || 'nightops';
+          if (themeLabel) themeLabel.textContent = THEME_NAMES[theme] || theme;
+          try {
+            const host = frame?.contentWindow?.VIPTrackHost;
+            if (!host || typeof host.applyNomadTheme !== 'function') return false;
+            host.applyNomadTheme(theme, getThemePalette());
+            if (typeof host.refreshLayout === 'function') host.refreshLayout();
+            return true;
+          } catch (error) {
+            return false;
+          }
+        }
+
+        function syncThemeSoon() {
+          requestAnimationFrame(() => {
+            setTimeout(() => { pushThemeToFrame(); }, 40);
+          });
+        }
+
+        if (frame) {
+          frame.addEventListener('load', syncThemeSoon);
+        }
+
+        if (stage && typeof ResizeObserver !== 'undefined') {
+          const observer = new ResizeObserver(() => {
+            try {
+              frame?.contentWindow?.VIPTrackHost?.refreshLayout?.();
+            } catch (error) {}
+          });
+          observer.observe(stage);
+        }
+
+        const themeObserver = new MutationObserver(() => {
+          syncThemeSoon();
+        });
+        themeObserver.observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ['data-theme', 'data-density'],
+        });
+
+        window._nomadTabCallbacks = window._nomadTabCallbacks || {};
+        window._nomadTabCallbacks[tabId] = function () {
+          syncThemeSoon();
+          try {
+            frame?.contentWindow?.VIPTrackHost?.onVisible?.();
+          } catch (error) {}
+        };
+
+        if (document.getElementById('tab-viptrack')?.classList.contains('active')) {
+          syncThemeSoon();
+        }
+      })();
+    </script>
   </div>

@@ -29,7 +29,8 @@ const NomadEvents = {
             if (wrap) wrap.title = 'Real-time updates: disconnected \u2014 reconnecting...';
             this._source.close();
             this._source = null;
-            setTimeout(() => this.connect(), this._reconnectDelay);
+            const jitter = Math.random() * this._reconnectDelay * 0.3;
+            setTimeout(() => this.connect(), this._reconnectDelay + jitter);
             this._reconnectDelay = Math.min(this._reconnectDelay * 2, this._maxReconnectDelay);
         };
 

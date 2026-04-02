@@ -126,8 +126,23 @@ def set_version(v):
 # _ocr_pipeline_state, _ocr_processed_files extracted to blueprints (imported from web.state there)
 # EMBED_MODEL, CHUNK_SIZE, CHUNK_OVERLAP extracted to web/blueprints/kb.py
 
-# Benchmark state — single dict replacement/update is GIL-atomic under CPython
+# Benchmark state — protected by lock for thread safety
 _benchmark_state = {'status': 'idle', 'progress': 0, 'stage': '', 'results': None}
+_benchmark_lock = threading.Lock()
+
+
+def _validate_bulk_ids(data):
+    """Validate and return integer IDs from a bulk-delete request, or (error_response, status)."""
+    ids = data.get('ids', [])
+    if not ids or not isinstance(ids, list):
+        return None
+    if len(ids) > 100:
+        return None
+    # Ensure all IDs are integers
+    try:
+        return [int(i) for i in ids]
+    except (ValueError, TypeError):
+        return None
 
 # Background CPU monitor — avoids blocking Flask threads with psutil.cpu_percent(interval=...)
 _cpu_percent = 0
@@ -830,7 +845,8 @@ def create_app():
         def do_benchmark():
             import psutil
             global _benchmark_state
-            _benchmark_state = {'status': 'running', 'progress': 0, 'stage': 'Starting...', 'results': None}
+            with _benchmark_lock:
+                _benchmark_state = {'status': 'running', 'progress': 0, 'stage': 'Starting...', 'results': None}
             results = {}
             hw = {}
 
@@ -846,7 +862,7 @@ def create_app():
 
                 if mode in ('full', 'system'):
                     # CPU benchmark — prime calculation
-                    _benchmark_state.update({'progress': 10, 'stage': 'CPU benchmark...'})
+                    with _benchmark_lock: _benchmark_state.update({'progress': 10, 'stage': 'CPU benchmark...'})
                     start = time.time()
                     count = 0
                     while time.time() - start < 10:
@@ -858,7 +874,7 @@ def create_app():
                     results['cpu_score'] = round(cpu_score)
 
                     # Memory benchmark — sequential allocation
-                    _benchmark_state.update({'progress': 30, 'stage': 'Memory benchmark...'})
+                    with _benchmark_lock: _benchmark_state.update({'progress': 30, 'stage': 'Memory benchmark...'})
                     start = time.time()
                     block_size = 1024 * 1024  # 1MB
                     blocks = 0
@@ -871,7 +887,7 @@ def create_app():
                     results['memory_score'] = round(mem_score)
 
                     # Disk benchmark
-                    _benchmark_state.update({'progress': 50, 'stage': 'Disk benchmark...'})
+                    with _benchmark_lock: _benchmark_state.update({'progress': 50, 'stage': 'Disk benchmark...'})
                     test_dir = os.path.join(get_data_dir(), 'benchmark')
                     os.makedirs(test_dir, exist_ok=True)
                     test_file = os.path.join(test_dir, 'bench.tmp')
@@ -888,7 +904,7 @@ def create_app():
                     results['disk_write_score'] = round(written / write_elapsed / (1024 * 1024)) if write_elapsed > 0 else 0
 
                     # Read
-                    _benchmark_state.update({'progress': 65, 'stage': 'Disk read benchmark...'})
+                    with _benchmark_lock: _benchmark_state.update({'progress': 65, 'stage': 'Disk read benchmark...'})
                     start = time.time()
                     read_bytes = 0
                     with open(test_file, 'rb') as f:
@@ -907,7 +923,7 @@ def create_app():
                         pass
 
                 if mode in ('full', 'ai'):
-                    _benchmark_state.update({'progress': 80, 'stage': 'AI benchmark...'})
+                    with _benchmark_lock: _benchmark_state.update({'progress': 80, 'stage': 'AI benchmark...'})
                     results['ai_tps'] = 0
                     results['ai_ttft'] = 0
 
@@ -944,7 +960,7 @@ def create_app():
                                 log.error(f'AI benchmark failed: {e}')
 
                 # Calculate NOMAD Score (0-100, weighted)
-                _benchmark_state.update({'progress': 95, 'stage': 'Calculating score...'})
+                with _benchmark_lock: _benchmark_state.update({'progress': 95, 'stage': 'Calculating score...'})
                 import math
 
                 def norm(val, ref):
@@ -976,18 +992,22 @@ def create_app():
                          results.get('nomad_score', 0), json.dumps(hw), json.dumps(results)))
                     db.commit()
 
-                _benchmark_state = {'status': 'complete', 'progress': 100, 'stage': 'Done', 'results': results, 'hardware': hw}
+                with _benchmark_lock:
+                    _benchmark_state = {'status': 'complete', 'progress': 100, 'stage': 'Done', 'results': results, 'hardware': hw}
 
             except Exception as e:
                 log.error(f'Benchmark failed: {e}')
-                _benchmark_state = {'status': 'error', 'progress': 0, 'stage': str(e), 'results': None}
+                with _benchmark_lock:
+                    _benchmark_state = {'status': 'error', 'progress': 0, 'stage': 'Benchmark failed', 'results': None}
 
         threading.Thread(target=do_benchmark, daemon=True).start()
         return jsonify({'status': 'started'})
 
     @app.route('/api/benchmark/status')
     def api_benchmark_status():
-        return jsonify(_benchmark_state)
+        with _benchmark_lock:
+            state = dict(_benchmark_state)
+        return jsonify(state)
 
     @app.route('/api/benchmark/history')
     def api_benchmark_history():
@@ -1025,7 +1045,8 @@ def create_app():
 
             return jsonify({'model': model, 'tokens_per_sec': tps, 'time_to_complete': ttft, 'tokens': tokens})
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            log.error('Request failed: %s', e)
+            return jsonify({'error': 'Internal server error'}), 500
 
     @app.route('/api/benchmark/storage', methods=['POST'])
     def api_benchmark_storage():
@@ -1067,7 +1088,8 @@ def create_app():
 
             return jsonify({'read_mbps': read_mbps, 'write_mbps': write_mbps})
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            log.error('Request failed: %s', e)
+            return jsonify({'error': 'Internal server error'}), 500
         finally:
             try:
                 os.rmdir(test_dir)
@@ -1415,11 +1437,9 @@ def create_app():
     @app.route('/api/contacts/bulk-delete', methods=['POST'])
     def api_contacts_bulk_delete():
         data = request.get_json(force=True)
-        ids = data.get('ids', [])
-        if not ids or not isinstance(ids, list):
-            return jsonify({'error': 'ids array required'}), 400
-        if len(ids) > 100:
-            return jsonify({'error': 'max 100 items per bulk delete'}), 400
+        ids = _validate_bulk_ids(data)
+        if ids is None:
+            return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as db:
             placeholders = ','.join('?' * len(ids))
             db.execute(f'DELETE FROM contacts WHERE id IN ({placeholders})', ids)
@@ -1575,7 +1595,8 @@ def create_app():
         except (ValueError, TypeError) as e:
             return jsonify({'error': f'Invalid duration: {e}'}), 400
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            log.error('Request failed: %s', e)
+            return jsonify({'error': 'Internal server error'}), 500
 
     @app.route('/api/timers/<int:tid>', methods=['DELETE'])
     def api_timers_delete(tid):
@@ -1732,7 +1753,8 @@ def create_app():
             return Response(json.dumps(export, indent=2), mimetype='application/json',
                            headers={'Content-Disposition': f'attachment; filename="{safe_name}.json"'})
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            log.error('Request failed: %s', e)
+            return jsonify({'error': 'Internal server error'}), 500
         finally:
             if db:
                 try: db.close()
@@ -1757,7 +1779,8 @@ def create_app():
             db.commit()
             return jsonify({'status': 'imported', 'id': cur.lastrowid})
         except Exception as e:
-            return jsonify({'error': str(e)}), 400
+            log.warning('Checklist import failed: %s', e)
+            return jsonify({'error': 'Import failed — check file format'}), 400
         finally:
             if db:
                 try: db.close()
@@ -2195,11 +2218,9 @@ def create_app():
     @app.route('/api/livestock/bulk-delete', methods=['POST'])
     def api_livestock_bulk_delete():
         data = request.get_json(force=True)
-        ids = data.get('ids', [])
-        if not ids or not isinstance(ids, list):
-            return jsonify({'error': 'ids array required'}), 400
-        if len(ids) > 100:
-            return jsonify({'error': 'max 100 items per bulk delete'}), 400
+        ids = _validate_bulk_ids(data)
+        if ids is None:
+            return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as db:
             placeholders = ','.join('?' * len(ids))
             db.execute(f'DELETE FROM livestock WHERE id IN ({placeholders})', ids)
@@ -2652,7 +2673,8 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
                 db.commit()
             return jsonify({'status': 'saved'}), 201
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            log.error('Request failed: %s', e)
+            return jsonify({'error': 'Internal server error'}), 500
 
     # ─── Skill Progression Tracking ─────────────────────────────────────
 
@@ -3936,7 +3958,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
 
             server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            server_sock.bind(('', 0))
+            server_sock.bind(('127.0.0.1', 0))
             port = server_sock.getsockname()[1]
             server_sock.listen(1)
             server_sock.settimeout(5)
@@ -3977,7 +3999,8 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
 
             return jsonify({'throughput_mbps': mbps, 'data_mb': round(received/1024/1024, 1), 'elapsed_sec': round(elapsed, 2)})
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            log.error('Request failed: %s', e)
+            return jsonify({'error': 'Internal server error'}), 500
         finally:
             if conn:
                 try:
@@ -4198,11 +4221,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/skills/bulk-delete', methods=['POST'])
     def api_skills_bulk_delete():
         data = request.get_json(force=True)
-        ids = data.get('ids', [])
-        if not ids or not isinstance(ids, list):
-            return jsonify({'error': 'ids array required'}), 400
-        if len(ids) > 100:
-            return jsonify({'error': 'max 100 items per bulk delete'}), 400
+        ids = _validate_bulk_ids(data)
+        if ids is None:
+            return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
             conn.execute(f'DELETE FROM skills WHERE id IN ({placeholders})', ids)
@@ -4366,11 +4387,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/ammo/bulk-delete', methods=['POST'])
     def api_ammo_bulk_delete():
         data = request.get_json(force=True)
-        ids = data.get('ids', [])
-        if not ids or not isinstance(ids, list):
-            return jsonify({'error': 'ids array required'}), 400
-        if len(ids) > 100:
-            return jsonify({'error': 'max 100 items per bulk delete'}), 400
+        ids = _validate_bulk_ids(data)
+        if ids is None:
+            return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
             conn.execute(f'DELETE FROM ammo_inventory WHERE id IN ({placeholders})', ids)
@@ -4486,11 +4505,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/community/bulk-delete', methods=['POST'])
     def api_community_bulk_delete():
         data = request.get_json(force=True)
-        ids = data.get('ids', [])
-        if not ids or not isinstance(ids, list):
-            return jsonify({'error': 'ids array required'}), 400
-        if len(ids) > 100:
-            return jsonify({'error': 'max 100 items per bulk delete'}), 400
+        ids = _validate_bulk_ids(data)
+        if ids is None:
+            return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
             conn.execute(f'DELETE FROM community_resources WHERE id IN ({placeholders})', ids)
@@ -4519,6 +4536,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             duration_hours = 1.0
         dose = round(new_rate * duration_hours, 4)
         with db_session() as conn:
+            conn.execute('BEGIN EXCLUSIVE')
             last = conn.execute('SELECT cumulative_rem FROM radiation_log ORDER BY id DESC LIMIT 1').fetchone()
             prev_cum = (last['cumulative_rem'] or 0) if last else 0
             new_cum = round(prev_cum + dose, 4)
@@ -4610,11 +4628,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/fuel/bulk-delete', methods=['POST'])
     def api_fuel_bulk_delete():
         data = request.get_json(force=True)
-        ids = data.get('ids', [])
-        if not ids or not isinstance(ids, list):
-            return jsonify({'error': 'ids array required'}), 400
-        if len(ids) > 100:
-            return jsonify({'error': 'max 100 items per bulk delete'}), 400
+        ids = _validate_bulk_ids(data)
+        if ids is None:
+            return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
             conn.execute(f'DELETE FROM fuel_storage WHERE id IN ({placeholders})', ids)
@@ -4690,11 +4706,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/equipment/bulk-delete', methods=['POST'])
     def api_equipment_bulk_delete():
         data = request.get_json(force=True)
-        ids = data.get('ids', [])
-        if not ids or not isinstance(ids, list):
-            return jsonify({'error': 'ids array required'}), 400
-        if len(ids) > 100:
-            return jsonify({'error': 'max 100 items per bulk delete'}), 400
+        ids = _validate_bulk_ids(data)
+        if ids is None:
+            return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
             conn.execute(f'DELETE FROM equipment_log WHERE id IN ({placeholders})', ids)
@@ -4983,7 +4997,10 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
                 vals.append(data['end_date'])
             if 'shift_duration_hours' in data:
                 sets.append('shift_duration_hours=?')
-                vals.append(int(data['shift_duration_hours']))
+                try:
+                    vals.append(int(data['shift_duration_hours']))
+                except (ValueError, TypeError):
+                    return jsonify({'error': 'shift_duration_hours must be a number'}), 400
             if 'personnel' in data:
                 sets.append('personnel=?')
                 vals.append(_json.dumps(data['personnel']))

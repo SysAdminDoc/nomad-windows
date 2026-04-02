@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VIPTrack v0.0.1 - Military & VIP Flight Tracker</title>
-    <script>if(location.protocol!=='file:')document.write('<link rel="manifest" href="manifest.json">');</script>
+    <script>if(location.protocol!=='file:' && new URLSearchParams(location.search).get('embed')!=='nomad')document.write('<link rel="manifest" href="manifest.json">');</script>
     <meta name="theme-color" content="#1a1a2e">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -68,6 +68,122 @@
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         html, body { height: 100%; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: var(--bg); color: var(--text); overflow: hidden; }
+        :where(button, input, select, textarea, a, .leaflet-control-zoom a):focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+        body.embedded-mode { color-scheme: dark; }
+        body.embedded-mode.day-mode { color-scheme: light; }
+        body.embedded-mode .header,
+        body.embedded-mode .filter-bar,
+        body.embedded-mode .settings-panel,
+        body.embedded-mode #sidebarWrapper,
+        body.embedded-mode .onboard-card,
+        body.embedded-mode #loadingOverlay {
+            backdrop-filter: blur(18px) saturate(1.15);
+            box-shadow: 0 22px 64px rgba(0, 0, 0, 0.32);
+        }
+        body.embedded-mode .filter-bar {
+            top: 14px;
+            padding: 10px 14px;
+            gap: 8px;
+            border-radius: 999px;
+            max-width: min(980px, calc(100vw - 540px));
+        }
+        body.embedded-mode .header {
+            top: 14px;
+            right: 14px;
+            padding: 7px 10px !important;
+            border-radius: 999px;
+            gap: 6px !important;
+        }
+        body.embedded-mode .settings-panel {
+            top: 72px;
+            right: 14px;
+            width: min(320px, calc(100vw - 28px));
+            max-height: calc(100vh - 86px);
+            border-radius: 18px;
+        }
+        body.embedded-mode #sidebarWrapper {
+            top: 14px !important;
+            bottom: 14px !important;
+            left: 14px !important;
+            width: min(360px, calc(100vw - 28px)) !important;
+            height: auto !important;
+            background: var(--bg-panel) !important;
+            border: 1px solid var(--border) !important;
+            border-right: none !important;
+            border-radius: 18px !important;
+            box-shadow: 0 24px 64px rgba(0, 0, 0, 0.32) !important;
+        }
+        body.embedded-mode .onboard-overlay {
+            inset: 0;
+            background: transparent;
+            display: none;
+            pointer-events: none;
+        }
+        body.embedded-mode .onboard-overlay.show { display: block; }
+        body.embedded-mode .onboard-card {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: min(360px, calc(100vw - 32px));
+            margin: 0;
+            padding: 20px 22px;
+            text-align: left;
+            border-radius: 18px;
+            pointer-events: auto;
+        }
+        body.embedded-mode .onboard-title { font-size: 18px; }
+        body.embedded-mode .onboard-desc { margin-bottom: 16px; }
+        body.embedded-mode .onboard-tip { padding: 6px 0; }
+        body.embedded-mode #loading {
+            background:
+                radial-gradient(circle at top, rgba(255, 255, 255, 0.08), transparent 42%),
+                var(--bg);
+        }
+        body.embedded-mode #loadingOverlay {
+            inset: auto auto 18px 50%;
+            width: auto;
+            min-width: 220px;
+            padding: 12px 18px;
+            border-radius: 999px;
+            transform: translateX(-50%);
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            flex-direction: row;
+            gap: 12px;
+        }
+        body.embedded-mode .loading-text { margin-top: 0; }
+        body.embedded-mode .loading-pulse { width: 18px; height: 18px; flex-shrink: 0; }
+        body.embedded-mode .leaflet-top.leaflet-left { bottom: 18px !important; right: 18px !important; }
+        @media (max-width: 1100px) {
+            body.embedded-mode .filter-bar {
+                left: 16px;
+                right: 16px;
+                transform: none;
+                max-width: calc(100vw - 32px);
+            }
+            body.embedded-mode .header {
+                top: auto;
+                bottom: 18px;
+                right: 18px;
+            }
+            body.embedded-mode .settings-panel {
+                top: auto;
+                right: 18px;
+                bottom: 18px;
+                max-height: min(70vh, 560px);
+            }
+        }
         #map { position: absolute; inset: 0; z-index: 1; }
         .leaflet-tile-container img, .leaflet-tile { outline: 0 !important; border: none !important; box-shadow: none !important; margin: 0 !important; padding: 0 !important; image-rendering: -webkit-optimize-contrast; backface-visibility: hidden; }
         .leaflet-tile-pane { will-change: auto !important; }
@@ -87,7 +203,7 @@
         .toolbar-count { font-size: 13px; font-weight: 600; color: var(--text); min-width: 80px; }
         .toolbar-count span { color: var(--accent); }
         .toolbar-actions { display: flex; gap: 8px; }
-        .toolbar-btn { width: 36px; height: 36px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
+        .toolbar-btn { width: 36px; height: 36px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color 0.15s, border-color 0.15s, color 0.15s, opacity 0.15s; }
         .toolbar-btn:hover:not(:disabled) { background: var(--border); color: var(--text); }
         .toolbar-btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .toolbar-btn.danger:hover { background: rgba(239, 68, 68, 0.2); border-color: var(--danger); color: var(--danger); }
@@ -124,13 +240,6 @@
         body.offline-mode::before { content: 'OFFLINE'; position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: var(--danger); color: #fff; padding: 4px 16px; border-radius: 0 0 10px 10px; font-size: 11px; font-weight: 700; letter-spacing: 1px; z-index: 3000; box-shadow: 0 2px 8px rgba(239,68,68,0.4); }
         body.offline-mode .cached-marker svg { opacity: 0.5; }
         body.offline-mode .cached-marker::after { content: '?'; position: absolute; top: -8px; right: -8px; width: 16px; height: 16px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #000; }
-        .data-source-indicator { position: fixed; bottom: 8px; left: 50%; transform: translateX(-50%); background: var(--bg-panel); border: 1px solid var(--border); border-radius: 20px; padding: 4px 12px; display: flex; align-items: center; gap: 8px; font-size: 10px; z-index: 1000; backdrop-filter: blur(10px); }
-        .source-name { font-weight: 600; color: var(--text); }
-        .source-status { padding: 2px 6px; border-radius: 10px; font-weight: 600; font-size: 9px; }
-        .source-status.healthy { background: rgba(74,222,128,0.2); color: var(--success); }
-        .source-status.degraded { background: rgba(251,191,36,0.2); color: #fbbf24; }
-        .source-status.unhealthy { background: rgba(239,68,68,0.2); color: var(--danger); }
-        .source-latency { color: var(--text-muted); }
         .circuit-breaker-warning { position: fixed; top: 100px; left: 50%; transform: translateX(-50%); background: rgba(239,68,68,0.95); color: #fff; padding: 8px 16px; border-radius: 8px; font-size: 12px; font-weight: 600; z-index: 3000; display: none; animation: pulse 2s infinite; }
         .circuit-breaker-warning.show { display: block; }
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
@@ -155,7 +264,7 @@
         .search-box::placeholder { color: var(--text-muted); }
         /* Enhanced Search Styles */
         .search-container { position: relative; z-index: 1100; }
-        .search-input-wrapper { display: flex; align-items: center; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 8px; padding: 0 4px 0 10px; transition: all 0.2s; }
+        .search-input-wrapper { display: flex; align-items: center; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 8px; padding: 0 4px 0 10px; transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s; }
         .search-input-wrapper:focus-within { border-color: var(--accent); background: rgba(128,128,128,0.25); }
         .search-icon { width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0; }
         .search-container .search-box { width: 180px; padding: 8px; background: transparent; border: none; color: var(--text); font-size: 12px; outline: none; transition: width 0.2s; }
@@ -164,18 +273,20 @@
         .search-clear-btn:hover { background: var(--text-dim); }
         .search-filter-btn { width: 32px; height: 32px; background: none; border: none; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; border-radius: 6px; position: relative; }
         .search-filter-btn:hover { background: rgba(128,128,128,0.2); color: var(--text); }
+        .search-filter-btn.active { background: rgba(255,255,255,0.12); color: var(--text); }
         .search-filter-btn svg { width: 16px; height: 16px; }
         .filter-badge { position: absolute; top: 2px; right: 2px; background: var(--accent); color: #000; font-size: 9px; font-weight: 700; min-width: 14px; height: 14px; border-radius: 7px; display: flex; align-items: center; justify-content: center; }
         .search-dropdown { position: absolute; top: calc(100% + 4px); left: 0; width: 360px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); display: none; overflow: hidden; }
         .search-dropdown.show { display: block; animation: dropdownShow 0.15s ease; }
         @keyframes dropdownShow { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
         .search-tabs { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-darker); }
-        .search-tab { flex: 1; padding: 10px 12px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+        .search-tab { flex: 1; padding: 10px 12px; background: none; border: none; border-bottom: 2px solid transparent; color: var(--text-dim); font-size: 12px; font-weight: 500; cursor: pointer; transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
         .search-tab:hover { color: var(--text); background: rgba(255,255,255,0.03); }
         .search-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
         .search-content { max-height: 400px; overflow-y: auto; }
         .search-tab-panel { display: none; padding: 12px; }
         .search-tab-panel.active { display: block; }
+        .search-results-stack { display: flex; flex-direction: column; gap: 10px; }
         .search-results { display: flex; flex-direction: column; gap: 4px; }
         .search-placeholder { text-align: center; color: var(--text-muted); padding: 24px; font-size: 12px; }
         .search-result-item { display: flex; align-items: center; gap: 10px; padding: 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
@@ -196,7 +307,7 @@
         .filter-label { font-size: 11px; font-weight: 600; color: var(--text-dim); margin-bottom: 8px; }
         .filter-hint { font-size: 10px; color: var(--text-muted); margin-top: 4px; }
         .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
-        .filter-chip { padding: 6px 12px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 16px; color: var(--text-dim); font-size: 11px; cursor: pointer; transition: all 0.15s; }
+        .filter-chip { padding: 6px 12px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 16px; color: var(--text-dim); font-size: 11px; cursor: pointer; transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
         .filter-chip:hover { border-color: var(--accent); color: var(--text); }
         .filter-chip.active { background: var(--accent); border-color: var(--accent); color: #000; }
         .filter-range { display: flex; align-items: center; gap: 8px; }
@@ -209,12 +320,42 @@
         .filter-checkbox { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); cursor: pointer; }
         .filter-checkbox input { accent-color: var(--accent); }
         .filter-actions { display: flex; gap: 8px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
-        .adv-filter-btn { flex: 1; padding: 10px 16px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+        .adv-filter-btn { flex: 1; padding: 10px 16px; border: none; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background-color 0.15s, border-color 0.15s, color 0.15s, filter 0.15s; }
         .adv-filter-btn.primary { background: var(--accent); color: #000; }
         .adv-filter-btn.primary:hover { filter: brightness(1.1); }
         .adv-filter-btn.secondary { background: var(--bg-darker); color: var(--text-dim); border: 1px solid var(--border); }
         .adv-filter-btn.secondary:hover { background: var(--border); color: var(--text); }
         .adv-filter-btn.full-width { margin-top: 12px; }
+        .search-history-dock {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-top: 10px;
+            border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .search-history-dock[hidden] { display: none; }
+        .search-history-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .search-history-title {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-muted);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .history-clear-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .history-clear-btn:hover { color: var(--text); }
         /* History Styles */
         .search-history { display: flex; flex-direction: column; gap: 4px; }
         .history-item { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
@@ -222,12 +363,25 @@
         .history-text { font-size: 12px; flex: 1; }
         .history-time { font-size: 10px; color: var(--text-muted); margin: 0 8px; }
         .history-remove { width: 20px; height: 20px; background: none; border: none; color: var(--text-muted); cursor: pointer; opacity: 0; transition: opacity 0.15s; font-size: 14px; }
-        .history-item:hover .history-remove { opacity: 1; }
+        .history-item:hover .history-remove,
+        .history-item:focus-within .history-remove,
+        .history-remove:focus-visible { opacity: 1; }
         .history-remove:hover { color: var(--danger); }
         .header-btn { width: 36px; height: 36px; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 6px; color: var(--text-dim); cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .header-btn:hover { background: rgba(128,128,128,0.25); color: var(--text); }
         .header-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
         .header-btn svg { width: 18px; height: 18px; }
+        .header-btn.action-btn {
+            width: auto;
+            min-width: 36px;
+            gap: 8px;
+            padding: 0 12px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .header-btn.action-btn svg { width: 16px; height: 16px; }
+        .header-btn-label { white-space: nowrap; }
         .error-indicator { display: flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(239, 68, 68, 0.2); border: 1px solid var(--danger); border-radius: 4px; cursor: pointer; font-size: 11px; color: var(--danger); }
         .error-icon { width: 16px; height: 16px; background: var(--danger); color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 10px; }
         .connection-status { display: none; /* Disabled per user request */ }
@@ -235,7 +389,8 @@
         .status-dot.online { background: var(--success); }
         .status-dot.offline { background: var(--danger); }
         .status-dot.stale { background: var(--accent); }
-        .filter-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; display: flex; gap: 6px; z-index: 1000; flex-wrap: wrap; max-width: calc(100vw - 280px); }
+        .filter-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; display: flex; gap: 6px; z-index: 1000; flex-wrap: nowrap; align-items: center; overflow-x: auto; scrollbar-width: none; max-width: calc(100vw - 280px); }
+        .filter-bar::-webkit-scrollbar { display: none; }
         .filter-btn { padding: 5px 10px; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 16px; color: var(--text-dim); font-size: 10px; font-weight: 500; cursor: pointer; white-space: nowrap; }
         .filter-btn:hover { background: rgba(128,128,128,0.25); color: var(--text); }
         .filter-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
@@ -356,11 +511,6 @@
         .session-row span:first-child { color: var(--text-muted); }
         .bottom-panels { position: fixed; bottom: 10px; right: 10px; z-index: 500; display: none; flex-direction: column; gap: 8px; align-items: flex-end; }
         .bottom-panels.visible { display: flex; }
-        .legend { position: fixed; right: 15px; top: 50%; transform: translateY(-50%); z-index: 500; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; font-size: 10px; }
-        .legend-title { font-weight: 600; margin-bottom: 6px; color: var(--text-dim); }
-        .legend-items { display: flex; flex-direction: column; gap: 3px; }
-        .legend-item { display: flex; align-items: center; gap: 6px; }
-        .legend-color { width: 18px; height: 10px; border-radius: 2px; }
         .aircraft-marker.dimmed { opacity: 0.8 !important; }
         .aircraft-marker.dimmed .sprite-icon { opacity: 0.4 !important; }
         .aircraft-marker.dimmed .aircraft-label { opacity: 0.8; }
@@ -372,7 +522,9 @@
         .bookmark-item { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; cursor: pointer; font-size: 11px; border-bottom: 1px solid var(--border); }
         .bookmark-item:hover { background: rgba(128,128,128,0.15); }
         .bookmark-delete { opacity: 0; background: none; border: none; color: #ef4444; cursor: pointer; font-size: 14px; padding: 0 4px; }
-        .bookmark-item:hover .bookmark-delete { opacity: 1; }
+        .bookmark-item:hover .bookmark-delete,
+        .bookmark-item:focus-within .bookmark-delete,
+        .bookmark-delete:focus-visible { opacity: 1; }
         .bookmarks-empty { padding: 10px; font-size: 10px; color: var(--text-muted); text-align: center; }
         .wiki-section { padding: 12px 14px; background: var(--bg-darker); border-top: 1px solid var(--border); }
         .wiki-summary { font-size: 11px; color: var(--text-dim); line-height: 1.5; max-height: 80px; overflow: hidden; margin-bottom: 8px; }
@@ -395,8 +547,11 @@
         .loading-progress { width: 200px; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
         .loading-progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.3s; }
         .spinner { width: 48px; height: 48px; border: 4px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
-        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg-panel); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; z-index: 3000; opacity: 0; transition: all 0.3s; }
+        .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--bg-panel); border: 1px solid var(--border); padding: 12px 20px; border-radius: 8px; z-index: 3000; opacity: 0; transition: transform 0.3s, opacity 0.3s, border-color 0.3s, background-color 0.3s; }
         .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast.info { border-color: var(--border); }
+        .toast.success { border-color: color-mix(in srgb, var(--success) 72%, var(--border)); }
+        .toast.error { border-color: color-mix(in srgb, var(--danger) 72%, var(--border)); background: color-mix(in srgb, var(--bg-panel) 84%, rgba(239, 68, 68, 0.24)); }
         .data-source { font-size: 10px; color: var(--text-muted); text-align: center; padding: 4px; background: rgba(128,128,128,0.1); border-radius: 0 0 8px 8px; }
         .category-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; border: 1px solid; cursor: help; white-space: nowrap; max-width: 150px; overflow: hidden; text-overflow: ellipsis; }
         .category-badge:hover { filter: brightness(1.2); }
@@ -424,7 +579,6 @@
         body.compact-mode .info-panel { width: 280px; }
         body.compact-mode .aircraft-photo { height: 120px; }
         body.compact-mode .info-header { padding: 10px 12px; }
-        body.compact-mode .legend { padding: 6px 8px; font-size: 9px; }
         body.compact-mode .bottom-panels { gap: 6px; }
         body.compact-mode .bookmarks-panel { min-width: 150px; }
         body.compact-mode .altitude-chart-container { height: 80px; }
@@ -455,12 +609,14 @@
         .watchlist-hex { font-size: 10px; color: var(--text-muted); font-family: monospace; }
         .watchlist-item.active .watchlist-hex { color: var(--success); }
         .watchlist-remove { background: none; border: none; color: var(--text-muted); font-size: 16px; cursor: pointer; padding: 2px 4px; opacity: 0; transition: opacity 0.15s; }
-        .watchlist-item:hover .watchlist-remove { opacity: 1; }
+        .watchlist-item:hover .watchlist-remove,
+        .watchlist-item:focus-within .watchlist-remove,
+        .watchlist-remove:focus-visible { opacity: 1; }
         .watchlist-remove:hover { color: var(--danger); }
         .watchlist-empty { padding: 20px 12px; text-align: center; color: var(--text-muted); font-size: 11px; line-height: 1.5; }
         .watchlist-empty span { font-size: 10px; opacity: 0.7; }
         /* Watch button in info panel */
-        .watch-btn { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: all 0.15s; }
+        .watch-btn { background: none; border: 1px solid var(--accent); color: var(--accent); padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; display: flex; align-items: center; gap: 4px; transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
         .watch-btn:hover { background: rgba(255, 215, 0, 0.1); }
         .watch-btn.watched { background: var(--accent); color: #000; }
         .watch-btn .star { font-size: 14px; }
@@ -491,7 +647,7 @@
         
         /* Phase 5: Info Panel Action Buttons */
         .info-actions { display: flex; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--border); }
-        .action-btn { flex: 1; background: var(--bg-darker); border: 1px solid var(--border); color: var(--text-dim); padding: 8px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: all 0.15s; }
+        .action-btn { flex: 1; background: var(--bg-darker); border: 1px solid var(--border); color: var(--text-dim); padding: 8px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; transition: background-color 0.15s, border-color 0.15s, color 0.15s; }
         .action-btn:hover { background: var(--border); color: var(--text); }
         .action-btn span { font-size: 12px; }
         
@@ -572,7 +728,7 @@
 
         .atc-feeds { margin-top: 8px; }
         .atc-loading, .atc-unavailable { font-size: 11px; color: var(--text-muted); text-align: center; padding: 8px; }
-        .atc-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text); transition: all 0.15s; }
+        .atc-link { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 8px; text-decoration: none; color: var(--text); transition: background-color 0.15s, border-color 0.15s, color 0.15s, transform 0.15s; }
         .atc-link:hover { background: var(--border); border-color: var(--accent); }
         .atc-icon { width: 36px; height: 36px; background: linear-gradient(135deg, #22c55e, #16a34a); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 11px; color: #fff; }
         
@@ -1029,47 +1185,9 @@
             color: var(--text-dim);
         }
 
-        /* ============ UI OVERHAUL: GROUPED TOOLBAR ============ */
-        .header { gap: 2px !important; padding: 6px 8px !important; align-items: center !important; }
-        .hv2-sep { width: 1px; height: 24px; background: var(--border); margin: 0 6px; flex-shrink: 0; opacity: 0.5; }
-        .hv2-dropdown { position: relative; }
-        .hv2-dropdown-trigger { display: flex; align-items: center; gap: 5px; padding: 5px 10px; background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 8px; color: var(--text-dim); font-size: 11px; font-weight: 500; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-        .hv2-dropdown-trigger:hover { background: rgba(255,255,255,0.08); color: var(--text); border-color: rgba(255,255,255,0.15); }
-        .hv2-dropdown-trigger.open { background: rgba(255,255,255,0.1); color: var(--text); border-color: var(--accent); }
-        .hv2-dropdown-trigger svg { width: 15px; height: 15px; flex-shrink: 0; }
-        .hv2-dropdown-trigger .hv2-dd-badge { width: 6px; height: 6px; background: var(--accent); border-radius: 50%; flex-shrink: 0; }
-        .hv2-panel { position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%) translateY(-8px); opacity: 0; pointer-events: none; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 6px; min-width: 220px; z-index: 2500; box-shadow: 0 12px 40px rgba(0,0,0,0.5); transition: opacity 0.15s, transform 0.15s; backdrop-filter: blur(16px); }
-        .hv2-panel.show { opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0); }
-        .hv2-panel-title { font-size: 10px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 10px 4px; }
-        .hv2-item { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 8px; cursor: pointer; transition: background 0.1s; }
-        .hv2-item:hover { background: rgba(255,255,255,0.06); }
-        .hv2-item-icon { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(255,255,255,0.04); flex-shrink: 0; }
-        .hv2-item-icon .header-btn { width: 28px !important; height: 28px !important; padding: 4px !important; margin: 0 !important; border: none !important; background: transparent !important; }
-        .hv2-item-label { font-size: 12px; color: var(--text-dim); flex: 1; }
-        .hv2-item-status { font-size: 10px; color: var(--text-muted); }
-        .hv2-item.is-active .hv2-item-icon { background: rgba(0,210,150,0.15); }
-        .hv2-item.is-active .hv2-item-label { color: var(--accent); }
-        .hv2-item.is-active .hv2-item-status { color: var(--accent); }
+        /* ============ UI OVERHAUL: ACTION RAIL ============ */
+        .header { gap: 6px !important; padding: 6px 8px !important; align-items: center !important; }
         .header-btn.active { background: rgba(0,210,150,0.12) !important; color: var(--accent) !important; box-shadow: 0 0 12px rgba(0,210,150,0.2), inset 0 0 0 1px rgba(0,210,150,0.25) !important; }
-
-        /* ============ UI OVERHAUL: STATUS DOCK ============ */
-        #map { bottom: 0 !important; }
-        .data-source-indicator { display: none !important; }
-        .legend { display: none !important; }
-
-        /* ============ UI OVERHAUL: FILTER CHIPS ============ */
-        .filter-chips-bar { position: fixed; top: 50px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; z-index: 1100; padding: 4px 6px; background: rgba(10,10,26,0.85); border: 1px solid var(--border); border-radius: 20px; backdrop-filter: blur(12px); opacity: 0; pointer-events: none; transition: opacity 0.2s; }
-        .filter-chips-bar.show { opacity: 1; pointer-events: auto; }
-        .filter-chip-btn { padding: 4px 10px; border: 1px solid transparent; border-radius: 14px; background: rgba(255,255,255,0.04); color: var(--text-muted); font-size: 10px; font-weight: 500; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
-        .filter-chip-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-dim); }
-        .filter-chip-btn.active { background: rgba(0,210,150,0.12); color: var(--accent); border-color: rgba(0,210,150,0.25); }
-
-        /* ============ UI OVERHAUL: 3D HUD ============ */
-        .hud-3d { position: fixed; bottom: 44px; right: 12px; background: rgba(10,10,26,0.88); border: 1px solid var(--border); border-radius: 10px; padding: 10px 14px; z-index: 1200; backdrop-filter: blur(12px); display: none; min-width: 160px; }
-        .hud-3d.show { display: block; }
-        .hud-3d-title { font-size: 10px; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-        .hud-3d-row { display: flex; align-items: center; gap: 8px; padding: 3px 0; font-size: 11px; color: var(--text-dim); }
-        .hud-3d-key { display: inline-flex; align-items: center; justify-content: center; min-width: 20px; padding: 1px 5px; background: rgba(255,255,255,0.08); border-radius: 4px; font-size: 10px; font-weight: 600; color: var(--text-muted); }
 
         /* ============ UI OVERHAUL: ONBOARDING ============ */
         .onboard-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 9000; display: none; }
@@ -1147,10 +1265,6 @@
                 border-radius: 0 0 12px 12px !important;
             }
 
-            /* Filter chips bar */
-            .filter-chips-bar { top: 46px; max-width: calc(100vw - 16px); overflow-x: auto; scrollbar-width: none; }
-            .filter-chips-bar::-webkit-scrollbar { display: none; }
-
             /* Map: below top bar, above bottom nav */
             #map { top: 46px !important; bottom: 60px !important; left: 0 !important; }
 
@@ -1183,9 +1297,6 @@
                 z-index: 1500 !important;
             }
 
-            /* HUD above bottom nav */
-            .hud-3d { bottom: 72px !important; right: 8px; }
-
             /* FAB above bottom nav */
             .mobile-fab { bottom: 76px !important; }
 
@@ -1200,11 +1311,6 @@
 
             /* Modal */
             .modal-overlay .modal { width: calc(100% - 32px); max-width: 400px; }
-
-            /* HV2 dropdowns (if visible) */
-            .hv2-dropdown-trigger span:not(.hv2-dd-badge) { display: none; }
-            .hv2-dropdown-trigger { padding: 5px 7px; }
-            .hv2-panel { min-width: 200px; }
 
             /* Bottom panels: hidden on mobile (use bottom nav instead) */
             .bottom-panels { display: none !important; }
@@ -1240,6 +1346,17 @@
         @media (min-width: 769px) and (max-width: 1024px) {
             #sidebarWrapper { width: 320px !important; }
             .filter-bar { max-width: calc(100vw - 200px); }
+        }
+        @media (max-width: 1400px) {
+            body.embedded-mode .header-btn.action-btn,
+            .header-btn.action-btn {
+                width: 36px;
+                padding: 0;
+            }
+            body.embedded-mode .header-btn-label,
+            .header-btn-label {
+                display: none;
+            }
         }
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
@@ -1286,9 +1403,27 @@ document.querySelector('link[rel="manifest"]')?.setAttribute('href', manifestUrl
 URL.revokeObjectURL(manifestUrl);
 </script>
 <script>
+window.VIPTRACK_URL_PARAMS = new URLSearchParams(window.location.search);
+window.VIPTRACK_EMBED_MODE = window.VIPTRACK_URL_PARAMS.get('embed') === 'nomad';
+window.VIPTRACK_SHARED_CONTEXT = ['hex', 'lat', 'lon', 'zoom'].some((key) => window.VIPTRACK_URL_PARAMS.has(key));
+
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', async () => {
+        if (window.VIPTRACK_EMBED_MODE) {
+            try {
+                const regs = await navigator.serviceWorker.getRegistrations();
+                for (const registration of regs) {
+                    const scriptUrl = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || '';
+                    if (scriptUrl.startsWith('blob:') || scriptUrl.toLowerCase().includes('viptrack')) {
+                        await registration.unregister();
+                    }
+                }
+            } catch (error) {
+                console.debug('[VIPTrack] Embedded service worker cleanup skipped', error);
+            }
+            return;
+        }
         try {
             // Clear old service workers first
             const regs = await navigator.serviceWorker.getRegistrations();
@@ -1452,158 +1587,111 @@ if ('serviceWorker' in navigator) {
             <span>VIPTrack<span class="version">v0.0.1</span></span>
         </div>
         <div class="spinner"></div>
-        <div class="loading-status" id="loadingStatus">Initializing...</div>
+        <div class="loading-status" id="loadingStatus" role="status" aria-live="polite" aria-atomic="true">Initializing…</div>
         <div class="loading-progress"><div class="loading-progress-bar" id="loadingProgress"></div></div>
     </div>
     <div id="sidebarWrapper" style="display:none;position:fixed;top:0;left:0;width:360px;height:100vh;z-index:9999;background:#0d0d1a;overflow-y:auto;border-right:1px solid rgba(255,255,255,0.1);box-shadow:4px 0 20px rgba(0,0,0,0.4);"></div>
     <div id="map"></div>
-    <!-- Phase 16: Reliability Indicators -->
-    <div class="data-source-indicator" id="dataSourceIndicator">
-        <span class="source-name">Connecting...</span>
-        <span class="source-status unknown">0/3</span>
-        <span class="source-latency">--</span>
-    </div>
     <div class="circuit-breaker-warning" id="circuitBreakerWarning"></div>
-    <div class="sync-indicator" id="syncIndicator">
+    <div class="sync-indicator" id="syncIndicator" role="status" aria-live="polite" aria-atomic="true">
         <div class="sync-spinner"></div>
-        <span class="sync-text">Syncing...</span>
+        <span class="sync-text">Syncing…</span>
     </div>
-    <div class="legend">
-        <div class="legend-title">Altitude</div>
-        <div class="legend-items">
-            <div class="legend-item"><div class="legend-color" style="background:#9400d3"></div>> 40k ft</div>
-            <div class="legend-item"><div class="legend-color" style="background:#ff0000"></div>30-40k</div>
-            <div class="legend-item"><div class="legend-color" style="background:#ff4500"></div>20-30k</div>
-            <div class="legend-item"><div class="legend-color" style="background:#ffa500"></div>10-20k</div>
-            <div class="legend-item"><div class="legend-color" style="background:#ffff00"></div>5-10k</div>
-            <div class="legend-item"><div class="legend-color" style="background:#7fff00"></div>1-5k</div>
-            <div class="legend-item"><div class="legend-color" style="background:#00ff00"></div>Ground</div>
-        </div>
-    </div>
-    <header class="header">
-        <!-- Primary Actions (always visible) -->
-        <button class="header-btn" id="locateBtn" title="My Location" aria-label="My Location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg></button>
-
-        <button class="header-btn" id="settingsBtn" title="Settings" aria-label="Settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg></button>
-        
-        <div class="hv2-sep"></div>
-        
-        <!-- Map Dropdown -->
-        <div class="hv2-dropdown">
-            <button class="hv2-dropdown-trigger" aria-label="Map and layers menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg><span>Map</span><span class="hv2-dd-badge" style="display:none"></span></button>
-            <div class="hv2-panel">
-                <div class="hv2-panel-title">Map & Layers</div>
-                <div class="hv2-item" data-btn="labelBtn"><div class="hv2-item-icon"><button class="header-btn" id="labelBtn" title="Labels" aria-label="Toggle Labels"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></button></div><div class="hv2-item-label">Labels</div><div class="hv2-item-status">OFF</div></div>
-            </div>
-        </div>
-        
-        <!-- Tools Dropdown -->
-        <div class="hv2-dropdown">
-            <button class="hv2-dropdown-trigger" aria-label="Tools menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg><span>Tools</span><span class="hv2-dd-badge" style="display:none"></span></button>
-            <div class="hv2-panel">
-                <div class="hv2-panel-title">Tools</div>
-                <div class="hv2-item" data-btn="followBtn"><div class="hv2-item-icon"><button class="header-btn" id="followBtn" title="Follow" aria-label="Follow Aircraft"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><path d="M12 8v8M8 12h8" stroke-dasharray="2 2"/></svg></button></div><div class="hv2-item-label">Follow Aircraft</div></div>
-                <div class="hv2-item" data-btn="panelsBtn"><div class="hv2-item-icon"><button class="header-btn" id="panelsBtn" title="Saved & Watchlist"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg></button></div><div class="hv2-item-label">Saved & Watchlist</div></div>
-            </div>
-        </div>
-        
+    <header class="header" aria-label="Map actions">
+        <button class="header-btn action-btn" id="locateBtn" title="Center on my location" aria-label="Center on my location"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/></svg><span class="header-btn-label">Locate</span></button>
+        <button class="header-btn action-btn" id="followBtn" type="button" title="Enable follow mode" aria-label="Enable follow mode" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4"/><path d="M12 8v8M8 12h8" stroke-dasharray="2 2"/></svg><span class="header-btn-label">Follow</span></button>
+        <button class="header-btn action-btn" id="labelBtn" type="button" title="Hide aircraft labels" aria-label="Hide aircraft labels" aria-pressed="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg><span class="header-btn-label">Labels</span></button>
+        <button class="header-btn action-btn" id="panelsBtn" type="button" title="Show saved locations and watchlist" aria-label="Show saved locations and watchlist" aria-controls="bottomPanels" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg><span class="header-btn-label">Lists</span></button>
+        <button class="header-btn action-btn" id="settingsBtn" type="button" title="Open settings" aria-label="Open settings" aria-controls="settingsPanel" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg><span class="header-btn-label">Settings</span></button>
     </header>
-    
-    <!-- Filter Chips Bar -->
-    <div class="filter-chips-bar" id="filterChipsBar">
-        <button class="filter-chip-btn" data-filter="military">Military</button>
-        <button class="filter-chip-btn" data-filter="vip">VIP</button>
-    </div>
-    
-    <!-- 3D HUD -->
-    <div class="hud-3d" id="hud3d">
-        <div class="hud-3d-title">3D Controls</div>
-        <div class="hud-3d-row"><span class="hud-3d-key">Drag</span> Rotate globe</div>
-        <div class="hud-3d-row"><span class="hud-3d-key">Scroll</span> Zoom in/out</div>
-        <div class="hud-3d-row"><span class="hud-3d-key">R-Drag</span> Tilt camera</div>
-        <div class="hud-3d-row"><span class="hud-3d-key">Click</span> Select aircraft</div>
-    </div>
     
     <!-- Onboarding Overlay -->
     <div class="onboard-overlay" id="onboardOverlay">
         <div class="onboard-card">
             <div class="onboard-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 110-14h8.5"/><polyline points="21 12 17 8 21 12 17 16"/></svg></div>
-            <div class="onboard-title">Welcome to VIPTrack</div>
-            <div class="onboard-desc">Real-time military and VIP aircraft tracking with aviation intelligence.</div>
+            <div class="onboard-title">VIPTrack Brief</div>
+            <div class="onboard-desc">A cleaner live view for military and VIP traffic inside NOMAD.</div>
             <div class="onboard-tips">
-                <div class="onboard-tip"><span class="onboard-tip-num">1</span><span>Only military, government, and VIP aircraft are shown</span></div>
-                <div class="onboard-tip"><span class="onboard-tip-num">2</span><span>Tap any aircraft on the map to see its details, route, and specs</span></div>
-                <div class="onboard-tip"><span class="onboard-tip-num">3</span><span>Use the search bar to find flights by callsign, registration, or ICAO hex</span></div>
-                <div class="onboard-tip"><span class="onboard-tip-num">4</span><span>Use the filter buttons to narrow by Military, Gov, or VIP</span></div>
+                <div class="onboard-tip"><span class="onboard-tip-num">1</span><span>Search by callsign, tail, hex, airport, or airline.</span></div>
+                <div class="onboard-tip"><span class="onboard-tip-num">2</span><span>Use All, Mil, and VIP to tighten the feed fast.</span></div>
+                <div class="onboard-tip"><span class="onboard-tip-num">3</span><span>Open any aircraft for route, specs, and watch status.</span></div>
             </div>
-            <button class="onboard-btn" id="onboardDismiss">Start Tracking</button>
+            <button class="onboard-btn" id="onboardDismiss">Begin</button>
         </div>
     </div>
     
     <!-- Loading Overlay -->
-    <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-overlay" id="loadingOverlay" role="status" aria-live="polite" aria-atomic="true">
         <div class="loading-pulse"></div>
-        <div class="loading-text" id="loadingText">Scanning for aircraft...</div>
+        <div class="loading-text" id="loadingText">Scanning live traffic…</div>
     </div>
     <div class="filter-bar" id="filterBar">
-        <div class="logo"><img src="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-32x32.png" alt="VIPTrack"><span>VIPTrack</span></div>
-        <div class="connectivity-indicator" id="connectivityIndicator" title="Online"><div class="connectivity-dot online"></div></div>
+        <div class="logo"><img src="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-32x32.png" alt="VIPTrack" width="32" height="32"><span>VIPTrack</span></div>
+        <div class="connectivity-indicator" id="connectivityIndicator" title="Live" role="status" aria-live="polite" aria-atomic="true" aria-label="Live"><div class="connectivity-dot online"></div></div>
         <div class="search-container" id="searchContainer">
             <div class="search-input-wrapper">
                 <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
                 </svg>
-                <input type="text" class="search-box" id="searchInput" aria-label="Search aircraft" placeholder="Search flights, airports, airlines..." autocomplete="off">
-                <button class="search-clear-btn" id="searchClearBtn" style="display:none;">x</button>
-                <button class="search-filter-btn" id="searchFilterBtn" title="Advanced Filters">
+                <input type="text" class="search-box" id="searchInput" name="search-input" aria-label="Search aircraft, airports, and airlines" placeholder="Search callsign, tail, airport…" autocomplete="off">
+                <button class="search-clear-btn" id="searchClearBtn" type="button" aria-label="Clear search" aria-hidden="true" style="display:none;">&times;</button>
+                <button class="search-filter-btn" id="searchFilterBtn" type="button" title="Advanced Filters" aria-label="Open advanced filters" aria-controls="searchDropdown" aria-expanded="false">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>
                     </svg>
                     <span class="filter-badge" id="filterBadge" style="display:none;">0</span>
                 </button>
             </div>
-            <div class="search-dropdown" id="searchDropdown">
-                <div class="search-tabs">
-                    <button class="search-tab active" data-tab="results">Results</button>
-                    <button class="search-tab" data-tab="filters">Filters</button>
-                    <button class="search-tab" data-tab="history">History</button>
+            <div class="search-dropdown" id="searchDropdown" aria-label="Search tools" aria-hidden="true">
+                <div class="search-tabs" role="tablist" aria-label="Search views">
+                    <button class="search-tab active" id="searchTabResults" type="button" data-tab="results" role="tab" aria-selected="true" aria-controls="tabResults">Results</button>
+                    <button class="search-tab" id="searchTabFilters" type="button" data-tab="filters" role="tab" aria-selected="false" aria-controls="tabFilters">Filters</button>
                 </div>
                 <div class="search-content">
-                    <div class="search-tab-panel active" id="tabResults">
-                        <div class="search-results" id="searchResults">
-                            <div class="search-placeholder">Start typing to search...</div>
+                    <div class="search-tab-panel active" id="tabResults" role="tabpanel" aria-labelledby="searchTabResults">
+                        <div class="search-results-stack">
+                            <div class="search-results" id="searchResults">
+                                <div class="search-placeholder">Search the live feed to inspect aircraft faster.</div>
+                            </div>
+                            <div class="search-history-dock" id="searchHistoryDock" hidden>
+                                <div class="search-history-head">
+                                    <span class="search-history-title">Recent Searches</span>
+                                    <button class="history-clear-btn" id="clearHistoryBtn" type="button">Clear</button>
+                                </div>
+                                <div class="search-history" id="searchHistory"></div>
+                            </div>
                         </div>
                     </div>
-                    <div class="search-tab-panel" id="tabFilters">
+                    <div class="search-tab-panel" id="tabFilters" role="tabpanel" aria-labelledby="searchTabFilters" hidden>
                         <div class="filter-section">
                             <div class="filter-label">Aircraft Type</div>
                             <div class="filter-chips" id="filterTypeChips">
-                                <button class="filter-chip" data-type="military">Military</button>
+                                <button class="filter-chip" type="button" data-type="military" aria-pressed="false">Military</button>
                             </div>
                         </div>
                         <div class="filter-section">
                             <div class="filter-label">Altitude</div>
                             <div class="filter-range">
-                                <input type="number" id="altMin" placeholder="Min ft" class="filter-input">
+                                <input type="number" id="altMin" placeholder="Min ft…" class="filter-input" aria-label="Minimum altitude in feet">
                                 <span class="filter-range-sep">-</span>
-                                <input type="number" id="altMax" placeholder="Max ft" class="filter-input">
+                                <input type="number" id="altMax" placeholder="Max ft…" class="filter-input" aria-label="Maximum altitude in feet">
                             </div>
                         </div>
                         <div class="filter-section">
                             <div class="filter-label">Speed</div>
                             <div class="filter-range">
-                                <input type="number" id="speedMin" placeholder="Min kt" class="filter-input">
+                                <input type="number" id="speedMin" placeholder="Min kt…" class="filter-input" aria-label="Minimum speed in knots">
                                 <span class="filter-range-sep">-</span>
-                                <input type="number" id="speedMax" placeholder="Max kt" class="filter-input">
+                                <input type="number" id="speedMax" placeholder="Max kt…" class="filter-input" aria-label="Maximum speed in knots">
                             </div>
                         </div>
                         <div class="filter-section">
                             <div class="filter-label">Airport (Origin/Destination)</div>
-                            <input type="text" id="filterAirport" placeholder="ICAO or IATA code" class="filter-input-full">
+                            <input type="text" id="filterAirport" placeholder="ICAO or IATA code…" class="filter-input-full" aria-label="Airport filter" autocomplete="off" spellcheck="false">
                         </div>
                         <div class="filter-section">
                             <div class="filter-label">Airline</div>
-                            <input type="text" id="filterAirline" placeholder="Name or ICAO code" class="filter-input-full">
+                            <input type="text" id="filterAirline" placeholder="Name or ICAO code…" class="filter-input-full" aria-label="Airline filter" autocomplete="off" spellcheck="false">
                         </div>
                         <div class="filter-section">
                             <div class="filter-label">Special</div>
@@ -1624,7 +1712,7 @@ if ('serviceWorker' in navigator) {
                         </div>
                         <div class="filter-section">
                             <div class="filter-label">Regex Pattern (Advanced)</div>
-                            <input type="text" id="filterRegex" placeholder="e.g., ^UAL\d+ or N\d{3}[A-Z]{2}" class="filter-input-full">
+                            <input type="text" id="filterRegex" placeholder="e.g., ^UAL\d+ or N\d{3}[A-Z]{2}…" class="filter-input-full" aria-label="Advanced regex filter" autocomplete="off" spellcheck="false">
                             <div class="filter-hint">Matches against callsign and registration</div>
                         </div>
                         <div class="filter-actions">
@@ -1632,23 +1720,17 @@ if ('serviceWorker' in navigator) {
                             <button class="adv-filter-btn primary" id="applyFiltersBtn">Apply Filters</button>
                         </div>
                     </div>
-                    <div class="search-tab-panel" id="tabHistory">
-                        <div class="search-history" id="searchHistory">
-                            <div class="search-placeholder">No recent searches</div>
-                        </div>
-                        <button class="adv-filter-btn secondary full-width" id="clearHistoryBtn">Clear History</button>
-                    </div>
                 </div>
             </div>
         </div>
         <div class="filter-divider"></div>
         <div role="radiogroup" aria-label="Aircraft category filter" style="display:contents">
-        <button class="filter-btn vip-btn active" data-filter="mil-vip" title="All Military + VIP Aircraft">All <span class="count" id="countMilVIP">0</span></button>
-        <button class="filter-btn" data-filter="military">Mil <span class="count" id="countMil">0</span></button>
-        <button class="filter-btn vip-btn" data-filter="vip" title="Badger's Best - Must-See Aircraft">VIP <span class="count" id="countVIP">0</span></button>
+        <button class="filter-btn vip-btn active" type="button" role="radio" aria-checked="true" data-filter="mil-vip" title="All Military + VIP Aircraft">All <span class="count" id="countMilVIP">0</span></button>
+        <button class="filter-btn" type="button" role="radio" aria-checked="false" data-filter="military">Mil <span class="count" id="countMil">0</span></button>
+        <button class="filter-btn vip-btn" type="button" role="radio" aria-checked="false" data-filter="vip" title="Badger's Best - Must-See Aircraft">VIP <span class="count" id="countVIP">0</span></button>
     </div>
     <div class="info-panel" id="infoPanel" role="dialog" aria-label="Aircraft Details">
-        <div class="aircraft-photo" id="aircraftPhoto"><div class="no-photo">Loading...</div></div>
+        <div class="aircraft-photo" id="aircraftPhoto"><div class="no-photo">Loading…</div></div>
         <div class="airline-banner" id="airlineBanner" style="display:none;"><img src="" alt=""></div>
         <div class="info-quickglance" id="infoQuickGlance">
             <div class="info-qg-item"><div class="info-qg-val" id="qgCallsign">---</div><div class="info-qg-label">Flight</div></div>
@@ -1665,7 +1747,7 @@ if ('serviceWorker' in navigator) {
                 <div class="info-hex" id="infoHex">---</div>
             </div>
             <div class="info-header-actions">
-                <button class="watch-btn" id="watchBtn" title="Add to Watchlist">
+                <button class="watch-btn" id="watchBtn" type="button" title="Add selected aircraft to watchlist" aria-label="Add selected aircraft to watchlist" aria-pressed="false">
                     <span class="star">*</span>
                     <span class="watch-text">Watch</span>
                 </button>
@@ -1709,7 +1791,7 @@ if ('serviceWorker' in navigator) {
                 <div class="info-row" id="infoAirlineRow" style="display:none;"><span class="info-label">Airline</span><span class="info-value" id="infoAirline">---</span></div>
                 <div class="info-row"><span class="info-label">Category</span><span class="info-value" id="infoCat">---</span></div>
                 <div class="info-row"><span class="info-label">Squawk</span><span class="info-value"><span class="squawk-code squawk-normal" id="infoSquawk">----</span></span></div>
-                <div class="trail-status" id="trailStatus">Loading trail...</div>
+                <div class="trail-status" id="trailStatus" role="status" aria-live="polite" aria-atomic="true">Loading trail…</div>
             </div>
         </div>
         <div class="tab-content" id="tabAircraft">
@@ -1807,33 +1889,33 @@ if ('serviceWorker' in navigator) {
             </div>
         </div>
         <div class="info-actions">
-            <button class="action-btn prediction" id="showPredictionBtn" title="Show 30-min Flight Prediction (P)"><span>P</span> Predict</button>
-            <button class="action-btn route" id="showRouteBtn" title="Show Route to Destination (R)"><span>R</span> Route</button>
-            <button class="action-btn" id="shareFlightBtn" title="Share Flight Link"><span>Share</span></button>
+            <button class="action-btn prediction" id="showPredictionBtn" type="button" title="Show 30-minute flight prediction" aria-label="Show 30-minute flight prediction" aria-pressed="false"><span>P</span> Predict</button>
+            <button class="action-btn route" id="showRouteBtn" type="button" title="Show route to destination" aria-label="Show route to destination" aria-pressed="false"><span>R</span> Route</button>
+            <button class="action-btn" id="shareFlightBtn" type="button" title="Share flight link" aria-label="Share flight link"><span>Share</span></button>
         </div>
         <div class="info-section external-links-section">
             <div class="info-section-title">Track Elsewhere</div>
             <div class="external-links" id="externalLinks">
-                <a class="ext-link" id="linkFA" href="#" target="_blank" title="FlightAware">
+                <a class="ext-link" id="linkFA" href="#" target="_blank" rel="noopener noreferrer" title="FlightAware" aria-label="Open FlightAware">
                     <span class="ext-icon fa">FA</span>
                 </a>
-                <a class="ext-link" id="linkFR24" href="#" target="_blank" title="FlightRadar24">
+                <a class="ext-link" id="linkFR24" href="#" target="_blank" rel="noopener noreferrer" title="FlightRadar24" aria-label="Open FlightRadar24">
                     <span class="ext-icon fr24">FR</span>
                 </a>
-                <a class="ext-link" id="linkADSBx" href="#" target="_blank" title="ADS-B Exchange">
+                <a class="ext-link" id="linkADSBx" href="#" target="_blank" rel="noopener noreferrer" title="ADS-B Exchange" aria-label="Open ADS-B Exchange">
                     <span class="ext-icon adsbx">Ax</span>
                 </a>
-                <a class="ext-link" id="linkPS" href="#" target="_blank" title="Planespotters">
+                <a class="ext-link" id="linkPS" href="#" target="_blank" rel="noopener noreferrer" title="Planespotters" aria-label="Open Planespotters">
                     <span class="ext-icon ps">PS</span>
                 </a>
-                <a class="ext-link" id="linkJP" href="#" target="_blank" title="JetPhotos">
+                <a class="ext-link" id="linkJP" href="#" target="_blank" rel="noopener noreferrer" title="JetPhotos" aria-label="Open JetPhotos">
                     <span class="ext-icon jp">JP</span>
                 </a>
             </div>
         </div>
-        <div class="data-source" id="dataSource">Connecting...</div>
+        <div class="data-source" id="dataSource" role="status" aria-live="polite" aria-atomic="true">Connecting…</div>
     </div>
-    <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Settings">
+    <div class="settings-panel" id="settingsPanel" role="dialog" aria-label="Settings" aria-hidden="true">
         <div class="settings-title">Settings</div>
         <div class="settings-section">
             <div class="settings-section-title">Display Options</div>
@@ -1877,9 +1959,9 @@ if ('serviceWorker' in navigator) {
             <button class="btn-secondary" id="clearOfflineCacheBtn" style="width: 100%;">Clear Offline Cache</button>
         </div>
     </div>
-    <div class="bottom-panels">
+    <div class="bottom-panels" id="bottomPanels" aria-label="Saved locations and watchlist panels" aria-hidden="true">
         <div class="bookmarks-panel">
-            <div class="bookmarks-header"><span class="bookmarks-title">Saved Locations</span><button class="bookmark-add-btn" id="addBookmarkBtn" title="Save current view">+</button></div>
+            <div class="bookmarks-header"><span class="bookmarks-title">Saved Locations</span><button class="bookmark-add-btn" id="addBookmarkBtn" type="button" title="Save current view" aria-label="Save current map view">+</button></div>
             <div class="bookmarks-list" id="bookmarksList"><div class="bookmarks-empty">No saved locations</div></div>
         </div>
         <div class="watchlist-panel">
@@ -1895,7 +1977,7 @@ if ('serviceWorker' in navigator) {
     <div class="modal-overlay" id="bookmarkModal">
         <div class="modal">
             <div class="modal-title">Save Location</div>
-            <input type="text" class="modal-input" id="bookmarkNameInput" placeholder="Enter location name...">
+            <input type="text" class="modal-input" id="bookmarkNameInput" name="bookmark-name" aria-label="Bookmark name" autocomplete="off" placeholder="Location name…">
             <div class="modal-btns"><button class="modal-btn secondary" id="bookmarkCancelBtn">Cancel</button><button class="modal-btn primary" id="bookmarkSaveBtn">Save</button></div>
         </div>
     </div>
@@ -1904,10 +1986,10 @@ if ('serviceWorker' in navigator) {
             <span class="install-icon">+</span>
             <span class="install-text">Install VIPTrack for offline access</span>
             <button class="install-btn" id="installBtn">Install</button>
-            <button class="install-dismiss" id="installDismiss">x</button>
+            <button class="install-dismiss" id="installDismiss" type="button" aria-label="Dismiss install prompt">&times;</button>
         </div>
     </div>
-    <div class="toast" id="toast"></div>
+    <div class="toast info" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pako/2.1.0/pako.min.js"></script>
     <script>
@@ -2440,7 +2522,7 @@ if ('serviceWorker' in navigator) {
             const syncIndicator = document.getElementById('syncIndicator');
             if (syncIndicator) {
                 syncIndicator.classList.add('show');
-                syncIndicator.querySelector('.sync-text').textContent = 'Syncing ' + this.syncQueue.length + ' items...';
+                syncIndicator.querySelector('.sync-text').textContent = 'Syncing ' + this.syncQueue.length + ' items…';
             }
             
             while (this.syncQueue.length > 0) {
@@ -2564,10 +2646,16 @@ if ('serviceWorker' in navigator) {
         
         updateUI() {
             const indicator = document.getElementById('dataSourceIndicator');
-            if (!indicator) return;
-            
             const best = this.getBestSource();
             const healthy = this.sources.filter(s => s.status === 'healthy').length;
+            const statusText = best.name + ' · ' + healthy + '/' + this.sources.length + ' healthy · ' + (best.latency < 9999 ? best.latency + 'ms' : '--');
+
+            const connectivity = document.getElementById('connectivityIndicator');
+            if (connectivity) {
+                connectivity.title = statusText;
+                connectivity.setAttribute('aria-label', statusText);
+            }
+            if (!indicator) return;
             
             indicator.innerHTML = '<span class="source-name">' + best.name + '</span>' +
                 '<span class="source-status ' + best.status + '">' + healthy + '/' + this.sources.length + '</span>' +
@@ -2695,7 +2783,7 @@ if ('serviceWorker' in navigator) {
             }
             
             if (count === 3) {
-                toast('Having trouble with ' + type + '. Will keep trying...');
+                    toast('Having trouble with ' + type + '. Will keep trying…');
             } else if (count === 10) {
                 toast('Persistent ' + type + ' issues. Check your connection.');
             }
@@ -2711,7 +2799,7 @@ if ('serviceWorker' in navigator) {
             );
             
             if (nextSource) {
-                toast('Switching to ' + nextSource.name + '...');
+                toast('Switching to ' + nextSource.name + '…');
                 return true;
             }
             
@@ -2736,7 +2824,7 @@ if ('serviceWorker' in navigator) {
             _dbg('Attempting map recovery...');
             
             if (map) {
-                map.invalidateSize();
+                refreshViptrackLayout();
                 
                 map.eachLayer(layer => {
                     if (layer._url && typeof layer.redraw === 'function') {
@@ -3172,7 +3260,7 @@ if ('serviceWorker' in navigator) {
             el.style.borderLeftColor = alert.alertType.color;
             el.innerHTML = '<div class="alert-icon" style="color:' + alert.alertType.color + '">' + alert.alertType.icon + '</div>' +
                 '<div class="alert-body"><div class="alert-title">' + alert.callsign + '</div><div class="alert-message">' + alert.message + '</div></div>' +
-                '<button class="alert-close">&times;</button>';
+                '<button class="alert-close" type="button" aria-label="Dismiss alert">&times;</button>';
             
             el.querySelector('.alert-body').addEventListener('click', () => {
                 selectAircraft(alert.aircraft.hex);
@@ -3291,10 +3379,11 @@ if ('serviceWorker' in navigator) {
                 .map(entry => {
                     const ac = aircraftCache[entry.hex];
                     const isActive = !!ac;
+                    const label = entry.name || entry.hex || 'aircraft';
                     return '<div class="watchlist-item ' + (isActive ? 'active' : '') + '" data-hex="' + entry.hex + '">' +
-                        '<div class="watchlist-info"><div class="watchlist-name">' + entry.name + '</div>' +
+                        '<div class="watchlist-info"><div class="watchlist-name">' + escapeHtml(label) + '</div>' +
                         '<div class="watchlist-hex">' + entry.hex + (isActive ? ' - ACTIVE' : '') + '</div></div>' +
-                        '<button class="watchlist-remove" data-hex="' + entry.hex + '" title="Remove">x</button></div>';
+                        '<button class="watchlist-remove" type="button" data-hex="' + entry.hex + '" title="Remove" aria-label="Remove ' + escapeAttr(label) + ' from watchlist">&times;</button></div>';
                 }).join('');
             
             container.innerHTML = items;
@@ -4756,6 +4845,20 @@ if ('serviceWorker' in navigator) {
     const SOURCE_ORDER = ['adsbone', 'adsblol', 'airplaneslive'];
 
     // ============ STATE ============
+    const EMBED_MODE = window.VIPTRACK_EMBED_MODE === true;
+    const HAS_SHARED_CONTEXT = window.VIPTRACK_SHARED_CONTEXT === true;
+    const HOST_THEME_CONFIG = {
+        nomad: { tone: 'light', mapStyle: 'esri-light', accent: '#8f6836' },
+        eink: { tone: 'light', mapStyle: 'esri-light', accent: '#111111' },
+        nightops: { tone: 'dark', mapStyle: 'esri-gray', accent: '#d0a86d' },
+        cyber: { tone: 'dark', mapStyle: 'esri-gray', accent: '#71a8ff' },
+        redlight: { tone: 'dark', mapStyle: 'esri-gray', accent: '#df855c' }
+    };
+    const BASEMAP_DEFS = {
+        'esri-gray': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', maxZoom: 16 },
+        'esri-light': { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', maxZoom: 16 }
+    };
+    const hostThemeState = { theme: 'nightops', tone: 'dark', mapStyle: 'esri-gray', density: 'compact' };
     let map, currentBaseMap, aircraftCache = {}, markers = {}, trailLine = null, selectedHex = null;
     
     // Cached DOM references for hot-path access
@@ -4766,6 +4869,74 @@ if ('serviceWorker' in navigator) {
     let bookmarks = [];
     const settings = { mapStyle: 'esri-gray', showLabels: false, altitudeColors: true, showWiki: true, filter: 'mil-vip', followMode: false, compactMode: false };
     const baseMaps = {};
+    function getHostTheme(themeName) { return HOST_THEME_CONFIG[themeName] || HOST_THEME_CONFIG.nightops; }
+    function setThemeMetaColor(color) {
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta && color) meta.setAttribute('content', color);
+    }
+    function applyThemeVars(vars) {
+        const root = document.documentElement;
+        Object.entries(vars).forEach(([name, value]) => {
+            if (value) root.style.setProperty(name, value);
+        });
+        if (vars['--bg']) setThemeMetaColor(vars['--bg']);
+    }
+    function readNomadThemeFromParent() {
+        if (!EMBED_MODE) return null;
+        try {
+            const parentRoot = window.parent.document.documentElement;
+            const styles = getComputedStyle(parentRoot);
+            return {
+                theme: parentRoot.getAttribute('data-theme') || window.parent.localStorage?.getItem('nomad-theme') || 'nightops',
+                density: parentRoot.getAttribute('data-density') || window.parent.localStorage?.getItem('nomad-density') || 'compact',
+                bg: styles.getPropertyValue('--bg').trim(),
+                surface: styles.getPropertyValue('--surface').trim(),
+                surfaceSolid: styles.getPropertyValue('--surface-solid').trim(),
+                surface2: styles.getPropertyValue('--surface2').trim(),
+                surface3: styles.getPropertyValue('--surface3').trim(),
+                surfacePanel: styles.getPropertyValue('--surface-panel').trim(),
+                text: styles.getPropertyValue('--text').trim(),
+                textDim: styles.getPropertyValue('--text-dim').trim(),
+                textMuted: styles.getPropertyValue('--text-muted').trim(),
+                accent: styles.getPropertyValue('--accent').trim(),
+                green: styles.getPropertyValue('--green').trim(),
+                orange: styles.getPropertyValue('--orange').trim(),
+                warning: styles.getPropertyValue('--warning').trim(),
+                red: styles.getPropertyValue('--red').trim(),
+                border: styles.getPropertyValue('--border').trim()
+            };
+        } catch (error) {
+            return null;
+        }
+    }
+    function ensureBaseMap(styleKey) {
+        const nextKey = BASEMAP_DEFS[styleKey] ? styleKey : 'esri-gray';
+        if (!baseMaps[nextKey]) {
+            const config = BASEMAP_DEFS[nextKey];
+            baseMaps[nextKey] = L.tileLayer(config.url, { maxZoom: config.maxZoom });
+        }
+        return baseMaps[nextKey];
+    }
+    function applyBaseMap(styleKey) {
+        if (!map) return;
+        const nextKey = BASEMAP_DEFS[styleKey] ? styleKey : 'esri-gray';
+        const nextLayer = ensureBaseMap(nextKey);
+        if (currentBaseMap === nextKey && map.hasLayer(nextLayer)) return;
+        if (currentBaseMap && baseMaps[currentBaseMap] && map.hasLayer(baseMaps[currentBaseMap])) {
+            map.removeLayer(baseMaps[currentBaseMap]);
+        }
+        currentBaseMap = nextKey;
+        nextLayer.addTo(map);
+    }
+    function refreshViptrackLayout() {
+        if (!map) return;
+        requestAnimationFrame(() => {
+            map.invalidateSize({ pan: false });
+            setTimeout(() => {
+                if (map) map.invalidateSize({ pan: false });
+            }, 120);
+        });
+    }
     const MILITARY_TYPES = ['F16', 'F15', 'F18', 'F22', 'F35', 'KC35', 'K35R', 'KC10', 'B52', 'A400', 'EUFI', 'RFAL', 'TORD', 'P8', 'U2', 'RC35', 'E6', 'E8', 'EA18', 'EP3', 'T38', 'T45'];
     const MILITARY_TYPES_EXACT = ['C17', 'C130', 'C5', 'C5M', 'B1', 'B1B', 'B2', 'A10', 'A10A', 'E3CF', 'E3TF', 'E3', 'V22', 'C2', 'C12', 'C30J', 'H60', 'C295', 'CN35', 'HAWK', 'MIAG', 'TUCA', 'F117', 'U28A', 'C146', 'C37A', 'C37B', 'C40A', 'C40B', 'P3', 'P8A', 'T6', 'T6A', 'T6B'];
     const BEECHCRAFT_TYPES = ['B190', 'B200', 'B250', 'B300', 'B350', 'BE20', 'BE30', 'BE40', 'B18T', 'B19T'];
@@ -4914,7 +5085,10 @@ if ('serviceWorker' in navigator) {
             });
             
             this.predictionActive = true;
-            document.getElementById('showPredictionBtn')?.classList.add('active');
+            syncPressedButtonState('showPredictionBtn', true, {
+                on: 'Hide 30-minute flight prediction',
+                off: 'Show 30-minute flight prediction'
+            });
         },
         
         // Draw great circle route to destination
@@ -4962,7 +5136,10 @@ if ('serviceWorker' in navigator) {
             this.etaMarkers.push(destMarker);
             
             this.routeActive = true;
-            document.getElementById('showRouteBtn')?.classList.add('active');
+            syncPressedButtonState('showRouteBtn', true, {
+                on: 'Hide route to destination',
+                off: 'Show route to destination'
+            });
         },
         
         // Generate great circle path points
@@ -5013,7 +5190,10 @@ if ('serviceWorker' in navigator) {
                 this.etaMarkers = null;
             }
             this.predictionActive = false;
-            document.getElementById('showPredictionBtn')?.classList.remove('active');
+            syncPressedButtonState('showPredictionBtn', false, {
+                on: 'Hide 30-minute flight prediction',
+                off: 'Show 30-minute flight prediction'
+            });
         },
         
         clearGreatCircle() {
@@ -5026,7 +5206,10 @@ if ('serviceWorker' in navigator) {
                 this.etaMarkers = null;
             }
             this.routeActive = false;
-            document.getElementById('showRouteBtn')?.classList.remove('active');
+            syncPressedButtonState('showRouteBtn', false, {
+                on: 'Hide route to destination',
+                off: 'Show route to destination'
+            });
         },
         
         clearAll() {
@@ -5044,8 +5227,14 @@ if ('serviceWorker' in navigator) {
             }
             this.predictionActive = false;
             this.routeActive = false;
-            document.getElementById('showPredictionBtn')?.classList.remove('active');
-            document.getElementById('showRouteBtn')?.classList.remove('active');
+            syncPressedButtonState('showPredictionBtn', false, {
+                on: 'Hide 30-minute flight prediction',
+                off: 'Show 30-minute flight prediction'
+            });
+            syncPressedButtonState('showRouteBtn', false, {
+                on: 'Hide route to destination',
+                off: 'Show route to destination'
+            });
         },
         
         togglePrediction(ac) {
@@ -5370,18 +5559,74 @@ if ('serviceWorker' in navigator) {
     function saveSettings() { localStorage.setItem('viptrack_settings_v3', JSON.stringify(settings)); }
     function loadSettings() { try { const s = localStorage.getItem('viptrack_settings_v3'); if (s) Object.assign(settings, JSON.parse(s)); } catch(e){} // VIPTrack: clamp filter to mil-vip subset
         if (!['mil-vip','military','vip'].includes(settings.filter)) settings.filter = 'mil-vip'; }
+    function escapeHtml(value) { return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
+    function escapeAttr(value) { return escapeHtml(value); }
+    function syncPressedButtonState(id, pressed, labels) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('active', !!pressed);
+        el.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+        if (labels) {
+            const text = pressed ? labels.on : labels.off;
+            if (text) {
+                el.setAttribute('title', text);
+                el.setAttribute('aria-label', text);
+            }
+        }
+    }
+    function syncExpandedButtonState(id, expanded, labels) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('active', !!expanded);
+        el.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        if (labels) {
+            const text = expanded ? labels.on : labels.off;
+            if (text) {
+                el.setAttribute('title', text);
+                el.setAttribute('aria-label', text);
+            }
+        }
+    }
+    function syncPrimaryFilterButtons(activeFilter) {
+        document.querySelectorAll('.filter-btn').forEach((button) => {
+            const active = button.dataset.filter === activeFilter;
+            button.classList.toggle('active', active);
+            button.setAttribute('aria-checked', active ? 'true' : 'false');
+        });
+    }
     function loadBookmarks() { try { const s = localStorage.getItem('viptrack_bookmarks'); if (s) bookmarks = JSON.parse(s); } catch(e) { bookmarks = []; } renderBookmarks(); }
     function saveBookmarks() { localStorage.setItem('viptrack_bookmarks', JSON.stringify(bookmarks)); renderBookmarks(); }
     function addBookmark(name) { const c = map.getCenter(); bookmarks.push({ id: Date.now(), name, lat: c.lat, lng: c.lng, zoom: map.getZoom() }); saveBookmarks(); toast('Saved: ' + name); }
     function deleteBookmark(id) { bookmarks = bookmarks.filter(b => b.id !== id); saveBookmarks(); }
     function goToBookmark(id) { const b = bookmarks.find(x => x.id === id); if (b) { map.setView([b.lat, b.lng], b.zoom); toast('Jumped to ' + b.name); } }
-    function renderBookmarks() { const list = document.getElementById('bookmarksList'); if (!bookmarks.length) { list.innerHTML = '<div class="bookmarks-empty">No saved locations</div>'; return; } list.innerHTML = bookmarks.map(b => '<div class="bookmark-item" data-id="' + b.id + '"><span class="bookmark-name">' + b.name + '</span><button class="bookmark-delete" data-id="' + b.id + '">&times;</button></div>').join(''); list.querySelectorAll('.bookmark-item').forEach(item => item.addEventListener('click', e => { if (!e.target.classList.contains('bookmark-delete')) goToBookmark(parseInt(item.dataset.id)); })); list.querySelectorAll('.bookmark-delete').forEach(btn => btn.addEventListener('click', e => { e.stopPropagation(); deleteBookmark(parseInt(btn.dataset.id)); })); }
+    function renderBookmarks() {
+        const list = document.getElementById('bookmarksList');
+        if (!list) return;
+        if (!bookmarks.length) {
+            list.innerHTML = '<div class="bookmarks-empty">No saved locations</div>';
+            return;
+        }
+        list.innerHTML = bookmarks.map((bookmark) => {
+            const label = bookmark.name || 'Untitled location';
+            return '<div class="bookmark-item" data-id="' + bookmark.id + '"><span class="bookmark-name">' + escapeHtml(label) + '</span><button class="bookmark-delete" type="button" data-id="' + bookmark.id + '" aria-label="Delete bookmark ' + escapeAttr(label) + '">&times;</button></div>';
+        }).join('');
+        list.querySelectorAll('.bookmark-item').forEach((item) => item.addEventListener('click', (e) => {
+            if (!e.target.classList.contains('bookmark-delete')) goToBookmark(parseInt(item.dataset.id));
+        }));
+        list.querySelectorAll('.bookmark-delete').forEach((btn) => btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteBookmark(parseInt(btn.dataset.id));
+        }));
+    }
     async function getWikipediaSummary(url) { if (!settings.showWiki || !url) return null; try { const m = url.match(/wikipedia\.org\/wiki\/(.+)$/); if (!m) return null; const r = await fetchWithTimeout('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(decodeURIComponent(m[1])), {}, 5000); if (!r?.ok) return null; const d = await r.json(); return { title: d.title, extract: d.extract, thumbnail: d.thumbnail?.source, url }; } catch(e) { return null; } }
     function setLoadingProgress(pct, status) { document.getElementById('loadingProgress').style.width = pct + '%'; document.getElementById('loadingStatus').textContent = status; }
-    async function getInitialLocation() { if (loadMapPosition()) { setLoadingProgress(5, 'Restoring view...'); return; } if (!navigator.geolocation) { setLoadingProgress(5, 'Using default...'); return; } setLoadingProgress(3, 'Getting location...'); return new Promise(resolve => { navigator.geolocation.getCurrentPosition(pos => { CONFIG.center = [pos.coords.latitude, pos.coords.longitude]; CONFIG.zoom = CONFIG.localZoom; setLoadingProgress(5, 'Found!'); resolve(); }, () => { setLoadingProgress(5, 'Using default...'); resolve(); }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }); }); }
+    async function getInitialLocation() { if (loadMapPosition()) { setLoadingProgress(5, 'Restoring view…'); return; } if (!navigator.geolocation) { setLoadingProgress(5, 'Using default map…'); return; } setLoadingProgress(3, 'Getting location…'); return new Promise(resolve => { navigator.geolocation.getCurrentPosition(pos => { CONFIG.center = [pos.coords.latitude, pos.coords.longitude]; CONFIG.zoom = CONFIG.localZoom; setLoadingProgress(5, 'Found!'); resolve(); }, () => { setLoadingProgress(5, 'Using default map…'); resolve(); }, { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }); }); }
 
     // ============ INITIALIZATION ============
     document.addEventListener('DOMContentLoaded', async () => {
+        if (EMBED_MODE) {
+            document.body.classList.add('embedded-mode');
+        }
         // Initialize IndexedDB first
         try {
             await skytrackDB.init();
@@ -5400,10 +5645,10 @@ if ('serviceWorker' in navigator) {
         // Load databases in parallel batches for faster startup
         let dbsLoaded = 0;
         const totalDbs = 16;
-        const trackDb = (name) => { dbsLoaded++; const pct = 5 + Math.round((dbsLoaded / totalDbs) * 73); setLoadingProgress(pct, name + '...'); };
+        const trackDb = (name) => { dbsLoaded++; const pct = 5 + Math.round((dbsLoaded / totalDbs) * 73); setLoadingProgress(pct, name + '…'); };
         
         // Batch 1: Core databases (airports, types, registrations) - needed by enrichment
-        setLoadingProgress(5, 'Loading core databases...');
+        setLoadingProgress(5, 'Loading core databases…');
         await Promise.allSettled([
             airportDB.init().then(() => trackDb('Airports')),
             frequencyDB.init().then(() => trackDb('Frequencies')),
@@ -5413,7 +5658,7 @@ if ('serviceWorker' in navigator) {
         ]);
         
         // Batch 2: Classification databases (military, interesting, categories)
-        setLoadingProgress(40, 'Loading classification data...');
+        setLoadingProgress(40, 'Loading classification data…');
         await Promise.allSettled([
             interestingDB.init().then(() => trackDb('Interesting')),
             categoriesDB.init().then(() => trackDb('Categories')),
@@ -5425,7 +5670,7 @@ if ('serviceWorker' in navigator) {
         ]);
         
         // Batch 3: Supplementary databases (airlines, routes, images)
-        setLoadingProgress(65, 'Loading supplementary data...');
+        setLoadingProgress(65, 'Loading supplementary data…');
         await Promise.allSettled([
             airlineDB.init().then(() => trackDb('Airlines')),
             callsignPrefixDB.init().then(() => trackDb('Callsign prefixes')),
@@ -5434,8 +5679,15 @@ if ('serviceWorker' in navigator) {
             preloadedImagesDB.init().then(() => trackDb('Images'))
         ]);
         
-        setLoadingProgress(80, 'Initializing map...');
+        setLoadingProgress(80, 'Initializing map…');
         initMap(); initUI();
+        if (EMBED_MODE) {
+            syncEmbeddedThemeFromParent();
+            window.addEventListener('resize', () => { refreshViptrackLayout(); });
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) refreshViptrackLayout();
+            });
+        }
         
         
         // Check URL params for shared flight links
@@ -5449,7 +5701,9 @@ if ('serviceWorker' in navigator) {
         function updateConnectivity(state) {
             if (!_connDot) return;
             _connDot.className = 'connectivity-dot ' + state;
-            _connEl.title = state === 'online' ? 'Live' : state === 'stale' ? 'Data stale' : 'Offline - using cached data';
+            const label = state === 'online' ? 'Live' : state === 'stale' ? 'Data stale' : 'Offline - using cached data';
+            _connEl.title = label;
+            _connEl.setAttribute('aria-label', label);
         }
         window.addEventListener('online', () => updateConnectivity('online'));
         window.addEventListener('offline', () => updateConnectivity('offline'));
@@ -5472,17 +5726,15 @@ if ('serviceWorker' in navigator) {
         };
         
         // Load compact mode setting
-        if (settings.compactMode) {
+        if (settings.compactMode && !EMBED_MODE) {
             document.body.classList.add('compact-mode');
         }
         
         // Load follow mode button state
-        if (settings.followMode) {
-            document.getElementById('followBtn')?.classList.add('active');
-        }
+        syncPressedButtonState('followBtn', settings.followMode, { on: 'Disable follow mode', off: 'Enable follow mode' });
         
         // Initialize alert system
-        setLoadingProgress(82, 'Initializing alerts...');
+        setLoadingProgress(82, 'Initializing alerts…');
         await alertSystem.init();
         
         // Set alert toggle states
@@ -5494,16 +5746,17 @@ if ('serviceWorker' in navigator) {
         }
         
         if (hadCache && Object.keys(aircraftCache).length) {
-            setLoadingProgress(85, 'Restoring aircraft...');
+            setLoadingProgress(85, 'Restoring aircraft…');
             Object.values(aircraftCache).forEach(ac => { ac._enriched = false; _enrichAircraft(ac, ac.hex); });
             updateCounts(); updateMarkersSync();
         }
         
-        setLoadingProgress(95, 'Loading aircraft...');
+        setLoadingProgress(95, 'Loading aircraft…');
         await loadAircraft();
         
         setLoadingProgress(100, 'Ready!');
         setTimeout(() => document.getElementById('loading').classList.add('hidden'), 300);
+        if (EMBED_MODE) setTimeout(() => { refreshViptrackLayout(); }, 220);
         
         _startFetchInterval();
         _setPausableInterval(saveAircraftCache, 30000, 'saveCache');
@@ -5522,10 +5775,11 @@ if ('serviceWorker' in navigator) {
 
     function initMap() {
         map = L.map('map', { center: CONFIG.center, zoom: CONFIG.zoom, zoomControl: true, preferCanvas: true, zoomSnap: 1, zoomDelta: 1, worldCopyJump: true });
-        baseMaps['esri-gray'] = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 16 });
-        currentBaseMap = 'esri-gray'; baseMaps[currentBaseMap].addTo(map);
+        ensureBaseMap('esri-gray');
+        ensureBaseMap('esri-light');
+        applyBaseMap(EMBED_MODE ? hostThemeState.mapStyle : settings.mapStyle);
         let moveTimeout; map.on('moveend', () => { clearTimeout(moveTimeout); moveTimeout = setTimeout(() => { loadAircraft(); }, 800); saveMapPosition(); });
-        map.on('click', () => { deselectAircraft(); _el('settingsPanel').classList.remove('show'); });
+        map.on('click', () => { deselectAircraft(); _el('settingsPanel').classList.remove('show'); _el('settingsPanel').setAttribute('aria-hidden', 'true'); syncExpandedButtonState('settingsBtn', false, { on: 'Close settings', off: 'Open settings' }); });
     }
 
 
@@ -6073,13 +6327,13 @@ if ('serviceWorker' in navigator) {
 
     // ============ TRAILS ============
     async function loadTrail(hex) {
-        const status = document.getElementById('trailStatus'); status.textContent = 'Loading trail...';
+        const status = document.getElementById('trailStatus'); status.textContent = 'Loading trail…';
         if (trailLine) { if (trailLine._originMarker) map.removeLayer(trailLine._originMarker); if (trailLine._group) map.removeLayer(trailLine._group); else map.removeLayer(trailLine); trailLine = null; }
         const ac = aircraftCache[hex]; if (!ac) return;
         const hexSuffix = hex.slice(-2).toLowerCase(), hexLower = hex.toLowerCase();
         const endpoints = [{ url: CONFIG.traceUrl + hexSuffix + '/trace_full_' + hexLower + '.json', name: 'full' }, { url: CONFIG.traceUrl + hexSuffix + '/trace_recent_' + hexLower + '.json', name: 'recent' }];
         for (const ep of endpoints) {
-            status.textContent = 'Loading ' + ep.name + ' trail...'; const resp = await fetchWithProxy(ep.url); if (!resp) continue;
+            status.textContent = 'Loading ' + ep.name + ' trail…'; const resp = await fetchWithProxy(ep.url); if (!resp) continue;
             try { 
                 const data = await resp.json(); 
                 if (data?.trace?.length > 1) { 
@@ -6129,7 +6383,7 @@ if ('serviceWorker' in navigator) {
             if (settings.altitudeColors) drawAltitudeColoredTrail(trace, ac); 
             else drawSimpleTrail(trace, ac); 
             status.textContent = 'Trail: ' + ac.history.length + ' pts (local)'; 
-        } else status.textContent = 'Trail: Building...';
+        } else status.textContent = 'Trail: Building…';
     }
     function drawAltitudeColoredTrail(trace, ac) {
         const group = L.layerGroup().addTo(map); let lastSeg = null;
@@ -6171,8 +6425,8 @@ if ('serviceWorker' in navigator) {
                     if (planeIcon) planeIcon.style.left = progress.progress + '%';
                 }
             } else {
-                document.getElementById('routeDistFlown').textContent = ac.from ? 'Tracking...' : '---';
-                document.getElementById('routeDistRemain').textContent = ac.to ? 'Calculating...' : '---';
+                document.getElementById('routeDistFlown').textContent = ac.from ? 'Tracking…' : '---';
+                document.getElementById('routeDistRemain').textContent = ac.to ? 'Calculating…' : '---';
                 document.getElementById('routeFlightTime').textContent = '---';
             }
             const destNote = document.getElementById('routeDestNote');
@@ -6207,7 +6461,7 @@ if ('serviceWorker' in navigator) {
         if (photoCache[hex]) { displayPhoto(photoCache[hex]); return; }
         if (photoFailCache[hex]) { showFallbackPhoto(ac, div); return; }
 
-        div.innerHTML = '<div class="no-photo">Loading...</div>';
+        div.innerHTML = '<div class="no-photo">Loading…</div>';
 
         // PRIORITY 1: Preloaded images database (fastest - no API call)
         if (preloadedImagesDB.loaded && preloadedImagesDB.hasImage(hex)) {
@@ -6634,6 +6888,10 @@ if ('serviceWorker' in navigator) {
         const watchBtn = document.getElementById('watchBtn');
         if (watchBtn) {
             const isWatched = alertSystem.isWatched(hex);
+            syncPressedButtonState('watchBtn', isWatched, {
+                on: 'Remove selected aircraft from watchlist',
+                off: 'Add selected aircraft to watchlist'
+            });
             watchBtn.classList.toggle('watched', isWatched);
             watchBtn.querySelector('.star').textContent = isWatched ? 'x' : '*';
             watchBtn.querySelector('.watch-text').textContent = isWatched ? 'Watching' : 'Watch';
@@ -6650,6 +6908,8 @@ if ('serviceWorker' in navigator) {
         
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelector('.tab-btn[data-tab="overview"]').classList.add('active'); document.getElementById('tabOverview').classList.add('active');
         _el('settingsPanel').classList.remove('show');
+        _el('settingsPanel').setAttribute('aria-hidden', 'true');
+        syncExpandedButtonState('settingsBtn', false, { on: 'Close settings', off: 'Open settings' });
         // Move panel into sidebar wrapper and show
         const _sbw = _el('sidebarWrapper');
         const _pnl = _el('infoPanel');
@@ -6678,18 +6938,17 @@ if ('serviceWorker' in navigator) {
         document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => { document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); btn.classList.add('active'); document.getElementById('tab' + btn.dataset.tab.charAt(0).toUpperCase() + btn.dataset.tab.slice(1)).classList.add('active'); }));
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
                 settings.filter = btn.dataset.filter;
+                syncPrimaryFilterButtons(settings.filter);
                 updateMarkers();
                 shareManager.updateUrl();
             });
         });
-        document.getElementById('labelBtn').addEventListener('click', function() { settings.showLabels = !settings.showLabels; this.classList.toggle('active', settings.showLabels); document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels); saveSettings(); updateMarkers(); });
+        document.getElementById('labelBtn').addEventListener('click', function() { settings.showLabels = !settings.showLabels; syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' }); document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels); saveSettings(); updateMarkers(); });
         document.getElementById('locateBtn').addEventListener('click', geolocate);
         document.getElementById('followBtn')?.addEventListener('click', function() {
             settings.followMode = !settings.followMode;
-            this.classList.toggle('active', settings.followMode);
+            syncPressedButtonState('followBtn', settings.followMode, { on: 'Disable follow mode', off: 'Enable follow mode' });
             saveSettings();
             
             toast(settings.followMode ? 'Follow mode ON' : 'Follow mode OFF');
@@ -6698,8 +6957,8 @@ if ('serviceWorker' in navigator) {
                 if (ac?.lat !== undefined) map.panTo([ac.lat, ac.lon]);
             }
         });
-        document.getElementById('settingsBtn').addEventListener('click', () => { _el('settingsPanel').classList.toggle('show'); deselectAircraft(); });
-        document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels); document.getElementById('toggleLabels').addEventListener('click', function() { settings.showLabels = !settings.showLabels; this.classList.toggle('on', settings.showLabels); document.getElementById('labelBtn').classList.toggle('active', settings.showLabels); saveSettings(); updateMarkers(); });
+        document.getElementById('settingsBtn').addEventListener('click', () => { const panel = _el('settingsPanel'); const isOpen = panel.classList.toggle('show'); panel.setAttribute('aria-hidden', isOpen ? 'false' : 'true'); syncExpandedButtonState('settingsBtn', isOpen, { on: 'Close settings', off: 'Open settings' }); deselectAircraft(); });
+        document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels); document.getElementById('toggleLabels').addEventListener('click', function() { settings.showLabels = !settings.showLabels; this.classList.toggle('on', settings.showLabels); syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' }); saveSettings(); updateMarkers(); });
         document.getElementById('toggleAltColors').classList.toggle('on', settings.altitudeColors); document.getElementById('toggleAltColors').addEventListener('click', function() { settings.altitudeColors = !settings.altitudeColors; this.classList.toggle('on', settings.altitudeColors); saveSettings(); if (selectedHex) loadTrail(selectedHex); });
         document.getElementById('toggleWiki').classList.toggle('on', settings.showWiki); document.getElementById('toggleWiki').addEventListener('click', function() { settings.showWiki = !settings.showWiki; this.classList.toggle('on', settings.showWiki); saveSettings(); });
         document.getElementById('addBookmarkBtn').addEventListener('click', () => { document.getElementById('bookmarkModal').classList.add('show'); document.getElementById('bookmarkNameInput').value = ''; document.getElementById('bookmarkNameInput').focus(); });
@@ -6707,10 +6966,14 @@ if ('serviceWorker' in navigator) {
         document.getElementById('bookmarkSaveBtn').addEventListener('click', () => { const name = document.getElementById('bookmarkNameInput').value.trim(); if (name) { addBookmark(name); document.getElementById('bookmarkModal').classList.remove('show'); } else toast('Enter name'); });
         document.getElementById('bookmarkNameInput').addEventListener('keypress', e => { if (e.key === 'Enter') { const name = e.target.value.trim(); if (name) { addBookmark(name); document.getElementById('bookmarkModal').classList.remove('show'); } } });
         document.getElementById('bookmarkModal').addEventListener('click', e => { if (e.target.id === 'bookmarkModal') document.getElementById('bookmarkModal').classList.remove('show'); });
-        document.getElementById('panelsBtn')?.addEventListener('click', () => { const bp = document.querySelector('.bottom-panels'); bp.classList.toggle('visible'); const btn = document.getElementById('panelsBtn'); if (bp.classList.contains('visible')) { btn.classList.add('active'); } else { btn.classList.remove('active'); } });
+        document.getElementById('panelsBtn')?.addEventListener('click', () => { const bp = document.getElementById('bottomPanels'); bp.classList.toggle('visible'); const visible = bp.classList.contains('visible'); bp.setAttribute('aria-hidden', visible ? 'false' : 'true'); syncExpandedButtonState('panelsBtn', visible, { on: 'Hide saved locations and watchlist', off: 'Show saved locations and watchlist' }); });
         
-        // Initialize enhanced search system
-        searchSystem.init();
+        syncPrimaryFilterButtons(settings.filter);
+        syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' });
+        syncPressedButtonState('followBtn', settings.followMode, { on: 'Disable follow mode', off: 'Enable follow mode' });
+        syncPressedButtonState('watchBtn', false, { on: 'Remove selected aircraft from watchlist', off: 'Add selected aircraft to watchlist' });
+        syncExpandedButtonState('settingsBtn', false, { on: 'Close settings', off: 'Open settings' });
+        syncExpandedButtonState('panelsBtn', false, { on: 'Hide saved locations and watchlist', off: 'Show saved locations and watchlist' });
         
         // Watch button handler
         document.getElementById('watchBtn')?.addEventListener('click', function() {
@@ -6719,12 +6982,14 @@ if ('serviceWorker' in navigator) {
             const isWatched = alertSystem.isWatched(selectedHex);
             if (isWatched) {
                 alertSystem.removeFromWatchlist(selectedHex);
+                syncPressedButtonState('watchBtn', false, { on: 'Remove selected aircraft from watchlist', off: 'Add selected aircraft to watchlist' });
                 this.classList.remove('watched');
                 this.querySelector('.star').textContent = '*';
                 this.querySelector('.watch-text').textContent = 'Watch';
             } else {
                 const name = ac?.flight?.trim() || ac?.r || selectedHex;
                 alertSystem.addToWatchlist(selectedHex, name);
+                syncPressedButtonState('watchBtn', true, { on: 'Remove selected aircraft from watchlist', off: 'Add selected aircraft to watchlist' });
                 this.classList.add('watched');
                 this.querySelector('.star').textContent = 'x';
                 this.querySelector('.watch-text').textContent = 'Watching';
@@ -6762,7 +7027,7 @@ if ('serviceWorker' in navigator) {
         
         // Phase 16: Data source and reliability handlers
         document.getElementById('checkSourcesBtn')?.addEventListener('click', async () => {
-            toast('Checking all data sources...');
+            toast('Checking all data sources…');
             await dataSourceManager.checkAllSources();
             updateDataSourceList();
             toast('Source check complete');
@@ -6826,8 +7091,8 @@ if ('serviceWorker' in navigator) {
         
         // Phase 6: Visual feature handlers
     }
-    function geolocate() { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { map.setView([pos.coords.latitude, pos.coords.longitude], CONFIG.localZoom); toast('Location updated'); }, () => toast('Location denied')); } }
-    function toast(msg) { const el = document.getElementById('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(() => el.classList.remove('show'), 3000); }
+    function geolocate() { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition(pos => { map.setView([pos.coords.latitude, pos.coords.longitude], CONFIG.localZoom); toast('Location updated'); }, () => toast('Location denied', 'error')); } }
+    function toast(msg, tone = 'info') { const el = document.getElementById('toast'); if (!el) return; const normalizedTone = tone === 'error' ? 'error' : tone === 'success' ? 'success' : 'info'; el.textContent = msg; el.classList.remove('info', 'success', 'error'); el.classList.add(normalizedTone, 'show'); clearTimeout(window.__viptrackToastTimer); window.__viptrackToastTimer = setTimeout(() => el.classList.remove('show'), 3000); }
 
     // ============ PHASE 8: ENHANCED SEARCH SYSTEM ============
     const searchSystem = {
@@ -6837,6 +7102,9 @@ if ('serviceWorker' in navigator) {
         history: [],
         maxHistory: 20,
         debounceTimer: null,
+        containerEl: null,
+        dropdownEl: null,
+        filterButtonEl: null,
         
         init() {
             // Load history from storage
@@ -6845,9 +7113,20 @@ if ('serviceWorker' in navigator) {
             const input = document.getElementById('searchInput');
             const container = document.getElementById('searchContainer');
             const dropdown = document.getElementById('searchDropdown');
+            const filterButton = document.getElementById('searchFilterBtn');
+
+            if (!input || !container || !dropdown || !filterButton) return;
+
+            this.containerEl = container;
+            this.dropdownEl = dropdown;
+            this.filterButtonEl = filterButton;
             
             // Input events
-            input?.addEventListener('focus', () => this.open());
+            input?.addEventListener('focus', () => {
+                this.open();
+                this.switchTab('results');
+                if (!input.value.trim()) this.updateResults('');
+            });
             input?.addEventListener('input', (e) => this.onInput(e.target.value));
             input?.addEventListener('keydown', (e) => this.onKeydown(e));
             
@@ -6855,15 +7134,18 @@ if ('serviceWorker' in navigator) {
             document.getElementById('searchClearBtn')?.addEventListener('click', () => {
                 input.value = '';
                 document.getElementById('searchClearBtn').style.display = 'none';
+                document.getElementById('searchClearBtn').setAttribute('aria-hidden', 'true');
                 this.updateResults('');
             });
             
             // Filter button
-            document.getElementById('searchFilterBtn')?.addEventListener('click', (e) => {
+            filterButton.addEventListener('click', (e) => {
+                e.preventDefault();
                 e.stopPropagation();
-                this.open();
-                this.switchTab('filters');
+                this.openFilters();
             });
+
+            dropdown.addEventListener('click', (e) => e.stopPropagation());
             
             // Tab switching
             document.querySelectorAll('.search-tab').forEach(tab => {
@@ -6874,6 +7156,7 @@ if ('serviceWorker' in navigator) {
             document.querySelectorAll('.filter-chip').forEach(chip => {
                 chip.addEventListener('click', () => {
                     chip.classList.toggle('active');
+                    chip.setAttribute('aria-pressed', chip.classList.contains('active') ? 'true' : 'false');
                 });
             });
             
@@ -6884,37 +7167,69 @@ if ('serviceWorker' in navigator) {
             
             // Close on outside click
             document.addEventListener('click', (e) => {
-                if (!e.target.closest('.search-container')) {
-                    this.close();
-                }
+                if (this.isEventInsideSearch(e.target)) return;
+                this.close();
             });
             
-            this.renderHistory();
+            this.renderHistory(true);
+            this.syncFilterButton();
+        },
+
+        isEventInsideSearch(target) {
+            return !!(this.containerEl && target instanceof Node && this.containerEl.contains(target));
         },
         
         open() {
             this.isOpen = true;
-            document.getElementById('searchDropdown')?.classList.add('show');
+            this.dropdownEl?.classList.add('show');
+            this.dropdownEl?.setAttribute('aria-hidden', 'false');
+            this.filterButtonEl?.setAttribute('aria-expanded', 'true');
+        },
+
+        openFilters() {
+            this.open();
+            this.switchTab('filters');
         },
         
         close() {
             this.isOpen = false;
-            document.getElementById('searchDropdown')?.classList.remove('show');
+            this.dropdownEl?.classList.remove('show');
+            this.dropdownEl?.setAttribute('aria-hidden', 'true');
+            this.filterButtonEl?.setAttribute('aria-expanded', 'false');
+        },
+
+        syncFilterButton() {
+            const btn = document.getElementById('searchFilterBtn');
+            if (!btn) return;
+            const hasFilters = Object.keys(this.filters).length > 0;
+            const isActive = this.activeTab === 'filters' || hasFilters;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         },
         
         switchTab(tab) {
             this.activeTab = tab;
             document.querySelectorAll('.search-tab').forEach(t => {
-                t.classList.toggle('active', t.dataset.tab === tab);
+                const active = t.dataset.tab === tab;
+                t.classList.toggle('active', active);
+                t.setAttribute('aria-selected', active ? 'true' : 'false');
             });
             document.querySelectorAll('.search-tab-panel').forEach(p => {
-                p.classList.toggle('active', p.id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+                const active = p.id === 'tab' + tab.charAt(0).toUpperCase() + tab.slice(1);
+                p.classList.toggle('active', active);
+                p.hidden = !active;
             });
+            const query = document.getElementById('searchInput')?.value?.trim() || '';
+            this.renderHistory(tab === 'results' && !query);
+            this.syncFilterButton();
         },
         
         onInput(value) {
             // Show/hide clear button
-            document.getElementById('searchClearBtn').style.display = value ? 'flex' : 'none';
+            const clearBtn = document.getElementById('searchClearBtn');
+            clearBtn.style.display = value ? 'flex' : 'none';
+            clearBtn.setAttribute('aria-hidden', value ? 'false' : 'true');
+            if (this.activeTab !== 'results') this.switchTab('results');
             
             // Debounce search
             clearTimeout(this.debounceTimer);
@@ -6949,14 +7264,17 @@ if ('serviceWorker' in navigator) {
                 
                 if (interesting.length > 0) {
                     container.innerHTML = 
-                        '<div class="search-section-header">Interesting Aircraft</div>' +
+                        '<div class="search-section-header">Live Now</div>' +
                         interesting.map(ac => this.renderAircraftResult(ac)).join('');
                     this.attachResultHandlers(container);
                 } else {
-                    container.innerHTML = '<div class="search-placeholder">Start typing to search...</div>';
+                    container.innerHTML = '<div class="search-placeholder">Search the live feed to inspect aircraft faster.</div>';
                 }
+                this.renderHistory(true);
                 return;
             }
+
+            this.renderHistory(false);
             
             const results = { aircraft: [], airports: [], airlines: [] };
             
@@ -7080,6 +7398,7 @@ if ('serviceWorker' in navigator) {
                     this.close();
                     document.getElementById('searchInput').value = '';
                     document.getElementById('searchClearBtn').style.display = 'none';
+                    document.getElementById('searchClearBtn').setAttribute('aria-hidden', 'true');
                 });
             });
         },
@@ -7214,6 +7533,7 @@ if ('serviceWorker' in navigator) {
                 badge.style.display = count > 0 ? 'flex' : 'none';
                 badge.textContent = count;
             }
+            this.syncFilterButton();
             
             // Store globally for marker updates
             window.searchFilters = this.filters;
@@ -7225,7 +7545,7 @@ if ('serviceWorker' in navigator) {
             window.searchFilters = {};
             
             // Clear UI
-            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.filter-chip').forEach(c => { c.classList.remove('active'); c.setAttribute('aria-pressed', 'false'); });
             const altMinEl = document.getElementById('altMin');
             const altMaxEl = document.getElementById('altMax');
             const speedMinEl = document.getElementById('speedMin');
@@ -7252,6 +7572,7 @@ if ('serviceWorker' in navigator) {
             
             const badge = document.getElementById('filterBadge');
             if (badge) badge.style.display = 'none';
+            this.syncFilterButton();
             
             updateMarkers();
             toast('Filters cleared');
@@ -7328,25 +7649,30 @@ if ('serviceWorker' in navigator) {
             // Save
             localStorage.setItem('viptrack_search_history', JSON.stringify(this.history));
             
-            this.renderHistory();
+            this.renderHistory(this.activeTab === 'results' && !(document.getElementById('searchInput')?.value?.trim()));
         },
         
-        renderHistory() {
+        renderHistory(visible = true) {
             const container = document.getElementById('searchHistory');
-            if (!container) return;
+            const dock = document.getElementById('searchHistoryDock');
+            if (!container || !dock) return;
             
             if (this.history.length === 0) {
-                container.innerHTML = '<div class="search-placeholder">No recent searches</div>';
+                container.innerHTML = '';
+                dock.hidden = true;
                 return;
             }
+
+            dock.hidden = !visible;
             
-            container.innerHTML = this.history.map((h, i) => 
-                '<div class="history-item" data-index="' + i + '">' +
-                    '<span class="history-text">' + h.text + '</span>' +
+            container.innerHTML = this.history.map((h, i) => {
+                const label = h.text || 'search';
+                return '<div class="history-item" data-index="' + i + '">' +
+                    '<span class="history-text">' + escapeHtml(label) + '</span>' +
                     '<span class="history-time">' + this.formatTime(h.time) + '</span>' +
-                    '<button class="history-remove" data-index="' + i + '">x</button>' +
-                '</div>'
-            ).join('');
+                    '<button class="history-remove" type="button" data-index="' + i + '" aria-label="Remove ' + escapeAttr(label) + ' from recent searches">&times;</button>' +
+                '</div>';
+            }).join('');
             
             // Click handlers
             container.querySelectorAll('.history-item').forEach(el => {
@@ -7366,13 +7692,13 @@ if ('serviceWorker' in navigator) {
         removeFromHistory(index) {
             this.history.splice(index, 1);
             localStorage.setItem('viptrack_search_history', JSON.stringify(this.history));
-            this.renderHistory();
+            this.renderHistory(this.activeTab === 'results' && !(document.getElementById('searchInput')?.value?.trim()));
         },
         
         clearHistory() {
             this.history = [];
             localStorage.removeItem('viptrack_search_history');
-            this.renderHistory();
+            this.renderHistory(false);
             toast('History cleared');
         },
         
@@ -7384,6 +7710,8 @@ if ('serviceWorker' in navigator) {
             return new Date(ts).toLocaleDateString();
         }
     };
+
+    searchSystem.init();
 
     // ============ PHASE 5: URL DEEP LINKING & SHARE ============
     const shareManager = {
@@ -7477,9 +7805,7 @@ if ('serviceWorker' in navigator) {
             // Apply filter from URL (VIPTrack: clamp to valid values)
             if (filter && ['mil-vip','military','vip'].includes(filter)) {
                 settings.filter = filter;
-                document.querySelectorAll('.filter-btn').forEach(b => {
-                    b.classList.toggle('active', b.dataset.filter === filter);
-                });
+                syncPrimaryFilterButtons(filter);
                 updateMarkers();
             }
             
@@ -7496,7 +7822,7 @@ if ('serviceWorker' in navigator) {
                     }
                 };
                 setTimeout(checkAndSelect, 2000);
-                toast('Looking for aircraft ' + hex + '...');
+                toast('Looking for aircraft ' + hex + '…');
             }
         },
         
@@ -7505,14 +7831,12 @@ if ('serviceWorker' in navigator) {
                 if (this._suppressPopstate) return;
                 const params = new URLSearchParams(window.location.search);
                 const hex = params.get('hex');
-                const filter = params.get('filter') || 'all';
+                const filter = ['mil-vip', 'military', 'vip'].includes(params.get('filter')) ? params.get('filter') : 'mil-vip';
                 
                 // Apply filter
                 if (filter !== settings.filter) {
                     settings.filter = filter;
-                    document.querySelectorAll('.filter-btn').forEach(b => {
-                        b.classList.toggle('active', b.dataset.filter === filter);
-                    });
+                    syncPrimaryFilterButtons(filter);
                 }
                 
                 // Apply selection
@@ -7528,17 +7852,100 @@ if ('serviceWorker' in navigator) {
     };
 
 
-    // ============ MIDNIGHT THEME (hardcoded) ============
-    function applyMidnightTheme() {
-        const root = document.documentElement;
-        root.style.setProperty('--bg', '#0a0a14');
-        root.style.setProperty('--bg-panel', 'rgba(10, 10, 20, 0.95)');
-        root.style.setProperty('--text', '#e0e0e0');
-        root.style.setProperty('--text-dim', '#888');
-        root.style.setProperty('--accent', '#00d4ff');
-        root.style.setProperty('--selected', '#ff00ff');
+    // ============ SHELL THEME BRIDGE ============
+    function applyStandaloneTheme() {
+        if (document.body) {
+            document.body.classList.remove('embedded-mode', 'day-mode');
+        }
+        applyThemeVars({
+            '--bg': '#0a0a14',
+            '--bg-panel': 'rgba(10, 10, 20, 0.95)',
+            '--bg-darker': 'rgba(0, 0, 0, 0.3)',
+            '--border': 'rgba(255, 255, 255, 0.1)',
+            '--text': '#e0e0e0',
+            '--text-dim': '#888888',
+            '--text-muted': '#666666',
+            '--accent': '#00d4ff',
+            '--accent-orange': '#ff9500',
+            '--selected': '#ff00ff',
+            '--success': '#4ade80',
+            '--danger': '#ef4444',
+            '--military': '#4a90d9',
+            '--gov': '#9333ea',
+            '--police': '#3b82f6',
+            '--medical': '#ef4444',
+            '--historic': '#f59e0b',
+            '--pia': '#ec4899',
+            '--vip': '#ffd700'
+        });
+        hostThemeState.theme = 'nightops';
+        hostThemeState.tone = 'dark';
+        hostThemeState.mapStyle = 'esri-gray';
     }
-    applyMidnightTheme();
+    function applyNomadTheme(themeName, palette = null) {
+        const theme = getHostTheme(themeName);
+        const nextPalette = palette || readNomadThemeFromParent() || {};
+        hostThemeState.theme = themeName;
+        hostThemeState.tone = theme.tone;
+        hostThemeState.mapStyle = theme.mapStyle;
+        hostThemeState.density = nextPalette.density || hostThemeState.density || 'compact';
+        if (document.body) {
+            document.body.classList.add('embedded-mode');
+            document.body.classList.toggle('day-mode', theme.tone === 'light');
+            document.body.classList.toggle('compact-mode', hostThemeState.density !== 'comfortable');
+        }
+        applyThemeVars({
+            '--bg': nextPalette.bg || (theme.tone === 'light' ? '#f4efe5' : '#0f141c'),
+            '--bg-panel': nextPalette.surfacePanel || nextPalette.surfaceSolid || nextPalette.surface || (theme.tone === 'light' ? 'rgba(255, 255, 255, 0.92)' : 'rgba(14, 18, 24, 0.9)'),
+            '--bg-darker': nextPalette.surface2 || (theme.tone === 'light' ? 'rgba(20, 24, 30, 0.06)' : 'rgba(0, 0, 0, 0.3)'),
+            '--border': nextPalette.border || (theme.tone === 'light' ? 'rgba(17, 17, 17, 0.14)' : 'rgba(255, 255, 255, 0.1)'),
+            '--text': nextPalette.text || (theme.tone === 'light' ? '#1b1f25' : '#e7edf5'),
+            '--text-dim': nextPalette.textDim || (theme.tone === 'light' ? '#4e5560' : '#a6b3c5'),
+            '--text-muted': nextPalette.textMuted || (theme.tone === 'light' ? '#6f7782' : '#8f9db0'),
+            '--accent': nextPalette.accent || theme.accent,
+            '--accent-orange': nextPalette.orange || '#ff9500',
+            '--selected': nextPalette.accent || theme.accent,
+            '--success': nextPalette.green || '#4ade80',
+            '--danger': nextPalette.red || '#ef4444',
+            '--military': nextPalette.accent || '#4a90d9',
+            '--gov': theme.tone === 'light' ? '#7c3aed' : '#a855f7',
+            '--police': nextPalette.accent || '#3b82f6',
+            '--medical': nextPalette.red || '#ef4444',
+            '--historic': nextPalette.warning || '#f59e0b',
+            '--pia': theme.tone === 'light' ? '#db2777' : '#ec4899',
+            '--vip': nextPalette.warning || nextPalette.accent || '#ffd700'
+        });
+        if (map) {
+            applyBaseMap(theme.mapStyle);
+            refreshViptrackLayout();
+        }
+        return theme;
+    }
+    function syncEmbeddedThemeFromParent() {
+        if (!EMBED_MODE) return false;
+        const palette = readNomadThemeFromParent();
+        applyNomadTheme(palette?.theme || hostThemeState.theme || 'nightops', palette || undefined);
+        return true;
+    }
+    window.VIPTrackHost = {
+        applyNomadTheme,
+        refreshLayout: refreshViptrackLayout,
+        onVisible() {
+            syncEmbeddedThemeFromParent();
+            refreshViptrackLayout();
+        },
+        getSnapshot() {
+            return {
+                embedded: EMBED_MODE,
+                theme: hostThemeState.theme,
+                density: hostThemeState.density,
+                mapStyle: currentBaseMap || hostThemeState.mapStyle,
+                dayMode: document.body?.classList.contains('day-mode') || false
+            };
+        }
+    };
+    if (EMBED_MODE) syncEmbeddedThemeFromParent();
+    else applyStandaloneTheme();
 
     // ============ PHASE 12: ENHANCED TRAIL VISUALIZATION ============
     const trailRenderer = {
@@ -7895,7 +8302,7 @@ if ('serviceWorker' in navigator) {
         
         truncate(text, len) {
             if (!text) return '';
-            return text.length > len ? text.substring(0, len) + '...' : text;
+        return text.length > len ? text.substring(0, len) + '…' : text;
         }
     };
 
@@ -7990,7 +8397,7 @@ if ('serviceWorker' in navigator) {
             
             // Resize map
             if (map) {
-                setTimeout(() => map.invalidateSize(), 100);
+                setTimeout(() => refreshViptrackLayout(), 100);
             }
         },
         
@@ -8725,92 +9132,16 @@ if ('serviceWorker' in navigator) {
 
     // ============ UI OVERHAUL: INITIALIZATION ============
     (function initUIOverhaul() {
-        
-        // --- Dropdown Menus ---
-        document.querySelectorAll('.hv2-dropdown-trigger').forEach(trigger => {
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const panel = trigger.nextElementSibling;
-                const wasOpen = panel.classList.contains('show');
-                // Close all
-                document.querySelectorAll('.hv2-panel.show').forEach(p => p.classList.remove('show'));
-                document.querySelectorAll('.hv2-dropdown-trigger.open').forEach(t => t.classList.remove('open'));
-                if (!wasOpen) {
-                    panel.classList.add('show');
-                    trigger.classList.add('open');
-                }
-            });
-        });
-        document.addEventListener('click', () => {
-            document.querySelectorAll('.hv2-panel.show').forEach(p => p.classList.remove('show'));
-            document.querySelectorAll('.hv2-dropdown-trigger.open').forEach(t => t.classList.remove('open'));
-        });
-        document.querySelectorAll('.hv2-panel').forEach(p => p.addEventListener('click', e => e.stopPropagation()));
-        
-        // Wire dropdown items to original button handlers
-        document.querySelectorAll('.hv2-item[data-btn]').forEach(item => {
-            item.addEventListener('click', () => {
-                const btnId = item.getAttribute('data-btn');
-                const btn = document.getElementById(btnId);
-                if (btn) btn.click();
-                // Update active state
-                setTimeout(() => {
-                    item.classList.toggle('is-active', btn && btn.classList.contains('active'));
-                }, 100);
-            });
-        });
-        
-        // Sync active states periodically
-        function syncDropdownStates() {
-            document.querySelectorAll('.hv2-item[data-btn]').forEach(item => {
-                const btn = document.getElementById(item.getAttribute('data-btn'));
-                if (btn) item.classList.toggle('is-active', btn.classList.contains('active'));
-            });
-            // Update dropdown badges
-            document.querySelectorAll('.hv2-dropdown').forEach(dd => {
-                const activeCount = dd.querySelectorAll('.hv2-item.is-active').length;
-                const badge = dd.querySelector('.hv2-dd-badge');
-                if (badge) badge.style.display = activeCount > 0 ? '' : 'none';
-            });
-        }
-        _setPausableInterval(syncDropdownStates, 2000, "dropdownSync");
-        setTimeout(syncDropdownStates, 500);
-        
-        // --- Filter Chips ---
-        document.querySelectorAll('.filter-chip-btn').forEach(chip => {
-            chip.addEventListener('click', () => {
-                chip.classList.toggle('active');
-                applyChipFilters();
-            });
-        });
-        function applyChipFilters() {
-            const activeChips = [...document.querySelectorAll('.filter-chip-btn.active')].map(c => c.dataset.filter);
-            // If no chips active, show all
-            if (activeChips.length === 0) {
-                if (typeof updateMarkers === 'function') updateMarkers();
-                return;
-            }
-            // Update marker visibility
-            Object.entries(markers).forEach(([hex, marker]) => {
-                const ac = aircraftCache[hex];
-                if (!ac) return;
-                let show = false;
-                const ct = ac.category_type || '';
-                if (activeChips.includes('military') && (ct === 'military' || ac.militaryInfo || ac.militaryRangeInfo)) show = true;
-                if (activeChips.includes('government') && ct === 'government') show = true;
-                if (activeChips.includes('vip') && ac.isVIP) show = true;
-                marker.setOpacity(show ? 1 : 0.08);
-            });
-        }
-        
+
         // --- Onboarding ---
-        if (!localStorage.getItem('viptrack_onboarded')) {
+        if (!localStorage.getItem('viptrack_onboarded') && !HAS_SHARED_CONTEXT) {
             const overlay = document.getElementById('onboardOverlay');
             if (overlay) {
-                setTimeout(() => overlay.classList.add('show'), 1500);
+                setTimeout(() => overlay.classList.add('show'), EMBED_MODE ? 850 : 1500);
                 document.getElementById('onboardDismiss')?.addEventListener('click', () => {
                     overlay.classList.remove('show');
                     localStorage.setItem('viptrack_onboarded', '1');
+                    if (EMBED_MODE) setTimeout(() => refreshViptrackLayout(), 120);
                 });
             }
         }
@@ -8826,10 +9157,15 @@ if ('serviceWorker' in navigator) {
                     setTimeout(() => loadingOverlay.classList.add('hidden'), 800);
                     setTimeout(() => { loadingOverlay.style.display = 'none'; }, 1300);
                     clearInterval(checkLoaded);
+                    if (EMBED_MODE) setTimeout(() => refreshViptrackLayout(), 160);
                 }
             }, 500);
             // Force hide after 15s
-            setTimeout(() => { loadingOverlay.classList.add('hidden'); setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500); }, 15000);
+            setTimeout(() => {
+                loadingOverlay.classList.add('hidden');
+                setTimeout(() => { loadingOverlay.style.display = 'none'; }, 500);
+                if (EMBED_MODE) refreshViptrackLayout();
+            }, 15000);
         }
         
         // --- Info Panel QuickGlance ---

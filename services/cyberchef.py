@@ -17,6 +17,7 @@ CYBERCHEF_RELEASE_API = 'https://api.github.com/repos/gchq/CyberChef/releases/la
 
 _server_thread = None
 _httpd = None
+_cyberchef_lock = threading.Lock()
 
 
 def get_install_dir():
@@ -93,32 +94,33 @@ def start():
     if not is_installed():
         raise RuntimeError('CyberChef is not installed')
 
-    if running():
-        return
+    with _cyberchef_lock:
+        if running():
+            return
 
-    # Clean up any stale server instance before starting fresh
-    if _httpd is not None:
+        # Clean up any stale server instance before starting fresh
+        if _httpd is not None:
+            try:
+                _httpd.shutdown()
+            except Exception:
+                pass
+            _httpd = None
+
+        install_dir = get_install_dir()
+
+        class QuietHandler(http.server.SimpleHTTPRequestHandler):
+            def __init__(self, *args, **kwargs):
+                super().__init__(*args, directory=install_dir, **kwargs)
+            def log_message(self, format, *args):
+                pass  # Suppress request logs
+
         try:
-            _httpd.shutdown()
-        except Exception:
-            pass
-        _httpd = None
-
-    install_dir = get_install_dir()
-
-    class QuietHandler(http.server.SimpleHTTPRequestHandler):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, directory=install_dir, **kwargs)
-        def log_message(self, format, *args):
-            pass  # Suppress request logs
-
-    try:
-        _httpd = http.server.HTTPServer(('0.0.0.0', CYBERCHEF_PORT), QuietHandler)
-    except OSError as e:
-        _httpd = None
-        raise RuntimeError(f'CyberChef port {CYBERCHEF_PORT} already in use: {e}')
-    _server_thread = threading.Thread(target=_httpd.serve_forever, daemon=True)
-    _server_thread.start()
+            _httpd = http.server.HTTPServer(('127.0.0.1', CYBERCHEF_PORT), QuietHandler)
+        except OSError as e:
+            _httpd = None
+            raise RuntimeError(f'CyberChef port {CYBERCHEF_PORT} already in use: {e}')
+        _server_thread = threading.Thread(target=_httpd.serve_forever, daemon=True)
+        _server_thread.start()
 
     db = get_db()
     try:
@@ -132,10 +134,11 @@ def start():
 
 def stop():
     global _httpd, _server_thread
-    if _httpd:
-        _httpd.shutdown()
-        _httpd = None
-    _server_thread = None
+    with _cyberchef_lock:
+        if _httpd:
+            _httpd.shutdown()
+            _httpd = None
+        _server_thread = None
 
     db = get_db()
     try:

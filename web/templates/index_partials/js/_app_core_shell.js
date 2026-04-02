@@ -1041,7 +1041,7 @@ function renderMarkdown(text) {
   // Links
   h = h.replace(/\[(.+?)\]\((.+?)\)/g, (m, text, url) => {
     if (/^javascript:/i.test(url.trim()) || /^data:/i.test(url.trim()) || /^vbscript:/i.test(url.trim())) return text;
-    return `<a href="${url}">${text}</a>`;
+    return `<a href="${escapeAttr(url)}">${text}</a>`;
   });
   // Paragraphs
   h = h.replace(/\n\n/g, '</p><p>');

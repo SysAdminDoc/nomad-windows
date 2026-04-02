@@ -7,28 +7,110 @@
     <style>
       /* NOMAD Theme Override */
       #tab-nukemap {
-        --base: #0a0a0c; --mantle: #0e1014; --crust: #0a0a0c;
-        --surface0: #12171c; --surface1: #1a2028; --surface2: #232c35;
-        --overlay0: #6c7a8a; --overlay1: #8a95a5;
-        --text: #c8ccd0; --subtext0: #a0a8b0; --subtext1: #b8bfc8;
-        --green: #4aedc4; --teal: #4aedc4; --blue: #4aedc4;
-        --red: #f38ba8; --maroon: #eba0ac; --peach: #fab387; --yellow: #f9e2af;
-        --lavender: #b4befe; --mauve: #cba6f7; --pink: #f5c2e7; --flamingo: #f2cdcd; --rosewater: #f5e0dc;
-        --sky: #89dceb;
-        --glass: rgba(10,10,12,0.92); --glass-border: rgba(35,44,53,0.6); --glass-hover: rgba(18,23,28,0.95);
-        --panel-w: 360px; --radius: 10px; --radius-sm: 6px;
-        --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+        --nk-app-bg: var(--bg, #0c1016);
+        --nk-app-surface: var(--surface, rgba(24,29,36,0.86));
+        --nk-app-surface-solid: var(--surface-solid, #151a22);
+        --nk-app-surface2: var(--surface2, #1d2430);
+        --nk-app-surface3: var(--surface3, #222d3a);
+        --nk-app-surface-panel: var(--surface-panel, rgba(14,18,24,0.94));
+        --nk-app-border: var(--border, rgba(255,255,255,0.08));
+        --nk-app-text: var(--text, #edf2f7);
+        --nk-app-text-dim: var(--text-dim, #9e9eb8);
+        --nk-app-text-muted: var(--text-muted, #8e9aae);
+        --nk-app-accent: var(--accent, #71a8ff);
+        --nk-app-green: var(--green, #49b090);
+        --nk-app-red: var(--red, #d96a64);
+        --nk-app-orange: var(--orange, #f09a4a);
+        --nk-app-yellow: var(--yellow, #ddc160);
+        --nk-app-purple: var(--purple, #8b78f2);
+        --nk-app-shadow: var(--shadow, 0 20px 48px rgba(0,0,0,0.42));
+        --nk-app-shadow-lg: var(--shadow-lg, 0 36px 90px rgba(0,0,0,0.55));
+        --panel-w: clamp(320px, 24vw, 390px);
+        --radius: 18px;
+        --radius-sm: 10px;
 
         position: relative;
         width: 100%;
-        min-height: calc(100vh - 20px);
-        height: calc(100vh - 20px);
-        overflow: hidden;
-        font-family: 'Cascadia Code', 'Consolas', monospace;
+        min-height: 0;
+        height: auto;
+        overflow: visible;
+        padding: clamp(6px, 0.8vw, 12px) 0 calc(var(--app-bottom-clearance, 0px) + 16px);
+        font-family: inherit;
+        color: var(--nk-app-text);
       }
+
+      #tab-nukemap .nukemap-shell{display:grid;gap:12px}
+      #tab-nukemap .nukemap-framebar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-inline:2px}
+      #tab-nukemap .nukemap-framebar-copy{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+      #tab-nukemap .nukemap-kicker{font-size:10px;font-weight:800;letter-spacing:0.18em;text-transform:uppercase;color:var(--nk-app-text-muted)}
+      #tab-nukemap .nukemap-framebar-title{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;min-width:0}
+      #tab-nukemap .nukemap-framebar-title h2{font-size:20px;font-weight:800;letter-spacing:-0.03em;color:var(--nk-app-text)}
+      #tab-nukemap .nukemap-framebar-title span{font-size:12px;font-weight:600;color:var(--nk-app-text-dim);white-space:nowrap}
+      #tab-nukemap .nukemap-theme-chip{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:999px;background:color-mix(in srgb,var(--nk-app-surface-panel) 92%,transparent);border:1px solid color-mix(in srgb,var(--nk-app-border) 82%,var(--nk-app-accent) 18%);box-shadow:var(--nk-app-shadow)}
+      #tab-nukemap .nukemap-theme-dot{width:10px;height:10px;border-radius:50%;background:var(--nk-app-accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--nk-app-accent) 22%,transparent)}
+      #tab-nukemap .nukemap-theme-label{font-size:11px;font-weight:700;color:var(--nk-app-text)}
+
+      #tab-nukemap #nukemap-stage{
+        --base: color-mix(in srgb,var(--nk-app-bg) 24%,#06080b);
+        --mantle: color-mix(in srgb,var(--nk-app-surface-panel) 72%,#090c11);
+        --crust: color-mix(in srgb,var(--nk-app-bg) 40%,#020304);
+        --surface0: color-mix(in srgb,var(--nk-app-surface-solid) 52%,#11161d);
+        --surface1: color-mix(in srgb,var(--nk-app-surface2) 56%,#18202a);
+        --surface2: color-mix(in srgb,var(--nk-app-surface3) 54%,#223042);
+        --overlay0: var(--nk-app-text-muted);
+        --overlay1: color-mix(in srgb,var(--nk-app-text-muted) 60%,var(--nk-app-text) 40%);
+        --text: var(--nk-app-text);
+        --subtext0: var(--nk-app-text-dim);
+        --subtext1: color-mix(in srgb,var(--nk-app-text) 82%,var(--nk-app-text-dim) 18%);
+        --green: var(--nk-app-green);
+        --teal: color-mix(in srgb,var(--nk-app-green) 72%,var(--nk-app-accent) 28%);
+        --blue: var(--nk-app-accent);
+        --red: var(--nk-app-red);
+        --maroon: color-mix(in srgb,var(--nk-app-red) 76%,var(--nk-app-orange) 24%);
+        --peach: var(--nk-app-orange);
+        --yellow: var(--nk-app-yellow);
+        --lavender: color-mix(in srgb,var(--nk-app-purple) 78%,#f2f6ff 22%);
+        --mauve: var(--nk-app-purple);
+        --pink: color-mix(in srgb,var(--nk-app-red) 54%,#fff1f5 46%);
+        --flamingo: color-mix(in srgb,var(--nk-app-red) 72%,var(--nk-app-orange) 28%);
+        --rosewater: color-mix(in srgb,var(--nk-app-orange) 38%,#ffffff 62%);
+        --sky: color-mix(in srgb,var(--nk-app-accent) 72%,#c7ebff 28%);
+        --glass: color-mix(in srgb,var(--mantle) 88%,transparent);
+        --glass-border: color-mix(in srgb,var(--nk-app-border) 82%,var(--nk-app-accent) 18%);
+        --glass-hover: color-mix(in srgb,var(--surface1) 90%,var(--nk-app-accent) 10%);
+        --shadow-lg: var(--nk-app-shadow-lg);
+        --stage-edge-gap: clamp(16px, 1.1vw, 24px);
+        --map-safe-left: calc(var(--panel-w) + var(--stage-edge-gap));
+        --map-safe-right: var(--stage-edge-gap);
+        --map-safe-width: calc(100% - var(--map-safe-left) - var(--map-safe-right));
+        --map-safe-center: calc(var(--map-safe-left) + (var(--map-safe-width) / 2));
+
+        position: relative;
+        width: calc(100% + (var(--page-inner-gutter, 18px) * 2));
+        height: min(1180px, max(680px, calc(100vh - 176px)));
+        min-height: 680px;
+        margin-inline: calc(var(--page-inner-gutter, 18px) * -1);
+        overflow: hidden;
+        border-radius: clamp(18px, 2vw, 28px);
+        border:1px solid color-mix(in srgb,var(--glass-border) 78%,var(--nk-app-accent) 22%);
+        background:
+          radial-gradient(circle at top right,color-mix(in srgb,var(--nk-app-accent) 12%,transparent),transparent 34%),
+          linear-gradient(180deg,color-mix(in srgb,var(--mantle) 92%,transparent),color-mix(in srgb,var(--base) 96%,transparent));
+        box-shadow:var(--nk-app-shadow-lg);
+        isolation:isolate;
+      }
+      #tab-nukemap #nukemap-stage.panel-collapsed{
+        --map-safe-left: calc(48px + var(--stage-edge-gap));
+      }
+      #tab-nukemap #nukemap-stage:fullscreen,
+      #tab-nukemap #nukemap-stage:-webkit-full-screen{width:100%;height:100vh;min-height:100vh;margin-inline:0;border-radius:0}
 
       /* Universal reset scoped */
       #tab-nukemap, #tab-nukemap *,#tab-nukemap *::before,#tab-nukemap *::after{margin:0;padding:0;box-sizing:border-box}
+      #tab-nukemap :where(button,input,select,textarea,a,.leaflet-control-zoom a):focus-visible{outline:2px solid var(--sky);outline-offset:2px}
+      @media (prefers-reduced-motion: reduce){
+        #tab-nukemap *,#tab-nukemap *::before,#tab-nukemap *::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}
+      }
 
       /* Map */
       #tab-nukemap #map{position:absolute;inset:0;z-index:1}
@@ -257,7 +339,7 @@
       #tab-nukemap .mirv-status{font-size:10px;color:var(--overlay0);margin-bottom:6px;padding:4px 0}
 
       /* Info bar */
-      #tab-nukemap #info-bar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);z-index:1000;background:var(--glass);backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--glass-border);border-radius:var(--radius);padding:8px 16px;display:none;box-shadow:var(--shadow-lg);max-width:calc(100vw - var(--panel-w) - 30px)}
+      #tab-nukemap #info-bar{position:absolute;bottom:14px;left:var(--map-safe-center);transform:translateX(-50%);z-index:1000;background:var(--glass);backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--glass-border);border-radius:var(--radius);padding:8px 16px;display:none;box-shadow:var(--shadow-lg);max-width:var(--map-safe-width)}
       #tab-nukemap #info-bar.active{display:flex;align-items:center;gap:14px}
       #tab-nukemap .ib-stat{text-align:center}
       #tab-nukemap .ib-val{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
@@ -278,13 +360,13 @@
       #tab-nukemap .ob-dot.off{background:var(--red)}
 
       /* Detonation counter */
-      #tab-nukemap #det-counter{position:absolute;top:12px;left:var(--panel-w);margin-left:14px;z-index:999;padding:4px 12px;border-radius:20px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);font-size:11px;color:var(--text);font-weight:700;display:none}
+      #tab-nukemap #det-counter{position:absolute;top:12px;left:var(--map-safe-left);z-index:999;padding:4px 12px;border-radius:20px;background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);font-size:11px;color:var(--text);font-weight:700;display:none}
       #tab-nukemap #det-counter-num{color:var(--red);font-size:14px;font-weight:900;margin-right:4px;font-variant-numeric:tabular-nums}
       #tab-nukemap .dc-label{color:var(--overlay0);font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
 
       /* Flash */
       @keyframes nuke-flash{0%{opacity:0}3%{opacity:1}10%{opacity:0.7}20%{opacity:0.3}100%{opacity:0}}
-      #tab-nukemap #flash{position:fixed;inset:0;z-index:9999;background:white;pointer-events:none;opacity:0}
+      #tab-nukemap #flash{position:absolute;inset:0;z-index:9999;background:white;pointer-events:none;opacity:0}
       #tab-nukemap #flash.active{animation:nuke-flash 2s ease-out forwards}
 
       /* GZ marker */
@@ -309,15 +391,15 @@
 
       /* Ring labels on map */
       #tab-nukemap .ring-label{background:none!important;border:none!important}
-      #tab-nukemap .rl-tag{display:inline-block;padding:2px 7px;border-radius:4px;background:rgba(17,17,27,0.85);border:1px solid;font-size:9px;font-weight:700;white-space:nowrap;backdrop-filter:blur(4px)}
+      #tab-nukemap .rl-tag{display:inline-block;padding:2px 7px;border-radius:4px;background:color-mix(in srgb,var(--glass) 92%,transparent);border:1px solid;font-size:9px;font-weight:700;white-space:nowrap;backdrop-filter:blur(4px)}
       #tab-nukemap .rl-dist{margin-left:4px;opacity:0.6;font-weight:500}
 
       /* Distance indicator */
-      #tab-nukemap .dist-indicator{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1001;padding:5px 14px;border-radius:20px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:11px;font-weight:700;color:var(--peach);display:none;font-variant-numeric:tabular-nums;box-shadow:var(--shadow-lg)}
+      #tab-nukemap .dist-indicator{position:absolute;top:12px;left:var(--map-safe-center);transform:translateX(-50%);z-index:1001;padding:5px 14px;border-radius:20px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:11px;font-weight:700;color:var(--peach);display:none;font-variant-numeric:tabular-nums;box-shadow:var(--shadow-lg)}
 
       /* Distance reference rings */
       #tab-nukemap .dist-ring-label{background:none!important;border:none!important}
-      #tab-nukemap .dist-ring-label span{font-size:8px;color:var(--overlay0);background:rgba(17,17,27,0.7);padding:1px 4px;border-radius:3px;font-weight:600}
+      #tab-nukemap .dist-ring-label span{font-size:8px;color:var(--overlay0);background:color-mix(in srgb,var(--glass) 88%,transparent);padding:1px 4px;border-radius:3px;font-weight:600}
 
       /* Layer switcher */
       #tab-nukemap .layer-switcher{display:flex;gap:3px;flex-wrap:wrap}
@@ -348,7 +430,7 @@
       #tab-nukemap .psi-eff{color:var(--overlay1);font-size:9px}
 
       /* Screenshot mode hint */
-      #tab-nukemap #screenshot-hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:10000;padding:8px 20px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:12px;color:var(--overlay1);display:none;cursor:pointer}
+      #tab-nukemap #screenshot-hint{position:absolute;bottom:20px;left:var(--map-safe-center);transform:translateX(-50%);z-index:10000;padding:8px 20px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:12px;color:var(--overlay1);display:none;cursor:pointer;max-width:var(--map-safe-width)}
 
       /* Experience report */
       #tab-nukemap .exp-report{min-width:260px}
@@ -410,7 +492,7 @@
       #tab-nukemap .scenario-chip .sc-desc{font-size:9px;color:var(--overlay0);margin-top:1px}
 
       /* Fact banner */
-      #tab-nukemap #fact-banner{position:absolute;top:50px;left:var(--panel-w);margin-left:14px;z-index:998;max-width:380px;padding:6px 14px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-border);font-size:10px;color:var(--subtext0);display:none;text-align:left;line-height:1.4;box-shadow:var(--shadow-lg);cursor:pointer}
+      #tab-nukemap #fact-banner{position:absolute;top:50px;left:var(--map-safe-left);z-index:998;max-width:min(380px, calc(var(--map-safe-width) - 16px));padding:6px 14px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-border);font-size:10px;color:var(--subtext0);display:none;text-align:left;line-height:1.4;box-shadow:var(--shadow-lg);cursor:pointer}
       #tab-nukemap #fact-banner.show{display:block;animation:factFade 0.5s ease-out}
       @keyframes factFade{0%{opacity:0;transform:translateX(10px)}100%{opacity:1;transform:translateX(0)}}
       #tab-nukemap .fact-label{font-size:9px;font-weight:700;color:var(--overlay0);text-transform:uppercase;letter-spacing:1px;margin-bottom:2px}
@@ -504,7 +586,7 @@
 
       /* Fallout contour labels */
       #tab-nukemap .fallout-contour-label{background:none!important;border:none!important}
-      #tab-nukemap .fallout-contour-label span{font-size:8px;font-weight:700;background:rgba(17,17,27,0.8);padding:1px 4px;border-radius:3px}
+      #tab-nukemap .fallout-contour-label span{font-size:8px;font-weight:700;background:color-mix(in srgb,var(--glass) 90%,transparent);padding:1px 4px;border-radius:3px}
 
       /* Test tooltip */
       #tab-nukemap .test-tooltip{background:var(--surface0)!important;color:var(--text)!important;border:1px solid var(--surface1)!important;border-radius:6px!important;font-size:11px!important;box-shadow:var(--shadow-lg)!important;padding:6px 10px!important}
@@ -516,7 +598,7 @@
       #tab-nukemap .ww3-arc{pointer-events:none}
 
       /* WW3 HUD overlay on map */
-      #tab-nukemap #ww3-hud{position:fixed;top:12px;left:50%;transform:translateX(-50%);z-index:1001;display:none;align-items:center;gap:0;padding:6px 14px;border-radius:var(--radius);background:rgba(17,17,27,0.92);backdrop-filter:blur(20px);border:1px solid rgba(243,139,168,0.3);box-shadow:0 8px 32px rgba(0,0,0,0.6),0 0 60px rgba(243,139,168,0.08);font-family:'Segoe UI',system-ui,sans-serif}
+      #tab-nukemap #ww3-hud{position:absolute;top:12px;left:var(--map-safe-center);transform:translateX(-50%);z-index:1001;display:none;align-items:center;gap:0;padding:6px 14px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(20px);border:1px solid color-mix(in srgb,var(--glass-border) 74%,var(--red) 26%);box-shadow:0 8px 32px rgba(0,0,0,0.6),0 0 60px color-mix(in srgb,var(--red) 14%,transparent);font-family:'Segoe UI',system-ui,sans-serif;max-width:var(--map-safe-width)}
       #tab-nukemap .ww3-hud-item{text-align:center;padding:0 10px}
       #tab-nukemap .ww3-hud-val{display:block;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.2}
       #tab-nukemap .ww3-hud-lbl{font-size:7px;color:rgba(166,173,200,0.6);text-transform:uppercase;letter-spacing:1px;font-weight:600}
@@ -534,18 +616,18 @@
       #tab-nukemap .ww3-warhead{filter:drop-shadow(0 0 4px rgba(255,255,255,0.6))}
 
       /* DEFCON indicator */
-      #tab-nukemap #ww3-defcon{position:fixed;top:56px;right:14px;z-index:1002;display:none;padding:6px 16px;border-radius:6px;background:rgba(17,17,27,0.95);border:2px solid currentColor;font-size:18px;font-weight:900;letter-spacing:3px;font-family:'Segoe UI',system-ui,monospace;text-shadow:0 0 10px currentColor;box-shadow:0 0 20px rgba(0,0,0,0.5)}
+      #tab-nukemap #ww3-defcon{position:absolute;top:56px;right:14px;z-index:1002;display:none;padding:6px 16px;border-radius:6px;background:var(--glass);border:2px solid currentColor;font-size:18px;font-weight:900;letter-spacing:3px;font-family:'Segoe UI',system-ui,monospace;text-shadow:0 0 10px currentColor;box-shadow:0 0 20px rgba(0,0,0,0.5)}
       #tab-nukemap .ww3-defcon-flash{animation:defcon-flash 0.8s ease-out}
       @keyframes defcon-flash{0%{transform:scale(1.3);opacity:0.5}50%{transform:scale(1);opacity:1}100%{transform:scale(1);opacity:1}}
 
       /* Impact toasts */
-      #tab-nukemap #ww3-toasts{position:fixed;bottom:60px;left:50%;transform:translateX(-50%);z-index:1002;display:flex;flex-direction:column-reverse;align-items:center;gap:4px;pointer-events:none}
+      #tab-nukemap #ww3-toasts{position:absolute;bottom:60px;left:var(--map-safe-center);transform:translateX(-50%);z-index:1002;display:flex;flex-direction:column-reverse;align-items:center;gap:4px;pointer-events:none;max-width:var(--map-safe-width)}
       #tab-nukemap .ww3-toast{padding:4px 16px;border-radius:4px;background:rgba(243,139,168,0.9);color:#11111b;font-size:11px;font-weight:900;letter-spacing:2px;white-space:nowrap;animation:toast-in 0.3s ease-out,toast-out 0.5s ease-in 2.5s forwards;text-shadow:0 1px 0 rgba(0,0,0,0.2)}
       @keyframes toast-in{0%{opacity:0;transform:translateY(10px) scale(0.9)}100%{opacity:1;transform:translateY(0) scale(1)}}
       @keyframes toast-out{0%{opacity:1}100%{opacity:0;transform:translateY(-10px)}}
 
       /* WW3 Map Legend */
-      #tab-nukemap #ww3-legend{position:fixed;bottom:50px;right:14px;z-index:1001;display:none;padding:8px 12px;border-radius:var(--radius-sm);background:rgba(17,17,27,0.92);backdrop-filter:blur(16px);border:1px solid rgba(69,71,90,0.5);font-size:9px;color:var(--subtext0);box-shadow:var(--shadow-lg)}
+      #tab-nukemap #ww3-legend{position:absolute;bottom:50px;right:14px;z-index:1001;display:none;padding:8px 12px;border-radius:var(--radius-sm);background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-border);font-size:9px;color:var(--subtext0);box-shadow:var(--shadow-lg)}
       #tab-nukemap .ww3-leg-title{font-size:8px;font-weight:700;color:var(--overlay0);text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
       #tab-nukemap .ww3-leg-row{display:flex;align-items:center;gap:6px;padding:1px 0;font-weight:500}
       #tab-nukemap .ww3-leg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -562,7 +644,7 @@
       #tab-nukemap .leaflet-control-scale-line{background:var(--glass)!important;backdrop-filter:blur(8px);border-color:var(--surface1)!important;color:var(--overlay1)!important;font-size:10px!important;line-height:1.4!important;padding:1px 6px!important;border-radius:3px!important}
 
       /* Detonation toast */
-      #tab-nukemap .det-toast{position:fixed;top:12px;right:130px;transform:translateY(-20px);z-index:1003;padding:8px 18px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(20px);border:1px solid rgba(243,139,168,0.3);box-shadow:0 8px 32px rgba(0,0,0,0.5);font-size:12px;color:var(--text);white-space:nowrap;opacity:0;transition:opacity 0.4s cubic-bezier(.4,0,.2,1),transform 0.4s cubic-bezier(.4,0,.2,1);pointer-events:none}
+      #tab-nukemap .det-toast{position:absolute;top:12px;right:130px;transform:translateY(-20px);z-index:1003;padding:8px 18px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(20px);border:1px solid color-mix(in srgb,var(--glass-border) 74%,var(--red) 26%);box-shadow:0 8px 32px rgba(0,0,0,0.5);font-size:12px;color:var(--text);white-space:nowrap;opacity:0;transition:opacity 0.4s cubic-bezier(.4,0,.2,1),transform 0.4s cubic-bezier(.4,0,.2,1);pointer-events:none}
       #tab-nukemap .det-toast.show{opacity:1;transform:translateY(0)}
       #tab-nukemap .dt-yield{font-weight:800;color:var(--peach);font-size:14px}
       #tab-nukemap .dt-loc{color:var(--subtext1);margin-left:6px}
@@ -577,7 +659,7 @@
       #tab-nukemap .ms-toggle{width:32px;height:32px;border-radius:var(--radius-sm);background:var(--glass);backdrop-filter:blur(10px);border:1px solid var(--glass-border);color:var(--overlay1);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background-color .2s,color .2s,border-color .2s;padding:0}
       #tab-nukemap .ms-toggle:hover{background:var(--glass-hover);color:var(--text)}
       #tab-nukemap .ms-toggle.open{background:var(--surface1);color:var(--text);border-color:var(--blue)}
-      #tab-nukemap .ms-panel{display:none;position:absolute;top:38px;right:0;min-width:130px;background:rgba(30,30,46,0.95);backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--glass-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);padding:5px;flex-direction:column;gap:2px;animation:msPanelIn .2s ease-out;z-index:1000}
+      #tab-nukemap .ms-panel{display:none;position:absolute;top:38px;right:0;min-width:130px;background:color-mix(in srgb,var(--glass) 94%,transparent);backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--glass-border);border-radius:var(--radius-sm);box-shadow:var(--shadow-lg);padding:5px;flex-direction:column;gap:2px;animation:msPanelIn .2s ease-out;z-index:1000}
       #tab-nukemap .ms-panel.open{display:flex}
       @keyframes msPanelIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
       #tab-nukemap .ms-btn{padding:6px 10px;border-radius:5px;background:transparent;border:1px solid transparent;color:var(--subtext0);font-size:10px;font-weight:600;cursor:pointer;text-align:left;transition:background-color .12s,color .12s,border-color .12s;white-space:nowrap}
@@ -613,7 +695,7 @@
       #tab-nukemap #ww3-quick-btn:hover{transform:translateY(-2px);box-shadow:0 6px 24px rgba(243,139,168,0.4)}
 
       /* Quick weapon bar */
-      #tab-nukemap #quick-weapons{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);z-index:999;display:flex;gap:3px;padding:4px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--glass-border);box-shadow:var(--shadow-lg);max-width:calc(100vw - var(--panel-w) - 30px)}
+      #tab-nukemap #quick-weapons{position:absolute;bottom:60px;left:var(--map-safe-center);transform:translateX(-50%);z-index:999;display:flex;gap:3px;padding:4px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--glass-border);box-shadow:var(--shadow-lg);max-width:var(--map-safe-width)}
       #tab-nukemap .qw-chip{padding:4px 10px;border-radius:6px;background:transparent;border:1px solid var(--surface1);color:var(--subtext0);font-size:9px;cursor:pointer;transition:background-color .15s,color .15s,border-color .15s;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.2}
       #tab-nukemap .qw-chip:hover{background:var(--surface0);color:var(--text);border-color:var(--surface2)}
       #tab-nukemap .qw-chip.qw-active{background:var(--surface1);color:var(--peach);border-color:var(--peach)}
@@ -634,23 +716,22 @@
       #tab-nukemap .legend-pop{font-size:7px;color:var(--overlay0);display:block;font-weight:400}
 
       /* Welcome overlay */
-      #tab-nukemap #welcome-overlay{position:fixed;inset:0;z-index:10001;background:rgba(17,17,27,0.85);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:center;animation:welcomeFade .5s ease}
+      #tab-nukemap #welcome-overlay{position:absolute;top:18px;right:18px;left:auto;bottom:auto;z-index:10001;width:min(390px, calc(var(--map-safe-width) - 18px));display:block;pointer-events:none}
       #tab-nukemap #welcome-overlay.hidden{display:none}
-      @keyframes welcomeFade{from{opacity:0}to{opacity:1}}
-      #tab-nukemap .welcome-card{max-width:420px;width:90%;background:var(--mantle);border:1px solid var(--surface1);border-radius:var(--radius);padding:28px 24px 20px;box-shadow:0 24px 64px rgba(0,0,0,0.6);animation:welcomeSlide .4s ease-out}
-      @keyframes welcomeSlide{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
-      #tab-nukemap .welcome-header{display:flex;align-items:center;gap:12px;margin-bottom:18px}
-      #tab-nukemap .welcome-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--red),var(--peach));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(243,139,168,0.3)}
+      #tab-nukemap .welcome-card{width:100%;margin-left:auto;background:color-mix(in srgb,var(--glass) 96%,transparent);border:1px solid color-mix(in srgb,var(--glass-border) 76%,var(--nk-app-accent) 24%);border-radius:calc(var(--radius) + 2px);padding:18px 18px 14px;box-shadow:0 24px 64px rgba(0,0,0,0.4);pointer-events:auto;animation:welcomeSlide .3s ease-out}
+      @keyframes welcomeSlide{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+      #tab-nukemap .welcome-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+      #tab-nukemap .welcome-icon{width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,var(--red),var(--peach));display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(243,139,168,0.25)}
       #tab-nukemap .welcome-icon svg{width:22px;height:22px;color:var(--crust)}
-      #tab-nukemap .welcome-title{font-size:24px;font-weight:800;letter-spacing:-0.5px}
+      #tab-nukemap .welcome-title{font-size:22px;font-weight:800;letter-spacing:-0.5px}
       #tab-nukemap .welcome-title span{color:var(--red)}
-      #tab-nukemap .welcome-body{margin-bottom:18px}
-      #tab-nukemap .welcome-step{display:flex;align-items:center;gap:10px;padding:6px 0}
+      #tab-nukemap .welcome-body{margin-bottom:14px}
+      #tab-nukemap .welcome-step{display:flex;align-items:center;gap:10px;padding:4px 0}
       #tab-nukemap .ws-num{width:22px;height:22px;border-radius:50%;background:var(--surface0);color:var(--peach);font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0}
       #tab-nukemap .ws-text{font-size:12px;color:var(--subtext1);line-height:1.4}
-      #tab-nukemap .welcome-features{display:flex;flex-wrap:wrap;gap:4px;margin-top:12px}
+      #tab-nukemap .welcome-features{display:flex;flex-wrap:wrap;gap:4px;margin-top:10px}
       #tab-nukemap .wf-tag{padding:3px 9px;border-radius:20px;background:var(--surface0);border:1px solid var(--surface1);color:var(--overlay1);font-size:9px;font-weight:600}
-      #tab-nukemap .welcome-dismiss{width:100%;padding:12px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,var(--red),#e64553);color:var(--crust);font-size:14px;font-weight:800;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:transform .2s,box-shadow .2s,opacity .2s;box-shadow:0 4px 16px rgba(243,139,168,0.25)}
+      #tab-nukemap .welcome-dismiss{width:100%;padding:11px 12px;border-radius:var(--radius-sm);border:none;background:linear-gradient(135deg,var(--red),#e64553);color:var(--crust);font-size:13px;font-weight:800;cursor:pointer;letter-spacing:0.9px;text-transform:uppercase;transition:transform .2s,box-shadow .2s,opacity .2s;box-shadow:0 4px 16px rgba(243,139,168,0.25)}
       #tab-nukemap .welcome-dismiss:hover{transform:translateY(-1px);box-shadow:0 6px 24px rgba(243,139,168,0.35)}
       #tab-nukemap .welcome-remember{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:10px;color:var(--overlay0);cursor:pointer;justify-content:center}
       #tab-nukemap .welcome-remember input{accent-color:var(--blue)}
@@ -663,7 +744,7 @@
       #tab-nukemap .conv-desc{color:var(--overlay0);font-size:9px;margin-left:auto}
 
       /* Blast wave arrival indicator */
-      #tab-nukemap .blast-arrival-indicator{position:fixed;bottom:100px;left:50%;transform:translateX(-50%);z-index:1001;padding:5px 14px;border-radius:20px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:11px;font-weight:700;display:none;font-variant-numeric:tabular-nums;box-shadow:var(--shadow-lg);white-space:nowrap}
+      #tab-nukemap .blast-arrival-indicator{position:absolute;bottom:100px;left:var(--map-safe-center);transform:translateX(-50%);z-index:1001;padding:5px 14px;border-radius:20px;background:var(--glass);backdrop-filter:blur(12px);border:1px solid var(--glass-border);font-size:11px;font-weight:700;display:none;font-variant-numeric:tabular-nums;box-shadow:var(--shadow-lg);white-space:nowrap;max-width:var(--map-safe-width)}
       #tab-nukemap .ba-time{color:var(--peach);font-size:13px}
       #tab-nukemap .ba-psi{color:var(--overlay1);margin-left:6px}
       #tab-nukemap .ba-sev{font-weight:800;font-size:10px;margin-left:6px;letter-spacing:0.5px}
@@ -718,7 +799,7 @@
       #tab-nukemap .cloud-compare-svg{width:100%;height:auto;border:1px solid var(--surface1);border-radius:var(--radius-sm)}
 
       /* Test timeline year display */
-      #tab-nukemap .test-timeline-year{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:1002;padding:8px 20px;border-radius:var(--radius);background:rgba(17,17,27,0.92);backdrop-filter:blur(16px);border:1px solid var(--glass-border);font-size:13px;font-weight:700;color:var(--text);box-shadow:var(--shadow-lg);white-space:nowrap;letter-spacing:0.5px}
+      #tab-nukemap .test-timeline-year{position:absolute;bottom:80px;left:var(--map-safe-center);transform:translateX(-50%);z-index:1002;padding:8px 20px;border-radius:var(--radius);background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--glass-border);font-size:13px;font-weight:700;color:var(--text);box-shadow:var(--shadow-lg);white-space:nowrap;letter-spacing:0.5px;max-width:var(--map-safe-width)}
 
       /* Print styles */
       @media print{
@@ -733,7 +814,7 @@
       #tab-nukemap .gi-body{font-size:10px;color:var(--subtext0);line-height:1.5}
 
       /* Loading overlay */
-      #tab-nukemap #loading-overlay{position:fixed;inset:0;z-index:10000;background:var(--crust);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.5s ease}
+      #tab-nukemap #loading-overlay{position:absolute;inset:0;z-index:10000;background:var(--crust);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.5s ease}
       #tab-nukemap #loading-overlay.hidden{opacity:0;pointer-events:none}
       #tab-nukemap .loading-spinner{width:40px;height:40px;border:3px solid var(--surface1);border-top-color:var(--red);border-radius:50%;animation:spin 0.8s linear infinite}
       @keyframes spin{to{transform:rotate(360deg)}}
@@ -744,7 +825,12 @@
 
       /* Responsive */
       @media(max-width:768px){
-        #tab-nukemap{--panel-w:100vw}
+        #tab-nukemap{--panel-w:100%;padding-block:8px calc(var(--app-bottom-clearance,0px) + 12px)}
+        #tab-nukemap .nukemap-framebar{align-items:flex-start;flex-direction:column}
+        #tab-nukemap .nukemap-framebar-title h2{font-size:18px}
+        #tab-nukemap .nukemap-framebar-title span{white-space:normal}
+        #tab-nukemap #nukemap-stage{width:100%;height:max(620px,calc(100vh - 126px));min-height:620px;margin-inline:0;border-radius:18px}
+        #tab-nukemap #nukemap-stage{--map-safe-left:12px;--map-safe-right:12px;--map-safe-width:calc(100% - 24px);--map-safe-center:50%}
         #tab-nukemap #panel{height:50vh;top:auto;width:100%;border-right:none;border-top:1px solid var(--glass-border);border-radius:var(--radius) var(--radius) 0 0}
         #tab-nukemap #panel.collapsed{transform:translateY(calc(100% - 44px))}
         #tab-nukemap #panel-toggle{top:-38px;right:12px;left:auto;border-radius:var(--radius-sm) var(--radius-sm) 0 0;width:44px;height:34px;border-bottom:none}
@@ -752,6 +838,8 @@
         #tab-nukemap #info-bar{bottom:calc(50vh + 6px);left:50%;max-width:95vw;font-size:11px;padding:5px 10px}
         #tab-nukemap #info-bar .ib-val{font-size:12px}
         #tab-nukemap #fact-banner{top:8px;left:8px;margin-left:0;max-width:75vw;font-size:9px;padding:4px 10px}
+        #tab-nukemap #welcome-overlay{inset:0;width:auto;display:flex;align-items:center;justify-content:center;padding:14px;background:color-mix(in srgb,var(--crust) 68%,transparent);backdrop-filter:blur(8px);pointer-events:auto}
+        #tab-nukemap .welcome-card{max-width:360px;width:100%;margin:0;padding:20px 18px 16px}
         #tab-nukemap .panel-header{padding:10px 14px 8px}
         #tab-nukemap .brand-icon{width:28px;height:28px;border-radius:8px}
         #tab-nukemap .brand-text{font-size:17px}
@@ -783,7 +871,7 @@
         #tab-nukemap .blast-arrival-indicator{bottom:calc(50vh + 30px);font-size:10px}
         #tab-nukemap .det-toast{top:auto;bottom:calc(50vh + 10px);font-size:11px;padding:6px 14px}
         #tab-nukemap .dt-yield{font-size:12px}
-        #tab-nukemap #quick-weapons{bottom:calc(50vh + 32px);left:50%;max-width:95vw;gap:2px;padding:3px}
+        #tab-nukemap #quick-weapons{bottom:calc(50vh + 32px);left:50%;max-width:95%;gap:2px;padding:3px}
         #tab-nukemap .qw-chip{padding:3px 7px}
         #tab-nukemap .qw-name{font-size:8px}
         #tab-nukemap .qw-yield{font-size:7px}
@@ -801,9 +889,25 @@
     </style>
 
     <!-- NukeMap Body Content -->
-    <div id="map"></div>
-    <div id="loading-overlay"><div class="loading-spinner"></div><div class="loading-text">Loading NukeMap...</div></div>
-    <div id="welcome-overlay">
+    <div class="nukemap-shell">
+      <div class="nukemap-framebar">
+        <div class="nukemap-framebar-copy">
+          <span class="nukemap-kicker">Strategic Modeling</span>
+          <div class="nukemap-framebar-title">
+            <h2>Nukemap</h2>
+            <span>Full-width blast, fallout, and casualty simulation</span>
+          </div>
+        </div>
+        <div class="nukemap-theme-chip" id="nukemap-theme-chip">
+          <span class="nukemap-theme-dot" id="nukemap-theme-dot"></span>
+          <span class="nukemap-theme-label" id="nukemap-theme-label">Theme-aware canvas</span>
+        </div>
+      </div>
+
+      <div id="nukemap-stage">
+        <div id="map"></div>
+        <div id="loading-overlay" role="status" aria-live="polite" aria-atomic="true"><div class="loading-spinner"></div><div class="loading-text">Loading NukeMap…</div></div>
+        <div id="welcome-overlay">
       <div class="welcome-card">
         <div class="welcome-header">
           <div class="welcome-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg></div>
@@ -823,7 +927,7 @@
             <span class="wf-tag">12 Map Styles</span>
           </div>
         </div>
-        <button class="welcome-dismiss" id="welcome-dismiss">Start Exploring</button>
+        <button class="welcome-dismiss" id="welcome-dismiss" type="button">Start Exploring</button>
         <label class="welcome-remember"><input type="checkbox" id="welcome-noshow" name="welcome-noshow" checked/> Don't show again</label>
       </div>
     </div>
@@ -833,7 +937,7 @@
     <div id="det-counter" style="display:none"><span id="det-counter-num">0</span><span class="dc-label">strikes</span></div>
 
     <div id="panel">
-      <button id="panel-toggle" title="Toggle panel">
+      <button id="panel-toggle" type="button" title="Collapse control panel" aria-label="Collapse control panel" aria-controls="panel" aria-expanded="true">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1.5H2zm0 4.25h12v1.5H2zm0 4.25h12v1.5H2z"/></svg>
       </button>
       <div class="panel-content">
@@ -847,7 +951,7 @@
           </div>
           <div class="search-wrap">
             <span class="search-icon"><svg viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></span>
-            <input type="text" id="search" name="search" placeholder="City, ZIP code, base, or coordinates..." autocomplete="off" spellcheck="false"/>
+            <input type="text" id="search" name="search" aria-label="Search city, ZIP code, base, or coordinates" placeholder="City, ZIP code, base, or coordinates…" autocomplete="off" spellcheck="false"/>
             <div id="search-results"></div>
           </div>
         </div>
@@ -870,7 +974,7 @@
           <div class="nk-tab-pane active" id="nk-pane-weapon">
             <div class="section">
               <div class="section-title">Warhead</div>
-              <input type="text" id="weapon-filter" name="weapon-filter" class="weapon-filter" placeholder="Filter weapons..." autocomplete="off" spellcheck="false"/>
+              <input type="text" id="weapon-filter" name="weapon-filter" class="weapon-filter" placeholder="Filter warheads…" autocomplete="off" spellcheck="false"/>
               <div class="select-wrap">
                 <select class="custom-select" id="weapon-select" name="weapon-select"></select>
                 <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
@@ -1052,7 +1156,7 @@
               <div class="section-title">Save / Load Scenario</div>
               <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Save current detonations to browser storage for later.</div>
               <div class="save-row">
-                <input type="text" id="save-name" name="save-name" class="compact-input" placeholder="Scenario name..." style="flex:1;max-width:none;text-align:left"/>
+                <input type="text" id="save-name" name="save-name" class="compact-input" placeholder="Scenario name…" style="flex:1;max-width:none;text-align:left"/>
                 <button class="btn-secondary" id="save-btn" style="flex:0;white-space:nowrap">Save</button>
               </div>
               <div id="saved-list" style="margin-top:6px"></div>
@@ -1106,7 +1210,7 @@
               <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Full-scale nuclear exchange with animated missile arcs, phased escalation, and live casualty tracking.</div>
               <div class="select-wrap">
                 <select class="custom-select" id="ww3-scenario" name="ww3-scenario">
-                  <option value="">Select scenario...</option>
+            <option value="">Select scenario…</option>
                 </select>
                 <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
               </div>
@@ -1331,8 +1435,10 @@
         <button class="ms-btn" data-layer="positron">Light</button>
       </div>
     </div>
-    <div id="screenshot-hint">Click here or press Escape to exit screenshot mode</div>
-    <div id="fact-banner"><div class="fact-label">Did You Know?</div><span id="fact-text"></span></div>
+        <div id="screenshot-hint">Click here or press Escape to exit screenshot mode</div>
+        <div id="fact-banner"><div class="fact-label">Did You Know?</div><span id="fact-text"></span></div>
+      </div>
+    </div>
 
     <!-- Leaflet JS -->
     <script src="/nukemap/lib/leaflet.js"></script>
@@ -1360,10 +1466,21 @@
     <script>
     (function() {
       var container = document.getElementById('tab-nukemap');
-      if (!container) return;
+      var stage = document.getElementById('nukemap-stage');
+      if (!container || !stage || container.dataset.nukemapShellBound === '1') return;
+      container.dataset.nukemapShellBound = '1';
 
-      // Override the switchTab that app.js defined
-      var origSwitchTab = window.switchTab || function(){};
+      var panel = document.getElementById('panel');
+      var themeLabel = document.getElementById('nukemap-theme-label');
+      var themeNames = {
+        nomad: 'Atlas (Light)',
+        nightops: 'Midnight (Dark)',
+        cyber: 'Cobalt (Blue Steel)',
+        redlight: 'Ember (Warm Dark)',
+        eink: 'Paper (E-Ink)'
+      };
+      var themeSyncRetries = 0;
+
       window.switchTab = function(id) {
         container.querySelectorAll('.nk-tab').forEach(function(t) {
           t.classList.toggle('active', t.dataset.nktab === id);
@@ -1373,12 +1490,81 @@
         });
       };
 
-      // Re-bind click handlers on the renamed tab buttons
       container.querySelectorAll('.nk-tab').forEach(function(t) {
         t.addEventListener('click', function() {
           window.switchTab(t.dataset.nktab);
         });
       });
+
+      function syncPanelState() {
+        stage.classList.toggle('panel-collapsed', !!(panel && panel.classList.contains('collapsed')));
+      }
+
+      function refreshMapLayout() {
+        syncPanelState();
+        if (!(window.NM && NM._map && typeof NM._map.invalidateSize === 'function')) return;
+        requestAnimationFrame(function() {
+          try { NM._map.invalidateSize(true); } catch (e) {}
+          setTimeout(function() {
+            try { NM._map.invalidateSize(true); } catch (e) {}
+          }, 180);
+        });
+      }
+
+      function syncTheme() {
+        var theme = document.documentElement.getAttribute('data-theme') || 'nomad';
+        if (themeLabel) themeLabel.textContent = themeNames[theme] || theme;
+
+        if (!(window.NM && NM.LayerSwitcher && NM.LayerSwitcher.map && typeof NM.LayerSwitcher.switchTo === 'function')) {
+          if (themeSyncRetries < 8) {
+            themeSyncRetries += 1;
+            setTimeout(syncTheme, 180);
+          }
+          return;
+        }
+
+        var targetLayer = typeof NM.getThemeMapLayerName === 'function'
+          ? NM.getThemeMapLayerName(theme)
+          : ({nomad: 'terrain', nightops: 'dark', cyber: 'darkClean', redlight: 'dark', eink: 'positron'})[theme] || 'terrain';
+
+        if (navigator.onLine && NM.LayerSwitcher.layers && NM.LayerSwitcher.layers[targetLayer] && NM.LayerSwitcher.current !== targetLayer) {
+          NM.LayerSwitcher.switchTo(targetLayer);
+        }
+      }
+
+      window.NM = window.NM || {};
+      window.NM.scheduleLayoutRefresh = refreshMapLayout;
+      window.nukemapOnVisible = function() {
+        refreshMapLayout();
+        syncTheme();
+      };
+
+      if (typeof ResizeObserver === 'function') {
+        var stageObserver = new ResizeObserver(function() {
+          refreshMapLayout();
+        });
+        stageObserver.observe(stage);
+      }
+
+      window.addEventListener('resize', refreshMapLayout);
+      document.addEventListener('fullscreenchange', refreshMapLayout);
+      document.addEventListener('webkitfullscreenchange', refreshMapLayout);
+
+      var themeObserver = new MutationObserver(function(mutations) {
+        for (var i = 0; i < mutations.length; i += 1) {
+          if (mutations[i].attributeName === 'data-theme') {
+            syncTheme();
+            refreshMapLayout();
+            break;
+          }
+        }
+      });
+      themeObserver.observe(document.documentElement, {attributes: true, attributeFilter: ['data-theme']});
+
+      syncPanelState();
+      syncTheme();
+      setTimeout(refreshMapLayout, 60);
+      setTimeout(refreshMapLayout, 260);
     })();
     </script>
 

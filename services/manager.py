@@ -35,6 +35,7 @@ DEPENDENCIES = {
     'qdrant': ['ollama'],      # Qdrant needs Ollama for embeddings
     'stirling': [],
     'flatnotes': [],
+    'torrent': [],
 }
 
 # Reverse: which services depend on this one (for ordered shutdown)
@@ -173,38 +174,37 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
         if service_id in _processes and _processes[service_id].poll() is None:
             return _processes[service_id].pid
 
-    # Support exe_path as either a string or a list (for [python, -m, module] style)
-    if isinstance(exe_path, list):
-        cmd = exe_path + (args or [])
-    else:
-        cmd = [exe_path] + (args or [])
-    log.info(f'Starting {service_id}: {" ".join(cmd)}')
+        # Support exe_path as either a string or a list (for [python, -m, module] style)
+        if isinstance(exe_path, list):
+            cmd = exe_path + (args or [])
+        else:
+            cmd = [exe_path] + (args or [])
+        log.info(f'Starting {service_id}: {" ".join(cmd)}')
 
-    from platform_utils import popen_kwargs
-    # Capture stdout/stderr with PIPE for log viewer
-    proc = subprocess.Popen(
-        cmd,
-        **popen_kwargs(cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT),
-    )
+        from platform_utils import popen_kwargs
+        # Capture stdout/stderr with PIPE for log viewer
+        proc = subprocess.Popen(
+            cmd,
+            **popen_kwargs(cwd=cwd, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT),
+        )
 
-    # Start background thread to read output into _service_logs
-    _service_logs.setdefault(service_id, [])
-    def _read_output():
-        try:
-            for line in iter(proc.stdout.readline, b''):
-                if not line:
-                    break
-                decoded = line.decode('utf-8', errors='replace').rstrip('\n\r')
-                if decoded:
-                    logs = _service_logs.setdefault(service_id, [])
-                    logs.append(decoded)
-                    if len(logs) > _SERVICE_LOG_MAX:
-                        del logs[:len(logs) - _SERVICE_LOG_MAX]
-        except Exception:
-            pass
-    threading.Thread(target=_read_output, daemon=True).start()
+        # Start background thread to read output into _service_logs
+        _service_logs.setdefault(service_id, [])
+        def _read_output():
+            try:
+                for line in iter(proc.stdout.readline, b''):
+                    if not line:
+                        break
+                    decoded = line.decode('utf-8', errors='replace').rstrip('\n\r')
+                    if decoded:
+                        logs = _service_logs.setdefault(service_id, [])
+                        logs.append(decoded)
+                        if len(logs) > _SERVICE_LOG_MAX:
+                            del logs[:len(logs) - _SERVICE_LOG_MAX]
+            except Exception:
+                pass
+        threading.Thread(target=_read_output, daemon=True).start()
 
-    with _lock:
         _processes[service_id] = proc
 
     db = get_db()
@@ -275,9 +275,14 @@ def is_running(service_id: str) -> bool:
 
     if row and row['pid']:
         if _pid_alive(row['pid']):
+            # Re-register the process so we track it going forward
             return True
 
     return False
+
+    # Note: PID-based fallback may match recycled PIDs after a crash.
+    # The health_monitor in nomad.py handles stale DB entries by
+    # checking mod.running() which uses the service's own port/status check.
 
 
 def _pid_alive(pid: int) -> bool:
@@ -368,7 +373,7 @@ def get_service_resources(service_id):
         entry = _processes.get(service_id)
     if not entry:
         return None
-    pid = entry.get('pid') if isinstance(entry, dict) else (entry.pid if hasattr(entry, 'pid') else None)
+    pid = entry.pid if hasattr(entry, 'pid') else None
     if not pid:
         return None
     try:
@@ -444,7 +449,7 @@ SERVICE_HEALTH_URLS = {
     'kiwix': ('http://127.0.0.1:8888/', 200),
     'qdrant': ('http://127.0.0.1:6333/healthz', 200),
     'stirling': ('http://127.0.0.1:8443/', 200),
-    'cyberchef': ('http://127.0.0.1:8081/', 200),
+    'cyberchef': ('http://127.0.0.1:8889/', 200),
 }
 
 

@@ -3,9 +3,9 @@
   <a class="sidebar-header" id="sidebar-home-link" href="{{ workspace_routes['services'] }}" data-tab-target="services">
     <img src="/static/nomad-mark.svg" alt="NOMAD logo" class="sidebar-brand-mark">
     <div class="sidebar-brand-copy">
-      <span class="sidebar-brand-kicker">Desktop Operations Workspace</span>
+      <span class="sidebar-brand-kicker">Field Operations Desk</span>
       <h1>NOMAD</h1>
-      <span class="sidebar-brand-subtitle">Preparedness, intelligence, and local systems</span>
+      <span class="sidebar-brand-subtitle">Preparedness, intelligence, and offline systems</span>
       <span class="version">v{{ version }}</span>
     </div>
   </a>
@@ -13,7 +13,7 @@
   <div class="sidebar-nav" id="sidebar-nav" role="menubar" aria-label="Application sections">
     <div class="sidebar-group-label">
       <span class="sidebar-group-title">Briefing</span>
-      <span class="sidebar-group-copy">Orient, assess, and decide what matters now.</span>
+      <span class="sidebar-group-copy">Orient, assess, decide.</span>
     </div>
     <!-- Situation Room -->
     <button class="tab{% if active_tab == 'situation-room' %} active{% endif %}" data-tab="situation-room">
@@ -35,7 +35,7 @@
 
     <div class="sidebar-group-label">
       <span class="sidebar-group-title">Operations</span>
-      <span class="sidebar-group-copy">Run field workflows, act on risk, and manage resources.</span>
+      <span class="sidebar-group-copy">Run fieldwork, act on risk, manage resources.</span>
     </div>
 
     <!-- Preparedness -->
@@ -71,7 +71,7 @@
 
     <div class="sidebar-group-label">
       <span class="sidebar-group-title">Knowledge</span>
-      <span class="sidebar-group-copy">Reference material, media, and your local working memory.</span>
+      <span class="sidebar-group-copy">Reference, media, and working memory.</span>
     </div>
     <!-- Library -->
     <button class="tab{% if active_tab == 'kiwix-library' %} active{% endif %}" data-tab="kiwix-library">
@@ -94,7 +94,7 @@
 
     <div class="sidebar-group-label">
       <span class="sidebar-group-title">Assistant</span>
-      <span class="sidebar-group-copy">Context-aware help, drafting, and operational copiloting.</span>
+      <span class="sidebar-group-copy">Drafting, synthesis, and copiloting.</span>
     </div>
     <!-- AI Assistant -->
     <button class="tab{% if active_tab == 'ai-chat' %} active{% endif %}" data-tab="ai-chat">
@@ -105,7 +105,7 @@
 
     <div class="sidebar-group-label">
       <span class="sidebar-group-title">System</span>
-      <span class="sidebar-group-copy">Tune the workspace, verify health, and manage the platform.</span>
+      <span class="sidebar-group-copy">Tune, verify, and manage the platform.</span>
     </div>
     <!-- Diagnostics -->
     <button class="tab{% if active_tab == 'benchmark' %} active{% endif %}" data-tab="benchmark">
@@ -121,16 +121,16 @@
   <div id="sidebar-context-hub" class="sidebar-context-hub">
     <div class="sidebar-context-head">
       <div class="sidebar-context-copy">
-        <span class="sidebar-context-kicker">Quick Return</span>
-        <p class="sidebar-context-text">Keep your active desk and pinned contexts within reach from any workspace.</p>
+        <span class="sidebar-context-kicker">Return</span>
+        <p class="sidebar-context-text">Keep pinned desks and your active context within reach.</p>
       </div>
     </div>
     <div class="sidebar-context-section">
-      <span class="sidebar-context-label">Pinned Contexts</span>
+      <span class="sidebar-context-label">Pinned</span>
       <div class="sidebar-context-list" id="sidebar-context-pinned"></div>
     </div>
     <div class="sidebar-context-section">
-      <span class="sidebar-context-label">Recent Context</span>
+      <span class="sidebar-context-label">Recent</span>
       <div class="sidebar-context-current" id="sidebar-context-current"></div>
     </div>
   </div>

@@ -37,10 +37,14 @@ const OfflineSync = {
       const data = await resp.json();
       for (const store of this.STORES) {
         if (!data[store]) continue;
-        const tx = this._db.transaction(store, 'readwrite');
-        const os = tx.objectStore(store);
-        os.clear();
-        data[store].forEach(row => os.put(row));
+        await new Promise((resolve, reject) => {
+          const tx = this._db.transaction(store, 'readwrite');
+          const os = tx.objectStore(store);
+          os.clear();
+          data[store].forEach(row => os.put(row));
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
       }
       // Save sync metadata
       const metaTx = this._db.transaction('_meta', 'readwrite');

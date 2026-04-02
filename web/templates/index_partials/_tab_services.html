@@ -42,17 +42,17 @@
          SEARCH BAR
          ════════════════════════════════════════════════════════════ -->
     <div id="services-launch" class="home-launch-deck">
-      <div class="home-launch-main">
+        <div class="home-launch-main">
         <div class="home-launch-hero home-surface-panel">
           <div class="home-launch-head">
             <div class="home-launch-copy">
-              <span class="section-header-label home-launch-kicker">MISSION CONTROL</span>
-              <h2 class="home-launch-title">Start from the desk you actually need right now.</h2>
-              <p class="home-launch-text">Search across the entire workspace, jump into the right operating lane, or reopen live context without backing out and rebuilding your mental map.</p>
+              <span class="section-header-label home-launch-kicker">COMMAND DESK</span>
+              <h2 class="home-launch-title">Search, switch lanes, or resume live work.</h2>
+              <p class="home-launch-text">Jump straight into the task, record, or context you need without backing out through extra screens.</p>
             </div>
             <div class="home-launch-actions">
               <button class="btn btn-sm btn-primary compact-action-btn" data-shell-action="toggle-command-palette">Global Find</button>
-              <button class="btn btn-sm btn-ghost compact-action-btn" data-tab-target="situation-room">Open Situation Room</button>
+              <button class="btn btn-sm btn-ghost compact-action-btn" data-tab-target="situation-room">Situation Room</button>
             </div>
           </div>
           <div class="search-bar home-search-shell home-search-shell-wide home-launch-search">
@@ -61,52 +61,51 @@
             <div class="search-results" id="search-results"></div>
           </div>
           <div class="home-launch-meta">
-            <span class="home-launch-chip">Ctrl+K opens global find from any workspace</span>
-            <span class="home-launch-chip">Pinned and recent desks stay synced with the sidebar</span>
-            <span class="home-launch-chip">Use Work Modes when you know the job, search when you only know the outcome</span>
+            <span class="home-launch-chip">Ctrl+K from any desk</span>
+            <span class="home-launch-chip">Pinned and recent work stay in sync</span>
           </div>
         </div>
 
         <div class="home-mode-rail home-surface-panel">
           <div class="section-header home-section-header home-toolbar">
-            <span class="section-header-label">WORK MODES</span>
+            <span class="section-header-label">WORK LANES</span>
             <div class="section-divider section-divider-grow"></div>
-            <div class="home-mode-rail-copy">Jump into the lane that matches what you need to do next.</div>
+            <div class="home-mode-rail-copy">Open the lane that matches the task in front of you.</div>
           </div>
           <div class="home-mode-grid">
             <button type="button" class="home-mode-card" data-tab-target="readiness">
               <span class="home-mode-icon" aria-hidden="true">&#128202;</span>
               <span class="home-mode-body">
                 <span class="home-mode-title">Briefing</span>
-                <span class="home-mode-copy">Check readiness, scan priorities, and see what changed.</span>
+                <span class="home-mode-copy">Readiness, priorities, and what changed.</span>
               </span>
             </button>
             <button type="button" class="home-mode-card" data-tab-target="preparedness" data-prep-sub="checklists">
               <span class="home-mode-icon" aria-hidden="true">&#9878;</span>
               <span class="home-mode-body">
                 <span class="home-mode-title">Operations</span>
-                <span class="home-mode-copy">Work checklists, incident logs, and field workflows.</span>
+                <span class="home-mode-copy">Checklists, incidents, and field workflows.</span>
               </span>
             </button>
             <button type="button" class="home-mode-card" data-tab-target="kiwix-library">
               <span class="home-mode-icon" aria-hidden="true">&#128214;</span>
               <span class="home-mode-body">
                 <span class="home-mode-title">Knowledge</span>
-                <span class="home-mode-copy">Open offline reference, notes, and media resources.</span>
+                <span class="home-mode-copy">Offline reference, notes, and media.</span>
               </span>
             </button>
             <button type="button" class="home-mode-card" data-tab-target="ai-chat">
               <span class="home-mode-icon" aria-hidden="true">&#129302;</span>
               <span class="home-mode-body">
                 <span class="home-mode-title">Copilot</span>
-                <span class="home-mode-copy">Ask for synthesis, drafting, or the next best action.</span>
+                <span class="home-mode-copy">Synthesis, drafting, and next-step help.</span>
               </span>
             </button>
             <button type="button" class="home-mode-card" data-tab-target="settings">
               <span class="home-mode-icon" aria-hidden="true">&#9881;</span>
               <span class="home-mode-body">
                 <span class="home-mode-title">System</span>
-                <span class="home-mode-copy">Tune models, tasks, backups, and platform behavior.</span>
+                <span class="home-mode-copy">Models, backups, and platform controls.</span>
               </span>
             </button>
           </div>
@@ -115,16 +114,16 @@
 
       <div id="home-continue-panel" class="home-continue-panel home-surface-panel">
         <div class="section-header home-section-header home-toolbar">
-          <span class="section-header-label">CONTINUE WORKING</span>
+          <span class="section-header-label">RESUME</span>
           <div class="section-divider section-divider-grow"></div>
-          <button id="home-pin-current-context-btn" class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-home-context-action="toggle-pin-current" aria-pressed="false">Pin Current Context</button>
+          <button id="home-pin-current-context-btn" class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-home-context-action="toggle-pin-current" aria-pressed="false">Pin Current</button>
           <button class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-shell-action="toggle-command-palette">Command Palette</button>
         </div>
-        <div id="home-continue-summary" class="home-continue-summary">Pick up where you left off without rebuilding your mental map.</div>
+        <div id="home-continue-summary" class="home-continue-summary">Pinned desks and recent surfaces stay ready here.</div>
         <div class="home-context-section">
           <div class="home-context-section-head">
-            <span class="home-context-section-title">Pinned Contexts</span>
-            <span class="home-context-section-copy">Keep the desks you return to most within immediate reach.</span>
+            <span class="home-context-section-title">Pinned</span>
+            <span class="home-context-section-copy">Keep priority desks within one click.</span>
           </div>
           <div id="home-pinned-grid" class="home-continue-grid home-continue-grid-pinned">
             <div class="home-continue-empty">Pin your current context to build a personal shelf.</div>
@@ -132,8 +131,8 @@
         </div>
         <div class="home-context-section">
           <div class="home-context-section-head">
-            <span class="home-context-section-title">Recent Context</span>
-            <span class="home-context-section-copy">Jump back to the last working views and sub-workspaces you were actually using.</span>
+            <span class="home-context-section-title">Recent</span>
+            <span class="home-context-section-copy">Return to the last surfaces you were actively using.</span>
           </div>
           <div id="home-continue-grid" class="home-continue-grid">
             <div class="home-continue-empty">Recent workspaces and saved context will appear here as you use the desk.</div>
@@ -148,7 +147,7 @@
     <div class="bento-grid">
       <div class="home-panel-group">
         <div class="section-header home-section-header home-toolbar">
-          <span class="section-header-label">SITUATION DASHBOARD</span>
+          <span class="section-header-label">LIVE STATUS</span>
           <div class="section-divider section-divider-grow"></div>
           <button class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-shell-action="open-widget-manager" title="Configure dashboard widgets">&#9881; Widgets</button>
         </div>
@@ -156,7 +155,7 @@
       </div>
       <div id="needs-overview" class="home-panel-group home-needs-overview">
         <div class="section-header home-section-header home-toolbar">
-          <span class="section-header-label">PREPAREDNESS BY NEED</span>
+          <span class="section-header-label">PREP GAPS</span>
           <div class="section-divider section-divider-grow"></div>
           <button class="btn btn-sm section-header-action compact-action-btn" data-tab-target="readiness">Score</button>
         </div>
@@ -199,7 +198,7 @@
     <div id="services-console" class="home-panel-shell home-surface-panel services-console-panel">
       <div class="home-panel-accent"></div>
       <div class="section-header services-toolbar home-toolbar">
-        <span class="section-header-label">SERVICES CONSOLE</span>
+        <span class="section-header-label">SERVICE STATUS</span>
         <div class="section-divider section-divider-grow"></div>
         <div class="services-toolbar-actions home-toolbar-actions">
           <button class="btn btn-sm btn-primary compact-action-btn" data-shell-action="start-all-services" title="Start AI Chat, Library, and all installed services">Start All</button>
@@ -209,23 +208,23 @@
       <div class="services-console-grid">
         <div class="services-console-summary-stack">
           <div class="services-console-block">
-            <div class="services-console-kicker">Instant Status</div>
+            <div class="services-console-kicker">Readiness</div>
             <div id="readiness-bar" class="services-console-readiness"></div>
           </div>
           <div class="services-console-block">
-            <div class="services-console-kicker">Running Service Shortcuts</div>
+            <div class="services-console-kicker">Running</div>
             <div id="svc-quicklinks" class="service-quicklinks services-console-quicklinks"></div>
           </div>
           <div class="services-console-block">
-            <div class="services-console-kicker">Command Snapshot</div>
+            <div class="services-console-kicker">Snapshot</div>
             <div id="cmd-dashboard" class="prep-dashboard-grid utility-summary-grid services-console-metrics"></div>
           </div>
           <div class="services-console-block">
-            <div class="services-console-kicker">Checklist Momentum</div>
+            <div class="services-console-kicker">Momentum</div>
             <div id="cmd-checklists" class="services-console-checklists"></div>
           </div>
           <div class="services-console-block">
-            <div class="services-console-kicker">Offline Footprint</div>
+            <div class="services-console-kicker">Footprint</div>
             <div class="content-summary services-console-summary" id="content-summary"></div>
           </div>
         </div>
@@ -240,44 +239,65 @@
       <!-- Left: Field Documents -->
       <div id="home-quick-nav" class="home-support-panel home-documents-panel home-surface-panel">
         <div class="section-header home-section-header home-toolbar">
-          <span class="section-header-label">PRINTABLE FIELD DOCUMENTS</span>
+          <span class="section-header-label">FIELD DOCS</span>
           <div class="section-divider section-divider-grow"></div>
         </div>
-        <div class="home-doc-grid">
-          <a class="cc-card home-doc-card" href="/api/print/operations-binder" target="_blank" rel="noopener noreferrer">
-            <div class="cc-icon">&#128214;</div>
-            <div class="cc-title">Operations Binder</div>
-            <div class="cc-sub">Complete field reference</div>
+        <div class="home-doc-list">
+          <a class="home-doc-row" href="/api/print/operations-binder" target="_blank" rel="noopener noreferrer">
+            <span class="home-doc-row-icon" aria-hidden="true">&#128214;</span>
+            <span class="home-doc-row-copy">
+              <span class="home-doc-row-title">Operations Binder</span>
+              <span class="home-doc-row-meta">Complete field reference</span>
+            </span>
+            <span class="home-doc-row-action">Open</span>
           </a>
-          <a class="cc-card home-doc-card" href="/api/print/wallet-cards" target="_blank" rel="noopener noreferrer">
-            <div class="cc-icon">&#128179;</div>
-            <div class="cc-title">Wallet Cards</div>
-            <div class="cc-sub">ICE, meds, rally points</div>
+          <a class="home-doc-row" href="/api/print/wallet-cards" target="_blank" rel="noopener noreferrer">
+            <span class="home-doc-row-icon" aria-hidden="true">&#128179;</span>
+            <span class="home-doc-row-copy">
+              <span class="home-doc-row-title">Wallet Cards</span>
+              <span class="home-doc-row-meta">ICE, meds, rally points</span>
+            </span>
+            <span class="home-doc-row-action">Open</span>
           </a>
-          <a class="cc-card home-doc-card" href="/api/print/soi" target="_blank" rel="noopener noreferrer">
-            <div class="cc-icon">&#128225;</div>
-            <div class="cc-title">SOI / Freq Card</div>
-            <div class="cc-sub">Signal operating instructions</div>
+          <a class="home-doc-row" href="/api/print/soi" target="_blank" rel="noopener noreferrer">
+            <span class="home-doc-row-icon" aria-hidden="true">&#128225;</span>
+            <span class="home-doc-row-copy">
+              <span class="home-doc-row-title">SOI / Freq Card</span>
+              <span class="home-doc-row-meta">Signal operating instructions</span>
+            </span>
+            <span class="home-doc-row-action">Open</span>
           </a>
-          <a class="cc-card home-doc-card" href="/api/print/medical-flipbook" target="_blank" rel="noopener noreferrer">
-            <div class="cc-icon">&#129657;</div>
-            <div class="cc-title">Medical Flipbook</div>
-            <div class="cc-sub">Pocket medical reference</div>
+          <a class="home-doc-row" href="/api/print/medical-flipbook" target="_blank" rel="noopener noreferrer">
+            <span class="home-doc-row-icon" aria-hidden="true">&#129657;</span>
+            <span class="home-doc-row-copy">
+              <span class="home-doc-row-title">Medical Flipbook</span>
+              <span class="home-doc-row-meta">Pocket medical reference</span>
+            </span>
+            <span class="home-doc-row-action">Open</span>
           </a>
-          <button type="button" class="cc-card home-doc-card" data-app-frame-title="Emergency Sheet" data-app-frame-url="/api/emergency-sheet">
-            <div class="cc-icon">&#128196;</div>
-            <div class="cc-title">Emergency Sheet</div>
-            <div class="cc-sub">One-page critical data</div>
+          <button type="button" class="home-doc-row" data-app-frame-title="Emergency Sheet" data-app-frame-url="/api/emergency-sheet">
+            <span class="home-doc-row-icon" aria-hidden="true">&#128196;</span>
+            <span class="home-doc-row-copy">
+              <span class="home-doc-row-title">Emergency Sheet</span>
+              <span class="home-doc-row-meta">One-page critical data</span>
+            </span>
+            <span class="home-doc-row-action">Open</span>
           </button>
-          <button type="button" class="cc-card home-doc-card" data-app-frame-title="Medical Cards" data-app-frame-url="/api/print/medical-cards">
-            <div class="cc-icon">&#129658;</div>
-            <div class="cc-title">Medical Cards</div>
-            <div class="cc-sub">Patient care cards</div>
+          <button type="button" class="home-doc-row" data-app-frame-title="Medical Cards" data-app-frame-url="/api/print/medical-cards">
+            <span class="home-doc-row-icon" aria-hidden="true">&#129658;</span>
+            <span class="home-doc-row-copy">
+              <span class="home-doc-row-title">Medical Cards</span>
+              <span class="home-doc-row-meta">Patient care cards</span>
+            </span>
+            <span class="home-doc-row-action">Open</span>
           </button>
-          <button type="button" class="cc-card home-doc-card" data-app-frame-title="Bug-Out Checklist" data-app-frame-url="/api/print/bug-out-checklist">
-            <div class="cc-icon">&#127939;</div>
-            <div class="cc-title">Bug-Out List</div>
-            <div class="cc-sub">Grab-and-go checklist</div>
+          <button type="button" class="home-doc-row" data-app-frame-title="Bug-Out Checklist" data-app-frame-url="/api/print/bug-out-checklist">
+            <span class="home-doc-row-icon" aria-hidden="true">&#127939;</span>
+            <span class="home-doc-row-copy">
+              <span class="home-doc-row-title">Bug-Out List</span>
+              <span class="home-doc-row-meta">Grab-and-go checklist</span>
+            </span>
+            <span class="home-doc-row-action">Open</span>
           </button>
         </div>
       </div>
@@ -285,7 +305,7 @@
       <!-- Right: Activity Log -->
       <div id="home-activity" class="home-support-panel home-activity-panel home-surface-panel">
         <div class="section-header activity-header home-toolbar">
-          <span class="section-header-label">ACTIVITY LOG</span>
+          <span class="section-header-label">RECENT ACTIVITY</span>
           <div class="section-divider section-divider-grow"></div>
           <div class="activity-toolbar">
             <select id="activity-filter" name="activity_filter" class="activity-filter-select" data-change-action="load-activity" aria-label="Filter activity log">

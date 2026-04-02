@@ -11,6 +11,7 @@ import os
 import json
 import logging
 import secrets
+import threading
 
 # Optional .env support — gracefully skip if python-dotenv is not installed
 try:
@@ -87,6 +88,7 @@ class Config:
 # Config cache — avoids re-reading config.json from disk on every get_data_dir() call
 _config_cache = None
 _config_mtime = 0
+_config_lock = threading.Lock()
 
 
 def get_config_path():
@@ -106,36 +108,37 @@ def get_config_path():
 def load_config() -> dict:
     global _config_cache, _config_mtime
     path = get_config_path()
-    if _config_cache is not None and _config_mtime == float('inf'):
-        return _config_cache
-    if not os.path.isfile(path):
-        return _config_cache if _config_cache is not None else {}
-    try:
-        mtime = os.path.getmtime(path)
-    except OSError:
-        return _config_cache if _config_cache is not None else {}
-    # Return cached version if file hasn't changed
-    if _config_cache is not None and mtime == _config_mtime:
-        return _config_cache
-    try:
-        with open(path, 'r') as f:
-            _config_cache = json.load(f)
-            _config_mtime = mtime
+    with _config_lock:
+        if _config_cache is not None and _config_mtime == float('inf'):
             return _config_cache
-    except (json.JSONDecodeError, OSError) as e:
-        log.warning(f'Could not load config from {path}: {e}')
-        # Try recovering from .tmp backup
-        tmp_path = path + '.tmp'
-        if os.path.isfile(tmp_path):
-            try:
-                with open(tmp_path, 'r') as f:
-                    data = json.load(f)
-                log.info(f'Recovered config from {tmp_path}')
-                _config_cache = data
-                return data
-            except (json.JSONDecodeError, OSError):
-                pass
-    return _config_cache if _config_cache is not None else {}
+        if not os.path.isfile(path):
+            return _config_cache if _config_cache is not None else {}
+        try:
+            mtime = os.path.getmtime(path)
+        except OSError:
+            return _config_cache if _config_cache is not None else {}
+        # Return cached version if file hasn't changed
+        if _config_cache is not None and mtime == _config_mtime:
+            return _config_cache
+        try:
+            with open(path, 'r') as f:
+                _config_cache = json.load(f)
+                _config_mtime = mtime
+                return _config_cache
+        except (json.JSONDecodeError, OSError) as e:
+            log.warning(f'Could not load config from {path}: {e}')
+            # Try recovering from .tmp backup
+            tmp_path = path + '.tmp'
+            if os.path.isfile(tmp_path):
+                try:
+                    with open(tmp_path, 'r') as f:
+                        data = json.load(f)
+                    log.info(f'Recovered config from {tmp_path}')
+                    _config_cache = data
+                    return data
+                except (json.JSONDecodeError, OSError):
+                    pass
+        return _config_cache if _config_cache is not None else {}
 
 
 def get_config_value(key: str, default=None):
@@ -157,18 +160,25 @@ def save_config(data: dict):
         os.replace(tmp_path, path)
     except PermissionError:
         if sys.platform == 'win32':
-            # Windows: retry once — antivirus may briefly lock the file
+            # Windows: retry with backoff — antivirus may briefly lock the file
             import time as _time
-            _time.sleep(0.1)
-            os.replace(tmp_path, path)
+            for _attempt in range(3):
+                _time.sleep(0.1 * (_attempt + 1))
+                try:
+                    os.replace(tmp_path, path)
+                    break
+                except PermissionError:
+                    if _attempt == 2:
+                        raise
         else:
             raise
     # Update cache immediately so subsequent reads are consistent
-    _config_cache = data
-    try:
-        _config_mtime = os.path.getmtime(path)
-    except OSError:
-        _config_mtime = 0
+    with _config_lock:
+        _config_cache = data
+        try:
+            _config_mtime = os.path.getmtime(path)
+        except OSError:
+            _config_mtime = 0
 
 
 def get_data_dir() -> str:

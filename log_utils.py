@@ -24,11 +24,14 @@ class SensitiveDataFilter(logging.Filter):
     ]
 
     def filter(self, record: logging.LogRecord) -> bool:
-        msg = record.getMessage()
-        for pattern, replacement in self._patterns:
-            msg = pattern.sub(replacement, msg)
-        record.msg = msg
-        record.args = None  # args already merged into msg
+        # Only format+scrub once per record to avoid double-formatting
+        if not getattr(record, '_scrubbed', False):
+            msg = record.getMessage()
+            for pattern, replacement in self._patterns:
+                msg = pattern.sub(replacement, msg)
+            record.msg = msg
+            record.args = None  # args already merged into msg
+            record._scrubbed = True
         return True
 
 

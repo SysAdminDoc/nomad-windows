@@ -1684,7 +1684,7 @@ function _renderVitalsCharts(data) {
   data.patients.forEach((patient, pi) => {
     const div = document.createElement('div');
     div.className = 'prep-vitals-card';
-    const safeName = (patient.name || 'Patient ' + (pi + 1)).replace(/</g, '&lt;');
+    const safeName = escapeHtml(patient.name || 'Patient ' + (pi + 1));
     div.innerHTML = '<div class="prep-vitals-name">' + safeName + '</div>' +
       '<div class="prep-vitals-spark-grid">' +
       '<div><span class="prep-vitals-label">Pulse</span><canvas id="spark-pulse-' + pi + '"></canvas></div>' +
@@ -3686,9 +3686,27 @@ function previewCSVImport() {
     const text = e.target.result;
     const lines = text.split('\n').filter(l => l.trim());
     if (lines.length < 2) { toast('CSV file appears empty', 'error'); return; }
-    _csvHeaders = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    function parseCSVLine(line) {
+      const fields = [];
+      let field = '', inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const c = line[i];
+        if (inQuotes) {
+          if (c === '"' && line[i+1] === '"') { field += '"'; i++; }
+          else if (c === '"') { inQuotes = false; }
+          else { field += c; }
+        } else {
+          if (c === '"') { inQuotes = true; }
+          else if (c === ',') { fields.push(field.trim()); field = ''; }
+          else { field += c; }
+        }
+      }
+      fields.push(field.trim());
+      return fields;
+    }
+    _csvHeaders = parseCSVLine(lines[0]);
     _csvParsedData = lines.slice(1).map(line => {
-      const vals = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      const vals = parseCSVLine(line);
       const row = {};
       _csvHeaders.forEach((h, i) => row[h] = vals[i] || '');
       return row;

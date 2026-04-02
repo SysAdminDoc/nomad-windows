@@ -35,7 +35,7 @@ async function apiFetch(url, options = {}) {
 
     // Include CSRF token on mutating requests
     const method = (mergedOptions.method || 'GET').toUpperCase();
-    if (_csrfToken && ['POST', 'PUT', 'DELETE'].includes(method)) {
+    if (_csrfToken && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
         mergedOptions.headers['X-CSRF-Token'] = _csrfToken;
     }
 

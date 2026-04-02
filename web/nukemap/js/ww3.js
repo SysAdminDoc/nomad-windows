@@ -689,13 +689,13 @@ NM.WW3 = {
 
     // Create DEFCON indicator
     let defcon = document.getElementById('ww3-defcon');
-    if (!defcon) { defcon = document.createElement('div'); defcon.id = 'ww3-defcon'; document.body.appendChild(defcon); }
+    if (!defcon) { defcon = document.createElement('div'); defcon.id = 'ww3-defcon'; (NM.getUiRoot ? NM.getUiRoot() : document.body).appendChild(defcon); }
     defcon.style.display = 'block'; defcon.textContent = 'DEFCON 3';
     this._defcon = 3;
 
     // Create impact toast container
     let toasts = document.getElementById('ww3-toasts');
-    if (!toasts) { toasts = document.createElement('div'); toasts.id = 'ww3-toasts'; document.body.appendChild(toasts); }
+    if (!toasts) { toasts = document.createElement('div'); toasts.id = 'ww3-toasts'; (NM.getUiRoot ? NM.getUiRoot() : document.body).appendChild(toasts); }
     toasts.innerHTML = '';
 
     // Air raid siren
@@ -733,7 +733,7 @@ NM.WW3 = {
     if (!hud) {
       hud = document.createElement('div');
       hud.id = 'ww3-hud';
-      document.body.appendChild(hud);
+      (NM.getUiRoot ? NM.getUiRoot() : document.body).appendChild(hud);
     }
     hud.style.display = 'flex';
     hud.innerHTML = '';
@@ -757,7 +757,7 @@ NM.WW3 = {
     if (!leg) {
       leg = document.createElement('div');
       leg.id = 'ww3-legend';
-      document.body.appendChild(leg);
+      (NM.getUiRoot ? NM.getUiRoot() : document.body).appendChild(leg);
     }
     const scenario = this._scenario;
     const sides = Object.keys(scenario.launchSets);

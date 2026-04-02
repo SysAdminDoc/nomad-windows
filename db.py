@@ -141,11 +141,7 @@ def apply_migrations(conn):
             sql = fh.read()
 
         try:
-            conn.execute('BEGIN')
-            for statement in sql.split(';'):
-                statement = statement.strip()
-                if statement:
-                    conn.execute(statement)
+            conn.executescript(sql)
             conn.execute(
                 'INSERT INTO _migrations (filename) VALUES (?)', (filename,)
             )

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NukeMap v3.3.0</title>
 <meta name="description" content="Nuclear weapon effects simulator with animated blast waves, WW3 simulation, MIRV strikes, 418 verified targets, and shelter survival analysis. Physics based on Glasstone &amp; Dolan.">
 <meta name="theme-color" content="#1e1e2e">
@@ -22,7 +22,7 @@
 <body>
 
 <div id="map"></div>
-<div id="loading-overlay"><div class="loading-spinner"></div><div class="loading-text">Loading NukeMap...</div></div>
+<div id="loading-overlay" role="status" aria-live="polite" aria-atomic="true"><div class="loading-spinner"></div><div class="loading-text">Loading NukeMap…</div></div>
 <div id="welcome-overlay">
   <div class="welcome-card">
     <div class="welcome-header">
@@ -43,7 +43,7 @@
         <span class="wf-tag">12 Map Styles</span>
       </div>
     </div>
-    <button class="welcome-dismiss" id="welcome-dismiss">Start Exploring</button>
+    <button class="welcome-dismiss" id="welcome-dismiss" type="button">Start Exploring</button>
     <label class="welcome-remember"><input type="checkbox" id="welcome-noshow" checked/> Don't show again</label>
   </div>
 </div>
@@ -53,7 +53,7 @@
 <div id="det-counter" style="display:none"><span id="det-counter-num">0</span><span class="dc-label">strikes</span></div>
 
 <div id="panel">
-  <button id="panel-toggle" title="Toggle panel">
+  <button id="panel-toggle" type="button" title="Collapse control panel" aria-label="Collapse control panel" aria-controls="panel" aria-expanded="true">
     <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3h12v1.5H2zm0 4.25h12v1.5H2zm0 4.25h12v1.5H2z"/></svg>
   </button>
   <div class="panel-content">
@@ -67,7 +67,7 @@
       </div>
       <div class="search-wrap">
         <span class="search-icon"><svg viewBox="0 0 16 16"><path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85zm-5.242.656a5 5 0 1 1 0-10 5 5 0 0 1 0 10z"/></svg></span>
-        <input type="text" id="search" placeholder="City, ZIP code, base, or coordinates..." autocomplete="off" spellcheck="false"/>
+        <input type="text" id="search" aria-label="Search city, ZIP code, base, or coordinates" placeholder="City, ZIP code, base, or coordinates…" autocomplete="off" spellcheck="false"/>
         <div id="search-results"></div>
       </div>
     </div>
@@ -90,7 +90,7 @@
       <div class="tab-content active" id="tab-weapon">
         <div class="section">
           <div class="section-title">Warhead</div>
-          <input type="text" id="weapon-filter" class="weapon-filter" placeholder="Filter weapons..." autocomplete="off" spellcheck="false"/>
+          <input type="text" id="weapon-filter" class="weapon-filter" placeholder="Filter warheads…" autocomplete="off" spellcheck="false"/>
           <div class="select-wrap">
             <select class="custom-select" id="weapon-select"></select>
             <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
@@ -272,7 +272,7 @@
           <div class="section-title">Save / Load Scenario</div>
           <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Save current detonations to browser storage for later.</div>
           <div class="save-row">
-            <input type="text" id="save-name" class="compact-input" placeholder="Scenario name..." style="flex:1;max-width:none;text-align:left"/>
+            <input type="text" id="save-name" class="compact-input" placeholder="Scenario name…" style="flex:1;max-width:none;text-align:left"/>
             <button class="btn-secondary" id="save-btn" style="flex:0;white-space:nowrap">Save</button>
           </div>
           <div id="saved-list" style="margin-top:6px"></div>
@@ -326,7 +326,7 @@
           <div style="font-size:10px;color:var(--overlay0);margin-bottom:6px">Full-scale nuclear exchange with animated missile arcs, phased escalation, and live casualty tracking.</div>
           <div class="select-wrap">
             <select class="custom-select" id="ww3-scenario">
-              <option value="">Select scenario...</option>
+          <option value="">Select scenario…</option>
             </select>
             <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
           </div>

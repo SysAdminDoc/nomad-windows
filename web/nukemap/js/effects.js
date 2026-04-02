@@ -104,7 +104,11 @@ NM.Effects = {
   },
 
   showTooltip(map, latlng, def, r) {
-    if (!this.rtEl) { this.rtEl = document.createElement('div'); this.rtEl.className = 'ring-tooltip'; document.body.appendChild(this.rtEl); }
+    if (!this.rtEl) {
+      this.rtEl = document.createElement('div');
+      this.rtEl.className = 'ring-tooltip';
+      (NM.getUiRoot ? NM.getUiRoot() : document.body).appendChild(this.rtEl);
+    }
     this.rtEl.innerHTML = `<div class="rt-title" style="color:${def.color}">${def.label}</div><div>Radius: <b>${NM.fmtDist(r)}</b></div><div>Area: <b>${NM.fmtArea(r)}</b></div><div class="rt-desc">${def.desc}</div>`;
     this.rtEl.style.display = 'block';
     const pt = map.latLngToContainerPoint(latlng);

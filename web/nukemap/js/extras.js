@@ -48,10 +48,10 @@ NM.DistanceIndicator = {
   gzLat: 0, gzLng: 0,
 
   init() {
-    this.el = document.createElement('div');
+    this.el = document.getElementById('dist-indicator') || document.createElement('div');
     this.el.id = 'dist-indicator';
     this.el.className = 'dist-indicator';
-    document.body.appendChild(this.el);
+    if (!this.el.isConnected) (NM.getUiRoot ? NM.getUiRoot() : document.body).appendChild(this.el);
   },
 
   start(map, lat, lng) {

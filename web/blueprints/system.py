@@ -2092,3 +2092,12 @@ def api_i18n_set_language():
         )
         db.commit()
     return jsonify({'status': 'ok', 'language': lang})
+
+
+# ─── Plugins ────────────────────────────────────────────────────────
+
+@system_bp.route('/api/plugins')
+def api_plugins():
+    """Return list of loaded plugins with name, path, and status."""
+    from web.plugins import list_plugins
+    return jsonify({'plugins': list_plugins()})

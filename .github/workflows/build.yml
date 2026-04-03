@@ -93,6 +93,14 @@ jobs:
         if: runner.os != 'Windows'
         run: chmod +x dist/NOMADFieldDesk
 
+      # Linux: build AppImage from PyInstaller binary
+      - name: Build AppImage
+        if: runner.os == 'Linux'
+        run: |
+          wget -q https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage -O /tmp/appimagetool
+          chmod +x /tmp/appimagetool
+          bash tools/build_appimage.sh
+
       - name: Upload binary
         uses: actions/upload-artifact@v4
         with:
@@ -105,6 +113,13 @@ jobs:
         with:
           name: NOMAD-Setup
           path: NOMAD-Setup.exe
+
+      - name: Upload AppImage
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v4
+        with:
+          name: NOMADFieldDesk-AppImage
+          path: NOMADFieldDesk*.AppImage
 
   release:
     needs: build
@@ -135,17 +150,32 @@ jobs:
           cp artifacts/NOMADFieldDesk-Linux/NOMADFieldDesk release/NOMADFieldDesk-Linux
           cp artifacts/NOMADFieldDesk-macOS/NOMADFieldDesk release/NOMADFieldDesk-macOS
           cp artifacts/NOMAD-Setup/NOMAD-Setup.exe release/NOMAD-Setup.exe
+          # Copy AppImage if present
+          if ls artifacts/NOMADFieldDesk-AppImage/NOMADFieldDesk*.AppImage 1>/dev/null 2>&1; then
+            cp artifacts/NOMADFieldDesk-AppImage/NOMADFieldDesk*.AppImage release/NOMADFieldDesk-Linux-x86_64.AppImage
+          fi
           chmod +x release/NOMADFieldDesk-Linux release/NOMADFieldDesk-macOS
+          chmod +x release/*.AppImage 2>/dev/null || true
           cd release && sha256sum * > SHA256SUMS.txt
 
+      # NOTE: ARM64 Linux/macOS builds are a future addition.
+      # GitHub Actions lacks free native ARM64 runners; would require QEMU
+      # cross-compilation or self-hosted runners.
       - name: Upload release assets
         run: |
+          ASSETS=(
+            release/NOMADFieldDesk-Windows.exe
+            release/NOMAD-Setup.exe
+            release/NOMADFieldDesk-Linux
+            release/NOMADFieldDesk-macOS
+            release/SHA256SUMS.txt
+          )
+          # Include AppImage if built
+          if [ -f release/NOMADFieldDesk-Linux-x86_64.AppImage ]; then
+            ASSETS+=(release/NOMADFieldDesk-Linux-x86_64.AppImage)
+          fi
           gh release upload ${{ github.ref_name }} \
-            release/NOMADFieldDesk-Windows.exe \
-            release/NOMAD-Setup.exe \
-            release/NOMADFieldDesk-Linux \
-            release/NOMADFieldDesk-macOS \
-            release/SHA256SUMS.txt \
+            "${ASSETS[@]}" \
             --repo ${{ github.repository }} \
             --clobber
         env:

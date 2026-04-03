@@ -5787,6 +5787,10 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     from web.routes_advanced import register_advanced_routes
     register_advanced_routes(app)
 
+    # ─── User Plugins ─────────────────────────────────────────────────
+    from web.plugins import load_plugins
+    load_plugins(app)
+
     # ─── SSE Real-Time Event Bus ─────────────────────────────────────
     _sse_connects = {}  # ip -> list of timestamps
 

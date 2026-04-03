@@ -526,6 +526,29 @@ def api_inventory_csv():
     return Response(buf.getvalue(), mimetype='text/csv',
                    headers={'Content-Disposition': 'attachment; filename="nomad-inventory.csv"'})
 
+
+@inventory_bp.route('/api/inventory/export')
+def api_inventory_export():
+    """Export all inventory items as CSV."""
+    try:
+        import csv
+        with db_session() as db:
+            rows = db.execute(
+                'SELECT name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes '
+                'FROM inventory ORDER BY category, name LIMIT 50000'
+            ).fetchall()
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(['Name', 'Category', 'Quantity', 'Unit', 'Min Qty', 'Daily Usage', 'Location', 'Expiration', 'Notes'])
+        for r in rows:
+            w.writerow([r['name'], r['category'], r['quantity'], r['unit'], r['min_quantity'],
+                        r['daily_usage'], r['location'], r['expiration'], r['notes']])
+        return Response(buf.getvalue(), mimetype='text/csv',
+                       headers={'Content-Disposition': 'attachment; filename="nomad_inventory_export.csv"'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @inventory_bp.route('/api/inventory/import-csv', methods=['POST'])
 def api_inventory_import_csv():
     if 'file' not in request.files:

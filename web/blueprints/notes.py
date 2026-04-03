@@ -99,6 +99,21 @@ def api_notes_export(note_id):
                    headers={'Content-Disposition': f'attachment; filename="{safe_title}.md"'})
 
 
+@notes_bp.route('/api/notes/export')
+def api_notes_export_json():
+    """Export all notes as a JSON file with Content-Disposition header."""
+    try:
+        import json as _json
+        with db_session() as db:
+            rows = db.execute('SELECT * FROM notes ORDER BY updated_at DESC LIMIT 10000').fetchall()
+        notes_data = [dict(r) for r in rows]
+        payload = _json.dumps(notes_data, indent=2, default=str)
+        return Response(payload, mimetype='application/json',
+                       headers={'Content-Disposition': 'attachment; filename="nomad_notes_export.json"'})
+    except Exception as e:
+        return Response(f'{{"error": "{e}"}}', mimetype='application/json', status=500)
+
+
 @notes_bp.route('/api/notes/export-all')
 def api_notes_export_all():
     """Export all notes as a ZIP of Markdown files."""

@@ -188,6 +188,9 @@ function runWorkspaceLeaveCallback(tabId) {
   } catch (e) {}
 }
 
+/* ─── Lazy Tab Init ─── */
+const _tabInitialized = {};
+
 function activateWorkspaceTab(tab) {
   const tabId = tab.dataset.tab;
   const previousTabId = window.NOMAD_ACTIVE_TAB || document.querySelector('.tab.active')?.dataset.tab || '';
@@ -204,6 +207,8 @@ function activateWorkspaceTab(tab) {
   window.NOMAD_ACTIVE_TAB = tabId;
   updateSidebarSubs();
   window.scrollTo(0, 0);
+  const firstVisit = !_tabInitialized[tabId];
+  _tabInitialized[tabId] = true;
   if (tabId === 'services' && typeof refreshServicesWorkspacePanels === 'function') {
     refreshServicesWorkspacePanels();
   }
@@ -211,13 +216,18 @@ function activateWorkspaceTab(tab) {
   if (tabId === 'notes') loadNotes();
   if (tabId === 'settings') { loadSystemInfo(); loadModelManager(); loadSettings(); startLiveGauges(); loadLogViewer(); loadDiskMonitor(); loadStartupState(); loadOllamaHost(); updateLastBackup(); loadNodeIdentity(); loadSyncLog(); loadConflicts(); loadGroupExercises(); loadDataSummary(); loadTrainingDatasets(); loadTrainingJobs(); loadBackups(); loadBackupConfig(); if (typeof refreshSettingsWorkspacePanels === 'function') refreshSettingsWorkspacePanels(); }
   if (tabId === 'kiwix-library') { loadZimList(); loadZimCatalog(); loadZimDownloads(); loadPDFList(); loadWikipediaTiers(); }
-  if (tabId === 'maps') { loadMaps(); loadWPDistances(); loadMapSources(); renderMapBookmarks(); loadSavedRoutes(); }
+  if (tabId === 'maps') {
+    if (firstVisit) { loadMaps(); loadMapSources(); }
+    loadWPDistances(); renderMapBookmarks(); loadSavedRoutes();
+  }
   if (tabId === 'benchmark') { loadBenchHistory(); loadBuilderTag(); }
   if (tabId === 'media') { loadMediaTab(); }
   if (tabId === 'tools') { loadDrillHistory(); renderScenarioSelector(); }
   if (tabId === 'preparedness') { loadPrepTab(); }
   if (tabId === 'readiness') { loadReadinessScore(); loadReadinessNeeds(); }
-  if (tabId === 'situation-room') { initSituationRoom(); }
+  if (tabId === 'situation-room') {
+    if (firstVisit) initSituationRoom();
+  }
   // Native tab visibility callbacks (NukeMap, VIPTrack)
   if (window._nomadTabCallbacks && window._nomadTabCallbacks[tabId]) {
     try { window._nomadTabCallbacks[tabId](); } catch(e) {}
@@ -1138,10 +1148,5 @@ document.addEventListener('keydown', e => {
     const util = document.querySelector('.utility-panel-shell:not(.is-hidden)');
     if (util) { util.classList.add('is-hidden'); e.preventDefault(); return; }
   }
-  // Ctrl/Cmd+K — open command palette
-  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-    e.preventDefault();
-    const cp = document.getElementById('command-palette');
-    if (cp) { cp.style.display = cp.style.display === 'none' ? 'flex' : 'none'; const inp = cp.querySelector('input'); if (inp) inp.focus(); }
-  }
+  // Ctrl/Cmd+K — handled by _app_workspaces.js toggleCommandPalette()
 });

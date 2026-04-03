@@ -1647,6 +1647,23 @@ def create_app():
         return Response(buf.getvalue(), mimetype='text/csv',
                        headers={'Content-Disposition': 'attachment; filename="nomad-contacts.csv"'})
 
+    @app.route('/api/contacts/export')
+    def api_contacts_export():
+        """Export all contacts as CSV with Content-Disposition."""
+        try:
+            import csv, io
+            with db_session() as db:
+                rows = db.execute('SELECT name, callsign, role, skills, phone, freq, email, address, rally_point, blood_type, medical_notes, notes FROM contacts ORDER BY name').fetchall()
+            buf = io.StringIO()
+            w = csv.writer(buf)
+            w.writerow(['Name', 'Callsign', 'Role', 'Skills', 'Phone', 'Frequency', 'Email', 'Address', 'Rally Point', 'Blood Type', 'Medical Notes', 'Notes'])
+            for r in rows:
+                w.writerow([r['name'], r['callsign'], r['role'], r['skills'], r['phone'], r['freq'], r['email'], r['address'], r['rally_point'], r['blood_type'], r['medical_notes'], r['notes']])
+            return Response(buf.getvalue(), mimetype='text/csv',
+                           headers={'Content-Disposition': 'attachment; filename="nomad_contacts_export.csv"'})
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
     # ─── Vault API (encrypted client-side) ──────────────────────────
 
     @app.route('/api/vault')

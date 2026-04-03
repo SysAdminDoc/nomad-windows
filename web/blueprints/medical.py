@@ -439,6 +439,30 @@ def api_patients_delete(pid):
     return jsonify({'status': 'deleted'})
 
 
+@medical_bp.route('/api/medical/patients/export')
+def api_medical_patients_export():
+    """Export all patients as CSV."""
+    try:
+        import csv
+        import io
+        with db_session() as db:
+            rows = db.execute(
+                'SELECT name, age, sex, blood_type, weight_kg, allergies, medications, conditions, notes '
+                'FROM patients ORDER BY name LIMIT 50000'
+            ).fetchall()
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(['Name', 'Age', 'Sex', 'Blood Type', 'Weight (kg)', 'Allergies', 'Medications', 'Conditions', 'Notes'])
+        for r in rows:
+            w.writerow([r['name'], r['age'] or '', r['sex'] or '', r['blood_type'] or '',
+                        r['weight_kg'] or '', r['allergies'] or '', r['medications'] or '',
+                        r['conditions'] or '', r['notes'] or ''])
+        return Response(buf.getvalue(), mimetype='text/csv',
+                       headers={'Content-Disposition': 'attachment; filename="nomad_patients_export.csv"'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 # ─── Vitals CRUD ─────────────────────────────────────────────────────
 
 @medical_bp.route('/api/patients/<int:pid>/vitals')

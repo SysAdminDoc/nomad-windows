@@ -47,6 +47,21 @@ _REQ_HEADERS = {'User-Agent': 'NOMAD-SitRoom/2.0'}
 _REQ_TIMEOUT = 12
 
 
+def _fetch_with_retry(url, timeout=10, retries=2, **kwargs):
+    """Fetch URL with exponential backoff retry."""
+    import time
+    for attempt in range(retries + 1):
+        try:
+            r = requests.get(url, timeout=timeout, **kwargs)
+            r.raise_for_status()
+            return r
+        except (requests.RequestException, Exception) as e:
+            if attempt == retries:
+                raise
+            time.sleep(0.5 * (2 ** attempt))
+    return None
+
+
 def _safe_float(val, default=0):
     """Convert value to float, returning default on failure."""
     try:
@@ -653,10 +668,8 @@ def _fetch_earthquakes():
         return
     _set_last_fetch('earthquakes')
     try:
-        resp = requests.get('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson',
-                            timeout=15, headers=_REQ_HEADERS)
-        if not resp.ok:
-            return
+        resp = _fetch_with_retry('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson',
+                                 timeout=15, headers=_REQ_HEADERS)
         data = resp.json()
     except Exception as e:
         log.debug(f"Earthquake fetch failed: {e}")
@@ -691,10 +704,8 @@ def _fetch_weather_alerts():
         return
     _set_last_fetch('weather_alerts')
     try:
-        resp = requests.get('https://api.weather.gov/alerts/active?status=actual&severity=Extreme,Severe',
-                            timeout=15, headers={**_REQ_HEADERS, 'Accept': 'application/geo+json'})
-        if not resp.ok:
-            return
+        resp = _fetch_with_retry('https://api.weather.gov/alerts/active?status=actual&severity=Extreme,Severe',
+                                 timeout=15, headers={**_REQ_HEADERS, 'Accept': 'application/geo+json'})
         data = resp.json()
     except Exception as e:
         log.debug(f"Weather alerts fetch failed: {e}")
@@ -791,14 +802,13 @@ def _fetch_market_data():
 
     # Crypto (CoinGecko)
     try:
-        resp = requests.get('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,ripple,cardano,dogecoin&vs_currencies=usd&include_24hr_change=true',
-                            timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
-        if resp.ok:
-            names = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL',
-                     'binancecoin': 'BNB', 'ripple': 'XRP', 'cardano': 'ADA', 'dogecoin': 'DOGE'}
-            for coin, vals in resp.json().items():
-                markets.append({'symbol': names.get(coin, coin.upper()), 'price': vals.get('usd', 0),
-                                'change_24h': round(vals.get('usd_24h_change') or 0, 2), 'market_type': 'crypto'})
+        resp = _fetch_with_retry('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,ripple,cardano,dogecoin&vs_currencies=usd&include_24hr_change=true',
+                                 timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
+        names = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL',
+                 'binancecoin': 'BNB', 'ripple': 'XRP', 'cardano': 'ADA', 'dogecoin': 'DOGE'}
+        for coin, vals in resp.json().items():
+            markets.append({'symbol': names.get(coin, coin.upper()), 'price': vals.get('usd', 0),
+                            'change_24h': round(vals.get('usd_24h_change') or 0, 2), 'market_type': 'crypto'})
     except Exception as e:
         log.debug(f"CoinGecko failed: {e}")
 
@@ -1486,11 +1496,9 @@ def _fetch_ucdp_conflicts():
     _set_last_fetch('ucdp')
     try:
         # UCDP Georeferenced Event Dataset - recent events
-        resp = requests.get('https://ucdpapi.pcr.uu.se/api/gedevents/24.1',
-                            params={'pagesize': 50, 'page': 0},
-                            timeout=15, headers=_REQ_HEADERS)
-        if not resp.ok:
-            return
+        resp = _fetch_with_retry('https://ucdpapi.pcr.uu.se/api/gedevents/24.1',
+                                  timeout=15, headers=_REQ_HEADERS,
+                                  params={'pagesize': 50, 'page': 0})
         data = resp.json()
     except Exception as e:
         log.debug(f"UCDP fetch failed: {e}")

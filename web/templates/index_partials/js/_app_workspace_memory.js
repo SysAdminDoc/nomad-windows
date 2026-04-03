@@ -2099,7 +2099,8 @@ async function loadContentSummary() {
 async function loadLogViewer() {
   const level = document.getElementById('log-level-filter').value;
   try {
-    const items = await (await fetch('/api/activity?limit=100')).json();
+    const lines = document.getElementById('log-lines-select')?.value || 100;
+    const items = await (await fetch('/api/activity?limit=' + parseInt(lines))).json();
     const filtered = level ? items.filter(a => a.level === level) : items;
     const el = document.getElementById('log-viewer');
     if (!filtered.length) { el.innerHTML = '<span class="settings-empty-state log-viewer-empty">No log entries.</span>'; return; }

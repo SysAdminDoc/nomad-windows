@@ -384,6 +384,11 @@
               <option value="error">Errors</option>
               <option value="warning">Warnings</option>
             </select>
+            <select id="log-lines-select" name="log_lines_count" class="preset-select" data-change-action="load-log-viewer" aria-label="Number of log lines">
+              <option value="50">Last 50</option>
+              <option value="100" selected>Last 100</option>
+              <option value="300">Last 300</option>
+            </select>
             <button class="btn btn-sm" type="button" data-shell-action="load-log-viewer">Refresh</button>
           </div>
         </div>
@@ -526,10 +531,12 @@
           <h3 class="settings-panel-title">System Health</h3>
           <p class="settings-panel-copy">Run quick integrity checks and database maintenance without leaving the admin lane.</p>
         </div>
+        <div id="health-dashboard-grid" class="health-dashboard-grid" aria-live="polite"></div>
         <div class="settings-panel-toolbar settings-panel-toolbar-wrap settings-toolbar-spacing">
           <button class="btn btn-sm btn-primary" type="button" data-shell-action="run-self-test">Run Self-Test</button>
           <button class="btn btn-sm" type="button" data-shell-action="run-db-check">Check Database</button>
           <button class="btn btn-sm" type="button" data-shell-action="run-db-vacuum">Optimize Database</button>
+          <button class="btn btn-sm" type="button" data-shell-action="refresh-health">Refresh Health</button>
         </div>
         <div id="system-health-results" class="settings-result-shell" aria-live="polite"></div>
       </div>

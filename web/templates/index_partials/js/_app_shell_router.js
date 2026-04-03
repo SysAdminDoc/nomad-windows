@@ -191,6 +191,7 @@ document.addEventListener('click', e => {
   if (action === 'run-self-test') { runSelfTest(); return; }
   if (action === 'run-db-check') { runDBCheck(); return; }
   if (action === 'run-db-vacuum') { runDBVacuum(); return; }
+  if (action === 'refresh-health') { loadHealthDashboard(); return; }
   if (action === 'create-backup') { createBackup(); return; }
   if (action === 'restore-backup') { restoreScheduledBackup(control.dataset.backupFilename, control.dataset.backupEncrypted === 'true'); return; }
   if (action === 'delete-backup') { deleteBackup(control.dataset.backupFilename); return; }

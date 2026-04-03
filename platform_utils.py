@@ -509,6 +509,9 @@ def is_portable_mode() -> bool:
         return True
     if os.path.isfile(os.path.join(app_dir, 'PORTABLE')):
         return True
+    if os.path.isfile(os.path.join(app_dir, 'portable.txt')):
+        log.info('Portable mode: using local data directory')
+        return True
 
     if IS_WINDOWS:
         try:

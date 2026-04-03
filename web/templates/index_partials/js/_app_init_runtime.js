@@ -42,6 +42,8 @@ window.refreshSettingsWorkspacePanels = refreshSettingsWorkspacePanels;
 
 // Critical: only load the visible workspace up front.
 const _startupWorkspaceTab = getActiveWorkspaceTab();
+// Mark startup tab as initialized so activateWorkspaceTab skips redundant heavy init.
+if (typeof _tabInitialized !== 'undefined') _tabInitialized[_startupWorkspaceTab] = true;
 if (_startupWorkspaceTab === 'services') {
   loadServicesWorkspaceCore();
 }
@@ -109,6 +111,17 @@ if (shellRuntime) {
 checkNetwork();
 checkWizard();
 checkForUpdate();
+// Auto-update toast notification (fires after checkForUpdate sets banner)
+(async () => {
+  try {
+    const r = await fetch('/api/update-check');
+    if (!r.ok) return;
+    const d = await r.json();
+    if (d.update_available) {
+      toast('Update available: v' + escapeHtml(d.latest) + '. <a href="' + escapeAttr(d.download_url || d.url || '') + '" target="_blank" style="color:var(--accent);text-decoration:underline">Download</a>', 'info', 15000);
+    }
+  } catch(_) {}
+})();
 loadStartupState();
 if (_startupWorkspaceTab === 'services') pollDownloadQueue();
 pollBroadcast();
@@ -3950,6 +3963,39 @@ async function runDBVacuum() {
     el.innerHTML = renderSettingsInlineStatus(`Database optimized. ${detail}`, 'success');
     toast('Database optimized', 'success');
   } catch(e) { el.innerHTML = renderSettingsInlineStatus('Database optimization failed.', 'error'); }
+}
+
+/* ─── Health Dashboard ─── */
+async function loadHealthDashboard() {
+  const el = document.getElementById('health-dashboard-grid');
+  if (!el) return;
+  el.innerHTML = renderSettingsInlineStatus('Loading health data…', 'muted');
+  try {
+    const d = await (await fetch('/api/system/health')).json();
+    const cards = [];
+    cards.push({label: 'Status', value: escapeHtml((d.status || 'unknown').replace(/_/g, ' ')), detail: d.db_integrity === 'ok' ? 'DB integrity OK' : ''});
+    cards.push({label: 'Modules Active', value: String(d.modules_active || 0) + ' / ' + String(d.modules_total || 0), detail: (d.coverage_pct || 0) + '% coverage'});
+    cards.push({label: 'Data Items', value: (d.total_data_items || 0).toLocaleString(), detail: 'across all tables'});
+    if (d.issues && d.issues.length) {
+      cards.push({label: 'Issues', value: String(d.issues.length), detail: d.issues.map(i => escapeHtml(i.msg)).join('; ')});
+    } else {
+      cards.push({label: 'Issues', value: '0', detail: 'no problems detected'});
+    }
+    // Coverage breakdown - show top populated modules
+    if (d.coverage) {
+      const populated = Object.values(d.coverage).filter(c => c.active).sort((a,b) => b.count - a.count).slice(0, 4);
+      populated.forEach(c => {
+        cards.push({label: escapeHtml(c.label), value: String(c.count), detail: ''});
+      });
+    }
+    el.innerHTML = cards.map(c => `<div class="health-card">
+      <div class="health-card-label">${c.label}</div>
+      <div class="health-card-value">${c.value}</div>
+      ${c.detail ? '<div class="health-card-detail">' + c.detail + '</div>' : ''}
+    </div>`).join('');
+  } catch(e) {
+    el.innerHTML = renderSettingsInlineStatus('Failed to load health data.', 'error');
+  }
 }
 
 /* ─── Sensor Charts ─── */

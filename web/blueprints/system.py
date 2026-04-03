@@ -565,7 +565,7 @@ def api_update_check():
     """Check GitHub for newer release."""
     try:
         import requests as rq
-        resp = rq.get('https://api.github.com/repos/SysAdminDoc/project-nomad-desktop/releases/latest', timeout=10)
+        resp = rq.get('https://api.github.com/repos/SysAdminDoc/project-nomad-desktop/releases/latest', timeout=5)
         if resp.ok:
             data = resp.json()
             latest = data.get('tag_name', '').lstrip('v')
@@ -803,6 +803,135 @@ def api_backups_restore():
     shutil.copy2(backup_path, db_path)
     log_activity('database_restored', detail=f'Restored from {filename}')
     return jsonify({'status': 'ok', 'message': f'Database restored from {filename}. Restart app to fully apply.'})
+
+
+@system_bp.route('/api/backup', methods=['POST'])
+def api_backup_create_simple():
+    """Create an immediate database backup."""
+    try:
+        from db import backup_db
+        backup_db()
+        # Find the most recent backup to return its path
+        backup_dir = os.path.join(os.path.dirname(get_db_path()), 'backups')
+        if os.path.isdir(backup_dir):
+            files = sorted(
+                [f for f in os.listdir(backup_dir) if f.endswith('.db')],
+                key=lambda f: os.path.getmtime(os.path.join(backup_dir, f)),
+                reverse=True,
+            )
+            if files:
+                return jsonify({'ok': True, 'path': os.path.join(backup_dir, files[0])})
+        return jsonify({'ok': True, 'path': ''})
+    except Exception as e:
+        log.error(f'Backup failed: {e}')
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@system_bp.route('/api/backup/restore', methods=['POST'])
+def api_backup_restore_alt():
+    """Alias for /api/backups/restore — accepts {"filename": "..."}."""
+    import re
+    from db import backup_db as _backup_db
+    data = request.get_json() or {}
+    filename = data.get('filename', '')
+    if not filename or not re.match(r'^[\w.]+$', filename):
+        return jsonify({'error': 'Invalid filename'}), 400
+    backup_dir = os.path.join(os.path.dirname(get_db_path()), 'backups')
+    backup_path = os.path.join(backup_dir, filename)
+    if not os.path.isfile(backup_path):
+        return jsonify({'error': 'Backup not found'}), 404
+    try:
+        _backup_db()
+        shutil.copy2(backup_path, get_db_path())
+        log_activity('database_restored', detail=f'Restored from {filename}')
+        return jsonify({'ok': True, 'message': 'Restart the app to complete restore'})
+    except Exception as e:
+        log.error(f'Restore failed: {e}')
+        return jsonify({'ok': False, 'error': str(e)}), 500
+
+
+@system_bp.route('/api/logs')
+def api_logs():
+    """Return the last N lines of the application log file."""
+    try:
+        lines_requested = min(int(request.args.get('lines', 100)), 500)
+    except (ValueError, TypeError):
+        lines_requested = 100
+    try:
+        log_path = os.path.join(get_data_dir(), 'nomad.log')
+        if not os.path.isfile(log_path):
+            return jsonify({'lines': [], 'path': log_path, 'error': 'Log file not found'})
+        with open(log_path, 'r', errors='replace') as f:
+            all_lines = f.readlines()
+        tail = [l.rstrip('\n') for l in all_lines[-lines_requested:]]
+        return jsonify({'lines': tail, 'path': log_path})
+    except Exception as e:
+        log.error(f'Log read failed: {e}')
+        return jsonify({'lines': [], 'error': str(e)}), 500
+
+
+@system_bp.route('/api/health/detailed')
+def api_health_detailed():
+    """Detailed health dashboard with DB stats, disk space, and service status."""
+    try:
+        import psutil
+    except ImportError:
+        psutil = None
+    result = {}
+    try:
+        # DB size
+        db_path = get_db_path()
+        result['db_size_mb'] = round(os.path.getsize(db_path) / (1024 * 1024), 2) if os.path.isfile(db_path) else 0
+
+        # Table count
+        with db_session() as db:
+            tables = db.execute("SELECT COUNT(*) as c FROM sqlite_master WHERE type='table'").fetchone()
+            result['db_tables'] = tables['c'] if tables else 0
+
+        # Backup count
+        backup_dir = os.path.join(os.path.dirname(db_path), 'backups')
+        if os.path.isdir(backup_dir):
+            result['backups'] = len([f for f in os.listdir(backup_dir) if f.endswith('.db')])
+        else:
+            result['backups'] = 0
+
+        # Disk free space
+        data_dir = get_data_dir()
+        disk = shutil.disk_usage(data_dir)
+        result['disk_free_gb'] = round(disk.free / (1024 ** 3), 1)
+
+        # Uptime
+        if psutil:
+            import time as _time
+            boot = psutil.boot_time()
+            result['uptime_seconds'] = int(_time.time() - boot)
+        else:
+            result['uptime_seconds'] = 0
+
+        # Python version
+        result['python'] = platform.python_version()
+
+        # Service status
+        services_status = {}
+        for sid, mod in SERVICE_MODULES.items():
+            try:
+                if not mod.is_installed():
+                    services_status[sid] = 'not_installed'
+                elif is_healthy(sid):
+                    services_status[sid] = 'running'
+                elif is_running(sid):
+                    services_status[sid] = 'unhealthy'
+                else:
+                    services_status[sid] = 'stopped'
+            except Exception:
+                services_status[sid] = 'unknown'
+        result['services'] = services_status
+
+        return jsonify(result)
+    except Exception as e:
+        log.error(f'Health detailed failed: {e}')
+        return jsonify({'error': str(e)}), 500
+
 
 # ─── Auto-pull default model after Ollama install ─────────────────
 

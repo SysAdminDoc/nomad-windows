@@ -682,7 +682,10 @@ def api_generator_stop(gid):
         if not session:
             return jsonify({'error': 'Generator is not running'}), 409
         now = datetime.now()
-        started = datetime.strptime(session['started_at'], '%Y-%m-%d %H:%M:%S')
+        try:
+            started = datetime.strptime(session['started_at'], '%Y-%m-%d %H:%M:%S')
+        except (ValueError, KeyError):
+            return jsonify({'error': 'Generator session has a missing or malformed start time'}), 400
         runtime_hours = (now - started).total_seconds() / 3600.0
         fuel_consumption_gph = gen['fuel_consumption_gph'] or 0
         fuel_used_gal = fuel_consumption_gph * runtime_hours

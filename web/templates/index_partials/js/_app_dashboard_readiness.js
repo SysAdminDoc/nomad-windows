@@ -965,9 +965,11 @@ async function saveVaultEntry() {
     const encrypted = await encryptVaultData(content);
     const editId = document.getElementById('vault-edit-id').value;
     if (editId) {
-      await fetch(`/api/vault/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title, ...encrypted})});
+      const r = await fetch(`/api/vault/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title, ...encrypted})});
+      if (!r.ok) { toast('Failed to save vault entry', 'error'); return; }
     } else {
-      await fetch('/api/vault', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title, ...encrypted})});
+      const r = await fetch('/api/vault', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title, ...encrypted})});
+      if (!r.ok) { toast('Failed to save vault entry', 'error'); return; }
     }
     toast('Entry encrypted and saved', 'success');
     hideVaultForm();
@@ -1015,7 +1017,8 @@ async function logWeather() {
     notes: document.getElementById('wx-notes').value.trim(),
   };
   if (!data.pressure_hpa && !data.temp_f && !data.notes) { toast('Enter at least temperature, pressure, or notes', 'warning'); return; }
-  await fetch('/api/weather', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  const r = await fetch('/api/weather', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  if (!r.ok) { toast('Failed to log weather observation', 'error'); return; }
   toast('Weather observation logged', 'success');
   document.getElementById('wx-notes').value = '';
   loadWeather();
@@ -1267,6 +1270,8 @@ function deleteSignalEntry(id) {
 function renderSignalSchedule() {
   const el = document.getElementById('signal-schedule-list');
   const nextEl = document.getElementById('signal-next');
+  if (!el) return;
+  if (!nextEl) return;
   if (!_signalSchedule.length) {
     el.innerHTML = '<div class="prep-empty-state prep-empty-state-wide">No signal schedules. Add check-in times above.</div>';
     nextEl.hidden = true;
@@ -1344,8 +1349,8 @@ function startCompass() {
 let _compassHandler = null;
 function _attachCompassListener() {
   _compassActive = true;
-  document.getElementById('compass-start-btn').textContent = 'Compass Active';
-  document.getElementById('compass-start-btn').disabled = true;
+  const btn = document.getElementById('compass-start-btn');
+  if (btn) { btn.textContent = 'Compass Active'; btn.disabled = true; }
   const compassErrEl = document.getElementById('compass-error');
   if (compassErrEl) compassErrEl.textContent = '';
 
@@ -1443,11 +1448,15 @@ async function readMeshSerial() {
     }
   } catch(e) {
     const statusEl = document.getElementById('mesh-status');
-    statusEl.textContent = 'Connection lost';
-    statusEl.classList.add('tools-status-pill-alert');
-    statusEl.classList.remove('tools-status-pill-live');
-    document.getElementById('mesh-msg').disabled = true;
-    document.getElementById('mesh-send-btn').disabled = true;
+    if (statusEl) {
+      statusEl.textContent = 'Connection lost';
+      statusEl.classList.add('tools-status-pill-alert');
+      statusEl.classList.remove('tools-status-pill-live');
+    }
+    const meshMsg = document.getElementById('mesh-msg');
+    if (meshMsg) meshMsg.disabled = true;
+    const meshSendBtn = document.getElementById('mesh-send-btn');
+    if (meshSendBtn) meshSendBtn.disabled = true;
     appendMeshLogEntry('Connection lost', 'error');
   }
 }

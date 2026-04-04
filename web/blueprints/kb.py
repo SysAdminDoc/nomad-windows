@@ -423,7 +423,7 @@ def api_kb_import_entities(doc_id):
         data = request.get_json() or {}
         selected = data.get('entities', [])
         if selected:
-            entities = [entities[i] for i in selected if i < len(entities)]
+            entities = [entities[i] for i in selected if 0 <= i < len(entities)]
 
         imported = {'contacts': 0, 'inventory': 0, 'waypoints': 0, 'skipped': 0}
 

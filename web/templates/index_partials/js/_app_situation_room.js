@@ -2312,6 +2312,7 @@ function initSitroomMap() {
 async function loadSitroomMapData() {
   if (!_sitroomMap || !_sitroomMap.loaded()) return;
   _sitroomClusterGrid = {}; // Reset clustering grid
+  _sitroomClusterCounts = {};
   const data = await safeFetch('/api/sitroom/events', {}, null);
   if (!data || !data.events) return;
   clearSitroomMarkers('earthquakes');
@@ -3014,7 +3015,7 @@ async function deleteSitroomFeed(id) {
     const resp = await fetch('/api/sitroom/feeds/' + id, {method: 'DELETE'});
     if (resp.ok) { toast('Feed removed', 'success'); loadSitroomFeeds(); }
     else { const d = await resp.json().catch(() => ({})); toast(d.error || 'Failed', 'error'); }
-  } catch (e) {}
+  } catch (e) { toast('Failed to delete feed', 'error'); }
 }
 
 /* ─── Refresh with polling ─── */
@@ -3620,7 +3621,7 @@ function _toggleSitroomSearch(show) {
   const input = document.getElementById('sr-search-input');
   if (!overlay) return;
   overlay.hidden = !show;
-  if (show) { input.value = ''; input.focus(); document.getElementById('sr-search-results').innerHTML = ''; }
+  if (show && input) { input.value = ''; input.focus(); document.getElementById('sr-search-results').innerHTML = ''; }
 }
 
 let _searchDebounce = null;
@@ -4313,11 +4314,17 @@ function _promptAddMonitor() {
   if (!keyword || !keyword.trim()) return;
   fetch('/api/sitroom/monitors', {method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({keyword: keyword.trim()})
-  }).then(() => loadSitroomMonitors());
+  }).then(resp => {
+    if (!resp.ok) toast('Failed to add monitor', 'error');
+    loadSitroomMonitors();
+  }).catch(() => toast('Failed to add monitor', 'error'));
 }
 
 async function _deleteMonitor(id) {
-  await fetch('/api/sitroom/monitors/' + id, {method:'DELETE'});
+  try {
+    const resp = await fetch('/api/sitroom/monitors/' + id, {method:'DELETE'});
+    if (!resp.ok) toast('Failed to delete monitor', 'error');
+  } catch(e) { toast('Failed to delete monitor', 'error'); }
   loadSitroomMonitors();
 }
 
@@ -4535,10 +4542,10 @@ async function openCountryDeepDive(country) {
 let _sitroomChannelsLoaded = false;
 async function loadSitroomLiveChannels() {
   if (_sitroomChannelsLoaded) return;
-  _sitroomChannelsLoaded = true;
   const d = await safeFetch('/api/sitroom/live-channels', {}, null);
   const btns = document.getElementById('sr-channel-btns');
   if (!btns || !d || !d.channels?.length) return;
+  _sitroomChannelsLoaded = true;
   btns.innerHTML = d.channels.map((ch, i) =>
     `<button class="sr-channel-btn${i === 0 ? ' active' : ''}" data-channel-idx="${i}" data-channel-vid="${escapeAttr(ch.video_id || '')}" data-channel-handle="${escapeAttr(ch.handle || '')}" title="${escapeAttr(ch.name)}">${escapeHtml(ch.name.split(' ')[0])}</button>`
   ).join('');

@@ -415,9 +415,21 @@ def api_patients_update(pid):
         weight_kg = data.get('weight_kg', existing['weight_kg'])
         sex = data.get('sex', existing['sex'])
         blood_type = data.get('blood_type', existing['blood_type'])
-        allergies = json.dumps(data.get('allergies', json.loads(existing['allergies'] or '[]')))
-        medications = json.dumps(data.get('medications', json.loads(existing['medications'] or '[]')))
-        conditions = json.dumps(data.get('conditions', json.loads(existing['conditions'] or '[]')))
+        try:
+            allergies_default = json.loads(existing['allergies'] or '[]')
+        except json.JSONDecodeError:
+            allergies_default = existing['allergies'] or []
+        allergies = json.dumps(data.get('allergies', allergies_default))
+        try:
+            medications_default = json.loads(existing['medications'] or '[]')
+        except json.JSONDecodeError:
+            medications_default = existing['medications'] or []
+        medications = json.dumps(data.get('medications', medications_default))
+        try:
+            conditions_default = json.loads(existing['conditions'] or '[]')
+        except json.JSONDecodeError:
+            conditions_default = existing['conditions'] or []
+        conditions = json.dumps(data.get('conditions', conditions_default))
         notes_val = data.get('notes', existing['notes'])
         contact_id = data.get('contact_id', existing['contact_id'])
         db.execute(

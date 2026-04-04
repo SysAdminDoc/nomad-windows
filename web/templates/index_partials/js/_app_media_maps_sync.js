@@ -446,8 +446,10 @@ function updateBatchCount() {
 
 async function batchDeleteMedia() {
   if (!_mediaSelected.size) return;
+  if (!confirm('Delete selected items? This cannot be undone.')) return;
   const r = await fetch('/api/media/batch-delete', {method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({type:_mediaSub, ids:[..._mediaSelected]})});
+  if (!r.ok) { toast('Failed to delete items', 'error'); return; }
   const d = await r.json();
   toast(`Deleted ${d.count} items`, 'warning');
   _mediaSelected.clear(); toggleMediaSelect();
@@ -1537,7 +1539,8 @@ async function torrentResume(hash) {
   await pollTorrentStatus();
 }
 async function torrentRemove(hash, deleteFiles) {
-  await fetch('/api/torrent/remove/' + hash + '?delete_files=' + deleteFiles, {method: 'DELETE'});
+  const r = await fetch('/api/torrent/remove/' + hash + '?delete_files=' + deleteFiles, {method: 'DELETE'});
+  if (!r.ok) { toast('Failed to remove torrent', 'error'); return; }
   delete _torrentStatuses[hash];
   // Remove from id→hash map
   for (const [k, v] of Object.entries(_torrentIdToHash)) { if (v === hash) delete _torrentIdToHash[k]; }
@@ -2166,8 +2169,10 @@ function bookReaderNext() { if (_mediaBookRendition) _mediaBookRendition.next();
 
 // ── CRUD ──
 async function deleteMediaItem(id, type) {
+  if (!confirm('Delete this item? This cannot be undone.')) return;
   const apiMap = {videos:'/api/videos', audio:'/api/audio', books:'/api/books'};
-  await fetch(`${apiMap[type]}/${id}`, {method:'DELETE'});
+  const r = await fetch(`${apiMap[type]}/${id}`, {method:'DELETE'});
+  if (!r.ok) { toast('Failed to delete item', 'error'); return; }
   toast('Deleted', 'warning');
   closeMediaPlayer();
   loadMediaContent(); loadTotalMediaStats();
@@ -3547,10 +3552,13 @@ function viewPDF(filename) {
 }
 function closePDFViewer() { document.getElementById('pdf-viewer').style.display = 'none'; document.getElementById('pdf-iframe').src = ''; }
 async function deletePDF(filename) {
-  await fetch(`/api/library/delete/${filename}`, {method:'DELETE'});
-  toast('Document deleted', 'warning');
-  loadPDFList();
-  closePDFViewer();
+  try {
+    const r = await fetch(`/api/library/delete/${filename}`, {method:'DELETE'});
+    if (!r.ok) { toast('Failed to delete document', 'error'); return; }
+    toast('Document deleted', 'warning');
+    loadPDFList();
+    closePDFViewer();
+  } catch(e) { toast('Failed to delete document', 'error'); }
 }
 
 /* ─── AI Chat File Drag/Drop ─── */
@@ -3623,8 +3631,11 @@ async function loadCommsLog() {
 }
 
 async function deleteCommsLog(id) {
-  await fetch(`/api/comms-log/${id}`, {method:'DELETE'});
-  loadCommsLog();
+  try {
+    const r = await fetch(`/api/comms-log/${id}`, {method:'DELETE'});
+    if (!r.ok) { toast('Failed to delete log entry', 'error'); return; }
+    loadCommsLog();
+  } catch(e) { toast('Failed to delete log entry', 'error'); }
 }
 
 /* ─── Shopping List ─── */
@@ -3912,7 +3923,7 @@ function addChecklistItem() {
   inp.focus();
   inp.addEventListener('keydown', e => { if (e.key === 'Enter') submitChecklistItem(); if (e.key === 'Escape') form.remove(); });
 }
-function submitChecklistItem() {
+async function submitChecklistItem() {
   const textEl = document.getElementById('add-item-text');
   const catEl = document.getElementById('add-item-cat');
   if (!textEl || !catEl) return;
@@ -3921,8 +3932,9 @@ function submitChecklistItem() {
   const cat = catEl.value;
   _currentChecklistItems.push({text, checked: false, cat});
   renderChecklist();
-  fetch(`/api/checklists/${_currentChecklistId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+  const r = await fetch(`/api/checklists/${_currentChecklistId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({items: _currentChecklistItems})});
+  if (!r.ok) toast('Failed to save checklist item', 'error');
   textEl.value = '';
   textEl.focus();
 }

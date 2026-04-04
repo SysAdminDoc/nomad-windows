@@ -283,7 +283,8 @@ async function loadModels() {
       warmupModel(models[0].name);
     }
   } catch(e) {
-    document.getElementById('model-select').innerHTML = '<option value="">Failed to load models</option>';
+    const sel = document.getElementById('model-select');
+    if (sel) sel.innerHTML = '<option value="">Failed to load models</option>';
     setChatReady(false, 'AI service starting...');
     startChatReadyPoll();
   }

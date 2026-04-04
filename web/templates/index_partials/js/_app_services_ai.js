@@ -401,7 +401,12 @@ function pollPullProgress() {
 
 /* ─── Conversations ─── */
 async function loadConversations() {
-  try { allConvos = await (await fetch('/api/conversations')).json(); } catch(e) { allConvos = []; }
+  try {
+    const r = await fetch('/api/conversations');
+    if (!r.ok) { allConvos = []; renderConvoList(); return; }
+    const d = await r.json();
+    allConvos = Array.isArray(d) ? d : [];
+  } catch(e) { allConvos = []; }
   renderConvoList();
 }
 function renderConvoList() {
@@ -1146,7 +1151,8 @@ function startZimQueuePoll() {
 }
 
 async function deleteZim(filename) {
-  await fetch('/api/kiwix/delete-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename}) });
+  const resp = await fetch('/api/kiwix/delete-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename}) });
+  if (!resp.ok) { toast('Failed to delete content pack', 'error'); return; }
   _installedZims.delete(filename);
   window._zimCompletedSet?.delete(filename);
   toast('Content pack deleted', 'warning');

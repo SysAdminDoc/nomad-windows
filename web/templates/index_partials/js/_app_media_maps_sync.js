@@ -463,16 +463,18 @@ async function batchMoveMedia() {
   try { folders = await _fetchJson(foldersMap[_mediaSub]); } catch(e) {}
   const name = prompt('Move to folder:\n\nExisting: ' + (folders.length ? folders.join(', ') : 'none'));
   if (name === null) return;
-  await fetch('/api/media/batch-move', {method:'POST', headers:{'Content-Type':'application/json'},
+  const r = await fetch('/api/media/batch-move', {method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({type:_mediaSub, ids:[..._mediaSelected], folder:name})});
+  if (!r.ok) { toast('Failed to move items', 'error'); return; }
   toast(`Moved ${_mediaSelected.size} items to ${name||'Unsorted'}`, 'success');
   _mediaSelected.clear(); toggleMediaSelect();
   loadMediaContent();
 }
 
 async function toggleFavorite(id) {
-  await fetch('/api/media/favorite', {method:'POST', headers:{'Content-Type':'application/json'},
+  const r = await fetch('/api/media/favorite', {method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({type:_mediaSub, id})});
+  if (!r.ok) { toast('Failed to update favorite', 'error'); return; }
   // Update local state
   const item = _mediaItems.find(i => i.id === id);
   if (item) item.favorited = item.favorited ? 0 : 1;
@@ -1531,11 +1533,13 @@ function updateActiveDownloadsPanel() {
 
 // ── Torrent actions ───────────────────────────────────────────────────────
 async function torrentPause(hash) {
-  await fetch('/api/torrent/pause/' + hash, {method: 'POST'});
+  const r = await fetch('/api/torrent/pause/' + hash, {method: 'POST'});
+  if (!r.ok) { toast('Failed to pause torrent', 'error'); return; }
   await pollTorrentStatus();
 }
 async function torrentResume(hash) {
-  await fetch('/api/torrent/resume/' + hash, {method: 'POST'});
+  const r = await fetch('/api/torrent/resume/' + hash, {method: 'POST'});
+  if (!r.ok) { toast('Failed to resume torrent', 'error'); return; }
   await pollTorrentStatus();
 }
 async function torrentRemove(hash, deleteFiles) {
@@ -2602,7 +2606,9 @@ function completeDrill() {
   sendNotification('Drill Complete', `${title}: ${checked}/${total} tasks in ${durationLabel}`);
   // Save to history
   fetch('/api/drills/history', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({drill_type: _currentDrillType || '', title, duration_sec: elapsed, tasks_total: total, tasks_completed: checked})});
+    body:JSON.stringify({drill_type: _currentDrillType || '', title, duration_sec: elapsed, tasks_total: total, tasks_completed: checked})})
+    .then(r => { if (!r.ok) toast('Failed to save drill history', 'error'); })
+    .catch(() => toast('Failed to save drill history', 'error'));
   document.getElementById('drill-active').style.display = 'none';
   document.getElementById('drill-active').classList.add('is-hidden');
   document.getElementById('drill-summary').hidden = true;
@@ -2899,7 +2905,8 @@ async function loadNodeIdentity() {
 async function saveNodeName() {
   const name = document.getElementById('node-name-input').value.trim();
   if (!name) { toast('Enter a node name', 'warning'); return; }
-  await fetch('/api/node/identity', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})});
+  const r = await fetch('/api/node/identity', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})});
+  if (!r.ok) { toast('Failed to set node name', 'error'); return; }
   toast(`Node name set to "${name}"`, 'success');
   loadNodeIdentity();
 }
@@ -3113,6 +3120,7 @@ async function exportSyncPack() {
   try {
     const resp = await fetch('/api/sync/export', {method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({include:['inventory','contacts','checklists','notes','incidents','waypoints']})});
+    if (!resp.ok) { toast('Export failed', 'error'); return; }
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = `nomad-sync-${new Date().toISOString().slice(0,10)}.zip`;
@@ -3479,7 +3487,8 @@ async function loadOllamaHost() {
 }
 async function saveOllamaHost() {
   const host = document.getElementById('ollama-host-input').value.trim();
-  await fetch('/api/settings/ollama-host', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({host})});
+  const r = await fetch('/api/settings/ollama-host', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({host})});
+  if (!r.ok) { toast('Failed to save Ollama host', 'error'); return; }
   toast(host ? `Ollama host set to ${host}` : 'Using local Ollama', 'success');
 }
 
@@ -3487,12 +3496,14 @@ async function saveOllamaHost() {
 async function setAuthPassword() {
   const pw = document.getElementById('auth-pw-input').value;
   if (!pw) { toast('Enter a password', 'warning'); return; }
-  await fetch('/api/auth/set-password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:pw})});
+  const r = await fetch('/api/auth/set-password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:pw})});
+  if (!r.ok) { toast('Failed to set password', 'error'); return; }
   document.getElementById('auth-pw-input').value = '';
   toast('Dashboard password set', 'success');
 }
 async function clearAuthPassword() {
-  await fetch('/api/auth/set-password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:''})});
+  const r = await fetch('/api/auth/set-password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:''})});
+  if (!r.ok) { toast('Failed to clear password', 'error'); return; }
   toast('Dashboard password cleared', 'info');
 }
 
@@ -3508,7 +3519,8 @@ function confirmPower(btn, action) {
   hostPower(action);
 }
 async function hostPower(action) {
-  await fetch('/api/system/shutdown', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action})});
+  const r = await fetch('/api/system/shutdown', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action})});
+  if (!r.ok) { toast(`Failed to initiate ${action}`, 'error'); return; }
   toast(`${action} initiated — computer will ${action} in 5 seconds`, 'warning');
 }
 
@@ -3601,7 +3613,8 @@ async function logComms() {
     signal_quality: document.getElementById('comms-sig').value,
   };
   if (!msg && !data.callsign) { toast('Enter a callsign or message', 'warning'); return; }
-  await fetch('/api/comms-log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  const r = await fetch('/api/comms-log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+  if (!r.ok) { toast('Failed to log communication', 'error'); return; }
   document.getElementById('comms-msg').value = '';
   toast('Communication logged', 'success');
   loadCommsLog();
@@ -3858,8 +3871,9 @@ function showInvQuickAdd() {
 }
 
 async function quickAddInvItem(item, control) {
-  await fetch('/api/inventory', {method:'POST', headers:{'Content-Type':'application/json'},
+  const r = await fetch('/api/inventory', {method:'POST', headers:{'Content-Type':'application/json'},
     body:JSON.stringify({name:item.name, category:item.cat, unit:item.unit, quantity:item.qty, daily_usage:item.daily||0})});
+  if (!r.ok) { toast('Failed to add item', 'error'); return; }
   if (control) {
     control.style.background = 'var(--green-dim)';
     control.style.color = 'var(--green)';

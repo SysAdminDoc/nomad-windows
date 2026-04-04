@@ -69,7 +69,7 @@ def install(callback=None):
 
             # Create venv
             creation_flags = {'creationflags': 0x08000000} if sys.platform == 'win32' else {}
-            subprocess.run([python, '-m', 'venv', venv_dir], check=True, **creation_flags)
+            subprocess.run([python, '-m', 'venv', venv_dir], check=True, capture_output=True, **creation_flags)
 
             # Get pip path in venv
             if sys.platform == 'win32':

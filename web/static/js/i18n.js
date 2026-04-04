@@ -56,7 +56,7 @@ const NomadI18n = {
         let str = this._translations[key] || this._fallback[key] || key;
         if (params) {
             Object.entries(params).forEach(([k, v]) => {
-                str = str.replace(`{${k}}`, v);
+                str = str.split(`{${k}}`).join(String(v));
             });
         }
         return str;
@@ -69,7 +69,7 @@ const NomadI18n = {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify({language: lang})
             });
-        } catch(e) {}
+        } catch(e) { console.warn('[i18n] Language save failed:', e.message); }
         this._lang = lang;
         await this.loadTranslations(lang);
         window.__NOMAD_I18N_BOOTSTRAP = {
@@ -82,7 +82,9 @@ const NomadI18n = {
 
     applyTranslations() {
         document.documentElement.lang = this._lang;
-        document.documentElement.dir = this._lang === 'ar' ? 'rtl' : 'ltr';
+        const rtlLangs = new Set(['ar', 'he', 'fa', 'ur']);
+        const dir = rtlLangs.has(this._lang) ? 'rtl' : 'ltr';
+        document.documentElement.dir = dir;
         // Update all elements with data-i18n attribute
         document.querySelectorAll('[data-i18n]').forEach(el => {
             const key = el.getAttribute('data-i18n');
@@ -109,6 +111,7 @@ const NomadI18n = {
 async function loadLanguageSelector() {
     try {
         const resp = await fetch('/api/i18n/languages');
+        if (!resp.ok) return;
         const data = await resp.json();
         const sel = document.getElementById('language-selector');
         if (!sel) return;

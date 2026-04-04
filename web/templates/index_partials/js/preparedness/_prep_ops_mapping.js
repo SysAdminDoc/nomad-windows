@@ -296,6 +296,7 @@ ${document.getElementById('aar-improve').value || 'N/A'}
 ${document.getElementById('aar-actions').value || 'None'}
 ===== END AAR =====`;
   const el = document.getElementById('aar-output');
+  if (!el) return;
   el.textContent = text;
   el.style.display = 'block';
 }

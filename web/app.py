@@ -2192,8 +2192,14 @@ def create_app():
             sort_by = 'species'
         with db_session() as db:
             rows = db.execute(f'SELECT * FROM livestock ORDER BY {sort_by} {sort_dir}, name ASC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
-        return jsonify([{**dict(r), 'health_log': json.loads(r['health_log'] or '[]'),
-                         'vaccinations': json.loads(r['vaccinations'] or '[]')} for r in rows])
+        def _safe_json_list(val):
+            try:
+                parsed = json.loads(val or '[]')
+                return parsed if isinstance(parsed, list) else []
+            except (json.JSONDecodeError, TypeError):
+                return []
+        return jsonify([{**dict(r), 'health_log': _safe_json_list(r['health_log']),
+                         'vaccinations': _safe_json_list(r['vaccinations'])} for r in rows])
 
     @app.route('/api/livestock', methods=['POST'])
     def api_livestock_create():

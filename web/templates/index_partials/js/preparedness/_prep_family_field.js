@@ -36,6 +36,7 @@ function deleteFEPMember(id) {
 
 function renderFEPMembers() {
   const el = document.getElementById('fep-members');
+  if (!el) return;
   if (!_fepMembers.length) { el.innerHTML = '<div class="fep-member-empty">No members added yet.</div>'; return; }
   el.innerHTML = _fepMembers.map(m => `
     <div class="fep-member-row">
@@ -76,6 +77,7 @@ function loadShelterAssess() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('nomad-shelter') || '{}'); } catch(e) {}
   const el = document.getElementById('shelter-assess');
+  if (!el) return;
   el.innerHTML = SHELTER_CRITERIA.map((c, i) => {
     const level = saved[i] || 'red';
     return `<div class="shelter-assess-row" role="button" tabindex="0" data-prep-action="cycle-shelter" data-shelter-index="${i}">
@@ -174,6 +176,7 @@ function loadInfraStatus() {
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('nomad-infra') || '{}'); } catch(e) {}
   const el = document.getElementById('infra-status');
+  if (!el) return;
   el.innerHTML = INFRA_ITEMS.map(item => {
     const key = item.replace(/[^a-zA-Z]/g,'').toLowerCase();
     const level = saved[key] || 'unknown';
@@ -291,7 +294,7 @@ LOC: ${loc || 'N/A'}
 6. PLAN: ${plan || 'N/A'}
 ===== END SITREP =====`;
   const el = document.getElementById('sitrep-output');
-  el.textContent = text;
+  if (el) el.textContent = text;
   el.style.display = 'block';
 }
 

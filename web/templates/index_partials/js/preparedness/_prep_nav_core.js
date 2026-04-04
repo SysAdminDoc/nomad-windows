@@ -352,7 +352,8 @@ async function loadPrepTab() {
     _prepLoaded = true;
   } else {
     // Ensure the category bar has tabs (in case it wasn't initialized)
-    if (!document.getElementById('prep-subtab-bar').children.length) initPrepNav();
+    const _bar = document.getElementById('prep-subtab-bar');
+    if (_bar && !_bar.children.length) initPrepNav();
   }
   renderPrepWorkspaceHub();
   await loadChecklists();
@@ -362,6 +363,7 @@ async function loadPrepTemplates() {
   try {
     const templates = await (await fetch('/api/checklists/templates')).json();
     const el = document.getElementById('prep-template-btns');
+    if (!el) return;
     el.innerHTML = Object.entries(templates).map(([k, v]) =>
       `<button class="prep-template-btn" data-checklist-template="${escapeHtml(k)}" title="${v.item_count} items">+ ${v.name}</button>`
     ).join('');

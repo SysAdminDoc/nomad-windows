@@ -18,6 +18,39 @@ const SVC = {
 };
 
 let _servicesLoaded = false;
+
+function getJsonErrorMessage(payload, defaultMessage, status) {
+  if (payload && typeof payload === 'object') {
+    const candidate = payload.error || payload.message || payload.detail;
+    if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+  }
+  return `${defaultMessage}${status ? ` (${status})` : ''}`;
+}
+
+async function fetchJsonStrict(url, opts = {}, defaultMessage = 'Request failed') {
+  const resp = await fetch(url, opts);
+  let payload = null;
+  try {
+    payload = await resp.json();
+  } catch (e) {
+    if (!resp.ok) throw new Error(`${defaultMessage} (${resp.status})`);
+    throw new Error(`${defaultMessage}: invalid server response`);
+  }
+  if (!resp.ok) {
+    throw new Error(getJsonErrorMessage(payload, defaultMessage, resp.status));
+  }
+  return payload;
+}
+
+async function fetchJsonSafe(url, opts = {}, fallback = null, defaultMessage = 'Request failed') {
+  try {
+    return await fetchJsonStrict(url, opts, defaultMessage);
+  } catch (e) {
+    console.warn(`[Services/AI] ${url} failed:`, e.message);
+    return fallback;
+  }
+}
+
 async function loadServices(servicesData = null) {
   const grid = document.getElementById('services-grid');
   if (!grid) return;
@@ -27,7 +60,7 @@ async function loadServices(servicesData = null) {
   try {
     const services = Array.isArray(servicesData)
       ? servicesData
-      : await (await fetch('/api/services')).json();
+      : await fetchJsonStrict('/api/services', {}, 'Failed to load services');
     _lastServicesData = services;
     _servicesLoaded = true;
     grid.innerHTML = services.map(s => {
@@ -131,58 +164,57 @@ const SVC_SIZES_MB = {ollama:310, kiwix:15, cyberchef:20, kolibri:300, qdrant:30
 async function installService(id) {
   // Check disk space first
   const neededMB = SVC_SIZES_MB[id] || 100;
-  try {
-    const sys = await (await fetch('/api/system')).json();
+  const sys = await fetchJsonSafe('/api/system', {}, null, 'Failed to load system status');
+  if (sys) {
     const freeMB = (sys.disk_free_bytes || 0) / (1024*1024);
     if (freeMB > 0 && freeMB < neededMB * 1.5) {
       toast(`Low disk space! ${Math.round(freeMB)} MB free, need ~${neededMB} MB. Install may fail.`, 'warning');
     }
-  } catch(e) {}
+  }
   // Check prereqs
   try {
-    const p = await (await fetch(`/api/services/${id}/prereqs`)).json();
+    const p = await fetchJsonStrict(`/api/services/${id}/prereqs`, {}, 'Failed to check prerequisites');
     if (!p.met) { toast(p.message || `Prerequisites not met for ${SVC[id]?.name||id}`, 'error'); return; }
     if (p.message) toast(p.message, 'info');
-  } catch(e) { toast('Failed to check prerequisites', 'warning'); }
+  } catch(e) { toast(e.message || 'Failed to check prerequisites', 'warning'); }
   try {
-    const r = await fetch(`/api/services/${id}/install`, {method:'POST'});
-    const d = await r.json();
+    const d = await fetchJsonStrict(`/api/services/${id}/install`, {method:'POST'}, `Failed to install ${SVC[id]?.name||id}`);
     if (d.status === 'already_installing') { toast('Already installing...', 'info'); return; }
     toast(`Installing ${SVC[id]?.name||id} (${SVC[id]?.dlSize || '?'})...`, 'info');
     pollServices();
-  } catch(e) { toast(`Failed to install ${SVC[id]?.name||id}`, 'error'); }
+  } catch(e) { toast(e.message || `Failed to install ${SVC[id]?.name||id}`, 'error'); }
 }
 async function startService(id) {
   _busyServices.add(id); loadServices();
   try {
-    const r = await (await fetch(`/api/services/${id}/start`, {method:'POST'})).json();
+    const r = await fetchJsonStrict(`/api/services/${id}/start`, {method:'POST'}, `Failed to start ${SVC[id]?.name||id}`);
     if (r.error) { toast(r.error, 'error'); } else { toast(`${SVC[id]?.name||id} started`, 'success'); }
-  } catch(e) { toast(`Failed to start ${SVC[id]?.name||id}`, 'error'); }
+  } catch(e) { toast(e.message || `Failed to start ${SVC[id]?.name||id}`, 'error'); }
   finally { _busyServices.delete(id); loadServices(); }
 }
 async function stopService(id) {
   _busyServices.add(id); loadServices();
   try {
-    await fetch(`/api/services/${id}/stop`, {method:'POST'});
+    await fetchJsonStrict(`/api/services/${id}/stop`, {method:'POST'}, `Failed to stop ${SVC[id]?.name||id}`);
     toast(`${SVC[id]?.name||id} stopped`, 'warning');
-  } catch(e) { toast(`Failed to stop ${SVC[id]?.name||id}`, 'error'); }
+  } catch(e) { toast(e.message || `Failed to stop ${SVC[id]?.name||id}`, 'error'); }
   finally { _busyServices.delete(id); loadServices(); }
 }
 async function restartService(id) {
   _busyServices.add(id); loadServices();
   toast(`Restarting ${SVC[id]?.name||id}...`, 'info');
   try {
-    const r = await (await fetch(`/api/services/${id}/restart`, {method:'POST'})).json();
+    const r = await fetchJsonStrict(`/api/services/${id}/restart`, {method:'POST'}, `Failed to restart ${SVC[id]?.name||id}`);
     if (r.error) { toast(r.error, 'error'); } else { toast(`${SVC[id]?.name||id} restarted`, 'success'); }
-  } catch(e) { toast(`Failed to restart ${SVC[id]?.name||id}`, 'error'); }
+  } catch(e) { toast(e.message || `Failed to restart ${SVC[id]?.name||id}`, 'error'); }
   finally { _busyServices.delete(id); loadServices(); }
 }
 async function uninstallService(id) {
   _busyServices.add(id); loadServices();
   try {
-    await fetch(`/api/services/${id}/uninstall`, {method:'POST'});
+    await fetchJsonStrict(`/api/services/${id}/uninstall`, {method:'POST'}, `Failed to uninstall ${SVC[id]?.name||id}`);
     toast(`${SVC[id]?.name||id} uninstalled`, 'warning');
-  } catch(e) { toast(`Failed to uninstall ${SVC[id]?.name||id}`, 'error'); }
+  } catch(e) { toast(e.message || `Failed to uninstall ${SVC[id]?.name||id}`, 'error'); }
   finally { _busyServices.delete(id); loadServices(); }
 }
 
@@ -269,7 +301,7 @@ function stopChatReadyPoll() {
 
 async function loadModels() {
   try {
-    const models = await (await fetch('/api/ai/models')).json();
+    const models = await fetchJsonStrict('/api/ai/models', {}, 'Failed to load AI models');
     const sel = document.getElementById('model-select');
     if (!sel) return;
     if (!models.length) {
@@ -321,7 +353,7 @@ function startChatReadyPoll() {
   if (_chatReadyPoll) return;
   const runner = async () => {
     try {
-      const models = await (await fetch('/api/ai/models')).json();
+      const models = await fetchJsonStrict('/api/ai/models', {}, 'Failed to load AI models');
       if (models.length) {
         stopChatReadyPoll();
         const sel = document.getElementById('model-select');
@@ -363,8 +395,10 @@ function pollPullProgress() {
       return;
     }
     try {
-    const p = await (await fetch('/api/ai/pull-progress')).json();
+    const p = await fetchJsonSafe('/api/ai/pull-progress', {}, null, 'Failed to load pull progress');
+    if (!p) return;
     const bar = document.getElementById('pull-progress-bar');
+    if (!bar) { stopPullProgressPolling(); return; }
     if (p.status === 'pulling') {
       bar.style.display = 'block';
       document.getElementById('pull-fill').style.width = p.percent + '%';
@@ -401,12 +435,8 @@ function pollPullProgress() {
 
 /* ─── Conversations ─── */
 async function loadConversations() {
-  try {
-    const r = await fetch('/api/conversations');
-    if (!r.ok) { allConvos = []; renderConvoList(); return; }
-    const d = await r.json();
-    allConvos = Array.isArray(d) ? d : [];
-  } catch(e) { allConvos = []; }
+  const d = await fetchJsonSafe('/api/conversations', {}, [], 'Failed to load conversations');
+  allConvos = Array.isArray(d) ? d : [];
   renderConvoList();
 }
 function renderConvoList() {
@@ -430,12 +460,10 @@ function renderConvoList() {
 async function newConversation() {
   const model = document.getElementById('model-select').value || '';
   try {
-    const r = await fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Chat', model})});
-    if (!r.ok) { toast('Failed to create conversation', 'error'); return; }
-    const c = await r.json();
+    const c = await fetchJsonStrict('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Chat', model})}, 'Failed to create conversation');
     await loadConversations();
     selectConvo(c.id);
-  } catch(e) { toast('Failed to create conversation', 'error'); }
+  } catch(e) { toast(e.message || 'Failed to create conversation', 'error'); }
 }
 async function selectConvo(id) {
   currentConvoId = id;
@@ -446,9 +474,7 @@ async function selectConvo(id) {
   const chatInput = document.getElementById('chat-input');
   if (chatInput) chatInput.placeholder = 'Type a message... (Enter to send, Shift+Enter for newline, drop files)';
   try {
-    const r = await fetch(`/api/conversations/${id}`);
-    if (!r.ok) { toast('Failed to load conversation', 'error'); return; }
-    const c = await r.json();
+    const c = await fetchJsonStrict(`/api/conversations/${id}`, {}, 'Failed to load conversation');
     try { chatMessages = JSON.parse(c.messages || '[]'); } catch(e) { chatMessages = []; }
     if (c.model) {
       const sel = document.getElementById('model-select');
@@ -456,11 +482,11 @@ async function selectConvo(id) {
     }
     renderChat();
     renderConvoList();
-  } catch(e) { toast('Failed to load conversation', 'error'); }
+  } catch(e) { toast(e.message || 'Failed to load conversation', 'error'); }
 }
 async function deleteConvo(id) {
   try {
-    await fetch(`/api/conversations/${id}`, {method:'DELETE'});
+    await fetchJsonStrict(`/api/conversations/${id}`, {method:'DELETE'}, 'Failed to delete conversation');
   } catch(e) { /* network error — continue cleanup */ }
   if (currentConvoId === id || parentConvoId === id) {
     currentConvoId = null; chatMessages = [];
@@ -481,9 +507,8 @@ async function deleteAllConvos() {
     return;
   }
   try {
-    const r = await fetch('/api/conversations/all', {method:'DELETE'});
-    if (!r.ok) { toast('Failed to delete conversations', 'error'); return; }
-  } catch(e) { toast('Failed to delete conversations', 'error'); return; }
+    await fetchJsonStrict('/api/conversations/all', {method:'DELETE'}, 'Failed to delete conversations');
+  } catch(e) { toast(e.message || 'Failed to delete conversations', 'error'); return; }
   currentConvoId = null; chatMessages = []; allConvos = [];
   currentBranchId = null; parentConvoId = null; branchMsgIdx = null;
   renderChat(); renderConvoList();
@@ -504,8 +529,8 @@ async function finishRename(id, inp) {
   const name = inp.value.trim();
   if (name) {
     try {
-      await fetch(`/api/conversations/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title: name})});
-    } catch(e) { toast('Rename failed', 'error'); }
+      await fetchJsonStrict(`/api/conversations/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title: name})}, 'Rename failed');
+    } catch(e) { toast(e.message || 'Rename failed', 'error'); }
   }
   await loadConversations();
 }
@@ -520,8 +545,8 @@ async function saveConversation() {
   if (!convoEl || convoEl.textContent.trim() === 'New Chat') {
     payload.title = chatMessages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat';
   }
-  await fetch(`/api/conversations/${currentConvoId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify(payload)});
+  await fetchJsonStrict(`/api/conversations/${currentConvoId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload)}, 'Failed to save conversation');
   await loadConversations();
 }
 
@@ -544,12 +569,10 @@ async function sendChat() {
 
   if (!currentConvoId) {
     try {
-      const resp = await fetch('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title: msg.slice(0,50), model})});
-      if (!resp.ok) { toast('Failed to create conversation', 'error'); isSending = false; return; }
-      const c = await resp.json();
+      const c = await fetchJsonStrict('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title: msg.slice(0,50), model})}, 'Failed to create conversation');
       currentConvoId = c.id;
       await loadConversations();
-    } catch(e) { toast('Failed to create conversation', 'error'); isSending = false; return; }
+    } catch(e) { toast(e.message || 'Failed to create conversation', 'error'); isSending = false; return; }
   }
 
   // Attach file context if present
@@ -581,6 +604,7 @@ async function sendChat() {
     const dec = new TextDecoder();
     let full = '';
     let streamBuf = '';
+    let streamParseWarned = false;
     const msgs = document.getElementById('chat-messages');
     let lastMsgEl = null;
     while (true) {
@@ -619,7 +643,12 @@ async function sendChat() {
             const secs = (d.eval_duration || 1) / 1e9;
             document.getElementById('chat-stats').textContent = `${toks} tokens | ${(secs > 0 ? (toks/secs).toFixed(1) : '0.0')} tok/s | ${secs.toFixed(1)}s`;
           }
-        } catch {}
+        } catch (e) {
+          if (!streamParseWarned) {
+            streamParseWarned = true;
+            console.warn('AI stream message parse failed:', e.message);
+          }
+        }
       }
     }
     renderChat();
@@ -1016,19 +1045,20 @@ function switchTier(ci, tier, btn) {
     const items = _cachedCatalog[ci]?.tiers?.[tier] || [];
     document.getElementById(`cat-items-${ci}`).innerHTML = renderTierItems(items);
   } else {
-    fetch('/api/kiwix/catalog').then(r=>{if(!r.ok)throw new Error();return r.json()}).then(catalog => {
+    fetchJsonSafe('/api/kiwix/catalog', {}, [], 'Failed to load library catalog').then(catalog => {
+      if (!catalog || !catalog.length) return;
       _cachedCatalog = catalog;
       const items = catalog[ci]?.tiers?.[tier] || [];
       document.getElementById(`cat-items-${ci}`).innerHTML = renderTierItems(items);
-    }).catch(()=>{});
+    });
   }
 }
 
 async function downloadAllZimsByTier(tier) {
   try {
     const [catalog, existing] = await Promise.all([
-      _cachedCatalog || fetch('/api/kiwix/catalog').then(r => { if(!r.ok) throw new Error(); return r.json(); }),
-      fetch('/api/kiwix/zims').then(r => { if(!r.ok) throw new Error(); return r.json(); })
+      _cachedCatalog || fetchJsonStrict('/api/kiwix/catalog', {}, 'Failed to load library catalog'),
+      fetchJsonStrict('/api/kiwix/zims', {}, 'Failed to load installed content')
     ]);
     _cachedCatalog = catalog;
     const existingNames = new Set(existing.map(z => z.filename));
@@ -1050,11 +1080,11 @@ async function downloadAllZimsByTier(tier) {
     toast(`Starting ${toDownload.length} downloads (${tier} tier)...`, 'info');
     toDownload.forEach(item => _downloadingZims.add(item.filename));
     await Promise.all(toDownload.map(item =>
-      fetch('/api/kiwix/download-zim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url: item.url, filename: item.filename})})
+      fetchJsonStrict('/api/kiwix/download-zim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url: item.url, filename: item.filename})}, `Failed to queue ${item.name || item.filename}`)
     ));
     renderFullCatalog(_cachedCatalog); // Update button states
     startZimQueuePoll();
-  } catch(e) { toast('Failed to start bulk download', 'error'); }
+  } catch(e) { toast(e.message || 'Failed to start bulk download', 'error'); }
 }
 
 async function downloadZimItem(btn, url, filename) {
@@ -1063,11 +1093,10 @@ async function downloadZimItem(btn, url, filename) {
   btn.innerHTML = '<span class="inline-status-spinner inline-status-spinner-sm"></span>Starting…';
   _downloadingZims.add(filename);
   try {
-    const r = await fetch('/api/kiwix/download-zim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, filename})});
-    if (!r.ok) { const d = await r.json().catch(()=>({})); toast(d.error || 'Download failed', 'error'); btn.disabled = false; btn.textContent = 'Retry'; _downloadingZims.delete(filename); return; }
+    await fetchJsonStrict('/api/kiwix/download-zim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, filename})}, 'Download failed');
     btn.innerHTML = '<span class="inline-status-spinner inline-status-spinner-sm"></span>Downloading…';
     btn.style.opacity = '0.7';
-  } catch(e) { toast('Failed to start download', 'error'); btn.disabled = false; btn.textContent = 'Retry'; _downloadingZims.delete(filename); return; }
+  } catch(e) { toast(e.message || 'Failed to start download', 'error'); btn.disabled = false; btn.textContent = 'Retry'; _downloadingZims.delete(filename); return; }
   startZimQueuePoll();
 }
 
@@ -1081,7 +1110,7 @@ function stopZimQueuePoll() {
 }
 async function loadZimDownloads() {
   try {
-    const downloads = await (await fetch('/api/kiwix/zim-downloads')).json();
+    const downloads = await fetchJsonSafe('/api/kiwix/zim-downloads', {}, {}, 'Failed to load download queue');
     const entries = Object.entries(downloads);
     const active = entries.filter(([,v]) => v.status === 'downloading' || v.status === 'extracting');
     const errors = entries.filter(([,v]) => v.status === 'error');
@@ -1131,7 +1160,7 @@ async function loadZimDownloads() {
       </div>
     `).join('');
     itemsEl.innerHTML = html;
-  } catch(e) {}
+  } catch(e) { console.warn('Failed to refresh ZIM downloads:', e.message); }
 }
 
 function startZimQueuePoll() {
@@ -1151,8 +1180,12 @@ function startZimQueuePoll() {
 }
 
 async function deleteZim(filename) {
-  const resp = await fetch('/api/kiwix/delete-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename}) });
-  if (!resp.ok) { toast('Failed to delete content pack', 'error'); return; }
+  try {
+    await fetchJsonStrict('/api/kiwix/delete-zim', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename}) }, 'Failed to delete content pack');
+  } catch (e) {
+    toast(e.message || 'Failed to delete content pack', 'error');
+    return;
+  }
   _installedZims.delete(filename);
   window._zimCompletedSet?.delete(filename);
   toast('Content pack deleted', 'warning');

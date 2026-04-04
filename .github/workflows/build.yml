@@ -73,7 +73,7 @@ jobs:
 
       # Windows: sign binary and installer if code signing cert is configured
       - name: Sign Windows binaries
-        if: runner.os == 'Windows' && secrets.CODESIGN_CERT_BASE64 != ''
+        if: ${{ runner.os == 'Windows' && secrets.CODESIGN_CERT_BASE64 != '' }}
         env:
           CODESIGN_CERT: ${{ secrets.CODESIGN_CERT_BASE64 }}
           CODESIGN_PASS: ${{ secrets.CODESIGN_CERT_PASSWORD }}

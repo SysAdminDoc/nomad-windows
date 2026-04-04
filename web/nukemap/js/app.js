@@ -1400,14 +1400,20 @@ function initControls() {
     }
   });
 
-  // WW3 quick-launch button
+  // WW3 quick-launch button — directly launches Global Thermonuclear War
   $('ww3-quick-btn').addEventListener('click', () => {
-    switchTab('tools');
-    // Scroll WW3 section into view
-    const ww3Sec = $('ww3-scenario')?.closest('.section');
-    if (ww3Sec) ww3Sec.scrollIntoView({behavior: 'smooth', block: 'start'});
-    // If panel is collapsed, open it
-    $('panel').classList.remove('collapsed');
+    if (NM.WW3.active) {
+      NM.WW3.stop(map);
+      $('ww3-pause').style.display = 'none';
+      return;
+    }
+    clearAll();
+    // Set UI to match what we're launching
+    const ww3Sel = $('ww3-scenario');
+    if (ww3Sel) ww3Sel.value = 'global';
+    NM.WW3.start(map, 'global');
+    $('ww3-pause').style.display = '';
+    $('ww3-pause').textContent = 'Pause';
   });
 
   // Quick weapon bar

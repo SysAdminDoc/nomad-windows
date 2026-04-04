@@ -355,6 +355,17 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **Perf: alert engine triple DB open** (`web/app.py`) — alert engine opened 3 separate DB connections per 5-minute cycle (read + dedup write + prune write); consolidated to 1 connection
   - **Perf: log reader deque allocation** (`services/manager.py`) — `_service_logs.setdefault(service_id, deque(maxlen=500))` inside hot log-reader loop constructed throwaway deque on every line; captured deque reference once before entering loop
 
+- **v6.27 — yt-dlp Bundling, NukeMap WW3, CI Fix, Cache Guard**:
+  - **yt-dlp bundled in executable** (`requirements.txt`, `build.spec`, `web/blueprints/media.py`) — added `yt-dlp` as pip dependency so PyInstaller packages it; `get_ytdlp_path()` prefers standalone binary (for updates) then falls back to bundled module via auto-generated wrapper script (.cmd on Windows, shell script on Unix); all existing `subprocess.run([exe, ...])` calls work unchanged with either mode
+  - **yt-dlp update mechanism** — `GET /api/ytdlp/check-update` compares installed version against GitHub latest release tag; `POST /api/ytdlp/update` downloads latest standalone binary with progress tracking and atomic replace (overrides bundled version); `GET /api/ytdlp/status` now reports `source: "bundled"|"standalone"|"none"`
+  - **NukeMap WW3 quick-launch** (`web/nukemap/js/app.js`) — floating WW3 button now directly launches the `global` scenario (708 warheads, all sides) instead of just scrolling to the Tools panel; click again while running to stop; syncs scenario dropdown
+  - **CI workflow fix** (`.github/workflows/build.yml`) — `secrets` context cannot be used in step-level `if:` conditions; moved code signing cert check from `if:` expression into script body with early exit
+  - **Situation Room CSS theming** (`web/static/css/app/45_situation_room.css`) — extracted 40+ hardcoded accent colors (`#4aedc4`, `#0f5040`) into `--sr-accent`, `--sr-accent-dim`, `--sr-accent-bg` CSS custom properties across all 6 theme variants
+  - **Services/AI fetch hardening** (`web/templates/index_partials/js/_app_services_ai.js`) — added `fetchJsonStrict`/`fetchJsonSafe` helpers; all install/start/stop/uninstall/prereqs/model-pull/ZIM-download flows now check `resp.ok` before parsing JSON and extract meaningful error messages from API payloads
+  - **`_api_cache` eviction guard** (`web/app.py`) — added max-size check with expired entry pruning (>120s old) when cache exceeds 50 entries; defense-in-depth for currently 2-key cache
+  - **Full codebase audit (v6.27)** — 3 parallel deep audits covering all Python blueprints, all JS files, service workers, state management, and service modules. Verified all v6.26 fixes hold. Confirmed false positives: SSE listener dedup (already correct), copilot session eviction (already bounded at 100), drag handler accumulation (DOM replacement GCs old listeners), interval dedup (startInterval calls stopInterval first), JSON.parse guards (all wrapped), RSS upsert pattern (bounded), restart tracker (pruned within 300s window)
+  - **New test files** — `tests/test_crud_api.py` (242 lines), `tests/test_db_safety.py` (58 lines), `tests/test_services_ai_contracts.py` (17 lines)
+
 ## Run / Build
 ```bash
 python nomad.py                    # Run from source (any platform)

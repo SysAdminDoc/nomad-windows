@@ -12,9 +12,9 @@ function loadFEP() {
   try {
     const data = JSON.parse(localStorage.getItem('nomad-fep') || '{}');
     Object.entries(data).forEach(([k, v]) => { const el = document.getElementById('fep-'+k); if (el) el.value = v; });
-    _fepMembers = JSON.parse(localStorage.getItem('nomad-fep-members') || '[]');
-    renderFEPMembers();
   } catch(e) {}
+  try { _fepMembers = JSON.parse(localStorage.getItem('nomad-fep-members') || '[]'); } catch(e) { _fepMembers = []; }
+  renderFEPMembers();
 }
 
 function addFEPMember() {
@@ -73,7 +73,8 @@ function prepToneClass(value, map) { return map[value] || 'text-muted'; }
 function fuelToneClass(fuel) { return fuel > 50 ? 'text-green' : fuel > 25 ? 'text-orange' : 'text-red'; }
 
 function loadShelterAssess() {
-  const saved = JSON.parse(localStorage.getItem('nomad-shelter') || '{}');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('nomad-shelter') || '{}'); } catch(e) {}
   const el = document.getElementById('shelter-assess');
   el.innerHTML = SHELTER_CRITERIA.map((c, i) => {
     const level = saved[i] || 'red';
@@ -92,7 +93,8 @@ function loadShelterAssess() {
 }
 
 function cycleShelter(idx) {
-  const saved = JSON.parse(localStorage.getItem('nomad-shelter') || '{}');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('nomad-shelter') || '{}'); } catch(e) {}
   const levels = ['red','yellow','green'];
   const current = saved[idx] || 'red';
   saved[idx] = levels[(levels.indexOf(current) + 1) % levels.length];
@@ -138,7 +140,8 @@ const HOME_SECURITY_ITEMS = [
 function renderHomeSecurity() {
   const el = document.getElementById('home-security-list');
   if (!el) return;
-  const saved = JSON.parse(localStorage.getItem('nomad-home-security') || '{}');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('nomad-home-security') || '{}'); } catch(e) {}
   let total = 0, checked = 0;
   el.innerHTML = HOME_SECURITY_ITEMS.map(cat => {
     return `<div class="prep-home-security-card">
@@ -160,14 +163,16 @@ function renderHomeSecurity() {
 }
 
 function toggleHomeSecurity(key, val) {
-  const saved = JSON.parse(localStorage.getItem('nomad-home-security') || '{}');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('nomad-home-security') || '{}'); } catch(e) {}
   if (val) saved[key] = true; else delete saved[key];
   localStorage.setItem('nomad-home-security', JSON.stringify(saved));
   renderHomeSecurity();
 }
 
 function loadInfraStatus() {
-  const saved = JSON.parse(localStorage.getItem('nomad-infra') || '{}');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('nomad-infra') || '{}'); } catch(e) {}
   const el = document.getElementById('infra-status');
   el.innerHTML = INFRA_ITEMS.map(item => {
     const key = item.replace(/[^a-zA-Z]/g,'').toLowerCase();
@@ -180,7 +185,8 @@ function loadInfraStatus() {
 }
 
 function cycleInfra(key) {
-  const saved = JSON.parse(localStorage.getItem('nomad-infra') || '{}');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('nomad-infra') || '{}'); } catch(e) {}
   const current = saved[key] || 'unknown';
   const next = INFRA_LEVELS[(INFRA_LEVELS.indexOf(current) + 1) % INFRA_LEVELS.length];
   saved[key] = next;

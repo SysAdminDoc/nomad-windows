@@ -1348,11 +1348,11 @@ function initControls() {
   $('dose-calc').addEventListener('click', () => {
     if (!currentDets.length) return;
     const det = currentDets[currentDets.length - 1];
-    if (!det.effects.isSurface) { $('dose-result').innerHTML = '<div style="color:var(--overlay0);font-size:11px">Dose calculator requires a surface burst (fallout)</div>'; return; }
+    if (!det.effects.isSurface) { ($('nuke-dose-result') || $('dose-result')).innerHTML = '<div style="color:var(--overlay0);font-size:11px">Dose calculator requires a surface burst (fallout)</div>'; return; }
     const dist = +$('dose-dist').value || 5;
     const arrive = +$('dose-arrive').value || 1;
     const stay = +$('dose-stay').value || 4;
-    $('dose-result').innerHTML = NM.DoseCalc.generateHTML(det.yieldKt, det.fission, dist, arrive, stay);
+    ($('nuke-dose-result') || $('dose-result')).innerHTML = NM.DoseCalc.generateHTML(det.yieldKt, det.fission, dist, arrive, stay);
   });
 
   // Test database

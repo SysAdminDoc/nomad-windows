@@ -6,11 +6,15 @@
 const NomadEvents = {
     _source: null,
     _handlers: {},
+    _sseListeners: {},
     _reconnectDelay: 1000,
     _maxReconnectDelay: 30000,
+    _reconnectTimer: null,
 
     connect() {
-        if (this._source) this._source.close();
+        if (this._reconnectTimer) { clearTimeout(this._reconnectTimer); this._reconnectTimer = null; }
+        if (this._source) { this._source.close(); this._source = null; }
+
         this._source = new EventSource('/api/events/stream');
 
         this._source.onopen = () => {
@@ -30,19 +34,22 @@ const NomadEvents = {
             this._source.close();
             this._source = null;
             const jitter = Math.random() * this._reconnectDelay * 0.3;
-            setTimeout(() => this.connect(), this._reconnectDelay + jitter);
+            this._reconnectTimer = setTimeout(() => this.connect(), this._reconnectDelay + jitter);
             this._reconnectDelay = Math.min(this._reconnectDelay * 2, this._maxReconnectDelay);
         };
 
-        // Register event types
+        // Register event types — use stored refs so we never duplicate
         ['inventory_update', 'weather_update', 'alert', 'alert_check', 'task_update',
          'sync_update', 'backup_complete', 'power_update'].forEach(type => {
-            this._source.addEventListener(type, (e) => {
-                let data;
-                try { data = JSON.parse(e.data); } catch(err) { console.debug('[SSE] Bad JSON:', err); return; }
-                if (typeof data !== 'object' || data === null) return;
-                this._dispatch(type, data);
-            });
+            if (!this._sseListeners[type]) {
+                this._sseListeners[type] = (e) => {
+                    let data;
+                    try { data = JSON.parse(e.data); } catch(err) { console.debug('[SSE] Bad JSON:', err); return; }
+                    if (typeof data !== 'object' || data === null) return;
+                    this._dispatch(type, data);
+                };
+            }
+            this._source.addEventListener(type, this._sseListeners[type]);
         });
     },
 

@@ -209,7 +209,8 @@ function savePace() {
 async function loadPace() {
   try {
     // Try localStorage first (fast), then server (backup source)
-    let pace = JSON.parse(localStorage.getItem('nomad-pace-plan') || '{}');
+    let pace = {};
+    try { pace = JSON.parse(localStorage.getItem('nomad-pace-plan') || '{}'); } catch(e) {}
     if (!Object.keys(pace).length) {
       try {
         const settings = await (await fetch('/api/settings')).json();

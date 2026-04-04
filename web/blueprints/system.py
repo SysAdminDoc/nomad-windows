@@ -1692,7 +1692,7 @@ def api_system_health():
         health['modules_active'] = modules_active
         health['modules_total'] = len(checks)
         health['total_data_items'] = total_items
-        health['coverage_pct'] = round(modules_active / len(checks) * 100)
+        health['coverage_pct'] = round(modules_active / len(checks) * 100) if checks else 0
 
         # Critical gaps
         from datetime import datetime, timedelta
@@ -1955,7 +1955,7 @@ def api_getting_started():
              'action': 'preparedness', 'sub': 'family'},
         ]
         completed = sum(1 for s in steps if s['done'])
-        return jsonify({'steps': steps, 'completed': completed, 'total': len(steps), 'pct': round(completed / len(steps) * 100)})
+        return jsonify({'steps': steps, 'completed': completed, 'total': len(steps), 'pct': round(completed / len(steps) * 100) if steps else 0})
 # ─── NukeMap ──────────────────────────────────────────────────────
 
 # Resolve nukemap directory — try multiple paths for robustness

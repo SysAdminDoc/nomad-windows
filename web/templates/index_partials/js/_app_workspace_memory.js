@@ -2088,7 +2088,9 @@ async function loadContentSummary() {
   const el = document.getElementById('content-summary');
   if (!el) return;
   try {
-    const s = await (await fetch('/api/content-summary')).json();
+    const _csResp = await fetch('/api/content-summary');
+    if (!_csResp.ok) throw new Error('content-summary failed');
+    const s = await _csResp.json();
     el.innerHTML = `
       <div>
         <div class="cs-total">${escapeHtml(String(s.total_size || '0 B'))}</div>
@@ -2112,7 +2114,9 @@ async function loadLogViewer() {
   const level = levelEl.value;
   try {
     const lines = document.getElementById('log-lines-select')?.value || 100;
-    const items = await (await fetch('/api/activity?limit=' + parseInt(lines))).json();
+    const _logResp = await fetch('/api/activity?limit=' + parseInt(lines));
+    if (!_logResp.ok) throw new Error('activity log failed');
+    const items = await _logResp.json();
     const filtered = level ? items.filter(a => a.level === level) : items;
     const el = document.getElementById('log-viewer');
     if (!filtered.length) { el.innerHTML = '<span class="settings-empty-state log-viewer-empty">No log entries.</span>'; return; }
@@ -2134,9 +2138,11 @@ async function loadLogViewer() {
 /* ─── Disk Monitor ─── */
 async function loadDataSummary() {
   try {
-    const d = await (await fetch('/api/data-summary')).json();
+    const _dsResp = await fetch('/api/data-summary');
+    if (!_dsResp.ok) return;
+    const d = await _dsResp.json();
     const el = document.getElementById('data-summary');
-    if (!d.tables.length) {
+    if (!d?.tables?.length) {
       el.innerHTML = '<div class="settings-empty-state">No data yet. Start adding inventory, contacts, and notes to see your data summary.</div>';
       return;
     }
@@ -2154,8 +2160,8 @@ async function loadDataSummary() {
 async function loadDiskMonitor() {
   try {
     const [sys, summary] = await Promise.all([
-      fetch('/api/system').then(r => r.json()),
-      fetch('/api/content-summary').then(r => r.json())
+      fetch('/api/system').then(r => { if(!r.ok) throw new Error(); return r.json(); }),
+      fetch('/api/content-summary').then(r => { if(!r.ok) throw new Error(); return r.json(); })
     ]);
     const el = document.getElementById('disk-monitor');
 
@@ -2205,7 +2211,7 @@ async function loadReadiness(servicesData = null) {
   try {
     const services = Array.isArray(servicesData)
       ? servicesData
-      : await (await fetch('/api/services')).json();
+      : await fetch('/api/services').then(r => { if(!r.ok) throw new Error(); return r.json(); });
     const caps = [
       {id:'ollama', label:'AI Chat', need:['ollama']},
       {id:'kiwix', label:'Library', need:['kiwix']},
@@ -2236,7 +2242,9 @@ async function loadActivity() {
   try {
     const filter = document.getElementById('activity-filter')?.value || '';
     const url = filter ? `/api/activity?limit=30&filter=${encodeURIComponent(filter)}` : '/api/activity?limit=30';
-    const items = await (await fetch(url)).json();
+    const _actResp = await fetch(url);
+    if (!_actResp.ok) throw new Error('activity failed');
+    const items = await _actResp.json();
     if (!items.length) { el.innerHTML = '<span class="text-muted">No activity yet.</span>'; return; }
     el.innerHTML = items.map(a => {
       const t = new Date(a.created_at);
@@ -2263,7 +2271,9 @@ async function checkForUpdate() {
   const statusEl = document.getElementById('update-status-text');
   if (!banner && !dlBtn && !statusEl) return;
   try {
-    const u = await (await fetch('/api/update-check')).json();
+    const _ucResp = await fetch('/api/update-check');
+    if (!_ucResp.ok) return;
+    const u = await _ucResp.json();
     if (u.update_available) {
       if (banner) {
         banner.style.display = 'inline-flex';
@@ -2300,7 +2310,9 @@ function pollUpdateProgress() {
   stopUpdateProgressPoll();
   const runner = async () => {
     try {
-      const s = await (await fetch('/api/update-download/status')).json();
+      const _udResp = await fetch('/api/update-download/status');
+      if (!_udResp.ok) { stopUpdateProgressPoll(); return; }
+      const s = await _udResp.json();
       document.getElementById('update-progress-pct').textContent = s.progress + '%';
       document.getElementById('update-progress-fill').style.width = s.progress + '%';
       document.getElementById('update-progress-label').textContent =
@@ -2340,7 +2352,9 @@ async function loadStartupState() {
   const toggle = document.getElementById('startup-toggle');
   if (!toggle) return;
   try {
-    const s = await (await fetch('/api/startup')).json();
+    const _suResp = await fetch('/api/startup');
+    if (!_suResp.ok) return;
+    const s = await _suResp.json();
     toggle.checked = s.enabled;
   } catch(e) {}
 }
@@ -2359,7 +2373,9 @@ async function pollDownloadQueue() {
   const itemsEl = document.getElementById('download-queue-items');
   if (!banner || !itemsEl) return;
   try {
-    const downloads = await (await fetch('/api/downloads/active')).json();
+    const _dlResp = await fetch('/api/downloads/active');
+    if (!_dlResp.ok) return;
+    const downloads = await _dlResp.json();
     if (!downloads.length) { banner.style.display = 'none'; return; }
     banner.style.display = 'block';
     itemsEl.innerHTML = downloads.map(d => {
@@ -2388,8 +2404,10 @@ async function loadServiceLogs() {
   const el = document.getElementById('svc-log-viewer');
   if (!svc) { el.innerHTML = '<span class="settings-console-hint">Select a service above to view its process output.</span>'; return; }
   try {
-    const data = await (await fetch('/api/services/' + svc + '/logs?tail=200')).json();
-    if (!data.lines || !data.lines.length) {
+    const _slResp = await fetch('/api/services/' + svc + '/logs?tail=200');
+    if (!_slResp.ok) throw new Error('logs failed');
+    const data = await _slResp.json();
+    if (!data?.lines || !data.lines.length) {
       el.innerHTML = '<span class="settings-console-hint">No log output captured for ' + svc + '. Logs appear when the service is running.</span>';
       return;
     }
@@ -2406,7 +2424,9 @@ async function loadServiceLogs() {
 /* ─── Content Update Checker ─── */
 async function checkContentUpdates() {
   try {
-    const updates = await (await fetch('/api/kiwix/check-updates')).json();
+    const _cuResp = await fetch('/api/kiwix/check-updates');
+    if (!_cuResp.ok) throw new Error('check-updates failed');
+    const updates = await _cuResp.json();
     const panel = document.getElementById('content-updates-panel');
     const itemsEl = document.getElementById('content-update-items');
     if (!updates.length) { panel.style.display = 'none'; toast('All content is up to date', 'success'); return; }

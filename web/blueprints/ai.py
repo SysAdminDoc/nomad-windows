@@ -866,8 +866,14 @@ def api_training_jobs_create():
     import re as _re
     base_model = _re.sub(r'[^a-zA-Z0-9._:-]', '', data.get('base_model', 'llama3.2'))[:100] or 'llama3.2'
     output_model = _re.sub(r'[^a-zA-Z0-9_-]', '', data.get('output_model', f'nomad-custom-{int(time.time())}'))[:100] or f'nomad-custom-{int(time.time())}'
-    epochs = min(max(int(data.get('epochs', 3)), 1), 20)
-    lr = float(data.get('learning_rate', 0.0002))
+    try:
+        epochs = min(max(int(data.get('epochs', 3)), 1), 20)
+    except (ValueError, TypeError):
+        epochs = 3
+    try:
+        lr = float(data.get('learning_rate', 0.0002))
+    except (ValueError, TypeError):
+        lr = 0.0002
 
     with db_session() as db:
         ds = db.execute('SELECT id, name, file_path FROM training_datasets WHERE id = ?', (dataset_id,)).fetchone() if dataset_id else None

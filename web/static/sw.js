@@ -53,17 +53,48 @@ self.addEventListener('install', event => {
   );
 });
 
-// Clean up old caches on activate
+// Clean up old caches on activate + evict stale sitroom entries
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME && k !== SITROOM_CACHE).map(k => caches.delete(k)))
-    ).then(() => self.clients.claim())
+    ).then(() => _evictStaleSitroomCache()).then(() => self.clients.claim())
   );
 });
 
+// Evict sitroom cache entries older than TTL and cap total entries
+async function _evictStaleSitroomCache() {
+  try {
+    const cache = await caches.open(SITROOM_CACHE);
+    const keys = await cache.keys();
+    const MAX_ENTRIES = 200;
+    const now = Date.now();
+    let evicted = 0;
+    for (const req of keys) {
+      const resp = await cache.match(req);
+      if (!resp) { await cache.delete(req); evicted++; continue; }
+      const cachedAt = parseInt(resp.headers.get('sw-cached-at') || '0');
+      if (cachedAt && (now - cachedAt > SITROOM_CACHE_TTL)) {
+        await cache.delete(req);
+        evicted++;
+      }
+    }
+    // If still over limit, evict oldest
+    if (keys.length - evicted > MAX_ENTRIES) {
+      const remaining = await cache.keys();
+      const excess = remaining.slice(0, remaining.length - MAX_ENTRIES);
+      for (const req of excess) await cache.delete(req);
+    }
+  } catch(e) { /* SW cache eviction is best-effort */ }
+}
+
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+
+  // Periodically evict stale sitroom cache (every ~100 requests)
+  if (url.pathname.startsWith('/api/sitroom/') && Math.random() < 0.01) {
+    _evictStaleSitroomCache();
+  }
 
   // Situation Room API — dedicated cache with TTL for offline intelligence
   if (url.pathname.startsWith('/api/sitroom/')) {
@@ -95,12 +126,14 @@ self.addEventListener('fetch', event => {
   }
 
   // Other API calls — network-first with general cache fallback (GET only)
+  // Only cache read-heavy endpoints, not all GETs (prevents unbounded cache growth)
   if (url.pathname.startsWith('/api/')) {
     if (event.request.method === 'GET') {
+      const cacheable = /^\/(api\/(services|system|content-summary|settings|offline\/snapshot))/.test(url.pathname);
       event.respondWith(
         fetch(event.request)
           .then(response => {
-            if (response.ok) {
+            if (response.ok && cacheable) {
               const clone = response.clone();
               caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
             }

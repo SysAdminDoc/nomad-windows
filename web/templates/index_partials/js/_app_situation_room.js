@@ -5065,14 +5065,16 @@ function _initCardResize() {
       // Persist to localStorage
       const cardId = _getSitroomPanelId(card);
       if (cardId) {
-        const sizes = JSON.parse(localStorage.getItem('sitroom-card-sizes') || '{}');
+        let sizes = {};
+        try { sizes = JSON.parse(localStorage.getItem('sitroom-card-sizes') || '{}'); } catch(e) {}
         sizes[cardId] = size;
         localStorage.setItem('sitroom-card-sizes', JSON.stringify(sizes));
       }
     }
   });
   // Restore saved sizes
-  const sizes = JSON.parse(localStorage.getItem('sitroom-card-sizes') || '{}');
+  let sizes = {};
+  try { sizes = JSON.parse(localStorage.getItem('sitroom-card-sizes') || '{}'); } catch(e) {}
   document.querySelectorAll('.sr-card').forEach(card => {
     const cardId = _getSitroomPanelId(card);
     if (cardId && sizes[cardId]) {

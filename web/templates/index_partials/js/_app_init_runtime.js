@@ -1055,8 +1055,8 @@ async function clearRadiation() {
 // ═══════════════════════════════════════════════════════════════
 // ICS FORMS
 // ═══════════════════════════════════════════════════════════════
-let _ics309Entries = JSON.parse(localStorage.getItem('nomad_ics309') || '[]');
-let _ics214Entries = JSON.parse(localStorage.getItem('nomad_ics214') || '[]');
+let _ics309Entries; try { _ics309Entries = JSON.parse(localStorage.getItem('nomad_ics309') || '[]'); } catch(e) { _ics309Entries = []; }
+let _ics214Entries; try { _ics214Entries = JSON.parse(localStorage.getItem('nomad_ics214') || '[]'); } catch(e) { _ics214Entries = []; }
 function _persistICS() {
   try {
     localStorage.setItem('nomad_ics309', JSON.stringify(_ics309Entries));

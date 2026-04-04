@@ -518,11 +518,12 @@ def uninstall_service(service_id: str) -> bool:
         db.commit()
     finally:
         db.close()
+        # Always clean up tracking state, even if DB delete failed
+        _download_progress.pop(service_id, None)
+        with _lock:
+            _service_logs.pop(service_id, None)
+            _restart_tracker.pop(service_id, None)
 
-    _download_progress.pop(service_id, None)
-    with _lock:
-        _service_logs.pop(service_id, None)
-        _restart_tracker.pop(service_id, None)
     log_activity('service_uninstalled', service_id)
     log.info(f'Uninstalled {service_id}')
     return True

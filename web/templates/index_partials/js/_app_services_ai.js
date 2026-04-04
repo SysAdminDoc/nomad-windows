@@ -1028,7 +1028,7 @@ async function downloadAllZimsByTier(tier) {
   try {
     const [catalog, existing] = await Promise.all([
       _cachedCatalog || fetch('/api/kiwix/catalog').then(r => { if(!r.ok) throw new Error(); return r.json(); }),
-      fetch('/api/kiwix/zims').then(r => r.json())
+      fetch('/api/kiwix/zims').then(r => { if(!r.ok) throw new Error(); return r.json(); })
     ]);
     _cachedCatalog = catalog;
     const existingNames = new Set(existing.map(z => z.filename));

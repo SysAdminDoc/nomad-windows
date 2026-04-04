@@ -241,7 +241,8 @@ const THREAT_LVL_COLORS = {low:'var(--green)',medium:'var(--warning)',high:'var(
 const THREAT_LVL_LABELS = {low:'LOW',medium:'MED',high:'HIGH',critical:'CRIT'};
 
 function loadThreatMatrix() {
-  const saved = JSON.parse(localStorage.getItem('nomad-threats') || '{}');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('nomad-threats') || '{}'); } catch(e) {}
   let html = '<div class="prep-inline-table-shell threat-matrix-table-shell"><table class="freq-table prep-inline-table threat-matrix-table"><thead><tr><th>Threat</th><th>Likelihood</th><th>Impact</th><th>Risk</th></tr></thead><tbody>';
   THREAT_SCENARIOS.forEach((t, i) => {
     const like = saved[`${i}_l`] || 'low';
@@ -263,7 +264,8 @@ function loadThreatMatrix() {
 }
 
 function cycleThreat(idx, type) {
-  const saved = JSON.parse(localStorage.getItem('nomad-threats') || '{}');
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('nomad-threats') || '{}'); } catch(e) {}
   const key = `${idx}_${type}`;
   const current = saved[key] || 'low';
   saved[key] = THREAT_LEVELS[(THREAT_LEVELS.indexOf(current) + 1) % THREAT_LEVELS.length];
@@ -315,10 +317,11 @@ async function printFullCard() {
     ]);
   } catch(e) { toast('Failed to load data for print card', 'error'); return; }
   // Get localStorage data
-  const pace = JSON.parse(localStorage.getItem('nomad-pace-plan') || '{}');
-  const fep = JSON.parse(localStorage.getItem('nomad-fep') || '{}');
-  const fepMembers = JSON.parse(localStorage.getItem('nomad-fep-members') || '[]');
-  const sit = JSON.parse(localStorage.getItem('nomad-sit-board') || '{}');
+  let pace = {}, fep = {}, fepMembers = [], sit = {};
+  try { pace = JSON.parse(localStorage.getItem('nomad-pace-plan') || '{}'); } catch(e) {}
+  try { fep = JSON.parse(localStorage.getItem('nomad-fep') || '{}'); } catch(e) {}
+  try { fepMembers = JSON.parse(localStorage.getItem('nomad-fep-members') || '[]'); } catch(e) {}
+  try { sit = JSON.parse(localStorage.getItem('nomad-sit-board') || '{}'); } catch(e) {}
   // Also try settings
   try { const s = await fetch('/api/settings').then(r=>r.json()); if (s.sit_board) Object.assign(sit, JSON.parse(s.sit_board)); } catch(e) {}
 

@@ -368,13 +368,13 @@ const MORSE_MAP = {'A':'.-','B':'-...','C':'-.-.','D':'-..','E':'.','F':'..-.','
 const MORSE_REV = Object.fromEntries(Object.entries(MORSE_MAP).map(([k,v])=>[v,k]));
 
 function textToMorse() {
-  const text = document.getElementById('morse-input').value.toUpperCase();
+  const text = (document.getElementById('morse-input')?.value || '').toUpperCase();
   const morse = text.split('').map(c => c === ' ' ? '/' : (MORSE_MAP[c] || '')).filter(Boolean).join(' ');
   document.getElementById('morse-output').textContent = morse;
 }
 
 function morseToText() {
-  const morse = document.getElementById('morse-decode-input').value.trim();
+  const morse = (document.getElementById('morse-decode-input')?.value || '').trim();
   const words = morse.split(/\s*\/\s*/);
   const text = words.map(w => w.split(/\s+/).map(c => MORSE_REV[c] || '?').join('')).join(' ');
   document.getElementById('morse-decode-output').textContent = text;

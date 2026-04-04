@@ -2411,8 +2411,14 @@ Respond with ONLY a JSON object (no markdown, no explanation):
         if not scenario:
             return jsonify({'error': 'Not found'}), 404
 
-        decisions = json.loads(scenario['decisions'] or '[]')
-        complications = json.loads(scenario['complications'] or '[]')
+        try:
+            decisions = json.loads(scenario['decisions'] or '[]')
+        except (json.JSONDecodeError, TypeError):
+            decisions = []
+        try:
+            complications = json.loads(scenario['complications'] or '[]')
+        except (json.JSONDecodeError, TypeError):
+            complications = []
 
         decision_summary = '\n'.join([f"Phase {d.get('phase',0)+1}: {d.get('label','')} (chose: {d.get('choice','')})" for d in decisions])
         complication_summary = '\n'.join([f"- {c.get('title','')}: chose {c.get('response','')}" for c in complications])
@@ -4106,7 +4112,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
 
     @app.route('/api/search/all')
     def api_search_all():
-        """Extended search across all data types."""
+        """Extended search across all data types — single UNION ALL query."""
         q = request.args.get('q', '').strip()[:200]
         if not q:
             return jsonify({'conversations': [], 'notes': [], 'documents': [], 'inventory': [], 'contacts': [], 'checklists': []})
@@ -4114,29 +4120,45 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             q_escaped = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
             like = f'%{q_escaped}%'
             esc = "ESCAPE '\\'"
-            convos = db.execute(f"SELECT id, title, 'conversation' as type FROM conversations WHERE title LIKE ? {esc} OR messages LIKE ? {esc} LIMIT 10", (like, like)).fetchall()
-            notes = db.execute(f"SELECT id, title, 'note' as type FROM notes WHERE title LIKE ? {esc} OR content LIKE ? {esc} LIMIT 10", (like, like)).fetchall()
-            docs = db.execute(f"SELECT id, filename as title, 'document' as type FROM documents WHERE filename LIKE ? {esc} AND status = 'ready' LIMIT 10", (like,)).fetchall()
-            inv = db.execute(f"SELECT id, name as title, 'inventory' as type FROM inventory WHERE name LIKE ? {esc} OR location LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 10", (like, like, like)).fetchall()
-            contacts = db.execute(f"SELECT id, name as title, 'contact' as type FROM contacts WHERE name LIKE ? {esc} OR callsign LIKE ? {esc} OR role LIKE ? {esc} OR skills LIKE ? {esc} LIMIT 10", (like, like, like, like)).fetchall()
-            checklists = db.execute(f"SELECT id, name as title, 'checklist' as type FROM checklists WHERE name LIKE ? {esc} LIMIT 10", (like,)).fetchall()
-            skills = db.execute(f"SELECT id, name as title, 'skill' as type FROM skills WHERE name LIKE ? {esc} OR category LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 5", (like, like, like)).fetchall()
-            ammo = db.execute(f"SELECT id, caliber as title, 'ammo' as type FROM ammo_inventory WHERE caliber LIKE ? {esc} OR brand LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5", (like, like, like)).fetchall()
-            equipment = db.execute(f"SELECT id, name as title, 'equipment' as type FROM equipment_log WHERE name LIKE ? {esc} OR category LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5", (like, like, like)).fetchall()
-            waypoints = db.execute(f"SELECT id, name as title, 'waypoint' as type FROM waypoints WHERE name LIKE ? {esc} OR notes LIKE ? {esc} OR category LIKE ? {esc} LIMIT 5", (like, like, like)).fetchall()
-            freqs = db.execute(f"SELECT id, service as title, 'frequency' as type FROM freq_database WHERE service LIKE ? {esc} OR description LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 5", (like, like, like)).fetchall()
-            patients = db.execute(f"SELECT id, name as title, 'patient' as type FROM patients WHERE name LIKE ? {esc} LIMIT 5", (like,)).fetchall()
-            incidents = db.execute(f"SELECT id, description as title, 'incident' as type FROM incidents WHERE description LIKE ? {esc} OR category LIKE ? {esc} LIMIT 5", (like, like)).fetchall()
-            fuel = db.execute(f"SELECT id, fuel_type as title, 'fuel' as type FROM fuel_storage WHERE fuel_type LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5", (like, like)).fetchall()
-        return jsonify({
-            'conversations': [dict(r) for r in convos], 'notes': [dict(r) for r in notes],
-            'documents': [dict(r) for r in docs], 'inventory': [dict(r) for r in inv],
-            'contacts': [dict(r) for r in contacts], 'checklists': [dict(r) for r in checklists],
-            'skills': [dict(r) for r in skills], 'ammo': [dict(r) for r in ammo],
-            'equipment': [dict(r) for r in equipment], 'waypoints': [dict(r) for r in waypoints],
-            'frequencies': [dict(r) for r in freqs], 'patients': [dict(r) for r in patients],
-            'incidents': [dict(r) for r in incidents], 'fuel': [dict(r) for r in fuel],
-        })
+            # Single UNION ALL — 1 round-trip instead of 14
+            _search_parts = [
+                (f"SELECT id, title, 'conversation' as type FROM conversations WHERE title LIKE ? {esc} OR messages LIKE ? {esc} LIMIT 10", (like, like)),
+                (f"SELECT id, title, 'note' as type FROM notes WHERE title LIKE ? {esc} OR content LIKE ? {esc} LIMIT 10", (like, like)),
+                (f"SELECT id, filename as title, 'document' as type FROM documents WHERE filename LIKE ? {esc} AND status = 'ready' LIMIT 10", (like,)),
+                (f"SELECT id, name as title, 'inventory' as type FROM inventory WHERE name LIKE ? {esc} OR location LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 10", (like, like, like)),
+                (f"SELECT id, name as title, 'contact' as type FROM contacts WHERE name LIKE ? {esc} OR callsign LIKE ? {esc} OR role LIKE ? {esc} OR skills LIKE ? {esc} LIMIT 10", (like, like, like, like)),
+                (f"SELECT id, name as title, 'checklist' as type FROM checklists WHERE name LIKE ? {esc} LIMIT 10", (like,)),
+                (f"SELECT id, name as title, 'skill' as type FROM skills WHERE name LIKE ? {esc} OR category LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 5", (like, like, like)),
+                (f"SELECT id, caliber as title, 'ammo' as type FROM ammo_inventory WHERE caliber LIKE ? {esc} OR brand LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5", (like, like, like)),
+                (f"SELECT id, name as title, 'equipment' as type FROM equipment_log WHERE name LIKE ? {esc} OR category LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5", (like, like, like)),
+                (f"SELECT id, name as title, 'waypoint' as type FROM waypoints WHERE name LIKE ? {esc} OR notes LIKE ? {esc} OR category LIKE ? {esc} LIMIT 5", (like, like, like)),
+                (f"SELECT id, service as title, 'frequency' as type FROM freq_database WHERE service LIKE ? {esc} OR description LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 5", (like, like, like)),
+                (f"SELECT id, name as title, 'patient' as type FROM patients WHERE name LIKE ? {esc} LIMIT 5", (like,)),
+                (f"SELECT id, description as title, 'incident' as type FROM incidents WHERE description LIKE ? {esc} OR category LIKE ? {esc} LIMIT 5", (like, like)),
+                (f"SELECT id, fuel_type as title, 'fuel' as type FROM fuel_storage WHERE fuel_type LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5", (like, like)),
+            ]
+            union_sql = ' UNION ALL '.join(sql for sql, _ in _search_parts)
+            union_params = []
+            for _, params in _search_parts:
+                union_params.extend(params)
+            rows = db.execute(union_sql, tuple(union_params)).fetchall()
+
+        # Group results by type
+        result = {}
+        _type_keys = {
+            'conversation': 'conversations', 'note': 'notes', 'document': 'documents',
+            'inventory': 'inventory', 'contact': 'contacts', 'checklist': 'checklists',
+            'skill': 'skills', 'ammo': 'ammo', 'equipment': 'equipment',
+            'waypoint': 'waypoints', 'frequency': 'frequencies', 'patient': 'patients',
+            'incident': 'incidents', 'fuel': 'fuel',
+        }
+        for key in _type_keys.values():
+            result[key] = []
+        for r in rows:
+            key = _type_keys.get(r['type'])
+            if key:
+                result[key].append(dict(r))
+        return jsonify(result)
 
     # ─── System Health & Diagnostics ────────────────────────────────
 

@@ -771,7 +771,10 @@ def api_barcode_scan_to_inventory():
     import re
     from datetime import datetime, timedelta
     upc = re.sub(r'[^0-9]', '', str(data.get('upc', '')))
-    quantity = max(0, float(data.get('quantity', 1)))
+    try:
+        quantity = max(0, float(data.get('quantity', 1)))
+    except (ValueError, TypeError):
+        quantity = 1
     if not upc or len(upc) not in (8, 12, 13):
         return jsonify({'error': 'Invalid UPC format — must be 8, 12, or 13 digits'}), 400
     with db_session() as db:

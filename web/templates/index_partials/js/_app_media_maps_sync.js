@@ -2687,7 +2687,8 @@ function renderMapZones() {
       }
     });
   }
-  const zones = JSON.parse(localStorage.getItem('nomad-map-zones') || '[]');
+  let zones = [];
+  try { zones = JSON.parse(localStorage.getItem('nomad-map-zones') || '[]'); } catch(e) {}
   zones.forEach((z, i) => {
     const id = `zone-${i}`;
     _map.addSource(id, {type:'geojson', data:z});
@@ -2741,7 +2742,8 @@ function finishProperty() {
   // Save as a zone
   const geojson = {type:'Feature', geometry:{type:'Polygon', coordinates:[[...coords]]},
     properties:{name: 'Property Boundary', color: '#5b9fff', isProperty: true, area_acres: acres.toFixed(2), perimeter_ft: Math.round(perimFt)}};
-  const zones = JSON.parse(localStorage.getItem('nomad-map-zones') || '[]');
+  let zones = [];
+  try { zones = JSON.parse(localStorage.getItem('nomad-map-zones') || '[]'); } catch(e) {}
   // Remove existing property boundary
   const filtered = zones.filter(z => !z.properties?.isProperty);
   filtered.push(geojson);
@@ -2811,7 +2813,8 @@ function saveMapBookmark() {
   const center = _map.getCenter();
   const zoom = _map.getZoom();
   const name = `View at ${center.lat.toFixed(3)}, ${center.lng.toFixed(3)}`;
-  const bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]');
+  let bookmarks = [];
+  try { bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]'); } catch(e) {}
   bookmarks.push({name, lat: center.lat, lng: center.lng, zoom, time: new Date().toISOString()});
   localStorage.setItem('nomad-map-bookmarks', JSON.stringify(bookmarks));
   toast(`Bookmark saved: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`, 'success');
@@ -2819,7 +2822,8 @@ function saveMapBookmark() {
 }
 
 function renderMapBookmarks() {
-  const bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]');
+  let bookmarks = [];
+  try { bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]'); } catch(e) {}
   // Render in the map management area if visible
   let el = document.getElementById('map-bookmarks-list');
   if (!el) return;
@@ -2833,7 +2837,8 @@ function renderMapBookmarks() {
 }
 
 function gotoBookmark(idx) {
-  const bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]');
+  let bookmarks = [];
+  try { bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]'); } catch(e) {}
   const b = bookmarks[idx];
   if (!b || !_map) return;
   if (!_mapVisible) toggleMapView();
@@ -2841,7 +2846,8 @@ function gotoBookmark(idx) {
 }
 
 function deleteBookmark(idx) {
-  const bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]');
+  let bookmarks = [];
+  try { bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]'); } catch(e) {}
   bookmarks.splice(idx, 1);
   localStorage.setItem('nomad-map-bookmarks', JSON.stringify(bookmarks));
   renderMapBookmarks();

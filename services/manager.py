@@ -147,12 +147,14 @@ def download_file(url: str, dest: str, service_id: str = '') -> str:
         _download_progress[service_id] = {
             'percent': 100, 'status': 'complete', 'error': None,
             'speed': '', 'downloaded': total, 'total': total,
+            '_finished_at': time.time(),
         }
         return dest
     except Exception as e:
         _download_progress[service_id] = {
             'percent': 0, 'status': 'error', 'error': str(e),
             'speed': '', 'downloaded': 0, 'total': 0,
+            '_finished_at': time.time(),
         }
         # Keep partial file for resume on next attempt
         log.warning(f'Download failed for {service_id}, partial file kept for resume: {e}')
@@ -196,7 +198,7 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
 
         # Start background thread to read output into _service_logs
         # NOTE: service logs may contain filesystem paths — acceptable for local desktop app
-        _service_logs.setdefault(service_id, deque(maxlen=500))
+        log_deque = _service_logs.setdefault(service_id, deque(maxlen=500))
         def _read_output():
             try:
                 for line in iter(proc.stdout.readline, b''):
@@ -204,7 +206,7 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
                         break
                     decoded = line.decode('utf-8', errors='replace').rstrip('\n\r')
                     if decoded:
-                        _service_logs.setdefault(service_id, deque(maxlen=500)).append(decoded)
+                        log_deque.append(decoded)
             except Exception:
                 pass
         threading.Thread(target=_read_output, daemon=True).start()
@@ -423,6 +425,18 @@ def get_download_progress(service_id: str) -> dict:
         'percent': 0, 'status': 'idle', 'error': None,
         'speed': '', 'downloaded': 0, 'total': 0,
     })
+
+
+def prune_completed_downloads(max_age: float = 3600):
+    """Remove download progress entries that completed/errored more than max_age seconds ago."""
+    now = time.time()
+    stale = [
+        k for k, v in _download_progress.items()
+        if v.get('status') in ('complete', 'error')
+        and v.get('_finished_at', 0) and now - v['_finished_at'] > max_age
+    ]
+    for k in stale:
+        _download_progress.pop(k, None)
 
 
 def get_service_logs(service_id: str) -> list[str]:

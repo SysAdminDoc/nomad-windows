@@ -2020,35 +2020,26 @@ def create_app():
                 except Exception:
                     pass
 
-                # Close the read-only db before opening write sessions
-                if db:
-                    try:
-                        db.close()
-                    except Exception:
-                        pass
-                    db = None
-
                 # Deduplicate against existing active alerts (don't re-create dismissed ones within 24h)
+                # Reuse the same connection for writes to avoid opening 2 more connections per cycle
                 if alerts:
-                    with db_session() as db2:
-                        for alert in alerts:
-                            existing = db2.execute(
-                                "SELECT id, dismissed FROM alerts WHERE alert_type = ? AND title = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1",
-                                (alert['type'], alert['title'], (now - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S'))
-                            ).fetchone()
-                            if not existing:
-                                db2.execute(
-                                    'INSERT INTO alerts (alert_type, severity, title, message) VALUES (?, ?, ?, ?)',
-                                    (alert['type'], alert['severity'], alert['title'], alert['message'])
-                                )
-                        db2.commit()
+                    for alert in alerts:
+                        existing = db.execute(
+                            "SELECT id, dismissed FROM alerts WHERE alert_type = ? AND title = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1",
+                            (alert['type'], alert['title'], (now - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S'))
+                        ).fetchone()
+                        if not existing:
+                            db.execute(
+                                'INSERT INTO alerts (alert_type, severity, title, message) VALUES (?, ?, ?, ?)',
+                                (alert['type'], alert['severity'], alert['title'], alert['message'])
+                            )
+                    db.commit()
                     broadcast_event('alert_check', {'event': 'new_alerts'})
 
                 # Prune old dismissed alerts (>7 days)
-                with db_session() as db3:
-                    db3.execute("DELETE FROM alerts WHERE dismissed = 1 AND created_at < ?",
-                               ((now - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S'),))
-                    db3.commit()
+                db.execute("DELETE FROM alerts WHERE dismissed = 1 AND created_at < ?",
+                           ((now - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S'),))
+                db.commit()
 
             except Exception as e:
                 log.error(f'Alert engine error: {e}')
@@ -4122,20 +4113,20 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             esc = "ESCAPE '\\'"
             # Single UNION ALL — 1 round-trip instead of 14
             _search_parts = [
-                (f"SELECT id, title, 'conversation' as type FROM conversations WHERE title LIKE ? {esc} OR messages LIKE ? {esc} LIMIT 10", (like, like)),
-                (f"SELECT id, title, 'note' as type FROM notes WHERE title LIKE ? {esc} OR content LIKE ? {esc} LIMIT 10", (like, like)),
-                (f"SELECT id, filename as title, 'document' as type FROM documents WHERE filename LIKE ? {esc} AND status = 'ready' LIMIT 10", (like,)),
-                (f"SELECT id, name as title, 'inventory' as type FROM inventory WHERE name LIKE ? {esc} OR location LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 10", (like, like, like)),
-                (f"SELECT id, name as title, 'contact' as type FROM contacts WHERE name LIKE ? {esc} OR callsign LIKE ? {esc} OR role LIKE ? {esc} OR skills LIKE ? {esc} LIMIT 10", (like, like, like, like)),
-                (f"SELECT id, name as title, 'checklist' as type FROM checklists WHERE name LIKE ? {esc} LIMIT 10", (like,)),
-                (f"SELECT id, name as title, 'skill' as type FROM skills WHERE name LIKE ? {esc} OR category LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 5", (like, like, like)),
-                (f"SELECT id, caliber as title, 'ammo' as type FROM ammo_inventory WHERE caliber LIKE ? {esc} OR brand LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5", (like, like, like)),
-                (f"SELECT id, name as title, 'equipment' as type FROM equipment_log WHERE name LIKE ? {esc} OR category LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5", (like, like, like)),
-                (f"SELECT id, name as title, 'waypoint' as type FROM waypoints WHERE name LIKE ? {esc} OR notes LIKE ? {esc} OR category LIKE ? {esc} LIMIT 5", (like, like, like)),
-                (f"SELECT id, service as title, 'frequency' as type FROM freq_database WHERE service LIKE ? {esc} OR description LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 5", (like, like, like)),
-                (f"SELECT id, name as title, 'patient' as type FROM patients WHERE name LIKE ? {esc} LIMIT 5", (like,)),
-                (f"SELECT id, description as title, 'incident' as type FROM incidents WHERE description LIKE ? {esc} OR category LIKE ? {esc} LIMIT 5", (like, like)),
-                (f"SELECT id, fuel_type as title, 'fuel' as type FROM fuel_storage WHERE fuel_type LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5", (like, like)),
+                (f"SELECT * FROM (SELECT id, title, 'conversation' as type FROM conversations WHERE title LIKE ? {esc} OR messages LIKE ? {esc} LIMIT 10)", (like, like)),
+                (f"SELECT * FROM (SELECT id, title, 'note' as type FROM notes WHERE title LIKE ? {esc} OR content LIKE ? {esc} LIMIT 10)", (like, like)),
+                (f"SELECT * FROM (SELECT id, filename as title, 'document' as type FROM documents WHERE filename LIKE ? {esc} AND status = 'ready' LIMIT 10)", (like,)),
+                (f"SELECT * FROM (SELECT id, name as title, 'inventory' as type FROM inventory WHERE name LIKE ? {esc} OR location LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 10)", (like, like, like)),
+                (f"SELECT * FROM (SELECT id, name as title, 'contact' as type FROM contacts WHERE name LIKE ? {esc} OR callsign LIKE ? {esc} OR role LIKE ? {esc} OR skills LIKE ? {esc} LIMIT 10)", (like, like, like, like)),
+                (f"SELECT * FROM (SELECT id, name as title, 'checklist' as type FROM checklists WHERE name LIKE ? {esc} LIMIT 10)", (like,)),
+                (f"SELECT * FROM (SELECT id, name as title, 'skill' as type FROM skills WHERE name LIKE ? {esc} OR category LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 5)", (like, like, like)),
+                (f"SELECT * FROM (SELECT id, caliber as title, 'ammo' as type FROM ammo_inventory WHERE caliber LIKE ? {esc} OR brand LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5)", (like, like, like)),
+                (f"SELECT * FROM (SELECT id, name as title, 'equipment' as type FROM equipment_log WHERE name LIKE ? {esc} OR category LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5)", (like, like, like)),
+                (f"SELECT * FROM (SELECT id, name as title, 'waypoint' as type FROM waypoints WHERE name LIKE ? {esc} OR notes LIKE ? {esc} OR category LIKE ? {esc} LIMIT 5)", (like, like, like)),
+                (f"SELECT * FROM (SELECT id, service as title, 'frequency' as type FROM freq_database WHERE service LIKE ? {esc} OR description LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 5)", (like, like, like)),
+                (f"SELECT * FROM (SELECT id, name as title, 'patient' as type FROM patients WHERE name LIKE ? {esc} LIMIT 5)", (like,)),
+                (f"SELECT * FROM (SELECT id, description as title, 'incident' as type FROM incidents WHERE description LIKE ? {esc} OR category LIKE ? {esc} LIMIT 5)", (like, like)),
+                (f"SELECT * FROM (SELECT id, fuel_type as title, 'fuel' as type FROM fuel_storage WHERE fuel_type LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5)", (like, like)),
             ]
             union_sql = ' UNION ALL '.join(sql for sql, _ in _search_parts)
             union_params = []
@@ -5838,6 +5829,11 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
                     return jsonify({'error': 'rate limited'}), 429
                 connects.append(now)
                 _sse_connects[ip] = connects
+                # Prune IPs with no recent connections to prevent unbounded growth
+                stale_ips = [k for k, v in _sse_connects.items()
+                             if all(now - t > 60 for t in v)]
+                for k in stale_ips:
+                    del _sse_connects[k]
         with _sse_lock:
             if len(_sse_clients) >= MAX_SSE_CLIENTS:
                 return jsonify({'error': 'Too many SSE connections'}), 429

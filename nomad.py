@@ -191,7 +191,7 @@ def on_window_closing():
 
 def health_monitor():
     """Background thread: detects crashed services and auto-restarts them."""
-    from services.manager import unregister_process, should_restart, record_restart
+    from services.manager import unregister_process, should_restart, record_restart, prune_completed_downloads
 
     # Wait long enough for auto_start_services to finish (Stirling can take 60s+)
     time.sleep(90)
@@ -235,6 +235,11 @@ def health_monitor():
                     db.close()
                 except Exception:
                     pass
+        # Prune stale download progress entries to prevent unbounded dict growth
+        try:
+            prune_completed_downloads()
+        except Exception:
+            pass
         time.sleep(10)
 
 

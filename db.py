@@ -19,20 +19,35 @@ def get_db_path():
     return os.path.join(data_dir, 'nomad.db')
 
 
+_wal_set = False
+
+
 def get_db():
+    global _wal_set
     db_path = get_db_path()
-    conn = sqlite3.connect(db_path, timeout=30, uri=db_path.startswith('file:'))
-    conn.row_factory = sqlite3.Row
-    conn.execute('PRAGMA journal_mode=WAL')
-    conn.execute('PRAGMA foreign_keys=ON')
-    # Register on flask.g so teardown_appcontext can auto-close leaked connections
     try:
-        from flask import g, has_app_context
-        if has_app_context():
-            g._db_conn = conn
+        conn = sqlite3.connect(db_path, timeout=30, uri=db_path.startswith('file:'))
+        conn.row_factory = sqlite3.Row
+        # WAL mode is persistent on the database file — only set once per process
+        if not _wal_set:
+            conn.execute('PRAGMA journal_mode=WAL')
+            _wal_set = True
+        conn.execute('PRAGMA foreign_keys=ON')
+        # Register on flask.g so teardown_appcontext can auto-close leaked connections
+        try:
+            from flask import g, has_app_context
+            if has_app_context():
+                g._db_conn = conn
+        except Exception as exc:
+            _log.debug('Failed to bind DB connection to Flask context: %s', exc)
+        return conn
     except Exception:
-        pass
-    return conn
+        if 'conn' in locals():
+            try:
+                conn.close()
+            except Exception:
+                pass
+        raise
 
 
 @contextmanager

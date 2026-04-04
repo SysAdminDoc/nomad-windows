@@ -71,6 +71,7 @@ _embed_state = {'status': 'idle', 'doc_id': None, 'progress': 0, 'detail': ''}
 # ─── Auto-OCR Pipeline ───────────────────────────────────────────────
 _ocr_pipeline_state = {'running': False, 'processed': 0, 'errors': 0, 'last_scan': None}
 _ocr_processed_files = set()
+_OCR_PROCESSED_MAX = 10000  # Cap to prevent unbounded memory growth
 
 # ─── SSE Event Bus ────────────────────────────────────────────────────
 from config import Config

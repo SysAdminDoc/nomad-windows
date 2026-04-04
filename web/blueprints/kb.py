@@ -14,7 +14,7 @@ from config import get_data_dir, Config
 from platform_utils import get_data_base
 from db import db_session, log_activity
 from services import ollama, qdrant, stirling
-from web.state import _embed_state, _ocr_pipeline_state, _ocr_processed_files
+from web.state import _embed_state, _ocr_pipeline_state, _ocr_processed_files, _OCR_PROCESSED_MAX
 
 log = logging.getLogger('nomad.web')
 
@@ -605,8 +605,10 @@ def _ocr_pipeline_scan():
                     )
                     db2.commit()
                 _ocr_processed_files.add(file_key)
-                if len(_ocr_processed_files) > 1000:
-                    _ocr_processed_files.clear()
+                if len(_ocr_processed_files) > _OCR_PROCESSED_MAX:
+                    # Shed half to avoid re-processing everything after eviction
+                    to_remove = list(_ocr_processed_files)[:len(_ocr_processed_files) // 2]
+                    _ocr_processed_files.difference_update(to_remove)
                 _ocr_pipeline_state['processed'] += 1
                 log_activity('ocr_pipeline', 'import', f'Auto-imported {safe_name} from {ws["name"]}')
             except Exception as e:

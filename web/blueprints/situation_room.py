@@ -46,13 +46,18 @@ _fetch_running = False
 _REQ_HEADERS = {'User-Agent': 'NOMAD-SitRoom/2.0'}
 _REQ_TIMEOUT = 12
 
+# Reusable session for connection pooling across 40+ feeds per refresh cycle
+_http_session = requests.Session()
+_http_session.headers.update(_REQ_HEADERS)
+
 
 def _fetch_with_retry(url, timeout=10, retries=2, **kwargs):
-    """Fetch URL with exponential backoff retry."""
+    """Fetch URL with exponential backoff retry (uses pooled session)."""
     import time
+    kwargs.setdefault('headers', _REQ_HEADERS)
     for attempt in range(retries + 1):
         try:
-            r = requests.get(url, timeout=timeout, **kwargs)
+            r = _http_session.get(url, timeout=timeout, **kwargs)
             r.raise_for_status()
             return r
         except (requests.RequestException, Exception) as e:
@@ -609,7 +614,7 @@ def _parse_feed(xml_text, feed_name, feed_category):
 def _fetch_single_feed(feed):
     """Fetch a single RSS feed. Returns list of articles."""
     try:
-        resp = requests.get(feed['url'], timeout=_REQ_TIMEOUT, headers={
+        resp = _http_session.get(feed['url'], timeout=_REQ_TIMEOUT, headers={
             **_REQ_HEADERS, 'Accept': 'application/rss+xml, application/xml, text/xml'})
         if resp.ok:
             return _parse_feed(resp.text, feed['name'], feed['category'])
@@ -769,7 +774,7 @@ def _fetch_market_data():
     }
     for sym, name in yf_symbols.items():
         try:
-            resp = requests.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}',
+            resp = _http_session.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}',
                                 params={'range': '1d', 'interval': '5m'}, timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
             if resp.ok:
                 meta = resp.json().get('chart', {}).get('result', [{}])[0].get('meta', {})
@@ -789,7 +794,7 @@ def _fetch_market_data():
     }
     for sym, name in sector_symbols.items():
         try:
-            resp = requests.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}',
+            resp = _http_session.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}',
                                 params={'range': '1d', 'interval': '5m'}, timeout=8, headers=_REQ_HEADERS)
             if resp.ok:
                 meta = resp.json().get('chart', {}).get('result', [{}])[0].get('meta', {})
@@ -814,7 +819,7 @@ def _fetch_market_data():
 
     # Gold/Silver (metals.dev) — with change tracking from previous cached price
     try:
-        resp = requests.get('https://api.metals.dev/v1/latest?api_key=demo&currency=USD&unit=toz',
+        resp = _http_session.get('https://api.metals.dev/v1/latest?api_key=demo&currency=USD&unit=toz',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
             metals = resp.json().get('metals', {})
@@ -837,7 +842,7 @@ def _fetch_market_data():
 
     # Brent oil (EIA)
     try:
-        resp = requests.get('https://api.eia.gov/v2/petroleum/pri/spt/data/',
+        resp = _http_session.get('https://api.eia.gov/v2/petroleum/pri/spt/data/',
                             params={'api_key': 'DEMO_KEY', 'frequency': 'daily', 'data[0]': 'value',
                                     'facets[product][]': 'EPCBRENT', 'sort[0][column]': 'period',
                                     'sort[0][direction]': 'desc', 'length': '1'},
@@ -855,7 +860,7 @@ def _fetch_market_data():
 
     # Fear & Greed Index
     try:
-        resp = requests.get('https://api.alternative.me/fng/?limit=1', timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
+        resp = _http_session.get('https://api.alternative.me/fng/?limit=1', timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
             fg = resp.json().get('data', [{}])[0]
             markets.append({'symbol': 'FEAR_GREED', 'price': int(fg.get('value', 50)),
@@ -882,7 +887,7 @@ def _fetch_conflict_data():
     # Dynamic 90-day window
     from_date = (datetime.now() - timedelta(days=90)).strftime('%Y-%m-%d')
     try:
-        resp = requests.get(
+        resp = _http_session.get(
             f'https://www.gdacs.org/gdacsapi/api/events/geteventlist/SEARCH?alertlevel=Orange;Red&eventlist=EQ;TC;FL;VO;DR&from={from_date}',
             timeout=15, headers={**_REQ_HEADERS, 'Accept': 'application/json'})
         if not resp.ok:
@@ -926,7 +931,7 @@ def _fetch_aviation():
     _set_last_fetch('aviation')
     try:
         # Fetch all aircraft (rate limited, ~10/day anonymous)
-        resp = requests.get('https://opensky-network.org/api/states/all',
+        resp = _http_session.get('https://opensky-network.org/api/states/all',
                             timeout=20, headers=_REQ_HEADERS)
         if not resp.ok:
             return
@@ -968,7 +973,7 @@ def _fetch_ais_ships():
 
     # Try Danish Maritime Authority AIS (free, no key, covers Danish/Baltic waters)
     try:
-        resp = requests.get('https://ais.dk/api/ais/latest',
+        resp = _http_session.get('https://ais.dk/api/ais/latest',
                             params={'limit': 200},
                             timeout=15, headers=_REQ_HEADERS)
         if resp.ok:
@@ -997,7 +1002,7 @@ def _fetch_ais_ships():
     # If DK API didn't return data, try NOAA NDBC (buoys with some vessel data)
     if not ships:
         try:
-            resp = requests.get('https://www.marinetraffic.com/en/data/?asset_type=vessels&columns=flag,shipname,mmsi,lat_of_latest_position,lon_of_latest_position,speed,heading',
+            resp = _http_session.get('https://www.marinetraffic.com/en/data/?asset_type=vessels&columns=flag,shipname,mmsi,lat_of_latest_position,lon_of_latest_position,speed,heading',
                                 timeout=12, headers={**_REQ_HEADERS, 'Accept': 'application/json'})
             # This may not work without auth, silently fail
         except Exception:
@@ -1032,7 +1037,7 @@ def _fetch_space_weather():
 
     # NOAA storm scales (G/S/R)
     try:
-        resp = requests.get('https://services.swpc.noaa.gov/products/noaa-scales.json',
+        resp = _http_session.get('https://services.swpc.noaa.gov/products/noaa-scales.json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
             scales = resp.json()
@@ -1042,7 +1047,7 @@ def _fetch_space_weather():
 
     # Kp index (geomagnetic activity)
     try:
-        resp = requests.get('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
+        resp = _http_session.get('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
             kp_data = resp.json()
@@ -1053,7 +1058,7 @@ def _fetch_space_weather():
 
     # Solar flare probabilities
     try:
-        resp = requests.get('https://services.swpc.noaa.gov/json/solar_probabilities.json',
+        resp = _http_session.get('https://services.swpc.noaa.gov/json/solar_probabilities.json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
             probs = resp.json()
@@ -1064,7 +1069,7 @@ def _fetch_space_weather():
 
     # Active space weather alerts
     try:
-        resp = requests.get('https://services.swpc.noaa.gov/products/alerts.json',
+        resp = _http_session.get('https://services.swpc.noaa.gov/products/alerts.json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
             alerts = resp.json()
@@ -1089,7 +1094,7 @@ def _fetch_volcanoes():
         return
     _set_last_fetch('volcanoes')
     try:
-        resp = requests.get('https://webservices.volcano.si.edu/geoserver/GVP-VOTW/ows',
+        resp = _http_session.get('https://webservices.volcano.si.edu/geoserver/GVP-VOTW/ows',
                             params={'service': 'WFS', 'version': '1.0.0', 'request': 'GetFeature',
                                     'typeName': 'GVP-VOTW:E3WebApp_Eruptions1960',
                                     'maxFeatures': '50', 'outputFormat': 'application/json',
@@ -1127,7 +1132,7 @@ def _fetch_predictions():
         return
     _set_last_fetch('predictions')
     try:
-        resp = requests.get('https://gamma-api.polymarket.com/markets',
+        resp = _http_session.get('https://gamma-api.polymarket.com/markets',
                             params={'limit': 20, 'active': 'true', 'closed': 'false'},
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if not resp.ok:
@@ -1172,7 +1177,7 @@ def _fetch_fires():
     _set_last_fetch('fires')
     try:
         # FIRMS VIIRS active fires (last 24h, CSV format, no API key for web service)
-        resp = requests.get('https://firms.modaps.eosdis.nasa.gov/api/area/csv/DEMO_KEY/VIIRS_SNPP_NRT/world/1',
+        resp = _http_session.get('https://firms.modaps.eosdis.nasa.gov/api/area/csv/DEMO_KEY/VIIRS_SNPP_NRT/world/1',
                             timeout=30, headers=_REQ_HEADERS)
         if not resp.ok:
             return
@@ -1237,7 +1242,7 @@ def _fetch_internet_outages():
 
     # Cloudflare Radar - public outage summary (no auth for basic data)
     try:
-        resp = requests.get('https://radar.cloudflare.com/api/v1/annotations/outages?dateRange=1d&format=json',
+        resp = _http_session.get('https://radar.cloudflare.com/api/v1/annotations/outages?dateRange=1d&format=json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
             data = resp.json()
@@ -1255,7 +1260,7 @@ def _fetch_internet_outages():
     # Fallback: IODA (Internet Outage Detection and Analysis) from Georgia Tech
     if not outages:
         try:
-            resp = requests.get('https://api.ioda.inetintel.cc.gatech.edu/v2/alerts/ongoing',
+            resp = _http_session.get('https://api.ioda.inetintel.cc.gatech.edu/v2/alerts/ongoing',
                                 timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
             if resp.ok:
                 data = resp.json()
@@ -1353,7 +1358,7 @@ def _fetch_disease_outbreaks():
         return
     _set_last_fetch('disease_outbreaks')
     try:
-        resp = requests.get('https://www.who.int/feeds/entity/don/en/rss.xml',
+        resp = _http_session.get('https://www.who.int/feeds/entity/don/en/rss.xml',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if not resp.ok:
             return
@@ -1386,7 +1391,7 @@ def _fetch_radiation():
     _set_last_fetch('radiation')
     try:
         # Safecast public API — recent measurements
-        resp = requests.get('https://api.safecast.org/measurements.json',
+        resp = _http_session.get('https://api.safecast.org/measurements.json',
                             params={'order': 'created_at desc', 'per_page': 50},
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if not resp.ok:
@@ -1426,7 +1431,7 @@ def _fetch_gdelt_trending():
     _set_last_fetch('gdelt_trending')
     try:
         # GDELT DOC API — top themes in last 24 hours
-        resp = requests.get('https://api.gdeltproject.org/api/v2/doc/doc',
+        resp = _http_session.get('https://api.gdeltproject.org/api/v2/doc/doc',
                             params={'query': '', 'mode': 'ToneChart', 'format': 'json',
                                     'maxrecords': '30', 'timespan': '24h', 'sort': 'ToneDesc'},
                             timeout=15, headers=_REQ_HEADERS)
@@ -1541,7 +1546,7 @@ def _fetch_cyber_threats():
 
     # CISA Known Exploited Vulnerabilities (KEV)
     try:
-        resp = requests.get('https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json',
+        resp = _http_session.get('https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json',
                             timeout=15, headers=_REQ_HEADERS)
         if resp.ok:
             data = resp.json()
@@ -1558,7 +1563,7 @@ def _fetch_cyber_threats():
 
     # CISA advisories RSS
     try:
-        resp = requests.get('https://www.cisa.gov/cybersecurity-advisories/all.xml',
+        resp = _http_session.get('https://www.cisa.gov/cybersecurity-advisories/all.xml',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
             adv = _parse_feed(resp.text, 'CISA', 'Cyber')
@@ -1597,7 +1602,7 @@ def _fetch_yield_curve():
         return
     _set_last_fetch('yield_curve')
     try:
-        resp = requests.get('https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/avg_interest_rates',
+        resp = _http_session.get('https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/avg_interest_rates',
                             params={'sort': '-record_date', 'page[size]': 20,
                                     'filter': 'security_type_desc:eq:Treasury Bills,Treasury Notes,Treasury Bonds'},
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
@@ -1634,7 +1639,7 @@ def _fetch_stablecoins():
         return
     _set_last_fetch('stablecoins')
     try:
-        resp = requests.get('https://api.coingecko.com/api/v3/simple/price',
+        resp = _http_session.get('https://api.coingecko.com/api/v3/simple/price',
                             params={'ids': 'tether,usd-coin,dai,first-digital-usd', 'vs_currencies': 'usd',
                                     'include_market_cap': 'true', 'include_24hr_change': 'true'},
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
@@ -1772,7 +1777,7 @@ def _fetch_bigmac_index():
     _set_last_fetch('bigmac')
     # Big Mac Index from GitHub (The Economist publishes data there)
     try:
-        resp = requests.get('https://raw.githubusercontent.com/TheEconomist/big-mac-data/master/output-data/big-mac-raw-index.csv',
+        resp = _http_session.get('https://raw.githubusercontent.com/TheEconomist/big-mac-data/master/output-data/big-mac-raw-index.csv',
                             timeout=15, headers=_REQ_HEADERS)
         if not resp.ok:
             return
@@ -1855,7 +1860,7 @@ def _fetch_arxiv_papers():
         return
     _set_last_fetch('arxiv_papers')
     try:
-        resp = requests.get('https://export.arxiv.org/api/query',
+        resp = _http_session.get('https://export.arxiv.org/api/query',
                             params={'search_query': 'cat:cs.AI+OR+cat:cs.LG', 'start': 0,
                                     'max_results': 15, 'sortBy': 'submittedDate', 'sortOrder': 'descending'},
                             timeout=15, headers=_REQ_HEADERS)
@@ -1896,7 +1901,7 @@ def _fetch_macro_stress():
     }
     for series_id, label in fred_series.items():
         try:
-            resp = requests.get(f'https://api.stlouisfed.org/fred/series/observations',
+            resp = _http_session.get(f'https://api.stlouisfed.org/fred/series/observations',
                                 params={'series_id': series_id, 'api_key': 'DEMO_KEY',
                                         'sort_order': 'desc', 'limit': 1, 'file_type': 'json'},
                                 timeout=8, headers=_REQ_HEADERS)
@@ -1953,7 +1958,7 @@ def _fetch_github_trending():
         return
     _set_last_fetch('github_trending')
     try:
-        resp = requests.get('https://api.github.com/search/repositories',
+        resp = _http_session.get('https://api.github.com/search/repositories',
                             params={'q': 'created:>' + (datetime.now() - timedelta(days=7)).strftime('%Y-%m-%d'),
                                     'sort': 'stars', 'order': 'desc', 'per_page': 15},
                             timeout=15, headers={**_REQ_HEADERS, 'Accept': 'application/vnd.github.v3+json'})
@@ -1991,7 +1996,7 @@ def _fetch_fuel_prices():
     _set_last_fetch('fuel_prices')
     try:
         # US gasoline prices from EIA
-        resp = requests.get('https://api.eia.gov/v2/petroleum/pri/gnd/data/',
+        resp = _http_session.get('https://api.eia.gov/v2/petroleum/pri/gnd/data/',
                             params={'api_key': 'DEMO_KEY', 'frequency': 'weekly', 'data[0]': 'value',
                                     'facets[product][]': 'EPM0', 'facets[duession][]': 'NUS',
                                     'sort[0][column]': 'period', 'sort[0][direction]': 'desc', 'length': '1'},
@@ -2032,7 +2037,7 @@ def _fetch_service_status():
     ]
     for name, url in status_feeds:
         try:
-            resp = requests.get(url, timeout=8, headers=_REQ_HEADERS)
+            resp = _http_session.get(url, timeout=8, headers=_REQ_HEADERS)
             if resp.ok:
                 items = _parse_feed(resp.text, name, 'Status')
                 for item in items[:3]:
@@ -2090,12 +2095,12 @@ def _fetch_displacement():
     _set_last_fetch('displacement')
     try:
         # UNHCR population statistics API (public, CC BY 4.0)
-        resp = requests.get('https://api.unhcr.org/population/v1/asylum-decisions/',
+        resp = _http_session.get('https://api.unhcr.org/population/v1/asylum-decisions/',
                             params={'limit': 20, 'yearFrom': 2024, 'sort': 'decisions_recognized desc'},
                             timeout=_REQ_TIMEOUT, headers={**_REQ_HEADERS, 'Accept': 'application/json'})
         if not resp.ok:
             # Fallback: use UNHCR RSS
-            resp2 = requests.get('https://www.unhcr.org/rss/news.xml',
+            resp2 = _http_session.get('https://www.unhcr.org/rss/news.xml',
                                  timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
             if resp2.ok:
                 items = _parse_feed(resp2.text, 'UNHCR', 'Displacement')
@@ -2148,7 +2153,7 @@ def _fetch_oref_alerts():
     _set_last_fetch('oref_alerts')
     try:
         # OREF public API — real-time rocket/siren alerts
-        resp = requests.get('https://www.oref.org.il/WarningMessages/History/AlertsHistory.json',
+        resp = _http_session.get('https://www.oref.org.il/WarningMessages/History/AlertsHistory.json',
                             timeout=_REQ_TIMEOUT,
                             headers={**_REQ_HEADERS, 'Referer': 'https://www.oref.org.il/',
                                      'X-Requested-With': 'XMLHttpRequest'})
@@ -2206,7 +2211,7 @@ def _fetch_gdelt_events():
     results = {}
     # GDELT DOC API — event counts by theme in last 24h
     try:
-        resp = requests.get('https://api.gdeltproject.org/api/v2/doc/doc',
+        resp = _http_session.get('https://api.gdeltproject.org/api/v2/doc/doc',
                             params={'query': '', 'mode': 'TimelineVolInfo', 'format': 'json',
                                     'TIMESPAN': '24h'},
                             timeout=15, headers=_REQ_HEADERS)
@@ -2217,7 +2222,7 @@ def _fetch_gdelt_events():
 
     # Tone timeline (sentiment over time)
     try:
-        resp = requests.get('https://api.gdeltproject.org/api/v2/doc/doc',
+        resp = _http_session.get('https://api.gdeltproject.org/api/v2/doc/doc',
                             params={'query': '', 'mode': 'TimelineTone', 'format': 'json',
                                     'TIMESPAN': '72h'},
                             timeout=15, headers=_REQ_HEADERS)
@@ -2228,7 +2233,7 @@ def _fetch_gdelt_events():
 
     # Geographic hotspots (top locations mentioned)
     try:
-        resp = requests.get('https://api.gdeltproject.org/api/v2/doc/doc',
+        resp = _http_session.get('https://api.gdeltproject.org/api/v2/doc/doc',
                             params={'query': '', 'mode': 'PointData', 'format': 'json',
                                     'TIMESPAN': '24h', 'MAXPOINTS': 50},
                             timeout=15, headers=_REQ_HEADERS)
@@ -2260,7 +2265,7 @@ def _fetch_cot_positioning():
     try:
         # CFTC Disaggregated Futures — top commodities
         # Using the open data API (Socrata-compatible)
-        resp = requests.get('https://publicreporting.cftc.gov/resource/jun7-fc8e.json',
+        resp = _http_session.get('https://publicreporting.cftc.gov/resource/jun7-fc8e.json',
                             params={'$limit': 50, '$order': 'report_date_as_yyyy_mm_dd DESC',
                                     '$where': "market_and_exchange_names LIKE '%CRUDE OIL%' OR "
                                               "market_and_exchange_names LIKE '%GOLD%' OR "
@@ -3335,7 +3340,7 @@ def api_sitroom_national_debt():
     # US national debt from Treasury API (fiscal data)
     debt = {}
     try:
-        resp = requests.get('https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny',
+        resp = _http_session.get('https://api.fiscaldata.treasury.gov/services/api/fiscal_service/v2/accounting/od/debt_to_penny',
                             params={'sort': '-record_date', 'page[size]': 1},
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
@@ -3774,7 +3779,7 @@ def api_sitroom_stock_analysis(symbol):
 
     # Try Yahoo Finance for more data
     try:
-        resp = requests.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}',
+        resp = _http_session.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{symbol}',
                             params={'interval': '1d', 'range': '1mo'},
                             timeout=10, headers={**_REQ_HEADERS, 'Accept': 'application/json'})
         if resp.ok:
@@ -4961,7 +4966,7 @@ def api_sitroom_webhook_test():
             'message': 'Webhook test notification',
             'timestamp': datetime.now().isoformat(),
         }
-        resp = requests.post(url, json=payload, timeout=10, headers=_REQ_HEADERS)
+        resp = _http_session.post(url, json=payload, timeout=10, headers=_REQ_HEADERS)
         return jsonify({'sent': True, 'status_code': resp.status_code})
     except Exception as e:
         return jsonify({'sent': False, 'error': str(e)[:200]})

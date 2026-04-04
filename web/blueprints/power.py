@@ -20,7 +20,12 @@ power_bp = Blueprint('power', __name__)
 def api_power_devices():
     with db_session() as db:
         rows = db.execute('SELECT * FROM power_devices ORDER BY device_type, name LIMIT 10000').fetchall()
-    return jsonify([{**dict(r), 'specs': json.loads(r['specs'] or '{}')} for r in rows])
+    def _safe_json(val, default):
+        try:
+            return json.loads(val or default)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            return json.loads(default)
+    return jsonify([{**dict(r), 'specs': _safe_json(r['specs'], '{}')} for r in rows])
 
 
 @power_bp.route('/api/power/devices', methods=['POST'])

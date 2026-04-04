@@ -398,7 +398,10 @@ def api_weather_action_rules_create():
     if action_type not in ('alert', 'task', 'both'):
         return jsonify({'error': 'action_type must be alert, task, or both'}), 400
     action_data = data.get('action_data', {})
-    cooldown = int(data.get('cooldown_minutes', 60))
+    try:
+        cooldown = int(data.get('cooldown_minutes', 60))
+    except (ValueError, TypeError):
+        cooldown = 60
 
     with db_session() as db:
         cur = db.execute(

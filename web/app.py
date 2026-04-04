@@ -63,6 +63,15 @@ def _esc(s):
     """Escape HTML for print/template output (None-safe wrapper around html.escape)."""
     return _html_escape(str(s)) if s else ''
 
+
+def _safe_json_list(val):
+    """Parse a JSON string from a DB column, returning [] on any error."""
+    try:
+        parsed = json.loads(val or '[]')
+        return parsed if isinstance(parsed, list) else []
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return []
+
 # ─── Security Helpers ─────────────────────────────────────────────────
 
 def _validate_download_url(url):
@@ -1162,11 +1171,11 @@ def create_app():
             rows = db.execute('SELECT * FROM checklists ORDER BY updated_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
         result = []
         for r in rows:
-            items = json.loads(r['items'] or '[]')
+            items = _safe_json_list(r['items'])
             result.append({
                 'id': r['id'], 'name': r['name'], 'template': r['template'],
                 'item_count': len(items),
-                'checked_count': sum(1 for i in items if i.get('checked')),
+                'checked_count': sum(1 for i in items if isinstance(i, dict) and i.get('checked')),
                 'created_at': r['created_at'], 'updated_at': r['updated_at'],
             })
         return jsonify(result)
@@ -1196,7 +1205,7 @@ def create_app():
             db.commit()
             cid = cur.lastrowid
             row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
-        return jsonify({**dict(row), 'items': json.loads(row['items'] or '[]')}), 201
+        return jsonify({**dict(row), 'items': _safe_json_list(row['items'])}), 201
 
     @app.route('/api/checklists/<int:cid>')
     def api_checklists_get(cid):
@@ -1204,7 +1213,7 @@ def create_app():
             row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
         if not row:
             return jsonify({'error': 'Not found'}), 404
-        return jsonify({**dict(row), 'items': json.loads(row['items'] or '[]')})
+        return jsonify({**dict(row), 'items': _safe_json_list(row['items'])})
 
     @app.route('/api/checklists/<int:cid>', methods=['PUT'])
     def api_checklists_update(cid):
@@ -1794,7 +1803,7 @@ def create_app():
                 return jsonify({'error': 'Not found'}), 404
             export = {'type': 'nomad_checklist', 'version': 1,
                       'name': row['name'], 'template': row['template'],
-                      'items': json.loads(row['items'] or '[]')}
+                      'items': _safe_json_list(row['items'])}
             safe_name = secure_filename(row['name']) or 'checklist'
             return Response(json.dumps(export, indent=2), mimetype='application/json',
                            headers={'Content-Disposition': f'attachment; filename="{safe_name}.json"'})
@@ -2192,12 +2201,6 @@ def create_app():
             sort_by = 'species'
         with db_session() as db:
             rows = db.execute(f'SELECT * FROM livestock ORDER BY {sort_by} {sort_dir}, name ASC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
-        def _safe_json_list(val):
-            try:
-                parsed = json.loads(val or '[]')
-                return parsed if isinstance(parsed, list) else []
-            except (json.JSONDecodeError, TypeError):
-                return []
         return jsonify([{**dict(r), 'health_log': _safe_json_list(r['health_log']),
                          'vaccinations': _safe_json_list(r['vaccinations'])} for r in rows])
 
@@ -2279,7 +2282,10 @@ def create_app():
             animal = db.execute('SELECT health_log FROM livestock WHERE id = ?', (lid,)).fetchone()
             if not animal:
                 return jsonify({'error': 'Not found'}), 404
-            log_entries = json.loads(animal['health_log'] or '[]')
+            try:
+                log_entries = json.loads(animal['health_log'] or '[]')
+            except (json.JSONDecodeError, TypeError):
+                log_entries = []
             log_entries.append({'date': time.strftime('%Y-%m-%d'), 'event': data.get('event', ''), 'notes': data.get('notes', '')})
             db.execute('UPDATE livestock SET health_log = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
                        (json.dumps(log_entries), lid))
@@ -2330,8 +2336,8 @@ def create_app():
             offset = 0
         with db_session() as db:
             rows = db.execute('SELECT * FROM scenarios ORDER BY started_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
-        return jsonify([{**dict(r), 'decisions': json.loads(r['decisions'] or '[]'),
-                         'complications': json.loads(r['complications'] or '[]')} for r in rows])
+        return jsonify([{**dict(r), 'decisions': _safe_json_list(r['decisions']),
+                         'complications': _safe_json_list(r['complications'])} for r in rows])
 
     @app.route('/api/scenarios', methods=['POST'])
     def api_scenarios_create():
@@ -3884,7 +3890,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             rows = db.execute('SELECT id, name, items FROM checklists ORDER BY updated_at DESC LIMIT 5').fetchall()
         result = []
         for r in rows:
-            items = json.loads(r['items'] or '[]')
+            items = _safe_json_list(r['items'])
             total = len(items)
             checked = sum(1 for i in items if isinstance(i, dict) and i.get('checked'))
             result.append({'id': r['id'], 'name': r['name'], 'total': total, 'checked': checked,

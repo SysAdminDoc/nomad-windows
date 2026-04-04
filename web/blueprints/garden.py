@@ -465,7 +465,7 @@ def api_water_log_create():
 def api_water_needs():
     """Calculate water needs per plot based on crops and temperature."""
     with db_session() as db:
-        plots = db.execute('SELECT * FROM garden_plots').fetchall()
+        plots = db.execute('SELECT * FROM garden_plots LIMIT 500').fetchall()
         results = []
         # Get latest temp from weather
         latest_temp = None

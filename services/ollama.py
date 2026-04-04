@@ -127,7 +127,20 @@ def start():
 
     # If something is already on our port, kill it so we can start with correct OLLAMA_MODELS
     if check_port(OLLAMA_PORT):
-        log.info('Port 11434 in use — stopping existing Ollama to ensure correct models directory')
+        from platform_utils import find_pid_on_port
+        holder_pid = find_pid_on_port(OLLAMA_PORT)
+        db = get_db()
+        try:
+            row = db.execute('SELECT pid FROM services WHERE id = ?', (SERVICE_ID,)).fetchone()
+            registered_pid = row['pid'] if row and row['pid'] else None
+        finally:
+            db.close()
+        if holder_pid and holder_pid == registered_pid:
+            log.info(f'Port {OLLAMA_PORT} held by our own registered PID {holder_pid} — stopping stale instance')
+        elif holder_pid:
+            log.warning(f'Port {OLLAMA_PORT} held by external PID {holder_pid} (not ours) — killing to reclaim port')
+        else:
+            log.info(f'Port {OLLAMA_PORT} in use — stopping existing process')
         _kill_port_holder(OLLAMA_PORT)
         time.sleep(1)
 

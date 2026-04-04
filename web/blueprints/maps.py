@@ -606,8 +606,9 @@ def api_maps_import_file():
     source_path = data.get('path', '').strip()
     if not source_path:
         return jsonify({'error': 'No path provided'}), 400
-    # Reject path traversal
-    if '..' in source_path:
+    # Reject path traversal — normcase+normpath catches Windows case manipulation and mixed separators
+    norm_source = os.path.normcase(os.path.normpath(source_path))
+    if '..' in norm_source.split(os.sep):
         return jsonify({'error': 'Invalid path: directory traversal not allowed'}), 400
     # Validate file extension
     ext = os.path.splitext(source_path)[1].lower()

@@ -25,7 +25,7 @@ const OfflineSync = {
         }
       };
       req.onsuccess = (e) => { this._db = e.target.result; resolve(this._db); };
-      req.onerror = (e) => { console.warn('IndexedDB init failed:', e); reject(e); };
+      req.onerror = (e) => { console.warn('IndexedDB init failed:', e); reject(e.target?.error || e); };
     });
   },
 
@@ -47,8 +47,12 @@ const OfflineSync = {
         });
       }
       // Save sync metadata
-      const metaTx = this._db.transaction('_meta', 'readwrite');
-      metaTx.objectStore('_meta').put({ key: 'lastSync', value: data._timestamp, fullSync: true });
+      await new Promise((resolve, reject) => {
+        const metaTx = this._db.transaction('_meta', 'readwrite');
+        metaTx.objectStore('_meta').put({ key: 'lastSync', value: data._timestamp || new Date().toISOString(), fullSync: true });
+        metaTx.oncomplete = resolve;
+        metaTx.onerror = () => reject(metaTx.error);
+      });
       this._updateSyncBadge('synced');
       return { tables: this.STORES.length, timestamp: data._timestamp };
     } catch (e) {
@@ -72,17 +76,26 @@ const OfflineSync = {
       if (!resp.ok) throw new Error('Changes fetch failed');
       const data = await resp.json();
       let totalChanges = 0;
+      const ts = data._timestamp || new Date().toISOString();
       for (const [table, rows] of Object.entries(data)) {
         if (table.startsWith('_') || !this.STORES.includes(table)) continue;
         if (!rows.length) continue;
-        const tx = this._db.transaction(table, 'readwrite');
-        const os = tx.objectStore(table);
-        rows.forEach(row => { os.put(row); totalChanges++; });
+        await new Promise((resolve, reject) => {
+          const tx = this._db.transaction(table, 'readwrite');
+          const os = tx.objectStore(table);
+          rows.forEach(row => { os.put(row); totalChanges++; });
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+        });
       }
-      const metaTx2 = this._db.transaction('_meta', 'readwrite');
-      metaTx2.objectStore('_meta').put({ key: 'lastSync', value: data._timestamp, fullSync: false, changes: totalChanges });
+      await new Promise((resolve, reject) => {
+        const metaTx2 = this._db.transaction('_meta', 'readwrite');
+        metaTx2.objectStore('_meta').put({ key: 'lastSync', value: ts, fullSync: false, changes: totalChanges });
+        metaTx2.oncomplete = resolve;
+        metaTx2.onerror = () => reject(metaTx2.error);
+      });
       this._updateSyncBadge('synced');
-      return { changes: totalChanges, timestamp: data._timestamp };
+      return { changes: totalChanges, timestamp: ts };
     } catch (e) {
       console.warn('Offline incremental sync failed:', e);
       this._updateSyncBadge('error');

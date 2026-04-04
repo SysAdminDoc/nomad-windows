@@ -3,6 +3,8 @@
  * Stacking, typed toast messages with auto-dismiss.
  */
 
+const _esc = typeof escapeHtml === 'function' ? escapeHtml : (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
 let _toastStack = [];
 const _toastIcons = {success:'&#10003;', error:'&#10007;', warning:'&#9888;', info:'&#8505;'};
 
@@ -11,7 +13,7 @@ function toast(msg, type='info') {
   el.className = `toast toast-${type}`;
   el.setAttribute('role', 'status');
   el.setAttribute('aria-live', 'polite');
-  el.innerHTML = `<span class="toast-icon">${_toastIcons[type]||_toastIcons.info}</span>${escapeHtml(msg)}`;
+  el.innerHTML = `<span class="toast-icon">${_toastIcons[type]||_toastIcons.info}</span>${_esc(msg)}`;
   document.body.appendChild(el);
   if (_toastStack.length >= 5) {
     const oldest = _toastStack.shift();

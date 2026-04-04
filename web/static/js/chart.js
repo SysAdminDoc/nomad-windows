@@ -33,6 +33,7 @@ const NomadChart = {
   line(canvasId, data, options) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
+    if (canvas.parentElement.clientWidth <= 0) return;
     const ctx = canvas.getContext('2d');
     const W = canvas.width = canvas.parentElement.clientWidth;
     const H = canvas.height = options.height || 200;
@@ -102,6 +103,7 @@ const NomadChart = {
 
       // Fill area if requested
       if (ds.fill) {
+        ctx.save();
         ctx.beginPath();
         let started = false;
         let firstX = 0, lastX = 0;
@@ -117,7 +119,7 @@ const NomadChart = {
         ctx.globalAlpha = 0.12;
         ctx.fillStyle = color;
         ctx.fill();
-        ctx.globalAlpha = 1.0;
+        ctx.restore();
       }
 
       // Line
@@ -206,6 +208,7 @@ const NomadChart = {
   bar(canvasId, data, options) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
+    if (canvas.parentElement.clientWidth <= 0) return;
     const ctx = canvas.getContext('2d');
     const W = canvas.width = canvas.parentElement.clientWidth;
     const H = canvas.height = options.height || 200;
@@ -342,6 +345,7 @@ const NomadChart = {
   breakdown(canvasId, data, options) {
     const canvas = document.getElementById(canvasId);
     if (!canvas) return;
+    if (canvas.parentElement.clientWidth <= 0) return;
     const ctx = canvas.getContext('2d');
     const W = canvas.width = canvas.parentElement.clientWidth;
     const H = canvas.height = options.height || Math.max(120, data.items.length * 32 + 40);
@@ -358,6 +362,9 @@ const NomadChart = {
     const valW = 60;
     const barArea = W - pad.left - pad.right - labelW - valW;
 
+    const green = t.green || '#2f7c68';
+    const red = t.red || '#b34d44';
+    const orange = t.orange || '#cf7d2f';
     data.items.forEach((item, i) => {
       const y = pad.top + i * (barH + gap);
       // Label
@@ -366,7 +373,7 @@ const NomadChart = {
       // Bar
       const bx = pad.left + labelW;
       const bw = Math.max(2, (item.value / maxVal) * barArea);
-      const color = item.value > 90 ? t.green : item.value > 30 ? (t.orange || '#e67e22') : t.red;
+      const color = item.value > 90 ? green : item.value > 30 ? orange : red;
       ctx.fillStyle = color;
       ctx.fillRect(bx, y, bw, barH);
       // Value text

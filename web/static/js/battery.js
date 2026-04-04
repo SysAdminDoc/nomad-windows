@@ -39,8 +39,10 @@ const BatteryManager = {
     }
 
     if (level <= this.CRITICAL_THRESHOLD) {
+      if (this._throttled !== 'critical') {
+        toast('Critical battery \u2014 heavy polling disabled, animations off', 'warning');
+      }
       this._throttle('critical');
-      toast('Critical battery \u2014 heavy polling disabled, animations off', 'warning');
     } else if (level <= this.LOW_THRESHOLD) {
       this._throttle('low');
     } else {

@@ -14,6 +14,8 @@ import requests
 import zipfile
 import shutil
 import logging
+from collections import deque
+from urllib.parse import urlparse
 from db import get_db, log_activity
 from config import get_data_dir
 
@@ -22,8 +24,7 @@ log = logging.getLogger('nomad.manager')
 # Track running processes — guarded by _lock for thread safety
 _processes: dict[str, subprocess.Popen] = {}
 _download_progress: dict[str, dict] = {}
-_service_logs: dict[str, list[str]] = {}
-_SERVICE_LOG_MAX = 500
+_service_logs: dict[str, deque] = {}
 _lock = threading.Lock()
 
 # Service dependency graph: service -> list of services it requires
@@ -80,7 +81,12 @@ def get_ollama_gpu_env() -> dict:
 
 def download_file(url: str, dest: str, service_id: str = '') -> str:
     """Download a file with progress tracking, speed display, and resume support."""
-    os.makedirs(os.path.dirname(dest), exist_ok=True)
+    parsed = urlparse(url)
+    if parsed.scheme not in ('http', 'https'):
+        raise ValueError(f'Unsupported URL scheme: {parsed.scheme}')
+    dest_dir = os.path.dirname(dest)
+    if dest_dir:
+        os.makedirs(dest_dir, exist_ok=True)
 
     # Check for partial download
     partial_size = 0
@@ -190,7 +196,7 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
 
         # Start background thread to read output into _service_logs
         # NOTE: service logs may contain filesystem paths — acceptable for local desktop app
-        _service_logs.setdefault(service_id, [])
+        _service_logs.setdefault(service_id, deque(maxlen=500))
         def _read_output():
             try:
                 for line in iter(proc.stdout.readline, b''):
@@ -198,10 +204,7 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
                         break
                     decoded = line.decode('utf-8', errors='replace').rstrip('\n\r')
                     if decoded:
-                        logs = _service_logs.setdefault(service_id, [])
-                        logs.append(decoded)
-                        if len(logs) > _SERVICE_LOG_MAX:
-                            del logs[:len(logs) - _SERVICE_LOG_MAX]
+                        _service_logs.setdefault(service_id, deque(maxlen=500)).append(decoded)
             except Exception:
                 pass
         threading.Thread(target=_read_output, daemon=True).start()
@@ -420,6 +423,11 @@ def get_download_progress(service_id: str) -> dict:
         'percent': 0, 'status': 'idle', 'error': None,
         'speed': '', 'downloaded': 0, 'total': 0,
     })
+
+
+def get_service_logs(service_id: str) -> list[str]:
+    """Return a snapshot of captured stdout/stderr lines for a service."""
+    return list(_service_logs.get(service_id, []))
 
 
 def check_port(port: int) -> bool:

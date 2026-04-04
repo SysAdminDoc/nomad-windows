@@ -631,8 +631,8 @@ def api_wound_photo_upload(pid, wid):
 def api_wound_photo_serve(filename):
     """Serve a wound photo."""
     photos_dir = os.path.join(get_data_dir(), 'wound_photos')
-    safe_path = os.path.normpath(os.path.join(photos_dir, filename))
-    if not safe_path.startswith(os.path.normpath(photos_dir)):
+    safe_path = os.path.normcase(os.path.normpath(os.path.join(photos_dir, filename)))
+    if not safe_path.startswith(os.path.normcase(os.path.normpath(photos_dir))):
         return jsonify({'error': 'Invalid path'}), 403
     if not os.path.isfile(safe_path):
         return jsonify({'error': 'Not found'}), 404

@@ -715,8 +715,8 @@ def api_library_pdfs():
 @ai_bp.route('/api/library/serve/<path:filename>')
 def api_library_serve(filename):
     pdf_dir = os.path.join(get_data_dir(), 'library')
-    safe = os.path.normpath(os.path.join(pdf_dir, secure_filename(filename)))
-    if not safe.startswith(os.path.normpath(pdf_dir)) or not os.path.isfile(safe):
+    safe = os.path.normcase(os.path.normpath(os.path.join(pdf_dir, secure_filename(filename))))
+    if not safe.startswith(os.path.normcase(os.path.normpath(pdf_dir))) or not os.path.isfile(safe):
         return jsonify({'error': 'Not found'}), 404
     from flask import send_file
     return send_file(safe)
@@ -724,8 +724,8 @@ def api_library_serve(filename):
 @ai_bp.route('/api/library/delete/<path:filename>', methods=['DELETE'])
 def api_library_delete(filename):
     pdf_dir = os.path.join(get_data_dir(), 'library')
-    safe = os.path.normpath(os.path.join(pdf_dir, secure_filename(filename)))
-    if not safe.startswith(os.path.normpath(pdf_dir)):
+    safe = os.path.normcase(os.path.normpath(os.path.join(pdf_dir, secure_filename(filename))))
+    if not safe.startswith(os.path.normcase(os.path.normpath(pdf_dir))):
         return jsonify({'error': 'Invalid'}), 400
     if os.path.isfile(safe):
         os.remove(safe)

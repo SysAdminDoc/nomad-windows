@@ -49,9 +49,8 @@ const STATIC_ASSETS = [
 // Cache static assets on install
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 // Clean up old caches on activate
@@ -59,9 +58,8 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME && k !== SITROOM_CACHE).map(k => caches.delete(k)))
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
@@ -72,13 +70,15 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       fetch(event.request)
         .then(response => {
-          const clone = response.clone();
-          caches.open(SITROOM_CACHE).then(cache => {
-            const headers = new Headers(clone.headers);
-            headers.set('sw-cached-at', Date.now().toString());
-            const cachedResponse = new Response(clone.body, {status: clone.status, statusText: clone.statusText, headers});
-            cache.put(event.request, cachedResponse);
-          });
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(SITROOM_CACHE).then(cache => {
+              const headers = new Headers(clone.headers);
+              headers.set('sw-cached-at', Date.now().toString());
+              const cachedResponse = new Response(clone.body, {status: clone.status, statusText: clone.statusText, headers});
+              cache.put(event.request, cachedResponse);
+            });
+          }
           return response;
         })
         .catch(() => {
@@ -100,8 +100,10 @@ self.addEventListener('fetch', event => {
       event.respondWith(
         fetch(event.request)
           .then(response => {
-            const clone = response.clone();
-            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            if (response.ok) {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            }
             return response;
           })
           .catch(() => caches.match(event.request))
@@ -115,8 +117,10 @@ self.addEventListener('fetch', event => {
     event.respondWith(
       caches.match(event.request).then(cached => {
         return cached || fetch(event.request).then(response => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
           return response;
         });
       })
@@ -138,7 +142,8 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Default: network with cache fallback
+  // Default: network with cache fallback (GET only — let mutations pass through)
+  if (event.request.method !== 'GET') return;
   event.respondWith(
     fetch(event.request).catch(() => caches.match(event.request))
   );
@@ -147,14 +152,18 @@ self.addEventListener('fetch', event => {
 // Handle push-alert messages from the main page for background notifications
 self.addEventListener('message', event => {
   if (event.data && event.data.type === 'push-alert') {
-self.registration.showNotification(event.data.title || 'NOMAD Alert', {
-      body: event.data.body || 'New alert received',
-      icon: '/static/logo.png',
-      badge: '/static/logo.png',
-      tag: 'nomad-alert',
-      renotify: true,
-      requireInteraction: true,
-    });
+    try {
+      self.registration.showNotification(event.data.title || 'NOMAD Alert', {
+        body: event.data.body || 'New alert received',
+        icon: '/static/logo.png',
+        badge: '/static/logo.png',
+        tag: 'nomad-alert',
+        renotify: true,
+        requireInteraction: true,
+      });
+    } catch (e) {
+      // Notification permission may have been revoked
+    }
   }
 });
 

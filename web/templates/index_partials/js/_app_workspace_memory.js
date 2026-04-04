@@ -1991,8 +1991,11 @@ function highlightMatch(text, query) {
 }
 
 async function doUnifiedSearch() {
-  const q = document.getElementById('unified-search').value.trim();
+  const searchInput = document.getElementById('unified-search');
+  if (!searchInput) return;
+  const q = searchInput.value.trim();
   const el = document.getElementById('search-results');
+  if (!el) return;
   if (!q) { el.classList.remove('active'); return; }
   try {
     const payload = await fetchUnifiedSearchPayload(q);
@@ -2006,7 +2009,7 @@ async function doUnifiedSearch() {
       items.forEach(i => { if (!groups[i.type]) groups[i.type] = []; groups[i.type].push(i); });
       let html = '';
       for (const [type, list] of Object.entries(groups)) {
-        html += `<div class="search-result-group-head"><span>${UNIFIED_SEARCH_TYPE_ICONS[type]||''} ${UNIFIED_SEARCH_TYPE_LABELS[type]||type}</span><span class="search-result-count">${list.length}</span></div>`;
+        html += `<div class="search-result-group-head"><span>${UNIFIED_SEARCH_TYPE_ICONS[type]||''} ${UNIFIED_SEARCH_TYPE_LABELS[type]||escapeHtml(type)}</span><span class="search-result-count">${list.length}</span></div>`;
         html += list.map(i => `
           <div class="search-result-item" data-shell-action="open-search-result" data-result-type="${escapeAttr(i.type)}" data-result-id="${parseInt(i.id)||0}" data-prevent-mousedown role="button" tabindex="0">
             <span class="search-result-title">${highlightMatch(i.title, q)}</span>
@@ -2020,14 +2023,21 @@ async function doUnifiedSearch() {
 }
 
 function showSearchResults() {
-  const q = document.getElementById('unified-search').value.trim();
-  if (q) document.getElementById('search-results').classList.add('active');
+  const searchInput = document.getElementById('unified-search');
+  const el = document.getElementById('search-results');
+  if (!searchInput || !el) return;
+  const q = searchInput.value.trim();
+  if (q) el.classList.add('active');
 }
-function hideSearchResults() { document.getElementById('search-results').classList.remove('active'); }
+function hideSearchResults() {
+  const el = document.getElementById('search-results');
+  if (el) el.classList.remove('active');
+}
 
 function openSearchResult(type, id) {
   hideSearchResults();
-  document.getElementById('unified-search').value = '';
+  const _uSearch = document.getElementById('unified-search');
+  if (_uSearch) _uSearch.value = '';
   if (type === 'conversation') {
     document.querySelector('[data-tab="ai-chat"]')?.click();
     setTimeout(() => selectConvo(id), 200);
@@ -2081,14 +2091,14 @@ async function loadContentSummary() {
     const s = await (await fetch('/api/content-summary')).json();
     el.innerHTML = `
       <div>
-        <div class="cs-total">${s.total_size}</div>
+        <div class="cs-total">${escapeHtml(String(s.total_size || '0 B'))}</div>
         <div class="cs-label">Offline Knowledge</div>
       </div>
-      <div class="cs-stat"><div class="cs-val">${s.ai_models}</div><div class="cs-label">AI Models</div></div>
-      <div class="cs-stat"><div class="cs-val">${s.zim_files}</div><div class="cs-label">Content Packs</div></div>
-      <div class="cs-stat"><div class="cs-val">${s.documents}</div><div class="cs-label">Documents</div></div>
-      <div class="cs-stat"><div class="cs-val">${s.conversations}</div><div class="cs-label">Conversations</div></div>
-      <div class="cs-stat"><div class="cs-val">${s.notes}</div><div class="cs-label">Notes</div></div>
+      <div class="cs-stat"><div class="cs-val">${escapeHtml(String(s.ai_models ?? '0'))}</div><div class="cs-label">AI Models</div></div>
+      <div class="cs-stat"><div class="cs-val">${escapeHtml(String(s.zim_files ?? '0'))}</div><div class="cs-label">Content Packs</div></div>
+      <div class="cs-stat"><div class="cs-val">${escapeHtml(String(s.documents ?? '0'))}</div><div class="cs-label">Documents</div></div>
+      <div class="cs-stat"><div class="cs-val">${escapeHtml(String(s.conversations ?? '0'))}</div><div class="cs-label">Conversations</div></div>
+      <div class="cs-stat"><div class="cs-val">${escapeHtml(String(s.notes ?? '0'))}</div><div class="cs-label">Notes</div></div>
     `;
   } catch(e) {
     el.innerHTML = '<div class="cs-label content-summary-empty">Content summary unavailable</div>';
@@ -2097,7 +2107,9 @@ async function loadContentSummary() {
 
 /* ─── Log Viewer ─── */
 async function loadLogViewer() {
-  const level = document.getElementById('log-level-filter').value;
+  const levelEl = document.getElementById('log-level-filter');
+  if (!levelEl) return;
+  const level = levelEl.value;
   try {
     const lines = document.getElementById('log-lines-select')?.value || 100;
     const items = await (await fetch('/api/activity?limit=' + parseInt(lines))).json();
@@ -2112,7 +2124,7 @@ async function loadLogViewer() {
       return `<div class="settings-log-row">
         <span class="settings-log-time">${ts}</span>
         <span class="settings-log-badge ${badgeClass}">${badge}</span>
-        <span class="settings-log-service">${a.service||'-'}</span>
+        <span class="settings-log-service">${escapeHtml(a.service||'-')}</span>
         <span>${escapeHtml(a.event.replace(/_/g,' '))}${a.detail ? ' — '+escapeHtml(a.detail) : ''}</span>
       </div>`;
     }).join('');
@@ -2157,7 +2169,7 @@ async function loadDiskMonitor() {
     const criticalDisk = devices.find(d => d.percent > 90);
     if (criticalDisk) {
       warn = `<div class="prep-reference-callout prep-reference-callout-danger settings-summary-alert">
-        Drive ${criticalDisk.mountpoint} is ${criticalDisk.percent}% full. Consider freeing space or moving data.
+        Drive ${escapeHtml(String(criticalDisk.mountpoint))} is ${escapeHtml(String(criticalDisk.percent))}% full. Consider freeing space or moving data.
       </div>`;
     }
 
@@ -2165,11 +2177,11 @@ async function loadDiskMonitor() {
       <div class="utility-summary-result settings-summary-grid">
         <div class="prep-summary-card utility-summary-card">
 <div class="prep-summary-meta">NOMAD Data</div>
-          <div class="prep-summary-value prep-summary-value-compact">${summary.total_size}</div>
+          <div class="prep-summary-value prep-summary-value-compact">${escapeHtml(String(summary.total_size || '0 B'))}</div>
         </div>
         <div class="prep-summary-card utility-summary-card">
           <div class="prep-summary-meta">ZIM Content</div>
-          <div class="prep-summary-value prep-summary-value-compact">${summary.zim_size}</div>
+          <div class="prep-summary-value prep-summary-value-compact">${escapeHtml(String(summary.zim_size || '0 B'))}</div>
         </div>
         <div class="prep-summary-card utility-summary-card">
           <div class="prep-summary-meta">Disk Free</div>
@@ -2235,7 +2247,7 @@ async function loadActivity() {
       return `<div class="activity-item">
         <span class="activity-time">${date} ${time}</span>
         <span class="activity-event ${eventToneClass}">${event}</span>
-        ${a.service ? `<span class="activity-service-tag">${a.service}</span>` : ''}
+        ${a.service ? `<span class="activity-service-tag">${escapeHtml(a.service)}</span>` : ''}
         ${a.detail ? `<span class="activity-detail">${escapeHtml(a.detail)}</span>` : ''}
       </div>`;
     }).join('');
@@ -2268,8 +2280,9 @@ async function checkForUpdate() {
 /* ─── Self-Update Download ─── */
 async function downloadUpdate() {
   const btn = document.getElementById('update-download-btn');
-  btn.disabled = true; btn.textContent = 'Downloading…';
-  document.getElementById('update-progress-bar').style.display = 'block';
+  if (btn) { btn.disabled = true; btn.textContent = 'Downloading…'; }
+  const pbar = document.getElementById('update-progress-bar');
+  if (pbar) pbar.style.display = 'block';
   await fetch('/api/update-download', {method:'POST'});
   pollUpdateProgress();
 }
@@ -2333,7 +2346,9 @@ async function loadStartupState() {
 }
 
 async function toggleStartup() {
-  const enabled = document.getElementById('startup-toggle').checked;
+  const toggleEl = document.getElementById('startup-toggle');
+  if (!toggleEl) return;
+  const enabled = toggleEl.checked;
   await fetch('/api/startup', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({enabled})});
   toast(enabled ? 'Will start at login' : 'Removed from startup', enabled ? 'success' : 'info');
 }
@@ -2367,7 +2382,9 @@ async function pollDownloadQueue() {
 
 /* ─── Service Process Logs ─── */
 async function loadServiceLogs() {
-  const svc = document.getElementById('svc-log-select').value;
+  const svcSelect = document.getElementById('svc-log-select');
+  if (!svcSelect) return;
+  const svc = svcSelect.value;
   const el = document.getElementById('svc-log-viewer');
   if (!svc) { el.innerHTML = '<span class="settings-console-hint">Select a service above to view its process output.</span>'; return; }
   try {

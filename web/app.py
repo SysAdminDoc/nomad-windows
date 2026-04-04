@@ -1763,8 +1763,8 @@ def create_app():
                 db.commit()
             return jsonify({'status': 'imported', 'count': imported})
         except Exception as e:
-            log.error(f'Contacts CSV import failed: {e}')
-            return jsonify({'error': f'Import failed: {e}'}), 500
+            log.error(f'CSV import failed: {e}')
+            return jsonify({'error': 'Import failed. Check server logs for details.'}), 500
 
     # ─── Full Data Export ─────────────────────────────────────────────
 
@@ -2601,8 +2601,11 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     def api_planner_calculate():
         """Calculate resource needs for X people over Y days."""
         data = request.get_json() or {}
-        people = max(1, int(data.get('people', 4)))
-        days = max(1, int(data.get('days', 14)))
+        try:
+            people = max(1, int(data.get('people', 4)))
+            days = max(1, int(data.get('days', 14)))
+        except (ValueError, TypeError):
+            return jsonify({'error': 'people and days must be integers'}), 400
         activity = data.get('activity', 'moderate')  # sedentary, moderate, heavy
 
         cal_mult = {'sedentary': 1800, 'moderate': 2200, 'heavy': 3000}.get(activity, 2200)
@@ -3994,6 +3997,13 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         conn = None
         try:
             peer = (request.json or {}).get('peer', '127.0.0.1')
+            import ipaddress
+            try:
+                addr = ipaddress.ip_address(peer)
+                if addr.is_loopback or addr.is_multicast:
+                    return jsonify({'error': 'Invalid peer address'}), 400
+            except ValueError:
+                return jsonify({'error': 'Invalid IP address'}), 400
             chunk = b'X' * (1024 * 1024)  # 1MB chunks
             total_mb = 10
 
@@ -4577,7 +4587,6 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             duration_hours = 1.0
         dose = round(new_rate * duration_hours, 4)
         with db_session() as conn:
-            conn.execute('BEGIN EXCLUSIVE')
             last = conn.execute('SELECT cumulative_rem FROM radiation_log ORDER BY id DESC LIMIT 1').fetchone()
             prev_cum = (last['cumulative_rem'] or 0) if last else 0
             new_cum = round(prev_cum + dose, 4)
@@ -5482,7 +5491,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
                 'contacts': 'SELECT id, name, callsign, role, phone, email, notes FROM contacts ORDER BY name LIMIT 2000',
                 'patients': 'SELECT id, contact_id, blood_type, allergies, medications, conditions FROM patients LIMIT 1000',
                 'waypoints': 'SELECT id, name, lat, lng, category, icon, notes FROM waypoints ORDER BY name LIMIT 5000',
-                'checklists': 'SELECT id, name, items, category FROM checklists ORDER BY name LIMIT 500',
+                'checklists': 'SELECT id, name, items FROM checklists ORDER BY name LIMIT 500',
                 'freq_database': 'SELECT id, frequency, service, mode, notes, channel_name FROM freq_database ORDER BY frequency LIMIT 2000',
             }
             for table, query in OFFLINE_TABLES.items():
@@ -5721,7 +5730,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         if sender:
             with db_session() as db_check:
                 peer = db_check.execute("SELECT trust_level FROM federation_peers WHERE node_id = ?", (sender,)).fetchone()
-            if peer and peer['trust_level'] == 'blocked':
+            if not peer or peer['trust_level'] == 'blocked':
                 return jsonify({'error': 'Peer is blocked'}), 403
         with db_session() as db:
             db.execute("""UPDATE group_exercises SET shared_state = ?, decisions_log = ?, current_phase = ?,

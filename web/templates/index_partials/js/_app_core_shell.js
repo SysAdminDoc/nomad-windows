@@ -730,7 +730,8 @@ async function offlineFullSync() {
   const r = await OfflineSync.fullSync();
   if (r) {
     toast(`Offline sync complete: ${r.tables} tables cached`, 'success');
-    document.getElementById('offline-sync-result').textContent = `Last synced: ${r.timestamp}`;
+    const el = document.getElementById('offline-sync-result');
+    if (el) el.textContent = `Last synced: ${r.timestamp}`;
   } else {
     toast('Offline sync failed', 'error');
   }
@@ -739,6 +740,7 @@ async function offlineFullSync() {
 async function offlineStatus() {
   const s = await OfflineSync.getSyncStatus();
   const el = document.getElementById('offline-sync-result');
+  if (!el) return;
   if (s && s.value) {
     el.textContent = `Last sync: ${s.value} | Type: ${s.fullSync ? 'Full' : 'Incremental'}${s.changes !== undefined ? ' | Changes: ' + s.changes : ''}`;
   } else {
@@ -755,7 +757,8 @@ async function offlineClear() {
     }
     OfflineSync._db = null;
     toast('Offline cache cleared', 'success');
-    document.getElementById('offline-sync-result').textContent = 'Cache cleared.';
+    const el = document.getElementById('offline-sync-result');
+    if (el) el.textContent = 'Cache cleared.';
   } catch(e) { toast('Failed to clear cache', 'error'); }
 }
 

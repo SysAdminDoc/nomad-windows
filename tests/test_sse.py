@@ -7,8 +7,13 @@ import time
 
 class TestSSEEndpoint:
     def test_event_stream_content_type(self, client):
-        resp = client.get('/api/events/stream')
-        assert resp.content_type.startswith('text/event-stream')
+        # SSE endpoint streams indefinitely; buffered=False prevents the test
+        # client from trying to consume the entire response body.
+        resp = client.get('/api/events/stream', buffered=False)
+        try:
+            assert resp.content_type.startswith('text/event-stream')
+        finally:
+            resp.close()
 
     def test_event_test_endpoint(self, client):
         resp = client.get('/api/events/test')

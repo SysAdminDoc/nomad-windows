@@ -22,17 +22,45 @@ def _esc(s):
 
 def _parse_json_list(value):
     """Decode a stored JSON list field with graceful fallback."""
-    try:
-        parsed = json.loads(value or '[]')
-        if isinstance(parsed, list):
-            return parsed
-        if isinstance(parsed, str):
-            return [parsed] if parsed else []
-    except (TypeError, ValueError):
-        pass
+    if isinstance(value, list):
+        return [item for item in value if item not in (None, '')]
+    if isinstance(value, tuple):
+        return [item for item in value if item not in (None, '')]
     if not value:
         return []
-    return [item.strip() for item in str(value).split(',') if item.strip()]
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value or '[]')
+            if isinstance(parsed, list):
+                return [item for item in parsed if item not in (None, '')]
+            if isinstance(parsed, str):
+                return [parsed] if parsed else []
+        except (TypeError, ValueError):
+            stripped = value.strip()
+            if stripped.startswith('{') or stripped.startswith('['):
+                return []
+            return [item.strip() for item in stripped.split(',') if item.strip()]
+    return [value]
+
+
+def _safe_response_json(response):
+    if response is None:
+        return {}
+    if hasattr(response, 'get_json'):
+        try:
+            data = response.get_json(silent=True)
+        except TypeError:
+            data = response.get_json()
+        if isinstance(data, dict):
+            return data
+    raw = getattr(response, 'data', None)
+    if isinstance(raw, (str, bytes, bytearray)):
+        try:
+            parsed = json.loads(raw)
+        except (json.JSONDecodeError, TypeError, ValueError):
+            return {}
+        return parsed if isinstance(parsed, dict) else {}
+    return {}
 
 
 def _render_patient_card_html(patient, vitals, wounds, pid):
@@ -192,7 +220,7 @@ def _render_handoff_report_html(
     )
     vitals_rows = ''.join(
         f'<tr><td>{_esc(str(v.get("created_at", "")))}</td><td>{_esc(str(v.get("heart_rate") or v.get("pulse") or "-"))}</td>'
-        f'<td>{_esc((f"{v.get("bp_systolic") or ""}/{v.get("bp_diastolic") or ""}").strip("/") or "-")}</td>'
+        f'<td>{_esc(((str(v.get("bp_systolic") or "")) + "/" + (str(v.get("bp_diastolic") or ""))).strip("/") or "-")}</td>'
         f'<td>{_esc(str(v.get("resp_rate") or "-"))}</td><td>{_esc(str(v.get("spo2") or "-"))}</td><td>{_esc(str(v.get("temp_f") or "-"))}</td></tr>'
         for v in vitals[:5]
     )
@@ -395,8 +423,8 @@ def api_patients_create():
             'INSERT INTO patients (contact_id, name, age, weight_kg, sex, blood_type, allergies, medications, conditions, notes) VALUES (?,?,?,?,?,?,?,?,?,?)',
             (data.get('contact_id'), data['name'], data.get('age'), data.get('weight_kg'),
              data.get('sex', ''), data.get('blood_type', ''),
-             json.dumps(data.get('allergies', [])), json.dumps(data.get('medications', [])),
-             json.dumps(data.get('conditions', [])), data.get('notes', '')))
+             json.dumps(_parse_json_list(data.get('allergies'))), json.dumps(_parse_json_list(data.get('medications'))),
+             json.dumps(_parse_json_list(data.get('conditions'))), data.get('notes', '')))
         db.commit()
         pid = cur.lastrowid
     return jsonify({'id': pid, 'status': 'created'}), 201
@@ -415,21 +443,12 @@ def api_patients_update(pid):
         weight_kg = data.get('weight_kg', existing['weight_kg'])
         sex = data.get('sex', existing['sex'])
         blood_type = data.get('blood_type', existing['blood_type'])
-        try:
-            allergies_default = json.loads(existing['allergies'] or '[]')
-        except json.JSONDecodeError:
-            allergies_default = existing['allergies'] or []
-        allergies = json.dumps(data.get('allergies', allergies_default))
-        try:
-            medications_default = json.loads(existing['medications'] or '[]')
-        except json.JSONDecodeError:
-            medications_default = existing['medications'] or []
-        medications = json.dumps(data.get('medications', medications_default))
-        try:
-            conditions_default = json.loads(existing['conditions'] or '[]')
-        except json.JSONDecodeError:
-            conditions_default = existing['conditions'] or []
-        conditions = json.dumps(data.get('conditions', conditions_default))
+        allergies_default = _parse_json_list(existing.get('allergies'))
+        allergies = json.dumps(_parse_json_list(data.get('allergies', allergies_default)))
+        medications_default = _parse_json_list(existing.get('medications'))
+        medications = json.dumps(_parse_json_list(data.get('medications', medications_default)))
+        conditions_default = _parse_json_list(existing.get('conditions'))
+        conditions = json.dumps(_parse_json_list(data.get('conditions', conditions_default)))
         notes_val = data.get('notes', existing['notes'])
         contact_id = data.get('contact_id', existing['contact_id'])
         db.execute(
@@ -612,15 +631,7 @@ def api_wound_photo_upload(pid, wid):
             os.remove(filepath)
             return jsonify({'error': 'Wound record not found'}), 404
 
-        photos = []
-        if existing['photo_path']:
-            try:
-                photos = json.loads(existing['photo_path'])
-                if isinstance(photos, str):
-                    photos = [photos] if photos else []
-            except (ValueError, TypeError):
-                photos = [existing['photo_path']] if existing['photo_path'] else []
-
+        photos = _parse_json_list(existing['photo_path'])
         photos.append(safe_name)
         db.execute('UPDATE wound_log SET photo_path = ? WHERE id = ?', (json.dumps(photos), wid))
         db.commit()
@@ -647,14 +658,7 @@ def api_wound_photos_list(pid, wid):
         row = db.execute('SELECT photo_path FROM wound_log WHERE id = ? AND patient_id = ?', (wid, pid)).fetchone()
         if not row:
             return jsonify({'error': 'Not found'}), 404
-        photos = []
-        if row['photo_path']:
-            try:
-                photos = json.loads(row['photo_path'])
-                if isinstance(photos, str):
-                    photos = [photos] if photos else []
-            except (ValueError, TypeError):
-                photos = [row['photo_path']] if row['photo_path'] else []
+        photos = _parse_json_list(row['photo_path'])
         return jsonify({'wound_id': wid, 'photos': photos})
 # ─── Patient Care Card ──────────────────────────────────────────────
 
@@ -734,11 +738,7 @@ def api_dosage_calculator():
                     weight_kg = patient['weight_kg']
 
                 # Check allergies
-                import json as _json
-                try:
-                    allergies = _json.loads(patient['allergies']) if patient['allergies'] else []
-                except (ValueError, TypeError):
-                    allergies = [a.strip() for a in (patient['allergies'] or '').split(',') if a.strip()]
+                allergies = _parse_json_list(patient['allergies'])
 
                 for allergy in allergies:
                     allergy_lower = allergy.lower()
@@ -748,10 +748,7 @@ def api_dosage_calculator():
                             blocked = True
 
                 # Check current medications for interactions
-                try:
-                    current_meds = _json.loads(patient['medications']) if patient['medications'] else []
-                except (ValueError, TypeError):
-                    current_meds = [m.strip() for m in (patient['medications'] or '').split(',') if m.strip()]
+                current_meds = _parse_json_list(patient['medications'])
 
                 for med in current_meds:
                     med_lower = med.lower()
@@ -1125,7 +1122,7 @@ def api_medical_reference_search():
         return jsonify([])
     # Get the reference data by calling the endpoint logic
     ref_resp = api_medical_reference()
-    ref_json = ref_resp.get_json() if hasattr(ref_resp, 'get_json') else json.loads(ref_resp.data)
+    ref_json = _safe_response_json(ref_resp)
     ref_data = ref_json.get('data', ref_json)
     results = []
     for cat_key, cat_data in ref_data.items():

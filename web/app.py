@@ -19,7 +19,6 @@ import web.state as _state
 from web.state import (
     _installing, _installing_lock,
     _pull_queue, _pull_queue_lock,
-    _wizard_state,
     _map_downloads,
     _ytdlp_downloads, _ytdlp_dl_lock,
     _ytdlp_install_state,
@@ -72,6 +71,55 @@ def _safe_json_list(val):
     except (json.JSONDecodeError, TypeError, ValueError):
         return []
 
+
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    if isinstance(fallback, list):
+        return list(fallback)
+    return fallback
+
+
+def _safe_json_value(val, fallback):
+    """Parse JSON safely, returning a cloned fallback for invalid or mismatched values."""
+    if val in (None, ''):
+        return _clone_json_fallback(fallback)
+    try:
+        parsed = json.loads(val) if isinstance(val, str) else val
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        log.debug('Invalid JSON payload encountered: %s', exc)
+        return _clone_json_fallback(fallback)
+    if isinstance(fallback, dict) and not isinstance(parsed, dict):
+        return {}
+    if isinstance(fallback, list) and not isinstance(parsed, list):
+        return []
+    return parsed
+
+
+def _close_db_safely(db, context='database connection'):
+    """Best-effort DB close with debug logging instead of silent failure."""
+    if not db:
+        return
+    try:
+        db.close()
+    except Exception as exc:
+        log.debug('Failed to close %s: %s', context, exc)
+
+
+def _read_household_size_setting(db, default=1):
+    """Return a sanitized household size from settings, falling back to a safe default."""
+    safe_default = max(1, int(default))
+    try:
+        hs = db.execute("SELECT value FROM settings WHERE key='household_size'").fetchone()
+        if not hs or hs['value'] in (None, ''):
+            return safe_default
+        return max(1, int(hs['value']))
+    except (TypeError, ValueError, KeyError) as exc:
+        log.debug('Invalid household_size setting encountered: %s', exc)
+    except Exception as exc:
+        log.debug('Failed to read household_size setting: %s', exc)
+    return safe_default
+
 # ─── Security Helpers ─────────────────────────────────────────────────
 
 def _validate_download_url(url):
@@ -115,7 +163,6 @@ def _check_origin(req):
         from flask import abort
         abort(403, 'Cross-origin request blocked')
 
-_state_lock = threading.Lock()
 _db_bootstrap_lock = threading.Lock()
 _db_bootstrap_done = False
 
@@ -1279,11 +1326,7 @@ def create_app():
             expiring = db.execute("SELECT name, expiration, category FROM inventory WHERE expiration != '' AND expiration <= ? ORDER BY expiration", (soon,)).fetchall()
 
         # Situation board
-        sit = {}
-        try:
-            sit = json.loads(settings.get('sit_board', '{}'))
-        except Exception:
-            pass
+        sit = _safe_json_value(settings.get('sit_board'), {})
 
         sit_colors = {'green': '#2d6a2d', 'yellow': '#8a7a00', 'orange': '#a84a12', 'red': '#993333'}
         sit_labels = {'green': 'GOOD', 'yellow': 'CAUTION', 'orange': 'CONCERN', 'red': 'CRITICAL'}
@@ -1811,9 +1854,7 @@ def create_app():
             log.error('Request failed: %s', e)
             return jsonify({'error': 'Internal server error'}), 500
         finally:
-            if db:
-                try: db.close()
-                except Exception: pass
+            _close_db_safely(db, 'checklist export')
 
     @app.route('/api/checklists/import-json', methods=['POST'])
     def api_checklist_import_json():
@@ -1837,9 +1878,7 @@ def create_app():
             log.warning('Checklist import failed: %s', e)
             return jsonify({'error': 'Import failed — check file format'}), 400
         finally:
-            if db:
-                try: db.close()
-                except Exception: pass
+            _close_db_safely(db, 'checklist import')
 
     # ─── Service Health API ───────────────────────────────────────────
 
@@ -1891,8 +1930,8 @@ def create_app():
                     db.execute('INSERT INTO waypoints (name, lat, lng, category) VALUES (?, ?, ?, ?)',
                                (name, float(lat), float(lon), 'imported'))
                     count += 1
-                except Exception:
-                    pass
+                except Exception as exc:
+                    log.debug('Skipping GPX waypoint "%s" during import: %s', name, exc)
             db.commit()
         return jsonify({'status': 'imported', 'count': count})
 
@@ -1905,166 +1944,163 @@ def create_app():
 
     def _run_alert_checks():
         """Background alert engine — checks inventory, weather, incidents every 5 minutes."""
-        with _state_lock:
-            if _state._alert_check_running:
-                return
-            _state._alert_check_running = True
+        if not _state.try_begin_alert_check():
+            return
         import time as _t
-        _t.sleep(30)  # Wait for app to initialize
-        while True:
-            db = None
-            try:
-                alerts = []
-                db = get_db()
-                now = datetime.now()
-                today = now.strftime('%Y-%m-%d')
-                soon = (now + timedelta(days=14)).strftime('%Y-%m-%d')
+        try:
+            _t.sleep(30)  # Wait for app to initialize
+            while True:
+                db = None
+                try:
+                    alerts = []
+                    db = get_db()
+                    now = datetime.now()
+                    today = now.strftime('%Y-%m-%d')
+                    soon = (now + timedelta(days=14)).strftime('%Y-%m-%d')
 
-                # 1. Critical burn rate items (<7 days supply)
-                burn_items = db.execute(
-                    'SELECT name, quantity, daily_usage, category FROM inventory WHERE daily_usage > 0 AND (quantity / daily_usage) < 7 ORDER BY (quantity / daily_usage) LIMIT 50'
-                ).fetchall()
-                for item in burn_items:
-                    days = round(item['quantity'] / item['daily_usage'], 1)
-                    sev = 'critical' if days < 3 else 'warning'
-                    alerts.append({
-                        'type': 'burn_rate', 'severity': sev,
-                        'title': f'{item["name"]} running low',
-                        'message': f'{item["name"]}: {days} days remaining at current usage ({item["quantity"]} {item.get("category", "")} left, using {item["daily_usage"]}/day). Reduce consumption or resupply.',
-                    })
+                    # 1. Critical burn rate items (<7 days supply)
+                    burn_items = db.execute(
+                        'SELECT name, quantity, daily_usage, category FROM inventory WHERE daily_usage > 0 AND (quantity / daily_usage) < 7 ORDER BY (quantity / daily_usage) LIMIT 50'
+                    ).fetchall()
+                    for item in burn_items:
+                        days = round(item['quantity'] / item['daily_usage'], 1)
+                        sev = 'critical' if days < 3 else 'warning'
+                        alerts.append({
+                            'type': 'burn_rate', 'severity': sev,
+                            'title': f'{item["name"]} running low',
+                            'message': f'{item["name"]}: {days} days remaining at current usage ({item["quantity"]} {item.get("category", "")} left, using {item["daily_usage"]}/day). Reduce consumption or resupply.',
+                        })
 
-                # 2. Expiring items (within 14 days)
-                expiring = db.execute(
-                    "SELECT name, expiration FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ? ORDER BY expiration",
-                    (soon, today)
-                ).fetchall()
-                for item in expiring:
+                    # 2. Expiring items (within 14 days)
+                    expiring = db.execute(
+                        "SELECT name, expiration FROM inventory WHERE expiration != '' AND expiration <= ? AND expiration >= ? ORDER BY expiration",
+                        (soon, today)
+                    ).fetchall()
+                    for item in expiring:
+                        try:
+                            exp_days = (datetime.strptime(item['expiration'], '%Y-%m-%d') - now).days
+                        except (ValueError, TypeError):
+                            continue
+                        sev = 'critical' if exp_days <= 3 else 'warning'
+                        alerts.append({
+                            'type': 'expiration', 'severity': sev,
+                            'title': f'{item["name"]} expiring',
+                            'message': f'{item["name"]} expires in {exp_days} day{"s" if exp_days != 1 else ""} ({item["expiration"]}). Use, rotate, or replace.',
+                        })
+
+                    # 3. Barometric pressure drop (>4mb in recent readings)
+                    pressure_rows = db.execute(
+                        'SELECT pressure_hpa, created_at FROM weather_log WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 10'
+                    ).fetchall()
+                    if len(pressure_rows) >= 2:
+                        newest = pressure_rows[0]['pressure_hpa']
+                        oldest = pressure_rows[-1]['pressure_hpa']
+                        diff = newest - oldest
+                        if diff < -4:
+                            alerts.append({
+                                'type': 'weather', 'severity': 'warning',
+                                'title': 'Rapid pressure drop detected',
+                                'message': f'Barometric pressure dropped {abs(round(diff, 1))} hPa ({round(oldest, 1)} to {round(newest, 1)}). Storm likely within 12-24 hours. Secure shelter, fill water containers, charge devices.',
+                            })
+
+                    # 4. Incident cluster (3+ in same category within 48h)
+                    cutoff = (now - timedelta(hours=48)).strftime('%Y-%m-%d %H:%M:%S')
+                    incident_clusters = db.execute(
+                        "SELECT category, COUNT(*) as cnt FROM incidents WHERE created_at >= ? GROUP BY category HAVING cnt >= 3",
+                        (cutoff,)
+                    ).fetchall()
+                    for cluster in incident_clusters:
+                        alerts.append({
+                            'type': 'incident_cluster', 'severity': 'warning',
+                            'title': f'{cluster["category"].title()} incidents escalating',
+                            'message': f'{cluster["cnt"]} {cluster["category"]} incidents in the last 48 hours. Review incident log and consider elevating threat level.',
+                        })
+
+                    # 5. Low stock items (quantity <= min_quantity)
+                    low_stock = db.execute(
+                        'SELECT name, quantity, unit, min_quantity FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0 LIMIT 50'
+                    ).fetchall()
+                    for item in low_stock:
+                        alerts.append({
+                            'type': 'low_stock', 'severity': 'warning',
+                            'title': f'{item["name"]} below minimum',
+                            'message': f'{item["name"]}: {item["quantity"]} {item["unit"]} remaining (minimum: {item["min_quantity"]}). Add to shopping list or resupply.',
+                        })
+
+                    # 6. Equipment overdue for service
                     try:
-                        exp_days = (datetime.strptime(item['expiration'], '%Y-%m-%d') - now).days
-                    except (ValueError, TypeError):
-                        continue
-                    sev = 'critical' if exp_days <= 3 else 'warning'
-                    alerts.append({
-                        'type': 'expiration', 'severity': sev,
-                        'title': f'{item["name"]} expiring',
-                        'message': f'{item["name"]} expires in {exp_days} day{"s" if exp_days != 1 else ""} ({item["expiration"]}). Use, rotate, or replace.',
-                    })
+                        overdue_equip = db.execute(
+                            "SELECT name, category, next_service FROM equipment_log WHERE next_service != '' AND next_service < ? AND status != 'non-operational'",
+                            (today,)
+                        ).fetchall()
+                        for eq in overdue_equip:
+                            alerts.append({
+                                'type': 'equipment_service', 'severity': 'warning',
+                                'title': f'{eq["name"]} service overdue',
+                                'message': f'{eq["name"]} ({eq["category"]}) was due for service on {eq["next_service"]}. Service overdue equipment may fail when needed most.',
+                            })
+                    except Exception as exc:
+                        log.debug('Alert engine skipped equipment service check: %s', exc)
 
-                # 3. Barometric pressure drop (>4mb in recent readings)
-                pressure_rows = db.execute(
-                    'SELECT pressure_hpa, created_at FROM weather_log WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 10'
-                ).fetchall()
-                if len(pressure_rows) >= 2:
-                    newest = pressure_rows[0]['pressure_hpa']
-                    oldest = pressure_rows[-1]['pressure_hpa']
-                    diff = newest - oldest
-                    if diff < -4:
-                        alerts.append({
-                            'type': 'weather', 'severity': 'warning',
-                            'title': 'Rapid pressure drop detected',
-                            'message': f'Barometric pressure dropped {abs(round(diff, 1))} hPa ({round(oldest, 1)} to {round(newest, 1)}). Storm likely within 12-24 hours. Secure shelter, fill water containers, charge devices.',
-                        })
+                    # 7. Expiring fuel (within 30 days)
+                    try:
+                        fuel_expiry = (now + timedelta(days=30)).strftime('%Y-%m-%d')
+                        expiring_fuel = db.execute(
+                            "SELECT fuel_type, quantity, unit, expires FROM fuel_storage WHERE expires != '' AND expires <= ? AND expires >= ?",
+                            (fuel_expiry, today)
+                        ).fetchall()
+                        for f in expiring_fuel:
+                            days_left = (datetime.strptime(f['expires'], '%Y-%m-%d') - now).days
+                            sev = 'warning' if days_left > 7 else 'critical'
+                            alerts.append({
+                                'type': 'fuel_expiry', 'severity': sev,
+                                'title': f'{f["fuel_type"]} expiring soon',
+                                'message': f'{f["quantity"]} {f["unit"]} of {f["fuel_type"]} expires in {days_left} days ({f["expires"]}). Use, rotate, or add stabilizer to extend shelf life.',
+                            })
+                    except Exception as exc:
+                        log.debug('Alert engine skipped fuel expiry check: %s', exc)
 
-                # 4. Incident cluster (3+ in same category within 48h)
-                cutoff = (now - timedelta(hours=48)).strftime('%Y-%m-%d %H:%M:%S')
-                incident_clusters = db.execute(
-                    "SELECT category, COUNT(*) as cnt FROM incidents WHERE created_at >= ? GROUP BY category HAVING cnt >= 3",
-                    (cutoff,)
-                ).fetchall()
-                for cluster in incident_clusters:
-                    alerts.append({
-                        'type': 'incident_cluster', 'severity': 'warning',
-                        'title': f'{cluster["category"].title()} incidents escalating',
-                        'message': f'{cluster["cnt"]} {cluster["category"]} incidents in the last 48 hours. Review incident log and consider elevating threat level.',
-                    })
+                    # 8. High cumulative radiation dose
+                    try:
+                        rad_row = db.execute('SELECT MAX(cumulative_rem) as max_rem FROM radiation_log').fetchone()
+                        if rad_row and rad_row['max_rem'] and rad_row['max_rem'] >= 25:
+                            sev = 'critical' if rad_row['max_rem'] >= 75 else 'warning'
+                            alerts.append({
+                                'type': 'radiation', 'severity': sev,
+                                'title': f'Cumulative radiation dose: {round(rad_row["max_rem"], 1)} rem',
+                                'message': f'Cumulative radiation exposure has reached {round(rad_row["max_rem"], 1)} rem. {">75 rem: Acute Radiation Syndrome risk." if rad_row["max_rem"] >= 75 else "25-75 rem: Increased cancer risk. Minimize further exposure. Take KI if thyroid threat."} Seek shelter with highest available Protection Factor.',
+                            })
+                    except Exception as exc:
+                        log.debug('Alert engine skipped radiation check: %s', exc)
 
-                # 5. Low stock items (quantity <= min_quantity)
-                low_stock = db.execute(
-                    'SELECT name, quantity, unit, min_quantity FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0 LIMIT 50'
-                ).fetchall()
-                for item in low_stock:
-                    alerts.append({
-                        'type': 'low_stock', 'severity': 'warning',
-                        'title': f'{item["name"]} below minimum',
-                        'message': f'{item["name"]}: {item["quantity"]} {item["unit"]} remaining (minimum: {item["min_quantity"]}). Add to shopping list or resupply.',
-                    })
+                    # Deduplicate against existing active alerts (don't re-create dismissed ones within 24h)
+                    # Reuse the same connection for writes to avoid opening 2 more connections per cycle
+                    if alerts:
+                        for alert in alerts:
+                            existing = db.execute(
+                                "SELECT id, dismissed FROM alerts WHERE alert_type = ? AND title = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1",
+                                (alert['type'], alert['title'], (now - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S'))
+                            ).fetchone()
+                            if not existing:
+                                db.execute(
+                                    'INSERT INTO alerts (alert_type, severity, title, message) VALUES (?, ?, ?, ?)',
+                                    (alert['type'], alert['severity'], alert['title'], alert['message'])
+                                )
+                        db.commit()
+                        broadcast_event('alert_check', {'event': 'new_alerts'})
 
-                # 6. Equipment overdue for service
-                try:
-                    overdue_equip = db.execute(
-                        "SELECT name, category, next_service FROM equipment_log WHERE next_service != '' AND next_service < ? AND status != 'non-operational'",
-                        (today,)
-                    ).fetchall()
-                    for eq in overdue_equip:
-                        alerts.append({
-                            'type': 'equipment_service', 'severity': 'warning',
-                            'title': f'{eq["name"]} service overdue',
-                            'message': f'{eq["name"]} ({eq["category"]}) was due for service on {eq["next_service"]}. Service overdue equipment may fail when needed most.',
-                        })
-                except Exception:
-                    pass
-
-                # 7. Expiring fuel (within 30 days)
-                try:
-                    fuel_expiry = (now + timedelta(days=30)).strftime('%Y-%m-%d')
-                    expiring_fuel = db.execute(
-                        "SELECT fuel_type, quantity, unit, expires FROM fuel_storage WHERE expires != '' AND expires <= ? AND expires >= ?",
-                        (fuel_expiry, today)
-                    ).fetchall()
-                    for f in expiring_fuel:
-                        days_left = (datetime.strptime(f['expires'], '%Y-%m-%d') - now).days
-                        sev = 'warning' if days_left > 7 else 'critical'
-                        alerts.append({
-                            'type': 'fuel_expiry', 'severity': sev,
-                            'title': f'{f["fuel_type"]} expiring soon',
-                            'message': f'{f["quantity"]} {f["unit"]} of {f["fuel_type"]} expires in {days_left} days ({f["expires"]}). Use, rotate, or add stabilizer to extend shelf life.',
-                        })
-                except Exception:
-                    pass
-
-                # 8. High cumulative radiation dose
-                try:
-                    rad_row = db.execute('SELECT MAX(cumulative_rem) as max_rem FROM radiation_log').fetchone()
-                    if rad_row and rad_row['max_rem'] and rad_row['max_rem'] >= 25:
-                        sev = 'critical' if rad_row['max_rem'] >= 75 else 'warning'
-                        alerts.append({
-                            'type': 'radiation', 'severity': sev,
-                            'title': f'Cumulative radiation dose: {round(rad_row["max_rem"], 1)} rem',
-                            'message': f'Cumulative radiation exposure has reached {round(rad_row["max_rem"], 1)} rem. {">75 rem: Acute Radiation Syndrome risk." if rad_row["max_rem"] >= 75 else "25-75 rem: Increased cancer risk. Minimize further exposure. Take KI if thyroid threat."} Seek shelter with highest available Protection Factor.',
-                        })
-                except Exception:
-                    pass
-
-                # Deduplicate against existing active alerts (don't re-create dismissed ones within 24h)
-                # Reuse the same connection for writes to avoid opening 2 more connections per cycle
-                if alerts:
-                    for alert in alerts:
-                        existing = db.execute(
-                            "SELECT id, dismissed FROM alerts WHERE alert_type = ? AND title = ? AND created_at >= ? ORDER BY created_at DESC LIMIT 1",
-                            (alert['type'], alert['title'], (now - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S'))
-                        ).fetchone()
-                        if not existing:
-                            db.execute(
-                                'INSERT INTO alerts (alert_type, severity, title, message) VALUES (?, ?, ?, ?)',
-                                (alert['type'], alert['severity'], alert['title'], alert['message'])
-                            )
+                    # Prune old dismissed alerts (>7 days)
+                    db.execute("DELETE FROM alerts WHERE dismissed = 1 AND created_at < ?",
+                               ((now - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S'),))
                     db.commit()
-                    broadcast_event('alert_check', {'event': 'new_alerts'})
 
-                # Prune old dismissed alerts (>7 days)
-                db.execute("DELETE FROM alerts WHERE dismissed = 1 AND created_at < ?",
-                           ((now - timedelta(days=7)).strftime('%Y-%m-%d %H:%M:%S'),))
-                db.commit()
-
-            except Exception as e:
-                log.error(f'Alert engine error: {e}')
-            finally:
-                if db:
-                    try:
-                        db.close()
-                    except Exception:
-                        pass
-            _t.sleep(300)  # Check every 5 minutes
+                except Exception as e:
+                    log.error(f'Alert engine error: {e}')
+                finally:
+                    _close_db_safely(db, 'alert engine')
+                _t.sleep(300)  # Check every 5 minutes
+        finally:
+            _state.set_alert_check_running(False)
 
     threading.Thread(target=_run_alert_checks, daemon=True).start()
 
@@ -2376,12 +2412,9 @@ def create_app():
         inv_str = ', '.join(f"{r['name']}: {r['quantity']} {r['unit']}" for r in inv_items) or 'unknown'
         context = f"Inventory: {inv_str}\n"
         context += f"Group size: {contacts_count} contacts\n"
-        if sit_raw and sit_raw['value']:
-            try:
-                sit = json.loads(sit_raw['value'] or '{}')
-                context += f"Situation: {', '.join(f'{k}={v}' for k,v in sit.items())}\n"
-            except Exception:
-                pass
+        sit = _safe_json_value(sit_raw['value'] if sit_raw else None, {})
+        if sit:
+            context += f"Situation: {', '.join(f'{k}={v}' for k,v in sit.items())}\n"
 
         prompt = f"""You are a survival training instructor running a disaster scenario. Generate ONE realistic complication for the current phase of the scenario. The complication should force a difficult decision.
 
@@ -2513,7 +2546,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             return None
 
         try:
-            return json.loads(row['value'])
+            return _safe_json_value(row['value'], None)
         except (TypeError, ValueError) as e:
             log.warning(f'Invalid auto-backup config — skipping schedule: {e}')
             return None
@@ -2792,7 +2825,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
 
             # Situation board
             sit_row = db.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
-            report['situation'] = json.loads(sit_row['value'] or '{}') if sit_row else {}
+            report['situation'] = _safe_json_value(sit_row['value'] if sit_row else None, {})
 
             # Services
             report['services'] = {}
@@ -3652,7 +3685,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             waypoints = [dict(r) for r in db.execute('SELECT * FROM waypoints ORDER BY category, name LIMIT 10000').fetchall()]
             checklists = [dict(r) for r in db.execute('SELECT name, items FROM checklists ORDER BY name').fetchall()]
             sit_raw = db.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
-            sit = json.loads(sit_raw['value'] or '{}') if sit_raw else {}
+            sit = _safe_json_value(sit_raw['value'] if sit_raw else None, {})
             wx = [dict(r) for r in db.execute('SELECT * FROM weather_log ORDER BY created_at DESC LIMIT 5').fetchall()]
 
         sit_labels = {'green': 'GOOD', 'yellow': 'CAUTION', 'orange': 'CONCERN', 'red': 'CRITICAL'}
@@ -3789,11 +3822,19 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             with db_session() as db3:
                 mem_row = db3.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
             if mem_row and mem_row['value']:
-                memories = json.loads(mem_row['value'])
-                if memories:
+                memories = _safe_json_value(mem_row['value'], [])
+                if not isinstance(memories, list):
+                    memories = []
+                facts = []
+                for memory in memories:
+                    fact = memory.get('fact') if isinstance(memory, dict) else memory
+                    fact = str(fact or '').strip()
+                    if fact:
+                        facts.append(fact)
+                if facts:
                     note_list = ''.join(
-                        f'<li>{_esc(m["fact"] if isinstance(m, dict) else m)}</li>'
-                        for m in memories
+                        f'<li>{_esc(fact)}</li>'
+                        for fact in facts
                     )
                     notes_html = f'''<section class="doc-section">
   <h2 class="doc-section-title">Operator Notes</h2>
@@ -5864,6 +5905,10 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         sse_register_client(q)
         def generate():
             try:
+                # Yield an initial keepalive so clients (and test harnesses)
+                # receive the response headers + first chunk immediately
+                # rather than waiting for the first event/keepalive tick.
+                yield ": connected\n\n"
                 while True:
                     try:
                         msg = q.get(timeout=30)
@@ -5983,11 +6028,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
                 GROUP BY category
             """).fetchall()
             total_cal = sum(r['total_calories'] or 0 for r in rows)
-            household_size = 1
-            try:
-                hs = db.execute("SELECT value FROM settings WHERE key='household_size'").fetchone()
-                if hs: household_size = max(1, int(hs['value']))
-            except Exception: pass
+            household_size = _read_household_size_setting(db)
             calories_per_day = household_size * 2000
             days_of_food = round(total_cal / calories_per_day, 1) if calories_per_day > 0 else 0
             return jsonify({
@@ -6007,11 +6048,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             inv_cal = db.execute("SELECT SUM(quantity * COALESCE(calories_per_unit, 0)) as cal FROM inventory WHERE category IN ('food','Food','canned','grains','freeze-dried')").fetchone()['cal'] or 0
             pres_cal = db.execute("SELECT SUM(quantity * COALESCE(calories_per_unit, 0)) as cal FROM preservation_log").fetchone()
             pres_cal = (pres_cal['cal'] if pres_cal else 0) or 0
-            household_size = 1
-            try:
-                hs = db.execute("SELECT value FROM settings WHERE key='household_size'").fetchone()
-                if hs: household_size = max(1, int(hs['value']))
-            except Exception: pass
+            household_size = _read_household_size_setting(db)
             daily_need = household_size * 2000
             total_cal = inv_cal + pres_cal
             days = round(total_cal / daily_need, 1) if daily_need > 0 else 0

@@ -832,10 +832,11 @@ def api_triage_update(pid):
     """Update a patient's triage category and care phase."""
     data = request.get_json() or {}
     with db_session() as db:
+        old_row = db.execute('SELECT triage_category FROM patients WHERE id = ?', (pid,)).fetchone()
+        if not old_row:
+            return jsonify({'error': 'Patient not found'}), 404
         if 'triage_category' in data:
-            # Fetch old category for history logging
-            old_row = db.execute('SELECT triage_category FROM patients WHERE id = ?', (pid,)).fetchone()
-            old_category = old_row['triage_category'] if old_row else ''
+            old_category = old_row['triage_category'] or ''
             new_category = data['triage_category']
             db.execute('UPDATE patients SET triage_category = ? WHERE id = ?', (new_category, pid))
             # Log to triage_history

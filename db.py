@@ -4,6 +4,7 @@ import sqlite3
 import os
 import glob
 import logging
+import threading
 from contextlib import contextmanager
 import config
 
@@ -20,6 +21,7 @@ def get_db_path():
 
 
 _wal_set = False
+_migration_lock = threading.Lock()
 
 
 def get_db():
@@ -127,45 +129,47 @@ def apply_migrations(conn):
         _log.debug('No db_migrations/ directory found — skipping migrations')
         return
 
-    # Ensure the tracking table exists (bootstrap)
-    conn.execute('''
-        CREATE TABLE IF NOT EXISTS _migrations (
-            id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            filename   TEXT    NOT NULL UNIQUE,
-            applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-
-    # Which migrations have already been applied?
-    applied = {
-        row[0]
-        for row in conn.execute('SELECT filename FROM _migrations').fetchall()
-    }
-
-    # Discover .sql files, sorted by name (numeric prefix keeps order)
-    sql_files = sorted(glob.glob(os.path.join(migrations_dir, '*.sql')))
-
-    for path in sql_files:
-        filename = os.path.basename(path)
-        if filename in applied:
-            continue
-
-        _log.info('Applying migration: %s', filename)
-        with open(path, 'r', encoding='utf-8') as fh:
-            sql = fh.read()
-
-        try:
-            conn.executescript(sql)
-            conn.execute(
-                'INSERT INTO _migrations (filename) VALUES (?)', (filename,)
+    with _migration_lock:
+        # Ensure the tracking table exists (bootstrap)
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS _migrations (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                filename   TEXT    NOT NULL UNIQUE,
+                applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-            conn.commit()
-            _log.info('Migration applied: %s', filename)
-        except Exception:
-            conn.rollback()
-            _log.exception('Migration FAILED: %s', filename)
-            raise
+        ''')
+        conn.commit()
+
+        # Which migrations have already been applied?
+        applied = {
+            row[0]
+            for row in conn.execute('SELECT filename FROM _migrations').fetchall()
+        }
+
+        # Discover .sql files, sorted by name (numeric prefix keeps order)
+        sql_files = sorted(glob.glob(os.path.join(migrations_dir, '*.sql')))
+
+        for path in sql_files:
+            filename = os.path.basename(path)
+            if filename in applied:
+                continue
+
+            _log.info('Applying migration: %s', filename)
+            with open(path, 'r', encoding='utf-8') as fh:
+                sql = fh.read()
+
+            try:
+                conn.executescript(sql)
+                conn.execute(
+                    'INSERT OR IGNORE INTO _migrations (filename) VALUES (?)', (filename,)
+                )
+                conn.commit()
+                applied.add(filename)
+                _log.info('Migration applied: %s', filename)
+            except Exception:
+                conn.rollback()
+                _log.exception('Migration FAILED: %s', filename)
+                raise
 
 
 def init_db():

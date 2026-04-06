@@ -33,6 +33,19 @@ class TestPatientsUpdate:
         resp = client.put(f'/api/patients/{pid}', json={'age': 41, 'blood_type': 'O-'})
         assert resp.status_code == 200
 
+    def test_update_patient_recovers_from_corrupted_list_fields(self, client, db):
+        create = client.post('/api/patients', json={'name': 'Corrupted Lists'}).get_json()
+        pid = create['id']
+        db.execute(
+            'UPDATE patients SET allergies = ?, medications = ?, conditions = ? WHERE id = ?',
+            ('{broken', '{broken', '{broken', pid),
+        )
+        db.commit()
+
+        resp = client.put(f'/api/patients/{pid}', json={'age': 41})
+
+        assert resp.status_code == 200
+
 
 class TestPatientsDelete:
     def test_delete_patient(self, client):
@@ -86,6 +99,18 @@ class TestWounds:
         resp = client.get(f'/api/patients/{pid}/wounds')
         assert resp.status_code == 200
         assert len(resp.get_json()) >= 1
+
+    def test_wound_photos_list_recovers_from_corrupted_photo_path(self, client, db):
+        patient = client.post('/api/patients', json={'name': 'Broken Photos'}).get_json()
+        pid = patient['id']
+        wound = client.post(f'/api/patients/{pid}/wounds', json={'location': 'Arm', 'type': 'Cut'}).get_json()
+        db.execute('UPDATE wound_log SET photo_path = ? WHERE id = ?', ('{broken', wound['id']))
+        db.commit()
+
+        resp = client.get(f'/api/patients/{pid}/wounds/{wound["id"]}/photos')
+
+        assert resp.status_code == 200
+        assert resp.get_json()['photos'] == []
 
 
 class TestDrugInteractions:

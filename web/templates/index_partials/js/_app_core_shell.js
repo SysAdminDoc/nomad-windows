@@ -121,12 +121,44 @@ function hasWorkspaceTabContent(tabId) {
 
 const NOMAD_EMBEDDED_WORKSPACE_STATE_KEY = 'nomad-embedded-workspace-state';
 
-function loadEmbeddedWorkspaceStates() {
+function cloneJsonFallback(fallback) {
+  if (typeof fallback === 'function') return fallback();
+  if (Array.isArray(fallback)) return [...fallback];
+  if (fallback && typeof fallback === 'object') return { ...fallback };
+  return fallback;
+}
+
+function safeJsonParse(value, fallback = null, options = {}) {
+  const storage = options.storage || null;
+  const key = options.key || '';
+  const removeOnError = options.removeOnError !== false;
+  if (value == null || value === '') return cloneJsonFallback(fallback);
   try {
-    return JSON.parse(sessionStorage.getItem(NOMAD_EMBEDDED_WORKSPACE_STATE_KEY) || '{}') || {};
-  } catch (_) {
-    return {};
+    const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+    return parsed == null ? cloneJsonFallback(fallback) : parsed;
+  } catch (error) {
+    if (storage && key && removeOnError) {
+      try { storage.removeItem(key); } catch (_) {}
+    }
+    return cloneJsonFallback(fallback);
   }
+}
+
+function readJsonStorage(storage, key, fallback = null, options = {}) {
+  if (!storage || !key) return cloneJsonFallback(fallback);
+  try {
+    const value = storage.getItem(key);
+    return safeJsonParse(value, fallback, { ...options, storage, key });
+  } catch (_) {
+    return cloneJsonFallback(fallback);
+  }
+}
+
+window.safeJsonParse = window.safeJsonParse || safeJsonParse;
+window.readJsonStorage = window.readJsonStorage || readJsonStorage;
+
+function loadEmbeddedWorkspaceStates() {
+  return readJsonStorage(sessionStorage, NOMAD_EMBEDDED_WORKSPACE_STATE_KEY, {});
 }
 
 function createEmbeddedWorkspaceStateStore() {
@@ -896,9 +928,8 @@ const FormStateRecovery = {
   },
   load(formId) {
     try {
-      const raw = localStorage.getItem(this._prefix + formId);
-      if (!raw) return null;
-      const data = JSON.parse(raw);
+      const data = readJsonStorage(localStorage, this._prefix + formId, null);
+      if (!data || typeof data !== 'object') return null;
       if (Date.now() - (data._ts || 0) > this._MAX_AGE) { this.clear(formId); return null; }
       const {_ts, ...rest} = data;
       return Object.keys(rest).length ? rest : null;

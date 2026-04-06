@@ -1,5 +1,9 @@
 """Tests for garden blueprint routes."""
 
+import json
+
+from db import db_session
+
 
 class TestGardenPlotsCRUD:
     def test_list_plots(self, client):
@@ -39,6 +43,40 @@ class TestGardenPlotsCRUD:
     def test_plots_geo(self, client):
         resp = client.get('/api/garden/plots/geo')
         assert resp.status_code == 200
+
+    def test_plots_geo_recovers_from_corrupted_boundary_geojson(self, client):
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO garden_plots (name, lat, lng, boundary_geojson) VALUES (?, ?, ?, ?)',
+                ('Broken Boundary Plot', 35.1, -80.8, '{broken'),
+            )
+            db.commit()
+
+        resp = client.get('/api/garden/plots/geo')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        feature = next((f for f in data['features'] if f['properties']['name'] == 'Broken Boundary Plot'), None)
+        assert feature is not None
+        assert feature['geometry']['type'] == 'Point'
+        assert feature['geometry']['coordinates'] == [-80.8, 35.1]
+
+    def test_create_plot_normalizes_dict_boundary_geojson(self, client):
+        resp = client.post('/api/garden/plots', json={
+            'name': 'GeoJSON Plot',
+            'lat': 34.5,
+            'lng': -81.2,
+            'boundary_geojson': {
+                'type': 'Polygon',
+                'coordinates': [[[-81.2, 34.5], [-81.1, 34.5], [-81.1, 34.6], [-81.2, 34.5]]],
+            },
+        })
+        assert resp.status_code == 201
+
+        with db_session() as db:
+            row = db.execute('SELECT boundary_geojson FROM garden_plots WHERE name = ?', ('GeoJSON Plot',)).fetchone()
+        assert row is not None
+        stored = json.loads(row['boundary_geojson'])
+        assert stored['type'] == 'Polygon'
 
 
 class TestGardenSeedsCRUD:

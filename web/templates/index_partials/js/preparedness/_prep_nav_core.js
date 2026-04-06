@@ -106,11 +106,7 @@ function normalizePrepWorkspaceState(raw) {
 }
 
 function getPrepWorkspaceState() {
-  try {
-    return normalizePrepWorkspaceState(JSON.parse(localStorage.getItem(PREP_WORKSPACE_STORAGE_KEY) || '{}'));
-  } catch (error) {
-    return normalizePrepWorkspaceState({});
-  }
+  return normalizePrepWorkspaceState(readJsonStorage(localStorage, PREP_WORKSPACE_STORAGE_KEY, {}));
 }
 
 function savePrepWorkspaceState(state) {
@@ -361,7 +357,8 @@ async function loadPrepTab() {
 
 async function loadPrepTemplates() {
   try {
-    const templates = await (await fetch('/api/checklists/templates')).json();
+    const templates = await safeFetch('/api/checklists/templates', {}, {});
+    if (!templates || typeof templates !== 'object') throw new Error('invalid checklist templates payload');
     const el = document.getElementById('prep-template-btns');
     if (!el) return;
     el.innerHTML = Object.entries(templates).map(([k, v]) =>
@@ -372,7 +369,8 @@ async function loadPrepTemplates() {
 
 async function loadChecklists() {
   try {
-    const lists = await (await fetch('/api/checklists')).json();
+    const lists = await safeFetch('/api/checklists', {}, []);
+    if (!Array.isArray(lists)) throw new Error('invalid checklist list payload');
     const el = document.getElementById('prep-list');
     if (!lists.length) {
       el.innerHTML = '<div class="prep-empty-block"><div class="prep-empty-copy">No checklists yet. Choose a template above.</div></div>';
@@ -401,10 +399,11 @@ async function loadChecklists() {
 
 async function createChecklist(template) {
   try {
-    const r = await (await fetch('/api/checklists', {
+    const r = await safeFetch('/api/checklists', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({template})
-    })).json();
+    }, null);
+    if (!r || !r.id) throw new Error('invalid checklist creation payload');
     toast(`Created: ${r.name}`, 'success');
     _currentChecklistId = r.id;
     await loadChecklists();
@@ -415,7 +414,8 @@ async function createChecklist(template) {
 async function selectChecklist(id) {
   _currentChecklistId = id;
   try {
-    const c = await (await fetch(`/api/checklists/${id}`)).json();
+    const c = await safeFetch(`/api/checklists/${id}`, {}, null);
+    if (!c || typeof c !== 'object') throw new Error('invalid checklist payload');
     _currentChecklistItems = c.items || [];
     document.getElementById('prep-active-name').textContent = c.name;
     renderChecklist();

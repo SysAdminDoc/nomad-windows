@@ -49,6 +49,71 @@ def _get_node_name():
     return (row['value'] if row and row['value'] else platform.node()) or 'NOMAD Node'
 
 
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, list):
+        return list(fallback)
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    return fallback
+
+
+def _safe_json_value(value, fallback=None):
+    if isinstance(value, (bytes, bytearray)):
+        value = value.decode('utf-8', errors='ignore')
+    if value in (None, ''):
+        return _clone_json_fallback(fallback)
+    if isinstance(value, (dict, list)):
+        return _clone_json_fallback(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return _clone_json_fallback(fallback)
+        try:
+            return json.loads(text)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return _clone_json_fallback(fallback)
+    return _clone_json_fallback(fallback)
+
+
+def _safe_json_object(value, fallback=None):
+    if fallback is None:
+        fallback = {}
+    parsed = _safe_json_value(value, None)
+    return dict(parsed) if isinstance(parsed, dict) else _clone_json_fallback(fallback)
+
+
+def _safe_json_list(value, fallback=None):
+    if fallback is None:
+        fallback = []
+    parsed = _safe_json_value(value, None)
+    return list(parsed) if isinstance(parsed, list) else _clone_json_fallback(fallback)
+
+
+def _safe_clock(value):
+    clock = {}
+    for node, raw_val in _safe_json_object(value, {}).items():
+        if not isinstance(node, str) or not node:
+            continue
+        if isinstance(raw_val, bool):
+            continue
+        if isinstance(raw_val, (int, float)):
+            parsed_val = int(raw_val)
+        elif isinstance(raw_val, str) and raw_val.strip().lstrip('-').isdigit():
+            parsed_val = int(raw_val.strip())
+        else:
+            continue
+        clock[node] = max(0, parsed_val)
+    return clock
+
+
+def _safe_conflict_list(value):
+    conflicts = []
+    for item in _safe_json_list(value, []):
+        if isinstance(item, dict):
+            conflicts.append(dict(item))
+    return conflicts
+
+
 def _vc_dominates(a, b):
     """Check if vector clock a dominates b (a >= b for all keys, a > b for at least one)."""
     all_keys = set(list(a.keys()) + list(b.keys()))
@@ -141,7 +206,7 @@ def api_node_discover():
         while time.time() < end_time:
             try:
                 data, addr = sock.recvfrom(1024)
-                peer = json.loads(data.decode())
+                peer = _safe_json_object(data, {})
                 if peer.get('type') == 'nomad_announce' and peer.get('node_id') != node_id:
                     _discovered_peers[peer['node_id']] = {
                         'node_id': peer['node_id'], 'node_name': peer.get('node_name', 'Unknown'),
@@ -229,7 +294,7 @@ def api_node_sync_push():
                 for row in table_data:
                     row_key = hashlib.sha256(json.dumps(row, sort_keys=True, default=str).encode()).hexdigest()[:16]
                     existing = db.execute('SELECT clock FROM vector_clocks WHERE table_name = ? AND row_hash = ?', (table, row_key)).fetchone()
-                    clock = json.loads(existing['clock']) if existing else {}
+                    clock = _safe_clock(existing['clock'] if existing else None)
                     clock[node_id] = clock.get(node_id, 0) + 1
                     db.execute('INSERT OR REPLACE INTO vector_clocks (table_name, row_hash, clock, last_node, updated_at) VALUES (?, ?, ?, ?, datetime("now"))',
                                (table, row_key, json.dumps(clock), node_id))
@@ -240,10 +305,7 @@ def api_node_sync_push():
         vc_rows = db.execute('SELECT table_name, row_hash, clock FROM vector_clocks LIMIT 50000').fetchall()
         payload['vector_clocks'] = {r['table_name']: {} for r in vc_rows}
         for r in vc_rows:
-            try:
-                payload['vector_clocks'][r['table_name']][r['row_hash']] = json.loads(r['clock'] or '{}')
-            except (json.JSONDecodeError, TypeError, ValueError):
-                payload['vector_clocks'][r['table_name']][r['row_hash']] = {}
+            payload['vector_clocks'][r['table_name']][r['row_hash']] = _safe_clock(r['clock'])
 
     # Sign the payload
     priv_key, pub_key = _get_or_create_node_key()
@@ -280,6 +342,8 @@ def api_node_sync_receive():
     source_node = data.get('source_node_id', '')
     source_name = data.get('source_node_name', '')
     tables = data.get('tables', {})
+    if not isinstance(tables, dict):
+        tables = {}
 
     if not source_node:
         return jsonify({'error': 'source_node_id required'}), 400
@@ -292,7 +356,11 @@ def api_node_sync_receive():
     # Build a lookup of incoming rows by table+hash for conflict detail
     incoming_by_hash = {}
     for tname, rows in tables.items():
+        if not isinstance(rows, list):
+            continue
         for row in rows:
+            if not isinstance(row, dict):
+                continue
             row_copy = {k: v for k, v in row.items() if k != 'id'}
             row_key = hashlib.sha256(json.dumps(row_copy, sort_keys=True, default=str).encode()).hexdigest()[:16]
             incoming_by_hash[(tname, row_key)] = row_copy
@@ -303,9 +371,13 @@ def api_node_sync_receive():
         for tname, rows in tables.items():
             if tname not in ALLOWED:
                 continue
+            if not isinstance(rows, list):
+                continue
             schema_cols = {r[1] for r in db.execute(f"PRAGMA table_info({tname})").fetchall()}
             count = 0
             for row in rows[:10000]:
+                if not isinstance(row, dict):
+                    continue
                 row.pop('id', None)
                 row.pop('created_at', None)
                 row.pop('updated_at', None)
@@ -326,12 +398,17 @@ def api_node_sync_receive():
         db.commit()
 
         incoming_clocks = data.get('vector_clocks', {})
+        if not isinstance(incoming_clocks, dict):
+            incoming_clocks = {}
         conflicts = []
         for tname, hashes in incoming_clocks.items():
+            if not isinstance(hashes, dict):
+                continue
             for row_hash, incoming_clock in hashes.items():
+                incoming_clock = _safe_clock(incoming_clock)
                 local_vc_row = db.execute('SELECT clock FROM vector_clocks WHERE table_name = ? AND row_hash = ?', (tname, row_hash)).fetchone()
+                local_clock = _safe_clock(local_vc_row['clock'] if local_vc_row else None)
                 if local_vc_row:
-                    local_clock = json.loads(local_vc_row['clock'] or '{}')
                     if not _vc_dominates(local_clock, incoming_clock) and not _vc_dominates(incoming_clock, local_clock) and local_clock != incoming_clock:
                         # Fetch actual local row data for conflict details
                         local_row_data = None
@@ -356,7 +433,7 @@ def api_node_sync_receive():
                             'incoming_clock': incoming_clock,
                             'resolution': 'last-write-wins',
                         })
-                merged = dict(local_clock) if local_vc_row else {}
+                merged = dict(local_clock)
                 for node, val in incoming_clock.items():
                     merged[node] = max(merged.get(node, 0), val)
                 db.execute('INSERT OR REPLACE INTO vector_clocks (table_name, row_hash, clock, last_node, updated_at) VALUES (?, ?, ?, ?, datetime("now"))',
@@ -411,10 +488,7 @@ def api_node_vector_clock():
         tname = r['table_name']
         if tname not in clocks:
             clocks[tname] = []
-        try:
-            clock_val = json.loads(r['clock'] or '{}')
-        except (json.JSONDecodeError, TypeError, ValueError):
-            clock_val = {}
+        clock_val = _safe_clock(r['clock'])
         clocks[tname].append({'row_hash': r['row_hash'], 'clock': clock_val, 'last_node': r['last_node'], 'updated_at': r['updated_at']})
     return jsonify(clocks)
 
@@ -427,7 +501,7 @@ def api_node_vector_clock_conflicts():
     result = []
     for r in rows:
         entry = dict(r)
-        entry['conflict_details'] = json.loads(entry.get('conflict_details') or '[]')
+        entry['conflict_details'] = _safe_conflict_list(entry.get('conflict_details'))
         result.append(entry)
     return jsonify(result)
 
@@ -442,7 +516,7 @@ def api_node_conflicts():
         result = []
         for r in rows:
             entry = dict(r)
-            entry['conflict_details'] = json.loads(entry.get('conflict_details') or '[]')
+            entry['conflict_details'] = _safe_conflict_list(entry.get('conflict_details'))
             for conflict in entry['conflict_details']:
                 tname = conflict.get('table', '')
                 row_hash = conflict.get('row_hash', '')
@@ -469,23 +543,13 @@ def api_node_conflict_resolve(conflict_id):
         if not row:
             return jsonify({'error': 'Conflict not found'}), 404
 
-        try:
-            conflicts = json.loads(row['conflict_details'] or '[]')
-            if not isinstance(conflicts, list):
-                conflicts = []
-        except (json.JSONDecodeError, TypeError, ValueError):
-            conflicts = []
+        conflicts = _safe_conflict_list(row['conflict_details'])
 
         if resolution == 'remote':
-            try:
-                tables_synced = json.loads(row['tables_synced'] or '{}')
-                if not isinstance(tables_synced, dict):
-                    tables_synced = {}
-            except (json.JSONDecodeError, TypeError, ValueError):
-                tables_synced = {}
+            tables_synced = _safe_json_object(row['tables_synced'], {})
             for conflict in conflicts:
                 tname = conflict.get('table', '')
-                incoming_clock = conflict.get('incoming_clock', {})
+                incoming_clock = _safe_clock(conflict.get('incoming_clock'))
                 row_hash = conflict.get('row_hash', '')
                 if tname and row_hash:
                     db.execute(
@@ -536,16 +600,11 @@ def api_conflict_diff(cid):
         row = db.execute('SELECT * FROM sync_log WHERE id = ?', (cid,)).fetchone()
     if not row:
         return jsonify({'error': 'Conflict not found'}), 404
-    try:
-        details = json.loads(row['conflict_details'] or '[]')
-        if not isinstance(details, list):
-            details = []
-    except (json.JSONDecodeError, TypeError, ValueError):
-        details = []
+    details = _safe_conflict_list(row['conflict_details'])
     result_conflicts = []
     for conflict in details:
-        local_row = conflict.get('local_row') or {}
-        incoming_row = conflict.get('incoming_row') or {}
+        local_row = conflict.get('local_row') if isinstance(conflict.get('local_row'), dict) else {}
+        incoming_row = conflict.get('incoming_row') if isinstance(conflict.get('incoming_row'), dict) else {}
         all_fields = set(list(local_row.keys()) + list(incoming_row.keys()))
         fields = []
         for name in sorted(all_fields):
@@ -641,20 +700,24 @@ def api_sync_import():
         with zf.ZipFile(io.BytesIO(file.read())) as z:
             if 'manifest.json' not in z.namelist():
                 return jsonify({'error': 'Invalid sync file (no manifest)'}), 400
-            manifest = json.loads(z.read('manifest.json'))
+            manifest = _safe_json_object(z.read('manifest.json'), {})
             with db_session() as db:
                 imported = {}
-                for table_info in manifest.get('tables', []):
+                for table_info in _safe_json_list(manifest.get('tables'), []):
+                    if not isinstance(table_info, dict):
+                        continue
                     tname = table_info['name']
                     if tname not in ('inventory', 'contacts', 'checklists', 'notes', 'incidents', 'waypoints'):
                         continue
                     fname = f'{tname}.json'
                     if fname not in z.namelist():
                         continue
-                    rows = json.loads(z.read(fname))
+                    rows = _safe_json_list(z.read(fname), [])
                     schema_cols = {row[1] for row in db.execute(f"PRAGMA table_info({tname})").fetchall()}
                     count = 0
                     for row in rows:
+                        if not isinstance(row, dict):
+                            continue
                         row.pop('id', None)
                         row.pop('created_at', None)
                         row.pop('updated_at', None)
@@ -959,8 +1022,7 @@ def api_mutual_aid_list():
     for r in rows:
         d = dict(r)
         for k in ('our_commitments', 'their_commitments'):
-            try: d[k] = json.loads(d[k] or '[]')
-            except (json.JSONDecodeError, TypeError): d[k] = []
+            d[k] = _safe_json_list(d[k], [])
         result.append(d)
     return jsonify(result)
 
@@ -977,8 +1039,8 @@ def api_mutual_aid_create():
             'VALUES (?,?,?,?,?,?,?,?,?)',
             (data.get('peer_node_id', ''), data.get('peer_name', ''), data['title'],
              data.get('description', ''),
-             json.dumps(data.get('our_commitments', [])),
-             json.dumps(data.get('their_commitments', [])),
+             json.dumps(_safe_json_list(data.get('our_commitments'), [])),
+             json.dumps(_safe_json_list(data.get('their_commitments'), [])),
              data.get('status', 'draft'),
              data.get('effective_date', ''), data.get('expiry_date', '')))
         db.commit()
@@ -999,7 +1061,7 @@ def api_mutual_aid_update(aid):
         for k in ('our_commitments', 'their_commitments'):
             if k in data:
                 fields.append(f'{k} = ?')
-                vals.append(json.dumps(data[k]))
+                vals.append(json.dumps(_safe_json_list(data[k], [])))
         if 'signed_by_us' in data:
             fields.append('signed_by_us = ?')
             vals.append(1 if data['signed_by_us'] else 0)

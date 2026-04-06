@@ -901,7 +901,8 @@ async function pollBroadcast() {
   const banner = document.getElementById('broadcast-banner');
   if (!banner) return;
   try {
-    const b = await (await fetch('/api/broadcast')).json();
+    const b = await safeFetch('/api/broadcast', {}, null);
+    if (!b) throw new Error('broadcast unavailable');
     if (b.active && b.message) {
       // Don't re-show a dismissed broadcast
       if (_dismissedBroadcastTs === b.timestamp) return;
@@ -933,8 +934,9 @@ async function calcPlan() {
   const days = parseInt(document.getElementById('plan-days').value) || 14;
   const activity = document.getElementById('plan-activity').value;
   try {
-    const r = await (await fetch('/api/planner/calculate', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({people, days, activity})})).json();
+    const r = await safeFetch('/api/planner/calculate', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({people, days, activity})}, null);
+    if (!r || !r.needs || !r.current_inventory) throw new Error('planner unavailable');
     const n = r.needs;
     const inv = r.current_inventory;
     document.getElementById('plan-result').innerHTML = `
@@ -1390,7 +1392,7 @@ async function loadCmdChecklists() {
   if (!el) return;
   const block = el.closest('.services-console-block');
   try {
-    const cls = await (await fetch('/api/dashboard/checklists')).json();
+    const cls = await safeFetch('/api/dashboard/checklists', {}, []);
     if (!cls.length) {
       el.innerHTML = '';
       block?.classList.add('is-empty');
@@ -1433,9 +1435,11 @@ function toggleShortcutsHelp() {
 
 /* ─── Daily Journal ─── */
 async function loadJournal() {
+  const el = document.getElementById('journal-list');
+  if (!el) return;
   try {
-    const entries = await (await fetch('/api/journal')).json();
-    const el = document.getElementById('journal-list');
+    const entries = await safeFetch('/api/journal', {}, null);
+    if (!Array.isArray(entries)) throw new Error('journal unavailable');
     if (!entries.length) {
       el.innerHTML = '<div class="settings-empty-state journal-empty-state">No journal entries yet. Start recording your daily observations above.</div>';
       return;
@@ -1576,9 +1580,11 @@ function _stopMotionPolling() {
 }
 
 async function loadSecurityDashboard() {
+  const el = document.getElementById('security-dashboard');
+  if (!el) return;
   try {
-    const d = await (await fetch('/api/security/dashboard')).json();
-    const el = document.getElementById('security-dashboard');
+    const d = await safeFetch('/api/security/dashboard', {}, null);
+    if (!d) throw new Error('security dashboard unavailable');
 const secColors = {green:'var(--green)',yellow:'var(--warning)',orange:'var(--orange)',red:'var(--red)'};
     const secLabels = {green:'SECURE',yellow:'CAUTION',orange:'ELEVATED',red:'CRITICAL'};
     el.innerHTML =
@@ -1586,13 +1592,16 @@ const secColors = {green:'var(--green)',yellow:'var(--warning)',orange:'var(--or
       prepMetricCard('Cameras Active', d.cameras_active, d.cameras_active > 0 ? 'var(--green)' : 'var(--text-muted)') +
       prepMetricCard('Access (24h)', d.access_24h, 'var(--accent)') +
       prepMetricCard('Incidents (48h)', d.security_incidents_48h, d.security_incidents_48h > 0 ? 'var(--red)' : 'var(--green)');
-  } catch(e) {}
+  } catch(e) {
+    el.innerHTML = prepEmptyBlock('Security dashboard unavailable right now.');
+  }
 }
 
 async function loadCameras() {
+  const el = document.getElementById('camera-grid');
   try {
-    const cameras = await (await fetch('/api/security/cameras')).json();
-    const el = document.getElementById('camera-grid');
+    const cameras = await safeFetch('/api/security/cameras', {}, null);
+    if (!Array.isArray(cameras)) throw new Error('camera list unavailable');
     stopCameraSnapshotRefresh();
     if (!cameras.length) {
       el.innerHTML = `<div class="prep-camera-empty">${prepEmptyBlock('No cameras registered. Add IP cameras above to view live feeds.')}</div>`;
@@ -1626,7 +1635,10 @@ async function loadCameras() {
     }).join('');
 
     startCameraSnapshotRefresh(cameras);
-  } catch(e) {}
+  } catch(e) {
+    stopCameraSnapshotRefresh();
+    if (el) el.innerHTML = `<div class="prep-camera-empty">${prepEmptyBlock('Could not load camera feeds right now.')}</div>`;
+  }
 }
 
 async function addCamera() {
@@ -1763,9 +1775,11 @@ async function logAccess() {
 }
 
 async function loadAccessLog() {
+  const el = document.getElementById('access-log-list');
+  if (!el) return;
   try {
-    const logs = await (await fetch('/api/security/access-log')).json();
-    const el = document.getElementById('access-log-list');
+    const logs = await safeFetch('/api/security/access-log', {}, null);
+    if (!Array.isArray(logs)) throw new Error('access log unavailable');
     if (!logs.length) { el.innerHTML = prepEmptyBlock('No access events logged.'); return; }
     el.innerHTML = '<table class="freq-table prep-inline-table"><thead><tr><th>Time</th><th>Person</th><th>Dir</th><th>Location</th><th>Method</th><th>Notes</th></tr></thead><tbody>' +
       logs.map(l => {
@@ -1774,7 +1788,7 @@ async function loadAccessLog() {
         const dirColor = l.direction === 'entry' ? 'var(--green)' : l.direction === 'exit' ? 'var(--text-muted)' : l.direction === 'unknown' ? 'var(--red)' : 'var(--accent)';
         return `<tr><td>${ts}</td><td><strong>${escapeHtml(l.person)}</strong></td><td><span class="prep-inline-pill" style="--prep-pill-tone:${dirColor};">${l.direction}</span></td><td>${escapeHtml(l.location||'-')}</td><td>${l.method}</td><td>${escapeHtml(l.notes||'')}</td></tr>`;
       }).join('') + '</tbody></table>';
-  } catch(e) {}
+  } catch(e) { el.innerHTML = prepEmptyBlock('Could not load access log right now.'); }
 }
 
 async function clearAccessLog() {
@@ -1801,9 +1815,11 @@ function showPowerTab(tab) {
 }
 
 async function loadPowerDashboard() {
+  const el = document.getElementById('power-dashboard');
+  if (!el) return;
   try {
-    const d = await (await fetch('/api/power/dashboard')).json();
-    const el = document.getElementById('power-dashboard');
+    const d = await safeFetch('/api/power/dashboard', {}, null);
+    if (!d) throw new Error('power dashboard unavailable');
     const autoColor = d.autonomy_days > 7 ? 'var(--green)' : d.autonomy_days > 3 ? 'var(--orange)' : 'var(--red)';
     const socColor = d.latest_soc > 50 ? 'var(--green)' : d.latest_soc > 20 ? 'var(--orange)' : 'var(--red)';
     const netColor = d.net_daily_wh >= 0 ? 'var(--green)' : 'var(--red)';
@@ -1865,9 +1881,11 @@ async function addPowerDevice() {
 }
 
 async function loadPowerDevices() {
+  const el = document.getElementById('power-devices-list');
+  if (!el) return;
   try {
-    const devices = await (await fetch('/api/power/devices')).json();
-    const el = document.getElementById('power-devices-list');
+    const devices = await safeFetch('/api/power/devices', {}, null);
+    if (!Array.isArray(devices)) throw new Error('power devices unavailable');
     if (!devices.length) { el.innerHTML = prepEmptyBlock('No power devices registered. Add your solar panels, batteries, and other equipment above.'); return; }
     const icons = {solar_panel:'&#9728;', battery:'&#128267;', charge_controller:'&#9889;', inverter:'&#128268;', generator:'&#9981;'};
     el.innerHTML = devices.map(d => {
@@ -1883,7 +1901,7 @@ async function loadPowerDevices() {
         <button class="prep-record-delete" type="button" data-prep-action="delete-power-device" data-power-device-id="${d.id}" aria-label="Delete power device">x</button>
       </div>`;
     }).join('');
-  } catch(e) {}
+  } catch(e) { el.innerHTML = prepEmptyBlock('Could not load power devices right now.'); }
 }
 
 async function deletePowerDevice(id) { await fetch(`/api/power/devices/${id}`, {method:'DELETE'}); loadPowerDevices(); loadPowerDashboard(); }
@@ -1907,9 +1925,11 @@ async function logPowerReading() {
 }
 
 async function loadPowerLog() {
+  const el = document.getElementById('power-log-list');
+  if (!el) return;
   try {
-    const logs = await (await fetch('/api/power/log')).json();
-    const el = document.getElementById('power-log-list');
+    const logs = await safeFetch('/api/power/log', {}, null);
+    if (!Array.isArray(logs)) throw new Error('power log unavailable');
     if (!logs.length) { el.innerHTML = prepEmptyBlock('No readings logged yet.'); return; }
     el.innerHTML = '<table class="freq-table prep-inline-table"><thead><tr><th>Time</th><th>Battery V</th><th>SOC</th><th>Solar W</th><th>Solar Wh</th><th>Load W</th><th>Load Wh</th><th>Gen</th></tr></thead><tbody>' +
       logs.map(l => {
@@ -1918,7 +1938,7 @@ async function loadPowerLog() {
         const socColor = l.battery_soc > 50 ? 'var(--green)' : l.battery_soc > 20 ? 'var(--orange)' : 'var(--red)';
         return `<tr><td>${ts}</td><td>${l.battery_voltage||'-'}</td><td>${l.battery_soc != null ? `<span class="prep-inline-pill" style="--prep-pill-tone:${socColor};">${l.battery_soc}%</span>` : '-'}</td><td>${l.solar_watts||'-'}</td><td>${l.solar_wh_today||'-'}</td><td>${l.load_watts||'-'}</td><td>${l.load_wh_today||'-'}</td><td>${l.generator_running ? '<span class="prep-inline-pill" style="--prep-pill-tone:var(--green);">ON</span>' : '-'}</td></tr>`;
       }).join('') + '</tbody></table>';
-  } catch(e) {}
+  } catch(e) { el.innerHTML = prepEmptyBlock('Could not load power log right now.'); }
 }
 
 
@@ -1928,11 +1948,9 @@ async function updateSolarConfig() {
     const settings = await safeFetch('/api/settings', {}, {});
     let lat = null, lng = null;
     if (settings.map_center) {
-      try {
-        const parts = JSON.parse(settings.map_center);
-        if (Array.isArray(parts) && parts.length >= 2) { lat = parts[0]; lng = parts[1]; }
-        else if (parts.lat) { lat = parts.lat; lng = parts.lng; }
-      } catch(e) {}
+      const parts = safeJsonParse(settings.map_center, null);
+      if (Array.isArray(parts) && parts.length >= 2) { lat = parts[0]; lng = parts[1]; }
+      else if (parts?.lat != null) { lat = parts.lat; lng = parts.lng; }
     }
     if (lat && lng) {
       document.getElementById('sf-lat').value = parseFloat(lat).toFixed(3);
@@ -2783,7 +2801,7 @@ function closeScenario() {
 async function loadScenarioHistory() {
   const el = document.getElementById('scenario-history');
   try {
-    const scenarios = await (await fetch('/api/scenarios')).json();
+    const scenarios = await safeFetch('/api/scenarios', {}, []);
     const completed = scenarios.filter(s => s.status === 'complete');
     if (!completed.length) {
       el.style.display = 'block';
@@ -2959,7 +2977,7 @@ async function deletePatient(id) {
 
 async function addPatientFromContacts() {
   try {
-    const contacts = await (await fetch('/api/contacts')).json();
+    const contacts = await safeFetch('/api/contacts', {}, []);
     if (!contacts.length) { toast('No contacts found. Add contacts first.', 'warning'); return; }
     const newContacts = contacts.filter(c => !_patients.some(p => p.name === c.name));
     await Promise.all(newContacts.map(c =>
@@ -2976,7 +2994,8 @@ async function checkDrugInteractions() {
   const el = document.getElementById('interaction-results');
   if (meds.length < 2) { el.style.display = 'block'; el.innerHTML = '<div class="prep-status-copy">Enter 2+ medications to check interactions.</div>'; return; }
   try {
-    const interactions = await (await fetch('/api/medical/interactions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({medications: meds})})).json();
+    const interactions = await safeFetch('/api/medical/interactions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({medications: meds})}, null);
+    if (!Array.isArray(interactions)) throw new Error('interaction lookup unavailable');
     el.style.display = 'block';
     if (!interactions.length) {
       el.innerHTML = '<div class="prep-med-result-card prep-med-result-card-success">No known interactions found between these medications.</div>';
@@ -3192,7 +3211,8 @@ async function logWound() {
 
 async function loadWounds(pid) {
   try {
-    const wounds = await (await fetch(`/api/patients/${pid}/wounds`)).json();
+    const wounds = await safeFetch(`/api/patients/${pid}/wounds`, {}, []);
+    if (!Array.isArray(wounds)) throw new Error('invalid wounds payload');
     const el = document.getElementById('wound-list');
     if (!wounds.length) { el.innerHTML = prepEmptyBlock('No wounds logged yet. Add injuries here to keep treatment history together.'); return; }
     el.innerHTML = wounds.map(w => {
@@ -3200,10 +3220,8 @@ async function loadWounds(pid) {
       const ts = t.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
       const sevColor = {minor:'var(--green)',moderate:'var(--orange)',severe:'var(--red)',critical:'var(--red)'}[w.severity] || 'var(--text)';
       let photoCount = 0;
-      try {
-        const pp = w.photo_path ? (typeof w.photo_path === 'string' ? JSON.parse(w.photo_path) : w.photo_path) : [];
-        photoCount = Array.isArray(pp) ? pp.length : (pp ? 1 : 0);
-      } catch(_) { photoCount = w.photo_path ? 1 : 0; }
+      const pp = w.photo_path ? (typeof w.photo_path === 'string' ? safeJsonParse(w.photo_path, []) : w.photo_path) : [];
+      photoCount = Array.isArray(pp) ? pp.length : (pp ? 1 : 0);
       const photoBadge = `<button type="button" class="btn btn-sm prep-utility-tab prep-med-photo-btn" data-prep-action="${photoCount > 0 ? 'view-wound-photos' : 'prompt-wound-photo'}" data-patient-id="${pid}" data-wound-id="${w.id}" title="${photoCount > 0 ? 'View photos' : 'Add photo'}">&#128247; ${photoCount > 0 ? photoCount : 'Add'}</button>`;
       const addPhotoBtn = photoCount > 0 ? `<button type="button" class="btn btn-sm prep-utility-tab prep-med-photo-btn" data-prep-action="prompt-wound-photo" data-patient-id="${pid}" data-wound-id="${w.id}" title="Add photo">+ Photo</button>` : '';
       return `<div class="prep-med-wound-card">
@@ -4403,7 +4421,8 @@ async function loadAlerts() {
   const count = document.getElementById('alert-count');
   if (!badge && !bar && !items && !count) return;
   try {
-    const alerts = await (await fetch('/api/alerts')).json();
+    const alerts = await safeFetch('/api/alerts', {}, null);
+    if (!Array.isArray(alerts)) return;
 
     if (!alerts.length) {
       if (badge) badge.style.display = 'none';
@@ -4528,7 +4547,7 @@ async function updateStatusStrip() {
     const allSettings = await safeFetch('/api/settings', {}, {});
     const sitRaw = allSettings['sit_board'];
     if (sitRaw) {
-      const sit = JSON.parse(sitRaw);
+      const sit = safeJsonParse(sitRaw, {});
       const levels = Object.values(sit || {});
       const worst = levels.includes('red') ? 'red' : levels.includes('yellow') ? 'yellow' : 'green';
       const labels = {red:'Alert',yellow:'Caution',green:'Normal'};
@@ -4630,13 +4649,7 @@ function normalizeCustomizeState(state) {
 }
 
 function getStoredCustomizeState() {
-  try {
-    const raw = localStorage.getItem('nomad-customize');
-    if (!raw) return normalizeCustomizeState({});
-    return normalizeCustomizeState(JSON.parse(raw));
-  } catch (_) {
-    return normalizeCustomizeState({});
-  }
+  return normalizeCustomizeState(readJsonStorage(localStorage, 'nomad-customize', {}));
 }
 
 function setCustomizeTabVisibility(tabId, visible) {

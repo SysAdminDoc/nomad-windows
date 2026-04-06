@@ -894,8 +894,8 @@ function renderCommunity() {
     return;
   }
   el.innerHTML = _community.map(p => {
-    let skills = []; try { skills = JSON.parse(p.skills || '[]'); } catch(_) {}
-    let equip = []; try { equip = JSON.parse(p.equipment || '[]'); } catch(_) {}
+    const skills = safeJsonParse(p.skills, []);
+    const equip = safeJsonParse(p.equipment, []);
     const trustKey = (p.trust_level || 'unknown').toLowerCase();
     const trustLabel = trustKey.split('-').map(part => part.charAt(0).toUpperCase() + part.slice(1)).join(' ');
     const distance = Number(p.distance_mi);
@@ -919,7 +919,7 @@ function renderCommunity() {
     </div>`;
   }).join('');
   // Skills summary
-  const allSkills = _community.flatMap(p => { try { return JSON.parse(p.skills || '[]'); } catch(_) { return []; } });
+  const allSkills = _community.flatMap(p => safeJsonParse(p.skills, []));
   const skillCounts = {};
   allSkills.forEach(s => skillCounts[s] = (skillCounts[s]||0)+1);
   const sumEl = document.getElementById('community-skills-summary');
@@ -934,8 +934,8 @@ function openCommunityForm(p) {
   document.getElementById('comm-dist').value = p ? p.distance_mi : '0.1';
   document.getElementById('comm-trust').value = p ? p.trust_level : 'unknown';
   document.getElementById('comm-contact').value = p ? p.contact : '';
-  document.getElementById('comm-skills').value = p ? (function(s){try{return JSON.parse(s||'[]').join(', ')}catch(e){return s||''}})(p.skills) : '';
-  document.getElementById('comm-equip').value = p ? (function(s){try{return JSON.parse(s||'[]').join(', ')}catch(e){return s||''}})(p.equipment) : '';
+  document.getElementById('comm-skills').value = p ? safeJsonParse(p.skills, []).join(', ') : '';
+  document.getElementById('comm-equip').value = p ? safeJsonParse(p.equipment, []).join(', ') : '';
   document.getElementById('comm-notes').value = p ? p.notes : '';
   document.getElementById('comm-edit-id').value = p ? p.id : '';
   document.getElementById('community-form').style.display = 'block';
@@ -1055,8 +1055,10 @@ async function clearRadiation() {
 // ═══════════════════════════════════════════════════════════════
 // ICS FORMS
 // ═══════════════════════════════════════════════════════════════
-let _ics309Entries; try { _ics309Entries = JSON.parse(localStorage.getItem('nomad_ics309') || '[]'); } catch(e) { _ics309Entries = []; }
-let _ics214Entries; try { _ics214Entries = JSON.parse(localStorage.getItem('nomad_ics214') || '[]'); } catch(e) { _ics214Entries = []; }
+let _ics309Entries = readJsonStorage(localStorage, 'nomad_ics309', []);
+if (!Array.isArray(_ics309Entries)) _ics309Entries = [];
+let _ics214Entries = readJsonStorage(localStorage, 'nomad_ics214', []);
+if (!Array.isArray(_ics214Entries)) _ics214Entries = [];
 function _persistICS() {
   try {
     localStorage.setItem('nomad_ics309', JSON.stringify(_ics309Entries));
@@ -1349,14 +1351,15 @@ async function loadSavedRoutes() {
   const container = document.getElementById('saved-routes-list');
   if (!container) return;
   try {
-    const routes = await (await fetch('/api/maps/routes')).json();
+    const routes = await safeFetch('/api/maps/routes', {}, []);
     if (!routes || routes.length === 0) {
       container.innerHTML = '<span class="settings-empty-state saved-route-empty">No routes saved yet. Create routes by selecting waypoints.</span>';
       document.getElementById('elevation-profile-panel').style.display = 'none';
       return;
     }
     container.innerHTML = routes.map(r => {
-      let wpCount = 0; try { wpCount = JSON.parse(r.waypoint_ids || '[]').length; } catch(e) {}
+        const wpIds = safeJsonParse(r.waypoint_ids, []);
+        const wpCount = Array.isArray(wpIds) ? wpIds.length : 0;
       const difficulty = r.terrain_difficulty || 'moderate';
       const diffColor = difficulty === 'easy' ? 'var(--green)' : difficulty === 'hard' ? 'var(--red)' : 'var(--orange)';
       return '<div class="saved-route-row">' +
@@ -1737,7 +1740,7 @@ async function geocodeSearch(query) {
   clearTimeout(_geocodeTimeout);
   _geocodeTimeout = setTimeout(async () => {
     try {
-      const results = await (await fetch(`/api/geocode/search?q=${encodeURIComponent(query)}`)).json();
+      const results = await safeFetch(`/api/geocode/search?q=${encodeURIComponent(query)}`, {}, []);
       const el = document.getElementById('geocode-results');
       if (!results.length) { el.style.display = 'none'; return; }
       el.style.display = 'block';
@@ -1765,7 +1768,7 @@ function geocodeGo(lat, lng, name) {
 
 async function reverseGeocode(lat, lng) {
   try {
-    const results = await (await fetch(`/api/geocode/reverse?lat=${lat}&lng=${lng}`)).json();
+    const results = await safeFetch(`/api/geocode/reverse?lat=${lat}&lng=${lng}`, {}, []);
     if (results.length) {
       const nearest = results[0];
       const distStr = nearest.distance_m >= 1000 ? (nearest.distance_m/1000).toFixed(1) + 'km' : nearest.distance_m + 'm';
@@ -3177,7 +3180,7 @@ let _fuelData = [];
 
 async function loadFuel() {
   try {
-    _fuelData = await (await fetch('/api/fuel')).json();
+    _fuelData = await safeFetch('/api/fuel', {}, []);
     renderFuelSummary();
     renderFuelTable();
   } catch(e) { console.error('loadFuel', e); }
@@ -3306,7 +3309,7 @@ let _equipData = [];
 
 async function loadEquipment() {
   try {
-    _equipData = await (await fetch('/api/equipment')).json();
+    _equipData = await safeFetch('/api/equipment', {}, []);
     renderEquipStatus();
     renderEquipTable();
   } catch(e) { console.error('loadEquipment', e); }
@@ -3472,9 +3475,11 @@ function showTaskForm() { document.getElementById('task-form').style.display = '
 function hideTaskForm() { document.getElementById('task-form').style.display = 'none'; }
 
 async function loadTasks() {
+  const el = document.getElementById('task-list');
+  if (!el) return;
   try {
-    const tasks = await (await fetch('/api/tasks')).json();
-    const el = document.getElementById('task-list');
+    const tasks = await safeFetch('/api/tasks', {}, null);
+    if (!Array.isArray(tasks)) throw new Error('invalid tasks');
     if (!tasks.length) { el.innerHTML = '<div class="settings-empty-state">No scheduled tasks. Click "+ New Task" to create one.</div>'; return; }
     const now = new Date();
     el.innerHTML = tasks.map(t => {
@@ -3503,7 +3508,10 @@ async function loadTasks() {
         </div>
       </div>`;
     }).join('');
-  } catch(e) { console.error('loadTasks:', e); }
+  } catch(e) {
+    console.error('loadTasks:', e);
+    el.innerHTML = '<div class="settings-empty-state">Could not load scheduled tasks right now.</div>';
+  }
 }
 
 async function saveTask() {
@@ -3548,13 +3556,14 @@ function showWatchForm() { document.getElementById('watch-form').style.display =
 function hideWatchForm() { document.getElementById('watch-form').style.display = 'none'; }
 
 async function loadWatchSchedules() {
+  const el = document.getElementById('watch-list');
+  if (!el) return;
   try {
-    const schedules = await (await fetch('/api/watch-schedules')).json();
-    const el = document.getElementById('watch-list');
+    const schedules = await safeFetch('/api/watch-schedules', {}, null);
+    if (!Array.isArray(schedules)) throw new Error('invalid watch schedules');
     if (!schedules.length) { el.innerHTML = '<div class="settings-empty-state">No watch schedules. Click "+ New Watch Schedule" to create one.</div>'; return; }
     el.innerHTML = schedules.map(s => {
-      let personnel = [];
-      try { personnel = JSON.parse(s.personnel || '[]'); } catch(e) {}
+      const personnel = safeJsonParse(s.personnel, []);
       return `<div class="settings-record-card settings-watch-card">
         <div class="settings-record-head">
           <div class="settings-record-main">
@@ -3573,7 +3582,10 @@ async function loadWatchSchedules() {
         </div>
       </div>`;
     }).join('');
-  } catch(e) { console.error('loadWatchSchedules:', e); }
+  } catch(e) {
+    console.error('loadWatchSchedules:', e);
+    el.innerHTML = '<div class="settings-empty-state">Could not load watch schedules right now.</div>';
+  }
 }
 
 async function createWatchSchedule() {
@@ -3606,10 +3618,8 @@ async function viewWatchSchedule(id) {
   try {
     const s = await (await fetch(`/api/watch-schedules/${id}`)).json();
     if (s.error) { toast(s.error, 'error'); return; }
-    let schedule = [];
-    try { schedule = JSON.parse(s.schedule_json || '[]'); } catch(e) {}
-    let personnel = [];
-    try { personnel = JSON.parse(s.personnel || '[]'); } catch(e) {}
+    let schedule = safeJsonParse(s.schedule_json, []);
+    let personnel = safeJsonParse(s.personnel, []);
 
     document.getElementById('watch-detail-title').textContent = s.name;
     document.getElementById('watch-detail-meta').innerHTML =
@@ -3804,7 +3814,7 @@ async function toggleTemplateDropdown() {
   dd.style.display = _templateDropdownOpen ? 'block' : 'none';
   if (_templateDropdownOpen) {
     try {
-      const templates = await (await fetch('/api/templates/inventory')).json();
+      const templates = await safeFetch('/api/templates/inventory', {}, []);
       const el = document.getElementById('template-dropdown-items');
       if (!templates.length) { el.innerHTML = '<div class="prep-dropdown-empty">No templates available.</div>'; return; }
       el.innerHTML = templates.map(t => `<button type="button" class="prep-template-btn" data-prep-action="apply-inventory-template" data-template-name="${escapeAttr(t.name)}">${escapeHtml(t.name)} <span class="prep-template-meta">${t.items_count||''} items</span></button>`).join('');
@@ -3825,7 +3835,8 @@ async function applyInventoryTemplate(name) {
 /* ─── Comms Status Board ─── */
 async function loadCommsStatusBoard() {
   try {
-    const data = await (await fetch('/api/comms/status-board')).json();
+    const data = await safeFetch('/api/comms/status-board', {}, null);
+    if (!data) throw new Error('status board unavailable');
     const el = document.getElementById('comms-board-content');
     const channels = data.channels || [];
     const peersOnline = data.federation_peers_online || 0;
@@ -3987,7 +3998,8 @@ async function loadHealthDashboard() {
   if (!el) return;
   el.innerHTML = renderSettingsInlineStatus('Loading health data…', 'muted');
   try {
-    const d = await (await fetch('/api/system/health')).json();
+    const d = await safeFetch('/api/system/health', {}, null);
+    if (!d) throw new Error('health unavailable');
     const cards = [];
     cards.push({label: 'Status', value: escapeHtml((d.status || 'unknown').replace(/_/g, ' ')), detail: d.db_integrity === 'ok' ? 'DB integrity OK' : ''});
     cards.push({label: 'Modules Active', value: String(d.modules_active || 0) + ' / ' + String(d.modules_total || 0), detail: (d.coverage_pct || 0) + '% coverage'});
@@ -4017,7 +4029,7 @@ async function loadHealthDashboard() {
 /* ─── Sensor Charts ─── */
 async function loadSensorDevices() {
   try {
-    const devices = await (await fetch('/api/power/devices')).json();
+    const devices = await safeFetch('/api/power/devices', {}, []);
     const sel = document.getElementById('sensor-device-select');
     const sensorDevices = (devices || []).filter(d => d.type === 'sensor' || d.has_readings);
     sel.innerHTML = '<option value="">Select sensor device...</option>' + sensorDevices.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
@@ -4030,7 +4042,7 @@ async function loadSensorChart() {
   if (!deviceId) { container.style.display = 'none'; return; }
   container.style.display = 'block';
   try {
-    const readings = await (await fetch(`/api/sensors/${deviceId}/history`)).json();
+    const readings = await safeFetch(`/api/sensors/${deviceId}/history`, {}, []);
     if (!readings || !readings.length) {
       document.getElementById('sensor-chart-info').textContent = 'No readings available for this device.';
       return;
@@ -4049,7 +4061,8 @@ async function scanSerialPorts() {
   const el = document.getElementById('serial-port-list');
   el.innerHTML = renderSettingsInlineStatus('Scanning ports…', 'muted');
   try {
-    const ports = await (await fetch('/api/serial/ports')).json();
+    const ports = await safeFetch('/api/serial/ports', {}, null);
+    if (!Array.isArray(ports)) throw new Error('ports unavailable');
     if (!ports || !ports.length) { el.innerHTML = renderSettingsInlineStatus('No serial ports detected.', 'muted'); return; }
     el.innerHTML = renderSerialPortRows(ports);
   } catch(e) { el.innerHTML = renderSettingsInlineStatus('Failed to scan ports.', 'error'); }

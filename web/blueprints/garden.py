@@ -29,6 +29,42 @@ SEED_VIABILITY = {
 }
 
 
+def _normalize_boundary_geojson(value):
+    if value in (None, ''):
+        return ''
+    if isinstance(value, dict):
+        return json.dumps(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return ''
+        try:
+            parsed = json.loads(text)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return ''
+        return json.dumps(parsed) if isinstance(parsed, dict) else ''
+    return ''
+
+
+def _safe_plot_geometry(value, lng, lat):
+    fallback = {'type': 'Point', 'coordinates': [lng, lat]}
+    if value in (None, ''):
+        return fallback
+    if isinstance(value, dict):
+        geometry = value
+    elif isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return fallback
+        try:
+            geometry = json.loads(text)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return fallback
+    else:
+        return fallback
+    return geometry if isinstance(geometry, dict) and geometry.get('type') else fallback
+
+
 @garden_bp.route('/api/garden/zone')
 def api_garden_zone():
     lat = request.args.get('lat', type=float)
@@ -61,7 +97,7 @@ def api_garden_plots_create():
         db.execute('INSERT INTO garden_plots (name, width_ft, length_ft, sun_exposure, soil_type, notes, lat, lng, boundary_geojson) VALUES (?,?,?,?,?,?,?,?,?)',
                    (data['name'], data.get('width_ft', 0), data.get('length_ft', 0),
                     data.get('sun_exposure', 'full'), data.get('soil_type', ''), data.get('notes', ''),
-                    data.get('lat'), data.get('lng'), data.get('boundary_geojson', '')))
+                    data.get('lat'), data.get('lng'), _normalize_boundary_geojson(data.get('boundary_geojson'))))
         db.commit()
     return jsonify({'status': 'created'}), 201
 
@@ -74,7 +110,7 @@ def api_garden_plots_update(pid):
         for k in ('name', 'width_ft', 'length_ft', 'sun_exposure', 'soil_type', 'notes', 'lat', 'lng', 'boundary_geojson'):
             if k in data:
                 fields.append(f'{k} = ?')
-                vals.append(data[k])
+                vals.append(_normalize_boundary_geojson(data[k]) if k == 'boundary_geojson' else data[k])
         if fields:
             vals.append(pid)
             db.execute(f'UPDATE garden_plots SET {", ".join(fields)} WHERE id = ?', vals)
@@ -90,14 +126,7 @@ def api_garden_plots_geo():
     features = []
     for r in rows:
         d = dict(r)
-        geojson = d.get('boundary_geojson', '')
-        if geojson:
-            try:
-                geometry = json.loads(geojson)
-            except Exception:
-                geometry = {'type': 'Point', 'coordinates': [d['lng'], d['lat']]}
-        else:
-            geometry = {'type': 'Point', 'coordinates': [d['lng'], d['lat']]}
+        geometry = _safe_plot_geometry(d.get('boundary_geojson'), d['lng'], d['lat'])
         features.append({
             'type': 'Feature',
             'geometry': geometry,

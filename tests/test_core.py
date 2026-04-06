@@ -477,6 +477,157 @@ class TestErrorHandler:
         assert "if (typeof _lastServicesData !== 'undefined' && Array.isArray(_lastServicesData) && _lastServicesData.length)" in ops_text
         assert "if (!banner && !dlBtn && !statusEl) return;" in memory_text
 
+    def test_visual_regression_harness_uses_an_isolated_nomad_server(self):
+        config_text = (REPO_ROOT / 'playwright.config.mjs').read_text(encoding='utf-8')
+
+        assert "const PLAYWRIGHT_PORT = process.env.NOMAD_PLAYWRIGHT_PORT || '4317';" in config_text
+        assert "const PLAYWRIGHT_BASE_URL = process.env.NOMAD_PLAYWRIGHT_BASE_URL || `http://127.0.0.1:${PLAYWRIGHT_PORT}`;" in config_text
+        assert "baseURL: PLAYWRIGHT_BASE_URL" in config_text
+        assert "command: `py -3 -m flask --app web.app run --host 127.0.0.1 --port ${PLAYWRIGHT_PORT} --no-debugger --no-reload`" in config_text
+        assert "url: PLAYWRIGHT_BASE_URL" in config_text
+        assert "reuseExistingServer: false" in config_text
+
+    def test_shared_runtime_read_flows_use_safe_fetch_for_release_critical_panels(self):
+        init_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_init_runtime.js').read_text(encoding='utf-8')
+        ops_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_ops_support.js').read_text(encoding='utf-8')
+
+        assert "const routes = await safeFetch('/api/maps/routes', {}, []);" in init_text
+        assert "const results = await safeFetch(`/api/geocode/search?q=${encodeURIComponent(query)}`, {}, []);" in init_text
+        assert "const tasks = await safeFetch('/api/tasks', {}, null);" in init_text
+        assert "const schedules = await safeFetch('/api/watch-schedules', {}, null);" in init_text
+        assert "const templates = await safeFetch('/api/templates/inventory', {}, []);" in init_text
+        assert "const d = await safeFetch('/api/system/health', {}, null);" in init_text
+        assert "const ports = await safeFetch('/api/serial/ports', {}, null);" in init_text
+
+        assert "const b = await safeFetch('/api/broadcast', {}, null);" in ops_text
+        assert "const r = await safeFetch('/api/planner/calculate'" in ops_text
+        assert "const cls = await safeFetch('/api/dashboard/checklists', {}, []);" in ops_text
+        assert "const entries = await safeFetch('/api/journal', {}, null);" in ops_text
+        assert "const d = await safeFetch('/api/security/dashboard', {}, null);" in ops_text
+        assert "const cameras = await safeFetch('/api/security/cameras', {}, null);" in ops_text
+        assert "const logs = await safeFetch('/api/security/access-log', {}, null);" in ops_text
+        assert "const alerts = await safeFetch('/api/alerts', {}, null);" in ops_text
+
+    def test_runtime_uses_shared_json_safety_helpers_for_saved_state_and_payloads(self):
+        core_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_core_shell.js').read_text(encoding='utf-8')
+        readiness_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_dashboard_readiness.js').read_text(encoding='utf-8')
+        init_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_init_runtime.js').read_text(encoding='utf-8')
+        media_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_media_maps_sync.js').read_text(encoding='utf-8')
+        family_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_family_field.js').read_text(encoding='utf-8')
+        mapping_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_ops_mapping.js').read_text(encoding='utf-8')
+        services_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
+        sitroom_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_situation_room.js').read_text(encoding='utf-8')
+        ai_text = (REPO_ROOT / 'web' / 'blueprints' / 'ai.py').read_text(encoding='utf-8')
+        app_text = (REPO_ROOT / 'web' / 'app.py').read_text(encoding='utf-8')
+        medical_text = (REPO_ROOT / 'web' / 'blueprints' / 'medical.py').read_text(encoding='utf-8')
+        maps_text = (REPO_ROOT / 'web' / 'blueprints' / 'maps.py').read_text(encoding='utf-8')
+        security_text = (REPO_ROOT / 'web' / 'blueprints' / 'security.py').read_text(encoding='utf-8')
+        power_text = (REPO_ROOT / 'web' / 'blueprints' / 'power.py').read_text(encoding='utf-8')
+        kb_text = (REPO_ROOT / 'web' / 'blueprints' / 'kb.py').read_text(encoding='utf-8')
+        media_blueprint_text = (REPO_ROOT / 'web' / 'blueprints' / 'media.py').read_text(encoding='utf-8')
+        comms_text = (REPO_ROOT / 'web' / 'blueprints' / 'comms.py').read_text(encoding='utf-8')
+        garden_text = (REPO_ROOT / 'web' / 'blueprints' / 'garden.py').read_text(encoding='utf-8')
+        weather_text = (REPO_ROOT / 'web' / 'blueprints' / 'weather.py').read_text(encoding='utf-8')
+        federation_text = (REPO_ROOT / 'web' / 'blueprints' / 'federation.py').read_text(encoding='utf-8')
+        inventory_text = (REPO_ROOT / 'web' / 'blueprints' / 'inventory.py').read_text(encoding='utf-8')
+        sitroom_blueprint_text = (REPO_ROOT / 'web' / 'blueprints' / 'situation_room.py').read_text(encoding='utf-8')
+
+        assert 'function safeJsonParse(value, fallback = null, options = {}) {' in core_text
+        assert 'function readJsonStorage(storage, key, fallback = null, options = {}) {' in core_text
+        assert "const data = readJsonStorage(localStorage, this._prefix + formId, null);" in core_text
+
+        assert "readJsonStorage(localStorage, 'nomad-signal-schedule', []);" in readiness_text
+        assert 'const offers = safeJsonParse(p.offers, []);' in readiness_text
+        assert 'const items = safeJsonParse(p.matched_items, []);' in readiness_text
+
+        assert "let _ics309Entries = readJsonStorage(localStorage, 'nomad_ics309', []);" in init_text
+        assert "chatMessages = safeJsonParse(c.messages, []);" in services_text
+        assert "chatMessages = safeJsonParse(r.messages, []);" in services_text
+        assert "readJsonStorage(localStorage, 'nomad-map-zones', []);" in media_text
+        assert "readJsonStorage(localStorage, 'nomad-map-bookmarks', []);" in media_text
+        assert "readJsonStorage(localStorage, 'nomad-fep', {});" in family_text
+        assert "readJsonStorage(localStorage, 'nomad-threats', {});" in mapping_text
+        assert 'function _parseSitroomDetailJson(value) {' in sitroom_text
+        assert "return readJsonStorage(localStorage, key, fallback);" in sitroom_text
+        assert "const det = _parseSitroomDetailJson(q.detail_json);" in sitroom_text
+        assert "const sizes = _readSitroomStorageObject('sitroom-card-sizes', {});" in sitroom_text
+
+        assert 'def _safe_message_list(val, default=None):' in ai_text
+        assert "messages = _safe_message_list(data.get('messages', []))" in ai_text
+        assert "memories = _safe_memory_entries(mem_row['value'])" in ai_text
+        assert "update_data['messages'] = json.dumps(_safe_message_list(data['messages']))" in ai_text
+
+        assert 'def _safe_json_value(val, fallback):' in app_text
+        assert "report['situation'] = _safe_json_value(sit_row['value'] if sit_row else None, {})" in app_text
+        assert "memories = _safe_json_value(mem_row['value'], [])" in app_text
+
+        assert 'def _safe_id_list(value):' in maps_text
+        assert "wp_ids = _safe_id_list(route['waypoint_ids'])" in maps_text
+        assert "geojson = _safe_track_geojson(trk['geojson'])" in maps_text
+        assert "item['properties'] = _safe_json_object(item.get('properties'), {})" in maps_text
+
+        assert 'def _safe_id_list(value):' in security_text
+        assert "sit = _safe_json_object(sit_raw['value'], {})" in security_text
+        assert "entry['camera_ids'] = _safe_id_list(entry.get('camera_ids'))" in security_text
+        assert "camera_ids = _safe_id_list(z['camera_ids'])" in security_text
+
+        assert 'def _resolve_map_center(value):' in power_text
+        assert "specs = _safe_json_object(d['specs'], {})" in power_text
+        assert "center_lat, center_lng = _resolve_map_center(mc['value'])" in power_text
+        assert "specs = _safe_json_object(d_dict.get('specs'), {})" in power_text
+
+        assert 'def _parse_json_list(value):' in medical_text
+        assert 'def _safe_response_json(response):' in medical_text
+        assert "json.dumps(_parse_json_list(data.get('allergies')))" in medical_text
+        assert "photos = _parse_json_list(existing['photo_path'])" in medical_text
+        assert "photos = _parse_json_list(row['photo_path'])" in medical_text
+        assert "allergies = _parse_json_list(patient['allergies'])" in medical_text
+        assert "current_meds = _parse_json_list(patient['medications'])" in medical_text
+        assert "ref_json = _safe_response_json(ref_resp)" in medical_text
+
+        assert 'def _safe_json_list(value, fallback=None):' in kb_text
+        assert "d['entities'] = _safe_json_list(d.get('entities'), [])" in kb_text
+        assert "d['linked_records'] = _safe_json_list(d.get('linked_records'), [])" in kb_text
+        assert "selected = _safe_index_list(data.get('entities'))" in kb_text
+
+        assert 'def _safe_string_list(value):' in media_blueprint_text
+        assert "dead_urls = set(_safe_string_list(dead_row['value'] if dead_row else None))" in media_blueprint_text
+        assert "dead = _safe_string_list(row['value'] if row else None)" in media_blueprint_text
+        assert 'd = _load_json_line(line, {})' in media_blueprint_text
+        assert "found = _load_json_line(search_result.stdout.strip().split('\\n')[0], {})" in media_blueprint_text
+
+        assert 'def _normalize_radio_channels(value):' in comms_text
+        assert "entry['channels'] = _normalize_radio_channels(entry.get('channels'))" in comms_text
+        assert "json.dumps(_normalize_radio_channels(data.get('channels', [])))" in comms_text
+        assert "channels = _normalize_radio_channels(r['channels'])" in comms_text
+
+        assert 'def _normalize_boundary_geojson(value):' in garden_text
+        assert "_normalize_boundary_geojson(data.get('boundary_geojson'))" in garden_text
+        assert "geometry = _safe_plot_geometry(d.get('boundary_geojson'), d['lng'], d['lat'])" in garden_text
+
+        assert 'def _safe_json_object(value, fallback=None):' in weather_text
+        assert "action_data = _safe_json_object(rule['action_data'], {})" in weather_text
+        assert "d['action_data'] = _safe_json_object(d.get('action_data'), {})" in weather_text
+        assert "action_data = _safe_json_object(data.get('action_data'), {})" in weather_text
+
+        assert 'def _safe_clock(value):' in federation_text
+        assert "clock = _safe_clock(existing['clock'] if existing else None)" in federation_text
+        assert "payload['vector_clocks'][r['table_name']][r['row_hash']] = _safe_clock(r['clock'])" in federation_text
+        assert "local_clock = _safe_clock(local_vc_row['clock'] if local_vc_row else None)" in federation_text
+        assert "entry['conflict_details'] = _safe_conflict_list(entry.get('conflict_details'))" in federation_text
+        assert "conflicts = _safe_conflict_list(row['conflict_details'])" in federation_text
+        assert "manifest = _safe_json_object(z.read('manifest.json'), {})" in federation_text
+        assert "json.dumps(_safe_json_list(data.get('our_commitments'), []))" in federation_text
+
+        assert 'def _safe_json_value(raw, fallback=None):' in inventory_text
+        assert 'def _extract_json_array(raw_text):' in inventory_text
+        assert "result = _safe_json_value(resp.read(), {})" in inventory_text
+        assert "for item in _extract_json_array(raw_text):" in inventory_text
+        assert "for item in _extract_json_array(raw_response):" in inventory_text
+
+        assert "prices = _safe_json_value(m.get('outcomePrices', '[]'), [])" in sitroom_blueprint_text
+        assert "sw = _safe_json_object(sw_row['value_json'], {})" in sitroom_blueprint_text
+
     def test_app_css_is_split_into_ordered_import_manifest(self):
         manifest = REPO_ROOT / 'web' / 'static' / 'css' / 'app.css'
         app_dir = REPO_ROOT / 'web' / 'static' / 'css' / 'app'

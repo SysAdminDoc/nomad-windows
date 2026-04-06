@@ -230,8 +230,9 @@ def list_models():
         resp = requests.get(f'http://localhost:{OLLAMA_PORT}/api/tags', timeout=5)
         if resp.ok:
             return resp.json().get('models', [])
-    except Exception:
-        pass
+        log.debug('Ollama model list returned HTTP %s', resp.status_code)
+    except (requests.RequestException, ValueError) as exc:
+        log.debug('Could not list Ollama models: %s', exc)
     return []
 
 

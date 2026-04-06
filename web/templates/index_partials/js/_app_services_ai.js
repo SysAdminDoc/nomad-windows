@@ -475,7 +475,7 @@ async function selectConvo(id) {
   if (chatInput) chatInput.placeholder = 'Type a message... (Enter to send, Shift+Enter for newline, drop files)';
   try {
     const c = await fetchJsonStrict(`/api/conversations/${id}`, {}, 'Failed to load conversation');
-    try { chatMessages = JSON.parse(c.messages || '[]'); } catch(e) { chatMessages = []; }
+    chatMessages = safeJsonParse(c.messages, []);
     if (c.model) {
       const sel = document.getElementById('model-select');
       for (const opt of sel.options) { if (opt.value === c.model) { sel.value = c.model; break; } }
@@ -616,7 +616,8 @@ async function sendChat() {
       for (const line of lines) {
         if (!line.trim()) continue;
         try {
-          const d = JSON.parse(line);
+          const d = safeJsonParse(line, null);
+          if (!d || typeof d !== 'object') throw new Error('Invalid stream payload');
           // Handle RAG citations chunk (first chunk when KB is enabled)
           if (d.citations) {
             chatMessages[chatMessages.length-1].citations = d.citations;
@@ -823,7 +824,7 @@ async function switchToBranch(branchId, convId) {
   parentConvoId = convId || r.conversation_id;
   currentBranchId = branchId;
   branchMsgIdx = r.parent_message_idx;
-  try { chatMessages = JSON.parse(r.messages || '[]'); } catch(e) { chatMessages = []; }
+  chatMessages = safeJsonParse(r.messages, []);
   renderChat();
   // Close branch panel if open
   const panel = document.getElementById('branch-panel');

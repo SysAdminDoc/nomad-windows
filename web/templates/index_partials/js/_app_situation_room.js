@@ -745,19 +745,46 @@ function _saveSitroomWorkspaceState() {
   if (typeof syncWorkspaceUrlState === 'function') syncWorkspaceUrlState();
 }
 
-function _restoreSitroomWorkspaceState() {
+function _readSitroomStorageJson(key, fallback) {
+  if (typeof readJsonStorage === 'function') {
+    return readJsonStorage(localStorage, key, fallback);
+  }
   try {
-    const saved = JSON.parse(localStorage.getItem('sr-workspace-state'));
-    if (!saved) return;
-    if (saved.view && SITROOM_VIEW_META[saved.view]) _sitroomView = saved.view;
-    if (saved.newsGroup) _sitroomNewsGroup = saved.newsGroup;
-    if (saved.regionPreset && SITROOM_REGION_PRESETS[saved.regionPreset]) _sitroomRegionPreset = saved.regionPreset;
-    if (saved.deskPreset && (SITROOM_DESK_PRESETS[saved.deskPreset] || saved.deskPreset === 'custom')) _sitroomDeskPreset = saved.deskPreset;
-    if (saved.layerPreset && (SITROOM_LAYER_PRESETS[saved.layerPreset] || saved.layerPreset === 'custom')) _sitroomLayerPreset = saved.layerPreset;
-    if (saved.savedDeskId) _sitroomSavedDeskId = saved.savedDeskId;
-    if (saved.briefMode && SITROOM_BRIEF_MODE_META[saved.briefMode]) _sitroomBriefMode = saved.briefMode;
-    if (saved.snapshotTemplate && SITROOM_SNAPSHOT_TEMPLATES[saved.snapshotTemplate]) _sitroomSnapshotTemplate = saved.snapshotTemplate;
-  } catch (e) { /* localStorage unavailable */ }
+    const raw = localStorage.getItem(key);
+    if (!raw) return fallback;
+    return JSON.parse(raw);
+  } catch (e) {
+    try { localStorage.removeItem(key); } catch (_) {}
+    return fallback;
+  }
+}
+
+function _readSitroomStorageObject(key, fallback = {}) {
+  const parsed = _readSitroomStorageJson(key, fallback);
+  if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed;
+  return fallback && typeof fallback === 'object' && !Array.isArray(fallback) ? { ...fallback } : {};
+}
+
+function _parseSitroomDetailJson(value) {
+  const parsed = typeof safeJsonParse === 'function'
+    ? safeJsonParse(value, {})
+    : (() => {
+        try { return value ? JSON.parse(value) : {}; } catch (_) { return {}; }
+      })();
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {};
+}
+
+function _restoreSitroomWorkspaceState() {
+  const saved = _readSitroomStorageJson('sr-workspace-state', null);
+  if (!saved) return;
+  if (saved.view && SITROOM_VIEW_META[saved.view]) _sitroomView = saved.view;
+  if (saved.newsGroup) _sitroomNewsGroup = saved.newsGroup;
+  if (saved.regionPreset && SITROOM_REGION_PRESETS[saved.regionPreset]) _sitroomRegionPreset = saved.regionPreset;
+  if (saved.deskPreset && (SITROOM_DESK_PRESETS[saved.deskPreset] || saved.deskPreset === 'custom')) _sitroomDeskPreset = saved.deskPreset;
+  if (saved.layerPreset && (SITROOM_LAYER_PRESETS[saved.layerPreset] || saved.layerPreset === 'custom')) _sitroomLayerPreset = saved.layerPreset;
+  if (saved.savedDeskId) _sitroomSavedDeskId = saved.savedDeskId;
+  if (saved.briefMode && SITROOM_BRIEF_MODE_META[saved.briefMode]) _sitroomBriefMode = saved.briefMode;
+  if (saved.snapshotTemplate && SITROOM_SNAPSHOT_TEMPLATES[saved.snapshotTemplate]) _sitroomSnapshotTemplate = saved.snapshotTemplate;
 }
 
 function _syncSitroomLayoutEditState() {
@@ -1141,12 +1168,8 @@ function _captureSitroomLayerState() {
 }
 
 function _readSitroomSavedDesks() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('sr-saved-desks'));
-    return Array.isArray(saved) ? _sortSitroomSavedDesks(saved.map((item, index) => _normalizeSitroomSavedDesk(item, index))) : [];
-  } catch (e) {
-    return [];
-  }
+  const saved = _readSitroomStorageJson('sr-saved-desks', []);
+  return Array.isArray(saved) ? _sortSitroomSavedDesks(saved.map((item, index) => _normalizeSitroomSavedDesk(item, index))) : [];
 }
 
 function _getSitroomSavedDeskById(id) {
@@ -2841,7 +2864,7 @@ async function renderSitroomQuakes() {
   if (!d || !d.earthquakes?.length) { list.innerHTML = '<div class="sitroom-empty">No earthquakes above M' + minMag + '</div>'; return; }
   list.innerHTML = d.earthquakes.map(q => {
     const mc = q.magnitude >= 6 ? 'sitroom-mag-high' : q.magnitude >= 4.5 ? 'sitroom-mag-med' : 'sitroom-mag-low';
-    let det = {}; try { det = q.detail_json ? JSON.parse(q.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(q.detail_json);
     return `<div class="sitroom-event-item">
       <span class="sitroom-mag ${mc}">M${q.magnitude ? q.magnitude.toFixed(1) : '?'}</span>
       <div class="sitroom-event-info">
@@ -2860,7 +2883,7 @@ async function loadSitroomWeather() {
   if (!list) return;
   if (!d || !d.alerts?.length) { list.innerHTML = '<div class="sitroom-empty">No severe weather alerts</div>'; return; }
   list.innerHTML = d.alerts.slice(0, 30).map(a => {
-    let det = {}; try { det = a.detail_json ? JSON.parse(a.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(a.detail_json);
     const sc = det.severity === 'Extreme' ? 'sitroom-sev-extreme' : 'sitroom-sev-severe';
     return `<div class="sitroom-event-item ${sc}">
       <div class="sitroom-event-info">
@@ -3142,7 +3165,7 @@ async function loadSitroomCII() {
   // Score from events
   if (events?.events) {
     events.events.forEach(ev => {
-      let det = {}; try { det = ev.detail_json ? JSON.parse(ev.detail_json) : {}; } catch(e) {}
+      const det = _parseSitroomDetailJson(ev.detail_json);
       const country = det.country || '';
       let sev = 0;
       if (ev.magnitude) sev += ev.magnitude;
@@ -3347,7 +3370,7 @@ async function loadSitroomOutages() {
   if (!el) return;
   if (!d || !d.outages?.length) { el.innerHTML = '<div class="sr-empty">No internet disruptions</div>'; return; }
   el.innerHTML = d.outages.map(o => {
-    let det = {}; try { det = o.detail_json ? JSON.parse(o.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(o.detail_json);
     return `<div class="sitroom-event-item">
       <span class="sitroom-mag sitroom-mag-net">NET</span>
       <div class="sitroom-event-info">
@@ -3385,7 +3408,7 @@ async function loadSitroomFires() {
   if (!el) return;
   if (!d || !d.fires?.length) { el.innerHTML = '<div class="sr-empty">No fire data</div>'; return; }
   el.innerHTML = d.fires.slice(0, 30).map(f => {
-    let det = {}; try { det = f.detail_json ? JSON.parse(f.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(f.detail_json);
     const bright = f.magnitude ? f.magnitude.toFixed(0) + 'K' : '?';
     return `<div class="sitroom-event-item">
       <span class="sitroom-mag sitroom-mag-fire">${bright}</span>
@@ -3404,7 +3427,7 @@ async function loadSitroomDiseases() {
   if (!el) return;
   if (!d || !d.outbreaks?.length) { el.innerHTML = '<div class="sr-empty">No outbreak data</div>'; return; }
   el.innerHTML = d.outbreaks.map(o => {
-    let det = {}; try { det = o.detail_json ? JSON.parse(o.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(o.detail_json);
     return `<div class="sitroom-event-item">
       <div class="sitroom-event-info">
         <div class="sitroom-event-title" title="${escapeAttr(o.title || '')}">${escapeHtml(o.title || 'Outbreak')}</div>
@@ -3460,21 +3483,19 @@ function _savePanelOrder() {
 }
 
 function _restorePanelOrder() {
-  try {
-    const saved = JSON.parse(localStorage.getItem('sr-panel-order'));
-    if (!saved || !saved.length) return;
-    const grid = document.getElementById('sr-cards-anchor');
-    if (!grid) return;
-    const cards = [...grid.querySelectorAll('.sr-card')];
-    const byTitle = {};
-    cards.forEach(c => {
-      const panelId = _getSitroomPanelId(c);
-      if (panelId) byTitle[panelId] = c;
-    });
-    saved.forEach(title => {
-      if (byTitle[title]) grid.appendChild(byTitle[title]);
-    });
-  } catch(e) {}
+  const saved = _readSitroomStorageJson('sr-panel-order', []);
+  if (!Array.isArray(saved) || !saved.length) return;
+  const grid = document.getElementById('sr-cards-anchor');
+  if (!grid) return;
+  const cards = [...grid.querySelectorAll('.sr-card')];
+  const byTitle = {};
+  cards.forEach(c => {
+    const panelId = _getSitroomPanelId(c);
+    if (panelId) byTitle[panelId] = c;
+  });
+  saved.forEach(title => {
+    if (byTitle[title]) grid.appendChild(byTitle[title]);
+  });
 }
 
 /* ─── Map Fullscreen ─── */
@@ -3700,7 +3721,7 @@ async function loadSitroomRadiation() {
   if (!el) return;
   if (!d || !d.readings?.length) { el.innerHTML = '<div class="sr-empty">No radiation data</div>'; return; }
   el.innerHTML = d.readings.slice(0, 20).map(r => {
-    let det = {}; try { det = r.detail_json ? JSON.parse(r.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(r.detail_json);
     const val = r.magnitude || 0;
     const cls = val > 100 ? 'sitroom-mag-high' : val > 50 ? 'sitroom-mag-med' : 'sitroom-mag-low';
     return `<div class="sitroom-event-item">
@@ -3720,7 +3741,7 @@ async function loadSitroomTrending() {
   if (!el) return;
   if (!d || !d.topics?.length) { el.innerHTML = '<div class="sr-empty">No trending data</div>'; return; }
   el.innerHTML = d.topics.map(t => {
-    let det = {}; try { det = t.detail_json ? JSON.parse(t.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(t.detail_json);
     const tone = t.magnitude || 0;
     const toneColor = tone > 2 ? '#4aedc4' : tone < -2 ? '#e05050' : '#888';
     return `<div class="sitroom-news-item">
@@ -3740,7 +3761,7 @@ async function loadSitroomSanctions() {
   if (!el) return;
   if (!d || !d.items?.length) { el.innerHTML = '<div class="sr-empty">No sanctions/trade data</div>'; return; }
   el.innerHTML = d.items.map(s => {
-    let det = {}; try { det = s.detail_json ? JSON.parse(s.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(s.detail_json);
     return `<div class="sitroom-event-item">
       <div class="sitroom-event-info">
         <div class="sitroom-event-title" title="${escapeAttr(s.title || '')}">${escapeHtml(s.title || '')}</div>
@@ -3771,7 +3792,7 @@ async function _checkCriticalAlerts() {
   const wx = await safeFetch('/api/sitroom/weather-alerts', {}, null);
   if (wx?.alerts) {
     wx.alerts.slice(0, 3).forEach(a => {
-      let det = {}; try { det = a.detail_json ? JSON.parse(a.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(a.detail_json);
       if (det.severity !== 'Extreme') return;
       const key = 'wx:' + a.event_id;
       if (_sitroomAlertsSeen.has(key)) return;
@@ -3803,7 +3824,7 @@ async function loadSitroomMacroStress() {
   if (!el) return;
   if (!d || !d.indicators?.length) { el.innerHTML = '<div class="sr-empty">No macro data</div>'; return; }
   el.innerHTML = d.indicators.map(i => {
-    let det = {}; try { det = i.detail_json ? JSON.parse(i.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(i.detail_json);
     const val = i.magnitude || 0;
     return `<div class="sr-macro-row">
       <span class="sr-macro-label">${escapeHtml(i.title || det.series || '')}</span>
@@ -4058,7 +4079,7 @@ async function loadSitroomGithub() {
   if (!el) return;
   if (!d || !d.repos?.length) { el.innerHTML = '<div class="sr-empty">No GitHub data</div>'; return; }
   el.innerHTML = d.repos.map(r => {
-    let det = {}; try { det = r.detail_json ? JSON.parse(r.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(r.detail_json);
     return `<div class="sitroom-news-item">
       <span class="sitroom-news-cat" data-cat="GitHub">${escapeHtml(det.language || '?')}</span>
       <div class="sitroom-news-body">
@@ -4076,7 +4097,7 @@ async function loadSitroomFuel() {
   if (!el) return;
   if (!d || !d.prices?.length) { el.innerHTML = '<div class="sr-empty">No fuel data</div>'; return; }
   el.innerHTML = d.prices.map(p => {
-    let det = {}; try { det = p.detail_json ? JSON.parse(p.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(p.detail_json);
     return `<div class="sr-fuel-card">
       <div class="sr-fuel-value">$${(p.magnitude||0).toFixed(2)}</div>
       <div class="sr-fuel-label">${escapeHtml(p.title || 'US GASOLINE')}</div>
@@ -4158,7 +4179,7 @@ async function loadSitroomVelocity() {
   if (!el) return;
   if (!d || !d.stories?.length) { el.innerHTML = '<div class="sr-empty">No velocity data yet</div>'; return; }
   el.innerHTML = d.stories.map(s => {
-    let det = {}; try { det = s.detail_json ? JSON.parse(s.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(s.detail_json);
     const speed = s.magnitude || 0;
     const barWidth = Math.min(100, speed * 15);
     const tone = speed >= 6 ? 'danger' : speed >= 4 ? 'warn' : 'neutral';
@@ -4183,7 +4204,7 @@ async function loadSitroomServiceStatus() {
   if (!el) return;
   if (!d || !d.services?.length) { el.innerHTML = '<div class="sr-empty">No service status data</div>'; return; }
   el.innerHTML = d.services.map(s => {
-    let det = {}; try { det = s.detail_json ? JSON.parse(s.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(s.detail_json);
     const isIncident = (s.title || '').toLowerCase().includes('incident') || (s.title || '').toLowerCase().includes('outage');
     return `<div class="sitroom-event-item${isIncident ? ' sitroom-sev-extreme' : ''}">
       <span class="sitroom-mag ${isIncident ? 'sitroom-mag-service-incident' : 'sitroom-mag-service-ok'}">${(det.service || '??').substring(0,3)}</span>
@@ -4203,7 +4224,7 @@ async function loadSitroomCorrelations() {
   if (!el) return;
   if (!d || !d.signals?.length) { el.innerHTML = '<div class="sr-empty">No cross-domain signals detected</div>'; return; }
   el.innerHTML = d.signals.map(s => {
-    let det = {}; try { det = s.detail_json ? JSON.parse(s.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(s.detail_json);
     return `<div class="sr-corr-signal" data-sev="${escapeAttr(det.severity || 'normal')}">
       <div class="sr-corr-title">${escapeHtml(s.title || '')}</div>
       <div class="sr-corr-detail">${escapeHtml(det.detail || '')}</div>
@@ -4220,7 +4241,7 @@ async function loadSitroomYieldCurve() {
   if (!d || !d.rates?.length) { el.innerHTML = '<div class="sr-empty">No yield data</div>'; return; }
   const maxRate = Math.max(...d.rates.map(r => r.magnitude || 0), 1);
   el.innerHTML = '<div class="sr-yield-bars">' + d.rates.slice(0, 12).map(r => {
-    let det = {}; try { det = r.detail_json ? JSON.parse(r.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(r.detail_json);
     const rate = r.magnitude || 0;
     const pct = (rate / maxRate * 100).toFixed(0);
     const label = (det.security || r.title || '').replace('Treasury ', '').substring(0, 8);
@@ -4399,7 +4420,7 @@ async function loadSitroomUcdp() {
   if (!el) return;
   if (!d || !d.conflicts?.length) { el.innerHTML = '<div class="sr-empty">No UCDP data</div>'; return; }
   el.innerHTML = d.conflicts.slice(0, 20).map(c => {
-    let det = {}; try { det = c.detail_json ? JSON.parse(c.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(c.detail_json);
     const deaths = c.magnitude || 0;
     const cls = deaths >= 10 ? 'sitroom-mag-high' : deaths >= 3 ? 'sitroom-mag-med' : 'sitroom-mag-low';
     return `<div class="sitroom-event-item">
@@ -4419,7 +4440,7 @@ async function loadSitroomCyber() {
   if (!el) return;
   if (!d || !d.threats?.length) { el.innerHTML = '<div class="sr-empty">No cyber threat data</div>'; return; }
   el.innerHTML = d.threats.map(t => {
-    let det = {}; try { det = t.detail_json ? JSON.parse(t.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(t.detail_json);
     const sevClass = det.severity === 'high' ? 'sitroom-mag-cyber-high' : 'sitroom-mag-cyber-med';
     return `<div class="sitroom-event-item">
       <span class="sitroom-mag ${sevClass}">${(det.severity || '?').substring(0,1).toUpperCase()}</span>
@@ -4473,7 +4494,7 @@ async function loadSitroomDisplacement() {
   if (!el) return;
   if (!d || !d.records?.length) { el.innerHTML = '<div class="sr-empty">No displacement data</div>'; return; }
   el.innerHTML = d.records.map(r => {
-    let det = {}; try { det = r.detail_json ? JSON.parse(r.detail_json) : {}; } catch(e) {}
+    const det = _parseSitroomDetailJson(r.detail_json);
     return `<div class="sitroom-event-item">
       <div class="sitroom-event-info">
         <div class="sitroom-event-title">${escapeHtml(r.title || '')}</div>
@@ -4661,15 +4682,13 @@ function _saveLayerState() {
 }
 
 function _restoreLayerState() {
-  try {
-    const state = JSON.parse(localStorage.getItem('sr-layer-state'));
-    if (!state) return;
-    document.querySelectorAll('[data-sitroom-layer]').forEach(cb => {
-      if (state[cb.dataset.sitroomLayer] !== undefined) cb.checked = state[cb.dataset.sitroomLayer];
-    });
-    _sitroomLayerPreset = _inferSitroomLayerPreset();
-    _updateActiveLayerCount();
-  } catch(e) {}
+  const state = _readSitroomStorageJson('sr-layer-state', null);
+  if (!state) return;
+  document.querySelectorAll('[data-sitroom-layer]').forEach(cb => {
+    if (state[cb.dataset.sitroomLayer] !== undefined) cb.checked = state[cb.dataset.sitroomLayer];
+  });
+  _sitroomLayerPreset = _inferSitroomLayerPreset();
+  _updateActiveLayerCount();
 }
 
 // Search input handler
@@ -5067,16 +5086,14 @@ function _initCardResize() {
       // Persist to localStorage
       const cardId = _getSitroomPanelId(card);
       if (cardId) {
-        let sizes = {};
-        try { sizes = JSON.parse(localStorage.getItem('sitroom-card-sizes') || '{}'); } catch(e) {}
+        const sizes = _readSitroomStorageObject('sitroom-card-sizes', {});
         sizes[cardId] = size;
         localStorage.setItem('sitroom-card-sizes', JSON.stringify(sizes));
       }
     }
   });
   // Restore saved sizes
-  let sizes = {};
-  try { sizes = JSON.parse(localStorage.getItem('sitroom-card-sizes') || '{}'); } catch(e) {}
+  const sizes = _readSitroomStorageObject('sitroom-card-sizes', {});
   document.querySelectorAll('.sr-card').forEach(card => {
     const cardId = _getSitroomPanelId(card);
     if (cardId && sizes[cardId]) {
@@ -5337,8 +5354,7 @@ async function loadSitroomOrefAlerts() {
   }
   let html = '';
   d.alerts.forEach(a => {
-    let detail = {};
-    try { detail = JSON.parse(a.detail_json || '{}'); } catch(e) {}
+    const detail = _parseSitroomDetailJson(a.detail_json);
     html += `<div class="sr-feed-item" data-tone="danger">
       ${_srFeedBadge('OREF', 'danger')}
       <span class="sr-feed-title">${escapeHtml(a.title)}</span>

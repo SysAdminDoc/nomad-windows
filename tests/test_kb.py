@@ -1,5 +1,7 @@
 """Tests for knowledge base / document API routes."""
 
+from db import db_session
+
 
 class TestKBDocuments:
     def test_list_documents(self, client):
@@ -28,6 +30,51 @@ class TestKBSearch:
         resp = client.post('/api/kb/search', json={})
         # Should handle missing query gracefully
         assert resp.status_code in (200, 400)
+
+
+class TestKBDocumentResilience:
+    def test_document_details_recover_from_corrupted_analysis_payloads(self, client):
+        with db_session() as db:
+            cur = db.execute(
+                'INSERT INTO documents (filename, content_type, file_size, status, entities, linked_records) VALUES (?, ?, ?, ?, ?, ?)',
+                ('broken-analysis.txt', 'text', 0, 'ready', '{broken', 'not-json'),
+            )
+            db.commit()
+            doc_id = cur.lastrowid
+
+        resp = client.get(f'/api/kb/documents/{doc_id}/details')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['entities'] == []
+        assert data['linked_records'] == []
+
+    def test_import_entities_accepts_json_string_selection(self, client):
+        with db_session() as db:
+            cur = db.execute(
+                'INSERT INTO documents (filename, content_type, file_size, status, entities) VALUES (?, ?, ?, ?, ?)',
+                (
+                    'entity-import.txt',
+                    'text',
+                    0,
+                    'ready',
+                    '[{"type":"person","value":"Alice Walker"},{"type":"person","value":"Bob Stone"}]',
+                ),
+            )
+            db.commit()
+            doc_id = cur.lastrowid
+
+        resp = client.post(f'/api/kb/documents/{doc_id}/import-entities', json={'entities': '[0]'})
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['results']['contacts'] == 1
+        assert data['results']['skipped'] == 0
+        assert data['total_imported'] == 1
+
+        with db_session() as db:
+            rows = db.execute('SELECT name FROM contacts ORDER BY name').fetchall()
+            names = [row['name'] for row in rows]
+        assert 'Alice Walker' in names
+        assert 'Bob Stone' not in names
 
 
 class TestCSVImport:

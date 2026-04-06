@@ -1,5 +1,7 @@
 """Tests for weather API routes including Zambretti prediction."""
 
+from db import db_session
+
 
 class TestWeatherLog:
     def test_empty_list(self, client):
@@ -91,3 +93,51 @@ class TestZambrettiPredict:
         resp = client.get('/api/weather/predict')
         data = resp.get_json()
         assert 'forecast' in data
+
+
+class TestWeatherActionRuleResilience:
+    def test_action_rules_list_recovers_from_corrupted_action_data(self, client):
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO weather_action_rules (name, condition_type, threshold, comparison, action_type, action_data, cooldown_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                ('Broken Rule', 'temp_high', 90, 'gte', 'alert', '{broken', 60),
+            )
+            db.commit()
+
+        resp = client.get('/api/weather/action-rules')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        target = next((rule for rule in data if rule['name'] == 'Broken Rule'), None)
+        assert target is not None
+        assert target['action_data'] == {}
+
+    def test_evaluate_rules_recovers_from_corrupted_action_data(self, client):
+        client.post('/api/weather/readings', json={'pressure_hpa': 1012, 'temp_f': 102, 'source': 'test'})
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO weather_action_rules (name, condition_type, threshold, comparison, action_type, action_data, cooldown_minutes) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                ('Hot Rule', 'temp_high', 100, 'gte', 'alert', '{broken', 0),
+            )
+            db.commit()
+
+        resp = client.post('/api/weather/evaluate-rules')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert len(data['triggered']) == 1
+        assert data['triggered'][0]['name'] == 'Hot Rule'
+
+    def test_create_action_rule_accepts_json_string_action_data(self, client):
+        resp = client.post('/api/weather/action-rules', json={
+            'name': 'String Action Data',
+            'condition_type': 'temp_high',
+            'threshold': 95,
+            'comparison': 'gte',
+            'action_type': 'alert',
+            'action_data': '{"severity":"critical","title":"Heat Alert"}',
+        })
+        assert resp.status_code == 201
+
+        with db_session() as db:
+            row = db.execute('SELECT action_data FROM weather_action_rules WHERE name = ?', ('String Action Data',)).fetchone()
+        assert row is not None
+        assert row['action_data'] == '{"severity": "critical", "title": "Heat Alert"}'

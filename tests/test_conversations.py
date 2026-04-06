@@ -51,6 +51,10 @@ class TestConversationsUpdate:
         ])
         resp = client.put(f'/api/conversations/{cid}', json={'messages': messages})
         assert resp.status_code == 200
+        saved = client.get(f'/api/conversations/{cid}').get_json()
+        stored_messages = json.loads(saved['messages'])
+        assert isinstance(stored_messages, list)
+        assert stored_messages[0]['content'] == 'How do I purify water?'
 
     def test_rename_conversation(self, client):
         create = client.post('/api/conversations', json={'title': 'Old Title'})
@@ -106,12 +110,25 @@ class TestConversationBranching:
         client.put(f'/api/conversations/{cid}', json={'messages': messages})
         resp = client.post(f'/api/conversations/{cid}/branch', json={'from_index': 1})
         assert resp.status_code in (200, 201)
+        data = resp.get_json()
+        assert [m['content'] for m in data['messages']] == ['Q1', 'A1']
 
     def test_list_branches(self, client):
         create = client.post('/api/conversations', json={'title': 'Branch Test'})
         cid = create.get_json()['id']
         resp = client.get(f'/api/conversations/{cid}/branches')
         assert resp.status_code == 200
+
+    def test_branch_conversation_recovers_from_corrupted_messages(self, client, db):
+        create = client.post('/api/conversations', json={'title': 'Broken Chat'})
+        cid = create.get_json()['id']
+        db.execute('UPDATE conversations SET messages = ? WHERE id = ?', ('{broken', cid))
+        db.commit()
+
+        resp = client.post(f'/api/conversations/{cid}/branch', json={'from_index': 2})
+
+        assert resp.status_code in (200, 201)
+        assert resp.get_json()['messages'] == []
 
 
 class TestConversationExport:
@@ -120,3 +137,14 @@ class TestConversationExport:
         cid = create.get_json()['id']
         resp = client.get(f'/api/conversations/{cid}/export')
         assert resp.status_code == 200
+
+    def test_export_conversation_recovers_from_corrupted_messages(self, client, db):
+        create = client.post('/api/conversations', json={'title': 'Broken Export'})
+        cid = create.get_json()['id']
+        db.execute('UPDATE conversations SET messages = ? WHERE id = ?', ('{broken', cid))
+        db.commit()
+
+        resp = client.get(f'/api/conversations/{cid}/export')
+
+        assert resp.status_code == 200
+        assert '# Broken Export' in resp.get_data(as_text=True)

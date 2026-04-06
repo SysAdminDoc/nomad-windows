@@ -75,6 +75,37 @@ def _safe_float(val, default=0):
         return default
 
 
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    if isinstance(fallback, list):
+        return list(fallback)
+    return fallback
+
+
+def _safe_json_value(value, fallback=None):
+    if value in (None, ''):
+        return _clone_json_fallback(fallback)
+    try:
+        parsed = json.loads(value) if isinstance(value, (str, bytes, bytearray)) else value
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return _clone_json_fallback(fallback)
+    if parsed is None:
+        return _clone_json_fallback(fallback)
+    if isinstance(fallback, dict) and not isinstance(parsed, dict):
+        return {}
+    if isinstance(fallback, list) and not isinstance(parsed, list):
+        return []
+    return parsed
+
+
+def _safe_json_object(value, fallback=None):
+    parsed = _safe_json_value(value, fallback)
+    if parsed is None or isinstance(parsed, dict):
+        return parsed
+    return _clone_json_fallback(fallback)
+
+
 def _get_state(key=None):
     with _state_lock:
         if key:
@@ -1148,12 +1179,7 @@ def _fetch_predictions():
     with db_session() as db:
         db.execute('DELETE FROM sitroom_predictions')
         for m in markets:
-            prices = m.get('outcomePrices', '[]')
-            if isinstance(prices, str):
-                try:
-                    prices = json.loads(prices)
-                except (json.JSONDecodeError, TypeError):
-                    prices = []
+            prices = _safe_json_value(m.get('outcomePrices', '[]'), [])
             try:
                 yes_price = float(prices[0]) if prices else 0
                 no_price = float(prices[1]) if len(prices) > 1 else 0
@@ -2473,10 +2499,9 @@ def api_sitroom_space_weather():
         rows = db.execute('SELECT * FROM sitroom_space_weather').fetchall()
     result = {}
     for r in rows:
-        try:
-            result[r['data_type']] = json.loads(r['value_json'])
-        except (json.JSONDecodeError, TypeError):
-            pass
+        parsed = _safe_json_value(r['value_json'], None)
+        if parsed is not None:
+            result[r['data_type']] = parsed
     return jsonify(result)
 
 
@@ -2538,7 +2563,7 @@ def api_sitroom_summary():
 
         # Space weather summary
         sw_row = db.execute("SELECT value_json FROM sitroom_space_weather WHERE data_type = 'noaa_scales'").fetchone()
-        space_weather = json.loads(sw_row['value_json']) if sw_row else None
+        space_weather = _safe_json_value(sw_row['value_json'] if sw_row else None, None)
 
     return jsonify({
         'news_count': counts['news'], 'earthquake_count': counts['quakes'],
@@ -2643,12 +2668,10 @@ def api_sitroom_ai_briefing():
             parts.append(f"{m['symbol']}: ${m['price']:,.2f} ({d}{m['change_24h'] or 0:.1f}%)")
 
     if sw_row:
-        try:
-            sw = json.loads(sw_row['value_json'])
+        sw = _safe_json_object(sw_row['value_json'], {})
+        if sw:
             parts.append(f"\n--- SPACE WEATHER ---")
             parts.append(f"Radio Blackout: R{sw.get('R', {}).get('Scale', 0)} | Solar Radiation: S{sw.get('S', {}).get('Scale', 0)} | Geomagnetic: G{sw.get('G', {}).get('Scale', 0)}")
-        except Exception:
-            pass
 
     parts.append('\nProvide a concise 3-5 paragraph intelligence briefing. Use professional military-style format. Start with "SITUATION REPORT" header and current date/time.')
 
@@ -2917,11 +2940,7 @@ def api_sitroom_cii_geo():
         events = db.execute("SELECT detail_json, event_type, magnitude FROM sitroom_events").fetchall()
     scores = {}
     for ev in events:
-        det = {}
-        try:
-            det = json.loads(dict(ev)['detail_json']) if dict(ev)['detail_json'] else {}
-        except (json.JSONDecodeError, TypeError):
-            pass
+        det = _safe_json_object(dict(ev).get('detail_json'), {})
         country = det.get('country', '')
         if not country or country == 'Unknown':
             continue
@@ -3375,10 +3394,9 @@ def api_sitroom_gdelt_full():
             return jsonify({'volume': None, 'tone': None, 'hotspots': None})
     result = {}
     for r in rows:
-        try:
-            result[r['data_type']] = json.loads(r['value_json'])
-        except (json.JSONDecodeError, TypeError, KeyError):
-            pass
+        parsed = _safe_json_value(r['value_json'], None)
+        if parsed is not None:
+            result[r['data_type']] = parsed
     return jsonify(result)
 
 
@@ -3812,11 +3830,9 @@ def api_sitroom_consumer_prices():
         ).fetchall()
         for r in bm:
             d = dict(r)
-            try:
-                detail = json.loads(d.get('detail_json', '{}'))
+            detail = _safe_json_object(d.get('detail_json'), None)
+            if detail:
                 result['bigmac'].append({'country': d['title'], **detail})
-            except Exception:
-                pass
 
         # Fuel price data (if cached)
         fuel = db.execute(
@@ -3824,11 +3840,9 @@ def api_sitroom_consumer_prices():
         ).fetchall()
         for r in fuel:
             d = dict(r)
-            try:
-                detail = json.loads(d.get('detail_json', '{}'))
+            detail = _safe_json_object(d.get('detail_json'), None)
+            if detail:
                 result['fuel'].append({'region': d['title'], **detail})
-            except Exception:
-                pass
 
     return jsonify(result)
 
@@ -3870,34 +3884,32 @@ def api_sitroom_enhanced_signals():
         signal_counts = {}
         for r in corr_rows:
             d = dict(r)
-            try:
-                detail = json.loads(d.get('detail_json', '{}'))
-                signal_type = detail.get('signal_type', 'unknown')
-                if signal_type not in signal_counts:
-                    signal_counts[signal_type] = 0
-                signal_counts[signal_type] += 1
-            except Exception:
-                pass
+            detail = _safe_json_object(d.get('detail_json'), None)
+            if not detail:
+                continue
+            signal_type = detail.get('signal_type', 'unknown')
+            if signal_type not in signal_counts:
+                signal_counts[signal_type] = 0
+            signal_counts[signal_type] += 1
 
     signals = []
     for r in corr_rows:
         d = dict(r)
-        try:
-            detail = json.loads(d.get('detail_json', '{}'))
-            signal_type = detail.get('signal_type', 'unknown')
-            count = signal_counts.get(signal_type, 1)
-            # Confidence based on number of corroborating signals
-            confidence = 'high' if count >= 3 else 'medium' if count >= 2 else 'low'
-            signals.append({
-                'title': d['title'],
-                'signal_type': signal_type,
-                'strength': d.get('magnitude', 0),
-                'confidence': confidence,
-                'corroborating_signals': count,
-                'detail': detail,
-            })
-        except Exception:
-            pass
+        detail = _safe_json_object(d.get('detail_json'), None)
+        if not detail:
+            continue
+        signal_type = detail.get('signal_type', 'unknown')
+        count = signal_counts.get(signal_type, 1)
+        # Confidence based on number of corroborating signals
+        confidence = 'high' if count >= 3 else 'medium' if count >= 2 else 'low'
+        signals.append({
+            'title': d['title'],
+            'signal_type': signal_type,
+            'strength': d.get('magnitude', 0),
+            'confidence': confidence,
+            'corroborating_signals': count,
+            'detail': detail,
+        })
 
     return jsonify({'signals': signals[:15], 'count': len(signals)})
 
@@ -3982,10 +3994,9 @@ def api_sitroom_market_regime():
             "SELECT detail_json FROM sitroom_events WHERE event_type = 'macro_indicator' AND title LIKE '%T10Y2Y%' LIMIT 1"
         ).fetchone()
         if spread:
-            try:
-                signals['yield_spread'] = json.loads(dict(spread)['detail_json']).get('value', 0)
-            except Exception:
-                pass
+            detail = _safe_json_object(dict(spread).get('detail_json'), None)
+            if detail:
+                signals['yield_spread'] = detail.get('value', 0)
         # Market moves
         indices = db.execute(
             "SELECT symbol, change_24h FROM sitroom_markets WHERE market_type = 'index'"
@@ -4610,11 +4621,13 @@ def api_sitroom_risk_radar():
 
     space_risk = 0
     if space_val:
-        try:
-            kp = json.loads(dict(space_val)['value_json']).get('latest', [None, None, None, None, '0'])
-            space_risk = min(10, int(float(kp[4] if len(kp) > 4 else 0)))
-        except Exception:
-            pass
+        payload = _safe_json_object(dict(space_val).get('value_json'), None)
+        if payload:
+            try:
+                kp = payload.get('latest', [None, None, None, None, '0'])
+                space_risk = min(10, int(float(kp[4] if len(kp) > 4 else 0)))
+            except Exception:
+                pass
 
     def _scale(val, low, high):
         return min(10, max(0, int((val - low) / max(1, high - low) * 10)))
@@ -4661,14 +4674,13 @@ def api_sitroom_correlation_matrix():
         ).fetchall()
     for r in corr:
         d = dict(r)
-        try:
-            detail = json.loads(d.get('detail_json', '{}'))
-            st = detail.get('signal_type', '')
-            for dom in domains:
-                if dom in st.lower() or dom in d['title'].lower():
-                    matrix[dom] = matrix.get(dom, 0) + 1
-        except Exception:
-            pass
+        detail = _safe_json_object(d.get('detail_json'), None)
+        if not detail:
+            continue
+        st = detail.get('signal_type', '')
+        for dom in domains:
+            if dom in st.lower() or dom in d['title'].lower():
+                matrix[dom] = matrix.get(dom, 0) + 1
     return jsonify({'matrix': matrix, 'domains': domains})
 
 
@@ -4872,10 +4884,9 @@ def api_sitroom_space_situational():
         ).fetchall()
     wx_data = {}
     for r in space_wx:
-        try:
-            wx_data[dict(r)['data_type']] = json.loads(dict(r)['value_json'])
-        except Exception:
-            pass
+        parsed = _safe_json_value(dict(r).get('value_json'), None)
+        if parsed is not None:
+            wx_data[dict(r)['data_type']] = parsed
     return jsonify({
         'space_weather': wx_data,
         'space_news': [dict(r) for r in space_news],

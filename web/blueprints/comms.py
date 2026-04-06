@@ -24,6 +24,43 @@ log = logging.getLogger('nomad.web')
 
 comms_bp = Blueprint('comms', __name__)
 
+
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, list):
+        return list(fallback)
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    return fallback
+
+
+def _safe_json_list(value, fallback=None):
+    if fallback is None:
+        fallback = []
+    if value in (None, ''):
+        return _clone_json_fallback(fallback)
+    if isinstance(value, list):
+        return list(value)
+    if isinstance(value, tuple):
+        return list(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return _clone_json_fallback(fallback)
+        try:
+            parsed = json.loads(text)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return _clone_json_fallback(fallback)
+        return list(parsed) if isinstance(parsed, list) else _clone_json_fallback(fallback)
+    return _clone_json_fallback(fallback)
+
+
+def _normalize_radio_channels(value):
+    channels = []
+    for item in _safe_json_list(value, []):
+        if isinstance(item, dict):
+            channels.append(dict(item))
+    return channels
+
 @comms_bp.route('/api/lan/transfer/send', methods=['POST'])
 def api_lan_transfer_send():
     """Send a file to another NOMAD node on the LAN."""
@@ -676,13 +713,22 @@ def api_comms_dashboard():
 def api_comms_profiles_list():
     with db_session() as db:
         rows = db.execute('SELECT * FROM radio_profiles ORDER BY name').fetchall()
-        return jsonify([dict(r) for r in rows])
+        profiles = []
+        for row in rows:
+            entry = dict(row)
+            entry['channels'] = _normalize_radio_channels(entry.get('channels'))
+            profiles.append(entry)
+        return jsonify(profiles)
 @comms_bp.route('/api/comms/radio-profiles', methods=['POST'])
 def api_comms_profiles_create():
     data = request.get_json() or {}
     with db_session() as db:
         db.execute('INSERT INTO radio_profiles (radio_model, name, channels) VALUES (?,?,?)',
-                   (data.get('radio_model', ''), data.get('name', 'New Profile'), json.dumps(data.get('channels', []))))
+                   (
+                       data.get('radio_model', ''),
+                       data.get('name', 'New Profile'),
+                       json.dumps(_normalize_radio_channels(data.get('channels', []))),
+                   ))
         db.commit()
         return jsonify({'status': 'created'})
 @comms_bp.route('/api/comms/radio-profiles/<int:pid>', methods=['DELETE'])
@@ -892,17 +938,14 @@ def api_comms_status_board():
         try:
             rows = db.execute('SELECT * FROM radio_profiles ORDER BY name').fetchall()
             for r in rows:
-                try:
-                    channels = json.loads(r['channels']) if r['channels'] else []
-                    for ch in channels:
-                        active_freqs.append({
-                            'profile': r['name'],
-                            'radio': r['radio_model'],
-                            'channel': ch.get('name', ''),
-                            'frequency': ch.get('frequency', ''),
-                        })
-                except Exception:
-                    pass
+                channels = _normalize_radio_channels(r['channels'])
+                for ch in channels:
+                    active_freqs.append({
+                        'profile': r['name'],
+                        'radio': r['radio_model'],
+                        'channel': ch.get('name', ''),
+                        'frequency': ch.get('frequency', ''),
+                    })
         except Exception:
             pass
 

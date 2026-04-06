@@ -637,8 +637,8 @@ def api_inventory_import_csv():
             db.commit()
         return jsonify({'status': 'imported', 'count': imported})
     except Exception as e:
-        log.error(f'Inventory CSV import failed: {e}')
-        return jsonify({'error': f'Import failed: {e}'}), 500
+        log.exception('Inventory CSV import failed')
+        return jsonify({'error': 'Import failed — check file format'}), 500
 
 @inventory_bp.route('/api/inventory/shopping-list')
 def api_shopping_list():

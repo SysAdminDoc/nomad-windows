@@ -805,7 +805,8 @@ def api_ai_upload_context():
             reader = PyPDF2.PdfReader(file)
             content = '\n'.join(page.extract_text() or '' for page in reader.pages)
         except Exception as e:
-            return jsonify({'error': f'PDF read failed: {e}'}), 400
+            log.warning('PDF read failed: %s', e)
+            return jsonify({'error': 'PDF read failed — file may be encrypted or corrupt'}), 400
     elif ext in ('txt', 'md', 'csv', 'log', 'json', 'xml', 'html'):
         content = file.read().decode('utf-8', errors='ignore')
     else:

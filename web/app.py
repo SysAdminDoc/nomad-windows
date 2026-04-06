@@ -1931,8 +1931,8 @@ def create_app():
         import xml.etree.ElementTree as ET
         try:
             root = ET.fromstring(content)
-        except ET.ParseError as e:
-            return jsonify({'error': f'Invalid GPX XML: {e}'}), 400
+        except ET.ParseError:
+            return jsonify({'error': 'Invalid GPX XML — file could not be parsed'}), 400
         ns = {'gpx': 'http://www.topografix.com/GPX/1/1'}
         wpts = root.findall('.//gpx:wpt', ns) + root.findall('.//wpt')
         with db_session() as db:

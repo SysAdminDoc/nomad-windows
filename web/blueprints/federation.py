@@ -736,7 +736,9 @@ def api_sync_import():
                 db.commit()
                 return jsonify({'status': 'imported', 'tables': imported})
     except Exception as e:
-        return jsonify({'error': str(e)}), 400
+        import logging
+        logging.getLogger(__name__).exception('Sync receive failed')
+        return jsonify({'error': 'Sync import failed'}), 400
 
 
 # ─── Federation Peers CRUD ──────────────────────────────────────────

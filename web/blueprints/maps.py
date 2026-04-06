@@ -339,14 +339,16 @@ def api_maps_delete():
             os.remove(path)
         return jsonify({'status': 'deleted'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import logging
+        logging.getLogger(__name__).exception('Map file delete failed')
+        return jsonify({'error': 'Delete failed'}), 500
 
 @maps_bp.route('/api/maps/tiles/<path:filepath>')
 def api_maps_serve_tile(filepath):
     """Serve local PMTiles files."""
     maps_dir = get_maps_dir()
     safe_path = os.path.normpath(os.path.join(maps_dir, filepath))
-    if not os.path.normcase(safe_path).startswith(os.path.normcase(os.path.normpath(maps_dir))):
+    if not os.path.normcase(safe_path).startswith(os.path.normcase(os.path.normpath(maps_dir)) + os.sep):
         return jsonify({'error': 'Forbidden'}), 403
     if not os.path.isfile(safe_path):
         return jsonify({'error': 'Not found'}), 404
@@ -697,7 +699,9 @@ def api_maps_import_file():
         shutil.copy2(source_path, dest)
         return jsonify({'status': 'imported', 'filename': filename, 'size': format_size(os.path.getsize(dest))})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import logging
+        logging.getLogger(__name__).exception('Map import failed')
+        return jsonify({'error': 'Import failed'}), 500
 
 
 # ─── Waypoints API ─────────────────────────────────────────────────

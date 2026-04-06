@@ -435,7 +435,8 @@ RULES:
 
         return jsonify({'answer': response_text.strip(), 'data_sources': list(set(p.split(':')[0] for p in ctx_parts))})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Quick query failed')
+        return jsonify({'error': 'AI query failed'}), 500
 
 @ai_bp.route('/api/ai/suggested-actions')
 def api_ai_suggested_actions():
@@ -604,7 +605,8 @@ def api_ai_chat_image():
             return jsonify({'answer': answer, 'model': model})
         return jsonify({'error': f'Model returned {resp.status_code}'}), 500
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Document query failed')
+        return jsonify({'error': 'AI query failed'}), 500
 
 
 @ai_bp.route('/api/conversations')
@@ -765,7 +767,7 @@ def api_library_pdfs():
 def api_library_serve(filename):
     pdf_dir = os.path.join(get_data_dir(), 'library')
     safe = os.path.normcase(os.path.normpath(os.path.join(pdf_dir, secure_filename(filename))))
-    if not safe.startswith(os.path.normcase(os.path.normpath(pdf_dir))) or not os.path.isfile(safe):
+    if not safe.startswith(os.path.normcase(os.path.normpath(pdf_dir)) + os.sep) or not os.path.isfile(safe):
         return jsonify({'error': 'Not found'}), 404
     from flask import send_file
     return send_file(safe)
@@ -774,7 +776,7 @@ def api_library_serve(filename):
 def api_library_delete(filename):
     pdf_dir = os.path.join(get_data_dir(), 'library')
     safe = os.path.normcase(os.path.normpath(os.path.join(pdf_dir, secure_filename(filename))))
-    if not safe.startswith(os.path.normcase(os.path.normpath(pdf_dir))):
+    if not safe.startswith(os.path.normcase(os.path.normpath(pdf_dir)) + os.sep):
         return jsonify({'error': 'Invalid'}), 400
     if os.path.isfile(safe):
         os.remove(safe)
@@ -846,7 +848,8 @@ def api_ai_model_info(model_name):
             })
         return jsonify({'name': model_name, 'error': 'Could not fetch model info'}), 404
     except Exception as e:
-        return jsonify({'name': model_name, 'error': str(e)}), 500
+        log.exception('Model info fetch failed for %s', model_name)
+        return jsonify({'name': model_name, 'error': 'Failed to fetch model info'}), 500
 
 # ─── Media Metadata Editor (v5.0 Phase 6) ───────────────────────
 

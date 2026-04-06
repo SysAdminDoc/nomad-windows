@@ -705,7 +705,8 @@ def api_channels_validate():
     except subprocess.TimeoutExpired:
         return jsonify({'url': url, 'alive': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Channel alive check failed')
+        return jsonify({'error': 'Check failed'}), 500
 
 # ─── YouTube Search & Channel Videos ─────────────────────────────
 
@@ -752,7 +753,8 @@ def api_youtube_search():
     except subprocess.TimeoutExpired:
         return jsonify({'error': 'Search timed out'}), 504
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('YouTube search failed')
+        return jsonify({'error': 'Search failed'}), 500
 
 @media_bp.route('/api/youtube/channel-videos')
 def api_youtube_channel_videos():
@@ -798,7 +800,8 @@ def api_youtube_channel_videos():
     except subprocess.TimeoutExpired:
         return jsonify({'error': 'Request timed out'}), 504
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Channel videos fetch failed')
+        return jsonify({'error': 'Failed to fetch channel videos'}), 500
 
 # ─── Channel Subscriptions ──────────────────────────────────────
 @media_bp.route('/api/subscriptions')
@@ -2329,7 +2332,8 @@ def api_torrent_add():
     except RuntimeError as e:
         return jsonify({'error': str(e), 'unavailable': True}), 503
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Torrent add failed')
+        return jsonify({'error': 'Failed to add torrent'}), 500
 
 @media_bp.route('/api/torrent/status')
 def api_torrent_status_all():
@@ -2343,7 +2347,8 @@ def api_torrent_status_one(ih):
     try:
         return jsonify(_torrent_mgr().get_status(ih))
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Torrent status failed')
+        return jsonify({'error': 'Failed to get status'}), 500
 
 @media_bp.route('/api/torrent/pause/<ih>', methods=['POST'])
 def api_torrent_pause(ih):
@@ -2367,7 +2372,8 @@ def api_torrent_open_folder(ih):
         _torrent_mgr().open_save_folder(ih)
         return jsonify({'ok': True})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Torrent open folder failed')
+        return jsonify({'error': 'Failed to open folder'}), 500
 
 @media_bp.route('/api/torrent/dir')
 def api_torrent_dir():

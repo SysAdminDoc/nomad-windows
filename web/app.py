@@ -1731,7 +1731,8 @@ def create_app():
             return Response(buf.getvalue(), mimetype='text/csv',
                            headers={'Content-Disposition': 'attachment; filename="nomad_contacts_export.csv"'})
         except Exception as e:
-            return jsonify({'error': str(e)}), 500
+            log.exception('Contact export failed')
+            return jsonify({'error': 'Export failed'}), 500
 
     # ─── Vault API (encrypted client-side) ──────────────────────────
 
@@ -4302,7 +4303,8 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     def viptrack_serve(filepath='index.html'):
         from flask import send_from_directory
         full_path = os.path.normpath(os.path.join(_viptrack_dir, filepath))
-        if not os.path.normcase(full_path).startswith(os.path.normcase(os.path.normpath(_viptrack_dir))):
+        base = os.path.normcase(os.path.normpath(_viptrack_dir))
+        if not (os.path.normcase(full_path) == base or os.path.normcase(full_path).startswith(base + os.sep)):
             return jsonify({'error': 'Forbidden'}), 403
         if not os.path.isfile(full_path):
             return jsonify({'error': f'Not found: {filepath}'}), 404

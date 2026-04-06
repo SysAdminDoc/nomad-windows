@@ -426,7 +426,9 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **XSS fixes** — channel name in browse loading message escaped (could contain HTML via catalog data), solar forecast value defense-in-depth escaping. 7 findings triaged from automated scan — 5 confirmed as false positives (hardcoded constants in calculators, tour steps, YouTube encodeURIComponent).
   - **system.py self-test info leak** — data directory path and str(e) in 3 places replaced with generic messages
   - **16 new tests** — test_audit_v631.py: self-test path leakage, query bounds, error message prevention, PUT 404, DELETE 404. Total: 663 tests (was 647)
-  - **Audit confirms** — SQL injection: zero vulnerabilities (3 independent agent scans); bare int()/float(): all wrapped; JSON.parse: all guarded; path traversal: all normcase+os.sep; XSS: all innerHTML escaped; 663 tests pass
+  - **3 more DELETE fetch→apiDelete** — skills, ammo, community in init_runtime
+  - **63 new tests** — test_sitroom_api.py (22), test_comms_weather_power.py (24), test_media_extended.py (17). Total: 726 tests (was 647)
+  - **Audit confirms** — SQL injection: zero vulnerabilities (3 independent agent scans); bare int()/float(): all wrapped; JSON.parse: all guarded; path traversal: all send_file routes use normcase+normpath+startswith+os.sep; XSS: all innerHTML escaped; all DELETE routes have confirm() + return 404; except Exception: pass blocks reviewed — all are intentional optional-feature probes (Ollama/PIL availability, weather data); 726 tests pass
 
 ## Run / Build
 ```bash

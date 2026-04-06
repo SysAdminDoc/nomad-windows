@@ -368,6 +368,22 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **Full codebase audit (v6.27)** — 3 parallel deep audits covering all Python blueprints, all JS files, service workers, state management, and service modules. Verified all v6.26 fixes hold. Confirmed false positives: SSE listener dedup (already correct), copilot session eviction (already bounded at 100), drag handler accumulation (DOM replacement GCs old listeners), interval dedup (startInterval calls stopInterval first), JSON.parse guards (all wrapped), RSS upsert pattern (bounded), restart tracker (pruned within 300s window)
   - **New test files** — `tests/test_crud_api.py` (242 lines), `tests/test_db_safety.py` (58 lines), `tests/test_services_ai_contracts.py` (17 lines)
 
+- **v6.28 — Deep Debug & UX Polish Audit (8 commits, 631 tests pass)**:
+  - **Python 3.10 compatibility fix** (`web/blueprints/medical.py`) — nested f-string with reused double quotes crashed on Python 3.10 (PEP 701 only in 3.12+); replaced with string concatenation
+  - **SSE test hang fix** (`tests/test_sse.py`, `web/app.py`) — SSE endpoint now yields initial `": connected\n\n"` keepalive on connect so test clients get immediate response; test uses `buffered=False` to avoid consuming infinite stream
+  - **48 raw fetch() → apiFetch/apiPost wrappers** — replaced unsafe `fetch()` calls across 6+ JS files with centralized `apiFetch()`/`apiPost()`/`apiPut()` from `web/static/js/api.js`; adds automatic `resp.ok` checks, JSON parsing, and meaningful error messages
+  - **25+ toast notifications added** — silent-failure user operations (patient CRUD, garden ops, livestock, security, power, wound log, dosage calculator) now show success/error toasts
+  - **~50 DELETE routes hardened** across `app.py` and 15 blueprint files — all DELETE endpoints now return 404 when target resource doesn't exist (was silently returning 200); bulk-delete routes return actual `rowcount` instead of requested count
+  - **~12 PUT routes hardened** — PUT/UPDATE endpoints for checklists, contacts, vault, livestock, inventory, garden, security, media now return 404 for non-existent resources
+  - **12 unsafe fetch patterns fixed** — 3 fire-and-forget scenario saves converted to `apiPut` with error logging; wound photo upload `resp.ok` check moved before `.json()` parsing; dosage calculator, wound log, patient import converted to `apiPost`
+  - **Input validation guards** — bare `int()` on UPC shelf life days uses `_safe_int()`, backup `keep_count` uses `_to_int()` helper; prevents `ValueError` crash on malformed client input
+  - **UX improvements**: confirm() dialogs added to `deleteContact()`, `deleteNote()`, `deleteVaultEntry()`; form fields cleared after `addPowerDevice()`, `addPlot()`, `addSeed()`, `addLivestock()`; inventory/contact save buttons show `.is-loading` spinner during async save and prevent double-submit
+  - **CSS polish**: improved `.empty-state` (larger text/icons, CTA button margin); added `.spinner-inline` loading indicator with spin animation; added `.input-error` red border class for form validation feedback; added `.btn.is-loading` state with inline spinner pseudo-element
+  - **ARIA accessibility** — `role=dialog`, `aria-modal`, `aria-labelledby` on modals/tour overlay; `aria-label` on broadcast banner and help icon buttons
+  - **Uncaught promise rejection fixes** — all async init-time `loadX()` calls in `setTimeout` blocks now have `.catch()` handlers to prevent silent unhandled rejections on network failure
+  - **Backend robustness**: checklist import JSON guard (try/except on `json.loads`); federation sync INSERT failures logged instead of silently swallowed; path traversal fix (`os.path.realpath` + `os.sep` suffix check); SSE log demoted to `console.debug`
+  - **CSS tokens**: transition duration tokens (`--duration-fast`, `--duration-normal`), z-index scale (`--z-base` through `--z-emergency`), eink button color fixes, toast entrance animation, ultra-wide sitroom breakpoints
+
 ## Run / Build
 ```bash
 python nomad.py                    # Run from source (any platform)

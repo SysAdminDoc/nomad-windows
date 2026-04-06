@@ -106,6 +106,7 @@ function createTimerQuick(name, mins) {
 }
 
 async function deleteTimer(id) {
+  if (!confirm('Delete this timer?')) return;
   try {
     const resp = await fetch(`/api/timers/${id}`, {method:'DELETE'});
     if (!resp.ok) { toast('Failed to delete timer', 'error'); return; }
@@ -230,6 +231,7 @@ async function submitWaypoint(lat, lng) {
 }
 
 async function deleteWaypoint(id) {
+  if (!confirm('Delete this waypoint?')) return;
   try {
     const r = await fetch(`/api/waypoints/${id}`, {method:'DELETE'});
     if (!r.ok) throw new Error('Delete failed');

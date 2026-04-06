@@ -220,6 +220,7 @@ async function logIncident() {
 }
 
 async function deleteIncident(id) {
+  if (!confirm('Delete this incident entry?')) return;
   try {
     const r = await fetch(`/api/incidents/${id}`, {method:'DELETE'});
     if (!r.ok) throw new Error('Delete failed');

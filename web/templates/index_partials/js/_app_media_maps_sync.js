@@ -1546,6 +1546,7 @@ async function torrentResume(hash) {
   await pollTorrentStatus();
 }
 async function torrentRemove(hash, deleteFiles) {
+  if (!confirm('Remove this torrent?' + (deleteFiles ? ' Downloaded files will be deleted.' : ''))) return;
   const r = await fetch('/api/torrent/remove/' + hash + '?delete_files=' + deleteFiles, {method: 'DELETE'});
   if (!r.ok) { toast('Failed to remove torrent', 'error'); return; }
   delete _torrentStatuses[hash];
@@ -2286,6 +2287,7 @@ async function subscribeChannel(url, name, category) {
 }
 
 async function unsubscribeChannel(id, name) {
+  if (!confirm('Unsubscribe from ' + (name || 'this channel') + '?')) return;
   await fetch(`/api/subscriptions/${id}`, {method:'DELETE'});
   toast(`Unsubscribed from ${name}`, 'info');
   loadSubscriptions();
@@ -3577,6 +3579,7 @@ function viewPDF(filename) {
 }
 function closePDFViewer() { document.getElementById('pdf-viewer').style.display = 'none'; document.getElementById('pdf-iframe').src = ''; }
 async function deletePDF(filename) {
+  if (!confirm('Delete this document?')) return;
   try {
     const r = await fetch(`/api/library/delete/${filename}`, {method:'DELETE'});
     if (!r.ok) { toast('Failed to delete document', 'error'); return; }
@@ -3657,6 +3660,7 @@ async function loadCommsLog() {
 }
 
 async function deleteCommsLog(id) {
+  if (!confirm('Delete this comms log entry?')) return;
   try {
     const r = await fetch(`/api/comms-log/${id}`, {method:'DELETE'});
     if (!r.ok) { toast('Failed to delete log entry', 'error'); return; }

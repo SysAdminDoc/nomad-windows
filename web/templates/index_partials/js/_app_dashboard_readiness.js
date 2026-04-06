@@ -886,8 +886,7 @@ async function unlockVault() {
     // Create verification entry on first unlock
     if (!verifyEntry) {
       const encrypted = await encryptVaultData('nomad-vault-v1');
-      await fetch('/api/vault', {method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({title: '__vault_verify__', ...encrypted})});
+      try { await apiPost('/api/vault', {title: '__vault_verify__', ...encrypted}); } catch(e) {}
     }
     document.getElementById('vault-locked').style.display = 'none';
     document.getElementById('vault-unlocked').style.display = 'block';

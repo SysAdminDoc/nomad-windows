@@ -3014,12 +3014,10 @@ async function savePatient() {
   try {
     let resp;
     if (editId) {
-      resp = await fetch(`/api/patients/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-      if (!resp.ok) { toast('Failed to update patient', 'error'); return; }
+      await apiPut('/api/patients/' + editId, data);
       toast('Patient updated', 'success');
     } else {
-      resp = await fetch('/api/patients', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-      if (!resp.ok) { toast('Failed to add patient', 'error'); return; }
+      await apiPost('/api/patients', data);
       toast('Patient added', 'success');
     }
     FormStateRecovery.clear('patient');

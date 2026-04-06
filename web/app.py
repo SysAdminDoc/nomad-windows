@@ -51,7 +51,6 @@ from services.manager import (
 )
 
 log = logging.getLogger('nomad.web')
-_CREATION_FLAGS = {'creationflags': 0x08000000} if sys.platform == 'win32' else {}
 
 
 def _esc(s):

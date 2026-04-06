@@ -220,7 +220,8 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
     except Exception as e:
         log.error(f'Failed to update DB for {service_id}: {e}')
         proc.terminate()
-        _processes.pop(service_id, None)
+        with _lock:
+            _processes.pop(service_id, None)
         raise
     finally:
         db.close()

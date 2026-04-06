@@ -1003,8 +1003,8 @@ def api_ytdlp_update():
             _ytdlp_install_state.update({'status': 'complete', 'percent': 100, 'error': None})
             log.info('yt-dlp updated to latest')
         except Exception as e:
-            _ytdlp_install_state.update({'status': 'error', 'percent': 0, 'error': str(e)})
-            log.error(f'yt-dlp update failed: {e}')
+            log.exception('yt-dlp update failed')
+            _ytdlp_install_state.update({'status': 'error', 'percent': 0, 'error': 'Update failed. Check logs for details.'})
 
     threading.Thread(target=do_update, daemon=True).start()
     return jsonify({'status': 'updating'})
@@ -1036,8 +1036,8 @@ def api_ytdlp_install():
             _ytdlp_install_state.update({'status': 'complete', 'percent': 100, 'error': None})
             log.info('yt-dlp installed')
         except Exception as e:
-            _ytdlp_install_state.update({'status': 'error', 'percent': 0, 'error': str(e)})
-            log.error(f'yt-dlp install failed: {e}')
+            log.exception('yt-dlp install failed')
+            _ytdlp_install_state.update({'status': 'error', 'percent': 0, 'error': 'Install failed. Check logs for details.'})
 
     threading.Thread(target=do_install, daemon=True).start()
     return jsonify({'status': 'installing'})
@@ -1211,9 +1211,11 @@ def api_ytdlp_download():
                 _db.execute('UPDATE download_queue SET status = "failed", error = "Download timed out", retries = retries + 1 WHERE id = ?', (queue_id,))
                 _db.commit()
         except Exception as e:
-            _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': '', 'speed': '', 'error': str(e)}
+            log.exception('Video download failed for %s', dl_id)
+            err_msg = 'Download failed'
+            _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': '', 'speed': '', 'error': err_msg}
             with db_session() as _db:
-                _db.execute('UPDATE download_queue SET status = "failed", error = ?, retries = retries + 1 WHERE id = ?', (str(e), queue_id))
+                _db.execute('UPDATE download_queue SET status = "failed", error = ?, retries = retries + 1 WHERE id = ?', (err_msg, queue_id))
                 _db.commit()
     threading.Thread(target=do_download, daemon=True).start()
     return jsonify({'status': 'started', 'id': dl_id})
@@ -1557,7 +1559,8 @@ def api_ytdlp_download_audio():
                         return
             _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': audio_title, 'speed': '', 'error': f'Download failed (exit code {proc.returncode})'}
         except Exception as e:
-            _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': '', 'speed': '', 'error': str(e)}
+            log.exception('Audio download failed for %s', dl_id)
+            _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': '', 'speed': '', 'error': 'Download failed'}
 
     threading.Thread(target=do_audio_dl, daemon=True).start()
     return jsonify({'status': 'started', 'id': dl_id})
@@ -1628,8 +1631,8 @@ def api_ffmpeg_install():
             _ffmpeg_install.update({'status': 'complete', 'percent': 100})
             log.info('FFmpeg installed')
         except Exception as e:
-            _ffmpeg_install.update({'status': 'error', 'percent': 0, 'error': str(e)})
-            log.error(f'FFmpeg install failed: {e}')
+            log.exception('FFmpeg install failed')
+            _ffmpeg_install.update({'status': 'error', 'percent': 0, 'error': 'Install failed. Check logs for details.'})
 
     threading.Thread(target=do_install, daemon=True).start()
     return jsonify({'status': 'installing', '_ref': id(_ffmpeg_install)})
@@ -2111,7 +2114,8 @@ def api_books_download_ref():
             _ytdlp_downloads[dl_id] = {'status': 'complete', 'percent': 100, 'title': title, 'speed': '', 'error': ''}
             log_activity('book_download', 'media', title)
         except Exception as e:
-            _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': title, 'speed': '', 'error': str(e)}
+            log.exception('Book download failed for %s', dl_id)
+            _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0, 'title': title, 'speed': '', 'error': 'Download failed'}
 
     threading.Thread(target=do_dl, daemon=True).start()
     return jsonify({'status': 'started', 'id': dl_id})

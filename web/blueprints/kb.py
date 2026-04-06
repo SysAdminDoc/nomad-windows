@@ -338,11 +338,12 @@ def api_kb_upload():
             threading.Thread(target=_analyze_document, args=(doc_id, text, filename), daemon=True).start()
 
           except Exception as e:
-            log.error(f'Embedding failed for doc {doc_id}: {e}')
-            db2.execute('UPDATE documents SET status = ?, error = ? WHERE id = ?', ('error', str(e), doc_id))
+            log.exception('Embedding failed for doc %s', doc_id)
+            err_msg = 'Embedding failed'
+            db2.execute('UPDATE documents SET status = ?, error = ? WHERE id = ?', ('error', err_msg, doc_id))
             db2.commit()
             _ws._embed_state.clear()
-            _ws._embed_state.update({'status': 'error', 'doc_id': doc_id, 'progress': 0, 'detail': str(e)})
+            _ws._embed_state.update({'status': 'error', 'doc_id': doc_id, 'progress': 0, 'detail': err_msg})
     threading.Thread(target=do_embed, daemon=True).start()
     return jsonify({'status': 'uploading', 'doc_id': doc_id}), 201
 

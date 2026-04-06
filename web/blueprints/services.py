@@ -345,7 +345,8 @@ def api_update_download():
             log_activity('update_downloaded', detail=f'{data.get("tag_name", "?")} → {fname}')
 
         except Exception as e:
-            _state._update_state = {'status': 'error', 'progress': 0, 'error': str(e), 'path': None}
+            log.exception('Update download failed')
+            _state._update_state = {'status': 'error', 'progress': 0, 'error': 'Update download failed', 'path': None}
 
     threading.Thread(target=do_update, daemon=True).start()
     return jsonify({'status': 'started'})

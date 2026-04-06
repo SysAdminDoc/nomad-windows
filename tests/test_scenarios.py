@@ -86,3 +86,12 @@ class TestScenariosAAR:
     def test_aar_nonexistent_returns_404(self, client):
         resp = client.post('/api/scenarios/99999/aar')
         assert resp.status_code == 404
+
+
+class TestScenariosUpdate404:
+    def test_update_nonexistent_returns_404(self, client):
+        resp = client.put('/api/scenarios/99999', json={
+            'current_phase': 1,
+            'status': 'active',
+        })
+        assert resp.status_code == 404

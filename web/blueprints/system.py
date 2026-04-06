@@ -728,7 +728,8 @@ X-GNOME-Autostart-enabled=true
 
         return jsonify({'status': 'ok', 'enabled': enabled})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Startup toggle failed')
+        return jsonify({'error': 'Failed to toggle startup'}), 500
 
 # ─── Export / Import Config ───────────────────────────────────────
 
@@ -749,8 +750,8 @@ def api_export_config():
         return Response(buf.read(), mimetype='application/zip',
                        headers={'Content-Disposition': 'attachment; filename="nomad-backup.zip"'})
     except Exception as e:
-        log.error(f'Export config failed: {e}')
-        return jsonify({'error': str(e)}), 500
+        log.exception('Export config failed')
+        return jsonify({'error': 'Export failed'}), 500
 
 @system_bp.route('/api/import-config', methods=['POST'])
 def api_import_config():
@@ -837,8 +838,8 @@ def api_backup_create_simple():
                 return jsonify({'ok': True, 'path': os.path.join(backup_dir, files[0])})
         return jsonify({'ok': True, 'path': ''})
     except Exception as e:
-        log.error(f'Backup failed: {e}')
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        log.exception('Backup failed')
+        return jsonify({'ok': False, 'error': 'Backup failed'}), 500
 
 
 @system_bp.route('/api/backup/restore', methods=['POST'])
@@ -860,8 +861,8 @@ def api_backup_restore_alt():
         log_activity('database_restored', detail=f'Restored from {filename}')
         return jsonify({'ok': True, 'message': 'Restart the app to complete restore'})
     except Exception as e:
-        log.error(f'Restore failed: {e}')
-        return jsonify({'ok': False, 'error': str(e)}), 500
+        log.exception('Restore failed')
+        return jsonify({'ok': False, 'error': 'Restore failed'}), 500
 
 
 @system_bp.route('/api/logs')
@@ -880,8 +881,8 @@ def api_logs():
         tail = [l.rstrip('\n') for l in all_lines[-lines_requested:]]
         return jsonify({'lines': tail, 'path': log_path})
     except Exception as e:
-        log.error(f'Log read failed: {e}')
-        return jsonify({'lines': [], 'error': str(e)}), 500
+        log.exception('Log read failed')
+        return jsonify({'lines': [], 'error': 'Failed to read logs'}), 500
 
 
 @system_bp.route('/api/health/detailed')
@@ -943,8 +944,8 @@ def api_health_detailed():
 
         return jsonify(result)
     except Exception as e:
-        log.error(f'Health detailed failed: {e}')
-        return jsonify({'error': str(e)}), 500
+        log.exception('Health detailed failed')
+        return jsonify({'error': 'Health check failed'}), 500
 
 
 # ─── Auto-pull default model after Ollama install ─────────────────
@@ -1102,8 +1103,8 @@ def api_export_all():
         return Response(buf.read(), mimetype='application/zip',
                        headers={'Content-Disposition': f'attachment; filename="{fname}"'})
     except Exception as e:
-        log.error(f'Full export failed: {e}')
-        return jsonify({'error': str(e)}), 500
+        log.exception('Full export failed')
+        return jsonify({'error': 'Export failed'}), 500
 
 
 @system_bp.route('/api/dashboard/critical')
@@ -1555,7 +1556,8 @@ def api_backup_delete(filename):
         log_activity('backup_deleted', detail=filename)
         return jsonify({'status': 'deleted'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Backup delete failed')
+        return jsonify({'error': 'Delete failed'}), 500
 
 @system_bp.route('/api/system/backup/configure', methods=['POST'])
 def api_backup_configure():

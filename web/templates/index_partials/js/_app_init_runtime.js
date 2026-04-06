@@ -770,8 +770,7 @@ async function saveSkill() {
 async function deleteSkill(id) {
   if (!confirm('Delete this skill?')) return;
   try {
-    const r = await fetch(`/api/skills/${id}`, {method:'DELETE'});
-    if (!r.ok) { toast('Failed to delete skill', 'error'); return; }
+    await apiDelete('/api/skills/' + id);
     toast('Skill deleted', 'info');
     loadSkills();
   } catch(e) { toast('Failed to delete skill', 'error'); }
@@ -872,8 +871,7 @@ async function saveAmmo() {
 async function deleteAmmo(id) {
   if (!confirm('Delete this entry?')) return;
   try {
-    const r = await fetch(`/api/ammo/${id}`, {method:'DELETE'});
-    if (!r.ok) throw new Error('Delete failed');
+    await apiDelete('/api/ammo/' + id);
     loadAmmo();
   } catch(e) { toast('Failed to delete ammo entry', 'error'); }
 }
@@ -972,8 +970,7 @@ async function saveCommunity() {
 async function deleteCommunity(id) {
   if (!confirm('Remove this person?')) return;
   try {
-    const r = await fetch(`/api/community/${id}`, {method:'DELETE'});
-    if (!r.ok) throw new Error('Delete failed');
+    await apiDelete('/api/community/' + id);
     loadCommunity();
   } catch(e) { toast('Failed to remove community member', 'error'); }
 }

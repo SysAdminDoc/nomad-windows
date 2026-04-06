@@ -1661,26 +1661,30 @@ async function showDocDetails(id) {
 async function importDocEntities(docId) {
   try {
     const r = await fetch(`/api/kb/documents/${docId}/import-entities`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({})});
-    const d = await r.json();
-    if (r.ok) {
-      const parts = [];
-      if (d.results.contacts > 0) parts.push(`${d.results.contacts} contact(s)`);
-      if (d.results.inventory > 0) parts.push(`${d.results.inventory} inventory item(s)`);
-      if (d.results.waypoints > 0) parts.push(`${d.results.waypoints} waypoint(s)`);
-      if (d.results.skipped > 0) parts.push(`${d.results.skipped} skipped`);
-      toast(`Imported ${d.total_imported} entities: ${parts.join(', ') || 'none'}`, d.total_imported > 0 ? 'success' : 'info');
-    } else {
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
       toast(d.error || 'Import failed', 'error');
+      return;
     }
+    const d = await r.json();
+    const parts = [];
+    if (d.results.contacts > 0) parts.push(`${d.results.contacts} contact(s)`);
+    if (d.results.inventory > 0) parts.push(`${d.results.inventory} inventory item(s)`);
+    if (d.results.waypoints > 0) parts.push(`${d.results.waypoints} waypoint(s)`);
+    if (d.results.skipped > 0) parts.push(`${d.results.skipped} skipped`);
+    toast(`Imported ${d.total_imported} entities: ${parts.join(', ') || 'none'}`, d.total_imported > 0 ? 'success' : 'info');
   } catch(e) { toast('Failed to import entities', 'error'); }
 }
 
 async function analyzeAllDocs() {
-  const r = await fetch('/api/kb/analyze-all', {method:'POST'});
-  const d = await r.json();
-  toast(`Analyzing ${d.count} document(s)...`, 'info');
-  // Refresh list after a delay
-  setTimeout(loadKBDocs, 10000);
+  try {
+    const r = await fetch('/api/kb/analyze-all', {method:'POST'});
+    if (!r.ok) throw new Error('API error');
+    const d = await r.json();
+    toast(`Analyzing ${d.count} document(s)...`, 'info');
+    // Refresh list after a delay
+    setTimeout(loadKBDocs, 10000);
+  } catch(e) { toast('Failed to start analysis', 'error'); }
 }
 
 /* ─── Map Tile Themes ─── */
@@ -1875,6 +1879,11 @@ async function importGpxFile(input) {
   formData.append('file', file);
   try {
     const r = await fetch('/api/waypoints/import-gpx', {method:'POST', body: formData});
+    if (!r.ok) {
+      const d = await r.json().catch(() => ({}));
+      toast(d.error || 'GPX import failed', 'error');
+      return;
+    }
     const d = await r.json();
     toast(`Imported ${d.count || 0} waypoints from GPX`, 'success');
     loadWPDistances();
@@ -2054,6 +2063,7 @@ async function searchMap() {
   // Online geocoding search
   try {
     const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
+    if (!r.ok) { toast('Geocoding failed', 'error'); return; }
     const results = await r.json();
     if (results.length) {
       const {lat, lon, display_name} = results[0];

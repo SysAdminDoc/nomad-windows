@@ -1948,8 +1948,14 @@ function normalizePaletteQuery(value) {
   return String(value || '').trim().toLowerCase();
 }
 
-function fetchUnifiedSearchPayload(q) {
-  return fetch(`/api/search/all?q=${encodeURIComponent(q)}`).then(resp => resp.ok ? resp.json() : null).catch(() => null);
+async function fetchUnifiedSearchPayload(q) {
+  try {
+    const resp = await fetch(`/api/search/all?q=${encodeURIComponent(q)}`);
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch (e) {
+    return null;
+  }
 }
 
 function flattenUnifiedSearchPayload(payload) {
@@ -2447,8 +2453,8 @@ async function updateZimContent(url, filename) {
 async function loadWikipediaTiers() {
   try {
     const [options, installed] = await Promise.all([
-      fetch('/api/kiwix/wikipedia-options').then(r => r.json()),
-      fetch('/api/kiwix/zims').then(r => r.json())
+      fetch('/api/kiwix/wikipedia-options').then(r => { if (!r.ok) throw new Error('Failed to load Wikipedia options'); return r.json(); }),
+      fetch('/api/kiwix/zims').then(r => { if (!r.ok) throw new Error('Failed to load ZIMs'); return r.json(); })
     ]);
     const installedNames = new Set(installed.map(z => typeof z === 'string' ? z : z.name || ''));
     const el = document.getElementById('wiki-tier-options');

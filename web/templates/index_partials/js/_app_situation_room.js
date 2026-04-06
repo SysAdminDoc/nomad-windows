@@ -3028,7 +3028,6 @@ async function addSitroomFeed() {
   try {
     const resp = await fetch('/api/sitroom/feeds', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: n, url: u, category: cat}) });
     if (!resp.ok) { const d = await resp.json().catch(() => ({})); toast(d.error || 'Failed to add feed', 'error'); return; }
-    await resp.json();
     toast('Feed added', 'success'); document.getElementById('sitroom-feed-name').value = ''; document.getElementById('sitroom-feed-url').value = ''; loadSitroomFeeds();
   } catch (e) { toast('Network error', 'error'); }
 }

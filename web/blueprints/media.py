@@ -2242,9 +2242,9 @@ def api_playlists():
     media_type = request.args.get('type', '')
     with db_session() as db:
         if media_type:
-            rows = db.execute('SELECT * FROM playlists WHERE media_type = ? ORDER BY updated_at DESC', (media_type,)).fetchall()
+            rows = db.execute('SELECT * FROM playlists WHERE media_type = ? ORDER BY updated_at DESC LIMIT 500', (media_type,)).fetchall()
         else:
-            rows = db.execute('SELECT * FROM playlists ORDER BY updated_at DESC').fetchall()
+            rows = db.execute('SELECT * FROM playlists ORDER BY updated_at DESC LIMIT 500').fetchall()
         return jsonify([dict(r) for r in rows])
 @media_bp.route('/api/playlists', methods=['POST'])
 def api_playlist_create():

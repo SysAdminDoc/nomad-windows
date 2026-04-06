@@ -153,7 +153,8 @@ def api_start_all():
                 mod.start()
                 started.append(sid)
             except Exception as e:
-                errors.append(f'{sid}: {e}')
+                log.exception('Start failed for %s', sid)
+                errors.append(f'{sid}: start failed')
     return jsonify({'started': started, 'errors': errors})
 
 @services_bp.route('/api/services/stop-all', methods=['POST'])
@@ -166,8 +167,8 @@ def api_stop_all():
                 mod.stop()
                 stopped.append(sid)
             except Exception as e:
-                errors.append(f'{sid}: {e}')
-                log.error(f'Stop failed for {sid}: {e}')
+                log.exception('Stop failed for %s', sid)
+                errors.append(f'{sid}: stop failed')
     return jsonify({'stopped': stopped, 'errors': errors})
 
 @services_bp.route('/api/services/<service_id>/progress')

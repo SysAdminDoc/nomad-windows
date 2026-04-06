@@ -769,8 +769,12 @@ async function saveSkill() {
 }
 async function deleteSkill(id) {
   if (!confirm('Delete this skill?')) return;
-  await fetch(`/api/skills/${id}`, {method:'DELETE'});
-  loadSkills();
+  try {
+    const r = await fetch(`/api/skills/${id}`, {method:'DELETE'});
+    if (!r.ok) { toast('Failed to delete skill', 'error'); return; }
+    toast('Skill deleted', 'info');
+    loadSkills();
+  } catch(e) { toast('Failed to delete skill', 'error'); }
 }
 async function seedDefaultSkills() {
   const r = await fetch('/api/skills/seed-defaults', {method:'POST'});
@@ -3437,9 +3441,12 @@ async function markServiced(id) {
 
 async function deleteEquip(id) {
   if (!confirm('Delete this equipment entry?')) return;
-  await fetch(`/api/equipment/${id}`, { method: 'DELETE' });
-  loadEquipment();
-  toast('Equipment deleted', 'success');
+  try {
+    const r = await fetch(`/api/equipment/${id}`, { method: 'DELETE' });
+    if (!r.ok) { toast('Failed to delete equipment', 'error'); return; }
+    loadEquipment();
+    toast('Equipment deleted', 'success');
+  } catch(e) { toast('Failed to delete equipment', 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -3949,7 +3956,9 @@ async function addAIMemory() {
 async function deleteAIMemory(id) {
   if (!confirm('Delete this AI memory?')) return;
   try {
-    await fetch(`/api/ai/memory/${id}`, { method: 'DELETE' });
+    const r = await fetch(`/api/ai/memory/${id}`, { method: 'DELETE' });
+    if (!r.ok) { toast('Failed to delete memory', 'error'); return; }
+    toast('Memory deleted', 'info');
     loadAIMemory();
   } catch(e) { toast('Failed to delete memory', 'error'); }
 }

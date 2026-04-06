@@ -180,9 +180,9 @@
 <div class="customize-overlay" id="customize-overlay" data-shell-action="toggle-customize-panel" aria-hidden="true"></div>
 
 <!-- Customize Panel -->
-<div class="customize-panel" id="customize-panel" role="dialog" aria-label="Customize Dashboard" aria-modal="true">
+<div class="customize-panel" id="customize-panel" role="dialog" aria-labelledby="customize-panel-title" aria-modal="true">
   <div class="customize-panel-header">
-    <h2>Customize</h2>
+    <h2 id="customize-panel-title">Customize</h2>
     <button class="btn btn-sm btn-ghost customize-close-btn" data-shell-action="toggle-customize-panel" aria-label="Close customize panel">&#10005;</button>
   </div>
   <div class="customize-panel-body">
@@ -309,7 +309,7 @@
 <main class="main-content" id="main-content">
 
 <!-- Emergency Broadcast Banner -->
-<div id="broadcast-banner" class="broadcast-banner is-hidden" role="button" tabindex="0" data-shell-action="dismiss-broadcast"></div>
+<div id="broadcast-banner" class="broadcast-banner is-hidden" role="button" tabindex="0" data-shell-action="dismiss-broadcast" aria-label="Dismiss broadcast notification"></div>
 
 <!-- Proactive Alert Bar -->
 <div id="alert-bar" class="alert-bar alert-bar-shell is-hidden">

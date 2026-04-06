@@ -53,36 +53,57 @@ self.addEventListener('install', event => {
   );
 });
 
-// Clean up old caches on activate + evict stale sitroom entries
+// Clean up old caches on activate + evict stale sitroom entries + prune main cache
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME && k !== SITROOM_CACHE).map(k => caches.delete(k)))
-    ).then(() => _evictStaleSitroomCache()).then(() => self.clients.claim())
+    ).then(() => _evictStaleSitroomCache()).then(() => _pruneCacheIfNeeded()).then(() => self.clients.claim())
   );
 });
+
+// Prune main cache if it grows too large (max 100 static assets + API responses)
+async function _pruneCacheIfNeeded() {
+  try {
+    const cache = await caches.open(CACHE_NAME);
+    const keys = await cache.keys();
+    const MAX_CACHE_ENTRIES = 150; // 100 statics + 50 API responses
+    if (keys.length > MAX_CACHE_ENTRIES) {
+      const excess = keys.slice(0, keys.length - MAX_CACHE_ENTRIES);
+      for (const req of excess) await cache.delete(req);
+    }
+  } catch(e) { /* Cache pruning is best-effort */ }
+}
 
 // Evict sitroom cache entries older than TTL and cap total entries
 async function _evictStaleSitroomCache() {
   try {
     const cache = await caches.open(SITROOM_CACHE);
-    const keys = await cache.keys();
+    let keys = await cache.keys();
     const MAX_ENTRIES = 200;
     const now = Date.now();
-    let evicted = 0;
+
+    // First pass: delete expired entries by TTL
+    const entriesToDelete = [];
     for (const req of keys) {
       const resp = await cache.match(req);
-      if (!resp) { await cache.delete(req); evicted++; continue; }
+      if (!resp) {
+        entriesToDelete.push(req);
+        continue;
+      }
       const cachedAt = parseInt(resp.headers.get('sw-cached-at') || '0');
       if (cachedAt && (now - cachedAt > SITROOM_CACHE_TTL)) {
-        await cache.delete(req);
-        evicted++;
+        entriesToDelete.push(req);
       }
     }
-    // If still over limit, evict oldest
-    if (keys.length - evicted > MAX_ENTRIES) {
-      const remaining = await cache.keys();
-      const excess = remaining.slice(0, remaining.length - MAX_ENTRIES);
+
+    // Delete TTL-expired entries
+    for (const req of entriesToDelete) await cache.delete(req);
+
+    // Second pass: if still over limit, delete oldest entries (FIFO)
+    keys = await cache.keys();
+    if (keys.length > MAX_ENTRIES) {
+      const excess = keys.slice(0, keys.length - MAX_ENTRIES);
       for (const req of excess) await cache.delete(req);
     }
   } catch(e) { /* SW cache eviction is best-effort */ }
@@ -91,9 +112,13 @@ async function _evictStaleSitroomCache() {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Periodically evict stale sitroom cache (every ~100 requests)
-  if (url.pathname.startsWith('/api/sitroom/') && Math.random() < 0.01) {
-    _evictStaleSitroomCache();
+  // Periodically evict stale caches (every ~100 requests for sitroom, ~200 for main)
+  if (Math.random() < 0.01) {
+    if (url.pathname.startsWith('/api/sitroom/')) {
+      _evictStaleSitroomCache();
+    } else if (url.pathname.startsWith('/api/') && Math.random() < 0.5) {
+      _pruneCacheIfNeeded();
+    }
   }
 
   // Situation Room API — dedicated cache with TTL for offline intelligence

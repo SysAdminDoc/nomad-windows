@@ -7,14 +7,12 @@ import time
 import threading
 import platform
 import logging
-import shutil
-import subprocess
 import queue
 from datetime import datetime, timedelta
 from html import escape as _html_escape
 from flask import Flask, render_template, jsonify, request, Response, stream_with_context
 from werkzeug.utils import secure_filename
-from web.validation import validate_json, validate_file_upload
+from web.validation import validate_json
 import web.state as _state
 from web.state import (
     _installing, _installing_lock,
@@ -33,8 +31,7 @@ from web.state import (
     sse_cleanup_stale_clients,
 )
 
-from config import get_data_dir, set_data_dir, Config
-from platform_utils import get_data_base
+from config import get_data_dir, Config
 try:
     from web.catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
 except Exception:

@@ -366,8 +366,9 @@ def api_kb_document_delete(doc_id):
     with db_session() as db:
         doc = db.execute('SELECT filename FROM documents WHERE id = ?', (doc_id,)).fetchone()
         if doc:
-            filepath = os.path.join(get_kb_upload_dir(), doc['filename'])
-            if os.path.isfile(filepath):
+            upload_dir = get_kb_upload_dir()
+            filepath = os.path.normpath(os.path.join(upload_dir, doc['filename']))
+            if os.path.normcase(filepath).startswith(os.path.normcase(upload_dir) + os.sep) and os.path.isfile(filepath):
                 os.remove(filepath)
             qdrant.delete_by_doc_id(doc_id)
             db.execute('DELETE FROM documents WHERE id = ?', (doc_id,))
@@ -420,7 +421,10 @@ def api_kb_analyze(doc_id):
     if not doc:
         return jsonify({'error': 'Not found'}), 404
 
-    filepath = os.path.join(get_kb_upload_dir(), doc['filename'])
+    _kb_dir = get_kb_upload_dir()
+    filepath = os.path.normpath(os.path.join(_kb_dir, doc['filename']))
+    if not os.path.normcase(filepath).startswith(os.path.normcase(_kb_dir) + os.sep):
+        return jsonify({'error': 'Invalid file path'}), 400
     if not os.path.isfile(filepath):
         return jsonify({'error': 'File not found on disk'}), 404
 
@@ -534,8 +538,11 @@ def api_kb_analyze_all():
     with db_session() as db:
         docs = db.execute("SELECT * FROM documents WHERE (doc_category IS NULL OR doc_category = '') AND status = 'ready'").fetchall()
     count = 0
+    _kb_base = get_kb_upload_dir()
     for doc in docs:
-        filepath = os.path.join(get_kb_upload_dir(), doc['filename'])
+        filepath = os.path.normpath(os.path.join(_kb_base, doc['filename']))
+        if not os.path.normcase(filepath).startswith(os.path.normcase(_kb_base) + os.sep):
+            continue
         if os.path.isfile(filepath):
             text = extract_text_from_file(filepath, doc['content_type'])
             threading.Thread(target=_analyze_document, args=(doc['id'], text, doc['filename']), daemon=True).start()

@@ -197,7 +197,7 @@ def api_note_search_titles():
 def api_note_templates():
     """List note templates."""
     with db_session() as db:
-        rows = db.execute('SELECT * FROM note_templates ORDER BY name').fetchall()
+        rows = db.execute('SELECT * FROM note_templates ORDER BY name LIMIT 500').fetchall()
         templates = [dict(r) for r in rows]
         # Add built-in templates if table is empty
         if not templates:

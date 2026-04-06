@@ -2467,7 +2467,7 @@ def api_sitroom_earthquakes():
 @situation_room_bp.route('/api/sitroom/markets')
 def api_sitroom_markets():
     with db_session() as db:
-        rows = db.execute('SELECT * FROM sitroom_markets ORDER BY market_type, symbol').fetchall()
+        rows = db.execute('SELECT * FROM sitroom_markets ORDER BY market_type, symbol LIMIT 500').fetchall()
     return jsonify({'markets': [dict(r) for r in rows]})
 
 
@@ -2559,7 +2559,7 @@ def api_sitroom_summary():
             "SELECT title, magnitude, lat, lng FROM sitroom_events WHERE event_type = 'earthquake' AND magnitude IS NOT NULL ORDER BY magnitude DESC LIMIT 5"
         ).fetchall()
 
-        market_rows = db.execute('SELECT * FROM sitroom_markets ORDER BY market_type, symbol').fetchall()
+        market_rows = db.execute('SELECT * FROM sitroom_markets ORDER BY market_type, symbol LIMIT 500').fetchall()
 
         # Space weather summary
         sw_row = db.execute("SELECT value_json FROM sitroom_space_weather WHERE data_type = 'noaa_scales'").fetchone()
@@ -2587,7 +2587,7 @@ def api_sitroom_summary():
 @situation_room_bp.route('/api/sitroom/feeds')
 def api_sitroom_feeds():
     with db_session() as db:
-        custom = db.execute('SELECT * FROM sitroom_custom_feeds ORDER BY category, name').fetchall()
+        custom = db.execute('SELECT * FROM sitroom_custom_feeds ORDER BY category, name LIMIT 200').fetchall()
     return jsonify({
         'builtin': [{'name': f['name'], 'url': f['url'], 'category': f['category']} for f in ALL_FEEDS],
         'custom': [dict(r) for r in custom],
@@ -3297,7 +3297,7 @@ def api_sitroom_monitors():
         db.execute('''CREATE TABLE IF NOT EXISTS sitroom_monitors
             (id INTEGER PRIMARY KEY, keyword TEXT NOT NULL, color TEXT DEFAULT '#4aedc4',
              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
-        monitors = db.execute('SELECT * FROM sitroom_monitors ORDER BY created_at DESC').fetchall()
+        monitors = db.execute('SELECT * FROM sitroom_monitors ORDER BY created_at DESC LIMIT 200').fetchall()
         db.commit()
 
     results = []
@@ -5021,7 +5021,7 @@ def api_sitroom_webhook_config():
                        (url, events))
             db.commit()
             return jsonify({'added': True})
-        rows = db.execute('SELECT * FROM sitroom_webhooks ORDER BY created_at DESC').fetchall()
+        rows = db.execute('SELECT * FROM sitroom_webhooks ORDER BY created_at DESC LIMIT 100').fetchall()
         return jsonify({'webhooks': [dict(r) for r in rows]})
 
 

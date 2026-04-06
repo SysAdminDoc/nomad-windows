@@ -266,7 +266,7 @@ def api_lan_presence():
     """List known LAN nodes and their status."""
     with db_session() as db:
         rows = db.execute(
-            "SELECT * FROM lan_presence WHERE last_seen >= datetime('now', '-5 minutes') ORDER BY node_name"
+            "SELECT * FROM lan_presence WHERE last_seen >= datetime('now', '-5 minutes') ORDER BY node_name LIMIT 500"
         ).fetchall()
         return jsonify([dict(r) for r in rows])
 @comms_bp.route('/api/lan/presence/heartbeat', methods=['POST'])
@@ -929,7 +929,7 @@ def api_comms_status_board():
         # Federation peers
         fed_peers = []
         try:
-            rows = db.execute("SELECT * FROM federation_peers WHERE trust_level != 'blocked' ORDER BY last_seen DESC").fetchall()
+            rows = db.execute("SELECT * FROM federation_peers WHERE trust_level != 'blocked' ORDER BY last_seen DESC LIMIT 500").fetchall()
             fed_peers = [dict(r) for r in rows]
         except Exception:
             pass

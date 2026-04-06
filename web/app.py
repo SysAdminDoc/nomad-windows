@@ -2415,10 +2415,12 @@ def create_app():
     def api_scenarios_update(sid):
         data = request.get_json() or {}
         with db_session() as db:
-            db.execute('UPDATE scenarios SET current_phase=?, status=?, decisions=?, complications=?, score=?, aar_text=?, completed_at=? WHERE id=?',
+            r = db.execute('UPDATE scenarios SET current_phase=?, status=?, decisions=?, complications=?, score=?, aar_text=?, completed_at=? WHERE id=?',
                        (data.get('current_phase', 0), data.get('status', 'active'),
                         json.dumps(data.get('decisions', [])), json.dumps(data.get('complications', [])),
                         data.get('score', 0), data.get('aar_text', ''), data.get('completed_at', ''), sid))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'updated'})
 
@@ -5177,7 +5179,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
                 return jsonify({'status': 'no changes'})
             sets.append('updated_at=CURRENT_TIMESTAMP')
             vals.append(sid)
-            db.execute(f'UPDATE watch_schedules SET {", ".join(sets)} WHERE id=?', tuple(vals))
+            r = db.execute(f'UPDATE watch_schedules SET {", ".join(sets)} WHERE id=?', tuple(vals))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
             return jsonify({'status': 'updated'})
 

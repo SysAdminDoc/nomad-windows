@@ -646,6 +646,9 @@ def api_conversations_get(cid):
 def api_conversations_update(cid):
     data = request.get_json() or {}
     with db_session() as db:
+        existing = db.execute('SELECT id FROM conversations WHERE id = ?', (cid,)).fetchone()
+        if not existing:
+            return jsonify({'error': 'not found'}), 404
         update_data = {}
         if 'title' in data:
             update_data['title'] = data['title']

@@ -818,8 +818,8 @@ async function loadReadinessScore() {
       const pct = Math.round(v.score / (catMax[k] || 1) * 100);
       const color = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--orange)' : 'var(--red)';
       const link = catLinks[k] || 'inventory';
-      return `<div class="readiness-category-link readiness-category-row" role="button" tabindex="0" data-tab-target="preparedness" data-prep-sub="${link}" data-prep-delay="200" title="${v.detail} — click to improve">
-        <span class="readiness-category-label">${catLabels[k] || k}</span>
+      return `<div class="readiness-category-link readiness-category-row" role="button" tabindex="0" data-tab-target="preparedness" data-prep-sub="${link}" data-prep-delay="200" title="${escapeAttr(v.detail || '')} — click to improve">
+        <span class="readiness-category-label">${escapeHtml(catLabels[k] || k)}</span>
         <div class="readiness-category-track">
           <div class="readiness-category-fill" style="--readiness-pct:${pct}%;--readiness-tone:${color};"></div>
         </div>

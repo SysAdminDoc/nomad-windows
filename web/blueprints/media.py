@@ -157,7 +157,7 @@ def api_media_thumbnail_serve(filename):
     safe = secure_filename(filename)
     thumb_dir = os.path.join(get_data_dir(), 'thumbnails')
     full = os.path.join(thumb_dir, safe)
-    if not os.path.normcase(os.path.normpath(full)).startswith(os.path.normcase(os.path.normpath(thumb_dir))):
+    if not os.path.normcase(os.path.normpath(full)).startswith(os.path.normcase(os.path.normpath(thumb_dir)) + os.sep):
         return jsonify({'error': 'Invalid path'}), 400
     if not os.path.isfile(full):
         return jsonify({'error': 'Not found'}), 404
@@ -487,7 +487,7 @@ def api_videos_update(vid):
 def api_videos_serve(filename):
     vdir = get_video_dir()
     safe = os.path.normcase(os.path.normpath(os.path.join(vdir, filename)))
-    if not safe.startswith(os.path.normcase(os.path.normpath(vdir))) or not os.path.isfile(safe):
+    if not safe.startswith(os.path.normcase(os.path.normpath(vdir)) + os.sep) or not os.path.isfile(safe):
         return jsonify({'error': 'Not found'}), 404
     from flask import send_file
     return send_file(safe)
@@ -1453,7 +1453,7 @@ def api_audio_update(aid):
 def api_audio_serve(filename):
     adir = get_audio_dir()
     safe = os.path.normcase(os.path.normpath(os.path.join(adir, filename)))
-    if not safe.startswith(os.path.normcase(os.path.normpath(adir))) or not os.path.isfile(safe):
+    if not safe.startswith(os.path.normcase(os.path.normpath(adir)) + os.sep) or not os.path.isfile(safe):
         return jsonify({'error': 'Not found'}), 404
     from flask import send_file
     return send_file(safe)
@@ -2039,7 +2039,7 @@ def api_books_update(bid):
 def api_books_serve(filename):
     bdir = get_books_dir()
     safe = os.path.normcase(os.path.normpath(os.path.join(bdir, filename)))
-    if not safe.startswith(os.path.normcase(os.path.normpath(bdir))) or not os.path.isfile(safe):
+    if not safe.startswith(os.path.normcase(os.path.normpath(bdir)) + os.sep) or not os.path.isfile(safe):
         return jsonify({'error': 'Not found'}), 404
     from flask import send_file
     return send_file(safe)

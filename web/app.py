@@ -4265,7 +4265,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         from flask import send_from_directory
         full_path = os.path.realpath(os.path.join(_nukemap_dir, filepath))
         base_dir = os.path.realpath(_nukemap_dir)
-        if not full_path.startswith(base_dir + os.sep) and full_path != base_dir:
+        if not os.path.normcase(full_path).startswith(os.path.normcase(base_dir) + os.sep) and os.path.normcase(full_path) != os.path.normcase(base_dir):
             return jsonify({'error': 'Forbidden'}), 403
         if not os.path.isfile(full_path):
             log.warning(f'NukeMap file not found: {full_path}')

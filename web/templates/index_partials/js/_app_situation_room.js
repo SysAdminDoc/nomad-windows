@@ -3026,18 +3026,16 @@ async function addSitroomFeed() {
   const cat = document.getElementById('sitroom-feed-category')?.value.trim() || 'Custom';
   if (!n || !u) { toast('Name and URL required', 'warning'); return; }
   try {
-    const resp = await fetch('/api/sitroom/feeds', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: n, url: u, category: cat}) });
-    if (!resp.ok) { const d = await resp.json().catch(() => ({})); toast(d.error || 'Failed to add feed', 'error'); return; }
+    await apiPost('/api/sitroom/feeds', {name: n, url: u, category: cat});
     toast('Feed added', 'success'); document.getElementById('sitroom-feed-name').value = ''; document.getElementById('sitroom-feed-url').value = ''; loadSitroomFeeds();
-  } catch (e) { toast('Network error', 'error'); }
+  } catch (e) { toast(e.data?.error || 'Failed to add feed', 'error'); }
 }
 
 async function deleteSitroomFeed(id) {
   if (!confirm('Remove this custom feed?')) return;
   try {
-    const resp = await fetch('/api/sitroom/feeds/' + id, {method: 'DELETE'});
-    if (resp.ok) { toast('Feed removed', 'success'); loadSitroomFeeds(); }
-    else { const d = await resp.json().catch(() => ({})); toast(d.error || 'Failed', 'error'); }
+    await apiDelete('/api/sitroom/feeds/' + id);
+    toast('Feed removed', 'success'); loadSitroomFeeds();
   } catch (e) { toast('Failed to delete feed', 'error'); }
 }
 
@@ -3046,11 +3044,9 @@ async function refreshSitroomFeeds() {
   const btn = document.getElementById('sitroom-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Refreshing...'; }
   try {
-    const resp = await fetch('/api/sitroom/refresh', {method: 'POST'});
-    if (resp.ok) {
-      toast('Feed refresh started', 'info');
-      _pollSitroomRefresh();
-    }
+    await apiPost('/api/sitroom/refresh');
+    toast('Feed refresh started', 'info');
+    _pollSitroomRefresh();
   } catch (e) { toast('Refresh failed', 'error'); }
   finally { if (btn) { btn.disabled = false; btn.textContent = 'Refresh Feeds'; } }
 }
@@ -3928,9 +3924,7 @@ async function _generateMarketBrief() {
   if (!el) return;
   el.innerHTML = '<div class="sr-empty"><div class="sr-radar"></div>Generating brief...</div>';
   try {
-    const resp = await fetch('/api/sitroom/market-brief', {method:'POST'});
-    if (!resp.ok) throw new Error('API error');
-    const d = await resp.json();
+    const d = await apiPost('/api/sitroom/market-brief');
     if (d.brief) {
       let h = escapeHtml(d.brief);
       h = h.replace(/^### (.*?)$/gm, '<h4 class="sr-market-brief-subhead">$1</h4>');
@@ -4294,9 +4288,7 @@ async function _generateAiBriefing() {
   if (btn) btn.disabled = true;
   el.innerHTML = '<div class="sr-empty sr-empty-emphasis"><div class="sr-radar"></div><span>Generating intelligence briefing...</span></div>';
   try {
-    const resp = await fetch('/api/sitroom/ai-briefing', {method:'POST', headers:{'Content-Type':'application/json'}});
-    if (!resp.ok) throw new Error('API error');
-    const d = await resp.json();
+    const d = await apiPost('/api/sitroom/ai-briefing');
     if (d.briefing) {
       el.innerHTML = '<div class="sr-briefing-text">' + _renderBriefing(d.briefing) + '</div>';
     } else {
@@ -4345,8 +4337,7 @@ function _promptAddMonitor() {
 
 async function _deleteMonitor(id) {
   try {
-    const resp = await fetch('/api/sitroom/monitors/' + id, {method:'DELETE'});
-    if (!resp.ok) toast('Failed to delete monitor', 'error');
+    await apiDelete('/api/sitroom/monitors/' + id);
   } catch(e) { toast('Failed to delete monitor', 'error'); }
   loadSitroomMonitors();
 }

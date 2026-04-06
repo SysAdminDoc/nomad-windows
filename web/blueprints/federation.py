@@ -13,7 +13,7 @@ import uuid as _uuid
 from flask import Blueprint, request, jsonify, Response
 
 from config import Config
-from db import get_db_path, db_session, log_activity
+from db import db_session, log_activity
 from web.state import _discovered_peers, broadcast_event
 
 log = logging.getLogger('nomad.web')
@@ -761,10 +761,20 @@ def api_federation_peer_add():
     node_id = data.get('node_id', '').strip()
     if not node_id:
         return jsonify({'error': 'node_id required'}), 400
+    # Validate peer IP to prevent SSRF when relay/sync contacts peers
+    peer_ip = data.get('ip', '').strip()
+    if peer_ip:
+        import ipaddress as _ipa
+        try:
+            ip_obj = _ipa.ip_address(peer_ip)
+            if ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved or ip_obj.is_unspecified:
+                return jsonify({'error': 'Invalid peer IP address (private/reserved)'}), 400
+        except ValueError:
+            return jsonify({'error': 'Invalid IP address format'}), 400
     with db_session() as db:
         db.execute('INSERT OR REPLACE INTO federation_peers (node_id, node_name, trust_level, ip, port, lat, lng) VALUES (?,?,?,?,?,?,?)',
                    (node_id, data.get('node_name', ''), data.get('trust_level', 'observer'),
-                    data.get('ip', ''), data.get('port', 8080),
+                    peer_ip, data.get('port', 8080),
                     data.get('lat'), data.get('lng')))
         db.commit()
     return jsonify({'status': 'added'})

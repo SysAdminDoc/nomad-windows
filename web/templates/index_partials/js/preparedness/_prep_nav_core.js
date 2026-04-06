@@ -487,17 +487,20 @@ async function toggleCheckItem(idx) {
 }
 
 async function deleteChecklist(id) {
-  await fetch(`/api/checklists/${id}`, {method: 'DELETE'});
-  toast('Checklist deleted', 'warning');
-  if (_currentChecklistId === id) {
-    _currentChecklistId = null;
-    _currentChecklistItems = [];
-    document.getElementById('prep-active-name').textContent = 'Select or create a checklist';
-    document.getElementById('prep-active-stats').textContent = '';
-    document.getElementById('prep-progress-fill').style.width = '0%';
-    document.getElementById('prep-checklist').innerHTML = '<div class="empty-state empty-state-fill"><div class="icon empty-state-icon-muted">&#9745;</div><p>Choose a template above to create a checklist, or select an existing one.</p></div>';
-  }
-  await loadChecklists();
+  try {
+    const resp = await fetch(`/api/checklists/${id}`, {method: 'DELETE'});
+    if (!resp.ok) { toast('Failed to delete checklist', 'error'); return; }
+    toast('Checklist deleted', 'warning');
+    if (_currentChecklistId === id) {
+      _currentChecklistId = null;
+      _currentChecklistItems = [];
+      document.getElementById('prep-active-name').textContent = 'Select or create a checklist';
+      document.getElementById('prep-active-stats').textContent = '';
+      document.getElementById('prep-progress-fill').style.width = '0%';
+      document.getElementById('prep-checklist').innerHTML = '<div class="empty-state empty-state-fill"><div class="icon empty-state-icon-muted">&#9745;</div><p>Choose a template above to create a checklist, or select an existing one.</p></div>';
+    }
+    await loadChecklists();
+  } catch(e) { console.error(e); toast('Failed to delete checklist', 'error'); }
 }
 
 document.addEventListener('click', event => {

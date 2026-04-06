@@ -4,7 +4,8 @@ let _settingsDebounceMap = {};
 function _debouncedSettingSave(key, value) {
     clearTimeout(_settingsDebounceMap[key]);
     _settingsDebounceMap[key] = setTimeout(() => {
-        fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({[key]: value})}).catch(()=>{});
+        fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({[key]: value})})
+            .catch(e => { console.error('Settings save failed:', e); toast('Failed to save settings', 'error'); });
     }, 500);
 }
 

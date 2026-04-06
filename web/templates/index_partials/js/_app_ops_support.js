@@ -852,11 +852,14 @@ async function toggleNotePin() {
   const n = allNotes.find(n => n.id === currentNoteId);
   if (!n) return;
   const newPinned = !n.pinned;
-  await fetch(`/api/notes/${currentNoteId}/pin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pinned:newPinned})});
-  n.pinned = newPinned;
-  document.getElementById('note-pin-btn').textContent = newPinned ? 'Unpin' : 'Pin';
-  toast(newPinned ? 'Note pinned' : 'Note unpinned', 'success');
-  await loadNotes();
+  try {
+    const resp = await fetch(`/api/notes/${currentNoteId}/pin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pinned:newPinned})});
+    if (!resp.ok) { toast('Failed to update note', 'error'); return; }
+    n.pinned = newPinned;
+    document.getElementById('note-pin-btn').textContent = newPinned ? 'Unpin' : 'Pin';
+    toast(newPinned ? 'Note pinned' : 'Note unpinned', 'success');
+    await loadNotes();
+  } catch(e) { console.error(e); toast('Failed to update note', 'error'); }
 }
 
 let _tagSaveTimer;
@@ -865,10 +868,13 @@ function autoSaveNoteTags() {
   _tagSaveTimer = setTimeout(async () => {
     if (!currentNoteId) return;
     const tags = document.getElementById('note-tags').value;
-    await fetch(`/api/notes/${currentNoteId}/tags`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tags})});
-    const n = allNotes.find(n => n.id === currentNoteId);
-    if (n) n.tags = tags;
-    renderNotesList();
+    try {
+      const resp = await fetch(`/api/notes/${currentNoteId}/tags`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tags})});
+      if (!resp.ok) { console.error('Failed to save tags'); return; }
+      const n = allNotes.find(n => n.id === currentNoteId);
+      if (n) n.tags = tags;
+      renderNotesList();
+    } catch(e) { console.error('Failed to save tags:', e); }
   }, 500);
 }
 
@@ -884,10 +890,13 @@ async function sendBroadcast() {
 }
 
 async function clearBroadcast() {
-  await fetch('/api/broadcast/clear', {method:'POST'});
-  toast('Broadcast cleared');
-  const banner = document.getElementById('broadcast-banner');
-  if (banner) banner.style.display = 'none';
+  try {
+    const resp = await fetch('/api/broadcast/clear', {method:'POST'});
+    if (!resp.ok) { toast('Failed to clear broadcast', 'error'); return; }
+    toast('Broadcast cleared');
+    const banner = document.getElementById('broadcast-banner');
+    if (banner) banner.style.display = 'none';
+  } catch(e) { console.error(e); toast('Failed to clear broadcast', 'error'); }
 }
 
 let _dismissedBroadcastTs = null;
@@ -1320,7 +1329,7 @@ function generatePassword() {
   const arr = new Uint32Array(20);
   crypto.getRandomValues(arr);
   const pw = Array.from(arr).map(n => chars[n % chars.length]).join('');
-  navigator.clipboard.writeText(pw).then(() => toast('Password copied to clipboard: ' + pw.slice(0,8) + '...', 'success')).catch(()=>{});
+  navigator.clipboard.writeText(pw).then(() => toast('Password copied to clipboard: ' + pw.slice(0,8) + '...', 'success')).catch(e => { console.error(e); toast('Failed to copy password to clipboard', 'error'); });
   // Also put it in the vault content if form is open
   const content = document.getElementById('vault-content');
   if (content && document.getElementById('vault-form').style.display !== 'none') {
@@ -1645,22 +1654,28 @@ async function addCamera() {
   const name = document.getElementById('cam-name').value.trim();
   const url = document.getElementById('cam-url').value.trim();
   if (!name || !url) { toast('Enter camera name and URL', 'warning'); return; }
-  await fetch('/api/security/cameras', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
-    name, url, stream_type: document.getElementById('cam-type').value,
-    location: document.getElementById('cam-location').value.trim()})});
-  document.getElementById('cam-name').value = '';
-  document.getElementById('cam-url').value = '';
-  document.getElementById('cam-location').value = '';
-  toast(`Camera "${name}" added`, 'success');
-  loadCameras();
-  loadSecurityDashboard();
+  try {
+    const resp = await fetch('/api/security/cameras', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      name, url, stream_type: document.getElementById('cam-type').value,
+      location: document.getElementById('cam-location').value.trim()})});
+    if (!resp.ok) { toast('Failed to add camera', 'error'); return; }
+    document.getElementById('cam-name').value = '';
+    document.getElementById('cam-url').value = '';
+    document.getElementById('cam-location').value = '';
+    toast(`Camera "${name}" added`, 'success');
+    loadCameras();
+    loadSecurityDashboard();
+  } catch(e) { console.error(e); toast('Failed to add camera', 'error'); }
 }
 
 async function deleteCamera(id) {
-  await fetch(`/api/security/cameras/${id}`, {method:'DELETE'});
-  toast('Camera removed', 'warning');
-  loadCameras();
-  loadSecurityDashboard();
+  try {
+    const resp = await fetch(`/api/security/cameras/${id}`, {method:'DELETE'});
+    if (!resp.ok) { toast('Failed to remove camera', 'error'); return; }
+    toast('Camera removed', 'warning');
+    loadCameras();
+    loadSecurityDashboard();
+  } catch(e) { console.error(e); toast('Failed to remove camera', 'error'); }
 }
 
 /* ─── Motion Detection ─── */
@@ -1762,16 +1777,19 @@ async function configureMotionDetection() {
 async function logAccess() {
   const person = document.getElementById('al-person').value.trim();
   if (!person) { toast('Enter person name', 'warning'); return; }
-  await fetch('/api/security/access-log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
-    person, direction: document.getElementById('al-direction').value,
-    location: document.getElementById('al-location').value.trim(),
-    method: document.getElementById('al-method').value,
-    notes: document.getElementById('al-notes').value.trim()})});
-  document.getElementById('al-person').value = '';
-  document.getElementById('al-notes').value = '';
-  toast('Access logged', 'success');
-  loadAccessLog();
-  loadSecurityDashboard();
+  try {
+    const resp = await fetch('/api/security/access-log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      person, direction: document.getElementById('al-direction').value,
+      location: document.getElementById('al-location').value.trim(),
+      method: document.getElementById('al-method').value,
+      notes: document.getElementById('al-notes').value.trim()})});
+    if (!resp.ok) { toast('Failed to log access', 'error'); return; }
+    document.getElementById('al-person').value = '';
+    document.getElementById('al-notes').value = '';
+    toast('Access logged', 'success');
+    loadAccessLog();
+    loadSecurityDashboard();
+  } catch(e) { console.error(e); toast('Failed to log access', 'error'); }
 }
 
 async function loadAccessLog() {
@@ -1799,9 +1817,12 @@ async function clearAccessLog() {
     setTimeout(() => { btn.textContent = 'Clear Log'; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
     return;
   }
-  await fetch('/api/security/access-log/clear', {method:'POST'});
-  toast('Access log cleared', 'warning');
-  loadAccessLog();
+  try {
+    const resp = await fetch('/api/security/access-log/clear', {method:'POST'});
+    if (!resp.ok) { toast('Failed to clear access log', 'error'); return; }
+    toast('Access log cleared', 'warning');
+    loadAccessLog();
+  } catch(e) { console.error(e); toast('Failed to clear access log', 'error'); }
 }
 
 /* ─── Power Management ─── */
@@ -1873,11 +1894,14 @@ async function addPowerDevice() {
   if (document.getElementById('pd-ctype')) specs.controller_type = document.getElementById('pd-ctype').value;
   if (document.getElementById('pd-amps')) specs.amps = parseInt(document.getElementById('pd-amps').value) || 0;
   if (document.getElementById('pd-fuel')) specs.fuel = document.getElementById('pd-fuel').value;
-  await fetch('/api/power/devices', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({device_type: type, name, specs})});
-  document.getElementById('pd-name').value = '';
-  toast(`${name} added`, 'success');
-  loadPowerDevices();
-  loadPowerDashboard();
+  try {
+    const resp = await fetch('/api/power/devices', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({device_type: type, name, specs})});
+    if (!resp.ok) { toast('Failed to add device', 'error'); return; }
+    document.getElementById('pd-name').value = '';
+    toast(`${name} added`, 'success');
+    loadPowerDevices();
+    loadPowerDashboard();
+  } catch(e) { console.error(e); toast('Failed to add device', 'error'); }
 }
 
 async function loadPowerDevices() {
@@ -1904,7 +1928,15 @@ async function loadPowerDevices() {
   } catch(e) { el.innerHTML = prepEmptyBlock('Could not load power devices right now.'); }
 }
 
-async function deletePowerDevice(id) { await fetch(`/api/power/devices/${id}`, {method:'DELETE'}); loadPowerDevices(); loadPowerDashboard(); }
+async function deletePowerDevice(id) {
+  try {
+    const resp = await fetch(`/api/power/devices/${id}`, {method:'DELETE'});
+    if (!resp.ok) { toast('Failed to remove device', 'error'); return; }
+    toast('Device removed', 'warning');
+    loadPowerDevices();
+    loadPowerDashboard();
+  } catch(e) { console.error(e); toast('Failed to remove device', 'error'); }
+}
 
 async function logPowerReading() {
   const data = {
@@ -1917,11 +1949,14 @@ async function logPowerReading() {
     generator_running: document.getElementById('pl-gen').value === '1',
   };
   if (!data.battery_voltage && !data.solar_watts && !data.load_watts) { toast('Enter at least one reading', 'warning'); return; }
-  await fetch('/api/power/log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  toast('Power reading logged', 'success');
-  ['pl-voltage','pl-soc','pl-solar','pl-solar-wh','pl-load','pl-load-wh'].forEach(id => document.getElementById(id).value = '');
-  loadPowerLog();
-  loadPowerDashboard();
+  try {
+    const resp = await fetch('/api/power/log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    if (!resp.ok) { toast('Failed to log reading', 'error'); return; }
+    toast('Power reading logged', 'success');
+    ['pl-voltage','pl-soc','pl-solar','pl-solar-wh','pl-load','pl-load-wh'].forEach(id => document.getElementById(id).value = '');
+    loadPowerLog();
+    loadPowerDashboard();
+  } catch(e) { console.error(e); toast('Failed to log reading', 'error'); }
 }
 
 async function loadPowerLog() {
@@ -2277,10 +2312,13 @@ async function submitPreservation() {
     batch_date: document.getElementById('ap-date').value, shelf_life_months: parseInt(document.getElementById('ap-shelf').value) || 12,
   };
   if (!data.crop) { toast('Crop name required', 'warning'); return; }
-  await fetch('/api/garden/preservation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  document.getElementById('add-pres-form')?.remove();
-  loadPreservationLog();
-  toast('Preservation batch logged', 'success');
+  try {
+    const resp = await fetch('/api/garden/preservation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    if (!resp.ok) { toast('Failed to log preservation batch', 'error'); return; }
+    document.getElementById('add-pres-form')?.remove();
+    loadPreservationLog();
+    toast('Preservation batch logged', 'success');
+  } catch(e) { console.error(e); toast('Failed to log preservation batch', 'error'); }
 }
 
 async function deletePreservation(id) {
@@ -2329,16 +2367,26 @@ async function loadPlots() {
 async function addPlot() {
   const name = document.getElementById('gp-name').value.trim();
   if (!name) { toast('Enter plot name', 'warning'); return; }
-  await fetch('/api/garden/plots', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
-    name, width_ft: parseFloat(document.getElementById('gp-width').value) || 10,
-    length_ft: parseFloat(document.getElementById('gp-length').value) || 20,
-    sun_exposure: document.getElementById('gp-sun').value})});
-  document.getElementById('gp-name').value = '';
-  toast('Plot added', 'success');
-  loadPlots();
+  try {
+    const resp = await fetch('/api/garden/plots', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      name, width_ft: parseFloat(document.getElementById('gp-width').value) || 10,
+      length_ft: parseFloat(document.getElementById('gp-length').value) || 20,
+      sun_exposure: document.getElementById('gp-sun').value})});
+    if (!resp.ok) { toast('Failed to add plot', 'error'); return; }
+    document.getElementById('gp-name').value = '';
+    toast('Plot added', 'success');
+    loadPlots();
+  } catch(e) { console.error(e); toast('Failed to add plot', 'error'); }
 }
 
-async function deletePlot(id) { await fetch(`/api/garden/plots/${id}`, {method:'DELETE'}); loadPlots(); }
+async function deletePlot(id) {
+  try {
+    const resp = await fetch(`/api/garden/plots/${id}`, {method:'DELETE'});
+    if (!resp.ok) { toast('Failed to remove plot', 'error'); return; }
+    toast('Plot removed', 'warning');
+    loadPlots();
+  } catch(e) { console.error(e); toast('Failed to remove plot', 'error'); }
+}
 
 async function loadSeeds() {
   try {
@@ -2357,18 +2405,28 @@ async function loadSeeds() {
 async function addSeed() {
   const species = document.getElementById('gs-species').value.trim();
   if (!species) { toast('Enter species name', 'warning'); return; }
-  await fetch('/api/garden/seeds', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
-    species, variety: document.getElementById('gs-variety').value.trim(),
-    quantity: parseInt(document.getElementById('gs-qty').value) || 50,
-    year_harvested: parseInt(document.getElementById('gs-year').value) || null,
-    days_to_maturity: parseInt(document.getElementById('gs-dtm').value) || null,
-    planting_season: document.getElementById('gs-season').value})});
-  document.getElementById('gs-species').value = ''; document.getElementById('gs-variety').value = '';
-  toast('Seed added', 'success');
-  loadSeeds();
+  try {
+    const resp = await fetch('/api/garden/seeds', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      species, variety: document.getElementById('gs-variety').value.trim(),
+      quantity: parseInt(document.getElementById('gs-qty').value) || 50,
+      year_harvested: parseInt(document.getElementById('gs-year').value) || null,
+      days_to_maturity: parseInt(document.getElementById('gs-dtm').value) || null,
+      planting_season: document.getElementById('gs-season').value})});
+    if (!resp.ok) { toast('Failed to add seed', 'error'); return; }
+    document.getElementById('gs-species').value = ''; document.getElementById('gs-variety').value = '';
+    toast('Seed added', 'success');
+    loadSeeds();
+  } catch(e) { console.error(e); toast('Failed to add seed', 'error'); }
 }
 
-async function deleteSeed(id) { await fetch(`/api/garden/seeds/${id}`, {method:'DELETE'}); loadSeeds(); }
+async function deleteSeed(id) {
+  try {
+    const resp = await fetch(`/api/garden/seeds/${id}`, {method:'DELETE'});
+    if (!resp.ok) { toast('Failed to remove seed', 'error'); return; }
+    toast('Seed removed', 'warning');
+    loadSeeds();
+  } catch(e) { console.error(e); toast('Failed to remove seed', 'error'); }
+}
 
 let _companionData = [];
 async function loadCompanions() {
@@ -2442,14 +2500,17 @@ async function loadHarvests() {
 async function logHarvest() {
   const crop = document.getElementById('gh-crop').value.trim();
   if (!crop) { toast('Enter crop name', 'warning'); return; }
-  await fetch('/api/garden/harvests', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
-    crop, quantity: parseFloat(document.getElementById('gh-qty').value) || 0,
-    unit: document.getElementById('gh-unit').value,
-    plot_id: document.getElementById('gh-plot').value || null,
-    notes: ''})});
-  document.getElementById('gh-crop').value = '';
-  toast('Harvest logged and added to inventory!', 'success');
-  loadHarvests();
+  try {
+    const resp = await fetch('/api/garden/harvests', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      crop, quantity: parseFloat(document.getElementById('gh-qty').value) || 0,
+      unit: document.getElementById('gh-unit').value,
+      plot_id: document.getElementById('gh-plot').value || null,
+      notes: ''})});
+    if (!resp.ok) { toast('Failed to log harvest', 'error'); return; }
+    document.getElementById('gh-crop').value = '';
+    toast('Harvest logged and added to inventory!', 'success');
+    loadHarvests();
+  } catch(e) { console.error(e); toast('Failed to log harvest', 'error'); }
 }
 
 async function loadLivestockList() {
@@ -2479,16 +2540,26 @@ async function loadLivestockList() {
 
 async function addLivestock() {
   const species = document.getElementById('gl-species').value;
-  await fetch('/api/livestock', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
-    species, name: document.getElementById('gl-name').value.trim(),
-    sex: document.getElementById('gl-sex').value, dob: document.getElementById('gl-dob').value,
-    weight_lbs: parseFloat(document.getElementById('gl-weight').value) || null})});
-  document.getElementById('gl-name').value = '';
-  toast(`${species} added`, 'success');
-  loadLivestockList();
+  try {
+    const resp = await fetch('/api/livestock', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+      species, name: document.getElementById('gl-name').value.trim(),
+      sex: document.getElementById('gl-sex').value, dob: document.getElementById('gl-dob').value,
+      weight_lbs: parseFloat(document.getElementById('gl-weight').value) || null})});
+    if (!resp.ok) { toast('Failed to add livestock', 'error'); return; }
+    document.getElementById('gl-name').value = '';
+    toast(`${species} added`, 'success');
+    loadLivestockList();
+  } catch(e) { console.error(e); toast('Failed to add livestock', 'error'); }
 }
 
-async function deleteLivestock(id) { await fetch(`/api/livestock/${id}`, {method:'DELETE'}); toast('Animal removed', 'warning'); loadLivestockList(); }
+async function deleteLivestock(id) {
+  try {
+    const resp = await fetch(`/api/livestock/${id}`, {method:'DELETE'});
+    if (!resp.ok) { toast('Failed to remove animal', 'error'); return; }
+    toast('Animal removed', 'warning');
+    loadLivestockList();
+  } catch(e) { console.error(e); toast('Failed to remove animal', 'error'); }
+}
 
 async function logHealthEvent(id) {
   const el = event.target.parentElement.parentElement;
@@ -2505,9 +2576,12 @@ async function submitHealthEvent(id) {
   const inp = document.getElementById(`he-${id}`);
   const event_text = inp?.value?.trim();
   if (!event_text) return;
-  await fetch(`/api/livestock/${id}/health`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({event: event_text})});
-  toast('Health event logged', 'success');
-  loadLivestockList();
+  try {
+    const resp = await fetch(`/api/livestock/${id}/health`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({event: event_text})});
+    if (!resp.ok) { toast('Failed to log health event', 'error'); return; }
+    toast('Health event logged', 'success');
+    loadLivestockList();
+  } catch(e) { console.error(e); toast('Failed to log health event', 'error'); }
 }
 
 /* ─── Immersive Training Scenarios ─── */
@@ -2943,16 +3017,21 @@ async function savePatient() {
     notes: document.getElementById('pt-notes').value.trim(),
   };
   const editId = document.getElementById('pt-edit-id').value;
-  if (editId) {
-    await fetch(`/api/patients/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    toast('Patient updated', 'success');
-  } else {
-    await fetch('/api/patients', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    toast('Patient added', 'success');
-  }
-  FormStateRecovery.clear('patient');
-  hidePatientForm();
-  loadPatients();
+  try {
+    let resp;
+    if (editId) {
+      resp = await fetch(`/api/patients/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+      if (!resp.ok) { toast('Failed to update patient', 'error'); return; }
+      toast('Patient updated', 'success');
+    } else {
+      resp = await fetch('/api/patients', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+      if (!resp.ok) { toast('Failed to add patient', 'error'); return; }
+      toast('Patient added', 'success');
+    }
+    FormStateRecovery.clear('patient');
+    hidePatientForm();
+    loadPatients();
+  } catch(e) { console.error(e); toast('Failed to save patient', 'error'); }
 }
 
 function editPatient(id) {
@@ -2968,10 +3047,13 @@ async function deletePatient(id) {
     setTimeout(() => { btn.textContent = 'Delete'; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
     return;
   }
-  await fetch(`/api/patients/${id}`, {method:'DELETE'});
-  toast('Patient removed', 'warning');
-  if (_activePatientId === id) closeVitalsPanel();
-  loadPatients();
+  try {
+    const resp = await fetch(`/api/patients/${id}`, {method:'DELETE'});
+    if (!resp.ok) { toast('Failed to remove patient', 'error'); return; }
+    toast('Patient removed', 'warning');
+    if (_activePatientId === id) closeVitalsPanel();
+    loadPatients();
+  } catch(e) { console.error(e); toast('Failed to remove patient', 'error'); }
 }
 
 async function addPatientFromContacts() {
@@ -3143,11 +3225,14 @@ async function logVitals() {
     notes: document.getElementById('v-notes').value.trim(),
   };
   if (!data.bp_systolic && !data.pulse && !data.temp_f && !data.spo2) { toast('Enter at least one vital sign', 'warning'); return; }
-  await fetch(`/api/patients/${_activePatientId}/vitals`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  toast('Vitals logged', 'success');
-  ['v-bps','v-bpd','v-pulse','v-resp','v-temp','v-spo2','v-pain','v-gcs','v-notes'].forEach(id => document.getElementById(id).value = '');
-  await loadVitals(_activePatientId);
-  await loadVitalsTrend(_activePatientId);
+  try {
+    const resp = await fetch(`/api/patients/${_activePatientId}/vitals`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    if (!resp.ok) { toast('Failed to log vitals', 'error'); return; }
+    toast('Vitals logged', 'success');
+    ['v-bps','v-bpd','v-pulse','v-resp','v-temp','v-spo2','v-pain','v-gcs','v-notes'].forEach(id => document.getElementById(id).value = '');
+    await loadVitals(_activePatientId);
+    await loadVitalsTrend(_activePatientId);
+  } catch(e) { console.error(e); toast('Failed to log vitals', 'error'); }
 }
 
 async function loadVitals(pid) {

@@ -241,9 +241,12 @@ async function adjustQty(id, delta) {
   const item = _cachedInvItems.find(i => i.id === id);
   if (!item) return;
   const newQty = Math.max(0, item.quantity + delta);
-  await fetch(`/api/inventory/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({quantity: newQty})});
-  item.quantity = newQty;
-  loadInventory();
+  try {
+    const resp = await fetch(`/api/inventory/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({quantity: newQty})});
+    if (!resp.ok) { toast('Failed to update quantity', 'error'); return; }
+    item.quantity = newQty;
+    loadInventory();
+  } catch(e) { console.error(e); toast('Failed to update quantity', 'error'); }
 }
 
 async function dailyConsume() {

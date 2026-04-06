@@ -2919,19 +2919,19 @@
 }
 
 .prep-reference-callout-danger {
-  border-left-color: #ef4444;
+  border-left-color: var(--red, #ef4444);
 }
 
 .prep-reference-callout-warn {
-  border-left-color: #f59e0b;
+  border-left-color: var(--orange, #f59e0b);
 }
 
 .prep-reference-callout-info {
-  border-left-color: #3b82f6;
+  border-left-color: var(--accent, #3b82f6);
 }
 
 .prep-reference-callout-safe {
-  border-left-color: #22c55e;
+  border-left-color: var(--green, #22c55e);
 }
 
 .prep-reference-shell-table {

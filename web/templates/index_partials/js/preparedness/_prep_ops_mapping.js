@@ -90,19 +90,24 @@ async function loadTimers() {
 async function createTimer() {
   const name = document.getElementById('timer-name').value.trim() || 'Timer';
   const mins = parseInt(document.getElementById('timer-mins').value) || 30;
-  await fetch('/api/timers', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name, duration_sec: mins * 60})});
-  document.getElementById('timer-name').value = '';
-  toast(`Timer "${name}" started (${mins}m)`, 'success');
-  loadTimers();
+  try {
+    const r = await fetch('/api/timers', {method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name, duration_sec: mins * 60})});
+    if (!r.ok) { toast('Failed to create timer', 'error'); return; }
+    document.getElementById('timer-name').value = '';
+    document.getElementById('timer-mins').value = '';
+    toast('Timer "' + name + '" started (' + mins + 'm)', 'success');
+    loadTimers();
+  } catch(e) { toast('Failed to create timer', 'error'); }
 }
 
 function createTimerQuick(name, mins) {
   fetch('/api/timers', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name, duration_sec: mins * 60})}).then(() => {
-    toast(`Timer "${name}" started (${mins}m)`, 'success');
+    body:JSON.stringify({name, duration_sec: mins * 60})}).then(r => {
+    if (!r.ok) { toast('Failed to create timer', 'error'); return; }
+    toast('Timer "' + name + '" started (' + mins + 'm)', 'success');
     loadTimers();
-  });
+  }).catch(() => toast('Failed to create timer', 'error'));
 }
 
 async function deleteTimer(id) {

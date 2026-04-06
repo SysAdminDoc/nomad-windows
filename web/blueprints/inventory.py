@@ -807,7 +807,8 @@ def api_barcode_add():
             'INSERT OR REPLACE INTO upc_database (upc, name, category, brand, size, unit, default_shelf_life_days) VALUES (?, ?, ?, ?, ?, ?, ?)',
             (upc, name, data.get('category', 'General'), data.get('brand', ''),
              data.get('size', ''), data.get('unit', 'each'),
-             int(data.get('default_shelf_life_days', 0)))
+             _safe_int(data.get('default_shelf_life_days', 0)))
+
         )
         db.commit()
         row = db.execute('SELECT * FROM upc_database WHERE upc = ?', (upc,)).fetchone()

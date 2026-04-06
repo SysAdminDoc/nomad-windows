@@ -36,6 +36,14 @@ import web.state as _state
 log = logging.getLogger('nomad.web')
 
 
+def _to_int(value, default=0):
+    """Safe int conversion that returns default on ValueError/TypeError."""
+    try:
+        return int(value)
+    except (ValueError, TypeError):
+        return default
+
+
 def _clone_json_fallback(fallback):
     if isinstance(fallback, dict):
         return dict(fallback)
@@ -1556,7 +1564,7 @@ def api_backup_configure():
     config = {
         'enabled': bool(data.get('enabled', False)),
         'interval': data.get('interval', 'daily') if data.get('interval') in ('daily', 'weekly') else 'daily',
-        'keep_count': max(1, min(30, int(data.get('keep_count', 7)))),
+        'keep_count': max(1, min(30, _to_int(data.get('keep_count', 7), 7))),
         'encrypt': bool(data.get('encrypt', False)),
     }
     if data.get('password'):

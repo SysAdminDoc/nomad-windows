@@ -841,7 +841,9 @@ def api_serial_connect():
         return jsonify({'error': 'pyserial not installed. Run: pip install pyserial'}), 500
     except Exception as e:
         _serial_state.update({'connected': False, 'error': str(e)})
-        return jsonify({'error': str(e)}), 500
+        import logging
+        logging.getLogger(__name__).exception('Serial connect failed')
+        return jsonify({'error': 'Serial connection failed'}), 500
 
 @comms_bp.route('/api/serial/disconnect', methods=['POST'])
 def api_serial_disconnect():

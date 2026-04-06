@@ -136,7 +136,9 @@ def api_notes_export_all():
         return Response(buf.read(), mimetype='application/zip',
                        headers={'Content-Disposition': 'attachment; filename="nomad-notes.zip"'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import logging
+        logging.getLogger(__name__).exception('Notes export failed')
+        return jsonify({'error': 'Export failed'}), 500
 
 
 # --- Notes Enhancements (v5.0 Phase 5) ---
@@ -307,7 +309,7 @@ def api_note_attachment_serve(note_id, filename):
     safe = secure_filename(filename)
     att_dir = os.path.join(get_data_dir(), 'attachments', 'notes', str(note_id))
     full = os.path.join(att_dir, safe)
-    if not os.path.normpath(full).startswith(os.path.normpath(att_dir)):
+    if not os.path.normcase(os.path.normpath(full)).startswith(os.path.normcase(os.path.normpath(att_dir)) + os.sep):
         return jsonify({'error': 'Invalid path'}), 400
     if not os.path.isfile(full):
         return jsonify({'error': 'Not found'}), 404

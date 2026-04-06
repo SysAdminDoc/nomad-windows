@@ -597,7 +597,9 @@ def api_inventory_export():
         return Response(buf.getvalue(), mimetype='text/csv',
                        headers={'Content-Disposition': 'attachment; filename="nomad_inventory_export.csv"'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import logging
+        logging.getLogger(__name__).exception('Inventory export failed')
+        return jsonify({'error': 'Export failed'}), 500
 
 
 @inventory_bp.route('/api/inventory/import-csv', methods=['POST'])

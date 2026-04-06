@@ -2027,7 +2027,7 @@ async function loadSolarForecast() {
   const ci = document.getElementById('solar-cloud-indicator');
   if (t.cloud_factor < 1.0) {
     ci.style.display = 'block';
-    ci.innerHTML = `Cloud cover impact: <strong style="color:${cfColor}">${((1-t.cloud_factor)*100).toFixed(0)}% reduction</strong> based on recent weather observations. Clear sky would yield ${t.clear_sky_kwh} kWh.`;
+    ci.innerHTML = 'Cloud cover impact: <strong style="color:' + cfColor + '">' + ((1-t.cloud_factor)*100).toFixed(0) + '% reduction</strong> based on recent weather observations. Clear sky would yield ' + escapeHtml(String(t.clear_sky_kwh)) + ' kWh.';
   } else {
     ci.style.display = 'none';
   }

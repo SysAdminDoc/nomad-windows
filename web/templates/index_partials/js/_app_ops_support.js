@@ -1499,6 +1499,7 @@ function exportJournal() {
 }
 
 async function deleteJournalEntry(id) {
+  if (!confirm('Delete this journal entry?')) return;
   try {
     const resp = await fetch(`/api/journal/${id}`, {method:'DELETE'});
     if (!resp.ok) { toast('Failed to delete entry', 'error'); return; }
@@ -1669,6 +1670,7 @@ async function addCamera() {
 }
 
 async function deleteCamera(id) {
+  if (!confirm('Remove this camera?')) return;
   try {
     const resp = await fetch(`/api/security/cameras/${id}`, {method:'DELETE'});
     if (!resp.ok) { toast('Failed to remove camera', 'error'); return; }
@@ -1929,6 +1931,7 @@ async function loadPowerDevices() {
 }
 
 async function deletePowerDevice(id) {
+  if (!confirm('Remove this power device?')) return;
   try {
     const resp = await fetch(`/api/power/devices/${id}`, {method:'DELETE'});
     if (!resp.ok) { toast('Failed to remove device', 'error'); return; }
@@ -2322,6 +2325,7 @@ async function submitPreservation() {
 }
 
 async function deletePreservation(id) {
+  if (!confirm('Delete this preservation entry?')) return;
   try {
     const r = await fetch(`/api/garden/preservation/${id}`, {method:'DELETE'});
     if (!r.ok) { toast('Delete failed', 'error'); return; }
@@ -2380,6 +2384,7 @@ async function addPlot() {
 }
 
 async function deletePlot(id) {
+  if (!confirm('Remove this garden plot?')) return;
   try {
     const resp = await fetch(`/api/garden/plots/${id}`, {method:'DELETE'});
     if (!resp.ok) { toast('Failed to remove plot', 'error'); return; }
@@ -2420,6 +2425,7 @@ async function addSeed() {
 }
 
 async function deleteSeed(id) {
+  if (!confirm('Remove this seed entry?')) return;
   try {
     const resp = await fetch(`/api/garden/seeds/${id}`, {method:'DELETE'});
     if (!resp.ok) { toast('Failed to remove seed', 'error'); return; }
@@ -2553,6 +2559,7 @@ async function addLivestock() {
 }
 
 async function deleteLivestock(id) {
+  if (!confirm('Remove this animal?')) return;
   try {
     const resp = await fetch(`/api/livestock/${id}`, {method:'DELETE'});
     if (!resp.ok) { toast('Failed to remove animal', 'error'); return; }

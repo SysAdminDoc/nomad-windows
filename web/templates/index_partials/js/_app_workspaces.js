@@ -1568,6 +1568,7 @@ function pollKBEmbed() {
 }
 
 async function deleteKBDoc(id) {
+  if (!confirm('Delete this document?')) return;
   try {
     await _workspaceFetchOk(`/api/kb/documents/${id}`, {method:'DELETE'}, 'Delete failed');
     toast('Document deleted', 'warning');

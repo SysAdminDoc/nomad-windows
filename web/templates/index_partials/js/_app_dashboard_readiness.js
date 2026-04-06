@@ -296,6 +296,7 @@ async function loadWidgetConfig() {
   }
   try {
     const resp = await fetch('/api/dashboard/widgets');
+    if (!resp.ok) throw new Error('widgets');
     const data = await resp.json();
     window._widgetConfig = data.widgets || null;
   } catch(e) {
@@ -967,11 +968,9 @@ async function saveVaultEntry() {
     const encrypted = await encryptVaultData(content);
     const editId = document.getElementById('vault-edit-id').value;
     if (editId) {
-      const r = await fetch(`/api/vault/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title, ...encrypted})});
-      if (!r.ok) { toast('Failed to save vault entry', 'error'); return; }
+      await apiPut('/api/vault/' + editId, {title, ...encrypted});
     } else {
-      const r = await fetch('/api/vault', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title, ...encrypted})});
-      if (!r.ok) { toast('Failed to save vault entry', 'error'); return; }
+      await apiPost('/api/vault', {title, ...encrypted});
     }
     toast('Entry encrypted and saved', 'success');
     hideVaultForm();

@@ -884,6 +884,7 @@ const TRUST_COLORS = {unknown:'var(--text-muted)', acquaintance:'var(--text-dim)
 async function loadCommunity() {
   try {
     const r = await fetch('/api/community');
+    if (!r.ok) return;
     _community = await r.json();
     renderCommunity();
   } catch(e) { console.warn('loadCommunity failed:', e.message); }
@@ -981,6 +982,7 @@ async function deleteCommunity(id) {
 async function loadRadiation() {
   try {
     const r = await fetch('/api/radiation');
+    if (!r.ok) return;
     const d = await r.json();
     renderRadiationDashboard(d);
     renderRadiationLog(d.readings);

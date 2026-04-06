@@ -271,8 +271,7 @@ async function checkYtdlpStatus() {
 
 async function installYtdlp() {
   try {
-    const r = await fetch('/api/ytdlp/install', {method:'POST'});
-    const d = await r.json();
+    const d = await apiPost('/api/ytdlp/install');
     if (d.status === 'already_installed') { toast('Downloader already installed', 'info'); checkYtdlpStatus(); return; }
     toast('Installing downloader...', 'info');
     setMediaVisibility('ytdlp-install-progress', true);
@@ -1440,6 +1439,7 @@ async function checkTorrentClient() {
   if (_torrentClientAvail !== null) return _torrentClientAvail;
   try {
     const r = await fetch('/api/torrent/available');
+    if (!r.ok) throw new Error('unavailable');
     const d = await r.json();
     _torrentClientAvail = !!d.available;
   } catch(e) { _torrentClientAvail = false; }
@@ -1471,6 +1471,7 @@ function stopTorrentPolling() {
 async function pollTorrentStatus() {
   try {
     const r = await fetch('/api/torrent/status');
+    if (!r.ok) return;
     const list = await r.json();
     _torrentStatuses = {};
     let anyActive = false;
@@ -1590,12 +1591,7 @@ async function downloadTorrent(torrentCardId) {
   }
 
   try {
-    const r = await fetch('/api/torrent/add', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({magnet: t.magnet, name: t.title, torrent_id: torrentCardId})
-    });
-    const data = await r.json();
+    const data = await apiPost('/api/torrent/add', {magnet: t.magnet, name: t.title, torrent_id: torrentCardId});
     if (data.error) {
       if (data.unavailable) {
         window.open(t.magnet, '_blank');
@@ -1913,8 +1909,7 @@ async function autoInstallYtdlp(channelUrl, channelName) {
   const results = document.getElementById('yt-video-results');
   results.innerHTML = mediaBrowserLoadingHtml('Installing video downloader…');
   try {
-    const r = await fetch('/api/ytdlp/install', {method:'POST'});
-    if (!r.ok) { toast('Failed to install downloader', 'error'); backToChannels(); return; }
+    await apiPost('/api/ytdlp/install');
     // Poll install progress
     for (let i = 0; i < 60; i++) {
       await new Promise(res => setTimeout(res, 2000));
@@ -2209,7 +2204,7 @@ async function downloadMediaURL() {
   const s = await _fetchJson('/api/ytdlp/status');
   if (!s.installed) {
     toast('Installing downloader first...', 'info');
-    await fetch('/api/ytdlp/install', {method:'POST'});
+    try { await apiPost('/api/ytdlp/install'); } catch(e) { toast('Install failed', 'error'); return; }
     for (let i = 0; i < 60; i++) {
       await new Promise(r => setTimeout(r, 2000));
       const p = await _fetchJson('/api/ytdlp/install-progress');
@@ -3176,7 +3171,7 @@ async function importDeadDrop() {
     if (!payload || typeof payload !== 'object') { toast('Invalid dead drop file', 'error'); input.value = ''; return; }
     input.value = '';
     // Import to DB
-    await fetch('/api/deaddrop/import', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({payload})});
+    await apiPost('/api/deaddrop/import', {payload});
     // Try to decrypt
     const secret = prompt('Enter the shared secret to decrypt this message:');
     if (!secret) { toast('Message imported but not decrypted', 'info'); return; }
@@ -3879,9 +3874,9 @@ function showInvQuickAdd() {
 }
 
 async function quickAddInvItem(item, control) {
-  const r = await fetch('/api/inventory', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name:item.name, category:item.cat, unit:item.unit, quantity:item.qty, daily_usage:item.daily||0})});
-  if (!r.ok) { toast('Failed to add item', 'error'); return; }
+  try {
+    await apiPost('/api/inventory', {name:item.name, category:item.cat, unit:item.unit, quantity:item.qty, daily_usage:item.daily||0});
+  } catch(e) { toast('Failed to add item', 'error'); return; }
   if (control) {
     control.style.background = 'var(--green-dim)';
     control.style.color = 'var(--green)';

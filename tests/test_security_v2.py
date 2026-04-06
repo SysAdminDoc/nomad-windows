@@ -165,3 +165,33 @@ class TestMotionDetection:
         resp = client.post('/api/security/motion/start/1')
         # Either 503 (no cv2) or 404 (no camera found) are valid
         assert resp.status_code in (503, 404)
+
+    def test_motion_configure_valid(self, client):
+        resp = client.post('/api/security/motion/configure', json={
+            'threshold': 50,
+            'check_interval': 10,
+            'cooldown': 30,
+        })
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['config']['threshold'] == 50
+        assert data['config']['check_interval'] == 10
+        assert data['config']['cooldown'] == 30
+
+    def test_motion_configure_invalid_type(self, client):
+        resp = client.post('/api/security/motion/configure', json={
+            'threshold': 'not_a_number',
+        })
+        assert resp.status_code == 400
+
+    def test_motion_configure_clamps_values(self, client):
+        resp = client.post('/api/security/motion/configure', json={
+            'threshold': 999,
+            'check_interval': 0,
+            'cooldown': 1,
+        })
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['config']['threshold'] == 100
+        assert data['config']['check_interval'] == 1
+        assert data['config']['cooldown'] == 5

@@ -53,23 +53,25 @@ if (_startupWorkspaceTab === 'situation-room') {
 }
 // Defer secondary workspace data so non-home launches do not fetch hidden panels.
 setTimeout(() => {
+  const _c = e => console.warn('[Init]', e.message || e);
   if (isWorkspaceTabActive('services')) {
-    loadServicesWorkspaceCore();
-    loadWidgetConfig().then(() => startLiveDashPolling());
-    loadNeedsOverview();
-    loadGettingStarted();
-    loadCmdDashboard();
-    loadCmdChecklists();
+    Promise.resolve(loadServicesWorkspaceCore()).catch(_c);
+    loadWidgetConfig().then(() => startLiveDashPolling()).catch(_c);
+    Promise.resolve(loadNeedsOverview()).catch(_c);
+    Promise.resolve(loadGettingStarted()).catch(_c);
+    Promise.resolve(loadCmdDashboard()).catch(_c);
+    Promise.resolve(loadCmdChecklists()).catch(_c);
   }
-  if (isWorkspaceTabActive('settings')) refreshSettingsWorkspacePanels();
+  if (isWorkspaceTabActive('settings')) Promise.resolve(refreshSettingsWorkspacePanels()).catch(_c);
 }, 500);
 setTimeout(() => {
+  const _c = e => console.warn('[Init]', e.message || e);
   if (isWorkspaceTabActive('services')) {
-    loadActivity();
-    loadContentSummary();
+    Promise.resolve(loadActivity()).catch(_c);
+    Promise.resolve(loadContentSummary()).catch(_c);
   }
-  if (hasVisibleStatusStrip()) updateStatusStrip();
-  updateTabBadges();
+  if (hasVisibleStatusStrip()) Promise.resolve(updateStatusStrip()).catch(_c);
+  Promise.resolve(updateTabBadges()).catch(_c);
 }, 1000);
 const shellRuntime = window.NomadShellRuntime;
 if (shellRuntime) {
@@ -4114,11 +4116,11 @@ if (aiMemoryInput) {
 setTimeout(() => {
   const activeWs = document.querySelector('.workspace-panel.active');
   if (activeWs) {
-    loadTasks();
-    loadWatchSchedules();
+    loadTasks().catch(e => console.warn('[Init] loadTasks:', e.message));
+    loadWatchSchedules().catch(e => console.warn('[Init] loadWatchSchedules:', e.message));
   }
-  loadSunData();
-  loadSensorDevices();
+  loadSunData().catch(e => console.warn('[Init] loadSunData:', e.message));
+  loadSensorDevices().catch(e => console.warn('[Init] loadSensorDevices:', e.message));
 }, 2000);
 
 // === DTMF Tone Generator ===

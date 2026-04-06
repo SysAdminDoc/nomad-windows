@@ -422,8 +422,11 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **Path traversal fix** — pmtiles tar extract in maps.py was missing `normcase()` and `os.sep` suffix on startswith check; Windows case-insensitive bypass
   - **Error message leakage** — 16 routes/threads plugged: self-test endpoint leaked str(e) in 5 paths + filesystem paths for binaries; map download leaked raw exception; media.py background threads (yt-dlp update/install, video/audio/book downloads, FFmpeg install) all leaked str(e) via polled state dicts; services.py update download; kb.py embedding thread
   - **Query bounds** — 9 unbounded SELECT queries capped: comms.py (lan_presence 500, federation_peers 500), media.py (playlists 500), situation_room.py (markets 500×2, monitors 200, custom_feeds 200, webhooks 100), notes.py (templates 500)
-  - **51 raw fetch→api wrapper conversions** — POST/PUT/DELETE calls across 6 JS files replaced with apiPost/apiPut/apiDelete wrappers: workspace_memory (7), dashboard_readiness (5), ops_support (2), prep_dashboards (4), prep_ops_mapping (5), init_runtime (13), media_maps_sync (15). Total api wrapper calls: 99 (was 47)
-  - **Audit confirms** — SQL injection: zero new findings; bare int()/float(): all wrapped; JSON.parse: all guarded; path traversal: all normcase+os.sep; XSS: all escaped; all 647 tests pass
+  - **62 raw fetch→api wrapper conversions** — POST/PUT/DELETE calls across 8 JS files replaced with apiPost/apiPut/apiDelete wrappers: workspace_memory (7), dashboard_readiness (8), ops_support (2), prep_dashboards (4), prep_ops_mapping (5), init_runtime (13), media_maps_sync (20), workspaces (3). Total api wrapper calls: 109 (was 47)
+  - **XSS fixes** — channel name in browse loading message escaped (could contain HTML via catalog data), solar forecast value defense-in-depth escaping. 7 findings triaged from automated scan — 5 confirmed as false positives (hardcoded constants in calculators, tour steps, YouTube encodeURIComponent).
+  - **system.py self-test info leak** — data directory path and str(e) in 3 places replaced with generic messages
+  - **16 new tests** — test_audit_v631.py: self-test path leakage, query bounds, error message prevention, PUT 404, DELETE 404. Total: 663 tests (was 647)
+  - **Audit confirms** — SQL injection: zero vulnerabilities (3 independent agent scans); bare int()/float(): all wrapped; JSON.parse: all guarded; path traversal: all normcase+os.sep; XSS: all innerHTML escaped; 663 tests pass
 
 ## Run / Build
 ```bash

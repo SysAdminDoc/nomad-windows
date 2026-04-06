@@ -127,7 +127,7 @@ async function saveSitBoard() {
   const levels = {};
   document.querySelectorAll('.sit-cell').forEach(c => levels[c.dataset.domain] = c.dataset.level);
   try {
-    await fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({sit_board: JSON.stringify(levels)})});
+    await apiPut('/api/settings', {sit_board: JSON.stringify(levels)});
   } catch(e) { toast('Failed to save situation board', 'error'); }
 }
 
@@ -212,18 +212,18 @@ async function logIncident() {
   if (!desc) { toast('Enter an event description', 'warning'); return; }
   const severity = document.getElementById('inc-severity').value;
   const category = document.getElementById('inc-category').value;
-  const resp = await fetch('/api/incidents', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({severity, category, description: desc})});
-  if (!resp.ok) { toast('Failed to log event', 'error'); return; }
-  document.getElementById('inc-desc').value = '';
-  toast('Event logged', severity === 'critical' ? 'error' : severity === 'alert' ? 'warning' : 'success');
+  try {
+    await apiPost('/api/incidents', {severity, category, description: desc});
+    document.getElementById('inc-desc').value = '';
+    toast('Event logged', severity === 'critical' ? 'error' : severity === 'alert' ? 'warning' : 'success');
+  } catch(e) { toast('Failed to log event', 'error'); return; }
   loadIncidents();
 }
 
 async function deleteIncident(id) {
   if (!confirm('Delete this incident entry?')) return;
   try {
-    const r = await fetch(`/api/incidents/${id}`, {method:'DELETE'});
-    if (!r.ok) throw new Error('Delete failed');
+    await apiDelete('/api/incidents/' + id);
     loadIncidents();
   } catch(e) { toast('Failed to delete incident', 'error'); }
 }
@@ -231,11 +231,10 @@ async function deleteIncident(id) {
 async function clearIncidents() {
   if (!confirm('Clear all incident log entries? This cannot be undone.')) return;
   try {
-    const r = await fetch('/api/incidents/clear', {method:'POST'});
-    if (!r.ok) { toast('Failed to clear incidents', 'error'); return; }
+    await apiPost('/api/incidents/clear');
     toast('Incident log cleared', 'warning');
     loadIncidents();
-  } catch(e) { console.error(e); toast('Failed to clear incidents', 'error'); }
+  } catch(e) { toast('Failed to clear incidents', 'error'); }
 }
 
 /* ─── Watch Schedule ─── */

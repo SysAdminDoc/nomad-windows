@@ -883,20 +883,20 @@ async function sendBroadcast() {
   const msg = document.getElementById('bcast-msg').value.trim();
   if (!msg) { toast('Enter a message', 'warning'); return; }
   const severity = document.getElementById('bcast-severity').value;
-  const resp = await fetch('/api/broadcast', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({message:msg, severity})});
-  if (!resp.ok) { toast('Failed to send broadcast', 'error'); return; }
-  toast('Broadcast sent to all LAN devices', 'warning');
-  document.getElementById('bcast-msg').value = '';
+  try {
+    await apiPost('/api/broadcast', {message: msg, severity});
+    toast('Broadcast sent to all LAN devices', 'warning');
+    document.getElementById('bcast-msg').value = '';
+  } catch(e) { toast('Failed to send broadcast', 'error'); }
 }
 
 async function clearBroadcast() {
   try {
-    const resp = await fetch('/api/broadcast/clear', {method:'POST'});
-    if (!resp.ok) { toast('Failed to clear broadcast', 'error'); return; }
+    await apiPost('/api/broadcast/clear');
     toast('Broadcast cleared');
     const banner = document.getElementById('broadcast-banner');
     if (banner) banner.style.display = 'none';
-  } catch(e) { console.error(e); toast('Failed to clear broadcast', 'error'); }
+  } catch(e) { toast('Failed to clear broadcast', 'error'); }
 }
 
 let _dismissedBroadcastTs = null;

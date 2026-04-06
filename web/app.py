@@ -395,9 +395,11 @@ def create_app():
         remote = request.remote_addr or ''
         if remote in ('127.0.0.1', '::1', 'localhost'):
             return
+        import hmac as _hmac
         from flask import session
         token = request.headers.get('X-CSRF-Token', '')
-        if not token or token != session.get('csrf_token'):
+        expected = session.get('csrf_token', '')
+        if not token or not expected or not _hmac.compare_digest(token, expected):
             from flask import abort
             abort(403, 'CSRF token missing or invalid')
 

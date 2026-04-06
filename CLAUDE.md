@@ -418,6 +418,13 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **Unused import** — removed `get_db_path` from federation.py
   - **Comprehensive audit findings**: SQL injection — zero new findings across 600+ routes and 16 blueprints; all sort_by fields validated against allowlists (CONTACT_SORT_FIELDS, LIVESTOCK_SORT_FIELDS, SKILL_SORT_FIELDS, EQUIPMENT_SORT_FIELDS); federation sync-receive validates table names against ALLOWED set and column names against PRAGMA table_info; conflict merge validates against MERGE_ALLOWED + regex; XSS — all innerHTML in 16 JS files uses escapeHtml/escapeAttr; situation room news/events/map popups all escaped; media rendering (video/audio/book/channel cards) all escaped; SSRF — all outbound HTTP in federation validated with ipaddress module; path traversal — all file-serving routes use normcase+normpath+startswith+os.sep; bare int()/float() — all wrapped in try-except across all blueprints; JSON.parse(localStorage) — zero unprotected calls in main app JS (all use readJsonStorage/safeJsonParse); SSE — bounded at MAX_SSE_CLIENTS with stale cleanup; service worker — SITROOM_CACHE has TTL eviction + 200 entry cap; all intervals properly cleared before re-setting
 
+- **v6.31 — Deep Codebase Audit Round 10 (7+ commits, 647 tests pass)**:
+  - **Path traversal fix** — pmtiles tar extract in maps.py was missing `normcase()` and `os.sep` suffix on startswith check; Windows case-insensitive bypass
+  - **Error message leakage** — 16 routes/threads plugged: self-test endpoint leaked str(e) in 5 paths + filesystem paths for binaries; map download leaked raw exception; media.py background threads (yt-dlp update/install, video/audio/book downloads, FFmpeg install) all leaked str(e) via polled state dicts; services.py update download; kb.py embedding thread
+  - **Query bounds** — 9 unbounded SELECT queries capped: comms.py (lan_presence 500, federation_peers 500), media.py (playlists 500), situation_room.py (markets 500×2, monitors 200, custom_feeds 200, webhooks 100), notes.py (templates 500)
+  - **51 raw fetch→api wrapper conversions** — POST/PUT/DELETE calls across 6 JS files replaced with apiPost/apiPut/apiDelete wrappers: workspace_memory (7), dashboard_readiness (5), ops_support (2), prep_dashboards (4), prep_ops_mapping (5), init_runtime (13), media_maps_sync (15). Total api wrapper calls: 99 (was 47)
+  - **Audit confirms** — SQL injection: zero new findings; bare int()/float(): all wrapped; JSON.parse: all guarded; path traversal: all normcase+os.sep; XSS: all escaped; all 647 tests pass
+
 ## Run / Build
 ```bash
 python nomad.py                    # Run from source (any platform)

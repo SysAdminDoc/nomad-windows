@@ -164,7 +164,7 @@ function renderMapPopupShell({ title, meta = '', facts = [], notes = '', section
 async function loadWaypoints() {
   if (!_map) return;
   try {
-    const waypoints = await (await fetch('/api/waypoints')).json();
+    const waypoints = await apiFetch('/api/waypoints');
     // Remove existing waypoint markers
     if (window._waypointMarkers) window._waypointMarkers.forEach(m => m.remove());
     window._waypointMarkers = [];

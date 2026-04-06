@@ -5,7 +5,7 @@ async function loadContacts() {
   let url = '/api/contacts';
   if (q) url += `?q=${encodeURIComponent(q)}`;
   try {
-    const contacts = await (await fetch(url)).json();
+    const contacts = await apiFetch(url);
     if (!q) _cachedContacts = contacts;
     const el = document.getElementById('contacts-grid');
     if (!contacts.length) {
@@ -291,7 +291,7 @@ async function loadLanPresence() {
 
 async function loadLanMessages() {
   try {
-    const msgs = await (await fetch('/api/lan/messages')).json();
+    const msgs = await apiFetch('/api/lan/messages');
     renderLanMessages(msgs);
     if (msgs.length) _lanLastId = msgs[msgs.length-1].id;
   } catch(e) {}
@@ -299,7 +299,7 @@ async function loadLanMessages() {
 
 async function pollLanMessages() {
   try {
-    const msgs = await (await fetch(`/api/lan/messages?after=${_lanLastId}`)).json();
+    const msgs = await apiFetch(`/api/lan/messages?after=${_lanLastId}`);
     if (msgs.length) {
       const el = document.getElementById('lan-chat-messages');
       for (const m of msgs) {
@@ -339,10 +339,7 @@ async function sendLanMsg() {
   const encrypt = document.getElementById('lan-encrypt-toggle')?.checked;
   const finalContent = encrypt ? await encryptLanMessage(content) : content;
   try {
-    const msg = await (await fetch('/api/lan/messages', {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({sender, content: finalContent, channel: document.getElementById('lan-channel')?.value || ''})
-    })).json();
+    const msg = await apiPost('/api/lan/messages', {sender, content: finalContent, channel: document.getElementById('lan-channel')?.value || ''});
     const el = document.getElementById('lan-chat-messages');
     // Remove empty state if present
     if (el.querySelector('.utility-empty-state')) el.innerHTML = '';

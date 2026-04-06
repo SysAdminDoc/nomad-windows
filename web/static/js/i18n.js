@@ -16,8 +16,7 @@ const NomadI18n = {
             this._fallback = bootstrap.fallback || (this._lang === 'en' ? this._translations : {});
         } else {
             try {
-                const resp = await fetch('/api/i18n/language');
-                const data = await resp.json();
+                const data = await apiFetch('/api/i18n/language');
                 this._lang = data.language || 'en';
             } catch(e) {
                 this._lang = 'en';
@@ -64,11 +63,7 @@ const NomadI18n = {
 
     async setLanguage(lang) {
         try {
-            await fetch('/api/i18n/language', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({language: lang})
-            });
+            await apiPost('/api/i18n/language', {language: lang});
         } catch(e) { console.warn('[i18n] Language save failed:', e.message); }
         this._lang = lang;
         await this.loadTranslations(lang);

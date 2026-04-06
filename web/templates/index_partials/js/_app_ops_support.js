@@ -1341,7 +1341,7 @@ function generateQR(text) {
 /* ─── Waypoint Distance Matrix UI ─── */
 async function loadWPDistances() {
   try {
-    const d = await (await fetch('/api/waypoints/distances')).json();
+    const d = await apiFetch('/api/waypoints/distances');
     const el = document.getElementById('wp-distance-matrix');
     if (!d.points.length) { el.innerHTML = '<span class="runtime-empty-note">No waypoints saved.</span>'; return; }
     let html = '<table class="freq-table"><thead><tr><th></th>';
@@ -1370,7 +1370,7 @@ async function loadServiceQuickLinks(servicesData = null) {
   try {
     const services = Array.isArray(servicesData)
       ? servicesData
-      : await (await fetch('/api/services')).json();
+      : await apiFetch('/api/services');
     const running = services.filter(s => s.running && s.port);
     if (!running.length) {
       el.innerHTML = '';
@@ -2297,7 +2297,7 @@ async function lookupZone() {
   const result = document.getElementById('zone-result');
   if (!result) return;
   try {
-    const z = await (await fetch(`/api/garden/zone?lat=${lat}`)).json();
+    const z = await apiFetch(`/api/garden/zone?lat=${lat}`);
     result.style.display = 'block';
     result.innerHTML = `<strong>Zone ${escapeHtml(String(z.zone))}</strong> with last frost around ${escapeHtml(z.last_frost || 'unknown')} and first frost around ${escapeHtml(z.first_frost || 'unknown')}.`;
   } catch(e) {
@@ -2310,7 +2310,7 @@ async function loadPlots() {
   const el = document.getElementById('plots-list');
   if (el) el.innerHTML = Array(3).fill('<div class="skeleton skeleton-card prep-garden-skeleton"></div>').join('');
   try {
-    const plots = await (await fetch('/api/garden/plots')).json();
+    const plots = await apiFetch('/api/garden/plots');
     const sel = document.getElementById('gh-plot');
     sel.innerHTML = '<option value="">-- Any --</option>' + plots.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     if (!plots.length) { el.innerHTML = prepEmptyBlock('No garden plots yet. Add one above to start planning beds and harvests.'); return; }
@@ -2342,7 +2342,7 @@ async function deletePlot(id) { await fetch(`/api/garden/plots/${id}`, {method:'
 
 async function loadSeeds() {
   try {
-    const seeds = await (await fetch('/api/garden/seeds')).json();
+    const seeds = await apiFetch('/api/garden/seeds');
     const el = document.getElementById('seeds-list');
     if (!seeds.length) { el.innerHTML = prepEmptyBlock('No seeds in inventory yet. Add seeds above to build your library.'); return; }
     el.innerHTML = '<div class="prep-table-wrap"><table class="freq-table prep-data-table"><thead><tr><th>Species</th><th>Variety</th><th>Qty</th><th>Year</th><th>Viability</th><th>Season</th><th>Days</th><th></th></tr></thead><tbody>' +
@@ -2428,7 +2428,7 @@ async function loadPestGuide() {
 
 async function loadHarvests() {
   try {
-    const harvests = await (await fetch('/api/garden/harvests')).json();
+    const harvests = await apiFetch('/api/garden/harvests');
     const el = document.getElementById('harvest-list');
     if (!harvests.length) { el.innerHTML = prepEmptyBlock('No harvests logged yet. Record output as beds start producing.'); return; }
     const totalLbs = harvests.filter(h => h.unit === 'lbs').reduce((s, h) => s + h.quantity, 0);
@@ -2454,7 +2454,7 @@ async function logHarvest() {
 
 async function loadLivestockList() {
   try {
-    const animals = await (await fetch('/api/livestock')).json();
+    const animals = await apiFetch('/api/livestock');
     const el = document.getElementById('livestock-list');
     if (!animals.length) { el.innerHTML = prepEmptyBlock('No livestock registered yet. Add animals above to track the herd.'); return; }
     const bySpecies = {};
@@ -2576,8 +2576,7 @@ async function startScenario(id) {
   _scenarioComplications = [];
   // Create DB record
   try {
-    const r = await (await fetch('/api/scenarios', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({type: id, title: _activeScenario.title})})).json();
+    const r = await apiPost('/api/scenarios', {type: id, title: _activeScenario.title});
     _scenarioDbId = r.id;
   } catch(e) { _scenarioDbId = null; }
   document.getElementById('scenario-selector').style.display = 'none';
@@ -2875,7 +2874,7 @@ let _patients = [];
 
 async function loadPatients() {
   try {
-    _patients = await (await fetch('/api/patients')).json();
+    _patients = await apiFetch('/api/patients');
     const el = document.getElementById('patient-list');
     if (!_patients.length) {
       el.innerHTML = prepEmptyBlock('No patients registered. Click "+ Add Patient" or "Import from Contacts" to start.');
@@ -3153,7 +3152,7 @@ async function logVitals() {
 
 async function loadVitals(pid) {
   try {
-    const vitals = await (await fetch(`/api/patients/${pid}/vitals`)).json();
+    const vitals = await apiFetch(`/api/patients/${pid}/vitals`);
     const tbody = document.getElementById('vitals-tbody');
     if (!vitals.length) { tbody.innerHTML = '<tr><td colspan="9" class="prep-table-empty">No vitals recorded. Use the form above to log.</td></tr>'; return; }
     tbody.innerHTML = vitals.map(v => {

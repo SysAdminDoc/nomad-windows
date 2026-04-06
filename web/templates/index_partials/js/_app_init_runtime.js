@@ -690,8 +690,7 @@ const PROF_COLORS = {none:'var(--text-muted)', basic:'var(--orange)', intermedia
 const PROF_LABELS = {none:'None', basic:'Basic', intermediate:'Intermediate', expert:'Expert'};
 async function loadSkills(filterCat) {
   try {
-    const resp = await fetch('/api/skills');
-    _skills = await resp.json();
+    _skills = await apiFetch('/api/skills');
     renderSkills(filterCat);
     renderSkillSummary();
     renderSkillFilterBtns();
@@ -784,15 +783,13 @@ async function seedDefaultSkills() {
 let _ammo = [];
 async function loadAmmo() {
   try {
-    const resp = await fetch('/api/ammo');
-    _ammo = await resp.json();
+    _ammo = await apiFetch('/api/ammo');
     renderAmmo();
     loadAmmoSummary();
   } catch(e) { console.warn('loadAmmo failed:', e.message); }
 }
 async function loadAmmoSummary() {
-  const r = await fetch('/api/ammo/summary');
-  const d = await r.json();
+  const d = await apiFetch('/api/ammo/summary');
   const bar = document.getElementById('ammo-summary-bar');
   if (bar) bar.innerHTML = `Total: <strong>${d.total.toLocaleString()} rounds</strong> across ${d.by_caliber.length} calibers`;
   const cal = document.getElementById('ammo-by-caliber');
@@ -1454,7 +1451,7 @@ async function loadElevationProfile(routeId) {
 /* ─── Elevation Profile Chart ─── */
 async function showElevationProfile(routeId) {
   try {
-    const data = await (await fetch(`/api/maps/elevation-profile/${routeId}`)).json();
+    const data = await apiFetch(`/api/maps/elevation-profile/${routeId}`);
     if (data.error) { toast(data.error, 'error'); return; }
     if (!data.points || !data.points.length) { toast('No elevation data — add waypoints with elevation to this route', 'warning'); return; }
 
@@ -3616,7 +3613,7 @@ async function createWatchSchedule() {
 
 async function viewWatchSchedule(id) {
   try {
-    const s = await (await fetch(`/api/watch-schedules/${id}`)).json();
+    const s = await apiFetch(`/api/watch-schedules/${id}`);
     if (s.error) { toast(s.error, 'error'); return; }
     let schedule = safeJsonParse(s.schedule_json, []);
     let personnel = safeJsonParse(s.personnel, []);
@@ -3666,7 +3663,7 @@ async function loadSunData() {
       if (wps.length) { lat = wps[0].latitude; lng = wps[0].longitude; }
     }
     if (!lat || !lng) return;
-    _sunData = await (await fetch(`/api/sun?lat=${lat}&lng=${lng}`)).json();
+    _sunData = await apiFetch(`/api/sun?lat=${lat}&lng=${lng}`);
   } catch(e) {}
 }
 
@@ -3799,8 +3796,7 @@ async function executeCSVImport() {
     return mapped;
   });
   try {
-    const resp = await fetch('/api/import/csv', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ table, rows }) });
-    const result = await resp.json();
+    const result = await apiPost('/api/import/csv', { table, rows });
     toast(`Imported ${result.imported || rows.length} rows into ${table}`, 'success');
     closeCSVImportModal();
   } catch(e) { toast('Import failed: ' + e.message, 'error'); }
@@ -3867,8 +3863,7 @@ async function loadCommsStatusBoard() {
 async function generateAISitrep() {
   toast('Generating AI SITREP...', 'info');
   try {
-    const resp = await fetch('/api/ai/sitrep', { method: 'POST' });
-    const data = await resp.json();
+    const data = await apiPost('/api/ai/sitrep', {});
     const content = data.sitrep || data.content || data.text || JSON.stringify(data, null, 2);
     document.getElementById('ai-sitrep-content').textContent = content;
     document.getElementById('ai-sitrep-modal').style.display = 'flex';
@@ -3928,7 +3923,7 @@ function renderSerialPortRows(ports) {
 
 async function loadAIMemory() {
   try {
-    const facts = await (await fetch('/api/ai/memory')).json();
+    const facts = await apiFetch('/api/ai/memory');
     const el = document.getElementById('ai-memory-list');
     if (!facts || !facts.length) { el.innerHTML = renderSettingsInlineStatus('No memory facts stored.', 'muted'); return; }
     el.innerHTML = renderAIMemoryFacts(facts);
@@ -3959,7 +3954,7 @@ async function runSelfTest() {
   const el = document.getElementById('system-health-results');
   el.innerHTML = renderSettingsInlineStatus('Running self-test…', 'muted');
   try {
-    const results = await (await fetch('/api/system/self-test', { method: 'POST' })).json();
+    const results = await apiPost('/api/system/self-test', {});
     const checks = results.checks || results.results || [];
     if (Array.isArray(checks)) {
       el.innerHTML = renderSystemHealthChecks(checks);
@@ -3974,7 +3969,7 @@ async function runDBCheck() {
   const el = document.getElementById('system-health-results');
   el.innerHTML = renderSettingsInlineStatus('Checking database integrity…', 'muted');
   try {
-    const result = await (await fetch('/api/system/db-check', { method: 'POST' })).json();
+    const result = await apiPost('/api/system/db-check', {});
     const ok = result.integrity === 'ok' || result.status === 'ok' || result.result === 'ok';
     el.innerHTML = renderSettingsInlineStatus(ok ? 'Database integrity check passed.' : `Database integrity issue: ${escapeHtml(JSON.stringify(result))}`, ok ? 'success' : 'error');
     toast(ok ? 'Database OK' : 'Database issue detected', ok ? 'success' : 'error');
@@ -3985,7 +3980,7 @@ async function runDBVacuum() {
   const el = document.getElementById('system-health-results');
   el.innerHTML = renderSettingsInlineStatus('Optimizing database…', 'muted');
   try {
-    const result = await (await fetch('/api/system/db-vacuum', { method: 'POST' })).json();
+    const result = await apiPost('/api/system/db-vacuum', {});
     const detail = result.size_before ? `Size: ${result.size_before} -> ${result.size_after}` : (result.message || 'Done');
     el.innerHTML = renderSettingsInlineStatus(`Database optimized. ${detail}`, 'success');
     toast('Database optimized', 'success');

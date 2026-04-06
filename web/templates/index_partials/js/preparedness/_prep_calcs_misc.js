@@ -160,7 +160,7 @@ function updateCalTracker() {
 /* ─── Skills Matrix ─── */
 async function loadSkillsMatrix() {
   try {
-    const contacts = await (await fetch('/api/contacts')).json();
+    const contacts = await apiFetch('/api/contacts');
     if (!contacts.length) { document.getElementById('skills-matrix').innerHTML = '<div class="text-muted text-size-12">Add contacts with skills to see the matrix.</div>'; return; }
     // Extract all unique skills
     const allSkills = new Set();
@@ -213,7 +213,7 @@ async function loadPace() {
     let pace = readJsonStorage(localStorage, 'nomad-pace-plan', {});
     if (!Object.keys(pace).length) {
       try {
-        const settings = await (await fetch('/api/settings')).json();
+        const settings = await apiFetch('/api/settings');
         if (settings.pace_plan) {
           pace = safeJsonParse(settings.pace_plan, {});
           localStorage.setItem('nomad-pace-plan', JSON.stringify(pace));

@@ -1866,7 +1866,10 @@ def create_app():
             raw = file.read(2 * 1024 * 1024 + 1)
             if len(raw) > 2 * 1024 * 1024:
                 return jsonify({'error': 'File exceeds 2MB limit'}), 400
-            data = json.loads(raw.decode('utf-8'))
+            try:
+                data = json.loads(raw.decode('utf-8'))
+            except (json.JSONDecodeError, UnicodeDecodeError):
+                return jsonify({'error': 'Invalid JSON file'}), 400
             if data.get('type') != 'nomad_checklist':
                 return jsonify({'error': 'Invalid checklist file'}), 400
             db = get_db()
@@ -4237,8 +4240,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/nukemap/<path:filepath>')
     def nukemap_serve(filepath='index.html'):
         from flask import send_from_directory
-        full_path = os.path.normpath(os.path.join(_nukemap_dir, filepath))
-        if not os.path.normcase(full_path).startswith(os.path.normcase(os.path.normpath(_nukemap_dir))):
+        full_path = os.path.realpath(os.path.join(_nukemap_dir, filepath))
+        base_dir = os.path.realpath(_nukemap_dir)
+        if not full_path.startswith(base_dir + os.sep) and full_path != base_dir:
             return jsonify({'error': 'Forbidden'}), 403
         if not os.path.isfile(full_path):
             log.warning(f'NukeMap file not found: {full_path}')

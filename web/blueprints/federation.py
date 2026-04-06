@@ -391,8 +391,8 @@ def api_node_sync_receive():
                 try:
                     db.execute(f'INSERT INTO {tname} ({",".join(cols)}) VALUES ({placeholders})', vals)
                     count += 1
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.warning('Federation sync insert failed for %s: %s', tname, e)
             imported[tname] = count
             total += count
         db.commit()

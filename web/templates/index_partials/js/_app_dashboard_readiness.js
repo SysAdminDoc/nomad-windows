@@ -788,8 +788,8 @@ async function loadCmdDashboard() {
     `;
     // Append critical alerts from parallel fetch
     let critHtml = '';
-    if (crit.critical_burn.length) critHtml += `<div class="cmd-dashboard-note-line text-danger">Running low: ${crit.critical_burn.map(i => `${i.name} (${i.days_left}d)`).join(', ')}</div>`;
-    if (crit.expiring_items.length) critHtml += `<div class="cmd-dashboard-note-line text-orange">Expiring: ${crit.expiring_items.map(i => `${i.name} (${i.expiration})`).join(', ')}</div>`;
+    if (crit.critical_burn.length) critHtml += `<div class="cmd-dashboard-note-line text-danger">Running low: ${crit.critical_burn.map(i => `${escapeHtml(i.name)} (${escapeHtml(String(i.days_left))}d)`).join(', ')}</div>`;
+    if (crit.expiring_items.length) critHtml += `<div class="cmd-dashboard-note-line text-orange">Expiring: ${crit.expiring_items.map(i => `${escapeHtml(i.name)} (${escapeHtml(i.expiration)})`).join(', ')}</div>`;
     if (critHtml) el.innerHTML += `<div class="cmd-dashboard-note">${critHtml}</div>`;
   } catch(e) { console.warn('loadCmdDashboard failed:', e); }
 }

@@ -1855,9 +1855,9 @@ Adult: 0.3mg (EpiPen) | Child: 0.15mg (EpiPen Jr) | Infant: 0.01mg/kg</li>
                 else:
                     failed.append({'node': peer['node_name'] or peer['node_id'],
                                    'error': f'HTTP {resp.status_code}'})
-            except Exception as e:
+            except Exception:
                 failed.append({'node': peer['node_name'] or peer['node_id'],
-                               'error': str(e)})
+                               'error': 'Connection failed'})
 
         log_activity('alert_relayed', 'federation',
                      f'Alert "{alert_title}" sent to {sent}/{len(peers)} peers')

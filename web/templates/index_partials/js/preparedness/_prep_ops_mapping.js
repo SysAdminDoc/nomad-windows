@@ -314,9 +314,9 @@ async function printFullCard() {
   let contacts = [], summary = {categories:[]}, trend = {};
   try {
     [contacts, summary, trend] = await Promise.all([
-      fetch('/api/contacts').then(r=>r.json()).catch(()=>[]),
-      fetch('/api/inventory/summary').then(r=>r.json()).catch(()=>({categories:[]})),
-      fetch('/api/weather/trend').then(r=>r.json()).catch(()=>({})),
+      apiFetch('/api/contacts').catch(()=>[]),
+      apiFetch('/api/inventory/summary').catch(()=>({categories:[]})),
+      apiFetch('/api/weather/trend').catch(()=>({})),
     ]);
   } catch(e) { toast('Failed to load data for print card', 'error'); return; }
   // Get localStorage data
@@ -327,7 +327,7 @@ async function printFullCard() {
   let sit = readJsonStorage(localStorage, 'nomad-sit-board', {});
   // Also try settings
   try {
-    const s = await fetch('/api/settings').then(r=>r.json());
+    const s = await apiFetch('/api/settings');
     if (s.sit_board) Object.assign(sit, safeJsonParse(s.sit_board, {}));
   } catch(e) {}
 

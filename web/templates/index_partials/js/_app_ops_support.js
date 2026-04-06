@@ -2713,8 +2713,9 @@ async function scenarioChoose(phaseIdx, choiceIdx, choiceLabel) {
 
   // Save to DB
   if (_scenarioDbId) {
-    fetch(`/api/scenarios/${_scenarioDbId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({current_phase: phaseIdx + 1, decisions: _scenarioDecisions, complications: _scenarioComplications})});
+    apiPut(`/api/scenarios/${_scenarioDbId}`,
+      {current_phase: phaseIdx + 1, decisions: _scenarioDecisions, complications: _scenarioComplications})
+      .catch(e => console.warn('[Scenario] save failed:', e.message));
   }
 
   // 50% chance of AI complication between phases (not on last phase)
@@ -2804,10 +2805,11 @@ async function completeScenario() {
 
     // Save final state
     if (_scenarioDbId) {
-      fetch(`/api/scenarios/${_scenarioDbId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({status:'complete', current_phase: _activeScenario.phases.length,
+      apiPut(`/api/scenarios/${_scenarioDbId}`,
+        {status:'complete', current_phase: _activeScenario.phases.length,
           decisions: _scenarioDecisions, complications: _scenarioComplications,
-          score, aar_text: aar.aar, completed_at: new Date().toISOString()})});
+          score, aar_text: aar.aar, completed_at: new Date().toISOString()})
+        .catch(e => console.warn('[Scenario] final save failed:', e.message));
     }
 
     el.innerHTML = `
@@ -2853,8 +2855,9 @@ async function completeScenario() {
 
 function abandonScenario() {
   if (_scenarioDbId) {
-    fetch(`/api/scenarios/${_scenarioDbId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({status:'abandoned', decisions: _scenarioDecisions, complications: _scenarioComplications})});
+    apiPut(`/api/scenarios/${_scenarioDbId}`,
+      {status:'abandoned', decisions: _scenarioDecisions, complications: _scenarioComplications})
+      .catch(e => console.warn('[Scenario] abandon save failed:', e.message));
   }
   closeScenario();
   toast('Scenario abandoned', 'warning');
@@ -3062,8 +3065,8 @@ async function addPatientFromContacts() {
     if (!contacts.length) { toast('No contacts found. Add contacts first.', 'warning'); return; }
     const newContacts = contacts.filter(c => !_patients.some(p => p.name === c.name));
     await Promise.all(newContacts.map(c =>
-      fetch('/api/patients', {method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({name: c.name, contact_id: c.id, blood_type: c.blood_type || '', notes: c.medical_notes || ''})})
+      apiPost('/api/patients', {name: c.name, contact_id: c.id, blood_type: c.blood_type || '', notes: c.medical_notes || ''})
+        .catch(e => console.warn('[Medical] patient import failed:', e.message))
     ));
     toast('Contacts imported as patients', 'success');
     loadPatients();
@@ -3140,8 +3143,7 @@ async function calculateDosage() {
 
   const body = { drug, patient_id: patientId ? parseInt(patientId) : null, age, weight_kg: weightKg };
   try {
-    const r = await fetch('/api/medical/dosage-calculator', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const data = await r.json();
+    const data = await apiPost('/api/medical/dosage-calculator', body);
     el.style.display = 'block';
 
     if (data.error) {
@@ -3277,20 +3279,21 @@ async function logWound() {
     treatment: document.getElementById('w-treat').value.trim(),
   };
   if (!data.location) { toast('Enter wound location', 'warning'); return; }
-  const res = await fetch(`/api/patients/${_activePatientId}/wounds`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  const result = await res.json();
-  toast('Wound logged', 'success');
+  try {
+    const result = await apiPost(`/api/patients/${_activePatientId}/wounds`, data);
+    toast('Wound logged', 'success');
 
-  // Upload photo if one was selected
-  const photoInput = document.getElementById('wound-photo-input');
-  if (photoInput.files.length > 0 && result.id) {
-    await uploadWoundPhoto(_activePatientId, result.id, photoInput.files[0]);
-  }
+    // Upload photo if one was selected
+    const photoInput = document.getElementById('wound-photo-input');
+    if (photoInput.files.length > 0 && result.id) {
+      await uploadWoundPhoto(_activePatientId, result.id, photoInput.files[0]);
+    }
 
-  hideWoundForm();
-  ['w-loc','w-desc','w-treat'].forEach(id => document.getElementById(id).value = '');
-  photoInput.value = '';
-  await loadWounds(_activePatientId);
+    hideWoundForm();
+    ['w-loc','w-desc','w-treat'].forEach(id => document.getElementById(id).value = '');
+    photoInput.value = '';
+    await loadWounds(_activePatientId);
+  } catch(e) { toast(e.message || 'Failed to log wound', 'error'); }
 }
 
 async function loadWounds(pid) {
@@ -3335,12 +3338,10 @@ async function uploadWoundPhoto(pid, wid, file) {
   const fd = new FormData();
   fd.append('photo', file);
   try {
-    const res = await fetch(`/api/patients/${pid}/wounds/${wid}/photo`, { method: 'POST', body: fd });
-    const data = await res.json();
-    if (!res.ok) { toast(data.error || 'Upload failed', 'error'); return; }
+    const res = await apiFetch(`/api/patients/${pid}/wounds/${wid}/photo`, { method: 'POST', body: fd });
     toast('Photo uploaded', 'success');
-    return data;
-  } catch(e) { toast('Photo upload failed', 'error'); }
+    return res;
+  } catch(e) { toast(e.message || 'Photo upload failed', 'error'); }
 }
 
 function promptWoundPhoto(pid, wid) {

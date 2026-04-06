@@ -363,12 +363,18 @@ async function scanReceipt() {
     formData.append('image', _receiptFile);
 
     const resp = await fetch('/api/inventory/receipt-scan', {method: 'POST', body: formData});
-    const data = await resp.json();
 
     if (!resp.ok) {
-      statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(data.error || 'Scan failed')}</div>`;
+      let errorMsg = 'Scan failed';
+      try {
+        const data = await resp.json();
+        errorMsg = data.error || errorMsg;
+      } catch (e) {}
+      statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(errorMsg)}</div>`;
       return;
     }
+
+    const data = await resp.json();
 
     _receiptScanResults = data.items || [];
     if (_receiptScanResults.length === 0) {
@@ -570,12 +576,18 @@ async function scanVisionImage() {
     formData.append('image', resized);
 
     const resp = await fetch('/api/inventory/vision-scan', {method: 'POST', body: formData});
-    const data = await resp.json();
 
     if (!resp.ok) {
-      statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(data.error || 'Scan failed')}</div>`;
+      let errorMsg = 'Scan failed';
+      try {
+        const data = await resp.json();
+        errorMsg = data.error || errorMsg;
+      } catch (e) {}
+      statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(errorMsg)}</div>`;
       return;
     }
+
+    const data = await resp.json();
 
     _visionScanResults = data.items || [];
     if (_visionScanResults.length === 0) {

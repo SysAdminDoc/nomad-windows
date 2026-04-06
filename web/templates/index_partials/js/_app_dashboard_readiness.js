@@ -988,7 +988,7 @@ async function saveVaultEntry() {
 async function viewVaultEntry(id) {
   if (!_vaultKey) { toast('Vault is locked', 'warning'); return; }
   try {
-    const e = await (await fetch(`/api/vault/${id}`)).json();
+    const e = await apiFetch(`/api/vault/${id}`);
     const decrypted = await decryptVaultData(e.encrypted_data, e.iv, e.salt);
     document.getElementById('vault-form').style.display = 'block';
     document.getElementById('vault-title').value = e.title;

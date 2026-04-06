@@ -1877,9 +1877,10 @@ def api_self_test():
                 })
                 results['status'] = 'degraded'
         except Exception as e:
+            log.warning('Self-test integrity check failed: %s', e)
             results['checks'].append({
                 'name': 'db_integrity', 'status': 'fail',
-                'detail': f'Could not run integrity check: {e}',
+                'detail': 'Could not run integrity check',
             })
             results['status'] = 'degraded'
     # Check write permission on data directory
@@ -1891,12 +1892,13 @@ def api_self_test():
         os.remove(test_file)
         results['checks'].append({
             'name': 'data_dir_writable', 'status': 'pass',
-            'detail': f'Data directory writable: {data_dir}',
+            'detail': 'Data directory writable',
         })
     except Exception as e:
+        log.warning('Self-test data dir write check failed: %s', e)
         results['checks'].append({
             'name': 'data_dir_writable', 'status': 'fail',
-            'detail': f'Cannot write to data directory: {e}',
+            'detail': 'Cannot write to data directory',
         })
         results['status'] = 'degraded'
 

@@ -3033,6 +3033,7 @@ async function addSitroomFeed() {
 }
 
 async function deleteSitroomFeed(id) {
+  if (!confirm('Remove this custom feed?')) return;
   try {
     const resp = await fetch('/api/sitroom/feeds/' + id, {method: 'DELETE'});
     if (resp.ok) { toast('Feed removed', 'success'); loadSitroomFeeds(); }

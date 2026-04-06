@@ -1897,6 +1897,7 @@ async function updatePeerTrust(nodeId, trust) {
 }
 
 async function removePeer(nodeId) {
+  if (!confirm('Remove this federation peer?')) return;
   try {
     const r = await fetch(`/api/federation/peers/${nodeId}`, {method:'DELETE'});
     if (!r.ok) { toast('Failed to remove peer', 'error'); return; }
@@ -2135,6 +2136,7 @@ function renderFreqTable() {
 }
 function filterFreqTable() { renderFreqTable(); }
 async function deleteFreq(id) {
+  if (!confirm('Delete this frequency?')) return;
   try {
     const r = await fetch(`/api/comms/frequencies/${id}`, {method:'DELETE'});
     if (!r.ok) { toast('Delete failed', 'error'); return; }
@@ -3945,6 +3947,7 @@ async function addAIMemory() {
 }
 
 async function deleteAIMemory(id) {
+  if (!confirm('Delete this AI memory?')) return;
   try {
     await fetch(`/api/ai/memory/${id}`, { method: 'DELETE' });
     loadAIMemory();

@@ -487,6 +487,7 @@ async function toggleCheckItem(idx) {
 }
 
 async function deleteChecklist(id) {
+  if (!confirm('Delete this checklist?')) return;
   try {
     const resp = await fetch(`/api/checklists/${id}`, {method: 'DELETE'});
     if (!resp.ok) { toast('Failed to delete checklist', 'error'); return; }

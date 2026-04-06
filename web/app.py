@@ -16,10 +16,7 @@ from web.validation import validate_json
 import web.state as _state
 from web.state import (
     _installing, _installing_lock,
-    _pull_queue, _pull_queue_lock,
     _map_downloads,
-    _ytdlp_downloads, _ytdlp_dl_lock,
-    _ytdlp_install_state,
     _auto_backup_timer,
     _broadcast,
     _update_state,

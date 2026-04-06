@@ -1,7 +1,6 @@
 """Weather observation, prediction, and action-rule routes."""
 
 import json
-import math
 from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify

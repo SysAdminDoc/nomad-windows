@@ -450,13 +450,12 @@ function updateBatchCount() {
 async function batchDeleteMedia() {
   if (!_mediaSelected.size) return;
   if (!confirm('Delete selected items? This cannot be undone.')) return;
-  const r = await fetch('/api/media/batch-delete', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({type:_mediaSub, ids:[..._mediaSelected]})});
-  if (!r.ok) { toast('Failed to delete items', 'error'); return; }
-  const d = await r.json();
-  toast(`Deleted ${d.count} items`, 'warning');
-  _mediaSelected.clear(); toggleMediaSelect();
-  loadMediaContent(); loadTotalMediaStats();
+  try {
+    const d = await apiPost('/api/media/batch-delete', {type: _mediaSub, ids: [..._mediaSelected]});
+    toast('Deleted ' + d.count + ' items', 'warning');
+    _mediaSelected.clear(); toggleMediaSelect();
+    loadMediaContent(); loadTotalMediaStats();
+  } catch(e) { toast('Failed to delete items', 'error'); }
 }
 
 async function batchMoveMedia() {
@@ -466,22 +465,21 @@ async function batchMoveMedia() {
   try { folders = await _fetchJson(foldersMap[_mediaSub]); } catch(e) {}
   const name = prompt('Move to folder:\n\nExisting: ' + (folders.length ? folders.join(', ') : 'none'));
   if (name === null) return;
-  const r = await fetch('/api/media/batch-move', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({type:_mediaSub, ids:[..._mediaSelected], folder:name})});
-  if (!r.ok) { toast('Failed to move items', 'error'); return; }
-  toast(`Moved ${_mediaSelected.size} items to ${name||'Unsorted'}`, 'success');
-  _mediaSelected.clear(); toggleMediaSelect();
-  loadMediaContent();
+  try {
+    await apiPost('/api/media/batch-move', {type: _mediaSub, ids: [..._mediaSelected], folder: name});
+    toast('Moved ' + _mediaSelected.size + ' items to ' + (name || 'Unsorted'), 'success');
+    _mediaSelected.clear(); toggleMediaSelect();
+    loadMediaContent();
+  } catch(e) { toast('Failed to move items', 'error'); }
 }
 
 async function toggleFavorite(id) {
-  const r = await fetch('/api/media/favorite', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({type:_mediaSub, id})});
-  if (!r.ok) { toast('Failed to update favorite', 'error'); return; }
-  // Update local state
-  const item = _mediaItems.find(i => i.id === id);
-  if (item) item.favorited = item.favorited ? 0 : 1;
-  renderMediaItems();
+  try {
+    await apiPost('/api/media/favorite', {type: _mediaSub, id});
+    const item = _mediaItems.find(i => i.id === id);
+    if (item) item.favorited = item.favorited ? 0 : 1;
+    renderMediaItems();
+  } catch(e) { toast('Failed to update favorite', 'error'); }
 }
 
 // ── Channel Browser ──
@@ -1536,27 +1534,29 @@ function updateActiveDownloadsPanel() {
 
 // ── Torrent actions ───────────────────────────────────────────────────────
 async function torrentPause(hash) {
-  const r = await fetch('/api/torrent/pause/' + hash, {method: 'POST'});
-  if (!r.ok) { toast('Failed to pause torrent', 'error'); return; }
-  await pollTorrentStatus();
+  try {
+    await apiPost('/api/torrent/pause/' + hash);
+    await pollTorrentStatus();
+  } catch(e) { toast('Failed to pause torrent', 'error'); }
 }
 async function torrentResume(hash) {
-  const r = await fetch('/api/torrent/resume/' + hash, {method: 'POST'});
-  if (!r.ok) { toast('Failed to resume torrent', 'error'); return; }
-  await pollTorrentStatus();
+  try {
+    await apiPost('/api/torrent/resume/' + hash);
+    await pollTorrentStatus();
+  } catch(e) { toast('Failed to resume torrent', 'error'); }
 }
 async function torrentRemove(hash, deleteFiles) {
   if (!confirm('Remove this torrent?' + (deleteFiles ? ' Downloaded files will be deleted.' : ''))) return;
-  const r = await fetch('/api/torrent/remove/' + hash + '?delete_files=' + deleteFiles, {method: 'DELETE'});
-  if (!r.ok) { toast('Failed to remove torrent', 'error'); return; }
-  delete _torrentStatuses[hash];
-  // Remove from id→hash map
-  for (const [k, v] of Object.entries(_torrentIdToHash)) { if (v === hash) delete _torrentIdToHash[k]; }
-  updateActiveDownloadsPanel();
-  refreshTorrentCardStates();
+  try {
+    await apiDelete('/api/torrent/remove/' + hash + '?delete_files=' + deleteFiles);
+    delete _torrentStatuses[hash];
+    for (const [k, v] of Object.entries(_torrentIdToHash)) { if (v === hash) delete _torrentIdToHash[k]; }
+    updateActiveDownloadsPanel();
+    refreshTorrentCardStates();
+  } catch(e) { toast('Failed to remove torrent', 'error'); }
 }
 async function torrentOpenFolder(hash) {
-  await fetch('/api/torrent/open-folder/' + hash, {method: 'POST'});
+  try { await apiPost('/api/torrent/open-folder/' + hash); } catch(e) {}
 }
 async function openTorrentSaveDir() {
   try {
@@ -2919,18 +2919,18 @@ async function loadNodeIdentity() {
 async function saveNodeName() {
   const name = document.getElementById('node-name-input').value.trim();
   if (!name) { toast('Enter a node name', 'warning'); return; }
-  const r = await fetch('/api/node/identity', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})});
-  if (!r.ok) { toast('Failed to set node name', 'error'); return; }
-  toast(`Node name set to "${name}"`, 'success');
-  loadNodeIdentity();
+  try {
+    await apiPut('/api/node/identity', {name});
+    toast('Node name set to "' + name + '"', 'success');
+    loadNodeIdentity();
+  } catch(e) { toast('Failed to set node name', 'error'); }
 }
 
 async function discoverPeers() {
   const el = document.getElementById('peer-list');
   el.innerHTML = '<div class="utility-empty-state peer-list-state">Scanning network…</div>';
   try {
-    const r = await fetch('/api/node/discover', {method:'POST'});
-    const d = await r.json();
+    const d = await apiPost('/api/node/discover');
     if (!d.peers.length) {
   el.innerHTML = '<div class="utility-empty-state peer-list-state">No other NOMAD nodes found on this network. Make sure other instances are running and on the same LAN.</div>';
       return;
@@ -2953,12 +2953,10 @@ async function syncToPeer(ip, port, name) {
   port = port || 8080;
   toast(`Pushing data to ${name || ip}...`, 'info');
   try {
-    const r = await fetch('/api/node/sync-push', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ip, port})});
-    const d = await r.json();
+    const d = await apiPost('/api/node/sync-push', {ip, port});
     if (d.error) { toast(d.error, 'error'); return; }
-    toast(`Pushed ${d.items} items to ${d.peer || ip}`, 'success');
-    sendNotification('Sync Complete', `Pushed ${d.items} items to ${d.peer || ip}`);
+    toast('Pushed ' + d.items + ' items to ' + (d.peer || ip), 'success');
+    sendNotification('Sync Complete', 'Pushed ' + d.items + ' items to ' + (d.peer || ip));
     loadSyncLog();
     loadGroupExercises();
   } catch(e) { toast('Push failed — check the IP address and make sure the peer is running', 'error'); }
@@ -3502,24 +3500,27 @@ async function loadOllamaHost() {
 }
 async function saveOllamaHost() {
   const host = document.getElementById('ollama-host-input').value.trim();
-  const r = await fetch('/api/settings/ollama-host', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({host})});
-  if (!r.ok) { toast('Failed to save Ollama host', 'error'); return; }
-  toast(host ? `Ollama host set to ${host}` : 'Using local Ollama', 'success');
+  try {
+    await apiPut('/api/settings/ollama-host', {host});
+    toast(host ? 'Ollama host set to ' + host : 'Using local Ollama', 'success');
+  } catch(e) { toast('Failed to save Ollama host', 'error'); }
 }
 
 /* ─── Auth Password ─── */
 async function setAuthPassword() {
   const pw = document.getElementById('auth-pw-input').value;
   if (!pw) { toast('Enter a password', 'warning'); return; }
-  const r = await fetch('/api/auth/set-password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:pw})});
-  if (!r.ok) { toast('Failed to set password', 'error'); return; }
-  document.getElementById('auth-pw-input').value = '';
-  toast('Dashboard password set', 'success');
+  try {
+    await apiPost('/api/auth/set-password', {password: pw});
+    document.getElementById('auth-pw-input').value = '';
+    toast('Dashboard password set', 'success');
+  } catch(e) { toast('Failed to set password', 'error'); }
 }
 async function clearAuthPassword() {
-  const r = await fetch('/api/auth/set-password', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({password:''})});
-  if (!r.ok) { toast('Failed to clear password', 'error'); return; }
-  toast('Dashboard password cleared', 'info');
+  try {
+    await apiPost('/api/auth/set-password', {password: ''});
+    toast('Dashboard password cleared', 'info');
+  } catch(e) { toast('Failed to clear password', 'error'); }
 }
 
 /* ─── Host Power ─── */
@@ -3534,9 +3535,10 @@ function confirmPower(btn, action) {
   hostPower(action);
 }
 async function hostPower(action) {
-  const r = await fetch('/api/system/shutdown', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({action})});
-  if (!r.ok) { toast(`Failed to initiate ${action}`, 'error'); return; }
-  toast(`${action} initiated — computer will ${action} in 5 seconds`, 'warning');
+  try {
+    await apiPost('/api/system/shutdown', {action});
+    toast(action + ' initiated — computer will ' + action + ' in 5 seconds', 'warning');
+  } catch(e) { toast('Failed to initiate ' + action, 'error'); }
 }
 
 /* ─── PDF Library ─── */
@@ -3629,11 +3631,12 @@ async function logComms() {
     signal_quality: document.getElementById('comms-sig').value,
   };
   if (!msg && !data.callsign) { toast('Enter a callsign or message', 'warning'); return; }
-  const r = await fetch('/api/comms-log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  if (!r.ok) { toast('Failed to log communication', 'error'); return; }
-  document.getElementById('comms-msg').value = '';
-  toast('Communication logged', 'success');
-  loadCommsLog();
+  try {
+    await apiPost('/api/comms-log', data);
+    document.getElementById('comms-msg').value = '';
+    toast('Communication logged', 'success');
+    loadCommsLog();
+  } catch(e) { toast('Failed to log communication', 'error'); }
 }
 
 async function loadCommsLog() {

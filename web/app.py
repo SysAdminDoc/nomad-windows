@@ -1685,8 +1685,8 @@ def create_app():
                 row = db.execute('SELECT * FROM timers WHERE id = ?', (cur.lastrowid,)).fetchone()
                 result = dict(row)
             return jsonify(result), 201
-        except (ValueError, TypeError) as e:
-            return jsonify({'error': f'Invalid duration: {e}'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid duration value'}), 400
         except Exception as e:
             log.error('Request failed: %s', e)
             return jsonify({'error': 'Internal server error'}), 500
@@ -4268,8 +4268,8 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         if not os.path.normcase(full_path).startswith(os.path.normcase(base_dir) + os.sep) and os.path.normcase(full_path) != os.path.normcase(base_dir):
             return jsonify({'error': 'Forbidden'}), 403
         if not os.path.isfile(full_path):
-            log.warning(f'NukeMap file not found: {full_path}')
-            return jsonify({'error': f'Not found: {filepath}'}), 404
+            log.warning('NukeMap file not found: %s', full_path)
+            return jsonify({'error': 'Not found'}), 404
         return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
 
     # ─── VIPTrack ─────────────────────────────────────────────────────
@@ -4309,7 +4309,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         if not (os.path.normcase(full_path) == base or os.path.normcase(full_path).startswith(base + os.sep)):
             return jsonify({'error': 'Forbidden'}), 403
         if not os.path.isfile(full_path):
-            return jsonify({'error': f'Not found: {filepath}'}), 404
+            return jsonify({'error': 'Not found'}), 404
         return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
 
     # ─── Skills Tracker ───────────────────────────────────────────────

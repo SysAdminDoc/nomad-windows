@@ -775,7 +775,8 @@ def api_import_config():
             else:
                 return error_response('Invalid backup file')
     except Exception as e:
-        return error_response(str(e), 500)
+        log.exception('Config restore failed')
+        return error_response('Restore failed', 500)
 
 # ─── Database Restore from Auto-Backups ──────────────────────────
 

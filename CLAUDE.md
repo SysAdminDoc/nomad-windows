@@ -392,7 +392,9 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **Thread safety** — `manager.py start_process()` accessed `_processes.pop()` without `_lock` in DB error path; race condition with concurrent service operations
   - **16 confirm() dialogs added** — destructive delete operations missing user confirmation: checklists, conversations, ZIM content packs, journal entries, cameras, power devices, preservation logs, garden plots/seeds, livestock, federation peers, frequencies, AI memories, KB documents, situation room custom feeds
   - **Frontend error handling** — `deleteSkill()`, `deleteEquip()`, `deleteAIMemory()` had bare `await fetch()` without try-catch or resp.ok checks; now properly wrapped with error toasts
-  - **Audit findings**: SQL injection — none found (all sort columns use allowlists, all user input parameterized); SSRF — federation relay sends to user-configured peer IPs (by design); XSS — generally well-audited with `escapeHtml()`/`escapeAttr()` used consistently; all `JSON.parse()` calls wrapped in try-catch; all `request.get_json()` uses `or {}` fallback; all `fetchone()` on non-aggregate queries checks for None
+  - **Timing attack fix** — CSRF token comparison in `_csrf_token_check()` used string equality (`!=`) vulnerable to timing attacks; now uses `hmac.compare_digest()` for constant-time comparison (auth token check already used `hmac.compare_digest`)
+  - **12 new tests** — 3 motion config validation tests (valid/invalid/clamped), 9 DELETE 404 tests across contacts, notes, skills, equipment, fuel, cameras, power devices, garden plots, tasks
+  - **Audit findings**: SQL injection — none found (all sort columns use allowlists, all user input parameterized); SSRF — federation relay sends to user-configured peer IPs (by design), webhook test has full SSRF protection (IP validation); XSS — generally well-audited with `escapeHtml()`/`escapeAttr()` used consistently; all `JSON.parse()` calls wrapped in try-catch; all `request.get_json()` uses `or {}` fallback; all `fetchone()` on non-aggregate queries checks for None; toast system uses `escapeHtml` on all messages
 
 ## Run / Build
 ```bash

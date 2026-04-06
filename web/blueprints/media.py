@@ -127,8 +127,8 @@ def api_video_thumbnail(vid):
             return error_response('Video not found', 404)
 
         videos_dir = os.path.join(get_data_dir(), 'videos')
-        video_path = os.path.join(videos_dir, row['folder'] or '', row['filename'])
-        if not os.path.isfile(video_path):
+        video_path = os.path.normpath(os.path.join(videos_dir, row['folder'] or '', row['filename']))
+        if not os.path.normcase(video_path).startswith(os.path.normcase(videos_dir) + os.sep) or not os.path.isfile(video_path):
             return error_response('Video file not found on disk', 404)
 
         thumb_dir = os.path.join(get_data_dir(), 'thumbnails')
@@ -461,8 +461,9 @@ def api_videos_delete(vid):
     with db_session() as db:
         row = db.execute('SELECT filename, title FROM videos WHERE id = ?', (vid,)).fetchone()
         if row:
-            filepath = os.path.join(get_video_dir(), row['filename'])
-            if os.path.isfile(filepath):
+            vdir = get_video_dir()
+            filepath = os.path.normpath(os.path.join(vdir, row['filename']))
+            if os.path.normcase(filepath).startswith(os.path.normcase(vdir) + os.sep) and os.path.isfile(filepath):
                 try:
                     os.remove(filepath)
                 except Exception:
@@ -873,12 +874,13 @@ def api_media_batch_delete():
         return jsonify({'error': 'Invalid type'}), 400
     with db_session() as db:
         media_dir = get_dir()
+        media_dir_nc = os.path.normcase(os.path.normpath(media_dir)) + os.sep
         deleted = 0
         for mid in ids:
             row = db.execute(f'SELECT filename FROM {table} WHERE id = ?', (mid,)).fetchone()
             if row:
-                filepath = os.path.join(media_dir, row['filename'])
-                if os.path.isfile(filepath):
+                filepath = os.path.normpath(os.path.join(media_dir, row['filename']))
+                if os.path.normcase(filepath).startswith(media_dir_nc) and os.path.isfile(filepath):
                     try:
                         os.remove(filepath)
                     except Exception:
@@ -1428,8 +1430,9 @@ def api_audio_delete(aid):
     with db_session() as db:
         row = db.execute('SELECT filename, title FROM audio WHERE id = ?', (aid,)).fetchone()
         if row:
-            filepath = os.path.join(get_audio_dir(), row['filename'])
-            if os.path.isfile(filepath):
+            adir = get_audio_dir()
+            filepath = os.path.normpath(os.path.join(adir, row['filename']))
+            if os.path.normcase(filepath).startswith(os.path.normcase(adir) + os.sep) and os.path.isfile(filepath):
                 try:
                     os.remove(filepath)
                 except Exception:
@@ -2014,8 +2017,9 @@ def api_books_delete(bid):
     with db_session() as db:
         row = db.execute('SELECT filename FROM books WHERE id = ?', (bid,)).fetchone()
         if row:
-            filepath = os.path.join(get_books_dir(), row['filename'])
-            if os.path.isfile(filepath):
+            bdir = get_books_dir()
+            filepath = os.path.normpath(os.path.join(bdir, row['filename']))
+            if os.path.normcase(filepath).startswith(os.path.normcase(bdir) + os.sep) and os.path.isfile(filepath):
                 try:
                     os.remove(filepath)
                 except Exception:

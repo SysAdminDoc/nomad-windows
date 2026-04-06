@@ -465,7 +465,9 @@ def api_patients_delete(pid):
         db.execute('DELETE FROM wound_photos WHERE wound_id IN (SELECT id FROM wound_log WHERE patient_id = ?)', (pid,))
         db.execute('DELETE FROM vitals_log WHERE patient_id = ?', (pid,))
         db.execute('DELETE FROM wound_log WHERE patient_id = ?', (pid,))
-        db.execute('DELETE FROM patients WHERE id = ?', (pid,))
+        r = db.execute('DELETE FROM patients WHERE id = ?', (pid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 

@@ -99,7 +99,9 @@ def api_cameras_create():
 def api_cameras_delete(cid):
     with db_session() as db:
         db.execute('DELETE FROM motion_events WHERE camera_id = ?', (cid,))
-        db.execute('DELETE FROM cameras WHERE id = ?', (cid,))
+        r = db.execute('DELETE FROM cameras WHERE id = ?', (cid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     log_activity('camera_deleted', 'security', f'Deleted camera {cid}')
     return jsonify({'status': 'deleted'})
@@ -268,7 +270,9 @@ def api_security_zones_update(zid):
 @security_bp.route('/api/security/zones/<int:zid>', methods=['DELETE'])
 def api_security_zones_delete(zid):
     with db_session() as db:
-        db.execute('DELETE FROM perimeter_zones WHERE id = ?', (zid,))
+        r = db.execute('DELETE FROM perimeter_zones WHERE id = ?', (zid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 

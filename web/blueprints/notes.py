@@ -57,7 +57,9 @@ def api_notes_delete(note_id):
     with db_session() as db:
         db.execute('DELETE FROM note_tags WHERE note_id = ?', (note_id,))
         db.execute('DELETE FROM note_links WHERE source_note_id = ? OR target_note_id = ?', (note_id, note_id))
-        db.execute('DELETE FROM notes WHERE id = ?', (note_id,))
+        r = db.execute('DELETE FROM notes WHERE id = ?', (note_id,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'deleted'})
 # --- Notes Pin/Tag ---
@@ -162,7 +164,9 @@ def api_note_add_tag(note_id):
 def api_note_remove_tag(note_id, tag):
     """Remove a tag from a note."""
     with db_session() as db:
-        db.execute('DELETE FROM note_tags WHERE note_id = ? AND tag = ?', (note_id, tag))
+        r = db.execute('DELETE FROM note_tags WHERE note_id = ? AND tag = ?', (note_id, tag))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'ok'})
 @notes_bp.route('/api/notes/<int:note_id>/backlinks')
@@ -257,7 +261,9 @@ def api_journal_create():
 @notes_bp.route('/api/journal/<int:jid>', methods=['DELETE'])
 def api_journal_delete(jid):
     with db_session() as db:
-        db.execute('DELETE FROM journal WHERE id = ?', (jid,))
+        r = db.execute('DELETE FROM journal WHERE id = ?', (jid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     log_activity('journal_deleted', detail='Deleted journal entry')
     return jsonify({'status': 'deleted'})

@@ -41,11 +41,11 @@ class TestNotFoundResources:
 
     def test_delete_nonexistent_inventory(self, client):
         resp = client.delete('/api/inventory/99999')
-        assert resp.status_code == 200  # delete is idempotent
+        assert resp.status_code == 404  # returns 404 for non-existent resources
 
     def test_delete_nonexistent_waypoint(self, client):
         resp = client.delete('/api/waypoints/99999')
-        assert resp.status_code == 200
+        assert resp.status_code == 404
 
 
 class TestMalformedRequests:

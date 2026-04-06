@@ -733,7 +733,9 @@ def api_waypoints_create():
 @maps_bp.route('/api/waypoints/<int:wid>', methods=['DELETE'])
 def api_waypoints_delete(wid):
     with db_session() as db:
-        db.execute('DELETE FROM waypoints WHERE id = ?', (wid,))
+        r = db.execute('DELETE FROM waypoints WHERE id = ?', (wid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 
@@ -786,7 +788,9 @@ def api_map_routes_create():
 @maps_bp.route('/api/maps/routes/<int:rid>', methods=['DELETE'])
 def api_map_routes_delete(rid):
     with db_session() as db:
-        db.execute('DELETE FROM map_routes WHERE id = ?', (rid,))
+        r = db.execute('DELETE FROM map_routes WHERE id = ?', (rid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 
@@ -869,7 +873,9 @@ def api_map_annotations_create():
 @maps_bp.route('/api/maps/annotations/<int:aid>', methods=['DELETE'])
 def api_map_annotations_delete(aid):
     with db_session() as db:
-        db.execute('DELETE FROM map_annotations WHERE id = ?', (aid,))
+        r = db.execute('DELETE FROM map_annotations WHERE id = ?', (aid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 
@@ -1439,7 +1445,9 @@ def api_tracks_stop(tid):
 def api_tracks_delete(tid):
     """Delete a track."""
     with db_session() as db:
-        db.execute('DELETE FROM gps_tracks WHERE id = ?', (tid,))
+        r = db.execute('DELETE FROM gps_tracks WHERE id = ?', (tid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'deleted'})
 

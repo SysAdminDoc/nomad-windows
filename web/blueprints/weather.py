@@ -433,7 +433,9 @@ def api_weather_action_rules_create():
 @weather_bp.route('/api/weather/action-rules/<int:rid>', methods=['DELETE'])
 def api_weather_action_rules_delete(rid):
     with db_session() as db:
-        db.execute('DELETE FROM weather_action_rules WHERE id = ?', (rid,))
+        r = db.execute('DELETE FROM weather_action_rules WHERE id = ?', (rid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'deleted'})
 @weather_bp.route('/api/weather/action-rules/<int:rid>/toggle', methods=['POST'])

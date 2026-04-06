@@ -170,7 +170,9 @@ def api_inventory_delete(item_id):
         db.execute('DELETE FROM inventory_photos WHERE inventory_id = ?', (item_id,))
         db.execute('DELETE FROM inventory_checkouts WHERE inventory_id = ?', (item_id,))
         db.execute('DELETE FROM shopping_list WHERE inventory_id = ?', (item_id,))
-        db.execute('DELETE FROM inventory WHERE id = ?', (item_id,))
+        r = db.execute('DELETE FROM inventory WHERE id = ?', (item_id,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     broadcast_event('inventory_update', {'action': 'delete', 'id': item_id})
     return jsonify({'status': 'deleted'})

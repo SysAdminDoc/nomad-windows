@@ -576,7 +576,9 @@ def api_kb_workspace_create():
 def api_kb_workspace_delete(wid):
     """Delete a KB workspace."""
     with db_session() as db:
-        db.execute('DELETE FROM kb_workspaces WHERE id = ?', (wid,))
+        r = db.execute('DELETE FROM kb_workspaces WHERE id = ?', (wid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'ok'})
 # ─── Auto-OCR Pipeline ─────────────────────────────────────────────

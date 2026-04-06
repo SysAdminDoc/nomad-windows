@@ -1283,7 +1283,9 @@ def create_app():
     @app.route('/api/checklists/<int:cid>', methods=['DELETE'])
     def api_checklists_delete(cid):
         with db_session() as db:
-            db.execute('DELETE FROM checklists WHERE id = ?', (cid,))
+            r = db.execute('DELETE FROM checklists WHERE id = ?', (cid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'deleted'})
 
@@ -1511,7 +1513,9 @@ def create_app():
     @app.route('/api/contacts/<int:cid>', methods=['DELETE'])
     def api_contacts_delete(cid):
         with db_session() as db:
-            db.execute('DELETE FROM contacts WHERE id = ?', (cid,))
+            r = db.execute('DELETE FROM contacts WHERE id = ?', (cid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'deleted'})
 
@@ -1523,9 +1527,9 @@ def create_app():
             return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as db:
             placeholders = ','.join('?' * len(ids))
-            db.execute(f'DELETE FROM contacts WHERE id IN ({placeholders})', ids)
+            r = db.execute(f'DELETE FROM contacts WHERE id IN ({placeholders})', ids)
             db.commit()
-        return jsonify({'status': 'deleted', 'count': len(ids)})
+        return jsonify({'status': 'deleted', 'count': r.rowcount})
 
     # ─── Guides Context API ────────────────────────────────────────────
 
@@ -1612,7 +1616,9 @@ def create_app():
     @app.route('/api/incidents/<int:iid>', methods=['DELETE'])
     def api_incidents_delete(iid):
         with db_session() as db:
-            db.execute('DELETE FROM incidents WHERE id = ?', (iid,))
+            r = db.execute('DELETE FROM incidents WHERE id = ?', (iid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'deleted'})
 
@@ -1682,7 +1688,9 @@ def create_app():
     @app.route('/api/timers/<int:tid>', methods=['DELETE'])
     def api_timers_delete(tid):
         with db_session() as db:
-            db.execute('DELETE FROM timers WHERE id = ?', (tid,))
+            r = db.execute('DELETE FROM timers WHERE id = ?', (tid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'deleted'})
 
@@ -1777,7 +1785,9 @@ def create_app():
     @app.route('/api/vault/<int:eid>', methods=['DELETE'])
     def api_vault_delete(eid):
         with db_session() as db:
-            db.execute('DELETE FROM vault_entries WHERE id = ?', (eid,))
+            r = db.execute('DELETE FROM vault_entries WHERE id = ?', (eid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'deleted'})
     # [EXTRACTED to blueprint]
@@ -2297,7 +2307,9 @@ def create_app():
     @app.route('/api/livestock/<int:lid>', methods=['DELETE'])
     def api_livestock_delete(lid):
         with db_session() as db:
-            db.execute('DELETE FROM livestock WHERE id = ?', (lid,))
+            r = db.execute('DELETE FROM livestock WHERE id = ?', (lid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'deleted'})
 
@@ -2309,9 +2321,9 @@ def create_app():
             return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as db:
             placeholders = ','.join('?' * len(ids))
-            db.execute(f'DELETE FROM livestock WHERE id IN ({placeholders})', ids)
+            r = db.execute(f'DELETE FROM livestock WHERE id IN ({placeholders})', ids)
             db.commit()
-        return jsonify({'status': 'deleted', 'count': len(ids)})
+        return jsonify({'status': 'deleted', 'count': r.rowcount})
 
     @app.route('/api/livestock/<int:lid>/health', methods=['POST'])
     def api_livestock_health_event(lid):
@@ -4342,7 +4354,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/skills/<int:sid>', methods=['DELETE'])
     def api_skills_delete(sid):
         with db_session() as conn:
-            conn.execute('DELETE FROM skills WHERE id=?', (sid,))
+            r = conn.execute('DELETE FROM skills WHERE id=?', (sid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             conn.commit()
             return jsonify({'ok': True})
 
@@ -4354,9 +4368,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
-            conn.execute(f'DELETE FROM skills WHERE id IN ({placeholders})', ids)
+            r = conn.execute(f'DELETE FROM skills WHERE id IN ({placeholders})', ids)
             conn.commit()
-        return jsonify({'status': 'deleted', 'count': len(ids)})
+        return jsonify({'status': 'deleted', 'count': r.rowcount})
 
     @app.route('/api/skills/export')
     def api_skills_export():
@@ -4508,7 +4522,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/ammo/<int:aid>', methods=['DELETE'])
     def api_ammo_delete(aid):
         with db_session() as conn:
-            conn.execute('DELETE FROM ammo_inventory WHERE id=?', (aid,))
+            r = conn.execute('DELETE FROM ammo_inventory WHERE id=?', (aid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             conn.commit()
             return jsonify({'ok': True})
 
@@ -4520,9 +4536,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
-            conn.execute(f'DELETE FROM ammo_inventory WHERE id IN ({placeholders})', ids)
+            r = conn.execute(f'DELETE FROM ammo_inventory WHERE id IN ({placeholders})', ids)
             conn.commit()
-        return jsonify({'status': 'deleted', 'count': len(ids)})
+        return jsonify({'status': 'deleted', 'count': r.rowcount})
 
     @app.route('/api/ammo/export')
     def api_ammo_export():
@@ -4626,7 +4642,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/community/<int:cid>', methods=['DELETE'])
     def api_community_delete(cid):
         with db_session() as conn:
-            conn.execute('DELETE FROM community_resources WHERE id=?', (cid,))
+            r = conn.execute('DELETE FROM community_resources WHERE id=?', (cid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             conn.commit()
             return jsonify({'ok': True})
 
@@ -4638,9 +4656,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
-            conn.execute(f'DELETE FROM community_resources WHERE id IN ({placeholders})', ids)
+            r = conn.execute(f'DELETE FROM community_resources WHERE id IN ({placeholders})', ids)
             conn.commit()
-        return jsonify({'status': 'deleted', 'count': len(ids)})
+        return jsonify({'status': 'deleted', 'count': r.rowcount})
 
     # ─── Radiation Dose Log ───────────────────────────────────────────
 
@@ -4748,7 +4766,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/fuel/<int:fid>', methods=['DELETE'])
     def api_fuel_delete(fid):
         with db_session() as conn:
-            conn.execute('DELETE FROM fuel_storage WHERE id=?', (fid,))
+            r = conn.execute('DELETE FROM fuel_storage WHERE id=?', (fid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             conn.commit()
             return jsonify({'ok': True})
 
@@ -4760,9 +4780,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
-            conn.execute(f'DELETE FROM fuel_storage WHERE id IN ({placeholders})', ids)
+            r = conn.execute(f'DELETE FROM fuel_storage WHERE id IN ({placeholders})', ids)
             conn.commit()
-        return jsonify({'status': 'deleted', 'count': len(ids)})
+        return jsonify({'status': 'deleted', 'count': r.rowcount})
 
     @app.route('/api/fuel/summary')
     def api_fuel_summary():
@@ -4826,7 +4846,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/equipment/<int:eid>', methods=['DELETE'])
     def api_equipment_delete(eid):
         with db_session() as conn:
-            conn.execute('DELETE FROM equipment_log WHERE id=?', (eid,))
+            r = conn.execute('DELETE FROM equipment_log WHERE id=?', (eid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             conn.commit()
             return jsonify({'ok': True})
 
@@ -4838,9 +4860,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
             return jsonify({'error': 'ids array of integers required (max 100)'}), 400
         with db_session() as conn:
             placeholders = ','.join('?' * len(ids))
-            conn.execute(f'DELETE FROM equipment_log WHERE id IN ({placeholders})', ids)
+            r = conn.execute(f'DELETE FROM equipment_log WHERE id IN ({placeholders})', ids)
             conn.commit()
-        return jsonify({'status': 'deleted', 'count': len(ids)})
+        return jsonify({'status': 'deleted', 'count': r.rowcount})
 
     @app.route('/api/equipment/export')
     def api_equipment_export():
@@ -4992,7 +5014,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
     def api_tasks_delete(task_id):
         with db_session() as db:
-            db.execute('DELETE FROM scheduled_tasks WHERE id = ?', (task_id,))
+            r = db.execute('DELETE FROM scheduled_tasks WHERE id = ?', (task_id,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'deleted'})
 
@@ -5148,7 +5172,9 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
     @app.route('/api/watch-schedules/<int:sid>', methods=['DELETE'])
     def api_watch_schedules_delete(sid):
         with db_session() as db:
-            db.execute('DELETE FROM watch_schedules WHERE id = ?', (sid,))
+            r = db.execute('DELETE FROM watch_schedules WHERE id = ?', (sid,))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'deleted'})
 

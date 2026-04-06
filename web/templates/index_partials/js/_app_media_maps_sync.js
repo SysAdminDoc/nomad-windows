@@ -1881,7 +1881,7 @@ async function browseChannelVideos(channelUrl, channelName) {
   const channels = document.getElementById('channel-list');
   setMediaVisibility(results, true);
   setMediaVisibility(channels, false);
-  results.innerHTML = mediaBrowserLoadingHtml(`Loading videos from ${channelName}…`);
+  results.innerHTML = mediaBrowserLoadingHtml('Loading videos from ' + escapeHtml(channelName) + '\u2026');
   try {
     const videos = await _fetchJson(`/api/youtube/channel-videos?url=${encodeURIComponent(channelUrl)}&limit=15`);
     if (videos.error) {

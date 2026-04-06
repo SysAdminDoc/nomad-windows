@@ -91,9 +91,7 @@ async function createTimer() {
   const name = document.getElementById('timer-name').value.trim() || 'Timer';
   const mins = parseInt(document.getElementById('timer-mins').value) || 30;
   try {
-    const r = await fetch('/api/timers', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name, duration_sec: mins * 60})});
-    if (!r.ok) { toast('Failed to create timer', 'error'); return; }
+    await apiPost('/api/timers', {name, duration_sec: mins * 60});
     document.getElementById('timer-name').value = '';
     document.getElementById('timer-mins').value = '';
     toast('Timer "' + name + '" started (' + mins + 'm)', 'success');
@@ -102,9 +100,7 @@ async function createTimer() {
 }
 
 function createTimerQuick(name, mins) {
-  fetch('/api/timers', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name, duration_sec: mins * 60})}).then(r => {
-    if (!r.ok) { toast('Failed to create timer', 'error'); return; }
+  apiPost('/api/timers', {name, duration_sec: mins * 60}).then(() => {
     toast('Timer "' + name + '" started (' + mins + 'm)', 'success');
     loadTimers();
   }).catch(() => toast('Failed to create timer', 'error'));
@@ -113,11 +109,10 @@ function createTimerQuick(name, mins) {
 async function deleteTimer(id) {
   if (!confirm('Delete this timer?')) return;
   try {
-    const resp = await fetch(`/api/timers/${id}`, {method:'DELETE'});
-    if (!resp.ok) { toast('Failed to delete timer', 'error'); return; }
+    await apiDelete('/api/timers/' + id);
     toast('Timer deleted', 'warning');
     loadTimers();
-  } catch(e) { console.error(e); toast('Failed to delete timer', 'error'); }
+  } catch(e) { toast('Failed to delete timer', 'error'); }
 }
 
 /* ─── Map Waypoints ─── */
@@ -228,18 +223,18 @@ async function submitWaypoint(lat, lng) {
   if (!name) { toast('Enter a waypoint name', 'warning'); return; }
   const cat = document.getElementById('wp-cat').value;
   const notes = document.getElementById('wp-notes').value.trim();
-  await fetch('/api/waypoints', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name, lat, lng, category: cat, notes})});
-  toast(`Waypoint "${name}" saved`, 'success');
-  document.getElementById('waypoint-form-panel').remove();
-  loadWaypoints();
+  try {
+    await apiPost('/api/waypoints', {name, lat, lng, category: cat, notes});
+    toast('Waypoint "' + name + '" saved', 'success');
+    document.getElementById('waypoint-form-panel').remove();
+    loadWaypoints();
+  } catch(e) { toast('Failed to save waypoint', 'error'); }
 }
 
 async function deleteWaypoint(id) {
   if (!confirm('Delete this waypoint?')) return;
   try {
-    const r = await fetch(`/api/waypoints/${id}`, {method:'DELETE'});
-    if (!r.ok) throw new Error('Delete failed');
+    await apiDelete('/api/waypoints/' + id);
     toast('Waypoint deleted', 'warning');
     loadWaypoints();
   } catch(e) { toast('Failed to delete waypoint', 'error'); }

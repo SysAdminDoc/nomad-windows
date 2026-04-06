@@ -372,8 +372,11 @@ def api_ai_chat():
             for line in ollama.chat(model, messages, stream=True):
                 if line:
                     yield line.decode('utf-8') + '\n'
-        except Exception as e:
+        except RuntimeError as e:
             yield json.dumps({'error': str(e)}) + '\n'
+        except Exception as e:
+            log.exception('AI chat streaming error')
+            yield json.dumps({'error': 'AI service error'}) + '\n'
 
     return Response(generate(), mimetype='text/event-stream')
 

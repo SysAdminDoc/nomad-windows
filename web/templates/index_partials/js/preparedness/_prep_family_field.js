@@ -196,7 +196,7 @@ let _vehicles = readJsonStorage(localStorage, 'nomad-vehicles', []);
 if (!Array.isArray(_vehicles)) _vehicles = [];
 function _syncVehicles() {
   localStorage.setItem('nomad-vehicles', JSON.stringify(_vehicles));
-  fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({vehicles: JSON.stringify(_vehicles)})});
+  fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({vehicles: JSON.stringify(_vehicles)})}).catch(() => {});
 }
 
 function addVehicle() {

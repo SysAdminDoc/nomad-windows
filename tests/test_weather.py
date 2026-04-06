@@ -36,7 +36,7 @@ class TestWeatherReadings:
             'temp_f': 68,
             'humidity': 55,
         })
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         assert resp.get_json()['status'] == 'ok'
 
     def test_get_readings(self, client):

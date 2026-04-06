@@ -72,7 +72,7 @@ class TestReceiptImport:
                 {'name': 'Rice 5lb Bag', 'quantity': 2, 'unit_price': 4.99, 'total_price': 9.98},
             ]
         })
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         data = resp.get_json()
         assert data['status'] == 'ok'
         assert data['count'] == 2
@@ -115,7 +115,7 @@ class TestVisionImport:
                 {'name': 'Flashlight', 'quantity': 3, 'category': 'Equipment', 'condition': 'New'},
             ]
         })
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         data = resp.get_json()
         assert data['status'] == 'ok'
         assert data['count'] == 2

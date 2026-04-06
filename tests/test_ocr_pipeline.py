@@ -41,7 +41,7 @@ class TestKBWorkspaces:
             'description': 'Medical reference documents',
             'auto_index': 0,
         })
-        assert resp.status_code == 200
+        assert resp.status_code == 201
         assert resp.get_json()['id'] is not None
 
     def test_create_workspace_requires_name(self, client):

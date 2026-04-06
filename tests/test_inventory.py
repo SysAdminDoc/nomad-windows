@@ -168,4 +168,4 @@ class TestInventoryCheckout:
             'quantity': 1,
             'reason': 'Patrol'
         })
-        assert resp.status_code == 200
+        assert resp.status_code == 201

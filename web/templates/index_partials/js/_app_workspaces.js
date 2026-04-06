@@ -352,6 +352,7 @@ async function applyNoteTemplateByIndex(idx) {
 }
 
 async function deleteNote() {
+  if (!confirm('Delete this note?')) return;
   if (!currentNoteId) return;
   await fetch(`/api/notes/${currentNoteId}`, {method:'DELETE'});
   currentNoteId = null;

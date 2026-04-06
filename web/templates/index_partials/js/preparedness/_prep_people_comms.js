@@ -112,6 +112,7 @@ function editContact(id) {
 }
 
 async function deleteContact(id) {
+  if (!confirm('Delete this contact?')) return;
   try {
     const r = await fetch(`/api/contacts/${id}`, {method:'DELETE'});
     if (!r.ok) throw new Error('Delete failed');

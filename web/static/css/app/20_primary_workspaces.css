@@ -95,11 +95,21 @@
 
 .empty-state {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center; height: 100%; color: var(--text-dim); gap: 6px; padding: 22px 14px;
-  font-size: 12px;
+  text-align: center; height: 100%; color: var(--text-dim); gap: 8px; padding: 28px 16px;
+  font-size: 13px;
 }
-.empty-state .icon { font-size: 40px; opacity: 0.4; margin-bottom: 6px; }
-.empty-state p { font-size: 12px; max-width: 280px; text-align: center; line-height: 1.45; }
+.empty-state .icon { font-size: 44px; opacity: 0.45; margin-bottom: 8px; }
+.empty-state p { font-size: 13px; max-width: 320px; text-align: center; line-height: 1.5; }
+.empty-state .btn { margin-top: 8px; }
+
+/* Inline loading spinner */
+.spinner-inline {
+  display: inline-block; width: 16px; height: 16px;
+  border: 2px solid var(--border); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin 0.6s linear infinite;
+  vertical-align: middle; margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* ─── Notes ─── */
 .notes-layout { display: flex; gap: 14px; height: calc(100vh - 176px); min-height: 360px; }

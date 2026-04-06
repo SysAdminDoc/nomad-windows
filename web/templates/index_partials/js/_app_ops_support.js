@@ -1897,7 +1897,7 @@ async function addPowerDevice() {
   try {
     const resp = await fetch('/api/power/devices', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({device_type: type, name, specs})});
     if (!resp.ok) { toast('Failed to add device', 'error'); return; }
-    document.getElementById('pd-name').value = '';
+    ['pd-type','pd-name','pd-watts','pd-count','pd-wh','pd-volts','pd-btype','pd-itype','pd-ctype','pd-amps','pd-fuel'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     toast(`${name} added`, 'success');
     loadPowerDevices();
     loadPowerDashboard();
@@ -2373,7 +2373,7 @@ async function addPlot() {
       length_ft: parseFloat(document.getElementById('gp-length').value) || 20,
       sun_exposure: document.getElementById('gp-sun').value})});
     if (!resp.ok) { toast('Failed to add plot', 'error'); return; }
-    document.getElementById('gp-name').value = '';
+    ['gp-name','gp-width','gp-length','gp-sun'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     toast('Plot added', 'success');
     loadPlots();
   } catch(e) { console.error(e); toast('Failed to add plot', 'error'); }
@@ -2413,7 +2413,7 @@ async function addSeed() {
       days_to_maturity: parseInt(document.getElementById('gs-dtm').value) || null,
       planting_season: document.getElementById('gs-season').value})});
     if (!resp.ok) { toast('Failed to add seed', 'error'); return; }
-    document.getElementById('gs-species').value = ''; document.getElementById('gs-variety').value = '';
+    ['gs-species','gs-variety','gs-qty','gs-year','gs-dtm','gs-season'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     toast('Seed added', 'success');
     loadSeeds();
   } catch(e) { console.error(e); toast('Failed to add seed', 'error'); }
@@ -2546,7 +2546,7 @@ async function addLivestock() {
       sex: document.getElementById('gl-sex').value, dob: document.getElementById('gl-dob').value,
       weight_lbs: parseFloat(document.getElementById('gl-weight').value) || null})});
     if (!resp.ok) { toast('Failed to add livestock', 'error'); return; }
-    document.getElementById('gl-name').value = '';
+    ['gl-species','gl-name','gl-sex','gl-dob','gl-weight'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     toast(`${species} added`, 'success');
     loadLivestockList();
   } catch(e) { console.error(e); toast('Failed to add livestock', 'error'); }

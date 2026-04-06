@@ -844,9 +844,7 @@ async function persistOnboardingComplete() {
   window.NOMAD_FIRST_RUN_COMPLETE = true;
   window.NOMAD_WIZARD_SHOULD_LAUNCH = false;
   refreshOnboardingSurfaces();
-  try {
-    await fetch('/api/settings/wizard-complete', {method: 'POST'});
-  } catch (_) {}
+  try { await apiPost('/api/settings/wizard-complete'); } catch (_) {}
 }
 
 async function checkWizard() {
@@ -1678,11 +1676,8 @@ async function importDocEntities(docId) {
 
 async function analyzeAllDocs() {
   try {
-    const r = await fetch('/api/kb/analyze-all', {method:'POST'});
-    if (!r.ok) throw new Error('API error');
-    const d = await r.json();
-    toast(`Analyzing ${d.count} document(s)...`, 'info');
-    // Refresh list after a delay
+    const d = await apiPost('/api/kb/analyze-all');
+    toast('Analyzing ' + d.count + ' document(s)...', 'info');
     setTimeout(loadKBDocs, 10000);
   } catch(e) { toast('Failed to start analysis', 'error'); }
 }
@@ -1878,16 +1873,10 @@ async function importGpxFile(input) {
   const formData = new FormData();
   formData.append('file', file);
   try {
-    const r = await fetch('/api/waypoints/import-gpx', {method:'POST', body: formData});
-    if (!r.ok) {
-      const d = await r.json().catch(() => ({}));
-      toast(d.error || 'GPX import failed', 'error');
-      return;
-    }
-    const d = await r.json();
-    toast(`Imported ${d.count || 0} waypoints from GPX`, 'success');
+    const d = await apiFetch('/api/waypoints/import-gpx', {method: 'POST', body: formData});
+    toast('Imported ' + (d.count || 0) + ' waypoints from GPX', 'success');
     loadWPDistances();
-  } catch(e) { toast('GPX import failed', 'error'); }
+  } catch(e) { toast(e.data?.error || 'GPX import failed', 'error'); }
   input.value = '';
 }
 

@@ -462,7 +462,7 @@ class TestErrorHandler:
         assert 'setWizardSectionVisibility(' in workspaces_text
         assert 'persistOnboardingComplete()' in workspaces_text
         assert 'clearWizardUrlFlag()' in workspaces_text
-        assert "fetch('/api/settings/wizard-complete', {method: 'POST'})" in workspaces_text
+        assert "apiPost('/api/settings/wizard-complete')" in workspaces_text
         assert "setShellVisibility(document.getElementById('wiz-mini-banner'), true);" in workspaces_text
         assert "setShellVisibility(document.getElementById('wiz-mini-banner'), false);" in workspaces_text
         assert "fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tour_complete:'1'})});" not in workspaces_text

@@ -1815,11 +1815,9 @@ async function downloadChannelVideo(channelUrl, channelName, category) {
   // Download latest video from channel, preserving channel name as folder
   const folder = category;
   try {
-    const r = await fetch('/api/ytdlp/download', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({url: channelUrl + '/videos', folder: folder, category: category.toLowerCase().replace(/[^a-z]+/g, '_')})});
-    const d = await r.json();
+    const d = await apiPost('/api/ytdlp/download', {url: channelUrl + '/videos', folder: folder, category: category.toLowerCase().replace(/[^a-z]+/g, '_')});
     if (d.id) {
-      toast(`Downloading from ${channelName}...`, 'info');
+      toast('Downloading from ' + escapeHtml(channelName) + '...', 'info');
       pollMediaDownloads(d.id);
     } else {
       toast(d.error || 'Download failed', 'error');
@@ -1998,10 +1996,8 @@ async function downloadYtVideo(url, title) {
   const s = await _fetchJson('/api/ytdlp/status');
   if (!s.installed) { toast('Install the downloader first from the Videos tab', 'warning'); return; }
   try {
-    const r = await fetch('/api/ytdlp/download', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({url, folder:'YouTube Downloads'})});
-    const d = await r.json();
-    if (d.id) { toast(`Downloading: ${title.substring(0,50)}...`, 'info'); pollMediaDownloads(d.id); }
+    const d = await apiPost('/api/ytdlp/download', {url, folder: 'YouTube Downloads'});
+    if (d.id) { toast('Downloading: ' + title.substring(0,50) + '...', 'info'); pollMediaDownloads(d.id); }
     else { toast(d.error || 'Download failed', 'error'); }
   } catch(e) { toast('Download failed', 'error'); }
 }
@@ -2010,10 +2006,8 @@ async function downloadYtAudio(url, title) {
   const s = await _fetchJson('/api/ytdlp/status');
   if (!s.installed) { toast('Install the downloader first from the Videos tab', 'warning'); return; }
   try {
-    const r = await fetch('/api/ytdlp/download-audio', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({url, folder:'YouTube Audio'})});
-    const d = await r.json();
-    if (d.id) { toast(`Downloading audio: ${title.substring(0,50)}...`, 'info'); pollMediaDownloads(d.id); }
+    const d = await apiPost('/api/ytdlp/download-audio', {url, folder: 'YouTube Audio'});
+    if (d.id) { toast('Downloading audio: ' + title.substring(0,50) + '...', 'info'); pollMediaDownloads(d.id); }
     else { toast(d.error || 'Download failed', 'error'); }
   } catch(e) { toast('Download failed', 'error'); }
 }
@@ -2279,10 +2273,8 @@ async function refreshDlQueue() {
 
 async function subscribeChannel(url, name, category) {
   try {
-    const r = await fetch('/api/subscriptions', {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name, url, category})});
-    const d = await r.json();
-    if (d.status === 'subscribed') toast(`Subscribed to ${name}`, 'success');
+    const d = await apiPost('/api/subscriptions', {name, url, category});
+    if (d.status === 'subscribed') toast('Subscribed to ' + name, 'success');
     else toast(d.error || 'Already subscribed', 'info');
   } catch(e) { toast('Failed to subscribe', 'error'); }
 }
@@ -2424,8 +2416,7 @@ async function loadBookCatalog() {
 async function downloadCatalogItem(btn, url, folder, category) {
   btn.disabled = true; btn.textContent = '...';
   try {
-    const r = await fetch('/api/ytdlp/download', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, folder, category})});
-    const d = await r.json();
+    const d = await apiPost('/api/ytdlp/download', {url, folder, category});
     if (d.error) { toast(d.error, 'error'); btn.disabled = false; btn.textContent = 'Download'; return; }
     btn.textContent = 'Queued'; pollMediaDownloads(d.id);
   } catch(e) { toast('Failed', 'error'); btn.disabled = false; btn.textContent = 'Download'; }
@@ -2434,8 +2425,7 @@ async function downloadCatalogItem(btn, url, folder, category) {
 async function downloadCatalogAudio(btn, url, folder, category) {
   btn.disabled = true; btn.textContent = '...';
   try {
-    const r = await fetch('/api/ytdlp/download-audio', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, folder, category})});
-    const d = await r.json();
+    const d = await apiPost('/api/ytdlp/download-audio', {url, folder, category});
     if (d.error) { toast(d.error, 'error'); btn.disabled = false; btn.textContent = 'Download'; return; }
     btn.textContent = 'Queued'; pollMediaDownloads(d.id);
   } catch(e) { toast('Failed', 'error'); btn.disabled = false; btn.textContent = 'Download'; }
@@ -2444,8 +2434,7 @@ async function downloadCatalogAudio(btn, url, folder, category) {
 async function downloadRefBook(btn, item) {
   btn.disabled = true; btn.textContent = '...';
   try {
-    const r = await fetch('/api/books/download-ref', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(item)});
-    const d = await r.json();
+    const d = await apiPost('/api/books/download-ref', item);
     if (d.status === 'already_downloaded') { toast('Already downloaded', 'info'); btn.textContent = 'Downloaded'; btn.style.color = 'var(--green)'; return; }
     if (d.error) { toast(d.error, 'error'); btn.disabled = false; btn.textContent = 'Download'; return; }
     btn.textContent = 'Downloading...'; pollMediaDownloads(d.id);
@@ -2457,11 +2446,10 @@ async function downloadAllCatalog() {
   if (!s.installed) { toast('Install the downloader first', 'warning'); return; }
   try {
     const catalog = await _fetchJson('/api/videos/catalog');
-    const r = await fetch('/api/ytdlp/download-catalog', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({items:catalog})});
-    const d = await r.json();
+    const d = await apiPost('/api/ytdlp/download-catalog', {items: catalog});
     if (d.error) { toast(d.error, 'error'); return; }
     if (d.status === 'all_downloaded') { toast('All catalog content already downloaded!', 'success'); return; }
-    toast(`Queued ${d.count} items for download`, 'info'); pollMediaDownloads(d.id);
+    toast('Queued ' + d.count + ' items for download', 'info'); pollMediaDownloads(d.id);
   } catch(e) { toast('Failed', 'error'); }
 }
 
@@ -2486,11 +2474,10 @@ async function downloadAllAudioCatalog() {
 
 async function downloadAllBooks() {
   try {
-    const r = await fetch('/api/books/download-all-refs', {method:'POST'});
-    const d = await r.json();
+    const d = await apiPost('/api/books/download-all-refs');
     if (d.status === 'all_downloaded') { toast('All reference books already downloaded!', 'success'); return; }
     if (d.error) { toast(d.error, 'error'); return; }
-    toast(`Downloading ${d.count} reference books...`, 'info'); pollMediaDownloads(d.id);
+    toast('Downloading ' + d.count + ' reference books...', 'info'); pollMediaDownloads(d.id);
   } catch(e) { toast('Failed', 'error'); }
 }
 

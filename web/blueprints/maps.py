@@ -332,7 +332,7 @@ def api_maps_delete():
         return jsonify({'error': 'Invalid filename'}), 400
     maps_dir = get_maps_dir()
     path = os.path.normpath(os.path.join(maps_dir, filename))
-    if not path.startswith(os.path.normpath(maps_dir) + os.sep):
+    if not os.path.normcase(path).startswith(os.path.normcase(os.path.normpath(maps_dir)) + os.sep):
         return jsonify({'error': 'Invalid filename'}), 400
     try:
         if os.path.isfile(path):

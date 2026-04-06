@@ -670,8 +670,9 @@ def api_maps_download_url():
             with _state_lock:
                 _map_downloads[dl_id] = {'progress': 100, 'status': f'Complete ({format_size(os.path.getsize(dest))})', 'error': None}
         except Exception as e:
+            log.exception('Map tile download failed for %s', dl_id)
             with _state_lock:
-                _map_downloads[dl_id] = {'progress': 0, 'status': 'Error', 'error': str(e)}
+                _map_downloads[dl_id] = {'progress': 0, 'status': 'Error', 'error': 'Download failed. Check logs for details.'}
 
     threading.Thread(target=_dl_thread, daemon=True).start()
     return jsonify({'status': 'started', 'dl_id': dl_id})

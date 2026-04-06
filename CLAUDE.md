@@ -429,7 +429,8 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **3 more DELETE fetch→apiDelete** — skills, ammo, community in init_runtime
   - **Dead import cleanup** — removed 8 unused imports: 5 state vars in app.py, math in weather.py, time in power.py, threading in federation.py
   - **CSS theme consistency** — 4 hardcoded reference callout border colors → var(--red/--orange/--accent/--green)
-  - **95 new tests across 5 files**: test_audit_v631.py (16), test_sitroom_api.py (22), test_comms_weather_power.py (24), test_media_extended.py (17), test_edge_cases.py (16). Total: 742 tests (was 647)
+  - **Missing empty states** — added empty-state guidance to showPhrases() and renderKIPersons() in init_runtime; note tag save converted to apiPut with error toast (was silent console.error)
+  - **112 new tests across 6 files**: test_audit_v631.py (16), test_sitroom_api.py (22), test_comms_weather_power.py (24), test_media_extended.py (17), test_edge_cases.py (16), test_federation_extended.py (17 — includes SSRF protection tests). Total: 759 tests (was 647)
   - **Audit confirms** — SQL injection: zero vulnerabilities (3 independent agent scans); bare int()/float(): all wrapped; JSON.parse: all guarded; path traversal: all 9 send_file routes use normcase+normpath+startswith+os.sep; XSS: all innerHTML escaped; all DELETE routes have confirm() + return 404; except Exception: pass blocks reviewed — all are intentional optional-feature probes (Ollama/PIL availability, weather data); 742 tests pass
 
 ## Run / Build

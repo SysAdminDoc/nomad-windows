@@ -103,7 +103,8 @@ def api_start_service(service_id):
             result['dependencies_started'] = deps_started
         return jsonify(result)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Service start failed for %s', service_id)
+        return jsonify({'error': 'Service start failed'}), 500
 
 @services_bp.route('/api/services/<service_id>/stop', methods=['POST'])
 def api_stop_service(service_id):
@@ -114,7 +115,8 @@ def api_stop_service(service_id):
         mod.stop()
         return jsonify({'status': 'stopped'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Service stop failed for %s', service_id)
+        return jsonify({'error': 'Service stop failed'}), 500
 
 @services_bp.route('/api/services/<service_id>/restart', methods=['POST'])
 def api_restart_service(service_id):
@@ -127,7 +129,8 @@ def api_restart_service(service_id):
         mod.start()
         return jsonify({'status': 'restarted'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Service restart failed for %s', service_id)
+        return jsonify({'error': 'Service restart failed'}), 500
 
 @services_bp.route('/api/services/<service_id>/uninstall', methods=['POST'])
 def api_uninstall_service(service_id):
@@ -137,8 +140,8 @@ def api_uninstall_service(service_id):
         uninstall_service(service_id)
         return jsonify({'status': 'uninstalled'})
     except Exception as e:
-        log.error(f'Uninstall failed for {service_id}: {e}')
-        return jsonify({'error': str(e)}), 500
+        log.exception('Uninstall failed for %s', service_id)
+        return jsonify({'error': 'Uninstall failed'}), 500
 
 @services_bp.route('/api/services/start-all', methods=['POST'])
 def api_start_all():

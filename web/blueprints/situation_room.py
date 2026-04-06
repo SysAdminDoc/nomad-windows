@@ -4984,7 +4984,8 @@ def api_sitroom_webhook_test():
         resp = _http_session.post(url, json=payload, timeout=10, headers=_REQ_HEADERS)
         return jsonify({'sent': True, 'status_code': resp.status_code})
     except Exception as e:
-        return jsonify({'sent': False, 'error': str(e)[:200]})
+        log.exception('Webhook test failed')
+        return jsonify({'sent': False, 'error': 'Webhook request failed'})
 
 
 @situation_room_bp.route('/api/sitroom/webhook-config', methods=['GET', 'POST'])

@@ -111,3 +111,47 @@ class TestResponseFormatConsistency:
                           content_type='application/json')
         data = resp.get_json()
         assert 'error' in data
+
+
+class TestErrorMessageSafety:
+    """Verify error responses don't leak internal details."""
+
+    def test_delete_nonexistent_contact(self, client):
+        resp = client.delete('/api/contacts/99999')
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert 'Traceback' not in json.dumps(data)
+
+    def test_delete_nonexistent_note(self, client):
+        resp = client.delete('/api/notes/99999')
+        assert resp.status_code == 404
+        data = resp.get_json()
+        assert 'error' in data
+
+    def test_delete_nonexistent_skill(self, client):
+        resp = client.delete('/api/skills/99999')
+        assert resp.status_code == 404
+
+    def test_delete_nonexistent_equipment(self, client):
+        resp = client.delete('/api/equipment/99999')
+        assert resp.status_code == 404
+
+    def test_delete_nonexistent_fuel(self, client):
+        resp = client.delete('/api/fuel/99999')
+        assert resp.status_code == 404
+
+    def test_delete_nonexistent_camera(self, client):
+        resp = client.delete('/api/security/cameras/99999')
+        assert resp.status_code == 404
+
+    def test_delete_nonexistent_power_device(self, client):
+        resp = client.delete('/api/power/devices/99999')
+        assert resp.status_code == 404
+
+    def test_delete_nonexistent_garden_plot(self, client):
+        resp = client.delete('/api/garden/plots/99999')
+        assert resp.status_code == 404
+
+    def test_delete_nonexistent_task(self, client):
+        resp = client.delete('/api/tasks/99999')
+        assert resp.status_code == 404

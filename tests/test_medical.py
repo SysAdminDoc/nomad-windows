@@ -156,3 +156,11 @@ class TestExpiringMeds:
     def test_expiring_meds_empty(self, client):
         resp = client.get('/api/medical/expiring-meds')
         assert resp.status_code == 200
+
+
+class TestTriageUpdate404:
+    def test_triage_update_nonexistent_returns_404(self, client):
+        resp = client.put('/api/medical/triage/99999', json={
+            'triage_category': 'immediate',
+        })
+        assert resp.status_code == 404

@@ -148,3 +148,11 @@ class TestConversationExport:
 
         assert resp.status_code == 200
         assert '# Broken Export' in resp.get_data(as_text=True)
+
+
+class TestConversationsUpdate404:
+    def test_update_nonexistent_returns_404(self, client):
+        resp = client.put('/api/conversations/99999', json={
+            'title': 'Does Not Exist',
+        })
+        assert resp.status_code == 404

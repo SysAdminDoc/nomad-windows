@@ -810,3 +810,11 @@ class TestSettingsEndpoint:
             'theme': 'dark',
         })
         assert resp.status_code == 200
+
+
+class TestWatchScheduleUpdate404:
+    def test_update_nonexistent_returns_404(self, client):
+        resp = client.put('/api/watch-schedules/99999', json={
+            'name': 'Does Not Exist',
+        })
+        assert resp.status_code == 404

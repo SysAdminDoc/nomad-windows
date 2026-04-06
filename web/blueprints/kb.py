@@ -571,7 +571,7 @@ def api_kb_workspace_create():
         )
         db.commit()
         wid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
-        return jsonify({'id': wid, 'status': 'ok'})
+        return jsonify({'id': wid, 'status': 'ok'}), 201
 @kb_bp.route('/api/kb/workspaces/<int:wid>', methods=['DELETE'])
 def api_kb_workspace_delete(wid):
     """Delete a KB workspace."""

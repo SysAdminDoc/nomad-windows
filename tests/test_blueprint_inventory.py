@@ -85,7 +85,7 @@ class TestCheckoutCheckin:
             'quantity': 2,
             'reason': 'Supply run',
         })
-        assert resp.status_code == 200
+        assert resp.status_code == 201
 
 
 class TestInventorySummary:

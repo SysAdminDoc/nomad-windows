@@ -120,7 +120,7 @@ def api_weather_reading_add():
             _evaluate_weather_action_rules(db)
         except Exception:
             pass
-        return jsonify({'status': 'ok', 'prediction': prediction})
+        return jsonify({'status': 'ok', 'prediction': prediction}), 201
 @weather_bp.route('/api/weather/predict')
 def api_weather_predict():
     """Get current Zambretti weather prediction."""

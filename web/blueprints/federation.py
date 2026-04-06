@@ -278,13 +278,13 @@ def api_node_sync_push():
                 if since:
                     schema_cols = {r[1] for r in db.execute(f"PRAGMA table_info({table})").fetchall()}
                     if 'updated_at' in schema_cols:
-                        rows = db.execute(f'SELECT * FROM {table} WHERE updated_at > ?', (since,)).fetchall()
+                        rows = db.execute(f'SELECT * FROM {table} WHERE updated_at > ? LIMIT 10000', (since,)).fetchall()
                     elif 'created_at' in schema_cols:
-                        rows = db.execute(f'SELECT * FROM {table} WHERE created_at > ?', (since,)).fetchall()
+                        rows = db.execute(f'SELECT * FROM {table} WHERE created_at > ? LIMIT 10000', (since,)).fetchall()
                     else:
-                        rows = db.execute(f'SELECT * FROM {table} LIMIT 50000').fetchall()
+                        rows = db.execute(f'SELECT * FROM {table} LIMIT 10000').fetchall()
                 else:
-                    rows = db.execute(f'SELECT * FROM {table} LIMIT 50000').fetchall()
+                    rows = db.execute(f'SELECT * FROM {table} LIMIT 10000').fetchall()
                 table_data = [dict(r) for r in rows]
                 for row in table_data:
                     row.pop('id', None)
@@ -834,7 +834,7 @@ def api_federation_supply_chain():
     with db_session() as db:
         peers = db.execute('SELECT * FROM federation_peers WHERE lat IS NOT NULL AND lng IS NOT NULL LIMIT 5000').fetchall()
         offers = db.execute("SELECT * FROM federation_offers WHERE status = 'active' LIMIT 5000").fetchall()
-        requests_rows = db.execute("SELECT * FROM federation_requests WHERE status = 'active'").fetchall()
+        requests_rows = db.execute("SELECT * FROM federation_requests WHERE status = 'active' LIMIT 500").fetchall()
 
     peer_map = {}
     features = []
@@ -908,7 +908,7 @@ def api_federation_offer_create():
 @federation_bp.route('/api/federation/requests')
 def api_federation_requests():
     with db_session() as db:
-        rows = db.execute("SELECT * FROM federation_requests WHERE status = 'active' ORDER BY urgency DESC, created_at DESC").fetchall()
+        rows = db.execute("SELECT * FROM federation_requests WHERE status = 'active' ORDER BY urgency DESC, created_at DESC LIMIT 500").fetchall()
     return jsonify([dict(r) for r in rows])
 
 

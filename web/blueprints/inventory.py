@@ -385,7 +385,7 @@ def api_inventory_receipt_import():
             added += 1
         db.commit()
     log_activity('receipt_import', f'Imported {added} items from receipt scan')
-    return jsonify({'status': 'ok', 'count': added})
+    return jsonify({'status': 'ok', 'count': added}), 201
 
 # ─── AI Vision Inventory Scanner ─────────────────────────────────
 @inventory_bp.route('/api/inventory/vision-scan', methods=['POST'])
@@ -559,7 +559,7 @@ def api_inventory_vision_import():
             added += 1
         db.commit()
     log_activity('vision_import', f'Imported {added} items from AI vision scan')
-    return jsonify({'status': 'ok', 'count': added})
+    return jsonify({'status': 'ok', 'count': added}), 201
 
 
 @inventory_bp.route('/api/inventory/export-csv')
@@ -685,7 +685,7 @@ def api_shopping_list_save():
                 (r['name'], r['category'], needed, r['unit'], r['id'])
             )
         db.commit()
-        return jsonify({'status': 'ok', 'count': len(rows)})
+        return jsonify({'status': 'ok', 'count': len(rows)}), 201
 @inventory_bp.route('/api/inventory/<int:item_id>/checkout', methods=['POST'])
 def api_inventory_checkout(item_id):
     """Check out an inventory item to a person."""
@@ -703,7 +703,7 @@ def api_inventory_checkout(item_id):
         db.execute('UPDATE inventory SET checked_out_to = ? WHERE id = ?', (person, item_id))
         db.commit()
         log_activity('checkout', detail=f'{person} checked out item #{item_id}')
-        return jsonify({'status': 'ok'})
+        return jsonify({'status': 'ok'}), 201
 @inventory_bp.route('/api/inventory/<int:item_id>/checkin', methods=['POST'])
 def api_inventory_checkin(item_id):
     """Return a checked-out inventory item."""

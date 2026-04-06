@@ -735,12 +735,10 @@ function deleteModel(name, btn) {
     setTimeout(() => { btn.textContent = 'Delete'; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
     return;
   }
-  fetch('/api/ai/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})})
-    .then(r => r.json()).then(d => {
-      if (d.error) { toast(`Failed to delete: ${d.error}`, 'error'); return; }
+  apiPost('/api/ai/delete', {model: name}).then(d => {
       toast(`Deleted ${name}`, 'warning');
       loadModelManager(); loadModels();
-    }).catch(() => toast('Delete failed', 'error'));
+    }).catch(e => toast(e.message || 'Delete failed', 'error'));
 }
 
 async function pullFromSettings(name) {

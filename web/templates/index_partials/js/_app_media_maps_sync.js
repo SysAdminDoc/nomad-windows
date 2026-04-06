@@ -2466,8 +2466,8 @@ async function downloadAllAudioCatalog() {
     const toDownload = catalog.filter(item => !_mediaItems.find(a => a.url === item.url));
     if (!toDownload.length) { toast('All audio catalog items already downloaded!', 'success'); return; }
     const results = await Promise.all(toDownload.map(item =>
-      fetch('/api/ytdlp/download-audio', {method:'POST', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({url:item.url, folder:item.folder, category:item.category})}).then(r => r.json())
+      apiPost('/api/ytdlp/download-audio', {url:item.url, folder:item.folder, category:item.category})
+        .catch(e => ({error: e.message}))
     ));
     let queued = 0;
     results.forEach(d => { if (d.id) { queued++; pollMediaDownloads(d.id); } });

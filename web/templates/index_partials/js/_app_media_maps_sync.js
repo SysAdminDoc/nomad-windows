@@ -109,9 +109,12 @@ async function runMediaDownloadPoll() {
       if (['downloading','queued','merging','fetching info','starting'].includes(p.status)) active = p;
     }
     if (active) {
-      document.getElementById('media-dl-title').textContent = active.title || 'Downloading...';
-      document.getElementById('media-dl-fill').style.width = active.percent + '%';
-      document.getElementById('media-dl-speed').textContent = active.speed || '';
+      const dlTitle = document.getElementById('media-dl-title');
+      const dlFill = document.getElementById('media-dl-fill');
+      const dlSpeed = document.getElementById('media-dl-speed');
+      if (dlTitle) dlTitle.textContent = active.title || 'Downloading...';
+      if (dlFill) dlFill.style.width = active.percent + '%';
+      if (dlSpeed) dlSpeed.textContent = active.speed || '';
       if (isMediaVisible('dl-queue-panel')) refreshDlQueue();
       if (active.status === 'complete') {
         toast('Download complete: ' + active.title, 'success');
@@ -2219,7 +2222,7 @@ async function downloadMediaURL() {
     }
     checkYtdlpStatus();
   }
-  const cat = document.getElementById('media-cat-select').value;
+  const cat = document.getElementById('media-cat-select')?.value || '';
   const endpoint = _mediaSub === 'audio' ? '/api/ytdlp/download-audio' : '/api/ytdlp/download';
   try {
     const r = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'},
@@ -2328,8 +2331,8 @@ async function loadSubscriptions() {
 
 async function uploadMediaFiles() {
   const input = document.getElementById('media-file-upload');
-  if (!input.files.length) return;
-  const cat = document.getElementById('media-cat-select').value;
+  if (!input || !input.files.length) return;
+  const cat = document.getElementById('media-cat-select')?.value || '';
   const uploadMap = {videos:'/api/videos/upload', audio:'/api/audio/upload', books:'/api/books/upload'};
   const uploads = Array.from(input.files).map(file => {
     const sizeMB = (file.size / 1024 / 1024).toFixed(1);

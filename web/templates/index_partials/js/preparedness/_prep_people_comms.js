@@ -368,23 +368,25 @@ const MORSE_REV = Object.fromEntries(Object.entries(MORSE_MAP).map(([k,v])=>[v,k
 function textToMorse() {
   const text = (document.getElementById('morse-input')?.value || '').toUpperCase();
   const morse = text.split('').map(c => c === ' ' ? '/' : (MORSE_MAP[c] || '')).filter(Boolean).join(' ');
-  document.getElementById('morse-output').textContent = morse;
+  const out = document.getElementById('morse-output');
+  if (out) out.textContent = morse;
 }
 
 function morseToText() {
   const morse = (document.getElementById('morse-decode-input')?.value || '').trim();
   const words = morse.split(/\s*\/\s*/);
   const text = words.map(w => w.split(/\s+/).map(c => MORSE_REV[c] || '?').join('')).join(' ');
-  document.getElementById('morse-decode-output').textContent = text;
+  const out = document.getElementById('morse-decode-output');
+  if (out) out.textContent = text;
 }
 
 let _morseAudioCtx = null;
 function playMorse() {
-  const morse = document.getElementById('morse-output').textContent;
+  const morse = document.getElementById('morse-output')?.textContent;
   if (!morse) { toast('Type some text first', 'warning'); return; }
   if (!_morseAudioCtx) _morseAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
   const ctx = _morseAudioCtx;
-  const wpm = parseInt(document.getElementById('morse-wpm').value) || 15;
+  const wpm = parseInt(document.getElementById('morse-wpm')?.value) || 15;
   const dotLen = 1.2 / wpm; // seconds per dot
   let t = ctx.currentTime + 0.1;
   for (const ch of morse) {

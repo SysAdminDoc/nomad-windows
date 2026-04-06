@@ -90,7 +90,16 @@
 }
 
 /* ─── Skills Matrix ─── */
-.skills-grid { overflow-x:auto; }
+.skills-grid { overflow-x:auto; -webkit-overflow-scrolling: touch; }
+.skills-grid::after {
+  content: '';
+  position: sticky;
+  right: 0;
+  display: block;
+  width: 24px;
+  min-height: 1px;
+  pointer-events: none;
+}
 .skills-grid table { border-collapse:collapse; font-size:11px; }
 .skills-grid th, .skills-grid td { padding:4px 8px;border:1px solid var(--border);text-align:center;white-space:nowrap; }
 .skills-grid th { background:var(--surface3);font-weight:600; }
@@ -164,11 +173,19 @@
   .freq-table { font-size: 10px; }
   .freq-table th, .freq-table td { padding: 4px 6px; }
 }
+@media (max-width: 600px) {
+  .sit-board { grid-template-columns: repeat(2, 1fr); }
+}
+
 @media (max-width: 480px) {
   .sit-board { grid-template-columns: repeat(2, 1fr); gap: 4px; }
   #cmd-dashboard { grid-template-columns: repeat(2, 1fr); }
   .prep-cat-btn { padding: 5px 10px !important; font-size: 10px !important; }
   .home-two-col { grid-template-columns: 1fr !important; }
+}
+
+@media (max-width: 400px) {
+  .sit-board { grid-template-columns: 1fr; }
 }
 
 /* ─── Prep Category Nav: Narrow Width ─── */

@@ -460,15 +460,18 @@ def api_motion_configure():
     """Set motion detection parameters."""
     _check_origin(request)
     data = request.get_json() or {}
-    if 'threshold' in data:
-        val = max(5, min(100, int(data['threshold'])))
-        _motion_config['threshold'] = val
-    if 'check_interval' in data:
-        val = max(1, min(30, int(data['check_interval'])))
-        _motion_config['check_interval'] = val
-    if 'cooldown' in data:
-        val = max(5, min(600, int(data['cooldown'])))
-        _motion_config['cooldown'] = val
+    try:
+        if 'threshold' in data:
+            val = max(5, min(100, int(data['threshold'])))
+            _motion_config['threshold'] = val
+        if 'check_interval' in data:
+            val = max(1, min(30, int(data['check_interval'])))
+            _motion_config['check_interval'] = val
+        if 'cooldown' in data:
+            val = max(5, min(600, int(data['cooldown'])))
+            _motion_config['cooldown'] = val
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid numeric value'}), 400
 
     # Persist to settings
     with db_session() as db:

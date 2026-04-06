@@ -229,9 +229,12 @@ async function deleteIncident(id) {
 
 async function clearIncidents() {
   if (!confirm('Clear all incident log entries? This cannot be undone.')) return;
-  await fetch('/api/incidents/clear', {method:'POST'});
-  toast('Incident log cleared', 'warning');
-  loadIncidents();
+  try {
+    const r = await fetch('/api/incidents/clear', {method:'POST'});
+    if (!r.ok) { toast('Failed to clear incidents', 'error'); return; }
+    toast('Incident log cleared', 'warning');
+    loadIncidents();
+  } catch(e) { console.error(e); toast('Failed to clear incidents', 'error'); }
 }
 
 /* ─── Watch Schedule ─── */

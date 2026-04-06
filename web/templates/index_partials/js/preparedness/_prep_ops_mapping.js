@@ -106,8 +106,12 @@ function createTimerQuick(name, mins) {
 }
 
 async function deleteTimer(id) {
-  await fetch(`/api/timers/${id}`, {method:'DELETE'});
-  loadTimers();
+  try {
+    const resp = await fetch(`/api/timers/${id}`, {method:'DELETE'});
+    if (!resp.ok) { toast('Failed to delete timer', 'error'); return; }
+    toast('Timer deleted', 'warning');
+    loadTimers();
+  } catch(e) { console.error(e); toast('Failed to delete timer', 'error'); }
 }
 
 /* ─── Map Waypoints ─── */

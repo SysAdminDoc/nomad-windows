@@ -2313,22 +2313,27 @@ function pollUpdateProgress() {
       const _udResp = await fetch('/api/update-download/status');
       if (!_udResp.ok) { stopUpdateProgressPoll(); return; }
       const s = await _udResp.json();
-      document.getElementById('update-progress-pct').textContent = s.progress + '%';
-      document.getElementById('update-progress-fill').style.width = s.progress + '%';
-      document.getElementById('update-progress-label').textContent =
+      const pctEl = document.getElementById('update-progress-pct');
+      const fillEl = document.getElementById('update-progress-fill');
+      const labelEl = document.getElementById('update-progress-label');
+      const barEl = document.getElementById('update-progress-bar');
+      const completeEl = document.getElementById('update-complete-msg');
+      const btnEl = document.getElementById('update-download-btn');
+      if (pctEl) pctEl.textContent = s.progress + '%';
+      if (fillEl) fillEl.style.width = s.progress + '%';
+      if (labelEl) labelEl.textContent =
         s.status === 'checking' ? 'Checking for update…' :
         s.status === 'downloading' ? 'Downloading update…' : s.status;
       if (s.status === 'complete') {
         stopUpdateProgressPoll();
-        document.getElementById('update-progress-bar').style.display = 'none';
-        document.getElementById('update-complete-msg').style.display = 'block';
-        document.getElementById('update-download-btn').style.display = 'none';
+        if (barEl) barEl.style.display = 'none';
+        if (completeEl) completeEl.style.display = 'block';
+        if (btnEl) btnEl.style.display = 'none';
         toast('Update downloaded successfully', 'success');
       } else if (s.status === 'error') {
         stopUpdateProgressPoll();
-        document.getElementById('update-progress-bar').style.display = 'none';
-        document.getElementById('update-download-btn').disabled = false;
-        document.getElementById('update-download-btn').textContent = 'Retry Download';
+        if (barEl) barEl.style.display = 'none';
+        if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Retry Download'; }
         toast('Update failed: ' + (s.error || 'Unknown error'), 'error');
       }
     } catch(e) { stopUpdateProgressPoll(); }

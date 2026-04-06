@@ -306,7 +306,8 @@ ${document.getElementById('aar-actions').value || 'None'}
 function copyAAR() {
   const el = document.getElementById('aar-output');
   if (!el || !el.textContent) generateAAR();
-  navigator.clipboard.writeText(document.getElementById('aar-output').textContent).then(() => toast('AAR copied', 'success'));
+  const text = document.getElementById('aar-output')?.textContent || '';
+  if (text) navigator.clipboard.writeText(text).then(() => toast('AAR copied', 'success'));
 }
 
 /* ─── Full Print Card (client-side with localStorage data) ─── */

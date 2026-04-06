@@ -4163,15 +4163,17 @@ function startPhoneticQuiz() {
 function nextPhoneticQuestion() {
   const keys = Object.keys(NATO_ALPHABET);
   const key = keys[Math.floor(Math.random() * keys.length)];
-  document.getElementById('phonetic-letter').textContent = key;
-  document.getElementById('phonetic-input').value = '';
-  document.getElementById('phonetic-result').textContent = '';
-  document.getElementById('phonetic-input').focus();
+  const letterEl = document.getElementById('phonetic-letter');
+  const inputEl = document.getElementById('phonetic-input');
+  const resultEl = document.getElementById('phonetic-result');
+  if (letterEl) letterEl.textContent = key;
+  if (inputEl) { inputEl.value = ''; inputEl.focus(); }
+  if (resultEl) resultEl.textContent = '';
 }
 
 function checkPhonetic() {
-  const letter = document.getElementById('phonetic-letter').textContent;
-  const answer = document.getElementById('phonetic-input').value.trim().toLowerCase();
+  const letter = document.getElementById('phonetic-letter')?.textContent || '';
+  const answer = (document.getElementById('phonetic-input')?.value || '').trim().toLowerCase();
   const correct = NATO_ALPHABET[letter].toLowerCase();
   _phoneticTotal++;
   const el = document.getElementById('phonetic-result');

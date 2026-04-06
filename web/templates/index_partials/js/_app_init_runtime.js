@@ -612,7 +612,9 @@ function showPhrases() {
   const lang = document.getElementById('phrase-lang').value;
   const data = _phrases[lang];
   if (!data) return;
-  document.getElementById('phrase-output').innerHTML = data.phrases.map(([eng,trans]) =>
+  const el = document.getElementById('phrase-output');
+  if (!data.phrases || !data.phrases.length) { el.innerHTML = '<div class="empty-state">No phrases available for this language.</div>'; return; }
+  el.innerHTML = data.phrases.map(([eng,trans]) =>
     `<div class="prep-reference-phrase-card">
       <div class="prep-reference-phrase-source">${eng}</div>
       <div class="prep-reference-phrase-translation">${trans}</div>
@@ -2320,6 +2322,7 @@ function removeKIPerson(idx) {
 function renderKIPersons() {
   const el = document.getElementById('ki-people-list');
   if (!el) return;
+  if (!_kiPersons.length) { el.innerHTML = '<div class="empty-state">Add family members above to calculate dosing.</div>'; return; }
   el.innerHTML = _kiPersons.map((p, i) => `
     <div class="prep-calc-dynamic-row">
       <input type="text" value="${p.label}" data-input-action="update-ki-person" data-ki-index="${i}" data-ki-field="label" class="prep-calc-dynamic-input prep-calc-dynamic-input-label">

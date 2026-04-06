@@ -869,12 +869,11 @@ function autoSaveNoteTags() {
     if (!currentNoteId) return;
     const tags = document.getElementById('note-tags').value;
     try {
-      const resp = await fetch(`/api/notes/${currentNoteId}/tags`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tags})});
-      if (!resp.ok) { console.error('Failed to save tags'); return; }
+      await apiPut('/api/notes/' + currentNoteId + '/tags', {tags});
       const n = allNotes.find(n => n.id === currentNoteId);
       if (n) n.tags = tags;
       renderNotesList();
-    } catch(e) { console.error('Failed to save tags:', e); }
+    } catch(e) { toast('Failed to save tags', 'error'); }
   }, 500);
 }
 

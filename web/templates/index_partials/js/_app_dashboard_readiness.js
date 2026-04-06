@@ -1000,6 +1000,7 @@ async function viewVaultEntry(id) {
 async function editVaultEntry(id) { await viewVaultEntry(id); }
 
 function deleteVaultEntry(id, btn) {
+  if (!confirm('Delete this vault entry?')) return;
   if (!btn) return;
   if (!btn.dataset.confirm) {
     btn.dataset.confirm = '1';

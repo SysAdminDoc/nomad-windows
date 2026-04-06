@@ -2265,7 +2265,9 @@ def api_playlist_update(pid):
             set_clause = ', '.join(f'{col} = ?' for col in filtered)
             params = list(filtered.values())
             params.append(pid)
-            db.execute(f'UPDATE playlists SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?', params)
+            r = db.execute(f'UPDATE playlists SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?', params)
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'ok'})
 @media_bp.route('/api/playlists/<int:pid>', methods=['DELETE'])

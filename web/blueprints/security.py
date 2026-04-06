@@ -246,6 +246,8 @@ def api_security_zones_create():
 def api_security_zones_update(zid):
     data = request.get_json() or {}
     with db_session() as db:
+        if not db.execute('SELECT 1 FROM perimeter_zones WHERE id = ?', (zid,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
         allowed = ['name', 'zone_type', 'boundary_geojson', 'threat_level', 'color', 'notes', 'camera_ids', 'waypoint_ids', 'alert_on_entry', 'alert_on_exit']
         update_data = {}
         for col in ['name', 'zone_type', 'boundary_geojson', 'threat_level', 'color', 'notes']:

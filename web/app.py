@@ -1266,6 +1266,8 @@ def create_app():
     def api_checklists_update(cid):
         data = request.get_json() or {}
         with db_session() as db:
+            if not db.execute('SELECT 1 FROM checklists WHERE id = ?', (cid,)).fetchone():
+                return jsonify({'error': 'not found'}), 404
             update_data = {}
             if 'name' in data:
                 update_data['name'] = data['name']
@@ -1499,6 +1501,8 @@ def create_app():
     def api_contacts_update(cid):
         data = request.get_json() or {}
         with db_session() as db:
+            if not db.execute('SELECT 1 FROM contacts WHERE id = ?', (cid,)).fetchone():
+                return jsonify({'error': 'not found'}), 404
             allowed = ['name', 'callsign', 'role', 'skills', 'phone', 'freq', 'email', 'address', 'rally_point', 'blood_type', 'medical_notes', 'notes']
             filtered = safe_columns(data, allowed)
             if not filtered:
@@ -1777,8 +1781,10 @@ def create_app():
             if len(data.get(field, '') or '') > 1_000_000:
                 return jsonify({'error': f'{field} too large (max 1MB)'}), 400
         with db_session() as db:
-            db.execute('UPDATE vault_entries SET title = ?, encrypted_data = ?, iv = ?, salt = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            r = db.execute('UPDATE vault_entries SET title = ?, encrypted_data = ?, iv = ?, salt = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
                        (data.get('title', ''), data['encrypted_data'], data['iv'], data['salt'], eid))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'saved'})
 
@@ -2300,7 +2306,9 @@ def create_app():
         sets.append('updated_at=CURRENT_TIMESTAMP')
         vals.append(lid)
         with db_session() as db:
-            db.execute(f'UPDATE livestock SET {", ".join(sets)} WHERE id=?', tuple(vals))
+            r = db.execute(f'UPDATE livestock SET {", ".join(sets)} WHERE id=?', tuple(vals))
+            if r.rowcount == 0:
+                return jsonify({'error': 'not found'}), 404
             db.commit()
         return jsonify({'status': 'updated'})
 

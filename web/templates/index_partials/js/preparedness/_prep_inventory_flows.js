@@ -209,15 +209,18 @@ async function saveInvItem() {
     notes: document.getElementById('inv-notes').value.trim(),
   };
   if (!data.name) { toast('Name is required', 'warning'); return; }
-  if (editId) {
-    const resp = await fetch(`/api/inventory/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    if (!resp.ok) { toast('Failed to update item', 'error'); return; }
-    toast('Item updated', 'success');
-  } else {
-    const resp = await fetch('/api/inventory', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    if (!resp.ok) { toast('Failed to add item', 'error'); return; }
-    toast('Item added', 'success');
-  }
+  const btn = document.querySelector('#inv-form .btn-primary, #inv-form [onclick*="saveInvItem"]');
+  if (btn) btn.classList.add('is-loading');
+  try {
+    if (editId) {
+      await apiPut(`/api/inventory/${editId}`, data);
+      toast('Item updated', 'success');
+    } else {
+      await apiPost('/api/inventory', data);
+      toast('Item added', 'success');
+    }
+  } catch(e) { toast(e.message || 'Failed to save item', 'error'); return;
+  } finally { if (btn) btn.classList.remove('is-loading'); }
   FormStateRecovery.clear('inventory');
   hideInvForm();
   loadInventory();

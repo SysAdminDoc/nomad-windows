@@ -1003,8 +1003,8 @@ function deleteVaultEntry(id, btn) {
     setTimeout(() => { btn.textContent = 'Delete'; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
     return;
   }
-  fetch(`/api/vault/${id}`, {method:'DELETE'})
-    .then(r => { if (!r.ok) throw new Error(); toast('Entry deleted', 'warning'); loadVaultList(); })
+  apiDelete('/api/vault/' + id)
+    .then(() => { toast('Entry deleted', 'warning'); loadVaultList(); })
     .catch(() => toast('Failed to delete entry', 'error'));
 }
 
@@ -1230,9 +1230,11 @@ async function toggleWeatherRule(id) {
 
 async function deleteWeatherRule(id) {
   if (!confirm('Delete this weather action rule?')) return;
-  await fetch(`/api/weather/action-rules/${id}`, { method: 'DELETE' });
-  toast('Rule deleted', 'success');
-  loadWeatherRules();
+  try {
+    await apiDelete('/api/weather/action-rules/' + id);
+    toast('Rule deleted', 'success');
+    loadWeatherRules();
+  } catch(e) { toast('Failed to delete rule', 'error'); }
 }
 
 async function evaluateWeatherRules() {

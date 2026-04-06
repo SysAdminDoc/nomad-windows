@@ -1431,7 +1431,8 @@ Adult: 0.3mg (EpiPen) | Child: 0.15mg (EpiPen Jr) | Infant: 0.01mg/kg</li>
                 db.execute('SELECT 1').fetchone()
             results.append({'check': 'database', 'status': 'pass', 'detail': 'Database accessible'})
         except Exception as e:
-            results.append({'check': 'database', 'status': 'fail', 'detail': str(e)})
+            log.warning('Self-test database check failed: %s', e)
+            results.append({'check': 'database', 'status': 'fail', 'detail': 'Database check failed'})
 
         # 2. Disk space > 100MB free
         try:
@@ -1445,7 +1446,8 @@ Adult: 0.3mg (EpiPen) | Child: 0.15mg (EpiPen Jr) | Infant: 0.01mg/kg</li>
                 results.append({'check': 'disk_space', 'status': 'fail',
                                 'detail': f'Only {free_mb:.0f} MB free (need >100 MB)'})
         except Exception as e:
-            results.append({'check': 'disk_space', 'status': 'fail', 'detail': str(e)})
+            log.warning('Self-test disk check failed: %s', e)
+            results.append({'check': 'disk_space', 'status': 'fail', 'detail': 'Disk space check failed'})
 
         # 3. Service binaries exist (if installed)
         from services import ollama as _ollama, kiwix as _kiwix
@@ -1457,15 +1459,16 @@ Adult: 0.3mg (EpiPen) | Child: 0.15mg (EpiPen Jr) | Infant: 0.01mg/kg</li>
                         path = exe()
                         if os.path.isfile(path):
                             results.append({'check': f'{svc_name}_binary', 'status': 'pass',
-                                            'detail': f'Binary exists at {path}'})
+                                            'detail': 'Binary found'})
                         else:
                             results.append({'check': f'{svc_name}_binary', 'status': 'fail',
-                                            'detail': f'Binary missing: {path}'})
+                                            'detail': 'Binary missing'})
                     else:
                         results.append({'check': f'{svc_name}_binary', 'status': 'pass',
                                         'detail': 'Installed (no exe check)'})
             except Exception as e:
-                results.append({'check': f'{svc_name}_binary', 'status': 'fail', 'detail': str(e)})
+                log.warning('Self-test %s binary check failed: %s', svc_name, e)
+                results.append({'check': f'{svc_name}_binary', 'status': 'fail', 'detail': 'Check failed'})
 
         # 4. Port conflicts
         import socket
@@ -1482,7 +1485,8 @@ Adult: 0.3mg (EpiPen) | Child: 0.15mg (EpiPen Jr) | Infant: 0.01mg/kg</li>
                     results.append({'check': f'port_{port}', 'status': 'warn',
                                     'detail': f'{label} port {port} not responding'})
             except Exception as e:
-                results.append({'check': f'port_{port}', 'status': 'warn', 'detail': str(e)})
+                log.warning('Self-test port %d check failed: %s', port, e)
+                results.append({'check': f'port_{port}', 'status': 'warn', 'detail': 'Port check failed'})
 
         # 5. Python version
         py_ver = platform.python_version()
@@ -1507,7 +1511,8 @@ Adult: 0.3mg (EpiPen) | Child: 0.15mg (EpiPen Jr) | Infant: 0.01mg/kg</li>
                 results.append({'check': 'critical_tables', 'status': 'fail',
                                 'detail': f'Missing tables: {", ".join(missing)}'})
         except Exception as e:
-            results.append({'check': 'critical_tables', 'status': 'fail', 'detail': str(e)})
+            log.warning('Self-test critical tables check failed: %s', e)
+            results.append({'check': 'critical_tables', 'status': 'fail', 'detail': 'Table check failed'})
 
         all_pass = all(r['status'] == 'pass' for r in results)
         any_fail = any(r['status'] == 'fail' for r in results)

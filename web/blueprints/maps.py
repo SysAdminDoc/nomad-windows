@@ -450,9 +450,9 @@ def _get_pmtiles_cli():
         with tarfile.open(fileobj=io.BytesIO(data), mode='r:gz') as tf:
             for name in tf.getnames():
                 if name.endswith(binary_name):
-                    # Path traversal protection
+                    # Path traversal protection (normcase for Windows case-insensitive)
                     target = os.path.normpath(os.path.join(pmtiles_dir, name))
-                    if not target.startswith(os.path.normpath(pmtiles_dir)):
+                    if not os.path.normcase(target).startswith(os.path.normcase(os.path.normpath(pmtiles_dir)) + os.sep):
                         continue
                     tf.extract(name, pmtiles_dir)
                     extracted = os.path.join(pmtiles_dir, name)
@@ -580,9 +580,11 @@ def _download_map_region_thread(region_id, bbox, maps_dir):
                 'error': 'Permission denied. Try running NOMAD Field Desk as Administrator, or check that your antivirus is not blocking pmtiles.exe.'}
     except Exception as e:
         log.exception('Map download error for %s', region_id)
-        err_msg = str(e)
-        if 'WinError 5' in err_msg or 'Permission denied' in err_msg or 'Access is denied' in err_msg:
+        raw = str(e)
+        if 'WinError 5' in raw or 'Permission denied' in raw or 'Access is denied' in raw:
             err_msg = 'Permission denied. Try running NOMAD Field Desk as Administrator, or check that your antivirus is not blocking pmtiles.exe.'
+        else:
+            err_msg = 'Download failed. Check logs for details.'
         with _state_lock:
             _map_downloads[region_id] = {'progress': 0, 'status': 'Error', 'error': err_msg}
 

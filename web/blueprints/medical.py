@@ -1,6 +1,7 @@
 """Medical module routes."""
 
 import json
+import logging
 import os
 import time
 from datetime import datetime, timedelta
@@ -8,6 +9,8 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, Response
 
 from db import db_session, log_activity
+
+log = logging.getLogger('nomad.web')
 from config import get_data_dir
 from web.print_templates import render_print_document
 
@@ -493,7 +496,8 @@ def api_medical_patients_export():
         return Response(buf.getvalue(), mimetype='text/csv',
                        headers={'Content-Disposition': 'attachment; filename="nomad_patients_export.csv"'})
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        log.exception('Patient export failed')
+        return jsonify({'error': 'Export failed'}), 500
 
 
 # ─── Vitals CRUD ─────────────────────────────────────────────────────

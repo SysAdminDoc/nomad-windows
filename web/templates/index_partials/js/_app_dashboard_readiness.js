@@ -479,12 +479,7 @@ function _attachWidgetDragHandlers() {
 async function saveWidgetConfig(silent) {
   if (!window._widgetConfig) return;
   try {
-    const resp = await fetch('/api/dashboard/widgets', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({widgets: window._widgetConfig})
-    });
-    const data = await resp.json();
+    const data = await apiPost('/api/dashboard/widgets', {widgets: window._widgetConfig});
     if (data.ok) {
       window._widgetConfig = data.widgets;
       if (_liveDashData) renderDashboardWidgets();
@@ -497,8 +492,7 @@ async function saveWidgetConfig(silent) {
 
 async function resetWidgetConfig() {
   try {
-    const resp = await fetch('/api/dashboard/widgets/reset', {method: 'POST'});
-    const data = await resp.json();
+    const data = await apiPost('/api/dashboard/widgets/reset');
     if (data.ok) {
       window._widgetConfig = data.widgets;
       if (_liveDashData) renderDashboardWidgets();
@@ -1026,9 +1020,10 @@ async function logWeather() {
     notes: document.getElementById('wx-notes').value.trim(),
   };
   if (!data.pressure_hpa && !data.temp_f && !data.notes) { toast('Enter at least temperature, pressure, or notes', 'warning'); return; }
-  const r = await fetch('/api/weather', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  if (!r.ok) { toast('Failed to log weather observation', 'error'); return; }
-  toast('Weather observation logged', 'success');
+  try {
+    await apiPost('/api/weather', data);
+    toast('Weather observation logged', 'success');
+  } catch(e) { toast('Failed to log weather observation', 'error'); return; }
   document.getElementById('wx-notes').value = '';
   loadWeather();
 }
@@ -1213,8 +1208,8 @@ async function createWeatherRule() {
     action_data,
     cooldown_minutes: parseInt(document.getElementById('wxr-cooldown').value) || 60,
   };
-  const resp = await fetch('/api/weather/action-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  if (resp.ok) {
+  try {
+    await apiPost('/api/weather/action-rules', body);
     toast('Weather action rule created', 'success');
     document.getElementById('wx-rule-form').style.display = 'none';
     document.getElementById('wxr-name').value = '';
@@ -1223,9 +1218,8 @@ async function createWeatherRule() {
     document.getElementById('wxr-message').value = '';
     document.getElementById('wxr-taskname').value = '';
     loadWeatherRules();
-  } else {
-    const err = await resp.json();
-    toast(err.error || 'Failed to create rule', 'error');
+  } catch(e) {
+    toast(e.data?.error || 'Failed to create rule', 'error');
   }
 }
 
@@ -1242,14 +1236,15 @@ async function deleteWeatherRule(id) {
 }
 
 async function evaluateWeatherRules() {
-  const resp = await fetch('/api/weather/evaluate-rules', { method: 'POST' });
-  const data = await resp.json();
-  if (data.triggered && data.triggered.length > 0) {
-    toast(`${data.triggered.length} rule(s) triggered: ${data.triggered.map(t => t.name).join(', ')}`, 'warning');
-  } else {
-    toast('No rules triggered — conditions not met or on cooldown', 'info');
-  }
-  loadWeatherRules();
+  try {
+    const data = await apiPost('/api/weather/evaluate-rules');
+    if (data.triggered && data.triggered.length > 0) {
+      toast(data.triggered.length + ' rule(s) triggered: ' + data.triggered.map(t => t.name).join(', '), 'warning');
+    } else {
+      toast('No rules triggered — conditions not met or on cooldown', 'info');
+    }
+    loadWeatherRules();
+  } catch(e) { toast('Failed to evaluate rules', 'error'); }
 }
 
 /* ─── Signal Schedule ─── */

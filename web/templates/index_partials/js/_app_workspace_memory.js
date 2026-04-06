@@ -2293,7 +2293,9 @@ async function downloadUpdate() {
   if (btn) { btn.disabled = true; btn.textContent = 'Downloading…'; }
   const pbar = document.getElementById('update-progress-bar');
   if (pbar) pbar.style.display = 'block';
-  await fetch('/api/update-download', {method:'POST'});
+  try {
+    await apiPost('/api/update-download');
+  } catch(e) { toast('Update download failed', 'error'); return; }
   pollUpdateProgress();
 }
 
@@ -2349,7 +2351,7 @@ function pollUpdateProgress() {
 }
 
 async function openUpdateFolder() {
-  await fetch('/api/update-download/open', {method:'POST'});
+  try { await apiPost('/api/update-download/open'); } catch(e) { toast('Could not open folder', 'error'); }
 }
 
 /* ─── Startup Toggle ─── */
@@ -2368,8 +2370,10 @@ async function toggleStartup() {
   const toggleEl = document.getElementById('startup-toggle');
   if (!toggleEl) return;
   const enabled = toggleEl.checked;
-  await fetch('/api/startup', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({enabled})});
-  toast(enabled ? 'Will start at login' : 'Removed from startup', enabled ? 'success' : 'info');
+  try {
+    await apiPut('/api/startup', {enabled});
+    toast(enabled ? 'Will start at login' : 'Removed from startup', enabled ? 'success' : 'info');
+  } catch(e) { toast('Failed to update startup setting', 'error'); }
 }
 
 /* ─── Unified Download Queue ─── */
@@ -2449,9 +2453,11 @@ async function checkContentUpdates() {
 }
 
 async function updateZimContent(url, filename) {
-  await fetch('/api/kiwix/download-zim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, filename})});
-  toast('Downloading updated content...', 'info');
-  loadZimDownloads();
+  try {
+    await apiPost('/api/kiwix/download-zim', {url, filename});
+    toast('Downloading updated content...', 'info');
+    loadZimDownloads();
+  } catch(e) { toast('Download request failed', 'error'); }
 }
 
 /* ─── Wikipedia Tier Selector ─── */
@@ -2483,9 +2489,11 @@ async function loadWikipediaTiers() {
 }
 
 async function downloadWikiTier(url, filename) {
-  await fetch('/api/kiwix/download-zim', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url, filename})});
-  toast('Downloading Wikipedia...', 'info');
-  loadZimDownloads();
+  try {
+    await apiPost('/api/kiwix/download-zim', {url, filename});
+    toast('Downloading Wikipedia...', 'info');
+    loadZimDownloads();
+  } catch(e) { toast('Download request failed', 'error'); }
 }
 
 /* ─── Export / Import Config ─── */
@@ -2535,8 +2543,7 @@ async function showBackupList() {
 async function restoreBackup(filename) {
   if (!confirm('Restore database from ' + filename + '? Current data will be backed up first.')) return;
   try {
-    const r = await fetch('/api/backups/restore', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename})});
-    const d = await r.json();
+    const d = await apiPost('/api/backups/restore', {filename});
     if (r.ok) {
       toast(d.message || 'Database restored', 'success');
       document.querySelectorAll('.generated-modal-overlay').forEach(m => m.remove());

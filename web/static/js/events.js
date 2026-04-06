@@ -19,7 +19,7 @@ const NomadEvents = {
 
         this._source.onopen = () => {
             this._reconnectDelay = 1000;
-            console.log('[SSE] Connected');
+            console.debug('[SSE] Connected');
             const dot = document.getElementById('sse-dot');
             const wrap = document.getElementById('sse-status');
             if (dot) dot.style.background = 'var(--green)';

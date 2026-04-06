@@ -384,6 +384,16 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **Backend robustness**: checklist import JSON guard (try/except on `json.loads`); federation sync INSERT failures logged instead of silently swallowed; path traversal fix (`os.path.realpath` + `os.sep` suffix check); SSE log demoted to `console.debug`
   - **CSS tokens**: transition duration tokens (`--duration-fast`, `--duration-normal`), z-index scale (`--z-base` through `--z-emergency`), eink button color fixes, toast entrance animation, ultra-wide sitroom breakpoints
 
+- **v6.29 — Deep Security & UX Audit (8 commits, 631 tests pass)**:
+  - **Path traversal hardening** — 6 `startswith()` checks across app.py (viptrack), notes.py, maps.py, medical.py, ai.py (library serve + delete) were missing `os.sep` suffix, allowing potential prefix-based directory escape; notes.py also missing `normcase()` for Windows case-insensitive bypass
+  - **Error message leakage** — 40+ API routes returned raw `str(e)` exception details to clients; replaced with generic error messages across services.py, system.py, medical.py, media.py, ai.py, federation.py, comms.py, inventory.py, notes.py, maps.py, situation_room.py, routes_advanced.py; all exceptions now logged via `log.exception()` for debugging
+  - **Input validation** — bare `int()` casts in security.py `api_motion_configure()` (threshold, check_interval, cooldown) wrapped in try-except to prevent ValueError crash
+  - **XSS fix** — dashboard readiness `innerHTML` rendered inventory item names and expiration dates without `escapeHtml()` (line 791-792 of `_app_dashboard_readiness.js`); user-crafted item names could execute arbitrary JS
+  - **Thread safety** — `manager.py start_process()` accessed `_processes.pop()` without `_lock` in DB error path; race condition with concurrent service operations
+  - **16 confirm() dialogs added** — destructive delete operations missing user confirmation: checklists, conversations, ZIM content packs, journal entries, cameras, power devices, preservation logs, garden plots/seeds, livestock, federation peers, frequencies, AI memories, KB documents, situation room custom feeds
+  - **Frontend error handling** — `deleteSkill()`, `deleteEquip()`, `deleteAIMemory()` had bare `await fetch()` without try-catch or resp.ok checks; now properly wrapped with error toasts
+  - **Audit findings**: SQL injection — none found (all sort columns use allowlists, all user input parameterized); SSRF — federation relay sends to user-configured peer IPs (by design); XSS — generally well-audited with `escapeHtml()`/`escapeAttr()` used consistently; all `JSON.parse()` calls wrapped in try-catch; all `request.get_json()` uses `or {}` fallback; all `fetchone()` on non-aggregate queries checks for None
+
 ## Run / Build
 ```bash
 python nomad.py                    # Run from source (any platform)

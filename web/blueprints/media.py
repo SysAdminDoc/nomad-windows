@@ -829,7 +829,9 @@ def api_subscriptions_add():
 @media_bp.route('/api/subscriptions/<int:sid>', methods=['DELETE'])
 def api_subscriptions_delete(sid):
     with db_session() as db:
-        db.execute('DELETE FROM subscriptions WHERE id = ?', (sid,))
+        r = db.execute('DELETE FROM subscriptions WHERE id = ?', (sid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'unsubscribed'})
 # ─── Media Shared Endpoints (favorites, batch) ────────────────────
@@ -2270,7 +2272,9 @@ def api_playlist_update(pid):
 def api_playlist_delete(pid):
     """Delete a playlist."""
     with db_session() as db:
-        db.execute('DELETE FROM playlists WHERE id = ?', (pid,))
+        r = db.execute('DELETE FROM playlists WHERE id = ?', (pid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'ok'})
 @media_bp.route('/api/media/<media_type>/<int:media_id>/metadata', methods=['PUT'])

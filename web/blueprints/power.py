@@ -79,7 +79,9 @@ def api_power_devices_create():
 @power_bp.route('/api/power/devices/<int:did>', methods=['DELETE'])
 def api_power_devices_delete(did):
     with db_session() as db:
-        db.execute('DELETE FROM power_devices WHERE id = ?', (did,))
+        r = db.execute('DELETE FROM power_devices WHERE id = ?', (did,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 
@@ -494,7 +496,9 @@ def api_sensor_devices_create():
 @power_bp.route('/api/sensors/devices/<int:sid>', methods=['DELETE'])
 def api_sensor_devices_delete(sid):
     with db_session() as db:
-        db.execute('DELETE FROM sensor_devices WHERE id = ?', (sid,))
+        r = db.execute('DELETE FROM sensor_devices WHERE id = ?', (sid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.execute('DELETE FROM sensor_readings WHERE device_id = ?', (sid,))
         db.commit()
     return jsonify({'status': 'deleted'})
@@ -680,7 +684,9 @@ def api_generators_update(gid):
 def api_generators_delete(gid):
     with db_session() as db:
         db.execute('DELETE FROM generator_sessions WHERE generator_id = ?', (gid,))
-        db.execute('DELETE FROM generators WHERE id = ?', (gid,))
+        r = db.execute('DELETE FROM generators WHERE id = ?', (gid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'deleted'})
 

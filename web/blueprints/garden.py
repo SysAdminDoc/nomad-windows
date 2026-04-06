@@ -143,7 +143,9 @@ def api_garden_plots_geo():
 @garden_bp.route('/api/garden/plots/<int:pid>', methods=['DELETE'])
 def api_garden_plots_delete(pid):
     with db_session() as db:
-        db.execute('DELETE FROM garden_plots WHERE id = ?', (pid,))
+        r = db.execute('DELETE FROM garden_plots WHERE id = ?', (pid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 
@@ -191,7 +193,9 @@ def api_garden_seeds_create():
 @garden_bp.route('/api/garden/seeds/<int:sid>', methods=['DELETE'])
 def api_garden_seeds_delete(sid):
     with db_session() as db:
-        db.execute('DELETE FROM seeds WHERE id = ?', (sid,))
+        r = db.execute('DELETE FROM seeds WHERE id = ?', (sid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 
@@ -349,7 +353,9 @@ def api_preservation_create():
 @garden_bp.route('/api/garden/preservation/<int:pid>', methods=['DELETE'])
 def api_preservation_delete(pid):
     with db_session() as db:
-        db.execute('DELETE FROM preservation_log WHERE id = ?', (pid,))
+        r = db.execute('DELETE FROM preservation_log WHERE id = ?', (pid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 
@@ -443,7 +449,9 @@ def api_seed_add():
 def api_seed_delete(sid):
     """Delete a seed inventory entry."""
     with db_session() as db:
-        db.execute('DELETE FROM seed_inventory WHERE id = ?', (sid,))
+        r = db.execute('DELETE FROM seed_inventory WHERE id = ?', (sid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'ok'})
 @garden_bp.route('/api/garden/pests')

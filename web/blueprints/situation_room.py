@@ -3331,7 +3331,9 @@ def api_sitroom_add_monitor():
 @situation_room_bp.route('/api/sitroom/monitors/<int:mid>', methods=['DELETE'])
 def api_sitroom_delete_monitor(mid):
     with db_session() as db:
-        db.execute('DELETE FROM sitroom_monitors WHERE id = ?', (mid,))
+        r = db.execute('DELETE FROM sitroom_monitors WHERE id = ?', (mid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'ok': True})
 
@@ -4399,7 +4401,9 @@ def api_sitroom_watchlist():
             data = request.get_json(silent=True) or {}
             kw = data.get('keyword', '')
             if kw:
-                db.execute('DELETE FROM sitroom_watchlist WHERE keyword = ?', (kw,))
+                r = db.execute('DELETE FROM sitroom_watchlist WHERE keyword = ?', (kw,))
+                if r.rowcount == 0:
+                    return jsonify({'error': 'not found'}), 404
                 db.commit()
             return jsonify({'deleted': kw})
 

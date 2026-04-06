@@ -783,7 +783,9 @@ def api_federation_peer_trust(node_id):
 @federation_bp.route('/api/federation/peers/<node_id>', methods=['DELETE'])
 def api_federation_peer_remove(node_id):
     with db_session() as db:
-        db.execute('DELETE FROM federation_peers WHERE node_id = ?', (node_id,))
+        r = db.execute('DELETE FROM federation_peers WHERE node_id = ?', (node_id,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'removed'})
 
@@ -1076,7 +1078,9 @@ def api_mutual_aid_update(aid):
 @federation_bp.route('/api/federation/mutual-aid/<int:aid>', methods=['DELETE'])
 def api_mutual_aid_delete(aid):
     with db_session() as db:
-        db.execute('DELETE FROM mutual_aid_agreements WHERE id = ?', (aid,))
+        r = db.execute('DELETE FROM mutual_aid_agreements WHERE id = ?', (aid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 

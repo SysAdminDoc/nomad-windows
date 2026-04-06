@@ -671,7 +671,9 @@ def api_conversation_rename(cid):
 @ai_bp.route('/api/conversations/<int:cid>', methods=['DELETE'])
 def api_conversations_delete(cid):
     with db_session() as db:
-        db.execute('DELETE FROM conversations WHERE id = ?', (cid,))
+        r = db.execute('DELETE FROM conversations WHERE id = ?', (cid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'status': 'deleted'})
 

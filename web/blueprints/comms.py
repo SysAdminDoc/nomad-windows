@@ -314,7 +314,9 @@ def api_comms_freq_create():
 @comms_bp.route('/api/comms/frequencies/<int:fid>', methods=['DELETE'])
 def api_comms_freq_delete(fid):
     with db_session() as db:
-        db.execute('DELETE FROM freq_database WHERE id = ?', (fid,))
+        r = db.execute('DELETE FROM freq_database WHERE id = ?', (fid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         log_activity('frequency_deleted', 'comms', 'Deleted frequency')
         return jsonify({'status': 'deleted'})
@@ -653,7 +655,9 @@ def api_comms_schedules_create():
 @comms_bp.route('/api/comms/schedules/<int:sid>', methods=['DELETE'])
 def api_comms_schedules_delete(sid):
     with db_session() as db:
-        db.execute('DELETE FROM comms_schedules WHERE id = ?', (sid,))
+        r = db.execute('DELETE FROM comms_schedules WHERE id = ?', (sid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'deleted': True})
 @comms_bp.route('/api/comms/schedules/overdue', methods=['GET'])
@@ -734,7 +738,9 @@ def api_comms_profiles_create():
 @comms_bp.route('/api/comms/radio-profiles/<int:pid>', methods=['DELETE'])
 def api_comms_profiles_delete(pid):
     with db_session() as db:
-        db.execute('DELETE FROM radio_profiles WHERE id = ?', (pid,))
+        r = db.execute('DELETE FROM radio_profiles WHERE id = ?', (pid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'deleted'})
 @comms_bp.route('/api/broadcast')
@@ -783,7 +789,9 @@ def api_comms_log_create():
 @comms_bp.route('/api/comms-log/<int:lid>', methods=['DELETE'])
 def api_comms_log_delete(lid):
     with db_session() as db:
-        db.execute('DELETE FROM comms_log WHERE id = ?', (lid,))
+        r = db.execute('DELETE FROM comms_log WHERE id = ?', (lid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'deleted'})
 # ─── Drill History API ────────────────────────────────────────────

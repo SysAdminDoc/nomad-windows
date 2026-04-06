@@ -412,6 +412,10 @@ v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,50
   - **CSS theme consistency** — 5 hardcoded `'Cascadia Code'` font-family → `var(--font-data)` in chat code blocks, notes preview, AI textarea, sitroom base, sitroom popups
   - **Dead code removal** — unused `_CREATION_FLAGS` constant in app.py (superseded by platform_utils.popen_kwargs)
   - **4 new tests** — scenarios update 404, conversations update 404, triage update 404, watch-schedules update 404; total 647 tests (was 643)
+  - **SSRF protection** — `POST /api/federation/peers` now validates peer IPs with ipaddress module (reject loopback/link-local/reserved) to prevent SSRF chain via relay-alert and group exercises
+  - **Path traversal** — maps file delete missing normcase() for Windows case-insensitive comparison
+  - **Query bounds** — 5 unbounded SELECT queries in print/export endpoints capped (burn rate/low stock/expiring 5000, contacts CSV 10000)
+  - **Unused import** — removed `get_db_path` from federation.py
   - **Comprehensive audit findings**: SQL injection — zero new findings across 600+ routes and 16 blueprints; all sort_by fields validated against allowlists (CONTACT_SORT_FIELDS, LIVESTOCK_SORT_FIELDS, SKILL_SORT_FIELDS, EQUIPMENT_SORT_FIELDS); federation sync-receive validates table names against ALLOWED set and column names against PRAGMA table_info; conflict merge validates against MERGE_ALLOWED + regex; XSS — all innerHTML in 16 JS files uses escapeHtml/escapeAttr; situation room news/events/map popups all escaped; media rendering (video/audio/book/channel cards) all escaped; SSRF — all outbound HTTP in federation validated with ipaddress module; path traversal — all file-serving routes use normcase+normpath+startswith+os.sep; bare int()/float() — all wrapped in try-except across all blueprints; JSON.parse(localStorage) — zero unprotected calls in main app JS (all use readJsonStorage/safeJsonParse); SSE — bounded at MAX_SSE_CLIENTS with stale cleanup; service worker — SITROOM_CACHE has TTL eviction + 200 entry cap; all intervals properly cleared before re-setting
 
 ## Run / Build

@@ -1,5 +1,7 @@
 """Tests for KB (knowledge base) documents and media-related routes."""
 
+from db import db_session
+
 
 class TestKBDocuments:
     def test_list_documents(self, client):
@@ -60,3 +62,38 @@ class TestKiwixCatalog:
     def test_kiwix_wikipedia_options(self, client):
         resp = client.get('/api/kiwix/wikipedia-options')
         assert resp.status_code == 200
+
+
+class TestChannelCatalogResilience:
+    def test_channels_catalog_recovers_from_corrupted_dead_channels(self, client):
+        with db_session() as db:
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('dead_channels', ?)", ('{broken',))
+            db.commit()
+
+        resp = client.get('/api/channels/catalog')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert isinstance(data, list)
+
+    def test_channels_validate_normalizes_corrupted_dead_channels_setting(self, client, monkeypatch):
+        with db_session() as db:
+            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('dead_channels', ?)", ('{broken',))
+            db.commit()
+
+        monkeypatch.setattr('web.blueprints.media.get_ytdlp_path', lambda: __file__)
+
+        class _Result:
+            returncode = 1
+            stdout = ''
+
+        monkeypatch.setattr('web.blueprints.media.subprocess.run', lambda *args, **kwargs: _Result())
+
+        resp = client.post('/api/channels/validate', json={'url': 'https://example.com/channel/test'})
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['alive'] is False
+
+        with db_session() as db:
+            row = db.execute("SELECT value FROM settings WHERE key = 'dead_channels'").fetchone()
+        assert row is not None
+        assert row['value'] == '["https://example.com/channel/test"]'

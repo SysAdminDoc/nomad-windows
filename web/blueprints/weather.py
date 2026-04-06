@@ -10,6 +10,33 @@ from db import db_session
 weather_bp = Blueprint('weather', __name__)
 
 
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, list):
+        return list(fallback)
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    return fallback
+
+
+def _safe_json_object(value, fallback=None):
+    if fallback is None:
+        fallback = {}
+    if value in (None, ''):
+        return _clone_json_fallback(fallback)
+    if isinstance(value, dict):
+        return dict(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return _clone_json_fallback(fallback)
+        try:
+            parsed = json.loads(text)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return _clone_json_fallback(fallback)
+        return dict(parsed) if isinstance(parsed, dict) else _clone_json_fallback(fallback)
+    return _clone_json_fallback(fallback)
+
+
 @weather_bp.route('/api/weather')
 def api_weather_list():
     try:
@@ -323,10 +350,7 @@ def _evaluate_weather_action_rules(db):
         elif comp == 'gte' and value >= threshold: matched = True
 
         if matched:
-            try:
-                action_data = json.loads(rule['action_data'] or '{}')
-            except (ValueError, TypeError):
-                action_data = {}
+            action_data = _safe_json_object(rule['action_data'], {})
 
             atype = rule['action_type']
 
@@ -371,10 +395,7 @@ def api_weather_action_rules():
         result = []
         for r in rows:
             d = dict(r)
-            try:
-                d['action_data'] = json.loads(d.get('action_data', '{}') or '{}')
-            except (ValueError, TypeError):
-                d['action_data'] = {}
+            d['action_data'] = _safe_json_object(d.get('action_data'), {})
             result.append(d)
         return jsonify(result)
 @weather_bp.route('/api/weather/action-rules', methods=['POST'])
@@ -397,7 +418,7 @@ def api_weather_action_rules_create():
     action_type = data.get('action_type', 'alert')
     if action_type not in ('alert', 'task', 'both'):
         return jsonify({'error': 'action_type must be alert, task, or both'}), 400
-    action_data = data.get('action_data', {})
+    action_data = _safe_json_object(data.get('action_data'), {})
     try:
         cooldown = int(data.get('cooldown_minutes', 60))
     except (ValueError, TypeError):

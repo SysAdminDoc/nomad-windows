@@ -1255,8 +1255,8 @@ async function evaluateWeatherRules() {
 let _signalSchedule = [];
 
 function loadSignalSchedule() {
-  const saved = localStorage.getItem('nomad-signal-schedule');
-  try { _signalSchedule = saved ? JSON.parse(saved) : []; } catch(e) { _signalSchedule = []; }
+  _signalSchedule = readJsonStorage(localStorage, 'nomad-signal-schedule', []);
+  if (!Array.isArray(_signalSchedule)) _signalSchedule = [];
   renderSignalSchedule();
 }
 
@@ -1654,9 +1654,8 @@ async function loadSupplyChainOverlay() {
     // Popup on peer click
     _map.on('click', 'supply-chain-nodes', (e) => {
       const p = e.features[0].properties;
-      let offers = [], requests = [];
-      try { offers = JSON.parse(p.offers); } catch(e) {}
-      try { requests = JSON.parse(p.requests); } catch(e) {}
+      const offers = safeJsonParse(p.offers, []);
+      const requests = safeJsonParse(p.requests, []);
       new maplibregl.Popup().setLngLat(e.lngLat).setHTML(
         renderMapPopupShell({
           title: escapeHtml(p.name),
@@ -1681,8 +1680,7 @@ async function loadSupplyChainOverlay() {
     // Popup on trade route click
     _map.on('click', 'supply-chain-routes', (e) => {
       const p = e.features[0].properties;
-      let items = [];
-      try { items = JSON.parse(p.matched_items); } catch(e) {}
+      const items = safeJsonParse(p.matched_items, []);
       new maplibregl.Popup().setLngLat(e.lngLat).setHTML(
         renderMapPopupShell({
           title: 'Trade route',

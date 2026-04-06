@@ -35,6 +35,50 @@ def get_kb_upload_dir():
     return path
 
 
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, list):
+        return list(fallback)
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    return fallback
+
+
+def _safe_json_list(value, fallback=None):
+    if fallback is None:
+        fallback = []
+    if value in (None, ''):
+        return _clone_json_fallback(fallback)
+    if isinstance(value, list):
+        return list(value)
+    if isinstance(value, tuple):
+        return list(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return _clone_json_fallback(fallback)
+        try:
+            parsed = json.loads(text)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return _clone_json_fallback(fallback)
+        return list(parsed) if isinstance(parsed, list) else _clone_json_fallback(fallback)
+    return _clone_json_fallback(fallback)
+
+
+def _safe_index_list(value):
+    indices = []
+    for item in _safe_json_list(value, []):
+        if isinstance(item, bool):
+            continue
+        if isinstance(item, int):
+            indices.append(item)
+            continue
+        if isinstance(item, str):
+            text = item.strip()
+            if text.lstrip('-').isdigit():
+                indices.append(int(text))
+    return indices
+
+
 def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
     """Split text into chunks respecting paragraph boundaries and sentences."""
     if not text or not text.strip():
@@ -393,14 +437,8 @@ def api_kb_doc_details(doc_id):
     if not doc:
         return jsonify({'error': 'Not found'}), 404
     d = dict(doc)
-    try:
-        d['entities'] = json.loads(d.get('entities', '[]') or '[]')
-    except Exception:
-        d['entities'] = []
-    try:
-        d['linked_records'] = json.loads(d.get('linked_records', '[]') or '[]')
-    except Exception:
-        d['linked_records'] = []
+    d['entities'] = _safe_json_list(d.get('entities'), [])
+    d['linked_records'] = _safe_json_list(d.get('linked_records'), [])
     return jsonify(d)
 
 
@@ -412,16 +450,13 @@ def api_kb_import_entities(doc_id):
         if not doc:
             return jsonify({'error': 'Not found'}), 404
 
-        try:
-            entities = json.loads(doc['entities'] or '[]')
-        except (ValueError, TypeError):
-            entities = []
+        entities = _safe_json_list(doc['entities'], [])
 
         if not entities:
             return jsonify({'error': 'No entities to import'}), 400
 
         data = request.get_json() or {}
-        selected = data.get('entities', [])
+        selected = _safe_index_list(data.get('entities'))
         if selected:
             entities = [entities[i] for i in selected if 0 <= i < len(entities)]
 

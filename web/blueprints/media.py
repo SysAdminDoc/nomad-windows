@@ -37,6 +37,63 @@ _CREATION_FLAGS = {'creationflags': 0x08000000} if sys.platform == 'win32' else 
 _state_lock = threading.Lock()
 
 
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, list):
+        return list(fallback)
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    return fallback
+
+
+def _safe_json_list(value, fallback=None):
+    if fallback is None:
+        fallback = []
+    if value in (None, ''):
+        return _clone_json_fallback(fallback)
+    if isinstance(value, list):
+        return list(value)
+    if isinstance(value, tuple):
+        return list(value)
+    if isinstance(value, str):
+        text = value.strip()
+        if not text:
+            return _clone_json_fallback(fallback)
+        try:
+            parsed = json.loads(text)
+        except (TypeError, ValueError, json.JSONDecodeError):
+            return _clone_json_fallback(fallback)
+        return list(parsed) if isinstance(parsed, list) else _clone_json_fallback(fallback)
+    return _clone_json_fallback(fallback)
+
+
+def _safe_string_list(value):
+    cleaned = []
+    for item in _safe_json_list(value, []):
+        if not isinstance(item, str):
+            continue
+        text = item.strip()
+        if text and text not in cleaned:
+            cleaned.append(text)
+    return cleaned
+
+
+def _load_json_line(line, fallback=None):
+    if fallback is None:
+        fallback = {}
+    if not isinstance(line, str):
+        return _clone_json_fallback(fallback)
+    text = line.strip()
+    if not text:
+        return _clone_json_fallback(fallback)
+    try:
+        parsed = json.loads(text)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
+
+
 def _validate_download_url(url):
     """Validate that a download URL is safe (SSRF protection)."""
     import ipaddress
@@ -599,7 +656,7 @@ def api_audio_catalog():
 def api_channels_catalog():
     with db_session() as db:
         dead_row = db.execute("SELECT value FROM settings WHERE key = 'dead_channels'").fetchone()
-    dead_urls = set(json.loads(dead_row['value']) if dead_row and dead_row['value'] else [])
+    dead_urls = set(_safe_string_list(dead_row['value'] if dead_row else None))
     live = [c for c in CHANNEL_CATALOG if c['url'] not in dead_urls]
     category = request.args.get('category', '')
     if category:
@@ -611,7 +668,7 @@ def api_channels_categories():
     from collections import Counter
     with db_session() as db:
         dead_row = db.execute("SELECT value FROM settings WHERE key = 'dead_channels'").fetchone()
-    dead_urls = set(json.loads(dead_row['value']) if dead_row and dead_row['value'] else [])
+    dead_urls = set(_safe_string_list(dead_row['value'] if dead_row else None))
     live = [c for c in CHANNEL_CATALOG if c['url'] not in dead_urls]
     counts = Counter(c['category'] for c in live)
     cats = sorted(counts.keys())
@@ -636,7 +693,7 @@ def api_channels_validate():
         if not alive:
             with db_session() as db:
                 row = db.execute("SELECT value FROM settings WHERE key = 'dead_channels'").fetchone()
-                dead = json.loads(row['value']) if row and row['value'] else []
+                dead = _safe_string_list(row['value'] if row else None)
                 if url not in dead:
                     dead.append(url)
                     if row:
@@ -674,24 +731,23 @@ def api_youtube_search():
         for line in result.stdout.strip().split('\n'):
             if not line.strip():
                 continue
-            try:
-                d = json.loads(line)
-                thumb = ''
-                if d.get('thumbnails'):
-                    thumb = d['thumbnails'][-1].get('url', '')
-                elif d.get('thumbnail'):
-                    thumb = d['thumbnail']
-                videos.append({
-                    'id': d.get('id', ''),
-                    'title': d.get('title', ''),
-                    'channel': d.get('channel', d.get('uploader', '')),
-                    'duration': d.get('duration_string', ''),
-                    'views': d.get('view_count', 0),
-                    'thumbnail': thumb,
-                    'url': f"https://www.youtube.com/watch?v={d.get('id', '')}",
-                })
-            except json.JSONDecodeError:
+            d = _load_json_line(line, {})
+            if not isinstance(d, dict):
                 continue
+            thumb = ''
+            if d.get('thumbnails'):
+                thumb = d['thumbnails'][-1].get('url', '')
+            elif d.get('thumbnail'):
+                thumb = d['thumbnail']
+            videos.append({
+                'id': d.get('id', ''),
+                'title': d.get('title', ''),
+                'channel': d.get('channel', d.get('uploader', '')),
+                'duration': d.get('duration_string', ''),
+                'views': d.get('view_count', 0),
+                'thumbnail': thumb,
+                'url': f"https://www.youtube.com/watch?v={d.get('id', '')}",
+            })
         return jsonify(videos)
     except subprocess.TimeoutExpired:
         return jsonify({'error': 'Search timed out'}), 504
@@ -721,24 +777,23 @@ def api_youtube_channel_videos():
         for line in result.stdout.strip().split('\n'):
             if not line.strip():
                 continue
-            try:
-                d = json.loads(line)
-                thumb = ''
-                if d.get('thumbnails'):
-                    thumb = d['thumbnails'][-1].get('url', '')
-                elif d.get('thumbnail'):
-                    thumb = d['thumbnail']
-                videos.append({
-                    'id': d.get('id', ''),
-                    'title': d.get('title', ''),
-                    'channel': d.get('channel', d.get('uploader', '')),
-                    'duration': d.get('duration_string', ''),
-                    'views': d.get('view_count', 0),
-                    'thumbnail': thumb,
-                    'url': f"https://www.youtube.com/watch?v={d.get('id', '')}",
-                })
-            except json.JSONDecodeError:
+            d = _load_json_line(line, {})
+            if not isinstance(d, dict):
                 continue
+            thumb = ''
+            if d.get('thumbnails'):
+                thumb = d['thumbnails'][-1].get('url', '')
+            elif d.get('thumbnail'):
+                thumb = d['thumbnail']
+            videos.append({
+                'id': d.get('id', ''),
+                'title': d.get('title', ''),
+                'channel': d.get('channel', d.get('uploader', '')),
+                'duration': d.get('duration_string', ''),
+                'views': d.get('view_count', 0),
+                'thumbnail': thumb,
+                'url': f"https://www.youtube.com/watch?v={d.get('id', '')}",
+            })
         return jsonify(videos)
     except subprocess.TimeoutExpired:
         return jsonify({'error': 'Request timed out'}), 504
@@ -1227,7 +1282,11 @@ def api_ytdlp_download_catalog():
                         capture_output=True, text=True, timeout=20, **_CREATION_FLAGS,
                     )
                     if search_result.returncode == 0 and search_result.stdout.strip():
-                        found = json.loads(search_result.stdout.strip().split('\n')[0])
+                        found = _load_json_line(search_result.stdout.strip().split('\n')[0], {})
+                        if not isinstance(found, dict) or not found.get('id'):
+                            log.warning(f'Video search returned malformed data for: {item.get("title")}')
+                            failed += 1
+                            continue
                         url = f"https://www.youtube.com/watch?v={found['id']}"
                         title = found.get('title', title)
                         _ytdlp_downloads[queue_id]['title'] = f'[{i+1}/{len(to_download)}] {title}'

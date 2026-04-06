@@ -28,6 +28,8 @@ These are intentional repo assets, not junk:
 ## Overview
 Cross-platform edition of [Project N.O.M.A.D.](https://github.com/Crosstalk-Solutions/project-nomad) — the most comprehensive offline survival command center available. Runs on Windows, Linux, and macOS. No Docker required. 8 managed services (incl. FlatNotes), **Situation Room** (World Monitor-inspired global intelligence dashboard with RSS news feeds, USGS earthquakes, NWS severe weather, GDACS crisis events, crypto/commodity markets, AI briefings — all cached for offline), proactive + predictive AI alerts, AI SITREP generator + action execution + persistent memory, 21 interactive decision guides, 41 calculators, 56 quick reference cards, medical module (TCCC/triage/SBAR), training scenarios, food production, multi-node federation with community readiness + skill matching, power management with sensor charts, security cameras, AI document intelligence, built-in BitTorrent client, media library with 210 survival channels, 41-section user guide, task scheduler, 9 printable field documents (operations binder, wallet cards, SOI), serial hardware bridge, mesh radio support, CSV import wizard with 5 inventory templates (155 items), PWA with offline caching, UI zoom control, sidebar sub-menus, and a premium dark dashboard with 5 themes (incl. E-Ink).
 
+Current repo note: some older changelog entries below mention retired Docker/headless files from earlier versions. The current codebase is desktop-first and those files are no longer present.
+
 ## Tech Stack
 - **Python 3** — Flask web server + pywebview (WebView2 on Windows, WebKit on macOS, GTK on Linux)
 - **SQLite** — 89 tables, WAL mode, 30s timeout, FK enforcement, SQLite backup API, 120 performance indexes

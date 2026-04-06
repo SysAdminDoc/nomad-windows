@@ -1,5 +1,6 @@
 /* ─── Family Emergency Plan ─── */
-let _fepMembers; try { _fepMembers = JSON.parse(localStorage.getItem('nomad-fep-members') || '[]'); } catch(e) { _fepMembers = []; }
+let _fepMembers = readJsonStorage(localStorage, 'nomad-fep-members', []);
+if (!Array.isArray(_fepMembers)) _fepMembers = [];
 
 function saveFEP() {
   const fields = ['meet1','meet2','meet3','ooa','route1','route2','route3','dest','ins-home','ins-auto','doctor','vet','utility','safe'];
@@ -9,11 +10,10 @@ function saveFEP() {
 }
 
 function loadFEP() {
-  try {
-    const data = JSON.parse(localStorage.getItem('nomad-fep') || '{}');
-    Object.entries(data).forEach(([k, v]) => { const el = document.getElementById('fep-'+k); if (el) el.value = v; });
-  } catch(e) {}
-  try { _fepMembers = JSON.parse(localStorage.getItem('nomad-fep-members') || '[]'); } catch(e) { _fepMembers = []; }
+  const data = readJsonStorage(localStorage, 'nomad-fep', {});
+  Object.entries(data).forEach(([k, v]) => { const el = document.getElementById('fep-'+k); if (el) el.value = v; });
+  _fepMembers = readJsonStorage(localStorage, 'nomad-fep-members', []);
+  if (!Array.isArray(_fepMembers)) _fepMembers = [];
   renderFEPMembers();
 }
 
@@ -74,8 +74,7 @@ function prepToneClass(value, map) { return map[value] || 'text-muted'; }
 function fuelToneClass(fuel) { return fuel > 50 ? 'text-green' : fuel > 25 ? 'text-orange' : 'text-red'; }
 
 function loadShelterAssess() {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('nomad-shelter') || '{}'); } catch(e) {}
+  let saved = readJsonStorage(localStorage, 'nomad-shelter', {});
   const el = document.getElementById('shelter-assess');
   if (!el) return;
   el.innerHTML = SHELTER_CRITERIA.map((c, i) => {
@@ -95,8 +94,7 @@ function loadShelterAssess() {
 }
 
 function cycleShelter(idx) {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('nomad-shelter') || '{}'); } catch(e) {}
+  let saved = readJsonStorage(localStorage, 'nomad-shelter', {});
   const levels = ['red','yellow','green'];
   const current = saved[idx] || 'red';
   saved[idx] = levels[(levels.indexOf(current) + 1) % levels.length];
@@ -142,8 +140,7 @@ const HOME_SECURITY_ITEMS = [
 function renderHomeSecurity() {
   const el = document.getElementById('home-security-list');
   if (!el) return;
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('nomad-home-security') || '{}'); } catch(e) {}
+  let saved = readJsonStorage(localStorage, 'nomad-home-security', {});
   let total = 0, checked = 0;
   el.innerHTML = HOME_SECURITY_ITEMS.map(cat => {
     return `<div class="prep-home-security-card">
@@ -165,16 +162,14 @@ function renderHomeSecurity() {
 }
 
 function toggleHomeSecurity(key, val) {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('nomad-home-security') || '{}'); } catch(e) {}
+  let saved = readJsonStorage(localStorage, 'nomad-home-security', {});
   if (val) saved[key] = true; else delete saved[key];
   localStorage.setItem('nomad-home-security', JSON.stringify(saved));
   renderHomeSecurity();
 }
 
 function loadInfraStatus() {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('nomad-infra') || '{}'); } catch(e) {}
+  let saved = readJsonStorage(localStorage, 'nomad-infra', {});
   const el = document.getElementById('infra-status');
   if (!el) return;
   el.innerHTML = INFRA_ITEMS.map(item => {
@@ -188,8 +183,7 @@ function loadInfraStatus() {
 }
 
 function cycleInfra(key) {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('nomad-infra') || '{}'); } catch(e) {}
+  let saved = readJsonStorage(localStorage, 'nomad-infra', {});
   const current = saved[key] || 'unknown';
   const next = INFRA_LEVELS[(INFRA_LEVELS.indexOf(current) + 1) % INFRA_LEVELS.length];
   saved[key] = next;
@@ -198,7 +192,8 @@ function cycleInfra(key) {
 }
 
 /* ─── Vehicle Readiness ─── */
-let _vehicles; try { _vehicles = JSON.parse(localStorage.getItem('nomad-vehicles') || '[]'); } catch(e) { _vehicles = []; }
+let _vehicles = readJsonStorage(localStorage, 'nomad-vehicles', []);
+if (!Array.isArray(_vehicles)) _vehicles = [];
 function _syncVehicles() {
   localStorage.setItem('nomad-vehicles', JSON.stringify(_vehicles));
   fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({vehicles: JSON.stringify(_vehicles)})});

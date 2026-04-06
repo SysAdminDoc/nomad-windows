@@ -94,6 +94,19 @@ class TestElevationProfile:
         resp = client.get('/api/maps/elevation-profile/99999')
         assert resp.status_code == 404
 
+    def test_elevation_profile_recovers_from_corrupted_waypoint_ids(self, client, db):
+        route = client.post('/api/maps/routes', json={'name': 'Broken Elevation Route'}).get_json()
+        db.execute('UPDATE map_routes SET waypoint_ids = ? WHERE id = ?', ('{broken', route['id']))
+        db.commit()
+
+        resp = client.get(f'/api/maps/elevation-profile/{route["id"]}')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['points'] == []
+        assert data['total_ascent'] == 0
+        assert data['total_descent'] == 0
+
 
 class TestWaypointDistances:
     def test_distances_endpoint(self, client):
@@ -104,3 +117,53 @@ class TestWaypointDistances:
         data = resp.get_json()
         assert 'points' in data
         assert 'matrix' in data
+
+
+class TestGeofenceResilience:
+    def test_geofences_list_recovers_from_corrupted_properties(self, client, db):
+        created = client.post('/api/geofences', json={'name': 'Broken Fence', 'lat': 39.2, 'lng': -104.8}).get_json()
+        db.execute('UPDATE map_annotations SET properties = ? WHERE id = ?', ('{broken', created['id']))
+        db.commit()
+
+        resp = client.get('/api/geofences')
+
+        assert resp.status_code == 200
+        fence = next(item for item in resp.get_json() if item['id'] == created['id'])
+        assert fence['properties'] == {}
+
+    def test_geofences_check_recovers_from_corrupted_properties(self, client, db):
+        created = client.post('/api/geofences', json={'name': 'Broken Trigger', 'lat': 39.3, 'lng': -104.7}).get_json()
+        db.execute('UPDATE map_annotations SET properties = ? WHERE id = ?', ('{broken', created['id']))
+        db.commit()
+
+        resp = client.post('/api/geofences/check', json={'lat': 39.3, 'lng': -104.7})
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['checked_count'] >= 1
+        assert data['triggered'][0]['properties'] == {}
+
+
+class TestGpxExportResilience:
+    def test_export_gpx_skips_corrupted_route_and_track_payloads(self, client, db):
+        waypoint = client.post('/api/waypoints', json={
+            'name': 'Export Point',
+            'lat': 39.4,
+            'lng': -104.6,
+        }).get_json()
+        route = client.post('/api/maps/routes', json={
+            'name': 'Broken Export Route',
+            'waypoint_ids': json.dumps([waypoint['id']]),
+        }).get_json()
+        track = client.post('/api/tracks', json={'name': 'Broken Export Track'}).get_json()
+        db.execute('UPDATE map_routes SET waypoint_ids = ? WHERE id = ?', ('{broken', route['id']))
+        db.execute('UPDATE gps_tracks SET geojson = ? WHERE id = ?', ('{broken', track['id']))
+        db.commit()
+
+        resp = client.get('/api/maps/export-gpx')
+
+        assert resp.status_code == 200
+        gpx = resp.get_data(as_text=True)
+        assert '<gpx version="1.1"' in gpx
+        assert '<name>Broken Export Route</name>' in gpx
+        assert '<name>Broken Export Track</name>' in gpx

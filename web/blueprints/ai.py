@@ -134,13 +134,52 @@ def api_ai_delete():
     return jsonify({'status': 'deleted'})
 
 def _safe_json_list(val, default=None):
-    """Parse a JSON string, returning default on failure."""
+    """Parse a JSON string or value, returning a list fallback on failure."""
     if default is None:
         default = []
+    parsed = None
     try:
-        return json.loads(val or '[]')
+        parsed = json.loads(val or '[]') if isinstance(val, str) else val
     except (json.JSONDecodeError, TypeError):
         return default
+    return parsed if isinstance(parsed, list) else default
+
+
+def _safe_message_list(val, default=None):
+    """Return a normalized list of chat message dicts."""
+    messages = _safe_json_list(val, default if default is not None else [])
+    normalized = []
+    for msg in messages:
+        if not isinstance(msg, dict):
+            continue
+        role = str(msg.get('role', '') or '').strip()
+        if not role:
+            continue
+        normalized_msg = dict(msg)
+        content = normalized_msg.get('content', '')
+        normalized_msg['role'] = role
+        normalized_msg['content'] = '' if content is None else str(content)
+        normalized.append(normalized_msg)
+    return normalized
+
+
+def _safe_memory_entries(val):
+    """Return persisted AI memory entries as a list of fact dicts."""
+    memories = _safe_json_list(val, [])
+    normalized = []
+    for memory in memories:
+        if isinstance(memory, dict):
+            fact = str(memory.get('fact', '') or '').strip()
+            if not fact:
+                continue
+            normalized_memory = dict(memory)
+            normalized_memory['fact'] = fact
+            normalized.append(normalized_memory)
+            continue
+        fact = str(memory or '').strip()
+        if fact:
+            normalized.append({'fact': fact})
+    return normalized
 
 def build_situation_context(db, detail_level='full') -> list[str]:
     """Build rich situation context from DB for AI consumption.
@@ -235,7 +274,7 @@ def get_ai_memory_text() -> str:
         with db_session() as mem_db:
             mem_row = mem_db.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
         if mem_row and mem_row['value']:
-            memories = json.loads(mem_row['value'])
+            memories = _safe_memory_entries(mem_row['value'])
             if memories:
                 lines = '\n'.join(f'- {m["fact"] if isinstance(m, dict) else m}' for m in memories)
                 return f'\n\n--- OPERATOR NOTES ---\n{lines}\n--- END NOTES ---'
@@ -248,7 +287,7 @@ def get_ai_memory_text() -> str:
 def api_ai_chat():
     data = request.get_json() or {}
     model = data.get('model', ollama.DEFAULT_MODEL)
-    messages = data.get('messages', [])
+    messages = _safe_message_list(data.get('messages', []))
     system_prompt = data.get('system_prompt', '')
     use_kb = data.get('knowledge_base', False)
 
@@ -271,7 +310,7 @@ def api_ai_chat():
     # RAG: inject knowledge base context if enabled, with source citations
     _rag_citations = []
     if use_kb and qdrant.running() and messages:
-        last_user_msg = next((m['content'] for m in reversed(messages) if m['role'] == 'user'), '')
+        last_user_msg = next((m.get('content', '') for m in reversed(messages) if m.get('role') == 'user'), '')
         if last_user_msg:
             try:
                 from web.blueprints.kb import embed_text as _embed_text
@@ -310,7 +349,7 @@ def api_ai_chat():
         with db_session() as mem_db:
             mem_row = mem_db.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
         if mem_row and mem_row['value']:
-            memories = json.loads(mem_row['value'])
+            memories = _safe_memory_entries(mem_row['value'])
             if memories:
                 mem_text = '\n'.join(f'- {m["fact"] if isinstance(m, dict) else m}' for m in memories)
                 system_prompt = (system_prompt + '\n\n' if system_prompt else '') + \
@@ -442,7 +481,7 @@ def api_ai_recommended():
 def api_context_usage():
     """Estimate token usage for a set of messages against a model's context window."""
     d = request.json or {}
-    messages = d.get('messages', [])
+    messages = _safe_message_list(d.get('messages', []))
     system_prompt = d.get('system_prompt', '')
     total_tokens = _estimate_tokens(system_prompt)
     for msg in messages:
@@ -477,14 +516,22 @@ def api_context_usage():
 def api_conversation_branch(cid):
     """Fork a conversation from a specific message index."""
     d = request.json or {}
-    msg_idx = d.get('message_index', 0)
+    raw_idx = d.get('message_index', d.get('from_index', 0))
+    try:
+        msg_idx = int(raw_idx)
+    except (TypeError, ValueError):
+        msg_idx = 0
     with db_session() as db:
         convo = db.execute('SELECT id, messages FROM conversations WHERE id = ?', (cid,)).fetchone()
         if not convo:
             return jsonify({'error': 'Conversation not found'}), 404
-        messages = json.loads(convo['messages'] or '[]')
+        messages = _safe_message_list(convo['messages'])
+        if msg_idx < 0:
+            msg_idx = 0
+        if messages:
+            msg_idx = min(msg_idx, len(messages) - 1)
         # Keep messages up to and including the branch point
-        branched = messages[:msg_idx + 1]
+        branched = messages[:msg_idx + 1] if messages else []
         db.execute(
             'INSERT INTO conversation_branches (conversation_id, parent_message_idx, messages) VALUES (?, ?, ?)',
             (cid, msg_idx, json.dumps(branched))
@@ -516,7 +563,7 @@ def api_conversation_branch_update(bid):
     d = request.json or {}
     with db_session() as db:
         db.execute('UPDATE conversation_branches SET messages = ? WHERE id = ?',
-                   (json.dumps(d.get('messages', [])), bid))
+                   (json.dumps(_safe_message_list(d.get('messages', []))), bid))
         db.commit()
         return jsonify({'status': 'ok'})
 # ─── AI Image Input / Multimodal (v5.0 Phase 1) ─────────────────
@@ -600,7 +647,7 @@ def api_conversations_update(cid):
         if 'model' in data:
             update_data['model'] = data['model']
         if 'messages' in data:
-            update_data['messages'] = json.dumps(data['messages'])
+            update_data['messages'] = json.dumps(_safe_message_list(data['messages']))
         filtered = safe_columns(update_data, ['title', 'model', 'messages'])
         if filtered:
             set_clause = ', '.join(f'{col} = ?' for col in filtered)
@@ -656,11 +703,11 @@ def api_conversations_export(cid):
         convo = db.execute('SELECT id, title, model, messages, created_at FROM conversations WHERE id = ?', (cid,)).fetchone()
     if not convo:
         return jsonify({'error': 'Not found'}), 404
-    messages = json.loads(convo['messages'] or '[]')
+    messages = _safe_message_list(convo['messages'])
     md = f"# {convo['title']}\n\n"
     md += f"*Model: {convo['model'] or 'Unknown'} | {convo['created_at']}*\n\n---\n\n"
     for m in messages:
-        role = 'You' if m['role'] == 'user' else 'AI'
+        role = 'You' if m.get('role') == 'user' else 'AI'
         md += f"**{role}:**\n\n{m.get('content', '')}\n\n---\n\n"
     safe_title = ''.join(c for c in (convo['title'] or 'export') if c.isalnum() or c in ' _-').strip() or 'export'
     return Response(md, mimetype='text/markdown',
@@ -827,10 +874,7 @@ def api_training_datasets_create():
             # Extract Q&A pairs from conversation history (messages stored as JSON array in conversations.messages)
             convos = db.execute('SELECT messages FROM conversations ORDER BY updated_at DESC LIMIT 20').fetchall()
             for c in convos:
-                try:
-                    msgs = json.loads(c['messages'] or '[]')
-                except (json.JSONDecodeError, TypeError):
-                    continue
+                msgs = _safe_message_list(c['messages'])
                 for i in range(len(msgs) - 1):
                     if isinstance(msgs[i], dict) and isinstance(msgs[i+1], dict) and msgs[i].get('role') == 'user' and msgs[i+1].get('role') == 'assistant':
                         records.append({'instruction': (msgs[i].get('content', '') or '')[:2000], 'output': (msgs[i+1].get('content', '') or '')[:2000]})

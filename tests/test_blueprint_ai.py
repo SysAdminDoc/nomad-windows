@@ -10,6 +10,15 @@ class TestAIMemory:
         data = resp.get_json()
         assert 'memories' in data
 
+    def test_list_memory_recovers_from_corrupted_storage(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('ai_memory', ?)", ('{broken',))
+        db.commit()
+
+        resp = client.get('/api/ai/memory')
+
+        assert resp.status_code == 200
+        assert resp.get_json()['memories'] == []
+
     def test_save_memory(self, client):
         resp = client.post('/api/ai/memory', json={
             'fact': 'The water filter needs replacing every 3 months'
@@ -33,6 +42,15 @@ class TestAIMemory:
         assert resp.status_code == 200
         assert resp.get_json()['status'] == 'cleared'
 
+    def test_save_memory_recovers_from_corrupted_storage(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('ai_memory', ?)", ('{\"fact\":\"not-a-list\"}',))
+        db.commit()
+
+        resp = client.post('/api/ai/memory', json={'fact': 'Fresh fact'})
+
+        assert resp.status_code == 200
+        assert resp.get_json()['count'] == 1
+
     def test_save_memory_no_fact_returns_400(self, client):
         resp = client.post('/api/ai/memory', json={})
         assert resp.status_code == 400
@@ -55,6 +73,29 @@ class TestAITrainingDatasets:
             'source': 'upload',
         })
         assert resp.status_code in (200, 201)
+
+    def test_create_dataset_skips_corrupted_conversation_messages(self, client, db):
+        valid_messages = json.dumps([
+            {'role': 'user', 'content': 'How do I purify water?'},
+            {'role': 'assistant', 'content': 'Boil it first.'},
+        ])
+        db.execute(
+            'INSERT INTO conversations (title, model, messages) VALUES (?, ?, ?)',
+            ('Valid Conversation', 'llama3', valid_messages),
+        )
+        db.execute(
+            'INSERT INTO conversations (title, model, messages) VALUES (?, ?, ?)',
+            ('Broken Conversation', 'llama3', '{broken'),
+        )
+        db.commit()
+
+        resp = client.post('/api/ai/training/datasets', json={
+            'name': 'Recovered Dataset',
+            'source': 'conversations',
+        })
+
+        assert resp.status_code in (200, 201)
+        assert resp.get_json()['records'] == 1
 
     def test_list_training_jobs(self, client):
         resp = client.get('/api/ai/training/jobs')

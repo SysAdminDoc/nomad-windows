@@ -241,8 +241,7 @@ const THREAT_LVL_COLORS = {low:'var(--green)',medium:'var(--warning)',high:'var(
 const THREAT_LVL_LABELS = {low:'LOW',medium:'MED',high:'HIGH',critical:'CRIT'};
 
 function loadThreatMatrix() {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('nomad-threats') || '{}'); } catch(e) {}
+  let saved = readJsonStorage(localStorage, 'nomad-threats', {});
   let html = '<div class="prep-inline-table-shell threat-matrix-table-shell"><table class="freq-table prep-inline-table threat-matrix-table"><thead><tr><th>Threat</th><th>Likelihood</th><th>Impact</th><th>Risk</th></tr></thead><tbody>';
   THREAT_SCENARIOS.forEach((t, i) => {
     const like = saved[`${i}_l`] || 'low';
@@ -264,8 +263,7 @@ function loadThreatMatrix() {
 }
 
 function cycleThreat(idx, type) {
-  let saved = {};
-  try { saved = JSON.parse(localStorage.getItem('nomad-threats') || '{}'); } catch(e) {}
+  let saved = readJsonStorage(localStorage, 'nomad-threats', {});
   const key = `${idx}_${type}`;
   const current = saved[key] || 'low';
   saved[key] = THREAT_LEVELS[(THREAT_LEVELS.indexOf(current) + 1) % THREAT_LEVELS.length];
@@ -318,13 +316,16 @@ async function printFullCard() {
     ]);
   } catch(e) { toast('Failed to load data for print card', 'error'); return; }
   // Get localStorage data
-  let pace = {}, fep = {}, fepMembers = [], sit = {};
-  try { pace = JSON.parse(localStorage.getItem('nomad-pace-plan') || '{}'); } catch(e) {}
-  try { fep = JSON.parse(localStorage.getItem('nomad-fep') || '{}'); } catch(e) {}
-  try { fepMembers = JSON.parse(localStorage.getItem('nomad-fep-members') || '[]'); } catch(e) {}
-  try { sit = JSON.parse(localStorage.getItem('nomad-sit-board') || '{}'); } catch(e) {}
+  let pace = readJsonStorage(localStorage, 'nomad-pace-plan', {});
+  let fep = readJsonStorage(localStorage, 'nomad-fep', {});
+  let fepMembers = readJsonStorage(localStorage, 'nomad-fep-members', []);
+  if (!Array.isArray(fepMembers)) fepMembers = [];
+  let sit = readJsonStorage(localStorage, 'nomad-sit-board', {});
   // Also try settings
-  try { const s = await fetch('/api/settings').then(r=>r.json()); if (s.sit_board) Object.assign(sit, JSON.parse(s.sit_board)); } catch(e) {}
+  try {
+    const s = await fetch('/api/settings').then(r=>r.json());
+    if (s.sit_board) Object.assign(sit, safeJsonParse(s.sit_board, {}));
+  } catch(e) {}
 
   const sitColors = {green:'var(--green)',yellow:'var(--yellow)',orange:'var(--orange)',red:'var(--red)'};
   const sitLabels = {green:'GOOD',yellow:'CAUTION',orange:'CONCERN',red:'CRITICAL'};

@@ -1,4 +1,44 @@
 /* ─── Maps ─── */
+async function _workspaceExtractError(resp, fallbackMessage) {
+  try {
+    const data = await resp.json();
+    return data?.error || data?.message || fallbackMessage;
+  } catch (_) {
+    try {
+      const text = await resp.text();
+      return text || fallbackMessage;
+    } catch (_) {
+      return fallbackMessage;
+    }
+  }
+}
+
+async function _workspaceFetchOk(url, opts = {}, failureLabel = 'Request failed') {
+  const resp = await fetch(url, opts);
+  if (!resp.ok) {
+    throw new Error(await _workspaceExtractError(resp.clone(), `${failureLabel} (HTTP ${resp.status})`));
+  }
+  return resp;
+}
+
+async function _workspaceFetchJson(url, opts = {}, failureLabel = 'Request failed') {
+  const resp = await _workspaceFetchOk(url, opts, failureLabel);
+  try {
+    return await resp.json();
+  } catch (_) {
+    throw new Error(`Invalid server response from ${url}`);
+  }
+}
+
+async function _workspaceFetchJsonSafe(url, opts = {}, fallback = null, failureLabel = 'Request failed') {
+  try {
+    return await _workspaceFetchJson(url, opts, failureLabel);
+  } catch (e) {
+    console.warn(`${failureLabel}:`, e.message);
+    return fallback;
+  }
+}
+
 async function loadMaps() {
   const [regions, files] = await Promise.all([
     safeFetch('/api/maps/regions', {}, []),
@@ -71,15 +111,15 @@ async function downloadMapRegion(regionId) {
 async function downloadAllMaps() {
   if (!confirm('This will download ALL map regions. Each region is extracted from the Protomaps planet build and may be several GB. Continue?')) return;
   try {
-    const regions = await (await fetch('/api/maps/regions')).json();
+    const regions = await _workspaceFetchJson('/api/maps/regions', {}, 'Could not load map regions');
     const toDownload = regions.filter(r => !r.downloaded);
     if (!toDownload.length) { toast('All regions already downloaded!', 'info'); return; }
     // Start downloads sequentially (one at a time to avoid overload)
     for (const r of toDownload) {
-      await fetch('/api/maps/download-region', {
+      await _workspaceFetchOk('/api/maps/download-region', {
         method: 'POST', headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({region_id: r.id})
-      });
+      }, `Could not queue ${r.name || r.id}`);
     }
     toast(`Queued ${toDownload.length} regions for download.`, 'info');
     startMapDownloadPolling();
@@ -93,7 +133,8 @@ function startMapDownloadPolling() {
   if (statusEl) statusEl.style.display = 'block';
   const poll = async () => {
     try {
-      const progress = await (await fetch('/api/maps/download-progress')).json();
+      const progress = await _workspaceFetchJsonSafe('/api/maps/download-progress', {}, null, 'Could not load map download progress');
+      if (!progress || typeof progress !== 'object') return;
       const active = Object.entries(progress).filter(([, v]) => v.progress > 0 && v.progress < 100);
       const errors = Object.entries(progress).filter(([, v]) => v.error);
 
@@ -174,7 +215,7 @@ async function importMapFile() {
 
 async function loadMapSources() {
   try {
-    const sources = await (await fetch('/api/maps/sources')).json();
+    const sources = await _workspaceFetchJson('/api/maps/sources', {}, 'Could not load map source catalog');
     const catalog = document.getElementById('map-sources-catalog');
     if (!catalog) return;
     const categories = {};
@@ -247,7 +288,8 @@ function selectNote(id) {
   loadNoteBacklinks(id);
 }
 async function createNote() {
-  const n = await (await fetch('/api/notes', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Note', content:''})})).json();
+  const n = await safeFetch('/api/notes', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Note', content:''})}, null);
+  if (!n || !n.id) { toast('Failed to create note', 'error'); return; }
   await loadNotes();
   selectNote(n.id);
 }
@@ -348,11 +390,24 @@ function autoSaveNote() {
 
 /* ─── Benchmark ─── */
 async function runBenchmark(mode) {
-  document.getElementById('bench-run-btn').disabled = true;
-  document.getElementById('bench-progress').style.display = 'block';
-  document.getElementById('bench-results').innerHTML = '';
-  await fetch('/api/benchmark/run', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({mode})});
-  pollBenchmark();
+  const runBtn = document.getElementById('bench-run-btn');
+  const progressEl = document.getElementById('bench-progress');
+  const resultsEl = document.getElementById('bench-results');
+  runBtn.disabled = true;
+  progressEl.style.display = 'block';
+  resultsEl.innerHTML = '';
+  try {
+    await _workspaceFetchOk('/api/benchmark/run', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({mode}),
+    }, 'Could not start benchmark');
+    pollBenchmark();
+  } catch (e) {
+    runBtn.disabled = false;
+    progressEl.style.display = 'none';
+    toast(e.message || 'Could not start benchmark', 'error');
+  }
 }
 
 let _benchPoll = null;
@@ -360,7 +415,8 @@ function pollBenchmark() {
   if (_benchPoll) clearInterval(_benchPoll);
   window.NomadShellRuntime?.stopInterval('benchmark.status');
   const poll = async () => {
-    const s = await (await fetch('/api/benchmark/status')).json();
+    const s = await _workspaceFetchJsonSafe('/api/benchmark/status', {}, null, 'Could not load benchmark status');
+    if (!s) return;
     document.getElementById('bench-fill').style.width = s.progress + '%';
     document.getElementById('bench-stage').textContent = s.stage;
     document.getElementById('bench-pct').textContent = s.progress + '%';
@@ -410,7 +466,7 @@ function showBenchResults(r) {
 
 async function loadBenchHistory() {
   try {
-    const history = await (await fetch('/api/benchmark/history')).json();
+    const history = await _workspaceFetchJson('/api/benchmark/history', {}, 'Could not load benchmark history');
     const el = document.getElementById('bench-history');
     if (!history.length) { el.innerHTML = '<span class="benchmark-empty-state">No benchmarks run yet.</span>'; return; }
     const latest = history[0];
@@ -459,7 +515,7 @@ async function loadBenchHistory() {
         <div class="benchmark-history-shell"><table class="benchmark-history-table benchmark-history-table-secondary">
         <tr><th>Date</th><th>Test</th><th>Result</th></tr>
         ${extResults.slice(0, 10).map(r => {
-          const scores = JSON.parse(r.scores || '{}');
+          const scores = safeJsonParse(r.scores, {});
           let result = '';
           if (r.test_type === 'ai_inference') result = (scores.tps || 0) + ' tok/s (' + escapeHtml(scores.model || '') + ')';
           else if (r.test_type === 'storage') result = 'R: ' + (scores.read_mbps || 0) + ' MB/s, W: ' + (scores.write_mbps || 0) + ' MB/s';
@@ -507,7 +563,7 @@ async function runStorageBenchmark() {
 /* ─── Settings ─── */
 async function loadSettings() {
   try {
-    const s = await (await fetch('/api/settings')).json();
+    const s = await _workspaceFetchJson('/api/settings', {}, 'Could not load settings');
     if (s.ai_name) {
       aiName = s.ai_name;
       document.getElementById('ai-name-input').value = aiName;
@@ -518,7 +574,7 @@ async function loadSettings() {
   } catch(e) {}
 
   try {
-    const n = await (await fetch('/api/network')).json();
+    const n = await _workspaceFetchJson('/api/network', {}, 'Could not load network status');
     document.getElementById('lan-url-setting').textContent = n.dashboard_url || '-';
   } catch(e) {}
 }
@@ -528,13 +584,21 @@ function saveAIName() {
   clearTimeout(_saveNameTimer);
   _saveNameTimer = setTimeout(async () => {
     aiName = document.getElementById('ai-name-input').value || 'AI';
-    await fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ai_name: aiName})});
+    try {
+      await _workspaceFetchOk('/api/settings', {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({ai_name: aiName}),
+      }, 'Could not save assistant name');
+    } catch (e) {
+      console.warn('Could not save assistant name:', e.message);
+    }
   }, 500);
 }
 
 async function loadSystemInfo() {
   try {
-    const s = await (await fetch('/api/system')).json();
+    const s = await _workspaceFetchJson('/api/system', {}, 'Could not load system info');
 
     // Gauges
     function gaugeColor(pct) { return pct > 90 ? 'gauge-red' : pct > 70 ? 'gauge-orange' : 'gauge-green'; }
@@ -596,8 +660,8 @@ function startLiveGauges() {
   if (_liveGaugeInt) clearInterval(_liveGaugeInt);
   window.NomadShellRuntime?.stopInterval('settings.live-gauges');
   const poll = async () => {
-    try {
-      const l = await (await fetch('/api/system/live')).json();
+    const l = await _workspaceFetchJsonSafe('/api/system/live', {}, null, 'Could not load live system gauges');
+    if (l) {
       const gauges = document.querySelectorAll('#system-gauges .gauge-card');
       if (gauges.length >= 3) {
         function updateGauge(g, pct) {
@@ -609,10 +673,10 @@ function startLiveGauges() {
         updateGauge(gauges[1], l.ram_percent);
         updateGauge(gauges[2], l.swap_percent);
       }
-    } catch(e) {
-      const vals = document.querySelectorAll('#system-gauges .gauge-card .gauge-value');
-      vals.forEach(g => { if (!g.textContent.endsWith('?')) g.textContent += ' ?'; });
+      return;
     }
+    const vals = document.querySelectorAll('#system-gauges .gauge-card .gauge-value');
+    vals.forEach(g => { if (!g.textContent.endsWith('?')) g.textContent += ' ?'; });
   };
   if (window.NomadShellRuntime) {
     _liveGaugeInt = window.NomadShellRuntime.startInterval('settings.live-gauges', poll, 3000, {
@@ -629,33 +693,37 @@ function startLiveGauges() {
 
 async function loadModelManager() {
   try {
-  const models = await (await fetch('/api/ai/models')).json();
-  const el = document.getElementById('model-list');
-  if (!models.length) {
-    el.innerHTML = '<div class="settings-empty-state model-list-empty">No models downloaded</div>';
-  } else {
-    el.innerHTML = models.map(m => `
+    const [models, rec] = await Promise.all([
+      _workspaceFetchJson('/api/ai/models', {}, 'Could not load installed models'),
+      _workspaceFetchJson('/api/ai/recommended', {}, 'Could not load recommended models'),
+    ]);
+    const el = document.getElementById('model-list');
+    if (!models.length) {
+      el.innerHTML = '<div class="settings-empty-state model-list-empty">No models downloaded</div>';
+    } else {
+      el.innerHTML = models.map(m => `
+        <div class="model-item">
+          <span class="model-name">${m.name}</span>
+          <span class="model-item-actions">
+            <span class="model-size">${(m.size/1e9).toFixed(1)} GB</span>
+            <button class="btn btn-sm btn-danger" type="button" data-shell-action="delete-model" data-model-name="${escapeAttr(m.name)}">Delete</button>
+          </span>
+        </div>
+      `).join('');
+    }
+
+    const installed = new Set(models.map(m => m.name));
+    document.getElementById('recommended-models').innerHTML = rec.map(r => `
       <div class="model-item">
-        <span class="model-name">${m.name}</span>
-        <span class="model-item-actions">
-          <span class="model-size">${(m.size/1e9).toFixed(1)} GB</span>
-          <button class="btn btn-sm btn-danger" type="button" data-shell-action="delete-model" data-model-name="${escapeAttr(m.name)}">Delete</button>
-        </span>
+        <span><span class="model-name">${r.name}</span> <span class="model-size">${r.desc} (${r.size})</span></span>
+        ${installed.has(r.name)
+          ? '<span class="runtime-status-installed">Installed</span>'
+          : `<button class="btn btn-sm btn-primary" type="button" data-shell-action="pull-settings-model" data-model-name="${escapeAttr(r.name)}">Pull</button>`}
       </div>
     `).join('');
+  } catch(e) {
+    document.getElementById('model-list').innerHTML = '<div class="settings-empty-state model-list-empty">Could not load models right now.</div>';
   }
-
-  const rec = await (await fetch('/api/ai/recommended')).json();
-  const installed = new Set(models.map(m => m.name));
-  document.getElementById('recommended-models').innerHTML = rec.map(r => `
-    <div class="model-item">
-      <span><span class="model-name">${r.name}</span> <span class="model-size">${r.desc} (${r.size})</span></span>
-      ${installed.has(r.name)
-        ? '<span class="runtime-status-installed">Installed</span>'
-        : `<button class="btn btn-sm btn-primary" type="button" data-shell-action="pull-settings-model" data-model-name="${escapeAttr(r.name)}">Pull</button>`}
-    </div>
-  `).join('');
-  } catch(e) {}
 }
 
 function deleteModel(name, btn) {
@@ -676,17 +744,25 @@ function deleteModel(name, btn) {
 }
 
 async function pullFromSettings(name) {
-  await fetch('/api/ai/pull', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})});
-  toast(`Pulling ${name}...`);
-  document.querySelector('[data-tab="ai-chat"]')?.click();
-  pollPullProgress();
+  try {
+    await _workspaceFetchOk('/api/ai/pull', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:name}),
+    }, `Could not start download for ${name}`);
+    toast(`Pulling ${name}...`);
+    document.querySelector('[data-tab="ai-chat"]')?.click();
+    pollPullProgress();
+  } catch (e) {
+    toast(e.message || 'Could not start model download', 'error');
+  }
 }
 
 /* ─── Network Status ─── */
 let _backendFailCount = 0;
 async function checkNetwork() {
   try {
-    const n = await (await fetch('/api/network')).json();
+    const n = await _workspaceFetchJson('/api/network', {}, 'Could not load network status');
     _backendFailCount = 0;
     const el = document.getElementById('net-status');
     const label = n.online ? 'Online' : 'Offline';
@@ -783,7 +859,7 @@ async function checkWizard() {
   if (!wizard) return;
 
   try {
-    const state = await (await fetch('/api/wizard/progress')).json();
+    const state = await _workspaceFetchJson('/api/wizard/progress', {}, 'Could not load setup progress');
     if (state?.status === 'running') {
       setShellVisibility(wizard, true);
       setShellVisibility(document.getElementById('wiz-mini-banner'), false);
@@ -828,7 +904,7 @@ async function wizLoadDrives() {
   if (!el) return;
   let drives = [];
   try {
-    drives = await (await fetch('/api/drives')).json();
+    drives = await _workspaceFetchJson('/api/drives', {}, 'Could not scan storage locations');
   } catch (_) {
     el.innerHTML = '<div class="utility-empty-state">Unable to list storage locations right now. You can retry or enter a custom path.</div>';
     setWizardStorageStatus('Storage scan failed. Enter a custom path or retry.', false);
@@ -884,7 +960,7 @@ async function wizLoadTiers() {
   const el = document.getElementById('wiz-tiers');
   if (!el) return;
   try {
-    _wizTiers = await (await fetch('/api/content-tiers')).json();
+    _wizTiers = await _workspaceFetchJson('/api/content-tiers', {}, 'Could not load setup profiles');
   } catch (_) {
     el.innerHTML = '<div class="utility-empty-state">Could not load setup profiles. Retry from Services or come back later.</div>';
     setWizardSectionVisibility('wiz-tier-detail', false);
@@ -1049,12 +1125,24 @@ async function wizStartSetup() {
   setWizardSectionVisibility('wiz-errors', false);
   setWizardSectionVisibility('wiz-stall-help', false);
   setShellVisibility(document.getElementById('wiz-mini-banner'), false);
-  if (_wizDrivePath) {
-    await fetch('/api/settings/data-dir', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({path: _wizDrivePath})});
+  try {
+    if (_wizDrivePath) {
+      await _workspaceFetchOk('/api/settings/data-dir', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({path: _wizDrivePath}),
+      }, 'Could not save setup storage path');
+    }
+    await _workspaceFetchOk('/api/wizard/setup', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({services: services, zims: zims, models: models}),
+    }, 'Could not start setup');
+    wizPollProgress();
+  } catch (e) {
+    toast(e.message || 'Could not start setup', 'error');
+    wizGoPage(3);
   }
-  await fetch('/api/wizard/setup', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({services: services, zims: zims, models: models})});
-  wizPollProgress();
 }
 
 let _wizMinimized = false;
@@ -1087,7 +1175,8 @@ function wizPollProgress() {
   _wizStallCount = 0;
   const runner = async () => {
     try {
-      const s = await (await fetch('/api/wizard/progress')).json();
+      const s = await _workspaceFetchJsonSafe('/api/wizard/progress', {}, null, 'Could not load setup progress');
+      if (!s) return;
       document.getElementById('wiz-overall-fill').style.width = s.overall_progress + '%';
       document.getElementById('wiz-overall-pct').textContent = s.overall_progress + '%';
       document.getElementById('wiz-current-item').textContent = s.current_item || '...';
@@ -1151,7 +1240,10 @@ function wizSkipToComplete() {
 async function wizShowComplete(state) {
   wizGoPage(5);
   // Show LAN URL
-  try { const net = await (await fetch('/api/network')).json(); document.getElementById('wiz-lan-url').textContent = net.dashboard_url; } catch(e) {}
+  try {
+    const net = await _workspaceFetchJson('/api/network', {}, 'Could not load LAN access URL');
+    document.getElementById('wiz-lan-url').textContent = net.dashboard_url;
+  } catch(e) {}
   const svcCount = state.completed.filter(c => ['ollama','kiwix','cyberchef','kolibri','qdrant','stirling'].includes(c)).length;
   const contentCount = state.completed.length - svcCount;
   document.getElementById('wiz-summary').innerHTML = `
@@ -1254,26 +1346,31 @@ function toggleModelPicker() {
 }
 
 async function loadModelPickerList() {
-  const [rec, models] = await Promise.all([
-    fetch('/api/ai/recommended').then(r => r.json()),
-    fetch('/api/ai/models').then(r => r.json())
-  ]);
-  const installed = new Set(models.map(m => m.name));
-  document.getElementById('model-picker-list').innerHTML = rec.map((r, idx) => `
-    <div class="model-picker-card">
-      <div class="model-picker-main">
-        <div class="model-picker-title">${r.name}</div>
-        <div class="model-picker-copy">${r.desc} (${r.size})</div>
-        <div id="model-info-${idx}" class="model-picker-meta"></div>
+  const list = document.getElementById('model-picker-list');
+  try {
+    const [rec, models] = await Promise.all([
+      _workspaceFetchJson('/api/ai/recommended', {}, 'Could not load recommended models'),
+      _workspaceFetchJson('/api/ai/models', {}, 'Could not load installed models')
+    ]);
+    const installed = new Set(models.map(m => m.name));
+    list.innerHTML = rec.map((r, idx) => `
+      <div class="model-picker-card">
+        <div class="model-picker-main">
+          <div class="model-picker-title">${r.name}</div>
+          <div class="model-picker-copy">${r.desc} (${r.size})</div>
+          <div id="model-info-${idx}" class="model-picker-meta"></div>
+        </div>
+        <div class="model-picker-actions">
+          <button class="btn btn-sm btn-ghost model-picker-info-btn" type="button" data-shell-action="show-model-info" data-model-name="${escapeAttr(r.name)}" data-model-info-id="model-info-${idx}" title="Model details">Info</button>
+          ${installed.has(r.name)
+            ? '<span class="model-picker-status">Ready</span>'
+            : `<button class="btn btn-sm btn-primary" type="button" data-shell-action="pull-model" data-model-name="${escapeAttr(r.name)}">Get</button>`}
+        </div>
       </div>
-      <div class="model-picker-actions">
-        <button class="btn btn-sm btn-ghost model-picker-info-btn" type="button" data-shell-action="show-model-info" data-model-name="${escapeAttr(r.name)}" data-model-info-id="model-info-${idx}" title="Model details">Info</button>
-        ${installed.has(r.name)
-          ? '<span class="model-picker-status">Ready</span>'
-          : `<button class="btn btn-sm btn-primary" type="button" data-shell-action="pull-model" data-model-name="${escapeAttr(r.name)}">Get</button>`}
-      </div>
-    </div>
-  `).join('');
+    `).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="model-picker-empty">Could not load recommended models right now.</div>';
+  }
 }
 
 async function showModelInfo(modelName, infoEl) {
@@ -1290,7 +1387,7 @@ async function showModelInfo(modelName, infoEl) {
 async function ensureOllamaReady() {
   // Auto-install and auto-start Ollama if needed — returns true when ready
   try {
-    const svcs = await (await fetch('/api/services')).json();
+    const svcs = await _workspaceFetchJson('/api/services', {}, 'Could not load AI service status');
     const svc = svcs.find(s => s.id === 'ollama');
     // Already running? Great, we're done
     if (svc?.installed && svc?.running) return true;
@@ -1301,10 +1398,10 @@ async function ensureOllamaReady() {
       // Wait for install (poll up to 3 min)
       for (let i = 0; i < 90; i++) {
         await new Promise(r => setTimeout(r, 2000));
-        const fresh = await (await fetch('/api/services')).json();
+        const fresh = await _workspaceFetchJson('/api/services', {}, 'Could not load AI service status');
         if (fresh.find(s => s.id === 'ollama')?.installed) break;
       }
-      const check = await (await fetch('/api/services')).json();
+      const check = await _workspaceFetchJson('/api/services', {}, 'Could not load AI service status');
       if (!check.find(s => s.id === 'ollama')?.installed) {
         toast('AI Chat is still installing. Please wait and try again.', 'warning');
         return false;
@@ -1316,7 +1413,7 @@ async function ensureOllamaReady() {
     // Wait for ready (up to 20 seconds)
     for (let i = 0; i < 10; i++) {
       await new Promise(r => setTimeout(r, 2000));
-      const fresh = await (await fetch('/api/services')).json();
+      const fresh = await _workspaceFetchJson('/api/services', {}, 'Could not load AI service status');
       if (fresh.find(s => s.id === 'ollama')?.running) return true;
     }
     toast('AI Chat is starting up. Try again in a moment.', 'warning');
@@ -1330,12 +1427,15 @@ async function ensureOllamaReady() {
 async function pullModel(name) {
   if (!await ensureOllamaReady()) return;
   try {
-    const r = await fetch('/api/ai/pull', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model:name})});
-    if (!r.ok) { const d = await r.json().catch(()=>({})); toast(d.error || 'Failed to start download', 'error'); return; }
+    await _workspaceFetchOk('/api/ai/pull', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:name})
+    }, `Failed to start download for ${name}`);
     toast(`Downloading ${name}...`, 'info');
     toggleModelPicker();
     pollPullProgress();
-  } catch(e) { toast('Failed to connect to AI service', 'error'); }
+  } catch(e) { toast(e.message || 'Failed to connect to AI service', 'error'); }
 }
 
 function pullCustomModel() {
@@ -1349,11 +1449,14 @@ async function pullAllModels() {
   if (!await ensureOllamaReady()) return;
   // Get all recommended model names
   try {
-    const rec = await (await fetch('/api/ai/recommended')).json();
+    const rec = await _workspaceFetchJson('/api/ai/recommended', {}, 'Could not load recommended models');
     const models = rec.map(r => r.name);
     const totalSize = rec.reduce((s, r) => s + parseFloat(r.size), 0).toFixed(1);
-    const r = await fetch('/api/ai/pull-queue', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({models})});
-    const d = await r.json();
+    const d = await _workspaceFetchJson('/api/ai/pull-queue', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({models})
+    }, 'Could not queue recommended models');
     if (d.error) { toast(d.error, 'warning'); return; }
     if (d.status === 'all_installed') { toast('All recommended models are already downloaded!', 'success'); return; }
     toast(`Queued ${d.count} models for download. They will download one at a time.`, 'info');
@@ -1376,7 +1479,7 @@ async function loadKBDocs() {
   const el = document.getElementById('kb-docs-list');
   let docs;
   try {
-    docs = await (await fetch('/api/kb/documents')).json();
+    docs = await _workspaceFetchJson('/api/kb/documents', {}, 'Could not load knowledge base documents');
   } catch(e) {
     el.innerHTML = '<span class="kb-doc-empty">Could not load documents. Document search may not be running.</span>';
     return;
@@ -1402,7 +1505,8 @@ async function loadKBDocs() {
   // Update badge
   const badge = document.getElementById('kb-status-badge');
   try {
-    const status = await (await fetch('/api/kb/status')).json();
+    const status = await safeFetch('/api/kb/status', {}, null);
+    if (!status) throw new Error('kb status unavailable');
     if (status.qdrant_running) {
       const ct = status.collection?.points_count || 0;
       badge.textContent = ct > 0 ? `${ct} searchable passages` : 'Ready for documents';
@@ -1423,11 +1527,15 @@ async function uploadKBFile() {
   const file = input.files[0];
   const formData = new FormData();
   formData.append('file', file);
-  toast(`Uploading ${file.name}...`);
-  await fetch('/api/kb/upload', {method: 'POST', body: formData});
-  input.value = '';
-  toast('Processing document...');
-  pollKBEmbed();
+  try {
+    toast(`Uploading ${file.name}...`);
+    await _workspaceFetchOk('/api/kb/upload', {method: 'POST', body: formData}, `Could not upload ${file.name}`);
+    input.value = '';
+    toast('Processing document...');
+    pollKBEmbed();
+  } catch (e) {
+    toast(e.message || 'Could not upload document', 'error');
+  }
 }
 
 let _kbPoll = null;
@@ -1441,7 +1549,8 @@ function stopKBPoll() {
 function pollKBEmbed() {
   if (_kbPoll) return;
   const runner = async () => {
-    const s = await (await fetch('/api/kb/status')).json();
+    const s = await _workspaceFetchJsonSafe('/api/kb/status', {}, null, 'Could not load document embed status');
+    if (!s) return;
     if (s.status === 'complete' || s.status === 'error' || s.status === 'idle') {
       stopKBPoll();
       if (s.status === 'complete') toast('Document embedded!', 'success');
@@ -1461,16 +1570,20 @@ function pollKBEmbed() {
 
 async function deleteKBDoc(id) {
   try {
-    const r = await fetch(`/api/kb/documents/${id}`, {method:'DELETE'});
-    if (!r.ok) throw new Error('Delete failed');
+    await _workspaceFetchOk(`/api/kb/documents/${id}`, {method:'DELETE'}, 'Delete failed');
     toast('Document deleted', 'warning');
     loadKBDocs();
-  } catch(e) { toast('Failed to delete document', 'error'); }
+  } catch(e) { toast(e.message || 'Failed to delete document', 'error'); }
 }
 
 async function analyzeDoc(id) {
+  try {
+    await _workspaceFetchOk(`/api/kb/documents/${id}/analyze`, {method:'POST'}, 'Could not start document analysis');
+  } catch (e) {
+    toast(e.message || 'Could not start document analysis', 'error');
+    return;
+  }
   toast('Analyzing document with AI...', 'info');
-  await fetch(`/api/kb/documents/${id}/analyze`, {method:'POST'});
   // Poll for completion
   let polls = 0;
   let poll = null;
@@ -1483,7 +1596,8 @@ async function analyzeDoc(id) {
   };
   const runner = async () => {
     polls++;
-    const d = await (await fetch(`/api/kb/documents/${id}/details`)).json();
+    const d = await _workspaceFetchJsonSafe(`/api/kb/documents/${id}/details`, {}, null, 'Could not load document analysis status');
+    if (!d) return;
     if (d.doc_category || polls > 30) {
       stopPoll();
       toast(`Document analyzed: ${d.doc_category || 'complete'}`, 'success');
@@ -1502,7 +1616,7 @@ async function analyzeDoc(id) {
 
 async function showDocDetails(id) {
   try {
-    const d = await (await fetch(`/api/kb/documents/${id}/details`)).json();
+    const d = await _workspaceFetchJson(`/api/kb/documents/${id}/details`, {}, 'Could not load document details');
     const catColors = {medical:'#e91e63',property:'#4caf50',vehicle:'#2196f3',financial:'#ff9800',legal:'#9c27b0',reference:'#00bcd4',personal:'#795548',other:'var(--text-muted)'};
     const entities = d.entities || [];
     const linked = d.linked_records || [];
@@ -1979,13 +2093,21 @@ function saveBuilderTag() {
   clearTimeout(_builderTagTimer);
   _builderTagTimer = setTimeout(async () => {
     const tag = document.getElementById('builder-tag').value;
-    await fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({builder_tag: tag})});
+    try {
+      await _workspaceFetchOk('/api/settings', {
+        method:'PUT',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({builder_tag: tag}),
+      }, 'Could not save builder tag');
+    } catch (e) {
+      console.warn('Could not save builder tag:', e.message);
+    }
   }, 500);
 }
 
 async function loadBuilderTag() {
   try {
-    const s = await (await fetch('/api/settings')).json();
+    const s = await _workspaceFetchJson('/api/settings', {}, 'Could not load settings');
     if (s.builder_tag) document.getElementById('builder-tag').value = s.builder_tag;
   } catch(e) {}
 }
@@ -2136,9 +2258,14 @@ async function importConfig() {
   if (!input.files.length) return;
   const formData = new FormData();
   formData.append('file', input.files[0]);
-  const r = await (await fetch('/api/import-config', {method:'POST', body:formData})).json();
-  input.value = '';
-  toast(r.message || r.error || 'Import complete');
+  try {
+    const r = await _workspaceFetchJson('/api/import-config', {method:'POST', body:formData}, 'Could not import configuration');
+    input.value = '';
+    toast(r.message || r.error || 'Import complete');
+  } catch (e) {
+    input.value = '';
+    toast(e.message || 'Could not import configuration', 'error');
+  }
 }
 
 /* ─── In-App Frame ─── */

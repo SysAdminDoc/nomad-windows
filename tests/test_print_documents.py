@@ -10,6 +10,28 @@ class TestPrintDocuments:
         assert 'Situation Status' in html
         assert 'Key Frequencies' in html
 
+    def test_preparedness_print_document_recovers_from_corrupted_situation_json(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('sit_board', ?)", ('{broken',))
+        db.commit()
+
+        resp = client.get('/api/preparedness/print')
+
+        assert resp.status_code == 200
+        html = resp.get_data(as_text=True)
+        assert 'Emergency Card' in html
+        assert 'Situation board is not configured yet.' in html
+
+    def test_preparedness_print_document_recovers_from_corrupted_ai_memory(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('ai_memory', ?)", ('{broken',))
+        db.commit()
+
+        resp = client.get('/api/preparedness/print')
+
+        assert resp.status_code == 200
+        html = resp.get_data(as_text=True)
+        assert 'Emergency Card' in html
+        assert 'Operator Notes' not in html
+
     def test_frequency_card_document(self, client):
         resp = client.get('/api/print/freq-card')
         assert resp.status_code == 200

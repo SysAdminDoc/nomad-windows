@@ -114,7 +114,8 @@ function calcTravel() {
 }
 
 /* ─── Calorie Tracker ─── */
-let _calLog; try { _calLog = JSON.parse(localStorage.getItem('nomad-cal-log') || '[]'); } catch(e) { _calLog = []; }
+let _calLog = readJsonStorage(localStorage, 'nomad-cal-log', []);
+if (!Array.isArray(_calLog)) _calLog = [];
 let _calLogDate = new Date().toISOString().slice(0,10);
 
 function addCalEntry() {
@@ -209,13 +210,12 @@ function savePace() {
 async function loadPace() {
   try {
     // Try localStorage first (fast), then server (backup source)
-    let pace = {};
-    try { pace = JSON.parse(localStorage.getItem('nomad-pace-plan') || '{}'); } catch(e) {}
+    let pace = readJsonStorage(localStorage, 'nomad-pace-plan', {});
     if (!Object.keys(pace).length) {
       try {
         const settings = await (await fetch('/api/settings')).json();
         if (settings.pace_plan) {
-          pace = JSON.parse(settings.pace_plan);
+          pace = safeJsonParse(settings.pace_plan, {});
           localStorage.setItem('nomad-pace-plan', JSON.stringify(pace));
         }
       } catch(e) {}

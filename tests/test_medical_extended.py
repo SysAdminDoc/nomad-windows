@@ -52,6 +52,28 @@ class TestDosageCalculator:
         # Should include allergy warnings
         assert 'warnings' in data or 'drug' in data
 
+    def test_dosage_calculator_recovers_from_corrupted_patient_lists(self, client, db):
+        patient = client.post('/api/patients', json={
+            'name': 'Broken Dosage Lists',
+        }).get_json()
+        db.execute(
+            'UPDATE patients SET allergies = ?, medications = ? WHERE id = ?',
+            ('{broken', '{broken', patient['id']),
+        )
+        db.commit()
+
+        resp = client.post('/api/medical/dosage-calculator', json={
+            'drug': 'Ibuprofen',
+            'patient_id': patient['id'],
+            'weight_kg': 70,
+            'age': 35,
+        })
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['drug'] == 'Ibuprofen'
+        assert isinstance(data['warnings'], list)
+
 
 class TestMedicalReference:
     def test_medical_reference(self, client):
@@ -61,6 +83,21 @@ class TestMedicalReference:
     def test_medical_reference_search(self, client):
         resp = client.get('/api/medical/reference/search?q=bleeding')
         assert resp.status_code == 200
+
+    def test_medical_reference_search_survives_non_json_reference_response(self, client, monkeypatch):
+        from flask import Response
+        from web.blueprints import medical as medical_module
+
+        monkeypatch.setattr(
+            medical_module,
+            'api_medical_reference',
+            lambda: Response('{broken', mimetype='application/json'),
+        )
+
+        resp = client.get('/api/medical/reference/search?q=bleeding')
+
+        assert resp.status_code == 200
+        assert resp.get_json() == []
 
 
 class TestPatientCard:
@@ -76,6 +113,26 @@ class TestPatientCard:
         assert 'Patient Care Card' in html
         assert 'Immediate Alerts' in html
         assert 'Card Test' in html
+
+    def test_patient_card_recovers_from_corrupted_list_fields(self, client, db):
+        patient = client.post('/api/patients', json={
+            'name': 'Broken Card Test',
+            'age': 40,
+            'blood_type': 'B+',
+        }).get_json()
+        db.execute(
+            'UPDATE patients SET allergies = ?, medications = ?, conditions = ? WHERE id = ?',
+            ('{broken', '{broken', '{broken', patient['id']),
+        )
+        db.commit()
+
+        resp = client.get(f'/api/patients/{patient["id"]}/card')
+
+        assert resp.status_code == 200
+        html = resp.get_data(as_text=True)
+        assert 'Patient Care Card' in html
+        assert 'Broken Card Test' in html
+        assert '{broken' not in html
 
 
 class TestExpiringMeds:

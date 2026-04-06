@@ -2668,7 +2668,8 @@ function submitDrawnZone() {
   const fillColor = colorMap[colorKey] || '#f44336';
   const coords = [..._zonePoints, _zonePoints[0]];
   const geojson = {type:'Feature', geometry:{type:'Polygon', coordinates:[coords]}, properties:{name, color:fillColor}};
-  let zones; try { zones = JSON.parse(localStorage.getItem('nomad-map-zones') || '[]'); } catch(e) { zones = []; }
+  let zones = readJsonStorage(localStorage, 'nomad-map-zones', []);
+  if (!Array.isArray(zones)) zones = [];
   zones.push(geojson);
   localStorage.setItem('nomad-map-zones', JSON.stringify(zones));
   renderMapZones();
@@ -2689,8 +2690,8 @@ function renderMapZones() {
       }
     });
   }
-  let zones = [];
-  try { zones = JSON.parse(localStorage.getItem('nomad-map-zones') || '[]'); } catch(e) {}
+  let zones = readJsonStorage(localStorage, 'nomad-map-zones', []);
+  if (!Array.isArray(zones)) zones = [];
   zones.forEach((z, i) => {
     const id = `zone-${i}`;
     _map.addSource(id, {type:'geojson', data:z});
@@ -2744,8 +2745,8 @@ function finishProperty() {
   // Save as a zone
   const geojson = {type:'Feature', geometry:{type:'Polygon', coordinates:[[...coords]]},
     properties:{name: 'Property Boundary', color: '#5b9fff', isProperty: true, area_acres: acres.toFixed(2), perimeter_ft: Math.round(perimFt)}};
-  let zones = [];
-  try { zones = JSON.parse(localStorage.getItem('nomad-map-zones') || '[]'); } catch(e) {}
+  let zones = readJsonStorage(localStorage, 'nomad-map-zones', []);
+  if (!Array.isArray(zones)) zones = [];
   // Remove existing property boundary
   const filtered = zones.filter(z => !z.properties?.isProperty);
   filtered.push(geojson);
@@ -2815,8 +2816,8 @@ function saveMapBookmark() {
   const center = _map.getCenter();
   const zoom = _map.getZoom();
   const name = `View at ${center.lat.toFixed(3)}, ${center.lng.toFixed(3)}`;
-  let bookmarks = [];
-  try { bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]'); } catch(e) {}
+  let bookmarks = readJsonStorage(localStorage, 'nomad-map-bookmarks', []);
+  if (!Array.isArray(bookmarks)) bookmarks = [];
   bookmarks.push({name, lat: center.lat, lng: center.lng, zoom, time: new Date().toISOString()});
   localStorage.setItem('nomad-map-bookmarks', JSON.stringify(bookmarks));
   toast(`Bookmark saved: ${center.lat.toFixed(4)}, ${center.lng.toFixed(4)}`, 'success');
@@ -2824,8 +2825,8 @@ function saveMapBookmark() {
 }
 
 function renderMapBookmarks() {
-  let bookmarks = [];
-  try { bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]'); } catch(e) {}
+  let bookmarks = readJsonStorage(localStorage, 'nomad-map-bookmarks', []);
+  if (!Array.isArray(bookmarks)) bookmarks = [];
   // Render in the map management area if visible
   let el = document.getElementById('map-bookmarks-list');
   if (!el) return;
@@ -2839,8 +2840,8 @@ function renderMapBookmarks() {
 }
 
 function gotoBookmark(idx) {
-  let bookmarks = [];
-  try { bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]'); } catch(e) {}
+  let bookmarks = readJsonStorage(localStorage, 'nomad-map-bookmarks', []);
+  if (!Array.isArray(bookmarks)) bookmarks = [];
   const b = bookmarks[idx];
   if (!b || !_map) return;
   if (!_mapVisible) toggleMapView();
@@ -2848,8 +2849,8 @@ function gotoBookmark(idx) {
 }
 
 function deleteBookmark(idx) {
-  let bookmarks = [];
-  try { bookmarks = JSON.parse(localStorage.getItem('nomad-map-bookmarks') || '[]'); } catch(e) {}
+  let bookmarks = readJsonStorage(localStorage, 'nomad-map-bookmarks', []);
+  if (!Array.isArray(bookmarks)) bookmarks = [];
   bookmarks.splice(idx, 1);
   localStorage.setItem('nomad-map-bookmarks', JSON.stringify(bookmarks));
   renderMapBookmarks();
@@ -2968,7 +2969,7 @@ async function loadSyncLog() {
       const ts = t.toLocaleDateString([], {month:'short',day:'numeric'}) + ' ' + t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
       const icon = l.direction === 'push' ? '&#8593;' : '&#8595;';
       const directionClass = l.direction === 'push' ? 'settings-sync-entry-push' : 'settings-sync-entry-pull';
-      const tables = JSON.parse(l.tables_synced || '{}');
+      const tables = safeJsonParse(l.tables_synced, {});
       const tableStr = Object.entries(tables).map(([t,c]) => `${t}:${c}`).join(', ');
       return `<div class="settings-record-card settings-sync-entry ${directionClass}">
         <div class="settings-record-head">
@@ -3060,8 +3061,8 @@ function showMergeEditor(conflictId, conflictDetailJson) {
   const fieldsEl = document.getElementById('merge-editor-fields');
   document.getElementById('merge-conflict-id').value = conflictId;
   overlay.hidden = false;
-  try {
-    const detail = JSON.parse(conflictDetailJson);
+  const detail = safeJsonParse(conflictDetailJson, null);
+  if (detail && typeof detail === 'object') {
     const localClock = detail.local_clock || {};
     const remoteClock = detail.incoming_clock || {};
     const allKeys = [...new Set([...Object.keys(localClock), ...Object.keys(remoteClock)])];
@@ -3078,7 +3079,7 @@ function showMergeEditor(conflictId, conflictDetailJson) {
         </div>
       `).join('')}
     `;
-  } catch(e) {
+  } else {
     fieldsEl.innerHTML = '<div class="settings-merge-editor-error">Could not parse conflict data for merge editor.</div>';
   }
 }
@@ -3178,7 +3179,8 @@ async function importDeadDrop() {
   if (!input.files.length) return;
   try {
     const text = await input.files[0].text();
-    const payload = JSON.parse(text);
+    const payload = safeJsonParse(text, null);
+    if (!payload || typeof payload !== 'object') { toast('Invalid dead drop file', 'error'); input.value = ''; return; }
     input.value = '';
     // Import to DB
     await fetch('/api/deaddrop/import', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({payload})});
@@ -3992,4 +3994,3 @@ function playAlertSound(type) {
     osc.start(ctx.currentTime); osc.stop(ctx.currentTime + 0.9);
   }
 }
-

@@ -40,6 +40,30 @@ _UNDO_VALID_TABLES = {'inventory', 'contacts', 'notes', 'waypoints', 'documents'
                        'scheduled_tasks', 'skills', 'watch_schedules'}
 
 
+def _safe_ai_memories(value):
+    """Return stored AI memory entries as normalized fact dicts."""
+    try:
+        parsed = json.loads(value or '[]') if isinstance(value, str) else value
+    except (json.JSONDecodeError, TypeError):
+        return []
+    if not isinstance(parsed, list):
+        return []
+    memories = []
+    for entry in parsed:
+        if isinstance(entry, dict):
+            fact = str(entry.get('fact', '') or '').strip()
+            if not fact:
+                continue
+            normalized = dict(entry)
+            normalized['fact'] = fact
+            memories.append(normalized)
+            continue
+        fact = str(entry or '').strip()
+        if fact:
+            memories.append({'fact': fact})
+    return memories
+
+
 def _push_undo(action_type, description, table, row_data):
     """Push an undoable action onto the stack."""
     with _undo_lock:
@@ -349,12 +373,7 @@ RULES:
         """List persistent AI memory facts."""
         with db_session() as db:
             row = db.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
-        memories = []
-        if row and row['value']:
-            try:
-                memories = json.loads(row['value'])
-            except (json.JSONDecodeError, TypeError):
-                pass
+        memories = _safe_ai_memories(row['value'] if row else None)
         return jsonify({'memories': memories})
 
     @app.route('/api/ai/memory', methods=['POST'])
@@ -368,12 +387,7 @@ RULES:
             return jsonify({'error': 'Fact too long (max 2000 chars)'}), 400
         with db_session() as db:
             row = db.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
-            memories = []
-            if row and row['value']:
-                try:
-                    memories = json.loads(row['value'])
-                except (json.JSONDecodeError, TypeError):
-                    pass
+            memories = _safe_ai_memories(row['value'] if row else None)
             memories.append({'fact': fact, 'saved_at': datetime.now().isoformat()})
             # Cap memory size to prevent unbounded growth
             if len(memories) > 200:

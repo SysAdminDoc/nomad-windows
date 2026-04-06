@@ -22,10 +22,41 @@ from services.manager import (
     get_service_resources, SERVICE_HEALTH_URLS, is_healthy,
 )
 import config
-from web.state import _wizard_state, _wizard_lock, _auto_backup_timer, _update_state, broadcast_event
+from web.state import (
+    _auto_backup_timer,
+    _update_state,
+    broadcast_event,
+    wizard_append_list_item,
+    wizard_reset,
+    wizard_snapshot,
+    wizard_update,
+)
 import web.state as _state
 
 log = logging.getLogger('nomad.web')
+
+
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    if isinstance(fallback, list):
+        return list(fallback)
+    return fallback
+
+
+def _safe_json_value(raw, fallback):
+    if raw in (None, ''):
+        return _clone_json_fallback(fallback)
+    try:
+        value = json.loads(raw) if isinstance(raw, str) else raw
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        log.debug('Invalid JSON setting payload: %s', exc)
+        return _clone_json_fallback(fallback)
+    if isinstance(fallback, dict) and not isinstance(value, dict):
+        return {}
+    if isinstance(fallback, list) and not isinstance(value, list):
+        return []
+    return value
 
 STARTUP_VALUE_NAME = APP_EXECUTABLE_BASENAME
 LEGACY_STARTUP_VALUE_NAMES = ('ProjectNOMAD',)
@@ -199,9 +230,7 @@ def api_wizard_setup():
 
     def do_setup():
         total = len(services_list) + len(zims) + len(models)
-        with _wizard_lock:
-            _wizard_state.update({'status': 'running', 'phase': 'services', 'completed': [],
-                                  'errors': [], 'total_items': total, 'overall_progress': 0})
+        wizard_reset(status='running', phase='services', total_items=total, overall_progress=0)
         done = 0
 
         # Phase 1: Install services
@@ -209,8 +238,7 @@ def api_wizard_setup():
             mod = SERVICE_MODULES.get(sid)
             if not mod:
                 continue
-            with _wizard_lock:
-                _wizard_state.update({'current_item': f'Installing {SVC_FRIENDLY.get(sid, sid)}', 'item_progress': 0})
+            wizard_update(current_item=f'Installing {SVC_FRIENDLY.get(sid, sid)}', item_progress=0)
             try:
                 if not mod.is_installed():
                     mod.install()
@@ -218,34 +246,28 @@ def api_wizard_setup():
                     import time
                     for _ in range(300):
                         p = get_download_progress(sid)
-                        with _wizard_lock:
-                            _wizard_state['item_progress'] = p.get('percent', 0)
+                        wizard_update(item_progress=p.get('percent', 0))
                         if p.get('status') in ('complete', 'error'):
                             break
                         time.sleep(1)
                     if get_download_progress(sid).get('status') == 'error':
                         err_msg = get_download_progress(sid).get("error", "unknown")
-                        with _wizard_lock:
-                            _wizard_state['errors'].append(f'{sid}: Download failed — {err_msg}. You can retry from the Home tab.')
+                        wizard_append_list_item('errors', f'{sid}: Download failed — {err_msg}. You can retry from the Home tab.')
             except Exception as e:
-                with _wizard_lock:
-                    _wizard_state['errors'].append(f'{sid}: Setup failed — check your internet connection and try again from the Home tab.')
+                wizard_append_list_item('errors', f'{sid}: Setup failed — check your internet connection and try again from the Home tab.')
             done += 1
-            with _wizard_lock:
-                _wizard_state['overall_progress'] = int(done / total * 100) if total > 0 else 100
-                _wizard_state['completed'].append(sid)
+            wizard_update(overall_progress=int(done / total * 100) if total > 0 else 100)
+            wizard_append_list_item('completed', sid)
 
         # Phase 2: Start services that CAN start now (skip Kiwix — needs content first)
-        with _wizard_lock:
-            _wizard_state['phase'] = 'starting'
+        wizard_update(phase='starting')
         import time
         for sid in services_list:
             if sid == 'kiwix':
                 continue  # Kiwix needs ZIM files before it can start — handled after downloads
             mod = SERVICE_MODULES.get(sid)
             if mod and mod.is_installed() and not mod.running():
-                with _wizard_lock:
-                    _wizard_state['current_item'] = f'Starting {SVC_FRIENDLY.get(sid, sid)}...'
+                wizard_update(current_item=f'Starting {SVC_FRIENDLY.get(sid, sid)}...')
                 try:
                     mod.start()
                     time.sleep(2)
@@ -255,36 +277,30 @@ def api_wizard_setup():
 
         # Phase 3: Download ZIM content
         if zims:
-            with _wizard_lock:
-                _wizard_state['phase'] = 'content'
+            wizard_update(phase='content')
             for zim in zims:
                 url = zim.get('url', '')
                 filename = zim.get('filename', '')
                 name = zim.get('name', filename)
-                with _wizard_lock:
-                    _wizard_state.update({'current_item': f'Downloading {name}', 'item_progress': 0})
+                wizard_update(current_item=f'Downloading {name}', item_progress=0)
                 try:
                     kiwix.download_zim(url, filename)
                     # Poll progress
                     prog_key = f'kiwix-zim-{filename}'
                     for _ in range(7200):  # up to 2 hours per ZIM
                         p = get_download_progress(prog_key)
-                        with _wizard_lock:
-                            _wizard_state['item_progress'] = p.get('percent', 0)
+                        wizard_update(item_progress=p.get('percent', 0))
                         if p.get('status') in ('complete', 'error'):
                             break
                         time.sleep(1)
                 except Exception as e:
-                    with _wizard_lock:
-                        _wizard_state['errors'].append(f'ZIM {filename}: {e}')
+                    wizard_append_list_item('errors', f'ZIM {filename}: {e}')
                 done += 1
-                with _wizard_lock:
-                    _wizard_state['overall_progress'] = int(done / total * 100) if total > 0 else 100
-                    _wizard_state['completed'].append(filename)
+                wizard_update(overall_progress=int(done / total * 100) if total > 0 else 100)
+                wizard_append_list_item('completed', filename)
 
             # NOW start Kiwix — it has content to serve
-            with _wizard_lock:
-                _wizard_state['current_item'] = 'Starting Kiwix with downloaded content...'
+            wizard_update(current_item='Starting Kiwix with downloaded content...')
             if kiwix.is_installed():
                 try:
                     if kiwix.running():
@@ -295,54 +311,43 @@ def api_wizard_setup():
                     log.warning(f'Wizard: Kiwix start after content: {e}')
         elif 'kiwix' in services_list:
             # No ZIMs selected but Kiwix installed — note it needs content
-            with _wizard_lock:
-                _wizard_state['current_item'] = 'Kiwix installed (add content from Library tab to start it)'
+            wizard_update(current_item='Kiwix installed (add content from Library tab to start it)')
 
         # Phase 4: Pull AI models
         if models:
-            with _wizard_lock:
-                _wizard_state['phase'] = 'models'
+            wizard_update(phase='models')
             for model_name in models:
-                with _wizard_lock:
-                    _wizard_state.update({'current_item': f'Downloading AI model: {model_name}', 'item_progress': 0})
+                wizard_update(current_item=f'Downloading AI model: {model_name}', item_progress=0)
                 try:
                     if not ollama.running():
-                        with _wizard_lock:
-                            _wizard_state['errors'].append(f'Model {model_name}: Skipped — AI service is not running. Start it from the Services tab and download models from AI Chat.')
+                        wizard_append_list_item('errors', f'Model {model_name}: Skipped — AI service is not running. Start it from the Services tab and download models from AI Chat.')
                     else:
                         ollama.pull_model(model_name)
                         # Poll pull progress
                         for _ in range(3600):
                             p = ollama.get_pull_progress()
-                            with _wizard_lock:
-                                _wizard_state['item_progress'] = p.get('percent', 0)
+                            wizard_update(item_progress=p.get('percent', 0))
                             if p.get('status') in ('complete', 'error'):
                                 break
                             time.sleep(1)
                 except Exception as e:
-                    with _wizard_lock:
-                        _wizard_state['errors'].append(f'Model {model_name}: {e}')
+                    wizard_append_list_item('errors', f'Model {model_name}: {e}')
                 done += 1
-                with _wizard_lock:
-                    _wizard_state['overall_progress'] = int(done / total * 100) if total > 0 else 100
-                    _wizard_state['completed'].append(model_name)
+                wizard_update(overall_progress=int(done / total * 100) if total > 0 else 100)
+                wizard_append_list_item('completed', model_name)
 
         # Mark wizard complete
         with db_session() as db:
             db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '1')")
             db.commit()
-        with _wizard_lock:
-            _wizard_state.update({'status': 'complete', 'phase': 'done', 'overall_progress': 100,
-                                  'current_item': 'Setup complete!'})
+        wizard_update(status='complete', phase='done', overall_progress=100, current_item='Setup complete!')
 
     threading.Thread(target=do_setup, daemon=True).start()
     return jsonify({'status': 'started'})
 
 @system_bp.route('/api/wizard/progress')
 def api_wizard_progress():
-    with _wizard_lock:
-        state = dict(_wizard_state)
-    return jsonify(state)
+    return jsonify(wizard_snapshot())
 
 @system_bp.route('/api/content-tiers')
 def api_content_tiers():
@@ -959,11 +964,7 @@ def api_dashboard_overview():
 
         # Situation board
         settings = {r['key']: r['value'] for r in db.execute('SELECT key, value FROM settings').fetchall()}
-        sit = {}
-        try:
-            sit = json.loads(settings.get('sit_board', '{}'))
-        except Exception:
-            pass
+        sit = _safe_json_value(settings.get('sit_board'), {})
 
         # Weather trend
         pressure_rows = db.execute('SELECT pressure_hpa FROM weather_log WHERE pressure_hpa IS NOT NULL ORDER BY created_at DESC LIMIT 3').fetchall()
@@ -1040,12 +1041,7 @@ def api_dashboard_live():
 
         # Situation board
         sit_raw = db.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
-        situation = {}
-        if sit_raw and sit_raw['value']:
-            try:
-                situation = json.loads(sit_raw['value'])
-            except Exception:
-                pass
+        situation = _safe_json_value(sit_raw['value'] if sit_raw else None, {})
 
         # Federation peers
         peers_online = 0
@@ -1287,14 +1283,8 @@ DEFAULT_WIDGETS = [
 def api_dashboard_widgets_get():
     """Return the user's dashboard widget configuration."""
     with db_session() as db:
-      try:
-        row = db.execute("SELECT value FROM settings WHERE key = 'dashboard_widgets'").fetchone()
-        if row:
-            widgets = json.loads(row['value'])
-        else:
-            widgets = DEFAULT_WIDGETS
-      except Exception:
-        widgets = DEFAULT_WIDGETS
+      row = db.execute("SELECT value FROM settings WHERE key = 'dashboard_widgets'").fetchone()
+      widgets = _safe_json_value(row['value'] if row else None, DEFAULT_WIDGETS)
     return jsonify({'widgets': widgets})
 
 @system_bp.route('/api/dashboard/widgets', methods=['POST'])
@@ -1378,9 +1368,8 @@ def api_backup_create():
             with db_session() as db_cfg:
                 cfg_row = db_cfg.execute("SELECT value FROM settings WHERE key = 'auto_backup_config'").fetchone()
             salt = ''
-            if cfg_row and cfg_row['value']:
-                cfg_data = json.loads(cfg_row['value'])
-                salt = cfg_data.get('_salt', '')
+            cfg_data = _safe_json_value(cfg_row['value'] if cfg_row else None, {})
+            salt = cfg_data.get('_salt', '')
             if not salt:
                 import secrets
                 salt = secrets.token_hex(16)
@@ -1432,8 +1421,8 @@ def api_backup_list():
                 'created_at': datetime.fromtimestamp(stat.st_mtime).isoformat(),
                 'encrypted': f.endswith('.enc'),
             })
-        except Exception:
-            pass
+        except Exception as exc:
+            log.debug('Skipping backup list entry %s: %s', f, exc)
     backups.sort(key=lambda b: b['created_at'], reverse=True)
     return jsonify(backups[:50])
 
@@ -1469,9 +1458,8 @@ def api_backup_restore():
             with db_session() as db2:
                 cfg_row = db2.execute("SELECT value FROM settings WHERE key = 'auto_backup_config'").fetchone()
             salt = ''
-            if cfg_row and cfg_row['value']:
-                cfg_data = json.loads(cfg_row['value'])
-                salt = cfg_data.get('_salt', '')
+            cfg_data = _safe_json_value(cfg_row['value'] if cfg_row else None, {})
+            salt = cfg_data.get('_salt', '')
             if not salt:
                 return jsonify({'error': 'No encryption salt found in backup config'}), 400
             kdf = PBKDF2HMAC(algorithm=hashes.SHA256(), length=32, salt=salt.encode(), iterations=100000)
@@ -1596,17 +1584,12 @@ def api_backup_config_get():
     """Get current auto-backup configuration."""
     with db_session() as db:
         row = db.execute("SELECT value FROM settings WHERE key = 'auto_backup_config'").fetchone()
-    if row and row['value']:
-        try:
-            config = json.loads(row['value'])
-        except (json.JSONDecodeError, TypeError, ValueError):
-            config = {}
-        config['has_password'] = bool(config.get('_derived_key'))
-        config.pop('password', None)
-        config.pop('_derived_key', None)
-        config.pop('_salt', None)
-    else:
-        config = {'enabled': False, 'interval': 'daily', 'keep_count': 7, 'encrypt': False, 'has_password': False}
+    default_config = {'enabled': False, 'interval': 'daily', 'keep_count': 7, 'encrypt': False, 'has_password': False}
+    config = _safe_json_value(row['value'] if row else None, default_config)
+    config['has_password'] = bool(config.get('_derived_key'))
+    config.pop('password', None)
+    config.pop('_derived_key', None)
+    config.pop('_salt', None)
     return jsonify(config)
 
 # [EXTRACTED to blueprint] Federation v2 API

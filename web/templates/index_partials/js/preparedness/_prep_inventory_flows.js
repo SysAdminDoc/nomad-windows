@@ -61,7 +61,8 @@ async function loadInventory() {
   if (cat) url += `category=${encodeURIComponent(cat)}&`;
   if (q) url += `q=${encodeURIComponent(q)}&`;
   try {
-    const items = await (await fetch(url)).json();
+    const items = await safeFetch(url, {}, []);
+    if (!Array.isArray(items)) throw new Error('invalid inventory payload');
     _cachedInvItems = items;
     const tbody = document.getElementById('inv-tbody');
     if (!items.length) {
@@ -111,7 +112,7 @@ async function loadInventory() {
       document.getElementById('inv-tfoot').innerHTML = totalValue > 0 ? `<tr><td colspan="4" class="prep-table-total-label">Total Inventory Value:</td><td class="prep-table-total-value">$${totalValue.toFixed(2)}</td><td colspan="5"></td></tr>` : '';
     }
     // Load summary alerts
-    const summary = await (await fetch('/api/inventory/summary')).json();
+    const summary = await safeFetch('/api/inventory/summary', {}, {});
     const alerts = document.getElementById('inv-alerts');
     const alertCards = [];
     if (summary.expired > 0) alertCards.push({tone: 'danger', label: 'Expired now', value: summary.expired, note: 'Rotate or discard first.'});
@@ -130,7 +131,8 @@ async function loadInventory() {
     // Populate category filter
     const sel = document.getElementById('inv-cat-filter');
     if (sel.options.length <= 1) {
-      const cats = await (await fetch('/api/inventory/categories')).json();
+      const cats = await safeFetch('/api/inventory/categories', {}, []);
+      if (!Array.isArray(cats)) throw new Error('invalid inventory categories payload');
       cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
     }
   } catch(e) {
@@ -174,7 +176,8 @@ function showInvForm(item) {
   // Populate category dropdown
   const sel = document.getElementById('inv-category');
   if (sel.options.length === 0) {
-    fetch('/api/inventory/categories').then(r=>r.json()).then(cats => {
+    safeFetch('/api/inventory/categories', {}, []).then(cats => {
+      if (!Array.isArray(cats)) return;
       cats.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
       if (item) sel.value = item.category;
     }).catch(()=>{});
@@ -247,7 +250,7 @@ async function dailyConsume() {
   const items = _cachedInvItems?.filter(i => i.daily_usage > 0 && i.quantity > 0) || [];
   if (!items.length) { toast('No items have daily usage set', 'info'); return; }
   try {
-    const r = await (await fetch('/api/inventory/batch-consume', {method:'POST', headers:{'Content-Type':'application/json'}})).json();
+    const r = await safeFetch('/api/inventory/batch-consume', {method:'POST', headers:{'Content-Type':'application/json'}}, null);
     if (r.items?.length) {
       toast(`Consumed daily usage for ${r.items.length} items`, 'success');
       loadInventory();

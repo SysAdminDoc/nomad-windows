@@ -26,6 +26,45 @@ def _check_origin(req):
         abort(403, 'Cross-origin request blocked')
 
 
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, (dict, list)):
+        return json.loads(json.dumps(fallback))
+    return fallback
+
+
+def _safe_json_value(value, fallback=None):
+    if isinstance(value, (dict, list)):
+        return _clone_json_fallback(value)
+    if value in (None, ''):
+        return _clone_json_fallback(fallback)
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return _clone_json_fallback(fallback)
+
+
+def _safe_json_object(value, fallback=None):
+    fallback = {} if fallback is None else fallback
+    parsed = _safe_json_value(value, fallback)
+    return parsed if isinstance(parsed, dict) else _clone_json_fallback(fallback)
+
+
+def _safe_json_list(value, fallback=None):
+    fallback = [] if fallback is None else fallback
+    parsed = _safe_json_value(value, fallback)
+    return parsed if isinstance(parsed, list) else _clone_json_fallback(fallback)
+
+
+def _safe_id_list(value):
+    ids = []
+    for raw in _safe_json_list(value, []):
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    return ids
+
+
 # ─── Security Cameras CRUD ─────────────────────────────────────────
 
 @security_bp.route('/api/security/cameras')
@@ -139,11 +178,8 @@ def api_security_dashboard():
         sit_raw = db.execute("SELECT value FROM settings WHERE key = 'sit_board'").fetchone()
         security_level = 'green'
         if sit_raw and sit_raw['value']:
-            try:
-                sit = json.loads(sit_raw['value'] or '{}')
-                security_level = sit.get('security', 'green')
-            except Exception:
-                pass
+            sit = _safe_json_object(sit_raw['value'], {})
+            security_level = sit.get('security', 'green')
     return jsonify({
         'cameras_active': cameras, 'access_24h': access_24h,
         'security_incidents_48h': sec_incidents, 'security_level': security_level,
@@ -164,14 +200,8 @@ def api_security_zones():
     result = []
     for r in rows:
         entry = dict(r)
-        try:
-            entry['camera_ids'] = json.loads(entry.get('camera_ids') or '[]')
-        except (json.JSONDecodeError, TypeError, ValueError):
-            entry['camera_ids'] = []
-        try:
-            entry['waypoint_ids'] = json.loads(entry.get('waypoint_ids') or '[]')
-        except (json.JSONDecodeError, TypeError, ValueError):
-            entry['waypoint_ids'] = []
+        entry['camera_ids'] = _safe_id_list(entry.get('camera_ids'))
+        entry['waypoint_ids'] = _safe_id_list(entry.get('waypoint_ids'))
         result.append(entry)
     return jsonify(result)
 
@@ -199,7 +229,7 @@ def api_security_zones_create():
         db.execute('''INSERT INTO perimeter_zones (name, zone_type, boundary_geojson, camera_ids, waypoint_ids,
                       alert_on_entry, alert_on_exit, threat_level, color, notes) VALUES (?,?,?,?,?,?,?,?,?,?)''',
                    (name, zone_type, boundary,
-                    json.dumps(data.get('camera_ids', [])), json.dumps(data.get('waypoint_ids', [])),
+                    json.dumps(_safe_id_list(data.get('camera_ids'))), json.dumps(_safe_id_list(data.get('waypoint_ids'))),
                     1 if data.get('alert_on_entry', True) else 0,
                     1 if data.get('alert_on_exit', False) else 0,
                     threat_level, color,
@@ -220,9 +250,9 @@ def api_security_zones_update(zid):
             if col in data:
                 update_data[col] = data[col]
         if 'camera_ids' in data:
-            update_data['camera_ids'] = json.dumps(data['camera_ids'])
+            update_data['camera_ids'] = json.dumps(_safe_id_list(data['camera_ids']))
         if 'waypoint_ids' in data:
-            update_data['waypoint_ids'] = json.dumps(data['waypoint_ids'])
+            update_data['waypoint_ids'] = json.dumps(_safe_id_list(data['waypoint_ids']))
         if 'alert_on_entry' in data:
             update_data['alert_on_entry'] = 1 if data['alert_on_entry'] else 0
         if 'alert_on_exit' in data:
@@ -252,8 +282,8 @@ def api_security_zones_geo():
     for z in zones:
         geojson = z['boundary_geojson']
         if geojson:
-            try:
-                geometry = json.loads(geojson)
+            geometry = _safe_json_value(geojson, None)
+            if isinstance(geometry, dict):
                 features.append({
                     'type': 'Feature',
                     'geometry': geometry,
@@ -263,8 +293,6 @@ def api_security_zones_geo():
                         'alert_on_entry': z['alert_on_entry']
                     }
                 })
-            except json.JSONDecodeError:
-                pass
     return jsonify({'type': 'FeatureCollection', 'features': features})
 
 
@@ -465,7 +493,7 @@ def api_check_perimeter_breach():
         zones = db.execute('SELECT * FROM perimeter_zones').fetchall()
         breaches = []
         for z in zones:
-            camera_ids = json.loads(z['camera_ids'] or '[]')
+            camera_ids = _safe_id_list(z['camera_ids'])
             if camera_id and camera_id in camera_ids:
                 if z['alert_on_entry']:
                     breaches.append({'zone_id': z['id'], 'zone_name': z['name'], 'zone_type': z['zone_type']})

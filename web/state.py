@@ -20,10 +20,65 @@ _pull_queue_lock = threading.Lock()
 
 # ─── Wizard Setup ────────────────────────────────────────────────────
 _wizard_lock = threading.Lock()
-_wizard_state = {
-    'status': 'idle', 'phase': '', 'current_item': '', 'item_progress': 0,
-    'overall_progress': 0, 'completed': [], 'errors': [], 'total_items': 0,
-}
+
+
+def _wizard_default_state():
+    return {
+        'status': 'idle',
+        'phase': '',
+        'current_item': '',
+        'item_progress': 0,
+        'overall_progress': 0,
+        'completed': [],
+        'errors': [],
+        'total_items': 0,
+    }
+
+
+def _wizard_copy_value(value):
+    if isinstance(value, list):
+        return list(value)
+    if isinstance(value, dict):
+        return dict(value)
+    return value
+
+
+def _wizard_snapshot_unlocked():
+    return {key: _wizard_copy_value(value) for key, value in _wizard_state.items()}
+
+
+_wizard_state = _wizard_default_state()
+
+
+def wizard_reset(**updates):
+    with _wizard_lock:
+        _wizard_state.clear()
+        _wizard_state.update(_wizard_default_state())
+        for key, value in updates.items():
+            _wizard_state[key] = _wizard_copy_value(value)
+        return _wizard_snapshot_unlocked()
+
+
+def wizard_update(**updates):
+    with _wizard_lock:
+        for key, value in updates.items():
+            _wizard_state[key] = _wizard_copy_value(value)
+        return _wizard_snapshot_unlocked()
+
+
+def wizard_append_list_item(field, value):
+    with _wizard_lock:
+        current = _wizard_state.get(field)
+        if not isinstance(current, list):
+            current = []
+            _wizard_state[field] = current
+        current.append(value)
+        return list(current)
+
+
+def wizard_snapshot():
+    with _wizard_lock:
+        return _wizard_snapshot_unlocked()
 
 # ─── Offline Map Downloads ───────────────────────────────────────────
 _map_downloads = {}  # {region_id: {'progress': 0-100, 'status': str, 'error': str|None}}
@@ -35,8 +90,23 @@ _ytdlp_dl_lock = threading.Lock()
 _ytdlp_install_state = {'status': 'idle', 'percent': 0, 'error': None}
 
 # ─── Proactive Alert System ──────────────────────────────────────────
-# Guarded by _state_lock (defined in web/app.py) for thread-safe access
+_alert_lock = threading.Lock()
 _alert_check_running = False
+
+
+def try_begin_alert_check():
+    global _alert_check_running
+    with _alert_lock:
+        if _alert_check_running:
+            return False
+        _alert_check_running = True
+        return True
+
+
+def set_alert_check_running(is_running):
+    global _alert_check_running
+    with _alert_lock:
+        _alert_check_running = bool(is_running)
 
 # ─── Peer Discovery ──────────────────────────────────────────────────
 _discovered_peers = {}

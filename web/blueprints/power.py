@@ -14,18 +14,54 @@ from web.state import broadcast_event
 power_bp = Blueprint('power', __name__)
 
 
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, (dict, list)):
+        return json.loads(json.dumps(fallback))
+    return fallback
+
+
+def _safe_json_value(value, fallback=None):
+    if isinstance(value, (dict, list)):
+        return _clone_json_fallback(value)
+    if value in (None, ''):
+        return _clone_json_fallback(fallback)
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return _clone_json_fallback(fallback)
+
+
+def _safe_json_object(value, fallback=None):
+    fallback = {} if fallback is None else fallback
+    parsed = _safe_json_value(value, fallback)
+    return parsed if isinstance(parsed, dict) else _clone_json_fallback(fallback)
+
+
+def _resolve_map_center(value):
+    parsed = _safe_json_value(value, None)
+    lat = None
+    lng = None
+    if isinstance(parsed, list) and len(parsed) >= 2:
+        raw_lat, raw_lng = parsed[0], parsed[1]
+    elif isinstance(parsed, dict):
+        raw_lat, raw_lng = parsed.get('lat'), parsed.get('lng')
+    else:
+        return None, None
+    try:
+        lat = float(raw_lat) if raw_lat is not None else None
+        lng = float(raw_lng) if raw_lng is not None else None
+    except (TypeError, ValueError):
+        return None, None
+    return lat, lng
+
+
 # ─── Power Devices CRUD ─────────────────────────────────────────────
 
 @power_bp.route('/api/power/devices')
 def api_power_devices():
     with db_session() as db:
         rows = db.execute('SELECT * FROM power_devices ORDER BY device_type, name LIMIT 10000').fetchall()
-    def _safe_json(val, default):
-        try:
-            return json.loads(val or default)
-        except (json.JSONDecodeError, TypeError, ValueError):
-            return json.loads(default)
-    return jsonify([{**dict(r), 'specs': _safe_json(r['specs'], '{}')} for r in rows])
+    return jsonify([{**dict(r), 'specs': _safe_json_object(r['specs'], {})} for r in rows])
 
 
 @power_bp.route('/api/power/devices', methods=['POST'])
@@ -35,7 +71,7 @@ def api_power_devices_create():
         return jsonify({'error': 'Name and type required'}), 400
     with db_session() as db:
         db.execute('INSERT INTO power_devices (device_type, name, specs, notes) VALUES (?,?,?,?)',
-                   (data['device_type'], data['name'], json.dumps(data.get('specs', {})), data.get('notes', '')))
+                   (data['device_type'], data['name'], json.dumps(_safe_json_object(data.get('specs'), {})), data.get('notes', '')))
         db.commit()
     return jsonify({'status': 'created'}), 201
 
@@ -87,7 +123,7 @@ def api_power_dashboard():
     total_solar_w = 0
     total_battery_wh = 0
     for d in devices:
-        specs = json.loads(d['specs'] or '{}')
+        specs = _safe_json_object(d['specs'], {})
         if d['device_type'] == 'solar_panel':
             total_solar_w += specs.get('watts', 0) * specs.get('count', 1)
         elif d['device_type'] == 'battery':
@@ -162,7 +198,7 @@ def api_power_autonomy():
         ).fetchall()
         total_battery_wh = 0
         for br in bat_rows:
-            specs = json.loads(br['specs'] or '{}')
+            specs = _safe_json_object(br['specs'], {})
             total_battery_wh += specs.get('capacity_wh', 0) * specs.get('count', 1)
         if total_battery_wh <= 0:
             total_battery_wh = 5000  # fallback default
@@ -295,16 +331,14 @@ def api_solar_forecast():
         with db_session() as db:
             mc = db.execute("SELECT value FROM settings WHERE key = 'map_center'").fetchone()
             if mc and mc['value']:
-                try:
-                    parts = json.loads(mc['value'])
-                    if isinstance(parts, list) and len(parts) >= 2:
-                        lat = lat if lat is not None else float(parts[0])
-                        lng = lng if lng is not None else float(parts[1])
-                    elif isinstance(parts, dict):
-                        lat = lat if lat is not None else float(parts.get('lat', 0))
-                        lng = lng if lng is not None else float(parts.get('lng', 0))
-                except (json.JSONDecodeError, ValueError):
-                    pass
+                center_lat, center_lng = _resolve_map_center(mc['value'])
+                lat = lat if lat is not None else center_lat
+                lng = lng if lng is not None else center_lng
+            if lat is None or lng is None:
+                wp = db.execute("SELECT lat, lng FROM waypoints ORDER BY created_at DESC LIMIT 1").fetchone()
+                if wp:
+                    lat = lat if lat is not None else wp['lat']
+                    lng = lng if lng is not None else wp['lng']
             if lat is None or lng is None:
                 wp = db.execute("SELECT lat, lng FROM waypoints ORDER BY created_at DESC LIMIT 1").fetchone()
                 if wp:
@@ -381,13 +415,9 @@ def api_solar_history():
         with db_session() as db:
             mc = db.execute("SELECT value FROM settings WHERE key = 'map_center'").fetchone()
             if mc and mc['value']:
-                try:
-                    parts = json.loads(mc['value'])
-                    if isinstance(parts, list) and len(parts) >= 2:
-                        lat = lat if lat is not None else float(parts[0])
-                        lng = lng if lng is not None else float(parts[1])
-                except (json.JSONDecodeError, ValueError):
-                    pass
+                center_lat, center_lng = _resolve_map_center(mc['value'])
+                lat = lat if lat is not None else center_lat
+                lng = lng if lng is not None else center_lng
     with db_session() as db:
         rows = db.execute(
             "SELECT solar_wh_today, solar_watts, created_at FROM power_log "
@@ -833,7 +863,7 @@ def api_power_load_schedule():
         total_load_w = 0
         for d in devices:
             d_dict = dict(d)
-            specs = json.loads(d_dict.get('specs') or '{}')
+            specs = _safe_json_object(d_dict.get('specs'), {})
             watts = specs.get('watts', 0) * specs.get('count', 1)
             d_dict['watts'] = watts
             d_dict['specs'] = specs

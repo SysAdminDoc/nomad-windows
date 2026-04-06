@@ -51,6 +51,81 @@ def _validate_download_url(url):
     return url
 
 
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, (dict, list)):
+        return json.loads(json.dumps(fallback))
+    return fallback
+
+
+def _safe_json_value(value, fallback=None):
+    if isinstance(value, (dict, list)):
+        return _clone_json_fallback(value)
+    if value in (None, ''):
+        return _clone_json_fallback(fallback)
+    try:
+        return json.loads(value)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return _clone_json_fallback(fallback)
+
+
+def _safe_json_list(value, fallback=None):
+    fallback = [] if fallback is None else fallback
+    parsed = _safe_json_value(value, fallback)
+    return parsed if isinstance(parsed, list) else _clone_json_fallback(fallback)
+
+
+def _safe_json_object(value, fallback=None):
+    fallback = {} if fallback is None else fallback
+    parsed = _safe_json_value(value, fallback)
+    return parsed if isinstance(parsed, dict) else _clone_json_fallback(fallback)
+
+
+def _safe_id_list(value):
+    ids = []
+    for raw in _safe_json_list(value, []):
+        try:
+            ids.append(int(raw))
+        except (TypeError, ValueError):
+            continue
+    return ids
+
+
+def _normalize_track_coordinates(value):
+    coords = []
+    for point in _safe_json_list(value, []):
+        if not isinstance(point, (list, tuple)) or len(point) < 2:
+            continue
+        try:
+            lng = float(point[0])
+            lat = float(point[1])
+        except (TypeError, ValueError):
+            continue
+        normalized = [lng, lat]
+        if len(point) >= 3:
+            try:
+                normalized.append(float(point[2]))
+            except (TypeError, ValueError):
+                normalized.append(0.0)
+        coords.append(normalized)
+    return coords
+
+
+def _safe_track_geojson(value):
+    parsed = _safe_json_object(value, {})
+    geometry = parsed.get('geometry')
+    if not isinstance(geometry, dict):
+        geometry = {}
+    properties = parsed.get('properties')
+    return {
+        'type': parsed.get('type') or 'Feature',
+        'geometry': {
+            'type': geometry.get('type') or 'LineString',
+            'coordinates': _normalize_track_coordinates(geometry.get('coordinates')),
+        },
+        'properties': properties if isinstance(properties, dict) else {},
+    }
+
+
 # ─── Maps API ──────────────────────────────────────────────────────
 
 MAPS_DIR_NAME = 'maps'
@@ -699,9 +774,10 @@ def api_map_routes_list():
 @maps_bp.route('/api/maps/routes', methods=['POST'])
 def api_map_routes_create():
     data = request.get_json() or {}
+    waypoint_ids = _safe_id_list(data.get('waypoint_ids'))
     with db_session() as db:
         db.execute('INSERT INTO map_routes (name, waypoint_ids, distance_km, estimated_time_min, terrain_difficulty, notes) VALUES (?,?,?,?,?,?)',
-                   (data.get('name', 'New Route'), json.dumps(data.get('waypoint_ids', [])),
+                   (data.get('name', 'New Route'), json.dumps(waypoint_ids),
                     data.get('distance_km', 0), data.get('estimated_time_min', 0),
                     data.get('terrain_difficulty', 'moderate'), data.get('notes', '')))
         db.commit()
@@ -721,7 +797,7 @@ def api_elevation_profile(route_id):
         route = db.execute('SELECT waypoint_ids FROM map_routes WHERE id = ?', (route_id,)).fetchone()
         if not route:
             return jsonify({'error': 'Route not found'}), 404
-        wp_ids = json.loads(route['waypoint_ids'] or '[]')
+        wp_ids = _safe_id_list(route['waypoint_ids'])
         if not wp_ids:
             return jsonify({'points': [], 'total_ascent': 0, 'total_descent': 0})
 
@@ -1312,10 +1388,7 @@ def api_tracks_add_point(tid):
         if row['ended_at']:
             return jsonify({'error': 'Track already stopped'}), 400
 
-        try:
-            geojson = json.loads(row['geojson'])
-        except (json.JSONDecodeError, TypeError, ValueError):
-            geojson = {'type': 'Feature', 'geometry': {'type': 'LineString', 'coordinates': []}, 'properties': {}}
+        geojson = _safe_track_geojson(row['geojson'])
         coords = geojson.get('geometry', {}).get('coordinates', [])
 
         total_distance = row['total_distance_m'] or 0
@@ -1378,10 +1451,7 @@ def api_tracks_export_gpx(tid):
         if not row:
             return jsonify({'error': 'Track not found'}), 404
 
-        try:
-            geojson = json.loads(row['geojson'])
-        except (json.JSONDecodeError, TypeError, ValueError):
-            geojson = {'geometry': {'coordinates': []}}
+        geojson = _safe_track_geojson(row['geojson'])
         coords = geojson.get('geometry', {}).get('coordinates', [])
 
         gpx = '<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -1411,10 +1481,7 @@ def api_geofences_list():
         results = []
         for r in rows:
             item = dict(r)
-            try:
-                item['properties'] = json.loads(item.get('properties') or '{}')
-            except (json.JSONDecodeError, TypeError):
-                item['properties'] = {}
+            item['properties'] = _safe_json_object(item.get('properties'), {})
             results.append(item)
         return jsonify(results)
 
@@ -1466,10 +1533,7 @@ def api_geofences_create():
         aid = cur.lastrowid
         row = db.execute('SELECT * FROM map_annotations WHERE id = ?', (aid,)).fetchone()
         result = dict(row)
-        try:
-            result['properties'] = json.loads(result.get('properties') or '{}')
-        except (json.JSONDecodeError, TypeError):
-            result['properties'] = {}
+        result['properties'] = _safe_json_object(result.get('properties'), {})
         return jsonify(result), 201
 
 @maps_bp.route('/api/geofences/check', methods=['POST'])
@@ -1500,10 +1564,7 @@ def api_geofences_check():
             if dist <= radius:
                 item = dict(f)
                 item['distance_m'] = round(dist, 1)
-                try:
-                    item['properties'] = json.loads(item.get('properties') or '{}')
-                except (json.JSONDecodeError, TypeError):
-                    item['properties'] = {}
+                item['properties'] = _safe_json_object(item.get('properties'), {})
                 triggered.append(item)
 
         return jsonify({'triggered': triggered, 'checked_count': len(fences)})
@@ -1536,7 +1597,7 @@ def api_maps_export_gpx():
             gpx += f'  <rte>\n    <name>{esc(rt["name"])}</name>\n'
             if rt['notes']:
                 gpx += f'    <desc>{esc(rt["notes"])}</desc>\n'
-            wp_ids = json.loads(rt['waypoint_ids'] or '[]')
+            wp_ids = _safe_id_list(rt['waypoint_ids'])
             if wp_ids:
                 placeholders = ','.join(['?' for _ in wp_ids])
                 rte_wps = db.execute(
@@ -1558,7 +1619,7 @@ def api_maps_export_gpx():
         tracks = db.execute('SELECT * FROM gps_tracks ORDER BY created_at LIMIT 50000').fetchall()
         for trk in tracks:
             gpx += f'  <trk>\n    <name>{esc(trk["name"])}</name>\n    <trkseg>\n'
-            geojson = json.loads(trk['geojson'])
+            geojson = _safe_track_geojson(trk['geojson'])
             coords = geojson.get('geometry', {}).get('coordinates', [])
             for pt in coords:
                 lng_v, lat_v = pt[0], pt[1]

@@ -101,3 +101,52 @@ class TestStatusReport:
     def test_status_report(self, client):
         resp = client.get('/api/status-report')
         assert resp.status_code == 200
+
+    def test_status_report_recovers_from_corrupted_situation_json(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('sit_board', ?)", ('{broken',))
+        db.commit()
+
+        resp = client.get('/api/status-report')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['situation'] == {}
+
+
+class TestDashboardAndBackupConfigFallbacks:
+    def test_dashboard_widgets_fall_back_when_setting_is_corrupted(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('dashboard_widgets', ?)", ('not-json',))
+        db.commit()
+
+        resp = client.get('/api/dashboard/widgets')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert isinstance(data['widgets'], list)
+        assert len(data['widgets']) == 10
+        assert any(widget['id'] == 'weather' for widget in data['widgets'])
+
+    def test_backup_config_falls_back_when_setting_is_corrupted(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('auto_backup_config', ?)", ('{oops',))
+        db.commit()
+
+        resp = client.get('/api/system/backup/config')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['enabled'] is False
+        assert data['interval'] == 'daily'
+        assert data['keep_count'] == 7
+        assert data['encrypt'] is False
+        assert data['has_password'] is False
+
+    def test_dashboard_live_recovers_from_corrupted_situation_json(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('sit_board', ?)", ('not valid json',))
+        db.commit()
+
+        resp = client.get('/api/dashboard/live')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert isinstance(data, dict)
+        assert data['situation'] == {}

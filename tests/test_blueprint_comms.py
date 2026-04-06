@@ -1,5 +1,7 @@
 """Tests for comms/radio blueprint routes."""
 
+from db import db_session
+
 
 class TestFrequenciesCRUD:
     def test_list_frequencies(self, client):
@@ -75,6 +77,34 @@ class TestRadioProfiles:
     def test_create_profile_minimal(self, client):
         resp = client.post('/api/comms/radio-profiles', json={'name': 'Minimal'})
         assert resp.status_code in (200, 201)
+
+    def test_list_profiles_recovers_from_corrupted_channels(self, client):
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO radio_profiles (radio_model, name, channels) VALUES (?, ?, ?)',
+                ('Baofeng', 'Broken Channels', '{broken'),
+            )
+            db.commit()
+
+        resp = client.get('/api/comms/radio-profiles')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        target = next((p for p in data if p['name'] == 'Broken Channels'), None)
+        assert target is not None
+        assert target['channels'] == []
+
+    def test_status_board_recovers_from_corrupted_radio_profile_channels(self, client):
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO radio_profiles (radio_model, name, channels) VALUES (?, ?, ?)',
+                ('Yaesu', 'Status Board Broken', '{broken'),
+            )
+            db.commit()
+
+        resp = client.get('/api/comms/status-board')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert isinstance(data['active_frequencies'], list)
 
 
 class TestPropagation:

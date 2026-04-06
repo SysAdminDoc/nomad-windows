@@ -1,10 +1,11 @@
 """Inventory management, barcode, shopping list, and receipt scanning routes."""
 
-import json
-import os
 import io
-import time
+import json
 import logging
+import os
+import re
+import time
 
 from flask import Blueprint, request, jsonify, Response
 from werkzeug.utils import secure_filename
@@ -33,6 +34,57 @@ def _esc(s):
     # NOTE: duplicated in app.py, blueprints/medical.py
     """Escape HTML entities."""
     return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+
+
+def _clone_json_fallback(fallback):
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    if isinstance(fallback, list):
+        return list(fallback)
+    return fallback
+
+
+def _safe_json_value(raw, fallback=None):
+    if raw in (None, '', b''):
+        return _clone_json_fallback(fallback)
+    try:
+        text = raw.decode('utf-8') if isinstance(raw, (bytes, bytearray)) else raw
+        parsed = json.loads(text) if isinstance(text, str) else text
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        log.debug('Invalid inventory JSON payload: %s', exc)
+        return _clone_json_fallback(fallback)
+    if isinstance(fallback, dict) and not isinstance(parsed, dict):
+        return {}
+    if isinstance(fallback, list) and not isinstance(parsed, list):
+        return []
+    return parsed
+
+
+def _extract_json_array(raw_text):
+    if not isinstance(raw_text, str) or '[' not in raw_text:
+        return []
+    json_match = re.search(r'\[.*\]', raw_text, re.DOTALL)
+    if not json_match:
+        return []
+    try:
+        parsed = json.loads(json_match.group())
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return []
+    return parsed if isinstance(parsed, list) else []
+
+
+def _safe_float(value, default=0.0):
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _safe_int(value, default=0):
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
 
 
 inventory_bp = Blueprint('inventory', __name__)
@@ -174,7 +226,6 @@ def api_inventory_receipt_scan():
     _check_origin(request)
     import tempfile
     import base64
-    import re
 
     if 'image' not in request.files:
         return jsonify({'error': 'No image file provided'}), 400
@@ -229,23 +280,18 @@ def api_inventory_receipt_scan():
                     method='POST',
                 )
                 with urllib.request.urlopen(req_ollama, timeout=120) as resp:
-                    result = json.loads(resp.read().decode('utf-8'))
+                    result = _safe_json_value(resp.read(), {})
 
-                raw_text = result.get('response', '')
-                # Extract JSON array from the response
-                json_match = re.search(r'\[.*\]', raw_text, re.DOTALL)
-                if json_match:
-                    try:
-                        parsed = json.loads(json_match.group())
-                    except (json.JSONDecodeError, ValueError):
-                        parsed = []
-                    for item in parsed:
-                        items.append({
-                            'name': str(item.get('name', 'Unknown')).strip(),
-                            'quantity': float(item.get('quantity', 1)),
-                            'unit_price': float(item.get('unit_price', 0)),
-                            'total_price': float(item.get('total_price', 0)),
-                        })
+                raw_text = result.get('response', '') if isinstance(result, dict) else ''
+                for item in _extract_json_array(raw_text):
+                    if not isinstance(item, dict):
+                        continue
+                    items.append({
+                        'name': str(item.get('name', 'Unknown')).strip(),
+                        'quantity': _safe_float(item.get('quantity', 1), 1),
+                        'unit_price': _safe_float(item.get('unit_price', 0), 0),
+                        'total_price': _safe_float(item.get('total_price', 0), 0),
+                    })
                 source = 'ollama'
             except Exception as e:
                 log.warning('Ollama receipt scan failed: %s', e)
@@ -346,7 +392,6 @@ def api_inventory_vision_scan():
     _check_origin(request)
     import tempfile
     import base64
-    import re
 
     if 'image' not in request.files:
         return jsonify({'error': 'No image file provided'}), 400
@@ -427,9 +472,9 @@ def api_inventory_vision_scan():
                     method='POST',
                 )
                 with urllib.request.urlopen(req_ollama, timeout=120) as resp:
-                    result = json.loads(resp.read().decode('utf-8'))
+                    result = _safe_json_value(resp.read(), {})
 
-                raw_response = result.get('response', '')
+                raw_response = result.get('response', '') if isinstance(result, dict) else ''
                 model_used = model
                 break
             except Exception as e:
@@ -446,26 +491,22 @@ def api_inventory_vision_scan():
 
         # Parse JSON array from response
         items = []
-        json_match = re.search(r'\[.*\]', raw_response, re.DOTALL)
-        if json_match:
-            try:
-                parsed = json.loads(json_match.group())
-                valid_categories = {'Food', 'Water', 'Medical', 'Ammunition', 'Fuel', 'Equipment',
-                                    'Batteries', 'Hygiene', 'Clothing', 'Tools', 'Communication',
-                                    'Documents', 'Seeds', 'General'}
-                valid_conditions = {'New', 'Good', 'Fair', 'Poor'}
-                for item in parsed:
-                    cat = str(item.get('category', 'General')).strip()
-                    cond = str(item.get('condition', 'Good')).strip()
-                    items.append({
-                        'name': str(item.get('name', 'Unknown')).strip(),
-                        'quantity': max(1, int(float(item.get('quantity', 1)))),
-                        'category': cat if cat in valid_categories else 'General',
-                        'condition': cond if cond in valid_conditions else 'Good',
-                        'notes': str(item.get('notes', '')).strip(),
-                    })
-            except (json.JSONDecodeError, ValueError) as e:
-                log.warning('Failed to parse vision model JSON: %s', e)
+        valid_categories = {'Food', 'Water', 'Medical', 'Ammunition', 'Fuel', 'Equipment',
+                            'Batteries', 'Hygiene', 'Clothing', 'Tools', 'Communication',
+                            'Documents', 'Seeds', 'General'}
+        valid_conditions = {'New', 'Good', 'Fair', 'Poor'}
+        for item in _extract_json_array(raw_response):
+            if not isinstance(item, dict):
+                continue
+            cat = str(item.get('category', 'General')).strip()
+            cond = str(item.get('condition', 'Good')).strip()
+            items.append({
+                'name': str(item.get('name', 'Unknown')).strip(),
+                'quantity': max(1, _safe_int(item.get('quantity', 1), 1)),
+                'category': cat if cat in valid_categories else 'General',
+                'condition': cond if cond in valid_conditions else 'Good',
+                'notes': str(item.get('notes', '')).strip(),
+            })
 
         return jsonify({
             'items': items,

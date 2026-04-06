@@ -4,6 +4,15 @@ import json
 
 
 class TestPerimeterZones:
+    def test_security_dashboard_recovers_from_corrupted_sit_board(self, client, db):
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('sit_board', ?)", ('{broken',))
+        db.commit()
+
+        resp = client.get('/api/security/dashboard')
+
+        assert resp.status_code == 200
+        assert resp.get_json()['security_level'] == 'green'
+
     def test_perimeter_zones_list(self, client):
         resp = client.get('/api/security/zones')
         assert resp.status_code == 200
@@ -63,6 +72,42 @@ class TestPerimeterZones:
         assert data['type'] == 'FeatureCollection'
         assert isinstance(data['features'], list)
 
+    def test_perimeter_zones_list_recovers_from_corrupted_link_ids(self, client, db):
+        created = client.post('/api/security/zones', json={
+            'name': 'Broken Link Zone',
+            'camera_ids': [1, 2],
+            'waypoint_ids': [3, 4],
+        }).get_json()
+        db.execute('UPDATE perimeter_zones SET camera_ids = ?, waypoint_ids = ? WHERE id = ?', ('{broken', '{broken', created['id']))
+        db.commit()
+
+        resp = client.get('/api/security/zones')
+
+        assert resp.status_code == 200
+        zone = next(item for item in resp.get_json() if item['id'] == created['id'])
+        assert zone['camera_ids'] == []
+        assert zone['waypoint_ids'] == []
+
+    def test_perimeter_zones_geo_skips_corrupted_boundary_geojson(self, client, db):
+        valid = client.post('/api/security/zones', json={
+            'name': 'Valid Geo Zone',
+            'boundary_geojson': json.dumps({
+                'type': 'Polygon',
+                'coordinates': [[[-104.0, 39.0], [-104.0, 39.1], [-103.9, 39.1], [-103.9, 39.0], [-104.0, 39.0]]],
+            }),
+        }).get_json()
+        broken = client.post('/api/security/zones', json={'name': 'Broken Geo Zone'}).get_json()
+        db.execute('UPDATE perimeter_zones SET boundary_geojson = ? WHERE id = ?', ('{broken', broken['id']))
+        db.commit()
+
+        resp = client.get('/api/security/zones/geo')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        names = {feature['properties']['name'] for feature in data['features']}
+        assert 'Valid Geo Zone' in names
+        assert 'Broken Geo Zone' not in names
+
     def test_perimeter_zone_geojson_size_limit(self, client):
         # A boundary larger than 500KB should be rejected
         huge_geojson = 'x' * 600000
@@ -84,6 +129,26 @@ class TestPerimeterZones:
         zones = client.get('/api/security/zones').get_json()
         bad_zone = [z for z in zones if z['name'] == 'Bad Color Zone']
         assert len(bad_zone) == 1
+
+    def test_check_breach_recovers_from_corrupted_camera_ids(self, client, db):
+        broken = client.post('/api/security/zones', json={'name': 'Broken Breach Zone'}).get_json()
+        valid = client.post('/api/security/zones', json={
+            'name': 'Valid Breach Zone',
+            'camera_ids': [7],
+            'alert_on_entry': True,
+        }).get_json()
+        db.execute('UPDATE perimeter_zones SET camera_ids = ?, alert_on_entry = 1 WHERE id = ?', ('{broken', broken['id']))
+        db.commit()
+
+        resp = client.post('/api/security/zones/check-breach', json={'camera_id': 7})
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['breaches'] == [{
+            'zone_id': valid['id'],
+            'zone_name': 'Valid Breach Zone',
+            'zone_type': 'perimeter',
+        }]
 
 
 class TestMotionDetection:

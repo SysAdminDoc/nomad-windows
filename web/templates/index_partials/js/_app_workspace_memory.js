@@ -1047,24 +1047,18 @@ function normalizeWorkspaceResumeState(raw) {
 }
 
 function parseWorkspaceResumeSettingValue(value) {
-  try {
-    if (!value) return normalizeWorkspaceResumeState({});
-    if (typeof value === 'string') return normalizeWorkspaceResumeState(JSON.parse(value));
-    if (typeof value === 'object') return normalizeWorkspaceResumeState(value);
-  } catch (error) {
-    console.warn('Unable to parse workspace memory setting', error);
-  }
+  if (!value) return normalizeWorkspaceResumeState({});
+  if (typeof value === 'string') return normalizeWorkspaceResumeState(safeJsonParse(value, {}));
+  if (typeof value === 'object') return normalizeWorkspaceResumeState(value);
   return normalizeWorkspaceResumeState({});
 }
 
 function getLocalWorkspaceResumeState() {
-  try {
-    const currentValue = localStorage.getItem(WORKSPACE_RESUME_STORAGE_KEY);
-    const legacyValue = currentValue ? null : localStorage.getItem(WORKSPACE_RESUME_LEGACY_STORAGE_KEY);
-    return normalizeWorkspaceResumeState(JSON.parse(currentValue || legacyValue || '{}'));
-  } catch (error) {
-    return normalizeWorkspaceResumeState({});
+  const currentValue = localStorage.getItem(WORKSPACE_RESUME_STORAGE_KEY);
+  if (currentValue) {
+    return normalizeWorkspaceResumeState(readJsonStorage(localStorage, WORKSPACE_RESUME_STORAGE_KEY, {}));
   }
+  return normalizeWorkspaceResumeState(readJsonStorage(localStorage, WORKSPACE_RESUME_LEGACY_STORAGE_KEY, {}));
 }
 
 function writeLocalWorkspaceResumeState(state) {
@@ -2501,7 +2495,8 @@ function doExportConfig() {
 }
 async function showBackupList() {
   try {
-    const backups = await (await fetch('/api/backups')).json();
+    const backups = await safeFetch('/api/backups', {}, []);
+    if (!Array.isArray(backups)) throw new Error('invalid backups payload');
     if (!backups.length) { toast('No automatic backups found', 'info'); return; }
     const html = backups.map(b => {
       const d = new Date(b.modified * 1000);

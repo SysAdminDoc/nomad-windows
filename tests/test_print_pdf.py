@@ -1,6 +1,22 @@
 """Tests for PDF generation, contours, receipt-import, and vision-import API routes."""
 
+import io
 import json
+
+
+class _FakeUrlopenResponse:
+    def __init__(self, status=200, payload=b'{}'):
+        self.status = status
+        self._payload = payload if isinstance(payload, (bytes, bytearray)) else str(payload).encode('utf-8')
+
+    def read(self):
+        return self._payload
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
 
 
 class TestPdfGeneration:
@@ -66,6 +82,30 @@ class TestReceiptImport:
         assert resp.status_code == 400
         assert 'No items' in resp.get_json()['error']
 
+    def test_receipt_scan_recovers_from_malformed_ollama_payload(self, client, monkeypatch):
+        import urllib.request
+
+        def fake_urlopen(req, timeout=0):
+            url = getattr(req, 'full_url', str(req))
+            if url.endswith('/api/tags'):
+                return _FakeUrlopenResponse(200, b'{}')
+            if url.endswith('/api/generate'):
+                return _FakeUrlopenResponse(200, b'{broken')
+            raise AssertionError(f'unexpected urlopen request: {url}')
+
+        monkeypatch.setattr(urllib.request, 'urlopen', fake_urlopen)
+
+        resp = client.post(
+            '/api/inventory/receipt-scan',
+            data={'image': (io.BytesIO(b'not-a-real-image'), 'receipt.png')},
+            content_type='multipart/form-data',
+        )
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['source'] == 'ollama'
+        assert data['items'] == []
+
 
 class TestVisionImport:
     def test_vision_import(self, client):
@@ -79,3 +119,27 @@ class TestVisionImport:
         data = resp.get_json()
         assert data['status'] == 'ok'
         assert data['count'] == 2
+
+    def test_vision_scan_recovers_from_malformed_ollama_payload(self, client, monkeypatch):
+        import urllib.request
+
+        def fake_urlopen(req, timeout=0):
+            url = getattr(req, 'full_url', str(req))
+            if url.endswith('/api/tags'):
+                return _FakeUrlopenResponse(200, b'{}')
+            if url.endswith('/api/generate'):
+                return _FakeUrlopenResponse(200, b'{broken')
+            raise AssertionError(f'unexpected urlopen request: {url}')
+
+        monkeypatch.setattr(urllib.request, 'urlopen', fake_urlopen)
+
+        resp = client.post(
+            '/api/inventory/vision-scan',
+            data={'image': (io.BytesIO(b'not-a-real-image'), 'vision.png')},
+            content_type='multipart/form-data',
+        )
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['model_used'] == 'llava'
+        assert data['items'] == []

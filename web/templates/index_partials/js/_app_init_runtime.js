@@ -777,10 +777,11 @@ async function deleteSkill(id) {
   } catch(e) { toast('Failed to delete skill', 'error'); }
 }
 async function seedDefaultSkills() {
-  const r = await fetch('/api/skills/seed-defaults', {method:'POST'});
-  const d = await r.json();
-  if (d.seeded === 0) { toast('Default skills already loaded', 'info'); }
-  else { toast(`Loaded ${d.seeded} default skills`, 'success'); loadSkills(); }
+  try {
+    const d = await apiPost('/api/skills/seed-defaults');
+    if (d.seeded === 0) { toast('Default skills already loaded', 'info'); }
+    else { toast('Loaded ' + d.seeded + ' default skills', 'success'); loadSkills(); }
+  } catch(e) { toast('Failed to seed skills', 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1041,18 +1042,20 @@ function renderRadiationLog(readings) {
 async function logRadiation() {
   const rate = parseFloat(document.getElementById('rad-log-rate').value);
   if (!rate && rate !== 0) { toast('Enter a dose rate', 'error'); return; }
-  const resp = await fetch('/api/radiation', {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({dose_rate_rem: rate, location: document.getElementById('rad-location').value, notes: document.getElementById('rad-notes').value})});
-  if (!resp.ok) { toast('Failed to log reading', 'error'); return; }
-  document.getElementById('rad-log-rate').value = '';
-  loadRadiation();
-  toast('Reading logged', 'success');
+  try {
+    await apiPost('/api/radiation', {dose_rate_rem: rate, location: document.getElementById('rad-location').value, notes: document.getElementById('rad-notes').value});
+    document.getElementById('rad-log-rate').value = '';
+    loadRadiation();
+    toast('Reading logged', 'success');
+  } catch(e) { toast('Failed to log reading', 'error'); }
 }
 async function clearRadiation() {
   if (!confirm('Clear all radiation dose log entries? This cannot be undone.')) return;
-  await fetch('/api/radiation/clear', {method:'POST'});
-  loadRadiation();
-  toast('Radiation log cleared', 'warning');
+  try {
+    await apiPost('/api/radiation/clear');
+    loadRadiation();
+    toast('Radiation log cleared', 'warning');
+  } catch(e) { toast('Failed to clear radiation log', 'error'); }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1889,22 +1892,25 @@ async function submitAddPeer() {
     ip: document.getElementById('fp-ip').value.trim(),
   };
   if (!data.node_id) { toast('Node ID required', 'warning'); return; }
-  await fetch('/api/federation/peers', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  hideAddPeerForm();
-  loadFederationPeers();
-  toast('Peer added', 'success');
+  try {
+    await apiPost('/api/federation/peers', data);
+    hideAddPeerForm();
+    loadFederationPeers();
+    toast('Peer added', 'success');
+  } catch(e) { toast('Failed to add peer', 'error'); }
 }
 
 async function updatePeerTrust(nodeId, trust) {
-  await fetch(`/api/federation/peers/${nodeId}/trust`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({trust_level: trust})});
-  toast('Trust updated', 'success');
+  try {
+    await apiPut('/api/federation/peers/' + nodeId + '/trust', {trust_level: trust});
+    toast('Trust updated', 'success');
+  } catch(e) { toast('Failed to update trust', 'error'); }
 }
 
 async function removePeer(nodeId) {
   if (!confirm('Remove this federation peer?')) return;
   try {
-    const r = await fetch(`/api/federation/peers/${nodeId}`, {method:'DELETE'});
-    if (!r.ok) { toast('Failed to remove peer', 'error'); return; }
+    await apiDelete('/api/federation/peers/' + nodeId);
     loadFederationPeers();
     toast('Peer removed', 'success');
   } catch(e) { toast('Remove failed — network error', 'error'); }
@@ -1954,9 +1960,11 @@ async function postOffer() {
   if (!type) return;
   const qty = prompt('Quantity?') || '0';
   const notes = prompt('Notes (optional)') || '';
-  await fetch('/api/federation/offers', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({item_type:type, quantity:parseFloat(qty), notes})});
-  loadFederationMarketplace();
-  toast('Offer posted', 'success');
+  try {
+    await apiPost('/api/federation/offers', {item_type: type, quantity: parseFloat(qty), notes});
+    loadFederationMarketplace();
+    toast('Offer posted', 'success');
+  } catch(e) { toast('Failed to post offer', 'error'); }
 }
 
 async function postRequest() {
@@ -1964,9 +1972,11 @@ async function postRequest() {
   if (!type) return;
   const desc = prompt('Description?') || '';
   const urgency = prompt('Urgency? (normal/urgent/critical)') || 'normal';
-  await fetch('/api/federation/requests', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({item_type:type, description:desc, urgency})});
-  loadFederationMarketplace();
-  toast('Request posted', 'success');
+  try {
+    await apiPost('/api/federation/requests', {item_type: type, description: desc, urgency});
+    loadFederationMarketplace();
+    toast('Request posted', 'success');
+  } catch(e) { toast('Failed to post request', 'error'); }
 }
 
 /* ─── TCCC MARCH Interactive Wizard ─── */
@@ -2173,10 +2183,12 @@ async function submitAddFreq() {
     priority: 5,
   };
   if (!data.frequency || !data.service) { toast('Frequency and service required', 'warning'); return; }
-  await fetch('/api/comms/frequencies', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-  document.getElementById('add-freq-form')?.remove();
-  loadFreqDatabase();
-  toast('Frequency added', 'success');
+  try {
+    await apiPost('/api/comms/frequencies', data);
+    document.getElementById('add-freq-form')?.remove();
+    loadFreqDatabase();
+    toast('Frequency added', 'success');
+  } catch(e) { toast('Failed to add frequency', 'error'); }
 }
 
 function exportChirpCSV() {
@@ -3526,13 +3538,13 @@ async function saveTask() {
   const name = document.getElementById('task-name').value.trim();
   if (!name) { toast('Task name is required', 'error'); return; }
   try {
-    await fetch('/api/tasks', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({
+    await apiPost('/api/tasks', {
       name, category: document.getElementById('task-category').value,
       recurrence: document.getElementById('task-recurrence').value,
       next_due: document.getElementById('task-next-due').value || new Date().toISOString(),
       assigned_to: document.getElementById('task-assigned').value.trim(),
       notes: document.getElementById('task-notes').value.trim()
-    })});
+    });
     toast('Task created', 'success');
     hideTaskForm();
     document.getElementById('task-name').value = '';
@@ -3609,12 +3621,10 @@ async function createWatchSchedule() {
   if (personnel.length < 2) { toast('At least 2 personnel required (one per line)', 'error'); return; }
 
   try {
-    const res = await fetch('/api/watch-schedules', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({
+    const data = await apiPost('/api/watch-schedules', {
       name, start_date, end_date, shift_duration_hours, personnel, notes
-    })});
-    const data = await res.json();
-    if (!res.ok) { toast(data.error || 'Failed to create schedule', 'error'); return; }
-    toast(`Schedule created: ${data.shifts} shifts`, 'success');
+    });
+    toast('Schedule created: ' + data.shifts + ' shifts', 'success');
     hideWatchForm();
     document.getElementById('watch-personnel').value = '';
     document.getElementById('watch-notes').value = '';
@@ -3831,8 +3841,8 @@ async function toggleTemplateDropdown() {
 
 async function applyInventoryTemplate(name) {
   try {
-    await fetch('/api/templates/inventory/apply', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ template_name: name }) });
-    toast(`Template "${name}" applied`, 'success');
+    await apiPost('/api/templates/inventory/apply', { template_name: name });
+    toast('Template "' + name + '" applied', 'success');
     document.getElementById('template-dropdown').style.display = 'none';
     _templateDropdownOpen = false;
     loadInventory();
@@ -3946,7 +3956,7 @@ async function addAIMemory() {
   const fact = input.value.trim();
   if (!fact) return;
   try {
-    await fetch('/api/ai/memory', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ fact }) });
+    await apiPost('/api/ai/memory', { fact });
     input.value = '';
     toast('Memory fact added', 'success');
     loadAIMemory();
@@ -4079,16 +4089,16 @@ async function scanSerialPorts() {
 
 async function serialConnect(port) {
   try {
-    await fetch('/api/serial/connect', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ port }) });
-    toast(`Connected to ${port}`, 'success');
+    await apiPost('/api/serial/connect', { port });
+    toast('Connected to ' + port, 'success');
     scanSerialPorts();
   } catch(e) { toast('Connection failed', 'error'); }
 }
 
 async function serialDisconnect(port) {
   try {
-    await fetch('/api/serial/disconnect', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ port }) });
-    toast(`Disconnected from ${port}`, 'info');
+    await apiPost('/api/serial/disconnect', { port });
+    toast('Disconnected from ' + port, 'info');
     scanSerialPorts();
   } catch(e) { toast('Disconnect failed', 'error'); }
 }

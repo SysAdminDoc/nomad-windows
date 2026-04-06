@@ -4324,7 +4324,7 @@ setTimeout(async () => {
 }, 120);
 
 // Check portable mode
-fetch('/api/system/portable-mode').then(r=>r.json()).then(d=>{if(d.portable){const el=document.getElementById('portable-indicator');if(el)el.style.display='';}}).catch(()=>{});
+fetch('/api/system/portable-mode').then(r=>{if(!r.ok)throw new Error();return r.json()}).then(d=>{if(d.portable){const el=document.getElementById('portable-indicator');if(el)el.style.display='';}}).catch(()=>{});
 
 /* ─── NomadEvents: loaded from /static/js/events.js ─── */
 

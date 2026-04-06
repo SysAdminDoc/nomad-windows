@@ -751,7 +751,7 @@ async function loadCmdDashboard() {
   try {
     const [d, crit] = await Promise.all([
       fetch('/api/dashboard/overview').then(r=>{if(!r.ok)throw new Error();return r.json()}),
-      fetch('/api/dashboard/critical').then(r => r.json()).catch(() => ({critical_burn:[], expiring_items:[]}))
+      fetch('/api/dashboard/critical').then(r => {if(!r.ok)throw new Error();return r.json()}).catch(() => ({critical_burn:[], expiring_items:[]}))
     ]);
     const sitLabels = {green:'ALL CLEAR',yellow:'CAUTION',orange:'CONCERN',red:'CRITICAL'};
       const sitColors = {green:'var(--green)',yellow:'var(--warning)',orange:'var(--orange)',red:'var(--red)'};

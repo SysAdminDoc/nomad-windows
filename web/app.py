@@ -1312,7 +1312,7 @@ def create_app():
             settings = {r['key']: r['value'] for r in db.execute('SELECT key, value FROM settings').fetchall()}
 
             # Burn rate summary
-            burn_rows = db.execute('SELECT category, name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY category').fetchall()
+            burn_rows = db.execute('SELECT category, name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY category LIMIT 5000').fetchall()
             burn = {}
             for r in burn_rows:
                 cat = r['category']
@@ -1321,11 +1321,11 @@ def create_app():
                     burn[cat] = days
 
             # Low stock items
-            low = db.execute('SELECT name, quantity, unit, category FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchall()
+            low = db.execute('SELECT name, quantity, unit, category FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0 LIMIT 5000').fetchall()
 
             # Expiring items
             soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
-            expiring = db.execute("SELECT name, expiration, category FROM inventory WHERE expiration != '' AND expiration <= ? ORDER BY expiration", (soon,)).fetchall()
+            expiring = db.execute("SELECT name, expiration, category FROM inventory WHERE expiration != '' AND expiration <= ? ORDER BY expiration LIMIT 5000", (soon,)).fetchall()
 
         # Situation board
         sit = _safe_json_value(settings.get('sit_board'), {})
@@ -1704,7 +1704,7 @@ def create_app():
     @app.route('/api/contacts/export-csv')
     def api_contacts_csv():
         with db_session() as db:
-            rows = db.execute('SELECT name, callsign, role, skills, phone, freq, email, address, rally_point, blood_type, medical_notes, notes FROM contacts ORDER BY name').fetchall()
+            rows = db.execute('SELECT name, callsign, role, skills, phone, freq, email, address, rally_point, blood_type, medical_notes, notes FROM contacts ORDER BY name LIMIT 10000').fetchall()
         import csv, io
         buf = io.StringIO()
         w = csv.writer(buf)
@@ -1720,7 +1720,7 @@ def create_app():
         try:
             import csv, io
             with db_session() as db:
-                rows = db.execute('SELECT name, callsign, role, skills, phone, freq, email, address, rally_point, blood_type, medical_notes, notes FROM contacts ORDER BY name').fetchall()
+                rows = db.execute('SELECT name, callsign, role, skills, phone, freq, email, address, rally_point, blood_type, medical_notes, notes FROM contacts ORDER BY name LIMIT 10000').fetchall()
             buf = io.StringIO()
             w = csv.writer(buf)
             w.writerow(['Name', 'Callsign', 'Role', 'Skills', 'Phone', 'Frequency', 'Email', 'Address', 'Rally Point', 'Blood Type', 'Medical Notes', 'Notes'])

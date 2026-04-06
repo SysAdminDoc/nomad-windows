@@ -459,6 +459,18 @@ textarea:focus {
   border-radius: var(--radius-sm);
   box-shadow: 0 8px 24px rgba(0,0,0,0.25);
   backdrop-filter: blur(16px);
+  animation: toast-enter 0.3s ease forwards;
+}
+
+@keyframes toast-enter {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════

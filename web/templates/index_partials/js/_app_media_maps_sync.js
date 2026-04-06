@@ -2180,11 +2180,12 @@ function bookReaderNext() { if (_mediaBookRendition) _mediaBookRendition.next();
 async function deleteMediaItem(id, type) {
   if (!confirm('Delete this item? This cannot be undone.')) return;
   const apiMap = {videos:'/api/videos', audio:'/api/audio', books:'/api/books'};
-  const r = await fetch(`${apiMap[type]}/${id}`, {method:'DELETE'});
-  if (!r.ok) { toast('Failed to delete item', 'error'); return; }
-  toast('Deleted', 'warning');
-  closeMediaPlayer();
-  loadMediaContent(); loadTotalMediaStats();
+  try {
+    await apiDelete(apiMap[type] + '/' + id);
+    toast('Deleted', 'warning');
+    closeMediaPlayer();
+    loadMediaContent(); loadTotalMediaStats();
+  } catch(e) { toast('Failed to delete item', 'error'); }
 }
 
 async function moveMediaItem(id, type) {
@@ -2288,9 +2289,11 @@ async function subscribeChannel(url, name, category) {
 
 async function unsubscribeChannel(id, name) {
   if (!confirm('Unsubscribe from ' + (name || 'this channel') + '?')) return;
-  await fetch(`/api/subscriptions/${id}`, {method:'DELETE'});
-  toast(`Unsubscribed from ${name}`, 'info');
-  loadSubscriptions();
+  try {
+    await apiDelete('/api/subscriptions/' + id);
+    toast('Unsubscribed from ' + (name || 'channel'), 'info');
+    loadSubscriptions();
+  } catch(e) { toast('Failed to unsubscribe', 'error'); }
 }
 
 async function loadSubscriptions() {
@@ -3413,7 +3416,7 @@ async function createPerimeterZone() {
 async function deletePerimeterZone(zid) {
   if (!confirm('Delete this perimeter zone?')) return;
   try {
-    await fetch(`/api/security/zones/${zid}`, {method:'DELETE'});
+    await apiDelete('/api/security/zones/' + zid);
     toast('Zone deleted', 'success');
     loadPerimeterZones();
   } catch(e) { toast('Delete failed', 'error'); }
@@ -3583,8 +3586,7 @@ function closePDFViewer() { document.getElementById('pdf-viewer').style.display 
 async function deletePDF(filename) {
   if (!confirm('Delete this document?')) return;
   try {
-    const r = await fetch(`/api/library/delete/${filename}`, {method:'DELETE'});
-    if (!r.ok) { toast('Failed to delete document', 'error'); return; }
+    await apiDelete('/api/library/delete/' + encodeURIComponent(filename));
     toast('Document deleted', 'warning');
     loadPDFList();
     closePDFViewer();
@@ -3665,8 +3667,7 @@ async function loadCommsLog() {
 async function deleteCommsLog(id) {
   if (!confirm('Delete this comms log entry?')) return;
   try {
-    const r = await fetch(`/api/comms-log/${id}`, {method:'DELETE'});
-    if (!r.ok) { toast('Failed to delete log entry', 'error'); return; }
+    await apiDelete('/api/comms-log/' + id);
     loadCommsLog();
   } catch(e) { toast('Failed to delete log entry', 'error'); }
 }

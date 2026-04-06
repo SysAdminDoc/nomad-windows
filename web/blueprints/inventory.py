@@ -156,6 +156,8 @@ def api_inventory_update(item_id):
     if not filtered:
         return jsonify({'error': 'No fields to update'}), 400
     with db_session() as db:
+        if not db.execute('SELECT 1 FROM inventory WHERE id = ?', (item_id,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
         set_clause = ', '.join(f'{col} = ?' for col in filtered)
         vals = list(filtered.values())
         vals.append(item_id)

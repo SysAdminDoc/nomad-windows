@@ -106,6 +106,8 @@ def api_garden_plots_create():
 def api_garden_plots_update(pid):
     data = request.get_json() or {}
     with db_session() as db:
+        if not db.execute('SELECT 1 FROM garden_plots WHERE id = ?', (pid,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
         fields, vals = [], []
         for k in ('name', 'width_ft', 'length_ft', 'sun_exposure', 'soil_type', 'notes', 'lat', 'lng', 'boundary_geojson'):
             if k in data:

@@ -92,15 +92,18 @@ async function saveContact() {
     notes: document.getElementById('ct-notes').value.trim(),
   };
   if (!data.name) { toast('Name is required', 'warning'); return; }
-  if (editId) {
-    const resp = await fetch(`/api/contacts/${editId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    if (!resp.ok) { toast('Failed to update contact', 'error'); return; }
-    toast('Contact updated', 'success');
-  } else {
-    const resp = await fetch('/api/contacts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    if (!resp.ok) { toast('Failed to add contact', 'error'); return; }
-    toast('Contact added', 'success');
-  }
+  const btn = document.querySelector('#contact-form .btn-primary, #contact-form [onclick*="saveContact"]');
+  if (btn) btn.classList.add('is-loading');
+  try {
+    if (editId) {
+      await apiPut(`/api/contacts/${editId}`, data);
+      toast('Contact updated', 'success');
+    } else {
+      await apiPost('/api/contacts', data);
+      toast('Contact added', 'success');
+    }
+  } catch(e) { toast(e.message || 'Failed to save contact', 'error'); return;
+  } finally { if (btn) btn.classList.remove('is-loading'); }
   FormStateRecovery.clear('contact');
   hideContactForm();
   loadContacts();

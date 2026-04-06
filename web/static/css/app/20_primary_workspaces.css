@@ -98,7 +98,7 @@
   text-align: center; height: 100%; color: var(--text-dim); gap: 6px; padding: 22px 14px;
   font-size: 12px;
 }
-.empty-state .icon { font-size: 40px; opacity: 0.25; margin-bottom: 6px; }
+.empty-state .icon { font-size: 40px; opacity: 0.4; margin-bottom: 6px; }
 .empty-state p { font-size: 12px; max-width: 280px; text-align: center; line-height: 1.45; }
 
 /* ─── Notes ─── */

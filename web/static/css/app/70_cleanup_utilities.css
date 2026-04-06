@@ -808,7 +808,14 @@
 
 /* Skeleton loading */
 .skeleton-card { padding: 16px; border-radius: var(--radius-sm); background: var(--surface); margin-bottom: 8px; height: 160px; }
-.skeleton-line { height: 12px; border-radius: 6px; background: var(--surface3); margin-bottom: 8px; animation: skeleton-pulse 1.5s ease-in-out infinite; }
+.skeleton-line {
+  height: 12px;
+  border-radius: 6px;
+  background: var(--surface3);
+  margin-bottom: 8px;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+  transition: opacity 0.3s ease;
+}
 @keyframes skeleton-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
 /* ─── Touch Target Compliance ─────────────────────────────────────── */
@@ -830,6 +837,13 @@ input[type="radio"] {
     width: 20px;
     height: 20px;
     cursor: pointer;
+}
+
+/* ─── Placeholder Text Styling ───────────────────────────────────── */
+input::placeholder, textarea::placeholder, select::placeholder {
+  color: var(--text-muted);
+  opacity: 0.7;
+  font-style: italic;
 }
 
 /* ─── Container Queries for Responsive Typography ─────────────────── */

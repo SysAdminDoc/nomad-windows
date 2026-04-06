@@ -40,6 +40,9 @@
   --shadow: 0 18px 42px rgba(47,31,14,0.08);
   --shadow-sm: 0 8px 20px rgba(47,31,14,0.06);
   --shadow-lg: 0 32px 76px rgba(47,31,14,0.12);
+  --duration-fast: 0.15s;
+  --duration-normal: 0.25s;
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
   --card-text: #18140f;
   --glow: 0 0 24px rgba(138,104,66,0.1);
   --gradient-accent: linear-gradient(135deg, #73522d, #c3996a);
@@ -296,8 +299,8 @@
 }
 [data-theme="eink"] .btn-primary,
 [data-theme="eink"] .btn {
-  background: #000 !important;
-  color: #fff !important;
+  background: var(--text) !important;
+  color: var(--bg) !important;
 }
 [data-theme="eink"] .card { border: 2px solid #000 !important; border-radius: 2px !important; }
 [data-theme="eink"] button, [data-theme="eink"] .btn { border: 1px solid #000 !important; border-radius: 2px !important; }

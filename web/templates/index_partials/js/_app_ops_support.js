@@ -1484,8 +1484,7 @@ async function submitJournal() {
   const mood = document.getElementById('journal-mood').value;
   const tags = document.getElementById('journal-tags').value.trim();
   try {
-    const resp = await fetch('/api/journal', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({entry, mood, tags})});
-    if (!resp.ok) { toast('Failed to save entry', 'error'); return; }
+    await apiPost('/api/journal', {entry, mood, tags});
     document.getElementById('journal-entry').value = '';
     document.getElementById('journal-mood').value = '';
     document.getElementById('journal-tags').value = '';
@@ -1656,14 +1655,13 @@ async function addCamera() {
   const url = document.getElementById('cam-url').value.trim();
   if (!name || !url) { toast('Enter camera name and URL', 'warning'); return; }
   try {
-    const resp = await fetch('/api/security/cameras', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    await apiPost('/api/security/cameras', {
       name, url, stream_type: document.getElementById('cam-type').value,
-      location: document.getElementById('cam-location').value.trim()})});
-    if (!resp.ok) { toast('Failed to add camera', 'error'); return; }
+      location: document.getElementById('cam-location').value.trim()});
     document.getElementById('cam-name').value = '';
     document.getElementById('cam-url').value = '';
     document.getElementById('cam-location').value = '';
-    toast(`Camera "${name}" added`, 'success');
+    toast('Camera "' + name + '" added', 'success');
     loadCameras();
     loadSecurityDashboard();
   } catch(e) { console.error(e); toast('Failed to add camera', 'error'); }
@@ -1780,12 +1778,11 @@ async function logAccess() {
   const person = document.getElementById('al-person').value.trim();
   if (!person) { toast('Enter person name', 'warning'); return; }
   try {
-    const resp = await fetch('/api/security/access-log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    await apiPost('/api/security/access-log', {
       person, direction: document.getElementById('al-direction').value,
       location: document.getElementById('al-location').value.trim(),
       method: document.getElementById('al-method').value,
-      notes: document.getElementById('al-notes').value.trim()})});
-    if (!resp.ok) { toast('Failed to log access', 'error'); return; }
+      notes: document.getElementById('al-notes').value.trim()});
     document.getElementById('al-person').value = '';
     document.getElementById('al-notes').value = '';
     toast('Access logged', 'success');
@@ -1820,11 +1817,10 @@ async function clearAccessLog() {
     return;
   }
   try {
-    const resp = await fetch('/api/security/access-log/clear', {method:'POST'});
-    if (!resp.ok) { toast('Failed to clear access log', 'error'); return; }
+    await apiPost('/api/security/access-log/clear');
     toast('Access log cleared', 'warning');
     loadAccessLog();
-  } catch(e) { console.error(e); toast('Failed to clear access log', 'error'); }
+  } catch(e) { toast('Failed to clear access log', 'error'); }
 }
 
 /* ─── Power Management ─── */
@@ -1897,10 +1893,9 @@ async function addPowerDevice() {
   if (document.getElementById('pd-amps')) specs.amps = parseInt(document.getElementById('pd-amps').value) || 0;
   if (document.getElementById('pd-fuel')) specs.fuel = document.getElementById('pd-fuel').value;
   try {
-    const resp = await fetch('/api/power/devices', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({device_type: type, name, specs})});
-    if (!resp.ok) { toast('Failed to add device', 'error'); return; }
+    await apiPost('/api/power/devices', {device_type: type, name, specs});
     ['pd-type','pd-name','pd-watts','pd-count','pd-wh','pd-volts','pd-btype','pd-itype','pd-ctype','pd-amps','pd-fuel'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    toast(`${name} added`, 'success');
+    toast(name + ' added', 'success');
     loadPowerDevices();
     loadPowerDashboard();
   } catch(e) { console.error(e); toast('Failed to add device', 'error'); }
@@ -1953,13 +1948,12 @@ async function logPowerReading() {
   };
   if (!data.battery_voltage && !data.solar_watts && !data.load_watts) { toast('Enter at least one reading', 'warning'); return; }
   try {
-    const resp = await fetch('/api/power/log', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    if (!resp.ok) { toast('Failed to log reading', 'error'); return; }
+    await apiPost('/api/power/log', data);
     toast('Power reading logged', 'success');
     ['pl-voltage','pl-soc','pl-solar','pl-solar-wh','pl-load','pl-load-wh'].forEach(id => document.getElementById(id).value = '');
     loadPowerLog();
     loadPowerDashboard();
-  } catch(e) { console.error(e); toast('Failed to log reading', 'error'); }
+  } catch(e) { toast('Failed to log reading', 'error'); }
 }
 
 async function loadPowerLog() {
@@ -2316,21 +2310,19 @@ async function submitPreservation() {
   };
   if (!data.crop) { toast('Crop name required', 'warning'); return; }
   try {
-    const resp = await fetch('/api/garden/preservation', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    if (!resp.ok) { toast('Failed to log preservation batch', 'error'); return; }
+    await apiPost('/api/garden/preservation', data);
     document.getElementById('add-pres-form')?.remove();
     loadPreservationLog();
     toast('Preservation batch logged', 'success');
-  } catch(e) { console.error(e); toast('Failed to log preservation batch', 'error'); }
+  } catch(e) { toast('Failed to log preservation batch', 'error'); }
 }
 
 async function deletePreservation(id) {
   if (!confirm('Delete this preservation entry?')) return;
   try {
-    const r = await fetch(`/api/garden/preservation/${id}`, {method:'DELETE'});
-    if (!r.ok) { toast('Delete failed', 'error'); return; }
+    await apiDelete('/api/garden/preservation/' + id);
     loadPreservationLog();
-  } catch(e) { toast('Delete failed — network error', 'error'); }
+  } catch(e) { toast('Delete failed', 'error'); }
 }
 
 async function lookupZone() {
@@ -2372,25 +2364,23 @@ async function addPlot() {
   const name = document.getElementById('gp-name').value.trim();
   if (!name) { toast('Enter plot name', 'warning'); return; }
   try {
-    const resp = await fetch('/api/garden/plots', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    await apiPost('/api/garden/plots', {
       name, width_ft: parseFloat(document.getElementById('gp-width').value) || 10,
       length_ft: parseFloat(document.getElementById('gp-length').value) || 20,
-      sun_exposure: document.getElementById('gp-sun').value})});
-    if (!resp.ok) { toast('Failed to add plot', 'error'); return; }
+      sun_exposure: document.getElementById('gp-sun').value});
     ['gp-name','gp-width','gp-length','gp-sun'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     toast('Plot added', 'success');
     loadPlots();
-  } catch(e) { console.error(e); toast('Failed to add plot', 'error'); }
+  } catch(e) { toast('Failed to add plot', 'error'); }
 }
 
 async function deletePlot(id) {
   if (!confirm('Remove this garden plot?')) return;
   try {
-    const resp = await fetch(`/api/garden/plots/${id}`, {method:'DELETE'});
-    if (!resp.ok) { toast('Failed to remove plot', 'error'); return; }
+    await apiDelete('/api/garden/plots/' + id);
     toast('Plot removed', 'warning');
     loadPlots();
-  } catch(e) { console.error(e); toast('Failed to remove plot', 'error'); }
+  } catch(e) { toast('Failed to remove plot', 'error'); }
 }
 
 async function loadSeeds() {
@@ -2411,27 +2401,25 @@ async function addSeed() {
   const species = document.getElementById('gs-species').value.trim();
   if (!species) { toast('Enter species name', 'warning'); return; }
   try {
-    const resp = await fetch('/api/garden/seeds', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    await apiPost('/api/garden/seeds', {
       species, variety: document.getElementById('gs-variety').value.trim(),
       quantity: parseInt(document.getElementById('gs-qty').value) || 50,
       year_harvested: parseInt(document.getElementById('gs-year').value) || null,
       days_to_maturity: parseInt(document.getElementById('gs-dtm').value) || null,
-      planting_season: document.getElementById('gs-season').value})});
-    if (!resp.ok) { toast('Failed to add seed', 'error'); return; }
+      planting_season: document.getElementById('gs-season').value});
     ['gs-species','gs-variety','gs-qty','gs-year','gs-dtm','gs-season'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     toast('Seed added', 'success');
     loadSeeds();
-  } catch(e) { console.error(e); toast('Failed to add seed', 'error'); }
+  } catch(e) { toast('Failed to add seed', 'error'); }
 }
 
 async function deleteSeed(id) {
   if (!confirm('Remove this seed entry?')) return;
   try {
-    const resp = await fetch(`/api/garden/seeds/${id}`, {method:'DELETE'});
-    if (!resp.ok) { toast('Failed to remove seed', 'error'); return; }
+    await apiDelete('/api/garden/seeds/' + id);
     toast('Seed removed', 'warning');
     loadSeeds();
-  } catch(e) { console.error(e); toast('Failed to remove seed', 'error'); }
+  } catch(e) { toast('Failed to remove seed', 'error'); }
 }
 
 let _companionData = [];
@@ -2507,12 +2495,11 @@ async function logHarvest() {
   const crop = document.getElementById('gh-crop').value.trim();
   if (!crop) { toast('Enter crop name', 'warning'); return; }
   try {
-    const resp = await fetch('/api/garden/harvests', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    await apiPost('/api/garden/harvests', {
       crop, quantity: parseFloat(document.getElementById('gh-qty').value) || 0,
       unit: document.getElementById('gh-unit').value,
       plot_id: document.getElementById('gh-plot').value || null,
-      notes: ''})});
-    if (!resp.ok) { toast('Failed to log harvest', 'error'); return; }
+      notes: ''});
     document.getElementById('gh-crop').value = '';
     toast('Harvest logged and added to inventory!', 'success');
     loadHarvests();
@@ -2547,25 +2534,23 @@ async function loadLivestockList() {
 async function addLivestock() {
   const species = document.getElementById('gl-species').value;
   try {
-    const resp = await fetch('/api/livestock', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({
+    await apiPost('/api/livestock', {
       species, name: document.getElementById('gl-name').value.trim(),
       sex: document.getElementById('gl-sex').value, dob: document.getElementById('gl-dob').value,
-      weight_lbs: parseFloat(document.getElementById('gl-weight').value) || null})});
-    if (!resp.ok) { toast('Failed to add livestock', 'error'); return; }
+      weight_lbs: parseFloat(document.getElementById('gl-weight').value) || null});
     ['gl-species','gl-name','gl-sex','gl-dob','gl-weight'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-    toast(`${species} added`, 'success');
+    toast(species + ' added', 'success');
     loadLivestockList();
-  } catch(e) { console.error(e); toast('Failed to add livestock', 'error'); }
+  } catch(e) { toast('Failed to add livestock', 'error'); }
 }
 
 async function deleteLivestock(id) {
   if (!confirm('Remove this animal?')) return;
   try {
-    const resp = await fetch(`/api/livestock/${id}`, {method:'DELETE'});
-    if (!resp.ok) { toast('Failed to remove animal', 'error'); return; }
+    await apiDelete('/api/livestock/' + id);
     toast('Animal removed', 'warning');
     loadLivestockList();
-  } catch(e) { console.error(e); toast('Failed to remove animal', 'error'); }
+  } catch(e) { toast('Failed to remove animal', 'error'); }
 }
 
 async function logHealthEvent(id) {
@@ -3058,12 +3043,11 @@ async function deletePatient(id) {
     return;
   }
   try {
-    const resp = await fetch(`/api/patients/${id}`, {method:'DELETE'});
-    if (!resp.ok) { toast('Failed to remove patient', 'error'); return; }
+    await apiDelete('/api/patients/' + id);
     toast('Patient removed', 'warning');
     if (_activePatientId === id) closeVitalsPanel();
     loadPatients();
-  } catch(e) { console.error(e); toast('Failed to remove patient', 'error'); }
+  } catch(e) { toast('Failed to remove patient', 'error'); }
 }
 
 async function addPatientFromContacts() {
@@ -4588,11 +4572,13 @@ async function dismissAlert(id) {
 }
 
 async function dismissAllAlerts() {
-  await fetch('/api/alerts/dismiss-all', {method:'POST'});
-  const panel = document.getElementById('alert-summary-panel');
-  if (panel) panel.style.display = 'none';
-  loadAlerts();
-  toast('All alerts dismissed', 'info');
+  try {
+    await apiPost('/api/alerts/dismiss-all');
+    const panel = document.getElementById('alert-summary-panel');
+    if (panel) panel.style.display = 'none';
+    loadAlerts();
+    toast('All alerts dismissed', 'info');
+  } catch(e) { toast('Failed to dismiss alerts', 'error'); }
 }
 
 async function generateAlertSummary() {
@@ -4603,9 +4589,8 @@ async function generateAlertSummary() {
   panel.style.display = 'block';
   panel.textContent = 'Generating AI situation summary...';
   try {
-    const r = await fetch('/api/alerts/generate-summary', {method:'POST'});
-    const d = await r.json();
-    panel.innerHTML = `<strong class="text-accent">AI Situation Summary:</strong><br>${escapeHtml(d.summary)}`;
+    const d = await apiPost('/api/alerts/generate-summary');
+    panel.innerHTML = '<strong class="text-accent">AI Situation Summary:</strong><br>' + escapeHtml(d.summary);
   } catch(e) {
     panel.textContent = 'Failed to generate summary';
   }

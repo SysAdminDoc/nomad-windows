@@ -29,7 +29,7 @@
     radial-gradient(circle at top right, rgba(74, 237, 196, 0.08), transparent 32%),
     linear-gradient(180deg, color-mix(in srgb, var(--sr-bg) 95%, black) 0%, var(--sr-bg) 22%, color-mix(in srgb, var(--sr-bg) 97%, black) 100%);
   color: var(--sr-text);
-  font-family: 'SF Mono','Monaco','Cascadia Code','Consolas',monospace;
+  font-family: var(--font-data, 'SF Mono','Monaco','Cascadia Code','Consolas',monospace);
   font-size: 12px;
   padding: 0;
   margin: 0;
@@ -2404,7 +2404,7 @@ a.sr-feed-title:hover { color: #7fe8cf; }
   transition: transform 0.1s;
 }
 .sitroom-marker:hover { transform: scale(1.5); z-index: 10; }
-.sitroom-popup { font-family: 'SF Mono','Cascadia Code',monospace; font-size: 11px; line-height: 1.4; max-width: 220px; }
+.sitroom-popup { font-family: var(--font-data, 'SF Mono','Cascadia Code',monospace); font-size: 11px; line-height: 1.4; max-width: 220px; }
 .maplibregl-popup-content { background: var(--sr-panel) !important; color: var(--sr-text) !important; border: 1px solid var(--sr-border) !important; border-radius: 3px !important; padding: 8px 10px !important; font-size: 11px !important; box-shadow: 0 4px 16px rgba(0,0,0,0.6) !important; }
 .maplibregl-popup-anchor-bottom .maplibregl-popup-tip { border-top-color: var(--sr-panel) !important; }
 .maplibregl-popup-anchor-top .maplibregl-popup-tip { border-bottom-color: var(--sr-panel) !important; }

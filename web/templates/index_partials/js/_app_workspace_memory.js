@@ -2043,10 +2043,10 @@ function openSearchResult(type, id) {
     setTimeout(() => selectConvo(id), 200);
   } else if (type === 'note') {
     document.querySelector('[data-tab="notes"]')?.click();
-    setTimeout(() => { loadNotes().then(() => selectNote(id)); }, 200);
+    setTimeout(() => { loadNotes().then(() => selectNote(id)).catch(() => {}); }, 200);
   } else if (type === 'document') {
     document.querySelector('[data-tab="kiwix-library"]')?.click();
-    setTimeout(() => { loadPDFList(); toast('Document found in library', 'info'); }, 200);
+    setTimeout(() => { try { loadPDFList(); } catch(e) {} toast('Document found in library', 'info'); }, 200);
   } else if (type === 'inventory') {
     document.querySelector('[data-tab="preparedness"]')?.click();
     setTimeout(() => switchPrepSub('inventory'), 200);

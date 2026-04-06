@@ -7,7 +7,6 @@ import logging
 import os
 import platform
 import time
-import threading
 import uuid as _uuid
 
 from flask import Blueprint, request, jsonify, Response

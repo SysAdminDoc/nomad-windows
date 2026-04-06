@@ -306,6 +306,20 @@
 [data-theme="eink"] button, [data-theme="eink"] .btn { border: 1px solid #000 !important; border-radius: 2px !important; }
 [data-theme="eink"] body { font-size: 16px !important; line-height: 1.6 !important; }
 [data-theme="eink"] img { filter: grayscale(100%) contrast(1.2) !important; }
+
+/* ─── Z-Index Scale ─── */
+:root {
+  /* Layering order (bottom to top) */
+  --z-base: 1;
+  --z-dropdown: 100;
+  --z-sticky: 500;
+  --z-overlay: 1000;
+  --z-modal: 5000;
+  --z-toast: 9000;
+  --z-tooltip: 9500;
+  --z-emergency: 10000;
+}
+
 /* ─── Design System: Typography Scale ─── */
 :root {
   /* 7-step type scale (1.25 ratio) */

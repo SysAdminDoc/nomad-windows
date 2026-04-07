@@ -5,35 +5,9 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify
 from db import db_session
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_object as _safe_json_object
 
 weather_bp = Blueprint('weather', __name__)
-
-
-def _clone_json_fallback(fallback):
-    if isinstance(fallback, list):
-        return list(fallback)
-    if isinstance(fallback, dict):
-        return dict(fallback)
-    return fallback
-
-
-def _safe_json_object(value, fallback=None):
-    if fallback is None:
-        fallback = {}
-    if value in (None, ''):
-        return _clone_json_fallback(fallback)
-    if isinstance(value, dict):
-        return dict(value)
-    if isinstance(value, str):
-        text = value.strip()
-        if not text:
-            return _clone_json_fallback(fallback)
-        try:
-            parsed = json.loads(text)
-        except (TypeError, ValueError, json.JSONDecodeError):
-            return _clone_json_fallback(fallback)
-        return dict(parsed) if isinstance(parsed, dict) else _clone_json_fallback(fallback)
-    return _clone_json_fallback(fallback)
 
 
 @weather_bp.route('/api/weather')

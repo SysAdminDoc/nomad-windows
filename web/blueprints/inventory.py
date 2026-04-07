@@ -18,6 +18,7 @@ from web.sql_safety import safe_table, safe_columns, build_update, build_insert
 from web.validation import validate_json, validate_file_upload
 from config import get_data_dir
 from web.state import broadcast_event
+from web.utils import esc as _esc, clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value
 
 log = logging.getLogger('nomad.web')
 
@@ -28,36 +29,6 @@ def _check_origin(req):
     if origin and not origin.startswith(('http://localhost:', 'http://127.0.0.1:')):
         from flask import abort
         abort(403, 'Cross-origin request blocked')
-
-
-def _esc(s):
-    # NOTE: duplicated in app.py, blueprints/medical.py
-    """Escape HTML entities."""
-    return str(s).replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
-
-
-def _clone_json_fallback(fallback):
-    if isinstance(fallback, dict):
-        return dict(fallback)
-    if isinstance(fallback, list):
-        return list(fallback)
-    return fallback
-
-
-def _safe_json_value(raw, fallback=None):
-    if raw in (None, '', b''):
-        return _clone_json_fallback(fallback)
-    try:
-        text = raw.decode('utf-8') if isinstance(raw, (bytes, bytearray)) else raw
-        parsed = json.loads(text) if isinstance(text, str) else text
-    except (json.JSONDecodeError, TypeError, ValueError) as exc:
-        log.debug('Invalid inventory JSON payload: %s', exc)
-        return _clone_json_fallback(fallback)
-    if isinstance(fallback, dict) and not isinstance(parsed, dict):
-        return {}
-    if isinstance(fallback, list) and not isinstance(parsed, list):
-        return []
-    return parsed
 
 
 def _extract_json_array(raw_text):

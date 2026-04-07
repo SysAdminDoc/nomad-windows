@@ -20,6 +20,7 @@ from config import get_data_dir
 from web.print_templates import render_print_document
 from web.state import _map_downloads
 import web.state as _state
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_list as _safe_json_list, safe_json_object as _safe_json_object, safe_id_list as _safe_id_list
 
 log = logging.getLogger('nomad.web')
 
@@ -49,45 +50,6 @@ def _validate_download_url(url):
     except (socket.gaierror, OSError):
         raise ValueError(f'Cannot resolve hostname: {hostname}')
     return url
-
-
-def _clone_json_fallback(fallback):
-    if isinstance(fallback, (dict, list)):
-        return json.loads(json.dumps(fallback))
-    return fallback
-
-
-def _safe_json_value(value, fallback=None):
-    if isinstance(value, (dict, list)):
-        return _clone_json_fallback(value)
-    if value in (None, ''):
-        return _clone_json_fallback(fallback)
-    try:
-        return json.loads(value)
-    except (json.JSONDecodeError, TypeError, ValueError):
-        return _clone_json_fallback(fallback)
-
-
-def _safe_json_list(value, fallback=None):
-    fallback = [] if fallback is None else fallback
-    parsed = _safe_json_value(value, fallback)
-    return parsed if isinstance(parsed, list) else _clone_json_fallback(fallback)
-
-
-def _safe_json_object(value, fallback=None):
-    fallback = {} if fallback is None else fallback
-    parsed = _safe_json_value(value, fallback)
-    return parsed if isinstance(parsed, dict) else _clone_json_fallback(fallback)
-
-
-def _safe_id_list(value):
-    ids = []
-    for raw in _safe_json_list(value, []):
-        try:
-            ids.append(int(raw))
-        except (TypeError, ValueError):
-            continue
-    return ids
 
 
 def _normalize_track_coordinates(value):

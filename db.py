@@ -187,7 +187,10 @@ def init_db():
         conn.close()
 
 
-def _init_db_inner(conn):
+def _create_core_tables(conn):
+    """Create core tables: services, settings, notes, conversations, activity_log,
+    documents, benchmarks, checklists, inventory, contacts, lan_messages,
+    vault_entries, comms_log, drill_history."""
     conn.executescript('''
         CREATE TABLE IF NOT EXISTS services (
             id TEXT PRIMARY KEY,
@@ -340,7 +343,14 @@ def _init_db_inner(conn):
             notes TEXT DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+    ''')
+    conn.commit()
 
+
+def _create_comms_media_tables(conn):
+    """Create comms/media tables: videos, audio, books, weather_log, waypoints,
+    sensor_devices, sensor_readings."""
+    conn.executescript('''
         CREATE TABLE IF NOT EXISTS videos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             title TEXT NOT NULL,
@@ -430,7 +440,16 @@ def _init_db_inner(conn):
             unit TEXT DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+    ''')
+    conn.commit()
 
+
+def _create_federation_tables(conn):
+    """Create federation tables: planting_calendar, preservation_log,
+    federation_peers, federation_offers, federation_requests, federation_sitboard,
+    mutual_aid_agreements, federation_transactions, sync_peers, vector_clocks,
+    dead_drop_messages, group_exercises, training_datasets, training_jobs."""
+    conn.executescript('''
         CREATE TABLE IF NOT EXISTS planting_calendar (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             crop TEXT NOT NULL,
@@ -613,7 +632,16 @@ def _init_db_inner(conn):
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (dataset_id) REFERENCES training_datasets(id)
         );
+    ''')
+    conn.commit()
 
+
+def _create_medical_security_tables(conn):
+    """Create medical/security tables: perimeter_zones, triage_events,
+    handoff_reports, freq_database, radio_profiles, map_routes, map_annotations,
+    gps_tracks, timers, incidents, patients, vitals_log, wound_log,
+    medication_log, triage_history, wound_updates, journal."""
+    conn.executescript('''
         CREATE TABLE IF NOT EXISTS perimeter_zones (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -809,7 +837,16 @@ def _init_db_inner(conn):
             tags TEXT DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+    ''')
+    conn.commit()
 
+
+def _create_power_garden_tables(conn):
+    """Create power/garden tables: cameras, access_log, power_devices, power_log,
+    generators, generator_sessions, sync_log, garden_plots, seeds, harvest_log,
+    livestock, scenarios, alerts, subscriptions, skills, ammo_inventory,
+    community_resources, radiation_log, fuel_storage, equipment_log, scheduled_tasks."""
+    conn.executescript('''
         CREATE TABLE IF NOT EXISTS cameras (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name TEXT NOT NULL,
@@ -1063,7 +1100,20 @@ def _init_db_inner(conn):
             last_completed TIMESTAMP,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
+    ''')
+    conn.commit()
 
+
+def _create_extended_tables(conn):
+    """Create extended tables: mesh_messages, kb_workspaces, conversation_branches,
+    inventory_photos, inventory_checkouts, shopping_list, note_tags, note_links,
+    note_templates, media_progress, playlists, drug_interactions, wound_photos,
+    weather_readings, lan_channels, lan_presence, lan_transfers, companion_plants,
+    seed_inventory, pest_guide, benchmark_results, watch_schedules,
+    weather_action_rules, upc_database, inventory_batches, consumption_log,
+    motion_events, download_queue, task_completions, comms_schedules, water_log,
+    storm_events, note_revisions, skill_progression."""
+    conn.executescript('''
         CREATE TABLE IF NOT EXISTS mesh_messages (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             from_node TEXT DEFAULT '',
@@ -1434,7 +1484,9 @@ def _init_db_inner(conn):
     ''')
     conn.commit()
 
-    # Schema migrations FIRST (before indexes that depend on new columns)
+
+def _apply_column_migrations(conn):
+    """Apply ALTER TABLE column migrations (before indexes that depend on new columns)."""
     for migration in [
         'ALTER TABLE inventory ADD COLUMN daily_usage REAL DEFAULT 0',
         'ALTER TABLE inventory ADD COLUMN barcode TEXT DEFAULT ""',
@@ -1516,7 +1568,9 @@ def _init_db_inner(conn):
         except sqlite3.OperationalError:
             pass  # Column already exists
 
-    # Performance indexes (after migrations so columns exist)
+
+def _create_indexes(conn):
+    """Create performance indexes (after migrations so columns exist)."""
     for idx in [
         'CREATE INDEX IF NOT EXISTS idx_activity_log_timestamp ON activity_log(created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_activity_log_level ON activity_log(level)',
@@ -1768,7 +1822,16 @@ def _init_db_inner(conn):
             pass  # Index already exists or related issue
     conn.commit()
 
-    # ─── Seed UPC barcode database ──────────────────────────────────────
+
+def _init_db_inner(conn):
+    _create_core_tables(conn)
+    _create_comms_media_tables(conn)
+    _create_federation_tables(conn)
+    _create_medical_security_tables(conn)
+    _create_power_garden_tables(conn)
+    _create_extended_tables(conn)
+    _apply_column_migrations(conn)
+    _create_indexes(conn)
     _seed_upc_database(conn)
 
 

@@ -14,6 +14,7 @@ from flask import Blueprint, request, jsonify, Response
 from config import Config
 from db import db_session, log_activity
 from web.state import _discovered_peers, broadcast_event
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_object as _safe_json_object, safe_json_list as _safe_json_list
 
 log = logging.getLogger('nomad.web')
 
@@ -47,45 +48,6 @@ def _get_node_name():
         row = db.execute("SELECT value FROM settings WHERE key = 'node_name'").fetchone()
     return (row['value'] if row and row['value'] else platform.node()) or 'NOMAD Node'
 
-
-def _clone_json_fallback(fallback):
-    if isinstance(fallback, list):
-        return list(fallback)
-    if isinstance(fallback, dict):
-        return dict(fallback)
-    return fallback
-
-
-def _safe_json_value(value, fallback=None):
-    if isinstance(value, (bytes, bytearray)):
-        value = value.decode('utf-8', errors='ignore')
-    if value in (None, ''):
-        return _clone_json_fallback(fallback)
-    if isinstance(value, (dict, list)):
-        return _clone_json_fallback(value)
-    if isinstance(value, str):
-        text = value.strip()
-        if not text:
-            return _clone_json_fallback(fallback)
-        try:
-            return json.loads(text)
-        except (TypeError, ValueError, json.JSONDecodeError):
-            return _clone_json_fallback(fallback)
-    return _clone_json_fallback(fallback)
-
-
-def _safe_json_object(value, fallback=None):
-    if fallback is None:
-        fallback = {}
-    parsed = _safe_json_value(value, None)
-    return dict(parsed) if isinstance(parsed, dict) else _clone_json_fallback(fallback)
-
-
-def _safe_json_list(value, fallback=None):
-    if fallback is None:
-        fallback = []
-    parsed = _safe_json_value(value, None)
-    return list(parsed) if isinstance(parsed, list) else _clone_json_fallback(fallback)
 
 
 def _safe_clock(value):

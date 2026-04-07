@@ -557,16 +557,23 @@ class TestErrorHandler:
         assert "memories = _safe_memory_entries(mem_row['value'])" in ai_text
         assert "update_data['messages'] = json.dumps(_safe_message_list(data['messages']))" in ai_text
 
-        assert 'def _safe_json_value(val, fallback):' in app_text
+        utils_text = (REPO_ROOT / 'web' / 'utils.py').read_text(encoding='utf-8')
+        assert 'def safe_json_value(value, fallback=None):' in utils_text
+        assert 'def safe_json_list(value, fallback=None):' in utils_text
+        assert 'def safe_json_object(value, fallback=None):' in utils_text
+        assert 'def safe_id_list(value):' in utils_text
+        assert 'def esc(s):' in utils_text
+
+        assert 'from web.utils import' in app_text
         assert "report['situation'] = _safe_json_value(sit_row['value'] if sit_row else None, {})" in app_text
         assert "memories = _safe_json_value(mem_row['value'], [])" in app_text
 
-        assert 'def _safe_id_list(value):' in maps_text
+        assert 'from web.utils import' in maps_text
         assert "wp_ids = _safe_id_list(route['waypoint_ids'])" in maps_text
         assert "geojson = _safe_track_geojson(trk['geojson'])" in maps_text
         assert "item['properties'] = _safe_json_object(item.get('properties'), {})" in maps_text
 
-        assert 'def _safe_id_list(value):' in security_text
+        assert 'from web.utils import' in security_text
         assert "sit = _safe_json_object(sit_raw['value'], {})" in security_text
         assert "entry['camera_ids'] = _safe_id_list(entry.get('camera_ids'))" in security_text
         assert "camera_ids = _safe_id_list(z['camera_ids'])" in security_text
@@ -585,7 +592,7 @@ class TestErrorHandler:
         assert "current_meds = _parse_json_list(patient['medications'])" in medical_text
         assert "ref_json = _safe_response_json(ref_resp)" in medical_text
 
-        assert 'def _safe_json_list(value, fallback=None):' in kb_text
+        assert 'from web.utils import' in kb_text
         assert "d['entities'] = _safe_json_list(d.get('entities'), [])" in kb_text
         assert "d['linked_records'] = _safe_json_list(d.get('linked_records'), [])" in kb_text
         assert "selected = _safe_index_list(data.get('entities'))" in kb_text
@@ -605,7 +612,7 @@ class TestErrorHandler:
         assert "_normalize_boundary_geojson(data.get('boundary_geojson'))" in garden_text
         assert "geometry = _safe_plot_geometry(d.get('boundary_geojson'), d['lng'], d['lat'])" in garden_text
 
-        assert 'def _safe_json_object(value, fallback=None):' in weather_text
+        assert 'from web.utils import' in weather_text
         assert "action_data = _safe_json_object(rule['action_data'], {})" in weather_text
         assert "d['action_data'] = _safe_json_object(d.get('action_data'), {})" in weather_text
         assert "action_data = _safe_json_object(data.get('action_data'), {})" in weather_text
@@ -619,7 +626,7 @@ class TestErrorHandler:
         assert "manifest = _safe_json_object(z.read('manifest.json'), {})" in federation_text
         assert "json.dumps(_safe_json_list(data.get('our_commitments'), []))" in federation_text
 
-        assert 'def _safe_json_value(raw, fallback=None):' in inventory_text
+        assert 'from web.utils import' in inventory_text
         assert 'def _extract_json_array(raw_text):' in inventory_text
         assert "result = _safe_json_value(resp.read(), {})" in inventory_text
         assert "for item in _extract_json_array(raw_text):" in inventory_text

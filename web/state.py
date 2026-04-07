@@ -9,6 +9,31 @@ import queue
 import threading
 import time
 
+# ─── API Response Cache ─────────────────────────────────────────────
+_api_cache = {}
+_cache_lock = threading.Lock()
+
+
+def cached_get(key, ttl_seconds=30):
+    """Return cached value if fresh, else None."""
+    with _cache_lock:
+        entry = _api_cache.get(key)
+        if entry and (time.time() - entry['ts']) < ttl_seconds:
+            return entry['val']
+    return None
+
+
+def cached_set(key, val):
+    """Store a value in the TTL cache."""
+    with _cache_lock:
+        _api_cache[key] = {'val': val, 'ts': time.time()}
+        if len(_api_cache) > 50:
+            now = time.time()
+            stale = [k for k, v in _api_cache.items() if now - v['ts'] > 120]
+            for k in stale:
+                del _api_cache[k]
+
+
 # ─── Service Management ──────────────────────────────────────────────
 _installing = set()
 _installing_lock = threading.Lock()

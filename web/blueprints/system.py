@@ -22,6 +22,7 @@ from services.manager import (
     get_service_resources, SERVICE_HEALTH_URLS, is_healthy,
 )
 import config
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value
 from web.state import (
     _auto_backup_timer,
     _update_state,
@@ -42,29 +43,6 @@ def _to_int(value, default=0):
         return int(value)
     except (ValueError, TypeError):
         return default
-
-
-def _clone_json_fallback(fallback):
-    if isinstance(fallback, dict):
-        return dict(fallback)
-    if isinstance(fallback, list):
-        return list(fallback)
-    return fallback
-
-
-def _safe_json_value(raw, fallback):
-    if raw in (None, ''):
-        return _clone_json_fallback(fallback)
-    try:
-        value = json.loads(raw) if isinstance(raw, str) else raw
-    except (json.JSONDecodeError, TypeError, ValueError) as exc:
-        log.debug('Invalid JSON setting payload: %s', exc)
-        return _clone_json_fallback(fallback)
-    if isinstance(fallback, dict) and not isinstance(value, dict):
-        return {}
-    if isinstance(fallback, list) and not isinstance(value, list):
-        return []
-    return value
 
 STARTUP_VALUE_NAME = APP_EXECUTABLE_BASENAME
 LEGACY_STARTUP_VALUE_NAMES = ('ProjectNOMAD',)

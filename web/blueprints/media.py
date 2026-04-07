@@ -21,6 +21,7 @@ from web.state import _ytdlp_downloads, _ytdlp_dl_lock, _ytdlp_install_state
 from web.validation import validate_json
 from web.sql_safety import safe_table, safe_columns, build_update
 import web.state as _state
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_list as _safe_json_list
 
 try:
     from web.catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
@@ -35,35 +36,6 @@ log = logging.getLogger('nomad.web')
 
 _CREATION_FLAGS = {'creationflags': 0x08000000} if sys.platform == 'win32' else {}
 _state_lock = threading.Lock()
-
-
-def _clone_json_fallback(fallback):
-    if isinstance(fallback, list):
-        return list(fallback)
-    if isinstance(fallback, dict):
-        return dict(fallback)
-    return fallback
-
-
-def _safe_json_list(value, fallback=None):
-    if fallback is None:
-        fallback = []
-    if value in (None, ''):
-        return _clone_json_fallback(fallback)
-    if isinstance(value, list):
-        return list(value)
-    if isinstance(value, tuple):
-        return list(value)
-    if isinstance(value, str):
-        text = value.strip()
-        if not text:
-            return _clone_json_fallback(fallback)
-        try:
-            parsed = json.loads(text)
-        except (TypeError, ValueError, json.JSONDecodeError):
-            return _clone_json_fallback(fallback)
-        return list(parsed) if isinstance(parsed, list) else _clone_json_fallback(fallback)
-    return _clone_json_fallback(fallback)
 
 
 def _safe_string_list(value):

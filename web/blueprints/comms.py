@@ -19,39 +19,11 @@ from web.state import (
     _mesh_state,
 )
 import web.state as _state
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_list as _safe_json_list
 
 log = logging.getLogger('nomad.web')
 
 comms_bp = Blueprint('comms', __name__)
-
-
-def _clone_json_fallback(fallback):
-    if isinstance(fallback, list):
-        return list(fallback)
-    if isinstance(fallback, dict):
-        return dict(fallback)
-    return fallback
-
-
-def _safe_json_list(value, fallback=None):
-    if fallback is None:
-        fallback = []
-    if value in (None, ''):
-        return _clone_json_fallback(fallback)
-    if isinstance(value, list):
-        return list(value)
-    if isinstance(value, tuple):
-        return list(value)
-    if isinstance(value, str):
-        text = value.strip()
-        if not text:
-            return _clone_json_fallback(fallback)
-        try:
-            parsed = json.loads(text)
-        except (TypeError, ValueError, json.JSONDecodeError):
-            return _clone_json_fallback(fallback)
-        return list(parsed) if isinstance(parsed, list) else _clone_json_fallback(fallback)
-    return _clone_json_fallback(fallback)
 
 
 def _normalize_radio_channels(value):

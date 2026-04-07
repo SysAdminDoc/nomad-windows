@@ -10,6 +10,7 @@ from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.sql_safety import safe_columns, build_update
 from web.state import _motion_detectors, _motion_config
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_object as _safe_json_object, safe_json_list as _safe_json_list, safe_id_list as _safe_id_list
 
 log = logging.getLogger(__name__)
 
@@ -24,45 +25,6 @@ def _check_origin(req):
     if origin and not origin.startswith(('http://localhost:', 'http://127.0.0.1:')):
         from flask import abort
         abort(403, 'Cross-origin request blocked')
-
-
-def _clone_json_fallback(fallback):
-    if isinstance(fallback, (dict, list)):
-        return json.loads(json.dumps(fallback))
-    return fallback
-
-
-def _safe_json_value(value, fallback=None):
-    if isinstance(value, (dict, list)):
-        return _clone_json_fallback(value)
-    if value in (None, ''):
-        return _clone_json_fallback(fallback)
-    try:
-        return json.loads(value)
-    except (json.JSONDecodeError, TypeError, ValueError):
-        return _clone_json_fallback(fallback)
-
-
-def _safe_json_object(value, fallback=None):
-    fallback = {} if fallback is None else fallback
-    parsed = _safe_json_value(value, fallback)
-    return parsed if isinstance(parsed, dict) else _clone_json_fallback(fallback)
-
-
-def _safe_json_list(value, fallback=None):
-    fallback = [] if fallback is None else fallback
-    parsed = _safe_json_value(value, fallback)
-    return parsed if isinstance(parsed, list) else _clone_json_fallback(fallback)
-
-
-def _safe_id_list(value):
-    ids = []
-    for raw in _safe_json_list(value, []):
-        try:
-            ids.append(int(raw))
-        except (TypeError, ValueError):
-            continue
-    return ids
 
 
 # ─── Security Cameras CRUD ─────────────────────────────────────────

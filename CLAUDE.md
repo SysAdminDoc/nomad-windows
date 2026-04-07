@@ -48,7 +48,7 @@ Current repo note: some older changelog entries below mention retired Docker/hea
 ```
 nomad.py              # Entry point — Flask + pywebview + tray + health monitor + service autostart
 platform_utils.py     # Cross-platform abstraction — subprocess flags, paths, GPU detection, URLs, process management
-db.py                 # SQLite init (89 tables), indexes, migrations (migrations BEFORE indexes), db_session() context manager
+db.py                 # SQLite init (89 tables), organized into 6 _create_*_tables() helpers + _apply_column_migrations() + _create_indexes(). db_session() context manager
 config.py             # Data directory management (atomic writes via tmp+replace, XDG-aware paths, mtime-cached reads)
 build.spec            # PyInstaller spec for portable exe
 icon.ico              # App icon (multi-size, 16-256px)
@@ -57,7 +57,9 @@ ROADMAP.md            # 22-phase implementation plan (all complete)
 .github/workflows/
   build.yml           # CI/CD — PyInstaller + Inno Setup, dual artifact release on tag push
 web/
-  app.py              # Flask routes (~566 endpoints) — ~17,500 lines
+  app.py              # Flask app factory + middleware + remaining routes (~4,150 lines, 102 routes). Most routes extracted to blueprints.
+  utils.py            # Shared utilities (esc, safe_json_value/list/object, safe_id_list, clone_json_fallback, close_db_safely)
+  state.py            # Shared mutable state, SSE event bus, TTL cache (cached_get/cached_set)
   translations.py     # i18n translations (10 languages, 56 keys per language)
   catalog.py          # Content catalogs (books, videos, audio, torrents)
   static/
@@ -71,6 +73,7 @@ web/
     js/
       epub.min.js     # EPUB reader library (bundled)
   routes_advanced.py  # Advanced routes (phases 16-20): AI SITREP, actions, memory, print binder/wallet/SOI, system health, undo, federation community
+  blueprints/         # 21 Flask blueprints: ai, benchmark, checklists, comms, contacts, federation, garden, inventory, kb, maps, media, medical, notes, power, security, services, situation_room, supplies, system, tasks, weather
   templates/
     index.html        # HTML + inline theme vars + JS (~28,500 lines)
   nukemap/            # NukeMap v3.2.0 — index.html, 18 JS modules, CSS, data/, lib/leaflet

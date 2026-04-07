@@ -34,6 +34,7 @@ from datetime import datetime, timedelta
 import requests
 from flask import Blueprint, request, jsonify, current_app
 from db import db_session, log_activity
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_object as _safe_json_object
 
 situation_room_bp = Blueprint('situation_room', __name__)
 log = logging.getLogger('nomad.situation_room')
@@ -73,37 +74,6 @@ def _safe_float(val, default=0):
         return float(val)
     except (ValueError, TypeError):
         return default
-
-
-def _clone_json_fallback(fallback):
-    if isinstance(fallback, dict):
-        return dict(fallback)
-    if isinstance(fallback, list):
-        return list(fallback)
-    return fallback
-
-
-def _safe_json_value(value, fallback=None):
-    if value in (None, ''):
-        return _clone_json_fallback(fallback)
-    try:
-        parsed = json.loads(value) if isinstance(value, (str, bytes, bytearray)) else value
-    except (json.JSONDecodeError, TypeError, ValueError):
-        return _clone_json_fallback(fallback)
-    if parsed is None:
-        return _clone_json_fallback(fallback)
-    if isinstance(fallback, dict) and not isinstance(parsed, dict):
-        return {}
-    if isinstance(fallback, list) and not isinstance(parsed, list):
-        return []
-    return parsed
-
-
-def _safe_json_object(value, fallback=None):
-    parsed = _safe_json_value(value, fallback)
-    if parsed is None or isinstance(parsed, dict):
-        return parsed
-    return _clone_json_fallback(fallback)
 
 
 def _get_state(key=None):

@@ -14,13 +14,9 @@ log = logging.getLogger('nomad.web')
 from config import get_data_dir
 from web.print_templates import render_print_document
 
+from web.utils import esc as _esc
+
 medical_bp = Blueprint('medical', __name__)
-
-
-def _esc(s):
-    # NOTE: duplicated in app.py, blueprints/inventory.py
-    """Escape HTML for print output."""
-    return (s or '').replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
 
 
 def _parse_json_list(value):

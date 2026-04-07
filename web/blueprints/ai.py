@@ -18,6 +18,7 @@ from web.state import _pull_queue, _pull_queue_lock
 from web.validation import validate_json
 from web.sql_safety import safe_columns
 import web.state as _state
+from web.utils import safe_json_list as _safe_json_list
 
 log = logging.getLogger('nomad.web')
 
@@ -132,17 +133,6 @@ def api_ai_delete():
     if not success:
         return jsonify({'error': 'Failed to delete model'}), 500
     return jsonify({'status': 'deleted'})
-
-def _safe_json_list(val, default=None):
-    """Parse a JSON string or value, returning a list fallback on failure."""
-    if default is None:
-        default = []
-    parsed = None
-    try:
-        parsed = json.loads(val or '[]') if isinstance(val, str) else val
-    except (json.JSONDecodeError, TypeError):
-        return default
-    return parsed if isinstance(parsed, list) else default
 
 
 def _safe_message_list(val, default=None):

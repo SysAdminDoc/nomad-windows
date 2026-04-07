@@ -10,21 +10,11 @@ from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 from web.sql_safety import safe_columns, build_update
 from web.state import _motion_detectors, _motion_config
-from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_object as _safe_json_object, safe_json_list as _safe_json_list, safe_id_list as _safe_id_list
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_object as _safe_json_object, safe_json_list as _safe_json_list, safe_id_list as _safe_id_list, check_origin as _check_origin
 
 log = logging.getLogger(__name__)
 
 security_bp = Blueprint('security', __name__)
-
-
-# ─── Helper ────────────────────────────────────────────────────────
-
-def _check_origin(req):
-    """Block cross-origin state-changing requests (CSRF protection)."""
-    origin = req.headers.get('Origin', '')
-    if origin and not origin.startswith(('http://localhost:', 'http://127.0.0.1:')):
-        from flask import abort
-        abort(403, 'Cross-origin request blocked')
 
 
 # ─── Security Cameras CRUD ─────────────────────────────────────────

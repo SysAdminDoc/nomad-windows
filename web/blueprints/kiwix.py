@@ -8,44 +8,11 @@ from flask import Blueprint, request, jsonify
 
 from services import kiwix
 from services.manager import _download_progress
+from web.utils import validate_download_url as _validate_download_url
 
 log = logging.getLogger('nomad.web')
 
 kiwix_bp = Blueprint('kiwix', __name__)
-
-
-def _validate_download_url(url):
-    """Validate that a download URL is safe (SSRF protection).
-
-    Raises ValueError if the URL uses a non-https scheme or points to a
-    private/internal IP address.
-    """
-    import ipaddress
-    from urllib.parse import urlparse
-    parsed = urlparse(url)
-    if parsed.scheme not in ('https', 'http'):
-        raise ValueError(f'Unsupported URL scheme: {parsed.scheme}')
-    hostname = parsed.hostname or ''
-    # Block obvious private hostnames
-    if hostname in ('localhost', '') or hostname.endswith('.local'):
-        raise ValueError('URLs pointing to internal hosts are not allowed')
-    # Resolve and check for private/internal IPs (SSRF protection)
-    try:
-        import socket
-        old_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(5)
-        try:
-            resolved = socket.getaddrinfo(hostname, None)
-        finally:
-            socket.setdefaulttimeout(old_timeout)
-        for _family, _type, _proto, _canonname, sockaddr in resolved:
-            ip = ipaddress.ip_address(sockaddr[0])
-            if (ip.is_private or ip.is_loopback or ip.is_link_local
-                    or ip.is_reserved or ip.is_multicast):
-                raise ValueError('URL resolves to a blocked IP range')
-    except (socket.gaierror, OSError):
-        raise ValueError(f'Cannot resolve hostname: {hostname}')
-    return url
 
 
 # ─── Kiwix ZIM API ─────────────────────────────────────────────────

@@ -565,8 +565,9 @@ class TestErrorHandler:
         assert 'def esc(s):' in utils_text
 
         assert 'from web.utils import' in app_text
-        assert "report['situation'] = _safe_json_value(sit_row['value'] if sit_row else None, {})" in app_text
-        assert "memories = _safe_json_value(mem_row['value'], [])" in app_text
+        print_text = (REPO_ROOT / 'web' / 'blueprints' / 'print_routes.py').read_text(encoding='utf-8')
+        assert "report['situation'] = _safe_json_value(sit_row['value'] if sit_row else None, {})" in print_text
+        assert "memories = _safe_json_value(mem_row['value'], [])" in print_text
 
         assert 'from web.utils import' in maps_text
         assert "wp_ids = _safe_id_list(route['waypoint_ids'])" in maps_text

@@ -23,6 +23,22 @@ from web.utils import esc as _esc, clone_json_fallback as _clone_json_fallback, 
 log = logging.getLogger('nomad.web')
 
 
+def _read_household_size_setting(db, default=1):
+    """Return a sanitized household size from settings, falling back to a safe default."""
+    safe_default = max(1, int(default))
+    try:
+        hs = db.execute("SELECT value FROM settings WHERE key='household_size'").fetchone()
+        if not hs or hs['value'] in (None, ''):
+            return safe_default
+        return max(1, int(hs['value']))
+    except (TypeError, ValueError, KeyError) as exc:
+        log.debug('Invalid household_size setting encountered: %s', exc)
+    except Exception as exc:
+        log.debug('Failed to read household_size setting: %s', exc)
+    return safe_default
+
+
+
 def _check_origin(req):
     """Block cross-origin state-changing requests (CSRF protection)."""
     origin = req.headers.get('Origin', '')
@@ -1309,3 +1325,99 @@ def api_templates_inventory_apply():
         db.commit()
     log_activity('template_applied', 'inventory', f'{tpl["name"]} ({inserted} items)')
     return jsonify({'status': 'applied', 'template': tpl['name'], 'items_inserted': inserted})
+
+
+# ─── Inventory Batch Expiration ──────────────────────────────────
+
+@inventory_bp.route('/api/inventory/<int:iid>/batches', methods=['GET'])
+def api_inventory_batches(iid):
+    with db_session() as db:
+        rows = db.execute('SELECT * FROM inventory_batches WHERE inventory_id = ? ORDER BY expiration ASC', (iid,)).fetchall()
+        return jsonify([dict(r) for r in rows])
+
+@inventory_bp.route('/api/inventory/<int:iid>/batches', methods=['POST'])
+def api_inventory_batch_create(iid):
+    d = request.json or {}
+    with db_session() as db:
+        cur = db.execute('INSERT INTO inventory_batches (inventory_id, quantity, expiration, lot_number, date_acquired, cost) VALUES (?, ?, ?, ?, ?, ?)',
+            (iid, d.get('quantity', 0), d.get('expiration'), d.get('lot_number'), d.get('date_acquired'), d.get('cost')))
+        db.commit()
+        row = db.execute('SELECT * FROM inventory_batches WHERE id = ?', (cur.lastrowid,)).fetchone()
+        return jsonify(dict(row)), 201
+
+# ─── Consumption History ─────────────────────────────────────────
+
+@inventory_bp.route('/api/inventory/<int:iid>/consumption-history', methods=['GET'])
+def api_consumption_history(iid):
+    with db_session() as db:
+        rows = db.execute('SELECT * FROM consumption_log WHERE inventory_id = ? ORDER BY consumed_at DESC LIMIT 100', (iid,)).fetchall()
+        return jsonify([dict(r) for r in rows])
+
+@inventory_bp.route('/api/inventory/consumption-rate', methods=['GET'])
+def api_consumption_rates():
+    with db_session() as db:
+        # Get items with consumption history, compute 7-day and 30-day rolling averages
+        rows = db.execute("""
+            SELECT cl.inventory_id, i.name, i.quantity, i.unit,
+                SUM(CASE WHEN cl.consumed_at >= datetime('now', '-7 days') THEN cl.amount ELSE 0 END) / 7.0 as avg_7d,
+                SUM(CASE WHEN cl.consumed_at >= datetime('now', '-30 days') THEN cl.amount ELSE 0 END) / 30.0 as avg_30d
+            FROM consumption_log cl
+            JOIN inventory i ON i.id = cl.inventory_id
+            WHERE cl.consumed_at >= datetime('now', '-30 days')
+            GROUP BY cl.inventory_id
+            ORDER BY avg_7d DESC
+            LIMIT 100
+        """).fetchall()
+        return jsonify([dict(r) for r in rows])
+
+# ─── Nutritional Tracking ────────────────────────────────────────
+
+@inventory_bp.route('/api/inventory/nutrition-summary', methods=['GET'])
+def api_nutrition_summary():
+    with db_session() as db:
+        # Sum calories, protein, fat, carbs from inventory items that have nutritional data
+        # These fields may not exist yet, so handle gracefully
+        rows = db.execute("""
+            SELECT category,
+                SUM(quantity * COALESCE(calories_per_unit, 0)) as total_calories,
+                SUM(quantity * COALESCE(protein_g, 0)) as total_protein,
+                SUM(quantity * COALESCE(fat_g, 0)) as total_fat,
+                SUM(quantity * COALESCE(carbs_g, 0)) as total_carbs,
+                COUNT(*) as item_count
+            FROM inventory
+            WHERE category IN ('food', 'Food', 'water', 'Water', 'freeze-dried', 'canned', 'grains')
+            GROUP BY category
+        """).fetchall()
+        total_cal = sum(r['total_calories'] or 0 for r in rows)
+        household_size = _read_household_size_setting(db)
+        calories_per_day = household_size * 2000
+        days_of_food = round(total_cal / calories_per_day, 1) if calories_per_day > 0 else 0
+        return jsonify({
+            'by_category': [dict(r) for r in rows],
+            'total_calories': total_cal,
+            'household_size': household_size,
+            'days_of_food': days_of_food,
+            'calories_per_day': calories_per_day
+        })
+
+# ─── Food Security Dashboard ─────────────────────────────────────
+
+@inventory_bp.route('/api/garden/food-security', methods=['GET'])
+def api_food_security():
+    with db_session() as db:
+        # Aggregate: current food inventory calories + preserved food + projected harvest
+        inv_cal = db.execute("SELECT SUM(quantity * COALESCE(calories_per_unit, 0)) as cal FROM inventory WHERE category IN ('food','Food','canned','grains','freeze-dried')").fetchone()['cal'] or 0
+        pres_cal = db.execute("SELECT SUM(quantity * COALESCE(calories_per_unit, 0)) as cal FROM preservation_log").fetchone()
+        pres_cal = (pres_cal['cal'] if pres_cal else 0) or 0
+        household_size = _read_household_size_setting(db)
+        daily_need = household_size * 2000
+        total_cal = inv_cal + pres_cal
+        days = round(total_cal / daily_need, 1) if daily_need > 0 else 0
+        return jsonify({
+            'inventory_calories': round(inv_cal),
+            'preserved_calories': round(pres_cal),
+            'total_calories': round(total_cal),
+            'household_size': household_size,
+            'days_of_food': days,
+            'daily_caloric_need': daily_need
+        })

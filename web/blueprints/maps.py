@@ -1612,3 +1612,93 @@ def api_maps_export_gpx():
                         headers={'Content-Disposition': 'attachment; filename="nomad-full-export.gpx"'})
 
 # ─── LoRA Fine-Tuning Pipeline ───────────────────────────────────
+
+
+# ─── GPX Import/Export & Distance Matrix ─────────────────────────
+
+
+@maps_bp.route('/api/waypoints/export-gpx')
+def api_waypoints_gpx():
+    with db_session() as db:
+        rows = db.execute('SELECT * FROM waypoints ORDER BY created_at LIMIT 10000').fetchall()
+    gpx = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="NOMADFieldDesk">\n'
+    for w in rows:
+        gpx += f'  <wpt lat="{w["lat"]}" lon="{w["lng"]}">\n'
+        gpx += f'    <name>{_esc(w["name"])}</name>\n'
+        gpx += f'    <desc>{_esc(w["notes"])}</desc>\n'
+        gpx += f'    <type>{_esc(w["category"])}</type>\n'
+        gpx += f'  </wpt>\n'
+    gpx += '</gpx>'
+    return Response(gpx, mimetype='application/gpx+xml',
+                   headers={'Content-Disposition': 'attachment; filename="nomad-waypoints.gpx"'})
+
+# ─── GPX Waypoint Import ─────────────────────────────────────────
+
+
+@maps_bp.route('/api/waypoints/import-gpx', methods=['POST'])
+def api_waypoints_import_gpx():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file'}), 400
+    file = request.files['file']
+    content = file.read().decode('utf-8', errors='replace')
+    import xml.etree.ElementTree as ET
+    try:
+        root = ET.fromstring(content)
+    except ET.ParseError:
+        return jsonify({'error': 'Invalid GPX XML — file could not be parsed'}), 400
+    ns = {'gpx': 'http://www.topografix.com/GPX/1/1'}
+    wpts = root.findall('.//gpx:wpt', ns) + root.findall('.//wpt')
+    with db_session() as db:
+        count = 0
+        for wpt in wpts:
+            lat = wpt.get('lat')
+            lon = wpt.get('lon')
+            if lat is None or lon is None:
+                continue
+            name_el = wpt.find('gpx:name', ns) or wpt.find('name')
+            name = name_el.text if name_el is not None and name_el.text else f'Imported {lat},{lon}'
+            try:
+                db.execute('INSERT INTO waypoints (name, lat, lng, category) VALUES (?, ?, ?, ?)',
+                           (name, float(lat), float(lon), 'imported'))
+                count += 1
+            except Exception as exc:
+                log.debug('Skipping GPX waypoint "%s" during import: %s', name, exc)
+        db.commit()
+    return jsonify({'status': 'imported', 'count': count})
+
+# ─── Enhanced Dashboard API ───────────────────────────────────────
+
+# [EXTRACTED to blueprint]
+
+
+# ─── Proactive Alert System ──────────────────────────────────────
+
+# [EXTRACTED to blueprint]
+
+
+@maps_bp.route('/api/waypoints/distances')
+def api_waypoints_distances():
+    with db_session() as db:
+        wps = db.execute('SELECT id, name, lat, lng, category FROM waypoints ORDER BY name').fetchall()
+    import math
+    def haversine(lat1, lon1, lat2, lon2):
+        R = 3959  # miles
+        dlat = math.radians(lat2 - lat1)
+        dlon = math.radians(lon2 - lon1)
+        a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
+        return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+
+    points = [dict(w) for w in wps]
+    matrix = []
+    for i, a in enumerate(points):
+        row = []
+        for j, b in enumerate(points):
+            if i == j:
+                row.append(0)
+            else:
+                row.append(round(haversine(a['lat'], a['lng'], b['lat'], b['lng']), 2))
+        matrix.append(row)
+    return jsonify({'points': points, 'matrix': matrix})
+
+# ─── External Ollama Host ─────────────────────────────────────────
+

@@ -11,6 +11,7 @@ from web.print_templates import render_print_document
 from web.utils import (
     esc as _esc,
     safe_json_value as _safe_json_value,
+    get_node_name as _get_node_name,
 )
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
 
@@ -27,12 +28,6 @@ SERVICE_MODULES = {
     'stirling': stirling,
     'flatnotes': flatnotes,
 }
-
-
-def _get_node_name():
-    with db_session() as db:
-        row = db.execute("SELECT value FROM settings WHERE key = 'node_name'").fetchone()
-    return (row['value'] if row and row['value'] else platform.node()) or 'NOMAD Node'
 
 
 def _get_version():

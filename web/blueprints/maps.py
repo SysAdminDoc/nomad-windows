@@ -20,7 +20,7 @@ from config import get_data_dir
 from web.print_templates import render_print_document
 from web.state import _map_downloads
 import web.state as _state
-from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_list as _safe_json_list, safe_json_object as _safe_json_object, safe_id_list as _safe_id_list
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_list as _safe_json_list, safe_json_object as _safe_json_object, safe_id_list as _safe_id_list, validate_download_url as _validate_download_url
 
 log = logging.getLogger('nomad.web')
 
@@ -29,27 +29,6 @@ _CREATION_FLAGS = {'creationflags': 0x08000000} if sys.platform == 'win32' else 
 _state_lock = threading.Lock()
 
 maps_bp = Blueprint('maps', __name__)
-
-
-def _validate_download_url(url):
-    import ipaddress
-    from urllib.parse import urlparse
-    parsed = urlparse(url)
-    if parsed.scheme not in ('https', 'http'):
-        raise ValueError(f'Unsupported URL scheme: {parsed.scheme}')
-    hostname = parsed.hostname or ''
-    if hostname in ('localhost', '') or hostname.endswith('.local'):
-        raise ValueError('URLs pointing to internal hosts are not allowed')
-    try:
-        import socket
-        resolved = socket.getaddrinfo(hostname, None)
-        for _family, _type, _proto, _canonname, sockaddr in resolved:
-            ip = ipaddress.ip_address(sockaddr[0])
-            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved:
-                raise ValueError(f'URL resolves to a private/internal IP: {ip}')
-    except (socket.gaierror, OSError):
-        raise ValueError(f'Cannot resolve hostname: {hostname}')
-    return url
 
 
 def _normalize_track_coordinates(value):

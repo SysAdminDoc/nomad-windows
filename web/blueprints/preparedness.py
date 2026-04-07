@@ -14,6 +14,7 @@ from web.utils import (
     safe_json_value as _safe_json_value,
     safe_json_list as _safe_json_list,
     close_db_safely as _close_db_safely,
+    validate_bulk_ids as _validate_bulk_ids,
 )
 from web.state import (
     broadcast_event,
@@ -26,21 +27,6 @@ from services import ollama
 log = logging.getLogger('nomad.web')
 
 preparedness_bp = Blueprint('preparedness', __name__)
-
-
-# ─── Validation Helpers ──────────────────────────────────────────────
-
-def _validate_bulk_ids(data):
-    """Validate and return integer IDs from a bulk-delete request."""
-    ids = data.get('ids', [])
-    if not ids or not isinstance(ids, list):
-        return None
-    if len(ids) > 100:
-        return None
-    try:
-        return [int(i) for i in ids]
-    except (ValueError, TypeError):
-        return None
 
 
 # ─── Incident Log API ────────────────────────────────────────────────

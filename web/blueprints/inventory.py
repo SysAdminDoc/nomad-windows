@@ -18,33 +18,9 @@ from web.sql_safety import safe_table, safe_columns, build_update, build_insert
 from web.validation import validate_json, validate_file_upload
 from config import get_data_dir
 from web.state import broadcast_event
-from web.utils import esc as _esc, clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value
+from web.utils import esc as _esc, clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, check_origin as _check_origin, read_household_size as _read_household_size_setting
 
 log = logging.getLogger('nomad.web')
-
-
-def _read_household_size_setting(db, default=1):
-    """Return a sanitized household size from settings, falling back to a safe default."""
-    safe_default = max(1, int(default))
-    try:
-        hs = db.execute("SELECT value FROM settings WHERE key='household_size'").fetchone()
-        if not hs or hs['value'] in (None, ''):
-            return safe_default
-        return max(1, int(hs['value']))
-    except (TypeError, ValueError, KeyError) as exc:
-        log.debug('Invalid household_size setting encountered: %s', exc)
-    except Exception as exc:
-        log.debug('Failed to read household_size setting: %s', exc)
-    return safe_default
-
-
-
-def _check_origin(req):
-    """Block cross-origin state-changing requests (CSRF protection)."""
-    origin = req.headers.get('Origin', '')
-    if origin and not origin.startswith(('http://localhost:', 'http://127.0.0.1:')):
-        from flask import abort
-        abort(403, 'Cross-origin request blocked')
 
 
 def _extract_json_array(raw_text):

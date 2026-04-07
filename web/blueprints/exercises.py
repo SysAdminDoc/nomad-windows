@@ -9,30 +9,11 @@ import uuid as _uuid
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
-from web.utils import safe_json_list as _safe_json_list
+from web.utils import safe_json_list as _safe_json_list, get_node_id as _get_node_id, get_node_name as _get_node_name
 
 log = logging.getLogger('nomad.web')
 
 exercises_bp = Blueprint('exercises', __name__)
-
-
-# ─── Node Identity Helpers ──────────────────────────────────────────
-
-def _get_node_id():
-    with db_session() as db:
-        row = db.execute("SELECT value FROM settings WHERE key = 'node_id'").fetchone()
-        if row and row['value']:
-            return row['value']
-        node_id = str(_uuid.uuid4())[:8]
-        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('node_id', ?)", (node_id,))
-        db.commit()
-        return node_id
-
-
-def _get_node_name():
-    with db_session() as db:
-        row = db.execute("SELECT value FROM settings WHERE key = 'node_name'").fetchone()
-    return (row['value'] if row and row['value'] else platform.node()) or 'NOMAD Node'
 
 
 def _get_trusted_peers():

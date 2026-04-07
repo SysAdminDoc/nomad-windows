@@ -5,23 +5,11 @@ import logging
 
 from flask import Blueprint, request, jsonify, Response
 from db import db_session
+from web.utils import validate_bulk_ids as _validate_bulk_ids
 
 _log = logging.getLogger(__name__)
 
 supplies_bp = Blueprint('supplies', __name__)
-
-
-def _validate_bulk_ids(data):
-    """Validate and return integer IDs from a bulk-delete request, or None."""
-    ids = data.get('ids', [])
-    if not ids or not isinstance(ids, list):
-        return None
-    if len(ids) > 100:
-        return None
-    try:
-        return [int(i) for i in ids]
-    except (ValueError, TypeError):
-        return None
 
 
 # ─── Vault ─────────────────────────────────────────────────────────

@@ -14,7 +14,7 @@ from flask import Blueprint, request, jsonify, Response
 from config import Config
 from db import db_session, log_activity
 from web.state import _discovered_peers, broadcast_event
-from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_object as _safe_json_object, safe_json_list as _safe_json_list
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_object as _safe_json_object, safe_json_list as _safe_json_list, check_origin as _check_origin, get_node_id as _get_node_id, get_node_name as _get_node_name
 
 log = logging.getLogger('nomad.web')
 
@@ -28,26 +28,6 @@ def _get_version():
         return VERSION
     except Exception:
         return '0.0.0'
-
-
-# ─── Node Identity Helpers ──────────────────────────────────────────
-
-def _get_node_id():
-    with db_session() as db:
-        row = db.execute("SELECT value FROM settings WHERE key = 'node_id'").fetchone()
-        if row and row['value']:
-            return row['value']
-        node_id = str(_uuid.uuid4())[:8]
-        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('node_id', ?)", (node_id,))
-        db.commit()
-        return node_id
-
-
-def _get_node_name():
-    with db_session() as db:
-        row = db.execute("SELECT value FROM settings WHERE key = 'node_name'").fetchone()
-    return (row['value'] if row and row['value'] else platform.node()) or 'NOMAD Node'
-
 
 
 def _safe_clock(value):
@@ -89,14 +69,6 @@ def _vc_dominates(a, b):
         if av > bv:
             at_least_one_greater = True
     return at_least_one_greater
-
-
-def _check_origin(req):
-    """Block cross-origin state-changing requests (CSRF protection)."""
-    origin = req.headers.get('Origin', '')
-    if origin and not origin.startswith(('http://localhost:', 'http://127.0.0.1:')):
-        from flask import abort
-        abort(403, 'Cross-origin request blocked')
 
 
 # ─── Cryptographic Node Identity ─────────────────────────────────

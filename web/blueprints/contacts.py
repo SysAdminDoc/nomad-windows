@@ -11,26 +11,13 @@ from db import db_session
 from web.print_templates import render_print_document
 from web.sql_safety import safe_columns
 from web.validation import validate_json
-from web.utils import esc as _esc
+from web.utils import esc as _esc, validate_bulk_ids as _validate_bulk_ids
 
 log = logging.getLogger('nomad.web')
 
 contacts_bp = Blueprint('contacts', __name__)
 
 CONTACT_SORT_FIELDS = {'name', 'callsign', 'role', 'created_at', 'updated_at'}
-
-
-def _validate_bulk_ids(data):
-    """Validate and return integer IDs from a bulk-delete request, or None."""
-    ids = data.get('ids', [])
-    if not ids or not isinstance(ids, list):
-        return None
-    if len(ids) > 100:
-        return None
-    try:
-        return [int(i) for i in ids]
-    except (ValueError, TypeError):
-        return None
 
 
 # ─── Contacts CRUD ────────────────────────────────────────────────────

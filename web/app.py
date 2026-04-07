@@ -55,9 +55,6 @@ from services.manager import (
 
 log = logging.getLogger('nomad.web')
 
-
-
-
 def _read_household_size_setting(db, default=1):
     """Return a sanitized household size from settings, falling back to a safe default."""
     safe_default = max(1, int(default))
@@ -107,7 +104,6 @@ def _validate_download_url(url):
         raise ValueError(f'Cannot resolve hostname: {hostname}')
     return url
 
-
 def _check_origin(req):
     """Block cross-origin state-changing requests (CSRF protection)."""
     origin = req.headers.get('Origin', '')
@@ -130,7 +126,6 @@ SERVICE_MODULES = {
 
 VERSION = Config.VERSION
 
-
 def set_version(v):
     global VERSION
     import re
@@ -142,7 +137,6 @@ def set_version(v):
 # EMBED_MODEL, CHUNK_SIZE, CHUNK_OVERLAP extracted to web/blueprints/kb.py
 
 # Benchmark state moved to web/blueprints/benchmark.py
-
 
 def _validate_bulk_ids(data):
     """Validate and return integer IDs from a bulk-delete request, or (error_response, status)."""
@@ -171,10 +165,8 @@ def _cpu_monitor():
 
 _cpu_monitor_started = False
 
-
 # ─── Build Bundle Manifest Helper ──────────────────────────────────────
 _bundle_manifest = None
-
 
 def _load_bundle_manifest():
     """Read the esbuild build manifest (web/static/dist/manifest.json).
@@ -193,7 +185,6 @@ def _load_bundle_manifest():
     except (FileNotFoundError, json.JSONDecodeError):
         _bundle_manifest = {}
     return _bundle_manifest
-
 
 def create_app():
     global _cpu_monitor_started, _db_bootstrap_done
@@ -593,19 +584,6 @@ def create_app():
     def viptrack_tab_page():
         return _render_workspace_page('viptrack')
 
-    # ─── Service API ───────────────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
-    # [EXTRACTED to blueprint]
-
-
-    # ─── LAN File Transfer (v5.0 Phase 10) ──────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
     # ─── Cross-Module Intelligence (Needs System) ─────────────────────
 
     SURVIVAL_NEEDS = {
@@ -781,9 +759,6 @@ def create_app():
                 'guides': guides,
             })
 
-    # ─── Kiwix ZIM API ─────────────────────────────────────────────────
-    # [EXTRACTED to kiwix blueprint]
-
     @app.route('/api/guides/context')
     def api_guides_context():
         """Return live inventory/contacts data for context-aware decision tree rendering."""
@@ -824,132 +799,8 @@ def create_app():
                 },
             })
 
-    # ─── LAN Chat API ─────────────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
-    # ─── Incident Log API ─────────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-    # [EXTRACTED to blueprint]
-
-
-    # ─── Comms / Frequency Database API ─────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
-    # [EXTRACTED to blueprint]
-
-
-    # ─── Timers API ───────────────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-    # ─── CSV Export API ───────────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
-    # [EXTRACTED to web/blueprints/contacts.py — export-csv, export]
-
-    # ─── Vault API (encrypted client-side) ──────────────────────────
-
-    # [EXTRACTED to supplies blueprint] Vault routes
-
-
-    # [EXTRACTED to web/blueprints/contacts.py — import-csv]
-
-    # ─── Full Data Export ─────────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
-    # [EXTRACTED to blueprint]
-
-
-    # [EXTRACTED to blueprint] Sneakernet sync export/import
-
-    # ─── Community Sharing API ────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-    # ─── Service Health API ───────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
-    # ─── GPX Waypoint Export ─────────────────────────────────────────
-
-    @app.route('/api/waypoints/export-gpx')
-    def api_waypoints_gpx():
-        with db_session() as db:
-            rows = db.execute('SELECT * FROM waypoints ORDER BY created_at LIMIT 10000').fetchall()
-        gpx = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="NOMADFieldDesk">\n'
-        for w in rows:
-            gpx += f'  <wpt lat="{w["lat"]}" lon="{w["lng"]}">\n'
-            gpx += f'    <name>{_esc(w["name"])}</name>\n'
-            gpx += f'    <desc>{_esc(w["notes"])}</desc>\n'
-            gpx += f'    <type>{_esc(w["category"])}</type>\n'
-            gpx += f'  </wpt>\n'
-        gpx += '</gpx>'
-        return Response(gpx, mimetype='application/gpx+xml',
-                       headers={'Content-Disposition': 'attachment; filename="nomad-waypoints.gpx"'})
-
-    # ─── GPX Waypoint Import ─────────────────────────────────────────
-
-    @app.route('/api/waypoints/import-gpx', methods=['POST'])
-    def api_waypoints_import_gpx():
-        if 'file' not in request.files:
-            return jsonify({'error': 'No file'}), 400
-        file = request.files['file']
-        content = file.read().decode('utf-8', errors='replace')
-        import xml.etree.ElementTree as ET
-        try:
-            root = ET.fromstring(content)
-        except ET.ParseError:
-            return jsonify({'error': 'Invalid GPX XML — file could not be parsed'}), 400
-        ns = {'gpx': 'http://www.topografix.com/GPX/1/1'}
-        wpts = root.findall('.//gpx:wpt', ns) + root.findall('.//wpt')
-        with db_session() as db:
-            count = 0
-            for wpt in wpts:
-                lat = wpt.get('lat')
-                lon = wpt.get('lon')
-                if lat is None or lon is None:
-                    continue
-                name_el = wpt.find('gpx:name', ns) or wpt.find('name')
-                name = name_el.text if name_el is not None and name_el.text else f'Imported {lat},{lon}'
-                try:
-                    db.execute('INSERT INTO waypoints (name, lat, lng, category) VALUES (?, ?, ?, ?)',
-                               (name, float(lat), float(lon), 'imported'))
-                    count += 1
-                except Exception as exc:
-                    log.debug('Skipping GPX waypoint "%s" during import: %s', name, exc)
-            db.commit()
-        return jsonify({'status': 'imported', 'count': count})
-
-    # ─── Enhanced Dashboard API ───────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
-    # ─── Proactive Alert System ──────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
     from web.blueprints.preparedness import start_alert_engine
     start_alert_engine()
-
-    # [EXTRACTED to blueprint] KB deep doc understanding + analyze routes
-
-
-    # [EXTRACTED to blueprint] Security cameras/access/dashboard
-
-
-    # [EXTRACTED to blueprint] Power devices/log/dashboard
 
     # ─── Multi-Node Federation ─────────────────────────────────────────
 
@@ -969,8 +820,6 @@ def create_app():
         with db_session() as db:
             row = db.execute("SELECT value FROM settings WHERE key = 'node_name'").fetchone()
         return (row['value'] if row and row['value'] else platform.node()) or 'NOMAD Node'
-
-    # [EXTRACTED to blueprint] Node/sync federation routes
 
     # Start UDP discovery listener in background
     def _discovery_listener():
@@ -1000,23 +849,6 @@ def create_app():
             log.warning(f'Discovery listener failed to start: {e}')
 
     threading.Thread(target=_discovery_listener, daemon=True).start()
-
-    # ─── Food Production Module ────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-    # ─── Scenario Training Engine ──────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-    # [EXTRACTED to blueprint] Medical module (patients + drugs + dosage + triage + TCCC)
-
-
-    # [EXTRACTED to blueprint] Sensor devices + readings
-
-
-    # [EXTRACTED to blueprint] Power history + autonomy + solar
-
 
     # ─── Scheduled Automatic Backups ──────────────────────────────────
 
@@ -1131,8 +963,6 @@ def create_app():
     except Exception:
         pass
 
-    # [EXTRACTED to blueprint]
-
     @app.route('/api/planner/calculate', methods=['POST'])
     def api_planner_calculate():
         """Calculate resource needs for X people over Y days."""
@@ -1170,70 +1000,6 @@ def create_app():
             'people': people, 'days': days, 'activity': activity,
             'needs': needs, 'current_inventory': inv,
         })
-
-    # ─── Waypoint Distance Matrix ─────────────────────────────────────
-
-    @app.route('/api/waypoints/distances')
-    def api_waypoints_distances():
-        with db_session() as db:
-            wps = db.execute('SELECT id, name, lat, lng, category FROM waypoints ORDER BY name').fetchall()
-        import math
-        def haversine(lat1, lon1, lat2, lon2):
-            R = 3959  # miles
-            dlat = math.radians(lat2 - lat1)
-            dlon = math.radians(lon2 - lon1)
-            a = math.sin(dlat/2)**2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon/2)**2
-            return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
-
-        points = [dict(w) for w in wps]
-        matrix = []
-        for i, a in enumerate(points):
-            row = []
-            for j, b in enumerate(points):
-                if i == j:
-                    row.append(0)
-                else:
-                    row.append(round(haversine(a['lat'], a['lng'], b['lat'], b['lng']), 2))
-            matrix.append(row)
-        return jsonify({'points': points, 'matrix': matrix})
-
-    # ─── External Ollama Host ─────────────────────────────────────────
-
-    @app.route('/api/settings/ollama-host')
-    def api_ollama_host_get():
-        with db_session() as db:
-            row = db.execute("SELECT value FROM settings WHERE key = 'ollama_host'").fetchone()
-        return jsonify({'host': row['value'] if row else ''})
-
-    @app.route('/api/settings/ollama-host', methods=['PUT'])
-    def api_ollama_host_set():
-        data = request.get_json() or {}
-        host = (data.get('host', '') or '').strip()
-        with db_session() as db:
-            db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('ollama_host', ?)", (host,))
-            db.commit()
-        # Update ollama module's port/host
-        if host:
-            log_activity('ollama_host_changed', detail=host)
-        return jsonify({'status': 'saved', 'host': host})
-
-    # ─── Host Power Control ───────────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
-    # [EXTRACTED to blueprint]
-
-
-    # [EXTRACTED to blueprint] drills/history + training/progression
-
-    # ─── Shopping List Generator ──────────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
-
-    # ─── Print / Status / PDF Routes ─────────────────────────────────
-    # [EXTRACTED to print_routes blueprint]
 
     @app.route('/api/readiness-score')
     def api_readiness_score():
@@ -1331,13 +1097,6 @@ def create_app():
         _set_cache('readiness', result)
         return jsonify(result)
 
-    # [EXTRACTED to blueprint] KB workspaces
-
-
-    # [EXTRACTED to blueprint]
-
-    # [EXTRACTED to web/blueprints/benchmark.py] — benchmark network route
-
     # ─── Data Summary ──────────────────────────────────────────────────
 
     @app.route('/api/data-summary')
@@ -1426,10 +1185,6 @@ def create_app():
                 result[key].append(dict(r))
         return jsonify(result)
 
-    # ─── System Health & Diagnostics ────────────────────────────────
-
-    # [EXTRACTED to blueprint]
-
     # Resolve nukemap directory — try multiple paths for robustness
     _nukemap_candidates = []
     if getattr(sys, 'frozen', False):
@@ -1502,17 +1257,6 @@ def create_app():
             return jsonify({'error': 'Not found'}), 404
         return send_from_directory(os.path.dirname(full_path), os.path.basename(full_path))
 
-    # [EXTRACTED to supplies blueprint] Skills, Ammo, Community, Radiation, Fuel, Equipment routes
-
-
-    # [EXTRACTED to blueprint]
-
-
-    # [EXTRACTED to blueprint]
-
-    # ─── Content Update Checker ───────────────────────────────────────
-    # [EXTRACTED to kiwix blueprint]
-
     @app.route('/sw.js')
     def service_worker():
         return app.send_static_file('sw.js')
@@ -1523,9 +1267,6 @@ def create_app():
     def favicon():
         svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><polygon points="32,4 60,32 32,60 4,32" fill="#4f9cf7"/><polygon points="32,14 50,32 32,50 14,32" fill="#0d0d0d"/><polygon points="32,22 42,32 32,42 22,32" fill="#4f9cf7"/></svg>'
         return Response(svg, mimetype='image/svg+xml')
-
-    # [EXTRACTED to blueprint] OCR pipeline helpers + routes
-
 
     # ─── IndexedDB Offline Sync ──────────────────────────────────────
     @app.route('/api/offline/snapshot')
@@ -1574,18 +1315,6 @@ def create_app():
                     changes[table] = []
         changes['_timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%S')
         return jsonify(changes)
-
-    # [EXTRACTED to blueprint] Dead drop routes
-
-
-    # [EXTRACTED to blueprint] Group exercises routes + _get_trusted_peers
-
-    # ─── Map Atlas Pages ─────────────────────────────────────────────
-    # [EXTRACTED to blueprint]
-
-
-    # [EXTRACTED to blueprint] Perimeter zones + motion detection
-
 
     # ─── Blueprints ──────────────────────────────────────────────────
     from web.blueprints.benchmark import benchmark_bp
@@ -1739,8 +1468,5 @@ def create_app():
             )
             db.commit()
         return jsonify({'status': 'ok', 'language': lang})
-
-    # ─── Inventory Batch Expiration ──────────────────────────────────
-    # [EXTRACTED to inventory blueprint]
 
     return app

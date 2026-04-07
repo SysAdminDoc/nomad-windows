@@ -2079,3 +2079,45 @@ def api_plugins():
     """Return list of loaded plugins with name, path, and status."""
     from web.plugins import list_plugins
     return jsonify({'plugins': list_plugins()})
+
+
+# ─── External Ollama Host ─────────────────────────────────────────
+
+
+@system_bp.route('/api/settings/ollama-host')
+def api_ollama_host_get():
+    with db_session() as db:
+        row = db.execute("SELECT value FROM settings WHERE key = 'ollama_host'").fetchone()
+    return jsonify({'host': row['value'] if row else ''})
+
+
+@system_bp.route('/api/settings/ollama-host', methods=['PUT'])
+def api_ollama_host_set():
+    data = request.get_json() or {}
+    host = (data.get('host', '') or '').strip()
+    with db_session() as db:
+        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('ollama_host', ?)", (host,))
+        db.commit()
+    # Update ollama module's port/host
+    if host:
+        log_activity('ollama_host_changed', detail=host)
+    return jsonify({'status': 'saved', 'host': host})
+
+# ─── Host Power Control ───────────────────────────────────────────
+
+# [EXTRACTED to blueprint]
+
+
+# [EXTRACTED to blueprint]
+
+
+# [EXTRACTED to blueprint] drills/history + training/progression
+
+# ─── Shopping List Generator ──────────────────────────────────────
+
+# [EXTRACTED to blueprint]
+
+
+# ─── Print / Status / PDF Routes ─────────────────────────────────
+# [EXTRACTED to print_routes blueprint]
+

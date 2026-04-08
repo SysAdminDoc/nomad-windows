@@ -1166,3 +1166,211 @@ def api_deaddrop_import():
         db.commit()
     log_activity('deaddrop_import', 'comms', f'Imported message from {payload.get("from_name", "unknown")}')
     return jsonify({'status': 'imported'})
+
+
+# ─── Community Readiness Dashboard (moved from routes_advanced) ──
+
+@federation_bp.route('/api/federation/community-readiness')
+def api_federation_community_readiness():
+    """Aggregate readiness scores across all federated nodes."""
+    with db_session() as db:
+        rows = db.execute(
+            'SELECT node_id, node_name, situation, updated_at FROM federation_sitboard '
+            'ORDER BY updated_at DESC LIMIT 200').fetchall()
+
+    CATEGORIES = ['water', 'food', 'medical', 'shelter', 'security', 'comms', 'power']
+    nodes = []
+    network_totals = {cat: [] for cat in CATEGORIES}
+
+    for row in rows:
+        try:
+            sit = json.loads(row['situation'] or '{}')
+        except (json.JSONDecodeError, TypeError):
+            sit = {}
+
+        node_readiness = {}
+        for cat in CATEGORIES:
+            # Try to extract a readiness value (0-100) from the situation data
+            val = sit.get(cat, sit.get(f'{cat}_readiness', sit.get(f'{cat}_status', None)))
+            if val is not None:
+                try:
+                    val = float(val)
+                except (ValueError, TypeError):
+                    # Map text statuses to numbers
+                    status_map = {'green': 100, 'good': 100, 'yellow': 60, 'caution': 60,
+                                  'orange': 40, 'degraded': 40, 'red': 20, 'critical': 20,
+                                  'black': 0, 'none': 0}
+                    val = status_map.get(str(val).lower(), 50)
+                node_readiness[cat] = val
+                network_totals[cat].append(val)
+            else:
+                node_readiness[cat] = None
+
+        nodes.append({
+            'node_id': row['node_id'],
+            'node_name': row['node_name'] or row['node_id'],
+            'readiness': node_readiness,
+            'updated_at': row['updated_at'],
+        })
+
+    # Compute network-wide averages
+    network_summary = {}
+    for cat in CATEGORIES:
+        vals = network_totals[cat]
+        if vals:
+            network_summary[cat] = {
+                'average': round(sum(vals) / len(vals), 1),
+                'min': min(vals),
+                'max': max(vals),
+                'reporting': len(vals),
+            }
+        else:
+            network_summary[cat] = {'average': None, 'min': None, 'max': None, 'reporting': 0}
+
+    overall_vals = [v for vals in network_totals.values() for v in vals]
+    overall_avg = round(sum(overall_vals) / len(overall_vals), 1) if overall_vals else None
+
+    return jsonify({
+        'overall_readiness': overall_avg,
+        'categories': network_summary,
+        'nodes': nodes,
+        'node_count': len(nodes),
+    })
+
+
+# ─── Skill Matching (moved from routes_advanced) ────────────────
+
+@federation_bp.route('/api/federation/skill-search')
+def api_federation_skill_search():
+    """Search for skills across local contacts and federation peers."""
+    query = request.args.get('skill', '').strip().lower()
+    if not query:
+        return jsonify({'error': 'skill query param required'}), 400
+
+    results = []
+    with db_session() as db:
+        # Local contacts with matching skills
+        contacts = db.execute(
+            "SELECT name, callsign, role, skills, phone FROM contacts "
+            "WHERE LOWER(skills) LIKE ? OR LOWER(role) LIKE ?",
+            (f'%{query}%', f'%{query}%')
+        ).fetchall()
+        for c in contacts:
+            results.append({
+                'source': 'local',
+                'name': c['name'],
+                'callsign': c['callsign'] or '',
+                'role': c['role'] or '',
+                'skills': c['skills'] or '',
+                'phone': c['phone'] or '',
+            })
+
+        # Federation peer shared data (from sitboard situation JSON)
+        peers = db.execute(
+            'SELECT node_id, node_name, situation FROM federation_sitboard LIMIT 200').fetchall()
+        for peer in peers:
+            try:
+                sit = json.loads(peer['situation'] or '{}')
+            except (json.JSONDecodeError, TypeError):
+                sit = {}
+            # Check shared_contacts or skills in situation data
+            shared_contacts = sit.get('contacts', sit.get('shared_contacts', []))
+            if isinstance(shared_contacts, list):
+                for sc in shared_contacts:
+                    if isinstance(sc, dict):
+                        sc_skills = str(sc.get('skills', '')).lower()
+                        sc_role = str(sc.get('role', '')).lower()
+                        if query in sc_skills or query in sc_role:
+                            results.append({
+                                'source': f'federation:{peer["node_name"] or peer["node_id"]}',
+                                'name': sc.get('name', 'Unknown'),
+                                'callsign': sc.get('callsign', ''),
+                                'role': sc.get('role', ''),
+                                'skills': sc.get('skills', ''),
+                                'phone': '',
+                            })
+
+        # Also check community_resources table
+        community = db.execute(
+            "SELECT name, skills, contact, trust_level FROM community_resources "
+            "WHERE LOWER(skills) LIKE ? LIMIT 200", (f'%{query}%',)
+        ).fetchall()
+        for cr in community:
+            results.append({
+                'source': 'community',
+                'name': cr['name'],
+                'callsign': '',
+                'role': '',
+                'skills': cr['skills'] or '',
+                'phone': cr['contact'] or '',
+            })
+
+    return jsonify({'query': query, 'results': results, 'count': len(results)})
+
+
+# ─── Distributed Alert Relay (moved from routes_advanced) ────────
+
+@federation_bp.route('/api/federation/relay-alert', methods=['POST'])
+def api_federation_relay_alert():
+    """Send an alert to all trusted federation peers."""
+    from datetime import datetime
+    data = request.get_json() or {}
+    alert_title = data.get('title', '').strip()
+    alert_message = data.get('message', '').strip()
+    alert_severity = data.get('severity', 'warning')
+
+    if not alert_title or not alert_message:
+        return jsonify({'error': 'title and message required'}), 400
+
+    with db_session() as db:
+        # Get node identity for the sender
+        node_id_row = db.execute("SELECT value FROM settings WHERE key = 'node_id'").fetchone()
+        node_name_row = db.execute("SELECT value FROM settings WHERE key = 'node_name'").fetchone()
+        sender_id = node_id_row['value'] if node_id_row and node_id_row['value'] else 'unknown'
+        sender_name = (node_name_row['value'] if node_name_row and node_name_row['value']
+                       else platform.node()) or 'NOMAD'
+
+        # Get trusted peers
+        peers = [dict(r) for r in db.execute(
+            "SELECT node_id, node_name, ip, port FROM federation_peers "
+            "WHERE trust_level IN ('trusted', 'admin', 'member') "
+            "AND ip != '' ORDER BY node_name").fetchall()]
+
+    if not peers:
+        return jsonify({'error': 'No trusted peers configured', 'sent': 0}), 404
+
+    alert_payload = {
+        'title': alert_title,
+        'message': alert_message,
+        'severity': alert_severity,
+        'sender_id': sender_id,
+        'sender_name': sender_name,
+        'timestamp': datetime.now().isoformat(),
+    }
+
+    import requests as http_requests
+
+    sent = 0
+    failed = []
+    for peer in peers:
+        url = f'http://{peer["ip"]}:{peer["port"]}/api/federation/receive-alert'
+        try:
+            resp = http_requests.post(url, json=alert_payload, timeout=5)
+            if resp.status_code < 300:
+                sent += 1
+            else:
+                failed.append({'node': peer['node_name'] or peer['node_id'],
+                               'error': f'HTTP {resp.status_code}'})
+        except Exception:
+            failed.append({'node': peer['node_name'] or peer['node_id'],
+                           'error': 'Connection failed'})
+
+    log_activity('alert_relayed', 'federation',
+                 f'Alert "{alert_title}" sent to {sent}/{len(peers)} peers')
+
+    return jsonify({
+        'status': 'relayed',
+        'sent': sent,
+        'total_peers': len(peers),
+        'failed': failed,
+    })

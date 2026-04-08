@@ -2262,7 +2262,7 @@ async function checkForUpdate() {
     if (!u) return;
     if (u.update_available) {
       if (banner) {
-        banner.style.display = 'inline-flex';
+        banner.classList.remove('is-hidden');
         banner.textContent = `Update: v${u.latest}`;
         banner.href = u.download_url;
       }

@@ -118,7 +118,7 @@ checkForUpdate();
   try {
     const d = await safeFetch('/api/update-check', {}, null);
     if (!d?.update_available) return;
-    toast('Update available: v' + escapeHtml(d.latest) + '. <a href="' + escapeAttr(d.download_url || d.url || '') + '" target="_blank" style="color:var(--accent);text-decoration:underline">Download</a>', 'info', 15000);
+    toast('Update available: v' + escapeHtml(d.latest), 'info');
   } catch(_) {}
 })();
 loadStartupState();

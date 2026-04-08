@@ -52,6 +52,31 @@ def _safe_index_list(value):
     return indices
 
 
+def _safe_response_payload(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
+
+
+def _normalize_extracted_entities(value):
+    entities = []
+    for entry in _safe_json_list(value, []):
+        if not isinstance(entry, dict):
+            continue
+        entity_type = str(entry.get('type', '') or '').strip().lower()
+        entity_value = str(entry.get('value', '') or '').strip()
+        if not entity_type or not entity_value:
+            continue
+        entities.append({'type': entity_type, 'value': entity_value})
+    return entities
+
+
 def chunk_text(text, chunk_size=CHUNK_SIZE, overlap=CHUNK_OVERLAP):
     """Split text into chunks respecting paragraph boundaries and sentences."""
     if not text or not text.strip():
@@ -111,7 +136,9 @@ def embed_text(texts, prefix='search_document: '):
         timeout=120,
     )
     resp.raise_for_status()
-    return resp.json().get('embeddings', [])
+    payload = _safe_response_payload(resp, {})
+    embeddings = payload.get('embeddings', [])
+    return embeddings if isinstance(embeddings, list) else []
 
 
 def extract_text_from_file(filepath, content_type):
@@ -157,7 +184,8 @@ Respond with ONLY the category word, nothing else."""
 
             r = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
                         json={'model': model, 'prompt': classify_prompt, 'stream': False}, timeout=20)
-            cat_words = r.json().get('response', '').strip().lower().split() if r.ok else []
+            classify_payload = _safe_response_payload(r, {}) if r.ok else {}
+            cat_words = str(classify_payload.get('response', '') or '').strip().lower().split() if isinstance(classify_payload, dict) else []
             category = cat_words[0] if cat_words else 'other'
             if category not in DOC_CATEGORIES:
                 category = 'other'
@@ -171,7 +199,8 @@ Summary:"""
 
             r = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
                         json={'model': model, 'prompt': summary_prompt, 'stream': False}, timeout=20)
-            summary = r.json().get('response', '').strip()[:500] if r.ok else ''
+            summary_payload = _safe_response_payload(r, {}) if r.ok else {}
+            summary = str(summary_payload.get('response', '') or '').strip()[:500] if isinstance(summary_payload, dict) else ''
 
             entity_prompt = f"""Extract key entities from this document as a JSON array. Include: names (people), dates, medications, addresses, phone numbers, vehicle info (make/model/year/VIN), dollar amounts, and GPS coordinates if present.
 
@@ -183,13 +212,8 @@ If no entities found, respond with: []"""
 
             r = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
                         json={'model': model, 'prompt': entity_prompt, 'stream': False, 'format': 'json'}, timeout=25)
-            entities_raw = r.json().get('response', '[]') if r.ok else '[]'
-            try:
-                entities = json.loads(entities_raw)
-                if not isinstance(entities, list):
-                    entities = []
-            except Exception:
-                entities = []
+            entity_payload = _safe_response_payload(r, {}) if r.ok else {}
+            entities = _normalize_extracted_entities(entity_payload.get('response', []))
 
             linked = []
             if entities:
@@ -415,7 +439,7 @@ def api_kb_doc_details(doc_id):
     if not doc:
         return jsonify({'error': 'Not found'}), 404
     d = dict(doc)
-    d['entities'] = _safe_json_list(d.get('entities'), [])
+    d['entities'] = _normalize_extracted_entities(d.get('entities'))
     d['linked_records'] = _safe_json_list(d.get('linked_records'), [])
     return jsonify(d)
 
@@ -428,7 +452,7 @@ def api_kb_import_entities(doc_id):
         if not doc:
             return jsonify({'error': 'Not found'}), 404
 
-        entities = _safe_json_list(doc['entities'], [])
+        entities = _normalize_extracted_entities(doc['entities'])
 
         if not entities:
             return jsonify({'error': 'No entities to import'}), 400

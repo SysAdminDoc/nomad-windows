@@ -4,6 +4,7 @@ import os
 import http.server
 import threading
 import logging
+import requests
 from services.manager import (
     get_services_dir, download_file, check_port, _download_progress
 )
@@ -18,6 +19,26 @@ CYBERCHEF_RELEASE_API = 'https://api.github.com/repos/gchq/CyberChef/releases/la
 _server_thread = None
 _httpd = None
 _cyberchef_lock = threading.Lock()
+
+
+def _safe_response_payload(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        if isinstance(fallback, dict):
+            return dict(fallback)
+        if isinstance(fallback, list):
+            return list(fallback)
+        return fallback
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    if isinstance(fallback, list):
+        return list(fallback)
+    return fallback
 
 
 def get_install_dir():
@@ -44,19 +65,25 @@ def install(callback=None):
 
     try:
         # Resolve actual zip URL from GitHub releases API
-        import requests as req
-        _api_resp = req.get(CYBERCHEF_RELEASE_API, timeout=15)
+        _api_resp = requests.get(CYBERCHEF_RELEASE_API, timeout=15)
         _api_resp.raise_for_status()
-        rel = _api_resp.json()
+        release = _safe_response_payload(_api_resp, {})
         zip_url = None
-        for asset in rel.get('assets', []):
-            if asset['name'].endswith('.zip') and 'CyberChef' in asset['name']:
-                zip_url = asset['browser_download_url']
+        assets = release.get('assets', []) if isinstance(release, dict) else []
+        for asset in assets:
+            if not isinstance(asset, dict):
+                continue
+            asset_name = str(asset.get('name', '') or '')
+            if asset_name.endswith('.zip') and 'CyberChef' in asset_name:
+                zip_url = asset.get('browser_download_url', '')
                 break
         if not zip_url:
-            if not rel.get('assets'):
+            if not assets:
                 raise RuntimeError('No CyberChef release assets found')
-            zip_url = rel['assets'][0]['browser_download_url']
+            first_asset = next((asset for asset in assets if isinstance(asset, dict) and asset.get('browser_download_url')), None)
+            if not first_asset:
+                raise RuntimeError('No CyberChef release assets found')
+            zip_url = first_asset['browser_download_url']
         download_file(zip_url, zip_path, SERVICE_ID)
 
         _download_progress[SERVICE_ID]['status'] = 'extracting'

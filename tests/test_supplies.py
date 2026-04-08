@@ -47,6 +47,11 @@ class TestFuel:
         assert gas is not None
         assert gas['total'] >= 30
 
+    def test_fuel_bulk_delete_rejects_malformed_json(self, client):
+        resp = client.post('/api/fuel/bulk-delete', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
 
 class TestEquipment:
     def test_list_equipment(self, client):
@@ -86,6 +91,11 @@ class TestEquipment:
         eid = create['id']
         resp = client.delete(f'/api/equipment/{eid}')
         assert resp.status_code == 200
+
+    def test_equipment_bulk_delete_rejects_malformed_json(self, client):
+        resp = client.post('/api/equipment/bulk-delete', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
 
 
 class TestAmmo:
@@ -129,3 +139,8 @@ class TestAmmo:
         assert 'by_caliber' in data
         assert 'total' in data
         assert data['total'] >= 800
+
+    def test_ammo_import_rejects_malformed_json(self, client):
+        resp = client.post('/api/ammo/import', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'

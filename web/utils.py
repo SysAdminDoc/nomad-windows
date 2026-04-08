@@ -80,6 +80,15 @@ def safe_id_list(value):
     return ids
 
 
+def require_json_body(req):
+    """Return parsed JSON or a standard 400 response for malformed JSON bodies."""
+    data = req.get_json(silent=True)
+    if data is None:
+        from flask import jsonify
+        return None, (jsonify({'error': 'Request body must be valid JSON'}), 400)
+    return data, None
+
+
 def close_db_safely(db, context='database connection'):
     """Best-effort DB close with debug logging instead of silent failure."""
     if not db:

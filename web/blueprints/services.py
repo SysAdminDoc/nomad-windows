@@ -16,6 +16,7 @@ from services.manager import (
     get_services_dir, ensure_dependencies,
 )
 from web.state import _installing, _installing_lock, _update_state
+from web.utils import clone_json_fallback as _clone_json_fallback
 import web.state as _state
 
 log = logging.getLogger('nomad.web')
@@ -37,6 +38,18 @@ SERVICE_MODULES = {
 }
 
 services_bp = Blueprint('services', __name__)
+
+
+def _safe_response_json(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
 
 @services_bp.route('/api/services')
 def api_services():
@@ -299,15 +312,26 @@ def api_update_download():
             if not resp.ok:
                 _state._update_state = {'status': 'error', 'progress': 0, 'error': 'Cannot reach GitHub', 'path': None}
                 return
-            data = resp.json()
-            assets = data.get('assets', [])
+            data = _safe_response_json(resp, {})
+            if not isinstance(data, dict):
+                _state._update_state = {'status': 'error', 'progress': 0, 'error': 'Malformed release metadata', 'path': None}
+                return
+            assets = data.get('assets')
+            if not isinstance(assets, list):
+                _state._update_state = {'status': 'error', 'progress': 0, 'error': 'Malformed release metadata', 'path': None}
+                return
 
             # Find the right asset for this platform
             plat = sys.platform
             arch = platform.machine().lower()
             asset = None
             for a in assets:
-                name = a['name'].lower()
+                if not isinstance(a, dict):
+                    continue
+                name = str(a.get('name', '') or '').lower()
+                asset_url = a.get('browser_download_url')
+                if not name or not isinstance(asset_url, str):
+                    continue
                 if plat == 'win32' and ('windows' in name or name.endswith('.exe') or name.endswith('.msi')):
                     asset = a
                     break
@@ -319,7 +343,7 @@ def api_update_download():
                     break
             # Fallback: first asset
             if not asset and assets:
-                asset = assets[0]
+                asset = next((a for a in assets if isinstance(a, dict) and isinstance(a.get('browser_download_url'), str) and a.get('name')), None)
             if not asset:
                 _state._update_state = {'status': 'error', 'progress': 0, 'error': 'No download found for your platform', 'path': None}
                 return

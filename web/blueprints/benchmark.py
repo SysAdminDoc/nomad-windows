@@ -14,6 +14,7 @@ from flask import Blueprint, request, jsonify
 from config import get_data_dir
 from db import db_session, log_activity
 from services import ollama
+from web.utils import safe_json_value as _safe_json_value
 
 log = logging.getLogger('nomad.web')
 
@@ -23,6 +24,15 @@ benchmark_bp = Blueprint('benchmark', __name__)
 _benchmark_state = {'status': 'idle', 'progress': 0, 'stage': '', 'results': None}
 _benchmark_lock = threading.Lock()
 _benchmark_net_lock = threading.Lock()
+
+
+def _load_stream_json_line(line):
+    if isinstance(line, bytes):
+        try:
+            line = line.decode('utf-8', errors='ignore')
+        except Exception:
+            return {}
+    return _safe_json_value(line, {})
 
 
 @benchmark_bp.route('/api/benchmark/run', methods=['POST'])
@@ -127,12 +137,13 @@ def api_benchmark_run():
                                 json={'model': test_model, 'prompt': 'Write a paragraph about the history of computing.', 'stream': True},
                                 stream=True, timeout=120,
                             )
+                            resp.raise_for_status()
                             ttft = None
                             tokens = 0
                             for line in resp.iter_lines():
                                 if line:
                                     try:
-                                        d = json.loads(line)
+                                        d = _load_stream_json_line(line)
                                         if d.get('response') and ttft is None:
                                             ttft = time.time() - start
                                         if d.get('response'):
@@ -140,7 +151,7 @@ def api_benchmark_run():
                                         if d.get('done'):
                                             break
                                     except Exception:
-                                        pass
+                                        log.debug('Skipping malformed benchmark stream chunk')
                             elapsed = time.time() - start
                             results['ai_tps'] = round(tokens / elapsed, 1) if elapsed > 0 else 0
                             results['ai_ttft'] = round(ttft * 1000) if ttft else 0

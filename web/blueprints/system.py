@@ -22,7 +22,11 @@ from services.manager import (
     get_service_resources, SERVICE_HEALTH_URLS, is_healthy,
 )
 import config
-from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value
+from web.utils import (
+    clone_json_fallback as _clone_json_fallback,
+    require_json_body as _require_json_body,
+    safe_json_value as _safe_json_value,
+)
 from web.state import (
     _auto_backup_timer,
     _update_state,
@@ -43,6 +47,18 @@ def _to_int(value, default=0):
         return int(value)
     except (ValueError, TypeError):
         return default
+
+
+def _safe_response_json(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
 
 STARTUP_VALUE_NAME = APP_EXECUTABLE_BASENAME
 LEGACY_STARTUP_VALUE_NAMES = ('ProjectNOMAD',)
@@ -559,9 +575,19 @@ def api_update_check():
         import requests as rq
         resp = rq.get('https://api.github.com/repos/SysAdminDoc/project-nomad-desktop/releases/latest', timeout=5)
         if resp.ok:
-            data = resp.json()
-            latest = data.get('tag_name', '').lstrip('v')
+            data = _safe_response_json(resp, {})
+            if not isinstance(data, dict):
+                raise ValueError('Malformed release metadata')
+            latest = str(data.get('tag_name', '') or '').lstrip('v')
             current = _get_version()
+            if not latest:
+                return jsonify({
+                    'current': current,
+                    'latest': current,
+                    'update_available': False,
+                    'download_url': data.get('html_url', ''),
+                    'release_name': data.get('name', ''),
+                })
             # Simple version comparison
             is_newer = False
             try:
@@ -1278,7 +1304,9 @@ def api_dashboard_widgets_get():
 @system_bp.route('/api/dashboard/widgets', methods=['POST'])
 def api_dashboard_widgets_save():
     """Save user's dashboard widget configuration."""
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     widgets = data if isinstance(data, list) else data.get('widgets', [])
 
     # Validate
@@ -2096,7 +2124,9 @@ def api_i18n_get_language():
 
 @system_bp.route('/api/i18n/language', methods=['POST'])
 def api_i18n_set_language():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     lang = data.get('language', '').strip()
     if lang not in SUPPORTED_LANGUAGES:
         return jsonify({'error': f'Unsupported language: {lang}'}), 400

@@ -66,6 +66,18 @@ def _load_json_line(line, fallback=None):
     return _clone_json_fallback(fallback)
 
 
+def _safe_response_json(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
+
+
 media_bp = Blueprint('media', __name__)
 
 @media_bp.route('/api/media/video/<int:vid>/thumbnail', methods=['POST'])
@@ -906,7 +918,8 @@ def api_ytdlp_check_update():
         resp = req.get('https://api.github.com/repos/yt-dlp/yt-dlp/releases/latest',
                        timeout=10, headers={'Accept': 'application/vnd.github+json'})
         if resp.ok:
-            latest = resp.json().get('tag_name', '').lstrip('v')
+            release = _safe_response_json(resp, {})
+            latest = str(release.get('tag_name', '') or '').lstrip('v') if isinstance(release, dict) else ''
     except Exception:
         pass
     update_available = bool(latest and current and latest != current)

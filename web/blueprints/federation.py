@@ -55,6 +55,18 @@ def _safe_conflict_list(value):
     return conflicts
 
 
+def _safe_response_payload(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
+
+
 def _vc_dominates(a, b):
     """Check if vector clock a dominates b (a >= b for all keys, a > b for at least one)."""
     all_keys = set(list(a.keys()) + list(b.keys()))
@@ -249,7 +261,13 @@ def api_node_sync_push():
     try:
         r = req.post(f'http://{peer_ip}:{peer_port}/api/node/sync-receive',
                     json=payload, timeout=30)
-        result = r.json()
+        if not r.ok:
+            raise RuntimeError(f'Peer sync receive returned HTTP {r.status_code}')
+        result = _safe_response_payload(r, {})
+        if not isinstance(result, dict) or not result:
+            raise ValueError('Peer returned malformed sync payload')
+        if result.get('error'):
+            raise RuntimeError(str(result.get('error')))
         sync_ts = time.strftime('%Y-%m-%dT%H:%M:%S')
         with db_session() as db:
             db.execute('INSERT INTO sync_log (direction, peer_node_id, peer_name, peer_ip, tables_synced, items_count, status) VALUES (?,?,?,?,?,?,?)',
@@ -1183,10 +1201,7 @@ def api_federation_community_readiness():
     network_totals = {cat: [] for cat in CATEGORIES}
 
     for row in rows:
-        try:
-            sit = json.loads(row['situation'] or '{}')
-        except (json.JSONDecodeError, TypeError):
-            sit = {}
+        sit = _safe_json_object(row['situation'], {})
 
         node_readiness = {}
         for cat in CATEGORIES:
@@ -1269,26 +1284,22 @@ def api_federation_skill_search():
         peers = db.execute(
             'SELECT node_id, node_name, situation FROM federation_sitboard LIMIT 200').fetchall()
         for peer in peers:
-            try:
-                sit = json.loads(peer['situation'] or '{}')
-            except (json.JSONDecodeError, TypeError):
-                sit = {}
+            sit = _safe_json_object(peer['situation'], {})
             # Check shared_contacts or skills in situation data
-            shared_contacts = sit.get('contacts', sit.get('shared_contacts', []))
-            if isinstance(shared_contacts, list):
-                for sc in shared_contacts:
-                    if isinstance(sc, dict):
-                        sc_skills = str(sc.get('skills', '')).lower()
-                        sc_role = str(sc.get('role', '')).lower()
-                        if query in sc_skills or query in sc_role:
-                            results.append({
-                                'source': f'federation:{peer["node_name"] or peer["node_id"]}',
-                                'name': sc.get('name', 'Unknown'),
-                                'callsign': sc.get('callsign', ''),
-                                'role': sc.get('role', ''),
-                                'skills': sc.get('skills', ''),
-                                'phone': '',
-                            })
+            shared_contacts = _safe_json_list(sit.get('contacts', sit.get('shared_contacts', [])), [])
+            for sc in shared_contacts:
+                if isinstance(sc, dict):
+                    sc_skills = str(sc.get('skills', '')).lower()
+                    sc_role = str(sc.get('role', '')).lower()
+                    if query in sc_skills or query in sc_role:
+                        results.append({
+                            'source': f'federation:{peer["node_name"] or peer["node_id"]}',
+                            'name': sc.get('name', 'Unknown'),
+                            'callsign': sc.get('callsign', ''),
+                            'role': sc.get('role', ''),
+                            'skills': sc.get('skills', ''),
+                            'phone': '',
+                        })
 
         # Also check community_resources table
         community = db.execute(

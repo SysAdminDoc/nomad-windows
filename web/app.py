@@ -23,6 +23,7 @@ from db import get_db_path, db_session, init_db
 from web.sql_safety import safe_table
 from web.utils import (
     check_origin as _check_origin,
+    require_json_body as _require_json_body,
     safe_json_value as _safe_json_value,
     safe_json_list as _safe_json_list,
     read_household_size as _read_household_size_setting,
@@ -729,7 +730,9 @@ def create_app():
             while True:
                 try:
                     data, addr = sock.recvfrom(1024)
-                    msg = json.loads(data.decode())
+                    msg = _safe_json_value(data, {})
+                    if not isinstance(msg, dict):
+                        continue
                     if msg.get('type') == 'nomad_discover' and msg.get('node_id') != _get_node_id():
                         # Respond with our identity
                         response = json.dumps({
@@ -862,7 +865,9 @@ def create_app():
     @app.route('/api/planner/calculate', methods=['POST'])
     def api_planner_calculate():
         """Calculate resource needs for X people over Y days."""
-        data = request.get_json() or {}
+        data, error = _require_json_body(request)
+        if error:
+            return error
         try:
             people = max(1, int(data.get('people', 4)))
             days = max(1, int(data.get('days', 14)))
@@ -958,7 +963,7 @@ def create_app():
             cl_total = 0
             cl_checked = 0
             for cl in checklists:
-                items = json.loads(cl['items'] or '[]')
+                items = _safe_json_list(cl['items'], [])
                 cl_total += len(items)
                 cl_checked += sum(1 for i in items if i.get('checked'))
             cl_pct = (cl_checked / cl_total * 100) if cl_total > 0 else 0
@@ -1353,7 +1358,9 @@ def create_app():
 
     @app.route('/api/i18n/language', methods=['POST'])
     def api_i18n_set_language():
-        data = request.get_json(force=True)
+        data, error = _require_json_body(request)
+        if error:
+            return error
         lang = data.get('language', '').strip()
         if lang not in SUPPORTED_LANGUAGES:
             return jsonify({'error': f'Unsupported language: {lang}'}), 400

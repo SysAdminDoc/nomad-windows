@@ -18,6 +18,26 @@ STIRLING_PORT = 8443
 STIRLING_RELEASE_API = 'https://api.github.com/repos/Stirling-Tools/Stirling-PDF/releases/latest'
 
 
+def _safe_response_payload(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        if isinstance(fallback, dict):
+            return dict(fallback)
+        if isinstance(fallback, list):
+            return list(fallback)
+        return fallback
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    if isinstance(fallback, list):
+        return list(fallback)
+    return fallback
+
+
 def get_install_dir():
     return os.path.join(get_services_dir(), 'stirling')
 
@@ -130,19 +150,25 @@ def install(callback=None):
         # Resolve download URL from GitHub releases
         resp = req.get(STIRLING_RELEASE_API, timeout=15)
         resp.raise_for_status()
-        rel = resp.json()
+        release = _safe_response_payload(resp, {})
         jar_url = None
-        for asset in rel.get('assets', []):
+        assets = release.get('assets', []) if isinstance(release, dict) else []
+        for asset in assets:
+            if not isinstance(asset, dict):
+                continue
             # Get the standalone jar (not -with-login, not -server)
-            if asset['name'] == 'Stirling-PDF.jar':
-                jar_url = asset['browser_download_url']
+            asset_name = str(asset.get('name', '') or '')
+            if asset_name == 'Stirling-PDF.jar':
+                jar_url = asset.get('browser_download_url', '')
                 break
         if not jar_url:
             # Fallback: any jar that isn't -with-login or -server
-            for asset in rel.get('assets', []):
-                name = asset['name']
+            for asset in assets:
+                if not isinstance(asset, dict):
+                    continue
+                name = str(asset.get('name', '') or '')
                 if name.endswith('.jar') and 'login' not in name.lower() and 'server' not in name.lower():
-                    jar_url = asset['browser_download_url']
+                    jar_url = asset.get('browser_download_url', '')
                     break
         if not jar_url:
             raise RuntimeError('Could not find Stirling-PDF download. Check your internet connection and try again.')

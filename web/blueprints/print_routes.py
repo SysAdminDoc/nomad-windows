@@ -11,6 +11,7 @@ from web.print_templates import render_print_document
 from web.utils import (
     esc as _esc,
     safe_json_value as _safe_json_value,
+    safe_json_list as _safe_json_list,
     get_node_name as _get_node_name,
 )
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
@@ -33,6 +34,11 @@ SERVICE_MODULES = {
 def _get_version():
     from web.app import VERSION
     return VERSION
+
+
+def _join_safe_list(value, empty=''):
+    items = [str(item).strip() for item in _safe_json_list(value, []) if str(item or '').strip()]
+    return ', '.join(items) if items else empty
 
 
 def _pdf_setup():
@@ -248,9 +254,9 @@ def api_status_report():
         cls = db.execute('SELECT name, items FROM checklists').fetchall()
         cl_summary = []
         for c in cls:
-            items = json.loads(c['items'] or '[]')
+            items = _safe_json_list(c['items'], [])
             total = len(items)
-            checked = sum(1 for i in items if i.get('checked'))
+            checked = sum(1 for i in items if isinstance(i, dict) and i.get('checked'))
             cl_summary.append({'name': c['name'], 'pct': round(checked / total * 100) if total > 0 else 0})
         report['checklists'] = cl_summary
 
@@ -423,12 +429,9 @@ def api_print_medical_cards():
     medication_count = 0
     for p in patients:
         record = dict(p)
-        try: allergies = json.loads(record['allergies'] or '[]')
-        except (json.JSONDecodeError, TypeError): allergies = []
-        try: conditions = json.loads(record['conditions'] or '[]')
-        except (json.JSONDecodeError, TypeError): conditions = []
-        try: medications = json.loads(record['medications'] or '[]')
-        except (json.JSONDecodeError, TypeError): medications = []
+        allergies = _safe_json_list(record.get('allergies'), [])
+        conditions = _safe_json_list(record.get('conditions'), [])
+        medications = _safe_json_list(record.get('medications'), [])
         if allergies:
             allergy_count += 1
         if medications:
@@ -671,12 +674,9 @@ def api_print_pdf_operations_binder():
     if patients:
         for p in patients:
             elements.append(Paragraph(f'Patient: {_esc(p["name"])}', mono_bold))
-            try: allergies = ', '.join(str(a) for a in json.loads(p.get('allergies') or '[]'))
-            except (json.JSONDecodeError, TypeError): allergies = ''
-            try: conditions = ', '.join(str(c) for c in json.loads(p.get('conditions') or '[]'))
-            except (json.JSONDecodeError, TypeError): conditions = ''
-            try: medications = ', '.join(str(m) for m in json.loads(p.get('medications') or '[]'))
-            except (json.JSONDecodeError, TypeError): medications = ''
+            allergies = _join_safe_list(p.get('allergies'))
+            conditions = _join_safe_list(p.get('conditions'))
+            medications = _join_safe_list(p.get('medications'))
             info = [
                 f'Blood Type: {p.get("blood_type","--")}  |  Weight: {p.get("weight_kg","?")} kg  |  Sex: {p.get("sex","--")}',
                 f'Allergies: {allergies or "NKDA"}',
@@ -715,15 +715,12 @@ def api_print_pdf_operations_binder():
     if checklists:
         for cl in checklists:
             elements.append(Paragraph(f'[ ] {_esc(cl["name"])}', mono_bold))
-            try:
-                cl_items = json.loads(cl.get('items') or '[]')
-                for it in cl_items:
-                    label = it.get('text', it) if isinstance(it, dict) else str(it)
-                    checked = it.get('checked', False) if isinstance(it, dict) else False
-                    mark = '[X]' if checked else '[ ]'
-                    elements.append(Paragraph(f'    {mark} {_esc(str(label))}', mono))
-            except (json.JSONDecodeError, TypeError):
-                pass
+            cl_items = _safe_json_list(cl.get('items'), [])
+            for it in cl_items:
+                label = it.get('text', it) if isinstance(it, dict) else str(it)
+                checked = it.get('checked', False) if isinstance(it, dict) else False
+                mark = '[X]' if checked else '[ ]'
+                elements.append(Paragraph(f'    {mark} {_esc(str(label))}', mono))
             elements.append(Spacer(1, 8))
     else:
         elements.append(Paragraph('No checklists.', mono))
@@ -791,12 +788,9 @@ def api_print_pdf_wallet_cards():
 
     # ICE Card for each patient
     for p in patients:
-        try: allergies = ', '.join(str(a) for a in json.loads(p.get('allergies') or '[]'))
-        except (json.JSONDecodeError, TypeError): allergies = ''
-        try: meds = ', '.join(str(m) for m in json.loads(p.get('medications') or '[]'))
-        except (json.JSONDecodeError, TypeError): meds = ''
-        try: conditions_str = ', '.join(str(c) for c in json.loads(p.get('conditions') or '[]'))
-        except (json.JSONDecodeError, TypeError): conditions_str = ''
+        allergies = _join_safe_list(p.get('allergies'))
+        meds = _join_safe_list(p.get('medications'))
+        conditions_str = _join_safe_list(p.get('conditions'))
 
         card_data = [
             [Paragraph(f'ICE CARD -- {_esc(p["name"])}', card_title)],
@@ -1025,18 +1019,9 @@ def api_emergency_sheet():
     if patients:
         patients_html = '<div class="doc-table-shell"><table><thead><tr><th>Name</th><th>Age</th><th>Weight</th><th>Blood</th><th>Allergies</th><th>Medications</th><th>Conditions</th></tr></thead><tbody>'
         for p in patients:
-            try:
-                allergies = json.loads(p.get('allergies') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                allergies = []
-            try:
-                meds = json.loads(p.get('medications') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                meds = []
-            try:
-                conds = json.loads(p.get('conditions') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                conds = []
+            allergies = _safe_json_list(p.get('allergies'), [])
+            meds = _safe_json_list(p.get('medications'), [])
+            conds = _safe_json_list(p.get('conditions'), [])
             allergy_str = ', '.join(allergies) if allergies else 'NKDA'
             patients_html += (
                 f"<tr><td class=\"doc-strong\">{_esc(p.get('name',''))}</td><td>{p.get('age','') or '-'}</td>"
@@ -1085,7 +1070,7 @@ def api_emergency_sheet():
     if checklists:
         checklist_html = '<div class="doc-table-shell"><table><thead><tr><th>Checklist</th><th>Progress</th></tr></thead><tbody>'
         for cl in checklists:
-            items = json.loads(cl.get('items') or '[]')
+            items = _safe_json_list(cl.get('items'), [])
             total = len(items)
             checked = sum(1 for i in items if isinstance(i, dict) and i.get('checked'))
             pct = round(checked / total * 100) if total > 0 else 0
@@ -1329,18 +1314,9 @@ def api_print_operations_binder():
     if patients:
         patient_cards_html = '<div class="doc-grid-2">'
         for p in patients:
-            try:
-                allergies = json.loads(p.get('allergies') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                allergies = []
-            try:
-                conditions = json.loads(p.get('conditions') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                conditions = []
-            try:
-                medications = json.loads(p.get('medications') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                medications = []
+            allergies = _safe_json_list(p.get('allergies'), [])
+            conditions = _safe_json_list(p.get('conditions'), [])
+            medications = _safe_json_list(p.get('medications'), [])
             allergy_html = ''.join(f'<span class="doc-chip doc-chip-alert">{esc(str(a))}</span>' for a in allergies) or '<span class="doc-chip doc-chip-muted">NKDA</span>'
             condition_html = ''.join(f'<span class="doc-chip">{esc(str(c))}</span>' for c in conditions) or '<span class="doc-chip doc-chip-muted">None recorded</span>'
             medication_html = ''.join(f'<span class="doc-chip">{esc(str(m))}</span>' for m in medications) or '<span class="doc-chip doc-chip-muted">None recorded</span>'
@@ -1385,10 +1361,7 @@ def api_print_operations_binder():
     if checklists:
         checklist_cards = '<div class="doc-grid-2">'
         for cl in checklists:
-            try:
-                items = json.loads(cl.get('items') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                items = []
+            items = _safe_json_list(cl.get('items'), [])
             panel = f'<div class="doc-panel"><h2 class="doc-section-title">{esc(cl["name"])}</h2>'
             if items:
                 panel += '<div class="doc-table-shell"><table><thead><tr><th style="width:60px;">Done</th><th>Task</th></tr></thead><tbody>'
@@ -1552,14 +1525,8 @@ def api_print_wallet_cards():
         if self_patient:
             self_patient = dict(self_patient)
             blood_type = self_patient.get('blood_type', '') or ''
-            try:
-                medications = json.loads(self_patient.get('medications') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                pass
-            try:
-                allergies = json.loads(self_patient.get('allergies') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                pass
+            medications = _safe_json_list(self_patient.get('medications'), [])
+            allergies = _safe_json_list(self_patient.get('allergies'), [])
 
         # Rally points
         rally_points = [dict(r) for r in db.execute(
@@ -1740,10 +1707,7 @@ def api_print_soi():
         profile_html = ''
         for prof in profiles:
             heading = esc(prof["name"]) + (f' ({esc(prof["radio_model"])})' if prof.get('radio_model') else '')
-            try:
-                channels = json.loads(prof.get('channels') or '[]')
-            except (json.JSONDecodeError, TypeError):
-                channels = []
+            channels = _safe_json_list(prof.get('channels'), [])
             panel = f'<div class="doc-panel"><h2 class="doc-section-title">{heading}</h2>'
             if channels:
                 panel += '<div class="doc-table-shell"><table><thead><tr><th>Ch</th><th>Freq</th><th>Name / Service</th></tr></thead><tbody>'

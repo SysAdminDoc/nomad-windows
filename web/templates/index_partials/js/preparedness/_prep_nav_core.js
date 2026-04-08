@@ -479,18 +479,18 @@ async function toggleCheckItem(idx) {
   _currentChecklistItems[idx].checked = !_currentChecklistItems[idx].checked;
   renderChecklist();
   // Save
-  await fetch(`/api/checklists/${_currentChecklistId}`, {
-    method: 'PUT', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({items: _currentChecklistItems})
-  });
-  loadChecklists();
+  try {
+    await apiPut(`/api/checklists/${_currentChecklistId}`, {items: _currentChecklistItems});
+    loadChecklists();
+  } catch (e) {
+    toast(e?.data?.error || e?.message || 'Failed to save checklist', 'error');
+  }
 }
 
 async function deleteChecklist(id) {
   if (!confirm('Delete this checklist?')) return;
   try {
-    const resp = await fetch(`/api/checklists/${id}`, {method: 'DELETE'});
-    if (!resp.ok) { toast('Failed to delete checklist', 'error'); return; }
+    await apiDelete(`/api/checklists/${id}`);
     toast('Checklist deleted', 'warning');
     if (_currentChecklistId === id) {
       _currentChecklistId = null;

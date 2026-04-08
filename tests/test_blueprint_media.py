@@ -97,3 +97,23 @@ class TestChannelCatalogResilience:
             row = db.execute("SELECT value FROM settings WHERE key = 'dead_channels'").fetchone()
         assert row is not None
         assert row['value'] == '["https://example.com/channel/test"]'
+
+
+class TestMediaUpdaterResilience:
+    def test_ytdlp_check_update_recovers_from_malformed_release_json(self, client, monkeypatch):
+        class _BadResponse:
+            ok = True
+
+            def json(self):
+                raise ValueError('bad github payload')
+
+        monkeypatch.setattr('requests.get', lambda *args, **kwargs: _BadResponse())
+        monkeypatch.setattr('web.blueprints.media.get_ytdlp_path', lambda: None)
+        monkeypatch.setattr('web.blueprints.media._ytdlp_bundled_available', lambda: False)
+
+        resp = client.get('/api/ytdlp/check-update')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['latest'] == ''
+        assert data['update_available'] is False

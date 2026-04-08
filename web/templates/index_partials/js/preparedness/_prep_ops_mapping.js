@@ -50,15 +50,14 @@ function toggleTimerPanel() {
 
 async function loadTimers() {
   try {
-    const resp = await fetch('/api/timers');
-    if (!resp.ok) return;
-    const timers = await resp.json();
+    const timers = await apiFetch('/api/timers');
+    const timerList = Array.isArray(timers) ? timers : [];
     const el = document.getElementById('timer-list');
-    if (!timers.length) {
+    if (!timerList.length) {
       el.innerHTML = utilityEmptyState('No active timers. Start one above.');
       return;
     }
-    el.innerHTML = timers.map(t => {
+    el.innerHTML = timerList.map(t => {
       const rem = Math.max(0, Math.round(t.remaining_sec));
       const h = Math.floor(rem / 3600);
       const m = Math.floor((rem % 3600) / 60);
@@ -76,7 +75,7 @@ async function loadTimers() {
     }).join('');
     // Alert for newly done timers
     if (!window._alertedTimers) window._alertedTimers = new Set();
-    timers.filter(t => t.done).forEach(t => {
+    timerList.filter(t => t.done).forEach(t => {
       if (!window._alertedTimers.has(t.id)) {
         window._alertedTimers.add(t.id);
         toast(`Timer "${t.name}" is DONE!`, 'warning');
@@ -274,7 +273,7 @@ function cycleThreat(idx, type) {
   const current = saved[key] || 'low';
   saved[key] = THREAT_LEVELS[(THREAT_LEVELS.indexOf(current) + 1) % THREAT_LEVELS.length];
   localStorage.setItem('nomad-threats', JSON.stringify(saved));
-  fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({threat_matrix: JSON.stringify(saved)})});
+  apiPut('/api/settings', {threat_matrix: JSON.stringify(saved)}).catch(() => {});
   loadThreatMatrix();
 }
 

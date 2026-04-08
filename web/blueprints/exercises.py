@@ -9,7 +9,12 @@ import uuid as _uuid
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
-from web.utils import safe_json_list as _safe_json_list, get_node_id as _get_node_id, get_node_name as _get_node_name
+from web.utils import (
+    safe_json_list as _safe_json_list,
+    safe_json_object as _safe_json_object,
+    get_node_id as _get_node_id,
+    get_node_name as _get_node_name,
+)
 
 log = logging.getLogger('nomad.web')
 
@@ -34,9 +39,9 @@ def api_group_exercises_list():
     result = []
     for r in rows:
         entry = dict(r)
-        entry['participants'] = json.loads(entry.get('participants') or '[]')
-        entry['decisions_log'] = json.loads(entry.get('decisions_log') or '[]')
-        entry['shared_state'] = json.loads(entry.get('shared_state') or '{}')
+        entry['participants'] = _safe_json_list(entry.get('participants'), [])
+        entry['decisions_log'] = _safe_json_list(entry.get('decisions_log'), [])
+        entry['shared_state'] = _safe_json_object(entry.get('shared_state'), {})
         result.append(entry)
     return jsonify(result)
 
@@ -166,18 +171,15 @@ def api_group_exercises_update_state(exercise_id):
         if not row:
             return jsonify({'error': 'Not found'}), 404
 
-        try:
-            shared_state = json.loads(row['shared_state'] or '{}')
-            if not isinstance(shared_state, dict):
-                shared_state = {}
-        except (json.JSONDecodeError, TypeError, ValueError):
-            shared_state = {}
+        shared_state = _safe_json_object(row['shared_state'], {})
         decisions_log = _safe_json_list(row['decisions_log'])
+        events = _safe_json_list(shared_state.get('events'), [])
+        shared_state['events'] = events
 
         if 'phase' in data:
             shared_state['phase'] = data['phase']
         if 'event' in data:
-            shared_state.setdefault('events', []).append({
+            events.append({
                 'node': _get_node_id(), 'name': _get_node_name(),
                 'event': data['event'], 'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S')
             })
@@ -203,10 +205,13 @@ def api_group_exercises_update_state(exercise_id):
     peers = _get_trusted_peers()
     import requests as req
     for p in participants:
-        if p['node_id'] == _get_node_id():
+        if not isinstance(p, dict):
+            continue
+        participant_node_id = p.get('node_id')
+        if not participant_node_id or participant_node_id == _get_node_id():
             continue
         for peer in peers:
-            if peer.get('node_id') == p['node_id']:
+            if peer.get('node_id') == participant_node_id:
                 try:
                     req.post(f"http://{peer['ip']}:{peer.get('port', 8080)}/api/group-exercises/{exercise_id}/sync-state",
                              json={'shared_state': shared_state, 'decisions_log': decisions_log,
@@ -230,11 +235,13 @@ def api_group_exercises_sync_state(exercise_id):
             peer = db_check.execute("SELECT trust_level FROM federation_peers WHERE node_id = ?", (sender,)).fetchone()
         if not peer or peer['trust_level'] == 'blocked':
             return jsonify({'error': 'Peer is blocked'}), 403
+    shared_state = _safe_json_object(data.get('shared_state'), {})
+    decisions_log = _safe_json_list(data.get('decisions_log'), [])
     with db_session() as db:
         db.execute("""UPDATE group_exercises SET shared_state = ?, decisions_log = ?, current_phase = ?,
                       status = ?, score = ?, aar_text = ?, updated_at = datetime('now') WHERE exercise_id = ?""",
-                   (json.dumps(data.get('shared_state', {})), json.dumps(data.get('decisions_log', [])),
-                    data.get('phase', 0), data.get('status', 'active'),
+                   (json.dumps(shared_state), json.dumps(decisions_log),
+                    shared_state.get('phase', data.get('phase', 0)), data.get('status', 'active'),
                     data.get('score', 0), data.get('aar_text', ''), exercise_id))
         db.commit()
     return jsonify({'status': 'synced'})

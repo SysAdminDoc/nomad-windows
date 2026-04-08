@@ -100,3 +100,42 @@ class TestAITrainingDatasets:
     def test_list_training_jobs(self, client):
         resp = client.get('/api/ai/training/jobs')
         assert resp.status_code == 200
+
+
+class TestAIHttpResilience:
+    def test_context_usage_recovers_from_malformed_model_info(self, client, monkeypatch):
+        class _BadResponse:
+            ok = True
+
+            def json(self):
+                raise ValueError('bad model info payload')
+
+        monkeypatch.setattr('requests.post', lambda *args, **kwargs: _BadResponse())
+
+        resp = client.post('/api/ai/context-usage', json={
+            'model': 'broken-model',
+            'messages': [{'role': 'user', 'content': 'Check context window'}],
+            'system_prompt': 'Be concise.',
+        })
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['max_tokens'] == 4096
+        assert data['remaining'] >= 0
+
+    def test_model_info_recovers_from_malformed_show_payload(self, client, monkeypatch):
+        class _BadResponse:
+            ok = True
+
+            def json(self):
+                raise ValueError('bad show payload')
+
+        monkeypatch.setattr('requests.post', lambda *args, **kwargs: _BadResponse())
+
+        resp = client.get('/api/ai/model-info/demo-model')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['name'] == 'demo-model'
+        assert data['parameters'] == 'Unknown'
+        assert data['quantization'] == 'Unknown'

@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, Response
 from db import db_session, log_activity
-from web.utils import esc as _esc
+from web.utils import esc as _esc, safe_json_list as _safe_json_list
 from web.sql_safety import safe_columns, build_update
 from web.print_templates import render_print_document
 from web.state import broadcast_event
@@ -16,6 +16,29 @@ from web.state import broadcast_event
 log = logging.getLogger('nomad.web')
 
 tasks_bp = Blueprint('tasks', __name__)
+
+
+def _normalize_watch_personnel(value):
+    personnel = []
+    for person in _safe_json_list(value, []):
+        label = str(person or '').strip()
+        if label:
+            personnel.append(label)
+    return personnel
+
+
+def _normalize_watch_schedule(value):
+    schedule = []
+    for shift in _safe_json_list(value, []):
+        if not isinstance(shift, dict):
+            continue
+        schedule.append({
+            'person': str(shift.get('person') or '').strip(),
+            'start': str(shift.get('start') or '').strip(),
+            'end': str(shift.get('end') or '').strip(),
+            'position': shift.get('position'),
+        })
+    return schedule
 
 # ─── Timers API ───────────────────────────────────────────────────
 
@@ -196,7 +219,14 @@ def api_tasks_due():
 def api_watch_schedules():
     with db_session() as db:
         rows = db.execute('SELECT * FROM watch_schedules ORDER BY start_date DESC LIMIT 10000').fetchall()
-        return jsonify([dict(r) for r in rows])
+        return jsonify([
+            {
+                **dict(r),
+                'personnel': _normalize_watch_personnel(r['personnel']),
+                'schedule_json': _normalize_watch_schedule(r['schedule_json']),
+            }
+            for r in rows
+        ])
 
 
 @tasks_bp.route('/api/watch-schedules', methods=['POST'])
@@ -209,7 +239,7 @@ def api_watch_schedules_create():
         shift_hours = int(data.get('shift_duration_hours', 4))
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid shift_duration_hours'}), 400
-    personnel = data.get('personnel', [])
+    personnel = _normalize_watch_personnel(data.get('personnel', []))
     notes = data.get('notes', '')
 
     if not start_date:
@@ -218,8 +248,6 @@ def api_watch_schedules_create():
         return jsonify({'error': 'shift_duration_hours must be 1-24'}), 400
     if not personnel or len(personnel) < 2:
         return jsonify({'error': 'At least 2 personnel required'}), 400
-
-    import json as _json
 
     # Auto-generate rotation schedule
     schedule = []
@@ -247,7 +275,7 @@ def api_watch_schedules_create():
     with db_session() as db:
         cur = db.execute(
             'INSERT INTO watch_schedules (name, start_date, end_date, shift_duration_hours, personnel, schedule_json, notes) VALUES (?, ?, ?, ?, ?, ?, ?)',
-            (name, start_date, end_date or (start + timedelta(days=7)).strftime('%Y-%m-%d'), shift_hours, _json.dumps(personnel), _json.dumps(schedule), notes)
+            (name, start_date, end_date or (start + timedelta(days=7)).strftime('%Y-%m-%d'), shift_hours, json.dumps(personnel), json.dumps(schedule), notes)
         )
         db.commit()
         sid = cur.lastrowid
@@ -260,7 +288,6 @@ def api_watch_schedules_update(sid):
     data = request.get_json() or {}
     if len(data.get('name', '') or '') > 200:
         return jsonify({'error': 'name too long (max 200)'}), 400
-    import json as _json
     with db_session() as db:
         sets = []
         vals = []
@@ -281,10 +308,10 @@ def api_watch_schedules_update(sid):
                 return jsonify({'error': 'shift_duration_hours must be a number'}), 400
         if 'personnel' in data:
             sets.append('personnel=?')
-            vals.append(_json.dumps(data['personnel']))
+            vals.append(json.dumps(_normalize_watch_personnel(data['personnel'])))
         if 'schedule_json' in data:
             sets.append('schedule_json=?')
-            vals.append(_json.dumps(data['schedule_json']))
+            vals.append(json.dumps(_normalize_watch_schedule(data['schedule_json'])))
         if 'notes' in data:
             sets.append('notes=?')
             vals.append(data['notes'])
@@ -315,20 +342,23 @@ def api_watch_schedule_detail(sid):
         row = db.execute('SELECT * FROM watch_schedules WHERE id = ?', (sid,)).fetchone()
         if not row:
             return jsonify({'error': 'Not found'}), 404
-        return jsonify(dict(row))
+        return jsonify({
+            **dict(row),
+            'personnel': _normalize_watch_personnel(row['personnel']),
+            'schedule_json': _normalize_watch_schedule(row['schedule_json']),
+        })
 
 
 @tasks_bp.route('/api/watch-schedules/<int:sid>/print')
 def api_watch_schedule_print(sid):
     """Generate a printable HTML watch schedule."""
-    import json as _json
     with db_session() as db:
         row = db.execute('SELECT * FROM watch_schedules WHERE id = ?', (sid,)).fetchone()
         if not row:
             return jsonify({'error': 'Not found'}), 404
         sched = row
-        schedule = _json.loads(sched['schedule_json'] or '[]')
-        personnel = _json.loads(sched['personnel'] or '[]')
+        schedule = _safe_json_list(sched['schedule_json'], [])
+        personnel = _safe_json_list(sched['personnel'], [])
 
     generated_at = time.strftime('%Y-%m-%d %H:%M')
     cadence = f'{sched["shift_duration_hours"]}h'
@@ -343,6 +373,8 @@ def api_watch_schedule_print(sid):
     shift_rows = ''
     daily_counts = {}
     for idx, shift in enumerate(schedule, start=1):
+        if not isinstance(shift, dict):
+            continue
         person = str(shift.get('person') or 'Unassigned')
         start_value = str(shift.get('start') or '')
         end_value = str(shift.get('end') or '')

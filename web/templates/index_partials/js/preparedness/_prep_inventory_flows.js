@@ -233,11 +233,10 @@ function editInvItem(id) {
 
 async function deleteInvItem(id) {
   try {
-    const r = await fetch(`/api/inventory/${id}`, {method:'DELETE'});
-    if (!r.ok) throw new Error('Delete failed');
+    await apiDelete(`/api/inventory/${id}`);
     toast('Item deleted', 'warning');
     loadInventory();
-  } catch(e) { toast('Failed to delete item', 'error'); }
+  } catch(e) { toast(e?.data?.error || e?.message || 'Failed to delete item', 'error'); }
 }
 
 async function adjustQty(id, delta) {
@@ -245,11 +244,10 @@ async function adjustQty(id, delta) {
   if (!item) return;
   const newQty = Math.max(0, item.quantity + delta);
   try {
-    const resp = await fetch(`/api/inventory/${id}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({quantity: newQty})});
-    if (!resp.ok) { toast('Failed to update quantity', 'error'); return; }
+    await apiPut(`/api/inventory/${id}`, {quantity: newQty});
     item.quantity = newQty;
     loadInventory();
-  } catch(e) { console.error(e); toast('Failed to update quantity', 'error'); }
+  } catch(e) { console.error(e); toast(e?.data?.error || e?.message || 'Failed to update quantity', 'error'); }
 }
 
 async function dailyConsume() {
@@ -367,22 +365,8 @@ async function scanReceipt() {
   try {
     const formData = new FormData();
     formData.append('image', _receiptFile);
-
-    const resp = await fetch('/api/inventory/receipt-scan', {method: 'POST', body: formData});
-
-    if (!resp.ok) {
-      let errorMsg = 'Scan failed';
-      try {
-        const data = await resp.json();
-        errorMsg = data.error || errorMsg;
-      } catch (e) {}
-      statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(errorMsg)}</div>`;
-      return;
-    }
-
-    const data = await resp.json();
-
-    _receiptScanResults = data.items || [];
+    const data = await apiUpload('/api/inventory/receipt-scan', formData);
+    _receiptScanResults = Array.isArray(data?.items) ? data.items : [];
     if (_receiptScanResults.length === 0) {
       statusEl.innerHTML = '<div class="scan-status-warning">&#9888; No items found on this receipt. Try a clearer image or different angle.</div>';
       return;
@@ -391,7 +375,7 @@ async function scanReceipt() {
     // Show results
     statusEl.style.display = 'none';
     document.getElementById('receipt-results-count').textContent = `Found ${_receiptScanResults.length} item(s)`;
-    document.getElementById('receipt-source-badge').textContent = data.source === 'ollama' ? 'AI Vision' : 'Tesseract OCR';
+    document.getElementById('receipt-source-badge').textContent = data?.source === 'ollama' ? 'AI Vision' : 'Tesseract OCR';
 
     const tbody = document.getElementById('receipt-items-tbody');
     tbody.innerHTML = _receiptScanResults.map((item, i) => `
@@ -406,7 +390,7 @@ async function scanReceipt() {
 
     resultsEl.style.display = 'block';
   } catch(e) {
-    statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(e.message || 'Network error')}</div>`;
+    statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(e?.data?.error || e.message || 'Network error')}</div>`;
   } finally {
     scanBtn.disabled = false;
     scanBtn.textContent = 'Scan Receipt';
@@ -437,13 +421,7 @@ async function importReceiptItems() {
   });
 
   try {
-    const resp = await fetch('/api/inventory/receipt-import', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({items}),
-    });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || 'Import failed');
+    const data = await apiPost('/api/inventory/receipt-import', {items});
 
     toast(`Imported ${data.count} item(s) from receipt`, 'success');
     // Close the modal
@@ -580,22 +558,8 @@ async function scanVisionImage() {
     const resized = await _resizeImageForVision(_visionFile);
     const formData = new FormData();
     formData.append('image', resized);
-
-    const resp = await fetch('/api/inventory/vision-scan', {method: 'POST', body: formData});
-
-    if (!resp.ok) {
-      let errorMsg = 'Scan failed';
-      try {
-        const data = await resp.json();
-        errorMsg = data.error || errorMsg;
-      } catch (e) {}
-      statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(errorMsg)}</div>`;
-      return;
-    }
-
-    const data = await resp.json();
-
-    _visionScanResults = data.items || [];
+    const data = await apiUpload('/api/inventory/vision-scan', formData);
+    _visionScanResults = Array.isArray(data?.items) ? data.items : [];
     if (_visionScanResults.length === 0) {
       statusEl.innerHTML = '<div class="scan-status-warning">&#9888; No items identified. Try a clearer image with items more visible.</div>';
       return;
@@ -604,7 +568,7 @@ async function scanVisionImage() {
     // Show results
     statusEl.style.display = 'none';
     document.getElementById('vision-results-count').textContent = `Found ${_visionScanResults.length} item(s)`;
-    document.getElementById('vision-model-badge').textContent = `Model: ${data.model_used || 'unknown'} | ${data.image_size || ''}`;
+    document.getElementById('vision-model-badge').textContent = `Model: ${data?.model_used || 'unknown'} | ${data?.image_size || ''}`;
 
     const catOpts = VISION_CATEGORIES.map(c => `<option value="${c}">${c}</option>`).join('');
     const condOpts = VISION_CONDITIONS.map(c => `<option value="${c}">${c}</option>`).join('');
@@ -640,7 +604,7 @@ async function scanVisionImage() {
 
     resultsEl.style.display = 'block';
   } catch(e) {
-    statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(e.message || 'Network error')}</div>`;
+    statusEl.innerHTML = `<div class="scan-status-error">&#9888; ${escapeHtml(e?.data?.error || e.message || 'Network error')}</div>`;
   } finally {
     scanBtn.disabled = false;
     scanBtn.innerHTML = '&#128270; Analyze';
@@ -670,13 +634,7 @@ async function importVisionItems() {
   });
 
   try {
-    const resp = await fetch('/api/inventory/vision-import', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({items}),
-    });
-    const data = await resp.json();
-    if (!resp.ok) throw new Error(data.error || 'Import failed');
+    const data = await apiPost('/api/inventory/vision-import', {items});
 
     toast(`Imported ${data.count} item(s) from AI vision scan`, 'success');
     const overlay = document.querySelector('.modal-overlay');
@@ -865,16 +823,7 @@ async function addBarcodeToInventory(upc, qty) {
     qty = qtyInput ? parseInt(qtyInput.value) || 1 : 1;
   }
   try {
-    var resp = await fetch('/api/barcode/scan-to-inventory', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({upc: upc, quantity: qty}),
-    });
-    var data = await resp.json();
-    if (!resp.ok) {
-      toast(data.error || 'Failed to add item', 'error');
-      return;
-    }
+    var data = await apiPost('/api/barcode/scan-to-inventory', {upc: upc, quantity: qty});
     _recentScans.unshift({name: data.item.name, upc: upc, qty: qty});
     if (_recentScans.length > 10) _recentScans.pop();
     _updateRecentScans();
@@ -891,7 +840,7 @@ async function addBarcodeToInventory(upc, qty) {
     var input = document.getElementById('barcode-manual-input');
     if (input) { input.value = ''; input.focus(); }
   } catch(e) {
-    toast('Failed to add item: ' + e.message, 'error');
+    toast('Failed to add item: ' + (e?.data?.error || e.message), 'error');
   }
 }
 
@@ -912,21 +861,12 @@ async function addToUpcDatabase() {
   };
 
   try {
-    var resp = await fetch('/api/barcode/add', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(payload),
-    });
-    var data = await resp.json();
-    if (!resp.ok) {
-      toast(data.error || 'Failed to save UPC', 'error');
-      return;
-    }
+    await apiPost('/api/barcode/add', payload);
     toast('Saved ' + name + ' to UPC database', 'success');
     formEl.style.display = 'none';
     await addBarcodeToInventory(upc, 1);
   } catch(e) {
-    toast('Failed to save: ' + e.message, 'error');
+    toast('Failed to save: ' + (e?.data?.error || e.message), 'error');
   }
 }
 

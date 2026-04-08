@@ -85,6 +85,21 @@ class TestPrintDocuments:
         assert 'Quick Reference' in html
         assert 'Morgan' in html
 
+    def test_emergency_sheet_recovers_from_corrupted_patient_lists(self, client, db):
+        client.post('/api/patients', json={'name': 'Casey Corrupt'})
+        db.execute(
+            'UPDATE patients SET allergies = ?, medications = ?, conditions = ? WHERE name = ?',
+            ('{broken', '{broken', '{broken', 'Casey Corrupt'),
+        )
+        db.commit()
+
+        resp = client.get('/api/emergency-sheet')
+
+        assert resp.status_code == 200
+        html = resp.get_data(as_text=True)
+        assert 'Casey Corrupt' in html
+        assert '{broken' not in html
+
     def test_wallet_reference_cards_document(self, client):
         client.post('/api/patients', json={'name': 'Riley', 'blood_type': 'A-', 'allergies': ['Latex']})
         resp = client.get('/api/print/wallet-cards')
@@ -121,6 +136,24 @@ class TestPrintDocuments:
         assert 'Operations Binder Overview' in html
         assert 'Harper Lane' in html
         assert 'Trauma Kit' in html
+
+    def test_operations_binder_recovers_from_corrupted_patient_lists_and_checklists(self, client, db):
+        client.post('/api/patients', json={'name': 'Sage Corrupt', 'blood_type': 'AB+'})
+        db.execute(
+            'UPDATE patients SET allergies = ?, medications = ?, conditions = ? WHERE name = ?',
+            ('{broken', '{broken', '{broken', 'Sage Corrupt'),
+        )
+        db.execute('INSERT INTO checklists (name, items) VALUES (?, ?)', ('Broken Checklist', '{broken'))
+        db.commit()
+
+        resp = client.get('/api/print/operations-binder')
+
+        assert resp.status_code == 200
+        html = resp.get_data(as_text=True)
+        assert 'Operations Binder' in html
+        assert 'Sage Corrupt' in html
+        assert 'Broken Checklist' in html
+        assert '{broken' not in html
 
     def test_map_atlas_document(self, client):
         client.post('/api/waypoints', json={'name': 'Checkpoint Cedar', 'lat': 39.7392, 'lng': -104.9903, 'category': 'checkpoint'})

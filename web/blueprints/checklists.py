@@ -57,10 +57,10 @@ def api_checklists_create():
     tmpl = CHECKLIST_TEMPLATES.get(template_id)
     if tmpl:
         name = tmpl['name']
-        items = json.dumps(tmpl['items'])
+        items = json.dumps(_safe_json_list(tmpl['items'], []))
     else:
         name = data.get('name', 'Custom Checklist')
-        items = json.dumps(data.get('items', []))
+        items = json.dumps(_safe_json_list(data.get('items', []), []))
     with db_session() as db:
         cur = db.execute('INSERT INTO checklists (name, template, items) VALUES (?, ?, ?)',
                          (name, template_id, items))
@@ -89,7 +89,7 @@ def api_checklists_update(cid):
         if 'name' in data:
             update_data['name'] = data['name']
         if 'items' in data:
-            update_data['items'] = json.dumps(data['items'])
+            update_data['items'] = json.dumps(_safe_json_list(data['items'], []))
         filtered = safe_columns(update_data, ['name', 'items'])
         if filtered:
             set_clause = ', '.join(f'{col} = ?' for col in filtered)
@@ -159,11 +159,13 @@ def api_checklist_import_json():
             data = json.loads(raw.decode('utf-8'))
         except (json.JSONDecodeError, UnicodeDecodeError):
             return jsonify({'error': 'Invalid JSON file'}), 400
-        if data.get('type') != 'nomad_checklist':
+        if not isinstance(data, dict) or data.get('type') != 'nomad_checklist':
             return jsonify({'error': 'Invalid checklist file'}), 400
+        items = _safe_json_list(data.get('items', []), [])
+        name = str(data.get('name', '') or 'Imported Checklist').strip()[:300] or 'Imported Checklist'
         db = get_db()
         cur = db.execute('INSERT INTO checklists (name, template, items) VALUES (?, ?, ?)',
-                         (data['name'], data.get('template', 'imported'), json.dumps(data['items'])))
+                         (name, str(data.get('template', 'imported') or 'imported')[:100], json.dumps(items)))
         db.commit()
         return jsonify({'status': 'imported', 'id': cur.lastrowid})
     except Exception as e:

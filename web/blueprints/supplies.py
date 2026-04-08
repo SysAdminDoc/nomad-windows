@@ -5,7 +5,7 @@ import logging
 
 from flask import Blueprint, request, jsonify, Response
 from db import db_session
-from web.utils import validate_bulk_ids as _validate_bulk_ids
+from web.utils import require_json_body as _require_json_body, validate_bulk_ids as _validate_bulk_ids
 
 _log = logging.getLogger(__name__)
 
@@ -139,7 +139,9 @@ def api_skills_delete(sid):
 
 @supplies_bp.route('/api/skills/bulk-delete', methods=['POST'])
 def api_skills_bulk_delete():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     ids = _validate_bulk_ids(data)
     if ids is None:
         return jsonify({'error': 'ids array of integers required (max 100)'}), 400
@@ -160,7 +162,9 @@ def api_skills_export():
 
 @supplies_bp.route('/api/skills/import', methods=['POST'])
 def api_skills_import():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     if not isinstance(data, list):
         return jsonify({'error': 'expected JSON array'}), 400
     if len(data) > 1000:
@@ -308,7 +312,9 @@ def api_ammo_delete(aid):
 
 @supplies_bp.route('/api/ammo/bulk-delete', methods=['POST'])
 def api_ammo_bulk_delete():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     ids = _validate_bulk_ids(data)
     if ids is None:
         return jsonify({'error': 'ids array of integers required (max 100)'}), 400
@@ -329,7 +335,9 @@ def api_ammo_export():
 
 @supplies_bp.route('/api/ammo/import', methods=['POST'])
 def api_ammo_import():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     if not isinstance(data, list):
         return jsonify({'error': 'expected JSON array'}), 400
     if len(data) > 1000:
@@ -427,7 +435,9 @@ def api_community_delete(cid):
 
 @supplies_bp.route('/api/community/bulk-delete', methods=['POST'])
 def api_community_bulk_delete():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     ids = _validate_bulk_ids(data)
     if ids is None:
         return jsonify({'error': 'ids array of integers required (max 100)'}), 400
@@ -553,7 +563,9 @@ def api_fuel_delete(fid):
 
 @supplies_bp.route('/api/fuel/bulk-delete', methods=['POST'])
 def api_fuel_bulk_delete():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     ids = _validate_bulk_ids(data)
     if ids is None:
         return jsonify({'error': 'ids array of integers required (max 100)'}), 400
@@ -634,7 +646,9 @@ def api_equipment_delete(eid):
 
 @supplies_bp.route('/api/equipment/bulk-delete', methods=['POST'])
 def api_equipment_bulk_delete():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     ids = _validate_bulk_ids(data)
     if ids is None:
         return jsonify({'error': 'ids array of integers required (max 100)'}), 400
@@ -655,7 +669,9 @@ def api_equipment_export():
 
 @supplies_bp.route('/api/equipment/import', methods=['POST'])
 def api_equipment_import():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     if not isinstance(data, list):
         return jsonify({'error': 'expected JSON array'}), 400
     if len(data) > 1000:

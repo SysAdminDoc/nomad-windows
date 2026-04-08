@@ -11,6 +11,8 @@ from flask import Blueprint, jsonify, request, Response
 from db import get_db, db_session, log_activity
 from web.validation import validate_json
 from web.utils import (
+    clone_json_fallback as _clone_json_fallback,
+    require_json_body as _require_json_body,
     safe_json_value as _safe_json_value,
     safe_json_list as _safe_json_list,
     close_db_safely as _close_db_safely,
@@ -27,6 +29,18 @@ from services import ollama
 log = logging.getLogger('nomad.web')
 
 preparedness_bp = Blueprint('preparedness', __name__)
+
+
+def _safe_response_json(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
 
 
 # ─── Incident Log API ────────────────────────────────────────────────
@@ -324,8 +338,11 @@ def api_alerts_generate_summary():
                        json={'model': model, 'prompt': prompt, 'stream': False},
                        timeout=30)
         resp.raise_for_status()
-        result = resp.json()
-        return jsonify({'summary': result.get('response', '').strip()})
+        result = _safe_response_json(resp, {})
+        summary = str(result.get('response', '') or '').strip()
+        if not summary:
+            raise ValueError('Malformed alert summary payload')
+        return jsonify({'summary': summary})
     except Exception as e:
         return jsonify({'summary': f'{len(alerts)} active alert(s). AI summary unavailable: {e}'})
 
@@ -384,8 +401,8 @@ def api_livestock_update(lid):
         'sex': lambda d: d['sex'],
         'weight_lbs': lambda d: d['weight_lbs'],
         'status': lambda d: d['status'],
-        'health_log': lambda d: json.dumps(d['health_log']),
-        'vaccinations': lambda d: json.dumps(d['vaccinations']),
+        'health_log': lambda d: json.dumps(_safe_json_list(d['health_log'], [])),
+        'vaccinations': lambda d: json.dumps(_safe_json_list(d['vaccinations'], [])),
         'notes': lambda d: d['notes'],
     }
     sets = []
@@ -416,7 +433,9 @@ def api_livestock_delete(lid):
 
 @preparedness_bp.route('/api/livestock/bulk-delete', methods=['POST'])
 def api_livestock_bulk_delete():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     ids = _validate_bulk_ids(data)
     if ids is None:
         return jsonify({'error': 'ids array of integers required (max 100)'}), 400
@@ -434,10 +453,7 @@ def api_livestock_health_event(lid):
         animal = db.execute('SELECT health_log FROM livestock WHERE id = ?', (lid,)).fetchone()
         if not animal:
             return jsonify({'error': 'Not found'}), 404
-        try:
-            log_entries = json.loads(animal['health_log'] or '[]')
-        except (json.JSONDecodeError, TypeError):
-            log_entries = []
+        log_entries = _safe_json_list(animal['health_log'], [])
         log_entries.append({'date': time.strftime('%Y-%m-%d'), 'event': data.get('event', ''), 'notes': data.get('notes', '')})
         db.execute('UPDATE livestock SET health_log = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
                    (json.dumps(log_entries), lid))
@@ -505,10 +521,12 @@ def api_scenarios_create():
 @preparedness_bp.route('/api/scenarios/<int:sid>', methods=['PUT'])
 def api_scenarios_update(sid):
     data = request.get_json() or {}
+    decisions = _safe_json_list(data.get('decisions', []), [])
+    complications = _safe_json_list(data.get('complications', []), [])
     with db_session() as db:
         r = db.execute('UPDATE scenarios SET current_phase=?, status=?, decisions=?, complications=?, score=?, aar_text=?, completed_at=? WHERE id=?',
                    (data.get('current_phase', 0), data.get('status', 'active'),
-                    json.dumps(data.get('decisions', [])), json.dumps(data.get('complications', [])),
+                    json.dumps(decisions), json.dumps(complications),
                     data.get('score', 0), data.get('aar_text', ''), data.get('completed_at', ''), sid))
         if r.rowcount == 0:
             return jsonify({'error': 'not found'}), 404
@@ -520,7 +538,7 @@ def api_scenario_complication(sid):
     """AI generates a context-aware complication based on current scenario state + user's real data."""
     data = request.get_json() or {}
     phase_desc = data.get('phase_description', '')
-    decisions_so_far = data.get('decisions', [])
+    decisions_so_far = _safe_json_list(data.get('decisions', []), [])
 
     # Gather real situation context
     with db_session() as db:
@@ -538,7 +556,7 @@ def api_scenario_complication(sid):
     prompt = f"""You are a survival training instructor running a disaster scenario. Generate ONE realistic complication for the current phase of the scenario. The complication should force a difficult decision.
 
 Scenario phase: {phase_desc}
-Decisions made so far: {', '.join(d.get('label','') for d in decisions_so_far[-3:]) if decisions_so_far else 'none yet'}
+Decisions made so far: {', '.join(d.get('label','') for d in decisions_so_far[-3:] if isinstance(d, dict)) if decisions_so_far else 'none yet'}
 Real situation data: {context}
 
 Respond with ONLY a JSON object (no markdown, no explanation):
@@ -556,8 +574,16 @@ Respond with ONLY a JSON object (no markdown, no explanation):
         resp = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
                        json={'model': models[0]['name'], 'prompt': prompt, 'stream': False, 'format': 'json'}, timeout=30)
         resp.raise_for_status()
-        result = resp.json().get('response', '{}')
-        complication = json.loads(result)
+        result = _safe_response_json(resp, {}).get('response', '{}')
+        complication = _safe_json_value(result, {})
+        choices = [str(choice).strip() for choice in _safe_json_list(complication.get('choices'), []) if str(choice or '').strip()]
+        if not isinstance(complication, dict) or not str(complication.get('title', '') or '').strip() or not str(complication.get('description', '') or '').strip() or len(choices) < 2:
+            raise ValueError('Malformed complication payload')
+        complication = {
+            'title': str(complication.get('title', '')).strip(),
+            'description': str(complication.get('description', '')).strip(),
+            'choices': choices[:3],
+        }
         return jsonify(complication)
     except Exception as e:
         log.error(f'Complication generation failed: {e}')
@@ -572,17 +598,11 @@ def api_scenario_aar(sid):
     if not scenario:
         return jsonify({'error': 'Not found'}), 404
 
-    try:
-        decisions = json.loads(scenario['decisions'] or '[]')
-    except (json.JSONDecodeError, TypeError):
-        decisions = []
-    try:
-        complications = json.loads(scenario['complications'] or '[]')
-    except (json.JSONDecodeError, TypeError):
-        complications = []
+    decisions = _safe_json_list(scenario['decisions'], [])
+    complications = _safe_json_list(scenario['complications'], [])
 
-    decision_summary = '\n'.join([f"Phase {d.get('phase',0)+1}: {d.get('label','')} (chose: {d.get('choice','')})" for d in decisions])
-    complication_summary = '\n'.join([f"- {c.get('title','')}: chose {c.get('response','')}" for c in complications])
+    decision_summary = '\n'.join([f"Phase {d.get('phase',0)+1}: {d.get('label','')} (chose: {d.get('choice','')})" for d in decisions if isinstance(d, dict)])
+    complication_summary = '\n'.join([f"- {c.get('title','')}: chose {c.get('response','')}" for c in complications if isinstance(c, dict)])
 
     prompt = f"""You are a survival training evaluator. Score this scenario performance and write a brief After-Action Review.
 
@@ -616,7 +636,7 @@ Respond as plain text, not JSON. Start with "Score: XX/100" on the first line.""
         resp = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/generate',
                        json={'model': _models[0]['name'], 'prompt': prompt, 'stream': False}, timeout=45)
         resp.raise_for_status()
-        aar_text = resp.json().get('response', '').strip()
+        aar_text = str(_safe_response_json(resp, {}).get('response', '') or '').strip()
         # Try to extract score
         score = 50
         import re
@@ -652,7 +672,9 @@ def api_drill_history():
 
 @preparedness_bp.route('/api/drills/history', methods=['POST'])
 def api_drill_history_save():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     if len(data.get('drill_type', '') or '') > 200:
         return jsonify({'error': 'drill_type too long'}), 400
     if len(data.get('title', '') or '') > 200:

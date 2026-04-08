@@ -248,20 +248,11 @@ async function askCopilot(question) {
   if (dismissBtn) dismissBtn.style.display = 'block';
   answerEl.innerHTML = '<div class="copilot-answer-shell"><span class="copilot-answer-state">Thinking…</span></div>';
   try {
-    const r = await fetch('/api/ai/quick-query', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({question})
-    });
-    if (!r.ok) {
-      const e = await r.json().catch(() => ({}));
-      answerEl.innerHTML = `<span class="copilot-answer-error">${escapeHtml(e.error || 'AI service unavailable')}</span>`;
-      return;
-    }
-    const data = await r.json();
+    const data = await apiPost('/api/ai/quick-query', {question});
     answerEl.innerHTML = `<div class="copilot-answer-shell"><div class="copilot-answer-body">${escapeHtml(data.answer || 'No answer generated.')}</div>
       ${data.data_sources?.length ? `<div class="copilot-source-row"><span class="copilot-source-label">Sources:</span>${data.data_sources.map(s => `<span class="copilot-source-chip">${escapeHtml(s)}</span>`).join('')}</div>` : ''}</div>`;
   } catch(e) {
-    answerEl.innerHTML = '<span class="copilot-answer-error">Failed to reach AI service</span>';
+    answerEl.innerHTML = `<span class="copilot-answer-error">${escapeHtml(e?.data?.error || 'Failed to reach AI service')}</span>`;
   }
 }
 
@@ -294,14 +285,8 @@ async function loadWidgetConfig() {
     window._widgetConfig = null;
     return window._widgetConfig;
   }
-  try {
-    const resp = await fetch('/api/dashboard/widgets');
-    if (!resp.ok) throw new Error('widgets');
-    const data = await resp.json();
-    window._widgetConfig = data.widgets || null;
-  } catch(e) {
-    window._widgetConfig = null;
-  }
+  const data = await safeFetch('/api/dashboard/widgets', {}, null);
+  window._widgetConfig = data?.widgets || null;
   return window._widgetConfig;
 }
 
@@ -745,9 +730,10 @@ async function loadCmdDashboard() {
   if (!el) return;
   try {
     const [d, crit] = await Promise.all([
-      fetch('/api/dashboard/overview').then(r=>{if(!r.ok)throw new Error();return r.json()}),
-      fetch('/api/dashboard/critical').then(r => {if(!r.ok)throw new Error();return r.json()}).catch(() => ({critical_burn:[], expiring_items:[]}))
+      safeFetch('/api/dashboard/overview', {}, null),
+      safeFetch('/api/dashboard/critical', {}, {critical_burn:[], expiring_items:[]}),
     ]);
+    if (!d) throw new Error('dashboard overview unavailable');
     const sitLabels = {green:'ALL CLEAR',yellow:'CAUTION',orange:'CONCERN',red:'CRITICAL'};
       const sitColors = {green:'var(--green)',yellow:'var(--warning)',orange:'var(--orange)',red:'var(--red)'};
     const metricCard = ({ label, value, tone = 'var(--accent)', meta = '', nav = '', valueClass = '' }) =>
@@ -797,9 +783,8 @@ async function loadReadinessScore() {
   const cats = document.getElementById('rs-categories');
   if (!gradeEl || !totalEl || !fill || !cats) return;
   try {
-    const _rs = await fetch('/api/readiness-score');
-    if (!_rs.ok) return;
-    const d = await _rs.json();
+    const d = await safeFetch('/api/readiness-score', {}, null);
+    if (!d || !d.categories) return;
     const gradeColors = {A:'var(--green)',B:'var(--green)',C:'var(--warning)',D:'var(--orange)',F:'var(--red)'};
     gradeEl.textContent = d.grade;
     gradeEl.style.color = gradeColors[d.grade] || 'var(--text)';
@@ -863,15 +848,12 @@ async function unlockVault() {
   if (!pw) { toast('Enter a password', 'warning'); return; }
   try {
     // Verify password by trying to decrypt the verification entry if one exists
-    const _vr = await fetch('/api/vault');
-    if (!_vr.ok) { toast('Failed to access vault', 'error'); return; }
-    const entries = await _vr.json();
+    const entries = await safeFetch('/api/vault', {}, null);
+    if (!Array.isArray(entries)) { toast('Failed to access vault', 'error'); return; }
     const verifyEntry = entries.find(e => e.title === '__vault_verify__');
     if (verifyEntry) {
       try {
-        const _ve = await fetch(`/api/vault/${verifyEntry.id}`);
-        if (!_ve.ok) throw new Error('Failed to load verification entry');
-        const e = await _ve.json();
+        const e = await apiFetch(`/api/vault/${verifyEntry.id}`);
         const salt = Uint8Array.from(atob(e.salt), c => c.charCodeAt(0));
         const iv = Uint8Array.from(atob(e.iv), c => c.charCodeAt(0));
         const data = Uint8Array.from(atob(e.encrypted_data), c => c.charCodeAt(0));
@@ -928,9 +910,8 @@ async function decryptVaultData(encrypted_data, iv_b64, salt_b64) {
 
 async function loadVaultList() {
   try {
-    const _vl = await fetch('/api/vault');
-    if (!_vl.ok) return;
-    const allEntries = await _vl.json();
+    const allEntries = await safeFetch('/api/vault', {}, null);
+    if (!Array.isArray(allEntries)) return;
     const entries = allEntries.filter(e => e.title !== '__vault_verify__');
     const el = document.getElementById('vault-list');
     if (!entries.length) { el.innerHTML = '<div class="utility-empty-state vault-empty-state">No entries yet. Click "+ New Entry" to add encrypted documents.</div>'; return; }
@@ -1033,9 +1014,8 @@ async function loadWeather() {
   if (logEl) logEl.innerHTML = Array(3).fill('<div class="skeleton skeleton-line weather-skeleton-row"></div>').join('');
   try {
     // Load trend
-    const _wt = await fetch('/api/weather/trend');
-    if (!_wt.ok) { if (trendEl) trendEl.innerHTML = '<span class="text-muted">Weather data unavailable</span>'; return; }
-    const trend = await _wt.json();
+    const trend = await safeFetch('/api/weather/trend', {}, null);
+    if (!trend) { if (trendEl) trendEl.innerHTML = '<span class="text-muted">Weather data unavailable</span>'; return; }
     const trendIcons = {rising_fast:'++ ',rising:'+ ',steady:'= ',falling:'- ',falling_fast:'-- ',insufficient:''};
     trendEl.innerHTML = `
       <div class="weather-trend-value ${trend.trend === 'falling' || trend.trend === 'falling_fast' ? 'text-red' : trend.trend === 'rising' || trend.trend === 'rising_fast' ? 'text-green' : trend.trend === 'steady' ? 'text-strong' : 'text-muted'}">${trendIcons[trend.trend]}${trend.current ? trend.current + ' hPa' : 'No data'}</div>
@@ -1043,8 +1023,7 @@ async function loadWeather() {
       <div class="weather-trend-prediction">${trend.prediction}</div>`;
 
     // Load history
-    const _wh = await fetch('/api/weather?limit=20');
-    const history = _wh.ok ? await _wh.json() : [];
+    const history = await safeFetch('/api/weather?limit=20', {}, []);
     const histEl = document.getElementById('wx-history');
     if (!history.length) { histEl.innerHTML = '<div class="text-muted text-size-12">No observations yet.</div>'; return; }
     histEl.innerHTML = '<table class="freq-table"><thead><tr><th>Time</th><th>hPa</th><th>Temp</th><th>Wind</th><th>Sky</th><th>Notes</th></tr></thead><tbody>' +
@@ -1154,14 +1133,11 @@ async function loadWeatherRules() {
   if (!el) return;
   el.innerHTML = '<div class="skeleton skeleton-line weather-skeleton-row"></div>';
   try {
-    const _wr = await fetch('/api/weather/action-rules');
-    if (!_wr.ok) { el.innerHTML = ''; return; }
-    const rules = await _wr.json();
+    const rules = await safeFetch('/api/weather/action-rules', {}, null);
+    if (!Array.isArray(rules)) { el.innerHTML = ''; return; }
     // Seed defaults if empty
     if (rules.length === 0) {
-      await Promise.all(_wxRuleDefaults.map(def =>
-        fetch('/api/weather/action-rules', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(def) })
-      ));
+      await Promise.all(_wxRuleDefaults.map(def => apiPost('/api/weather/action-rules', def)));
       return loadWeatherRules();
     }
     if (!rules.length) { el.innerHTML = '<div class="text-muted">No weather action rules defined.</div>'; return; }
@@ -1222,8 +1198,12 @@ async function createWeatherRule() {
 }
 
 async function toggleWeatherRule(id) {
-  await fetch(`/api/weather/action-rules/${id}/toggle`, { method: 'POST' });
-  loadWeatherRules();
+  try {
+    await apiPost(`/api/weather/action-rules/${id}/toggle`);
+    loadWeatherRules();
+  } catch (e) {
+    toast(e?.data?.error || 'Failed to toggle rule', 'error');
+  }
 }
 
 async function deleteWeatherRule(id) {
@@ -1315,13 +1295,11 @@ async function importInvCSV() {
   const formData = new FormData();
   formData.append('file', input.files[0]);
   try {
-    const _resp = await fetch('/api/inventory/import-csv', {method:'POST', body:formData});
-    if (!_resp.ok) { const _e = await _resp.json().catch(() => ({})); toast(_e.error || 'Import failed', 'error'); input.value = ''; return; }
-    const r = await _resp.json();
+    const r = await apiUpload('/api/inventory/import-csv', formData);
     input.value = '';
     toast(`Imported ${r.count} items`, 'success');
     loadInventory();
-  } catch(e) { toast('Import failed', 'error'); input.value = ''; }
+  } catch(e) { toast(e?.data?.error || 'Import failed', 'error'); input.value = ''; }
 }
 
 async function importContactsCSV() {
@@ -1330,13 +1308,11 @@ async function importContactsCSV() {
   const formData = new FormData();
   formData.append('file', input.files[0]);
   try {
-    const _resp = await fetch('/api/contacts/import-csv', {method:'POST', body:formData});
-    if (!_resp.ok) { const _e = await _resp.json().catch(() => ({})); toast(_e.error || 'Import failed', 'error'); input.value = ''; return; }
-    const r = await _resp.json();
+    const r = await apiUpload('/api/contacts/import-csv', formData);
     input.value = '';
     toast(`Imported ${r.count} contacts`, 'success');
     loadContacts();
-  } catch(e) { toast('Import failed', 'error'); input.value = ''; }
+  } catch(e) { toast(e?.data?.error || 'Import failed', 'error'); input.value = ''; }
 }
 
 /* ─── Meshtastic (Web Serial) ─── */
@@ -1819,15 +1795,18 @@ function startGardenDraw(plotId) {
   toast('Click on map to draw garden boundary. Double-click to finish.', 'info');
 }
 // Integrated into map click handler via _drawingGarden flag — see map click handler
-function finishGardenDraw() {
+async function finishGardenDraw() {
   if (_gardenPoints.length < 3) { toast('Need at least 3 points', 'warning'); _drawingGarden = false; _gardenPoints = []; return; }
   _gardenPoints.push(_gardenPoints[0]); // Close polygon
   const geojson = JSON.stringify({type: 'Polygon', coordinates: [_gardenPoints]});
   const center = _gardenPoints.reduce((a, p) => [a[0]+p[0], a[1]+p[1]], [0,0]).map(v => v / (_gardenPoints.length - 1));
-  fetch(`/api/garden/plots/${_gardenPlotEditId}`, {
-    method: 'PUT', headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({boundary_geojson: geojson, lng: center[0], lat: center[1]})
-  }).then(() => { toast('Garden boundary saved', 'success'); loadGardenOverlay(); });
+  try {
+    await apiPut(`/api/garden/plots/${_gardenPlotEditId}`, {boundary_geojson: geojson, lng: center[0], lat: center[1]});
+    toast('Garden boundary saved', 'success');
+    loadGardenOverlay();
+  } catch (e) {
+    toast(e?.data?.error || e?.message || 'Failed to save garden boundary', 'error');
+  }
   _drawingGarden = false;
   _gardenPoints = [];
 }

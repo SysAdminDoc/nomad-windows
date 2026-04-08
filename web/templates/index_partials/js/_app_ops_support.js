@@ -820,8 +820,8 @@ function setupAutoBackup(interval) {
     const runner = async () => {
       if (document.hidden) return;
       try {
-        const resp = await fetch('/api/export-config');
-        if (resp.ok) toast('Auto backup completed', 'info');
+        const resp = await apiFetch('/api/export-config');
+        if (resp instanceof Response) toast('Auto backup completed', 'info');
       } catch(e) {}
     };
     if (window.NomadShellRuntime) {
@@ -853,13 +853,12 @@ async function toggleNotePin() {
   if (!n) return;
   const newPinned = !n.pinned;
   try {
-    const resp = await fetch(`/api/notes/${currentNoteId}/pin`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pinned:newPinned})});
-    if (!resp.ok) { toast('Failed to update note', 'error'); return; }
+    await apiPost(`/api/notes/${currentNoteId}/pin`, {pinned:newPinned});
     n.pinned = newPinned;
     document.getElementById('note-pin-btn').textContent = newPinned ? 'Unpin' : 'Pin';
     toast(newPinned ? 'Note pinned' : 'Note unpinned', 'success');
     await loadNotes();
-  } catch(e) { console.error(e); toast('Failed to update note', 'error'); }
+  } catch(e) { console.error(e); toast(e?.data?.error || 'Failed to update note', 'error'); }
 }
 
 let _tagSaveTimer;
@@ -1499,11 +1498,10 @@ function exportJournal() {
 async function deleteJournalEntry(id) {
   if (!confirm('Delete this journal entry?')) return;
   try {
-    const resp = await fetch(`/api/journal/${id}`, {method:'DELETE'});
-    if (!resp.ok) { toast('Failed to delete entry', 'error'); return; }
+    await apiDelete(`/api/journal/${id}`);
     toast('Entry deleted', 'warning');
     loadJournal();
-  } catch(e) { toast('Failed to delete entry', 'error'); }
+  } catch(e) { toast(e?.data?.error || 'Failed to delete entry', 'error'); }
 }
 
 /* ─── Security Module ─── */
@@ -1669,12 +1667,11 @@ async function addCamera() {
 async function deleteCamera(id) {
   if (!confirm('Remove this camera?')) return;
   try {
-    const resp = await fetch(`/api/security/cameras/${id}`, {method:'DELETE'});
-    if (!resp.ok) { toast('Failed to remove camera', 'error'); return; }
+    await apiDelete(`/api/security/cameras/${id}`);
     toast('Camera removed', 'warning');
     loadCameras();
     loadSecurityDashboard();
-  } catch(e) { console.error(e); toast('Failed to remove camera', 'error'); }
+  } catch(e) { console.error(e); toast(e?.data?.error || 'Failed to remove camera', 'error'); }
 }
 
 /* ─── Motion Detection ─── */
@@ -1927,12 +1924,11 @@ async function loadPowerDevices() {
 async function deletePowerDevice(id) {
   if (!confirm('Remove this power device?')) return;
   try {
-    const resp = await fetch(`/api/power/devices/${id}`, {method:'DELETE'});
-    if (!resp.ok) { toast('Failed to remove device', 'error'); return; }
+    await apiDelete(`/api/power/devices/${id}`);
     toast('Device removed', 'warning');
     loadPowerDevices();
     loadPowerDashboard();
-  } catch(e) { console.error(e); toast('Failed to remove device', 'error'); }
+  } catch(e) { console.error(e); toast(e?.data?.error || 'Failed to remove device', 'error'); }
 }
 
 async function logPowerReading() {
@@ -2568,11 +2564,10 @@ async function submitHealthEvent(id) {
   const event_text = inp?.value?.trim();
   if (!event_text) return;
   try {
-    const resp = await fetch(`/api/livestock/${id}/health`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({event: event_text})});
-    if (!resp.ok) { toast('Failed to log health event', 'error'); return; }
+    await apiPost(`/api/livestock/${id}/health`, {event: event_text});
     toast('Health event logged', 'success');
     loadLivestockList();
-  } catch(e) { console.error(e); toast('Failed to log health event', 'error'); }
+  } catch(e) { console.error(e); toast(e?.data?.error || 'Failed to log health event', 'error'); }
 }
 
 /* ─── Immersive Training Scenarios ─── */
@@ -2728,11 +2723,11 @@ async function showComplication(afterPhase) {
 
   try {
     const phase = _activeScenario.phases[afterPhase];
-    const r = await fetch(`/api/scenarios/${_scenarioDbId || 0}/complication`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({phase_description: phase.title + ': ' + phase.desc, decisions: _scenarioDecisions})
+    const comp = await apiPost(`/api/scenarios/${_scenarioDbId || 0}/complication`, {
+      phase_description: phase.title + ': ' + phase.desc,
+      decisions: _scenarioDecisions
     });
-    const comp = await r.json();
+    if (comp?.error) throw new Error(comp.error);
 
     _scenarioComplications.push({...comp, response: '', phase: afterPhase});
 
@@ -2762,6 +2757,7 @@ async function showComplication(afterPhase) {
       </div>`;
     playAlertSound('broadcast');
   } catch(e) {
+    toast(e?.data?.error || e.message || 'Failed to generate complication', 'error');
     renderScenarioPhase(afterPhase + 1);
   }
 }
@@ -2786,11 +2782,11 @@ async function completeScenario() {
     </div>`;
 
   try {
-    const r = await fetch(`/api/scenarios/${_scenarioDbId || 0}/aar`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({decisions: _scenarioDecisions, complications: _scenarioComplications})
+    const aar = await apiPost(`/api/scenarios/${_scenarioDbId || 0}/aar`, {
+      decisions: _scenarioDecisions,
+      complications: _scenarioComplications
     });
-    const aar = await r.json();
+    if (aar?.error) throw new Error(aar.error);
     const score = aar.score || 50;
     const scoreToneClass = getScenarioToneClass(score);
 
@@ -2840,6 +2836,7 @@ async function completeScenario() {
       </div>`;
       sendNotification('Scenario Complete', `${_activeScenario.title}: ${score}/100`);
   } catch(e) {
+    toast(e?.data?.error || e.message || 'Failed to generate after-action review', 'error');
     el.innerHTML = `<div class="scenario-error-state">Failed to generate review. <button type="button" class="btn btn-sm" data-prep-action="close-scenario">Back</button></div>`;
   }
 }
@@ -3216,13 +3213,12 @@ async function logVitals() {
   };
   if (!data.bp_systolic && !data.pulse && !data.temp_f && !data.spo2) { toast('Enter at least one vital sign', 'warning'); return; }
   try {
-    const resp = await fetch(`/api/patients/${_activePatientId}/vitals`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    if (!resp.ok) { toast('Failed to log vitals', 'error'); return; }
+    await apiPost(`/api/patients/${_activePatientId}/vitals`, data);
     toast('Vitals logged', 'success');
     ['v-bps','v-bpd','v-pulse','v-resp','v-temp','v-spo2','v-pain','v-gcs','v-notes'].forEach(id => document.getElementById(id).value = '');
     await loadVitals(_activePatientId);
     await loadVitalsTrend(_activePatientId);
-  } catch(e) { console.error(e); toast('Failed to log vitals', 'error'); }
+  } catch(e) { console.error(e); toast(e?.data?.error || 'Failed to log vitals', 'error'); }
 }
 
 async function loadVitals(pid) {
@@ -3352,9 +3348,8 @@ function closeWoundPhotoModal() {
 
 async function viewWoundPhotos(pid, wid) {
   try {
-    const res = await fetch(`/api/patients/${pid}/wounds/${wid}/photos`);
-    const data = await res.json();
-    if (!res.ok || !data.photos || !data.photos.length) { toast('No photos found', 'info'); return; }
+    const data = await safeFetch(`/api/patients/${pid}/wounds/${wid}/photos`, {}, null);
+    if (!Array.isArray(data?.photos) || !data.photos.length) { toast('No photos found', 'info'); return; }
     const photos = data.photos;
     const existing = document.getElementById('wound-photo-modal');
     if (existing) existing.remove();
@@ -4312,8 +4307,7 @@ let _guideContext = null;
 
 async function loadGuideContext() {
   try {
-    const resp = await fetch('/api/guides/context');
-    if (resp.ok) _guideContext = await resp.json();
+    _guideContext = await safeFetch('/api/guides/context', {}, null);
   } catch(e) {}
 }
 
@@ -4558,14 +4552,22 @@ function toggleAlertBar() {
 }
 
 async function snoozeAlert(id) {
-  await fetch(`/api/alerts/${id}/dismiss`, {method:'POST'});
-  toast('Alert snoozed for 1 hour', 'info');
-  loadAlerts();
+  try {
+    await apiPost(`/api/alerts/${id}/dismiss`, {});
+    toast('Alert snoozed for 1 hour', 'info');
+    loadAlerts();
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to snooze alert', 'error');
+  }
 }
 
 async function dismissAlert(id) {
-  await fetch(`/api/alerts/${id}/dismiss`, {method:'POST'});
-  loadAlerts();
+  try {
+    await apiPost(`/api/alerts/${id}/dismiss`, {});
+    loadAlerts();
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to dismiss alert', 'error');
+  }
 }
 
 async function dismissAllAlerts() {

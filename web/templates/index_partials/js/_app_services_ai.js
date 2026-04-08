@@ -28,18 +28,18 @@ function getJsonErrorMessage(payload, defaultMessage, status) {
 }
 
 async function fetchJsonStrict(url, opts = {}, defaultMessage = 'Request failed') {
-  const resp = await fetch(url, opts);
-  let payload = null;
   try {
-    payload = await resp.json();
+    const payload = await apiFetch(url, opts);
+    if (payload instanceof Response) {
+      throw new Error(`${defaultMessage}: invalid server response`);
+    }
+    return payload;
   } catch (e) {
-    if (!resp.ok) throw new Error(`${defaultMessage} (${resp.status})`);
-    throw new Error(`${defaultMessage}: invalid server response`);
+    if (e?.status) {
+      throw new Error(getJsonErrorMessage(e?.data, defaultMessage, e.status));
+    }
+    throw new Error(e?.message || defaultMessage);
   }
-  if (!resp.ok) {
-    throw new Error(getJsonErrorMessage(payload, defaultMessage, resp.status));
-  }
-  return payload;
 }
 
 async function fetchJsonSafe(url, opts = {}, fallback = null, defaultMessage = 'Request failed') {
@@ -324,11 +324,11 @@ async function loadModels() {
 
 async function warmupModel(modelName) {
   try {
-    const resp = await fetch('/api/ai/chat', {
+    const resp = await apiFetch('/api/ai/chat', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({model: modelName, messages: [{role:'user', content:'hi'}]}),
     });
-    if (!resp.ok) throw new Error('Warmup failed: ' + resp.status);
+    if (!(resp instanceof Response) || !resp.body) throw new Error('Warmup failed: invalid stream response');
     // Read and discard the streaming response
     const reader = resp.body.getReader();
     while (true) { const {done} = await reader.read(); if (done) break; }
@@ -588,15 +588,12 @@ async function sendChat() {
 
   let _chatTimeout = null;
   try {
-    const resp = await fetch('/api/ai/chat', {
+    const resp = await apiFetch('/api/ai/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({model, knowledge_base: kbEnabled, situation_context: document.getElementById('sit-context-toggle').checked, system_prompt: PRESETS[activePreset] || '', messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)}),
       signal: _chatAbortCtrl.signal,
     });
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({}));
-      throw new Error(err.error || `AI service error (${resp.status})`);
-    }
+    if (!(resp instanceof Response) || !resp.body) throw new Error('AI service returned an invalid stream response');
     const reader = resp.body.getReader();
     _chatTimeout = setTimeout(() => {
         reader.cancel();
@@ -1194,4 +1191,3 @@ async function deleteZim(filename) {
   toast('Content pack deleted', 'warning');
   loadZimList();
 }
-

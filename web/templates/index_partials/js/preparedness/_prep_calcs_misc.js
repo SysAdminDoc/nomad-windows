@@ -203,7 +203,7 @@ function savePace() {
   // Debounced server-side persist for backup
   clearTimeout(_paceSaveTimer);
   _paceSaveTimer = setTimeout(() => {
-    fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({pace_plan: JSON.stringify(pace)})}).catch(() => {});
+    apiPut('/api/settings', {pace_plan: JSON.stringify(pace)}).catch(() => {});
   }, 1000);
 }
 

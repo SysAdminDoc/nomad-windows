@@ -60,6 +60,21 @@ class TestSyncPush:
         assert resp.status_code == 400
         assert 'Invalid' in resp.get_json()['error']
 
+    def test_sync_push_rejects_malformed_peer_response(self, client, monkeypatch):
+        class _BadResponse:
+            ok = True
+            status_code = 200
+
+            def json(self):
+                raise ValueError('bad peer payload')
+
+        monkeypatch.setattr('requests.post', lambda *args, **kwargs: _BadResponse())
+
+        resp = client.post('/api/node/sync-push', json={'ip': '10.10.10.10'})
+
+        assert resp.status_code == 500
+        assert 'Push to peer failed' in resp.get_json()['error']
+
 
 class TestSyncPull:
     def test_sync_pull_invalid_ip(self, client):
@@ -209,6 +224,65 @@ class TestGroupExercises:
         assert 'exercise_id' in data
         assert 'invited' in data
 
+    def test_group_exercises_list_recovers_from_corrupted_json_fields(self, client, db):
+        create = client.post('/api/group-exercises', json={
+            'title': 'Broken Exercise',
+            'scenario_type': 'grid_down',
+            'description': 'Exercise with corrupted payloads',
+        })
+        exercise_id = create.get_json()['exercise_id']
+
+        db.execute(
+            'UPDATE group_exercises SET participants = ?, decisions_log = ?, shared_state = ? WHERE exercise_id = ?',
+            ('{broken', '{broken', '{broken', exercise_id),
+        )
+        db.commit()
+
+        resp = client.get('/api/group-exercises')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        entry = next((item for item in data if item['exercise_id'] == exercise_id), None)
+        assert entry is not None
+        assert entry['participants'] == []
+        assert entry['decisions_log'] == []
+        assert entry['shared_state'] == {}
+
+    def test_group_exercises_sync_state_accepts_json_string_payloads(self, client, db):
+        create = client.post('/api/group-exercises', json={
+            'title': 'String Sync Exercise',
+            'scenario_type': 'grid_down',
+            'description': 'Exercise with stringified sync payloads',
+        })
+        exercise_id = create.get_json()['exercise_id']
+
+        db.execute(
+            "INSERT INTO federation_peers (node_id, node_name, trust_level) VALUES (?, ?, ?)",
+            ('trusted-sync-node', 'Trusted Sync Node', 'trusted'),
+        )
+        db.commit()
+
+        resp = client.post(f'/api/group-exercises/{exercise_id}/sync-state', json={
+            'source_node_id': 'trusted-sync-node',
+            'shared_state': '{"phase": 3, "events": [{"event": "alpha"}]}',
+            'decisions_log': '[{"decision": "hold"}]',
+            'status': 'active',
+            'score': 77,
+            'aar_text': 'Steady response',
+        })
+
+        assert resp.status_code == 200
+
+        row = db.execute(
+            'SELECT shared_state, decisions_log, current_phase, score FROM group_exercises WHERE exercise_id = ?',
+            (exercise_id,),
+        ).fetchone()
+        assert row is not None
+        assert json.loads(row['shared_state']) == {'phase': 3, 'events': [{'event': 'alpha'}]}
+        assert json.loads(row['decisions_log']) == [{'decision': 'hold'}]
+        assert row['current_phase'] == 3
+        assert row['score'] == 77
+
 
 class TestMutualAidResilience:
     def test_mutual_aid_list_recovers_from_corrupted_commitments(self, client):
@@ -255,3 +329,49 @@ class TestOfflineSnapshot:
             assert isinstance(data[table], list)
         assert '_timestamp' in data
         assert '_node_id' in data
+
+
+class TestCommunityReadinessResilience:
+    def test_community_readiness_recovers_from_corrupted_situation_json(self, client):
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO federation_sitboard (node_id, node_name, situation) VALUES (?, ?, ?)',
+                ('node-broken', 'Broken Node', '{broken'),
+            )
+            db.commit()
+
+        resp = client.get('/api/federation/community-readiness')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        entry = next((item for item in data['nodes'] if item['node_id'] == 'node-broken'), None)
+        assert entry is not None
+        assert entry['readiness']['water'] is None
+
+
+class TestFederationSkillSearchResilience:
+    def test_skill_search_accepts_stringified_shared_contacts_and_skips_corrupted_sitboard(self, client):
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO federation_sitboard (node_id, node_name, situation) VALUES (?, ?, ?)',
+                ('node-corrupt', 'Corrupt Node', '{broken'),
+            )
+            db.execute(
+                'INSERT INTO federation_sitboard (node_id, node_name, situation) VALUES (?, ?, ?)',
+                (
+                    'node-skilled',
+                    'Skilled Node',
+                    json.dumps({
+                        'shared_contacts': '[{"name":"Taylor","role":"Medic","skills":"trauma, triage","callsign":"MED-1"}]'
+                    }),
+                ),
+            )
+            db.commit()
+
+        resp = client.get('/api/federation/skill-search?skill=trauma')
+
+        assert resp.status_code == 200
+        data = resp.get_json()['results']
+        entry = next((item for item in data if item['name'] == 'Taylor'), None)
+        assert entry is not None
+        assert entry['source'] == 'federation:Skilled Node'

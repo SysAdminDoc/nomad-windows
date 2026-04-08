@@ -22,6 +22,26 @@ VECTOR_SIZE = 768  # nomic-embed-text v1.5
 EMBED_MODEL = 'nomic-embed-text:v1.5'
 
 
+def _safe_response_payload(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        if isinstance(fallback, dict):
+            return dict(fallback)
+        if isinstance(fallback, list):
+            return list(fallback)
+        return fallback
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    if isinstance(fallback, list):
+        return list(fallback)
+    return fallback
+
+
 def get_install_dir():
     return os.path.join(get_services_dir(), 'qdrant')
 
@@ -66,12 +86,16 @@ def install(callback=None):
         # Resolve download URL from GitHub releases
         resp = req.get(QDRANT_RELEASE_API, timeout=15)
         resp.raise_for_status()
-        rel = resp.json()
+        release = _safe_response_payload(resp, {})
         zip_url = None
         asset_keyword = get_qdrant_asset_filter()
-        for asset in rel.get('assets', []):
-            if asset_keyword in asset['name'].lower():
-                zip_url = asset['browser_download_url']
+        assets = release.get('assets', []) if isinstance(release, dict) else []
+        for asset in assets:
+            if not isinstance(asset, dict):
+                continue
+            asset_name = str(asset.get('name', '') or '').lower()
+            if asset_keyword in asset_name:
+                zip_url = asset.get('browser_download_url', '')
                 break
         if not zip_url:
             raise RuntimeError('Could not find Qdrant download for this platform. Check your internet connection and try again.')
@@ -231,7 +255,9 @@ def search(vector: list[float], limit: int = 5, filter_params: dict | None = Non
             timeout=10,
         )
         if r.ok:
-            return r.json().get('result', [])
+            payload = _safe_response_payload(r, {})
+            result = payload.get('result', []) if isinstance(payload, dict) else []
+            return result if isinstance(result, list) else []
     except Exception as e:
         log.error(f'Qdrant search failed: {e}')
     return []
@@ -263,7 +289,8 @@ def get_collection_info():
     try:
         r = req.get(f'http://localhost:{QDRANT_PORT}/collections/{COLLECTION_NAME}', timeout=5)
         if r.ok:
-            data = r.json().get('result', {})
+            payload = _safe_response_payload(r, {})
+            data = payload.get('result', {}) if isinstance(payload, dict) else {}
             return {
                 'points_count': data.get('points_count', 0),
                 'vectors_count': data.get('vectors_count', 0),

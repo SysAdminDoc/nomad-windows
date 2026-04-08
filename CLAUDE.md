@@ -20,7 +20,7 @@ These are intentional repo assets, not junk:
 - `tools/build_offline_atlas.py` — offline basemap generator
 - `web/nukemap/data/offline_atlas.json` — shared offline atlas (NukeMap + VIPTrack)
 - `web/viptrack/lib/` — vendored Leaflet + pako for VIPTrack (referenced by tracked index.html)
-- `web/checklist_templates_data.py` — imported by `web/app.py`
+- `web/checklist_templates_data.py` — imported by `web/blueprints/checklists.py`
 - `docs/` — project documentation
 
 ---
@@ -57,9 +57,9 @@ ROADMAP.md            # 22-phase implementation plan (all complete)
 .github/workflows/
   build.yml           # CI/CD — PyInstaller + Inno Setup, dual artifact release on tag push
 web/
-  app.py              # Flask app factory + middleware + remaining routes (~4,150 lines, 102 routes). Most routes extracted to blueprints.
-  utils.py            # Shared utilities (esc, safe_json_value/list/object, safe_id_list, clone_json_fallback, close_db_safely)
-  state.py            # Shared mutable state, SSE event bus, TTL cache (cached_get/cached_set)
+  app.py              # Flask app factory (~1,370 lines, 44 routes) — middleware, CSRF, error handlers, page routes, cross-module aggregation (needs/readiness/search/data-summary), SSE events, auto-backup, i18n, blueprint registration
+  utils.py            # 13 shared helpers: esc, safe_json_value/list/object, safe_id_list, clone_json_fallback, close_db_safely, validate_bulk_ids, check_origin, validate_download_url, get_node_id, get_node_name, read_household_size
+  state.py            # Shared mutable state, SSE event bus, TTL cache (cached_get/cached_set), wizard state
   translations.py     # i18n translations (10 languages, 56 keys per language)
   catalog.py          # Content catalogs (books, videos, audio, torrents)
   static/
@@ -72,8 +72,8 @@ web/
     pmtiles.js        # Tile format handler (bundled)
     js/
       epub.min.js     # EPUB reader library (bundled)
-  routes_advanced.py  # Advanced routes (phases 16-20): AI SITREP, actions, memory, print binder/wallet/SOI, system health, undo, federation community
-  blueprints/         # 21 Flask blueprints: ai, benchmark, checklists, comms, contacts, federation, garden, inventory, kb, maps, media, medical, notes, power, security, services, situation_room, supplies, system, tasks, weather
+  routes_advanced.py  # Deprecated stub — all routes dissolved into blueprints
+  blueprints/         # 26 Flask blueprints: ai, benchmark, checklists, comms, contacts, exercises, federation, garden, inventory, kb, kiwix, maps, media, medical, notes, power, preparedness, print_routes, security, services, situation_room, supplies, system, tasks, undo, weather
   templates/
     index.html        # HTML + inline theme vars + JS (~28,500 lines)
   nukemap/            # NukeMap v3.2.0 — index.html, 18 JS modules, CSS, data/, lib/leaflet
@@ -121,7 +121,7 @@ services/
 ```
 
 ## Version
-v1.0.0 — ~51,300 lines across 6 core files (app.py ~17,500 + index.html ~28,500 + app.css 2,392 + premium.css 717 + db.py 1,455 + translations.py 368), 600+ API routes (17 blueprints incl. situation_room), 95+ DB tables (135+ indexes), ~340 seeded radio frequencies, 8 managed services, 25 prep sub-tabs, 42 calculators, 56 reference cards, 21 decision guides, 38-section user guide, 850+ JS functions, 338 automated pytest tests (34 test files), 10 supported languages, persistent AI copilot dock (all tabs) with model cards + multimodal image input + conversation branching + source citations, SSE real-time alert push (/api/alerts/stream) with polling fallback, context-aware decision trees with live inventory/contacts data, allergy-aware dosage calculator (8 drugs, patient cross-check, pediatric dosing), watch/shift rotation planner with printable schedules, 6 inventory templates (185 items), Zambretti offline weather prediction with pressure graphing + weather-triggered alerts, inventory barcode/QR + lot tracking + check-in/out + photo attachments + auto-shopping list, DTMF tone generator + NATO phonetic trainer + antenna calculator + HF propagation prediction, wiki-links + backlinks + templates + attachments + daily journal in notes, media resume playback + chapter navigation + playlists + auto-thumbnails + subtitle support + metadata editor + Continue Watching, interactive TCCC MARCH flowchart + vital signs trending + expiring meds tracker + 15-category searchable medical reference, KB workspaces, companion planting (20 pairs) + pest guide (10 entries) + seed inventory, map measurement + print + style switcher + GPX + elevation profile graph + saved routes panel, AI inference + storage + network benchmarks, LAN chat channels + AES-GCM encryption + presence indicators + peer file transfer, mesh node map overlay, bento grid home + sidebar group labels + status pills + customize panel, v5.0 roadmap 98% complete (65/66 features)
+v1.0.0 — 600+ API routes across 26 blueprints + app.py (1,370 lines), db.py organized into 8 schema helpers, web/utils.py (13 shared functions), 95+ DB tables (210+ indexes), ~340 seeded radio frequencies, 8 managed services, 25 prep sub-tabs, 42 calculators, 56 reference cards, 21 decision guides, 38-section user guide, 850+ JS functions, 338 automated pytest tests (34 test files), 10 supported languages, persistent AI copilot dock (all tabs) with model cards + multimodal image input + conversation branching + source citations, SSE real-time alert push (/api/alerts/stream) with polling fallback, context-aware decision trees with live inventory/contacts data, allergy-aware dosage calculator (8 drugs, patient cross-check, pediatric dosing), watch/shift rotation planner with printable schedules, 6 inventory templates (185 items), Zambretti offline weather prediction with pressure graphing + weather-triggered alerts, inventory barcode/QR + lot tracking + check-in/out + photo attachments + auto-shopping list, DTMF tone generator + NATO phonetic trainer + antenna calculator + HF propagation prediction, wiki-links + backlinks + templates + attachments + daily journal in notes, media resume playback + chapter navigation + playlists + auto-thumbnails + subtitle support + metadata editor + Continue Watching, interactive TCCC MARCH flowchart + vital signs trending + expiring meds tracker + 15-category searchable medical reference, KB workspaces, companion planting (20 pairs) + pest guide (10 entries) + seed inventory, map measurement + print + style switcher + GPX + elevation profile graph + saved routes panel, AI inference + storage + network benchmarks, LAN chat channels + AES-GCM encryption + presence indicators + peer file transfer, mesh node map overlay, bento grid home + sidebar group labels + status pills + customize panel, v5.0 roadmap 98% complete (65/66 features)
 
 ## Audit History (8 rounds)
 - **v1.8.0 — Security**: Auth deny-on-failure, thread-safe install lock, path traversal hardening (normpath+startswith on maps/ZIM delete), DB try-finally on all 7 services, stirling stderr crash fix, race conditions (window handler before thread, health monitor MAX_RESTARTS), Flask startup error feedback

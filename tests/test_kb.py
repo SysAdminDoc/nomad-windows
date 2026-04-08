@@ -17,6 +17,20 @@ class TestKBStatus:
         data = resp.get_json()
         assert 'status' in data
 
+    def test_embed_texts_returns_empty_list_on_bad_json(self, monkeypatch):
+        from web.blueprints import kb as kb_module
+
+        class _BadResponse:
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                raise ValueError('bad embed payload')
+
+        monkeypatch.setattr('requests.post', lambda *args, **kwargs: _BadResponse())
+
+        assert kb_module.embed_text(['water filter']) == []
+
 
 class TestKBSearch:
     def test_search_empty_kb(self, client):
@@ -48,6 +62,30 @@ class TestKBDocumentResilience:
         assert data['entities'] == []
         assert data['linked_records'] == []
 
+    def test_document_details_filter_invalid_entity_shapes(self, client):
+        with db_session() as db:
+            cur = db.execute(
+                'INSERT INTO documents (filename, content_type, file_size, status, entities) VALUES (?, ?, ?, ?, ?)',
+                (
+                    'mixed-entities.txt',
+                    'text',
+                    0,
+                    'ready',
+                    '[1, {"type":"person","value":" Alice Walker "}, {"type":"","value":"skip"}, {"type":"phone","value":" 555-0101 "}]',
+                ),
+            )
+            db.commit()
+            doc_id = cur.lastrowid
+
+        resp = client.get(f'/api/kb/documents/{doc_id}/details')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['entities'] == [
+            {'type': 'person', 'value': 'Alice Walker'},
+            {'type': 'phone', 'value': '555-0101'},
+        ]
+
     def test_import_entities_accepts_json_string_selection(self, client):
         with db_session() as db:
             cur = db.execute(
@@ -75,6 +113,33 @@ class TestKBDocumentResilience:
             names = [row['name'] for row in rows]
         assert 'Alice Walker' in names
         assert 'Bob Stone' not in names
+
+    def test_import_entities_skips_invalid_entries_in_mixed_payload(self, client):
+        with db_session() as db:
+            cur = db.execute(
+                'INSERT INTO documents (filename, content_type, file_size, status, entities) VALUES (?, ?, ?, ?, ?)',
+                (
+                    'mixed-import.txt',
+                    'text',
+                    0,
+                    'ready',
+                    '[null, {"type":"person","value":" Alice Walker "}, {"type":"phone","value":" 555-0101 "}, {"type":"person","value":""}]',
+                ),
+            )
+            db.commit()
+            doc_id = cur.lastrowid
+
+        resp = client.post(f'/api/kb/documents/{doc_id}/import-entities', json={})
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['results']['contacts'] >= 1
+        assert data['total_imported'] >= 1
+
+        with db_session() as db:
+            contact = db.execute('SELECT name, phone FROM contacts WHERE LOWER(name) = LOWER(?)', ('Alice Walker',)).fetchone()
+        assert contact is not None
+        assert contact['phone'] == '555-0101'
 
 
 class TestCSVImport:

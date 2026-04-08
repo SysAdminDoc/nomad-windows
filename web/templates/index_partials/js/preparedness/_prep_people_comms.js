@@ -48,9 +48,7 @@ async function addEmergencyNumbers() {
     {name: 'National Weather Service', phone: '', role: 'Weather alerts', freq: 'NOAA 162.400-162.550 MHz', notes: 'Monitor via NOAA weather radio'},
     {name: 'Coast Guard', phone: 'VHF Ch 16', role: 'Maritime emergency', freq: '156.800 MHz', notes: 'Marine distress frequency'},
   ];
-  const results = await Promise.allSettled(numbers.map(c =>
-    fetch('/api/contacts', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(c)})
-  ));
+  const results = await Promise.allSettled(numbers.map(c => apiPost('/api/contacts', c)));
   const added = results.filter(r => r.status === 'fulfilled').length;
   toast(`Added ${added} emergency contacts`, 'success');
   loadContacts();
@@ -117,11 +115,10 @@ function editContact(id) {
 async function deleteContact(id) {
   if (!confirm('Delete this contact?')) return;
   try {
-    const r = await fetch(`/api/contacts/${id}`, {method:'DELETE'});
-    if (!r.ok) throw new Error('Delete failed');
+    await apiDelete(`/api/contacts/${id}`);
     toast('Contact deleted', 'warning');
     loadContacts();
-  } catch(e) { toast('Failed to delete contact', 'error'); }
+  } catch(e) { toast(e?.data?.error || e?.message || 'Failed to delete contact', 'error'); }
 }
 
 /* ─── Unit Converter ─── */

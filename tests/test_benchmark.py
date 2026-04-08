@@ -1,5 +1,7 @@
 """Tests for benchmark API routes."""
 
+import web.blueprints.benchmark as benchmark_module
+
 
 class TestBenchmarkStatus:
     def test_benchmark_status(self, client):
@@ -39,3 +41,36 @@ class TestStorageBenchmark:
         assert 'read_mbps' in data
         assert 'write_mbps' in data
         assert data['read_mbps'] > 0
+
+
+class TestBenchmarkRunResilience:
+    def test_ai_benchmark_ignores_malformed_stream_lines(self, client, monkeypatch):
+        class _ImmediateThread:
+            def __init__(self, target=None, daemon=None):
+                self._target = target
+
+            def start(self):
+                if self._target:
+                    self._target()
+
+        class _FakeResponse:
+            def raise_for_status(self):
+                return None
+
+            def iter_lines(self):
+                return iter([b'{broken', b'{"response":"hello"}', b'{"done":true}'])
+
+        monkeypatch.setattr(benchmark_module.threading, 'Thread', _ImmediateThread)
+        monkeypatch.setattr(benchmark_module.ollama, 'is_installed', lambda: True)
+        monkeypatch.setattr(benchmark_module.ollama, 'running', lambda: True)
+        monkeypatch.setattr(benchmark_module.ollama, 'list_models', lambda: [{'name': 'test-model'}])
+        monkeypatch.setattr('requests.post', lambda *args, **kwargs: _FakeResponse())
+
+        resp = client.post('/api/benchmark/run', json={'mode': 'ai'})
+
+        assert resp.status_code == 200
+        status = client.get('/api/benchmark/status')
+        assert status.status_code == 200
+        data = status.get_json()
+        assert data['status'] == 'complete'
+        assert data['results']['ai_tps'] >= 0

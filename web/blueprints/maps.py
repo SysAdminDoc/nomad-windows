@@ -67,6 +67,27 @@ def _safe_track_geojson(value):
     }
 
 
+def _load_json_response_bytes(raw, fallback=None):
+    if fallback is None:
+        fallback = {}
+    if isinstance(raw, (bytes, bytearray)):
+        text = raw.decode('utf-8', errors='ignore')
+    elif isinstance(raw, str):
+        text = raw
+    else:
+        return _clone_json_fallback(fallback)
+    text = text.strip()
+    if not text:
+        return _clone_json_fallback(fallback)
+    try:
+        parsed = json.loads(text)
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
+
+
 # ─── Maps API ──────────────────────────────────────────────────────
 
 MAPS_DIR_NAME = 'maps'
@@ -349,12 +370,15 @@ def _get_pmtiles_cli():
     if os.path.isfile(exe):
         return exe
     # Download from GitHub releases
-    import urllib.request, zipfile, io, json as _json
+    import urllib.request, zipfile, io
     api_url = 'https://api.github.com/repos/protomaps/go-pmtiles/releases/latest'
     log.info('Resolving pmtiles CLI release from %s', api_url)
     req = urllib.request.Request(api_url, headers={'User-Agent': 'NOMADFieldDesk/1.0.0', 'Accept': 'application/vnd.github+json'})
     with urllib.request.urlopen(req, timeout=30) as resp:
-        release = _json.loads(resp.read())
+        release = _load_json_response_bytes(resp.read(), {})
+    if not isinstance(release, dict):
+        log.error('Malformed go-pmtiles release metadata payload')
+        return None
     url = None
     if IS_WINDOWS:
         plat_key, arch_key = 'Windows', 'x86_64'
@@ -366,9 +390,19 @@ def _get_pmtiles_cli():
         import platform as _plat
         arch = 'arm64' if _plat.machine() == 'aarch64' else 'x86_64'
         plat_key, arch_key = 'Linux', arch
-    for asset in release.get('assets', []):
-        if plat_key in asset['name'] and arch_key in asset['name']:
-            url = asset['browser_download_url']
+    assets = release.get('assets')
+    if not isinstance(assets, list):
+        log.error('go-pmtiles release metadata missing asset list')
+        return None
+    for asset in assets:
+        if not isinstance(asset, dict):
+            continue
+        asset_name = str(asset.get('name', '') or '')
+        asset_url = asset.get('browser_download_url')
+        if not isinstance(asset_url, str):
+            continue
+        if plat_key in asset_name and arch_key in asset_name:
+            url = asset_url
             break
     if not url:
         log.error('No %s %s asset found in go-pmtiles release', plat_key, arch_key)

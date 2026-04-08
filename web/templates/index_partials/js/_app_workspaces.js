@@ -79,7 +79,7 @@ async function loadMaps() {
   }
 }
 
-function deleteMap(filename, btn) {
+async function deleteMap(filename, btn) {
   if (!btn) btn = (typeof event !== 'undefined' && event) ? event.target : null;
   if (!btn) return;
   if (!btn.dataset.confirm) {
@@ -90,19 +90,22 @@ function deleteMap(filename, btn) {
     setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
     return;
   }
-  fetch('/api/maps/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename})})
-    .then(r => { if (!r.ok) throw new Error(); toast('Map deleted', 'warning'); loadMaps(); })
-    .catch(() => toast('Failed to delete map', 'error'));
+  try {
+    await _workspaceFetchOk('/api/maps/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename})}, 'Failed to delete map');
+    toast('Map deleted', 'warning');
+    loadMaps();
+  } catch (e) {
+    toast(e.message || 'Failed to delete map', 'error');
+  }
 }
 
 async function downloadMapRegion(regionId) {
   try {
-    const resp = await fetch('/api/maps/download-region', {
+    await _workspaceFetchJson('/api/maps/download-region', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({region_id: regionId})
-    });
-    if (!resp.ok) { const data = await resp.json().catch(() => ({})); toast(data.error || 'Download failed', 'error'); return; }
+    }, 'Download failed');
     toast(`Started downloading region "${regionId}". This may take a while — tiles are extracted from the Protomaps planet build.`, 'info');
     startMapDownloadPolling();
   } catch (e) { toast('Download request failed: ' + e.message, 'error'); }
@@ -188,11 +191,10 @@ async function downloadMapFromUrl() {
   const filename = (document.getElementById('map-file-input')?.value?.trim()) || url.split('/').pop()?.split('?')[0] || 'download.pmtiles';
   if (!filename) { toast('Could not determine filename', 'warning'); return; }
   try {
-    const resp = await fetch('/api/maps/download-url', {
+    await _workspaceFetchJson('/api/maps/download-url', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({url, filename})
-    });
-    if (!resp.ok) { const data = await resp.json().catch(() => ({})); toast(data.error || 'Failed', 'error'); return; }
+    }, 'Failed');
     toast('Download started: ' + filename, 'info');
     startMapDownloadPolling();
   } catch (e) { toast('Failed: ' + e.message, 'error'); }
@@ -202,12 +204,10 @@ async function importMapFile() {
   const path = document.getElementById('map-file-input')?.value?.trim();
   if (!path) { toast('Enter a file path first', 'error'); return; }
   try {
-    const resp = await fetch('/api/maps/import-file', {
+    const data = await _workspaceFetchJson('/api/maps/import-file', {
       method: 'POST', headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({path})
-    });
-    if (!resp.ok) { const data = await resp.json().catch(() => ({})); toast(data.error || 'Import failed', 'error'); return; }
-    const data = await resp.json();
+    }, 'Import failed');
     toast(`Imported ${data.filename} (${data.size})`, 'success');
     loadMaps();
   } catch (e) { toast('Import failed: ' + e.message, 'error'); }
@@ -252,8 +252,8 @@ async function loadNotes() {
   const notesList = document.getElementById('notes-list');
   if (notesList && (!allNotes || allNotes.length === 0)) notesList.innerHTML = Array(4).fill('<div class="skeleton skeleton-card notes-skeleton"></div>').join('');
   try {
-    const resp = await fetch('/api/notes');
-    if (resp.ok) allNotes = await resp.json();
+    const notes = await _workspaceFetchJsonSafe('/api/notes', {}, allNotes || [], 'Failed to load notes');
+    allNotes = Array.isArray(notes) ? notes : (allNotes || []);
   } catch(e) { allNotes = allNotes || []; }
   renderNotesList();
 }
@@ -354,11 +354,15 @@ async function applyNoteTemplateByIndex(idx) {
 async function deleteNote() {
   if (!confirm('Delete this note?')) return;
   if (!currentNoteId) return;
-  await fetch(`/api/notes/${currentNoteId}`, {method:'DELETE'});
-  currentNoteId = null;
-  document.getElementById('note-title').value = '';
-  document.getElementById('note-content').value = '';
-  await loadNotes();
+  try {
+    await _workspaceFetchOk(`/api/notes/${currentNoteId}`, {method:'DELETE'}, 'Failed to delete note');
+    currentNoteId = null;
+    document.getElementById('note-title').value = '';
+    document.getElementById('note-content').value = '';
+    await loadNotes();
+  } catch (e) {
+    toast(e.message || 'Failed to delete note', 'error');
+  }
 }
 function filterNotes() {
   const q = document.getElementById('notes-search').value.toLowerCase();
@@ -381,11 +385,10 @@ function autoSaveNote() {
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     try {
-      const resp = await fetch(`/api/notes/${currentNoteId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({title:document.getElementById('note-title').value, content:document.getElementById('note-content').value})});
-      if (!resp.ok) { toast('Note save failed', 'error'); return; }
+      await _workspaceFetchOk(`/api/notes/${currentNoteId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({title:document.getElementById('note-title').value, content:document.getElementById('note-content').value})}, 'Note save failed');
       await loadNotes();
-    } catch(e) { toast('Note save failed', 'error'); }
+    } catch(e) { toast(e.message || 'Note save failed', 'error'); }
   }, 500);
 }
 
@@ -1658,20 +1661,14 @@ async function showDocDetails(id) {
 
 async function importDocEntities(docId) {
   try {
-    const r = await fetch(`/api/kb/documents/${docId}/import-entities`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({})});
-    if (!r.ok) {
-      const d = await r.json().catch(() => ({}));
-      toast(d.error || 'Import failed', 'error');
-      return;
-    }
-    const d = await r.json();
+    const d = await _workspaceFetchJson(`/api/kb/documents/${docId}/import-entities`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({})}, 'Import failed');
     const parts = [];
     if (d.results.contacts > 0) parts.push(`${d.results.contacts} contact(s)`);
     if (d.results.inventory > 0) parts.push(`${d.results.inventory} inventory item(s)`);
     if (d.results.waypoints > 0) parts.push(`${d.results.waypoints} waypoint(s)`);
     if (d.results.skipped > 0) parts.push(`${d.results.skipped} skipped`);
     toast(`Imported ${d.total_imported} entities: ${parts.join(', ') || 'none'}`, d.total_imported > 0 ? 'success' : 'info');
-  } catch(e) { toast('Failed to import entities', 'error'); }
+  } catch(e) { toast(e.message || 'Failed to import entities', 'error'); }
 }
 
 async function analyzeAllDocs() {
@@ -2051,10 +2048,12 @@ async function searchMap() {
   }
   // Online geocoding search
   try {
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`);
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&limit=1`, {
+      signal: AbortSignal.timeout(8000),
+    });
     if (!r.ok) { toast('Geocoding failed', 'error'); return; }
     const results = await r.json();
-    if (results.length) {
+    if (Array.isArray(results) && results.length) {
       const {lat, lon, display_name} = results[0];
       _map.flyTo({center: [parseFloat(lon), parseFloat(lat)], zoom: 12});
       new maplibregl.Marker().setLngLat([parseFloat(lon), parseFloat(lat)])
@@ -2066,7 +2065,8 @@ async function searchMap() {
           })
         ))
         .addTo(_map).togglePopup();
-    } else { toast('Location not found', 'warning'); }
+    } else if (Array.isArray(results)) { toast('Location not found', 'warning'); }
+    else { toast('Geocoding returned an invalid response', 'error'); }
   } catch(e) { toast('Location search requires internet. Enter coordinates (lat,lng) for offline navigation.', 'warning'); }
 }
 

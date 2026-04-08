@@ -76,6 +76,18 @@ def _safe_float(val, default=0):
         return default
 
 
+def _safe_response_json(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
+
+
 def _get_state(key=None):
     with _state_lock:
         if key:
@@ -676,11 +688,13 @@ def _fetch_earthquakes():
     try:
         resp = _fetch_with_retry('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson',
                                  timeout=15, headers=_REQ_HEADERS)
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"Earthquake fetch failed: {e}")
         return
 
+    if not isinstance(data, dict):
+        return
     features = data.get('features', [])[:100]
     batch_ts = datetime.now().isoformat()
     with db_session() as db:
@@ -712,11 +726,13 @@ def _fetch_weather_alerts():
     try:
         resp = _fetch_with_retry('https://api.weather.gov/alerts/active?status=actual&severity=Extreme,Severe',
                                  timeout=15, headers={**_REQ_HEADERS, 'Accept': 'application/geo+json'})
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"Weather alerts fetch failed: {e}")
         return
 
+    if not isinstance(data, dict):
+        return
     features = data.get('features', [])[:200]
     batch_ts = datetime.now().isoformat()
     with db_session() as db:
@@ -778,7 +794,10 @@ def _fetch_market_data():
             resp = _http_session.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}',
                                 params={'range': '1d', 'interval': '5m'}, timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
             if resp.ok:
-                meta = resp.json().get('chart', {}).get('result', [{}])[0].get('meta', {})
+                payload = _safe_response_json(resp, {})
+                meta = payload.get('chart', {}).get('result', [{}])[0].get('meta', {}) if isinstance(payload, dict) else {}
+                if not isinstance(meta, dict) or not meta:
+                    continue
                 price = meta.get('regularMarketPrice', 0)
                 prev = meta.get('previousClose', 0)
                 change = ((price - prev) / prev * 100) if prev else 0
@@ -798,7 +817,10 @@ def _fetch_market_data():
             resp = _http_session.get(f'https://query1.finance.yahoo.com/v8/finance/chart/{sym}',
                                 params={'range': '1d', 'interval': '5m'}, timeout=8, headers=_REQ_HEADERS)
             if resp.ok:
-                meta = resp.json().get('chart', {}).get('result', [{}])[0].get('meta', {})
+                payload = _safe_response_json(resp, {})
+                meta = payload.get('chart', {}).get('result', [{}])[0].get('meta', {}) if isinstance(payload, dict) else {}
+                if not isinstance(meta, dict) or not meta:
+                    continue
                 price = meta.get('regularMarketPrice', 0)
                 prev = meta.get('previousClose', 0)
                 change = ((price - prev) / prev * 100) if prev else 0
@@ -812,7 +834,12 @@ def _fetch_market_data():
                                  timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         names = {'bitcoin': 'BTC', 'ethereum': 'ETH', 'solana': 'SOL',
                  'binancecoin': 'BNB', 'ripple': 'XRP', 'cardano': 'ADA', 'dogecoin': 'DOGE'}
-        for coin, vals in resp.json().items():
+        coin_data = _safe_response_json(resp, {})
+        if not isinstance(coin_data, dict):
+            coin_data = {}
+        for coin, vals in coin_data.items():
+            if not isinstance(vals, dict):
+                continue
             markets.append({'symbol': names.get(coin, coin.upper()), 'price': vals.get('usd', 0),
                             'change_24h': round(vals.get('usd_24h_change') or 0, 2), 'market_type': 'crypto'})
     except Exception as e:
@@ -823,7 +850,8 @@ def _fetch_market_data():
         resp = _http_session.get('https://api.metals.dev/v1/latest?api_key=demo&currency=USD&unit=toz',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            metals = resp.json().get('metals', {})
+            payload = _safe_response_json(resp, {})
+            metals = payload.get('metals', {}) if isinstance(payload, dict) else {}
             # Read previous prices from DB for change calculation
             prev_prices = {}
             try:
@@ -849,7 +877,8 @@ def _fetch_market_data():
                                     'sort[0][direction]': 'desc', 'length': '1'},
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            rows = resp.json().get('response', {}).get('data', [])
+            payload = _safe_response_json(resp, {})
+            rows = payload.get('response', {}).get('data', []) if isinstance(payload, dict) else []
             if rows:
                 try:
                     markets.append({'symbol': 'OIL (BRENT)', 'price': float(rows[0].get('value', 0)),
@@ -863,7 +892,11 @@ def _fetch_market_data():
     try:
         resp = _http_session.get('https://api.alternative.me/fng/?limit=1', timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            fg = resp.json().get('data', [{}])[0]
+            payload = _safe_response_json(resp, {})
+            fg_rows = payload.get('data', [{}]) if isinstance(payload, dict) else [{}]
+            fg = fg_rows[0] if fg_rows else {}
+            if not isinstance(fg, dict) or 'value' not in fg:
+                raise ValueError('Fear/Greed payload missing value')
             markets.append({'symbol': 'FEAR_GREED', 'price': int(fg.get('value', 50)),
                             'change_24h': 0, 'market_type': 'sentiment',
                             'label': fg.get('value_classification', 'Neutral')})
@@ -893,11 +926,13 @@ def _fetch_conflict_data():
             timeout=15, headers={**_REQ_HEADERS, 'Accept': 'application/json'})
         if not resp.ok:
             return
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"GDACS failed: {e}")
         return
 
+    if not isinstance(data, dict):
+        return
     features = data.get('features', [])[:50]
     batch_ts = datetime.now().isoformat()
     with db_session() as db:
@@ -936,11 +971,13 @@ def _fetch_aviation():
                             timeout=20, headers=_REQ_HEADERS)
         if not resp.ok:
             return
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"OpenSky failed: {e}")
         return
 
+    if not isinstance(data, dict):
+        return
     states = data.get('states', [])
     if not states:
         return
@@ -978,7 +1015,7 @@ def _fetch_ais_ships():
                             params={'limit': 200},
                             timeout=15, headers=_REQ_HEADERS)
         if resp.ok:
-            data = resp.json()
+            data = _safe_response_json(resp, [])
             for s in (data if isinstance(data, list) else data.get('features', data.get('data', []))):
                 # Handle GeoJSON or flat format
                 if isinstance(s, dict):
@@ -1041,8 +1078,10 @@ def _fetch_space_weather():
         resp = _http_session.get('https://services.swpc.noaa.gov/products/noaa-scales.json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            scales = resp.json()
-            datasets['noaa_scales'] = scales.get('0', {})  # Current conditions
+            scales = _safe_response_json(resp, {})
+            current_scales = scales.get('0', {}) if isinstance(scales, dict) else {}
+            if isinstance(current_scales, dict) and current_scales:
+                datasets['noaa_scales'] = current_scales  # Current conditions
     except Exception as e:
         log.debug(f"NOAA scales failed: {e}")
 
@@ -1051,7 +1090,7 @@ def _fetch_space_weather():
         resp = _http_session.get('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            kp_data = resp.json()
+            kp_data = _safe_response_json(resp, [])
             if kp_data:
                 datasets['kp_index'] = {'latest': kp_data[-1], 'recent': kp_data[-8:]}
     except Exception as e:
@@ -1062,7 +1101,7 @@ def _fetch_space_weather():
         resp = _http_session.get('https://services.swpc.noaa.gov/json/solar_probabilities.json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            probs = resp.json()
+            probs = _safe_response_json(resp, [])
             if probs:
                 datasets['solar_probs'] = probs[-1]
     except Exception as e:
@@ -1073,8 +1112,9 @@ def _fetch_space_weather():
         resp = _http_session.get('https://services.swpc.noaa.gov/products/alerts.json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            alerts = resp.json()
-            datasets['sw_alerts'] = alerts[:10]
+            alerts = _safe_response_json(resp, [])
+            if isinstance(alerts, list) and alerts:
+                datasets['sw_alerts'] = alerts[:10]
     except Exception as e:
         log.debug(f"NOAA alerts failed: {e}")
 
@@ -1103,11 +1143,13 @@ def _fetch_volcanoes():
                             timeout=20, headers=_REQ_HEADERS)
         if not resp.ok:
             return
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"Volcano fetch failed: {e}")
         return
 
+    if not isinstance(data, dict):
+        return
     features = data.get('features', [])[:50]
     with db_session() as db:
         db.execute('DELETE FROM sitroom_volcanoes')
@@ -1138,11 +1180,13 @@ def _fetch_predictions():
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if not resp.ok:
             return
-        markets = resp.json()
+        markets = _safe_response_json(resp, [])
     except Exception as e:
         log.debug(f"Polymarket failed: {e}")
         return
 
+    if not isinstance(markets, list):
+        return
     if not markets:
         return
 
@@ -1241,7 +1285,7 @@ def _fetch_internet_outages():
         resp = _http_session.get('https://radar.cloudflare.com/api/v1/annotations/outages?dateRange=1d&format=json',
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            data = resp.json()
+            data = _safe_response_json(resp, {})
             for item in (data.get('annotations', []) or data.get('result', {}).get('annotations', []))[:30]:
                 outages.append({
                     'title': item.get('description', item.get('eventType', 'Internet disruption')),
@@ -1259,7 +1303,7 @@ def _fetch_internet_outages():
             resp = _http_session.get('https://api.ioda.inetintel.cc.gatech.edu/v2/alerts/ongoing',
                                 timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
             if resp.ok:
-                data = resp.json()
+                data = _safe_response_json(resp, {})
                 for alert in (data.get('data', []))[:20]:
                     outages.append({
                         'title': f"Internet disruption: {alert.get('entityName', 'Unknown')}",
@@ -1392,7 +1436,7 @@ def _fetch_radiation():
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if not resp.ok:
             return
-        data = resp.json()
+        data = _safe_response_json(resp, [])
     except Exception as e:
         log.debug(f"Safecast radiation fetch failed: {e}")
         return
@@ -1433,7 +1477,7 @@ def _fetch_gdelt_trending():
                             timeout=15, headers=_REQ_HEADERS)
         if not resp.ok:
             return
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"GDELT trending fetch failed: {e}")
         return
@@ -1500,7 +1544,7 @@ def _fetch_ucdp_conflicts():
         resp = _fetch_with_retry('https://ucdpapi.pcr.uu.se/api/gedevents/24.1',
                                   timeout=15, headers=_REQ_HEADERS,
                                   params={'pagesize': 50, 'page': 0})
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"UCDP fetch failed: {e}")
         return
@@ -1545,7 +1589,7 @@ def _fetch_cyber_threats():
         resp = _http_session.get('https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json',
                             timeout=15, headers=_REQ_HEADERS)
         if resp.ok:
-            data = resp.json()
+            data = _safe_response_json(resp, {})
             for vuln in (data.get('vulnerabilities', []))[-20:]:
                 items.append({
                     'title': f"{vuln.get('cveID', '')} - {vuln.get('vendorProject', '')} {vuln.get('product', '')}",
@@ -1604,7 +1648,8 @@ def _fetch_yield_curve():
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if not resp.ok:
             return
-        data = resp.json().get('data', [])
+        payload = _safe_response_json(resp, {})
+        data = payload.get('data', []) if isinstance(payload, dict) else []
     except Exception as e:
         log.debug(f"Yield curve fetch failed: {e}")
         return
@@ -1641,12 +1686,15 @@ def _fetch_stablecoins():
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if not resp.ok:
             return
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"Stablecoin fetch failed: {e}")
         return
 
     names = {'tether': 'USDT', 'usd-coin': 'USDC', 'dai': 'DAI', 'first-digital-usd': 'FDUSD'}
+    if not data or not isinstance(data, dict):
+        return
+
     with db_session() as db:
         rows = []
         for coin, vals in data.items():
@@ -1902,7 +1950,8 @@ def _fetch_macro_stress():
                                         'sort_order': 'desc', 'limit': 1, 'file_type': 'json'},
                                 timeout=8, headers=_REQ_HEADERS)
             if resp.ok:
-                obs = resp.json().get('observations', [])
+                payload = _safe_response_json(resp, {})
+                obs = payload.get('observations', []) if isinstance(payload, dict) else []
                 if obs and obs[0].get('value', '.') != '.':
                     indicators[series_id] = {'label': label, 'value': float(obs[0]['value']),
                                               'date': obs[0].get('date', '')}
@@ -1960,7 +2009,7 @@ def _fetch_github_trending():
                             timeout=15, headers={**_REQ_HEADERS, 'Accept': 'application/vnd.github.v3+json'})
         if not resp.ok:
             return
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"GitHub trending fetch failed: {e}")
         return
@@ -1998,7 +2047,8 @@ def _fetch_fuel_prices():
                                     'sort[0][column]': 'period', 'sort[0][direction]': 'desc', 'length': '1'},
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            rows = resp.json().get('response', {}).get('data', [])
+            payload = _safe_response_json(resp, {})
+            rows = payload.get('response', {}).get('data', []) if isinstance(payload, dict) else []
             if rows:
                 with db_session() as db:
                     db.execute("DELETE FROM sitroom_events WHERE event_type = 'fuel_price'")
@@ -2112,7 +2162,7 @@ def _fetch_displacement():
                     db.commit()
                 log.info(f"Situation Room: cached {len(items)} displacement items (RSS fallback)")
             return
-        data = resp.json()
+        data = _safe_response_json(resp, {})
     except Exception as e:
         log.debug(f"UNHCR fetch failed: {e}")
         return
@@ -2155,7 +2205,7 @@ def _fetch_oref_alerts():
                                      'X-Requested-With': 'XMLHttpRequest'})
         if not resp.ok:
             return
-        data = resp.json() if resp.text.strip() else []
+        data = _safe_response_json(resp, []) if resp.text.strip() else []
     except Exception as e:
         log.debug(f"OREF fetch failed: {e}")
         return
@@ -2212,7 +2262,9 @@ def _fetch_gdelt_events():
                                     'TIMESPAN': '24h'},
                             timeout=15, headers=_REQ_HEADERS)
         if resp.ok:
-            results['volume'] = resp.json()
+            data = _safe_response_json(resp, {})
+            if data:
+                results['volume'] = data
     except Exception as e:
         log.debug(f"GDELT volume fetch failed: {e}")
 
@@ -2223,7 +2275,9 @@ def _fetch_gdelt_events():
                                     'TIMESPAN': '72h'},
                             timeout=15, headers=_REQ_HEADERS)
         if resp.ok:
-            results['tone'] = resp.json()
+            data = _safe_response_json(resp, {})
+            if data:
+                results['tone'] = data
     except Exception as e:
         log.debug(f"GDELT tone fetch failed: {e}")
 
@@ -2234,7 +2288,9 @@ def _fetch_gdelt_events():
                                     'TIMESPAN': '24h', 'MAXPOINTS': 50},
                             timeout=15, headers=_REQ_HEADERS)
         if resp.ok:
-            results['hotspots'] = resp.json()
+            data = _safe_response_json(resp, {})
+            if data:
+                results['hotspots'] = data
     except Exception as e:
         log.debug(f"GDELT hotspots fetch failed: {e}")
 
@@ -2274,7 +2330,7 @@ def _fetch_cot_positioning():
                             timeout=15, headers=_REQ_HEADERS)
         if not resp.ok:
             return
-        data = resp.json()
+        data = _safe_response_json(resp, [])
     except Exception as e:
         log.debug(f"CFTC COT fetch failed: {e}")
         return
@@ -3335,7 +3391,8 @@ def api_sitroom_national_debt():
                             params={'sort': '-record_date', 'page[size]': 1},
                             timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
         if resp.ok:
-            data = resp.json().get('data', [])
+            payload = _safe_response_json(resp, {})
+            data = payload.get('data', []) if isinstance(payload, dict) else []
             if data:
                 debt['us'] = {'total': float(data[0].get('tot_pub_debt_out_amt', 0)),
                               'date': data[0].get('record_date', '')}
@@ -3773,7 +3830,7 @@ def api_sitroom_stock_analysis(symbol):
                             params={'interval': '1d', 'range': '1mo'},
                             timeout=10, headers={**_REQ_HEADERS, 'Accept': 'application/json'})
         if resp.ok:
-            data = resp.json()
+            data = _safe_response_json(resp, {})
             meta = data.get('chart', {}).get('result', [{}])[0].get('meta', {})
             result['name'] = meta.get('shortName', meta.get('symbol', symbol))
             result['exchange'] = meta.get('exchangeName', '')

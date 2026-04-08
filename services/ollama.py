@@ -1,5 +1,6 @@
 """Ollama service — local AI chat with LLMs."""
 
+import json
 import os
 import subprocess
 import time
@@ -39,6 +40,43 @@ RECOMMENDED_MODELS = [
     {'name': 'alibayram/medgemma', 'size': '3.3 GB', 'desc': 'Medical AI — can analyze wound photos, X-rays, symptoms'},
     {'name': 'meditron:7b', 'size': '3.8 GB', 'desc': 'Medical AI by EPFL — clinical knowledge, drug interactions'},
 ]
+
+
+def _load_stream_json_line(line):
+    if isinstance(line, (bytes, bytearray)):
+        text = line.decode('utf-8', errors='ignore')
+    elif isinstance(line, str):
+        text = line
+    else:
+        return None
+    text = text.strip()
+    if not text:
+        return None
+    try:
+        parsed = json.loads(text)
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _safe_response_payload(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        if isinstance(fallback, dict):
+            return dict(fallback)
+        if isinstance(fallback, list):
+            return list(fallback)
+        return fallback
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    if isinstance(fallback, dict):
+        return dict(fallback)
+    if isinstance(fallback, list):
+        return list(fallback)
+    return fallback
 
 
 def get_models_dir():
@@ -229,7 +267,9 @@ def list_models():
     try:
         resp = requests.get(f'http://localhost:{OLLAMA_PORT}/api/tags', timeout=5)
         if resp.ok:
-            return resp.json().get('models', [])
+            payload = _safe_response_payload(resp, {})
+            models = payload.get('models', []) if isinstance(payload, dict) else []
+            return models if isinstance(models, list) else []
         log.debug('Ollama model list returned HTTP %s', resp.status_code)
     except (requests.RequestException, ValueError) as exc:
         log.debug('Could not list Ollama models: %s', exc)
@@ -250,52 +290,65 @@ def pull_model(model_name: str):
         )
         resp.raise_for_status()
 
-        import json
         import time as _time
         _pull_max_pct = 0
         _pull_last_bytes = 0
         _pull_last_time = _time.time()
+        saw_valid_chunk = False
+        saw_success = False
         for line in resp.iter_lines():
             if not line:
                 continue
-            try:
-                data = json.loads(line)
-                if not isinstance(data, dict):
-                    continue
-                status = str(data.get('status', ''))
-                total = int(data.get('total', 0) or 0)
-                completed = int(data.get('completed', 0) or 0)
-                pct = int(completed / total * 100) if total > 0 else 0
-                # Prevent backward jumps when Ollama switches layers
-                _pull_max_pct = max(_pull_max_pct, pct)
+            data = _load_stream_json_line(line)
+            if not data:
+                logging.debug('pull_model parse error: unreadable chunk')
+                continue
+            saw_valid_chunk = True
+            status = str(data.get('status', ''))
+            total = int(data.get('total', 0) or 0)
+            completed = int(data.get('completed', 0) or 0)
+            pct = int(completed / total * 100) if total > 0 else 0
+            # Prevent backward jumps when Ollama switches layers
+            _pull_max_pct = max(_pull_max_pct, pct)
+            if status.lower() in {'success', 'complete', 'completed', 'done'} or (total > 0 and completed >= total):
+                saw_success = True
 
-                # Calculate speed
-                speed_str = ''
-                now = _time.time()
-                if completed > 0 and total > 0 and now - _pull_last_time >= 1:
-                    bytes_delta = completed - _pull_last_bytes
-                    time_delta = now - _pull_last_time
-                    if bytes_delta > 0 and time_delta > 0:
-                        bps = bytes_delta / time_delta
-                        speed_str = f'{bps/1024/1024:.1f} MB/s' if bps > 1024*1024 else f'{bps/1024:.0f} KB/s'
-                    _pull_last_bytes = completed
-                    _pull_last_time = now
+            # Calculate speed
+            speed_str = ''
+            now = _time.time()
+            if completed > 0 and total > 0 and now - _pull_last_time >= 1:
+                bytes_delta = completed - _pull_last_bytes
+                time_delta = now - _pull_last_time
+                if bytes_delta > 0 and time_delta > 0:
+                    bps = bytes_delta / time_delta
+                    speed_str = f'{bps/1024/1024:.1f} MB/s' if bps > 1024*1024 else f'{bps/1024:.0f} KB/s'
+                _pull_last_bytes = completed
+                _pull_last_time = now
 
-                # Build size display
-                size_str = ''
-                if total > 0:
-                    size_str = f'{completed/1024/1024/1024:.1f}/{total/1024/1024/1024:.1f} GB' if total > 1024**3 else f'{completed/1024/1024:.0f}/{total/1024/1024:.0f} MB'
+            # Build size display
+            size_str = ''
+            if total > 0:
+                size_str = f'{completed/1024/1024/1024:.1f}/{total/1024/1024/1024:.1f} GB' if total > 1024**3 else f'{completed/1024/1024:.0f}/{total/1024/1024:.0f} MB'
 
-                _pull_progress = {
-                    'status': 'pulling',
-                    'model': model_name,
-                    'percent': _pull_max_pct,
-                    'detail': f'{status} {size_str} {speed_str}'.strip(),
-                }
-            except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
-                logging.debug('pull_model parse error: %s', exc)
+            _pull_progress = {
+                'status': 'pulling',
+                'model': model_name,
+                'percent': _pull_max_pct,
+                'detail': f'{status} {size_str} {speed_str}'.strip(),
+            }
 
+        if not saw_valid_chunk:
+            _pull_progress = {
+                'status': 'error',
+                'model': model_name,
+                'percent': 0,
+                'detail': 'AI service returned unreadable pull progress data.',
+            }
+            log.warning('Model pull failed: unreadable progress stream for %s', model_name)
+            return False
         _pull_progress = {'status': 'complete', 'model': model_name, 'percent': 100, 'detail': 'Done'}
+        if not saw_success:
+            log.debug('Model pull stream ended without explicit success marker for %s', model_name)
         log.info(f'Model {model_name} pulled successfully')
         return True
     except Exception as e:
@@ -360,4 +413,4 @@ def chat(model: str, messages: list[dict], stream: bool = True):
                 resp.close()
         return _streaming_lines()
     else:
-        return resp.json()
+        return _safe_response_payload(resp, {})

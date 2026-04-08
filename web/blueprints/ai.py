@@ -20,7 +20,7 @@ from web.state import _pull_queue, _pull_queue_lock
 from web.validation import validate_json
 from web.sql_safety import safe_columns
 import web.state as _state
-from web.utils import safe_json_list as _safe_json_list
+from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_list as _safe_json_list
 
 log = logging.getLogger('nomad.web')
 
@@ -47,6 +47,39 @@ def _trim_messages_to_fit(messages, max_tokens=4096, system_tokens=0):
         result.insert(0, msg)
         total += msg_tokens
     return result
+
+
+def _load_jsonl_samples(path, limit=5):
+    samples = []
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            for raw_line in f:
+                if len(samples) >= limit:
+                    break
+                line = raw_line.strip()
+                if not line:
+                    continue
+                try:
+                    parsed = json.loads(line)
+                except (json.JSONDecodeError, TypeError, ValueError):
+                    continue
+                if isinstance(parsed, dict):
+                    samples.append(parsed)
+    except Exception as exc:
+        log.warning('Could not read training dataset samples: %s', exc)
+    return samples
+
+
+def _safe_response_payload(response, fallback=None):
+    if fallback is None:
+        fallback = {}
+    try:
+        parsed = response.json()
+    except Exception:
+        return _clone_json_fallback(fallback)
+    if isinstance(parsed, (dict, list)):
+        return parsed
+    return _clone_json_fallback(fallback)
 
 # ─── Copilot Session Memory ─────────────────────────────────────────
 
@@ -490,7 +523,7 @@ def api_context_usage():
             import requests as req
             r = req.post('http://localhost:11434/api/show', json={'name': model}, timeout=5)
             if r.ok:
-                info = r.json()
+                info = _safe_response_payload(r, {})
                 params = info.get('parameters', '')
                 if 'num_ctx' in params:
                     import re
@@ -595,7 +628,7 @@ def api_ai_chat_image():
             'stream': False
         }, timeout=120)
         if resp.ok:
-            data = resp.json()
+            data = _safe_response_payload(resp, {})
             answer = data.get('message', {}).get('content', 'No response')
             return jsonify({'answer': answer, 'model': model})
         return jsonify({'error': f'Model returned {resp.status_code}'}), 500
@@ -819,7 +852,7 @@ def api_ai_model_info(model_name):
         import requests as _req
         r = _req.post(f'http://localhost:11434/api/show', json={'name': model_name}, timeout=5)
         if r.ok:
-            data = r.json()
+            data = _safe_response_payload(r, {})
             details = data.get('details', {})
             model_info = data.get('model_info', {})
             # Extract key metrics
@@ -934,14 +967,11 @@ def api_training_jobs_create():
         system_prompt = "You are NOMAD, a survival and preparedness AI assistant. You provide practical, actionable advice for emergency preparedness, off-grid living, and disaster response."
         if ds:
             # Read sample records for system prompt enhancement
-            try:
-                with open(ds['file_path'], 'r') as f:
-                    samples = [json.loads(line) for line in f.readlines()[:5]]
-                if samples:
-                    topics = ', '.join(set(s.get('instruction', '')[:50] for s in samples[:3]))
+            samples = _load_jsonl_samples(ds['file_path'], limit=5)
+            if samples:
+                topics = ', '.join(set(s.get('instruction', '')[:50] for s in samples[:3] if str(s.get('instruction', '')).strip()))
+                if topics:
                     system_prompt += f" Your training focused on: {topics}."
-            except Exception as e:
-                log.warning(f'Could not read training dataset samples: {e}')
 
         with open(modelfile_path, 'w') as f:
             f.write(f'FROM {base_model}\n')

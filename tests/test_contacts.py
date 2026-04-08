@@ -66,3 +66,8 @@ class TestContactsDelete:
         assert resp.status_code == 200
         contacts = client.get('/api/contacts').get_json()
         assert not any(c['id'] == cid for c in contacts)
+
+    def test_bulk_delete_rejects_malformed_json(self, client):
+        resp = client.post('/api/contacts/bulk-delete', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'

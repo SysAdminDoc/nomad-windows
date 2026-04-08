@@ -1,6 +1,9 @@
 """Tests for AI training datasets and jobs API routes."""
 
 import json
+from pathlib import Path
+
+from config import get_data_dir
 
 
 class TestTrainingDatasets:
@@ -87,3 +90,34 @@ class TestTrainingJobs:
         data = resp.get_json()
         assert 'id' in data
         # The base_model should have been cleaned of dangerous characters
+
+    def test_training_job_create_skips_malformed_dataset_sample_lines(self, client, db, tmp_path):
+        dataset_path = tmp_path / 'mixed-dataset.jsonl'
+        dataset_path.write_text(
+            '\n'.join([
+                json.dumps({'instruction': 'Purify water for a field team', 'response': 'Boil for one minute.'}),
+                '{broken',
+                json.dumps({'instruction': 'Establish a perimeter at night', 'response': 'Set overlapping sectors.'}),
+            ]),
+            encoding='utf-8',
+        )
+
+        db.execute(
+            'INSERT INTO training_datasets (name, description, format, record_count, file_path, base_model, status) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            ('Mixed Dataset', 'mixed sample file', 'jsonl', 2, str(dataset_path), '', 'ready'),
+        )
+        db.commit()
+        ds = db.execute('SELECT id FROM training_datasets WHERE name = ?', ('Mixed Dataset',)).fetchone()
+
+        resp = client.post('/api/ai/training/jobs', json={
+            'dataset_id': ds['id'],
+            'base_model': 'llama3.2',
+            'output_model': 'mixed-sample-model',
+            'epochs': 1,
+        })
+
+        assert resp.status_code == 201
+        modelfile = Path(get_data_dir()) / 'modelfiles' / 'mixed-sample-model.Modelfile'
+        assert modelfile.exists()
+        contents = modelfile.read_text(encoding='utf-8')
+        assert 'Purify water for a field team' in contents

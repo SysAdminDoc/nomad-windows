@@ -72,6 +72,18 @@ class TestI18nLanguages:
         resp = client.post('/api/i18n/language', json={'language': 'zz'})
         assert resp.status_code == 400
 
+    def test_set_language_rejects_malformed_json(self, client):
+        resp = client.post('/api/i18n/language', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data['error'] == 'Request body must be valid JSON'
+
+    def test_dashboard_widgets_rejects_malformed_json(self, client):
+        resp = client.post('/api/dashboard/widgets', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data['error'] == 'Request body must be valid JSON'
+
 
 class TestSystemInfo:
     def test_system_self_test(self, client):
@@ -95,6 +107,22 @@ class TestVersionEndpoint:
         if resp.status_code == 200:
             data = resp.get_json()
             assert 'version' in data
+
+    def test_update_check_recovers_from_malformed_release_json(self, client, monkeypatch):
+        class _BadResponse:
+            ok = True
+
+            def json(self):
+                raise ValueError('bad github payload')
+
+        monkeypatch.setattr('requests.get', lambda *args, **kwargs: _BadResponse())
+
+        resp = client.get('/api/update-check')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['update_available'] is False
+        assert data['latest'] == data['current']
 
 
 class TestStatusReport:
@@ -150,3 +178,15 @@ class TestDashboardAndBackupConfigFallbacks:
         data = resp.get_json()
         assert isinstance(data, dict)
         assert data['situation'] == {}
+
+    def test_readiness_score_recovers_from_corrupted_checklist_json(self, client, db):
+        db.execute('INSERT INTO checklists (name, items) VALUES (?, ?)', ('Broken Readiness Checklist', '{broken'))
+        db.commit()
+
+        resp = client.get('/api/readiness-score')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert isinstance(data, dict)
+        assert data['categories']['planning']['score'] >= 0
+        assert 'checklists' in data['categories']['planning']['detail']

@@ -1104,11 +1104,7 @@ async function persistWorkspaceResumeStateToServer(force = false) {
   if (!_workspaceResumeHasServerState && !force) return false;
   try {
     const state = getWorkspaceResumeState();
-    await fetch('/api/settings', {
-      method: 'PUT',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({[WORKSPACE_RESUME_SETTINGS_KEY]: JSON.stringify(state)}),
-    });
+    await apiPut('/api/settings', {[WORKSPACE_RESUME_SETTINGS_KEY]: JSON.stringify(state)});
     return true;
   } catch (error) {
     console.warn('Unable to persist workspace memory', error);
@@ -1134,9 +1130,8 @@ async function hydrateWorkspaceResumeState(force = false) {
 
   _workspaceResumeHydrationPromise = (async () => {
     try {
-      const response = await fetch('/api/settings');
-      if (!response.ok) throw new Error(`settings ${response.status}`);
-      const settings = await response.json();
+      const settings = await safeFetch('/api/settings', {}, null);
+      if (!settings) throw new Error('settings unavailable');
       const serverState = parseWorkspaceResumeSettingValue(settings?.[WORKSPACE_RESUME_SETTINGS_KEY]);
       const chosenState = pickPreferredWorkspaceResumeState(localState, serverState);
       const serverSerialized = JSON.stringify(serverState);
@@ -1949,13 +1944,7 @@ function normalizePaletteQuery(value) {
 }
 
 async function fetchUnifiedSearchPayload(q) {
-  try {
-    const resp = await fetch(`/api/search/all?q=${encodeURIComponent(q)}`);
-    if (!resp.ok) return null;
-    return await resp.json();
-  } catch (e) {
-    return null;
-  }
+  return await safeFetch(`/api/search/all?q=${encodeURIComponent(q)}`, {}, null);
 }
 
 function flattenUnifiedSearchPayload(payload) {
@@ -2088,9 +2077,8 @@ async function loadContentSummary() {
   const el = document.getElementById('content-summary');
   if (!el) return;
   try {
-    const _csResp = await fetch('/api/content-summary');
-    if (!_csResp.ok) throw new Error('content-summary failed');
-    const s = await _csResp.json();
+    const s = await safeFetch('/api/content-summary', {}, null);
+    if (!s) throw new Error('content-summary failed');
     el.innerHTML = `
       <div>
         <div class="cs-total">${escapeHtml(String(s.total_size || '0 B'))}</div>
@@ -2114,9 +2102,8 @@ async function loadLogViewer() {
   const level = levelEl.value;
   try {
     const lines = document.getElementById('log-lines-select')?.value || 100;
-    const _logResp = await fetch('/api/activity?limit=' + parseInt(lines));
-    if (!_logResp.ok) throw new Error('activity log failed');
-    const items = await _logResp.json();
+    const items = await safeFetch('/api/activity?limit=' + parseInt(lines), {}, null);
+    if (!Array.isArray(items)) throw new Error('activity log failed');
     const filtered = level ? items.filter(a => a.level === level) : items;
     const el = document.getElementById('log-viewer');
     if (!filtered.length) { el.innerHTML = '<span class="settings-empty-state log-viewer-empty">No log entries.</span>'; return; }
@@ -2138,9 +2125,8 @@ async function loadLogViewer() {
 /* ─── Disk Monitor ─── */
 async function loadDataSummary() {
   try {
-    const _dsResp = await fetch('/api/data-summary');
-    if (!_dsResp.ok) return;
-    const d = await _dsResp.json();
+    const d = await safeFetch('/api/data-summary', {}, null);
+    if (!d) return;
     const el = document.getElementById('data-summary');
     if (!d?.tables?.length) {
       el.innerHTML = '<div class="settings-empty-state">No data yet. Start adding inventory, contacts, and notes to see your data summary.</div>';
@@ -2160,9 +2146,10 @@ async function loadDataSummary() {
 async function loadDiskMonitor() {
   try {
     const [sys, summary] = await Promise.all([
-      fetch('/api/system').then(r => { if(!r.ok) throw new Error(); return r.json(); }),
-      fetch('/api/content-summary').then(r => { if(!r.ok) throw new Error(); return r.json(); })
+      safeFetch('/api/system', {}, null),
+      safeFetch('/api/content-summary', {}, null),
     ]);
+    if (!sys || !summary) throw new Error('disk monitor unavailable');
     const el = document.getElementById('disk-monitor');
 
     // Calculate usage breakdown
@@ -2211,7 +2198,8 @@ async function loadReadiness(servicesData = null) {
   try {
     const services = Array.isArray(servicesData)
       ? servicesData
-      : await fetch('/api/services').then(r => { if(!r.ok) throw new Error(); return r.json(); });
+      : await safeFetch('/api/services', {}, []);
+    if (!Array.isArray(services)) throw new Error('services unavailable');
     const caps = [
       {id:'ollama', label:'AI Chat', need:['ollama']},
       {id:'kiwix', label:'Library', need:['kiwix']},
@@ -2242,9 +2230,8 @@ async function loadActivity() {
   try {
     const filter = document.getElementById('activity-filter')?.value || '';
     const url = filter ? `/api/activity?limit=30&filter=${encodeURIComponent(filter)}` : '/api/activity?limit=30';
-    const _actResp = await fetch(url);
-    if (!_actResp.ok) throw new Error('activity failed');
-    const items = await _actResp.json();
+    const items = await safeFetch(url, {}, null);
+    if (!Array.isArray(items)) throw new Error('activity failed');
     if (!items.length) { el.innerHTML = '<span class="text-muted">No activity yet.</span>'; return; }
     el.innerHTML = items.map(a => {
       const t = new Date(a.created_at);
@@ -2271,9 +2258,8 @@ async function checkForUpdate() {
   const statusEl = document.getElementById('update-status-text');
   if (!banner && !dlBtn && !statusEl) return;
   try {
-    const _ucResp = await fetch('/api/update-check');
-    if (!_ucResp.ok) return;
-    const u = await _ucResp.json();
+    const u = await safeFetch('/api/update-check', {}, null);
+    if (!u) return;
     if (u.update_available) {
       if (banner) {
         banner.style.display = 'inline-flex';
@@ -2312,9 +2298,8 @@ function pollUpdateProgress() {
   stopUpdateProgressPoll();
   const runner = async () => {
     try {
-      const _udResp = await fetch('/api/update-download/status');
-      if (!_udResp.ok) { stopUpdateProgressPoll(); return; }
-      const s = await _udResp.json();
+      const s = await safeFetch('/api/update-download/status', {}, null);
+      if (!s) { stopUpdateProgressPoll(); return; }
       const pctEl = document.getElementById('update-progress-pct');
       const fillEl = document.getElementById('update-progress-fill');
       const labelEl = document.getElementById('update-progress-label');
@@ -2359,9 +2344,8 @@ async function loadStartupState() {
   const toggle = document.getElementById('startup-toggle');
   if (!toggle) return;
   try {
-    const _suResp = await fetch('/api/startup');
-    if (!_suResp.ok) return;
-    const s = await _suResp.json();
+    const s = await safeFetch('/api/startup', {}, null);
+    if (!s) return;
     toggle.checked = s.enabled;
   } catch(e) {}
 }
@@ -2382,9 +2366,8 @@ async function pollDownloadQueue() {
   const itemsEl = document.getElementById('download-queue-items');
   if (!banner || !itemsEl) return;
   try {
-    const _dlResp = await fetch('/api/downloads/active');
-    if (!_dlResp.ok) return;
-    const downloads = await _dlResp.json();
+    const downloads = await safeFetch('/api/downloads/active', {}, []);
+    if (!Array.isArray(downloads)) return;
     if (!downloads.length) { banner.style.display = 'none'; return; }
     banner.style.display = 'block';
     itemsEl.innerHTML = downloads.map(d => {
@@ -2413,9 +2396,8 @@ async function loadServiceLogs() {
   const el = document.getElementById('svc-log-viewer');
   if (!svc) { el.innerHTML = '<span class="settings-console-hint">Select a service above to view its process output.</span>'; return; }
   try {
-    const _slResp = await fetch('/api/services/' + svc + '/logs?tail=200');
-    if (!_slResp.ok) throw new Error('logs failed');
-    const data = await _slResp.json();
+    const data = await safeFetch('/api/services/' + svc + '/logs?tail=200', {}, null);
+    if (!data) throw new Error('logs failed');
     if (!data?.lines || !data.lines.length) {
       el.innerHTML = '<span class="settings-console-hint">No log output captured for ' + svc + '. Logs appear when the service is running.</span>';
       return;
@@ -2433,9 +2415,8 @@ async function loadServiceLogs() {
 /* ─── Content Update Checker ─── */
 async function checkContentUpdates() {
   try {
-    const _cuResp = await fetch('/api/kiwix/check-updates');
-    if (!_cuResp.ok) throw new Error('check-updates failed');
-    const updates = await _cuResp.json();
+    const updates = await safeFetch('/api/kiwix/check-updates', {}, null);
+    if (!Array.isArray(updates)) throw new Error('check-updates failed');
     const panel = document.getElementById('content-updates-panel');
     const itemsEl = document.getElementById('content-update-items');
     if (!updates.length) { panel.style.display = 'none'; toast('All content is up to date', 'success'); return; }
@@ -2464,9 +2445,10 @@ async function updateZimContent(url, filename) {
 async function loadWikipediaTiers() {
   try {
     const [options, installed] = await Promise.all([
-      fetch('/api/kiwix/wikipedia-options').then(r => { if (!r.ok) throw new Error('Failed to load Wikipedia options'); return r.json(); }),
-      fetch('/api/kiwix/zims').then(r => { if (!r.ok) throw new Error('Failed to load ZIMs'); return r.json(); })
+      safeFetch('/api/kiwix/wikipedia-options', {}, []),
+      safeFetch('/api/kiwix/zims', {}, []),
     ]);
+    if (!Array.isArray(options) || !Array.isArray(installed)) throw new Error('Failed to load Wikipedia tiers');
     const installedNames = new Set(installed.map(z => typeof z === 'string' ? z : z.name || ''));
     const el = document.getElementById('wiki-tier-options');
     if (!options.length) { el.innerHTML = '<div class="settings-empty-state">Install Kiwix first to download Wikipedia.</div>'; return; }
@@ -2544,12 +2526,8 @@ async function restoreBackup(filename) {
   if (!confirm('Restore database from ' + filename + '? Current data will be backed up first.')) return;
   try {
     const d = await apiPost('/api/backups/restore', {filename});
-    if (r.ok) {
-      toast(d.message || 'Database restored', 'success');
-      document.querySelectorAll('.generated-modal-overlay').forEach(m => m.remove());
-    } else {
-      toast(d.error || 'Restore failed', 'error');
-    }
+    toast(d.message || 'Database restored', 'success');
+    document.querySelectorAll('.generated-modal-overlay').forEach(m => m.remove());
   } catch(e) { toast('Restore failed', 'error'); }
 }
 function updateLastBackup() {

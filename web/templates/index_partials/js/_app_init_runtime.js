@@ -116,12 +116,9 @@ checkForUpdate();
 // Auto-update toast notification (fires after checkForUpdate sets banner)
 (async () => {
   try {
-    const r = await fetch('/api/update-check');
-    if (!r.ok) return;
-    const d = await r.json();
-    if (d.update_available) {
-      toast('Update available: v' + escapeHtml(d.latest) + '. <a href="' + escapeAttr(d.download_url || d.url || '') + '" target="_blank" style="color:var(--accent);text-decoration:underline">Download</a>', 'info', 15000);
-    }
+    const d = await safeFetch('/api/update-check', {}, null);
+    if (!d?.update_available) return;
+    toast('Update available: v' + escapeHtml(d.latest) + '. <a href="' + escapeAttr(d.download_url || d.url || '') + '" target="_blank" style="color:var(--accent);text-decoration:underline">Download</a>', 'info', 15000);
   } catch(_) {}
 })();
 loadStartupState();
@@ -763,8 +760,13 @@ async function saveSkill() {
     notes: document.getElementById('skill-notes').value.trim(),
   };
   if (!body.name) { toast('Skill name required', 'error'); return; }
-  const resp = await fetch(id ? `/api/skills/${id}` : '/api/skills', {method: id ? 'PUT' : 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-  if (!resp.ok) { toast('Failed to save skill', 'error'); return; }
+  try {
+    if (id) await apiPut(`/api/skills/${id}`, body);
+    else await apiPost('/api/skills', body);
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to save skill', 'error');
+    return;
+  }
   closeSkillForm();
   loadSkills();
   toast('Skill saved', 'success');
@@ -864,8 +866,13 @@ async function saveAmmo() {
     notes: document.getElementById('ammo-notes').value.trim(),
   };
   if (!body.caliber) { toast('Caliber required', 'error'); return; }
-  const resp = await fetch(id ? `/api/ammo/${id}` : '/api/ammo', {method: id ? 'PUT' : 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-  if (!resp.ok) { toast('Failed to save ammo entry', 'error'); return; }
+  try {
+    if (id) await apiPut(`/api/ammo/${id}`, body);
+    else await apiPost('/api/ammo', body);
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to save ammo entry', 'error');
+    return;
+  }
   closeAmmoForm();
   loadAmmo();
   toast('Saved', 'success');
@@ -885,9 +892,8 @@ let _community = [];
 const TRUST_COLORS = {unknown:'var(--text-muted)', acquaintance:'var(--text-dim)', trusted:'var(--orange)', 'inner-circle':'var(--green)'};
 async function loadCommunity() {
   try {
-    const r = await fetch('/api/community');
-    if (!r.ok) return;
-    _community = await r.json();
+    const data = await safeFetch('/api/community', {}, []);
+    _community = Array.isArray(data) ? data : [];
     renderCommunity();
   } catch(e) { console.warn('loadCommunity failed:', e.message); }
 }
@@ -964,8 +970,13 @@ async function saveCommunity() {
     notes: document.getElementById('comm-notes').value.trim(),
   };
   if (!body.name) { toast('Name required', 'error'); return; }
-  const resp = await fetch(id ? `/api/community/${id}` : '/api/community', {method: id ? 'PUT' : 'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)});
-  if (!resp.ok) { toast('Failed to save', 'error'); return; }
+  try {
+    if (id) await apiPut(`/api/community/${id}`, body);
+    else await apiPost('/api/community', body);
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to save', 'error');
+    return;
+  }
   closeCommunityForm();
   loadCommunity();
   toast('Saved', 'success');
@@ -983,11 +994,11 @@ async function deleteCommunity(id) {
 // ═══════════════════════════════════════════════════════════════
 async function loadRadiation() {
   try {
-    const r = await fetch('/api/radiation');
-    if (!r.ok) return;
-    const d = await r.json();
-    renderRadiationDashboard(d);
-    renderRadiationLog(d.readings);
+    const d = await safeFetch('/api/radiation', {}, null);
+    if (!d) throw new Error('Failed to load radiation data');
+    const readings = Array.isArray(d.readings) ? d.readings : [];
+    renderRadiationDashboard({...d, readings});
+    renderRadiationLog(readings);
   } catch(e) {
     const el = document.getElementById('radiation-dashboard');
     if (el) el.innerHTML = '<div class="prep-empty-state prep-empty-state-wide prep-error-state">Failed to load radiation data.</div>';
@@ -1318,10 +1329,14 @@ async function changeTriageCategory(patientId, currentCat) {
 }
 
 async function setTriageCategory(patientId, category) {
-  await fetch(`/api/medical/triage/${patientId}`, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({triage_category: category})});
-  document.getElementById('triage-picker')?.remove();
-  loadTriageBoard();
-  toast('Triage updated', 'success');
+  try {
+    await apiPut(`/api/medical/triage/${patientId}`, {triage_category: category});
+    document.getElementById('triage-picker')?.remove();
+    loadTriageBoard();
+    toast('Triage updated', 'success');
+  } catch (e) {
+    toast(e?.data?.error || e?.message || 'Failed to update triage', 'error');
+  }
 }
 
 /* ─── Medical Quick Reference ─── */
@@ -2153,8 +2168,7 @@ function filterFreqTable() { renderFreqTable(); }
 async function deleteFreq(id) {
   if (!confirm('Delete this frequency?')) return;
   try {
-    const r = await fetch(`/api/comms/frequencies/${id}`, {method:'DELETE'});
-    if (!r.ok) { toast('Delete failed', 'error'); return; }
+    await apiDelete(`/api/comms/frequencies/${id}`);
   } catch(e) { toast('Delete failed — network error', 'error'); return; }
   loadFreqDatabase();
 }
@@ -2785,10 +2799,9 @@ async function loadMedicalSupplies() {
   if (!el) return;
   el.innerHTML = prepEmptyBlock('Loading medical supplies...');
   try {
-    const resp = await fetch('/api/inventory?category=Medical');
-    if (!resp.ok) throw new Error('Failed to load');
-    const data = await resp.json();
-    const items = data.items || data || [];
+    const data = await safeFetch('/api/inventory?category=Medical', {}, null);
+    if (!data) throw new Error('Failed to load');
+    const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []);
     if (!items.length) {
       el.innerHTML = prepEmptyBlock('No medical supplies in inventory. Add items under Preparedness → Inventory.');
       return;
@@ -3304,8 +3317,13 @@ async function saveFuel() {
     notes: document.getElementById('fuel-notes').value,
   };
   const url = id ? `/api/fuel/${id}` : '/api/fuel';
-  const method = id ? 'PUT' : 'POST';
-  await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  try {
+    if (id) await apiPut(url, body);
+    else await apiPost(url, body);
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to save fuel entry', 'error');
+    return;
+  }
   closeFuelForm();
   loadFuel();
   toast('Fuel entry saved', 'success');
@@ -3314,8 +3332,7 @@ async function saveFuel() {
 async function deleteFuel(id) {
   if (!confirm('Delete this fuel entry?')) return;
   try {
-    const r = await fetch(`/api/fuel/${id}`, { method: 'DELETE' });
-    if (!r.ok) throw new Error('Delete failed');
+    await apiDelete(`/api/fuel/${id}`);
     loadFuel();
     toast('Fuel entry deleted', 'success');
   } catch(e) { toast('Failed to delete fuel entry', 'error'); }
@@ -3433,8 +3450,13 @@ async function saveEquip() {
   };
   if (!body.name) { toast('Equipment name required', 'warning'); return; }
   const url = id ? `/api/equipment/${id}` : '/api/equipment';
-  const method = id ? 'PUT' : 'POST';
-  await fetch(url, { method, headers: {'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  try {
+    if (id) await apiPut(url, body);
+    else await apiPost(url, body);
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to save equipment', 'error');
+    return;
+  }
   closeEquipForm();
   loadEquipment();
   toast('Equipment saved', 'success');
@@ -3444,11 +3466,12 @@ async function markServiced(id) {
   const r = _equipData.find(x => x.id === id);
   if (!r) return;
   const today = new Date().toISOString().slice(0,10);
-  await fetch(`/api/equipment/${id}`, {
-    method: 'PUT',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({ ...r, last_service: today, status: 'operational' })
-  });
+  try {
+    await apiPut(`/api/equipment/${id}`, { ...r, last_service: today, status: 'operational' });
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to update equipment service', 'error');
+    return;
+  }
   loadEquipment();
   toast('Marked serviced today', 'success');
 }
@@ -3456,8 +3479,7 @@ async function markServiced(id) {
 async function deleteEquip(id) {
   if (!confirm('Delete this equipment entry?')) return;
   try {
-    const r = await fetch(`/api/equipment/${id}`, { method: 'DELETE' });
-    if (!r.ok) { toast('Failed to delete equipment', 'error'); return; }
+    await apiDelete(`/api/equipment/${id}`);
     loadEquipment();
     toast('Equipment deleted', 'success');
   } catch(e) { toast('Failed to delete equipment', 'error'); }
@@ -3558,7 +3580,7 @@ async function saveTask() {
 
 async function completeTask(id) {
   try {
-    await fetch(`/api/tasks/${id}/complete`, { method: 'POST' });
+    await apiPost(`/api/tasks/${id}/complete`, {});
     toast('Task completed', 'success');
     loadTasks();
   } catch(e) { toast('Failed to complete task', 'error'); }
@@ -3567,7 +3589,7 @@ async function completeTask(id) {
 async function deleteTask(id) {
   if (!confirm('Delete this task?')) return;
   try {
-    await fetch(`/api/tasks/${id}`, { method: 'DELETE' });
+    await apiDelete(`/api/tasks/${id}`);
     toast('Task deleted', 'info');
     loadTasks();
   } catch(e) { toast('Failed to delete task', 'error'); }
@@ -3667,7 +3689,7 @@ async function viewWatchSchedule(id) {
 async function deleteWatchSchedule(id) {
   if (!confirm('Delete this watch schedule?')) return;
   try {
-    await fetch(`/api/watch-schedules/${id}`, { method: 'DELETE' });
+    await apiDelete(`/api/watch-schedules/${id}`);
     toast('Watch schedule deleted', 'info');
     document.getElementById('watch-detail').style.display = 'none';
     loadWatchSchedules();
@@ -3693,10 +3715,8 @@ async function loadSunData() {
 /* ─── Predictive Alerts ─── */
 async function loadPredictiveAlerts() {
   try {
-    const r = await fetch('/api/alerts/predictive');
-    if (!r.ok) return;
-    const preds = await r.json();
-    if (!preds || !preds.length) return;
+    const preds = await safeFetch('/api/alerts/predictive', {}, []);
+    if (!Array.isArray(preds) || !preds.length) return;
     const items = document.getElementById('alert-items');
     if (!items) return;
     // Update badge count to include predictions
@@ -3968,8 +3988,7 @@ async function addAIMemory() {
 async function deleteAIMemory(id) {
   if (!confirm('Delete this AI memory?')) return;
   try {
-    const r = await fetch(`/api/ai/memory/${id}`, { method: 'DELETE' });
-    if (!r.ok) { toast('Failed to delete memory', 'error'); return; }
+    await apiDelete(`/api/ai/memory/${id}`);
     toast('Memory deleted', 'info');
     loadAIMemory();
   } catch(e) { toast('Failed to delete memory', 'error'); }
@@ -4352,7 +4371,7 @@ setTimeout(async () => {
 }, 120);
 
 // Check portable mode
-fetch('/api/system/portable-mode').then(r=>{if(!r.ok)throw new Error();return r.json()}).then(d=>{if(d.portable){const el=document.getElementById('portable-indicator');if(el)el.style.display='';}}).catch(()=>{});
+safeFetch('/api/system/portable-mode', {}, null).then(d=>{if(d?.portable){const el=document.getElementById('portable-indicator');if(el)el.style.display='';}}).catch(()=>{});
 
 /* ─── NomadEvents: loaded from /static/js/events.js ─── */
 

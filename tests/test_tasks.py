@@ -1,6 +1,94 @@
 """Tests for scheduled tasks API routes."""
 
 
+class TestWatchSchedulePrint:
+    def test_watch_schedule_print_recovers_from_corrupted_schedule_and_personnel(self, client, db):
+        create = client.post('/api/watch-schedules', json={
+            'name': 'Broken Rotation',
+            'start_date': '2026-03-20',
+            'end_date': '2026-03-21',
+            'shift_duration_hours': 6,
+            'personnel': ['Alex', 'Riley'],
+            'notes': 'Maintain radio checks at each relief.',
+        })
+        sid = create.get_json()['id']
+
+        db.execute(
+            'UPDATE watch_schedules SET schedule_json = ?, personnel = ? WHERE id = ?',
+            ('{broken', '{broken', sid),
+        )
+        db.commit()
+
+        resp = client.get(f'/api/watch-schedules/{sid}/print')
+
+        assert resp.status_code == 200
+        html = resp.get_data(as_text=True)
+        assert 'Watch Schedule - Broken Rotation' in html
+        assert 'No personnel listed' in html
+        assert 'No shifts were generated for this rotation window.' in html
+
+    def test_watch_schedule_create_accepts_json_string_personnel(self, client):
+        resp = client.post('/api/watch-schedules', json={
+            'name': 'String Personnel',
+            'start_date': '2026-03-20',
+            'end_date': '2026-03-21',
+            'shift_duration_hours': 6,
+            'personnel': '["Alex","Riley","Sage"]',
+            'notes': 'Rotate sectors.',
+        })
+
+        assert resp.status_code == 201
+        data = resp.get_json()
+        assert data['shifts'] > 0
+
+    def test_watch_schedule_detail_normalizes_corrupted_json_fields(self, client, db):
+        create = client.post('/api/watch-schedules', json={
+            'name': 'Detail Recovery',
+            'start_date': '2026-03-20',
+            'end_date': '2026-03-21',
+            'shift_duration_hours': 6,
+            'personnel': ['Alex', 'Riley'],
+            'notes': 'Rotate sectors.',
+        })
+        sid = create.get_json()['id']
+
+        db.execute(
+            'UPDATE watch_schedules SET schedule_json = ?, personnel = ? WHERE id = ?',
+            ('{broken', '{broken', sid),
+        )
+        db.commit()
+
+        resp = client.get(f'/api/watch-schedules/{sid}')
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['schedule_json'] == []
+        assert data['personnel'] == []
+
+    def test_watch_schedule_update_accepts_json_string_fields(self, client):
+        create = client.post('/api/watch-schedules', json={
+            'name': 'Update Recovery',
+            'start_date': '2026-03-20',
+            'end_date': '2026-03-21',
+            'shift_duration_hours': 6,
+            'personnel': ['Alex', 'Riley'],
+            'notes': 'Rotate sectors.',
+        })
+        sid = create.get_json()['id']
+
+        resp = client.put(f'/api/watch-schedules/{sid}', json={
+            'personnel': '["Alex","Riley","Sage"]',
+            'schedule_json': '[{"person":"Alex","start":"2026-03-20 00:00","end":"2026-03-20 06:00","position":1}]',
+        })
+
+        assert resp.status_code == 200
+        detail = client.get(f'/api/watch-schedules/{sid}')
+        assert detail.status_code == 200
+        data = detail.get_json()
+        assert data['personnel'] == ['Alex', 'Riley', 'Sage']
+        assert data['schedule_json'][0]['person'] == 'Alex'
+
+
 class TestTasksList:
     def test_list_tasks(self, client):
         resp = client.get('/api/tasks')

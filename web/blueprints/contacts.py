@@ -11,7 +11,11 @@ from db import db_session
 from web.print_templates import render_print_document
 from web.sql_safety import safe_columns
 from web.validation import validate_json
-from web.utils import esc as _esc, validate_bulk_ids as _validate_bulk_ids
+from web.utils import (
+    esc as _esc,
+    require_json_body as _require_json_body,
+    validate_bulk_ids as _validate_bulk_ids,
+)
 
 log = logging.getLogger('nomad.web')
 
@@ -97,7 +101,9 @@ def api_contacts_delete(cid):
 
 @contacts_bp.route('/api/contacts/bulk-delete', methods=['POST'])
 def api_contacts_bulk_delete():
-    data = request.get_json(force=True)
+    data, error = _require_json_body(request)
+    if error:
+        return error
     ids = _validate_bulk_ids(data)
     if ids is None:
         return jsonify({'error': 'ids array of integers required (max 100)'}), 400

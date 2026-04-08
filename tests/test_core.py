@@ -508,6 +508,161 @@ class TestErrorHandler:
         assert "const logs = await safeFetch('/api/security/access-log', {}, null);" in ops_text
         assert "const alerts = await safeFetch('/api/alerts', {}, null);" in ops_text
 
+    def test_dashboard_and_workspace_memory_use_safe_fetch_for_shared_shell_panels(self):
+        readiness_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_dashboard_readiness.js').read_text(encoding='utf-8')
+        memory_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspace_memory.js').read_text(encoding='utf-8')
+
+        assert "const data = await apiPost('/api/ai/quick-query', {question});" in readiness_text
+        assert "const data = await safeFetch('/api/dashboard/widgets', {}, null);" in readiness_text
+        assert "safeFetch('/api/dashboard/overview', {}, null)" in readiness_text
+        assert "safeFetch('/api/dashboard/critical', {}, {critical_burn:[], expiring_items:[]})" in readiness_text
+        assert "const d = await safeFetch('/api/readiness-score', {}, null);" in readiness_text
+        assert "const entries = await safeFetch('/api/vault', {}, null);" in readiness_text
+        assert "const trend = await safeFetch('/api/weather/trend', {}, null);" in readiness_text
+        assert "const history = await safeFetch('/api/weather?limit=20', {}, []);" in readiness_text
+        assert "const rules = await safeFetch('/api/weather/action-rules', {}, null);" in readiness_text
+        assert "await Promise.all(_wxRuleDefaults.map(def => apiPost('/api/weather/action-rules', def)));" in readiness_text
+        assert "await apiPost(`/api/weather/action-rules/${id}/toggle`);" in readiness_text
+        assert "await apiPut(`/api/garden/plots/${_gardenPlotEditId}`, {boundary_geojson: geojson, lng: center[0], lat: center[1]});" in readiness_text
+        assert "const r = await apiUpload('/api/inventory/import-csv', formData);" in readiness_text
+        assert "const r = await apiUpload('/api/contacts/import-csv', formData);" in readiness_text
+
+        assert "await apiPut('/api/settings', {[WORKSPACE_RESUME_SETTINGS_KEY]: JSON.stringify(state)});" in memory_text
+        assert "const settings = await safeFetch('/api/settings', {}, null);" in memory_text
+        assert "return await safeFetch(`/api/search/all?q=${encodeURIComponent(q)}`, {}, null);" in memory_text
+        assert "const s = await safeFetch('/api/content-summary', {}, null);" in memory_text
+        assert "const items = await safeFetch('/api/activity?limit=' + parseInt(lines), {}, null);" in memory_text
+        assert "const d = await safeFetch('/api/data-summary', {}, null);" in memory_text
+        assert "safeFetch('/api/system', {}, null)," in memory_text
+        assert "safeFetch('/api/content-summary', {}, null)," in memory_text
+        assert ": await safeFetch('/api/services', {}, []);" in memory_text
+        assert "const u = await safeFetch('/api/update-check', {}, null);" in memory_text
+        assert "const s = await safeFetch('/api/update-download/status', {}, null);" in memory_text
+        assert "const downloads = await safeFetch('/api/downloads/active', {}, []);" in memory_text
+        assert "const data = await safeFetch('/api/services/' + svc + '/logs?tail=200', {}, null);" in memory_text
+        assert "const updates = await safeFetch('/api/kiwix/check-updates', {}, null);" in memory_text
+        assert "safeFetch('/api/kiwix/wikipedia-options', {}, [])," in memory_text
+        assert "safeFetch('/api/kiwix/zims', {}, [])," in memory_text
+        assert "const d = await apiPost('/api/backups/restore', {filename});" in memory_text
+        assert "if (r.ok)" not in memory_text
+
+    def test_init_runtime_uses_shared_api_helpers_for_remaining_shared_mutations(self):
+        init_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_init_runtime.js').read_text(encoding='utf-8')
+
+        assert "const d = await safeFetch('/api/update-check', {}, null);" in init_text
+        assert "if (id) await apiPut(`/api/skills/${id}`, body);" in init_text
+        assert "else await apiPost('/api/skills', body);" in init_text
+        assert "if (id) await apiPut(`/api/ammo/${id}`, body);" in init_text
+        assert "else await apiPost('/api/ammo', body);" in init_text
+        assert "const data = await safeFetch('/api/community', {}, []);" in init_text
+        assert "if (id) await apiPut(`/api/community/${id}`, body);" in init_text
+        assert "else await apiPost('/api/community', body);" in init_text
+        assert "const d = await safeFetch('/api/radiation', {}, null);" in init_text
+        assert "await apiDelete(`/api/comms/frequencies/${id}`);" in init_text
+        assert "const data = await safeFetch('/api/inventory?category=Medical', {}, null);" in init_text
+        assert "if (id) await apiPut(url, body);" in init_text
+        assert "else await apiPost(url, body);" in init_text
+        assert "await apiDelete(`/api/fuel/${id}`);" in init_text
+        assert "await apiPut(`/api/equipment/${id}`, { ...r, last_service: today, status: 'operational' });" in init_text
+        assert "await apiDelete(`/api/equipment/${id}`);" in init_text
+        assert "await apiPost(`/api/tasks/${id}/complete`, {});" in init_text
+        assert "await apiDelete(`/api/tasks/${id}`);" in init_text
+        assert "await apiDelete(`/api/watch-schedules/${id}`);" in init_text
+        assert "const preds = await safeFetch('/api/alerts/predictive', {}, []);" in init_text
+        assert "await apiDelete(`/api/ai/memory/${id}`);" in init_text
+        assert "await apiPut(`/api/medical/triage/${patientId}`, {triage_category: category});" in init_text
+        assert "safeFetch('/api/system/portable-mode', {}, null).then" in init_text
+
+    def test_media_maps_runtime_uses_shared_api_helpers_for_interactive_actions(self):
+        media_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_media_maps_sync.js').read_text(encoding='utf-8')
+
+        assert "return apiFetch(url, opts);" in media_text
+        assert "const videos = await _fetchJson(`/api/youtube/search?q=${encodeURIComponent(q)}&limit=${_ytSearchLimit}`);" in media_text
+        assert "apiPost('/api/channels/validate', {url: channelUrl}).catch(() => {});" in media_text
+        assert "apiFetch(`/api/books/${id}`, {method:'PATCH', body:JSON.stringify({last_position:loc.start?.cfi||''})}).catch(() => {});" in media_text
+        assert "await apiFetch(`${apiMap[type]}/${id}`, {method:'PATCH', body:JSON.stringify({folder:name})});" in media_text
+        assert "const d = await apiPost(endpoint, {url, category:cat, folder:_mediaFolder});" in media_text
+        assert "return apiUpload(uploadMap[_mediaSub], formData)" in media_text
+        assert "const d = await apiPost(`/api/node/conflicts/${id}/resolve`, body);" in media_text
+        assert "await apiPost(`/api/group-exercises/${exerciseId}/update-state`, {decision, event: `Phase advanced with decision: ${decision}`," in media_text
+        assert "await apiPost(`/api/group-exercises/${exerciseId}/update-state`, {status: 'completed', event: 'Exercise completed'});" in media_text
+        assert "await apiPost(`/api/ai/training/jobs/${jid}/run`, {});" in media_text
+        assert "apiPost('/api/drills/history', {drill_type: _currentDrillType || '', title, duration_sec: elapsed, tasks_total: total, tasks_completed: checked})" in media_text
+        assert "await apiUpload('/api/library/upload-pdf', formData);" in media_text
+        assert "await apiPut(`/api/checklists/${_currentChecklistId}`, {items: _currentChecklistItems});" in media_text
+
+    def test_ops_support_and_workspaces_use_guarded_helpers_for_shared_actions(self):
+        ops_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_ops_support.js').read_text(encoding='utf-8')
+        workspaces_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
+
+        assert "await apiPost(`/api/notes/${currentNoteId}/pin`, {pinned:newPinned});" in ops_text
+        assert "await apiDelete(`/api/journal/${id}`);" in ops_text
+        assert "await apiDelete(`/api/security/cameras/${id}`);" in ops_text
+        assert "await apiDelete(`/api/power/devices/${id}`);" in ops_text
+        assert "await apiPost(`/api/livestock/${id}/health`, {event: event_text});" in ops_text
+        assert "const comp = await apiPost(`/api/scenarios/${_scenarioDbId || 0}/complication`, {" in ops_text
+        assert "const aar = await apiPost(`/api/scenarios/${_scenarioDbId || 0}/aar`, {" in ops_text
+        assert "await apiPost(`/api/patients/${_activePatientId}/vitals`, data);" in ops_text
+        assert "const data = await safeFetch(`/api/patients/${pid}/wounds/${wid}/photos`, {}, null);" in ops_text
+        assert "_guideContext = await safeFetch('/api/guides/context', {}, null);" in ops_text
+        assert "await apiPost(`/api/alerts/${id}/dismiss`, {});" in ops_text
+        assert "const resp = await apiFetch('/api/export-config');" in ops_text
+
+        assert "await _workspaceFetchOk('/api/maps/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename})}, 'Failed to delete map');" in workspaces_text
+        assert "await _workspaceFetchJson('/api/maps/download-region', {" in workspaces_text
+        assert "await _workspaceFetchJson('/api/maps/download-url', {" in workspaces_text
+        assert "const data = await _workspaceFetchJson('/api/maps/import-file', {" in workspaces_text
+        assert "const notes = await _workspaceFetchJsonSafe('/api/notes', {}, allNotes || [], 'Failed to load notes');" in workspaces_text
+        assert "await _workspaceFetchOk(`/api/notes/${currentNoteId}`, {method:'DELETE'}, 'Failed to delete note');" in workspaces_text
+        assert "await _workspaceFetchOk(`/api/notes/${currentNoteId}`, {method:'PUT', headers:{'Content-Type':'application/json'}," in workspaces_text
+        assert "const d = await _workspaceFetchJson(`/api/kb/documents/${docId}/import-entities`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({})}, 'Import failed');" in workspaces_text
+        assert "signal: AbortSignal.timeout(8000)," in workspaces_text
+        assert "else { toast('Geocoding returned an invalid response', 'error'); }" in workspaces_text
+
+    def test_services_ai_uses_shared_api_fetch_for_streaming_chat_paths(self):
+        services_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
+
+        assert "const payload = await apiFetch(url, opts);" in services_text
+        assert "const resp = await apiFetch('/api/ai/chat', {" in services_text
+        assert "if (!(resp instanceof Response) || !resp.body) throw new Error('Warmup failed: invalid stream response');" in services_text
+        assert "if (!(resp instanceof Response) || !resp.body) throw new Error('AI service returned an invalid stream response');" in services_text
+
+    def test_preparedness_and_sitroom_runtime_use_shared_api_helpers_for_remaining_actions(self):
+        core_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_core_shell.js').read_text(encoding='utf-8')
+        sitroom_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_situation_room.js').read_text(encoding='utf-8')
+        calcs_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_calcs_misc.js').read_text(encoding='utf-8')
+        family_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_family_field.js').read_text(encoding='utf-8')
+        inventory_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_inventory_flows.js').read_text(encoding='utf-8')
+        nav_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_nav_core.js').read_text(encoding='utf-8')
+        mapping_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_ops_mapping.js').read_text(encoding='utf-8')
+        people_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_people_comms.js').read_text(encoding='utf-8')
+
+        assert "apiPut('/api/settings', {[key]: value})" in core_text
+        assert "signal: AbortSignal.timeout(8000)," in sitroom_text
+        assert "apiPost('/api/sitroom/monitors', {keyword: keyword.trim()})" in sitroom_text
+
+        assert "apiPut('/api/settings', {pace_plan: JSON.stringify(pace)}).catch(() => {});" in calcs_text
+        assert "apiPut('/api/settings', {vehicles: JSON.stringify(_vehicles)}).catch(() => {});" in family_text
+
+        assert "await apiDelete(`/api/inventory/${id}`);" in inventory_text
+        assert "await apiPut(`/api/inventory/${id}`, {quantity: newQty});" in inventory_text
+        assert "const data = await apiUpload('/api/inventory/receipt-scan', formData);" in inventory_text
+        assert "const data = await apiPost('/api/inventory/receipt-import', {items});" in inventory_text
+        assert "const data = await apiUpload('/api/inventory/vision-scan', formData);" in inventory_text
+        assert "const data = await apiPost('/api/inventory/vision-import', {items});" in inventory_text
+        assert "var data = await apiPost('/api/barcode/scan-to-inventory', {upc: upc, quantity: qty});" in inventory_text
+        assert "await apiPost('/api/barcode/add', payload);" in inventory_text
+
+        assert "await apiPut(`/api/checklists/${_currentChecklistId}`, {items: _currentChecklistItems});" in nav_text
+        assert "await apiDelete(`/api/checklists/${id}`);" in nav_text
+
+        assert "const timers = await apiFetch('/api/timers');" in mapping_text
+        assert "const timerList = Array.isArray(timers) ? timers : [];" in mapping_text
+        assert "apiPut('/api/settings', {threat_matrix: JSON.stringify(saved)}).catch(() => {});" in mapping_text
+
+        assert "const results = await Promise.allSettled(numbers.map(c => apiPost('/api/contacts', c)));" in people_text
+        assert "await apiDelete(`/api/contacts/${id}`);" in people_text
+
     def test_runtime_uses_shared_json_safety_helpers_for_saved_state_and_payloads(self):
         core_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_core_shell.js').read_text(encoding='utf-8')
         readiness_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_dashboard_readiness.js').read_text(encoding='utf-8')
@@ -525,12 +680,23 @@ class TestErrorHandler:
         power_text = (REPO_ROOT / 'web' / 'blueprints' / 'power.py').read_text(encoding='utf-8')
         kb_text = (REPO_ROOT / 'web' / 'blueprints' / 'kb.py').read_text(encoding='utf-8')
         media_blueprint_text = (REPO_ROOT / 'web' / 'blueprints' / 'media.py').read_text(encoding='utf-8')
+        services_blueprint_text = (REPO_ROOT / 'web' / 'blueprints' / 'services.py').read_text(encoding='utf-8')
+        system_blueprint_text = (REPO_ROOT / 'web' / 'blueprints' / 'system.py').read_text(encoding='utf-8')
         comms_text = (REPO_ROOT / 'web' / 'blueprints' / 'comms.py').read_text(encoding='utf-8')
         garden_text = (REPO_ROOT / 'web' / 'blueprints' / 'garden.py').read_text(encoding='utf-8')
         weather_text = (REPO_ROOT / 'web' / 'blueprints' / 'weather.py').read_text(encoding='utf-8')
         federation_text = (REPO_ROOT / 'web' / 'blueprints' / 'federation.py').read_text(encoding='utf-8')
         inventory_text = (REPO_ROOT / 'web' / 'blueprints' / 'inventory.py').read_text(encoding='utf-8')
         sitroom_blueprint_text = (REPO_ROOT / 'web' / 'blueprints' / 'situation_room.py').read_text(encoding='utf-8')
+        exercises_text = (REPO_ROOT / 'web' / 'blueprints' / 'exercises.py').read_text(encoding='utf-8')
+        preparedness_text = (REPO_ROOT / 'web' / 'blueprints' / 'preparedness.py').read_text(encoding='utf-8')
+        tasks_text = (REPO_ROOT / 'web' / 'blueprints' / 'tasks.py').read_text(encoding='utf-8')
+        benchmark_text = (REPO_ROOT / 'web' / 'blueprints' / 'benchmark.py').read_text(encoding='utf-8')
+        checklists_text = (REPO_ROOT / 'web' / 'blueprints' / 'checklists.py').read_text(encoding='utf-8')
+        ollama_text = (REPO_ROOT / 'services' / 'ollama.py').read_text(encoding='utf-8')
+        cyberchef_text = (REPO_ROOT / 'services' / 'cyberchef.py').read_text(encoding='utf-8')
+        qdrant_text = (REPO_ROOT / 'services' / 'qdrant.py').read_text(encoding='utf-8')
+        stirling_text = (REPO_ROOT / 'services' / 'stirling.py').read_text(encoding='utf-8')
 
         assert 'function safeJsonParse(value, fallback = null, options = {}) {' in core_text
         assert 'function readJsonStorage(storage, key, fallback = null, options = {}) {' in core_text
@@ -556,6 +722,8 @@ class TestErrorHandler:
         assert "messages = _safe_message_list(data.get('messages', []))" in ai_text
         assert "memories = _safe_memory_entries(mem_row['value'])" in ai_text
         assert "update_data['messages'] = json.dumps(_safe_message_list(data['messages']))" in ai_text
+        assert 'def _load_jsonl_samples(path, limit=5):' in ai_text
+        assert "samples = _load_jsonl_samples(ds['file_path'], limit=5)" in ai_text
 
         utils_text = (REPO_ROOT / 'web' / 'utils.py').read_text(encoding='utf-8')
         assert 'def safe_json_value(value, fallback=None):' in utils_text
@@ -568,11 +736,18 @@ class TestErrorHandler:
         print_text = (REPO_ROOT / 'web' / 'blueprints' / 'print_routes.py').read_text(encoding='utf-8')
         assert "report['situation'] = _safe_json_value(sit_row['value'] if sit_row else None, {})" in print_text
         assert "memories = _safe_json_value(mem_row['value'], [])" in print_text
+        assert 'def _join_safe_list(value, empty=\'\'):' in print_text
+        assert "items = _safe_json_list(c['items'], [])" in print_text
+        assert "allergies = _safe_json_list(record.get('allergies'), [])" in print_text
+        assert "allergies = _join_safe_list(p.get('allergies'))" in print_text
+        assert "channels = _safe_json_list(prof.get('channels'), [])" in print_text
 
         assert 'from web.utils import' in maps_text
+        assert 'def _load_json_response_bytes(raw, fallback=None):' in maps_text
         assert "wp_ids = _safe_id_list(route['waypoint_ids'])" in maps_text
         assert "geojson = _safe_track_geojson(trk['geojson'])" in maps_text
         assert "item['properties'] = _safe_json_object(item.get('properties'), {})" in maps_text
+        assert "release = _load_json_response_bytes(resp.read(), {})" in maps_text
 
         assert 'from web.utils import' in security_text
         assert "sit = _safe_json_object(sit_raw['value'], {})" in security_text
@@ -594,15 +769,33 @@ class TestErrorHandler:
         assert "ref_json = _safe_response_json(ref_resp)" in medical_text
 
         assert 'from web.utils import' in kb_text
-        assert "d['entities'] = _safe_json_list(d.get('entities'), [])" in kb_text
+        assert 'def _safe_response_payload(response, fallback=None):' in kb_text
+        assert 'def _normalize_extracted_entities(value):' in kb_text
+        assert "payload = _safe_response_payload(resp, {})" in kb_text
+        assert "embeddings = payload.get('embeddings', [])" in kb_text
+        assert "entities = _normalize_extracted_entities(entity_payload.get('response', []))" in kb_text
+        assert "d['entities'] = _normalize_extracted_entities(d.get('entities'))" in kb_text
         assert "d['linked_records'] = _safe_json_list(d.get('linked_records'), [])" in kb_text
+        assert "entities = _normalize_extracted_entities(doc['entities'])" in kb_text
         assert "selected = _safe_index_list(data.get('entities'))" in kb_text
 
+        assert 'def _safe_response_payload(response, fallback=None):' in ai_text
+        assert "info = _safe_response_payload(r, {})" in ai_text
+        assert "data = _safe_response_payload(resp, {})" in ai_text
+
         assert 'def _safe_string_list(value):' in media_blueprint_text
+        assert 'def _safe_response_json(response, fallback=None):' in media_blueprint_text
         assert "dead_urls = set(_safe_string_list(dead_row['value'] if dead_row else None))" in media_blueprint_text
         assert "dead = _safe_string_list(row['value'] if row else None)" in media_blueprint_text
         assert 'd = _load_json_line(line, {})' in media_blueprint_text
         assert "found = _load_json_line(search_result.stdout.strip().split('\\n')[0], {})" in media_blueprint_text
+        assert "release = _safe_response_json(resp, {})" in media_blueprint_text
+
+        assert 'def _safe_response_json(response, fallback=None):' in services_blueprint_text
+        assert "data = _safe_response_json(resp, {})" in services_blueprint_text
+
+        assert 'def _safe_response_json(response, fallback=None):' in system_blueprint_text
+        assert "data = _safe_response_json(resp, {})" in system_blueprint_text
 
         assert 'def _normalize_radio_channels(value):' in comms_text
         assert "entry['channels'] = _normalize_radio_channels(entry.get('channels'))" in comms_text
@@ -619,13 +812,18 @@ class TestErrorHandler:
         assert "action_data = _safe_json_object(data.get('action_data'), {})" in weather_text
 
         assert 'def _safe_clock(value):' in federation_text
+        assert 'def _safe_response_payload(response, fallback=None):' in federation_text
         assert "clock = _safe_clock(existing['clock'] if existing else None)" in federation_text
+        assert "result = _safe_response_payload(r, {})" in federation_text
         assert "payload['vector_clocks'][r['table_name']][r['row_hash']] = _safe_clock(r['clock'])" in federation_text
         assert "local_clock = _safe_clock(local_vc_row['clock'] if local_vc_row else None)" in federation_text
         assert "entry['conflict_details'] = _safe_conflict_list(entry.get('conflict_details'))" in federation_text
         assert "conflicts = _safe_conflict_list(row['conflict_details'])" in federation_text
         assert "manifest = _safe_json_object(z.read('manifest.json'), {})" in federation_text
         assert "json.dumps(_safe_json_list(data.get('our_commitments'), []))" in federation_text
+        assert "sit = _safe_json_object(row['situation'], {})" in federation_text
+        assert "sit = _safe_json_object(peer['situation'], {})" in federation_text
+        assert "shared_contacts = _safe_json_list(sit.get('contacts', sit.get('shared_contacts', [])), [])" in federation_text
 
         assert 'from web.utils import' in inventory_text
         assert 'def _extract_json_array(raw_text):' in inventory_text
@@ -635,6 +833,77 @@ class TestErrorHandler:
 
         assert "prices = _safe_json_value(m.get('outcomePrices', '[]'), [])" in sitroom_blueprint_text
         assert "sw = _safe_json_object(sw_row['value_json'], {})" in sitroom_blueprint_text
+        assert 'def _safe_response_json(response, fallback=None):' in sitroom_blueprint_text
+        assert "data = _safe_response_json(resp, {})" in sitroom_blueprint_text
+        assert "markets = _safe_response_json(resp, [])" in sitroom_blueprint_text
+        assert "kp_data = _safe_response_json(resp, [])" in sitroom_blueprint_text
+        assert "alerts = _safe_response_json(resp, [])" in sitroom_blueprint_text
+        assert "rows = payload.get('response', {}).get('data', []) if isinstance(payload, dict) else []" in sitroom_blueprint_text
+        assert "data = _safe_response_json(resp, []) if resp.text.strip() else []" in sitroom_blueprint_text
+
+        assert 'safe_json_object as _safe_json_object' in exercises_text
+        assert "entry['shared_state'] = _safe_json_object(entry.get('shared_state'), {})" in exercises_text
+        assert "shared_state = _safe_json_object(row['shared_state'], {})" in exercises_text
+        assert "shared_state = _safe_json_object(data.get('shared_state'), {})" in exercises_text
+        assert "decisions_log = _safe_json_list(data.get('decisions_log'), [])" in exercises_text
+
+        assert "log_entries = _safe_json_list(animal['health_log'], [])" in preparedness_text
+        assert 'def _safe_response_json(response, fallback=None):' in preparedness_text
+        assert "result = _safe_response_json(resp, {})" in preparedness_text
+        assert "decisions = _safe_json_list(data.get('decisions', []), [])" in preparedness_text
+        assert "complications = _safe_json_list(data.get('complications', []), [])" in preparedness_text
+        assert "complication = _safe_json_value(result, {})" in preparedness_text
+        assert "decisions = _safe_json_list(scenario['decisions'], [])" in preparedness_text
+        assert "complications = _safe_json_list(scenario['complications'], [])" in preparedness_text
+
+        assert "from web.utils import esc as _esc, safe_json_list as _safe_json_list" in tasks_text
+        assert 'def _normalize_watch_personnel(value):' in tasks_text
+        assert 'def _normalize_watch_schedule(value):' in tasks_text
+        assert "'personnel': _normalize_watch_personnel(r['personnel'])" in tasks_text
+        assert "'schedule_json': _normalize_watch_schedule(r['schedule_json'])" in tasks_text
+        assert "schedule = _safe_json_list(sched['schedule_json'], [])" in tasks_text
+        assert "personnel = _safe_json_list(sched['personnel'], [])" in tasks_text
+
+        assert 'from web.utils import safe_json_value as _safe_json_value' in benchmark_text
+        assert 'def _load_stream_json_line(line):' in benchmark_text
+        assert 'resp.raise_for_status()' in benchmark_text
+        assert 'd = _load_stream_json_line(line)' in benchmark_text
+
+        assert 'def _load_stream_json_line(line):' in ollama_text
+        assert 'def _safe_response_payload(response, fallback=None):' in ollama_text
+        assert 'data = _load_stream_json_line(line)' in ollama_text
+        assert 'return _safe_response_payload(resp, {})' in ollama_text
+        assert 'AI service returned unreadable pull progress data.' in ollama_text
+
+        assert 'def _safe_response_payload(response, fallback=None):' in cyberchef_text
+        assert 'release = _safe_response_payload(_api_resp, {})' in cyberchef_text
+
+        assert 'def _safe_response_payload(response, fallback=None):' in qdrant_text
+        assert 'release = _safe_response_payload(resp, {})' in qdrant_text
+        assert "payload = _safe_response_payload(r, {})" in qdrant_text
+
+        assert 'def _safe_response_payload(response, fallback=None):' in stirling_text
+        assert 'release = _safe_response_payload(resp, {})' in stirling_text
+
+        assert "items = json.dumps(_safe_json_list(data.get('items', []), []))" in checklists_text
+        assert "update_data['items'] = json.dumps(_safe_json_list(data['items'], []))" in checklists_text
+        assert "items = _safe_json_list(data.get('items', []), [])" in checklists_text
+        assert "msg = _safe_json_value(data, {})" in app_text
+        assert "data, error = _require_json_body(request)" in app_text
+        assert "items = _safe_json_list(cl['items'], [])" in app_text
+
+    def test_backend_blueprints_use_shared_json_body_guard_for_bulk_and_settings_routes(self):
+        contacts_text = (REPO_ROOT / 'web' / 'blueprints' / 'contacts.py').read_text(encoding='utf-8')
+        preparedness_text = (REPO_ROOT / 'web' / 'blueprints' / 'preparedness.py').read_text(encoding='utf-8')
+        supplies_text = (REPO_ROOT / 'web' / 'blueprints' / 'supplies.py').read_text(encoding='utf-8')
+        system_text = (REPO_ROOT / 'web' / 'blueprints' / 'system.py').read_text(encoding='utf-8')
+        utils_text = (REPO_ROOT / 'web' / 'utils.py').read_text(encoding='utf-8')
+
+        assert "def require_json_body(req):" in utils_text
+        assert "data, error = _require_json_body(request)" in contacts_text
+        assert "data, error = _require_json_body(request)" in preparedness_text
+        assert "data, error = _require_json_body(request)" in supplies_text
+        assert "data, error = _require_json_body(request)" in system_text
 
     def test_app_css_is_split_into_ordered_import_manifest(self):
         manifest = REPO_ROOT / 'web' / 'static' / 'css' / 'app.css'

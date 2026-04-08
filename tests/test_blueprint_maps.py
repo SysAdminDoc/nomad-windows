@@ -167,3 +167,23 @@ class TestGpxExportResilience:
         assert '<gpx version="1.1"' in gpx
         assert '<name>Broken Export Route</name>' in gpx
         assert '<name>Broken Export Track</name>' in gpx
+
+
+class TestOfflineMapBootstrapResilience:
+    def test_get_pmtiles_cli_returns_none_on_malformed_release_metadata(self, monkeypatch, tmp_path):
+        from web.blueprints import maps
+
+        class _BadReleaseResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return b'{broken'
+
+        monkeypatch.setattr(maps, 'get_services_dir', lambda: str(tmp_path))
+        monkeypatch.setattr('urllib.request.urlopen', lambda *args, **kwargs: _BadReleaseResponse())
+
+        assert maps._get_pmtiles_cli() is None

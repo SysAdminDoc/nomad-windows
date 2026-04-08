@@ -1,8 +1,6 @@
 /* ─── Media Tab ─── */
 async function _fetchJson(url, opts) {
-  const resp = await fetch(url, opts);
-  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-  return resp.json();
+  return apiFetch(url, opts);
 }
 let _mediaItems = [];
 let _mediaFolder = '';
@@ -1438,9 +1436,7 @@ let _torrentPollTimer = null;
 async function checkTorrentClient() {
   if (_torrentClientAvail !== null) return _torrentClientAvail;
   try {
-    const r = await fetch('/api/torrent/available');
-    if (!r.ok) throw new Error('unavailable');
-    const d = await r.json();
+    const d = await _fetchJson('/api/torrent/available');
     _torrentClientAvail = !!d.available;
   } catch(e) { _torrentClientAvail = false; }
   const badge = document.getElementById('torrent-client-badge');
@@ -1470,9 +1466,8 @@ function stopTorrentPolling() {
 
 async function pollTorrentStatus() {
   try {
-    const r = await fetch('/api/torrent/status');
-    if (!r.ok) return;
-    const list = await r.json();
+    const list = await _fetchJson('/api/torrent/status');
+    if (!Array.isArray(list)) return;
     _torrentStatuses = {};
     let anyActive = false;
     list.forEach(s => {
@@ -1848,8 +1843,7 @@ async function searchYouTube() {
   setMediaVisibility(channels, false);
   results.innerHTML = mediaBrowserLoadingHtml('Searching YouTube...');
   try {
-    const resp = await fetch(`/api/youtube/search?q=${encodeURIComponent(q)}&limit=${_ytSearchLimit}`);
-    const videos = await resp.json();
+    const videos = await _fetchJson(`/api/youtube/search?q=${encodeURIComponent(q)}&limit=${_ytSearchLimit}`);
     if (videos.error) { results.innerHTML = mediaBrowserStatusHtml({title:'Search Error', copy:escapeHtml(videos.error), tone:'danger'}); return; }
     renderVideoResults(videos, `Search: "${q}"`);
   } catch(e) { results.innerHTML = mediaBrowserStatusHtml({title:'Search Failed', copy:'Could not connect to the search service. Check your internet connection.', tone:'danger'}); }
@@ -1892,7 +1886,7 @@ async function browseChannelVideos(channelUrl, channelName) {
     }
     if (!videos.length) {
       // Channel has no videos — mark as dead and remove from view
-      fetch('/api/channels/validate', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({url:channelUrl})});
+      apiPost('/api/channels/validate', {url: channelUrl}).catch(() => {});
       results.innerHTML = mediaBrowserStatusHtml({
         title: 'Channel Unavailable',
         copy: `${escapeHtml(channelName)} has no videos or has been removed from YouTube.<br>It has been hidden from the channel list.`,
@@ -2140,7 +2134,7 @@ function openBook(id, filename, title, format) {
       _mediaBookRendition.display();
       _mediaBookRendition.on('relocated', loc => {
         document.getElementById('book-reader-loc').textContent = loc.start?.displayed ? `Page ${loc.start.displayed.page} of ${loc.start.displayed.total}` : '';
-        fetch(`/api/books/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({last_position:loc.start?.cfi||''})});
+        apiFetch(`/api/books/${id}`, {method:'PATCH', body:JSON.stringify({last_position:loc.start?.cfi||''})}).catch(() => {});
       });
     } else {
       content.innerHTML = '<div class="workspace-empty-state media-book-loading">EPUB reader loading... If this persists, the epub.js library may not be available.</div>';
@@ -2184,8 +2178,12 @@ async function moveMediaItem(id, type) {
   try { folders = await _fetchJson(foldersMap[type]); } catch(e) {}
   const name = prompt('Move to folder:\n\nExisting: ' + (folders.length ? folders.join(', ') : 'none'));
   if (name === null) return;
-  const resp = await fetch(`${apiMap[type]}/${id}`, {method:'PATCH', headers:{'Content-Type':'application/json'}, body:JSON.stringify({folder:name})});
-  if (!resp.ok) { toast('Failed to move item', 'error'); return; }
+  try {
+    await apiFetch(`${apiMap[type]}/${id}`, {method:'PATCH', body:JSON.stringify({folder:name})});
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to move item', 'error');
+    return;
+  }
   toast('Moved to ' + (name || 'Unsorted'), 'success');
   loadMediaContent();
 }
@@ -2216,14 +2214,12 @@ async function downloadMediaURL() {
   const cat = document.getElementById('media-cat-select')?.value || '';
   const endpoint = _mediaSub === 'audio' ? '/api/ytdlp/download-audio' : '/api/ytdlp/download';
   try {
-    const r = await fetch(endpoint, {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({url, category:cat, folder:_mediaFolder})});
-    const d = await r.json();
+    const d = await apiPost(endpoint, {url, category:cat, folder:_mediaFolder});
     if (d.error) { toast(d.error, 'error'); return; }
     input.value = '';
     toast('Download started...', 'info');
     pollMediaDownloads(d.id);
-  } catch(e) { toast('Download failed to start', 'error'); }
+  } catch(e) { toast(e?.data?.error || 'Download failed to start', 'error'); }
 }
 
 function pollMediaDownloads(watchId) {
@@ -2334,9 +2330,9 @@ async function uploadMediaFiles() {
     formData.append('folder', _mediaFolder);
     formData.append('title', file.name.replace(/\.[^.]+$/, ''));
     toast(`Uploading ${file.name} (${sizeMB} MB)...`, 'info');
-    return fetch(uploadMap[_mediaSub], {method:'POST', body:formData})
-      .then(r => { if (r.ok) toast('Uploaded: ' + file.name, 'success'); else toast('Upload failed: ' + file.name, 'error'); })
-      .catch(() => toast('Upload failed: ' + file.name, 'error'));
+    return apiUpload(uploadMap[_mediaSub], formData)
+      .then(() => { toast('Uploaded: ' + file.name, 'success'); })
+      .catch(e => toast(`Upload failed: ${e?.data?.error || file.name}`, 'error'));
   });
   await Promise.all(uploads);
   input.value = '';
@@ -2597,9 +2593,7 @@ function completeDrill() {
   toast(`Drill complete! ${title}: ${checked}/${total} tasks in ${durationLabel}`, 'success');
   sendNotification('Drill Complete', `${title}: ${checked}/${total} tasks in ${durationLabel}`);
   // Save to history
-  fetch('/api/drills/history', {method:'POST', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({drill_type: _currentDrillType || '', title, duration_sec: elapsed, tasks_total: total, tasks_completed: checked})})
-    .then(r => { if (!r.ok) toast('Failed to save drill history', 'error'); })
+  apiPost('/api/drills/history', {drill_type: _currentDrillType || '', title, duration_sec: elapsed, tasks_total: total, tasks_completed: checked})
     .catch(() => toast('Failed to save drill history', 'error'));
   document.getElementById('drill-active').style.display = 'none';
   document.getElementById('drill-active').classList.add('is-hidden');
@@ -3033,10 +3027,7 @@ async function resolveConflict(id, resolution, mergedData) {
   try {
     const body = { resolution };
     if (mergedData) body.merged_data = mergedData;
-    const r = await fetch(`/api/node/conflicts/${id}/resolve`, {
-      method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
-    });
-    const d = await r.json();
+    const d = await apiPost(`/api/node/conflicts/${id}/resolve`, body);
     if (d.error) { toast(d.error, 'error'); return; }
     toast(`Conflict #${id} resolved as ${resolution}`, 'success');
     loadConflicts();
@@ -3117,7 +3108,11 @@ async function exportSyncPack() {
   try {
     const resp = await fetch('/api/sync/export', {method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({include:['inventory','contacts','checklists','notes','incidents','waypoints']})});
-    if (!resp.ok) { toast('Export failed', 'error'); return; }
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      toast(data.error || 'Export failed', 'error');
+      return;
+    }
     const blob = await resp.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = `nomad-sync-${new Date().toISOString().slice(0,10)}.zip`;
@@ -3268,22 +3263,19 @@ async function advanceGroupExercise(exerciseId) {
   const decision = prompt('Your decision/action for this phase:');
   if (!decision) return;
   try {
-    const _resp = await fetch(`/api/group-exercises/${exerciseId}/update-state`, {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({decision, event: `Phase advanced with decision: ${decision}`,
-        phase: (await _fetchJson('/api/group-exercises')).find(e => e.exercise_id === exerciseId)?.current_phase + 1 || 1})});
-    if (!_resp.ok) throw new Error('HTTP ' + _resp.status);
+    await apiPost(`/api/group-exercises/${exerciseId}/update-state`, {decision, event: `Phase advanced with decision: ${decision}`,
+      phase: (await _fetchJson('/api/group-exercises')).find(e => e.exercise_id === exerciseId)?.current_phase + 1 || 1});
     toast('Phase advanced', 'success');
     loadGroupExercises();
-  } catch(e) { toast('Failed', 'error'); }
+  } catch(e) { toast(e?.data?.error || 'Failed', 'error'); }
 }
 
 async function completeGroupExercise(exerciseId) {
   try {
-    await fetch(`/api/group-exercises/${exerciseId}/update-state`, {method:'POST', headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({status: 'completed', event: 'Exercise completed'})});
+    await apiPost(`/api/group-exercises/${exerciseId}/update-state`, {status: 'completed', event: 'Exercise completed'});
     toast('Exercise completed!', 'success');
     loadGroupExercises();
-  } catch(e) { toast('Failed', 'error'); }
+  } catch(e) { toast(e?.data?.error || 'Failed', 'error'); }
 }
 
 /* ─── LoRA Fine-Tuning Pipeline ─── */
@@ -3356,10 +3348,10 @@ async function createTrainingJob() {
 async function runTrainingJob(jid) {
   toast('Running training job (creating model via Ollama)...', 'info');
   try {
-    await fetch(`/api/ai/training/jobs/${jid}/run`, {method:'POST'});
+    await apiPost(`/api/ai/training/jobs/${jid}/run`, {});
     toast('Training started \u2014 model will be available once complete', 'success');
     setTimeout(loadTrainingJobs, 3000);
-  } catch(e) { toast('Failed to start training', 'error'); }
+  } catch(e) { toast(e?.data?.error || 'Failed to start training', 'error'); }
 }
 
 /* ─── Perimeter Security Zones ─── */
@@ -3414,6 +3406,11 @@ async function generateMapAtlas() {
   try {
     const resp = await fetch('/api/maps/atlas', {method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({lat, lng, title, zoom_levels:[10,13,15], grid_size:2})});
+    if (!resp.ok) {
+      const data = await resp.json().catch(() => ({}));
+      toast(data.error || 'Atlas generation failed', 'error');
+      return;
+    }
     const html = await resp.text();
     const w = window.open('', '_blank');
     w.document.write(html);
@@ -3548,16 +3545,11 @@ async function uploadPDF() {
   const formData = new FormData();
   formData.append('file', file);
   try {
-    const r = await fetch('/api/library/upload-pdf', {method:'POST', body:formData});
+    await apiUpload('/api/library/upload-pdf', formData);
     input.value = '';
-    if (r.ok) {
-      toast('Document uploaded', 'success');
-    } else {
-      const d = await r.json().catch(() => ({}));
-      toast(`Upload failed: ${d.error || 'Server error'}`, 'error');
-    }
+    toast('Document uploaded', 'success');
     loadPDFList();
-  } catch(e) { toast('Upload failed — check your connection', 'error'); }
+  } catch(e) { toast(`Upload failed: ${e?.data?.error || e?.message || 'check your connection'}`, 'error'); }
 }
 function viewPDF(filename) {
   document.getElementById('pdf-viewer').style.display = 'block';
@@ -3949,9 +3941,11 @@ async function submitChecklistItem() {
   const cat = catEl.value;
   _currentChecklistItems.push({text, checked: false, cat});
   renderChecklist();
-  const r = await fetch(`/api/checklists/${_currentChecklistId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({items: _currentChecklistItems})});
-  if (!r.ok) toast('Failed to save checklist item', 'error');
+  try {
+    await apiPut(`/api/checklists/${_currentChecklistId}`, {items: _currentChecklistItems});
+  } catch(e) {
+    toast(e?.data?.error || 'Failed to save checklist item', 'error');
+  }
   textEl.value = '';
   textEl.focus();
 }

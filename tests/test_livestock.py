@@ -54,6 +54,11 @@ class TestLivestockDelete:
         assert resp.status_code == 200
         assert resp.get_json()['status'] == 'deleted'
 
+    def test_bulk_delete_rejects_malformed_json(self, client):
+        resp = client.post('/api/livestock/bulk-delete', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'
+
 
 class TestLivestockHealth:
     def test_log_health_event(self, client):

@@ -20,6 +20,12 @@ class TestMalformedJSON:
         resp = client.post('/api/notes', json={})
         assert resp.status_code in (200, 201, 400)
 
+    def test_planner_calculate_rejects_malformed_json(self, client):
+        resp = client.post('/api/planner/calculate', data='{bad', content_type='application/json')
+        assert resp.status_code == 400
+        data = resp.get_json()
+        assert data['error'] == 'Request body must be valid JSON'
+
 
 class TestSpecialCharacters:
     """Test that special characters in user input don't cause crashes."""

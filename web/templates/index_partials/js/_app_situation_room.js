@@ -2675,10 +2675,12 @@ async function _toggleWeatherRadar() {
     return;
   }
   try {
-    const resp = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+    const resp = await fetch('https://api.rainviewer.com/public/weather-maps.json', {
+      signal: AbortSignal.timeout(8000),
+    });
     if (!resp.ok) return;
     const data = await resp.json();
-    const frames = data.radar && data.radar.past;
+    const frames = Array.isArray(data?.radar?.past) ? data.radar.past : [];
     if (!frames || !frames.length) return;
     const latest = frames[frames.length - 1];
     const tileUrl = `${data.host}${latest.path}/256/{z}/{x}/{y}/2/1_1.png`;
@@ -4327,12 +4329,9 @@ async function loadSitroomMonitors() {
 function _promptAddMonitor() {
   const keyword = prompt('Enter keyword to monitor:');
   if (!keyword || !keyword.trim()) return;
-  fetch('/api/sitroom/monitors', {method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({keyword: keyword.trim()})
-  }).then(resp => {
-    if (!resp.ok) toast('Failed to add monitor', 'error');
-    loadSitroomMonitors();
-  }).catch(() => toast('Failed to add monitor', 'error'));
+  apiPost('/api/sitroom/monitors', {keyword: keyword.trim()})
+    .then(() => loadSitroomMonitors())
+    .catch((e) => toast(e?.data?.error || e?.message || 'Failed to add monitor', 'error'));
 }
 
 async function _deleteMonitor(id) {

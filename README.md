@@ -1,7 +1,7 @@
 <div align="center">
 <img src="nomad-mark.png" width="140" height="140"/>
 
-# NOMAD Field Desk v1.0.0
+# NOMAD Field Desk v7.0.0
 
 ### Your Personal Intelligence & Preparedness Command Center
 
@@ -63,7 +63,8 @@ Generate a complete **operations binder, laminated wallet cards, signal operatin
 | **Services** | Ollama (AI), Kiwix (Wikipedia), CyberChef, Kolibri, Qdrant, Stirling PDF, FlatNotes, BitTorrent |
 | **Intelligence** | 36 data sources, 435+ feeds, 45 map layers, 1,275 infrastructure points, 108+ cards |
 | **Preparedness** | Inventory, medical, garden, power, security, radio, 42 calculators, 21 guides, 56 reference cards |
-| **Platform** | Windows, Linux, macOS -single portable executable |
+| **Backend** | 600+ API routes across 26 blueprints, 95+ DB tables, 210+ indexes, 775+ automated tests |
+| **Platform** | Windows, Linux, macOS -single portable executable per platform |
 | **Themes** | Desert, Night Ops, Cyber, Red Light, E-Ink |
 | **Privacy** | All data stored locally. No accounts. No telemetry. No cloud. |
 
@@ -73,6 +74,12 @@ Generate a complete **operations binder, laminated wallet cards, signal operatin
 
 ### Windows
 Download **NOMADFieldDesk-Windows.exe** (portable) or **NOMAD-Setup.exe** (installer) from [Releases](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest) and double-click. No install needed -runs from USB, desktop, anywhere.
+
+### Linux
+Download **NOMADFieldDesk-Linux** from [Releases](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest), `chmod +x`, and run. Requires GTK WebKit (`sudo apt install python3-gi gir1.2-webkit2-4.1`).
+
+### macOS
+Download **NOMADFieldDesk-macOS** from [Releases](https://github.com/SysAdminDoc/project-nomad-desktop/releases/latest). Uses native WebKit -no extra dependencies.
 
 ### From source
 ```bash

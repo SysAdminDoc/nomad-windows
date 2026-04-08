@@ -5,57 +5,29 @@ import os
 import sys
 import time
 import threading
-import platform
 import logging
 import queue
-from datetime import datetime, timedelta
-from flask import Flask, render_template, jsonify, request, Response, stream_with_context
-from werkzeug.utils import secure_filename
-from web.validation import validate_json
+from datetime import datetime
+from flask import Flask, render_template, jsonify, request, Response
 import web.state as _state
 from web.state import (
-    _installing, _installing_lock,
-    _map_downloads,
     _auto_backup_timer,
-    _broadcast,
-    _update_state,
-    _serial_state, _serial_conn,
-    _mesh_state,
     MAX_SSE_CLIENTS, _sse_clients, _sse_lock,
     broadcast_event,
     sse_register_client, sse_unregister_client, sse_touch_client,
     sse_cleanup_stale_clients,
 )
 
-from config import get_data_dir, Config
-try:
-    from web.catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
-except Exception:
-    try:
-        from catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
-    except Exception:
-        logging.getLogger('nomad.web').warning('Could not import channel catalog — media features will be limited')
-        CHANNEL_CATALOG = []
-        CHANNEL_CATEGORIES = []
-from db import get_db, get_db_path, db_session, init_db, log_activity
-from web.print_templates import render_print_document
-from web.sql_safety import safe_table, safe_columns, build_update, build_insert
+from config import Config
+from db import get_db_path, db_session, init_db
+from web.sql_safety import safe_table
 from web.utils import (
-    esc as _esc,
-    clone_json_fallback as _clone_json_fallback,
+    check_origin as _check_origin,
     safe_json_value as _safe_json_value,
     safe_json_list as _safe_json_list,
-    close_db_safely as _close_db_safely,
-    validate_download_url as _validate_download_url,
-    check_origin as _check_origin,
-    validate_bulk_ids as _validate_bulk_ids,
     read_household_size as _read_household_size_setting,
 )
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
-from services.manager import (
-    get_download_progress, get_dir_size, format_size, uninstall_service, get_services_dir,
-    ensure_dependencies, detect_gpu
-)
 
 log = logging.getLogger('nomad.web')
 
@@ -1296,9 +1268,9 @@ def create_app():
     app.register_blueprint(print_routes_bp)
     app.register_blueprint(kiwix_bp)
 
-    # ─── Advanced Routes (Phases 16, 18, 19, 20) ────────────────────
-    from web.routes_advanced import register_advanced_routes
-    register_advanced_routes(app)
+    # ─── Undo Blueprint ──────────────────────────────────────────────
+    from web.blueprints.undo import undo_bp
+    app.register_blueprint(undo_bp)
 
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins

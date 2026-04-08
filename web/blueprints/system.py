@@ -1779,6 +1779,43 @@ def api_health_score():
         return jsonify({'score': min(100, score), 'status': status, 'breakdown': breakdown})
 
 
+# ─── Database Integrity Check (moved from routes_advanced) ───────
+
+@system_bp.route('/api/system/db-check', methods=['POST'])
+def api_system_db_check():
+    """Run PRAGMA integrity_check and foreign_key_check."""
+    with db_session() as db:
+        integrity = db.execute('PRAGMA integrity_check').fetchall()
+        fk_check = db.execute('PRAGMA foreign_key_check').fetchall()
+
+    integrity_results = [dict(r) for r in integrity] if integrity else []
+    fk_results = [dict(r) for r in fk_check] if fk_check else []
+
+    # integrity_check returns [{'integrity_check': 'ok'}] when healthy
+    ok = (len(integrity_results) == 1 and
+          integrity_results[0].get('integrity_check') == 'ok' and
+          len(fk_results) == 0)
+
+    return jsonify({
+        'status': 'ok' if ok else 'issues_found',
+        'integrity_check': integrity_results,
+        'foreign_key_check': fk_results,
+    })
+
+
+@system_bp.route('/api/system/db-vacuum', methods=['POST'])
+def api_system_db_vacuum():
+    """Run VACUUM and REINDEX to optimize the database."""
+    import sqlite3
+    path = get_db_path()
+    conn = sqlite3.connect(path)
+    conn.execute('VACUUM')
+    conn.execute('REINDEX')
+    conn.close()
+    log_activity('db_vacuum', 'system', 'Database vacuumed and reindexed')
+    return jsonify({'status': 'ok', 'message': 'VACUUM and REINDEX completed'})
+
+
 @system_bp.route('/api/system/self-test', methods=['GET'])
 def api_self_test():
     """Run a comprehensive self-test of all system components."""

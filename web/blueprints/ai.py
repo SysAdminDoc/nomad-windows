@@ -2,10 +2,12 @@
 
 import json
 import os
+import re
 import time
 import threading
 import logging
 from collections import defaultdict
+from datetime import datetime
 
 from flask import Blueprint, request, jsonify, Response, stream_with_context
 from werkzeug.utils import secure_filename
@@ -997,3 +999,341 @@ def api_training_jobs_run(jid):
     t = threading.Thread(target=do_train, daemon=True)
     t.start()
     return jsonify({'status': 'running'})
+
+
+# ─── AI Memory helpers (moved from routes_advanced) ──────────────────
+
+def _safe_ai_memories(value):
+    """Return stored AI memory entries as normalized fact dicts."""
+    try:
+        parsed = json.loads(value or '[]') if isinstance(value, str) else value
+    except (json.JSONDecodeError, TypeError):
+        return []
+    if not isinstance(parsed, list):
+        return []
+    memories = []
+    for entry in parsed:
+        if isinstance(entry, dict):
+            fact = str(entry.get('fact', '') or '').strip()
+            if not fact:
+                continue
+            normalized = dict(entry)
+            normalized['fact'] = fact
+            memories.append(normalized)
+            continue
+        fact = str(entry or '').strip()
+        if fact:
+            memories.append({'fact': fact})
+    return memories
+
+
+# ─── AI SITREP Generator ─────────────────────────────────────────
+
+@ai_bp.route('/api/ai/sitrep', methods=['POST'])
+def api_ai_sitrep():
+    """Generate a daily situation report from all data changes."""
+    if not ollama.running():
+        return jsonify({'error': 'AI service not running'}), 503
+
+    data = request.get_json() or {}
+    model = data.get('model', ollama.DEFAULT_MODEL)
+
+    with db_session() as db:
+        ctx_parts = []
+
+        # Recent activity log (last 24h)
+        activity = db.execute(
+            "SELECT event, service, detail, level, created_at FROM activity_log "
+            "WHERE created_at >= datetime('now', '-24 hours') ORDER BY created_at DESC LIMIT 50"
+        ).fetchall()
+        if activity:
+            lines = [f'[{a["level"]}] {a["event"]}' + (f' ({a["service"]})' if a["service"] else '') +
+                     (f' — {a["detail"][:80]}' if a["detail"] else '') for a in activity]
+            ctx_parts.append('ACTIVITY LOG (24h):\n' + '\n'.join(lines))
+
+        # Inventory — low stock items
+        low_stock = db.execute(
+            'SELECT name, quantity, unit, category, min_quantity FROM inventory '
+            'WHERE quantity <= min_quantity AND min_quantity > 0 ORDER BY category LIMIT 50'
+        ).fetchall()
+        if low_stock:
+            ctx_parts.append('LOW STOCK ALERTS:\n' + '\n'.join(
+                f'  {r["name"]} ({r["category"]}): {r["quantity"]} {r["unit"]} (min: {r["min_quantity"]})'
+                for r in low_stock))
+
+        # Inventory — newly expired (expiration within last 7 days or already expired)
+        expired = db.execute(
+            "SELECT name, quantity, unit, expiration FROM inventory "
+            "WHERE expiration != '' AND expiration <= date('now') ORDER BY expiration LIMIT 50"
+        ).fetchall()
+        if expired:
+            ctx_parts.append('EXPIRED ITEMS:\n' + '\n'.join(
+                f'  {r["name"]}: {r["quantity"]} {r["unit"]} (expired {r["expiration"]})'
+                for r in expired))
+
+        # Incidents in last 24h
+        incidents = db.execute(
+            "SELECT severity, category, description, created_at FROM incidents "
+            "WHERE created_at >= datetime('now', '-24 hours') ORDER BY created_at DESC LIMIT 50"
+        ).fetchall()
+        if incidents:
+            ctx_parts.append('INCIDENTS (24h):\n' + '\n'.join(
+                f'  [{r["severity"]}] {r["category"]}: {r["description"][:100]}'
+                for r in incidents))
+
+        # Weather trends
+        weather = db.execute(
+            "SELECT pressure_hpa, temp_f, wind_dir, wind_speed, clouds, precip, created_at "
+            "FROM weather_log WHERE created_at >= datetime('now', '-24 hours') "
+            "ORDER BY created_at DESC LIMIT 10"
+        ).fetchall()
+        if weather:
+            latest = weather[0]
+            ctx_parts.append(
+                f'WEATHER: {latest["temp_f"]}F, Pressure {latest["pressure_hpa"]} hPa, '
+                f'Wind {latest["wind_dir"]} {latest["wind_speed"]}, '
+                f'Clouds {latest["clouds"]}, Precip {latest["precip"]} '
+                f'({len(weather)} readings in 24h)')
+            if len(weather) >= 2:
+                oldest = weather[-1]
+                if latest['pressure_hpa'] and oldest['pressure_hpa']:
+                    delta = round(latest['pressure_hpa'] - oldest['pressure_hpa'], 1)
+                    trend = 'RISING' if delta > 0 else 'FALLING' if delta < 0 else 'STEADY'
+                    ctx_parts.append(f'PRESSURE TREND: {trend} ({delta:+.1f} hPa over period)')
+
+        # Power status
+        power = db.execute(
+            'SELECT battery_soc, solar_watts, load_watts, solar_wh_today, load_wh_today, '
+            'generator_running, created_at FROM power_log ORDER BY created_at DESC LIMIT 1'
+        ).fetchone()
+        if power:
+            gen = 'ON' if power['generator_running'] else 'OFF'
+            ctx_parts.append(
+                f'POWER: Battery {power["battery_soc"] or "?"}%, '
+                f'Solar {power["solar_watts"] or 0}W ({power["solar_wh_today"] or 0} Wh today), '
+                f'Load {power["load_watts"] or 0}W ({power["load_wh_today"] or 0} Wh today), '
+                f'Generator {gen}')
+
+        # Medical alerts — recent vitals
+        vitals = db.execute(
+            "SELECT p.name, v.bp_systolic, v.bp_diastolic, v.pulse, v.spo2, v.temp_f, v.created_at "
+            "FROM vitals_log v JOIN patients p ON v.patient_id = p.id "
+            "WHERE v.created_at >= datetime('now', '-24 hours') ORDER BY v.created_at DESC LIMIT 10"
+        ).fetchall()
+        if vitals:
+            ctx_parts.append('MEDICAL VITALS (24h):\n' + '\n'.join(
+                f'  {v["name"]}: BP {v["bp_systolic"]}/{v["bp_diastolic"]}, '
+                f'HR {v["pulse"]}, SpO2 {v["spo2"]}%, Temp {v["temp_f"]}F'
+                for v in vitals))
+
+        # Active alerts
+        alerts = db.execute(
+            'SELECT title, severity, message FROM alerts WHERE dismissed = 0 ORDER BY severity DESC LIMIT 10'
+        ).fetchall()
+        if alerts:
+            ctx_parts.append('ACTIVE ALERTS:\n' + '\n'.join(
+                f'  [{a["severity"]}] {a["title"]}: {a["message"][:100]}' for a in alerts))
+
+        # Inventory summary by category
+        inv_summary = db.execute(
+            'SELECT category, COUNT(*) as cnt, SUM(quantity) as total FROM inventory GROUP BY category LIMIT 50'
+        ).fetchall()
+        if inv_summary:
+            ctx_parts.append('INVENTORY SUMMARY: ' + ', '.join(
+                f'{r["category"]}: {r["cnt"]} items' for r in inv_summary))
+
+        # Team count
+        team_count = db.execute('SELECT COUNT(*) as c FROM contacts').fetchone()['c']
+        if team_count:
+            ctx_parts.append(f'TEAM: {team_count} contacts registered')
+
+    context = '\n\n'.join(ctx_parts) if ctx_parts else 'No operational data recorded yet.'
+
+    system_prompt = f"""You are a military-style intelligence officer generating a SITREP (Situation Report) for a preparedness and field-operations workspace called NOMAD Field Desk.
+
+Generate a formatted SITREP in markdown using this exact structure:
+
+# SITREP — {datetime.now().strftime('%d %b %Y %H%M')}Z
+
+## 1. SITUATION
+(Overall assessment — 2-3 sentences summarizing current conditions)
+
+## 2. SUPPLY STATUS
+(Inventory highlights, low stock, expired items — use exact numbers from data)
+
+## 3. PERSONNEL & MEDICAL
+(Team count, any medical alerts, patient status)
+
+## 4. INFRASTRUCTURE
+(Power, weather, comms status)
+
+## 5. INCIDENTS & ALERTS
+(Any incidents in last 24h, active alerts)
+
+## 6. RECOMMENDED ACTIONS
+(3-5 prioritized actionable items based on the data — be specific)
+
+RULES:
+- Use ONLY the data provided below. Never fabricate information.
+- Use exact quantities and names from the data.
+- If a section has no relevant data, write "No data available."
+- Be concise, direct, military-style briefing tone.
+
+--- OPERATIONAL DATA ---
+{context}
+--- END DATA ---"""
+
+    try:
+        result = ollama.chat(model, [
+            {'role': 'system', 'content': system_prompt},
+            {'role': 'user', 'content': 'Generate the daily SITREP.'}
+        ], stream=False)
+        sitrep_text = result.get('message', {}).get('content', '') if isinstance(result, dict) else ''
+        log_activity('sitrep_generated', 'ai', 'Daily SITREP generated')
+        return jsonify({'sitrep': sitrep_text.strip()})
+    except Exception as e:
+        log.error('SITREP generation failed: %s', e)
+        return jsonify({'error': 'SITREP generation failed'}), 500
+
+
+# ─── AI Action Execution ─────────────────────────────────────────
+
+@ai_bp.route('/api/ai/execute-action', methods=['POST'])
+def api_ai_execute_action():
+    """Parse and execute a natural-language action command."""
+    data = request.get_json() or {}
+    action = data.get('action', '').strip()
+    if not action:
+        return jsonify({'error': 'No action provided'}), 400
+    if len(action) > 500:
+        return jsonify({'error': 'Action too long (max 500 chars)'}), 400
+
+    # Pattern: "add [qty] [item] to inventory"
+    m = re.match(r'add\s+(\d+)\s+(.+?)\s+to\s+inventory', action, re.IGNORECASE)
+    if m:
+        qty = max(1, min(int(m.group(1)), 100000))
+        item_name = m.group(2).strip()[:200]
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO inventory (name, quantity, category) VALUES (?, ?, ?)',
+                (item_name, qty, 'other'))
+            db.commit()
+            row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            log_activity('inventory_added', 'ai', f'Added {qty} {item_name} via AI action')
+        return jsonify({
+            'status': 'executed',
+            'action': 'add_inventory',
+            'detail': f'Added {qty} {item_name} to inventory',
+            'id': row_id,
+        })
+
+    # Pattern: "log incident [desc]"
+    m = re.match(r'log\s+incident\s+(.+)', action, re.IGNORECASE)
+    if m:
+        desc = m.group(1).strip()
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO incidents (severity, category, description) VALUES (?, ?, ?)',
+                ('info', 'other', desc))
+            db.commit()
+            row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            log_activity('incident_logged', 'ai', f'Incident: {desc[:80]}')
+        return jsonify({
+            'status': 'executed',
+            'action': 'log_incident',
+            'detail': f'Logged incident: {desc}',
+            'id': row_id,
+        })
+
+    # Pattern: "create note [title]"
+    m = re.match(r'create\s+note\s+(.+)', action, re.IGNORECASE)
+    if m:
+        title = m.group(1).strip()
+        with db_session() as db:
+            db.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, ''))
+            db.commit()
+            row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            log_activity('note_created', 'ai', f'Note: {title}')
+        return jsonify({
+            'status': 'executed',
+            'action': 'create_note',
+            'detail': f'Created note: {title}',
+            'id': row_id,
+        })
+
+    # Pattern: "add waypoint [name] at [lat],[lng]"
+    m = re.match(r'add\s+waypoint\s+(.+?)\s+at\s+([-\d.]+)\s*,\s*([-\d.]+)', action, re.IGNORECASE)
+    if m:
+        wp_name = m.group(1).strip()
+        try:
+            lat = float(m.group(2))
+            lng = float(m.group(3))
+        except ValueError:
+            return jsonify({'error': 'Invalid coordinates — lat and lng must be numbers'}), 400
+        if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+            return jsonify({'error': 'Coordinates out of range (lat: -90..90, lng: -180..180)'}), 400
+        wp_name = wp_name[:200]
+        with db_session() as db:
+            db.execute(
+                'INSERT INTO waypoints (name, lat, lng) VALUES (?, ?, ?)',
+                (wp_name, lat, lng))
+            db.commit()
+            row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+            log_activity('waypoint_added', 'ai', f'Waypoint: {wp_name} ({lat},{lng})')
+        return jsonify({
+            'status': 'executed',
+            'action': 'add_waypoint',
+            'detail': f'Added waypoint {wp_name} at {lat},{lng}',
+            'id': row_id,
+        })
+
+    return jsonify({
+        'status': 'unrecognized',
+        'error': 'Could not parse action. Supported: "add [qty] [item] to inventory", '
+                 '"log incident [desc]", "create note [title]", "add waypoint [name] at [lat],[lng]"',
+    }), 400
+
+
+# ─── AI Memory ───────────────────────────────────────────────────
+
+@ai_bp.route('/api/ai/memory', methods=['GET'])
+def api_ai_memory_list():
+    """List persistent AI memory facts."""
+    with db_session() as db:
+        row = db.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
+    memories = _safe_ai_memories(row['value'] if row else None)
+    return jsonify({'memories': memories})
+
+
+@ai_bp.route('/api/ai/memory', methods=['POST'])
+def api_ai_memory_save():
+    """Save a fact to AI memory."""
+    data = request.get_json() or {}
+    fact = data.get('fact', '').strip()
+    if not fact:
+        return jsonify({'error': 'No fact provided'}), 400
+    if len(fact) > 2000:
+        return jsonify({'error': 'Fact too long (max 2000 chars)'}), 400
+    with db_session() as db:
+        row = db.execute("SELECT value FROM settings WHERE key = 'ai_memory'").fetchone()
+        memories = _safe_ai_memories(row['value'] if row else None)
+        memories.append({'fact': fact, 'saved_at': datetime.now().isoformat()})
+        # Cap memory size to prevent unbounded growth
+        if len(memories) > 200:
+            memories = memories[-200:]
+        db.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('ai_memory', ?)",
+            (json.dumps(memories),))
+        db.commit()
+    log_activity('ai_memory_saved', 'ai', f'Memory: {fact[:60]}')
+    return jsonify({'status': 'saved', 'count': len(memories)})
+
+
+@ai_bp.route('/api/ai/memory', methods=['DELETE'])
+def api_ai_memory_clear():
+    """Clear all AI memory."""
+    with db_session() as db:
+        db.execute("DELETE FROM settings WHERE key = 'ai_memory'")
+        db.commit()
+    log_activity('ai_memory_cleared', 'ai', 'All AI memories cleared')
+    return jsonify({'status': 'cleared'})

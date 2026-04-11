@@ -331,3 +331,12 @@ summary:focus-visible,
 [dir="rtl"] .tab-icon { margin-left: 8px; margin-right: 0; }
 [dir="rtl"] .sidebar-sub { padding-right: 32px; padding-left: 0; }
 [dir="rtl"] .sidebar-footer { direction: rtl; }
+/* Right-side fixed surfaces flip to the left in RTL so they don't
+   slide in from off-screen or hide behind the sidebar. */
+[dir="rtl"] .customize-panel { right: auto; left: 0; border-left: none; border-right: 1px solid var(--border); transform: translateX(-100%); }
+[dir="rtl"] .customize-panel.open { transform: translateX(0); }
+[dir="rtl"] .customize-panel-header { direction: rtl; text-align: right; }
+[dir="rtl"] .utility-panel-shell { right: auto; left: 28px; }
+[dir="rtl"] #lan-chat-panel,
+[dir="rtl"] #timer-panel { right: auto !important; left: 28px; }
+[dir="rtl"] #quick-actions-menu { right: auto !important; left: 28px; }

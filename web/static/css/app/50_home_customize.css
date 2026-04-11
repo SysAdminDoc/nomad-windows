@@ -762,12 +762,16 @@ html[data-zoom="xlarge"] { --ui-zoom: 1.3; }
   overflow-y: auto;
   overscroll-behavior: contain;
   transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* Delay visibility change until the slide-out transform completes
+     so the close animation is actually visible to the user. */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.3s;
 }
 .customize-panel.open {
   visibility: visible;
   pointer-events: auto;
   transform: translateX(0);
+  /* On open, visibility must flip immediately so the slide-in is seen. */
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0s;
 }
 .customize-panel-header {
   display: flex;

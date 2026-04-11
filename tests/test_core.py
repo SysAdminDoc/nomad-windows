@@ -1071,7 +1071,9 @@ class TestErrorHandler:
         assert 'OutputBaseFilename=NOMAD-Setup' in installer
         assert 'artifact: NOMADFieldDesk-Windows' in workflow
         assert 'release/NOMAD-Setup.exe' in workflow
-        assert '# NOMAD Field Desk v1.0.0' in readme
+        # Version-agnostic: match any v<major>.<minor>.<patch> so test survives bumps.
+        import re as _re
+        assert _re.search(r'# NOMAD Field Desk v\d+\.\d+\.\d+', readme), 'README missing NOMAD Field Desk version header'
         assert 'NOMADFieldDesk-Windows.exe' in readme
         assert 'NOMAD-Setup.exe' in readme
         assert '"name": "nomad-field-desk"' in package_json

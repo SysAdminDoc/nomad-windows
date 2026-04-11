@@ -44,8 +44,11 @@ async function loadMaps() {
     safeFetch('/api/maps/regions', {}, []),
     safeFetch('/api/maps/files', {}, []),
   ]);
+  const regionGrid = document.getElementById('region-grid');
+  const filesEl = document.getElementById('map-files-list');
+  if (!regionGrid || !filesEl) return;
 
-  document.getElementById('region-grid').innerHTML = regions.map(r => `
+  regionGrid.innerHTML = regions.map(r => `
     <div class="region-card">
       <div class="region-card-shell">
         <div class="region-card-copy">
@@ -63,7 +66,6 @@ async function loadMaps() {
     </div>
   `).join('');
 
-  const filesEl = document.getElementById('map-files-list');
   if (!files.length) {
     filesEl.innerHTML = '<span class="map-files-empty">No maps downloaded yet.</span>';
   } else {
@@ -270,6 +272,7 @@ function renderNoteListHtml(items, emptyText) {
 }
 function renderNotesList() {
   const list = document.getElementById('notes-list');
+  if (!list) return;
   const q = (document.getElementById('notes-search')?.value || '').toLowerCase();
   let filtered = q ? allNotes.filter(n => (n.title||'').toLowerCase().includes(q) || (n.tags||'').toLowerCase().includes(q)) : allNotes;
   list.innerHTML = renderNoteListHtml(filtered, 'No notes yet');
@@ -277,11 +280,16 @@ function renderNotesList() {
 function selectNote(id) {
   currentNoteId = id;
   const n = allNotes.find(n => n.id === id);
+  const titleInput = document.getElementById('note-title');
+  const contentInput = document.getElementById('note-content');
+  const tagsInput = document.getElementById('note-tags');
+  const pinBtn = document.getElementById('note-pin-btn');
+  if (!titleInput || !contentInput || !tagsInput || !pinBtn) return;
   if (n) {
-    document.getElementById('note-title').value = n.title||'';
-    document.getElementById('note-content').value = n.content||'';
-    document.getElementById('note-tags').value = n.tags||'';
-    document.getElementById('note-pin-btn').textContent = n.pinned ? 'Unpin' : 'Pin';
+    titleInput.value = n.title||'';
+    contentInput.value = n.content||'';
+    tagsInput.value = n.tags||'';
+    pinBtn.textContent = n.pinned ? 'Unpin' : 'Pin';
   }
   renderNotesList();
   updateNoteWordCount();
@@ -325,9 +333,10 @@ async function createNoteWithTitle(title) {
 let _noteTemplatesCache = [];
 async function toggleNoteTemplates() {
   const dd = document.getElementById('note-template-dropdown');
+  const list = document.getElementById('note-template-list');
+  if (!dd || !list) return;
   if (dd.style.display === 'block') { dd.style.display = 'none'; return; }
   dd.style.display = 'block';
-  const list = document.getElementById('note-template-list');
   _noteTemplatesCache = await safeFetch('/api/notes/templates', {}, []);
   list.innerHTML = _noteTemplatesCache.map((t, idx) => `
     <div class="note-template-item" data-note-action="apply-note-template" data-note-template-index="${idx}" role="button" tabindex="0">
@@ -342,8 +351,10 @@ async function toggleNoteTemplates() {
 
 async function applyNoteTemplateByIndex(idx) {
   const t = _noteTemplatesCache[idx];
+  const dropdown = document.getElementById('note-template-dropdown');
+  if (!dropdown) return;
   if (!t) return;
-  document.getElementById('note-template-dropdown').style.display = 'none';
+  dropdown.style.display = 'none';
   const r = await safeFetch('/api/notes', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title: t.name, content: t.content})}, null);
   if (r && r.id) {
     loadNotes();
@@ -354,21 +365,26 @@ async function applyNoteTemplateByIndex(idx) {
 async function deleteNote() {
   if (!confirm('Delete this note?')) return;
   if (!currentNoteId) return;
+  const titleInput = document.getElementById('note-title');
+  const contentInput = document.getElementById('note-content');
+  if (!titleInput || !contentInput) return;
   try {
     await _workspaceFetchOk(`/api/notes/${currentNoteId}`, {method:'DELETE'}, 'Failed to delete note');
     currentNoteId = null;
-    document.getElementById('note-title').value = '';
-    document.getElementById('note-content').value = '';
+    titleInput.value = '';
+    contentInput.value = '';
     await loadNotes();
   } catch (e) {
     toast(e.message || 'Failed to delete note', 'error');
   }
 }
 function filterNotes() {
-  const q = document.getElementById('notes-search').value.toLowerCase();
+  const searchInput = document.getElementById('notes-search');
+  const list = document.getElementById('notes-list');
+  if (!searchInput || !list) return;
+  const q = searchInput.value.toLowerCase();
   if (!q) { renderNotesList(); return; }
   const filtered = allNotes.filter(n => (n.title||'').toLowerCase().includes(q) || (n.content||'').toLowerCase().includes(q));
-  const list = document.getElementById('notes-list');
   list.innerHTML = renderNoteListHtml(filtered, 'No matches');
 }
 
@@ -384,9 +400,12 @@ function autoSaveNote() {
   if (!currentNoteId) return;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
+    const titleInput = document.getElementById('note-title');
+    const contentInput = document.getElementById('note-content');
+    if (!titleInput || !contentInput) return;
     try {
       await _workspaceFetchOk(`/api/notes/${currentNoteId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({title:document.getElementById('note-title').value, content:document.getElementById('note-content').value})}, 'Note save failed');
+        body:JSON.stringify({title:titleInput.value, content:contentInput.value})}, 'Note save failed');
       await loadNotes();
     } catch(e) { toast(e.message || 'Note save failed', 'error'); }
   }, 500);
@@ -397,6 +416,7 @@ async function runBenchmark(mode) {
   const runBtn = document.getElementById('bench-run-btn');
   const progressEl = document.getElementById('bench-progress');
   const resultsEl = document.getElementById('bench-results');
+  if (!runBtn || !progressEl || !resultsEl) return;
   runBtn.disabled = true;
   progressEl.style.display = 'block';
   resultsEl.innerHTML = '';
@@ -419,18 +439,24 @@ function pollBenchmark() {
   if (_benchPoll) clearInterval(_benchPoll);
   window.NomadShellRuntime?.stopInterval('benchmark.status');
   const poll = async () => {
+    const fillEl = document.getElementById('bench-fill');
+    const stageEl = document.getElementById('bench-stage');
+    const pctEl = document.getElementById('bench-pct');
+    if (!fillEl || !stageEl || !pctEl) return;
     const s = await _workspaceFetchJsonSafe('/api/benchmark/status', {}, null, 'Could not load benchmark status');
     if (!s) return;
-    document.getElementById('bench-fill').style.width = s.progress + '%';
-    document.getElementById('bench-stage').textContent = s.stage;
-    document.getElementById('bench-pct').textContent = s.progress + '%';
+    fillEl.style.width = s.progress + '%';
+    stageEl.textContent = s.stage;
+    pctEl.textContent = s.progress + '%';
 
     if (s.status === 'complete' || s.status === 'error') {
+      const runBtn = document.getElementById('bench-run-btn');
+      const progressEl = document.getElementById('bench-progress');
       if (_benchPoll) clearInterval(_benchPoll);
       _benchPoll = null;
       window.NomadShellRuntime?.stopInterval('benchmark.status');
-      document.getElementById('bench-run-btn').disabled = false;
-      document.getElementById('bench-progress').style.display = 'none';
+      if (runBtn) runBtn.disabled = false;
+      if (progressEl) progressEl.style.display = 'none';
       if (s.status === 'complete' && s.results) showBenchResults(s.results);
       if (s.status === 'error') toast('Benchmark failed: ' + s.stage, 'error');
       loadBenchHistory();
@@ -447,7 +473,9 @@ function pollBenchmark() {
 }
 
 function showBenchResults(r) {
-  document.getElementById('bench-results').innerHTML = `
+  const resultsEl = document.getElementById('bench-results');
+  if (!resultsEl) return;
+  resultsEl.innerHTML = `
     <div class="benchmark-results-overview">
       <div class="benchmark-score-hero"><div class="bench-big"><span>${r.nomad_score}</span></div><div class="benchmark-score-caption">NOMAD Score</div></div>
       <div class="benchmark-run-summary">
@@ -472,6 +500,7 @@ async function loadBenchHistory() {
   try {
     const history = await _workspaceFetchJson('/api/benchmark/history', {}, 'Could not load benchmark history');
     const el = document.getElementById('bench-history');
+    if (!el) return;
     if (!history.length) { el.innerHTML = '<span class="benchmark-empty-state">No benchmarks run yet.</span>'; return; }
     const latest = history[0];
     const oldest = history[history.length - 1];
@@ -529,7 +558,8 @@ async function loadBenchHistory() {
         </table></div></div>`;
     }
   } catch(e) {
-    document.getElementById('bench-history').innerHTML = '<span class="benchmark-empty-state">Failed to load history</span>';
+    const el = document.getElementById('bench-history');
+    if (el) el.innerHTML = '<span class="benchmark-empty-state">Failed to load history</span>';
   }
 }
 
@@ -568,9 +598,10 @@ async function runStorageBenchmark() {
 async function loadSettings() {
   try {
     const s = await _workspaceFetchJson('/api/settings', {}, 'Could not load settings');
+    const aiNameInput = document.getElementById('ai-name-input');
     if (s.ai_name) {
       aiName = s.ai_name;
-      document.getElementById('ai-name-input').value = aiName;
+      if (aiNameInput) aiNameInput.value = aiName;
     }
     if (s.theme && !localStorage.getItem('nomad-theme')) {
       setTheme(s.theme);
@@ -579,7 +610,8 @@ async function loadSettings() {
 
   try {
     const n = await _workspaceFetchJson('/api/network', {}, 'Could not load network status');
-    document.getElementById('lan-url-setting').textContent = n.dashboard_url || '-';
+    const lanUrlEl = document.getElementById('lan-url-setting');
+    if (lanUrlEl) lanUrlEl.textContent = n.dashboard_url || '-';
   } catch(e) {}
 }
 
@@ -587,7 +619,9 @@ let _saveNameTimer;
 function saveAIName() {
   clearTimeout(_saveNameTimer);
   _saveNameTimer = setTimeout(async () => {
-    aiName = document.getElementById('ai-name-input').value || 'AI';
+    const aiNameInput = document.getElementById('ai-name-input');
+    if (!aiNameInput) return;
+    aiName = aiNameInput.value || 'AI';
     try {
       await _workspaceFetchOk('/api/settings', {
         method:'PUT',
@@ -601,12 +635,17 @@ function saveAIName() {
 }
 
 async function loadSystemInfo() {
+  const gaugesEl = document.getElementById('system-gauges');
+  const systemInfoEl = document.getElementById('system-info');
+  const dataDirEl = document.getElementById('data-dir');
+  const diskDevicesEl = document.getElementById('disk-devices');
+  if (!gaugesEl || !systemInfoEl || !dataDirEl || !diskDevicesEl) return;
   try {
     const s = await _workspaceFetchJson('/api/system', {}, 'Could not load system info');
 
     // Gauges
     function gaugeColor(pct) { return pct > 90 ? 'gauge-red' : pct > 70 ? 'gauge-orange' : 'gauge-green'; }
-    document.getElementById('system-gauges').innerHTML = `
+    gaugesEl.innerHTML = `
       <div class="gauge-card ${gaugeColor(s.cpu_percent)}">
         <div class="gauge-label">CPU</div>
         <div class="gauge-value">${s.cpu_percent}%</div>
@@ -630,7 +669,7 @@ async function loadSystemInfo() {
     `;
 
     // System info
-    document.getElementById('system-info').innerHTML = `
+    systemInfoEl.innerHTML = `
       <div class="setting-row"><span class="setting-label">Version</span><span class="setting-value">v${s.version}</span></div>
       <div class="setting-row"><span class="setting-label">Platform</span><span class="setting-value">${s.platform}</span></div>
       <div class="setting-row"><span class="setting-label">Hostname</span><span class="setting-value">${s.hostname}</span></div>
@@ -641,10 +680,10 @@ async function loadSystemInfo() {
       <div class="setting-row"><span class="setting-label">GPU</span><span class="setting-value">${s.gpu}${s.gpu_vram ? ' ('+s.gpu_vram+')' : ''}</span></div>
       <div class="setting-row"><span class="setting-label">NOMAD Data</span><span class="setting-value">${s.nomad_disk_used}</span></div>
     `;
-    document.getElementById('data-dir').textContent = s.data_dir;
+    dataDirEl.textContent = s.data_dir;
 
     // Disk devices
-    const dd = document.getElementById('disk-devices');
+    const dd = diskDevicesEl;
     if (s.disk_devices && s.disk_devices.length) {
       dd.innerHTML = s.disk_devices.map(d => {
         const color = d.percent > 90 ? 'var(--red)' : d.percent > 75 ? 'var(--orange)' : 'var(--accent)';
@@ -656,7 +695,7 @@ async function loadSystemInfo() {
     } else {
       dd.innerHTML = `<div class="setting-row"><span class="setting-label">Disk Free</span><span class="setting-value">${s.disk_free} / ${s.disk_total}</span></div>`;
     }
-  } catch(e) { document.getElementById('system-info').innerHTML = '<span class="text-red">Failed to load</span>'; }
+  } catch(e) { systemInfoEl.innerHTML = '<span class="text-red">Failed to load</span>'; }
 }
 
 let _liveGaugeInt = null;
@@ -696,12 +735,14 @@ function startLiveGauges() {
 }
 
 async function loadModelManager() {
+  const el = document.getElementById('model-list');
+  const recommendedEl = document.getElementById('recommended-models');
+  if (!el || !recommendedEl) return;
   try {
     const [models, rec] = await Promise.all([
       _workspaceFetchJson('/api/ai/models', {}, 'Could not load installed models'),
       _workspaceFetchJson('/api/ai/recommended', {}, 'Could not load recommended models'),
     ]);
-    const el = document.getElementById('model-list');
     if (!models.length) {
       el.innerHTML = '<div class="settings-empty-state model-list-empty">No models downloaded</div>';
     } else {
@@ -717,7 +758,7 @@ async function loadModelManager() {
     }
 
     const installed = new Set(models.map(m => m.name));
-    document.getElementById('recommended-models').innerHTML = rec.map(r => `
+    recommendedEl.innerHTML = rec.map(r => `
       <div class="model-item">
         <span><span class="model-name">${r.name}</span> <span class="model-size">${r.desc} (${r.size})</span></span>
         ${installed.has(r.name)
@@ -726,7 +767,7 @@ async function loadModelManager() {
       </div>
     `).join('');
   } catch(e) {
-    document.getElementById('model-list').innerHTML = '<div class="settings-empty-state model-list-empty">Could not load models right now.</div>';
+    el.innerHTML = '<div class="settings-empty-state model-list-empty">Could not load models right now.</div>';
   }
 }
 
@@ -1177,17 +1218,28 @@ function wizPollProgress() {
     try {
       const s = await _workspaceFetchJsonSafe('/api/wizard/progress', {}, null, 'Could not load setup progress');
       if (!s) return;
-      document.getElementById('wiz-overall-fill').style.width = s.overall_progress + '%';
-      document.getElementById('wiz-overall-pct').textContent = s.overall_progress + '%';
-      document.getElementById('wiz-current-item').textContent = s.current_item || '...';
-      document.getElementById('wiz-item-fill').style.width = s.item_progress + '%';
-      document.getElementById('wiz-item-pct').textContent = s.item_progress + '%';
-      document.getElementById('wiz-mini-pct').textContent = s.overall_progress + '%';
-      document.getElementById('wiz-mini-fill').style.width = s.overall_progress + '%';
-      document.getElementById('wiz-mini-item').textContent = s.current_item || '...';
+      const overallFillEl = document.getElementById('wiz-overall-fill');
+      const overallPctEl = document.getElementById('wiz-overall-pct');
+      const currentItemEl = document.getElementById('wiz-current-item');
+      const itemFillEl = document.getElementById('wiz-item-fill');
+      const itemPctEl = document.getElementById('wiz-item-pct');
+      const miniPctEl = document.getElementById('wiz-mini-pct');
+      const miniFillEl = document.getElementById('wiz-mini-fill');
+      const miniItemEl = document.getElementById('wiz-mini-item');
+      const phaseLabelEl = document.getElementById('wiz-phase-label');
+      const completedListEl = document.getElementById('wiz-completed-list');
+      if (!overallFillEl || !overallPctEl || !currentItemEl || !itemFillEl || !itemPctEl || !miniPctEl || !miniFillEl || !miniItemEl || !phaseLabelEl || !completedListEl) return;
+      overallFillEl.style.width = s.overall_progress + '%';
+      overallPctEl.textContent = s.overall_progress + '%';
+      currentItemEl.textContent = s.current_item || '...';
+      itemFillEl.style.width = s.item_progress + '%';
+      itemPctEl.textContent = s.item_progress + '%';
+      miniPctEl.textContent = s.overall_progress + '%';
+      miniFillEl.style.width = s.overall_progress + '%';
+      miniItemEl.textContent = s.current_item || '...';
 
       const phaseNames = {services:'Installing tools...', starting:'Starting services...', content:'Downloading offline content...', models:'Downloading AI models...', done:'Complete!'};
-      document.getElementById('wiz-phase-label').textContent = phaseNames[s.phase] || s.phase;
+      phaseLabelEl.textContent = phaseNames[s.phase] || s.phase;
 
       if (s.overall_progress === _wizLastProgress && s.item_progress === 0) {
         _wizStallCount++;
@@ -1197,7 +1249,7 @@ function wizPollProgress() {
       }
       setWizardSectionVisibility('wiz-stall-help', _wizStallCount > 30);
 
-      document.getElementById('wiz-completed-list').innerHTML = (s.completed || []).map(c =>
+      completedListEl.innerHTML = (s.completed || []).map(c =>
         `<div class="wizard-complete-row"><span class="wizard-complete-icon">&#10003;</span><span>${escapeHtml(c)}</span></div>`).join('');
 
       const errEl = document.getElementById('wiz-errors');
@@ -1239,14 +1291,18 @@ function wizSkipToComplete() {
 
 async function wizShowComplete(state) {
   wizGoPage(5);
+  const lanUrlEl = document.getElementById('wiz-lan-url');
+  const summaryEl = document.getElementById('wiz-summary');
+  const errorSummaryEl = document.getElementById('wiz-error-summary');
+  if (!lanUrlEl || !summaryEl || !errorSummaryEl) return;
   // Show LAN URL
   try {
     const net = await _workspaceFetchJson('/api/network', {}, 'Could not load LAN access URL');
-    document.getElementById('wiz-lan-url').textContent = net.dashboard_url;
+    lanUrlEl.textContent = net.dashboard_url;
   } catch(e) {}
   const svcCount = state.completed.filter(c => ['ollama','kiwix','cyberchef','kolibri','qdrant','stirling'].includes(c)).length;
   const contentCount = state.completed.length - svcCount;
-  document.getElementById('wiz-summary').innerHTML = `
+  summaryEl.innerHTML = `
     <div class="wizard-summary-card">
       <div class="wizard-summary-number wizard-summary-number-green">${svcCount}</div><div class="wizard-summary-label">Tools Installed</div>
     </div>
@@ -1258,11 +1314,11 @@ async function wizShowComplete(state) {
     </div>`;
   if (state.errors.length) {
     setWizardSectionVisibility('wiz-error-summary', true);
-    document.getElementById('wiz-error-summary').innerHTML = `<div class="wizard-error-summary-card">`
+    errorSummaryEl.innerHTML = `<div class="wizard-error-summary-card">`
       + state.errors.map(e => `<div class="wizard-error-row">&#10007; ${escapeHtml(e)}</div>`).join('') + `</div>`;
   } else {
     setWizardSectionVisibility('wiz-error-summary', false);
-    document.getElementById('wiz-error-summary').innerHTML = '';
+    errorSummaryEl.innerHTML = '';
   }
 }
 
@@ -1293,6 +1349,66 @@ const TOUR_STEPS = [
   { tab: 'settings', title: 'Settings & System Health', text: 'Manage AI models, run system health checks, schedule recurring tasks, back up your data, and configure multi-node sync.', pos: 'center' },
 ];
 let _tourStep = 0;
+const TOUR_SESSION_KEY = 'nomad-guided-tour-state';
+const TOUR_FOCUS_KEY = 'nomad-guided-tour-focus';
+
+function _readTourSession() {
+  try {
+    const raw = sessionStorage.getItem(TOUR_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (_) {
+    return null;
+  }
+}
+
+function _writeTourSession(step = _tourStep) {
+  try {
+    sessionStorage.setItem(TOUR_SESSION_KEY, JSON.stringify({ active: true, step }));
+  } catch (_) {}
+}
+
+function _clearTourSession() {
+  try {
+    sessionStorage.removeItem(TOUR_SESSION_KEY);
+  } catch (_) {}
+}
+
+function _queueTourFocusRestore(tabId = 'services') {
+  try {
+    sessionStorage.setItem(TOUR_FOCUS_KEY, tabId);
+  } catch (_) {}
+}
+
+function _restoreTourFocusIfNeeded() {
+  let tabId = '';
+  try {
+    tabId = sessionStorage.getItem(TOUR_FOCUS_KEY) || '';
+    if (!tabId) return;
+    sessionStorage.removeItem(TOUR_FOCUS_KEY);
+  } catch (_) {
+    return;
+  }
+  const tabBtn = document.querySelector(`.tab[data-tab="${tabId}"]`);
+  if (tabBtn) requestAnimationFrame(() => tabBtn.focus());
+}
+
+function _renderTourStep(step) {
+  const tourOverlay = document.getElementById('tour-overlay');
+  const contentEl = document.getElementById('tour-content');
+  const stepNumEl = document.getElementById('tour-step-num');
+  const nextBtn = document.getElementById('tour-next-btn');
+  const card = document.getElementById('tour-card');
+  if (!contentEl || !stepNumEl || !nextBtn || !card) return;
+  if (!tourOverlay) return false;
+  setShellVisibility(tourOverlay, true);
+  contentEl.innerHTML = `<h3 class="tour-content-title">${step.title}</h3><p class="tour-content-copy">${step.text}</p>`;
+  stepNumEl.textContent = `${_tourStep+1} of ${TOUR_STEPS.length}`;
+  nextBtn.textContent = _tourStep === TOUR_STEPS.length - 1 ? 'Done' : 'Next';
+  card.style.top = '50%';
+  card.style.left = '50%';
+  card.style.transform = 'translate(-50%, -50%)';
+  return true;
+}
 
 function startTour() {
   persistOnboardingComplete();
@@ -1300,7 +1416,10 @@ function startTour() {
   setShellVisibility(document.getElementById('wiz-mini-banner'), false);
   clearWizardUrlFlag();
   _tourStep = 0;
-  setShellVisibility(document.getElementById('tour-overlay'), true);
+  const tourOverlay = document.getElementById('tour-overlay');
+  if (!tourOverlay) return;
+  _writeTourSession(_tourStep);
+  setShellVisibility(tourOverlay, true);
   showTourStep();
   loadServices();
 }
@@ -1308,18 +1427,16 @@ function startTour() {
 function showTourStep() {
   const step = TOUR_STEPS[_tourStep];
   if (!step) { tourSkip(); return; }
-  // Switch to the tab
-  const tabBtn = document.querySelector(`[data-tab="${step.tab}"]`);
-  if (tabBtn) tabBtn.click();
-
-  document.getElementById('tour-content').innerHTML = `<h3 class="tour-content-title">${step.title}</h3><p class="tour-content-copy">${step.text}</p>`;
-  document.getElementById('tour-step-num').textContent = `${_tourStep+1} of ${TOUR_STEPS.length}`;
-  document.getElementById('tour-next-btn').textContent = _tourStep === TOUR_STEPS.length - 1 ? 'Done' : 'Next';
-
-  const card = document.getElementById('tour-card');
-  card.style.top = '50%';
-  card.style.left = '50%';
-  card.style.transform = 'translate(-50%, -50%)';
+  if (!_renderTourStep(step)) return;
+  _writeTourSession(_tourStep);
+  const activeTab = window.NOMAD_ACTIVE_TAB || getWorkspacePageTab();
+  if (activeTab !== step.tab) {
+    const openedInPlace = typeof openWorkspaceRouteAware === 'function'
+      ? openWorkspaceRouteAware(step.tab)
+      : !!document.querySelector(`.tab[data-tab="${step.tab}"]`)?.click();
+    if (!openedInPlace) return;
+  }
+  document.getElementById('tour-next-btn')?.focus();
 }
 
 function tourNext() {
@@ -1332,8 +1449,48 @@ function tourNext() {
 }
 
 function tourSkip() {
-  setShellVisibility(document.getElementById('tour-overlay'), false);
-  document.querySelector('[data-tab="services"]')?.click();
+  const tourOverlay = document.getElementById('tour-overlay');
+  _clearTourSession();
+  _queueTourFocusRestore('services');
+  if (tourOverlay) setShellVisibility(tourOverlay, false);
+  const servicesTab = document.querySelector('.tab[data-tab="services"]');
+  const activeTab = window.NOMAD_ACTIVE_TAB || getWorkspacePageTab();
+  if (activeTab === 'services') {
+    servicesTab?.focus();
+    _restoreTourFocusIfNeeded();
+    return;
+  }
+  if (typeof openWorkspaceRouteAware === 'function') {
+    const openedInPlace = openWorkspaceRouteAware('services');
+    if (openedInPlace) {
+      _restoreTourFocusIfNeeded();
+    }
+    return;
+  }
+  servicesTab?.click();
+  _restoreTourFocusIfNeeded();
+}
+
+function restoreGuidedTourIfNeeded() {
+  _restoreTourFocusIfNeeded();
+  const state = _readTourSession();
+  if (!state?.active) return;
+  const nextStep = Number.parseInt(state.step, 10);
+  if (!Number.isFinite(nextStep) || nextStep < 0 || nextStep >= TOUR_STEPS.length) {
+    _clearTourSession();
+    return;
+  }
+  _tourStep = nextStep;
+  const tourOverlay = document.getElementById('tour-overlay');
+  if (!tourOverlay) return;
+  setShellVisibility(tourOverlay, true);
+  showTourStep();
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', restoreGuidedTourIfNeeded, { once: true });
+} else {
+  requestAnimationFrame(restoreGuidedTourIfNeeded);
 }
 
 /* ─── Inline Model Picker ─── */
@@ -1341,12 +1498,14 @@ let _modelPickerVisible = false;
 function toggleModelPicker() {
   _modelPickerVisible = !_modelPickerVisible;
   const panel = document.getElementById('model-picker-panel');
+  if (!panel) return;
   panel.style.display = _modelPickerVisible ? 'block' : 'none';
   if (_modelPickerVisible) loadModelPickerList();
 }
 
 async function loadModelPickerList() {
   const list = document.getElementById('model-picker-list');
+  if (!list) return;
   try {
     const [rec, models] = await Promise.all([
       _workspaceFetchJson('/api/ai/recommended', {}, 'Could not load recommended models'),
@@ -1439,9 +1598,11 @@ async function pullModel(name) {
 }
 
 function pullCustomModel() {
-  const name = document.getElementById('custom-model-input').value.trim();
+  const input = document.getElementById('custom-model-input');
+  if (!input) return;
+  const name = input.value.trim();
   if (!name) return;
-  document.getElementById('custom-model-input').value = '';
+  input.value = '';
   pullModel(name);
 }
 
@@ -1469,14 +1630,17 @@ async function pullAllModels() {
 let kbEnabled = false;
 
 function toggleKB() {
-  kbEnabled = document.getElementById('kb-toggle').checked;
+  const toggle = document.getElementById('kb-toggle');
   const docsEl = document.getElementById('kb-docs-list');
+  if (!toggle || !docsEl) return;
+  kbEnabled = toggle.checked;
   docsEl.style.display = kbEnabled ? 'block' : 'none';
   if (kbEnabled) loadKBDocs();
 }
 
 async function loadKBDocs() {
   const el = document.getElementById('kb-docs-list');
+  if (!el) return;
   let docs;
   try {
     docs = await _workspaceFetchJson('/api/kb/documents', {}, 'Could not load knowledge base documents');
@@ -1523,7 +1687,7 @@ async function loadKBDocs() {
 
 async function uploadKBFile() {
   const input = document.getElementById('kb-file-input');
-  if (!input.files.length) return;
+  if (!input || !input.files.length) return;
   const file = input.files[0];
   const formData = new FormData();
   formData.append('file', file);
@@ -1782,10 +1946,17 @@ let _mapVisible = false;
 
 function toggleMapView() {
   _mapVisible = !_mapVisible;
-  document.getElementById('map-viewer').style.display = _mapVisible ? 'block' : 'none';
-  document.getElementById('map-management').style.display = _mapVisible ? 'none' : 'block';
-  document.getElementById('map-toggle-btn').textContent = _mapVisible ? 'Manage Maps' : 'Show Map';
-  ['pin-btn','measure-btn','clear-pins-btn','save-wp-btn','draw-zone-btn','gpx-btn','property-btn','print-map-btn','bookmark-btn','bearing-btn','style-btn'].forEach(id => document.getElementById(id).style.display = _mapVisible ? '' : 'none');
+  const viewerEl = document.getElementById('map-viewer');
+  const managementEl = document.getElementById('map-management');
+  const toggleBtn = document.getElementById('map-toggle-btn');
+  if (!viewerEl || !managementEl || !toggleBtn) return;
+  viewerEl.style.display = _mapVisible ? 'block' : 'none';
+  managementEl.style.display = _mapVisible ? 'none' : 'block';
+  toggleBtn.textContent = _mapVisible ? 'Manage Maps' : 'Show Map';
+  ['pin-btn','measure-btn','clear-pins-btn','save-wp-btn','draw-zone-btn','gpx-btn','property-btn','print-map-btn','bookmark-btn','bearing-btn','style-btn'].forEach(id => {
+    const control = document.getElementById(id);
+    if (control) control.style.display = _mapVisible ? '' : 'none';
+  });
   if (_mapVisible && !_map) initMap();
   if (_mapVisible && _map) loadWaypoints();
 }
@@ -1982,7 +2153,9 @@ function clearPins() {
 
 function toggleMeasure() {
   _measureMode = !_measureMode;
-  document.getElementById('measure-btn').textContent = _measureMode ? 'Stop Measuring' : 'Measure';
+  const measureBtn = document.getElementById('measure-btn');
+  if (!measureBtn) return;
+  measureBtn.textContent = _measureMode ? 'Stop Measuring' : 'Measure';
   if (!_measureMode) {
     _measurePoints = [];
     if (_map.getSource('measure-line')) { _map.removeLayer('measure-line'); _map.removeSource('measure-line'); }
@@ -2024,7 +2197,9 @@ function haversineKm(a, b) {
 }
 
 async function searchMap() {
-  const q = document.getElementById('map-search-input').value.trim();
+  const searchInput = document.getElementById('map-search-input');
+  if (!searchInput) return;
+  const q = searchInput.value.trim();
   if (!q || !_map) return;
   // Check if input is coordinates (lat,lng or lat lng)
   const coordMatch = q.match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);
@@ -2070,114 +2245,6 @@ async function searchMap() {
   } catch(e) { toast('Location search requires internet. Enter coordinates (lat,lng) for offline navigation.', 'warning'); }
 }
 
-/* ─── Notes Preview ─── */
-let _notePreviewVisible = false;
-
-function toggleNotePreview() {
-  _notePreviewVisible = !_notePreviewVisible;
-  document.getElementById('note-preview').style.display = _notePreviewVisible ? 'block' : 'none';
-  document.getElementById('note-preview-btn').textContent = _notePreviewVisible ? 'Editor' : 'Preview';
-  if (_notePreviewVisible) updateNotePreview();
-}
-
-function updateNotePreview() {
-  if (!_notePreviewVisible) return;
-  const content = document.getElementById('note-content').value;
-  document.getElementById('note-preview').innerHTML = renderMarkdown(content);
-}
-
-/* ─── Builder Tag ─── */
-let _builderTagTimer;
-function saveBuilderTag() {
-  clearTimeout(_builderTagTimer);
-  _builderTagTimer = setTimeout(async () => {
-    const tag = document.getElementById('builder-tag').value;
-    try {
-      await _workspaceFetchOk('/api/settings', {
-        method:'PUT',
-        headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({builder_tag: tag}),
-      }, 'Could not save builder tag');
-    } catch (e) {
-      console.warn('Could not save builder tag:', e.message);
-    }
-  }, 500);
-}
-
-async function loadBuilderTag() {
-  try {
-    const s = await _workspaceFetchJson('/api/settings', {}, 'Could not load settings');
-    if (s.builder_tag) document.getElementById('builder-tag').value = s.builder_tag;
-  } catch(e) {}
-}
-
-/* ─── System Prompt Presets ─── */
-const PRESETS = {
-  assistant: 'You are a helpful, knowledgeable assistant. Be concise and accurate.',
-  medical: 'You are a medical information advisor. Provide evidence-based health information. Always recommend consulting a healthcare professional for medical decisions. Reference medical terminology accurately.',
-  coding: 'You are an expert software engineer. Write clean, efficient code. Explain your reasoning. Suggest best practices and potential pitfalls. Support multiple programming languages.',
-  survival: 'You are a survival and preparedness expert. Provide practical, actionable advice for emergency situations, outdoor survival, first aid, and disaster preparedness. Cover shelter, water, fire, food, navigation, and signaling.',
-  teacher: 'You are a patient, encouraging teacher. Explain concepts clearly with examples. Break complex topics into digestible parts. Ask follow-up questions to check understanding. Adapt your teaching style to the student.',
-  analyst: 'You are a data analyst. Help interpret data, create queries, explain statistical concepts, and provide analytical frameworks. Be precise with numbers.',
-  field_medic: 'You are a field medic / tactical medicine advisor. Provide step-by-step trauma care guidance: tourniquet application, wound packing, chest seals, airway management, shock treatment, triage. Reference TCCC (Tactical Combat Casualty Care) and TECC protocols. Include drug dosages when relevant. Always emphasize scene safety and personal protective equipment.',
-  ham_radio: 'You are an amateur radio (HAM) expert. Help with radio operations, antenna design, propagation, frequency planning, emergency communications (ARES/RACES), radio programming, Winlink, digital modes (FT8, JS8Call, APRS). Explain band plans, license requirements, and equipment selection. Cover both VHF/UHF and HF operations.',
-  homesteader: 'You are a homesteading and self-sufficiency expert. Advise on gardening (seasonal planting, soil prep, seed saving), animal husbandry (chickens, goats, rabbits), food preservation (canning, dehydrating, smoking, fermenting, root cellaring), off-grid living, rainwater harvesting, composting, and traditional crafts. Be practical and regionally adaptable.',
-  water_specialist: 'You are a water treatment and sanitation expert. Advise on water purification methods (boiling, chemical, filtration, UV, distillation), water source assessment, well drilling and maintenance, rainwater collection systems, greywater recycling, emergency sanitation (latrines, waste disposal), and waterborne illness prevention. Include specific measurements, ratios, and procedures.',
-  tactical: 'You are a security and operational security (OPSEC) advisor for preparedness. Cover home security hardening, perimeter defense, situational awareness, threat assessment, communications security, travel security, gray man concepts, community defense organization, and neighborhood watch coordination. Focus on legal, defensive, and preventive measures.',
-  forager: 'You are a wild food and foraging expert. Help identify edible plants, mushrooms, insects, and wild game. Cover safe foraging practices, poisonous look-alikes, seasonal availability, preparation methods, and nutritional value. Include preservation techniques for wild-harvested food. Always emphasize positive identification and the rule: when in doubt, do NOT eat it.',
-  scenario_grid: 'You are an emergency planning advisor. The power grid has been down for 3 days with no estimated restoration. Help me prioritize: water procurement and purification, food preservation from thawing freezers, alternative heating/cooling, communication with family and neighbors, security considerations, medical needs, fuel conservation. Ask about my specific situation (how many people, location, supplies on hand, season/weather) and provide a detailed hour-by-hour and day-by-day action plan.',
-  scenario_medical: 'You are a remote/austere medicine advisor. There is a medical emergency and professional medical help is not available. Help me assess and treat the situation using available supplies. Ask about: the patient (age, weight, conditions, medications), the injury/illness symptoms, what medical supplies are available, distance to nearest medical facility. Provide step-by-step treatment, monitoring instructions, warning signs to watch for, and when to escalate. Reference TCCC and wilderness medicine protocols.',
-  nuclear: 'You are a nuclear preparedness and civil defense expert. Advise on: blast radius effects by yield (thermal, overpressure, radiation), optimal shelter locations (PF ratings, basement vs above-ground), fallout protection (shelter-in-place timing, 7-10 rule of decay), decontamination procedures, potassium iodide dosing, EMP effects on electronics (Faraday protection), evacuation vs shelter-in-place decision criteria based on distance from ground zero, long-term fallout zone mapping, food/water contamination assessment. Reference Glasstone & Dolan nuclear effects data. Be specific about distances, timeframes, and protection factors.',
-  scenario_evacuation: 'You are an evacuation planning expert. Help me plan an emergency evacuation. Ask about: number of people (ages, mobility), vehicles available, fuel levels, distance to destinations, current threats (fire, flood, civil unrest, chemical), time available, supplies already packed. Provide: route planning (primary + 2 alternates), vehicle loading priority, communication plan, rally points, go/no-go decision criteria, and what to grab in the last 5 minutes.',
-  solar_expert: 'You are an off-grid solar power expert. Help design and troubleshoot solar systems: panel sizing, battery bank calculations (LiFePO4 vs lead-acid), charge controllers (MPPT vs PWM), inverter selection (pure vs modified sine), wiring (series vs parallel, wire gauge), mounting, tilt angles, and maintenance. Calculate loads, autonomy days, and system costs. Cover both portable (camping/bug-out) and permanent (homestead) installations. Include safety: grounding, overcurrent protection, disconnect switches.',
-  land_nav: 'You are a land navigation instructor with military and wilderness experience. Teach map reading (topographic contour interpretation, UTM/MGRS grid coordinates, distance estimation), compass use (declination adjustment, triangulation, backstighting), celestial navigation (Polaris, sun methods, Southern Cross), natural navigation (vegetation, wind, animal behavior, terrain association), GPS alternatives, route planning, terrain association, pace counting, and dead reckoning. Provide practical exercises.',
-  herbalist: 'You are a medicinal herbalist and ethnobotanist. Advise on growing, harvesting, preparing, and using medicinal plants for common ailments when modern medicine is unavailable. Cover: anti-inflammatory herbs (willow bark, turmeric), antimicrobial plants (garlic, oregano, goldenseal), wound care (yarrow, plantain, aloe), digestive remedies (ginger, peppermint, chamomile), pain relief (valerian, white willow), and immune support (elderberry, echinacea). Include preparation methods: tinctures, teas, poultices, salves, and proper dosing. Always note contraindications and when professional care is critical.',
-  cbrn_specialist: 'You are a CBRN (Chemical, Biological, Radiological, Nuclear) defense specialist. Cover: nuclear blast effects by yield (fireball radius, overpressure zones, thermal radiation, initial nuclear radiation, fallout projection), fallout decay using the 7-10 Rule, shelter protection factors (below-grade concrete PF 100-1000, above-grade frame house PF 3-10), KI dosing by age (adult 130mg, teen 65mg, child 1-12yr 65mg, infant 16-32mg), self-decontamination (remove outer clothing removes 80% of contamination, shower with soap), chemical agent recognition (nerve/blister/choking/blood agents and their antidotes), biological threat indicators, hot zone / warm zone / cold zone protocols, improvised protective equipment, re-entry timing after fallout events. Reference Glasstone & Dolan Effects of Nuclear Weapons, FM 3-11 series, and FEMA 2022 Nuclear Detonation Planning Guide.',
-  comms_planner: 'You are an emergency communications planner specializing in grid-down and austere communications. Cover the PACE model (Primary/Alternate/Contingency/Emergency): help users build layered communication plans. Advise on: local VHF/UHF simplex (146.520 national calling, 446.000 FM), GMRS/FRS for family comms, CB radio for vehicle travel corridors, HF for regional/national reach (40m daytime, 80m nighttime), JS8Call for store-and-forward HF messaging, Winlink P2P for email without internet, APRS for position tracking, Meshtastic LoRa for encrypted neighborhood mesh, signal mirrors and ground-to-air for aircraft, runner protocols for foot messenger plans. Include frequency planning, net check-in procedures, authentication codes, traffic handling, and how to integrate ICS/NIMS radio procedures into group operations.',
-};
-// Load saved custom prompt
-(function() { const cp = localStorage.getItem('nomad-custom-prompt'); if (cp) PRESETS.custom = cp; })();
-let activePreset = '';
-
-function applyPreset() {
-  activePreset = document.getElementById('system-preset').value;
-  if (activePreset === 'custom') {
-    toggleCustomPrompt(true);
-  } else {
-    toggleCustomPrompt(false);
-  }
-}
-
-function toggleCustomPrompt(show) {
-  const panel = document.getElementById('custom-prompt-panel');
-  if (show === undefined) show = panel.style.display === 'none';
-  panel.style.display = show ? 'block' : 'none';
-  if (show) {
-    // Load saved custom prompt
-    const saved = localStorage.getItem('nomad-custom-prompt') || '';
-    document.getElementById('custom-prompt-text').value = saved;
-  }
-}
-
-function saveCustomPrompt() {
-  const text = document.getElementById('custom-prompt-text').value.trim();
-  localStorage.setItem('nomad-custom-prompt', text);
-  PRESETS.custom = text;
-  activePreset = 'custom';
-  document.getElementById('system-preset').value = 'custom';
-  toggleCustomPrompt(false);
-  toast('Custom prompt saved', 'success');
-}
-
-function clearCustomPrompt() {
-  document.getElementById('custom-prompt-text').value = '';
-  localStorage.removeItem('nomad-custom-prompt');
-  delete PRESETS.custom;
-  activePreset = '';
-  document.getElementById('system-preset').value = '';
-  toggleCustomPrompt(false);
-}
-
 function exportConversation() {
   if (!currentConvoId) { toast('No conversation selected', 'warning'); return; }
   window.location=`/api/conversations/${currentConvoId}/export`;
@@ -2185,10 +2252,13 @@ function exportConversation() {
 
 /* ─── Conversation Search ─── */
 function filterConvos() {
-  const q = document.getElementById('convo-search').value.toLowerCase();
+  const searchInput = document.getElementById('convo-search');
+  if (!searchInput) return;
+  const q = searchInput.value.toLowerCase();
   if (!q) { renderConvoList(); return; }
   const filtered = allConvos.filter(c => c.title.toLowerCase().includes(q));
   const el = document.getElementById('convo-list');
+  if (!el) return;
   if (!filtered.length) { el.innerHTML = '<div class="sidebar-empty-state convo-search-empty">No matches</div>'; return; }
   el.innerHTML = filtered.map(c => {
     const branchBadge = (c.branch_count && c.branch_count > 0) ? `<span class="convo-branch-badge" title="${c.branch_count} branch${c.branch_count>1?'es':''}">${c.branch_count}</span>` : '';
@@ -2254,6 +2324,7 @@ function openWorkspaceTab(tabId) {
 
 async function importConfig() {
   const input = document.getElementById('import-file');
+  if (!input) return;
   if (!input.files.length) return;
   const formData = new FormData();
   formData.append('file', input.files[0]);
@@ -2269,15 +2340,22 @@ async function importConfig() {
 
 /* ─── In-App Frame ─── */
 function openAppFrame(title, url) {
-  document.getElementById('app-frame-title').textContent = title;
-  document.getElementById('app-frame-iframe').src = url;
-  document.getElementById('app-frame-overlay').style.display = 'flex';
+  const titleEl = document.getElementById('app-frame-title');
+  const iframe = document.getElementById('app-frame-iframe');
+  const overlay = document.getElementById('app-frame-overlay');
+  if (!titleEl || !iframe || !overlay) return;
+  titleEl.textContent = title;
+  iframe.src = url;
+  overlay.style.display = 'flex';
 }
 
 function openAppFrameHTML(title, html, scrollTo) {
   const iframe = document.getElementById('app-frame-iframe');
-  document.getElementById('app-frame-title').textContent = title;
-  document.getElementById('app-frame-overlay').style.display = 'flex';
+  const titleEl = document.getElementById('app-frame-title');
+  const overlay = document.getElementById('app-frame-overlay');
+  if (!iframe || !titleEl || !overlay) return;
+  titleEl.textContent = title;
+  overlay.style.display = 'flex';
   iframe.src = 'about:blank';
   setTimeout(() => {
     iframe.contentDocument.open();
@@ -2293,14 +2371,19 @@ function openAppFrameHTML(title, html, scrollTo) {
 }
 
 function closeAppFrame() {
-  document.getElementById('app-frame-overlay').style.display = 'none';
-  document.getElementById('app-frame-iframe').src = 'about:blank';
+  const overlay = document.getElementById('app-frame-overlay');
+  const iframe = document.getElementById('app-frame-iframe');
+  if (!overlay || !iframe) return;
+  overlay.style.display = 'none';
+  iframe.src = 'about:blank';
 }
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && document.getElementById('app-frame-overlay').style.display === 'flex') {
+  const overlay = document.getElementById('app-frame-overlay');
+  if (e.key === 'Escape' && overlay?.style.display === 'flex') {
     closeAppFrame();
   }
-  if (e.key === 'Escape' && document.getElementById('needs-detail-modal').style.display === 'flex') {
+  const needsDetailModal = document.getElementById('needs-detail-modal');
+  if (e.key === 'Escape' && needsDetailModal?.style.display === 'flex') {
     closeNeedsDetail();
   }
   const tcccModal = document.getElementById('tccc-modal');

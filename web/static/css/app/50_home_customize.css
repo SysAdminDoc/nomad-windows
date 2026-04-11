@@ -737,11 +737,15 @@ html[data-zoom="xlarge"] { --ui-zoom: 1.3; }
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
-  z-index: 9998;
+  z-index: 9600;
+  pointer-events: none;
   backdrop-filter: blur(4px);
   animation: fadeSlideIn 0.2s ease;
 }
-.customize-overlay.open { display: block; }
+.customize-overlay.open {
+  display: block;
+  pointer-events: auto;
+}
 .customize-panel {
   visibility: hidden;
   pointer-events: none;
@@ -751,11 +755,12 @@ html[data-zoom="xlarge"] { --ui-zoom: 1.3; }
   bottom: 0;
   width: 420px;
   max-width: 90vw;
-  z-index: var(--z-modal, 5000);
+  z-index: 9601;
   background: var(--surface-solid);
   border-left: 1px solid var(--border);
   box-shadow: -8px 0 40px rgba(0,0,0,0.25);
   overflow-y: auto;
+  overscroll-behavior: contain;
   transform: translateX(100%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }

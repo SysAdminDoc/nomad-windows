@@ -66,13 +66,18 @@ function setShellVisibility(el, visible) {
     el.hidden = true;
     el.style.removeProperty('display');
   }
+  if (el.hasAttribute('aria-hidden')) {
+    el.setAttribute('aria-hidden', visible ? 'false' : 'true');
+  }
   if (typeof syncViewportChrome === 'function') {
     requestAnimationFrame(syncViewportChrome);
   }
 }
 
 function isShellVisible(el) {
-  return !!el && !el.classList.contains('is-hidden') && !el.hidden && getComputedStyle(el).display !== 'none';
+  if (!el || el.classList.contains('is-hidden') || el.hidden) return false;
+  const style = getComputedStyle(el);
+  return style.display !== 'none' && style.visibility !== 'hidden';
 }
 
 const UTILITY_DOCK_BUTTON_IDS = {
@@ -85,6 +90,122 @@ function setUtilityDockButtonExpanded(kind, open) {
   const buttonId = UTILITY_DOCK_BUTTON_IDS[kind];
   if (!buttonId) return;
   document.getElementById(buttonId)?.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
+function getLastVisibleShellElement(selector) {
+  const matches = Array.from(document.querySelectorAll(selector)).filter(isShellVisible);
+  return matches.length ? matches[matches.length - 1] : null;
+}
+
+function closeVisibleShellSurface(surface) {
+  if (!surface) return false;
+  switch (surface.id) {
+    case 'command-palette-overlay':
+      if (typeof toggleCommandPalette === 'function') toggleCommandPalette(false);
+      else setShellVisibility(surface, false);
+      return true;
+    case 'shortcuts-overlay':
+      if (typeof toggleShortcutsHelp === 'function') toggleShortcutsHelp(false);
+      else setShellVisibility(surface, false);
+      return true;
+    case 'shell-health-overlay':
+      if (typeof toggleShellHealth === 'function') toggleShellHealth(false);
+      else setShellVisibility(surface, false);
+      return true;
+    case 'app-frame-overlay':
+      if (typeof closeAppFrame === 'function') closeAppFrame();
+      else surface.style.display = 'none';
+      return true;
+    case 'needs-detail-modal':
+      if (typeof closeNeedsDetail === 'function') closeNeedsDetail();
+      else surface.style.display = 'none';
+      return true;
+    case 'tccc-modal':
+      surface.style.display = 'none';
+      return true;
+    case 'tour-overlay':
+      if (typeof tourSkip === 'function') tourSkip();
+      else setShellVisibility(surface, false);
+      return true;
+    case 'wizard':
+      if (isShellVisible(document.getElementById('wiz-page-4')) && typeof wizMinimize === 'function') {
+        wizMinimize();
+      } else if (typeof skipWizard === 'function') {
+        skipWizard();
+      } else {
+        setShellVisibility(surface, false);
+      }
+      return true;
+    case 'quick-actions-menu':
+      if (typeof _qaOpen !== 'undefined') _qaOpen = false;
+      setShellVisibility(surface, false);
+      setUtilityDockButtonExpanded('actions', false);
+      return true;
+    case 'lan-chat-panel':
+      if (typeof _lanChatOpen !== 'undefined') _lanChatOpen = false;
+      setShellVisibility(surface, false);
+      setUtilityDockButtonExpanded('chat', false);
+      if (typeof setLanChatCompact === 'function') setLanChatCompact(true);
+      if (typeof stopLanMessagePolling === 'function') stopLanMessagePolling();
+      else if (typeof _lanPoll !== 'undefined' && _lanPoll) { clearInterval(_lanPoll); _lanPoll = null; }
+      if (typeof stopLanPresencePolling === 'function') stopLanPresencePolling();
+      return true;
+    case 'timer-panel':
+      if (typeof _timerPanelOpen !== 'undefined') _timerPanelOpen = false;
+      setShellVisibility(surface, false);
+      setUtilityDockButtonExpanded('timer', false);
+      if (typeof stopTimerPolling === 'function') stopTimerPolling();
+      else if (typeof _timerPoll !== 'undefined' && _timerPoll) { clearInterval(_timerPoll); _timerPoll = null; }
+      return true;
+    default:
+      break;
+  }
+
+  if (surface.classList.contains('generated-modal-overlay')) {
+    surface.remove();
+    return true;
+  }
+
+  if (surface.classList.contains('modal-overlay')) {
+    const closeButton = surface.querySelector('[data-shell-action="close-generated-modal"], [data-shell-action="close-ai-sitrep"], .modal-close, .settings-modal-close');
+    if (closeButton && typeof closeButton.click === 'function') {
+      closeButton.click();
+      return true;
+    }
+    surface.style.display = 'none';
+    if (surface.hasAttribute('aria-hidden')) surface.setAttribute('aria-hidden', 'true');
+    return true;
+  }
+
+  return false;
+}
+
+function closeTopVisibleShellSurface() {
+  const prioritizedIds = [
+    'command-palette-overlay',
+    'shortcuts-overlay',
+    'shell-health-overlay',
+    'app-frame-overlay',
+    'needs-detail-modal',
+    'tccc-modal',
+    'tour-overlay',
+    'wizard',
+  ];
+  for (const id of prioritizedIds) {
+    const surface = document.getElementById(id);
+    if (isShellVisible(surface)) return closeVisibleShellSurface(surface);
+  }
+
+  const modal = getLastVisibleShellElement('.generated-modal-overlay, .modal-overlay');
+  if (modal) return closeVisibleShellSurface(modal);
+
+  const utilityIds = ['quick-actions-menu', 'lan-chat-panel', 'timer-panel'];
+  for (const id of utilityIds) {
+    const surface = document.getElementById(id);
+    if (isShellVisible(surface)) return closeVisibleShellSurface(surface);
+  }
+
+  return false;
 }
 
 /* ─── Sidebar Sub-Menu Toggle ─── */
@@ -620,6 +741,7 @@ if (typeof window.fetch === 'function' && !window.__nomadFetchInstrumented) {
 }
 
 let _shellHealthUnsubscribe = null;
+let _shellHealthReturnFocus = null;
 
 function formatShellRuntimeAge(timestamp) {
   if (!timestamp) return 'idle';
@@ -697,21 +819,26 @@ function renderShellHealth(snapshot = window.NomadShellRuntime?.snapshot?.()) {
 function toggleShellHealth(force) {
   const overlay = document.getElementById('shell-health-overlay');
   if (!overlay) return;
-  const shouldOpen = typeof force === 'boolean' ? force : overlay.hidden;
+  const shouldOpen = typeof force === 'boolean' ? force : !isShellVisible(overlay);
   if (!shouldOpen) {
-    overlay.hidden = true;
-    overlay.classList.add('is-hidden');
+    setShellVisibility(overlay, false);
     if (_shellHealthUnsubscribe) {
       _shellHealthUnsubscribe();
       _shellHealthUnsubscribe = null;
     }
+    const returnFocus = _shellHealthReturnFocus;
+    _shellHealthReturnFocus = null;
+    if (returnFocus && returnFocus.isConnected && typeof returnFocus.focus === 'function') {
+      requestAnimationFrame(() => returnFocus.focus());
+    }
     return;
   }
-  overlay.hidden = false;
-  overlay.classList.remove('is-hidden');
+  _shellHealthReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  setShellVisibility(overlay, true);
   renderShellHealth();
   if (_shellHealthUnsubscribe) _shellHealthUnsubscribe();
   _shellHealthUnsubscribe = window.NomadShellRuntime.subscribe(renderShellHealth);
+  requestAnimationFrame(() => overlay.querySelector('.shell-health-close')?.focus());
 }
 
 document.addEventListener('keydown', (event) => {
@@ -1177,11 +1304,10 @@ function renderMarkdown(text) {
 document.addEventListener('keydown', e => {
   // Esc — close topmost modal/overlay
   if (e.key === 'Escape') {
-    const modal = document.querySelector('.modal-overlay:not(.hidden), .modal-overlay[style*="flex"], .wizard-overlay:not(.hidden)');
-    if (modal) { modal.style.display = 'none'; e.preventDefault(); return; }
-    // Close utility panel
-    const util = document.querySelector('.utility-panel-shell:not(.is-hidden)');
-    if (util) { util.classList.add('is-hidden'); e.preventDefault(); return; }
+    if (closeTopVisibleShellSurface()) {
+      e.preventDefault();
+      return;
+    }
   }
   // Ctrl/Cmd+K — handled by _app_workspaces.js toggleCommandPalette()
 });

@@ -809,7 +809,9 @@ function showHelp(section) {
 /* ─── Auto Backup ─── */
 let _autoBackupTimer = null;
 function saveAutoBackup() {
-  const interval = parseInt(document.getElementById('auto-backup-interval').value);
+  const intervalInput = document.getElementById('auto-backup-interval');
+  if (!intervalInput) return;
+  const interval = parseInt(intervalInput.value);
   localStorage.setItem('nomad-auto-backup', interval);
   setupAutoBackup(interval);
 }
@@ -842,7 +844,9 @@ function setupAutoBackup(interval) {
 
 /* ─── AI Conversation Starters ─── */
 function useStarter(text) {
-  document.getElementById('chat-input').value = text;
+  const chatInput = document.getElementById('chat-input');
+  if (!chatInput) return;
+  chatInput.value = text;
   sendChat();
 }
 
@@ -851,11 +855,13 @@ async function toggleNotePin() {
   if (!currentNoteId) return;
   const n = allNotes.find(n => n.id === currentNoteId);
   if (!n) return;
+  const pinBtn = document.getElementById('note-pin-btn');
+  if (!pinBtn) return;
   const newPinned = !n.pinned;
   try {
     await apiPost(`/api/notes/${currentNoteId}/pin`, {pinned:newPinned});
     n.pinned = newPinned;
-    document.getElementById('note-pin-btn').textContent = newPinned ? 'Unpin' : 'Pin';
+    pinBtn.textContent = newPinned ? 'Unpin' : 'Pin';
     toast(newPinned ? 'Note pinned' : 'Note unpinned', 'success');
     await loadNotes();
   } catch(e) { console.error(e); toast(e?.data?.error || 'Failed to update note', 'error'); }
@@ -866,7 +872,9 @@ function autoSaveNoteTags() {
   clearTimeout(_tagSaveTimer);
   _tagSaveTimer = setTimeout(async () => {
     if (!currentNoteId) return;
-    const tags = document.getElementById('note-tags').value;
+    const tagsInput = document.getElementById('note-tags');
+    if (!tagsInput) return;
+    const tags = tagsInput.value;
     try {
       await apiPut('/api/notes/' + currentNoteId + '/tags', {tags});
       const n = allNotes.find(n => n.id === currentNoteId);
@@ -878,13 +886,16 @@ function autoSaveNoteTags() {
 
 /* ─── Emergency Broadcast ─── */
 async function sendBroadcast() {
-  const msg = document.getElementById('bcast-msg').value.trim();
+  const messageInput = document.getElementById('bcast-msg');
+  const severityInput = document.getElementById('bcast-severity');
+  if (!messageInput || !severityInput) return;
+  const msg = messageInput.value.trim();
   if (!msg) { toast('Enter a message', 'warning'); return; }
-  const severity = document.getElementById('bcast-severity').value;
+  const severity = severityInput.value;
   try {
     await apiPost('/api/broadcast', {message: msg, severity});
     toast('Broadcast sent to all LAN devices', 'warning');
-    document.getElementById('bcast-msg').value = '';
+    messageInput.value = '';
   } catch(e) { toast('Failed to send broadcast', 'error'); }
 }
 
@@ -937,16 +948,21 @@ async function pollBroadcast() {
 
 /* ─── Resource Allocation Planner ─── */
 async function calcPlan() {
-  const people = parseInt(document.getElementById('plan-people').value) || 4;
-  const days = parseInt(document.getElementById('plan-days').value) || 14;
-  const activity = document.getElementById('plan-activity').value;
+  const peopleInput = document.getElementById('plan-people');
+  const daysInput = document.getElementById('plan-days');
+  const activityInput = document.getElementById('plan-activity');
+  const resultEl = document.getElementById('plan-result');
+  if (!peopleInput || !daysInput || !activityInput || !resultEl) return;
+  const people = parseInt(peopleInput.value) || 4;
+  const days = parseInt(daysInput.value) || 14;
+  const activity = activityInput.value;
   try {
     const r = await safeFetch('/api/planner/calculate', {method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({people, days, activity})}, null);
     if (!r || !r.needs || !r.current_inventory) throw new Error('planner unavailable');
     const n = r.needs;
     const inv = r.current_inventory;
-    document.getElementById('plan-result').innerHTML = `
+    resultEl.innerHTML = `
       <div class="planner-result-head">${people} people x ${days} days (${activity})</div>
       <div class="planner-result-grid">
         <div class="planner-result-item"><strong class="planner-result-label">Water:</strong> ${n.water_gal} gallons ${inv.water ? `<span class="planner-result-meta">(have: ${inv.water})</span>` : ''}</div>
@@ -959,12 +975,16 @@ async function calcPlan() {
         <div class="planner-result-item"><strong class="planner-result-label">Trash bags:</strong> ${n.trash_bags}</div>
         <div class="planner-result-item"><strong class="planner-result-label">First aid kits:</strong> ${n.first_aid_kits}</div>
       </div>`;
-  } catch(e) { document.getElementById('plan-result').innerHTML = 'Calculation failed.'; }
+  } catch(e) { resultEl.innerHTML = 'Calculation failed.'; }
 }
 
 function calcFoodStorage() {
-  const people = parseInt(document.getElementById('fs-people').value) || 4;
-  const months = parseInt(document.getElementById('fs-months').value) || 3;
+  const peopleInput = document.getElementById('fs-people');
+  const monthsInput = document.getElementById('fs-months');
+  const resultEl = document.getElementById('fs-result');
+  if (!peopleInput || !monthsInput || !resultEl) return;
+  const people = parseInt(peopleInput.value) || 4;
+  const months = parseInt(monthsInput.value) || 3;
   const days = months * 30;
   // LDS/FEMA recommended quantities per adult per year, scaled
   const scale = days / 365;
@@ -996,15 +1016,22 @@ function calcFoodStorage() {
   }
   html += '</tbody></table></div>';
   html += '<div class="prep-reference-note prep-reference-note-tight">Based on LDS/FEMA long-term storage guidelines. Store in Mylar bags with O2 absorbers in 5-gallon buckets for 25+ year shelf life.</div>';
-  document.getElementById('fs-result').innerHTML = html;
+  resultEl.innerHTML = html;
 }
 
 function calcGenFuel() {
-  const watts = parseInt(document.getElementById('gen-size').value);
-  const fuel = document.getElementById('gen-fuel').value;
-  const hours = parseInt(document.getElementById('gen-hours').value) || 8;
-  const days = parseInt(document.getElementById('gen-days').value) || 7;
-  const load = parseInt(document.getElementById('gen-load').value) || 50;
+  const wattsInput = document.getElementById('gen-size');
+  const fuelInput = document.getElementById('gen-fuel');
+  const hoursInput = document.getElementById('gen-hours');
+  const daysInput = document.getElementById('gen-days');
+  const loadInput = document.getElementById('gen-load');
+  const resultEl = document.getElementById('gen-result');
+  if (!wattsInput || !fuelInput || !hoursInput || !daysInput || !loadInput || !resultEl) return;
+  const watts = parseInt(wattsInput.value);
+  const fuel = fuelInput.value;
+  const hours = parseInt(hoursInput.value) || 8;
+  const days = parseInt(daysInput.value) || 7;
+  const load = parseInt(loadInput.value) || 50;
   // Fuel consumption rates (gal/hr at full load per 1000W)
   const rates = {
     gasoline: {per1kw: 0.75, unit: 'gallons', shelf: '3-6 months (1-2 yr w/ stabilizer)', weight: 6.3, container: '5-gal jerry cans'},
@@ -1048,14 +1075,20 @@ function calcGenFuel() {
     <strong>Common loads:</strong> Refrigerator 600W, Freezer 500W, Well Pump 1000W, Sump Pump 800W, Space Heater 1500W, Lights (LED) 10-15W each, Phone charger 5W, CPAP 30-60W, Window AC 500-1500W, Microwave 1000-1500W, TV 100-200W.
     <br><strong>Tip:</strong> Run generator 2-4 hours at a time to cycle fridge/freezer. A freezer stays frozen 24-48 hrs if kept closed. Cycle loads to reduce generator wear.
   </div>`;
-  document.getElementById('gen-result').innerHTML = html;
+  resultEl.innerHTML = html;
 }
 
 function calcRainwater() {
-  const area = parseFloat(document.getElementById('rw-area').value) || 1500;
-  const rain = parseFloat(document.getElementById('rw-rain').value) || 1;
-  const eff = parseFloat(document.getElementById('rw-roof').value) || 0.9;
-  const people = parseInt(document.getElementById('rw-people').value) || 4;
+  const areaInput = document.getElementById('rw-area');
+  const rainInput = document.getElementById('rw-rain');
+  const efficiencyInput = document.getElementById('rw-roof');
+  const peopleInput = document.getElementById('rw-people');
+  const resultEl = document.getElementById('rw-result');
+  if (!areaInput || !rainInput || !efficiencyInput || !peopleInput || !resultEl) return;
+  const area = parseFloat(areaInput.value) || 1500;
+  const rain = parseFloat(rainInput.value) || 1;
+  const eff = parseFloat(efficiencyInput.value) || 0.9;
+  const people = parseInt(peopleInput.value) || 4;
   // 1 inch of rain on 1 sq ft = 0.623 gallons
   const gallons = Math.round(area * rain * 0.623 * eff * 10) / 10;
   const liters = Math.round(gallons * 3.785 * 10) / 10;
@@ -1074,13 +1107,18 @@ function calcRainwater() {
     <strong>Purification:</strong> Roof water must be filtered + disinfected. Ceramic filter → UV or bleach (8 drops/gal). First-flush diverter discards debris.
     <strong>Legal:</strong> Rainwater harvesting is legal in most US states but some have restrictions — check local laws.
   </div>`;
-  document.getElementById('rw-result').innerHTML = html;
+  resultEl.innerHTML = html;
 }
 
 function calcRadioRange() {
-  const type = document.getElementById('rr-type').value;
-  const terrain = document.getElementById('rr-terrain').value;
-  const height = parseInt(document.getElementById('rr-height').value) || 6;
+  const typeInput = document.getElementById('rr-type');
+  const terrainInput = document.getElementById('rr-terrain');
+  const heightInput = document.getElementById('rr-height');
+  const resultEl = document.getElementById('rr-result');
+  if (!typeInput || !terrainInput || !heightInput || !resultEl) return;
+  const type = typeInput.value;
+  const terrain = terrainInput.value;
+  const height = parseInt(heightInput.value) || 6;
   // Base ranges in miles (ideal conditions)
   const bases = {
     'frs': {base: 1, band: 'UHF 462 MHz', license: 'None', note: 'Bubble-pack radios. Very limited.'},
@@ -1112,13 +1150,18 @@ function calcRadioRange() {
   html += `<div class="prep-reference-note prep-reference-note-tight">
     Range is estimated. Actual range depends on terrain, weather, antenna quality, and interference. <strong>Repeaters</strong> can extend VHF/UHF range to 50-100+ miles. <strong>NVIS</strong> (Near Vertical Incidence Skywave) on 40m/80m gives 0-300 mile coverage with horizontal antenna — fills the HF skip zone. In emergencies, you may transmit on any frequency (FCC §97.405).
   </div>`;
-  document.getElementById('rr-result').innerHTML = html;
+  resultEl.innerHTML = html;
 }
 
 function calcMedDose() {
-  const weight = parseFloat(document.getElementById('md-weight').value) || 150;
-  const unit = document.getElementById('md-unit').value;
-  const age = document.getElementById('md-age').value;
+  const weightInput = document.getElementById('md-weight');
+  const unitInput = document.getElementById('md-unit');
+  const ageInput = document.getElementById('md-age');
+  const resultEl = document.getElementById('md-result');
+  if (!weightInput || !unitInput || !ageInput || !resultEl) return;
+  const weight = parseFloat(weightInput.value) || 150;
+  const unit = unitInput.value;
+  const age = ageInput.value;
   const kg = unit === 'kg' ? weight : weight / 2.205;
   const lbs = unit === 'lbs' ? weight : weight * 2.205;
 
@@ -1155,14 +1198,20 @@ function calcMedDose() {
   }
   html += '</tbody></table></div>';
   html += '<div class="prep-reference-note prep-reference-note-tight"><strong>DISCLAIMER:</strong> For reference only. Consult a medical professional when possible. Doses may vary based on individual health conditions, allergies, and other medications.</div>';
-  document.getElementById('md-result').innerHTML = html;
+  resultEl.innerHTML = html;
 }
 
 function calcSolarSize() {
-  const dailyWh = parseInt(document.getElementById('sol-wh').value) || 3000;
-  const sunHrs = parseInt(document.getElementById('sol-sun').value) || 4;
-  const battType = document.getElementById('sol-batt').value;
-  const autoDays = parseInt(document.getElementById('sol-days').value) || 2;
+  const dailyWhInput = document.getElementById('sol-wh');
+  const sunHoursInput = document.getElementById('sol-sun');
+  const batteryTypeInput = document.getElementById('sol-batt');
+  const autonomyInput = document.getElementById('sol-days');
+  const resultEl = document.getElementById('sol-size-result');
+  if (!dailyWhInput || !sunHoursInput || !batteryTypeInput || !autonomyInput || !resultEl) return;
+  const dailyWh = parseInt(dailyWhInput.value) || 3000;
+  const sunHrs = parseInt(sunHoursInput.value) || 4;
+  const battType = batteryTypeInput.value;
+  const autoDays = parseInt(autonomyInput.value) || 2;
 
   const battInfo = {lifepo4: {dod: 0.8, volt: 12.8, life: '10+ years', cost: '$$$$'}, agm: {dod: 0.5, volt: 12, life: '3-5 years', cost: '$$'}, flooded: {dod: 0.5, volt: 12, life: '3-7 years', cost: '$'}};
   const b = battInfo[battType];
@@ -1211,7 +1260,7 @@ function calcSolarSize() {
     <strong>Common loads:</strong> Fridge 150Wh/hr x 8hr = 1,200Wh/day | Lights (LED) 10W x 5hr = 50Wh | Laptop 50W x 4hr = 200Wh | Phone 20Wh | Well pump 1000W x 1hr = 1,000Wh | CPAP 40W x 8hr = 320Wh
     <br><strong>Tips:</strong> MPPT controllers 20-30% more efficient than PWM. LiFePO4 costs more but lasts 3x longer. Tilt panels to latitude angle.
   </div>`;
-  document.getElementById('sol-size-result').innerHTML = html;
+  resultEl.innerHTML = html;
 }
 
 const BOB_ITEMS = [
@@ -1247,7 +1296,10 @@ function renderBOBChecklist() {
 function calcBOB() {
   if (!document.querySelector('.bob-item')) renderBOBChecklist();
   if (!document.querySelector('.bob-item')) return;
-  const bodyWeight = parseInt(document.getElementById('bob-bodyweight').value) || 180;
+  const bodyWeightInput = document.getElementById('bob-bodyweight');
+  const resultEl = document.getElementById('bob-result');
+  if (!bodyWeightInput || !resultEl) return;
+  const bodyWeight = parseInt(bodyWeightInput.value) || 180;
   let totalWeight = 0, checkedCount = 0;
   document.querySelectorAll('.bob-item').forEach(cb => {
     if (cb.checked) { totalWeight += parseFloat(cb.dataset.weight); checkedCount++; }
@@ -1275,7 +1327,7 @@ function calcBOB() {
   </div>`;
   html += `</div>`;
   if (pct > 25) html += `<div class="prep-reference-callout prep-reference-callout-danger">Pack too heavy for sustained travel. Remove non-essentials or reduce quantities.</div>`;
-  document.getElementById('bob-result').innerHTML = html;
+  resultEl.innerHTML = html;
 }
 
 /* ─── Quick Actions ─── */
@@ -1434,10 +1486,24 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
-function toggleShortcutsHelp() {
+let _shortcutsReturnFocus = null;
+
+function toggleShortcutsHelp(force) {
   const el = document.getElementById('shortcuts-overlay');
   if (!el) return;
-  el.hidden = !el.hidden;
+  const show = typeof force === 'boolean' ? force : !isShellVisible(el);
+  if (show) {
+    _shortcutsReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setShellVisibility(el, true);
+    requestAnimationFrame(() => el.querySelector('.shortcuts-close')?.focus());
+    return;
+  }
+  setShellVisibility(el, false);
+  const returnFocus = _shortcutsReturnFocus;
+  _shortcutsReturnFocus = null;
+  if (returnFocus && returnFocus.isConnected && typeof returnFocus.focus === 'function') {
+    requestAnimationFrame(() => returnFocus.focus());
+  }
 }
 
 /* ─── Daily Journal ─── */
@@ -1472,20 +1538,24 @@ async function loadJournal() {
       </div>`;
     }).join('');
   } catch(e) {
-    document.getElementById('journal-list').innerHTML = '<div class="journal-error">Failed to load journal</div>';
+    el.innerHTML = '<div class="journal-error">Failed to load journal</div>';
   }
 }
 
 async function submitJournal() {
-  const entry = document.getElementById('journal-entry').value.trim();
+  const entryInput = document.getElementById('journal-entry');
+  const moodInput = document.getElementById('journal-mood');
+  const tagsInput = document.getElementById('journal-tags');
+  if (!entryInput || !moodInput || !tagsInput) return;
+  const entry = entryInput.value.trim();
   if (!entry) { toast('Write something first', 'warning'); return; }
-  const mood = document.getElementById('journal-mood').value;
-  const tags = document.getElementById('journal-tags').value.trim();
+  const mood = moodInput.value;
+  const tags = tagsInput.value.trim();
   try {
     await apiPost('/api/journal', {entry, mood, tags});
-    document.getElementById('journal-entry').value = '';
-    document.getElementById('journal-mood').value = '';
-    document.getElementById('journal-tags').value = '';
+    entryInput.value = '';
+    moodInput.value = '';
+    tagsInput.value = '';
     toast('Journal entry logged', 'success');
     loadJournal();
   } catch(e) { toast('Failed to save entry', 'error'); }
@@ -1560,8 +1630,11 @@ function startCameraSnapshotRefresh(cameras) {
 
 function showSecurityTab(tab) {
   ['cameras','access'].forEach(t => {
-    document.getElementById(`security-${t}-panel`).style.display = t === tab ? 'block' : 'none';
-    document.getElementById(`sec-tab-${t}`).className = t === tab ? 'btn btn-sm prep-utility-tab prep-utility-tab-active' : 'btn btn-sm prep-utility-tab';
+    const panel = document.getElementById(`security-${t}-panel`);
+    const tabBtn = document.getElementById(`sec-tab-${t}`);
+    if (!panel || !tabBtn) return;
+    panel.style.display = t === tab ? 'block' : 'none';
+    tabBtn.className = t === tab ? 'btn btn-sm prep-utility-tab prep-utility-tab-active' : 'btn btn-sm prep-utility-tab';
   });
   if (tab === 'cameras') { loadCameras(); loadMotionStatus(); _startMotionPolling(); }
   else { _stopMotionPolling(); stopCameraSnapshotRefresh(); }
@@ -1648,16 +1721,21 @@ async function loadCameras() {
 }
 
 async function addCamera() {
-  const name = document.getElementById('cam-name').value.trim();
-  const url = document.getElementById('cam-url').value.trim();
+  const nameInput = document.getElementById('cam-name');
+  const urlInput = document.getElementById('cam-url');
+  const typeInput = document.getElementById('cam-type');
+  const locationInput = document.getElementById('cam-location');
+  if (!nameInput || !urlInput || !typeInput || !locationInput) return;
+  const name = nameInput.value.trim();
+  const url = urlInput.value.trim();
   if (!name || !url) { toast('Enter camera name and URL', 'warning'); return; }
   try {
     await apiPost('/api/security/cameras', {
-      name, url, stream_type: document.getElementById('cam-type').value,
-      location: document.getElementById('cam-location').value.trim()});
-    document.getElementById('cam-name').value = '';
-    document.getElementById('cam-url').value = '';
-    document.getElementById('cam-location').value = '';
+      name, url, stream_type: typeInput.value,
+      location: locationInput.value.trim()});
+    nameInput.value = '';
+    urlInput.value = '';
+    locationInput.value = '';
     toast('Camera "' + name + '" added', 'success');
     loadCameras();
     loadSecurityDashboard();
@@ -1756,9 +1834,13 @@ function toggleMotionSettingsPanel() {
 }
 
 async function configureMotionDetection() {
-  const threshold = parseInt(document.getElementById('motion-threshold').value) || 25;
-  const check_interval = parseInt(document.getElementById('motion-interval').value) || 2;
-  const cooldown = parseInt(document.getElementById('motion-cooldown').value) || 60;
+  const thresholdInput = document.getElementById('motion-threshold');
+  const intervalInput = document.getElementById('motion-interval');
+  const cooldownInput = document.getElementById('motion-cooldown');
+  if (!thresholdInput || !intervalInput || !cooldownInput) return;
+  const threshold = parseInt(thresholdInput.value) || 25;
+  const check_interval = parseInt(intervalInput.value) || 2;
+  const cooldown = parseInt(cooldownInput.value) || 60;
   const resp = await safeFetch('/api/security/motion/configure', {
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({threshold, check_interval, cooldown})
@@ -1771,16 +1853,22 @@ async function configureMotionDetection() {
 }
 
 async function logAccess() {
-  const person = document.getElementById('al-person').value.trim();
+  const personInput = document.getElementById('al-person');
+  const directionInput = document.getElementById('al-direction');
+  const locationInput = document.getElementById('al-location');
+  const methodInput = document.getElementById('al-method');
+  const notesInput = document.getElementById('al-notes');
+  if (!personInput || !directionInput || !locationInput || !methodInput || !notesInput) return;
+  const person = personInput.value.trim();
   if (!person) { toast('Enter person name', 'warning'); return; }
   try {
     await apiPost('/api/security/access-log', {
-      person, direction: document.getElementById('al-direction').value,
-      location: document.getElementById('al-location').value.trim(),
-      method: document.getElementById('al-method').value,
-      notes: document.getElementById('al-notes').value.trim()});
-    document.getElementById('al-person').value = '';
-    document.getElementById('al-notes').value = '';
+      person, direction: directionInput.value,
+      location: locationInput.value.trim(),
+      method: methodInput.value,
+      notes: notesInput.value.trim()});
+    personInput.value = '';
+    notesInput.value = '';
     toast('Access logged', 'success');
     loadAccessLog();
     loadSecurityDashboard();
@@ -1822,8 +1910,11 @@ async function clearAccessLog() {
 /* ─── Power Management ─── */
 function showPowerTab(tab) {
   ['devices','log'].forEach(t => {
-    document.getElementById(`power-${t}-panel`).style.display = t === tab ? 'block' : 'none';
-    document.getElementById(`pwr-tab-${t}`).className = t === tab ? 'btn btn-sm prep-utility-tab prep-utility-tab-active' : 'btn btn-sm prep-utility-tab';
+    const panel = document.getElementById(`power-${t}-panel`);
+    const tabBtn = document.getElementById(`pwr-tab-${t}`);
+    if (!panel || !tabBtn) return;
+    panel.style.display = t === tab ? 'block' : 'none';
+    tabBtn.className = t === tab ? 'btn btn-sm prep-utility-tab prep-utility-tab-active' : 'btn btn-sm prep-utility-tab';
   });
   if (tab === 'devices') { loadPowerDevices(); updatePowerSpecFields(); }
   if (tab === 'log') loadPowerLog();
@@ -1846,7 +1937,7 @@ async function loadPowerDashboard() {
       prepMetricCard('Avg Load', `${d.avg_load_w}W`, 'var(--orange)', `${d.daily_consumption_wh} Wh/day`) +
       prepMetricCard('Net Daily', `${d.net_daily_wh >= 0 ? '+' : ''}${d.net_daily_wh}Wh`, netColor, d.net_daily_wh >= 0 ? 'Surplus' : 'Deficit');
   } catch(e) {
-    document.getElementById('power-dashboard').innerHTML = prepEmptyBlock('Add power devices and log readings to see your power dashboard.');
+    el.innerHTML = prepEmptyBlock('Add power devices and log readings to see your power dashboard.');
   }
 }
 
@@ -1875,19 +1966,31 @@ function updatePowerSpecFields() {
 }
 
 async function addPowerDevice() {
-  const type = document.getElementById('pd-type').value;
-  const name = document.getElementById('pd-name').value.trim();
+  const typeInput = document.getElementById('pd-type');
+  const nameInput = document.getElementById('pd-name');
+  if (!typeInput || !nameInput) return;
+  const type = typeInput.value;
+  const name = nameInput.value.trim();
   if (!name) { toast('Enter device name', 'warning'); return; }
   const specs = {};
-  if (document.getElementById('pd-watts')) specs.watts = parseInt(document.getElementById('pd-watts').value) || 0;
-  if (document.getElementById('pd-count')) specs.count = parseInt(document.getElementById('pd-count').value) || 1;
-  if (document.getElementById('pd-wh')) specs.capacity_wh = parseInt(document.getElementById('pd-wh').value) || 0;
-  if (document.getElementById('pd-volts')) specs.voltage = parseFloat(document.getElementById('pd-volts').value) || 0;
-  if (document.getElementById('pd-btype')) specs.battery_type = document.getElementById('pd-btype').value;
-  if (document.getElementById('pd-itype')) specs.inverter_type = document.getElementById('pd-itype').value;
-  if (document.getElementById('pd-ctype')) specs.controller_type = document.getElementById('pd-ctype').value;
-  if (document.getElementById('pd-amps')) specs.amps = parseInt(document.getElementById('pd-amps').value) || 0;
-  if (document.getElementById('pd-fuel')) specs.fuel = document.getElementById('pd-fuel').value;
+  const wattsInput = document.getElementById('pd-watts');
+  const countInput = document.getElementById('pd-count');
+  const whInput = document.getElementById('pd-wh');
+  const voltsInput = document.getElementById('pd-volts');
+  const batteryTypeInput = document.getElementById('pd-btype');
+  const inverterTypeInput = document.getElementById('pd-itype');
+  const controllerTypeInput = document.getElementById('pd-ctype');
+  const ampsInput = document.getElementById('pd-amps');
+  const fuelInput = document.getElementById('pd-fuel');
+  if (wattsInput) specs.watts = parseInt(wattsInput.value) || 0;
+  if (countInput) specs.count = parseInt(countInput.value) || 1;
+  if (whInput) specs.capacity_wh = parseInt(whInput.value) || 0;
+  if (voltsInput) specs.voltage = parseFloat(voltsInput.value) || 0;
+  if (batteryTypeInput) specs.battery_type = batteryTypeInput.value;
+  if (inverterTypeInput) specs.inverter_type = inverterTypeInput.value;
+  if (controllerTypeInput) specs.controller_type = controllerTypeInput.value;
+  if (ampsInput) specs.amps = parseInt(ampsInput.value) || 0;
+  if (fuelInput) specs.fuel = fuelInput.value;
   try {
     await apiPost('/api/power/devices', {device_type: type, name, specs});
     ['pd-type','pd-name','pd-watts','pd-count','pd-wh','pd-volts','pd-btype','pd-itype','pd-ctype','pd-amps','pd-fuel'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
@@ -1932,20 +2035,28 @@ async function deletePowerDevice(id) {
 }
 
 async function logPowerReading() {
+  const voltageInput = document.getElementById('pl-voltage');
+  const socInput = document.getElementById('pl-soc');
+  const solarInput = document.getElementById('pl-solar');
+  const solarWhInput = document.getElementById('pl-solar-wh');
+  const loadInput = document.getElementById('pl-load');
+  const loadWhInput = document.getElementById('pl-load-wh');
+  const generatorInput = document.getElementById('pl-gen');
+  if (!voltageInput || !socInput || !solarInput || !solarWhInput || !loadInput || !loadWhInput || !generatorInput) return;
   const data = {
-    battery_voltage: parseFloat(document.getElementById('pl-voltage').value) || null,
-    battery_soc: parseInt(document.getElementById('pl-soc').value) || null,
-    solar_watts: parseFloat(document.getElementById('pl-solar').value) || null,
-    solar_wh_today: parseFloat(document.getElementById('pl-solar-wh').value) || null,
-    load_watts: parseFloat(document.getElementById('pl-load').value) || null,
-    load_wh_today: parseFloat(document.getElementById('pl-load-wh').value) || null,
-    generator_running: document.getElementById('pl-gen').value === '1',
+    battery_voltage: parseFloat(voltageInput.value) || null,
+    battery_soc: parseInt(socInput.value) || null,
+    solar_watts: parseFloat(solarInput.value) || null,
+    solar_wh_today: parseFloat(solarWhInput.value) || null,
+    load_watts: parseFloat(loadInput.value) || null,
+    load_wh_today: parseFloat(loadWhInput.value) || null,
+    generator_running: generatorInput.value === '1',
   };
   if (!data.battery_voltage && !data.solar_watts && !data.load_watts) { toast('Enter at least one reading', 'warning'); return; }
   try {
     await apiPost('/api/power/log', data);
     toast('Power reading logged', 'success');
-    ['pl-voltage','pl-soc','pl-solar','pl-solar-wh','pl-load','pl-load-wh'].forEach(id => document.getElementById(id).value = '');
+    [voltageInput, socInput, solarInput, solarWhInput, loadInput, loadWhInput].forEach(input => { input.value = ''; });
     loadPowerLog();
     loadPowerDashboard();
   } catch(e) { toast('Failed to log reading', 'error'); }
@@ -1973,6 +2084,9 @@ async function loadPowerLog() {
 async function updateSolarConfig() {
   try {
     const settings = await safeFetch('/api/settings', {}, {});
+    const latInput = document.getElementById('sf-lat');
+    const lngInput = document.getElementById('sf-lng');
+    if (!latInput || !lngInput) return;
     let lat = null, lng = null;
     if (settings.map_center) {
       const parts = safeJsonParse(settings.map_center, null);
@@ -1980,8 +2094,8 @@ async function updateSolarConfig() {
       else if (parts?.lat != null) { lat = parts.lat; lng = parts.lng; }
     }
     if (lat && lng) {
-      document.getElementById('sf-lat').value = parseFloat(lat).toFixed(3);
-      document.getElementById('sf-lng').value = parseFloat(lng).toFixed(3);
+      latInput.value = parseFloat(lat).toFixed(3);
+      lngInput.value = parseFloat(lng).toFixed(3);
       toast('Location loaded from settings', 'success');
       loadSolarForecast();
     } else {
@@ -1991,18 +2105,25 @@ async function updateSolarConfig() {
 }
 
 async function loadSolarForecast() {
-  const lat = document.getElementById('sf-lat').value;
-  const lng = document.getElementById('sf-lng').value;
-  const watts = document.getElementById('sf-watts').value || 100;
-  const count = document.getElementById('sf-count').value || 1;
-  const eff = document.getElementById('sf-eff').value || 0.85;
+  const latInput = document.getElementById('sf-lat');
+  const lngInput = document.getElementById('sf-lng');
+  const wattsInput = document.getElementById('sf-watts');
+  const countInput = document.getElementById('sf-count');
+  const efficiencyInput = document.getElementById('sf-eff');
+  const el = document.getElementById('solar-forecast-today');
+  const cloudIndicator = document.getElementById('solar-cloud-indicator');
+  if (!latInput || !lngInput || !wattsInput || !countInput || !efficiencyInput || !el || !cloudIndicator) return;
+  const lat = latInput.value;
+  const lng = lngInput.value;
+  const watts = wattsInput.value || 100;
+  const count = countInput.value || 1;
+  const eff = efficiencyInput.value || 0.85;
   if (!lat || !lng) { toast('Enter latitude and longitude', 'warning'); return; }
   const params = new URLSearchParams({lat, lng, panel_watts: watts, panel_count: count, efficiency: eff});
   const data = await safeFetch(`/api/power/solar-forecast?${params}`, {}, null);
   if (!data || data.error) { toast(data?.error || 'Solar forecast failed', 'error'); return; }
 
   const t = data.today;
-  const el = document.getElementById('solar-forecast-today');
   const cfColor = t.cloud_factor >= 0.8 ? 'var(--green)' : t.cloud_factor >= 0.5 ? 'var(--orange)' : 'var(--red)';
   el.innerHTML = prepMetricCard('Est. kWh', t.estimated_kwh, 'var(--green)') +
     prepMetricCard('Clear Sky', t.clear_sky_kwh + ' kWh', 'var(--accent)') +
@@ -2013,12 +2134,11 @@ async function loadSolarForecast() {
     prepMetricCard('Max Alt', t.max_altitude_degrees + '\u00B0', 'var(--accent)') +
     prepMetricCard('Cloud Factor', (t.cloud_factor * 100).toFixed(0) + '%', cfColor);
 
-  const ci = document.getElementById('solar-cloud-indicator');
   if (t.cloud_factor < 1.0) {
-    ci.style.display = 'block';
-    ci.innerHTML = 'Cloud cover impact: <strong style="color:' + cfColor + '">' + ((1-t.cloud_factor)*100).toFixed(0) + '% reduction</strong> based on recent weather observations. Clear sky would yield ' + escapeHtml(String(t.clear_sky_kwh)) + ' kWh.';
+    cloudIndicator.style.display = 'block';
+    cloudIndicator.innerHTML = 'Cloud cover impact: <strong style="color:' + cfColor + '">' + ((1-t.cloud_factor)*100).toFixed(0) + '% reduction</strong> based on recent weather observations. Clear sky would yield ' + escapeHtml(String(t.clear_sky_kwh)) + ' kWh.';
   } else {
-    ci.style.display = 'none';
+    cloudIndicator.style.display = 'none';
   }
 
   renderSolarChart(data.daily);
@@ -2149,12 +2269,18 @@ async function deleteBackup(filename) {
 }
 
 async function configureAutoBackup() {
+  const enabledInput = document.getElementById('ab-enabled');
+  const intervalInput = document.getElementById('ab-interval');
+  const keepInput = document.getElementById('ab-keep');
+  const encryptInput = document.getElementById('ab-encrypt');
+  const passwordInput = document.getElementById('ab-password');
+  if (!enabledInput || !intervalInput || !keepInput || !encryptInput || !passwordInput) return;
   const config = {
-    enabled: document.getElementById('ab-enabled').checked,
-    interval: document.getElementById('ab-interval').value,
-    keep_count: parseInt(document.getElementById('ab-keep').value) || 7,
-    encrypt: document.getElementById('ab-encrypt').checked,
-    password: document.getElementById('ab-password').value,
+    enabled: enabledInput.checked,
+    interval: intervalInput.value,
+    keep_count: parseInt(keepInput.value) || 7,
+    encrypt: encryptInput.checked,
+    password: passwordInput.value,
   };
   const r = await safeFetch('/api/system/backup/configure', {
     method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -2171,19 +2297,22 @@ async function loadBackupConfig() {
   const enEl = document.getElementById('ab-enabled');
   const intEl = document.getElementById('ab-interval');
   const keepEl = document.getElementById('ab-keep');
+  const keepValEl = document.getElementById('ab-keep-val');
   const encEl = document.getElementById('ab-encrypt');
+  const pwWrapEl = document.getElementById('ab-pw-wrap');
   if (enEl) enEl.checked = cfg.enabled;
   if (intEl) intEl.value = cfg.interval || 'daily';
-  if (keepEl) { keepEl.value = cfg.keep_count || 7; document.getElementById('ab-keep-val').textContent = cfg.keep_count || 7; }
+  if (keepEl) keepEl.value = cfg.keep_count || 7;
+  if (keepValEl) keepValEl.textContent = cfg.keep_count || 7;
   if (encEl) {
     encEl.checked = cfg.encrypt;
-    document.getElementById('ab-pw-wrap').style.display = cfg.encrypt ? 'block' : 'none';
+    if (pwWrapEl) pwWrapEl.style.display = cfg.encrypt ? 'block' : 'none';
   }
 }
 
 function restoreFromUpload() {
   const input = document.getElementById('backup-upload-file');
-  if (!input.files.length) return;
+  if (!input || !input.files || !input.files.length) return;
   toast('Upload restore: place .db files in the backups directory and use the list to restore', 'warning');
   input.value = '';
 }
@@ -2298,10 +2427,17 @@ function showAddPreservationForm() {
 }
 
 async function submitPreservation() {
+  const cropInput = document.getElementById('ap-crop');
+  const methodInput = document.getElementById('ap-method');
+  const qtyInput = document.getElementById('ap-qty');
+  const unitInput = document.getElementById('ap-unit');
+  const dateInput = document.getElementById('ap-date');
+  const shelfInput = document.getElementById('ap-shelf');
+  if (!cropInput || !methodInput || !qtyInput || !unitInput || !dateInput || !shelfInput) return;
   const data = {
-    crop: document.getElementById('ap-crop').value, method: document.getElementById('ap-method').value,
-    quantity: parseFloat(document.getElementById('ap-qty').value) || 0, unit: document.getElementById('ap-unit').value,
-    batch_date: document.getElementById('ap-date').value, shelf_life_months: parseInt(document.getElementById('ap-shelf').value) || 12,
+    crop: cropInput.value, method: methodInput.value,
+    quantity: parseFloat(qtyInput.value) || 0, unit: unitInput.value,
+    batch_date: dateInput.value, shelf_life_months: parseInt(shelfInput.value) || 12,
   };
   if (!data.crop) { toast('Crop name required', 'warning'); return; }
   try {
@@ -2321,7 +2457,9 @@ async function deletePreservation(id) {
 }
 
 async function lookupZone() {
-  const lat = parseFloat(document.getElementById('garden-lat').value);
+  const latInput = document.getElementById('garden-lat');
+  if (!latInput) return;
+  const lat = parseFloat(latInput.value);
   if (isNaN(lat)) return;
   const result = document.getElementById('zone-result');
   if (!result) return;
@@ -2341,6 +2479,7 @@ async function loadPlots() {
   try {
     const plots = await apiFetch('/api/garden/plots');
     const sel = document.getElementById('gh-plot');
+    if (!el || !sel) return;
     sel.innerHTML = '<option value="">-- Any --</option>' + plots.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
     if (!plots.length) { el.innerHTML = prepEmptyBlock('No garden plots yet. Add one above to start planning beds and harvests.'); return; }
     const totalSqFt = plots.reduce((s, p) => s + (p.width_ft * p.length_ft), 0);
@@ -2356,13 +2495,18 @@ async function loadPlots() {
 }
 
 async function addPlot() {
-  const name = document.getElementById('gp-name').value.trim();
+  const nameInput = document.getElementById('gp-name');
+  const widthInput = document.getElementById('gp-width');
+  const lengthInput = document.getElementById('gp-length');
+  const sunInput = document.getElementById('gp-sun');
+  if (!nameInput || !widthInput || !lengthInput || !sunInput) return;
+  const name = nameInput.value.trim();
   if (!name) { toast('Enter plot name', 'warning'); return; }
   try {
     await apiPost('/api/garden/plots', {
-      name, width_ft: parseFloat(document.getElementById('gp-width').value) || 10,
-      length_ft: parseFloat(document.getElementById('gp-length').value) || 20,
-      sun_exposure: document.getElementById('gp-sun').value});
+      name, width_ft: parseFloat(widthInput.value) || 10,
+      length_ft: parseFloat(lengthInput.value) || 20,
+      sun_exposure: sunInput.value});
     ['gp-name','gp-width','gp-length','gp-sun'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     toast('Plot added', 'success');
     loadPlots();
@@ -2393,15 +2537,22 @@ async function loadSeeds() {
 }
 
 async function addSeed() {
-  const species = document.getElementById('gs-species').value.trim();
+  const speciesInput = document.getElementById('gs-species');
+  const varietyInput = document.getElementById('gs-variety');
+  const quantityInput = document.getElementById('gs-qty');
+  const yearInput = document.getElementById('gs-year');
+  const maturityInput = document.getElementById('gs-dtm');
+  const seasonInput = document.getElementById('gs-season');
+  if (!speciesInput || !varietyInput || !quantityInput || !yearInput || !maturityInput || !seasonInput) return;
+  const species = speciesInput.value.trim();
   if (!species) { toast('Enter species name', 'warning'); return; }
   try {
     await apiPost('/api/garden/seeds', {
-      species, variety: document.getElementById('gs-variety').value.trim(),
-      quantity: parseInt(document.getElementById('gs-qty').value) || 50,
-      year_harvested: parseInt(document.getElementById('gs-year').value) || null,
-      days_to_maturity: parseInt(document.getElementById('gs-dtm').value) || null,
-      planting_season: document.getElementById('gs-season').value});
+      species, variety: varietyInput.value.trim(),
+      quantity: parseInt(quantityInput.value) || 50,
+      year_harvested: parseInt(yearInput.value) || null,
+      days_to_maturity: parseInt(maturityInput.value) || null,
+      planting_season: seasonInput.value});
     ['gs-species','gs-variety','gs-qty','gs-year','gs-dtm','gs-season'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     toast('Seed added', 'success');
     loadSeeds();
@@ -2487,15 +2638,20 @@ async function loadHarvests() {
 }
 
 async function logHarvest() {
-  const crop = document.getElementById('gh-crop').value.trim();
+  const cropInput = document.getElementById('gh-crop');
+  const quantityInput = document.getElementById('gh-qty');
+  const unitInput = document.getElementById('gh-unit');
+  const plotInput = document.getElementById('gh-plot');
+  if (!cropInput || !quantityInput || !unitInput || !plotInput) return;
+  const crop = cropInput.value.trim();
   if (!crop) { toast('Enter crop name', 'warning'); return; }
   try {
     await apiPost('/api/garden/harvests', {
-      crop, quantity: parseFloat(document.getElementById('gh-qty').value) || 0,
-      unit: document.getElementById('gh-unit').value,
-      plot_id: document.getElementById('gh-plot').value || null,
+      crop, quantity: parseFloat(quantityInput.value) || 0,
+      unit: unitInput.value,
+      plot_id: plotInput.value || null,
       notes: ''});
-    document.getElementById('gh-crop').value = '';
+    cropInput.value = '';
     toast('Harvest logged and added to inventory!', 'success');
     loadHarvests();
   } catch(e) { console.error(e); toast('Failed to log harvest', 'error'); }
@@ -2527,12 +2683,18 @@ async function loadLivestockList() {
 }
 
 async function addLivestock() {
-  const species = document.getElementById('gl-species').value;
+  const speciesInput = document.getElementById('gl-species');
+  const nameInput = document.getElementById('gl-name');
+  const sexInput = document.getElementById('gl-sex');
+  const dobInput = document.getElementById('gl-dob');
+  const weightInput = document.getElementById('gl-weight');
+  if (!speciesInput || !nameInput || !sexInput || !dobInput || !weightInput) return;
+  const species = speciesInput.value;
   try {
     await apiPost('/api/livestock', {
-      species, name: document.getElementById('gl-name').value.trim(),
-      sex: document.getElementById('gl-sex').value, dob: document.getElementById('gl-dob').value,
-      weight_lbs: parseFloat(document.getElementById('gl-weight').value) || null});
+      species, name: nameInput.value.trim(),
+      sex: sexInput.value, dob: dobInput.value,
+      weight_lbs: parseFloat(weightInput.value) || null});
     ['gl-species','gl-name','gl-sex','gl-dob','gl-weight'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     toast(species + ' added', 'success');
     loadLivestockList();
@@ -2973,18 +3135,31 @@ async function loadPatients() {
 const _ptFields = {name:'pt-name', age:'pt-age', weight:'pt-weight', sex:'pt-sex', blood:'pt-blood', allergies:'pt-allergies', meds:'pt-meds', conditions:'pt-conditions', notes:'pt-notes'};
 let _ptRecoveryAttached = false;
 function showPatientForm(patient) {
-  document.getElementById('patient-form').style.display = 'block';
-  document.getElementById('pt-name').value = patient?.name || '';
-  document.getElementById('pt-age').value = patient?.age || '';
-  document.getElementById('pt-weight').value = patient?.weight_kg || '';
-  document.getElementById('pt-sex').value = patient?.sex || '';
-  document.getElementById('pt-blood').value = patient?.blood_type || '';
-  document.getElementById('pt-allergies').value = (patient?.allergies || []).join(', ');
-  document.getElementById('pt-meds').value = (patient?.medications || []).join(', ');
-  document.getElementById('pt-conditions').value = (patient?.conditions || []).join(', ');
-  document.getElementById('pt-notes').value = patient?.notes || '';
-  document.getElementById('pt-edit-id').value = patient?.id || '';
-  document.getElementById('interaction-results').style.display = 'none';
+  const form = document.getElementById('patient-form');
+  const nameInput = document.getElementById('pt-name');
+  const ageInput = document.getElementById('pt-age');
+  const weightInput = document.getElementById('pt-weight');
+  const sexInput = document.getElementById('pt-sex');
+  const bloodInput = document.getElementById('pt-blood');
+  const allergiesInput = document.getElementById('pt-allergies');
+  const medsInput = document.getElementById('pt-meds');
+  const conditionsInput = document.getElementById('pt-conditions');
+  const notesInput = document.getElementById('pt-notes');
+  const editIdInput = document.getElementById('pt-edit-id');
+  const interactionResults = document.getElementById('interaction-results');
+  if (!form || !nameInput || !ageInput || !weightInput || !sexInput || !bloodInput || !allergiesInput || !medsInput || !conditionsInput || !notesInput || !editIdInput || !interactionResults) return;
+  form.style.display = 'block';
+  nameInput.value = patient?.name || '';
+  ageInput.value = patient?.age || '';
+  weightInput.value = patient?.weight_kg || '';
+  sexInput.value = patient?.sex || '';
+  bloodInput.value = patient?.blood_type || '';
+  allergiesInput.value = (patient?.allergies || []).join(', ');
+  medsInput.value = (patient?.medications || []).join(', ');
+  conditionsInput.value = (patient?.conditions || []).join(', ');
+  notesInput.value = patient?.notes || '';
+  editIdInput.value = patient?.id || '';
+  interactionResults.style.display = 'none';
   if (!patient) {
     if (FormStateRecovery.restore('patient', _ptFields)) {
       toast('Recovered unsaved patient data', 'info');
@@ -2992,22 +3167,38 @@ function showPatientForm(patient) {
   }
   if (!_ptRecoveryAttached) { FormStateRecovery.attach('patient', _ptFields); _ptRecoveryAttached = true; }
 }
-function hidePatientForm() { document.getElementById('patient-form').style.display = 'none'; FormStateRecovery.clear('patient'); }
+function hidePatientForm() {
+  const form = document.getElementById('patient-form');
+  if (!form) return;
+  form.style.display = 'none';
+  FormStateRecovery.clear('patient');
+}
 
 async function savePatient() {
-  const name = document.getElementById('pt-name').value.trim();
+  const nameInput = document.getElementById('pt-name');
+  const ageInput = document.getElementById('pt-age');
+  const weightInput = document.getElementById('pt-weight');
+  const sexInput = document.getElementById('pt-sex');
+  const bloodInput = document.getElementById('pt-blood');
+  const allergiesInput = document.getElementById('pt-allergies');
+  const medsInput = document.getElementById('pt-meds');
+  const conditionsInput = document.getElementById('pt-conditions');
+  const notesInput = document.getElementById('pt-notes');
+  const editIdInput = document.getElementById('pt-edit-id');
+  if (!nameInput || !ageInput || !weightInput || !sexInput || !bloodInput || !allergiesInput || !medsInput || !conditionsInput || !notesInput || !editIdInput) return;
+  const name = nameInput.value.trim();
   if (!name) { toast('Patient name required', 'warning'); return; }
   const data = {
-    name, age: parseInt(document.getElementById('pt-age').value) || null,
-    weight_kg: parseFloat(document.getElementById('pt-weight').value) || null,
-    sex: document.getElementById('pt-sex').value,
-    blood_type: document.getElementById('pt-blood').value,
-    allergies: document.getElementById('pt-allergies').value.split(',').map(s => s.trim()).filter(Boolean),
-    medications: document.getElementById('pt-meds').value.split(',').map(s => s.trim()).filter(Boolean),
-    conditions: document.getElementById('pt-conditions').value.split(',').map(s => s.trim()).filter(Boolean),
-    notes: document.getElementById('pt-notes').value.trim(),
+    name, age: parseInt(ageInput.value) || null,
+    weight_kg: parseFloat(weightInput.value) || null,
+    sex: sexInput.value,
+    blood_type: bloodInput.value,
+    allergies: allergiesInput.value.split(',').map(s => s.trim()).filter(Boolean),
+    medications: medsInput.value.split(',').map(s => s.trim()).filter(Boolean),
+    conditions: conditionsInput.value.split(',').map(s => s.trim()).filter(Boolean),
+    notes: notesInput.value.trim(),
   };
-  const editId = document.getElementById('pt-edit-id').value;
+  const editId = editIdInput.value;
   try {
     let resp;
     if (editId) {
@@ -3059,8 +3250,10 @@ async function addPatientFromContacts() {
 }
 
 async function checkDrugInteractions() {
-  const meds = document.getElementById('pt-meds').value.split(',').map(s => s.trim()).filter(Boolean);
   const el = document.getElementById('interaction-results');
+  const medsInput = document.getElementById('pt-meds');
+  if (!el || !medsInput) return;
+  const meds = medsInput.value.split(',').map(s => s.trim()).filter(Boolean);
   if (meds.length < 2) { el.style.display = 'block'; el.innerHTML = '<div class="prep-status-copy">Enter 2+ medications to check interactions.</div>'; return; }
   try {
     const interactions = await safeFetch('/api/medical/interactions', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({medications: meds})}, null);
@@ -3084,6 +3277,7 @@ async function checkDrugInteractions() {
 async function loadDosageDrugs() {
   const drugs = await safeFetch('/api/medical/dosage-drugs', {}, []);
   const sel = document.getElementById('dc-drug');
+  if (!sel) return;
   sel.innerHTML = '<option value="">Select drug...</option>';
   drugs.forEach(d => {
     const opt = document.createElement('option');
@@ -3097,6 +3291,9 @@ function loadDosageCalculator() {
   loadDosageDrugs();
   // Populate patient dropdown from existing _patients list
   const pSel = document.getElementById('dc-patient');
+  const ageInput = document.getElementById('dc-age');
+  const weightInput = document.getElementById('dc-weight');
+  if (!pSel || !ageInput || !weightInput) return;
   pSel.innerHTML = '<option value="">Manual entry</option>';
   if (typeof _patients !== 'undefined' && _patients.length) {
     _patients.forEach(p => {
@@ -3111,20 +3308,25 @@ function loadDosageCalculator() {
     if (!this.value || typeof _patients === 'undefined') return;
     const p = _patients.find(x => x.id == this.value);
     if (p) {
-      if (p.age) document.getElementById('dc-age').value = p.age;
-      if (p.weight_kg) document.getElementById('dc-weight').value = p.weight_kg;
+      if (p.age) ageInput.value = p.age;
+      if (p.weight_kg) weightInput.value = p.weight_kg;
     }
   };
 }
 
 async function calculateDosage() {
-  const drug = document.getElementById('dc-drug').value;
+  const drugSelect = document.getElementById('dc-drug');
+  const patientSelect = document.getElementById('dc-patient');
+  const ageInput = document.getElementById('dc-age');
+  const weightInput = document.getElementById('dc-weight');
   const el = document.getElementById('dosage-results');
+  if (!drugSelect || !patientSelect || !ageInput || !weightInput || !el) return;
+  const drug = drugSelect.value;
   if (!drug) { toast('Select a drug first', 'warning'); return; }
 
-  const patientId = document.getElementById('dc-patient').value || null;
-  const age = document.getElementById('dc-age').value ? parseInt(document.getElementById('dc-age').value) : null;
-  const weightKg = document.getElementById('dc-weight').value ? parseFloat(document.getElementById('dc-weight').value) : null;
+  const patientId = patientSelect.value || null;
+  const age = ageInput.value ? parseInt(ageInput.value) : null;
+  const weightKg = weightInput.value ? parseFloat(weightInput.value) : null;
 
   const body = { drug, patient_id: patientId ? parseInt(patientId) : null, age, weight_kg: weightKg };
   try {
@@ -3179,10 +3381,14 @@ async function openVitalsPanel(patientId) {
   _activePatientId = patientId;
   const p = _patients.find(x => x.id === patientId);
   if (!p) return;
-  document.getElementById('vitals-panel').style.display = 'block';
-  document.getElementById('wound-form').style.display = 'none';
-  document.getElementById('vitals-patient-name').textContent = `${p.name} — Vitals & Wounds`;
+  const panel = document.getElementById('vitals-panel');
+  const woundForm = document.getElementById('wound-form');
+  const titleEl = document.getElementById('vitals-patient-name');
   const banner = document.getElementById('vitals-allergy-banner');
+  if (!panel || !woundForm || !titleEl || !banner) return;
+  panel.style.display = 'block';
+  woundForm.style.display = 'none';
+  titleEl.textContent = `${p.name} — Vitals & Wounds`;
   if (p.allergies?.length) {
     banner.style.display = 'block';
     banner.textContent = 'ALLERGIES: ' + p.allergies.join(', ');
@@ -3195,27 +3401,39 @@ async function openVitalsPanel(patientId) {
 function closeVitalsPanel() {
   _activePatientId = null;
   hideWoundForm();
-  document.getElementById('vitals-panel').style.display = 'none';
+  const panel = document.getElementById('vitals-panel');
+  if (!panel) return;
+  panel.style.display = 'none';
 }
 
 async function logVitals() {
   if (!_activePatientId) return;
+  const systolicInput = document.getElementById('v-bps');
+  const diastolicInput = document.getElementById('v-bpd');
+  const pulseInput = document.getElementById('v-pulse');
+  const respInput = document.getElementById('v-resp');
+  const tempInput = document.getElementById('v-temp');
+  const spo2Input = document.getElementById('v-spo2');
+  const painInput = document.getElementById('v-pain');
+  const gcsInput = document.getElementById('v-gcs');
+  const notesInput = document.getElementById('v-notes');
+  if (!systolicInput || !diastolicInput || !pulseInput || !respInput || !tempInput || !spo2Input || !painInput || !gcsInput || !notesInput) return;
   const data = {
-    bp_systolic: parseInt(document.getElementById('v-bps').value) || null,
-    bp_diastolic: parseInt(document.getElementById('v-bpd').value) || null,
-    pulse: parseInt(document.getElementById('v-pulse').value) || null,
-    resp_rate: parseInt(document.getElementById('v-resp').value) || null,
-    temp_f: parseFloat(document.getElementById('v-temp').value) || null,
-    spo2: parseInt(document.getElementById('v-spo2').value) || null,
-    pain_level: parseInt(document.getElementById('v-pain').value) || null,
-    gcs: parseInt(document.getElementById('v-gcs').value) || null,
-    notes: document.getElementById('v-notes').value.trim(),
+    bp_systolic: parseInt(systolicInput.value) || null,
+    bp_diastolic: parseInt(diastolicInput.value) || null,
+    pulse: parseInt(pulseInput.value) || null,
+    resp_rate: parseInt(respInput.value) || null,
+    temp_f: parseFloat(tempInput.value) || null,
+    spo2: parseInt(spo2Input.value) || null,
+    pain_level: parseInt(painInput.value) || null,
+    gcs: parseInt(gcsInput.value) || null,
+    notes: notesInput.value.trim(),
   };
   if (!data.bp_systolic && !data.pulse && !data.temp_f && !data.spo2) { toast('Enter at least one vital sign', 'warning'); return; }
   try {
     await apiPost(`/api/patients/${_activePatientId}/vitals`, data);
     toast('Vitals logged', 'success');
-    ['v-bps','v-bpd','v-pulse','v-resp','v-temp','v-spo2','v-pain','v-gcs','v-notes'].forEach(id => document.getElementById(id).value = '');
+    [systolicInput, diastolicInput, pulseInput, respInput, tempInput, spo2Input, painInput, gcsInput, notesInput].forEach(input => { input.value = ''; });
     await loadVitals(_activePatientId);
     await loadVitalsTrend(_activePatientId);
   } catch(e) { console.error(e); toast(e?.data?.error || 'Failed to log vitals', 'error'); }
@@ -3225,6 +3443,7 @@ async function loadVitals(pid) {
   try {
     const vitals = await apiFetch(`/api/patients/${pid}/vitals`);
     const tbody = document.getElementById('vitals-tbody');
+    if (!tbody) return;
     if (!vitals.length) { tbody.innerHTML = '<tr><td colspan="9" class="prep-table-empty">No vitals recorded. Use the form above to log.</td></tr>'; return; }
     tbody.innerHTML = vitals.map(v => {
       const bp = v.bp_systolic ? `${v.bp_systolic}/${v.bp_diastolic}` : '-';
@@ -3255,12 +3474,19 @@ function hideWoundForm() {
 
 async function logWound() {
   if (!_activePatientId) return;
+  const locationInput = document.getElementById('w-loc');
+  const typeInput = document.getElementById('w-type');
+  const severityInput = document.getElementById('w-sev');
+  const descriptionInput = document.getElementById('w-desc');
+  const treatmentInput = document.getElementById('w-treat');
+  const photoInput = document.getElementById('wound-photo-input');
+  if (!locationInput || !typeInput || !severityInput || !descriptionInput || !treatmentInput || !photoInput) return;
   const data = {
-    location: document.getElementById('w-loc').value.trim(),
-    wound_type: document.getElementById('w-type').value,
-    severity: document.getElementById('w-sev').value,
-    description: document.getElementById('w-desc').value.trim(),
-    treatment: document.getElementById('w-treat').value.trim(),
+    location: locationInput.value.trim(),
+    wound_type: typeInput.value,
+    severity: severityInput.value,
+    description: descriptionInput.value.trim(),
+    treatment: treatmentInput.value.trim(),
   };
   if (!data.location) { toast('Enter wound location', 'warning'); return; }
   try {
@@ -3268,13 +3494,12 @@ async function logWound() {
     toast('Wound logged', 'success');
 
     // Upload photo if one was selected
-    const photoInput = document.getElementById('wound-photo-input');
     if (photoInput.files.length > 0 && result.id) {
       await uploadWoundPhoto(_activePatientId, result.id, photoInput.files[0]);
     }
 
     hideWoundForm();
-    ['w-loc','w-desc','w-treat'].forEach(id => document.getElementById(id).value = '');
+    [locationInput, descriptionInput, treatmentInput].forEach(input => { input.value = ''; });
     photoInput.value = '';
     await loadWounds(_activePatientId);
   } catch(e) { toast(e.message || 'Failed to log wound', 'error'); }
@@ -4762,15 +4987,26 @@ function applyCustomizeState(state) {
 function toggleCustomizePanel() {
   const panel = document.getElementById('customize-panel');
   const overlay = document.getElementById('customize-overlay');
+  if (!panel || !overlay) return;
   const isOpen = panel.classList.contains('open');
   if (isOpen) {
     panel.classList.remove('open');
     overlay.classList.remove('open');
-    setTimeout(() => { panel.style.display = 'none'; }, 300);
+    panel.setAttribute('aria-hidden', 'true');
+    overlay.setAttribute('aria-hidden', 'true');
+    setTimeout(() => {
+      if (!panel.classList.contains('open')) panel.style.display = 'none';
+    }, 300);
   } else {
     panel.style.display = 'block';
+    panel.setAttribute('aria-hidden', 'false');
+    overlay.setAttribute('aria-hidden', 'false');
     overlay.classList.add('open');
-    requestAnimationFrame(() => panel.classList.add('open'));
+    requestAnimationFrame(() => {
+      panel.classList.add('open');
+      const closeBtn = panel.querySelector('.customize-close-btn');
+      if (closeBtn) closeBtn.focus();
+    });
     updateCustomizeTheme();
     updateCustomizeZoom();
     updateCustomizeDensity();

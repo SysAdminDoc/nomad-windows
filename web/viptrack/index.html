@@ -7669,6 +7669,18 @@ if ('serviceWorker' in navigator) {
 
     // ============ UI HANDLERS ============
     function initUI() {
+        const settingsPanelEl = document.getElementById('settingsPanel');
+        const bottomPanelsEl = document.getElementById('bottomPanels');
+        const preserveSettingsOpen = !!(
+            settingsPanelEl?.classList.contains('show') ||
+            settingsPanelEl?.getAttribute('aria-hidden') === 'false' ||
+            document.getElementById('settingsBtn')?.getAttribute('aria-expanded') === 'true'
+        );
+        const preserveBottomPanelsOpen = !!(
+            bottomPanelsEl?.classList.contains('visible') ||
+            bottomPanelsEl?.getAttribute('aria-hidden') === 'false' ||
+            document.getElementById('panelsBtn')?.getAttribute('aria-expanded') === 'true'
+        );
         bindCoreViewActions();
         bindTopBarActions();
         document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels); document.getElementById('toggleLabels').addEventListener('click', function() { settings.showLabels = !settings.showLabels; this.classList.toggle('on', settings.showLabels); syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' }); saveSettings(); updateMarkers(); });
@@ -7684,8 +7696,8 @@ if ('serviceWorker' in navigator) {
         syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' });
         syncPressedButtonState('followBtn', settings.followMode, { on: 'Disable follow mode', off: 'Enable follow mode' });
         syncPressedButtonState('watchBtn', false, { on: 'Remove selected aircraft from watchlist', off: 'Add selected aircraft to watchlist' });
-        setSettingsPanelOpen(false);
-        setBottomPanelsOpen(false);
+        setSettingsPanelOpen(preserveSettingsOpen);
+        setBottomPanelsOpen(preserveBottomPanelsOpen);
         
         // Watch button handler
         document.getElementById('watchBtn')?.addEventListener('click', function() {

@@ -12,7 +12,7 @@
   </div>
 </div>
 
-<div id="lan-chat-panel" class="utility-panel utility-panel-shell utility-panel-shell-wide utility-panel-shell-lan is-hidden">
+<div id="lan-chat-panel" class="utility-panel utility-panel-shell utility-panel-shell-wide utility-panel-shell-lan is-hidden" hidden>
   <div class="utility-panel-header">
     <span class="utility-panel-title">LAN Chat</span>
     <select id="lan-channel" name="lan_channel" class="utility-panel-select" data-change-action="switch-lan-channel" aria-label="LAN chat channel">
@@ -43,7 +43,7 @@
   </div>
 </div>
 
-<div id="quick-actions-menu" class="floating-action-menu utility-actions-menu is-hidden">
+<div id="quick-actions-menu" class="floating-action-menu utility-actions-menu is-hidden" hidden>
   <button class="btn btn-sm btn-primary utility-quick-btn" type="button" data-shell-action="quick-log-incident">Log Incident</button>
   <button class="btn btn-sm btn-primary utility-quick-btn" type="button" data-shell-action="quick-start-timer">Start Timer</button>
   <button class="btn btn-sm btn-primary utility-quick-btn" type="button" data-shell-action="quick-add-inventory">Add Supply</button>
@@ -51,7 +51,7 @@
   <button class="btn btn-sm btn-primary utility-quick-btn" type="button" data-shell-action="quick-new-note">New Note</button>
 </div>
 
-<div id="timer-panel" class="utility-panel utility-panel-shell is-hidden">
+<div id="timer-panel" class="utility-panel utility-panel-shell is-hidden" hidden>
   <div class="utility-panel-header">
     <span class="utility-panel-title">Timers</span>
     <button class="btn btn-sm btn-ghost utility-close-btn" type="button" data-shell-action="toggle-timer-panel" aria-label="Close timer panel">x</button>
@@ -72,7 +72,7 @@
 </div>
 
 <!-- Setup Wizard -->
-<div class="wizard-overlay is-hidden" id="wizard" role="dialog" aria-modal="true" aria-label="Setup Wizard">
+<div class="wizard-overlay is-hidden" id="wizard" role="dialog" aria-modal="true" aria-label="Setup Wizard" aria-hidden="true" hidden>
   <div class="wizard-card wizard-card-shell">
     <!-- Page 1: Welcome -->
     <div id="wiz-page-1" class="wizard-page">
@@ -204,7 +204,7 @@
   </div>
 </div>
 
-<button id="wiz-mini-banner" class="wizard-mini-banner is-hidden" type="button" data-shell-action="restore-wizard" aria-live="polite" aria-label="Setup is still running in the background. Click to reopen setup progress.">
+<button id="wiz-mini-banner" class="wizard-mini-banner is-hidden" type="button" data-shell-action="restore-wizard" aria-live="polite" aria-label="Setup is still running in the background. Click to reopen setup progress." hidden>
   <span class="wizard-mini-head">
     <span class="wizard-mini-label">Setup Running</span>
     <span id="wiz-mini-pct" class="wizard-mini-pct">0%</span>
@@ -215,7 +215,7 @@
 </button>
 
 <!-- Guided Tour -->
-<div id="tour-overlay" class="tour-overlay-shell is-hidden" data-shell-action="tour-next" role="dialog" aria-modal="true" aria-label="Guided Tour">
+<div id="tour-overlay" class="tour-overlay-shell is-hidden" data-shell-action="tour-next" role="dialog" aria-modal="true" aria-label="Guided Tour" aria-hidden="true" hidden>
   <div id="tour-card" class="tour-card-shell" data-stop-propagation>
     <div id="tour-content"></div>
     <div class="tour-footer">

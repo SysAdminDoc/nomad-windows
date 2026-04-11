@@ -1,4 +1,4 @@
-<div id="command-palette-overlay" class="command-palette-overlay" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" hidden>
+<div id="command-palette-overlay" class="command-palette-overlay" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" aria-hidden="true" hidden>
   <div class="command-palette-dialog" data-stop-propagation>
     <div class="command-palette-header">
       <div class="command-palette-copy">
@@ -6,7 +6,7 @@
         <h3 id="command-palette-title" class="command-palette-title">Command Palette</h3>
         <p class="command-palette-text">Find workspaces, jump into a lane, or open the right record without backing out to Home first.</p>
       </div>
-      <button class="btn btn-sm btn-ghost command-palette-close" type="button" data-shell-action="toggle-command-palette" aria-label="Close command palette">x</button>
+      <button class="btn btn-sm btn-ghost command-palette-close" type="button" data-shell-action="toggle-command-palette" aria-label="Close command palette">&#10005;</button>
     </div>
     <div class="command-palette-input-shell">
       <span class="command-palette-input-icon" aria-hidden="true">&#128269;</span>
@@ -35,11 +35,11 @@
   </div>
 </div>
 
-<div id="shortcuts-overlay" class="shortcuts-overlay" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" hidden>
+<div id="shortcuts-overlay" class="shortcuts-overlay" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" aria-hidden="true" hidden>
   <div class="shortcuts-dialog">
     <div class="shortcuts-header">
       <h3 id="shortcuts-title" class="shortcuts-title">Keyboard Shortcuts</h3>
-      <button class="btn btn-sm btn-ghost shortcuts-close" type="button" data-shell-action="toggle-shortcuts" aria-label="Close keyboard shortcuts help">x</button>
+      <button class="btn btn-sm btn-ghost shortcuts-close" type="button" data-shell-action="toggle-shortcuts" aria-label="Close keyboard shortcuts help">&#10005;</button>
     </div>
     <div class="shortcuts-grid">
       <kbd class="shortcuts-key">Alt+1-9</kbd><span>Switch tabs</span>

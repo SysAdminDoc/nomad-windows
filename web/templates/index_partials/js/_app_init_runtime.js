@@ -132,12 +132,20 @@ setTimeout(loadAlerts, 5000);
 // BALLISTICS CALCULATOR
 // ═══════════════════════════════════════════════════════════════
 function calcBallistics() {
-  const sel = document.getElementById('bal-caliber').value.split(',');
-  const name = document.getElementById('bal-caliber').options[document.getElementById('bal-caliber').selectedIndex].text;
+  const caliberSelect = document.getElementById('bal-caliber');
+  const zeroInput = document.getElementById('bal-zero');
+  const windInput = document.getElementById('bal-wind');
+  const resultEl = document.getElementById('bal-result');
+  if (!caliberSelect || !zeroInput || !windInput || !resultEl) return;
+  const selectedValue = caliberSelect.value;
+  const selectedOption = caliberSelect.options[caliberSelect.selectedIndex];
+  if (!selectedValue || !selectedOption) return;
+  const sel = selectedValue.split(',');
+  const name = selectedOption.text;
   const bulletWt = parseFloat(sel[1]);
   const muzzleV = parseFloat(sel[2]);
-  const zeroYd = parseFloat(document.getElementById('bal-zero').value) || 100;
-  const windMph = parseFloat(document.getElementById('bal-wind').value) || 0;
+  const zeroYd = parseFloat(zeroInput.value) || 100;
+  const windMph = parseFloat(windInput.value) || 0;
   // Simple ballistic coefficient approximations by caliber type
   const bcMap = {'5.56':0.304,'7.62':0.475,'30-06':0.41,'300blk':0.275,'9mm':0.165,'45acp':0.195,'22lr':0.14,'12ga-slug':0.12};
   const calKey = sel[0];
@@ -166,7 +174,7 @@ function calcBallistics() {
       <td>${windDrift}"</td>
     </tr>`;
   }).join('');
-  document.getElementById('bal-result').innerHTML = `
+  resultEl.innerHTML = `
     <div class="prep-reference-callout prep-reference-callout-info">${name} | Zero: ${zeroYd}yd | Wind: ${windMph}mph crosswind</div>
     <div class="prep-table-wrap"><table class="prep-data-table prep-reference-table-compact prep-calc-table prep-calc-table-center">
       <thead><tr>
@@ -184,10 +192,15 @@ function calcBallistics() {
 // COMPOSTING CALCULATOR
 // ═══════════════════════════════════════════════════════════════
 function calcCompost() {
-  const browns = parseFloat(document.getElementById('comp-browns').value) || 0;
-  const greens = parseFloat(document.getElementById('comp-greens').value) || 0;
-  const vol = parseFloat(document.getElementById('comp-vol').value) || 1;
-  if (!browns && !greens) { document.getElementById('comp-result').innerHTML = ''; return; }
+  const brownsInput = document.getElementById('comp-browns');
+  const greensInput = document.getElementById('comp-greens');
+  const volumeInput = document.getElementById('comp-vol');
+  const resultEl = document.getElementById('comp-result');
+  if (!brownsInput || !greensInput || !volumeInput || !resultEl) return;
+  const browns = parseFloat(brownsInput.value) || 0;
+  const greens = parseFloat(greensInput.value) || 0;
+  const vol = parseFloat(volumeInput.value) || 1;
+  if (!browns && !greens) { resultEl.innerHTML = ''; return; }
   // C:N ratios: browns ~50:1, greens ~15:1
   const totalN = browns / 50 + greens / 15;
   const cn = totalN > 0 ? Math.round((browns * 50 + greens * 15) / (browns + greens)) : 50;
@@ -203,7 +216,7 @@ function calcCompost() {
   const ratioToneClass = ideal ? 'prep-summary-card-ok' : tooCarbon ? 'utility-summary-card-alert' : 'prep-summary-card-danger';
   const adviceToneClass = ideal ? 'prep-reference-callout-safe' : tooCarbon ? 'prep-reference-callout-warn' : 'prep-reference-callout-danger';
   const volumeToneClass = volOK ? 'prep-summary-card-ok' : 'utility-summary-card-alert';
-  document.getElementById('comp-result').innerHTML = `
+  resultEl.innerHTML = `
     <div class="utility-summary-result utility-summary-grid">
       <div class="prep-summary-card utility-summary-card ${ratioToneClass}">
         <div class="prep-summary-meta">C:N Ratio</div>
@@ -229,10 +242,16 @@ function calcCompost() {
 // PASTURE ROTATION CALCULATOR
 // ═══════════════════════════════════════════════════════════════
 function calcPastureRotation() {
-  const acres = parseFloat(document.getElementById('pr-acres').value) || 1;
-  const au = parseFloat(document.getElementById('pr-au').value) || 1; // Animal Units (1 AU = 1000 lb cow)
-  const paddocks = parseInt(document.getElementById('pr-paddocks').value) || 4;
-  const season = document.getElementById('pr-season').value;
+  const acresInput = document.getElementById('pr-acres');
+  const auInput = document.getElementById('pr-au');
+  const paddocksInput = document.getElementById('pr-paddocks');
+  const seasonInput = document.getElementById('pr-season');
+  const resultEl = document.getElementById('pr-result');
+  if (!acresInput || !auInput || !paddocksInput || !seasonInput || !resultEl) return;
+  const acres = parseFloat(acresInput.value) || 1;
+  const au = parseFloat(auInput.value) || 1; // Animal Units (1 AU = 1000 lb cow)
+  const paddocks = parseInt(paddocksInput.value) || 4;
+  const season = seasonInput.value;
   // Stocking rate: warm season ~1.5 acres/AU, cool season ~2.5 acres/AU
   const acresPerAU = season === 'warm' ? 1.5 : 2.5;
   const restDays = season === 'warm' ? 21 : 60;
@@ -245,7 +264,7 @@ function calcPastureRotation() {
   const statusCopy = adequate
     ? `Adequate for ${au} AU. ${((totalCapacity*0.8-au)/totalCapacity*100).toFixed(0)}% below safe stocking limit.`
     : `Overstocked. Max safe load: ${(totalCapacity*0.8).toFixed(1)} AU. Reduce by ${(au - totalCapacity*0.8).toFixed(1)} AU or add ${Math.ceil((au*acresPerAU*paddocks/0.8 - acres)/acresPerPaddock)} paddocks.`;
-  document.getElementById('pr-result').innerHTML = `
+  resultEl.innerHTML = `
     <div class="utility-summary-result utility-summary-grid">
       <div class="prep-summary-card utility-summary-card">
         <div class="prep-summary-meta">Acres / paddock</div>
@@ -280,10 +299,16 @@ function calcPastureRotation() {
 // NATURAL BUILDING CALCULATOR
 // ═══════════════════════════════════════════════════════════════
 function calcNaturalBuilding() {
-  const method = document.getElementById('nb-method').value;
-  const length = parseFloat(document.getElementById('nb-length').value) || 0;
-  const height = parseFloat(document.getElementById('nb-height').value) || 0;
-  const thick = parseFloat(document.getElementById('nb-thick').value) || 14;
+  const methodInput = document.getElementById('nb-method');
+  const lengthInput = document.getElementById('nb-length');
+  const heightInput = document.getElementById('nb-height');
+  const thicknessInput = document.getElementById('nb-thick');
+  const resultEl = document.getElementById('nb-result');
+  if (!methodInput || !lengthInput || !heightInput || !thicknessInput || !resultEl) return;
+  const method = methodInput.value;
+  const length = parseFloat(lengthInput.value) || 0;
+  const height = parseFloat(heightInput.value) || 0;
+  const thick = parseFloat(thicknessInput.value) || 14;
   const wallArea = length * height; // sq ft
   let html = '';
   if (method === 'adobe') {
@@ -317,17 +342,22 @@ function calcNaturalBuilding() {
       <div>Plaster needed: ~<strong>${Math.ceil(wallArea * 2 * 0.04)} cu yd</strong> (both sides, 1.5 in earth/lime plaster)</div>
       <div class="copy-dim-note">Straw bale: R-value ~R-30 (far superior to adobe or cob). Must be kept dry — moisture is fatal. Use a rubble trench foundation raised 18+ inches above grade. Pin bales with rebar stakes. Plaster immediately after stacking to prevent wetting.</div>`;
   }
-  document.getElementById('nb-result').innerHTML = html;
+  resultEl.innerHTML = html;
 }
 
 // ═══════════════════════════════════════════════════════════════
 // NUCLEAR FALLOUT DOSE CALCULATOR (7-10 Rule)
 // ═══════════════════════════════════════════════════════════════
 function calcFallout() {
-  const h1Rate = parseFloat(document.getElementById('fall-h1').value) || 0;
-  const pf = parseFloat(document.getElementById('fall-shelter').value) || 1;
-  const hours = parseFloat(document.getElementById('fall-hours').value) || 1;
-  if (!h1Rate) { document.getElementById('fall-result').innerHTML = ''; return; }
+  const rateInput = document.getElementById('fall-h1');
+  const shelterInput = document.getElementById('fall-shelter');
+  const hoursInput = document.getElementById('fall-hours');
+  const resultEl = document.getElementById('fall-result');
+  if (!rateInput || !shelterInput || !hoursInput || !resultEl) return;
+  const h1Rate = parseFloat(rateInput.value) || 0;
+  const pf = parseFloat(shelterInput.value) || 1;
+  const hours = parseFloat(hoursInput.value) || 1;
+  if (!h1Rate) { resultEl.innerHTML = ''; return; }
   // 7-10 Rule: rate at time T = H1_rate * (T ^ -1.2)
   const rateAtT = h1Rate * Math.pow(hours, -1.2);
   const shelteredRate = rateAtT / pf;
@@ -354,7 +384,7 @@ function calcFallout() {
   const shelteredToneClass = shelteredRate < 0.5 ? 'prep-summary-card-ok' : shelteredRate < 5 ? 'utility-summary-card-alert' : 'prep-summary-card-danger';
   const cumDoseToneClass = cum24h > 25 ? 'prep-reference-callout-danger' : cum24h > 5 ? 'prep-reference-callout-warn' : 'prep-reference-callout-safe';
   const cumDoseStatus = cum24h > 25 ? 'HIGH — health risk' : cum24h > 5 ? 'moderate' : 'low risk';
-  document.getElementById('fall-result').innerHTML = `
+  resultEl.innerHTML = `
     <div class="utility-summary-result utility-summary-grid fallout-result-summary">
       <div class="prep-summary-card utility-summary-card ${shelteredToneClass}">
         <div class="prep-summary-meta">Dose rate now (H+${hours}hr)</div>
@@ -388,14 +418,23 @@ function calcFallout() {
 // CANNING CALCULATOR
 // ═══════════════════════════════════════════════════════════════
 function calcCanning() {
-  const foodSel = document.getElementById('can-food').value.split(',');
-  const foodName = document.getElementById('can-food').options[document.getElementById('can-food').selectedIndex].text;
+  const foodSelect = document.getElementById('can-food');
+  const poundsInput = document.getElementById('can-lbs');
+  const jarInput = document.getElementById('can-jar');
+  const altitudeInput = document.getElementById('can-alt');
+  const resultEl = document.getElementById('can-result');
+  if (!foodSelect || !poundsInput || !jarInput || !altitudeInput || !resultEl) return;
+  const selectedValue = foodSelect.value;
+  const selectedOption = foodSelect.options[foodSelect.selectedIndex];
+  if (!selectedValue || !selectedOption) return;
+  const foodSel = selectedValue.split(',');
+  const foodName = selectedOption.text;
   const lbsPerJar = parseFloat(foodSel[1]);
   const baseTime = parseInt(foodSel[2]);
   const method = foodSel[3]; // 'wb' = water bath, 'pc' = pressure canner
-  const lbs = parseFloat(document.getElementById('can-lbs').value) || 0;
-  const jarSize = parseFloat(document.getElementById('can-jar').value);
-  const altitude = parseInt(document.getElementById('can-alt').value) || 0;
+  const lbs = parseFloat(poundsInput.value) || 0;
+  const jarSize = parseFloat(jarInput.value);
+  const altitude = parseInt(altitudeInput.value) || 0;
   const numJars = Math.ceil(lbs / (lbsPerJar * jarSize));
   // Altitude time adjustment for water bath (every 1000 ft above 1000 ft = +5 min)
   let timeAdj = 0;
@@ -408,7 +447,7 @@ function calcCanning() {
   const finalTime = baseTime + timeAdj;
   const methodLabel = method === 'wb' ? 'Water Bath Canner' : 'Pressure Canner';
   const pressurePSI = method === 'pc' ? (altitude >= 6000 ? 15 : altitude >= 2001 ? 12 : 10) : null;
-  document.getElementById('can-result').innerHTML = `
+  resultEl.innerHTML = `
     <div class="utility-summary-result utility-summary-grid canning-result-summary">
       <div class="prep-summary-card utility-summary-card">
         <div class="prep-summary-meta">Jars needed</div>
@@ -606,10 +645,12 @@ const _phrases = {
   ]},
 };
 function showPhrases() {
-  const lang = document.getElementById('phrase-lang').value;
+  const languageSelect = document.getElementById('phrase-lang');
+  const el = document.getElementById('phrase-output');
+  if (!languageSelect || !el) return;
+  const lang = languageSelect.value;
   const data = _phrases[lang];
   if (!data) return;
-  const el = document.getElementById('phrase-output');
   if (!data.phrases || !data.phrases.length) { el.innerHTML = '<div class="empty-state">No phrases available for this language.</div>'; return; }
   el.innerHTML = data.phrases.map(([eng,trans]) =>
     `<div class="prep-reference-phrase-card">
@@ -736,28 +777,46 @@ function renderSkillSummary() {
   el.innerHTML = `${_skills.length} skills: <span>${counts.expert} Expert</span> · <span>${counts.intermediate} Mid</span> · <span>${counts.basic} Basic</span> · <span>${counts.none} None</span>`;
 }
 function openSkillForm(s) {
-  document.getElementById('skill-name').value = s ? s.name : '';
-  document.getElementById('skill-cat').value = s ? s.category : 'General';
-  document.getElementById('skill-prof').value = s ? s.proficiency : 'none';
-  document.getElementById('skill-practiced').value = s ? s.last_practiced : '';
-  document.getElementById('skill-notes').value = s ? s.notes : '';
-  document.getElementById('skill-edit-id').value = s ? s.id : '';
-  document.getElementById('skills-form').style.display = 'block';
-  document.getElementById('skill-name').focus();
+  const nameInput = document.getElementById('skill-name');
+  const categoryInput = document.getElementById('skill-cat');
+  const proficiencyInput = document.getElementById('skill-prof');
+  const practicedInput = document.getElementById('skill-practiced');
+  const notesInput = document.getElementById('skill-notes');
+  const editIdInput = document.getElementById('skill-edit-id');
+  const form = document.getElementById('skills-form');
+  if (!nameInput || !categoryInput || !proficiencyInput || !practicedInput || !notesInput || !editIdInput || !form) return;
+  nameInput.value = s ? s.name : '';
+  categoryInput.value = s ? s.category : 'General';
+  proficiencyInput.value = s ? s.proficiency : 'none';
+  practicedInput.value = s ? s.last_practiced : '';
+  notesInput.value = s ? s.notes : '';
+  editIdInput.value = s ? s.id : '';
+  form.style.display = 'block';
+  nameInput.focus();
 }
 function closeSkillForm() {
-  document.getElementById('skill-edit-id').value = '';
-  document.getElementById('skills-form').style.display = 'none';
+  const editIdInput = document.getElementById('skill-edit-id');
+  const form = document.getElementById('skills-form');
+  if (!editIdInput || !form) return;
+  editIdInput.value = '';
+  form.style.display = 'none';
 }
 function editSkill(id) { openSkillForm(_skills.find(s => s.id === id)); }
 async function saveSkill() {
-  const id = document.getElementById('skill-edit-id').value;
+  const editIdInput = document.getElementById('skill-edit-id');
+  const nameInput = document.getElementById('skill-name');
+  const categoryInput = document.getElementById('skill-cat');
+  const proficiencyInput = document.getElementById('skill-prof');
+  const practicedInput = document.getElementById('skill-practiced');
+  const notesInput = document.getElementById('skill-notes');
+  if (!editIdInput || !nameInput || !categoryInput || !proficiencyInput || !practicedInput || !notesInput) return;
+  const id = editIdInput.value;
   const body = {
-    name: document.getElementById('skill-name').value.trim(),
-    category: document.getElementById('skill-cat').value,
-    proficiency: document.getElementById('skill-prof').value,
-    last_practiced: document.getElementById('skill-practiced').value,
-    notes: document.getElementById('skill-notes').value.trim(),
+    name: nameInput.value.trim(),
+    category: categoryInput.value,
+    proficiency: proficiencyInput.value,
+    last_practiced: practicedInput.value,
+    notes: notesInput.value.trim(),
   };
   if (!body.name) { toast('Skill name required', 'error'); return; }
   try {
@@ -839,31 +898,53 @@ function renderAmmo() {
     </tbody></table>`;
 }
 function openAmmoForm(a) {
-  document.getElementById('ammo-caliber').value = a ? a.caliber : '';
-  document.getElementById('ammo-brand').value = a ? a.brand : '';
-  document.getElementById('ammo-weight').value = a ? a.bullet_weight : '';
-  document.getElementById('ammo-type').value = a ? a.bullet_type : 'FMJ';
-  document.getElementById('ammo-qty').value = a ? a.quantity : 0;
-  document.getElementById('ammo-location').value = a ? a.location : '';
-  document.getElementById('ammo-notes').value = a ? a.notes : '';
-  document.getElementById('ammo-edit-id').value = a ? a.id : '';
-  document.getElementById('ammo-form').style.display = 'block';
+  const caliberInput = document.getElementById('ammo-caliber');
+  const brandInput = document.getElementById('ammo-brand');
+  const weightInput = document.getElementById('ammo-weight');
+  const typeInput = document.getElementById('ammo-type');
+  const qtyInput = document.getElementById('ammo-qty');
+  const locationInput = document.getElementById('ammo-location');
+  const notesInput = document.getElementById('ammo-notes');
+  const editIdInput = document.getElementById('ammo-edit-id');
+  const form = document.getElementById('ammo-form');
+  if (!caliberInput || !brandInput || !weightInput || !typeInput || !qtyInput || !locationInput || !notesInput || !editIdInput || !form) return;
+  caliberInput.value = a ? a.caliber : '';
+  brandInput.value = a ? a.brand : '';
+  weightInput.value = a ? a.bullet_weight : '';
+  typeInput.value = a ? a.bullet_type : 'FMJ';
+  qtyInput.value = a ? a.quantity : 0;
+  locationInput.value = a ? a.location : '';
+  notesInput.value = a ? a.notes : '';
+  editIdInput.value = a ? a.id : '';
+  form.style.display = 'block';
 }
 function closeAmmoForm() {
-  document.getElementById('ammo-edit-id').value = '';
-  document.getElementById('ammo-form').style.display = 'none';
+  const editIdInput = document.getElementById('ammo-edit-id');
+  const form = document.getElementById('ammo-form');
+  if (!editIdInput || !form) return;
+  editIdInput.value = '';
+  form.style.display = 'none';
 }
 function editAmmo(id) { openAmmoForm(_ammo.find(a => a.id === id)); }
 async function saveAmmo() {
-  const id = document.getElementById('ammo-edit-id').value;
+  const editIdInput = document.getElementById('ammo-edit-id');
+  const caliberInput = document.getElementById('ammo-caliber');
+  const brandInput = document.getElementById('ammo-brand');
+  const weightInput = document.getElementById('ammo-weight');
+  const typeInput = document.getElementById('ammo-type');
+  const qtyInput = document.getElementById('ammo-qty');
+  const locationInput = document.getElementById('ammo-location');
+  const notesInput = document.getElementById('ammo-notes');
+  if (!editIdInput || !caliberInput || !brandInput || !weightInput || !typeInput || !qtyInput || !locationInput || !notesInput) return;
+  const id = editIdInput.value;
   const body = {
-    caliber: document.getElementById('ammo-caliber').value.trim(),
-    brand: document.getElementById('ammo-brand').value.trim(),
-    bullet_weight: document.getElementById('ammo-weight').value.trim(),
-    bullet_type: document.getElementById('ammo-type').value,
-    quantity: parseInt(document.getElementById('ammo-qty').value) || 0,
-    location: document.getElementById('ammo-location').value.trim(),
-    notes: document.getElementById('ammo-notes').value.trim(),
+    caliber: caliberInput.value.trim(),
+    brand: brandInput.value.trim(),
+    bullet_weight: weightInput.value.trim(),
+    bullet_type: typeInput.value,
+    quantity: parseInt(qtyInput.value) || 0,
+    location: locationInput.value.trim(),
+    notes: notesInput.value.trim(),
   };
   if (!body.caliber) { toast('Caliber required', 'error'); return; }
   try {
@@ -941,33 +1022,55 @@ function renderCommunity() {
   }
 }
 function openCommunityForm(p) {
-  document.getElementById('comm-name').value = p ? p.name : '';
-  document.getElementById('comm-dist').value = p ? p.distance_mi : '0.1';
-  document.getElementById('comm-trust').value = p ? p.trust_level : 'unknown';
-  document.getElementById('comm-contact').value = p ? p.contact : '';
-  document.getElementById('comm-skills').value = p ? safeJsonParse(p.skills, []).join(', ') : '';
-  document.getElementById('comm-equip').value = p ? safeJsonParse(p.equipment, []).join(', ') : '';
-  document.getElementById('comm-notes').value = p ? p.notes : '';
-  document.getElementById('comm-edit-id').value = p ? p.id : '';
-  document.getElementById('community-form').style.display = 'block';
+  const nameInput = document.getElementById('comm-name');
+  const distanceInput = document.getElementById('comm-dist');
+  const trustInput = document.getElementById('comm-trust');
+  const contactInput = document.getElementById('comm-contact');
+  const skillsInput = document.getElementById('comm-skills');
+  const equipmentInput = document.getElementById('comm-equip');
+  const notesInput = document.getElementById('comm-notes');
+  const editIdInput = document.getElementById('comm-edit-id');
+  const form = document.getElementById('community-form');
+  if (!nameInput || !distanceInput || !trustInput || !contactInput || !skillsInput || !equipmentInput || !notesInput || !editIdInput || !form) return;
+  nameInput.value = p ? p.name : '';
+  distanceInput.value = p ? p.distance_mi : '0.1';
+  trustInput.value = p ? p.trust_level : 'unknown';
+  contactInput.value = p ? p.contact : '';
+  skillsInput.value = p ? safeJsonParse(p.skills, []).join(', ') : '';
+  equipmentInput.value = p ? safeJsonParse(p.equipment, []).join(', ') : '';
+  notesInput.value = p ? p.notes : '';
+  editIdInput.value = p ? p.id : '';
+  form.style.display = 'block';
 }
 function closeCommunityForm() {
-  document.getElementById('comm-edit-id').value = '';
-  document.getElementById('community-form').style.display = 'none';
+  const editIdInput = document.getElementById('comm-edit-id');
+  const form = document.getElementById('community-form');
+  if (!editIdInput || !form) return;
+  editIdInput.value = '';
+  form.style.display = 'none';
 }
 function editCommunity(id) { openCommunityForm(_community.find(p => p.id === id)); }
 async function saveCommunity() {
-  const id = document.getElementById('comm-edit-id').value;
-  const skillsRaw = document.getElementById('comm-skills').value;
-  const equipRaw = document.getElementById('comm-equip').value;
+  const editIdInput = document.getElementById('comm-edit-id');
+  const nameInput = document.getElementById('comm-name');
+  const distanceInput = document.getElementById('comm-dist');
+  const trustInput = document.getElementById('comm-trust');
+  const contactInput = document.getElementById('comm-contact');
+  const skillsInput = document.getElementById('comm-skills');
+  const equipmentInput = document.getElementById('comm-equip');
+  const notesInput = document.getElementById('comm-notes');
+  if (!editIdInput || !nameInput || !distanceInput || !trustInput || !contactInput || !skillsInput || !equipmentInput || !notesInput) return;
+  const id = editIdInput.value;
+  const skillsRaw = skillsInput.value;
+  const equipRaw = equipmentInput.value;
   const body = {
-    name: document.getElementById('comm-name').value.trim(),
-    distance_mi: parseFloat(document.getElementById('comm-dist').value) || 0,
-    trust_level: document.getElementById('comm-trust').value,
-    contact: document.getElementById('comm-contact').value.trim(),
+    name: nameInput.value.trim(),
+    distance_mi: parseFloat(distanceInput.value) || 0,
+    trust_level: trustInput.value,
+    contact: contactInput.value.trim(),
     skills: skillsRaw ? skillsRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
     equipment: equipRaw ? equipRaw.split(',').map(s => s.trim()).filter(Boolean) : [],
-    notes: document.getElementById('comm-notes').value.trim(),
+    notes: notesInput.value.trim(),
   };
   if (!body.name) { toast('Name required', 'error'); return; }
   try {
@@ -1052,11 +1155,15 @@ function renderRadiationLog(readings) {
     }).join('')}</tbody></table></div>`;
 }
 async function logRadiation() {
-  const rate = parseFloat(document.getElementById('rad-log-rate').value);
+  const rateInput = document.getElementById('rad-log-rate');
+  const locationInput = document.getElementById('rad-location');
+  const notesInput = document.getElementById('rad-notes');
+  if (!rateInput || !locationInput || !notesInput) return;
+  const rate = parseFloat(rateInput.value);
   if (!rate && rate !== 0) { toast('Enter a dose rate', 'error'); return; }
   try {
-    await apiPost('/api/radiation', {dose_rate_rem: rate, location: document.getElementById('rad-location').value, notes: document.getElementById('rad-notes').value});
-    document.getElementById('rad-log-rate').value = '';
+    await apiPost('/api/radiation', {dose_rate_rem: rate, location: locationInput.value, notes: notesInput.value});
+    rateInput.value = '';
     loadRadiation();
     toast('Reading logged', 'success');
   } catch(e) { toast('Failed to log reading', 'error'); }
@@ -1086,22 +1193,34 @@ function _persistICS() {
 function showICSTab(tab) {
   ['213','309','214'].forEach(t => {
     const isActive = t === tab;
-    document.getElementById(`ics-${t}-panel`).style.display = isActive ? '' : 'none';
+    const panel = document.getElementById(`ics-${t}-panel`);
     const tabBtn = document.getElementById(`ics-tab-${t}`);
+    if (!panel || !tabBtn) return;
+    panel.style.display = isActive ? '' : 'none';
     tabBtn.className = isActive ? 'btn btn-sm btn-primary' : 'btn btn-sm';
     tabBtn.setAttribute('aria-pressed', String(isActive));
   });
 }
 function printICS213() {
-  const to = document.getElementById('ics213-to').value;
-  const from = document.getElementById('ics213-from').value;
-  const subject = document.getElementById('ics213-subject').value;
-  const dt = document.getElementById('ics213-datetime').value || new Date().toLocaleString();
-  const incident = document.getElementById('ics213-incident').value;
-  const priority = document.getElementById('ics213-priority').value;
-  const message = document.getElementById('ics213-message').value;
-  const replyby = document.getElementById('ics213-replyby').value;
-  const reply = document.getElementById('ics213-reply').value;
+  const toInput = document.getElementById('ics213-to');
+  const fromInput = document.getElementById('ics213-from');
+  const subjectInput = document.getElementById('ics213-subject');
+  const dtInput = document.getElementById('ics213-datetime');
+  const incidentInput = document.getElementById('ics213-incident');
+  const priorityInput = document.getElementById('ics213-priority');
+  const messageInput = document.getElementById('ics213-message');
+  const replyByInput = document.getElementById('ics213-replyby');
+  const replyInput = document.getElementById('ics213-reply');
+  if (!toInput || !fromInput || !subjectInput || !dtInput || !incidentInput || !priorityInput || !messageInput || !replyByInput || !replyInput) return;
+  const to = toInput.value;
+  const from = fromInput.value;
+  const subject = subjectInput.value;
+  const dt = dtInput.value || new Date().toLocaleString();
+  const incident = incidentInput.value;
+  const priority = priorityInput.value;
+  const message = messageInput.value;
+  const replyby = replyByInput.value;
+  const reply = replyInput.value;
   const w = window.open('', '_blank');
   if (!w) { toast('Pop-up blocked -- please allow pop-ups', 'warning'); return; }
   w.document.write(`<!DOCTYPE html><html><head><title>ICS-213</title>
@@ -1121,19 +1240,27 @@ function printICS213() {
   w.document.close();
 }
 function clearICS213() {
-  ['ics213-to','ics213-from','ics213-subject','ics213-datetime','ics213-incident','ics213-message','ics213-replyby','ics213-reply'].forEach(id => document.getElementById(id).value = '');
+  const fields = ['ics213-to','ics213-from','ics213-subject','ics213-datetime','ics213-incident','ics213-message','ics213-replyby','ics213-reply']
+    .map(id => document.getElementById(id));
+  if (fields.some(field => !field)) return;
+  fields.forEach(field => { field.value = ''; });
 }
 function addICS309Entry() {
+  const timeInput = document.getElementById('ics309-time');
+  const fromInput = document.getElementById('ics309-from');
+  const toInput = document.getElementById('ics309-to');
+  const msgInput = document.getElementById('ics309-msg');
+  if (!timeInput || !fromInput || !toInput || !msgInput) return;
   const entry = {
-    time: document.getElementById('ics309-time').value,
-    from: document.getElementById('ics309-from').value,
-    to: document.getElementById('ics309-to').value,
-    msg: document.getElementById('ics309-msg').value,
+    time: timeInput.value,
+    from: fromInput.value,
+    to: toInput.value,
+    msg: msgInput.value,
   };
   if (!entry.msg) return;
   _ics309Entries.push(entry);
   _persistICS();
-  ['ics309-time','ics309-from','ics309-to','ics309-msg'].forEach(id => document.getElementById(id).value = '');
+  [timeInput, fromInput, toInput, msgInput].forEach(field => { field.value = ''; });
   renderICS309Table();
 }
 function removeICS309Entry(index) {
@@ -1156,9 +1283,13 @@ function renderICS309Table() {
     </tr>`).join('')}</tbody></table>`;
 }
 function printICS309() {
-  const incident = document.getElementById('ics309-incident').value;
-  const operator = document.getElementById('ics309-operator').value;
-  const station = document.getElementById('ics309-station').value;
+  const incidentInput = document.getElementById('ics309-incident');
+  const operatorInput = document.getElementById('ics309-operator');
+  const stationInput = document.getElementById('ics309-station');
+  if (!incidentInput || !operatorInput || !stationInput) return;
+  const incident = incidentInput.value;
+  const operator = operatorInput.value;
+  const station = stationInput.value;
   const rows = _ics309Entries.map(e =>
     `<tr><td>${escapeHtml(e.time)}</td><td>${escapeHtml(e.from)}</td><td>${escapeHtml(e.to)}</td><td>${escapeHtml(e.msg)}</td></tr>`).join('');
   const w = window.open('', '_blank');
@@ -1177,11 +1308,14 @@ function printICS309() {
 }
 function clearICS309() { _ics309Entries = []; _persistICS(); renderICS309Table(); }
 function addICS214Entry() {
-  const entry = {time: document.getElementById('ics214-time').value, activity: document.getElementById('ics214-activity').value};
+  const timeInput = document.getElementById('ics214-time');
+  const activityInput = document.getElementById('ics214-activity');
+  if (!timeInput || !activityInput) return;
+  const entry = {time: timeInput.value, activity: activityInput.value};
   if (!entry.activity) return;
   _ics214Entries.push(entry);
   _persistICS();
-  ['ics214-time','ics214-activity'].forEach(id => document.getElementById(id).value = '');
+  [timeInput, activityInput].forEach(field => { field.value = ''; });
   renderICS214Table();
 }
 function removeICS214Entry(index) {
@@ -1204,10 +1338,15 @@ function renderICS214Table() {
     </tr>`).join('')}</tbody></table>`;
 }
 function printICS214() {
-  const incident = document.getElementById('ics214-incident').value;
-  const unit = document.getElementById('ics214-unit').value;
-  const leader = document.getElementById('ics214-leader').value;
-  const period = document.getElementById('ics214-period').value;
+  const incidentInput = document.getElementById('ics214-incident');
+  const unitInput = document.getElementById('ics214-unit');
+  const leaderInput = document.getElementById('ics214-leader');
+  const periodInput = document.getElementById('ics214-period');
+  if (!incidentInput || !unitInput || !leaderInput || !periodInput) return;
+  const incident = incidentInput.value;
+  const unit = unitInput.value;
+  const leader = leaderInput.value;
+  const period = periodInput.value;
   const rows = _ics214Entries.map(e => `<tr><td>${escapeHtml(e.time)}</td><td>${escapeHtml(e.activity)}</td></tr>`).join('');
   const w = window.open('', '_blank');
   if (!w) { toast('Pop-up blocked -- please allow pop-ups', 'warning'); return; }
@@ -2254,6 +2393,9 @@ function exportChirpCSV() {
 
 // --- Burn Surface Area (Rule of Nines) ---
 function calcBurnArea() {
+  const weightInput = document.getElementById('burn-weight');
+  const el = document.getElementById('burn-result');
+  if (!weightInput || !el) return;
   const regions = {
     'burn-head': 9, 'burn-chest': 9, 'burn-abdomen': 9,
     'burn-upperback': 9, 'burn-lowerback': 9,
@@ -2266,9 +2408,7 @@ function calcBurnArea() {
   for (const [id, pct] of Object.entries(regions)) {
     if (document.getElementById(id) && document.getElementById(id).checked) tbsa += pct;
   }
-  const weight = parseFloat(document.getElementById('burn-weight').value) || 70;
-  const el = document.getElementById('burn-result');
-  if (!el) return;
+  const weight = parseFloat(weightInput.value) || 70;
   if (tbsa === 0) { el.innerHTML = '<span class="text-dim">Select burned body regions above.</span>'; return; }
   const parkland4h = (4 * weight * tbsa).toFixed(0);
   const first8h = (parkland4h / 2).toFixed(0);
@@ -2376,13 +2516,18 @@ function calcKIDosage() {
 
 // --- Dead Reckoning Navigator ---
 function calcDeadReckoning() {
-  const lat = parseFloat(document.getElementById('dr-lat').value);
-  const lon = parseFloat(document.getElementById('dr-lon').value);
-  const bearing = parseFloat(document.getElementById('dr-bearing').value) || 0;
-  const speed = parseFloat(document.getElementById('dr-speed').value) || 3;
-  const hours = parseFloat(document.getElementById('dr-hours').value) || 1;
+  const latInput = document.getElementById('dr-lat');
+  const lonInput = document.getElementById('dr-lon');
+  const bearingInput = document.getElementById('dr-bearing');
+  const speedInput = document.getElementById('dr-speed');
+  const hoursInput = document.getElementById('dr-hours');
   const el = document.getElementById('dr-result');
-  if (!el) return;
+  if (!latInput || !lonInput || !el) return;
+  const lat = parseFloat(latInput.value);
+  const lon = parseFloat(lonInput.value);
+  const bearing = parseFloat(bearingInput?.value) || 0;
+  const speed = parseFloat(speedInput?.value) || 3;
+  const hours = parseFloat(hoursInput?.value) || 1;
   if (isNaN(lat) || isNaN(lon)) { el.innerHTML = '<span class="text-dim">Enter start coordinates.</span>'; return; }
   const distMi = speed * hours;
   const distKm = distMi * 1.60934;
@@ -2657,12 +2802,16 @@ function calcWeightDose() {
 // HYPOTHERMIA ASSESSMENT
 // ═══════════════════════════════════════════════════════════════
 function calcHypothermia() {
-  const temp = parseFloat(document.getElementById('hypo-temp').value) || 32;
-  const wind = parseFloat(document.getElementById('hypo-wind').value) || 10;
-  const hours = parseFloat(document.getElementById('hypo-hours').value) || 1;
-  const wetFactor = parseFloat(document.getElementById('hypo-wet').value) || 1;
+  const tempInput = document.getElementById('hypo-temp');
+  const windInput = document.getElementById('hypo-wind');
+  const hoursInput = document.getElementById('hypo-hours');
+  const wetInput = document.getElementById('hypo-wet');
   const el = document.getElementById('hypo-result');
-  if (!el) return;
+  if (!tempInput || !windInput || !hoursInput || !wetInput || !el) return;
+  const temp = parseFloat(tempInput.value) || 32;
+  const wind = parseFloat(windInput.value) || 10;
+  const hours = parseFloat(hoursInput.value) || 1;
+  const wetFactor = parseFloat(wetInput.value) || 1;
 
   // NOAA wind chill (valid T<=50°F, wind>=3 mph)
   let windChill = temp;
@@ -2717,12 +2866,15 @@ function calcHypothermia() {
 // ORAL REHYDRATION THERAPY
 // ═══════════════════════════════════════════════════════════════
 function calcORT() {
-  const unit = document.getElementById('ort-unit').value;
-  let weight = parseFloat(document.getElementById('ort-weight').value) || 70;
-  if (unit === 'lb') weight = weight / 2.205;
-  const sev = document.getElementById('ort-sev').value;
+  const unitInput = document.getElementById('ort-unit');
+  const weightInput = document.getElementById('ort-weight');
+  const severityInput = document.getElementById('ort-sev');
   const el = document.getElementById('ort-result');
-  if (!el) return;
+  if (!unitInput || !weightInput || !severityInput || !el) return;
+  const unit = unitInput.value;
+  let weight = parseFloat(weightInput.value) || 70;
+  if (unit === 'lb') weight = weight / 2.205;
+  const sev = severityInput.value;
 
   const mLperKg = {mild: 50, moderate: 75, severe: 100};
   const replacement = weight * mLperKg[sev];
@@ -2753,11 +2905,14 @@ function calcORT() {
 // ANTIBIOTIC INVENTORY PLANNER
 // ═══════════════════════════════════════════════════════════════
 function calcAbxInventory() {
-  const drug = document.getElementById('abx-drug').value;
-  const qty = parseInt(document.getElementById('abx-qty').value) || 0;
-  const people = parseInt(document.getElementById('abx-people').value) || 1;
+  const drugInput = document.getElementById('abx-drug');
+  const qtyInput = document.getElementById('abx-qty');
+  const peopleInput = document.getElementById('abx-people');
   const el = document.getElementById('abx-result');
-  if (!el) return;
+  if (!drugInput || !qtyInput || !peopleInput || !el) return;
+  const drug = drugInput.value;
+  const qty = parseInt(qtyInput.value) || 0;
+  const people = parseInt(peopleInput.value) || 1;
 
   const drugs = {
     amox500:      {name:'Amoxicillin 500mg',        tabs:21, days:7,  freq:'TID (3×/day)', dose:'500mg',        indications:'Respiratory, ear/sinus, skin, dental, UTI (uncomplicated)'},
@@ -2936,11 +3091,16 @@ function tcccReset() {
 // RADIATION DOSE ACCUMULATOR
 // ═══════════════════════════════════════════════════════════════
 function calcRadDose() {
-  const rate = parseFloat(document.getElementById('rad-rate').value) || 0;
-  const unit = document.getElementById('rad-unit').value;
-  const hours = parseFloat(document.getElementById('rad-hours').value) || 0;
-  const pf = parseFloat(document.getElementById('rad-pf').value) || 1;
+  const rateInput = document.getElementById('rad-rate');
+  const unitInput = document.getElementById('rad-unit');
+  const hoursInput = document.getElementById('rad-hours');
+  const pfInput = document.getElementById('rad-pf');
   const el = document.getElementById('rad-result');
+  if (!rateInput || !unitInput || !hoursInput || !pfInput || !el) return;
+  const rate = parseFloat(rateInput.value) || 0;
+  const unit = unitInput.value;
+  const hours = parseFloat(hoursInput.value) || 0;
+  const pf = parseFloat(pfInput.value) || 1;
   if (rate <= 0 || hours <= 0) { el.innerHTML = ''; return; }
 
   // Normalize to mSv/hr
@@ -2977,12 +3137,18 @@ function calcRadDose() {
 // WATER NEEDS CALCULATOR
 // ═══════════════════════════════════════════════════════════════
 function calcWaterNeeds() {
-  const adults = parseInt(document.getElementById('wn-adults').value) || 0;
-  const children = parseInt(document.getElementById('wn-children').value) || 0;
-  const activity = parseFloat(document.getElementById('wn-activity').value) || 1;
-  const climate = parseFloat(document.getElementById('wn-climate').value) || 1;
-  const days = parseInt(document.getElementById('wn-days').value) || 1;
+  const adultsInput = document.getElementById('wn-adults');
+  const childrenInput = document.getElementById('wn-children');
+  const activityInput = document.getElementById('wn-activity');
+  const climateInput = document.getElementById('wn-climate');
+  const daysInput = document.getElementById('wn-days');
   const el = document.getElementById('wn-result');
+  if (!adultsInput || !childrenInput || !activityInput || !climateInput || !daysInput || !el) return;
+  const adults = parseInt(adultsInput.value) || 0;
+  const children = parseInt(childrenInput.value) || 0;
+  const activity = parseFloat(activityInput.value) || 1;
+  const climate = parseFloat(climateInput.value) || 1;
+  const days = parseInt(daysInput.value) || 1;
 
   // Base: 2L/day adult drinking, 0.5L sanitation, 1L cooking. Children = 60% of adult.
   const adultDailyL = (2 + 0.5 + 1) * activity * climate;
@@ -3020,12 +3186,17 @@ function calcWaterNeeds() {
 // GENERATOR RUNTIME CALCULATOR
 // ═══════════════════════════════════════════════════════════════
 function calcGenerator() {
-  const watts = parseFloat(document.getElementById('gen-watts').value) || 0;
-  const loadPct = parseFloat(document.getElementById('gen2-load').value) || 50;
-  const fuelType = document.getElementById('gen2-fuel').value;
-  const fuelQty = parseFloat(document.getElementById('gen2-fuel-qty').value) || 0;
+  const wattsInput = document.getElementById('gen-watts');
+  const loadInput = document.getElementById('gen2-load');
+  const fuelTypeInput = document.getElementById('gen2-fuel');
+  const fuelQtyInput = document.getElementById('gen2-fuel-qty');
   const unitEl = document.getElementById('gen2-fuel-unit');
   const el = document.getElementById('gen2-result');
+  if (!wattsInput || !loadInput || !fuelTypeInput || !fuelQtyInput || !el) return;
+  const watts = parseFloat(wattsInput.value) || 0;
+  const loadPct = parseFloat(loadInput.value) || 50;
+  const fuelType = fuelTypeInput.value;
+  const fuelQty = parseFloat(fuelQtyInput.value) || 0;
 
   // Fuel consumption rates at 100% load (gal/hr per 1000W) — typical values
   const fuelData = {
@@ -3064,10 +3235,14 @@ function calcGenerator() {
 // DEHYDRATION ASSESSMENT
 // ═══════════════════════════════════════════════════════════════
 function calcDehydration() {
-  const weight = parseFloat(document.getElementById('deh-weight').value) || 70;
-  const sev = document.getElementById('deh-sev').value;
-  const age = document.getElementById('deh-age').value;
+  const weightInput = document.getElementById('deh-weight');
+  const severityInput = document.getElementById('deh-sev');
+  const ageInput = document.getElementById('deh-age');
   const el = document.getElementById('deh-result');
+  if (!weightInput || !severityInput || !ageInput || !el) return;
+  const weight = parseFloat(weightInput.value) || 70;
+  const sev = severityInput.value;
+  const age = ageInput.value;
 
   const sevData = {
     mild:     { pct: 0.02, label: 'Mild (2%)',     color: '#f59e0b', route: 'Oral', urgency: 'Monitor' },
@@ -3110,14 +3285,22 @@ function calcDehydration() {
 // VITAL SIGNS ASSESSMENT
 // ═══════════════════════════════════════════════════════════════
 function calcVitals() {
-  const hr = parseInt(document.getElementById('vs-hr').value) || 0;
-  const sbp = parseInt(document.getElementById('vs-sbp').value) || 0;
-  const dbp = parseInt(document.getElementById('vs-dbp').value) || 0;
-  const rr = parseInt(document.getElementById('vs-rr').value) || 0;
-  const temp = parseFloat(document.getElementById('vs-temp').value) || 98.6;
-  const spo2 = parseInt(document.getElementById('vs-spo2').value) || 98;
-  const age = document.getElementById('vs-age').value;
+  const hrInput = document.getElementById('vs-hr');
+  const sbpInput = document.getElementById('vs-sbp');
+  const dbpInput = document.getElementById('vs-dbp');
+  const rrInput = document.getElementById('vs-rr');
+  const tempInput = document.getElementById('vs-temp');
+  const spo2Input = document.getElementById('vs-spo2');
+  const ageInput = document.getElementById('vs-age');
   const el = document.getElementById('vs-result');
+  if (!hrInput || !sbpInput || !dbpInput || !rrInput || !tempInput || !spo2Input || !ageInput || !el) return;
+  const hr = parseInt(hrInput.value) || 0;
+  const sbp = parseInt(sbpInput.value) || 0;
+  const dbp = parseInt(dbpInput.value) || 0;
+  const rr = parseInt(rrInput.value) || 0;
+  const temp = parseFloat(tempInput.value) || 98.6;
+  const spo2 = parseInt(spo2Input.value) || 98;
+  const age = ageInput.value;
 
   // Age-specific normal ranges
   const ranges = {
@@ -3177,31 +3360,35 @@ function calcVitals() {
 }
 
 (function initCalcDefaults() {
-  const safeInit = (label, fn) => {
+  const hasNodes = ids => ids.every(id => document.getElementById(id));
+  const safeInit = ({ label, fn, required }) => {
+    if (!hasNodes(required)) return;
     try {
       fn();
     } catch (error) {
       console.warn(`Skipping ${label} defaults:`, error);
     }
   };
-  // Render KI with default 1 adult
+  const calculatorInitializers = [
+    { label: 'KI persons', fn: renderKIPersons, required: ['ki-people-list'] },
+    { label: 'IV drip', fn: calcIVDrip, required: ['iv-vol', 'iv-time', 'iv-drops', 'iv-result'] },
+    { label: 'Burn area', fn: calcBurnArea, required: ['burn-weight', 'burn-result'] },
+    { label: 'Dead reckoning', fn: calcDeadReckoning, required: ['dr-lat', 'dr-lon', 'dr-result'] },
+    { label: 'NVIS', fn: calcNVIS, required: ['nvis-result'] },
+    { label: 'Weight-based dosing', fn: calcWeightDose, required: ['dose-result'] },
+    { label: 'Shelter layers', fn: renderShelterLayers, required: ['shpf-layers'] },
+    { label: 'Crop calories', fn: calcCropCalories, required: ['crop-result'] },
+    { label: 'Hypothermia', fn: calcHypothermia, required: ['hypo-temp', 'hypo-wind', 'hypo-hours', 'hypo-wet', 'hypo-result'] },
+    { label: 'ORT', fn: calcORT, required: ['ort-unit', 'ort-weight', 'ort-sev', 'ort-result'] },
+    { label: 'Antibiotic inventory', fn: calcAbxInventory, required: ['abx-drug', 'abx-qty', 'abx-people', 'abx-result'] },
+    { label: 'Radiation dose', fn: calcRadDose, required: ['rad-rate', 'rad-unit', 'rad-hours', 'rad-pf', 'rad-result'] },
+    { label: 'Water needs', fn: calcWaterNeeds, required: ['wn-adults', 'wn-children', 'wn-activity', 'wn-climate', 'wn-days', 'wn-result'] },
+    { label: 'Generator sizing', fn: calcGenerator, required: ['gen-watts', 'gen2-load', 'gen2-fuel', 'gen2-fuel-qty', 'gen2-result'] },
+    { label: 'Dehydration', fn: calcDehydration, required: ['deh-weight', 'deh-sev', 'deh-age', 'deh-result'] },
+    { label: 'Vitals', fn: calcVitals, required: ['vs-hr', 'vs-sbp', 'vs-dbp', 'vs-rr', 'vs-temp', 'vs-spo2', 'vs-age', 'vs-result'] },
+  ];
   setTimeout(() => {
-    safeInit('KI persons', renderKIPersons);
-    safeInit('IV drip', calcIVDrip);
-    safeInit('Burn area', calcBurnArea);
-    safeInit('Dead reckoning', calcDeadReckoning);
-    safeInit('NVIS', calcNVIS);
-    safeInit('Weight-based dosing', calcWeightDose);
-    safeInit('Shelter layers', renderShelterLayers);
-    safeInit('Crop calories', calcCropCalories);
-    safeInit('Hypothermia', calcHypothermia);
-    safeInit('ORT', calcORT);
-    safeInit('Antibiotic inventory', calcAbxInventory);
-    safeInit('Radiation dose', calcRadDose);
-    safeInit('Water needs', calcWaterNeeds);
-    safeInit('Generator sizing', calcGenerator);
-    safeInit('Dehydration', calcDehydration);
-    safeInit('Vitals', calcVitals);
+    calculatorInitializers.forEach(safeInit);
   }, 500);
 })();
 
@@ -4386,7 +4573,7 @@ if (commandPaletteOverlay) {
 const shortcutsOverlay = document.getElementById('shortcuts-overlay');
 if (shortcutsOverlay) {
   shortcutsOverlay.addEventListener('click', e => {
-    if (e.target === shortcutsOverlay) toggleShortcutsHelp();
+    if (e.target === shortcutsOverlay) toggleShortcutsHelp(false);
   });
 }
 

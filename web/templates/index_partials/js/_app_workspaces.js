@@ -475,24 +475,52 @@ function pollBenchmark() {
 function showBenchResults(r) {
   const resultsEl = document.getElementById('bench-results');
   if (!resultsEl) return;
+  const interp = r.interpretation || null;
+  const overallLabel = interp ? interp.overall_grade : (r.nomad_score != null ? r.nomad_score : '—');
+  const overallCaption = interp ? 'Health Grade' : 'NOMAD Score';
+  const summaryCopy = interp
+    ? escapeHtml(interp.summary)
+    : 'This snapshot covers system throughput and model responsiveness.';
+  const subsystems = interp && interp.subsystems ? interp.subsystems : {};
+  const subHtml = interp ? `
+    <div class="benchmark-subsystem-grid">
+      <div class="benchmark-subsystem-cell"><div class="benchmark-subsystem-letter">${escapeHtml(subsystems.cpu || '—')}</div><div class="benchmark-subsystem-label">CPU</div></div>
+      <div class="benchmark-subsystem-cell"><div class="benchmark-subsystem-letter">${escapeHtml(subsystems.memory || '—')}</div><div class="benchmark-subsystem-label">Memory</div></div>
+      <div class="benchmark-subsystem-cell"><div class="benchmark-subsystem-letter">${escapeHtml(subsystems.disk || '—')}</div><div class="benchmark-subsystem-label">Disk</div></div>
+      <div class="benchmark-subsystem-cell"><div class="benchmark-subsystem-letter">${escapeHtml(subsystems.ai || '—')}</div><div class="benchmark-subsystem-label">AI Speed</div></div>
+      <div class="benchmark-subsystem-cell"><div class="benchmark-subsystem-letter">${escapeHtml(subsystems.response || '—')}</div><div class="benchmark-subsystem-label">Response</div></div>
+    </div>` : '';
+  const rec = interp && interp.recommended_model ? interp.recommended_model : null;
+  const recHtml = rec ? `
+    <div class="benchmark-model-recommend">
+      <div class="benchmark-model-recommend-kicker">RECOMMENDED MODEL</div>
+      <div class="benchmark-model-recommend-name">${escapeHtml(rec.name)} <span class="benchmark-model-recommend-size">${escapeHtml(rec.size || '')}</span></div>
+      <div class="benchmark-model-recommend-why">${escapeHtml(rec.why || '')}</div>
+    </div>` : '';
   resultsEl.innerHTML = `
     <div class="benchmark-results-overview">
-      <div class="benchmark-score-hero"><div class="bench-big"><span>${r.nomad_score}</span></div><div class="benchmark-score-caption">NOMAD Score</div></div>
+      <div class="benchmark-score-hero"><div class="bench-big"><span>${escapeHtml(String(overallLabel))}</span></div><div class="benchmark-score-caption">${escapeHtml(overallCaption)}</div></div>
       <div class="benchmark-run-summary">
-        <div class="benchmark-run-summary-kicker">LATEST RUN</div>
-        <div class="benchmark-run-summary-title">This snapshot covers system throughput and model responsiveness.</div>
-        <div class="benchmark-run-summary-copy">Use the score cards below for the immediate picture, then compare against history to spot drift or a machine that is falling behind.</div>
+        <div class="benchmark-run-summary-kicker">SYSTEM HEALTH CHECK</div>
+        <div class="benchmark-run-summary-title">${summaryCopy}</div>
+        <div class="benchmark-run-summary-copy">Letter grades summarise each subsystem. Raw numbers are in "Advanced Details" below for power users.</div>
       </div>
     </div>
-    <div class="bench-scores benchmark-metric-grid">
-      <div class="bench-score"><div class="score-val">${r.cpu_score||0}</div><div class="score-label">CPU ops/s</div></div>
-      <div class="bench-score"><div class="score-val">${r.memory_score||0}</div><div class="score-label">Memory MB/s</div></div>
-      <div class="bench-score"><div class="score-val">${r.disk_read_score||0}</div><div class="score-label">Disk Read MB/s</div></div>
-      <div class="bench-score"><div class="score-val">${r.disk_write_score||0}</div><div class="score-label">Disk Write MB/s</div></div>
-      <div class="bench-score"><div class="score-val">${r.ai_tps||0}</div><div class="score-label">AI Speed (tok/s)</div></div>
-      <div class="bench-score"><div class="score-val">${r.ai_ttft||0}</div><div class="score-label">Response Time (ms)</div></div>
-    </div>
-    <div class="benchmark-result-note">Compare this run against Diagnostics History below before changing hardware, storage, or model expectations.</div>
+    ${subHtml}
+    ${recHtml}
+    <details class="benchmark-advanced-details">
+      <summary>Advanced details &mdash; raw scores</summary>
+      <div class="bench-scores benchmark-metric-grid">
+        <div class="bench-score"><div class="score-val">${r.cpu_score||0}</div><div class="score-label">CPU ops/s</div></div>
+        <div class="bench-score"><div class="score-val">${r.memory_score||0}</div><div class="score-label">Memory MB/s</div></div>
+        <div class="bench-score"><div class="score-val">${r.disk_read_score||0}</div><div class="score-label">Disk Read MB/s</div></div>
+        <div class="bench-score"><div class="score-val">${r.disk_write_score||0}</div><div class="score-label">Disk Write MB/s</div></div>
+        <div class="bench-score"><div class="score-val">${r.ai_tps||0}</div><div class="score-label">AI Speed (tok/s)</div></div>
+        <div class="bench-score"><div class="score-val">${r.ai_ttft||0}</div><div class="score-label">Response Time (ms)</div></div>
+        <div class="bench-score"><div class="score-val">${r.nomad_score||0}</div><div class="score-label">NOMAD Score</div></div>
+      </div>
+    </details>
+    <div class="benchmark-result-note">Compare this run against Diagnostics History below to spot degradation over time.</div>
   `;
 }
 

@@ -426,6 +426,9 @@ document.addEventListener('click', e => {
       case 'watch-download-yt': watchAndDownload(control.dataset.mediaUrl, control.dataset.mediaTitle, control.dataset.mediaVideoId); break;
       case 'download-yt-video': downloadYtVideo(control.dataset.mediaUrl, control.dataset.mediaTitle); break;
       case 'download-yt-audio': downloadYtAudio(control.dataset.mediaUrl, control.dataset.mediaTitle); break;
+      case 'crosssearch-input': mediaCrossSearchInput(control); break;
+      case 'crosssearch-clear': mediaCrossSearchClear(); break;
+      case 'crosssearch-open': mediaCrossSearchOpen(control.dataset.resultType, control.dataset.resultId); break;
       case 'load-more-results': loadMoreResults(); break;
       case 'torrent-open-folder': torrentOpenFolder(control.dataset.torrentHash); break;
       case 'torrent-resume': torrentResume(control.dataset.torrentHash); break;

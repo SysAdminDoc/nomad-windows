@@ -164,6 +164,94 @@
   flex-wrap: wrap;
 }
 
+/* Cross-catalog media search (v7.0.4) — one input searching videos,
+   audio, books, and channels via /api/media/search. Dropdown opens
+   below the input with typed, categorised results. */
+.media-crosssearch {
+  margin-top: 14px;
+  position: relative;
+}
+.media-crosssearch-label {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.media-crosssearch-field {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+.media-crosssearch-input {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-overlay-soft);
+  color: var(--text);
+  font-size: 13px;
+}
+.media-crosssearch-input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.media-crosssearch-results {
+  margin-top: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-solid, var(--surface));
+  box-shadow: 0 12px 32px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+}
+.media-crosssearch-results.is-hidden { display: none; }
+.media-crosssearch-result {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 10px;
+  padding: 10px 12px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  cursor: pointer;
+  color: var(--text);
+}
+.media-crosssearch-result:last-child { border-bottom: none; }
+.media-crosssearch-result:hover,
+.media-crosssearch-result:focus-visible {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.media-crosssearch-result-type {
+  grid-row: 1 / span 2;
+  align-self: center;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+}
+.media-crosssearch-result-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.media-crosssearch-result-sub {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.media-crosssearch-empty {
+  padding: 14px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
 .media-command-pill {
   display: inline-flex;
   align-items: center;

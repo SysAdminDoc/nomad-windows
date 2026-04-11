@@ -35,6 +35,128 @@ def _load_stream_json_line(line):
     return _safe_json_value(line, {})
 
 
+def _score_to_letter(score):
+    """Convert a 0-100 sub-score to an A-F letter grade.
+
+    Non-technical users cannot interpret raw values like "47 000 CPU ops" or
+    "8.2 tok/s". A letter grade collapses the noise into a single readable
+    signal per subsystem so the Benchmark tab can be presented as a "System
+    Health Check" instead of a developer tool.
+    """
+    if score is None:
+        return '?'
+    if score >= 90:
+        return 'A'
+    if score >= 75:
+        return 'B'
+    if score >= 60:
+        return 'C'
+    if score >= 40:
+        return 'D'
+    return 'F'
+
+
+def _recommend_model(ram_gb, ai_tps, gpu_name):
+    """Suggest a local Ollama model based on hardware + AI inference speed.
+
+    Inputs are taken from the results dict at the end of a benchmark run;
+    the recommendation is opinionated and meant to anchor the user at a
+    reasonable starting model rather than exhaustively survey all options.
+    """
+    gpu_name = (gpu_name or '').lower()
+    has_gpu = gpu_name and gpu_name not in ('none', 'unknown', '')
+    try:
+        ram = float(ram_gb or 0)
+    except (TypeError, ValueError):
+        ram = 0.0
+    try:
+        tps = float(ai_tps or 0)
+    except (TypeError, ValueError):
+        tps = 0.0
+
+    # Fast path: if the benchmark already measured strong token throughput,
+    # trust that over the RAM/GPU heuristic.
+    if tps >= 25 and ram >= 16:
+        return {
+            'name': 'llama3.1:8b',
+            'size': '~4.7 GB',
+            'why': f'Your hardware produced {tps:.1f} tok/s — a mid-size 8B model will feel responsive.',
+        }
+    if tps >= 15 or (has_gpu and ram >= 16):
+        return {
+            'name': 'llama3.2:3b',
+            'size': '~2.0 GB',
+            'why': 'Good balance of speed and capability on your hardware.',
+        }
+    if ram >= 8:
+        return {
+            'name': 'phi3:mini',
+            'size': '~2.3 GB',
+            'why': '3.8B parameter model that runs well on 8 GB systems without a GPU.',
+        }
+    return {
+        'name': 'qwen2.5:0.5b',
+        'size': '~400 MB',
+        'why': 'Tiny model that stays responsive on low-RAM machines. Upgrade later when you add RAM.',
+    }
+
+
+def _interpret_results(results, hardware):
+    """Compute letter-grade interpretation + model recommendation.
+
+    Returns a dict with ``overall_grade``, ``subsystems`` (cpu / memory /
+    disk / ai / response), ``recommended_model``, and a one-line
+    ``summary`` that the UI can render verbatim. The raw numeric scores
+    on ``results`` are left untouched so power users can still see them.
+    """
+    # Re-normalise each subsystem on the same curves used in the NOMAD
+    # Score calculation so the letter grades line up with the headline.
+    def _norm(val, ref):
+        if not val or val <= 0:
+            return 0.0
+        return min(100.0, math.log(val / ref + 1) / math.log(2) * 100.0)
+
+    cpu_n = _norm(results.get('cpu_score', 0), 500000)
+    mem_n = _norm(results.get('memory_score', 0), 500)
+    dr_n = _norm(results.get('disk_read_score', 0), 500)
+    dw_n = _norm(results.get('disk_write_score', 0), 300)
+    disk_n = (dr_n + dw_n) / 2
+    ai_n = _norm(results.get('ai_tps', 0), 10)
+    ttft = results.get('ai_ttft', 0) or 0
+    ttft_n = max(0.0, 100.0 - ttft / 50.0) if ttft > 0 else 0.0
+
+    overall = results.get('nomad_score', 0) or 0
+    subsystems = {
+        'cpu': _score_to_letter(cpu_n),
+        'memory': _score_to_letter(mem_n),
+        'disk': _score_to_letter(disk_n),
+        'ai': _score_to_letter(ai_n) if ai_n > 0 else '—',
+        'response': _score_to_letter(ttft_n) if ttft > 0 else '—',
+    }
+
+    ram_gb = (hardware or {}).get('ram_gb', 0)
+    gpu_name = (hardware or {}).get('gpu', '')
+    recommended = _recommend_model(ram_gb, results.get('ai_tps', 0), gpu_name)
+
+    overall_letter = _score_to_letter(overall)
+    if overall >= 75:
+        summary = f'Solid system health ({overall_letter}). This machine can comfortably run NOMAD and mid-size AI models.'
+    elif overall >= 60:
+        summary = f'Workable system health ({overall_letter}). NOMAD will run, but pick a smaller AI model to stay responsive.'
+    elif overall >= 40:
+        summary = f'Constrained system health ({overall_letter}). Prefer the smallest AI model and expect slower responses.'
+    else:
+        summary = f'Under-resourced system ({overall_letter}). NOMAD runs but AI features will feel sluggish.'
+
+    return {
+        'overall_grade': overall_letter,
+        'overall_score': round(overall, 1),
+        'subsystems': subsystems,
+        'recommended_model': recommended,
+        'summary': summary,
+    }
+
+
 @benchmark_bp.route('/api/benchmark/run', methods=['POST'])
 def api_benchmark_run():
     data = request.get_json() or {}
@@ -178,6 +300,14 @@ def api_benchmark_run():
                 ttft_n * 0.10 + dr_n * 0.10 + dw_n * 0.10
             )
             results['nomad_score'] = round(nomad_score, 1)
+
+            # Non-technical interpretation: letter grades + model recommendation
+            # are attached to the results dict so the frontend can render a
+            # "System Health Check" summary without re-computing anything.
+            try:
+                results['interpretation'] = _interpret_results(results, hw)
+            except Exception as _interp_exc:
+                log.debug('Benchmark interpretation failed: %s', _interp_exc)
 
             # Save to DB
             with db_session() as db:

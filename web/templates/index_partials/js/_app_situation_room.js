@@ -3063,10 +3063,13 @@ function _showSitroomSkeletons() {
   bodies.forEach(el => {
     // Only skeletonise panels that currently show either no data or a
     // "click Refresh Feeds" empty state — don't blank out cards that
-    // already have fresh content from a previous run.
+    // already have fresh content from a previous run. The previous
+    // `|| el.dataset.sitroomSkeleton === '1'` clause re-skeletonized
+    // every card we'd EVER skeletonized, so a second Refresh click
+    // wiped the real content that had replaced the first skeleton.
     const txt = (el.textContent || '').trim();
     const isEmpty = !txt || /click refresh|no data|no cached|loading/i.test(txt);
-    if (isEmpty || el.dataset.sitroomSkeleton === '1') {
+    if (isEmpty) {
       el.dataset.sitroomSkeleton = '1';
       el.innerHTML = skeletonHtml;
     }

@@ -162,6 +162,16 @@ def api_benchmark_run():
     data = request.get_json() or {}
     mode = data.get('mode', 'full')  # full, system, ai
 
+    # Guard against concurrent runs: two CPU/disk/memory benchmarks in
+    # parallel corrupt each other's measurements and race on the shared
+    # `_benchmark_state` dict + the benchmarks table insert. The frontend
+    # already disables the run button, but direct API calls or stale
+    # clients can still hit this endpoint repeatedly.
+    global _benchmark_state
+    with _benchmark_lock:
+        if _benchmark_state.get('status') == 'running':
+            return jsonify({'error': 'Benchmark already running', 'status': 'running'}), 409
+
     def do_benchmark():
         import psutil
         global _benchmark_state

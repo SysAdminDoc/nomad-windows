@@ -43,6 +43,238 @@ def _safe_response_json(response, fallback=None):
     return _clone_json_fallback(fallback)
 
 
+# ─── Cross-module Preparedness Dashboard Snapshot ────────────────────
+#
+# Returns a single operational snapshot across inventory, medical, power,
+# garden, contacts, tasks, incidents, and alerts so the Preparedness tab
+# (or Home, or any embedded widget) can render a "daily standup" view
+# without tab-hopping. Every section is wrapped in try/except so a
+# missing table on a fresh install or partial migration never takes down
+# the whole response — the section just returns `None` with an
+# ``error`` hint.
+
+def _safe_count(db, sql, params=()):
+    try:
+        row = db.execute(sql, params).fetchone()
+        return row[0] if row else 0
+    except Exception as exc:
+        log.debug('dashboard safe_count failed: %s (%s)', sql, exc)
+        return 0
+
+
+@preparedness_bp.route('/api/preparedness/dashboard')
+def api_preparedness_dashboard():
+    """Aggregated cross-module snapshot of field readiness.
+
+    Shape::
+
+        {
+          "generated_at": "2026-04-11T10:00:00Z",
+          "inventory": {"total": 0, "low_stock": 0, "expiring_30d": 0,
+                        "categories": {"food": 12, ...}},
+          "medical":   {"patients": 0, "with_allergies": 0, "expiring_meds": 0},
+          "power":     {"devices": 0, "latest_soc_pct": null},
+          "garden":    {"plots": 0, "active_plantings": 0},
+          "contacts":  {"total": 0, "with_callsign": 0, "with_skills": 0},
+          "tasks":     {"total": 0, "overdue": 0, "due_today": 0},
+          "incidents": {"total": 0, "last_24h": 0, "open_critical": 0},
+          "alerts":    {"active": 0, "critical": 0},
+          "readiness_hint": "B" | "needs-attention"
+        }
+
+    Callers on Home and the Preparedness Overview can render one of the
+    listed sections as a card without issuing seven separate fetches.
+    """
+    today = datetime.now().strftime('%Y-%m-%d')
+    soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+    payload = {
+        'generated_at': datetime.now().isoformat(timespec='seconds') + 'Z',
+    }
+
+    with db_session() as db:
+        # Inventory
+        try:
+            total = _safe_count(db, 'SELECT COUNT(*) FROM inventory')
+            low = _safe_count(
+                db,
+                'SELECT COUNT(*) FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0',
+            )
+            expiring = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM inventory WHERE expiration != '' AND expiration <= ?",
+                (soon,),
+            )
+            cats = {}
+            for r in db.execute(
+                'SELECT category, COUNT(*) AS c FROM inventory GROUP BY category ORDER BY c DESC LIMIT 20'
+            ).fetchall():
+                cats[r['category'] or 'uncategorized'] = r['c']
+            payload['inventory'] = {
+                'total': total,
+                'low_stock': low,
+                'expiring_30d': expiring,
+                'categories': cats,
+            }
+        except Exception as exc:
+            log.debug('dashboard inventory section failed: %s', exc)
+            payload['inventory'] = {'error': 'unavailable'}
+
+        # Medical
+        try:
+            patients = _safe_count(db, 'SELECT COUNT(*) FROM patients')
+            with_allergies = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM patients WHERE allergies IS NOT NULL "
+                "AND allergies != '' AND allergies != '[]'",
+            )
+            expiring_meds = 0
+            try:
+                expiring_meds = _safe_count(
+                    db,
+                    "SELECT COUNT(*) FROM medical_supplies WHERE expiration != '' AND expiration <= ?",
+                    (soon,),
+                )
+            except Exception:
+                pass
+            payload['medical'] = {
+                'patients': patients,
+                'with_allergies': with_allergies,
+                'expiring_meds': expiring_meds,
+            }
+        except Exception as exc:
+            log.debug('dashboard medical section failed: %s', exc)
+            payload['medical'] = {'error': 'unavailable'}
+
+        # Power
+        try:
+            devices = _safe_count(db, 'SELECT COUNT(*) FROM power_devices')
+            latest_soc = None
+            try:
+                row = db.execute(
+                    'SELECT soc_pct FROM power_log ORDER BY created_at DESC LIMIT 1'
+                ).fetchone()
+                if row and row['soc_pct'] is not None:
+                    latest_soc = row['soc_pct']
+            except Exception:
+                pass
+            payload['power'] = {
+                'devices': devices,
+                'latest_soc_pct': latest_soc,
+            }
+        except Exception as exc:
+            log.debug('dashboard power section failed: %s', exc)
+            payload['power'] = {'error': 'unavailable'}
+
+        # Garden
+        try:
+            plots = _safe_count(db, 'SELECT COUNT(*) FROM garden_plots')
+            active = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM garden_plots WHERE status = 'active' OR status = 'planted'",
+            )
+            payload['garden'] = {
+                'plots': plots,
+                'active_plantings': active,
+            }
+        except Exception as exc:
+            log.debug('dashboard garden section failed: %s', exc)
+            payload['garden'] = {'error': 'unavailable'}
+
+        # Contacts
+        try:
+            total_c = _safe_count(db, 'SELECT COUNT(*) FROM contacts')
+            with_cs = _safe_count(
+                db, "SELECT COUNT(*) FROM contacts WHERE callsign IS NOT NULL AND callsign != ''",
+            )
+            with_skills = _safe_count(
+                db, "SELECT COUNT(*) FROM contacts WHERE skills IS NOT NULL AND skills != ''",
+            )
+            payload['contacts'] = {
+                'total': total_c,
+                'with_callsign': with_cs,
+                'with_skills': with_skills,
+            }
+        except Exception as exc:
+            log.debug('dashboard contacts section failed: %s', exc)
+            payload['contacts'] = {'error': 'unavailable'}
+
+        # Tasks (scheduled)
+        try:
+            total_t = _safe_count(db, 'SELECT COUNT(*) FROM scheduled_tasks')
+            overdue = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM scheduled_tasks WHERE next_due IS NOT NULL "
+                "AND next_due < ? AND (completed IS NULL OR completed = 0)",
+                (today,),
+            )
+            due_today = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM scheduled_tasks WHERE next_due = ? "
+                "AND (completed IS NULL OR completed = 0)",
+                (today,),
+            )
+            payload['tasks'] = {
+                'total': total_t,
+                'overdue': overdue,
+                'due_today': due_today,
+            }
+        except Exception as exc:
+            log.debug('dashboard tasks section failed: %s', exc)
+            payload['tasks'] = {'error': 'unavailable'}
+
+        # Incidents
+        try:
+            total_i = _safe_count(db, 'SELECT COUNT(*) FROM incidents')
+            last_24h = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM incidents WHERE created_at >= datetime('now', '-24 hours')",
+            )
+            open_critical = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM incidents WHERE severity = 'critical'",
+            )
+            payload['incidents'] = {
+                'total': total_i,
+                'last_24h': last_24h,
+                'open_critical': open_critical,
+            }
+        except Exception as exc:
+            log.debug('dashboard incidents section failed: %s', exc)
+            payload['incidents'] = {'error': 'unavailable'}
+
+        # Alerts (active proactive alerts stored by the alert engine)
+        try:
+            active_alerts = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM alerts WHERE dismissed IS NULL OR dismissed = 0",
+            )
+            critical_alerts = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM alerts WHERE severity = 'critical' "
+                "AND (dismissed IS NULL OR dismissed = 0)",
+            )
+            payload['alerts'] = {
+                'active': active_alerts,
+                'critical': critical_alerts,
+            }
+        except Exception as exc:
+            log.debug('dashboard alerts section failed: %s', exc)
+            payload['alerts'] = {'error': 'unavailable'}
+
+    # Coarse readiness hint: red flags raise 'needs-attention', otherwise
+    # we defer to the full readiness-score endpoint for the letter grade.
+    needs_attention = (
+        payload.get('inventory', {}).get('low_stock', 0) > 0
+        or payload.get('inventory', {}).get('expiring_30d', 0) > 0
+        or payload.get('tasks', {}).get('overdue', 0) > 0
+        or payload.get('alerts', {}).get('critical', 0) > 0
+        or payload.get('incidents', {}).get('open_critical', 0) > 0
+    )
+    payload['readiness_hint'] = 'needs-attention' if needs_attention else 'ok'
+
+    return jsonify(payload)
+
+
 # ─── Incident Log API ────────────────────────────────────────────────
 
 @preparedness_bp.route('/api/incidents')

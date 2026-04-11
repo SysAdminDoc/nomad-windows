@@ -66,30 +66,191 @@ def _pdf_setup():
     }
 
 
+# ─── Shared data fetchers ─────────────────────────────────────────
+#
+# Historically, every print route re-implemented its own contact query,
+# burn-rate query, low-stock query, etc. The originals used different
+# LIMITs (sometimes 5000, sometimes 10000), slightly different column
+# lists, and subtly different filters. Extracting the queries once
+# guarantees that "the operations binder's contact table" and "the
+# emergency sheet's contact table" see the same rows in the same order.
+
+def _fetch_contacts(db, limit=10000):
+    """All contacts ordered by name. One source of truth for every route."""
+    return db.execute(
+        'SELECT * FROM contacts ORDER BY name LIMIT ?',
+        (limit,),
+    ).fetchall()
+
+
+def _fetch_burn_summary(db, limit=5000):
+    """Compute min-days-left per category from inventory with daily_usage > 0.
+
+    Returns a ``dict[category] -> days`` where ``days`` is the smallest
+    (quantity / daily_usage) value in that category — the resource that
+    will run out first, which is the tactically useful number.
+    """
+    burn_rows = db.execute(
+        'SELECT category, name, quantity, unit, daily_usage FROM inventory '
+        'WHERE daily_usage > 0 ORDER BY category LIMIT ?',
+        (limit,),
+    ).fetchall()
+    burn = {}
+    for r in burn_rows:
+        cat = r['category']
+        days = round(r['quantity'] / r['daily_usage'], 1) if r['daily_usage'] > 0 else 999
+        if cat not in burn or days < burn[cat]:
+            burn[cat] = days
+    return burn
+
+
+def _fetch_low_stock(db, limit=5000):
+    """Inventory items currently at or below their min_quantity threshold."""
+    return db.execute(
+        'SELECT name, quantity, unit, category FROM inventory '
+        'WHERE quantity <= min_quantity AND min_quantity > 0 LIMIT ?',
+        (limit,),
+    ).fetchall()
+
+
+def _fetch_expiring(db, within_days=30, limit=5000):
+    """Inventory items expiring within ``within_days`` days, oldest first."""
+    threshold = (datetime.now() + timedelta(days=within_days)).strftime('%Y-%m-%d')
+    return db.execute(
+        "SELECT name, expiration, category FROM inventory "
+        "WHERE expiration != '' AND expiration <= ? ORDER BY expiration LIMIT ?",
+        (threshold, limit),
+    ).fetchall()
+
+
+# ─── Shared HTML renderers ────────────────────────────────────────
+#
+# Each renderer returns a fragment of print-document HTML. They all use
+# the existing `.doc-*` CSS classes from `print_templates.py` so the
+# visual output is identical to the hand-rolled copies that used to
+# live inline in every route, they just aren't copy-pasted 9 times.
+
+def _render_empty(message):
+    """Consistent empty-state panel for a print section."""
+    return f'<div class="doc-empty">{_esc(message)}</div>'
+
+
+def _render_contacts_table(contacts, include_radio=True, empty_msg='No emergency contacts are available yet.'):
+    """Render a contacts list as a print table.
+
+    ``include_radio=True`` adds callsign / frequency / blood / rally columns
+    (used by the full emergency card). ``include_radio=False`` returns a
+    compact name + role + phone table for wallet cards and similar.
+    """
+    if not contacts:
+        return _render_empty(empty_msg)
+    if include_radio:
+        head = ('<thead><tr><th>Name</th><th>Role</th><th>Callsign</th>'
+                '<th>Phone</th><th>Freq</th><th>Blood</th><th>Rally Point</th></tr></thead>')
+        rows = []
+        for c in contacts:
+            rows.append(
+                f'<tr><td class="doc-strong">{_esc(c["name"])}</td>'
+                f'<td>{_esc(c["role"])}</td>'
+                f'<td>{_esc(c["callsign"]) or "-"}</td>'
+                f'<td>{_esc(c["phone"]) or "-"}</td>'
+                f'<td>{_esc(c["freq"]) or "-"}</td>'
+                f'<td>{_esc(c["blood_type"]) or "-"}</td>'
+                f'<td>{_esc(c["rally_point"]) or "-"}</td></tr>'
+            )
+    else:
+        head = '<thead><tr><th>Name</th><th>Callsign</th><th>Phone</th></tr></thead>'
+        rows = []
+        for c in contacts:
+            rows.append(
+                f'<tr><td class="doc-strong">{_esc(c["name"])}</td>'
+                f'<td>{_esc(c["callsign"] or "-")}</td>'
+                f'<td>{_esc(c["phone"] or "-")}</td></tr>'
+            )
+    return '<div class="doc-table-shell"><table>' + head + '<tbody>' + ''.join(rows) + '</tbody></table></div>'
+
+
+def _render_burn_table(burn, empty_msg='No burn-rate tracked inventory is available.'):
+    """Render the output of :func:`_fetch_burn_summary` as a print table.
+
+    Categories with fewer than 7 days left are flagged with the
+    ``doc-alert`` class so the printed copy can highlight them in red.
+    """
+    if not burn:
+        return _render_empty(empty_msg)
+    html = '<div class="doc-table-shell"><table><thead><tr><th>Resource</th><th>Days Left</th></tr></thead><tbody>'
+    for cat, days in sorted(burn.items()):
+        marker = ' class="doc-alert"' if days < 7 else ''
+        html += f'<tr><td class="doc-strong">{_esc(cat.upper())}</td><td{marker}>{days}</td></tr>'
+    html += '</tbody></table></div>'
+    return html
+
+
+def _render_low_stock_table(low, empty_msg='No low-stock alerts at the moment.'):
+    """Render a low-stock inventory list as a print table."""
+    if not low:
+        return _render_empty(empty_msg)
+    html = '<div class="doc-table-shell"><table><thead><tr><th>Item</th><th>Qty</th><th>Category</th></tr></thead><tbody>'
+    for r in low:
+        html += (
+            f'<tr><td class="doc-alert">{_esc(r["name"])}</td>'
+            f'<td>{r["quantity"]} {_esc(r["unit"])}</td>'
+            f'<td>{_esc(r["category"])}</td></tr>'
+        )
+    html += '</tbody></table></div>'
+    return html
+
+
+def _render_expiring_table(expiring, empty_msg='No items are expiring in the next 30 days.'):
+    """Render an expiring-items list as a print table."""
+    if not expiring:
+        return _render_empty(empty_msg)
+    html = '<div class="doc-table-shell"><table><thead><tr><th>Item</th><th>Expires</th><th>Category</th></tr></thead><tbody>'
+    for r in expiring:
+        html += (
+            f'<tr><td class="doc-strong">{_esc(r["name"])}</td>'
+            f'<td>{_esc(r["expiration"])}</td>'
+            f'<td>{_esc(r["category"])}</td></tr>'
+        )
+    html += '</tbody></table></div>'
+    return html
+
+
+#: Shared standard-frequency reference used by the freq card, the
+#: emergency card, the operations binder, and the wallet cards. Kept
+#: as a module constant so every print document quotes the same text.
+STANDARD_FREQUENCIES = [
+    ('FRS Rally', 'Ch 1 / 462.5625 MHz'),
+    ('FRS Emergency', 'Ch 3 / 462.6125 MHz'),
+    ('GMRS Emergency', 'Ch 20 / 462.6750 MHz'),
+    ('CB Emergency', 'Ch 9 / 27.065 MHz'),
+    ('CB Highway', 'Ch 19 / 27.185 MHz'),
+    ('2m Calling', '146.520 MHz'),
+    ('2m Emergency', '146.550 MHz'),
+    ('NOAA Weather', '162.400 - 162.550 MHz'),
+]
+
+
+def _render_standard_frequencies_table():
+    """Render the shared STANDARD_FREQUENCIES constant as a print table."""
+    html = '<div class="doc-table-shell"><table><thead><tr><th>Use</th><th>Freq / Ch</th></tr></thead><tbody>'
+    for label, freq in STANDARD_FREQUENCIES:
+        html += f'<tr><td class="doc-strong">{_esc(label)}</td><td>{_esc(freq)}</td></tr>'
+    html += '</tbody></table></div>'
+    return html
+
+
 # ─── Preparedness Print ───────────────────────────────────────────
 
 @print_routes_bp.route('/api/preparedness/print')
 def api_preparedness_print():
     """Generate printable emergency summary page."""
     with db_session() as db:
-        contacts = db.execute('SELECT * FROM contacts ORDER BY name LIMIT 10000').fetchall()
+        contacts = _fetch_contacts(db)
         settings = {r['key']: r['value'] for r in db.execute('SELECT key, value FROM settings').fetchall()}
-
-        # Burn rate summary
-        burn_rows = db.execute('SELECT category, name, quantity, unit, daily_usage FROM inventory WHERE daily_usage > 0 ORDER BY category LIMIT 5000').fetchall()
-        burn = {}
-        for r in burn_rows:
-            cat = r['category']
-            days = round(r['quantity'] / r['daily_usage'], 1) if r['daily_usage'] > 0 else 999
-            if cat not in burn or days < burn[cat]:
-                burn[cat] = days
-
-        # Low stock items
-        low = db.execute('SELECT name, quantity, unit, category FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0 LIMIT 5000').fetchall()
-
-        # Expiring items
-        soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
-        expiring = db.execute("SELECT name, expiration, category FROM inventory WHERE expiration != '' AND expiration <= ? ORDER BY expiration LIMIT 5000", (soon,)).fetchall()
+        burn = _fetch_burn_summary(db)
+        low = _fetch_low_stock(db)
+        expiring = _fetch_expiring(db, within_days=30)
 
     # Situation board
     sit = _safe_json_value(settings.get('sit_board'), {})
@@ -111,42 +272,11 @@ def api_preparedness_print():
             )
         sit_html += '</div>'
 
-    contacts_html = '<div class="doc-empty">No emergency contacts are available yet.</div>'
-    if contacts:
-        contacts_html = '<div class="doc-table-shell"><table><thead><tr><th>Name</th><th>Role</th><th>Callsign</th><th>Phone</th><th>Freq</th><th>Blood</th><th>Rally Point</th></tr></thead><tbody>'
-        for c in contacts:
-            contacts_html += (
-                f'<tr><td class="doc-strong">{_esc(c["name"])}</td><td>{_esc(c["role"])}</td>'
-                f'<td>{_esc(c["callsign"]) or "-"}</td><td>{_esc(c["phone"]) or "-"}</td>'
-                f'<td>{_esc(c["freq"]) or "-"}</td><td>{_esc(c["blood_type"]) or "-"}</td>'
-                f'<td>{_esc(c["rally_point"]) or "-"}</td></tr>'
-            )
-        contacts_html += '</tbody></table></div>'
-
-    supply_html = '<div class="doc-empty">No burn-rate tracked inventory is available.</div>'
-    if burn:
-        supply_html = '<div class="doc-table-shell"><table><thead><tr><th>Resource</th><th>Days Left</th></tr></thead><tbody>'
-        for cat, days in sorted(burn.items()):
-            marker = ' class="doc-alert"' if days < 7 else ''
-            supply_html += f'<tr><td class="doc-strong">{_esc(cat.upper())}</td><td{marker}>{days}</td></tr>'
-        supply_html += '</tbody></table></div>'
-
-    low_html = '<div class="doc-empty">No low-stock alerts at the moment.</div>'
-    if low:
-        low_html = '<div class="doc-table-shell"><table><thead><tr><th>Item</th><th>Qty</th><th>Category</th></tr></thead><tbody>'
-        for r in low:
-            low_html += (
-                f'<tr><td class="doc-alert">{_esc(r["name"])}</td><td>{r["quantity"]} {_esc(r["unit"])}</td>'
-                f'<td>{_esc(r["category"])}</td></tr>'
-            )
-        low_html += '</tbody></table></div>'
-
-    expiring_html = '<div class="doc-empty">No items are expiring in the next 30 days.</div>'
-    if expiring:
-        expiring_html = '<div class="doc-table-shell"><table><thead><tr><th>Item</th><th>Expires</th><th>Category</th></tr></thead><tbody>'
-        for r in expiring:
-            expiring_html += f'<tr><td class="doc-strong">{_esc(r["name"])}</td><td>{_esc(r["expiration"])}</td><td>{_esc(r["category"])}</td></tr>'
-        expiring_html += '</tbody></table></div>'
+    contacts_html = _render_contacts_table(contacts, include_radio=True)
+    supply_html = _render_burn_table(burn)
+    low_html = _render_low_stock_table(low)
+    expiring_html = _render_expiring_table(expiring)
+    freq_html = _render_standard_frequencies_table()
 
     body = f'''<section class="doc-section">
   <h2 class="doc-section-title">Situation Status</h2>
@@ -172,16 +302,7 @@ def api_preparedness_print():
     </div>
     <div class="doc-panel">
       <h2 class="doc-section-title">Key Frequencies</h2>
-      <div class="doc-table-shell"><table><thead><tr><th>Use</th><th>Freq / Ch</th></tr></thead><tbody>
-        <tr><td class="doc-strong">FRS Rally</td><td>Ch 1 / 462.5625 MHz</td></tr>
-        <tr><td class="doc-strong">FRS Emergency</td><td>Ch 3 / 462.6125 MHz</td></tr>
-        <tr><td class="doc-strong">GMRS Emergency</td><td>Ch 20 / 462.6750 MHz</td></tr>
-        <tr><td class="doc-strong">CB Emergency</td><td>Ch 9 / 27.065 MHz</td></tr>
-        <tr><td class="doc-strong">CB Highway</td><td>Ch 19 / 27.185 MHz</td></tr>
-        <tr><td class="doc-strong">2m Calling</td><td>146.520 MHz</td></tr>
-        <tr><td class="doc-strong">2m Emergency</td><td>146.550 MHz</td></tr>
-        <tr><td class="doc-strong">NOAA Weather</td><td>162.400 - 162.550 MHz</td></tr>
-      </tbody></table></div>
+      {freq_html}
     </div>
   </div>
 </section>

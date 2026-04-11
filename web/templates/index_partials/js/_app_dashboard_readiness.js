@@ -95,8 +95,10 @@ async function loadGettingStarted() {
   // Hide if all steps complete
   if (data.pct >= 100 && window.NOMAD_FIRST_RUN_COMPLETE !== false) { panel.style.display = 'none'; return; }
   panel.style.display = '';
-  document.getElementById('gs-progress-text').textContent = `${data.completed}/${data.total} complete (${data.pct}%)`;
+  const progressTextEl = document.getElementById('gs-progress-text');
   const el = document.getElementById('gs-steps');
+  if (!progressTextEl || !el) return;
+  progressTextEl.textContent = `${data.completed}/${data.total} complete (${data.pct}%)`;
   el.innerHTML = data.steps.map((s, i) => {
     const borderColor = s.done ? 'var(--green)' : 'var(--border)';
     const attrs = s.done ? '' : ' role="button" tabindex="0" data-prep-action="gs-navigate" data-gs-step-index="' + i + '"';
@@ -844,7 +846,11 @@ async function deriveVaultKey(password, salt) {
 }
 
 async function unlockVault() {
-  const pw = document.getElementById('vault-pw').value;
+  const passwordInput = document.getElementById('vault-pw');
+  const lockedEl = document.getElementById('vault-locked');
+  const unlockedEl = document.getElementById('vault-unlocked');
+  if (!passwordInput || !lockedEl || !unlockedEl) return;
+  const pw = passwordInput.value;
   if (!pw) { toast('Enter a password', 'warning'); return; }
   try {
     // Verify password by trying to decrypt the verification entry if one exists
@@ -870,18 +876,22 @@ async function unlockVault() {
       const encrypted = await encryptVaultData('nomad-vault-v1');
       try { await apiPost('/api/vault', {title: '__vault_verify__', ...encrypted}); } catch(e) {}
     }
-    document.getElementById('vault-locked').style.display = 'none';
-    document.getElementById('vault-unlocked').style.display = 'block';
+    lockedEl.style.display = 'none';
+    unlockedEl.style.display = 'block';
     loadVaultList();
     toast('Vault unlocked', 'success');
   } catch(e) { toast('Failed to unlock: ' + e.message, 'error'); }
 }
 
 function lockVault() {
+  const passwordInput = document.getElementById('vault-pw');
+  const lockedEl = document.getElementById('vault-locked');
+  const unlockedEl = document.getElementById('vault-unlocked');
+  if (!passwordInput || !lockedEl || !unlockedEl) return;
   _vaultKey = null;
-  document.getElementById('vault-locked').style.display = 'block';
-  document.getElementById('vault-unlocked').style.display = 'none';
-  document.getElementById('vault-pw').value = '';
+  lockedEl.style.display = 'block';
+  unlockedEl.style.display = 'none';
+  passwordInput.value = '';
   toast('Vault locked');
 }
 
@@ -914,6 +924,7 @@ async function loadVaultList() {
     if (!Array.isArray(allEntries)) return;
     const entries = allEntries.filter(e => e.title !== '__vault_verify__');
     const el = document.getElementById('vault-list');
+    if (!el) return;
     if (!entries.length) { el.innerHTML = '<div class="utility-empty-state vault-empty-state">No entries yet. Click "+ New Entry" to add encrypted documents.</div>'; return; }
     el.innerHTML = entries.map(e => `
       <div class="prep-record-item vault-entry-row">
@@ -931,22 +942,35 @@ async function loadVaultList() {
 }
 
 function newVaultEntry() {
-  document.getElementById('vault-form').style.display = 'block';
-  document.getElementById('vault-title').value = '';
-  document.getElementById('vault-content').value = '';
-  document.getElementById('vault-edit-id').value = '';
+  const form = document.getElementById('vault-form');
+  const titleInput = document.getElementById('vault-title');
+  const contentInput = document.getElementById('vault-content');
+  const editIdInput = document.getElementById('vault-edit-id');
+  if (!form || !titleInput || !contentInput || !editIdInput) return;
+  form.style.display = 'block';
+  titleInput.value = '';
+  contentInput.value = '';
+  editIdInput.value = '';
 }
 
-function hideVaultForm() { document.getElementById('vault-form').style.display = 'none'; }
+function hideVaultForm() {
+  const form = document.getElementById('vault-form');
+  if (!form) return;
+  form.style.display = 'none';
+}
 
 async function saveVaultEntry() {
   if (!_vaultKey) { toast('Vault is locked', 'warning'); return; }
-  const title = document.getElementById('vault-title').value.trim();
-  const content = document.getElementById('vault-content').value;
+  const titleInput = document.getElementById('vault-title');
+  const contentInput = document.getElementById('vault-content');
+  const editIdInput = document.getElementById('vault-edit-id');
+  if (!titleInput || !contentInput || !editIdInput) return;
+  const title = titleInput.value.trim();
+  const content = contentInput.value;
   if (!title) { toast('Title required', 'warning'); return; }
   try {
     const encrypted = await encryptVaultData(content);
-    const editId = document.getElementById('vault-edit-id').value;
+    const editId = editIdInput.value;
     if (editId) {
       await apiPut('/api/vault/' + editId, {title, ...encrypted});
     } else {
@@ -963,10 +987,15 @@ async function viewVaultEntry(id) {
   try {
     const e = await apiFetch(`/api/vault/${id}`);
     const decrypted = await decryptVaultData(e.encrypted_data, e.iv, e.salt);
-    document.getElementById('vault-form').style.display = 'block';
-    document.getElementById('vault-title').value = e.title;
-    document.getElementById('vault-content').value = decrypted;
-    document.getElementById('vault-edit-id').value = id;
+    const form = document.getElementById('vault-form');
+    const titleInput = document.getElementById('vault-title');
+    const contentInput = document.getElementById('vault-content');
+    const editIdInput = document.getElementById('vault-edit-id');
+    if (!form || !titleInput || !contentInput || !editIdInput) return;
+    form.style.display = 'block';
+    titleInput.value = e.title;
+    contentInput.value = decrypted;
+    editIdInput.value = id;
   } catch(err) { toast('Decryption failed — wrong password?', 'error'); }
 }
 
@@ -989,21 +1018,29 @@ function deleteVaultEntry(id, btn) {
 
 /* ─── Weather Journal ─── */
 async function logWeather() {
+  const pressureInput = document.getElementById('wx-pressure');
+  const tempInput = document.getElementById('wx-temp');
+  const windDirInput = document.getElementById('wx-wind-dir');
+  const windSpeedInput = document.getElementById('wx-wind-spd');
+  const cloudsInput = document.getElementById('wx-clouds');
+  const precipInput = document.getElementById('wx-precip');
+  const notesInput = document.getElementById('wx-notes');
+  if (!pressureInput || !tempInput || !windDirInput || !windSpeedInput || !cloudsInput || !precipInput || !notesInput) return;
   const data = {
-    pressure_hpa: parseFloat(document.getElementById('wx-pressure').value) || null,
-    temp_f: parseFloat(document.getElementById('wx-temp').value) || null,
-    wind_dir: document.getElementById('wx-wind-dir').value,
-    wind_speed: document.getElementById('wx-wind-spd').value,
-    clouds: document.getElementById('wx-clouds').value,
-    precip: document.getElementById('wx-precip').value,
-    notes: document.getElementById('wx-notes').value.trim(),
+    pressure_hpa: parseFloat(pressureInput.value) || null,
+    temp_f: parseFloat(tempInput.value) || null,
+    wind_dir: windDirInput.value,
+    wind_speed: windSpeedInput.value,
+    clouds: cloudsInput.value,
+    precip: precipInput.value,
+    notes: notesInput.value.trim(),
   };
   if (!data.pressure_hpa && !data.temp_f && !data.notes) { toast('Enter at least temperature, pressure, or notes', 'warning'); return; }
   try {
     await apiPost('/api/weather', data);
     toast('Weather observation logged', 'success');
   } catch(e) { toast('Failed to log weather observation', 'error'); return; }
-  document.getElementById('wx-notes').value = '';
+  notesInput.value = '';
   loadWeather();
 }
 
@@ -1025,6 +1062,7 @@ async function loadWeather() {
     // Load history
     const history = await safeFetch('/api/weather?limit=20', {}, []);
     const histEl = document.getElementById('wx-history');
+    if (!histEl) return;
     if (!history.length) { histEl.innerHTML = '<div class="text-muted text-size-12">No observations yet.</div>'; return; }
     histEl.innerHTML = '<table class="freq-table"><thead><tr><th>Time</th><th>hPa</th><th>Temp</th><th>Wind</th><th>Sky</th><th>Notes</th></tr></thead><tbody>' +
       history.map(w => {
@@ -1160,37 +1198,50 @@ async function loadWeatherRules() {
 }
 
 async function createWeatherRule() {
-  const name = document.getElementById('wxr-name').value.trim();
+  const nameInput = document.getElementById('wxr-name');
+  const severityInput = document.getElementById('wxr-severity');
+  const titleInput = document.getElementById('wxr-title');
+  const messageInput = document.getElementById('wxr-message');
+  const taskNameInput = document.getElementById('wxr-taskname');
+  const taskCategoryInput = document.getElementById('wxr-taskcat');
+  const conditionInput = document.getElementById('wxr-condition');
+  const comparisonInput = document.getElementById('wxr-comparison');
+  const thresholdInput = document.getElementById('wxr-threshold');
+  const actionInput = document.getElementById('wxr-action');
+  const cooldownInput = document.getElementById('wxr-cooldown');
+  const form = document.getElementById('wx-rule-form');
+  if (!nameInput || !severityInput || !titleInput || !messageInput || !taskNameInput || !taskCategoryInput || !conditionInput || !comparisonInput || !thresholdInput || !actionInput || !cooldownInput || !form) return;
+  const name = nameInput.value.trim();
   if (!name) { toast('Rule name is required', 'warning'); return; }
   const action_data = {};
-  const sev = document.getElementById('wxr-severity').value;
+  const sev = severityInput.value;
   if (sev) action_data.severity = sev;
-  const title = document.getElementById('wxr-title').value.trim();
+  const title = titleInput.value.trim();
   if (title) action_data.title = title;
-  const msg = document.getElementById('wxr-message').value.trim();
+  const msg = messageInput.value.trim();
   if (msg) action_data.message = msg;
-  const taskName = document.getElementById('wxr-taskname').value.trim();
+  const taskName = taskNameInput.value.trim();
   if (taskName) action_data.task_name = taskName;
-  const taskCat = document.getElementById('wxr-taskcat').value.trim();
+  const taskCat = taskCategoryInput.value.trim();
   if (taskCat) action_data.task_category = taskCat;
   const body = {
     name,
-    condition_type: document.getElementById('wxr-condition').value,
-    comparison: document.getElementById('wxr-comparison').value,
-    threshold: parseFloat(document.getElementById('wxr-threshold').value) || 0,
-    action_type: document.getElementById('wxr-action').value,
+    condition_type: conditionInput.value,
+    comparison: comparisonInput.value,
+    threshold: parseFloat(thresholdInput.value) || 0,
+    action_type: actionInput.value,
     action_data,
-    cooldown_minutes: parseInt(document.getElementById('wxr-cooldown').value) || 60,
+    cooldown_minutes: parseInt(cooldownInput.value) || 60,
   };
   try {
     await apiPost('/api/weather/action-rules', body);
     toast('Weather action rule created', 'success');
-    document.getElementById('wx-rule-form').style.display = 'none';
-    document.getElementById('wxr-name').value = '';
-    document.getElementById('wxr-threshold').value = '';
-    document.getElementById('wxr-title').value = '';
-    document.getElementById('wxr-message').value = '';
-    document.getElementById('wxr-taskname').value = '';
+    form.style.display = 'none';
+    nameInput.value = '';
+    thresholdInput.value = '';
+    titleInput.value = '';
+    messageInput.value = '';
+    taskNameInput.value = '';
     loadWeatherRules();
   } catch(e) {
     toast(e.data?.error || 'Failed to create rule', 'error');
@@ -1237,15 +1288,20 @@ function loadSignalSchedule() {
 }
 
 function addSignalSchedule() {
-  const freq = document.getElementById('sig-freq').value.trim();
-  const time = document.getElementById('sig-time').value;
-  const interval = parseInt(document.getElementById('sig-interval').value);
-  const purpose = document.getElementById('sig-purpose').value.trim();
+  const freqInput = document.getElementById('sig-freq');
+  const timeInput = document.getElementById('sig-time');
+  const intervalInput = document.getElementById('sig-interval');
+  const purposeInput = document.getElementById('sig-purpose');
+  if (!freqInput || !timeInput || !intervalInput || !purposeInput) return;
+  const freq = freqInput.value.trim();
+  const time = timeInput.value;
+  const interval = parseInt(intervalInput.value);
+  const purpose = purposeInput.value.trim();
   if (!freq || !time) { toast('Frequency and time required', 'warning'); return; }
   _signalSchedule.push({freq, time, interval, purpose, id: Date.now()});
   localStorage.setItem('nomad-signal-schedule', JSON.stringify(_signalSchedule));
-  document.getElementById('sig-freq').value = '';
-  document.getElementById('sig-purpose').value = '';
+  freqInput.value = '';
+  purposeInput.value = '';
   renderSignalSchedule();
   toast('Signal schedule added', 'success');
 }
@@ -1291,7 +1347,7 @@ function renderSignalSchedule() {
 /* ─── CSV Import ─── */
 async function importInvCSV() {
   const input = document.getElementById('inv-import-file');
-  if (!input.files.length) return;
+  if (!input || !input.files.length) return;
   const formData = new FormData();
   formData.append('file', input.files[0]);
   try {
@@ -1304,7 +1360,7 @@ async function importInvCSV() {
 
 async function importContactsCSV() {
   const input = document.getElementById('ct-import-file');
-  if (!input.files.length) return;
+  if (!input || !input.files.length) return;
   const formData = new FormData();
   formData.append('file', input.files[0]);
   try {
@@ -1327,12 +1383,12 @@ function startCompass() {
   if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
     DeviceOrientationEvent.requestPermission().then(state => {
       if (state === 'granted') _attachCompassListener();
-      else { errEl.textContent = 'Permission denied'; }
-    }).catch(() => { errEl.textContent = 'Permission request failed'; });
+      else if (errEl) { errEl.textContent = 'Permission denied'; }
+    }).catch(() => { if (errEl) errEl.textContent = 'Permission request failed'; });
   } else if ('DeviceOrientationEvent' in window) {
     _attachCompassListener();
   } else {
-    errEl.textContent = 'Device orientation not supported on this device';
+    if (errEl) errEl.textContent = 'Device orientation not supported on this device';
   }
 }
 let _compassHandler = null;
@@ -1378,14 +1434,17 @@ function _attachCompassListener() {
 async function scanMeshtastic() {
   if (!('serial' in navigator)) { toast('Web Serial not supported. Use Chrome or Edge.', 'error'); return; }
   try {
+    const statusEl = document.getElementById('mesh-status');
+    const messageInput = document.getElementById('mesh-msg');
+    const sendBtn = document.getElementById('mesh-send-btn');
+    if (!statusEl || !messageInput || !sendBtn) return;
     _meshPort = await navigator.serial.requestPort();
     await _meshPort.open({baudRate: 115200});
-    const statusEl = document.getElementById('mesh-status');
     statusEl.textContent = 'Device connected';
     statusEl.classList.add('tools-status-pill-live');
     statusEl.classList.remove('tools-status-pill-alert');
-    document.getElementById('mesh-msg').disabled = false;
-    document.getElementById('mesh-send-btn').disabled = false;
+    messageInput.disabled = false;
+    sendBtn.disabled = false;
     appendMeshLogEntry('Radio connected. Listening for traffic.', 'system');
     toast('Meshtastic device connected', 'success');
     readMeshSerial();
@@ -1452,12 +1511,14 @@ async function readMeshSerial() {
 
 async function sendMeshMsg() {
   if (!_meshPort || !_meshPort.writable) return;
-  const msg = document.getElementById('mesh-msg').value.trim();
+  const messageInput = document.getElementById('mesh-msg');
+  if (!messageInput) return;
+  const msg = messageInput.value.trim();
   if (!msg) return;
   const writer = _meshPort.writable.getWriter();
   await writer.write(new TextEncoder().encode(msg + '\n'));
   writer.releaseLock();
-  document.getElementById('mesh-msg').value = '';
+  messageInput.value = '';
   appendMeshLogEntry(msg, 'outbound');
 }
 
@@ -1815,9 +1876,11 @@ async function finishGardenDraw() {
 let _barcodeStream = null;
 async function startBarcodeScanner() {
   try {
+    const video = document.getElementById('barcode-video');
+    const resultEl = document.getElementById('barcode-result');
+    if (!video || !resultEl) return;
     const stream = await navigator.mediaDevices.getUserMedia({video: {facingMode: 'environment'}});
     _barcodeStream = stream;
-    const video = document.getElementById('barcode-video');
     video.srcObject = stream;
     video.style.display = 'block';
     if ('BarcodeDetector' in window) {
@@ -1828,7 +1891,7 @@ async function startBarcodeScanner() {
           const barcodes = await detector.detect(video);
           if (barcodes.length > 0) {
             const code = barcodes[0].rawValue;
-            document.getElementById('barcode-result').innerHTML = `<div class="scan-result-title">Scanned: ${escapeHtml(code)}</div><div class="scan-results-actions"><button type="button" class="btn btn-sm btn-primary" data-shell-action="barcode-to-inventory" data-barcode-code="${escapeAttr(code)}">Add to Inventory</button></div>`;
+            resultEl.innerHTML = `<div class="scan-result-title">Scanned: ${escapeHtml(code)}</div><div class="scan-results-actions"><button type="button" class="btn btn-sm btn-primary" data-shell-action="barcode-to-inventory" data-barcode-code="${escapeAttr(code)}">Add to Inventory</button></div>`;
             toast(`Barcode: ${code}`, 'success');
             return;
           }
@@ -1837,19 +1900,27 @@ async function startBarcodeScanner() {
       };
       requestAnimationFrame(scanLoop);
     } else {
-      document.getElementById('barcode-result').innerHTML = '<div class="scan-status-warning">BarcodeDetector API not available. Use Chrome 83+ or enable chrome://flags/#enable-experimental-web-platform-features</div>';
+      resultEl.innerHTML = '<div class="scan-status-warning">BarcodeDetector API not available. Use Chrome 83+ or enable chrome://flags/#enable-experimental-web-platform-features</div>';
     }
   } catch(e) { toast('Camera access denied', 'error'); }
 }
 
 function stopBarcodeScanner() {
   if (_barcodeStream) { _barcodeStream.getTracks().forEach(t => t.stop()); _barcodeStream = null; }
-  document.getElementById('barcode-video').style.display = 'none';
+  const video = document.getElementById('barcode-video');
+  if (!video) return;
+  video.style.display = 'none';
 }
 
 function barcodeToInventory(code) {
   stopBarcodeScanner();
   document.querySelector('[data-tab="preparedness"]')?.click();
-  setTimeout(() => { switchPrepSub('inventory'); showInvForm(); document.getElementById('inv-barcode').value = code; }, 300);
+  setTimeout(() => {
+    switchPrepSub('inventory');
+    showInvForm();
+    const barcodeInput = document.getElementById('inv-barcode');
+    if (!barcodeInput) return;
+    barcodeInput.value = code;
+  }, 300);
 }
 

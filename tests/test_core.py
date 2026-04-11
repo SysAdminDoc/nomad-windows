@@ -137,7 +137,7 @@ class TestErrorHandler:
         assert 'id="home-continue-panel" class="home-continue-panel home-surface-panel"' in html
         assert 'Pinned' in html
         assert 'Recent' in html
-        assert 'id="command-palette-overlay" class="command-palette-overlay" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" hidden' in html
+        assert 'id="command-palette-overlay" class="command-palette-overlay" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" aria-hidden="true" hidden' in html
         assert 'id="workspace-context-bar" class="workspace-context-bar" hidden' in html
         assert 'id="workspace-inspector"' not in html
         assert 'id="sidebar-context-hub"' in html
@@ -369,6 +369,10 @@ class TestErrorHandler:
         assert "_setPausableInterval(() => this.checkConnection(), 30000, 'offlineConnection')" in viptrack_text
         assert 'pauseWorkspaceActivity()' in viptrack_text
         assert 'onHidden()' in viptrack_text
+        assert 'const preserveSettingsOpen = !!(' in viptrack_text
+        assert 'const preserveBottomPanelsOpen = !!(' in viptrack_text
+        assert 'setSettingsPanelOpen(preserveSettingsOpen);' in viptrack_text
+        assert 'setBottomPanelsOpen(preserveBottomPanelsOpen);' in viptrack_text
         assert "const OFFLINE_ATLAS_STORAGE_KEY = 'nomad-offline-atlas-cache';" in viptrack_text
         assert "const OFFLINE_ATLAS_URL = '/nukemap/data/offline_atlas.json';" in viptrack_text
         assert 'onboardAtlasStatus' in viptrack_text
@@ -418,6 +422,13 @@ class TestErrorHandler:
         assert "NomadShellRuntime.startInterval('ai-chat.model-ready'" in services_ai_text
         assert "NomadShellRuntime.startInterval('ai-chat.pull-progress'" in services_ai_text
         assert "NomadShellRuntime.startInterval('library.zim-downloads'" in services_ai_text
+        assert "if (!bar || !fillEl || !detailEl || !pctEl) { stopPullProgressPolling(); return; }" in services_ai_text
+        assert "if (!el) return;" in services_ai_text
+        assert "const modelSelect = document.getElementById('model-select');" in services_ai_text
+        assert "if (!input || !modelSelect || !sendBtn || !stopBtn) return;" in services_ai_text
+        assert "const statsEl = document.getElementById('chat-stats');" in services_ai_text
+        assert "if (statsEl) statsEl.textContent =" in services_ai_text
+        assert "const regenBtn = document.getElementById('regen-btn');" in services_ai_text
 
         assert "NomadShellRuntime.startInterval('media.ytdlp-install'" in media_text
         assert "NomadShellRuntime.startInterval('media.download-progress'" in media_text
@@ -465,6 +476,13 @@ class TestErrorHandler:
         assert "apiPost('/api/settings/wizard-complete')" in workspaces_text
         assert "setShellVisibility(document.getElementById('wiz-mini-banner'), true);" in workspaces_text
         assert "setShellVisibility(document.getElementById('wiz-mini-banner'), false);" in workspaces_text
+        assert "const TOUR_SESSION_KEY = 'nomad-guided-tour-state';" in workspaces_text
+        assert "const TOUR_FOCUS_KEY = 'nomad-guided-tour-focus';" in workspaces_text
+        assert "_writeTourSession(_tourStep);" in workspaces_text
+        assert "const activeTab = window.NOMAD_ACTIVE_TAB || getWorkspacePageTab();" in workspaces_text
+        assert "openWorkspaceRouteAware(step.tab)" in workspaces_text
+        assert "_queueTourFocusRestore('services');" in workspaces_text
+        assert 'function restoreGuidedTourIfNeeded() {' in workspaces_text
         assert "fetch('/api/settings', {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({tour_complete:'1'})});" not in workspaces_text
 
     def test_shared_shell_runtime_skips_route_specific_ui_when_missing(self):
@@ -526,6 +544,21 @@ class TestErrorHandler:
         assert "await apiPut(`/api/garden/plots/${_gardenPlotEditId}`, {boundary_geojson: geojson, lng: center[0], lat: center[1]});" in readiness_text
         assert "const r = await apiUpload('/api/inventory/import-csv', formData);" in readiness_text
         assert "const r = await apiUpload('/api/contacts/import-csv', formData);" in readiness_text
+        assert "if (!progressTextEl || !el) return;" in readiness_text
+        assert "if (!passwordInput || !lockedEl || !unlockedEl) return;" in readiness_text
+        assert "if (!el) return;" in readiness_text
+        assert "if (!form || !titleInput || !contentInput || !editIdInput) return;" in readiness_text
+        assert "if (!titleInput || !contentInput || !editIdInput) return;" in readiness_text
+        assert "if (!pressureInput || !tempInput || !windDirInput || !windSpeedInput || !cloudsInput || !precipInput || !notesInput) return;" in readiness_text
+        assert "if (!histEl) return;" in readiness_text
+        assert "if (!nameInput || !severityInput || !titleInput || !messageInput || !taskNameInput || !taskCategoryInput || !conditionInput || !comparisonInput || !thresholdInput || !actionInput || !cooldownInput || !form) return;" in readiness_text
+        assert "if (!freqInput || !timeInput || !intervalInput || !purposeInput) return;" in readiness_text
+        assert "if (!input || !input.files.length) return;" in readiness_text
+        assert "const statusEl = document.getElementById('mesh-status');" in readiness_text
+        assert "if (!statusEl || !messageInput || !sendBtn) return;" in readiness_text
+        assert "if (!messageInput) return;" in readiness_text
+        assert "if (!video || !resultEl) return;" in readiness_text
+        assert "if (!barcodeInput) return;" in readiness_text
 
         assert "await apiPut('/api/settings', {[WORKSPACE_RESUME_SETTINGS_KEY]: JSON.stringify(state)});" in memory_text
         assert "const settings = await safeFetch('/api/settings', {}, null);" in memory_text
@@ -552,12 +585,27 @@ class TestErrorHandler:
         assert "const d = await safeFetch('/api/update-check', {}, null);" in init_text
         assert "if (id) await apiPut(`/api/skills/${id}`, body);" in init_text
         assert "else await apiPost('/api/skills', body);" in init_text
+        assert "if (!nameInput || !categoryInput || !proficiencyInput || !practicedInput || !notesInput || !editIdInput || !form) return;" in init_text
+        assert "if (!editIdInput || !form) return;" in init_text
+        assert "if (!editIdInput || !nameInput || !categoryInput || !proficiencyInput || !practicedInput || !notesInput) return;" in init_text
         assert "if (id) await apiPut(`/api/ammo/${id}`, body);" in init_text
         assert "else await apiPost('/api/ammo', body);" in init_text
+        assert "if (!caliberInput || !brandInput || !weightInput || !typeInput || !qtyInput || !locationInput || !notesInput || !editIdInput || !form) return;" in init_text
+        assert "if (!editIdInput || !caliberInput || !brandInput || !weightInput || !typeInput || !qtyInput || !locationInput || !notesInput) return;" in init_text
         assert "const data = await safeFetch('/api/community', {}, []);" in init_text
         assert "if (id) await apiPut(`/api/community/${id}`, body);" in init_text
         assert "else await apiPost('/api/community', body);" in init_text
+        assert "if (!nameInput || !distanceInput || !trustInput || !contactInput || !skillsInput || !equipmentInput || !notesInput || !editIdInput || !form) return;" in init_text
+        assert "if (!editIdInput || !nameInput || !distanceInput || !trustInput || !contactInput || !skillsInput || !equipmentInput || !notesInput) return;" in init_text
         assert "const d = await safeFetch('/api/radiation', {}, null);" in init_text
+        assert "if (!rateInput || !locationInput || !notesInput) return;" in init_text
+        assert "if (!panel || !tabBtn) return;" in init_text
+        assert "if (!toInput || !fromInput || !subjectInput || !dtInput || !incidentInput || !priorityInput || !messageInput || !replyByInput || !replyInput) return;" in init_text
+        assert "if (fields.some(field => !field)) return;" in init_text
+        assert "if (!timeInput || !fromInput || !toInput || !msgInput) return;" in init_text
+        assert "if (!incidentInput || !operatorInput || !stationInput) return;" in init_text
+        assert "if (!timeInput || !activityInput) return;" in init_text
+        assert "if (!incidentInput || !unitInput || !leaderInput || !periodInput) return;" in init_text
         assert "await apiDelete(`/api/comms/frequencies/${id}`);" in init_text
         assert "const data = await safeFetch('/api/inventory?category=Medical', {}, null);" in init_text
         assert "if (id) await apiPut(url, body);" in init_text
@@ -572,6 +620,18 @@ class TestErrorHandler:
         assert "await apiDelete(`/api/ai/memory/${id}`);" in init_text
         assert "await apiPut(`/api/medical/triage/${patientId}`, {triage_category: category});" in init_text
         assert "safeFetch('/api/system/portable-mode', {}, null).then" in init_text
+        assert "const hasNodes = ids => ids.every(id => document.getElementById(id));" in init_text
+        assert "const calculatorInitializers = [" in init_text
+        assert "{ label: 'Dead reckoning', fn: calcDeadReckoning, required: ['dr-lat', 'dr-lon', 'dr-result'] }" in init_text
+        assert "{ label: 'Vitals', fn: calcVitals, required: ['vs-hr', 'vs-sbp', 'vs-dbp', 'vs-rr', 'vs-temp', 'vs-spo2', 'vs-age', 'vs-result'] }" in init_text
+        assert "calculatorInitializers.forEach(safeInit);" in init_text
+        assert "if (!caliberSelect || !zeroInput || !windInput || !resultEl) return;" in init_text
+        assert "if (!brownsInput || !greensInput || !volumeInput || !resultEl) return;" in init_text
+        assert "if (!acresInput || !auInput || !paddocksInput || !seasonInput || !resultEl) return;" in init_text
+        assert "if (!methodInput || !lengthInput || !heightInput || !thicknessInput || !resultEl) return;" in init_text
+        assert "if (!rateInput || !shelterInput || !hoursInput || !resultEl) return;" in init_text
+        assert "if (!foodSelect || !poundsInput || !jarInput || !altitudeInput || !resultEl) return;" in init_text
+        assert "if (!languageSelect || !el) return;" in init_text
 
     def test_media_maps_runtime_uses_shared_api_helpers_for_interactive_actions(self):
         media_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_media_maps_sync.js').read_text(encoding='utf-8')
@@ -594,8 +654,12 @@ class TestErrorHandler:
     def test_ops_support_and_workspaces_use_guarded_helpers_for_shared_actions(self):
         ops_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_ops_support.js').read_text(encoding='utf-8')
         workspaces_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
+        profiles_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspace_profiles.js').read_text(encoding='utf-8')
+        inline_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_app_inline.js').read_text(encoding='utf-8')
 
         assert "await apiPost(`/api/notes/${currentNoteId}/pin`, {pinned:newPinned});" in ops_text
+        assert "const pinBtn = document.getElementById('note-pin-btn');" in ops_text
+        assert "if (!pinBtn) return;" in ops_text
         assert "await apiDelete(`/api/journal/${id}`);" in ops_text
         assert "await apiDelete(`/api/security/cameras/${id}`);" in ops_text
         assert "await apiDelete(`/api/power/devices/${id}`);" in ops_text
@@ -607,6 +671,49 @@ class TestErrorHandler:
         assert "_guideContext = await safeFetch('/api/guides/context', {}, null);" in ops_text
         assert "await apiPost(`/api/alerts/${id}/dismiss`, {});" in ops_text
         assert "const resp = await apiFetch('/api/export-config');" in ops_text
+        assert "if (!peopleInput || !daysInput || !activityInput || !resultEl) return;" in ops_text
+        assert "if (!peopleInput || !monthsInput || !resultEl) return;" in ops_text
+        assert "if (!wattsInput || !fuelInput || !hoursInput || !daysInput || !loadInput || !resultEl) return;" in ops_text
+        assert "if (!areaInput || !rainInput || !efficiencyInput || !peopleInput || !resultEl) return;" in ops_text
+        assert "if (!typeInput || !terrainInput || !heightInput || !resultEl) return;" in ops_text
+        assert "if (!weightInput || !unitInput || !ageInput || !resultEl) return;" in ops_text
+        assert "if (!dailyWhInput || !sunHoursInput || !batteryTypeInput || !autonomyInput || !resultEl) return;" in ops_text
+        assert "if (!bodyWeightInput || !resultEl) return;" in ops_text
+        assert "if (!enabledInput || !intervalInput || !keepInput || !encryptInput || !passwordInput) return;" in ops_text
+        assert "if (!input || !input.files || !input.files.length) return;" in ops_text
+        assert "if (!entryInput || !moodInput || !tagsInput) return;" in ops_text
+        assert "if (!nameInput || !urlInput || !typeInput || !locationInput) return;" in ops_text
+        assert "if (!form || !nameInput || !ageInput || !weightInput || !sexInput || !bloodInput || !allergiesInput || !medsInput || !conditionsInput || !notesInput || !editIdInput || !interactionResults) return;" in ops_text
+        assert "if (!nameInput || !ageInput || !weightInput || !sexInput || !bloodInput || !allergiesInput || !medsInput || !conditionsInput || !notesInput || !editIdInput) return;" in ops_text
+        assert "if (!el || !medsInput) return;" in ops_text
+        assert "if (!sel) return;" in ops_text
+        assert "if (!pSel || !ageInput || !weightInput) return;" in ops_text
+        assert "if (!drugSelect || !patientSelect || !ageInput || !weightInput || !el) return;" in ops_text
+        assert "if (!panel || !woundForm || !titleEl || !banner) return;" in ops_text
+        assert "if (!systolicInput || !diastolicInput || !pulseInput || !respInput || !tempInput || !spo2Input || !painInput || !gcsInput || !notesInput) return;" in ops_text
+        assert "if (!tbody) return;" in ops_text
+        assert "if (!locationInput || !typeInput || !severityInput || !descriptionInput || !treatmentInput || !photoInput) return;" in ops_text
+        assert "if (!intervalInput) return;" in ops_text
+        assert "if (!chatInput) return;" in ops_text
+        assert "if (!tagsInput) return;" in ops_text
+        assert "if (!messageInput || !severityInput) return;" in ops_text
+        assert "if (!thresholdInput || !intervalInput || !cooldownInput) return;" in ops_text
+        assert "if (!personInput || !directionInput || !locationInput || !methodInput || !notesInput) return;" in ops_text
+        assert "if (!typeInput || !nameInput) return;" in ops_text
+        assert "if (!voltageInput || !socInput || !solarInput || !solarWhInput || !loadInput || !loadWhInput || !generatorInput) return;" in ops_text
+        assert "if (!latInput || !lngInput) return;" in ops_text
+        assert "if (!latInput || !lngInput || !wattsInput || !countInput || !efficiencyInput || !el || !cloudIndicator) return;" in ops_text
+        assert "if (!cropInput || !methodInput || !qtyInput || !unitInput || !dateInput || !shelfInput) return;" in ops_text
+        assert "if (!el || !sel) return;" in ops_text
+        assert "if (!nameInput || !widthInput || !lengthInput || !sunInput) return;" in ops_text
+        assert "if (!speciesInput || !varietyInput || !quantityInput || !yearInput || !maturityInput || !seasonInput) return;" in ops_text
+        assert "if (!cropInput || !quantityInput || !unitInput || !plotInput) return;" in ops_text
+        assert "if (!speciesInput || !nameInput || !sexInput || !dobInput || !weightInput) return;" in ops_text
+        assert "const panel = document.getElementById(`security-${t}-panel`);" in ops_text
+        assert "const panel = document.getElementById(`power-${t}-panel`);" in ops_text
+        assert "const tabBtn = document.getElementById(`sec-tab-${t}`);" in ops_text
+        assert "const tabBtn = document.getElementById(`pwr-tab-${t}`);" in ops_text
+        assert "if (!panel || !tabBtn) return;" in ops_text
 
         assert "await _workspaceFetchOk('/api/maps/delete', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({filename})}, 'Failed to delete map');" in workspaces_text
         assert "await _workspaceFetchJson('/api/maps/download-region', {" in workspaces_text
@@ -618,6 +725,39 @@ class TestErrorHandler:
         assert "const d = await _workspaceFetchJson(`/api/kb/documents/${docId}/import-entities`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({})}, 'Import failed');" in workspaces_text
         assert "signal: AbortSignal.timeout(8000)," in workspaces_text
         assert "else { toast('Geocoding returned an invalid response', 'error'); }" in workspaces_text
+        assert "if (!panel) return;" in workspaces_text
+        assert "if (!list) return;" in workspaces_text
+        assert "if (!el || !recommendedEl) return;" in workspaces_text
+        assert "recommendedEl.innerHTML = rec.map(r => `" in workspaces_text
+        assert "if (!input) return;" in workspaces_text
+        assert "if (!toggle || !docsEl) return;" in workspaces_text
+        assert "if (!regionGrid || !filesEl) return;" in workspaces_text
+        assert "if (!titleInput || !contentInput || !tagsInput || !pinBtn) return;" in workspaces_text
+        assert "if (!dd || !list) return;" in workspaces_text
+        assert "if (!dropdown) return;" in workspaces_text
+        assert "if (!searchInput || !list) return;" in workspaces_text
+        assert "if (!runBtn || !progressEl || !resultsEl) return;" in workspaces_text
+        assert "if (!fillEl || !stageEl || !pctEl) return;" in workspaces_text
+        assert "if (!resultsEl) return;" in workspaces_text
+        assert "if (!aiNameInput) return;" in workspaces_text
+        assert "if (!gaugesEl || !systemInfoEl || !dataDirEl || !diskDevicesEl) return;" in workspaces_text
+        assert "if (!viewerEl || !managementEl || !toggleBtn) return;" in workspaces_text
+        assert "if (!measureBtn) return;" in workspaces_text
+        assert "if (!searchInput) return;" in workspaces_text
+        assert "if (!previewEl || !previewBtn) return;" in profiles_text
+        assert "if (!contentInput || !previewEl) return;" in profiles_text
+        assert "if (!builderTagInput) return;" in profiles_text
+        assert "if (!systemPresetSelect) return;" in profiles_text
+        assert "if (!customPromptInput || !systemPresetSelect) return;" in profiles_text
+        assert "_app_workspace_profiles.js" in inline_text
+        assert "if (!input || !input.files.length) return;" in workspaces_text
+        assert "if (!titleEl || !iframe || !overlay) return;" in workspaces_text
+        assert "if (!iframe || !titleEl || !overlay) return;" in workspaces_text
+        assert "if (!overlay || !iframe) return;" in workspaces_text
+        assert "if (!overallFillEl || !overallPctEl || !currentItemEl || !itemFillEl || !itemPctEl || !miniPctEl || !miniFillEl || !miniItemEl || !phaseLabelEl || !completedListEl) return;" in workspaces_text
+        assert "if (!lanUrlEl || !summaryEl || !errorSummaryEl) return;" in workspaces_text
+        assert "if (!tourOverlay) return;" in workspaces_text
+        assert "if (!contentEl || !stepNumEl || !nextBtn || !card) return;" in workspaces_text
 
     def test_services_ai_uses_shared_api_fetch_for_streaming_chat_paths(self):
         services_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
@@ -904,6 +1044,63 @@ class TestErrorHandler:
         assert "data, error = _require_json_body(request)" in preparedness_text
         assert "data, error = _require_json_body(request)" in supplies_text
         assert "data, error = _require_json_body(request)" in system_text
+
+    def test_customize_panel_layers_above_overlay_and_updates_accessibility_state(self):
+        shell_html = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_shell.html').read_text(encoding='utf-8')
+        support_js = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_ops_support.js').read_text(encoding='utf-8')
+        customize_css = (REPO_ROOT / 'web' / 'static' / 'css' / 'app' / '50_home_customize.css').read_text(encoding='utf-8')
+
+        assert 'id="customize-panel"' in shell_html
+        assert 'aria-hidden="true"' in shell_html
+        assert "z-index: 9600;" in customize_css
+        assert "z-index: 9601;" in customize_css
+        assert "pointer-events: none;" in customize_css
+        assert "overlay.setAttribute('aria-hidden', 'false');" in support_js
+        assert "overlay.setAttribute('aria-hidden', 'true');" in support_js
+        assert "panel.setAttribute('aria-hidden', 'false');" in support_js
+        assert "panel.setAttribute('aria-hidden', 'true');" in support_js
+
+    def test_shell_dialog_surfaces_share_hidden_state_and_focus_safe_visibility(self):
+        shell_html = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_shell.html').read_text(encoding='utf-8')
+        overlays_html = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_utility_overlays.html').read_text(encoding='utf-8')
+        shortcuts_html = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_shortcuts_overlay.html').read_text(encoding='utf-8')
+        core_shell_js = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_core_shell.js').read_text(encoding='utf-8')
+        workspaces_js = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
+        support_js = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_ops_support.js').read_text(encoding='utf-8')
+        memory_js = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspace_memory.js').read_text(encoding='utf-8')
+
+        assert 'id="wizard"' in overlays_html and 'aria-hidden="true"' in overlays_html
+        assert 'id="tour-overlay"' in overlays_html and 'aria-hidden="true"' in overlays_html
+        assert 'id="command-palette-overlay"' in shortcuts_html and 'aria-hidden="true"' in shortcuts_html
+        assert 'id="shortcuts-overlay"' in shortcuts_html and 'aria-hidden="true"' in shortcuts_html
+        assert 'id="shell-health-overlay"' in shell_html and 'aria-hidden="true"' in shell_html
+        assert "el.setAttribute('aria-hidden', visible ? 'false' : 'true');" in core_shell_js
+        assert "setShellVisibility(overlay, true);" in core_shell_js
+        assert "setShellVisibility(overlay, false);" in core_shell_js
+        assert "overlay.querySelector('.shell-health-close')?.focus()" in core_shell_js
+        assert "setShellVisibility(el, true);" in support_js
+        assert "setShellVisibility(el, false);" in support_js
+        assert "el.querySelector('.shortcuts-close')?.focus()" in support_js
+        assert "toggleShortcutsHelp(false)" in memory_js
+        assert "document.getElementById('tour-next-btn')?.focus()" in workspaces_js
+
+    def test_shell_escape_closer_targets_visible_surfaces_and_force_closes_live_panels(self):
+        overlays_html = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_utility_overlays.html').read_text(encoding='utf-8')
+        core_shell_js = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_core_shell.js').read_text(encoding='utf-8')
+        init_runtime_js = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_init_runtime.js').read_text(encoding='utf-8')
+
+        assert 'id="wizard" role="dialog" aria-modal="true" aria-label="Setup Wizard" aria-hidden="true" hidden' in overlays_html
+        assert 'id="tour-overlay" class="tour-overlay-shell is-hidden" data-shell-action="tour-next" role="dialog" aria-modal="true" aria-label="Guided Tour" aria-hidden="true" hidden' in overlays_html
+        assert 'id="lan-chat-panel" class="utility-panel utility-panel-shell utility-panel-shell-wide utility-panel-shell-lan is-hidden" hidden' in overlays_html
+        assert 'id="quick-actions-menu" class="floating-action-menu utility-actions-menu is-hidden" hidden' in overlays_html
+        assert 'id="timer-panel" class="utility-panel utility-panel-shell is-hidden" hidden' in overlays_html
+        assert "function closeTopVisibleShellSurface()" in core_shell_js
+        assert "const modal = document.querySelector('.modal-overlay:not(.hidden), .modal-overlay[style*=\"flex\"], .wizard-overlay:not(.hidden)');" not in core_shell_js
+        assert "if (closeTopVisibleShellSurface()) {" in core_shell_js
+        assert "if (typeof skipWizard === 'function')" in core_shell_js
+        assert "if (typeof stopLanMessagePolling === 'function') stopLanMessagePolling();" in core_shell_js
+        assert "if (typeof stopTimerPolling === 'function') stopTimerPolling();" in core_shell_js
+        assert "if (e.target === shortcutsOverlay) toggleShortcutsHelp(false);" in init_runtime_js
 
     def test_app_css_is_split_into_ordered_import_manifest(self):
         manifest = REPO_ROOT / 'web' / 'static' / 'css' / 'app.css'

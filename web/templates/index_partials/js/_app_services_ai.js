@@ -398,14 +398,17 @@ function pollPullProgress() {
     const p = await fetchJsonSafe('/api/ai/pull-progress', {}, null, 'Failed to load pull progress');
     if (!p) return;
     const bar = document.getElementById('pull-progress-bar');
-    if (!bar) { stopPullProgressPolling(); return; }
+    const fillEl = document.getElementById('pull-fill');
+    const detailEl = document.getElementById('pull-detail');
+    const pctEl = document.getElementById('pull-pct');
+    if (!bar || !fillEl || !detailEl || !pctEl) { stopPullProgressPolling(); return; }
     if (p.status === 'pulling') {
       bar.style.display = 'block';
-      document.getElementById('pull-fill').style.width = p.percent + '%';
+      fillEl.style.width = p.percent + '%';
       let detail = p.detail || '...';
       if (p.queue_total > 1) detail = `[${p.queue_pos || '?'}/${p.queue_total}] ${detail}`;
-      document.getElementById('pull-detail').textContent = detail;
-      document.getElementById('pull-pct').textContent = p.percent + '%';
+      detailEl.textContent = detail;
+      pctEl.textContent = p.percent + '%';
     } else {
       if (p.status === 'complete') {
         toast(`Model ${p.model} ready!`, 'success');
@@ -441,6 +444,7 @@ async function loadConversations() {
 }
 function renderConvoList() {
   const el = document.getElementById('convo-list');
+  if (!el) return;
   if (!allConvos.length) {
     el.innerHTML = '<div class="sidebar-empty-state convo-list-empty">No conversations yet</div>';
     return;
@@ -458,7 +462,8 @@ function renderConvoList() {
   }).join('');
 }
 async function newConversation() {
-  const model = document.getElementById('model-select').value || '';
+  const modelSelect = document.getElementById('model-select');
+  const model = modelSelect?.value || '';
   try {
     const c = await fetchJsonStrict('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Chat', model})}, 'Failed to create conversation');
     await loadConversations();
@@ -478,7 +483,9 @@ async function selectConvo(id) {
     chatMessages = safeJsonParse(c.messages, []);
     if (c.model) {
       const sel = document.getElementById('model-select');
-      for (const opt of sel.options) { if (opt.value === c.model) { sel.value = c.model; break; } }
+      if (sel) {
+        for (const opt of sel.options) { if (opt.value === c.model) { sel.value = c.model; break; } }
+      }
     }
     renderChat();
     renderConvoList();
@@ -539,7 +546,9 @@ async function saveConversation() {
   // If viewing a branch, save to the branch instead
   if (currentBranchId) { await saveBranch(); return; }
   if (!currentConvoId) return;
-  const model = document.getElementById('model-select').value;
+  const modelSelect = document.getElementById('model-select');
+  if (!modelSelect) return;
+  const model = modelSelect.value;
   const payload = {model, messages: chatMessages};
   // Only set title for brand-new conversations (no custom title yet)
   const convoEl = document.querySelector(`.convo-item[data-convo-id="${currentConvoId}"]`);
@@ -556,17 +565,21 @@ async function sendChat() {
   if (document.getElementById('chat-image-input')?.files?.length) { await sendChatWithImage(); return; }
   if (!_chatReady) { toast('AI service is still starting. Please wait...', 'info'); return; }
   const input = document.getElementById('chat-input');
+  const modelSelect = document.getElementById('model-select');
+  const sendBtn = document.getElementById('send-btn');
+  const stopBtn = document.getElementById('stop-btn');
+  if (!input || !modelSelect || !sendBtn || !stopBtn) return;
   const msg = input.value.trim();
   if (!msg) return;
-  const model = document.getElementById('model-select').value;
+  const model = modelSelect.value;
   if (!model) { toast('No AI model available. Opening the download panel...', 'info'); toggleModelPicker(); return; }
 
   isSending = true;
   input.value = '';
   input.style.height = 'auto';
   _chatAbortCtrl = new AbortController();
-  document.getElementById('send-btn').disabled = true;
-  document.getElementById('stop-btn').style.display = '';
+  sendBtn.disabled = true;
+  stopBtn.style.display = '';
 
   if (!currentConvoId) {
     try {
@@ -590,7 +603,7 @@ async function sendChat() {
   try {
     const resp = await apiFetch('/api/ai/chat', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({model, knowledge_base: kbEnabled, situation_context: document.getElementById('sit-context-toggle').checked, system_prompt: PRESETS[activePreset] || '', messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)}),
+      body: JSON.stringify({model, knowledge_base: kbEnabled, situation_context: !!document.getElementById('sit-context-toggle')?.checked, system_prompt: PRESETS[activePreset] || '', messages: chatMessages.filter(m=>m.content && m.role !== 'thinking').slice(0,-1)}),
       signal: _chatAbortCtrl.signal,
     });
     if (!(resp instanceof Response) || !resp.body) throw new Error('AI service returned an invalid stream response');
@@ -640,7 +653,8 @@ async function sendChat() {
           if (d.done && d.eval_count) {
             const toks = d.eval_count;
             const secs = (d.eval_duration || 1) / 1e9;
-            document.getElementById('chat-stats').textContent = `${toks} tokens | ${(secs > 0 ? (toks/secs).toFixed(1) : '0.0')} tok/s | ${secs.toFixed(1)}s`;
+            const statsEl = document.getElementById('chat-stats');
+            if (statsEl) statsEl.textContent = `${toks} tokens | ${(secs > 0 ? (toks/secs).toFixed(1) : '0.0')} tok/s | ${secs.toFixed(1)}s`;
           }
         } catch (e) {
           if (!streamParseWarned) {
@@ -673,9 +687,10 @@ async function sendChat() {
   }
   isSending = false;
   _chatAbortCtrl = null;
-  document.getElementById('send-btn').disabled = false;
-  document.getElementById('stop-btn').style.display = 'none';
-  document.getElementById('regen-btn').style.display = chatMessages.length >= 2 ? '' : 'none';
+  sendBtn.disabled = false;
+  stopBtn.style.display = 'none';
+  const regenBtn = document.getElementById('regen-btn');
+  if (regenBtn) regenBtn.style.display = chatMessages.length >= 2 ? '' : 'none';
   saveConversation();
 }
 
@@ -688,7 +703,9 @@ function regenerateChat() {
   if (chatMessages.length && chatMessages[chatMessages.length-1].role === 'user') {
     const lastUserMsg = chatMessages.pop();
     const originalContent = lastUserMsg.content.split('\n\n--- Attached File Content ---\n')[0];
-    document.getElementById('chat-input').value = originalContent;
+    const chatInput = document.getElementById('chat-input');
+    if (!chatInput) return;
+    chatInput.value = originalContent;
     renderChat();
     sendChat();
   }
@@ -699,8 +716,10 @@ function stopChat() {
     _chatAbortCtrl.abort();
     _chatAbortCtrl = null;
     isSending = false;
-    document.getElementById('send-btn').disabled = false;
-    document.getElementById('stop-btn').style.display = 'none';
+    const sendBtn = document.getElementById('send-btn');
+    const stopBtn = document.getElementById('stop-btn');
+    if (sendBtn) sendBtn.disabled = false;
+    if (stopBtn) stopBtn.style.display = 'none';
     if (chatMessages.length && chatMessages[chatMessages.length-1].role === 'assistant') {
       chatMessages[chatMessages.length-1].thinking = false;
     }

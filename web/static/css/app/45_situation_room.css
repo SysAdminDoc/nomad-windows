@@ -2766,3 +2766,42 @@ body.situation-room-active .main-content.situation-room-main {
     grid-column: span 1 !important;
   }
 }
+
+/* ─── Skeleton placeholders (v7.0.4) ─── */
+/* Pulse-animated rows injected into empty card bodies the moment a refresh
+   starts, so users get an immediate "working" signal instead of staring at
+   blank cards for 30-60 seconds while 34 fetch workers complete. */
+.sitroom-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 6px 2px;
+}
+.sitroom-skeleton-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.sitroom-skeleton-bar {
+  display: inline-block;
+  height: 10px;
+  border-radius: 5px;
+  flex: 0 0 30%;
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--border, #333) 55%, transparent),
+    color-mix(in srgb, var(--accent, #4f9cf7) 22%, transparent),
+    color-mix(in srgb, var(--border, #333) 55%, transparent));
+  background-size: 200% 100%;
+  animation: sitroom-skeleton-pulse 1.6s ease-in-out infinite;
+}
+.sitroom-skeleton-bar-wide {
+  flex: 1 1 auto;
+}
+@keyframes sitroom-skeleton-pulse {
+  0%   { background-position: 100% 0; opacity: 0.55; }
+  50%  { opacity: 0.9; }
+  100% { background-position: -100% 0; opacity: 0.55; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sitroom-skeleton-bar { animation: none; opacity: 0.7; }
+}

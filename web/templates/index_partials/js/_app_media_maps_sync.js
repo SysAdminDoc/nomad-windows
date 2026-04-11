@@ -1981,6 +1981,73 @@ function closeYtWatch() {
   setMediaVisibility(panel, false);
 }
 
+/* ─── Cross-catalog media search (v7.0.4) ───
+   Debounced client for /api/media/search. Renders a unified dropdown
+   beneath the hero input, then on click jumps to the correct sub-tab
+   so the 736+ curated items in videos/audio/books/channels are
+   discoverable without tab-hopping. */
+let _mediaCrossSearchTimer = null;
+let _mediaCrossSearchLastReqId = 0;
+
+function mediaCrossSearchInput(inputEl) {
+  if (!inputEl) return;
+  const query = (inputEl.value || '').trim();
+  const results = document.getElementById('media-crosssearch-results');
+  if (!results) return;
+  if (_mediaCrossSearchTimer) { clearTimeout(_mediaCrossSearchTimer); _mediaCrossSearchTimer = null; }
+  if (query.length < 2) {
+    results.innerHTML = '';
+    results.classList.add('is-hidden');
+    return;
+  }
+  // Debounce 200ms — matches the rest of the app's search debouncing.
+  _mediaCrossSearchTimer = setTimeout(async () => {
+    const reqId = ++_mediaCrossSearchLastReqId;
+    const d = await safeFetch('/api/media/search?q=' + encodeURIComponent(query), {}, null);
+    // Stale-response guard: drop this result if a newer request fired.
+    if (reqId !== _mediaCrossSearchLastReqId) return;
+    if (!d || !Array.isArray(d.results)) {
+      results.innerHTML = '<div class="media-crosssearch-empty">Search unavailable.</div>';
+      results.classList.remove('is-hidden');
+      return;
+    }
+    if (!d.results.length) {
+      results.innerHTML = '<div class="media-crosssearch-empty">No matches for "' + escapeHtml(query) + '"</div>';
+      results.classList.remove('is-hidden');
+      return;
+    }
+    const typeLabels = {video: 'Video', audio: 'Audio', book: 'Book', channel: 'Channel'};
+    results.innerHTML = d.results.map(r => {
+      const label = typeLabels[r.type] || r.type;
+      return `<button type="button" class="media-crosssearch-result" role="option"
+        data-media-action="crosssearch-open"
+        data-result-type="${escapeAttr(r.type)}"
+        data-result-id="${escapeAttr(String(r.id ?? ''))}">
+        <span class="media-crosssearch-result-type">${escapeHtml(label)}</span>
+        <span class="media-crosssearch-result-title">${escapeHtml(r.title || '(untitled)')}</span>
+        <span class="media-crosssearch-result-sub">${escapeHtml(r.subtitle || '')}</span>
+      </button>`;
+    }).join('');
+    results.classList.remove('is-hidden');
+  }, 200);
+}
+
+function mediaCrossSearchClear() {
+  const input = document.getElementById('media-crosssearch-input');
+  const results = document.getElementById('media-crosssearch-results');
+  if (input) input.value = '';
+  if (results) { results.innerHTML = ''; results.classList.add('is-hidden'); }
+}
+
+function mediaCrossSearchOpen(type, id) {
+  const subByType = {video: 'videos', audio: 'audio', book: 'books', channel: 'channels'};
+  const targetSub = subByType[type];
+  if (targetSub && typeof switchMediaSub === 'function') {
+    try { switchMediaSub(targetSub); } catch (_) {}
+  }
+  mediaCrossSearchClear();
+}
+
 async function downloadYtVideo(url, title) {
   const s = await _fetchJson('/api/ytdlp/status');
   if (!s.installed) { toast('Install the downloader first from the Videos tab', 'warning'); return; }

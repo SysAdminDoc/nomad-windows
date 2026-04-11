@@ -671,6 +671,103 @@ def api_channels_validate():
         log.exception('Channel alive check failed')
         return jsonify({'error': 'Check failed'}), 500
 
+# ─── Cross-catalog media search ──────────────────────────────────
+
+@media_bp.route('/api/media/search')
+def api_media_search():
+    """Unified search across videos, audio, books, and the channel catalog.
+
+    The Media tab historically forced users to search each sub-tab (videos,
+    audio, books, torrents, channels) independently, which is painful when
+    the combined corpus is 700+ curated items. This endpoint takes a single
+    ``q`` query parameter, runs a case-insensitive LIKE across the local
+    media tables plus the in-memory ``CHANNEL_CATALOG``, and returns one
+    normalised result list so the frontend can render a single dropdown.
+
+    Each result has:
+        type: 'video' | 'audio' | 'book' | 'channel'
+        id:   integer row id (local tables) or slug (channels)
+        title: display label
+        subtitle: category / folder / channel hint
+    """
+    query = (request.args.get('q') or '').strip()
+    if not query or len(query) < 2:
+        return jsonify({'results': []})
+    # Cap the query length so an accidental 10 KB paste doesn't hit SQLite
+    # with a gigantic LIKE pattern.
+    query = query[:120]
+    try:
+        limit = min(max(int(request.args.get('limit', '20')), 1), 100)
+    except (TypeError, ValueError):
+        limit = 20
+
+    like = f'%{query}%'
+    results = []
+    with db_session() as db:
+        # Each SELECT is parameterised; the LIKE pattern is bound, not
+        # interpolated. We cap per-source at the full limit to keep the
+        # query cheap and then dedupe/trim at the end.
+        for media_type, table, subtitle_col in (
+            ('video', 'videos', 'category'),
+            ('audio', 'audio', 'category'),
+            ('book', 'books', 'category'),
+        ):
+            try:
+                rows = db.execute(
+                    f'SELECT id, title, {subtitle_col} AS subtitle, folder '
+                    f'FROM {table} '
+                    'WHERE title LIKE ? OR folder LIKE ? '
+                    'ORDER BY id DESC LIMIT ?',
+                    (like, like, limit),
+                ).fetchall()
+            except Exception as exc:
+                # A missing table (fresh install, migration gap) must not
+                # take down the whole search.
+                log.debug('Media search skipped %s: %s', table, exc)
+                continue
+            for r in rows:
+                folder = r['folder'] or ''
+                subtitle = r['subtitle'] or ''
+                hint_parts = [p for p in (subtitle, folder) if p]
+                results.append({
+                    'type': media_type,
+                    'id': r['id'],
+                    'title': r['title'] or '(untitled)',
+                    'subtitle': ' / '.join(hint_parts) or media_type,
+                })
+
+    # Channel catalog is in-memory so we search it with pure Python.
+    q_lower = query.lower()
+    try:
+        for ch in CHANNEL_CATALOG or []:
+            if not isinstance(ch, dict):
+                continue
+            hay = ' '.join(str(ch.get(k, '') or '') for k in ('name', 'description', 'category'))
+            if q_lower in hay.lower():
+                results.append({
+                    'type': 'channel',
+                    'id': ch.get('id') or ch.get('url') or ch.get('name'),
+                    'title': ch.get('name', '(unnamed)'),
+                    'subtitle': ch.get('category') or 'Channel',
+                })
+                if len(results) >= limit * 4:
+                    break
+    except Exception as exc:
+        log.debug('Channel catalog search failed: %s', exc)
+
+    # Simple relevance sort: exact-match titles first, then prefix matches,
+    # then contains-matches, preserving insertion order within each tier.
+    def _rank(item):
+        t = (item.get('title') or '').lower()
+        if t == q_lower:
+            return 0
+        if t.startswith(q_lower):
+            return 1
+        return 2
+    results.sort(key=_rank)
+    return jsonify({'results': results[:limit], 'query': query, 'count': len(results)})
+
+
 # ─── YouTube Search & Channel Videos ─────────────────────────────
 
 @media_bp.route('/api/youtube/search')

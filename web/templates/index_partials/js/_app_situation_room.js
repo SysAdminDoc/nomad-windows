@@ -3046,10 +3046,38 @@ async function deleteSitroomFeed(id) {
   } catch (e) { toast('Failed to delete feed', 'error'); }
 }
 
+/* ─── Skeleton placeholders ───
+   34+ fetch workers run concurrently during a Situation Room refresh.
+   Without visual feedback, users see empty cards for 30-60 seconds and
+   assume the page is frozen. These skeletons fill the visible card bodies
+   with pulse-animated placeholder rows the moment the refresh starts, so
+   the user gets an immediate "working" signal. Real card content
+   overwrites the skeletons as each worker reports back. */
+const _sitroomSkeletonRowCount = 3;
+function _showSitroomSkeletons() {
+  const bodies = document.querySelectorAll('.sitroom-card .sr-card-body, .sitroom-card .sitroom-feed-list, .sitroom-card .sitroom-panel-body');
+  const rows = new Array(_sitroomSkeletonRowCount).fill(
+    '<div class="sitroom-skeleton-row"><span class="sitroom-skeleton-bar"></span><span class="sitroom-skeleton-bar sitroom-skeleton-bar-wide"></span></div>'
+  ).join('');
+  const skeletonHtml = '<div class="sitroom-skeleton" aria-hidden="true">' + rows + '</div>';
+  bodies.forEach(el => {
+    // Only skeletonise panels that currently show either no data or a
+    // "click Refresh Feeds" empty state — don't blank out cards that
+    // already have fresh content from a previous run.
+    const txt = (el.textContent || '').trim();
+    const isEmpty = !txt || /click refresh|no data|no cached|loading/i.test(txt);
+    if (isEmpty || el.dataset.sitroomSkeleton === '1') {
+      el.dataset.sitroomSkeleton = '1';
+      el.innerHTML = skeletonHtml;
+    }
+  });
+}
+
 /* ─── Refresh with polling ─── */
 async function refreshSitroomFeeds() {
   const btn = document.getElementById('sitroom-refresh-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'Refreshing...'; }
+  _showSitroomSkeletons();
   try {
     await apiPost('/api/sitroom/refresh');
     toast('Feed refresh started', 'info');

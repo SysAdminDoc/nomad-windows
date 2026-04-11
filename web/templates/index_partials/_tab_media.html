@@ -31,6 +31,19 @@
             <span class="media-command-pill">Resume later</span>
             <span class="media-command-pill">Offline first</span>
           </div>
+          <!-- Cross-catalog search: one input, queries videos + audio + books
+               + channels via /api/media/search. Results render in a dropdown
+               below the input, each linked to its source sub-tab. -->
+          <div class="media-crosssearch">
+            <label class="media-crosssearch-label" for="media-crosssearch-input">Search everything in your library</label>
+            <div class="media-crosssearch-field">
+              <input type="search" id="media-crosssearch-input" name="media_crosssearch_query" class="media-crosssearch-input"
+                     placeholder="Search videos, audio, books, and channels&hellip;"
+                     autocomplete="off" data-media-action="crosssearch-input">
+              <button type="button" class="btn btn-sm" data-media-action="crosssearch-clear" title="Clear search">&times;</button>
+            </div>
+            <div id="media-crosssearch-results" class="media-crosssearch-results is-hidden" role="listbox" aria-label="Media search results"></div>
+          </div>
         </div>
         <!-- Sub-Tab Bar -->
         <div class="media-subtabs workspace-toolbar">

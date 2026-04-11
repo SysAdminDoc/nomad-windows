@@ -268,6 +268,82 @@ test('setup wizard advances cleanly and restores from the mini banner', async ({
   await expect(page.locator('#wiz-page-4')).toBeVisible();
 });
 
+test('guided tour stays interactive and restores shell focus when closed', async ({ page }) => {
+  await bootWorkspace(page, 'nightops', '/?wizard=1');
+
+  await page.evaluate(() => {
+    wizGoPage(5);
+  });
+  await expect(page.locator('#wiz-page-5')).toBeVisible();
+  await page.click('[data-shell-action="start-tour"]');
+
+  const overlay = page.locator('#tour-overlay');
+  const nextBtn = page.locator('#tour-next-btn');
+  const servicesTab = page.locator('[data-tab="services"]');
+
+  await expect(overlay).toBeVisible();
+  await expect(overlay).toHaveAttribute('aria-hidden', 'false');
+  await expect(nextBtn).toBeFocused();
+  await expect(page.locator('#tour-step-num')).toContainText('1 of 6');
+
+  await nextBtn.click();
+  await expect(page.locator('#tour-step-num')).toContainText('2 of 6');
+
+  await page.click('[data-shell-action="tour-skip"]');
+  await expect(overlay).toBeHidden();
+  await expect(overlay).toHaveAttribute('aria-hidden', 'true');
+  await expect(servicesTab).toBeFocused();
+});
+
+test('escape closes visible shell surfaces without leaving stale utility state behind', async ({ page }) => {
+  await bootWorkspace(page, 'nightops', '/?wizard=1');
+
+  await expect(page.locator('#wizard')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#wizard')).toBeHidden();
+  await expect(page.locator('#wiz-mini-banner')).toBeHidden();
+
+  await page.evaluate(() => {
+    wizGoPage(5);
+    startTour();
+  });
+  await expect(page.locator('#tour-overlay')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#tour-overlay')).toBeHidden();
+  await expect(page.locator('[data-tab="services"]')).toBeFocused();
+
+  await page.evaluate(() => toggleShortcutsHelp(true));
+  await expect(page.locator('#shortcuts-overlay')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#shortcuts-overlay')).toBeHidden();
+
+  await page.evaluate(() => toggleShellHealth(true));
+  await expect(page.locator('#shell-health-overlay')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#shell-health-overlay')).toBeHidden();
+
+  await page.evaluate(() => toggleLanChat());
+  await expect(page.locator('#lan-chat-panel')).toBeVisible();
+  await expect.poll(async () => page.evaluate(() => (typeof _lanChatOpen !== 'undefined' ? _lanChatOpen : null))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#lan-chat-panel')).toBeHidden();
+  await expect.poll(async () => page.evaluate(() => (typeof _lanChatOpen !== 'undefined' ? _lanChatOpen : null))).toBe(false);
+
+  await page.evaluate(() => toggleQuickActions());
+  await expect(page.locator('#quick-actions-menu')).toBeVisible();
+  await expect.poll(async () => page.evaluate(() => (typeof _qaOpen !== 'undefined' ? _qaOpen : null))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#quick-actions-menu')).toBeHidden();
+  await expect.poll(async () => page.evaluate(() => (typeof _qaOpen !== 'undefined' ? _qaOpen : null))).toBe(false);
+
+  await page.evaluate(() => toggleTimerPanel());
+  await expect(page.locator('#timer-panel')).toBeVisible();
+  await expect.poll(async () => page.evaluate(() => (typeof _timerPanelOpen !== 'undefined' ? _timerPanelOpen : null))).toBe(true);
+  await page.keyboard.press('Escape');
+  await expect(page.locator('#timer-panel')).toBeHidden();
+  await expect.poll(async () => page.evaluate(() => (typeof _timerPanelOpen !== 'undefined' ? _timerPanelOpen : null))).toBe(false);
+});
+
 test('density customization persists without stretching the shell', async ({ page }) => {
   await bootWorkspace(page, 'nightops');
 

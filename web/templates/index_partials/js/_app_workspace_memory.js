@@ -2686,10 +2686,13 @@ function toggleCommandPalette(force) {
   const overlay = document.getElementById('command-palette-overlay');
   const input = document.getElementById('command-palette-input');
   if (!overlay || !input) return;
-  const show = typeof force === 'boolean' ? force : overlay.hidden;
+  const show = typeof force === 'boolean' ? force : !isShellVisible(overlay);
   if (show) {
     const shortcuts = document.getElementById('shortcuts-overlay');
-    if (shortcuts && !shortcuts.hidden) shortcuts.hidden = true;
+    if (shortcuts && !shortcuts.hidden) {
+      if (typeof toggleShortcutsHelp === 'function') toggleShortcutsHelp(false);
+      else setShellVisibility(shortcuts, false);
+    }
     _commandPaletteReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setShellVisibility(overlay, true);
     input.value = '';

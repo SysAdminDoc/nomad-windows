@@ -4,6 +4,8 @@
 
 {% include 'index_partials/js/_app_workspaces.js' %}
 
+{% include 'index_partials/js/_app_workspace_profiles.js' %}
+
 {% include 'index_partials/js/_app_workspace_memory.js' %}
 
 {% include 'index_partials/js/_app_shell_router.js' %}

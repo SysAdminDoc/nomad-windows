@@ -998,6 +998,14 @@ async function loadZimList() {
     `;
   }
 
+  // Kiwix pre-flight banner: show when the user has zero ZIMs installed so
+  // they understand why Kiwix can't start, instead of hitting a cryptic
+  // service error in Settings.
+  const preflightBanner = document.getElementById('kiwix-preflight-banner');
+  if (preflightBanner) {
+    preflightBanner.classList.toggle('is-hidden', zims.length > 0);
+  }
+
   // Re-render catalog if visible to update download states
   if (_cachedCatalog) renderFullCatalog(_cachedCatalog);
 }

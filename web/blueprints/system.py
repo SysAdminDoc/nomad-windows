@@ -805,16 +805,43 @@ def api_backups_list():
 
 @system_bp.route('/api/backups/restore', methods=['POST'])
 def api_backups_restore():
-    """Restore database from an automatic backup file."""
+    """Restore database from an automatic backup file.
+
+    Two-phase commit: without ``confirmed: true`` the endpoint returns a
+    preview describing exactly what would happen (source file, size, and the
+    fact that the current DB will be auto-backed-up). The restore only runs
+    when ``confirmed: true`` is sent, preventing accidental data loss from a
+    misclick. The current DB is *always* backed up before the replace.
+    """
     from db import get_db_path, backup_db
     data = request.get_json() or {}
     filename = data.get('filename', '')
+    confirmed = bool(data.get('confirmed'))
     if not filename or '..' in filename or '/' in filename or '\\' in filename:
         return jsonify({'error': 'Invalid filename'}), 400
     backup_dir = os.path.join(os.path.dirname(get_db_path()), 'backups')
     backup_path = os.path.join(backup_dir, filename)
     if not os.path.isfile(backup_path):
         return jsonify({'error': 'Backup not found'}), 404
+
+    if not confirmed:
+        try:
+            size_bytes = os.path.getsize(backup_path)
+        except OSError:
+            size_bytes = 0
+        return jsonify({
+            'status': 'preview',
+            'requires_confirmation': True,
+            'filename': filename,
+            'size_bytes': size_bytes,
+            'current_db_will_be_backed_up': True,
+            'message': (
+                f'Restoring "{filename}" will overwrite your current database. '
+                'The current database will be automatically backed up first. '
+                'Re-POST with "confirmed": true to proceed.'
+            ),
+        })
+
     # Safety: back up current DB first
     backup_db()
     # Replace current DB with backup

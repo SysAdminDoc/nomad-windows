@@ -351,22 +351,73 @@ def api_update_download():
             _state._update_state['status'] = 'downloading'
             url = asset['browser_download_url']
             fname = asset['name']
-            import tempfile
+            import tempfile, hashlib
             dest = os.path.join(tempfile.gettempdir(), 'nomad-update', fname)
             os.makedirs(os.path.dirname(dest), exist_ok=True)
+
+            # Locate the SHA256SUMS.txt asset (produced by the release workflow)
+            # so the downloaded binary can be integrity-verified before it is
+            # presented to the user. A missing checksum file is fatal — we do
+            # NOT silently skip verification.
+            checksums_asset = None
+            for a in assets:
+                if not isinstance(a, dict):
+                    continue
+                a_name = str(a.get('name', '') or '').lower()
+                if a_name == 'sha256sums.txt' and isinstance(a.get('browser_download_url'), str):
+                    checksums_asset = a
+                    break
+            if not checksums_asset:
+                _state._update_state = {'status': 'error', 'progress': 0,
+                                        'error': 'Release is missing SHA256SUMS.txt — update refused',
+                                        'path': None}
+                return
+
+            sums_resp = rq.get(checksums_asset['browser_download_url'], timeout=15)
+            if not sums_resp.ok:
+                _state._update_state = {'status': 'error', 'progress': 0,
+                                        'error': 'Could not fetch SHA256SUMS.txt', 'path': None}
+                return
+            expected_hash = None
+            for line in (sums_resp.text or '').splitlines():
+                parts = line.strip().split(None, 1)
+                if len(parts) == 2 and parts[1].lstrip('*') == fname:
+                    expected_hash = parts[0].lower()
+                    break
+            if not expected_hash or len(expected_hash) != 64:
+                _state._update_state = {'status': 'error', 'progress': 0,
+                                        'error': f'No SHA256 entry found for {fname}', 'path': None}
+                return
 
             dl_resp = rq.get(url, stream=True, timeout=30)
             dl_resp.raise_for_status()
             total = int(dl_resp.headers.get('content-length', 0))
             downloaded = 0
+            hasher = hashlib.sha256()
             with open(dest, 'wb') as f:
                 for chunk in dl_resp.iter_content(65536):
                     f.write(chunk)
+                    hasher.update(chunk)
                     downloaded += len(chunk)
                     _state._update_state['progress'] = int(downloaded / total * 100) if total > 0 else 0
 
-            _state._update_state = {'status': 'complete', 'progress': 100, 'error': None, 'path': dest}
-            log_activity('update_downloaded', detail=f'{data.get("tag_name", "?")} → {fname}')
+            actual_hash = hasher.hexdigest().lower()
+            if actual_hash != expected_hash:
+                # Integrity failure — delete the tampered/corrupt file so it
+                # can never be opened by the user.
+                try:
+                    os.remove(dest)
+                except OSError:
+                    pass
+                log.error('Update checksum mismatch: expected %s, got %s', expected_hash, actual_hash)
+                _state._update_state = {'status': 'error', 'progress': 0,
+                                        'error': 'Checksum verification failed — file deleted',
+                                        'path': None}
+                return
+
+            _state._update_state = {'status': 'complete', 'progress': 100, 'error': None, 'path': dest,
+                                    'sha256': actual_hash}
+            log_activity('update_downloaded', detail=f'{data.get("tag_name", "?")} → {fname} (sha256 OK)')
 
         except Exception as e:
             log.exception('Update download failed')

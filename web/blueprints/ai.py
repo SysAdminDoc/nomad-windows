@@ -1228,68 +1228,57 @@ RULES:
 
 # ─── AI Action Execution ─────────────────────────────────────────
 
-@ai_bp.route('/api/ai/execute-action', methods=['POST'])
-def api_ai_execute_action():
-    """Parse and execute a natural-language action command."""
-    data = request.get_json() or {}
-    action = data.get('action', '').strip()
-    if not action:
-        return jsonify({'error': 'No action provided'}), 400
-    if len(action) > 500:
-        return jsonify({'error': 'Action too long (max 500 chars)'}), 400
+def _parse_ai_action(action: str):
+    """Pure parser — returns (action_type, detail, exec_fn) or (None, error_message, None).
 
+    exec_fn takes no args and performs the DB mutation + activity log, returning the new row id.
+    """
     # Pattern: "add [qty] [item] to inventory"
     m = re.match(r'add\s+(\d+)\s+(.+?)\s+to\s+inventory', action, re.IGNORECASE)
     if m:
         qty = max(1, min(int(m.group(1)), 100000))
         item_name = m.group(2).strip()[:200]
-        with db_session() as db:
-            db.execute(
-                'INSERT INTO inventory (name, quantity, category) VALUES (?, ?, ?)',
-                (item_name, qty, 'other'))
-            db.commit()
-            row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
-            log_activity('inventory_added', 'ai', f'Added {qty} {item_name} via AI action')
-        return jsonify({
-            'status': 'executed',
-            'action': 'add_inventory',
-            'detail': f'Added {qty} {item_name} to inventory',
-            'id': row_id,
-        })
+
+        def _exec():
+            with db_session() as db:
+                db.execute(
+                    'INSERT INTO inventory (name, quantity, category) VALUES (?, ?, ?)',
+                    (item_name, qty, 'other'))
+                db.commit()
+                row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+                log_activity('inventory_added', 'ai', f'Added {qty} {item_name} via AI action')
+            return row_id
+        return 'add_inventory', f'Add {qty} {item_name} to inventory', _exec
 
     # Pattern: "log incident [desc]"
     m = re.match(r'log\s+incident\s+(.+)', action, re.IGNORECASE)
     if m:
         desc = m.group(1).strip()
-        with db_session() as db:
-            db.execute(
-                'INSERT INTO incidents (severity, category, description) VALUES (?, ?, ?)',
-                ('info', 'other', desc))
-            db.commit()
-            row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
-            log_activity('incident_logged', 'ai', f'Incident: {desc[:80]}')
-        return jsonify({
-            'status': 'executed',
-            'action': 'log_incident',
-            'detail': f'Logged incident: {desc}',
-            'id': row_id,
-        })
+
+        def _exec():
+            with db_session() as db:
+                db.execute(
+                    'INSERT INTO incidents (severity, category, description) VALUES (?, ?, ?)',
+                    ('info', 'other', desc))
+                db.commit()
+                row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+                log_activity('incident_logged', 'ai', f'Incident: {desc[:80]}')
+            return row_id
+        return 'log_incident', f'Log incident: {desc}', _exec
 
     # Pattern: "create note [title]"
     m = re.match(r'create\s+note\s+(.+)', action, re.IGNORECASE)
     if m:
         title = m.group(1).strip()
-        with db_session() as db:
-            db.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, ''))
-            db.commit()
-            row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
-            log_activity('note_created', 'ai', f'Note: {title}')
-        return jsonify({
-            'status': 'executed',
-            'action': 'create_note',
-            'detail': f'Created note: {title}',
-            'id': row_id,
-        })
+
+        def _exec():
+            with db_session() as db:
+                db.execute('INSERT INTO notes (title, content) VALUES (?, ?)', (title, ''))
+                db.commit()
+                row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+                log_activity('note_created', 'ai', f'Note: {title}')
+            return row_id
+        return 'create_note', f'Create note: {title}', _exec
 
     # Pattern: "add waypoint [name] at [lat],[lng]"
     m = re.match(r'add\s+waypoint\s+(.+?)\s+at\s+([-\d.]+)\s*,\s*([-\d.]+)', action, re.IGNORECASE)
@@ -1299,29 +1288,73 @@ def api_ai_execute_action():
             lat = float(m.group(2))
             lng = float(m.group(3))
         except ValueError:
-            return jsonify({'error': 'Invalid coordinates — lat and lng must be numbers'}), 400
+            return None, 'Invalid coordinates — lat and lng must be numbers', None
         if not (-90 <= lat <= 90 and -180 <= lng <= 180):
-            return jsonify({'error': 'Coordinates out of range (lat: -90..90, lng: -180..180)'}), 400
+            return None, 'Coordinates out of range (lat: -90..90, lng: -180..180)', None
         wp_name = wp_name[:200]
-        with db_session() as db:
-            db.execute(
-                'INSERT INTO waypoints (name, lat, lng) VALUES (?, ?, ?)',
-                (wp_name, lat, lng))
-            db.commit()
-            row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
-            log_activity('waypoint_added', 'ai', f'Waypoint: {wp_name} ({lat},{lng})')
+
+        def _exec():
+            with db_session() as db:
+                db.execute(
+                    'INSERT INTO waypoints (name, lat, lng) VALUES (?, ?, ?)',
+                    (wp_name, lat, lng))
+                db.commit()
+                row_id = db.execute('SELECT last_insert_rowid()').fetchone()[0]
+                log_activity('waypoint_added', 'ai', f'Waypoint: {wp_name} ({lat},{lng})')
+            return row_id
+        return 'add_waypoint', f'Add waypoint {wp_name} at {lat},{lng}', _exec
+
+    return None, None, None
+
+
+@ai_bp.route('/api/ai/execute-action', methods=['POST'])
+def api_ai_execute_action():
+    """Parse and execute a natural-language action command.
+
+    Two-phase commit: without ``confirmed: true`` the endpoint returns a
+    preview of the parsed action so the frontend can display a confirmation
+    dialog. Only when ``confirmed: true`` is passed does the action actually
+    mutate the database. This prevents accidental or hallucinated AI writes.
+    """
+    data = request.get_json() or {}
+    action = data.get('action', '').strip()
+    confirmed = bool(data.get('confirmed'))
+    if not action:
+        return jsonify({'error': 'No action provided'}), 400
+    if len(action) > 500:
+        return jsonify({'error': 'Action too long (max 500 chars)'}), 400
+
+    action_type, detail, exec_fn = _parse_ai_action(action)
+
+    if action_type is None:
+        # detail holds the error message if parsing recognised the pattern but
+        # the arguments were invalid; otherwise it's None (unrecognised).
+        if detail:
+            return jsonify({'error': detail}), 400
         return jsonify({
-            'status': 'executed',
-            'action': 'add_waypoint',
-            'detail': f'Added waypoint {wp_name} at {lat},{lng}',
-            'id': row_id,
+            'status': 'unrecognized',
+            'error': 'Could not parse action. Supported: "add [qty] [item] to inventory", '
+                     '"log incident [desc]", "create note [title]", "add waypoint [name] at [lat],[lng]"',
+        }), 400
+
+    if not confirmed:
+        # Preview phase — describe what would happen without mutating state.
+        return jsonify({
+            'status': 'preview',
+            'action': action_type,
+            'detail': detail,
+            'requires_confirmation': True,
+            'message': 'Re-POST with "confirmed": true to execute this action.',
         })
 
+    # Execute phase — user has explicitly confirmed.
+    row_id = exec_fn()
     return jsonify({
-        'status': 'unrecognized',
-        'error': 'Could not parse action. Supported: "add [qty] [item] to inventory", '
-                 '"log incident [desc]", "create note [title]", "add waypoint [name] at [lat],[lng]"',
-    }), 400
+        'status': 'executed',
+        'action': action_type,
+        'detail': detail,
+        'id': row_id,
+    })
 
 
 # ─── AI Memory ───────────────────────────────────────────────────

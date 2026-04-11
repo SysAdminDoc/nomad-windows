@@ -22,6 +22,25 @@
     </div>
     <div id="library-summary" class="content-summary workspace-summary"></div>
 
+    <!-- Kiwix pre-flight banner: surfaces when no ZIM is installed so users
+         understand why Kiwix won't start, instead of hitting a cryptic
+         service error in Settings. Hidden by default; library loader JS
+         toggles `.is-hidden` based on installed ZIM count. -->
+    <div id="kiwix-preflight-banner" class="workspace-panel workspace-panel-tight workspace-panel-accent is-hidden" role="status" aria-live="polite">
+      <div class="workspace-toolbar workspace-heading-row">
+        <span class="workspace-panel-title">&#9888; Kiwix needs content before it can start</span>
+      </div>
+      <div class="workspace-copy">
+        The Kiwix service serves offline Wikipedia and reference ZIM files. You haven't installed any yet &mdash;
+        pick a Wikipedia tier below (Essentials is the smallest at ~3 GB) and Kiwix will start automatically
+        once the download completes.
+      </div>
+      <div class="workspace-toolbar workspace-toolbar-actions">
+        <button type="button" class="btn btn-sm btn-primary" data-zim-tier="essential">Install Essentials (~3 GB)</button>
+        <button type="button" class="btn btn-sm" data-scroll-to="wiki-tier-selector">Browse All Tiers</button>
+      </div>
+    </div>
+
     <!-- Wikipedia Tier Selector -->
     <div id="wiki-tier-selector" class="workspace-panel workspace-panel-tight">
       <div class="workspace-toolbar workspace-heading-row">

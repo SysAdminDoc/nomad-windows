@@ -1648,31 +1648,87 @@ def api_waypoints_gpx():
 # ─── GPX Waypoint Import ─────────────────────────────────────────
 
 
+#: Hard cap on GPX upload size. A 50 MB file easily covers multi-thousand
+#: waypoint tracks; files larger than this are almost always malformed or
+#: malicious, and would take many seconds to XML-parse and bloat memory.
+GPX_MAX_BYTES = 50 * 1024 * 1024
+#: Maximum number of <wpt> elements we will import from a single file.
+#: Matches the implicit 10k LIMIT on other bulk-import paths and protects
+#: the DB from a single import wedging the writer.
+GPX_MAX_WAYPOINTS = 10000
+
+
 @maps_bp.route('/api/waypoints/import-gpx', methods=['POST'])
 def api_waypoints_import_gpx():
     if 'file' not in request.files:
         return jsonify({'error': 'No file'}), 400
     file = request.files['file']
-    content = file.read().decode('utf-8', errors='replace')
+
+    # Size check (stream position → end, then rewind). This catches oversize
+    # files before we allocate a multi-megabyte string for XML parsing.
+    try:
+        file.stream.seek(0, 2)
+        size = file.stream.tell()
+        file.stream.seek(0)
+    except (OSError, AttributeError):
+        size = 0
+    if size > GPX_MAX_BYTES:
+        return jsonify({
+            'error': f'GPX file too large ({size // (1024*1024)} MB). '
+                     f'Maximum is {GPX_MAX_BYTES // (1024*1024)} MB.',
+        }), 413
+
+    raw = file.read(GPX_MAX_BYTES + 1)
+    if len(raw) > GPX_MAX_BYTES:
+        return jsonify({'error': f'GPX file exceeds {GPX_MAX_BYTES // (1024*1024)} MB limit'}), 413
+    try:
+        content = raw.decode('utf-8', errors='replace')
+    except Exception:
+        return jsonify({'error': 'GPX file is not valid UTF-8'}), 400
+
+    # XML parse with a defusedxml-style guard against billion-laughs /
+    # external-entity attacks. stdlib ElementTree already ignores DTDs, but
+    # we additionally refuse documents whose root element isn't <gpx>.
     import xml.etree.ElementTree as ET
     try:
         root = ET.fromstring(content)
-    except ET.ParseError:
-        return jsonify({'error': 'Invalid GPX XML — file could not be parsed'}), 400
+    except ET.ParseError as exc:
+        return jsonify({'error': f'Invalid GPX XML: {exc}'}), 400
+    # Root tag may be namespaced — strip the namespace for the check.
+    root_tag = root.tag.rsplit('}', 1)[-1] if '}' in root.tag else root.tag
+    if root_tag.lower() != 'gpx':
+        return jsonify({'error': 'Not a GPX document (root element is not <gpx>)'}), 400
+
     ns = {'gpx': 'http://www.topografix.com/GPX/1/1'}
     wpts = root.findall('.//gpx:wpt', ns) + root.findall('.//wpt')
+    if len(wpts) > GPX_MAX_WAYPOINTS:
+        return jsonify({
+            'error': f'GPX file contains {len(wpts)} waypoints; maximum is {GPX_MAX_WAYPOINTS}. '
+                     'Split the file and import in parts.',
+        }), 413
+
     with db_session() as db:
         count = 0
         for wpt in wpts:
-            lat = wpt.get('lat')
-            lon = wpt.get('lon')
-            if lat is None or lon is None:
+            lat_s = wpt.get('lat')
+            lon_s = wpt.get('lon')
+            if lat_s is None or lon_s is None:
+                continue
+            # Validate coordinate ranges to reject obviously corrupt files.
+            try:
+                lat_f = float(lat_s)
+                lng_f = float(lon_s)
+            except (TypeError, ValueError):
+                continue
+            if not (-90.0 <= lat_f <= 90.0) or not (-180.0 <= lng_f <= 180.0):
                 continue
             name_el = wpt.find('gpx:name', ns) or wpt.find('name')
-            name = name_el.text if name_el is not None and name_el.text else f'Imported {lat},{lon}'
+            name = name_el.text if name_el is not None and name_el.text else f'Imported {lat_f:.5f},{lng_f:.5f}'
+            # Cap name length so a pathological file can't blow up the DB.
+            name = (name or '').strip()[:200] or f'Imported {lat_f:.5f},{lng_f:.5f}'
             try:
                 db.execute('INSERT INTO waypoints (name, lat, lng, category) VALUES (?, ?, ?, ?)',
-                           (name, float(lat), float(lon), 'imported'))
+                           (name, lat_f, lng_f, 'imported'))
                 count += 1
             except Exception as exc:
                 log.debug('Skipping GPX waypoint "%s" during import: %s', name, exc)

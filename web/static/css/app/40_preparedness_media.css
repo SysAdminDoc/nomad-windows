@@ -523,7 +523,7 @@
 }
 
 .lan-qr-modal-overlay {
-  z-index: 99999;
+  z-index: var(--z-modal, 5000);
 }
 .lan-qr-modal-card {
   width: min(380px, 90vw);

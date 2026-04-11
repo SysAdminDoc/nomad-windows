@@ -221,7 +221,7 @@
   position: absolute;
   top: -100%;
   left: 16px;
-  z-index: 100000;
+  z-index: var(--z-emergency, 10000);
   padding: 8px 16px;
   background: var(--accent);
   color: var(--text-inverse);

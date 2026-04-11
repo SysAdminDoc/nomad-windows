@@ -1197,7 +1197,7 @@
 .generated-modal-overlay {
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: var(--z-modal, 5000);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1827,7 +1827,7 @@
 .shortcuts-overlay {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: var(--z-modal, 5000);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2126,7 +2126,7 @@
   border-radius: 18px;
   background: var(--surface-overlay-soft);
   box-shadow: 0 18px 42px rgba(22,14,5,0.28);
-  z-index: 9999;
+  z-index: var(--z-toast, 9000);
   text-align: left;
   cursor: pointer;
   appearance: none;

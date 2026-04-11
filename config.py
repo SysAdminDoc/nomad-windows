@@ -36,7 +36,7 @@ class Config:
     """Central configuration with environment variable overrides."""
 
     # --- App Identity ---
-    VERSION = os.environ.get('NOMAD_VERSION', '7.0.0')
+    VERSION = os.environ.get('NOMAD_VERSION', '7.0.1')
 
     # --- Upload / Content Limits ---
     MAX_CONTENT_LENGTH = int(os.environ.get('NOMAD_MAX_CONTENT_LENGTH', 100 * 1024 * 1024))  # 100 MB
@@ -109,8 +109,6 @@ def load_config() -> dict:
     global _config_cache, _config_mtime
     path = get_config_path()
     with _config_lock:
-        if _config_cache is not None and _config_mtime == float('inf'):
-            return _config_cache
         if not os.path.isfile(path):
             return _config_cache if _config_cache is not None else {}
         try:

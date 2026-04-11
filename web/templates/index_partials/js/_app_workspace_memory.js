@@ -1807,12 +1807,15 @@ function syncWorkspaceUrlState() {
   }
 
   if (activeTab === 'situation-room') {
-    if (typeof _sitroomView !== 'undefined') params.set('sr_view', _sitroomView);
-    if (typeof _sitroomNewsGroup !== 'undefined') params.set('sr_news', _sitroomNewsGroup);
-    if (typeof _sitroomRegionPreset !== 'undefined') params.set('sr_region', _sitroomRegionPreset);
-    if (typeof _sitroomDeskPreset !== 'undefined') params.set('sr_desk', _sitroomDeskPreset);
-    if (typeof _sitroomLayerPreset !== 'undefined') params.set('sr_layers', _sitroomLayerPreset);
-    if (typeof _sitroomBriefMode !== 'undefined') params.set('sr_brief', _sitroomBriefMode);
+    // TDZ-safe: wrap in try/catch because sitroom `let` variables are hoisted
+    // in the concatenated script block and typeof throws ReferenceError if
+    // this function is called before situation_room.js initializes them.
+    try { if (typeof _sitroomView !== 'undefined') params.set('sr_view', _sitroomView); } catch (_) {}
+    try { if (typeof _sitroomNewsGroup !== 'undefined') params.set('sr_news', _sitroomNewsGroup); } catch (_) {}
+    try { if (typeof _sitroomRegionPreset !== 'undefined') params.set('sr_region', _sitroomRegionPreset); } catch (_) {}
+    try { if (typeof _sitroomDeskPreset !== 'undefined') params.set('sr_desk', _sitroomDeskPreset); } catch (_) {}
+    try { if (typeof _sitroomLayerPreset !== 'undefined') params.set('sr_layers', _sitroomLayerPreset); } catch (_) {}
+    try { if (typeof _sitroomBriefMode !== 'undefined') params.set('sr_brief', _sitroomBriefMode); } catch (_) {}
   } else {
     ['sr_view', 'sr_news', 'sr_region', 'sr_desk', 'sr_layers', 'sr_brief'].forEach(key => params.delete(key));
   }

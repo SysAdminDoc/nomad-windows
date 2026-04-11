@@ -241,6 +241,13 @@ def stop_process(service_id: str) -> bool:
         except subprocess.TimeoutExpired:
             log.warning(f'{service_id} did not terminate within 10s, sending SIGKILL')
             proc.kill()
+    # Explicitly close the captured stdout PIPE so the reader thread's FD is
+    # released — avoids briefly leaked file descriptors on rapid stop/start.
+    if proc and proc.stdout:
+        try:
+            proc.stdout.close()
+        except Exception:
+            pass
 
     # Also try by PID from DB — but only if we didn't already stop a tracked process
     db = get_db()

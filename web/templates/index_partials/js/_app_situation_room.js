@@ -2950,7 +2950,12 @@ async function loadSitroomNews(append) {
   const filtered = _filterSitroomNewsByRegion(deduped);
   const prioritized = _prioritizeSitroomBriefArticles(filtered);
   if (!append) _sitroomNewsArticles = [];
-  _sitroomNewsArticles = append ? _sitroomNewsArticles.concat(prioritized) : prioritized.slice();
+  // Cap accumulated news at 500 items to prevent unbounded memory growth
+  // across many paginated appends.
+  const SITROOM_NEWS_MAX = 500;
+  _sitroomNewsArticles = append
+    ? _sitroomNewsArticles.concat(prioritized).slice(-SITROOM_NEWS_MAX)
+    : prioritized.slice(0, SITROOM_NEWS_MAX);
   if (!prioritized.length) {
     if (!append) {
       list.innerHTML = '<div class="sitroom-empty">No headlines match this regional preset yet. Try another preset or broaden the desk.</div>';

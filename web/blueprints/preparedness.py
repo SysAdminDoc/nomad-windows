@@ -5,7 +5,7 @@ import time
 import logging
 import threading
 import queue
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request, Response
 
 from db import get_db, db_session, log_activity
@@ -87,8 +87,12 @@ def api_preparedness_dashboard():
     """
     today = datetime.now().strftime('%Y-%m-%d')
     soon = (datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d')
+    # generated_at must be a real UTC timestamp — the previous version
+    # used datetime.now() (naive local time) with a trailing 'Z', so any
+    # client comparing it against SQLite's datetime('now') (which IS UTC)
+    # saw a drift equal to the machine's timezone offset.
     payload = {
-        'generated_at': datetime.now().isoformat(timespec='seconds') + 'Z',
+        'generated_at': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
     }
 
     with db_session() as db:
@@ -127,15 +131,20 @@ def api_preparedness_dashboard():
                 "SELECT COUNT(*) FROM patients WHERE allergies IS NOT NULL "
                 "AND allergies != '' AND allergies != '[]'",
             )
-            expiring_meds = 0
-            try:
-                expiring_meds = _safe_count(
-                    db,
-                    "SELECT COUNT(*) FROM medical_supplies WHERE expiration != '' AND expiration <= ?",
-                    (soon,),
-                )
-            except Exception:
-                pass
+            # Expiring meds come from the `inventory` table with a
+            # medical category — there is no standalone `medical_supplies`
+            # table in the schema, so the previous query silently caught
+            # the "no such table" error and always returned 0.
+            # Category casing varies across seed templates (some use
+            # 'Medical', others 'medical'), so match case-insensitively.
+            expiring_meds = _safe_count(
+                db,
+                "SELECT COUNT(*) FROM inventory "
+                "WHERE LOWER(category) = 'medical' "
+                "AND expiration IS NOT NULL AND expiration != '' "
+                "AND expiration <= ?",
+                (soon,),
+            )
             payload['medical'] = {
                 'patients': patients,
                 'with_allergies': with_allergies,

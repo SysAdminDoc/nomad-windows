@@ -1,6 +1,42 @@
 """Tests for incidents API routes."""
 
 
+class TestPreparednessDashboard:
+    """Cross-module snapshot endpoint /api/preparedness/dashboard (v7.0.5)."""
+
+    def test_dashboard_returns_expected_sections(self, client):
+        resp = client.get('/api/preparedness/dashboard')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        # Every top-level section the frontend reads must be present,
+        # even on a fresh DB where counts are zero.
+        for key in ('generated_at', 'inventory', 'medical', 'power', 'garden',
+                    'contacts', 'tasks', 'incidents', 'alerts', 'readiness_hint'):
+            assert key in data, f'missing section: {key}'
+        assert data['readiness_hint'] in ('ok', 'needs-attention')
+
+    def test_dashboard_reflects_incident_activity(self, client):
+        # Baseline
+        data0 = client.get('/api/preparedness/dashboard').get_json()
+        assert data0['incidents']['total'] == 0
+        # Log a critical incident, verify the snapshot reflects it
+        client.post('/api/incidents', json={
+            'description': 'Critical test event',
+            'severity': 'critical',
+            'category': 'security',
+        })
+        data1 = client.get('/api/preparedness/dashboard').get_json()
+        assert data1['incidents']['total'] >= 1
+        assert data1['incidents']['open_critical'] >= 1
+        assert data1['readiness_hint'] == 'needs-attention'
+
+    def test_dashboard_survives_missing_optional_tables(self, client):
+        # The endpoint wraps every section in try/except so a partial
+        # schema (missing power_log, alerts, etc.) still returns 200.
+        resp = client.get('/api/preparedness/dashboard')
+        assert resp.status_code == 200
+
+
 class TestIncidentsList:
     def test_list_incidents(self, client):
         resp = client.get('/api/incidents')

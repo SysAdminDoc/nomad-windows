@@ -206,6 +206,10 @@ document.addEventListener('click', e => {
   if (action === 'restore-wizard') { wizRestore(); return; }
   if (action === 'dismiss-copilot-answer') { dismissCopilotAnswer(); return; }
   if (action === 'voice-input') { voiceInput(control.dataset.voiceTarget); return; }
+  if (action === 'toggle-handsfree') {
+    if (typeof window.NomadVoiceCopilot !== 'undefined') window.NomadVoiceCopilot.toggle();
+    return;
+  }
   if (action === 'ask-copilot') { askCopilot(control.dataset.copilotQuestion); return; }
   if (action === 'close-csv-import') { closeCSVImportModal(); return; }
   if (action === 'execute-csv-import') { executeCSVImport(); return; }
@@ -1000,6 +1004,7 @@ document.addEventListener('change', e => {
     case 'update-power-spec-fields': updatePowerSpecFields(); break;
     case 'load-sensor-chart': loadSensorChart(); break;
     case 'save-auto-backup': saveAutoBackup(); break;
+    case 'save-voice-prefs': saveVoicePrefs(); break;
     case 'toggle-startup': toggleStartup(); break;
     case 'toggle-notifications': toggleNotifications(); break;
     case 'import-config': importConfig(); break;

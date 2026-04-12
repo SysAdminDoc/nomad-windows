@@ -2206,6 +2206,93 @@
   padding: 4px 8px;
 }
 
+.copilot-handsfree-btn {
+  font-size: 12px;
+  padding: 4px 8px;
+  position: relative;
+}
+.copilot-handsfree-btn[data-state="listening"] {
+  background: var(--accent-dim, rgba(74, 237, 196, 0.2));
+  color: var(--accent, #4aedc4);
+  animation: copilot-pulse 1.4s ease-in-out infinite;
+}
+.copilot-handsfree-btn[data-state="thinking"] {
+  background: rgba(255, 200, 87, 0.18);
+  color: #ffc857;
+}
+.copilot-handsfree-btn[data-state="speaking"] {
+  background: rgba(120, 180, 255, 0.18);
+  color: #8ac7ff;
+}
+.copilot-handsfree-btn[aria-pressed="true"]::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  top: 3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent, #4aedc4);
+  box-shadow: 0 0 4px currentColor;
+}
+@keyframes copilot-pulse {
+  0%, 100% { box-shadow: 0 0 0 2px var(--accent-dim, rgba(74, 237, 196, 0.4)); }
+  50%      { box-shadow: 0 0 0 5px var(--accent-dim, rgba(74, 237, 196, 0.2)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .copilot-handsfree-btn[data-state="listening"] { animation: none; }
+}
+
+.copilot-voice-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 12px;
+  font-size: 11px;
+  min-height: 22px;
+}
+.copilot-voice-state-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-family: var(--font-data, 'Cascadia Code', monospace);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted, #8a96a8);
+}
+.copilot-voice-state-badge[data-state="listening"] {
+  background: var(--accent-dim, rgba(74, 237, 196, 0.18));
+  color: var(--accent, #4aedc4);
+}
+.copilot-voice-state-badge[data-state="thinking"] {
+  background: rgba(255, 200, 87, 0.18);
+  color: #ffc857;
+}
+.copilot-voice-state-badge[data-state="speaking"] {
+  background: rgba(120, 180, 255, 0.18);
+  color: #8ac7ff;
+}
+.copilot-voice-transcript {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--text-muted, #8a96a8);
+  font-style: italic;
+}
+/* Hide the whole strip when idle — nothing useful to show */
+.copilot-voice-state-badge[data-state="idle"] ~ .copilot-voice-transcript[hidden] { display: none; }
+.copilot-voice-strip:has(.copilot-voice-state-badge[data-state="idle"]) {
+  padding-top: 0;
+  padding-bottom: 0;
+  min-height: 0;
+}
+.copilot-voice-strip:has(.copilot-voice-state-badge[data-state="idle"]) .copilot-voice-state-badge {
+  display: none;
+}
+
 .copilot-ask-btn {
   font-size: 10px;
 }

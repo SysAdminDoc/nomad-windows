@@ -41,10 +41,10 @@
         <div class="calc-card prep-calc-card-wide">
           <h4>Watch / Guard Rotation Schedule</h4>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Team Members (comma-separated)</label><input id="watch-names" name="watch_names" class="prep-toolbar-input prep-toolbar-input-wide" value="Alpha, Bravo, Charlie, Delta" data-input-action="calc-watch"></div>
-            <div class="prep-field"><label class="prep-field-label">Shift (hours)</label><input id="watch-shift" name="watch_shift" type="number" min="1" max="12" value="4" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-watch"></div>
-            <div class="prep-field"><label class="prep-field-label">Days</label><input id="watch-days" name="watch_days" type="number" min="1" max="14" value="3" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-watch"></div>
-            <div class="prep-field"><label class="prep-field-label">Start Time</label><input id="watch-start" name="watch_start" type="time" value="18:00" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-watch"></div>
+            <div class="prep-field"><label class="prep-field-label" for="watch-names">Team Members (comma-separated)</label><input id="watch-names" name="watch_names" class="prep-toolbar-input prep-toolbar-input-wide" value="Alpha, Bravo, Charlie, Delta" data-input-action="calc-watch"></div>
+            <div class="prep-field"><label class="prep-field-label" for="watch-shift">Shift (hours)</label><input id="watch-shift" name="watch_shift" type="number" min="1" max="12" value="4" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-watch"></div>
+            <div class="prep-field"><label class="prep-field-label" for="watch-days">Days</label><input id="watch-days" name="watch_days" type="number" min="1" max="14" value="3" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-watch"></div>
+            <div class="prep-field"><label class="prep-field-label" for="watch-start">Start Time</label><input id="watch-start" name="watch_start" type="time" value="18:00" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-watch"></div>
           </div>
           <div id="watch-result" class="prep-calc-scroll watch-result-shell"></div>
         </div>
@@ -52,9 +52,9 @@
         <div class="calc-card prep-calc-card-wide">
           <h4>Sunrise / Sunset Calculator (Offline)</h4>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Latitude</label><input id="solar-lat" name="solar_lat" type="number" step="0.001" value="39.8" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-solar"></div>
-            <div class="prep-field"><label class="prep-field-label">Longitude</label><input id="solar-lng" name="solar_lng" type="number" step="0.001" value="-98.5" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-solar"></div>
-            <div class="prep-field"><label class="prep-field-label">Date</label><input id="solar-date" name="solar_date" type="date" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-solar"></div>
+            <div class="prep-field"><label class="prep-field-label" for="solar-lat">Latitude</label><input id="solar-lat" name="solar_lat" type="number" step="0.001" value="39.8" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-solar"></div>
+            <div class="prep-field"><label class="prep-field-label" for="solar-lng">Longitude</label><input id="solar-lng" name="solar_lng" type="number" step="0.001" value="-98.5" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-solar"></div>
+            <div class="prep-field"><label class="prep-field-label" for="solar-date">Date</label><input id="solar-date" name="solar_date" type="date" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-solar"></div>
             <button class="btn btn-sm" data-prep-action="calc-solar-today">Today</button>
             <button class="btn btn-sm" data-prep-action="get-solar-location">Use My Location</button>
           </div>
@@ -129,8 +129,8 @@
           <div class="calc-row"><label>Target cal/day</label><input id="cal-target" name="cal_target" type="number" value="2000" min="800" max="5000" step="100" data-input-action="update-cal-tracker"></div>
           <div id="cal-log-form" class="prep-calc-inline-form">
             <div class="prep-toolbar-row prep-ops-toolbar prep-ops-toolbar-compact">
-              <div class="prep-field"><label class="prep-field-label">Item</label><input id="cal-item" name="cal_item" class="prep-toolbar-input prep-toolbar-input-wide" placeholder="e.g. MRE, rice + beans…"></div>
-              <div class="prep-field"><label class="prep-field-label">Calories</label><input id="cal-amount" name="cal_amount" type="number" min="1" value="500" class="prep-toolbar-input prep-toolbar-input-compact"></div>
+              <div class="prep-field"><label class="prep-field-label" for="cal-item">Item</label><input id="cal-item" name="cal_item" class="prep-toolbar-input prep-toolbar-input-wide" placeholder="e.g. MRE, rice + beans…"></div>
+              <div class="prep-field"><label class="prep-field-label" for="cal-amount">Calories</label><input id="cal-amount" name="cal_amount" type="number" min="1" value="500" class="prep-toolbar-input prep-toolbar-input-compact"></div>
               <button type="button" class="btn btn-sm btn-primary" data-prep-action="add-cal-entry">Log</button>
             </div>
           </div>
@@ -140,9 +140,9 @@
         <div class="calc-card prep-calc-card-wide">
           <h4>Resource Allocation Planner</h4>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">People</label><input id="plan-people" name="plan_people" type="number" min="1" max="50" value="4" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-plan"></div>
-            <div class="prep-field"><label class="prep-field-label">Days</label><input id="plan-days" name="plan_days" type="number" min="1" max="365" value="14" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-plan"></div>
-            <div class="prep-field"><label class="prep-field-label">Activity Level</label>
+            <div class="prep-field"><label class="prep-field-label" for="plan-people">People</label><input id="plan-people" name="plan_people" type="number" min="1" max="50" value="4" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-plan"></div>
+            <div class="prep-field"><label class="prep-field-label" for="plan-days">Days</label><input id="plan-days" name="plan_days" type="number" min="1" max="365" value="14" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-plan"></div>
+            <div class="prep-field"><label class="prep-field-label" for="plan-activity">Activity Level</label>
               <select id="plan-activity" name="plan_activity" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-plan">
                 <option value="sedentary">Sedentary (shelter-in-place)</option>
                 <option value="moderate" selected>Moderate (normal activity)</option>
@@ -156,8 +156,8 @@
           <h4>Food Storage Planner</h4>
           <div class="prep-note-block">Calculate how much food to store per person. Based on LDS/FEMA/Red Cross guidelines.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">People</label><input id="fs-people" name="fs_people" type="number" min="1" max="30" value="4" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-food-storage"></div>
-            <div class="prep-field"><label class="prep-field-label">Months</label><input id="fs-months" name="fs_months" type="number" min="1" max="24" value="3" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-food-storage"></div>
+            <div class="prep-field"><label class="prep-field-label" for="fs-people">People</label><input id="fs-people" name="fs_people" type="number" min="1" max="30" value="4" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-food-storage"></div>
+            <div class="prep-field"><label class="prep-field-label" for="fs-months">Months</label><input id="fs-months" name="fs_months" type="number" min="1" max="24" value="3" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-food-storage"></div>
           </div>
           <div class="calc-result" id="fs-result"></div>
         </div>
@@ -167,7 +167,7 @@
           <h4>Generator Fuel Calculator</h4>
           <div class="prep-note-block">Estimate fuel needs for generator runtime. Adjust based on your generator's rated consumption.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Generator Size (watts)</label>
+            <div class="prep-field"><label class="prep-field-label" for="gen-size">Generator Size (watts)</label>
               <select id="gen-size" name="gen_size" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-gen-fuel">
                 <option value="2000">2,000W (small portable)</option>
                 <option value="3500" selected>3,500W (mid portable)</option>
@@ -176,16 +176,16 @@
                 <option value="10000">10,000W (standby)</option>
                 <option value="20000">20,000W (large standby)</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Fuel Type</label>
+            <div class="prep-field"><label class="prep-field-label" for="gen-fuel">Fuel Type</label>
               <select id="gen-fuel" name="gen_fuel" class="prep-toolbar-select prep-toolbar-select-tight" data-change-action="calc-gen-fuel">
                 <option value="gasoline" selected>Gasoline</option>
                 <option value="diesel">Diesel</option>
                 <option value="propane">Propane (LP)</option>
                 <option value="natgas">Natural Gas</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Hours/Day Running</label><input id="gen-hours" name="gen_hours" type="number" min="1" max="24" value="8" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-gen-fuel"></div>
-            <div class="prep-field"><label class="prep-field-label">Days</label><input id="gen-days" name="gen_days" type="number" min="1" max="90" value="7" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-gen-fuel"></div>
-            <div class="prep-field"><label class="prep-field-label">Load %</label><input id="gen-load" name="gen_load" type="number" min="10" max="100" value="50" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-gen-fuel"></div>
+            <div class="prep-field"><label class="prep-field-label" for="gen-hours">Hours/Day Running</label><input id="gen-hours" name="gen_hours" type="number" min="1" max="24" value="8" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-gen-fuel"></div>
+            <div class="prep-field"><label class="prep-field-label" for="gen-days">Days</label><input id="gen-days" name="gen_days" type="number" min="1" max="90" value="7" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-gen-fuel"></div>
+            <div class="prep-field"><label class="prep-field-label" for="gen-load">Load %</label><input id="gen-load" name="gen_load" type="number" min="10" max="100" value="50" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-gen-fuel"></div>
           </div>
           <div class="calc-result" id="gen-result"></div>
         </div>
@@ -195,9 +195,9 @@
           <h4>Rainwater Harvest Calculator</h4>
           <div class="prep-note-block">Estimate collectible rainwater from roof/catchment area.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Roof Area (sq ft)</label><input id="rw-area" name="rw_area" type="number" min="10" max="100000" value="1500" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-rainwater"></div>
-            <div class="prep-field"><label class="prep-field-label">Rainfall (inches)</label><input id="rw-rain" name="rw_rain" type="number" min="0.1" max="100" value="1" step="0.1" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-rainwater"></div>
-            <div class="prep-field"><label class="prep-field-label">Roof Type</label>
+            <div class="prep-field"><label class="prep-field-label" for="rw-area">Roof Area (sq ft)</label><input id="rw-area" name="rw_area" type="number" min="10" max="100000" value="1500" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-rainwater"></div>
+            <div class="prep-field"><label class="prep-field-label" for="rw-rain">Rainfall (inches)</label><input id="rw-rain" name="rw_rain" type="number" min="0.1" max="100" value="1" step="0.1" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-rainwater"></div>
+            <div class="prep-field"><label class="prep-field-label" for="rw-roof">Roof Type</label>
               <select id="rw-roof" name="rw_roof" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-rainwater">
                 <option value="0.95">Metal (95% eff)</option>
                 <option value="0.90" selected>Asphalt Shingle (90%)</option>
@@ -205,7 +205,7 @@
                 <option value="0.60">Flat/Gravel (60%)</option>
                 <option value="0.75">Tarp/Improvised (75%)</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">People</label><input id="rw-people" name="rw_people" type="number" min="1" max="30" value="4" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-rainwater"></div>
+            <div class="prep-field"><label class="prep-field-label" for="rw-people">People</label><input id="rw-people" name="rw_people" type="number" min="1" max="30" value="4" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-rainwater"></div>
           </div>
           <div class="calc-result" id="rw-result"></div>
         </div>
@@ -215,7 +215,7 @@
           <h4>Radio Range Estimator</h4>
           <div class="prep-note-block">Estimate effective communication range based on radio type and terrain.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Radio Type</label>
+            <div class="prep-field"><label class="prep-field-label" for="rr-type">Radio Type</label>
               <select id="rr-type" name="rr_type" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-radio-range">
                 <option value="frs">FRS (walkie-talkie, 0.5W)</option>
                 <option value="gmrs">GMRS (5W handheld)</option>
@@ -230,7 +230,7 @@
                 <option value="murs">MURS (2W)</option>
                 <option value="meshtastic">Meshtastic LoRa</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Terrain</label>
+            <div class="prep-field"><label class="prep-field-label" for="rr-terrain">Terrain</label>
               <select id="rr-terrain" name="rr_terrain" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-radio-range">
                 <option value="urban">Urban (buildings)</option>
                 <option value="suburban" selected>Suburban</option>
@@ -240,7 +240,7 @@
                 <option value="water">Over Water</option>
                 <option value="hilltop">Hilltop-to-Hilltop</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Antenna Height (ft)</label><input id="rr-height" name="rr_height" type="number" min="3" max="500" value="6" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-radio-range"></div>
+            <div class="prep-field"><label class="prep-field-label" for="rr-height">Antenna Height (ft)</label><input id="rr-height" name="rr_height" type="number" min="3" max="500" value="6" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-radio-range"></div>
           </div>
           <div class="calc-result" id="rr-result"></div>
         </div>
@@ -250,13 +250,13 @@
           <h4>Medication Dosage Calculator</h4>
           <div class="prep-note-block">Calculate weight-based doses for common OTC medications. For reference only — consult medical professional when possible.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Patient Weight</label><input id="md-weight" name="md_weight" type="number" min="5" max="400" value="150" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-med-dose"></div>
-            <div class="prep-field"><label class="prep-field-label">Unit</label>
+            <div class="prep-field"><label class="prep-field-label" for="md-weight">Patient Weight</label><input id="md-weight" name="md_weight" type="number" min="5" max="400" value="150" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-med-dose"></div>
+            <div class="prep-field"><label class="prep-field-label" for="md-unit">Unit</label>
               <select id="md-unit" name="md_unit" class="prep-toolbar-select prep-toolbar-select-tight" data-change-action="calc-med-dose">
                 <option value="lbs" selected>Pounds</option>
                 <option value="kg">Kilograms</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Age Group</label>
+            <div class="prep-field"><label class="prep-field-label" for="md-age">Age Group</label>
               <select id="md-age" name="md_age" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-med-dose">
                 <option value="adult" selected>Adult (12+)</option>
                 <option value="child">Child (2-11)</option>
@@ -271,8 +271,8 @@
           <h4>Off-Grid Solar Power Sizing Calculator</h4>
           <div class="prep-note-block">Size a solar system for off-grid or backup power. Enter your daily loads to calculate panels, batteries, and inverter.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Daily Watt-Hours</label><input id="sol-wh" name="sol_wh" type="number" min="100" max="50000" value="3000" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-solar-size"></div>
-            <div class="prep-field"><label class="prep-field-label">Sun Hours/Day</label>
+            <div class="prep-field"><label class="prep-field-label" for="sol-wh">Daily Watt-Hours</label><input id="sol-wh" name="sol_wh" type="number" min="100" max="50000" value="3000" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-solar-size"></div>
+            <div class="prep-field"><label class="prep-field-label" for="sol-sun">Sun Hours/Day</label>
               <select id="sol-sun" name="sol_sun" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-solar-size">
                 <option value="3">3 hrs (cloudy/winter/north)</option>
                 <option value="4" selected>4 hrs (avg US winter)</option>
@@ -280,13 +280,13 @@
                 <option value="6">6 hrs (sunny/south)</option>
                 <option value="7">7 hrs (desert/SW)</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Battery Type</label>
+            <div class="prep-field"><label class="prep-field-label" for="sol-batt">Battery Type</label>
               <select id="sol-batt" name="sol_batt" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-solar-size">
                 <option value="lifepo4" selected>LiFePO4 (best, 80% DoD)</option>
                 <option value="agm">AGM Lead-Acid (50% DoD)</option>
                 <option value="flooded">Flooded Lead-Acid (50% DoD)</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Autonomy Days</label><input id="sol-days" name="sol_days" type="number" min="1" max="7" value="2" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-solar-size"></div>
+            <div class="prep-field"><label class="prep-field-label" for="sol-days">Autonomy Days</label><input id="sol-days" name="sol_days" type="number" min="1" max="7" value="2" class="prep-toolbar-input prep-toolbar-input-tight" data-input-action="calc-solar-size"></div>
           </div>
           <div class="calc-result" id="sol-size-result"></div>
         </div>
@@ -296,7 +296,7 @@
           <h4>Bug-Out Bag Weight Calculator</h4>
           <div class="prep-note-block">Track your BOB weight. Target: 15-25% of body weight for 72-hour kit. Check items you're carrying.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Body Weight (lbs)</label><input id="bob-bodyweight" name="bob_bodyweight" type="number" min="80" max="400" value="180" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-bob"></div>
+            <div class="prep-field"><label class="prep-field-label" for="bob-bodyweight">Body Weight (lbs)</label><input id="bob-bodyweight" name="bob_bodyweight" type="number" min="80" max="400" value="180" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-bob"></div>
           </div>
           <div id="bob-checklist" class="prep-calc-checklist-grid"></div>
           <div class="calc-result" id="bob-result"></div>
@@ -307,7 +307,7 @@
           <h4>Ballistics Calculator</h4>
           <div class="prep-note-block">Estimate bullet drop, energy, and time-of-flight at range. Reference only — verify with live fire.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Caliber / Load</label>
+            <div class="prep-field"><label class="prep-field-label" for="bal-caliber">Caliber / Load</label>
               <select id="bal-caliber" name="bal_caliber" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-ballistics">
                 <option value="223,55,3240">5.56/.223 55gr FMJ</option>
                 <option value="308,168,2650">7.62/.308 168gr BTHP</option>
@@ -318,8 +318,8 @@
                 <option value="22lr,40,1080">.22 LR 40gr LRN</option>
                 <option value="12ga-slug,437,1600">12 Gauge Slug 1oz</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Zero Range (yd)</label><input id="bal-zero" name="bal_zero" type="number" min="25" max="300" value="100" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-ballistics"></div>
-            <div class="prep-field"><label class="prep-field-label">Wind Speed (mph)</label><input id="bal-wind" name="bal_wind" type="number" min="0" max="50" value="10" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-ballistics"></div>
+            <div class="prep-field"><label class="prep-field-label" for="bal-zero">Zero Range (yd)</label><input id="bal-zero" name="bal_zero" type="number" min="25" max="300" value="100" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-ballistics"></div>
+            <div class="prep-field"><label class="prep-field-label" for="bal-wind">Wind Speed (mph)</label><input id="bal-wind" name="bal_wind" type="number" min="0" max="50" value="10" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-ballistics"></div>
           </div>
           <div class="calc-result" id="bal-result"></div>
         </div>
@@ -370,8 +370,8 @@
           <h4>Nuclear Fallout — Dose Rate & Shelter Assessment (7-10 Rule)</h4>
           <div class="prep-note-block">The 7-10 Rule: dose rate drops 10x for every 7x increase in time after detonation (H+1 = reference). Enter H+1 dose rate from your dosimeter or reference data.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Dose rate @ H+1 (R/hr)</label><input id="fall-h1" name="fall_h1" type="number" min="0.001" step="0.001" value="100" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-fallout"></div>
-            <div class="prep-field"><label class="prep-field-label">Shelter type</label>
+            <div class="prep-field"><label class="prep-field-label" for="fall-h1">Dose rate @ H+1 (R/hr)</label><input id="fall-h1" name="fall_h1" type="number" min="0.001" step="0.001" value="100" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-fallout"></div>
+            <div class="prep-field"><label class="prep-field-label" for="fall-shelter">Shelter type</label>
               <select id="fall-shelter" name="fall_shelter" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-fallout">
                 <option value="1">Open (PF 1) — No protection</option>
                 <option value="3">Vehicle (PF 3)</option>
@@ -380,7 +380,7 @@
                 <option value="200">Concrete basement / subway (PF 200)</option>
                 <option value="1000">Underground bunker (PF 1000)</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Hours since detonation</label><input id="fall-hours" name="fall_hours" type="number" min="1" max="720" value="1" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-fallout"></div>
+            <div class="prep-field"><label class="prep-field-label" for="fall-hours">Hours since detonation</label><input id="fall-hours" name="fall_hours" type="number" min="1" max="720" value="1" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-fallout"></div>
           </div>
           <div class="calc-result" id="fall-result"></div>
         </div>
@@ -390,7 +390,7 @@
           <h4>Canning & Preservation Calculator</h4>
           <div class="prep-note-block">Estimate jar quantities and processing times. Always follow USDA-tested recipes for safety.</div>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field"><label class="prep-field-label">Food type</label>
+            <div class="prep-field"><label class="prep-field-label" for="can-food">Food type</label>
               <select id="can-food" name="can_food" class="prep-toolbar-select prep-toolbar-select-wide" data-change-action="calc-canning">
                 <option value="tomatoes,2,45,wb">Tomatoes (whole)</option>
                 <option value="green-beans,2,20,pc">Green Beans</option>
@@ -403,14 +403,14 @@
                 <option value="jam,0.5,10,wb">Jam / Jelly</option>
                 <option value="pickles,1,10,wb">Pickles</option>
               </select></div>
-            <div class="prep-field"><label class="prep-field-label">Pounds of produce</label><input id="can-lbs" name="can_lbs" type="number" min="1" max="500" value="20" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-canning"></div>
-            <div class="prep-field"><label class="prep-field-label">Jar size</label>
+            <div class="prep-field"><label class="prep-field-label" for="can-lbs">Pounds of produce</label><input id="can-lbs" name="can_lbs" type="number" min="1" max="500" value="20" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-canning"></div>
+            <div class="prep-field"><label class="prep-field-label" for="can-jar">Jar size</label>
               <select id="can-jar" name="can_jar" class="prep-toolbar-select prep-toolbar-select-tight" data-change-action="calc-canning">
                 <option value="0.5">Half-pint (8 oz)</option>
                 <option value="1" selected>Pint (16 oz)</option>
                 <option value="1.5">Quart (32 oz)</option>
             </select></div>
-            <div class="prep-field"><label class="prep-field-label">Altitude</label>
+            <div class="prep-field"><label class="prep-field-label" for="can-alt">Altitude</label>
               <select id="can-alt" name="can_alt" class="prep-toolbar-select prep-toolbar-select-tight" data-change-action="calc-canning">
                 <option value="0">0–1,000 ft</option>
                 <option value="1000">1,001–3,000 ft</option>
@@ -458,7 +458,7 @@
         <div class="prep-form-grid prep-form-grid-2">
           <div class="prep-field"><label class="prep-field-label">Volume (mL)</label><input type="number" id="iv-vol" name="iv_vol" value="1000" min="1" class="prep-field-control" data-input-action="calc-iv-drip"></div>
           <div class="prep-field"><label class="prep-field-label">Time (minutes)</label><input type="number" id="iv-time" name="iv_time" value="60" min="1" class="prep-field-control" data-input-action="calc-iv-drip"></div>
-          <div class="prep-field prep-field-span-2"><label class="prep-field-label">Drop Factor (drops/mL)</label>
+          <div class="prep-field prep-field-span-2"><label class="prep-field-label" for="iv-drops">Drop Factor (drops/mL)</label>
             <select id="iv-drops" name="iv_drops" class="prep-field-control" data-change-action="calc-iv-drip">
               <option value="10">10 gtt/mL — Macro (blood/thick fluids)</option>
               <option value="15">15 gtt/mL — Standard macro set</option>
@@ -500,7 +500,7 @@
         <div id="shpf-layers" class="prep-calc-dynamic-list"></div>
           <button type="button" class="btn btn-sm calc-inline-action" data-prep-action="add-shelter-layer">+ Add Layer</button>
         <div class="prep-field">
-          <label class="prep-field-label">Geometry bonus</label>
+          <label class="prep-field-label" for="shpf-geo">Geometry bonus</label>
           <select id="shpf-geo" name="shpf_geo" class="prep-field-control" data-change-action="calc-shelter-pf">
             <option value="1">Above-grade room (no geo bonus)</option>
             <option value="1.5">Corner room / inner room</option>
@@ -529,7 +529,7 @@
         <h4>NVIS / HF Frequency Advisor</h4>
         <div class="prep-note-block">NVIS (Near Vertical Incidence Skywave) provides 30–500 mile regional coverage. No repeater needed.</div>
         <div class="prep-form-grid prep-form-grid-2 calc-inline-action">
-          <div class="prep-field"><label class="prep-field-label">Solar Cycle Phase</label>
+          <div class="prep-field"><label class="prep-field-label" for="nvis-solar">Solar Cycle Phase</label>
             <select id="nvis-solar" name="nvis_solar" class="prep-field-control" data-change-action="calc-nvis">
               <option value="solar-min">Solar Minimum</option>
               <option value="solar-rising" selected>Solar Rising (current, ~2025)</option>
@@ -537,7 +537,7 @@
               <option value="solar-falling">Solar Falling</option>
             </select>
           </div>
-          <div class="prep-field"><label class="prep-field-label">Time of Day</label>
+          <div class="prep-field"><label class="prep-field-label" for="nvis-time">Time of Day</label>
             <select id="nvis-time" name="nvis_time" class="prep-field-control" data-change-action="calc-nvis">
               <option value="predawn">Pre-dawn (0000–0600)</option>
               <option value="morning" selected>Morning (0600–1200)</option>
@@ -556,13 +556,13 @@
         <div class="prep-note-block">Calculate pediatric or adult doses from mg/kg dosing references. Always verify against current formulary. Not a substitute for medical advice.</div>
         <div class="prep-form-grid prep-form-grid-2">
           <div class="prep-field"><label class="prep-field-label">Patient weight</label><input type="number" id="dose-weight" name="dose_weight" value="20" min="1" class="prep-field-control" data-input-action="calc-weight-dose"></div>
-          <div class="prep-field"><label class="prep-field-label">Unit</label>
+          <div class="prep-field"><label class="prep-field-label" for="dose-unit">Unit</label>
             <select id="dose-unit" name="dose_unit" class="prep-field-control" data-change-action="calc-weight-dose">
               <option value="kg" selected>kg</option>
               <option value="lb">lbs</option>
             </select>
           </div>
-          <div class="prep-field prep-field-span-2"><label class="prep-field-label">Medication</label>
+          <div class="prep-field prep-field-span-2"><label class="prep-field-label" for="dose-med">Medication</label>
             <select id="dose-med" name="dose_med" class="prep-field-control" data-change-action="calc-weight-dose">
               <option value="ibu">Ibuprofen (pain/fever) — 5-10 mg/kg q6-8h, max 40mg/kg/day</option>
               <option value="acetaminophen">Acetaminophen (pain/fever) — 10-15 mg/kg q4-6h, max 75mg/kg/day</option>
@@ -588,7 +588,7 @@
           <div class="prep-field"><label class="prep-field-label">Air Temp (°F)</label><input type="number" id="hypo-temp" name="hypo_temp" value="32" min="-60" max="50" class="prep-field-control" data-input-action="calc-hypothermia"></div>
           <div class="prep-field"><label class="prep-field-label">Wind Speed (mph)</label><input type="number" id="hypo-wind" name="hypo_wind" value="10" min="0" max="100" class="prep-field-control" data-input-action="calc-hypothermia"></div>
           <div class="prep-field"><label class="prep-field-label">Exposure (hours)</label><input type="number" id="hypo-hours" name="hypo_hours" value="1" min="0.1" step="0.1" max="24" class="prep-field-control" data-input-action="calc-hypothermia"></div>
-          <div class="prep-field"><label class="prep-field-label">Clothing / Wetness</label>
+          <div class="prep-field"><label class="prep-field-label" for="hypo-wet">Clothing / Wetness</label>
             <select id="hypo-wet" name="hypo_wet" class="prep-field-control" data-change-action="calc-hypothermia">
               <option value="1">Dry — adequate clothing</option>
               <option value="3">Damp — wet/inadequate clothing</option>
@@ -605,13 +605,13 @@
         <div class="prep-note-block">WHO-standard ORT for dehydration from diarrhea, vomiting, or fluid loss. Life-saving in grid-down scenarios.</div>
         <div class="prep-form-grid prep-form-grid-2">
           <div class="prep-field"><label class="prep-field-label">Patient weight</label><input type="number" id="ort-weight" name="ort_weight" value="70" min="1" class="prep-field-control" data-input-action="calc-ort"></div>
-          <div class="prep-field"><label class="prep-field-label">Unit</label>
+          <div class="prep-field"><label class="prep-field-label" for="ort-unit">Unit</label>
             <select id="ort-unit" name="ort_unit" class="prep-field-control" data-change-action="calc-ort">
               <option value="kg" selected>kg</option>
               <option value="lb">lbs</option>
             </select>
           </div>
-          <div class="prep-field prep-field-span-2"><label class="prep-field-label">Dehydration severity</label>
+          <div class="prep-field prep-field-span-2"><label class="prep-field-label" for="ort-sev">Dehydration severity</label>
             <select id="ort-sev" name="ort_sev" class="prep-field-control" data-change-action="calc-ort">
               <option value="mild">Mild (3–5%) — Thirsty, slightly dry mouth, normal urine</option>
               <option value="moderate" selected>Moderate (5–10%) — Dry mouth, sunken eyes, decreased urination</option>
@@ -627,7 +627,7 @@
         <h4>Antibiotic Inventory Planner</h4>
         <div class="prep-note-block">How many treatment courses does your stock cover? Based on standard adult dosing.</div>
         <div class="prep-form-grid prep-form-grid-2">
-          <div class="prep-field prep-field-span-2"><label class="prep-field-label">Antibiotic</label>
+          <div class="prep-field prep-field-span-2"><label class="prep-field-label" for="abx-drug">Antibiotic</label>
             <select id="abx-drug" name="abx_drug" class="prep-field-control" data-change-action="calc-abx-inventory">
               <option value="amox500">Amoxicillin 500mg (7-day course: 21 tabs TID)</option>
               <option value="amox250">Amoxicillin 250mg (7-day course: 42 tabs TID)</option>

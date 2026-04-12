@@ -40,14 +40,14 @@
         <div class="settings-card prep-utility-shell prep-ops-shell prep-ops-span-full">
           <h3 class="prep-utility-header prep-utility-header-compact"><span class="prep-utility-subtitle">SITREP Generator (Situation Report)</span><button class="help-icon" data-help="glossary" title="What is a SITREP?">?</button></h3>
           <div class="prep-form-grid prep-form-grid-2 prep-ops-form-grid">
-            <div class="prep-field"><label class="prep-field-label">Date/Time Group</label><input id="sitrep-dtg" name="sitrep_dtg" class="prep-field-control" placeholder="Auto-filled"></div>
-            <div class="prep-field"><label class="prep-field-label">Location</label><input id="sitrep-loc" name="sitrep_loc" class="prep-field-control" placeholder="Grid ref or description"></div>
-            <div class="prep-field"><label class="prep-field-label">1. Situation (what happened)</label><textarea id="sitrep-sit" name="sitrep_sit" rows="2" class="prep-field-control prep-ops-textarea"></textarea></div>
-            <div class="prep-field"><label class="prep-field-label">2. Casualties/Injuries</label><input id="sitrep-cas" name="sitrep_cas" class="prep-field-control" placeholder="None / count / details"></div>
-            <div class="prep-field"><label class="prep-field-label">3. Supplies Status</label><input id="sitrep-sup" name="sitrep_sup" class="prep-field-control" placeholder="Green/Yellow/Red + details"></div>
-            <div class="prep-field"><label class="prep-field-label">4. Comms Status</label><input id="sitrep-comms" name="sitrep_comms" class="prep-field-control" placeholder="Equipment operational / degraded / down"></div>
-            <div class="prep-field"><label class="prep-field-label">5. Requests/Needs</label><input id="sitrep-req" name="sitrep_req" class="prep-field-control" placeholder="Medical, supplies, evacuation, etc."></div>
-            <div class="prep-field"><label class="prep-field-label">6. Plan/Intent</label><input id="sitrep-plan" name="sitrep_plan" class="prep-field-control" placeholder="Next actions, timeline"></div>
+            <div class="prep-field"><label class="prep-field-label" for="sitrep-dtg">Date/Time Group</label><input id="sitrep-dtg" name="sitrep_dtg" class="prep-field-control" placeholder="Auto-filled"></div>
+            <div class="prep-field"><label class="prep-field-label" for="sitrep-loc">Location</label><input id="sitrep-loc" name="sitrep_loc" class="prep-field-control" placeholder="Grid ref or description"></div>
+            <div class="prep-field"><label class="prep-field-label" for="sitrep-sit">1. Situation (what happened)</label><textarea id="sitrep-sit" name="sitrep_sit" rows="2" class="prep-field-control prep-ops-textarea"></textarea></div>
+            <div class="prep-field"><label class="prep-field-label" for="sitrep-cas">2. Casualties/Injuries</label><input id="sitrep-cas" name="sitrep_cas" class="prep-field-control" placeholder="None / count / details"></div>
+            <div class="prep-field"><label class="prep-field-label" for="sitrep-sup">3. Supplies Status</label><input id="sitrep-sup" name="sitrep_sup" class="prep-field-control" placeholder="Green/Yellow/Red + details"></div>
+            <div class="prep-field"><label class="prep-field-label" for="sitrep-comms">4. Comms Status</label><input id="sitrep-comms" name="sitrep_comms" class="prep-field-control" placeholder="Equipment operational / degraded / down"></div>
+            <div class="prep-field"><label class="prep-field-label" for="sitrep-req">5. Requests/Needs</label><input id="sitrep-req" name="sitrep_req" class="prep-field-control" placeholder="Medical, supplies, evacuation, etc."></div>
+            <div class="prep-field"><label class="prep-field-label" for="sitrep-plan">6. Plan/Intent</label><input id="sitrep-plan" name="sitrep_plan" class="prep-field-control" placeholder="Next actions, timeline"></div>
           </div>
           <div class="prep-form-actions">
             <button type="button" class="btn btn-sm btn-primary" data-prep-action="generate-sitrep">Generate SITREP</button>
@@ -83,14 +83,14 @@
           <h3 class="prep-utility-header prep-utility-header-compact"><span class="prep-utility-subtitle">Bleach/Disinfection Calculator</span></h3>
           <div class="prep-ops-copy">
             <div class="prep-toolbar-row prep-ops-toolbar prep-ops-toolbar-compact">
-              <div class="prep-field"><label class="prep-field-label">Bleach %</label>
+              <div class="prep-field"><label class="prep-field-label" for="bleach-pct">Bleach %</label>
                 <select id="bleach-pct" name="bleach_pct" class="prep-toolbar-select prep-toolbar-select-tight" data-change-action="calc-bleach">
                   <option value="6">6% (standard)</option>
                   <option value="8.25">8.25% (concentrated)</option>
                 </select></div>
-              <div class="prep-field"><label class="prep-field-label">Water (gallons)</label>
+              <div class="prep-field"><label class="prep-field-label" for="bleach-gal">Water (gallons)</label>
                 <input id="bleach-gal" name="bleach_gal" type="number" value="1" min="0.25" step="0.25" class="prep-toolbar-input prep-toolbar-input-compact" data-input-action="calc-bleach"></div>
-              <div class="prep-field"><label class="prep-field-label">Water clarity</label>
+              <div class="prep-field"><label class="prep-field-label" for="bleach-clarity">Water clarity</label>
                 <select id="bleach-clarity" name="bleach_clarity" class="prep-toolbar-select prep-toolbar-select-tight" data-change-action="calc-bleach">
                   <option value="clear">Clear</option>
                   <option value="cloudy">Cloudy/turbid</option>
@@ -117,13 +117,13 @@
         <div class="settings-card prep-utility-shell prep-ops-shell prep-ops-span-full">
           <h3 class="prep-utility-header prep-utility-header-compact"><span class="prep-utility-subtitle">After-Action Review (AAR)</span></h3>
           <div class="prep-form-grid prep-form-grid-2 prep-ops-form-grid">
-            <div class="prep-field"><label class="prep-field-label">Event/Incident</label><input id="aar-event" name="aar_event" class="prep-field-control" placeholder="What was the event/exercise/incident?"></div>
-            <div class="prep-field"><label class="prep-field-label">Date</label><input id="aar-date" name="aar_date" type="date" class="prep-field-control"></div>
-            <div class="prep-field"><label class="prep-field-label">1. What was planned?</label><textarea id="aar-planned" name="aar_planned" rows="2" class="prep-field-control prep-ops-textarea" placeholder="What was the intended outcome/plan?"></textarea></div>
-            <div class="prep-field"><label class="prep-field-label">2. What actually happened?</label><textarea id="aar-happened" name="aar_happened" rows="2" class="prep-field-control prep-ops-textarea" placeholder="What were the actual results?"></textarea></div>
-            <div class="prep-field"><label class="prep-field-label">3. What went well?</label><textarea id="aar-well" name="aar_well" rows="2" class="prep-field-control prep-ops-textarea" placeholder="Sustains - what to keep doing"></textarea></div>
-            <div class="prep-field"><label class="prep-field-label">4. What needs improvement?</label><textarea id="aar-improve" name="aar_improve" rows="2" class="prep-field-control prep-ops-textarea" placeholder="Improves - what to change"></textarea></div>
-            <div class="prep-field prep-field-span-2"><label class="prep-field-label">5. Action items</label><textarea id="aar-actions" name="aar_actions" rows="2" class="prep-field-control prep-ops-textarea" placeholder="Specific actions, assigned to whom, by when"></textarea></div>
+            <div class="prep-field"><label class="prep-field-label" for="aar-event">Event/Incident</label><input id="aar-event" name="aar_event" class="prep-field-control" placeholder="What was the event/exercise/incident?"></div>
+            <div class="prep-field"><label class="prep-field-label" for="aar-date">Date</label><input id="aar-date" name="aar_date" type="date" class="prep-field-control"></div>
+            <div class="prep-field"><label class="prep-field-label" for="aar-planned">1. What was planned?</label><textarea id="aar-planned" name="aar_planned" rows="2" class="prep-field-control prep-ops-textarea" placeholder="What was the intended outcome/plan?"></textarea></div>
+            <div class="prep-field"><label class="prep-field-label" for="aar-happened">2. What actually happened?</label><textarea id="aar-happened" name="aar_happened" rows="2" class="prep-field-control prep-ops-textarea" placeholder="What were the actual results?"></textarea></div>
+            <div class="prep-field"><label class="prep-field-label" for="aar-well">3. What went well?</label><textarea id="aar-well" name="aar_well" rows="2" class="prep-field-control prep-ops-textarea" placeholder="Sustains - what to keep doing"></textarea></div>
+            <div class="prep-field"><label class="prep-field-label" for="aar-improve">4. What needs improvement?</label><textarea id="aar-improve" name="aar_improve" rows="2" class="prep-field-control prep-ops-textarea" placeholder="Improves - what to change"></textarea></div>
+            <div class="prep-field prep-field-span-2"><label class="prep-field-label" for="aar-actions">5. Action items</label><textarea id="aar-actions" name="aar_actions" rows="2" class="prep-field-control prep-ops-textarea" placeholder="Specific actions, assigned to whom, by when"></textarea></div>
           </div>
           <div class="prep-form-actions">
             <button type="button" class="btn btn-sm btn-primary" data-prep-action="generate-aar">Generate Report</button>

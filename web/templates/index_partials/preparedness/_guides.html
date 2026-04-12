@@ -200,7 +200,7 @@
           <h4>Planting Calendar by USDA Hardiness Zone</h4>
           <div class="workspace-toolbar prep-plant-toolbar">
             <div class="prep-field">
-              <label class="prep-field-label">Zone</label>
+              <label class="prep-field-label" for="plant-zone">Zone</label>
               <select id="plant-zone" name="plant_zone" class="prep-toolbar-select prep-toolbar-select-tight" data-change-action="show-plant-zone">
               <option value="4">Zone 4 (-30 to -20F)</option><option value="5">Zone 5 (-20 to -10F)</option>
               <option value="6">Zone 6 (-10 to 0F)</option><option value="7" selected>Zone 7 (0 to 10F)</option>
@@ -281,13 +281,13 @@
         <div class="calc-card prep-calc-card-wide">
           <h4>Morse Code Trainer</h4>
           <div class="prep-toolbar-row prep-ops-toolbar">
-            <div class="prep-field prep-toolbar-field-flex"><label class="prep-field-label">Text to encode</label><input id="morse-input" name="morse_input" class="prep-field-control prep-morse-input" placeholder="Type text to convert to Morse..." data-input-action="text-to-morse"></div>
+            <div class="prep-field prep-toolbar-field-flex"><label class="prep-field-label" for="morse-input">Text to encode</label><input id="morse-input" name="morse_input" class="prep-field-control prep-morse-input" placeholder="Type text to convert to Morse..." data-input-action="text-to-morse"></div>
             <button type="button" class="btn btn-sm btn-primary" data-prep-action="play-morse">Play Sound</button>
-            <div class="prep-field"><label class="prep-field-label">Speed (WPM)</label><input id="morse-wpm" name="morse_wpm" type="number" min="5" max="30" value="15" class="prep-toolbar-input prep-toolbar-input-tight"></div>
+            <div class="prep-field"><label class="prep-field-label" for="morse-wpm">Speed (WPM)</label><input id="morse-wpm" name="morse_wpm" type="number" min="5" max="30" value="15" class="prep-toolbar-input prep-toolbar-input-tight"></div>
           </div>
           <div id="morse-output" class="prep-output-shell prep-morse-output"></div>
           <div class="prep-toolbar-row prep-ops-toolbar prep-ops-toolbar-compact">
-            <div class="prep-field prep-toolbar-field-flex"><label class="prep-field-label">Morse to decode</label><input id="morse-decode-input" name="morse_decode_input" class="prep-field-control prep-morse-input prep-morse-input-mono" placeholder="Enter dots (.) and dashes (-), space between letters, / between words" data-input-action="morse-to-text"></div>
+            <div class="prep-field prep-toolbar-field-flex"><label class="prep-field-label" for="morse-decode-input">Morse to decode</label><input id="morse-decode-input" name="morse_decode_input" class="prep-field-control prep-morse-input prep-morse-input-mono" placeholder="Enter dots (.) and dashes (-), space between letters, / between words" data-input-action="morse-to-text"></div>
           </div>
           <div id="morse-decode-output" class="prep-output-shell prep-morse-decode-output"></div>
           <div class="prep-reference-footnote">Common prosigns: SOS = ...---... | CQ (calling) = -.-. --.- | AR (end of message) = .-.-. | SK (end of contact) = ...-.-</div>

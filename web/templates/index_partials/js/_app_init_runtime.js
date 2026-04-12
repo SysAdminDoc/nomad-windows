@@ -1388,6 +1388,9 @@ function showLanQR() {
       <button type="button" class="btn btn-sm" data-shell-action="close-lan-qr">Close</button>
     </div>`;
   document.body.appendChild(modal);
+  if (typeof NomadModal !== 'undefined') NomadModal.open(modal, {
+    onClose: () => { if (modal.parentNode) modal.remove(); },
+  });
   // Simple QR code generation using a data URL approach (pure JS QR)
   generateQRCanvas('qr-canvas', url);
 }
@@ -2141,6 +2144,7 @@ let _tcccLog = [];
 let _tcccProtocol = [];
 
 function closeTCCCModal() {
+  if (typeof NomadModal !== 'undefined' && NomadModal.isOpen()) { NomadModal.close(); return; }
   const modal = document.getElementById('tccc-modal');
   if (modal) modal.style.display = 'none';
 }
@@ -2161,6 +2165,9 @@ async function startTCCC(patientId) {
     document.body.appendChild(modal);
   }
   modal.style.display = 'flex';
+  if (typeof NomadModal !== 'undefined') NomadModal.open(modal, {
+    onClose: () => closeTCCCModal(),
+  });
   renderTCCCStep(protocol);
 }
 
@@ -4096,7 +4103,11 @@ async function generateAISitrep() {
     const data = await apiPost('/api/ai/sitrep', {});
     const content = data.sitrep || data.content || data.text || JSON.stringify(data, null, 2);
     document.getElementById('ai-sitrep-content').textContent = content;
-    document.getElementById('ai-sitrep-modal').style.display = 'flex';
+    const modal = document.getElementById('ai-sitrep-modal');
+    modal.style.display = 'flex';
+    if (typeof NomadModal !== 'undefined') NomadModal.open(modal, {
+      onClose: () => { modal.style.display = 'none'; },
+    });
   } catch(e) { toast('Failed to generate AI SITREP', 'error'); }
 }
 

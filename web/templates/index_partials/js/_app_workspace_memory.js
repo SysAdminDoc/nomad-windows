@@ -2523,6 +2523,9 @@ async function showBackupList() {
       + '<div class="generated-modal-copy">Current database will be backed up first. Restart the app after restoring.</div>'
       + '<div class="generated-modal-list">' + html + '</div></div>';
     document.body.appendChild(modal);
+    if (typeof NomadModal !== 'undefined') NomadModal.open(modal, {
+      onClose: () => { if (modal.parentNode) modal.remove(); },
+    });
   } catch(e) { toast('Failed to load backups', 'error'); }
 }
 async function restoreBackup(filename) {

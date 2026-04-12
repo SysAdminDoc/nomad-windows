@@ -352,7 +352,35 @@ async function loadPrepTab() {
     if (_bar && !_bar.children.length) initPrepNav();
   }
   renderPrepWorkspaceHub();
+  loadPrepDashboard();
   await loadChecklists();
+}
+
+
+/* ─── Preparedness Dashboard Snapshot (v7.0.6) ─── */
+async function loadPrepDashboard() {
+  const strip = document.getElementById('prep-dashboard-strip');
+  const cells = document.getElementById('prep-dashboard-cells');
+  if (!strip || !cells) return;
+  const d = await safeFetch('/api/preparedness/dashboard', {}, null);
+  if (!d || d.error) { strip.classList.add('is-hidden'); return; }
+  const metrics = [
+    {label: 'Supplies', value: (d.inventory?.total ?? 0), tone: (d.inventory?.low_stock > 0) ? 'warn' : 'ok'},
+    {label: 'Low Stock', value: (d.inventory?.low_stock ?? 0), tone: (d.inventory?.low_stock > 0) ? 'danger' : 'ok'},
+    {label: 'Expiring', value: (d.inventory?.expiring_30d ?? 0), tone: (d.inventory?.expiring_30d > 0) ? 'warn' : 'ok'},
+    {label: 'Patients', value: (d.medical?.patients ?? 0), tone: 'ok'},
+    {label: 'Contacts', value: (d.contacts?.total ?? 0), tone: (d.contacts?.total > 0) ? 'ok' : 'muted'},
+    {label: 'Tasks Due', value: (d.tasks?.due_today ?? 0) + (d.tasks?.overdue ?? 0), tone: (d.tasks?.overdue > 0) ? 'danger' : 'ok'},
+    {label: 'Incidents 24h', value: (d.incidents?.last_24h ?? 0), tone: (d.incidents?.open_critical > 0) ? 'danger' : 'ok'},
+    {label: 'Active Alerts', value: (d.alerts?.active ?? 0), tone: (d.alerts?.critical > 0) ? 'danger' : 'ok'},
+  ];
+  cells.innerHTML = metrics.map(m =>
+    `<div class="prep-dashboard-cell prep-dashboard-tone-${m.tone}">
+      <div class="prep-dashboard-value">${m.value}</div>
+      <div class="prep-dashboard-label">${escapeHtml(m.label)}</div>
+    </div>`
+  ).join('');
+  strip.classList.remove('is-hidden');
 }
 
 async function loadPrepTemplates() {

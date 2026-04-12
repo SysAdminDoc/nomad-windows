@@ -217,6 +217,23 @@
 }
 
 /* === WCAG 2.1 AA Accessibility === */
+
+/* Screen-reader-only utility (v7.0.6): hides an element visually but
+   keeps it in the accessibility tree so screen readers can announce it.
+   Used for tab-level <h2> headings that would clutter the visual design
+   but are required for a valid heading hierarchy (h1 → h2 → h3). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .skip-nav, .skip-link {
   position: absolute;
   top: -100%;

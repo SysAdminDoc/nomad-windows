@@ -108,6 +108,10 @@ SETTINGS_WHITELIST = {
     'ai_memory_enabled', 'ai_memory', 'wizard_tier', 'first_run_complete',
     'lan_name', 'lan_sharing', 'lan_password_enabled', 'workspace_memory',
     'household_size', 'location', 'timezone', 'units',
+    # Home coordinates + proximity radius — used by weather, sun calc, and
+    # the Situation Room "Proximity Board" to filter global feeds to threats
+    # within a given distance of the user's location.
+    'latitude', 'longitude', 'proximity_radius_km',
 }
 
 @system_bp.route('/api/settings', methods=['PUT'])

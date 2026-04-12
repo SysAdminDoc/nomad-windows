@@ -2031,6 +2031,64 @@ function hydrateVoicePrefs() {
   }
 }
 
+/* ─── Home Location (used by weather, sun calc, and SR proximity) ─── */
+async function hydrateHomeLocation() {
+  const latEl = document.getElementById('home-lat-input');
+  const lngEl = document.getElementById('home-lng-input');
+  const radEl = document.getElementById('proximity-radius-select');
+  if (!latEl || !lngEl) return;
+  try {
+    const s = await apiFetch('/api/settings');
+    if (s.latitude) latEl.value = s.latitude;
+    if (s.longitude) lngEl.value = s.longitude;
+    if (s.proximity_radius_km && radEl) radEl.value = s.proximity_radius_km;
+  } catch (_) { /* not fatal — user can still fill the form */ }
+}
+
+async function saveHomeLocation() {
+  const lat = parseFloat(document.getElementById('home-lat-input')?.value);
+  const lng = parseFloat(document.getElementById('home-lng-input')?.value);
+  const radEl = document.getElementById('proximity-radius-select');
+  const radius = radEl ? radEl.value : '500';
+  if (!isFinite(lat) || !isFinite(lng) || lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    toast('Enter a valid latitude and longitude', 'warning');
+    return;
+  }
+  try {
+    await apiPut('/api/settings', {
+      latitude: String(lat),
+      longitude: String(lng),
+      proximity_radius_km: String(radius),
+    });
+    toast('Home location saved', 'success');
+    // Refresh the proximity card immediately if Situation Room is mounted
+    if (typeof loadSitroomProximity === 'function') loadSitroomProximity();
+  } catch (e) {
+    toast('Failed to save location', 'error');
+  }
+}
+
+function detectHomeLocation() {
+  if (!navigator.geolocation) {
+    toast('Geolocation not supported in this browser', 'warning');
+    return;
+  }
+  toast('Detecting location...', 'info');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const latEl = document.getElementById('home-lat-input');
+      const lngEl = document.getElementById('home-lng-input');
+      if (latEl) latEl.value = pos.coords.latitude.toFixed(4);
+      if (lngEl) lngEl.value = pos.coords.longitude.toFixed(4);
+      saveHomeLocation();
+    },
+    (err) => {
+      toast('Location detection failed: ' + (err.message || err.code), 'error');
+    },
+    { enableHighAccuracy: false, timeout: 10000, maximumAge: 60000 }
+  );
+}
+
 function saveVoicePrefs() {
   if (typeof window.NomadSpeech === 'undefined') return;
   const tog = document.getElementById('voice-tts-toggle');
@@ -4489,9 +4547,10 @@ document.addEventListener('DOMContentLoaded', () => {
   if (el) el.innerHTML = Object.entries(NATO_ALPHABET).map(([k,v]) => '<div class="prep-reference-card"><strong class="prep-reference-key">' + k + '</strong> <span class="prep-reference-value">' + v + '</span></div>').join('');
 });
 
-// Hydrate Voice Copilot settings row (TTS toggle, voice picker, rate slider)
+// Hydrate Voice Copilot + Home Location settings rows
 document.addEventListener('DOMContentLoaded', () => {
   if (typeof hydrateVoicePrefs === 'function') hydrateVoicePrefs();
+  if (typeof hydrateHomeLocation === 'function') hydrateHomeLocation();
   // Hide hands-free button on browsers without STT or TTS (Linux WebKitGTK
   // often lacks voices entirely — a button that toasts "not supported" on
   // every click is worse than no button).

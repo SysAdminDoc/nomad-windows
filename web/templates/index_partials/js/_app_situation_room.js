@@ -522,6 +522,7 @@ window._nomadTabLeaveCallbacks['situation-room'] = function() {
 };
 
 function _sitroomRefreshPanels() {
+  loadSitroomProximity();
   loadSitroomSummary();
   loadSitroomNews();
   loadSitroomFeeds();
@@ -3436,6 +3437,62 @@ function renderSitroomFearGreed(markets) {
 }
 
 /* ─── Fires ─── */
+/* ─── Proximity Board (Near You) ───
+ * Filters the global sitroom_events feed to threats within the user's
+ * configured radius. Shows distance rings + nearest-first list.
+ * If home coordinates aren't set, prompts the user rather than showing
+ * an empty board. */
+async function loadSitroomProximity() {
+  const body = document.getElementById('sr-proximity-body');
+  const radiusBadge = document.getElementById('sr-proximity-radius');
+  if (!body) return;
+  const d = await safeFetch('/api/sitroom/proximity?limit=50', {}, null);
+  if (!d) {
+    body.innerHTML = '<div class="sr-empty">Proximity data unavailable</div>';
+    return;
+  }
+  if (!d.configured) {
+    if (radiusBadge) radiusBadge.textContent = 'NOT SET';
+    body.innerHTML = `<div class="sr-proximity-empty">
+      <div class="sr-proximity-empty-title">Home location not configured</div>
+      <div class="sr-proximity-empty-copy">${escapeHtml(d.message || 'Set latitude and longitude in Settings to enable proximity alerts.')}</div>
+      <button class="sr-btn sr-btn-ghost" type="button" onclick="switchTab('settings')">Open Settings</button>
+    </div>`;
+    return;
+  }
+  if (radiusBadge) radiusBadge.textContent = `${Math.round(d.radius_km)} km`;
+  const rings = d.rings || {};
+  const ringLabels = d.ring_labels || ['50', '200', '500', '2000'];
+  const ringsHtml = ringLabels.map(r => {
+    const count = rings[r] || 0;
+    const tone = count === 0 ? 'sr-proximity-ring-empty' :
+                 count >= 10 ? 'sr-proximity-ring-hot' : 'sr-proximity-ring-warn';
+    return `<div class="sr-proximity-ring ${tone}">
+      <div class="sr-proximity-ring-count">${count}</div>
+      <div class="sr-proximity-ring-label">&lt; ${r} km</div>
+    </div>`;
+  }).join('');
+  if (!d.events.length) {
+    body.innerHTML = `<div class="sr-proximity-rings">${ringsHtml}</div>
+      <div class="sr-proximity-all-clear">All clear within ${Math.round(d.radius_km)} km. No active threats near your location.</div>`;
+    return;
+  }
+  const eventsHtml = d.events.slice(0, 30).map(e => {
+    const mag = (e.magnitude !== null && e.magnitude !== undefined)
+      ? `<span class="sitroom-mag">${Number(e.magnitude).toFixed(1)}</span>` : '';
+    return `<div class="sitroom-event-item sr-proximity-event" data-event-type="${escapeAttr(e.event_type)}">
+      ${mag}
+      <div class="sitroom-event-info">
+        <div class="sitroom-event-title">${escapeHtml(e.label)} — ${escapeHtml(e.title || '(no description)')}</div>
+        <div class="sitroom-event-meta">${e.distance_km} km ${escapeHtml(e.bearing_compass)} (${e.bearing_deg}°)</div>
+      </div>
+      ${e.source_url ? `<a href="${escapeAttr(e.source_url)}" target="_blank" rel="noopener" class="sitroom-event-link" aria-label="Open source">&#8599;</a>` : ''}
+    </div>`;
+  }).join('');
+  body.innerHTML = `<div class="sr-proximity-rings">${ringsHtml}</div>
+    <div class="sr-proximity-events">${eventsHtml}</div>`;
+}
+
 async function loadSitroomFires() {
   const d = await safeFetch('/api/sitroom/fires?limit=50', {}, null);
   const el = document.getElementById('sitroom-fires-list');

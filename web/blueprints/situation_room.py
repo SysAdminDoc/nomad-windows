@@ -2475,6 +2475,179 @@ def api_sitroom_events():
     return jsonify({'events': [dict(r) for r in rows]})
 
 
+# ─── Proximity Board (location-aware threat filter) ────────────────────
+#
+# Takes the same sitroom_events table used by the global feeds and filters
+# it against the user's home coordinates (stored in settings.latitude /
+# .longitude). Produces a "Near You" view that ranks real threats to
+# *your* location over global noise — a magnitude-4 quake 200km away is
+# far more relevant than a magnitude-6 quake on the other side of the
+# planet, but the default Situation Room view ranks by raw magnitude.
+
+# Event types that have usable coordinates in sitroom_events
+_PROXIMITY_EVENT_TYPES = (
+    'earthquake', 'weather_alert', 'fire', 'disease', 'volcano',
+    'conflict', 'ucdp_conflict', 'oref_alert',
+)
+
+# Labels shown in the proximity board — keeps the UI from having to know
+# about every internal event_type string.
+_PROXIMITY_LABELS = {
+    'earthquake': 'Seismic',
+    'weather_alert': 'Severe Weather',
+    'fire': 'Fire',
+    'disease': 'Disease Outbreak',
+    'volcano': 'Volcanic Activity',
+    'conflict': 'Armed Conflict',
+    'ucdp_conflict': 'Armed Conflict',
+    'oref_alert': 'Siren/Rocket Alert',
+}
+
+# Default distance rings (km) used both for bucket counts and the UI pills.
+_PROXIMITY_RINGS = (50, 200, 500, 2000)
+
+
+def _haversine_km(lat1, lng1, lat2, lng2):
+    """Great-circle distance between two points in kilometres.
+
+    Uses the standard haversine formula. Returns a float. Callers must
+    guarantee non-None floats — this helper does no input coercion so it
+    stays fast in tight loops over thousands of events.
+    """
+    from math import radians, sin, cos, asin, sqrt
+    R = 6371.0
+    p1, p2 = radians(lat1), radians(lat2)
+    dlat = radians(lat2 - lat1)
+    dlng = radians(lng2 - lng1)
+    a = sin(dlat / 2) ** 2 + cos(p1) * cos(p2) * sin(dlng / 2) ** 2
+    return 2 * R * asin(sqrt(a))
+
+
+def _bearing_deg(lat1, lng1, lat2, lng2):
+    """Initial-bearing from (lat1,lng1) to (lat2,lng2), degrees 0–360."""
+    from math import radians, sin, cos, atan2, degrees
+    p1, p2 = radians(lat1), radians(lat2)
+    dlng = radians(lng2 - lng1)
+    x = sin(dlng) * cos(p2)
+    y = cos(p1) * sin(p2) - sin(p1) * cos(p2) * cos(dlng)
+    return (degrees(atan2(x, y)) + 360) % 360
+
+
+def _compass_from_bearing(deg):
+    """Compact 8-point compass label for a bearing in degrees."""
+    dirs = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
+    return dirs[int((deg + 22.5) // 45) % 8]
+
+
+def _get_home_coords(db):
+    """Read the user's home coordinates + radius preference from settings.
+
+    Returns ``(lat, lng, radius_km)`` as floats, or ``(None, None, default)``
+    if coordinates haven't been configured. Radius defaults to 500 km — a
+    "regional situational awareness" span that covers local weather, nearby
+    fires, and neighbouring-state seismic events without being so wide that
+    it collapses into the unfiltered global view.
+    """
+    rows = db.execute(
+        "SELECT key, value FROM settings WHERE key IN ('latitude','longitude','proximity_radius_km')"
+    ).fetchall()
+    s = {r['key']: r['value'] for r in rows}
+    def _f(v):
+        try: return float(v) if v not in (None, '') else None
+        except (TypeError, ValueError): return None
+    radius = _f(s.get('proximity_radius_km')) or 500.0
+    return _f(s.get('latitude')), _f(s.get('longitude')), radius
+
+
+@situation_room_bp.route('/api/sitroom/proximity')
+def api_sitroom_proximity():
+    """Events within user-configured radius, nearest first, plus ring counts.
+
+    Query params (optional):
+      ?radius=<km>   override the stored proximity_radius_km
+      ?limit=<n>     cap events returned (default 40, max 200)
+    """
+    try:
+        override_radius = request.args.get('radius', type=float)
+    except (TypeError, ValueError):
+        override_radius = None
+    try:
+        limit = min(int(request.args.get('limit', 40)), 200)
+    except (TypeError, ValueError):
+        limit = 40
+
+    with db_session() as db:
+        home_lat, home_lng, default_radius = _get_home_coords(db)
+        if home_lat is None or home_lng is None:
+            # Return a structured "not configured" payload so the UI can
+            # prompt the user to set their home coordinates without having
+            # to distinguish a 404 from an empty result.
+            return jsonify({
+                'configured': False,
+                'home_lat': None,
+                'home_lng': None,
+                'radius_km': default_radius,
+                'events': [],
+                'rings': {str(r): 0 for r in _PROXIMITY_RINGS},
+                'by_type': {},
+                'message': 'Set home coordinates in Settings to enable proximity alerts.',
+            })
+
+        radius_km = override_radius if override_radius and override_radius > 0 else default_radius
+        placeholders = ','.join('?' * len(_PROXIMITY_EVENT_TYPES))
+        rows = db.execute(
+            f"SELECT event_id, event_type, title, magnitude, lat, lng, event_time, source_url "
+            f"FROM sitroom_events WHERE event_type IN ({placeholders}) "
+            f"AND lat IS NOT NULL AND lng IS NOT NULL "
+            f"AND lat != 0 AND lng != 0 LIMIT 5000",
+            _PROXIMITY_EVENT_TYPES,
+        ).fetchall()
+
+    events = []
+    rings = {str(r): 0 for r in _PROXIMITY_RINGS}
+    by_type = {}
+    for r in rows:
+        try:
+            lat = float(r['lat']); lng = float(r['lng'])
+        except (TypeError, ValueError):
+            continue
+        dist = _haversine_km(home_lat, home_lng, lat, lng)
+        if dist > radius_km:
+            continue
+        for ring in _PROXIMITY_RINGS:
+            if dist <= ring:
+                rings[str(ring)] += 1
+        etype = r['event_type']
+        by_type[etype] = by_type.get(etype, 0) + 1
+        bearing = _bearing_deg(home_lat, home_lng, lat, lng)
+        events.append({
+            'event_id': r['event_id'],
+            'event_type': etype,
+            'label': _PROXIMITY_LABELS.get(etype, etype.replace('_', ' ').title()),
+            'title': r['title'] or '',
+            'magnitude': r['magnitude'],
+            'lat': lat,
+            'lng': lng,
+            'distance_km': round(dist, 1),
+            'bearing_deg': round(bearing),
+            'bearing_compass': _compass_from_bearing(bearing),
+            'event_time': r['event_time'],
+            'source_url': r['source_url'] or '',
+        })
+    events.sort(key=lambda e: e['distance_km'])
+    return jsonify({
+        'configured': True,
+        'home_lat': home_lat,
+        'home_lng': home_lng,
+        'radius_km': radius_km,
+        'events': events[:limit],
+        'total_in_radius': len(events),
+        'rings': rings,
+        'by_type': by_type,
+        'ring_labels': [str(r) for r in _PROXIMITY_RINGS],
+    })
+
+
 @situation_room_bp.route('/api/sitroom/earthquakes')
 def api_sitroom_earthquakes():
     min_mag = request.args.get('min_magnitude', 0, type=float)

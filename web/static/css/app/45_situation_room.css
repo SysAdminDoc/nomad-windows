@@ -2805,3 +2805,98 @@ body.situation-room-active .main-content.situation-room-main {
 @media (prefers-reduced-motion: reduce) {
   .sitroom-skeleton-bar { animation: none; opacity: 0.7; }
 }
+
+/* ─── Proximity Board (Near You) ─── */
+.sr-card-proximity {
+  border-color: var(--sr-accent, #4aedc4);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--sr-accent, #4aedc4) 35%, transparent);
+}
+.sr-card-proximity .sr-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.sr-proximity-radius {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--sr-accent, #4aedc4);
+  font-family: var(--font-data, 'Cascadia Code', monospace);
+  background: var(--sr-accent-bg, rgba(74, 237, 196, 0.12));
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.sr-proximity-rings {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.sr-proximity-ring {
+  border: 1px solid var(--border, #333);
+  border-radius: 6px;
+  padding: 8px 4px;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+}
+.sr-proximity-ring-count {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1;
+  font-family: var(--font-data, 'Cascadia Code', monospace);
+}
+.sr-proximity-ring-label {
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted, #8a96a8);
+  margin-top: 3px;
+}
+.sr-proximity-ring-empty .sr-proximity-ring-count {
+  color: var(--text-muted, #8a96a8);
+  opacity: 0.5;
+}
+.sr-proximity-ring-warn { border-color: rgba(255, 200, 87, 0.5); }
+.sr-proximity-ring-warn .sr-proximity-ring-count { color: #ffc857; }
+.sr-proximity-ring-hot {
+  border-color: rgba(255, 87, 87, 0.5);
+  background: rgba(255, 87, 87, 0.08);
+}
+.sr-proximity-ring-hot .sr-proximity-ring-count { color: #ff5757; }
+.sr-proximity-events {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.sr-proximity-all-clear {
+  padding: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--sr-accent, #4aedc4);
+  background: var(--sr-accent-bg, rgba(74, 237, 196, 0.08));
+  border-radius: 6px;
+  letter-spacing: 0.04em;
+}
+.sr-proximity-empty {
+  padding: 16px 10px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+.sr-proximity-empty-title {
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.sr-proximity-empty-copy {
+  font-size: 11px;
+  color: var(--text-muted, #8a96a8);
+  max-width: 280px;
+  line-height: 1.4;
+}

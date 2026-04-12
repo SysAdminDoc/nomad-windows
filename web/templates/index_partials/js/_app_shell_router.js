@@ -210,6 +210,8 @@ document.addEventListener('click', e => {
     if (typeof window.NomadVoiceCopilot !== 'undefined') window.NomadVoiceCopilot.toggle();
     return;
   }
+  if (action === 'save-home-location') { saveHomeLocation(); return; }
+  if (action === 'detect-home-location') { detectHomeLocation(); return; }
   if (action === 'ask-copilot') { askCopilot(control.dataset.copilotQuestion); return; }
   if (action === 'close-csv-import') { closeCSVImportModal(); return; }
   if (action === 'execute-csv-import') { executeCSVImport(); return; }

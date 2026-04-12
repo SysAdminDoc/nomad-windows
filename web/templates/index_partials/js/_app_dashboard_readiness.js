@@ -249,10 +249,21 @@ async function askCopilot(question) {
   const dismissBtn = document.getElementById('copilot-dismiss');
   if (dismissBtn) dismissBtn.style.display = 'block';
   answerEl.innerHTML = '<div class="copilot-answer-shell"><span class="copilot-answer-state">Thinking…</span></div>';
+  // Voice turn flag is set by the single-shot mic button in voiceInput();
+  // hands-free mode drives its own TTS from NomadVoiceCopilot.
+  const isVoiceTurn = !!window._copilotVoiceTurn;
+  window._copilotVoiceTurn = false;
   try {
     const data = await apiPost('/api/ai/quick-query', {question});
-    answerEl.innerHTML = `<div class="copilot-answer-shell"><div class="copilot-answer-body">${escapeHtml(data.answer || 'No answer generated.')}</div>
+    const answer = data.answer || 'No answer generated.';
+    answerEl.innerHTML = `<div class="copilot-answer-shell"><div class="copilot-answer-body">${escapeHtml(answer)}</div>
       ${data.data_sources?.length ? `<div class="copilot-source-row"><span class="copilot-source-label">Sources:</span>${data.data_sources.map(s => `<span class="copilot-source-chip">${escapeHtml(s)}</span>`).join('')}</div>` : ''}</div>`;
+    // Speak the answer if the question was dictated via the single-shot mic.
+    // Hands-free mode uses its own speak path (and ignores this flag since
+    // it calls askCopilot directly without setting _copilotVoiceTurn).
+    if (isVoiceTurn && window.NomadSpeech && window.NomadSpeech.isSupported()) {
+      window.NomadSpeech.speak(answer, { interrupt: true });
+    }
   } catch(e) {
     answerEl.innerHTML = `<span class="copilot-answer-error">${escapeHtml(e?.data?.error || 'Failed to reach AI service')}</span>`;
   }

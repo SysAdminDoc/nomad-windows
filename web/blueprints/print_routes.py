@@ -240,6 +240,31 @@ def _render_standard_frequencies_table():
     return html
 
 
+def _render_allergy_chips(allergies):
+    """Allergy chip list with NKDA fallback. Identical across every card that shows
+    allergies so every printed copy speaks the same language (No Known Drug
+    Allergies) rather than six near-duplicate strings."""
+    if not allergies:
+        return '<span class="doc-chip doc-chip-muted">NKDA</span>'
+    return ''.join(f'<span class="doc-chip doc-chip-alert">{_esc(str(a))}</span>' for a in allergies)
+
+
+def _render_medication_chips(medications, limit=None):
+    """Medication chip list with "None recorded" fallback. ``limit`` optionally
+    truncates — wallet cards cap at 8 to fit the physical card; binders don't."""
+    if not medications:
+        return '<span class="doc-chip doc-chip-muted">None recorded</span>'
+    items = medications[:limit] if limit else medications
+    return ''.join(f'<span class="doc-chip">{_esc(str(m))}</span>' for m in items)
+
+
+def _render_condition_chips(conditions):
+    """Condition chip list with "None recorded" fallback."""
+    if not conditions:
+        return '<span class="doc-chip doc-chip-muted">None recorded</span>'
+    return ''.join(f'<span class="doc-chip">{_esc(str(c))}</span>' for c in conditions)
+
+
 # ─── Preparedness Print ───────────────────────────────────────────
 
 @print_routes_bp.route('/api/preparedness/print')
@@ -556,9 +581,9 @@ def api_print_medical_cards():
             allergy_count += 1
         if medications:
             medication_count += 1
-        allergy_html = ''.join(f'<span class="doc-chip doc-chip-alert">{_esc(str(a))}</span>' for a in allergies) or '<span class="doc-chip doc-chip-muted">NKDA</span>'
-        conditions_html = ''.join(f'<span class="doc-chip">{_esc(str(c))}</span>' for c in conditions) or '<span class="doc-chip doc-chip-muted">None recorded</span>'
-        meds_html = ''.join(f'<span class="doc-chip">{_esc(str(m))}</span>' for m in medications) or '<span class="doc-chip doc-chip-muted">None recorded</span>'
+        allergy_html = _render_allergy_chips(allergies)
+        conditions_html = _render_condition_chips(conditions)
+        meds_html = _render_medication_chips(medications)
         card_grid += f'''<div class="doc-panel doc-panel-strong">
   <h2 class="doc-section-title">Medical Card</h2>
   <div class="doc-note-box" style="background:#fff;border-style:solid;">
@@ -1671,8 +1696,8 @@ def api_print_wallet_cards():
         for i, c in enumerate(ice_contacts[:3])
     ) or '<div class="doc-empty">No emergency contacts are on file.</div>'
 
-    medication_html = ''.join(f'<span class="doc-chip">{esc(str(med))}</span>' for med in medications[:8]) or '<span class="doc-chip doc-chip-muted">None recorded</span>'
-    allergy_html = ''.join(f'<span class="doc-chip doc-chip-alert">{esc(str(item))}</span>' for item in allergies) or '<span class="doc-chip doc-chip-muted">NKDA</span>'
+    medication_html = _render_medication_chips(medications, limit=8)
+    allergy_html = _render_allergy_chips(allergies)
 
     rally_html = '<div class="doc-empty">No rally points are configured.</div>'
     if rally_points:

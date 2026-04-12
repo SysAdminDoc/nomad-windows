@@ -197,6 +197,22 @@
               <button class="btn btn-sm settings-row-compact-btn" data-zoom-level="xlarge" id="zoom-xlarge" aria-pressed="false">X-Large</button>
             </div>
           </div>
+          <div class="setting-row" id="home-location-row">
+            <span class="setting-label">Home Location<br><span class="settings-inline-label">Used by weather, sun calc, and Situation Room proximity alerts.</span></span>
+            <div class="settings-inline-actions">
+              <input type="number" id="home-lat-input" name="home_latitude" class="settings-input settings-input-sm" placeholder="Latitude" step="0.0001" min="-90" max="90" aria-label="Home latitude">
+              <input type="number" id="home-lng-input" name="home_longitude" class="settings-input settings-input-sm" placeholder="Longitude" step="0.0001" min="-180" max="180" aria-label="Home longitude">
+              <select id="proximity-radius-select" name="proximity_radius_km" class="preset-select settings-select settings-input-sm" aria-label="Proximity alert radius">
+                <option value="100">100 km radius</option>
+                <option value="250">250 km</option>
+                <option value="500" selected>500 km</option>
+                <option value="1000">1000 km</option>
+                <option value="2000">2000 km</option>
+              </select>
+              <button type="button" class="btn btn-sm" data-shell-action="save-home-location">Save</button>
+              <button type="button" class="btn btn-sm btn-ghost" data-shell-action="detect-home-location" title="Use browser geolocation">Detect</button>
+            </div>
+          </div>
           <div class="setting-row" id="voice-prefs-row">
             <span class="setting-label">Voice Copilot<br><span class="settings-inline-label" id="voice-prefs-hint">Speak answers aloud and enable hands-free mode.</span></span>
             <div class="settings-inline-actions">

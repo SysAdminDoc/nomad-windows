@@ -110,3 +110,53 @@ class TestSitroomSpecialized:
     def test_monitors_list(self, client):
         resp = client.get('/api/sitroom/monitors')
         assert resp.status_code == 200
+
+
+class TestSitroomProximity:
+    """Tests for the /api/sitroom/proximity endpoint added in v7.2.0.
+
+    The endpoint filters the global sitroom_events feed against home
+    coordinates stored in settings and returns nearest-first events plus
+    ring counts at 50/200/500/2000 km.
+    """
+
+    def test_proximity_not_configured(self, client):
+        """Without home coordinates saved, the endpoint returns a structured
+        not-configured payload with a helpful message rather than a 404 or
+        500. The UI uses the ``configured`` flag to prompt the user."""
+        resp = client.get('/api/sitroom/proximity')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['configured'] is False
+        assert data['events'] == []
+        assert 'message' in data
+        assert 'rings' in data
+
+    def test_proximity_configured_no_events(self, client):
+        """With home coords saved but no qualifying events in sitroom_events,
+        returns configured=True, zero events, zero ring counts."""
+        client.put('/api/settings', json={'latitude': '40.0', 'longitude': '-74.0'})
+        resp = client.get('/api/sitroom/proximity')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['configured'] is True
+        assert data['home_lat'] == 40.0
+        assert data['home_lng'] == -74.0
+        assert data['radius_km'] > 0
+        # rings dict exists with all 4 buckets
+        assert set(data['rings'].keys()) == {'50', '200', '500', '2000'}
+
+    def test_proximity_radius_override(self, client):
+        """?radius=<km> should override the stored proximity_radius_km."""
+        client.put('/api/settings', json={'latitude': '0', 'longitude': '0'})
+        resp = client.get('/api/sitroom/proximity?radius=100')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['radius_km'] == 100.0
+
+    def test_proximity_haversine_sanity(self):
+        """Direct smoke test of the haversine helper — NYC → LA is ~3,935 km."""
+        from web.blueprints.situation_room import _haversine_km
+        # NYC (40.71,-74.00) to LA (34.05,-118.24)
+        d = _haversine_km(40.7128, -74.0060, 34.0522, -118.2437)
+        assert 3900 <= d <= 4000  # published great-circle distance is ~3944 km

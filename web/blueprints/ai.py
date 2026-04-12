@@ -7,7 +7,7 @@ import time
 import threading
 import logging
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timezone
 
 from flask import Blueprint, request, jsonify, Response, stream_with_context
 from werkzeug.utils import secure_filename
@@ -1183,7 +1183,7 @@ def api_ai_sitrep():
 
 Generate a formatted SITREP in markdown using this exact structure:
 
-# SITREP — {datetime.now().strftime('%d %b %Y %H%M')}Z
+# SITREP — {datetime.now(timezone.utc).strftime('%d %b %Y %H%M')}Z
 
 ## 1. SITUATION
 (Overall assessment — 2-3 sentences summarizing current conditions)

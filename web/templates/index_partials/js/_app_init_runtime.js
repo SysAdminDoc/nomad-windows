@@ -1977,8 +1977,10 @@ function voiceInput(targetInputId) {
   recognition.onend = () => {
     _voiceRecognition = null;
     if (btn) btn.classList.remove('voice-active');
-    // Auto-submit if it's the copilot
+    // Auto-submit if it's the copilot. Mark the call as voice-originated so
+    // askCopilot can speak the answer via NomadSpeech.
     if (targetInputId === 'copilot-input' && input.value.trim()) {
+      window._copilotVoiceTurn = true;
       askCopilot();
     }
   };
@@ -1993,6 +1995,52 @@ function voiceInput(targetInputId) {
   input.value = '';
   recognition.start();
   toast('Listening...', 'info');
+}
+
+/* ─── Voice Copilot Preferences (Settings row) ─── */
+function hydrateVoicePrefs() {
+  if (typeof window.NomadSpeech === 'undefined' || !window.NomadSpeech.isSupported()) {
+    const row = document.getElementById('voice-prefs-row');
+    if (row) {
+      const hint = document.getElementById('voice-prefs-hint');
+      if (hint) hint.textContent = 'Not supported in this browser.';
+      const tog = document.getElementById('voice-tts-toggle');
+      const sel = document.getElementById('voice-voice-select');
+      const rate = document.getElementById('voice-rate-slider');
+      [tog, sel, rate].forEach(el => { if (el) el.disabled = true; });
+    }
+    return;
+  }
+  const prefs = window.NomadSpeech.getPrefs();
+  const tog = document.getElementById('voice-tts-toggle');
+  const sel = document.getElementById('voice-voice-select');
+  const rate = document.getElementById('voice-rate-slider');
+  if (tog) tog.checked = !!prefs.enabled;
+  if (rate) rate.value = prefs.rate || 1;
+  if (sel) {
+    const populate = () => {
+      const voices = window.NomadSpeech.getVoices();
+      const prior = sel.value || prefs.voiceURI || '';
+      sel.innerHTML = '<option value="">Default voice</option>' +
+        voices.map(v => `<option value="${escapeAttr(v.voiceURI)}">${escapeHtml(v.name)} (${escapeHtml(v.lang)})</option>`).join('');
+      if (prior) sel.value = prior;
+    };
+    populate();
+    // Voices arrive async in Chromium — repopulate when they load
+    setTimeout(populate, 600);
+  }
+}
+
+function saveVoicePrefs() {
+  if (typeof window.NomadSpeech === 'undefined') return;
+  const tog = document.getElementById('voice-tts-toggle');
+  const sel = document.getElementById('voice-voice-select');
+  const rate = document.getElementById('voice-rate-slider');
+  window.NomadSpeech.setPrefs({
+    enabled: tog ? !!tog.checked : true,
+    voiceURI: sel ? sel.value : '',
+    rate: rate ? parseFloat(rate.value) || 1 : 1,
+  });
 }
 
 /* ─── Federation Peer Management UI ─── */
@@ -4439,6 +4487,18 @@ function updatePhoneticScore() {
 document.addEventListener('DOMContentLoaded', () => {
   const el = document.getElementById('phonetic-reference');
   if (el) el.innerHTML = Object.entries(NATO_ALPHABET).map(([k,v]) => '<div class="prep-reference-card"><strong class="prep-reference-key">' + k + '</strong> <span class="prep-reference-value">' + v + '</span></div>').join('');
+});
+
+// Hydrate Voice Copilot settings row (TTS toggle, voice picker, rate slider)
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof hydrateVoicePrefs === 'function') hydrateVoicePrefs();
+  // Hide hands-free button on browsers without STT or TTS (Linux WebKitGTK
+  // often lacks voices entirely — a button that toasts "not supported" on
+  // every click is worse than no button).
+  const handsfreeBtn = document.getElementById('copilot-handsfree-btn');
+  if (handsfreeBtn && (typeof window.NomadVoiceCopilot === 'undefined' || !window.NomadVoiceCopilot.isSupported())) {
+    handsfreeBtn.hidden = true;
+  }
 });
 
 // === Note Backlinks ===

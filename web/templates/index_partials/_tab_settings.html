@@ -197,6 +197,19 @@
               <button class="btn btn-sm settings-row-compact-btn" data-zoom-level="xlarge" id="zoom-xlarge" aria-pressed="false">X-Large</button>
             </div>
           </div>
+          <div class="setting-row" id="voice-prefs-row">
+            <span class="setting-label">Voice Copilot<br><span class="settings-inline-label" id="voice-prefs-hint">Speak answers aloud and enable hands-free mode.</span></span>
+            <div class="settings-inline-actions">
+              <label class="settings-toggle-control settings-toggle-copy"><input type="checkbox" id="voice-tts-toggle" name="voice_tts_enabled" checked data-change-action="save-voice-prefs"> Speak answers</label>
+              <select id="voice-voice-select" name="voice_voice" class="preset-select settings-select settings-input-sm" data-change-action="save-voice-prefs" aria-label="TTS voice">
+                <option value="">Default voice</option>
+              </select>
+              <label class="settings-inline-label settings-input-sm" style="display:inline-flex;align-items:center;gap:4px;">
+                Rate
+                <input type="range" id="voice-rate-slider" name="voice_rate" min="0.5" max="2" step="0.1" value="1" data-change-action="save-voice-prefs" aria-label="Speech rate" style="width:80px;">
+              </label>
+            </div>
+          </div>
           <div class="setting-row">
             <span class="setting-label">External Ollama Host</span>
             <div class="settings-inline-actions">
@@ -704,10 +717,15 @@
     <div class="copilot-dock-answer" id="copilot-answer" aria-live="polite" aria-label="Copilot response"></div>
     <button id="copilot-dismiss" class="copilot-dismiss-btn is-hidden" type="button" data-shell-action="dismiss-copilot-answer" aria-label="Clear copilot answer">Clear</button>
   </div>
+  <div class="copilot-voice-strip" id="copilot-voice-strip">
+    <span class="copilot-voice-state-badge" id="copilot-voice-state" data-state="idle" role="status" aria-live="polite">Idle</span>
+    <span class="copilot-voice-transcript" id="copilot-voice-transcript" aria-live="polite" hidden></span>
+  </div>
   <div class="copilot-dock-bar">
     <span class="copilot-dock-label">AI COPILOT</span>
     <input type="text" id="copilot-input" name="copilot_query" data-enter-action="ask-copilot" aria-label="AI Copilot question input" autocomplete="off" placeholder="Ask about supplies, team, medical, or power… (Ctrl+/)">
-    <button class="btn btn-sm copilot-voice-btn" type="button" data-shell-action="voice-input" data-voice-target="copilot-input" title="Voice input" id="copilot-voice-btn" aria-label="Voice input for copilot">&#127908;</button>
+    <button class="btn btn-sm copilot-voice-btn" type="button" data-shell-action="voice-input" data-voice-target="copilot-input" title="Voice input (single question)" id="copilot-voice-btn" aria-label="Voice input for copilot">&#127908;</button>
+    <button class="btn btn-sm copilot-handsfree-btn" type="button" data-shell-action="toggle-handsfree" title="Hands-free conversation mode" id="copilot-handsfree-btn" aria-label="Toggle hands-free voice conversation" aria-pressed="false" data-state="idle">&#128266;</button>
     <button class="btn btn-sm btn-primary copilot-ask-btn" type="button" data-shell-action="ask-copilot" aria-label="Ask AI Copilot">ASK</button>
     <div class="copilot-dock-tools" aria-label="Desk utilities">
       <button id="copilot-utility-chat-btn" class="btn btn-sm btn-ghost copilot-utility-btn" type="button" data-shell-action="toggle-lan-chat" aria-controls="lan-chat-panel" aria-expanded="false" aria-label="Open LAN chat">

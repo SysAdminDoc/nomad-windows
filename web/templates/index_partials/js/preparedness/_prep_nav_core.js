@@ -357,6 +357,31 @@ async function loadPrepTab() {
 }
 
 
+/* ─── Enter-to-save on preparedness forms (v7.0.8) ───
+   Power-user ergonomic from the design-review Top 20 item #17: pressing
+   Enter in any input inside a form shell dispatches a click on the
+   matching save button. Keeps the current forms' markup unchanged;
+   the handler is scoped to specific form IDs so it doesn't interfere
+   with <textarea> inputs or other forms that legitimately want Enter
+   to insert a newline. Shift+Enter or textarea Enter are always
+   passed through. */
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+  const target = e.target;
+  if (!target || !target.tagName) return;
+  const tag = target.tagName.toLowerCase();
+  if (tag === 'textarea' || tag === 'button') return;
+  if (tag !== 'input' && tag !== 'select') return;
+  const form = target.closest('#inv-form, #contact-form');
+  if (!form) return;
+  const saveAction = form.id === 'inv-form' ? 'save-inv-item' : 'save-contact';
+  const saveBtn = form.querySelector('[data-prep-action="' + saveAction + '"]');
+  if (!saveBtn || saveBtn.disabled) return;
+  e.preventDefault();
+  saveBtn.click();
+});
+
+
 /* ─── Preparedness Dashboard Snapshot (v7.0.6) ─── */
 async function loadPrepDashboard() {
   const strip = document.getElementById('prep-dashboard-strip');

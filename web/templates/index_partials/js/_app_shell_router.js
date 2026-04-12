@@ -132,6 +132,7 @@ document.addEventListener('click', e => {
   }
   if (action === 'restore-legacy-backup') { restoreBackup(control.dataset.backupFilename); return; }
   if (action === 'close-generated-modal') {
+    if (typeof NomadModal !== 'undefined' && NomadModal.isOpen()) NomadModal.close();
     const modal = control.closest('.generated-modal-overlay');
     if (modal) modal.remove();
     return;
@@ -210,6 +211,7 @@ document.addEventListener('click', e => {
   if (action === 'execute-csv-import') { executeCSVImport(); return; }
   if (action === 'print-window') { window.print(); return; }
   if (action === 'close-ai-sitrep') {
+    if (typeof NomadModal !== 'undefined' && NomadModal.isOpen()) { NomadModal.close(); return; }
     const modal = document.getElementById('ai-sitrep-modal');
     if (modal) modal.style.display = 'none';
     return;

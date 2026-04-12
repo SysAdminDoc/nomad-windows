@@ -3629,6 +3629,9 @@ async function viewWoundPhotos(pid, wid) {
         </div>
       </div>`;
     document.body.appendChild(modal);
+    if (typeof NomadModal !== 'undefined') NomadModal.open(modal, {
+      onClose: () => { if (modal.parentNode) modal.remove(); },
+    });
 
     if (photos.length > 1) {
       const leftSel = document.getElementById('wound-photo-left');

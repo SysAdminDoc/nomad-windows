@@ -1123,17 +1123,14 @@ def api_emergency_sheet():
             )
         sit_html += '</div>'
 
-    contacts_html = '<div class="doc-empty">No contacts registered.</div>'
-    if contacts:
-        contacts_html = '<div class="doc-table-shell"><table><thead><tr><th>Name</th><th>Role</th><th>Phone</th><th>Callsign</th><th>Radio Freq</th><th>Blood</th><th>Rally Point</th></tr></thead><tbody>'
-        for c in contacts:
-            contacts_html += (
-                f"<tr><td class=\"doc-strong\">{_esc(c.get('name',''))}</td><td>{_esc(c.get('role','')) or '-'}</td>"
-                f"<td>{_esc(c.get('phone','')) or '-'}</td><td>{_esc(c.get('callsign','')) or '-'}</td>"
-                f"<td>{_esc(c.get('freq','')) or '-'}</td><td>{_esc(c.get('blood_type','')) or '-'}</td>"
-                f"<td>{_esc(c.get('rally_point','')) or '-'}</td></tr>"
-            )
-        contacts_html += '</tbody></table></div>'
+    # Refactored to use shared _render_contacts_table helper (v7.0.9).
+    # Column order is now standardised across every print document — Name,
+    # Role, Callsign, Phone, Freq, Blood, Rally Point — so the Emergency
+    # Sheet and Preparedness Print match visually instead of each carrying
+    # its own slightly-different column layout.
+    contacts_html = _render_contacts_table(
+        contacts, include_radio=True, empty_msg='No contacts registered.',
+    )
 
     patients_html = '<div class="doc-empty">No patient profiles are recorded.</div>'
     if patients:

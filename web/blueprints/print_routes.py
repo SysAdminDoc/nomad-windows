@@ -476,12 +476,11 @@ def api_print_freq_card():
             )
         traffic_html += '</tbody></table></div>'
 
-    contacts_html = '<div class="doc-empty">No radio contacts with a callsign or phone are on file.</div>'
-    if contacts:
-        contacts_html = '<div class="doc-table-shell"><table><thead><tr><th>Name</th><th>Callsign</th><th>Phone</th></tr></thead><tbody>'
-        for c in contacts:
-            contacts_html += f'<tr><td class="doc-strong">{_esc(c["name"])}</td><td>{_esc(c["callsign"] or "-")}</td><td>{_esc(c["phone"] or "-")}</td></tr>'
-        contacts_html += '</tbody></table></div>'
+    contacts_html = _render_contacts_table(
+        contacts,
+        include_radio=False,
+        empty_msg='No radio contacts with a callsign or phone are on file.',
+    )
 
     body = f'''<section class="doc-section">
   <div class="doc-grid-2">

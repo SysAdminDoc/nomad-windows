@@ -18,6 +18,16 @@
       <button type="button" class="sit-cell" data-sit-domain="comms" data-domain="comms" data-level="green"><div class="sit-label">Comms</div><div class="sit-level">Good</div></button>
     </div>
 
+    <!-- Operational snapshot — loaded from /api/preparedness/dashboard so
+         the operator can see the cross-module state at a glance without
+         tab-hopping. Rendered by loadPrepDashboard() on tab open. -->
+    <div id="prep-dashboard-strip" class="prep-dashboard-strip is-hidden" role="region" aria-label="Operational snapshot">
+      <div class="prep-dashboard-kicker">FIELD SNAPSHOT</div>
+      <div class="prep-dashboard-grid" id="prep-dashboard-cells">
+        <!-- Cells populated by JS on tab load -->
+      </div>
+    </div>
+
     <!-- Scenario-first navigation -->
     <div class="prep-nav prep-nav-shell prep-scenario-shell">
       <div class="prep-scenario-intro">

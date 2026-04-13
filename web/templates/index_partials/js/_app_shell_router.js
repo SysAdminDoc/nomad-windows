@@ -468,6 +468,9 @@ document.addEventListener('click', e => {
       case 'delete-bookmark': deleteBookmark(Number(control.dataset.bookmarkIndex)); break;
       case 'load-elevation-profile': loadElevationProfile(Number(control.dataset.routeId)); break;
       case 'show-elevation-profile': showElevationProfile(Number(control.dataset.routeId)); break;
+      case 'plan-route': openRoutePlanner(Number(control.dataset.routeId)); break;
+      case 'close-route-planner': closeRoutePlanner(); break;
+      case 'run-route-plan': runRoutePlan(); break;
       case 'delete-saved-route': deleteSavedRoute(Number(control.dataset.routeId)); break;
       case 'download-region': downloadMapRegion(control.dataset.mapRegion); break;
       case 'toggle-map-view': toggleMapView(); break;

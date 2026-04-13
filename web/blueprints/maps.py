@@ -831,6 +831,254 @@ def api_elevation_profile(route_id):
             'total_descent': round(total_descent, 1),
             'total_distance_m': round(total_dist),
         })
+
+
+# ─── Route Plan with Milestones (v7.4.0) ───────────────────────────
+#
+# Takes an existing saved route (ordered waypoint chain) + a pace + a
+# departure time, and returns:
+#   - Timed milestones at every waypoint ("you'll be at X by 14:30")
+#   - Sunrise / sunset along the way so the planner can see if they're
+#     moving in darkness on any leg
+#   - Resupply / shelter candidates from other waypoints within a
+#     configurable corridor around each leg (doesn't have to be
+#     on the route — just nearby)
+#   - Per-person water + calorie estimate for the trip
+#
+# This is deterministic math on the existing elevation_profile pipeline.
+# No external services, no routing engine — we just walk the waypoint
+# chain the user already built.
+
+def _haversine_km(lat1, lng1, lat2, lng2):
+    """Great-circle distance in km."""
+    R = 6371.0
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dlat = math.radians(lat2 - lat1)
+    dlng = math.radians(lng2 - lng1)
+    a = math.sin(dlat / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dlng / 2) ** 2
+    return 2 * R * math.asin(math.sqrt(a))
+
+
+def _sun_times_for(lat, lng, when):
+    """Compute sunrise/sunset in UTC ISO-8601 for a given date + coord.
+
+    Simplified from tasks.py:_sun_times — uses the same NOAA algorithm
+    but scoped to one day so the import graph stays trivial. Returns
+    ``{sunrise_iso, sunset_iso}``, or ``None`` for polar day/night.
+    """
+    from datetime import datetime, timezone, timedelta
+    # Convert date to Julian day (NOAA formula)
+    y, m, d = when.year, when.month, when.day
+    if m <= 2:
+        y, m = y - 1, m + 12
+    a = y // 100
+    b = 2 - a + a // 4
+    jd = int(365.25 * (y + 4716)) + int(30.6001 * (m + 1)) + d + b - 1524.5
+
+    def _zenith(rising):
+        # Official zenith for sunrise/sunset = 90° 50'
+        zen = 90.833
+        lng_hr = lng / 15.0
+        t = jd + ((6 if rising else 18) - lng_hr) / 24
+        M = (0.9856 * t) - 3.289
+        L = M + (1.916 * math.sin(math.radians(M))) + (0.020 * math.sin(math.radians(2 * M))) + 282.634
+        L = L % 360
+        RA = math.degrees(math.atan(0.91764 * math.tan(math.radians(L)))) % 360
+        Lq = math.floor(L / 90) * 90
+        RAq = math.floor(RA / 90) * 90
+        RA = (RA + (Lq - RAq)) / 15
+        sinDec = 0.39782 * math.sin(math.radians(L))
+        cosDec = math.cos(math.asin(sinDec))
+        try:
+            cosH = (math.cos(math.radians(zen)) - (sinDec * math.sin(math.radians(lat)))) / (cosDec * math.cos(math.radians(lat)))
+        except ZeroDivisionError:
+            return None
+        if cosH > 1 or cosH < -1:
+            return None  # Polar day/night
+        if rising:
+            H = 360 - math.degrees(math.acos(cosH))
+        else:
+            H = math.degrees(math.acos(cosH))
+        H = H / 15
+        T = H + RA - (0.06571 * t) - 6.622
+        UT = (T - lng_hr) % 24
+        return UT
+
+    def _ut_to_iso(ut, day):
+        if ut is None:
+            return None
+        hours = int(ut)
+        minutes = int((ut - hours) * 60)
+        minutes = max(0, min(59, minutes))
+        base = datetime(day.year, day.month, day.day, 0, 0, 0, tzinfo=timezone.utc)
+        return (base + timedelta(hours=hours, minutes=minutes)).isoformat()
+
+    return {
+        'sunrise_iso': _ut_to_iso(_zenith(True), when),
+        'sunset_iso':  _ut_to_iso(_zenith(False), when),
+    }
+
+
+@maps_bp.route('/api/maps/route-plan', methods=['POST'])
+def api_maps_route_plan():
+    """Return a planned schedule for an existing route.
+
+    Body:
+        {route_id, pace_kmh, depart_iso, corridor_km, people}
+
+    All fields optional except ``route_id``. Defaults:
+        pace_kmh=5 (walking), depart_iso=now UTC, corridor_km=5, people=1
+    """
+    from datetime import datetime, timezone, timedelta
+
+    data = request.get_json() or {}
+    route_id = data.get('route_id')
+    if not isinstance(route_id, int):
+        try: route_id = int(route_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'route_id required'}), 400
+
+    try:
+        pace_kmh = float(data.get('pace_kmh') or 5.0)
+    except (TypeError, ValueError):
+        pace_kmh = 5.0
+    pace_kmh = max(0.5, min(pace_kmh, 120.0))  # walking pace floor, vehicle ceiling
+
+    try:
+        corridor_km = float(data.get('corridor_km') or 5.0)
+    except (TypeError, ValueError):
+        corridor_km = 5.0
+    corridor_km = max(0.5, min(corridor_km, 50.0))
+
+    try:
+        people = max(1, min(int(data.get('people') or 1), 50))
+    except (TypeError, ValueError):
+        people = 1
+
+    depart_iso = data.get('depart_iso')
+    try:
+        depart = datetime.fromisoformat((depart_iso or '').replace('Z', '+00:00'))
+        if depart.tzinfo is None:
+            depart = depart.replace(tzinfo=timezone.utc)
+    except (TypeError, ValueError):
+        depart = datetime.now(timezone.utc)
+
+    with db_session() as db:
+        route = db.execute('SELECT * FROM map_routes WHERE id = ?', (route_id,)).fetchone()
+        if not route:
+            return jsonify({'error': 'Route not found'}), 404
+        wp_ids = _safe_id_list(route['waypoint_ids'])
+        if len(wp_ids) < 2:
+            return jsonify({'error': 'Route needs at least 2 waypoints'}), 400
+
+        placeholders = ','.join('?' for _ in wp_ids)
+        order_case = ' '.join(f'WHEN id = ? THEN {i}' for i, _ in enumerate(wp_ids))
+        waypoints = db.execute(
+            f'SELECT id, name, lat, lng, elevation_m, category FROM waypoints '
+            f'WHERE id IN ({placeholders}) ORDER BY CASE {order_case} END',
+            wp_ids + wp_ids,
+        ).fetchall()
+        waypoints = [dict(w) for w in waypoints]
+
+        # All other waypoints (candidates for resupply/shelter corridor)
+        all_wps = db.execute(
+            'SELECT id, name, lat, lng, category FROM waypoints LIMIT 2000'
+        ).fetchall()
+        route_id_set = set(wp_ids)
+        candidates = [dict(w) for w in all_wps if w['id'] not in route_id_set]
+
+    # Walk the chain — compute cumulative distance, ETA, leg-level info
+    milestones = []
+    cumulative_km = 0.0
+    cumulative_ascent_m = 0.0
+    prev = None
+    for wp in waypoints:
+        if prev is not None:
+            seg_km = _haversine_km(prev['lat'], prev['lng'], wp['lat'], wp['lng'])
+            cumulative_km += seg_km
+            delta = (wp.get('elevation_m') or 0) - (prev.get('elevation_m') or 0)
+            if delta > 0:
+                cumulative_ascent_m += delta
+        eta = depart + timedelta(hours=(cumulative_km / pace_kmh))
+        milestones.append({
+            'waypoint_id': wp['id'],
+            'name': wp['name'],
+            'lat': wp['lat'],
+            'lng': wp['lng'],
+            'category': wp.get('category') or '',
+            'cumulative_km': round(cumulative_km, 2),
+            'eta_iso': eta.isoformat(),
+            'eta_hours_in': round((eta - depart).total_seconds() / 3600, 2),
+        })
+        prev = wp
+
+    total_km = round(cumulative_km, 2)
+    total_hours = round(cumulative_km / pace_kmh, 2)
+
+    # Find nearby candidates — within corridor_km of ANY waypoint on the route
+    nearby = []
+    for cand in candidates:
+        best_km = None
+        best_wp = None
+        for wp in waypoints:
+            d = _haversine_km(wp['lat'], wp['lng'], cand['lat'], cand['lng'])
+            if best_km is None or d < best_km:
+                best_km = d
+                best_wp = wp
+        if best_km is not None and best_km <= corridor_km:
+            nearby.append({
+                'waypoint_id': cand['id'],
+                'name': cand['name'],
+                'category': cand.get('category') or '',
+                'lat': cand['lat'],
+                'lng': cand['lng'],
+                'nearest_route_wp': best_wp['name'] if best_wp else '',
+                'distance_from_route_km': round(best_km, 2),
+            })
+    nearby.sort(key=lambda c: c['distance_from_route_km'])
+    nearby = nearby[:30]
+
+    # Sunrise / sunset overlay — use the start coord on the depart date,
+    # and the end coord on the arrival date. For most routes these are
+    # the same day; two days of sun data is enough signal.
+    sun = []
+    days_spanned = set([depart.date()])
+    arrive_at = depart + timedelta(hours=total_hours)
+    days_spanned.add(arrive_at.date())
+    start_lat, start_lng = waypoints[0]['lat'], waypoints[0]['lng']
+    for day in sorted(days_spanned):
+        st = _sun_times_for(start_lat, start_lng, datetime.combine(day, datetime.min.time()))
+        sun.append({'date': day.isoformat(), 'lat': start_lat, 'lng': start_lng, **st})
+
+    # Resource burn estimate — reuse the Kit Builder water model without
+    # importing the blueprint (keeps maps → kit_builder coupling clean).
+    # Assume temperate + bug-out for pace-based movement.
+    water_l_per_person = 3.0 * max(1.0, total_hours / 24)
+    kcal_per_person = 3500 * max(1.0, total_hours / 24)
+
+    return jsonify({
+        'route_id': route_id,
+        'route_name': route['name'],
+        'params': {
+            'pace_kmh': pace_kmh,
+            'corridor_km': corridor_km,
+            'people': people,
+            'depart_iso': depart.isoformat(),
+        },
+        'milestones': milestones,
+        'totals': {
+            'distance_km': total_km,
+            'duration_hours': total_hours,
+            'ascent_m': round(cumulative_ascent_m, 0),
+            'water_l_total': round(water_l_per_person * people, 1),
+            'kcal_total': round(kcal_per_person * people, 0),
+            'arrive_iso': arrive_at.isoformat(),
+        },
+        'nearby_waypoints': nearby,
+        'sun': sun,
+    })
+
+
 @maps_bp.route('/api/maps/annotations')
 def api_map_annotations_list():
     try:

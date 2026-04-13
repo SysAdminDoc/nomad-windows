@@ -4145,6 +4145,121 @@ async function executeCSVImport() {
   } catch(e) { toast('Import failed: ' + e.message, 'error'); }
 }
 
+/* ─── Kit Builder Wizard (v7.3.0) ─── */
+let _kitBuilderLastPlan = null;
+
+function openKitBuilder() {
+  const modal = document.getElementById('kit-builder-modal');
+  if (!modal) return;
+  modal.classList.remove('is-hidden');
+  // Show inputs step; hide results
+  document.getElementById('kit-builder-step-inputs')?.classList.remove('is-hidden');
+  document.getElementById('kit-builder-step-results')?.classList.add('is-hidden');
+  document.getElementById('kit-mission')?.focus();
+}
+
+function closeKitBuilder() {
+  const modal = document.getElementById('kit-builder-modal');
+  if (modal) modal.classList.add('is-hidden');
+}
+
+function resetKitBuilder() {
+  document.getElementById('kit-builder-step-inputs')?.classList.remove('is-hidden');
+  document.getElementById('kit-builder-step-results')?.classList.add('is-hidden');
+}
+
+async function generateKitPlan() {
+  const payload = {
+    mission: document.getElementById('kit-mission')?.value || 'bug_out',
+    climate: document.getElementById('kit-climate')?.value || 'temperate',
+    people: parseInt(document.getElementById('kit-people')?.value, 10) || 1,
+    duration_hrs: parseInt(document.getElementById('kit-duration')?.value, 10) || 72,
+    mobility: document.getElementById('kit-mobility')?.value || 'mixed',
+  };
+  try {
+    const plan = await apiPost('/api/kit-builder/plan', payload);
+    _kitBuilderLastPlan = plan;
+    renderKitPlan(plan);
+    document.getElementById('kit-builder-step-inputs')?.classList.add('is-hidden');
+    document.getElementById('kit-builder-step-results')?.classList.remove('is-hidden');
+  } catch (e) {
+    toast(e?.data?.error || 'Could not generate kit plan', 'error');
+  }
+}
+
+function renderKitPlan(plan) {
+  const summary = document.getElementById('kit-builder-summary');
+  const items = document.getElementById('kit-builder-items');
+  if (!summary || !items) return;
+  const t = plan.totals || {};
+  const p = plan.params || {};
+  const missionLabel = {
+    bug_out: 'Bug-out', shelter_in_place: 'Shelter in place',
+    vehicle: 'Vehicle / EDC', medical_bag: 'Medical bag'
+  }[p.mission] || p.mission;
+  summary.innerHTML = `
+    <div class="kit-builder-summary-header">
+      <div><strong>${escapeHtml(missionLabel)}</strong> · ${p.people} people · ${Math.round((p.duration_hrs || 0) / 24 * 10) / 10} days · ${escapeHtml(p.climate)} climate · ${escapeHtml(p.mobility)}</div>
+    </div>
+    <div class="kit-builder-stats">
+      <div class="kit-stat"><span class="kit-stat-num">${t.item_count || 0}</span><span class="kit-stat-label">Items</span></div>
+      <div class="kit-stat"><span class="kit-stat-num">${t.weight_kg || 0}</span><span class="kit-stat-label">kg total</span></div>
+      <div class="kit-stat kit-stat-gap"><span class="kit-stat-num">${t.gaps || 0}</span><span class="kit-stat-label">Gaps</span></div>
+      <div class="kit-stat kit-stat-partial"><span class="kit-stat-num">${t.partial || 0}</span><span class="kit-stat-label">Partial</span></div>
+      <div class="kit-stat kit-stat-have"><span class="kit-stat-num">${t.have || 0}</span><span class="kit-stat-label">Have</span></div>
+    </div>`;
+  applyKitFilter();
+}
+
+function applyKitFilter() {
+  if (!_kitBuilderLastPlan) return;
+  const showGap = document.getElementById('kit-filter-gap')?.checked;
+  const showPartial = document.getElementById('kit-filter-partial')?.checked;
+  const showHave = document.getElementById('kit-filter-have')?.checked;
+  const filtered = (_kitBuilderLastPlan.items || []).filter(it => {
+    return (showGap && it.status === 'gap')
+        || (showPartial && it.status === 'partial')
+        || (showHave && it.status === 'have');
+  });
+  const items = document.getElementById('kit-builder-items');
+  if (!items) return;
+  if (!filtered.length) {
+    items.innerHTML = '<div class="prep-empty-state">No items match the selected filters.</div>';
+    return;
+  }
+  items.innerHTML = filtered.map(it => {
+    const statusClass = `kit-item-${it.status}`;
+    const statusLabel = it.status === 'have' ? 'Have'
+                      : it.status === 'partial' ? `Partial (${it.owned_quantity})`
+                      : 'Gap';
+    return `<div class="kit-item ${statusClass}">
+      <div class="kit-item-main">
+        <div class="kit-item-name">${escapeHtml(it.name)}</div>
+        <div class="kit-item-reason">${escapeHtml(it.reason || '')}</div>
+      </div>
+      <div class="kit-item-qty">${it.quantity} ${escapeHtml(it.unit || '')}</div>
+      <div class="kit-item-weight">${it.weight_kg || 0} kg</div>
+      <div class="kit-item-status">${statusLabel}</div>
+    </div>`;
+  }).join('');
+}
+
+async function commitKitToShopping() {
+  if (!_kitBuilderLastPlan) return;
+  // Commit only gap + partial items — don't re-shop things already owned
+  const gaps = (_kitBuilderLastPlan.items || []).filter(it => it.status !== 'have');
+  if (!gaps.length) {
+    toast('No gaps to add', 'info');
+    return;
+  }
+  try {
+    const res = await apiPost('/api/kit-builder/add-to-shopping-list', { items: gaps });
+    toast(`Added ${res.added || 0} items to shopping list`, 'success');
+  } catch (e) {
+    toast('Failed to add items to shopping list', 'error');
+  }
+}
+
 /* ─── Template Quick Entry ─── */
 let _templateDropdownOpen = false;
 async function toggleTemplateDropdown() {

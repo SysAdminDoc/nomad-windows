@@ -1289,6 +1289,10 @@ def create_app():
     from web.blueprints.family import family_bp
     app.register_blueprint(family_bp)
 
+    # ─── Daily Operations Brief (v7.7.0) ─────────────────────────────
+    from web.blueprints.brief import brief_bp
+    app.register_blueprint(brief_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

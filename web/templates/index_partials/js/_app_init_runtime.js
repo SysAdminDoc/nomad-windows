@@ -4264,6 +4264,108 @@ async function executeCSVImport() {
   } catch(e) { toast('Import failed: ' + e.message, 'error'); }
 }
 
+/* ─── Daily Operations Brief (v7.7.0) ─── */
+async function generateDailyBrief() {
+  const body = document.getElementById('daily-brief-body');
+  const btn = document.getElementById('daily-brief-gen-btn');
+  if (!body) return;
+  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+  body.innerHTML = '<div class="daily-brief-empty">Compiling brief…</div>';
+  try {
+    const d = await apiFetch('/api/brief/daily');
+    body.innerHTML = _renderDailyBrief(d);
+  } catch (e) {
+    body.innerHTML = '<div class="daily-brief-empty">Failed to compile brief.</div>';
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Regenerate'; }
+  }
+}
+
+function _renderDailyBrief(d) {
+  const s = d.sections || {};
+  const blocks = [];
+
+  const emer = s.emergency || {};
+  if (emer.active) {
+    blocks.push(`<div class="daily-brief-block daily-brief-block-alert">
+      <div class="daily-brief-block-title">⚠ EMERGENCY MODE ACTIVE</div>
+      <div>${escapeHtml(emer.reason || '')}</div>
+    </div>`);
+  }
+
+  const w = s.weather;
+  if (w) {
+    const bits = [];
+    if (w.temp_c != null) bits.push(`${w.temp_c}°C`);
+    if (w.humidity != null) bits.push(`${w.humidity}% humidity`);
+    if (w.pressure != null) bits.push(`${w.pressure} hPa`);
+    if (w.conditions) bits.push(escapeHtml(w.conditions));
+    blocks.push(`<div class="daily-brief-block">
+      <div class="daily-brief-block-title">Weather</div>
+      <div>${bits.length ? bits.join(' · ') : 'No reading'}</div>
+    </div>`);
+  }
+
+  const p = s.proximity;
+  if (p) {
+    if (p.count === 0) {
+      blocks.push(`<div class="daily-brief-block daily-brief-block-ok">
+        <div class="daily-brief-block-title">Proximity (within ${Math.round(p.radius_km)} km)</div>
+        <div>All clear — no active threats.</div>
+      </div>`);
+    } else {
+      const top = p.events.slice(0, 5).map(e =>
+        `<li>${escapeHtml(e.event_type.replace(/_/g, ' '))}: ${escapeHtml(e.title || '')} <span class="daily-brief-dist">${e.distance_km} km</span></li>`
+      ).join('');
+      blocks.push(`<div class="daily-brief-block daily-brief-block-warn">
+        <div class="daily-brief-block-title">Proximity — ${p.count} active within ${Math.round(p.radius_km)} km</div>
+        <ul class="daily-brief-list">${top}</ul>
+      </div>`);
+    }
+  }
+
+  const inv = s.inventory || {};
+  const exp = (inv.expiring_14d || []).slice(0, 5);
+  const low = (inv.low_stock || []).slice(0, 5);
+  if (exp.length || low.length) {
+    const expHtml = exp.length
+      ? `<strong>Expiring (14d):</strong> ` + exp.map(r => escapeHtml(r.name)).join(', ')
+      : '';
+    const lowHtml = low.length
+      ? `<strong>Low stock:</strong> ` + low.map(r => escapeHtml(r.name)).join(', ')
+      : '';
+    blocks.push(`<div class="daily-brief-block daily-brief-block-warn">
+      <div class="daily-brief-block-title">Inventory</div>
+      ${expHtml ? `<div>${expHtml}</div>` : ''}
+      ${lowHtml ? `<div>${lowHtml}</div>` : ''}
+    </div>`);
+  }
+
+  const tasks = (s.tasks || {}).due_today || [];
+  if (tasks.length) {
+    const top = tasks.slice(0, 5).map(t => `<li>${escapeHtml(t.title || '')}</li>`).join('');
+    blocks.push(`<div class="daily-brief-block">
+      <div class="daily-brief-block-title">Tasks due today (${tasks.length})</div>
+      <ul class="daily-brief-list">${top}</ul>
+    </div>`);
+  }
+
+  const fam = s.family;
+  if (fam && fam.total > 0) {
+    const parts = Object.entries(fam.summary || {}).map(([k, v]) => `${k.replace('_', ' ')}: ${v}`);
+    blocks.push(`<div class="daily-brief-block">
+      <div class="daily-brief-block-title">Family check-in (${fam.total})</div>
+      <div>${parts.join(' · ')}</div>
+    </div>`);
+  }
+
+  if (!blocks.length) {
+    return '<div class="daily-brief-empty">Brief compiled but no notable signal — quiet day.</div>';
+  }
+  const ts = d.generated_at ? new Date(d.generated_at).toLocaleString() : '';
+  return blocks.join('') + `<div class="daily-brief-footer">Compiled ${escapeHtml(ts)}</div>`;
+}
+
 /* ─── Family Check-in Board (v7.6.0) ─── */
 const _FAMILY_STATUS_LABELS = {
   ok: 'OK',

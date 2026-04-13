@@ -1535,6 +1535,7 @@ async function loadSavedRoutes() {
         '</div>' +
         '<div class="saved-route-actions">' +
           '<button type="button" class="btn btn-sm saved-route-btn" data-map-action="show-elevation-profile" data-route-id="' + r.id + '">Profile</button>' +
+          '<button type="button" class="btn btn-sm saved-route-btn" data-map-action="plan-route" data-route-id="' + r.id + '" title="Plan timed milestones for this route">Plan</button>' +
           '<button type="button" class="btn btn-sm btn-ghost saved-route-delete" data-map-action="delete-saved-route" data-route-id="' + r.id + '" title="Delete route">Delete</button>' +
         '</div>' +
       '</div>';
@@ -1723,6 +1724,124 @@ async function showElevationProfile(routeId) {
 function hideElevationProfile() {
   const el = document.getElementById('elevation-profile-chart');
   if (el) el.style.display = 'none';
+}
+
+/* ─── Route Planner (v7.4.0) ─── */
+let _routePlannerRouteId = null;
+
+function openRoutePlanner(routeId) {
+  _routePlannerRouteId = routeId;
+  const modal = document.getElementById('route-planner-modal');
+  if (!modal) return;
+  document.getElementById('route-planner-inputs')?.classList.remove('is-hidden');
+  document.getElementById('route-planner-results')?.classList.add('is-hidden');
+  // Default departure = now, rounded to next :00
+  const now = new Date();
+  now.setMinutes(0, 0, 0);
+  now.setHours(now.getHours() + 1);
+  const iso = now.toISOString().slice(0, 16);  // YYYY-MM-DDTHH:MM (local input wants this format)
+  const depart = document.getElementById('rp-depart');
+  if (depart && !depart.value) depart.value = iso;
+  modal.classList.remove('is-hidden');
+  document.getElementById('rp-pace')?.focus();
+}
+
+function closeRoutePlanner() {
+  const modal = document.getElementById('route-planner-modal');
+  if (modal) modal.classList.add('is-hidden');
+  _routePlannerRouteId = null;
+}
+
+async function runRoutePlan() {
+  if (!_routePlannerRouteId) return;
+  const payload = {
+    route_id: _routePlannerRouteId,
+    pace_kmh: parseFloat(document.getElementById('rp-pace')?.value) || 5,
+    corridor_km: parseFloat(document.getElementById('rp-corridor')?.value) || 5,
+    people: parseInt(document.getElementById('rp-people')?.value, 10) || 1,
+    depart_iso: (document.getElementById('rp-depart')?.value || '') + ':00',
+  };
+  try {
+    const plan = await apiPost('/api/maps/route-plan', payload);
+    renderRoutePlan(plan);
+  } catch (e) {
+    toast(e?.data?.error || 'Could not generate route plan', 'error');
+  }
+}
+
+function renderRoutePlan(plan) {
+  const inputsEl = document.getElementById('route-planner-inputs');
+  const resultsEl = document.getElementById('route-planner-results');
+  if (!resultsEl) return;
+  inputsEl?.classList.add('is-hidden');
+  resultsEl.classList.remove('is-hidden');
+  const t = plan.totals || {};
+  const hrs = Math.floor(t.duration_hours || 0);
+  const mins = Math.round(((t.duration_hours || 0) - hrs) * 60);
+  const fmtTime = iso => {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    } catch (_) { return iso; }
+  };
+  const sunHtml = (plan.sun || []).map(s => {
+    const sunrise = s.sunrise_iso ? fmtTime(s.sunrise_iso) : '(polar day/night)';
+    const sunset = s.sunset_iso ? fmtTime(s.sunset_iso) : '(polar day/night)';
+    return `<div class="route-plan-sun-row"><span>${escapeHtml(s.date)}</span> <span>Sunrise ${escapeHtml(sunrise)}</span> <span>Sunset ${escapeHtml(sunset)}</span></div>`;
+  }).join('');
+  const milestonesHtml = (plan.milestones || []).map((m, i) => {
+    const inDark = _milestoneInDark(m.eta_iso, plan.sun || []);
+    return `<div class="route-plan-milestone ${inDark ? 'route-plan-milestone-dark' : ''}">
+      <div class="route-plan-mile-num">${i + 1}</div>
+      <div class="route-plan-mile-main">
+        <div class="route-plan-mile-name">${escapeHtml(m.name || '(unnamed)')}</div>
+        <div class="route-plan-mile-meta">${m.cumulative_km} km from start · ETA ${escapeHtml(fmtTime(m.eta_iso))}${inDark ? ' · <strong>in darkness</strong>' : ''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  const nearbyHtml = (plan.nearby_waypoints || []).length
+    ? `<div class="route-plan-section-head">Resupply / shelter within corridor</div>
+       <div class="route-plan-nearby">` +
+      (plan.nearby_waypoints || []).map(n => `
+        <div class="route-plan-nearby-row">
+          <strong>${escapeHtml(n.name)}</strong>
+          <span>${n.distance_from_route_km} km from ${escapeHtml(n.nearest_route_wp)}</span>
+          ${n.category ? `<span class="route-plan-nearby-cat">${escapeHtml(n.category)}</span>` : ''}
+        </div>`).join('') + `</div>`
+    : '<div class="route-plan-empty">No nearby waypoints within the corridor. Widen the corridor or add more waypoints to your map.</div>';
+  resultsEl.innerHTML = `
+    <div class="route-plan-summary">
+      <div class="route-plan-stat"><span class="route-plan-stat-num">${t.distance_km || 0}</span><span class="route-plan-stat-label">km</span></div>
+      <div class="route-plan-stat"><span class="route-plan-stat-num">${hrs}h ${mins}m</span><span class="route-plan-stat-label">duration</span></div>
+      <div class="route-plan-stat"><span class="route-plan-stat-num">${t.ascent_m || 0}</span><span class="route-plan-stat-label">m ascent</span></div>
+      <div class="route-plan-stat"><span class="route-plan-stat-num">${t.water_l_total || 0}</span><span class="route-plan-stat-label">L water</span></div>
+      <div class="route-plan-stat"><span class="route-plan-stat-num">${Math.round((t.kcal_total || 0) / 1000)}k</span><span class="route-plan-stat-label">kcal</span></div>
+    </div>
+    <div class="route-plan-sun">${sunHtml}</div>
+    <div class="route-plan-section-head">Arrive by ${escapeHtml(fmtTime(t.arrive_iso))}</div>
+    <div class="route-plan-milestones">${milestonesHtml}</div>
+    ${nearbyHtml}
+    <div class="prep-form-actions">
+      <button class="btn btn-sm" type="button" onclick="openRoutePlanner(${_routePlannerRouteId})">Back to Inputs</button>
+      <button class="btn btn-sm btn-ghost" type="button" data-map-action="close-route-planner">Close</button>
+    </div>`;
+}
+
+function _milestoneInDark(eta_iso, sun) {
+  try {
+    const eta = new Date(eta_iso).getTime();
+    for (const s of sun) {
+      if (!s.sunrise_iso || !s.sunset_iso) continue;
+      const rise = new Date(s.sunrise_iso).getTime();
+      const set = new Date(s.sunset_iso).getTime();
+      // Compare on the same day
+      const etaDate = new Date(eta_iso).toISOString().slice(0, 10);
+      if (etaDate === s.date) {
+        return eta < rise || eta > set;
+      }
+    }
+  } catch (_) {}
+  return false;
 }
 
 /* ─── NomadChart: loaded from /static/js/chart.js ─── */

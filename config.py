@@ -36,7 +36,7 @@ class Config:
     """Central configuration with environment variable overrides."""
 
     # --- App Identity ---
-    VERSION = os.environ.get('NOMAD_VERSION', '7.3.0')
+    VERSION = os.environ.get('NOMAD_VERSION', '7.4.0')
 
     # --- Upload / Content Limits ---
     MAX_CONTENT_LENGTH = int(os.environ.get('NOMAD_MAX_CONTENT_LENGTH', 100 * 1024 * 1024))  # 100 MB

@@ -143,3 +143,40 @@
     </div>
   </div>
 
+<!-- Route Planner Modal (v7.4.0) -->
+<div id="route-planner-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="route-planner-title" data-backdrop-close="route-planner-modal">
+  <div class="modal-card settings-modal-card settings-modal-card-lg">
+    <div class="modal-header settings-heading-row">
+      <h3 class="settings-detail-title" id="route-planner-title">Route Plan</h3>
+      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-map-action="close-route-planner" aria-label="Close route planner">x</button>
+    </div>
+    <div class="modal-body settings-modal-body">
+      <div id="route-planner-inputs">
+        <div class="prep-form-grid prep-form-grid-2">
+          <div class="prep-field">
+            <label class="prep-field-label" for="rp-pace">Pace (km/h)</label>
+            <input id="rp-pace" name="rp_pace" class="prep-field-control" type="number" min="1" max="120" step="0.5" value="5" title="Walking approx 5, hiking approx 4, running approx 8, vehicle approx 50">
+          </div>
+          <div class="prep-field">
+            <label class="prep-field-label" for="rp-corridor">Corridor (km)</label>
+            <input id="rp-corridor" name="rp_corridor" class="prep-field-control" type="number" min="0.5" max="50" step="0.5" value="5" title="Search radius along the route for resupply and shelter waypoints">
+          </div>
+          <div class="prep-field">
+            <label class="prep-field-label" for="rp-people">People</label>
+            <input id="rp-people" name="rp_people" class="prep-field-control" type="number" min="1" max="50" value="1">
+          </div>
+          <div class="prep-field">
+            <label class="prep-field-label" for="rp-depart">Departure</label>
+            <input id="rp-depart" name="rp_depart" class="prep-field-control" type="datetime-local">
+          </div>
+        </div>
+        <div class="prep-form-actions">
+          <button class="btn btn-sm btn-primary" type="button" data-map-action="run-route-plan">Generate Plan</button>
+          <button class="btn btn-sm" type="button" data-map-action="close-route-planner">Cancel</button>
+        </div>
+      </div>
+      <div id="route-planner-results" class="is-hidden"></div>
+    </div>
+  </div>
+</div>
+

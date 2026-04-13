@@ -206,3 +206,507 @@ def api_emergency_exit():
         'duration_hours': duration,
         'reason': exit_reason,
     })
+
+
+# ─── Evacuation Planning ─────────────────────────────────────────────
+
+@emergency_bp.route('/api/emergency/evac-plans')
+def api_evac_plans_list():
+    """List all evacuation plans, active ones first."""
+    with db_session() as db:
+        rows = db.execute(
+            'SELECT * FROM evac_plans ORDER BY is_active DESC, updated_at DESC'
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@emergency_bp.route('/api/emergency/evac-plans', methods=['POST'])
+def api_evac_plans_create():
+    """Create a new evacuation plan. If is_active=1, deactivate all others."""
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'name is required'}), 400
+
+    plan_type = data.get('plan_type', 'evacuate')
+    is_active = int(bool(data.get('is_active', 0)))
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    with db_session() as db:
+        if is_active:
+            db.execute('UPDATE evac_plans SET is_active = 0')
+
+        cur = db.execute(
+            '''INSERT INTO evac_plans
+               (name, plan_type, is_active, destination, primary_route,
+                alternate_route, distance_miles, estimated_time_min,
+                trigger_conditions, notes, created_at, updated_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (
+                name,
+                plan_type,
+                is_active,
+                data.get('destination', ''),
+                data.get('primary_route', ''),
+                data.get('alternate_route', ''),
+                float(data.get('distance_miles', 0)),
+                int(data.get('estimated_time_min', 0)),
+                data.get('trigger_conditions', ''),
+                data.get('notes', ''),
+                now_iso,
+                now_iso,
+            ),
+        )
+        plan_id = cur.lastrowid
+        db.commit()
+        try:
+            log_activity('evac_plan_create', f'Created evac plan: {name}')
+        except Exception:
+            pass
+
+    return jsonify({'id': plan_id, 'name': name}), 201
+
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>')
+def api_evac_plan_detail(pid):
+    """Get a single plan with its rally points and assignments."""
+    with db_session() as db:
+        plan = db.execute(
+            'SELECT * FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not plan:
+            return jsonify({'error': 'plan not found'}), 404
+
+        rally_points = db.execute(
+            'SELECT * FROM rally_points WHERE evac_plan_id = ? ORDER BY sequence_order',
+            (pid,),
+        ).fetchall()
+
+        assignments = db.execute(
+            'SELECT * FROM evac_assignments WHERE evac_plan_id = ? ORDER BY role, person_name',
+            (pid,),
+        ).fetchall()
+
+    result = dict(plan)
+    result['rally_points'] = [dict(r) for r in rally_points]
+    result['assignments'] = [dict(a) for a in assignments]
+    return jsonify(result)
+
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>', methods=['PUT'])
+def api_evac_plan_update(pid):
+    """Update an existing evacuation plan."""
+    data = request.get_json() or {}
+    allowed = {
+        'name', 'plan_type', 'is_active', 'destination', 'primary_route',
+        'alternate_route', 'distance_miles', 'estimated_time_min',
+        'trigger_conditions', 'notes',
+    }
+    fields = {k: v for k, v in data.items() if k in allowed}
+    if not fields:
+        return jsonify({'error': 'no valid fields to update'}), 400
+
+    now_iso = datetime.now(timezone.utc).isoformat()
+    fields['updated_at'] = now_iso
+
+    with db_session() as db:
+        existing = db.execute(
+            'SELECT id FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not existing:
+            return jsonify({'error': 'plan not found'}), 404
+
+        if fields.get('is_active'):
+            db.execute('UPDATE evac_plans SET is_active = 0')
+            fields['is_active'] = 1
+
+        set_clause = ', '.join(f'{k} = ?' for k in fields)
+        values = list(fields.values()) + [pid]
+        db.execute(f'UPDATE evac_plans SET {set_clause} WHERE id = ?', values)
+        db.commit()
+        try:
+            log_activity('evac_plan_update', f'Updated evac plan id={pid}')
+        except Exception:
+            pass
+
+    return jsonify({'updated': True, 'id': pid})
+
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>', methods=['DELETE'])
+def api_evac_plan_delete(pid):
+    """Delete a plan and cascade-delete its rally points and assignments."""
+    with db_session() as db:
+        existing = db.execute(
+            'SELECT id, name FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not existing:
+            return jsonify({'error': 'plan not found'}), 404
+
+        db.execute('DELETE FROM rally_points WHERE evac_plan_id = ?', (pid,))
+        db.execute('DELETE FROM evac_assignments WHERE evac_plan_id = ?', (pid,))
+        db.execute('DELETE FROM evac_plans WHERE id = ?', (pid,))
+        db.commit()
+        try:
+            log_activity('evac_plan_delete', f'Deleted evac plan: {existing["name"]}')
+        except Exception:
+            pass
+
+    return jsonify({'deleted': True, 'id': pid})
+
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>/activate', methods=['POST'])
+def api_evac_plan_activate(pid):
+    """Activate a plan — deactivates all others first."""
+    with db_session() as db:
+        existing = db.execute(
+            'SELECT id, name FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not existing:
+            return jsonify({'error': 'plan not found'}), 404
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        db.execute('UPDATE evac_plans SET is_active = 0')
+        db.execute(
+            'UPDATE evac_plans SET is_active = 1, updated_at = ? WHERE id = ?',
+            (now_iso, pid),
+        )
+        db.commit()
+        try:
+            log_activity('evac_plan_activate', f'Activated evac plan: {existing["name"]}')
+        except Exception:
+            pass
+
+    return jsonify({'activated': True, 'id': pid, 'name': existing['name']})
+
+
+# ─── Rally Points ────────────────────────────────────────────────────
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>/rally-points')
+def api_rally_points_list(pid):
+    """List rally points for a plan, ordered by sequence."""
+    with db_session() as db:
+        plan = db.execute(
+            'SELECT id FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not plan:
+            return jsonify({'error': 'plan not found'}), 404
+
+        rows = db.execute(
+            'SELECT * FROM rally_points WHERE evac_plan_id = ? ORDER BY sequence_order',
+            (pid,),
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>/rally-points', methods=['POST'])
+def api_rally_point_create(pid):
+    """Create a rally point for a plan."""
+    data = request.get_json() or {}
+    name = (data.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'name is required'}), 400
+
+    with db_session() as db:
+        plan = db.execute(
+            'SELECT id FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not plan:
+            return jsonify({'error': 'plan not found'}), 404
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        cur = db.execute(
+            '''INSERT INTO rally_points
+               (evac_plan_id, name, location, lat, lng, point_type,
+                sequence_order, notes, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (
+                pid,
+                name,
+                data.get('location', ''),
+                data.get('lat'),
+                data.get('lng'),
+                data.get('point_type', 'assembly'),
+                int(data.get('sequence_order', 0)),
+                data.get('notes', ''),
+                now_iso,
+            ),
+        )
+        point_id = cur.lastrowid
+        db.commit()
+        try:
+            log_activity('rally_point_create', f'Created rally point: {name}')
+        except Exception:
+            pass
+
+    return jsonify({'id': point_id, 'name': name}), 201
+
+
+@emergency_bp.route('/api/emergency/rally-points/<int:rid>', methods=['PUT'])
+def api_rally_point_update(rid):
+    """Update a rally point."""
+    data = request.get_json() or {}
+    allowed = {'name', 'location', 'lat', 'lng', 'point_type', 'sequence_order', 'notes'}
+    fields = {k: v for k, v in data.items() if k in allowed}
+    if not fields:
+        return jsonify({'error': 'no valid fields to update'}), 400
+
+    with db_session() as db:
+        existing = db.execute(
+            'SELECT id FROM rally_points WHERE id = ?', (rid,)
+        ).fetchone()
+        if not existing:
+            return jsonify({'error': 'rally point not found'}), 404
+
+        set_clause = ', '.join(f'{k} = ?' for k in fields)
+        values = list(fields.values()) + [rid]
+        db.execute(f'UPDATE rally_points SET {set_clause} WHERE id = ?', values)
+        db.commit()
+        try:
+            log_activity('rally_point_update', f'Updated rally point id={rid}')
+        except Exception:
+            pass
+
+    return jsonify({'updated': True, 'id': rid})
+
+
+@emergency_bp.route('/api/emergency/rally-points/<int:rid>', methods=['DELETE'])
+def api_rally_point_delete(rid):
+    """Delete a rally point."""
+    with db_session() as db:
+        existing = db.execute(
+            'SELECT id FROM rally_points WHERE id = ?', (rid,)
+        ).fetchone()
+        if not existing:
+            return jsonify({'error': 'rally point not found'}), 404
+
+        db.execute('DELETE FROM rally_points WHERE id = ?', (rid,))
+        db.commit()
+        try:
+            log_activity('rally_point_delete', f'Deleted rally point id={rid}')
+        except Exception:
+            pass
+
+    return jsonify({'deleted': True, 'id': rid})
+
+
+# ─── Evacuation Assignments ──────────────────────────────────────────
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>/assignments')
+def api_assignments_list(pid):
+    """List personnel assignments for a plan."""
+    with db_session() as db:
+        plan = db.execute(
+            'SELECT id FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not plan:
+            return jsonify({'error': 'plan not found'}), 404
+
+        rows = db.execute(
+            'SELECT * FROM evac_assignments WHERE evac_plan_id = ? ORDER BY role, person_name',
+            (pid,),
+        ).fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>/assignments', methods=['POST'])
+def api_assignment_create(pid):
+    """Create a personnel assignment for a plan."""
+    data = request.get_json() or {}
+    person_name = (data.get('person_name') or '').strip()
+    if not person_name:
+        return jsonify({'error': 'person_name is required'}), 400
+
+    with db_session() as db:
+        plan = db.execute(
+            'SELECT id FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not plan:
+            return jsonify({'error': 'plan not found'}), 404
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        cur = db.execute(
+            '''INSERT INTO evac_assignments
+               (evac_plan_id, person_name, role, vehicle, go_bag,
+                checked_in, checked_in_at, notes, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            (
+                pid,
+                person_name,
+                data.get('role', 'member'),
+                data.get('vehicle', ''),
+                data.get('go_bag', ''),
+                0,
+                '',
+                data.get('notes', ''),
+                now_iso,
+            ),
+        )
+        assignment_id = cur.lastrowid
+        db.commit()
+        try:
+            log_activity('evac_assignment_create', f'Assigned {person_name} to evac plan')
+        except Exception:
+            pass
+
+    return jsonify({'id': assignment_id, 'person_name': person_name}), 201
+
+
+@emergency_bp.route('/api/emergency/assignments/<int:aid>', methods=['PUT'])
+def api_assignment_update(aid):
+    """Update a personnel assignment."""
+    data = request.get_json() or {}
+    allowed = {'person_name', 'role', 'vehicle', 'go_bag', 'notes'}
+    fields = {k: v for k, v in data.items() if k in allowed}
+    if not fields:
+        return jsonify({'error': 'no valid fields to update'}), 400
+
+    with db_session() as db:
+        existing = db.execute(
+            'SELECT id FROM evac_assignments WHERE id = ?', (aid,)
+        ).fetchone()
+        if not existing:
+            return jsonify({'error': 'assignment not found'}), 404
+
+        set_clause = ', '.join(f'{k} = ?' for k in fields)
+        values = list(fields.values()) + [aid]
+        db.execute(f'UPDATE evac_assignments SET {set_clause} WHERE id = ?', values)
+        db.commit()
+        try:
+            log_activity('evac_assignment_update', f'Updated assignment id={aid}')
+        except Exception:
+            pass
+
+    return jsonify({'updated': True, 'id': aid})
+
+
+@emergency_bp.route('/api/emergency/assignments/<int:aid>', methods=['DELETE'])
+def api_assignment_delete(aid):
+    """Delete a personnel assignment."""
+    with db_session() as db:
+        existing = db.execute(
+            'SELECT id FROM evac_assignments WHERE id = ?', (aid,)
+        ).fetchone()
+        if not existing:
+            return jsonify({'error': 'assignment not found'}), 404
+
+        db.execute('DELETE FROM evac_assignments WHERE id = ?', (aid,))
+        db.commit()
+        try:
+            log_activity('evac_assignment_delete', f'Deleted assignment id={aid}')
+        except Exception:
+            pass
+
+    return jsonify({'deleted': True, 'id': aid})
+
+
+@emergency_bp.route('/api/emergency/assignments/<int:aid>/check-in', methods=['POST'])
+def api_assignment_checkin(aid):
+    """Mark a person as checked in."""
+    with db_session() as db:
+        existing = db.execute(
+            'SELECT id, person_name FROM evac_assignments WHERE id = ?', (aid,)
+        ).fetchone()
+        if not existing:
+            return jsonify({'error': 'assignment not found'}), 404
+
+        now_iso = datetime.now(timezone.utc).isoformat()
+        db.execute(
+            'UPDATE evac_assignments SET checked_in = 1, checked_in_at = ? WHERE id = ?',
+            (now_iso, aid),
+        )
+        db.commit()
+        try:
+            log_activity('evac_checkin', f'{existing["person_name"]} checked in')
+        except Exception:
+            pass
+
+    return jsonify({'checked_in': True, 'id': aid, 'checked_in_at': now_iso})
+
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>/reset-checkins', methods=['POST'])
+def api_evac_plan_reset_checkins(pid):
+    """Reset all check-ins for a plan."""
+    with db_session() as db:
+        plan = db.execute(
+            'SELECT id, name FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not plan:
+            return jsonify({'error': 'plan not found'}), 404
+
+        db.execute(
+            "UPDATE evac_assignments SET checked_in = 0, checked_in_at = '' WHERE evac_plan_id = ?",
+            (pid,),
+        )
+        db.commit()
+        try:
+            log_activity('evac_reset_checkins', f'Reset check-ins for plan: {plan["name"]}')
+        except Exception:
+            pass
+
+    return jsonify({'reset': True, 'plan_id': pid})
+
+
+# ─── Accountability & Summary ────────────────────────────────────────
+
+@emergency_bp.route('/api/emergency/evac-plans/<int:pid>/accountability')
+def api_evac_plan_accountability(pid):
+    """Accountability report: total, checked-in, missing, personnel list."""
+    with db_session() as db:
+        plan = db.execute(
+            'SELECT id, name FROM evac_plans WHERE id = ?', (pid,)
+        ).fetchone()
+        if not plan:
+            return jsonify({'error': 'plan not found'}), 404
+
+        rows = db.execute(
+            'SELECT person_name, role, checked_in, checked_in_at '
+            'FROM evac_assignments WHERE evac_plan_id = ? ORDER BY role, person_name',
+            (pid,),
+        ).fetchall()
+
+    personnel = [dict(r) for r in rows]
+    total = len(personnel)
+    checked_in = sum(1 for p in personnel if p['checked_in'])
+    missing = total - checked_in
+
+    return jsonify({
+        'total': total,
+        'checked_in': checked_in,
+        'missing': missing,
+        'personnel': personnel,
+    })
+
+
+@emergency_bp.route('/api/emergency/evac/summary')
+def api_evac_summary():
+    """Compact evacuation summary for dashboard widgets."""
+    with db_session() as db:
+        plans = db.execute('SELECT * FROM evac_plans').fetchall()
+        total_plans = len(plans)
+
+        active_plan = None
+        for p in plans:
+            if p['is_active']:
+                active_plan = p
+                break
+
+        has_active = active_plan is not None
+        active_name = active_plan['name'] if active_plan else ''
+
+        total_personnel = 0
+        checked_in_count = 0
+        if active_plan:
+            rows = db.execute(
+                'SELECT checked_in FROM evac_assignments WHERE evac_plan_id = ?',
+                (active_plan['id'],),
+            ).fetchall()
+            total_personnel = len(rows)
+            checked_in_count = sum(1 for r in rows if r['checked_in'])
+
+    return jsonify({
+        'total_plans': total_plans,
+        'has_active_plan': has_active,
+        'active_plan_name': active_name,
+        'total_personnel': total_personnel,
+        'checked_in_count': checked_in_count,
+    })

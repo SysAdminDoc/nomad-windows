@@ -2,6 +2,7 @@
 
 import json
 import time
+from datetime import date, timedelta
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
@@ -345,11 +346,23 @@ def api_preservation_list():
 def api_preservation_create():
     data = request.get_json() or {}
     with db_session() as db:
-        db.execute('INSERT INTO preservation_log (crop, method, quantity, unit, batch_date, shelf_life_months, notes) VALUES (?,?,?,?,?,?,?)',
-                   (data.get('crop', ''), data.get('method', 'canning'), data.get('quantity', 0),
-                    data.get('unit', 'quarts'), data.get('batch_date', ''), data.get('shelf_life_months', 12), data.get('notes', '')))
+        db.execute(
+            '''INSERT INTO preservation_log
+               (crop, method, quantity, unit, batch_date, shelf_life_months, notes,
+                jar_size, jar_count, processing_time_min, pressure_psi,
+                storage_temp, storage_location, batch_label, success,
+                yield_amount, yield_unit, calories_per_unit)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (data.get('crop', ''), data.get('method', 'canning'), data.get('quantity', 0),
+             data.get('unit', 'quarts'), data.get('batch_date', ''), data.get('shelf_life_months', 12),
+             data.get('notes', ''), data.get('jar_size', ''), data.get('jar_count', 0),
+             data.get('processing_time_min', 0), data.get('pressure_psi', 0),
+             data.get('storage_temp', ''), data.get('storage_location', ''),
+             data.get('batch_label', ''), data.get('success', 1),
+             data.get('yield_amount', 0), data.get('yield_unit', ''),
+             data.get('calories_per_unit', 0)))
         db.commit()
-    return jsonify({'status': 'created'})
+    return jsonify({'status': 'created'}), 201
 
 
 @garden_bp.route('/api/garden/preservation/<int:pid>', methods=['DELETE'])
@@ -598,3 +611,140 @@ def api_rotation_suggestions(pid):
                 warnings.append(f"Avoid {family} family ({', '.join(PLANT_FAMILIES.get(family, []))}) - planted recently")
 
         return jsonify({'suggestions': suggestions, 'warnings': warnings})
+
+
+# ─── Food Preservation Batch Tracker (expanded) ──────────────────────
+
+_PRESERVATION_FIELDS = [
+    'crop', 'method', 'quantity', 'unit', 'batch_date', 'shelf_life_months',
+    'notes', 'jar_size', 'jar_count', 'processing_time_min', 'pressure_psi',
+    'storage_temp', 'storage_location', 'batch_label', 'success',
+    'yield_amount', 'yield_unit', 'calories_per_unit',
+]
+
+
+@garden_bp.route('/api/garden/preservation/<int:pid>', methods=['PUT'])
+def api_preservation_update(pid):
+    """Update a preservation record."""
+    data = request.get_json() or {}
+    with db_session() as db:
+        if not db.execute('SELECT 1 FROM preservation_log WHERE id = ?', (pid,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
+        fields, vals = [], []
+        for k in _PRESERVATION_FIELDS:
+            if k in data:
+                fields.append(f'{k} = ?')
+                vals.append(data[k])
+        if not fields:
+            return jsonify({'error': 'no valid fields provided'}), 400
+        vals.append(pid)
+        db.execute(f'UPDATE preservation_log SET {", ".join(fields)} WHERE id = ?', vals)
+        db.commit()
+    return jsonify({'status': 'updated'})
+
+
+@garden_bp.route('/api/garden/preservation/<int:pid>', methods=['GET'])
+def api_preservation_get(pid):
+    """Get a single preservation record."""
+    with db_session() as db:
+        row = db.execute('SELECT * FROM preservation_log WHERE id = ?', (pid,)).fetchone()
+        if not row:
+            return jsonify({'error': 'not found'}), 404
+        return jsonify(dict(row))
+
+
+@garden_bp.route('/api/garden/preservation/by-method')
+def api_preservation_by_method():
+    """Group preservation records by method with counts and total quantity."""
+    with db_session() as db:
+        rows = db.execute(
+            '''SELECT method, COUNT(*) as batch_count, COALESCE(SUM(quantity), 0) as total_quantity
+               FROM preservation_log GROUP BY method ORDER BY batch_count DESC'''
+        ).fetchall()
+    return jsonify([{'method': r['method'], 'batch_count': r['batch_count'],
+                     'total_quantity': r['total_quantity']} for r in rows])
+
+
+@garden_bp.route('/api/garden/preservation/expiring')
+def api_preservation_expiring():
+    """Records where batch_date + shelf_life_months is within 90 days of today."""
+    with db_session() as db:
+        rows = db.execute(
+            'SELECT * FROM preservation_log WHERE batch_date IS NOT NULL AND batch_date != \'\' AND shelf_life_months > 0'
+        ).fetchall()
+    today = date.today()
+    threshold = today + timedelta(days=90)
+    expiring = []
+    for r in rows:
+        d = dict(r)
+        try:
+            parts = d['batch_date'].split('-')
+            batch = date(int(parts[0]), int(parts[1]), int(parts[2]))
+        except (ValueError, IndexError):
+            continue
+        exp_year = batch.year + (batch.month + d['shelf_life_months'] - 1) // 12
+        exp_month = (batch.month + d['shelf_life_months'] - 1) % 12 + 1
+        exp_day = min(batch.day, 28)
+        expiration = date(exp_year, exp_month, exp_day)
+        if expiration <= threshold:
+            d['expiration_date'] = expiration.isoformat()
+            d['days_until_expiry'] = (expiration - today).days
+            expiring.append(d)
+    expiring.sort(key=lambda x: x['days_until_expiry'])
+    return jsonify(expiring)
+
+
+@garden_bp.route('/api/garden/preservation/stats')
+def api_preservation_stats():
+    """Dashboard stats for preservation batches."""
+    current_year = time.strftime('%Y')
+    with db_session() as db:
+        total = db.execute('SELECT COUNT(*) as cnt FROM preservation_log').fetchone()['cnt']
+        by_method = db.execute(
+            'SELECT method, COUNT(*) as cnt FROM preservation_log GROUP BY method ORDER BY cnt DESC'
+        ).fetchall()
+        total_jars = db.execute(
+            'SELECT COALESCE(SUM(jar_count), 0) as cnt FROM preservation_log'
+        ).fetchone()['cnt']
+        successful = db.execute(
+            'SELECT COUNT(*) as cnt FROM preservation_log WHERE success = 1'
+        ).fetchone()['cnt']
+        failed = db.execute(
+            'SELECT COUNT(*) as cnt FROM preservation_log WHERE success = 0'
+        ).fetchone()['cnt']
+        this_year = db.execute(
+            "SELECT COUNT(*) as cnt FROM preservation_log WHERE batch_date LIKE ?",
+            (f'{current_year}%',)
+        ).fetchone()['cnt']
+        top_crop = db.execute(
+            'SELECT crop, COUNT(*) as cnt FROM preservation_log GROUP BY crop ORDER BY cnt DESC LIMIT 1'
+        ).fetchone()
+    return jsonify({
+        'total_batches': total,
+        'batches_by_method': {r['method']: r['cnt'] for r in by_method},
+        'total_jars': total_jars,
+        'successful_batches': successful,
+        'failed_batches': failed,
+        'batches_this_year': this_year,
+        'most_preserved_crop': top_crop['crop'] if top_crop else None,
+    })
+
+
+@garden_bp.route('/api/garden/preservation/canning-reference')
+def api_preservation_canning_reference():
+    """Static reference data for pressure canning and water-bath processing."""
+    reference = [
+        {'food_type': 'Green Beans', 'method': 'pressure', 'pressure_psi': 10, 'time_pints_min': 20, 'time_quarts_min': 25, 'altitude_note': 'Add 1 PSI per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Corn (whole kernel)', 'method': 'pressure', 'pressure_psi': 10, 'time_pints_min': 55, 'time_quarts_min': 85, 'altitude_note': 'Add 1 PSI per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Carrots', 'method': 'pressure', 'pressure_psi': 10, 'time_pints_min': 25, 'time_quarts_min': 30, 'altitude_note': 'Add 1 PSI per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Tomatoes (crushed)', 'method': 'water_bath', 'pressure_psi': 0, 'time_pints_min': 35, 'time_quarts_min': 45, 'altitude_note': 'Add 5 min per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Peaches', 'method': 'water_bath', 'pressure_psi': 0, 'time_pints_min': 25, 'time_quarts_min': 30, 'altitude_note': 'Add 5 min per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Pickles (cucumber)', 'method': 'water_bath', 'pressure_psi': 0, 'time_pints_min': 10, 'time_quarts_min': 15, 'altitude_note': 'Add 5 min per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Chicken (boneless)', 'method': 'pressure', 'pressure_psi': 10, 'time_pints_min': 75, 'time_quarts_min': 90, 'altitude_note': 'Add 1 PSI per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Beef (cubed)', 'method': 'pressure', 'pressure_psi': 10, 'time_pints_min': 75, 'time_quarts_min': 90, 'altitude_note': 'Add 1 PSI per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Salsa', 'method': 'water_bath', 'pressure_psi': 0, 'time_pints_min': 15, 'time_quarts_min': 15, 'altitude_note': 'Add 5 min per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Applesauce', 'method': 'water_bath', 'pressure_psi': 0, 'time_pints_min': 15, 'time_quarts_min': 20, 'altitude_note': 'Add 5 min per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Jams/Jellies', 'method': 'water_bath', 'pressure_psi': 0, 'time_pints_min': 10, 'time_quarts_min': 10, 'altitude_note': 'Add 5 min per 1,000 ft above 1,000 ft'},
+        {'food_type': 'Peas', 'method': 'pressure', 'pressure_psi': 10, 'time_pints_min': 40, 'time_quarts_min': 40, 'altitude_note': 'Add 1 PSI per 1,000 ft above 1,000 ft'},
+    ]
+    return jsonify(reference)

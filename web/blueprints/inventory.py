@@ -115,7 +115,7 @@ def api_inventory_create():
 })
 def api_inventory_update(item_id):
     data = request.get_json() or {}
-    allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'barcode', 'cost', 'notes', 'calories_per_unit', 'protein_g', 'fat_g', 'carbs_g']
+    allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'barcode', 'cost', 'notes', 'calories_per_unit', 'protein_g', 'fat_g', 'carbs_g', 'weight_oz', 'container_id']
     filtered = safe_columns(data, allowed)
     if not filtered:
         return jsonify({'error': 'No fields to update'}), 400
@@ -1399,3 +1399,292 @@ def api_food_security():
             'days_of_food': days,
             'daily_caloric_need': daily_need
         })
+
+# ─── Container / Kit Management ──────────────────────────────────────
+
+CONTAINER_TYPES = ['bag', 'box', 'bin', 'tote', 'vehicle', 'cache', 'room', 'other']
+
+
+@inventory_bp.route('/api/inventory/containers', methods=['GET'])
+def api_containers_list():
+    """List all containers with item_count and total_weight."""
+    with db_session() as db:
+        rows = db.execute('''
+            SELECT c.*,
+                   COUNT(i.id) AS item_count,
+                   COALESCE(SUM(i.quantity), 0) AS total_item_qty
+            FROM inventory_containers c
+            LEFT JOIN inventory i ON i.container_id = c.id
+            GROUP BY c.id
+            ORDER BY c.name
+        ''').fetchall()
+    return jsonify([dict(r) for r in rows])
+
+
+@inventory_bp.route('/api/inventory/containers', methods=['POST'])
+@validate_json({
+    'name': {'type': str, 'required': True, 'max_length': 200},
+    'container_type': {'type': str, 'max_length': 50},
+})
+def api_containers_create():
+    """Create a new container."""
+    data = request.get_json() or {}
+    ctype = data.get('container_type', 'bag')
+    if ctype not in CONTAINER_TYPES:
+        return jsonify({'error': f'Invalid container_type. Must be one of: {CONTAINER_TYPES}'}), 400
+    with db_session() as db:
+        cur = db.execute(
+            '''INSERT INTO inventory_containers
+               (name, container_type, location, parent_container_id,
+                weight_capacity_lb, volume_capacity_cf, notes)
+               VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            (data.get('name', ''), ctype,
+             data.get('location', ''),
+             data.get('parent_container_id'),
+             _safe_float(data.get('weight_capacity_lb', 0)),
+             _safe_float(data.get('volume_capacity_cf', 0)),
+             data.get('notes', '')))
+        db.commit()
+        row = db.execute('SELECT * FROM inventory_containers WHERE id = ?',
+                         (cur.lastrowid,)).fetchone()
+    broadcast_event('inventory_update', {'action': 'container_add', 'id': cur.lastrowid})
+    return jsonify(dict(row)), 201
+
+
+@inventory_bp.route('/api/inventory/containers/summary', methods=['GET'])
+def api_containers_summary():
+    """Aggregate stats: totals, assigned/unassigned, by type."""
+    with db_session() as db:
+        total = db.execute(
+            'SELECT COUNT(*) AS c FROM inventory_containers').fetchone()['c']
+        assigned = db.execute(
+            'SELECT COUNT(*) AS c FROM inventory WHERE container_id IS NOT NULL'
+        ).fetchone()['c']
+        unassigned = db.execute(
+            'SELECT COUNT(*) AS c FROM inventory WHERE container_id IS NULL'
+        ).fetchone()['c']
+        by_type = db.execute(
+            '''SELECT container_type, COUNT(*) AS c
+               FROM inventory_containers GROUP BY container_type
+               ORDER BY container_type'''
+        ).fetchall()
+    return jsonify({
+        'total_containers': total,
+        'items_assigned': assigned,
+        'items_unassigned': unassigned,
+        'containers_by_type': {r['container_type']: r['c'] for r in by_type},
+    })
+
+
+@inventory_bp.route('/api/inventory/containers/<int:cid>', methods=['GET'])
+def api_containers_get(cid):
+    """Get a single container with its items and direct sub-containers."""
+    with db_session() as db:
+        container = db.execute(
+            'SELECT * FROM inventory_containers WHERE id = ?', (cid,)
+        ).fetchone()
+        if not container:
+            return jsonify({'error': 'Container not found'}), 404
+        items = db.execute(
+            'SELECT * FROM inventory WHERE container_id = ? ORDER BY name',
+            (cid,)).fetchall()
+        children = db.execute(
+            '''SELECT c.*, COUNT(i.id) AS item_count
+               FROM inventory_containers c
+               LEFT JOIN inventory i ON i.container_id = c.id
+               WHERE c.parent_container_id = ?
+               GROUP BY c.id ORDER BY c.name''', (cid,)).fetchall()
+    result = dict(container)
+    result['items'] = [dict(r) for r in items]
+    result['sub_containers'] = [dict(r) for r in children]
+    return jsonify(result)
+
+
+@inventory_bp.route('/api/inventory/containers/<int:cid>', methods=['PUT'])
+@validate_json({
+    'name': {'type': str, 'max_length': 200},
+})
+def api_containers_update(cid):
+    """Update a container (allowed-list pattern)."""
+    data = request.get_json() or {}
+    allowed = ['name', 'container_type', 'location', 'parent_container_id',
+               'weight_capacity_lb', 'volume_capacity_cf', 'notes']
+    filtered = safe_columns(data, allowed)
+    if not filtered:
+        return jsonify({'error': 'No fields to update'}), 400
+    if 'container_type' in filtered and filtered['container_type'] not in CONTAINER_TYPES:
+        return jsonify({'error': f'Invalid container_type. Must be one of: {CONTAINER_TYPES}'}), 400
+    if 'parent_container_id' in filtered and filtered['parent_container_id'] == cid:
+        return jsonify({'error': 'A container cannot be its own parent'}), 400
+    for num_field in ('weight_capacity_lb', 'volume_capacity_cf'):
+        if num_field in filtered:
+            filtered[num_field] = _safe_float(filtered[num_field])
+    with db_session() as db:
+        if not db.execute('SELECT 1 FROM inventory_containers WHERE id = ?', (cid,)).fetchone():
+            return jsonify({'error': 'Container not found'}), 404
+        set_clause = ', '.join(f'{col} = ?' for col in filtered)
+        vals = list(filtered.values())
+        vals.append(cid)
+        db.execute(
+            f'UPDATE inventory_containers SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            vals)
+        db.commit()
+    broadcast_event('inventory_update', {'action': 'container_edit', 'id': cid})
+    return jsonify({'status': 'saved'})
+
+
+@inventory_bp.route('/api/inventory/containers/<int:cid>', methods=['DELETE'])
+def api_containers_delete(cid):
+    """Delete a container. Un-assign all items (don't delete them)."""
+    with db_session() as db:
+        if not db.execute('SELECT 1 FROM inventory_containers WHERE id = ?', (cid,)).fetchone():
+            return jsonify({'error': 'Container not found'}), 404
+        # Un-assign items from this container
+        db.execute('UPDATE inventory SET container_id = NULL WHERE container_id = ?', (cid,))
+        # Re-parent child containers to NULL
+        db.execute('UPDATE inventory_containers SET parent_container_id = NULL WHERE parent_container_id = ?', (cid,))
+        db.execute('DELETE FROM inventory_containers WHERE id = ?', (cid,))
+        db.commit()
+    broadcast_event('inventory_update', {'action': 'container_delete', 'id': cid})
+    return jsonify({'status': 'deleted'})
+
+
+@inventory_bp.route('/api/inventory/<int:item_id>/assign-container', methods=['POST'])
+@validate_json({})
+def api_inventory_assign_container(item_id):
+    """Assign an inventory item to a container, or unassign (container_id: null)."""
+    data = request.get_json() or {}
+    container_id = data.get('container_id')  # int or None
+    with db_session() as db:
+        if not db.execute('SELECT 1 FROM inventory WHERE id = ?', (item_id,)).fetchone():
+            return jsonify({'error': 'Item not found'}), 404
+        if container_id is not None:
+            container_id = _safe_int(container_id)
+            if not db.execute('SELECT 1 FROM inventory_containers WHERE id = ?',
+                              (container_id,)).fetchone():
+                return jsonify({'error': 'Container not found'}), 404
+        db.execute('UPDATE inventory SET container_id = ? WHERE id = ?',
+                   (container_id, item_id))
+        db.commit()
+    broadcast_event('inventory_update', {'action': 'assign_container', 'id': item_id,
+                                         'container_id': container_id})
+    return jsonify({'status': 'assigned', 'item_id': item_id,
+                    'container_id': container_id})
+
+
+@inventory_bp.route('/api/inventory/containers/<int:cid>/bulk-assign', methods=['POST'])
+@validate_json({})
+def api_containers_bulk_assign(cid):
+    """Assign multiple items to a container at once."""
+    data = request.get_json() or {}
+    item_ids = data.get('item_ids', [])
+    if not isinstance(item_ids, list) or not item_ids:
+        return jsonify({'error': 'item_ids must be a non-empty list'}), 400
+    # Sanitise: only integers
+    try:
+        item_ids = [int(i) for i in item_ids]
+    except (ValueError, TypeError):
+        return jsonify({'error': 'item_ids must contain integers'}), 400
+    with db_session() as db:
+        if not db.execute('SELECT 1 FROM inventory_containers WHERE id = ?', (cid,)).fetchone():
+            return jsonify({'error': 'Container not found'}), 404
+        placeholders = ','.join('?' for _ in item_ids)
+        db.execute(
+            f'UPDATE inventory SET container_id = ? WHERE id IN ({placeholders})',
+            [cid] + item_ids)
+        db.commit()
+    broadcast_event('inventory_update', {'action': 'bulk_assign', 'container_id': cid,
+                                         'item_ids': item_ids})
+    return jsonify({'status': 'assigned', 'container_id': cid,
+                    'count': len(item_ids)})
+
+
+@inventory_bp.route('/api/inventory/containers/<int:cid>/tree', methods=['GET'])
+def api_containers_tree(cid):
+    """Recursive tree: container -> items + sub-containers -> their items."""
+    # Iterative BFS to avoid deep recursion on very nested containers
+    with db_session() as db:
+        root = db.execute(
+            'SELECT * FROM inventory_containers WHERE id = ?', (cid,)
+        ).fetchone()
+        if not root:
+            return jsonify({'error': 'Container not found'}), 404
+        root_node = dict(root)
+        root_node['items'] = [dict(r) for r in db.execute(
+            'SELECT * FROM inventory WHERE container_id = ? ORDER BY name',
+            (cid,)).fetchall()]
+        root_node['sub_containers'] = []
+
+        # BFS to build tree
+        stack = [(root_node, cid)]
+        visited = {cid}
+        while stack:
+            parent_node, parent_id = stack.pop(0)
+            children = db.execute(
+                'SELECT * FROM inventory_containers WHERE parent_container_id = ? ORDER BY name',
+                (parent_id,)).fetchall()
+            for child in children:
+                if child['id'] in visited:
+                    continue
+                visited.add(child['id'])
+                child_node = dict(child)
+                child_node['items'] = [dict(r) for r in db.execute(
+                    'SELECT * FROM inventory WHERE container_id = ? ORDER BY name',
+                    (child['id'],)).fetchall()]
+                child_node['sub_containers'] = []
+                parent_node['sub_containers'].append(child_node)
+                stack.append((child_node, child['id']))
+
+    return jsonify(root_node)
+
+
+@inventory_bp.route('/api/inventory/containers/<int:cid>/weight', methods=['GET'])
+def api_containers_weight(cid):
+    """Total weight of all items in a container including nested sub-containers.
+
+    Uses weight_oz from loadout_items if the inventory item is linked there,
+    otherwise falls back to quantity as a rough estimate.
+    """
+    with db_session() as db:
+        if not db.execute('SELECT 1 FROM inventory_containers WHERE id = ?', (cid,)).fetchone():
+            return jsonify({'error': 'Container not found'}), 404
+
+        # Gather all container IDs in the tree (iterative BFS)
+        all_ids = []
+        queue = [cid]
+        visited = {cid}
+        while queue:
+            cur = queue.pop(0)
+            all_ids.append(cur)
+            children = db.execute(
+                'SELECT id FROM inventory_containers WHERE parent_container_id = ?',
+                (cur,)).fetchall()
+            for ch in children:
+                if ch['id'] not in visited:
+                    visited.add(ch['id'])
+                    queue.append(ch['id'])
+
+        if not all_ids:
+            return jsonify({'container_id': cid, 'total_weight_oz': 0,
+                            'total_weight_lb': 0, 'item_count': 0})
+
+        placeholders = ','.join('?' for _ in all_ids)
+        # Sum weight: prefer weight_oz on inventory if present, else quantity as fallback
+        rows = db.execute(
+            f'''SELECT COALESCE(SUM(
+                    CASE WHEN weight_oz > 0 THEN weight_oz * quantity
+                         ELSE quantity END
+                ), 0) AS total_oz,
+                COUNT(*) AS item_count
+            FROM inventory WHERE container_id IN ({placeholders})''',
+            all_ids).fetchone()
+        total_oz = rows['total_oz'] or 0
+        item_count = rows['item_count'] or 0
+
+    return jsonify({
+        'container_id': cid,
+        'total_weight_oz': round(total_oz, 2),
+        'total_weight_lb': round(total_oz / 16.0, 2),
+        'item_count': item_count,
+        'containers_counted': len(all_ids),
+    })

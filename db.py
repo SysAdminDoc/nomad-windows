@@ -1692,6 +1692,102 @@ def _create_water_financial_vehicle_loadout_tables(conn):
     conn.commit()
 
 
+def _create_pace_evac_container_tables(conn):
+    """v7.9.0 — PACE plans, evacuation planning, inventory containers."""
+    conn.executescript('''
+        /* ─── PACE Communications Plans ─── */
+        CREATE TABLE IF NOT EXISTS pace_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            scenario TEXT DEFAULT '',
+            is_active INTEGER DEFAULT 0,
+            primary_method TEXT DEFAULT '',
+            primary_freq TEXT DEFAULT '',
+            primary_equipment TEXT DEFAULT '',
+            primary_callsign TEXT DEFAULT '',
+            primary_schedule TEXT DEFAULT '',
+            primary_notes TEXT DEFAULT '',
+            alternate_method TEXT DEFAULT '',
+            alternate_freq TEXT DEFAULT '',
+            alternate_equipment TEXT DEFAULT '',
+            alternate_callsign TEXT DEFAULT '',
+            alternate_schedule TEXT DEFAULT '',
+            alternate_notes TEXT DEFAULT '',
+            contingency_method TEXT DEFAULT '',
+            contingency_freq TEXT DEFAULT '',
+            contingency_equipment TEXT DEFAULT '',
+            contingency_callsign TEXT DEFAULT '',
+            contingency_schedule TEXT DEFAULT '',
+            contingency_notes TEXT DEFAULT '',
+            emergency_method TEXT DEFAULT '',
+            emergency_freq TEXT DEFAULT '',
+            emergency_equipment TEXT DEFAULT '',
+            emergency_callsign TEXT DEFAULT '',
+            emergency_schedule TEXT DEFAULT '',
+            emergency_notes TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Evacuation Plans ─── */
+        CREATE TABLE IF NOT EXISTS evac_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            plan_type TEXT DEFAULT 'evacuate',
+            is_active INTEGER DEFAULT 0,
+            destination TEXT DEFAULT '',
+            primary_route TEXT DEFAULT '',
+            alternate_route TEXT DEFAULT '',
+            distance_miles REAL DEFAULT 0,
+            estimated_time_min INTEGER DEFAULT 0,
+            trigger_conditions TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS rally_points (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            evac_plan_id INTEGER REFERENCES evac_plans(id),
+            name TEXT NOT NULL,
+            location TEXT DEFAULT '',
+            lat REAL,
+            lng REAL,
+            point_type TEXT DEFAULT 'assembly',
+            sequence_order INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS evac_assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            evac_plan_id INTEGER REFERENCES evac_plans(id),
+            person_name TEXT NOT NULL,
+            role TEXT DEFAULT 'member',
+            vehicle TEXT DEFAULT '',
+            go_bag TEXT DEFAULT '',
+            checked_in INTEGER DEFAULT 0,
+            checked_in_at TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Inventory Containers ─── */
+        CREATE TABLE IF NOT EXISTS inventory_containers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            container_type TEXT DEFAULT 'bag',
+            location TEXT DEFAULT '',
+            parent_container_id INTEGER DEFAULT NULL,
+            weight_capacity_lb REAL DEFAULT 0,
+            volume_capacity_cf REAL DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _apply_column_migrations(conn):
     """Apply ALTER TABLE column migrations (before indexes that depend on new columns)."""
     for migration in [
@@ -1768,6 +1864,20 @@ def _apply_column_migrations(conn):
         'ALTER TABLE inventory ADD COLUMN fat_g REAL DEFAULT 0',
         'ALTER TABLE inventory ADD COLUMN carbs_g REAL DEFAULT 0',
         'ALTER TABLE preservation_log ADD COLUMN calories_per_unit REAL DEFAULT 0',
+        # v7.9.0 — Container management
+        'ALTER TABLE inventory ADD COLUMN container_id INTEGER DEFAULT NULL',
+        'ALTER TABLE inventory ADD COLUMN weight_oz REAL DEFAULT 0',
+        # v7.9.0 — Preservation batch tracker expansion
+        'ALTER TABLE preservation_log ADD COLUMN jar_size TEXT DEFAULT ""',
+        'ALTER TABLE preservation_log ADD COLUMN jar_count INTEGER DEFAULT 0',
+        'ALTER TABLE preservation_log ADD COLUMN processing_time_min INTEGER DEFAULT 0',
+        'ALTER TABLE preservation_log ADD COLUMN pressure_psi REAL DEFAULT 0',
+        'ALTER TABLE preservation_log ADD COLUMN storage_temp TEXT DEFAULT ""',
+        'ALTER TABLE preservation_log ADD COLUMN storage_location TEXT DEFAULT ""',
+        'ALTER TABLE preservation_log ADD COLUMN batch_label TEXT DEFAULT ""',
+        'ALTER TABLE preservation_log ADD COLUMN success INTEGER DEFAULT 1',
+        'ALTER TABLE preservation_log ADD COLUMN yield_amount REAL DEFAULT 0',
+        'ALTER TABLE preservation_log ADD COLUMN yield_unit TEXT DEFAULT ""',
     ]:
         try:
             conn.execute(migration)
@@ -2049,6 +2159,23 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_loadout_items_category ON loadout_items(category)',
         'CREATE INDEX IF NOT EXISTS idx_loadout_items_packed ON loadout_items(packed)',
         'CREATE INDEX IF NOT EXISTS idx_loadout_items_expiration ON loadout_items(expiration)',
+        # v7.9.0 — PACE plans
+        'CREATE INDEX IF NOT EXISTS idx_pace_plans_active ON pace_plans(is_active)',
+        # v7.9.0 — Evacuation planning
+        'CREATE INDEX IF NOT EXISTS idx_evac_plans_active ON evac_plans(is_active)',
+        'CREATE INDEX IF NOT EXISTS idx_evac_plans_type ON evac_plans(plan_type)',
+        'CREATE INDEX IF NOT EXISTS idx_rally_points_plan ON rally_points(evac_plan_id)',
+        'CREATE INDEX IF NOT EXISTS idx_rally_points_sequence ON rally_points(evac_plan_id, sequence_order)',
+        'CREATE INDEX IF NOT EXISTS idx_evac_assignments_plan ON evac_assignments(evac_plan_id)',
+        'CREATE INDEX IF NOT EXISTS idx_evac_assignments_role ON evac_assignments(role)',
+        # v7.9.0 — Inventory containers
+        'CREATE INDEX IF NOT EXISTS idx_inventory_containers_type ON inventory_containers(container_type)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_containers_parent ON inventory_containers(parent_container_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_container_id ON inventory(container_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_weight ON inventory(weight_oz)',
+        # v7.9.0 — Preservation expansion
+        'CREATE INDEX IF NOT EXISTS idx_preservation_log_success ON preservation_log(success)',
+        'CREATE INDEX IF NOT EXISTS idx_preservation_log_storage ON preservation_log(storage_location)',
     ]:
         try:
             conn.execute(idx)
@@ -2065,6 +2192,7 @@ def _init_db_inner(conn):
     _create_power_garden_tables(conn)
     _create_extended_tables(conn)
     _create_water_financial_vehicle_loadout_tables(conn)
+    _create_pace_evac_container_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

@@ -212,6 +212,12 @@ document.addEventListener('click', e => {
   }
   if (action === 'save-home-location') { saveHomeLocation(); return; }
   if (action === 'detect-home-location') { detectHomeLocation(); return; }
+  if (action === 'open-emergency-modal') { openEmergencyEnterModal(); return; }
+  if (action === 'close-emergency-modal') { closeEmergencyEnterModal(); return; }
+  if (action === 'confirm-emergency-enter') { confirmEmergencyEnter(); return; }
+  if (action === 'open-emergency-exit-modal') { openEmergencyExitModal(); return; }
+  if (action === 'close-emergency-exit-modal') { closeEmergencyExitModal(); return; }
+  if (action === 'confirm-emergency-exit') { confirmEmergencyExit(); return; }
   if (action === 'ask-copilot') { askCopilot(control.dataset.copilotQuestion); return; }
   if (action === 'close-csv-import') { closeCSVImportModal(); return; }
   if (action === 'execute-csv-import') { executeCSVImport(); return; }

@@ -112,6 +112,11 @@ SETTINGS_WHITELIST = {
     # the Situation Room "Proximity Board" to filter global feeds to threats
     # within a given distance of the user's location.
     'latitude', 'longitude', 'proximity_radius_km',
+    # Emergency Mode state — managed by /api/emergency/enter and /exit,
+    # whitelisted here so a factory-reset / config-restore round-trip
+    # can include them.
+    'emergency_active', 'emergency_started_at', 'emergency_reason',
+    'emergency_incident_id',
 }
 
 @system_bp.route('/api/settings', methods=['PUT'])

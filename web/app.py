@@ -1285,6 +1285,10 @@ def create_app():
     from web.blueprints.emergency import emergency_bp
     app.register_blueprint(emergency_bp)
 
+    # ─── Family Check-in Board (v7.6.0) ──────────────────────────────
+    from web.blueprints.family import family_bp
+    app.register_blueprint(family_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

@@ -674,6 +674,12 @@ document.addEventListener('click', e => {
       case 'show-inv-quick-add': showInvQuickAdd(); break;
       case 'toggle-template-dropdown': toggleTemplateDropdown(); break;
       case 'show-shopping-list': showShoppingList(); break;
+      case 'open-kit-builder': openKitBuilder(); break;
+      case 'close-kit-builder': closeKitBuilder(); break;
+      case 'generate-kit-plan': generateKitPlan(); break;
+      case 'apply-kit-filter': applyKitFilter(); break;
+      case 'commit-kit-to-shopping': commitKitToShopping(); break;
+      case 'reset-kit-builder': resetKitBuilder(); break;
       case 'quick-add-inv-item': quickAddInvItem({
         name: control.dataset.itemName,
         cat: control.dataset.itemCat,

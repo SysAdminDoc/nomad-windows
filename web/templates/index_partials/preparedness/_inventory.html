@@ -30,6 +30,7 @@
             </div>
           </div>
           <button class="btn btn-sm" data-prep-action="show-shopping-list" title="Auto-generate shopping list from gaps">Shopping List</button>
+          <button class="btn btn-sm btn-primary" data-prep-action="open-kit-builder" title="Build a personalized kit from mission parameters">Kit Builder</button>
           <button class="btn btn-sm" data-prep-action="daily-consume" title="Subtract daily usage from all tracked items">Daily Consume</button>
           <span class="prep-toolbar-divider"></span>
           <a class="btn btn-sm" href="/api/inventory/export-csv" title="Export to CSV">Export</a>
@@ -71,4 +72,76 @@
         </table>
       </div>
     </div>
+
+    <!-- Kit Builder Wizard Modal -->
+    <div id="kit-builder-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="kit-builder-title" data-backdrop-close="kit-builder-modal">
+      <div class="modal-card settings-modal-card settings-modal-card-lg">
+        <div class="modal-header settings-heading-row">
+          <h3 class="settings-detail-title" id="kit-builder-title">Kit Builder</h3>
+          <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-prep-action="close-kit-builder" aria-label="Close kit builder">x</button>
+        </div>
+        <div class="modal-body settings-modal-body">
+          <!-- Step 1: Inputs -->
+          <div id="kit-builder-step-inputs">
+            <p class="kit-builder-intro">Tell us about the mission and we'll compute a tailored kit — scaled to your people, climate, and duration. Water, food, and medical counts are derived from field-op references (TB MED 507, TCCC, FM 21-10).</p>
+            <div class="prep-form-grid prep-form-grid-2">
+              <div class="prep-field">
+                <label class="prep-field-label" for="kit-mission">Mission</label>
+                <select id="kit-mission" name="kit_mission" class="prep-field-control">
+                  <option value="bug_out">Bug-out (72+ hour evacuation)</option>
+                  <option value="shelter_in_place">Shelter in place</option>
+                  <option value="vehicle">Vehicle / EDC</option>
+                  <option value="medical_bag">Medical bag (IFAK+)</option>
+                </select>
+              </div>
+              <div class="prep-field">
+                <label class="prep-field-label" for="kit-climate">Climate</label>
+                <select id="kit-climate" name="kit_climate" class="prep-field-control">
+                  <option value="temperate">Temperate</option>
+                  <option value="cold">Cold</option>
+                  <option value="hot">Hot / arid</option>
+                  <option value="tropical">Tropical / humid</option>
+                </select>
+              </div>
+              <div class="prep-field">
+                <label class="prep-field-label" for="kit-people">People</label>
+                <input id="kit-people" name="kit_people" class="prep-field-control" type="number" min="1" max="50" value="1">
+              </div>
+              <div class="prep-field">
+                <label class="prep-field-label" for="kit-duration">Duration (hours)</label>
+                <input id="kit-duration" name="kit_duration" class="prep-field-control" type="number" min="1" max="2160" value="72">
+              </div>
+              <div class="prep-field">
+                <label class="prep-field-label" for="kit-mobility">Mobility</label>
+                <select id="kit-mobility" name="kit_mobility" class="prep-field-control">
+                  <option value="mixed">Mixed</option>
+                  <option value="foot">On foot</option>
+                  <option value="vehicle">Vehicle</option>
+                </select>
+              </div>
+            </div>
+            <div class="prep-form-actions">
+              <button class="btn btn-sm btn-primary" type="button" data-prep-action="generate-kit-plan">Generate Plan</button>
+              <button class="btn btn-sm" type="button" data-prep-action="close-kit-builder">Cancel</button>
+            </div>
+          </div>
+          <!-- Step 2: Results -->
+          <div id="kit-builder-step-results" class="is-hidden">
+            <div class="kit-builder-summary" id="kit-builder-summary"></div>
+            <div class="kit-builder-filters">
+              <label class="kit-builder-filter-label"><input type="checkbox" id="kit-filter-gap" name="kit_filter_gap" checked data-prep-action="apply-kit-filter"> Gaps</label>
+              <label class="kit-builder-filter-label"><input type="checkbox" id="kit-filter-partial" name="kit_filter_partial" checked data-prep-action="apply-kit-filter"> Partial</label>
+              <label class="kit-builder-filter-label"><input type="checkbox" id="kit-filter-have" name="kit_filter_have" data-prep-action="apply-kit-filter"> Have</label>
+            </div>
+            <div class="kit-builder-items" id="kit-builder-items"></div>
+            <div class="prep-form-actions">
+              <button class="btn btn-sm btn-primary" type="button" data-prep-action="commit-kit-to-shopping">Add Gaps to Shopping List</button>
+              <button class="btn btn-sm" type="button" data-prep-action="reset-kit-builder">Back to Inputs</button>
+              <button class="btn btn-sm btn-ghost" type="button" data-prep-action="close-kit-builder">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     </div><!-- /psub-inventory -->

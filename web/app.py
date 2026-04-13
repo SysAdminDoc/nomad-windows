@@ -1277,6 +1277,10 @@ def create_app():
     from web.blueprints.undo import undo_bp
     app.register_blueprint(undo_bp)
 
+    # ─── Kit Builder (v7.3.0 — personalized kit wizard) ──────────────
+    from web.blueprints.kit_builder import kit_builder_bp
+    app.register_blueprint(kit_builder_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

@@ -54,6 +54,10 @@ build.spec            # PyInstaller spec for portable exe
 icon.ico              # App icon (multi-size, 16-256px)
 installer.iss         # Inno Setup installer script
 ROADMAP.md            # 22-phase implementation plan (all complete)
+ROADMAP-v5.md         # 12-phase v5 feature expansion (91% complete)
+ROADMAP-v8.md         # 20-phase future implementation plan (from features.md — 1,805 features across 4 tiers)
+features.md           # Master feature list (63 sections, 1,805 checkboxes)
+datasources.md        # Offline data sources catalog (22 sections, 53 data packs)
 .github/workflows/
   build.yml           # CI/CD — PyInstaller + Inno Setup, dual artifact release on tag push
 web/

@@ -1281,6 +1281,10 @@ def create_app():
     from web.blueprints.kit_builder import kit_builder_bp
     app.register_blueprint(kit_builder_bp)
 
+    # ─── Emergency Mode (v7.5.0 — crisis orchestrator) ───────────────
+    from web.blueprints.emergency import emergency_bp
+    app.register_blueprint(emergency_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

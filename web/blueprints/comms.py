@@ -956,3 +956,172 @@ def api_comms_status_board():
             'frequencies': len(active_freqs),
             },
         })
+
+
+# ─── PACE Communications Plan Builder ────────────────────────────────
+
+_PACE_ALLOWED = {
+    'name', 'scenario', 'notes', 'is_active',
+    'primary_method', 'primary_freq', 'primary_equipment',
+    'primary_callsign', 'primary_schedule', 'primary_notes',
+    'alternate_method', 'alternate_freq', 'alternate_equipment',
+    'alternate_callsign', 'alternate_schedule', 'alternate_notes',
+    'contingency_method', 'contingency_freq', 'contingency_equipment',
+    'contingency_callsign', 'contingency_schedule', 'contingency_notes',
+    'emergency_method', 'emergency_freq', 'emergency_equipment',
+    'emergency_callsign', 'emergency_schedule', 'emergency_notes',
+}
+
+
+@comms_bp.route('/api/comms/pace')
+def api_pace_list():
+    """List all PACE communications plans."""
+    with db_session() as db:
+        rows = db.execute(
+            'SELECT * FROM pace_plans ORDER BY is_active DESC, name ASC'
+        ).fetchall()
+        return jsonify([dict(r) for r in rows])
+
+
+@comms_bp.route('/api/comms/pace', methods=['POST'])
+def api_pace_create():
+    """Create a new PACE communications plan."""
+    d = request.get_json() or {}
+    name = (d.get('name') or '').strip()
+    if not name:
+        return jsonify({'error': 'name required'}), 400
+    with db_session() as db:
+        if d.get('is_active'):
+            db.execute('UPDATE pace_plans SET is_active = 0 WHERE is_active = 1')
+        cur = db.execute(
+            '''INSERT INTO pace_plans (
+                name, scenario, is_active,
+                primary_method, primary_freq, primary_equipment,
+                primary_callsign, primary_schedule, primary_notes,
+                alternate_method, alternate_freq, alternate_equipment,
+                alternate_callsign, alternate_schedule, alternate_notes,
+                contingency_method, contingency_freq, contingency_equipment,
+                contingency_callsign, contingency_schedule, contingency_notes,
+                emergency_method, emergency_freq, emergency_equipment,
+                emergency_callsign, emergency_schedule, emergency_notes,
+                notes
+            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+            (
+                name,
+                d.get('scenario', ''),
+                1 if d.get('is_active') else 0,
+                d.get('primary_method', ''),
+                d.get('primary_freq', ''),
+                d.get('primary_equipment', ''),
+                d.get('primary_callsign', ''),
+                d.get('primary_schedule', ''),
+                d.get('primary_notes', ''),
+                d.get('alternate_method', ''),
+                d.get('alternate_freq', ''),
+                d.get('alternate_equipment', ''),
+                d.get('alternate_callsign', ''),
+                d.get('alternate_schedule', ''),
+                d.get('alternate_notes', ''),
+                d.get('contingency_method', ''),
+                d.get('contingency_freq', ''),
+                d.get('contingency_equipment', ''),
+                d.get('contingency_callsign', ''),
+                d.get('contingency_schedule', ''),
+                d.get('contingency_notes', ''),
+                d.get('emergency_method', ''),
+                d.get('emergency_freq', ''),
+                d.get('emergency_equipment', ''),
+                d.get('emergency_callsign', ''),
+                d.get('emergency_schedule', ''),
+                d.get('emergency_notes', ''),
+                d.get('notes', ''),
+            )
+        )
+        db.commit()
+        row = db.execute('SELECT * FROM pace_plans WHERE id = ?', (cur.lastrowid,)).fetchone()
+        log_activity('pace_plan_created', 'comms', f'Created PACE plan: {name}')
+        return jsonify(dict(row)), 201
+
+
+@comms_bp.route('/api/comms/pace/<int:pid>')
+def api_pace_get(pid):
+    """Get a single PACE plan."""
+    with db_session() as db:
+        row = db.execute('SELECT * FROM pace_plans WHERE id = ?', (pid,)).fetchone()
+        if not row:
+            return jsonify({'error': 'not found'}), 404
+        return jsonify(dict(row))
+
+
+@comms_bp.route('/api/comms/pace/<int:pid>', methods=['PUT'])
+def api_pace_update(pid):
+    """Update a PACE plan."""
+    data = request.get_json() or {}
+    filtered = {k: v for k, v in data.items() if k in _PACE_ALLOWED}
+    if not filtered:
+        return jsonify({'error': 'No fields to update'}), 400
+    with db_session() as db:
+        if not db.execute('SELECT 1 FROM pace_plans WHERE id = ?', (pid,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
+        if filtered.get('is_active'):
+            db.execute('UPDATE pace_plans SET is_active = 0 WHERE is_active = 1')
+        set_clause = ', '.join(f'{col} = ?' for col in filtered)
+        vals = list(filtered.values())
+        vals.append(pid)
+        db.execute(
+            f'UPDATE pace_plans SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            vals
+        )
+        db.commit()
+        row = db.execute('SELECT * FROM pace_plans WHERE id = ?', (pid,)).fetchone()
+        log_activity('pace_plan_updated', 'comms', f'Updated PACE plan id={pid}')
+        return jsonify(dict(row))
+
+
+@comms_bp.route('/api/comms/pace/<int:pid>', methods=['DELETE'])
+def api_pace_delete(pid):
+    """Delete a PACE plan."""
+    with db_session() as db:
+        r = db.execute('DELETE FROM pace_plans WHERE id = ?', (pid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
+        db.commit()
+        log_activity('pace_plan_deleted', 'comms', f'Deleted PACE plan id={pid}')
+        return jsonify({'status': 'deleted'})
+
+
+@comms_bp.route('/api/comms/pace/<int:pid>/activate', methods=['POST'])
+def api_pace_activate(pid):
+    """Set a PACE plan as the active plan (deactivates all others)."""
+    with db_session() as db:
+        if not db.execute('SELECT 1 FROM pace_plans WHERE id = ?', (pid,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
+        db.execute('UPDATE pace_plans SET is_active = 0 WHERE is_active = 1')
+        db.execute('UPDATE pace_plans SET is_active = 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?', (pid,))
+        db.commit()
+        row = db.execute('SELECT * FROM pace_plans WHERE id = ?', (pid,)).fetchone()
+        log_activity('pace_plan_activated', 'comms', f'Activated PACE plan id={pid}')
+        return jsonify(dict(row))
+
+
+@comms_bp.route('/api/comms/pace/active')
+def api_pace_active():
+    """Get the currently active PACE plan."""
+    with db_session() as db:
+        row = db.execute('SELECT * FROM pace_plans WHERE is_active = 1').fetchone()
+        if not row:
+            return jsonify({'error': 'no active PACE plan'}), 404
+        return jsonify(dict(row))
+
+
+@comms_bp.route('/api/comms/pace/summary')
+def api_pace_summary():
+    """Compact summary of PACE plans."""
+    with db_session() as db:
+        total = db.execute('SELECT COUNT(*) FROM pace_plans').fetchone()[0]
+        active = db.execute('SELECT name FROM pace_plans WHERE is_active = 1').fetchone()
+        return jsonify({
+            'total_plans': total,
+            'has_active_plan': active is not None,
+            'active_plan_name': active[0] if active else None,
+        })

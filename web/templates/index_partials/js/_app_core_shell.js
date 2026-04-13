@@ -383,6 +383,8 @@ function activateWorkspaceTab(tab) {
   if (tabId === 'financial') { loadFinancial(); }
   if (tabId === 'vehicles') { loadVehicles(); }
   if (tabId === 'loadout') { loadLoadout(); }
+  if (tabId === 'timeline') { loadTimeline(); }
+  if (tabId === 'threat-intel') { loadThreatIntel(); }
   if (tabId === 'situation-room') {
     if (firstVisit) initSituationRoom();
   }

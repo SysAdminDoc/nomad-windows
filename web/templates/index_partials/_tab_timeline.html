@@ -1,0 +1,169 @@
+<div id="tab-timeline" class="tab-content tab-vcenter timeline-workspace{% if active_tab == 'timeline' %} active{% endif %}">
+
+  <style>
+    #tab-timeline {
+      --tl-accent: var(--accent, #5b9fff);
+      --tl-card-bg: var(--card-bg, #1a1a2e);
+      --tl-surface: var(--surface, rgba(24, 29, 36, 0.84));
+      --tl-border: var(--border, rgba(255, 255, 255, 0.08));
+      --tl-text: var(--text, #edf2f7);
+      --tl-text-dim: var(--text-dim, #a3b2c7);
+      --tl-text-muted: var(--text-muted, #888);
+      --tl-green: var(--green, #34d399);
+      --tl-orange: var(--orange, #fb923c);
+      --tl-red: var(--red, #f87171);
+    }
+    .tl-deck { padding: 24px 0 16px; }
+    .tl-deck h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; color: var(--tl-text); margin: 6px 0 4px; }
+    .tl-deck p { font-size: 13px; color: var(--tl-text-dim); margin: 0 0 14px; }
+    .tl-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .tl-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .tl-stat-card { background: var(--tl-card-bg); border-radius: 10px; padding: 16px; text-align: center; border: 1px solid var(--tl-border); }
+    .tl-stat-value { font-size: 28px; font-weight: 700; color: var(--tl-accent); }
+    .tl-stat-label { font-size: 11px; color: var(--tl-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+    .tl-stat-card.warning .tl-stat-value { color: var(--tl-orange); }
+    .tl-stat-card.critical .tl-stat-value { color: var(--tl-red); }
+    .tl-stat-card.ok .tl-stat-value { color: var(--tl-green); }
+    .tl-filter-bar { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
+    .tl-filter-bar label { font-size: 12px; color: var(--tl-text-dim); }
+    .tl-filter-bar select, .tl-filter-bar input { font-size: 13px; padding: 6px 10px; border-radius: 6px; border: 1px solid var(--tl-border); background: var(--tl-surface); color: var(--tl-text); }
+    .tl-event-list { display: flex; flex-direction: column; gap: 6px; }
+    .tl-event { display: flex; gap: 12px; padding: 12px 16px; background: var(--tl-card-bg); border-radius: 8px; border: 1px solid var(--tl-border); align-items: flex-start; }
+    .tl-event-date { font-size: 12px; font-weight: 700; color: var(--tl-accent); min-width: 80px; flex-shrink: 0; }
+    .tl-event-badge { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0; }
+    .tl-event-badge.expiration { background: rgba(248,113,113,0.15); color: var(--tl-red); }
+    .tl-event-badge.maintenance { background: rgba(251,146,60,0.15); color: var(--tl-orange); }
+    .tl-event-badge.task { background: rgba(91,159,255,0.15); color: var(--tl-accent); }
+    .tl-event-badge.drill { background: rgba(52,211,153,0.15); color: var(--tl-green); }
+    .tl-event-badge.financial_expiration { background: rgba(251,146,60,0.15); color: var(--tl-orange); }
+    .tl-event-badge.water_expiration { background: rgba(91,159,255,0.15); color: var(--tl-accent); }
+    .tl-event-badge.loadout_expiration { background: rgba(248,113,113,0.15); color: var(--tl-red); }
+    .tl-event-badge.filter_replacement { background: rgba(52,211,153,0.15); color: var(--tl-green); }
+    .tl-event-badge.fuel_expiration { background: rgba(251,146,60,0.15); color: var(--tl-orange); }
+    .tl-event-badge.equipment_service { background: rgba(251,146,60,0.15); color: var(--tl-orange); }
+    .tl-event-badge.preservation { background: rgba(52,211,153,0.15); color: var(--tl-green); }
+    .tl-event-body { flex: 1; min-width: 0; }
+    .tl-event-title { font-size: 14px; font-weight: 600; color: var(--tl-text); }
+    .tl-event-detail { font-size: 12px; color: var(--tl-text-muted); margin-top: 2px; }
+    .tl-severity-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+    .tl-severity-dot.critical { background: var(--tl-red); }
+    .tl-severity-dot.warning { background: var(--tl-orange); }
+    .tl-severity-dot.info { background: var(--tl-accent); }
+    .tl-severity-dot.low { background: var(--tl-green); }
+    .tl-overdue-section { margin-bottom: 20px; }
+    .tl-overdue-section h3 { font-size: 14px; font-weight: 700; color: var(--tl-red); margin-bottom: 8px; }
+    .tl-empty { text-align: center; padding: 40px; color: var(--tl-text-muted); font-size: 14px; }
+  </style>
+
+  <div class="workspace-scroll-container" style="padding:0 24px 24px;">
+    <div class="tl-deck">
+      <h2>Unified Timeline</h2>
+      <p>All dates, deadlines, and events across every module in one view.</p>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="tl-stats-row" id="tl-stats-row">
+      <div class="tl-stat-card critical"><div class="tl-stat-value" id="tl-stat-overdue">--</div><div class="tl-stat-label">Overdue</div></div>
+      <div class="tl-stat-card warning"><div class="tl-stat-value" id="tl-stat-week">--</div><div class="tl-stat-label">This Week</div></div>
+      <div class="tl-stat-card"><div class="tl-stat-value" id="tl-stat-month">--</div><div class="tl-stat-label">This Month</div></div>
+      <div class="tl-stat-card"><div class="tl-stat-value" id="tl-stat-maint">--</div><div class="tl-stat-label">Maint Due</div></div>
+    </div>
+
+    <!-- Filters -->
+    <div class="tl-filter-bar">
+      <label for="tl-filter-type">Type:</label>
+      <select id="tl-filter-type" name="tl-filter-type">
+        <option value="">All</option>
+        <option value="expiration">Expirations</option>
+        <option value="maintenance">Maintenance</option>
+        <option value="task">Tasks</option>
+        <option value="drill">Drills</option>
+        <option value="financial">Financial</option>
+        <option value="water">Water</option>
+        <option value="fuel">Fuel</option>
+        <option value="preservation">Preservation</option>
+      </select>
+      <label for="tl-filter-start">From:</label>
+      <input type="date" id="tl-filter-start" name="tl-filter-start">
+      <label for="tl-filter-end">To:</label>
+      <input type="date" id="tl-filter-end" name="tl-filter-end">
+      <button class="btn btn-sm" type="button" onclick="loadTimelineEvents()">Apply</button>
+    </div>
+
+    <!-- Overdue Section -->
+    <div class="tl-overdue-section" id="tl-overdue-section" hidden>
+      <h3>Overdue Items</h3>
+      <div class="tl-event-list" id="tl-overdue-list"></div>
+    </div>
+
+    <!-- Event List -->
+    <div class="tl-event-list" id="tl-event-list">
+      <div class="tl-empty">Loading timeline...</div>
+    </div>
+  </div>
+
+  <script>
+  function loadTimeline() {
+    loadTimelineSummary();
+    loadTimelineOverdue();
+    loadTimelineEvents();
+  }
+
+  async function loadTimelineSummary() {
+    try {
+      const data = await apiFetch('/api/timeline/summary');
+      document.getElementById('tl-stat-overdue').textContent = data.overdue_tasks || 0;
+      document.getElementById('tl-stat-week').textContent = data.expiring_this_week || 0;
+      document.getElementById('tl-stat-month').textContent = data.expiring_this_month || 0;
+      document.getElementById('tl-stat-maint').textContent = data.maintenance_due_this_week || 0;
+    } catch (e) { console.error('Timeline summary error:', e); }
+  }
+
+  async function loadTimelineOverdue() {
+    try {
+      const data = await apiFetch('/api/timeline/overdue');
+      const section = document.getElementById('tl-overdue-section');
+      const list = document.getElementById('tl-overdue-list');
+      if (data.events && data.events.length > 0) {
+        section.hidden = false;
+        list.innerHTML = data.events.map(renderTimelineEvent).join('');
+      } else {
+        section.hidden = true;
+      }
+    } catch (e) { console.error('Timeline overdue error:', e); }
+  }
+
+  async function loadTimelineEvents() {
+    try {
+      const typeFilter = document.getElementById('tl-filter-type').value;
+      const start = document.getElementById('tl-filter-start').value;
+      const end = document.getElementById('tl-filter-end').value;
+      const params = new URLSearchParams();
+      if (typeFilter) params.set('types', typeFilter);
+      if (start) params.set('start', start);
+      if (end) params.set('end', end);
+      const data = await apiFetch('/api/timeline?' + params.toString());
+      const list = document.getElementById('tl-event-list');
+      if (data.events && data.events.length > 0) {
+        list.innerHTML = data.events.map(renderTimelineEvent).join('');
+      } else {
+        list.innerHTML = '<div class="tl-empty">No events found for the selected period.</div>';
+      }
+    } catch (e) {
+      console.error('Timeline events error:', e);
+      document.getElementById('tl-event-list').innerHTML = '<div class="tl-empty">Failed to load timeline.</div>';
+    }
+  }
+
+  function renderTimelineEvent(ev) {
+    return `<div class="tl-event">
+      <div class="tl-event-date">${escapeHtml(ev.date || '')}</div>
+      <span class="tl-event-badge ${escapeHtml(ev.type)}">${escapeHtml(ev.type.replace(/_/g, ' '))}</span>
+      <div class="tl-event-body">
+        <div class="tl-event-title"><span class="tl-severity-dot ${escapeHtml(ev.severity || 'info')}"></span>${escapeHtml(ev.title)}</div>
+        <div class="tl-event-detail">${escapeHtml(ev.detail || '')}</div>
+      </div>
+    </div>`;
+  }
+  </script>
+</div>

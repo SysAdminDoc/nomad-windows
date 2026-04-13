@@ -1788,6 +1788,118 @@ def _create_pace_evac_container_tables(conn):
     conn.commit()
 
 
+def _create_readiness_alerts_threat_drill_tables(conn):
+    """v7.10.0 — Readiness goals, alert rules engine, threat intel, evac drills."""
+    conn.executescript('''
+        /* ─── Readiness Goals ─── */
+        CREATE TABLE IF NOT EXISTS readiness_goals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT NOT NULL DEFAULT 'General',
+            target_days INTEGER DEFAULT 0,
+            target_quantity REAL DEFAULT 0,
+            target_unit TEXT DEFAULT '',
+            metric_source TEXT DEFAULT 'inventory',
+            metric_query TEXT DEFAULT '',
+            priority TEXT DEFAULT 'medium',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Alert Rules Engine (generalized from weather_action_rules) ─── */
+        CREATE TABLE IF NOT EXISTS alert_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            condition_type TEXT NOT NULL DEFAULT 'inventory_low',
+            threshold REAL NOT NULL DEFAULT 0,
+            comparison TEXT NOT NULL DEFAULT 'lt',
+            action_type TEXT NOT NULL DEFAULT 'alert',
+            action_data TEXT DEFAULT '{}',
+            enabled INTEGER DEFAULT 1,
+            cooldown_minutes INTEGER DEFAULT 60,
+            severity TEXT DEFAULT 'warning',
+            category TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            last_triggered TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS alert_rule_triggers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            rule_id INTEGER REFERENCES alert_rules(id),
+            condition_value REAL DEFAULT 0,
+            threshold_value REAL DEFAULT 0,
+            action_taken TEXT DEFAULT '',
+            triggered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Threat Intelligence ─── */
+        CREATE TABLE IF NOT EXISTS threat_feeds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            feed_type TEXT DEFAULT 'manual',
+            url TEXT DEFAULT '',
+            category TEXT DEFAULT 'other',
+            refresh_interval_min INTEGER DEFAULT 60,
+            enabled INTEGER DEFAULT 1,
+            last_fetched TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS threat_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            feed_id INTEGER REFERENCES threat_feeds(id),
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT 'other',
+            severity TEXT DEFAULT 'medium',
+            severity_score INTEGER DEFAULT 2,
+            source_url TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            lat REAL,
+            lng REAL,
+            tags TEXT DEFAULT '[]',
+            impact_assessment TEXT DEFAULT '',
+            recommended_actions TEXT DEFAULT '',
+            resolved INTEGER DEFAULT 0,
+            resolved_at TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Evacuation Drill Runs ─── */
+        CREATE TABLE IF NOT EXISTS evac_drill_runs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            evac_plan_id INTEGER REFERENCES evac_plans(id),
+            name TEXT NOT NULL,
+            drill_type TEXT DEFAULT 'full_evacuation',
+            status TEXT DEFAULT 'pending',
+            participants INTEGER DEFAULT 0,
+            target_time_sec INTEGER DEFAULT 0,
+            total_time_sec INTEGER DEFAULT 0,
+            started_at TEXT DEFAULT '',
+            completed_at TEXT DEFAULT '',
+            score INTEGER DEFAULT 0,
+            weather_conditions TEXT DEFAULT '',
+            after_action_notes TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS evac_drill_laps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            drill_run_id INTEGER REFERENCES evac_drill_runs(id),
+            lap_number INTEGER DEFAULT 1,
+            checkpoint_name TEXT DEFAULT '',
+            elapsed_sec INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _apply_column_migrations(conn):
     """Apply ALTER TABLE column migrations (before indexes that depend on new columns)."""
     for migration in [
@@ -2176,6 +2288,31 @@ def _create_indexes(conn):
         # v7.9.0 — Preservation expansion
         'CREATE INDEX IF NOT EXISTS idx_preservation_log_success ON preservation_log(success)',
         'CREATE INDEX IF NOT EXISTS idx_preservation_log_storage ON preservation_log(storage_location)',
+        # v7.10.0 — Readiness goals
+        'CREATE INDEX IF NOT EXISTS idx_readiness_goals_category ON readiness_goals(category)',
+        'CREATE INDEX IF NOT EXISTS idx_readiness_goals_priority ON readiness_goals(priority)',
+        'CREATE INDEX IF NOT EXISTS idx_readiness_goals_source ON readiness_goals(metric_source)',
+        # v7.10.0 — Alert rules engine
+        'CREATE INDEX IF NOT EXISTS idx_alert_rules_enabled ON alert_rules(enabled)',
+        'CREATE INDEX IF NOT EXISTS idx_alert_rules_condition ON alert_rules(condition_type)',
+        'CREATE INDEX IF NOT EXISTS idx_alert_rules_severity ON alert_rules(severity)',
+        'CREATE INDEX IF NOT EXISTS idx_alert_rule_triggers_rule ON alert_rule_triggers(rule_id)',
+        'CREATE INDEX IF NOT EXISTS idx_alert_rule_triggers_at ON alert_rule_triggers(triggered_at DESC)',
+        # v7.10.0 — Threat intelligence
+        'CREATE INDEX IF NOT EXISTS idx_threat_feeds_enabled ON threat_feeds(enabled)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_feeds_category ON threat_feeds(category)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_entries_feed ON threat_entries(feed_id)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_entries_category ON threat_entries(category)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_entries_severity ON threat_entries(severity_score DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_entries_resolved ON threat_entries(resolved)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_entries_created ON threat_entries(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_entries_geo ON threat_entries(lat, lng)',
+        # v7.10.0 — Evacuation drills
+        'CREATE INDEX IF NOT EXISTS idx_evac_drill_runs_plan ON evac_drill_runs(evac_plan_id)',
+        'CREATE INDEX IF NOT EXISTS idx_evac_drill_runs_status ON evac_drill_runs(status)',
+        'CREATE INDEX IF NOT EXISTS idx_evac_drill_runs_started ON evac_drill_runs(started_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_evac_drill_laps_run ON evac_drill_laps(drill_run_id)',
+        'CREATE INDEX IF NOT EXISTS idx_evac_drill_laps_number ON evac_drill_laps(drill_run_id, lap_number)',
     ]:
         try:
             conn.execute(idx)
@@ -2193,6 +2330,7 @@ def _init_db_inner(conn):
     _create_extended_tables(conn)
     _create_water_financial_vehicle_loadout_tables(conn)
     _create_pace_evac_container_tables(conn)
+    _create_readiness_alerts_threat_drill_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

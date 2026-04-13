@@ -1303,6 +1303,18 @@ def create_app():
     app.register_blueprint(vehicles_bp)
     app.register_blueprint(loadout_bp)
 
+    # ─── v7.10.0 — High Value Modules ───────────────────────────────
+    from web.blueprints.readiness_goals import readiness_goals_bp
+    from web.blueprints.alert_rules import alert_rules_bp
+    from web.blueprints.timeline import timeline_bp
+    from web.blueprints.threat_intel import threat_intel_bp
+    from web.blueprints.evac_drills import evac_drills_bp
+    app.register_blueprint(readiness_goals_bp)
+    app.register_blueprint(alert_rules_bp)
+    app.register_blueprint(timeline_bp)
+    app.register_blueprint(threat_intel_bp)
+    app.register_blueprint(evac_drills_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

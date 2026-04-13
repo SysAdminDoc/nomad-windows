@@ -237,6 +237,46 @@
     </div>
 
     <!-- ════════════════════════════════════════════════════════════
+         FAMILY CHECK-IN BOARD (v7.6.0)
+         ════════════════════════════════════════════════════════════ -->
+    <div class="bento-grid home-section-stack">
+      <div id="family-checkin-panel" class="home-support-panel home-surface-panel family-checkin-panel">
+        <div class="section-header home-section-header home-toolbar">
+          <span class="section-header-label">FAMILY CHECK-IN</span>
+          <div class="section-divider section-divider-grow"></div>
+          <button type="button" class="btn btn-sm" data-shell-action="open-add-family-member" title="Add a family member">+ Add</button>
+          <button type="button" class="btn btn-sm btn-ghost" data-shell-action="reset-family-checkins" title="Reset all to OK">Reset All</button>
+        </div>
+        <div class="family-checkin-summary" id="family-checkin-summary" aria-live="polite"></div>
+        <div class="family-checkin-list" id="family-checkin-list"></div>
+      </div>
+    </div>
+
+    <!-- Add Family Member Modal -->
+    <div id="family-add-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="family-add-title" data-backdrop-close="family-add-modal">
+      <div class="modal-card settings-modal-card settings-modal-card-md">
+        <div class="modal-header settings-heading-row">
+          <h3 class="settings-detail-title" id="family-add-title">Add Family Member</h3>
+          <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-shell-action="close-add-family-member" aria-label="Cancel">x</button>
+        </div>
+        <div class="modal-body settings-modal-body">
+          <div class="prep-field">
+            <label class="prep-field-label" for="family-add-name">Name</label>
+            <input id="family-add-name" name="family_add_name" class="prep-field-control" maxlength="200" autocomplete="off">
+          </div>
+          <div class="prep-field">
+            <label class="prep-field-label" for="family-add-phone">Phone (optional)</label>
+            <input id="family-add-phone" name="family_add_phone" class="prep-field-control" maxlength="50" type="tel" autocomplete="off">
+          </div>
+          <div class="prep-form-actions">
+            <button class="btn btn-sm btn-primary" type="button" data-shell-action="submit-add-family-member">Add</button>
+            <button class="btn btn-sm" type="button" data-shell-action="close-add-family-member">Cancel</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════
          BENTO ROW 3: FIELD DOCUMENTS + ACTIVITY LOG (side by side)
          ════════════════════════════════════════════════════════════ -->
     <div class="bento-grid home-support-grid home-section-stack">

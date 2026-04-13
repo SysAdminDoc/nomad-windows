@@ -173,8 +173,75 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/><path d="M5 12h6M13 12h6M5 5h6M13 5h6M5 19h6M13 19h6"/></svg>
       Customize
     </button>
+    <button class="sidebar-emergency-btn" id="sidebar-emergency-btn" type="button" data-shell-action="open-emergency-modal" title="Enter Emergency Mode — orchestrated crisis response" aria-label="Enter Emergency Mode">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 2 L2 20 L22 20 Z"/><line x1="12" y1="9" x2="12" y2="14"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>
+      <span class="sidebar-emergency-btn-label">EMERGENCY</span>
+    </button>
   </div>
 </nav><!-- /sidebar -->
+
+<!-- Emergency Mode banner (shown when active) -->
+<div id="emergency-banner" class="emergency-banner is-hidden" role="alert" aria-live="assertive">
+  <div class="emergency-banner-inner">
+    <span class="emergency-banner-icon" aria-hidden="true">&#9888;</span>
+    <span class="emergency-banner-copy">
+      <strong>EMERGENCY MODE ACTIVE</strong>
+      <span id="emergency-banner-reason"></span>
+      <span id="emergency-banner-duration" class="emergency-banner-duration"></span>
+    </span>
+    <button type="button" class="btn btn-sm emergency-banner-exit" data-shell-action="open-emergency-exit-modal" aria-label="Exit Emergency Mode">EXIT</button>
+  </div>
+</div>
+
+<!-- Emergency Mode entry modal -->
+<div id="emergency-enter-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="emergency-enter-title" data-backdrop-close="emergency-enter-modal">
+  <div class="modal-card settings-modal-card settings-modal-card-md emergency-modal-card">
+    <div class="modal-header settings-heading-row">
+      <h3 class="settings-detail-title" id="emergency-enter-title">Enter Emergency Mode?</h3>
+      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-shell-action="close-emergency-modal" aria-label="Cancel">x</button>
+    </div>
+    <div class="modal-body settings-modal-body">
+      <p class="emergency-modal-copy">
+        Emergency Mode flags this as a live crisis event. It will:
+      </p>
+      <ul class="emergency-modal-list">
+        <li>Log a critical incident to the timeline</li>
+        <li>Show a persistent banner across every tab</li>
+        <li>Broadcast the state to every open NOMAD window on this machine</li>
+        <li>Record duration on exit for your after-action review</li>
+      </ul>
+      <div class="prep-field">
+        <label class="prep-field-label" for="emergency-reason-input">Reason (shown on banner + timeline)</label>
+        <input id="emergency-reason-input" name="emergency_reason_input" class="prep-field-control" maxlength="500" placeholder="e.g. Severe weather - tornado warning" autocomplete="off">
+      </div>
+      <div class="prep-form-actions">
+        <button class="btn btn-sm btn-primary emergency-modal-confirm" type="button" data-shell-action="confirm-emergency-enter">ACTIVATE</button>
+        <button class="btn btn-sm" type="button" data-shell-action="close-emergency-modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Emergency Mode exit modal -->
+<div id="emergency-exit-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="emergency-exit-title" data-backdrop-close="emergency-exit-modal">
+  <div class="modal-card settings-modal-card settings-modal-card-md">
+    <div class="modal-header settings-heading-row">
+      <h3 class="settings-detail-title" id="emergency-exit-title">Exit Emergency Mode?</h3>
+      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-shell-action="close-emergency-exit-modal" aria-label="Cancel">x</button>
+    </div>
+    <div class="modal-body settings-modal-body">
+      <p class="emergency-modal-copy">Close the emergency. A closeout entry will be written to the incident timeline with the total duration.</p>
+      <div class="prep-field">
+        <label class="prep-field-label" for="emergency-closeout-input">Closeout note (optional — appended to the incident)</label>
+        <textarea id="emergency-closeout-input" name="emergency_closeout_input" class="prep-field-control" rows="3" maxlength="2000" placeholder="What happened, what you did, what you'd do differently"></textarea>
+      </div>
+      <div class="prep-form-actions">
+        <button class="btn btn-sm btn-primary" type="button" data-shell-action="confirm-emergency-exit">Exit Emergency</button>
+        <button class="btn btn-sm" type="button" data-shell-action="close-emergency-exit-modal">Keep Active</button>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Customize Panel Overlay -->
 <div class="customize-overlay" id="customize-overlay" data-shell-action="toggle-customize-panel" aria-hidden="true"></div>

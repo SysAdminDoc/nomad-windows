@@ -114,6 +114,23 @@ NomadEvents.on('sync_update', (data) => {
 NomadEvents.on('backup_complete', (data) => {
     if (typeof toast === 'function') toast('Backup complete: ' + (data.filename || ''), 'success');
 });
+// Emergency Mode — cross-tab state sync (v7.5.0). Every open NOMAD
+// window on the same machine subscribes to the same SSE stream and
+// mirrors the banner on enter/exit without polling.
+NomadEvents.on('emergency_enter', (data) => {
+    if (typeof _applyEmergencyState === 'function') {
+        _applyEmergencyState({
+            active: true,
+            reason: (data && data.reason) || 'Emergency',
+            started_at: data && data.started_at,
+        });
+    }
+});
+NomadEvents.on('emergency_exit', () => {
+    if (typeof _applyEmergencyState === 'function') {
+        _applyEmergencyState({ active: false });
+    }
+});
 
 // Auto-connect when page loads
 if (typeof document !== 'undefined') {

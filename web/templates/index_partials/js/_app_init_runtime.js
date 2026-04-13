@@ -4264,6 +4264,112 @@ async function executeCSVImport() {
   } catch(e) { toast('Import failed: ' + e.message, 'error'); }
 }
 
+/* ─── Emergency Mode (v7.5.0) ─── */
+let _emergencyTickInterval = null;
+
+function openEmergencyEnterModal() {
+  document.getElementById('emergency-enter-modal')?.classList.remove('is-hidden');
+  const input = document.getElementById('emergency-reason-input');
+  if (input) { input.value = ''; input.focus(); }
+}
+function closeEmergencyEnterModal() {
+  document.getElementById('emergency-enter-modal')?.classList.add('is-hidden');
+}
+function openEmergencyExitModal() {
+  document.getElementById('emergency-exit-modal')?.classList.remove('is-hidden');
+  document.getElementById('emergency-closeout-input')?.focus();
+}
+function closeEmergencyExitModal() {
+  document.getElementById('emergency-exit-modal')?.classList.add('is-hidden');
+}
+
+async function confirmEmergencyEnter() {
+  const reason = (document.getElementById('emergency-reason-input')?.value || '').trim() || 'Emergency';
+  try {
+    const res = await apiPost('/api/emergency/enter', { reason });
+    closeEmergencyEnterModal();
+    _applyEmergencyState({ active: true, reason, started_at: res.started_at, duration_hours: 0 });
+    toast('Emergency Mode activated', 'warning');
+    // Announce via TTS if the Voice Copilot is available
+    try {
+      if (window.NomadSpeech && window.NomadSpeech.isSupported()) {
+        window.NomadSpeech.speak('Emergency mode activated. ' + reason, { interrupt: true });
+      }
+    } catch (_) {}
+  } catch (e) {
+    toast('Could not activate emergency mode', 'error');
+  }
+}
+
+async function confirmEmergencyExit() {
+  const closeout_note = (document.getElementById('emergency-closeout-input')?.value || '').trim();
+  try {
+    const res = await apiPost('/api/emergency/exit', { closeout_note });
+    closeEmergencyExitModal();
+    _applyEmergencyState({ active: false });
+    const hrs = res.duration_hours != null ? ` (${res.duration_hours}h)` : '';
+    toast('Emergency Mode ended' + hrs, 'success');
+    try {
+      if (window.NomadSpeech && window.NomadSpeech.isSupported()) {
+        window.NomadSpeech.speak('Emergency mode ended' + (hrs || ''), { interrupt: true });
+      }
+    } catch (_) {}
+  } catch (e) {
+    toast('Could not exit emergency mode', 'error');
+  }
+}
+
+function _applyEmergencyState(state) {
+  const banner = document.getElementById('emergency-banner');
+  const body = document.body;
+  if (!banner || !body) return;
+  if (state.active) {
+    banner.classList.remove('is-hidden');
+    body.classList.add('emergency-mode');
+    const reasonEl = document.getElementById('emergency-banner-reason');
+    if (reasonEl) reasonEl.textContent = state.reason ? ' — ' + state.reason : '';
+    _updateEmergencyDuration(state.started_at);
+    if (!_emergencyTickInterval) {
+      _emergencyTickInterval = setInterval(
+        () => _updateEmergencyDuration(state.started_at), 60000
+      );
+    }
+    // Hide the sidebar enter button while active
+    const enterBtn = document.getElementById('sidebar-emergency-btn');
+    if (enterBtn) enterBtn.hidden = true;
+  } else {
+    banner.classList.add('is-hidden');
+    body.classList.remove('emergency-mode');
+    if (_emergencyTickInterval) { clearInterval(_emergencyTickInterval); _emergencyTickInterval = null; }
+    const enterBtn = document.getElementById('sidebar-emergency-btn');
+    if (enterBtn) enterBtn.hidden = false;
+  }
+}
+
+function _updateEmergencyDuration(started_at) {
+  const el = document.getElementById('emergency-banner-duration');
+  if (!el || !started_at) return;
+  try {
+    const ms = Date.now() - new Date(started_at).getTime();
+    const mins = Math.floor(ms / 60000);
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    el.textContent = ' · ' + (h > 0 ? `${h}h ${m}m` : `${m}m`);
+  } catch (_) {}
+}
+
+async function loadEmergencyState() {
+  try {
+    const state = await apiFetch('/api/emergency/status');
+    _applyEmergencyState(state);
+  } catch (_) {}
+}
+
+// Hydrate emergency state on page load so banner survives reloads
+document.addEventListener('DOMContentLoaded', () => {
+  loadEmergencyState();
+});
+
 /* ─── Kit Builder Wizard (v7.3.0) ─── */
 let _kitBuilderLastPlan = null;
 

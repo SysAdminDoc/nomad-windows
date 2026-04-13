@@ -1,0 +1,1017 @@
+<div id="tab-water-mgmt" class="tab-content tab-vcenter water-workspace{% if active_tab == 'water-mgmt' %} active{% endif %}">
+
+  <!-- Scoped styles -->
+  <style>
+    #tab-water-mgmt {
+      --wm-accent: var(--accent, #5b9fff);
+      --wm-card-bg: var(--card-bg, #1a1a2e);
+      --wm-surface: var(--surface, rgba(24, 29, 36, 0.84));
+      --wm-surface2: var(--surface2, #1d2430);
+      --wm-border: var(--border, rgba(255, 255, 255, 0.08));
+      --wm-text: var(--text, #edf2f7);
+      --wm-text-dim: var(--text-dim, #a3b2c7);
+      --wm-text-muted: var(--text-muted, #888);
+      --wm-green: var(--green, #34d399);
+      --wm-orange: var(--orange, #fb923c);
+      --wm-red: var(--red, #f87171);
+    }
+    .water-command-deck {
+      padding: 24px 0 16px;
+    }
+    .water-command-deck h2 {
+      font-size: 20px; font-weight: 800; letter-spacing: -0.03em;
+      color: var(--wm-text); margin: 6px 0 4px;
+    }
+    .water-command-deck p {
+      font-size: 13px; color: var(--wm-text-dim); margin: 0 0 14px;
+    }
+    .water-command-actions {
+      display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .water-stats-row {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 14px; margin-bottom: 20px;
+    }
+    .water-stat-card {
+      background: var(--wm-card-bg); border-radius: 10px; padding: 16px;
+      text-align: center; border: 1px solid var(--wm-border);
+    }
+    .water-stat-value {
+      font-size: 28px; font-weight: 700; color: var(--wm-accent);
+    }
+    .water-stat-value.is-warning { color: var(--wm-orange); }
+    .water-stat-value.is-critical { color: var(--wm-red); }
+    .water-stat-value.is-good { color: var(--wm-green); }
+    .water-stat-label {
+      font-size: 11px; color: var(--wm-text-muted); margin-top: 4px;
+      text-transform: uppercase; letter-spacing: 0.06em;
+    }
+    .water-table-wrap {
+      overflow-x: auto; margin-top: 10px;
+    }
+    .water-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .water-table th {
+      text-align: left; padding: 8px 10px; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.08em;
+      color: var(--wm-text-muted); border-bottom: 1px solid var(--wm-border);
+      font-weight: 600;
+    }
+    .water-table td {
+      padding: 8px 10px; border-bottom: 1px solid var(--wm-border);
+      color: var(--wm-text); vertical-align: middle;
+    }
+    .water-table tbody tr:hover {
+      background: var(--wm-surface2);
+    }
+    .water-table .wm-actions-cell {
+      white-space: nowrap; text-align: right;
+    }
+    .water-table .wm-actions-cell button {
+      margin-left: 4px;
+    }
+    .water-empty {
+      padding: 20px; text-align: center; color: var(--wm-text-muted);
+      font-size: 13px;
+    }
+    .wm-form-overlay {
+      display: none; margin-top: 12px; padding: 16px;
+      background: var(--wm-surface); border: 1px solid var(--wm-border);
+      border-radius: 10px;
+    }
+    .wm-form-overlay.is-visible { display: block; }
+    .wm-form-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    @media (max-width: 600px) { .wm-form-grid { grid-template-columns: 1fr; } }
+    .wm-form-grid .wm-field { display: flex; flex-direction: column; gap: 3px; }
+    .wm-form-grid .wm-field-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 0.06em; color: var(--wm-text-muted);
+    }
+    .wm-form-grid .wm-field-control {
+      padding: 6px 10px; border-radius: 6px; border: 1px solid var(--wm-border);
+      background: var(--wm-card-bg); color: var(--wm-text); font-size: 13px;
+      font-family: inherit;
+    }
+    .wm-form-grid .wm-field-control:focus {
+      outline: none; border-color: var(--wm-accent);
+    }
+    .wm-form-grid .wm-field-span-full { grid-column: 1 / -1; }
+    .wm-form-actions {
+      display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end;
+    }
+    .wm-purification-table {
+      width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px;
+    }
+    .wm-purification-table th {
+      text-align: left; padding: 8px 10px; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--wm-text-muted); border-bottom: 1px solid var(--wm-border);
+      font-weight: 600; white-space: nowrap;
+    }
+    .wm-purification-table td {
+      padding: 8px 10px; border-bottom: 1px solid var(--wm-border);
+      color: var(--wm-text); vertical-align: top; line-height: 1.4;
+    }
+    .wm-purification-table tbody tr:hover { background: var(--wm-surface2); }
+    .wm-budget-result {
+      margin-top: 12px; padding: 14px; border-radius: 8px;
+      background: var(--wm-card-bg); border: 1px solid var(--wm-border);
+    }
+    .wm-budget-result table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .wm-budget-result th, .wm-budget-result td {
+      padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--wm-border);
+    }
+    .wm-budget-result th {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--wm-text-muted); font-weight: 600;
+    }
+    .wm-capacity-bar {
+      height: 8px; border-radius: 4px; background: var(--wm-surface2);
+      overflow: hidden; margin-top: 10px;
+    }
+    .wm-capacity-bar-fill {
+      height: 100%; width: 0; border-radius: 4px;
+      background: linear-gradient(90deg, var(--wm-accent), var(--wm-green));
+      transition: width 0.4s ease;
+    }
+    .wm-quality-badge {
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+    }
+    .wm-quality-badge.is-safe { background: rgba(52,211,153,0.15); color: var(--wm-green); }
+    .wm-quality-badge.is-caution { background: rgba(251,146,60,0.15); color: var(--wm-orange); }
+    .wm-quality-badge.is-unsafe { background: rgba(248,113,113,0.15); color: var(--wm-red); }
+  </style>
+
+  <!-- Hero header -->
+  <div class="water-command-deck">
+    <div class="section-header-label">HYDRATION SECURITY</div>
+    <h2>Water Management</h2>
+    <p>Track storage, filtration, sources, and daily water budgets.</p>
+    <div class="water-command-actions">
+      <button class="btn btn-sm btn-primary" onclick="showWaterForm('storage')">+ Storage</button>
+      <button class="btn btn-sm btn-ghost" onclick="showWaterForm('filter')">+ Filter</button>
+      <button class="btn btn-sm btn-ghost" onclick="showWaterForm('source')">+ Source</button>
+      <button class="btn btn-sm btn-ghost" onclick="showWaterForm('quality')">+ Quality Test</button>
+    </div>
+  </div>
+
+  <!-- Dashboard cards -->
+  <div class="settings-grid">
+
+    <!-- Dashboard Summary -->
+    <div class="settings-card layout-span-full">
+      <h3>Dashboard</h3>
+      <div class="water-stats-row">
+        <div class="water-stat-card">
+          <div class="water-stat-value" id="ws-total-gallons">--</div>
+          <div class="water-stat-label">Gallons Stored</div>
+        </div>
+        <div class="water-stat-card">
+          <div class="water-stat-value" id="ws-total-capacity">--</div>
+          <div class="water-stat-label">Total Capacity</div>
+        </div>
+        <div class="water-stat-card">
+          <div class="water-stat-value" id="ws-days-of-water">--</div>
+          <div class="water-stat-label">Days of Water</div>
+        </div>
+        <div class="water-stat-card">
+          <div class="water-stat-value" id="ws-total-sources">--</div>
+          <div class="water-stat-label">Active Sources</div>
+        </div>
+        <div class="water-stat-card">
+          <div class="water-stat-value" id="ws-filters-due">--</div>
+          <div class="water-stat-label">Filters Due</div>
+        </div>
+      </div>
+      <div class="wm-capacity-bar">
+        <div class="wm-capacity-bar-fill" id="ws-capacity-bar-fill"></div>
+      </div>
+    </div>
+
+    <!-- Storage List -->
+    <div class="settings-card layout-span-full">
+      <h3>Storage Containers</h3>
+      <!-- Inline form -->
+      <div id="wm-form-storage" class="wm-form-overlay">
+        <div class="wm-form-grid">
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-storage-name">Name *</label>
+            <input id="wm-storage-name" class="wm-field-control" placeholder="e.g. 55-gal drum" name="wm-storage-name">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-storage-type">Type</label>
+            <select id="wm-storage-type" class="wm-field-control" name="wm-storage-type">
+              <option value="barrel">Barrel / Drum</option>
+              <option value="tank">Tank</option>
+              <option value="bladder">Water Bladder</option>
+              <option value="ibc">IBC Tote</option>
+              <option value="jug">Jug / Container</option>
+              <option value="bottle">Bottles</option>
+              <option value="cistern">Cistern</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-storage-capacity">Capacity (gal)</label>
+            <input id="wm-storage-capacity" type="number" min="0" step="0.5" class="wm-field-control" placeholder="55" name="wm-storage-capacity">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-storage-current">Current (gal)</label>
+            <input id="wm-storage-current" type="number" min="0" step="0.5" class="wm-field-control" placeholder="55" name="wm-storage-current">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-storage-location">Location</label>
+            <input id="wm-storage-location" class="wm-field-control" placeholder="Garage, basement..." name="wm-storage-location">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-storage-filled">Date Filled</label>
+            <input id="wm-storage-filled" type="date" class="wm-field-control" name="wm-storage-filled">
+          </div>
+          <div class="wm-field wm-field-span-full">
+            <label class="wm-field-label" for="wm-storage-notes">Notes</label>
+            <input id="wm-storage-notes" class="wm-field-control" placeholder="Treatment, rotation schedule..." name="wm-storage-notes">
+          </div>
+        </div>
+        <input type="hidden" id="wm-storage-edit-id" value="">
+        <div class="wm-form-actions">
+          <button class="btn btn-sm btn-ghost" onclick="hideWaterForm('storage')">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="saveWaterStorage()">Save</button>
+        </div>
+      </div>
+      <div class="water-table-wrap">
+        <table class="water-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Type</th><th>Current</th><th>Capacity</th><th>Fill %</th><th>Location</th><th>Filled</th><th>Notes</th><th class="wm-actions-cell"></th>
+            </tr>
+          </thead>
+          <tbody id="wm-storage-tbody">
+            <tr><td colspan="9" class="water-empty">No storage entries yet. Click "+ Storage" to start tracking.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="settings-card">
+      <h3>Filtration Systems</h3>
+      <!-- Inline form -->
+      <div id="wm-form-filter" class="wm-form-overlay">
+        <div class="wm-form-grid">
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-filter-name">Filter Name *</label>
+            <input id="wm-filter-name" class="wm-field-control" placeholder="e.g. Berkey Big" name="wm-filter-name">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-filter-type">Filter Type</label>
+            <select id="wm-filter-type" class="wm-field-control" name="wm-filter-type">
+              <option value="gravity">Gravity</option>
+              <option value="pump">Pump</option>
+              <option value="straw">Straw / Squeeze</option>
+              <option value="uv">UV</option>
+              <option value="reverse_osmosis">Reverse Osmosis</option>
+              <option value="ceramic">Ceramic</option>
+              <option value="activated_carbon">Activated Carbon</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-filter-capacity">Rated Capacity (gal)</label>
+            <input id="wm-filter-capacity" type="number" min="0" step="1" class="wm-field-control" placeholder="3000" name="wm-filter-capacity">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-filter-used">Gallons Used</label>
+            <input id="wm-filter-used" type="number" min="0" step="1" class="wm-field-control" placeholder="0" name="wm-filter-used">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-filter-installed">Installed Date</label>
+            <input id="wm-filter-installed" type="date" class="wm-field-control" name="wm-filter-installed">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-filter-replace-by">Replace By</label>
+            <input id="wm-filter-replace-by" type="date" class="wm-field-control" name="wm-filter-replace-by">
+          </div>
+          <div class="wm-field wm-field-span-full">
+            <label class="wm-field-label" for="wm-filter-notes">Notes</label>
+            <input id="wm-filter-notes" class="wm-field-control" placeholder="Replacement parts, maintenance..." name="wm-filter-notes">
+          </div>
+        </div>
+        <input type="hidden" id="wm-filter-edit-id" value="">
+        <div class="wm-form-actions">
+          <button class="btn btn-sm btn-ghost" onclick="hideWaterForm('filter')">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="saveWaterFilter()">Save</button>
+        </div>
+      </div>
+      <div class="water-table-wrap">
+        <table class="water-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Type</th><th>Life Left</th><th>Replace By</th><th>Notes</th><th class="wm-actions-cell"></th>
+            </tr>
+          </thead>
+          <tbody id="wm-filter-tbody">
+            <tr><td colspan="6" class="water-empty">No filters tracked. Click "+ Filter" to add.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Sources -->
+    <div class="settings-card">
+      <h3>Water Sources</h3>
+      <!-- Inline form -->
+      <div id="wm-form-source" class="wm-form-overlay">
+        <div class="wm-form-grid">
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-source-name">Source Name *</label>
+            <input id="wm-source-name" class="wm-field-control" placeholder="e.g. Creek behind property" name="wm-source-name">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-source-type">Type</label>
+            <select id="wm-source-type" class="wm-field-control" name="wm-source-type">
+              <option value="well">Well</option>
+              <option value="spring">Spring</option>
+              <option value="creek">Creek / Stream</option>
+              <option value="river">River</option>
+              <option value="lake">Lake / Pond</option>
+              <option value="rain">Rainwater Collection</option>
+              <option value="municipal">Municipal / Tap</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-source-reliability">Reliability</label>
+            <select id="wm-source-reliability" class="wm-field-control" name="wm-source-reliability">
+              <option value="year_round">Year-round</option>
+              <option value="seasonal">Seasonal</option>
+              <option value="intermittent">Intermittent</option>
+              <option value="emergency_only">Emergency Only</option>
+            </select>
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-source-distance">Distance</label>
+            <input id="wm-source-distance" class="wm-field-control" placeholder="e.g. 0.3 miles" name="wm-source-distance">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-source-treatment">Treatment Required</label>
+            <select id="wm-source-treatment" class="wm-field-control" name="wm-source-treatment">
+              <option value="none">None (potable)</option>
+              <option value="filter">Filter Only</option>
+              <option value="boil">Boil</option>
+              <option value="chemical">Chemical Treatment</option>
+              <option value="filter_and_chemical">Filter + Chemical</option>
+              <option value="full">Full Treatment (RO/Distill)</option>
+            </select>
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-source-gal-per-day">Est. Gal/Day</label>
+            <input id="wm-source-gal-per-day" type="number" min="0" step="0.5" class="wm-field-control" placeholder="10" name="wm-source-gal-per-day">
+          </div>
+          <div class="wm-field wm-field-span-full">
+            <label class="wm-field-label" for="wm-source-notes">Notes</label>
+            <input id="wm-source-notes" class="wm-field-control" placeholder="Access details, contamination risks..." name="wm-source-notes">
+          </div>
+        </div>
+        <input type="hidden" id="wm-source-edit-id" value="">
+        <div class="wm-form-actions">
+          <button class="btn btn-sm btn-ghost" onclick="hideWaterForm('source')">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="saveWaterSource()">Save</button>
+        </div>
+      </div>
+      <div class="water-table-wrap">
+        <table class="water-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Type</th><th>Reliability</th><th>Distance</th><th>Treatment</th><th>Gal/Day</th><th class="wm-actions-cell"></th>
+            </tr>
+          </thead>
+          <tbody id="wm-source-tbody">
+            <tr><td colspan="7" class="water-empty">No sources logged. Click "+ Source" to add.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Budget Calculator -->
+    <div class="settings-card">
+      <h3>Water Budget Calculator</h3>
+      <p style="font-size:12px;color:var(--wm-text-dim);margin-bottom:12px;">
+        Estimate how much water you need based on people and duration.
+      </p>
+      <div class="wm-form-grid" style="margin-bottom:8px;">
+        <div class="wm-field">
+          <label class="wm-field-label" for="wm-budget-people">People</label>
+          <input id="wm-budget-people" type="number" min="1" max="100" value="4" class="wm-field-control" name="wm-budget-people">
+        </div>
+        <div class="wm-field">
+          <label class="wm-field-label" for="wm-budget-days">Days</label>
+          <input id="wm-budget-days" type="number" min="1" max="365" value="14" class="wm-field-control" name="wm-budget-days">
+        </div>
+      </div>
+      <button class="btn btn-sm btn-primary" onclick="loadWaterBudget()">Calculate</button>
+      <div id="wm-budget-result"></div>
+    </div>
+
+    <!-- Purification Reference -->
+    <div class="settings-card">
+      <h3>Purification Reference</h3>
+      <p style="font-size:12px;color:var(--wm-text-dim);margin-bottom:12px;">
+        Common water purification methods and their effectiveness.
+      </p>
+      <div id="wm-purification-body">
+        <button class="btn btn-sm" onclick="loadPurificationRef()">Load Reference Table</button>
+      </div>
+    </div>
+
+    <!-- Quality Tests -->
+    <div class="settings-card layout-span-full">
+      <h3>Water Quality Tests</h3>
+      <!-- Inline form -->
+      <div id="wm-form-quality" class="wm-form-overlay">
+        <div class="wm-form-grid">
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-quality-source">Source / Container</label>
+            <input id="wm-quality-source" class="wm-field-control" placeholder="e.g. Well #1, Rain barrel" name="wm-quality-source">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-quality-date">Test Date</label>
+            <input id="wm-quality-date" type="date" class="wm-field-control" name="wm-quality-date">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-quality-ph">pH</label>
+            <input id="wm-quality-ph" type="number" min="0" max="14" step="0.1" class="wm-field-control" placeholder="7.0" name="wm-quality-ph">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-quality-tds">TDS (ppm)</label>
+            <input id="wm-quality-tds" type="number" min="0" step="1" class="wm-field-control" placeholder="200" name="wm-quality-tds">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-quality-turbidity">Turbidity (NTU)</label>
+            <input id="wm-quality-turbidity" type="number" min="0" step="0.1" class="wm-field-control" placeholder="1.0" name="wm-quality-turbidity">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-quality-chlorine">Free Chlorine (ppm)</label>
+            <input id="wm-quality-chlorine" type="number" min="0" step="0.1" class="wm-field-control" placeholder="0.5" name="wm-quality-chlorine">
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-quality-result">Result</label>
+            <select id="wm-quality-result" class="wm-field-control" name="wm-quality-result">
+              <option value="safe">Safe</option>
+              <option value="caution">Caution</option>
+              <option value="unsafe">Unsafe</option>
+            </select>
+          </div>
+          <div class="wm-field">
+            <label class="wm-field-label" for="wm-quality-method">Test Method</label>
+            <input id="wm-quality-method" class="wm-field-control" placeholder="e.g. Strip test, lab panel" name="wm-quality-method">
+          </div>
+          <div class="wm-field wm-field-span-full">
+            <label class="wm-field-label" for="wm-quality-notes">Notes</label>
+            <input id="wm-quality-notes" class="wm-field-control" placeholder="Observations, contaminants found..." name="wm-quality-notes">
+          </div>
+        </div>
+        <div class="wm-form-actions">
+          <button class="btn btn-sm btn-ghost" onclick="hideWaterForm('quality')">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="saveWaterQuality()">Save</button>
+        </div>
+      </div>
+      <div class="water-table-wrap">
+        <table class="water-table">
+          <thead>
+            <tr>
+              <th>Source</th><th>Date</th><th>pH</th><th>TDS</th><th>Turbidity</th><th>Chlorine</th><th>Method</th><th>Result</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="wm-quality-tbody">
+            <tr><td colspan="9" class="water-empty">No quality tests recorded. Click "+ Quality Test" to log one.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /settings-grid -->
+
+  <script>
+  (function () {
+    'use strict';
+
+    /* ------------------------------------------------------------------ */
+    /*  State                                                              */
+    /* ------------------------------------------------------------------ */
+    let _storageItems = [];
+    let _filterItems  = [];
+    let _sourceItems  = [];
+    let _qualityTests = [];
+
+    /* ------------------------------------------------------------------ */
+    /*  Helpers                                                            */
+    /* ------------------------------------------------------------------ */
+    function $(id) { return document.getElementById(id); }
+
+    function val(id) {
+      const el = $(id);
+      if (!el) return '';
+      return el.value.trim();
+    }
+
+    function numVal(id, fallback) {
+      const v = parseFloat(val(id));
+      return isNaN(v) ? (fallback !== undefined ? fallback : 0) : v;
+    }
+
+    function fmtNum(n) {
+      if (n == null || isNaN(n)) return '--';
+      return Number(n).toLocaleString(undefined, { maximumFractionDigits: 1 });
+    }
+
+    function fmtPct(current, capacity) {
+      if (!capacity || capacity <= 0) return '--';
+      return Math.round((current / capacity) * 100) + '%';
+    }
+
+    function formatReliability(r) {
+      const map = {
+        year_round: 'Year-round', seasonal: 'Seasonal',
+        intermittent: 'Intermittent', emergency_only: 'Emergency Only'
+      };
+      return map[r] || escapeHtml(r || '--');
+    }
+
+    function formatTreatment(t) {
+      const map = {
+        none: 'None (potable)', filter: 'Filter Only', boil: 'Boil',
+        chemical: 'Chemical', filter_and_chemical: 'Filter + Chemical',
+        full: 'Full (RO/Distill)'
+      };
+      return map[t] || escapeHtml(t || '--');
+    }
+
+    function qualityBadge(result) {
+      const cls = result === 'safe' ? 'is-safe' : result === 'caution' ? 'is-caution' : 'is-unsafe';
+      const label = result === 'safe' ? 'SAFE' : result === 'caution' ? 'CAUTION' : 'UNSAFE';
+      return '<span class="wm-quality-badge ' + cls + '">' + label + '</span>';
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Dashboard                                                          */
+    /* ------------------------------------------------------------------ */
+    function renderDashboard(d) {
+      const totalCurrent  = d.total_current  != null ? d.total_current  : 0;
+      const totalCapacity = d.total_capacity != null ? d.total_capacity : 0;
+      const daysOfWater   = d.days_of_water  != null ? d.days_of_water  : 0;
+      const totalSources  = d.total_sources  != null ? d.total_sources  : 0;
+      const filtersDue    = d.filters_needing_replacement != null ? d.filters_needing_replacement : 0;
+      const pct = totalCapacity > 0 ? Math.round((totalCurrent / totalCapacity) * 100) : 0;
+
+      const gallonsEl  = $('ws-total-gallons');
+      const capEl      = $('ws-total-capacity');
+      const daysEl     = $('ws-days-of-water');
+      const sourcesEl  = $('ws-total-sources');
+      const filtersEl  = $('ws-filters-due');
+      const barFill    = $('ws-capacity-bar-fill');
+
+      if (gallonsEl)  gallonsEl.textContent = fmtNum(totalCurrent);
+      if (capEl)      capEl.textContent     = fmtNum(totalCapacity);
+      if (daysEl)     daysEl.textContent     = fmtNum(daysOfWater);
+      if (sourcesEl)  sourcesEl.textContent  = totalSources;
+      if (filtersEl)  filtersEl.textContent  = filtersDue;
+      if (barFill)    barFill.style.width    = Math.min(pct, 100) + '%';
+
+      /* Conditional coloring */
+      if (daysEl) {
+        daysEl.className = 'water-stat-value' +
+          (daysOfWater < 3 ? ' is-critical' : daysOfWater < 7 ? ' is-warning' : ' is-good');
+      }
+      if (filtersEl) {
+        filtersEl.className = 'water-stat-value' + (filtersDue > 0 ? ' is-warning' : '');
+      }
+    }
+
+    /* ------------------------------------------------------------------ */
+    /*  Storage                                                            */
+    /* ------------------------------------------------------------------ */
+    function renderStorageList(items) {
+      _storageItems = items || [];
+      const tbody = $('wm-storage-tbody');
+      if (!tbody) return;
+      if (!_storageItems.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="water-empty">No storage entries yet. Click "+ Storage" to start tracking.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = _storageItems.map(function (s) {
+        const pct = fmtPct(s.current_gallons, s.capacity_gallons);
+        return '<tr>' +
+          '<td>' + escapeHtml(s.name || '--') + '</td>' +
+          '<td>' + escapeHtml(s.type || '--') + '</td>' +
+          '<td>' + fmtNum(s.current_gallons) + '</td>' +
+          '<td>' + fmtNum(s.capacity_gallons) + '</td>' +
+          '<td>' + escapeHtml(pct) + '</td>' +
+          '<td>' + escapeHtml(s.location || '--') + '</td>' +
+          '<td>' + escapeHtml(s.date_filled || '--') + '</td>' +
+          '<td>' + escapeHtml(s.notes || '') + '</td>' +
+          '<td class="wm-actions-cell">' +
+            '<button class="btn btn-sm" onclick="editWaterStorage(' + s.id + ')">Edit</button>' +
+            '<button class="btn btn-sm btn-ghost" onclick="deleteWaterStorage(' + s.id + ')">Del</button>' +
+          '</td></tr>';
+      }).join('');
+    }
+
+    window.saveWaterStorage = async function () {
+      const id   = val('wm-storage-edit-id');
+      const data = {
+        name:             val('wm-storage-name'),
+        type:             val('wm-storage-type'),
+        capacity_gallons: numVal('wm-storage-capacity'),
+        current_gallons:  numVal('wm-storage-current'),
+        location:         val('wm-storage-location'),
+        date_filled:      val('wm-storage-filled'),
+        notes:            val('wm-storage-notes')
+      };
+      if (!data.name) { toast('Name is required.', 'error'); return; }
+      try {
+        if (id) {
+          await apiPut('/api/water/storage/' + id, data);
+        } else {
+          await apiPost('/api/water/storage', data);
+        }
+        toast('Storage saved.', 'success');
+        hideWaterForm('storage');
+        loadWaterMgmt();
+      } catch (e) {
+        toast('Failed to save storage: ' + (e.message || e), 'error');
+      }
+    };
+
+    window.editWaterStorage = function (id) {
+      const item = _storageItems.find(function (s) { return s.id === id; });
+      if (!item) return;
+      $('wm-storage-edit-id').value   = item.id;
+      $('wm-storage-name').value      = item.name || '';
+      $('wm-storage-type').value      = item.type || 'barrel';
+      $('wm-storage-capacity').value  = item.capacity_gallons || '';
+      $('wm-storage-current').value   = item.current_gallons || '';
+      $('wm-storage-location').value  = item.location || '';
+      $('wm-storage-filled').value    = item.date_filled || '';
+      $('wm-storage-notes').value     = item.notes || '';
+      showWaterForm('storage');
+    };
+
+    window.deleteWaterStorage = async function (id) {
+      if (!confirm('Delete this storage entry?')) return;
+      try {
+        await apiDelete('/api/water/storage/' + id);
+        toast('Storage deleted.', 'success');
+        loadWaterMgmt();
+      } catch (e) {
+        toast('Delete failed: ' + (e.message || e), 'error');
+      }
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Filters                                                            */
+    /* ------------------------------------------------------------------ */
+    function renderFilterList(items) {
+      _filterItems = items || [];
+      const tbody = $('wm-filter-tbody');
+      if (!tbody) return;
+      if (!_filterItems.length) {
+        tbody.innerHTML = '<tr><td colspan="6" class="water-empty">No filters tracked. Click "+ Filter" to add.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = _filterItems.map(function (f) {
+        const capacity = f.rated_capacity_gallons || 0;
+        const used     = f.gallons_used || 0;
+        const lifeLeft = capacity > 0 ? Math.max(0, Math.round(((capacity - used) / capacity) * 100)) + '%' : '--';
+        return '<tr>' +
+          '<td>' + escapeHtml(f.name || '--') + '</td>' +
+          '<td>' + escapeHtml(f.filter_type || '--') + '</td>' +
+          '<td>' + escapeHtml(lifeLeft) + '</td>' +
+          '<td>' + escapeHtml(f.replace_by || '--') + '</td>' +
+          '<td>' + escapeHtml(f.notes || '') + '</td>' +
+          '<td class="wm-actions-cell">' +
+            '<button class="btn btn-sm" onclick="editWaterFilter(' + f.id + ')">Edit</button>' +
+            '<button class="btn btn-sm btn-ghost" onclick="deleteWaterFilter(' + f.id + ')">Del</button>' +
+          '</td></tr>';
+      }).join('');
+    }
+
+    window.saveWaterFilter = async function () {
+      const id   = val('wm-filter-edit-id');
+      const data = {
+        name:                    val('wm-filter-name'),
+        filter_type:             val('wm-filter-type'),
+        rated_capacity_gallons:  numVal('wm-filter-capacity'),
+        gallons_used:            numVal('wm-filter-used'),
+        installed_date:          val('wm-filter-installed'),
+        replace_by:              val('wm-filter-replace-by'),
+        notes:                   val('wm-filter-notes')
+      };
+      if (!data.name) { toast('Filter name is required.', 'error'); return; }
+      try {
+        if (id) {
+          await apiPut('/api/water/filters/' + id, data);
+        } else {
+          await apiPost('/api/water/filters', data);
+        }
+        toast('Filter saved.', 'success');
+        hideWaterForm('filter');
+        loadWaterMgmt();
+      } catch (e) {
+        toast('Failed to save filter: ' + (e.message || e), 'error');
+      }
+    };
+
+    window.editWaterFilter = function (id) {
+      const item = _filterItems.find(function (f) { return f.id === id; });
+      if (!item) return;
+      $('wm-filter-edit-id').value   = item.id;
+      $('wm-filter-name').value      = item.name || '';
+      $('wm-filter-type').value      = item.filter_type || 'gravity';
+      $('wm-filter-capacity').value  = item.rated_capacity_gallons || '';
+      $('wm-filter-used').value      = item.gallons_used || '';
+      $('wm-filter-installed').value = item.installed_date || '';
+      $('wm-filter-replace-by').value = item.replace_by || '';
+      $('wm-filter-notes').value     = item.notes || '';
+      showWaterForm('filter');
+    };
+
+    window.deleteWaterFilter = async function (id) {
+      if (!confirm('Delete this filter?')) return;
+      try {
+        await apiDelete('/api/water/filters/' + id);
+        toast('Filter deleted.', 'success');
+        loadWaterMgmt();
+      } catch (e) {
+        toast('Delete failed: ' + (e.message || e), 'error');
+      }
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Sources                                                            */
+    /* ------------------------------------------------------------------ */
+    function renderSourceList(items) {
+      _sourceItems = items || [];
+      const tbody = $('wm-source-tbody');
+      if (!tbody) return;
+      if (!_sourceItems.length) {
+        tbody.innerHTML = '<tr><td colspan="7" class="water-empty">No sources logged. Click "+ Source" to add.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = _sourceItems.map(function (s) {
+        return '<tr>' +
+          '<td>' + escapeHtml(s.name || '--') + '</td>' +
+          '<td>' + escapeHtml(s.type || '--') + '</td>' +
+          '<td>' + formatReliability(s.reliability) + '</td>' +
+          '<td>' + escapeHtml(s.distance || '--') + '</td>' +
+          '<td>' + formatTreatment(s.treatment_required) + '</td>' +
+          '<td>' + fmtNum(s.estimated_gal_per_day) + '</td>' +
+          '<td class="wm-actions-cell">' +
+            '<button class="btn btn-sm" onclick="editWaterSource(' + s.id + ')">Edit</button>' +
+            '<button class="btn btn-sm btn-ghost" onclick="deleteWaterSource(' + s.id + ')">Del</button>' +
+          '</td></tr>';
+      }).join('');
+    }
+
+    window.saveWaterSource = async function () {
+      const id   = val('wm-source-edit-id');
+      const data = {
+        name:                  val('wm-source-name'),
+        type:                  val('wm-source-type'),
+        reliability:           val('wm-source-reliability'),
+        distance:              val('wm-source-distance'),
+        treatment_required:    val('wm-source-treatment'),
+        estimated_gal_per_day: numVal('wm-source-gal-per-day'),
+        notes:                 val('wm-source-notes')
+      };
+      if (!data.name) { toast('Source name is required.', 'error'); return; }
+      try {
+        if (id) {
+          await apiPut('/api/water/sources/' + id, data);
+        } else {
+          await apiPost('/api/water/sources', data);
+        }
+        toast('Source saved.', 'success');
+        hideWaterForm('source');
+        loadWaterMgmt();
+      } catch (e) {
+        toast('Failed to save source: ' + (e.message || e), 'error');
+      }
+    };
+
+    window.editWaterSource = function (id) {
+      const item = _sourceItems.find(function (s) { return s.id === id; });
+      if (!item) return;
+      $('wm-source-edit-id').value       = item.id;
+      $('wm-source-name').value          = item.name || '';
+      $('wm-source-type').value          = item.type || 'well';
+      $('wm-source-reliability').value   = item.reliability || 'year_round';
+      $('wm-source-distance').value      = item.distance || '';
+      $('wm-source-treatment').value     = item.treatment_required || 'none';
+      $('wm-source-gal-per-day').value   = item.estimated_gal_per_day || '';
+      $('wm-source-notes').value         = item.notes || '';
+      showWaterForm('source');
+    };
+
+    window.deleteWaterSource = async function (id) {
+      if (!confirm('Delete this water source?')) return;
+      try {
+        await apiDelete('/api/water/sources/' + id);
+        toast('Source deleted.', 'success');
+        loadWaterMgmt();
+      } catch (e) {
+        toast('Delete failed: ' + (e.message || e), 'error');
+      }
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Quality Tests                                                      */
+    /* ------------------------------------------------------------------ */
+    function renderQualityList(items) {
+      _qualityTests = items || [];
+      const tbody = $('wm-quality-tbody');
+      if (!tbody) return;
+      if (!_qualityTests.length) {
+        tbody.innerHTML = '<tr><td colspan="9" class="water-empty">No quality tests recorded. Click "+ Quality Test" to log one.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = _qualityTests.map(function (q) {
+        return '<tr>' +
+          '<td>' + escapeHtml(q.source || '--') + '</td>' +
+          '<td>' + escapeHtml(q.test_date || '--') + '</td>' +
+          '<td>' + (q.ph != null ? fmtNum(q.ph) : '--') + '</td>' +
+          '<td>' + (q.tds != null ? fmtNum(q.tds) : '--') + '</td>' +
+          '<td>' + (q.turbidity != null ? fmtNum(q.turbidity) : '--') + '</td>' +
+          '<td>' + (q.free_chlorine != null ? fmtNum(q.free_chlorine) : '--') + '</td>' +
+          '<td>' + escapeHtml(q.test_method || '--') + '</td>' +
+          '<td>' + qualityBadge(q.result || 'unsafe') + '</td>' +
+          '<td>' + escapeHtml(q.notes || '') + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    window.saveWaterQuality = async function () {
+      const data = {
+        source:        val('wm-quality-source'),
+        test_date:     val('wm-quality-date'),
+        ph:            numVal('wm-quality-ph', null),
+        tds:           numVal('wm-quality-tds', null),
+        turbidity:     numVal('wm-quality-turbidity', null),
+        free_chlorine: numVal('wm-quality-chlorine', null),
+        result:        val('wm-quality-result'),
+        test_method:   val('wm-quality-method'),
+        notes:         val('wm-quality-notes')
+      };
+      if (!data.source) { toast('Source / container is required.', 'error'); return; }
+      try {
+        await apiPost('/api/water/quality', data);
+        toast('Quality test saved.', 'success');
+        hideWaterForm('quality');
+        loadWaterMgmt();
+      } catch (e) {
+        toast('Failed to save quality test: ' + (e.message || e), 'error');
+      }
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Budget Calculator                                                  */
+    /* ------------------------------------------------------------------ */
+    window.loadWaterBudget = async function () {
+      const people = numVal('wm-budget-people', 4);
+      const days   = numVal('wm-budget-days', 14);
+      const container = $('wm-budget-result');
+      if (!container) return;
+      container.innerHTML = '<div class="water-empty">Calculating...</div>';
+      try {
+        const res = await apiFetch('/api/water/budget?people=' + people + '&days=' + days);
+        if (!res || typeof res !== 'object') {
+          container.innerHTML = '<div class="water-empty">No data returned.</div>';
+          return;
+        }
+        let html = '<div class="wm-budget-result"><table>';
+        html += '<thead><tr><th>Category</th><th>Gal/Person/Day</th><th>Total Gallons</th></tr></thead><tbody>';
+        const rows = res.breakdown || [];
+        rows.forEach(function (row) {
+          html += '<tr><td>' + escapeHtml(row.category || '--') + '</td>' +
+            '<td>' + fmtNum(row.per_person_per_day) + '</td>' +
+            '<td>' + fmtNum(row.total) + '</td></tr>';
+        });
+        html += '</tbody>';
+        if (res.grand_total != null) {
+          html += '<tfoot><tr><td colspan="2" style="font-weight:700;">Grand Total</td>' +
+            '<td style="font-weight:700;color:var(--wm-accent);">' + fmtNum(res.grand_total) + ' gal</td></tr></tfoot>';
+        }
+        html += '</table>';
+        if (res.notes) {
+          html += '<p style="font-size:11px;color:var(--wm-text-muted);margin-top:8px;">' + escapeHtml(res.notes) + '</p>';
+        }
+        html += '</div>';
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = '<div class="water-empty">Failed to load budget: ' + escapeHtml(e.message || String(e)) + '</div>';
+      }
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Purification Reference                                             */
+    /* ------------------------------------------------------------------ */
+    window.loadPurificationRef = async function () {
+      const container = $('wm-purification-body');
+      if (!container) return;
+      container.innerHTML = '<div class="water-empty">Loading...</div>';
+      try {
+        const res = await apiFetch('/api/water/purification-reference');
+        const methods = (res && res.methods) ? res.methods : res;
+        if (!Array.isArray(methods) || !methods.length) {
+          container.innerHTML = '<div class="water-empty">No purification data available.</div>';
+          return;
+        }
+        let html = '<table class="wm-purification-table">';
+        html += '<thead><tr><th>Method</th><th>Instructions</th><th>Effective Against</th><th>Limitations</th></tr></thead><tbody>';
+        methods.forEach(function (m) {
+          html += '<tr>' +
+            '<td style="font-weight:600;white-space:nowrap;">' + escapeHtml(m.method || '--') + '</td>' +
+            '<td>' + escapeHtml(m.instructions || '--') + '</td>' +
+            '<td>' + escapeHtml(m.effective_against || '--') + '</td>' +
+            '<td>' + escapeHtml(m.limitations || '--') + '</td>' +
+            '</tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      } catch (e) {
+        container.innerHTML = '<div class="water-empty">Failed to load reference: ' + escapeHtml(e.message || String(e)) + '</div>';
+      }
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Form visibility                                                    */
+    /* ------------------------------------------------------------------ */
+    window.showWaterForm = function (type) {
+      var formIds = ['wm-form-storage', 'wm-form-filter', 'wm-form-source', 'wm-form-quality'];
+      formIds.forEach(function (fid) {
+        var el = $(fid);
+        if (el) el.classList.remove('is-visible');
+      });
+      var target = $('wm-form-' + type);
+      if (target) {
+        target.classList.add('is-visible');
+        var firstInput = target.querySelector('input:not([type=hidden]), select');
+        if (firstInput) firstInput.focus();
+      }
+    };
+
+    window.hideWaterForm = function (type) {
+      var target = $('wm-form-' + type);
+      if (target) {
+        target.classList.remove('is-visible');
+        /* Reset fields */
+        target.querySelectorAll('input:not([type=hidden])').forEach(function (inp) { inp.value = ''; });
+        target.querySelectorAll('select').forEach(function (sel) { sel.selectedIndex = 0; });
+        var hiddenId = target.querySelector('input[type=hidden]');
+        if (hiddenId) hiddenId.value = '';
+      }
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Main init                                                          */
+    /* ------------------------------------------------------------------ */
+    window.loadWaterMgmt = async function () {
+      try {
+        const [dashboard, storage, filters, sources, quality] = await Promise.all([
+          apiFetch('/api/water/dashboard'),
+          apiFetch('/api/water/storage'),
+          apiFetch('/api/water/filters'),
+          apiFetch('/api/water/sources'),
+          apiFetch('/api/water/quality')
+        ]);
+        renderDashboard(dashboard || {});
+        renderStorageList(Array.isArray(storage) ? storage : (storage && storage.items) || []);
+        renderFilterList(Array.isArray(filters) ? filters : (filters && filters.items) || []);
+        renderSourceList(Array.isArray(sources) ? sources : (sources && sources.items) || []);
+        renderQualityList(Array.isArray(quality) ? quality : (quality && quality.items) || []);
+      } catch (e) {
+        toast('Failed to load water management data: ' + (e.message || e), 'error');
+      }
+    };
+
+    /* ------------------------------------------------------------------ */
+    /*  Tab activation hook                                                */
+    /* ------------------------------------------------------------------ */
+    window._nomadTabCallbacks = window._nomadTabCallbacks || {};
+    window._nomadTabCallbacks['water-mgmt'] = function () {
+      loadWaterMgmt();
+    };
+
+    /* Auto-load if tab is already active on page load */
+    if (document.getElementById('tab-water-mgmt') &&
+        document.getElementById('tab-water-mgmt').classList.contains('active')) {
+      loadWaterMgmt();
+    }
+
+  })();
+  </script>
+
+</div>

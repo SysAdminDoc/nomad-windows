@@ -96,10 +96,11 @@ def api_inventory_create():
     data = request.get_json() or {}
     with db_session() as db:
         cur = db.execute(
-            'INSERT INTO inventory (name, category, quantity, unit, min_quantity, daily_usage, location, expiration, barcode, cost, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            'INSERT INTO inventory (name, category, quantity, unit, min_quantity, daily_usage, location, expiration, barcode, cost, notes, calories_per_unit, protein_g, fat_g, carbs_g) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             (data.get('name', ''), data.get('category', 'other'), data.get('quantity', 0),
              data.get('unit', 'ea'), data.get('min_quantity', 0), data.get('daily_usage', 0),
-             data.get('location', ''), data.get('expiration', ''), data.get('barcode', ''), data.get('cost', 0), data.get('notes', '')))
+             data.get('location', ''), data.get('expiration', ''), data.get('barcode', ''), data.get('cost', 0), data.get('notes', ''),
+             data.get('calories_per_unit', 0), data.get('protein_g', 0), data.get('fat_g', 0), data.get('carbs_g', 0)))
         db.commit()
         item_id = cur.lastrowid
         row = db.execute('SELECT * FROM inventory WHERE id = ?', (item_id,)).fetchone()
@@ -114,7 +115,7 @@ def api_inventory_create():
 })
 def api_inventory_update(item_id):
     data = request.get_json() or {}
-    allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'barcode', 'cost', 'notes']
+    allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'barcode', 'cost', 'notes', 'calories_per_unit', 'protein_g', 'fat_g', 'carbs_g']
     filtered = safe_columns(data, allowed)
     if not filtered:
         return jsonify({'error': 'No fields to update'}), 400
@@ -530,13 +531,13 @@ def api_inventory_vision_import():
 @inventory_bp.route('/api/inventory/export-csv')
 def api_inventory_csv():
     with db_session() as db:
-        rows = db.execute('SELECT name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes FROM inventory ORDER BY category, name LIMIT 50000').fetchall()
+        rows = db.execute('SELECT name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes, calories_per_unit, protein_g, fat_g, carbs_g FROM inventory ORDER BY category, name LIMIT 50000').fetchall()
     import csv, io
     buf = io.StringIO()
     w = csv.writer(buf)
-    w.writerow(['Name', 'Category', 'Quantity', 'Unit', 'Min Qty', 'Daily Usage', 'Location', 'Expiration', 'Notes'])
+    w.writerow(['Name', 'Category', 'Quantity', 'Unit', 'Min Qty', 'Daily Usage', 'Location', 'Expiration', 'Notes', 'Calories/Unit', 'Protein (g)', 'Fat (g)', 'Carbs (g)'])
     for r in rows:
-        w.writerow([r['name'], r['category'], r['quantity'], r['unit'], r['min_quantity'], r['daily_usage'], r['location'], r['expiration'], r['notes']])
+        w.writerow([r['name'], r['category'], r['quantity'], r['unit'], r['min_quantity'], r['daily_usage'], r['location'], r['expiration'], r['notes'], r['calories_per_unit'], r['protein_g'], r['fat_g'], r['carbs_g']])
     return Response(buf.getvalue(), mimetype='text/csv',
                    headers={'Content-Disposition': 'attachment; filename="nomad-inventory.csv"'})
 
@@ -548,15 +549,16 @@ def api_inventory_export():
         import csv
         with db_session() as db:
             rows = db.execute(
-                'SELECT name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes '
+                'SELECT name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes, calories_per_unit, protein_g, fat_g, carbs_g '
                 'FROM inventory ORDER BY category, name LIMIT 50000'
             ).fetchall()
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(['Name', 'Category', 'Quantity', 'Unit', 'Min Qty', 'Daily Usage', 'Location', 'Expiration', 'Notes'])
+        w.writerow(['Name', 'Category', 'Quantity', 'Unit', 'Min Qty', 'Daily Usage', 'Location', 'Expiration', 'Notes', 'Calories/Unit', 'Protein (g)', 'Fat (g)', 'Carbs (g)'])
         for r in rows:
             w.writerow([r['name'], r['category'], r['quantity'], r['unit'], r['min_quantity'],
-                        r['daily_usage'], r['location'], r['expiration'], r['notes']])
+                        r['daily_usage'], r['location'], r['expiration'], r['notes'],
+                        r['calories_per_unit'], r['protein_g'], r['fat_g'], r['carbs_g']])
         return Response(buf.getvalue(), mimetype='text/csv',
                        headers={'Content-Disposition': 'attachment; filename="nomad_inventory_export.csv"'})
     except Exception as e:

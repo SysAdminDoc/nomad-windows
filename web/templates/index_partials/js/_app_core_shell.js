@@ -379,6 +379,10 @@ function activateWorkspaceTab(tab) {
   if (tabId === 'tools') { loadDrillHistory(); renderScenarioSelector(); }
   if (tabId === 'preparedness') { loadPrepTab(); }
   if (tabId === 'readiness') { loadReadinessScore(); loadReadinessNeeds(); }
+  if (tabId === 'water-mgmt') { loadWaterMgmt(); }
+  if (tabId === 'financial') { loadFinancial(); }
+  if (tabId === 'vehicles') { loadVehicles(); }
+  if (tabId === 'loadout') { loadLoadout(); }
   if (tabId === 'situation-room') {
     if (firstVisit) initSituationRoom();
   }

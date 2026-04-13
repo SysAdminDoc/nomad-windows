@@ -1293,6 +1293,16 @@ def create_app():
     from web.blueprints.brief import brief_bp
     app.register_blueprint(brief_bp)
 
+    # ─── v7.8.0 — Critical Path Modules ─────────────────────────────
+    from web.blueprints.water_mgmt import water_mgmt_bp
+    from web.blueprints.financial import financial_bp
+    from web.blueprints.vehicles import vehicles_bp
+    from web.blueprints.loadout import loadout_bp
+    app.register_blueprint(water_mgmt_bp)
+    app.register_blueprint(financial_bp)
+    app.register_blueprint(vehicles_bp)
+    app.register_blueprint(loadout_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

@@ -1,0 +1,1104 @@
+  <!-- Financial Preparedness Tab -->
+  <div id="tab-financial" class="tab-content tab-vcenter financial-workspace{% if active_tab == 'financial' %} active{% endif %}">
+    <style>
+      #tab-financial {
+        --fin-bg: var(--bg, #0c1016);
+        --fin-surface: var(--surface, rgba(24, 29, 36, 0.84));
+        --fin-surface-solid: var(--surface-solid, #151a22);
+        --fin-surface2: var(--surface2, #1d2430);
+        --fin-surface3: var(--surface3, #222d3a);
+        --fin-border: var(--border, rgba(255, 255, 255, 0.08));
+        --fin-text: var(--text, #edf2f7);
+        --fin-text-dim: var(--text-dim, #a3b2c7);
+        --fin-text-muted: var(--text-muted, #8e9aae);
+        --fin-accent: var(--accent, #71a8ff);
+        --fin-green: var(--green, #4caf50);
+        --fin-orange: var(--orange, #ff9800);
+        --fin-red: var(--red, #f44336);
+        --fin-gold: #d4a843;
+        --fin-silver: #c0c0c0;
+        --fin-shadow: var(--shadow, 0 20px 48px rgba(0, 0, 0, 0.42));
+
+        position: relative;
+        width: 100%;
+        min-height: 0;
+        height: auto;
+        overflow: visible;
+        padding: clamp(6px, 0.8vw, 12px) 0 calc(var(--app-bottom-clearance, 0px) + 16px);
+        color: var(--fin-text);
+        font-family: inherit;
+      }
+
+      /* ── Command Deck ── */
+      #tab-financial .financial-command-deck {
+        display: grid;
+        gap: 6px;
+        padding: clamp(14px, 2vw, 24px);
+        border-radius: clamp(14px, 1.6vw, 22px);
+        background: var(--fin-surface);
+        border: 1px solid var(--fin-border);
+        margin-bottom: 16px;
+      }
+      #tab-financial .financial-command-deck .section-header-label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--fin-text-muted);
+      }
+      #tab-financial .financial-command-deck h2 {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: var(--fin-text);
+        margin: 0;
+      }
+      #tab-financial .financial-command-deck p {
+        font-size: 13px;
+        color: var(--fin-text-dim);
+        margin: 0;
+        line-height: 1.5;
+      }
+      #tab-financial .financial-command-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 6px;
+      }
+
+      /* ── Stat Cards ── */
+      #tab-financial .fin-stats-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 12px;
+      }
+      #tab-financial .fin-stat-card {
+        background: var(--fin-surface-solid);
+        border: 1px solid var(--fin-border);
+        border-radius: 12px;
+        padding: 16px;
+        display: grid;
+        gap: 4px;
+      }
+      #tab-financial .fin-stat-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--fin-text-muted);
+      }
+      #tab-financial .fin-stat-value {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--fin-text);
+        letter-spacing: -0.02em;
+      }
+      #tab-financial .fin-stat-value.accent { color: var(--fin-accent); }
+      #tab-financial .fin-stat-value.green { color: var(--fin-green); }
+      #tab-financial .fin-stat-value.gold { color: var(--fin-gold); }
+
+      /* ── Section Cards ── */
+      #tab-financial .fin-card {
+        background: var(--fin-surface-solid);
+        border: 1px solid var(--fin-border);
+        border-radius: 14px;
+        padding: clamp(14px, 2vw, 22px);
+        display: grid;
+        gap: 12px;
+      }
+      #tab-financial .fin-card-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      #tab-financial .fin-card-header h3 {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--fin-text);
+        margin: 0;
+      }
+      #tab-financial .workspace-kicker {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--fin-text-muted);
+      }
+
+      /* ── Emergency Fund Progress ── */
+      #tab-financial .fin-efund-bar-shell {
+        width: 100%;
+        height: 18px;
+        border-radius: 9px;
+        background: var(--fin-surface2);
+        overflow: hidden;
+        position: relative;
+      }
+      #tab-financial .fin-efund-bar-fill {
+        height: 100%;
+        width: 0;
+        border-radius: 9px;
+        background: linear-gradient(90deg, var(--fin-accent), var(--fin-green));
+        transition: width 0.5s ease;
+        min-width: 0;
+      }
+      #tab-financial .fin-efund-meta {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        font-size: 13px;
+        color: var(--fin-text-dim);
+      }
+      #tab-financial .fin-efund-pct {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--fin-green);
+        letter-spacing: -0.02em;
+      }
+
+      /* ── Tables ── */
+      #tab-financial .fin-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+      }
+      #tab-financial .fin-table th {
+        text-align: left;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--fin-text-muted);
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--fin-border);
+      }
+      #tab-financial .fin-table td {
+        padding: 10px;
+        border-bottom: 1px solid var(--fin-border);
+        color: var(--fin-text);
+        vertical-align: middle;
+      }
+      #tab-financial .fin-table tr:last-child td { border-bottom: none; }
+      #tab-financial .fin-table tr:hover td {
+        background: var(--fin-surface2);
+      }
+
+      /* ── Badges ── */
+      #tab-financial .fin-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 6px;
+        background: var(--fin-surface2);
+        color: var(--fin-text-dim);
+      }
+      #tab-financial .fin-badge-gold { background: rgba(212, 168, 67, 0.18); color: var(--fin-gold); }
+      #tab-financial .fin-badge-silver { background: rgba(192, 192, 192, 0.18); color: var(--fin-silver); }
+      #tab-financial .fin-badge-green { background: rgba(76, 175, 80, 0.18); color: var(--fin-green); }
+      #tab-financial .fin-badge-orange { background: rgba(255, 152, 0, 0.18); color: var(--fin-orange); }
+      #tab-financial .fin-badge-red { background: rgba(244, 67, 54, 0.18); color: var(--fin-red); }
+      #tab-financial .fin-badge-accent { background: rgba(113, 168, 255, 0.18); color: var(--fin-accent); }
+
+      /* ── Inline Forms ── */
+      #tab-financial .fin-form {
+        display: none;
+        gap: 10px;
+        padding: 16px;
+        border-radius: 10px;
+        background: var(--fin-surface2);
+        border: 1px solid var(--fin-border);
+      }
+      #tab-financial .fin-form.visible {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        align-items: end;
+      }
+      #tab-financial .fin-form-field {
+        display: grid;
+        gap: 4px;
+      }
+      #tab-financial .fin-form-field label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--fin-text-muted);
+      }
+      #tab-financial .fin-form-field input,
+      #tab-financial .fin-form-field select {
+        padding: 8px 10px;
+        border-radius: 8px;
+        border: 1px solid var(--fin-border);
+        background: var(--fin-surface-solid);
+        color: var(--fin-text);
+        font-size: 13px;
+        font-family: inherit;
+      }
+      #tab-financial .fin-form-field input:focus,
+      #tab-financial .fin-form-field select:focus {
+        outline: none;
+        border-color: var(--fin-accent);
+        box-shadow: 0 0 0 2px rgba(113, 168, 255, 0.18);
+      }
+      #tab-financial .fin-form-actions {
+        display: flex;
+        gap: 8px;
+        align-items: end;
+        grid-column: 1 / -1;
+      }
+      #tab-financial .fin-form-check {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--fin-text-dim);
+      }
+      #tab-financial .fin-form-check input[type="checkbox"] {
+        width: 16px;
+        height: 16px;
+        accent-color: var(--fin-accent);
+      }
+
+      /* ── Barter Category Groups ── */
+      #tab-financial .fin-barter-groups {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+      }
+      #tab-financial .fin-barter-group {
+        background: var(--fin-surface2);
+        border-radius: 10px;
+        padding: 14px;
+        display: grid;
+        gap: 6px;
+      }
+      #tab-financial .fin-barter-group-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--fin-text);
+      }
+      #tab-financial .fin-barter-group-meta {
+        font-size: 12px;
+        color: var(--fin-text-dim);
+      }
+
+      /* ── Cost Per Day ── */
+      #tab-financial .fin-cpd-row {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      #tab-financial .fin-cpd-value {
+        font-size: 28px;
+        font-weight: 800;
+        color: var(--fin-accent);
+        letter-spacing: -0.02em;
+      }
+      #tab-financial .fin-cpd-label {
+        font-size: 13px;
+        color: var(--fin-text-dim);
+      }
+
+      /* ── Doc Expiry Warning ── */
+      #tab-financial .fin-expiry-warn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--fin-orange);
+      }
+      #tab-financial .fin-expiry-critical {
+        color: var(--fin-red);
+      }
+
+      /* ── Empty States ── */
+      #tab-financial .fin-empty {
+        text-align: center;
+        padding: 28px 16px;
+        font-size: 13px;
+        color: var(--fin-text-muted);
+      }
+
+      /* ── Delete button ── */
+      #tab-financial .fin-row-actions {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+      #tab-financial .fin-btn-delete {
+        border: none;
+        background: none;
+        color: var(--fin-text-muted);
+        cursor: pointer;
+        font-size: 14px;
+        padding: 2px 6px;
+        border-radius: 6px;
+        transition: color 0.15s, background 0.15s;
+      }
+      #tab-financial .fin-btn-delete:hover {
+        color: var(--fin-red);
+        background: rgba(244, 67, 54, 0.12);
+      }
+    </style>
+
+    <div class="financial-command-deck">
+      <div class="section-header-label">FINANCIAL RESILIENCE</div>
+      <h2>Financial Preparedness</h2>
+      <p>Track cash reserves, precious metals, barter goods, and critical documents.</p>
+      <div class="financial-command-actions">
+        <button class="btn btn-primary" onclick="showFinForm('cash')">+ Cash</button>
+        <button class="btn btn-ghost" onclick="showFinForm('metal')">+ Metal</button>
+        <button class="btn btn-ghost" onclick="showFinForm('barter')">+ Barter</button>
+        <button class="btn btn-ghost" onclick="showFinForm('document')">+ Document</button>
+      </div>
+    </div>
+
+    <div class="settings-grid">
+
+      <!-- Dashboard Summary Stats -->
+      <div class="fin-card layout-span-full">
+        <div class="fin-card-header">
+          <div>
+            <div class="workspace-kicker">OVERVIEW</div>
+            <h3>Preparedness Value</h3>
+          </div>
+        </div>
+        <div id="fin-stats-row" class="fin-stats-row">
+          <div class="fin-stat-card">
+            <span class="fin-stat-label">Cash Reserves</span>
+            <span class="fin-stat-value green" id="fin-stat-cash">$0</span>
+          </div>
+          <div class="fin-stat-card">
+            <span class="fin-stat-label">Metals Value</span>
+            <span class="fin-stat-value gold" id="fin-stat-metals">$0</span>
+          </div>
+          <div class="fin-stat-card">
+            <span class="fin-stat-label">Barter Value</span>
+            <span class="fin-stat-value accent" id="fin-stat-barter">$0</span>
+          </div>
+          <div class="fin-stat-card">
+            <span class="fin-stat-label">Total Preparedness</span>
+            <span class="fin-stat-value" id="fin-stat-total">$0</span>
+          </div>
+          <div class="fin-stat-card">
+            <span class="fin-stat-label">Documents</span>
+            <span class="fin-stat-value" id="fin-stat-docs">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Emergency Fund Progress -->
+      <div class="fin-card layout-span-full">
+        <div class="fin-card-header">
+          <div>
+            <div class="workspace-kicker">EMERGENCY FUND</div>
+            <h3>Target Progress</h3>
+          </div>
+          <span class="fin-efund-pct" id="fin-efund-pct">0%</span>
+        </div>
+        <div class="fin-efund-bar-shell">
+          <div class="fin-efund-bar-fill" id="fin-efund-fill"></div>
+        </div>
+        <div class="fin-efund-meta">
+          <span>Current: <strong id="fin-efund-current">$0</strong></span>
+          <span>Target: <strong id="fin-efund-target">$0</strong></span>
+          <span>Remaining: <strong id="fin-efund-remaining">$0</strong></span>
+        </div>
+      </div>
+
+      <!-- Cost Per Day -->
+      <div class="fin-card">
+        <div class="fin-card-header">
+          <div>
+            <div class="workspace-kicker">BURN RATE</div>
+            <h3>Cost Per Day</h3>
+          </div>
+        </div>
+        <div class="fin-cpd-row">
+          <span class="fin-cpd-value" id="fin-cpd-value">--</span>
+          <span class="fin-cpd-label">per day based on current reserves and household size</span>
+        </div>
+        <div id="fin-cpd-details" class="fin-cpd-label"></div>
+      </div>
+
+      <!-- Cash Reserves -->
+      <div class="fin-card layout-span-full">
+        <div class="fin-card-header">
+          <div>
+            <div class="workspace-kicker">CASH RESERVES</div>
+            <h3>Physical Currency</h3>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="showFinForm('cash')">+ Add Cash</button>
+        </div>
+        <!-- Cash Form -->
+        <div id="fin-form-cash" class="fin-form">
+          <div class="fin-form-field">
+            <label for="fin-cash-denomination">Denomination</label>
+            <input type="text" id="fin-cash-denomination" name="denomination" placeholder="e.g. $20 bills">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-cash-amount">Amount ($)</label>
+            <input type="number" id="fin-cash-amount" name="amount" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-cash-location">Location</label>
+            <input type="text" id="fin-cash-location" name="location" placeholder="e.g. Home safe">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-cash-currency">Currency</label>
+            <input type="text" id="fin-cash-currency" name="currency" value="USD" placeholder="USD">
+          </div>
+          <div class="fin-form-actions">
+            <button class="btn btn-sm btn-primary" onclick="saveFinCash()">Save</button>
+            <button class="btn btn-sm btn-ghost" onclick="hideFinForm('cash')">Cancel</button>
+          </div>
+        </div>
+        <div id="fin-cash-list">
+          <div class="fin-empty">No cash entries yet. Add your first reserve above.</div>
+        </div>
+      </div>
+
+      <!-- Precious Metals -->
+      <div class="fin-card layout-span-full">
+        <div class="fin-card-header">
+          <div>
+            <div class="workspace-kicker">PRECIOUS METALS</div>
+            <h3>Gold, Silver &amp; Platinum</h3>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="showFinForm('metal')">+ Add Metal</button>
+        </div>
+        <!-- Metals Form -->
+        <div id="fin-form-metal" class="fin-form">
+          <div class="fin-form-field">
+            <label for="fin-metal-type">Metal Type</label>
+            <select id="fin-metal-type" name="metal_type">
+              <option value="gold">Gold</option>
+              <option value="silver">Silver</option>
+              <option value="platinum">Platinum</option>
+            </select>
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-metal-form">Form</label>
+            <select id="fin-metal-form" name="form">
+              <option value="coin">Coin</option>
+              <option value="bar">Bar</option>
+              <option value="round">Round</option>
+              <option value="jewelry">Jewelry</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-metal-desc">Description</label>
+            <input type="text" id="fin-metal-desc" name="description" placeholder="e.g. 1oz American Eagle">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-metal-weight">Weight (oz)</label>
+            <input type="number" id="fin-metal-weight" name="weight_oz" step="0.001" min="0" placeholder="0.000">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-metal-purity">Purity</label>
+            <input type="text" id="fin-metal-purity" name="purity" placeholder="e.g. .999 or 24k">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-metal-price">Purchase Price ($)</label>
+            <input type="number" id="fin-metal-price" name="purchase_price" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-metal-location">Location</label>
+            <input type="text" id="fin-metal-location" name="location" placeholder="e.g. Safe deposit box">
+          </div>
+          <div class="fin-form-actions">
+            <button class="btn btn-sm btn-primary" onclick="saveFinMetal()">Save</button>
+            <button class="btn btn-sm btn-ghost" onclick="hideFinForm('metal')">Cancel</button>
+          </div>
+        </div>
+        <div id="fin-metals-list">
+          <div class="fin-empty">No metals tracked. Add your precious metal holdings above.</div>
+        </div>
+      </div>
+
+      <!-- Barter Goods -->
+      <div class="fin-card layout-span-full">
+        <div class="fin-card-header">
+          <div>
+            <div class="workspace-kicker">BARTER GOODS</div>
+            <h3>Trade &amp; Exchange Stock</h3>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="showFinForm('barter')">+ Add Barter</button>
+        </div>
+        <!-- Barter Form -->
+        <div id="fin-form-barter" class="fin-form">
+          <div class="fin-form-field">
+            <label for="fin-barter-name">Item Name</label>
+            <input type="text" id="fin-barter-name" name="name" placeholder="e.g. .22 LR ammo">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-barter-category">Category</label>
+            <select id="fin-barter-category" name="category">
+              <option value="ammunition">Ammunition</option>
+              <option value="fuel">Fuel</option>
+              <option value="medical">Medical Supplies</option>
+              <option value="food">Food &amp; Water</option>
+              <option value="tools">Tools &amp; Hardware</option>
+              <option value="hygiene">Hygiene Products</option>
+              <option value="alcohol_tobacco">Alcohol &amp; Tobacco</option>
+              <option value="batteries">Batteries &amp; Power</option>
+              <option value="clothing">Clothing &amp; Fabric</option>
+              <option value="seeds">Seeds &amp; Agriculture</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-barter-qty">Quantity</label>
+            <input type="number" id="fin-barter-qty" name="quantity" step="1" min="0" placeholder="0">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-barter-unit">Unit</label>
+            <input type="text" id="fin-barter-unit" name="unit" placeholder="e.g. rounds, gallons">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-barter-value">Est. Value ($)</label>
+            <input type="number" id="fin-barter-value" name="estimated_value" step="0.01" min="0" placeholder="0.00">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-barter-location">Location</label>
+            <input type="text" id="fin-barter-location" name="location" placeholder="e.g. Garage cache">
+          </div>
+          <div class="fin-form-actions">
+            <button class="btn btn-sm btn-primary" onclick="saveFinBarter()">Save</button>
+            <button class="btn btn-sm btn-ghost" onclick="hideFinForm('barter')">Cancel</button>
+          </div>
+        </div>
+        <!-- Barter category groups -->
+        <div id="fin-barter-groups" class="fin-barter-groups"></div>
+        <div id="fin-barter-list">
+          <div class="fin-empty">No barter goods tracked. Build your trade stock above.</div>
+        </div>
+      </div>
+
+      <!-- Critical Documents -->
+      <div class="fin-card layout-span-full">
+        <div class="fin-card-header">
+          <div>
+            <div class="workspace-kicker">CRITICAL DOCUMENTS</div>
+            <h3>Identity, Insurance &amp; Accounts</h3>
+          </div>
+          <button class="btn btn-sm btn-primary" onclick="showFinForm('document')">+ Add Document</button>
+        </div>
+        <!-- Documents Form -->
+        <div id="fin-form-document" class="fin-form">
+          <div class="fin-form-field">
+            <label for="fin-doc-type">Document Type</label>
+            <select id="fin-doc-type" name="doc_type">
+              <option value="passport">Passport</option>
+              <option value="drivers_license">Driver's License</option>
+              <option value="birth_certificate">Birth Certificate</option>
+              <option value="social_security">Social Security Card</option>
+              <option value="insurance">Insurance Policy</option>
+              <option value="deed">Property Deed</option>
+              <option value="title">Vehicle Title</option>
+              <option value="bank_account">Bank Account</option>
+              <option value="investment">Investment Account</option>
+              <option value="will">Will / Trust</option>
+              <option value="medical_record">Medical Record</option>
+              <option value="prescription">Prescription</option>
+              <option value="license_permit">License / Permit</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-doc-desc">Description</label>
+            <input type="text" id="fin-doc-desc" name="description" placeholder="e.g. US Passport - John">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-doc-account">Account / ID Number</label>
+            <input type="text" id="fin-doc-account" name="account_number" placeholder="Optional">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-doc-institution">Institution</label>
+            <input type="text" id="fin-doc-institution" name="institution" placeholder="e.g. US State Dept">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-doc-expiration">Expiration Date</label>
+            <input type="date" id="fin-doc-expiration" name="expiration">
+          </div>
+          <div class="fin-form-field">
+            <label for="fin-doc-location">Physical Location</label>
+            <input type="text" id="fin-doc-location" name="location" placeholder="e.g. Fireproof safe">
+          </div>
+          <div class="fin-form-field">
+            <label class="fin-form-check">
+              <input type="checkbox" id="fin-doc-digital" name="digital_copy">
+              Digital copy on file
+            </label>
+          </div>
+          <div class="fin-form-actions">
+            <button class="btn btn-sm btn-primary" onclick="saveFinDocument()">Save</button>
+            <button class="btn btn-sm btn-ghost" onclick="hideFinForm('document')">Cancel</button>
+          </div>
+        </div>
+        <div id="fin-docs-list">
+          <div class="fin-empty">No documents tracked. Secure your critical paperwork above.</div>
+        </div>
+      </div>
+
+    </div><!-- /.settings-grid -->
+
+    <script>
+      /* ─── Financial Preparedness JS ─── */
+      (function () {
+        'use strict';
+
+        const FIN_FORMS = ['cash', 'metal', 'barter', 'document'];
+
+        /* ── Helpers ── */
+        function $(id) { return document.getElementById(id); }
+        function fmtCurrency(v, currency) {
+          const num = parseFloat(v) || 0;
+          try {
+            return num.toLocaleString('en-US', { style: 'currency', currency: currency || 'USD' });
+          } catch (e) {
+            return '$' + num.toFixed(2);
+          }
+        }
+        function fmtNumber(v) { return (parseFloat(v) || 0).toLocaleString('en-US'); }
+
+        const DOC_TYPE_LABELS = {
+          passport: 'Passport', drivers_license: "Driver's License", birth_certificate: 'Birth Certificate',
+          social_security: 'SSN Card', insurance: 'Insurance', deed: 'Property Deed', title: 'Vehicle Title',
+          bank_account: 'Bank Account', investment: 'Investment', will: 'Will / Trust',
+          medical_record: 'Medical Record', prescription: 'Prescription', license_permit: 'License / Permit',
+          other: 'Other'
+        };
+
+        const METAL_TYPE_BADGE = {
+          gold: 'fin-badge-gold', silver: 'fin-badge-silver', platinum: 'fin-badge-accent'
+        };
+
+        const BARTER_CAT_LABELS = {
+          ammunition: 'Ammunition', fuel: 'Fuel', medical: 'Medical Supplies',
+          food: 'Food & Water', tools: 'Tools & Hardware', hygiene: 'Hygiene Products',
+          alcohol_tobacco: 'Alcohol & Tobacco', batteries: 'Batteries & Power',
+          clothing: 'Clothing & Fabric', seeds: 'Seeds & Agriculture', other: 'Other'
+        };
+
+        /* ── Form Visibility ── */
+        window.showFinForm = function (type) {
+          FIN_FORMS.forEach(t => {
+            const el = $('fin-form-' + t);
+            if (el) el.classList.toggle('visible', t === type);
+          });
+        };
+
+        window.hideFinForm = function (type) {
+          const el = $('fin-form-' + type);
+          if (el) el.classList.remove('visible');
+        };
+
+        function clearForm(type) {
+          const form = $('fin-form-' + type);
+          if (!form) return;
+          form.querySelectorAll('input:not([type="checkbox"])').forEach(i => { i.value = ''; });
+          form.querySelectorAll('input[type="checkbox"]').forEach(i => { i.checked = false; });
+          form.querySelectorAll('select').forEach(s => { s.selectedIndex = 0; });
+          form.classList.remove('visible');
+        }
+
+        /* ── Dashboard ── */
+        async function loadDashboard() {
+          try {
+            const d = await apiFetch('/api/financial/dashboard');
+            $('fin-stat-cash').textContent = fmtCurrency(d.total_cash);
+            $('fin-stat-metals').textContent = fmtCurrency(d.total_metals_value);
+            $('fin-stat-barter').textContent = fmtCurrency(d.total_barter_value);
+            $('fin-stat-total').textContent = fmtCurrency(d.total_preparedness_value);
+            $('fin-stat-docs').textContent = fmtNumber(d.documents_count);
+          } catch (e) {
+            console.warn('[Financial] Dashboard load failed:', e.message);
+          }
+        }
+
+        /* ── Emergency Fund ── */
+        async function loadEmergencyFund() {
+          try {
+            const ef = await apiFetch('/api/financial/emergency-fund');
+            const pct = Math.min(parseFloat(ef.percentage) || 0, 100);
+            $('fin-efund-pct').textContent = pct.toFixed(1) + '%';
+            $('fin-efund-fill').style.width = pct + '%';
+            $('fin-efund-current').textContent = fmtCurrency(ef.current);
+            $('fin-efund-target').textContent = fmtCurrency(ef.target);
+            $('fin-efund-remaining').textContent = fmtCurrency(ef.remaining);
+          } catch (e) {
+            console.warn('[Financial] Emergency fund load failed:', e.message);
+          }
+        }
+
+        /* ── Cost Per Day ── */
+        async function loadCostPerDay() {
+          try {
+            const cpd = await apiFetch('/api/financial/cost-per-day');
+            $('fin-cpd-value').textContent = fmtCurrency(cpd.cost_per_day || cpd.value || 0);
+            const details = $('fin-cpd-details');
+            if (details && cpd.days_covered != null) {
+              details.textContent = 'Current reserves cover approximately ' + Math.floor(cpd.days_covered) + ' days.';
+            }
+          } catch (e) {
+            console.warn('[Financial] Cost-per-day load failed:', e.message);
+          }
+        }
+
+        /* ── Cash CRUD ── */
+        async function loadCash() {
+          try {
+            const items = await apiFetch('/api/financial/cash');
+            renderCash(Array.isArray(items) ? items : (items.items || []));
+          } catch (e) {
+            console.warn('[Financial] Cash load failed:', e.message);
+          }
+        }
+
+        function renderCash(items) {
+          const el = $('fin-cash-list');
+          if (!items.length) {
+            el.innerHTML = '<div class="fin-empty">No cash entries yet. Add your first reserve above.</div>';
+            return;
+          }
+          let byLocation = {};
+          items.forEach(c => {
+            const loc = c.location || 'Unspecified';
+            if (!byLocation[loc]) byLocation[loc] = [];
+            byLocation[loc].push(c);
+          });
+          let html = '<table class="fin-table"><thead><tr><th>Denomination</th><th>Amount</th><th>Location</th><th>Currency</th><th></th></tr></thead><tbody>';
+          items.forEach(c => {
+            html += '<tr>'
+              + '<td>' + escapeHtml(c.denomination || '--') + '</td>'
+              + '<td><strong>' + fmtCurrency(c.amount, c.currency) + '</strong></td>'
+              + '<td>' + escapeHtml(c.location || '--') + '</td>'
+              + '<td><span class="fin-badge">' + escapeHtml(c.currency || 'USD') + '</span></td>'
+              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinCash(' + c.id + ')" title="Delete">&#10005;</button></td>'
+              + '</tr>';
+          });
+          html += '</tbody></table>';
+          el.innerHTML = html;
+        }
+
+        window.saveFinCash = async function () {
+          const data = {
+            denomination: $('fin-cash-denomination').value.trim(),
+            amount: parseFloat($('fin-cash-amount').value) || 0,
+            location: $('fin-cash-location').value.trim(),
+            currency: $('fin-cash-currency').value.trim() || 'USD',
+          };
+          if (!data.amount) { toast('Enter a cash amount', 'error'); return; }
+          try {
+            await apiPost('/api/financial/cash', data);
+            toast('Cash entry saved', 'success');
+            clearForm('cash');
+            loadCash();
+            loadDashboard();
+            loadEmergencyFund();
+            loadCostPerDay();
+          } catch (e) {
+            toast('Failed to save cash: ' + e.message, 'error');
+          }
+        };
+
+        window.deleteFinCash = async function (id) {
+          try {
+            await apiDelete('/api/financial/cash/' + id);
+            toast('Cash entry removed', 'success');
+            loadCash();
+            loadDashboard();
+            loadEmergencyFund();
+            loadCostPerDay();
+          } catch (e) {
+            toast('Failed to delete: ' + e.message, 'error');
+          }
+        };
+
+        /* ── Metals CRUD ── */
+        async function loadMetals() {
+          try {
+            const items = await apiFetch('/api/financial/metals');
+            renderMetals(Array.isArray(items) ? items : (items.items || []));
+          } catch (e) {
+            console.warn('[Financial] Metals load failed:', e.message);
+          }
+        }
+
+        function renderMetals(items) {
+          const el = $('fin-metals-list');
+          if (!items.length) {
+            el.innerHTML = '<div class="fin-empty">No metals tracked. Add your precious metal holdings above.</div>';
+            return;
+          }
+          /* Summary by type */
+          const byType = {};
+          items.forEach(m => {
+            const t = m.metal_type || 'other';
+            if (!byType[t]) byType[t] = { weight: 0, value: 0, count: 0 };
+            byType[t].weight += parseFloat(m.weight_oz) || 0;
+            byType[t].value += parseFloat(m.purchase_price) || 0;
+            byType[t].count++;
+          });
+          let summary = '<div class="fin-stats-row" style="margin-bottom:14px">';
+          Object.keys(byType).forEach(t => {
+            const badge = METAL_TYPE_BADGE[t] || 'fin-badge';
+            summary += '<div class="fin-stat-card">'
+              + '<span class="fin-stat-label"><span class="fin-badge ' + badge + '">' + escapeHtml(t) + '</span></span>'
+              + '<span class="fin-stat-value">' + byType[t].weight.toFixed(3) + ' oz</span>'
+              + '<span class="fin-stat-label">' + fmtCurrency(byType[t].value) + ' purchase value</span>'
+              + '</div>';
+          });
+          summary += '</div>';
+
+          let html = summary + '<table class="fin-table"><thead><tr><th>Type</th><th>Form</th><th>Description</th><th>Weight</th><th>Purity</th><th>Purchase $</th><th>Location</th><th></th></tr></thead><tbody>';
+          items.forEach(m => {
+            const badge = METAL_TYPE_BADGE[m.metal_type] || 'fin-badge';
+            html += '<tr>'
+              + '<td><span class="fin-badge ' + badge + '">' + escapeHtml(m.metal_type || '--') + '</span></td>'
+              + '<td>' + escapeHtml(m.form || '--') + '</td>'
+              + '<td>' + escapeHtml(m.description || '--') + '</td>'
+              + '<td><strong>' + (parseFloat(m.weight_oz) || 0).toFixed(3) + ' oz</strong></td>'
+              + '<td>' + escapeHtml(m.purity || '--') + '</td>'
+              + '<td>' + fmtCurrency(m.purchase_price) + '</td>'
+              + '<td>' + escapeHtml(m.location || '--') + '</td>'
+              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinMetal(' + m.id + ')" title="Delete">&#10005;</button></td>'
+              + '</tr>';
+          });
+          html += '</tbody></table>';
+          el.innerHTML = html;
+        }
+
+        window.saveFinMetal = async function () {
+          const data = {
+            metal_type: $('fin-metal-type').value,
+            form: $('fin-metal-form').value,
+            description: $('fin-metal-desc').value.trim(),
+            weight_oz: parseFloat($('fin-metal-weight').value) || 0,
+            purity: $('fin-metal-purity').value.trim(),
+            purchase_price: parseFloat($('fin-metal-price').value) || 0,
+            location: $('fin-metal-location').value.trim(),
+          };
+          if (!data.weight_oz) { toast('Enter a weight in ounces', 'error'); return; }
+          try {
+            await apiPost('/api/financial/metals', data);
+            toast('Metal entry saved', 'success');
+            clearForm('metal');
+            loadMetals();
+            loadDashboard();
+            loadEmergencyFund();
+          } catch (e) {
+            toast('Failed to save metal: ' + e.message, 'error');
+          }
+        };
+
+        window.deleteFinMetal = async function (id) {
+          try {
+            await apiDelete('/api/financial/metals/' + id);
+            toast('Metal entry removed', 'success');
+            loadMetals();
+            loadDashboard();
+            loadEmergencyFund();
+          } catch (e) {
+            toast('Failed to delete: ' + e.message, 'error');
+          }
+        };
+
+        /* ── Barter CRUD ── */
+        async function loadBarter() {
+          try {
+            const items = await apiFetch('/api/financial/barter');
+            renderBarter(Array.isArray(items) ? items : (items.items || []));
+          } catch (e) {
+            console.warn('[Financial] Barter load failed:', e.message);
+          }
+        }
+
+        function renderBarterGroups(items) {
+          const el = $('fin-barter-groups');
+          const byCat = {};
+          items.forEach(b => {
+            const cat = b.category || 'other';
+            if (!byCat[cat]) byCat[cat] = { count: 0, value: 0 };
+            byCat[cat].count += parseInt(b.quantity) || 1;
+            byCat[cat].value += parseFloat(b.estimated_value) || 0;
+          });
+          if (!Object.keys(byCat).length) { el.innerHTML = ''; return; }
+          let html = '';
+          Object.keys(byCat).sort().forEach(cat => {
+            html += '<div class="fin-barter-group">'
+              + '<span class="fin-barter-group-name">' + escapeHtml(BARTER_CAT_LABELS[cat] || cat) + '</span>'
+              + '<span class="fin-barter-group-meta">' + fmtNumber(byCat[cat].count) + ' items &middot; ' + fmtCurrency(byCat[cat].value) + '</span>'
+              + '</div>';
+          });
+          el.innerHTML = html;
+        }
+
+        function renderBarter(items) {
+          const el = $('fin-barter-list');
+          renderBarterGroups(items);
+          if (!items.length) {
+            el.innerHTML = '<div class="fin-empty">No barter goods tracked. Build your trade stock above.</div>';
+            return;
+          }
+          let html = '<table class="fin-table"><thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Unit</th><th>Est. Value</th><th>Location</th><th></th></tr></thead><tbody>';
+          items.forEach(b => {
+            html += '<tr>'
+              + '<td><strong>' + escapeHtml(b.name || '--') + '</strong></td>'
+              + '<td><span class="fin-badge">' + escapeHtml(BARTER_CAT_LABELS[b.category] || b.category || '--') + '</span></td>'
+              + '<td>' + fmtNumber(b.quantity) + '</td>'
+              + '<td>' + escapeHtml(b.unit || '--') + '</td>'
+              + '<td>' + fmtCurrency(b.estimated_value) + '</td>'
+              + '<td>' + escapeHtml(b.location || '--') + '</td>'
+              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinBarter(' + b.id + ')" title="Delete">&#10005;</button></td>'
+              + '</tr>';
+          });
+          html += '</tbody></table>';
+          el.innerHTML = html;
+        }
+
+        window.saveFinBarter = async function () {
+          const data = {
+            name: $('fin-barter-name').value.trim(),
+            category: $('fin-barter-category').value,
+            quantity: parseInt($('fin-barter-qty').value) || 0,
+            unit: $('fin-barter-unit').value.trim(),
+            estimated_value: parseFloat($('fin-barter-value').value) || 0,
+            location: $('fin-barter-location').value.trim(),
+          };
+          if (!data.name) { toast('Enter an item name', 'error'); return; }
+          try {
+            await apiPost('/api/financial/barter', data);
+            toast('Barter item saved', 'success');
+            clearForm('barter');
+            loadBarter();
+            loadDashboard();
+          } catch (e) {
+            toast('Failed to save barter item: ' + e.message, 'error');
+          }
+        };
+
+        window.deleteFinBarter = async function (id) {
+          try {
+            await apiDelete('/api/financial/barter/' + id);
+            toast('Barter item removed', 'success');
+            loadBarter();
+            loadDashboard();
+          } catch (e) {
+            toast('Failed to delete: ' + e.message, 'error');
+          }
+        };
+
+        /* ── Documents CRUD ── */
+        async function loadDocuments() {
+          try {
+            const items = await apiFetch('/api/financial/documents');
+            renderDocuments(Array.isArray(items) ? items : (items.items || []));
+          } catch (e) {
+            console.warn('[Financial] Documents load failed:', e.message);
+          }
+        }
+
+        function renderDocuments(items) {
+          const el = $('fin-docs-list');
+          if (!items.length) {
+            el.innerHTML = '<div class="fin-empty">No documents tracked. Secure your critical paperwork above.</div>';
+            return;
+          }
+          const now = new Date();
+          const soon = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000); /* 90 days */
+          let html = '<table class="fin-table"><thead><tr><th>Type</th><th>Description</th><th>Institution</th><th>Expiration</th><th>Location</th><th>Digital</th><th></th></tr></thead><tbody>';
+          items.forEach(d => {
+            const typeBadge = 'fin-badge-accent';
+            let expiryHtml = '--';
+            if (d.expiration) {
+              const exp = new Date(d.expiration);
+              const isExpired = exp < now;
+              const isSoon = !isExpired && exp < soon;
+              expiryHtml = escapeHtml(d.expiration);
+              if (isExpired) {
+                expiryHtml = '<span class="fin-expiry-warn fin-expiry-critical">EXPIRED ' + expiryHtml + '</span>';
+              } else if (isSoon) {
+                expiryHtml = '<span class="fin-expiry-warn">EXPIRING ' + expiryHtml + '</span>';
+              }
+            }
+            html += '<tr>'
+              + '<td><span class="fin-badge ' + typeBadge + '">' + escapeHtml(DOC_TYPE_LABELS[d.doc_type] || d.doc_type || '--') + '</span></td>'
+              + '<td><strong>' + escapeHtml(d.description || '--') + '</strong></td>'
+              + '<td>' + escapeHtml(d.institution || '--') + '</td>'
+              + '<td>' + expiryHtml + '</td>'
+              + '<td>' + escapeHtml(d.location || '--') + '</td>'
+              + '<td>' + (d.digital_copy ? '<span class="fin-badge fin-badge-green">YES</span>' : '<span class="fin-badge">NO</span>') + '</td>'
+              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinDocument(' + d.id + ')" title="Delete">&#10005;</button></td>'
+              + '</tr>';
+          });
+          html += '</tbody></table>';
+          el.innerHTML = html;
+        }
+
+        window.saveFinDocument = async function () {
+          const data = {
+            doc_type: $('fin-doc-type').value,
+            description: $('fin-doc-desc').value.trim(),
+            account_number: $('fin-doc-account').value.trim(),
+            institution: $('fin-doc-institution').value.trim(),
+            expiration: $('fin-doc-expiration').value || null,
+            location: $('fin-doc-location').value.trim(),
+            digital_copy: $('fin-doc-digital').checked,
+          };
+          if (!data.description) { toast('Enter a document description', 'error'); return; }
+          try {
+            await apiPost('/api/financial/documents', data);
+            toast('Document saved', 'success');
+            clearForm('document');
+            loadDocuments();
+            loadDashboard();
+          } catch (e) {
+            toast('Failed to save document: ' + e.message, 'error');
+          }
+        };
+
+        window.deleteFinDocument = async function (id) {
+          try {
+            await apiDelete('/api/financial/documents/' + id);
+            toast('Document removed', 'success');
+            loadDocuments();
+            loadDashboard();
+          } catch (e) {
+            toast('Failed to delete: ' + e.message, 'error');
+          }
+        };
+
+        /* ── Main Init ── */
+        window.loadFinancial = function () {
+          loadDashboard();
+          loadEmergencyFund();
+          loadCostPerDay();
+          loadCash();
+          loadMetals();
+          loadBarter();
+          loadDocuments();
+        };
+
+        /* ── Tab Activation Hook ── */
+        window._nomadTabCallbacks = window._nomadTabCallbacks || {};
+        window._nomadTabCallbacks['financial'] = function () {
+          window.loadFinancial();
+        };
+
+        /* Boot if already active */
+        if (document.getElementById('tab-financial')?.classList.contains('active')) {
+          window.loadFinancial();
+        }
+      })();
+    </script>
+  </div>

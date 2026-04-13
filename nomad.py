@@ -54,7 +54,7 @@ from config import APP_DISPLAY_NAME, APP_SHORT_NAME, Config, get_data_dir
 from web.app import create_app, set_version
 from db import init_db, get_db, log_activity, backup_db
 
-VERSION = '1.0.0'
+VERSION = '7.8.0'
 PORT = Config.APP_PORT
 HOST = Config.APP_HOST
 

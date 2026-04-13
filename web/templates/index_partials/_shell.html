@@ -69,6 +69,30 @@
       <span>VIPTrack</span>
     </button>
 
+    <!-- Water Management -->
+    <button class="tab{% if active_tab == 'water-mgmt' %} active{% endif %}" data-tab="water-mgmt">
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span>
+      <span>Water</span>
+    </button>
+
+    <!-- Financial Preparedness -->
+    <button class="tab{% if active_tab == 'financial' %} active{% endif %}" data-tab="financial">
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+      <span>Financial</span>
+    </button>
+
+    <!-- Vehicles -->
+    <button class="tab{% if active_tab == 'vehicles' %} active{% endif %}" data-tab="vehicles">
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 17h14v-5H5zm0 0v2m14-2v2"/><path d="M5 12l2-5h10l2 5"/><circle cx="7.5" cy="17" r="1"/><circle cx="16.5" cy="17" r="1"/></svg></span>
+      <span>Vehicles</span>
+    </button>
+
+    <!-- Loadout / Bug-Out Bags -->
+    <button class="tab{% if active_tab == 'loadout' %} active{% endif %}" data-tab="loadout">
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span>
+      <span>Loadout</span>
+    </button>
+
     <div class="sidebar-group-label">
       <span class="sidebar-group-title">Knowledge</span>
       <span class="sidebar-group-copy">Reference, media, and working memory.</span>

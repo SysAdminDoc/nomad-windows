@@ -1502,6 +1502,196 @@ def _create_extended_tables(conn):
     conn.commit()
 
 
+def _create_water_financial_vehicle_loadout_tables(conn):
+    """v7.8.0 — Water management, financial preparedness, vehicles, and loadout tables."""
+    conn.executescript('''
+        /* ─── Water Management ─── */
+        CREATE TABLE IF NOT EXISTS water_storage (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            container_type TEXT DEFAULT '',
+            capacity_gallons REAL DEFAULT 0,
+            current_gallons REAL DEFAULT 0,
+            fill_date TEXT DEFAULT '',
+            treatment_method TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            expiration TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS water_filters (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            filter_type TEXT DEFAULT '',
+            brand TEXT DEFAULT '',
+            max_gallons REAL DEFAULT 0,
+            gallons_processed REAL DEFAULT 0,
+            install_date TEXT DEFAULT '',
+            replacement_date TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS water_sources (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            source_type TEXT DEFAULT 'unknown',
+            lat REAL,
+            lng REAL,
+            waypoint_id INTEGER,
+            flow_rate_gph REAL DEFAULT 0,
+            potable INTEGER DEFAULT 0,
+            treatment_required INTEGER DEFAULT 1,
+            seasonal INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS water_quality_tests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            source_id INTEGER REFERENCES water_sources(id),
+            test_date TEXT DEFAULT '',
+            ph REAL,
+            tds_ppm REAL,
+            turbidity_ntu REAL,
+            coliform TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Financial Preparedness ─── */
+        CREATE TABLE IF NOT EXISTS financial_cash (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            denomination TEXT DEFAULT '',
+            amount REAL DEFAULT 0,
+            location TEXT DEFAULT '',
+            currency TEXT DEFAULT 'USD',
+            notes TEXT DEFAULT '',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS financial_metals (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            metal_type TEXT DEFAULT 'gold',
+            form TEXT DEFAULT 'coin',
+            description TEXT DEFAULT '',
+            weight_oz REAL DEFAULT 0,
+            purity REAL DEFAULT 0.999,
+            purchase_price REAL DEFAULT 0,
+            location TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS financial_barter (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'other',
+            quantity REAL DEFAULT 0,
+            unit TEXT DEFAULT 'ea',
+            estimated_value REAL DEFAULT 0,
+            location TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS financial_documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            doc_type TEXT DEFAULT 'other',
+            description TEXT DEFAULT '',
+            account_number TEXT DEFAULT '',
+            institution TEXT DEFAULT '',
+            expiration TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            digital_copy INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Vehicles & BOV ─── */
+        CREATE TABLE IF NOT EXISTS vehicles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            year INTEGER,
+            make TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            vin TEXT DEFAULT '',
+            fuel_type TEXT DEFAULT 'gasoline',
+            tank_capacity_gal REAL DEFAULT 0,
+            mpg REAL DEFAULT 0,
+            odometer INTEGER DEFAULT 0,
+            color TEXT DEFAULT '',
+            plate TEXT DEFAULT '',
+            insurance_exp TEXT DEFAULT '',
+            registration_exp TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            role TEXT DEFAULT 'daily',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS vehicle_maintenance (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            vehicle_id INTEGER REFERENCES vehicles(id),
+            service_type TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            mileage INTEGER DEFAULT 0,
+            cost REAL DEFAULT 0,
+            service_date TEXT DEFAULT '',
+            next_due_date TEXT DEFAULT '',
+            next_due_mileage INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'completed',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS vehicle_fuel_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            vehicle_id INTEGER REFERENCES vehicles(id),
+            gallons REAL DEFAULT 0,
+            cost_per_gallon REAL DEFAULT 0,
+            total_cost REAL DEFAULT 0,
+            odometer INTEGER DEFAULT 0,
+            station TEXT DEFAULT '',
+            fuel_date TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Bug-Out Bag Loadout ─── */
+        CREATE TABLE IF NOT EXISTS loadout_bags (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            owner TEXT DEFAULT '',
+            bag_type TEXT DEFAULT '72hour',
+            season TEXT DEFAULT 'all',
+            target_weight_lb REAL DEFAULT 0,
+            location TEXT DEFAULT '',
+            last_inspected TEXT DEFAULT '',
+            photo_path TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS loadout_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bag_id INTEGER REFERENCES loadout_bags(id),
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'other',
+            quantity INTEGER DEFAULT 1,
+            weight_oz REAL DEFAULT 0,
+            packed INTEGER DEFAULT 0,
+            expiration TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _apply_column_migrations(conn):
     """Apply ALTER TABLE column migrations (before indexes that depend on new columns)."""
     for migration in [
@@ -1832,6 +2022,33 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_perimeter_zones_created ON perimeter_zones(created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_triage_events_created ON triage_events(created_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_group_exercises_created ON group_exercises(created_at DESC)',
+        # v7.8.0 — Water management
+        'CREATE INDEX IF NOT EXISTS idx_water_storage_location ON water_storage(location)',
+        'CREATE INDEX IF NOT EXISTS idx_water_storage_expiration ON water_storage(expiration)',
+        'CREATE INDEX IF NOT EXISTS idx_water_filters_status ON water_filters(status)',
+        'CREATE INDEX IF NOT EXISTS idx_water_sources_type ON water_sources(source_type)',
+        'CREATE INDEX IF NOT EXISTS idx_water_quality_source ON water_quality_tests(source_id)',
+        'CREATE INDEX IF NOT EXISTS idx_water_quality_date ON water_quality_tests(test_date DESC)',
+        # v7.8.0 — Financial preparedness
+        'CREATE INDEX IF NOT EXISTS idx_financial_cash_location ON financial_cash(location)',
+        'CREATE INDEX IF NOT EXISTS idx_financial_metals_type ON financial_metals(metal_type)',
+        'CREATE INDEX IF NOT EXISTS idx_financial_barter_category ON financial_barter(category)',
+        'CREATE INDEX IF NOT EXISTS idx_financial_documents_type ON financial_documents(doc_type)',
+        'CREATE INDEX IF NOT EXISTS idx_financial_documents_expiration ON financial_documents(expiration)',
+        # v7.8.0 — Vehicles
+        'CREATE INDEX IF NOT EXISTS idx_vehicles_role ON vehicles(role)',
+        'CREATE INDEX IF NOT EXISTS idx_vehicle_maintenance_vehicle ON vehicle_maintenance(vehicle_id)',
+        'CREATE INDEX IF NOT EXISTS idx_vehicle_maintenance_status ON vehicle_maintenance(status)',
+        'CREATE INDEX IF NOT EXISTS idx_vehicle_maintenance_next_due ON vehicle_maintenance(next_due_date)',
+        'CREATE INDEX IF NOT EXISTS idx_vehicle_fuel_log_vehicle ON vehicle_fuel_log(vehicle_id)',
+        'CREATE INDEX IF NOT EXISTS idx_vehicle_fuel_log_date ON vehicle_fuel_log(fuel_date DESC)',
+        # v7.8.0 — Loadout bags
+        'CREATE INDEX IF NOT EXISTS idx_loadout_bags_type ON loadout_bags(bag_type)',
+        'CREATE INDEX IF NOT EXISTS idx_loadout_bags_owner ON loadout_bags(owner)',
+        'CREATE INDEX IF NOT EXISTS idx_loadout_items_bag ON loadout_items(bag_id)',
+        'CREATE INDEX IF NOT EXISTS idx_loadout_items_category ON loadout_items(category)',
+        'CREATE INDEX IF NOT EXISTS idx_loadout_items_packed ON loadout_items(packed)',
+        'CREATE INDEX IF NOT EXISTS idx_loadout_items_expiration ON loadout_items(expiration)',
     ]:
         try:
             conn.execute(idx)
@@ -1847,6 +2064,7 @@ def _init_db_inner(conn):
     _create_medical_security_tables(conn)
     _create_power_garden_tables(conn)
     _create_extended_tables(conn)
+    _create_water_financial_vehicle_loadout_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

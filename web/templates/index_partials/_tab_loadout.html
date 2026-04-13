@@ -1,0 +1,1083 @@
+  <div id="tab-loadout" class="tab-content tab-vcenter loadout-workspace{% if active_tab == 'loadout' %} active{% endif %}">
+    <style>
+      #tab-loadout {
+        --lo-bg: var(--bg, #0c1016);
+        --lo-surface: var(--surface, rgba(24, 29, 36, 0.84));
+        --lo-surface-solid: var(--surface-solid, #151a22);
+        --lo-surface2: var(--surface2, #1d2430);
+        --lo-surface3: var(--surface3, #222d3a);
+        --lo-border: var(--border, rgba(255, 255, 255, 0.08));
+        --lo-text: var(--text, #edf2f7);
+        --lo-text-dim: var(--text-dim, #a3b2c7);
+        --lo-text-muted: var(--text-muted, #8e9aae);
+        --lo-accent: var(--accent, #71a8ff);
+        --lo-green: var(--green, #44bb44);
+        --lo-red: var(--red, #ff4444);
+        --lo-orange: var(--orange, #f0a040);
+        --lo-shadow: var(--shadow, 0 20px 48px rgba(0, 0, 0, 0.42));
+        --card-bg-alt: var(--surface2, #252538);
+
+        position: relative;
+        width: 100%;
+        min-height: 0;
+        height: auto;
+        overflow: visible;
+        padding: clamp(6px, 0.8vw, 12px) 0 calc(var(--app-bottom-clearance, 0px) + 16px);
+        color: var(--lo-text);
+        font-family: inherit;
+      }
+
+      /* Command deck */
+      #tab-loadout .loadout-command-deck {
+        display: grid;
+        gap: 6px;
+        padding: 0 2px 12px;
+      }
+      #tab-loadout .loadout-command-deck .section-header-label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: var(--lo-text-muted);
+      }
+      #tab-loadout .loadout-command-deck h2 {
+        font-size: 20px;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        color: var(--lo-text);
+        margin: 0;
+      }
+      #tab-loadout .loadout-command-deck p {
+        font-size: 13px;
+        color: var(--lo-text-dim);
+        margin: 0;
+        max-width: 520px;
+      }
+      #tab-loadout .loadout-command-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 4px;
+      }
+
+      /* Dashboard stats */
+      #tab-loadout .loadout-stats-strip {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      #tab-loadout .lo-stat-card {
+        background: var(--lo-surface);
+        border: 1px solid var(--lo-border);
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: grid;
+        gap: 2px;
+      }
+      #tab-loadout .lo-stat-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--lo-text-muted);
+      }
+      #tab-loadout .lo-stat-value {
+        font-size: 22px;
+        font-weight: 800;
+        color: var(--lo-text);
+        line-height: 1.1;
+      }
+
+      /* Bag cards grid */
+      #tab-loadout .loadout-bags-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+      #tab-loadout .lo-bag-card {
+        background: var(--lo-surface);
+        border: 1px solid var(--lo-border);
+        border-radius: 12px;
+        padding: 14px 16px;
+        cursor: pointer;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        display: grid;
+        gap: 8px;
+      }
+      #tab-loadout .lo-bag-card:hover {
+        border-color: color-mix(in srgb, var(--lo-border) 50%, var(--lo-accent) 50%);
+        box-shadow: var(--lo-shadow);
+      }
+      #tab-loadout .lo-bag-card-head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      #tab-loadout .lo-bag-name {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--lo-text);
+        margin: 0;
+      }
+      #tab-loadout .lo-bag-owner {
+        font-size: 11px;
+        color: var(--lo-text-dim);
+      }
+      #tab-loadout .lo-bag-badges {
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+      #tab-loadout .lo-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 4px;
+        line-height: 1.4;
+      }
+      #tab-loadout .lo-badge-72hour   { background: #2d5a9d; color: #c4dafe; }
+      #tab-loadout .lo-badge-get-home  { background: #5a3d8a; color: #dcc8f7; }
+      #tab-loadout .lo-badge-inch      { background: #8a5a2d; color: #f7dfc8; }
+      #tab-loadout .lo-badge-edc       { background: #2d8a5a; color: #c8f7df; }
+      #tab-loadout .lo-badge-medical   { background: #8a2d3d; color: #f7c8d0; }
+      #tab-loadout .lo-badge-vehicle   { background: #5a6e2d; color: #ddf0b4; }
+      #tab-loadout .lo-badge-season    { background: var(--lo-surface3); color: var(--lo-text-dim); }
+      #tab-loadout .lo-bag-meta {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        font-size: 11px;
+        color: var(--lo-text-muted);
+      }
+      #tab-loadout .lo-pack-status {
+        font-weight: 600;
+      }
+
+      /* Weight bar */
+      #tab-loadout .lo-weight-bar-shell {
+        display: grid;
+        gap: 2px;
+      }
+      #tab-loadout .lo-weight-track {
+        background: var(--card-bg-alt, #252538);
+        border-radius: 6px;
+        height: 8px;
+        width: 100%;
+        overflow: hidden;
+      }
+      #tab-loadout .lo-weight-fill {
+        height: 100%;
+        border-radius: 6px;
+        transition: width 0.3s ease;
+      }
+      #tab-loadout .lo-weight-label {
+        font-size: 11px;
+        color: var(--lo-text-muted);
+      }
+
+      /* Detail panel */
+      #tab-loadout .lo-detail-panel {
+        background: var(--lo-surface);
+        border: 1px solid color-mix(in srgb, var(--lo-border) 60%, var(--lo-accent) 40%);
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 14px;
+        display: none;
+      }
+      #tab-loadout .lo-detail-panel.is-open { display: block; }
+      #tab-loadout .lo-detail-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      #tab-loadout .lo-detail-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: var(--lo-text);
+        margin: 0;
+      }
+      #tab-loadout .lo-detail-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      #tab-loadout .lo-detail-actions .btn { font-size: 12px; }
+
+      /* Items table */
+      #tab-loadout .lo-items-group {
+        margin-bottom: 10px;
+      }
+      #tab-loadout .lo-items-group-header {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 6px 0 4px;
+        border-bottom: 1px solid var(--lo-border);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      #tab-loadout .lo-cat-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        flex-shrink: 0;
+      }
+      #tab-loadout .lo-item-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 4px;
+        border-bottom: 1px solid color-mix(in srgb, var(--lo-border) 50%, transparent);
+        font-size: 13px;
+      }
+      #tab-loadout .lo-item-row:last-child { border-bottom: none; }
+      #tab-loadout .lo-item-packed-toggle {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        border: 2px solid var(--lo-text-muted);
+        background: transparent;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: transparent;
+        flex-shrink: 0;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+        padding: 0;
+      }
+      #tab-loadout .lo-item-packed-toggle.is-packed {
+        background: var(--lo-green);
+        border-color: var(--lo-green);
+        color: #fff;
+      }
+      #tab-loadout .lo-item-name {
+        flex: 1;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: var(--lo-text);
+      }
+      #tab-loadout .lo-item-qty {
+        font-size: 11px;
+        color: var(--lo-text-dim);
+        white-space: nowrap;
+      }
+      #tab-loadout .lo-item-weight {
+        font-size: 11px;
+        color: var(--lo-text-muted);
+        white-space: nowrap;
+        min-width: 50px;
+        text-align: right;
+      }
+      #tab-loadout .lo-item-exp {
+        font-size: 10px;
+        color: var(--lo-orange);
+        white-space: nowrap;
+      }
+      #tab-loadout .lo-item-actions {
+        display: flex;
+        gap: 4px;
+        flex-shrink: 0;
+      }
+      #tab-loadout .lo-item-actions button {
+        background: transparent;
+        border: none;
+        color: var(--lo-text-muted);
+        cursor: pointer;
+        font-size: 13px;
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+      #tab-loadout .lo-item-actions button:hover { color: var(--lo-text); background: var(--lo-surface3); }
+
+      /* Weight breakdown chart */
+      #tab-loadout .lo-breakdown {
+        margin-top: 14px;
+      }
+      #tab-loadout .lo-breakdown-title {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--lo-text-muted);
+        margin-bottom: 8px;
+      }
+      #tab-loadout .lo-breakdown-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+        font-size: 12px;
+      }
+      #tab-loadout .lo-breakdown-cat {
+        width: 80px;
+        text-align: right;
+        color: var(--lo-text-dim);
+        flex-shrink: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      #tab-loadout .lo-breakdown-bar {
+        flex: 1;
+        height: 10px;
+        background: var(--card-bg-alt, #252538);
+        border-radius: 5px;
+        overflow: hidden;
+      }
+      #tab-loadout .lo-breakdown-fill {
+        height: 100%;
+        border-radius: 5px;
+        transition: width 0.3s ease;
+      }
+      #tab-loadout .lo-breakdown-val {
+        width: 60px;
+        font-size: 11px;
+        color: var(--lo-text-muted);
+        white-space: nowrap;
+      }
+
+      /* Form overlay */
+      #tab-loadout .lo-form-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 900;
+        background: rgba(0, 0, 0, 0.55);
+        align-items: center;
+        justify-content: center;
+      }
+      #tab-loadout .lo-form-overlay.is-open { display: flex; }
+      #tab-loadout .lo-form-card {
+        background: var(--lo-surface-solid);
+        border: 1px solid var(--lo-border);
+        border-radius: 14px;
+        padding: 22px 24px;
+        width: min(480px, 92vw);
+        max-height: 85vh;
+        overflow-y: auto;
+        box-shadow: var(--lo-shadow);
+      }
+      #tab-loadout .lo-form-card h3 {
+        font-size: 16px;
+        font-weight: 800;
+        color: var(--lo-text);
+        margin: 0 0 14px;
+      }
+      #tab-loadout .lo-form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      #tab-loadout .lo-form-grid .lo-field-full { grid-column: 1 / -1; }
+      #tab-loadout .lo-field {
+        display: grid;
+        gap: 3px;
+      }
+      #tab-loadout .lo-field label {
+        font-size: 11px;
+        font-weight: 700;
+        color: var(--lo-text-dim);
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+      }
+      #tab-loadout .lo-field input,
+      #tab-loadout .lo-field select,
+      #tab-loadout .lo-field textarea {
+        background: var(--lo-surface2);
+        border: 1px solid var(--lo-border);
+        border-radius: 6px;
+        color: var(--lo-text);
+        padding: 7px 10px;
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      #tab-loadout .lo-field input:focus,
+      #tab-loadout .lo-field select:focus,
+      #tab-loadout .lo-field textarea:focus {
+        border-color: var(--lo-accent);
+      }
+      #tab-loadout .lo-field textarea { resize: vertical; min-height: 54px; }
+      #tab-loadout .lo-form-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+        justify-content: flex-end;
+      }
+
+      /* Empty state */
+      #tab-loadout .lo-empty {
+        text-align: center;
+        padding: 40px 20px;
+        color: var(--lo-text-muted);
+        font-size: 14px;
+      }
+
+      @media (max-width: 768px) {
+        #tab-loadout .loadout-bags-grid {
+          grid-template-columns: 1fr;
+        }
+        #tab-loadout .lo-form-grid {
+          grid-template-columns: 1fr;
+        }
+        #tab-loadout .loadout-stats-strip {
+          grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        }
+      }
+    </style>
+
+    <!-- Command deck header -->
+    <div class="loadout-command-deck">
+      <div class="section-header-label">GO-BAG READINESS</div>
+      <h2>Loadout Manager</h2>
+      <p>Build, track, and maintain bug-out bags with weight budgets and pack status.</p>
+      <div class="loadout-command-actions">
+        <button class="btn btn-primary" onclick="showBagForm()">+ New Bag</button>
+      </div>
+    </div>
+
+    <div class="settings-grid">
+
+      <!-- Dashboard stats -->
+      <div id="lo-stats" class="loadout-stats-strip"></div>
+
+      <!-- Bag cards -->
+      <div id="lo-bags-grid" class="loadout-bags-grid">
+        <div class="lo-empty">Loading bags...</div>
+      </div>
+
+      <!-- Detail panel (expanded bag) -->
+      <div id="lo-detail" class="lo-detail-panel"></div>
+
+    </div>
+
+    <!-- Bag form overlay -->
+    <div id="lo-bag-form-overlay" class="lo-form-overlay" onclick="if(event.target===this)closeBagForm()">
+      <div class="lo-form-card">
+        <h3 id="lo-bag-form-title">New Bag</h3>
+        <div class="lo-form-grid">
+          <input type="hidden" id="lo-bag-edit-id" value="">
+          <div class="lo-field lo-field-full">
+            <label for="lo-bag-name">Name *</label>
+            <input id="lo-bag-name" type="text" placeholder="e.g. 72-Hour Get Home Bag" name="lo-bag-name">
+          </div>
+          <div class="lo-field">
+            <label for="lo-bag-owner">Owner</label>
+            <input id="lo-bag-owner" type="text" placeholder="e.g. Dad" name="lo-bag-owner">
+          </div>
+          <div class="lo-field">
+            <label for="lo-bag-type">Bag Type</label>
+            <select id="lo-bag-type" name="lo-bag-type">
+              <option value="72hour">72-Hour</option>
+              <option value="get-home">Get Home</option>
+              <option value="inch">INCH (Never Coming Home)</option>
+              <option value="edc">EDC (Every Day Carry)</option>
+              <option value="medical">Medical</option>
+              <option value="vehicle">Vehicle</option>
+            </select>
+          </div>
+          <div class="lo-field">
+            <label for="lo-bag-season">Season</label>
+            <select id="lo-bag-season" name="lo-bag-season">
+              <option value="all">All Season</option>
+              <option value="summer">Summer</option>
+              <option value="winter">Winter</option>
+              <option value="spring">Spring</option>
+              <option value="fall">Fall</option>
+            </select>
+          </div>
+          <div class="lo-field">
+            <label for="lo-bag-weight">Target Weight (lb)</label>
+            <input id="lo-bag-weight" type="number" min="0" step="0.1" placeholder="e.g. 35" name="lo-bag-weight">
+          </div>
+          <div class="lo-field">
+            <label for="lo-bag-location">Location</label>
+            <input id="lo-bag-location" type="text" placeholder="e.g. Hall closet" name="lo-bag-location">
+          </div>
+          <div class="lo-field lo-field-full">
+            <label for="lo-bag-notes">Notes</label>
+            <textarea id="lo-bag-notes" placeholder="Optional notes" name="lo-bag-notes"></textarea>
+          </div>
+        </div>
+        <div class="lo-form-actions">
+          <button class="btn" onclick="closeBagForm()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveBag()">Save Bag</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item form overlay -->
+    <div id="lo-item-form-overlay" class="lo-form-overlay" onclick="if(event.target===this)closeItemForm()">
+      <div class="lo-form-card">
+        <h3 id="lo-item-form-title">Add Item</h3>
+        <div class="lo-form-grid">
+          <input type="hidden" id="lo-item-edit-id" value="">
+          <input type="hidden" id="lo-item-bag-id" value="">
+          <div class="lo-field lo-field-full">
+            <label for="lo-item-name">Name *</label>
+            <input id="lo-item-name" type="text" placeholder="e.g. Sawyer Mini filter" name="lo-item-name">
+          </div>
+          <div class="lo-field">
+            <label for="lo-item-category">Category</label>
+            <select id="lo-item-category" name="lo-item-category">
+              <option value="water">Water</option>
+              <option value="food">Food</option>
+              <option value="shelter">Shelter</option>
+              <option value="fire">Fire</option>
+              <option value="medical">Medical</option>
+              <option value="comms">Comms</option>
+              <option value="navigation">Navigation</option>
+              <option value="tools">Tools</option>
+              <option value="clothing">Clothing</option>
+              <option value="hygiene">Hygiene</option>
+              <option value="documents">Documents</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+          <div class="lo-field">
+            <label for="lo-item-qty">Quantity</label>
+            <input id="lo-item-qty" type="number" min="1" step="1" value="1" name="lo-item-qty">
+          </div>
+          <div class="lo-field">
+            <label for="lo-item-weight">Weight (oz)</label>
+            <input id="lo-item-weight" type="number" min="0" step="0.1" placeholder="0" name="lo-item-weight">
+          </div>
+          <div class="lo-field">
+            <label for="lo-item-exp">Expiration</label>
+            <input id="lo-item-exp" type="date" name="lo-item-exp">
+          </div>
+          <div class="lo-field lo-field-full">
+            <label for="lo-item-notes">Notes</label>
+            <textarea id="lo-item-notes" placeholder="Optional notes" name="lo-item-notes"></textarea>
+          </div>
+        </div>
+        <div class="lo-form-actions">
+          <button class="btn" onclick="closeItemForm()">Cancel</button>
+          <button class="btn btn-primary" onclick="saveItem()">Save Item</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    (function() {
+      const CATEGORY_COLORS = {
+        water:      '#3b82f6',
+        food:       '#f59e0b',
+        shelter:    '#8b5cf6',
+        fire:       '#ef4444',
+        medical:    '#ec4899',
+        comms:      '#06b6d4',
+        navigation: '#14b8a6',
+        tools:      '#6b7280',
+        clothing:   '#a78bfa',
+        hygiene:    '#34d399',
+        documents:  '#fbbf24',
+        other:      '#9ca3af'
+      };
+
+      const BAG_TYPE_LABELS = {
+        '72hour':  '72HR',
+        'get-home': 'GET HOME',
+        'inch':    'INCH',
+        'edc':     'EDC',
+        'medical': 'MEDICAL',
+        'vehicle': 'VEHICLE'
+      };
+
+      let _bags = [];
+      let _activeBagId = null;
+
+      // ── Dashboard ───────────────────────────────────────────────
+      function renderStats(d) {
+        const totalReady = d.bags_by_type ? Object.values(d.bags_by_type).reduce((a, b) => a + b, 0) : d.total_bags || 0;
+        const packPct = d.overall_pack_status != null ? Math.round(d.overall_pack_status) : 0;
+        const el = document.getElementById('lo-stats');
+        if (!el) return;
+        el.innerHTML = `
+          <div class="lo-stat-card">
+            <span class="lo-stat-label">Total Bags</span>
+            <span class="lo-stat-value">${d.total_bags || 0}</span>
+          </div>
+          <div class="lo-stat-card">
+            <span class="lo-stat-label">Total Items</span>
+            <span class="lo-stat-value">${d.total_items || 0}</span>
+          </div>
+          <div class="lo-stat-card">
+            <span class="lo-stat-label">Bags Ready</span>
+            <span class="lo-stat-value">${totalReady - (d.overweight_bags || 0)}</span>
+          </div>
+          <div class="lo-stat-card">
+            <span class="lo-stat-label">Expiring Soon</span>
+            <span class="lo-stat-value" style="color:${d.items_expiring_soon > 0 ? 'var(--lo-orange)' : 'inherit'}">${d.items_expiring_soon || 0}</span>
+          </div>
+          <div class="lo-stat-card">
+            <span class="lo-stat-label">Pack Status</span>
+            <span class="lo-stat-value">${packPct}%</span>
+          </div>`;
+      }
+
+      // ── Bag Cards ───────────────────────────────────────────────
+      function renderBags(bags) {
+        const grid = document.getElementById('lo-bags-grid');
+        if (!grid) return;
+        if (!bags || bags.length === 0) {
+          grid.innerHTML = '<div class="lo-empty">No bags yet. Click "+ New Bag" to build your first go-bag.</div>';
+          return;
+        }
+        grid.innerHTML = bags.map(b => {
+          const typeKey = (b.bag_type || '72hour').replace(/\s+/g, '-').toLowerCase();
+          const typeCls = 'lo-badge-' + typeKey;
+          const typeLabel = BAG_TYPE_LABELS[typeKey] || typeKey.toUpperCase();
+          const seasonLabel = b.season ? b.season.charAt(0).toUpperCase() + b.season.slice(1) : '';
+          const currentLb = b.current_weight_lb != null ? b.current_weight_lb.toFixed(1) : '0.0';
+          const targetLb = b.target_weight_lb != null ? b.target_weight_lb.toFixed(1) : '0.0';
+          const pct = b.target_weight_lb > 0 ? Math.min(100, (b.current_weight_lb / b.target_weight_lb) * 100) : 0;
+          const overweight = b.current_weight_lb > b.target_weight_lb && b.target_weight_lb > 0;
+          const packed = b.packed_count || 0;
+          const total = b.total_items || 0;
+          const inspected = b.last_inspected ? new Date(b.last_inspected).toLocaleDateString() : 'Never';
+
+          return `<div class="lo-bag-card" onclick="showBagDetail(${b.id})" role="button" tabindex="0" aria-label="${escapeHtml(b.name)}">
+            <div class="lo-bag-card-head">
+              <div>
+                <div class="lo-bag-name">${escapeHtml(b.name)}</div>
+                ${b.owner ? `<div class="lo-bag-owner">${escapeHtml(b.owner)}</div>` : ''}
+              </div>
+              <div class="lo-bag-badges">
+                <span class="lo-badge ${typeCls}">${typeLabel}</span>
+                ${seasonLabel && seasonLabel !== 'All' ? `<span class="lo-badge lo-badge-season">${escapeHtml(seasonLabel)}</span>` : ''}
+              </div>
+            </div>
+            <div class="lo-weight-bar-shell">
+              <div class="lo-weight-track">
+                <div class="lo-weight-fill" style="width:${pct.toFixed(1)}%;background:${overweight ? 'var(--lo-red)' : 'var(--lo-green)'}"></div>
+              </div>
+              <div class="lo-weight-label">${currentLb} / ${targetLb} lb</div>
+            </div>
+            <div class="lo-bag-meta">
+              <span class="lo-pack-status">${packed}/${total} packed</span>
+              <span>Inspected: ${inspected}</span>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      // ── Main init ───────────────────────────────────────────────
+      async function loadLoadout() {
+        try {
+          const [dash, bags] = await Promise.all([
+            apiFetch('/api/loadout/dashboard'),
+            apiFetch('/api/loadout/bags')
+          ]);
+          renderStats(dash);
+          _bags = Array.isArray(bags) ? bags : (bags.bags || []);
+          renderBags(_bags);
+        } catch (err) {
+          console.error('[Loadout] init error:', err);
+          document.getElementById('lo-bags-grid').innerHTML = '<div class="lo-empty">Failed to load bags. Check connection.</div>';
+        }
+      }
+      window.loadLoadout = loadLoadout;
+
+      // ── Bag Form ────────────────────────────────────────────────
+      function showBagForm(id) {
+        const overlay = document.getElementById('lo-bag-form-overlay');
+        const title = document.getElementById('lo-bag-form-title');
+        document.getElementById('lo-bag-edit-id').value = id || '';
+        if (id) {
+          title.textContent = 'Edit Bag';
+          const bag = _bags.find(b => b.id === id);
+          if (bag) {
+            document.getElementById('lo-bag-name').value = bag.name || '';
+            document.getElementById('lo-bag-owner').value = bag.owner || '';
+            document.getElementById('lo-bag-type').value = bag.bag_type || '72hour';
+            document.getElementById('lo-bag-season').value = bag.season || 'all';
+            document.getElementById('lo-bag-weight').value = bag.target_weight_lb || '';
+            document.getElementById('lo-bag-location').value = bag.location || '';
+            document.getElementById('lo-bag-notes').value = bag.notes || '';
+          }
+        } else {
+          title.textContent = 'New Bag';
+          document.getElementById('lo-bag-name').value = '';
+          document.getElementById('lo-bag-owner').value = '';
+          document.getElementById('lo-bag-type').value = '72hour';
+          document.getElementById('lo-bag-season').value = 'all';
+          document.getElementById('lo-bag-weight').value = '';
+          document.getElementById('lo-bag-location').value = '';
+          document.getElementById('lo-bag-notes').value = '';
+        }
+        overlay.classList.add('is-open');
+        document.getElementById('lo-bag-name').focus();
+      }
+      window.showBagForm = showBagForm;
+
+      function closeBagForm() {
+        document.getElementById('lo-bag-form-overlay').classList.remove('is-open');
+      }
+      window.closeBagForm = closeBagForm;
+
+      async function saveBag() {
+        const name = document.getElementById('lo-bag-name').value.trim();
+        if (!name) { toast('Bag name is required', 'warning'); return; }
+        const payload = {
+          name,
+          owner: document.getElementById('lo-bag-owner').value.trim(),
+          bag_type: document.getElementById('lo-bag-type').value,
+          season: document.getElementById('lo-bag-season').value,
+          target_weight_lb: parseFloat(document.getElementById('lo-bag-weight').value) || 0,
+          location: document.getElementById('lo-bag-location').value.trim(),
+          notes: document.getElementById('lo-bag-notes').value.trim()
+        };
+        const editId = document.getElementById('lo-bag-edit-id').value;
+        try {
+          if (editId) {
+            await apiPut('/api/loadout/bags/' + editId, payload);
+            toast('Bag updated', 'success');
+          } else {
+            await apiPost('/api/loadout/bags', payload);
+            toast('Bag created', 'success');
+          }
+          closeBagForm();
+          loadLoadout();
+        } catch (err) {
+          toast('Error saving bag: ' + err.message, 'error');
+        }
+      }
+      window.saveBag = saveBag;
+
+      // ── Delete Bag ──────────────────────────────────────────────
+      async function deleteBag(id) {
+        if (!confirm('Delete this bag and all its items? This cannot be undone.')) return;
+        try {
+          await apiDelete('/api/loadout/bags/' + id);
+          toast('Bag deleted', 'success');
+          const panel = document.getElementById('lo-detail');
+          if (panel) { panel.classList.remove('is-open'); panel.innerHTML = ''; }
+          _activeBagId = null;
+          loadLoadout();
+        } catch (err) {
+          toast('Error deleting bag: ' + err.message, 'error');
+        }
+      }
+      window.deleteBag = deleteBag;
+
+      // ── Bag Detail ──────────────────────────────────────────────
+      async function showBagDetail(id) {
+        _activeBagId = id;
+        const panel = document.getElementById('lo-detail');
+        if (!panel) return;
+        panel.innerHTML = '<div class="lo-empty">Loading...</div>';
+        panel.classList.add('is-open');
+        try {
+          const [bag, items, breakdown] = await Promise.all([
+            apiFetch('/api/loadout/bags/' + id),
+            apiFetch('/api/loadout/bags/' + id + '/items'),
+            apiFetch('/api/loadout/bags/' + id + '/weight-breakdown')
+          ]);
+          renderDetail(bag, Array.isArray(items) ? items : (items.items || []), breakdown);
+          panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        } catch (err) {
+          panel.innerHTML = '<div class="lo-empty">Failed to load bag details.</div>';
+          console.error('[Loadout] detail error:', err);
+        }
+      }
+      window.showBagDetail = showBagDetail;
+
+      function renderDetail(bag, items, breakdown) {
+        const panel = document.getElementById('lo-detail');
+        if (!panel) return;
+        const inspected = bag.last_inspected ? new Date(bag.last_inspected).toLocaleDateString() : 'Never';
+
+        // Group items by category
+        const groups = {};
+        items.forEach(item => {
+          const cat = item.category || 'other';
+          if (!groups[cat]) groups[cat] = [];
+          groups[cat].push(item);
+        });
+
+        let itemsHtml = '';
+        const catOrder = ['water','food','shelter','fire','medical','comms','navigation','tools','clothing','hygiene','documents','other'];
+        catOrder.forEach(cat => {
+          if (!groups[cat]) return;
+          const color = CATEGORY_COLORS[cat] || '#9ca3af';
+          itemsHtml += `<div class="lo-items-group">
+            <div class="lo-items-group-header">
+              <span class="lo-cat-dot" style="background:${color}"></span>
+              <span style="color:${color}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+              <span style="color:var(--lo-text-muted);margin-left:auto;font-weight:400">${groups[cat].length} item${groups[cat].length !== 1 ? 's' : ''}</span>
+            </div>`;
+          groups[cat].forEach(item => {
+            const packed = item.is_packed || item.packed;
+            const weightOz = item.weight_oz != null ? item.weight_oz : 0;
+            const expStr = item.expiration ? new Date(item.expiration).toLocaleDateString() : '';
+            itemsHtml += `<div class="lo-item-row">
+              <button class="lo-item-packed-toggle ${packed ? 'is-packed' : ''}" onclick="event.stopPropagation();togglePacked(${item.id})" title="${packed ? 'Unpack' : 'Pack'}">&#10003;</button>
+              <span class="lo-item-name">${escapeHtml(item.name)}</span>
+              ${item.quantity > 1 ? `<span class="lo-item-qty">x${item.quantity}</span>` : ''}
+              <span class="lo-item-weight">${weightOz.toFixed(1)} oz</span>
+              ${expStr ? `<span class="lo-item-exp">${expStr}</span>` : ''}
+              <span class="lo-item-actions">
+                <button onclick="event.stopPropagation();showItemForm(${bag.id},${item.id})" title="Edit">&#9998;</button>
+                <button onclick="event.stopPropagation();deleteItem(${item.id})" title="Delete">&#10005;</button>
+              </span>
+            </div>`;
+          });
+          itemsHtml += '</div>';
+        });
+
+        if (!items.length) {
+          itemsHtml = '<div class="lo-empty" style="padding:20px 0">No items in this bag yet.</div>';
+        }
+
+        // Weight breakdown chart
+        let breakdownHtml = '';
+        if (breakdown && breakdown.categories) {
+          const cats = breakdown.categories;
+          const maxOz = Math.max(...cats.map(c => c.weight_oz || 0), 1);
+          breakdownHtml = `<div class="lo-breakdown">
+            <div class="lo-breakdown-title">Weight by Category</div>
+            ${cats.map(c => {
+              const pct = ((c.weight_oz || 0) / maxOz * 100).toFixed(1);
+              const color = CATEGORY_COLORS[c.category] || '#9ca3af';
+              const lbs = ((c.weight_oz || 0) / 16).toFixed(1);
+              return `<div class="lo-breakdown-row">
+                <span class="lo-breakdown-cat">${c.category}</span>
+                <div class="lo-breakdown-bar"><div class="lo-breakdown-fill" style="width:${pct}%;background:${color}"></div></div>
+                <span class="lo-breakdown-val">${lbs} lb</span>
+              </div>`;
+            }).join('')}
+          </div>`;
+        }
+
+        panel.innerHTML = `
+          <div class="lo-detail-header">
+            <div>
+              <h3 class="lo-detail-title">${escapeHtml(bag.name)}</h3>
+              <div style="font-size:12px;color:var(--lo-text-dim);">
+                ${bag.owner ? escapeHtml(bag.owner) + ' &middot; ' : ''}${BAG_TYPE_LABELS[(bag.bag_type || '').replace(/\s+/g, '-').toLowerCase()] || bag.bag_type || ''} &middot; Inspected: ${inspected}
+                ${bag.location ? ' &middot; ' + escapeHtml(bag.location) : ''}
+              </div>
+            </div>
+            <div class="lo-detail-actions">
+              <button class="btn btn-sm btn-primary" onclick="showItemForm(${bag.id})">+ Item</button>
+              <button class="btn btn-sm" onclick="packAll(${bag.id})">Pack All</button>
+              <button class="btn btn-sm" onclick="unpackAll(${bag.id})">Unpack All</button>
+              <button class="btn btn-sm" onclick="cloneBag(${bag.id})">Clone</button>
+              <button class="btn btn-sm" onclick="markInspected(${bag.id})">Mark Inspected</button>
+              <button class="btn btn-sm" onclick="showBagForm(${bag.id})">Edit</button>
+              <button class="btn btn-sm" style="color:var(--lo-red)" onclick="deleteBag(${bag.id})">Delete</button>
+              <button class="btn btn-sm" onclick="document.getElementById('lo-detail').classList.remove('is-open')">Close</button>
+            </div>
+          </div>
+          ${itemsHtml}
+          ${breakdownHtml}`;
+      }
+
+      // ── Item Form ───────────────────────────────────────────────
+      function showItemForm(bagId, itemId) {
+        const overlay = document.getElementById('lo-item-form-overlay');
+        const title = document.getElementById('lo-item-form-title');
+        document.getElementById('lo-item-bag-id').value = bagId;
+        document.getElementById('lo-item-edit-id').value = itemId || '';
+        if (itemId) {
+          title.textContent = 'Edit Item';
+          apiFetch('/api/loadout/bags/' + bagId + '/items').then(res => {
+            const items = Array.isArray(res) ? res : (res.items || []);
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+              document.getElementById('lo-item-name').value = item.name || '';
+              document.getElementById('lo-item-category').value = item.category || 'other';
+              document.getElementById('lo-item-qty').value = item.quantity || 1;
+              document.getElementById('lo-item-weight').value = item.weight_oz || '';
+              document.getElementById('lo-item-exp').value = item.expiration || '';
+              document.getElementById('lo-item-notes').value = item.notes || '';
+            }
+          });
+        } else {
+          title.textContent = 'Add Item';
+          document.getElementById('lo-item-name').value = '';
+          document.getElementById('lo-item-category').value = 'water';
+          document.getElementById('lo-item-qty').value = 1;
+          document.getElementById('lo-item-weight').value = '';
+          document.getElementById('lo-item-exp').value = '';
+          document.getElementById('lo-item-notes').value = '';
+        }
+        overlay.classList.add('is-open');
+        document.getElementById('lo-item-name').focus();
+      }
+      window.showItemForm = showItemForm;
+
+      function closeItemForm() {
+        document.getElementById('lo-item-form-overlay').classList.remove('is-open');
+      }
+      window.closeItemForm = closeItemForm;
+
+      async function saveItem() {
+        const bagId = document.getElementById('lo-item-bag-id').value;
+        const name = document.getElementById('lo-item-name').value.trim();
+        if (!name) { toast('Item name is required', 'warning'); return; }
+        const payload = {
+          name,
+          category: document.getElementById('lo-item-category').value,
+          quantity: parseInt(document.getElementById('lo-item-qty').value) || 1,
+          weight_oz: parseFloat(document.getElementById('lo-item-weight').value) || 0,
+          expiration: document.getElementById('lo-item-exp').value || null,
+          notes: document.getElementById('lo-item-notes').value.trim()
+        };
+        const editId = document.getElementById('lo-item-edit-id').value;
+        try {
+          if (editId) {
+            await apiPut('/api/loadout/items/' + editId, payload);
+            toast('Item updated', 'success');
+          } else {
+            await apiPost('/api/loadout/bags/' + bagId + '/items', payload);
+            toast('Item added', 'success');
+          }
+          closeItemForm();
+          showBagDetail(parseInt(bagId));
+          loadLoadout();
+        } catch (err) {
+          toast('Error saving item: ' + err.message, 'error');
+        }
+      }
+      window.saveItem = saveItem;
+
+      // ── Delete Item ─────────────────────────────────────────────
+      async function deleteItem(itemId) {
+        if (!confirm('Delete this item?')) return;
+        try {
+          await apiDelete('/api/loadout/items/' + itemId);
+          toast('Item deleted', 'success');
+          if (_activeBagId) showBagDetail(_activeBagId);
+          loadLoadout();
+        } catch (err) {
+          toast('Error deleting item: ' + err.message, 'error');
+        }
+      }
+      window.deleteItem = deleteItem;
+
+      // ── Toggle Packed ───────────────────────────────────────────
+      async function togglePacked(itemId) {
+        try {
+          await apiPut('/api/loadout/items/' + itemId + '/toggle-packed');
+          if (_activeBagId) showBagDetail(_activeBagId);
+          loadLoadout();
+        } catch (err) {
+          toast('Error toggling packed status: ' + err.message, 'error');
+        }
+      }
+      window.togglePacked = togglePacked;
+
+      // ── Clone Bag ───────────────────────────────────────────────
+      async function cloneBag(id) {
+        const newName = prompt('Name for the cloned bag:');
+        if (!newName || !newName.trim()) return;
+        try {
+          await apiPost('/api/loadout/bags/' + id + '/clone', { name: newName.trim() });
+          toast('Bag cloned', 'success');
+          loadLoadout();
+        } catch (err) {
+          toast('Error cloning bag: ' + err.message, 'error');
+        }
+      }
+      window.cloneBag = cloneBag;
+
+      // ── Mark Inspected ──────────────────────────────────────────
+      async function markInspected(id) {
+        try {
+          await apiPost('/api/loadout/bags/' + id + '/mark-inspected');
+          toast('Marked as inspected', 'success');
+          showBagDetail(id);
+          loadLoadout();
+        } catch (err) {
+          toast('Error marking inspected: ' + err.message, 'error');
+        }
+      }
+      window.markInspected = markInspected;
+
+      // ── Pack All / Unpack All ───────────────────────────────────
+      async function packAll(id) {
+        try {
+          await apiPost('/api/loadout/bags/' + id + '/pack-all');
+          toast('All items packed', 'success');
+          showBagDetail(id);
+          loadLoadout();
+        } catch (err) {
+          toast('Error packing all: ' + err.message, 'error');
+        }
+      }
+      window.packAll = packAll;
+
+      async function unpackAll(id) {
+        try {
+          await apiPost('/api/loadout/bags/' + id + '/unpack-all');
+          toast('All items unpacked', 'success');
+          showBagDetail(id);
+          loadLoadout();
+        } catch (err) {
+          toast('Error unpacking all: ' + err.message, 'error');
+        }
+      }
+      window.unpackAll = unpackAll;
+
+      // ── Weight Breakdown ────────────────────────────────────────
+      async function loadWeightBreakdown(id) {
+        try {
+          const data = await apiFetch('/api/loadout/bags/' + id + '/weight-breakdown');
+          if (!data || !data.categories) return;
+          const panel = document.getElementById('lo-detail');
+          if (!panel) return;
+          let existing = panel.querySelector('.lo-breakdown');
+          if (existing) existing.remove();
+          const maxOz = Math.max(...data.categories.map(c => c.weight_oz || 0), 1);
+          const html = `<div class="lo-breakdown">
+            <div class="lo-breakdown-title">Weight by Category</div>
+            ${data.categories.map(c => {
+              const pct = ((c.weight_oz || 0) / maxOz * 100).toFixed(1);
+              const color = CATEGORY_COLORS[c.category] || '#9ca3af';
+              const lbs = ((c.weight_oz || 0) / 16).toFixed(1);
+              return `<div class="lo-breakdown-row">
+                <span class="lo-breakdown-cat">${c.category}</span>
+                <div class="lo-breakdown-bar"><div class="lo-breakdown-fill" style="width:${pct}%;background:${color}"></div></div>
+                <span class="lo-breakdown-val">${lbs} lb</span>
+              </div>`;
+            }).join('')}
+          </div>`;
+          panel.insertAdjacentHTML('beforeend', html);
+        } catch (err) {
+          console.error('[Loadout] breakdown error:', err);
+        }
+      }
+      window.loadWeightBreakdown = loadWeightBreakdown;
+
+      // ── Tab activation callback ─────────────────────────────────
+      window._nomadTabCallbacks = window._nomadTabCallbacks || {};
+      window._nomadTabCallbacks['loadout'] = function() {
+        loadLoadout();
+      };
+
+      // Auto-load if tab is active on page load
+      if (document.getElementById('tab-loadout')?.classList.contains('active')) {
+        loadLoadout();
+      }
+    })();
+    </script>
+  </div>

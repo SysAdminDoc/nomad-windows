@@ -131,6 +131,10 @@ NomadEvents.on('emergency_exit', () => {
         _applyEmergencyState({ active: false });
     }
 });
+// Family Check-in Board (v7.6.0) — refresh list on any create/update/delete
+NomadEvents.on('family_checkin', () => {
+    if (typeof loadFamilyCheckins === 'function') loadFamilyCheckins();
+});
 
 // Auto-connect when page loads
 if (typeof document !== 'undefined') {

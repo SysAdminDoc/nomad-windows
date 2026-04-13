@@ -213,6 +213,18 @@ document.addEventListener('click', e => {
   if (action === 'save-home-location') { saveHomeLocation(); return; }
   if (action === 'detect-home-location') { detectHomeLocation(); return; }
   if (action === 'open-emergency-modal') { openEmergencyEnterModal(); return; }
+  if (action === 'open-add-family-member') { openAddFamilyMember(); return; }
+  if (action === 'close-add-family-member') { closeAddFamilyMember(); return; }
+  if (action === 'submit-add-family-member') { submitAddFamilyMember(); return; }
+  if (action === 'reset-family-checkins') { resetFamilyCheckins(); return; }
+  if (action === 'update-family-status') {
+    updateFamilyStatus(Number(control.dataset.memberId), control.dataset.status);
+    return;
+  }
+  if (action === 'delete-family-member') {
+    deleteFamilyMember(Number(control.dataset.memberId), control.dataset.memberName);
+    return;
+  }
   if (action === 'close-emergency-modal') { closeEmergencyEnterModal(); return; }
   if (action === 'confirm-emergency-enter') { confirmEmergencyEnter(); return; }
   if (action === 'open-emergency-exit-modal') { openEmergencyExitModal(); return; }

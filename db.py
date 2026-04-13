@@ -1481,6 +1481,23 @@ def _create_extended_tables(conn):
             drill_type TEXT,
             recorded_at TEXT DEFAULT (datetime('now'))
         );
+
+        /* ═══ v7.6.0: Family Check-in Board ═══
+           One row per household member. Status is one of: 'ok', 'needs_help',
+           'en_route', 'unaccounted'. Intentionally separate from contacts
+           because (a) not every contact is a family member, and (b) the
+           check-in state is high-frequency mutation that doesn't belong in
+           the contacts table which is used as a stable reference directory. */
+        CREATE TABLE IF NOT EXISTS family_checkins (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'ok',
+            location TEXT DEFAULT '',
+            note TEXT DEFAULT '',
+            phone TEXT DEFAULT '',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
     ''')
     conn.commit()
 

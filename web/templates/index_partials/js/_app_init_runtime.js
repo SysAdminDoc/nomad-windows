@@ -4264,6 +4264,121 @@ async function executeCSVImport() {
   } catch(e) { toast('Import failed: ' + e.message, 'error'); }
 }
 
+/* ─── Family Check-in Board (v7.6.0) ─── */
+const _FAMILY_STATUS_LABELS = {
+  ok: 'OK',
+  needs_help: 'NEEDS HELP',
+  en_route: 'EN ROUTE',
+  unaccounted: 'UNACCOUNTED',
+};
+const _FAMILY_STATUS_ORDER = ['ok', 'en_route', 'needs_help', 'unaccounted'];
+
+async function loadFamilyCheckins() {
+  const list = document.getElementById('family-checkin-list');
+  const summary = document.getElementById('family-checkin-summary');
+  if (!list || !summary) return;
+  try {
+    const d = await apiFetch('/api/family-checkins');
+    _renderFamilySummary(d.summary || {}, d.total || 0);
+    if (!d.members || !d.members.length) {
+      list.innerHTML = '<div class="family-checkin-empty">No family members added yet. Click <strong>+ Add</strong> to set up a check-in slot for each person in your household.</div>';
+      return;
+    }
+    list.innerHTML = d.members.map(m => _renderFamilyRow(m)).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="family-checkin-empty">Unable to load check-in board.</div>';
+  }
+}
+
+function _renderFamilySummary(summary, total) {
+  const el = document.getElementById('family-checkin-summary');
+  if (!el) return;
+  if (!total) { el.innerHTML = ''; return; }
+  const parts = _FAMILY_STATUS_ORDER.map(s => {
+    const count = summary[s] || 0;
+    if (!count) return '';
+    return `<span class="family-checkin-chip family-checkin-chip-${s}"><strong>${count}</strong> ${escapeHtml(_FAMILY_STATUS_LABELS[s])}</span>`;
+  }).filter(Boolean);
+  el.innerHTML = parts.join('');
+}
+
+function _renderFamilyRow(m) {
+  const buttons = _FAMILY_STATUS_ORDER.map(s => {
+    const active = m.status === s ? 'is-active' : '';
+    return `<button type="button" class="family-status-btn family-status-btn-${s} ${active}" data-shell-action="update-family-status" data-member-id="${m.id}" data-status="${s}" title="Set status to ${escapeAttr(_FAMILY_STATUS_LABELS[s])}">${escapeHtml(_FAMILY_STATUS_LABELS[s])}</button>`;
+  }).join('');
+  const updated = m.updated_at ? new Date(m.updated_at + (m.updated_at.endsWith('Z') ? '' : 'Z')).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+  return `<div class="family-checkin-row family-checkin-row-${m.status}">
+    <div class="family-checkin-main">
+      <div class="family-checkin-name">${escapeHtml(m.name)}${m.phone ? ` <span class="family-checkin-phone">${escapeHtml(m.phone)}</span>` : ''}</div>
+      <div class="family-checkin-meta">${m.location ? escapeHtml(m.location) + ' · ' : ''}Updated ${escapeHtml(updated)}</div>
+    </div>
+    <div class="family-checkin-actions">${buttons}</div>
+    <button type="button" class="btn btn-sm btn-ghost family-checkin-del" data-shell-action="delete-family-member" data-member-id="${m.id}" data-member-name="${escapeAttr(m.name)}" title="Remove">x</button>
+  </div>`;
+}
+
+function openAddFamilyMember() {
+  document.getElementById('family-add-modal')?.classList.remove('is-hidden');
+  const name = document.getElementById('family-add-name');
+  if (name) { name.value = ''; name.focus(); }
+  const phone = document.getElementById('family-add-phone');
+  if (phone) phone.value = '';
+}
+
+function closeAddFamilyMember() {
+  document.getElementById('family-add-modal')?.classList.add('is-hidden');
+}
+
+async function submitAddFamilyMember() {
+  const name = (document.getElementById('family-add-name')?.value || '').trim();
+  const phone = (document.getElementById('family-add-phone')?.value || '').trim();
+  if (!name) { toast('Name required', 'warning'); return; }
+  try {
+    await apiPost('/api/family-checkins', { name, phone });
+    closeAddFamilyMember();
+    loadFamilyCheckins();
+    toast(`Added ${name}`, 'success');
+  } catch (e) {
+    toast(e?.data?.error || 'Could not add member', 'error');
+  }
+}
+
+async function updateFamilyStatus(memberId, status) {
+  try {
+    await apiPut('/api/family-checkins/' + memberId, { status });
+    loadFamilyCheckins();
+  } catch (e) {
+    toast('Could not update status', 'error');
+  }
+}
+
+async function deleteFamilyMember(memberId, name) {
+  if (!confirm(`Remove ${name} from check-in board?`)) return;
+  try {
+    await apiDelete('/api/family-checkins/' + memberId);
+    loadFamilyCheckins();
+  } catch (e) {
+    toast('Could not remove member', 'error');
+  }
+}
+
+async function resetFamilyCheckins() {
+  if (!confirm('Reset every member back to OK? (use after a drill or when the situation ends)')) return;
+  try {
+    await apiPost('/api/family-checkins/reset-all', {});
+    loadFamilyCheckins();
+    toast('All members reset to OK', 'success');
+  } catch (e) {
+    toast('Could not reset', 'error');
+  }
+}
+
+// Load on page init
+document.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('family-checkin-list')) loadFamilyCheckins();
+});
+
 /* ─── Emergency Mode (v7.5.0) ─── */
 let _emergencyTickInterval = null;
 

@@ -1130,6 +1130,66 @@ body.emergency-mode::before {
   filter: brightness(1.1);
 }
 
+/* ─── Daily Operations Brief (v7.7.0) ─── */
+.daily-brief-panel { padding: 16px; }
+.daily-brief-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 10px;
+}
+.daily-brief-empty {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.daily-brief-block {
+  padding: 10px 12px;
+  border-left: 3px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.daily-brief-block-title {
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+.daily-brief-block-ok { border-left-color: #4aedc4; }
+.daily-brief-block-warn { border-left-color: #ffc857; }
+.daily-brief-block-alert {
+  border-left-color: #ff5757;
+  background: rgba(255, 87, 87, 0.08);
+}
+.daily-brief-list {
+  margin: 4px 0 0 18px;
+  padding: 0;
+}
+.daily-brief-list li {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+.daily-brief-dist {
+  font-family: var(--font-data, 'Cascadia Code', monospace);
+  color: var(--accent);
+  font-size: 10px;
+}
+.daily-brief-footer {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-align: right;
+  font-family: var(--font-data, 'Cascadia Code', monospace);
+  padding-top: 4px;
+  border-top: 1px solid var(--border);
+}
+
 /* ─── Family Check-in Board (v7.6.0) ─── */
 .family-checkin-panel { padding: 16px; }
 .family-checkin-summary {

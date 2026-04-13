@@ -217,6 +217,7 @@ document.addEventListener('click', e => {
   if (action === 'close-add-family-member') { closeAddFamilyMember(); return; }
   if (action === 'submit-add-family-member') { submitAddFamilyMember(); return; }
   if (action === 'reset-family-checkins') { resetFamilyCheckins(); return; }
+  if (action === 'generate-daily-brief') { generateDailyBrief(); return; }
   if (action === 'update-family-status') {
     updateFamilyStatus(Number(control.dataset.memberId), control.dataset.status);
     return;

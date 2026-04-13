@@ -1,0 +1,964 @@
+<!-- Vehicles & BOV Manager Tab -->
+<div id="tab-vehicles" class="tab-content tab-vcenter vehicles-workspace{% if active_tab == 'vehicles' %} active{% endif %}">
+
+  <style>
+    #tab-vehicles {
+      --vh-accent: var(--accent, #71a8ff);
+      --vh-accent-dim: color-mix(in srgb, var(--vh-accent) 18%, transparent);
+      --vh-surface: var(--surface, rgba(24, 29, 36, 0.84));
+      --vh-surface2: var(--surface2, #1d2430);
+      --vh-surface3: var(--surface3, #222d3a);
+      --vh-border: var(--border, rgba(255, 255, 255, 0.08));
+      --vh-text: var(--text, #edf2f7);
+      --vh-text-dim: var(--text-dim, #a3b2c7);
+      --vh-text-muted: var(--text-muted, #8e9aae);
+      --vh-danger: var(--danger, #f56565);
+      --vh-success: var(--success, #48bb78);
+      --vh-warning: var(--warning, #ecc94b);
+    }
+
+    /* Command Deck */
+    .vehicles-command-deck {
+      display: grid; gap: 6px;
+      padding: 18px 0 10px;
+    }
+    .vehicles-command-deck .section-header-label { margin-bottom: 2px; }
+    .vehicles-command-deck h2 {
+      font-size: 20px; font-weight: 800; letter-spacing: -0.03em;
+      color: var(--vh-text); margin: 0;
+    }
+    .vehicles-command-deck p {
+      font-size: 13px; color: var(--vh-text-dim); margin: 0; line-height: 1.5;
+    }
+    .vehicles-command-actions {
+      display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;
+    }
+
+    /* Dashboard Stats */
+    .vehicles-dash-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px; margin-bottom: 14px;
+    }
+    .vehicles-dash-stat {
+      background: var(--vh-surface); border: 1px solid var(--vh-border);
+      border-radius: var(--radius, 10px); padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .vehicles-dash-stat-value {
+      font-size: 24px; font-weight: 800; color: var(--vh-text);
+      font-family: var(--font-data, monospace);
+    }
+    .vehicles-dash-stat-value.is-alert { color: var(--vh-danger); }
+    .vehicles-dash-stat-value.is-ok { color: var(--vh-success); }
+    .vehicles-dash-stat-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--vh-text-muted);
+    }
+
+    /* Vehicle Cards Grid */
+    .vehicles-card-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+      gap: 12px;
+    }
+    .vehicle-card {
+      background: var(--vh-surface); border: 1px solid var(--vh-border);
+      border-radius: var(--radius, 10px); padding: 16px; cursor: pointer;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+    .vehicle-card:hover {
+      border-color: color-mix(in srgb, var(--vh-accent) 40%, var(--vh-border));
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    }
+    .vehicle-card-head {
+      display: flex; align-items: flex-start; justify-content: space-between;
+      gap: 10px; margin-bottom: 10px;
+    }
+    .vehicle-card-name {
+      font-size: 15px; font-weight: 700; color: var(--vh-text);
+      line-height: 1.3;
+    }
+    .vehicle-card-subtitle {
+      font-size: 12px; color: var(--vh-text-dim); margin-top: 2px;
+    }
+    .vehicle-card-role {
+      display: inline-flex; align-items: center; padding: 3px 9px;
+      border-radius: 999px; font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap;
+    }
+    .vehicle-card-role[data-role="bugout"] {
+      background: color-mix(in srgb, var(--vh-danger) 16%, transparent);
+      color: var(--vh-danger); border: 1px solid color-mix(in srgb, var(--vh-danger) 30%, transparent);
+    }
+    .vehicle-card-role[data-role="daily"] {
+      background: color-mix(in srgb, var(--vh-accent) 14%, transparent);
+      color: var(--vh-accent); border: 1px solid color-mix(in srgb, var(--vh-accent) 28%, transparent);
+    }
+    .vehicle-card-role[data-role="backup"] {
+      background: color-mix(in srgb, var(--vh-warning) 14%, transparent);
+      color: var(--vh-warning); border: 1px solid color-mix(in srgb, var(--vh-warning) 28%, transparent);
+    }
+    .vehicle-card-role[data-role="utility"] {
+      background: color-mix(in srgb, var(--vh-text-muted) 14%, transparent);
+      color: var(--vh-text-dim); border: 1px solid color-mix(in srgb, var(--vh-text-muted) 28%, transparent);
+    }
+    .vehicle-card-stats {
+      display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;
+      margin-top: 10px; padding-top: 10px;
+      border-top: 1px solid var(--vh-border);
+    }
+    .vehicle-card-stat-label {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--vh-text-muted);
+    }
+    .vehicle-card-stat-val {
+      font-size: 13px; font-weight: 700; color: var(--vh-text);
+      font-family: var(--font-data, monospace);
+    }
+    .vehicle-card-actions {
+      display: flex; gap: 6px; margin-top: 10px; justify-content: flex-end;
+    }
+
+    /* Detail Panel */
+    .vehicle-detail-panel {
+      background: var(--vh-surface); border: 1px solid var(--vh-border);
+      border-radius: var(--radius, 10px); padding: 20px;
+      margin-top: 14px;
+    }
+    .vehicle-detail-panel.is-hidden { display: none; }
+    .vehicle-detail-header {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .vehicle-detail-title {
+      font-size: 18px; font-weight: 800; color: var(--vh-text);
+    }
+    .vehicle-detail-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+    /* Sub-sections in detail */
+    .vehicle-detail-section {
+      margin-top: 18px; padding-top: 14px;
+      border-top: 1px solid var(--vh-border);
+    }
+    .vehicle-detail-section-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 10px; flex-wrap: wrap;
+    }
+    .vehicle-detail-section-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--vh-text-muted);
+    }
+
+    /* Tables */
+    .vehicles-table {
+      width: 100%; border-collapse: collapse; font-size: 12px;
+    }
+    .vehicles-table th {
+      text-align: left; padding: 6px 8px; font-size: 10px;
+      font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--vh-text-muted); border-bottom: 1px solid var(--vh-border);
+    }
+    .vehicles-table td {
+      padding: 7px 8px; color: var(--vh-text-dim);
+      border-bottom: 1px solid color-mix(in srgb, var(--vh-border) 50%, transparent);
+    }
+    .vehicles-table tr:hover td { color: var(--vh-text); }
+    .vehicles-table .td-actions { white-space: nowrap; text-align: right; }
+
+    /* Range Calculator */
+    .vehicle-range-block {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .vehicle-range-stat {
+      background: var(--vh-surface2); border-radius: var(--radius, 10px);
+      padding: 12px 14px;
+    }
+    .vehicle-range-stat-label {
+      font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--vh-text-muted); margin-bottom: 4px;
+    }
+    .vehicle-range-stat-value {
+      font-size: 20px; font-weight: 800; color: var(--vh-text);
+      font-family: var(--font-data, monospace);
+    }
+
+    /* Fuel Economy Trend */
+    .vehicle-econ-trend {
+      display: flex; gap: 3px; align-items: flex-end; height: 60px; margin-top: 8px;
+    }
+    .vehicle-econ-bar {
+      flex: 1; min-width: 6px; background: var(--vh-accent);
+      border-radius: 3px 3px 0 0; transition: height 0.2s ease;
+      position: relative;
+    }
+    .vehicle-econ-bar:hover { opacity: 0.8; }
+    .vehicle-econ-avg {
+      font-size: 13px; font-weight: 700; color: var(--vh-accent);
+      font-family: var(--font-data, monospace); margin-top: 6px;
+    }
+
+    /* Modal/Form overrides */
+    .vehicles-modal-overlay {
+      position: fixed; inset: 0; z-index: 9000;
+      background: rgba(0,0,0,0.55); display: flex;
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    }
+    .vehicles-modal-overlay.is-hidden { display: none; }
+    .vehicles-modal-card {
+      background: var(--vh-surface2); border: 1px solid var(--vh-border);
+      border-radius: var(--radius, 10px); width: 94vw; max-width: 600px;
+      max-height: 88vh; overflow-y: auto; box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+    .vehicles-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px; border-bottom: 1px solid var(--vh-border);
+    }
+    .vehicles-modal-header h3 {
+      font-size: 15px; font-weight: 700; color: var(--vh-text); margin: 0;
+    }
+    .vehicles-modal-body { padding: 18px 20px; }
+    .vehicles-modal-close {
+      background: none; border: none; color: var(--vh-text-muted);
+      font-size: 18px; cursor: pointer; padding: 0 2px; line-height: 1;
+    }
+    .vehicles-modal-close:hover { color: var(--vh-text); }
+
+    /* Form Grid */
+    .vehicles-form-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px;
+    }
+    .vehicles-field { display: flex; flex-direction: column; gap: 4px; }
+    .vehicles-field.span-2 { grid-column: span 2; }
+    .vehicles-field-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--vh-text-muted);
+    }
+    .vehicles-field-control {
+      background: var(--vh-surface3); border: 1px solid var(--vh-border);
+      border-radius: 6px; padding: 7px 10px; font-size: 13px;
+      color: var(--vh-text); font-family: inherit;
+      transition: border-color 0.15s ease;
+    }
+    .vehicles-field-control:focus {
+      outline: none; border-color: var(--vh-accent);
+      box-shadow: 0 0 0 2px var(--vh-accent-dim);
+    }
+    select.vehicles-field-control { cursor: pointer; }
+    textarea.vehicles-field-control { resize: vertical; min-height: 48px; }
+
+    .vehicles-form-actions {
+      display: flex; gap: 8px; justify-content: flex-end;
+      margin-top: 14px; padding-top: 12px;
+      border-top: 1px solid var(--vh-border);
+    }
+
+    .vehicles-empty-state {
+      text-align: center; padding: 32px 16px; color: var(--vh-text-muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 700px) {
+      .vehicles-card-grid { grid-template-columns: 1fr; }
+      .vehicles-form-grid { grid-template-columns: 1fr; }
+      .vehicles-field.span-2 { grid-column: span 1; }
+      .vehicle-range-block { grid-template-columns: 1fr; }
+      .vehicles-dash-grid { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+
+  <!-- Command Deck -->
+  <div class="vehicles-command-deck">
+    <div class="section-header-label">MOBILITY &amp; TRANSPORT</div>
+    <h2>Vehicles</h2>
+    <p>Manage vehicles, maintenance, fuel, and bug-out readiness.</p>
+    <div class="vehicles-command-actions">
+      <button class="btn btn-primary" onclick="showVehicleForm()">+ Vehicle</button>
+    </div>
+  </div>
+
+  <div class="settings-grid" style="display:block;">
+
+    <!-- Dashboard Stats -->
+    <div id="vehicles-dash" class="vehicles-dash-grid"></div>
+
+    <!-- Vehicle Cards -->
+    <div id="vehicles-card-list" class="vehicles-card-grid">
+      <div class="vehicles-empty-state">Loading vehicles...</div>
+    </div>
+
+    <!-- Vehicle Detail Panel (hidden until vehicle selected) -->
+    <div id="vehicle-detail" class="vehicle-detail-panel is-hidden">
+      <div class="vehicle-detail-header">
+        <div>
+          <div class="vehicle-detail-title" id="vd-title"></div>
+          <div style="font-size:12px;color:var(--vh-text-dim);margin-top:2px;" id="vd-subtitle"></div>
+        </div>
+        <div class="vehicle-detail-actions">
+          <button class="btn btn-sm" onclick="showVehicleForm(window._vdId)">Edit</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteVehicle(window._vdId)">Delete</button>
+          <button class="btn btn-sm btn-ghost" onclick="closeVehicleDetail()">Close</button>
+        </div>
+      </div>
+      <div id="vd-info" style="font-size:12px;color:var(--vh-text-dim);line-height:1.6;"></div>
+
+      <!-- Range Calculator -->
+      <div class="vehicle-detail-section">
+        <div class="vehicle-detail-section-head">
+          <span class="vehicle-detail-section-title">RANGE CALCULATOR</span>
+        </div>
+        <div id="vd-range" class="vehicle-range-block"></div>
+      </div>
+
+      <!-- Fuel Economy Trend -->
+      <div class="vehicle-detail-section">
+        <div class="vehicle-detail-section-head">
+          <span class="vehicle-detail-section-title">FUEL ECONOMY TREND</span>
+        </div>
+        <div id="vd-econ-chart" class="vehicle-econ-trend"></div>
+        <div id="vd-econ-avg" class="vehicle-econ-avg"></div>
+      </div>
+
+      <!-- Maintenance History -->
+      <div class="vehicle-detail-section">
+        <div class="vehicle-detail-section-head">
+          <span class="vehicle-detail-section-title">MAINTENANCE HISTORY</span>
+          <button class="btn btn-sm btn-primary" onclick="showMaintenanceForm(window._vdId)">+ Service</button>
+        </div>
+        <div id="vd-maintenance"></div>
+      </div>
+
+      <!-- Fuel Log -->
+      <div class="vehicle-detail-section">
+        <div class="vehicle-detail-section-head">
+          <span class="vehicle-detail-section-title">FUEL LOG</span>
+          <button class="btn btn-sm btn-primary" onclick="showFuelForm(window._vdId)">+ Fuel Entry</button>
+        </div>
+        <div id="vd-fuel-log"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       Vehicle Add/Edit Modal
+       ═══════════════════════════════════════════ -->
+  <div id="vehicle-modal" class="vehicles-modal-overlay is-hidden" onclick="if(event.target===this)closeVehicleModal()">
+    <div class="vehicles-modal-card">
+      <div class="vehicles-modal-header">
+        <h3 id="vehicle-modal-title">Add Vehicle</h3>
+        <button class="vehicles-modal-close" onclick="closeVehicleModal()" aria-label="Close vehicle form">&times;</button>
+      </div>
+      <div class="vehicles-modal-body">
+        <input type="hidden" id="vf-id">
+        <div class="vehicles-form-grid">
+          <label class="vehicles-field span-2"><span class="vehicles-field-label">Vehicle Name *</span>
+            <input type="text" id="vf-name" class="vehicles-field-control" placeholder="Bug-Out Tacoma" name="vf-name"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Year</span>
+            <input type="number" id="vf-year" class="vehicles-field-control" placeholder="2021" min="1900" max="2099" name="vf-year"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Make</span>
+            <input type="text" id="vf-make" class="vehicles-field-control" placeholder="Toyota" name="vf-make"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Model</span>
+            <input type="text" id="vf-model" class="vehicles-field-control" placeholder="Tacoma TRD" name="vf-model"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">VIN</span>
+            <input type="text" id="vf-vin" class="vehicles-field-control" placeholder="Optional" name="vf-vin"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Fuel Type</span>
+            <select id="vf-fuel-type" class="vehicles-field-control" name="vf-fuel-type">
+              <option value="gasoline">Gasoline</option>
+              <option value="diesel">Diesel</option>
+              <option value="electric">Electric</option>
+              <option value="hybrid">Hybrid</option>
+              <option value="propane">Propane</option>
+            </select></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Tank Capacity (gal)</span>
+            <input type="number" id="vf-tank" class="vehicles-field-control" step="0.1" min="0" placeholder="21.1" name="vf-tank"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">MPG (avg)</span>
+            <input type="number" id="vf-mpg" class="vehicles-field-control" step="0.1" min="0" placeholder="24.5" name="vf-mpg"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Odometer</span>
+            <input type="number" id="vf-odometer" class="vehicles-field-control" min="0" placeholder="47200" name="vf-odometer"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Color</span>
+            <input type="text" id="vf-color" class="vehicles-field-control" placeholder="Cement Gray" name="vf-color"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">License Plate</span>
+            <input type="text" id="vf-plate" class="vehicles-field-control" placeholder="ABC-1234" name="vf-plate"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Insurance Expires</span>
+            <input type="date" id="vf-insurance-exp" class="vehicles-field-control" name="vf-insurance-exp"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Registration Expires</span>
+            <input type="date" id="vf-registration-exp" class="vehicles-field-control" name="vf-registration-exp"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Location</span>
+            <input type="text" id="vf-location" class="vehicles-field-control" placeholder="Home garage" name="vf-location"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Role</span>
+            <select id="vf-role" class="vehicles-field-control" name="vf-role">
+              <option value="daily">Daily Driver</option>
+              <option value="bugout">Bug-Out Vehicle</option>
+              <option value="backup">Backup</option>
+              <option value="utility">Utility</option>
+            </select></label>
+        </div>
+        <div class="vehicles-form-actions">
+          <button class="btn btn-sm btn-ghost" onclick="closeVehicleModal()">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="saveVehicle()">Save Vehicle</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       Maintenance Add/Edit Modal
+       ═══════════════════════════════════════════ -->
+  <div id="maint-modal" class="vehicles-modal-overlay is-hidden" onclick="if(event.target===this)closeMaintModal()">
+    <div class="vehicles-modal-card">
+      <div class="vehicles-modal-header">
+        <h3 id="maint-modal-title">Add Service Record</h3>
+        <button class="vehicles-modal-close" onclick="closeMaintModal()" aria-label="Close maintenance form">&times;</button>
+      </div>
+      <div class="vehicles-modal-body">
+        <input type="hidden" id="mf-vehicle-id">
+        <input type="hidden" id="mf-id">
+        <div class="vehicles-form-grid">
+          <label class="vehicles-field span-2"><span class="vehicles-field-label">Service Type *</span>
+            <input type="text" id="mf-service-type" class="vehicles-field-control" placeholder="Oil Change, Tire Rotation, Brakes..." name="mf-service-type"></label>
+          <label class="vehicles-field span-2"><span class="vehicles-field-label">Description</span>
+            <textarea id="mf-description" class="vehicles-field-control" rows="2" placeholder="Work performed..." name="mf-description"></textarea></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Mileage at Service</span>
+            <input type="number" id="mf-mileage" class="vehicles-field-control" min="0" placeholder="47200" name="mf-mileage"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Cost ($)</span>
+            <input type="number" id="mf-cost" class="vehicles-field-control" step="0.01" min="0" placeholder="89.50" name="mf-cost"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Service Date</span>
+            <input type="date" id="mf-service-date" class="vehicles-field-control" name="mf-service-date"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Next Due Date</span>
+            <input type="date" id="mf-next-due-date" class="vehicles-field-control" name="mf-next-due-date"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Next Due Mileage</span>
+            <input type="number" id="mf-next-due-mileage" class="vehicles-field-control" min="0" placeholder="52200" name="mf-next-due-mileage"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Status</span>
+            <select id="mf-status" class="vehicles-field-control" name="mf-status">
+              <option value="completed">Completed</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="overdue">Overdue</option>
+              <option value="in_progress">In Progress</option>
+            </select></label>
+          <label class="vehicles-field span-2"><span class="vehicles-field-label">Notes</span>
+            <textarea id="mf-notes" class="vehicles-field-control" rows="2" placeholder="Parts used, shop name, warranty..." name="mf-notes"></textarea></label>
+        </div>
+        <div class="vehicles-form-actions">
+          <button class="btn btn-sm btn-ghost" onclick="closeMaintModal()">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="saveMaintenance(document.getElementById('mf-vehicle-id').value)">Save Record</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       Fuel Entry Modal
+       ═══════════════════════════════════════════ -->
+  <div id="fuel-entry-modal" class="vehicles-modal-overlay is-hidden" onclick="if(event.target===this)closeFuelModal()">
+    <div class="vehicles-modal-card">
+      <div class="vehicles-modal-header">
+        <h3>Add Fuel Entry</h3>
+        <button class="vehicles-modal-close" onclick="closeFuelModal()" aria-label="Close fuel form">&times;</button>
+      </div>
+      <div class="vehicles-modal-body">
+        <input type="hidden" id="ff-vehicle-id">
+        <div class="vehicles-form-grid">
+          <label class="vehicles-field"><span class="vehicles-field-label">Gallons *</span>
+            <input type="number" id="ff-gallons" class="vehicles-field-control" step="0.001" min="0" placeholder="14.5" name="ff-gallons"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Cost per Gallon ($)</span>
+            <input type="number" id="ff-cost-per-gallon" class="vehicles-field-control" step="0.001" min="0" placeholder="3.459" name="ff-cost-per-gallon"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Odometer *</span>
+            <input type="number" id="ff-odometer" class="vehicles-field-control" min="0" placeholder="47800" name="ff-odometer"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Station</span>
+            <input type="text" id="ff-station" class="vehicles-field-control" placeholder="Shell, Costco..." name="ff-station"></label>
+          <label class="vehicles-field"><span class="vehicles-field-label">Date</span>
+            <input type="date" id="ff-fuel-date" class="vehicles-field-control" name="ff-fuel-date"></label>
+          <label class="vehicles-field span-2"><span class="vehicles-field-label">Notes</span>
+            <textarea id="ff-notes" class="vehicles-field-control" rows="2" placeholder="Full tank, premium, trip fill-up..." name="ff-notes"></textarea></label>
+        </div>
+        <div class="vehicles-form-actions">
+          <button class="btn btn-sm btn-ghost" onclick="closeFuelModal()">Cancel</button>
+          <button class="btn btn-sm btn-primary" onclick="saveFuel(document.getElementById('ff-vehicle-id').value)">Save Entry</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function() {
+    'use strict';
+
+    /* ══════════════════════════════════════
+       Helpers
+       ══════════════════════════════════════ */
+    const $  = id => document.getElementById(id);
+    const esc = typeof escapeHtml === 'function' ? escapeHtml : s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    const fmt = n => n == null ? '--' : Number(n).toLocaleString();
+    const fmtMoney = n => n == null ? '--' : '$' + Number(n).toFixed(2);
+    const fmtDate = d => { if (!d) return '--'; const dt = new Date(d); return isNaN(dt) ? d : dt.toLocaleDateString(); };
+
+    /* ══════════════════════════════════════
+       1. loadVehicles — main init
+       ══════════════════════════════════════ */
+    window.loadVehicles = async function loadVehicles() {
+      try {
+        const [dash, vehicles] = await Promise.all([
+          apiFetch('/api/vehicles/dashboard'),
+          apiFetch('/api/vehicles')
+        ]);
+        renderDashboard(dash);
+        renderVehicleCards(Array.isArray(vehicles) ? vehicles : vehicles.vehicles || []);
+      } catch (e) {
+        console.error('[Vehicles] load error', e);
+        $('vehicles-card-list').innerHTML = '<div class="vehicles-empty-state">Failed to load vehicles. Check connection.</div>';
+      }
+    };
+
+    /* ── Dashboard ────────────────────── */
+    function renderDashboard(d) {
+      const el = $('vehicles-dash');
+      if (!el) return;
+      const bovCount = (d.vehicles_by_role || {}).bugout || 0;
+      el.innerHTML = `
+        <div class="vehicles-dash-stat">
+          <div class="vehicles-dash-stat-value">${fmt(d.total_vehicles || 0)}</div>
+          <div class="vehicles-dash-stat-label">Total Vehicles</div>
+        </div>
+        <div class="vehicles-dash-stat">
+          <div class="vehicles-dash-stat-value" style="color:var(--vh-danger)">${fmt(bovCount)}</div>
+          <div class="vehicles-dash-stat-label">Bug-Out Ready</div>
+        </div>
+        <div class="vehicles-dash-stat">
+          <div class="vehicles-dash-stat-value ${(d.maintenance_overdue||0) > 0 ? 'is-alert' : 'is-ok'}">${fmt(d.maintenance_overdue || 0)}</div>
+          <div class="vehicles-dash-stat-label">Maintenance Overdue</div>
+        </div>
+        <div class="vehicles-dash-stat">
+          <div class="vehicles-dash-stat-value">${fmt(d.total_range ? Math.round(d.total_range) : 0)}</div>
+          <div class="vehicles-dash-stat-label">Total Range (mi)</div>
+        </div>`;
+    }
+
+    /* ── Vehicle Cards ────────────────── */
+    function renderVehicleCards(list) {
+      const el = $('vehicles-card-list');
+      if (!el) return;
+      if (!list.length) {
+        el.innerHTML = '<div class="vehicles-empty-state">No vehicles yet. Click "+ Vehicle" to add your first.</div>';
+        return;
+      }
+      el.innerHTML = list.map(v => {
+        const ymm = [v.year, v.make, v.model].filter(Boolean).join(' ');
+        const range = (v.tank_capacity_gal && v.mpg) ? Math.round(v.tank_capacity_gal * v.mpg) : null;
+        return `<div class="vehicle-card" onclick="showVehicleDetail(${v.id})" tabindex="0" role="button"
+                     aria-label="${esc(v.name || ymm)}">
+          <div class="vehicle-card-head">
+            <div>
+              <div class="vehicle-card-name">${esc(v.name || ymm || 'Unnamed')}</div>
+              ${ymm ? `<div class="vehicle-card-subtitle">${esc(ymm)}</div>` : ''}
+            </div>
+            <span class="vehicle-card-role" data-role="${esc(v.role || 'daily')}">${esc((v.role || 'daily').toUpperCase())}</span>
+          </div>
+          <div class="vehicle-card-stats">
+            <div><div class="vehicle-card-stat-label">Odometer</div><div class="vehicle-card-stat-val">${fmt(v.odometer)}</div></div>
+            <div><div class="vehicle-card-stat-label">Fuel</div><div class="vehicle-card-stat-val">${esc((v.fuel_type || 'gas').charAt(0).toUpperCase() + (v.fuel_type || 'gas').slice(1))}</div></div>
+            <div><div class="vehicle-card-stat-label">Range</div><div class="vehicle-card-stat-val">${range ? fmt(range) + ' mi' : '--'}</div></div>
+          </div>
+          <div class="vehicle-card-actions">
+            <button class="btn btn-sm" onclick="event.stopPropagation();showVehicleForm(${v.id})">Edit</button>
+            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle(${v.id})">Del</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    /* ══════════════════════════════════════
+       2. showVehicleForm — new/edit vehicle
+       ══════════════════════════════════════ */
+    window.showVehicleForm = async function showVehicleForm(id) {
+      // Reset form
+      ['vf-id','vf-name','vf-year','vf-make','vf-model','vf-vin','vf-tank','vf-mpg',
+       'vf-odometer','vf-color','vf-plate','vf-insurance-exp','vf-registration-exp','vf-location'].forEach(k => { const el = $(k); if (el) el.value = ''; });
+      $('vf-fuel-type').value = 'gasoline';
+      $('vf-role').value = 'daily';
+
+      if (id) {
+        $('vehicle-modal-title').textContent = 'Edit Vehicle';
+        try {
+          const v = await apiFetch(`/api/vehicles/${id}`);
+          $('vf-id').value = v.id;
+          $('vf-name').value = v.name || '';
+          $('vf-year').value = v.year || '';
+          $('vf-make').value = v.make || '';
+          $('vf-model').value = v.model || '';
+          $('vf-vin').value = v.vin || '';
+          $('vf-fuel-type').value = v.fuel_type || 'gasoline';
+          $('vf-tank').value = v.tank_capacity_gal || '';
+          $('vf-mpg').value = v.mpg || '';
+          $('vf-odometer').value = v.odometer || '';
+          $('vf-color').value = v.color || '';
+          $('vf-plate').value = v.plate || '';
+          $('vf-insurance-exp').value = v.insurance_exp || '';
+          $('vf-registration-exp').value = v.registration_exp || '';
+          $('vf-location').value = v.location || '';
+          $('vf-role').value = v.role || 'daily';
+        } catch (e) {
+          toast('Failed to load vehicle', 'error');
+          return;
+        }
+      } else {
+        $('vehicle-modal-title').textContent = 'Add Vehicle';
+      }
+      $('vehicle-modal').classList.remove('is-hidden');
+    };
+
+    window.closeVehicleModal = function() {
+      $('vehicle-modal').classList.add('is-hidden');
+    };
+
+    /* ══════════════════════════════════════
+       3. saveVehicle — POST/PUT
+       ══════════════════════════════════════ */
+    window.saveVehicle = async function saveVehicle() {
+      const name = $('vf-name').value.trim();
+      if (!name) { toast('Vehicle name is required', 'warning'); return; }
+
+      const payload = {
+        name,
+        year: $('vf-year').value ? parseInt($('vf-year').value) : null,
+        make: $('vf-make').value.trim() || null,
+        model: $('vf-model').value.trim() || null,
+        vin: $('vf-vin').value.trim() || null,
+        fuel_type: $('vf-fuel-type').value,
+        tank_capacity_gal: $('vf-tank').value ? parseFloat($('vf-tank').value) : null,
+        mpg: $('vf-mpg').value ? parseFloat($('vf-mpg').value) : null,
+        odometer: $('vf-odometer').value ? parseInt($('vf-odometer').value) : null,
+        color: $('vf-color').value.trim() || null,
+        plate: $('vf-plate').value.trim() || null,
+        insurance_exp: $('vf-insurance-exp').value || null,
+        registration_exp: $('vf-registration-exp').value || null,
+        location: $('vf-location').value.trim() || null,
+        role: $('vf-role').value
+      };
+
+      const id = $('vf-id').value;
+      try {
+        if (id) {
+          await apiPut(`/api/vehicles/${id}`, payload);
+          toast('Vehicle updated', 'success');
+        } else {
+          await apiPost('/api/vehicles', payload);
+          toast('Vehicle added', 'success');
+        }
+        closeVehicleModal();
+        loadVehicles();
+        if (id && window._vdId == id) showVehicleDetail(parseInt(id));
+      } catch (e) {
+        toast(e.message || 'Save failed', 'error');
+      }
+    };
+
+    /* ══════════════════════════════════════
+       4. deleteVehicle — DELETE with confirm
+       ══════════════════════════════════════ */
+    window.deleteVehicle = async function deleteVehicle(id) {
+      if (!confirm('Delete this vehicle and all its records? This cannot be undone.')) return;
+      try {
+        await apiDelete(`/api/vehicles/${id}`);
+        toast('Vehicle deleted', 'success');
+        closeVehicleDetail();
+        loadVehicles();
+      } catch (e) {
+        toast(e.message || 'Delete failed', 'error');
+      }
+    };
+
+    /* ══════════════════════════════════════
+       5. showVehicleDetail — expand detail
+       ══════════════════════════════════════ */
+    window.showVehicleDetail = async function showVehicleDetail(id) {
+      window._vdId = id;
+      const panel = $('vehicle-detail');
+      panel.classList.remove('is-hidden');
+
+      try {
+        const v = await apiFetch(`/api/vehicles/${id}`);
+        const ymm = [v.year, v.make, v.model].filter(Boolean).join(' ');
+        $('vd-title').textContent = v.name || ymm || 'Vehicle';
+        $('vd-subtitle').textContent = ymm || '';
+
+        // Info line
+        const infoParts = [];
+        if (v.vin) infoParts.push(`VIN: ${esc(v.vin)}`);
+        if (v.plate) infoParts.push(`Plate: ${esc(v.plate)}`);
+        if (v.color) infoParts.push(`Color: ${esc(v.color)}`);
+        if (v.fuel_type) infoParts.push(`Fuel: ${esc(v.fuel_type)}`);
+        if (v.odometer) infoParts.push(`Odometer: ${fmt(v.odometer)} mi`);
+        if (v.location) infoParts.push(`Location: ${esc(v.location)}`);
+        if (v.insurance_exp) infoParts.push(`Insurance exp: ${fmtDate(v.insurance_exp)}`);
+        if (v.registration_exp) infoParts.push(`Registration exp: ${fmtDate(v.registration_exp)}`);
+        $('vd-info').innerHTML = infoParts.join(' &bull; ');
+
+        // Load sub-data in parallel
+        await Promise.all([
+          loadVehicleRange(id),
+          loadFuelEconomy(id),
+          loadMaintenanceHistory(id),
+          loadFuelLog(id)
+        ]);
+
+        // Scroll detail into view
+        panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (e) {
+        toast('Failed to load vehicle details', 'error');
+      }
+    };
+
+    window.closeVehicleDetail = function closeVehicleDetail() {
+      $('vehicle-detail').classList.add('is-hidden');
+      window._vdId = null;
+    };
+
+    /* ══════════════════════════════════════
+       10. loadVehicleRange — range calculator
+       ══════════════════════════════════════ */
+    window.loadVehicleRange = async function loadVehicleRange(id) {
+      const el = $('vd-range');
+      if (!el) return;
+      try {
+        const r = await apiFetch(`/api/vehicles/${id}/range`);
+        el.innerHTML = `
+          <div class="vehicle-range-stat">
+            <div class="vehicle-range-stat-label">MAX RANGE</div>
+            <div class="vehicle-range-stat-value">${r.max_range_miles != null ? fmt(Math.round(r.max_range_miles)) + ' mi' : '--'}</div>
+          </div>
+          <div class="vehicle-range-stat">
+            <div class="vehicle-range-stat-label">TANK CAPACITY</div>
+            <div class="vehicle-range-stat-value">${r.tank_capacity_gal != null ? r.tank_capacity_gal + ' gal' : '--'}</div>
+          </div>
+          <div class="vehicle-range-stat">
+            <div class="vehicle-range-stat-label">AVG MPG</div>
+            <div class="vehicle-range-stat-value">${r.mpg != null ? r.mpg : '--'}</div>
+          </div>
+          <div class="vehicle-range-stat">
+            <div class="vehicle-range-stat-label">FUEL TYPE</div>
+            <div class="vehicle-range-stat-value">${esc(r.fuel_type || '--')}</div>
+          </div>`;
+      } catch (e) {
+        el.innerHTML = '<div class="vehicles-empty-state">Range data unavailable</div>';
+      }
+    };
+
+    /* ── Fuel Economy Trend ───────────── */
+    async function loadFuelEconomy(id) {
+      const chartEl = $('vd-econ-chart');
+      const avgEl = $('vd-econ-avg');
+      if (!chartEl) return;
+      try {
+        const data = await apiFetch(`/api/vehicles/${id}/fuel-economy`);
+        const entries = data.entries || [];
+        if (!entries.length) {
+          chartEl.innerHTML = '';
+          avgEl.textContent = 'No fuel economy data yet';
+          return;
+        }
+        const mpgs = entries.map(e => e.mpg || 0);
+        const max = Math.max(...mpgs, 1);
+        chartEl.innerHTML = mpgs.map((m, i) =>
+          `<div class="vehicle-econ-bar" style="height:${Math.round((m / max) * 100)}%" title="${m.toFixed(1)} mpg — ${fmtDate(entries[i].date)}"></div>`
+        ).join('');
+        avgEl.textContent = data.average_mpg != null ? `Avg: ${Number(data.average_mpg).toFixed(1)} MPG` : '';
+      } catch {
+        chartEl.innerHTML = '';
+        avgEl.textContent = '';
+      }
+    }
+
+    /* ── Maintenance History ──────────── */
+    async function loadMaintenanceHistory(id) {
+      const el = $('vd-maintenance');
+      if (!el) return;
+      try {
+        const list = await apiFetch(`/api/vehicles/${id}/maintenance`);
+        const items = Array.isArray(list) ? list : list.records || [];
+        if (!items.length) {
+          el.innerHTML = '<div class="vehicles-empty-state">No service records yet.</div>';
+          return;
+        }
+        el.innerHTML = `<table class="vehicles-table">
+          <thead><tr><th>Date</th><th>Service</th><th>Mileage</th><th>Cost</th><th>Status</th><th></th></tr></thead>
+          <tbody>${items.map(m => `<tr>
+            <td>${fmtDate(m.service_date)}</td>
+            <td>${esc(m.service_type || '--')}</td>
+            <td>${fmt(m.mileage)}</td>
+            <td>${m.cost != null ? fmtMoney(m.cost) : '--'}</td>
+            <td>${esc(m.status || '--')}</td>
+            <td class="td-actions">
+              <button class="btn btn-sm" onclick="showMaintenanceForm(${id}, ${m.id})">Edit</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteMaintenance(${id}, ${m.id})">Del</button>
+            </td>
+          </tr>`).join('')}</tbody>
+        </table>`;
+      } catch {
+        el.innerHTML = '<div class="vehicles-empty-state">Failed to load maintenance records.</div>';
+      }
+    }
+
+    /* ── Fuel Log ────────────────────── */
+    async function loadFuelLog(id) {
+      const el = $('vd-fuel-log');
+      if (!el) return;
+      try {
+        const list = await apiFetch(`/api/vehicles/${id}/fuel`);
+        const items = Array.isArray(list) ? list : list.entries || [];
+        if (!items.length) {
+          el.innerHTML = '<div class="vehicles-empty-state">No fuel entries yet.</div>';
+          return;
+        }
+        el.innerHTML = `<table class="vehicles-table">
+          <thead><tr><th>Date</th><th>Gallons</th><th>$/gal</th><th>Total</th><th>Odometer</th><th>Station</th></tr></thead>
+          <tbody>${items.map(f => `<tr>
+            <td>${fmtDate(f.fuel_date)}</td>
+            <td>${f.gallons != null ? Number(f.gallons).toFixed(2) : '--'}</td>
+            <td>${f.cost_per_gallon != null ? fmtMoney(f.cost_per_gallon) : '--'}</td>
+            <td>${(f.gallons != null && f.cost_per_gallon != null) ? fmtMoney(f.gallons * f.cost_per_gallon) : '--'}</td>
+            <td>${fmt(f.odometer)}</td>
+            <td>${esc(f.station || '--')}</td>
+          </tr>`).join('')}</tbody>
+        </table>`;
+      } catch {
+        el.innerHTML = '<div class="vehicles-empty-state">Failed to load fuel log.</div>';
+      }
+    }
+
+    /* ══════════════════════════════════════
+       6. showMaintenanceForm — new/edit
+       ══════════════════════════════════════ */
+    window.showMaintenanceForm = async function showMaintenanceForm(vehicleId, mid) {
+      // Reset
+      ['mf-id','mf-service-type','mf-description','mf-mileage','mf-cost',
+       'mf-service-date','mf-next-due-date','mf-next-due-mileage','mf-notes'].forEach(k => { const el = $(k); if (el) el.value = ''; });
+      $('mf-status').value = 'completed';
+      $('mf-vehicle-id').value = vehicleId;
+
+      if (mid) {
+        $('maint-modal-title').textContent = 'Edit Service Record';
+        try {
+          // Fetch full record list and find the one
+          const list = await apiFetch(`/api/vehicles/${vehicleId}/maintenance`);
+          const items = Array.isArray(list) ? list : list.records || [];
+          const m = items.find(r => r.id == mid);
+          if (m) {
+            $('mf-id').value = m.id;
+            $('mf-service-type').value = m.service_type || '';
+            $('mf-description').value = m.description || '';
+            $('mf-mileage').value = m.mileage || '';
+            $('mf-cost').value = m.cost || '';
+            $('mf-service-date').value = m.service_date || '';
+            $('mf-next-due-date').value = m.next_due_date || '';
+            $('mf-next-due-mileage').value = m.next_due_mileage || '';
+            $('mf-status').value = m.status || 'completed';
+            $('mf-notes').value = m.notes || '';
+          }
+        } catch (e) {
+          toast('Failed to load service record', 'error');
+          return;
+        }
+      } else {
+        $('maint-modal-title').textContent = 'Add Service Record';
+        $('mf-service-date').value = new Date().toISOString().slice(0, 10);
+      }
+      $('maint-modal').classList.remove('is-hidden');
+    };
+
+    window.closeMaintModal = function() {
+      $('maint-modal').classList.add('is-hidden');
+    };
+
+    /* ══════════════════════════════════════
+       7. saveMaintenance — POST/PUT
+       ══════════════════════════════════════ */
+    window.saveMaintenance = async function saveMaintenance(vehicleId) {
+      const serviceType = $('mf-service-type').value.trim();
+      if (!serviceType) { toast('Service type is required', 'warning'); return; }
+
+      const payload = {
+        service_type: serviceType,
+        description: $('mf-description').value.trim() || null,
+        mileage: $('mf-mileage').value ? parseInt($('mf-mileage').value) : null,
+        cost: $('mf-cost').value ? parseFloat($('mf-cost').value) : null,
+        service_date: $('mf-service-date').value || null,
+        next_due_date: $('mf-next-due-date').value || null,
+        next_due_mileage: $('mf-next-due-mileage').value ? parseInt($('mf-next-due-mileage').value) : null,
+        status: $('mf-status').value,
+        notes: $('mf-notes').value.trim() || null
+      };
+
+      const mid = $('mf-id').value;
+      try {
+        if (mid) {
+          await apiPut(`/api/vehicles/maintenance/${mid}`, payload);
+          toast('Service record updated', 'success');
+        } else {
+          await apiPost(`/api/vehicles/${vehicleId}/maintenance`, payload);
+          toast('Service record added', 'success');
+        }
+        closeMaintModal();
+        if (window._vdId) showVehicleDetail(window._vdId);
+        loadVehicles();
+      } catch (e) {
+        toast(e.message || 'Save failed', 'error');
+      }
+    };
+
+    /* ── Delete maintenance ───────────── */
+    window.deleteMaintenance = async function deleteMaintenance(vehicleId, mid) {
+      if (!confirm('Delete this service record?')) return;
+      try {
+        await apiDelete(`/api/vehicles/maintenance/${mid}`);
+        toast('Service record deleted', 'success');
+        if (window._vdId) showVehicleDetail(window._vdId);
+        loadVehicles();
+      } catch (e) {
+        toast(e.message || 'Delete failed', 'error');
+      }
+    };
+
+    /* ══════════════════════════════════════
+       8. showFuelForm — fuel entry
+       ══════════════════════════════════════ */
+    window.showFuelForm = function showFuelForm(vehicleId) {
+      ['ff-gallons','ff-cost-per-gallon','ff-odometer','ff-station','ff-notes'].forEach(k => { const el = $(k); if (el) el.value = ''; });
+      $('ff-vehicle-id').value = vehicleId;
+      $('ff-fuel-date').value = new Date().toISOString().slice(0, 10);
+      $('fuel-entry-modal').classList.remove('is-hidden');
+    };
+
+    window.closeFuelModal = function() {
+      $('fuel-entry-modal').classList.add('is-hidden');
+    };
+
+    /* ══════════════════════════════════════
+       9. saveFuel — POST
+       ══════════════════════════════════════ */
+    window.saveFuel = async function saveFuel(vehicleId) {
+      const gallons = $('ff-gallons').value;
+      const odometer = $('ff-odometer').value;
+      if (!gallons || !odometer) { toast('Gallons and odometer are required', 'warning'); return; }
+
+      const payload = {
+        gallons: parseFloat(gallons),
+        cost_per_gallon: $('ff-cost-per-gallon').value ? parseFloat($('ff-cost-per-gallon').value) : null,
+        odometer: parseInt(odometer),
+        station: $('ff-station').value.trim() || null,
+        fuel_date: $('ff-fuel-date').value || null,
+        notes: $('ff-notes').value.trim() || null
+      };
+
+      try {
+        await apiPost(`/api/vehicles/${vehicleId}/fuel`, payload);
+        toast('Fuel entry added', 'success');
+        closeFuelModal();
+        if (window._vdId) showVehicleDetail(window._vdId);
+      } catch (e) {
+        toast(e.message || 'Save failed', 'error');
+      }
+    };
+
+  })();
+  </script>
+
+</div><!-- /tab-vehicles -->

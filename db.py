@@ -2404,6 +2404,37 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_vet_records_animal ON vet_records(animal_name)',
         'CREATE INDEX IF NOT EXISTS idx_vet_records_species ON vet_records(species)',
         'CREATE INDEX IF NOT EXISTS idx_vet_records_next_due ON vet_records(next_due)',
+        # v7.16.0 — Training & Knowledge (Phase 10)
+        'CREATE INDEX IF NOT EXISTS idx_skill_trees_person ON skill_trees(person_name)',
+        'CREATE INDEX IF NOT EXISTS idx_skill_trees_category ON skill_trees(category)',
+        'CREATE INDEX IF NOT EXISTS idx_skill_trees_level ON skill_trees(level)',
+        'CREATE INDEX IF NOT EXISTS idx_skill_trees_certified ON skill_trees(certified)',
+        'CREATE INDEX IF NOT EXISTS idx_skill_trees_person_cat ON skill_trees(person_name, category)',
+        'CREATE INDEX IF NOT EXISTS idx_training_courses_status ON training_courses(status)',
+        'CREATE INDEX IF NOT EXISTS idx_training_courses_category ON training_courses(category)',
+        'CREATE INDEX IF NOT EXISTS idx_training_courses_difficulty ON training_courses(difficulty)',
+        'CREATE INDEX IF NOT EXISTS idx_training_courses_created ON training_courses(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_training_lessons_course ON training_lessons(course_id)',
+        'CREATE INDEX IF NOT EXISTS idx_training_lessons_number ON training_lessons(course_id, lesson_number)',
+        'CREATE INDEX IF NOT EXISTS idx_training_lessons_type ON training_lessons(lesson_type)',
+        'CREATE INDEX IF NOT EXISTS idx_certifications_person ON certifications(person_name)',
+        'CREATE INDEX IF NOT EXISTS idx_certifications_status ON certifications(status)',
+        'CREATE INDEX IF NOT EXISTS idx_certifications_expiration ON certifications(expiration_date)',
+        'CREATE INDEX IF NOT EXISTS idx_certifications_name ON certifications(certification_name)',
+        'CREATE INDEX IF NOT EXISTS idx_drill_templates_type ON drill_templates(drill_type)',
+        'CREATE INDEX IF NOT EXISTS idx_drill_templates_builtin ON drill_templates(is_builtin)',
+        'CREATE INDEX IF NOT EXISTS idx_drill_results_template ON drill_results(template_id)',
+        'CREATE INDEX IF NOT EXISTS idx_drill_results_date ON drill_results(drill_date DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_drill_results_grade ON drill_results(overall_grade)',
+        'CREATE INDEX IF NOT EXISTS idx_flashcards_deck ON flashcards(deck_name)',
+        'CREATE INDEX IF NOT EXISTS idx_flashcards_category ON flashcards(category)',
+        'CREATE INDEX IF NOT EXISTS idx_flashcards_next_review ON flashcards(next_review)',
+        'CREATE INDEX IF NOT EXISTS idx_flashcards_deck_cat ON flashcards(deck_name, category)',
+        'CREATE INDEX IF NOT EXISTS idx_flashcards_ease ON flashcards(ease_factor)',
+        'CREATE INDEX IF NOT EXISTS idx_knowledge_packages_person ON knowledge_packages(person_name)',
+        'CREATE INDEX IF NOT EXISTS idx_knowledge_packages_status ON knowledge_packages(status)',
+        'CREATE INDEX IF NOT EXISTS idx_knowledge_packages_category ON knowledge_packages(category)',
+        'CREATE INDEX IF NOT EXISTS idx_knowledge_packages_reviewed ON knowledge_packages(last_reviewed)',
     ]:
         try:
             conn.execute(idx)
@@ -3085,6 +3116,148 @@ def _create_medical_phase2_tables(conn):
     conn.commit()
 
 
+def _create_training_knowledge_tables(conn):
+    """Phase 10 — Training, Education & Knowledge Preservation: skill trees,
+    courses, lessons, certifications, drills, flashcards, knowledge packages."""
+    conn.executescript('''
+        /* ─── Skill Trees ─── */
+        CREATE TABLE IF NOT EXISTS skill_trees (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person_name TEXT NOT NULL,
+            skill_name TEXT NOT NULL,
+            category TEXT DEFAULT 'survival',
+            level INTEGER DEFAULT 1,
+            prerequisites TEXT DEFAULT '[]',
+            certified INTEGER DEFAULT 0,
+            certified_date TEXT DEFAULT '',
+            instructor TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Training Courses ─── */
+        CREATE TABLE IF NOT EXISTS training_courses (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT 'general',
+            difficulty TEXT DEFAULT 'beginner',
+            estimated_hours REAL DEFAULT 1.0,
+            instructor TEXT DEFAULT '',
+            max_students INTEGER DEFAULT 10,
+            prerequisites_text TEXT DEFAULT '',
+            materials_needed TEXT DEFAULT '',
+            status TEXT DEFAULT 'draft',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Training Lessons ─── */
+        CREATE TABLE IF NOT EXISTS training_lessons (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            course_id INTEGER NOT NULL REFERENCES training_courses(id) ON DELETE CASCADE,
+            lesson_number INTEGER DEFAULT 1,
+            title TEXT NOT NULL,
+            content TEXT DEFAULT '',
+            duration_minutes INTEGER DEFAULT 30,
+            lesson_type TEXT DEFAULT 'lecture',
+            materials TEXT DEFAULT '',
+            objectives TEXT DEFAULT '[]',
+            completed_by TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Certifications ─── */
+        CREATE TABLE IF NOT EXISTS certifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person_name TEXT NOT NULL,
+            certification_name TEXT NOT NULL,
+            issuing_authority TEXT DEFAULT '',
+            date_earned TEXT DEFAULT '',
+            expiration_date TEXT DEFAULT '',
+            renewal_interval_days INTEGER DEFAULT 365,
+            status TEXT DEFAULT 'active',
+            document_ref TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Drill Templates ─── */
+        CREATE TABLE IF NOT EXISTS drill_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            drill_type TEXT DEFAULT 'custom',
+            description TEXT DEFAULT '',
+            phases TEXT DEFAULT '[]',
+            grading_criteria TEXT DEFAULT '[]',
+            estimated_duration_minutes INTEGER DEFAULT 30,
+            personnel_required INTEGER DEFAULT 2,
+            equipment_needed TEXT DEFAULT '',
+            is_builtin INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Drill Results ─── */
+        CREATE TABLE IF NOT EXISTS drill_results (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            template_id INTEGER REFERENCES drill_templates(id) ON DELETE SET NULL,
+            drill_date TEXT NOT NULL,
+            participants TEXT DEFAULT '[]',
+            overall_grade TEXT DEFAULT '',
+            phase_scores TEXT DEFAULT '[]',
+            deficiencies TEXT DEFAULT '[]',
+            strengths TEXT DEFAULT '[]',
+            aar_notes TEXT DEFAULT '',
+            corrective_actions TEXT DEFAULT '',
+            next_drill_date TEXT DEFAULT '',
+            conducted_by TEXT DEFAULT '',
+            is_no_notice INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Flashcards (Spaced Repetition) ─── */
+        CREATE TABLE IF NOT EXISTS flashcards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            deck_name TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            front_text TEXT NOT NULL,
+            back_text TEXT NOT NULL,
+            difficulty INTEGER DEFAULT 1,
+            interval_days INTEGER DEFAULT 1,
+            ease_factor REAL DEFAULT 2.5,
+            next_review TEXT DEFAULT '',
+            review_count INTEGER DEFAULT 0,
+            correct_count INTEGER DEFAULT 0,
+            last_reviewed TEXT DEFAULT '',
+            tags TEXT DEFAULT '[]',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Knowledge Packages ("If I'm Gone") ─── */
+        CREATE TABLE IF NOT EXISTS knowledge_packages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person_name TEXT NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            category TEXT DEFAULT 'general',
+            skills_documented TEXT DEFAULT '[]',
+            procedures TEXT DEFAULT '[]',
+            contacts_referenced TEXT DEFAULT '[]',
+            critical_knowledge TEXT DEFAULT '',
+            contingency_plans TEXT DEFAULT '',
+            last_reviewed TEXT DEFAULT '',
+            review_interval_days INTEGER DEFAULT 90,
+            status TEXT DEFAULT 'draft',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -3102,6 +3275,7 @@ def _init_db_inner(conn):
     _create_tactical_comms_tables(conn)
     _create_land_assessment_tables(conn)
     _create_medical_phase2_tables(conn)
+    _create_training_knowledge_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

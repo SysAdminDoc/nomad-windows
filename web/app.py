@@ -1347,6 +1347,10 @@ def create_app():
     from web.blueprints.medical_phase2 import medical_phase2_bp
     app.register_blueprint(medical_phase2_bp)
 
+    # ─── v7.16.0 — Training & Knowledge (Phase 10) ───────────────────
+    from web.blueprints.training_knowledge import training_knowledge_bp
+    app.register_blueprint(training_knowledge_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

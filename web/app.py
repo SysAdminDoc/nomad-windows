@@ -1331,6 +1331,14 @@ def create_app():
     from web.blueprints.meal_planning import meal_planning_bp
     app.register_blueprint(meal_planning_bp)
 
+    # ─── v7.14.0 — Movement & Route Planning (Phase 5) ───────────────
+    from web.blueprints.movement_ops import movement_ops_bp
+    app.register_blueprint(movement_ops_bp)
+
+    # ─── v7.14.0 — Tactical Communications (Phase 6) ─────────────────
+    from web.blueprints.tactical_comms import tactical_comms_bp
+    app.register_blueprint(tactical_comms_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

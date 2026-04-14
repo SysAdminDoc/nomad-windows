@@ -2639,6 +2639,42 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_deployment_configs_active ON deployment_configs(is_active)',
         'CREATE INDEX IF NOT EXISTS idx_performance_metrics_type ON performance_metrics(metric_type)',
         'CREATE INDEX IF NOT EXISTS idx_performance_metrics_recorded ON performance_metrics(recorded_at)',
+        # ─── Phase 20: Specialized Modules & Community (v7.26.0) ───
+        'CREATE INDEX IF NOT EXISTS idx_supply_caches_type ON supply_caches(cache_type)',
+        'CREATE INDEX IF NOT EXISTS idx_supply_caches_security ON supply_caches(security_level)',
+        'CREATE INDEX IF NOT EXISTS idx_pets_species ON pets(species)',
+        'CREATE INDEX IF NOT EXISTS idx_pets_status ON pets(status)',
+        'CREATE INDEX IF NOT EXISTS idx_youth_programs_type ON youth_programs(program_type)',
+        'CREATE INDEX IF NOT EXISTS idx_youth_programs_status ON youth_programs(status)',
+        'CREATE INDEX IF NOT EXISTS idx_end_of_life_plans_person ON end_of_life_plans(person)',
+        'CREATE INDEX IF NOT EXISTS idx_end_of_life_plans_status ON end_of_life_plans(status)',
+        'CREATE INDEX IF NOT EXISTS idx_procurement_lists_type ON procurement_lists(list_type)',
+        'CREATE INDEX IF NOT EXISTS idx_procurement_lists_status ON procurement_lists(status)',
+        'CREATE INDEX IF NOT EXISTS idx_procurement_lists_priority ON procurement_lists(priority)',
+        'CREATE INDEX IF NOT EXISTS idx_intel_collection_type ON intel_collection(intel_type)',
+        'CREATE INDEX IF NOT EXISTS idx_intel_collection_status ON intel_collection(status)',
+        'CREATE INDEX IF NOT EXISTS idx_intel_collection_classification ON intel_collection(classification)',
+        'CREATE INDEX IF NOT EXISTS idx_fabrication_projects_type ON fabrication_projects(project_type)',
+        'CREATE INDEX IF NOT EXISTS idx_fabrication_projects_status ON fabrication_projects(status)',
+        'CREATE INDEX IF NOT EXISTS idx_badges_category ON badges(category)',
+        'CREATE INDEX IF NOT EXISTS idx_badges_rarity ON badges(rarity)',
+        'CREATE INDEX IF NOT EXISTS idx_badge_awards_badge ON badge_awards(badge_id)',
+        'CREATE INDEX IF NOT EXISTS idx_badge_awards_person ON badge_awards(person)',
+        'CREATE INDEX IF NOT EXISTS idx_seasonal_events_date ON seasonal_events(date)',
+        'CREATE INDEX IF NOT EXISTS idx_seasonal_events_type ON seasonal_events(event_type)',
+        'CREATE INDEX IF NOT EXISTS idx_seasonal_events_category ON seasonal_events(category)',
+        'CREATE INDEX IF NOT EXISTS idx_legal_documents_type ON legal_documents(doc_type)',
+        'CREATE INDEX IF NOT EXISTS idx_legal_documents_person ON legal_documents(person)',
+        'CREATE INDEX IF NOT EXISTS idx_legal_documents_expiry ON legal_documents(expiry_date)',
+        'CREATE INDEX IF NOT EXISTS idx_drones_type ON drones(drone_type)',
+        'CREATE INDEX IF NOT EXISTS idx_drones_condition ON drones(condition)',
+        'CREATE INDEX IF NOT EXISTS idx_drone_flights_drone ON drone_flights(drone_id)',
+        'CREATE INDEX IF NOT EXISTS idx_drone_flights_date ON drone_flights(date)',
+        'CREATE INDEX IF NOT EXISTS idx_fitness_logs_person ON fitness_logs(person)',
+        'CREATE INDEX IF NOT EXISTS idx_fitness_logs_date ON fitness_logs(date)',
+        'CREATE INDEX IF NOT EXISTS idx_fitness_logs_type ON fitness_logs(exercise_type)',
+        'CREATE INDEX IF NOT EXISTS idx_content_packs_type ON content_packs(pack_type)',
+        'CREATE INDEX IF NOT EXISTS idx_content_packs_status ON content_packs(status)',
     ]:
         try:
             conn.execute(idx)
@@ -4828,6 +4864,308 @@ def _create_platform_security_tables(conn):
     conn.commit()
 
 
+def _create_specialized_modules_tables(conn):
+    """Phase 20 — Specialized Modules & Community: caches, pets, youth,
+    end-of-life, procurement, intel, fabrication, badges, calendar, legal, drones."""
+    conn.executescript('''
+        /* ─── Supply Caches ─── */
+        CREATE TABLE IF NOT EXISTS supply_caches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            cache_type TEXT DEFAULT 'general',
+            location_description TEXT DEFAULT '',
+            gps_coords TEXT DEFAULT '',
+            access_instructions TEXT DEFAULT '',
+            concealment_method TEXT DEFAULT '',
+            container_type TEXT DEFAULT '',
+            contents TEXT DEFAULT '[]',
+            last_checked TEXT DEFAULT '',
+            condition TEXT DEFAULT 'good',
+            known_by TEXT DEFAULT '[]',
+            expiration_date TEXT DEFAULT '',
+            security_level TEXT DEFAULT 'standard',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Pets & Companion Animals ─── */
+        CREATE TABLE IF NOT EXISTS pets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            species TEXT DEFAULT 'dog',
+            breed TEXT DEFAULT '',
+            age_years REAL DEFAULT 0,
+            weight_lbs REAL DEFAULT 0,
+            microchip_id TEXT DEFAULT '',
+            medical_conditions TEXT DEFAULT '[]',
+            medications TEXT DEFAULT '[]',
+            vaccination_dates TEXT DEFAULT '{}',
+            food_type TEXT DEFAULT '',
+            daily_food_amount TEXT DEFAULT '',
+            food_supply_days INTEGER DEFAULT 0,
+            veterinarian TEXT DEFAULT '',
+            evacuation_carrier TEXT DEFAULT '',
+            temperament TEXT DEFAULT '',
+            special_needs TEXT DEFAULT '',
+            photo_ref TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Youth Programs ─── */
+        CREATE TABLE IF NOT EXISTS youth_programs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            program_type TEXT DEFAULT 'education',
+            age_range TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            curriculum TEXT DEFAULT '[]',
+            materials_needed TEXT DEFAULT '[]',
+            instructor TEXT DEFAULT '',
+            schedule TEXT DEFAULT '',
+            participants TEXT DEFAULT '[]',
+            skills_taught TEXT DEFAULT '[]',
+            progress_notes TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── End-of-Life Plans ─── */
+        CREATE TABLE IF NOT EXISTS end_of_life_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person TEXT NOT NULL,
+            plan_type TEXT DEFAULT 'general',
+            wishes TEXT DEFAULT '',
+            medical_directives TEXT DEFAULT '',
+            organ_donor INTEGER DEFAULT 0,
+            body_disposition TEXT DEFAULT '',
+            memorial_wishes TEXT DEFAULT '',
+            important_documents TEXT DEFAULT '[]',
+            digital_accounts TEXT DEFAULT '[]',
+            beneficiaries TEXT DEFAULT '[]',
+            executor TEXT DEFAULT '',
+            attorney TEXT DEFAULT '',
+            insurance_info TEXT DEFAULT '',
+            last_updated_by TEXT DEFAULT '',
+            status TEXT DEFAULT 'draft',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Procurement Lists ─── */
+        CREATE TABLE IF NOT EXISTS procurement_lists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            list_type TEXT DEFAULT 'shopping',
+            priority TEXT DEFAULT 'medium',
+            items TEXT DEFAULT '[]',
+            budget REAL DEFAULT 0,
+            spent REAL DEFAULT 0,
+            supplier TEXT DEFAULT '',
+            due_date TEXT DEFAULT '',
+            assigned_to TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Intel Collection (PIR) ─── */
+        CREATE TABLE IF NOT EXISTS intel_collection (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            intel_type TEXT DEFAULT 'humint',
+            priority_info_req TEXT DEFAULT '',
+            source TEXT DEFAULT '',
+            source_reliability TEXT DEFAULT 'unknown',
+            info_credibility TEXT DEFAULT 'unknown',
+            classification TEXT DEFAULT 'unclassified',
+            date_collected TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            summary TEXT DEFAULT '',
+            raw_data TEXT DEFAULT '',
+            analysis TEXT DEFAULT '',
+            actionable INTEGER DEFAULT 0,
+            dissemination TEXT DEFAULT '[]',
+            expiry_date TEXT DEFAULT '',
+            status TEXT DEFAULT 'new',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Fabrication Projects (3D Printing) ─── */
+        CREATE TABLE IF NOT EXISTS fabrication_projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            project_type TEXT DEFAULT '3d_print',
+            description TEXT DEFAULT '',
+            file_path TEXT DEFAULT '',
+            material TEXT DEFAULT 'pla',
+            material_amount TEXT DEFAULT '',
+            printer_model TEXT DEFAULT '',
+            print_settings TEXT DEFAULT '{}',
+            estimated_time_hours REAL DEFAULT 0,
+            actual_time_hours REAL DEFAULT 0,
+            copies_made INTEGER DEFAULT 0,
+            priority TEXT DEFAULT 'medium',
+            status TEXT DEFAULT 'queued',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Badges & Achievements ─── */
+        CREATE TABLE IF NOT EXISTS badges (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            description TEXT DEFAULT '',
+            icon TEXT DEFAULT '',
+            criteria TEXT DEFAULT '',
+            points INTEGER DEFAULT 10,
+            rarity TEXT DEFAULT 'common',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Badge Awards ─── */
+        CREATE TABLE IF NOT EXISTS badge_awards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            badge_id INTEGER NOT NULL,
+            person TEXT NOT NULL,
+            awarded_date TEXT DEFAULT '',
+            awarded_by TEXT DEFAULT 'system',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Seasonal Events ─── */
+        CREATE TABLE IF NOT EXISTS seasonal_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            event_type TEXT DEFAULT 'seasonal',
+            date TEXT DEFAULT '',
+            recurrence TEXT DEFAULT 'yearly',
+            description TEXT DEFAULT '',
+            tasks TEXT DEFAULT '[]',
+            reminders TEXT DEFAULT '[]',
+            category TEXT DEFAULT 'preparedness',
+            completed INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Legal Documents ─── */
+        CREATE TABLE IF NOT EXISTS legal_documents (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            doc_type TEXT DEFAULT 'general',
+            person TEXT DEFAULT '',
+            issuing_authority TEXT DEFAULT '',
+            document_number TEXT DEFAULT '',
+            issue_date TEXT DEFAULT '',
+            expiry_date TEXT DEFAULT '',
+            file_path TEXT DEFAULT '',
+            storage_location TEXT DEFAULT '',
+            renewal_reminder INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Drones ─── */
+        CREATE TABLE IF NOT EXISTS drones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            drone_type TEXT DEFAULT 'quadcopter',
+            manufacturer TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            serial_number TEXT DEFAULT '',
+            registration TEXT DEFAULT '',
+            weight_grams INTEGER DEFAULT 0,
+            max_flight_time_min INTEGER DEFAULT 0,
+            max_range_m INTEGER DEFAULT 0,
+            camera_specs TEXT DEFAULT '',
+            battery_count INTEGER DEFAULT 1,
+            battery_type TEXT DEFAULT '',
+            firmware_version TEXT DEFAULT '',
+            total_flights INTEGER DEFAULT 0,
+            total_flight_hours REAL DEFAULT 0,
+            last_flight TEXT DEFAULT '',
+            condition TEXT DEFAULT 'operational',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Drone Flight Logs ─── */
+        CREATE TABLE IF NOT EXISTS drone_flights (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            drone_id INTEGER NOT NULL,
+            date TEXT DEFAULT '',
+            mission_type TEXT DEFAULT 'recon',
+            location TEXT DEFAULT '',
+            gps_coords TEXT DEFAULT '',
+            duration_min INTEGER DEFAULT 0,
+            max_altitude_m INTEGER DEFAULT 0,
+            distance_km REAL DEFAULT 0,
+            battery_start_pct INTEGER DEFAULT 100,
+            battery_end_pct INTEGER DEFAULT 0,
+            weather_conditions TEXT DEFAULT '',
+            observations TEXT DEFAULT '',
+            media_captured TEXT DEFAULT '[]',
+            pilot TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Fitness Logs ─── */
+        CREATE TABLE IF NOT EXISTS fitness_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person TEXT DEFAULT '',
+            date TEXT DEFAULT '',
+            exercise_type TEXT DEFAULT 'cardio',
+            activity TEXT DEFAULT '',
+            duration_min INTEGER DEFAULT 0,
+            distance_km REAL DEFAULT 0,
+            reps INTEGER DEFAULT 0,
+            sets INTEGER DEFAULT 0,
+            weight_lbs REAL DEFAULT 0,
+            calories_burned INTEGER DEFAULT 0,
+            heart_rate_avg INTEGER DEFAULT 0,
+            heart_rate_max INTEGER DEFAULT 0,
+            perceived_exertion INTEGER DEFAULT 5,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Community Content Packs ─── */
+        CREATE TABLE IF NOT EXISTS content_packs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            pack_type TEXT DEFAULT 'knowledge',
+            version TEXT DEFAULT '1.0.0',
+            author TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            contents_manifest TEXT DEFAULT '[]',
+            size_bytes INTEGER DEFAULT 0,
+            install_date TEXT DEFAULT '',
+            source_url TEXT DEFAULT '',
+            checksum TEXT DEFAULT '',
+            status TEXT DEFAULT 'installed',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -4855,6 +5193,7 @@ def _init_db_inner(conn):
     _create_hunting_foraging_tables(conn)
     _create_hardware_sensors_tables(conn)
     _create_platform_security_tables(conn)
+    _create_specialized_modules_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

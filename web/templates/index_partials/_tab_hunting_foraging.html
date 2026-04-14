@@ -1,0 +1,931 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB: Hunting, Foraging & Wild Food  (Phase 17 · v7.23.0)
+     Game logs, fishing, foraging, traps, trade skills, preservation
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="tab-hunting-foraging" class="tab-content is-hidden" data-tab="hunting-foraging" data-tab-content="hunting-foraging">
+<style>
+  #tab-hunting-foraging {
+    --hf-accent: #84cc16;
+    --hf-accent-dim: #84cc1622;
+    --hf-accent-hover: #65a30d;
+    --hf-red: #ef4444;
+    --hf-green: #22c55e;
+    --hf-amber: #f59e0b;
+    --hf-blue: #3b82f6;
+    --hf-orange: #f97316;
+    --hf-purple: #a855f7;
+  }
+  #tab-hunting-foraging .hf-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-hunting-foraging .hf-header h2 { font-size:1.25rem; color:var(--hf-accent); margin:0; }
+  #tab-hunting-foraging .hf-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-hunting-foraging .hf-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-hunting-foraging .hf-sub-tab.active { background:var(--hf-accent-dim); border-color:var(--hf-accent); color:var(--hf-accent); }
+  #tab-hunting-foraging .hf-panel { display:none; }
+  #tab-hunting-foraging .hf-panel.active { display:block; }
+  #tab-hunting-foraging .hf-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-hunting-foraging .hf-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-hunting-foraging .hf-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-hunting-foraging .hf-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
+  #tab-hunting-foraging .hf-stat-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:12px 14px; text-align:center; }
+  #tab-hunting-foraging .hf-stat-val { font-size:1.4rem; font-weight:700; color:var(--hf-accent); }
+  #tab-hunting-foraging .hf-stat-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-secondary,#aaa); margin-top:2px; }
+  #tab-hunting-foraging .hf-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-hunting-foraging .hf-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-hunting-foraging .hf-form-row input,
+  #tab-hunting-foraging .hf-form-row select,
+  #tab-hunting-foraging .hf-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-hunting-foraging .hf-form-row textarea { resize:vertical; min-height:48px; font-family:inherit; }
+  #tab-hunting-foraging .hf-form-row .field { flex:1; min-width:140px; }
+  #tab-hunting-foraging .hf-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-hunting-foraging .hf-btn-primary { background:var(--hf-accent); color:#000; }
+  #tab-hunting-foraging .hf-btn-danger { background:var(--hf-red); color:#fff; }
+  #tab-hunting-foraging .hf-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-hunting-foraging .hf-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  #tab-hunting-foraging .hf-table th { text-align:left; padding:8px 10px; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#333); font-weight:600; }
+  #tab-hunting-foraging .hf-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); vertical-align:middle; }
+  #tab-hunting-foraging .hf-table tbody tr:hover { background:rgba(255,255,255,.03); }
+  #tab-hunting-foraging .hf-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-hunting-foraging .hf-badge-big_game { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-hunting-foraging .hf-badge-small_game { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-hunting-foraging .hf-badge-waterfowl { background:rgba(6,182,212,.2); color:#06b6d4; }
+  #tab-hunting-foraging .hf-badge-upland_bird { background:rgba(245,158,11,.2); color:#f59e0b; }
+  #tab-hunting-foraging .hf-badge-predator { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-hunting-foraging .hf-badge-kept { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-hunting-foraging .hf-badge-released { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-hunting-foraging .hf-conf-certain { color:#22c55e; }
+  #tab-hunting-foraging .hf-conf-probable { color:#f59e0b; }
+  #tab-hunting-foraging .hf-conf-possible { color:#f97316; }
+  #tab-hunting-foraging .hf-conf-unknown { color:#ef4444; }
+  #tab-hunting-foraging .hf-status-active { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-hunting-foraging .hf-status-triggered { background:rgba(245,158,11,.2); color:#f59e0b; }
+  #tab-hunting-foraging .hf-status-empty { background:rgba(100,116,139,.2); color:#94a3b8; }
+  #tab-hunting-foraging .hf-status-damaged { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-hunting-foraging .hf-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-hunting-foraging .hf-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-hunting-foraging .hf-list-item:last-child { border-bottom:none; }
+  #tab-hunting-foraging .hf-level-bar { height:8px; border-radius:4px; background:var(--border,#333); overflow:hidden; margin-top:4px; }
+  #tab-hunting-foraging .hf-level-fill { height:100%; border-radius:4px; background:var(--hf-accent); transition:width .3s; }
+  #tab-hunting-foraging .hf-method-canning { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-hunting-foraging .hf-method-dehydrating { background:rgba(245,158,11,.2); color:#f59e0b; }
+  #tab-hunting-foraging .hf-method-smoking { background:rgba(100,116,139,.3); color:#94a3b8; }
+  #tab-hunting-foraging .hf-method-fermenting { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-hunting-foraging .hf-method-freezing { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-hunting-foraging .hf-method-salting { background:rgba(255,255,255,.1); color:#e2e8f0; }
+  #tab-hunting-foraging .hf-method-pickling { background:rgba(132,204,22,.2); color:#84cc16; }
+  #tab-hunting-foraging .hf-warn-icon { color:var(--hf-amber); margin-left:4px; }
+</style>
+
+<div class="hf-header">
+  <h2>Hunting, Foraging & Wild Food</h2>
+</div>
+
+<!-- Sub-tabs -->
+<div class="hf-sub-tabs">
+  <button class="hf-sub-tab active" data-hf-panel="hunting">Hunting</button>
+  <button class="hf-sub-tab" data-hf-panel="fishing">Fishing</button>
+  <button class="hf-sub-tab" data-hf-panel="foraging">Foraging</button>
+  <button class="hf-sub-tab" data-hf-panel="traps">Traps & Snares</button>
+  <button class="hf-sub-tab" data-hf-panel="trades">Trade Skills</button>
+  <button class="hf-sub-tab" data-hf-panel="preservation">Preservation</button>
+</div>
+
+<!-- ── Hunting Panel ─────────────────────────────────────── -->
+<div class="hf-panel active" id="hf-panel-hunting">
+  <div id="hf-game-stats" class="hf-stats-grid">
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Total Harvested</div></div>
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Meat Yield (lbs)</div></div>
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Species Count</div></div>
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Biggest Harvest</div></div>
+  </div>
+  <div class="hf-card">
+    <div class="hf-card-title">Log Game Harvest</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Date</label><input name="hf-game-date" id="hf-game-date" type="date"></div>
+      <div class="field"><label>Species</label><input name="hf-game-species" id="hf-game-species" placeholder="White-tail Deer"></div>
+      <div class="field"><label>Game Type</label>
+        <select name="hf-game-type" id="hf-game-type">
+          <option value="big_game">Big Game</option><option value="small_game">Small Game</option>
+          <option value="waterfowl">Waterfowl</option><option value="upland_bird">Upland Bird</option>
+          <option value="predator">Predator</option>
+        </select>
+      </div>
+      <div class="field"><label>Method</label>
+        <select name="hf-game-method" id="hf-game-method">
+          <option value="rifle">Rifle</option><option value="shotgun">Shotgun</option>
+          <option value="bow">Bow</option><option value="crossbow">Crossbow</option>
+          <option value="muzzleloader">Muzzleloader</option><option value="handgun">Handgun</option>
+          <option value="trap">Trap</option><option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Weapon Details</label><input name="hf-game-weapon" id="hf-game-weapon" placeholder=".308 Win, Remington 700"></div>
+      <div class="field"><label>Location</label><input name="hf-game-location" id="hf-game-location" placeholder="North Ridge Stand"></div>
+      <div class="field"><label>Weight (lbs)</label><input name="hf-game-weight" id="hf-game-weight" type="number" step="0.1" placeholder="0"></div>
+      <div class="field"><label>Meat Yield (lbs)</label><input name="hf-game-yield" id="hf-game-yield" type="number" step="0.1" placeholder="0"></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>License/Tag</label><input name="hf-game-tag" id="hf-game-tag" placeholder="Tag #"></div>
+      <div class="field"><label>Season</label><input name="hf-game-season" id="hf-game-season" placeholder="2026 Archery"></div>
+      <div class="field"><label>Weather</label><input name="hf-game-weather" id="hf-game-weather" placeholder="Clear, 45F"></div>
+      <div class="field" style="display:flex;align-items:flex-end;gap:8px;min-width:auto">
+        <label style="display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer"><input name="hf-game-dressed" id="hf-game-dressed" type="checkbox"> Field Dressed</label>
+      </div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Notes</label><textarea name="hf-game-notes" id="hf-game-notes" rows="2" placeholder="Additional notes..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddGame()">Log Harvest</button></div>
+    </div>
+  </div>
+  <div class="hf-card">
+    <div class="hf-card-title">Game Log</div>
+    <div id="hf-game-list" style="overflow-x:auto"><div class="hf-empty">Loading game log...</div></div>
+  </div>
+
+  <!-- Hunting Zones -->
+  <div class="hf-card">
+    <div class="hf-card-title">Hunting Zones</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Zone Name</label><input name="hf-zone-name" id="hf-zone-name" placeholder="North Ridge"></div>
+      <div class="field"><label>Type</label>
+        <select name="hf-zone-type" id="hf-zone-type">
+          <option value="hunting">Hunting</option><option value="fishing">Fishing</option>
+          <option value="foraging">Foraging</option><option value="multi_use">Multi-Use</option>
+        </select>
+      </div>
+      <div class="field"><label>Target Species</label><input name="hf-zone-species" id="hf-zone-species" placeholder="Deer, Turkey"></div>
+      <div class="field"><label>Season Dates</label><input name="hf-zone-season" id="hf-zone-season" placeholder="Oct 1 - Jan 15"></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Location/Terrain</label><input name="hf-zone-location" id="hf-zone-location" placeholder="GPS or description"></div>
+      <div class="field"><label>Access Notes</label><input name="hf-zone-access" id="hf-zone-access" placeholder="Gate code, trail directions"></div>
+      <div class="field"><label>Regulations</label><input name="hf-zone-regs" id="hf-zone-regs" placeholder="Antler restrictions, etc."></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddZone()">Add Zone</button></div>
+    </div>
+  </div>
+  <div id="hf-zone-list" class="hf-grid"></div>
+</div>
+
+<!-- ── Fishing Panel ─────────────────────────────────────── -->
+<div class="hf-panel" id="hf-panel-fishing">
+  <div id="hf-fish-stats" class="hf-stats-grid">
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Total Catch</div></div>
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Total Weight</div></div>
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Kept</div></div>
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Released</div></div>
+  </div>
+  <div class="hf-card">
+    <div class="hf-card-title">Log Catch</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Date</label><input name="hf-fish-date" id="hf-fish-date" type="date"></div>
+      <div class="field"><label>Species</label><input name="hf-fish-species" id="hf-fish-species" placeholder="Largemouth Bass"></div>
+      <div class="field"><label>Method</label>
+        <select name="hf-fish-method" id="hf-fish-method">
+          <option value="rod_reel">Rod & Reel</option><option value="fly">Fly Fishing</option>
+          <option value="trotline">Trotline</option><option value="netting">Netting</option>
+          <option value="spearfishing">Spearfishing</option><option value="hand_line">Hand Line</option>
+          <option value="trap">Fish Trap</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Bait/Lure</label><input name="hf-fish-bait" id="hf-fish-bait" placeholder="Worm, spinner, etc."></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Weight (lbs)</label><input name="hf-fish-weight" id="hf-fish-weight" type="number" step="0.1" placeholder="0"></div>
+      <div class="field"><label>Length (in)</label><input name="hf-fish-length" id="hf-fish-length" type="number" step="0.1" placeholder="0"></div>
+      <div class="field"><label>Water Type</label>
+        <select name="hf-fish-water" id="hf-fish-water">
+          <option value="freshwater">Freshwater</option><option value="saltwater">Saltwater</option>
+          <option value="brackish">Brackish</option>
+        </select>
+      </div>
+      <div class="field"><label>Water Temp (F)</label><input name="hf-fish-temp" id="hf-fish-temp" type="number" step="1" placeholder="0"></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Weather</label><input name="hf-fish-weather" id="hf-fish-weather" placeholder="Overcast, 65F"></div>
+      <div class="field"><label>Location</label><input name="hf-fish-location" id="hf-fish-location" placeholder="Lake, river, etc."></div>
+      <div class="field" style="display:flex;align-items:flex-end;gap:8px;min-width:auto">
+        <label style="display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer"><input name="hf-fish-kept" id="hf-fish-kept" type="checkbox" checked> Kept</label>
+      </div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Notes</label><textarea name="hf-fish-notes" id="hf-fish-notes" rows="2" placeholder="Additional notes..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddFishing()">Log Catch</button></div>
+    </div>
+  </div>
+  <div class="hf-card">
+    <div class="hf-card-title">Fishing Log</div>
+    <div id="hf-fish-list" style="overflow-x:auto"><div class="hf-empty">Loading fishing log...</div></div>
+  </div>
+</div>
+
+<!-- ── Foraging Panel ────────────────────────────────────── -->
+<div class="hf-panel" id="hf-panel-foraging">
+  <div class="hf-card">
+    <div class="hf-card-title">Log Foraged Item</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Date</label><input name="hf-forage-date" id="hf-forage-date" type="date"></div>
+      <div class="field"><label>Plant Name</label><input name="hf-forage-plant" id="hf-forage-plant" placeholder="Dandelion"></div>
+      <div class="field"><label>Scientific Name</label><input name="hf-forage-sci" id="hf-forage-sci" placeholder="Taraxacum officinale"></div>
+      <div class="field"><label>Category</label>
+        <select name="hf-forage-cat" id="hf-forage-cat">
+          <option value="edible_plant">Edible Plant</option><option value="medicinal">Medicinal</option>
+          <option value="mushroom">Mushroom</option><option value="berry">Berry</option>
+          <option value="nut">Nut</option><option value="root">Root/Tuber</option>
+          <option value="seaweed">Seaweed</option><option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Location</label><input name="hf-forage-location" id="hf-forage-location" placeholder="Meadow, forest edge, etc."></div>
+      <div class="field"><label>Quantity</label><input name="hf-forage-qty" id="hf-forage-qty" type="number" step="0.1" placeholder="0"></div>
+      <div class="field"><label>Unit</label>
+        <select name="hf-forage-unit" id="hf-forage-unit">
+          <option value="lbs">lbs</option><option value="oz">oz</option>
+          <option value="cups">cups</option><option value="gallons">gallons</option>
+          <option value="count">count</option><option value="bags">bags</option>
+        </select>
+      </div>
+      <div class="field"><label>Season</label><input name="hf-forage-season" id="hf-forage-season" placeholder="Spring"></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Habitat</label><input name="hf-forage-habitat" id="hf-forage-habitat" placeholder="Moist woodland edge"></div>
+      <div class="field"><label>Confidence</label>
+        <select name="hf-forage-conf" id="hf-forage-conf">
+          <option value="certain">Certain</option><option value="probable">Probable</option>
+          <option value="possible">Possible</option><option value="unknown">Unknown</option>
+        </select>
+      </div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Preparation Notes</label><textarea name="hf-forage-prep" id="hf-forage-prep" rows="2" placeholder="How to prepare..."></textarea></div>
+      <div class="field"><label>Warnings</label><textarea name="hf-forage-warn" id="hf-forage-warn" rows="2" placeholder="Look-alikes, toxicity..."></textarea></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field" style="flex:0"><button class="hf-btn hf-btn-primary" onclick="hfAddForaging()">Log Item</button></div>
+    </div>
+  </div>
+  <div class="hf-card">
+    <div class="hf-card-title">Foraging Log</div>
+    <div id="hf-forage-list" style="overflow-x:auto"><div class="hf-empty">Loading foraging log...</div></div>
+  </div>
+
+  <!-- Wild Edibles Reference -->
+  <div class="hf-card">
+    <div class="hf-card-title">Wild Edibles Reference</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Search</label><input name="hf-edible-search" id="hf-edible-search" placeholder="Search by name..." oninput="hfSearchEdibles()"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-secondary" onclick="hfSeedEdibles()">Seed Default Edibles</button></div>
+    </div>
+    <div id="hf-edible-list" class="hf-grid"><div class="hf-empty">Loading edibles reference...</div></div>
+  </div>
+</div>
+
+<!-- ── Traps & Snares Panel ──────────────────────────────── -->
+<div class="hf-panel" id="hf-panel-traps">
+  <div id="hf-trap-stats" class="hf-stats-grid">
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Active</div></div>
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Triggered</div></div>
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Empty</div></div>
+    <div class="hf-stat-card"><div class="hf-stat-val">0</div><div class="hf-stat-label">Damaged</div></div>
+  </div>
+  <div class="hf-card">
+    <div class="hf-card-title">Add Trap / Snare</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Name</label><input name="hf-trap-name" id="hf-trap-name" placeholder="Rabbit Snare #1"></div>
+      <div class="field"><label>Type</label>
+        <select name="hf-trap-type" id="hf-trap-type">
+          <option value="snare">Snare</option><option value="deadfall">Deadfall</option>
+          <option value="cage_trap">Cage Trap</option><option value="pitfall">Pitfall</option>
+          <option value="spring_trap">Spring Trap</option><option value="net">Net</option>
+          <option value="fish_trap">Fish Trap</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Target Species</label><input name="hf-trap-species" id="hf-trap-species" placeholder="Rabbit, Squirrel"></div>
+      <div class="field"><label>Location</label><input name="hf-trap-location" id="hf-trap-location" placeholder="Game trail, creek"></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Bait</label><input name="hf-trap-bait" id="hf-trap-bait" placeholder="Carrot, corn, etc."></div>
+      <div class="field"><label>Check Frequency (hrs)</label><input name="hf-trap-freq" id="hf-trap-freq" type="number" value="24" min="1"></div>
+      <div class="field"><label>Materials</label><input name="hf-trap-materials" id="hf-trap-materials" placeholder="Paracord, wire, sticks"></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Instructions</label><textarea name="hf-trap-instructions" id="hf-trap-instructions" rows="2" placeholder="Setup instructions..."></textarea></div>
+      <div class="field"><label>Legal Notes</label><textarea name="hf-trap-legal" id="hf-trap-legal" rows="2" placeholder="Permit requirements, season restrictions..."></textarea></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field" style="flex:0"><button class="hf-btn hf-btn-primary" onclick="hfAddTrap()">Add Trap</button></div>
+    </div>
+  </div>
+  <div id="hf-trap-list" class="hf-grid"><div class="hf-empty">Loading traps...</div></div>
+</div>
+
+<!-- ── Trade Skills Panel ────────────────────────────────── -->
+<div class="hf-panel" id="hf-panel-trades">
+  <div class="hf-card">
+    <div class="hf-card-title">Add Trade Skill</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Skill Name</label><input name="hf-skill-name" id="hf-skill-name" placeholder="Tanning, Blacksmithing..."></div>
+      <div class="field"><label>Category</label>
+        <select name="hf-skill-cat" id="hf-skill-cat">
+          <option value="general">General</option><option value="woodworking">Woodworking</option>
+          <option value="metalworking">Metalworking</option><option value="leather">Leatherwork</option>
+          <option value="fiber">Fiber Arts</option><option value="pottery">Pottery</option>
+          <option value="butchering">Butchering</option><option value="trapping">Trapping</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Practitioner</label><input name="hf-skill-who" id="hf-skill-who" placeholder="Name"></div>
+      <div class="field"><label>Skill Level</label>
+        <select name="hf-skill-level" id="hf-skill-level">
+          <option value="beginner">Beginner (1)</option><option value="intermediate">Intermediate (2)</option>
+          <option value="advanced">Advanced (3)</option><option value="expert">Expert (4)</option>
+        </select>
+      </div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Tools Required</label><input name="hf-skill-tools" id="hf-skill-tools" placeholder="Knife, saw, forge..."></div>
+      <div class="field"><label>Description</label><textarea name="hf-skill-desc" id="hf-skill-desc" rows="2" placeholder="Skill description..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddSkill()">Add Skill</button></div>
+    </div>
+  </div>
+  <div id="hf-skill-list" class="hf-grid"><div class="hf-empty">Loading skills...</div></div>
+
+  <!-- Projects -->
+  <div class="hf-card">
+    <div class="hf-card-title">Trade Projects</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Project Name</label><input name="hf-proj-name" id="hf-proj-name" placeholder="Deer hide tanning"></div>
+      <div class="field"><label>Skill</label><select name="hf-proj-skill" id="hf-proj-skill"><option value="">-- Select Skill --</option></select></div>
+      <div class="field"><label>Difficulty</label>
+        <select name="hf-proj-diff" id="hf-proj-diff">
+          <option value="beginner">Beginner</option><option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option><option value="expert">Expert</option>
+        </select>
+      </div>
+      <div class="field"><label>Time (hrs)</label><input name="hf-proj-time" id="hf-proj-time" type="number" step="0.5" placeholder="0"></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Materials</label><input name="hf-proj-materials" id="hf-proj-materials" placeholder="Hide, salt, tannins..."></div>
+      <div class="field"><label>Output Item</label><input name="hf-proj-output" id="hf-proj-output" placeholder="Tanned leather"></div>
+      <div class="field"><label>Steps</label><textarea name="hf-proj-steps" id="hf-proj-steps" rows="2" placeholder="Step-by-step process..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddProject()">Add Project</button></div>
+    </div>
+  </div>
+  <div id="hf-proj-list"><div class="hf-empty">Loading projects...</div></div>
+</div>
+
+<!-- ── Preservation Panel ────────────────────────────────── -->
+<div class="hf-panel" id="hf-panel-preservation">
+  <div class="hf-card">
+    <div class="hf-card-title">Add Preservation Method</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Method Name</label><input name="hf-pres-name" id="hf-pres-name" placeholder="Water Bath Canning"></div>
+      <div class="field"><label>Type</label>
+        <select name="hf-pres-type" id="hf-pres-type">
+          <option value="canning">Canning</option><option value="dehydrating">Dehydrating</option>
+          <option value="smoking">Smoking</option><option value="fermenting">Fermenting</option>
+          <option value="freezing">Freezing</option><option value="salting">Salting</option>
+          <option value="pickling">Pickling</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Input Item</label><input name="hf-pres-input" id="hf-pres-input" placeholder="Venison, berries..."></div>
+      <div class="field"><label>Output Item</label><input name="hf-pres-output" id="hf-pres-output" placeholder="Canned venison, jerky..."></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Equipment</label><input name="hf-pres-equip" id="hf-pres-equip" placeholder="Pressure canner, jars..."></div>
+      <div class="field"><label>Processing Time (hrs)</label><input name="hf-pres-time" id="hf-pres-time" type="number" step="0.5" placeholder="0"></div>
+      <div class="field"><label>Shelf Life (days)</label><input name="hf-pres-shelf" id="hf-pres-shelf" type="number" value="365"></div>
+      <div class="field"><label>Yield Ratio</label><input name="hf-pres-yield" id="hf-pres-yield" type="number" step="0.1" value="1.0"></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Process Steps</label><textarea name="hf-pres-steps" id="hf-pres-steps" rows="2" placeholder="Step-by-step process..."></textarea></div>
+      <div class="field"><label>Safety Notes</label><textarea name="hf-pres-safety" id="hf-pres-safety" rows="2" placeholder="Botulism risk, temperature requirements..."></textarea></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field" style="flex:0"><button class="hf-btn hf-btn-primary" onclick="hfAddPreservation()">Add Method</button></div>
+      <div class="field" style="flex:0"><button class="hf-btn hf-btn-secondary" onclick="hfSeedPreservation()">Seed Default Methods</button></div>
+    </div>
+  </div>
+  <div id="hf-pres-list" class="hf-grid"><div class="hf-empty">Loading methods...</div></div>
+
+  <!-- Batches -->
+  <div class="hf-card">
+    <div class="hf-card-title">Preservation Batches</div>
+    <div class="hf-form-row">
+      <div class="field"><label>Method</label><select name="hf-batch-method" id="hf-batch-method"><option value="">-- Select Method --</option></select></div>
+      <div class="field"><label>Batch Name</label><input name="hf-batch-name" id="hf-batch-name" placeholder="Venison Batch #1"></div>
+      <div class="field"><label>Date Processed</label><input name="hf-batch-date" id="hf-batch-date" type="date"></div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Input Qty</label><input name="hf-batch-in-qty" id="hf-batch-in-qty" type="number" step="0.1" placeholder="0"></div>
+      <div class="field"><label>Input Unit</label>
+        <select name="hf-batch-in-unit" id="hf-batch-in-unit">
+          <option value="lbs">lbs</option><option value="oz">oz</option>
+          <option value="cups">cups</option><option value="gallons">gallons</option>
+        </select>
+      </div>
+      <div class="field"><label>Output Qty</label><input name="hf-batch-out-qty" id="hf-batch-out-qty" type="number" step="0.1" placeholder="0"></div>
+      <div class="field"><label>Output Unit</label>
+        <select name="hf-batch-out-unit" id="hf-batch-out-unit">
+          <option value="jars">jars</option><option value="lbs">lbs</option>
+          <option value="bags">bags</option><option value="oz">oz</option>
+        </select>
+      </div>
+    </div>
+    <div class="hf-form-row">
+      <div class="field"><label>Expiration Date</label><input name="hf-batch-exp" id="hf-batch-exp" type="date"></div>
+      <div class="field"><label>Storage Location</label><input name="hf-batch-storage" id="hf-batch-storage" placeholder="Root cellar, pantry..."></div>
+      <div class="field"><label>Processor</label><input name="hf-batch-processor" id="hf-batch-processor" placeholder="Name"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddBatch()">Log Batch</button></div>
+    </div>
+  </div>
+  <div id="hf-batch-list"><div class="hf-empty">Loading batches...</div></div>
+</div>
+
+<script>
+(function(){
+  const root = document.getElementById('tab-hunting-foraging');
+  const el  = id => document.getElementById(id);
+  const val = id => el(id)?.value || '';
+  const numVal = (id, def) => parseFloat(val(id)) || def || 0;
+  const api = (url, opts) => fetch(url, opts).then(r => r.json());
+  const post = (url, body) => api(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const put  = (url, body) => api(url, {method:'PUT',  headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const del  = url => api(url, {method:'DELETE'});
+  const toast = msg => { if (window.showToast) window.showToast(msg); };
+  const API = '/api/hunting';
+
+  const today = new Date().toISOString().split('T')[0];
+  ['hf-game-date','hf-fish-date','hf-forage-date','hf-batch-date'].forEach(id => { const e = el(id); if (e && !e.value) e.value = today; });
+
+  const gameTypeBadge = t => '<span class="hf-badge hf-badge-' + t + '">' + t.replace(/_/g, ' ') + '</span>';
+  const confClass = c => 'hf-conf-' + (c || 'unknown');
+  const statusBadge = s => '<span class="hf-badge hf-status-' + (s || 'active') + '">' + (s || 'active') + '</span>';
+  const methodBadge = t => '<span class="hf-badge hf-method-' + (t || 'other') + '">' + (t || 'other').replace(/_/g, ' ') + '</span>';
+  const levelPct = l => ({beginner:25, intermediate:50, advanced:75, expert:100}[l] || 25);
+  const catIcons = {general:'*',woodworking:'[W]',metalworking:'[M]',leather:'[L]',fiber:'[F]',pottery:'[P]',butchering:'[B]',trapping:'[T]',other:'[-]'};
+
+  /* ── Sub-tab switching ── */
+  root.querySelectorAll('.hf-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.hf-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.hf-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = el('hf-panel-' + btn.dataset.hfPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     HUNTING — Game Log + Zones
+     ═══════════════════════════════════════════════════════════ */
+  function hfLoadGame() {
+    api(API + '/game').then(items => {
+      const c = el('hf-game-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No game harvested yet.</div>'; return; }
+      c.innerHTML = '<table class="hf-table"><thead><tr><th>Date</th><th>Species</th><th>Type</th><th>Method</th><th>Weight</th><th>Meat Yield</th><th>Location</th><th></th></tr></thead><tbody>' +
+        items.map(g => '<tr><td>' + (g.date || '-') + '</td><td><strong>' + g.species + '</strong></td><td>' + gameTypeBadge(g.game_type) +
+          '</td><td>' + (g.method || '-') + '</td><td>' + (g.weight_lbs || 0) + ' lbs</td><td>' + (g.meat_yield_lbs || 0) + ' lbs</td><td>' + (g.location || '-') +
+          '</td><td><button class="hf-btn hf-btn-danger" onclick="hfDeleteGame(' + g.id + ')">&times;</button></td></tr>').join('') +
+        '</tbody></table>';
+    });
+    api(API + '/game/stats').then(s => {
+      const c = el('hf-game-stats');
+      c.innerHTML = '<div class="hf-stat-card"><div class="hf-stat-val">' + (s.total_harvested || 0) + '</div><div class="hf-stat-label">Total Harvested</div></div>' +
+        '<div class="hf-stat-card"><div class="hf-stat-val">' + (s.total_meat_yield || 0).toFixed(1) + '</div><div class="hf-stat-label">Meat Yield (lbs)</div></div>' +
+        '<div class="hf-stat-card"><div class="hf-stat-val">' + (s.species_count || 0) + '</div><div class="hf-stat-label">Species Count</div></div>' +
+        '<div class="hf-stat-card"><div class="hf-stat-val">' + (s.biggest_harvest || 0) + '</div><div class="hf-stat-label">Biggest Harvest (lbs)</div></div>';
+    });
+  }
+
+  window.hfAddGame = function() {
+    const species = val('hf-game-species'); if (!species) return;
+    post(API + '/game', {
+      date: val('hf-game-date'), species, game_type: val('hf-game-type'), method: val('hf-game-method'),
+      weapon_details: val('hf-game-weapon'), location: val('hf-game-location'),
+      weight_lbs: numVal('hf-game-weight'), meat_yield_lbs: numVal('hf-game-yield'),
+      field_dressed: el('hf-game-dressed')?.checked ? 1 : 0,
+      license_tag: val('hf-game-tag'), season: val('hf-game-season'),
+      weather_conditions: val('hf-game-weather'), notes: val('hf-game-notes')
+    }).then(() => {
+      el('hf-game-species').value = ''; el('hf-game-weapon').value = '';
+      el('hf-game-location').value = ''; el('hf-game-weight').value = '';
+      el('hf-game-yield').value = ''; el('hf-game-tag').value = '';
+      el('hf-game-notes').value = '';
+      hfLoadGame(); toast('Game harvest logged');
+    });
+  };
+
+  window.hfDeleteGame = function(id) {
+    del(API + '/game/' + id).then(() => { hfLoadGame(); toast('Entry removed'); });
+  };
+
+  /* ── Hunting Zones ── */
+  function hfLoadZones() {
+    api(API + '/zones').then(items => {
+      const c = el('hf-zone-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No hunting zones defined.</div>'; return; }
+      c.innerHTML = items.map(z => '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+        '<div><strong style="color:var(--hf-accent)">' + z.name + '</strong> ' + statusBadge(z.zone_type) +
+        '<br><small style="color:var(--text-secondary,#aaa)">Species: ' + (z.target_species || '-') + ' | Season: ' + (z.season_dates || '-') + '</small>' +
+        '<br><small style="color:var(--text-secondary,#aaa)">' + (z.location || '') + (z.access_notes ? ' | ' + z.access_notes : '') + '</small></div>' +
+        '<button class="hf-btn hf-btn-danger" onclick="hfDeleteZone(' + z.id + ')">&times;</button></div></div>').join('');
+    });
+  }
+
+  window.hfAddZone = function() {
+    const name = val('hf-zone-name'); if (!name) return;
+    post(API + '/zones', {
+      name, zone_type: val('hf-zone-type'), target_species: val('hf-zone-species'),
+      season_dates: val('hf-zone-season'), location: val('hf-zone-location'),
+      access_notes: val('hf-zone-access'), regulations: val('hf-zone-regs')
+    }).then(() => {
+      el('hf-zone-name').value = ''; el('hf-zone-species').value = '';
+      el('hf-zone-season').value = ''; el('hf-zone-location').value = '';
+      el('hf-zone-access').value = ''; el('hf-zone-regs').value = '';
+      hfLoadZones(); toast('Zone added');
+    });
+  };
+
+  window.hfDeleteZone = function(id) {
+    del(API + '/zones/' + id).then(() => { hfLoadZones(); toast('Zone removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     FISHING
+     ═══════════════════════════════════════════════════════════ */
+  function hfLoadFishing() {
+    api(API + '/fishing').then(items => {
+      const c = el('hf-fish-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No catches logged yet.</div>'; return; }
+      c.innerHTML = '<table class="hf-table"><thead><tr><th>Date</th><th>Species</th><th>Method</th><th>Weight</th><th>Length</th><th>Status</th><th>Water</th><th>Location</th><th></th></tr></thead><tbody>' +
+        items.map(f => '<tr><td>' + (f.date || '-') + '</td><td><strong>' + f.species + '</strong></td><td>' + (f.method || '-').replace(/_/g, ' ') +
+          '</td><td>' + (f.weight_lbs || 0) + ' lbs</td><td>' + (f.length_inches || 0) + '"</td><td>' +
+          (f.kept ? '<span class="hf-badge hf-badge-kept">Kept</span>' : '<span class="hf-badge hf-badge-released">Released</span>') +
+          '</td><td>' + (f.water_type || '-') + '</td><td>' + (f.location || '-') +
+          '</td><td><button class="hf-btn hf-btn-danger" onclick="hfDeleteFishing(' + f.id + ')">&times;</button></td></tr>').join('') +
+        '</tbody></table>';
+    });
+    api(API + '/fishing/stats').then(s => {
+      const c = el('hf-fish-stats');
+      c.innerHTML = '<div class="hf-stat-card"><div class="hf-stat-val">' + (s.total_catch || 0) + '</div><div class="hf-stat-label">Total Catch</div></div>' +
+        '<div class="hf-stat-card"><div class="hf-stat-val">' + (s.total_weight || 0).toFixed(1) + '</div><div class="hf-stat-label">Total Weight (lbs)</div></div>' +
+        '<div class="hf-stat-card"><div class="hf-stat-val">' + (s.kept || 0) + '</div><div class="hf-stat-label">Kept</div></div>' +
+        '<div class="hf-stat-card"><div class="hf-stat-val">' + (s.released || 0) + '</div><div class="hf-stat-label">Released</div></div>';
+    });
+  }
+
+  window.hfAddFishing = function() {
+    const species = val('hf-fish-species'); if (!species) return;
+    post(API + '/fishing', {
+      date: val('hf-fish-date'), species, method: val('hf-fish-method'),
+      bait_lure: val('hf-fish-bait'), weight_lbs: numVal('hf-fish-weight'),
+      length_inches: numVal('hf-fish-length'), kept: el('hf-fish-kept')?.checked ? 1 : 0,
+      water_type: val('hf-fish-water'), water_temp_f: numVal('hf-fish-temp'),
+      weather_conditions: val('hf-fish-weather'), location: val('hf-fish-location'),
+      notes: val('hf-fish-notes')
+    }).then(() => {
+      el('hf-fish-species').value = ''; el('hf-fish-bait').value = '';
+      el('hf-fish-weight').value = ''; el('hf-fish-length').value = '';
+      el('hf-fish-temp').value = ''; el('hf-fish-weather').value = '';
+      el('hf-fish-location').value = ''; el('hf-fish-notes').value = '';
+      hfLoadFishing(); toast('Catch logged');
+    });
+  };
+
+  window.hfDeleteFishing = function(id) {
+    del(API + '/fishing/' + id).then(() => { hfLoadFishing(); toast('Entry removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     FORAGING
+     ═══════════════════════════════════════════════════════════ */
+  function hfLoadForaging() {
+    api(API + '/foraging').then(items => {
+      const c = el('hf-forage-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No foraging entries yet.</div>'; return; }
+      c.innerHTML = '<table class="hf-table"><thead><tr><th>Date</th><th>Plant</th><th>Category</th><th>Qty</th><th>Confidence</th><th>Location</th><th></th></tr></thead><tbody>' +
+        items.map(f => '<tr><td>' + (f.date || '-') + '</td><td><strong>' + f.plant_name + '</strong>' +
+          (f.scientific_name ? '<br><small style="color:var(--text-secondary,#aaa);font-style:italic">' + f.scientific_name + '</small>' : '') +
+          '</td><td>' + gameTypeBadge(f.category || 'edible_plant') +
+          '</td><td>' + (f.quantity_harvested || 0) + ' ' + (f.unit || 'lbs') +
+          '</td><td><span class="' + confClass(f.confidence_level) + '">' + (f.confidence_level || 'unknown') + '</span>' +
+          '</td><td>' + (f.location || '-') +
+          '</td><td><button class="hf-btn hf-btn-danger" onclick="hfDeleteForaging(' + f.id + ')">&times;</button></td></tr>').join('') +
+        '</tbody></table>';
+    });
+  }
+
+  window.hfAddForaging = function() {
+    const plant_name = val('hf-forage-plant'); if (!plant_name) return;
+    post(API + '/foraging', {
+      date: val('hf-forage-date'), plant_name, scientific_name: val('hf-forage-sci'),
+      category: val('hf-forage-cat'), location: val('hf-forage-location'),
+      quantity_harvested: val('hf-forage-qty'), unit: val('hf-forage-unit'),
+      season: val('hf-forage-season'), habitat: val('hf-forage-habitat'),
+      confidence_level: val('hf-forage-conf'), preparation_notes: val('hf-forage-prep'),
+      warnings: val('hf-forage-warn')
+    }).then(() => {
+      el('hf-forage-plant').value = ''; el('hf-forage-sci').value = '';
+      el('hf-forage-location').value = ''; el('hf-forage-qty').value = '';
+      el('hf-forage-habitat').value = ''; el('hf-forage-prep').value = '';
+      el('hf-forage-warn').value = '';
+      hfLoadForaging(); toast('Foraging entry logged');
+    });
+  };
+
+  window.hfDeleteForaging = function(id) {
+    del(API + '/foraging/' + id).then(() => { hfLoadForaging(); toast('Entry removed'); });
+  };
+
+  /* ── Wild Edibles Reference ── */
+  function hfLoadEdibles(query) {
+    const url = query ? API + '/edibles/search?q=' + encodeURIComponent(query) : API + '/edibles';
+    api(url).then(items => {
+      const c = el('hf-edible-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No edibles in reference. Use "Seed Default Edibles" to populate.</div>'; return; }
+      c.innerHTML = items.map(e => {
+        const parts = Array.isArray(e.edible_parts) ? e.edible_parts : (function(){ try { return JSON.parse(e.edible_parts || '[]'); } catch(_) { return []; } })();
+        const preps = Array.isArray(e.preparation_methods) ? e.preparation_methods : (function(){ try { return JSON.parse(e.preparation_methods || '[]'); } catch(_) { return []; } })();
+        return '<div class="hf-card"><strong style="color:var(--hf-accent)">' + e.common_name + '</strong>' +
+          (e.scientific_name ? ' <em style="color:var(--text-secondary,#aaa);font-size:.82rem">' + e.scientific_name + '</em>' : '') +
+          (e.toxicity_warnings ? '<span class="hf-warn-icon" title="' + e.toxicity_warnings + '"> [!]</span>' : '') +
+          '<br><small style="color:var(--text-secondary,#aaa)">Edible parts: ' + (parts.join(', ') || '-') + '</small>' +
+          (e.look_alikes ? '<br><small style="color:var(--hf-red)">Look-alikes: ' + e.look_alikes + '</small>' : '') +
+          '<br><small style="color:var(--text-secondary,#aaa)">Preparation: ' + (preps.join(', ') || '-') + '</small>' +
+          '<div style="margin-top:6px"><button class="hf-btn hf-btn-danger" style="padding:3px 8px;font-size:.72rem" onclick="hfDeleteEdible(' + e.id + ')">&times;</button></div></div>';
+      }).join('');
+    });
+  }
+
+  window.hfSearchEdibles = function() { hfLoadEdibles(val('hf-edible-search')); };
+
+  window.hfSeedEdibles = function() {
+    post(API + '/edibles/seed', {}).then(() => { hfLoadEdibles(); toast('Default edibles seeded'); });
+  };
+
+  window.hfDeleteEdible = function(id) {
+    del(API + '/edibles/' + id).then(() => { hfLoadEdibles(); toast('Edible removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     TRAPS & SNARES
+     ═══════════════════════════════════════════════════════════ */
+  function hfLoadTraps() {
+    api(API + '/traps').then(items => {
+      const c = el('hf-trap-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No traps set.</div>'; return; }
+      /* Stats summary */
+      const counts = {active:0, triggered:0, empty:0, damaged:0};
+      items.forEach(t => { counts[t.status] = (counts[t.status] || 0) + 1; });
+      const sc = el('hf-trap-stats');
+      sc.innerHTML = '<div class="hf-stat-card"><div class="hf-stat-val">' + (counts.active || 0) + '</div><div class="hf-stat-label">Active</div></div>' +
+        '<div class="hf-stat-card"><div class="hf-stat-val">' + (counts.triggered || 0) + '</div><div class="hf-stat-label">Triggered</div></div>' +
+        '<div class="hf-stat-card"><div class="hf-stat-val">' + (counts.empty || 0) + '</div><div class="hf-stat-label">Empty</div></div>' +
+        '<div class="hf-stat-card"><div class="hf-stat-val">' + (counts.damaged || 0) + '</div><div class="hf-stat-label">Damaged</div></div>';
+      /* Cards */
+      c.innerHTML = items.map(t => {
+        const overdue = t.check_date ? (new Date() - new Date(t.check_date)) / 3600000 > (t.check_frequency_hours || 24) : false;
+        return '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+          '<div><strong style="color:var(--hf-accent)">' + t.name + '</strong> ' + statusBadge(t.status) +
+          '<br><small style="color:var(--text-secondary,#aaa)">Type: ' + (t.trap_type || '-').replace(/_/g, ' ') + ' | Target: ' + (t.target_species || '-') + '</small>' +
+          '<br><small style="color:var(--text-secondary,#aaa)">Location: ' + (t.location || '-') + ' | Bait: ' + (t.bait || '-') + '</small>' +
+          '<br><small style="color:var(--text-secondary,#aaa)">Last checked: ' + (t.check_date || 'never') +
+          (overdue ? ' <span style="color:var(--hf-red)">[OVERDUE]</span>' : '') +
+          ' | Catches: ' + (t.catches || 0) + '</small></div>' +
+          '<div style="display:flex;gap:4px;flex-direction:column">' +
+          '<button class="hf-btn hf-btn-primary" style="padding:4px 10px;font-size:.75rem" onclick="hfCheckTrap(' + t.id + ')">Check</button>' +
+          '<button class="hf-btn hf-btn-danger" style="padding:4px 10px;font-size:.75rem" onclick="hfDeleteTrap(' + t.id + ')">&times;</button>' +
+          '</div></div></div>';
+      }).join('');
+    });
+  }
+
+  window.hfAddTrap = function() {
+    const name = val('hf-trap-name'); if (!name) return;
+    post(API + '/traps', {
+      name, trap_type: val('hf-trap-type'), target_species: val('hf-trap-species'),
+      location: val('hf-trap-location'), bait: val('hf-trap-bait'),
+      check_frequency_hours: numVal('hf-trap-freq', 24),
+      instructions: val('hf-trap-instructions'), materials_used: val('hf-trap-materials'),
+      legal_notes: val('hf-trap-legal')
+    }).then(() => {
+      el('hf-trap-name').value = ''; el('hf-trap-species').value = '';
+      el('hf-trap-location').value = ''; el('hf-trap-bait').value = '';
+      el('hf-trap-materials').value = ''; el('hf-trap-instructions').value = '';
+      el('hf-trap-legal').value = '';
+      hfLoadTraps(); toast('Trap added');
+    });
+  };
+
+  window.hfCheckTrap = function(id) {
+    post(API + '/traps/' + id + '/check', {}).then(() => { hfLoadTraps(); toast('Trap checked'); });
+  };
+
+  window.hfDeleteTrap = function(id) {
+    del(API + '/traps/' + id).then(() => { hfLoadTraps(); toast('Trap removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     TRADE SKILLS & PROJECTS
+     ═══════════════════════════════════════════════════════════ */
+  let _skills = [];
+
+  function fillSkillSelect() {
+    const sel = el('hf-proj-skill');
+    sel.innerHTML = '<option value="">-- Select Skill --</option>' +
+      _skills.map(s => '<option value="' + s.id + '">' + s.skill_name + '</option>').join('');
+  }
+
+  function hfLoadSkills() {
+    api(API + '/skills').then(items => {
+      _skills = items;
+      fillSkillSelect();
+      const c = el('hf-skill-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No trade skills tracked yet.</div>'; return; }
+      c.innerHTML = items.map(s => {
+        const pct = levelPct(s.skill_level);
+        return '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+          '<div style="flex:1"><strong style="color:var(--hf-accent)">' + s.skill_name + '</strong>' +
+          ' <small style="color:var(--text-secondary,#aaa)">' + (catIcons[s.category] || '') + ' ' + (s.category || '').replace(/_/g, ' ') + '</small>' +
+          (s.practitioner ? '<br><small style="color:var(--text-secondary,#aaa)">Practitioner: ' + s.practitioner + '</small>' : '') +
+          '<br><small style="color:var(--text-secondary,#aaa)">Level: ' + (s.skill_level || 'beginner') + ' | Projects: ' + (s.projects_completed || 0) + '</small>' +
+          '<div class="hf-level-bar"><div class="hf-level-fill" style="width:' + pct + '%"></div></div></div>' +
+          '<button class="hf-btn hf-btn-danger" style="margin-left:8px" onclick="hfDeleteSkill(' + s.id + ')">&times;</button>' +
+          '</div></div>';
+      }).join('');
+    });
+  }
+
+  window.hfAddSkill = function() {
+    const skill_name = val('hf-skill-name'); if (!skill_name) return;
+    post(API + '/skills', {
+      skill_name, category: val('hf-skill-cat'), practitioner: val('hf-skill-who'),
+      skill_level: val('hf-skill-level'), tools_required: val('hf-skill-tools'),
+      description: val('hf-skill-desc')
+    }).then(() => {
+      el('hf-skill-name').value = ''; el('hf-skill-who').value = '';
+      el('hf-skill-tools').value = ''; el('hf-skill-desc').value = '';
+      hfLoadSkills(); toast('Skill added');
+    });
+  };
+
+  window.hfDeleteSkill = function(id) {
+    del(API + '/skills/' + id).then(() => { hfLoadSkills(); toast('Skill removed'); });
+  };
+
+  /* ── Projects ── */
+  function hfLoadProjects() {
+    api(API + '/projects').then(items => {
+      const c = el('hf-proj-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No projects yet.</div>'; return; }
+      c.innerHTML = items.map(p => {
+        const skill = _skills.find(s => s.id === p.skill_id);
+        const statusColor = p.status === 'completed' ? 'var(--hf-green)' : p.status === 'in_progress' ? 'var(--hf-amber)' : 'var(--text-secondary,#aaa)';
+        return '<div class="hf-list-item"><div><strong>' + p.name + '</strong>' +
+          (skill ? ' <small style="color:var(--hf-accent)">(' + skill.skill_name + ')</small>' : '') +
+          '<br><small style="color:var(--text-secondary,#aaa)">Difficulty: ' + (p.difficulty || '-') + ' | Time: ' + (p.time_hours || 0) + 'h' +
+          (p.output_item ? ' | Output: ' + p.output_item : '') + '</small>' +
+          '<br><small style="color:' + statusColor + '">' + (p.status || 'planned') + '</small></div>' +
+          '<button class="hf-btn hf-btn-danger" onclick="hfDeleteProject(' + p.id + ')">&times;</button></div>';
+      }).join('');
+    });
+  }
+
+  window.hfAddProject = function() {
+    const name = val('hf-proj-name'); if (!name) return;
+    post(API + '/projects', {
+      name, skill_id: numVal('hf-proj-skill'), difficulty: val('hf-proj-diff'),
+      time_hours: numVal('hf-proj-time'), materials: val('hf-proj-materials'),
+      output_item: val('hf-proj-output'), steps: val('hf-proj-steps')
+    }).then(() => {
+      el('hf-proj-name').value = ''; el('hf-proj-materials').value = '';
+      el('hf-proj-output').value = ''; el('hf-proj-steps').value = '';
+      el('hf-proj-time').value = '';
+      hfLoadProjects(); toast('Project added');
+    });
+  };
+
+  window.hfDeleteProject = function(id) {
+    del(API + '/projects/' + id).then(() => { hfLoadProjects(); toast('Project removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     PRESERVATION — Methods + Batches
+     ═══════════════════════════════════════════════════════════ */
+  let _methods = [];
+
+  function fillMethodSelect() {
+    const sel = el('hf-batch-method');
+    sel.innerHTML = '<option value="">-- Select Method --</option>' +
+      _methods.map(m => '<option value="' + m.id + '">' + m.name + '</option>').join('');
+  }
+
+  function hfLoadPreservation() {
+    api(API + '/preservation').then(items => {
+      _methods = items;
+      fillMethodSelect();
+      const c = el('hf-pres-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No preservation methods. Use "Seed Default Methods" to populate.</div>'; return; }
+      c.innerHTML = items.map(m => '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+        '<div><strong style="color:var(--hf-accent)">' + m.name + '</strong> ' + methodBadge(m.method_type) +
+        (m.safety_notes ? '<span class="hf-warn-icon" title="' + m.safety_notes + '"> [!]</span>' : '') +
+        '<br><small style="color:var(--text-secondary,#aaa)">Input: ' + (m.input_item || '-') + ' -> Output: ' + (m.output_item || '-') + '</small>' +
+        '<br><small style="color:var(--text-secondary,#aaa)">Shelf life: ' + (m.shelf_life_days || 0) + ' days | Yield: ' + (m.yield_ratio || 1.0) + 'x | Time: ' + (m.processing_time_hours || 0) + 'h</small></div>' +
+        '<button class="hf-btn hf-btn-danger" onclick="hfDeletePreservation(' + m.id + ')">&times;</button></div></div>').join('');
+    });
+  }
+
+  window.hfAddPreservation = function() {
+    const name = val('hf-pres-name'); if (!name) return;
+    post(API + '/preservation', {
+      name, method_type: val('hf-pres-type'), input_item: val('hf-pres-input'),
+      output_item: val('hf-pres-output'), equipment_needed: val('hf-pres-equip'),
+      processing_time_hours: numVal('hf-pres-time'), shelf_life_days: numVal('hf-pres-shelf', 365),
+      yield_ratio: numVal('hf-pres-yield', 1.0), process_steps: val('hf-pres-steps'),
+      safety_notes: val('hf-pres-safety')
+    }).then(() => {
+      el('hf-pres-name').value = ''; el('hf-pres-input').value = '';
+      el('hf-pres-output').value = ''; el('hf-pres-equip').value = '';
+      el('hf-pres-time').value = ''; el('hf-pres-steps').value = '';
+      el('hf-pres-safety').value = '';
+      hfLoadPreservation(); toast('Method added');
+    });
+  };
+
+  window.hfSeedPreservation = function() {
+    post(API + '/preservation/seed', {}).then(() => { hfLoadPreservation(); toast('Default methods seeded'); });
+  };
+
+  window.hfDeletePreservation = function(id) {
+    del(API + '/preservation/' + id).then(() => { hfLoadPreservation(); toast('Method removed'); });
+  };
+
+  /* ── Batches ── */
+  function hfLoadBatches() {
+    api(API + '/batches').then(items => {
+      const c = el('hf-batch-list');
+      if (!items.length) { c.innerHTML = '<div class="hf-empty">No batches logged yet.</div>'; return; }
+      c.innerHTML = items.map(b => {
+        const method = _methods.find(m => m.id === b.method_id);
+        const expired = b.expiration_date && new Date(b.expiration_date) < new Date();
+        return '<div class="hf-list-item"><div><strong>' + (b.batch_name || 'Batch #' + b.id) + '</strong>' +
+          (method ? ' <small style="color:var(--hf-accent)">(' + method.name + ')</small>' : '') +
+          '<br><small style="color:var(--text-secondary,#aaa)">' + (b.date_processed || '-') +
+          ' | In: ' + (b.input_quantity || 0) + ' ' + (b.input_unit || 'lbs') +
+          ' | Out: ' + (b.output_quantity || 0) + ' ' + (b.output_unit || 'jars') + '</small>' +
+          '<br><small style="color:var(--text-secondary,#aaa)">Exp: ' + (b.expiration_date || '-') +
+          (expired ? ' <span style="color:var(--hf-red)">[EXPIRED]</span>' : '') +
+          ' | Storage: ' + (b.storage_location || '-') +
+          (b.processor ? ' | By: ' + b.processor : '') + '</small></div>' +
+          '<button class="hf-btn hf-btn-danger" onclick="hfDeleteBatch(' + b.id + ')">&times;</button></div>';
+      }).join('');
+    });
+  }
+
+  window.hfAddBatch = function() {
+    const method_id = numVal('hf-batch-method');
+    post(API + '/batches', {
+      method_id, batch_name: val('hf-batch-name'), date_processed: val('hf-batch-date'),
+      input_quantity: numVal('hf-batch-in-qty'), input_unit: val('hf-batch-in-unit'),
+      output_quantity: numVal('hf-batch-out-qty'), output_unit: val('hf-batch-out-unit'),
+      expiration_date: val('hf-batch-exp'), storage_location: val('hf-batch-storage'),
+      processor: val('hf-batch-processor')
+    }).then(() => {
+      el('hf-batch-name').value = ''; el('hf-batch-in-qty').value = '';
+      el('hf-batch-out-qty').value = ''; el('hf-batch-storage').value = '';
+      el('hf-batch-processor').value = '';
+      hfLoadBatches(); toast('Batch logged');
+    });
+  };
+
+  window.hfDeleteBatch = function(id) {
+    del(API + '/batches/' + id).then(() => { hfLoadBatches(); toast('Batch removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     LAZY LOAD — MutationObserver
+     ═══════════════════════════════════════════════════════════ */
+  let _loaded = false;
+  function loadAll() {
+    if (_loaded) return; _loaded = true;
+    hfLoadGame();
+    hfLoadZones();
+    hfLoadFishing();
+    hfLoadForaging();
+    hfLoadEdibles();
+    hfLoadTraps();
+    hfLoadSkills();
+    hfLoadProjects();
+    hfLoadPreservation();
+    hfLoadBatches();
+  }
+
+  const obs = new MutationObserver(() => {
+    if (!root.classList.contains('is-hidden')) { loadAll(); }
+  });
+  obs.observe(root, {attributes: true, attributeFilter: ['class']});
+  if (!root.classList.contains('is-hidden')) { loadAll(); }
+})();
+</script>
+</div>

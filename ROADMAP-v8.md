@@ -612,7 +612,7 @@ Community-driven priorities. Build based on user demand.
 
 ---
 
-### Phase 17: Hunting, Foraging & Wild Food
+### Phase 17: Hunting, Foraging & Wild Food ✅ COMPLETE (v7.23.0)
 **Effort:** M (2-3 sessions) | **features.md refs:** §23 (all), §38 (Trade Skills)
 - Hunting management, fishing, foraging & wild edibles, trapping & snaring
 - Trade skills tracker (blacksmithing, woodworking, leatherwork, sewing, soap, candles)

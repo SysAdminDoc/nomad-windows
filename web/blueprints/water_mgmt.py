@@ -422,3 +422,128 @@ def api_water_summary():
         'source_count': source_count,
         'days_of_water_estimate': days_estimate,
     })
+
+
+# ─── Water Budget (daily usage by category) ──────────────────────
+
+_DEFAULT_BUDGET_CATEGORIES = [
+    {'category': 'drinking', 'daily_gallons': 0.5, 'per_person': 1, 'notes': 'Minimum 0.5 gal/person/day; 1 gal in heat/exertion'},
+    {'category': 'cooking', 'daily_gallons': 0.25, 'per_person': 1, 'notes': 'Rice, pasta, rehydration, beverages'},
+    {'category': 'hygiene', 'daily_gallons': 0.25, 'per_person': 1, 'notes': 'Sponge bath, brushing teeth, hand washing'},
+    {'category': 'medical', 'daily_gallons': 0.1, 'per_person': 0, 'notes': 'Wound cleaning, medication mixing'},
+    {'category': 'sanitation', 'daily_gallons': 0.5, 'per_person': 0, 'notes': 'Toilet flushing (if no alternative), dish washing'},
+    {'category': 'pets', 'daily_gallons': 0.25, 'per_person': 0, 'notes': 'Adjust for number/size of animals'},
+    {'category': 'garden', 'daily_gallons': 1.0, 'per_person': 0, 'notes': 'Only if active growing season; reduce in winter'},
+]
+
+
+@water_mgmt_bp.route('/api/water/budget')
+def api_water_budget():
+    with db_session() as db:
+        rows = db.execute('SELECT * FROM water_budget WHERE enabled = 1 ORDER BY category').fetchall()
+        if not rows:
+            # Seed defaults on first access
+            for cat in _DEFAULT_BUDGET_CATEGORIES:
+                db.execute(
+                    '''INSERT INTO water_budget (category, daily_gallons, per_person, notes, enabled)
+                       VALUES (?,?,?,?,1)''',
+                    (cat['category'], cat['daily_gallons'], cat['per_person'], cat['notes'])
+                )
+            db.commit()
+            rows = db.execute('SELECT * FROM water_budget WHERE enabled = 1 ORDER BY category').fetchall()
+
+        household_size = _get_household_size(db)
+        storage = db.execute(
+            'SELECT COALESCE(SUM(current_gallons), 0) as total FROM water_storage'
+        ).fetchone()['total']
+
+    categories = []
+    total_daily = 0
+    for r in rows:
+        d = dict(r)
+        effective = d['daily_gallons'] * (household_size if d['per_person'] else 1)
+        d['effective_daily_gallons'] = round(effective, 2)
+        total_daily += effective
+        categories.append(d)
+
+    days_supply = round(storage / total_daily, 1) if total_daily > 0 else 0
+
+    return jsonify({
+        'categories': categories,
+        'household_size': household_size,
+        'total_daily_gallons': round(total_daily, 2),
+        'total_stored_gallons': storage,
+        'days_of_water': days_supply,
+    })
+
+
+@water_mgmt_bp.route('/api/water/budget', methods=['POST'])
+def api_water_budget_update():
+    data = request.get_json() or {}
+    cat_id = data.get('id')
+    if not cat_id:
+        return jsonify({'error': 'id required'}), 400
+
+    allowed = ['category', 'daily_gallons', 'per_person', 'notes', 'enabled']
+    updates = []
+    values = []
+    for key in allowed:
+        if key in data:
+            updates.append(f'{key} = ?')
+            values.append(data[key])
+    if not updates:
+        return jsonify({'error': 'No fields to update'}), 400
+
+    with db_session() as db:
+        if not db.execute('SELECT 1 FROM water_budget WHERE id = ?', (cat_id,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
+        updates.append("updated_at = datetime('now')")
+        values.append(cat_id)
+        db.execute(f"UPDATE water_budget SET {', '.join(updates)} WHERE id = ?", values)
+        db.commit()
+    return jsonify({'status': 'updated'})
+
+
+@water_mgmt_bp.route('/api/water/budget/add', methods=['POST'])
+def api_water_budget_add():
+    data = request.get_json() or {}
+    if not data.get('category'):
+        return jsonify({'error': 'Category required'}), 400
+    with db_session() as db:
+        db.execute(
+            '''INSERT INTO water_budget (category, daily_gallons, per_person, notes, enabled)
+               VALUES (?,?,?,?,1)''',
+            (data['category'], data.get('daily_gallons', 0),
+             1 if data.get('per_person') else 0, data.get('notes', ''))
+        )
+        db.commit()
+    return jsonify({'status': 'created'}), 201
+
+
+# ─── Filter life alerts ──────────────────────────────────────────
+
+@water_mgmt_bp.route('/api/water/filter-alerts')
+def api_water_filter_alerts():
+    """Return filters approaching replacement threshold (>80% capacity used)."""
+    with db_session() as db:
+        rows = db.execute(
+            "SELECT * FROM water_filters WHERE status = 'active' ORDER BY name"
+        ).fetchall()
+
+    alerts = []
+    for r in rows:
+        max_gal = r['max_gallons'] or 0
+        used = r['gallons_processed'] or 0
+        if max_gal > 0:
+            pct = round(used / max_gal * 100, 1)
+            remaining = max_gal - used
+            if pct >= 80:
+                alerts.append({
+                    'filter_id': r['id'],
+                    'name': r['name'],
+                    'percent_used': pct,
+                    'gallons_remaining': round(remaining, 1),
+                    'status': 'critical' if pct >= 95 else 'warning',
+                })
+    alerts.sort(key=lambda x: x['percent_used'], reverse=True)
+    return jsonify(alerts)

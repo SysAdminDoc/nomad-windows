@@ -2329,6 +2329,10 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_county ON fema_nri_counties(state_fips, county_fips)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_state ON fema_nri_counties(state_name)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_risk ON fema_nri_counties(risk_score DESC)',
+        # v7.12.0 — Consumption profiles & water budget
+        'CREATE INDEX IF NOT EXISTS idx_consumption_profiles_type ON consumption_profiles(profile_type)',
+        'CREATE INDEX IF NOT EXISTS idx_water_budget_category ON water_budget(category)',
+        'CREATE INDEX IF NOT EXISTS idx_water_budget_enabled ON water_budget(enabled)',
     ]:
         try:
             conn.execute(idx)
@@ -2446,6 +2450,40 @@ def _create_data_foundation_tables(conn):
     conn.commit()
 
 
+def _create_consumption_water_budget_tables(conn):
+    """Phase 2 — Nutritional Intelligence & Water Management expansion:
+    consumption profiles, water budgets, dietary restrictions."""
+    conn.executescript('''
+        /* ─── Consumption Profiles (per-person caloric needs) ─── */
+        CREATE TABLE IF NOT EXISTS consumption_profiles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            profile_type TEXT DEFAULT 'adult_male',
+            age_years INTEGER DEFAULT 30,
+            weight_lb REAL DEFAULT 0,
+            activity_level TEXT DEFAULT 'moderate',
+            daily_calories INTEGER DEFAULT 2000,
+            daily_water_gal REAL DEFAULT 0.5,
+            dietary_restrictions TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Water Budget Categories ─── */
+        CREATE TABLE IF NOT EXISTS water_budget (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,
+            daily_gallons REAL DEFAULT 0,
+            per_person INTEGER DEFAULT 1,
+            notes TEXT DEFAULT '',
+            enabled INTEGER DEFAULT 1,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -2457,6 +2495,7 @@ def _init_db_inner(conn):
     _create_pace_evac_container_tables(conn)
     _create_readiness_alerts_threat_drill_tables(conn)
     _create_data_foundation_tables(conn)
+    _create_consumption_water_budget_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

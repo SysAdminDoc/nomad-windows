@@ -1323,6 +1323,10 @@ def create_app():
     app.register_blueprint(regional_profile_bp)
     app.register_blueprint(nutrition_bp)
 
+    # ─── v7.12.0 — Nutritional Intelligence & Water Expansion (Phase 2) ──
+    from web.blueprints.consumption import consumption_bp
+    app.register_blueprint(consumption_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

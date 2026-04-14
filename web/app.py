@@ -1375,6 +1375,10 @@ def create_app():
     from web.blueprints.interoperability import interoperability_bp
     app.register_blueprint(interoperability_bp)
 
+    # ─── v7.23.0 — Hunting, Foraging & Wild Food (Phase 17) ──────────
+    from web.blueprints.hunting_foraging import hunting_foraging_bp
+    app.register_blueprint(hunting_foraging_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

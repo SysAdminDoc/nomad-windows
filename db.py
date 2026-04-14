@@ -2579,6 +2579,31 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_batch_imports_type ON batch_imports(import_type)',
         'CREATE INDEX IF NOT EXISTS idx_batch_imports_format ON batch_imports(format)',
         'CREATE INDEX IF NOT EXISTS idx_batch_imports_status ON batch_imports(status)',
+        # ─── Phase 17: Hunting, Foraging & Wild Food (v7.23.0) ───
+        'CREATE INDEX IF NOT EXISTS idx_hunting_game_log_species ON hunting_game_log(species)',
+        'CREATE INDEX IF NOT EXISTS idx_hunting_game_log_type ON hunting_game_log(game_type)',
+        'CREATE INDEX IF NOT EXISTS idx_hunting_game_log_date ON hunting_game_log(date)',
+        'CREATE INDEX IF NOT EXISTS idx_hunting_game_log_method ON hunting_game_log(method)',
+        'CREATE INDEX IF NOT EXISTS idx_fishing_log_species ON fishing_log(species)',
+        'CREATE INDEX IF NOT EXISTS idx_fishing_log_date ON fishing_log(date)',
+        'CREATE INDEX IF NOT EXISTS idx_fishing_log_water_type ON fishing_log(water_type)',
+        'CREATE INDEX IF NOT EXISTS idx_foraging_log_plant ON foraging_log(plant_name)',
+        'CREATE INDEX IF NOT EXISTS idx_foraging_log_category ON foraging_log(category)',
+        'CREATE INDEX IF NOT EXISTS idx_foraging_log_date ON foraging_log(date)',
+        'CREATE INDEX IF NOT EXISTS idx_foraging_log_confidence ON foraging_log(confidence_level)',
+        'CREATE INDEX IF NOT EXISTS idx_traps_snares_type ON traps_snares(trap_type)',
+        'CREATE INDEX IF NOT EXISTS idx_traps_snares_status ON traps_snares(status)',
+        'CREATE INDEX IF NOT EXISTS idx_traps_snares_check ON traps_snares(check_date)',
+        'CREATE INDEX IF NOT EXISTS idx_wild_edibles_category ON wild_edibles(category)',
+        'CREATE INDEX IF NOT EXISTS idx_wild_edibles_region ON wild_edibles(region)',
+        'CREATE INDEX IF NOT EXISTS idx_trade_skills_category ON trade_skills(category)',
+        'CREATE INDEX IF NOT EXISTS idx_trade_skills_level ON trade_skills(skill_level)',
+        'CREATE INDEX IF NOT EXISTS idx_trade_projects_skill ON trade_projects(skill_id)',
+        'CREATE INDEX IF NOT EXISTS idx_trade_projects_status ON trade_projects(status)',
+        'CREATE INDEX IF NOT EXISTS idx_preservation_methods_type ON preservation_methods(method_type)',
+        'CREATE INDEX IF NOT EXISTS idx_preservation_batches_method ON preservation_batches(method_id)',
+        'CREATE INDEX IF NOT EXISTS idx_preservation_batches_expiry ON preservation_batches(expiration_date)',
+        'CREATE INDEX IF NOT EXISTS idx_hunting_zones_type ON hunting_zones(zone_type)',
     ]:
         try:
             conn.execute(idx)
@@ -4301,6 +4326,219 @@ def _create_interoperability_tables(conn):
     conn.commit()
 
 
+def _create_hunting_foraging_tables(conn):
+    """Phase 17 — Hunting, Foraging & Wild Food: game logs, fishing, foraging,
+    traps, trade skills, preservation, wild edibles reference."""
+    conn.executescript('''
+        /* ─── Hunting Game Log ─── */
+        CREATE TABLE IF NOT EXISTS hunting_game_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT DEFAULT '',
+            species TEXT NOT NULL,
+            game_type TEXT DEFAULT 'big_game',
+            location TEXT DEFAULT '',
+            gps_coords TEXT DEFAULT '',
+            method TEXT DEFAULT 'rifle',
+            weapon_details TEXT DEFAULT '',
+            weight_lbs REAL DEFAULT 0,
+            meat_yield_lbs REAL DEFAULT 0,
+            field_dressed INTEGER DEFAULT 0,
+            trophy INTEGER DEFAULT 0,
+            license_tag TEXT DEFAULT '',
+            season TEXT DEFAULT '',
+            weather_conditions TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Fishing Log ─── */
+        CREATE TABLE IF NOT EXISTS fishing_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT DEFAULT '',
+            species TEXT NOT NULL,
+            location TEXT DEFAULT '',
+            gps_coords TEXT DEFAULT '',
+            method TEXT DEFAULT 'rod_reel',
+            bait_lure TEXT DEFAULT '',
+            weight_lbs REAL DEFAULT 0,
+            length_inches REAL DEFAULT 0,
+            kept INTEGER DEFAULT 1,
+            water_type TEXT DEFAULT 'freshwater',
+            water_temp_f REAL DEFAULT 0,
+            weather_conditions TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Foraging Log ─── */
+        CREATE TABLE IF NOT EXISTS foraging_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            date TEXT DEFAULT '',
+            plant_name TEXT NOT NULL,
+            scientific_name TEXT DEFAULT '',
+            category TEXT DEFAULT 'edible_plant',
+            location TEXT DEFAULT '',
+            gps_coords TEXT DEFAULT '',
+            quantity_harvested TEXT DEFAULT '',
+            unit TEXT DEFAULT 'lbs',
+            season TEXT DEFAULT '',
+            habitat TEXT DEFAULT '',
+            confidence_level TEXT DEFAULT 'certain',
+            photo_ref TEXT DEFAULT '',
+            preparation_notes TEXT DEFAULT '',
+            warnings TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Traps & Snares ─── */
+        CREATE TABLE IF NOT EXISTS traps_snares (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            trap_type TEXT DEFAULT 'snare',
+            target_species TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            gps_coords TEXT DEFAULT '',
+            set_date TEXT DEFAULT '',
+            check_date TEXT DEFAULT '',
+            check_frequency_hours INTEGER DEFAULT 24,
+            status TEXT DEFAULT 'active',
+            catches INTEGER DEFAULT 0,
+            materials_used TEXT DEFAULT '[]',
+            bait TEXT DEFAULT '',
+            instructions TEXT DEFAULT '',
+            legal_notes TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Wild Edibles Reference ─── */
+        CREATE TABLE IF NOT EXISTS wild_edibles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            common_name TEXT NOT NULL,
+            scientific_name TEXT DEFAULT '',
+            category TEXT DEFAULT 'plant',
+            edible_parts TEXT DEFAULT '[]',
+            season_available TEXT DEFAULT '[]',
+            habitat TEXT DEFAULT '',
+            identification_features TEXT DEFAULT '',
+            look_alikes TEXT DEFAULT '',
+            preparation_methods TEXT DEFAULT '[]',
+            nutritional_info TEXT DEFAULT '',
+            medicinal_uses TEXT DEFAULT '',
+            toxicity_warnings TEXT DEFAULT '',
+            image_ref TEXT DEFAULT '',
+            region TEXT DEFAULT 'north_america',
+            confidence_required TEXT DEFAULT 'expert',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Trade Skills ─── */
+        CREATE TABLE IF NOT EXISTS trade_skills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            skill_name TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            practitioner TEXT DEFAULT '',
+            skill_level TEXT DEFAULT 'beginner',
+            tools_required TEXT DEFAULT '[]',
+            materials_required TEXT DEFAULT '[]',
+            description TEXT DEFAULT '',
+            projects_completed INTEGER DEFAULT 0,
+            last_practiced TEXT DEFAULT '',
+            learning_resources TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Trade Skill Projects ─── */
+        CREATE TABLE IF NOT EXISTS trade_projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            skill_id INTEGER DEFAULT 0,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            materials TEXT DEFAULT '[]',
+            tools TEXT DEFAULT '[]',
+            steps TEXT DEFAULT '[]',
+            time_hours REAL DEFAULT 0,
+            difficulty TEXT DEFAULT 'beginner',
+            output_item TEXT DEFAULT '',
+            output_quantity INTEGER DEFAULT 1,
+            status TEXT DEFAULT 'planned',
+            started_date TEXT DEFAULT '',
+            completed_date TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Preservation Methods ─── */
+        CREATE TABLE IF NOT EXISTS preservation_methods (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            method_type TEXT DEFAULT 'canning',
+            input_item TEXT DEFAULT '',
+            output_item TEXT DEFAULT '',
+            equipment_needed TEXT DEFAULT '[]',
+            supplies_needed TEXT DEFAULT '[]',
+            process_steps TEXT DEFAULT '[]',
+            processing_time_hours REAL DEFAULT 0,
+            shelf_life_days INTEGER DEFAULT 365,
+            yield_ratio REAL DEFAULT 1.0,
+            safety_notes TEXT DEFAULT '',
+            temperature_requirements TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Preservation Batches ─── */
+        CREATE TABLE IF NOT EXISTS preservation_batches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            method_id INTEGER DEFAULT 0,
+            batch_name TEXT DEFAULT '',
+            date_processed TEXT DEFAULT '',
+            input_quantity REAL DEFAULT 0,
+            input_unit TEXT DEFAULT 'lbs',
+            output_quantity REAL DEFAULT 0,
+            output_unit TEXT DEFAULT 'jars',
+            expiration_date TEXT DEFAULT '',
+            storage_location TEXT DEFAULT '',
+            quality_check TEXT DEFAULT 'good',
+            processor TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Hunting Zones / Areas ─── */
+        CREATE TABLE IF NOT EXISTS hunting_zones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            zone_type TEXT DEFAULT 'hunting',
+            location TEXT DEFAULT '',
+            gps_bounds TEXT DEFAULT '',
+            terrain TEXT DEFAULT '',
+            target_species TEXT DEFAULT '[]',
+            season_dates TEXT DEFAULT '',
+            regulations TEXT DEFAULT '',
+            access_notes TEXT DEFAULT '',
+            blind_stand_locations TEXT DEFAULT '[]',
+            trail_cam_locations TEXT DEFAULT '[]',
+            last_scouted TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -4325,6 +4563,7 @@ def _init_db_inner(conn):
     _create_disaster_modules_tables(conn)
     _create_daily_living_tables(conn)
     _create_interoperability_tables(conn)
+    _create_hunting_foraging_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

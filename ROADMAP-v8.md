@@ -509,7 +509,7 @@ These phases build the moat. They're what makes NOMAD truly unique.
 
 ---
 
-### Phase 12: Security, OPSEC & Night Operations
+### Phase 12: Security, OPSEC & Night Operations ✅ COMPLETE (v7.18.0)
 **Theme:** Tactical-grade security operations and signature management.
 **Effort:** L (4-6 sessions)
 **features.md refs:** §1.5 (OPSEC), §16.4 (Tactical Security), §48 (Signature Management), §28 (Night Operations), §15.4 (CBRN), §46 (EMP)

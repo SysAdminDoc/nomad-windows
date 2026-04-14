@@ -2343,6 +2343,37 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_inventory_audits_status ON inventory_audits(status)',
         'CREATE INDEX IF NOT EXISTS idx_inventory_audit_items_audit ON inventory_audit_items(audit_id)',
         'CREATE INDEX IF NOT EXISTS idx_inventory_audit_items_inv ON inventory_audit_items(inventory_id)',
+        # v7.14.0 — Movement & Route Planning (Phase 5)
+        'CREATE INDEX IF NOT EXISTS idx_movement_plans_type ON movement_plans(plan_type)',
+        'CREATE INDEX IF NOT EXISTS idx_movement_plans_status ON movement_plans(status)',
+        'CREATE INDEX IF NOT EXISTS idx_movement_plans_evac ON movement_plans(evac_plan_id)',
+        'CREATE INDEX IF NOT EXISTS idx_alt_vehicles_type ON alt_vehicles(vehicle_type)',
+        'CREATE INDEX IF NOT EXISTS idx_alt_vehicles_condition ON alt_vehicles(condition)',
+        'CREATE INDEX IF NOT EXISTS idx_route_hazards_plan ON route_hazards(movement_plan_id)',
+        'CREATE INDEX IF NOT EXISTS idx_route_hazards_type ON route_hazards(hazard_type)',
+        'CREATE INDEX IF NOT EXISTS idx_route_hazards_severity ON route_hazards(severity)',
+        'CREATE INDEX IF NOT EXISTS idx_route_recon_plan ON route_recon(movement_plan_id)',
+        'CREATE INDEX IF NOT EXISTS idx_route_recon_date ON route_recon(recon_date DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_vehicle_loading_evac ON vehicle_loading_plans(evac_plan_id)',
+        'CREATE INDEX IF NOT EXISTS idx_vehicle_loading_vehicle ON vehicle_loading_plans(vehicle_id)',
+        'CREATE INDEX IF NOT EXISTS idx_go_nogo_evac ON go_nogo_matrix(evac_plan_id)',
+        'CREATE INDEX IF NOT EXISTS idx_go_nogo_status ON go_nogo_matrix(current_status)',
+        # v7.14.0 — Tactical Communications (Phase 6)
+        'CREATE INDEX IF NOT EXISTS idx_radio_equipment_type ON radio_equipment(radio_type)',
+        'CREATE INDEX IF NOT EXISTS idx_radio_equipment_assigned ON radio_equipment(assigned_to)',
+        'CREATE INDEX IF NOT EXISTS idx_radio_equipment_condition ON radio_equipment(condition)',
+        'CREATE INDEX IF NOT EXISTS idx_auth_codes_date ON auth_codes(valid_date)',
+        'CREATE INDEX IF NOT EXISTS idx_auth_codes_active ON auth_codes(is_active)',
+        'CREATE INDEX IF NOT EXISTS idx_auth_codes_set ON auth_codes(code_set_name)',
+        'CREATE INDEX IF NOT EXISTS idx_net_schedules_active ON net_schedules(is_active)',
+        'CREATE INDEX IF NOT EXISTS idx_net_schedules_type ON net_schedules(net_type)',
+        'CREATE INDEX IF NOT EXISTS idx_comms_checks_schedule ON comms_checks(net_schedule_id)',
+        'CREATE INDEX IF NOT EXISTS idx_comms_checks_date ON comms_checks(check_date DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_message_templates_type ON message_templates(template_type)',
+        'CREATE INDEX IF NOT EXISTS idx_message_templates_builtin ON message_templates(is_builtin)',
+        'CREATE INDEX IF NOT EXISTS idx_sent_messages_template ON sent_messages(template_id)',
+        'CREATE INDEX IF NOT EXISTS idx_sent_messages_type ON sent_messages(template_type)',
+        'CREATE INDEX IF NOT EXISTS idx_sent_messages_sent ON sent_messages(sent_at DESC)',
     ]:
         try:
             conn.execute(idx)
@@ -2561,6 +2592,247 @@ def _create_consumption_water_budget_tables(conn):
     conn.commit()
 
 
+def _create_movement_ops_tables(conn):
+    """Phase 5 — Evacuation, Movement & Route Planning:
+    movement plans, alt vehicles, route hazards/recon, vehicle loading, go/no-go."""
+    conn.executescript('''
+        /* ─── Movement Plans (foot march, convoy, multi-modal) ─── */
+        CREATE TABLE IF NOT EXISTS movement_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            plan_type TEXT DEFAULT 'foot',
+            origin TEXT DEFAULT '',
+            origin_lat REAL,
+            origin_lng REAL,
+            destination TEXT DEFAULT '',
+            destination_lat REAL,
+            destination_lng REAL,
+            distance_miles REAL DEFAULT 0,
+            pace_count_per_100m INTEGER DEFAULT 65,
+            march_rate_mph REAL DEFAULT 3.0,
+            estimated_hours REAL DEFAULT 0,
+            rest_plan TEXT DEFAULT '10min/hour',
+            water_stops TEXT DEFAULT '[]',
+            waypoints TEXT DEFAULT '[]',
+            convoy_sop TEXT DEFAULT '',
+            convoy_order TEXT DEFAULT '[]',
+            comm_plan TEXT DEFAULT '',
+            hand_signals TEXT DEFAULT '[]',
+            night_movement INTEGER DEFAULT 0,
+            vehicle_id INTEGER,
+            evac_plan_id INTEGER REFERENCES evac_plans(id),
+            status TEXT DEFAULT 'draft',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Alternative Vehicles (bicycle, horse, boat, ATV, etc.) ─── */
+        CREATE TABLE IF NOT EXISTS alt_vehicles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            vehicle_type TEXT DEFAULT 'bicycle',
+            capacity_lb REAL DEFAULT 0,
+            range_miles REAL DEFAULT 0,
+            speed_mph REAL DEFAULT 0,
+            fuel_type TEXT DEFAULT 'human',
+            fuel_consumption TEXT DEFAULT '',
+            feed_requirements TEXT DEFAULT '',
+            condition TEXT DEFAULT 'good',
+            maintenance_due TEXT DEFAULT '',
+            storage_location TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Route Hazards (bridges, tunnels, chokepoints, flood zones) ─── */
+        CREATE TABLE IF NOT EXISTS route_hazards (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            movement_plan_id INTEGER REFERENCES movement_plans(id),
+            name TEXT NOT NULL,
+            hazard_type TEXT DEFAULT 'chokepoint',
+            lat REAL,
+            lng REAL,
+            severity TEXT DEFAULT 'moderate',
+            description TEXT DEFAULT '',
+            bypass_route TEXT DEFAULT '',
+            seasonal INTEGER DEFAULT 0,
+            active_months TEXT DEFAULT '',
+            last_verified TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Route Reconnaissance Log ─── */
+        CREATE TABLE IF NOT EXISTS route_recon (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            movement_plan_id INTEGER REFERENCES movement_plans(id),
+            recon_date TEXT NOT NULL,
+            observer TEXT DEFAULT '',
+            road_condition TEXT DEFAULT 'passable',
+            bridge_status TEXT DEFAULT 'intact',
+            water_crossings TEXT DEFAULT '[]',
+            obstacles TEXT DEFAULT '[]',
+            threat_level TEXT DEFAULT 'low',
+            population_density TEXT DEFAULT 'rural',
+            fuel_available INTEGER DEFAULT 0,
+            water_available INTEGER DEFAULT 0,
+            shelter_available INTEGER DEFAULT 0,
+            photos TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Vehicle Loading Plans (which bags/gear in which vehicle) ─── */
+        CREATE TABLE IF NOT EXISTS vehicle_loading_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            evac_plan_id INTEGER REFERENCES evac_plans(id),
+            vehicle_id INTEGER,
+            vehicle_name TEXT DEFAULT '',
+            load_order INTEGER DEFAULT 0,
+            assigned_persons TEXT DEFAULT '[]',
+            assigned_bags TEXT DEFAULT '[]',
+            assigned_items TEXT DEFAULT '[]',
+            total_weight_lb REAL DEFAULT 0,
+            max_weight_lb REAL DEFAULT 0,
+            fuel_level_pct INTEGER DEFAULT 100,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Go/No-Go Decision Matrix ─── */
+        CREATE TABLE IF NOT EXISTS go_nogo_matrix (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            evac_plan_id INTEGER REFERENCES evac_plans(id),
+            criterion TEXT NOT NULL,
+            category TEXT DEFAULT 'security',
+            weight REAL DEFAULT 1.0,
+            go_threshold TEXT DEFAULT '',
+            nogo_threshold TEXT DEFAULT '',
+            current_value TEXT DEFAULT '',
+            current_status TEXT DEFAULT 'unknown',
+            data_source TEXT DEFAULT 'manual',
+            last_updated TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
+def _create_tactical_comms_tables(conn):
+    """Phase 6 — Communications & Field Operations:
+    radio equipment, auth codes, net schedules, comms checks, field reference."""
+    conn.executescript('''
+        /* ─── Radio Equipment Inventory ─── */
+        CREATE TABLE IF NOT EXISTS radio_equipment (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            model TEXT DEFAULT '',
+            serial_number TEXT DEFAULT '',
+            radio_type TEXT DEFAULT 'handheld',
+            freq_range_low REAL DEFAULT 0,
+            freq_range_high REAL DEFAULT 0,
+            power_watts REAL DEFAULT 5,
+            battery_type TEXT DEFAULT '',
+            battery_count INTEGER DEFAULT 1,
+            antenna TEXT DEFAULT '',
+            firmware_version TEXT DEFAULT '',
+            programmed_channels TEXT DEFAULT '[]',
+            condition TEXT DEFAULT 'good',
+            assigned_to TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            last_tested TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Authentication Codes (challenge/response, daily rotating) ─── */
+        CREATE TABLE IF NOT EXISTS auth_codes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            code_set_name TEXT NOT NULL,
+            valid_date TEXT NOT NULL,
+            challenge TEXT NOT NULL,
+            response TEXT NOT NULL,
+            running_password TEXT DEFAULT '',
+            number_combination TEXT DEFAULT '',
+            duress_code TEXT DEFAULT '',
+            is_active INTEGER DEFAULT 1,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Net Schedules (radio check-in windows) ─── */
+        CREATE TABLE IF NOT EXISTS net_schedules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            net_type TEXT DEFAULT 'daily',
+            frequency TEXT DEFAULT '',
+            backup_frequency TEXT DEFAULT '',
+            day_of_week TEXT DEFAULT 'daily',
+            start_time TEXT DEFAULT '0800',
+            duration_min INTEGER DEFAULT 30,
+            net_control TEXT DEFAULT '',
+            call_order TEXT DEFAULT '[]',
+            protocol TEXT DEFAULT 'voice',
+            is_active INTEGER DEFAULT 1,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Comms Checks Log ─── */
+        CREATE TABLE IF NOT EXISTS comms_checks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            net_schedule_id INTEGER REFERENCES net_schedules(id),
+            check_date TEXT NOT NULL,
+            check_time TEXT DEFAULT '',
+            operator TEXT DEFAULT '',
+            stations_checked TEXT DEFAULT '[]',
+            stations_missed TEXT DEFAULT '[]',
+            signal_quality TEXT DEFAULT 'good',
+            propagation_notes TEXT DEFAULT '',
+            issues TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Message Templates (SITREP, MEDEVAC 9-line, SALUTE, etc.) ─── */
+        CREATE TABLE IF NOT EXISTS message_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            template_type TEXT DEFAULT 'SITREP',
+            fields TEXT DEFAULT '[]',
+            example TEXT DEFAULT '',
+            instructions TEXT DEFAULT '',
+            is_builtin INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Sent Messages Log ─── */
+        CREATE TABLE IF NOT EXISTS sent_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            template_id INTEGER REFERENCES message_templates(id),
+            template_type TEXT DEFAULT '',
+            content TEXT DEFAULT '{}',
+            formatted_text TEXT DEFAULT '',
+            sent_via TEXT DEFAULT 'radio',
+            sent_to TEXT DEFAULT '',
+            sent_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            acknowledged INTEGER DEFAULT 0,
+            acknowledged_at TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -2574,6 +2846,8 @@ def _init_db_inner(conn):
     _create_data_foundation_tables(conn)
     _create_consumption_water_budget_tables(conn)
     _create_meal_planning_tables(conn)
+    _create_movement_ops_tables(conn)
+    _create_tactical_comms_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

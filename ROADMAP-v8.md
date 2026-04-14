@@ -244,7 +244,7 @@ These phases address the biggest gaps between NOMAD and what users most need. Bu
 
 ---
 
-### Phase 5: Evacuation, Movement & Route Planning
+### Phase 5: Evacuation, Movement & Route Planning ✅ COMPLETE (v7.14.0)
 **Theme:** Connect maps + bags + contacts + vehicles into actionable evacuation and movement plans.
 **Effort:** L (4-6 sessions)
 **Depends on:** Phase 3 (vehicles, loadouts)
@@ -293,7 +293,7 @@ These phases deliver significant capability. Can be built in any order within th
 
 ---
 
-### Phase 6: Communications & Field Operations
+### Phase 6: Communications & Field Operations ✅ COMPLETE (v7.14.0)
 **Theme:** Tactical communications planning and field-expedient survival reference.
 **Effort:** L (4-6 sessions)
 **features.md refs:** §16.3 (Tactical Comms), §2.3 (Comms Module), §57 (Field Expedient), §2.4 (Weather expansion)

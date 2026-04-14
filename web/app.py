@@ -1315,6 +1315,14 @@ def create_app():
     app.register_blueprint(threat_intel_bp)
     app.register_blueprint(evac_drills_bp)
 
+    # ─── v7.11.0 — Data Foundation & Localization (Phase 1) ─────────
+    from web.blueprints.data_packs import data_packs_bp
+    from web.blueprints.regional_profile import regional_profile_bp
+    from web.blueprints.nutrition import nutrition_bp
+    app.register_blueprint(data_packs_bp)
+    app.register_blueprint(regional_profile_bp)
+    app.register_blueprint(nutrition_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

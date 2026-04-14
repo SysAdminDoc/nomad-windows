@@ -59,11 +59,11 @@ Generate a complete **operations binder, laminated wallet cards, signal operatin
 
 | | |
 |---|---|
-| **Tabs** | Situation Room, Home, AI Chat, Library, Maps, Notes, Media, Tools, NukeMap, VIPTrack, Preparedness, Settings |
+| **Tabs** | Situation Room, Home, AI Chat, Library, Maps, Notes, Media, Tools, NukeMap, VIPTrack, Preparedness, Training, Group Ops, OPSEC, Agriculture, Disasters, Daily Living, Import/Export, Wild Food, Hardware, Security, Specialized, Settings |
 | **Services** | Ollama (AI), Kiwix (Wikipedia), CyberChef, Kolibri, Qdrant, Stirling PDF, FlatNotes, BitTorrent |
 | **Intelligence** | 36 data sources, 435+ feeds, 45 map layers, 1,275 infrastructure points, 108+ cards |
 | **Preparedness** | Inventory, medical, garden, power, security, radio, 42 calculators, 21 guides, 56 reference cards |
-| **Backend** | 600+ API routes across 26 blueprints, 95+ DB tables, 210+ indexes, 775+ automated tests |
+| **Backend** | 1,644 API routes across 59 blueprints, 264 DB tables, 611 indexes, 888+ automated tests |
 | **Platform** | Windows, Linux, macOS -single portable executable per platform |
 | **Themes** | Desert, Night Ops, Cyber, Red Light, E-Ink |
 | **Privacy** | All data stored locally. No accounts. No telemetry. No cloud. |

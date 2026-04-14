@@ -587,7 +587,7 @@ These phases build the moat. They're what makes NOMAD truly unique.
 
 ---
 
-### Phase 16: Interoperability & Data Exchange
+### Phase 16: Interoperability & Data Exchange ✅ COMPLETE (v7.22.0)
 **Theme:** Import/export everything. No data lock-in. Plugin foundation.
 **Effort:** L (4-6 sessions)
 **features.md refs:** §18 (Interoperability), §7 (Print & Export), §34.2 (Data Entry)

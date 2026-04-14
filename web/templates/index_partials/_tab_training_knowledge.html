@@ -1,0 +1,689 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     TRAINING & KNOWLEDGE  (data-tab="training-knowledge")
+     Skills, courses, certifications, drills, flashcards, knowledge packages
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="tab-training-knowledge" class="tab-content is-hidden" data-tab="training-knowledge">
+<style>
+  #tab-training-knowledge {
+    --tk-accent: #8b5cf6;
+    --tk-accent-dim: rgba(139,92,246,.15);
+    --tk-red: #ef4444;
+    --tk-green: #22c55e;
+    --tk-amber: #f59e0b;
+    --tk-blue: #3b82f6;
+    --tk-orange: #f97316;
+  }
+  #tab-training-knowledge .tk-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-training-knowledge .tk-header h2 { font-size:1.25rem; color:var(--tk-accent); margin:0; }
+  #tab-training-knowledge .tk-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-training-knowledge .tk-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-training-knowledge .tk-sub-tab.active { background:var(--tk-accent-dim); border-color:var(--tk-accent); color:var(--tk-accent); }
+  #tab-training-knowledge .tk-panel { display:none; }
+  #tab-training-knowledge .tk-panel.active { display:block; }
+  #tab-training-knowledge .tk-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-training-knowledge .tk-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-training-knowledge .tk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-training-knowledge .tk-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
+  #tab-training-knowledge .tk-stat-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:12px 14px; text-align:center; }
+  #tab-training-knowledge .tk-stat-val { font-size:1.4rem; font-weight:700; color:var(--tk-accent); }
+  #tab-training-knowledge .tk-stat-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-secondary,#aaa); margin-top:2px; }
+  #tab-training-knowledge .tk-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-training-knowledge .tk-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-training-knowledge .tk-form-row input,
+  #tab-training-knowledge .tk-form-row select,
+  #tab-training-knowledge .tk-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-training-knowledge .tk-form-row .field { flex:1; min-width:140px; }
+  #tab-training-knowledge .tk-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-training-knowledge .tk-btn-primary { background:var(--tk-accent); color:#fff; }
+  #tab-training-knowledge .tk-btn-danger { background:var(--tk-red); color:#fff; }
+  #tab-training-knowledge .tk-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-training-knowledge .tk-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-training-knowledge .tk-list-item:last-child { border-bottom:none; }
+  #tab-training-knowledge .tk-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-training-knowledge .tk-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-training-knowledge .tk-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  #tab-training-knowledge .tk-table th { padding:8px 10px; text-align:left; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); background:rgba(0,0,0,.3); border-bottom:1px solid var(--border,#444); }
+  #tab-training-knowledge .tk-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-training-knowledge .tk-table tr:nth-child(even) td { background:rgba(255,255,255,.02); }
+  #tab-training-knowledge .tk-stars { color:var(--tk-accent); letter-spacing:2px; }
+  #tab-training-knowledge .tk-cert-active { color:var(--tk-green); }
+  #tab-training-knowledge .tk-cert-expiring { color:var(--tk-amber); }
+  #tab-training-knowledge .tk-cert-expired { color:var(--tk-red); }
+  #tab-training-knowledge .tk-grade-A { background:#16a34a; color:#fff; }
+  #tab-training-knowledge .tk-grade-B { background:#3b82f6; color:#fff; }
+  #tab-training-knowledge .tk-grade-C { background:#eab308; color:#000; }
+  #tab-training-knowledge .tk-grade-D { background:#f97316; color:#fff; }
+  #tab-training-knowledge .tk-grade-F { background:#ef4444; color:#fff; }
+  /* Flashcard flip */
+  #tab-training-knowledge .tk-flashcard-scene { perspective:600px; margin:20px auto; max-width:480px; height:260px; }
+  #tab-training-knowledge .tk-flashcard-inner { position:relative; width:100%; height:100%; transition:transform .5s; transform-style:preserve-3d; }
+  #tab-training-knowledge .tk-flashcard-inner.flipped { transform:rotateY(180deg); }
+  #tab-training-knowledge .tk-flashcard-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:12px; display:flex; align-items:center; justify-content:center; padding:24px; font-size:1.1rem; text-align:center; border:1px solid var(--border,#333); }
+  #tab-training-knowledge .tk-flashcard-front { background:var(--card-bg,#1a1a2e); color:var(--text-primary,#eee); }
+  #tab-training-knowledge .tk-flashcard-back { background:var(--tk-accent-dim); color:var(--tk-accent); transform:rotateY(180deg); }
+  /* Matrix modal */
+  #tab-training-knowledge .tk-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.7); z-index:9000; display:flex; align-items:center; justify-content:center; }
+  #tab-training-knowledge .tk-modal { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:12px; padding:20px; max-width:90vw; max-height:85vh; overflow:auto; min-width:400px; }
+  #tab-training-knowledge .tk-modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  #tab-training-knowledge .tk-modal-header h3 { margin:0; color:var(--tk-accent); font-size:1.05rem; }
+  #tab-training-knowledge .tk-matrix-cell { text-align:center; min-width:60px; }
+  #tab-training-knowledge .tk-bus-meter { height:8px; border-radius:4px; background:var(--border,#333); overflow:hidden; margin-top:4px; }
+  #tab-training-knowledge .tk-bus-fill { height:100%; border-radius:4px; transition:width .3s; }
+</style>
+
+<div class="tk-header">
+  <h2>Training & Knowledge</h2>
+</div>
+
+<!-- Sub-tabs -->
+<div class="tk-sub-tabs">
+  <button class="tk-sub-tab active" data-tk-panel="skills">Skills</button>
+  <button class="tk-sub-tab" data-tk-panel="courses">Courses</button>
+  <button class="tk-sub-tab" data-tk-panel="certifications">Certs</button>
+  <button class="tk-sub-tab" data-tk-panel="drills">Drills</button>
+  <button class="tk-sub-tab" data-tk-panel="flashcards">Flashcards</button>
+  <button class="tk-sub-tab" data-tk-panel="knowledge">Knowledge</button>
+</div>
+
+<!-- ── Skills Panel ──────────────────────────────────── -->
+<div class="tk-panel active" id="tk-panel-skills">
+  <div class="tk-card">
+    <div class="tk-card-title">Add / Edit Skill</div>
+    <input type="hidden" id="tk-skill-edit-id" name="tk-skill-edit-id" value="">
+    <div class="tk-form-row">
+      <div class="field"><label>Person</label><input name="tk-skill-person" id="tk-skill-person" placeholder="Name"></div>
+      <div class="field"><label>Skill Name</label><input name="tk-skill-name" id="tk-skill-name" placeholder="First Aid"></div>
+      <div class="field"><label>Category</label>
+        <select name="tk-skill-category" id="tk-skill-category">
+          <option value="medical">Medical</option><option value="comms">Communications</option>
+          <option value="navigation">Navigation</option><option value="security">Security</option>
+          <option value="mechanical">Mechanical</option><option value="agriculture">Agriculture</option>
+          <option value="leadership">Leadership</option><option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>Level (1-5)</label>
+        <select name="tk-skill-level" id="tk-skill-level">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5">5</option>
+        </select>
+      </div>
+      <div class="field"><label>Certified?</label>
+        <select name="tk-skill-certified" id="tk-skill-certified">
+          <option value="0">No</option><option value="1">Yes</option>
+        </select>
+      </div>
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="tk-btn tk-btn-primary" onclick="tkSaveSkill()">Save Skill</button>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <span class="tk-card-title" style="margin:0">Skill Roster</span>
+    <button class="tk-btn tk-btn-secondary" onclick="tkShowMatrix()">Cross-Training Matrix</button>
+  </div>
+  <div id="tk-skill-list" class="tk-card"><div class="tk-empty">Loading skills...</div></div>
+</div>
+
+<!-- ── Courses Panel ─────────────────────────────────── -->
+<div class="tk-panel" id="tk-panel-courses">
+  <div class="tk-card">
+    <div class="tk-card-title">Create Course</div>
+    <input type="hidden" id="tk-course-edit-id" name="tk-course-edit-id" value="">
+    <div class="tk-form-row">
+      <div class="field"><label>Title</label><input name="tk-course-title" id="tk-course-title" placeholder="Wilderness First Aid"></div>
+      <div class="field"><label>Category</label>
+        <select name="tk-course-category" id="tk-course-category">
+          <option value="medical">Medical</option><option value="comms">Communications</option>
+          <option value="navigation">Navigation</option><option value="security">Security</option>
+          <option value="mechanical">Mechanical</option><option value="leadership">Leadership</option>
+          <option value="survival">Survival</option><option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>Difficulty</label>
+        <select name="tk-course-difficulty" id="tk-course-difficulty">
+          <option value="beginner">Beginner</option><option value="intermediate">Intermediate</option>
+          <option value="advanced">Advanced</option>
+        </select>
+      </div>
+      <div class="field"><label>Instructor</label><input name="tk-course-instructor" id="tk-course-instructor" placeholder="Name"></div>
+      <div class="field"><label>Hours</label><input name="tk-course-hours" id="tk-course-hours" type="number" step="0.5" value="1"></div>
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="tk-btn tk-btn-primary" onclick="tkSaveCourse()">Save Course</button>
+      </div>
+    </div>
+  </div>
+  <div id="tk-course-list" class="tk-card"><div class="tk-empty">Loading courses...</div></div>
+  <!-- Expanded course detail / lessons -->
+  <div id="tk-course-detail" class="tk-card is-hidden">
+    <div id="tk-course-detail-header"></div>
+    <div class="tk-card" style="margin-top:10px;">
+      <div class="tk-card-title">Add Lesson</div>
+      <input type="hidden" id="tk-lesson-course-id" name="tk-lesson-course-id" value="">
+      <div class="tk-form-row">
+        <div class="field"><label>Lesson Title</label><input name="tk-lesson-title" id="tk-lesson-title" placeholder="Lesson title"></div>
+        <div class="field"><label>Order</label><input name="tk-lesson-order" id="tk-lesson-order" type="number" value="1"></div>
+      </div>
+      <div class="tk-form-row">
+        <div class="field"><label>Content</label><textarea name="tk-lesson-content" id="tk-lesson-content" rows="3" placeholder="Lesson content / notes"></textarea></div>
+      </div>
+      <button class="tk-btn tk-btn-primary" onclick="tkAddLesson()">Add Lesson</button>
+    </div>
+    <div id="tk-lesson-list"></div>
+  </div>
+</div>
+
+<!-- ── Certifications Panel ──────────────────────────── -->
+<div class="tk-panel" id="tk-panel-certifications">
+  <div id="tk-cert-expiring-banner" class="tk-card is-hidden" style="border-color:var(--tk-amber);"></div>
+  <div class="tk-card">
+    <div class="tk-card-title">Add Certification</div>
+    <input type="hidden" id="tk-cert-edit-id" name="tk-cert-edit-id" value="">
+    <div class="tk-form-row">
+      <div class="field"><label>Person</label><input name="tk-cert-person" id="tk-cert-person" placeholder="Name"></div>
+      <div class="field"><label>Certification</label><input name="tk-cert-name" id="tk-cert-name" placeholder="CPR/AED"></div>
+      <div class="field"><label>Issuer</label><input name="tk-cert-issuer" id="tk-cert-issuer" placeholder="Red Cross"></div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>Issue Date</label><input name="tk-cert-issued" id="tk-cert-issued" type="date"></div>
+      <div class="field"><label>Expiration Date</label><input name="tk-cert-expires" id="tk-cert-expires" type="date"></div>
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="tk-btn tk-btn-primary" onclick="tkSaveCert()">Save Cert</button>
+      </div>
+    </div>
+  </div>
+  <div id="tk-cert-list" class="tk-card"><div class="tk-empty">Loading certifications...</div></div>
+</div>
+
+<!-- ── Drills Panel ──────────────────────────────────── -->
+<div class="tk-panel" id="tk-panel-drills">
+  <div style="display:flex;gap:8px;margin-bottom:12px;">
+    <button class="tk-btn tk-btn-secondary" onclick="tkSeedDrills()">Seed Built-in Drills</button>
+  </div>
+  <div class="tk-card">
+    <div class="tk-card-title">Create Drill Template</div>
+    <input type="hidden" id="tk-drill-edit-id" name="tk-drill-edit-id" value="">
+    <div class="tk-form-row">
+      <div class="field"><label>Drill Name</label><input name="tk-drill-name" id="tk-drill-name" placeholder="Fire Evacuation"></div>
+      <div class="field"><label>Category</label>
+        <select name="tk-drill-category" id="tk-drill-category">
+          <option value="fire">Fire</option><option value="medical">Medical</option>
+          <option value="security">Security</option><option value="evacuation">Evacuation</option>
+          <option value="comms">Communications</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Duration (min)</label><input name="tk-drill-duration" id="tk-drill-duration" type="number" value="30"></div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>Description</label><textarea name="tk-drill-description" id="tk-drill-description" rows="2" placeholder="Drill objectives and procedure"></textarea></div>
+    </div>
+    <button class="tk-btn tk-btn-primary" onclick="tkSaveDrillTemplate()">Save Template</button>
+  </div>
+  <div id="tk-drill-templates" class="tk-card"><div class="tk-empty">Loading drill templates...</div></div>
+  <div class="tk-card-title" style="margin-top:16px;">Past Drill Results</div>
+  <div id="tk-drill-results" class="tk-card"><div class="tk-empty">No drill results yet.</div></div>
+  <!-- AAR detail -->
+  <div id="tk-drill-aar" class="tk-card is-hidden">
+    <div class="tk-card-title">After-Action Review</div>
+    <input type="hidden" id="tk-aar-result-id" name="tk-aar-result-id" value="">
+    <div class="tk-form-row">
+      <div class="field"><label>Grade</label>
+        <select name="tk-aar-grade" id="tk-aar-grade">
+          <option value="A">A</option><option value="B">B</option><option value="C">C</option>
+          <option value="D">D</option><option value="F">F</option>
+        </select>
+      </div>
+      <div class="field"><label>Participants</label><input name="tk-aar-participants" id="tk-aar-participants" placeholder="Comma-separated names"></div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>AAR Notes</label><textarea name="tk-aar-notes" id="tk-aar-notes" rows="4" placeholder="What went well, what needs improvement, action items"></textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="tk-btn tk-btn-primary" onclick="tkSaveAAR()">Save AAR</button>
+      <button class="tk-btn tk-btn-secondary" onclick="document.getElementById('tk-drill-aar').classList.add('is-hidden')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Flashcards Panel ──────────────────────────────── -->
+<div class="tk-panel" id="tk-panel-flashcards">
+  <div class="tk-stats-grid" id="tk-fc-stats"></div>
+  <div class="tk-card">
+    <div class="tk-card-title">Add Flashcard</div>
+    <div class="tk-form-row">
+      <div class="field"><label>Deck</label><input name="tk-fc-deck" id="tk-fc-deck" placeholder="Deck name"></div>
+      <div class="field"><label>Front</label><input name="tk-fc-front" id="tk-fc-front" placeholder="Question / prompt"></div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>Back</label><textarea name="tk-fc-back" id="tk-fc-back" rows="2" placeholder="Answer"></textarea></div>
+    </div>
+    <button class="tk-btn tk-btn-primary" onclick="tkAddFlashcard()">Add Card</button>
+  </div>
+  <div class="tk-card-title" style="margin-top:14px;">Decks</div>
+  <div id="tk-fc-decks" class="tk-grid"></div>
+  <!-- Review mode -->
+  <div id="tk-fc-review" class="is-hidden" style="margin-top:16px;">
+    <div class="tk-card" style="text-align:center;">
+      <div class="tk-card-title">Review Mode <span id="tk-fc-review-progress"></span></div>
+      <div class="tk-flashcard-scene">
+        <div class="tk-flashcard-inner" id="tk-fc-card-inner">
+          <div class="tk-flashcard-face tk-flashcard-front" id="tk-fc-card-front">Loading...</div>
+          <div class="tk-flashcard-face tk-flashcard-back" id="tk-fc-card-back"></div>
+        </div>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="tk-btn tk-btn-secondary" onclick="tkFlipCard()">Flip</button>
+      </div>
+      <div id="tk-fc-rating-btns" class="is-hidden" style="margin-top:10px;display:flex;gap:6px;justify-content:center;flex-wrap:wrap;">
+        <button class="tk-btn tk-btn-danger" onclick="tkRateCard(0)">0 - Again</button>
+        <button class="tk-btn tk-btn-secondary" onclick="tkRateCard(1)">1</button>
+        <button class="tk-btn tk-btn-secondary" onclick="tkRateCard(2)">2</button>
+        <button class="tk-btn tk-btn-secondary" onclick="tkRateCard(3)">3 - OK</button>
+        <button class="tk-btn tk-btn-secondary" onclick="tkRateCard(4)">4</button>
+        <button class="tk-btn tk-btn-primary" onclick="tkRateCard(5)">5 - Easy</button>
+      </div>
+      <div style="margin-top:10px;">
+        <button class="tk-btn tk-btn-secondary" onclick="tkExitReview()">Exit Review</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Knowledge Packages Panel ──────────────────────── -->
+<div class="tk-panel" id="tk-panel-knowledge">
+  <div class="tk-card-title" style="margin-bottom:10px;">Bus Factor Dashboard</div>
+  <div id="tk-bus-factor" class="tk-stats-grid"></div>
+  <div class="tk-card">
+    <div class="tk-card-title">Create / Edit "If I'm Gone" Package</div>
+    <input type="hidden" id="tk-kp-edit-id" name="tk-kp-edit-id" value="">
+    <div class="tk-form-row">
+      <div class="field"><label>Person</label><input name="tk-kp-person" id="tk-kp-person" placeholder="Name"></div>
+      <div class="field"><label>Role</label><input name="tk-kp-role" id="tk-kp-role" placeholder="Primary role / title"></div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>Skills Documented</label><textarea name="tk-kp-skills" id="tk-kp-skills" rows="2" placeholder="Key skills this person holds"></textarea></div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>Procedures</label><textarea name="tk-kp-procedures" id="tk-kp-procedures" rows="2" placeholder="Critical procedures only this person knows"></textarea></div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>Contacts</label><textarea name="tk-kp-contacts" id="tk-kp-contacts" rows="2" placeholder="Key contacts and relationships"></textarea></div>
+    </div>
+    <div class="tk-form-row">
+      <div class="field"><label>Critical Knowledge</label><textarea name="tk-kp-knowledge" id="tk-kp-knowledge" rows="3" placeholder="Passwords, access codes, institutional knowledge, anything irreplaceable"></textarea></div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="tk-btn tk-btn-primary" onclick="tkSaveKnowledgePkg()">Save Package</button>
+      <button class="tk-btn tk-btn-secondary" onclick="tkClearKPForm()">Clear</button>
+    </div>
+  </div>
+  <div class="tk-card-title" style="margin-top:14px;">Knowledge Packages</div>
+  <div id="tk-kp-list" class="tk-card"><div class="tk-empty">Loading knowledge packages...</div></div>
+</div>
+
+<!-- ── Cross-Training Matrix Modal ───────────────────── -->
+<div id="tk-matrix-modal" class="tk-modal-overlay is-hidden" onclick="if(event.target===this)this.classList.add('is-hidden')">
+  <div class="tk-modal">
+    <div class="tk-modal-header">
+      <h3>Cross-Training Matrix</h3>
+      <button class="tk-btn tk-btn-secondary" onclick="document.getElementById('tk-matrix-modal').classList.add('is-hidden')">&times;</button>
+    </div>
+    <div id="tk-matrix-body"><div class="tk-empty">Loading matrix...</div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const root = document.getElementById('tab-training-knowledge');
+  /* Sub-tab switching */
+  root.querySelectorAll('.tk-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.tk-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.tk-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById('tk-panel-' + btn.dataset.tkPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  const el = id => document.getElementById(id);
+  const val = id => document.getElementById(id)?.value || '';
+  const numVal = (id, def) => parseFloat(val(id)) || def || 0;
+  const api = (url, opts) => fetch(url, opts).then(r => r.json());
+  const post = (url, body) => api(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const put = (url, body) => api(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const del = url => api(url, {method:'DELETE'});
+  function toast(msg) { if (window.showToast) window.showToast(msg); }
+  function stars(n) { return '<span class="tk-stars">' + '★'.repeat(n) + '☆'.repeat(5 - n) + '</span>'; }
+  function gradeBadge(g) { return '<span class="tk-badge tk-grade-' + g + '">' + g + '</span>'; }
+  function certStatus(expires) {
+    if (!expires) return {cls:'tk-cert-active', label:'Active'};
+    const d = (new Date(expires) - new Date()) / 86400000;
+    if (d < 0) return {cls:'tk-cert-expired', label:'Expired'};
+    if (d < 30) return {cls:'tk-cert-expiring', label:'Expiring Soon'};
+    return {cls:'tk-cert-active', label:'Active'};
+  }
+
+  /* ══════════════════════ SKILLS ══════════════════════ */
+  window.tkLoadSkills = function() {
+    api('/api/training/skills').then(items => {
+      const c = el('tk-skill-list');
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No skills recorded. Add one above.</div>'; return; }
+      c.innerHTML = '<table class="tk-table"><thead><tr><th>Person</th><th>Skill</th><th>Category</th><th>Level</th><th>Certified</th><th></th></tr></thead><tbody>' +
+        items.map(s => '<tr><td>' + s.person + '</td><td>' + s.skill_name + '</td><td><span class="tk-badge" style="background:var(--tk-accent-dim);color:var(--tk-accent)">' + s.category + '</span></td><td>' + stars(s.level) + '</td><td>' + (s.certified ? '<span class="tk-badge" style="background:var(--tk-green);color:#fff">YES</span>' : '-') + '</td><td style="white-space:nowrap"><button class="tk-btn tk-btn-secondary" onclick="tkEditSkill(' + s.id + ')">Edit</button> <button class="tk-btn tk-btn-danger" onclick="tkDeleteSkill(' + s.id + ')">&times;</button></td></tr>').join('') +
+        '</tbody></table>';
+    });
+  };
+  window.tkSaveSkill = function() {
+    const person = val('tk-skill-person'), name = val('tk-skill-name');
+    if (!person || !name) return;
+    const body = {person, skill_name:name, category:val('tk-skill-category'), level:parseInt(val('tk-skill-level')), certified:val('tk-skill-certified')==='1'};
+    const editId = val('tk-skill-edit-id');
+    const p = editId ? put('/api/training/skills/' + editId, body) : post('/api/training/skills', body);
+    p.then(() => { el('tk-skill-person').value = ''; el('tk-skill-name').value = ''; el('tk-skill-edit-id').value = ''; toast(editId ? 'Skill updated' : 'Skill added'); tkLoadSkills(); });
+  };
+  window.tkEditSkill = function(id) {
+    api('/api/training/skills/' + id).then(s => {
+      el('tk-skill-edit-id').value = s.id;
+      el('tk-skill-person').value = s.person || '';
+      el('tk-skill-name').value = s.skill_name || '';
+      el('tk-skill-category').value = s.category || 'other';
+      el('tk-skill-level').value = s.level || 1;
+      el('tk-skill-certified').value = s.certified ? '1' : '0';
+    });
+  };
+  window.tkDeleteSkill = function(id) {
+    del('/api/training/skills/' + id).then(() => { toast('Skill deleted'); tkLoadSkills(); });
+  };
+  window.tkShowMatrix = function() {
+    el('tk-matrix-modal').classList.remove('is-hidden');
+    api('/api/training/skills/matrix').then(data => {
+      const people = data.people || [], categories = data.categories || [], grid = data.grid || {};
+      if (!people.length) { el('tk-matrix-body').innerHTML = '<div class="tk-empty">No skill data for matrix.</div>'; return; }
+      let h = '<table class="tk-table"><thead><tr><th>Person</th>' + categories.map(c => '<th class="tk-matrix-cell">' + c + '</th>').join('') + '</tr></thead><tbody>';
+      people.forEach(p => {
+        h += '<tr><td>' + p + '</td>';
+        categories.forEach(c => {
+          const v = (grid[p] && grid[p][c]) || 0;
+          h += '<td class="tk-matrix-cell">' + (v ? stars(v) : '<span style="color:#555">-</span>') + '</td>';
+        });
+        h += '</tr>';
+      });
+      h += '</tbody></table>';
+      el('tk-matrix-body').innerHTML = h;
+    });
+  };
+
+  /* ══════════════════════ COURSES ═════════════════════ */
+  window.tkLoadCourses = function() {
+    api('/api/training/courses').then(items => {
+      const c = el('tk-course-list');
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No courses yet. Create one above.</div>'; return; }
+      c.innerHTML = items.map(co => '<div class="tk-list-item"><div><strong>' + co.title + '</strong> <span class="tk-badge" style="background:var(--tk-accent-dim);color:var(--tk-accent)">' + co.category + '</span> <span class="tk-badge" style="background:var(--border,#333)">' + co.difficulty + '</span><br><small style="color:var(--text-secondary)">' + (co.instructor || 'No instructor') + ' &middot; ' + co.hours + 'h</small></div><div style="display:flex;gap:6px;"><button class="tk-btn tk-btn-secondary" onclick="tkViewCourse(' + co.id + ')">Lessons</button><button class="tk-btn tk-btn-secondary" onclick="tkEditCourse(' + co.id + ')">Edit</button><button class="tk-btn tk-btn-danger" onclick="tkDeleteCourse(' + co.id + ')">&times;</button></div></div>').join('');
+    });
+  };
+  window.tkSaveCourse = function() {
+    const title = val('tk-course-title'); if (!title) return;
+    const body = {title, category:val('tk-course-category'), difficulty:val('tk-course-difficulty'), instructor:val('tk-course-instructor'), hours:numVal('tk-course-hours', 1)};
+    const editId = val('tk-course-edit-id');
+    const p = editId ? put('/api/training/courses/' + editId, body) : post('/api/training/courses', body);
+    p.then(() => { el('tk-course-title').value = ''; el('tk-course-instructor').value = ''; el('tk-course-edit-id').value = ''; toast(editId ? 'Course updated' : 'Course created'); tkLoadCourses(); });
+  };
+  window.tkEditCourse = function(id) {
+    api('/api/training/courses/' + id).then(c => {
+      el('tk-course-edit-id').value = c.id;
+      el('tk-course-title').value = c.title || '';
+      el('tk-course-category').value = c.category || 'other';
+      el('tk-course-difficulty').value = c.difficulty || 'beginner';
+      el('tk-course-instructor').value = c.instructor || '';
+      el('tk-course-hours').value = c.hours || 1;
+    });
+  };
+  window.tkDeleteCourse = function(id) {
+    del('/api/training/courses/' + id).then(() => { toast('Course deleted'); tkLoadCourses(); });
+  };
+  window.tkViewCourse = function(id) {
+    el('tk-lesson-course-id').value = id;
+    el('tk-course-detail').classList.remove('is-hidden');
+    api('/api/training/courses/' + id).then(c => {
+      el('tk-course-detail-header').innerHTML = '<div style="display:flex;justify-content:space-between;align-items:center"><div><strong>' + c.title + '</strong><br><small style="color:var(--text-secondary)">' + c.category + ' &middot; ' + c.difficulty + ' &middot; ' + (c.instructor || '') + '</small></div><button class="tk-btn tk-btn-secondary" onclick="document.getElementById(\'tk-course-detail\').classList.add(\'is-hidden\')">Close</button></div>';
+    });
+    tkLoadLessons(id);
+  };
+  window.tkLoadLessons = function(courseId) {
+    api('/api/training/courses/' + courseId + '/lessons').then(items => {
+      const c = el('tk-lesson-list');
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No lessons yet.</div>'; return; }
+      c.innerHTML = items.map((l, i) => '<div class="tk-list-item"><div><span style="color:var(--tk-accent);font-weight:700;margin-right:8px">' + (l.order_num || i + 1) + '.</span><strong>' + l.title + '</strong>' + (l.completed ? ' <span class="tk-badge" style="background:var(--tk-green);color:#fff">Done</span>' : '') + '<br><small style="color:var(--text-secondary)">' + (l.content || '').substring(0, 80) + '</small></div><div style="display:flex;gap:6px;">' + (!l.completed ? '<button class="tk-btn tk-btn-primary" onclick="tkCompleteLesson(' + l.id + ',' + courseId + ')">Complete</button>' : '') + '<button class="tk-btn tk-btn-danger" onclick="tkDeleteLesson(' + l.id + ',' + courseId + ')">&times;</button></div></div>').join('');
+    });
+  };
+  window.tkAddLesson = function() {
+    const courseId = val('tk-lesson-course-id'); if (!courseId) return;
+    const title = val('tk-lesson-title'); if (!title) return;
+    post('/api/training/courses/' + courseId + '/lessons', {title, content:val('tk-lesson-content'), order_num:numVal('tk-lesson-order', 1)}).then(() => {
+      el('tk-lesson-title').value = ''; el('tk-lesson-content').value = ''; toast('Lesson added'); tkLoadLessons(courseId);
+    });
+  };
+  window.tkCompleteLesson = function(id, courseId) {
+    post('/api/training/lessons/' + id + '/complete', {}).then(() => { toast('Lesson completed'); tkLoadLessons(courseId); });
+  };
+  window.tkDeleteLesson = function(id, courseId) {
+    del('/api/training/lessons/' + id).then(() => { toast('Lesson removed'); tkLoadLessons(courseId); });
+  };
+
+  /* ══════════════════════ CERTIFICATIONS ══════════════ */
+  window.tkLoadCerts = function() {
+    api('/api/training/certifications').then(items => {
+      const c = el('tk-cert-list');
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No certifications tracked.</div>'; return; }
+      c.innerHTML = '<table class="tk-table"><thead><tr><th>Person</th><th>Certification</th><th>Issuer</th><th>Issued</th><th>Expires</th><th>Status</th><th></th></tr></thead><tbody>' +
+        items.map(ct => { const s = certStatus(ct.expiration_date); return '<tr><td>' + ct.person + '</td><td>' + ct.cert_name + '</td><td>' + (ct.issuer || '-') + '</td><td>' + (ct.issue_date || '-') + '</td><td>' + (ct.expiration_date || 'N/A') + '</td><td><span class="' + s.cls + '">' + s.label + '</span></td><td style="white-space:nowrap"><button class="tk-btn tk-btn-secondary" onclick="tkEditCert(' + ct.id + ')">Edit</button> <button class="tk-btn tk-btn-danger" onclick="tkDeleteCert(' + ct.id + ')">&times;</button></td></tr>'; }).join('') +
+        '</tbody></table>';
+    });
+    api('/api/training/certifications/expiring').then(items => {
+      const b = el('tk-cert-expiring-banner');
+      if (!items.length) { b.classList.add('is-hidden'); return; }
+      b.classList.remove('is-hidden');
+      b.innerHTML = '<div class="tk-card-title" style="color:var(--tk-amber)">' + items.length + ' Expiring Soon</div>' +
+        items.map(ct => '<div style="margin-bottom:4px;"><strong>' + ct.person + '</strong> - ' + ct.cert_name + ' <small style="color:var(--tk-amber)">expires ' + ct.expiration_date + '</small></div>').join('');
+    });
+  };
+  window.tkSaveCert = function() {
+    const person = val('tk-cert-person'), name = val('tk-cert-name'); if (!person || !name) return;
+    const body = {person, cert_name:name, issuer:val('tk-cert-issuer'), issue_date:val('tk-cert-issued'), expiration_date:val('tk-cert-expires')};
+    const editId = val('tk-cert-edit-id');
+    const p = editId ? put('/api/training/certifications/' + editId, body) : post('/api/training/certifications', body);
+    p.then(() => { el('tk-cert-person').value = ''; el('tk-cert-name').value = ''; el('tk-cert-issuer').value = ''; el('tk-cert-edit-id').value = ''; toast(editId ? 'Cert updated' : 'Cert added'); tkLoadCerts(); });
+  };
+  window.tkEditCert = function(id) {
+    api('/api/training/certifications/' + id).then(c => {
+      el('tk-cert-edit-id').value = c.id;
+      el('tk-cert-person').value = c.person || '';
+      el('tk-cert-name').value = c.cert_name || '';
+      el('tk-cert-issuer').value = c.issuer || '';
+      el('tk-cert-issued').value = c.issue_date || '';
+      el('tk-cert-expires').value = c.expiration_date || '';
+    });
+  };
+  window.tkDeleteCert = function(id) {
+    del('/api/training/certifications/' + id).then(() => { toast('Cert deleted'); tkLoadCerts(); });
+  };
+
+  /* ══════════════════════ DRILLS ══════════════════════ */
+  window.tkLoadDrillTemplates = function() {
+    api('/api/training/drills/templates').then(items => {
+      const c = el('tk-drill-templates');
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No drill templates. Seed built-ins or create one above.</div>'; return; }
+      c.innerHTML = items.map(d => '<div class="tk-list-item"><div><strong>' + d.name + '</strong> <span class="tk-badge" style="background:var(--tk-accent-dim);color:var(--tk-accent)">' + d.category + '</span><br><small style="color:var(--text-secondary)">' + (d.description || '').substring(0, 100) + ' &middot; ' + d.duration_minutes + ' min</small></div><div style="display:flex;gap:6px;"><button class="tk-btn tk-btn-primary" onclick="tkRunDrill(' + d.id + ')">Run</button><button class="tk-btn tk-btn-danger" onclick="tkDeleteDrillTemplate(' + d.id + ')">&times;</button></div></div>').join('');
+    });
+  };
+  window.tkLoadDrillResults = function() {
+    api('/api/training/drills/results').then(items => {
+      const c = el('tk-drill-results');
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No drill results yet. Run a drill to generate results.</div>'; return; }
+      c.innerHTML = items.map(r => '<div class="tk-list-item"><div>' + (r.grade ? gradeBadge(r.grade) + ' ' : '') + '<strong>' + (r.template_name || 'Drill') + '</strong><br><small style="color:var(--text-secondary)">' + (r.run_date || '') + (r.participants ? ' &middot; ' + r.participants : '') + '</small>' + (r.aar_notes ? '<br><small style="color:var(--tk-accent)">' + r.aar_notes.substring(0, 80) + '...</small>' : '') + '</div><div><button class="tk-btn tk-btn-secondary" onclick="tkOpenAAR(' + r.id + ',\'' + (r.grade || 'C') + '\',\'' + (r.participants || '').replace(/'/g, "\\'") + '\',\'' + (r.aar_notes || '').replace(/'/g, "\\'") + '\')">AAR</button></div></div>').join('');
+    });
+  };
+  window.tkSaveDrillTemplate = function() {
+    const name = val('tk-drill-name'); if (!name) return;
+    const body = {name, category:val('tk-drill-category'), duration_minutes:numVal('tk-drill-duration', 30), description:val('tk-drill-description')};
+    const editId = val('tk-drill-edit-id');
+    const p = editId ? put('/api/training/drills/templates/' + editId, body) : post('/api/training/drills/templates', body);
+    p.then(() => { el('tk-drill-name').value = ''; el('tk-drill-description').value = ''; el('tk-drill-edit-id').value = ''; toast(editId ? 'Template updated' : 'Template created'); tkLoadDrillTemplates(); });
+  };
+  window.tkDeleteDrillTemplate = function(id) {
+    del('/api/training/drills/templates/' + id).then(() => { toast('Template deleted'); tkLoadDrillTemplates(); });
+  };
+  window.tkSeedDrills = function() {
+    post('/api/training/drills/templates/seed', {}).then(() => { toast('Built-in drills seeded'); tkLoadDrillTemplates(); });
+  };
+  window.tkRunDrill = function(templateId) {
+    post('/api/training/drills/run', {template_id:templateId}).then(r => { toast('Drill started'); tkLoadDrillResults(); tkOpenAAR(r.id || r.result_id, 'C', '', ''); });
+  };
+  window.tkOpenAAR = function(resultId, grade, participants, notes) {
+    el('tk-drill-aar').classList.remove('is-hidden');
+    el('tk-aar-result-id').value = resultId;
+    el('tk-aar-grade').value = grade || 'C';
+    el('tk-aar-participants').value = participants || '';
+    el('tk-aar-notes').value = notes || '';
+  };
+  window.tkSaveAAR = function() {
+    const id = val('tk-aar-result-id'); if (!id) return;
+    put('/api/training/drills/results/' + id, {grade:val('tk-aar-grade'), participants:val('tk-aar-participants'), aar_notes:val('tk-aar-notes')}).then(() => {
+      el('tk-drill-aar').classList.add('is-hidden'); toast('AAR saved'); tkLoadDrillResults();
+    });
+  };
+
+  /* ══════════════════════ FLASHCARDS ═════════════════ */
+  let fcQueue = [], fcIdx = 0, fcFlipped = false;
+
+  window.tkLoadFlashcardStats = function() {
+    api('/api/training/flashcards/due').then(due => {
+      const dueCount = Array.isArray(due) ? due.length : (due.count || 0);
+      api('/api/training/flashcards').then(all => {
+        const total = Array.isArray(all) ? all.length : 0;
+        const avgEase = total ? (all.reduce((s, c) => s + (c.ease_factor || 2.5), 0) / total).toFixed(2) : '0.00';
+        el('tk-fc-stats').innerHTML =
+          '<div class="tk-stat-card"><div class="tk-stat-val">' + total + '</div><div class="tk-stat-label">Total Cards</div></div>' +
+          '<div class="tk-stat-card"><div class="tk-stat-val" style="color:var(--tk-amber)">' + dueCount + '</div><div class="tk-stat-label">Due Now</div></div>' +
+          '<div class="tk-stat-card"><div class="tk-stat-val">' + avgEase + '</div><div class="tk-stat-label">Avg Ease</div></div>';
+      });
+    });
+  };
+  window.tkLoadDecks = function() {
+    api('/api/training/flashcards/decks').then(decks => {
+      const c = el('tk-fc-decks');
+      if (!decks.length) { c.innerHTML = '<div class="tk-empty">No flashcard decks. Add a card above.</div>'; return; }
+      c.innerHTML = decks.map(d => '<div class="tk-card" style="cursor:pointer" onclick="tkStartReview(\'' + d.deck.replace(/'/g, "\\'") + '\')"><div class="tk-card-title">' + d.deck + '</div><div style="display:flex;gap:12px;"><span style="font-size:.82rem;color:var(--text-secondary)">' + d.count + ' cards</span>' + (d.due ? '<span style="font-size:.82rem;color:var(--tk-amber)">' + d.due + ' due</span>' : '') + '</div></div>').join('');
+    });
+  };
+  window.tkAddFlashcard = function() {
+    const deck = val('tk-fc-deck'), front = val('tk-fc-front'), back = val('tk-fc-back');
+    if (!deck || !front || !back) return;
+    post('/api/training/flashcards', {deck, front, back}).then(() => {
+      el('tk-fc-front').value = ''; el('tk-fc-back').value = ''; toast('Card added'); tkLoadDecks(); tkLoadFlashcardStats();
+    });
+  };
+  window.tkStartReview = function(deck) {
+    api('/api/training/flashcards/due' + (deck ? '?deck=' + encodeURIComponent(deck) : '')).then(cards => {
+      if (!cards.length) { toast('No cards due for review'); return; }
+      fcQueue = cards; fcIdx = 0; fcFlipped = false;
+      el('tk-fc-review').classList.remove('is-hidden');
+      el('tk-fc-rating-btns').classList.add('is-hidden');
+      tkShowCurrentCard();
+    });
+  };
+  function tkShowCurrentCard() {
+    if (fcIdx >= fcQueue.length) { toast('Review complete!'); tkExitReview(); return; }
+    const c = fcQueue[fcIdx];
+    el('tk-fc-card-front').textContent = c.front;
+    el('tk-fc-card-back').textContent = c.back;
+    el('tk-fc-card-inner').classList.remove('flipped');
+    el('tk-fc-rating-btns').classList.add('is-hidden');
+    el('tk-fc-review-progress').textContent = '(' + (fcIdx + 1) + '/' + fcQueue.length + ')';
+    fcFlipped = false;
+  }
+  window.tkFlipCard = function() {
+    fcFlipped = !fcFlipped;
+    el('tk-fc-card-inner').classList.toggle('flipped', fcFlipped);
+    if (fcFlipped) el('tk-fc-rating-btns').classList.remove('is-hidden');
+  };
+  window.tkRateCard = function(quality) {
+    const c = fcQueue[fcIdx];
+    post('/api/training/flashcards/' + c.id + '/review', {quality}).then(() => {
+      fcIdx++;
+      tkShowCurrentCard();
+    });
+  };
+  window.tkExitReview = function() {
+    el('tk-fc-review').classList.add('is-hidden');
+    fcQueue = []; fcIdx = 0;
+    tkLoadDecks(); tkLoadFlashcardStats();
+  };
+
+  /* ══════════════════════ KNOWLEDGE PACKAGES ═════════ */
+  window.tkLoadKnowledgePkgs = function() {
+    api('/api/training/knowledge-packages').then(items => {
+      const c = el('tk-kp-list');
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No knowledge packages. Create an "If I\'m Gone" package above.</div>'; return; }
+      c.innerHTML = items.map(k => '<div class="tk-list-item"><div><strong>' + k.person + '</strong>' + (k.role ? ' <span class="tk-badge" style="background:var(--tk-accent-dim);color:var(--tk-accent)">' + k.role + '</span>' : '') + '<br><small style="color:var(--text-secondary)">' + [k.skills_documented ? 'Skills' : '', k.procedures ? 'Procedures' : '', k.contacts ? 'Contacts' : '', k.critical_knowledge ? 'Critical Knowledge' : ''].filter(Boolean).join(' &middot; ') + '</small></div><div style="display:flex;gap:6px;"><button class="tk-btn tk-btn-secondary" onclick="tkEditKP(' + k.id + ')">Edit</button><button class="tk-btn tk-btn-danger" onclick="tkDeleteKP(' + k.id + ')">&times;</button></div></div>').join('');
+    });
+  };
+  window.tkLoadBusFactor = function() {
+    api('/api/training/knowledge-packages/bus-factor').then(data => {
+      const c = el('tk-bus-factor');
+      const items = data.people || data || [];
+      if (!items.length) { c.innerHTML = '<div class="tk-stat-card"><div class="tk-stat-val" style="color:var(--tk-red)">?</div><div class="tk-stat-label">No Data</div></div>'; return; }
+      c.innerHTML = items.map(p => {
+        const pct = p.coverage || 0;
+        const col = pct >= 75 ? 'var(--tk-green)' : pct >= 40 ? 'var(--tk-amber)' : 'var(--tk-red)';
+        return '<div class="tk-stat-card" style="text-align:left"><div style="display:flex;justify-content:space-between;align-items:baseline"><strong style="font-size:.85rem">' + p.person + '</strong><span style="font-size:.85rem;font-weight:700;color:' + col + '">' + pct + '%</span></div><div class="tk-bus-meter"><div class="tk-bus-fill" style="width:' + pct + '%;background:' + col + '"></div></div><div class="tk-stat-label">' + (p.gaps ? p.gaps + ' gaps' : 'Covered') + '</div></div>';
+      }).join('');
+    });
+  };
+  window.tkSaveKnowledgePkg = function() {
+    const person = val('tk-kp-person'); if (!person) return;
+    const body = {person, role:val('tk-kp-role'), skills_documented:val('tk-kp-skills'), procedures:val('tk-kp-procedures'), contacts:val('tk-kp-contacts'), critical_knowledge:val('tk-kp-knowledge')};
+    const editId = val('tk-kp-edit-id');
+    const p = editId ? put('/api/training/knowledge-packages/' + editId, body) : post('/api/training/knowledge-packages', body);
+    p.then(() => { tkClearKPForm(); toast(editId ? 'Package updated' : 'Package created'); tkLoadKnowledgePkgs(); tkLoadBusFactor(); });
+  };
+  window.tkEditKP = function(id) {
+    api('/api/training/knowledge-packages/' + id).then(k => {
+      el('tk-kp-edit-id').value = k.id;
+      el('tk-kp-person').value = k.person || '';
+      el('tk-kp-role').value = k.role || '';
+      el('tk-kp-skills').value = k.skills_documented || '';
+      el('tk-kp-procedures').value = k.procedures || '';
+      el('tk-kp-contacts').value = k.contacts || '';
+      el('tk-kp-knowledge').value = k.critical_knowledge || '';
+    });
+  };
+  window.tkDeleteKP = function(id) {
+    del('/api/training/knowledge-packages/' + id).then(() => { toast('Package deleted'); tkLoadKnowledgePkgs(); tkLoadBusFactor(); });
+  };
+  window.tkClearKPForm = function() {
+    el('tk-kp-edit-id').value = ''; el('tk-kp-person').value = ''; el('tk-kp-role').value = '';
+    el('tk-kp-skills').value = ''; el('tk-kp-procedures').value = ''; el('tk-kp-contacts').value = ''; el('tk-kp-knowledge').value = '';
+  };
+
+  /* ══════════════════════ LAZY LOAD ══════════════════ */
+  let loaded = false;
+  function loadAll() {
+    if (loaded) return; loaded = true;
+    tkLoadSkills(); tkLoadCourses(); tkLoadCerts();
+    tkLoadDrillTemplates(); tkLoadDrillResults();
+    tkLoadFlashcardStats(); tkLoadDecks();
+    tkLoadKnowledgePkgs(); tkLoadBusFactor();
+  }
+  const obs = new MutationObserver(() => {
+    if (!root.classList.contains('is-hidden')) loadAll();
+  });
+  obs.observe(root, {attributes:true, attributeFilter:['class']});
+  if (!root.classList.contains('is-hidden')) loadAll();
+})();
+</script>
+</div>

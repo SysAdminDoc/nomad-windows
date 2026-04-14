@@ -1363,6 +1363,14 @@ def create_app():
     from web.blueprints.agriculture import agriculture_bp
     app.register_blueprint(agriculture_bp)
 
+    # ─── v7.20.0 — Disaster-Specific Modules (Phase 14) ──────────────
+    from web.blueprints.disaster_modules import disaster_modules_bp
+    app.register_blueprint(disaster_modules_bp)
+
+    # ─── v7.21.0 — Daily Living & Quality of Life (Phase 15) ─────────
+    from web.blueprints.daily_living import daily_living_bp
+    app.register_blueprint(daily_living_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

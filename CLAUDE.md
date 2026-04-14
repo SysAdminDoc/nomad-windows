@@ -32,7 +32,7 @@ Current repo note: some older changelog entries below mention retired Docker/hea
 
 ## Tech Stack
 - **Python 3** — Flask web server + pywebview (WebView2 on Windows, WebKit on macOS, GTK on Linux)
-- **SQLite** — 165 tables, WAL mode, 30s timeout, FK enforcement, SQLite backup API, 332 performance indexes
+- **SQLite** — 216 tables, WAL mode, 30s timeout, FK enforcement, SQLite backup API, 491 performance indexes
 - **CSS** — External files: `web/static/css/app.css` (base) + `web/static/css/premium.css` (polish layer)
 - **Native process management** — subprocess for Ollama, kiwix-serve, Kolibri; threading HTTP server for CyberChef
 - **pystray** — system tray icon for background operation
@@ -77,7 +77,7 @@ web/
     js/
       epub.min.js     # EPUB reader library (bundled)
   routes_advanced.py  # Deprecated stub — all routes dissolved into blueprints
-  blueprints/         # 31 Flask blueprints: ai, benchmark, checklists, comms, consumption, contacts, data_packs, exercises, federation, garden, inventory, kb, kiwix, maps, meal_planning, media, medical, notes, nutrition, power, preparedness, print_routes, regional_profile, security, services, situation_room, supplies, system, tasks, undo, weather
+  blueprints/         # 53 Flask blueprints: ai, agriculture, benchmark, checklists, comms, consumption, contacts, data_packs, disaster_modules, exercises, federation, garden, group_ops, inventory, kb, kiwix, land_assessment, maps, meal_planning, media, medical, medical_phase2, movement_ops, notes, nutrition, power, preparedness, print_routes, regional_profile, security, security_opsec, services, situation_room, supplies, system, tactical_comms, tasks, training_knowledge, undo, weather + more
   templates/
     index.html        # HTML + inline theme vars + JS (~28,500 lines)
   nukemap/            # NukeMap v3.2.0 — index.html, 18 JS modules, CSS, data/, lib/leaflet

@@ -1,0 +1,810 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     DISASTER-SPECIFIC MODULES  (data-tab="disaster-modules")
+     Plans, energy systems, construction, fortifications, checklists
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="tab-disaster-modules" class="tab-content is-hidden" data-tab="disaster-modules">
+<style>
+  #tab-disaster-modules {
+    --dm-accent: #f59e0b;
+    --dm-accent-dim: rgba(245,158,11,.15);
+    --dm-red: #ef4444;
+    --dm-green: #22c55e;
+    --dm-blue: #3b82f6;
+    --dm-purple: #a855f7;
+    --dm-orange: #f97316;
+    --dm-cyan: #06b6d4;
+    --dm-gray: #6b7280;
+  }
+  #tab-disaster-modules .dm-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-disaster-modules .dm-header h2 { font-size:1.25rem; color:var(--dm-accent); margin:0; }
+  #tab-disaster-modules .dm-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-disaster-modules .dm-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-disaster-modules .dm-sub-tab.active { background:var(--dm-accent-dim); border-color:var(--dm-accent); color:var(--dm-accent); }
+  #tab-disaster-modules .dm-panel { display:none; }
+  #tab-disaster-modules .dm-panel.active { display:block; }
+  #tab-disaster-modules .dm-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-disaster-modules .dm-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-disaster-modules .dm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-disaster-modules .dm-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-disaster-modules .dm-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-disaster-modules .dm-form-row input,
+  #tab-disaster-modules .dm-form-row select,
+  #tab-disaster-modules .dm-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-disaster-modules .dm-form-row textarea { min-height:60px; resize:vertical; font-family:inherit; }
+  #tab-disaster-modules .dm-form-row .field { flex:1; min-width:140px; }
+  #tab-disaster-modules .dm-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-disaster-modules .dm-btn-primary { background:var(--dm-accent); color:#000; }
+  #tab-disaster-modules .dm-btn-danger { background:var(--dm-red); color:#fff; }
+  #tab-disaster-modules .dm-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-disaster-modules .dm-btn-success { background:var(--dm-green); color:#000; }
+  #tab-disaster-modules .dm-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-disaster-modules .dm-list-item:last-child { border-bottom:none; }
+  #tab-disaster-modules .dm-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-disaster-modules .dm-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-disaster-modules .dm-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  #tab-disaster-modules .dm-table th { text-align:left; padding:8px 10px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#444); background:rgba(0,0,0,.2); }
+  #tab-disaster-modules .dm-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); vertical-align:middle; }
+  #tab-disaster-modules .dm-table tbody tr:hover { background:rgba(245,158,11,.05); }
+  #tab-disaster-modules .dm-summary-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:16px; }
+  #tab-disaster-modules .dm-summary-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:8px; padding:12px; text-align:center; }
+  #tab-disaster-modules .dm-summary-val { font-size:1.4rem; font-weight:700; color:var(--dm-accent); }
+  #tab-disaster-modules .dm-summary-label { font-size:.7rem; color:var(--text-secondary,#aaa); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+  /* Progress bar */
+  #tab-disaster-modules .dm-progress { height:8px; border-radius:4px; background:var(--border,#333); overflow:hidden; margin-top:4px; }
+  #tab-disaster-modules .dm-progress-fill { height:100%; border-radius:4px; transition:width .3s; }
+  /* Disaster type colors */
+  #tab-disaster-modules .dm-type-earthquake { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-disaster-modules .dm-type-flood { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-disaster-modules .dm-type-fire { background:rgba(249,115,22,.2); color:#f97316; }
+  #tab-disaster-modules .dm-type-tornado { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-disaster-modules .dm-type-hurricane { background:rgba(6,182,212,.2); color:#06b6d4; }
+  #tab-disaster-modules .dm-type-pandemic { background:rgba(234,179,8,.2); color:#eab308; }
+  #tab-disaster-modules .dm-type-nuclear { background:rgba(239,68,68,.25); color:#f87171; }
+  #tab-disaster-modules .dm-type-emp { background:rgba(168,85,247,.25); color:#c084fc; }
+  #tab-disaster-modules .dm-type-drought { background:rgba(245,158,11,.2); color:#f59e0b; }
+  #tab-disaster-modules .dm-type-winter_storm { background:rgba(148,163,184,.2); color:#94a3b8; }
+  /* Environment badges */
+  #tab-disaster-modules .dm-env-urban { background:rgba(107,114,128,.25); color:#9ca3af; }
+  #tab-disaster-modules .dm-env-suburban { background:rgba(59,130,246,.15); color:#60a5fa; }
+  #tab-disaster-modules .dm-env-rural { background:rgba(34,197,94,.15); color:#22c55e; }
+  #tab-disaster-modules .dm-env-wilderness { background:rgba(146,64,14,.25); color:#b45309; }
+  /* Protection level badges */
+  #tab-disaster-modules .dm-prot-basic { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-disaster-modules .dm-prot-moderate { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-disaster-modules .dm-prot-hardened { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-disaster-modules .dm-prot-blast_rated { background:rgba(239,68,68,.2); color:#ef4444; }
+  /* Energy status */
+  #tab-disaster-modules .dm-status-operational { color:#22c55e; }
+  #tab-disaster-modules .dm-status-degraded { color:#f59e0b; }
+  #tab-disaster-modules .dm-status-offline { color:#ef4444; }
+  /* Checklist category badges */
+  #tab-disaster-modules .dm-cat-pre_event { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-disaster-modules .dm-cat-during { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-disaster-modules .dm-cat-post_event { background:rgba(245,158,11,.2); color:#f59e0b; }
+  #tab-disaster-modules .dm-cat-recovery { background:rgba(34,197,94,.2); color:#22c55e; }
+  /* Condition indicators */
+  #tab-disaster-modules .dm-cond-good { color:#22c55e; }
+  #tab-disaster-modules .dm-cond-fair { color:#f59e0b; }
+  #tab-disaster-modules .dm-cond-poor { color:#ef4444; }
+  /* Low stock warning */
+  #tab-disaster-modules .dm-low-stock { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.3); }
+  #tab-disaster-modules .dm-checklist-item { display:flex; align-items:center; gap:8px; padding:6px 0; border-bottom:1px solid var(--border,#333); }
+  #tab-disaster-modules .dm-checklist-item:last-child { border-bottom:none; }
+  #tab-disaster-modules .dm-checklist-item input[type="checkbox"] { width:16px; height:16px; accent-color:var(--dm-accent); flex-shrink:0; }
+  #tab-disaster-modules .dm-checklist-item.completed span { text-decoration:line-through; color:var(--text-secondary,#aaa); }
+</style>
+
+<div class="dm-header">
+  <h2>Disaster-Specific Modules</h2>
+</div>
+
+<!-- Sub-tabs -->
+<div class="dm-sub-tabs">
+  <button class="dm-sub-tab active" data-dm-panel="plans">Plans</button>
+  <button class="dm-sub-tab" data-dm-panel="energy">Energy</button>
+  <button class="dm-sub-tab" data-dm-panel="construction">Construction</button>
+  <button class="dm-sub-tab" data-dm-panel="fortifications">Fortifications</button>
+  <button class="dm-sub-tab" data-dm-panel="checklists">Checklists</button>
+</div>
+
+<!-- ── Plans Panel ──────────────────────────────────────── -->
+<div class="dm-panel active" id="dm-panel-plans">
+  <div id="dm-plan-summary" class="dm-summary-row"></div>
+
+  <!-- Filters -->
+  <div class="dm-card">
+    <div class="dm-card-title">Filter Plans</div>
+    <div class="dm-form-row">
+      <div class="field"><label>Disaster Type</label>
+        <select name="dm-plan-filter-type" id="dm-plan-filter-type" onchange="dmLoadPlans()">
+          <option value="">All Types</option>
+          <option value="earthquake">Earthquake</option><option value="flood">Flood</option>
+          <option value="fire">Fire</option><option value="tornado">Tornado</option>
+          <option value="hurricane">Hurricane</option><option value="pandemic">Pandemic</option>
+          <option value="nuclear">Nuclear</option><option value="emp">EMP</option>
+          <option value="drought">Drought</option><option value="winter_storm">Winter Storm</option>
+        </select>
+      </div>
+      <div class="field"><label>Environment</label>
+        <select name="dm-plan-filter-env" id="dm-plan-filter-env" onchange="dmLoadPlans()">
+          <option value="">All Environments</option>
+          <option value="urban">Urban</option><option value="suburban">Suburban</option>
+          <option value="rural">Rural</option><option value="wilderness">Wilderness</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Plan -->
+  <div class="dm-card">
+    <div class="dm-card-title">Create Disaster Plan</div>
+    <div class="dm-form-row">
+      <div class="field"><label>Plan Name</label><input name="dm-plan-name" id="dm-plan-name" placeholder="Earthquake Response Plan"></div>
+      <div class="field"><label>Disaster Type</label>
+        <select name="dm-plan-type" id="dm-plan-type">
+          <option value="earthquake">Earthquake</option><option value="flood">Flood</option>
+          <option value="fire">Fire</option><option value="tornado">Tornado</option>
+          <option value="hurricane">Hurricane</option><option value="pandemic">Pandemic</option>
+          <option value="nuclear">Nuclear</option><option value="emp">EMP</option>
+          <option value="drought">Drought</option><option value="winter_storm">Winter Storm</option>
+        </select>
+      </div>
+      <div class="field"><label>Environment</label>
+        <select name="dm-plan-env" id="dm-plan-env">
+          <option value="urban">Urban</option><option value="suburban">Suburban</option>
+          <option value="rural">Rural</option><option value="wilderness">Wilderness</option>
+        </select>
+      </div>
+    </div>
+    <div class="dm-form-row">
+      <div class="field"><label>Status</label>
+        <select name="dm-plan-status" id="dm-plan-status">
+          <option value="draft">Draft</option><option value="active">Active</option><option value="archived">Archived</option>
+        </select>
+      </div>
+      <div class="field"><label>Description</label><textarea name="dm-plan-desc" id="dm-plan-desc" rows="2" placeholder="Plan overview..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreatePlan()">Create</button></div>
+    </div>
+  </div>
+
+  <!-- Plan list -->
+  <div id="dm-plan-list" class="dm-card"><div class="dm-empty">Loading plans...</div></div>
+
+  <!-- Expanded plan detail -->
+  <div id="dm-plan-detail" class="dm-card" style="display:none"></div>
+
+  <!-- Seed defaults + Reference sidebar -->
+  <div style="display:grid; grid-template-columns:auto 1fr; gap:12px; align-items:start;">
+    <button class="dm-btn dm-btn-secondary" onclick="dmSeedChecklists()">Seed Default Checklists</button>
+    <div class="dm-card" style="margin-bottom:0">
+      <div class="dm-card-title">Quick Reference</div>
+      <div id="dm-plan-reference"><div class="dm-empty">Loading reference data...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Energy Panel ─────────────────────────────────────── -->
+<div class="dm-panel" id="dm-panel-energy">
+  <div id="dm-energy-summary" class="dm-summary-row"></div>
+
+  <!-- Energy systems table -->
+  <div class="dm-card">
+    <div class="dm-card-title">Alternative Energy Systems</div>
+    <div id="dm-energy-list"><div class="dm-empty">Loading energy systems...</div></div>
+  </div>
+
+  <!-- Add energy system -->
+  <div class="dm-card">
+    <div class="dm-card-title">Add Energy System</div>
+    <div class="dm-form-row">
+      <div class="field"><label>Name</label><input name="dm-energy-name" id="dm-energy-name" placeholder="South Ridge Solar Array"></div>
+      <div class="field"><label>Type</label>
+        <select name="dm-energy-type" id="dm-energy-type">
+          <option value="wood">Wood</option><option value="biogas">Biogas</option>
+          <option value="micro_hydro">Micro-Hydro</option><option value="wind">Wind</option>
+          <option value="solar_thermal">Solar Thermal</option><option value="charcoal">Charcoal</option>
+          <option value="manual">Manual/Human Power</option>
+        </select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select name="dm-energy-status" id="dm-energy-status">
+          <option value="operational">Operational</option><option value="degraded">Degraded</option><option value="offline">Offline</option>
+        </select>
+      </div>
+    </div>
+    <div class="dm-form-row">
+      <div class="field"><label>Output (watts)</label><input name="dm-energy-output" id="dm-energy-output" type="number" placeholder="500"></div>
+      <div class="field"><label>Fuel Source</label><input name="dm-energy-fuel" id="dm-energy-fuel" placeholder="Hardwood, creek flow, etc."></div>
+      <div class="field"><label>Notes</label><textarea name="dm-energy-notes" id="dm-energy-notes" rows="2" placeholder="Maintenance notes..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreateEnergy()">Add</button></div>
+    </div>
+  </div>
+
+  <!-- Calculators -->
+  <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+    <div class="dm-card">
+      <div class="dm-card-title">Heating Calculator</div>
+      <div class="dm-form-row">
+        <div class="field"><label>Square Footage</label><input name="dm-heat-sqft" id="dm-heat-sqft" type="number" placeholder="1200"></div>
+        <div class="field"><label>Insulation Quality</label>
+          <select name="dm-heat-insulation" id="dm-heat-insulation">
+            <option value="poor">Poor</option><option value="average">Average</option><option value="good">Good</option><option value="excellent">Excellent</option>
+          </select>
+        </div>
+      </div>
+      <div class="dm-form-row">
+        <div class="field"><label>Indoor Temp Target (F)</label><input name="dm-heat-indoor" id="dm-heat-indoor" type="number" value="65"></div>
+        <div class="field"><label>Outdoor Avg Temp (F)</label><input name="dm-heat-outdoor" id="dm-heat-outdoor" type="number" value="20"></div>
+      </div>
+      <button class="dm-btn dm-btn-primary" onclick="dmCalcHeating()">Calculate</button>
+      <div id="dm-heat-result" class="is-hidden" style="margin-top:10px; padding:10px; background:rgba(245,158,11,.1); border-radius:6px; font-size:.85rem;"></div>
+    </div>
+    <div class="dm-card">
+      <div class="dm-card-title">Sandbag Calculator</div>
+      <div class="dm-form-row">
+        <div class="field"><label>Wall Length (ft)</label><input name="dm-sand-length" id="dm-sand-length" type="number" placeholder="50"></div>
+        <div class="field"><label>Wall Height (ft)</label><input name="dm-sand-height" id="dm-sand-height" type="number" placeholder="3"></div>
+      </div>
+      <button class="dm-btn dm-btn-primary" onclick="dmCalcSandbag()">Calculate</button>
+      <div id="dm-sand-result" class="is-hidden" style="margin-top:10px; padding:10px; background:rgba(59,130,246,.1); border-radius:6px; font-size:.85rem;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Construction Panel ───────────────────────────────── -->
+<div class="dm-panel" id="dm-panel-construction">
+  <!-- Create project -->
+  <div class="dm-card">
+    <div class="dm-card-title">New Construction Project</div>
+    <div class="dm-form-row">
+      <div class="field"><label>Project Name</label><input name="dm-con-name" id="dm-con-name" placeholder="Root Cellar Build"></div>
+      <div class="field"><label>Status</label>
+        <select name="dm-con-status" id="dm-con-status">
+          <option value="planned">Planned</option><option value="in_progress">In Progress</option><option value="complete">Complete</option>
+        </select>
+      </div>
+      <div class="field"><label>Est. Labor Hours</label><input name="dm-con-hours" id="dm-con-hours" type="number" placeholder="40"></div>
+    </div>
+    <div class="dm-form-row">
+      <div class="field"><label>Hours Completed</label><input name="dm-con-hours-done" id="dm-con-hours-done" type="number" placeholder="0"></div>
+      <div class="field"><label>Description</label><textarea name="dm-con-desc" id="dm-con-desc" rows="2" placeholder="Project details..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreateConstruction()">Create</button></div>
+    </div>
+  </div>
+
+  <!-- Project list -->
+  <div id="dm-con-list" class="dm-card"><div class="dm-empty">Loading projects...</div></div>
+
+  <!-- Materials inventory -->
+  <div class="dm-card">
+    <div class="dm-card-title">Materials Inventory</div>
+    <div id="dm-mat-low-stock" style="margin-bottom:8px"></div>
+    <div id="dm-mat-list"><div class="dm-empty">Loading materials...</div></div>
+  </div>
+
+  <!-- Add material -->
+  <div class="dm-card">
+    <div class="dm-card-title">Add Material</div>
+    <div class="dm-form-row">
+      <div class="field"><label>Material Name</label><input name="dm-mat-name" id="dm-mat-name" placeholder="2x4 Lumber"></div>
+      <div class="field"><label>Category</label>
+        <select name="dm-mat-category" id="dm-mat-category">
+          <option value="lumber">Lumber</option><option value="concrete">Concrete</option>
+          <option value="metal">Metal</option><option value="fasteners">Fasteners</option>
+          <option value="roofing">Roofing</option><option value="plumbing">Plumbing</option>
+          <option value="electrical">Electrical</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Quantity</label><input name="dm-mat-qty" id="dm-mat-qty" type="number" placeholder="100"></div>
+    </div>
+    <div class="dm-form-row">
+      <div class="field"><label>Unit</label><input name="dm-mat-unit" id="dm-mat-unit" placeholder="boards, bags, lbs..."></div>
+      <div class="field"><label>Min Stock Level</label><input name="dm-mat-min" id="dm-mat-min" type="number" placeholder="10"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreateMaterial()">Add</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Fortifications Panel ─────────────────────────────── -->
+<div class="dm-panel" id="dm-panel-fortifications">
+  <div id="dm-fort-assessment" class="dm-summary-row"></div>
+
+  <!-- Fortification cards -->
+  <div id="dm-fort-list" class="dm-grid"><div class="dm-empty">Loading fortifications...</div></div>
+
+  <!-- Add fortification -->
+  <div class="dm-card">
+    <div class="dm-card-title">Add Fortification</div>
+    <div class="dm-form-row">
+      <div class="field"><label>Name</label><input name="dm-fort-name" id="dm-fort-name" placeholder="Main Gate Barrier"></div>
+      <div class="field"><label>Protection Level</label>
+        <select name="dm-fort-level" id="dm-fort-level">
+          <option value="basic">Basic</option><option value="moderate">Moderate</option>
+          <option value="hardened">Hardened</option><option value="blast_rated">Blast Rated</option>
+        </select>
+      </div>
+      <div class="field"><label>Condition</label>
+        <select name="dm-fort-condition" id="dm-fort-condition">
+          <option value="good">Good</option><option value="fair">Fair</option><option value="poor">Poor</option>
+        </select>
+      </div>
+    </div>
+    <div class="dm-form-row">
+      <div class="field"><label>Capacity (persons)</label><input name="dm-fort-capacity" id="dm-fort-capacity" type="number" placeholder="10"></div>
+      <div class="field"><label>Next Inspection</label><input name="dm-fort-inspection" id="dm-fort-inspection" type="date"></div>
+      <div class="field"><label>Notes</label><textarea name="dm-fort-notes" id="dm-fort-notes" rows="2" placeholder="Construction details, materials..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreateFortification()">Add</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Checklists Panel ─────────────────────────────────── -->
+<div class="dm-panel" id="dm-panel-checklists">
+  <!-- Filters -->
+  <div class="dm-card">
+    <div class="dm-card-title">Filter Checklists</div>
+    <div class="dm-form-row">
+      <div class="field"><label>Plan</label>
+        <select name="dm-cl-filter-plan" id="dm-cl-filter-plan" onchange="dmLoadChecklists()">
+          <option value="">All Plans</option>
+        </select>
+      </div>
+      <div class="field"><label>Category</label>
+        <select name="dm-cl-filter-cat" id="dm-cl-filter-cat" onchange="dmLoadChecklists()">
+          <option value="">All Categories</option>
+          <option value="pre_event">Pre-Event</option><option value="during">During</option>
+          <option value="post_event">Post-Event</option><option value="recovery">Recovery</option>
+        </select>
+      </div>
+      <div class="field"><label>Status</label>
+        <select name="dm-cl-filter-status" id="dm-cl-filter-status" onchange="dmLoadChecklists()">
+          <option value="">All</option><option value="incomplete">Incomplete</option><option value="complete">Complete</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Checklist items -->
+  <div id="dm-cl-list" class="dm-card"><div class="dm-empty">Loading checklists...</div></div>
+</div>
+
+<script>
+(function(){
+  const root = document.getElementById('tab-disaster-modules');
+  const el = id => document.getElementById(id);
+  const val = id => el(id)?.value || '';
+  const numVal = (id, def) => parseFloat(val(id)) || def || 0;
+  const api = (url, opts) => fetch(url, opts).then(r => r.json());
+  const toast = msg => { if (window.showToast) window.showToast(msg); };
+  const API = '/api/disaster';
+
+  const disasterTypeColors = {
+    earthquake:'#ef4444', flood:'#3b82f6', fire:'#f97316', tornado:'#a855f7',
+    hurricane:'#06b6d4', pandemic:'#eab308', nuclear:'#f87171', emp:'#c084fc',
+    drought:'#f59e0b', winter_storm:'#94a3b8'
+  };
+  const protLevelColors = { basic:'#22c55e', moderate:'#3b82f6', hardened:'#a855f7', blast_rated:'#ef4444' };
+
+  function fmtDate(d){ if(!d) return '--'; const dt=new Date(d); return dt.toLocaleDateString(); }
+  function inspectionBadge(dateStr){
+    if(!dateStr) return '<span style="color:var(--dm-gray);font-size:.75rem">No date</span>';
+    const diff=Math.ceil((new Date(dateStr)-Date.now())/864e5);
+    if(diff<0) return `<span style="color:var(--dm-red);font-size:.75rem">Overdue by ${Math.abs(diff)}d</span>`;
+    if(diff<=7) return `<span style="color:var(--dm-accent);font-size:.75rem">Due in ${diff}d</span>`;
+    return `<span style="color:var(--dm-gray);font-size:.75rem">${fmtDate(dateStr)}</span>`;
+  }
+
+  /* ── Sub-tab switching ── */
+  root.querySelectorAll('.dm-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.dm-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.dm-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = el('dm-panel-' + btn.dataset.dmPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     PLANS
+     ═══════════════════════════════════════════════════════════ */
+  window.dmLoadPlans = function(){
+    const typeFilter = val('dm-plan-filter-type');
+    const envFilter = val('dm-plan-filter-env');
+    let url = API + '/plans';
+    const params = [];
+    if(typeFilter) params.push('type=' + typeFilter);
+    if(envFilter) params.push('environment=' + envFilter);
+    if(params.length) url += '?' + params.join('&');
+
+    api(url).then(plans => {
+      const list = el('dm-plan-list');
+      if(!plans || !plans.length){ list.innerHTML = '<div class="dm-empty">No plans found. Create one above.</div>'; return; }
+      list.innerHTML = plans.map(p => {
+        const tc = disasterTypeColors[p.disaster_type] || '#f59e0b';
+        const stColor = p.status === 'active' ? '#22c55e' : p.status === 'draft' ? '#f59e0b' : '#6b7280';
+        return `<div class="dm-list-item">
+          <div style="flex:1">
+            <span class="dm-badge dm-type-${p.disaster_type}" style="margin-right:6px">${(p.disaster_type||'').replace('_',' ')}</span>
+            <strong>${p.name}</strong>
+            <span class="dm-badge" style="color:${stColor};margin-left:6px">${p.status}</span>
+            ${p.environment ? `<span class="dm-badge dm-env-${p.environment}" style="margin-left:4px">${p.environment}</span>` : ''}
+            <br><small style="color:var(--text-secondary,#aaa)">Last reviewed: ${fmtDate(p.last_reviewed)}</small>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="dm-btn dm-btn-secondary" onclick="dmExpandPlan(${p.id})">View</button>
+            <button class="dm-btn dm-btn-danger" onclick="dmDeletePlan(${p.id})">Del</button>
+          </div>
+        </div>`;
+      }).join('');
+    });
+    // Summary
+    api(API + '/summary').then(data => {
+      const box = el('dm-plan-summary');
+      if(!data){ box.innerHTML = ''; return; }
+      box.innerHTML = `
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.total_plans||0}</div><div class="dm-summary-label">Plans</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.active_plans||0}</div><div class="dm-summary-label">Active</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.total_checklists||0}</div><div class="dm-summary-label">Checklists</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.completion_pct||0}%</div><div class="dm-summary-label">Completion</div></div>`;
+    });
+    // Reference
+    api(API + '/plans/reference').then(ref => {
+      const box = el('dm-plan-reference');
+      if(!ref || !ref.length){ box.innerHTML = '<div style="font-size:.82rem;color:var(--text-secondary,#aaa)">No reference data.</div>'; return; }
+      box.innerHTML = ref.map(r => `<div style="padding:6px 0;border-bottom:1px solid var(--border,#333);font-size:.82rem">
+        <span class="dm-badge dm-type-${r.disaster_type}" style="margin-right:6px">${(r.disaster_type||'').replace('_',' ')}</span>
+        <strong>${r.action||''}</strong>
+        ${r.detail ? `<br><small style="color:var(--text-secondary,#aaa)">${r.detail}</small>` : ''}
+      </div>`).join('');
+    });
+  };
+
+  window.dmCreatePlan = function(){
+    const name = val('dm-plan-name'); if(!name) return;
+    api(API + '/plans', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, disaster_type: val('dm-plan-type'), environment: val('dm-plan-env'),
+        status: val('dm-plan-status'), description: val('dm-plan-desc')})
+    }).then(() => { el('dm-plan-name').value = ''; el('dm-plan-desc').value = ''; dmLoadPlans(); toast('Plan created'); });
+  };
+
+  window.dmDeletePlan = function(id){
+    api(API + '/plans/' + id, {method:'DELETE'}).then(() => { dmLoadPlans(); toast('Plan removed'); });
+  };
+
+  window.dmExpandPlan = function(id){
+    api(API + '/plans/' + id).then(p => {
+      const box = el('dm-plan-detail');
+      if(!p){ box.style.display = 'none'; return; }
+      box.style.display = 'block';
+      const checklists = p.checklists || [];
+      const totalItems = checklists.length;
+      const doneItems = checklists.filter(c => c.completed).length;
+      const pct = totalItems ? Math.round(doneItems / totalItems * 100) : 0;
+      box.innerHTML = `<div class="dm-card-title">${p.name}
+        <span class="dm-badge dm-type-${p.disaster_type}" style="margin-left:8px">${(p.disaster_type||'').replace('_',' ')}</span></div>
+        <p style="font-size:.85rem;color:var(--text-secondary,#aaa);margin:0 0 12px">${p.description || 'No description.'}</p>
+        <div style="margin-bottom:10px"><strong style="font-size:.82rem">Checklist Progress: ${pct}%</strong>
+          <div class="dm-progress"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
+        </div>
+        ${totalItems ? checklists.map(c => `<div class="dm-checklist-item ${c.completed?'completed':''}">
+          <input type="checkbox" name="dm-plan-cl-${c.id}" ${c.completed?'checked':''} onchange="dmToggleChecklist(${c.id},this.checked)">
+          <span>${c.item_text}</span>
+          <span class="dm-badge dm-cat-${c.category}" style="margin-left:auto">${(c.category||'').replace('_',' ')}</span>
+        </div>`).join('') : '<div class="dm-empty">No checklists for this plan.</div>'}`;
+    });
+  };
+
+  window.dmSeedChecklists = function(){
+    api(API + '/checklists/seed', {method:'POST'}).then(() => { dmLoadPlans(); dmLoadChecklists(); toast('Default checklists seeded'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     ENERGY
+     ═══════════════════════════════════════════════════════════ */
+  function dmLoadEnergy(){
+    api(API + '/energy').then(items => {
+      const list = el('dm-energy-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No energy systems tracked.</div>'; return; }
+      list.innerHTML = `<table class="dm-table"><thead><tr>
+        <th>System</th><th>Type</th><th>Status</th><th>Output</th><th>Fuel</th><th></th>
+      </tr></thead><tbody>${items.map(e => {
+        const stClass = 'dm-status-' + (e.status||'offline');
+        return `<tr>
+          <td><strong>${e.name}</strong>${e.notes ? `<br><small style="color:var(--text-secondary,#aaa)">${e.notes}</small>` : ''}</td>
+          <td>${(e.energy_type||e.type||'').replace('_',' ')}</td>
+          <td><span class="${stClass}">&#9679; ${e.status}</span></td>
+          <td>${e.output_watts ? e.output_watts + 'W' : '--'}</td>
+          <td>${e.fuel_source || '--'}</td>
+          <td style="text-align:right"><button class="dm-btn dm-btn-danger" onclick="dmDeleteEnergy(${e.id})">Del</button></td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+    });
+    // Summary
+    api(API + '/energy/summary').then(data => {
+      const box = el('dm-energy-summary');
+      if(!data){ box.innerHTML = ''; return; }
+      box.innerHTML = `
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.total||0}</div><div class="dm-summary-label">Systems</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val dm-status-operational">${data.operational||0}</div><div class="dm-summary-label">Operational</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val dm-status-degraded">${data.degraded||0}</div><div class="dm-summary-label">Degraded</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val dm-status-offline">${data.offline||0}</div><div class="dm-summary-label">Offline</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.total_watts||0}W</div><div class="dm-summary-label">Total Output</div></div>`;
+    });
+  }
+
+  window.dmCreateEnergy = function(){
+    const name = val('dm-energy-name'); if(!name) return;
+    api(API + '/energy', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, energy_type: val('dm-energy-type'), status: val('dm-energy-status'),
+        output_watts: numVal('dm-energy-output'), fuel_source: val('dm-energy-fuel'), notes: val('dm-energy-notes')})
+    }).then(() => { el('dm-energy-name').value = ''; el('dm-energy-fuel').value = ''; el('dm-energy-notes').value = ''; dmLoadEnergy(); toast('Energy system added'); });
+  };
+
+  window.dmDeleteEnergy = function(id){
+    api(API + '/energy/' + id, {method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({status:'offline'})
+    }).then(() => { dmLoadEnergy(); toast('System updated'); });
+  };
+
+  /* Heating calculator */
+  window.dmCalcHeating = function(){
+    const sqft = numVal('dm-heat-sqft', 1200);
+    const insulation = val('dm-heat-insulation');
+    const indoor = numVal('dm-heat-indoor', 65);
+    const outdoor = numVal('dm-heat-outdoor', 20);
+    const delta = indoor - outdoor;
+    const factors = { poor: 0.07, average: 0.05, good: 0.035, excellent: 0.025 };
+    const factor = factors[insulation] || 0.05;
+    const btuPerHour = sqft * delta * factor;
+    const btuPerDay = btuPerHour * 24;
+    const btuPerCord = 20000000; // avg hardwood cord
+    const cordsPerSeason = (btuPerDay * 150) / btuPerCord; // ~150 day heating season
+    const resultEl = el('dm-heat-result');
+    resultEl.innerHTML = `<strong>BTU/hour:</strong> ${Math.round(btuPerHour).toLocaleString()}<br>
+      <strong>BTU/day:</strong> ${Math.round(btuPerDay).toLocaleString()}<br>
+      <strong>Cords per season (~150 days):</strong> ${cordsPerSeason.toFixed(1)}<br>
+      <small style="color:var(--text-secondary,#aaa)">${sqft} sq ft, ${insulation} insulation, ${delta}F delta</small>`;
+    resultEl.classList.remove('is-hidden');
+  };
+
+  /* Sandbag calculator */
+  window.dmCalcSandbag = function(){
+    const length = numVal('dm-sand-length', 50);
+    const height = numVal('dm-sand-height', 3);
+    // ~6 bags per foot of length per foot of height (staggered stack)
+    const bags = Math.ceil(length * height * 6);
+    const sand_tons = (bags * 35) / 2000; // ~35 lbs per bag
+    const resultEl = el('dm-sand-result');
+    resultEl.innerHTML = `<strong>Sandbags needed:</strong> ${bags.toLocaleString()}<br>
+      <strong>Sand required:</strong> ~${sand_tons.toFixed(1)} tons (${Math.round(bags * 35).toLocaleString()} lbs)<br>
+      <small style="color:var(--text-secondary,#aaa)">${length}ft x ${height}ft wall, staggered placement</small>`;
+    resultEl.classList.remove('is-hidden');
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     CONSTRUCTION
+     ═══════════════════════════════════════════════════════════ */
+  function dmLoadConstruction(){
+    api(API + '/construction').then(projects => {
+      const list = el('dm-con-list');
+      if(!projects || !projects.length){ list.innerHTML = '<div class="dm-empty">No construction projects.</div>'; return; }
+      list.innerHTML = projects.map(p => {
+        const est = p.estimated_hours || 0;
+        const done = p.hours_completed || 0;
+        const pct = est ? Math.round(done / est * 100) : 0;
+        const stColor = p.status === 'complete' ? '#22c55e' : p.status === 'in_progress' ? '#f59e0b' : '#6b7280';
+        return `<div class="dm-list-item" style="flex-wrap:wrap">
+          <div style="flex:1;min-width:200px">
+            <strong>${p.name}</strong>
+            <span class="dm-badge" style="color:${stColor};margin-left:8px">${(p.status||'').replace('_',' ')}</span>
+            ${p.description ? `<br><small style="color:var(--text-secondary,#aaa)">${p.description}</small>` : ''}
+            <div style="margin-top:6px">
+              <small style="color:var(--text-secondary,#aaa)">Labor: ${done}/${est} hrs (${pct}%)</small>
+              <div class="dm-progress" style="width:180px"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=100?'#22c55e':pct>=50?'#f59e0b':'#3b82f6'}"></div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px">
+            <button class="dm-btn dm-btn-secondary" onclick="dmViewMaterials(${p.id})">Materials</button>
+            <button class="dm-btn dm-btn-danger" onclick="dmDeleteConstruction(${p.id})">Del</button>
+          </div>
+        </div>`;
+      }).join('');
+    });
+  }
+
+  function dmLoadMaterials(){
+    api(API.replace('/disaster','/disaster/materials')).then(items => {
+      const list = el('dm-mat-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No materials tracked.</div>'; return; }
+      list.innerHTML = `<table class="dm-table"><thead><tr>
+        <th>Material</th><th>Category</th><th>Qty</th><th>Unit</th><th>Min Stock</th><th></th>
+      </tr></thead><tbody>${items.map(m => {
+        const low = m.min_stock && m.quantity <= m.min_stock;
+        return `<tr class="${low ? 'dm-low-stock' : ''}">
+          <td><strong>${m.name}</strong>${low ? ' <span style="color:var(--dm-red);font-size:.72rem;font-weight:600">LOW</span>' : ''}</td>
+          <td>${m.category || '--'}</td>
+          <td>${m.quantity || 0}</td>
+          <td>${m.unit || '--'}</td>
+          <td>${m.min_stock || '--'}</td>
+          <td style="text-align:right"><button class="dm-btn dm-btn-danger" onclick="dmDeleteMaterial(${m.id})">Del</button></td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+    });
+    // Low stock warnings
+    api(API.replace('/disaster','/disaster/materials') + '/low-stock').then(items => {
+      const box = el('dm-mat-low-stock');
+      if(!items || !items.length){ box.innerHTML = ''; return; }
+      box.innerHTML = `<div style="padding:8px 12px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:6px;font-size:.82rem;color:var(--dm-red)">
+        <strong>Low Stock Warnings:</strong> ${items.map(i => i.name).join(', ')}
+      </div>`;
+    });
+  }
+
+  window.dmCreateConstruction = function(){
+    const name = val('dm-con-name'); if(!name) return;
+    api(API + '/construction', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, status: val('dm-con-status'),
+        estimated_hours: numVal('dm-con-hours'), hours_completed: numVal('dm-con-hours-done'),
+        description: val('dm-con-desc')})
+    }).then(() => { el('dm-con-name').value = ''; el('dm-con-desc').value = ''; dmLoadConstruction(); toast('Project created'); });
+  };
+
+  window.dmDeleteConstruction = function(id){
+    api(API + '/construction/' + id, {method:'DELETE'}).then(() => { dmLoadConstruction(); toast('Project removed'); });
+  };
+
+  window.dmViewMaterials = function(projectId){
+    api(API + '/construction/' + projectId + '/materials').then(items => {
+      const list = el('dm-mat-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No materials linked to this project.</div>'; return; }
+      list.innerHTML = `<table class="dm-table"><thead><tr>
+        <th>Material</th><th>Category</th><th>Qty</th><th>Unit</th>
+      </tr></thead><tbody>${items.map(m => `<tr>
+        <td>${m.name}</td><td>${m.category||'--'}</td><td>${m.quantity||0}</td><td>${m.unit||'--'}</td>
+      </tr>`).join('')}</tbody></table>`;
+    });
+  };
+
+  window.dmCreateMaterial = function(){
+    const name = val('dm-mat-name'); if(!name) return;
+    api(API.replace('/disaster','/disaster/materials'), {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, category: val('dm-mat-category'),
+        quantity: numVal('dm-mat-qty'), unit: val('dm-mat-unit'), min_stock: numVal('dm-mat-min')})
+    }).then(() => { el('dm-mat-name').value = ''; el('dm-mat-unit').value = ''; dmLoadMaterials(); toast('Material added'); });
+  };
+
+  window.dmDeleteMaterial = function(id){
+    api(API.replace('/disaster','/disaster/materials') + '/' + id, {method:'DELETE'}).then(() => { dmLoadMaterials(); toast('Material removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     FORTIFICATIONS
+     ═══════════════════════════════════════════════════════════ */
+  function dmLoadFortifications(){
+    api(API + '/fortifications').then(items => {
+      const list = el('dm-fort-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No fortifications tracked.</div>'; return; }
+      list.innerHTML = items.map(f => {
+        const condClass = 'dm-cond-' + (f.condition || 'fair');
+        const condIcon = f.condition === 'good' ? '&#9679;' : f.condition === 'fair' ? '&#9681;' : '&#9675;';
+        return `<div class="dm-card">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <strong style="font-size:.95rem">${f.name}</strong>
+              <span class="dm-badge dm-prot-${f.protection_level}" style="margin-left:8px">${(f.protection_level||'').replace('_',' ')}</span>
+            </div>
+            <button class="dm-btn dm-btn-danger" onclick="dmDeleteFortification(${f.id})">Del</button>
+          </div>
+          <div style="margin-top:8px;font-size:.82rem">
+            <span class="${condClass}" title="Condition">${condIcon} ${f.condition || 'unknown'}</span>
+            <span style="margin-left:12px;color:var(--text-secondary,#aaa)">Capacity: ${f.capacity || '--'} persons</span>
+            <span style="margin-left:12px">${inspectionBadge(f.next_inspection)}</span>
+          </div>
+          ${f.notes ? `<div style="margin-top:6px;font-size:.8rem;color:var(--text-secondary,#aaa)">${f.notes}</div>` : ''}
+        </div>`;
+      }).join('');
+    });
+    // Assessment summary
+    api(API + '/fortifications/assessment').then(data => {
+      const box = el('dm-fort-assessment');
+      if(!data){ box.innerHTML = ''; return; }
+      box.innerHTML = `
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.total||0}</div><div class="dm-summary-label">Fortifications</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val dm-cond-good">${data.good_condition||0}</div><div class="dm-summary-label">Good</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val dm-cond-fair">${data.fair_condition||0}</div><div class="dm-summary-label">Fair</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val dm-cond-poor">${data.poor_condition||0}</div><div class="dm-summary-label">Poor</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.total_capacity||0}</div><div class="dm-summary-label">Total Capacity</div></div>
+        <div class="dm-summary-card"><div class="dm-summary-val" style="color:${(data.inspections_due||0)>0?'var(--dm-red)':'var(--dm-green)'}">${data.inspections_due||0}</div><div class="dm-summary-label">Inspections Due</div></div>`;
+    });
+  }
+
+  window.dmCreateFortification = function(){
+    const name = val('dm-fort-name'); if(!name) return;
+    api(API + '/fortifications', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, protection_level: val('dm-fort-level'), condition: val('dm-fort-condition'),
+        capacity: numVal('dm-fort-capacity'), next_inspection: val('dm-fort-inspection'), notes: val('dm-fort-notes')})
+    }).then(() => { el('dm-fort-name').value = ''; el('dm-fort-notes').value = ''; dmLoadFortifications(); toast('Fortification added'); });
+  };
+
+  window.dmDeleteFortification = function(id){
+    api(API + '/fortifications/' + id, {method:'DELETE'}).then(() => { dmLoadFortifications(); toast('Fortification removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     CHECKLISTS
+     ═══════════════════════════════════════════════════════════ */
+  window.dmLoadChecklists = function(){
+    const planFilter = val('dm-cl-filter-plan');
+    const catFilter = val('dm-cl-filter-cat');
+    const statusFilter = val('dm-cl-filter-status');
+    let url = API + '/checklists';
+    const params = [];
+    if(planFilter) params.push('plan_id=' + planFilter);
+    if(catFilter) params.push('category=' + catFilter);
+    if(statusFilter) params.push('status=' + statusFilter);
+    if(params.length) url += '?' + params.join('&');
+
+    api(url).then(items => {
+      const list = el('dm-cl-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No checklist items found.</div>'; return; }
+      // Group by plan
+      const grouped = {};
+      items.forEach(c => { const key = c.plan_name || 'Unassigned'; (grouped[key] = grouped[key] || []).push(c); });
+
+      list.innerHTML = Object.entries(grouped).map(([planName, checks]) => {
+        const total = checks.length;
+        const done = checks.filter(c => c.completed).length;
+        const pct = total ? Math.round(done / total * 100) : 0;
+        return `<div style="margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <strong style="font-size:.9rem">${planName}</strong>
+            <span style="font-size:.82rem;color:var(--text-secondary,#aaa)">${done}/${total} (${pct}%)</span>
+          </div>
+          <div class="dm-progress" style="margin-bottom:8px"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
+          ${checks.map(c => `<div class="dm-checklist-item ${c.completed?'completed':''}">
+            <input type="checkbox" name="dm-cl-item-${c.id}" ${c.completed?'checked':''} onchange="dmToggleChecklist(${c.id},this.checked)">
+            <span style="flex:1">${c.item_text}</span>
+            <span class="dm-badge dm-cat-${c.category}">${(c.category||'').replace('_',' ')}</span>
+          </div>`).join('')}
+        </div>`;
+      }).join('');
+    });
+    // Populate plan filter dropdown
+    api(API + '/plans').then(plans => {
+      const sel = el('dm-cl-filter-plan');
+      const current = sel.value;
+      const opts = '<option value="">All Plans</option>' + (plans||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
+      sel.innerHTML = opts;
+      sel.value = current;
+    });
+  };
+
+  window.dmToggleChecklist = function(id, completed){
+    api(API + '/checklists/' + id, {method:'PUT', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({completed})
+    }).then(() => { toast(completed ? 'Item completed' : 'Item unchecked'); dmLoadChecklists(); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     LAZY LOAD -- MutationObserver
+     ═══════════════════════════════════════════════════════════ */
+  let _loaded = false;
+  function loadAll(){
+    if(_loaded) return; _loaded = true;
+    dmLoadPlans();
+    dmLoadEnergy();
+    dmLoadConstruction();
+    dmLoadMaterials();
+    dmLoadFortifications();
+    dmLoadChecklists();
+  }
+
+  const obs = new MutationObserver(() => {
+    if(!root.classList.contains('is-hidden')){ loadAll(); }
+  });
+  obs.observe(root, {attributes: true, attributeFilter: ['class']});
+  if(!root.classList.contains('is-hidden')){ loadAll(); }
+})();
+</script>
+</div>

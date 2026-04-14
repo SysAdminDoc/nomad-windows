@@ -2313,11 +2313,136 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_evac_drill_runs_started ON evac_drill_runs(started_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_evac_drill_laps_run ON evac_drill_laps(drill_run_id)',
         'CREATE INDEX IF NOT EXISTS idx_evac_drill_laps_number ON evac_drill_laps(drill_run_id, lap_number)',
+        # v7.11.0 — Data Foundation & Localization (Phase 1)
+        'CREATE INDEX IF NOT EXISTS idx_regional_profile_active ON regional_profile(is_active)',
+        'CREATE INDEX IF NOT EXISTS idx_regional_profile_zip ON regional_profile(zip_code)',
+        'CREATE INDEX IF NOT EXISTS idx_data_packs_pack_id ON data_packs(pack_id)',
+        'CREATE INDEX IF NOT EXISTS idx_data_packs_status ON data_packs(status)',
+        'CREATE INDEX IF NOT EXISTS idx_data_packs_tier ON data_packs(tier)',
+        'CREATE INDEX IF NOT EXISTS idx_nutrition_foods_fdc_id ON nutrition_foods(fdc_id)',
+        'CREATE INDEX IF NOT EXISTS idx_nutrition_foods_description ON nutrition_foods(description)',
+        'CREATE INDEX IF NOT EXISTS idx_nutrition_foods_group ON nutrition_foods(food_group)',
+        'CREATE INDEX IF NOT EXISTS idx_nutrition_nutrients_fdc_id ON nutrition_nutrients(fdc_id)',
+        'CREATE INDEX IF NOT EXISTS idx_nutrition_nutrients_name ON nutrition_nutrients(nutrient_name)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_nutrition_link_inv ON inventory_nutrition_link(inventory_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_nutrition_link_fdc ON inventory_nutrition_link(fdc_id)',
+        'CREATE INDEX IF NOT EXISTS idx_fema_nri_county ON fema_nri_counties(state_fips, county_fips)',
+        'CREATE INDEX IF NOT EXISTS idx_fema_nri_state ON fema_nri_counties(state_name)',
+        'CREATE INDEX IF NOT EXISTS idx_fema_nri_risk ON fema_nri_counties(risk_score DESC)',
     ]:
         try:
             conn.execute(idx)
         except sqlite3.OperationalError:
             pass  # Index already exists or related issue
+    conn.commit()
+
+
+def _create_data_foundation_tables(conn):
+    """Phase 1 — Data Foundation & Localization: regional profiles, nutrition DB,
+    data pack management, and inventory→nutrition linking."""
+    conn.executescript('''
+        /* ─── Regional Profile ─── */
+        CREATE TABLE IF NOT EXISTS regional_profile (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL DEFAULT 'primary',
+            country TEXT DEFAULT 'US',
+            state TEXT DEFAULT '',
+            county TEXT DEFAULT '',
+            zip_code TEXT DEFAULT '',
+            lat REAL,
+            lng REAL,
+            usda_zone TEXT DEFAULT '',
+            fema_risk_scores TEXT DEFAULT '{}',
+            frost_date_last TEXT DEFAULT '',
+            frost_date_first TEXT DEFAULT '',
+            nearest_nws_station TEXT DEFAULT '',
+            nearest_nws_station_name TEXT DEFAULT '',
+            threat_weights TEXT DEFAULT '{}',
+            notes TEXT DEFAULT '',
+            is_active INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Data Packs ─── */
+        CREATE TABLE IF NOT EXISTS data_packs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pack_id TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            tier INTEGER DEFAULT 1,
+            category TEXT DEFAULT 'general',
+            size_bytes INTEGER DEFAULT 0,
+            compressed_size_bytes INTEGER DEFAULT 0,
+            version TEXT DEFAULT '1.0.0',
+            status TEXT DEFAULT 'available',
+            installed_at TEXT DEFAULT '',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            manifest TEXT DEFAULT '{}',
+            source_url TEXT DEFAULT '',
+            checksum TEXT DEFAULT ''
+        );
+
+        /* ─── Nutrition Foods (USDA FoodData SR Legacy) ─── */
+        CREATE TABLE IF NOT EXISTS nutrition_foods (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fdc_id INTEGER UNIQUE,
+            description TEXT NOT NULL,
+            food_group TEXT DEFAULT '',
+            calories REAL DEFAULT 0,
+            protein_g REAL DEFAULT 0,
+            fat_g REAL DEFAULT 0,
+            carbs_g REAL DEFAULT 0,
+            fiber_g REAL DEFAULT 0,
+            sugar_g REAL DEFAULT 0,
+            sodium_mg REAL DEFAULT 0,
+            serving_size REAL DEFAULT 100,
+            serving_unit TEXT DEFAULT 'g',
+            data_source TEXT DEFAULT 'sr_legacy'
+        );
+
+        /* ─── Nutrition Nutrients (per-food micronutrient detail) ─── */
+        CREATE TABLE IF NOT EXISTS nutrition_nutrients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fdc_id INTEGER NOT NULL,
+            nutrient_name TEXT NOT NULL,
+            nutrient_number TEXT DEFAULT '',
+            amount REAL DEFAULT 0,
+            unit TEXT DEFAULT '',
+            FOREIGN KEY (fdc_id) REFERENCES nutrition_foods(fdc_id)
+        );
+
+        /* ─── Inventory ↔ Nutrition Link ─── */
+        CREATE TABLE IF NOT EXISTS inventory_nutrition_link (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            inventory_id INTEGER NOT NULL,
+            fdc_id INTEGER NOT NULL,
+            servings_per_item REAL DEFAULT 1,
+            calories_per_serving REAL DEFAULT 0,
+            protein_per_serving REAL DEFAULT 0,
+            fat_per_serving REAL DEFAULT 0,
+            carbs_per_serving REAL DEFAULT 0,
+            linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (inventory_id) REFERENCES inventory(id),
+            FOREIGN KEY (fdc_id) REFERENCES nutrition_foods(fdc_id)
+        );
+
+        /* ─── FEMA NRI County Hazard Data ─── */
+        CREATE TABLE IF NOT EXISTS fema_nri_counties (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            state_fips TEXT NOT NULL,
+            county_fips TEXT NOT NULL,
+            state_name TEXT DEFAULT '',
+            county_name TEXT DEFAULT '',
+            risk_score REAL DEFAULT 0,
+            risk_rating TEXT DEFAULT '',
+            expected_annual_loss REAL DEFAULT 0,
+            social_vulnerability REAL DEFAULT 0,
+            community_resilience REAL DEFAULT 0,
+            hazard_scores TEXT DEFAULT '{}',
+            UNIQUE(state_fips, county_fips)
+        );
+    ''')
     conn.commit()
 
 
@@ -2331,6 +2456,7 @@ def _init_db_inner(conn):
     _create_water_financial_vehicle_loadout_tables(conn)
     _create_pace_evac_container_tables(conn)
     _create_readiness_alerts_threat_drill_tables(conn)
+    _create_data_foundation_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

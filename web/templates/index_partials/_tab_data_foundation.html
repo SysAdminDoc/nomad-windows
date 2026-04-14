@@ -1,0 +1,422 @@
+<div id="tab-data-foundation" class="tab-content tab-vcenter df-workspace{% if active_tab == 'data-foundation' %} active{% endif %}">
+
+  <style>
+    #tab-data-foundation {
+      --df-accent: var(--accent, #5b9fff);
+      --df-card-bg: var(--card-bg, #1a1a2e);
+      --df-surface: var(--surface, rgba(24, 29, 36, 0.84));
+      --df-surface2: var(--surface2, #1d2430);
+      --df-border: var(--border, rgba(255, 255, 255, 0.08));
+      --df-text: var(--text, #edf2f7);
+      --df-text-dim: var(--text-dim, #a3b2c7);
+      --df-text-muted: var(--text-muted, #888);
+      --df-green: var(--green, #34d399);
+      --df-orange: var(--orange, #fb923c);
+      --df-red: var(--red, #f87171);
+    }
+    .df-deck { padding: 24px 0 16px; }
+    .df-deck h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; color: var(--df-text); margin: 6px 0 4px; }
+    .df-deck p { font-size: 13px; color: var(--df-text-dim); margin: 0 0 14px; }
+    .df-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .df-tabs { display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid var(--df-border); }
+    .df-tab-btn { padding: 10px 18px; font-size: 13px; font-weight: 600; color: var(--df-text-muted); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.2s, border-color 0.2s; }
+    .df-tab-btn:hover { color: var(--df-text); }
+    .df-tab-btn.active { color: var(--df-accent); border-bottom-color: var(--df-accent); }
+    .df-panel { display: none; }
+    .df-panel.active { display: block; }
+    .df-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .df-stat-card { background: var(--df-card-bg); border-radius: 10px; padding: 16px; text-align: center; border: 1px solid var(--df-border); }
+    .df-stat-value { font-size: 28px; font-weight: 700; color: var(--df-accent); }
+    .df-stat-value.is-good { color: var(--df-green); }
+    .df-stat-value.is-warning { color: var(--df-orange); }
+    .df-stat-label { font-size: 11px; color: var(--df-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+
+    /* ─── Data Pack Cards ─── */
+    .df-pack-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 14px; }
+    .df-pack-card { background: var(--df-card-bg); border-radius: 10px; padding: 18px; border: 1px solid var(--df-border); }
+    .df-pack-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .df-pack-name { font-size: 14px; font-weight: 700; color: var(--df-text); }
+    .df-pack-tier { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
+    .df-pack-tier.tier-1 { background: rgba(91,159,255,0.15); color: var(--df-accent); }
+    .df-pack-tier.tier-2 { background: rgba(251,146,60,0.15); color: var(--df-orange); }
+    .df-pack-tier.tier-3 { background: rgba(255,255,255,0.08); color: var(--df-text-muted); }
+    .df-pack-desc { font-size: 12px; color: var(--df-text-dim); line-height: 1.5; margin-bottom: 10px; }
+    .df-pack-meta { font-size: 11px; color: var(--df-text-muted); display: flex; gap: 12px; margin-bottom: 10px; }
+    .df-pack-status { display: flex; align-items: center; gap: 6px; }
+    .df-pack-status .dot { width: 8px; height: 8px; border-radius: 50%; }
+    .df-pack-status .dot.installed { background: var(--df-green); }
+    .df-pack-status .dot.available { background: var(--df-text-muted); }
+    .df-pack-actions { display: flex; gap: 6px; }
+
+    /* ─── Regional Profile ─── */
+    .df-profile-card { background: var(--df-card-bg); border-radius: 10px; padding: 20px; border: 1px solid var(--df-border); margin-bottom: 16px; }
+    .df-profile-card h3 { font-size: 15px; font-weight: 700; color: var(--df-text); margin: 0 0 12px; }
+    .df-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .df-form-group { display: flex; flex-direction: column; }
+    .df-form-group label { font-size: 11px; color: var(--df-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+    .df-form-group input, .df-form-group select { font-size: 13px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--df-border); background: var(--df-surface); color: var(--df-text); }
+    .df-form-group select { appearance: none; }
+    .df-form-full { grid-column: 1 / -1; }
+    .df-threat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 12px; }
+    .df-threat-bar { background: var(--df-surface); border-radius: 6px; padding: 10px 12px; border: 1px solid var(--df-border); }
+    .df-threat-bar-head { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 6px; }
+    .df-threat-bar-name { color: var(--df-text); font-weight: 600; text-transform: capitalize; }
+    .df-threat-bar-score { font-weight: 700; }
+    .df-threat-bar-score.very-high { color: var(--df-red); }
+    .df-threat-bar-score.high { color: var(--df-orange); }
+    .df-threat-bar-score.moderate { color: var(--df-accent); }
+    .df-threat-bar-score.low { color: var(--df-text-muted); }
+    .df-threat-track { height: 4px; background: var(--df-surface2); border-radius: 2px; overflow: hidden; }
+    .df-threat-fill { height: 100%; border-radius: 2px; transition: width 0.4s ease; }
+
+    /* ─── Nutrition ─── */
+    .df-nutrition-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 20px; }
+    .df-macro-card { background: var(--df-card-bg); border-radius: 10px; padding: 16px; border: 1px solid var(--df-border); text-align: center; }
+    .df-macro-value { font-size: 24px; font-weight: 700; }
+    .df-macro-label { font-size: 11px; color: var(--df-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
+    .df-gap-row { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--df-card-bg); border-radius: 6px; border: 1px solid var(--df-border); margin-bottom: 6px; }
+    .df-gap-name { font-size: 13px; font-weight: 600; color: var(--df-text); flex: 0 0 120px; }
+    .df-gap-track { flex: 1; height: 6px; background: var(--df-surface2); border-radius: 3px; overflow: hidden; }
+    .df-gap-fill { height: 100%; border-radius: 3px; transition: width 0.4s ease; }
+    .df-gap-fill.red { background: var(--df-red); }
+    .df-gap-fill.amber { background: var(--df-orange); }
+    .df-gap-fill.green { background: var(--df-green); }
+    .df-gap-days { font-size: 12px; font-weight: 700; flex: 0 0 60px; text-align: right; }
+    .df-empty { text-align: center; padding: 40px; color: var(--df-text-muted); font-size: 14px; }
+    .df-section { margin-bottom: 20px; }
+    .df-section h3 { font-size: 14px; font-weight: 700; color: var(--df-text); margin-bottom: 10px; }
+    .df-search-row { display: flex; gap: 8px; margin-bottom: 12px; }
+    .df-search-row input { flex: 1; font-size: 13px; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--df-border); background: var(--df-surface); color: var(--df-text); }
+    .df-food-results { max-height: 300px; overflow-y: auto; }
+    .df-food-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid var(--df-border); cursor: pointer; }
+    .df-food-item:hover { background: var(--df-surface2); }
+    .df-food-name { font-size: 13px; color: var(--df-text); }
+    .df-food-meta { font-size: 11px; color: var(--df-text-muted); }
+    .df-food-cal { font-size: 13px; font-weight: 600; color: var(--df-accent); }
+  </style>
+
+  <div class="workspace-scroll-container" style="padding:0 24px 24px;">
+    <div class="df-deck">
+      <div class="section-header-label workspace-kicker">DATA FOUNDATION</div>
+      <h2>Personalize NOMAD with your location and offline datasets.</h2>
+      <p>Configure your region, install data packs, and connect nutrition data to inventory. Everything runs offline once installed.</p>
+    </div>
+
+    <!-- Sub-tabs -->
+    <div class="df-tabs">
+      <button class="df-tab-btn active" data-df-tab="packs">Data Packs</button>
+      <button class="df-tab-btn" data-df-tab="region">Regional Profile</button>
+      <button class="df-tab-btn" data-df-tab="nutrition">Nutrition</button>
+    </div>
+
+    <!-- ═══════ DATA PACKS PANEL ═══════ -->
+    <div id="df-panel-packs" class="df-panel active">
+      <div class="df-stats-row" id="df-packs-stats">
+        <div class="df-stat-card"><div class="df-stat-value" id="df-packs-installed">—</div><div class="df-stat-label">Installed</div></div>
+        <div class="df-stat-card"><div class="df-stat-value" id="df-packs-available">—</div><div class="df-stat-label">Available</div></div>
+        <div class="df-stat-card"><div class="df-stat-value" id="df-packs-size">—</div><div class="df-stat-label">Disk Used</div></div>
+        <div class="df-stat-card"><div class="df-stat-value" id="df-packs-tier1">—</div><div class="df-stat-label">Tier 1 Packs</div></div>
+      </div>
+      <div class="df-pack-grid" id="df-packs-grid"></div>
+      <div class="df-empty is-hidden" id="df-packs-empty">Loading data packs&hellip;</div>
+    </div>
+
+    <!-- ═══════ REGIONAL PROFILE PANEL ═══════ -->
+    <div id="df-panel-region" class="df-panel">
+      <div class="df-profile-card">
+        <h3>Location Setup</h3>
+        <p style="font-size:13px;color:var(--df-text-dim);margin-bottom:14px;">Set your location so NOMAD can auto-configure weather stations, frost dates, hardiness zones, and threat-weighted readiness scoring.</p>
+        <div class="df-form-grid" id="df-region-form">
+          <div class="df-form-group">
+            <label for="df-region-state">State</label>
+            <select id="df-region-state" name="df-region-state"><option value="">Select state&hellip;</option></select>
+          </div>
+          <div class="df-form-group">
+            <label for="df-region-county">County</label>
+            <input id="df-region-county" name="df-region-county" type="text" placeholder="e.g. Maricopa">
+          </div>
+          <div class="df-form-group">
+            <label for="df-region-zip">ZIP Code</label>
+            <input id="df-region-zip" name="df-region-zip" type="text" placeholder="e.g. 85001" maxlength="10">
+          </div>
+          <div class="df-form-group">
+            <label for="df-region-zone">USDA Hardiness Zone</label>
+            <input id="df-region-zone" name="df-region-zone" type="text" placeholder="e.g. 9b">
+          </div>
+          <div class="df-form-group">
+            <label for="df-region-frost-last">Last Spring Frost</label>
+            <input id="df-region-frost-last" name="df-region-frost-last" type="text" placeholder="e.g. Mar 15">
+          </div>
+          <div class="df-form-group">
+            <label for="df-region-frost-first">First Fall Frost</label>
+            <input id="df-region-frost-first" name="df-region-frost-first" type="text" placeholder="e.g. Nov 10">
+          </div>
+          <div class="df-form-group">
+            <label for="df-region-nws">NWS Station ID</label>
+            <input id="df-region-nws" name="df-region-nws" type="text" placeholder="e.g. KPHX">
+          </div>
+          <div class="df-form-group">
+            <label for="df-region-lat">Latitude</label>
+            <input id="df-region-lat" name="df-region-lat" type="number" step="0.0001" placeholder="33.4484">
+          </div>
+          <div class="df-form-group">
+            <label for="df-region-lng">Longitude</label>
+            <input id="df-region-lng" name="df-region-lng" type="number" step="0.0001" placeholder="-112.0740">
+          </div>
+          <div class="df-form-group df-form-full" style="flex-direction:row;gap:8px;align-items:flex-end;">
+            <button class="btn btn-sm btn-primary" type="button" id="df-region-save-btn">Save Profile</button>
+            <button class="btn btn-sm" type="button" id="df-region-clear-btn">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Threat Assessment -->
+      <div class="df-section is-hidden" id="df-threats-section">
+        <h3>Regional Threat Assessment</h3>
+        <div class="df-threat-grid" id="df-threats-grid"></div>
+      </div>
+    </div>
+
+    <!-- ═══════ NUTRITION PANEL ═══════ -->
+    <div id="df-panel-nutrition" class="df-panel">
+      <div class="df-nutrition-summary" id="df-nutrition-stats">
+        <div class="df-macro-card"><div class="df-macro-value" style="color:var(--df-accent);" id="df-nut-person-days">—</div><div class="df-macro-label">Person-days of food</div></div>
+        <div class="df-macro-card"><div class="df-macro-value" style="color:var(--df-green);" id="df-nut-calories">—</div><div class="df-macro-label">Total calories</div></div>
+        <div class="df-macro-card"><div class="df-macro-value" style="color:var(--df-orange);" id="df-nut-protein">—</div><div class="df-macro-label">Protein (g)</div></div>
+        <div class="df-macro-card"><div class="df-macro-value" id="df-nut-linked">—</div><div class="df-macro-label">Linked Items</div></div>
+      </div>
+
+      <div class="df-section">
+        <h3>Micronutrient Gap Analysis</h3>
+        <div id="df-gaps-list">
+          <div class="df-empty">Link inventory items to nutrition data to see gap analysis.</div>
+        </div>
+      </div>
+
+      <div class="df-section">
+        <h3>Search USDA Food Database</h3>
+        <div class="df-search-row">
+          <input id="df-food-search" name="df-food-search" type="text" placeholder="Search foods (e.g. rice, canned beans, flour)&hellip;">
+          <button class="btn btn-sm btn-primary" type="button" id="df-food-search-btn">Search</button>
+        </div>
+        <div class="df-food-results" id="df-food-results"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function(){
+    /* ─── Sub-tab Switching ─── */
+    document.querySelectorAll('.df-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.df-tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.df-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const panel = document.getElementById('df-panel-' + btn.dataset.dfTab);
+        if (panel) panel.classList.add('active');
+      });
+    });
+
+    const api = window.NOMAD_API || { get: (u) => fetch(u).then(r => r.json()), post: (u,d) => fetch(u, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(r => r.json()) };
+    function showToast(msg, type) { if (window.showToast) window.showToast(msg, type); }
+
+    /* ─── Data Packs ─── */
+    async function loadPacks() {
+      try {
+        const [packs, summary] = await Promise.all([api.get('/api/data-packs'), api.get('/api/data-packs/summary')]);
+        document.getElementById('df-packs-installed').textContent = summary.installed_count;
+        document.getElementById('df-packs-available').textContent = summary.total_available;
+        document.getElementById('df-packs-size').textContent = summary.installed_size_display || '0 B';
+        document.getElementById('df-packs-tier1').textContent = summary.tier1_total;
+
+        const grid = document.getElementById('df-packs-grid');
+        grid.innerHTML = '';
+        packs.forEach(p => {
+          const installed = p.status === 'installed';
+          const tierClass = 'tier-' + p.tier;
+          grid.innerHTML += `
+            <div class="df-pack-card" data-pack-id="${p.pack_id}">
+              <div class="df-pack-header">
+                <div class="df-pack-name">${p.name}</div>
+                <span class="df-pack-tier ${tierClass}">Tier ${p.tier}</span>
+              </div>
+              <div class="df-pack-desc">${p.description}</div>
+              <div class="df-pack-meta">
+                <span>${p.category}</span>
+                <span>${p.compressed_size_display}</span>
+                <span>v${p.version}</span>
+              </div>
+              <div class="df-pack-status">
+                <span class="dot ${installed ? 'installed' : 'available'}"></span>
+                <span style="font-size:12px;color:var(--df-text-dim);">${installed ? 'Installed' : 'Available'}</span>
+              </div>
+              <div class="df-pack-actions" style="margin-top:8px;">
+                ${installed
+                  ? `<button class="btn btn-sm btn-danger" onclick="dfUninstallPack('${p.pack_id}')">Uninstall</button>`
+                  : `<button class="btn btn-sm btn-primary" onclick="dfInstallPack('${p.pack_id}')">Install</button>`
+                }
+              </div>
+            </div>`;
+        });
+      } catch(e) { console.error('Data packs load error', e); }
+    }
+
+    window.dfInstallPack = async function(packId) {
+      try {
+        await api.post('/api/data-packs/' + packId + '/install', {});
+        showToast('Pack installed', 'success');
+        loadPacks();
+      } catch(e) { showToast('Install failed', 'error'); }
+    };
+
+    window.dfUninstallPack = async function(packId) {
+      try {
+        await api.post('/api/data-packs/' + packId + '/uninstall', {});
+        showToast('Pack removed', 'info');
+        loadPacks();
+      } catch(e) { showToast('Uninstall failed', 'error'); }
+    };
+
+    /* ─── Regional Profile ─── */
+    async function loadStates() {
+      try {
+        const states = await api.get('/api/region/states');
+        const sel = document.getElementById('df-region-state');
+        states.forEach(s => { const o = document.createElement('option'); o.value = s.code; o.textContent = s.name; sel.appendChild(o); });
+      } catch(e) {}
+    }
+
+    async function loadProfile() {
+      try {
+        const data = await api.get('/api/region/profile');
+        if (!data.configured) return;
+        document.getElementById('df-region-state').value = data.state || '';
+        document.getElementById('df-region-county').value = data.county || '';
+        document.getElementById('df-region-zip').value = data.zip_code || '';
+        document.getElementById('df-region-zone').value = data.usda_zone || '';
+        document.getElementById('df-region-frost-last').value = data.frost_date_last || '';
+        document.getElementById('df-region-frost-first').value = data.frost_date_first || '';
+        document.getElementById('df-region-nws').value = data.nearest_nws_station || '';
+        document.getElementById('df-region-lat').value = data.lat || '';
+        document.getElementById('df-region-lng').value = data.lng || '';
+        loadThreats();
+      } catch(e) {}
+    }
+
+    async function loadThreats() {
+      try {
+        const data = await api.get('/api/region/threats');
+        if (!data.configured || !data.threats?.length) { document.getElementById('df-threats-section').classList.add('is-hidden'); return; }
+        document.getElementById('df-threats-section').classList.remove('is-hidden');
+        const grid = document.getElementById('df-threats-grid');
+        grid.innerHTML = '';
+        data.threats.forEach(t => {
+          const cls = t.score >= 80 ? 'very-high' : (t.score >= 60 ? 'high' : (t.score >= 40 ? 'moderate' : 'low'));
+          const color = t.score >= 80 ? 'var(--df-red)' : (t.score >= 60 ? 'var(--df-orange)' : (t.score >= 40 ? 'var(--df-accent)' : 'var(--df-text-muted)'));
+          grid.innerHTML += `
+            <div class="df-threat-bar">
+              <div class="df-threat-bar-head">
+                <span class="df-threat-bar-name">${t.hazard.replace(/_/g, ' ')}</span>
+                <span class="df-threat-bar-score ${cls}">${t.rating}</span>
+              </div>
+              <div class="df-threat-track"><div class="df-threat-fill" style="width:${Math.min(t.score,100)}%;background:${color};"></div></div>
+            </div>`;
+        });
+      } catch(e) {}
+    }
+
+    document.getElementById('df-region-save-btn').addEventListener('click', async () => {
+      const payload = {
+        state: document.getElementById('df-region-state').value,
+        county: document.getElementById('df-region-county').value,
+        zip_code: document.getElementById('df-region-zip').value,
+        usda_zone: document.getElementById('df-region-zone').value,
+        frost_date_last: document.getElementById('df-region-frost-last').value,
+        frost_date_first: document.getElementById('df-region-frost-first').value,
+        nearest_nws_station: document.getElementById('df-region-nws').value,
+        lat: parseFloat(document.getElementById('df-region-lat').value) || null,
+        lng: parseFloat(document.getElementById('df-region-lng').value) || null,
+      };
+      try {
+        await api.post('/api/region/profile', payload);
+        showToast('Regional profile saved', 'success');
+        loadThreats();
+      } catch(e) { showToast('Save failed', 'error'); }
+    });
+
+    document.getElementById('df-region-clear-btn').addEventListener('click', () => {
+      document.querySelectorAll('#df-region-form input, #df-region-form select').forEach(el => { if(el.tagName === 'SELECT') el.selectedIndex = 0; else el.value = ''; });
+      document.getElementById('df-threats-section').classList.add('is-hidden');
+    });
+
+    /* ─── Nutrition ─── */
+    async function loadNutrition() {
+      try {
+        const data = await api.get('/api/nutrition/summary');
+        document.getElementById('df-nut-person-days').textContent = data.person_days_of_food || '0';
+        document.getElementById('df-nut-calories').textContent = data.total_calories ? data.total_calories.toLocaleString() : '0';
+        document.getElementById('df-nut-protein').textContent = data.total_protein_g ? data.total_protein_g.toLocaleString() : '0';
+        document.getElementById('df-nut-linked').textContent = data.linked_items || '0';
+      } catch(e) {}
+    }
+
+    async function loadGaps() {
+      try {
+        const data = await api.get('/api/nutrition/gaps');
+        const list = document.getElementById('df-gaps-list');
+        if (!data.has_data) { list.innerHTML = '<div class="df-empty">Link inventory items to nutrition data to see gap analysis.</div>'; return; }
+        list.innerHTML = '';
+        data.gaps.forEach(g => {
+          const pct = Math.min(g.days_supply / 30 * 100, 100);
+          list.innerHTML += `
+            <div class="df-gap-row">
+              <div class="df-gap-name">${g.nutrient}</div>
+              <div class="df-gap-track"><div class="df-gap-fill ${g.status}" style="width:${pct}%"></div></div>
+              <div class="df-gap-days" style="color:var(--df-${g.status === 'red' ? 'red' : g.status === 'amber' ? 'orange' : 'green'});">${g.days_supply}d</div>
+            </div>`;
+        });
+      } catch(e) {}
+    }
+
+    let searchTimeout;
+    document.getElementById('df-food-search').addEventListener('input', function() {
+      clearTimeout(searchTimeout);
+      searchTimeout = setTimeout(() => searchFoods(this.value), 300);
+    });
+    document.getElementById('df-food-search-btn').addEventListener('click', () => searchFoods(document.getElementById('df-food-search').value));
+
+    async function searchFoods(q) {
+      if (!q || q.length < 2) return;
+      try {
+        const results = await api.get('/api/nutrition/search?q=' + encodeURIComponent(q));
+        const container = document.getElementById('df-food-results');
+        if (!results.length) { container.innerHTML = '<div class="df-empty">No foods found.</div>'; return; }
+        container.innerHTML = '';
+        results.forEach(f => {
+          container.innerHTML += `
+            <div class="df-food-item" data-fdc-id="${f.fdc_id}">
+              <div>
+                <div class="df-food-name">${f.description}</div>
+                <div class="df-food-meta">${f.food_group} &middot; ${f.serving_size}${f.serving_unit} serving</div>
+              </div>
+              <div class="df-food-cal">${f.calories} cal</div>
+            </div>`;
+        });
+      } catch(e) {}
+    }
+
+    /* ─── Init ─── */
+    if (document.getElementById('tab-data-foundation')) {
+      loadPacks();
+      loadStates();
+      loadProfile();
+      loadNutrition();
+      loadGaps();
+    }
+
+    document.addEventListener('nomad:tab-activated', function(e) {
+      if (e.detail?.tab === 'data-foundation') { loadPacks(); loadProfile(); loadNutrition(); loadGaps(); }
+    });
+  })();
+  </script>
+</div>

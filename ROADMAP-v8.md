@@ -624,7 +624,7 @@ Community-driven priorities. Build based on user demand.
 
 ---
 
-### Phase 18: Hardware, Sensors & Mesh
+### Phase 18: Hardware, Sensors & Mesh ✅ COMPLETE (v7.24.0)
 **Effort:** XL (7+ sessions — hardware-dependent) | **features.md refs:** §13 (Sensors), §4.3 (Specialized Services), §24 (Networking)
 - MQTT broker for IoT sensors (soil moisture, water level, temp/humidity, air quality, Geiger counter)
 - Full Meshtastic serial integration

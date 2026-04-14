@@ -2604,6 +2604,26 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_preservation_batches_method ON preservation_batches(method_id)',
         'CREATE INDEX IF NOT EXISTS idx_preservation_batches_expiry ON preservation_batches(expiration_date)',
         'CREATE INDEX IF NOT EXISTS idx_hunting_zones_type ON hunting_zones(zone_type)',
+        # ─── Phase 18: Hardware, Sensors & Mesh (v7.24.0) ───
+        'CREATE INDEX IF NOT EXISTS idx_iot_sensors_type ON iot_sensors(sensor_type)',
+        'CREATE INDEX IF NOT EXISTS idx_iot_sensors_protocol ON iot_sensors(protocol)',
+        'CREATE INDEX IF NOT EXISTS idx_iot_sensors_status ON iot_sensors(status)',
+        'CREATE INDEX IF NOT EXISTS idx_sensor_readings_sensor ON sensor_readings(sensor_id)',
+        'CREATE INDEX IF NOT EXISTS idx_sensor_readings_time ON sensor_readings(timestamp)',
+        'CREATE INDEX IF NOT EXISTS idx_network_devices_type ON network_devices(device_type)',
+        'CREATE INDEX IF NOT EXISTS idx_network_devices_status ON network_devices(status)',
+        'CREATE INDEX IF NOT EXISTS idx_network_devices_ip ON network_devices(ip_address)',
+        'CREATE INDEX IF NOT EXISTS idx_mesh_nodes_node_id ON mesh_nodes(node_id)',
+        'CREATE INDEX IF NOT EXISTS idx_mesh_nodes_status ON mesh_nodes(status)',
+        'CREATE INDEX IF NOT EXISTS idx_mesh_nodes_last_heard ON mesh_nodes(last_heard)',
+        'CREATE INDEX IF NOT EXISTS idx_weather_stations_type ON weather_stations(station_type)',
+        'CREATE INDEX IF NOT EXISTS idx_weather_stations_status ON weather_stations(status)',
+        'CREATE INDEX IF NOT EXISTS idx_gps_devices_type ON gps_devices(device_type)',
+        'CREATE INDEX IF NOT EXISTS idx_gps_devices_status ON gps_devices(status)',
+        'CREATE INDEX IF NOT EXISTS idx_wearable_devices_type ON wearable_devices(device_type)',
+        'CREATE INDEX IF NOT EXISTS idx_wearable_devices_wearer ON wearable_devices(wearer)',
+        'CREATE INDEX IF NOT EXISTS idx_integration_configs_type ON integration_configs(integration_type)',
+        'CREATE INDEX IF NOT EXISTS idx_integration_configs_status ON integration_configs(status)',
     ]:
         try:
             conn.execute(idx)
@@ -4539,6 +4559,182 @@ def _create_hunting_foraging_tables(conn):
     conn.commit()
 
 
+def _create_hardware_sensors_tables(conn):
+    """Phase 18 — Hardware, Sensors & Mesh: IoT sensors, network devices,
+    Meshtastic nodes, weather stations, GPS devices, wearables, integrations."""
+    conn.executescript('''
+        /* ─── IoT Sensors ─── */
+        CREATE TABLE IF NOT EXISTS iot_sensors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            sensor_type TEXT DEFAULT 'temperature',
+            protocol TEXT DEFAULT 'mqtt',
+            device_id TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            topic TEXT DEFAULT '',
+            unit TEXT DEFAULT '',
+            current_value TEXT DEFAULT '',
+            last_reading_at TEXT DEFAULT '',
+            min_threshold REAL DEFAULT 0,
+            max_threshold REAL DEFAULT 0,
+            alert_enabled INTEGER DEFAULT 0,
+            calibration_offset REAL DEFAULT 0,
+            battery_pct INTEGER DEFAULT 100,
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Sensor Readings ─── */
+        CREATE TABLE IF NOT EXISTS sensor_readings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sensor_id INTEGER NOT NULL,
+            value REAL DEFAULT 0,
+            raw_value TEXT DEFAULT '',
+            unit TEXT DEFAULT '',
+            quality TEXT DEFAULT 'good',
+            timestamp TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Network Devices ─── */
+        CREATE TABLE IF NOT EXISTS network_devices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            device_type TEXT DEFAULT 'router',
+            ip_address TEXT DEFAULT '',
+            mac_address TEXT DEFAULT '',
+            hostname TEXT DEFAULT '',
+            manufacturer TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            firmware_version TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            vlan TEXT DEFAULT '',
+            role TEXT DEFAULT 'infrastructure',
+            port_count INTEGER DEFAULT 0,
+            uplink_to INTEGER DEFAULT 0,
+            last_seen TEXT DEFAULT '',
+            status TEXT DEFAULT 'online',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Meshtastic Nodes ─── */
+        CREATE TABLE IF NOT EXISTS mesh_nodes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            node_id TEXT NOT NULL,
+            long_name TEXT DEFAULT '',
+            short_name TEXT DEFAULT '',
+            hardware_model TEXT DEFAULT '',
+            firmware_version TEXT DEFAULT '',
+            role TEXT DEFAULT 'client',
+            latitude REAL DEFAULT 0,
+            longitude REAL DEFAULT 0,
+            altitude_m REAL DEFAULT 0,
+            battery_level INTEGER DEFAULT 0,
+            voltage REAL DEFAULT 0,
+            channel_utilization REAL DEFAULT 0,
+            air_util_tx REAL DEFAULT 0,
+            snr REAL DEFAULT 0,
+            rssi INTEGER DEFAULT 0,
+            hops_away INTEGER DEFAULT 0,
+            last_heard TEXT DEFAULT '',
+            status TEXT DEFAULT 'online',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Weather Stations ─── */
+        CREATE TABLE IF NOT EXISTS weather_stations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            station_type TEXT DEFAULT 'personal',
+            brand TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            protocol TEXT DEFAULT 'ecowitt',
+            ip_address TEXT DEFAULT '',
+            api_key TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            latitude REAL DEFAULT 0,
+            longitude REAL DEFAULT 0,
+            elevation_ft REAL DEFAULT 0,
+            polling_interval_sec INTEGER DEFAULT 60,
+            last_poll TEXT DEFAULT '',
+            current_data TEXT DEFAULT '{}',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── GPS Devices ─── */
+        CREATE TABLE IF NOT EXISTS gps_devices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            device_type TEXT DEFAULT 'handheld',
+            brand TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            serial_number TEXT DEFAULT '',
+            connection_type TEXT DEFAULT 'usb',
+            port TEXT DEFAULT '',
+            baud_rate INTEGER DEFAULT 9600,
+            last_fix_lat REAL DEFAULT 0,
+            last_fix_lon REAL DEFAULT 0,
+            last_fix_alt REAL DEFAULT 0,
+            last_fix_time TEXT DEFAULT '',
+            accuracy_m REAL DEFAULT 0,
+            satellites INTEGER DEFAULT 0,
+            battery_pct INTEGER DEFAULT 100,
+            status TEXT DEFAULT 'disconnected',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Wearable Health Devices ─── */
+        CREATE TABLE IF NOT EXISTS wearable_devices (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            device_type TEXT DEFAULT 'fitness_tracker',
+            brand TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            wearer TEXT DEFAULT '',
+            connection_type TEXT DEFAULT 'bluetooth',
+            last_sync TEXT DEFAULT '',
+            battery_pct INTEGER DEFAULT 100,
+            current_data TEXT DEFAULT '{}',
+            status TEXT DEFAULT 'paired',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Integration Configs ─── */
+        CREATE TABLE IF NOT EXISTS integration_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            integration_type TEXT DEFAULT 'mqtt',
+            endpoint_url TEXT DEFAULT '',
+            api_key TEXT DEFAULT '',
+            username TEXT DEFAULT '',
+            auth_token TEXT DEFAULT '',
+            config_json TEXT DEFAULT '{}',
+            polling_interval_sec INTEGER DEFAULT 60,
+            last_sync TEXT DEFAULT '',
+            sync_count INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'disabled',
+            error_message TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -4564,6 +4760,7 @@ def _init_db_inner(conn):
     _create_daily_living_tables(conn)
     _create_interoperability_tables(conn)
     _create_hunting_foraging_tables(conn)
+    _create_hardware_sensors_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

@@ -1,0 +1,773 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB: Hardware & Sensors  (Phase 18 · v7.24.0)
+     Sensors, network devices, mesh radios, GPS/stations, integrations
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="tab-hardware-sensors" class="tab-content is-hidden" data-tab="hardware-sensors" data-tab-content="hardware-sensors">
+<style>
+  #tab-hardware-sensors {
+    --hw-accent: #14b8a6;
+    --hw-accent-dim: #14b8a622;
+    --hw-accent-hover: #0d9488;
+    --hw-red: #ef4444;
+    --hw-green: #22c55e;
+    --hw-amber: #f59e0b;
+    --hw-blue: #3b82f6;
+    --hw-orange: #f97316;
+    --hw-purple: #a855f7;
+  }
+  #tab-hardware-sensors .hw-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-hardware-sensors .hw-header h2 { font-size:1.25rem; color:var(--hw-accent); margin:0; }
+  #tab-hardware-sensors .hw-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-hardware-sensors .hw-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-hardware-sensors .hw-sub-tab.active { background:var(--hw-accent-dim); border-color:var(--hw-accent); color:var(--hw-accent); }
+  #tab-hardware-sensors .hw-panel { display:none; }
+  #tab-hardware-sensors .hw-panel.active { display:block; }
+  #tab-hardware-sensors .hw-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-hardware-sensors .hw-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-hardware-sensors .hw-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-hardware-sensors .hw-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
+  #tab-hardware-sensors .hw-stat-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:12px 14px; text-align:center; }
+  #tab-hardware-sensors .hw-stat-val { font-size:1.4rem; font-weight:700; color:var(--hw-accent); }
+  #tab-hardware-sensors .hw-stat-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-secondary,#aaa); margin-top:2px; }
+  #tab-hardware-sensors .hw-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-hardware-sensors .hw-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-hardware-sensors .hw-form-row input,
+  #tab-hardware-sensors .hw-form-row select,
+  #tab-hardware-sensors .hw-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-hardware-sensors .hw-form-row textarea { resize:vertical; min-height:48px; font-family:inherit; }
+  #tab-hardware-sensors .hw-form-row .field { flex:1; min-width:140px; }
+  #tab-hardware-sensors .hw-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-hardware-sensors .hw-btn-primary { background:var(--hw-accent); color:#000; }
+  #tab-hardware-sensors .hw-btn-primary:hover { background:var(--hw-accent-hover); }
+  #tab-hardware-sensors .hw-btn-danger { background:var(--hw-red); color:#fff; }
+  #tab-hardware-sensors .hw-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-hardware-sensors .hw-btn-success { background:var(--hw-green); color:#000; }
+  #tab-hardware-sensors .hw-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  #tab-hardware-sensors .hw-table th { text-align:left; padding:8px 10px; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#333); font-weight:600; }
+  #tab-hardware-sensors .hw-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); vertical-align:middle; }
+  #tab-hardware-sensors .hw-table tbody tr:hover { background:rgba(255,255,255,.03); }
+  #tab-hardware-sensors .hw-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-hardware-sensors .hw-badge-online { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-hardware-sensors .hw-badge-offline { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-hardware-sensors .hw-badge-alert { background:rgba(245,158,11,.2); color:#f59e0b; }
+  #tab-hardware-sensors .hw-badge-unknown { background:rgba(100,116,139,.2); color:#94a3b8; }
+  #tab-hardware-sensors .hw-badge-ok { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-hardware-sensors .hw-badge-warning { background:rgba(245,158,11,.2); color:#f59e0b; }
+  #tab-hardware-sensors .hw-badge-critical { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-hardware-sensors .hw-badge-connected { background:rgba(20,184,166,.2); color:#14b8a6; }
+  #tab-hardware-sensors .hw-badge-synced { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-hardware-sensors .hw-badge-error { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-hardware-sensors .hw-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-hardware-sensors .hw-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-hardware-sensors .hw-list-item:last-child { border-bottom:none; }
+  #tab-hardware-sensors .hw-batt-bar { height:8px; border-radius:4px; background:var(--border,#333); overflow:hidden; margin-top:4px; width:60px; display:inline-block; vertical-align:middle; }
+  #tab-hardware-sensors .hw-batt-fill { height:100%; border-radius:4px; transition:width .3s; }
+  #tab-hardware-sensors .hw-topo-tree { font-family:monospace; font-size:.8rem; white-space:pre; color:var(--text-primary,#eee); padding:12px; background:rgba(0,0,0,.3); border-radius:8px; overflow-x:auto; }
+</style>
+
+<div class="hw-header">
+  <h2>Hardware & Sensors</h2>
+</div>
+
+<!-- Sub-tab navigation -->
+<div class="hw-sub-tabs">
+  <button class="hw-sub-tab active" data-hw-panel="sensors">&#128225; Sensors</button>
+  <button class="hw-sub-tab" data-hw-panel="network">&#128421; Network</button>
+  <button class="hw-sub-tab" data-hw-panel="mesh">&#128225; Mesh</button>
+  <button class="hw-sub-tab" data-hw-panel="stations">&#127760; Stations & GPS</button>
+  <button class="hw-sub-tab" data-hw-panel="integrations">&#128268; Integrations</button>
+</div>
+
+<!-- ── Sensors Panel ────────────────────────────────────── -->
+<div class="hw-panel active" id="hw-panel-sensors" data-hw-panel="sensors">
+  <div id="hw-sensor-stats" class="hw-stats-grid">
+    <div class="hw-stat-card"><div class="hw-stat-val" id="hw-stat-total">0</div><div class="hw-stat-label">Total Sensors</div></div>
+    <div class="hw-stat-card"><div class="hw-stat-val" id="hw-stat-online">0</div><div class="hw-stat-label">Online</div></div>
+    <div class="hw-stat-card"><div class="hw-stat-val" id="hw-stat-alerts">0</div><div class="hw-stat-label">Alerts</div></div>
+    <div class="hw-stat-card"><div class="hw-stat-val" id="hw-stat-lowbatt">0</div><div class="hw-stat-label">Low Battery</div></div>
+  </div>
+
+  <div class="hw-card">
+    <div class="hw-card-title">Add Sensor</div>
+    <div class="hw-form-row">
+      <div class="field"><label>Name</label><input name="hw-sensor-name" id="hw-sensor-name" placeholder="Living Room Temp"></div>
+      <div class="field"><label>Sensor Type</label>
+        <select name="hw-sensor-type" id="hw-sensor-type">
+          <option value="temperature">Temperature</option><option value="humidity">Humidity</option>
+          <option value="pressure">Pressure</option><option value="motion">Motion</option>
+          <option value="door_window">Door/Window</option><option value="smoke">Smoke</option>
+          <option value="water_leak">Water Leak</option><option value="air_quality">Air Quality</option>
+          <option value="light">Light</option><option value="soil_moisture">Soil Moisture</option>
+          <option value="radiation">Radiation</option><option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="field"><label>Protocol</label>
+        <select name="hw-sensor-protocol" id="hw-sensor-protocol">
+          <option value="mqtt">MQTT</option><option value="zigbee">Zigbee</option>
+          <option value="zwave">Z-Wave</option><option value="wifi">WiFi</option>
+          <option value="bluetooth">Bluetooth</option><option value="lora">LoRa</option>
+          <option value="serial">Serial</option><option value="http">HTTP</option>
+          <option value="manual">Manual</option>
+        </select>
+      </div>
+      <div class="field"><label>Device ID</label><input name="hw-sensor-device-id" id="hw-sensor-device-id" placeholder="sensor_001"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Location</label><input name="hw-sensor-location" id="hw-sensor-location" placeholder="Building A, Room 3"></div>
+      <div class="field"><label>Topic / Endpoint</label><input name="hw-sensor-topic" id="hw-sensor-topic" placeholder="home/sensors/temp1"></div>
+      <div class="field"><label>Unit</label><input name="hw-sensor-unit" id="hw-sensor-unit" placeholder="F, %, ppm"></div>
+      <div class="field"><label>Min Threshold</label><input name="hw-sensor-min" id="hw-sensor-min" type="number" step="any" placeholder="0"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Max Threshold</label><input name="hw-sensor-max" id="hw-sensor-max" type="number" step="any" placeholder="100"></div>
+      <div class="field" style="display:flex;align-items:flex-end;gap:8px;min-width:auto">
+        <label style="display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer"><input name="hw-sensor-alert" id="hw-sensor-alert" type="checkbox" checked> Enable Alerts</label>
+      </div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddSensor()">Add Sensor</button></div>
+    </div>
+  </div>
+
+  <!-- Manual Reading -->
+  <div class="hw-card">
+    <div class="hw-card-title">Record Manual Reading</div>
+    <div class="hw-form-row">
+      <div class="field"><label>Sensor</label><select name="hw-reading-sensor" id="hw-reading-sensor"><option value="">-- Select Sensor --</option></select></div>
+      <div class="field"><label>Value</label><input name="hw-reading-value" id="hw-reading-value" type="number" step="any" placeholder="72.5"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddReading()">Record</button></div>
+    </div>
+  </div>
+
+  <div class="hw-card">
+    <div class="hw-card-title">Sensor Grid</div>
+    <div id="hw-sensor-list" class="hw-grid"><div class="hw-empty">Loading sensors...</div></div>
+  </div>
+</div>
+
+<!-- ── Network Panel ────────────────────────────────────── -->
+<div class="hw-panel" id="hw-panel-network" data-hw-panel="network">
+  <div class="hw-card">
+    <div class="hw-card-title">Add Network Device</div>
+    <div class="hw-form-row">
+      <div class="field"><label>Name</label><input name="hw-net-name" id="hw-net-name" placeholder="Core Switch"></div>
+      <div class="field"><label>Device Type</label>
+        <select name="hw-net-type" id="hw-net-type">
+          <option value="router">Router</option><option value="switch">Switch</option>
+          <option value="access_point">Access Point</option><option value="firewall">Firewall</option>
+          <option value="server">Server</option><option value="camera">Camera</option>
+          <option value="nas">NAS</option><option value="iot">IoT Device</option>
+          <option value="printer">Printer</option><option value="workstation">Workstation</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>IP Address</label><input name="hw-net-ip" id="hw-net-ip" placeholder="192.168.1.1"></div>
+      <div class="field"><label>MAC Address</label><input name="hw-net-mac" id="hw-net-mac" placeholder="AA:BB:CC:DD:EE:FF"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Hostname</label><input name="hw-net-hostname" id="hw-net-hostname" placeholder="core-sw-01"></div>
+      <div class="field"><label>Manufacturer</label><input name="hw-net-manufacturer" id="hw-net-manufacturer" placeholder="Ubiquiti"></div>
+      <div class="field"><label>Model</label><input name="hw-net-model" id="hw-net-model" placeholder="USW-24-PoE"></div>
+      <div class="field"><label>Firmware</label><input name="hw-net-firmware" id="hw-net-firmware" placeholder="v6.5.4"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Location</label><input name="hw-net-location" id="hw-net-location" placeholder="Server Room"></div>
+      <div class="field"><label>VLAN</label><input name="hw-net-vlan" id="hw-net-vlan" placeholder="10"></div>
+      <div class="field"><label>Role</label>
+        <select name="hw-net-role" id="hw-net-role">
+          <option value="core">Core</option><option value="distribution">Distribution</option>
+          <option value="access">Access</option><option value="edge">Edge</option>
+          <option value="management">Management</option><option value="security">Security</option>
+          <option value="endpoint">Endpoint</option>
+        </select>
+      </div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddNetDevice()">Add Device</button></div>
+    </div>
+  </div>
+
+  <div class="hw-card">
+    <div class="hw-card-title">Device Table</div>
+    <div id="hw-net-list" style="overflow-x:auto"><div class="hw-empty">Loading network devices...</div></div>
+  </div>
+
+  <div class="hw-card">
+    <div class="hw-card-title">Network Topology</div>
+    <div id="hw-net-topology" class="hw-topo-tree">Loading topology...</div>
+  </div>
+</div>
+
+<!-- ── Mesh Panel ───────────────────────────────────────── -->
+<div class="hw-panel" id="hw-panel-mesh" data-hw-panel="mesh">
+  <div id="hw-mesh-stats" class="hw-stats-grid">
+    <div class="hw-stat-card"><div class="hw-stat-val" id="hw-mesh-total">0</div><div class="hw-stat-label">Total Nodes</div></div>
+    <div class="hw-stat-card"><div class="hw-stat-val" id="hw-mesh-online-ct">0</div><div class="hw-stat-label">Online</div></div>
+    <div class="hw-stat-card"><div class="hw-stat-val" id="hw-mesh-avg-snr">--</div><div class="hw-stat-label">Avg SNR</div></div>
+    <div class="hw-stat-card"><div class="hw-stat-val" id="hw-mesh-avg-rssi">--</div><div class="hw-stat-label">Avg RSSI</div></div>
+  </div>
+
+  <div class="hw-card">
+    <div class="hw-card-title">Add Mesh Node</div>
+    <div class="hw-form-row">
+      <div class="field"><label>Node ID</label><input name="hw-mesh-node-id" id="hw-mesh-node-id" placeholder="!abcd1234"></div>
+      <div class="field"><label>Long Name</label><input name="hw-mesh-long-name" id="hw-mesh-long-name" placeholder="Base Camp Radio"></div>
+      <div class="field"><label>Short Name</label><input name="hw-mesh-short-name" id="hw-mesh-short-name" placeholder="BCR" maxlength="4"></div>
+      <div class="field"><label>Hardware Model</label><input name="hw-mesh-hardware" id="hw-mesh-hardware" placeholder="T-Beam v1.1"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Role</label>
+        <select name="hw-mesh-role" id="hw-mesh-role">
+          <option value="client">Client</option><option value="client_mute">Client Mute</option>
+          <option value="router">Router</option><option value="router_client">Router Client</option>
+          <option value="repeater">Repeater</option><option value="tracker">Tracker</option>
+          <option value="sensor">Sensor</option><option value="tak">TAK</option>
+          <option value="client_hidden">Client Hidden</option><option value="lost_and_found">Lost and Found</option>
+          <option value="tak_tracker">TAK Tracker</option>
+        </select>
+      </div>
+      <div class="field"><label>Latitude</label><input name="hw-mesh-lat" id="hw-mesh-lat" type="number" step="any" placeholder="34.0522"></div>
+      <div class="field"><label>Longitude</label><input name="hw-mesh-lon" id="hw-mesh-lon" type="number" step="any" placeholder="-118.2437"></div>
+      <div class="field"><label>Altitude (m)</label><input name="hw-mesh-alt" id="hw-mesh-alt" type="number" step="any" placeholder="100"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddMeshNode()">Add Node</button></div>
+    </div>
+  </div>
+
+  <div class="hw-card">
+    <div class="hw-card-title">Mesh Nodes</div>
+    <div id="hw-mesh-list" class="hw-grid"><div class="hw-empty">Loading mesh nodes...</div></div>
+  </div>
+</div>
+
+<!-- ── Stations & GPS Panel ─────────────────────────────── -->
+<div class="hw-panel" id="hw-panel-stations" data-hw-panel="stations">
+  <!-- Weather Stations -->
+  <div class="hw-card">
+    <div class="hw-card-title">Add Weather Station</div>
+    <div class="hw-form-row">
+      <div class="field"><label>Name</label><input name="hw-wx-name" id="hw-wx-name" placeholder="Backyard Station"></div>
+      <div class="field"><label>Station Type</label><input name="hw-wx-type" id="hw-wx-type" placeholder="Personal Weather Station"></div>
+      <div class="field"><label>Brand</label><input name="hw-wx-brand" id="hw-wx-brand" placeholder="Davis"></div>
+      <div class="field"><label>Model</label><input name="hw-wx-model" id="hw-wx-model" placeholder="Vantage Pro2"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Protocol</label>
+        <select name="hw-wx-protocol" id="hw-wx-protocol">
+          <option value="http">HTTP API</option><option value="serial">Serial</option>
+          <option value="usb">USB</option><option value="wifi">WiFi</option>
+          <option value="rtl_sdr">RTL-SDR</option><option value="mqtt">MQTT</option>
+          <option value="wunderground">Weather Underground</option><option value="manual">Manual</option>
+        </select>
+      </div>
+      <div class="field"><label>IP / URL</label><input name="hw-wx-ip" id="hw-wx-ip" placeholder="192.168.1.50"></div>
+      <div class="field"><label>Location</label><input name="hw-wx-location" id="hw-wx-location" placeholder="Rooftop"></div>
+      <div class="field"><label>Latitude</label><input name="hw-wx-lat" id="hw-wx-lat" type="number" step="any" placeholder="34.0522"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Longitude</label><input name="hw-wx-lon" id="hw-wx-lon" type="number" step="any" placeholder="-118.2437"></div>
+      <div class="field"><label>Elevation (ft)</label><input name="hw-wx-elevation" id="hw-wx-elevation" type="number" step="any" placeholder="500"></div>
+      <div class="field"><label>Polling Interval (s)</label><input name="hw-wx-interval" id="hw-wx-interval" type="number" placeholder="60"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddStation()">Add Station</button></div>
+    </div>
+  </div>
+  <div class="hw-card">
+    <div class="hw-card-title">Weather Stations</div>
+    <div id="hw-wx-list" class="hw-grid"><div class="hw-empty">Loading weather stations...</div></div>
+  </div>
+
+  <!-- GPS Devices -->
+  <div class="hw-card" style="margin-top:20px">
+    <div class="hw-card-title">Add GPS Device</div>
+    <div class="hw-form-row">
+      <div class="field"><label>Name</label><input name="hw-gps-name" id="hw-gps-name" placeholder="Handheld GPS"></div>
+      <div class="field"><label>Device Type</label>
+        <select name="hw-gps-type" id="hw-gps-type">
+          <option value="handheld">Handheld</option><option value="vehicle">Vehicle</option>
+          <option value="usb_dongle">USB Dongle</option><option value="module">Module</option>
+          <option value="phone">Phone</option><option value="watch">Watch</option>
+          <option value="tracker">Tracker</option><option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Brand</label><input name="hw-gps-brand" id="hw-gps-brand" placeholder="Garmin"></div>
+      <div class="field"><label>Model</label><input name="hw-gps-model" id="hw-gps-model" placeholder="GPSMAP 67"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Serial #</label><input name="hw-gps-serial" id="hw-gps-serial" placeholder="SN12345"></div>
+      <div class="field"><label>Connection</label>
+        <select name="hw-gps-connection" id="hw-gps-connection">
+          <option value="usb">USB</option><option value="serial">Serial</option>
+          <option value="bluetooth">Bluetooth</option><option value="wifi">WiFi</option>
+          <option value="ant">ANT+</option><option value="standalone">Standalone</option>
+        </select>
+      </div>
+      <div class="field"><label>Port</label><input name="hw-gps-port" id="hw-gps-port" placeholder="COM3 or /dev/ttyUSB0"></div>
+      <div class="field"><label>Baud Rate</label><input name="hw-gps-baud" id="hw-gps-baud" type="number" placeholder="9600"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddGPS()">Add GPS</button></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-success" onclick="hwRecordFix()">Record Fix</button></div>
+    </div>
+  </div>
+  <div class="hw-card">
+    <div class="hw-card-title">GPS Devices</div>
+    <div id="hw-gps-list" class="hw-grid"><div class="hw-empty">Loading GPS devices...</div></div>
+  </div>
+
+  <!-- Wearables -->
+  <div class="hw-card" style="margin-top:20px">
+    <div class="hw-card-title">Add Wearable Device</div>
+    <div class="hw-form-row">
+      <div class="field"><label>Name</label><input name="hw-wear-name" id="hw-wear-name" placeholder="Fitness Tracker"></div>
+      <div class="field"><label>Device Type</label><input name="hw-wear-type" id="hw-wear-type" placeholder="Smartwatch"></div>
+      <div class="field"><label>Brand</label><input name="hw-wear-brand" id="hw-wear-brand" placeholder="Garmin"></div>
+      <div class="field"><label>Model</label><input name="hw-wear-model" id="hw-wear-model" placeholder="Fenix 8"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Wearer</label><input name="hw-wear-wearer" id="hw-wear-wearer" placeholder="John"></div>
+      <div class="field"><label>Connection</label><input name="hw-wear-connection" id="hw-wear-connection" placeholder="Bluetooth"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddWearable()">Add Wearable</button></div>
+    </div>
+  </div>
+  <div class="hw-card">
+    <div class="hw-card-title">Wearable Devices</div>
+    <div id="hw-wear-list" class="hw-grid"><div class="hw-empty">Loading wearables...</div></div>
+  </div>
+</div>
+
+<!-- ── Integrations Panel ───────────────────────────────── -->
+<div class="hw-panel" id="hw-panel-integrations" data-hw-panel="integrations">
+  <div class="hw-card">
+    <div class="hw-card-title">Add Integration</div>
+    <div class="hw-form-row">
+      <div class="field"><label>Name</label><input name="hw-int-name" id="hw-int-name" placeholder="Home Assistant"></div>
+      <div class="field"><label>Type</label>
+        <select name="hw-int-type" id="hw-int-type">
+          <option value="home_assistant">Home Assistant</option><option value="mqtt_broker">MQTT Broker</option>
+          <option value="node_red">Node-RED</option><option value="influxdb">InfluxDB</option>
+          <option value="grafana">Grafana</option><option value="custom_api">Custom API</option>
+        </select>
+      </div>
+      <div class="field"><label>Endpoint URL</label><input name="hw-int-endpoint" id="hw-int-endpoint" placeholder="http://192.168.1.10:8123/api"></div>
+      <div class="field"><label>API Key</label><input name="hw-int-apikey" id="hw-int-apikey" type="password" placeholder="Bearer token or key"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Username</label><input name="hw-int-username" id="hw-int-username" placeholder="admin"></div>
+      <div class="field"><label>Auth Token</label><input name="hw-int-token" id="hw-int-token" type="password" placeholder="Token"></div>
+      <div class="field"><label>Polling Interval (s)</label><input name="hw-int-interval" id="hw-int-interval" type="number" placeholder="30"></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field"><label>Config JSON</label><textarea name="hw-int-config" id="hw-int-config" rows="3" placeholder='{"custom_key": "value"}'></textarea></div>
+    </div>
+    <div class="hw-form-row">
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddIntegration()">Add Integration</button></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-secondary" onclick="hwTestConnection()">Test Connection</button></div>
+    </div>
+  </div>
+
+  <div class="hw-card">
+    <div class="hw-card-title">Active Integrations</div>
+    <div id="hw-int-list" class="hw-grid"><div class="hw-empty">Loading integrations...</div></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const root = document.getElementById('tab-hardware-sensors');
+  const el  = id => document.getElementById(id);
+  const val = id => el(id)?.value?.trim() || '';
+  const numVal = (id, def) => parseFloat(val(id)) || def || 0;
+  const api = (url, opts) => fetch(url, opts).then(r => r.json());
+  const post = (url, body) => api(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const put  = (url, body) => api(url, {method:'PUT',  headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const del  = url => api(url, {method:'DELETE'});
+  const toast = msg => { if (window.showToast) window.showToast(msg); };
+  const API = '/api/hardware';
+
+  const statusBadge = s => '<span class="hw-badge hw-badge-' + (s || 'unknown') + '">' + (s || 'unknown') + '</span>';
+  const battBar = pct => {
+    const p = Math.max(0, Math.min(100, pct || 0));
+    const c = p > 50 ? 'var(--hw-green)' : p > 20 ? 'var(--hw-amber)' : 'var(--hw-red)';
+    return '<span class="hw-batt-bar"><span class="hw-batt-fill" style="width:' + p + '%;background:' + c + '"></span></span> ' + p + '%';
+  };
+
+  /* ── Sub-tab switching ── */
+  root.querySelectorAll('.hw-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.hw-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.hw-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = el('hw-panel-' + btn.dataset.hwPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     SENSORS — CRUD + Manual Readings
+     ═══════════════════════════════════════════════════════════ */
+  let _sensors = [];
+
+  function hwFillSensorSelect() {
+    const sel = el('hw-reading-sensor');
+    sel.innerHTML = '<option value="">-- Select Sensor --</option>' +
+      _sensors.map(s => '<option value="' + s.id + '">' + s.name + '</option>').join('');
+  }
+
+  function hwLoadSensors() {
+    api(API + '/sensors').then(items => {
+      _sensors = items;
+      hwFillSensorSelect();
+      const totalEl = el('hw-stat-total'), onlineEl = el('hw-stat-online'),
+            alertEl = el('hw-stat-alerts'), battEl = el('hw-stat-lowbatt');
+      totalEl.textContent = items.length;
+      onlineEl.textContent = items.filter(s => s.status === 'online').length;
+      alertEl.textContent = items.filter(s => s.status === 'alert').length;
+      battEl.textContent = items.filter(s => (s.battery_level || 100) < 20).length;
+      const c = el('hw-sensor-list');
+      if (!items.length) { c.innerHTML = '<div class="hw-empty">No sensors configured yet.</div>'; return; }
+      c.innerHTML = items.map(s => {
+        const val = s.last_value != null ? s.last_value : '--';
+        const unit = s.unit || '';
+        const alert = s.alert_enabled ? ' [Alerts ON]' : '';
+        return '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+          '<div style="flex:1"><strong style="color:var(--hw-accent)">' + s.name + '</strong> ' + statusBadge(s.status) +
+          '<br><small style="color:var(--text-secondary,#aaa)">' + (s.sensor_type || '').replace(/_/g, ' ') +
+          ' | ' + (s.protocol || '-') + ' | ' + (s.location || '-') + '</small>' +
+          '<br><span style="font-size:1.3rem;font-weight:700;color:var(--text-primary,#eee)">' + val + '</span>' +
+          ' <small style="color:var(--text-secondary,#aaa)">' + unit + '</small>' +
+          (s.battery_level != null ? '<br><small style="color:var(--text-secondary,#aaa)">Battery: ' + battBar(s.battery_level) + '</small>' : '') +
+          (s.threshold_min != null || s.threshold_max != null ? '<br><small style="color:var(--text-secondary,#aaa)">Range: ' + (s.threshold_min ?? '-') + ' - ' + (s.threshold_max ?? '-') + alert + '</small>' : '') +
+          '</div>' +
+          '<button class="hw-btn hw-btn-danger" onclick="hwDeleteSensor(' + s.id + ')">&times;</button>' +
+          '</div></div>';
+      }).join('');
+    });
+  }
+
+  window.hwAddSensor = function() {
+    const name = val('hw-sensor-name'); if (!name) return;
+    post(API + '/sensors', {
+      name, sensor_type: val('hw-sensor-type'), protocol: val('hw-sensor-protocol'),
+      device_id: val('hw-sensor-device-id'), location: val('hw-sensor-location'),
+      topic: val('hw-sensor-topic'), unit: val('hw-sensor-unit'),
+      threshold_min: numVal('hw-sensor-min') || null, threshold_max: numVal('hw-sensor-max') || null,
+      alert_enabled: el('hw-sensor-alert')?.checked ? 1 : 0
+    }).then(() => {
+      ['hw-sensor-name','hw-sensor-device-id','hw-sensor-location','hw-sensor-topic','hw-sensor-unit','hw-sensor-min','hw-sensor-max'].forEach(id => { el(id).value = ''; });
+      hwLoadSensors(); toast('Sensor added');
+    });
+  };
+
+  window.hwDeleteSensor = function(id) {
+    del(API + '/sensors/' + id).then(() => { hwLoadSensors(); toast('Sensor removed'); });
+  };
+
+  window.hwAddReading = function() {
+    const sensor_id = numVal('hw-reading-sensor');
+    const value = val('hw-reading-value');
+    if (!sensor_id || value === '') return;
+    post(API + '/sensors/' + sensor_id + '/readings', { value: parseFloat(value) }).then(() => {
+      el('hw-reading-value').value = '';
+      hwLoadSensors(); toast('Reading recorded');
+    });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     NETWORK — Devices + Topology
+     ═══════════════════════════════════════════════════════════ */
+  function hwLoadNetDevices() {
+    api(API + '/network').then(items => {
+      const c = el('hw-net-list');
+      if (!items.length) { c.innerHTML = '<div class="hw-empty">No network devices added.</div>'; return; }
+      c.innerHTML = '<table class="hw-table"><thead><tr>' +
+        '<th>Name</th><th>Type</th><th>IP</th><th>Hostname</th><th>Status</th><th>Last Seen</th><th></th>' +
+        '</tr></thead><tbody>' +
+        items.map(d => '<tr>' +
+          '<td><strong>' + d.name + '</strong><br><small style="color:var(--text-secondary,#aaa)">' + (d.manufacturer || '') + ' ' + (d.model || '') + '</small></td>' +
+          '<td>' + (d.device_type || '-').replace(/_/g, ' ') + '</td>' +
+          '<td style="font-family:monospace">' + (d.ip_address || '-') + '</td>' +
+          '<td>' + (d.hostname || '-') + '</td>' +
+          '<td>' + statusBadge(d.status || 'unknown') + '</td>' +
+          '<td><small>' + (d.last_seen || 'Never') + '</small></td>' +
+          '<td><button class="hw-btn hw-btn-danger" onclick="hwDeleteNetDevice(' + d.id + ')">&times;</button></td>' +
+          '</tr>').join('') +
+        '</tbody></table>';
+    });
+    hwLoadTopology();
+  }
+
+  function hwLoadTopology() {
+    api(API + '/network/topology').then(data => {
+      const c = el('hw-net-topology');
+      if (!data || !data.tree) { c.textContent = 'No topology data. Add devices to build the tree.'; return; }
+      c.textContent = data.tree;
+    }).catch(() => {
+      el('hw-net-topology').textContent = 'Topology unavailable.';
+    });
+  }
+
+  window.hwAddNetDevice = function() {
+    const name = val('hw-net-name'); if (!name) return;
+    post(API + '/network', {
+      name, device_type: val('hw-net-type'), ip_address: val('hw-net-ip'),
+      mac_address: val('hw-net-mac'), hostname: val('hw-net-hostname'),
+      manufacturer: val('hw-net-manufacturer'), model: val('hw-net-model'),
+      firmware_version: val('hw-net-firmware'), location: val('hw-net-location'),
+      vlan: val('hw-net-vlan'), role: val('hw-net-role')
+    }).then(() => {
+      ['hw-net-name','hw-net-ip','hw-net-mac','hw-net-hostname','hw-net-manufacturer','hw-net-model','hw-net-firmware','hw-net-location','hw-net-vlan'].forEach(id => { el(id).value = ''; });
+      hwLoadNetDevices(); toast('Device added');
+    });
+  };
+
+  window.hwDeleteNetDevice = function(id) {
+    del(API + '/network/' + id).then(() => { hwLoadNetDevices(); toast('Device removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     MESH — Meshtastic / LoRa Nodes
+     ═══════════════════════════════════════════════════════════ */
+  function hwLoadMeshNodes() {
+    api(API + '/mesh').then(items => {
+      const totalEl = el('hw-mesh-total'), onlineEl = el('hw-mesh-online-ct'),
+            snrEl = el('hw-mesh-avg-snr'), rssiEl = el('hw-mesh-avg-rssi');
+      totalEl.textContent = items.length;
+      onlineEl.textContent = items.filter(n => n.status === 'online').length;
+      const snrs = items.filter(n => n.snr != null).map(n => n.snr);
+      const rssis = items.filter(n => n.rssi != null).map(n => n.rssi);
+      snrEl.textContent = snrs.length ? (snrs.reduce((a,b) => a+b, 0) / snrs.length).toFixed(1) : '--';
+      rssiEl.textContent = rssis.length ? (rssis.reduce((a,b) => a+b, 0) / rssis.length).toFixed(0) : '--';
+      const c = el('hw-mesh-list');
+      if (!items.length) { c.innerHTML = '<div class="hw-empty">No mesh nodes configured.</div>'; return; }
+      c.innerHTML = items.map(n => {
+        return '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+          '<div style="flex:1"><strong style="color:var(--hw-accent)">' + (n.long_name || n.node_id) + '</strong>' +
+          (n.short_name ? ' <small style="color:var(--text-secondary,#aaa)">(' + n.short_name + ')</small>' : '') +
+          ' ' + statusBadge(n.status) +
+          '<br><small style="color:var(--text-secondary,#aaa)">ID: ' + (n.node_id || '-') + ' | HW: ' + (n.hardware_model || '-') + ' | Role: ' + (n.role || '-') + '</small>' +
+          (n.battery_level != null ? '<br><small style="color:var(--text-secondary,#aaa)">Battery: ' + battBar(n.battery_level) + '</small>' : '') +
+          '<br><small style="color:var(--text-secondary,#aaa)">SNR: ' + (n.snr != null ? n.snr + ' dB' : '--') +
+          ' | RSSI: ' + (n.rssi != null ? n.rssi + ' dBm' : '--') +
+          ' | Hops: ' + (n.hops != null ? n.hops : '--') + '</small>' +
+          (n.last_heard ? '<br><small style="color:var(--text-secondary,#aaa)">Last heard: ' + n.last_heard + '</small>' : '') +
+          '</div>' +
+          '<button class="hw-btn hw-btn-danger" onclick="hwDeleteMeshNode(' + n.id + ')">&times;</button>' +
+          '</div></div>';
+      }).join('');
+    });
+  }
+
+  window.hwAddMeshNode = function() {
+    const node_id = val('hw-mesh-node-id'); if (!node_id) return;
+    post(API + '/mesh', {
+      node_id, long_name: val('hw-mesh-long-name'), short_name: val('hw-mesh-short-name'),
+      hardware_model: val('hw-mesh-hardware'), role: val('hw-mesh-role'),
+      latitude: numVal('hw-mesh-lat') || null, longitude: numVal('hw-mesh-lon') || null,
+      altitude: numVal('hw-mesh-alt') || null
+    }).then(() => {
+      ['hw-mesh-node-id','hw-mesh-long-name','hw-mesh-short-name','hw-mesh-hardware','hw-mesh-lat','hw-mesh-lon','hw-mesh-alt'].forEach(id => { el(id).value = ''; });
+      hwLoadMeshNodes(); toast('Mesh node added');
+    });
+  };
+
+  window.hwDeleteMeshNode = function(id) {
+    del(API + '/mesh/' + id).then(() => { hwLoadMeshNodes(); toast('Node removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     STATIONS & GPS — Weather, GPS, Wearables
+     ═══════════════════════════════════════════════════════════ */
+  function hwLoadStations() {
+    api(API + '/stations').then(items => {
+      const c = el('hw-wx-list');
+      if (!items.length) { c.innerHTML = '<div class="hw-empty">No weather stations configured.</div>'; return; }
+      c.innerHTML = items.map(s => '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+        '<div style="flex:1"><strong style="color:var(--hw-accent)">' + s.name + '</strong> ' + statusBadge(s.status) +
+        '<br><small style="color:var(--text-secondary,#aaa)">' + (s.brand || '') + ' ' + (s.model || '') + ' | ' + (s.protocol || '-') + '</small>' +
+        '<br><small style="color:var(--text-secondary,#aaa)">Location: ' + (s.location || '-') +
+        (s.latitude ? ' | ' + s.latitude + ', ' + s.longitude : '') +
+        (s.elevation ? ' | Elev: ' + s.elevation + ' ft' : '') + '</small>' +
+        (s.polling_interval ? '<br><small style="color:var(--text-secondary,#aaa)">Polling: ' + s.polling_interval + 's</small>' : '') +
+        '</div>' +
+        '<button class="hw-btn hw-btn-danger" onclick="hwDeleteStation(' + s.id + ')">&times;</button>' +
+        '</div></div>').join('');
+    });
+  }
+
+  window.hwAddStation = function() {
+    const name = val('hw-wx-name'); if (!name) return;
+    post(API + '/stations', {
+      name, station_type: val('hw-wx-type'), brand: val('hw-wx-brand'),
+      model: val('hw-wx-model'), protocol: val('hw-wx-protocol'),
+      ip_address: val('hw-wx-ip'), location: val('hw-wx-location'),
+      latitude: numVal('hw-wx-lat') || null, longitude: numVal('hw-wx-lon') || null,
+      elevation: numVal('hw-wx-elevation') || null, polling_interval: numVal('hw-wx-interval', 60)
+    }).then(() => {
+      ['hw-wx-name','hw-wx-type','hw-wx-brand','hw-wx-model','hw-wx-ip','hw-wx-location','hw-wx-lat','hw-wx-lon','hw-wx-elevation','hw-wx-interval'].forEach(id => { el(id).value = ''; });
+      hwLoadStations(); toast('Station added');
+    });
+  };
+
+  window.hwDeleteStation = function(id) {
+    del(API + '/stations/' + id).then(() => { hwLoadStations(); toast('Station removed'); });
+  };
+
+  /* ── GPS Devices ── */
+  function hwLoadGPS() {
+    api(API + '/gps').then(items => {
+      const c = el('hw-gps-list');
+      if (!items.length) { c.innerHTML = '<div class="hw-empty">No GPS devices added.</div>'; return; }
+      c.innerHTML = items.map(g => '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+        '<div style="flex:1"><strong style="color:var(--hw-accent)">' + g.name + '</strong> ' + statusBadge(g.status) +
+        '<br><small style="color:var(--text-secondary,#aaa)">' + (g.brand || '') + ' ' + (g.model || '') + ' | ' + (g.device_type || '-').replace(/_/g, ' ') + '</small>' +
+        '<br><small style="color:var(--text-secondary,#aaa)">Connection: ' + (g.connection_type || '-') +
+        (g.port ? ' | Port: ' + g.port : '') + (g.baud_rate ? ' | Baud: ' + g.baud_rate : '') + '</small>' +
+        (g.last_fix ? '<br><small style="color:var(--text-secondary,#aaa)">Last Fix: ' + g.last_fix_lat + ', ' + g.last_fix_lon + ' @ ' + g.last_fix + '</small>' : '') +
+        '</div>' +
+        '<button class="hw-btn hw-btn-danger" onclick="hwDeleteGPS(' + g.id + ')">&times;</button>' +
+        '</div></div>').join('');
+    });
+  }
+
+  window.hwAddGPS = function() {
+    const name = val('hw-gps-name'); if (!name) return;
+    post(API + '/gps', {
+      name, device_type: val('hw-gps-type'), brand: val('hw-gps-brand'),
+      model: val('hw-gps-model'), serial_number: val('hw-gps-serial'),
+      connection_type: val('hw-gps-connection'), port: val('hw-gps-port'),
+      baud_rate: numVal('hw-gps-baud', 9600)
+    }).then(() => {
+      ['hw-gps-name','hw-gps-brand','hw-gps-model','hw-gps-serial','hw-gps-port','hw-gps-baud'].forEach(id => { el(id).value = ''; });
+      hwLoadGPS(); toast('GPS device added');
+    });
+  };
+
+  window.hwDeleteGPS = function(id) {
+    del(API + '/gps/' + id).then(() => { hwLoadGPS(); toast('GPS device removed'); });
+  };
+
+  window.hwRecordFix = function() {
+    post(API + '/gps/fix', {}).then(data => {
+      if (data && data.error) { toast('Fix failed: ' + data.error); return; }
+      hwLoadGPS(); toast('GPS fix recorded');
+    }).catch(() => toast('Fix request failed'));
+  };
+
+  /* ── Wearables ── */
+  function hwLoadWearables() {
+    api(API + '/wearables').then(items => {
+      const c = el('hw-wear-list');
+      if (!items.length) { c.innerHTML = '<div class="hw-empty">No wearable devices added.</div>'; return; }
+      c.innerHTML = items.map(w => '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+        '<div style="flex:1"><strong style="color:var(--hw-accent)">' + w.name + '</strong> ' + statusBadge(w.status) +
+        '<br><small style="color:var(--text-secondary,#aaa)">' + (w.brand || '') + ' ' + (w.model || '') + ' | ' + (w.device_type || '-') + '</small>' +
+        (w.wearer ? '<br><small style="color:var(--text-secondary,#aaa)">Wearer: ' + w.wearer + '</small>' : '') +
+        (w.connection_type ? '<br><small style="color:var(--text-secondary,#aaa)">Connection: ' + w.connection_type + '</small>' : '') +
+        (w.battery_level != null ? '<br><small style="color:var(--text-secondary,#aaa)">Battery: ' + battBar(w.battery_level) + '</small>' : '') +
+        '</div>' +
+        '<button class="hw-btn hw-btn-danger" onclick="hwDeleteWearable(' + w.id + ')">&times;</button>' +
+        '</div></div>').join('');
+    });
+  }
+
+  window.hwAddWearable = function() {
+    const name = val('hw-wear-name'); if (!name) return;
+    post(API + '/wearables', {
+      name, device_type: val('hw-wear-type'), brand: val('hw-wear-brand'),
+      model: val('hw-wear-model'), wearer: val('hw-wear-wearer'),
+      connection_type: val('hw-wear-connection')
+    }).then(() => {
+      ['hw-wear-name','hw-wear-type','hw-wear-brand','hw-wear-model','hw-wear-wearer','hw-wear-connection'].forEach(id => { el(id).value = ''; });
+      hwLoadWearables(); toast('Wearable added');
+    });
+  };
+
+  window.hwDeleteWearable = function(id) {
+    del(API + '/wearables/' + id).then(() => { hwLoadWearables(); toast('Wearable removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     INTEGRATIONS — External service configs
+     ═══════════════════════════════════════════════════════════ */
+  function hwLoadIntegrations() {
+    api(API + '/integrations').then(items => {
+      const c = el('hw-int-list');
+      if (!items.length) { c.innerHTML = '<div class="hw-empty">No integrations configured.</div>'; return; }
+      c.innerHTML = items.map(i => {
+        const syncBadge = statusBadge(i.status || 'unknown');
+        return '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
+          '<div style="flex:1"><strong style="color:var(--hw-accent)">' + i.name + '</strong> ' + syncBadge +
+          '<br><small style="color:var(--text-secondary,#aaa)">' + (i.integration_type || '-').replace(/_/g, ' ') +
+          ' | ' + (i.endpoint_url || '-') + '</small>' +
+          (i.polling_interval ? '<br><small style="color:var(--text-secondary,#aaa)">Polling: ' + i.polling_interval + 's</small>' : '') +
+          (i.last_sync ? '<br><small style="color:var(--text-secondary,#aaa)">Last sync: ' + i.last_sync + '</small>' : '') +
+          '</div>' +
+          '<div style="display:flex;gap:4px">' +
+          '<button class="hw-btn hw-btn-secondary" onclick="hwTestIntegration(' + i.id + ')">Test</button>' +
+          '<button class="hw-btn hw-btn-danger" onclick="hwDeleteIntegration(' + i.id + ')">&times;</button>' +
+          '</div></div></div>';
+      }).join('');
+    });
+  }
+
+  window.hwAddIntegration = function() {
+    const name = val('hw-int-name'); if (!name) return;
+    let config_json = null;
+    const raw = val('hw-int-config');
+    if (raw) { try { config_json = JSON.parse(raw); } catch(e) { toast('Invalid JSON in config'); return; } }
+    post(API + '/integrations', {
+      name, integration_type: val('hw-int-type'), endpoint_url: val('hw-int-endpoint'),
+      api_key: val('hw-int-apikey'), username: val('hw-int-username'),
+      auth_token: val('hw-int-token'), polling_interval: numVal('hw-int-interval', 30),
+      config_json: config_json
+    }).then(() => {
+      ['hw-int-name','hw-int-endpoint','hw-int-apikey','hw-int-username','hw-int-token','hw-int-interval','hw-int-config'].forEach(id => { el(id).value = ''; });
+      hwLoadIntegrations(); toast('Integration added');
+    });
+  };
+
+  window.hwDeleteIntegration = function(id) {
+    del(API + '/integrations/' + id).then(() => { hwLoadIntegrations(); toast('Integration removed'); });
+  };
+
+  window.hwTestIntegration = function(id) {
+    post(API + '/integrations/' + id + '/test', {}).then(data => {
+      if (data && data.success) toast('Connection successful');
+      else toast('Connection failed: ' + (data.error || 'unknown error'));
+    }).catch(() => toast('Test request failed'));
+  };
+
+  window.hwTestConnection = function() {
+    const endpoint = val('hw-int-endpoint');
+    const apikey = val('hw-int-apikey');
+    const token = val('hw-int-token');
+    if (!endpoint) { toast('Enter an endpoint URL first'); return; }
+    post(API + '/integrations/test', {
+      endpoint_url: endpoint, api_key: apikey, auth_token: token,
+      integration_type: val('hw-int-type')
+    }).then(data => {
+      if (data && data.success) toast('Connection successful');
+      else toast('Connection failed: ' + (data.error || 'unknown error'));
+    }).catch(() => toast('Test request failed'));
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     LAZY LOAD — MutationObserver
+     ═══════════════════════════════════════════════════════════ */
+  let _loaded = false;
+  function loadAll() {
+    if (_loaded) return; _loaded = true;
+    hwLoadSensors();
+    hwLoadNetDevices();
+    hwLoadMeshNodes();
+    hwLoadStations();
+    hwLoadGPS();
+    hwLoadWearables();
+    hwLoadIntegrations();
+  }
+
+  const obs = new MutationObserver(() => {
+    if (!root.classList.contains('is-hidden')) { loadAll(); }
+  });
+  obs.observe(root, {attributes: true, attributeFilter: ['class']});
+  if (!root.classList.contains('is-hidden')) { loadAll(); }
+})();
+</script>
+</div>

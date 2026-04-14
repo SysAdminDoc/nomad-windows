@@ -1379,6 +1379,10 @@ def create_app():
     from web.blueprints.hunting_foraging import hunting_foraging_bp
     app.register_blueprint(hunting_foraging_bp)
 
+    # ─── v7.24.0 — Hardware, Sensors & Mesh (Phase 18) ───────────────
+    from web.blueprints.hardware_sensors import hardware_sensors_bp
+    app.register_blueprint(hardware_sensors_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

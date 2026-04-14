@@ -437,8 +437,8 @@ _DEFAULT_BUDGET_CATEGORIES = [
 ]
 
 
-@water_mgmt_bp.route('/api/water/budget')
-def api_water_budget():
+@water_mgmt_bp.route('/api/water/budget/detailed')
+def api_water_budget_detailed():
     with db_session() as db:
         rows = db.execute('SELECT * FROM water_budget WHERE enabled = 1 ORDER BY category').fetchall()
         if not rows:

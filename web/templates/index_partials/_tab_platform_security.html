@@ -1,0 +1,851 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB: Platform, Deployment & Security  (Phase 19 · v7.25.0)
+     Users, auth, sessions, logs, deployment configs, performance
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="tab-platform-security" class="tab-content is-hidden" data-tab="platform-security" data-tab-content="platform-security">
+<style>
+  #tab-platform-security {
+    --ps-accent: #f43f5e;
+    --ps-accent-dim: #f43f5e22;
+    --ps-accent-hover: #e11d48;
+    --ps-red: #ef4444;
+    --ps-green: #22c55e;
+    --ps-amber: #f59e0b;
+    --ps-blue: #3b82f6;
+    --ps-purple: #a855f7;
+    --ps-gray: #64748b;
+  }
+  #tab-platform-security .ps-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-platform-security .ps-header h2 { font-size:1.25rem; color:var(--ps-accent); margin:0; }
+  #tab-platform-security .ps-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-platform-security .ps-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-platform-security .ps-sub-tab.active { background:var(--ps-accent-dim); border-color:var(--ps-accent); color:var(--ps-accent); }
+  #tab-platform-security .ps-panel { display:none; }
+  #tab-platform-security .ps-panel.active { display:block; }
+  #tab-platform-security .ps-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-platform-security .ps-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-platform-security .ps-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
+  #tab-platform-security .ps-stat-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:12px 14px; text-align:center; }
+  #tab-platform-security .ps-stat-val { font-size:1.4rem; font-weight:700; color:var(--ps-accent); }
+  #tab-platform-security .ps-stat-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-secondary,#aaa); margin-top:2px; }
+  #tab-platform-security .ps-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-platform-security .ps-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-platform-security .ps-form-row input,
+  #tab-platform-security .ps-form-row select,
+  #tab-platform-security .ps-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-platform-security .ps-form-row textarea { resize:vertical; min-height:60px; font-family:monospace; font-size:.8rem; }
+  #tab-platform-security .ps-form-row .field { flex:1; min-width:140px; }
+  #tab-platform-security .ps-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-platform-security .ps-btn-primary { background:var(--ps-accent); color:#fff; }
+  #tab-platform-security .ps-btn-primary:hover { background:var(--ps-accent-hover); }
+  #tab-platform-security .ps-btn-danger { background:var(--ps-red); color:#fff; }
+  #tab-platform-security .ps-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-platform-security .ps-btn-success { background:var(--ps-green); color:#000; }
+  #tab-platform-security .ps-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  #tab-platform-security .ps-table th { text-align:left; padding:8px 10px; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#333); font-weight:600; }
+  #tab-platform-security .ps-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); vertical-align:middle; }
+  #tab-platform-security .ps-table tbody tr:hover { background:rgba(255,255,255,.03); }
+  #tab-platform-security .ps-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-platform-security .ps-badge-admin { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-platform-security .ps-badge-user { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-platform-security .ps-badge-viewer { background:rgba(100,116,139,.2); color:#94a3b8; }
+  #tab-platform-security .ps-badge-guest { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-platform-security .ps-badge-active { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-platform-security .ps-badge-inactive { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-platform-security .ps-badge-general { background:rgba(100,116,139,.2); color:#94a3b8; }
+  #tab-platform-security .ps-badge-network { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-platform-security .ps-badge-backup { background:rgba(245,158,11,.2); color:#f59e0b; }
+  #tab-platform-security .ps-badge-update { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-platform-security .ps-badge-display { background:rgba(244,63,94,.2); color:#f43f5e; }
+  #tab-platform-security .ps-badge-success { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-platform-security .ps-badge-error { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-platform-security .ps-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-platform-security .ps-modal-overlay { position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,.55); display:flex; align-items:center; justify-content:center; }
+  #tab-platform-security .ps-modal-overlay.is-hidden { display:none; }
+  #tab-platform-security .ps-modal-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; width:94vw; max-width:420px; max-height:88vh; overflow-y:auto; box-shadow:0 24px 64px rgba(0,0,0,.4); }
+  #tab-platform-security .ps-modal-header { display:flex; align-items:center; justify-content:space-between; padding:14px 18px; border-bottom:1px solid var(--border,#333); }
+  #tab-platform-security .ps-modal-header h3 { font-size:.95rem; font-weight:700; color:var(--text-primary,#eee); margin:0; }
+  #tab-platform-security .ps-modal-close { background:none; border:none; color:var(--text-secondary,#aaa); font-size:18px; cursor:pointer; padding:0 2px; line-height:1; }
+  #tab-platform-security .ps-modal-close:hover { color:var(--text-primary,#eee); }
+  #tab-platform-security .ps-modal-body { padding:16px 18px; }
+  #tab-platform-security .ps-section-title { font-size:.85rem; font-weight:600; color:var(--ps-accent); margin:16px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border,#333); }
+</style>
+
+<div class="ps-header">
+  <h2>Platform, Deployment & Security</h2>
+</div>
+
+<!-- Sub-tab navigation -->
+<div class="ps-sub-tabs">
+  <button class="ps-sub-tab active" data-ps-panel="users">&#128100; Users & Auth</button>
+  <button class="ps-sub-tab" data-ps-panel="sessions">&#128274; Sessions & Logs</button>
+  <button class="ps-sub-tab" data-ps-panel="deploy">&#9881; Deployment</button>
+  <button class="ps-sub-tab" data-ps-panel="performance">&#128200; Performance</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 1: Users & Auth
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="ps-panel active" id="ps-panel-users" data-ps-panel="users">
+
+  <!-- User Table -->
+  <div class="ps-card">
+    <div class="ps-card-title">User Accounts</div>
+    <div style="overflow-x:auto;">
+      <table class="ps-table">
+        <thead>
+          <tr><th>Username</th><th>Display Name</th><th>Role</th><th>Active</th><th>Last Login</th><th>Logins</th><th></th></tr>
+        </thead>
+        <tbody id="ps-user-list">
+          <tr><td colspan="7" class="ps-empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Add User Form -->
+  <div class="ps-card">
+    <div class="ps-card-title">Add User</div>
+    <div class="ps-form-row">
+      <div class="field"><label>Username</label><input name="ps-user-username" id="ps-user-username" placeholder="jdoe"></div>
+      <div class="field"><label>Display Name</label><input name="ps-user-display" id="ps-user-display" placeholder="John Doe"></div>
+      <div class="field"><label>PIN</label><input name="ps-user-pin" id="ps-user-pin" type="password" placeholder="4-8 digits" maxlength="8"></div>
+    </div>
+    <div class="ps-form-row">
+      <div class="field"><label>Role</label>
+        <select name="ps-user-role" id="ps-user-role">
+          <option value="admin">Admin</option>
+          <option value="user" selected>User</option>
+          <option value="viewer">Viewer</option>
+          <option value="guest">Guest</option>
+        </select>
+      </div>
+      <div class="field" style="flex:2"><label>Permissions (JSON)</label>
+        <textarea name="ps-user-permissions" id="ps-user-permissions" placeholder='{"can_edit": true, "can_delete": false}' rows="2"></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ps-btn ps-btn-primary" onclick="psAddUser()">Add User</button>
+    </div>
+  </div>
+
+  <!-- Auth Test -->
+  <div class="ps-card">
+    <div class="ps-card-title">Auth Test</div>
+    <div class="ps-form-row">
+      <div class="field"><label>Username</label><input name="ps-auth-username" id="ps-auth-username" placeholder="username"></div>
+      <div class="field"><label>PIN</label><input name="ps-auth-pin" id="ps-auth-pin" type="password" placeholder="PIN"></div>
+      <div class="field" style="display:flex;align-items:flex-end;">
+        <button class="ps-btn ps-btn-primary" onclick="psAuthTest()">Login</button>
+      </div>
+    </div>
+    <div id="ps-auth-result" style="margin-top:8px;font-size:.82rem;color:var(--text-secondary,#aaa);"></div>
+  </div>
+
+  <!-- Reset PIN Modal -->
+  <div id="ps-pin-modal" class="ps-modal-overlay is-hidden" onclick="if(event.target===this)psClosePinModal()">
+    <div class="ps-modal-card">
+      <div class="ps-modal-header">
+        <h3>Reset PIN</h3>
+        <button class="ps-modal-close" onclick="psClosePinModal()">&times;</button>
+      </div>
+      <div class="ps-modal-body">
+        <input type="hidden" name="ps-pin-user-id" id="ps-pin-user-id">
+        <div class="ps-form-row">
+          <div class="field"><label>New PIN</label><input name="ps-pin-new" id="ps-pin-new" type="password" placeholder="4-8 digits" maxlength="8"></div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button class="ps-btn ps-btn-primary" onclick="psResetPin()">Save PIN</button>
+          <button class="ps-btn ps-btn-secondary" onclick="psClosePinModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit User Modal -->
+  <div id="ps-edit-modal" class="ps-modal-overlay is-hidden" onclick="if(event.target===this)psCloseEditModal()">
+    <div class="ps-modal-card">
+      <div class="ps-modal-header">
+        <h3>Edit User</h3>
+        <button class="ps-modal-close" onclick="psCloseEditModal()">&times;</button>
+      </div>
+      <div class="ps-modal-body">
+        <input type="hidden" name="ps-edit-user-id" id="ps-edit-user-id">
+        <div class="ps-form-row">
+          <div class="field"><label>Username</label><input name="ps-edit-username" id="ps-edit-username" placeholder="username"></div>
+          <div class="field"><label>Display Name</label><input name="ps-edit-display" id="ps-edit-display" placeholder="Display Name"></div>
+        </div>
+        <div class="ps-form-row">
+          <div class="field"><label>Role</label>
+            <select name="ps-edit-role" id="ps-edit-role">
+              <option value="admin">Admin</option>
+              <option value="user">User</option>
+              <option value="viewer">Viewer</option>
+              <option value="guest">Guest</option>
+            </select>
+          </div>
+          <div class="field"><label>Active</label>
+            <select name="ps-edit-active" id="ps-edit-active">
+              <option value="1">Yes</option>
+              <option value="0">No</option>
+            </select>
+          </div>
+        </div>
+        <div class="ps-form-row">
+          <div class="field"><label>Permissions (JSON)</label>
+            <textarea name="ps-edit-permissions" id="ps-edit-permissions" rows="3"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button class="ps-btn ps-btn-primary" onclick="psSaveEditUser()">Save</button>
+          <button class="ps-btn ps-btn-secondary" onclick="psCloseEditModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 2: Sessions & Logs
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="ps-panel" id="ps-panel-sessions" data-ps-panel="sessions">
+
+  <!-- Active Sessions -->
+  <div class="ps-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span class="ps-card-title" style="margin-bottom:0">Active Sessions</span>
+      <button class="ps-btn ps-btn-secondary" onclick="psCleanupSessions()">Cleanup Expired</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="ps-table">
+        <thead>
+          <tr><th>User</th><th>IP</th><th>Device</th><th>Created</th><th>Last Activity</th><th>Expires</th><th></th></tr>
+        </thead>
+        <tbody id="ps-session-list">
+          <tr><td colspan="7" class="ps-empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Logs Summary -->
+  <div class="ps-stats-grid" id="ps-log-stats">
+    <div class="ps-stat-card"><div class="ps-stat-val" id="ps-log-total">0</div><div class="ps-stat-label">Total Events</div></div>
+    <div class="ps-stat-card"><div class="ps-stat-val" id="ps-log-users">0</div><div class="ps-stat-label">Unique Users</div></div>
+    <div class="ps-stat-card"><div class="ps-stat-val" id="ps-log-failed">0</div><div class="ps-stat-label">Failed Attempts</div></div>
+  </div>
+
+  <!-- Access Logs -->
+  <div class="ps-card">
+    <div class="ps-card-title">Access Logs</div>
+    <div class="ps-form-row">
+      <div class="field"><label>User</label>
+        <select name="ps-log-filter-user" id="ps-log-filter-user">
+          <option value="">All Users</option>
+        </select>
+      </div>
+      <div class="field"><label>Action</label>
+        <select name="ps-log-filter-action" id="ps-log-filter-action">
+          <option value="">All Actions</option>
+          <option value="login">Login</option>
+          <option value="logout">Logout</option>
+          <option value="create">Create</option>
+          <option value="update">Update</option>
+          <option value="delete">Delete</option>
+          <option value="view">View</option>
+          <option value="export">Export</option>
+        </select>
+      </div>
+      <div class="field"><label>Limit</label>
+        <select name="ps-log-filter-limit" id="ps-log-filter-limit">
+          <option value="50">50</option>
+          <option value="100" selected>100</option>
+          <option value="250">250</option>
+          <option value="500">500</option>
+        </select>
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end;gap:6px;">
+        <button class="ps-btn ps-btn-primary" onclick="psLoadLogs()">Filter</button>
+        <button class="ps-btn ps-btn-secondary" onclick="psLoadLogs()">Refresh</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="ps-table">
+        <thead>
+          <tr><th>Time</th><th>User</th><th>Action</th><th>Resource</th><th>IP</th><th>Status</th></tr>
+        </thead>
+        <tbody id="ps-log-list">
+          <tr><td colspan="6" class="ps-empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
+      <button class="ps-btn ps-btn-danger" onclick="psClearOldLogs()">Clear Old Logs</button>
+      <div class="field" style="max-width:100px;margin:0;"><input name="ps-log-clear-days" id="ps-log-clear-days" type="number" value="30" min="1" placeholder="days" style="padding:7px 10px;border-radius:6px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.85rem;width:100%;"></div>
+      <span style="font-size:.78rem;color:var(--text-secondary,#aaa);">days old</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 3: Deployment
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="ps-panel" id="ps-panel-deploy" data-ps-panel="deploy">
+
+  <!-- Config List -->
+  <div class="ps-card">
+    <div class="ps-card-title">Configurations</div>
+    <div id="ps-config-list" style="overflow-x:auto;">
+      <div class="ps-empty">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Add Config Form -->
+  <div class="ps-card">
+    <div class="ps-card-title">Add Configuration</div>
+    <div class="ps-form-row">
+      <div class="field"><label>Name</label><input name="ps-config-name" id="ps-config-name" placeholder="backup-nightly"></div>
+      <div class="field"><label>Type</label>
+        <select name="ps-config-type" id="ps-config-type">
+          <option value="general">General</option>
+          <option value="network">Network</option>
+          <option value="backup">Backup</option>
+          <option value="update">Update</option>
+          <option value="display">Display</option>
+        </select>
+      </div>
+      <div class="field"><label>Active</label>
+        <select name="ps-config-active" id="ps-config-active">
+          <option value="1" selected>Yes</option>
+          <option value="0">No</option>
+        </select>
+      </div>
+    </div>
+    <div class="ps-form-row">
+      <div class="field" style="flex:2"><label>Description</label><input name="ps-config-desc" id="ps-config-desc" placeholder="Nightly backup to USB drive"></div>
+    </div>
+    <div class="ps-form-row">
+      <div class="field"><label>Config Data (JSON)</label>
+        <textarea name="ps-config-data" id="ps-config-data" rows="4" placeholder='{"schedule": "0 2 * * *", "target": "/mnt/usb"}'></textarea>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ps-btn ps-btn-primary" onclick="psAddConfig()">Add Config</button>
+    </div>
+  </div>
+
+  <!-- Edit Config Modal -->
+  <div id="ps-config-modal" class="ps-modal-overlay is-hidden" onclick="if(event.target===this)psCloseConfigModal()">
+    <div class="ps-modal-card" style="max-width:540px;">
+      <div class="ps-modal-header">
+        <h3>Edit Configuration</h3>
+        <button class="ps-modal-close" onclick="psCloseConfigModal()">&times;</button>
+      </div>
+      <div class="ps-modal-body">
+        <input type="hidden" name="ps-cedit-id" id="ps-cedit-id">
+        <div class="ps-form-row">
+          <div class="field"><label>Name</label><input name="ps-cedit-name" id="ps-cedit-name"></div>
+          <div class="field"><label>Type</label>
+            <select name="ps-cedit-type" id="ps-cedit-type">
+              <option value="general">General</option>
+              <option value="network">Network</option>
+              <option value="backup">Backup</option>
+              <option value="update">Update</option>
+              <option value="display">Display</option>
+            </select>
+          </div>
+        </div>
+        <div class="ps-form-row">
+          <div class="field"><label>Description</label><input name="ps-cedit-desc" id="ps-cedit-desc"></div>
+          <div class="field"><label>Active</label>
+            <select name="ps-cedit-active" id="ps-cedit-active">
+              <option value="1">Yes</option>
+              <option value="0">No</option>
+            </select>
+          </div>
+        </div>
+        <div class="ps-form-row">
+          <div class="field"><label>Config Data (JSON)</label>
+            <textarea name="ps-cedit-data" id="ps-cedit-data" rows="5"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:10px;display:flex;gap:8px;">
+          <button class="ps-btn ps-btn-primary" onclick="psSaveConfig()">Save</button>
+          <button class="ps-btn ps-btn-secondary" onclick="psCloseConfigModal()">Cancel</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 4: Performance
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="ps-panel" id="ps-panel-performance" data-ps-panel="performance">
+
+  <!-- Summary Cards -->
+  <div class="ps-stats-grid" id="ps-perf-stats">
+    <div class="ps-stat-card"><div class="ps-stat-val" id="ps-perf-startup">--</div><div class="ps-stat-label">Avg Startup (ms)</div></div>
+    <div class="ps-stat-card"><div class="ps-stat-val" id="ps-perf-request">--</div><div class="ps-stat-label">Avg Request (ms)</div></div>
+    <div class="ps-stat-card"><div class="ps-stat-val" id="ps-perf-db">--</div><div class="ps-stat-label">Avg DB Query (ms)</div></div>
+    <div class="ps-stat-card"><div class="ps-stat-val" id="ps-perf-memory">--</div><div class="ps-stat-label">Memory (MB)</div></div>
+  </div>
+
+  <!-- Metrics Table -->
+  <div class="ps-card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+      <span class="ps-card-title" style="margin-bottom:0">Metrics</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <select name="ps-metric-filter-type" id="ps-metric-filter-type" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.82rem;">
+          <option value="">All Types</option>
+          <option value="startup">Startup</option>
+          <option value="request">Request</option>
+          <option value="database">Database</option>
+          <option value="memory">Memory</option>
+          <option value="cpu">CPU</option>
+          <option value="disk">Disk</option>
+          <option value="custom">Custom</option>
+        </select>
+        <button class="ps-btn ps-btn-secondary" onclick="psLoadMetrics()">Refresh</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="ps-table">
+        <thead>
+          <tr><th>Type</th><th>Name</th><th>Value</th><th>Unit</th><th>Recorded</th></tr>
+        </thead>
+        <tbody id="ps-metric-list">
+          <tr><td colspan="5" class="ps-empty">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Record Metric -->
+  <div class="ps-card">
+    <div class="ps-card-title">Record Metric</div>
+    <div class="ps-form-row">
+      <div class="field"><label>Type</label>
+        <select name="ps-metric-type" id="ps-metric-type">
+          <option value="startup">Startup</option>
+          <option value="request">Request</option>
+          <option value="database">Database</option>
+          <option value="memory">Memory</option>
+          <option value="cpu">CPU</option>
+          <option value="disk">Disk</option>
+          <option value="custom">Custom</option>
+        </select>
+      </div>
+      <div class="field"><label>Name</label><input name="ps-metric-name" id="ps-metric-name" placeholder="page_load_time"></div>
+      <div class="field"><label>Value</label><input name="ps-metric-value" id="ps-metric-value" type="number" step="any" placeholder="123.45"></div>
+      <div class="field"><label>Unit</label><input name="ps-metric-unit" id="ps-metric-unit" placeholder="ms"></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:6px;">
+      <button class="ps-btn ps-btn-primary" onclick="psRecordMetric()">Record</button>
+    </div>
+  </div>
+
+  <!-- Cleanup -->
+  <div class="ps-card">
+    <div style="display:flex;gap:8px;align-items:center;">
+      <button class="ps-btn ps-btn-danger" onclick="psCleanupMetrics()">Cleanup Old Metrics</button>
+      <div class="field" style="max-width:100px;margin:0;"><input name="ps-metric-clear-days" id="ps-metric-clear-days" type="number" value="30" min="1" placeholder="days" style="padding:7px 10px;border-radius:6px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.85rem;width:100%;"></div>
+      <span style="font-size:.78rem;color:var(--text-secondary,#aaa);">days old</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SCRIPT
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  const root = document.getElementById('tab-platform-security');
+  const el  = id => document.getElementById(id);
+  const val = id => el(id)?.value?.trim() || '';
+  const numVal = (id, def) => parseFloat(val(id)) || def || 0;
+  const api = (url, opts) => fetch(url, opts).then(r => r.json());
+  const post = (url, body) => api(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const put  = (url, body) => api(url, {method:'PUT',  headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const del  = url => api(url, {method:'DELETE'});
+  const toast = msg => { if (window.showToast) window.showToast(msg); };
+  const API = '/api/platform';
+
+  function fmtDate(d) { if (!d) return '-'; try { return new Date(d).toLocaleString(); } catch(e) { return d; } }
+
+  function roleBadge(role) {
+    const r = (role || 'guest').toLowerCase();
+    return '<span class="ps-badge ps-badge-' + r + '">' + r + '</span>';
+  }
+
+  function statusBadge(active) {
+    return active ? '<span class="ps-badge ps-badge-active">active</span>'
+                  : '<span class="ps-badge ps-badge-inactive">inactive</span>';
+  }
+
+  function typeBadge(t) {
+    return '<span class="ps-badge ps-badge-' + (t || 'general') + '">' + (t || 'general') + '</span>';
+  }
+
+  /* ── Sub-tab switching ── */
+  root.querySelectorAll('.ps-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.ps-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.ps-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = el('ps-panel-' + btn.dataset.psPanel);
+      if (panel) panel.classList.add('active');
+      if (btn.dataset.psPanel === 'sessions') { psLoadSessions(); psLoadLogs(); }
+      if (btn.dataset.psPanel === 'deploy') psLoadConfigs();
+      if (btn.dataset.psPanel === 'performance') { psLoadPerfSummary(); psLoadMetrics(); }
+    });
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     USERS & AUTH
+     ═══════════════════════════════════════════════════════════ */
+
+  function psLoadUsers() {
+    api(API + '/users').then(items => {
+      const c = el('ps-user-list');
+      if (!items.length) { c.innerHTML = '<tr><td colspan="7" class="ps-empty">No users yet.</td></tr>'; return; }
+      c.innerHTML = items.map(u =>
+        '<tr>' +
+        '<td><strong>' + (u.username || '-') + '</strong></td>' +
+        '<td>' + (u.display_name || '-') + '</td>' +
+        '<td>' + roleBadge(u.role) + '</td>' +
+        '<td>' + statusBadge(u.is_active) + '</td>' +
+        '<td><small>' + fmtDate(u.last_login) + '</small></td>' +
+        '<td>' + (u.login_count || 0) + '</td>' +
+        '<td style="white-space:nowrap;">' +
+          '<button class="ps-btn ps-btn-secondary" style="padding:4px 10px;margin-right:4px;" onclick="psOpenEditModal(' + u.id + ')">Edit</button>' +
+          '<button class="ps-btn ps-btn-secondary" style="padding:4px 10px;margin-right:4px;" onclick="psOpenPinModal(' + u.id + ')">PIN</button>' +
+          '<button class="ps-btn ps-btn-danger" style="padding:4px 10px;" onclick="psDeleteUser(' + u.id + ')">&times;</button>' +
+        '</td></tr>'
+      ).join('');
+      psPopulateLogUserFilter(items);
+    });
+  }
+
+  function psPopulateLogUserFilter(users) {
+    const sel = el('ps-log-filter-user');
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">All Users</option>' +
+      users.map(u => '<option value="' + u.username + '">' + (u.display_name || u.username) + '</option>').join('');
+    sel.value = cur;
+  }
+
+  window.psAddUser = function() {
+    const username = val('ps-user-username');
+    if (!username) { toast('Username is required'); return; }
+    const pin = val('ps-user-pin');
+    if (!pin) { toast('PIN is required'); return; }
+    let permissions = val('ps-user-permissions');
+    if (permissions) { try { JSON.parse(permissions); } catch(e) { toast('Invalid permissions JSON'); return; } }
+    post(API + '/users', {
+      username, display_name: val('ps-user-display'), pin,
+      role: val('ps-user-role'), permissions: permissions || null
+    }).then(data => {
+      if (data.error) { toast('Error: ' + data.error); return; }
+      ['ps-user-username','ps-user-display','ps-user-pin','ps-user-permissions'].forEach(id => { el(id).value = ''; });
+      psLoadUsers(); toast('User added');
+    });
+  };
+
+  window.psDeleteUser = function(id) {
+    del(API + '/users/' + id).then(() => { psLoadUsers(); toast('User removed'); });
+  };
+
+  /* Edit Modal */
+  window.psOpenEditModal = function(id) {
+    api(API + '/users/' + id).then(u => {
+      el('ps-edit-user-id').value = u.id;
+      el('ps-edit-username').value = u.username || '';
+      el('ps-edit-display').value = u.display_name || '';
+      el('ps-edit-role').value = u.role || 'user';
+      el('ps-edit-active').value = u.is_active ? '1' : '0';
+      el('ps-edit-permissions').value = u.permissions || '';
+      el('ps-edit-modal').classList.remove('is-hidden');
+    });
+  };
+
+  window.psCloseEditModal = function() { el('ps-edit-modal').classList.add('is-hidden'); };
+
+  window.psSaveEditUser = function() {
+    const id = val('ps-edit-user-id');
+    if (!id) return;
+    let permissions = val('ps-edit-permissions');
+    if (permissions) { try { JSON.parse(permissions); } catch(e) { toast('Invalid permissions JSON'); return; } }
+    put(API + '/users/' + id, {
+      username: val('ps-edit-username'), display_name: val('ps-edit-display'),
+      role: val('ps-edit-role'), is_active: parseInt(val('ps-edit-active')),
+      permissions: permissions || null
+    }).then(data => {
+      if (data.error) { toast('Error: ' + data.error); return; }
+      psCloseEditModal(); psLoadUsers(); toast('User updated');
+    });
+  };
+
+  /* PIN Modal */
+  window.psOpenPinModal = function(id) {
+    el('ps-pin-user-id').value = id;
+    el('ps-pin-new').value = '';
+    el('ps-pin-modal').classList.remove('is-hidden');
+  };
+
+  window.psClosePinModal = function() { el('ps-pin-modal').classList.add('is-hidden'); };
+
+  window.psResetPin = function() {
+    const id = val('ps-pin-user-id');
+    const pin = val('ps-pin-new');
+    if (!pin) { toast('Enter a new PIN'); return; }
+    put(API + '/users/' + id + '/pin', { pin }).then(data => {
+      if (data.error) { toast('Error: ' + data.error); return; }
+      psClosePinModal(); toast('PIN reset');
+    });
+  };
+
+  /* Auth Test */
+  window.psAuthTest = function() {
+    const username = val('ps-auth-username');
+    const pin = val('ps-auth-pin');
+    if (!username || !pin) { toast('Enter username and PIN'); return; }
+    post(API + '/auth/login', { username, pin }).then(data => {
+      const r = el('ps-auth-result');
+      if (data.error) {
+        r.innerHTML = '<span style="color:var(--ps-red);">Failed: ' + data.error + '</span>';
+      } else {
+        r.innerHTML = '<span style="color:var(--ps-green);">Success!</span> Token: <code style="background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;font-size:.78rem;">' + (data.token || data.session_token || '-') + '</code>';
+      }
+    }).catch(() => {
+      el('ps-auth-result').innerHTML = '<span style="color:var(--ps-red);">Request failed</span>';
+    });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     SESSIONS & LOGS
+     ═══════════════════════════════════════════════════════════ */
+
+  function psLoadSessions() {
+    api(API + '/sessions').then(items => {
+      const c = el('ps-session-list');
+      if (!items.length) { c.innerHTML = '<tr><td colspan="7" class="ps-empty">No active sessions.</td></tr>'; return; }
+      c.innerHTML = items.map(s =>
+        '<tr>' +
+        '<td><strong>' + (s.username || s.user_id || '-') + '</strong></td>' +
+        '<td style="font-family:monospace;font-size:.78rem;">' + (s.ip_address || '-') + '</td>' +
+        '<td>' + (s.device || '-') + '</td>' +
+        '<td><small>' + fmtDate(s.created_at) + '</small></td>' +
+        '<td><small>' + fmtDate(s.last_activity) + '</small></td>' +
+        '<td><small>' + fmtDate(s.expires_at) + '</small></td>' +
+        '<td><button class="ps-btn ps-btn-danger" style="padding:4px 10px;" onclick="psRevokeSession(\'' + (s.token || s.id) + '\')">Revoke</button></td>' +
+        '</tr>'
+      ).join('');
+    });
+  }
+
+  window.psRevokeSession = function(token) {
+    del(API + '/sessions/' + token).then(() => { psLoadSessions(); toast('Session revoked'); });
+  };
+
+  window.psCleanupSessions = function() {
+    post(API + '/sessions/cleanup', {}).then(data => {
+      psLoadSessions();
+      toast('Cleaned up ' + (data.removed || 0) + ' expired sessions');
+    });
+  };
+
+  function psLoadLogs() {
+    const user = val('ps-log-filter-user');
+    const action = val('ps-log-filter-action');
+    const limit = val('ps-log-filter-limit') || '100';
+    let url = API + '/logs?limit=' + limit;
+    if (user) url += '&user=' + encodeURIComponent(user);
+    if (action) url += '&action=' + encodeURIComponent(action);
+    api(url).then(data => {
+      const items = data.logs || data;
+      const stats = data.summary || {};
+      el('ps-log-total').textContent = stats.total_events || items.length || 0;
+      el('ps-log-users').textContent = stats.unique_users || '--';
+      el('ps-log-failed').textContent = stats.failed_attempts || '--';
+      const c = el('ps-log-list');
+      if (!items.length) { c.innerHTML = '<tr><td colspan="6" class="ps-empty">No logs found.</td></tr>'; return; }
+      c.innerHTML = items.map(l => {
+        const sc = l.status_code || l.status || '';
+        const scClass = (sc >= 400) ? 'ps-badge-error' : 'ps-badge-success';
+        return '<tr>' +
+          '<td><small>' + fmtDate(l.timestamp || l.created_at) + '</small></td>' +
+          '<td>' + (l.username || l.user || '-') + '</td>' +
+          '<td>' + (l.action || '-') + '</td>' +
+          '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (l.resource || '-') + '</td>' +
+          '<td style="font-family:monospace;font-size:.78rem;">' + (l.ip_address || '-') + '</td>' +
+          '<td>' + (sc ? '<span class="ps-badge ' + scClass + '">' + sc + '</span>' : '-') + '</td>' +
+          '</tr>';
+      }).join('');
+    });
+  }
+
+  window.psClearOldLogs = function() {
+    const days = numVal('ps-log-clear-days', 30);
+    post(API + '/logs/cleanup', { days }).then(data => {
+      psLoadLogs();
+      toast('Cleared ' + (data.removed || 0) + ' old log entries');
+    });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     DEPLOYMENT — Configs
+     ═══════════════════════════════════════════════════════════ */
+
+  function psLoadConfigs() {
+    api(API + '/configs').then(items => {
+      const c = el('ps-config-list');
+      if (!items.length) { c.innerHTML = '<div class="ps-empty">No configurations yet.</div>'; return; }
+      c.innerHTML = items.map(cfg => {
+        const dataPreview = cfg.config_data ? (typeof cfg.config_data === 'string' ? cfg.config_data : JSON.stringify(cfg.config_data)).substring(0, 80) : '';
+        return '<div style="display:flex;justify-content:space-between;align-items:start;padding:10px 0;border-bottom:1px solid var(--border,#333);">' +
+          '<div style="flex:1">' +
+            '<strong style="color:var(--ps-accent)">' + (cfg.name || '-') + '</strong> ' +
+            typeBadge(cfg.config_type) + ' ' + statusBadge(cfg.is_active) +
+            '<br><small style="color:var(--text-secondary,#aaa)">' + (cfg.description || 'No description') + '</small>' +
+            (dataPreview ? '<br><code style="font-size:.72rem;color:var(--text-secondary,#888);">' + dataPreview + (cfg.config_data && cfg.config_data.length > 80 ? '...' : '') + '</code>' : '') +
+            (cfg.last_applied ? '<br><small style="color:var(--text-secondary,#666);">Last applied: ' + fmtDate(cfg.last_applied) + '</small>' : '') +
+          '</div>' +
+          '<div style="display:flex;gap:4px;white-space:nowrap;">' +
+            '<button class="ps-btn ps-btn-secondary" style="padding:4px 10px;" onclick="psOpenConfigModal(' + cfg.id + ')">Edit</button>' +
+            '<button class="ps-btn ps-btn-danger" style="padding:4px 10px;" onclick="psDeleteConfig(' + cfg.id + ')">&times;</button>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+    });
+  }
+
+  window.psAddConfig = function() {
+    const name = val('ps-config-name');
+    if (!name) { toast('Config name is required'); return; }
+    let config_data = val('ps-config-data');
+    if (config_data) { try { JSON.parse(config_data); } catch(e) { toast('Invalid JSON in config data'); return; } }
+    post(API + '/configs', {
+      name, config_type: val('ps-config-type'), description: val('ps-config-desc'),
+      config_data: config_data || null, is_active: parseInt(val('ps-config-active'))
+    }).then(data => {
+      if (data.error) { toast('Error: ' + data.error); return; }
+      ['ps-config-name','ps-config-desc','ps-config-data'].forEach(id => { el(id).value = ''; });
+      psLoadConfigs(); toast('Config added');
+    });
+  };
+
+  window.psDeleteConfig = function(id) {
+    del(API + '/configs/' + id).then(() => { psLoadConfigs(); toast('Config removed'); });
+  };
+
+  /* Edit Config Modal */
+  window.psOpenConfigModal = function(id) {
+    api(API + '/configs/' + id).then(cfg => {
+      el('ps-cedit-id').value = cfg.id;
+      el('ps-cedit-name').value = cfg.name || '';
+      el('ps-cedit-type').value = cfg.config_type || 'general';
+      el('ps-cedit-desc').value = cfg.description || '';
+      el('ps-cedit-active').value = cfg.is_active ? '1' : '0';
+      el('ps-cedit-data').value = typeof cfg.config_data === 'string' ? cfg.config_data : JSON.stringify(cfg.config_data || {}, null, 2);
+      el('ps-config-modal').classList.remove('is-hidden');
+    });
+  };
+
+  window.psCloseConfigModal = function() { el('ps-config-modal').classList.add('is-hidden'); };
+
+  window.psSaveConfig = function() {
+    const id = val('ps-cedit-id');
+    if (!id) return;
+    let config_data = val('ps-cedit-data');
+    if (config_data) { try { JSON.parse(config_data); } catch(e) { toast('Invalid JSON in config data'); return; } }
+    put(API + '/configs/' + id, {
+      name: val('ps-cedit-name'), config_type: val('ps-cedit-type'),
+      description: val('ps-cedit-desc'), config_data: config_data || null,
+      is_active: parseInt(val('ps-cedit-active'))
+    }).then(data => {
+      if (data.error) { toast('Error: ' + data.error); return; }
+      psCloseConfigModal(); psLoadConfigs(); toast('Config updated');
+    });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     PERFORMANCE — Metrics
+     ═══════════════════════════════════════════════════════════ */
+
+  function psLoadPerfSummary() {
+    api(API + '/performance/summary').then(data => {
+      el('ps-perf-startup').textContent = data.avg_startup != null ? data.avg_startup.toFixed(1) : '--';
+      el('ps-perf-request').textContent = data.avg_request != null ? data.avg_request.toFixed(1) : '--';
+      el('ps-perf-db').textContent = data.avg_db_query != null ? data.avg_db_query.toFixed(1) : '--';
+      el('ps-perf-memory').textContent = data.memory_usage != null ? data.memory_usage.toFixed(1) : '--';
+    }).catch(() => {});
+  }
+
+  function psLoadMetrics() {
+    const typeFilter = val('ps-metric-filter-type');
+    let url = API + '/performance/metrics';
+    if (typeFilter) url += '?type=' + encodeURIComponent(typeFilter);
+    api(url).then(items => {
+      const c = el('ps-metric-list');
+      if (!items.length) { c.innerHTML = '<tr><td colspan="5" class="ps-empty">No metrics recorded.</td></tr>'; return; }
+      c.innerHTML = items.map(m =>
+        '<tr>' +
+        '<td>' + typeBadge(m.metric_type) + '</td>' +
+        '<td>' + (m.metric_name || m.name || '-') + '</td>' +
+        '<td style="font-weight:600;">' + (m.value != null ? m.value : '-') + '</td>' +
+        '<td>' + (m.unit || '-') + '</td>' +
+        '<td><small>' + fmtDate(m.recorded_at || m.created_at) + '</small></td>' +
+        '</tr>'
+      ).join('');
+    });
+  }
+
+  window.psRecordMetric = function() {
+    const name = val('ps-metric-name');
+    const value = val('ps-metric-value');
+    if (!name || value === '') { toast('Name and value required'); return; }
+    post(API + '/performance/metrics', {
+      metric_type: val('ps-metric-type'), metric_name: name,
+      value: parseFloat(value), unit: val('ps-metric-unit')
+    }).then(data => {
+      if (data.error) { toast('Error: ' + data.error); return; }
+      ['ps-metric-name','ps-metric-value','ps-metric-unit'].forEach(id => { el(id).value = ''; });
+      psLoadPerfSummary(); psLoadMetrics(); toast('Metric recorded');
+    });
+  };
+
+  window.psCleanupMetrics = function() {
+    const days = numVal('ps-metric-clear-days', 30);
+    post(API + '/performance/cleanup', { days }).then(data => {
+      psLoadPerfSummary(); psLoadMetrics();
+      toast('Cleaned up ' + (data.removed || 0) + ' old metrics');
+    });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     LAZY LOAD — MutationObserver
+     ═══════════════════════════════════════════════════════════ */
+  let _loaded = false;
+  function loadAll() {
+    if (_loaded) return; _loaded = true;
+    psLoadUsers();
+    psLoadSessions();
+    psLoadLogs();
+    psLoadConfigs();
+    psLoadPerfSummary();
+    psLoadMetrics();
+  }
+
+  const obs = new MutationObserver(() => {
+    if (!root.classList.contains('is-hidden')) { loadAll(); }
+  });
+  obs.observe(root, {attributes: true, attributeFilter: ['class']});
+  if (!root.classList.contains('is-hidden')) { loadAll(); }
+})();
+</script>
+</div>

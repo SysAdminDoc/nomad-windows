@@ -2624,6 +2624,21 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_wearable_devices_wearer ON wearable_devices(wearer)',
         'CREATE INDEX IF NOT EXISTS idx_integration_configs_type ON integration_configs(integration_type)',
         'CREATE INDEX IF NOT EXISTS idx_integration_configs_status ON integration_configs(status)',
+        # ─── Phase 19: Platform, Deployment & Security (v7.25.0) ───
+        'CREATE INDEX IF NOT EXISTS idx_app_users_username ON app_users(username)',
+        'CREATE INDEX IF NOT EXISTS idx_app_users_role ON app_users(role)',
+        'CREATE INDEX IF NOT EXISTS idx_app_users_active ON app_users(is_active)',
+        'CREATE INDEX IF NOT EXISTS idx_app_sessions_token ON app_sessions(session_token)',
+        'CREATE INDEX IF NOT EXISTS idx_app_sessions_user ON app_sessions(user_id)',
+        'CREATE INDEX IF NOT EXISTS idx_app_sessions_active ON app_sessions(is_active)',
+        'CREATE INDEX IF NOT EXISTS idx_app_sessions_expires ON app_sessions(expires_at)',
+        'CREATE INDEX IF NOT EXISTS idx_access_logs_user ON access_logs(user_id)',
+        'CREATE INDEX IF NOT EXISTS idx_access_logs_action ON access_logs(action)',
+        'CREATE INDEX IF NOT EXISTS idx_access_logs_created ON access_logs(created_at)',
+        'CREATE INDEX IF NOT EXISTS idx_deployment_configs_type ON deployment_configs(config_type)',
+        'CREATE INDEX IF NOT EXISTS idx_deployment_configs_active ON deployment_configs(is_active)',
+        'CREATE INDEX IF NOT EXISTS idx_performance_metrics_type ON performance_metrics(metric_type)',
+        'CREATE INDEX IF NOT EXISTS idx_performance_metrics_recorded ON performance_metrics(recorded_at)',
     ]:
         try:
             conn.execute(idx)
@@ -4735,6 +4750,84 @@ def _create_hardware_sensors_tables(conn):
     conn.commit()
 
 
+def _create_platform_security_tables(conn):
+    """Phase 19 — Platform, Deployment & Security: users, sessions, permissions,
+    access logs, deployment configs, performance metrics."""
+    conn.executescript('''
+        /* ─── Users ─── */
+        CREATE TABLE IF NOT EXISTS app_users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL UNIQUE,
+            display_name TEXT DEFAULT '',
+            pin_hash TEXT DEFAULT '',
+            password_hash TEXT DEFAULT '',
+            role TEXT DEFAULT 'user',
+            permissions TEXT DEFAULT '[]',
+            is_active INTEGER DEFAULT 1,
+            last_login TEXT DEFAULT '',
+            login_count INTEGER DEFAULT 0,
+            failed_attempts INTEGER DEFAULT 0,
+            locked_until TEXT DEFAULT '',
+            settings TEXT DEFAULT '{}',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Sessions ─── */
+        CREATE TABLE IF NOT EXISTS app_sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER DEFAULT 0,
+            session_token TEXT NOT NULL,
+            ip_address TEXT DEFAULT '',
+            user_agent TEXT DEFAULT '',
+            device_info TEXT DEFAULT '',
+            expires_at TEXT DEFAULT '',
+            is_active INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            last_activity TEXT DEFAULT ''
+        );
+
+        /* ─── Access Logs ─── */
+        CREATE TABLE IF NOT EXISTS access_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER DEFAULT 0,
+            action TEXT DEFAULT '',
+            resource TEXT DEFAULT '',
+            ip_address TEXT DEFAULT '',
+            user_agent TEXT DEFAULT '',
+            status_code INTEGER DEFAULT 200,
+            detail TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Deployment Configs ─── */
+        CREATE TABLE IF NOT EXISTS deployment_configs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            config_type TEXT DEFAULT 'general',
+            description TEXT DEFAULT '',
+            config_data TEXT DEFAULT '{}',
+            is_active INTEGER DEFAULT 1,
+            applied_at TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Performance Metrics ─── */
+        CREATE TABLE IF NOT EXISTS performance_metrics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            metric_type TEXT DEFAULT 'startup',
+            metric_name TEXT DEFAULT '',
+            value REAL DEFAULT 0,
+            unit TEXT DEFAULT 'ms',
+            context TEXT DEFAULT '{}',
+            recorded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -4761,6 +4854,7 @@ def _init_db_inner(conn):
     _create_interoperability_tables(conn)
     _create_hunting_foraging_tables(conn)
     _create_hardware_sensors_tables(conn)
+    _create_platform_security_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

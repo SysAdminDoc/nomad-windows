@@ -1383,6 +1383,10 @@ def create_app():
     from web.blueprints.hardware_sensors import hardware_sensors_bp
     app.register_blueprint(hardware_sensors_bp)
 
+    # ─── Platform Security (Users, Auth, Sessions, Configs, Metrics) ──
+    from web.blueprints.platform_security import platform_security_bp
+    app.register_blueprint(platform_security_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

@@ -1339,6 +1339,14 @@ def create_app():
     from web.blueprints.tactical_comms import tactical_comms_bp
     app.register_blueprint(tactical_comms_bp)
 
+    # ─── v7.15.0 — Land Assessment & Property (Phase 8) ──────────────
+    from web.blueprints.land_assessment import land_assessment_bp
+    app.register_blueprint(land_assessment_bp)
+
+    # ─── v7.15.0 — Medical Phase 2 (Phase 9) ─────────────────────────
+    from web.blueprints.medical_phase2 import medical_phase2_bp
+    app.register_blueprint(medical_phase2_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

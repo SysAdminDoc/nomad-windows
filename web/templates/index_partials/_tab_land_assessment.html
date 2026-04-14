@@ -1,0 +1,381 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     LAND ASSESSMENT  (data-tab="land-assessment")
+     Property evaluation, criteria scoring, features inventory,
+     development plans, side-by-side comparison
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="tab-land-assessment" class="tab-content is-hidden" data-tab="land-assessment">
+<style>
+  #tab-land-assessment {
+    --la-accent: #10b981;
+    --la-accent-dim: rgba(16,185,129,.15);
+    --la-red: #ef4444;
+    --la-amber: #f59e0b;
+    --la-blue: #3b82f6;
+  }
+  #tab-land-assessment .la-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-land-assessment .la-header h2 { font-size:1.25rem; color:var(--la-accent); margin:0; }
+  #tab-land-assessment .la-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-land-assessment .la-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-land-assessment .la-sub-tab.active { background:var(--la-accent-dim); border-color:var(--la-accent); color:var(--la-accent); }
+  #tab-land-assessment .la-panel { display:none; }
+  #tab-land-assessment .la-panel.active { display:block; }
+  #tab-land-assessment .la-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-land-assessment .la-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-land-assessment .la-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-land-assessment .la-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-land-assessment .la-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-land-assessment .la-form-row input,
+  #tab-land-assessment .la-form-row select,
+  #tab-land-assessment .la-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-land-assessment .la-form-row .field { flex:1; min-width:140px; }
+  #tab-land-assessment .la-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-land-assessment .la-btn-primary { background:var(--la-accent); color:#000; }
+  #tab-land-assessment .la-btn-danger { background:var(--la-red); color:#fff; }
+  #tab-land-assessment .la-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-land-assessment .la-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-land-assessment .la-list-item:last-child { border-bottom:none; }
+  #tab-land-assessment .la-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-land-assessment .la-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-land-assessment .la-score { display:inline-block; padding:2px 8px; border-radius:4px; font-weight:700; font-size:.82rem; }
+  #tab-land-assessment .la-compare-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
+  #tab-land-assessment .la-compare-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; }
+  #tab-land-assessment .la-compare-card .rank { font-size:1.4rem; font-weight:700; color:var(--la-accent); }
+  #tab-land-assessment .la-compare-card .prop-name { font-size:1rem; font-weight:600; color:var(--text-primary,#eee); margin:4px 0 8px; }
+  #tab-land-assessment .la-compare-card .cat-row { display:flex; justify-content:space-between; font-size:.8rem; padding:3px 0; border-bottom:1px solid var(--border,#333); }
+  #tab-land-assessment .la-compare-card .cat-row:last-child { border-bottom:none; }
+  #tab-land-assessment .la-compare-card .cat-label { color:var(--text-secondary,#aaa); }
+  #tab-land-assessment .la-compare-card .cat-val { color:var(--text-primary,#eee); font-weight:600; }
+  #tab-land-assessment .la-slider-row { display:flex; align-items:center; gap:8px; padding:8px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-land-assessment .la-slider-row:last-child { border-bottom:none; }
+  #tab-land-assessment .la-slider-row input[type=range] { flex:1; accent-color:var(--la-accent); }
+  #tab-land-assessment .la-slider-row .crit-name { flex:2; font-size:.85rem; color:var(--text-primary,#eee); }
+  #tab-land-assessment .la-slider-row .crit-weight { font-size:.72rem; color:var(--text-secondary,#aaa); min-width:50px; }
+  #tab-land-assessment .la-slider-row .crit-val { font-size:.9rem; font-weight:700; color:var(--la-accent); min-width:24px; text-align:center; }
+  #tab-land-assessment .la-score-result { background:var(--la-accent-dim); border:1px solid var(--la-accent); border-radius:8px; padding:14px; margin-top:10px; }
+  #tab-land-assessment .la-score-result .val { font-size:1.4rem; font-weight:700; color:var(--la-accent); }
+</style>
+
+<div class="la-header">
+  <h2>Land Assessment</h2>
+</div>
+
+<!-- Sub-tabs -->
+<div class="la-sub-tabs">
+  <button class="la-sub-tab active" data-la-panel="properties">Properties</button>
+  <button class="la-sub-tab" data-la-panel="assessments">Assessments</button>
+  <button class="la-sub-tab" data-la-panel="features">Features</button>
+  <button class="la-sub-tab" data-la-panel="devplans">Dev Plans</button>
+  <button class="la-sub-tab" data-la-panel="compare">Compare</button>
+</div>
+
+<!-- ── Properties Panel ─────────────────────────────────── -->
+<div class="la-panel active" id="la-panel-properties">
+  <div class="la-card">
+    <div class="la-card-title">Add Property</div>
+    <div class="la-form-row">
+      <div class="field"><label>Name</label><input name="la-prop-name" id="la-prop-name" placeholder="Hilltop Parcel"></div>
+      <div class="field"><label>Type</label>
+        <select name="la-prop-type" id="la-prop-type">
+          <option value="rural">Rural</option><option value="suburban">Suburban</option>
+          <option value="urban">Urban</option><option value="agricultural">Agricultural</option>
+          <option value="wooded">Wooded</option><option value="desert">Desert</option>
+          <option value="coastal">Coastal</option><option value="mountain">Mountain</option>
+        </select>
+      </div>
+      <div class="field"><label>State</label><input name="la-prop-state" id="la-prop-state" placeholder="TN"></div>
+    </div>
+    <div class="la-form-row">
+      <div class="field"><label>Acreage</label><input name="la-prop-acreage" id="la-prop-acreage" type="number" step="0.1" value="0"></div>
+      <div class="field"><label>Distance from Home (mi)</label><input name="la-prop-distance" id="la-prop-distance" type="number" step="0.1" value="0"></div>
+      <div class="field"><label>Status</label>
+        <select name="la-prop-status" id="la-prop-status">
+          <option value="prospect">Prospect</option><option value="under_contract">Under Contract</option>
+          <option value="owned">Owned</option><option value="sold">Sold</option>
+        </select>
+      </div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="la-btn la-btn-primary" onclick="laCreateProperty()">Add</button></div>
+    </div>
+  </div>
+  <div id="la-prop-list" class="la-card"><div class="la-empty">Loading properties...</div></div>
+</div>
+
+<!-- ── Assessments Panel ────────────────────────────────── -->
+<div class="la-panel" id="la-panel-assessments">
+  <div class="la-card">
+    <div class="la-card-title">Property Assessment Criteria</div>
+    <div class="la-form-row">
+      <div class="field"><label>Property</label>
+        <select name="la-assess-prop" id="la-assess-prop"><option value="">-- Select Property --</option></select>
+      </div>
+      <div class="field" style="flex:0;align-self:flex-end;display:flex;gap:6px">
+        <button class="la-btn la-btn-secondary" onclick="laSeedCriteria()">Seed Default Criteria</button>
+        <button class="la-btn la-btn-primary" onclick="laRecalcScore()">Recalculate Score</button>
+      </div>
+    </div>
+  </div>
+  <div id="la-score-display" class="la-score-result" style="display:none"></div>
+  <div id="la-assess-list" class="la-card"><div class="la-empty">Select a property above.</div></div>
+</div>
+
+<!-- ── Features Panel ───────────────────────────────────── -->
+<div class="la-panel" id="la-panel-features">
+  <div class="la-card">
+    <div class="la-card-title">Add Feature</div>
+    <div class="la-form-row">
+      <div class="field"><label>Property</label>
+        <select name="la-feat-prop" id="la-feat-prop"><option value="">-- Select Property --</option></select>
+      </div>
+      <div class="field"><label>Name</label><input name="la-feat-name" id="la-feat-name" placeholder="Barn"></div>
+    </div>
+    <div class="la-form-row">
+      <div class="field"><label>Type</label>
+        <select name="la-feat-type" id="la-feat-type">
+          <option value="building">Building</option><option value="well">Well</option>
+          <option value="spring">Spring</option><option value="pond">Pond</option>
+          <option value="creek">Creek</option><option value="fence">Fence</option>
+          <option value="gate">Gate</option><option value="road">Road</option>
+          <option value="trail">Trail</option><option value="garden">Garden</option>
+          <option value="orchard">Orchard</option><option value="solar">Solar</option>
+          <option value="generator">Generator</option><option value="septic">Septic</option>
+          <option value="cistern">Cistern</option><option value="cellar">Cellar</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Condition</label>
+        <select name="la-feat-condition" id="la-feat-condition">
+          <option value="good">Good</option><option value="fair">Fair</option>
+          <option value="poor">Poor</option><option value="needs_repair">Needs Repair</option>
+          <option value="non_functional">Non-Functional</option>
+        </select>
+      </div>
+      <div class="field"><label>Value Estimate ($)</label><input name="la-feat-value" id="la-feat-value" type="number" step="100" value="0"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="la-btn la-btn-primary" onclick="laCreateFeature()">Add</button></div>
+    </div>
+  </div>
+  <div id="la-feat-list" class="la-card"><div class="la-empty">Select a property above.</div></div>
+</div>
+
+<!-- ── Dev Plans Panel ──────────────────────────────────── -->
+<div class="la-panel" id="la-panel-devplans">
+  <div class="la-card">
+    <div class="la-card-title">Add Development Plan</div>
+    <div class="la-form-row">
+      <div class="field"><label>Property</label>
+        <select name="la-dp-prop" id="la-dp-prop"><option value="">-- Select Property --</option></select>
+      </div>
+      <div class="field"><label>Name</label><input name="la-dp-name" id="la-dp-name" placeholder="Install well pump"></div>
+    </div>
+    <div class="la-form-row">
+      <div class="field"><label>Category</label>
+        <select name="la-dp-category" id="la-dp-category">
+          <option value="infrastructure">Infrastructure</option><option value="water">Water</option>
+          <option value="power">Power</option><option value="agriculture">Agriculture</option>
+          <option value="security">Security</option><option value="shelter">Shelter</option>
+        </select>
+      </div>
+      <div class="field"><label>Priority</label>
+        <select name="la-dp-priority" id="la-dp-priority">
+          <option value="low">Low</option><option value="medium" selected>Medium</option>
+          <option value="high">High</option><option value="critical">Critical</option>
+        </select>
+      </div>
+      <div class="field"><label>Est. Cost ($)</label><input name="la-dp-cost" id="la-dp-cost" type="number" step="100" value="0"></div>
+      <div class="field"><label>Status</label>
+        <select name="la-dp-status" id="la-dp-status">
+          <option value="planned">Planned</option><option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="la-btn la-btn-primary" onclick="laCreateDevPlan()">Add</button></div>
+    </div>
+  </div>
+  <div id="la-dp-list" class="la-card"><div class="la-empty">Select a property above.</div></div>
+</div>
+
+<!-- ── Compare Panel ────────────────────────────────────── -->
+<div class="la-panel" id="la-panel-compare">
+  <div style="margin-bottom:12px">
+    <button class="la-btn la-btn-primary" onclick="laLoadCompare()">Refresh Comparison</button>
+  </div>
+  <div id="la-compare-list" class="la-compare-grid"><div class="la-empty" style="grid-column:1/-1">Click Refresh to load comparison data.</div></div>
+</div>
+
+<script>
+(function(){
+  const root = document.getElementById('tab-land-assessment');
+  root.querySelectorAll('.la-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.la-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.la-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById('la-panel-' + btn.dataset.laPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  const $=id=>document.getElementById(id);
+  const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
+  const val=id=>($(id)||{}).value||'';
+  const numVal=(id,def)=>parseFloat(val(id))||def||0;
+
+  function scoreColor(s){return s>=8?'#22c55e':s>=5?'#f59e0b':s>=3?'#f97316':'#ef4444';}
+  const statusColor={prospect:'#3b82f6',under_contract:'#f59e0b',owned:'#22c55e',sold:'#94a3b8'};
+  const prioColor={low:'#94a3b8',medium:'#3b82f6',high:'#f59e0b',critical:'#ef4444'};
+
+  /* ── Populate property dropdowns ── */
+  let _props=[];
+  function fillPropSelects(){
+    ['la-assess-prop','la-feat-prop','la-dp-prop'].forEach(id=>{
+      const el=$(id);if(!el)return;
+      const cur=el.value;
+      el.innerHTML='<option value="">-- Select Property --</option>'+
+        _props.map(p=>`<option value="${p.id}"${p.id==cur?' selected':''}>${p.name}</option>`).join('');
+    });
+  }
+
+  /* ── Properties ── */
+  window.laLoadProperties=function(){
+    api('/api/properties').then(items=>{
+      _props=items;fillPropSelects();
+      const el=$('la-prop-list');
+      if(!items.length){el.innerHTML='<div class="la-empty">No properties yet. Add one above.</div>';return;}
+      el.innerHTML=items.map(p=>`<div class="la-list-item">
+        <div><strong>${p.name}</strong> <span class="la-badge" style="color:${statusColor[p.status]||'#aaa'};margin-left:6px">${p.status}</span>
+          <br><small style="color:var(--text-secondary)">${p.property_type} · ${p.acreage} ac · ${p.state||'--'}${p.distance_from_home?' · '+p.distance_from_home+' mi':''}</small>
+          ${p.total_score!=null?`<br><span class="la-score" style="color:${scoreColor(p.total_score)}">Score: ${p.total_score}</span>`:''}</div>
+        <div><button class="la-btn la-btn-danger" onclick="laDeleteProperty(${p.id})">×</button></div>
+      </div>`).join('');
+    });
+  };
+  window.laCreateProperty=function(){
+    const name=val('la-prop-name');if(!name)return;
+    api('/api/properties',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,property_type:val('la-prop-type'),state:val('la-prop-state'),
+        acreage:numVal('la-prop-acreage'),distance_from_home:numVal('la-prop-distance'),
+        status:val('la-prop-status')})
+    }).then(()=>{$('la-prop-name').value='';laLoadProperties();});
+  };
+  window.laDeleteProperty=function(id){
+    api('/api/properties/'+id,{method:'DELETE'}).then(()=>laLoadProperties());
+  };
+
+  /* ── Assessments ── */
+  $('la-assess-prop').addEventListener('change',()=>laLoadAssessments());
+
+  window.laLoadAssessments=function(){
+    const pid=val('la-assess-prop');
+    const el=$('la-assess-list');
+    if(!pid){el.innerHTML='<div class="la-empty">Select a property above.</div>';$('la-score-display').style.display='none';return;}
+    api('/api/properties/'+pid+'/assessments').then(items=>{
+      if(!items.length){el.innerHTML='<div class="la-empty">No criteria yet. Click "Seed Default Criteria" to populate.</div>';return;}
+      el.innerHTML=items.map(a=>`<div class="la-slider-row" data-assess-id="${a.id}">
+        <span class="crit-name">${a.criterion_name}</span>
+        <span class="crit-weight">wt: ${a.weight}</span>
+        <input type="range" min="1" max="10" value="${a.score}" name="la-criterion-score" oninput="this.nextElementSibling.textContent=this.value" onchange="laUpdateScore(${a.id},this.value)">
+        <span class="crit-val">${a.score}</span>
+      </div>`).join('');
+    });
+  };
+  window.laUpdateScore=function(assessId,score){
+    api('/api/assessments/'+assessId,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({score:parseInt(score)})});
+  };
+  window.laSeedCriteria=function(){
+    const pid=val('la-assess-prop');if(!pid)return;
+    api('/api/properties/'+pid+'/assessments/seed',{method:'POST'}).then(()=>laLoadAssessments());
+  };
+  window.laRecalcScore=function(){
+    const pid=val('la-assess-prop');if(!pid)return;
+    api('/api/properties/'+pid+'/score',{method:'POST'}).then(r=>{
+      const el=$('la-score-display');el.style.display='block';
+      el.innerHTML=`<span class="val">${r.total_score}</span> overall score` +
+        (r.category_scores?'<br><small>'+Object.entries(r.category_scores).map(([k,v])=>`${k}: ${v}`).join(' · ')+'</small>':'');
+      laLoadProperties();
+    });
+  };
+
+  /* ── Features ── */
+  $('la-feat-prop').addEventListener('change',()=>laLoadFeatures());
+
+  window.laLoadFeatures=function(){
+    const pid=val('la-feat-prop');
+    const el=$('la-feat-list');
+    if(!pid){el.innerHTML='<div class="la-empty">Select a property above.</div>';return;}
+    api('/api/properties/'+pid+'/features').then(items=>{
+      if(!items.length){el.innerHTML='<div class="la-empty">No features logged for this property.</div>';return;}
+      const condColor={good:'#22c55e',fair:'#f59e0b',poor:'#f97316',needs_repair:'#ef4444',non_functional:'#ef4444'};
+      el.innerHTML=items.map(f=>`<div class="la-list-item">
+        <div><strong>${f.name}</strong> <span class="la-badge" style="color:${condColor[f.condition]||'#aaa'};margin-left:6px">${f.condition}</span>
+          <br><small style="color:var(--text-secondary)">${f.feature_type}${f.value_estimate?' · $'+Number(f.value_estimate).toLocaleString():''}</small></div>
+        <div><button class="la-btn la-btn-danger" onclick="laDeleteFeature(${f.id})">×</button></div>
+      </div>`).join('');
+    });
+  };
+  window.laCreateFeature=function(){
+    const pid=val('la-feat-prop'),name=val('la-feat-name');if(!pid||!name)return;
+    api('/api/properties/'+pid+'/features',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,feature_type:val('la-feat-type'),condition:val('la-feat-condition'),
+        value_estimate:numVal('la-feat-value')})
+    }).then(()=>{$('la-feat-name').value='';laLoadFeatures();});
+  };
+  window.laDeleteFeature=function(id){
+    api('/api/features/'+id,{method:'DELETE'}).then(()=>laLoadFeatures());
+  };
+
+  /* ── Dev Plans ── */
+  $('la-dp-prop').addEventListener('change',()=>laLoadDevPlans());
+
+  window.laLoadDevPlans=function(){
+    const pid=val('la-dp-prop');
+    const el=$('la-dp-list');
+    if(!pid){el.innerHTML='<div class="la-empty">Select a property above.</div>';return;}
+    api('/api/properties/'+pid+'/dev-plans').then(items=>{
+      if(!items.length){el.innerHTML='<div class="la-empty">No development plans for this property.</div>';return;}
+      el.innerHTML=items.map(d=>`<div class="la-list-item">
+        <div><strong>${d.name}</strong> <span class="la-badge" style="color:${prioColor[d.priority]||'#aaa'};margin-left:6px">${d.priority}</span>
+          <br><small style="color:var(--text-secondary)">${d.category} · $${Number(d.estimated_cost||0).toLocaleString()} · ${d.status}</small></div>
+        <div><button class="la-btn la-btn-danger" onclick="laDeleteDevPlan(${d.id})">×</button></div>
+      </div>`).join('');
+    });
+  };
+  window.laCreateDevPlan=function(){
+    const pid=val('la-dp-prop'),name=val('la-dp-name');if(!pid||!name)return;
+    api('/api/properties/'+pid+'/dev-plans',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,category:val('la-dp-category'),priority:val('la-dp-priority'),
+        estimated_cost:numVal('la-dp-cost'),status:val('la-dp-status')})
+    }).then(()=>{$('la-dp-name').value='';laLoadDevPlans();});
+  };
+  window.laDeleteDevPlan=function(id){
+    api('/api/dev-plans/'+id,{method:'DELETE'}).then(()=>laLoadDevPlans());
+  };
+
+  /* ── Compare ── */
+  window.laLoadCompare=function(){
+    api('/api/properties/compare').then(items=>{
+      const el=$('la-compare-list');
+      if(!items.length){el.innerHTML='<div class="la-empty" style="grid-column:1/-1">No properties to compare. Add at least two properties first.</div>';return;}
+      items.sort((a,b)=>(b.total_score||0)-(a.total_score||0));
+      el.innerHTML=items.map((p,i)=>{
+        let cats='';
+        if(p.category_scores){cats=Object.entries(p.category_scores).map(([k,v])=>`<div class="cat-row"><span class="cat-label">${k}</span><span class="cat-val">${v}</span></div>`).join('');}
+        return `<div class="la-compare-card">
+          <div class="rank">#${i+1}</div>
+          <div class="prop-name">${p.name||'Property '+p.id}</div>
+          <div class="cat-row"><span class="cat-label">Total Score</span><span class="cat-val" style="color:${scoreColor(p.total_score||0)}">${p.total_score||'--'}</span></div>
+          ${cats}
+          <div class="cat-row"><span class="cat-label">Features</span><span class="cat-val">${p.features_count||0}</span></div>
+          <div class="cat-row"><span class="cat-label">Dev Plans</span><span class="cat-val">${p.plans_count||0}</span></div>
+          <div class="cat-row"><span class="cat-label">Total Dev Cost</span><span class="cat-val">$${Number(p.total_dev_cost||0).toLocaleString()}</span></div>
+        </div>`;
+      }).join('');
+    });
+  };
+
+  /* ── Initial load when tab activates ── */
+  const obs=new MutationObserver(()=>{
+    if(!root.classList.contains('is-hidden')){laLoadProperties();}
+  });
+  obs.observe(root,{attributes:true,attributeFilter:['class']});
+})();
+</script>
+</div>

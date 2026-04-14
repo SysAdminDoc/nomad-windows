@@ -378,7 +378,7 @@ These phases deliver significant capability. Can be built in any order within th
 
 ---
 
-### Phase 8: Land Assessment & Property
+### Phase 8: Land Assessment & Property ✅ COMPLETE (v7.15.0)
 **Theme:** The most expensive prep decision with zero software support — until now.
 **Effort:** M (2-3 sessions)
 **features.md refs:** §63 (Land & Property Assessment)
@@ -409,7 +409,7 @@ These phases deliver significant capability. Can be built in any order within th
 
 ---
 
-### Phase 9: Medical Phase 2
+### Phase 9: Medical Phase 2 ✅ COMPLETE (v7.15.0)
 **Theme:** Deep medical expansions for austere and long-duration scenarios.
 **Effort:** L (4-6 sessions)
 **features.md refs:** §52 (Deep Medical Phase 2), §16.2 (Advanced Clinical), §2.2 remaining

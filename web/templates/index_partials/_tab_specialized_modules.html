@@ -1,0 +1,1336 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     SPECIALIZED MODULES  (Phase 20 · data-tab="specialized-modules")
+     Caches, Procurement, Pets, Intel, Fabrication, Badges,
+     Calendar, Legal, Drones, Fitness
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="tab-specialized-modules" class="tab-content is-hidden" data-tab="specialized-modules" data-tab-content="specialized-modules">
+<style>
+  #tab-specialized-modules {
+    --sm-accent: #ec4899;
+    --sm-accent-dim: rgba(236,72,153,.15);
+    --sm-red: #ef4444;
+    --sm-green: #22c55e;
+    --sm-blue: #3b82f6;
+    --sm-yellow: #eab308;
+    --sm-purple: #a855f7;
+    --sm-orange: #f97316;
+    --sm-cyan: #06b6d4;
+    --sm-gray: #6b7280;
+  }
+  #tab-specialized-modules .sm-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-specialized-modules .sm-header h2 { font-size:1.25rem; color:var(--sm-accent); margin:0; }
+  #tab-specialized-modules .sm-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-specialized-modules .sm-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-specialized-modules .sm-sub-tab.active { background:var(--sm-accent-dim); border-color:var(--sm-accent); color:var(--sm-accent); }
+  #tab-specialized-modules .sm-panel { display:none; }
+  #tab-specialized-modules .sm-panel.active { display:block; }
+  #tab-specialized-modules .sm-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-specialized-modules .sm-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-specialized-modules .sm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-specialized-modules .sm-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-specialized-modules .sm-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-specialized-modules .sm-form-row input,
+  #tab-specialized-modules .sm-form-row select,
+  #tab-specialized-modules .sm-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-specialized-modules .sm-form-row textarea { min-height:60px; resize:vertical; font-family:inherit; }
+  #tab-specialized-modules .sm-form-row .field { flex:1; min-width:140px; }
+  #tab-specialized-modules .sm-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-specialized-modules .sm-btn-primary { background:var(--sm-accent); color:#000; }
+  #tab-specialized-modules .sm-btn-danger { background:var(--sm-red); color:#fff; }
+  #tab-specialized-modules .sm-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-specialized-modules .sm-btn-success { background:var(--sm-green); color:#000; }
+  #tab-specialized-modules .sm-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-specialized-modules .sm-list-item:last-child { border-bottom:none; }
+  #tab-specialized-modules .sm-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-specialized-modules .sm-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-specialized-modules .sm-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  #tab-specialized-modules .sm-table th { text-align:left; padding:8px 10px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#444); background:rgba(0,0,0,.2); }
+  #tab-specialized-modules .sm-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); vertical-align:middle; }
+  #tab-specialized-modules .sm-table tbody tr:hover { background:rgba(236,72,153,.05); }
+  #tab-specialized-modules .sm-summary-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:10px; margin-bottom:16px; }
+  #tab-specialized-modules .sm-summary-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:8px; padding:12px; text-align:center; }
+  #tab-specialized-modules .sm-summary-val { font-size:1.4rem; font-weight:700; color:var(--sm-accent); }
+  #tab-specialized-modules .sm-summary-label { font-size:.7rem; color:var(--text-secondary,#aaa); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+  #tab-specialized-modules .sm-progress { height:8px; border-radius:4px; background:var(--border,#333); overflow:hidden; margin-top:4px; }
+  #tab-specialized-modules .sm-progress-fill { height:100%; border-radius:4px; transition:width .3s; }
+  /* Type badges */
+  #tab-specialized-modules .sm-type-supply { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-type-bugout { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-specialized-modules .sm-type-cache { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-specialized-modules .sm-type-mobile { background:rgba(6,182,212,.2); color:#06b6d4; }
+  #tab-specialized-modules .sm-type-dead_drop { background:rgba(107,114,128,.25); color:#9ca3af; }
+  /* Priority badges */
+  #tab-specialized-modules .sm-pri-critical { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-specialized-modules .sm-pri-high { background:rgba(249,115,22,.2); color:#f97316; }
+  #tab-specialized-modules .sm-pri-medium { background:rgba(234,179,8,.2); color:#eab308; }
+  #tab-specialized-modules .sm-pri-low { background:rgba(34,197,94,.2); color:#22c55e; }
+  /* Security level */
+  #tab-specialized-modules .sm-sec-basic { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-specialized-modules .sm-sec-moderate { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-sec-high { background:rgba(249,115,22,.2); color:#f97316; }
+  #tab-specialized-modules .sm-sec-max { background:rgba(239,68,68,.2); color:#ef4444; }
+  /* Condition */
+  #tab-specialized-modules .sm-cond-good { color:#22c55e; }
+  #tab-specialized-modules .sm-cond-fair { color:#eab308; }
+  #tab-specialized-modules .sm-cond-poor { color:#ef4444; }
+  /* Classification badges */
+  #tab-specialized-modules .sm-class-unclassified { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-specialized-modules .sm-class-confidential { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-class-secret { background:rgba(249,115,22,.2); color:#f97316; }
+  #tab-specialized-modules .sm-class-top_secret { background:rgba(239,68,68,.2); color:#ef4444; }
+  /* Intel type badges */
+  #tab-specialized-modules .sm-intel-humint { background:rgba(236,72,153,.2); color:#ec4899; }
+  #tab-specialized-modules .sm-intel-sigint { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-intel-osint { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-specialized-modules .sm-intel-imint { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-specialized-modules .sm-intel-geoint { background:rgba(6,182,212,.2); color:#06b6d4; }
+  #tab-specialized-modules .sm-intel-techint { background:rgba(234,179,8,.2); color:#eab308; }
+  /* Fab type badges */
+  #tab-specialized-modules .sm-fab-3d_print { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-fab-cnc { background:rgba(249,115,22,.2); color:#f97316; }
+  #tab-specialized-modules .sm-fab-laser { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-specialized-modules .sm-fab-woodwork { background:rgba(146,64,14,.25); color:#b45309; }
+  /* Fab status */
+  #tab-specialized-modules .sm-fabst-planned { background:rgba(107,114,128,.2); color:#9ca3af; }
+  #tab-specialized-modules .sm-fabst-in_progress { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-fabst-completed { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-specialized-modules .sm-fabst-failed { background:rgba(239,68,68,.2); color:#ef4444; }
+  /* Badge rarity */
+  #tab-specialized-modules .sm-rarity-common { background:rgba(107,114,128,.2); color:#9ca3af; }
+  #tab-specialized-modules .sm-rarity-uncommon { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-specialized-modules .sm-rarity-rare { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-rarity-epic { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-specialized-modules .sm-rarity-legendary { background:rgba(234,179,8,.2); color:#eab308; }
+  /* Event type badges */
+  #tab-specialized-modules .sm-evt-seasonal { background:rgba(236,72,153,.2); color:#ec4899; }
+  #tab-specialized-modules .sm-evt-maintenance { background:rgba(249,115,22,.2); color:#f97316; }
+  #tab-specialized-modules .sm-evt-inspection { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-evt-renewal { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-specialized-modules .sm-evt-planting { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-specialized-modules .sm-evt-harvest { background:rgba(234,179,8,.2); color:#eab308; }
+  #tab-specialized-modules .sm-evt-drill { background:rgba(239,68,68,.2); color:#ef4444; }
+  /* Legal doc type badges */
+  #tab-specialized-modules .sm-doc-id { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-doc-passport { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-specialized-modules .sm-doc-license { background:rgba(6,182,212,.2); color:#06b6d4; }
+  #tab-specialized-modules .sm-doc-deed { background:rgba(146,64,14,.25); color:#b45309; }
+  #tab-specialized-modules .sm-doc-will { background:rgba(107,114,128,.25); color:#9ca3af; }
+  #tab-specialized-modules .sm-doc-insurance { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-specialized-modules .sm-doc-certification { background:rgba(234,179,8,.2); color:#eab308; }
+  #tab-specialized-modules .sm-doc-permit { background:rgba(249,115,22,.2); color:#f97316; }
+  /* Drone condition */
+  #tab-specialized-modules .sm-drone-excellent { background:rgba(34,197,94,.2); color:#22c55e; }
+  #tab-specialized-modules .sm-drone-good { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-drone-fair { background:rgba(234,179,8,.2); color:#eab308; }
+  #tab-specialized-modules .sm-drone-poor { background:rgba(239,68,68,.2); color:#ef4444; }
+  /* Workout type */
+  #tab-specialized-modules .sm-fit-cardio { background:rgba(239,68,68,.2); color:#ef4444; }
+  #tab-specialized-modules .sm-fit-strength { background:rgba(249,115,22,.2); color:#f97316; }
+  #tab-specialized-modules .sm-fit-flexibility { background:rgba(168,85,247,.2); color:#a855f7; }
+  #tab-specialized-modules .sm-fit-endurance { background:rgba(59,130,246,.2); color:#3b82f6; }
+  #tab-specialized-modules .sm-fit-combat { background:rgba(239,68,68,.25); color:#f87171; }
+  #tab-specialized-modules .sm-fit-swimming { background:rgba(6,182,212,.2); color:#06b6d4; }
+  /* Badge grid */
+  #tab-specialized-modules .sm-badge-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
+  #tab-specialized-modules .sm-badge-tile { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:8px; padding:12px; text-align:center; }
+  #tab-specialized-modules .sm-badge-tile .icon { font-size:1.8rem; margin-bottom:4px; }
+  #tab-specialized-modules .sm-badge-tile .name { font-size:.82rem; font-weight:600; color:var(--text-primary,#eee); }
+  #tab-specialized-modules .sm-badge-tile .pts { font-size:.72rem; color:var(--sm-accent); margin-top:2px; }
+  /* Leaderboard */
+  #tab-specialized-modules .sm-leaderboard-item { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-specialized-modules .sm-leaderboard-item:last-child { border-bottom:none; }
+  #tab-specialized-modules .sm-lb-rank { font-size:1.1rem; font-weight:700; color:var(--sm-accent); min-width:28px; text-align:center; }
+  #tab-specialized-modules .sm-low-supply { background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.3); }
+  /* Expiring alert */
+  #tab-specialized-modules .sm-expiring { background:rgba(239,68,68,.08); border-left:3px solid var(--sm-red); }
+  /* Weekly stats */
+  #tab-specialized-modules .sm-stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:8px; margin-bottom:12px; }
+  #tab-specialized-modules .sm-stat-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:6px; padding:8px; text-align:center; }
+  #tab-specialized-modules .sm-stat-val { font-size:1.2rem; font-weight:700; color:var(--sm-accent); }
+  #tab-specialized-modules .sm-stat-lbl { font-size:.68rem; color:var(--text-secondary,#aaa); text-transform:uppercase; }
+</style>
+
+<div class="sm-header">
+  <h2>Specialized Modules</h2>
+</div>
+
+<!-- Sub-tabs -->
+<div class="sm-sub-tabs">
+  <button class="sm-sub-tab active" data-sm-panel="caches">Caches & Procurement</button>
+  <button class="sm-sub-tab" data-sm-panel="pets">Pets & Family</button>
+  <button class="sm-sub-tab" data-sm-panel="intel">Intelligence</button>
+  <button class="sm-sub-tab" data-sm-panel="fab">Fabrication</button>
+  <button class="sm-sub-tab" data-sm-panel="badges">Badges & Gamification</button>
+  <button class="sm-sub-tab" data-sm-panel="calendar">Calendar</button>
+  <button class="sm-sub-tab" data-sm-panel="legal">Legal & Documents</button>
+  <button class="sm-sub-tab" data-sm-panel="drones">Drones & Fitness</button>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 1: Caches & Procurement
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="sm-panel active" id="sm-panel-caches">
+  <div id="sm-cache-summary" class="sm-summary-row"></div>
+
+  <!-- Add cache -->
+  <div class="sm-card">
+    <div class="sm-card-title">Add Supply Cache</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Cache Name</label><input name="sm-cache-name" id="sm-cache-name" placeholder="North Ridge Cache"></div>
+      <div class="field"><label>Type</label>
+        <select name="sm-cache-type" id="sm-cache-type">
+          <option value="supply">Supply</option><option value="bugout">Bug-out</option>
+          <option value="cache">Hidden Cache</option><option value="mobile">Mobile</option>
+          <option value="dead_drop">Dead Drop</option>
+        </select>
+      </div>
+      <div class="field"><label>Location</label><input name="sm-cache-location" id="sm-cache-location" placeholder="GPS or description"></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Security Level</label>
+        <select name="sm-cache-security" id="sm-cache-security">
+          <option value="basic">Basic</option><option value="moderate">Moderate</option>
+          <option value="high">High</option><option value="max">Max</option>
+        </select>
+      </div>
+      <div class="field"><label>Condition</label>
+        <select name="sm-cache-condition" id="sm-cache-condition">
+          <option value="good">Good</option><option value="fair">Fair</option><option value="poor">Poor</option>
+        </select>
+      </div>
+      <div class="field"><label>Notes</label><textarea name="sm-cache-notes" id="sm-cache-notes" rows="2" placeholder="Contents, access info..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateCache()">Add Cache</button></div>
+    </div>
+  </div>
+
+  <!-- Cache list -->
+  <div id="sm-cache-list" class="sm-card"><div class="sm-empty">Loading caches...</div></div>
+
+  <!-- Procurement section -->
+  <div class="sm-card">
+    <div class="sm-card-title">Procurement Lists</div>
+    <div id="sm-procure-budget" class="sm-summary-row" style="margin-bottom:12px"></div>
+    <div class="sm-form-row">
+      <div class="field"><label>List Name</label><input name="sm-procure-name" id="sm-procure-name" placeholder="Q2 Medical Supplies"></div>
+      <div class="field"><label>Priority</label>
+        <select name="sm-procure-priority" id="sm-procure-priority">
+          <option value="critical">Critical</option><option value="high">High</option>
+          <option value="medium">Medium</option><option value="low">Low</option>
+        </select>
+      </div>
+      <div class="field"><label>Budget ($)</label><input name="sm-procure-budget-amt" id="sm-procure-budget-amt" type="number" placeholder="500"></div>
+      <div class="field"><label>Items (comma-separated)</label><input name="sm-procure-items" id="sm-procure-items" placeholder="Bandages, Antibiotics, Suture kit"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateProcureList()">Create List</button></div>
+    </div>
+  </div>
+  <div id="sm-procure-list" class="sm-card"><div class="sm-empty">Loading procurement lists...</div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 2: Pets & Family
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="sm-panel" id="sm-panel-pets">
+  <!-- Add pet -->
+  <div class="sm-card">
+    <div class="sm-card-title">Add Pet</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Name</label><input name="sm-pet-name" id="sm-pet-name" placeholder="Buddy"></div>
+      <div class="field"><label>Species</label>
+        <select name="sm-pet-species" id="sm-pet-species">
+          <option value="dog">Dog</option><option value="cat">Cat</option>
+          <option value="bird">Bird</option><option value="rabbit">Rabbit</option>
+          <option value="fish">Fish</option><option value="reptile">Reptile</option>
+          <option value="horse">Horse</option><option value="livestock">Livestock</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="field"><label>Breed</label><input name="sm-pet-breed" id="sm-pet-breed" placeholder="German Shepherd"></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Age (years)</label><input name="sm-pet-age" id="sm-pet-age" type="number" placeholder="3"></div>
+      <div class="field"><label>Weight (lbs)</label><input name="sm-pet-weight" id="sm-pet-weight" type="number" placeholder="65"></div>
+      <div class="field"><label>Food Supply (days)</label><input name="sm-pet-food-days" id="sm-pet-food-days" type="number" placeholder="30"></div>
+      <div class="field"><label>Notes</label><textarea name="sm-pet-notes" id="sm-pet-notes" rows="2" placeholder="Medical needs, meds..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreatePet()">Add Pet</button></div>
+    </div>
+  </div>
+  <div id="sm-pet-list" class="sm-grid"></div>
+
+  <!-- Youth programs -->
+  <div class="sm-card" style="margin-top:16px">
+    <div class="sm-card-title">Youth Programs</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Program Name</label><input name="sm-youth-name" id="sm-youth-name" placeholder="Junior Survival Skills"></div>
+      <div class="field"><label>Type</label>
+        <select name="sm-youth-type" id="sm-youth-type">
+          <option value="survival">Survival Skills</option><option value="first_aid">First Aid</option>
+          <option value="farming">Farming</option><option value="crafts">Crafts</option>
+          <option value="fitness">Fitness</option><option value="education">Education</option>
+        </select>
+      </div>
+      <div class="field"><label>Age Range</label><input name="sm-youth-age-range" id="sm-youth-age-range" placeholder="8-12"></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Instructor</label><input name="sm-youth-instructor" id="sm-youth-instructor" placeholder="Name"></div>
+      <div class="field"><label>Status</label>
+        <select name="sm-youth-status" id="sm-youth-status">
+          <option value="active">Active</option><option value="planned">Planned</option>
+          <option value="completed">Completed</option><option value="suspended">Suspended</option>
+        </select>
+      </div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateYouthProgram()">Add Program</button></div>
+    </div>
+  </div>
+  <div id="sm-youth-list" class="sm-card"><div class="sm-empty">Loading youth programs...</div></div>
+
+  <!-- End-of-life plans -->
+  <div class="sm-card" style="margin-top:16px">
+    <div class="sm-card-title">End-of-Life Plans</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Person Name</label><input name="sm-eol-person" id="sm-eol-person" placeholder="Full name"></div>
+      <div class="field"><label>Status</label>
+        <select name="sm-eol-status" id="sm-eol-status">
+          <option value="draft">Draft</option><option value="complete">Complete</option>
+          <option value="needs_review">Needs Review</option>
+        </select>
+      </div>
+      <div class="field"><label>Wishes / Notes</label><textarea name="sm-eol-wishes" id="sm-eol-wishes" rows="2" placeholder="Burial preferences, directives..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateEOLPlan()">Add Plan</button></div>
+    </div>
+  </div>
+  <div id="sm-eol-list" class="sm-card"><div class="sm-empty">Loading end-of-life plans...</div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 3: Intelligence
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="sm-panel" id="sm-panel-intel">
+  <div id="sm-intel-summary" class="sm-summary-row"></div>
+
+  <!-- Filters -->
+  <div class="sm-card">
+    <div class="sm-card-title">Filter Intel</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Type</label>
+        <select name="sm-intel-filter-type" id="sm-intel-filter-type" onchange="smLoadIntel()">
+          <option value="">All Types</option>
+          <option value="humint">HUMINT</option><option value="sigint">SIGINT</option>
+          <option value="osint">OSINT</option><option value="imint">IMINT</option>
+          <option value="geoint">GEOINT</option><option value="techint">TECHINT</option>
+        </select>
+      </div>
+      <div class="field"><label>Classification</label>
+        <select name="sm-intel-filter-class" id="sm-intel-filter-class" onchange="smLoadIntel()">
+          <option value="">All Classifications</option>
+          <option value="unclassified">Unclassified</option><option value="confidential">Confidential</option>
+          <option value="secret">Secret</option><option value="top_secret">Top Secret</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add intel report -->
+  <div class="sm-card">
+    <div class="sm-card-title">Submit Intel Report</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Title</label><input name="sm-intel-title" id="sm-intel-title" placeholder="Observed patrol pattern"></div>
+      <div class="field"><label>Intel Type</label>
+        <select name="sm-intel-type" id="sm-intel-type">
+          <option value="humint">HUMINT</option><option value="sigint">SIGINT</option>
+          <option value="osint">OSINT</option><option value="imint">IMINT</option>
+          <option value="geoint">GEOINT</option><option value="techint">TECHINT</option>
+        </select>
+      </div>
+      <div class="field"><label>PIR</label><input name="sm-intel-pir" id="sm-intel-pir" placeholder="Priority Intelligence Requirement"></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Source</label><input name="sm-intel-source" id="sm-intel-source" placeholder="Source identifier"></div>
+      <div class="field"><label>Source Reliability</label>
+        <select name="sm-intel-reliability" id="sm-intel-reliability">
+          <option value="A">A - Completely Reliable</option><option value="B">B - Usually Reliable</option>
+          <option value="C">C - Fairly Reliable</option><option value="D">D - Not Usually Reliable</option>
+          <option value="E">E - Unreliable</option><option value="F">F - Cannot Be Judged</option>
+        </select>
+      </div>
+      <div class="field"><label>Credibility</label>
+        <select name="sm-intel-credibility" id="sm-intel-credibility">
+          <option value="1">1 - Confirmed</option><option value="2">2 - Probably True</option>
+          <option value="3">3 - Possibly True</option><option value="4">4 - Doubtfully True</option>
+          <option value="5">5 - Improbable</option><option value="6">6 - Cannot Be Judged</option>
+        </select>
+      </div>
+      <div class="field"><label>Classification</label>
+        <select name="sm-intel-classification" id="sm-intel-classification">
+          <option value="unclassified">Unclassified</option><option value="confidential">Confidential</option>
+          <option value="secret">Secret</option><option value="top_secret">Top Secret</option>
+        </select>
+      </div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field" style="flex:2"><label>Summary</label><textarea name="sm-intel-summary" id="sm-intel-summary" rows="2" placeholder="Key findings..."></textarea></div>
+      <div class="field" style="flex:2"><label>Analysis</label><textarea name="sm-intel-analysis" id="sm-intel-analysis" rows="2" placeholder="Assessment and implications..."></textarea></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="sm-intel-actionable" id="sm-intel-actionable" style="width:auto"> Actionable Intel</label></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateIntel()">Submit Report</button></div>
+    </div>
+  </div>
+
+  <!-- Intel table -->
+  <div id="sm-intel-list" class="sm-card"><div class="sm-empty">Loading intel reports...</div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 4: Fabrication
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="sm-panel" id="sm-panel-fab">
+  <div class="sm-card">
+    <div class="sm-card-title">Add Fabrication Project</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Project Name</label><input name="sm-fab-name" id="sm-fab-name" placeholder="Antenna mount bracket"></div>
+      <div class="field"><label>Type</label>
+        <select name="sm-fab-type" id="sm-fab-type">
+          <option value="3d_print">3D Print</option><option value="cnc">CNC</option>
+          <option value="laser">Laser Cut</option><option value="woodwork">Woodwork</option>
+        </select>
+      </div>
+      <div class="field"><label>Material</label><input name="sm-fab-material" id="sm-fab-material" placeholder="PLA, Aluminum, etc."></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Estimated Time (hrs)</label><input name="sm-fab-time" id="sm-fab-time" type="number" placeholder="4"></div>
+      <div class="field"><label>Status</label>
+        <select name="sm-fab-status" id="sm-fab-status">
+          <option value="planned">Planned</option><option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option><option value="failed">Failed</option>
+        </select>
+      </div>
+      <div class="field"><label>Notes</label><textarea name="sm-fab-notes" id="sm-fab-notes" rows="2" placeholder="Design files, tolerances..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateFabProject()">Add Project</button></div>
+    </div>
+  </div>
+  <div id="sm-fab-list" class="sm-grid"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 5: Badges & Gamification
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="sm-panel" id="sm-panel-badges">
+  <!-- Badge management -->
+  <div class="sm-card">
+    <div class="sm-card-title" style="display:flex;justify-content:space-between;align-items:center">
+      Badge Definitions
+      <button class="sm-btn sm-btn-secondary" onclick="smSeedBadges()">Seed Defaults</button>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Icon (emoji)</label><input name="sm-badge-icon" id="sm-badge-icon" placeholder="&#127941;" style="max-width:70px"></div>
+      <div class="field"><label>Badge Name</label><input name="sm-badge-name" id="sm-badge-name" placeholder="First Aid Expert"></div>
+      <div class="field"><label>Description</label><input name="sm-badge-desc" id="sm-badge-desc" placeholder="Completed advanced first aid"></div>
+      <div class="field"><label>Points</label><input name="sm-badge-points" id="sm-badge-points" type="number" placeholder="50"></div>
+      <div class="field"><label>Rarity</label>
+        <select name="sm-badge-rarity" id="sm-badge-rarity">
+          <option value="common">Common</option><option value="uncommon">Uncommon</option>
+          <option value="rare">Rare</option><option value="epic">Epic</option><option value="legendary">Legendary</option>
+        </select>
+      </div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateBadge()">Add Badge</button></div>
+    </div>
+  </div>
+  <div id="sm-badge-grid" class="sm-badge-grid"></div>
+
+  <!-- Award badges -->
+  <div class="sm-card" style="margin-top:16px">
+    <div class="sm-card-title">Award Badge</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Badge</label>
+        <select name="sm-award-badge" id="sm-award-badge"><option value="">-- Select Badge --</option></select>
+      </div>
+      <div class="field"><label>Person</label><input name="sm-award-person" id="sm-award-person" placeholder="Recipient name"></div>
+      <div class="field"><label>Date</label><input name="sm-award-date" id="sm-award-date" type="date"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smAwardBadge()">Award</button></div>
+    </div>
+  </div>
+
+  <!-- Filter awards by person -->
+  <div class="sm-card" style="margin-top:12px">
+    <div class="sm-card-title">Awards</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Filter Person</label><input name="sm-award-filter-person" id="sm-award-filter-person" placeholder="All" onchange="smLoadAwards()"></div>
+    </div>
+    <div id="sm-award-list"><div class="sm-empty">Loading awards...</div></div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div class="sm-card" style="margin-top:12px">
+    <div class="sm-card-title">Leaderboard</div>
+    <div id="sm-leaderboard"><div class="sm-empty">Loading leaderboard...</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 6: Calendar
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="sm-panel" id="sm-panel-calendar">
+  <div class="sm-card">
+    <div class="sm-card-title">Add Event</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Event Name</label><input name="sm-cal-name" id="sm-cal-name" placeholder="Spring planting"></div>
+      <div class="field"><label>Type</label>
+        <select name="sm-cal-type" id="sm-cal-type">
+          <option value="seasonal">Seasonal</option><option value="maintenance">Maintenance</option>
+          <option value="inspection">Inspection</option><option value="renewal">Renewal</option>
+          <option value="planting">Planting</option><option value="harvest">Harvest</option>
+          <option value="drill">Drill</option>
+        </select>
+      </div>
+      <div class="field"><label>Date</label><input name="sm-cal-date" id="sm-cal-date" type="date"></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Recurrence</label>
+        <select name="sm-cal-recurrence" id="sm-cal-recurrence">
+          <option value="once">Once</option><option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option><option value="yearly">Yearly</option>
+        </select>
+      </div>
+      <div class="field"><label>Category</label><input name="sm-cal-category" id="sm-cal-category" placeholder="Garden, Equipment, etc."></div>
+      <div class="field"><label>Description</label><textarea name="sm-cal-desc" id="sm-cal-desc" rows="2" placeholder="Event details..."></textarea></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field" style="flex:3"><label>Tasks (one per line)</label><textarea name="sm-cal-tasks" id="sm-cal-tasks" rows="3" placeholder="Prepare soil&#10;Check seed inventory&#10;Water schedule"></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateEvent()">Add Event</button></div>
+    </div>
+  </div>
+
+  <!-- Month filter -->
+  <div class="sm-form-row">
+    <div class="field"><label>Filter Month</label><input name="sm-cal-filter-month" id="sm-cal-filter-month" type="month" onchange="smLoadEvents()"></div>
+  </div>
+
+  <!-- Upcoming events -->
+  <div class="sm-card">
+    <div class="sm-card-title">Upcoming Events (Next 30 Days)</div>
+    <div id="sm-cal-upcoming"><div class="sm-empty">Loading events...</div></div>
+  </div>
+
+  <!-- All events -->
+  <div id="sm-cal-list" class="sm-card"><div class="sm-empty">Loading all events...</div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 7: Legal & Documents
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="sm-panel" id="sm-panel-legal">
+  <!-- Expiring soon -->
+  <div class="sm-card sm-expiring" id="sm-legal-expiring-section" style="display:none">
+    <div class="sm-card-title" style="color:var(--sm-red)">Expiring Soon (Next 90 Days)</div>
+    <div id="sm-legal-expiring"></div>
+  </div>
+
+  <!-- Add document -->
+  <div class="sm-card">
+    <div class="sm-card-title">Add Legal Document</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Title</label><input name="sm-legal-title" id="sm-legal-title" placeholder="Driver's License - John"></div>
+      <div class="field"><label>Type</label>
+        <select name="sm-legal-type" id="sm-legal-type">
+          <option value="id">ID</option><option value="passport">Passport</option>
+          <option value="license">License</option><option value="deed">Deed</option>
+          <option value="will">Will</option><option value="insurance">Insurance</option>
+          <option value="certification">Certification</option><option value="permit">Permit</option>
+        </select>
+      </div>
+      <div class="field"><label>Person</label><input name="sm-legal-person" id="sm-legal-person" placeholder="Person name"></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Issue Date</label><input name="sm-legal-issue-date" id="sm-legal-issue-date" type="date"></div>
+      <div class="field"><label>Expiry Date</label><input name="sm-legal-expiry-date" id="sm-legal-expiry-date" type="date"></div>
+      <div class="field"><label>Notes</label><textarea name="sm-legal-notes" id="sm-legal-notes" rows="2" placeholder="Filing location, numbers..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateLegalDoc()">Add Document</button></div>
+    </div>
+  </div>
+
+  <!-- Document table -->
+  <div id="sm-legal-list" class="sm-card"><div class="sm-empty">Loading documents...</div></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     PANEL 8: Drones & Fitness
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="sm-panel" id="sm-panel-drones">
+  <!-- Drone inventory -->
+  <div class="sm-card">
+    <div class="sm-card-title">Add Drone</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Name</label><input name="sm-drone-name" id="sm-drone-name" placeholder="Recon Alpha"></div>
+      <div class="field"><label>Type</label>
+        <select name="sm-drone-type" id="sm-drone-type">
+          <option value="quadcopter">Quadcopter</option><option value="fixed_wing">Fixed Wing</option>
+          <option value="hexacopter">Hexacopter</option><option value="octocopter">Octocopter</option>
+          <option value="fpv">FPV Racer</option><option value="vtol">VTOL</option>
+        </select>
+      </div>
+      <div class="field"><label>Manufacturer</label><input name="sm-drone-mfg" id="sm-drone-mfg" placeholder="DJI"></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Model</label><input name="sm-drone-model" id="sm-drone-model" placeholder="Mavic 3"></div>
+      <div class="field"><label>Condition</label>
+        <select name="sm-drone-condition" id="sm-drone-condition">
+          <option value="excellent">Excellent</option><option value="good">Good</option>
+          <option value="fair">Fair</option><option value="poor">Poor</option>
+        </select>
+      </div>
+      <div class="field"><label>Notes</label><textarea name="sm-drone-notes" id="sm-drone-notes" rows="2" placeholder="Battery count, mods..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateDrone()">Add Drone</button></div>
+    </div>
+  </div>
+  <div id="sm-drone-list" class="sm-grid"></div>
+
+  <!-- Flight log -->
+  <div class="sm-card" style="margin-top:16px">
+    <div class="sm-card-title">Flight Log</div>
+    <div class="sm-form-row">
+      <div class="field"><label>Drone</label>
+        <select name="sm-flight-drone" id="sm-flight-drone" onchange="smLoadFlights()"><option value="">-- Select Drone --</option></select>
+      </div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Date</label><input name="sm-flight-date" id="sm-flight-date" type="date"></div>
+      <div class="field"><label>Mission</label><input name="sm-flight-mission" id="sm-flight-mission" placeholder="Perimeter recon"></div>
+      <div class="field"><label>Duration (min)</label><input name="sm-flight-duration" id="sm-flight-duration" type="number" placeholder="25"></div>
+      <div class="field"><label>Max Altitude (ft)</label><input name="sm-flight-altitude" id="sm-flight-altitude" type="number" placeholder="400"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateFlight()">Log Flight</button></div>
+    </div>
+    <div id="sm-flight-list"><div class="sm-empty">Select a drone to view flights.</div></div>
+  </div>
+
+  <!-- Fitness tracker -->
+  <div class="sm-card" style="margin-top:16px">
+    <div class="sm-card-title">Fitness Tracker</div>
+    <div id="sm-fitness-stats" class="sm-stats-row"></div>
+    <div class="sm-form-row">
+      <div class="field"><label>Person</label><input name="sm-fit-person" id="sm-fit-person" placeholder="Name" onchange="smLoadFitness()"></div>
+      <div class="field"><label>Workout Type</label>
+        <select name="sm-fit-type" id="sm-fit-type">
+          <option value="cardio">Cardio</option><option value="strength">Strength</option>
+          <option value="flexibility">Flexibility</option><option value="endurance">Endurance</option>
+          <option value="combat">Combat</option><option value="swimming">Swimming</option>
+        </select>
+      </div>
+      <div class="field"><label>Activity</label><input name="sm-fit-activity" id="sm-fit-activity" placeholder="Running, Push-ups..."></div>
+      <div class="field"><label>Duration (min)</label><input name="sm-fit-duration" id="sm-fit-duration" type="number" placeholder="45"></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Distance (mi)</label><input name="sm-fit-distance" id="sm-fit-distance" type="number" step="0.1" placeholder="3.2"></div>
+      <div class="field"><label>Reps</label><input name="sm-fit-reps" id="sm-fit-reps" type="number" placeholder="50"></div>
+      <div class="field"><label>Sets</label><input name="sm-fit-sets" id="sm-fit-sets" type="number" placeholder="3"></div>
+      <div class="field"><label>Weight (lbs)</label><input name="sm-fit-weight" id="sm-fit-weight" type="number" placeholder="135"></div>
+    </div>
+    <div class="sm-form-row">
+      <div class="field"><label>Calories</label><input name="sm-fit-calories" id="sm-fit-calories" type="number" placeholder="350"></div>
+      <div class="field"><label>Heart Rate (avg bpm)</label><input name="sm-fit-hr" id="sm-fit-hr" type="number" placeholder="140"></div>
+      <div class="field"><label>Exertion (1-10)</label>
+        <select name="sm-fit-exertion" id="sm-fit-exertion">
+          <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+          <option value="4">4</option><option value="5" selected>5</option><option value="6">6</option>
+          <option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+        </select>
+      </div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateWorkout()">Log Workout</button></div>
+    </div>
+    <div id="sm-fitness-list"><div class="sm-empty">Enter a name above to view workout history.</div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  const root = document.getElementById('tab-specialized-modules');
+  const el = id => document.getElementById(id);
+  const val = id => el(id)?.value || '';
+  const numVal = (id, def) => parseFloat(val(id)) || def || 0;
+  const api = (url, opts) => fetch(url, opts).then(r => r.json());
+  const toast = msg => { if (window.showToast) window.showToast(msg); };
+  const API = '/api/specialized';
+
+  function fmtDate(d){ if(!d) return '--'; return new Date(d).toLocaleDateString(); }
+  function daysUntil(d){ if(!d) return null; return Math.ceil((new Date(d) - Date.now()) / 864e5); }
+
+  const speciesIcons = { dog:'\uD83D\uDC36', cat:'\uD83D\uDC31', bird:'\uD83D\uDC26', rabbit:'\uD83D\uDC30', fish:'\uD83D\uDC1F', reptile:'\uD83E\uDD8E', horse:'\uD83D\uDC34', livestock:'\uD83D\uDC04', other:'\uD83D\uDC3E' };
+
+  /* ── Sub-tab switching ── */
+  root.querySelectorAll('.sm-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.sm-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.sm-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = el('sm-panel-' + btn.dataset.smPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  /* ═══════════════════════════════════════════════════════════
+     CACHES
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadCaches = function(){
+    api(API + '/caches').then(items => {
+      const list = el('sm-cache-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No supply caches tracked. Add one above.</div>'; return; }
+      list.innerHTML = items.map(c => {
+        const condClass = 'sm-cond-' + (c.condition || 'good');
+        return `<div class="sm-list-item">
+          <div style="flex:1">
+            <span class="sm-badge sm-type-${c.cache_type || c.type || 'supply'}">${(c.cache_type || c.type || 'supply').replace(/_/g,' ')}</span>
+            <strong style="margin-left:6px">${c.name}</strong>
+            <span class="sm-badge sm-sec-${c.security_level || 'basic'}" style="margin-left:6px">${(c.security_level || 'basic')}</span>
+            <br><small style="color:var(--text-secondary,#aaa)">${c.location || 'Unknown'} | <span class="${condClass}">${c.condition || 'good'}</span> | Checked: ${fmtDate(c.last_checked)}</small>
+          </div>
+          <div><button class="sm-btn sm-btn-danger" onclick="smDeleteCache(${c.id})">Del</button></div>
+        </div>`;
+      }).join('');
+    });
+    // Summary
+    api(API + '/caches/summary').then(data => {
+      const box = el('sm-cache-summary');
+      if(!data){ box.innerHTML = ''; return; }
+      box.innerHTML = `
+        <div class="sm-summary-card"><div class="sm-summary-val">${data.total || 0}</div><div class="sm-summary-label">Caches</div></div>
+        <div class="sm-summary-card"><div class="sm-summary-val">${data.by_type ? Object.keys(data.by_type).length : 0}</div><div class="sm-summary-label">Types</div></div>
+        <div class="sm-summary-card"><div class="sm-summary-val">${data.needs_check || 0}</div><div class="sm-summary-label">Need Check</div></div>`;
+    }).catch(() => {});
+  };
+
+  window.smCreateCache = function(){
+    const name = val('sm-cache-name'); if(!name) return;
+    api(API + '/caches', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, cache_type: val('sm-cache-type'), location: val('sm-cache-location'),
+        security_level: val('sm-cache-security'), condition: val('sm-cache-condition'), notes: val('sm-cache-notes')})
+    }).then(() => { el('sm-cache-name').value=''; el('sm-cache-location').value=''; el('sm-cache-notes').value=''; smLoadCaches(); toast('Cache added'); });
+  };
+
+  window.smDeleteCache = function(id){
+    api(API + '/caches/' + id, {method:'DELETE'}).then(() => { smLoadCaches(); toast('Cache removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     PROCUREMENT
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadProcurement = function(){
+    api(API + '/procurement').then(items => {
+      const list = el('sm-procure-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No procurement lists. Create one above.</div>'; return; }
+      let totalBudget = 0, totalSpent = 0;
+      list.innerHTML = items.map(p => {
+        const budget = p.budget || 0;
+        const spent = p.spent || 0;
+        totalBudget += budget;
+        totalSpent += spent;
+        const pct = budget > 0 ? Math.round(spent / budget * 100) : 0;
+        const barColor = pct >= 90 ? 'var(--sm-red)' : pct >= 70 ? 'var(--sm-yellow)' : 'var(--sm-green)';
+        const itemCount = p.items_count || (p.items ? (typeof p.items === 'string' ? p.items.split(',').length : p.items.length) : 0);
+        return `<div class="sm-list-item">
+          <div style="flex:1">
+            <span class="sm-badge sm-pri-${p.priority || 'medium'}">${(p.priority || 'medium')}</span>
+            <strong style="margin-left:6px">${p.name}</strong>
+            <span style="margin-left:8px;font-size:.78rem;color:var(--text-secondary,#aaa)">${itemCount} items</span>
+            <span class="sm-badge" style="margin-left:6px;background:rgba(107,114,128,.2);color:#9ca3af">${p.status || 'active'}</span>
+            <div style="margin-top:6px">
+              <small style="color:var(--text-secondary,#aaa)">$${spent.toLocaleString()} / $${budget.toLocaleString()}</small>
+              <div class="sm-progress"><div class="sm-progress-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
+            </div>
+          </div>
+          <div><button class="sm-btn sm-btn-danger" onclick="smDeleteProcurement(${p.id})">Del</button></div>
+        </div>`;
+      }).join('');
+      // Budget summary
+      const budgetBox = el('sm-procure-budget');
+      const remaining = totalBudget - totalSpent;
+      budgetBox.innerHTML = `
+        <div class="sm-summary-card"><div class="sm-summary-val">$${totalBudget.toLocaleString()}</div><div class="sm-summary-label">Total Budget</div></div>
+        <div class="sm-summary-card"><div class="sm-summary-val">$${totalSpent.toLocaleString()}</div><div class="sm-summary-label">Spent</div></div>
+        <div class="sm-summary-card"><div class="sm-summary-val" style="color:${remaining<0?'var(--sm-red)':'var(--sm-green)'}">$${remaining.toLocaleString()}</div><div class="sm-summary-label">Remaining</div></div>`;
+    });
+  };
+
+  window.smCreateProcureList = function(){
+    const name = val('sm-procure-name'); if(!name) return;
+    api(API + '/procurement', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, priority: val('sm-procure-priority'),
+        budget: numVal('sm-procure-budget-amt',0), items: val('sm-procure-items')})
+    }).then(() => { el('sm-procure-name').value=''; el('sm-procure-items').value=''; el('sm-procure-budget-amt').value=''; smLoadProcurement(); toast('Procurement list created'); });
+  };
+
+  window.smDeleteProcurement = function(id){
+    api(API + '/procurement/' + id, {method:'DELETE'}).then(() => { smLoadProcurement(); toast('List removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     PETS
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadPets = function(){
+    api(API + '/pets').then(items => {
+      const list = el('sm-pet-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No pets tracked.</div>'; return; }
+      list.innerHTML = items.map(p => {
+        const foodDays = p.food_supply_days || 0;
+        const lowFood = foodDays < 7;
+        const icon = speciesIcons[p.species] || speciesIcons.other;
+        return `<div class="sm-card ${lowFood ? 'sm-low-supply' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <span style="font-size:1.5rem;margin-right:6px">${icon}</span>
+              <strong style="color:var(--text-primary,#eee)">${p.name}</strong>
+              <br><small style="color:var(--text-secondary,#aaa)">${p.breed || p.species || ''} | Age: ${p.age || '?'}y | ${p.weight || '?'} lbs</small>
+              <br><span class="sm-badge" style="background:${lowFood ? 'rgba(239,68,68,.2)' : 'rgba(34,197,94,.2)'};color:${lowFood ? '#ef4444' : '#22c55e'}">${foodDays}d food</span>
+            </div>
+            <button class="sm-btn sm-btn-danger" onclick="smDeletePet(${p.id})">Del</button>
+          </div>
+        </div>`;
+      }).join('');
+    });
+  };
+
+  window.smCreatePet = function(){
+    const name = val('sm-pet-name'); if(!name) return;
+    api(API + '/pets', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, species: val('sm-pet-species'), breed: val('sm-pet-breed'),
+        age: numVal('sm-pet-age',0), weight: numVal('sm-pet-weight',0),
+        food_supply_days: numVal('sm-pet-food-days',0), notes: val('sm-pet-notes')})
+    }).then(() => { el('sm-pet-name').value=''; el('sm-pet-breed').value=''; el('sm-pet-notes').value=''; smLoadPets(); toast('Pet added'); });
+  };
+
+  window.smDeletePet = function(id){
+    api(API + '/pets/' + id, {method:'DELETE'}).then(() => { smLoadPets(); toast('Pet removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     YOUTH PROGRAMS
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadYouthPrograms = function(){
+    api(API + '/youth-programs').then(items => {
+      const list = el('sm-youth-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No youth programs.</div>'; return; }
+      list.innerHTML = items.map(y => {
+        const stColor = y.status === 'active' ? '#22c55e' : y.status === 'planned' ? '#3b82f6' : y.status === 'completed' ? '#6b7280' : '#ef4444';
+        return `<div class="sm-list-item">
+          <div style="flex:1">
+            <strong>${y.name}</strong>
+            <span class="sm-badge" style="background:${stColor}22;color:${stColor};margin-left:6px">${y.status || 'active'}</span>
+            <br><small style="color:var(--text-secondary,#aaa)">${(y.program_type||y.type||'').replace(/_/g,' ')} | Ages: ${y.age_range || '?'} | Instructor: ${y.instructor || 'TBD'}</small>
+          </div>
+          <button class="sm-btn sm-btn-danger" onclick="smDeleteYouthProgram(${y.id})">Del</button>
+        </div>`;
+      }).join('');
+    });
+  };
+
+  window.smCreateYouthProgram = function(){
+    const name = val('sm-youth-name'); if(!name) return;
+    api(API + '/youth-programs', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, program_type: val('sm-youth-type'), age_range: val('sm-youth-age-range'),
+        instructor: val('sm-youth-instructor'), status: val('sm-youth-status')})
+    }).then(() => { el('sm-youth-name').value=''; el('sm-youth-instructor').value=''; smLoadYouthPrograms(); toast('Program added'); });
+  };
+
+  window.smDeleteYouthProgram = function(id){
+    api(API + '/youth-programs/' + id, {method:'DELETE'}).then(() => { smLoadYouthPrograms(); toast('Program removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     END-OF-LIFE PLANS
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadEOLPlans = function(){
+    api(API + '/eol-plans').then(items => {
+      const list = el('sm-eol-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No end-of-life plans.</div>'; return; }
+      list.innerHTML = items.map(e => {
+        const stColor = e.status === 'complete' ? '#22c55e' : e.status === 'needs_review' ? '#f59e0b' : '#6b7280';
+        return `<div class="sm-list-item">
+          <div style="flex:1">
+            <strong>${e.person_name || e.person || ''}</strong>
+            <span class="sm-badge" style="background:${stColor}22;color:${stColor};margin-left:6px">${(e.status || 'draft').replace(/_/g,' ')}</span>
+            <br><small style="color:var(--text-secondary,#aaa)">Updated: ${fmtDate(e.updated_at || e.last_updated)}</small>
+          </div>
+          <button class="sm-btn sm-btn-danger" onclick="smDeleteEOLPlan(${e.id})">Del</button>
+        </div>`;
+      }).join('');
+    });
+  };
+
+  window.smCreateEOLPlan = function(){
+    const person = val('sm-eol-person'); if(!person) return;
+    api(API + '/eol-plans', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({person_name: person, status: val('sm-eol-status'), wishes: val('sm-eol-wishes')})
+    }).then(() => { el('sm-eol-person').value=''; el('sm-eol-wishes').value=''; smLoadEOLPlans(); toast('Plan added'); });
+  };
+
+  window.smDeleteEOLPlan = function(id){
+    api(API + '/eol-plans/' + id, {method:'DELETE'}).then(() => { smLoadEOLPlans(); toast('Plan removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     INTELLIGENCE
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadIntel = function(){
+    const typeF = val('sm-intel-filter-type');
+    const classF = val('sm-intel-filter-class');
+    let url = API + '/intel';
+    const params = [];
+    if(typeF) params.push('type=' + typeF);
+    if(classF) params.push('classification=' + classF);
+    if(params.length) url += '?' + params.join('&');
+
+    api(url).then(items => {
+      const list = el('sm-intel-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No intel reports. Submit one above.</div>'; return; }
+      list.innerHTML = `<table class="sm-table"><thead><tr>
+        <th>Title</th><th>Type</th><th>Source Rel.</th><th>Classification</th><th>Date</th><th>Status</th><th></th>
+      </tr></thead><tbody>${items.map(i => {
+        const typeClass = 'sm-intel-' + (i.intel_type || 'osint');
+        const classClass = 'sm-class-' + (i.classification || 'unclassified');
+        return `<tr>
+          <td><strong>${i.title}</strong>${i.actionable ? ' <span style="color:var(--sm-accent);font-size:.72rem">[ACTIONABLE]</span>' : ''}
+            ${i.pir ? '<br><small style="color:var(--text-secondary,#aaa)">PIR: ' + i.pir + '</small>' : ''}</td>
+          <td><span class="sm-badge ${typeClass}">${(i.intel_type || '').toUpperCase()}</span></td>
+          <td style="text-align:center;font-weight:600">${i.reliability || '?'}</td>
+          <td><span class="sm-badge ${classClass}">${(i.classification || 'unclassified').replace(/_/g,' ')}</span></td>
+          <td>${fmtDate(i.created_at || i.date)}</td>
+          <td>${i.status || 'active'}</td>
+          <td><button class="sm-btn sm-btn-danger" onclick="smDeleteIntel(${i.id})">Del</button></td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+    });
+
+    // Summary cards
+    api(API + '/intel/summary').then(data => {
+      const box = el('sm-intel-summary');
+      if(!data){ box.innerHTML = ''; return; }
+      const byType = data.by_type || {};
+      const typeCards = Object.keys(byType).map(t =>
+        `<div class="sm-summary-card"><div class="sm-summary-val">${byType[t]}</div><div class="sm-summary-label">${t.toUpperCase()}</div></div>`
+      ).join('');
+      box.innerHTML = `
+        <div class="sm-summary-card"><div class="sm-summary-val">${data.total || 0}</div><div class="sm-summary-label">Reports</div></div>
+        <div class="sm-summary-card"><div class="sm-summary-val">${data.actionable || 0}</div><div class="sm-summary-label">Actionable</div></div>
+        ${typeCards}`;
+    }).catch(() => {});
+  };
+
+  window.smCreateIntel = function(){
+    const title = val('sm-intel-title'); if(!title) return;
+    api(API + '/intel', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({title, intel_type: val('sm-intel-type'), pir: val('sm-intel-pir'),
+        source: val('sm-intel-source'), reliability: val('sm-intel-reliability'),
+        credibility: val('sm-intel-credibility'), classification: val('sm-intel-classification'),
+        summary: val('sm-intel-summary'), analysis: val('sm-intel-analysis'),
+        actionable: el('sm-intel-actionable').checked})
+    }).then(() => {
+      el('sm-intel-title').value=''; el('sm-intel-pir').value=''; el('sm-intel-source').value='';
+      el('sm-intel-summary').value=''; el('sm-intel-analysis').value=''; el('sm-intel-actionable').checked=false;
+      smLoadIntel(); toast('Intel report submitted');
+    });
+  };
+
+  window.smDeleteIntel = function(id){
+    api(API + '/intel/' + id, {method:'DELETE'}).then(() => { smLoadIntel(); toast('Report removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     FABRICATION
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadFabProjects = function(){
+    api(API + '/fabrication').then(items => {
+      const list = el('sm-fab-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No fabrication projects.</div>'; return; }
+      list.innerHTML = items.map(f => {
+        const typeClass = 'sm-fab-' + (f.fab_type || f.type || '3d_print');
+        const stClass = 'sm-fabst-' + (f.status || 'planned');
+        return `<div class="sm-card">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <span class="sm-badge ${typeClass}">${(f.fab_type || f.type || '3d_print').replace(/_/g,' ')}</span>
+              <strong style="margin-left:6px">${f.name}</strong>
+              <span class="sm-badge ${stClass}" style="margin-left:6px">${(f.status || 'planned').replace(/_/g,' ')}</span>
+              <br><small style="color:var(--text-secondary,#aaa)">Material: ${f.material || 'N/A'} | Est: ${f.estimated_time || '?'}h</small>
+              ${f.notes ? '<br><small style="color:var(--text-secondary,#888)">' + f.notes + '</small>' : ''}
+            </div>
+            <button class="sm-btn sm-btn-danger" onclick="smDeleteFabProject(${f.id})">Del</button>
+          </div>
+        </div>`;
+      }).join('');
+    });
+  };
+
+  window.smCreateFabProject = function(){
+    const name = val('sm-fab-name'); if(!name) return;
+    api(API + '/fabrication', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, fab_type: val('sm-fab-type'), material: val('sm-fab-material'),
+        estimated_time: numVal('sm-fab-time',0), status: val('sm-fab-status'), notes: val('sm-fab-notes')})
+    }).then(() => { el('sm-fab-name').value=''; el('sm-fab-material').value=''; el('sm-fab-notes').value=''; smLoadFabProjects(); toast('Project added'); });
+  };
+
+  window.smDeleteFabProject = function(id){
+    api(API + '/fabrication/' + id, {method:'DELETE'}).then(() => { smLoadFabProjects(); toast('Project removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     BADGES & GAMIFICATION
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadBadges = function(){
+    api(API + '/badges').then(items => {
+      const grid = el('sm-badge-grid');
+      if(!items || !items.length){ grid.innerHTML = '<div class="sm-empty">No badges defined. Click "Seed Defaults" to start.</div>'; return; }
+      grid.innerHTML = items.map(b => `<div class="sm-badge-tile">
+        <div class="icon">${b.icon || '?'}</div>
+        <div class="name">${b.name}</div>
+        <div><span class="sm-badge sm-rarity-${b.rarity || 'common'}">${b.rarity || 'common'}</span></div>
+        <div class="pts">${b.points || 0} pts</div>
+        <div style="margin-top:4px;font-size:.72rem;color:var(--text-secondary,#aaa)">${b.description || ''}</div>
+      </div>`).join('');
+      // Populate award dropdown
+      const sel = el('sm-award-badge');
+      sel.innerHTML = '<option value="">-- Select Badge --</option>' +
+        items.map(b => `<option value="${b.id}">${b.icon || ''} ${b.name} (${b.points}pts)</option>`).join('');
+    });
+  };
+
+  window.smCreateBadge = function(){
+    const name = val('sm-badge-name'); if(!name) return;
+    api(API + '/badges', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, icon: val('sm-badge-icon'), description: val('sm-badge-desc'),
+        points: numVal('sm-badge-points',0), rarity: val('sm-badge-rarity')})
+    }).then(() => { el('sm-badge-name').value=''; el('sm-badge-icon').value=''; el('sm-badge-desc').value=''; el('sm-badge-points').value=''; smLoadBadges(); toast('Badge created'); });
+  };
+
+  window.smSeedBadges = function(){
+    api(API + '/badges/seed', {method:'POST'}).then(() => { smLoadBadges(); toast('Default badges seeded'); });
+  };
+
+  /* ── Awards ── */
+  window.smLoadAwards = function(){
+    const person = val('sm-award-filter-person');
+    let url = API + '/awards';
+    if(person) url += '?person=' + encodeURIComponent(person);
+    api(url).then(items => {
+      const list = el('sm-award-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No awards yet.</div>'; return; }
+      list.innerHTML = items.map(a => `<div class="sm-list-item">
+        <div><span style="font-size:1.2rem;margin-right:4px">${a.badge_icon || ''}</span>
+          <strong>${a.badge_name || 'Badge #' + a.badge_id}</strong>
+          <span style="margin-left:6px;font-size:.78rem;color:var(--text-secondary,#aaa)">to ${a.person}</span>
+        </div>
+        <small style="color:var(--text-secondary,#aaa)">${fmtDate(a.awarded_date || a.date)}</small>
+      </div>`).join('');
+    });
+  };
+
+  window.smAwardBadge = function(){
+    const badgeId = val('sm-award-badge');
+    const person = val('sm-award-person');
+    if(!badgeId || !person) return;
+    api(API + '/awards', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({badge_id: parseInt(badgeId), person, awarded_date: val('sm-award-date') || new Date().toISOString().split('T')[0]})
+    }).then(() => { el('sm-award-person').value=''; smLoadAwards(); smLoadLeaderboard(); toast('Badge awarded'); });
+  };
+
+  /* ── Leaderboard ── */
+  window.smLoadLeaderboard = function(){
+    api(API + '/leaderboard').then(items => {
+      const box = el('sm-leaderboard');
+      if(!items || !items.length){ box.innerHTML = '<div class="sm-empty">No awards given yet.</div>'; return; }
+      box.innerHTML = items.map((p, i) => `<div class="sm-leaderboard-item">
+        <div class="sm-lb-rank">${i + 1}</div>
+        <div style="flex:1">
+          <strong style="color:var(--text-primary,#eee)">${p.person}</strong>
+          <br><small style="color:var(--text-secondary,#aaa)">${p.badge_count || 0} badges</small>
+        </div>
+        <div style="font-size:1.1rem;font-weight:700;color:var(--sm-accent)">${p.total_points || 0} pts</div>
+      </div>`).join('');
+    });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     CALENDAR
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadEvents = function(){
+    const monthFilter = val('sm-cal-filter-month');
+    let url = API + '/events';
+    if(monthFilter) url += '?month=' + monthFilter;
+
+    api(url).then(items => {
+      const list = el('sm-cal-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No events scheduled.</div>'; return; }
+      list.innerHTML = '<div class="sm-card-title">All Events</div>' + items.map(e => {
+        const evtClass = 'sm-evt-' + (e.event_type || e.type || 'seasonal');
+        return `<div class="sm-list-item">
+          <div style="flex:1">
+            <span class="sm-badge ${evtClass}">${(e.event_type || e.type || 'seasonal')}</span>
+            <strong style="margin-left:6px">${e.name}</strong>
+            <span style="margin-left:8px;font-size:.78rem;color:var(--text-secondary,#aaa)">${e.recurrence || 'once'}</span>
+            <br><small style="color:var(--text-secondary,#aaa)">${fmtDate(e.event_date || e.date)} | ${e.category || ''}</small>
+            ${e.description ? '<br><small style="color:var(--text-secondary,#888)">' + e.description.substring(0, 120) + '</small>' : ''}
+          </div>
+          <button class="sm-btn sm-btn-danger" onclick="smDeleteEvent(${e.id})">Del</button>
+        </div>`;
+      }).join('');
+    });
+
+    // Upcoming 30 days
+    api(API + '/events/upcoming').then(items => {
+      const box = el('sm-cal-upcoming');
+      if(!items || !items.length){ box.innerHTML = '<div class="sm-empty">No events in the next 30 days.</div>'; return; }
+      box.innerHTML = items.map(e => {
+        const days = daysUntil(e.event_date || e.date);
+        const urgency = days !== null && days <= 3 ? 'color:var(--sm-red)' : days !== null && days <= 7 ? 'color:var(--sm-yellow)' : 'color:var(--sm-green)';
+        return `<div class="sm-list-item">
+          <div>
+            <span class="sm-badge sm-evt-${e.event_type || e.type || 'seasonal'}">${e.event_type || e.type || 'seasonal'}</span>
+            <strong style="margin-left:6px">${e.name}</strong>
+          </div>
+          <span style="font-weight:600;${urgency}">${days !== null ? (days === 0 ? 'TODAY' : days + 'd') : fmtDate(e.event_date || e.date)}</span>
+        </div>`;
+      }).join('');
+    }).catch(() => {});
+  };
+
+  window.smCreateEvent = function(){
+    const name = val('sm-cal-name'); if(!name) return;
+    api(API + '/events', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, event_type: val('sm-cal-type'), event_date: val('sm-cal-date'),
+        recurrence: val('sm-cal-recurrence'), category: val('sm-cal-category'),
+        description: val('sm-cal-desc'), tasks: val('sm-cal-tasks')})
+    }).then(() => { el('sm-cal-name').value=''; el('sm-cal-desc').value=''; el('sm-cal-tasks').value=''; smLoadEvents(); toast('Event added'); });
+  };
+
+  window.smDeleteEvent = function(id){
+    api(API + '/events/' + id, {method:'DELETE'}).then(() => { smLoadEvents(); toast('Event removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     LEGAL & DOCUMENTS
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadLegalDocs = function(){
+    api(API + '/legal').then(items => {
+      const list = el('sm-legal-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No legal documents tracked.</div>'; return; }
+      list.innerHTML = `<table class="sm-table"><thead><tr>
+        <th>Title</th><th>Type</th><th>Person</th><th>Issued</th><th>Expires</th><th>Alert</th><th></th>
+      </tr></thead><tbody>${items.map(d => {
+        const typeClass = 'sm-doc-' + (d.doc_type || d.type || 'id');
+        const days = daysUntil(d.expiry_date);
+        let alert = '--';
+        if(days !== null){
+          if(days < 0) alert = '<span style="color:var(--sm-red);font-weight:600">EXPIRED</span>';
+          else if(days <= 30) alert = '<span style="color:var(--sm-red);font-weight:600">' + days + 'd</span>';
+          else if(days <= 90) alert = '<span style="color:var(--sm-yellow)">' + days + 'd</span>';
+          else alert = '<span style="color:var(--sm-green)">' + days + 'd</span>';
+        }
+        return `<tr>
+          <td><strong>${d.title}</strong></td>
+          <td><span class="sm-badge ${typeClass}">${(d.doc_type || d.type || 'id')}</span></td>
+          <td>${d.person || '--'}</td>
+          <td>${fmtDate(d.issue_date)}</td>
+          <td>${fmtDate(d.expiry_date)}</td>
+          <td>${alert}</td>
+          <td><button class="sm-btn sm-btn-danger" onclick="smDeleteLegalDoc(${d.id})">Del</button></td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+    });
+
+    // Expiring soon (90 days)
+    api(API + '/legal/expiring').then(items => {
+      const section = el('sm-legal-expiring-section');
+      const box = el('sm-legal-expiring');
+      if(!items || !items.length){ section.style.display = 'none'; return; }
+      section.style.display = 'block';
+      box.innerHTML = items.map(d => {
+        const days = daysUntil(d.expiry_date);
+        const urgency = days !== null && days < 0 ? 'EXPIRED' : days !== null && days <= 30 ? days + ' days' : days + ' days';
+        return `<div class="sm-list-item">
+          <div>
+            <span class="sm-badge sm-doc-${d.doc_type || d.type || 'id'}">${d.doc_type || d.type || 'id'}</span>
+            <strong style="margin-left:6px">${d.title}</strong>
+            <span style="margin-left:6px;font-size:.78rem;color:var(--text-secondary,#aaa)">${d.person || ''}</span>
+          </div>
+          <span style="color:var(--sm-red);font-weight:600">${urgency}</span>
+        </div>`;
+      }).join('');
+    }).catch(() => { el('sm-legal-expiring-section').style.display = 'none'; });
+  };
+
+  window.smCreateLegalDoc = function(){
+    const title = val('sm-legal-title'); if(!title) return;
+    api(API + '/legal', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({title, doc_type: val('sm-legal-type'), person: val('sm-legal-person'),
+        issue_date: val('sm-legal-issue-date'), expiry_date: val('sm-legal-expiry-date'), notes: val('sm-legal-notes')})
+    }).then(() => { el('sm-legal-title').value=''; el('sm-legal-person').value=''; el('sm-legal-notes').value=''; smLoadLegalDocs(); toast('Document added'); });
+  };
+
+  window.smDeleteLegalDoc = function(id){
+    api(API + '/legal/' + id, {method:'DELETE'}).then(() => { smLoadLegalDocs(); toast('Document removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     DRONES
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadDrones = function(){
+    api(API + '/drones').then(items => {
+      const list = el('sm-drone-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No drones tracked.</div>'; return; }
+      list.innerHTML = items.map(d => {
+        const condClass = 'sm-drone-' + (d.condition || 'good');
+        return `<div class="sm-card">
+          <div style="display:flex;justify-content:space-between;align-items:start">
+            <div>
+              <strong style="color:var(--text-primary,#eee)">${d.name}</strong>
+              <span class="sm-badge" style="margin-left:6px;background:rgba(107,114,128,.2);color:#9ca3af">${(d.drone_type || d.type || 'quadcopter').replace(/_/g,' ')}</span>
+              <span class="sm-badge ${condClass}" style="margin-left:4px">${d.condition || 'good'}</span>
+              <br><small style="color:var(--text-secondary,#aaa)">${d.manufacturer || ''} ${d.model || ''}</small>
+              <br><small style="color:var(--text-secondary,#aaa)">Flights: ${d.total_flights || 0} | Hours: ${d.total_hours || 0}</small>
+            </div>
+            <button class="sm-btn sm-btn-danger" onclick="smDeleteDrone(${d.id})">Del</button>
+          </div>
+        </div>`;
+      }).join('');
+      // Populate flight drone selector
+      const sel = el('sm-flight-drone');
+      sel.innerHTML = '<option value="">-- Select Drone --</option>' +
+        items.map(d => `<option value="${d.id}">${d.name}</option>`).join('');
+    });
+  };
+
+  window.smCreateDrone = function(){
+    const name = val('sm-drone-name'); if(!name) return;
+    api(API + '/drones', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, drone_type: val('sm-drone-type'), manufacturer: val('sm-drone-mfg'),
+        model: val('sm-drone-model'), condition: val('sm-drone-condition'), notes: val('sm-drone-notes')})
+    }).then(() => { el('sm-drone-name').value=''; el('sm-drone-mfg').value=''; el('sm-drone-model').value=''; el('sm-drone-notes').value=''; smLoadDrones(); toast('Drone added'); });
+  };
+
+  window.smDeleteDrone = function(id){
+    api(API + '/drones/' + id, {method:'DELETE'}).then(() => { smLoadDrones(); toast('Drone removed'); });
+  };
+
+  /* ── Flight Logs ── */
+  window.smLoadFlights = function(){
+    const droneId = val('sm-flight-drone');
+    if(!droneId){ el('sm-flight-list').innerHTML = '<div class="sm-empty">Select a drone to view flights.</div>'; return; }
+    api(API + '/drones/' + droneId + '/flights').then(items => {
+      const list = el('sm-flight-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No flights logged for this drone.</div>'; return; }
+      list.innerHTML = `<table class="sm-table" style="margin-top:10px"><thead><tr>
+        <th>Date</th><th>Mission</th><th>Duration</th><th>Alt (ft)</th><th></th>
+      </tr></thead><tbody>${items.map(f => `<tr>
+        <td>${fmtDate(f.flight_date || f.date)}</td>
+        <td>${f.mission || '--'}</td>
+        <td>${f.duration || 0} min</td>
+        <td>${f.max_altitude || '--'}</td>
+        <td><button class="sm-btn sm-btn-danger" onclick="smDeleteFlight(${f.id})">Del</button></td>
+      </tr>`).join('')}</tbody></table>`;
+    });
+  };
+
+  window.smCreateFlight = function(){
+    const droneId = val('sm-flight-drone'); if(!droneId) return;
+    api(API + '/drones/' + droneId + '/flights', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({flight_date: val('sm-flight-date'), mission: val('sm-flight-mission'),
+        duration: numVal('sm-flight-duration',0), max_altitude: numVal('sm-flight-altitude',0)})
+    }).then(() => { el('sm-flight-mission').value=''; el('sm-flight-duration').value=''; el('sm-flight-altitude').value=''; smLoadFlights(); smLoadDrones(); toast('Flight logged'); });
+  };
+
+  window.smDeleteFlight = function(id){
+    const droneId = val('sm-flight-drone');
+    api(API + '/flights/' + id, {method:'DELETE'}).then(() => { smLoadFlights(); if(droneId) smLoadDrones(); toast('Flight removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     FITNESS
+     ═══════════════════════════════════════════════════════════ */
+  window.smLoadFitness = function(){
+    const person = val('sm-fit-person');
+    if(!person){ el('sm-fitness-list').innerHTML = '<div class="sm-empty">Enter a name above to view workout history.</div>'; el('sm-fitness-stats').innerHTML = ''; return; }
+    api(API + '/fitness?person=' + encodeURIComponent(person)).then(items => {
+      const list = el('sm-fitness-list');
+      if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No workouts logged for ' + person + '.</div>'; return; }
+      list.innerHTML = `<table class="sm-table" style="margin-top:10px"><thead><tr>
+        <th>Date</th><th>Type</th><th>Activity</th><th>Duration</th><th>Dist</th><th>Reps/Sets/Wt</th><th>Cal</th><th>HR</th><th>RPE</th><th></th>
+      </tr></thead><tbody>${items.map(w => {
+        const fitClass = 'sm-fit-' + (w.workout_type || w.type || 'cardio');
+        const repsStr = [w.reps ? w.reps + 'r' : '', w.sets ? w.sets + 's' : '', w.weight_lbs ? w.weight_lbs + 'lb' : ''].filter(Boolean).join('/') || '--';
+        return `<tr>
+          <td>${fmtDate(w.created_at || w.date)}</td>
+          <td><span class="sm-badge ${fitClass}">${(w.workout_type || w.type || 'cardio')}</span></td>
+          <td>${w.activity || '--'}</td>
+          <td>${w.duration || 0}m</td>
+          <td>${w.distance ? w.distance + 'mi' : '--'}</td>
+          <td>${repsStr}</td>
+          <td>${w.calories || '--'}</td>
+          <td>${w.heart_rate || '--'}</td>
+          <td>${w.exertion || '--'}</td>
+          <td><button class="sm-btn sm-btn-danger" onclick="smDeleteWorkout(${w.id})">Del</button></td>
+        </tr>`;
+      }).join('')}</tbody></table>`;
+    });
+
+    // Weekly stats
+    api(API + '/fitness/weekly?person=' + encodeURIComponent(person)).then(data => {
+      const box = el('sm-fitness-stats');
+      if(!data){ box.innerHTML = ''; return; }
+      box.innerHTML = `
+        <div class="sm-stat-card"><div class="sm-stat-val">${data.workouts || 0}</div><div class="sm-stat-lbl">Workouts</div></div>
+        <div class="sm-stat-card"><div class="sm-stat-val">${data.total_duration || 0}m</div><div class="sm-stat-lbl">Duration</div></div>
+        <div class="sm-stat-card"><div class="sm-stat-val">${data.total_calories || 0}</div><div class="sm-stat-lbl">Calories</div></div>
+        <div class="sm-stat-card"><div class="sm-stat-val">${data.total_distance ? data.total_distance.toFixed(1) : 0}mi</div><div class="sm-stat-lbl">Distance</div></div>
+        <div class="sm-stat-card"><div class="sm-stat-val">${data.avg_exertion ? data.avg_exertion.toFixed(1) : '--'}</div><div class="sm-stat-lbl">Avg RPE</div></div>`;
+    }).catch(() => {});
+  };
+
+  window.smCreateWorkout = function(){
+    const person = val('sm-fit-person'); if(!person) return;
+    api(API + '/fitness', {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({person, workout_type: val('sm-fit-type'), activity: val('sm-fit-activity'),
+        duration: numVal('sm-fit-duration',0), distance: numVal('sm-fit-distance',0),
+        reps: numVal('sm-fit-reps',0), sets: numVal('sm-fit-sets',0), weight_lbs: numVal('sm-fit-weight',0),
+        calories: numVal('sm-fit-calories',0), heart_rate: numVal('sm-fit-hr',0),
+        exertion: parseInt(val('sm-fit-exertion')) || 5})
+    }).then(() => { el('sm-fit-activity').value=''; el('sm-fit-duration').value=''; el('sm-fit-distance').value='';
+      el('sm-fit-reps').value=''; el('sm-fit-sets').value=''; el('sm-fit-weight').value='';
+      el('sm-fit-calories').value=''; el('sm-fit-hr').value='';
+      smLoadFitness(); toast('Workout logged');
+    });
+  };
+
+  window.smDeleteWorkout = function(id){
+    api(API + '/fitness/' + id, {method:'DELETE'}).then(() => { smLoadFitness(); toast('Workout removed'); });
+  };
+
+  /* ═══════════════════════════════════════════════════════════
+     LAZY LOAD -- MutationObserver
+     ═══════════════════════════════════════════════════════════ */
+  let _loaded = false;
+  function loadAll(){
+    if(_loaded) return; _loaded = true;
+    smLoadCaches();
+    smLoadProcurement();
+    smLoadPets();
+    smLoadYouthPrograms();
+    smLoadEOLPlans();
+    smLoadIntel();
+    smLoadFabProjects();
+    smLoadBadges();
+    smLoadAwards();
+    smLoadLeaderboard();
+    smLoadEvents();
+    smLoadLegalDocs();
+    smLoadDrones();
+    smLoadFitness();
+  }
+
+  const obs = new MutationObserver(() => {
+    if(!root.classList.contains('is-hidden')){ loadAll(); }
+  });
+  obs.observe(root, {attributes: true, attributeFilter: ['class']});
+  if(!root.classList.contains('is-hidden')){ loadAll(); }
+})();
+</script>
+</div>

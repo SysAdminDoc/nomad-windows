@@ -1387,6 +1387,10 @@ def create_app():
     from web.blueprints.platform_security import platform_security_bp
     app.register_blueprint(platform_security_bp)
 
+    # ─── Specialized Modules (Caches, Pets, Intel, Drones, etc.) ─────
+    from web.blueprints.specialized_modules import specialized_modules_bp
+    app.register_blueprint(specialized_modules_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

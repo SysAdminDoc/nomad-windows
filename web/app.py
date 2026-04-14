@@ -1359,6 +1359,10 @@ def create_app():
     from web.blueprints.security_opsec import security_opsec_bp
     app.register_blueprint(security_opsec_bp)
 
+    # ─── v7.19.0 — Agriculture & Permaculture (Phase 13) ─────────────
+    from web.blueprints.agriculture import agriculture_bp
+    app.register_blueprint(agriculture_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

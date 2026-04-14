@@ -2333,6 +2333,16 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_consumption_profiles_type ON consumption_profiles(profile_type)',
         'CREATE INDEX IF NOT EXISTS idx_water_budget_category ON water_budget(category)',
         'CREATE INDEX IF NOT EXISTS idx_water_budget_enabled ON water_budget(enabled)',
+        # v7.13.0 — Meal planning & inventory intelligence
+        'CREATE INDEX IF NOT EXISTS idx_recipes_category ON recipes(category)',
+        'CREATE INDEX IF NOT EXISTS idx_recipes_created ON recipes(created_at DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_recipe ON recipe_ingredients(recipe_id)',
+        'CREATE INDEX IF NOT EXISTS idx_recipe_ingredients_inv ON recipe_ingredients(inventory_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_substitutes_inv ON inventory_substitutes(inventory_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_substitutes_sub ON inventory_substitutes(substitute_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_audits_status ON inventory_audits(status)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_audit_items_audit ON inventory_audit_items(audit_id)',
+        'CREATE INDEX IF NOT EXISTS idx_inventory_audit_items_inv ON inventory_audit_items(inventory_id)',
     ]:
         try:
             conn.execute(idx)
@@ -2450,6 +2460,73 @@ def _create_data_foundation_tables(conn):
     conn.commit()
 
 
+def _create_meal_planning_tables(conn):
+    """Phase 4 — Advanced Inventory & Consumption Modeling:
+    recipes, recipe ingredients, and inventory substitute mapping."""
+    conn.executescript('''
+        /* ─── Recipes ─── */
+        CREATE TABLE IF NOT EXISTS recipes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'meal',
+            servings INTEGER DEFAULT 4,
+            prep_time_min INTEGER DEFAULT 0,
+            cook_time_min INTEGER DEFAULT 0,
+            method TEXT DEFAULT '',
+            instructions TEXT DEFAULT '',
+            calories_per_serving REAL DEFAULT 0,
+            tags TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Recipe Ingredients (linked to inventory/nutrition) ─── */
+        CREATE TABLE IF NOT EXISTS recipe_ingredients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            inventory_id INTEGER,
+            fdc_id INTEGER,
+            name TEXT NOT NULL,
+            quantity REAL DEFAULT 1,
+            unit TEXT DEFAULT '',
+            optional INTEGER DEFAULT 0
+        );
+
+        /* ─── Inventory Substitutes ─── */
+        CREATE TABLE IF NOT EXISTS inventory_substitutes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            inventory_id INTEGER NOT NULL REFERENCES inventory(id),
+            substitute_id INTEGER NOT NULL REFERENCES inventory(id),
+            ratio REAL DEFAULT 1.0,
+            notes TEXT DEFAULT '',
+            UNIQUE(inventory_id, substitute_id)
+        );
+
+        /* ─── Inventory Audit Runs ─── */
+        CREATE TABLE IF NOT EXISTS inventory_audits (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            started_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TEXT DEFAULT '',
+            status TEXT DEFAULT 'in_progress',
+            total_items INTEGER DEFAULT 0,
+            verified INTEGER DEFAULT 0,
+            discrepancies INTEGER DEFAULT 0,
+            notes TEXT DEFAULT ''
+        );
+        CREATE TABLE IF NOT EXISTS inventory_audit_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            audit_id INTEGER NOT NULL REFERENCES inventory_audits(id) ON DELETE CASCADE,
+            inventory_id INTEGER NOT NULL,
+            expected_qty REAL DEFAULT 0,
+            actual_qty REAL,
+            verified INTEGER DEFAULT 0,
+            discrepancy_notes TEXT DEFAULT ''
+        );
+    ''')
+    conn.commit()
+
+
 def _create_consumption_water_budget_tables(conn):
     """Phase 2 — Nutritional Intelligence & Water Management expansion:
     consumption profiles, water budgets, dietary restrictions."""
@@ -2496,6 +2573,7 @@ def _init_db_inner(conn):
     _create_readiness_alerts_threat_drill_tables(conn)
     _create_data_foundation_tables(conn)
     _create_consumption_water_budget_tables(conn)
+    _create_meal_planning_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

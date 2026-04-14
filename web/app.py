@@ -1327,6 +1327,10 @@ def create_app():
     from web.blueprints.consumption import consumption_bp
     app.register_blueprint(consumption_bp)
 
+    # ─── v7.13.0 — Advanced Inventory & Consumption Modeling (Phase 4) ──
+    from web.blueprints.meal_planning import meal_planning_bp
+    app.register_blueprint(meal_planning_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

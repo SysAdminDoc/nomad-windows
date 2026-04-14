@@ -56,6 +56,57 @@
         </div>
       </div>
 
+      <!-- Sustain Intelligence (Nutrition + Water + Consumption) -->
+      <div class="workspace-toolbar readiness-section-heading">
+        <span class="section-header-label">SUSTAIN INTELLIGENCE</span>
+        <div class="section-divider section-divider-grow"></div>
+      </div>
+      <div class="readiness-sustain-strip" id="readiness-sustain-strip" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
+        <div class="service-card" style="text-align:center;padding:14px;">
+          <div id="rs-food-days" style="font-size:26px;font-weight:700;color:var(--accent,#5b9fff);">—</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Person-Days Food</div>
+        </div>
+        <div class="service-card" style="text-align:center;padding:14px;">
+          <div id="rs-water-days" style="font-size:26px;font-weight:700;color:var(--accent,#5b9fff);">—</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Days of Water</div>
+        </div>
+        <div class="service-card" style="text-align:center;padding:14px;">
+          <div id="rs-total-cal" style="font-size:26px;font-weight:700;color:var(--green,#34d399);">—</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Total Calories</div>
+        </div>
+        <div class="service-card" style="text-align:center;padding:14px;">
+          <div id="rs-linked" style="font-size:26px;font-weight:700;color:var(--text-dim,#a3b2c7);">—</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Linked Items</div>
+        </div>
+        <div class="service-card" style="text-align:center;padding:14px;">
+          <div id="rs-filter-alerts" style="font-size:26px;font-weight:700;color:var(--text-dim,#a3b2c7);">—</div>
+          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Filter Alerts</div>
+        </div>
+      </div>
+      <script>
+      (function(){
+        async function loadSustainStrip() {
+          const f = (u) => fetch(u).then(r => r.json()).catch(() => null);
+          const [nut, water, alerts] = await Promise.all([f('/api/nutrition/summary'), f('/api/water/summary'), f('/api/water/filter-alerts')]);
+          if (nut) {
+            document.getElementById('rs-food-days').textContent = nut.person_days_of_food || '0';
+            document.getElementById('rs-total-cal').textContent = nut.total_calories ? nut.total_calories.toLocaleString() : '0';
+            document.getElementById('rs-linked').textContent = nut.linked_items || '0';
+          }
+          if (water) {
+            document.getElementById('rs-water-days').textContent = water.days_of_water_estimate || '0';
+          }
+          if (alerts) {
+            const el = document.getElementById('rs-filter-alerts');
+            el.textContent = alerts.length;
+            if (alerts.length > 0) el.style.color = 'var(--orange,#fb923c)';
+          }
+        }
+        if (document.getElementById('tab-readiness')) loadSustainStrip();
+        document.addEventListener('nomad:tab-activated', function(e) { if (e.detail?.tab === 'readiness') loadSustainStrip(); });
+      })();
+      </script>
+
       <!-- Needs Overview (duplicate for readiness context) -->
       <div class="workspace-toolbar readiness-section-heading">
         <span class="section-header-label">COVERAGE BY CATEGORY</span>

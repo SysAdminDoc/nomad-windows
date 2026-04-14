@@ -32,7 +32,7 @@ Current repo note: some older changelog entries below mention retired Docker/hea
 
 ## Tech Stack
 - **Python 3** — Flask web server + pywebview (WebView2 on Windows, WebKit on macOS, GTK on Linux)
-- **SQLite** — 95 tables, WAL mode, 30s timeout, FK enforcement, SQLite backup API, 136 performance indexes
+- **SQLite** — 97 tables, WAL mode, 30s timeout, FK enforcement, SQLite backup API, 139 performance indexes
 - **CSS** — External files: `web/static/css/app.css` (base) + `web/static/css/premium.css` (polish layer)
 - **Native process management** — subprocess for Ollama, kiwix-serve, Kolibri; threading HTTP server for CyberChef
 - **pystray** — system tray icon for background operation
@@ -48,7 +48,7 @@ Current repo note: some older changelog entries below mention retired Docker/hea
 ```
 nomad.py              # Entry point — Flask + pywebview + tray + health monitor + service autostart
 platform_utils.py     # Cross-platform abstraction — subprocess flags, paths, GPU detection, URLs, process management
-db.py                 # SQLite init (95 tables), organized into 6 _create_*_tables() helpers + _apply_column_migrations() + _create_indexes(). db_session() context manager
+db.py                 # SQLite init (97 tables), organized into 6 _create_*_tables() helpers + _apply_column_migrations() + _create_indexes(). db_session() context manager
 config.py             # Data directory management (atomic writes via tmp+replace, XDG-aware paths, mtime-cached reads)
 build.spec            # PyInstaller spec for portable exe
 icon.ico              # App icon (multi-size, 16-256px)
@@ -77,7 +77,7 @@ web/
     js/
       epub.min.js     # EPUB reader library (bundled)
   routes_advanced.py  # Deprecated stub — all routes dissolved into blueprints
-  blueprints/         # 29 Flask blueprints: ai, benchmark, checklists, comms, contacts, data_packs, exercises, federation, garden, inventory, kb, kiwix, maps, media, medical, notes, nutrition, power, preparedness, print_routes, regional_profile, security, services, situation_room, supplies, system, tasks, undo, weather
+  blueprints/         # 30 Flask blueprints: ai, benchmark, checklists, comms, consumption, contacts, data_packs, exercises, federation, garden, inventory, kb, kiwix, maps, media, medical, notes, nutrition, power, preparedness, print_routes, regional_profile, security, services, situation_room, supplies, system, tasks, undo, weather
   templates/
     index.html        # HTML + inline theme vars + JS (~28,500 lines)
   nukemap/            # NukeMap v3.2.0 — index.html, 18 JS modules, CSS, data/, lib/leaflet

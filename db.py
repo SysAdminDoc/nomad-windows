@@ -2374,6 +2374,36 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_sent_messages_template ON sent_messages(template_id)',
         'CREATE INDEX IF NOT EXISTS idx_sent_messages_type ON sent_messages(template_type)',
         'CREATE INDEX IF NOT EXISTS idx_sent_messages_sent ON sent_messages(sent_at DESC)',
+        # v7.15.0 — Land Assessment & Property (Phase 8)
+        'CREATE INDEX IF NOT EXISTS idx_properties_type ON properties(property_type)',
+        'CREATE INDEX IF NOT EXISTS idx_properties_status ON properties(status)',
+        'CREATE INDEX IF NOT EXISTS idx_properties_state ON properties(state)',
+        'CREATE INDEX IF NOT EXISTS idx_properties_score ON properties(total_score DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_property_assessments_prop ON property_assessments(property_id)',
+        'CREATE INDEX IF NOT EXISTS idx_property_assessments_cat ON property_assessments(category)',
+        'CREATE INDEX IF NOT EXISTS idx_property_features_prop ON property_features(property_id)',
+        'CREATE INDEX IF NOT EXISTS idx_property_features_type ON property_features(feature_type)',
+        'CREATE INDEX IF NOT EXISTS idx_development_plans_prop ON development_plans(property_id)',
+        'CREATE INDEX IF NOT EXISTS idx_development_plans_status ON development_plans(status)',
+        'CREATE INDEX IF NOT EXISTS idx_development_plans_priority ON development_plans(priority)',
+        # v7.15.0 — Medical Phase 2 (Phase 9)
+        'CREATE INDEX IF NOT EXISTS idx_pregnancies_status ON pregnancies(status)',
+        'CREATE INDEX IF NOT EXISTS idx_pregnancies_due ON pregnancies(due_date)',
+        'CREATE INDEX IF NOT EXISTS idx_dental_records_patient ON dental_records(patient_name)',
+        'CREATE INDEX IF NOT EXISTS idx_dental_records_tooth ON dental_records(tooth_number)',
+        'CREATE INDEX IF NOT EXISTS idx_herbal_remedies_name ON herbal_remedies(name)',
+        'CREATE INDEX IF NOT EXISTS idx_herbal_remedies_builtin ON herbal_remedies(is_builtin)',
+        'CREATE INDEX IF NOT EXISTS idx_chronic_conditions_patient ON chronic_conditions(patient_name)',
+        'CREATE INDEX IF NOT EXISTS idx_chronic_conditions_status ON chronic_conditions(status)',
+        'CREATE INDEX IF NOT EXISTS idx_chronic_conditions_stockpile ON chronic_conditions(medication_stockpile_days)',
+        'CREATE INDEX IF NOT EXISTS idx_vaccinations_patient ON vaccinations(patient_name)',
+        'CREATE INDEX IF NOT EXISTS idx_vaccinations_next_due ON vaccinations(next_due)',
+        'CREATE INDEX IF NOT EXISTS idx_mental_health_patient ON mental_health_logs(patient_name)',
+        'CREATE INDEX IF NOT EXISTS idx_mental_health_date ON mental_health_logs(check_date DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_mental_health_mood ON mental_health_logs(mood_score)',
+        'CREATE INDEX IF NOT EXISTS idx_vet_records_animal ON vet_records(animal_name)',
+        'CREATE INDEX IF NOT EXISTS idx_vet_records_species ON vet_records(species)',
+        'CREATE INDEX IF NOT EXISTS idx_vet_records_next_due ON vet_records(next_due)',
     ]:
         try:
             conn.execute(idx)
@@ -2833,6 +2863,228 @@ def _create_tactical_comms_tables(conn):
     conn.commit()
 
 
+def _create_land_assessment_tables(conn):
+    """Phase 8 — Land Assessment & Property: site scoring, property mapping,
+    development planning, BOL comparison."""
+    conn.executescript('''
+        /* ─── Properties (real estate / BOL sites) ─── */
+        CREATE TABLE IF NOT EXISTS properties (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            property_type TEXT DEFAULT 'rural',
+            address TEXT DEFAULT '',
+            county TEXT DEFAULT '',
+            state TEXT DEFAULT '',
+            lat REAL,
+            lng REAL,
+            acreage REAL DEFAULT 0,
+            purchase_price REAL DEFAULT 0,
+            current_value REAL DEFAULT 0,
+            ownership TEXT DEFAULT 'owned',
+            access_road TEXT DEFAULT '',
+            distance_from_home_miles REAL DEFAULT 0,
+            travel_time_hours REAL DEFAULT 0,
+            nearest_town TEXT DEFAULT '',
+            nearest_town_miles REAL DEFAULT 0,
+            population_density TEXT DEFAULT 'rural',
+            zoning TEXT DEFAULT '',
+            water_rights TEXT DEFAULT '',
+            mineral_rights TEXT DEFAULT '',
+            total_score REAL DEFAULT 0,
+            status TEXT DEFAULT 'prospect',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Property Assessments (scored criteria) ─── */
+        CREATE TABLE IF NOT EXISTS property_assessments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id INTEGER NOT NULL REFERENCES properties(id),
+            criterion TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            score INTEGER DEFAULT 5,
+            weight REAL DEFAULT 1.0,
+            notes TEXT DEFAULT '',
+            assessed_date TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Property Features (infrastructure, resources, hazards) ─── */
+        CREATE TABLE IF NOT EXISTS property_features (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id INTEGER NOT NULL REFERENCES properties(id),
+            feature_type TEXT DEFAULT 'building',
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            lat REAL,
+            lng REAL,
+            condition TEXT DEFAULT 'good',
+            value_estimate REAL DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Development Plans (projects for property improvement) ─── */
+        CREATE TABLE IF NOT EXISTS development_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            property_id INTEGER NOT NULL REFERENCES properties(id),
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'infrastructure',
+            priority TEXT DEFAULT 'medium',
+            estimated_cost REAL DEFAULT 0,
+            actual_cost REAL DEFAULT 0,
+            start_date TEXT DEFAULT '',
+            target_date TEXT DEFAULT '',
+            completed_date TEXT DEFAULT '',
+            status TEXT DEFAULT 'planned',
+            impact_score INTEGER DEFAULT 5,
+            description TEXT DEFAULT '',
+            materials TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
+def _create_medical_phase2_tables(conn):
+    """Phase 9 — Medical Phase 2: pregnancy, dental, veterinary, chronic conditions,
+    vaccinations, mental health, herbal remedies, clinical tools."""
+    conn.executescript('''
+        /* ─── Pregnancy & Childbirth Tracking ─── */
+        CREATE TABLE IF NOT EXISTS pregnancies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_name TEXT NOT NULL,
+            due_date TEXT DEFAULT '',
+            conception_date TEXT DEFAULT '',
+            blood_type TEXT DEFAULT '',
+            rh_factor TEXT DEFAULT '',
+            gravida INTEGER DEFAULT 1,
+            para INTEGER DEFAULT 0,
+            risk_factors TEXT DEFAULT '[]',
+            prenatal_visits TEXT DEFAULT '[]',
+            birth_plan TEXT DEFAULT '',
+            supply_checklist TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'active',
+            outcome TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Dental Records ─── */
+        CREATE TABLE IF NOT EXISTS dental_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_name TEXT NOT NULL,
+            tooth_number INTEGER,
+            condition TEXT DEFAULT '',
+            treatment TEXT DEFAULT '',
+            treatment_date TEXT DEFAULT '',
+            pain_level INTEGER DEFAULT 0,
+            provider TEXT DEFAULT '',
+            follow_up_date TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Herbal & Alternative Remedies Reference ─── */
+        CREATE TABLE IF NOT EXISTS herbal_remedies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            common_names TEXT DEFAULT '',
+            uses TEXT DEFAULT '[]',
+            preparation TEXT DEFAULT '',
+            dosage TEXT DEFAULT '',
+            contraindications TEXT DEFAULT '[]',
+            interactions TEXT DEFAULT '[]',
+            season TEXT DEFAULT 'all',
+            habitat TEXT DEFAULT '',
+            identification TEXT DEFAULT '',
+            is_builtin INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Chronic Condition Management ─── */
+        CREATE TABLE IF NOT EXISTS chronic_conditions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_name TEXT NOT NULL,
+            condition_name TEXT NOT NULL,
+            severity TEXT DEFAULT 'moderate',
+            diagnosed_date TEXT DEFAULT '',
+            medications TEXT DEFAULT '[]',
+            medication_stockpile_days INTEGER DEFAULT 0,
+            weaning_protocol TEXT DEFAULT '',
+            alternative_treatments TEXT DEFAULT '[]',
+            monitoring_schedule TEXT DEFAULT '',
+            emergency_protocol TEXT DEFAULT '',
+            last_checkup TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Vaccination Tracker ─── */
+        CREATE TABLE IF NOT EXISTS vaccinations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_name TEXT NOT NULL,
+            vaccine_name TEXT NOT NULL,
+            date_administered TEXT DEFAULT '',
+            dose_number INTEGER DEFAULT 1,
+            lot_number TEXT DEFAULT '',
+            provider TEXT DEFAULT '',
+            next_due TEXT DEFAULT '',
+            reaction TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Mental Health Check-in Log ─── */
+        CREATE TABLE IF NOT EXISTS mental_health_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_name TEXT NOT NULL,
+            check_date TEXT NOT NULL,
+            mood_score INTEGER DEFAULT 5,
+            anxiety_level INTEGER DEFAULT 0,
+            sleep_hours REAL DEFAULT 7,
+            sleep_quality TEXT DEFAULT 'fair',
+            appetite TEXT DEFAULT 'normal',
+            energy_level INTEGER DEFAULT 5,
+            stress_sources TEXT DEFAULT '[]',
+            coping_strategies TEXT DEFAULT '[]',
+            warning_signs TEXT DEFAULT '[]',
+            provider_notes TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Veterinary Records (pets & livestock) ─── */
+        CREATE TABLE IF NOT EXISTS vet_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            animal_name TEXT NOT NULL,
+            species TEXT DEFAULT 'dog',
+            breed TEXT DEFAULT '',
+            weight_lb REAL DEFAULT 0,
+            age_years REAL DEFAULT 0,
+            condition TEXT DEFAULT '',
+            treatment TEXT DEFAULT '',
+            treatment_date TEXT DEFAULT '',
+            medications TEXT DEFAULT '[]',
+            vaccinations TEXT DEFAULT '[]',
+            provider TEXT DEFAULT '',
+            next_due TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -2848,6 +3100,8 @@ def _init_db_inner(conn):
     _create_meal_planning_tables(conn)
     _create_movement_ops_tables(conn)
     _create_tactical_comms_tables(conn)
+    _create_land_assessment_tables(conn)
+    _create_medical_phase2_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

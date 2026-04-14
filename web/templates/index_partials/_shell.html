@@ -153,6 +153,18 @@
       <span>Agriculture</span>
     </button>
 
+    <!-- Disaster-Specific Modules -->
+    <button class="tab{% if active_tab == 'disaster-modules' %} active{% endif %}" data-tab="disaster-modules">
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
+      <span>Disasters</span>
+    </button>
+
+    <!-- Daily Living & Quality of Life -->
+    <button class="tab{% if active_tab == 'daily-living' %} active{% endif %}" data-tab="daily-living">
+      <span class="tab-icon"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+      <span>Daily Living</span>
+    </button>
+
     <div class="sidebar-group-label">
       <span class="sidebar-group-title">Knowledge</span>
       <span class="sidebar-group-copy">Reference, media, and working memory.</span>

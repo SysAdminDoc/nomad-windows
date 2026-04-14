@@ -1,0 +1,1210 @@
+<!-- ═══════════════════════════════════════════════════════════════
+     TAB: Daily Living & Quality of Life  (Phase 15 · v7.21.0)
+     Schedules, clothing, sanitation, morale, sleep, grid-down cooking
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="tab-daily-living" class="tab-content is-hidden" data-tab="daily-living" data-tab-content="daily-living">
+<style>
+  #tab-daily-living {
+    --dl-accent: #06b6d4;
+    --dl-accent-dim: #06b6d422;
+    --dl-accent-hover: #0891b2;
+    --dl-red: #ef4444;
+    --dl-green: #22c55e;
+    --dl-amber: #f59e0b;
+    --dl-orange: #f97316;
+    --dl-blue: #3b82f6;
+  }
+  #tab-daily-living .dl-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-daily-living .dl-header h2 { font-size:1.25rem; color:var(--dl-accent); margin:0; }
+  #tab-daily-living .dl-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-daily-living .dl-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-daily-living .dl-sub-tab.active { background:var(--dl-accent-dim); border-color:var(--dl-accent); color:var(--dl-accent); }
+  #tab-daily-living .dl-panel { display:none; }
+  #tab-daily-living .dl-panel.active { display:block; }
+  #tab-daily-living .dl-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-daily-living .dl-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-daily-living .dl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-daily-living .dl-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
+  #tab-daily-living .dl-stat-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:12px 14px; text-align:center; }
+  #tab-daily-living .dl-stat-val { font-size:1.4rem; font-weight:700; color:var(--dl-accent); }
+  #tab-daily-living .dl-stat-label { font-size:.7rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-secondary,#aaa); margin-top:2px; }
+  #tab-daily-living .dl-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-daily-living .dl-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-daily-living .dl-form-row input,
+  #tab-daily-living .dl-form-row select,
+  #tab-daily-living .dl-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-daily-living .dl-form-row textarea { min-height:60px; resize:vertical; }
+  #tab-daily-living .dl-form-row .field { flex:1; min-width:140px; }
+  #tab-daily-living .dl-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-daily-living .dl-btn-primary { background:var(--dl-accent); color:#fff; }
+  #tab-daily-living .dl-btn-primary:hover { background:var(--dl-accent-hover); }
+  #tab-daily-living .dl-btn-danger { background:var(--dl-red); color:#fff; }
+  #tab-daily-living .dl-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-daily-living .dl-btn-success { background:var(--dl-green); color:#000; }
+  #tab-daily-living .dl-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-daily-living .dl-list-item:last-child { border-bottom:none; }
+  #tab-daily-living .dl-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-daily-living .dl-badge-normal { background:rgba(34,197,94,.2); color:var(--dl-green); }
+  #tab-daily-living .dl-badge-grid_down { background:rgba(239,68,68,.2); color:var(--dl-red); }
+  #tab-daily-living .dl-badge-emergency { background:rgba(249,115,22,.2); color:var(--dl-orange); }
+  #tab-daily-living .dl-badge-watch { background:rgba(59,130,246,.2); color:var(--dl-blue); }
+  #tab-daily-living .dl-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-daily-living .dl-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  #tab-daily-living .dl-table th { padding:8px 10px; text-align:left; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); background:rgba(0,0,0,.3); border-bottom:1px solid var(--border,#444); }
+  #tab-daily-living .dl-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-daily-living .dl-table tr:nth-child(even) td { background:rgba(255,255,255,.02); }
+  #tab-daily-living .dl-stars { color:var(--dl-accent); letter-spacing:2px; }
+  #tab-daily-living .dl-low-stock { color:var(--dl-red); font-weight:700; }
+  #tab-daily-living .dl-risk-critical { background:rgba(239,68,68,.2); color:var(--dl-red); }
+  #tab-daily-living .dl-risk-high { background:rgba(249,115,22,.2); color:var(--dl-orange); }
+  #tab-daily-living .dl-risk-moderate { background:rgba(234,179,8,.2); color:var(--dl-amber); }
+  #tab-daily-living .dl-risk-low { background:rgba(34,197,94,.2); color:var(--dl-green); }
+  #tab-daily-living .dl-slider-wrap { display:flex; align-items:center; gap:8px; }
+  #tab-daily-living .dl-slider-wrap input[type="range"] { flex:1; accent-color:var(--dl-accent); }
+  #tab-daily-living .dl-slider-val { min-width:24px; text-align:center; font-weight:600; color:var(--dl-accent); font-size:.85rem; }
+  #tab-daily-living .dl-day-checks { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-daily-living .dl-day-checks label { font-size:.78rem; display:flex; align-items:center; gap:3px; color:var(--text-secondary,#aaa); cursor:pointer; }
+  #tab-daily-living .dl-recipe-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:14px; }
+  #tab-daily-living .dl-recipe-title { font-weight:600; color:var(--text-primary,#eee); margin-bottom:4px; }
+  #tab-daily-living .dl-recipe-meta { font-size:.75rem; color:var(--text-secondary,#aaa); }
+  #tab-daily-living .dl-ingredient-row { display:flex; gap:6px; align-items:center; margin-bottom:4px; }
+  #tab-daily-living .dl-ingredient-row input { flex:1; }
+</style>
+
+<div class="dl-header">
+  <h2>Daily Living & Quality of Life</h2>
+</div>
+
+<!-- Sub-tab navigation -->
+<div class="dl-sub-tabs" style="margin-bottom:1rem;display:flex;gap:.5rem;flex-wrap:wrap;">
+  <button class="dl-sub-tab active" data-dl-panel="schedules">&#128197; Schedules</button>
+  <button class="dl-sub-tab" data-dl-panel="clothing">&#128085; Clothing</button>
+  <button class="dl-sub-tab" data-dl-panel="sanitation">&#129532; Sanitation</button>
+  <button class="dl-sub-tab" data-dl-panel="morale">&#129504; Morale</button>
+  <button class="dl-sub-tab" data-dl-panel="sleep">&#128564; Sleep</button>
+  <button class="dl-sub-tab" data-dl-panel="recipes">&#127859; Cooking</button>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 1: Schedules & Chores
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="dl-panel active" id="dl-panel-schedules" data-dl-panel-content="schedules">
+
+  <!-- Schedule Stats -->
+  <div class="dl-stats-grid" id="dl-schedule-stats"></div>
+
+  <!-- Add Schedule Form -->
+  <div class="dl-card">
+    <div class="dl-card-title">Add Schedule</div>
+    <input type="hidden" id="dl-sched-edit-id" value="">
+    <div class="dl-form-row">
+      <div class="field"><label>Schedule Name</label><input name="dl-sched-name" id="dl-sched-name" placeholder="Daily routine"></div>
+      <div class="field"><label>Type</label>
+        <select name="dl-sched-type" id="dl-sched-type">
+          <option value="normal">Normal</option><option value="grid_down">Grid Down</option>
+          <option value="emergency">Emergency</option><option value="watch">Watch</option>
+        </select>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Description</label><textarea name="dl-sched-desc" id="dl-sched-desc" placeholder="Schedule details..."></textarea></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field">
+        <label>Active Days</label>
+        <div class="dl-day-checks">
+          <label><input type="checkbox" name="dl-sched-day-mon" id="dl-sched-day-mon" checked> Mon</label>
+          <label><input type="checkbox" name="dl-sched-day-tue" id="dl-sched-day-tue" checked> Tue</label>
+          <label><input type="checkbox" name="dl-sched-day-wed" id="dl-sched-day-wed" checked> Wed</label>
+          <label><input type="checkbox" name="dl-sched-day-thu" id="dl-sched-day-thu" checked> Thu</label>
+          <label><input type="checkbox" name="dl-sched-day-fri" id="dl-sched-day-fri" checked> Fri</label>
+          <label><input type="checkbox" name="dl-sched-day-sat" id="dl-sched-day-sat" checked> Sat</label>
+          <label><input type="checkbox" name="dl-sched-day-sun" id="dl-sched-day-sun" checked> Sun</label>
+        </div>
+      </div>
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="dl-btn dl-btn-primary" onclick="dlSaveSchedule()">Save Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Schedule List -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <span class="dl-card-title" style="margin:0">Schedules</span>
+    <button class="dl-btn dl-btn-secondary" onclick="dlLoadTemplates()">Load Templates</button>
+  </div>
+  <div id="dl-schedule-list" class="dl-card"><div class="dl-empty">Loading schedules...</div></div>
+  <div id="dl-schedule-templates" class="dl-card is-hidden"></div>
+
+  <!-- Chores Section -->
+  <div class="dl-card" style="margin-top:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="dl-card-title" style="margin:0">Chores</div>
+      <button class="dl-btn dl-btn-secondary" onclick="dlRotateChores()">Rotate All</button>
+    </div>
+    <input type="hidden" id="dl-chore-edit-id" value="">
+    <div class="dl-form-row">
+      <div class="field"><label>Chore Name</label><input name="dl-chore-name" id="dl-chore-name" placeholder="Firewood collection"></div>
+      <div class="field"><label>Category</label>
+        <select name="dl-chore-category" id="dl-chore-category">
+          <option value="cooking">Cooking</option><option value="cleaning">Cleaning</option>
+          <option value="security">Security</option><option value="maintenance">Maintenance</option>
+          <option value="water">Water</option><option value="firewood">Firewood</option>
+          <option value="general">General</option>
+        </select>
+      </div>
+      <div class="field"><label>Assigned To</label><input name="dl-chore-assigned" id="dl-chore-assigned" placeholder="Person"></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Frequency</label>
+        <select name="dl-chore-freq" id="dl-chore-freq">
+          <option value="daily">Daily</option><option value="twice_daily">Twice Daily</option>
+          <option value="weekly">Weekly</option>
+        </select>
+      </div>
+      <div class="field"><label>Duration (min)</label><input name="dl-chore-duration" id="dl-chore-duration" type="number" value="30" min="1"></div>
+      <div class="field"><label>Priority</label>
+        <select name="dl-chore-priority" id="dl-chore-priority">
+          <option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Instructions</label><textarea name="dl-chore-instructions" id="dl-chore-instructions" placeholder="Step-by-step details..."></textarea></div>
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="dl-btn dl-btn-primary" onclick="dlSaveChore()">Save Chore</button>
+      </div>
+    </div>
+  </div>
+  <div id="dl-chore-list" class="dl-card"><div class="dl-empty">Loading chores...</div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 2: Clothing & Gear
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="dl-panel" id="dl-panel-clothing" data-dl-panel-content="clothing">
+
+  <!-- Assessment Card -->
+  <div id="dl-clothing-assessment" class="dl-card is-hidden"></div>
+
+  <!-- Filter -->
+  <div class="dl-form-row" style="margin-bottom:12px;">
+    <div class="field"><label>Filter by Person</label>
+      <select name="dl-clothing-filter" id="dl-clothing-filter" onchange="dlLoadClothing()">
+        <option value="">All People</option>
+      </select>
+    </div>
+    <div class="field" style="align-self:flex-end;flex:0">
+      <button class="dl-btn dl-btn-secondary" onclick="dlLoadAssessment()">Cold Weather Assessment</button>
+    </div>
+  </div>
+
+  <!-- Add Clothing Form -->
+  <div class="dl-card">
+    <div class="dl-card-title">Add Clothing Item</div>
+    <input type="hidden" id="dl-cloth-edit-id" value="">
+    <div class="dl-form-row">
+      <div class="field"><label>Person</label><input name="dl-cloth-person" id="dl-cloth-person" placeholder="Name"></div>
+      <div class="field"><label>Item Name</label><input name="dl-cloth-name" id="dl-cloth-name" placeholder="Winter jacket"></div>
+      <div class="field"><label>Category</label>
+        <select name="dl-cloth-category" id="dl-cloth-category">
+          <option value="base_layer">Base Layer</option><option value="insulation">Insulation</option>
+          <option value="outer">Outer</option><option value="footwear">Footwear</option>
+          <option value="headwear">Headwear</option><option value="gloves">Gloves</option>
+          <option value="rain_gear">Rain Gear</option><option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Size</label><input name="dl-cloth-size" id="dl-cloth-size" placeholder="M / L / XL"></div>
+      <div class="field"><label>Quantity</label><input name="dl-cloth-qty" id="dl-cloth-qty" type="number" value="1" min="1"></div>
+      <div class="field"><label>Condition</label>
+        <select name="dl-cloth-condition" id="dl-cloth-condition">
+          <option value="new">New</option><option value="good" selected>Good</option>
+          <option value="fair">Fair</option><option value="worn">Worn</option><option value="damaged">Damaged</option>
+        </select>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Season</label>
+        <select name="dl-cloth-season" id="dl-cloth-season">
+          <option value="all">All Seasons</option><option value="summer">Summer</option>
+          <option value="winter">Winter</option><option value="rain">Rain</option>
+        </select>
+      </div>
+      <div class="field"><label>Warmth Rating (1-5)</label><input name="dl-cloth-warmth" id="dl-cloth-warmth" type="range" min="1" max="5" value="3"></div>
+      <div class="field"><label>Material</label><input name="dl-cloth-material" id="dl-cloth-material" placeholder="Gore-Tex, wool..."></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Location</label><input name="dl-cloth-location" id="dl-cloth-location" placeholder="Closet A"></div>
+      <div class="field"><label style="display:flex;align-items:center;gap:6px;margin-top:18px;"><input type="checkbox" name="dl-cloth-waterproof" id="dl-cloth-waterproof"> Waterproof</label></div>
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="dl-btn dl-btn-primary" onclick="dlSaveClothing()">Save Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Clothing List -->
+  <div id="dl-clothing-list" class="dl-grid"><div class="dl-empty">Loading clothing...</div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 3: Sanitation
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="dl-panel" id="dl-panel-sanitation" data-dl-panel-content="sanitation">
+
+  <!-- Projections -->
+  <div id="dl-sanitation-projections" class="dl-stats-grid"></div>
+
+  <!-- Low Stock Alerts -->
+  <div id="dl-sanitation-alerts" class="dl-card is-hidden"></div>
+
+  <!-- Add Supply Form -->
+  <div class="dl-card">
+    <div class="dl-card-title">Add Sanitation Supply</div>
+    <input type="hidden" id="dl-san-edit-id" value="">
+    <div class="dl-form-row">
+      <div class="field"><label>Supply Name</label><input name="dl-san-name" id="dl-san-name" placeholder="Bleach, soap..."></div>
+      <div class="field"><label>Category</label>
+        <select name="dl-san-category" id="dl-san-category">
+          <option value="hygiene">Hygiene</option><option value="waste">Waste</option>
+          <option value="water_treatment">Water Treatment</option><option value="cleaning">Cleaning</option>
+          <option value="medical_waste">Medical Waste</option>
+        </select>
+      </div>
+      <div class="field"><label>Quantity</label><input name="dl-san-qty" id="dl-san-qty" type="number" value="1" min="0"></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Unit</label><input name="dl-san-unit" id="dl-san-unit" placeholder="bottles, rolls..."></div>
+      <div class="field"><label>Min Stock</label><input name="dl-san-min" id="dl-san-min" type="number" value="5" min="0"></div>
+      <div class="field"><label>Daily Usage Rate</label><input name="dl-san-rate" id="dl-san-rate" type="number" step="0.1" value="1" min="0"></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Persons Served</label><input name="dl-san-persons" id="dl-san-persons" type="number" value="1" min="1"></div>
+      <div class="field"><label>Location</label><input name="dl-san-location" id="dl-san-location" placeholder="Storage room"></div>
+      <div class="field"><label>Expiration Date</label><input name="dl-san-expires" id="dl-san-expires" type="date"></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="dl-btn dl-btn-primary" onclick="dlSaveSanitation()">Save Supply</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supply List -->
+  <div id="dl-sanitation-list" class="dl-card"><div class="dl-empty">Loading supplies...</div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 4: Morale & Psych
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="dl-panel" id="dl-panel-morale" data-dl-panel-content="morale">
+
+  <!-- Trend Summary -->
+  <div id="dl-morale-trends" class="dl-stats-grid"></div>
+
+  <!-- Person Filter -->
+  <div class="dl-form-row" style="margin-bottom:12px;">
+    <div class="field"><label>Filter by Person</label>
+      <select name="dl-morale-filter" id="dl-morale-filter" onchange="dlLoadMorale()">
+        <option value="">All People</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Quick-Log Form -->
+  <div class="dl-card">
+    <div class="dl-card-title">Quick Morale Log</div>
+    <div class="dl-form-row">
+      <div class="field"><label>Person</label><input name="dl-morale-person" id="dl-morale-person" placeholder="Name"></div>
+      <div class="field"><label>Date</label><input name="dl-morale-date" id="dl-morale-date" type="date"></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Morale (1-10)</label>
+        <div class="dl-slider-wrap"><input type="range" name="dl-morale-score" id="dl-morale-score" min="1" max="10" value="5"><span class="dl-slider-val" id="dl-morale-score-val">5</span></div>
+      </div>
+      <div class="field"><label>Stress (1-10)</label>
+        <div class="dl-slider-wrap"><input type="range" name="dl-morale-stress" id="dl-morale-stress" min="1" max="10" value="5"><span class="dl-slider-val" id="dl-morale-stress-val">5</span></div>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Sleep Quality (1-10)</label>
+        <div class="dl-slider-wrap"><input type="range" name="dl-morale-sleep" id="dl-morale-sleep" min="1" max="10" value="5"><span class="dl-slider-val" id="dl-morale-sleep-val">5</span></div>
+      </div>
+      <div class="field"><label>Physical Health (1-10)</label>
+        <div class="dl-slider-wrap"><input type="range" name="dl-morale-physical" id="dl-morale-physical" min="1" max="10" value="5"><span class="dl-slider-val" id="dl-morale-physical-val">5</span></div>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Social (1-10)</label>
+        <div class="dl-slider-wrap"><input type="range" name="dl-morale-social" id="dl-morale-social" min="1" max="10" value="5"><span class="dl-slider-val" id="dl-morale-social-val">5</span></div>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field">
+        <label>Activities</label>
+        <div class="dl-day-checks">
+          <label><input type="checkbox" name="dl-morale-act-exercise"> Exercise</label>
+          <label><input type="checkbox" name="dl-morale-act-reading"> Reading</label>
+          <label><input type="checkbox" name="dl-morale-act-games"> Games</label>
+          <label><input type="checkbox" name="dl-morale-act-music"> Music</label>
+          <label><input type="checkbox" name="dl-morale-act-social"> Social Time</label>
+          <label><input type="checkbox" name="dl-morale-act-craft"> Crafting</label>
+          <label><input type="checkbox" name="dl-morale-act-nature"> Nature Walk</label>
+        </div>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Concerns</label><textarea name="dl-morale-concerns" id="dl-morale-concerns" placeholder="Any worries or issues..."></textarea></div>
+      <div class="field"><label>Positive Notes</label><textarea name="dl-morale-positive" id="dl-morale-positive" placeholder="Good things today..."></textarea></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="dl-btn dl-btn-primary" onclick="dlSaveMorale()">Log Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Morale History -->
+  <div id="dl-morale-list" class="dl-card"><div class="dl-empty">Loading morale logs...</div></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 5: Sleep & Performance
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="dl-panel" id="dl-panel-sleep" data-dl-panel-content="sleep">
+
+  <!-- Sleep Debt Display -->
+  <div id="dl-sleep-debt" class="dl-stats-grid"></div>
+
+  <!-- Sleep Log Form -->
+  <div class="dl-card">
+    <div class="dl-card-title">Log Sleep</div>
+    <div class="dl-form-row">
+      <div class="field"><label>Person</label><input name="dl-sleep-person" id="dl-sleep-person" placeholder="Name"></div>
+      <div class="field"><label>Date</label><input name="dl-sleep-date" id="dl-sleep-date" type="date"></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Sleep Start</label><input name="dl-sleep-start" id="dl-sleep-start" type="time"></div>
+      <div class="field"><label>Sleep End</label><input name="dl-sleep-end" id="dl-sleep-end" type="time"></div>
+      <div class="field"><label>Quality (1-10)</label>
+        <div class="dl-slider-wrap"><input type="range" name="dl-sleep-quality" id="dl-sleep-quality" min="1" max="10" value="5"><span class="dl-slider-val" id="dl-sleep-quality-val">5</span></div>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Interruptions</label><input name="dl-sleep-interruptions" id="dl-sleep-interruptions" type="number" value="0" min="0"></div>
+      <div class="field"><label style="display:flex;align-items:center;gap:6px;margin-top:18px;"><input type="checkbox" name="dl-sleep-watch" id="dl-sleep-watch"> Watch Duty</label></div>
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="dl-btn dl-btn-primary" onclick="dlSaveSleep()">Log Sleep</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sleep History -->
+  <div id="dl-sleep-list" class="dl-card"><div class="dl-empty">Loading sleep logs...</div></div>
+
+  <!-- Watch Optimizer -->
+  <div class="dl-card" style="margin-top:16px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="dl-card-title" style="margin:0">Watch Schedule Optimizer</div>
+      <button class="dl-btn dl-btn-primary" onclick="dlRunWatchOptimizer()">Generate Rotation</button>
+    </div>
+    <div id="dl-watch-result" class="dl-empty">Click to generate an optimized watch rotation.</div>
+  </div>
+
+  <!-- Performance Checks -->
+  <div class="dl-card" style="margin-top:16px;">
+    <div class="dl-card-title">Performance Check</div>
+    <div class="dl-form-row">
+      <div class="field"><label>Person</label><input name="dl-perf-person" id="dl-perf-person" placeholder="Name"></div>
+      <div class="field"><label>Hours Awake</label><input name="dl-perf-hours" id="dl-perf-hours" type="number" value="8" min="0" step="0.5"></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Fatigue (1-10)</label>
+        <div class="dl-slider-wrap"><input type="range" name="dl-perf-fatigue" id="dl-perf-fatigue" min="1" max="10" value="3"><span class="dl-slider-val" id="dl-perf-fatigue-val">3</span></div>
+      </div>
+      <div class="field"><label>Cognitive Score (1-10)</label>
+        <div class="dl-slider-wrap"><input type="range" name="dl-perf-cognitive" id="dl-perf-cognitive" min="1" max="10" value="7"><span class="dl-slider-val" id="dl-perf-cognitive-val">7</span></div>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Physical Score (1-10)</label>
+        <div class="dl-slider-wrap"><input type="range" name="dl-perf-physical" id="dl-perf-physical" min="1" max="10" value="7"><span class="dl-slider-val" id="dl-perf-physical-val">7</span></div>
+      </div>
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="dl-btn dl-btn-primary" onclick="dlSavePerformance()">Log Check</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Performance History -->
+  <div id="dl-perf-list" class="dl-card"><div class="dl-empty">Loading performance checks...</div></div>
+
+  <!-- Risk Summary -->
+  <div id="dl-risk-summary" class="dl-card is-hidden"></div>
+
+  <!-- Work-Rest Reference -->
+  <div id="dl-work-rest-ref" class="dl-card is-hidden"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     PANEL 6: Grid-Down Cooking
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="dl-panel" id="dl-panel-recipes" data-dl-panel-content="recipes">
+
+  <!-- Recipe Filters -->
+  <div class="dl-form-row" style="margin-bottom:12px;">
+    <div class="field"><label>Category</label>
+      <select name="dl-recipe-filter-cat" id="dl-recipe-filter-cat" onchange="dlLoadRecipes()">
+        <option value="">All Categories</option>
+        <option value="main">Main</option><option value="side">Side</option>
+        <option value="breakfast">Breakfast</option><option value="snack">Snack</option>
+        <option value="drink">Drink</option><option value="preservation">Preservation</option>
+      </select>
+    </div>
+    <div class="field"><label>Method</label>
+      <select name="dl-recipe-filter-method" id="dl-recipe-filter-method" onchange="dlLoadRecipes()">
+        <option value="">All Methods</option>
+        <option value="campfire">Campfire</option><option value="camp_stove">Camp Stove</option>
+        <option value="dutch_oven">Dutch Oven</option><option value="solar_oven">Solar Oven</option>
+        <option value="no_cook">No Cook</option><option value="rocket_stove">Rocket Stove</option>
+      </select>
+    </div>
+    <div class="field"><label>Search</label><input name="dl-recipe-search" id="dl-recipe-search" placeholder="Search recipes..." onkeyup="dlSearchRecipes()"></div>
+    <div class="field" style="align-self:flex-end;flex:0">
+      <button class="dl-btn dl-btn-success" onclick="dlSeedRecipes()">Seed Default Recipes</button>
+    </div>
+  </div>
+
+  <!-- Recipe List -->
+  <div id="dl-recipe-list" class="dl-grid"><div class="dl-empty">Loading recipes...</div></div>
+
+  <!-- Add Recipe Form -->
+  <div class="dl-card" style="margin-top:16px;">
+    <div class="dl-card-title">Add Recipe</div>
+    <input type="hidden" id="dl-recipe-edit-id" value="">
+    <div class="dl-form-row">
+      <div class="field"><label>Recipe Name</label><input name="dl-recipe-name" id="dl-recipe-name" placeholder="Camp stew"></div>
+      <div class="field"><label>Category</label>
+        <select name="dl-recipe-category" id="dl-recipe-category">
+          <option value="main">Main</option><option value="side">Side</option>
+          <option value="breakfast">Breakfast</option><option value="snack">Snack</option>
+          <option value="drink">Drink</option><option value="preservation">Preservation</option>
+        </select>
+      </div>
+      <div class="field"><label>Cooking Method</label>
+        <select name="dl-recipe-method" id="dl-recipe-method">
+          <option value="campfire">Campfire</option><option value="camp_stove">Camp Stove</option>
+          <option value="dutch_oven">Dutch Oven</option><option value="solar_oven">Solar Oven</option>
+          <option value="no_cook">No Cook</option><option value="rocket_stove">Rocket Stove</option>
+        </select>
+      </div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Prep Time (min)</label><input name="dl-recipe-prep" id="dl-recipe-prep" type="number" value="10" min="0"></div>
+      <div class="field"><label>Cook Time (min)</label><input name="dl-recipe-cook" id="dl-recipe-cook" type="number" value="30" min="0"></div>
+      <div class="field"><label>Servings</label><input name="dl-recipe-servings" id="dl-recipe-servings" type="number" value="4" min="1"></div>
+      <div class="field"><label>Calories per Serving</label><input name="dl-recipe-calories" id="dl-recipe-calories" type="number" value="400" min="0"></div>
+    </div>
+    <div class="dl-form-row">
+      <div class="field"><label>Instructions</label><textarea name="dl-recipe-instructions" id="dl-recipe-instructions" placeholder="Step-by-step cooking instructions..."></textarea></div>
+    </div>
+
+    <!-- Dynamic Ingredients -->
+    <div style="margin-bottom:10px;">
+      <label style="font-size:.78rem;color:var(--text-secondary,#aaa);display:block;margin-bottom:6px;">Ingredients</label>
+      <div id="dl-recipe-ingredients"></div>
+      <button class="dl-btn dl-btn-secondary" onclick="dlAddIngredientRow()" style="margin-top:6px;">+ Add Ingredient</button>
+    </div>
+
+    <button class="dl-btn dl-btn-primary" onclick="dlSaveRecipe()">Save Recipe</button>
+  </div>
+
+  <!-- Fuel Calculator -->
+  <div class="dl-card" style="margin-top:16px;">
+    <div class="dl-card-title">Fuel Calculator</div>
+    <div class="dl-form-row">
+      <div class="field"><label>Recipe</label>
+        <select name="dl-fuel-recipe" id="dl-fuel-recipe">
+          <option value="">Select a recipe...</option>
+        </select>
+      </div>
+      <div class="field"><label>Servings Override</label><input name="dl-fuel-servings" id="dl-fuel-servings" type="number" value="4" min="1"></div>
+      <div class="field" style="align-self:flex-end;flex:0">
+        <button class="dl-btn dl-btn-primary" onclick="dlCalculateFuel()">Calculate Fuel</button>
+      </div>
+    </div>
+    <div id="dl-fuel-result" class="dl-empty">Select a recipe and calculate fuel needs.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  const root = document.getElementById('tab-daily-living');
+
+  /* ── Sub-tab switching ───────────────────────────────── */
+  root.querySelectorAll('.dl-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.dl-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.dl-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById('dl-panel-' + btn.dataset.dlPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  /* ── Helpers ─────────────────────────────────────────── */
+  const el  = id => document.getElementById(id);
+  const val = id => document.getElementById(id)?.value || '';
+  const numVal = (id, def) => parseFloat(val(id)) || def || 0;
+  const api = (url, opts) => fetch(url, opts).then(r => r.json());
+  const post = (url, body) => api(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const put  = (url, body) => api(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const del  = url => api(url, {method:'DELETE'});
+  function toast(msg) { if (window.showToast) window.showToast(msg); }
+  function stars(n) { return '<span class="dl-stars">' + '\u2605'.repeat(n) + '\u2606'.repeat(5 - n) + '</span>'; }
+  function typeBadge(t) { return '<span class="dl-badge dl-badge-' + t + '">' + t.replace('_', ' ') + '</span>'; }
+  function riskBadge(level) {
+    var cls = 'dl-risk-low';
+    if (level === 'critical') cls = 'dl-risk-critical';
+    else if (level === 'high') cls = 'dl-risk-high';
+    else if (level === 'moderate') cls = 'dl-risk-moderate';
+    return '<span class="dl-badge ' + cls + '">' + level + '</span>';
+  }
+  var methodIcons = {campfire:'\uD83D\uDD25',camp_stove:'\u26FD',dutch_oven:'\uD83C\uDF72',solar_oven:'\u2600\uFE0F',no_cook:'\u2744\uFE0F',rocket_stove:'\uD83D\uDE80'};
+  function methodIcon(m) { return methodIcons[m] || ''; }
+
+  /* ── Slider live-update wiring ───────────────────────── */
+  ['dl-morale-score','dl-morale-stress','dl-morale-sleep','dl-morale-physical','dl-morale-social',
+   'dl-sleep-quality','dl-perf-fatigue','dl-perf-cognitive','dl-perf-physical'].forEach(function(id) {
+    var s = el(id), v = el(id + '-val');
+    if (s && v) s.addEventListener('input', function(){ v.textContent = s.value; });
+  });
+
+  /* Set today as default for date fields */
+  var today = new Date().toISOString().split('T')[0];
+  ['dl-morale-date','dl-sleep-date'].forEach(function(id){ var e = el(id); if (e && !e.value) e.value = today; });
+
+  /* ══════════════════════ SCHEDULES ══════════════════════ */
+  window.dlLoadSchedules = function() {
+    api('/api/daily-living/schedules').then(function(items) {
+      var c = el('dl-schedule-list');
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No schedules yet. Create one above.</div>'; return; }
+      c.innerHTML = items.map(function(s) {
+        return '<div class="dl-list-item"><div><strong>' + s.name + '</strong> ' + typeBadge(s.type || 'normal') +
+          '<br><small style="color:var(--text-secondary)">' + (s.description || 'No description') +
+          ' &middot; ' + (s.active_days || []).join(', ') + '</small></div>' +
+          '<div style="display:flex;gap:6px;">' +
+          '<button class="dl-btn dl-btn-secondary" onclick="dlEditSchedule(' + s.id + ')">Edit</button>' +
+          '<button class="dl-btn dl-btn-danger" onclick="dlDeleteSchedule(' + s.id + ')">&times;</button></div></div>';
+      }).join('');
+      /* Update stats */
+      var stats = el('dl-schedule-stats');
+      stats.innerHTML = '<div class="dl-stat-card"><div class="dl-stat-val">' + items.length + '</div><div class="dl-stat-label">Schedules</div></div>' +
+        '<div class="dl-stat-card"><div class="dl-stat-val">' + items.filter(function(s){return s.type==='normal';}).length + '</div><div class="dl-stat-label">Normal</div></div>' +
+        '<div class="dl-stat-card"><div class="dl-stat-val">' + items.filter(function(s){return s.type==='grid_down';}).length + '</div><div class="dl-stat-label">Grid Down</div></div>' +
+        '<div class="dl-stat-card"><div class="dl-stat-val">' + items.filter(function(s){return s.type==='emergency';}).length + '</div><div class="dl-stat-label">Emergency</div></div>';
+    });
+  };
+
+  window.dlSaveSchedule = function() {
+    var name = val('dl-sched-name'); if (!name) return;
+    var days = [];
+    ['mon','tue','wed','thu','fri','sat','sun'].forEach(function(d) {
+      if (el('dl-sched-day-' + d).checked) days.push(d);
+    });
+    var body = {name:name, type:val('dl-sched-type'), description:val('dl-sched-desc'), active_days:days};
+    var editId = val('dl-sched-edit-id');
+    var p = editId ? put('/api/daily-living/schedules/' + editId, body) : post('/api/daily-living/schedules', body);
+    p.then(function() {
+      el('dl-sched-name').value = ''; el('dl-sched-desc').value = ''; el('dl-sched-edit-id').value = '';
+      toast(editId ? 'Schedule updated' : 'Schedule created'); dlLoadSchedules();
+    });
+  };
+
+  window.dlEditSchedule = function(id) {
+    api('/api/daily-living/schedules/' + id).then(function(s) {
+      el('dl-sched-edit-id').value = s.id;
+      el('dl-sched-name').value = s.name || '';
+      el('dl-sched-type').value = s.type || 'normal';
+      el('dl-sched-desc').value = s.description || '';
+      var days = s.active_days || [];
+      ['mon','tue','wed','thu','fri','sat','sun'].forEach(function(d) {
+        el('dl-sched-day-' + d).checked = days.indexOf(d) !== -1;
+      });
+    });
+  };
+
+  window.dlDeleteSchedule = function(id) {
+    del('/api/daily-living/schedules/' + id).then(function() { toast('Schedule deleted'); dlLoadSchedules(); });
+  };
+
+  window.dlLoadTemplates = function() {
+    var box = el('dl-schedule-templates');
+    box.classList.remove('is-hidden');
+    api('/api/daily-living/schedules/templates').then(function(templates) {
+      if (!templates.length) { box.innerHTML = '<div class="dl-empty">No templates available.</div>'; return; }
+      box.innerHTML = '<div class="dl-card-title">Schedule Templates</div>' +
+        templates.map(function(t) {
+          return '<div class="dl-list-item"><div><strong>' + t.name + '</strong> ' + typeBadge(t.type || 'normal') +
+            '<br><small style="color:var(--text-secondary)">' + (t.description || '') + '</small></div>' +
+            '<button class="dl-btn dl-btn-primary" onclick="dlApplyTemplate(' + t.id + ')">Apply</button></div>';
+        }).join('');
+    });
+  };
+
+  window.dlApplyTemplate = function(id) {
+    post('/api/daily-living/schedules', {template_id:id}).then(function() { toast('Template applied'); dlLoadSchedules(); });
+  };
+
+  /* ══════════════════════ CHORES ═════════════════════════ */
+  window.dlLoadChores = function() {
+    api('/api/daily-living/chores').then(function(items) {
+      var c = el('dl-chore-list');
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No chores yet. Add one above.</div>'; return; }
+      c.innerHTML = items.map(function(ch) {
+        var completedCls = ch.completed ? ' style="opacity:.5"' : '';
+        return '<div class="dl-list-item"' + completedCls + '><div>' +
+          '<strong>' + ch.name + '</strong> <span class="dl-badge" style="background:var(--dl-accent-dim);color:var(--dl-accent)">' + ch.category + '</span>' +
+          ' <span class="dl-badge" style="background:var(--border,#333)">' + ch.frequency + '</span>' +
+          '<br><small style="color:var(--text-secondary)">Assigned: ' + (ch.assigned_to || 'Unassigned') +
+          ' &middot; ' + (ch.duration || 30) + 'min &middot; Priority: ' + (ch.priority || 'medium') + '</small></div>' +
+          '<div style="display:flex;gap:6px;">' +
+          (!ch.completed ? '<button class="dl-btn dl-btn-success" onclick="dlCompleteChore(' + ch.id + ')">Done</button>' : '') +
+          '<button class="dl-btn dl-btn-secondary" onclick="dlEditChore(' + ch.id + ')">Edit</button>' +
+          '<button class="dl-btn dl-btn-danger" onclick="dlDeleteChore(' + ch.id + ')">&times;</button></div></div>';
+      }).join('');
+    });
+  };
+
+  window.dlSaveChore = function() {
+    var name = val('dl-chore-name'); if (!name) return;
+    var body = {name:name, category:val('dl-chore-category'), assigned_to:val('dl-chore-assigned'),
+      frequency:val('dl-chore-freq'), duration:numVal('dl-chore-duration', 30),
+      priority:val('dl-chore-priority'), instructions:val('dl-chore-instructions')};
+    var editId = val('dl-chore-edit-id');
+    var p = editId ? put('/api/daily-living/chores/' + editId, body) : post('/api/daily-living/chores', body);
+    p.then(function() {
+      el('dl-chore-name').value = ''; el('dl-chore-assigned').value = ''; el('dl-chore-instructions').value = ''; el('dl-chore-edit-id').value = '';
+      toast(editId ? 'Chore updated' : 'Chore added'); dlLoadChores();
+    });
+  };
+
+  window.dlEditChore = function(id) {
+    api('/api/daily-living/chores/' + id).then(function(ch) {
+      el('dl-chore-edit-id').value = ch.id;
+      el('dl-chore-name').value = ch.name || '';
+      el('dl-chore-category').value = ch.category || 'general';
+      el('dl-chore-assigned').value = ch.assigned_to || '';
+      el('dl-chore-freq').value = ch.frequency || 'daily';
+      el('dl-chore-duration').value = ch.duration || 30;
+      el('dl-chore-priority').value = ch.priority || 'medium';
+      el('dl-chore-instructions').value = ch.instructions || '';
+    });
+  };
+
+  window.dlDeleteChore = function(id) {
+    del('/api/daily-living/chores/' + id).then(function() { toast('Chore deleted'); dlLoadChores(); });
+  };
+
+  window.dlCompleteChore = function(id) {
+    post('/api/daily-living/chores/' + id + '/complete', {}).then(function() { toast('Chore completed!'); dlLoadChores(); });
+  };
+
+  window.dlRotateChores = function() {
+    post('/api/daily-living/chores/rotate', {}).then(function() { toast('Chores rotated'); dlLoadChores(); });
+  };
+
+  /* ══════════════════════ CLOTHING ═══════════════════════ */
+  window.dlLoadClothing = function() {
+    var person = val('dl-clothing-filter');
+    var url = '/api/daily-living/clothing' + (person ? '?person=' + encodeURIComponent(person) : '');
+    api(url).then(function(items) {
+      var c = el('dl-clothing-list');
+      /* Populate person filter dropdown from unique persons */
+      var select = el('dl-clothing-filter');
+      var currentVal = select.value;
+      var people = [];
+      items.forEach(function(it) { if (it.person && people.indexOf(it.person) === -1) people.push(it.person); });
+      var opts = '<option value="">All People</option>' + people.map(function(p) {
+        return '<option value="' + p + '"' + (p === currentVal ? ' selected' : '') + '>' + p + '</option>';
+      }).join('');
+      select.innerHTML = opts;
+
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No clothing items. Add one above.</div>'; return; }
+      c.innerHTML = items.map(function(it) {
+        return '<div class="dl-recipe-card"><div class="dl-recipe-title">' + it.item_name +
+          (it.waterproof ? ' <span class="dl-badge" style="background:rgba(59,130,246,.2);color:var(--dl-blue)">Waterproof</span>' : '') +
+          '</div><div class="dl-recipe-meta">' + (it.person || '') + ' &middot; ' + (it.category || '').replace('_', ' ') +
+          ' &middot; ' + (it.size || '-') + ' &middot; Qty: ' + (it.quantity || 1) + ' &middot; ' + (it.condition || 'good') +
+          ' &middot; ' + (it.season || 'all') + '</div>' +
+          '<div style="margin-top:6px;">' + stars(it.warmth_rating || 1) + ' <small style="color:var(--text-secondary)">warmth</small></div>' +
+          '<div style="margin-top:8px;display:flex;gap:6px;">' +
+          '<button class="dl-btn dl-btn-secondary" onclick="dlEditClothing(' + it.id + ')">Edit</button>' +
+          '<button class="dl-btn dl-btn-danger" onclick="dlDeleteClothing(' + it.id + ')">&times;</button></div></div>';
+      }).join('');
+    });
+  };
+
+  window.dlSaveClothing = function() {
+    var name = val('dl-cloth-name'); if (!name) return;
+    var body = {person:val('dl-cloth-person'), item_name:name, category:val('dl-cloth-category'),
+      size:val('dl-cloth-size'), quantity:numVal('dl-cloth-qty', 1), condition:val('dl-cloth-condition'),
+      season:val('dl-cloth-season'), warmth_rating:numVal('dl-cloth-warmth', 3),
+      waterproof:el('dl-cloth-waterproof').checked, material:val('dl-cloth-material'), location:val('dl-cloth-location')};
+    var editId = val('dl-cloth-edit-id');
+    var p = editId ? put('/api/daily-living/clothing/' + editId, body) : post('/api/daily-living/clothing', body);
+    p.then(function() {
+      el('dl-cloth-name').value = ''; el('dl-cloth-person').value = ''; el('dl-cloth-material').value = '';
+      el('dl-cloth-location').value = ''; el('dl-cloth-edit-id').value = '';
+      toast(editId ? 'Item updated' : 'Item added'); dlLoadClothing();
+    });
+  };
+
+  window.dlEditClothing = function(id) {
+    api('/api/daily-living/clothing/' + id).then(function(it) {
+      el('dl-cloth-edit-id').value = it.id;
+      el('dl-cloth-person').value = it.person || '';
+      el('dl-cloth-name').value = it.item_name || '';
+      el('dl-cloth-category').value = it.category || 'other';
+      el('dl-cloth-size').value = it.size || '';
+      el('dl-cloth-qty').value = it.quantity || 1;
+      el('dl-cloth-condition').value = it.condition || 'good';
+      el('dl-cloth-season').value = it.season || 'all';
+      el('dl-cloth-warmth').value = it.warmth_rating || 3;
+      el('dl-cloth-waterproof').checked = !!it.waterproof;
+      el('dl-cloth-material').value = it.material || '';
+      el('dl-cloth-location').value = it.location || '';
+    });
+  };
+
+  window.dlDeleteClothing = function(id) {
+    del('/api/daily-living/clothing/' + id).then(function() { toast('Item removed'); dlLoadClothing(); });
+  };
+
+  window.dlLoadAssessment = function() {
+    var box = el('dl-clothing-assessment');
+    box.classList.remove('is-hidden');
+    api('/api/daily-living/clothing/assessment').then(function(data) {
+      var html = '<div class="dl-card-title">Cold Weather Assessment</div>';
+      if (data.summary) html += '<p style="color:var(--text-primary,#eee);margin-bottom:8px;">' + data.summary + '</p>';
+      if (data.gaps && data.gaps.length) {
+        html += '<div style="color:var(--dl-amber);font-weight:600;margin-bottom:4px;">Gaps Identified:</div><ul style="margin:0;padding-left:18px;color:var(--text-secondary,#aaa)">';
+        data.gaps.forEach(function(g) { html += '<li>' + g + '</li>'; });
+        html += '</ul>';
+      } else {
+        html += '<div style="color:var(--dl-green);">No warmth gaps detected.</div>';
+      }
+      box.innerHTML = html;
+    });
+  };
+
+  /* ══════════════════════ SANITATION ═════════════════════ */
+  window.dlLoadSanitation = function() {
+    api('/api/daily-living/sanitation').then(function(items) {
+      var c = el('dl-sanitation-list');
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No sanitation supplies tracked.</div>'; return; }
+      /* Check for low stock alerts */
+      var lowStock = items.filter(function(s) { return s.quantity < (s.min_stock || 0); });
+      var alertBox = el('dl-sanitation-alerts');
+      if (lowStock.length) {
+        alertBox.classList.remove('is-hidden');
+        alertBox.innerHTML = '<div class="dl-card-title" style="color:var(--dl-red);">Low Stock Alerts (' + lowStock.length + ')</div>' +
+          lowStock.map(function(s) {
+            return '<div style="margin-bottom:4px;"><strong class="dl-low-stock">' + s.name + '</strong> <small style="color:var(--text-secondary)">' +
+              s.quantity + ' / ' + s.min_stock + ' ' + (s.unit || '') + '</small></div>';
+          }).join('');
+      } else {
+        alertBox.classList.add('is-hidden');
+      }
+
+      c.innerHTML = '<table class="dl-table"><thead><tr><th>Supply</th><th>Category</th><th>Qty</th><th>Unit</th><th>Min</th><th>Rate/Day</th><th>Days Left</th><th>Expires</th><th></th></tr></thead><tbody>' +
+        items.map(function(s) {
+          var daysLeft = s.daily_usage_rate > 0 ? Math.floor(s.quantity / s.daily_usage_rate) : '-';
+          var lowCls = s.quantity < (s.min_stock || 0) ? ' class="dl-low-stock"' : '';
+          return '<tr><td' + lowCls + '>' + s.name + '</td><td><span class="dl-badge" style="background:var(--dl-accent-dim);color:var(--dl-accent)">' + (s.category || '') + '</span></td>' +
+            '<td' + lowCls + '>' + s.quantity + '</td><td>' + (s.unit || '') + '</td><td>' + (s.min_stock || 0) + '</td>' +
+            '<td>' + (s.daily_usage_rate || 0) + '</td><td>' + daysLeft + '</td><td>' + (s.expiration_date || '-') + '</td>' +
+            '<td style="white-space:nowrap"><button class="dl-btn dl-btn-secondary" onclick="dlEditSanitation(' + s.id + ')">Edit</button> ' +
+            '<button class="dl-btn dl-btn-danger" onclick="dlDeleteSanitation(' + s.id + ')">&times;</button></td></tr>';
+        }).join('') + '</tbody></table>';
+    });
+
+    /* Load projections */
+    api('/api/daily-living/sanitation/projections').then(function(data) {
+      var box = el('dl-sanitation-projections');
+      var cats = data.categories || data;
+      if (Array.isArray(cats)) {
+        box.innerHTML = cats.map(function(c) {
+          return '<div class="dl-stat-card"><div class="dl-stat-val">' + (c.days_supply || 0) + 'd</div><div class="dl-stat-label">' + c.category + '</div></div>';
+        }).join('');
+      }
+    });
+  };
+
+  window.dlSaveSanitation = function() {
+    var name = val('dl-san-name'); if (!name) return;
+    var body = {name:name, category:val('dl-san-category'), quantity:numVal('dl-san-qty', 1), unit:val('dl-san-unit'),
+      min_stock:numVal('dl-san-min', 5), daily_usage_rate:numVal('dl-san-rate', 1),
+      persons_served:numVal('dl-san-persons', 1), location:val('dl-san-location'), expiration_date:val('dl-san-expires')};
+    var editId = val('dl-san-edit-id');
+    var p = editId ? put('/api/daily-living/sanitation/' + editId, body) : post('/api/daily-living/sanitation', body);
+    p.then(function() {
+      el('dl-san-name').value = ''; el('dl-san-unit').value = ''; el('dl-san-location').value = '';
+      el('dl-san-expires').value = ''; el('dl-san-edit-id').value = '';
+      toast(editId ? 'Supply updated' : 'Supply added'); dlLoadSanitation();
+    });
+  };
+
+  window.dlEditSanitation = function(id) {
+    api('/api/daily-living/sanitation/' + id).then(function(s) {
+      el('dl-san-edit-id').value = s.id;
+      el('dl-san-name').value = s.name || '';
+      el('dl-san-category').value = s.category || 'hygiene';
+      el('dl-san-qty').value = s.quantity || 0;
+      el('dl-san-unit').value = s.unit || '';
+      el('dl-san-min').value = s.min_stock || 0;
+      el('dl-san-rate').value = s.daily_usage_rate || 0;
+      el('dl-san-persons').value = s.persons_served || 1;
+      el('dl-san-location').value = s.location || '';
+      el('dl-san-expires').value = s.expiration_date || '';
+    });
+  };
+
+  window.dlDeleteSanitation = function(id) {
+    del('/api/daily-living/sanitation/' + id).then(function() { toast('Supply removed'); dlLoadSanitation(); });
+  };
+
+  /* ══════════════════════ MORALE ═════════════════════════ */
+  window.dlLoadMorale = function() {
+    var person = val('dl-morale-filter');
+    var url = '/api/daily-living/morale' + (person ? '?person=' + encodeURIComponent(person) : '');
+    api(url).then(function(items) {
+      var c = el('dl-morale-list');
+      /* Populate filter */
+      var select = el('dl-morale-filter');
+      var currentVal = select.value;
+      var people = [];
+      items.forEach(function(it) { if (it.person && people.indexOf(it.person) === -1) people.push(it.person); });
+      var opts = '<option value="">All People</option>' + people.map(function(p) {
+        return '<option value="' + p + '"' + (p === currentVal ? ' selected' : '') + '>' + p + '</option>';
+      }).join('');
+      select.innerHTML = opts;
+
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No morale logs yet.</div>'; return; }
+      c.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Date</th><th>Morale</th><th>Stress</th><th>Sleep</th><th>Physical</th><th>Social</th><th>Activities</th><th></th></tr></thead><tbody>' +
+        items.map(function(m) {
+          return '<tr><td>' + (m.person || '') + '</td><td>' + (m.date || '') + '</td>' +
+            '<td>' + (m.morale || 0) + '</td><td>' + (m.stress || 0) + '</td>' +
+            '<td>' + (m.sleep_quality || 0) + '</td><td>' + (m.physical_health || 0) + '</td>' +
+            '<td>' + (m.social || 0) + '</td><td><small>' + ((m.activities || []).join(', ') || '-') + '</small></td>' +
+            '<td><button class="dl-btn dl-btn-danger" onclick="dlDeleteMorale(' + m.id + ')">&times;</button></td></tr>';
+        }).join('') + '</tbody></table>';
+    });
+
+    /* Load trends */
+    api('/api/daily-living/morale/trends').then(function(data) {
+      var box = el('dl-morale-trends');
+      var fields = ['morale','stress','sleep_quality','physical_health','social'];
+      box.innerHTML = fields.map(function(f) {
+        var v = data[f + '_avg'] !== undefined ? data[f + '_avg'] : (data[f] || '-');
+        if (typeof v === 'number') v = v.toFixed(1);
+        return '<div class="dl-stat-card"><div class="dl-stat-val">' + v + '</div><div class="dl-stat-label">' + f.replace(/_/g, ' ') + ' (7d avg)</div></div>';
+      }).join('');
+    });
+  };
+
+  window.dlSaveMorale = function() {
+    var person = val('dl-morale-person'); if (!person) return;
+    var activities = [];
+    root.querySelectorAll('[name^="dl-morale-act-"]').forEach(function(cb) {
+      if (cb.checked) activities.push(cb.name.replace('dl-morale-act-', ''));
+    });
+    var body = {person:person, date:val('dl-morale-date'),
+      morale:numVal('dl-morale-score', 5), stress:numVal('dl-morale-stress', 5),
+      sleep_quality:numVal('dl-morale-sleep', 5), physical_health:numVal('dl-morale-physical', 5),
+      social:numVal('dl-morale-social', 5), activities:activities,
+      concerns:val('dl-morale-concerns'), positive_notes:val('dl-morale-positive')};
+    post('/api/daily-living/morale', body).then(function() {
+      el('dl-morale-person').value = ''; el('dl-morale-concerns').value = ''; el('dl-morale-positive').value = '';
+      root.querySelectorAll('[name^="dl-morale-act-"]').forEach(function(cb) { cb.checked = false; });
+      toast('Morale logged'); dlLoadMorale();
+    });
+  };
+
+  window.dlDeleteMorale = function(id) {
+    del('/api/daily-living/morale/' + id).then(function() { toast('Entry removed'); dlLoadMorale(); });
+  };
+
+  /* ══════════════════════ SLEEP ══════════════════════════ */
+  window.dlLoadSleep = function() {
+    api('/api/daily-living/sleep').then(function(items) {
+      var c = el('dl-sleep-list');
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No sleep logs yet.</div>'; return; }
+      c.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Date</th><th>Start</th><th>End</th><th>Quality</th><th>Interruptions</th><th>Watch</th><th></th></tr></thead><tbody>' +
+        items.map(function(s) {
+          return '<tr><td>' + (s.person || '') + '</td><td>' + (s.date || '') + '</td>' +
+            '<td>' + (s.sleep_start || '') + '</td><td>' + (s.sleep_end || '') + '</td>' +
+            '<td>' + (s.quality || 0) + '/10</td><td>' + (s.interruptions || 0) + '</td>' +
+            '<td>' + (s.watch_duty ? 'Yes' : '-') + '</td>' +
+            '<td><button class="dl-btn dl-btn-danger" onclick="dlDeleteSleep(' + s.id + ')">&times;</button></td></tr>';
+        }).join('') + '</tbody></table>';
+    });
+
+    /* Sleep debt */
+    api('/api/daily-living/sleep/debt').then(function(data) {
+      var box = el('dl-sleep-debt');
+      var people = data.people || data;
+      if (Array.isArray(people)) {
+        box.innerHTML = people.map(function(p) {
+          var color = p.debt_hours > 8 ? 'var(--dl-red)' : p.debt_hours > 4 ? 'var(--dl-amber)' : 'var(--dl-green)';
+          return '<div class="dl-stat-card"><div class="dl-stat-val" style="color:' + color + '">' + (p.debt_hours || 0).toFixed(1) + 'h</div><div class="dl-stat-label">' + p.person + ' debt</div></div>';
+        }).join('');
+      }
+    });
+  };
+
+  window.dlSaveSleep = function() {
+    var person = val('dl-sleep-person'); if (!person) return;
+    var body = {person:person, date:val('dl-sleep-date'),
+      sleep_start:val('dl-sleep-start'), sleep_end:val('dl-sleep-end'),
+      quality:numVal('dl-sleep-quality', 5), interruptions:numVal('dl-sleep-interruptions', 0),
+      watch_duty:el('dl-sleep-watch').checked};
+    post('/api/daily-living/sleep', body).then(function() {
+      el('dl-sleep-person').value = ''; el('dl-sleep-start').value = ''; el('dl-sleep-end').value = '';
+      toast('Sleep logged'); dlLoadSleep();
+    });
+  };
+
+  window.dlDeleteSleep = function(id) {
+    del('/api/daily-living/sleep/' + id).then(function() { toast('Entry removed'); dlLoadSleep(); });
+  };
+
+  window.dlRunWatchOptimizer = function() {
+    api('/api/daily-living/sleep/watch-optimizer').then(function(data) {
+      var box = el('dl-watch-result');
+      if (!data.rotation || !data.rotation.length) { box.innerHTML = '<div class="dl-empty">Not enough data for optimization. Log more sleep entries.</div>'; return; }
+      box.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Watch Start</th><th>Watch End</th><th>Notes</th></tr></thead><tbody>' +
+        data.rotation.map(function(r) {
+          return '<tr><td>' + r.person + '</td><td>' + r.start + '</td><td>' + r.end + '</td><td>' + (r.notes || '') + '</td></tr>';
+        }).join('') + '</tbody></table>';
+    });
+  };
+
+  /* ══════════════════════ PERFORMANCE ════════════════════ */
+  window.dlLoadPerformance = function() {
+    api('/api/daily-living/performance').then(function(items) {
+      var c = el('dl-perf-list');
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No performance checks logged.</div>'; return; }
+      c.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Hours Awake</th><th>Fatigue</th><th>Cognitive</th><th>Physical</th><th>Risk</th><th></th></tr></thead><tbody>' +
+        items.map(function(p) {
+          return '<tr><td>' + (p.person || '') + '</td><td>' + (p.hours_awake || 0) + '</td>' +
+            '<td>' + (p.fatigue || 0) + '/10</td><td>' + (p.cognitive_score || 0) + '/10</td>' +
+            '<td>' + (p.physical_score || 0) + '/10</td><td>' + riskBadge(p.risk_level || 'low') + '</td>' +
+            '<td><button class="dl-btn dl-btn-danger" onclick="dlDeletePerformance(' + p.id + ')">&times;</button></td></tr>';
+        }).join('') + '</tbody></table>';
+    });
+
+    /* Risk summary */
+    api('/api/daily-living/performance/risk-summary').then(function(data) {
+      var box = el('dl-risk-summary');
+      if (!data || (!data.people && !data.summary)) { box.classList.add('is-hidden'); return; }
+      box.classList.remove('is-hidden');
+      var html = '<div class="dl-card-title">Fatigue Risk Summary</div>';
+      if (data.people) {
+        html += '<div class="dl-grid">' + data.people.map(function(p) {
+          return '<div class="dl-stat-card"><div class="dl-stat-val">' + riskBadge(p.risk_level || 'low') + '</div><div class="dl-stat-label">' + p.person + '</div></div>';
+        }).join('') + '</div>';
+      }
+      if (data.summary) html += '<p style="margin-top:8px;color:var(--text-secondary,#aaa)">' + data.summary + '</p>';
+      box.innerHTML = html;
+    });
+
+    /* Work-rest reference */
+    api('/api/daily-living/reference/work-rest').then(function(data) {
+      var box = el('dl-work-rest-ref');
+      if (!data || !data.table) { box.classList.add('is-hidden'); return; }
+      box.classList.remove('is-hidden');
+      box.innerHTML = '<div class="dl-card-title">Work-Rest Reference</div>' +
+        '<table class="dl-table"><thead><tr><th>Hours Awake</th><th>Risk</th><th>Recommendation</th></tr></thead><tbody>' +
+        data.table.map(function(r) {
+          return '<tr><td>' + r.hours + '</td><td>' + riskBadge(r.risk) + '</td><td>' + r.recommendation + '</td></tr>';
+        }).join('') + '</tbody></table>';
+    });
+  };
+
+  window.dlSavePerformance = function() {
+    var person = val('dl-perf-person'); if (!person) return;
+    var body = {person:person, hours_awake:numVal('dl-perf-hours', 8),
+      fatigue:numVal('dl-perf-fatigue', 3), cognitive_score:numVal('dl-perf-cognitive', 7),
+      physical_score:numVal('dl-perf-physical', 7)};
+    post('/api/daily-living/performance', body).then(function() {
+      el('dl-perf-person').value = '';
+      toast('Performance check logged'); dlLoadPerformance();
+    });
+  };
+
+  window.dlDeletePerformance = function(id) {
+    del('/api/daily-living/performance/' + id).then(function() { toast('Check removed'); dlLoadPerformance(); });
+  };
+
+  /* ══════════════════════ RECIPES ════════════════════════ */
+  var ingredientCounter = 0;
+
+  window.dlAddIngredientRow = function() {
+    var box = el('dl-recipe-ingredients');
+    var row = document.createElement('div');
+    row.className = 'dl-ingredient-row';
+    row.innerHTML = '<input name="dl-ingredient-name-' + ingredientCounter + '" placeholder="Ingredient" style="flex:2">' +
+      '<input name="dl-ingredient-qty-' + ingredientCounter + '" placeholder="Amount" style="flex:1">' +
+      '<input name="dl-ingredient-unit-' + ingredientCounter + '" placeholder="Unit" style="flex:1">' +
+      '<button class="dl-btn dl-btn-danger" onclick="this.parentElement.remove()" style="flex:0;padding:4px 10px">&times;</button>';
+    box.appendChild(row);
+    ingredientCounter++;
+  };
+
+  function gatherIngredients() {
+    var rows = el('dl-recipe-ingredients').querySelectorAll('.dl-ingredient-row');
+    var ingredients = [];
+    rows.forEach(function(row) {
+      var inputs = row.querySelectorAll('input');
+      var name = inputs[0] ? inputs[0].value : '';
+      if (name) {
+        ingredients.push({name:name, quantity:inputs[1] ? inputs[1].value : '', unit:inputs[2] ? inputs[2].value : ''});
+      }
+    });
+    return ingredients;
+  }
+
+  window.dlLoadRecipes = function() {
+    var cat = val('dl-recipe-filter-cat');
+    var method = val('dl-recipe-filter-method');
+    var params = [];
+    if (cat) params.push('category=' + cat);
+    if (method) params.push('method=' + method);
+    var url = '/api/daily-living/recipes' + (params.length ? '?' + params.join('&') : '');
+    api(url).then(function(items) {
+      var c = el('dl-recipe-list');
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No recipes found.</div>'; return; }
+      c.innerHTML = items.map(function(r) {
+        return '<div class="dl-recipe-card">' +
+          '<div class="dl-recipe-title">' + methodIcon(r.cooking_method) + ' ' + r.name + '</div>' +
+          '<div class="dl-recipe-meta">' + (r.category || '') + ' &middot; ' + (r.cooking_method || '').replace('_', ' ') +
+          ' &middot; Prep: ' + (r.prep_time || 0) + 'm &middot; Cook: ' + (r.cook_time || 0) + 'm' +
+          ' &middot; ' + (r.calories_per_serving || 0) + ' cal &middot; Serves ' + (r.servings || 1) + '</div>' +
+          '<div style="margin-top:8px;display:flex;gap:6px;">' +
+          '<button class="dl-btn dl-btn-secondary" onclick="dlEditRecipe(' + r.id + ')">Edit</button>' +
+          '<button class="dl-btn dl-btn-danger" onclick="dlDeleteRecipe(' + r.id + ')">&times;</button></div></div>';
+      }).join('');
+
+      /* Populate fuel calculator dropdown */
+      var select = el('dl-fuel-recipe');
+      select.innerHTML = '<option value="">Select a recipe...</option>' + items.map(function(r) {
+        return '<option value="' + r.id + '">' + r.name + '</option>';
+      }).join('');
+    });
+  };
+
+  window.dlSearchRecipes = function() {
+    var q = val('dl-recipe-search');
+    if (!q || q.length < 2) { dlLoadRecipes(); return; }
+    api('/api/daily-living/recipes/search?q=' + encodeURIComponent(q)).then(function(items) {
+      var c = el('dl-recipe-list');
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No recipes match "' + q + '".</div>'; return; }
+      c.innerHTML = items.map(function(r) {
+        return '<div class="dl-recipe-card">' +
+          '<div class="dl-recipe-title">' + methodIcon(r.cooking_method) + ' ' + r.name + '</div>' +
+          '<div class="dl-recipe-meta">' + (r.category || '') + ' &middot; ' + (r.cooking_method || '').replace('_', ' ') +
+          ' &middot; ' + (r.calories_per_serving || 0) + ' cal &middot; Serves ' + (r.servings || 1) + '</div>' +
+          '<div style="margin-top:8px;display:flex;gap:6px;">' +
+          '<button class="dl-btn dl-btn-secondary" onclick="dlEditRecipe(' + r.id + ')">Edit</button>' +
+          '<button class="dl-btn dl-btn-danger" onclick="dlDeleteRecipe(' + r.id + ')">&times;</button></div></div>';
+      }).join('');
+    });
+  };
+
+  window.dlSaveRecipe = function() {
+    var name = val('dl-recipe-name'); if (!name) return;
+    var body = {name:name, category:val('dl-recipe-category'), cooking_method:val('dl-recipe-method'),
+      prep_time:numVal('dl-recipe-prep', 10), cook_time:numVal('dl-recipe-cook', 30),
+      servings:numVal('dl-recipe-servings', 4), calories_per_serving:numVal('dl-recipe-calories', 400),
+      instructions:val('dl-recipe-instructions'), ingredients:gatherIngredients()};
+    var editId = val('dl-recipe-edit-id');
+    var p = editId ? put('/api/daily-living/recipes/' + editId, body) : post('/api/daily-living/recipes', body);
+    p.then(function() {
+      el('dl-recipe-name').value = ''; el('dl-recipe-instructions').value = ''; el('dl-recipe-edit-id').value = '';
+      el('dl-recipe-ingredients').innerHTML = '';
+      toast(editId ? 'Recipe updated' : 'Recipe added'); dlLoadRecipes();
+    });
+  };
+
+  window.dlEditRecipe = function(id) {
+    api('/api/daily-living/recipes/' + id).then(function(r) {
+      el('dl-recipe-edit-id').value = r.id;
+      el('dl-recipe-name').value = r.name || '';
+      el('dl-recipe-category').value = r.category || 'main';
+      el('dl-recipe-method').value = r.cooking_method || 'campfire';
+      el('dl-recipe-prep').value = r.prep_time || 0;
+      el('dl-recipe-cook').value = r.cook_time || 0;
+      el('dl-recipe-servings').value = r.servings || 4;
+      el('dl-recipe-calories').value = r.calories_per_serving || 0;
+      el('dl-recipe-instructions').value = r.instructions || '';
+      /* Rebuild ingredient rows */
+      el('dl-recipe-ingredients').innerHTML = '';
+      if (r.ingredients && r.ingredients.length) {
+        r.ingredients.forEach(function(ing) {
+          dlAddIngredientRow();
+          var rows = el('dl-recipe-ingredients').querySelectorAll('.dl-ingredient-row');
+          var last = rows[rows.length - 1];
+          var inputs = last.querySelectorAll('input');
+          if (inputs[0]) inputs[0].value = ing.name || '';
+          if (inputs[1]) inputs[1].value = ing.quantity || '';
+          if (inputs[2]) inputs[2].value = ing.unit || '';
+        });
+      }
+    });
+  };
+
+  window.dlDeleteRecipe = function(id) {
+    del('/api/daily-living/recipes/' + id).then(function() { toast('Recipe removed'); dlLoadRecipes(); });
+  };
+
+  window.dlSeedRecipes = function() {
+    post('/api/daily-living/recipes/seed', {}).then(function(data) {
+      toast('Seeded ' + (data.count || 'default') + ' recipes'); dlLoadRecipes();
+    });
+  };
+
+  window.dlCalculateFuel = function() {
+    var recipeId = val('dl-fuel-recipe'); if (!recipeId) return;
+    var servings = numVal('dl-fuel-servings', 4);
+    post('/api/daily-living/recipes/calculate-fuel', {recipe_id:parseInt(recipeId), servings:servings}).then(function(data) {
+      var box = el('dl-fuel-result');
+      box.innerHTML = '<div class="dl-grid">' +
+        '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.fuel_amount || '-') + '</div><div class="dl-stat-label">Fuel Needed (' + (data.fuel_unit || '') + ')</div></div>' +
+        '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.cook_time || '-') + 'm</div><div class="dl-stat-label">Cook Time</div></div>' +
+        '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.total_calories || '-') + '</div><div class="dl-stat-label">Total Calories</div></div>' +
+        '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.method || '-') + '</div><div class="dl-stat-label">Method</div></div>' +
+        '</div>' + (data.notes ? '<p style="margin-top:8px;color:var(--text-secondary,#aaa)">' + data.notes + '</p>' : '');
+    });
+  };
+
+  /* ══════════════════════ LAZY LOAD ══════════════════════ */
+  var loaded = false;
+  function loadAll() {
+    if (loaded) return; loaded = true;
+    dlLoadSchedules(); dlLoadChores(); dlLoadClothing();
+    dlLoadSanitation(); dlLoadMorale(); dlLoadSleep();
+    dlLoadPerformance(); dlLoadRecipes();
+  }
+  var obs = new MutationObserver(function() {
+    if (!root.classList.contains('is-hidden')) loadAll();
+  });
+  obs.observe(root, {attributes:true, attributeFilter:['class']});
+  if (!root.classList.contains('is-hidden')) loadAll();
+})();
+</script>
+</div>

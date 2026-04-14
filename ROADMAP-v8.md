@@ -549,7 +549,7 @@ These phases build the moat. They're what makes NOMAD truly unique.
 
 ---
 
-### Phase 14: Disaster-Specific Modules
+### Phase 14: Disaster-Specific Modules ✅ COMPLETE (v7.20.0)
 **Theme:** Specialized preparedness for each disaster type. One size does not fit all.
 **Effort:** L (4-6 sessions)
 **features.md refs:** §39 (all 10 disaster types), §40 (4 environment types), §15.6 (Alternative Energy), §15.7 (Construction)
@@ -566,7 +566,7 @@ These phases build the moat. They're what makes NOMAD truly unique.
 
 ---
 
-### Phase 15: Daily Living & Quality of Life
+### Phase 15: Daily Living & Quality of Life ✅ COMPLETE (v7.21.0)
 **Theme:** Actually surviving day-to-day under grid-down conditions.
 **Effort:** M (2-3 sessions)
 **features.md refs:** §30 (Quality of Life), §15.2 (Sanitation), §15.3 (Clothing), §15.8 (Psychological), §59 (Sleep & Performance)

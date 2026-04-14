@@ -2532,6 +2532,46 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_aquaponics_systems_status ON aquaponics_systems(status)',
         'CREATE INDEX IF NOT EXISTS idx_recycling_systems_type ON recycling_systems(system_type)',
         'CREATE INDEX IF NOT EXISTS idx_recycling_systems_status ON recycling_systems(current_status)',
+        # ─── Phase 14: Disaster-Specific Modules (v7.20.0) ───
+        'CREATE INDEX IF NOT EXISTS idx_disaster_plans_type ON disaster_plans(disaster_type)',
+        'CREATE INDEX IF NOT EXISTS idx_disaster_plans_status ON disaster_plans(status)',
+        'CREATE INDEX IF NOT EXISTS idx_disaster_plans_env ON disaster_plans(environment_type)',
+        'CREATE INDEX IF NOT EXISTS idx_disaster_checklists_plan ON disaster_checklists(plan_id)',
+        'CREATE INDEX IF NOT EXISTS idx_disaster_checklists_category ON disaster_checklists(category)',
+        'CREATE INDEX IF NOT EXISTS idx_disaster_checklists_status ON disaster_checklists(status)',
+        'CREATE INDEX IF NOT EXISTS idx_energy_systems_type ON energy_systems(energy_type)',
+        'CREATE INDEX IF NOT EXISTS idx_energy_systems_condition ON energy_systems(condition)',
+        'CREATE INDEX IF NOT EXISTS idx_construction_projects_type ON construction_projects(project_type)',
+        'CREATE INDEX IF NOT EXISTS idx_construction_projects_status ON construction_projects(status)',
+        'CREATE INDEX IF NOT EXISTS idx_construction_projects_priority ON construction_projects(priority)',
+        'CREATE INDEX IF NOT EXISTS idx_building_materials_category ON building_materials(category)',
+        'CREATE INDEX IF NOT EXISTS idx_building_materials_location ON building_materials(location)',
+        'CREATE INDEX IF NOT EXISTS idx_fortifications_type ON fortifications(fortification_type)',
+        'CREATE INDEX IF NOT EXISTS idx_fortifications_status ON fortifications(status)',
+        'CREATE INDEX IF NOT EXISTS idx_fortifications_condition ON fortifications(condition)',
+        # ─── Phase 15: Daily Living & Quality of Life (v7.21.0) ───
+        'CREATE INDEX IF NOT EXISTS idx_daily_schedules_type ON daily_schedules(schedule_type)',
+        'CREATE INDEX IF NOT EXISTS idx_daily_schedules_status ON daily_schedules(status)',
+        'CREATE INDEX IF NOT EXISTS idx_daily_schedules_template ON daily_schedules(is_template)',
+        'CREATE INDEX IF NOT EXISTS idx_chore_assignments_schedule ON chore_assignments(schedule_id)',
+        'CREATE INDEX IF NOT EXISTS idx_chore_assignments_assigned ON chore_assignments(assigned_to)',
+        'CREATE INDEX IF NOT EXISTS idx_chore_assignments_category ON chore_assignments(category)',
+        'CREATE INDEX IF NOT EXISTS idx_chore_assignments_status ON chore_assignments(status)',
+        'CREATE INDEX IF NOT EXISTS idx_clothing_inventory_person ON clothing_inventory(person)',
+        'CREATE INDEX IF NOT EXISTS idx_clothing_inventory_category ON clothing_inventory(category)',
+        'CREATE INDEX IF NOT EXISTS idx_clothing_inventory_season ON clothing_inventory(season)',
+        'CREATE INDEX IF NOT EXISTS idx_sanitation_supplies_category ON sanitation_supplies(category)',
+        'CREATE INDEX IF NOT EXISTS idx_sanitation_supplies_expiry ON sanitation_supplies(expiration_date)',
+        'CREATE INDEX IF NOT EXISTS idx_morale_logs_person ON morale_logs(person)',
+        'CREATE INDEX IF NOT EXISTS idx_morale_logs_date ON morale_logs(date)',
+        'CREATE INDEX IF NOT EXISTS idx_sleep_logs_person ON sleep_logs(person)',
+        'CREATE INDEX IF NOT EXISTS idx_sleep_logs_date ON sleep_logs(date)',
+        'CREATE INDEX IF NOT EXISTS idx_performance_checks_person ON performance_checks(person)',
+        'CREATE INDEX IF NOT EXISTS idx_performance_checks_date ON performance_checks(date)',
+        'CREATE INDEX IF NOT EXISTS idx_performance_checks_risk ON performance_checks(risk_assessment)',
+        'CREATE INDEX IF NOT EXISTS idx_grid_down_recipes_category ON grid_down_recipes(category)',
+        'CREATE INDEX IF NOT EXISTS idx_grid_down_recipes_method ON grid_down_recipes(cooking_method)',
+        'CREATE INDEX IF NOT EXISTS idx_grid_down_recipes_rating ON grid_down_recipes(rating)',
     ]:
         try:
             conn.execute(idx)
@@ -3932,6 +3972,288 @@ def _create_agriculture_tables(conn):
     conn.commit()
 
 
+def _create_disaster_modules_tables(conn):
+    """Phase 14 — Disaster-Specific Modules: plans, checklists, energy,
+    construction, materials, fortifications."""
+    conn.executescript('''
+        /* ─── Disaster Plans ─── */
+        CREATE TABLE IF NOT EXISTS disaster_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            disaster_type TEXT DEFAULT 'earthquake',
+            environment_type TEXT DEFAULT 'general',
+            description TEXT DEFAULT '',
+            trigger_conditions TEXT DEFAULT '',
+            immediate_actions TEXT DEFAULT '[]',
+            sustained_actions TEXT DEFAULT '[]',
+            resources_required TEXT DEFAULT '[]',
+            shelter_plan TEXT DEFAULT '',
+            evacuation_triggers TEXT DEFAULT '',
+            communication_plan TEXT DEFAULT '',
+            estimated_duration TEXT DEFAULT '',
+            personnel_assignments TEXT DEFAULT '[]',
+            last_reviewed TEXT DEFAULT '',
+            status TEXT DEFAULT 'draft',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Disaster Checklists ─── */
+        CREATE TABLE IF NOT EXISTS disaster_checklists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plan_id INTEGER DEFAULT 0,
+            title TEXT NOT NULL,
+            category TEXT DEFAULT 'pre_event',
+            items TEXT DEFAULT '[]',
+            assigned_to TEXT DEFAULT '',
+            due_date TEXT DEFAULT '',
+            completion_pct INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Alternative Energy Systems ─── */
+        CREATE TABLE IF NOT EXISTS energy_systems (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            energy_type TEXT DEFAULT 'wood',
+            location TEXT DEFAULT '',
+            capacity TEXT DEFAULT '',
+            fuel_source TEXT DEFAULT '',
+            output_rating TEXT DEFAULT '',
+            efficiency_pct INTEGER DEFAULT 0,
+            installation_date TEXT DEFAULT '',
+            condition TEXT DEFAULT 'operational',
+            maintenance_schedule TEXT DEFAULT '',
+            inventory_link TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Construction Projects ─── */
+        CREATE TABLE IF NOT EXISTS construction_projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            project_type TEXT DEFAULT 'infrastructure',
+            location TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            materials TEXT DEFAULT '[]',
+            labor_hours_estimated INTEGER DEFAULT 0,
+            labor_hours_actual INTEGER DEFAULT 0,
+            start_date TEXT DEFAULT '',
+            target_date TEXT DEFAULT '',
+            completion_date TEXT DEFAULT '',
+            assigned_to TEXT DEFAULT '',
+            blueprint_ref TEXT DEFAULT '',
+            status TEXT DEFAULT 'planned',
+            priority TEXT DEFAULT 'medium',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Building Materials Inventory ─── */
+        CREATE TABLE IF NOT EXISTS building_materials (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'other',
+            quantity REAL DEFAULT 0,
+            unit TEXT DEFAULT 'each',
+            location TEXT DEFAULT '',
+            cost_per_unit REAL DEFAULT 0,
+            supplier TEXT DEFAULT '',
+            min_stock REAL DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Fortifications ─── */
+        CREATE TABLE IF NOT EXISTS fortifications (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            fortification_type TEXT DEFAULT 'safe_room',
+            location TEXT DEFAULT '',
+            protection_level TEXT DEFAULT 'basic',
+            dimensions TEXT DEFAULT '',
+            materials_used TEXT DEFAULT '[]',
+            capacity_persons INTEGER DEFAULT 0,
+            construction_time_hours INTEGER DEFAULT 0,
+            condition TEXT DEFAULT 'planned',
+            last_inspection TEXT DEFAULT '',
+            vulnerabilities TEXT DEFAULT '',
+            improvements_needed TEXT DEFAULT '',
+            status TEXT DEFAULT 'planned',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
+def _create_daily_living_tables(conn):
+    """Phase 15 — Daily Living & Quality of Life: schedules, chores, clothing,
+    sanitation, morale, sleep, performance, grid-down recipes."""
+    conn.executescript('''
+        /* ─── Daily Schedules ─── */
+        CREATE TABLE IF NOT EXISTS daily_schedules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            schedule_type TEXT DEFAULT 'normal',
+            description TEXT DEFAULT '',
+            time_blocks TEXT DEFAULT '[]',
+            assigned_to TEXT DEFAULT '',
+            is_template INTEGER DEFAULT 0,
+            active_days TEXT DEFAULT '["mon","tue","wed","thu","fri","sat","sun"]',
+            start_date TEXT DEFAULT '',
+            end_date TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Chore Assignments ─── */
+        CREATE TABLE IF NOT EXISTS chore_assignments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            schedule_id INTEGER DEFAULT 0,
+            chore_name TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            assigned_to TEXT DEFAULT '',
+            frequency TEXT DEFAULT 'daily',
+            time_slot TEXT DEFAULT '',
+            duration_minutes INTEGER DEFAULT 30,
+            priority TEXT DEFAULT 'medium',
+            instructions TEXT DEFAULT '',
+            rotation_group TEXT DEFAULT '',
+            last_completed TEXT DEFAULT '',
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Clothing Inventory ─── */
+        CREATE TABLE IF NOT EXISTS clothing_inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person TEXT DEFAULT '',
+            item_name TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            size TEXT DEFAULT '',
+            quantity INTEGER DEFAULT 1,
+            condition TEXT DEFAULT 'good',
+            season TEXT DEFAULT 'all',
+            warmth_rating INTEGER DEFAULT 3,
+            waterproof INTEGER DEFAULT 0,
+            material TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Sanitation Supplies ─── */
+        CREATE TABLE IF NOT EXISTS sanitation_supplies (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'hygiene',
+            quantity REAL DEFAULT 0,
+            unit TEXT DEFAULT 'each',
+            min_stock REAL DEFAULT 0,
+            daily_usage_rate REAL DEFAULT 0,
+            persons_served INTEGER DEFAULT 1,
+            location TEXT DEFAULT '',
+            expiration_date TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Morale Logs ─── */
+        CREATE TABLE IF NOT EXISTS morale_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person TEXT DEFAULT '',
+            date TEXT DEFAULT '',
+            morale_score INTEGER DEFAULT 5,
+            stress_level INTEGER DEFAULT 5,
+            sleep_quality INTEGER DEFAULT 5,
+            physical_health INTEGER DEFAULT 5,
+            social_connection INTEGER DEFAULT 5,
+            activities TEXT DEFAULT '[]',
+            concerns TEXT DEFAULT '',
+            positive_notes TEXT DEFAULT '',
+            interventions TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Sleep Logs ─── */
+        CREATE TABLE IF NOT EXISTS sleep_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person TEXT DEFAULT '',
+            date TEXT DEFAULT '',
+            sleep_start TEXT DEFAULT '',
+            sleep_end TEXT DEFAULT '',
+            duration_hours REAL DEFAULT 0,
+            quality INTEGER DEFAULT 5,
+            interruptions INTEGER DEFAULT 0,
+            watch_duty INTEGER DEFAULT 0,
+            watch_start TEXT DEFAULT '',
+            watch_end TEXT DEFAULT '',
+            sleep_debt_hours REAL DEFAULT 0,
+            environment TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Performance Checks ─── */
+        CREATE TABLE IF NOT EXISTS performance_checks (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            person TEXT DEFAULT '',
+            date TEXT DEFAULT '',
+            check_type TEXT DEFAULT 'routine',
+            reaction_time_ms INTEGER DEFAULT 0,
+            cognitive_score INTEGER DEFAULT 0,
+            physical_score INTEGER DEFAULT 0,
+            fatigue_level INTEGER DEFAULT 5,
+            hours_awake REAL DEFAULT 0,
+            hours_since_last_sleep REAL DEFAULT 0,
+            ambient_temp_f REAL DEFAULT 0,
+            hydration_status TEXT DEFAULT 'adequate',
+            caloric_intake INTEGER DEFAULT 0,
+            risk_assessment TEXT DEFAULT 'low',
+            recommendations TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Grid-Down Recipes ─── */
+        CREATE TABLE IF NOT EXISTS grid_down_recipes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            category TEXT DEFAULT 'main',
+            cooking_method TEXT DEFAULT 'campfire',
+            prep_time_minutes INTEGER DEFAULT 15,
+            cook_time_minutes INTEGER DEFAULT 30,
+            servings INTEGER DEFAULT 4,
+            calories_per_serving INTEGER DEFAULT 0,
+            protein_per_serving REAL DEFAULT 0,
+            ingredients TEXT DEFAULT '[]',
+            instructions TEXT DEFAULT '',
+            water_required_ml INTEGER DEFAULT 0,
+            fuel_required TEXT DEFAULT '',
+            equipment_needed TEXT DEFAULT '[]',
+            shelf_stable_only INTEGER DEFAULT 1,
+            tags TEXT DEFAULT '[]',
+            rating INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -3953,6 +4275,8 @@ def _init_db_inner(conn):
     _create_group_ops_tables(conn)
     _create_security_opsec_tables(conn)
     _create_agriculture_tables(conn)
+    _create_disaster_modules_tables(conn)
+    _create_daily_living_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

@@ -1,0 +1,1040 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     SECURITY & OPSEC  (data-tab="security-opsec")
+     Compartments, checklists, threat matrix, OP log, signatures,
+     night ops, CBRN/EMP preparedness
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="tab-security-opsec" class="tab-content is-hidden" data-tab="security-opsec">
+<style>
+  #tab-security-opsec {
+    --so-accent: #ef4444;
+    --so-accent-dim: rgba(239,68,68,.15);
+    --so-red: #ef4444;
+    --so-green: #22c55e;
+    --so-blue: #3b82f6;
+    --so-yellow: #eab308;
+    --so-orange: #f97316;
+    --so-cyan: #06b6d4;
+    --so-gray: #6b7280;
+  }
+  #tab-security-opsec .so-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-security-opsec .so-header h2 { font-size:1.25rem; color:var(--so-accent); margin:0; }
+  #tab-security-opsec .so-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-security-opsec .so-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-security-opsec .so-sub-tab.active { background:var(--so-accent-dim); border-color:var(--so-accent); color:var(--so-accent); }
+  #tab-security-opsec .so-panel { display:none; }
+  #tab-security-opsec .so-panel.active { display:block; }
+  #tab-security-opsec .so-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-security-opsec .so-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-security-opsec .so-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-security-opsec .so-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-security-opsec .so-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-security-opsec .so-form-row input,
+  #tab-security-opsec .so-form-row select,
+  #tab-security-opsec .so-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-security-opsec .so-form-row textarea { min-height:60px; resize:vertical; }
+  #tab-security-opsec .so-form-row .field { flex:1; min-width:140px; }
+  #tab-security-opsec .so-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-security-opsec .so-btn-primary { background:var(--so-accent); color:#fff; }
+  #tab-security-opsec .so-btn-danger { background:var(--so-red); color:#fff; }
+  #tab-security-opsec .so-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-security-opsec .so-btn-success { background:var(--so-green); color:#000; }
+  #tab-security-opsec .so-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-security-opsec .so-list-item:last-child { border-bottom:none; }
+  #tab-security-opsec .so-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-security-opsec .so-badge-open { background:rgba(34,197,94,.2); color:var(--so-green); }
+  #tab-security-opsec .so-badge-restricted { background:rgba(59,130,246,.2); color:var(--so-blue); }
+  #tab-security-opsec .so-badge-confidential { background:rgba(234,179,8,.2); color:var(--so-yellow); }
+  #tab-security-opsec .so-badge-need_to_know { background:rgba(239,68,68,.2); color:var(--so-red); }
+  #tab-security-opsec .so-badge-movement { background:rgba(249,115,22,.2); color:var(--so-orange); }
+  #tab-security-opsec .so-badge-noise { background:rgba(234,179,8,.2); color:var(--so-yellow); }
+  #tab-security-opsec .so-badge-light { background:rgba(6,182,212,.2); color:var(--so-cyan); }
+  #tab-security-opsec .so-badge-vehicle { background:rgba(59,130,246,.2); color:var(--so-blue); }
+  #tab-security-opsec .so-badge-aircraft { background:rgba(139,92,246,.2); color:#a78bfa; }
+  #tab-security-opsec .so-badge-comms { background:rgba(34,197,94,.2); color:var(--so-green); }
+  #tab-security-opsec .so-badge-other { background:rgba(107,114,128,.2); color:var(--so-gray); }
+  #tab-security-opsec .so-badge-active { background:rgba(34,197,94,.2); color:var(--so-green); }
+  #tab-security-opsec .so-badge-standby { background:rgba(234,179,8,.2); color:var(--so-yellow); }
+  #tab-security-opsec .so-badge-inactive { background:rgba(107,114,128,.2); color:var(--so-gray); }
+  #tab-security-opsec .so-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-security-opsec .so-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  #tab-security-opsec .so-table th { text-align:left; padding:8px 10px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#444); background:rgba(0,0,0,.2); }
+  #tab-security-opsec .so-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-security-opsec .so-table tbody tr:nth-child(even) { background:rgba(255,255,255,.02); }
+  #tab-security-opsec .so-table tbody tr:hover { background:rgba(239,68,68,.05); }
+  #tab-security-opsec .so-risk-1,.so-risk-2,.so-risk-3,.so-risk-4,.so-risk-5 { color:#22c55e; }
+  #tab-security-opsec .so-risk-6,.so-risk-7,.so-risk-8,.so-risk-9,.so-risk-10 { color:#eab308; }
+  #tab-security-opsec .so-risk-11,.so-risk-12,.so-risk-13,.so-risk-14,.so-risk-15 { color:#f97316; }
+  #tab-security-opsec .so-risk-16,.so-risk-17,.so-risk-18,.so-risk-19,.so-risk-20,
+  #tab-security-opsec .so-risk-21,.so-risk-22,.so-risk-23,.so-risk-24,.so-risk-25 { color:#ef4444; }
+  #tab-security-opsec .so-gauge { height:22px; border-radius:6px; background:rgba(255,255,255,.08); overflow:hidden; position:relative; margin:8px 0; }
+  #tab-security-opsec .so-gauge-fill { height:100%; border-radius:6px; transition:width .3s; }
+  #tab-security-opsec .so-gauge-text { position:absolute; top:0; left:8px; line-height:22px; font-size:.72rem; font-weight:600; color:#fff; }
+  #tab-security-opsec .so-stat { text-align:center; padding:12px; }
+  #tab-security-opsec .so-stat-val { font-size:1.6rem; font-weight:700; color:var(--so-accent); }
+  #tab-security-opsec .so-stat-label { font-size:.75rem; color:var(--text-secondary,#aaa); margin-top:2px; }
+  #tab-security-opsec .so-mopp-0 { background:rgba(34,197,94,.2); color:var(--so-green); }
+  #tab-security-opsec .so-mopp-1 { background:rgba(59,130,246,.2); color:var(--so-blue); }
+  #tab-security-opsec .so-mopp-2 { background:rgba(234,179,8,.2); color:var(--so-yellow); }
+  #tab-security-opsec .so-mopp-3 { background:rgba(249,115,22,.2); color:var(--so-orange); }
+  #tab-security-opsec .so-mopp-4 { background:rgba(239,68,68,.2); color:var(--so-red); }
+  #tab-security-opsec .so-protected { color:var(--so-green); }
+  #tab-security-opsec .so-unprotected { color:var(--so-red); }
+  #tab-security-opsec .so-moon { font-size:1.5rem; margin-right:6px; }
+  #tab-security-opsec .so-timer-display { font-size:2rem; font-weight:700; font-family:monospace; color:var(--so-accent); text-align:center; padding:16px; }
+  #tab-security-opsec .so-checklist-item { display:flex; align-items:center; gap:8px; padding:6px 0; }
+  #tab-security-opsec .so-checklist-item input[type="checkbox"] { width:16px; height:16px; accent-color:var(--so-accent); }
+  #tab-security-opsec .so-score { font-size:1.1rem; font-weight:700; }
+  #tab-security-opsec .so-sig-category { padding:12px; border:1px solid var(--border,#333); border-radius:8px; margin-bottom:10px; }
+  #tab-security-opsec .so-sig-category h4 { margin:0 0 8px; font-size:.88rem; color:var(--so-accent); }
+  #tab-security-opsec .so-ref-item { padding:8px 12px; border-bottom:1px solid var(--border,#333); font-size:.82rem; color:var(--text-secondary,#ccc); }
+</style>
+
+<div class="so-header">
+  <h2>Security & OPSEC</h2>
+</div>
+
+<!-- Sub-tabs -->
+<div class="so-sub-tabs">
+  <button class="so-sub-tab active" data-so-panel="opsec">OPSEC</button>
+  <button class="so-sub-tab" data-so-panel="tactical">Tactical</button>
+  <button class="so-sub-tab" data-so-panel="oplog">OP Log</button>
+  <button class="so-sub-tab" data-so-panel="signatures">Signatures</button>
+  <button class="so-sub-tab" data-so-panel="nightops">Night Ops</button>
+  <button class="so-sub-tab" data-so-panel="cbrn-emp">CBRN/EMP</button>
+</div>
+
+<!-- ── OPSEC Panel ─────────────────────────────────────── -->
+<div class="so-panel active" id="so-panel-opsec">
+  <!-- Compartments -->
+  <div class="so-card">
+    <div class="so-card-title">Add Compartment</div>
+    <div class="so-form-row">
+      <div class="field"><label>Name</label><input name="so-compartment-name" id="so-compartment-name" placeholder="Alpha Cell"></div>
+      <div class="field"><label>Classification</label>
+        <select name="so-compartment-classification" id="so-compartment-classification">
+          <option value="open">Open</option><option value="restricted">Restricted</option>
+          <option value="confidential">Confidential</option><option value="need_to_know">Need-to-Know</option>
+        </select>
+      </div>
+    </div>
+    <div class="so-form-row">
+      <div class="field"><label>Members (comma-separated)</label><input name="so-compartment-members" id="so-compartment-members" placeholder="Alpha, Bravo, Charlie"></div>
+      <div class="field"><label>Description</label><input name="so-compartment-desc" id="so-compartment-desc" placeholder="Purpose of this compartment"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateCompartment()">Add</button></div>
+    </div>
+  </div>
+  <div class="so-grid" id="so-compartment-list"><div class="so-empty">Loading...</div></div>
+
+  <!-- Checklists -->
+  <div class="so-card" style="margin-top:16px">
+    <div class="so-card-title">Security Audit Checklists
+      <button class="so-btn so-btn-secondary" style="float:right;font-size:.75rem" onclick="soSeedChecklists()">Seed Default Checklists</button>
+    </div>
+    <div class="so-form-row">
+      <div class="field"><label>Checklist Name</label><input name="so-checklist-name" id="so-checklist-name" placeholder="Perimeter Audit"></div>
+      <div class="field"><label>Items (one per line)</label><textarea name="so-checklist-items" id="so-checklist-items" placeholder="Check all entry points&#10;Verify locks&#10;Test alarm system"></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateChecklist()">Create</button></div>
+    </div>
+  </div>
+  <div id="so-checklist-list"><div class="so-empty">No checklists yet.</div></div>
+
+  <!-- Duress Signals & Cover Stories -->
+  <div class="so-card" style="margin-top:16px">
+    <div class="so-card-title">Duress Signals & Cover Stories</div>
+    <div class="so-form-row">
+      <div class="field"><label>Duress Code Word</label><input name="so-duress-word" id="so-duress-word" placeholder="Pineapple"></div>
+      <div class="field"><label>Type</label>
+        <select name="so-duress-type" id="so-duress-type">
+          <option value="duress_signal">Duress Signal</option><option value="cover_story">Cover Story</option>
+        </select>
+      </div>
+      <div class="field"><label>Description</label><input name="so-duress-desc" id="so-duress-desc" placeholder="When spoken = under duress"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateDuress()">Add</button></div>
+    </div>
+  </div>
+  <div id="so-duress-list"><div class="so-empty">No duress signals configured.</div></div>
+</div>
+
+<!-- ── Tactical Panel ──────────────────────────────────── -->
+<div class="so-panel" id="so-panel-tactical">
+  <!-- Threat Matrix -->
+  <div class="so-card">
+    <div class="so-card-title">Add Threat</div>
+    <div class="so-form-row">
+      <div class="field"><label>Threat Name</label><input name="so-threat-name" id="so-threat-name" placeholder="Armed intruders"></div>
+      <div class="field"><label>Category</label>
+        <select name="so-threat-category" id="so-threat-category">
+          <option value="human">Human</option><option value="natural">Natural</option>
+          <option value="infrastructure">Infrastructure</option><option value="cyber">Cyber</option>
+          <option value="animal">Animal</option><option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="so-form-row">
+      <div class="field"><label>Likelihood (1-5)</label>
+        <select name="so-threat-likelihood" id="so-threat-likelihood">
+          <option value="1">1 - Rare</option><option value="2">2 - Unlikely</option>
+          <option value="3">3 - Possible</option><option value="4">4 - Likely</option>
+          <option value="5">5 - Almost Certain</option>
+        </select>
+      </div>
+      <div class="field"><label>Impact (1-5)</label>
+        <select name="so-threat-impact" id="so-threat-impact">
+          <option value="1">1 - Negligible</option><option value="2">2 - Minor</option>
+          <option value="3">3 - Moderate</option><option value="4">4 - Major</option>
+          <option value="5">5 - Catastrophic</option>
+        </select>
+      </div>
+    </div>
+    <div class="so-form-row">
+      <div class="field"><label>Mitigation</label><textarea name="so-threat-mitigation" id="so-threat-mitigation" placeholder="Security patrols, perimeter alarms..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateThreat()">Add Threat</button></div>
+    </div>
+  </div>
+  <div class="so-card">
+    <div class="so-card-title">Threat Matrix</div>
+    <div style="overflow-x:auto"><table class="so-table" id="so-threat-table">
+      <thead><tr><th>Threat</th><th>Category</th><th>Likelihood</th><th>Impact</th><th>Risk Score</th><th>Mitigation</th><th>Actions</th></tr></thead>
+      <tbody id="so-threat-tbody"><tr><td colspan="7" class="so-empty">Loading...</td></tr></tbody>
+    </table></div>
+  </div>
+
+  <!-- Observation Posts -->
+  <div class="so-card" style="margin-top:16px">
+    <div class="so-card-title">Observation Posts</div>
+    <div class="so-form-row">
+      <div class="field"><label>Post Name</label><input name="so-op-name" id="so-op-name" placeholder="OP Alpha"></div>
+      <div class="field"><label>Sector</label><input name="so-op-sector" id="so-op-sector" placeholder="North Ridge"></div>
+      <div class="field"><label>Status</label>
+        <select name="so-op-status" id="so-op-status">
+          <option value="active">Active</option><option value="standby">Standby</option><option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="field"><label>Personnel</label><input name="so-op-personnel" id="so-op-personnel" placeholder="2"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateOP()">Add Post</button></div>
+    </div>
+  </div>
+  <div id="so-op-list"><div class="so-empty">No observation posts.</div></div>
+</div>
+
+<!-- ── OP Log Panel ────────────────────────────────────── -->
+<div class="so-panel" id="so-panel-oplog">
+  <div class="so-grid" id="so-oplog-stats"></div>
+  <div class="so-card">
+    <div class="so-card-title">New Observation Log Entry</div>
+    <div class="so-form-row">
+      <div class="field"><label>Post</label>
+        <select name="so-log-post" id="so-log-post"><option value="">All Posts</option></select>
+      </div>
+      <div class="field"><label>Category</label>
+        <select name="so-log-category" id="so-log-category">
+          <option value="movement">Movement</option><option value="noise">Noise</option>
+          <option value="light">Light</option><option value="vehicle">Vehicle</option>
+          <option value="aircraft">Aircraft</option><option value="comms">Comms</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="so-form-row">
+      <div class="field"><label>Description</label><textarea name="so-log-description" id="so-log-description" placeholder="Observed movement at treeline, 2 individuals heading NE..."></textarea></div>
+    </div>
+    <div class="so-form-row">
+      <div class="field"><label>Grid/Location</label><input name="so-log-grid" id="so-log-grid" placeholder="GR 123 456"></div>
+      <div class="field"><label>Bearing</label><input name="so-log-bearing" id="so-log-bearing" placeholder="045"></div>
+      <div class="field"><label>Distance</label><input name="so-log-distance" id="so-log-distance" placeholder="300m"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateLog()">Log Entry</button></div>
+    </div>
+  </div>
+  <div class="so-card">
+    <div class="so-card-title">Filter Logs
+      <span style="float:right">
+        <select name="so-log-filter-post" id="so-log-filter-post" style="padding:4px 8px;border-radius:4px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.78rem">
+          <option value="">All Posts</option>
+        </select>
+        <select name="so-log-filter-category" id="so-log-filter-category" style="padding:4px 8px;border-radius:4px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.78rem;margin-left:4px">
+          <option value="">All Categories</option>
+          <option value="movement">Movement</option><option value="noise">Noise</option>
+          <option value="light">Light</option><option value="vehicle">Vehicle</option>
+          <option value="aircraft">Aircraft</option><option value="comms">Comms</option>
+          <option value="other">Other</option>
+        </select>
+        <button class="so-btn so-btn-secondary" style="margin-left:4px" onclick="soLoadLog()">Apply</button>
+      </span>
+    </div>
+  </div>
+  <div id="so-log-list"><div class="so-empty">No log entries.</div></div>
+</div>
+
+<!-- ── Signatures Panel ────────────────────────────────── -->
+<div class="so-panel" id="so-panel-signatures">
+  <div class="so-card">
+    <div class="so-card-title">Overall Concealment Score</div>
+    <div id="so-concealment-gauge">
+      <div class="so-gauge"><div class="so-gauge-fill" id="so-gauge-fill" style="width:0%;background:var(--so-green)"></div><div class="so-gauge-text" id="so-gauge-text">0 / 100 (Fully Concealed)</div></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    <div style="flex:1;min-width:300px">
+      <!-- Signature Categories -->
+      <div class="so-sig-category" id="so-sig-visual">
+        <h4>Visual Signatures</h4>
+        <div class="so-form-row">
+          <div class="field"><label>Source</label><input name="so-vis-source" id="so-vis-source" placeholder="Campfire smoke"></div>
+          <div class="field"><label>Intensity (1-10)</label><input name="so-vis-intensity" id="so-vis-intensity" type="number" min="1" max="10" value="5"></div>
+          <div class="field"><label>Mitigation</label><input name="so-vis-mitigation" id="so-vis-mitigation" placeholder="Use smokeless fuel"></div>
+          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soAddSignature('visual')">Add</button></div>
+        </div>
+        <div id="so-sig-visual-list"></div>
+      </div>
+      <div class="so-sig-category" id="so-sig-audio">
+        <h4>Audio Signatures</h4>
+        <div class="so-form-row">
+          <div class="field"><label>Source</label><input name="so-aud-source" id="so-aud-source" placeholder="Generator noise"></div>
+          <div class="field"><label>Intensity (1-10)</label><input name="so-aud-intensity" id="so-aud-intensity" type="number" min="1" max="10" value="5"></div>
+          <div class="field"><label>Mitigation</label><input name="so-aud-mitigation" id="so-aud-mitigation" placeholder="Sound baffles, run daytime only"></div>
+          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soAddSignature('audio')">Add</button></div>
+        </div>
+        <div id="so-sig-audio-list"></div>
+      </div>
+      <div class="so-sig-category" id="so-sig-electronic">
+        <h4>Electronic Signatures</h4>
+        <div class="so-form-row">
+          <div class="field"><label>Source</label><input name="so-elec-source" id="so-elec-source" placeholder="Radio transmissions"></div>
+          <div class="field"><label>Intensity (1-10)</label><input name="so-elec-intensity" id="so-elec-intensity" type="number" min="1" max="10" value="5"></div>
+          <div class="field"><label>Mitigation</label><input name="so-elec-mitigation" id="so-elec-mitigation" placeholder="COMSEC schedule, burst tx"></div>
+          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soAddSignature('electronic')">Add</button></div>
+        </div>
+        <div id="so-sig-electronic-list"></div>
+      </div>
+      <div class="so-sig-category" id="so-sig-thermal">
+        <h4>Thermal Signatures</h4>
+        <div class="so-form-row">
+          <div class="field"><label>Source</label><input name="so-therm-source" id="so-therm-source" placeholder="Exhaust vents"></div>
+          <div class="field"><label>Intensity (1-10)</label><input name="so-therm-intensity" id="so-therm-intensity" type="number" min="1" max="10" value="5"></div>
+          <div class="field"><label>Mitigation</label><input name="so-therm-mitigation" id="so-therm-mitigation" placeholder="IR screening, heat dispersal"></div>
+          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soAddSignature('thermal')">Add</button></div>
+        </div>
+        <div id="so-sig-thermal-list"></div>
+      </div>
+    </div>
+    <!-- Reference Guide Sidebar -->
+    <div style="flex:0 0 260px;min-width:220px">
+      <div class="so-card">
+        <div class="so-card-title">Reference Guide</div>
+        <div id="so-sig-guide"><div class="so-empty" style="padding:12px">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Night Ops Panel ─────────────────────────────────── -->
+<div class="so-panel" id="so-panel-nightops">
+  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+    <div class="so-card" style="flex:1;min-width:200px;text-align:center">
+      <div class="so-card-title">Moon Phase</div>
+      <div id="so-moon-display" style="font-size:3rem">--</div>
+      <div id="so-moon-label" style="font-size:.85rem;color:var(--text-secondary,#aaa)">Loading...</div>
+    </div>
+    <div class="so-card" style="flex:1;min-width:200px;text-align:center">
+      <div class="so-card-title">Dark Adaptation Timer</div>
+      <div class="so-timer-display" id="so-timer-display">30:00</div>
+      <div style="display:flex;gap:6px;justify-content:center">
+        <button class="so-btn so-btn-primary" id="so-timer-start" onclick="soStartTimer()">Start</button>
+        <button class="so-btn so-btn-secondary" onclick="soResetTimer()">Reset</button>
+      </div>
+    </div>
+    <div class="so-card" style="flex:1;min-width:200px;text-align:center">
+      <div class="so-card-title">Ambient Light</div>
+      <select name="so-ambient-light" id="so-ambient-light" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.85rem;margin-bottom:8px">
+        <option value="full_moon">Full Moon</option><option value="half_moon">Half Moon</option>
+        <option value="quarter_moon">Quarter Moon</option><option value="starlight">Starlight Only</option>
+        <option value="overcast">Overcast / No Light</option>
+      </select>
+      <label style="font-size:.82rem;color:var(--text-secondary,#aaa);display:flex;align-items:center;gap:6px;justify-content:center">
+        <input type="checkbox" name="so-nvg-available" id="so-nvg-available" style="width:16px;height:16px;accent-color:var(--so-green)"> NVG Available
+      </label>
+    </div>
+  </div>
+  <!-- Night Op Plans -->
+  <div class="so-card">
+    <div class="so-card-title">Night Operation Plan</div>
+    <div class="so-form-row">
+      <div class="field"><label>Operation Name</label><input name="so-night-name" id="so-night-name" placeholder="Shadow Sweep"></div>
+      <div class="field"><label>Date/Time</label><input name="so-night-datetime" id="so-night-datetime" type="datetime-local"></div>
+      <div class="field"><label>Ambient Light</label>
+        <select name="so-night-ambient" id="so-night-ambient">
+          <option value="full_moon">Full Moon</option><option value="half_moon">Half Moon</option>
+          <option value="starlight">Starlight</option><option value="overcast">Overcast</option>
+        </select>
+      </div>
+    </div>
+    <div class="so-form-row">
+      <div class="field"><label>Movement Route</label><textarea name="so-night-route" id="so-night-route" placeholder="SP > CP1 > OBJ > CP2 > Rally Point"></textarea></div>
+    </div>
+    <div class="so-form-row">
+      <div class="field"><label>Rally Point</label><input name="so-night-rally" id="so-night-rally" placeholder="GR 456 789"></div>
+      <div class="field"><label>Personnel</label><input name="so-night-personnel" id="so-night-personnel" placeholder="Alpha team, 4 pax"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateNightOp()">Create Plan</button></div>
+    </div>
+  </div>
+  <div id="so-nightop-list"><div class="so-empty">No night operation plans.</div></div>
+</div>
+
+<!-- ── CBRN/EMP Panel ──────────────────────────────────── -->
+<div class="so-panel" id="so-panel-cbrn-emp">
+  <!-- MOPP Level -->
+  <div class="so-card" style="text-align:center">
+    <div class="so-card-title">Current MOPP Level</div>
+    <div style="display:flex;gap:8px;justify-content:center;margin:8px 0">
+      <button class="so-btn so-mopp-0" onclick="soSetMOPP(0)" id="so-mopp-btn-0"><strong>MOPP 0</strong></button>
+      <button class="so-btn so-mopp-1" onclick="soSetMOPP(1)" id="so-mopp-btn-1"><strong>MOPP 1</strong></button>
+      <button class="so-btn so-mopp-2" onclick="soSetMOPP(2)" id="so-mopp-btn-2"><strong>MOPP 2</strong></button>
+      <button class="so-btn so-mopp-3" onclick="soSetMOPP(3)" id="so-mopp-btn-3"><strong>MOPP 3</strong></button>
+      <button class="so-btn so-mopp-4" onclick="soSetMOPP(4)" id="so-mopp-btn-4"><strong>MOPP 4</strong></button>
+    </div>
+    <div id="so-mopp-desc" style="font-size:.82rem;color:var(--text-secondary,#aaa)">MOPP 0: All clear, no protective gear required</div>
+  </div>
+
+  <div style="display:flex;gap:12px;flex-wrap:wrap">
+    <!-- CBRN Equipment -->
+    <div style="flex:1;min-width:320px">
+      <div class="so-card">
+        <div class="so-card-title">CBRN Equipment Inventory</div>
+        <div class="so-form-row">
+          <div class="field"><label>Item Name</label><input name="so-cbrn-item" id="so-cbrn-item" placeholder="M50 Gas Mask"></div>
+          <div class="field"><label>Type</label>
+            <select name="so-cbrn-type" id="so-cbrn-type">
+              <option value="mask">Mask/Respirator</option><option value="suit">Protective Suit</option>
+              <option value="detector">Detector</option><option value="dosimeter">Dosimeter</option>
+              <option value="decon">Decon Supplies</option><option value="medical">Medical/KI</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="so-form-row">
+          <div class="field"><label>Quantity</label><input name="so-cbrn-qty" id="so-cbrn-qty" type="number" min="0" value="1"></div>
+          <div class="field"><label>Condition</label>
+            <select name="so-cbrn-condition" id="so-cbrn-condition">
+              <option value="serviceable">Serviceable</option><option value="needs_calibration">Needs Calibration</option>
+              <option value="expired">Expired</option><option value="damaged">Damaged</option>
+            </select>
+          </div>
+          <div class="field"><label>Calibration Due</label><input name="so-cbrn-cal-date" id="so-cbrn-cal-date" type="date"></div>
+          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateCBRNItem()">Add</button></div>
+        </div>
+      </div>
+      <div id="so-cbrn-list"><div class="so-empty">No CBRN equipment tracked.</div></div>
+
+      <!-- Procedures -->
+      <div class="so-card" style="margin-top:12px">
+        <div class="so-card-title">CBRN Procedures
+          <button class="so-btn so-btn-secondary" style="float:right;font-size:.75rem" onclick="soSeedProcedures()">Seed Built-in Procedures</button>
+        </div>
+        <div class="so-form-row">
+          <div class="field"><label>Procedure Name</label><input name="so-proc-name" id="so-proc-name" placeholder="Mask Drill"></div>
+          <div class="field"><label>Type</label>
+            <select name="so-proc-type" id="so-proc-type">
+              <option value="immediate_action">Immediate Action</option><option value="decontamination">Decontamination</option>
+              <option value="shelter">Shelter-in-Place</option><option value="evacuation">Evacuation</option>
+            </select>
+          </div>
+        </div>
+        <div class="so-form-row">
+          <div class="field"><label>Steps</label><textarea name="so-proc-steps" id="so-proc-steps" placeholder="1. Don mask within 9 seconds&#10;2. Clear and seal&#10;3. Report to team lead"></textarea></div>
+          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateProcedure()">Add</button></div>
+        </div>
+      </div>
+      <div id="so-proc-list"><div class="so-empty">No procedures defined.</div></div>
+    </div>
+
+    <!-- Calculators + EMP -->
+    <div style="flex:1;min-width:320px">
+      <!-- Calculators -->
+      <div class="so-card">
+        <div class="so-card-title">KI Dosage Reference</div>
+        <div style="overflow-x:auto"><table class="so-table">
+          <thead><tr><th>Age Group</th><th>Dose (mg)</th><th>Tablets (130mg)</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td>Adults (18+)</td><td>130</td><td>1</td><td>Standard adult dose</td></tr>
+            <tr><td>Youth (12-17, &gt;70kg)</td><td>130</td><td>1</td><td>Full dose if &gt;70kg</td></tr>
+            <tr><td>Youth (12-17, &lt;70kg)</td><td>65</td><td>1/2</td><td>Half dose if &lt;70kg</td></tr>
+            <tr><td>Children (3-12)</td><td>65</td><td>1/2</td><td>Half tablet</td></tr>
+            <tr><td>Infants (1mo-3yr)</td><td>32</td><td>1/4</td><td>Quarter tablet, crushed</td></tr>
+            <tr><td>Neonates (&lt;1mo)</td><td>16</td><td>1/8</td><td>Consult medical</td></tr>
+          </tbody>
+        </table></div>
+      </div>
+      <div class="so-card">
+        <div class="so-card-title">Fallout Decay Calculator</div>
+        <div class="so-form-row">
+          <div class="field"><label>Initial Dose Rate (R/hr)</label><input name="so-fallout-rate" id="so-fallout-rate" type="number" step="0.1" value="100"></div>
+          <div class="field"><label>Hours Since Detonation</label><input name="so-fallout-hours" id="so-fallout-hours" type="number" min="1" value="1"></div>
+          <div class="field"><label>Target Hours</label><input name="so-fallout-target" id="so-fallout-target" type="number" min="1" value="49"></div>
+          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCalcFallout()">Calculate</button></div>
+        </div>
+        <div id="so-fallout-result" class="is-hidden" style="margin-top:8px;padding:10px;background:var(--so-accent-dim);border-radius:6px;font-size:.85rem"></div>
+      </div>
+      <div class="so-card">
+        <div class="so-card-title">Decon Time Estimator</div>
+        <div class="so-form-row">
+          <div class="field"><label>Personnel Count</label><input name="so-decon-personnel" id="so-decon-personnel" type="number" min="1" value="4"></div>
+          <div class="field"><label>Contamination Level</label>
+            <select name="so-decon-level" id="so-decon-level">
+              <option value="light">Light</option><option value="moderate">Moderate</option><option value="heavy">Heavy</option>
+            </select>
+          </div>
+          <div class="field"><label>Decon Stations</label><input name="so-decon-stations" id="so-decon-stations" type="number" min="1" value="1"></div>
+          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCalcDecon()">Calculate</button></div>
+        </div>
+        <div id="so-decon-result" class="is-hidden" style="margin-top:8px;padding:10px;background:var(--so-accent-dim);border-radius:6px;font-size:.85rem"></div>
+      </div>
+
+      <!-- EMP Inventory -->
+      <div class="so-card" style="margin-top:12px">
+        <div class="so-card-title">EMP-Sensitive Equipment</div>
+        <div class="so-form-row">
+          <div class="field"><label>Item</label><input name="so-emp-item" id="so-emp-item" placeholder="Handheld radio"></div>
+          <div class="field"><label>Category</label>
+            <select name="so-emp-category" id="so-emp-category">
+              <option value="communications">Communications</option><option value="medical">Medical</option>
+              <option value="navigation">Navigation</option><option value="power">Power/Solar</option>
+              <option value="computing">Computing</option><option value="vehicle">Vehicle</option>
+              <option value="other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="so-form-row">
+          <div class="field"><label>Faraday Protection</label>
+            <select name="so-emp-protection" id="so-emp-protection">
+              <option value="protected">Protected (Faraday Cage)</option><option value="partial">Partially Protected</option>
+              <option value="unprotected">Unprotected</option>
+            </select>
+          </div>
+          <div class="field"><label>Priority</label>
+            <select name="so-emp-priority" id="so-emp-priority">
+              <option value="critical">Critical</option><option value="important">Important</option><option value="low">Low</option>
+            </select>
+          </div>
+          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateEMPItem()">Add</button></div>
+        </div>
+      </div>
+      <div id="so-emp-list"><div class="so-empty">No EMP inventory tracked.</div></div>
+
+      <!-- Grid Dependency Analysis -->
+      <div class="so-card" style="margin-top:12px">
+        <div class="so-card-title">Grid Dependency Analysis</div>
+        <div id="so-emp-analysis"><div class="so-empty" style="padding:12px">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SCRIPT
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+(function(){
+  /* ── Sub-tab switching ── */
+  const root = document.getElementById('tab-security-opsec');
+  root.querySelectorAll('.so-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.so-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.so-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById('so-panel-' + btn.dataset.soPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  const el=id=>document.getElementById(id);
+  const val=id=>(el(id)||{}).value||'';
+  const numVal=(id,def)=>parseFloat(val(id))||def||0;
+  const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
+  function toast(msg){if(window.showToast)window.showToast(msg);}
+
+  const classificationBadge=c=>`<span class="so-badge so-badge-${c}">${c.replace(/_/g,' ').toUpperCase()}</span>`;
+  const categoryBadge=c=>`<span class="so-badge so-badge-${c}">${c}</span>`;
+  function riskColor(score){
+    if(score<=5)return'#22c55e';if(score<=10)return'#eab308';
+    if(score<=15)return'#f97316';return'#ef4444';
+  }
+  function riskClass(score){
+    return'so-risk-'+Math.min(score,25);
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     OPSEC — Compartments
+     ══════════════════════════════════════════════════════════ */
+  window.soLoadCompartments=function(){
+    api('/api/security-ops/opsec/compartments').then(items=>{
+      const list=el('so-compartment-list');
+      if(!items.length){list.innerHTML='<div class="so-empty">No compartments defined.</div>';return;}
+      list.innerHTML=items.map(c=>`<div class="so-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>${c.name}</strong> ${classificationBadge(c.classification)}</div>
+          <button class="so-btn so-btn-danger" onclick="soDeleteCompartment(${c.id})">Delete</button>
+        </div>
+        ${c.description?'<div style="font-size:.82rem;color:var(--text-secondary,#aaa);margin-top:4px">'+c.description+'</div>':''}
+        ${c.members?'<div style="font-size:.78rem;margin-top:6px;color:var(--text-secondary,#ccc)">Members: '+c.members+'</div>':''}
+      </div>`).join('');
+    });
+  };
+  window.soCreateCompartment=function(){
+    const name=val('so-compartment-name');if(!name)return;
+    api('/api/security-ops/opsec/compartments',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,classification:val('so-compartment-classification'),
+        members:val('so-compartment-members'),description:val('so-compartment-desc')})
+    }).then(()=>{el('so-compartment-name').value='';el('so-compartment-desc').value='';toast('Compartment created');soLoadCompartments();});
+  };
+  window.soDeleteCompartment=function(id){
+    api('/api/security-ops/opsec/compartments/'+id,{method:'DELETE'}).then(()=>{toast('Compartment deleted');soLoadCompartments();});
+  };
+
+  /* ── Checklists ── */
+  window.soLoadChecklists=function(){
+    api('/api/security-ops/opsec/checklists').then(items=>{
+      const list=el('so-checklist-list');
+      if(!items.length){list.innerHTML='<div class="so-empty">No checklists yet. Use "Seed Default Checklists" to get started.</div>';return;}
+      list.innerHTML=items.map(cl=>{
+        const checkItems=(cl.items||[]);
+        const done=checkItems.filter(i=>i.checked).length;
+        const total=checkItems.length;
+        const pct=total?Math.round(done/total*100):0;
+        return`<div class="so-card">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div><strong>${cl.name}</strong> <span class="so-score" style="color:${pct>=80?'var(--so-green)':pct>=50?'var(--so-yellow)':'var(--so-red)'}">${pct}%</span> <small>(${done}/${total})</small></div>
+          </div>
+          <div style="margin-top:8px">${checkItems.map((item,idx)=>`<div class="so-checklist-item">
+            <input type="checkbox" name="so-cl-${cl.id}-${idx}" ${item.checked?'checked':''} onchange="soToggleCheckItem(${cl.id},${idx},this.checked)">
+            <span style="font-size:.85rem;color:var(--text-primary,#eee)">${item.text||item}</span>
+          </div>`).join('')}</div>
+        </div>`;
+      }).join('');
+    });
+  };
+  window.soCreateChecklist=function(){
+    const name=val('so-checklist-name');if(!name)return;
+    const rawItems=val('so-checklist-items').split('\n').filter(l=>l.trim());
+    if(!rawItems.length)return;
+    api('/api/security-ops/opsec/checklists',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,items:rawItems.map(text=>({text,checked:false}))})
+    }).then(()=>{el('so-checklist-name').value='';el('so-checklist-items').value='';toast('Checklist created');soLoadChecklists();});
+  };
+  window.soToggleCheckItem=function(clId,idx,checked){
+    api('/api/security-ops/opsec/checklists/'+clId,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({toggle_item:{index:idx,checked}})
+    }).then(()=>{soLoadChecklists();});
+  };
+  window.soSeedChecklists=function(){
+    api('/api/security-ops/opsec/checklists/seed',{method:'POST'}).then(()=>{toast('Default checklists seeded');soLoadChecklists();});
+  };
+
+  /* ── Duress Signals ── */
+  window.soLoadDuress=function(){
+    api('/api/security-ops/opsec/compartments').then(items=>{
+      /* duress items are stored with compartments endpoint with type filter — use compartments as proxy or dedicated sub */
+    });
+    /* Duress stored within compartments context — reload from dedicated method if API provides */
+    const list=el('so-duress-list');
+    api('/api/security-ops/opsec/compartments?type=duress').catch(()=>({items:[]})).then(data=>{
+      const items=data.items||data||[];
+      const duress=items.filter(i=>i.type==='duress_signal'||i.type==='cover_story');
+      if(!duress.length){list.innerHTML='<div class="so-empty">No duress signals configured.</div>';return;}
+      list.innerHTML=duress.map(d=>`<div class="so-list-item">
+        <div><span class="so-badge so-badge-${d.type==='duress_signal'?'need_to_know':'restricted'}">${d.type==='duress_signal'?'DURESS':'COVER'}</span>
+          <strong style="margin-left:6px">${d.name||d.word}</strong>
+          ${d.description?'<br><small style="color:var(--text-secondary,#aaa)">'+d.description+'</small>':''}
+        </div>
+        <button class="so-btn so-btn-danger" onclick="soDeleteCompartment(${d.id})">Delete</button>
+      </div>`).join('');
+    });
+  };
+  window.soCreateDuress=function(){
+    const word=val('so-duress-word');if(!word)return;
+    api('/api/security-ops/opsec/compartments',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:word,type:val('so-duress-type'),classification:'need_to_know',description:val('so-duress-desc')})
+    }).then(()=>{el('so-duress-word').value='';el('so-duress-desc').value='';toast('Duress signal added');soLoadDuress();});
+  };
+
+  /* ══════════════════════════════════════════════════════════
+     TACTICAL — Threat Matrix
+     ══════════════════════════════════════════════════════════ */
+  window.soLoadThreats=function(){
+    api('/api/security-ops/threat-matrix').then(items=>{
+      const tbody=el('so-threat-tbody');
+      if(!items.length){tbody.innerHTML='<tr><td colspan="7" class="so-empty">No threats defined.</td></tr>';return;}
+      tbody.innerHTML=items.map(t=>{
+        const score=(t.likelihood||1)*(t.impact||1);
+        return`<tr>
+          <td>${t.name}</td><td>${t.category||''}</td>
+          <td>${t.likelihood}</td><td>${t.impact}</td>
+          <td><strong class="${riskClass(score)}" style="color:${riskColor(score)}">${score}</strong></td>
+          <td style="max-width:200px;font-size:.78rem">${t.mitigation||''}</td>
+          <td><button class="so-btn so-btn-danger" onclick="soDeleteThreat(${t.id})">Del</button></td>
+        </tr>`;
+      }).join('');
+    });
+  };
+  window.soCreateThreat=function(){
+    const name=val('so-threat-name');if(!name)return;
+    api('/api/security-ops/threat-matrix',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,category:val('so-threat-category'),
+        likelihood:parseInt(val('so-threat-likelihood'))||1,impact:parseInt(val('so-threat-impact'))||1,
+        mitigation:val('so-threat-mitigation')})
+    }).then(()=>{el('so-threat-name').value='';el('so-threat-mitigation').value='';toast('Threat added');soLoadThreats();});
+  };
+  window.soDeleteThreat=function(id){
+    api('/api/security-ops/threat-matrix/'+id,{method:'DELETE'}).then(()=>{toast('Threat removed');soLoadThreats();});
+  };
+
+  /* ── Observation Posts ── */
+  window.soLoadOPs=function(){
+    api('/api/security-ops/observation-posts').then(items=>{
+      const list=el('so-op-list');
+      if(!items.length){list.innerHTML='<div class="so-empty">No observation posts.</div>';return;}
+      list.innerHTML=items.map(op=>`<div class="so-list-item">
+        <div>
+          <span class="so-badge so-badge-${op.status||'active'}">${(op.status||'active').toUpperCase()}</span>
+          <strong style="margin-left:6px">${op.name}</strong>
+          <small style="margin-left:8px;color:var(--text-secondary,#aaa)">Sector: ${op.sector||'--'} | Personnel: ${op.personnel||'--'}</small>
+        </div>
+        <div>
+          <button class="so-btn so-btn-secondary" onclick="soToggleOPStatus(${op.id},'${op.status==='active'?'standby':'active'}')">Toggle</button>
+        </div>
+      </div>`).join('');
+      populatePostSelects(items);
+    });
+  };
+  window.soCreateOP=function(){
+    const name=val('so-op-name');if(!name)return;
+    api('/api/security-ops/observation-posts',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,sector:val('so-op-sector'),status:val('so-op-status'),personnel:val('so-op-personnel')})
+    }).then(()=>{el('so-op-name').value='';toast('Observation post added');soLoadOPs();});
+  };
+  window.soToggleOPStatus=function(id,status){
+    api('/api/security-ops/observation-posts/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status})}).then(()=>{toast('Status updated');soLoadOPs();});
+  };
+  function populatePostSelects(posts){
+    ['so-log-post','so-log-filter-post'].forEach(sid=>{
+      const s=el(sid);if(!s)return;
+      const v=s.value;
+      s.innerHTML='<option value="">All Posts</option>'+posts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+      s.value=v;
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════
+     OP LOG
+     ══════════════════════════════════════════════════════════ */
+  window.soLoadLog=function(){
+    let url='/api/security-ops/op-log?';
+    const postFilter=val('so-log-filter-post');
+    const catFilter=val('so-log-filter-category');
+    if(postFilter)url+='post_id='+postFilter+'&';
+    if(catFilter)url+='category='+catFilter+'&';
+    api(url).then(items=>{
+      const list=el('so-log-list');
+      if(!items.length){list.innerHTML='<div class="so-empty">No log entries found.</div>';return;}
+      list.innerHTML=items.map(e=>`<div class="so-list-item" style="flex-wrap:wrap">
+        <div style="flex:1">
+          ${categoryBadge(e.category||'other')}
+          <strong style="margin-left:6px">${e.description||''}</strong>
+          <br><small style="color:var(--text-secondary,#aaa)">
+            ${e.post_name?'Post: '+e.post_name+' | ':''}${e.grid?'Grid: '+e.grid+' | ':''}${e.bearing?'Brg: '+e.bearing+' | ':''}${e.distance?'Dist: '+e.distance+' | ':''}
+            ${e.created_at||''}
+          </small>
+        </div>
+      </div>`).join('');
+    });
+  };
+  window.soLoadLogStats=function(){
+    api('/api/security-ops/op-log/summary').then(s=>{
+      el('so-oplog-stats').innerHTML=[
+        {v:s.total||0,l:'Total Entries'},{v:s.last_24h||0,l:'Last 24h'},
+        {v:s.most_active_post||'--',l:'Most Active Post'},{v:s.top_category||'--',l:'Top Category'}
+      ].map(x=>`<div class="so-card so-stat"><div class="so-stat-val">${x.v}</div><div class="so-stat-label">${x.l}</div></div>`).join('');
+    });
+  };
+  window.soCreateLog=function(){
+    const desc=val('so-log-description');if(!desc)return;
+    api('/api/security-ops/op-log',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({post_id:val('so-log-post')||null,category:val('so-log-category'),
+        description:desc,grid:val('so-log-grid'),bearing:val('so-log-bearing'),distance:val('so-log-distance')})
+    }).then(()=>{el('so-log-description').value='';el('so-log-grid').value='';el('so-log-bearing').value='';el('so-log-distance').value='';toast('Log entry created');soLoadLog();soLoadLogStats();});
+  };
+
+  /* ══════════════════════════════════════════════════════════
+     SIGNATURES
+     ══════════════════════════════════════════════════════════ */
+  window.soLoadSignatures=function(){
+    api('/api/security-ops/signatures').then(items=>{
+      const byCat={visual:[],audio:[],electronic:[],thermal:[]};
+      items.forEach(s=>{if(byCat[s.category])byCat[s.category].push(s);});
+      let totalIntensity=0,totalItems=0;
+      Object.keys(byCat).forEach(cat=>{
+        const list=el('so-sig-'+cat+'-list');
+        if(!list)return;
+        if(!byCat[cat].length){list.innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa);padding:4px 0">No items</div>';return;}
+        list.innerHTML=byCat[cat].map(s=>{
+          totalIntensity+=(s.intensity||0);totalItems++;
+          return`<div class="so-list-item">
+            <div><strong>${s.source}</strong> <small>Intensity: ${s.intensity}/10</small>
+              ${s.mitigation?'<br><small style="color:var(--text-secondary,#aaa)">Mitigation: '+s.mitigation+'</small>':''}
+            </div>
+            <button class="so-btn so-btn-danger" onclick="soDeleteSignature(${s.id})">Del</button>
+          </div>`;
+        }).join('');
+      });
+      const avgScore=totalItems?Math.round(totalIntensity/totalItems*10):0;
+      updateConcealmentGauge(avgScore);
+    });
+  };
+  function updateConcealmentGauge(score){
+    const fill=el('so-gauge-fill');
+    const text=el('so-gauge-text');
+    if(!fill||!text)return;
+    const pct=Math.min(score,100);
+    fill.style.width=pct+'%';
+    fill.style.background=pct<=30?'var(--so-green)':pct<=60?'var(--so-yellow)':pct<=80?'var(--so-orange)':'var(--so-red)';
+    const label=pct<=20?'Fully Concealed':pct<=40?'Low Signature':pct<=60?'Moderate Exposure':pct<=80?'High Exposure':'Fully Exposed';
+    text.textContent=pct+' / 100 ('+label+')';
+  }
+  window.soAddSignature=function(category){
+    const prefixMap={visual:'vis',audio:'aud',electronic:'elec',thermal:'therm'};
+    const p=prefixMap[category];
+    const source=val('so-'+p+'-source');if(!source)return;
+    api('/api/security-ops/signatures',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({category,source,intensity:numVal('so-'+p+'-intensity',5),mitigation:val('so-'+p+'-mitigation')})
+    }).then(()=>{el('so-'+p+'-source').value='';el('so-'+p+'-mitigation').value='';toast('Signature added');soLoadSignatures();});
+  };
+  window.soDeleteSignature=function(id){
+    api('/api/security-ops/signatures/'+id,{method:'DELETE'}).then(()=>{toast('Signature removed');soLoadSignatures();});
+  };
+  window.soLoadSigGuide=function(){
+    api('/api/security-ops/signatures/guide').then(guide=>{
+      const container=el('so-sig-guide');
+      if(!guide||!guide.length){container.innerHTML='<div class="so-ref-item">No reference data available.</div>';return;}
+      container.innerHTML=guide.map(g=>`<div class="so-ref-item"><strong>${g.title||g.category}</strong><br>${g.description||g.text||''}</div>`).join('');
+    }).catch(()=>{el('so-sig-guide').innerHTML='<div class="so-ref-item">Could not load guide.</div>';});
+  };
+
+  /* ══════════════════════════════════════════════════════════
+     NIGHT OPS
+     ══════════════════════════════════════════════════════════ */
+  let timerInterval=null;
+  let timerSeconds=1800;
+  function updateTimerDisplay(){
+    const m=Math.floor(timerSeconds/60);
+    const s=timerSeconds%60;
+    el('so-timer-display').textContent=String(m).padStart(2,'0')+':'+String(s).padStart(2,'0');
+    if(timerSeconds<=0){
+      clearInterval(timerInterval);timerInterval=null;
+      el('so-timer-display').style.color='var(--so-green)';
+      el('so-timer-start').textContent='Start';
+      toast('Dark adaptation complete');
+    }
+  }
+  window.soStartTimer=function(){
+    if(timerInterval){clearInterval(timerInterval);timerInterval=null;el('so-timer-start').textContent='Start';return;}
+    el('so-timer-display').style.color='var(--so-accent)';
+    el('so-timer-start').textContent='Pause';
+    timerInterval=setInterval(()=>{timerSeconds--;updateTimerDisplay();},1000);
+  };
+  window.soResetTimer=function(){
+    if(timerInterval){clearInterval(timerInterval);timerInterval=null;}
+    timerSeconds=1800;
+    el('so-timer-display').style.color='var(--so-accent)';
+    el('so-timer-start').textContent='Start';
+    updateTimerDisplay();
+  };
+
+  function loadMoonPhase(){
+    api('/api/security-ops/night-ops/conditions').then(data=>{
+      const phases=['🌑','🌒','🌓','🌔','🌕','🌖','🌗','🌘'];
+      const idx=data.moon_phase_index||0;
+      el('so-moon-display').textContent=phases[idx%8]||'🌑';
+      el('so-moon-label').textContent=(data.moon_phase_name||'New Moon')+' — '+(data.illumination||0)+'% illumination';
+    }).catch(()=>{
+      el('so-moon-display').textContent='🌑';
+      el('so-moon-label').textContent='Could not load moon data';
+    });
+  }
+
+  window.soLoadNightOps=function(){
+    api('/api/security-ops/night-ops').then(items=>{
+      const list=el('so-nightop-list');
+      if(!items.length){list.innerHTML='<div class="so-empty">No night operation plans.</div>';return;}
+      list.innerHTML=items.map(op=>`<div class="so-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>${op.name}</strong> <small style="color:var(--text-secondary,#aaa)">${op.datetime||''}</small></div>
+        </div>
+        ${op.route?'<div style="font-size:.82rem;color:var(--text-secondary,#ccc);margin-top:6px">Route: '+op.route+'</div>':''}
+        <div style="font-size:.78rem;color:var(--text-secondary,#aaa);margin-top:4px">
+          Rally: ${op.rally_point||'--'} | Personnel: ${op.personnel||'--'} | Ambient: ${op.ambient_light||'--'}
+        </div>
+      </div>`).join('');
+    });
+  };
+  window.soCreateNightOp=function(){
+    const name=val('so-night-name');if(!name)return;
+    api('/api/security-ops/night-ops',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,datetime:val('so-night-datetime'),ambient_light:val('so-night-ambient'),
+        route:val('so-night-route'),rally_point:val('so-night-rally'),personnel:val('so-night-personnel')})
+    }).then(()=>{el('so-night-name').value='';el('so-night-route').value='';toast('Night op plan created');soLoadNightOps();});
+  };
+
+  /* ══════════════════════════════════════════════════════════
+     CBRN / EMP
+     ══════════════════════════════════════════════════════════ */
+  const moppDescriptions=[
+    'MOPP 0: All clear, no protective gear required',
+    'MOPP 1: Overgarment worn, mask carried',
+    'MOPP 2: Overgarment + boots, mask carried',
+    'MOPP 3: Overgarment + boots + mask worn, gloves carried',
+    'MOPP 4: Full protection — mask, suit, boots, gloves'
+  ];
+  let currentMOPP=0;
+  window.soSetMOPP=function(level){
+    currentMOPP=level;
+    el('so-mopp-desc').textContent=moppDescriptions[level]||'';
+    for(let i=0;i<=4;i++){
+      const btn=el('so-mopp-btn-'+i);
+      if(btn)btn.style.outline=i===level?'2px solid var(--text-primary,#eee)':'none';
+    }
+  };
+
+  window.soLoadCBRNEquipment=function(){
+    api('/api/security-ops/cbrn/equipment').then(items=>{
+      const list=el('so-cbrn-list');
+      if(!items.length){list.innerHTML='<div class="so-empty">No CBRN equipment tracked.</div>';return;}
+      list.innerHTML=items.map(i=>{
+        const overdue=i.calibration_due&&new Date(i.calibration_due)<new Date();
+        return`<div class="so-list-item">
+          <div>
+            <strong>${i.name}</strong> <small>x${i.quantity||1}</small>
+            <span class="so-badge" style="margin-left:6px;${i.condition==='serviceable'?'background:rgba(34,197,94,.2);color:var(--so-green)':'background:rgba(239,68,68,.2);color:var(--so-red)'}">${(i.condition||'').replace(/_/g,' ')}</span>
+            ${i.calibration_due?'<br><small style="color:'+(overdue?'var(--so-red)':'var(--text-secondary,#aaa)')+'">Cal due: '+i.calibration_due+(overdue?' OVERDUE':'')+'</small>':''}
+          </div>
+        </div>`;
+      }).join('');
+    });
+  };
+  window.soCreateCBRNItem=function(){
+    const name=val('so-cbrn-item');if(!name)return;
+    api('/api/security-ops/cbrn/equipment',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,type:val('so-cbrn-type'),quantity:numVal('so-cbrn-qty',1),
+        condition:val('so-cbrn-condition'),calibration_due:val('so-cbrn-cal-date')||null})
+    }).then(()=>{el('so-cbrn-item').value='';toast('CBRN item added');soLoadCBRNEquipment();});
+  };
+
+  /* ── Procedures ── */
+  window.soLoadProcedures=function(){
+    api('/api/security-ops/cbrn/procedures').then(items=>{
+      const list=el('so-proc-list');
+      if(!items.length){list.innerHTML='<div class="so-empty">No procedures defined.</div>';return;}
+      list.innerHTML=items.map(p=>`<div class="so-card">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div><strong>${p.name}</strong> <span class="so-badge so-badge-${p.type==='immediate_action'?'need_to_know':p.type==='decontamination'?'confidential':'restricted'}">${(p.type||'').replace(/_/g,' ')}</span></div>
+        </div>
+        <pre style="margin:8px 0 0;white-space:pre-wrap;font-size:.78rem;color:var(--text-secondary,#ccc);background:rgba(0,0,0,.3);padding:8px;border-radius:4px">${p.steps||''}</pre>
+      </div>`).join('');
+    });
+  };
+  window.soCreateProcedure=function(){
+    const name=val('so-proc-name');if(!name)return;
+    api('/api/security-ops/cbrn/procedures',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,type:val('so-proc-type'),steps:val('so-proc-steps')})
+    }).then(()=>{el('so-proc-name').value='';el('so-proc-steps').value='';toast('Procedure added');soLoadProcedures();});
+  };
+  window.soSeedProcedures=function(){
+    api('/api/security-ops/cbrn/procedures/seed',{method:'POST'}).then(()=>{toast('Built-in procedures seeded');soLoadProcedures();});
+  };
+
+  /* ── Calculators ── */
+  window.soCalcFallout=function(){
+    const rate=numVal('so-fallout-rate',100);
+    const h1=numVal('so-fallout-hours',1);
+    const h2=numVal('so-fallout-target',49);
+    if(h2<=h1){el('so-fallout-result').innerHTML='Target hours must be greater than initial.';el('so-fallout-result').classList.remove('is-hidden');return;}
+    /* 7-10 rule: for every 7x increase in time, dose rate drops by factor of 10 */
+    const decayRate=rate*Math.pow(h2/h1,-1.2);
+    const safe=decayRate<0.5;
+    el('so-fallout-result').innerHTML=`<strong>Predicted dose rate at ${h2}h:</strong> ${decayRate.toFixed(2)} R/hr<br>
+      <small>${safe?'<span style="color:var(--so-green)">Below 0.5 R/hr — movement possible with caution</span>':'<span style="color:var(--so-red)">Above 0.5 R/hr — continue sheltering</span>'}</small>
+      <br><small>Based on t^-1.2 decay approximation from initial ${rate} R/hr at ${h1}h post-detonation</small>`;
+    el('so-fallout-result').classList.remove('is-hidden');
+  };
+  window.soCalcDecon=function(){
+    const personnel=numVal('so-decon-personnel',4);
+    const stations=numVal('so-decon-stations',1);
+    const level=val('so-decon-level');
+    const timePerPerson={light:8,moderate:15,heavy:25}[level]||15;
+    const totalMin=Math.ceil(personnel/stations)*timePerPerson;
+    el('so-decon-result').innerHTML=`<strong>Estimated decon time:</strong> ${totalMin} minutes<br>
+      <small>${personnel} personnel at ${timePerPerson} min each across ${stations} station(s)</small>`;
+    el('so-decon-result').classList.remove('is-hidden');
+  };
+
+  /* ── EMP Inventory ── */
+  window.soLoadEMPInventory=function(){
+    api('/api/security-ops/emp/inventory').then(items=>{
+      const list=el('so-emp-list');
+      if(!items.length){list.innerHTML='<div class="so-empty">No EMP inventory tracked.</div>';return;}
+      list.innerHTML=items.map(i=>{
+        const protClass=i.protection==='protected'?'so-protected':i.protection==='partial'?'so-badge-confidential':'so-unprotected';
+        const protIcon=i.protection==='protected'?'&#9679;':i.protection==='partial'?'&#9681;':'&#9675;';
+        return`<div class="so-list-item">
+          <div>
+            <span class="${protClass}" title="${i.protection}">${protIcon}</span>
+            <strong style="margin-left:6px">${i.name}</strong>
+            <small style="margin-left:6px;color:var(--text-secondary,#aaa)">${i.category||''} | Priority: ${i.priority||'low'}</small>
+          </div>
+          <button class="so-btn so-btn-danger" onclick="soDeleteEMPItem(${i.id})">Del</button>
+        </div>`;
+      }).join('');
+    });
+  };
+  window.soCreateEMPItem=function(){
+    const name=val('so-emp-item');if(!name)return;
+    api('/api/security-ops/emp/inventory',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,category:val('so-emp-category'),protection:val('so-emp-protection'),priority:val('so-emp-priority')})
+    }).then(()=>{el('so-emp-item').value='';toast('EMP item added');soLoadEMPInventory();});
+  };
+  window.soDeleteEMPItem=function(id){
+    api('/api/security-ops/emp/inventory/'+id,{method:'DELETE'}).then(()=>{toast('Item removed');soLoadEMPInventory();});
+  };
+  window.soLoadEMPAnalysis=function(){
+    api('/api/security-ops/emp/analysis').then(data=>{
+      const container=el('so-emp-analysis');
+      if(!data||(!data.categories&&!data.total)){container.innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa);padding:8px">No analysis data. Add EMP inventory items first.</div>';return;}
+      const cats=data.categories||{};
+      const total=data.total||0;
+      const protectedPct=total?Math.round((data.protected||0)/total*100):0;
+      container.innerHTML=`<div style="margin-bottom:8px"><strong>Protection Coverage:</strong> <span style="color:${protectedPct>=70?'var(--so-green)':protectedPct>=40?'var(--so-yellow)':'var(--so-red)'}">${protectedPct}%</span> of ${total} items protected</div>
+        <div class="so-gauge"><div class="so-gauge-fill" style="width:${protectedPct}%;background:${protectedPct>=70?'var(--so-green)':protectedPct>=40?'var(--so-yellow)':'var(--so-red)'}"></div><div class="so-gauge-text">${protectedPct}% Protected</div></div>
+        ${Object.keys(cats).length?'<div style="margin-top:10px;font-size:.82rem">'+Object.entries(cats).map(([cat,info])=>`<div class="so-list-item" style="padding:6px 0">
+          <span>${cat}</span>
+          <span><span class="so-protected">${info.protected||0}</span> / ${info.total||0} protected</span>
+        </div>`).join('')+'</div>':''}
+        ${data.critical_unprotected?'<div style="margin-top:8px;padding:8px;background:rgba(239,68,68,.15);border-radius:6px;font-size:.82rem;color:var(--so-red)"><strong>Warning:</strong> '+data.critical_unprotected+' critical item(s) unprotected</div>':''}`;
+    }).catch(()=>{el('so-emp-analysis').innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa)">Could not load analysis.</div>';});
+  };
+
+  /* ── Initial load when tab activates ── */
+  const obs=new MutationObserver(()=>{
+    if(!root.classList.contains('is-hidden')){
+      soLoadCompartments();soLoadChecklists();soLoadDuress();
+      soLoadThreats();soLoadOPs();
+      soLoadLog();soLoadLogStats();
+      soLoadSignatures();soLoadSigGuide();
+      soLoadNightOps();loadMoonPhase();
+      soLoadCBRNEquipment();soLoadProcedures();
+      soLoadEMPInventory();soLoadEMPAnalysis();
+      soSetMOPP(currentMOPP);
+    }
+  });
+  obs.observe(root,{attributes:true,attributeFilter:['class']});
+})();
+</script>
+</div>

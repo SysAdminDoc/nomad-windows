@@ -2508,6 +2508,30 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_emp_inventory_protected ON emp_inventory(is_protected)',
         'CREATE INDEX IF NOT EXISTS idx_emp_inventory_priority ON emp_inventory(priority)',
         'CREATE INDEX IF NOT EXISTS idx_emp_inventory_grid ON emp_inventory(grid_dependent)',
+        # v7.19.0 — Agriculture & Permaculture (Phase 13)
+        'CREATE INDEX IF NOT EXISTS idx_food_forest_guilds_central ON food_forest_guilds(central_species)',
+        'CREATE INDEX IF NOT EXISTS idx_food_forest_layers_guild ON food_forest_layers(guild_id)',
+        'CREATE INDEX IF NOT EXISTS idx_food_forest_layers_type ON food_forest_layers(layer_type)',
+        'CREATE INDEX IF NOT EXISTS idx_food_forest_layers_species ON food_forest_layers(species)',
+        'CREATE INDEX IF NOT EXISTS idx_soil_projects_type ON soil_projects(project_type)',
+        'CREATE INDEX IF NOT EXISTS idx_soil_projects_status ON soil_projects(status)',
+        'CREATE INDEX IF NOT EXISTS idx_perennial_plants_type ON perennial_plants(plant_type)',
+        'CREATE INDEX IF NOT EXISTS idx_perennial_plants_health ON perennial_plants(health_status)',
+        'CREATE INDEX IF NOT EXISTS idx_perennial_plants_species ON perennial_plants(species)',
+        'CREATE INDEX IF NOT EXISTS idx_multi_year_plans_status ON multi_year_plans(status)',
+        'CREATE INDEX IF NOT EXISTS idx_multi_year_plans_years ON multi_year_plans(start_year, end_year)',
+        'CREATE INDEX IF NOT EXISTS idx_breeding_records_species ON breeding_records(species)',
+        'CREATE INDEX IF NOT EXISTS idx_breeding_records_status ON breeding_records(status)',
+        'CREATE INDEX IF NOT EXISTS idx_breeding_records_due ON breeding_records(expected_due)',
+        'CREATE INDEX IF NOT EXISTS idx_feed_tracking_group ON feed_tracking(animal_group)',
+        'CREATE INDEX IF NOT EXISTS idx_feed_tracking_date ON feed_tracking(fed_date DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_homestead_systems_type ON homestead_systems(system_type)',
+        'CREATE INDEX IF NOT EXISTS idx_homestead_systems_condition ON homestead_systems(condition)',
+        'CREATE INDEX IF NOT EXISTS idx_homestead_systems_next_maint ON homestead_systems(next_maintenance)',
+        'CREATE INDEX IF NOT EXISTS idx_aquaponics_systems_type ON aquaponics_systems(system_type)',
+        'CREATE INDEX IF NOT EXISTS idx_aquaponics_systems_status ON aquaponics_systems(status)',
+        'CREATE INDEX IF NOT EXISTS idx_recycling_systems_type ON recycling_systems(system_type)',
+        'CREATE INDEX IF NOT EXISTS idx_recycling_systems_status ON recycling_systems(current_status)',
     ]:
         try:
             conn.execute(idx)
@@ -3717,6 +3741,197 @@ def _create_security_opsec_tables(conn):
     conn.commit()
 
 
+def _create_agriculture_tables(conn):
+    """Phase 13 — Agriculture & Permaculture: food forest, soil, perennials,
+    breeding, feed, homestead systems, aquaponics, recycling."""
+    conn.executescript('''
+        /* ─── Food Forest Guilds ─── */
+        CREATE TABLE IF NOT EXISTS food_forest_guilds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            central_species TEXT DEFAULT '',
+            support_species TEXT DEFAULT '[]',
+            nitrogen_fixers TEXT DEFAULT '[]',
+            dynamic_accumulators TEXT DEFAULT '[]',
+            pest_confusers TEXT DEFAULT '[]',
+            ground_covers TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Food Forest Layers ─── */
+        CREATE TABLE IF NOT EXISTS food_forest_layers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            design_name TEXT DEFAULT '',
+            layer_type TEXT DEFAULT 'herbaceous',
+            species TEXT DEFAULT '',
+            spacing_ft REAL DEFAULT 0,
+            mature_height_ft REAL DEFAULT 0,
+            yield_per_year TEXT DEFAULT '',
+            years_to_production INTEGER DEFAULT 1,
+            guild_id INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Soil Building Projects ─── */
+        CREATE TABLE IF NOT EXISTS soil_projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            project_type TEXT DEFAULT 'compost',
+            location TEXT DEFAULT '',
+            dimensions TEXT DEFAULT '',
+            materials TEXT DEFAULT '[]',
+            start_date TEXT DEFAULT '',
+            completion_date TEXT DEFAULT '',
+            soil_test_before TEXT DEFAULT '{}',
+            soil_test_after TEXT DEFAULT '{}',
+            status TEXT DEFAULT 'planned',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Perennial Plants ─── */
+        CREATE TABLE IF NOT EXISTS perennial_plants (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            species TEXT DEFAULT '',
+            variety TEXT DEFAULT '',
+            plant_type TEXT DEFAULT 'fruit_tree',
+            planted_date TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            rootstock TEXT DEFAULT '',
+            pollinator_group TEXT DEFAULT '',
+            years_to_bearing INTEGER DEFAULT 3,
+            estimated_yield TEXT DEFAULT '',
+            last_pruned TEXT DEFAULT '',
+            last_fertilized TEXT DEFAULT '',
+            health_status TEXT DEFAULT 'good',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Multi-Year Plans ─── */
+        CREATE TABLE IF NOT EXISTS multi_year_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            start_year INTEGER DEFAULT 2024,
+            end_year INTEGER DEFAULT 2044,
+            goals TEXT DEFAULT '[]',
+            milestones TEXT DEFAULT '[]',
+            carrying_capacity_persons INTEGER DEFAULT 0,
+            land_acres REAL DEFAULT 0,
+            climate_zone TEXT DEFAULT '',
+            adaptation_strategies TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'draft',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Breeding Records ─── */
+        CREATE TABLE IF NOT EXISTS breeding_records (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            animal_name TEXT NOT NULL,
+            species TEXT DEFAULT '',
+            breed TEXT DEFAULT '',
+            sex TEXT DEFAULT 'female',
+            sire TEXT DEFAULT '',
+            dam TEXT DEFAULT '',
+            birth_date TEXT DEFAULT '',
+            breeding_date TEXT DEFAULT '',
+            expected_due TEXT DEFAULT '',
+            offspring_count INTEGER DEFAULT 0,
+            offspring_names TEXT DEFAULT '[]',
+            genetic_notes TEXT DEFAULT '',
+            health_at_breeding TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Feed Tracking ─── */
+        CREATE TABLE IF NOT EXISTS feed_tracking (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            animal_group TEXT NOT NULL,
+            feed_type TEXT DEFAULT '',
+            quantity_lbs REAL DEFAULT 0,
+            cost_per_unit REAL DEFAULT 0,
+            fed_date TEXT DEFAULT '',
+            fed_by TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Homestead Systems ─── */
+        CREATE TABLE IF NOT EXISTS homestead_systems (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            system_name TEXT NOT NULL,
+            system_type TEXT DEFAULT 'solar',
+            location TEXT DEFAULT '',
+            capacity TEXT DEFAULT '',
+            current_reading TEXT DEFAULT '',
+            last_maintenance TEXT DEFAULT '',
+            next_maintenance TEXT DEFAULT '',
+            condition TEXT DEFAULT 'good',
+            metrics TEXT DEFAULT '{}',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Aquaponics / Hydroponics Systems ─── */
+        CREATE TABLE IF NOT EXISTS aquaponics_systems (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            system_type TEXT DEFAULT 'aquaponics',
+            location TEXT DEFAULT '',
+            fish_species TEXT DEFAULT '',
+            fish_count INTEGER DEFAULT 0,
+            plant_species TEXT DEFAULT '[]',
+            water_volume_gal REAL DEFAULT 0,
+            ph_level REAL DEFAULT 7.0,
+            ammonia_ppm REAL DEFAULT 0,
+            nitrite_ppm REAL DEFAULT 0,
+            nitrate_ppm REAL DEFAULT 0,
+            temperature_f REAL DEFAULT 72,
+            last_water_change TEXT DEFAULT '',
+            feeding_schedule TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Resource Recycling Systems ─── */
+        CREATE TABLE IF NOT EXISTS recycling_systems (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            system_type TEXT DEFAULT 'compost',
+            location TEXT DEFAULT '',
+            capacity TEXT DEFAULT '',
+            input_sources TEXT DEFAULT '[]',
+            output_products TEXT DEFAULT '[]',
+            processing_time_days INTEGER DEFAULT 30,
+            current_status TEXT DEFAULT 'active',
+            last_turned TEXT DEFAULT '',
+            temperature_f REAL DEFAULT 0,
+            metrics TEXT DEFAULT '{}',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -3737,6 +3952,7 @@ def _init_db_inner(conn):
     _create_training_knowledge_tables(conn)
     _create_group_ops_tables(conn)
     _create_security_opsec_tables(conn)
+    _create_agriculture_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

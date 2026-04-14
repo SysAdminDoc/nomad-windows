@@ -1,0 +1,834 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     GROUP OPERATIONS & GOVERNANCE  (data-tab="group-ops")
+     Pods, governance, duty roster, disputes, ICS forms, CERT,
+     civil defense shelters & community warnings
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="tab-group-ops" class="tab-content is-hidden" data-tab="group-ops">
+<style>
+  #tab-group-ops {
+    --go-accent: #f97316;
+    --go-accent-dim: rgba(249,115,22,.15);
+    --go-red: #ef4444;
+    --go-green: #22c55e;
+    --go-blue: #3b82f6;
+    --go-yellow: #eab308;
+    --go-cyan: #06b6d4;
+    --go-orange: #f97316;
+    --go-gray: #6b7280;
+  }
+  #tab-group-ops .go-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-group-ops .go-header h2 { font-size:1.25rem; color:var(--go-accent); margin:0; }
+  #tab-group-ops .go-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-group-ops .go-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-group-ops .go-sub-tab.active { background:var(--go-accent-dim); border-color:var(--go-accent); color:var(--go-accent); }
+  #tab-group-ops .go-panel { display:none; }
+  #tab-group-ops .go-panel.active { display:block; }
+  #tab-group-ops .go-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-group-ops .go-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-group-ops .go-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-group-ops .go-stat { text-align:center; padding:12px; }
+  #tab-group-ops .go-stat-val { font-size:1.6rem; font-weight:700; color:var(--go-accent); }
+  #tab-group-ops .go-stat-label { font-size:.75rem; color:var(--text-secondary,#aaa); margin-top:2px; }
+  #tab-group-ops .go-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-group-ops .go-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-group-ops .go-form-row input,
+  #tab-group-ops .go-form-row select,
+  #tab-group-ops .go-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-group-ops .go-form-row .field { flex:1; min-width:140px; }
+  #tab-group-ops .go-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-group-ops .go-btn-primary { background:var(--go-accent); color:#000; }
+  #tab-group-ops .go-btn-danger { background:var(--go-red); color:#fff; }
+  #tab-group-ops .go-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-group-ops .go-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-group-ops .go-list-item:last-child { border-bottom:none; }
+  #tab-group-ops .go-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-group-ops .go-badge-active { background:rgba(34,197,94,.2); color:var(--go-green); }
+  #tab-group-ops .go-badge-inactive { background:rgba(107,114,128,.2); color:var(--go-gray); }
+  #tab-group-ops .go-badge-disbanded { background:rgba(239,68,68,.2); color:var(--go-red); }
+  #tab-group-ops .go-badge-open { background:rgba(59,130,246,.2); color:var(--go-blue); }
+  #tab-group-ops .go-badge-resolved { background:rgba(34,197,94,.2); color:var(--go-green); }
+  #tab-group-ops .go-badge-critical { background:rgba(239,68,68,.2); color:var(--go-red); }
+  #tab-group-ops .go-badge-high { background:rgba(249,115,22,.2); color:var(--go-orange); }
+  #tab-group-ops .go-badge-medium { background:rgba(234,179,8,.2); color:var(--go-yellow); }
+  #tab-group-ops .go-badge-low { background:rgba(34,197,94,.2); color:var(--go-green); }
+  #tab-group-ops .go-badge-scheduled { background:rgba(59,130,246,.2); color:var(--go-blue); }
+  #tab-group-ops .go-badge-completed { background:rgba(107,114,128,.2); color:var(--go-gray); }
+  #tab-group-ops .go-badge-missed { background:rgba(239,68,68,.2); color:var(--go-red); }
+  #tab-group-ops .go-badge-draft { background:rgba(107,114,128,.2); color:var(--go-gray); }
+  #tab-group-ops .go-badge-archived { background:rgba(59,130,246,.15); color:#60a5fa; }
+  #tab-group-ops .go-badge-info { background:rgba(59,130,246,.2); color:var(--go-blue); }
+  #tab-group-ops .go-badge-advisory { background:rgba(6,182,212,.2); color:var(--go-cyan); }
+  #tab-group-ops .go-badge-watch { background:rgba(234,179,8,.2); color:var(--go-yellow); }
+  #tab-group-ops .go-badge-warning { background:rgba(249,115,22,.2); color:var(--go-orange); }
+  #tab-group-ops .go-badge-emergency { background:rgba(239,68,68,.2); color:var(--go-red); }
+  #tab-group-ops .go-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-group-ops .go-table { width:100%; border-collapse:collapse; font-size:.82rem; }
+  #tab-group-ops .go-table th { text-align:left; padding:8px 10px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#444); background:rgba(0,0,0,.2); }
+  #tab-group-ops .go-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-group-ops .go-table tbody tr:nth-child(even) { background:rgba(255,255,255,.02); }
+  #tab-group-ops .go-table tbody tr:hover { background:rgba(249,115,22,.05); }
+  #tab-group-ops .go-chain { display:flex; flex-direction:column; gap:4px; padding:10px 0; }
+  #tab-group-ops .go-chain-node { display:flex; align-items:center; gap:10px; padding:8px 14px; background:var(--go-accent-dim); border-left:3px solid var(--go-accent); border-radius:0 8px 8px 0; }
+  #tab-group-ops .go-chain-node .rank { font-weight:700; color:var(--go-accent); min-width:24px; }
+  #tab-group-ops .go-capacity-bar { height:18px; border-radius:4px; background:rgba(255,255,255,.08); overflow:hidden; position:relative; }
+  #tab-group-ops .go-capacity-fill { height:100%; border-radius:4px; transition:width .3s; }
+  #tab-group-ops .go-capacity-text { position:absolute; top:0; left:8px; line-height:18px; font-size:.7rem; font-weight:600; color:#fff; }
+  #tab-group-ops .go-vote-bar { display:flex; height:22px; border-radius:4px; overflow:hidden; margin:4px 0; }
+  #tab-group-ops .go-vote-bar div { display:flex; align-items:center; justify-content:center; font-size:.7rem; font-weight:600; color:#fff; transition:width .3s; }
+  #tab-group-ops .go-ics-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-group-ops .go-members-expand { max-height:0; overflow:hidden; transition:max-height .3s ease; }
+  #tab-group-ops .go-members-expand.open { max-height:500px; }
+</style>
+
+<div class="go-header">
+  <h2>Group Operations & Governance</h2>
+</div>
+
+<!-- Sub-tabs -->
+<div class="go-sub-tabs">
+  <button class="go-sub-tab active" data-go-panel="pods">Pods</button>
+  <button class="go-sub-tab" data-go-panel="governance">Governance</button>
+  <button class="go-sub-tab" data-go-panel="duties">Duties</button>
+  <button class="go-sub-tab" data-go-panel="disputes">Disputes</button>
+  <button class="go-sub-tab" data-go-panel="ics">ICS Forms</button>
+  <button class="go-sub-tab" data-go-panel="cert">CERT</button>
+  <button class="go-sub-tab" data-go-panel="civil-defense">Civil Def</button>
+</div>
+
+<!-- ── Pods Panel ────────────────────────────────────── -->
+<div class="go-panel active" id="go-panel-pods">
+  <div class="go-grid" id="go-pod-stats"></div>
+  <div class="go-card">
+    <div class="go-card-title">Create Pod</div>
+    <div class="go-form-row">
+      <div class="field"><label>Pod Name</label><input name="go-pod-name" id="go-pod-name" placeholder="Alpha Team"></div>
+      <div class="field"><label>Leader</label><input name="go-pod-leader" id="go-pod-leader" placeholder="Jane Doe"></div>
+      <div class="field"><label>Status</label>
+        <select name="go-pod-status" id="go-pod-status">
+          <option value="active">Active</option><option value="inactive">Inactive</option><option value="disbanded">Disbanded</option>
+        </select>
+      </div>
+    </div>
+    <div class="go-form-row">
+      <div class="field" style="flex:3"><label>Description</label><textarea name="go-pod-desc" id="go-pod-desc" rows="2" placeholder="Pod mission / purpose"></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreatePod()">Create Pod</button></div>
+    </div>
+  </div>
+  <div id="go-pod-list"><div class="go-empty">Loading pods...</div></div>
+</div>
+
+<!-- ── Governance Panel ─────────────────────────────── -->
+<div class="go-panel" id="go-panel-governance">
+  <div class="go-card">
+    <div class="go-card-title">Pod Selector</div>
+    <div class="go-form-row">
+      <div class="field"><label>Select Pod</label>
+        <select name="go-gov-pod" id="go-gov-pod"><option value="">-- Select Pod --</option></select>
+      </div>
+    </div>
+  </div>
+  <div class="go-card">
+    <div class="go-card-title">Create Role</div>
+    <div class="go-form-row">
+      <div class="field"><label>Title</label><input name="go-role-title" id="go-role-title" placeholder="Squad Leader"></div>
+      <div class="field"><label>Authority Level</label><input name="go-role-authority" id="go-role-authority" type="number" value="1" min="1"></div>
+      <div class="field"><label>Assigned To</label><input name="go-role-assigned" id="go-role-assigned" placeholder="Member name"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field" style="flex:3"><label>Responsibilities</label><textarea name="go-role-responsibilities" id="go-role-responsibilities" rows="2" placeholder="Key responsibilities"></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateRole()">Add Role</button></div>
+    </div>
+  </div>
+  <div class="go-card">
+    <div class="go-card-title">Roles (by Authority)</div>
+    <div id="go-role-list"><div class="go-empty">Select a pod to view roles.</div></div>
+  </div>
+  <div class="go-card">
+    <div class="go-card-title">Chain of Command</div>
+    <div id="go-chain-view"><div class="go-empty">Select a pod to view chain of command.</div></div>
+  </div>
+  <div class="go-card">
+    <div class="go-card-title">Create SOP</div>
+    <div class="go-form-row">
+      <div class="field"><label>Title</label><input name="go-sop-title" id="go-sop-title" placeholder="Communications Protocol"></div>
+      <div class="field"><label>Category</label>
+        <select name="go-sop-category" id="go-sop-category">
+          <option value="security">Security</option><option value="comms">Communications</option>
+          <option value="medical">Medical</option><option value="logistics">Logistics</option>
+          <option value="operations">Operations</option><option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="field"><label>Version</label><input name="go-sop-version" id="go-sop-version" value="1.0" placeholder="1.0"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field" style="flex:3"><label>Content</label><textarea name="go-sop-content" id="go-sop-content" rows="3" placeholder="SOP details..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateSOP()">Add SOP</button></div>
+    </div>
+  </div>
+  <div class="go-card">
+    <div class="go-card-title">Standard Operating Procedures</div>
+    <div id="go-sop-list"><div class="go-empty">No SOPs created.</div></div>
+  </div>
+</div>
+
+<!-- ── Duty Roster Panel ────────────────────────────── -->
+<div class="go-panel" id="go-panel-duties">
+  <div class="go-card">
+    <div class="go-card-title">Create Duty Assignment</div>
+    <div class="go-form-row">
+      <div class="field"><label>Assigned To</label><input name="go-duty-assignee" id="go-duty-assignee" placeholder="Member name"></div>
+      <div class="field"><label>Role / Task</label><input name="go-duty-role" id="go-duty-role" placeholder="Night watch"></div>
+      <div class="field"><label>Pod</label>
+        <select name="go-duty-pod" id="go-duty-pod"><option value="">-- Any --</option></select>
+      </div>
+    </div>
+    <div class="go-form-row">
+      <div class="field"><label>Date</label><input name="go-duty-date" id="go-duty-date" type="date"></div>
+      <div class="field"><label>Start Time</label><input name="go-duty-start" id="go-duty-start" type="time"></div>
+      <div class="field"><label>End Time</label><input name="go-duty-end" id="go-duty-end" type="time"></div>
+      <div class="field"><label>Status</label>
+        <select name="go-duty-status" id="go-duty-status">
+          <option value="scheduled">Scheduled</option><option value="active">Active</option>
+          <option value="completed">Completed</option><option value="missed">Missed</option>
+        </select>
+      </div>
+    </div>
+    <div class="go-form-row">
+      <div class="field" style="flex:3"><label>Notes</label><textarea name="go-duty-notes" id="go-duty-notes" rows="2"></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateDuty()">Assign</button></div>
+    </div>
+  </div>
+  <div class="go-form-row">
+    <div class="field"><label>Filter Pod</label>
+      <select name="go-duty-filter-pod" id="go-duty-filter-pod" onchange="goLoadDuties()"><option value="">All Pods</option></select>
+    </div>
+    <div class="field"><label>Filter Date</label><input name="go-duty-filter-date" id="go-duty-filter-date" type="date" onchange="goLoadDuties()"></div>
+  </div>
+  <div id="go-duty-list" class="go-card"><div class="go-empty">Loading duties...</div></div>
+</div>
+
+<!-- ── Disputes Panel ───────────────────────────────── -->
+<div class="go-panel" id="go-panel-disputes">
+  <div class="go-card">
+    <div class="go-card-title">File Dispute</div>
+    <div class="go-form-row">
+      <div class="field"><label>Title</label><input name="go-dispute-title" id="go-dispute-title" placeholder="Resource allocation disagreement"></div>
+      <div class="field"><label>Severity</label>
+        <select name="go-dispute-severity" id="go-dispute-severity">
+          <option value="low">Low</option><option value="medium">Medium</option>
+          <option value="high">High</option><option value="critical">Critical</option>
+        </select>
+      </div>
+      <div class="field"><label>Filed By</label><input name="go-dispute-filed-by" id="go-dispute-filed-by" placeholder="Your name"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field" style="flex:3"><label>Description</label><textarea name="go-dispute-desc" id="go-dispute-desc" rows="2" placeholder="Describe the dispute..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateDispute()">File</button></div>
+    </div>
+  </div>
+  <div id="go-dispute-list" class="go-card"><div class="go-empty">Loading disputes...</div></div>
+  <div class="go-card">
+    <div class="go-card-title">Create Vote</div>
+    <div class="go-form-row">
+      <div class="field"><label>Dispute</label>
+        <select name="go-vote-dispute" id="go-vote-dispute"><option value="">-- Select Dispute --</option></select>
+      </div>
+      <div class="field"><label>Question</label><input name="go-vote-question" id="go-vote-question" placeholder="Should we accept proposal A?"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field"><label>Options (comma-separated)</label><input name="go-vote-options" id="go-vote-options" placeholder="Yes, No, Abstain"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateVote()">Create Vote</button></div>
+    </div>
+  </div>
+  <div id="go-vote-list" class="go-card"><div class="go-empty">No active votes.</div></div>
+</div>
+
+<!-- ── ICS Forms Panel ──────────────────────────────── -->
+<div class="go-panel" id="go-panel-ics">
+  <div class="go-card">
+    <div class="go-card-title">Create ICS Form</div>
+    <div class="go-form-row">
+      <div class="field"><label>ICS Type</label>
+        <select name="go-ics-type" id="go-ics-type" onchange="goLoadICSTemplate()">
+          <option value="">-- Select --</option>
+          <option value="201">ICS 201 - Incident Briefing</option>
+          <option value="202">ICS 202 - Incident Objectives</option>
+          <option value="203">ICS 203 - Org Assignment</option>
+          <option value="204">ICS 204 - Assignment List</option>
+          <option value="205">ICS 205 - Communications Plan</option>
+          <option value="206">ICS 206 - Medical Plan</option>
+          <option value="207">ICS 207 - Org Chart</option>
+          <option value="208">ICS 208 - Safety Message</option>
+          <option value="209">ICS 209 - Incident Status</option>
+          <option value="210">ICS 210 - Resource Status</option>
+          <option value="211">ICS 211 - Check-In List</option>
+          <option value="213">ICS 213 - General Message</option>
+          <option value="214">ICS 214 - Activity Log</option>
+          <option value="215">ICS 215 - Operational Planning</option>
+        </select>
+      </div>
+      <div class="field"><label>Incident Name</label><input name="go-ics-incident" id="go-ics-incident" placeholder="Hurricane Alpha"></div>
+      <div class="field"><label>Status</label>
+        <select name="go-ics-status" id="go-ics-status">
+          <option value="draft">Draft</option><option value="active">Active</option><option value="archived">Archived</option>
+        </select>
+      </div>
+    </div>
+    <div id="go-ics-template-fields" class="go-form-row" style="flex-direction:column;gap:8px"></div>
+    <div class="go-form-row">
+      <div class="field" style="flex:0"><button class="go-btn go-btn-primary" onclick="goCreateICSForm()">Create Form</button></div>
+    </div>
+  </div>
+  <div id="go-ics-list" class="go-card"><div class="go-empty">Loading ICS forms...</div></div>
+</div>
+
+<!-- ── CERT Panel ───────────────────────────────────── -->
+<div class="go-panel" id="go-panel-cert">
+  <div class="go-card">
+    <div class="go-card-title">Create CERT Team</div>
+    <div class="go-form-row">
+      <div class="field"><label>Team Name</label><input name="go-cert-name" id="go-cert-name" placeholder="Search & Rescue Alpha"></div>
+      <div class="field"><label>Specialty</label>
+        <select name="go-cert-specialty" id="go-cert-specialty">
+          <option value="search_rescue">Search & Rescue</option><option value="medical">Medical</option>
+          <option value="fire_suppression">Fire Suppression</option><option value="logistics">Logistics</option>
+          <option value="communications">Communications</option><option value="damage_assessment">Damage Assessment</option>
+        </select>
+      </div>
+      <div class="field"><label>Leader</label><input name="go-cert-leader" id="go-cert-leader" placeholder="Team leader"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field"><label>Members (comma-separated)</label><input name="go-cert-members" id="go-cert-members" placeholder="Alice, Bob, Charlie"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateCERT()">Create Team</button></div>
+    </div>
+  </div>
+  <div id="go-cert-list" class="go-grid"><div class="go-empty">Loading CERT teams...</div></div>
+  <div class="go-card">
+    <div class="go-card-title">Damage Assessment</div>
+    <div class="go-form-row">
+      <div class="field"><label>Location</label><input name="go-da-location" id="go-da-location" placeholder="123 Main St"></div>
+      <div class="field"><label>Severity</label>
+        <select name="go-da-severity" id="go-da-severity">
+          <option value="minor">Minor</option><option value="moderate">Moderate</option>
+          <option value="major">Major</option><option value="destroyed">Destroyed</option>
+        </select>
+      </div>
+      <div class="field"><label>Assessed By</label><input name="go-da-assessor" id="go-da-assessor" placeholder="Your name"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field"><label>Structure Type</label>
+        <select name="go-da-structure" id="go-da-structure">
+          <option value="residential">Residential</option><option value="commercial">Commercial</option>
+          <option value="industrial">Industrial</option><option value="infrastructure">Infrastructure</option>
+          <option value="public">Public/Govt</option>
+        </select>
+      </div>
+      <div class="field"><label>Occupants</label><input name="go-da-occupants" id="go-da-occupants" type="number" value="0"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field"><label>Utilities Status</label></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field"><label><input type="checkbox" name="go-da-util-power" id="go-da-util-power"> Power</label></div>
+      <div class="field"><label><input type="checkbox" name="go-da-util-water" id="go-da-util-water"> Water</label></div>
+      <div class="field"><label><input type="checkbox" name="go-da-util-gas" id="go-da-util-gas"> Gas</label></div>
+      <div class="field"><label><input type="checkbox" name="go-da-util-sewer" id="go-da-util-sewer"> Sewer</label></div>
+      <div class="field"><label><input type="checkbox" name="go-da-util-comms" id="go-da-util-comms"> Comms</label></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field" style="flex:3"><label>Notes</label><textarea name="go-da-notes" id="go-da-notes" rows="2" placeholder="Damage details, hazards..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateDamageAssessment()">Submit</button></div>
+    </div>
+  </div>
+  <div id="go-da-list" class="go-card"><div class="go-empty">Loading assessments...</div></div>
+</div>
+
+<!-- ── Civil Defense Panel ──────────────────────────── -->
+<div class="go-panel" id="go-panel-civil-defense">
+  <div class="go-card">
+    <div class="go-card-title">Register Shelter</div>
+    <div class="go-form-row">
+      <div class="field"><label>Shelter Name</label><input name="go-shelter-name" id="go-shelter-name" placeholder="Community Center"></div>
+      <div class="field"><label>Location</label><input name="go-shelter-location" id="go-shelter-location" placeholder="456 Oak Ave"></div>
+      <div class="field"><label>Capacity</label><input name="go-shelter-capacity" id="go-shelter-capacity" type="number" value="50"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field"><label>Current Occupancy</label><input name="go-shelter-occupancy" id="go-shelter-occupancy" type="number" value="0"></div>
+      <div class="field"><label>Status</label>
+        <select name="go-shelter-status" id="go-shelter-status">
+          <option value="active">Active</option><option value="inactive">Inactive</option><option value="full">Full</option>
+        </select>
+      </div>
+      <div class="field"><label>Contact</label><input name="go-shelter-contact" id="go-shelter-contact" placeholder="Shelter manager"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field" style="flex:3"><label>Amenities</label><textarea name="go-shelter-amenities" id="go-shelter-amenities" rows="2" placeholder="Generator, water, medical supplies..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateShelter()">Register</button></div>
+    </div>
+  </div>
+  <div id="go-shelter-capacity-summary" class="go-grid" style="margin-bottom:12px"></div>
+  <div id="go-shelter-list" class="go-card"><div class="go-empty">Loading shelters...</div></div>
+  <div class="go-card">
+    <div class="go-card-title">Issue Community Warning</div>
+    <div class="go-form-row">
+      <div class="field"><label>Title</label><input name="go-warning-title" id="go-warning-title" placeholder="Severe Weather Alert"></div>
+      <div class="field"><label>Severity</label>
+        <select name="go-warning-severity" id="go-warning-severity">
+          <option value="info">Info</option><option value="advisory">Advisory</option>
+          <option value="watch">Watch</option><option value="warning">Warning</option>
+          <option value="emergency">Emergency</option>
+        </select>
+      </div>
+      <div class="field"><label>Issued By</label><input name="go-warning-issued-by" id="go-warning-issued-by" placeholder="Your name"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field"><label>Expires</label><input name="go-warning-expires" id="go-warning-expires" type="datetime-local"></div>
+      <div class="field"><label>Area</label><input name="go-warning-area" id="go-warning-area" placeholder="All sectors"></div>
+    </div>
+    <div class="go-form-row">
+      <div class="field" style="flex:3"><label>Message</label><textarea name="go-warning-message" id="go-warning-message" rows="2" placeholder="Warning details..."></textarea></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateWarning()">Issue Warning</button></div>
+    </div>
+  </div>
+  <div id="go-warning-list" class="go-card"><div class="go-empty">Loading warnings...</div></div>
+</div>
+
+<script>
+(function(){
+  /* ── Sub-tab switching ── */
+  const root = document.getElementById('tab-group-ops');
+  root.querySelectorAll('.go-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.go-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.go-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById('go-panel-' + btn.dataset.goPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  const el=id=>document.getElementById(id);
+  const val=id=>(el(id)||{}).value||'';
+  const numVal=(id,def)=>parseFloat(val(id))||def||0;
+  const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
+  function toast(msg){if(window.showToast)window.showToast(msg);}
+
+  const statusBadge=s=>`<span class="go-badge go-badge-${s}">${s}</span>`;
+  const severityColor={minor:'var(--go-green)',moderate:'var(--go-yellow)',major:'var(--go-orange)',destroyed:'var(--go-red)'};
+  const icsColors={'201':'#3b82f6','202':'#8b5cf6','203':'#06b6d4','204':'#22c55e','205':'#f59e0b','206':'#ef4444','207':'#ec4899','208':'#f97316','209':'#14b8a6','210':'#6366f1','211':'#84cc16','213':'#a855f7','214':'#0ea5e9','215':'#e11d48'};
+
+  /* ── Pod helpers ── */
+  function populatePodSelects(pods){
+    const selects=['go-gov-pod','go-duty-pod','go-duty-filter-pod'];
+    selects.forEach(sid=>{
+      const s=el(sid);if(!s)return;
+      const v=s.value;
+      const opts='<option value="">-- '+(sid.includes('filter')?'All Pods':'Select Pod')+' --</option>'+
+        pods.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+      s.innerHTML=opts;
+      if(v)s.value=v;
+    });
+  }
+
+  /* ═══ PODS ═══ */
+  window.goLoadPods=function(){
+    api('/api/group/pods').then(pods=>{
+      populatePodSelects(pods);
+      const list=el('go-pod-list');
+      if(!pods.length){list.innerHTML='<div class="go-empty">No pods created yet.</div>';return;}
+      list.innerHTML='<div class="go-grid">'+pods.map(p=>`<div class="go-card">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div><strong style="color:var(--go-accent)">${p.name}</strong> ${statusBadge(p.status||'active')}
+            <br><small style="color:var(--text-secondary,#aaa)">Leader: ${p.leader||'Unassigned'} | Members: ${p.member_count||0}</small>
+            ${p.description?'<br><small style="color:var(--text-secondary,#888)">'+p.description+'</small>':''}
+          </div>
+          <div><button class="go-btn go-btn-danger" onclick="goDeletePod(${p.id})">x</button></div>
+        </div>
+        <div style="margin-top:8px"><button class="go-btn go-btn-secondary" onclick="goToggleMembers(${p.id},this)">Show Members</button></div>
+        <div class="go-members-expand" id="go-pod-members-${p.id}"></div>
+      </div>`).join('')+'</div>';
+      goLoadPodStats();
+    });
+  };
+  window.goLoadPodStats=function(){
+    api('/api/group/summary').then(s=>{
+      el('go-pod-stats').innerHTML=[
+        {v:s.total_pods||0,l:'Total Pods'},{v:s.total_members||0,l:'Total Members'},
+        {v:s.active_pods||0,l:'Active Pods'},{v:s.active_duties||0,l:'Active Duties'}
+      ].map(x=>`<div class="go-card go-stat"><div class="go-stat-val">${x.v}</div><div class="go-stat-label">${x.l}</div></div>`).join('');
+    });
+  };
+  window.goToggleMembers=function(podId,btn){
+    const wrap=el('go-pod-members-'+podId);
+    if(wrap.classList.contains('open')){wrap.classList.remove('open');btn.textContent='Show Members';return;}
+    api('/api/group/pods/'+podId+'/members').then(members=>{
+      wrap.innerHTML=members.length?'<div style="padding:8px 0">'+members.map(m=>`<div class="go-list-item">
+        <div><strong>${m.name}</strong> <small style="color:var(--text-secondary,#aaa)">${m.role||''}</small></div>
+        <button class="go-btn go-btn-danger" onclick="goRemoveMember(${m.id},${podId})">x</button>
+      </div>`).join('')+'<div class="go-form-row" style="margin-top:8px"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="New member name"></div><div class="field" style="flex:0"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>'
+        :'<div class="go-empty" style="padding:12px">No members. <div class="go-form-row" style="margin-top:8px"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="Member name"></div><div class="field" style="flex:0"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>';
+      wrap.classList.add('open');btn.textContent='Hide Members';
+    });
+  };
+  window.goCreatePod=function(){
+    const name=val('go-pod-name');if(!name)return;
+    api('/api/group/pods',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,leader:val('go-pod-leader'),status:val('go-pod-status'),description:val('go-pod-desc')})
+    }).then(()=>{el('go-pod-name').value='';el('go-pod-desc').value='';toast('Pod created');goLoadPods();});
+  };
+  window.goDeletePod=function(id){
+    api('/api/group/pods/'+id,{method:'DELETE'}).then(()=>{toast('Pod deleted');goLoadPods();});
+  };
+  window.goAddMember=function(podId){
+    const name=val('go-add-member-'+podId);if(!name)return;
+    api('/api/group/pods/'+podId+'/members',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name})
+    }).then(()=>{toast('Member added');goToggleMembers(podId,el('go-pod-members-'+podId).previousElementSibling.querySelector('button'));});
+  };
+  window.goRemoveMember=function(memberId,podId){
+    api('/api/group/members/'+memberId,{method:'DELETE'}).then(()=>{toast('Member removed');goLoadPods();});
+  };
+
+  /* ═══ GOVERNANCE ═══ */
+  window.goLoadRoles=function(){
+    const podId=val('go-gov-pod');if(!podId){el('go-role-list').innerHTML='<div class="go-empty">Select a pod to view roles.</div>';el('go-chain-view').innerHTML='<div class="go-empty">Select a pod.</div>';return;}
+    api('/api/group/pods/'+podId+'/roles').then(roles=>{
+      const list=el('go-role-list');
+      if(!roles.length){list.innerHTML='<div class="go-empty">No roles defined for this pod.</div>';return;}
+      roles.sort((a,b)=>(a.authority_level||99)-(b.authority_level||99));
+      list.innerHTML='<table class="go-table"><thead><tr><th>#</th><th>Title</th><th>Assigned To</th><th>Authority</th><th>Actions</th></tr></thead><tbody>'+
+        roles.map((r,i)=>`<tr><td>${i+1}</td><td>${r.title}</td><td>${r.assigned_to||'Vacant'}</td><td>${r.authority_level||'-'}</td>
+          <td><button class="go-btn go-btn-danger" onclick="goDeleteRole(${r.id})">x</button></td></tr>`).join('')+'</tbody></table>';
+    });
+    api('/api/group/pods/'+podId+'/chain-of-command').then(chain=>{
+      const view=el('go-chain-view');
+      if(!chain.length){view.innerHTML='<div class="go-empty">No chain of command data.</div>';return;}
+      view.innerHTML='<div class="go-chain">'+chain.map((c,i)=>`<div class="go-chain-node">
+        <span class="rank">${i+1}</span><strong>${c.title}</strong><span style="color:var(--text-secondary,#aaa);margin-left:auto">${c.assigned_to||'Vacant'}</span>
+      </div>`).join('')+'</div>';
+    });
+  };
+  el('go-gov-pod').addEventListener('change',()=>{goLoadRoles();});
+  window.goCreateRole=function(){
+    const podId=val('go-gov-pod'),title=val('go-role-title');if(!podId||!title)return;
+    api('/api/group/pods/'+podId+'/roles',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title,authority_level:numVal('go-role-authority',1),assigned_to:val('go-role-assigned'),responsibilities:val('go-role-responsibilities')})
+    }).then(()=>{el('go-role-title').value='';el('go-role-assigned').value='';el('go-role-responsibilities').value='';toast('Role created');goLoadRoles();});
+  };
+  window.goDeleteRole=function(id){
+    api('/api/group/roles/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({status:'removed'})}).then(()=>{toast('Role removed');goLoadRoles();});
+  };
+
+  /* ── SOPs ── */
+  window.goLoadSOPs=function(){
+    api('/api/group/sops').then(sops=>{
+      const list=el('go-sop-list');
+      if(!sops.length){list.innerHTML='<div class="go-empty">No SOPs created.</div>';return;}
+      const catColor={security:'#ef4444',comms:'#06b6d4',medical:'#22c55e',logistics:'#f59e0b',operations:'#8b5cf6',admin:'#6b7280'};
+      list.innerHTML=sops.map(s=>`<div class="go-list-item">
+        <div><strong>${s.title}</strong> <span class="go-badge" style="background:rgba(255,255,255,.08);color:${catColor[s.category]||'#aaa'}">${s.category}</span>
+          <span class="go-badge go-badge-${s.status||'active'}">v${s.version||'1.0'}</span>
+          ${s.content?'<br><small style="color:var(--text-secondary,#888)">'+s.content.substring(0,120)+(s.content.length>120?'...':'')+'</small>':''}
+        </div>
+        <div><button class="go-btn go-btn-danger" onclick="goDeleteSOP(${s.id})">x</button></div>
+      </div>`).join('');
+    });
+  };
+  window.goCreateSOP=function(){
+    const title=val('go-sop-title');if(!title)return;
+    api('/api/group/sops',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title,category:val('go-sop-category'),version:val('go-sop-version'),content:val('go-sop-content')})
+    }).then(()=>{el('go-sop-title').value='';el('go-sop-content').value='';toast('SOP created');goLoadSOPs();});
+  };
+  window.goDeleteSOP=function(id){
+    api('/api/group/sops/'+id,{method:'DELETE'}).then(()=>{toast('SOP deleted');goLoadSOPs();});
+  };
+
+  /* ═══ DUTY ROSTER ═══ */
+  window.goLoadDuties=function(){
+    let url='/api/group/duties?';
+    const pod=val('go-duty-filter-pod'),dt=val('go-duty-filter-date');
+    if(pod)url+='pod_id='+pod+'&';if(dt)url+='date='+dt+'&';
+    api(url).then(duties=>{
+      const list=el('go-duty-list');
+      if(!duties.length){list.innerHTML='<div class="go-empty">No duty assignments found.</div>';return;}
+      list.innerHTML='<table class="go-table"><thead><tr><th>Date</th><th>Time</th><th>Assignee</th><th>Task</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
+        duties.map(d=>`<tr><td>${d.date||''}</td><td>${d.start_time||''} - ${d.end_time||''}</td><td>${d.assignee||''}</td><td>${d.role||''}</td>
+          <td>${statusBadge(d.status||'scheduled')}</td>
+          <td><select name="go-duty-chg-${d.id}" onchange="goUpdateDutyStatus(${d.id},this.value)" style="padding:3px 6px;border-radius:4px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.78rem">
+            <option value="scheduled"${d.status==='scheduled'?' selected':''}>Scheduled</option><option value="active"${d.status==='active'?' selected':''}>Active</option>
+            <option value="completed"${d.status==='completed'?' selected':''}>Completed</option><option value="missed"${d.status==='missed'?' selected':''}>Missed</option>
+          </select> <button class="go-btn go-btn-danger" onclick="goDeleteDuty(${d.id})">x</button></td></tr>`).join('')+'</tbody></table>';
+    });
+  };
+  window.goCreateDuty=function(){
+    const assignee=val('go-duty-assignee'),role=val('go-duty-role');if(!assignee||!role)return;
+    api('/api/group/duties',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({assignee,role,pod_id:val('go-duty-pod')||null,date:val('go-duty-date'),
+        start_time:val('go-duty-start'),end_time:val('go-duty-end'),status:val('go-duty-status'),notes:val('go-duty-notes')})
+    }).then(()=>{el('go-duty-assignee').value='';el('go-duty-role').value='';el('go-duty-notes').value='';toast('Duty assigned');goLoadDuties();});
+  };
+  window.goUpdateDutyStatus=function(id,status){
+    api('/api/group/duties/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status})}).then(()=>{toast('Duty updated');goLoadDuties();});
+  };
+  window.goDeleteDuty=function(id){
+    api('/api/group/duties/'+id,{method:'DELETE'}).then(()=>{toast('Duty removed');goLoadDuties();});
+  };
+
+  /* ═══ DISPUTES & VOTING ═══ */
+  window.goLoadDisputes=function(){
+    api('/api/group/disputes').then(disputes=>{
+      const list=el('go-dispute-list');
+      const sel=el('go-vote-dispute');
+      sel.innerHTML='<option value="">-- Select Dispute --</option>'+disputes.filter(d=>d.status==='open').map(d=>`<option value="${d.id}">${d.title}</option>`).join('');
+      if(!disputes.length){list.innerHTML='<div class="go-empty">No disputes filed.</div>';return;}
+      list.innerHTML=disputes.map(d=>`<div class="go-list-item">
+        <div><strong>${d.title}</strong> ${statusBadge(d.status||'open')} <span class="go-badge go-badge-${d.severity||'low'}">${d.severity||'low'}</span>
+          <br><small style="color:var(--text-secondary,#aaa)">Filed by: ${d.filed_by||'Unknown'}${d.description?' | '+d.description.substring(0,80):''}</small></div>
+        <div>${d.status==='open'?'<button class="go-btn go-btn-secondary" onclick="goResolveDispute('+d.id+')">Resolve</button>':''}</div>
+      </div>`).join('');
+    });
+  };
+  window.goCreateDispute=function(){
+    const title=val('go-dispute-title');if(!title)return;
+    api('/api/group/disputes',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title,severity:val('go-dispute-severity'),filed_by:val('go-dispute-filed-by'),description:val('go-dispute-desc')})
+    }).then(()=>{el('go-dispute-title').value='';el('go-dispute-desc').value='';toast('Dispute filed');goLoadDisputes();});
+  };
+  window.goResolveDispute=function(id){
+    api('/api/group/disputes/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status:'resolved'})}).then(()=>{toast('Dispute resolved');goLoadDisputes();});
+  };
+
+  /* ── Voting ── */
+  window.goLoadVotes=function(){
+    api('/api/group/disputes').then(disputes=>{
+      const container=el('go-vote-list');
+      const openIds=disputes.filter(d=>d.status==='open').map(d=>d.id);
+      if(!openIds.length){container.innerHTML='<div class="go-empty">No open disputes with votes.</div>';return;}
+      Promise.all(openIds.map(id=>api('/api/group/disputes/'+id))).then(details=>{
+        let html='';
+        details.forEach(d=>{
+          if(!d.votes||!d.votes.length)return;
+          d.votes.forEach(v=>{
+            const total=v.results?Object.values(v.results).reduce((a,b)=>a+b,0):0;
+            const barColors=['#3b82f6','#22c55e','#f59e0b','#ef4444','#8b5cf6','#06b6d4'];
+            html+=`<div class="go-card"><div class="go-card-title">${v.question} <span class="go-badge go-badge-${v.status||'open'}">${v.status||'open'}</span></div>`;
+            if(v.results&&total>0){
+              html+='<div class="go-vote-bar">'+Object.entries(v.results).map(([opt,cnt],i)=>{
+                const pct=Math.round(cnt/total*100);
+                return `<div style="width:${pct}%;background:${barColors[i%barColors.length]}" title="${opt}: ${cnt}">${pct>8?opt+' '+pct+'%':''}</div>`;
+              }).join('')+'</div><small style="color:var(--text-secondary,#aaa)">Total votes: '+total+'</small>';
+            }
+            if(v.status==='open'&&v.options){
+              html+='<div class="go-form-row" style="margin-top:8px">'+v.options.map(o=>`<button class="go-btn go-btn-secondary" onclick="goCastVote(${v.id},'${o.replace(/'/g,"\\'")}')">${o}</button>`).join('')+'</div>';
+            }
+            html+='</div>';
+          });
+        });
+        container.innerHTML=html||'<div class="go-empty">No votes created yet.</div>';
+      });
+    });
+  };
+  window.goCreateVote=function(){
+    const disputeId=val('go-vote-dispute'),question=val('go-vote-question'),opts=val('go-vote-options');
+    if(!disputeId||!question||!opts)return;
+    api('/api/group/disputes/'+disputeId+'/vote',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({question,options:opts.split(',').map(o=>o.trim()).filter(Boolean)})
+    }).then(()=>{el('go-vote-question').value='';el('go-vote-options').value='';toast('Vote created');goLoadVotes();});
+  };
+  window.goCastVote=function(voteId,option){
+    api('/api/group/votes/'+voteId+'/cast',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({option})}).then(()=>{toast('Vote cast');goLoadVotes();});
+  };
+
+  /* ═══ ICS FORMS ═══ */
+  const icsTemplateFields={
+    '201':['incident_name','date_prepared','map_sketch','current_situation','objectives','current_org','resources_summary'],
+    '202':['incident_name','date_time','period','objectives','weather_forecast','safety_message','attachments'],
+    '203':['incident_name','date_time','incident_commander','operations_chief','planning_chief','logistics_chief','finance_chief'],
+    '204':['incident_name','period','branch','division','resources_assigned','work_assignments','special_instructions'],
+    '205':['incident_name','date_time','radio_channel','frequency','phone_numbers','medical_frequency'],
+    '206':['incident_name','date_time','medical_aid_stations','transportation','hospitals','medical_procedures'],
+    '207':['incident_name','date_time','org_chart_positions','legend'],
+    '208':['incident_name','date_time','safety_message','hazards','ppe_required','emergency_procedures'],
+    '209':['incident_name','date_time','percent_contained','structures_threatened','structures_damaged','injuries','costs'],
+    '210':['incident_name','resource_name','resource_type','status','location','eta','notes'],
+    '211':['incident_name','check_in_location','leader_name','total_personnel','agency','date_time'],
+    '213':['to','from','subject','date_time','message_body','reply'],
+    '214':['incident_name','unit_name','unit_leader','date','activity_log_entries'],
+    '215':['incident_name','period','work_assignments','resources_needed','overhead_positions','special_equipment']
+  };
+  window.goLoadICSTemplate=function(){
+    const type=val('go-ics-type'),container=el('go-ics-template-fields');
+    if(!type){container.innerHTML='';return;}
+    const fields=icsTemplateFields[type]||[];
+    container.innerHTML=fields.map(f=>{
+      const label=f.replace(/_/g,' ').replace(/\b\w/g,c=>c.toUpperCase());
+      const isLong=f.includes('message')||f.includes('log')||f.includes('situation')||f.includes('objectives')||f.includes('procedures');
+      return `<div class="go-form-row"><div class="field"><label>${label}</label>${isLong?
+        '<textarea name="go-ics-field-'+f+'" id="go-ics-field-'+f+'" rows="2"></textarea>':
+        '<input name="go-ics-field-'+f+'" id="go-ics-field-'+f+'" placeholder="'+label+'">'}</div></div>`;
+    }).join('');
+  };
+  window.goLoadICSForms=function(){
+    api('/api/group/ics-forms').then(forms=>{
+      const list=el('go-ics-list');
+      if(!forms.length){list.innerHTML='<div class="go-empty">No ICS forms created.</div>';return;}
+      list.innerHTML=forms.map(f=>{
+        const color=icsColors[f.form_type]||'#6b7280';
+        return `<div class="go-list-item">
+          <div><span class="go-ics-badge" style="background:${color}22;color:${color};padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600">ICS ${f.form_type}</span>
+            <strong style="margin-left:6px">${f.incident_name||'Untitled'}</strong> ${statusBadge(f.status||'draft')}
+            <br><small style="color:var(--text-secondary,#aaa)">Created: ${f.created_at||'Unknown'}</small></div>
+          <div>
+            <select name="go-ics-status-${f.id}" onchange="goUpdateICSStatus(${f.id},this.value)" style="padding:3px 6px;border-radius:4px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.78rem">
+              <option value="draft"${f.status==='draft'?' selected':''}>Draft</option><option value="active"${f.status==='active'?' selected':''}>Active</option>
+              <option value="archived"${f.status==='archived'?' selected':''}>Archived</option>
+            </select></div></div>`;
+      }).join('');
+    });
+  };
+  window.goCreateICSForm=function(){
+    const type=val('go-ics-type'),incident=val('go-ics-incident');if(!type)return;
+    const fields=icsTemplateFields[type]||[];
+    const data={};fields.forEach(f=>{data[f]=val('go-ics-field-'+f);});
+    api('/api/group/ics-forms',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({form_type:type,incident_name:incident,status:val('go-ics-status'),data})
+    }).then(()=>{el('go-ics-incident').value='';el('go-ics-template-fields').innerHTML='';el('go-ics-type').value='';toast('ICS form created');goLoadICSForms();});
+  };
+  window.goUpdateICSStatus=function(id,status){
+    api('/api/group/ics-forms/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status})}).then(()=>{toast('ICS form updated');goLoadICSForms();});
+  };
+
+  /* ═══ CERT ═══ */
+  window.goLoadCERT=function(){
+    api('/api/group/cert-teams').then(teams=>{
+      const list=el('go-cert-list');
+      if(!teams.length){list.innerHTML='<div class="go-empty">No CERT teams created.</div>';return;}
+      const specColor={search_rescue:'#3b82f6',medical:'#22c55e',fire_suppression:'#ef4444',logistics:'#f59e0b',communications:'#06b6d4',damage_assessment:'#8b5cf6'};
+      list.innerHTML=teams.map(t=>`<div class="go-card">
+        <div style="display:flex;justify-content:space-between;align-items:start">
+          <div><strong style="color:var(--go-accent)">${t.name}</strong>
+            <span class="go-badge" style="background:${(specColor[t.specialty]||'#6b7280')}22;color:${specColor[t.specialty]||'#6b7280'}">${(t.specialty||'').replace(/_/g,' ')}</span>
+            <br><small style="color:var(--text-secondary,#aaa)">Leader: ${t.leader||'None'}</small>
+            ${t.members?'<br><small style="color:var(--text-secondary,#888)">Members: '+t.members+'</small>':''}
+          </div>
+        </div>
+      </div>`).join('');
+    });
+  };
+  window.goCreateCERT=function(){
+    const name=val('go-cert-name');if(!name)return;
+    api('/api/group/cert-teams',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,specialty:val('go-cert-specialty'),leader:val('go-cert-leader'),members:val('go-cert-members')})
+    }).then(()=>{el('go-cert-name').value='';el('go-cert-members').value='';toast('CERT team created');goLoadCERT();});
+  };
+
+  /* ── Damage Assessments ── */
+  window.goLoadDamageAssessments=function(){
+    api('/api/group/damage-assessments').then(items=>{
+      const list=el('go-da-list');
+      if(!items.length){list.innerHTML='<div class="go-empty">No damage assessments submitted.</div>';return;}
+      list.innerHTML='<table class="go-table"><thead><tr><th>Location</th><th>Type</th><th>Severity</th><th>Occupants</th><th>Utilities</th><th>Assessor</th></tr></thead><tbody>'+
+        items.map(a=>{
+          const sc=severityColor[a.severity]||'var(--go-gray)';
+          const utils=[];if(a.power)utils.push('Pwr');if(a.water)utils.push('H2O');if(a.gas)utils.push('Gas');if(a.sewer)utils.push('Swr');if(a.comms)utils.push('Com');
+          return `<tr><td>${a.location||''}</td><td>${a.structure_type||''}</td>
+            <td><span class="go-badge" style="background:${sc}22;color:${sc}">${a.severity||''}</span></td>
+            <td>${a.occupants||0}</td><td>${utils.join(', ')||'None'}</td><td>${a.assessed_by||''}</td></tr>`;
+        }).join('')+'</tbody></table>';
+    });
+  };
+  window.goCreateDamageAssessment=function(){
+    const location=val('go-da-location');if(!location)return;
+    api('/api/group/damage-assessments',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({location,severity:val('go-da-severity'),assessed_by:val('go-da-assessor'),
+        structure_type:val('go-da-structure'),occupants:numVal('go-da-occupants',0),
+        power:el('go-da-util-power').checked,water:el('go-da-util-water').checked,
+        gas:el('go-da-util-gas').checked,sewer:el('go-da-util-sewer').checked,comms:el('go-da-util-comms').checked,
+        notes:val('go-da-notes')})
+    }).then(()=>{el('go-da-location').value='';el('go-da-notes').value='';toast('Assessment submitted');goLoadDamageAssessments();});
+  };
+
+  /* ═══ CIVIL DEFENSE ═══ */
+  window.goLoadShelters=function(){
+    api('/api/group/shelters').then(shelters=>{
+      const list=el('go-shelter-list');
+      if(!shelters.length){list.innerHTML='<div class="go-empty">No shelters registered.</div>';return;}
+      list.innerHTML=shelters.map(s=>{
+        const pct=s.capacity>0?Math.round((s.occupancy||0)/s.capacity*100):0;
+        const barColor=pct>=90?'var(--go-red)':pct>=70?'var(--go-yellow)':'var(--go-green)';
+        return `<div class="go-list-item" style="flex-direction:column;align-items:stretch">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+            <div><strong>${s.name}</strong> ${statusBadge(s.status||'active')}
+              <br><small style="color:var(--text-secondary,#aaa)">${s.location||''} | Contact: ${s.contact||'N/A'}</small></div>
+            <button class="go-btn go-btn-secondary" onclick="goEditShelterOccupancy(${s.id},${s.occupancy||0},${s.capacity})">Update</button>
+          </div>
+          <div class="go-capacity-bar"><div class="go-capacity-fill" style="width:${pct}%;background:${barColor}"></div>
+            <span class="go-capacity-text">${s.occupancy||0} / ${s.capacity} (${pct}%)</span></div>
+        </div>`;
+      }).join('');
+    });
+    api('/api/group/shelters/capacity').then(cap=>{
+      el('go-shelter-capacity-summary').innerHTML=[
+        {v:cap.total_shelters||0,l:'Total Shelters'},{v:cap.total_capacity||0,l:'Total Capacity'},
+        {v:cap.total_occupancy||0,l:'Current Occupancy'},{v:(cap.utilization_pct||0)+'%',l:'Utilization'}
+      ].map(x=>`<div class="go-card go-stat"><div class="go-stat-val">${x.v}</div><div class="go-stat-label">${x.l}</div></div>`).join('');
+    });
+  };
+  window.goCreateShelter=function(){
+    const name=val('go-shelter-name');if(!name)return;
+    api('/api/group/shelters',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,location:val('go-shelter-location'),capacity:numVal('go-shelter-capacity',50),
+        occupancy:numVal('go-shelter-occupancy',0),status:val('go-shelter-status'),contact:val('go-shelter-contact'),
+        amenities:val('go-shelter-amenities')})
+    }).then(()=>{el('go-shelter-name').value='';el('go-shelter-amenities').value='';toast('Shelter registered');goLoadShelters();});
+  };
+  window.goEditShelterOccupancy=function(id,current,capacity){
+    const newOcc=prompt('Update occupancy (current: '+current+', capacity: '+capacity+'):',current);
+    if(newOcc===null)return;
+    api('/api/group/shelters/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({occupancy:parseInt(newOcc)||0})}).then(()=>{toast('Occupancy updated');goLoadShelters();});
+  };
+
+  /* ── Warnings ── */
+  window.goLoadWarnings=function(){
+    api('/api/group/warnings').then(warnings=>{
+      const list=el('go-warning-list');
+      if(!warnings.length){list.innerHTML='<div class="go-empty">No community warnings issued.</div>';return;}
+      list.innerHTML=warnings.map(w=>`<div class="go-list-item">
+        <div><span class="go-badge go-badge-${w.severity||'info'}">${(w.severity||'info').toUpperCase()}</span>
+          <strong style="margin-left:6px">${w.title}</strong>
+          <br><small style="color:var(--text-secondary,#aaa)">${w.issued_by||''} | Area: ${w.area||'All'}${w.expires?' | Expires: '+w.expires:''}</small>
+          ${w.message?'<br><small style="color:var(--text-secondary,#ccc)">'+w.message.substring(0,150)+'</small>':''}
+        </div>
+        <div><button class="go-btn go-btn-secondary" onclick="goArchiveWarning(${w.id})">Archive</button></div>
+      </div>`).join('');
+    });
+  };
+  window.goCreateWarning=function(){
+    const title=val('go-warning-title');if(!title)return;
+    api('/api/group/warnings',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({title,severity:val('go-warning-severity'),issued_by:val('go-warning-issued-by'),
+        expires:val('go-warning-expires'),area:val('go-warning-area'),message:val('go-warning-message')})
+    }).then(()=>{el('go-warning-title').value='';el('go-warning-message').value='';toast('Warning issued');goLoadWarnings();});
+  };
+  window.goArchiveWarning=function(id){
+    api('/api/group/warnings/'+id,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({status:'archived'})}).then(()=>{toast('Warning archived');goLoadWarnings();});
+  };
+
+  /* ── Initial load when tab activates ── */
+  const obs=new MutationObserver(()=>{
+    if(!root.classList.contains('is-hidden')){
+      goLoadPods();goLoadSOPs();goLoadDuties();goLoadDisputes();goLoadVotes();
+      goLoadICSForms();goLoadCERT();goLoadDamageAssessments();goLoadShelters();goLoadWarnings();
+    }
+  });
+  obs.observe(root,{attributes:true,attributeFilter:['class']});
+})();
+</script>
+</div>

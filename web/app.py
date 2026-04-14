@@ -1351,6 +1351,14 @@ def create_app():
     from web.blueprints.training_knowledge import training_knowledge_bp
     app.register_blueprint(training_knowledge_bp)
 
+    # ─── v7.17.0 — Group Operations & Governance (Phase 11) ──────────
+    from web.blueprints.group_ops import group_ops_bp
+    app.register_blueprint(group_ops_bp)
+
+    # ─── v7.18.0 — Security, OPSEC & Night Ops (Phase 12) ────────────
+    from web.blueprints.security_opsec import security_opsec_bp
+    app.register_blueprint(security_opsec_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

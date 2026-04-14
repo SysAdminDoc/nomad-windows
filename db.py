@@ -2435,6 +2435,79 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_knowledge_packages_status ON knowledge_packages(status)',
         'CREATE INDEX IF NOT EXISTS idx_knowledge_packages_category ON knowledge_packages(category)',
         'CREATE INDEX IF NOT EXISTS idx_knowledge_packages_reviewed ON knowledge_packages(last_reviewed)',
+        # v7.17.0 — Group Operations & Governance (Phase 11)
+        'CREATE INDEX IF NOT EXISTS idx_pods_status ON pods(status)',
+        'CREATE INDEX IF NOT EXISTS idx_pods_leader ON pods(leader_contact_id)',
+        'CREATE INDEX IF NOT EXISTS idx_pod_members_pod ON pod_members(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_pod_members_person ON pod_members(person_name)',
+        'CREATE INDEX IF NOT EXISTS idx_pod_members_role ON pod_members(role)',
+        'CREATE INDEX IF NOT EXISTS idx_pod_members_status ON pod_members(status)',
+        'CREATE INDEX IF NOT EXISTS idx_governance_roles_pod ON governance_roles(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_governance_roles_authority ON governance_roles(authority_level DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_governance_roles_status ON governance_roles(status)',
+        'CREATE INDEX IF NOT EXISTS idx_governance_sops_pod ON governance_sops(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_governance_sops_category ON governance_sops(category)',
+        'CREATE INDEX IF NOT EXISTS idx_governance_sops_status ON governance_sops(status)',
+        'CREATE INDEX IF NOT EXISTS idx_duty_roster_pod ON duty_roster(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_duty_roster_person ON duty_roster(person_name)',
+        'CREATE INDEX IF NOT EXISTS idx_duty_roster_type ON duty_roster(duty_type)',
+        'CREATE INDEX IF NOT EXISTS idx_duty_roster_status ON duty_roster(status)',
+        'CREATE INDEX IF NOT EXISTS idx_duty_roster_start ON duty_roster(shift_start)',
+        'CREATE INDEX IF NOT EXISTS idx_disputes_pod ON disputes(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_disputes_status ON disputes(status)',
+        'CREATE INDEX IF NOT EXISTS idx_disputes_severity ON disputes(severity)',
+        'CREATE INDEX IF NOT EXISTS idx_disputes_type ON disputes(dispute_type)',
+        'CREATE INDEX IF NOT EXISTS idx_votes_dispute ON votes(dispute_id)',
+        'CREATE INDEX IF NOT EXISTS idx_votes_status ON votes(status)',
+        'CREATE INDEX IF NOT EXISTS idx_ics_forms_pod ON ics_forms(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_ics_forms_type ON ics_forms(form_type)',
+        'CREATE INDEX IF NOT EXISTS idx_ics_forms_status ON ics_forms(status)',
+        'CREATE INDEX IF NOT EXISTS idx_cert_teams_pod ON cert_teams(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_cert_teams_type ON cert_teams(team_type)',
+        'CREATE INDEX IF NOT EXISTS idx_cert_teams_status ON cert_teams(status)',
+        'CREATE INDEX IF NOT EXISTS idx_damage_assessments_pod ON damage_assessments(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_damage_assessments_team ON damage_assessments(cert_team_id)',
+        'CREATE INDEX IF NOT EXISTS idx_damage_assessments_severity ON damage_assessments(severity)',
+        'CREATE INDEX IF NOT EXISTS idx_damage_assessments_date ON damage_assessments(assessment_date DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_shelters_pod ON shelters(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_shelters_status ON shelters(status)',
+        'CREATE INDEX IF NOT EXISTS idx_shelters_type ON shelters(shelter_type)',
+        'CREATE INDEX IF NOT EXISTS idx_community_warnings_pod ON community_warnings(pod_id)',
+        'CREATE INDEX IF NOT EXISTS idx_community_warnings_status ON community_warnings(status)',
+        'CREATE INDEX IF NOT EXISTS idx_community_warnings_severity ON community_warnings(severity)',
+        'CREATE INDEX IF NOT EXISTS idx_community_warnings_issued ON community_warnings(issued_at DESC)',
+        # v7.18.0 — Security, OPSEC & Night Operations (Phase 12)
+        'CREATE INDEX IF NOT EXISTS idx_opsec_compartments_classification ON opsec_compartments(classification)',
+        'CREATE INDEX IF NOT EXISTS idx_opsec_compartments_status ON opsec_compartments(status)',
+        'CREATE INDEX IF NOT EXISTS idx_opsec_checklists_category ON opsec_checklists(category)',
+        'CREATE INDEX IF NOT EXISTS idx_opsec_checklists_compartment ON opsec_checklists(compartment_id)',
+        'CREATE INDEX IF NOT EXISTS idx_opsec_checklists_status ON opsec_checklists(status)',
+        'CREATE INDEX IF NOT EXISTS idx_opsec_checklists_score ON opsec_checklists(score)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_matrix_type ON threat_matrix(threat_type)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_matrix_risk ON threat_matrix(risk_score DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_matrix_status ON threat_matrix(status)',
+        'CREATE INDEX IF NOT EXISTS idx_threat_matrix_assigned ON threat_matrix(assigned_to)',
+        'CREATE INDEX IF NOT EXISTS idx_observation_posts_type ON observation_posts(type)',
+        'CREATE INDEX IF NOT EXISTS idx_observation_posts_status ON observation_posts(status)',
+        'CREATE INDEX IF NOT EXISTS idx_op_log_entries_post ON op_log_entries(post_id)',
+        'CREATE INDEX IF NOT EXISTS idx_op_log_entries_category ON op_log_entries(category)',
+        'CREATE INDEX IF NOT EXISTS idx_op_log_entries_time ON op_log_entries(entry_time DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_op_log_entries_threat ON op_log_entries(threat_level)',
+        'CREATE INDEX IF NOT EXISTS idx_signature_assessments_status ON signature_assessments(status)',
+        'CREATE INDEX IF NOT EXISTS idx_signature_assessments_score ON signature_assessments(overall_score)',
+        'CREATE INDEX IF NOT EXISTS idx_signature_assessments_date ON signature_assessments(assessment_date DESC)',
+        'CREATE INDEX IF NOT EXISTS idx_night_ops_plans_status ON night_ops_plans(status)',
+        'CREATE INDEX IF NOT EXISTS idx_night_ops_plans_date ON night_ops_plans(operation_date)',
+        'CREATE INDEX IF NOT EXISTS idx_cbrn_equipment_type ON cbrn_equipment(equipment_type)',
+        'CREATE INDEX IF NOT EXISTS idx_cbrn_equipment_condition ON cbrn_equipment(condition)',
+        'CREATE INDEX IF NOT EXISTS idx_cbrn_equipment_cal_due ON cbrn_equipment(calibration_due)',
+        'CREATE INDEX IF NOT EXISTS idx_cbrn_procedures_type ON cbrn_procedures(procedure_type)',
+        'CREATE INDEX IF NOT EXISTS idx_cbrn_procedures_agent ON cbrn_procedures(threat_agent)',
+        'CREATE INDEX IF NOT EXISTS idx_cbrn_procedures_builtin ON cbrn_procedures(is_builtin)',
+        'CREATE INDEX IF NOT EXISTS idx_emp_inventory_category ON emp_inventory(category)',
+        'CREATE INDEX IF NOT EXISTS idx_emp_inventory_protected ON emp_inventory(is_protected)',
+        'CREATE INDEX IF NOT EXISTS idx_emp_inventory_priority ON emp_inventory(priority)',
+        'CREATE INDEX IF NOT EXISTS idx_emp_inventory_grid ON emp_inventory(grid_dependent)',
     ]:
         try:
             conn.execute(idx)
@@ -3258,6 +3331,392 @@ def _create_training_knowledge_tables(conn):
     conn.commit()
 
 
+def _create_group_ops_tables(conn):
+    """Phase 11 — Group Operations & Governance: pods, members, governance,
+    SOPs, duty roster, disputes, votes, ICS forms, CERT, shelters, warnings."""
+    conn.executescript('''
+        /* ─── Pods (Multi-Household Groups) ─── */
+        CREATE TABLE IF NOT EXISTS pods (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            leader_contact_id INTEGER DEFAULT 0,
+            member_count INTEGER DEFAULT 0,
+            resource_sharing_policy TEXT DEFAULT '',
+            communication_plan TEXT DEFAULT '',
+            meeting_schedule TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Pod Members ─── */
+        CREATE TABLE IF NOT EXISTS pod_members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER NOT NULL REFERENCES pods(id) ON DELETE CASCADE,
+            contact_id INTEGER DEFAULT 0,
+            person_name TEXT NOT NULL,
+            role TEXT DEFAULT 'member',
+            skills TEXT DEFAULT '[]',
+            responsibilities TEXT DEFAULT '',
+            joined_date TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Governance Roles ─── */
+        CREATE TABLE IF NOT EXISTS governance_roles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER NOT NULL REFERENCES pods(id) ON DELETE CASCADE,
+            role_title TEXT NOT NULL,
+            person_name TEXT DEFAULT '',
+            authority_level INTEGER DEFAULT 1,
+            responsibilities TEXT DEFAULT '',
+            chain_of_command TEXT DEFAULT '[]',
+            succession_order INTEGER DEFAULT 0,
+            term_start TEXT DEFAULT '',
+            term_end TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Standard Operating Procedures ─── */
+        CREATE TABLE IF NOT EXISTS governance_sops (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER DEFAULT 0,
+            title TEXT NOT NULL,
+            category TEXT DEFAULT 'admin',
+            content TEXT DEFAULT '',
+            version TEXT DEFAULT '1.0',
+            effective_date TEXT DEFAULT '',
+            review_date TEXT DEFAULT '',
+            approved_by TEXT DEFAULT '',
+            status TEXT DEFAULT 'draft',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Duty Roster ─── */
+        CREATE TABLE IF NOT EXISTS duty_roster (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER DEFAULT 0,
+            person_name TEXT NOT NULL,
+            duty_type TEXT DEFAULT 'watch',
+            shift_start TEXT DEFAULT '',
+            shift_end TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            status TEXT DEFAULT 'scheduled',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Disputes ─── */
+        CREATE TABLE IF NOT EXISTS disputes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER DEFAULT 0,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            parties_involved TEXT DEFAULT '[]',
+            dispute_type TEXT DEFAULT 'resource',
+            severity TEXT DEFAULT 'medium',
+            resolution_method TEXT DEFAULT 'mediation',
+            resolution TEXT DEFAULT '',
+            resolved_by TEXT DEFAULT '',
+            status TEXT DEFAULT 'open',
+            opened_date TEXT DEFAULT '',
+            resolved_date TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Votes ─── */
+        CREATE TABLE IF NOT EXISTS votes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            dispute_id INTEGER REFERENCES disputes(id) ON DELETE CASCADE,
+            question TEXT NOT NULL,
+            vote_type TEXT DEFAULT 'simple_majority',
+            options TEXT DEFAULT '[]',
+            results TEXT DEFAULT '{}',
+            total_voters INTEGER DEFAULT 0,
+            votes_cast INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'open',
+            deadline TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── ICS Forms ─── */
+        CREATE TABLE IF NOT EXISTS ics_forms (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER DEFAULT 0,
+            form_type TEXT NOT NULL,
+            incident_name TEXT DEFAULT '',
+            operational_period TEXT DEFAULT '',
+            prepared_by TEXT DEFAULT '',
+            form_data TEXT DEFAULT '{}',
+            status TEXT DEFAULT 'draft',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── CERT Teams ─── */
+        CREATE TABLE IF NOT EXISTS cert_teams (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER DEFAULT 0,
+            team_name TEXT NOT NULL,
+            team_type TEXT DEFAULT 'search_rescue',
+            leader_name TEXT DEFAULT '',
+            members TEXT DEFAULT '[]',
+            equipment TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'standby',
+            deployment_location TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Damage Assessments ─── */
+        CREATE TABLE IF NOT EXISTS damage_assessments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER DEFAULT 0,
+            cert_team_id INTEGER DEFAULT 0,
+            location TEXT NOT NULL,
+            assessment_date TEXT DEFAULT '',
+            damage_type TEXT DEFAULT 'structural',
+            severity TEXT DEFAULT 'minor',
+            occupancy_status TEXT DEFAULT 'occupied',
+            utilities TEXT DEFAULT '{"power":"ok","water":"ok","gas":"ok","sewer":"ok"}',
+            hazards TEXT DEFAULT '[]',
+            photo_refs TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            assessor_name TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Shelters ─── */
+        CREATE TABLE IF NOT EXISTS shelters (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER DEFAULT 0,
+            name TEXT NOT NULL,
+            location TEXT DEFAULT '',
+            capacity INTEGER DEFAULT 10,
+            current_occupancy INTEGER DEFAULT 0,
+            shelter_type TEXT DEFAULT 'emergency',
+            amenities TEXT DEFAULT '[]',
+            supplies_status TEXT DEFAULT 'adequate',
+            manager_name TEXT DEFAULT '',
+            status TEXT DEFAULT 'standby',
+            opened_date TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Community Warnings ─── */
+        CREATE TABLE IF NOT EXISTS community_warnings (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            pod_id INTEGER DEFAULT 0,
+            title TEXT NOT NULL,
+            message TEXT DEFAULT '',
+            severity TEXT DEFAULT 'info',
+            target_area TEXT DEFAULT '',
+            issued_by TEXT DEFAULT '',
+            issued_at TEXT DEFAULT '',
+            expires_at TEXT DEFAULT '',
+            delivery_methods TEXT DEFAULT '[]',
+            acknowledged_by TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
+def _create_security_opsec_tables(conn):
+    """Phase 12 — Security, OPSEC & Night Operations: compartments, checklists,
+    threat matrix, observation posts, OP log, signatures, night ops, CBRN, EMP."""
+    conn.executescript('''
+        /* ─── OPSEC Compartments ─── */
+        CREATE TABLE IF NOT EXISTS opsec_compartments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            classification TEXT DEFAULT 'open',
+            authorized_persons TEXT DEFAULT '[]',
+            cover_story TEXT DEFAULT '',
+            duress_signal TEXT DEFAULT '',
+            review_date TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── OPSEC Checklists ─── */
+        CREATE TABLE IF NOT EXISTS opsec_checklists (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            compartment_id INTEGER DEFAULT 0,
+            title TEXT NOT NULL,
+            category TEXT DEFAULT 'digital',
+            items TEXT DEFAULT '[]',
+            last_audit_date TEXT DEFAULT '',
+            next_audit_date TEXT DEFAULT '',
+            audited_by TEXT DEFAULT '',
+            score INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Threat Matrix ─── */
+        CREATE TABLE IF NOT EXISTS threat_matrix (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            threat_name TEXT NOT NULL,
+            threat_type TEXT DEFAULT 'human',
+            likelihood INTEGER DEFAULT 1,
+            impact INTEGER DEFAULT 1,
+            risk_score INTEGER DEFAULT 1,
+            vulnerability TEXT DEFAULT '',
+            countermeasure TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            assigned_to TEXT DEFAULT '',
+            review_date TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Observation Posts ─── */
+        CREATE TABLE IF NOT EXISTS observation_posts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            location TEXT DEFAULT '',
+            coordinates TEXT DEFAULT '',
+            type TEXT DEFAULT 'fixed',
+            fields_of_fire TEXT DEFAULT '',
+            dead_space TEXT DEFAULT '',
+            sectors TEXT DEFAULT '[]',
+            equipment TEXT DEFAULT '[]',
+            communication TEXT DEFAULT '',
+            status TEXT DEFAULT 'planned',
+            assigned_to TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── OP Log Entries ─── */
+        CREATE TABLE IF NOT EXISTS op_log_entries (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            post_id INTEGER DEFAULT 0,
+            observer TEXT DEFAULT '',
+            entry_time TEXT DEFAULT '',
+            category TEXT DEFAULT 'other',
+            direction TEXT DEFAULT '',
+            distance TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            threat_level TEXT DEFAULT 'none',
+            action_taken TEXT DEFAULT '',
+            reported_to TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Signature Assessments ─── */
+        CREATE TABLE IF NOT EXISTS signature_assessments (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            location TEXT DEFAULT '',
+            assessment_date TEXT DEFAULT '',
+            visual_signatures TEXT DEFAULT '[]',
+            audio_signatures TEXT DEFAULT '[]',
+            electronic_signatures TEXT DEFAULT '[]',
+            thermal_signatures TEXT DEFAULT '[]',
+            overall_score INTEGER DEFAULT 0,
+            recommendations TEXT DEFAULT '',
+            assessed_by TEXT DEFAULT '',
+            status TEXT DEFAULT 'draft',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Night Ops Plans ─── */
+        CREATE TABLE IF NOT EXISTS night_ops_plans (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            operation_date TEXT DEFAULT '',
+            moonrise TEXT DEFAULT '',
+            moonset TEXT DEFAULT '',
+            moon_phase TEXT DEFAULT '',
+            moon_illumination INTEGER DEFAULT 0,
+            ambient_light_level TEXT DEFAULT 'moonless',
+            dark_adaptation_minutes INTEGER DEFAULT 30,
+            nvg_required INTEGER DEFAULT 0,
+            movement_routes TEXT DEFAULT '[]',
+            rally_points TEXT DEFAULT '[]',
+            signals TEXT DEFAULT '{}',
+            notes TEXT DEFAULT '',
+            status TEXT DEFAULT 'draft',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── CBRN Equipment ─── */
+        CREATE TABLE IF NOT EXISTS cbrn_equipment (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            equipment_name TEXT NOT NULL,
+            equipment_type TEXT DEFAULT 'ppe',
+            model TEXT DEFAULT '',
+            serial_number TEXT DEFAULT '',
+            calibration_date TEXT DEFAULT '',
+            calibration_due TEXT DEFAULT '',
+            condition TEXT DEFAULT 'serviceable',
+            assigned_to TEXT DEFAULT '',
+            location TEXT DEFAULT '',
+            quantity INTEGER DEFAULT 1,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── CBRN Procedures ─── */
+        CREATE TABLE IF NOT EXISTS cbrn_procedures (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            procedure_type TEXT DEFAULT 'detection',
+            threat_agent TEXT DEFAULT 'all',
+            mopp_level INTEGER DEFAULT 0,
+            steps TEXT DEFAULT '[]',
+            equipment_required TEXT DEFAULT '[]',
+            time_estimate_minutes INTEGER DEFAULT 30,
+            warnings TEXT DEFAULT '',
+            reference TEXT DEFAULT '',
+            is_builtin INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── EMP Hardening Inventory ─── */
+        CREATE TABLE IF NOT EXISTS emp_inventory (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_name TEXT NOT NULL,
+            category TEXT DEFAULT 'critical_spare',
+            description TEXT DEFAULT '',
+            protection_method TEXT DEFAULT '',
+            is_protected INTEGER DEFAULT 0,
+            grid_dependent INTEGER DEFAULT 0,
+            manual_alternative TEXT DEFAULT '',
+            priority TEXT DEFAULT 'medium',
+            location TEXT DEFAULT '',
+            quantity INTEGER DEFAULT 1,
+            tested_date TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -3276,6 +3735,8 @@ def _init_db_inner(conn):
     _create_land_assessment_tables(conn)
     _create_medical_phase2_tables(conn)
     _create_training_knowledge_tables(conn)
+    _create_group_ops_tables(conn)
+    _create_security_opsec_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

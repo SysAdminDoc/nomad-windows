@@ -490,7 +490,7 @@ These phases build the moat. They're what makes NOMAD truly unique.
 
 ---
 
-### Phase 11: Group Operations & Governance
+### Phase 11: Group Operations & Governance ✅ COMPLETE (v7.17.0)
 **Theme:** Multi-household coordination, leadership, and fair resource allocation.
 **Effort:** L (4-6 sessions)
 **features.md refs:** §56 (Multi-Household Pod), §15.10 (Group Governance), §61 (Dispute Resolution), §44 (ICS/NIMS), §45 (Civil Defense)

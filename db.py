@@ -2572,6 +2572,13 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_grid_down_recipes_category ON grid_down_recipes(category)',
         'CREATE INDEX IF NOT EXISTS idx_grid_down_recipes_method ON grid_down_recipes(cooking_method)',
         'CREATE INDEX IF NOT EXISTS idx_grid_down_recipes_rating ON grid_down_recipes(rating)',
+        # ─── Phase 16: Interoperability & Data Exchange (v7.22.0) ───
+        'CREATE INDEX IF NOT EXISTS idx_data_exports_type ON data_exports(export_type)',
+        'CREATE INDEX IF NOT EXISTS idx_data_exports_format ON data_exports(format)',
+        'CREATE INDEX IF NOT EXISTS idx_data_exports_status ON data_exports(status)',
+        'CREATE INDEX IF NOT EXISTS idx_batch_imports_type ON batch_imports(import_type)',
+        'CREATE INDEX IF NOT EXISTS idx_batch_imports_format ON batch_imports(format)',
+        'CREATE INDEX IF NOT EXISTS idx_batch_imports_status ON batch_imports(status)',
     ]:
         try:
             conn.execute(idx)
@@ -4254,6 +4261,46 @@ def _create_daily_living_tables(conn):
     conn.commit()
 
 
+def _create_interoperability_tables(conn):
+    """Phase 16 — Interoperability & Data Exchange: import/export jobs, batch imports."""
+    conn.executescript('''
+        /* ─── Data Exports ─── */
+        CREATE TABLE IF NOT EXISTS data_exports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            export_type TEXT NOT NULL,
+            format TEXT DEFAULT 'csv',
+            source_table TEXT DEFAULT '',
+            filter_params TEXT DEFAULT '{}',
+            record_count INTEGER DEFAULT 0,
+            file_path TEXT DEFAULT '',
+            file_size_bytes INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'pending',
+            error_message TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TEXT DEFAULT ''
+        );
+
+        /* ─── Batch Imports ─── */
+        CREATE TABLE IF NOT EXISTS batch_imports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            import_type TEXT NOT NULL,
+            format TEXT DEFAULT 'csv',
+            target_table TEXT DEFAULT '',
+            source_filename TEXT DEFAULT '',
+            total_records INTEGER DEFAULT 0,
+            imported_records INTEGER DEFAULT 0,
+            skipped_records INTEGER DEFAULT 0,
+            error_records INTEGER DEFAULT 0,
+            column_mapping TEXT DEFAULT '{}',
+            validation_errors TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'pending',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            completed_at TEXT DEFAULT ''
+        );
+    ''')
+    conn.commit()
+
+
 def _init_db_inner(conn):
     _create_core_tables(conn)
     _create_comms_media_tables(conn)
@@ -4277,6 +4324,7 @@ def _init_db_inner(conn):
     _create_agriculture_tables(conn)
     _create_disaster_modules_tables(conn)
     _create_daily_living_tables(conn)
+    _create_interoperability_tables(conn)
     _apply_column_migrations(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)

@@ -1371,6 +1371,10 @@ def create_app():
     from web.blueprints.daily_living import daily_living_bp
     app.register_blueprint(daily_living_bp)
 
+    # ─── v7.22.0 — Interoperability & Data Exchange (Phase 16) ───────
+    from web.blueprints.interoperability import interoperability_bp
+    app.register_blueprint(interoperability_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

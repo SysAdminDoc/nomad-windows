@@ -1,0 +1,400 @@
+<!-- ═══════════════════════════════════════════════════════════════════
+     TACTICAL COMMUNICATIONS  (data-tab="tactical-comms")
+     Phase 6 — radio equipment, auth codes, net schedules, message
+     templates (SITREP/MEDEVAC/SALUTE), comms checks, weather calcs
+     ═══════════════════════════════════════════════════════════════════ -->
+<div id="tab-tactical-comms" class="tab-content is-hidden" data-tab="tactical-comms">
+<style>
+  #tab-tactical-comms {
+    --tc-accent: #06b6d4;
+    --tc-accent-dim: rgba(6,182,212,.15);
+    --tc-red: #ef4444;
+    --tc-green: #22c55e;
+    --tc-amber: #f59e0b;
+  }
+  #tab-tactical-comms .tc-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
+  #tab-tactical-comms .tc-header h2 { font-size:1.25rem; color:var(--tc-accent); margin:0; }
+  #tab-tactical-comms .tc-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+  #tab-tactical-comms .tc-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-tactical-comms .tc-sub-tab.active { background:var(--tc-accent-dim); border-color:var(--tc-accent); color:var(--tc-accent); }
+  #tab-tactical-comms .tc-panel { display:none; }
+  #tab-tactical-comms .tc-panel.active { display:block; }
+  #tab-tactical-comms .tc-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-tactical-comms .tc-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-tactical-comms .tc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+  #tab-tactical-comms .tc-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+  #tab-tactical-comms .tc-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
+  #tab-tactical-comms .tc-form-row input,
+  #tab-tactical-comms .tc-form-row select,
+  #tab-tactical-comms .tc-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
+  #tab-tactical-comms .tc-form-row .field { flex:1; min-width:140px; }
+  #tab-tactical-comms .tc-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-tactical-comms .tc-btn-primary { background:var(--tc-accent); color:#000; }
+  #tab-tactical-comms .tc-btn-danger { background:var(--tc-red); color:#fff; }
+  #tab-tactical-comms .tc-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-tactical-comms .tc-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-tactical-comms .tc-list-item:last-child { border-bottom:none; }
+  #tab-tactical-comms .tc-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
+  #tab-tactical-comms .tc-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-tactical-comms .tc-msg-template { background:var(--tc-accent-dim); border:1px solid var(--tc-accent); border-radius:8px; padding:14px; margin-bottom:10px; }
+  #tab-tactical-comms .tc-msg-template h4 { margin:0 0 6px; color:var(--tc-accent); font-size:.9rem; }
+  #tab-tactical-comms .tc-msg-template pre { margin:6px 0 0; white-space:pre-wrap; font-size:.78rem; color:var(--text-secondary,#ccc); background:rgba(0,0,0,.3); padding:8px; border-radius:4px; }
+  #tab-tactical-comms .tc-calc-result { background:var(--tc-accent-dim); border:1px solid var(--tc-accent); border-radius:8px; padding:14px; margin-top:10px; }
+  #tab-tactical-comms .tc-calc-result .val { font-size:1.2rem; font-weight:700; color:var(--tc-accent); }
+  #tab-tactical-comms .tc-beaufort td { padding:4px 8px; font-size:.78rem; border-bottom:1px solid var(--border,#333); }
+  #tab-tactical-comms .tc-beaufort th { padding:4px 8px; font-size:.72rem; color:var(--text-secondary,#aaa); text-align:left; border-bottom:1px solid var(--border,#444); }
+</style>
+
+<div class="tc-header">
+  <h2>Tactical Communications</h2>
+</div>
+
+<!-- Sub-tabs -->
+<div class="tc-sub-tabs">
+  <button class="tc-sub-tab active" data-tc-panel="radios">Radio Equipment</button>
+  <button class="tc-sub-tab" data-tc-panel="auth">Auth Codes</button>
+  <button class="tc-sub-tab" data-tc-panel="nets">Net Schedules</button>
+  <button class="tc-sub-tab" data-tc-panel="messages">Message Formats</button>
+  <button class="tc-sub-tab" data-tc-panel="weather">Weather Calcs</button>
+</div>
+
+<!-- ── Radio Equipment Panel ──────────────────────────── -->
+<div class="tc-panel active" id="tc-panel-radios">
+  <div class="tc-card">
+    <div class="tc-card-title">Add Radio</div>
+    <div class="tc-form-row">
+      <div class="field"><label>Name</label><input name="tc-radio-name" id="tc-radio-name" placeholder="Baofeng UV-5R #1"></div>
+      <div class="field"><label>Model</label><input name="tc-radio-model" id="tc-radio-model" placeholder="UV-5R"></div>
+      <div class="field"><label>Type</label>
+        <select name="tc-radio-type" id="tc-radio-type">
+          <option value="handheld">Handheld</option><option value="mobile">Mobile</option>
+          <option value="base">Base Station</option><option value="repeater">Repeater</option>
+          <option value="sdr">SDR</option><option value="satellite">Satellite</option>
+          <option value="hf">HF</option><option value="cb">CB</option>
+        </select>
+      </div>
+    </div>
+    <div class="tc-form-row">
+      <div class="field"><label>Freq Low (MHz)</label><input name="tc-radio-flow" id="tc-radio-flow" type="number" step="0.001" value="0"></div>
+      <div class="field"><label>Freq High (MHz)</label><input name="tc-radio-fhigh" id="tc-radio-fhigh" type="number" step="0.001" value="0"></div>
+      <div class="field"><label>Power (W)</label><input name="tc-radio-power" id="tc-radio-power" type="number" step="0.1" value="5"></div>
+      <div class="field"><label>Condition</label>
+        <select name="tc-radio-condition" id="tc-radio-condition">
+          <option value="good">Good</option><option value="fair">Fair</option>
+          <option value="poor">Poor</option><option value="inoperative">Inoperative</option>
+        </select>
+      </div>
+    </div>
+    <div class="tc-form-row">
+      <div class="field"><label>Assigned To</label><input name="tc-radio-assigned" id="tc-radio-assigned" placeholder=""></div>
+      <div class="field"><label>Location</label><input name="tc-radio-location" id="tc-radio-location" placeholder="Comms bag"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcCreateRadio()">Add Radio</button></div>
+    </div>
+  </div>
+  <div id="tc-radio-list" class="tc-card"><div class="tc-empty">Loading...</div></div>
+</div>
+
+<!-- ── Auth Codes Panel ──────────────────────────────── -->
+<div class="tc-panel" id="tc-panel-auth">
+  <div class="tc-card">
+    <div class="tc-card-title">Create Authentication Code</div>
+    <div class="tc-form-row">
+      <div class="field"><label>Code Set</label><input name="tc-auth-set" id="tc-auth-set" placeholder="DAILY-OPS"></div>
+      <div class="field"><label>Valid Date</label><input name="tc-auth-date" id="tc-auth-date" type="date"></div>
+    </div>
+    <div class="tc-form-row">
+      <div class="field"><label>Challenge</label><input name="tc-auth-challenge" id="tc-auth-challenge" placeholder="THUNDER"></div>
+      <div class="field"><label>Response</label><input name="tc-auth-response" id="tc-auth-response" placeholder="LIGHTNING"></div>
+    </div>
+    <div class="tc-form-row">
+      <div class="field"><label>Running Password</label><input name="tc-auth-running" id="tc-auth-running" placeholder="Optional"></div>
+      <div class="field"><label>Duress Code</label><input name="tc-auth-duress" id="tc-auth-duress" placeholder="Optional"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcCreateAuth()">Add Code</button></div>
+    </div>
+  </div>
+  <div id="tc-auth-today" class="tc-card" style="display:none"></div>
+  <div id="tc-auth-list" class="tc-card"><div class="tc-empty">Loading...</div></div>
+</div>
+
+<!-- ── Net Schedules Panel ───────────────────────────── -->
+<div class="tc-panel" id="tc-panel-nets">
+  <div class="tc-card">
+    <div class="tc-card-title">Add Net Schedule</div>
+    <div class="tc-form-row">
+      <div class="field"><label>Net Name</label><input name="tc-net-name" id="tc-net-name" placeholder="Morning Check-In"></div>
+      <div class="field"><label>Type</label>
+        <select name="tc-net-type" id="tc-net-type">
+          <option value="daily">Daily</option><option value="weekly">Weekly</option>
+          <option value="emergency">Emergency</option><option value="convoy">Convoy</option>
+          <option value="guard">Guard</option>
+        </select>
+      </div>
+      <div class="field"><label>Frequency</label><input name="tc-net-freq" id="tc-net-freq" placeholder="146.520"></div>
+    </div>
+    <div class="tc-form-row">
+      <div class="field"><label>Start Time</label><input name="tc-net-time" id="tc-net-time" value="0800" placeholder="0800"></div>
+      <div class="field"><label>Duration (min)</label><input name="tc-net-duration" id="tc-net-duration" type="number" value="30"></div>
+      <div class="field"><label>Net Control</label><input name="tc-net-control" id="tc-net-control" placeholder="Callsign"></div>
+      <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcCreateNet()">Add Net</button></div>
+    </div>
+  </div>
+  <div id="tc-net-list" class="tc-card"><div class="tc-empty">Loading...</div></div>
+</div>
+
+<!-- ── Message Formats Panel ─────────────────────────── -->
+<div class="tc-panel" id="tc-panel-messages">
+  <div style="margin-bottom:12px">
+    <button class="tc-btn tc-btn-primary" onclick="tcSeedTemplates()">Seed Built-in Templates</button>
+    <small style="color:var(--text-secondary);margin-left:8px">Adds SITREP, MEDEVAC 9-Line, SALUTE, SPOT, ACE, LACE if not present</small>
+  </div>
+  <div id="tc-msg-list"><div class="tc-empty">Loading message templates...</div></div>
+</div>
+
+<!-- ── Weather Calculators Panel ─────────────────────── -->
+<div class="tc-panel" id="tc-panel-weather">
+  <div class="tc-grid">
+    <div class="tc-card">
+      <div class="tc-card-title">Moon Phase</div>
+      <div class="tc-form-row">
+        <div class="field"><label>Date (blank=today)</label><input name="tc-moon-date" id="tc-moon-date" type="date"></div>
+        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcMoonPhase()">Check</button></div>
+      </div>
+      <div id="tc-moon-result" class="tc-calc-result" style="display:none"></div>
+    </div>
+    <div class="tc-card">
+      <div class="tc-card-title">Lightning Distance</div>
+      <div class="tc-form-row">
+        <div class="field"><label>Flash-to-Bang (sec)</label><input name="tc-lightning-sec" id="tc-lightning-sec" type="number" step="0.5" value="10"></div>
+        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcLightning()">Calculate</button></div>
+      </div>
+      <div id="tc-lightning-result" class="tc-calc-result" style="display:none"></div>
+    </div>
+    <div class="tc-card">
+      <div class="tc-card-title">Wind Chill</div>
+      <div class="tc-form-row">
+        <div class="field"><label>Temp (°F)</label><input name="tc-wc-temp" id="tc-wc-temp" type="number" value="32"></div>
+        <div class="field"><label>Wind (mph)</label><input name="tc-wc-wind" id="tc-wc-wind" type="number" value="15"></div>
+        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcWindChill()">Calculate</button></div>
+      </div>
+      <div id="tc-wc-result" class="tc-calc-result" style="display:none"></div>
+    </div>
+    <div class="tc-card">
+      <div class="tc-card-title">Heat Index</div>
+      <div class="tc-form-row">
+        <div class="field"><label>Temp (°F)</label><input name="tc-hi-temp" id="tc-hi-temp" type="number" value="95"></div>
+        <div class="field"><label>Humidity %</label><input name="tc-hi-humid" id="tc-hi-humid" type="number" value="60"></div>
+        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcHeatIndex()">Calculate</button></div>
+      </div>
+      <div id="tc-hi-result" class="tc-calc-result" style="display:none"></div>
+    </div>
+    <div class="tc-card">
+      <div class="tc-card-title">Growing Degree Days</div>
+      <div class="tc-form-row">
+        <div class="field"><label>High (°F)</label><input name="tc-gdd-high" id="tc-gdd-high" type="number" value="85"></div>
+        <div class="field"><label>Low (°F)</label><input name="tc-gdd-low" id="tc-gdd-low" type="number" value="55"></div>
+        <div class="field"><label>Base (°F)</label><input name="tc-gdd-base" id="tc-gdd-base" type="number" value="50"></div>
+        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcGDD()">Calculate</button></div>
+      </div>
+      <div id="tc-gdd-result" class="tc-calc-result" style="display:none"></div>
+    </div>
+    <div class="tc-card" style="grid-column:1/-1">
+      <div class="tc-card-title">Beaufort Wind Scale Reference</div>
+      <div id="tc-beaufort-table"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const root = document.getElementById('tab-tactical-comms');
+  root.querySelectorAll('.tc-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      root.querySelectorAll('.tc-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.tc-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const panel = document.getElementById('tc-panel-' + btn.dataset.tcPanel);
+      if (panel) panel.classList.add('active');
+    });
+  });
+
+  const $=id=>document.getElementById(id);
+  const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
+  const val=id=>($(id)||{}).value||'';
+  const numVal=(id,def)=>parseFloat(val(id))||def||0;
+
+  /* ── Radio Equipment ── */
+  window.tcLoadRadios=function(){
+    api('/api/radio-equipment').then(items=>{
+      const el=$('tc-radio-list');
+      if(!items.length){el.innerHTML='<div class="tc-empty">No radio equipment registered.</div>';return;}
+      const condColor={good:'#22c55e',fair:'#f59e0b',poor:'#f97316',inoperative:'#ef4444'};
+      el.innerHTML=items.map(r=>`<div class="tc-list-item">
+        <div><strong>${r.name}</strong> <span class="tc-badge" style="color:${condColor[r.condition]||'#aaa'};margin-left:6px">${r.condition}</span>
+          <br><small style="color:var(--text-secondary)">${r.radio_type} · ${r.model||'?'} · ${r.power_watts}W${r.assigned_to?' · '+r.assigned_to:''}</small>
+          ${r.freq_range_low?`<br><small style="color:var(--tc-accent)">${r.freq_range_low}-${r.freq_range_high} MHz</small>`:''}</div>
+        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteRadio(${r.id})">×</button></div>
+      </div>`).join('');
+    });
+  };
+  window.tcCreateRadio=function(){
+    const name=val('tc-radio-name');if(!name)return;
+    api('/api/radio-equipment',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,model:val('tc-radio-model'),radio_type:val('tc-radio-type'),
+        freq_range_low:numVal('tc-radio-flow'),freq_range_high:numVal('tc-radio-fhigh'),
+        power_watts:numVal('tc-radio-power',5),condition:val('tc-radio-condition'),
+        assigned_to:val('tc-radio-assigned'),location:val('tc-radio-location')})
+    }).then(()=>{$('tc-radio-name').value='';$('tc-radio-model').value='';tcLoadRadios();});
+  };
+  window.tcDeleteRadio=function(id){
+    api('/api/radio-equipment/'+id,{method:'DELETE'}).then(()=>tcLoadRadios());
+  };
+
+  /* ── Auth Codes ── */
+  window.tcLoadAuth=function(){
+    api('/api/auth-codes').then(items=>{
+      const el=$('tc-auth-list');
+      if(!items.length){el.innerHTML='<div class="tc-empty">No authentication codes configured.</div>';return;}
+      el.innerHTML=items.map(a=>`<div class="tc-list-item">
+        <div><strong>${a.code_set_name}</strong> <small style="color:var(--text-secondary)">${a.valid_date}</small>
+          <br><small>Challenge: <strong>${a.challenge}</strong> → Response: <strong>${a.response}</strong></small>
+          ${a.running_password?'<br><small>Running PW: '+a.running_password+'</small>':''}</div>
+        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteAuth(${a.id})">×</button></div>
+      </div>`).join('');
+    });
+    /* Today's codes */
+    api('/api/auth-codes/today').then(codes=>{
+      const el=$('tc-auth-today');
+      if(!codes.length){el.style.display='none';return;}
+      el.style.display='block';
+      el.innerHTML='<div class="tc-card-title" style="color:var(--tc-green)">TODAY\'S ACTIVE CODES</div>'+
+        codes.map(c=>`<div style="margin-bottom:6px"><strong>${c.code_set_name}</strong>: ${c.challenge} → ${c.response}${c.duress_code?' <small style="color:var(--tc-red)">(Duress: '+c.duress_code+')</small>':''}</div>`).join('');
+    });
+  };
+  window.tcCreateAuth=function(){
+    const cs=val('tc-auth-set'),vd=val('tc-auth-date'),ch=val('tc-auth-challenge'),re=val('tc-auth-response');
+    if(!cs||!vd||!ch||!re)return;
+    api('/api/auth-codes',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({code_set_name:cs,valid_date:vd,challenge:ch,response:re,
+        running_password:val('tc-auth-running'),duress_code:val('tc-auth-duress')})
+    }).then(()=>{$('tc-auth-challenge').value='';$('tc-auth-response').value='';tcLoadAuth();});
+  };
+  window.tcDeleteAuth=function(id){
+    api('/api/auth-codes/'+id,{method:'DELETE'}).then(()=>tcLoadAuth());
+  };
+
+  /* ── Net Schedules ── */
+  window.tcLoadNets=function(){
+    api('/api/net-schedules').then(items=>{
+      const el=$('tc-net-list');
+      if(!items.length){el.innerHTML='<div class="tc-empty">No net schedules configured.</div>';return;}
+      el.innerHTML=items.map(n=>`<div class="tc-list-item">
+        <div><strong>${n.name}</strong> <span class="tc-badge" style="margin-left:6px;color:${n.is_active?'var(--tc-green)':'var(--text-secondary)'}">${n.is_active?'ACTIVE':'OFF'}</span>
+          <br><small style="color:var(--text-secondary)">${n.net_type} · ${n.frequency||'No freq'} · ${n.start_time} · ${n.duration_min}min</small>
+          ${n.net_control?`<br><small>NCS: ${n.net_control}</small>`:''}</div>
+        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteNet(${n.id})">×</button></div>
+      </div>`).join('');
+    });
+  };
+  window.tcCreateNet=function(){
+    const name=val('tc-net-name');if(!name)return;
+    api('/api/net-schedules',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,net_type:val('tc-net-type'),frequency:val('tc-net-freq'),
+        start_time:val('tc-net-time'),duration_min:numVal('tc-net-duration',30),
+        net_control:val('tc-net-control')})
+    }).then(()=>{$('tc-net-name').value='';tcLoadNets();});
+  };
+  window.tcDeleteNet=function(id){
+    api('/api/net-schedules/'+id,{method:'DELETE'}).then(()=>tcLoadNets());
+  };
+
+  /* ── Message Templates ── */
+  window.tcLoadMessages=function(){
+    api('/api/message-templates').then(items=>{
+      const el=$('tc-msg-list');
+      if(!items.length){el.innerHTML='<div class="tc-empty">No message templates. Click "Seed Built-in Templates" to add standard military formats.</div>';return;}
+      el.innerHTML=items.map(t=>`<div class="tc-msg-template">
+        <h4>${t.name} <span class="tc-badge" style="color:var(--tc-accent);margin-left:4px">${t.template_type}</span>
+          ${t.is_builtin?'<span class="tc-badge" style="color:var(--text-secondary);margin-left:4px">BUILT-IN</span>':''}
+        </h4>
+        <div style="font-size:.8rem;color:var(--text-secondary)">${t.instructions||''}</div>
+        <pre>${t.example||'No example'}</pre>
+        ${!t.is_builtin?`<button class="tc-btn tc-btn-danger" style="margin-top:8px" onclick="tcDeleteTemplate(${t.id})">Delete</button>`:''}
+      </div>`).join('');
+    });
+  };
+  window.tcSeedTemplates=function(){
+    api('/api/message-templates/seed',{method:'POST'}).then(r=>{tcLoadMessages();});
+  };
+  window.tcDeleteTemplate=function(id){
+    api('/api/message-templates/'+id,{method:'DELETE'}).then(()=>tcLoadMessages());
+  };
+
+  /* ── Weather Calculators ── */
+  window.tcMoonPhase=function(){
+    const d=val('tc-moon-date');
+    api('/api/weather/moon-phase'+(d?'?date='+d:'')).then(r=>{
+      const el=$('tc-moon-result');el.style.display='block';
+      el.innerHTML=`<span class="val">${r.phase}</span> (Day ${r.day_of_cycle})<br>
+        <small>Illumination: ${r.illumination_pct}% · ${r.good_for_night_ops?'<span style="color:var(--tc-green)">Good for night ops</span>':'<span style="color:var(--tc-amber)">High visibility — poor for covert movement</span>'}</small>`;
+    });
+  };
+  window.tcLightning=function(){
+    const sec=numVal('tc-lightning-sec',10);
+    api('/api/weather/lightning-distance',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({seconds:sec})
+    }).then(r=>{
+      const el=$('tc-lightning-result');el.style.display='block';
+      el.innerHTML=`<span class="val">${r.distance_miles} mi</span> (${r.distance_km} km)<br>
+        <small style="color:${r.danger_zone?'var(--tc-red)':'var(--tc-green)'}">${r.recommendation}</small>`;
+    });
+  };
+  window.tcWindChill=function(){
+    api('/api/weather/wind-chill',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({temp_f:numVal('tc-wc-temp',32),wind_mph:numVal('tc-wc-wind',15)})
+    }).then(r=>{
+      const el=$('tc-wc-result');el.style.display='block';
+      if(r.note){el.innerHTML=`<small>${r.note}</small>`;return;}
+      el.innerHTML=`<span class="val">${r.wind_chill_f}°F</span> feels like<br>
+        <small>Danger: ${r.danger_level}${r.frostbite_risk_minutes?' · Frostbite risk in '+r.frostbite_risk_minutes+'min':''}</small>`;
+    });
+  };
+  window.tcHeatIndex=function(){
+    api('/api/weather/heat-index',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({temp_f:numVal('tc-hi-temp',95),humidity_pct:numVal('tc-hi-humid',60)})
+    }).then(r=>{
+      const el=$('tc-hi-result');el.style.display='block';
+      if(r.note){el.innerHTML=`<small>${r.note}</small>`;return;}
+      const dangerColor={low:'#22c55e',caution:'#f59e0b',danger:'#f97316',extreme:'#ef4444'};
+      el.innerHTML=`<span class="val">${r.heat_index_f}°F</span> feels like<br>
+        <small style="color:${dangerColor[r.danger_level]||'#aaa'}">Danger level: ${r.danger_level}</small>`;
+    });
+  };
+  window.tcGDD=function(){
+    api('/api/weather/growing-degree-days',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({high_f:numVal('tc-gdd-high',85),low_f:numVal('tc-gdd-low',55),base_f:numVal('tc-gdd-base',50)})
+    }).then(r=>{
+      const el=$('tc-gdd-result');el.style.display='block';
+      el.innerHTML=`<span class="val">${r.gdd} GDD</span><br><small>Avg: ${r.average_f}°F · Base: ${r.base_f}°F</small>`;
+    });
+  };
+
+  /* ── Beaufort Scale ── */
+  function loadBeaufort(){
+    api('/api/weather/beaufort').then(scale=>{
+      const el=$('tc-beaufort-table');
+      el.innerHTML='<table class="tc-beaufort" style="width:100%;border-collapse:collapse"><thead><tr><th>Force</th><th>Description</th><th>MPH</th><th>Observable Effect</th></tr></thead><tbody>'+
+        scale.map(s=>`<tr><td>${s.force}</td><td>${s.description}</td><td>${s.mph_range}</td><td>${s.observation}</td></tr>`).join('')+
+        '</tbody></table>';
+    });
+  }
+
+  /* ── Initial load when tab activates ── */
+  const obs=new MutationObserver(()=>{
+    if(!root.classList.contains('is-hidden')){
+      tcLoadRadios();tcLoadAuth();tcLoadNets();tcLoadMessages();loadBeaufort();
+    }
+  });
+  obs.observe(root,{attributes:true,attributeFilter:['class']});
+})();
+</script>
+</div>

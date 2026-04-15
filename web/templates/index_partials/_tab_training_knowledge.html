@@ -2,7 +2,7 @@
      TRAINING & KNOWLEDGE  (data-tab="training-knowledge")
      Skills, courses, certifications, drills, flashcards, knowledge packages
      ═══════════════════════════════════════════════════════════════════ -->
-<div id="tab-training-knowledge" class="tab-content is-hidden" data-tab="training-knowledge">
+<div id="tab-training-knowledge" class="tab-content{% if active_tab == 'training-knowledge' %} active{% endif %}" data-tab="training-knowledge">
 <style>
   #tab-training-knowledge {
     --tk-accent: #8b5cf6;
@@ -15,14 +15,20 @@
   }
   #tab-training-knowledge .tk-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
   #tab-training-knowledge .tk-header h2 { font-size:1.25rem; color:var(--tk-accent); margin:0; }
-  #tab-training-knowledge .tk-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-training-knowledge .tk-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
-  #tab-training-knowledge .tk-sub-tab.active { background:var(--tk-accent-dim); border-color:var(--tk-accent); color:var(--tk-accent); }
-  #tab-training-knowledge .tk-panel { display:none; }
-  #tab-training-knowledge .tk-panel.active { display:block; }
-  #tab-training-knowledge .tk-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
-  #tab-training-knowledge .tk-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
-  #tab-training-knowledge .tk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
+#tab-training-knowledge .tk-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
+#tab-training-knowledge .tk-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+#tab-training-knowledge .tk-sub-tab.active { background:var(--tk-accent-dim); border-color:var(--tk-accent); color:var(--tk-accent); }
+#tab-training-knowledge .tk-sub-tab:focus-visible { box-shadow:0 0 0 3px rgba(91,159,255,.28); }
+#tab-training-knowledge .tk-panel { display:none; }
+#tab-training-knowledge .tk-panel.active { display:block; }
+#tab-training-knowledge .tk-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+#tab-training-knowledge .tk-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+#tab-training-knowledge .tk-card-button { width:100%; display:block; text-align:left; color:inherit; cursor:pointer; appearance:none; }
+#tab-training-knowledge .tk-card-button .tk-card-title { display:block; }
+#tab-training-knowledge .tk-card-meta { display:flex; gap:12px; flex-wrap:wrap; }
+#tab-training-knowledge .tk-card-button:hover { border-color:var(--tk-accent); background:color-mix(in srgb, var(--tk-accent-dim) 72%, var(--card-bg,#1a1a2e)); }
+#tab-training-knowledge .tk-card-button:focus-visible { box-shadow:0 0 0 3px rgba(91,159,255,.28); border-color:var(--tk-accent); }
+#tab-training-knowledge .tk-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-training-knowledge .tk-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
   #tab-training-knowledge .tk-stat-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:12px 14px; text-align:center; }
   #tab-training-knowledge .tk-stat-val { font-size:1.4rem; font-weight:700; color:var(--tk-accent); }
@@ -32,11 +38,12 @@
   #tab-training-knowledge .tk-form-row input,
   #tab-training-knowledge .tk-form-row select,
   #tab-training-knowledge .tk-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
-  #tab-training-knowledge .tk-form-row .field { flex:1; min-width:140px; }
-  #tab-training-knowledge .tk-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
-  #tab-training-knowledge .tk-btn-primary { background:var(--tk-accent); color:#fff; }
-  #tab-training-knowledge .tk-btn-danger { background:var(--tk-red); color:#fff; }
-  #tab-training-knowledge .tk-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+#tab-training-knowledge .tk-form-row .field { flex:1; min-width:140px; }
+#tab-training-knowledge .tk-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+#tab-training-knowledge .tk-btn-primary { background:var(--tk-accent); color:#fff; }
+#tab-training-knowledge .tk-btn-danger { background:var(--tk-red); color:#fff; }
+#tab-training-knowledge .tk-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+#tab-training-knowledge .tk-btn:focus-visible { box-shadow:0 0 0 3px rgba(91,159,255,.28); }
   #tab-training-knowledge .tk-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
   #tab-training-knowledge .tk-list-item:last-child { border-bottom:none; }
   #tab-training-knowledge .tk-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
@@ -76,17 +83,17 @@
 </div>
 
 <!-- Sub-tabs -->
-<div class="tk-sub-tabs">
-  <button class="tk-sub-tab active" data-tk-panel="skills">Skills</button>
-  <button class="tk-sub-tab" data-tk-panel="courses">Courses</button>
-  <button class="tk-sub-tab" data-tk-panel="certifications">Certs</button>
-  <button class="tk-sub-tab" data-tk-panel="drills">Drills</button>
-  <button class="tk-sub-tab" data-tk-panel="flashcards">Flashcards</button>
-  <button class="tk-sub-tab" data-tk-panel="knowledge">Knowledge</button>
+<div class="tk-sub-tabs" role="tablist" aria-label="Training and knowledge sections">
+  <button type="button" class="tk-sub-tab active" role="tab" aria-selected="true" aria-controls="tk-panel-skills" id="tk-tab-skills" data-tk-panel="skills">Skills</button>
+  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-courses" id="tk-tab-courses" data-tk-panel="courses">Courses</button>
+  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-certifications" id="tk-tab-certifications" data-tk-panel="certifications">Certs</button>
+  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-drills" id="tk-tab-drills" data-tk-panel="drills">Drills</button>
+  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-flashcards" id="tk-tab-flashcards" data-tk-panel="flashcards">Flashcards</button>
+  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-knowledge" id="tk-tab-knowledge" data-tk-panel="knowledge">Knowledge</button>
 </div>
 
 <!-- ── Skills Panel ──────────────────────────────────── -->
-<div class="tk-panel active" id="tk-panel-skills">
+<div class="tk-panel active" id="tk-panel-skills" role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-skills">
   <div class="tk-card">
     <div class="tk-card-title">Add / Edit Skill</div>
     <input type="hidden" id="tk-skill-edit-id" name="tk-skill-edit-id" value="">
@@ -127,7 +134,7 @@
 </div>
 
 <!-- ── Courses Panel ─────────────────────────────────── -->
-<div class="tk-panel" id="tk-panel-courses">
+<div class="tk-panel" id="tk-panel-courses" role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-courses">
   <div class="tk-card">
     <div class="tk-card-title">Create Course</div>
     <input type="hidden" id="tk-course-edit-id" name="tk-course-edit-id" value="">
@@ -177,7 +184,7 @@
 </div>
 
 <!-- ── Certifications Panel ──────────────────────────── -->
-<div class="tk-panel" id="tk-panel-certifications">
+<div class="tk-panel" id="tk-panel-certifications" role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-certifications">
   <div id="tk-cert-expiring-banner" class="tk-card is-hidden" style="border-color:var(--tk-amber);"></div>
   <div class="tk-card">
     <div class="tk-card-title">Add Certification</div>
@@ -199,7 +206,7 @@
 </div>
 
 <!-- ── Drills Panel ──────────────────────────────────── -->
-<div class="tk-panel" id="tk-panel-drills">
+<div class="tk-panel" id="tk-panel-drills" role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-drills">
   <div style="display:flex;gap:8px;margin-bottom:12px;">
     <button class="tk-btn tk-btn-secondary" onclick="tkSeedDrills()">Seed Built-in Drills</button>
   </div>
@@ -249,7 +256,7 @@
 </div>
 
 <!-- ── Flashcards Panel ──────────────────────────────── -->
-<div class="tk-panel" id="tk-panel-flashcards">
+<div class="tk-panel" id="tk-panel-flashcards" role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-flashcards">
   <div class="tk-stats-grid" id="tk-fc-stats"></div>
   <div class="tk-card">
     <div class="tk-card-title">Add Flashcard</div>
@@ -293,7 +300,7 @@
 </div>
 
 <!-- ── Knowledge Packages Panel ──────────────────────── -->
-<div class="tk-panel" id="tk-panel-knowledge">
+<div class="tk-panel" id="tk-panel-knowledge" role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-knowledge">
   <div class="tk-card-title" style="margin-bottom:10px;">Bus Factor Dashboard</div>
   <div id="tk-bus-factor" class="tk-stats-grid"></div>
   <div class="tk-card">
@@ -325,11 +332,11 @@
 </div>
 
 <!-- ── Cross-Training Matrix Modal ───────────────────── -->
-<div id="tk-matrix-modal" class="tk-modal-overlay is-hidden" onclick="if(event.target===this)this.classList.add('is-hidden')">
+<div id="tk-matrix-modal" class="tk-modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="tk-matrix-title" onclick="if(event.target===this)this.classList.add('is-hidden')">
   <div class="tk-modal">
     <div class="tk-modal-header">
-      <h3>Cross-Training Matrix</h3>
-      <button class="tk-btn tk-btn-secondary" onclick="document.getElementById('tk-matrix-modal').classList.add('is-hidden')">&times;</button>
+      <h3 id="tk-matrix-title">Cross-Training Matrix</h3>
+      <button type="button" class="tk-btn tk-btn-secondary" id="tk-matrix-close" aria-label="Close cross-training matrix" onclick="document.getElementById('tk-matrix-modal').classList.add('is-hidden')">&times;</button>
     </div>
     <div id="tk-matrix-body"><div class="tk-empty">Loading matrix...</div></div>
   </div>
@@ -341,9 +348,10 @@
   /* Sub-tab switching */
   root.querySelectorAll('.tk-sub-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      root.querySelectorAll('.tk-sub-tab').forEach(b => b.classList.remove('active'));
+      root.querySelectorAll('.tk-sub-tab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
       root.querySelectorAll('.tk-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
       const panel = document.getElementById('tk-panel-' + btn.dataset.tkPanel);
       if (panel) panel.classList.add('active');
     });
@@ -403,6 +411,8 @@
   };
   window.tkShowMatrix = function() {
     el('tk-matrix-modal').classList.remove('is-hidden');
+    const closeBtn = el('tk-matrix-close');
+    if (closeBtn) closeBtn.focus();
     api('/api/training/skills/matrix').then(data => {
       const people = data.people || [], categories = data.categories || [], grid = data.grid || {};
       if (!people.length) { el('tk-matrix-body').innerHTML = '<div class="tk-empty">No skill data for matrix.</div>'; return; }
@@ -580,7 +590,7 @@
     api('/api/training/flashcards/decks').then(decks => {
       const c = el('tk-fc-decks');
       if (!decks.length) { c.innerHTML = '<div class="tk-empty">No flashcard decks. Add a card above.</div>'; return; }
-      c.innerHTML = decks.map(d => '<div class="tk-card" style="cursor:pointer" onclick="tkStartReview(\'' + d.deck.replace(/'/g, "\\'") + '\')"><div class="tk-card-title">' + d.deck + '</div><div style="display:flex;gap:12px;"><span style="font-size:.82rem;color:var(--text-secondary)">' + d.count + ' cards</span>' + (d.due ? '<span style="font-size:.82rem;color:var(--tk-amber)">' + d.due + ' due</span>' : '') + '</div></div>').join('');
+      c.innerHTML = decks.map(d => '<button type="button" class="tk-card tk-card-button" onclick="tkStartReview(\'' + d.deck.replace(/'/g, "\\'") + '\')" aria-label="Review ' + esc(d.deck) + ' flashcard deck"><span class="tk-card-title">' + esc(d.deck) + '</span><span class="tk-card-meta"><span style="font-size:.82rem;color:var(--text-secondary)">' + d.count + ' cards</span>' + (d.due ? '<span style="font-size:.82rem;color:var(--tk-amber)">' + d.due + ' due</span>' : '') + '</span></button>').join('');
     });
   };
   window.tkAddFlashcard = function() {

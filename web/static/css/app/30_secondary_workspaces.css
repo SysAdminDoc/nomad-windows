@@ -293,8 +293,11 @@
   font-size: 11px;
 }
 .chat-image-preview-thumb {
+  width: 40px;
   height: 40px;
   border-radius: 4px;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 .chat-image-preview-name {
   min-width: 0;

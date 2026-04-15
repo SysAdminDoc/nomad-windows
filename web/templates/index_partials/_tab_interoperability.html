@@ -2,7 +2,7 @@
      TAB: Interoperability & Data Exchange  (Phase 16 · v7.22.0)
      Export/import data in various formats, batch entry, history log
      ═══════════════════════════════════════════════════════════════ -->
-<div id="tab-interoperability" class="tab-content is-hidden" data-tab="interoperability" data-tab-content="interoperability">
+<div id="tab-interoperability" class="tab-content{% if active_tab == 'interoperability' %} active{% endif %}" data-tab="interoperability" data-tab-content="interoperability">
 <style>
   #tab-interoperability {
     --io-accent: #a855f7;
@@ -16,7 +16,7 @@
   #tab-interoperability .io-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
   #tab-interoperability .io-header h2 { font-size:1.25rem; color:var(--io-accent); margin:0; }
   #tab-interoperability .io-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-interoperability .io-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:all .15s; }
+  #tab-interoperability .io-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-interoperability .io-sub-tab.active { background:var(--io-accent-dim); border-color:var(--io-accent); color:var(--io-accent); }
   #tab-interoperability .io-panel { display:none; }
   #tab-interoperability .io-panel.active { display:block; }
@@ -32,7 +32,7 @@
   #tab-interoperability .io-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-interoperability .io-form-row textarea { min-height:120px; resize:vertical; font-family:monospace; font-size:.8rem; }
   #tab-interoperability .io-form-row .field { flex:1; min-width:140px; }
-  #tab-interoperability .io-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:all .15s; }
+  #tab-interoperability .io-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-interoperability .io-btn-primary { background:var(--io-accent); color:#fff; }
   #tab-interoperability .io-btn-primary:hover { background:var(--io-accent-hover); }
   #tab-interoperability .io-btn-danger { background:var(--io-red); color:#fff; }
@@ -52,9 +52,12 @@
   #tab-interoperability .io-export-card .io-export-label { font-size:.78rem; color:var(--text-secondary,#aaa); }
   #tab-interoperability .io-export-card .io-export-format { font-size:.72rem; font-weight:600; color:var(--io-accent); text-transform:uppercase; letter-spacing:.06em; }
   #tab-interoperability .io-section-title { font-size:.85rem; font-weight:600; color:var(--io-accent); margin:16px 0 10px; padding-bottom:6px; border-bottom:1px solid var(--border,#333); }
-  #tab-interoperability .io-drop-zone { border:2px dashed var(--border,#444); border-radius:10px; padding:40px 20px; text-align:center; color:var(--text-secondary,#aaa); cursor:pointer; transition:all .2s; }
-  #tab-interoperability .io-drop-zone:hover,
-  #tab-interoperability .io-drop-zone.io-drag-over { border-color:var(--io-accent); background:var(--io-accent-dim); color:var(--io-accent); }
+#tab-interoperability .io-drop-zone { border:2px dashed var(--border,#444); border-radius:10px; padding:40px 20px; text-align:center; color:var(--text-secondary,#aaa); cursor:pointer; transition:background-color .2s,border-color .2s,color .2s,box-shadow .2s,transform .2s; }
+#tab-interoperability .io-drop-zone:hover,
+#tab-interoperability .io-drop-zone.io-drag-over { border-color:var(--io-accent); background:var(--io-accent-dim); color:var(--io-accent); }
+#tab-interoperability .io-drop-zone:focus-visible { border-color:var(--io-accent); background:var(--io-accent-dim); color:var(--io-accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--io-accent) 26%, transparent); }
+  #tab-interoperability .io-sub-tab:focus-visible { outline:2px solid var(--io-accent); outline-offset:2px; }
+  #tab-interoperability .io-btn:focus-visible { outline:2px solid var(--io-accent); outline-offset:2px; }
   #tab-interoperability .io-results { background:rgba(0,0,0,.3); border:1px solid var(--border,#333); border-radius:8px; padding:14px; margin-top:12px; }
   #tab-interoperability .io-results-hidden { display:none; }
   #tab-interoperability .io-mapping-grid { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; margin:10px 0; }
@@ -73,17 +76,17 @@
 </div>
 
 <!-- Sub-tab navigation -->
-<div class="io-sub-tabs" style="margin-bottom:1rem;display:flex;gap:.5rem;flex-wrap:wrap;">
-  <button class="io-sub-tab active" data-io-panel="export">&#128228; Export</button>
-  <button class="io-sub-tab" data-io-panel="import">&#128229; Import</button>
-  <button class="io-sub-tab" data-io-panel="batch">&#128203; Batch Entry</button>
-  <button class="io-sub-tab" data-io-panel="history">&#128202; History</button>
+<div class="io-sub-tabs" role="tablist" aria-label="Data exchange sections" style="margin-bottom:1rem;display:flex;gap:.5rem;flex-wrap:wrap;">
+  <button type="button" class="io-sub-tab active" role="tab" aria-selected="true" aria-controls="io-panel-export" id="io-tab-export" data-io-panel="export">&#128228; Export</button>
+  <button type="button" class="io-sub-tab" role="tab" aria-selected="false" aria-controls="io-panel-import" id="io-tab-import" data-io-panel="import">&#128229; Import</button>
+  <button type="button" class="io-sub-tab" role="tab" aria-selected="false" aria-controls="io-panel-batch" id="io-tab-batch" data-io-panel="batch">&#128203; Batch Entry</button>
+  <button type="button" class="io-sub-tab" role="tab" aria-selected="false" aria-controls="io-panel-history" id="io-tab-history" data-io-panel="history">&#128202; History</button>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 1: Export Data
      ═══════════════════════════════════════════════════════════════ -->
-<div class="io-panel active" id="io-panel-export" data-io-panel-content="export">
+<div class="io-panel active" id="io-panel-export" role="tabpanel" tabindex="-1" aria-labelledby="io-tab-export" data-io-panel-content="export">
 
   <!-- Inventory -->
   <div class="io-section-title">Inventory</div>
@@ -232,7 +235,7 @@
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 2: Import Data
      ═══════════════════════════════════════════════════════════════ -->
-<div class="io-panel" id="io-panel-import" data-io-panel-content="import">
+<div class="io-panel" id="io-panel-import" role="tabpanel" tabindex="-1" aria-labelledby="io-tab-import" data-io-panel-content="import">
 
   <div class="io-card">
     <div class="io-card-title">Import File</div>
@@ -255,7 +258,7 @@
     </div>
 
     <!-- Drag & drop zone -->
-    <div class="io-drop-zone" id="io-drop-zone" onclick="document.getElementById('io-import-file-input').click()">
+    <div class="io-drop-zone" id="io-drop-zone" role="button" tabindex="0" aria-label="Choose an import file" data-click-target="io-import-file-input">
       <div style="font-size:2rem;margin-bottom:8px;">&#128193;</div>
       <div>Drag & drop a file here, or click to browse</div>
       <div style="font-size:.75rem;margin-top:6px;color:var(--text-secondary,#666)" id="io-drop-filename">No file selected</div>
@@ -300,7 +303,7 @@
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 3: Batch Entry
      ═══════════════════════════════════════════════════════════════ -->
-<div class="io-panel" id="io-panel-batch" data-io-panel-content="batch">
+<div class="io-panel" id="io-panel-batch" role="tabpanel" tabindex="-1" aria-labelledby="io-tab-batch" data-io-panel-content="batch">
 
   <div class="io-card">
     <div class="io-card-title">Bulk Data Entry</div>
@@ -357,13 +360,13 @@
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 4: History
      ═══════════════════════════════════════════════════════════════ -->
-<div class="io-panel" id="io-panel-history" data-io-panel-content="history">
+<div class="io-panel" id="io-panel-history" role="tabpanel" tabindex="-1" aria-labelledby="io-tab-history" data-io-panel-content="history">
 
   <!-- Recent Exports -->
   <div class="io-card">
     <div class="io-card-title">Recent Exports</div>
     <div style="overflow-x:auto;">
-      <table class="io-table" id="io-export-history-table">
+      <table class="io-table" id="io-export-history-table" aria-label="Recent exports">
         <thead>
           <tr>
             <th>Type</th>
@@ -385,7 +388,7 @@
   <div class="io-card">
     <div class="io-card-title">Recent Imports</div>
     <div style="overflow-x:auto;">
-      <table class="io-table" id="io-import-history-table">
+      <table class="io-table" id="io-import-history-table" aria-label="Recent imports">
         <thead>
           <tr>
             <th>Type</th>
@@ -422,9 +425,10 @@
   /* ── Sub-tab switching ───────────────────────────────── */
   root.querySelectorAll('.io-sub-tab').forEach(function(btn) {
     btn.addEventListener('click', function() {
-      root.querySelectorAll('.io-sub-tab').forEach(function(b) { b.classList.remove('active'); });
+      root.querySelectorAll('.io-sub-tab').forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
       root.querySelectorAll('.io-panel').forEach(function(p) { p.classList.remove('active'); });
       btn.classList.add('active');
+      btn.setAttribute('aria-selected', 'true');
       var panel = document.getElementById('io-panel-' + btn.dataset.ioPanel);
       if (panel) panel.classList.add('active');
       /* Auto-refresh history when switching to that panel */

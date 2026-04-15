@@ -20,7 +20,7 @@
     </select>
     <div class="utility-panel-actions">
       <label class="utility-panel-toggle" title="Encrypt LAN messages">
-        <input type="checkbox" id="lan-encrypt-toggle" name="lan_encrypt" class="utility-panel-toggle-input" checked>
+        <input type="checkbox" id="lan-encrypt-toggle" name="lan_encrypt" class="utility-panel-toggle-input" checked aria-label="Encrypt LAN messages">
         <span>&#128274;</span>
       </label>
       <span class="utility-panel-status" id="lan-chat-status">Local network</span>
@@ -36,7 +36,7 @@
     <span class="utility-panel-presence-label">Online:</span>
     <span id="lan-presence-list">—</span>
   </div>
-  <div id="lan-chat-messages" class="utility-panel-body utility-message-list"></div>
+  <div id="lan-chat-messages" class="utility-panel-body utility-message-list" role="log" aria-live="polite" aria-relevant="additions text" aria-label="LAN chat messages"></div>
   <div class="utility-panel-row utility-panel-row-compose">
     <input id="lan-chat-input" name="lan_chat_message" class="utility-panel-input utility-panel-compose-input" data-enter-action="send-lan-msg" aria-label="LAN chat message" autocomplete="off" placeholder="Type a message…">
     <button class="btn btn-sm btn-primary" type="button" data-shell-action="send-lan-msg">Send</button>
@@ -76,7 +76,7 @@
   <div class="wizard-card wizard-card-shell">
     <!-- Page 1: Welcome -->
     <div id="wiz-page-1" class="wizard-page">
-      <img src="/static/nomad-mark.svg" alt="NOMAD logo" class="wizard-logo">
+      <img src="/static/nomad-mark.svg" alt="NOMAD logo" class="wizard-logo" width="100" height="100">
       <h2 class="shimmer-text">Welcome to NOMAD</h2>
       <p class="subtitle">Your desktop workspace for offline planning, reference, and local operations. Everything runs locally — no cloud, no subscriptions, no internet required after setup.</p>
       <div class="wizard-capability-grid">

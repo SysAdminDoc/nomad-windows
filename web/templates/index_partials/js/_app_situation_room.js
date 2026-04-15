@@ -410,14 +410,7 @@ async function _copySitroomDeskSnapshot() {
 
   try {
     const blob = new Blob([text], {type: 'text/plain;charset=utf-8'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sitroom-desk-snapshot-${Date.now()}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    window.downloadBlobFile(blob, `sitroom-desk-snapshot-${Date.now()}.txt`);
     toast('Desk snapshot downloaded', 'info');
   } catch (e) {
     _showSitroomAlert('warning', 'Unable to share desk snapshot on this device');
@@ -5273,7 +5266,12 @@ function _initAnalysisWorker() {
   `;
   try {
     const blob = new Blob([workerCode], {type: 'application/javascript'});
-    _sitroomWorker = new Worker(URL.createObjectURL(blob));
+    const workerUrl = URL.createObjectURL(blob);
+    try {
+      _sitroomWorker = new Worker(workerUrl);
+    } finally {
+      window.setTimeout(() => window.revokeObjectUrlSafe?.(workerUrl), 0);
+    }
     _sitroomWorker.onmessage = function(e) {
       if (e.data.type === 'cluster-result') {
         _renderWorkerClusters(e.data.clusters);

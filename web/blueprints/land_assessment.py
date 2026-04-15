@@ -5,6 +5,7 @@ import json
 import logging
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 _log = logging.getLogger(__name__)
 
@@ -58,7 +59,7 @@ def api_properties_list():
                 'SELECT * FROM properties WHERE status = ? ORDER BY total_score DESC', (status,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM properties ORDER BY total_score DESC').fetchall()
+            rows = db.execute('SELECT * FROM properties ORDER BY total_score DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

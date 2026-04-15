@@ -7,6 +7,7 @@ import logging
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 _log = logging.getLogger(__name__)
 
@@ -50,7 +51,7 @@ GUILD_JSON_ARRAYS = ['support_species', 'nitrogen_fixers', 'dynamic_accumulators
 @agriculture_bp.route('/food-forest/guilds')
 def api_guilds_list():
     with db_session() as db:
-        rows = db.execute('SELECT * FROM food_forest_guilds ORDER BY name').fetchall()
+        rows = db.execute('SELECT * FROM food_forest_guilds ORDER BY name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([_row(r, json_arrays=GUILD_JSON_ARRAYS) for r in rows])
 
 
@@ -131,7 +132,7 @@ def api_layers_list():
                 (guild_id,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM food_forest_layers ORDER BY layer_type, species').fetchall()
+            rows = db.execute('SELECT * FROM food_forest_layers ORDER BY layer_type, species LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -386,7 +387,7 @@ PLAN_JSON_ARRAYS = ['goals', 'milestones', 'adaptation_strategies']
 @agriculture_bp.route('/plans')
 def api_plans_list():
     with db_session() as db:
-        rows = db.execute('SELECT * FROM multi_year_plans ORDER BY start_year DESC').fetchall()
+        rows = db.execute('SELECT * FROM multi_year_plans ORDER BY start_year DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([_row(r, json_arrays=PLAN_JSON_ARRAYS) for r in rows])
 
 

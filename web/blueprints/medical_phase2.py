@@ -7,6 +7,7 @@ from datetime import date, datetime, timedelta
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.validation import validate_json
 
 _log = logging.getLogger(__name__)
 
@@ -17,6 +18,54 @@ MOOD_LABELS = {1: 'Very Low', 2: 'Low', 3: 'Below Average', 4: 'Slightly Low',
                5: 'Neutral', 6: 'Slightly Good', 7: 'Good', 8: 'Very Good',
                9: 'Excellent', 10: 'Peak'}
 SPECIES_LIST = ['dog', 'cat', 'horse', 'cow', 'goat', 'chicken', 'pig', 'sheep', 'rabbit', 'other']
+
+# Audit H2 — schemas for high-sensitivity patient data routes.
+_PREGNANCY_SCHEMA = {
+    'patient_name': {'type': str, 'required': True, 'max_length': 200},
+    'due_date': {'type': str, 'max_length': 50},
+    'blood_type': {'type': str, 'max_length': 10},
+    'gravida': {'type': int, 'min': 0, 'max': 30},
+    'para': {'type': int, 'min': 0, 'max': 30},
+    'status': {'type': str, 'choices': ['active', 'delivered', 'loss']},
+    'notes': {'type': str, 'max_length': 5000},
+}
+_DENTAL_SCHEMA = {
+    'patient_name': {'type': str, 'required': True, 'max_length': 200},
+    'tooth_number': {'type': int, 'min': 1, 'max': 32},
+    'condition': {'type': str, 'max_length': 200},
+    'treatment': {'type': str, 'max_length': 500},
+    'pain_level': {'type': int, 'min': 0, 'max': 10},
+    'treatment_date': {'type': str, 'max_length': 50},
+}
+_CHRONIC_SCHEMA = {
+    'patient_name': {'type': str, 'required': True, 'max_length': 200},
+    'condition_name': {'type': str, 'required': True, 'max_length': 200},
+    'severity': {'type': str, 'choices': CHRONIC_SEVERITIES},
+    'medication_stockpile_days': {'type': int, 'min': 0, 'max': 36500},
+}
+_VAX_SCHEMA = {
+    'patient_name': {'type': str, 'required': True, 'max_length': 200},
+    'vaccine_name': {'type': str, 'required': True, 'max_length': 200},
+    'date_administered': {'type': str, 'max_length': 50},
+    'dose_number': {'type': int, 'min': 1, 'max': 20},
+    'next_due': {'type': str, 'max_length': 50},
+}
+_VET_SCHEMA = {
+    'animal_name': {'type': str, 'required': True, 'max_length': 200},
+    'species': {'type': str, 'choices': SPECIES_LIST},
+    'breed': {'type': str, 'max_length': 100},
+    'weight_lb': {'type': (int, float), 'min': 0, 'max': 5000},
+    'condition': {'type': str, 'max_length': 500},
+    'treatment': {'type': str, 'max_length': 1000},
+}
+_MENTAL_SCHEMA = {
+    'patient_name': {'type': str, 'required': True, 'max_length': 200},
+    'check_date': {'type': str, 'max_length': 50},
+    'mood_score': {'type': int, 'min': 0, 'max': 10},
+    'anxiety_level': {'type': int, 'min': 0, 'max': 10},
+    'sleep_hours': {'type': (int, float), 'min': 0, 'max': 24},
+    'energy_level': {'type': int, 'min': 0, 'max': 10},
+}
 
 BUILTIN_HERBS = [
     ('Yarrow', 'Achillea millefolium', '["wound healing","fever reduction","anti-inflammatory"]',
@@ -68,6 +117,7 @@ def api_pregnancies_list():
 
 
 @medical_phase2_bp.route('/api/medical/pregnancies', methods=['POST'])
+@validate_json(_PREGNANCY_SCHEMA)
 def api_pregnancies_create():
     data = request.get_json() or {}
     name = (data.get('patient_name') or '').strip()
@@ -95,6 +145,7 @@ def api_pregnancies_create():
 
 
 @medical_phase2_bp.route('/api/medical/pregnancies/<int:pid>', methods=['PUT'])
+@validate_json(_PREGNANCY_SCHEMA)
 def api_pregnancies_update(pid):
     data = request.get_json() or {}
     allowed = [
@@ -148,6 +199,7 @@ def api_dental_list():
 
 
 @medical_phase2_bp.route('/api/medical/dental', methods=['POST'])
+@validate_json(_DENTAL_SCHEMA)
 def api_dental_create():
     data = request.get_json() or {}
     name = (data.get('patient_name') or '').strip()
@@ -269,6 +321,7 @@ def api_chronic_list():
 
 
 @medical_phase2_bp.route('/api/medical/chronic', methods=['POST'])
+@validate_json(_CHRONIC_SCHEMA)
 def api_chronic_create():
     data = request.get_json() or {}
     name = (data.get('patient_name') or '').strip()
@@ -300,6 +353,7 @@ def api_chronic_create():
 
 
 @medical_phase2_bp.route('/api/medical/chronic/<int:cid>', methods=['PUT'])
+@validate_json(_CHRONIC_SCHEMA)
 def api_chronic_update(cid):
     data = request.get_json() or {}
     allowed = [
@@ -368,6 +422,7 @@ def api_vaccinations_list():
 
 
 @medical_phase2_bp.route('/api/medical/vaccinations', methods=['POST'])
+@validate_json(_VAX_SCHEMA)
 def api_vaccinations_create():
     data = request.get_json() or {}
     name = (data.get('patient_name') or '').strip()
@@ -431,6 +486,7 @@ def api_mental_health_list():
 
 
 @medical_phase2_bp.route('/api/medical/mental-health', methods=['POST'])
+@validate_json(_MENTAL_SCHEMA)
 def api_mental_health_create():
     data = request.get_json() or {}
     name = (data.get('patient_name') or '').strip()
@@ -512,6 +568,7 @@ def api_vet_list():
 
 
 @medical_phase2_bp.route('/api/medical/vet', methods=['POST'])
+@validate_json(_VET_SCHEMA)
 def api_vet_create():
     data = request.get_json() or {}
     name = (data.get('animal_name') or '').strip()
@@ -540,6 +597,7 @@ def api_vet_create():
 
 
 @medical_phase2_bp.route('/api/medical/vet/<int:vid>', methods=['PUT'])
+@validate_json(_VET_SCHEMA)
 def api_vet_update(vid):
     data = request.get_json() or {}
     allowed = [

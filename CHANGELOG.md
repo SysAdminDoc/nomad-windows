@@ -2,6 +2,28 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.28.0] — Auth foundation + validation expansion (Roadmap H2/H4 + M1/M2)
+
+### H4 — Authentication enforcement layer
+- New `web/auth.py` with `require_auth(role='user')` decorator.
+- **Desktop mode (default):** decorator is a no-op; `g.current_user` set to a synthetic admin so downstream code works unchanged. Existing single-user installs require zero migration.
+- **Multi-user mode:** opt-in via `NOMAD_AUTH_REQUIRED=1` env var. Validates session token from `Authorization: Bearer <token>` header or `?token=` query against `app_sessions`/`app_users` tables (provisioned by Phase 19's `platform_security` blueprint). Localhost requests always exempt so the local pywebview shell works.
+- Role hierarchy: `admin` > `user` > `viewer` > `guest`. `@require_auth('admin')` rejects lower-rank sessions with 403.
+- Demo coverage: applied to all 8 mutating financial endpoints (cash/metals/barter/documents × create/update). Pattern can be replicated to any other blueprint with a one-line decorator.
+
+### H2 — Input validation expansion
+- `medical_phase2`: 9 routes wrapped — pregnancies, dental, chronic conditions, vaccinations, vet, mental health (create + update where applicable). Schemas enforce types, max lengths (200-5000 chars), numeric bounds (mood/anxiety/sleep ranges), and `choices` enums for severity/species/status fields.
+- `vehicles`: 4 routes wrapped — vehicles + maintenance (create + update). Schemas bound year (1900-2100), mpg (0-1000), odometer/cost (≤10M).
+
+### M1 — Pagination expansion (4 more blueprints)
+- `agriculture` (food_forest_guilds, food_forest_layers, multi_year_plans), `group_ops` (pods), `readiness_goals`, `land_assessment` (properties). Brings v7.27.0 + v7.28.0 total to **22 list endpoints across 11 blueprints** (financial, daily_living, training_knowledge, hunting_foraging, disaster_modules, movement_ops, evac_drills, agriculture, group_ops, readiness_goals, land_assessment).
+
+### M2 — Activity logging expansion
+- `checklists` (create/update/delete) and `weather` (action_rules create/delete) now write to the activity log. Brings v7.27.0 + v7.28.0 total to **4 of 11 audit-flagged blueprints** (contacts, vehicles, checklists, weather). Remaining: brief, kit_builder, kiwix, print_routes, supplies, timeline.
+
+### Stats
+- 11 files changed. New files: `web/auth.py`. No DB schema changes (uses Phase 19 tables). Backward compatible — existing single-user desktop installs see no behavior change.
+
 ## [v7.27.0] — Hardening & Polish (Audit Backlog)
 - Fixed: Disk-space pre-check before yt-dlp downloads (media.py) — rejects when approx size + 500 MB margin exceeds free space on the video dir volume
 - Fixed: Streaming CSV import for contacts (interoperability.py) — new `_iter_upload_lines()` decoder + batched 500-row commits avoid loading multi-hundred-MB uploads fully into memory

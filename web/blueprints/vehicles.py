@@ -6,6 +6,36 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
+from web.validation import validate_json
+
+# Audit H2 — vehicle data validation.
+_VEHICLE_SCHEMA = {
+    'name': {'type': str, 'required': True, 'max_length': 200},
+    'year': {'type': int, 'min': 1900, 'max': 2100},
+    'make': {'type': str, 'max_length': 100},
+    'model': {'type': str, 'max_length': 100},
+    'vin': {'type': str, 'max_length': 30},
+    'fuel_type': {'type': str, 'max_length': 30},
+    'tank_capacity_gal': {'type': (int, float), 'min': 0, 'max': 10000},
+    'mpg': {'type': (int, float), 'min': 0, 'max': 1000},
+    'odometer': {'type': (int, float), 'min': 0, 'max': 10_000_000},
+    'color': {'type': str, 'max_length': 50},
+    'plate': {'type': str, 'max_length': 20},
+    'insurance_exp': {'type': str, 'max_length': 50},
+    'registration_exp': {'type': str, 'max_length': 50},
+    'location': {'type': str, 'max_length': 200},
+    'role': {'type': str, 'max_length': 50},
+    'notes': {'type': str, 'max_length': 5000},
+}
+_MAINTENANCE_SCHEMA = {
+    'service_type': {'type': str, 'required': True, 'max_length': 100},
+    'service_date': {'type': str, 'max_length': 50},
+    'mileage': {'type': (int, float), 'min': 0, 'max': 10_000_000},
+    'next_due_mileage': {'type': (int, float), 'min': 0, 'max': 10_000_000},
+    'next_due_date': {'type': str, 'max_length': 50},
+    'cost': {'type': (int, float), 'min': 0, 'max': 1_000_000},
+    'notes': {'type': str, 'max_length': 2000},
+}
 from web.sql_safety import safe_columns
 
 _log = logging.getLogger(__name__)
@@ -42,6 +72,7 @@ def api_vehicles_list():
 
 
 @vehicles_bp.route('/api/vehicles', methods=['POST'])
+@validate_json(_VEHICLE_SCHEMA)
 def api_vehicles_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -101,6 +132,7 @@ def api_vehicles_get(vid):
 
 
 @vehicles_bp.route('/api/vehicles/<int:vid>', methods=['PUT'])
+@validate_json(_VEHICLE_SCHEMA)
 def api_vehicles_update(vid):
     data = request.get_json() or {}
     if 'fuel_type' in data and data['fuel_type'] not in VALID_FUEL_TYPES:
@@ -154,6 +186,7 @@ def api_maintenance_list(vid):
 
 
 @vehicles_bp.route('/api/vehicles/<int:vid>/maintenance', methods=['POST'])
+@validate_json(_MAINTENANCE_SCHEMA)
 def api_maintenance_create(vid):
     data = request.get_json() or {}
     service_type = (data.get('service_type') or '').strip()
@@ -183,6 +216,7 @@ def api_maintenance_create(vid):
 
 
 @vehicles_bp.route('/api/vehicles/maintenance/<int:mid>', methods=['PUT'])
+@validate_json(_MAINTENANCE_SCHEMA)
 def api_maintenance_update(mid):
     data = request.get_json() or {}
     if 'status' in data and data['status'] not in VALID_MAINT_STATUSES:

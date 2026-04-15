@@ -2,6 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 readiness_goals_bp = Blueprint('readiness_goals', __name__)
 
@@ -11,7 +12,7 @@ readiness_goals_bp = Blueprint('readiness_goals', __name__)
 @readiness_goals_bp.route('/api/readiness-goals')
 def api_readiness_goals_list():
     with db_session() as db:
-        rows = db.execute('SELECT * FROM readiness_goals ORDER BY category, name').fetchall()
+        rows = db.execute('SELECT * FROM readiness_goals ORDER BY category, name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

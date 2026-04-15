@@ -901,3 +901,124 @@ After Tier 1, shift to user-demand-driven priorities within Tier 2-3.
 **Test coverage is strong.** 888 tests across 66 files with every blueprint covered is well above average for a project this size. The test infrastructure is a solid foundation for regression prevention during the fixes above.
 
 **Next development phase should focus on hardening, not features.** All 1,805 features are built. A "v7.27.0 — Hardening & Polish" release addressing H1-H5 and M1-M6 would dramatically improve production readiness without adding complexity.
+
+---
+
+## Extended Audit Findings (Widened Scope)
+
+*Generated 2026-04-14 — 4 parallel audit vectors covering frontend JS, services/integrations, test suite, and data integrity.*
+
+### Fixes Applied in v7.27.0
+
+The following bugs were identified and fixed during this audit cycle:
+
+1. **sensor_readings table conflict** — Renamed Phase 18 table to `iot_sensor_readings` in db.py, hardware_sensors.py, undo.py. Phase 1 `sensor_readings` (power.py) untouched.
+2. **SSE client limit race condition** — Removed redundant capacity check in app.py; `sse_register_client()` is now the single atomic gatekeeper under `_sse_lock`.
+3. **Orphaned medical records on patient delete** — Added missing `DELETE FROM` for `wound_updates`, `medication_log`, `triage_history` in medical.py.
+4. **Federation trust level bypass** — Changed sync endpoint to only accept `trusted`, `admin`, `member` peers (was allowing any non-blocked peer including `observer` and `untrusted`).
+5. **WAL checkpoint before backup** — Added `PRAGMA wal_checkpoint(RESTART)` in `backup_db()` to ensure consistent backup state.
+6. **Kolibri partial install state** — Changed migrate failure from `log.warning` to `raise RuntimeError` so the DB isn't marked as installed when provisioning fails.
+7. **Download queue race condition** — Wrapped `_ytdlp_downloads` cleanup in `_ytdlp_dl_lock` to prevent dict mutation during concurrent iteration.
+
+### Frontend & JavaScript Audit
+
+**XSS Risk (30+ instances):**
+- `_tab_medical_phase2.html` — patient names, conditions, medications inserted into innerHTML without `escapeHtml()` (lines 355-550)
+- `_tab_agriculture.html` — guild names, species, zone data unescaped in innerHTML (lines 406-600)
+- The global `escapeHtml()` function exists in `_app_core_shell.js:1113` but is not used in these newer tab partials
+- **Recommendation:** Wrap all user-sourced template variables with `escapeHtml()` in Phase 17-20 partials
+
+**Fetch Error Handling:**
+- Tab partials define local `const api = (url, opts) => fetch(url, opts).then(r => r.json())` without `.ok` checks or `.catch()` — network errors and 400/500 responses silently fail
+- Central `apiFetch()` in `web/static/js/api.js` has proper error handling but inline partials don't use it
+- **Recommendation:** Replace local `api()` wrappers with central `safeFetch()` from `_app_core_shell.js:1157`
+
+**Memory Leaks (Low):**
+- Event listeners attached in tab partials without `removeEventListener` on tab switch
+- `setInterval` timers in situation room / ops support without cleanup on unmount
+- Mitigated by the fact that tabs persist in DOM (hidden, not destroyed)
+
+**Accessibility:**
+- 100+ interactive buttons lack `aria-label` (delete "x" buttons, map controls, sub-tab toggles)
+- App frame modal has `role="dialog"` but no focus trap
+
+### Services & External Integration Audit
+
+**High Severity:**
+- **Disk space pre-check missing** — `api_ytdlp_download()` downloads without checking available storage; large videos can fill disk (media.py:1110-1281)
+- **Partial service install state** — *(Fixed: Kolibri)* — FlatNotes has similar issue: no binary verification after `pip install` (flatnotes.py:85-110)
+
+**Medium Severity:**
+- Ollama streaming can yield malformed JSON if Ollama crashes mid-response (ai.py:397-406)
+- Qdrant RAG search has no socket timeout; can hang indefinitely if Qdrant unresponsive (ai.py:344)
+- Ollama port kill logic only waits 1s for port release; may fail on Windows (ollama.py:182-194)
+- Stirling PDF startup timeout of 60s may be insufficient for Spring Boot cold start (stirling.py:251-258)
+- CSV import loads entire file into memory before processing — no chunked reads (interoperability.py:673-714)
+- UTF-8 encoding uses `errors='replace'` which silently corrupts non-UTF-8 names on import (interoperability.py:146-147)
+
+**Low Severity:**
+- RSS feed failures logged at debug level only — user never notified of broken feeds (situation_room.py:634)
+- ThreadPoolExecutor 90s timeout silently drops slow feed workers (situation_room.py:660-664)
+- GeoJSON import accepts invalid coordinates without range validation (interoperability.py:849-860)
+- KML parsing fragile with whitespace in coordinate strings (interoperability.py:890-897)
+- Torrent monitor thread can die silently on exception (torrent.py:294-305)
+
+### Data Integrity Audit
+
+**Critical:**
+- **Orphaned patients** — *(Fixed)* — Contacts deletion leaves orphaned `patients.contact_id`, `pods.leader_contact_id`, `pod_members.contact_id` — no FK constraints
+- **Orphaned medical records** — *(Fixed)* — `medication_log`, `triage_history`, `wound_updates` now cascade on patient delete
+
+**High:**
+- **Federation trust bypass** — *(Fixed)* — Observer/untrusted peers could push sync data
+- **Pod member duty orphans** — Removing a pod member doesn't clean up their `duty_roster` entries (group_ops.py:228-236)
+- **Conflict resolution schema risk** — Federation merge allows dynamic column names with only regex validation; type mismatches possible (federation.py:510-532)
+
+**Medium:**
+- **Backup WAL safety** — *(Fixed)* — WAL checkpoint now runs before backup
+- **Emergency state crash recovery** — If app crashes between `_write_state()` and `db.commit()`, recovery sees partial state and treats emergency as inactive (emergency.py:145-151)
+- **Dead drop messages unencrypted at rest** — Column named `encrypted_data` stores base64-encoded ciphertext but the DB itself is unencrypted (federation.py:1173-1186)
+- **Vector clock stale-wins** — Last-write-wins resolution trusts incoming clock without verifying the remote actually has newer data (federation.py:70-83)
+
+### Test Suite Audit
+
+**Coverage:** 889 tests / 66 files — **22 of 59 blueprints tested** (37%)
+
+**Critical Gaps (untested blueprints by endpoint count):**
+1. `specialized_modules.py` — 81 endpoints, 0 tests
+2. `hunting_foraging.py` — 56 endpoints, 0 tests
+3. `daily_living.py` — 50 endpoints, 0 tests
+4. `hardware_sensors.py` — 45 endpoints, 0 tests
+5. `group_ops.py` — 45 endpoints, 0 tests
+
+**Quality Issues:**
+- 57 of 66 test files only verify HTTP status codes, not database state changes
+- No concurrent access tests exist — race conditions are untested
+- No test coverage for rate limiting, resource exhaustion, or date/time edge cases
+
+**Strong Areas:**
+- Excellent test isolation (per-test in-memory SQLite via UUID)
+- Good edge case and XSS prevention tests
+- Federation sync tests are comprehensive (test_federation_v2.py)
+
+---
+
+### v7.27.0 Hardening Punch List (Prioritized)
+
+| # | Fix | Severity | Status |
+|---|-----|----------|--------|
+| 1 | sensor_readings table rename | Critical | **Done** |
+| 2 | Patient delete cascade (medical) | Critical | **Done** |
+| 3 | Federation trust enforcement | High | **Done** |
+| 4 | SSE race condition | Medium | **Done** |
+| 5 | WAL checkpoint before backup | Medium | **Done** |
+| 6 | Kolibri install state | Medium | **Done** |
+| 7 | Download queue lock | Medium | **Done** |
+| 8 | XSS: escapeHtml in Phase 17-20 partials | High | Backlog |
+| 9 | Replace inline api() with safeFetch() | Medium | Backlog |
+| 10 | Disk space pre-check for downloads | High | Backlog |
+| 11 | Ollama streaming error resilience | Medium | Backlog |
+| 12 | CSV import chunked processing | Medium | Backlog |
+| 13 | Duty roster cleanup on member remove | Medium | Backlog |
+| 14 | Accessibility: aria-labels | Low | Backlog |
+| 15 | Add tests for Phase 10-20 blueprints | Low | Backlog |

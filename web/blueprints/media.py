@@ -1130,10 +1130,11 @@ def api_ytdlp_download():
         dl_id = str(_state._ytdlp_dl_counter)
 
     # Clean up completed/failed entries if too many accumulate
-    if len(_ytdlp_downloads) > 100:
-        to_remove = [k for k, v in _ytdlp_downloads.items() if v.get('status') in ('complete', 'error')]
-        for k in to_remove:
-            del _ytdlp_downloads[k]
+    with _ytdlp_dl_lock:
+        if len(_ytdlp_downloads) > 100:
+            to_remove = [k for k, v in _ytdlp_downloads.items() if v.get('status') in ('complete', 'error')]
+            for k in to_remove:
+                del _ytdlp_downloads[k]
 
     _ytdlp_downloads[dl_id] = {'status': 'starting', 'percent': 0, 'title': '', 'speed': '', 'error': ''}
 

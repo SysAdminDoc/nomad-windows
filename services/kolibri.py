@@ -193,7 +193,7 @@ def install(callback=None):
             **_run_kwargs(),
         )
         if migrate_result.returncode != 0:
-            log.warning(f'Kolibri migrate failed (exit {migrate_result.returncode}): {migrate_result.stderr}')
+            raise RuntimeError(f'Kolibri migrate failed (exit {migrate_result.returncode}): {migrate_result.stderr}')
 
         db = get_db()
         try:

@@ -150,7 +150,7 @@ def sensors_get(sid):
             return jsonify({'error': 'sensor not found'}), 404
         sensor = dict(row)
         readings = db.execute(
-            'SELECT * FROM sensor_readings WHERE sensor_id = ? ORDER BY created_at DESC LIMIT 10',
+            'SELECT * FROM iot_sensor_readings WHERE sensor_id = ? ORDER BY created_at DESC LIMIT 10',
             (sid,)
         ).fetchall()
         sensor['recent_readings'] = [dict(r) for r in readings]
@@ -191,7 +191,7 @@ def sensors_update(sid):
 def sensors_delete(sid):
     """Delete an IoT sensor and cascade its readings."""
     with db_session() as db:
-        db.execute('DELETE FROM sensor_readings WHERE sensor_id = ?', (sid,))
+        db.execute('DELETE FROM iot_sensor_readings WHERE sensor_id = ?', (sid,))
         r = db.execute('DELETE FROM iot_sensors WHERE id = ?', (sid,))
         if r.rowcount == 0:
             return jsonify({'error': 'sensor not found'}), 404
@@ -213,7 +213,7 @@ def sensors_add_reading(sid):
         if not sensor:
             return jsonify({'error': 'sensor not found'}), 404
         db.execute(
-            '''INSERT INTO sensor_readings (sensor_id, value, raw_value, unit, quality, timestamp)
+            '''INSERT INTO iot_sensor_readings (sensor_id, value, raw_value, unit, quality, timestamp)
                VALUES (?,?,?,?,?,?)''',
             (sid, float(value),
              str(data.get('raw_value', value)),
@@ -242,7 +242,7 @@ def sensors_readings(sid):
         if not sensor:
             return jsonify({'error': 'sensor not found'}), 404
         rows = db.execute(
-            'SELECT * FROM sensor_readings WHERE sensor_id = ? AND created_at >= ? ORDER BY created_at DESC',
+            'SELECT * FROM iot_sensor_readings WHERE sensor_id = ? AND created_at >= ? ORDER BY created_at DESC',
             (sid, cutoff)
         ).fetchall()
     return jsonify([dict(r) for r in rows])
@@ -266,7 +266,7 @@ def sensors_dashboard():
             'SELECT id, name, battery_pct FROM iot_sensors WHERE battery_pct < 20 ORDER BY battery_pct'
         ).fetchall()
         recent_readings = db.execute(
-            'SELECT COUNT(*) as c FROM sensor_readings WHERE created_at >= ?',
+            'SELECT COUNT(*) as c FROM iot_sensor_readings WHERE created_at >= ?',
             ((datetime.utcnow() - timedelta(hours=24)).strftime('%Y-%m-%dT%H:%M:%SZ'),)
         ).fetchone()['c']
     return jsonify({

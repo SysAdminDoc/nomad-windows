@@ -94,6 +94,7 @@ def backup_db():
     # Use SQLite backup API for WAL-safe copies
     src = sqlite3.connect(db_path, timeout=30)
     try:
+        src.execute('PRAGMA wal_checkpoint(RESTART)')
         dst = sqlite3.connect(backup_path)
         try:
             src.backup(dst)
@@ -4637,8 +4638,8 @@ def _create_hardware_sensors_tables(conn):
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
-        /* ─── Sensor Readings ─── */
-        CREATE TABLE IF NOT EXISTS sensor_readings (
+        /* ─── IoT Sensor Readings (Phase 18 — distinct from Phase 1 sensor_readings) ─── */
+        CREATE TABLE IF NOT EXISTS iot_sensor_readings (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             sensor_id INTEGER NOT NULL,
             value REAL DEFAULT 0,

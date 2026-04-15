@@ -1416,11 +1416,9 @@ def create_app():
                              if all(now - t > 60 for t in v)]
                 for k in stale_ips:
                     del _sse_connects[k]
-        with _sse_lock:
-            if len(_sse_clients) >= MAX_SSE_CLIENTS:
-                return jsonify({'error': 'Too many SSE connections'}), 429
         q = queue.Queue(maxsize=50)
-        sse_register_client(q)
+        if not sse_register_client(q):
+            return jsonify({'error': 'Too many SSE connections'}), 429
         def generate():
             try:
                 # Yield an initial keepalive so clients (and test harnesses)

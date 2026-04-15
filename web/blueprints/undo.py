@@ -20,7 +20,7 @@ _undo_lock = threading.Lock()
 
 _UNDO_VALID_TABLES = {'inventory', 'contacts', 'notes', 'waypoints', 'documents',
                        'videos', 'audio', 'books', 'checklists', 'weather_log',
-                       'sensor_devices', 'sensor_readings', 'journal', 'patients',
+                       'sensor_devices', 'sensor_readings', 'iot_sensor_readings', 'journal', 'patients',
                        'vitals_log', 'wound_log', 'cameras', 'access_log',
                        'power_devices', 'power_log', 'incidents', 'comms_log',
                        'seeds', 'harvest_log', 'livestock', 'preservation_log',

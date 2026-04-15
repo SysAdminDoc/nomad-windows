@@ -462,6 +462,9 @@ def api_patients_delete(pid):
     with db_session() as db:
         db.execute('DELETE FROM handoff_reports WHERE patient_id = ?', (pid,))
         db.execute('DELETE FROM wound_photos WHERE wound_id IN (SELECT id FROM wound_log WHERE patient_id = ?)', (pid,))
+        db.execute('DELETE FROM wound_updates WHERE patient_id = ?', (pid,))
+        db.execute('DELETE FROM medication_log WHERE patient_id = ?', (pid,))
+        db.execute('DELETE FROM triage_history WHERE patient_id = ?', (pid,))
         db.execute('DELETE FROM vitals_log WHERE patient_id = ?', (pid,))
         db.execute('DELETE FROM wound_log WHERE patient_id = ?', (pid,))
         r = db.execute('DELETE FROM patients WHERE id = ?', (pid,))

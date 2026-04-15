@@ -300,8 +300,8 @@ def api_node_sync_receive():
         return jsonify({'error': 'source_node_id required'}), 400
     with db_session() as db_check:
         peer = db_check.execute("SELECT trust_level FROM federation_peers WHERE node_id = ?", (source_node,)).fetchone()
-    if not peer or peer['trust_level'] == 'blocked':
-        return jsonify({'error': 'Unknown or blocked peer'}), 403
+    if not peer or peer['trust_level'] not in ('trusted', 'admin', 'member'):
+        return jsonify({'error': 'Unknown or untrusted peer'}), 403
 
     ALLOWED = {'inventory', 'contacts', 'checklists', 'notes', 'incidents', 'waypoints'}
     # Build a lookup of incoming rows by table+hash for conflict detail

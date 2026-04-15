@@ -779,3 +779,125 @@ Session 9-10: Phase 5 — Evacuation & Movement (connects everything into action
 ```
 
 After Tier 1, shift to user-demand-driven priorities within Tier 2-3.
+
+---
+
+## Research & Strategic Gaps (Auto-Generated Analysis)
+
+> **Generated:** 2026-04-14 | **Baseline:** v7.26.0 (all 20 phases complete)
+> **Method:** Static analysis of 76,094 lines across 59 blueprints, 264 tables, 1,628 route decorators, 66 test files.
+> **Scope:** Architecture, schema integrity, security, reliability, developer experience.
+
+---
+
+### High Priority
+
+**H1. Duplicate `sensor_readings` Table — Schema Conflict (db.py:435 vs db.py:4641)**
+- Two CREATE TABLE IF NOT EXISTS `sensor_readings` with incompatible schemas. The first (Phase 1 core) uses `device_id` + `reading_type`; the second (Phase 18 hardware) uses `sensor_id` + `raw_value` + `quality` + `timestamp`. Because of IF NOT EXISTS, the second definition is silently ignored — hardware_sensors.py queries will fail at runtime when referencing columns that don't exist.
+- **Fix:** Rename the Phase 18 table to `iot_sensor_readings` and update hardware_sensors.py references. The legacy `sensor_readings` table serves power.py and should remain unchanged.
+- **Affected:** hardware_sensors.py (lines 153, 194, 216, 245, 269), db.py line 4641
+
+**H2. Input Validation Coverage — 9 of 1,628 Routes**
+- A `@validate_json` decorator exists in web/validation.py but is only applied to 9 routes. The remaining 1,600+ routes accept unvalidated JSON payloads. While parameterized SQL prevents injection, missing validation means:
+  - Oversized payloads can bloat the database (no max_length enforcement)
+  - Type mismatches cause 500 errors instead of 400s
+  - Required fields silently default to empty strings
+- **Fix:** Prioritize validation on mutating (POST/PUT) routes in inventory, medical, contacts, and financial blueprints first — these handle the most sensitive data. A phased rollout across all blueprints is realistic at ~5 blueprints per session.
+
+**H3. Mutating Rate Limit Not Enforced (web/app.py:144-149)**
+- `Config.RATELIMIT_MUTATING` (60/minute) is configured but the enforcement function body is `pass`. POST/PUT/DELETE requests are not actually rate-limited despite flask-limiter being active for GET requests.
+- **Fix:** Apply `limiter.limit(Config.RATELIMIT_MUTATING)` to the before_request hook for non-safe HTTP methods, or decorate mutating routes explicitly.
+
+**H4. No Auth Middleware Wired to Routes**
+- Phase 19 built `app_users`, `app_sessions`, and role-based access (admin/user/viewer/guest) in platform_security.py, but zero routes across the 58 other blueprints use `@login_required` or `@auth_required` decorators. The auth system exists but is not enforced anywhere.
+- **Fix:** Create a `require_auth` decorator in web/utils.py. Apply it globally via a before_request hook that checks session tokens, with an allowlist for public routes (health check, login, SSE).
+
+**H5. Path Traversal Checks Fragile on Windows (web/app.py:1114, 1153)**
+- NukeMap and VIPTrack static file routes use `os.path.normcase()` + string prefix matching for path containment. On Windows, mixed-case and mixed-separator paths can bypass this check.
+- **Fix:** Replace with `os.path.commonpath([full_path, base_dir]) == os.path.normcase(base_dir)` which is normalization-safe on all platforms.
+
+---
+
+### Medium Priority
+
+**M1. 19 Blueprints Return Unbounded Query Results**
+- These blueprints have no LIMIT clause on their primary list endpoints: agriculture, consumption, daily_living, disaster_modules, emergency, evac_drills, family, financial, group_ops, hunting_foraging, land_assessment, meal_planning, movement_ops, readiness_goals, training_knowledge, and 4 others.
+- A table with thousands of rows will return the entire result set in a single JSON response. On constrained hardware (Raspberry Pi), this causes memory spikes and UI freezes.
+- **Fix:** Add server-side pagination (LIMIT/OFFSET with sensible defaults of 50-100 rows) to all list endpoints. The pattern already exists in inventory.py, contacts.py, and notes.py — replicate it.
+
+**M2. 11 Blueprints Have No Activity Logging**
+- These blueprints never call `log_activity()`: brief, checklists, contacts, kit_builder, kiwix, print_routes, supplies, timeline, vehicles, weather, and __init__. This creates blind spots in the activity log — a user modifying contacts, vehicles, or weather data leaves no audit trail.
+- **Fix:** Add `log_activity()` calls to create/update/delete operations in each affected blueprint.
+
+**M3. SSE Client Limit Race Condition (web/app.py:1419-1423)**
+- The check `len(_sse_clients) >= MAX_SSE_CLIENTS` and the subsequent queue creation + registration happen outside a single lock acquisition. A concurrent thread can exceed the limit between the check and the registration.
+- **Fix:** Hold `_sse_lock` from the limit check through queue creation and registration in one atomic block.
+
+**M4. `access_log` vs `access_logs` Table Name Collision (db.py:862, 4827)**
+- Two tables with near-identical names serve different purposes: `access_log` (physical entry/exit, used by security.py) and `access_logs` (API access audit, used by platform_security.py). This is confusing and error-prone.
+- **Fix:** Rename `access_logs` to `api_access_log` or `platform_access_log` to disambiguate. Update platform_security.py SQL references.
+
+**M5. No FTS5 Full-Text Search**
+- Phase 19 roadmap deliverables included "FTS5 full-text search" but no FTS5 virtual tables exist in db.py. Keyword search across notes, inventory, contacts, and knowledge base still uses LIKE queries, which are O(n) table scans.
+- **Fix:** Create FTS5 virtual tables for notes, inventory, contacts, and documents. Add triggers to keep them in sync with the base tables. This is a significant performance win for deployments with 10,000+ records.
+
+**M6. No Connection Pooling**
+- Phase 19 deliverables included "connection pooling" but each request creates a new SQLite connection via `db_session()`. SQLite's file-based locking makes this acceptable at low concurrency, but under LAN multi-user access (Phase 19's multi-user auth), contention will cause "database is locked" errors.
+- **Fix:** Implement a thread-local connection pool with a configurable max size (default 5). Reuse connections within the same thread/request lifecycle.
+
+**M7. Config Crashes on Invalid Environment Variables (config.py:42-78)**
+- All `int(os.environ.get(...))` calls will raise `ValueError` if the env var is set to a non-numeric string. The app crashes at import time before any error handling can catch it.
+- **Fix:** Wrap each conversion in a try-except with a fallback to the default value, or use a validated config loader.
+
+**M8. DB Migration System Underpowered — 3 Files for 264 Tables**
+- The migration system (`db_migrations/`) has only 3 migration files despite 264 tables and 27 table-creation functions. Most schema changes are handled by `_apply_column_migrations()` which uses ALTER TABLE ADD COLUMN with try-except (silently ignoring if column exists). This works but:
+  - No rollback capability
+  - No version tracking beyond "column exists or not"
+  - Schema changes are invisible to deployment tooling
+- **Fix:** For future schema changes, write proper numbered migration files. The existing approach is acceptable for the current state but should not be extended further.
+
+**M9. 326 Bare `except Exception` Catches**
+- Across all blueprints, 326 instances of `except Exception` catch and suppress errors. While each returns a JSON error response (not silently swallowing), overly broad catches mask programming errors (KeyError, TypeError, AttributeError) that should crash loudly during development.
+- **Fix:** Narrow catches to specific expected exceptions (sqlite3.Error, ValueError, KeyError) in hot paths. Keep broad catches only at the outermost route handler level.
+
+---
+
+### Low Priority
+
+**L1. Unused CSS Variables Across 7 Tab Partials**
+- 25+ CSS custom properties (e.g., `--dm-blue`, `--ag-brown`, `--hf-purple`) are defined but never referenced in their respective tab partials. No functional impact, but adds dead weight to the CSS cascade.
+- **Fix:** Remove unused variables or implement them in styling rules during the next UI pass.
+
+**L2. 5 Missing `name` Attributes on Hidden Inputs (_tab_daily_living.html)**
+- Hidden inputs at lines 99, 145, 205, 265, 485 lack `name` attributes. These are state-management inputs (edit IDs) not submitted in forms, but violate the `test_partial_controls_have_names` test contract.
+- **Fix:** Add `name="dl-sched-edit-id"` (etc.) to each hidden input matching the existing ID pattern.
+
+**L3. `os._exit(0)` Bypasses Python Cleanup (nomad.py:149)**
+- On shutdown, `os._exit(0)` is called instead of `sys.exit(0)`. This skips Python's normal cleanup (context managers, finalizers, buffered writes). The app manually flushes log handlers before this call, but any in-flight database writes could be lost.
+- **Fix:** Replace with `sys.exit(0)` which allows normal cleanup, or ensure all DB connections are explicitly closed before the call.
+
+**L4. Double Import of Preparedness Module (web/app.py:712, 1269)**
+- The preparedness module is imported twice: once for `start_alert_engine` (line 712) and once for `preparedness_bp` (line 1269). No functional bug, but wasteful and confusing.
+- **Fix:** Consolidate to a single import at the blueprint registration site.
+
+**L5. Internationalization Stub — No Active Translations**
+- `web/translations.py` (444 lines) exists but contains no `translate()` or `_t()` functions. The i18n system is scaffolded but not wired to any UI strings.
+- **Note:** This is architectural debt, not a bug. Wire it only when localization becomes a user requirement.
+
+**L6. PID Recycling in Service Manager (services/manager.py:277-295)**
+- `is_running()` checks if a PID is alive but does not verify the process name. If a service crashes and the OS recycles the PID to a different process, the health monitor will incorrectly report the service as running.
+- **Fix:** Store the process name or creation time alongside the PID and verify both in `is_running()`.
+
+---
+
+### Strategic Observations
+
+**Architecture is sound.** The blueprint-per-domain pattern scales well. The 59-blueprint structure is maintainable because each module is self-contained with consistent CRUD patterns. No monolithic files need splitting.
+
+**Biggest risk is data integrity.** The sensor_readings schema conflict (H1) is the only bug that will cause runtime failures. The auth gap (H4) is the biggest security exposure — the multi-user system exists but isn't enforced. Everything else is hardening, not triage.
+
+**Performance ceiling is SQLite.** For single-user desktop use, SQLite with WAL is excellent. For the LAN multi-user scenario (Phase 19), the lack of connection pooling (M6) and FTS5 (M5) will become bottlenecks before anything else. If federation scales beyond 5 nodes, consider WAL2 or a SQLite connection proxy.
+
+**Test coverage is strong.** 888 tests across 66 files with every blueprint covered is well above average for a project this size. The test infrastructure is a solid foundation for regression prevention during the fixes above.
+
+**Next development phase should focus on hardening, not features.** All 1,805 features are built. A "v7.27.0 — Hardening & Polish" release addressing H1-H5 and M1-M6 would dramatically improve production readiness without adding complexity.

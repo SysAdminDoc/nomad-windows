@@ -165,6 +165,7 @@ class TestErrorHandler:
             ('/situation-room', 'Situation Room · NOMAD Field Desk', 'tab-situation-room', 'sr-map-command-brief', ['tab-services', 'tab-settings', 'tab-media']),
             ('/preparedness', 'Preparedness · NOMAD Field Desk', 'tab-preparedness', 'data-prep-category="coordinate"', ['tab-services', 'tab-situation-room', 'tab-settings']),
             ('/maps', 'Maps · NOMAD Field Desk', 'tab-maps', 'class="map-command-deck map-surface"', ['tab-preparedness', 'tab-media', 'tab-settings']),
+            ('/loadout', 'Loadout · NOMAD Field Desk', 'tab-loadout', 'class="loadout-command-deck"', ['tab-preparedness', 'tab-media', 'tab-settings']),
             ('/library', 'Library · NOMAD Field Desk', 'tab-kiwix-library', 'class="library-command-deck workspace-panel"', ['tab-preparedness', 'tab-media', 'tab-settings']),
             ('/notes', 'Notes · NOMAD Field Desk', 'tab-notes', 'class="notes-command-deck"', ['tab-preparedness', 'tab-media', 'tab-settings']),
             ('/media', 'Media · NOMAD Field Desk', 'tab-media', 'class="media-command-deck"', ['tab-preparedness', 'tab-settings', 'tab-situation-room']),
@@ -203,6 +204,15 @@ class TestErrorHandler:
         assert 'class="prep-guide-card"' in prep_html
         assert 'id="inv-viz" class="inventory-viz-shell"' in prep_html
         assert 'id="rad-result"' in prep_html
+
+        loadout_html = self._html(client, '/loadout')
+        assert 'window.NOMAD_ACTIVE_TAB = "loadout";' in loadout_html
+        assert '"loadout": "/loadout"' in loadout_html
+        assert 'id="lo-bags-grid"' in loadout_html
+        assert 'Loadout Manager' in loadout_html
+        assert 'window.loadLoadout = loadLoadout;' in loadout_html
+        assert 'id="tab-services"' not in loadout_html
+        assert 'id="tab-settings"' not in loadout_html
 
         sitroom_html = self._html(client, '/situation-room')
         assert 'window.NOMAD_ACTIVE_TAB = "situation-room";' in sitroom_html

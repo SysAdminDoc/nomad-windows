@@ -374,6 +374,12 @@ def create_app():
             'title': 'Tools',
             'partial': 'index_partials/_tab_tools.html',
         },
+        'loadout': {
+            'route': '/loadout',
+            'aliases': [],
+            'title': 'Loadout',
+            'partial': 'index_partials/_tab_loadout.html',
+        },
         'kiwix-library': {
             'route': '/library',
             'aliases': ['/knowledge'],
@@ -482,6 +488,10 @@ def create_app():
     @app.route('/tools')
     def tools_page():
         return _render_workspace_page('tools')
+
+    @app.route('/loadout')
+    def loadout_page():
+        return _render_workspace_page('loadout')
 
     @app.route('/library')
     @app.route('/knowledge')

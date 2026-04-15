@@ -207,14 +207,20 @@ def sse_cleanup_stale_clients():
 
     Called periodically (e.g. from a background thread) to prevent
     leaked queues from accumulating when clients disconnect without
-    triggering GeneratorExit.
+    triggering GeneratorExit. Queues that predate activity tracking are
+    backfilled instead of being treated as instantly stale.
     """
     now = time.time()
     with _sse_lock:
-        stale = [
-            q for q in _sse_clients
-            if now - _sse_client_last_active.get(id(q), 0) > SSE_STALE_TIMEOUT
-        ]
+        stale = []
+        for q in list(_sse_clients):
+            queue_id = id(q)
+            last_active = _sse_client_last_active.get(queue_id)
+            if last_active is None:
+                _sse_client_last_active[queue_id] = now
+                continue
+            if now - last_active > SSE_STALE_TIMEOUT:
+                stale.append(q)
         for q in stale:
             _sse_clients.remove(q)
             _sse_client_last_active.pop(id(q), None)

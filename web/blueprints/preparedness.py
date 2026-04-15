@@ -532,13 +532,9 @@ def api_alerts_dismiss_all():
 def api_alerts_stream():
     """Deprecated: Use /api/events/stream instead. Kept for backward compat."""
     # Re-implement SSE stream for backward compatibility
-    ip = request.remote_addr or 'unknown'
-    now = time.time()
-    with _sse_lock:
-        if len(_sse_clients) >= MAX_SSE_CLIENTS:
-            return jsonify({'error': 'Too many SSE connections'}), 429
     q = queue.Queue(maxsize=50)
-    sse_register_client(q)
+    if not sse_register_client(q):
+        return jsonify({'error': 'Too many SSE connections'}), 429
     def generate():
         try:
             yield ": connected\n\n"

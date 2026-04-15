@@ -109,6 +109,12 @@
         border-color: color-mix(in srgb, var(--lo-border) 50%, var(--lo-accent) 50%);
         box-shadow: var(--lo-shadow);
       }
+      #tab-loadout .lo-bag-card:focus-visible {
+        outline: 2px solid var(--lo-accent);
+        outline-offset: 3px;
+        border-color: color-mix(in srgb, var(--lo-border) 45%, var(--lo-accent) 55%);
+        box-shadow: var(--lo-shadow);
+      }
       #tab-loadout .lo-bag-card-head {
         display: flex;
         align-items: flex-start;
@@ -191,6 +197,10 @@
         display: none;
       }
       #tab-loadout .lo-detail-panel.is-open { display: block; }
+      #tab-loadout .lo-detail-panel:focus-visible {
+        outline: 2px solid var(--lo-accent);
+        outline-offset: 3px;
+      }
       #tab-loadout .lo-detail-header {
         display: flex;
         align-items: center;
@@ -263,6 +273,11 @@
         background: var(--lo-green);
         border-color: var(--lo-green);
         color: #fff;
+      }
+      #tab-loadout .lo-item-packed-toggle:focus-visible,
+      #tab-loadout .lo-item-actions button:focus-visible {
+        outline: 2px solid var(--lo-accent);
+        outline-offset: 2px;
       }
       #tab-loadout .lo-item-name {
         flex: 1;
@@ -406,13 +421,14 @@
         padding: 7px 10px;
         font-size: 13px;
         font-family: inherit;
-        outline: none;
         transition: border-color 0.15s;
       }
-      #tab-loadout .lo-field input:focus,
-      #tab-loadout .lo-field select:focus,
-      #tab-loadout .lo-field textarea:focus {
+      #tab-loadout .lo-field input:focus-visible,
+      #tab-loadout .lo-field select:focus-visible,
+      #tab-loadout .lo-field textarea:focus-visible {
         border-color: var(--lo-accent);
+        outline: 2px solid transparent;
+        box-shadow: 0 0 0 2px rgba(94, 193, 116, 0.18);
       }
       #tab-loadout .lo-field textarea { resize: vertical; min-height: 54px; }
       #tab-loadout .lo-form-actions {
@@ -460,11 +476,11 @@
 
       <!-- Bag cards -->
       <div id="lo-bags-grid" class="loadout-bags-grid">
-        <div class="lo-empty">Loading bags...</div>
+        <div class="lo-empty">Loading bags…</div>
       </div>
 
       <!-- Detail panel (expanded bag) -->
-      <div id="lo-detail" class="lo-detail-panel"></div>
+      <div id="lo-detail" class="lo-detail-panel" role="region" aria-label="Loadout bag details" aria-live="polite" tabindex="-1"></div>
 
     </div>
 
@@ -604,6 +620,16 @@
       let _bags = [];
       let _activeBagId = null;
 
+      function handleBagCardActivate(event) {
+        const card = event.target.closest('.lo-bag-card[data-bag-id]');
+        if (!card) return;
+        const bagId = Number(card.dataset.bagId || 0);
+        if (!bagId) return;
+        if (event.type === 'keydown' && event.key !== 'Enter' && event.key !== ' ') return;
+        if (event.type === 'keydown') event.preventDefault();
+        showBagDetail(bagId);
+      }
+
       // ── Dashboard ───────────────────────────────────────────────
       function renderStats(d) {
         const totalReady = d.bags_by_type ? Object.values(d.bags_by_type).reduce((a, b) => a + b, 0) : d.total_bags || 0;
@@ -654,7 +680,7 @@
           const total = b.total_items || 0;
           const inspected = b.last_inspected ? new Date(b.last_inspected).toLocaleDateString() : 'Never';
 
-          return `<div class="lo-bag-card" onclick="showBagDetail(${b.id})" role="button" tabindex="0" aria-label="${escapeHtml(b.name)}">
+          return `<div class="lo-bag-card" data-bag-id="${b.id}" role="button" tabindex="0" aria-controls="lo-detail" aria-label="Open ${escapeAttr(b.name)} bag details">
             <div class="lo-bag-card-head">
               <div>
                 <div class="lo-bag-name">${escapeHtml(b.name)}</div>
@@ -695,6 +721,12 @@
         }
       }
       window.loadLoadout = loadLoadout;
+
+      const bagGrid = document.getElementById('lo-bags-grid');
+      if (bagGrid) {
+        bagGrid.addEventListener('click', handleBagCardActivate);
+        bagGrid.addEventListener('keydown', handleBagCardActivate);
+      }
 
       // ── Bag Form ────────────────────────────────────────────────
       function showBagForm(id) {
@@ -783,7 +815,7 @@
         _activeBagId = id;
         const panel = document.getElementById('lo-detail');
         if (!panel) return;
-        panel.innerHTML = '<div class="lo-empty">Loading...</div>';
+        panel.innerHTML = '<div class="lo-empty">Loading…</div>';
         panel.classList.add('is-open');
         try {
           const [bag, items, breakdown] = await Promise.all([
@@ -792,7 +824,9 @@
             apiFetch('/api/loadout/bags/' + id + '/weight-breakdown')
           ]);
           renderDetail(bag, Array.isArray(items) ? items : (items.items || []), breakdown);
-          panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          panel.focus({ preventScroll: true });
+          const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          panel.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'start' });
         } catch (err) {
           panel.innerHTML = '<div class="lo-empty">Failed to load bag details.</div>';
           console.error('[Loadout] detail error:', err);
@@ -829,14 +863,14 @@
             const weightOz = item.weight_oz != null ? item.weight_oz : 0;
             const expStr = item.expiration ? new Date(item.expiration).toLocaleDateString() : '';
             itemsHtml += `<div class="lo-item-row">
-              <button class="lo-item-packed-toggle ${packed ? 'is-packed' : ''}" onclick="event.stopPropagation();togglePacked(${item.id})" title="${packed ? 'Unpack' : 'Pack'}">&#10003;</button>
+              <button type="button" class="lo-item-packed-toggle ${packed ? 'is-packed' : ''}" onclick="event.stopPropagation();togglePacked(${item.id})" title="${packed ? 'Mark item unpacked' : 'Mark item packed'}" aria-label="${packed ? 'Mark ' + escapeAttr(item.name) + ' unpacked' : 'Mark ' + escapeAttr(item.name) + ' packed'}" aria-pressed="${packed ? 'true' : 'false'}">&#10003;</button>
               <span class="lo-item-name">${escapeHtml(item.name)}</span>
               ${item.quantity > 1 ? `<span class="lo-item-qty">x${item.quantity}</span>` : ''}
               <span class="lo-item-weight">${weightOz.toFixed(1)} oz</span>
               ${expStr ? `<span class="lo-item-exp">${expStr}</span>` : ''}
               <span class="lo-item-actions">
-                <button onclick="event.stopPropagation();showItemForm(${bag.id},${item.id})" title="Edit">&#9998;</button>
-                <button onclick="event.stopPropagation();deleteItem(${item.id})" title="Delete">&#10005;</button>
+                <button type="button" onclick="event.stopPropagation();showItemForm(${bag.id},${item.id})" title="Edit item" aria-label="Edit ${escapeAttr(item.name)}">&#9998;</button>
+                <button type="button" onclick="event.stopPropagation();deleteItem(${item.id})" title="Delete item" aria-label="Delete ${escapeAttr(item.name)}">&#10005;</button>
               </span>
             </div>`;
           });

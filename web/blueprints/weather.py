@@ -4,7 +4,7 @@ import json
 from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify
-from db import db_session
+from db import db_session, log_activity
 from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_object as _safe_json_object
 
 weather_bp = Blueprint('weather', __name__)
@@ -402,7 +402,8 @@ def api_weather_action_rules_create():
             'INSERT INTO weather_action_rules (name, condition_type, threshold, comparison, action_type, action_data, cooldown_minutes) VALUES (?,?,?,?,?,?,?)',
             (name, condition_type, threshold, comparison, action_type, json.dumps(action_data), cooldown))
         db.commit()
-        return jsonify({'id': cur.lastrowid, 'name': name}), 201
+    log_activity('weather_rule_created', service='weather', detail=f'{name} ({condition_type})')
+    return jsonify({'id': cur.lastrowid, 'name': name}), 201
 @weather_bp.route('/api/weather/action-rules/<int:rid>', methods=['DELETE'])
 def api_weather_action_rules_delete(rid):
     with db_session() as db:
@@ -410,7 +411,8 @@ def api_weather_action_rules_delete(rid):
         if r.rowcount == 0:
             return jsonify({'error': 'not found'}), 404
         db.commit()
-        return jsonify({'status': 'deleted'})
+    log_activity('weather_rule_deleted', service='weather', detail=f'id={rid}')
+    return jsonify({'status': 'deleted'})
 @weather_bp.route('/api/weather/action-rules/<int:rid>/toggle', methods=['POST'])
 def api_weather_action_rules_toggle(rid):
     with db_session() as db:

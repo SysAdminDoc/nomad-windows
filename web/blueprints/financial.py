@@ -9,6 +9,7 @@ from db import db_session, log_activity
 from web.blueprints import get_pagination
 from web.sql_safety import safe_columns
 from web.validation import validate_json
+from web.auth import require_auth
 
 # Reusable validation schemas — audit H2.
 _CASH_SCHEMA = {
@@ -94,6 +95,7 @@ def api_cash_list():
 
 
 @financial_bp.route('/api/financial/cash', methods=['POST'])
+@require_auth('admin')
 @validate_json(_CASH_SCHEMA)
 def api_cash_create():
     data = request.get_json() or {}
@@ -117,6 +119,7 @@ def api_cash_create():
 
 
 @financial_bp.route('/api/financial/cash/<int:item_id>', methods=['PUT'])
+@require_auth('admin')
 @validate_json(_CASH_SCHEMA)
 def api_cash_update(item_id):
     data = request.get_json() or {}
@@ -165,6 +168,7 @@ def api_metals_list():
 
 
 @financial_bp.route('/api/financial/metals', methods=['POST'])
+@require_auth('admin')
 @validate_json(_METALS_SCHEMA)
 def api_metals_create():
     data = request.get_json() or {}
@@ -197,6 +201,7 @@ def api_metals_create():
 
 
 @financial_bp.route('/api/financial/metals/<int:item_id>', methods=['PUT'])
+@require_auth('admin')
 @validate_json(_METALS_SCHEMA)
 def api_metals_update(item_id):
     data = request.get_json() or {}
@@ -258,6 +263,7 @@ def api_barter_list():
 
 
 @financial_bp.route('/api/financial/barter', methods=['POST'])
+@require_auth('admin')
 @validate_json(_BARTER_SCHEMA)
 def api_barter_create():
     data = request.get_json() or {}
@@ -286,6 +292,7 @@ def api_barter_create():
 
 
 @financial_bp.route('/api/financial/barter/<int:item_id>', methods=['PUT'])
+@require_auth('admin')
 @validate_json(_BARTER_SCHEMA)
 def api_barter_update(item_id):
     data = request.get_json() or {}
@@ -343,6 +350,7 @@ def api_documents_list():
 
 
 @financial_bp.route('/api/financial/documents', methods=['POST'])
+@require_auth('admin')
 @validate_json(_DOCUMENTS_SCHEMA)
 def api_documents_create():
     data = request.get_json() or {}
@@ -373,6 +381,7 @@ def api_documents_create():
 
 
 @financial_bp.route('/api/financial/documents/<int:item_id>', methods=['PUT'])
+@require_auth('admin')
 @validate_json(_DOCUMENTS_SCHEMA)
 def api_documents_update(item_id):
     data = request.get_json() or {}

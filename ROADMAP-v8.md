@@ -798,15 +798,18 @@ After Tier 1, shift to user-demand-driven priorities within Tier 2-3.
 - **Affected:** hardware_sensors.py (lines 153, 194, 216, 245, 269), db.py line 4641
 
 **H2. Input Validation Coverage — 9 of 1,628 Routes** — **Partial (v7.27.0)**
-- Financial blueprint fully covered: 8 mutating routes (cash/metals/barter/documents × create/update) now wrapped with reusable `_CASH_SCHEMA`/`_METALS_SCHEMA`/`_BARTER_SCHEMA`/`_DOCUMENTS_SCHEMA`.
-- Remaining: medical, medical_phase2, contacts (partial — `name` validated on create), inventory, vehicles, group_ops, security_opsec, agriculture, all Phase 17-20 blueprints. ~30 more routes high-priority, ~1500 low-priority.
+- Financial fully covered (8 routes — v7.27.0).
+- Medical Phase 2 covered (9 routes — v7.28.0): pregnancies, dental, chronic, vaccinations, vet, mental_health.
+- Vehicles covered (4 routes — v7.28.0): vehicles + maintenance.
+- Remaining: medical (Phase 9), contacts (partial), inventory, group_ops, security_opsec, agriculture, all Phase 17-20 blueprints. ~20 more routes high-priority, ~1500 low-priority.
 
 **H3. Mutating Rate Limit Not Enforced (web/app.py:144-149)** — **Fixed in v7.27.0**
 - Replaced the empty `pass` body with a per-IP sliding-window counter. Localhost exempt. 429 returned on overflow.
 
-**H4. No Auth Middleware Wired to Routes**
-- Phase 19 built `app_users`, `app_sessions`, and role-based access (admin/user/viewer/guest) in platform_security.py, but zero routes across the 58 other blueprints use `@login_required` or `@auth_required` decorators. The auth system exists but is not enforced anywhere.
-- **Fix:** Create a `require_auth` decorator in web/utils.py. Apply it globally via a before_request hook that checks session tokens, with an allowlist for public routes (health check, login, SSE).
+**H4. No Auth Middleware Wired to Routes** — **Foundation in v7.28.0**
+- New `web/auth.py` provides `require_auth(role)` decorator with desktop-mode default (no-op) + opt-in `NOMAD_AUTH_REQUIRED=1` env flag for multi-user enforcement. Localhost always exempt. Role hierarchy enforced (`admin` > `user` > `viewer` > `guest`).
+- Demo coverage: 8 financial mutating routes. Pattern to replicate elsewhere.
+- Remaining: roll out to medical, contacts, inventory, group_ops, security_opsec, all sensitive admin endpoints.
 
 **H5. Path Traversal Checks Fragile on Windows (web/app.py:1114, 1153)** — **Fixed in v7.27.0**
 - Both NukeMap and VIPTrack routes now use `os.path.commonpath([full, base]) == base` with a `ValueError` catch for cross-drive edge cases.
@@ -816,12 +819,12 @@ After Tier 1, shift to user-demand-driven priorities within Tier 2-3.
 ### Medium Priority
 
 **M1. 19 Blueprints Return Unbounded Query Results** — **Partial (v7.27.0)**
-- 7 of 19 blueprints paginated via a shared `get_pagination()` helper in `web/blueprints/__init__.py`: `financial`, `daily_living`, `training_knowledge`, `hunting_foraging`, `disaster_modules`, `movement_ops`, `evac_drills`.
-- Remaining: `agriculture`, `consumption`, `emergency`, `family`, `group_ops`, `land_assessment`, `meal_planning`, `readiness_goals`, `specialized_modules`, `hardware_sensors`, `callshield`, `alerts`. Pattern is trivial to replicate once the helper is imported.
+- 11 of 19 blueprints paginated: `financial`, `daily_living`, `training_knowledge`, `hunting_foraging`, `disaster_modules`, `movement_ops`, `evac_drills` (v7.27.0); `agriculture`, `group_ops`, `readiness_goals`, `land_assessment` (v7.28.0).
+- Remaining: `consumption`, `emergency`, `family`, `meal_planning`, `specialized_modules`, `hardware_sensors`, `callshield`, `alerts`.
 
 **M2. 11 Blueprints Have No Activity Logging** — **Partial (v7.27.0)**
-- `contacts` and `vehicles` now call `log_activity()` on create/update/delete.
-- Remaining: `brief`, `checklists`, `kit_builder`, `kiwix`, `print_routes`, `supplies`, `timeline`, `weather`.
+- v7.27.0: `contacts`, `vehicles`. v7.28.0: `checklists`, `weather`. **4 of 11 covered.**
+- Remaining: `brief`, `kit_builder`, `kiwix`, `print_routes`, `supplies`, `timeline`.
 
 **M3. SSE Client Limit Race Condition (web/app.py:1419-1423)**
 - The check `len(_sse_clients) >= MAX_SSE_CLIENTS` and the subsequent queue creation + registration happen outside a single lock acquisition. A concurrent thread can exceed the limit between the check and the registration.

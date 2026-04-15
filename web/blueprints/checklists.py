@@ -6,7 +6,7 @@ import logging
 from flask import Blueprint, request, jsonify, Response
 from werkzeug.utils import secure_filename
 
-from db import get_db, db_session
+from db import get_db, db_session, log_activity
 from web.utils import safe_json_list as _safe_json_list, close_db_safely as _close_db_safely
 from web.sql_safety import safe_columns
 from web.validation import validate_json
@@ -67,6 +67,7 @@ def api_checklists_create():
         db.commit()
         cid = cur.lastrowid
         row = db.execute('SELECT * FROM checklists WHERE id = ?', (cid,)).fetchone()
+    log_activity('checklist_created', service='checklists', detail=name[:80])
     return jsonify({**dict(row), 'items': _safe_json_list(row['items'])}), 201
 
 
@@ -97,6 +98,7 @@ def api_checklists_update(cid):
             vals.append(cid)
             db.execute(f'UPDATE checklists SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?', vals)
         db.commit()
+    log_activity('checklist_updated', service='checklists', detail=f'id={cid}')
     return jsonify({'status': 'saved'})
 
 
@@ -107,6 +109,7 @@ def api_checklists_delete(cid):
         if r.rowcount == 0:
             return jsonify({'error': 'not found'}), 404
         db.commit()
+    log_activity('checklist_deleted', service='checklists', detail=f'id={cid}')
     return jsonify({'status': 'deleted'})
 
 

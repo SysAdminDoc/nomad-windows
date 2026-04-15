@@ -9,6 +9,7 @@ from datetime import datetime, date, timedelta
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 group_ops_bp = Blueprint('group_ops', __name__, url_prefix='/api/group')
 _log = logging.getLogger('nomad.group_ops')
@@ -53,7 +54,7 @@ def api_pods_list():
         if status:
             rows = db.execute('SELECT * FROM pods WHERE status = ? ORDER BY name', (status,)).fetchall()
         else:
-            rows = db.execute('SELECT * FROM pods ORDER BY name').fetchall()
+            rows = db.execute('SELECT * FROM pods ORDER BY name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

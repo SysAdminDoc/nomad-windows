@@ -37,8 +37,210 @@ function downloadBlobFile(blob, filename) {
   return true;
 }
 
+let _iframeHtmlWriteNonce = 0;
+
+function writeIframeHtml(iframe, html, options = {}) {
+  if (!iframe || typeof html !== 'string') return false;
+  const { scrollTo = '', afterRender = null } = options || {};
+  _iframeHtmlWriteNonce += 1;
+  const renderToken = String(_iframeHtmlWriteNonce);
+  let committed = false;
+
+  iframe.dataset.nomadFrameRenderToken = renderToken;
+
+  if (iframe.__nomadHtmlLoadHandler) {
+    try {
+      iframe.removeEventListener('load', iframe.__nomadHtmlLoadHandler);
+    } catch (_) {}
+    iframe.__nomadHtmlLoadHandler = null;
+  }
+
+  const finalizeRender = () => {
+    if (!iframe.isConnected || iframe.dataset.nomadFrameRenderToken !== renderToken) return false;
+    const doc = iframe.contentDocument;
+    if (!doc) return false;
+    if (scrollTo) {
+      const target = doc.getElementById(scrollTo);
+      if (target) {
+        try {
+          target.scrollIntoView({behavior:'smooth', block:'start'});
+        } catch (_) {}
+      }
+    }
+    if (typeof afterRender === 'function') {
+      try {
+        afterRender(iframe, doc);
+      } catch (_) {}
+    }
+    return true;
+  };
+
+  const commitHtml = () => {
+    if (committed) return true;
+    if (!iframe.isConnected || iframe.dataset.nomadFrameRenderToken !== renderToken) return false;
+    const doc = iframe.contentDocument;
+    if (!doc) return false;
+    committed = true;
+    try {
+      doc.open();
+      doc.write(html);
+      doc.close();
+    } catch (_) {
+      return false;
+    }
+    window.requestAnimationFrame(() => {
+      finalizeRender();
+    });
+    return true;
+  };
+
+  const handleBlankLoad = () => {
+    if (iframe.__nomadHtmlLoadHandler === handleBlankLoad) {
+      iframe.__nomadHtmlLoadHandler = null;
+    }
+    commitHtml();
+  };
+
+  iframe.__nomadHtmlLoadHandler = handleBlankLoad;
+  iframe.addEventListener('load', handleBlankLoad, { once: true });
+  iframe.src = 'about:blank';
+  window.setTimeout(() => {
+    commitHtml();
+  }, 100);
+  return true;
+}
+
+function printHtmlInHiddenFrame(html, title = 'Document') {
+  if (typeof html !== 'string' || !document.body) return false;
+  const frame = document.createElement('iframe');
+  frame.setAttribute('aria-hidden', 'true');
+  frame.tabIndex = -1;
+  frame.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0;border:0;visibility:hidden';
+  document.body.appendChild(frame);
+
+  let cleanupTimer = 0;
+  let cleanedUp = false;
+  let printStarted = false;
+
+  const cleanup = () => {
+    if (cleanedUp) return;
+    cleanedUp = true;
+    window.clearTimeout(cleanupTimer);
+    try {
+      frame.contentWindow?.removeEventListener('afterprint', cleanup);
+    } catch (_) {}
+    if (frame.isConnected) frame.remove();
+  };
+
+  const startPrint = () => {
+    if (cleanedUp || printStarted) return false;
+    const win = frame.contentWindow;
+    const doc = frame.contentDocument;
+    if (!win || !doc) {
+      cleanup();
+      return false;
+    }
+    printStarted = true;
+    if (title && !doc.title) {
+      try {
+        doc.title = title;
+      } catch (_) {}
+    }
+    try {
+      win.addEventListener('afterprint', cleanup, { once: true });
+    } catch (_) {}
+    cleanupTimer = window.setTimeout(cleanup, 60000);
+    try {
+      win.focus();
+      win.print();
+      return true;
+    } catch (_) {
+      cleanup();
+      return false;
+    }
+  };
+
+  const wrote = writeIframeHtml(frame, html, {
+    afterRender: () => {
+      window.setTimeout(() => {
+        startPrint();
+      }, 0);
+    },
+  });
+  if (!wrote) {
+    cleanup();
+    return false;
+  }
+  window.setTimeout(() => {
+    startPrint();
+  }, 800);
+  return true;
+}
+
+function renderPopupStatus(popup, title, message, tone = 'info') {
+  if (!popup || popup.closed) return false;
+  const safeTitle = escapeHtml(title || 'Document');
+  const safeMessage = escapeHtml(message || '').replace(/\n/g, '<br>');
+  const toneStyles = {
+    info: {
+      accent: '#1f5c8d',
+      panel: '#eef5fb',
+      text: '#16324a',
+    },
+    warning: {
+      accent: '#9a5a00',
+      panel: '#fff4df',
+      text: '#4d2e00',
+    },
+    error: {
+      accent: '#9b1c1c',
+      panel: '#fff1f1',
+      text: '#5f1414',
+    },
+  };
+  const palette = toneStyles[tone] || toneStyles.info;
+  popup.document.open();
+  popup.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${safeTitle}</title>
+    <style>
+      :root{color-scheme:light;}
+      body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f7fb;color:#102338;display:grid;place-items:center;min-height:100vh;padding:24px;}
+      .popup-status{max-width:520px;width:min(100%,520px);background:#fff;border:1px solid rgba(16,35,56,0.12);border-radius:18px;box-shadow:0 24px 60px rgba(16,35,56,0.12);padding:28px 24px;}
+      .popup-status-kicker{font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:${palette.accent};font-weight:700;margin-bottom:10px;}
+      .popup-status-title{font-size:24px;line-height:1.2;margin:0 0 10px;}
+      .popup-status-copy{background:${palette.panel};color:${palette.text};border-radius:12px;padding:14px 16px;line-height:1.6;}
+    </style></head><body>
+    <div class="popup-status">
+      <div class="popup-status-kicker">NOMAD Field Desk</div>
+      <h1 class="popup-status-title">${safeTitle}</h1>
+      <div class="popup-status-copy">${safeMessage}</div>
+    </div>
+  </body></html>`);
+  popup.document.close();
+  return true;
+}
+
+function replacePopupHtml(popup, html) {
+  if (!popup || popup.closed || typeof html !== 'string') return false;
+  popup.document.open();
+  popup.document.write(html);
+  popup.document.close();
+  return true;
+}
+
+function openPendingPopup(title, loadingMessage = 'Preparing document…') {
+  const popup = window.open('', '_blank');
+  if (!popup) return null;
+  renderPopupStatus(popup, title, loadingMessage, 'info');
+  return popup;
+}
+
 window.revokeObjectUrlSafe = revokeObjectUrlSafe;
 window.downloadBlobFile = downloadBlobFile;
+window.writeIframeHtml = writeIframeHtml;
+window.printHtmlInHiddenFrame = printHtmlInHiddenFrame;
+window.renderPopupStatus = renderPopupStatus;
+window.replacePopupHtml = replacePopupHtml;
+window.openPendingPopup = openPendingPopup;
 
 async function loadServicesWorkspaceCore() {
   const servicesData = await safeFetch('/api/services', {}, []);
@@ -1249,9 +1451,9 @@ function printICS213() {
   const message = messageInput.value;
   const replyby = replyByInput.value;
   const reply = replyInput.value;
-  const w = window.open('', '_blank');
+  const w = window.openPendingPopup?.('ICS-213', 'Preparing the printable ICS-213 form…');
   if (!w) { toast('Pop-up blocked -- please allow pop-ups', 'warning'); return; }
-  w.document.write(`<!DOCTYPE html><html><head><title>ICS-213</title>
+  window.replacePopupHtml?.(w, `<!DOCTYPE html><html><head><title>ICS-213</title>
   <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px;}table{width:100%;border-collapse:collapse;}
   td,th{border:1px solid #000;padding:4px 6px;}h2{text-align:center;}
   .header-row{background:#ccc;font-weight:bold;text-align:center;font-size:14px;}
@@ -1265,7 +1467,6 @@ function printICS213() {
   <tr><td colspan="2"><strong>Approved by (Signature):</strong><br><br><br></td><td colspan="2"><strong>Position/Title:</strong><br></td></tr>
   </table><br><p class="text-size-10 text-center">ICS-213 — General Message Form — NIMS Compatible</p>
   <script>window.print();<\/script></body></html>`);
-  w.document.close();
 }
 function clearICS213() {
   const fields = ['ics213-to','ics213-from','ics213-subject','ics213-datetime','ics213-incident','ics213-message','ics213-replyby','ics213-reply']
@@ -1320,9 +1521,9 @@ function printICS309() {
   const station = stationInput.value;
   const rows = _ics309Entries.map(e =>
     `<tr><td>${escapeHtml(e.time)}</td><td>${escapeHtml(e.from)}</td><td>${escapeHtml(e.to)}</td><td>${escapeHtml(e.msg)}</td></tr>`).join('');
-  const w = window.open('', '_blank');
+  const w = window.openPendingPopup?.('ICS-309', 'Preparing the printable ICS-309 log…');
   if (!w) { toast('Pop-up blocked -- please allow pop-ups', 'warning'); return; }
-  w.document.write(`<!DOCTYPE html><html><head><title>ICS-309</title>
+  window.replacePopupHtml?.(w, `<!DOCTYPE html><html><head><title>ICS-309</title>
   <style>body{font-family:Arial,sans-serif;font-size:11px;margin:20px;}table{width:100%;border-collapse:collapse;}
   td,th{border:1px solid #000;padding:4px 6px;}h2{text-align:center;}
   @media print{body{margin:0.5in;}}</style></head><body>
@@ -1332,7 +1533,6 @@ function printICS309() {
   <br><p><strong>Operator Signature:</strong> ______________________ <strong>Date/Time:</strong> ______________</p>
   <p class="text-size-10 text-center">ICS-309 — Communications Log — NIMS Compatible</p>
   <script>window.print();<\/script></body></html>`);
-  w.document.close();
 }
 function clearICS309() { _ics309Entries = []; _persistICS(); renderICS309Table(); }
 function addICS214Entry() {
@@ -1376,9 +1576,9 @@ function printICS214() {
   const leader = leaderInput.value;
   const period = periodInput.value;
   const rows = _ics214Entries.map(e => `<tr><td>${escapeHtml(e.time)}</td><td>${escapeHtml(e.activity)}</td></tr>`).join('');
-  const w = window.open('', '_blank');
+  const w = window.openPendingPopup?.('ICS-214', 'Preparing the printable ICS-214 activity log…');
   if (!w) { toast('Pop-up blocked -- please allow pop-ups', 'warning'); return; }
-  w.document.write(`<!DOCTYPE html><html><head><title>ICS-214</title>
+  window.replacePopupHtml?.(w, `<!DOCTYPE html><html><head><title>ICS-214</title>
   <style>body{font-family:Arial,sans-serif;font-size:11px;margin:20px;}table{width:100%;border-collapse:collapse;}
   td,th{border:1px solid #000;padding:4px 6px;}h2{text-align:center;}.time-col{width:100px;}
   @media print{body{margin:0.5in;}}</style></head><body>
@@ -1388,7 +1588,6 @@ function printICS214() {
   <br><p><strong>Prepared by:</strong> ______________________ <strong>Date/Time:</strong> ______________</p>
   <p class="text-size-10 text-center">ICS-214 — Activity Log — NIMS Compatible</p>
   <script>window.print();<\/script></body></html>`);
-  w.document.close();
 }
 function clearICS214() { _ics214Entries = []; _persistICS(); renderICS214Table(); }
 

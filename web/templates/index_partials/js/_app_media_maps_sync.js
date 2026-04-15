@@ -3460,21 +3460,28 @@ async function generateMapAtlas() {
   const lng = _map ? _map.getCenter().lng : 0;
   const title = prompt('Atlas title:', 'NOMAD Map Atlas');
   if (!title) return;
+  const w = window.openPendingPopup?.('Generating Map Atlas', 'Building the printable atlas packet. This can take a moment for larger grids.');
+  if (!w) { toast('Pop-up blocked -- please allow pop-ups', 'warning'); return; }
   toast('Generating map atlas...', 'info');
   try {
     const resp = await fetch('/api/maps/atlas', {method:'POST', headers:{'Content-Type':'application/json'},
       body:JSON.stringify({lat, lng, title, zoom_levels:[10,13,15], grid_size:2})});
     if (!resp.ok) {
       const data = await resp.json().catch(() => ({}));
+      window.renderPopupStatus?.(w, 'Map Atlas Unavailable', data.error || 'Atlas generation failed. Close this window and try again.', 'error');
       toast(data.error || 'Atlas generation failed', 'error');
       return;
     }
     const html = await resp.text();
-    const w = window.open('', '_blank');
-    w.document.write(html);
-    w.document.close();
+    if (!window.replacePopupHtml?.(w, html)) {
+      toast('Atlas window was closed before the document was ready', 'warning');
+      return;
+    }
     toast('Map atlas generated — print from the new window', 'success');
-  } catch(e) { toast('Atlas generation failed', 'error'); }
+  } catch(e) {
+    window.renderPopupStatus?.(w, 'Map Atlas Unavailable', 'Atlas generation failed. Close this window and try again.', 'error');
+    toast('Atlas generation failed', 'error');
+  }
 }
 
 /* ─── Community Sharing ─── */

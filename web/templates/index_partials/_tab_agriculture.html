@@ -15,15 +15,26 @@
     --ag-brown: #92400e;
     --ag-lime: #84cc16;
   }
-  #tab-agriculture .ag-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-agriculture .ag-header h2 { font-size:1.25rem; color:var(--ag-accent); margin:0; }
-  #tab-agriculture .ag-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-agriculture .ag-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-agriculture .ag-sub-tab.active { background:var(--ag-accent-dim); border-color:var(--ag-accent); color:var(--ag-accent); }
+  #tab-agriculture .ag-command-deck { display:grid; gap:12px; margin-bottom:16px; padding:18px 20px; border:1px solid color-mix(in srgb, var(--ag-accent) 12%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--ag-accent) 14%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 90%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08)); }
+  #tab-agriculture .ag-command-deck-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  #tab-agriculture .ag-command-copy { display:grid; gap:8px; max-width:min(760px, 100%); }
+  #tab-agriculture .ag-command-title { margin:0; font-size:1.32rem; line-height:1.18; color:var(--text-primary,#eee); }
+  #tab-agriculture .ag-command-text { margin:0; color:var(--text-secondary,#aaa); line-height:1.6; max-width:68ch; }
+  #tab-agriculture .ag-command-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  #tab-agriculture .ag-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-agriculture .ag-command-pill { display:inline-flex; align-items:center; min-height:28px; padding:0 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--ag-accent) 20%, var(--border,#333)); background:color-mix(in srgb, var(--ag-accent) 10%, transparent); color:color-mix(in srgb, var(--ag-accent) 44%, var(--text-primary,#f5f7ff)); font-size:.72rem; font-weight:600; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-agriculture .ag-sub-tabs-shell { display:grid; gap:8px; margin-bottom:18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 84%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-agriculture .ag-sub-tabs-label { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary,#aaa); font-weight:700; }
+  #tab-agriculture .ag-sub-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-agriculture .ag-sub-tab { min-height:36px; padding:8px 14px; border-radius:999px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-agriculture .ag-sub-tab:hover { border-color:color-mix(in srgb, var(--ag-accent) 22%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+  #tab-agriculture .ag-sub-tab.active { background:color-mix(in srgb, var(--ag-accent) 14%, var(--surface-solid, #121726)); border-color:color-mix(in srgb, var(--ag-accent) 48%, var(--border,#333)); color:var(--ag-accent); box-shadow:0 10px 24px color-mix(in srgb, var(--ag-accent) 16%, transparent); }
+  #tab-agriculture .ag-sub-tab:focus-visible,
+  #tab-agriculture .ag-btn:focus-visible { outline:2px solid transparent; outline-offset:2px; box-shadow:0 0 0 2px color-mix(in srgb, var(--surface-solid,#151826) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--ag-accent) 48%, transparent); }
   #tab-agriculture .ag-panel { display:none; }
   #tab-agriculture .ag-panel.active { display:block; }
-  #tab-agriculture .ag-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
-  #tab-agriculture .ag-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-agriculture .ag-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
+  #tab-agriculture .ag-card-title { font-size:1rem; font-weight:700; color:var(--text-primary,#eee); margin-bottom:10px; }
   #tab-agriculture .ag-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-agriculture .ag-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
   #tab-agriculture .ag-form-row label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:3px; }
@@ -32,14 +43,14 @@
   #tab-agriculture .ag-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-agriculture .ag-form-row textarea { resize:vertical; min-height:48px; font-family:inherit; }
   #tab-agriculture .ag-form-row .field { flex:1; min-width:140px; }
-  #tab-agriculture .ag-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-agriculture .ag-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-agriculture .ag-btn-primary { background:var(--ag-accent); color:#000; }
   #tab-agriculture .ag-btn-danger { background:var(--ag-red); color:#fff; }
   #tab-agriculture .ag-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
   #tab-agriculture .ag-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
   #tab-agriculture .ag-list-item:last-child { border-bottom:none; }
   #tab-agriculture .ag-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
-  #tab-agriculture .ag-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-agriculture .ag-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
   #tab-agriculture .ag-table { width:100%; border-collapse:collapse; font-size:.82rem; }
   #tab-agriculture .ag-table th { text-align:left; padding:8px 10px; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#333); font-weight:600; }
   #tab-agriculture .ag-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); vertical-align:middle; }
@@ -83,24 +94,51 @@
   #tab-agriculture .ag-summary-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:8px; padding:12px; text-align:center; }
   #tab-agriculture .ag-summary-val { font-size:1.4rem; font-weight:700; color:var(--ag-accent); }
   #tab-agriculture .ag-summary-label { font-size:.7rem; color:var(--text-secondary,#aaa); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+  @media (max-width: 860px) {
+    #tab-agriculture .ag-command-deck { padding:16px; }
+    #tab-agriculture .ag-command-actions { width:100%; justify-content:flex-start; }
+    #tab-agriculture .ag-command-actions .ag-btn { flex:1 1 160px; }
+  }
 </style>
 
-<div class="ag-header">
-  <h2>Agriculture & Permaculture</h2>
+<div class="ag-command-deck workspace-panel">
+  <div class="ag-command-deck-head">
+    <div class="ag-command-copy">
+      <h2 class="ag-command-title">Plan resilient food systems, soil recovery, and closed-loop support from one field-ready workspace.</h2>
+      <p class="ag-command-text">Move from guild design to livestock, infrastructure, and recycling without losing the context needed to grow a stable homestead over time.</p>
+    </div>
+    <div class="ag-command-actions">
+      <button type="button" class="ag-btn ag-btn-secondary" data-ag-panel-target="food-forest">Guild Design</button>
+      <button type="button" class="ag-btn ag-btn-secondary" data-ag-panel-target="soil">Soil Projects</button>
+      <button type="button" class="ag-btn ag-btn-secondary" data-ag-panel-target="systems">Infrastructure</button>
+      <button type="button" class="ag-btn ag-btn-secondary" data-ag-panel-target="recycling">Resource Loops</button>
+    </div>
+  </div>
+  <div class="ag-command-pills" aria-hidden="true">
+    <span class="ag-command-pill">Food forests</span>
+    <span class="ag-command-pill">Soil recovery</span>
+    <span class="ag-command-pill">Perennials</span>
+    <span class="ag-command-pill">Livestock</span>
+    <span class="ag-command-pill">Homestead systems</span>
+    <span class="ag-command-pill">Resource loops</span>
+  </div>
 </div>
 
 <!-- Sub-tabs -->
-<div class="ag-sub-tabs">
-  <button class="ag-sub-tab active" data-ag-panel="food-forest">Food Forest</button>
-  <button class="ag-sub-tab" data-ag-panel="soil">Soil & Land</button>
-  <button class="ag-sub-tab" data-ag-panel="perennials">Perennials</button>
-  <button class="ag-sub-tab" data-ag-panel="livestock">Livestock</button>
-  <button class="ag-sub-tab" data-ag-panel="systems">Systems</button>
-  <button class="ag-sub-tab" data-ag-panel="recycling">Recycling</button>
+<div class="ag-sub-tabs-shell">
+  <div class="ag-sub-tabs-label">Workflows</div>
+  <div class="ag-sub-tabs" role="tablist" aria-label="Agriculture sections">
+    <button type="button" class="ag-sub-tab active" data-ag-panel="food-forest" role="tab" aria-selected="true" aria-controls="ag-panel-food-forest" id="ag-tab-food-forest">Food Forest</button>
+    <button type="button" class="ag-sub-tab" data-ag-panel="soil" role="tab" aria-selected="false" aria-controls="ag-panel-soil" id="ag-tab-soil">Soil & Land</button>
+    <button type="button" class="ag-sub-tab" data-ag-panel="perennials" role="tab" aria-selected="false" aria-controls="ag-panel-perennials" id="ag-tab-perennials">Perennials</button>
+    <button type="button" class="ag-sub-tab" data-ag-panel="livestock" role="tab" aria-selected="false" aria-controls="ag-panel-livestock" id="ag-tab-livestock">Livestock</button>
+    <button type="button" class="ag-sub-tab" data-ag-panel="systems" role="tab" aria-selected="false" aria-controls="ag-panel-systems" id="ag-tab-systems">Systems</button>
+    <button type="button" class="ag-sub-tab" data-ag-panel="recycling" role="tab" aria-selected="false" aria-controls="ag-panel-recycling" id="ag-tab-recycling">Recycling</button>
+  </div>
 </div>
 
 <!-- ── Food Forest Panel ─────────────────────────────────── -->
-<div class="ag-panel active" id="ag-panel-food-forest">
+<div class="ag-panel active" id="ag-panel-food-forest" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-food-forest">
   <div class="ag-card">
     <div class="ag-card-title">Create Guild</div>
     <div class="ag-form-row">
@@ -119,7 +157,7 @@
       <div class="field"><label>Notes</label><textarea name="ag-guild-notes" id="ag-guild-notes" rows="2" placeholder="Companion planting notes..."></textarea></div>
     </div>
   </div>
-  <div id="ag-guild-list" class="ag-card"><div class="ag-empty">Loading guilds...</div></div>
+  <div id="ag-guild-list" class="ag-card"><div class="ag-empty">Loading food-forest guilds...</div></div>
 
   <!-- Layer form -->
   <div class="ag-card">
@@ -141,17 +179,17 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateLayer()">Add</button></div>
     </div>
   </div>
-  <div id="ag-layer-list" class="ag-card"><div class="ag-empty">Select a guild to view layers.</div></div>
+  <div id="ag-layer-list" class="ag-card"><div class="ag-empty">Select a guild to review its canopy, support species, and roles.</div></div>
 
   <!-- Yield timeline -->
   <div class="ag-card">
     <div class="ag-card-title">Yield Timeline</div>
-    <div id="ag-yield-timeline"><div class="ag-empty">Select a guild above to view projected yields.</div></div>
+    <div id="ag-yield-timeline"><div class="ag-empty">Select a guild to review its projected yield rhythm.</div></div>
   </div>
 </div>
 
 <!-- ── Soil & Land Panel ─────────────────────────────────── -->
-<div class="ag-panel" id="ag-panel-soil">
+<div class="ag-panel" id="ag-panel-soil" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-soil" hidden>
   <div class="ag-card">
     <div class="ag-card-title">New Soil Project</div>
     <div class="ag-form-row">
@@ -187,11 +225,11 @@
       <div class="field"><label>Notes</label><textarea name="ag-soil-notes" id="ag-soil-notes" rows="2" placeholder="Observations..."></textarea></div>
     </div>
   </div>
-  <div id="ag-soil-list" class="ag-card"><div class="ag-empty">Loading soil projects...</div></div>
+  <div id="ag-soil-list" class="ag-card"><div class="ag-empty">Loading soil recovery projects...</div></div>
 </div>
 
 <!-- ── Perennials Panel ──────────────────────────────────── -->
-<div class="ag-panel" id="ag-panel-perennials">
+<div class="ag-panel" id="ag-panel-perennials" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-perennials" hidden>
   <div class="ag-card">
     <div class="ag-card-title">Register Plant</div>
     <div class="ag-form-row">
@@ -213,11 +251,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreatePlant()">Add</button></div>
     </div>
   </div>
-  <div id="ag-plant-list" class="ag-card"><div class="ag-empty">Loading perennials...</div></div>
+  <div id="ag-plant-list" class="ag-card"><div class="ag-empty">Loading perennial registry...</div></div>
 </div>
 
 <!-- ── Livestock Panel ───────────────────────────────────── -->
-<div class="ag-panel" id="ag-panel-livestock">
+<div class="ag-panel" id="ag-panel-livestock" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-livestock" hidden>
   <!-- Breeding records -->
   <div class="ag-card">
     <div class="ag-card-title">Add Breeding Record</div>
@@ -246,12 +284,12 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateBreeding()">Add</button></div>
     </div>
   </div>
-  <div id="ag-breed-list" class="ag-card"><div class="ag-empty">Loading breeding records...</div></div>
+  <div id="ag-breed-list" class="ag-card"><div class="ag-empty">Loading livestock breeding records...</div></div>
 
   <!-- Due dates -->
   <div class="ag-card">
     <div class="ag-card-title">Upcoming Due Dates</div>
-    <div id="ag-breed-due-list"><div class="ag-empty">Loading...</div></div>
+    <div id="ag-breed-due-list"><div class="ag-empty">Calculating upcoming breeding windows...</div></div>
   </div>
 
   <!-- Feed tracking -->
@@ -266,12 +304,12 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateFeed()">Add</button></div>
     </div>
   </div>
-  <div id="ag-feed-list" class="ag-card"><div class="ag-empty">Loading feed log...</div></div>
+  <div id="ag-feed-list" class="ag-card"><div class="ag-empty">Loading feed logs...</div></div>
   <div id="ag-feed-summary" class="ag-summary-row"></div>
 </div>
 
 <!-- ── Systems Panel ─────────────────────────────────────── -->
-<div class="ag-panel" id="ag-panel-systems">
+<div class="ag-panel" id="ag-panel-systems" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-systems" hidden>
   <!-- Homestead infrastructure -->
   <div class="ag-card">
     <div class="ag-card-title">Add Homestead System</div>
@@ -295,7 +333,7 @@
     </div>
   </div>
   <div id="ag-sys-dashboard" class="ag-grid"></div>
-  <div id="ag-sys-list" class="ag-card"><div class="ag-empty">Loading systems...</div></div>
+  <div id="ag-sys-list" class="ag-card"><div class="ag-empty">Loading homestead systems...</div></div>
 
   <!-- Aquaponics -->
   <div class="ag-card" style="margin-top:16px">
@@ -314,7 +352,7 @@
 </div>
 
 <!-- ── Recycling Panel ───────────────────────────────────── -->
-<div class="ag-panel" id="ag-panel-recycling">
+<div class="ag-panel" id="ag-panel-recycling" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-recycling" hidden>
   <div class="ag-card">
     <div class="ag-card-title">Add Recycling System</div>
     <div class="ag-form-row">
@@ -347,13 +385,14 @@
   <!-- Input/Output flow visualization -->
   <div class="ag-card">
     <div class="ag-card-title">Resource Flow</div>
-    <div id="ag-rec-flow"><div class="ag-empty">Add recycling systems above to visualize resource flows.</div></div>
+    <div id="ag-rec-flow"><div class="ag-empty">Add a recycling system to map how water, waste, and nutrients cycle through the property.</div></div>
   </div>
 </div>
 
 <script>
 (function(){
   const root = document.getElementById('tab-agriculture');
+  if (!root) return;
   const el = id => document.getElementById(id);
   const val = id => el(id)?.value || '';
   const numVal = (id, def) => parseFloat(val(id)) || def || 0;
@@ -390,14 +429,30 @@
   }
 
   /* ── Sub-tab switching ── */
-  root.querySelectorAll('.ag-sub-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.querySelectorAll('.ag-sub-tab').forEach(b => b.classList.remove('active'));
-      root.querySelectorAll('.ag-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = el('ag-panel-' + btn.dataset.agPanel);
-      if (panel) panel.classList.add('active');
+  function agActivatePanel(panelName, focusPanel = false) {
+    root.querySelectorAll('.ag-sub-tab').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
     });
+    root.querySelectorAll('.ag-panel').forEach(p => {
+      p.classList.remove('active');
+      p.hidden = true;
+    });
+    const btn = root.querySelector(`.ag-sub-tab[data-ag-panel="${panelName}"]`);
+    const panel = el('ag-panel-' + panelName);
+    if (!btn || !panel) return;
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    panel.classList.add('active');
+    panel.hidden = false;
+    if (focusPanel) panel.focus();
+  }
+
+  root.querySelectorAll('.ag-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => agActivatePanel(btn.dataset.agPanel, true));
+  });
+  root.querySelectorAll('[data-ag-panel-target]').forEach(btn => {
+    btn.addEventListener('click', () => agActivatePanel(btn.dataset.agPanelTarget, true));
   });
 
   /* ═══════════════════════════════════════════════════════════
@@ -415,7 +470,7 @@
     api(API + '/food-forest/guilds').then(items => {
       _guilds = items; fillGuildSelect();
       const box = el('ag-guild-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No guilds yet. Create one above.</div>'; return; }
+      if (!items.length) { box.innerHTML = '<div class="ag-empty">No guilds yet. Start with the first planting guild above to anchor the layout.</div>'; return; }
       box.innerHTML = items.map(g => `<div class="ag-list-item">
         <div><strong>${esc(g.name)}</strong> <small style="color:var(--text-secondary,#aaa)">Central: ${esc(g.central_species || '--')} | Zone ${esc(g.zone || '--')}</small>
           ${g.notes ? `<br><small style="color:var(--text-secondary,#aaa)">${esc(g.notes)}</small>` : ''}
@@ -449,9 +504,9 @@
   window.agLoadLayers = function(guildId) {
     const gid = guildId || val('ag-layer-guild');
     const box = el('ag-layer-list');
-    if (!gid) { box.innerHTML = '<div class="ag-empty">Select a guild to view layers.</div>'; return; }
+    if (!gid) { box.innerHTML = '<div class="ag-empty">Select a guild to review its canopy, support species, and roles.</div>'; return; }
     api(API + '/food-forest/layers?guild_id=' + gid).then(items => {
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No layers in this guild. Add one above.</div>'; return; }
+      if (!items.length) { box.innerHTML = '<div class="ag-empty">No support layers yet. Add canopy, shrub, or ground-cover species above.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Layer</th><th>Species</th><th>Role</th><th></th></tr></thead><tbody>' +
         items.map(l => `<tr>
           <td><span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}</span></td>
@@ -476,9 +531,9 @@
   window.agLoadYield = function(guildId) {
     const gid = guildId || val('ag-layer-guild');
     const box = el('ag-yield-timeline');
-    if (!gid) { box.innerHTML = '<div class="ag-empty">Select a guild to view projected yields.</div>'; return; }
+    if (!gid) { box.innerHTML = '<div class="ag-empty">Select a guild to review its projected yield rhythm.</div>'; return; }
     api(API + '/food-forest/yield-timeline?guild_id=' + gid).then(data => {
-      if (!data || !data.length) { box.innerHTML = '<div class="ag-empty">No yield data available for this guild.</div>'; return; }
+      if (!data || !data.length) { box.innerHTML = '<div class="ag-empty">No yield projection is available for this guild yet. Add a few layers to build the seasonal view.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Year</th><th>Species</th><th>Expected Yield</th><th>Unit</th></tr></thead><tbody>' +
         data.map(y => `<tr><td>${esc(y.year || '--')}</td><td>${esc(y.species || '--')}</td><td>${esc(y.expected_yield || '--')}</td><td>${esc(y.unit || '--')}</td></tr>`).join('') +
         '</tbody></table>';
@@ -493,7 +548,7 @@
   window.agLoadSoil = function() {
     api(API + '/soil').then(items => {
       const box = el('ag-soil-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No soil projects yet.</div>'; return; }
+      if (!items.length) { box.innerHTML = '<div class="ag-empty">No soil projects yet. Capture the first recovery or improvement effort above.</div>'; return; }
       box.innerHTML = items.map(s => {
         const badge = soilTypeClass[s.soil_type] || '';
         const stColor = soilStatusColor[s.status] || '#aaa';
@@ -545,7 +600,7 @@
   window.agLoadPlants = function() {
     api(API + '/perennials').then(items => {
       const box = el('ag-plant-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No perennials registered.</div>'; return; }
+      if (!items.length) { box.innerHTML = '<div class="ag-empty">No perennials registered yet. Add the first long-term planting above.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Health</th><th>Name</th><th>Species</th><th>Location</th><th>Planted</th><th>Pruning</th><th>Fertilize</th><th></th></tr></thead><tbody>' +
         items.map(p => `<tr>
           <td><span class="ag-health-dot" style="background:${healthColor[p.health] || '#9ca3af'}"></span>${esc(p.health || '--')}</td>
@@ -579,7 +634,7 @@
   window.agLoadBreeding = function() {
     api(API + '/breeding').then(items => {
       const box = el('ag-breed-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No breeding records.</div>'; return; }
+      if (!items.length) { box.innerHTML = '<div class="ag-empty">No breeding records yet. Log the first pairing or cycle above.</div>'; return; }
       box.innerHTML = items.map(b => `<div class="ag-list-item">
         <div><strong>${esc(b.name)}</strong>
           <span class="ag-badge ag-status-${esc(b.status)}" style="margin-left:6px">${esc(b.status)}</span>
@@ -592,7 +647,7 @@
     // Due dates
     api(API + '/breeding/due').then(items => {
       const box = el('ag-breed-due-list');
-      if (!items || !items.length) { box.innerHTML = '<div class="ag-empty">No upcoming due dates.</div>'; return; }
+      if (!items || !items.length) { box.innerHTML = '<div class="ag-empty">No upcoming breeding windows are scheduled yet.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Animal</th><th>Species</th><th>Due</th><th>Status</th></tr></thead><tbody>' +
         items.map(b => `<tr>
           <td>${esc(b.name)}</td><td>${esc(b.species || '--')}</td>
@@ -618,7 +673,7 @@
   window.agLoadFeed = function() {
     api(API + '/feed').then(items => {
       const box = el('ag-feed-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No feed entries.</div>'; return; }
+      if (!items.length) { box.innerHTML = '<div class="ag-empty">No feed entries yet. Log the first ration or adjustment above.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Date</th><th>Type</th><th>Amount (lbs)</th><th>Cost</th><th>Notes</th><th></th></tr></thead><tbody>' +
         items.map(f => `<tr>
           <td>${f.date || '--'}</td><td>${f.feed_type || '--'}</td>
@@ -679,7 +734,7 @@
     // Full list
     api(API + '/homestead').then(items => {
       const box = el('ag-sys-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No homestead systems registered.</div>'; return; }
+      if (!items.length) { box.innerHTML = '<div class="ag-empty">No homestead systems are registered yet. Add water, power, or growing systems above.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Name</th><th>Type</th><th>Capacity</th><th>Condition</th><th>Maintenance</th><th></th></tr></thead><tbody>' +
         items.map(s => {
           const pct = s.condition ?? 100;
@@ -711,7 +766,7 @@
   window.agLoadAquaponics = function() {
     api(API + '/aquaponics').then(items => {
       const box = el('ag-aqua-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No aquaponics readings.</div>'; return; }
+      if (!items.length) { box.innerHTML = '<div class="ag-empty">No aquaponics readings yet. The first water-quality trend will appear here.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>System</th><th>pH</th><th>Ammonia</th><th>Nitrite</th><th>Nitrate</th><th>Temp</th><th>Recorded</th><th></th></tr></thead><tbody>' +
         items.map(a => `<tr>
           <td><strong>${a.name || '--'}</strong></td>
@@ -744,7 +799,7 @@
   window.agLoadRecycling = function() {
     api(API + '/recycling').then(items => {
       const box = el('ag-rec-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No recycling systems.</div>'; return; }
+      if (!items.length) { box.innerHTML = '<div class="ag-empty">No recycling systems yet. Add compost, greywater, biogas, or reuse loops above.</div>'; return; }
       box.innerHTML = items.map(r => {
         const badge = recTypeClass[r.system_type] || '';
         const stColor = r.status === 'active' ? '#22c55e' : r.status === 'maintenance' ? '#f59e0b' : r.status === 'offline' ? '#ef4444' : '#94a3b8';
@@ -776,7 +831,7 @@
   function agLoadRecFlow() {
     api(API + '/recycling').then(items => {
       const box = el('ag-rec-flow');
-      if (!items || !items.length) { box.innerHTML = '<div class="ag-empty">Add recycling systems to visualize resource flows.</div>'; return; }
+      if (!items || !items.length) { box.innerHTML = '<div class="ag-empty">Add recycling systems to reveal how nutrients, water, and materials loop together.</div>'; return; }
       const byType = {};
       items.forEach(r => { (byType[r.system_type] = byType[r.system_type] || []).push(r); });
       box.innerHTML = Object.entries(byType).map(([type, systems]) => {

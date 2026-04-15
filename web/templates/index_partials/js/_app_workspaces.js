@@ -2053,13 +2053,9 @@ function printMap() {
   if (!mapEl) return;
   const canvas = mapEl.querySelector('canvas');
   if (!canvas) { toast('Map not loaded', 'warning'); return; }
-  const win = window.open('', '_blank');
-  win.document.write('<html><head><title>NOMAD Map Print</title><style>body{margin:0;text-align:center;}img{max-width:100%;height:auto;}h3{font-family:system-ui;margin:8px;}.print-meta{font-size:11px;color:#666;}</style></head><body>');
-        win.document.write('<h3>NOMAD Field Desk — Map Export</h3>');
-  win.document.write('<img src="' + canvas.toDataURL('image/png') + '" alt="Map export preview" width="' + canvas.width + '" height="' + canvas.height + '">');
-  win.document.write('<p class="print-meta">Printed ' + new Date().toLocaleString() + '</p>');
-  win.document.write('</body></html>');
-  win.document.close();
+  const win = window.openPendingPopup?.('NOMAD Map Print', 'Preparing the printable map capture…');
+  if (!win) { toast('Pop-up blocked -- please allow pop-ups', 'warning'); return; }
+  window.replacePopupHtml?.(win, '<html><head><title>NOMAD Map Print</title><style>body{margin:0;text-align:center;}img{max-width:100%;height:auto;}h3{font-family:system-ui;margin:8px;}.print-meta{font-size:11px;color:#666;}</style></head><body><h3>NOMAD Field Desk — Map Export</h3><img src="' + canvas.toDataURL('image/png') + '" alt="Map export preview" width="' + canvas.width + '" height="' + canvas.height + '"><p class="print-meta">Printed ' + new Date().toLocaleString() + '</p></body></html>');
   setTimeout(() => win.print(), 500);
 }
 
@@ -2367,12 +2363,24 @@ async function importConfig() {
 }
 
 /* ─── In-App Frame ─── */
+function resetAppFrameSurface(iframe) {
+  if (!iframe) return;
+  iframe.dataset.nomadFrameRenderToken = '';
+  if (iframe.__nomadHtmlLoadHandler) {
+    try {
+      iframe.removeEventListener('load', iframe.__nomadHtmlLoadHandler);
+    } catch(_) {}
+    iframe.__nomadHtmlLoadHandler = null;
+  }
+}
+
 function openAppFrame(title, url) {
   const titleEl = document.getElementById('app-frame-title');
   const iframe = document.getElementById('app-frame-iframe');
   const overlay = document.getElementById('app-frame-overlay');
   if (!titleEl || !iframe || !overlay) return;
   titleEl.textContent = title;
+  resetAppFrameSurface(iframe);
   iframe.src = url;
   overlay.style.display = 'flex';
 }
@@ -2384,18 +2392,23 @@ function openAppFrameHTML(title, html, scrollTo) {
   if (!iframe || !titleEl || !overlay) return;
   titleEl.textContent = title;
   overlay.style.display = 'flex';
-  iframe.src = 'about:blank';
-  setTimeout(() => {
-    iframe.contentDocument.open();
-    iframe.contentDocument.write(html);
-    iframe.contentDocument.close();
+  resetAppFrameSurface(iframe);
+  if (window.writeIframeHtml?.(iframe, html, { scrollTo })) return;
+  try {
+    const doc = iframe.contentDocument;
+    if (!doc) throw new Error('Frame document unavailable');
+    doc.open();
+    doc.write(html);
+    doc.close();
     if (scrollTo) {
-      setTimeout(() => {
-        const el = iframe.contentDocument.getElementById(scrollTo);
+      window.requestAnimationFrame(() => {
+        const el = iframe.contentDocument?.getElementById(scrollTo);
         if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
-      }, 100);
+      });
     }
-  }, 50);
+  } catch(e) {
+    toast('Could not load this view in the application frame', 'error');
+  }
 }
 
 function closeAppFrame() {
@@ -2403,6 +2416,7 @@ function closeAppFrame() {
   const iframe = document.getElementById('app-frame-iframe');
   if (!overlay || !iframe) return;
   overlay.style.display = 'none';
+  resetAppFrameSurface(iframe);
   iframe.src = 'about:blank';
 }
 document.addEventListener('keydown', e => {
@@ -2445,8 +2459,16 @@ document.addEventListener('keydown', e => {
 });
 
 function printAppFrame() {
+  const iframe = document.getElementById('app-frame-iframe');
+  const frameWin = iframe?.contentWindow;
+  const frameDoc = iframe?.contentDocument;
+  if (!iframe || !frameWin || !frameDoc?.body || !frameDoc.body.childNodes.length) {
+    toast('Nothing is loaded in the application frame yet', 'warning');
+    return;
+  }
   try {
-    document.getElementById('app-frame-iframe').contentWindow.print();
+    frameWin.focus();
+    frameWin.print();
   } catch(e) {
     toast('Cannot print this content — try opening it in a new browser tab instead', 'warning');
   }

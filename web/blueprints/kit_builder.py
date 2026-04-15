@@ -28,7 +28,7 @@ Design principles:
 """
 
 from flask import Blueprint, request, jsonify
-from db import db_session
+from db import db_session, log_activity
 
 kit_builder_bp = Blueprint('kit_builder', __name__)
 
@@ -374,6 +374,8 @@ def api_kit_builder_plan():
         'have':     sum(1 for i in items if i['status'] == 'have'),
         'item_count': len(items),
     }
+    log_activity('kit_plan_generated', service='kit_builder',
+                 detail=f"mission={params.get('mission','?')} people={params.get('people','?')} gaps={totals['gaps']}")
     return jsonify({'params': params, 'items': items, 'totals': totals})
 
 
@@ -413,4 +415,5 @@ def api_kit_builder_add_to_shopping():
             )
             added += 1
         db.commit()
+    log_activity('kit_items_to_shopping', service='kit_builder', detail=f'added={added}')
     return jsonify({'status': 'ok', 'added': added}), 201

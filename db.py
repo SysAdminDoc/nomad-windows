@@ -4,11 +4,42 @@ import sqlite3
 import os
 import glob
 import logging
+import queue
 import threading
 from contextlib import contextmanager
 import config
 
 _log = logging.getLogger('nomad.db')
+
+
+# ─── Connection Pool (v7.29.0 — audit M6) ──────────────────────────────
+# Process-wide queue of reusable SQLite connections. Reduces per-request
+# connect/PRAGMA overhead under LAN multi-user access. Opt-in via env var.
+# Default size of 4 keeps memory low for single-user desktop use. SQLite WAL
+# tolerates many concurrent readers; contention only appears under write
+# load, where the pool has no effect either way.
+try:
+    _POOL_SIZE = max(0, int(os.environ.get('NOMAD_DB_POOL_SIZE', '4')))
+except (ValueError, TypeError):
+    _POOL_SIZE = 4
+_pool: 'queue.Queue[sqlite3.Connection]' = queue.Queue(maxsize=_POOL_SIZE) if _POOL_SIZE > 0 else None
+_pool_lock = threading.Lock()
+_pool_db_path: str = None  # pool is keyed by db path; clears on change
+
+
+def _pool_clear():
+    """Drain and close every connection currently in the pool."""
+    if _pool is None:
+        return
+    while True:
+        try:
+            conn = _pool.get_nowait()
+        except queue.Empty:
+            break
+        try:
+            conn.close()
+        except Exception:
+            pass
 
 
 def get_db_path():
@@ -52,23 +83,111 @@ def get_db():
         raise
 
 
+def _pool_acquire():
+    """Return a pooled SQLite connection if available, else a fresh one.
+    Pooled connections have already-set PRAGMAs (foreign_keys=ON) and are
+    validated with a cheap SELECT 1 before reuse. Invalid connections are
+    discarded and replaced."""
+    global _pool_db_path
+    if _pool is None:
+        return get_db(), False
+    # Invalidate pool if the target DB path changed (test isolation).
+    current_path = get_db_path()
+    with _pool_lock:
+        if _pool_db_path != current_path:
+            _pool_clear()
+            _pool_db_path = current_path
+    try:
+        conn = _pool.get_nowait()
+    except queue.Empty:
+        return get_db(), False
+    try:
+        conn.execute('SELECT 1').fetchone()
+        # Rebind to current flask.g so teardown can see it
+        try:
+            from flask import g, has_app_context
+            if has_app_context():
+                g._db_conn = conn
+        except Exception:
+            pass
+        return conn, True
+    except sqlite3.Error:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return get_db(), False
+
+
+def _pool_release(conn):
+    """Return a connection to the pool if space available, else close it."""
+    if _pool is None:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return
+    # Never pool a connection with an open transaction
+    try:
+        if conn.in_transaction:
+            conn.rollback()
+    except Exception:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        return
+    try:
+        _pool.put_nowait(conn)
+    except queue.Full:
+        try:
+            conn.close()
+        except Exception:
+            pass
+
+
+def pool_stats():
+    """Return current pool size / capacity for diagnostics."""
+    if _pool is None:
+        return {'enabled': False, 'size': 0, 'capacity': 0}
+    return {'enabled': True, 'size': _pool.qsize(), 'capacity': _POOL_SIZE}
+
+
 @contextmanager
 def db_session():
-    """Context manager for DB connections with automatic close.
+    """Context manager for DB connections with automatic close/release.
 
     Usage:
         with db_session() as db:
             db.execute(...)
             db.commit()
     """
-    conn = get_db()
+    conn, from_pool = _pool_acquire()
     try:
         yield conn
     except Exception:
-        conn.rollback()
+        try:
+            conn.rollback()
+        except Exception:
+            pass
+        # Don't return a possibly-broken conn to the pool
+        try:
+            conn.close()
+        except Exception:
+            pass
         raise
-    finally:
-        conn.close()
+    else:
+        # Unbind from flask.g before returning to pool so teardown_appcontext
+        # does not close a pooled connection still in use by another caller.
+        try:
+            from flask import g, has_app_context
+            if has_app_context() and getattr(g, '_db_conn', None) is conn:
+                g._db_conn = None
+        except Exception:
+            pass
+        # Always try to return to pool — Queue.put_nowait bounds size.
+        # If pooling disabled or pool full, _pool_release closes it.
+        _pool_release(conn)
 
 
 def log_activity(event: str, service: str = None, detail: str = None, level: str = 'info'):
@@ -5199,7 +5318,88 @@ def _init_db_inner(conn):
     _apply_column_migrations(conn)
     _migrate_access_logs(conn)
     _create_indexes(conn)
+    _create_fts5_tables(conn)
     _seed_upc_database(conn)
+
+
+def _create_fts5_tables(conn):
+    """v7.29.0 (audit M5): FTS5 full-text search virtual tables for the
+    highest-traffic search targets. Content-external mode mirrors rowid +
+    indexed columns of the base tables; triggers keep the FTS index in
+    sync on INSERT/UPDATE/DELETE. On first creation the index is populated
+    from existing rows via the `rebuild` command.
+
+    Scope (5 tables): notes, inventory, contacts, documents, waypoints.
+    Other LIKE-based searches (conversations messages, freq_database,
+    skills, etc.) still use LIKE — can be expanded incrementally without
+    breaking callers.
+
+    FTS5 is shipped with the Python stdlib sqlite3 on all supported
+    platforms. If the extension is somehow unavailable, failure is logged
+    and the app falls back to LIKE search — nothing else breaks.
+    """
+    try:
+        conn.execute("CREATE VIRTUAL TABLE IF NOT EXISTS _fts5_probe USING fts5(x)")
+        conn.execute("DROP TABLE _fts5_probe")
+    except sqlite3.OperationalError as e:
+        _log.warning('FTS5 not available — keyword search will use LIKE fallback: %s', e)
+        return
+
+    specs = [
+        ('notes_fts', 'notes', ['title', 'content']),
+        ('inventory_fts', 'inventory', ['name', 'location', 'notes']),
+        ('contacts_fts', 'contacts', ['name', 'callsign', 'role', 'skills', 'notes']),
+        ('documents_fts', 'documents', ['filename']),
+        ('waypoints_fts', 'waypoints', ['name', 'category', 'notes']),
+    ]
+
+    for fts_table, src_table, cols in specs:
+        cols_csv = ', '.join(cols)
+        new_cols_csv = ', '.join('new.' + c for c in cols)
+        old_cols_csv = ', '.join('old.' + c for c in cols)
+        already = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?",
+            (fts_table,),
+        ).fetchone()
+        conn.execute(
+            f"CREATE VIRTUAL TABLE IF NOT EXISTS {fts_table} USING fts5("
+            f"{cols_csv}, content='{src_table}', content_rowid='id', "
+            f"tokenize='porter unicode61 remove_diacritics 2')"
+        )
+        conn.executescript(f'''
+            CREATE TRIGGER IF NOT EXISTS {fts_table}_ai AFTER INSERT ON {src_table} BEGIN
+                INSERT INTO {fts_table}(rowid, {cols_csv}) VALUES (new.id, {new_cols_csv});
+            END;
+            CREATE TRIGGER IF NOT EXISTS {fts_table}_ad AFTER DELETE ON {src_table} BEGIN
+                INSERT INTO {fts_table}({fts_table}, rowid, {cols_csv}) VALUES('delete', old.id, {old_cols_csv});
+            END;
+            CREATE TRIGGER IF NOT EXISTS {fts_table}_au AFTER UPDATE ON {src_table} BEGIN
+                INSERT INTO {fts_table}({fts_table}, rowid, {cols_csv}) VALUES('delete', old.id, {old_cols_csv});
+                INSERT INTO {fts_table}(rowid, {cols_csv}) VALUES (new.id, {new_cols_csv});
+            END;
+        ''')
+        if not already:
+            try:
+                conn.execute(f"INSERT INTO {fts_table}({fts_table}) VALUES('rebuild')")
+            except sqlite3.OperationalError as e:
+                _log.warning('FTS5 rebuild failed for %s: %s', fts_table, e)
+    conn.commit()
+
+
+def fts5_available(conn=None):
+    """Return True if FTS5 virtual tables were created successfully."""
+    own = False
+    if conn is None:
+        conn = get_db()
+        own = True
+    try:
+        row = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='notes_fts'"
+        ).fetchone()
+        return row is not None
+    finally:
+        if own:
+            conn.close()
 
 
 def _migrate_access_logs(conn):

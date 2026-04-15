@@ -8,6 +8,7 @@ import time
 from flask import Blueprint, request, jsonify, Response
 
 from db import db_session, log_activity
+from web.auth import require_auth
 from web.print_templates import render_print_document
 from web.sql_safety import safe_columns
 from web.validation import validate_json
@@ -22,6 +23,23 @@ log = logging.getLogger('nomad.web')
 contacts_bp = Blueprint('contacts', __name__)
 
 CONTACT_SORT_FIELDS = {'name', 'callsign', 'role', 'created_at', 'updated_at'}
+
+# Reusable validation schema — audit H2 rollout (v7.32.0).
+_CONTACT_SCHEMA = {
+    'name': {'type': str, 'max_length': 200},
+    'callsign': {'type': str, 'max_length': 50},
+    'role': {'type': str, 'max_length': 100},
+    'skills': {'type': str, 'max_length': 2000},
+    'phone': {'type': str, 'max_length': 50},
+    'freq': {'type': str, 'max_length': 50},
+    'email': {'type': str, 'max_length': 200},
+    'address': {'type': str, 'max_length': 500},
+    'rally_point': {'type': str, 'max_length': 200},
+    'blood_type': {'type': str, 'max_length': 10},
+    'medical_notes': {'type': str, 'max_length': 2000},
+    'notes': {'type': str, 'max_length': 4000},
+}
+_CONTACT_CREATE_SCHEMA = dict(_CONTACT_SCHEMA, name={'type': str, 'required': True, 'max_length': 200})
 
 
 # ─── Contacts CRUD ────────────────────────────────────────────────────
@@ -53,9 +71,8 @@ def api_contacts_list():
 
 
 @contacts_bp.route('/api/contacts', methods=['POST'])
-@validate_json({
-    'name': {'type': str, 'required': True, 'max_length': 200},
-})
+@require_auth('admin')
+@validate_json(_CONTACT_CREATE_SCHEMA)
 def api_contacts_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -73,6 +90,8 @@ def api_contacts_create():
 
 
 @contacts_bp.route('/api/contacts/<int:cid>', methods=['PUT'])
+@require_auth('admin')
+@validate_json(_CONTACT_SCHEMA)
 def api_contacts_update(cid):
     data = request.get_json() or {}
     with db_session() as db:
@@ -92,6 +111,7 @@ def api_contacts_update(cid):
 
 
 @contacts_bp.route('/api/contacts/<int:cid>', methods=['DELETE'])
+@require_auth('admin')
 def api_contacts_delete(cid):
     with db_session() as db:
         r = db.execute('DELETE FROM contacts WHERE id = ?', (cid,))
@@ -103,6 +123,7 @@ def api_contacts_delete(cid):
 
 
 @contacts_bp.route('/api/contacts/bulk-delete', methods=['POST'])
+@require_auth('admin')
 def api_contacts_bulk_delete():
     data, error = _require_json_body(request)
     if error:
@@ -151,6 +172,7 @@ def api_contacts_export():
 
 
 @contacts_bp.route('/api/contacts/import-csv', methods=['POST'])
+@require_auth('admin')
 def api_contacts_import_csv():
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400

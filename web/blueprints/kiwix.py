@@ -6,6 +6,7 @@ import logging
 
 from flask import Blueprint, request, jsonify
 
+from db import log_activity
 from services import kiwix
 from services.manager import _download_progress
 from web.utils import validate_download_url as _validate_download_url
@@ -51,6 +52,8 @@ def api_kiwix_download_zim():
             log.error(f'ZIM download failed: {e}')
 
     threading.Thread(target=do_download, daemon=True).start()
+    log_activity('zim_download_started', service='kiwix',
+                 detail=f'url={url[:120]} filename={filename or "(auto)"}')
     return jsonify({'status': 'downloading'})
 
 @kiwix_bp.route('/api/kiwix/zim-downloads')
@@ -72,6 +75,7 @@ def api_kiwix_delete_zim():
     success = kiwix.delete_zim(filename)
     if not success:
         return jsonify({'error': 'Failed to delete ZIM file'}), 500
+    log_activity('zim_deleted', service='kiwix', detail=f'filename={filename}', level='warn')
     return jsonify({'status': 'deleted'})
 
 # ─── Content Update Checker ───────────────────────────────────────

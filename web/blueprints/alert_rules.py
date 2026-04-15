@@ -2,6 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 import json
 
 alert_rules_bp = Blueprint('alert_rules', __name__)
@@ -32,7 +33,10 @@ ACTIONS = ['alert', 'sse_event', 'log_activity', 'set_emergency_level']
 @alert_rules_bp.route('/api/alert-rules')
 def api_alert_rules_list():
     with db_session() as db:
-        rows = db.execute('SELECT * FROM alert_rules ORDER BY enabled DESC, name').fetchall()
+        rows = db.execute(
+            'SELECT * FROM alert_rules ORDER BY enabled DESC, name LIMIT ? OFFSET ?',
+            get_pagination()
+        ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

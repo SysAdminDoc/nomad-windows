@@ -31,6 +31,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify, current_app
 
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 emergency_bp = Blueprint('emergency', __name__)
 log = logging.getLogger('nomad.emergency')
@@ -215,7 +216,8 @@ def api_evac_plans_list():
     """List all evacuation plans, active ones first."""
     with db_session() as db:
         rows = db.execute(
-            'SELECT * FROM evac_plans ORDER BY is_active DESC, updated_at DESC'
+            'SELECT * FROM evac_plans ORDER BY is_active DESC, updated_at DESC LIMIT ? OFFSET ?',
+            get_pagination()
         ).fetchall()
     return jsonify([dict(r) for r in rows])
 

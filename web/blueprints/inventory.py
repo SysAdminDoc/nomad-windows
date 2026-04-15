@@ -16,6 +16,7 @@ from services.manager import format_size
 from web.print_templates import render_print_document
 from web.sql_safety import safe_table, safe_columns, build_update, build_insert
 from web.validation import validate_json, validate_file_upload
+from web.auth import require_auth
 from config import get_data_dir
 from web.state import broadcast_event
 from web.utils import esc as _esc, clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, check_origin as _check_origin, read_household_size as _read_household_size_setting
@@ -86,12 +87,31 @@ def api_inventory_list():
         rows = db.execute(query, params).fetchall()
     return jsonify([dict(r) for r in rows])
 
-@inventory_bp.route('/api/inventory', methods=['POST'])
-@validate_json({
-    'name': {'type': str, 'required': True, 'max_length': 500},
-    'quantity': {'type': int, 'min': 0, 'max': 999999},
+_INVENTORY_SCHEMA = {
+    'name': {'type': str, 'max_length': 500},
     'category': {'type': str, 'max_length': 100},
-})
+    'quantity': {'type': (int, float), 'min': 0, 'max': 999999},
+    'unit': {'type': str, 'max_length': 20},
+    'min_quantity': {'type': (int, float), 'min': 0, 'max': 999999},
+    'daily_usage': {'type': (int, float), 'min': 0, 'max': 999999},
+    'location': {'type': str, 'max_length': 200},
+    'expiration': {'type': str, 'max_length': 50},
+    'barcode': {'type': str, 'max_length': 100},
+    'cost': {'type': (int, float), 'min': 0, 'max': 10_000_000},
+    'notes': {'type': str, 'max_length': 4000},
+    'calories_per_unit': {'type': (int, float), 'min': 0, 'max': 100_000},
+    'protein_g': {'type': (int, float), 'min': 0, 'max': 10_000},
+    'fat_g': {'type': (int, float), 'min': 0, 'max': 10_000},
+    'carbs_g': {'type': (int, float), 'min': 0, 'max': 10_000},
+    'weight_oz': {'type': (int, float), 'min': 0, 'max': 1_000_000},
+    'container_id': {'type': (int, str), 'max_length': 50},
+}
+_INVENTORY_CREATE_SCHEMA = dict(_INVENTORY_SCHEMA, name={'type': str, 'required': True, 'max_length': 500})
+
+
+@inventory_bp.route('/api/inventory', methods=['POST'])
+@require_auth('admin')
+@validate_json(_INVENTORY_CREATE_SCHEMA)
 def api_inventory_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -108,11 +128,8 @@ def api_inventory_create():
     return jsonify(dict(row)), 201
 
 @inventory_bp.route('/api/inventory/<int:item_id>', methods=['PUT'])
-@validate_json({
-    'name': {'type': str, 'max_length': 500},
-    'quantity': {'type': int, 'min': 0, 'max': 999999},
-    'category': {'type': str, 'max_length': 100},
-})
+@require_auth('admin')
+@validate_json(_INVENTORY_SCHEMA)
 def api_inventory_update(item_id):
     data = request.get_json() or {}
     allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'barcode', 'cost', 'notes', 'calories_per_unit', 'protein_g', 'fat_g', 'carbs_g', 'weight_oz', 'container_id']
@@ -131,6 +148,7 @@ def api_inventory_update(item_id):
     return jsonify({'status': 'saved'})
 
 @inventory_bp.route('/api/inventory/<int:item_id>', methods=['DELETE'])
+@require_auth('admin')
 def api_inventory_delete(item_id):
     with db_session() as db:
         db.execute('DELETE FROM inventory_photos WHERE inventory_id = ?', (item_id,))

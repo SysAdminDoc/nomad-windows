@@ -3,8 +3,8 @@
       <div class="benchmark-command-deck-head">
         <div class="benchmark-command-copy">
           <div class="section-header-label benchmark-command-kicker">SYSTEM HEALTH CHECK</div>
-          <h2 class="benchmark-command-title">How well will this machine run NOMAD?</h2>
-          <p class="benchmark-command-text">Get an A&ndash;F health grade for CPU, memory, disk, and AI speed, plus a recommended local model for your hardware. Advanced raw scores are one click away.</p>
+          <h2 class="benchmark-command-title">See how this machine will feel under live NOMAD workloads.</h2>
+          <p class="benchmark-command-text">Measure CPU, memory, storage, and inference performance, then get a practical local-model recommendation and a trend line for this hardware.</p>
         </div>
         <div class="benchmark-command-actions">
           <button type="button" class="btn btn-sm btn-primary" data-benchmark-mode="full">Run Full Benchmark</button>
@@ -26,7 +26,7 @@
           <div class="workspace-kicker">RUN HEALTH CHECK</div>
           <h3>System Health Check <button class="help-icon" data-help="benchmark" title="What is this?">?</button></h3>
           <p class="benchmark-intro">
-            We grade your CPU, memory, disk, and AI inference speed on an A&ndash;F scale and suggest which local AI model will feel responsive on this hardware.
+            Run one benchmark to grade the machine, spot bottlenecks, and pick a local AI footprint that will still feel responsive in real use.
           </p>
         </div>
         <div class="benchmark-toolbar workspace-toolbar benchmark-toolbar-shell">
@@ -46,9 +46,9 @@
         </div>
         <div id="bench-progress" class="benchmark-progress benchmark-progress-shell is-hidden">
           <div class="progress-bar"><div class="fill is-zero-width" id="bench-fill"></div></div>
-          <div class="progress-info"><span id="bench-stage">...</span><span id="bench-pct">0%</span></div>
+          <div class="progress-info"><span id="bench-stage">Preparing diagnostics...</span><span id="bench-pct">0%</span></div>
         </div>
-        <div id="bench-results" class="benchmark-results workspace-stack"><div class="benchmark-empty-state">Click "Run Full Benchmark" to test system performance and generate a NOMAD score (0-100).</div></div>
+        <div id="bench-results" class="benchmark-results workspace-stack"><div class="benchmark-empty-state">Run a full benchmark to generate a NOMAD score, a local-model recommendation, and a baseline for future comparisons.</div></div>
       </div>
       <div class="settings-card benchmark-history-card layout-span-full">
         <div class="benchmark-history-head">
@@ -56,10 +56,9 @@
             <div class="workspace-kicker">TREND HISTORY</div>
             <h3>Diagnostics History</h3>
           </div>
-          <p class="benchmark-history-copy">Compare runs over time to spot degradation before it turns into operational risk.</p>
+          <p class="benchmark-history-copy">Compare runs over time so you can catch drift before it turns into an operational slowdown.</p>
         </div>
-        <div id="bench-history" class="benchmark-history workspace-stack"><div class="benchmark-empty-state">No benchmarks run yet. Run one above to track your system performance over time.</div></div>
+        <div id="bench-history" class="benchmark-history workspace-stack"><div class="benchmark-empty-state">No benchmark history yet. Each run will build a trend line here.</div></div>
       </div>
     </div>
   </div>
-

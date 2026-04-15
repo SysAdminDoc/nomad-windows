@@ -13,16 +13,26 @@
     --tk-blue: #3b82f6;
     --tk-orange: #f97316;
   }
-  #tab-training-knowledge .tk-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-training-knowledge .tk-header h2 { font-size:1.25rem; color:var(--tk-accent); margin:0; }
-#tab-training-knowledge .tk-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-#tab-training-knowledge .tk-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-#tab-training-knowledge .tk-sub-tab.active { background:var(--tk-accent-dim); border-color:var(--tk-accent); color:var(--tk-accent); }
+  #tab-training-knowledge .tk-command-deck { display:grid; gap:12px; margin-bottom:16px; padding:18px 20px; border:1px solid color-mix(in srgb, var(--tk-accent) 12%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--tk-accent) 14%, transparent), transparent 40%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 90%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08)); }
+  #tab-training-knowledge .tk-command-deck-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  #tab-training-knowledge .tk-command-copy { display:grid; gap:7px; max-width:70ch; }
+  #tab-training-knowledge .tk-command-kicker { margin:0; }
+  #tab-training-knowledge .tk-command-title { margin:0; font-size:clamp(1.7rem, 2vw, 2.2rem); line-height:1.05; letter-spacing:-0.04em; color:var(--text,#f5f7fb); }
+  #tab-training-knowledge .tk-command-text { margin:0; max-width:60ch; color:var(--text-dim,#b6bfcd); font-size:.95rem; line-height:1.65; }
+  #tab-training-knowledge .tk-command-actions,
+  #tab-training-knowledge .tk-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-training-knowledge .tk-command-pill { display:inline-flex; align-items:center; min-height:28px; padding:0 12px; border-radius:999px; border:1px solid color-mix(in srgb, var(--tk-accent) 10%, var(--border,#333)); background:color-mix(in srgb, var(--surface-solid, #151826) 90%, transparent); color:var(--text-dim,#b6bfcd); font-size:.78rem; font-weight:600; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-training-knowledge .tk-sub-tabs-shell { display:grid; gap:8px; margin-bottom:18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 84%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-training-knowledge .tk-sub-tabs-label { color:var(--text-secondary,#aaa); font-size:.74rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }
+#tab-training-knowledge .tk-sub-tabs { display:flex; gap:8px; margin-bottom:0; flex-wrap:wrap; }
+#tab-training-knowledge .tk-sub-tab { min-height:34px; padding:0 14px; border-radius:999px; border:1px solid var(--border,#333); background:color-mix(in srgb, var(--surface-solid, #151826) 88%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.84rem; font-weight:600; letter-spacing:.01em; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+#tab-training-knowledge .tk-sub-tab:hover { border-color:color-mix(in srgb, var(--tk-accent) 24%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+#tab-training-knowledge .tk-sub-tab.active { background:linear-gradient(180deg, color-mix(in srgb, var(--tk-accent-dim) 82%, var(--surface-solid, #151826)), color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent)); border-color:var(--tk-accent); color:var(--tk-accent); box-shadow:0 10px 20px color-mix(in srgb, var(--tk-accent) 16%, transparent); }
 #tab-training-knowledge .tk-sub-tab:focus-visible { box-shadow:0 0 0 3px rgba(91,159,255,.28); }
 #tab-training-knowledge .tk-panel { display:none; }
 #tab-training-knowledge .tk-panel.active { display:block; }
-#tab-training-knowledge .tk-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
-#tab-training-knowledge .tk-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+#tab-training-knowledge .tk-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 92%, transparent); border-radius:18px; padding:18px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 7%, transparent); }
+#tab-training-knowledge .tk-card-title { font-size:1rem; font-weight:700; letter-spacing:-0.01em; color:var(--text-primary,#eee); margin-bottom:8px; }
 #tab-training-knowledge .tk-card-button { width:100%; display:block; text-align:left; color:inherit; cursor:pointer; appearance:none; }
 #tab-training-knowledge .tk-card-button .tk-card-title { display:block; }
 #tab-training-knowledge .tk-card-meta { display:flex; gap:12px; flex-wrap:wrap; }
@@ -39,7 +49,7 @@
   #tab-training-knowledge .tk-form-row select,
   #tab-training-knowledge .tk-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
 #tab-training-knowledge .tk-form-row .field { flex:1; min-width:140px; }
-#tab-training-knowledge .tk-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+#tab-training-knowledge .tk-btn { min-height:34px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
 #tab-training-knowledge .tk-btn-primary { background:var(--tk-accent); color:#fff; }
 #tab-training-knowledge .tk-btn-danger { background:var(--tk-red); color:#fff; }
 #tab-training-knowledge .tk-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
@@ -47,7 +57,7 @@
   #tab-training-knowledge .tk-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
   #tab-training-knowledge .tk-list-item:last-child { border-bottom:none; }
   #tab-training-knowledge .tk-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
-  #tab-training-knowledge .tk-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-training-knowledge .tk-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
   #tab-training-knowledge .tk-table { width:100%; border-collapse:collapse; font-size:.82rem; }
   #tab-training-knowledge .tk-table th { padding:8px 10px; text-align:left; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); background:rgba(0,0,0,.3); border-bottom:1px solid var(--border,#444); }
   #tab-training-knowledge .tk-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); }
@@ -76,20 +86,47 @@
   #tab-training-knowledge .tk-matrix-cell { text-align:center; min-width:60px; }
   #tab-training-knowledge .tk-bus-meter { height:8px; border-radius:4px; background:var(--border,#333); overflow:hidden; margin-top:4px; }
   #tab-training-knowledge .tk-bus-fill { height:100%; border-radius:4px; transition:width .3s; }
+  @media (max-width: 860px) {
+    #tab-training-knowledge .tk-command-deck { padding:16px; }
+    #tab-training-knowledge .tk-command-actions { width:100%; }
+  }
 </style>
 
-<div class="tk-header">
-  <h2>Training & Knowledge</h2>
+<div class="tk-command-deck workspace-panel">
+  <div class="tk-command-deck-head">
+    <div class="tk-command-copy">
+      <div class="section-header-label tk-command-kicker">TRAINING READINESS</div>
+      <h2 class="tk-command-title">Build skills, rehearse workflows, and keep operational knowledge current.</h2>
+      <p class="tk-command-text">Track capability, courses, certifications, drills, and flashcards in one workspace so practice and institutional memory stay connected.</p>
+    </div>
+    <div class="tk-command-actions">
+      <button type="button" class="btn btn-sm btn-primary" data-tk-panel-target="skills">Skill Roster</button>
+      <button type="button" class="btn btn-sm" data-tk-panel-target="courses">Courses</button>
+      <button type="button" class="btn btn-sm" data-tk-panel-target="drills">Drill Results</button>
+      <button type="button" class="btn btn-sm btn-ghost" data-tk-panel-target="flashcards">Flashcards</button>
+    </div>
+  </div>
+  <div class="tk-command-pills">
+    <span class="tk-command-pill">Skills</span>
+    <span class="tk-command-pill">Courses</span>
+    <span class="tk-command-pill">Certifications</span>
+    <span class="tk-command-pill">Drills</span>
+    <span class="tk-command-pill">Flashcards</span>
+    <span class="tk-command-pill">Knowledge base</span>
+  </div>
 </div>
 
 <!-- Sub-tabs -->
-<div class="tk-sub-tabs" role="tablist" aria-label="Training and knowledge sections">
-  <button type="button" class="tk-sub-tab active" role="tab" aria-selected="true" aria-controls="tk-panel-skills" id="tk-tab-skills" data-tk-panel="skills">Skills</button>
-  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-courses" id="tk-tab-courses" data-tk-panel="courses">Courses</button>
-  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-certifications" id="tk-tab-certifications" data-tk-panel="certifications">Certs</button>
-  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-drills" id="tk-tab-drills" data-tk-panel="drills">Drills</button>
-  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-flashcards" id="tk-tab-flashcards" data-tk-panel="flashcards">Flashcards</button>
-  <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-knowledge" id="tk-tab-knowledge" data-tk-panel="knowledge">Knowledge</button>
+<div class="tk-sub-tabs-shell">
+  <div class="tk-sub-tabs-label">Workflows</div>
+  <div class="tk-sub-tabs" role="tablist" aria-label="Training and knowledge sections">
+    <button type="button" class="tk-sub-tab active" role="tab" aria-selected="true" aria-controls="tk-panel-skills" id="tk-tab-skills" data-tk-panel="skills">Skills</button>
+    <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-courses" id="tk-tab-courses" data-tk-panel="courses">Courses</button>
+    <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-certifications" id="tk-tab-certifications" data-tk-panel="certifications">Certifications</button>
+    <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-drills" id="tk-tab-drills" data-tk-panel="drills">Drills</button>
+    <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-flashcards" id="tk-tab-flashcards" data-tk-panel="flashcards">Flashcards</button>
+    <button type="button" class="tk-sub-tab" role="tab" aria-selected="false" aria-controls="tk-panel-knowledge" id="tk-tab-knowledge" data-tk-panel="knowledge">Knowledge</button>
+  </div>
 </div>
 
 <!-- ── Skills Panel ──────────────────────────────────── -->
@@ -231,7 +268,7 @@
   </div>
   <div id="tk-drill-templates" class="tk-card"><div class="tk-empty">Loading drill templates...</div></div>
   <div class="tk-card-title" style="margin-top:16px;">Past Drill Results</div>
-  <div id="tk-drill-results" class="tk-card"><div class="tk-empty">No drill results yet.</div></div>
+  <div id="tk-drill-results" class="tk-card"><div class="tk-empty">No drill results yet. Each completed run will build an after-action trail here.</div></div>
   <!-- AAR detail -->
   <div id="tk-drill-aar" class="tk-card is-hidden">
     <div class="tk-card-title">After-Action Review</div>
@@ -277,7 +314,7 @@
       <div class="tk-card-title">Review Mode <span id="tk-fc-review-progress"></span></div>
       <div class="tk-flashcard-scene">
         <div class="tk-flashcard-inner" id="tk-fc-card-inner">
-          <div class="tk-flashcard-face tk-flashcard-front" id="tk-fc-card-front">Loading...</div>
+          <div class="tk-flashcard-face tk-flashcard-front" id="tk-fc-card-front">Preparing review card...</div>
           <div class="tk-flashcard-face tk-flashcard-back" id="tk-fc-card-back"></div>
         </div>
       </div>
@@ -346,14 +383,27 @@
 (function(){
   const root = document.getElementById('tab-training-knowledge');
   /* Sub-tab switching */
+  function tkActivatePanel(panelName, focusPanel = false) {
+    root.querySelectorAll('.tk-sub-tab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+    root.querySelectorAll('.tk-panel').forEach(p => p.classList.remove('active'));
+    const btn = root.querySelector('.tk-sub-tab[data-tk-panel="' + panelName + '"]');
+    const panel = document.getElementById('tk-panel-' + panelName);
+    if (!btn || !panel) return;
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    panel.classList.add('active');
+    if (focusPanel) panel.focus();
+  }
+
   root.querySelectorAll('.tk-sub-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      root.querySelectorAll('.tk-sub-tab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
-      root.querySelectorAll('.tk-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      btn.setAttribute('aria-selected', 'true');
-      const panel = document.getElementById('tk-panel-' + btn.dataset.tkPanel);
-      if (panel) panel.classList.add('active');
+      tkActivatePanel(btn.dataset.tkPanel, true);
+    });
+  });
+
+  root.querySelectorAll('[data-tk-panel-target]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      tkActivatePanel(btn.dataset.tkPanelTarget, true);
     });
   });
 
@@ -382,7 +432,7 @@
   window.tkLoadSkills = function() {
     api('/api/training/skills').then(items => {
       const c = el('tk-skill-list');
-      if (!items.length) { c.innerHTML = '<div class="tk-empty">No skills recorded. Add one above.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No skills are recorded yet. Start with the first person and capability above.</div>'; return; }
       c.innerHTML = '<table class="tk-table"><thead><tr><th>Person</th><th>Skill</th><th>Category</th><th>Level</th><th>Certified</th><th></th></tr></thead><tbody>' +
         items.map(s => '<tr><td>' + s.person + '</td><td>' + s.skill_name + '</td><td><span class="tk-badge" style="background:var(--tk-accent-dim);color:var(--tk-accent)">' + s.category + '</span></td><td>' + stars(s.level) + '</td><td>' + (s.certified ? '<span class="tk-badge" style="background:var(--tk-green);color:#fff">YES</span>' : '-') + '</td><td style="white-space:nowrap"><button class="tk-btn tk-btn-secondary" onclick="tkEditSkill(' + s.id + ')">Edit</button> <button class="tk-btn tk-btn-danger" onclick="tkDeleteSkill(' + s.id + ')">&times;</button></td></tr>').join('') +
         '</tbody></table>';
@@ -415,7 +465,7 @@
     if (closeBtn) closeBtn.focus();
     api('/api/training/skills/matrix').then(data => {
       const people = data.people || [], categories = data.categories || [], grid = data.grid || {};
-      if (!people.length) { el('tk-matrix-body').innerHTML = '<div class="tk-empty">No skill data for matrix.</div>'; return; }
+      if (!people.length) { el('tk-matrix-body').innerHTML = '<div class="tk-empty">Add a few skills to generate the cross-training view.</div>'; return; }
       let h = '<table class="tk-table"><thead><tr><th>Person</th>' + categories.map(c => '<th class="tk-matrix-cell">' + c + '</th>').join('') + '</tr></thead><tbody>';
       people.forEach(p => {
         h += '<tr><td>' + p + '</td>';
@@ -434,7 +484,7 @@
   window.tkLoadCourses = function() {
     api('/api/training/courses').then(items => {
       const c = el('tk-course-list');
-      if (!items.length) { c.innerHTML = '<div class="tk-empty">No courses yet. Create one above.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No courses yet. Build the first training path above.</div>'; return; }
       c.innerHTML = items.map(co => '<div class="tk-list-item"><div><strong>' + co.title + '</strong> <span class="tk-badge" style="background:var(--tk-accent-dim);color:var(--tk-accent)">' + co.category + '</span> <span class="tk-badge" style="background:var(--border,#333)">' + co.difficulty + '</span><br><small style="color:var(--text-secondary)">' + (co.instructor || 'No instructor') + ' &middot; ' + co.hours + 'h</small></div><div style="display:flex;gap:6px;"><button class="tk-btn tk-btn-secondary" onclick="tkViewCourse(' + co.id + ')">Lessons</button><button class="tk-btn tk-btn-secondary" onclick="tkEditCourse(' + co.id + ')">Edit</button><button class="tk-btn tk-btn-danger" onclick="tkDeleteCourse(' + co.id + ')">&times;</button></div></div>').join('');
     });
   };
@@ -469,7 +519,7 @@
   window.tkLoadLessons = function(courseId) {
     api('/api/training/courses/' + courseId + '/lessons').then(items => {
       const c = el('tk-lesson-list');
-      if (!items.length) { c.innerHTML = '<div class="tk-empty">No lessons yet.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No lessons yet. Add the first lesson for this course.</div>'; return; }
       c.innerHTML = items.map((l, i) => '<div class="tk-list-item"><div><span style="color:var(--tk-accent);font-weight:700;margin-right:8px">' + (l.order_num || i + 1) + '.</span><strong>' + l.title + '</strong>' + (l.completed ? ' <span class="tk-badge" style="background:var(--tk-green);color:#fff">Done</span>' : '') + '<br><small style="color:var(--text-secondary)">' + (l.content || '').substring(0, 80) + '</small></div><div style="display:flex;gap:6px;">' + (!l.completed ? '<button class="tk-btn tk-btn-primary" onclick="tkCompleteLesson(' + l.id + ',' + courseId + ')">Complete</button>' : '') + '<button class="tk-btn tk-btn-danger" onclick="tkDeleteLesson(' + l.id + ',' + courseId + ')">&times;</button></div></div>').join('');
     });
   };
@@ -491,7 +541,7 @@
   window.tkLoadCerts = function() {
     api('/api/training/certifications').then(items => {
       const c = el('tk-cert-list');
-      if (!items.length) { c.innerHTML = '<div class="tk-empty">No certifications tracked.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No certifications are tracked yet. Add active credentials here to keep them visible.</div>'; return; }
       c.innerHTML = '<table class="tk-table"><thead><tr><th>Person</th><th>Certification</th><th>Issuer</th><th>Issued</th><th>Expires</th><th>Status</th><th></th></tr></thead><tbody>' +
         items.map(ct => { const s = certStatus(ct.expiration_date); return '<tr><td>' + ct.person + '</td><td>' + ct.cert_name + '</td><td>' + (ct.issuer || '-') + '</td><td>' + (ct.issue_date || '-') + '</td><td>' + (ct.expiration_date || 'N/A') + '</td><td><span class="' + s.cls + '">' + s.label + '</span></td><td style="white-space:nowrap"><button class="tk-btn tk-btn-secondary" onclick="tkEditCert(' + ct.id + ')">Edit</button> <button class="tk-btn tk-btn-danger" onclick="tkDeleteCert(' + ct.id + ')">&times;</button></td></tr>'; }).join('') +
         '</tbody></table>';
@@ -529,14 +579,14 @@
   window.tkLoadDrillTemplates = function() {
     api('/api/training/drills/templates').then(items => {
       const c = el('tk-drill-templates');
-      if (!items.length) { c.innerHTML = '<div class="tk-empty">No drill templates. Seed built-ins or create one above.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No drill templates yet. Seed the built-ins or create your own above.</div>'; return; }
       c.innerHTML = items.map(d => '<div class="tk-list-item"><div><strong>' + d.name + '</strong> <span class="tk-badge" style="background:var(--tk-accent-dim);color:var(--tk-accent)">' + d.category + '</span><br><small style="color:var(--text-secondary)">' + (d.description || '').substring(0, 100) + ' &middot; ' + d.duration_minutes + ' min</small></div><div style="display:flex;gap:6px;"><button class="tk-btn tk-btn-primary" onclick="tkRunDrill(' + d.id + ')">Run</button><button class="tk-btn tk-btn-danger" onclick="tkDeleteDrillTemplate(' + d.id + ')">&times;</button></div></div>').join('');
     });
   };
   window.tkLoadDrillResults = function() {
     api('/api/training/drills/results').then(items => {
       const c = el('tk-drill-results');
-      if (!items.length) { c.innerHTML = '<div class="tk-empty">No drill results yet. Run a drill to generate results.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="tk-empty">No drill results yet. Run a drill to start building after-action reviews.</div>'; return; }
       c.innerHTML = items.map(r => '<div class="tk-list-item"><div>' + (r.grade ? gradeBadge(r.grade) + ' ' : '') + '<strong>' + (r.template_name || 'Drill') + '</strong><br><small style="color:var(--text-secondary)">' + (r.run_date || '') + (r.participants ? ' &middot; ' + r.participants : '') + '</small>' + (r.aar_notes ? '<br><small style="color:var(--tk-accent)">' + r.aar_notes.substring(0, 80) + '...</small>' : '') + '</div><div><button class="tk-btn tk-btn-secondary" onclick="tkOpenAAR(' + r.id + ',\'' + (r.grade || 'C') + '\',\'' + (r.participants || '').replace(/'/g, "\\'") + '\',\'' + (r.aar_notes || '').replace(/'/g, "\\'") + '\')">AAR</button></div></div>').join('');
     });
   };
@@ -589,7 +639,7 @@
   window.tkLoadDecks = function() {
     api('/api/training/flashcards/decks').then(decks => {
       const c = el('tk-fc-decks');
-      if (!decks.length) { c.innerHTML = '<div class="tk-empty">No flashcard decks. Add a card above.</div>'; return; }
+      if (!decks.length) { c.innerHTML = '<div class="tk-empty">No flashcard decks yet. Add your first card above to create one.</div>'; return; }
       c.innerHTML = decks.map(d => '<button type="button" class="tk-card tk-card-button" onclick="tkStartReview(\'' + d.deck.replace(/'/g, "\\'") + '\')" aria-label="Review ' + esc(d.deck) + ' flashcard deck"><span class="tk-card-title">' + esc(d.deck) + '</span><span class="tk-card-meta"><span style="font-size:.82rem;color:var(--text-secondary)">' + d.count + ' cards</span>' + (d.due ? '<span style="font-size:.82rem;color:var(--tk-amber)">' + d.due + ' due</span>' : '') + '</span></button>').join('');
     });
   };

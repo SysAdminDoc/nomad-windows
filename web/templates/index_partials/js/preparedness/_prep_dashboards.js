@@ -342,10 +342,7 @@ function printWalletCard() {
 <div><b>SOS:</b> 3 of anything (fires, whistles, flashes). Mirror signal 50+ miles.</div>
 <div><b>Rule of 3:</b> 3 min air, 3 hrs exposure, 3 days water, 3 weeks food.</div>
 </div></div></body></html>`;
-  const frame = document.createElement('iframe');
-  frame.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:0;height:0';
-  document.body.appendChild(frame);
-  frame.contentDocument.write(html);
-  frame.contentDocument.close();
-  setTimeout(() => { frame.contentWindow.print(); setTimeout(() => frame.remove(), 1000); }, 250);
+  if (!window.printHtmlInHiddenFrame?.(html, 'Emergency Wallet Card')) {
+    toast('Could not open the wallet card print view', 'error');
+  }
 }

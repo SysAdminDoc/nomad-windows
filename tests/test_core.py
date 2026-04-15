@@ -133,7 +133,7 @@ class TestErrorHandler:
         assert 'class="home-launch-deck"' in html
         assert 'class="home-launch-hero home-surface-panel"' in html
         assert 'COMMAND DESK' in html
-        assert 'Search, switch lanes, or resume live work.' in html
+        assert 'Find the right desk, pick up where you left off, or start fresh.' in html
         assert 'id="home-continue-panel" class="home-continue-panel home-surface-panel"' in html
         assert 'Pinned' in html
         assert 'Recent' in html
@@ -142,7 +142,9 @@ class TestErrorHandler:
         assert 'id="workspace-inspector"' not in html
         assert 'id="sidebar-context-hub"' in html
         assert 'Return' in html
-        assert 'Keep pinned desks and your active context within reach.' in html
+        assert 'Keep your pinned desks and live context one click away.' in html
+        assert 'Suggested actions' in html
+        assert 'Stay in the flow with the next step that fits the desk you already have open.' in html
         assert 'id="mobile-bottom-nav"' not in html
         assert 'data-shell-action="open-mobile-drawer"' not in html
         assert 'class="sidebar-toggle"' not in html
@@ -239,6 +241,70 @@ class TestErrorHandler:
         assert 'data-workspace-memory-action="set-launch-current"' in settings_html
         assert 'id="settings-memory-launch"' in settings_html
         assert 'id="settings-memory-pinned"' in settings_html
+
+    def test_shared_premium_polish_contract_for_shell_home_and_settings(self):
+        premium_text = (REPO_ROOT / 'web' / 'static' / 'css' / 'premium' / '90_theme_consistency.css').read_text(encoding='utf-8')
+        shell_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_shell.html').read_text(encoding='utf-8')
+        services_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_services.html').read_text(encoding='utf-8')
+        settings_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_settings.html').read_text(encoding='utf-8')
+
+        assert '.workspace-context-bar {' in premium_text
+        assert '.settings-command-pill {' in premium_text
+        assert '.daily-brief-empty' in premium_text
+        assert '.benchmark-empty-state' in premium_text
+        assert 'Quick Return' in shell_text
+        assert 'Suggested actions' in shell_text
+        assert 'Find the right desk, pick up where you left off, or start fresh.' in services_text
+        assert 'Pinned desks and recent surfaces stay staged here for quick return.' in services_text
+        assert 'Building your live dashboard...' in services_text
+        assert 'Collecting live system metrics...' in settings_text
+        assert 'No AI models are installed yet. Choose a recommended model below or download the full set.' in settings_text
+
+    def test_specialty_workspaces_gain_premium_command_decks_and_calmer_empty_states(self):
+        benchmark_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_benchmark.html').read_text(encoding='utf-8')
+        benchmark_css = (REPO_ROOT / 'web' / 'static' / 'css' / 'premium' / '60_benchmark_tools.css').read_text(encoding='utf-8')
+        interop_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_interoperability.html').read_text(encoding='utf-8')
+        training_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_training_knowledge.html').read_text(encoding='utf-8')
+
+        assert 'See how this machine will feel under live NOMAD workloads.' in benchmark_text
+        assert 'Run a full benchmark to generate a NOMAD score, a local-model recommendation, and a baseline for future comparisons.' in benchmark_text
+        assert '.benchmark-command-pill {' in benchmark_css
+        assert 'text-transform: none;' in benchmark_css
+
+        assert 'class="io-command-deck workspace-panel"' in interop_text
+        assert 'Move records in and out without losing structure or audit history.' in interop_text
+        assert 'data-io-panel-target="history"' in interop_text
+        assert 'function ioActivatePanel(panelName, focusPanel)' in interop_text
+        assert 'No exports yet. Generated files and print runs will appear here.' in interop_text
+        assert "Couldn\\'t load export history right now." in interop_text
+
+        assert 'class="tk-command-deck workspace-panel"' in training_text
+        assert 'Build skills, rehearse workflows, and keep operational knowledge current.' in training_text
+        assert 'data-tk-panel-target="flashcards"' in training_text
+        assert 'function tkActivatePanel(panelName, focusPanel = false)' in training_text
+        assert 'No skills are recorded yet. Start with the first person and capability above.' in training_text
+        assert 'No flashcard decks yet. Add your first card above to create one.' in training_text
+
+    def test_agriculture_and_daily_living_gain_premium_command_decks_and_accessible_panel_switching(self):
+        agriculture_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_agriculture.html').read_text(encoding='utf-8')
+        daily_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_daily_living.html').read_text(encoding='utf-8')
+
+        assert 'class="ag-command-deck workspace-panel"' in agriculture_text
+        assert 'Plan resilient food systems, soil recovery, and closed-loop support from one field-ready workspace.' in agriculture_text
+        assert 'data-ag-panel-target="recycling"' in agriculture_text
+        assert 'role="tablist" aria-label="Agriculture sections"' in agriculture_text
+        assert 'function agActivatePanel(panelName, focusPanel = false)' in agriculture_text
+        assert 'No guilds yet. Start with the first planting guild above to anchor the layout.' in agriculture_text
+        assert 'Add recycling systems to reveal how nutrients, water, and materials loop together.' in agriculture_text
+
+        assert 'class="dl-command-deck workspace-panel"' in daily_text
+        assert 'Keep routines, morale, and grid-down quality of life stable when conditions change.' in daily_text
+        assert 'data-dl-panel-target="recipes"' in daily_text
+        assert 'role="tablist" aria-label="Daily living sections"' in daily_text
+        assert 'function dlActivatePanel(panelName, focusPanel = false)' in daily_text
+        assert '&#128197;' not in daily_text
+        assert 'No morale check-ins yet. Start logging how the household is holding up.' in daily_text
+        assert 'Not enough sleep data yet. Log a few more nights to build a reliable watch rotation.' in daily_text
 
     def test_workspace_page_bootstraps_saved_language_before_runtime_init(self, client, db):
         db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('language', 'es')")
@@ -527,6 +593,7 @@ class TestErrorHandler:
         # IO: focus-visible on sub-tab and btn
         assert '.io-sub-tab:focus-visible' in interop_text
         assert '.io-btn:focus-visible' in interop_text
+        assert 'data-io-panel-target="export"' in interop_text
         # IO: JS switches aria-selected on tab change
         assert "b.setAttribute('aria-selected', 'false')" in interop_text
         assert "btn.setAttribute('aria-selected', 'true')" in interop_text
@@ -543,6 +610,7 @@ class TestErrorHandler:
         assert 'role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-courses"' in training_text
         assert 'role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-drills"' in training_text
         assert 'role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-knowledge"' in training_text
+        assert 'data-tk-panel-target="skills"' in training_text
         # TK: JS switches aria-selected on tab change
         assert "b.setAttribute('aria-selected', 'false')" in training_text
         assert "btn.setAttribute('aria-selected', 'true')" in training_text
@@ -574,6 +642,96 @@ class TestErrorHandler:
         assert 'object-fit: cover;' in secondary_css_text
         assert 'alt="Map export preview" width="' in workspaces_text
         assert '<div class="airline-banner" id="airlineBanner" style="display:none;"><img src="" alt="" width="160" height="32"></div>' in viptrack_text
+
+    def test_blob_downloads_and_viptrack_pwa_use_static_assets_and_safe_cleanup(self):
+        init_runtime_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_init_runtime.js').read_text(encoding='utf-8')
+        media_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_media_maps_sync.js').read_text(encoding='utf-8')
+        services_ai_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
+        sitroom_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_situation_room.js').read_text(encoding='utf-8')
+        prep_inventory_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_inventory_flows.js').read_text(encoding='utf-8')
+        viptrack_text = (REPO_ROOT / 'web' / 'viptrack' / 'index.html').read_text(encoding='utf-8')
+        viptrack_manifest_text = (REPO_ROOT / 'web' / 'viptrack' / 'manifest.webmanifest').read_text(encoding='utf-8')
+        viptrack_sw_text = (REPO_ROOT / 'web' / 'viptrack' / 'sw.js').read_text(encoding='utf-8')
+
+        assert 'function revokeObjectUrlSafe(url)' in init_runtime_text
+        assert 'function downloadBlobFile(blob, filename)' in init_runtime_text
+        assert "window.downloadBlobFile = downloadBlobFile;" in init_runtime_text
+        assert 'link.click();' in init_runtime_text
+        assert 'window.setTimeout(() => {' in init_runtime_text
+        assert 'a.click(); URL.revokeObjectURL(url);' not in init_runtime_text
+
+        assert "window.downloadBlobFile(blob, filename || 'nomad-document.pdf');" in media_text
+        assert 'const blobUrl = URL.createObjectURL(blob);' not in media_text
+        assert 'a.click(); URL.revokeObjectURL(url);' not in media_text
+
+        assert 'window._chatImagePreviewUrl = null;' in services_ai_text
+        assert "preview.innerHTML = '';" in services_ai_text
+        assert 'const objectUrl = URL.createObjectURL(file);' in prep_inventory_text
+        assert "window.revokeObjectUrlSafe?.(objectUrl);" in prep_inventory_text
+        assert 'window.downloadBlobFile(blob, `sitroom-desk-snapshot-${Date.now()}.txt`);' in sitroom_text
+        assert 'const workerUrl = URL.createObjectURL(blob);' in sitroom_text
+        assert "window.setTimeout(() => window.revokeObjectUrlSafe?.(workerUrl), 0);" in sitroom_text
+
+        assert 'document.write(' not in viptrack_text
+        assert "manifestLink.href = '/viptrack/manifest.webmanifest';" in viptrack_text
+        assert "const viptrackServiceWorkerUrl = new URL('/viptrack/sw.js', window.location.origin).href;" in viptrack_text
+        assert "navigator.serviceWorker.register(viptrackServiceWorkerUrl, { scope: '/viptrack/' })" in viptrack_text
+        assert 'const manifestBlob = new Blob' not in viptrack_text
+        assert 'const swBlob = new Blob' not in viptrack_text
+        assert 'for (const r of regs) await r.unregister();' not in viptrack_text
+
+        assert '"scope": "/viptrack/"' in viptrack_manifest_text
+        assert '"start_url": "/viptrack/"' in viptrack_manifest_text
+        assert "const CACHE_NAME = 'viptrack-v4.15';" in viptrack_sw_text
+        assert "'/viptrack/manifest.webmanifest'," in viptrack_sw_text
+        assert 'function isStaticAssetRequest(url, requestUrl) {' in viptrack_sw_text
+
+    def test_print_popup_flows_open_windows_synchronously_and_render_status_shells(self):
+        init_runtime_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_init_runtime.js').read_text(encoding='utf-8')
+        media_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_media_maps_sync.js').read_text(encoding='utf-8')
+        workspaces_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
+
+        assert 'function renderPopupStatus(popup, title, message, tone = \'info\') {' in init_runtime_text
+        assert 'function replacePopupHtml(popup, html) {' in init_runtime_text
+        assert 'function openPendingPopup(title, loadingMessage = \'Preparing document…\') {' in init_runtime_text
+        assert "window.openPendingPopup = openPendingPopup;" in init_runtime_text
+        assert "window.replacePopupHtml = replacePopupHtml;" in init_runtime_text
+        assert "const w = window.openPendingPopup?.('ICS-213', 'Preparing the printable ICS-213 form…');" in init_runtime_text
+        assert "const w = window.openPendingPopup?.('ICS-309', 'Preparing the printable ICS-309 log…');" in init_runtime_text
+        assert "const w = window.openPendingPopup?.('ICS-214', 'Preparing the printable ICS-214 activity log…');" in init_runtime_text
+        assert 'w.document.write(`<!DOCTYPE html><html><head><title>ICS-213</title>' not in init_runtime_text
+        assert "const w = window.openPendingPopup?.('Generating Map Atlas', 'Building the printable atlas packet. This can take a moment for larger grids.');" in media_text
+        assert "window.renderPopupStatus?.(w, 'Map Atlas Unavailable'" in media_text
+        assert "if (!window.replacePopupHtml?.(w, html)) {" in media_text
+        assert "const win = window.openPendingPopup?.('NOMAD Map Print', 'Preparing the printable map capture…');" in workspaces_text
+        assert "toast('Pop-up blocked -- please allow pop-ups', 'warning');" in workspaces_text
+        assert "window.replacePopupHtml?.(win, '<html><head><title>NOMAD Map Print</title>" in workspaces_text
+
+    def test_iframe_render_and_hidden_print_flows_use_shared_runtime_helpers(self):
+        init_runtime_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_init_runtime.js').read_text(encoding='utf-8')
+        workspaces_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
+        dashboards_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_dashboards.js').read_text(encoding='utf-8')
+
+        assert "let _iframeHtmlWriteNonce = 0;" in init_runtime_text
+        assert "function writeIframeHtml(iframe, html, options = {}) {" in init_runtime_text
+        assert "iframe.dataset.nomadFrameRenderToken = renderToken;" in init_runtime_text
+        assert "iframe.addEventListener('load', handleBlankLoad, { once: true });" in init_runtime_text
+        assert "function printHtmlInHiddenFrame(html, title = 'Document') {" in init_runtime_text
+        assert "win.addEventListener('afterprint', cleanup, { once: true });" in init_runtime_text
+        assert "window.writeIframeHtml = writeIframeHtml;" in init_runtime_text
+        assert "window.printHtmlInHiddenFrame = printHtmlInHiddenFrame;" in init_runtime_text
+
+        assert "function resetAppFrameSurface(iframe) {" in workspaces_text
+        assert "resetAppFrameSurface(iframe);" in workspaces_text
+        assert "if (window.writeIframeHtml?.(iframe, html, { scrollTo })) return;" in workspaces_text
+        assert "toast('Could not load this view in the application frame', 'error');" in workspaces_text
+        assert "if (!iframe || !frameWin || !frameDoc?.body || !frameDoc.body.childNodes.length) {" in workspaces_text
+        assert "toast('Nothing is loaded in the application frame yet', 'warning');" in workspaces_text
+        assert "frameWin.focus();" in workspaces_text
+
+        assert "window.printHtmlInHiddenFrame?.(html, 'Emergency Wallet Card')" in dashboards_text
+        assert "frame.contentDocument.write(html);" not in dashboards_text
+        assert "setTimeout(() => { frame.contentWindow.print();" not in dashboards_text
 
     def test_long_running_workspace_polls_use_shared_runtime_guards(self):
         services_ai_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')

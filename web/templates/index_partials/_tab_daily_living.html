@@ -14,15 +14,26 @@
     --dl-orange: #f97316;
     --dl-blue: #3b82f6;
   }
-  #tab-daily-living .dl-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-daily-living .dl-header h2 { font-size:1.25rem; color:var(--dl-accent); margin:0; }
-  #tab-daily-living .dl-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-daily-living .dl-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-daily-living .dl-sub-tab.active { background:var(--dl-accent-dim); border-color:var(--dl-accent); color:var(--dl-accent); }
+  #tab-daily-living .dl-command-deck { display:grid; gap:12px; margin-bottom:16px; padding:18px 20px; border:1px solid color-mix(in srgb, var(--dl-accent) 12%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--dl-accent) 14%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 90%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08)); }
+  #tab-daily-living .dl-command-deck-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  #tab-daily-living .dl-command-copy { display:grid; gap:8px; max-width:min(760px, 100%); }
+  #tab-daily-living .dl-command-title { margin:0; font-size:1.32rem; line-height:1.18; color:var(--text-primary,#eee); }
+  #tab-daily-living .dl-command-text { margin:0; color:var(--text-secondary,#aaa); line-height:1.6; max-width:68ch; }
+  #tab-daily-living .dl-command-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  #tab-daily-living .dl-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-daily-living .dl-command-pill { display:inline-flex; align-items:center; min-height:28px; padding:0 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--dl-accent) 20%, var(--border,#333)); background:color-mix(in srgb, var(--dl-accent) 10%, transparent); color:color-mix(in srgb, var(--dl-accent) 44%, var(--text-primary,#f5f7ff)); font-size:.72rem; font-weight:600; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-daily-living .dl-sub-tabs-shell { display:grid; gap:8px; margin-bottom:18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 84%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-daily-living .dl-sub-tabs-label { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary,#aaa); font-weight:700; }
+  #tab-daily-living .dl-sub-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-daily-living .dl-sub-tab { min-height:36px; padding:8px 14px; border-radius:999px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-daily-living .dl-sub-tab:hover { border-color:color-mix(in srgb, var(--dl-accent) 22%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+  #tab-daily-living .dl-sub-tab.active { background:color-mix(in srgb, var(--dl-accent) 14%, var(--surface-solid, #121726)); border-color:color-mix(in srgb, var(--dl-accent) 48%, var(--border,#333)); color:var(--dl-accent); box-shadow:0 10px 24px color-mix(in srgb, var(--dl-accent) 16%, transparent); }
+  #tab-daily-living .dl-sub-tab:focus-visible,
+  #tab-daily-living .dl-btn:focus-visible { outline:2px solid transparent; outline-offset:2px; box-shadow:0 0 0 2px color-mix(in srgb, var(--surface-solid,#151826) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--dl-accent) 48%, transparent); }
   #tab-daily-living .dl-panel { display:none; }
   #tab-daily-living .dl-panel.active { display:block; }
-  #tab-daily-living .dl-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
-  #tab-daily-living .dl-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
+  #tab-daily-living .dl-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
+  #tab-daily-living .dl-card-title { font-size:1rem; font-weight:700; color:var(--text-primary,#eee); margin-bottom:10px; }
   #tab-daily-living .dl-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-daily-living .dl-stats-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:14px; }
   #tab-daily-living .dl-stat-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:12px 14px; text-align:center; }
@@ -35,7 +46,7 @@
   #tab-daily-living .dl-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-daily-living .dl-form-row textarea { min-height:60px; resize:vertical; }
   #tab-daily-living .dl-form-row .field { flex:1; min-width:140px; }
-  #tab-daily-living .dl-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-daily-living .dl-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-daily-living .dl-btn-primary { background:var(--dl-accent); color:#fff; }
   #tab-daily-living .dl-btn-primary:hover { background:var(--dl-accent-hover); }
   #tab-daily-living .dl-btn-danger { background:var(--dl-red); color:#fff; }
@@ -48,7 +59,7 @@
   #tab-daily-living .dl-badge-grid_down { background:rgba(239,68,68,.2); color:var(--dl-red); }
   #tab-daily-living .dl-badge-emergency { background:rgba(249,115,22,.2); color:var(--dl-orange); }
   #tab-daily-living .dl-badge-watch { background:rgba(59,130,246,.2); color:var(--dl-blue); }
-  #tab-daily-living .dl-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-daily-living .dl-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
   #tab-daily-living .dl-table { width:100%; border-collapse:collapse; font-size:.82rem; }
   #tab-daily-living .dl-table th { padding:8px 10px; text-align:left; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); background:rgba(0,0,0,.3); border-bottom:1px solid var(--border,#444); }
   #tab-daily-living .dl-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); }
@@ -69,26 +80,54 @@
   #tab-daily-living .dl-recipe-meta { font-size:.75rem; color:var(--text-secondary,#aaa); }
   #tab-daily-living .dl-ingredient-row { display:flex; gap:6px; align-items:center; margin-bottom:4px; }
   #tab-daily-living .dl-ingredient-row input { flex:1; }
+  @media (max-width: 860px) {
+    #tab-daily-living .dl-command-deck { padding:16px; }
+    #tab-daily-living .dl-command-actions { width:100%; justify-content:flex-start; }
+    #tab-daily-living .dl-command-actions .dl-btn { flex:1 1 160px; }
+  }
 </style>
 
-<div class="dl-header">
-  <h2>Daily Living & Quality of Life</h2>
+<div class="dl-command-deck workspace-panel">
+  <div class="dl-command-deck-head">
+    <div class="dl-command-copy">
+      <h2 class="dl-command-title">Keep routines, morale, and grid-down quality of life stable when conditions change.</h2>
+      <p class="dl-command-text">Stage schedules, chores, clothing, sanitation, sleep, and cooking in one place so the household rhythm still feels deliberate under stress.</p>
+    </div>
+    <div class="dl-command-actions">
+      <button type="button" class="dl-btn dl-btn-secondary" data-dl-panel-target="schedules">Routines</button>
+      <button type="button" class="dl-btn dl-btn-secondary" data-dl-panel-target="sanitation">Sanitation</button>
+      <button type="button" class="dl-btn dl-btn-secondary" data-dl-panel-target="morale">Morale</button>
+      <button type="button" class="dl-btn dl-btn-secondary" data-dl-panel-target="sleep">Sleep</button>
+      <button type="button" class="dl-btn dl-btn-secondary" data-dl-panel-target="recipes">Cooking</button>
+    </div>
+  </div>
+  <div class="dl-command-pills" aria-hidden="true">
+    <span class="dl-command-pill">Schedules</span>
+    <span class="dl-command-pill">Chores</span>
+    <span class="dl-command-pill">Morale</span>
+    <span class="dl-command-pill">Sleep</span>
+    <span class="dl-command-pill">Grid-down cooking</span>
+    <span class="dl-command-pill">Watch planning</span>
+  </div>
 </div>
 
 <!-- Sub-tab navigation -->
-<div class="dl-sub-tabs" style="margin-bottom:1rem;display:flex;gap:.5rem;flex-wrap:wrap;">
-  <button class="dl-sub-tab active" data-dl-panel="schedules">&#128197; Schedules</button>
-  <button class="dl-sub-tab" data-dl-panel="clothing">&#128085; Clothing</button>
-  <button class="dl-sub-tab" data-dl-panel="sanitation">&#129532; Sanitation</button>
-  <button class="dl-sub-tab" data-dl-panel="morale">&#129504; Morale</button>
-  <button class="dl-sub-tab" data-dl-panel="sleep">&#128564; Sleep</button>
-  <button class="dl-sub-tab" data-dl-panel="recipes">&#127859; Cooking</button>
+<div class="dl-sub-tabs-shell">
+  <div class="dl-sub-tabs-label">Workflows</div>
+  <div class="dl-sub-tabs" role="tablist" aria-label="Daily living sections">
+    <button type="button" class="dl-sub-tab active" data-dl-panel="schedules" role="tab" aria-selected="true" aria-controls="dl-panel-schedules" id="dl-tab-schedules">Schedules</button>
+    <button type="button" class="dl-sub-tab" data-dl-panel="clothing" role="tab" aria-selected="false" aria-controls="dl-panel-clothing" id="dl-tab-clothing">Clothing</button>
+    <button type="button" class="dl-sub-tab" data-dl-panel="sanitation" role="tab" aria-selected="false" aria-controls="dl-panel-sanitation" id="dl-tab-sanitation">Sanitation</button>
+    <button type="button" class="dl-sub-tab" data-dl-panel="morale" role="tab" aria-selected="false" aria-controls="dl-panel-morale" id="dl-tab-morale">Morale</button>
+    <button type="button" class="dl-sub-tab" data-dl-panel="sleep" role="tab" aria-selected="false" aria-controls="dl-panel-sleep" id="dl-tab-sleep">Sleep</button>
+    <button type="button" class="dl-sub-tab" data-dl-panel="recipes" role="tab" aria-selected="false" aria-controls="dl-panel-recipes" id="dl-tab-recipes">Cooking</button>
+  </div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 1: Schedules & Chores
      ═══════════════════════════════════════════════════════════════ -->
-<div class="dl-panel active" id="dl-panel-schedules" data-dl-panel-content="schedules">
+<div class="dl-panel active" id="dl-panel-schedules" data-dl-panel-content="schedules" role="tabpanel" tabindex="-1" aria-labelledby="dl-tab-schedules">
 
   <!-- Schedule Stats -->
   <div class="dl-stats-grid" id="dl-schedule-stats"></div>
@@ -133,7 +172,7 @@
     <span class="dl-card-title" style="margin:0">Schedules</span>
     <button class="dl-btn dl-btn-secondary" onclick="dlLoadTemplates()">Load Templates</button>
   </div>
-  <div id="dl-schedule-list" class="dl-card"><div class="dl-empty">Loading schedules...</div></div>
+  <div id="dl-schedule-list" class="dl-card"><div class="dl-empty">Loading routines and schedules...</div></div>
   <div id="dl-schedule-templates" class="dl-card is-hidden"></div>
 
   <!-- Chores Section -->
@@ -176,13 +215,13 @@
       </div>
     </div>
   </div>
-  <div id="dl-chore-list" class="dl-card"><div class="dl-empty">Loading chores...</div></div>
+  <div id="dl-chore-list" class="dl-card"><div class="dl-empty">Loading chore rotation...</div></div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 2: Clothing & Gear
      ═══════════════════════════════════════════════════════════════ -->
-<div class="dl-panel" id="dl-panel-clothing" data-dl-panel-content="clothing">
+<div class="dl-panel" id="dl-panel-clothing" data-dl-panel-content="clothing" role="tabpanel" tabindex="-1" aria-labelledby="dl-tab-clothing" hidden>
 
   <!-- Assessment Card -->
   <div id="dl-clothing-assessment" class="dl-card is-hidden"></div>
@@ -245,13 +284,13 @@
   </div>
 
   <!-- Clothing List -->
-  <div id="dl-clothing-list" class="dl-grid"><div class="dl-empty">Loading clothing...</div></div>
+  <div id="dl-clothing-list" class="dl-grid"><div class="dl-empty">Loading clothing readiness...</div></div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 3: Sanitation
      ═══════════════════════════════════════════════════════════════ -->
-<div class="dl-panel" id="dl-panel-sanitation" data-dl-panel-content="sanitation">
+<div class="dl-panel" id="dl-panel-sanitation" data-dl-panel-content="sanitation" role="tabpanel" tabindex="-1" aria-labelledby="dl-tab-sanitation" hidden>
 
   <!-- Projections -->
   <div id="dl-sanitation-projections" class="dl-stats-grid"></div>
@@ -292,13 +331,13 @@
   </div>
 
   <!-- Supply List -->
-  <div id="dl-sanitation-list" class="dl-card"><div class="dl-empty">Loading supplies...</div></div>
+  <div id="dl-sanitation-list" class="dl-card"><div class="dl-empty">Loading sanitation supplies...</div></div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 4: Morale & Psych
      ═══════════════════════════════════════════════════════════════ -->
-<div class="dl-panel" id="dl-panel-morale" data-dl-panel-content="morale">
+<div class="dl-panel" id="dl-panel-morale" data-dl-panel-content="morale" role="tabpanel" tabindex="-1" aria-labelledby="dl-tab-morale" hidden>
 
   <!-- Trend Summary -->
   <div id="dl-morale-trends" class="dl-stats-grid"></div>
@@ -366,13 +405,13 @@
   </div>
 
   <!-- Morale History -->
-  <div id="dl-morale-list" class="dl-card"><div class="dl-empty">Loading morale logs...</div></div>
+  <div id="dl-morale-list" class="dl-card"><div class="dl-empty">Loading morale check-ins...</div></div>
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 5: Sleep & Performance
      ═══════════════════════════════════════════════════════════════ -->
-<div class="dl-panel" id="dl-panel-sleep" data-dl-panel-content="sleep">
+<div class="dl-panel" id="dl-panel-sleep" data-dl-panel-content="sleep" role="tabpanel" tabindex="-1" aria-labelledby="dl-tab-sleep" hidden>
 
   <!-- Sleep Debt Display -->
   <div id="dl-sleep-debt" class="dl-stats-grid"></div>
@@ -401,7 +440,7 @@
   </div>
 
   <!-- Sleep History -->
-  <div id="dl-sleep-list" class="dl-card"><div class="dl-empty">Loading sleep logs...</div></div>
+  <div id="dl-sleep-list" class="dl-card"><div class="dl-empty">Loading sleep records...</div></div>
 
   <!-- Watch Optimizer -->
   <div class="dl-card" style="margin-top:16px;">
@@ -409,7 +448,7 @@
       <div class="dl-card-title" style="margin:0">Watch Schedule Optimizer</div>
       <button class="dl-btn dl-btn-primary" onclick="dlRunWatchOptimizer()">Generate Rotation</button>
     </div>
-    <div id="dl-watch-result" class="dl-empty">Click to generate an optimized watch rotation.</div>
+    <div id="dl-watch-result" class="dl-empty">Run a watch rotation once enough sleep data is in place.</div>
   </div>
 
   <!-- Performance Checks -->
@@ -438,7 +477,7 @@
   </div>
 
   <!-- Performance History -->
-  <div id="dl-perf-list" class="dl-card"><div class="dl-empty">Loading performance checks...</div></div>
+  <div id="dl-perf-list" class="dl-card"><div class="dl-empty">Loading readiness checks...</div></div>
 
   <!-- Risk Summary -->
   <div id="dl-risk-summary" class="dl-card is-hidden"></div>
@@ -450,7 +489,7 @@
 <!-- ═══════════════════════════════════════════════════════════════
      PANEL 6: Grid-Down Cooking
      ═══════════════════════════════════════════════════════════════ -->
-<div class="dl-panel" id="dl-panel-recipes" data-dl-panel-content="recipes">
+<div class="dl-panel" id="dl-panel-recipes" data-dl-panel-content="recipes" role="tabpanel" tabindex="-1" aria-labelledby="dl-tab-recipes" hidden>
 
   <!-- Recipe Filters -->
   <div class="dl-form-row" style="margin-bottom:12px;">
@@ -477,7 +516,7 @@
   </div>
 
   <!-- Recipe List -->
-  <div id="dl-recipe-list" class="dl-grid"><div class="dl-empty">Loading recipes...</div></div>
+  <div id="dl-recipe-list" class="dl-grid"><div class="dl-empty">Loading grid-down recipes...</div></div>
 
   <!-- Add Recipe Form -->
   <div class="dl-card" style="margin-top:16px;">
@@ -534,7 +573,7 @@
         <button class="dl-btn dl-btn-primary" onclick="dlCalculateFuel()">Calculate Fuel</button>
       </div>
     </div>
-    <div id="dl-fuel-result" class="dl-empty">Select a recipe and calculate fuel needs.</div>
+    <div id="dl-fuel-result" class="dl-empty">Select a recipe to estimate fuel before you cook.</div>
   </div>
 </div>
 
@@ -544,16 +583,33 @@
 <script>
 (function(){
   const root = document.getElementById('tab-daily-living');
+  if (!root) return;
 
   /* ── Sub-tab switching ───────────────────────────────── */
-  root.querySelectorAll('.dl-sub-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.querySelectorAll('.dl-sub-tab').forEach(b => b.classList.remove('active'));
-      root.querySelectorAll('.dl-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = document.getElementById('dl-panel-' + btn.dataset.dlPanel);
-      if (panel) panel.classList.add('active');
+  function dlActivatePanel(panelName, focusPanel = false) {
+    root.querySelectorAll('.dl-sub-tab').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
     });
+    root.querySelectorAll('.dl-panel').forEach(p => {
+      p.classList.remove('active');
+      p.hidden = true;
+    });
+    const btn = root.querySelector(`.dl-sub-tab[data-dl-panel="${panelName}"]`);
+    const panel = document.getElementById('dl-panel-' + panelName);
+    if (!btn || !panel) return;
+    btn.classList.add('active');
+    btn.setAttribute('aria-selected', 'true');
+    panel.classList.add('active');
+    panel.hidden = false;
+    if (focusPanel) panel.focus();
+  }
+
+  root.querySelectorAll('.dl-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => dlActivatePanel(btn.dataset.dlPanel, true));
+  });
+  root.querySelectorAll('[data-dl-panel-target]').forEach(btn => {
+    btn.addEventListener('click', () => dlActivatePanel(btn.dataset.dlPanelTarget, true));
   });
 
   /* ── Helpers ─────────────────────────────────────────── */
@@ -595,7 +651,7 @@
   window.dlLoadSchedules = function() {
     api('/api/daily-living/schedules').then(function(items) {
       var c = el('dl-schedule-list');
-      if (!items.length) { c.innerHTML = '<div class="dl-empty">No schedules yet. Create one above.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No schedules yet. Build the first routine above so the household cadence is visible.</div>'; return; }
       c.innerHTML = items.map(function(s) {
         return '<div class="dl-list-item"><div><strong>' + s.name + '</strong> ' + typeBadge(s.type || 'normal') +
           '<br><small style="color:var(--text-secondary)">' + (s.description || 'No description') +
@@ -649,7 +705,7 @@
     var box = el('dl-schedule-templates');
     box.classList.remove('is-hidden');
     api('/api/daily-living/schedules/templates').then(function(templates) {
-      if (!templates.length) { box.innerHTML = '<div class="dl-empty">No templates available.</div>'; return; }
+      if (!templates.length) { box.innerHTML = '<div class="dl-empty">No built-in templates are available right now.</div>'; return; }
       box.innerHTML = '<div class="dl-card-title">Schedule Templates</div>' +
         templates.map(function(t) {
           return '<div class="dl-list-item"><div><strong>' + t.name + '</strong> ' + typeBadge(t.type || 'normal') +
@@ -667,7 +723,7 @@
   window.dlLoadChores = function() {
     api('/api/daily-living/chores').then(function(items) {
       var c = el('dl-chore-list');
-      if (!items.length) { c.innerHTML = '<div class="dl-empty">No chores yet. Add one above.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No chores yet. Add the first recurring responsibility above.</div>'; return; }
       c.innerHTML = items.map(function(ch) {
         var completedCls = ch.completed ? ' style="opacity:.5"' : '';
         return '<div class="dl-list-item"' + completedCls + '><div>' +
@@ -737,7 +793,7 @@
       }).join('');
       select.innerHTML = opts;
 
-      if (!items.length) { c.innerHTML = '<div class="dl-empty">No clothing items. Add one above.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No clothing items yet. Add the first climate or work layer above.</div>'; return; }
       c.innerHTML = items.map(function(it) {
         return '<div class="dl-recipe-card"><div class="dl-recipe-title">' + it.item_name +
           (it.waterproof ? ' <span class="dl-badge" style="background:rgba(59,130,246,.2);color:var(--dl-blue)">Waterproof</span>' : '') +
@@ -809,7 +865,7 @@
   window.dlLoadSanitation = function() {
     api('/api/daily-living/sanitation').then(function(items) {
       var c = el('dl-sanitation-list');
-      if (!items.length) { c.innerHTML = '<div class="dl-empty">No sanitation supplies tracked.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No sanitation supplies are tracked yet. Add the essentials that protect hygiene and morale.</div>'; return; }
       /* Check for low stock alerts */
       var lowStock = items.filter(function(s) { return s.quantity < (s.min_stock || 0); });
       var alertBox = el('dl-sanitation-alerts');
@@ -897,7 +953,7 @@
       }).join('');
       select.innerHTML = opts;
 
-      if (!items.length) { c.innerHTML = '<div class="dl-empty">No morale logs yet.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No morale check-ins yet. Start logging how the household is holding up.</div>'; return; }
       c.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Date</th><th>Morale</th><th>Stress</th><th>Sleep</th><th>Physical</th><th>Social</th><th>Activities</th><th></th></tr></thead><tbody>' +
         items.map(function(m) {
           return '<tr><td>' + (m.person || '') + '</td><td>' + (m.date || '') + '</td>' +
@@ -946,7 +1002,7 @@
   window.dlLoadSleep = function() {
     api('/api/daily-living/sleep').then(function(items) {
       var c = el('dl-sleep-list');
-      if (!items.length) { c.innerHTML = '<div class="dl-empty">No sleep logs yet.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No sleep records yet. The first entries will unlock fatigue and watch planning.</div>'; return; }
       c.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Date</th><th>Start</th><th>End</th><th>Quality</th><th>Interruptions</th><th>Watch</th><th></th></tr></thead><tbody>' +
         items.map(function(s) {
           return '<tr><td>' + (s.person || '') + '</td><td>' + (s.date || '') + '</td>' +
@@ -989,7 +1045,7 @@
   window.dlRunWatchOptimizer = function() {
     api('/api/daily-living/sleep/watch-optimizer').then(function(data) {
       var box = el('dl-watch-result');
-      if (!data.rotation || !data.rotation.length) { box.innerHTML = '<div class="dl-empty">Not enough data for optimization. Log more sleep entries.</div>'; return; }
+      if (!data.rotation || !data.rotation.length) { box.innerHTML = '<div class="dl-empty">Not enough sleep data yet. Log a few more nights to build a reliable watch rotation.</div>'; return; }
       box.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Watch Start</th><th>Watch End</th><th>Notes</th></tr></thead><tbody>' +
         data.rotation.map(function(r) {
           return '<tr><td>' + r.person + '</td><td>' + r.start + '</td><td>' + r.end + '</td><td>' + (r.notes || '') + '</td></tr>';
@@ -1001,7 +1057,7 @@
   window.dlLoadPerformance = function() {
     api('/api/daily-living/performance').then(function(items) {
       var c = el('dl-perf-list');
-      if (!items.length) { c.innerHTML = '<div class="dl-empty">No performance checks logged.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No performance checks yet. Log the first readiness check above.</div>'; return; }
       c.innerHTML = '<table class="dl-table"><thead><tr><th>Person</th><th>Hours Awake</th><th>Fatigue</th><th>Cognitive</th><th>Physical</th><th>Risk</th><th></th></tr></thead><tbody>' +
         items.map(function(p) {
           return '<tr><td>' + (p.person || '') + '</td><td>' + (p.hours_awake || 0) + '</td>' +
@@ -1091,7 +1147,7 @@
     var url = '/api/daily-living/recipes' + (params.length ? '?' + params.join('&') : '');
     api(url).then(function(items) {
       var c = el('dl-recipe-list');
-      if (!items.length) { c.innerHTML = '<div class="dl-empty">No recipes found.</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No recipes yet. Add the first grid-down meal plan above.</div>'; return; }
       c.innerHTML = items.map(function(r) {
         return '<div class="dl-recipe-card">' +
           '<div class="dl-recipe-title">' + methodIcon(r.cooking_method) + ' ' + r.name + '</div>' +
@@ -1116,7 +1172,7 @@
     if (!q || q.length < 2) { dlLoadRecipes(); return; }
     api('/api/daily-living/recipes/search?q=' + encodeURIComponent(q)).then(function(items) {
       var c = el('dl-recipe-list');
-      if (!items.length) { c.innerHTML = '<div class="dl-empty">No recipes match "' + q + '".</div>'; return; }
+      if (!items.length) { c.innerHTML = '<div class="dl-empty">No recipes match "' + q + '". Try a broader ingredient or meal name.</div>'; return; }
       c.innerHTML = items.map(function(r) {
         return '<div class="dl-recipe-card">' +
           '<div class="dl-recipe-title">' + methodIcon(r.cooking_method) + ' ' + r.name + '</div>' +

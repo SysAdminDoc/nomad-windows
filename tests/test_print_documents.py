@@ -170,6 +170,22 @@ class TestPrintDocuments:
         assert 'Atlas Contents' in html
         assert 'Checkpoint Cedar' in html
 
+    def test_map_atlas_document_escapes_untrusted_title_and_waypoint_labels(self, client):
+        client.post('/api/waypoints', json={'name': '<b>Checkpoint Cedar</b>', 'lat': 39.7392, 'lng': -104.9903, 'category': '<script>alert(1)</script>'})
+        resp = client.post('/api/maps/atlas', json={
+            'title': '<script>alert(1)</script>',
+            'lat': 39.7392,
+            'lng': -104.9903,
+            'zoom_levels': [10],
+            'grid_size': 1,
+        })
+        assert resp.status_code == 200
+        html = resp.get_data(as_text=True)
+        assert '<script>alert(1)</script>' not in html
+        assert '&lt;script&gt;alert(1)&lt;/script&gt;' in html
+        assert '&lt;b&gt;Checkpoint Cedar&lt;/b&gt;' in html
+        assert '&lt;script&gt;alert(1)&lt;/script&gt;' in html
+
     def test_watch_schedule_document(self, client):
         create = client.post('/api/watch-schedules', json={
             'name': 'Night Watch',

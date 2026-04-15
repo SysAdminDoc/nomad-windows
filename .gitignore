@@ -32,17 +32,7 @@ playwright-report/
 test-results/
 tmp/
 tmp_pytest_full.out
-AUDIT_PROMPT.md
-file
 
 # Internal docs (keep locally, not in repo)
 CLAUDE.md
-ROADMAP.md
-ROADMAP-v5.md
-OFFLINE-DATASETS.md
-SURVIVAL-YOUTUBE-REFERENCE.md
 docs/schema.md
-
-# Local one-off tooling not used by the app/runtime
-scripts/audit_tables.py
-project_nomad_logo.png

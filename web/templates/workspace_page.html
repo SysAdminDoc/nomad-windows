@@ -2,7 +2,7 @@
 <html lang="{{ current_lang }}" dir="{{ 'rtl' if is_rtl else 'ltr' }}">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#4f9cf7">
 <title>{{ page_title }} · NOMAD Field Desk v{{ version }}</title>
@@ -77,9 +77,8 @@ window.NOMAD_WORKSPACE_ROUTES = {{ workspace_routes|tojson }};
 window.NOMAD_ALLOW_LAUNCH_RESTORE = {{ allow_launch_restore|tojson }};
 window.NOMAD_FIRST_RUN_COMPLETE = {{ first_run_complete|tojson }};
 window.NOMAD_WIZARD_SHOULD_LAUNCH = {{ wizard_should_launch|tojson }};
+window.NOMAD_VERSION = {{ version|tojson }};
 </script>
-<script>
-{% include 'index_partials/_app_inline.js' %}
-</script>
+<script src="/app-runtime.js?v={{ version }}"></script>
 </body>
 </html>

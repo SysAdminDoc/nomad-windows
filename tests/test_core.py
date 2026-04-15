@@ -146,11 +146,8 @@ class TestErrorHandler:
         assert 'id="mobile-bottom-nav"' not in html
         assert 'data-shell-action="open-mobile-drawer"' not in html
         assert 'class="sidebar-toggle"' not in html
-        assert 'viewport-fit=cover' not in html
-        assert 'Can my family use it from another computer on the network?' in html
+        assert 'viewport-fit=cover' in html
         assert 'data-install-service="ollama"' in html
-        assert 'data-shell-action="install-service"' in html
-        assert 'data-shell-action="reload-services"' in html
         assert 'data-shell-action="dismiss-broadcast"' in html
         assert 'id="broadcast-banner" class="broadcast-banner is-hidden"' in html
         assert 'id="tab-services"' in html
@@ -158,6 +155,10 @@ class TestErrorHandler:
         assert 'id="tab-situation-room"' not in html
         assert 'id="tab-maps"' not in html
         assert 'id="tab-settings"' not in html
+        runtime_js = self._html(client, '/app-runtime.js?v=test')
+        assert 'Can my family use it from another computer on the network?' in runtime_js
+        assert 'data-shell-action="install-service"' in runtime_js
+        assert 'data-shell-action="reload-services"' in runtime_js
         assert 'utility-fab' not in html
 
     def test_workspace_pages_are_segmented(self, client):
@@ -282,6 +283,12 @@ class TestErrorHandler:
             contents = css_file.read_text(encoding='utf-8')
             assert 'transition: all' not in contents, f'transition: all found in {css_file.name}'
 
+        inline_partials = sorted((REPO_ROOT / 'web' / 'templates' / 'index_partials').glob('_tab_*.html'))
+        for partial in inline_partials:
+            contents = partial.read_text(encoding='utf-8')
+            assert 'transition:all' not in contents, f'transition:all found in {partial.name}'
+            assert 'transition: all' not in contents, f'transition: all found in {partial.name}'
+
     def test_gitignore_covers_legacy_binaries_and_runtime_artifacts(self):
         contents = (REPO_ROOT / '.gitignore').read_text(encoding='utf-8')
 
@@ -332,14 +339,19 @@ class TestErrorHandler:
     def test_css_focus_contract_does_not_regress_to_outline_none(self):
         css_root = REPO_ROOT / 'web' / 'static' / 'css'
         combined = '\n'.join(path.read_text(encoding='utf-8') for path in sorted(css_root.rglob('*.css')))
+        inline_partials = sorted((REPO_ROOT / 'web' / 'templates' / 'index_partials').glob('_tab_*.html'))
+        partial_text = '\n'.join(path.read_text(encoding='utf-8') for path in inline_partials)
 
         assert 'outline: none' not in combined
         assert 'outline:none' not in combined
+        assert 'outline: none' not in partial_text
+        assert 'outline:none' not in partial_text
         assert ':focus-visible' in combined
 
     def test_embedded_tool_pages_keep_zoom_enabled_and_status_regions(self):
         viptrack_text = (REPO_ROOT / 'web' / 'viptrack' / 'index.html').read_text(encoding='utf-8')
         nukemap_text = (REPO_ROOT / 'web' / 'nukemap' / 'index.html').read_text(encoding='utf-8')
+        nukemap_styles_text = (REPO_ROOT / 'web' / 'nukemap' / 'css' / 'styles.css').read_text(encoding='utf-8')
         nukemap_app_text = (REPO_ROOT / 'web' / 'nukemap' / 'js' / 'app.js').read_text(encoding='utf-8')
         nukemap_extras_text = (REPO_ROOT / 'web' / 'nukemap' / 'js' / 'extras.js').read_text(encoding='utf-8')
         offline_atlas_text = (REPO_ROOT / 'web' / 'nukemap' / 'data' / 'offline_atlas.json').read_text(encoding='utf-8')
@@ -353,17 +365,59 @@ class TestErrorHandler:
         assert 'user-scalable=no' not in viptrack_text
         assert 'user-scalable=no' not in nukemap_text
         assert 'transition: all' not in viptrack_text
+        assert 'outline: none' not in viptrack_text
+        assert 'outline:none' not in viptrack_text
+        assert 'outline: none' not in nukemap_styles_text
+        assert 'outline:none' not in nukemap_styles_text
+        assert 'outline: none' not in nukemap_partial
+        assert 'outline:none' not in nukemap_partial
         assert 'aria-label="Clear search"' in viptrack_text
+        assert 'role="switch"' in viptrack_text
+        assert 'id="toggleTrailArrows" type="button" role="switch"' in viptrack_text
+        assert 'id="toggleAlerts" type="button" role="switch"' in viptrack_text
+        assert 'id="toggleNotifications" type="button" role="switch"' in viptrack_text
+        assert 'aria-label="Trail color mode"' in viptrack_text
+        assert 'aria-label="Military alert radius"' in viptrack_text
+        assert 'aria-label="Sort aircraft list"' in viptrack_text
+        assert '.toggle:focus-visible' in viptrack_text
         assert 'role="tablist"' in viptrack_text
         assert 'aria-controls="bottomPanels"' in viptrack_text
         assert 'aria-controls="settingsPanel"' in viptrack_text
         assert 'role="status" aria-live="polite" aria-atomic="true"' in viptrack_text
+        assert '.search-box:focus-visible' in viptrack_text
+        assert "function syncToggleSwitchState(id, checked)" in viptrack_text
+        assert 'trailRenderer.init();' in viptrack_text
+        assert "syncToggleSwitchState('toggleTrailArrows', this.options.showDirection);" in viptrack_text
+        assert "document.getElementById('bookmarkNameInput').addEventListener('keydown'" in viptrack_text
+        assert 'aria-label="Filter warheads"' in nukemap_text
+        assert 'aria-label="Select warhead"' in nukemap_text
+        assert 'aria-label="Yield slider"' in nukemap_text
+        assert 'aria-label="Yield unit"' in nukemap_text
+        assert 'aria-label="Wind speed in kilometers per hour"' in nukemap_text
         assert 'aria-controls="panel"' in nukemap_text
         assert 'aria-expanded="true"' in nukemap_text
         assert 'Select scenario…' in nukemap_text
         assert 'Select scenario...' not in nukemap_text
         assert 'role="status" aria-live="polite" aria-atomic="true"' in nukemap_text
         assert 'role="status" aria-live="polite" aria-atomic="true"' in nukemap_partial
+        assert 'aria-label="Filter warheads"' in nukemap_partial
+        assert 'aria-label="Select warhead"' in nukemap_partial
+        assert 'aria-label="Yield slider"' in nukemap_partial
+        assert 'aria-label="Yield unit"' in nukemap_partial
+        assert 'aria-label="Wind speed in kilometers per hour"' in nukemap_partial
+        assert '#yield-slider:focus-visible' in nukemap_styles_text
+        assert '#tab-nukemap #yield-slider:focus-visible' in nukemap_partial
+        assert '.toggle-row input{display:none}' not in nukemap_styles_text
+        assert '#tab-nukemap .toggle-row input{display:none}' not in nukemap_partial
+        assert '.toggle-row:focus-visible .tg-slider' in nukemap_styles_text
+        assert '.toggle-row input:focus-visible+.tg-slider' in nukemap_styles_text
+        assert '#tab-nukemap .toggle-row:focus-visible .tg-slider' in nukemap_partial
+        assert '#tab-nukemap .toggle-row input:focus-visible+.tg-slider' in nukemap_partial
+        assert '.toggle-row input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer}' in nukemap_styles_text
+        assert '#tab-nukemap .toggle-row input{position:absolute;inset:0;margin:0;opacity:0;cursor:pointer}' in nukemap_partial
+        assert 'NM.enhanceToggleRows = function()' in nukemap_app_text
+        assert "toggleRow.setAttribute('role', 'switch');" in nukemap_app_text
+        assert "if (input.id) toggleRow.dataset.toggleInput = input.id;" in nukemap_app_text
         assert '@media (prefers-reduced-motion: reduce)' in viptrack_text
         assert '@media (prefers-reduced-motion: reduce)' in nukemap_partial
         assert '/viptrack/lib/leaflet.css' in viptrack_text
@@ -419,6 +473,107 @@ class TestErrorHandler:
         assert '"places":[' in offline_atlas_text
         assert "window.NomadEmbeddedWorkspaceState?.save?.('nukemap', snapshot);" in nukemap_partial
         assert '_nomadTabLeaveCallbacks.nukemap' in nukemap_partial
+
+    def test_runtime_generated_import_training_and_scan_controls_keep_semantics(self):
+        interop_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_interoperability.html').read_text(encoding='utf-8')
+        training_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_training_knowledge.html').read_text(encoding='utf-8')
+        prep_inventory_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / 'preparedness' / '_prep_inventory_flows.js').read_text(encoding='utf-8')
+        init_runtime_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_init_runtime.js').read_text(encoding='utf-8')
+
+        assert 'role="button" tabindex="0" aria-label="Choose an import file" data-click-target="io-import-file-input"' in interop_text
+        assert '.io-drop-zone:focus-visible' in interop_text
+        assert "onclick=\"document.getElementById('io-import-file-input').click()\"" not in interop_text
+
+        assert '<button type="button" class="tk-card tk-card-button"' in training_text
+        assert 'aria-label="Review ' in training_text
+        assert '.tk-card-button:focus-visible' in training_text
+        assert '.tk-btn:focus-visible' in training_text
+        assert '<div class="tk-card" style="cursor:pointer" onclick="tkStartReview(' not in training_text
+
+        assert 'alt="Receipt preview"' in prep_inventory_text
+        assert 'alt="Supply image preview"' in prep_inventory_text
+        assert 'aria-label="Select all scanned receipt items"' in prep_inventory_text
+        assert 'aria-label="Select receipt item ${i + 1}"' in prep_inventory_text
+        assert 'aria-label="Receipt item name ${i + 1}"' in prep_inventory_text
+        assert 'aria-label="Receipt quantity ${i + 1}"' in prep_inventory_text
+        assert 'aria-label="Select detected inventory item ${i + 1}"' in prep_inventory_text
+        assert 'aria-label="Detected item name ${i + 1}"' in prep_inventory_text
+        assert 'aria-label="Detected item quantity ${i + 1}"' in prep_inventory_text
+        assert 'aria-label="Detected item category ${i + 1}"' in prep_inventory_text
+        assert 'aria-label="Detected item condition ${i + 1}"' in prep_inventory_text
+
+        assert 'aria-label="Map CSV column ${escapeAttr(h)}"' in init_runtime_text
+
+    def test_interoperability_and_training_sub_tab_semantics(self):
+        interop_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_interoperability.html').read_text(encoding='utf-8')
+        training_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_training_knowledge.html').read_text(encoding='utf-8')
+
+        # IO: tablist container
+        assert 'role="tablist"' in interop_text
+        assert 'aria-label="Data exchange sections"' in interop_text
+        # IO: each tab button has role, aria-selected, aria-controls, and type
+        assert 'role="tab" aria-selected="true" aria-controls="io-panel-export" id="io-tab-export"' in interop_text
+        assert 'role="tab" aria-selected="false" aria-controls="io-panel-import" id="io-tab-import"' in interop_text
+        assert 'role="tab" aria-selected="false" aria-controls="io-panel-batch" id="io-tab-batch"' in interop_text
+        assert 'role="tab" aria-selected="false" aria-controls="io-panel-history" id="io-tab-history"' in interop_text
+        # IO: panels have role=tabpanel, tabindex, aria-labelledby
+        assert 'role="tabpanel" tabindex="-1" aria-labelledby="io-tab-export"' in interop_text
+        assert 'role="tabpanel" tabindex="-1" aria-labelledby="io-tab-import"' in interop_text
+        assert 'role="tabpanel" tabindex="-1" aria-labelledby="io-tab-batch"' in interop_text
+        assert 'role="tabpanel" tabindex="-1" aria-labelledby="io-tab-history"' in interop_text
+        # IO: history tables have accessible names
+        assert 'aria-label="Recent exports"' in interop_text
+        assert 'aria-label="Recent imports"' in interop_text
+        # IO: focus-visible on sub-tab and btn
+        assert '.io-sub-tab:focus-visible' in interop_text
+        assert '.io-btn:focus-visible' in interop_text
+        # IO: JS switches aria-selected on tab change
+        assert "b.setAttribute('aria-selected', 'false')" in interop_text
+        assert "btn.setAttribute('aria-selected', 'true')" in interop_text
+
+        # TK: tablist container
+        assert 'role="tablist"' in training_text
+        assert 'aria-label="Training and knowledge sections"' in training_text
+        # TK: each tab button has role, aria-selected, aria-controls, and type
+        assert 'role="tab" aria-selected="true" aria-controls="tk-panel-skills" id="tk-tab-skills"' in training_text
+        assert 'role="tab" aria-selected="false" aria-controls="tk-panel-courses" id="tk-tab-courses"' in training_text
+        assert 'role="tab" aria-selected="false" aria-controls="tk-panel-flashcards" id="tk-tab-flashcards"' in training_text
+        # TK: panels have role=tabpanel, tabindex, aria-labelledby
+        assert 'role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-skills"' in training_text
+        assert 'role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-courses"' in training_text
+        assert 'role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-drills"' in training_text
+        assert 'role="tabpanel" tabindex="-1" aria-labelledby="tk-tab-knowledge"' in training_text
+        # TK: JS switches aria-selected on tab change
+        assert "b.setAttribute('aria-selected', 'false')" in training_text
+        assert "btn.setAttribute('aria-selected', 'true')" in training_text
+        # TK: cross-training matrix modal has dialog semantics
+        assert 'role="dialog" aria-modal="true" aria-labelledby="tk-matrix-title"' in training_text
+        assert 'id="tk-matrix-title"' in training_text
+        assert 'id="tk-matrix-close"' in training_text
+        assert 'aria-label="Close cross-training matrix"' in training_text
+        assert "type=\"button\"" in training_text
+        # TK: tkShowMatrix focuses close button on open
+        assert "closeBtn.focus()" in training_text
+
+    def test_runtime_generated_media_and_preview_images_keep_alt_and_intrinsic_sizing(self):
+        media_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_media_maps_sync.js').read_text(encoding='utf-8')
+        services_ai_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
+        workspaces_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
+        secondary_css_text = (REPO_ROOT / 'web' / 'static' / 'css' / 'app' / '30_secondary_workspaces.css').read_text(encoding='utf-8')
+        viptrack_text = (REPO_ROOT / 'web' / 'viptrack' / 'index.html').read_text(encoding='utf-8')
+
+        assert 'class="media-card-thumb-img" loading="lazy" width="160" height="90" alt="Thumbnail for ${escapeAttr(v.title)}"' in media_text
+        assert 'class="media-list-thumb" loading="lazy" width="48" height="27" alt="Thumbnail for ${escapeAttr(v.title)}"' in media_text
+        assert 'class="media-browser-thumb-img" loading="lazy" width="160" height="90" alt="Thumbnail for ${escapeAttr(v.title)}"' in media_text
+        assert 'alt="Operational map snapshot" width="${printWidth}" height="${printHeight}"' in media_text
+        assert 'alt="Preview of ' in services_ai_text
+        assert 'class="chat-image-preview-thumb" alt="Preview of ' in services_ai_text
+        assert 'width="40" height="40"' in services_ai_text
+        assert '.chat-image-preview-thumb {' in secondary_css_text
+        assert 'width: 40px;' in secondary_css_text
+        assert 'object-fit: cover;' in secondary_css_text
+        assert 'alt="Map export preview" width="' in workspaces_text
+        assert '<div class="airline-banner" id="airlineBanner" style="display:none;"><img src="" alt="" width="160" height="32"></div>' in viptrack_text
 
     def test_long_running_workspace_polls_use_shared_runtime_guards(self):
         services_ai_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
@@ -1084,6 +1239,10 @@ class TestErrorHandler:
         assert 'id="command-palette-overlay"' in shortcuts_html and 'aria-hidden="true"' in shortcuts_html
         assert 'id="shortcuts-overlay"' in shortcuts_html and 'aria-hidden="true"' in shortcuts_html
         assert 'id="shell-health-overlay"' in shell_html and 'aria-hidden="true"' in shell_html
+        assert 'class="sidebar-brand-mark" width="52" height="52"' in shell_html
+        assert 'class="wizard-logo" width="100" height="100"' in overlays_html
+        assert 'id="lan-encrypt-toggle"' in overlays_html and 'aria-label="Encrypt LAN messages"' in overlays_html
+        assert 'id="lan-chat-messages" class="utility-panel-body utility-message-list" role="log" aria-live="polite" aria-relevant="additions text" aria-label="LAN chat messages"' in overlays_html
         assert "el.setAttribute('aria-hidden', visible ? 'false' : 'true');" in core_shell_js
         assert "setShellVisibility(overlay, true);" in core_shell_js
         assert "setShellVisibility(overlay, false);" in core_shell_js
@@ -1227,23 +1386,26 @@ class TestErrorHandler:
 
         notes_html = self._html(client, '/notes')
         assert 'data-note-action="create-note"' in notes_html
-        assert 'data-note-action="select-note"' in notes_html
-        assert 'data-note-action="apply-note-template"' in notes_html
-        assert 'class="note-item-head"' in notes_html
         assert 'data-workspace-guide-target="notes"' not in notes_html
+        assert 'src="/app-runtime.js?v=' in notes_html
+
+        runtime_js = self._html(client, '/app-runtime.js?v=test')
+        assert 'data-note-action="select-note"' in runtime_js
+        assert 'data-note-action="apply-note-template"' in runtime_js
+        assert 'class="note-item-head"' in runtime_js
 
         media_html = self._html(client, '/media')
         assert 'data-media-sub-switch="channels"' in media_html
         assert 'data-media-action="download-url"' in media_html
-        assert 'data-media-action="resume-media"' in media_html
-        assert 'class="media-download-item"' in media_html
         assert 'data-workspace-guide-target="media"' not in media_html
+        assert 'data-media-action="resume-media"' in runtime_js
+        assert 'class="media-download-item"' in runtime_js
 
         maps_html = self._html(client, '/maps')
         assert 'data-map-action="toggle-map-view"' in maps_html
-        assert 'data-map-action="delete-map"' in maps_html
         assert 'data-input-action="geocode-search"' in maps_html
-        assert 'map-zone-panel' in maps_html
+        assert 'data-map-action="delete-map"' in runtime_js
+        assert 'map-zone-panel' in runtime_js
 
         tools_html = self._html(client, '/tools')
         assert 'data-tool-action="start-compass"' in tools_html

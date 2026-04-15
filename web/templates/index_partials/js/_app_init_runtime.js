@@ -12,6 +12,34 @@ function hasVisibleStatusStrip() {
     .some(candidate => candidate && !candidate.hidden && getComputedStyle(candidate).display !== 'none');
 }
 
+function revokeObjectUrlSafe(url) {
+  if (!url || typeof URL === 'undefined' || typeof URL.revokeObjectURL !== 'function') return;
+  try {
+    URL.revokeObjectURL(url);
+  } catch (_) {}
+}
+
+function downloadBlobFile(blob, filename) {
+  if (!(blob instanceof Blob) || !filename || typeof URL === 'undefined' || typeof URL.createObjectURL !== 'function') {
+    return false;
+  }
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  link.rel = 'noopener';
+  document.body.appendChild(link);
+  link.click();
+  window.setTimeout(() => {
+    link.remove();
+    revokeObjectUrlSafe(url);
+  }, 1000);
+  return true;
+}
+
+window.revokeObjectUrlSafe = revokeObjectUrlSafe;
+window.downloadBlobFile = downloadBlobFile;
+
 async function loadServicesWorkspaceCore() {
   const servicesData = await safeFetch('/api/services', {}, []);
   if (!Array.isArray(servicesData)) return [];
@@ -2612,10 +2640,7 @@ function exportChirpCSV() {
   const header = 'Location,Name,Frequency,Duplex,Offset,Tone,rToneFreq,cToneFreq,DtcsCode,DtcsPolarity,Mode,TStep,Skip,Comment,URCALL,RPT1CALL,RPT2CALL\n';
   const csv = header + channels.map(r => r.join(',')).join('\n');
   const blob = new Blob([csv], {type: 'text/csv'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'NOMAD_Emergency_Channels.csv';
-  a.click(); URL.revokeObjectURL(url);
+  downloadBlobFile(blob, 'NOMAD_Emergency_Channels.csv');
   toast('CHIRP CSV exported', 'success');
 }
 
@@ -4216,7 +4241,7 @@ function previewCSVImport() {
     // Column mapping UI
     const mapEl = document.getElementById('csv-column-mapping');
     mapEl.innerHTML = _csvHeaders.map(h =>
-      `<span>${escapeHtml(h)}</span><span>&#8594;</span><select class="csv-col-map settings-csv-select" data-csv="${escapeHtml(h)}"><option value="">-- skip --</option>${dbCols.map(c => `<option value="${c}" ${c.toLowerCase()===h.toLowerCase()?'selected':''}>${c}</option>`).join('')}</select>`
+      `<span>${escapeHtml(h)}</span><span>&#8594;</span><select class="csv-col-map settings-csv-select" data-csv="${escapeHtml(h)}" aria-label="Map CSV column ${escapeAttr(h)}"><option value="">-- skip --</option>${dbCols.map(c => `<option value="${c}" ${c.toLowerCase()===h.toLowerCase()?'selected':''}>${c}</option>`).join('')}</select>`
     ).join('');
 
     // Preview table

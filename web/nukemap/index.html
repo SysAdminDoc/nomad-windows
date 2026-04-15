@@ -91,19 +91,19 @@
       <div class="tab-content active" id="tab-weapon">
         <div class="section">
           <div class="section-title">Warhead</div>
-          <input type="text" id="weapon-filter" class="weapon-filter" placeholder="Filter warheads…" autocomplete="off" spellcheck="false"/>
+          <input type="text" id="weapon-filter" class="weapon-filter" placeholder="Filter warheads…" autocomplete="off" spellcheck="false" aria-label="Filter warheads"/>
           <div class="select-wrap">
-            <select class="custom-select" id="weapon-select"></select>
+            <select class="custom-select" id="weapon-select" aria-label="Select warhead"></select>
             <span class="select-arrow"><svg viewBox="0 0 10 6"><path d="M0 0l5 6 5-6z" fill="currentColor"/></svg></span>
           </div>
           <div class="yield-row">
-            <input type="range" id="yield-slider" min="0" max="1000" value="280" step="1"/>
+            <input type="range" id="yield-slider" min="0" max="1000" value="280" step="1" aria-label="Yield slider"/>
             <div class="yield-display"><span id="yield-val">15</span> <span class="yield-unit" id="yield-unit">kT</span></div>
           </div>
           <div class="yield-labels"><span>0.001 kT</span><span>100 MT</span></div>
           <div class="yield-input-row">
-            <input type="number" id="yield-input" value="15" min="0.001" step="any"/>
-            <select id="yield-unit-select"><option value="kt" selected>kT</option><option value="mt">MT</option><option value="t">tons</option></select>
+            <input type="number" id="yield-input" value="15" min="0.001" step="any" aria-label="Yield value"/>
+            <select id="yield-unit-select" aria-label="Yield unit"><option value="kt" selected>kT</option><option value="mt">MT</option><option value="t">tons</option></select>
           </div>
         </div>
 
@@ -130,7 +130,7 @@
               <div class="wind-compass" id="wind-compass"><div class="wind-arrow" id="wind-arrow"></div></div>
               <div class="wind-info">
                 <label>Wind (fallout)</label>
-                <div class="wind-speed-row"><input type="number" id="wind-speed" value="24" min="0" max="300"/><span class="unit">km/h</span></div>
+                <div class="wind-speed-row"><input type="number" id="wind-speed" value="24" min="0" max="300" aria-label="Wind speed in kilometers per hour"/><span class="unit">km/h</span></div>
                 <div class="wind-dir-label" id="wind-dir-label">From N (0deg)</div>
               </div>
             </div>

@@ -428,6 +428,18 @@ def create_app():
             'title': 'VIPTrack',
             'partial': 'index_partials/_tab_viptrack.html',
         },
+        'training-knowledge': {
+            'route': '/training-knowledge',
+            'aliases': ['/training'],
+            'title': 'Training & Knowledge',
+            'partial': 'index_partials/_tab_training_knowledge.html',
+        },
+        'interoperability': {
+            'route': '/interoperability',
+            'aliases': ['/data-exchange'],
+            'title': 'Interoperability',
+            'partial': 'index_partials/_tab_interoperability.html',
+        },
     }
 
     workspace_routes = {tab: meta['route'] for tab, meta in workspace_pages.items()}
@@ -458,6 +470,18 @@ def create_app():
             first_run_complete=first_run_complete,
             wizard_should_launch=(tab_id == 'services' and not first_run_complete),
         )
+
+    @app.route('/app-runtime.js')
+    def app_runtime_js():
+        response = Response(
+            render_template('index_partials/_app_inline.js', version=VERSION),
+            mimetype='application/javascript',
+        )
+        response.headers['Cache-Control'] = (
+            'no-cache' if app.config.get('DEBUG') else 'public, max-age=86400'
+        )
+        response.headers['X-Content-Type-Options'] = 'nosniff'
+        return response
 
     @app.route('/')
     def dashboard():
@@ -527,6 +551,16 @@ def create_app():
     @app.route('/viptrack-tab')
     def viptrack_tab_page():
         return _render_workspace_page('viptrack')
+
+    @app.route('/training-knowledge')
+    @app.route('/training')
+    def training_knowledge_page():
+        return _render_workspace_page('training-knowledge')
+
+    @app.route('/interoperability')
+    @app.route('/data-exchange')
+    def interoperability_page():
+        return _render_workspace_page('interoperability')
 
     # ─── Cross-Module Intelligence (Needs System) ─────────────────────
 

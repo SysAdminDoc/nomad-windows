@@ -618,6 +618,29 @@ test('nukemap fills the wide workspace frame and follows the active shell theme'
     await page.locator('#welcome-dismiss').click();
     await page.waitForTimeout(2400);
 
+    const multiToggle = page.locator('#tab-nukemap .toggle-row').first();
+    const toggleFocusState = await multiToggle.evaluate((toggleRow) => ({
+      toggleInput: toggleRow?.dataset?.toggleInput || '',
+      activeRole: toggleRow?.getAttribute?.('role') || '',
+      activeAriaChecked: toggleRow?.getAttribute?.('aria-checked') || '',
+      tabIndex: toggleRow?.tabIndex ?? -1,
+    }));
+
+    expect(toggleFocusState.toggleInput).toBe('multi-check');
+    expect(toggleFocusState.activeRole).toBe('switch');
+    expect(toggleFocusState.activeAriaChecked).toBe('false');
+    expect(toggleFocusState.tabIndex).toBe(0);
+
+    await multiToggle.evaluate((toggleRow) => {
+      toggleRow.dispatchEvent(new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }));
+    });
+    const multiCheckEnabled = await page.evaluate(() => ({
+      checked: document.getElementById('multi-check')?.checked ?? false,
+      ariaChecked: document.querySelector('#tab-nukemap .toggle-row')?.getAttribute?.('aria-checked') || '',
+    }));
+    expect(multiCheckEnabled.checked).toBeTruthy();
+    expect(multiCheckEnabled.ariaChecked).toBe('true');
+
     const postDemoState = await page.evaluate(() => ({
       shellStillVisible: document.getElementById('tab-nukemap')?.classList.contains('active') ?? false,
       stageVisible: !!document.getElementById('nukemap-stage')?.getBoundingClientRect().width,
@@ -700,6 +723,11 @@ test('viptrack fills the wide workspace frame and keeps embedded controls statef
   await embedded.locator('#settingsBtn').evaluate((button) => button.click());
   await expect(embedded.locator('#settingsBtn')).toHaveAttribute('aria-expanded', 'true');
   await expect(embedded.locator('#settingsPanel')).toHaveAttribute('aria-hidden', 'false');
+  await expect(embedded.locator('#toggleTrailArrows')).toHaveAttribute('role', 'switch');
+  await expect(embedded.locator('#toggleTrailArrows')).toHaveAttribute('aria-checked', 'true');
+  await embedded.locator('#toggleTrailArrows').evaluate((button) => button.click());
+  await expect(embedded.locator('#toggleTrailArrows')).toHaveAttribute('aria-checked', 'false');
+  await expect(embedded.locator('#toggleAlerts')).toHaveAttribute('role', 'switch');
 
   await embedded.locator('#panelsBtn').evaluate((button) => button.click());
   await expect(embedded.locator('#panelsBtn')).toHaveAttribute('aria-expanded', 'true');
@@ -763,6 +791,80 @@ test('shared shell pauses VIPTrack activity after switching away from the tab', 
   expect(hiddenState?.pausableActive).toBe(0);
   expect(hiddenState?.tabPaused).toBeTruthy();
   expect(hiddenState?.reason).toBe('tab-hidden');
+});
+
+test('interoperability sub-tabs expose correct ARIA tablist semantics and toggle aria-selected', async ({ page }) => {
+  await bootWorkspace(page, 'nightops', '/interoperability');
+  const tablist = page.locator('#tab-interoperability [role="tablist"]');
+  await expect(tablist).toBeVisible();
+  await expect(tablist).toHaveAttribute('aria-label', 'Data exchange sections');
+
+  // Default: export tab is selected
+  const exportTab = page.locator('#io-tab-export');
+  await expect(exportTab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#io-panel-export')).toBeVisible();
+
+  // Click import tab — aria-selected should shift
+  await page.locator('#io-tab-import').click();
+  await expect(page.locator('#io-tab-export')).toHaveAttribute('aria-selected', 'false');
+  await expect(page.locator('#io-tab-import')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#io-panel-import')).toBeVisible();
+  await expect(page.locator('#io-panel-export')).not.toBeVisible();
+
+  // Click history tab
+  await page.locator('#io-tab-history').click();
+  await expect(page.locator('#io-tab-import')).toHaveAttribute('aria-selected', 'false');
+  await expect(page.locator('#io-tab-history')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#io-panel-history')).toBeVisible();
+});
+
+test('training-knowledge sub-tabs expose correct ARIA tablist semantics and toggle aria-selected', async ({ page }) => {
+  await bootWorkspace(page, 'nightops', '/training-knowledge');
+  const tablist = page.locator('#tab-training-knowledge [role="tablist"]');
+  await expect(tablist).toBeVisible();
+  await expect(tablist).toHaveAttribute('aria-label', 'Training and knowledge sections');
+
+  // Default: skills tab is selected
+  const skillsTab = page.locator('#tk-tab-skills');
+  await expect(skillsTab).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#tk-panel-skills')).toBeVisible();
+
+  // Click courses tab — aria-selected should shift
+  await page.locator('#tk-tab-courses').click();
+  await expect(page.locator('#tk-tab-skills')).toHaveAttribute('aria-selected', 'false');
+  await expect(page.locator('#tk-tab-courses')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#tk-panel-courses')).toBeVisible();
+  await expect(page.locator('#tk-panel-skills')).not.toBeVisible();
+
+  // Click flashcards tab
+  await page.locator('#tk-tab-flashcards').click();
+  await expect(page.locator('#tk-tab-courses')).toHaveAttribute('aria-selected', 'false');
+  await expect(page.locator('#tk-tab-flashcards')).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator('#tk-panel-flashcards')).toBeVisible();
+});
+
+test('training-knowledge cross-training matrix modal has dialog semantics and receives focus on open', async ({ page }) => {
+  await bootWorkspace(page, 'nightops', '/training-knowledge');
+
+  // Modal should be hidden initially
+  const modal = page.locator('#tk-matrix-modal');
+  await expect(modal).toHaveClass(/is-hidden/);
+  await expect(modal).toHaveAttribute('role', 'dialog');
+  await expect(modal).toHaveAttribute('aria-modal', 'true');
+  await expect(modal).toHaveAttribute('aria-labelledby', 'tk-matrix-title');
+
+  // Open the modal
+  await page.locator('button', { hasText: 'Cross-Training Matrix' }).click();
+  await expect(modal).not.toHaveClass(/is-hidden/);
+
+  // Close button should have focus after open
+  const closeBtn = page.locator('#tk-matrix-close');
+  await expect(closeBtn).toBeFocused();
+  await expect(closeBtn).toHaveAttribute('aria-label', 'Close cross-training matrix');
+
+  // Close via the close button
+  await closeBtn.click();
+  await expect(modal).toHaveClass(/is-hidden/);
 });
 
 [

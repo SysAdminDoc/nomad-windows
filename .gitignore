@@ -35,4 +35,5 @@ tmp_pytest_full.out
 
 # Internal docs (keep locally, not in repo)
 CLAUDE.md
+CODEX_CHANGELOG.md
 docs/schema.md

@@ -2,7 +2,7 @@
 <html lang="{{ current_lang }}" dir="{{ 'rtl' if is_rtl else 'ltr' }}">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <link rel="manifest" href="/static/manifest.json">
 <meta name="theme-color" content="#4f9cf7">
 <title>NOMAD Field Desk v{{ version }}</title>
@@ -144,9 +144,9 @@
 <script src="/static/js/voice_copilot.js"></script>
 {% endif %}
 
-
 <script>
-{% include 'index_partials/_app_inline.js' %}
+window.NOMAD_VERSION = {{ version|tojson }};
 </script>
+<script src="/app-runtime.js?v={{ version }}"></script>
 </body>
 </html>

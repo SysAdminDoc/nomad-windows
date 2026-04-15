@@ -1,4 +1,4 @@
-const VERSION = '{{ version }}';
+const VERSION = window.NOMAD_VERSION || '0.0.0';
 
 let _settingsDebounceMap = {};
 function _debouncedSettingSave(key, value) {
@@ -55,6 +55,55 @@ function showSkeleton(container, count = 6) {
   if (!container) return;
   container.innerHTML = Array(count).fill('<div class="skeleton-card"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:80%"></div><div class="skeleton-line" style="width:40%"></div></div>').join('');
 }
+
+function inferButtonAriaLabel(button, text) {
+  const title = button.getAttribute('title')?.trim();
+  if (title) return title;
+
+  const classNames = typeof button.className === 'string' ? button.className : '';
+  const id = button.id || '';
+  const roleHint = `${classNames} ${id}`;
+  if (button.dataset.help !== undefined || /help-icon/i.test(roleHint) || text === '?') return 'Open help';
+  if (/close/i.test(roleHint) || ['x', 'X', '×', '✕', '✖'].includes(text)) return 'Close';
+  if (/delete|danger|remove/i.test(roleHint)) return 'Delete item';
+  return '';
+}
+
+function applyShellAccessibilityDefaults(root = document) {
+  if (!root) return;
+  const buttons = [];
+  if (root.matches?.('button')) buttons.push(root);
+  if (root.querySelectorAll) root.querySelectorAll('button').forEach(button => buttons.push(button));
+  if (!buttons.length) return;
+
+  buttons.forEach(button => {
+    if (!button.hasAttribute('type')) button.type = 'button';
+    if (!button.hasAttribute('aria-label')) {
+      const text = button.textContent?.replace(/\s+/g, ' ').trim() || '';
+      const label = inferButtonAriaLabel(button, text);
+      if (label && (!text || text.length <= 2 || ['?', 'x', 'X', '×', '✕', '✖'].includes(text))) {
+        button.setAttribute('aria-label', label);
+      }
+    }
+  });
+}
+
+function observeShellAccessibilityDefaults() {
+  if (typeof MutationObserver !== 'function' || !document?.body) return;
+  if (window.__nomadAccessibilityObserverInstalled) return;
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeType === Node.ELEMENT_NODE) applyShellAccessibilityDefaults(node);
+      });
+    });
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+  window.__nomadAccessibilityObserverInstalled = true;
+}
+
+applyShellAccessibilityDefaults();
+observeShellAccessibilityDefaults();
 
 function setShellVisibility(el, visible) {
   if (!el) return;

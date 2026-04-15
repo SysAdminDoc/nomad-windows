@@ -5,6 +5,7 @@ import logging
 import math
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 meal_planning_bp = Blueprint('meal_planning', __name__)
 _log = logging.getLogger('nomad.meal_planning')
@@ -15,13 +16,17 @@ _log = logging.getLogger('nomad.meal_planning')
 @meal_planning_bp.route('/api/recipes')
 def api_recipes_list():
     category = request.args.get('category', '')
+    limit, offset = get_pagination()
     with db_session() as db:
         if category:
             rows = db.execute(
-                'SELECT * FROM recipes WHERE category = ? ORDER BY name', (category,)
+                'SELECT * FROM recipes WHERE category = ? ORDER BY name LIMIT ? OFFSET ?',
+                (category, limit, offset)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM recipes ORDER BY name').fetchall()
+            rows = db.execute(
+                'SELECT * FROM recipes ORDER BY name LIMIT ? OFFSET ?', (limit, offset)
+            ).fetchall()
     return jsonify([_format_recipe(r) for r in rows])
 
 

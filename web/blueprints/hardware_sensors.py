@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 _log = logging.getLogger(__name__)
 
@@ -97,9 +98,11 @@ def sensors_list():
         clauses.append('status = ?')
         params.append(status)
     where = (' WHERE ' + ' AND '.join(clauses)) if clauses else ''
+    limit, offset = get_pagination()
     with db_session() as db:
         rows = db.execute(
-            f'SELECT * FROM iot_sensors{where} ORDER BY name', params
+            f'SELECT * FROM iot_sensors{where} ORDER BY name LIMIT ? OFFSET ?',
+            (*params, limit, offset)
         ).fetchall()
     return jsonify([dict(r) for r in rows])
 
@@ -287,7 +290,10 @@ def sensors_dashboard():
 def network_list():
     """List network devices."""
     with db_session() as db:
-        rows = db.execute('SELECT * FROM network_devices ORDER BY name').fetchall()
+        rows = db.execute(
+            'SELECT * FROM network_devices ORDER BY name LIMIT ? OFFSET ?',
+            get_pagination()
+        ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -435,7 +441,10 @@ def network_scan():
 def mesh_list():
     """List all mesh nodes."""
     with db_session() as db:
-        rows = db.execute('SELECT * FROM mesh_nodes ORDER BY long_name').fetchall()
+        rows = db.execute(
+            'SELECT * FROM mesh_nodes ORDER BY long_name LIMIT ? OFFSET ?',
+            get_pagination()
+        ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -608,7 +617,10 @@ def mesh_stats():
 def weather_list():
     """List all weather stations."""
     with db_session() as db:
-        rows = db.execute('SELECT * FROM weather_stations ORDER BY name').fetchall()
+        rows = db.execute(
+            'SELECT * FROM weather_stations ORDER BY name LIMIT ? OFFSET ?',
+            get_pagination()
+        ).fetchall()
     result = []
     for r in rows:
         entry = dict(r)
@@ -729,7 +741,10 @@ def weather_delete(wid):
 def gps_list():
     """List GPS devices."""
     with db_session() as db:
-        rows = db.execute('SELECT * FROM gps_devices ORDER BY name').fetchall()
+        rows = db.execute(
+            'SELECT * FROM gps_devices ORDER BY name LIMIT ? OFFSET ?',
+            get_pagination()
+        ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -862,13 +877,18 @@ def gps_record_fix(gid):
 def wearables_list():
     """List wearable devices with optional ?wearer= filter."""
     wearer = request.args.get('wearer', '').strip()
+    limit, offset = get_pagination()
     with db_session() as db:
         if wearer:
             rows = db.execute(
-                'SELECT * FROM wearable_devices WHERE wearer = ? ORDER BY name', (wearer,)
+                'SELECT * FROM wearable_devices WHERE wearer = ? ORDER BY name LIMIT ? OFFSET ?',
+                (wearer, limit, offset)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM wearable_devices ORDER BY name').fetchall()
+            rows = db.execute(
+                'SELECT * FROM wearable_devices ORDER BY name LIMIT ? OFFSET ?',
+                (limit, offset)
+            ).fetchall()
     result = []
     for r in rows:
         entry = dict(r)
@@ -982,7 +1002,10 @@ def wearables_delete(wid):
 def integrations_list():
     """List all integration configs."""
     with db_session() as db:
-        rows = db.execute('SELECT * FROM integration_configs ORDER BY name').fetchall()
+        rows = db.execute(
+            'SELECT * FROM integration_configs ORDER BY name LIMIT ? OFFSET ?',
+            get_pagination()
+        ).fetchall()
     result = []
     for r in rows:
         entry = dict(r)

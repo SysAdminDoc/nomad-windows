@@ -4,6 +4,7 @@ import json
 import logging
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 consumption_bp = Blueprint('consumption', __name__)
 _log = logging.getLogger('nomad.consumption')
@@ -41,7 +42,10 @@ DIETARY_RESTRICTION_OPTIONS = [
 @consumption_bp.route('/api/consumption/profiles')
 def api_profiles_list():
     with db_session() as db:
-        rows = db.execute('SELECT * FROM consumption_profiles ORDER BY name').fetchall()
+        rows = db.execute(
+            'SELECT * FROM consumption_profiles ORDER BY name LIMIT ? OFFSET ?',
+            get_pagination()
+        ).fetchall()
     return jsonify([_format_profile(r) for r in rows])
 
 

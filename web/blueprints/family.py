@@ -21,6 +21,7 @@ from datetime import datetime, timezone
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 family_bp = Blueprint('family', __name__)
 log = logging.getLogger('nomad.family')
@@ -62,7 +63,8 @@ def api_family_checkins_list():
             "    WHEN 'unaccounted' THEN 0 "
             "    WHEN 'needs_help' THEN 1 "
             "    WHEN 'en_route' THEN 2 "
-            "    ELSE 3 END, name"
+            "    ELSE 3 END, name LIMIT ? OFFSET ?",
+            get_pagination()
         ).fetchall()
     members = [_row_to_dict(r) for r in rows]
     summary = {s: 0 for s in _VALID_STATUS}

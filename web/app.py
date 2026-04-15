@@ -1062,7 +1062,12 @@ def create_app():
 
     @app.route('/api/search/all')
     def api_search_all():
-        """Extended search across all data types — single UNION ALL query."""
+        """Extended search across all data types — single UNION ALL query.
+
+        v7.29.0: uses FTS5 for notes/inventory/contacts/documents/waypoints
+        when available (O(log n) vs LIKE's O(n) full scan). Remaining targets
+        still use LIKE until their FTS5 indexes are added incrementally.
+        """
         q = request.args.get('q', '').strip()[:200]
         if not q:
             return jsonify({'conversations': [], 'notes': [], 'documents': [], 'inventory': [], 'contacts': [], 'checklists': []})
@@ -1070,13 +1075,34 @@ def create_app():
             q_escaped = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
             like = f'%{q_escaped}%'
             esc = "ESCAPE '\\'"
+            # FTS5 MATCH expression: escape embedded double quotes then wrap
+            # the whole query in double quotes for phrase/prefix handling.
+            fts_q = '"' + q.replace('"', '""') + '"' + '*'
+            use_fts = False
+            try:
+                use_fts = db.execute(
+                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='notes_fts'"
+                ).fetchone() is not None
+            except Exception:
+                use_fts = False
             # Single UNION ALL — 1 round-trip instead of 14
-            _search_parts = [
-                (f"SELECT * FROM (SELECT id, title, 'conversation' as type FROM conversations WHERE title LIKE ? {esc} OR messages LIKE ? {esc} LIMIT 10)", (like, like)),
-                (f"SELECT * FROM (SELECT id, title, 'note' as type FROM notes WHERE title LIKE ? {esc} OR content LIKE ? {esc} LIMIT 10)", (like, like)),
-                (f"SELECT * FROM (SELECT id, filename as title, 'document' as type FROM documents WHERE filename LIKE ? {esc} AND status = 'ready' LIMIT 10)", (like,)),
-                (f"SELECT * FROM (SELECT id, name as title, 'inventory' as type FROM inventory WHERE name LIKE ? {esc} OR location LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 10)", (like, like, like)),
-                (f"SELECT * FROM (SELECT id, name as title, 'contact' as type FROM contacts WHERE name LIKE ? {esc} OR callsign LIKE ? {esc} OR role LIKE ? {esc} OR skills LIKE ? {esc} LIMIT 10)", (like, like, like, like)),
+            if use_fts:
+                _search_parts = [
+                    (f"SELECT * FROM (SELECT id, title, 'conversation' as type FROM conversations WHERE title LIKE ? {esc} OR messages LIKE ? {esc} LIMIT 10)", (like, like)),
+                    ("SELECT * FROM (SELECT n.id, n.title, 'note' as type FROM notes n JOIN notes_fts f ON f.rowid = n.id WHERE notes_fts MATCH ? LIMIT 10)", (fts_q,)),
+                    ("SELECT * FROM (SELECT d.id, d.filename as title, 'document' as type FROM documents d JOIN documents_fts f ON f.rowid = d.id WHERE documents_fts MATCH ? AND d.status = 'ready' LIMIT 10)", (fts_q,)),
+                    ("SELECT * FROM (SELECT i.id, i.name as title, 'inventory' as type FROM inventory i JOIN inventory_fts f ON f.rowid = i.id WHERE inventory_fts MATCH ? LIMIT 10)", (fts_q,)),
+                    ("SELECT * FROM (SELECT c.id, c.name as title, 'contact' as type FROM contacts c JOIN contacts_fts f ON f.rowid = c.id WHERE contacts_fts MATCH ? LIMIT 10)", (fts_q,)),
+                ]
+            else:
+                _search_parts = [
+                    (f"SELECT * FROM (SELECT id, title, 'conversation' as type FROM conversations WHERE title LIKE ? {esc} OR messages LIKE ? {esc} LIMIT 10)", (like, like)),
+                    (f"SELECT * FROM (SELECT id, title, 'note' as type FROM notes WHERE title LIKE ? {esc} OR content LIKE ? {esc} LIMIT 10)", (like, like)),
+                    (f"SELECT * FROM (SELECT id, filename as title, 'document' as type FROM documents WHERE filename LIKE ? {esc} AND status = 'ready' LIMIT 10)", (like,)),
+                    (f"SELECT * FROM (SELECT id, name as title, 'inventory' as type FROM inventory WHERE name LIKE ? {esc} OR location LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 10)", (like, like, like)),
+                    (f"SELECT * FROM (SELECT id, name as title, 'contact' as type FROM contacts WHERE name LIKE ? {esc} OR callsign LIKE ? {esc} OR role LIKE ? {esc} OR skills LIKE ? {esc} LIMIT 10)", (like, like, like, like)),
+                ]
+            _search_parts.extend([
                 (f"SELECT * FROM (SELECT id, name as title, 'checklist' as type FROM checklists WHERE name LIKE ? {esc} LIMIT 10)", (like,)),
                 (f"SELECT * FROM (SELECT id, name as title, 'skill' as type FROM skills WHERE name LIKE ? {esc} OR category LIKE ? {esc} OR notes LIKE ? {esc} LIMIT 5)", (like, like, like)),
                 (f"SELECT * FROM (SELECT id, caliber as title, 'ammo' as type FROM ammo_inventory WHERE caliber LIKE ? {esc} OR brand LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5)", (like, like, like)),
@@ -1086,7 +1112,7 @@ def create_app():
                 (f"SELECT * FROM (SELECT id, name as title, 'patient' as type FROM patients WHERE name LIKE ? {esc} LIMIT 5)", (like,)),
                 (f"SELECT * FROM (SELECT id, description as title, 'incident' as type FROM incidents WHERE description LIKE ? {esc} OR category LIKE ? {esc} LIMIT 5)", (like, like)),
                 (f"SELECT * FROM (SELECT id, fuel_type as title, 'fuel' as type FROM fuel_storage WHERE fuel_type LIKE ? {esc} OR location LIKE ? {esc} LIMIT 5)", (like, like)),
-            ]
+            ])
             union_sql = ' UNION ALL '.join(sql for sql, _ in _search_parts)
             union_params = []
             for _, params in _search_parts:

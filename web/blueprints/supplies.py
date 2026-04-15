@@ -4,7 +4,7 @@ import json
 import logging
 
 from flask import Blueprint, request, jsonify, Response
-from db import db_session
+from db import db_session, log_activity
 from web.utils import require_json_body as _require_json_body, validate_bulk_ids as _validate_bulk_ids
 
 _log = logging.getLogger(__name__)
@@ -41,6 +41,7 @@ def api_vault_create():
                          (data.get('title', 'Untitled'), data['encrypted_data'], data['iv'], data['salt']))
         db.commit()
         eid = cur.lastrowid
+    log_activity('vault_entry_created', service='supplies', detail=f'id={eid}')
     return jsonify({'id': eid, 'status': 'saved'}), 201
 
 @supplies_bp.route('/api/vault/<int:eid>')
@@ -74,6 +75,7 @@ def api_vault_delete(eid):
         if r.rowcount == 0:
             return jsonify({'error': 'not found'}), 404
         db.commit()
+    log_activity('vault_entry_deleted', service='supplies', detail=f'id={eid}')
     return jsonify({'status': 'deleted'})
 
 
@@ -112,7 +114,8 @@ def api_skills_create():
              d.get('notes',''), d.get('last_practiced','')))
         conn.commit()
         row = conn.execute('SELECT * FROM skills WHERE id=?', (cur.lastrowid,)).fetchone()
-        return jsonify(dict(row)), 201
+    log_activity('skill_created', service='supplies', detail=f"name={d['name'].strip()[:80]}")
+    return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/skills/<int:sid>', methods=['PUT'])
 def api_skills_update(sid):
@@ -281,7 +284,8 @@ def api_ammo_create():
              d.get('bullet_type',''), qty, d.get('location',''), d.get('notes','')))
         conn.commit()
         row = conn.execute('SELECT * FROM ammo_inventory WHERE id=?', (cur.lastrowid,)).fetchone()
-        return jsonify(dict(row)), 201
+    log_activity('ammo_added', service='supplies', detail=f"caliber={d.get('caliber','')[:80]} qty={qty}")
+    return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/ammo/<int:aid>', methods=['PUT'])
 def api_ammo_update(aid):
@@ -403,7 +407,8 @@ def api_community_create():
              d.get('contact',''), d.get('notes',''), d.get('trust_level','unknown')))
         conn.commit()
         row = conn.execute('SELECT * FROM community_resources WHERE id=?', (cur.lastrowid,)).fetchone()
-        return jsonify(dict(row)), 201
+    log_activity('community_resource_added', service='supplies', detail=f"name={d['name'].strip()[:80]}")
+    return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/community/<int:cid>', methods=['PUT'])
 def api_community_update(cid):
@@ -478,14 +483,18 @@ def api_radiation_create():
             (new_rate, d.get('location',''), new_cum, d.get('notes','')))
         conn.commit()
         row = conn.execute('SELECT * FROM radiation_log WHERE id=?', (cur.lastrowid,)).fetchone()
-        return jsonify(dict(row)), 201
+    log_activity('radiation_reading_logged', service='supplies',
+                 detail=f"dose_rate={new_rate} duration_h={duration_hours} cum_rem={new_cum}",
+                 level='warn' if new_cum >= 25 else 'info')
+    return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/radiation/clear', methods=['POST'])
 def api_radiation_clear():
     with db_session() as conn:
         conn.execute('DELETE FROM radiation_log')
         conn.commit()
-        return jsonify({'ok': True})
+    log_activity('radiation_log_cleared', service='supplies', level='warn')
+    return jsonify({'ok': True})
 
 
 # ─── Fuel Storage ─────────────────────────────────────────────────
@@ -527,7 +536,9 @@ def api_fuel_create():
              d.get('date_stored',''), d.get('expires',''), d.get('notes','')))
         conn.commit()
         row = conn.execute('SELECT * FROM fuel_storage WHERE id=?', (cur.lastrowid,)).fetchone()
-        return jsonify(dict(row)), 201
+    log_activity('fuel_added', service='supplies',
+                 detail=f"fuel_type={d['fuel_type'].strip()[:40]} qty={qty} {d.get('unit','gallons')}")
+    return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/fuel/<int:fid>', methods=['PUT'])
 def api_fuel_update(fid):
@@ -618,7 +629,9 @@ def api_equipment_create():
              d.get('location',''), d.get('notes','')))
         conn.commit()
         row = conn.execute('SELECT * FROM equipment_log WHERE id=?', (cur.lastrowid,)).fetchone()
-        return jsonify(dict(row)), 201
+    log_activity('equipment_added', service='supplies',
+                 detail=f"name={d['name'].strip()[:80]} status={d.get('status','operational')}")
+    return jsonify(dict(row)), 201
 
 @supplies_bp.route('/api/equipment/<int:eid>', methods=['PUT'])
 def api_equipment_update(eid):

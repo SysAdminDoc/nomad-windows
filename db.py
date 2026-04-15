@@ -52,6 +52,7 @@ def get_db_path():
 
 
 _wal_set = False
+_wal_lock = threading.Lock()
 _migration_lock = threading.Lock()
 
 
@@ -63,8 +64,10 @@ def get_db():
         conn.row_factory = sqlite3.Row
         # WAL mode is persistent on the database file — only set once per process
         if not _wal_set:
-            conn.execute('PRAGMA journal_mode=WAL')
-            _wal_set = True
+            with _wal_lock:
+                if not _wal_set:
+                    conn.execute('PRAGMA journal_mode=WAL')
+                    _wal_set = True
         conn.execute('PRAGMA foreign_keys=ON')
         # Register on flask.g so teardown_appcontext can auto-close leaked connections
         try:
@@ -97,10 +100,10 @@ def _pool_acquire():
         if _pool_db_path != current_path:
             _pool_clear()
             _pool_db_path = current_path
-    try:
-        conn = _pool.get_nowait()
-    except queue.Empty:
-        return get_db(), False
+        try:
+            conn = _pool.get_nowait()
+        except queue.Empty:
+            return get_db(), False
     try:
         conn.execute('SELECT 1').fetchone()
         # Rebind to current flask.g so teardown can see it
@@ -210,10 +213,11 @@ def backup_db():
     os.makedirs(backup_dir, exist_ok=True)
     from datetime import datetime
     backup_path = os.path.join(backup_dir, f'nomad_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db')
-    # Use SQLite backup API for WAL-safe copies
+    # Use SQLite backup API for WAL-safe copies.
+    # PASSIVE checkpoint avoids blocking concurrent writers.
     src = sqlite3.connect(db_path, timeout=30)
     try:
-        src.execute('PRAGMA wal_checkpoint(RESTART)')
+        src.execute('PRAGMA wal_checkpoint(PASSIVE)')
         dst = sqlite3.connect(backup_path)
         try:
             src.backup(dst)
@@ -878,8 +882,8 @@ def _create_medical_security_tables(conn):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             contact_id INTEGER,
             name TEXT NOT NULL,
-            age INTEGER,
-            weight_kg REAL,
+            age INTEGER CHECK (age IS NULL OR (age >= 0 AND age <= 200)),
+            weight_kg REAL CHECK (weight_kg IS NULL OR (weight_kg >= 0 AND weight_kg <= 700)),
             sex TEXT DEFAULT '',
             blood_type TEXT DEFAULT '',
             allergies TEXT DEFAULT '[]',
@@ -893,14 +897,14 @@ def _create_medical_security_tables(conn):
         CREATE TABLE IF NOT EXISTS vitals_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             patient_id INTEGER NOT NULL,
-            bp_systolic INTEGER,
-            bp_diastolic INTEGER,
-            pulse INTEGER,
-            resp_rate INTEGER,
-            temp_f REAL,
-            spo2 INTEGER,
-            pain_level INTEGER,
-            gcs INTEGER,
+            bp_systolic INTEGER CHECK (bp_systolic IS NULL OR (bp_systolic >= 20 AND bp_systolic <= 350)),
+            bp_diastolic INTEGER CHECK (bp_diastolic IS NULL OR (bp_diastolic >= 10 AND bp_diastolic <= 250)),
+            pulse INTEGER CHECK (pulse IS NULL OR (pulse >= 0 AND pulse <= 300)),
+            resp_rate INTEGER CHECK (resp_rate IS NULL OR (resp_rate >= 0 AND resp_rate <= 100)),
+            temp_f REAL CHECK (temp_f IS NULL OR (temp_f >= 70.0 AND temp_f <= 115.0)),
+            spo2 INTEGER CHECK (spo2 IS NULL OR (spo2 >= 0 AND spo2 <= 100)),
+            pain_level INTEGER CHECK (pain_level IS NULL OR (pain_level >= 0 AND pain_level <= 10)),
+            gcs INTEGER CHECK (gcs IS NULL OR (gcs >= 3 AND gcs <= 15)),
             notes TEXT DEFAULT '',
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );

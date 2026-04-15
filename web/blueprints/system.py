@@ -1872,7 +1872,7 @@ def api_system_db_vacuum():
     """Run VACUUM and REINDEX to optimize the database."""
     import sqlite3
     path = get_db_path()
-    conn = sqlite3.connect(path)
+    conn = sqlite3.connect(path, uri=path.startswith('file:'))
     conn.execute('VACUUM')
     conn.execute('REINDEX')
     conn.close()

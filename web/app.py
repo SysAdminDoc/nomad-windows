@@ -171,6 +171,11 @@ def create_app():
                     return _j({'error': 'Rate limit exceeded for mutating requests',
                                'retry_after': _mutating_window}), 429
                 q.append(now)
+                # Prune empty deques to prevent unbounded memory growth from old IPs
+                if len(_mutating_hits) > 500:
+                    stale_addrs = [a for a, dq in _mutating_hits.items() if not dq]
+                    for a in stale_addrs:
+                        del _mutating_hits[a]
 
         app.extensions['limiter'] = limiter
     except ImportError:

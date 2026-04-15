@@ -884,8 +884,8 @@ function showPhrases() {
   if (!data.phrases || !data.phrases.length) { el.innerHTML = '<div class="empty-state">No phrases available for this language.</div>'; return; }
   el.innerHTML = data.phrases.map(([eng,trans]) =>
     `<div class="prep-reference-phrase-card">
-      <div class="prep-reference-phrase-source">${eng}</div>
-      <div class="prep-reference-phrase-translation">${trans}</div>
+      <div class="prep-reference-phrase-source">${escapeHtml(eng)}</div>
+      <div class="prep-reference-phrase-translation">${escapeHtml(trans)}</div>
     </div>`
   ).join('');
 }

@@ -837,6 +837,9 @@ def api_triage_update(pid):
         if 'triage_category' in data:
             old_category = old_row['triage_category'] or ''
             new_category = data['triage_category']
+            valid_triage = {'immediate', 'delayed', 'minimal', 'expectant', 'unassigned', ''}
+            if new_category not in valid_triage:
+                return jsonify({'error': f'Invalid triage category. Must be one of: {", ".join(sorted(valid_triage - {""}))}'}), 400
             db.execute('UPDATE patients SET triage_category = ? WHERE id = ?', (new_category, pid))
             # Log to triage_history
             reason = data.get('reason', '')

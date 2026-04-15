@@ -1,5 +1,6 @@
 """Tasks, timers, watch-schedules, and sun routes."""
 
+import calendar
 import json
 import math
 import logging
@@ -189,7 +190,10 @@ def api_tasks_complete(task_id):
         elif rec == 'weekly':
             next_due = (base + timedelta(weeks=1)).strftime('%Y-%m-%d %H:%M:%S')
         elif rec == 'monthly':
-            next_due = (base + timedelta(days=30)).strftime('%Y-%m-%d %H:%M:%S')
+            y = base.year + (base.month // 12)
+            m = (base.month % 12) + 1
+            d = min(base.day, calendar.monthrange(y, m)[1])
+            next_due = base.replace(year=y, month=m, day=d).strftime('%Y-%m-%d %H:%M:%S')
         else:
             next_due = None  # one-time task stays completed
         db.execute('UPDATE scheduled_tasks SET completed_count = ?, last_completed = ?, next_due = ? WHERE id = ?',

@@ -602,23 +602,27 @@ def api_inventory_import_csv():
         reader = csv.DictReader(io.StringIO(content))
         with db_session() as db:
             imported = 0
-            for row in reader:
-                name = row.get('Name', row.get('name', '')).strip()
-                if not name:
-                    continue
-                db.execute(
-                    'INSERT INTO inventory (name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    (name, row.get('Category', row.get('category', 'other')),
-                     float(row.get('Quantity', row.get('quantity', 0)) or 0),
-                     row.get('Unit', row.get('unit', 'ea')),
-                     float(row.get('Min Qty', row.get('min_quantity', 0)) or 0),
-                     float(row.get('Daily Usage', row.get('daily_usage', 0)) or 0),
-                     row.get('Location', row.get('location', '')),
-                     row.get('Expiration', row.get('expiration', '')),
-                     row.get('Notes', row.get('notes', ''))))
-                imported += 1
+            errors = []
+            for i, row in enumerate(reader, 1):
+                try:
+                    name = row.get('Name', row.get('name', '')).strip()
+                    if not name:
+                        continue
+                    db.execute(
+                        'INSERT INTO inventory (name, category, quantity, unit, min_quantity, daily_usage, location, expiration, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                        (name, row.get('Category', row.get('category', 'other')),
+                         float(row.get('Quantity', row.get('quantity', 0)) or 0),
+                         row.get('Unit', row.get('unit', 'ea')),
+                         float(row.get('Min Qty', row.get('min_quantity', 0)) or 0),
+                         float(row.get('Daily Usage', row.get('daily_usage', 0)) or 0),
+                         row.get('Location', row.get('location', '')),
+                         row.get('Expiration', row.get('expiration', '')),
+                         row.get('Notes', row.get('notes', ''))))
+                    imported += 1
+                except Exception as e:
+                    errors.append(f'Row {i}: {str(e)}')
             db.commit()
-        return jsonify({'status': 'imported', 'count': imported})
+        return jsonify({'status': 'imported', 'count': imported, 'errors': errors})
     except Exception as e:
         log.exception('Inventory CSV import failed')
         return jsonify({'error': 'Import failed — check file format'}), 500

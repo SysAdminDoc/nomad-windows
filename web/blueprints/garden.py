@@ -1,5 +1,6 @@
 """Garden & agriculture routes."""
 
+import calendar
 import json
 import time
 from datetime import date, timedelta
@@ -684,7 +685,7 @@ def api_preservation_expiring():
             continue
         exp_year = batch.year + (batch.month + d['shelf_life_months'] - 1) // 12
         exp_month = (batch.month + d['shelf_life_months'] - 1) % 12 + 1
-        exp_day = min(batch.day, 28)
+        exp_day = min(batch.day, calendar.monthrange(exp_year, exp_month)[1])
         expiration = date(exp_year, exp_month, exp_day)
         if expiration <= threshold:
             d['expiration_date'] = expiration.isoformat()

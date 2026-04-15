@@ -52,12 +52,12 @@ async function loadMaps() {
     <div class="region-card">
       <div class="region-card-shell">
         <div class="region-card-copy">
-          <div class="region-card-title">${r.name}</div>
-          <div class="region-card-meta">${r.states}</div>
+          <div class="region-card-title">${escapeHtml(r.name)}</div>
+          <div class="region-card-meta">${escapeHtml(r.states)}</div>
         </div>
         ${r.downloaded
           ? `<div class="region-card-actions">
-              <span class="region-card-size">${r.size}</span>
+              <span class="region-card-size">${escapeHtml(r.size)}</span>
               <button class="btn btn-sm btn-danger" type="button" data-map-action="delete-map" data-map-filename="${escapeAttr(r.id)}.pmtiles">x</button>
             </div>`
           : `<button class="btn btn-sm btn-primary btn-open-svc-compact" type="button" data-map-action="download-region" data-map-region="${escapeAttr(r.id)}">Download</button>`
@@ -511,13 +511,13 @@ function showBenchResults(r) {
     <details class="benchmark-advanced-details">
       <summary>Advanced details &mdash; raw scores</summary>
       <div class="bench-scores benchmark-metric-grid">
-        <div class="bench-score"><div class="score-val">${r.cpu_score||0}</div><div class="score-label">CPU ops/s</div></div>
-        <div class="bench-score"><div class="score-val">${r.memory_score||0}</div><div class="score-label">Memory MB/s</div></div>
-        <div class="bench-score"><div class="score-val">${r.disk_read_score||0}</div><div class="score-label">Disk Read MB/s</div></div>
-        <div class="bench-score"><div class="score-val">${r.disk_write_score||0}</div><div class="score-label">Disk Write MB/s</div></div>
-        <div class="bench-score"><div class="score-val">${r.ai_tps||0}</div><div class="score-label">AI Speed (tok/s)</div></div>
-        <div class="bench-score"><div class="score-val">${r.ai_ttft||0}</div><div class="score-label">Response Time (ms)</div></div>
-        <div class="bench-score"><div class="score-val">${r.nomad_score||0}</div><div class="score-label">NOMAD Score</div></div>
+        <div class="bench-score"><div class="score-val">${Number(r.cpu_score)||0}</div><div class="score-label">CPU ops/s</div></div>
+        <div class="bench-score"><div class="score-val">${Number(r.memory_score)||0}</div><div class="score-label">Memory MB/s</div></div>
+        <div class="bench-score"><div class="score-val">${Number(r.disk_read_score)||0}</div><div class="score-label">Disk Read MB/s</div></div>
+        <div class="bench-score"><div class="score-val">${Number(r.disk_write_score)||0}</div><div class="score-label">Disk Write MB/s</div></div>
+        <div class="bench-score"><div class="score-val">${Number(r.ai_tps)||0}</div><div class="score-label">AI Speed (tok/s)</div></div>
+        <div class="bench-score"><div class="score-val">${Number(r.ai_ttft)||0}</div><div class="score-label">Response Time (ms)</div></div>
+        <div class="bench-score"><div class="score-val">${Number(r.nomad_score)||0}</div><div class="score-label">NOMAD Score</div></div>
       </div>
     </details>
     <div class="benchmark-result-note">Compare this run against Diagnostics History below to spot degradation over time.</div>
@@ -559,13 +559,13 @@ async function loadBenchHistory() {
       ${history.map((h, i) => {
         const prev = history[i + 1]; // previous run (older)
         return `<tr>
-          <td>${new Date(h.created_at).toLocaleDateString()}</td>
-          <td><strong class="benchmark-score-pill">${h.nomad_score}</strong>${delta(h.nomad_score, prev?.nomad_score)}</td>
-          <td>${h.cpu_score}${delta(h.cpu_score, prev?.cpu_score)}</td>
-          <td>${h.memory_score}${delta(h.memory_score, prev?.memory_score)}</td>
-          <td>${h.disk_read_score}${delta(h.disk_read_score, prev?.disk_read_score)}</td>
-          <td>${h.disk_write_score}${delta(h.disk_write_score, prev?.disk_write_score)}</td>
-          <td>${h.ai_tps}${delta(h.ai_tps, prev?.ai_tps)}</td>
+          <td>${escapeHtml(new Date(h.created_at).toLocaleDateString())}</td>
+          <td><strong class="benchmark-score-pill">${Number(h.nomad_score)||0}</strong>${delta(h.nomad_score, prev?.nomad_score)}</td>
+          <td>${Number(h.cpu_score)||0}${delta(h.cpu_score, prev?.cpu_score)}</td>
+          <td>${Number(h.memory_score)||0}${delta(h.memory_score, prev?.memory_score)}</td>
+          <td>${Number(h.disk_read_score)||0}${delta(h.disk_read_score, prev?.disk_read_score)}</td>
+          <td>${Number(h.disk_write_score)||0}${delta(h.disk_write_score, prev?.disk_write_score)}</td>
+          <td>${Number(h.ai_tps)||0}${delta(h.ai_tps, prev?.ai_tps)}</td>
         </tr>`;
       }).join('')}
     </table></div>`;
@@ -673,40 +673,43 @@ async function loadSystemInfo() {
 
     // Gauges
     function gaugeColor(pct) { return pct > 90 ? 'gauge-red' : pct > 70 ? 'gauge-orange' : 'gauge-green'; }
+    const cpuPct = Number(s.cpu_percent) || 0;
+    const ramPct = Number(s.ram_percent) || 0;
+    const swapPct = Number(s.swap_percent) || 0;
     gaugesEl.innerHTML = `
-      <div class="gauge-card ${gaugeColor(s.cpu_percent)}">
+      <div class="gauge-card ${gaugeColor(cpuPct)}">
         <div class="gauge-label">CPU</div>
-        <div class="gauge-value">${s.cpu_percent}%</div>
-        <div class="gauge-bar"><div class="fill" style="width:${s.cpu_percent}%"></div></div>
+        <div class="gauge-value">${cpuPct}%</div>
+        <div class="gauge-bar"><div class="fill" style="width:${cpuPct}%"></div></div>
       </div>
-      <div class="gauge-card ${gaugeColor(s.ram_percent)}">
+      <div class="gauge-card ${gaugeColor(ramPct)}">
         <div class="gauge-label">Memory</div>
-        <div class="gauge-value">${s.ram_percent}%</div>
-        <div class="gauge-bar"><div class="fill" style="width:${s.ram_percent}%"></div></div>
+        <div class="gauge-value">${ramPct}%</div>
+        <div class="gauge-bar"><div class="fill" style="width:${ramPct}%"></div></div>
       </div>
-      <div class="gauge-card ${gaugeColor(s.swap_percent)}">
+      <div class="gauge-card ${gaugeColor(swapPct)}">
         <div class="gauge-label">Swap</div>
-        <div class="gauge-value">${s.swap_percent}%</div>
-        <div class="gauge-bar"><div class="fill" style="width:${s.swap_percent}%"></div></div>
+        <div class="gauge-value">${swapPct}%</div>
+        <div class="gauge-bar"><div class="fill" style="width:${swapPct}%"></div></div>
       </div>
       <div class="gauge-card gauge-blue">
         <div class="gauge-label">Uptime</div>
-        <div class="gauge-value" style="font-size:16px;">${s.uptime}</div>
+        <div class="gauge-value" style="font-size:16px;">${escapeHtml(s.uptime || '')}</div>
         <div class="gauge-bar"><div class="fill" style="width:100%"></div></div>
       </div>
     `;
 
     // System info
     systemInfoEl.innerHTML = `
-      <div class="setting-row"><span class="setting-label">Version</span><span class="setting-value">v${s.version}</span></div>
-      <div class="setting-row"><span class="setting-label">Platform</span><span class="setting-value">${s.platform}</span></div>
-      <div class="setting-row"><span class="setting-label">Hostname</span><span class="setting-value">${s.hostname}</span></div>
-      <div class="setting-row"><span class="setting-label">CPU</span><span class="setting-value">${s.cpu}</span></div>
-      <div class="setting-row"><span class="setting-label">Cores</span><span class="setting-value">${s.cpu_cores_physical} physical / ${s.cpu_cores} logical</span></div>
-      <div class="setting-row"><span class="setting-label">RAM</span><span class="setting-value">${s.ram_used} / ${s.ram_total} (${s.ram_percent}%)</span></div>
-      <div class="setting-row"><span class="setting-label">Swap</span><span class="setting-value">${s.swap_used} / ${s.swap_total}</span></div>
-      <div class="setting-row"><span class="setting-label">GPU</span><span class="setting-value">${s.gpu}${s.gpu_vram ? ' ('+s.gpu_vram+')' : ''}</span></div>
-      <div class="setting-row"><span class="setting-label">NOMAD Data</span><span class="setting-value">${s.nomad_disk_used}</span></div>
+      <div class="setting-row"><span class="setting-label">Version</span><span class="setting-value">v${escapeHtml(s.version || '')}</span></div>
+      <div class="setting-row"><span class="setting-label">Platform</span><span class="setting-value">${escapeHtml(s.platform || '')}</span></div>
+      <div class="setting-row"><span class="setting-label">Hostname</span><span class="setting-value">${escapeHtml(s.hostname || '')}</span></div>
+      <div class="setting-row"><span class="setting-label">CPU</span><span class="setting-value">${escapeHtml(s.cpu || '')}</span></div>
+      <div class="setting-row"><span class="setting-label">Cores</span><span class="setting-value">${Number(s.cpu_cores_physical)||0} physical / ${Number(s.cpu_cores)||0} logical</span></div>
+      <div class="setting-row"><span class="setting-label">RAM</span><span class="setting-value">${escapeHtml(s.ram_used || '')} / ${escapeHtml(s.ram_total || '')} (${ramPct}%)</span></div>
+      <div class="setting-row"><span class="setting-label">Swap</span><span class="setting-value">${escapeHtml(s.swap_used || '')} / ${escapeHtml(s.swap_total || '')}</span></div>
+      <div class="setting-row"><span class="setting-label">GPU</span><span class="setting-value">${escapeHtml(s.gpu || '')}${s.gpu_vram ? ' ('+escapeHtml(s.gpu_vram)+')' : ''}</span></div>
+      <div class="setting-row"><span class="setting-label">NOMAD Data</span><span class="setting-value">${escapeHtml(s.nomad_disk_used || '')}</span></div>
     `;
     dataDirEl.textContent = s.data_dir;
 
@@ -714,14 +717,15 @@ async function loadSystemInfo() {
     const dd = diskDevicesEl;
     if (s.disk_devices && s.disk_devices.length) {
       dd.innerHTML = s.disk_devices.map(d => {
-        const color = d.percent > 90 ? 'var(--red)' : d.percent > 75 ? 'var(--orange)' : 'var(--accent)';
+        const pct = Number(d.percent) || 0;
+        const color = pct > 90 ? 'var(--red)' : pct > 75 ? 'var(--orange)' : 'var(--accent)';
         return `<div class="disk-device">
-          <div class="disk-label"><span>${d.mountpoint} (${d.fstype})</span><span>${d.used} / ${d.total} (${d.percent}%)</span></div>
-          <div class="progress-bar"><div class="fill" style="width:${d.percent}%;background:${color};"></div></div>
+          <div class="disk-label"><span>${escapeHtml(d.mountpoint || '')} (${escapeHtml(d.fstype || '')})</span><span>${escapeHtml(d.used || '')} / ${escapeHtml(d.total || '')} (${pct}%)</span></div>
+          <div class="progress-bar"><div class="fill" style="width:${pct}%;background:${color};"></div></div>
         </div>`;
       }).join('');
     } else {
-      dd.innerHTML = `<div class="setting-row"><span class="setting-label">Disk Free</span><span class="setting-value">${s.disk_free} / ${s.disk_total}</span></div>`;
+      dd.innerHTML = `<div class="setting-row"><span class="setting-label">Disk Free</span><span class="setting-value">${escapeHtml(s.disk_free || '')} / ${escapeHtml(s.disk_total || '')}</span></div>`;
     }
   } catch(e) { systemInfoEl.innerHTML = '<span class="text-red">Failed to load</span>'; }
 }
@@ -776,9 +780,9 @@ async function loadModelManager() {
     } else {
       el.innerHTML = models.map(m => `
         <div class="model-item">
-          <span class="model-name">${m.name}</span>
+          <span class="model-name">${escapeHtml(m.name)}</span>
           <span class="model-item-actions">
-            <span class="model-size">${(m.size/1e9).toFixed(1)} GB</span>
+            <span class="model-size">${((Number(m.size)||0)/1e9).toFixed(1)} GB</span>
             <button class="btn btn-sm btn-danger" type="button" data-shell-action="delete-model" data-model-name="${escapeAttr(m.name)}">Delete</button>
           </span>
         </div>
@@ -788,7 +792,7 @@ async function loadModelManager() {
     const installed = new Set(models.map(m => m.name));
     recommendedEl.innerHTML = rec.map(r => `
       <div class="model-item">
-        <span><span class="model-name">${r.name}</span> <span class="model-size">${r.desc} (${r.size})</span></span>
+        <span><span class="model-name">${escapeHtml(r.name)}</span> <span class="model-size">${escapeHtml(r.desc)} (${escapeHtml(r.size)})</span></span>
         ${installed.has(r.name)
           ? '<span class="runtime-status-installed">Installed</span>'
           : `<button class="btn btn-sm btn-primary" type="button" data-shell-action="pull-settings-model" data-model-name="${escapeAttr(r.name)}">Pull</button>`}

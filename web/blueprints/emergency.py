@@ -408,6 +408,20 @@ def api_rally_point_create(pid):
     if not name:
         return jsonify({'error': 'name is required'}), 400
 
+    # Validate coordinates if provided
+    lat = data.get('lat')
+    lng = data.get('lng')
+    if lat is not None or lng is not None:
+        try:
+            lat = float(lat) if lat is not None else None
+            lng = float(lng) if lng is not None else None
+        except (ValueError, TypeError):
+            return jsonify({'error': 'lat and lng must be numeric'}), 400
+        if lat is not None and not (-90 <= lat <= 90):
+            return jsonify({'error': 'lat must be -90..90'}), 400
+        if lng is not None and not (-180 <= lng <= 180):
+            return jsonify({'error': 'lng must be -180..180'}), 400
+
     with db_session() as db:
         plan = db.execute(
             'SELECT id FROM evac_plans WHERE id = ?', (pid,)
@@ -425,8 +439,8 @@ def api_rally_point_create(pid):
                 pid,
                 name,
                 data.get('location', ''),
-                data.get('lat'),
-                data.get('lng'),
+                lat,
+                lng,
                 data.get('point_type', 'assembly'),
                 int(data.get('sequence_order', 0)),
                 data.get('notes', ''),
@@ -451,6 +465,19 @@ def api_rally_point_update(rid):
     fields = {k: v for k, v in data.items() if k in allowed}
     if not fields:
         return jsonify({'error': 'no valid fields to update'}), 400
+    # Validate coordinates if provided
+    if 'lat' in fields or 'lng' in fields:
+        try:
+            if 'lat' in fields:
+                lat_val = float(fields['lat'])
+                if not (-90 <= lat_val <= 90):
+                    return jsonify({'error': 'lat must be -90..90'}), 400
+            if 'lng' in fields:
+                lng_val = float(fields['lng'])
+                if not (-180 <= lng_val <= 180):
+                    return jsonify({'error': 'lng must be -180..180'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'lat and lng must be numeric'}), 400
 
     with db_session() as db:
         existing = db.execute(

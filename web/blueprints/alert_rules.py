@@ -137,12 +137,14 @@ def api_alert_rules_evaluate():
             is_triggered = _compare(current_value, comp, threshold)
 
             if is_triggered:
-                # Check cooldown
+                # Check cooldown (CURRENT_TIMESTAMP stores UTC)
                 if rule['last_triggered']:
                     from datetime import datetime, timedelta
                     try:
                         last = datetime.fromisoformat(rule['last_triggered'])
-                        if datetime.now() - last < timedelta(minutes=rule['cooldown_minutes']):
+                        if last.tzinfo is not None:
+                            last = last.replace(tzinfo=None)
+                        if datetime.utcnow() - last < timedelta(minutes=rule['cooldown_minutes']):
                             continue  # Still in cooldown
                     except (ValueError, TypeError):
                         pass

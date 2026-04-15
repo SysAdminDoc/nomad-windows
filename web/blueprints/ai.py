@@ -37,15 +37,23 @@ def _trim_messages_to_fit(messages, max_tokens=4096, system_tokens=0):
     if not messages:
         return messages
     budget = max_tokens - system_tokens - 200  # Reserve 200 for response
+    # Preserve system message if present — must never be dropped
+    system_msg = None
+    rest = messages
+    if messages[0].get('role') == 'system':
+        system_msg = messages[0]
+        rest = messages[1:]
+        budget -= _estimate_tokens(system_msg.get('content', ''))
     result = []
     total = 0
-    # Always keep the system message (first) and iterate from newest
-    for msg in reversed(messages):
+    for msg in reversed(rest):
         msg_tokens = _estimate_tokens(msg.get('content', ''))
         if total + msg_tokens > budget and result:
             break
         result.insert(0, msg)
         total += msg_tokens
+    if system_msg:
+        result.insert(0, system_msg)
     return result
 
 

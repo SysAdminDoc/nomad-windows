@@ -4,6 +4,7 @@ performance metrics, and role management."""
 import json
 import logging
 import hashlib
+import os
 import secrets
 from datetime import datetime, timedelta
 
@@ -38,14 +39,42 @@ _USER_SAFE_COLUMNS = [
 
 # ─── Helpers ────────────────────────────────────────────────────────
 
+def _hash_credential(value):
+    """Hash a PIN or password using PBKDF2-SHA256 with random salt."""
+    salt = os.urandom(16)
+    h = hashlib.pbkdf2_hmac('sha256', value.encode(), salt, 100_000)
+    return f'pbkdf2${salt.hex()}${h.hex()}'
+
+
+def _verify_credential(value, stored_hash):
+    """Verify a PIN or password against a stored hash.
+    Supports PBKDF2 (preferred) and legacy plain SHA-256."""
+    if not value or not stored_hash:
+        return False
+    if stored_hash.startswith('pbkdf2$'):
+        parts = stored_hash.split('$')
+        if len(parts) != 3:
+            return False
+        salt = bytes.fromhex(parts[1])
+        h = hashlib.pbkdf2_hmac('sha256', value.encode(), salt, 100_000)
+        return h.hex() == parts[2]
+    # Legacy SHA-256 fallback
+    return hashlib.sha256(value.encode()).hexdigest() == stored_hash
+
+
+def _needs_rehash(stored_hash):
+    """Check if a hash uses the legacy format and needs upgrading."""
+    return bool(stored_hash) and not stored_hash.startswith('pbkdf2$')
+
+
 def _hash_pin(pin):
-    """Hash a PIN using SHA-256."""
-    return hashlib.sha256(pin.encode()).hexdigest()
+    """Hash a PIN using PBKDF2-SHA256."""
+    return _hash_credential(pin)
 
 
 def _verify_pin(pin, pin_hash):
     """Compare a plain PIN against a stored hash."""
-    return _hash_pin(pin) == pin_hash
+    return _verify_credential(pin, pin_hash)
 
 
 def _safe_user(row):
@@ -104,7 +133,7 @@ def users_create():
     pin = (data.get('pin') or '').strip()
     pin_hash = _hash_pin(pin) if pin else ''
     password = (data.get('password') or '').strip()
-    password_hash = hashlib.sha256(password.encode()).hexdigest() if password else ''
+    password_hash = _hash_credential(password) if password else ''
     permissions = json.dumps(data.get('permissions', []))
     settings = json.dumps(data.get('settings', {}))
     with db_session() as db:
@@ -173,7 +202,7 @@ def users_update(uid):
         password = (data['password'] or '').strip()
         if password:
             sets.append('password_hash = ?')
-            params.append(hashlib.sha256(password.encode()).hexdigest())
+            params.append(_hash_credential(password))
     if not sets:
         return jsonify({'error': 'no fields to update'}), 400
     sets.append("updated_at = datetime('now')")
@@ -259,7 +288,7 @@ def auth_login():
         if pin and user['pin_hash']:
             valid = _verify_pin(pin, user['pin_hash'])
         if not valid and password and user['password_hash']:
-            valid = hashlib.sha256(password.encode()).hexdigest() == user['password_hash']
+            valid = _verify_credential(password, user['password_hash'])
         if not valid:
             attempts = (user['failed_attempts'] or 0) + 1
             updates = {'failed_attempts': attempts}
@@ -280,6 +309,13 @@ def auth_login():
             log_activity('login_failed', service='platform_security',
                          detail=f'Failed login for {username} (attempt {attempts})')
             return jsonify({'error': 'invalid credentials'}), 401
+        # Transparently upgrade legacy SHA-256 hashes to PBKDF2
+        if pin and user['pin_hash'] and _needs_rehash(user['pin_hash']):
+            db.execute("UPDATE app_users SET pin_hash = ? WHERE id = ?",
+                       (_hash_credential(pin), user['id']))
+        if password and user['password_hash'] and _needs_rehash(user['password_hash']):
+            db.execute("UPDATE app_users SET password_hash = ? WHERE id = ?",
+                       (_hash_credential(password), user['id']))
         # Success — create session
         token = secrets.token_urlsafe(32)
         expires = (now + timedelta(hours=SESSION_TIMEOUT_HOURS)).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -385,9 +421,9 @@ def auth_change_password():
                 'SELECT password_hash FROM app_users WHERE id = ?', (sess['user_id'],)
             ).fetchone()
             if user and user['password_hash']:
-                if hashlib.sha256(current.encode()).hexdigest() != user['password_hash']:
+                if not _verify_credential(current, user['password_hash']):
                     return jsonify({'error': 'current password is incorrect'}), 401
-        new_hash = hashlib.sha256(new_password.encode()).hexdigest()
+        new_hash = _hash_credential(new_password)
         r = db.execute(
             "UPDATE app_users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?",
             (new_hash, sess['user_id'])

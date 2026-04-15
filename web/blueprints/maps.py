@@ -702,11 +702,18 @@ def api_waypoints_list():
 @maps_bp.route('/api/waypoints', methods=['POST'])
 def api_waypoints_create():
     data = request.get_json() or {}
+    try:
+        lat = float(data.get('lat', 0))
+        lng = float(data.get('lng', 0))
+    except (ValueError, TypeError):
+        return jsonify({'error': 'lat and lng must be numeric'}), 400
+    if not (-90 <= lat <= 90) or not (-180 <= lng <= 180):
+        return jsonify({'error': 'lat must be -90..90, lng must be -180..180'}), 400
     cat = data.get('category', 'general')
     color = WAYPOINT_COLORS.get(cat, '#9e9e9e')
     with db_session() as db:
         cur = db.execute('INSERT INTO waypoints (name, lat, lng, category, color, notes) VALUES (?, ?, ?, ?, ?, ?)',
-                         (data.get('name', 'Waypoint'), data.get('lat', 0), data.get('lng', 0),
+                         (data.get('name', 'Waypoint'), lat, lng,
                           cat, color, data.get('notes', '')))
         db.commit()
         row = db.execute('SELECT * FROM waypoints WHERE id = ?', (cur.lastrowid,)).fetchone()
@@ -729,6 +736,17 @@ def api_waypoint_update(wid):
     fields = {k: v for k, v in data.items() if k in allowed}
     if not fields:
         return jsonify({'error': 'No valid fields provided'}), 400
+    # Validate coordinates if provided
+    if 'lat' in fields or 'lng' in fields:
+        try:
+            lat = float(fields.get('lat', 0))
+            lng = float(fields.get('lng', 0))
+        except (ValueError, TypeError):
+            return jsonify({'error': 'lat and lng must be numeric'}), 400
+        if 'lat' in fields and not (-90 <= lat <= 90):
+            return jsonify({'error': 'lat must be -90..90'}), 400
+        if 'lng' in fields and not (-180 <= lng <= 180):
+            return jsonify({'error': 'lng must be -180..180'}), 400
     # Auto-set color when category changes
     if 'category' in fields:
         fields['color'] = WAYPOINT_COLORS.get(fields['category'], '#9e9e9e')

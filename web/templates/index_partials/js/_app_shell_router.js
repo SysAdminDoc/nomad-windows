@@ -1433,33 +1433,38 @@ function _isVisibleForLayout(el) {
   return !!el && getComputedStyle(el).display !== 'none';
 }
 
+function _visibleLayoutHeight(el) {
+  if (!_isVisibleForLayout(el)) return 0;
+  return el.getBoundingClientRect().height;
+}
+
 function syncViewportChrome() {
   const root = document.documentElement;
   const broadcast = document.getElementById('broadcast-banner');
   const alertBar = document.getElementById('alert-bar');
   const statusStrip = document.getElementById('status-strip');
   let topOffset = 0;
+  const broadcastHeight = _visibleLayoutHeight(broadcast);
 
-  if (_isVisibleForLayout(broadcast)) {
+  if (broadcast && broadcastHeight > 0) {
     broadcast.style.top = '0px';
-    topOffset += broadcast.getBoundingClientRect().height;
+    topOffset += broadcastHeight;
   }
-  root.style.setProperty('--alert-bar-offset', `${_isVisibleForLayout(broadcast) ? broadcast.getBoundingClientRect().height : 0}px`);
+  root.style.setProperty('--alert-bar-offset', `${broadcastHeight}px`);
 
   if (alertBar) {
     alertBar.style.top = `${topOffset}px`;
-    if (_isVisibleForLayout(alertBar)) topOffset += alertBar.getBoundingClientRect().height;
+    topOffset += _visibleLayoutHeight(alertBar);
   }
 
   if (statusStrip) statusStrip.style.top = `${topOffset}px`;
   root.style.setProperty('--stacked-top-offset', `${topOffset}px`);
 
   const copilotDock = document.getElementById('copilot-dock');
-  let copilotHeight = 0;
+  const copilotHeight = _visibleLayoutHeight(copilotDock);
 
   if (copilotDock) {
     copilotDock.style.bottom = '0px';
-    if (_isVisibleForLayout(copilotDock)) copilotHeight = copilotDock.getBoundingClientRect().height;
   }
 
   const bottomClearance = Math.max(88, copilotHeight + 28);
@@ -1468,8 +1473,19 @@ function syncViewportChrome() {
   root.style.setProperty('--floating-panel-bottom', `${copilotHeight + 80}px`);
 }
 
+let _viewportChromeSyncQueued = false;
+
+function scheduleViewportChromeSync() {
+  if (_viewportChromeSyncQueued) return;
+  _viewportChromeSyncQueued = true;
+  requestAnimationFrame(() => {
+    _viewportChromeSyncQueued = false;
+    syncViewportChrome();
+  });
+}
+
 const _chromeObserver = new MutationObserver(() => {
-  requestAnimationFrame(syncViewportChrome);
+  scheduleViewportChromeSync();
 });
 
 ['broadcast-banner', 'alert-bar', 'status-strip', 'copilot-dock'].forEach(id => {
@@ -1485,8 +1501,8 @@ const _chromeObserver = new MutationObserver(() => {
   }
 });
 
-window.addEventListener('resize', () => requestAnimationFrame(syncViewportChrome));
-requestAnimationFrame(syncViewportChrome);
+window.addEventListener('resize', scheduleViewportChromeSync);
+scheduleViewportChromeSync();
 
 document.addEventListener('focusin', e => {
   if (e.target.id === 'copilot-input') {
@@ -1545,4 +1561,3 @@ if (incidentDescInput) {
     }
   });
 }
-

@@ -455,6 +455,11 @@ test('workspace navigation uses dedicated routes instead of one giant mounted pa
   await expect(page.locator('#tab-notes')).toBeVisible();
   await expect(page.locator('#tab-maps')).toHaveCount(0);
 
+  await page.locator('.tab[data-tab="loadout"]').click();
+  await expect(page).toHaveURL(/\/loadout(\?|$)/);
+  await expect(page.locator('#tab-loadout')).toBeVisible();
+  await expect(page.locator('#tab-notes')).toHaveCount(0);
+
   await testInfo.attach('segmented-workspace-routes', {
     body: await page.screenshot({ fullPage: false }),
     contentType: 'image/png',
@@ -764,6 +769,7 @@ test('shared shell pauses VIPTrack activity after switching away from the tab', 
   { name: 'notes', path: '/notes?tab=notes', visibleSelector: '#tab-notes', allowedEndpoints: [] },
   { name: 'settings', path: '/settings?tab=settings', visibleSelector: '#tab-settings', allowedEndpoints: ['/api/content-summary'] },
   { name: 'maps', path: '/maps?tab=maps', visibleSelector: '#tab-maps', allowedEndpoints: [] },
+  { name: 'loadout', path: '/loadout?tab=loadout', visibleSelector: '#tab-loadout', allowedEndpoints: [] },
 ].forEach(({ name, path, visibleSelector, allowedEndpoints }) => {
   test(`non-services route ${name} avoids home-dashboard fetches and tolerates LAN status updates`, async ({ page }) => {
     const requests = [];

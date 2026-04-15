@@ -176,6 +176,27 @@ class TestSSEClientLifecycle:
         finally:
             sse_unregister_client(q)
 
+    def test_cleanup_backfills_untracked_clients(self, app):
+        from web.state import (
+            sse_cleanup_stale_clients,
+            _sse_clients, _sse_client_last_active, _sse_lock,
+        )
+        q = queue.Queue(maxsize=50)
+        with _sse_lock:
+            _sse_clients.append(q)
+            _sse_client_last_active.pop(id(q), None)
+        try:
+            removed = sse_cleanup_stale_clients()
+            assert removed == 0
+            with _sse_lock:
+                assert q in _sse_clients
+                assert id(q) in _sse_client_last_active
+        finally:
+            with _sse_lock:
+                if q in _sse_clients:
+                    _sse_clients.remove(q)
+                _sse_client_last_active.pop(id(q), None)
+
     def test_unregister_idempotent(self, app):
         from web.state import sse_register_client, sse_unregister_client
         q = queue.Queue(maxsize=50)

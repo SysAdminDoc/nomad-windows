@@ -212,6 +212,14 @@ def sse_cleanup_stale_clients():
     """
     now = time.time()
     with _sse_lock:
+        # Prune orphaned activity timestamps whose queue is no longer
+        # registered. CPython recycles id() values for garbage-collected
+        # objects, so a freshly-allocated queue can otherwise inherit a
+        # stale timestamp from a prior queue with the same id() and be
+        # incorrectly evicted on the next cleanup pass.
+        current_ids = {id(q) for q in _sse_clients}
+        for orphan_id in [k for k in _sse_client_last_active if k not in current_ids]:
+            _sse_client_last_active.pop(orphan_id, None)
         stale = []
         for q in list(_sse_clients):
             queue_id = id(q)

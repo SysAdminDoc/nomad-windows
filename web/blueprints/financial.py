@@ -6,7 +6,47 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 from web.sql_safety import safe_columns
+from web.validation import validate_json
+
+# Reusable validation schemas — audit H2.
+_CASH_SCHEMA = {
+    'denomination': {'type': str, 'max_length': 50},
+    'amount': {'type': (int, float), 'min': 0, 'max': 1_000_000_000},
+    'location': {'type': str, 'max_length': 200},
+    'currency': {'type': str, 'max_length': 10},
+    'notes': {'type': str, 'max_length': 2000},
+}
+_METALS_SCHEMA = {
+    'metal_type': {'type': str, 'max_length': 50},
+    'form': {'type': str, 'max_length': 50},
+    'description': {'type': str, 'max_length': 500},
+    'weight_oz': {'type': (int, float), 'min': 0, 'max': 1_000_000},
+    'purity': {'type': (int, float), 'min': 0, 'max': 1},
+    'purchase_price': {'type': (int, float), 'min': 0, 'max': 1_000_000_000},
+    'location': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+}
+_BARTER_SCHEMA = {
+    'name': {'type': str, 'required': True, 'max_length': 200},
+    'category': {'type': str, 'max_length': 50},
+    'quantity': {'type': (int, float), 'min': 0, 'max': 1_000_000},
+    'unit': {'type': str, 'max_length': 20},
+    'estimated_value': {'type': (int, float), 'min': 0, 'max': 1_000_000_000},
+    'location': {'type': str, 'max_length': 200},
+    'notes': {'type': str, 'max_length': 2000},
+}
+_DOCUMENTS_SCHEMA = {
+    'doc_type': {'type': str, 'max_length': 50},
+    'description': {'type': str, 'max_length': 500},
+    'account_number': {'type': str, 'max_length': 100},
+    'institution': {'type': str, 'max_length': 200},
+    'expiration': {'type': str, 'max_length': 50},
+    'location': {'type': str, 'max_length': 200},
+    'digital_copy': {'type': (str, int, bool), 'max_length': 500},
+    'notes': {'type': str, 'max_length': 2000},
+}
 
 log = logging.getLogger('nomad.web')
 
@@ -47,12 +87,14 @@ def _get_setting(db, key, default=None):
 def api_cash_list():
     with db_session() as db:
         rows = db.execute(
-            'SELECT * FROM financial_cash ORDER BY location, denomination'
+            'SELECT * FROM financial_cash ORDER BY location, denomination LIMIT ? OFFSET ?',
+            get_pagination(),
         ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
 @financial_bp.route('/api/financial/cash', methods=['POST'])
+@validate_json(_CASH_SCHEMA)
 def api_cash_create():
     data = request.get_json() or {}
     with db_session() as db:
@@ -75,6 +117,7 @@ def api_cash_create():
 
 
 @financial_bp.route('/api/financial/cash/<int:item_id>', methods=['PUT'])
+@validate_json(_CASH_SCHEMA)
 def api_cash_update(item_id):
     data = request.get_json() or {}
     filtered = safe_columns(data, CASH_ALLOWED)
@@ -115,12 +158,14 @@ def api_cash_delete(item_id):
 def api_metals_list():
     with db_session() as db:
         rows = db.execute(
-            'SELECT * FROM financial_metals ORDER BY metal_type, form'
+            'SELECT * FROM financial_metals ORDER BY metal_type, form LIMIT ? OFFSET ?',
+            get_pagination()
         ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
 @financial_bp.route('/api/financial/metals', methods=['POST'])
+@validate_json(_METALS_SCHEMA)
 def api_metals_create():
     data = request.get_json() or {}
     metal_type = data.get('metal_type', 'gold')
@@ -152,6 +197,7 @@ def api_metals_create():
 
 
 @financial_bp.route('/api/financial/metals/<int:item_id>', methods=['PUT'])
+@validate_json(_METALS_SCHEMA)
 def api_metals_update(item_id):
     data = request.get_json() or {}
     filtered = safe_columns(data, METALS_ALLOWED)
@@ -197,19 +243,22 @@ def api_metals_delete(item_id):
 def api_barter_list():
     with db_session() as db:
         category = request.args.get('category', '').strip()
+        limit, offset = get_pagination()
         if category and category in BARTER_CATEGORIES:
             rows = db.execute(
-                'SELECT * FROM financial_barter WHERE category = ? ORDER BY category, name',
-                (category,)
+                'SELECT * FROM financial_barter WHERE category = ? ORDER BY category, name LIMIT ? OFFSET ?',
+                (category, limit, offset)
             ).fetchall()
         else:
             rows = db.execute(
-                'SELECT * FROM financial_barter ORDER BY category, name'
+                'SELECT * FROM financial_barter ORDER BY category, name LIMIT ? OFFSET ?',
+                (limit, offset)
             ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
 @financial_bp.route('/api/financial/barter', methods=['POST'])
+@validate_json(_BARTER_SCHEMA)
 def api_barter_create():
     data = request.get_json() or {}
     category = data.get('category', 'other')
@@ -237,6 +286,7 @@ def api_barter_create():
 
 
 @financial_bp.route('/api/financial/barter/<int:item_id>', methods=['PUT'])
+@validate_json(_BARTER_SCHEMA)
 def api_barter_update(item_id):
     data = request.get_json() or {}
     filtered = safe_columns(data, BARTER_ALLOWED)
@@ -286,12 +336,14 @@ DOCUMENT_TYPES = [
 def api_documents_list():
     with db_session() as db:
         rows = db.execute(
-            'SELECT * FROM financial_documents ORDER BY doc_type, description'
+            'SELECT * FROM financial_documents ORDER BY doc_type, description LIMIT ? OFFSET ?',
+            get_pagination()
         ).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
 @financial_bp.route('/api/financial/documents', methods=['POST'])
+@validate_json(_DOCUMENTS_SCHEMA)
 def api_documents_create():
     data = request.get_json() or {}
     doc_type = data.get('doc_type', 'other')
@@ -321,6 +373,7 @@ def api_documents_create():
 
 
 @financial_bp.route('/api/financial/documents/<int:item_id>', methods=['PUT'])
+@validate_json(_DOCUMENTS_SCHEMA)
 def api_documents_update(item_id):
     data = request.get_json() or {}
     filtered = safe_columns(data, DOCUMENTS_ALLOWED)

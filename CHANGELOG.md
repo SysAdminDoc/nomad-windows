@@ -2,6 +2,27 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.27.0] — Hardening & Polish (Audit Backlog)
+- Fixed: Disk-space pre-check before yt-dlp downloads (media.py) — rejects when approx size + 500 MB margin exceeds free space on the video dir volume
+- Fixed: Streaming CSV import for contacts (interoperability.py) — new `_iter_upload_lines()` decoder + batched 500-row commits avoid loading multi-hundred-MB uploads fully into memory
+- Fixed: Duty roster cleanup on pod member removal (group_ops.py) — cancels scheduled/active shifts for the removed person in the same pod instead of leaving orphaned roster entries
+- Fixed: XSS — user-sourced strings rendered via innerHTML in `_tab_medical_phase2.html` and `_tab_agriculture.html` are now escaped through a local `esc()` helper that prefers the global `window.escapeHtml`
+- Fixed: Ollama streaming resilience (ai.py) — corrupt/partial JSON chunks from a crashing Ollama backend are now skipped with a debug log instead of forwarded to the client reader
+- Fixed: Config crashes on invalid env vars (config.py M7) — new `_env_int()` helper falls back to defaults with a warning instead of raising ValueError at import time
+- Fixed: Double preparedness import (app.py L4) — consolidated to a single import at the `start_alert_engine` site; blueprint is reused at registration
+- Fixed: `os._exit(0)` → `sys.exit(0)` on shutdown (nomad.py L3) — allows interpreter cleanup so in-flight DB commits actually land
+- Fixed: Missing `name` attrs on 5 hidden inputs in `_tab_daily_living.html` (L2) — satisfies the `test_partial_controls_have_names` contract
+- Added: `@validate_json` schemas applied to all 8 mutating financial endpoints (cash/metals/barter/documents × create/update) per audit H2. Schemas enforce types, max lengths (200-2000 chars), and numeric bounds (≤1B for monetary fields). Financial is the most sensitive blueprint per the audit and gets first coverage.
+- Fixed: `access_logs` table renamed to `platform_access_log` (audit M4) — disambiguates from `access_log` used by physical-security blueprint. New `_migrate_access_logs()` runs on every startup: idempotent, copies any existing rows into the new table via `INSERT OR IGNORE`, then drops the old. Index names also updated. SQL references in `platform_security.py` rewritten.
+- Fixed: Mutating rate limit actually enforced (audit H3) — replaced empty `pass` body with a per-remote-IP sliding-window counter (60s / N from `Config.RATELIMIT_MUTATING`). Localhost exempt. Returns 429 + `retry_after` on overflow.
+- Fixed: Path traversal on Windows in NukeMap/VIPTrack static-file routes (audit H5) — replaced `normcase` + prefix matching with `os.path.commonpath([full, base]) == base`, which is normalization-safe across mixed-case/mixed-separator paths.
+- Added: Shared `get_pagination()` helper in `web/blueprints/__init__.py` (default 100, max 1000) and applied `LIMIT ? OFFSET ?` to primary list endpoints in 7 blueprints — `financial` (cash/metals/barter/documents), `daily_living` (schedules/clothing/sanitation×2/morale/sleep/performance), `training_knowledge` (skill_trees/courses/drill_templates/knowledge_packages), `hunting_foraging` (trade_skills/preservation_methods/preservation_batches/hunting_zones), `disaster_modules` (energy_systems/building_materials), `movement_ops` (alt_vehicles/route_hazards/route_recon), `evac_drills` (drill_runs). Addresses audit M1 — blueprints were returning unbounded result sets that caused memory spikes and UI freezes on constrained hardware.
+- Added: `log_activity()` audit trail to `contacts` (create/update/delete) and `vehicles` (create/update/delete) — was blind spot per audit M2. Weather module deferred (most mutating endpoints are internal alert-rule triggers, not user data).
+- Fixed: PID recycling in service manager (services/manager.py L6) — `is_running()` now verifies the stored PID's process executable basename matches the service's recorded `exe_path` via psutil; `_pid_alive` alone could match a recycled PID that the OS had reassigned to an unrelated process after a crash
+- Added: `esc()` helper (XSS guard) in 7 remaining Phase 17-20 partials — `_tab_hunting_foraging`, `_tab_daily_living`, `_tab_disaster_modules`, `_tab_specialized_modules`, `_tab_group_ops`, `_tab_training_knowledge`, `_tab_security_opsec`. Foundation is in place; `_tab_group_ops` statusBadge and `_tab_security_opsec` classificationBadge/categoryBadge are already wrapped. Remaining per-row field escaping will land incrementally.
+- Fixed: XSS in `_tab_hunting_foraging.html` — 5 primary render functions (game, zones, fishing, foraging, edibles, traps) plus shared `gameTypeBadge`/`statusBadge`/`confClass` helpers now route all user-sourced strings (species, plant names, locations, scientific names, toxicity warnings, bait, notes) through `esc()`. This is the worst-offender Phase 17-20 partial per the audit (56 endpoints, 0 tests).
+- Stats: Addresses 9 backlog items (#8 partial, #10, #11, #12, #13, L2, L3, L4, M7) from the v7.27.0 hardening punch list in ROADMAP-v8.md
+
 ## [v7.26.0] — Phase 20: Specialized Modules & Community
 - Added: Supply caches with GPS and concealment tracking
 - Added: Pets & companion animals with food supply projections

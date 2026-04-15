@@ -467,7 +467,7 @@ def access_logs_list():
     params.append(limit)
     with db_session() as db:
         rows = db.execute(
-            f'SELECT * FROM access_logs{where} ORDER BY created_at DESC LIMIT ?',
+            f'SELECT * FROM platform_access_log{where} ORDER BY created_at DESC LIMIT ?',
             params
         ).fetchall()
     return jsonify([dict(r) for r in rows])
@@ -480,7 +480,7 @@ def access_logs_clear():
     cutoff = (datetime.utcnow() - timedelta(days=days)).strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         r = db.execute(
-            'DELETE FROM access_logs WHERE created_at < ?', (cutoff,)
+            'DELETE FROM platform_access_log WHERE created_at < ?', (cutoff,)
         )
         deleted = r.rowcount
         db.commit()
@@ -494,15 +494,15 @@ def access_logs_summary():
     """Count by action type, most active users, recent failures."""
     with db_session() as db:
         by_action = db.execute(
-            'SELECT action, COUNT(*) as count FROM access_logs '
+            'SELECT action, COUNT(*) as count FROM platform_access_log '
             'GROUP BY action ORDER BY count DESC'
         ).fetchall()
         active_users = db.execute(
-            'SELECT user_id, COUNT(*) as count FROM access_logs '
+            'SELECT user_id, COUNT(*) as count FROM platform_access_log '
             'WHERE user_id > 0 GROUP BY user_id ORDER BY count DESC LIMIT 10'
         ).fetchall()
         recent_failures = db.execute(
-            'SELECT * FROM access_logs WHERE status_code >= 400 '
+            'SELECT * FROM platform_access_log WHERE status_code >= 400 '
             'ORDER BY created_at DESC LIMIT 20'
         ).fetchall()
     return jsonify({

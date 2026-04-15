@@ -376,6 +376,9 @@
   const numVal = (id, def) => parseFloat(val(id)) || def || 0;
   const api = (url, opts) => fetch(url, opts).then(r => r.json());
   const toast = msg => { if (window.showToast) window.showToast(msg); };
+  const esc = s => (window.escapeHtml ? window.escapeHtml(s) : String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
   const API = '/api/disaster';
 
   const disasterTypeColors = {

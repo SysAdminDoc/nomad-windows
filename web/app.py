@@ -135,18 +135,42 @@ def create_app():
             addr = get_remote_address()
             return addr in ('127.0.0.1', '::1')
 
-        # Apply stricter limit to mutating methods via a shared limiter decorator
-        _mutating_limit = limiter.shared_limit(
-            Config.RATELIMIT_MUTATING,
-            scope='mutating',
-        )
+        # Stricter rate limit for POST/PUT/DELETE — audit H3.
+        # Implemented as a per-client sliding-window counter so it actually
+        # enforces (flask-limiter's shared_limit decorator only applies if
+        # each route opts in, which none did). Localhost is exempt — the
+        # check only matters when the desktop app is reached over LAN.
+        import collections
+        import threading as _th
+        _mutating_window = int(os.environ.get('NOMAD_RATELIMIT_MUTATING_WINDOW', 60))
+        _mutating_max = 60  # requests per window, per remote IP
+        try:
+            # parse "N/minute" form → N (60s window)
+            _n, _per = Config.RATELIMIT_MUTATING.split('/')
+            _mutating_max = int(_n.strip())
+        except (ValueError, AttributeError):
+            pass
+        _mutating_hits = collections.defaultdict(collections.deque)
+        _mutating_lock = _th.Lock()
 
         @app.before_request
         def _check_mutating_rate_limit():
-            """Apply stricter rate limit to POST/PUT/DELETE requests."""
-            if request.method in ('POST', 'PUT', 'DELETE'):
-                # The shared limit is checked via the limiter's internals
-                pass
+            if request.method not in ('POST', 'PUT', 'DELETE'):
+                return
+            addr = get_remote_address()
+            if addr in ('127.0.0.1', '::1'):
+                return
+            now = time.time()
+            cutoff = now - _mutating_window
+            with _mutating_lock:
+                q = _mutating_hits[addr]
+                while q and q[0] < cutoff:
+                    q.popleft()
+                if len(q) >= _mutating_max:
+                    from flask import jsonify as _j
+                    return _j({'error': 'Rate limit exceeded for mutating requests',
+                               'retry_after': _mutating_window}), 429
+                q.append(now)
 
         app.extensions['limiter'] = limiter
     except ImportError:
@@ -709,7 +733,7 @@ def create_app():
                 },
             })
 
-    from web.blueprints.preparedness import start_alert_engine
+    from web.blueprints.preparedness import start_alert_engine, preparedness_bp  # noqa: F401 — preparedness_bp re-used at registration site
     start_alert_engine()
 
     # ─── Multi-Node Federation ─────────────────────────────────────────
@@ -1111,7 +1135,13 @@ def create_app():
         from flask import send_from_directory
         full_path = os.path.realpath(os.path.join(_nukemap_dir, filepath))
         base_dir = os.path.realpath(_nukemap_dir)
-        if not os.path.normcase(full_path).startswith(os.path.normcase(base_dir) + os.sep) and os.path.normcase(full_path) != os.path.normcase(base_dir):
+        # Audit H5: commonpath is normalization-safe on Windows where
+        # mixed-case/mixed-separator paths could bypass startswith checks.
+        try:
+            if os.path.commonpath([full_path, base_dir]) != base_dir:
+                return jsonify({'error': 'Forbidden'}), 403
+        except ValueError:
+            # commonpath raises when paths are on different drives (Windows)
             return jsonify({'error': 'Forbidden'}), 403
         if not os.path.isfile(full_path):
             log.warning('NukeMap file not found: %s', full_path)
@@ -1150,9 +1180,13 @@ def create_app():
     @app.route('/viptrack/<path:filepath>')
     def viptrack_serve(filepath='index.html'):
         from flask import send_from_directory
-        full_path = os.path.normpath(os.path.join(_viptrack_dir, filepath))
-        base = os.path.normcase(os.path.normpath(_viptrack_dir))
-        if not (os.path.normcase(full_path) == base or os.path.normcase(full_path).startswith(base + os.sep)):
+        full_path = os.path.realpath(os.path.join(_viptrack_dir, filepath))
+        base_dir = os.path.realpath(_viptrack_dir)
+        # Audit H5 — commonpath is normalization-safe on Windows.
+        try:
+            if os.path.commonpath([full_path, base_dir]) != base_dir:
+                return jsonify({'error': 'Forbidden'}), 403
+        except ValueError:
             return jsonify({'error': 'Forbidden'}), 403
         if not os.path.isfile(full_path):
             return jsonify({'error': 'Not found'}), 404
@@ -1266,7 +1300,7 @@ def create_app():
     app.register_blueprint(tasks_bp)
     app.register_blueprint(contacts_bp)
     app.register_blueprint(exercises_bp)
-    from web.blueprints.preparedness import preparedness_bp
+    # preparedness_bp already imported above at the start_alert_engine() call site
     from web.blueprints.print_routes import print_routes_bp
     from web.blueprints.kiwix import kiwix_bp
     app.register_blueprint(preparedness_bp)

@@ -96,7 +96,7 @@
   <!-- Add Schedule Form -->
   <div class="dl-card">
     <div class="dl-card-title">Add Schedule</div>
-    <input type="hidden" id="dl-sched-edit-id" value="">
+    <input type="hidden" id="dl-sched-edit-id" name="dl-sched-edit-id" value="">
     <div class="dl-form-row">
       <div class="field"><label>Schedule Name</label><input name="dl-sched-name" id="dl-sched-name" placeholder="Daily routine"></div>
       <div class="field"><label>Type</label>
@@ -142,7 +142,7 @@
       <div class="dl-card-title" style="margin:0">Chores</div>
       <button class="dl-btn dl-btn-secondary" onclick="dlRotateChores()">Rotate All</button>
     </div>
-    <input type="hidden" id="dl-chore-edit-id" value="">
+    <input type="hidden" id="dl-chore-edit-id" name="dl-chore-edit-id" value="">
     <div class="dl-form-row">
       <div class="field"><label>Chore Name</label><input name="dl-chore-name" id="dl-chore-name" placeholder="Firewood collection"></div>
       <div class="field"><label>Category</label>
@@ -202,7 +202,7 @@
   <!-- Add Clothing Form -->
   <div class="dl-card">
     <div class="dl-card-title">Add Clothing Item</div>
-    <input type="hidden" id="dl-cloth-edit-id" value="">
+    <input type="hidden" id="dl-cloth-edit-id" name="dl-cloth-edit-id" value="">
     <div class="dl-form-row">
       <div class="field"><label>Person</label><input name="dl-cloth-person" id="dl-cloth-person" placeholder="Name"></div>
       <div class="field"><label>Item Name</label><input name="dl-cloth-name" id="dl-cloth-name" placeholder="Winter jacket"></div>
@@ -262,7 +262,7 @@
   <!-- Add Supply Form -->
   <div class="dl-card">
     <div class="dl-card-title">Add Sanitation Supply</div>
-    <input type="hidden" id="dl-san-edit-id" value="">
+    <input type="hidden" id="dl-san-edit-id" name="dl-san-edit-id" value="">
     <div class="dl-form-row">
       <div class="field"><label>Supply Name</label><input name="dl-san-name" id="dl-san-name" placeholder="Bleach, soap..."></div>
       <div class="field"><label>Category</label>
@@ -482,7 +482,7 @@
   <!-- Add Recipe Form -->
   <div class="dl-card" style="margin-top:16px;">
     <div class="dl-card-title">Add Recipe</div>
-    <input type="hidden" id="dl-recipe-edit-id" value="">
+    <input type="hidden" id="dl-recipe-edit-id" name="dl-recipe-edit-id" value="">
     <div class="dl-form-row">
       <div class="field"><label>Recipe Name</label><input name="dl-recipe-name" id="dl-recipe-name" placeholder="Camp stew"></div>
       <div class="field"><label>Category</label>
@@ -565,6 +565,9 @@
   const put  = (url, body) => api(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const del  = url => api(url, {method:'DELETE'});
   function toast(msg) { if (window.showToast) window.showToast(msg); }
+  const esc = s => (window.escapeHtml ? window.escapeHtml(s) : String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
   function stars(n) { return '<span class="dl-stars">' + '\u2605'.repeat(n) + '\u2606'.repeat(5 - n) + '</span>'; }
   function typeBadge(t) { return '<span class="dl-badge dl-badge-' + t + '">' + t.replace('_', ' ') + '</span>'; }
   function riskBadge(level) {

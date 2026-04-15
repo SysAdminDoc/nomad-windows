@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify
 
-from db import db_session
+from db import db_session, log_activity
 from web.sql_safety import safe_columns
 
 _log = logging.getLogger(__name__)
@@ -68,6 +68,7 @@ def api_vehicles_create():
              data.get('location', ''), role, data.get('notes', '')))
         db.commit()
         row = db.execute('SELECT * FROM vehicles WHERE id = ?', (cur.lastrowid,)).fetchone()
+    log_activity('vehicle_created', service='vehicles', detail=f'{name} ({role})')
     return jsonify(dict(row)), 201
 
 
@@ -121,6 +122,7 @@ def api_vehicles_update(vid):
         )
         db.commit()
         row = db.execute('SELECT * FROM vehicles WHERE id = ?', (vid,)).fetchone()
+    log_activity('vehicle_updated', service='vehicles', detail=f'id={vid}')
     return jsonify(dict(row))
 
 
@@ -133,6 +135,7 @@ def api_vehicles_delete(vid):
         db.execute('DELETE FROM vehicle_maintenance WHERE vehicle_id = ?', (vid,))
         db.execute('DELETE FROM vehicles WHERE id = ?', (vid,))
         db.commit()
+    log_activity('vehicle_deleted', service='vehicles', detail=f'id={vid}')
     return jsonify({'status': 'deleted'})
 
 

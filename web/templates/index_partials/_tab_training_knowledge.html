@@ -357,6 +357,9 @@
   const put = (url, body) => api(url, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const del = url => api(url, {method:'DELETE'});
   function toast(msg) { if (window.showToast) window.showToast(msg); }
+  const esc = s => (window.escapeHtml ? window.escapeHtml(s) : String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
   function stars(n) { return '<span class="tk-stars">' + '★'.repeat(n) + '☆'.repeat(5 - n) + '</span>'; }
   function gradeBadge(g) { return '<span class="tk-badge tk-grade-' + g + '">' + g + '</span>'; }
   function certStatus(expires) {

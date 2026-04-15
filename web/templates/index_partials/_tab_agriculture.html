@@ -360,6 +360,10 @@
   const api = (url, opts) => fetch(url, opts).then(r => r.json());
   const toast = msg => { if (window.showToast) window.showToast(msg); };
   const API = '/api/agriculture';
+  // XSS guard: every user-sourced string rendered via innerHTML goes through esc().
+  const esc = s => (window.escapeHtml ? window.escapeHtml(s) : String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
 
   const healthColor = {excellent:'#22c55e', good:'#84cc16', fair:'#f59e0b', poor:'#fb923c', dead:'#9ca3af'};
   const breedStatusColor = {active:'#22c55e', bred:'#3b82f6', gestating:'#f59e0b', delivered:'#a855f7'};
@@ -404,7 +408,7 @@
     const s = el('ag-layer-guild'); if (!s) return;
     const cur = s.value;
     s.innerHTML = '<option value="">-- Select Guild --</option>' +
-      _guilds.map(g => `<option value="${g.id}"${g.id == cur ? ' selected' : ''}>${g.name}</option>`).join('');
+      _guilds.map(g => `<option value="${+g.id||0}"${g.id == cur ? ' selected' : ''}>${esc(g.name)}</option>`).join('');
   }
 
   window.agLoadGuilds = function() {
@@ -413,13 +417,13 @@
       const box = el('ag-guild-list');
       if (!items.length) { box.innerHTML = '<div class="ag-empty">No guilds yet. Create one above.</div>'; return; }
       box.innerHTML = items.map(g => `<div class="ag-list-item">
-        <div><strong>${g.name}</strong> <small style="color:var(--text-secondary,#aaa)">Central: ${g.central_species || '--'} | Zone ${g.zone || '--'}</small>
-          ${g.notes ? `<br><small style="color:var(--text-secondary,#aaa)">${g.notes}</small>` : ''}
-          <div style="margin-top:4px">${(g.layers || []).map(l => `<span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${l.layer_type}: ${l.species}</span>`).join('')}</div>
+        <div><strong>${esc(g.name)}</strong> <small style="color:var(--text-secondary,#aaa)">Central: ${esc(g.central_species || '--')} | Zone ${esc(g.zone || '--')}</small>
+          ${g.notes ? `<br><small style="color:var(--text-secondary,#aaa)">${esc(g.notes)}</small>` : ''}
+          <div style="margin-top:4px">${(g.layers || []).map(l => `<span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}: ${esc(l.species)}</span>`).join('')}</div>
         </div>
         <div style="display:flex;gap:4px">
-          <button class="ag-btn ag-btn-secondary" onclick="agSelectGuild(${g.id})">Layers</button>
-          <button class="ag-btn ag-btn-danger" onclick="agDeleteGuild(${g.id})">x</button>
+          <button class="ag-btn ag-btn-secondary" onclick="agSelectGuild(${+g.id||0})">Layers</button>
+          <button class="ag-btn ag-btn-danger" onclick="agDeleteGuild(${+g.id||0})">x</button>
         </div>
       </div>`).join('');
     });
@@ -450,10 +454,10 @@
       if (!items.length) { box.innerHTML = '<div class="ag-empty">No layers in this guild. Add one above.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Layer</th><th>Species</th><th>Role</th><th></th></tr></thead><tbody>' +
         items.map(l => `<tr>
-          <td><span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${l.layer_type}</span></td>
-          <td>${l.species || '--'}</td>
-          <td>${l.role || '--'}</td>
-          <td style="text-align:right"><button class="ag-btn ag-btn-danger" onclick="agDeleteLayer(${l.id})">x</button></td>
+          <td><span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}</span></td>
+          <td>${esc(l.species || '--')}</td>
+          <td>${esc(l.role || '--')}</td>
+          <td style="text-align:right"><button class="ag-btn ag-btn-danger" onclick="agDeleteLayer(${+l.id||0})">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -476,7 +480,7 @@
     api(API + '/food-forest/yield-timeline?guild_id=' + gid).then(data => {
       if (!data || !data.length) { box.innerHTML = '<div class="ag-empty">No yield data available for this guild.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Year</th><th>Species</th><th>Expected Yield</th><th>Unit</th></tr></thead><tbody>' +
-        data.map(y => `<tr><td>${y.year || '--'}</td><td>${y.species || '--'}</td><td>${y.expected_yield || '--'}</td><td>${y.unit || '--'}</td></tr>`).join('') +
+        data.map(y => `<tr><td>${esc(y.year || '--')}</td><td>${esc(y.species || '--')}</td><td>${esc(y.expected_yield || '--')}</td><td>${esc(y.unit || '--')}</td></tr>`).join('') +
         '</tbody></table>';
     });
   };
@@ -502,13 +506,13 @@
             K: ${s.k_before ?? '--'} -> ${s.k_after ?? '--'}</div>`;
         }
         return `<div class="ag-list-item">
-          <div><strong>${s.name}</strong>
-            <span class="ag-badge ${badge}" style="margin-left:6px">${s.soil_type}</span>
-            <span class="ag-badge" style="color:${stColor};margin-left:4px">${s.status}</span>
+          <div><strong>${esc(s.name)}</strong>
+            <span class="ag-badge ${badge}" style="margin-left:6px">${esc(s.soil_type)}</span>
+            <span class="ag-badge" style="color:${stColor};margin-left:4px">${esc(s.status)}</span>
             ${testHtml}
-            ${s.notes ? `<br><small style="color:var(--text-secondary,#aaa)">${s.notes}</small>` : ''}
+            ${s.notes ? `<br><small style="color:var(--text-secondary,#aaa)">${esc(s.notes)}</small>` : ''}
           </div>
-          <div><button class="ag-btn ag-btn-danger" onclick="agDeleteSoil(${s.id})">x</button></div>
+          <div><button class="ag-btn ag-btn-danger" onclick="agDeleteSoil(${+s.id||0})">x</button></div>
         </div>`;
       }).join('');
     });
@@ -544,14 +548,14 @@
       if (!items.length) { box.innerHTML = '<div class="ag-empty">No perennials registered.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Health</th><th>Name</th><th>Species</th><th>Location</th><th>Planted</th><th>Pruning</th><th>Fertilize</th><th></th></tr></thead><tbody>' +
         items.map(p => `<tr>
-          <td><span class="ag-health-dot" style="background:${healthColor[p.health] || '#9ca3af'}"></span>${p.health || '--'}</td>
-          <td><strong>${p.name}</strong></td>
-          <td>${p.species || '--'}</td>
-          <td>${p.location || '--'}</td>
-          <td>${p.date_planted || '--'}</td>
+          <td><span class="ag-health-dot" style="background:${healthColor[p.health] || '#9ca3af'}"></span>${esc(p.health || '--')}</td>
+          <td><strong>${esc(p.name)}</strong></td>
+          <td>${esc(p.species || '--')}</td>
+          <td>${esc(p.location || '--')}</td>
+          <td>${esc(p.date_planted || '--')}</td>
           <td>${dueTag(p.pruning_due)}</td>
           <td>${dueTag(p.fertilization_due)}</td>
-          <td style="text-align:right"><button class="ag-btn ag-btn-danger" onclick="agDeletePlant(${p.id})">x</button></td>
+          <td style="text-align:right"><button class="ag-btn ag-btn-danger" onclick="agDeletePlant(${+p.id||0})">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -577,12 +581,12 @@
       const box = el('ag-breed-list');
       if (!items.length) { box.innerHTML = '<div class="ag-empty">No breeding records.</div>'; return; }
       box.innerHTML = items.map(b => `<div class="ag-list-item">
-        <div><strong>${b.name}</strong>
-          <span class="ag-badge ag-status-${b.status}" style="margin-left:6px">${b.status}</span>
-          <br><small style="color:var(--text-secondary,#aaa)">${b.species || '--'} | Bred: ${b.breed_date || '--'} | Due: ${b.due_date || '--'} | Offspring: ${b.offspring_count || 0}</small>
-          ${b.notes ? `<br><small style="color:var(--text-secondary,#aaa)">${b.notes}</small>` : ''}
+        <div><strong>${esc(b.name)}</strong>
+          <span class="ag-badge ag-status-${esc(b.status)}" style="margin-left:6px">${esc(b.status)}</span>
+          <br><small style="color:var(--text-secondary,#aaa)">${esc(b.species || '--')} | Bred: ${esc(b.breed_date || '--')} | Due: ${esc(b.due_date || '--')} | Offspring: ${+b.offspring_count||0}</small>
+          ${b.notes ? `<br><small style="color:var(--text-secondary,#aaa)">${esc(b.notes)}</small>` : ''}
         </div>
-        <div><button class="ag-btn ag-btn-danger" onclick="agDeleteBreeding(${b.id})">x</button></div>
+        <div><button class="ag-btn ag-btn-danger" onclick="agDeleteBreeding(${+b.id||0})">x</button></div>
       </div>`).join('');
     });
     // Due dates
@@ -591,9 +595,9 @@
       if (!items || !items.length) { box.innerHTML = '<div class="ag-empty">No upcoming due dates.</div>'; return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Animal</th><th>Species</th><th>Due</th><th>Status</th></tr></thead><tbody>' +
         items.map(b => `<tr>
-          <td>${b.name}</td><td>${b.species || '--'}</td>
+          <td>${esc(b.name)}</td><td>${esc(b.species || '--')}</td>
           <td>${dueTag(b.due_date)}</td>
-          <td><span class="ag-status-${b.status}">${b.status}</span></td>
+          <td><span class="ag-status-${esc(b.status)}">${esc(b.status)}</span></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };

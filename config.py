@@ -32,34 +32,47 @@ LEGACY_STORAGE_DIRNAMES = ('ProjectNOMAD',)
 # Application Settings (class-based, env-overridable)
 # ---------------------------------------------------------------------------
 
+def _env_int(name, default):
+    """Read an int from the environment, falling back to `default` on missing
+    or non-numeric values rather than crashing at import time."""
+    raw = os.environ.get(name)
+    if raw is None or raw == '':
+        return default
+    try:
+        return int(raw)
+    except (ValueError, TypeError):
+        log.warning('Invalid int for %s=%r — using default %d', name, raw, default)
+        return default
+
+
 class Config:
     """Central configuration with environment variable overrides."""
 
     # --- App Identity ---
-    VERSION = os.environ.get('NOMAD_VERSION', '7.26.0')
+    VERSION = os.environ.get('NOMAD_VERSION', '7.27.0')
 
     # --- Upload / Content Limits ---
-    MAX_CONTENT_LENGTH = int(os.environ.get('NOMAD_MAX_CONTENT_LENGTH', 100 * 1024 * 1024))  # 100 MB
+    MAX_CONTENT_LENGTH = _env_int('NOMAD_MAX_CONTENT_LENGTH', 100 * 1024 * 1024)  # 100 MB
 
     # --- Knowledge Base / RAG ---
     EMBED_MODEL = os.environ.get('NOMAD_EMBED_MODEL', 'nomic-embed-text:v1.5')
-    CHUNK_SIZE = int(os.environ.get('NOMAD_CHUNK_SIZE', 500))
-    CHUNK_OVERLAP = int(os.environ.get('NOMAD_CHUNK_OVERLAP', 50))
+    CHUNK_SIZE = _env_int('NOMAD_CHUNK_SIZE', 500)
+    CHUNK_OVERLAP = _env_int('NOMAD_CHUNK_OVERLAP', 50)
 
     # --- SSE ---
-    MAX_SSE_CLIENTS = int(os.environ.get('NOMAD_MAX_SSE_CLIENTS', 20))
+    MAX_SSE_CLIENTS = _env_int('NOMAD_MAX_SSE_CLIENTS', 20)
 
     # --- Service Ports ---
-    APP_PORT = int(os.environ.get('NOMAD_PORT', 8080))
+    APP_PORT = _env_int('NOMAD_PORT', 8080)
     APP_HOST = os.environ.get('NOMAD_HOST', '127.0.0.1')
-    OLLAMA_PORT = int(os.environ.get('NOMAD_OLLAMA_PORT', 11434))
-    KIWIX_PORT = int(os.environ.get('NOMAD_KIWIX_PORT', 8888))
-    CYBERCHEF_PORT = int(os.environ.get('NOMAD_CYBERCHEF_PORT', 8889))
-    FLATNOTES_PORT = int(os.environ.get('NOMAD_FLATNOTES_PORT', 8890))
-    KOLIBRI_PORT = int(os.environ.get('NOMAD_KOLIBRI_PORT', 8300))
-    QDRANT_PORT = int(os.environ.get('NOMAD_QDRANT_PORT', 6333))
-    STIRLING_PORT = int(os.environ.get('NOMAD_STIRLING_PORT', 8443))
-    DISCOVERY_PORT = int(os.environ.get('NOMAD_DISCOVERY_PORT', 18080))
+    OLLAMA_PORT = _env_int('NOMAD_OLLAMA_PORT', 11434)
+    KIWIX_PORT = _env_int('NOMAD_KIWIX_PORT', 8888)
+    CYBERCHEF_PORT = _env_int('NOMAD_CYBERCHEF_PORT', 8889)
+    FLATNOTES_PORT = _env_int('NOMAD_FLATNOTES_PORT', 8890)
+    KOLIBRI_PORT = _env_int('NOMAD_KOLIBRI_PORT', 8300)
+    QDRANT_PORT = _env_int('NOMAD_QDRANT_PORT', 6333)
+    STIRLING_PORT = _env_int('NOMAD_STIRLING_PORT', 8443)
+    DISCOVERY_PORT = _env_int('NOMAD_DISCOVERY_PORT', 18080)
 
     # --- Map Extensions ---
     ALLOWED_MAP_EXTENSIONS = set(
@@ -74,8 +87,8 @@ class Config:
     RATELIMIT_MUTATING = os.environ.get('NOMAD_RATELIMIT_MUTATING', '60/minute')
 
     # --- Misc Magic Numbers ---
-    CPU_MONITOR_INTERVAL = int(os.environ.get('NOMAD_CPU_MONITOR_INTERVAL', 2))
-    OCR_PIPELINE_INTERVAL = int(os.environ.get('NOMAD_OCR_PIPELINE_INTERVAL', 60))
+    CPU_MONITOR_INTERVAL = _env_int('NOMAD_CPU_MONITOR_INTERVAL', 2)
+    OCR_PIPELINE_INTERVAL = _env_int('NOMAD_OCR_PIPELINE_INTERVAL', 60)
 
     @classmethod
     def secret_key(cls):

@@ -7,7 +7,7 @@ import time
 
 from flask import Blueprint, request, jsonify, Response
 
-from db import db_session
+from db import db_session, log_activity
 from web.print_templates import render_print_document
 from web.sql_safety import safe_columns
 from web.validation import validate_json
@@ -68,6 +68,7 @@ def api_contacts_create():
         db.commit()
         cid = cur.lastrowid
         row = db.execute('SELECT * FROM contacts WHERE id = ?', (cid,)).fetchone()
+    log_activity('contact_created', service='contacts', detail=data.get('name', '')[:80])
     return jsonify(dict(row)), 201
 
 
@@ -86,6 +87,7 @@ def api_contacts_update(cid):
         vals.append(cid)
         db.execute(f'UPDATE contacts SET {set_clause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?', vals)
         db.commit()
+    log_activity('contact_updated', service='contacts', detail=f'id={cid}')
     return jsonify({'status': 'saved'})
 
 
@@ -96,6 +98,7 @@ def api_contacts_delete(cid):
         if r.rowcount == 0:
             return jsonify({'error': 'not found'}), 404
         db.commit()
+    log_activity('contact_deleted', service='contacts', detail=f'id={cid}')
     return jsonify({'status': 'deleted'})
 
 

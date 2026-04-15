@@ -2633,9 +2633,9 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_app_sessions_user ON app_sessions(user_id)',
         'CREATE INDEX IF NOT EXISTS idx_app_sessions_active ON app_sessions(is_active)',
         'CREATE INDEX IF NOT EXISTS idx_app_sessions_expires ON app_sessions(expires_at)',
-        'CREATE INDEX IF NOT EXISTS idx_access_logs_user ON access_logs(user_id)',
-        'CREATE INDEX IF NOT EXISTS idx_access_logs_action ON access_logs(action)',
-        'CREATE INDEX IF NOT EXISTS idx_access_logs_created ON access_logs(created_at)',
+        'CREATE INDEX IF NOT EXISTS idx_platform_access_log_user ON platform_access_log(user_id)',
+        'CREATE INDEX IF NOT EXISTS idx_platform_access_log_action ON platform_access_log(action)',
+        'CREATE INDEX IF NOT EXISTS idx_platform_access_log_created ON platform_access_log(created_at)',
         'CREATE INDEX IF NOT EXISTS idx_deployment_configs_type ON deployment_configs(config_type)',
         'CREATE INDEX IF NOT EXISTS idx_deployment_configs_active ON deployment_configs(is_active)',
         'CREATE INDEX IF NOT EXISTS idx_performance_metrics_type ON performance_metrics(metric_type)',
@@ -4824,8 +4824,9 @@ def _create_platform_security_tables(conn):
             last_activity TEXT DEFAULT ''
         );
 
-        /* ─── Access Logs ─── */
-        CREATE TABLE IF NOT EXISTS access_logs (
+        /* ─── Platform Access Log (renamed from access_logs in v7.27.0
+              to disambiguate from access_log used by physical security) ─── */
+        CREATE TABLE IF NOT EXISTS platform_access_log (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER DEFAULT 0,
             action TEXT DEFAULT '',
@@ -5196,8 +5197,36 @@ def _init_db_inner(conn):
     _create_platform_security_tables(conn)
     _create_specialized_modules_tables(conn)
     _apply_column_migrations(conn)
+    _migrate_access_logs(conn)
     _create_indexes(conn)
     _seed_upc_database(conn)
+
+
+def _migrate_access_logs(conn):
+    """Audit M4: rename `access_logs` (platform/API audit log) to
+    `platform_access_log` to disambiguate from `access_log` (physical entry
+    log used by security.py). Idempotent — if old table exists, copy rows
+    into the new table and drop the old one. Safe to run on every startup.
+    """
+    try:
+        old_exists = conn.execute(
+            "SELECT 1 FROM sqlite_master WHERE type='table' AND name='access_logs'"
+        ).fetchone()
+        if not old_exists:
+            return
+        # Both tables share the same schema; INSERT OR IGNORE preserves any
+        # rows the new table already has (in case of partial migrations).
+        conn.execute(
+            'INSERT OR IGNORE INTO platform_access_log '
+            '(id, user_id, action, resource, ip_address, user_agent, '
+            ' status_code, detail, created_at) '
+            'SELECT id, user_id, action, resource, ip_address, user_agent, '
+            ' status_code, detail, created_at FROM access_logs'
+        )
+        conn.execute('DROP TABLE access_logs')
+        conn.commit()
+    except Exception as e:
+        _log.warning('access_logs migration skipped: %s', e)
 
 
 def _seed_upc_database(conn):

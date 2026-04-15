@@ -228,12 +228,21 @@ def api_pod_member_update(mid):
 @group_ops_bp.route('/members/<int:mid>', methods=['DELETE'])
 def api_pod_member_delete(mid):
     with db_session() as db:
-        r = db.execute('DELETE FROM pod_members WHERE id = ?', (mid,))
-        if r.rowcount == 0:
+        member = db.execute('SELECT pod_id, person_name FROM pod_members WHERE id = ?', (mid,)).fetchone()
+        if not member:
             return jsonify({'error': 'Member not found'}), 404
+        # Cancel any outstanding duty roster entries for this person in this pod
+        # so we don't leave orphaned scheduled/active shifts after removal.
+        duty_cleared = db.execute(
+            "UPDATE duty_roster SET status = 'cancelled' "
+            "WHERE pod_id = ? AND person_name = ? AND status IN ('scheduled','active')",
+            (member['pod_id'], member['person_name']),
+        ).rowcount
+        db.execute('DELETE FROM pod_members WHERE id = ?', (mid,))
         db.commit()
-    log_activity('pod_member_removed', service='group', detail=f'Removed member {mid}')
-    return jsonify({'status': 'deleted'})
+    log_activity('pod_member_removed', service='group',
+                 detail=f'Removed member {mid} (cleared {duty_cleared} duty entries)')
+    return jsonify({'status': 'deleted', 'duties_cancelled': duty_cleared})
 
 
 # ═══════════════════════════════════════════════════════════════════

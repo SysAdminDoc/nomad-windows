@@ -1172,6 +1172,29 @@ def api_ytdlp_download():
             video_duration = parts[1] if len(parts) > 1 else ''
             _ytdlp_downloads[dl_id]['title'] = video_title
 
+            # Disk space pre-check — reject if approximate file size exceeds
+            # free space minus a 500MB safety margin (merge/convert overhead).
+            try:
+                size_str = parts[2] if len(parts) > 2 else ''
+                approx_size = int(size_str) if size_str and size_str != 'NA' else 0
+            except (ValueError, TypeError):
+                approx_size = 0
+            try:
+                free_bytes = shutil.disk_usage(vdir).free
+            except OSError:
+                free_bytes = 0
+            safety_margin = 500 * 1024 * 1024
+            required = (approx_size * 2 if approx_size else safety_margin) + safety_margin
+            if free_bytes and required > free_bytes:
+                err_msg = 'Insufficient disk space: need ~%s, have %s free' % (
+                    format_size(required), format_size(free_bytes))
+                _ytdlp_downloads[dl_id] = {'status': 'error', 'percent': 0,
+                    'title': video_title, 'speed': '', 'error': err_msg}
+                with db_session() as _db:
+                    _db.execute('UPDATE download_queue SET status = "failed", error = ?, retries = retries + 1 WHERE id = ?', (err_msg, queue_id))
+                    _db.commit()
+                return
+
             # Download with progress — include thumbnail + subtitles
             _ytdlp_downloads[dl_id]['status'] = 'downloading'
             output_tmpl = os.path.join(vdir, '%(title)s.%(ext)s')

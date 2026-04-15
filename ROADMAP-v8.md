@@ -797,45 +797,38 @@ After Tier 1, shift to user-demand-driven priorities within Tier 2-3.
 - **Fix:** Rename the Phase 18 table to `iot_sensor_readings` and update hardware_sensors.py references. The legacy `sensor_readings` table serves power.py and should remain unchanged.
 - **Affected:** hardware_sensors.py (lines 153, 194, 216, 245, 269), db.py line 4641
 
-**H2. Input Validation Coverage — 9 of 1,628 Routes**
-- A `@validate_json` decorator exists in web/validation.py but is only applied to 9 routes. The remaining 1,600+ routes accept unvalidated JSON payloads. While parameterized SQL prevents injection, missing validation means:
-  - Oversized payloads can bloat the database (no max_length enforcement)
-  - Type mismatches cause 500 errors instead of 400s
-  - Required fields silently default to empty strings
-- **Fix:** Prioritize validation on mutating (POST/PUT) routes in inventory, medical, contacts, and financial blueprints first — these handle the most sensitive data. A phased rollout across all blueprints is realistic at ~5 blueprints per session.
+**H2. Input Validation Coverage — 9 of 1,628 Routes** — **Partial (v7.27.0)**
+- Financial blueprint fully covered: 8 mutating routes (cash/metals/barter/documents × create/update) now wrapped with reusable `_CASH_SCHEMA`/`_METALS_SCHEMA`/`_BARTER_SCHEMA`/`_DOCUMENTS_SCHEMA`.
+- Remaining: medical, medical_phase2, contacts (partial — `name` validated on create), inventory, vehicles, group_ops, security_opsec, agriculture, all Phase 17-20 blueprints. ~30 more routes high-priority, ~1500 low-priority.
 
-**H3. Mutating Rate Limit Not Enforced (web/app.py:144-149)**
-- `Config.RATELIMIT_MUTATING` (60/minute) is configured but the enforcement function body is `pass`. POST/PUT/DELETE requests are not actually rate-limited despite flask-limiter being active for GET requests.
-- **Fix:** Apply `limiter.limit(Config.RATELIMIT_MUTATING)` to the before_request hook for non-safe HTTP methods, or decorate mutating routes explicitly.
+**H3. Mutating Rate Limit Not Enforced (web/app.py:144-149)** — **Fixed in v7.27.0**
+- Replaced the empty `pass` body with a per-IP sliding-window counter. Localhost exempt. 429 returned on overflow.
 
 **H4. No Auth Middleware Wired to Routes**
 - Phase 19 built `app_users`, `app_sessions`, and role-based access (admin/user/viewer/guest) in platform_security.py, but zero routes across the 58 other blueprints use `@login_required` or `@auth_required` decorators. The auth system exists but is not enforced anywhere.
 - **Fix:** Create a `require_auth` decorator in web/utils.py. Apply it globally via a before_request hook that checks session tokens, with an allowlist for public routes (health check, login, SSE).
 
-**H5. Path Traversal Checks Fragile on Windows (web/app.py:1114, 1153)**
-- NukeMap and VIPTrack static file routes use `os.path.normcase()` + string prefix matching for path containment. On Windows, mixed-case and mixed-separator paths can bypass this check.
-- **Fix:** Replace with `os.path.commonpath([full_path, base_dir]) == os.path.normcase(base_dir)` which is normalization-safe on all platforms.
+**H5. Path Traversal Checks Fragile on Windows (web/app.py:1114, 1153)** — **Fixed in v7.27.0**
+- Both NukeMap and VIPTrack routes now use `os.path.commonpath([full, base]) == base` with a `ValueError` catch for cross-drive edge cases.
 
 ---
 
 ### Medium Priority
 
-**M1. 19 Blueprints Return Unbounded Query Results**
-- These blueprints have no LIMIT clause on their primary list endpoints: agriculture, consumption, daily_living, disaster_modules, emergency, evac_drills, family, financial, group_ops, hunting_foraging, land_assessment, meal_planning, movement_ops, readiness_goals, training_knowledge, and 4 others.
-- A table with thousands of rows will return the entire result set in a single JSON response. On constrained hardware (Raspberry Pi), this causes memory spikes and UI freezes.
-- **Fix:** Add server-side pagination (LIMIT/OFFSET with sensible defaults of 50-100 rows) to all list endpoints. The pattern already exists in inventory.py, contacts.py, and notes.py — replicate it.
+**M1. 19 Blueprints Return Unbounded Query Results** — **Partial (v7.27.0)**
+- 7 of 19 blueprints paginated via a shared `get_pagination()` helper in `web/blueprints/__init__.py`: `financial`, `daily_living`, `training_knowledge`, `hunting_foraging`, `disaster_modules`, `movement_ops`, `evac_drills`.
+- Remaining: `agriculture`, `consumption`, `emergency`, `family`, `group_ops`, `land_assessment`, `meal_planning`, `readiness_goals`, `specialized_modules`, `hardware_sensors`, `callshield`, `alerts`. Pattern is trivial to replicate once the helper is imported.
 
-**M2. 11 Blueprints Have No Activity Logging**
-- These blueprints never call `log_activity()`: brief, checklists, contacts, kit_builder, kiwix, print_routes, supplies, timeline, vehicles, weather, and __init__. This creates blind spots in the activity log — a user modifying contacts, vehicles, or weather data leaves no audit trail.
-- **Fix:** Add `log_activity()` calls to create/update/delete operations in each affected blueprint.
+**M2. 11 Blueprints Have No Activity Logging** — **Partial (v7.27.0)**
+- `contacts` and `vehicles` now call `log_activity()` on create/update/delete.
+- Remaining: `brief`, `checklists`, `kit_builder`, `kiwix`, `print_routes`, `supplies`, `timeline`, `weather`.
 
 **M3. SSE Client Limit Race Condition (web/app.py:1419-1423)**
 - The check `len(_sse_clients) >= MAX_SSE_CLIENTS` and the subsequent queue creation + registration happen outside a single lock acquisition. A concurrent thread can exceed the limit between the check and the registration.
 - **Fix:** Hold `_sse_lock` from the limit check through queue creation and registration in one atomic block.
 
-**M4. `access_log` vs `access_logs` Table Name Collision (db.py:862, 4827)**
-- Two tables with near-identical names serve different purposes: `access_log` (physical entry/exit, used by security.py) and `access_logs` (API access audit, used by platform_security.py). This is confusing and error-prone.
-- **Fix:** Rename `access_logs` to `api_access_log` or `platform_access_log` to disambiguate. Update platform_security.py SQL references.
+**M4. `access_log` vs `access_logs` Table Name Collision (db.py:862, 4827)** — **Fixed in v7.27.0**
+- Renamed `access_logs` → `platform_access_log` with idempotent migration (`_migrate_access_logs`). Indexes renamed. `platform_security.py` SQL updated. `access_log` (physical-security) untouched.
 
 **M5. No FTS5 Full-Text Search**
 - Phase 19 roadmap deliverables included "FTS5 full-text search" but no FTS5 virtual tables exist in db.py. Keyword search across notes, inventory, contacts, and knowledge base still uses LIKE queries, which are O(n) table scans.
@@ -845,9 +838,9 @@ After Tier 1, shift to user-demand-driven priorities within Tier 2-3.
 - Phase 19 deliverables included "connection pooling" but each request creates a new SQLite connection via `db_session()`. SQLite's file-based locking makes this acceptable at low concurrency, but under LAN multi-user access (Phase 19's multi-user auth), contention will cause "database is locked" errors.
 - **Fix:** Implement a thread-local connection pool with a configurable max size (default 5). Reuse connections within the same thread/request lifecycle.
 
-**M7. Config Crashes on Invalid Environment Variables (config.py:42-78)**
-- All `int(os.environ.get(...))` calls will raise `ValueError` if the env var is set to a non-numeric string. The app crashes at import time before any error handling can catch it.
-- **Fix:** Wrap each conversion in a try-except with a fallback to the default value, or use a validated config loader.
+**M7. Config Crashes on Invalid Environment Variables (config.py:42-78)** — **Fixed in v7.27.0**
+- All `int(os.environ.get(...))` calls would raise `ValueError` if the env var was set to a non-numeric string.
+- **Fix applied:** `_env_int()` helper now wraps all integer env reads, falling back to the default value and logging a warning instead of crashing at import time.
 
 **M8. DB Migration System Underpowered — 3 Files for 264 Tables**
 - The migration system (`db_migrations/`) has only 3 migration files despite 264 tables and 27 table-creation functions. Most schema changes are handled by `_apply_column_migrations()` which uses ALTER TABLE ADD COLUMN with try-except (silently ignoring if column exists). This works but:
@@ -884,9 +877,9 @@ After Tier 1, shift to user-demand-driven priorities within Tier 2-3.
 - `web/translations.py` (444 lines) exists but contains no `translate()` or `_t()` functions. The i18n system is scaffolded but not wired to any UI strings.
 - **Note:** This is architectural debt, not a bug. Wire it only when localization becomes a user requirement.
 
-**L6. PID Recycling in Service Manager (services/manager.py:277-295)**
-- `is_running()` checks if a PID is alive but does not verify the process name. If a service crashes and the OS recycles the PID to a different process, the health monitor will incorrectly report the service as running.
-- **Fix:** Store the process name or creation time alongside the PID and verify both in `is_running()`.
+**L6. PID Recycling in Service Manager (services/manager.py:277-295)** — **Fixed in v7.27.0**
+- `is_running()` checked if a PID was alive but did not verify the process name. After a crash, a recycled PID could cause false-positive "running" status.
+- **Fix applied:** New `_pid_matches_exe()` helper uses psutil to compare the live PID's executable basename to the service's recorded `exe_path`. Conservative fallback: if psutil isn't available or the PID can't be introspected, trust `_pid_alive`'s positive result rather than second-guessing it.
 
 ---
 
@@ -1014,12 +1007,12 @@ The following bugs were identified and fixed during this audit cycle:
 | 5 | WAL checkpoint before backup | Medium | **Done** |
 | 6 | Kolibri install state | Medium | **Done** |
 | 7 | Download queue lock | Medium | **Done** |
-| 8 | XSS: escapeHtml in Phase 17-20 partials | High | Backlog |
+| 8 | XSS: escapeHtml in Phase 17-20 partials | High | **Partial** — `esc()` helper added to all 9 partials; medical_phase2 + agriculture fully escaped; per-row field escaping in the other 7 still incremental (v7.27.0) |
 | 9 | Replace inline api() with safeFetch() | Medium | Backlog |
-| 10 | Disk space pre-check for downloads | High | Backlog |
-| 11 | Ollama streaming error resilience | Medium | Backlog |
-| 12 | CSV import chunked processing | Medium | Backlog |
-| 13 | Duty roster cleanup on member remove | Medium | Backlog |
+| 10 | Disk space pre-check for downloads | High | **Done** (v7.27.0) |
+| 11 | Ollama streaming error resilience | Medium | **Done** (v7.27.0) |
+| 12 | CSV import chunked processing | Medium | **Done** (contacts CSV — v7.27.0) |
+| 13 | Duty roster cleanup on member remove | Medium | **Done** (v7.27.0) |
 | 14 | Accessibility: aria-labels | Low | Backlog |
 | 15 | Add tests for Phase 10-20 blueprints | Low | Backlog |
 

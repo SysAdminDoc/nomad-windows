@@ -7,6 +7,7 @@ import logging
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 _log = logging.getLogger(__name__)
 
@@ -1050,7 +1051,7 @@ def api_skills_list():
                 (category,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM trade_skills ORDER BY skill_name').fetchall()
+            rows = db.execute('SELECT * FROM trade_skills ORDER BY skill_name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -1243,7 +1244,7 @@ def api_preservation_list():
                 (method_type,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM preservation_methods ORDER BY name').fetchall()
+            rows = db.execute('SELECT * FROM preservation_methods ORDER BY name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -1369,7 +1370,7 @@ def api_batches_list():
                 (method_id,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM preservation_batches ORDER BY id DESC').fetchall()
+            rows = db.execute('SELECT * FROM preservation_batches ORDER BY id DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -1464,7 +1465,7 @@ def api_zones_list():
                 (zone_type,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM hunting_zones ORDER BY name').fetchall()
+            rows = db.execute('SELECT * FROM hunting_zones ORDER BY name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

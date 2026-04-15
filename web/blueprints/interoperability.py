@@ -1,5 +1,6 @@
 """Phase 16: Interoperability & Data Exchange — exports, imports, print docs, batch ops."""
 
+import codecs
 import csv
 import io
 import json
@@ -146,6 +147,24 @@ def _get_upload_text():
     if request.files and 'file' in request.files:
         return request.files['file'].read().decode('utf-8', errors='replace')
     return request.get_data(as_text=True)
+
+
+def _iter_upload_lines():
+    """Yield decoded text lines from the upload without loading it all into memory.
+
+    Used by CSV importers so multi-hundred-MB spreadsheet imports don't spike RAM.
+    Falls back to the buffered `_get_upload_text()` path when no file stream is
+    available (raw POST body).
+    """
+    if request.files and 'file' in request.files:
+        stream = request.files['file'].stream
+        decoder = codecs.getreader('utf-8')(stream, errors='replace')
+        for line in decoder:
+            yield line
+        return
+    # Raw POST body — already buffered; split in-memory (unavoidable for this path).
+    for line in io.StringIO(request.get_data(as_text=True) or ''):
+        yield line
 
 
 def _get_upload_filename():
@@ -670,15 +689,21 @@ def api_import_contacts_vcard():
 
 @interoperability_bp.route('/import/contacts/csv', methods=['POST'])
 def api_import_contacts_csv():
-    text = _get_upload_text()
-    if not text:
+    col_map = {}
+    if request.form and request.form.get('column_mapping'):
+        try:
+            col_map = json.loads(request.form.get('column_mapping') or '{}')
+        except (ValueError, TypeError):
+            col_map = {}
+    elif not (request.files and 'file' in request.files):
+        col_map = (request.get_json(silent=True) or {}).get('column_mapping', {})
+    reader = csv.DictReader(_iter_upload_lines())
+    if not reader.fieldnames:
         return jsonify({'error': 'No CSV data found'}), 400
-    data = request.get_json(silent=True) or {}
-    col_map = data.get('column_mapping', {})
-    reader = csv.DictReader(io.StringIO(text))
     imported = 0
     skipped = 0
     errors = []
+    BATCH = 500
     with db_session() as db:
         contact_cols = {r[1] for r in db.execute("PRAGMA table_info(contacts)").fetchall()}
         contact_cols -= {'id', 'created_at', 'updated_at'}
@@ -704,6 +729,8 @@ def api_import_contacts_csv():
             except Exception as e:
                 errors.append(f'Row {row_num}: {e}')
                 skipped += 1
+            if imported and imported % BATCH == 0:
+                db.commit()
         db.commit()
         total = imported + skipped
         _log_import(db, 'contacts', 'csv', 'contacts', _get_upload_filename(),

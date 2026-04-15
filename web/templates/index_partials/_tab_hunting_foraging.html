@@ -453,14 +453,17 @@
   const put  = (url, body) => api(url, {method:'PUT',  headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const del  = url => api(url, {method:'DELETE'});
   const toast = msg => { if (window.showToast) window.showToast(msg); };
+  const esc = s => (window.escapeHtml ? window.escapeHtml(s) : String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
   const API = '/api/hunting';
 
   const today = new Date().toISOString().split('T')[0];
   ['hf-game-date','hf-fish-date','hf-forage-date','hf-batch-date'].forEach(id => { const e = el(id); if (e && !e.value) e.value = today; });
 
-  const gameTypeBadge = t => '<span class="hf-badge hf-badge-' + t + '">' + t.replace(/_/g, ' ') + '</span>';
-  const confClass = c => 'hf-conf-' + (c || 'unknown');
-  const statusBadge = s => '<span class="hf-badge hf-status-' + (s || 'active') + '">' + (s || 'active') + '</span>';
+  const gameTypeBadge = t => '<span class="hf-badge hf-badge-' + esc(t) + '">' + esc(String(t||'').replace(/_/g, ' ')) + '</span>';
+  const confClass = c => 'hf-conf-' + esc(c || 'unknown');
+  const statusBadge = s => '<span class="hf-badge hf-status-' + esc(s || 'active') + '">' + esc(s || 'active') + '</span>';
   const methodBadge = t => '<span class="hf-badge hf-method-' + (t || 'other') + '">' + (t || 'other').replace(/_/g, ' ') + '</span>';
   const levelPct = l => ({beginner:25, intermediate:50, advanced:75, expert:100}[l] || 25);
   const catIcons = {general:'*',woodworking:'[W]',metalworking:'[M]',leather:'[L]',fiber:'[F]',pottery:'[P]',butchering:'[B]',trapping:'[T]',other:'[-]'};
@@ -484,9 +487,9 @@
       const c = el('hf-game-list');
       if (!items.length) { c.innerHTML = '<div class="hf-empty">No game harvested yet.</div>'; return; }
       c.innerHTML = '<table class="hf-table"><thead><tr><th>Date</th><th>Species</th><th>Type</th><th>Method</th><th>Weight</th><th>Meat Yield</th><th>Location</th><th></th></tr></thead><tbody>' +
-        items.map(g => '<tr><td>' + (g.date || '-') + '</td><td><strong>' + g.species + '</strong></td><td>' + gameTypeBadge(g.game_type) +
-          '</td><td>' + (g.method || '-') + '</td><td>' + (g.weight_lbs || 0) + ' lbs</td><td>' + (g.meat_yield_lbs || 0) + ' lbs</td><td>' + (g.location || '-') +
-          '</td><td><button class="hf-btn hf-btn-danger" onclick="hfDeleteGame(' + g.id + ')">&times;</button></td></tr>').join('') +
+        items.map(g => '<tr><td>' + esc(g.date || '-') + '</td><td><strong>' + esc(g.species) + '</strong></td><td>' + gameTypeBadge(g.game_type) +
+          '</td><td>' + esc(g.method || '-') + '</td><td>' + (+g.weight_lbs||0) + ' lbs</td><td>' + (+g.meat_yield_lbs||0) + ' lbs</td><td>' + esc(g.location || '-') +
+          '</td><td><button class="hf-btn hf-btn-danger" onclick="hfDeleteGame(' + (+g.id||0) + ')">&times;</button></td></tr>').join('') +
         '</tbody></table>';
     });
     api(API + '/game/stats').then(s => {
@@ -526,10 +529,10 @@
       const c = el('hf-zone-list');
       if (!items.length) { c.innerHTML = '<div class="hf-empty">No hunting zones defined.</div>'; return; }
       c.innerHTML = items.map(z => '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-        '<div><strong style="color:var(--hf-accent)">' + z.name + '</strong> ' + statusBadge(z.zone_type) +
-        '<br><small style="color:var(--text-secondary,#aaa)">Species: ' + (z.target_species || '-') + ' | Season: ' + (z.season_dates || '-') + '</small>' +
-        '<br><small style="color:var(--text-secondary,#aaa)">' + (z.location || '') + (z.access_notes ? ' | ' + z.access_notes : '') + '</small></div>' +
-        '<button class="hf-btn hf-btn-danger" onclick="hfDeleteZone(' + z.id + ')">&times;</button></div></div>').join('');
+        '<div><strong style="color:var(--hf-accent)">' + esc(z.name) + '</strong> ' + statusBadge(z.zone_type) +
+        '<br><small style="color:var(--text-secondary,#aaa)">Species: ' + esc(z.target_species || '-') + ' | Season: ' + esc(z.season_dates || '-') + '</small>' +
+        '<br><small style="color:var(--text-secondary,#aaa)">' + esc(z.location || '') + (z.access_notes ? ' | ' + esc(z.access_notes) : '') + '</small></div>' +
+        '<button class="hf-btn hf-btn-danger" onclick="hfDeleteZone(' + (+z.id||0) + ')">&times;</button></div></div>').join('');
     });
   }
 
@@ -559,11 +562,11 @@
       const c = el('hf-fish-list');
       if (!items.length) { c.innerHTML = '<div class="hf-empty">No catches logged yet.</div>'; return; }
       c.innerHTML = '<table class="hf-table"><thead><tr><th>Date</th><th>Species</th><th>Method</th><th>Weight</th><th>Length</th><th>Status</th><th>Water</th><th>Location</th><th></th></tr></thead><tbody>' +
-        items.map(f => '<tr><td>' + (f.date || '-') + '</td><td><strong>' + f.species + '</strong></td><td>' + (f.method || '-').replace(/_/g, ' ') +
-          '</td><td>' + (f.weight_lbs || 0) + ' lbs</td><td>' + (f.length_inches || 0) + '"</td><td>' +
+        items.map(f => '<tr><td>' + esc(f.date || '-') + '</td><td><strong>' + esc(f.species) + '</strong></td><td>' + esc(String(f.method || '-').replace(/_/g, ' ')) +
+          '</td><td>' + (+f.weight_lbs||0) + ' lbs</td><td>' + (+f.length_inches||0) + '"</td><td>' +
           (f.kept ? '<span class="hf-badge hf-badge-kept">Kept</span>' : '<span class="hf-badge hf-badge-released">Released</span>') +
-          '</td><td>' + (f.water_type || '-') + '</td><td>' + (f.location || '-') +
-          '</td><td><button class="hf-btn hf-btn-danger" onclick="hfDeleteFishing(' + f.id + ')">&times;</button></td></tr>').join('') +
+          '</td><td>' + esc(f.water_type || '-') + '</td><td>' + esc(f.location || '-') +
+          '</td><td><button class="hf-btn hf-btn-danger" onclick="hfDeleteFishing(' + (+f.id||0) + ')">&times;</button></td></tr>').join('') +
         '</tbody></table>';
     });
     api(API + '/fishing/stats').then(s => {
@@ -605,13 +608,13 @@
       const c = el('hf-forage-list');
       if (!items.length) { c.innerHTML = '<div class="hf-empty">No foraging entries yet.</div>'; return; }
       c.innerHTML = '<table class="hf-table"><thead><tr><th>Date</th><th>Plant</th><th>Category</th><th>Qty</th><th>Confidence</th><th>Location</th><th></th></tr></thead><tbody>' +
-        items.map(f => '<tr><td>' + (f.date || '-') + '</td><td><strong>' + f.plant_name + '</strong>' +
-          (f.scientific_name ? '<br><small style="color:var(--text-secondary,#aaa);font-style:italic">' + f.scientific_name + '</small>' : '') +
+        items.map(f => '<tr><td>' + esc(f.date || '-') + '</td><td><strong>' + esc(f.plant_name) + '</strong>' +
+          (f.scientific_name ? '<br><small style="color:var(--text-secondary,#aaa);font-style:italic">' + esc(f.scientific_name) + '</small>' : '') +
           '</td><td>' + gameTypeBadge(f.category || 'edible_plant') +
-          '</td><td>' + (f.quantity_harvested || 0) + ' ' + (f.unit || 'lbs') +
-          '</td><td><span class="' + confClass(f.confidence_level) + '">' + (f.confidence_level || 'unknown') + '</span>' +
-          '</td><td>' + (f.location || '-') +
-          '</td><td><button class="hf-btn hf-btn-danger" onclick="hfDeleteForaging(' + f.id + ')">&times;</button></td></tr>').join('') +
+          '</td><td>' + esc(f.quantity_harvested || 0) + ' ' + esc(f.unit || 'lbs') +
+          '</td><td><span class="' + confClass(f.confidence_level) + '">' + esc(f.confidence_level || 'unknown') + '</span>' +
+          '</td><td>' + esc(f.location || '-') +
+          '</td><td><button class="hf-btn hf-btn-danger" onclick="hfDeleteForaging(' + (+f.id||0) + ')">&times;</button></td></tr>').join('') +
         '</tbody></table>';
     });
   }
@@ -647,13 +650,13 @@
       c.innerHTML = items.map(e => {
         const parts = Array.isArray(e.edible_parts) ? e.edible_parts : (function(){ try { return JSON.parse(e.edible_parts || '[]'); } catch(_) { return []; } })();
         const preps = Array.isArray(e.preparation_methods) ? e.preparation_methods : (function(){ try { return JSON.parse(e.preparation_methods || '[]'); } catch(_) { return []; } })();
-        return '<div class="hf-card"><strong style="color:var(--hf-accent)">' + e.common_name + '</strong>' +
-          (e.scientific_name ? ' <em style="color:var(--text-secondary,#aaa);font-size:.82rem">' + e.scientific_name + '</em>' : '') +
-          (e.toxicity_warnings ? '<span class="hf-warn-icon" title="' + e.toxicity_warnings + '"> [!]</span>' : '') +
-          '<br><small style="color:var(--text-secondary,#aaa)">Edible parts: ' + (parts.join(', ') || '-') + '</small>' +
-          (e.look_alikes ? '<br><small style="color:var(--hf-red)">Look-alikes: ' + e.look_alikes + '</small>' : '') +
-          '<br><small style="color:var(--text-secondary,#aaa)">Preparation: ' + (preps.join(', ') || '-') + '</small>' +
-          '<div style="margin-top:6px"><button class="hf-btn hf-btn-danger" style="padding:3px 8px;font-size:.72rem" onclick="hfDeleteEdible(' + e.id + ')">&times;</button></div></div>';
+        return '<div class="hf-card"><strong style="color:var(--hf-accent)">' + esc(e.common_name) + '</strong>' +
+          (e.scientific_name ? ' <em style="color:var(--text-secondary,#aaa);font-size:.82rem">' + esc(e.scientific_name) + '</em>' : '') +
+          (e.toxicity_warnings ? '<span class="hf-warn-icon" title="' + esc(e.toxicity_warnings) + '"> [!]</span>' : '') +
+          '<br><small style="color:var(--text-secondary,#aaa)">Edible parts: ' + esc(parts.join(', ') || '-') + '</small>' +
+          (e.look_alikes ? '<br><small style="color:var(--hf-red)">Look-alikes: ' + esc(e.look_alikes) + '</small>' : '') +
+          '<br><small style="color:var(--text-secondary,#aaa)">Preparation: ' + esc(preps.join(', ') || '-') + '</small>' +
+          '<div style="margin-top:6px"><button class="hf-btn hf-btn-danger" style="padding:3px 8px;font-size:.72rem" onclick="hfDeleteEdible(' + (+e.id||0) + ')">&times;</button></div></div>';
       }).join('');
     });
   }
@@ -687,15 +690,15 @@
       c.innerHTML = items.map(t => {
         const overdue = t.check_date ? (new Date() - new Date(t.check_date)) / 3600000 > (t.check_frequency_hours || 24) : false;
         return '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-          '<div><strong style="color:var(--hf-accent)">' + t.name + '</strong> ' + statusBadge(t.status) +
-          '<br><small style="color:var(--text-secondary,#aaa)">Type: ' + (t.trap_type || '-').replace(/_/g, ' ') + ' | Target: ' + (t.target_species || '-') + '</small>' +
-          '<br><small style="color:var(--text-secondary,#aaa)">Location: ' + (t.location || '-') + ' | Bait: ' + (t.bait || '-') + '</small>' +
-          '<br><small style="color:var(--text-secondary,#aaa)">Last checked: ' + (t.check_date || 'never') +
+          '<div><strong style="color:var(--hf-accent)">' + esc(t.name) + '</strong> ' + statusBadge(t.status) +
+          '<br><small style="color:var(--text-secondary,#aaa)">Type: ' + esc(String(t.trap_type || '-').replace(/_/g, ' ')) + ' | Target: ' + esc(t.target_species || '-') + '</small>' +
+          '<br><small style="color:var(--text-secondary,#aaa)">Location: ' + esc(t.location || '-') + ' | Bait: ' + esc(t.bait || '-') + '</small>' +
+          '<br><small style="color:var(--text-secondary,#aaa)">Last checked: ' + esc(t.check_date || 'never') +
           (overdue ? ' <span style="color:var(--hf-red)">[OVERDUE]</span>' : '') +
-          ' | Catches: ' + (t.catches || 0) + '</small></div>' +
+          ' | Catches: ' + (+t.catches||0) + '</small></div>' +
           '<div style="display:flex;gap:4px;flex-direction:column">' +
-          '<button class="hf-btn hf-btn-primary" style="padding:4px 10px;font-size:.75rem" onclick="hfCheckTrap(' + t.id + ')">Check</button>' +
-          '<button class="hf-btn hf-btn-danger" style="padding:4px 10px;font-size:.75rem" onclick="hfDeleteTrap(' + t.id + ')">&times;</button>' +
+          '<button class="hf-btn hf-btn-primary" style="padding:4px 10px;font-size:.75rem" onclick="hfCheckTrap(' + (+t.id||0) + ')">Check</button>' +
+          '<button class="hf-btn hf-btn-danger" style="padding:4px 10px;font-size:.75rem" onclick="hfDeleteTrap(' + (+t.id||0) + ')">&times;</button>' +
           '</div></div></div>';
       }).join('');
     });

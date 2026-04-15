@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 disaster_modules_bp = Blueprint('disaster_modules', __name__, url_prefix='/api/disaster')
 
@@ -371,7 +372,7 @@ def api_energy_list():
             ).fetchall()
     else:
         with db_session() as db:
-            rows = db.execute('SELECT * FROM energy_systems ORDER BY name').fetchall()
+            rows = db.execute('SELECT * FROM energy_systems ORDER BY name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -563,7 +564,7 @@ def api_materials_list():
             ).fetchall()
     else:
         with db_session() as db:
-            rows = db.execute('SELECT * FROM building_materials ORDER BY category, name').fetchall()
+            rows = db.execute('SELECT * FROM building_materials ORDER BY category, name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

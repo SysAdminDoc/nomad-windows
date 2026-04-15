@@ -395,8 +395,18 @@ def api_ai_chat():
             if _rag_citations:
                 yield json.dumps({'citations': _rag_citations}) + '\n'
             for line in ollama.chat(model, messages, stream=True):
-                if line:
-                    yield line.decode('utf-8') + '\n'
+                if not line:
+                    continue
+                # Ollama can emit partial/corrupt frames if the backend crashes
+                # mid-response. Validate each chunk parses as JSON before
+                # forwarding so the client-side reader doesn't choke.
+                try:
+                    decoded = line.decode('utf-8')
+                    json.loads(decoded)
+                except (UnicodeDecodeError, ValueError):
+                    log.debug('Skipping malformed Ollama stream chunk')
+                    continue
+                yield decoded + '\n'
         except RuntimeError as e:
             yield json.dumps({'error': str(e)}) + '\n'
         except Exception as e:

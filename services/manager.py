@@ -275,7 +275,13 @@ def stop_process(service_id: str) -> bool:
 
 
 def is_running(service_id: str) -> bool:
-    """Check if a service process is alive."""
+    """Check if a service process is alive.
+
+    When falling back to the DB-stored PID, also verify the PID still maps to a
+    process whose executable matches the service's recorded `exe_path`. This
+    avoids false positives after a crash when the OS recycles the PID to an
+    unrelated process.
+    """
     with _lock:
         proc = _processes.get(service_id)
     if proc and proc.poll() is None:
@@ -283,26 +289,51 @@ def is_running(service_id: str) -> bool:
 
     db = get_db()
     try:
-        row = db.execute('SELECT pid FROM services WHERE id = ?', (service_id,)).fetchone()
+        row = db.execute('SELECT pid, exe_path FROM services WHERE id = ?', (service_id,)).fetchone()
     finally:
         db.close()
 
     if row and row['pid']:
-        if _pid_alive(row['pid']):
+        if _pid_alive(row['pid']) and _pid_matches_exe(row['pid'], row['exe_path']):
             # Re-register the process so we track it going forward
             return True
 
     return False
-
-    # Note: PID-based fallback may match recycled PIDs after a crash.
-    # The health_monitor in nomad.py handles stale DB entries by
-    # checking mod.running() which uses the service's own port/status check.
 
 
 def _pid_alive(pid: int) -> bool:
     """Check if a process with the given PID is alive (cross-platform)."""
     from platform_utils import pid_alive
     return pid_alive(pid)
+
+
+def _pid_matches_exe(pid: int, exe_path: str) -> bool:
+    """Verify the PID's process executable matches the expected service exe.
+
+    Returns True if we can't positively disprove the match (psutil unavailable,
+    permission denied, or no exe_path recorded) — the caller has already
+    confirmed the PID is alive via `_pid_alive`, so this is a second-line
+    sanity check against recycled PIDs, not a hard gate.
+    """
+    if not exe_path:
+        return True
+    try:
+        import psutil
+    except ImportError:
+        return True
+    try:
+        proc = psutil.Process(pid)
+        proc_exe = (proc.exe() or '').lower()
+        expected = os.path.basename(exe_path).lower()
+        if not expected:
+            return True
+        # Match by basename — full paths may differ after install-dir moves.
+        return os.path.basename(proc_exe) == expected
+    except (psutil.NoSuchProcess, psutil.ZombieProcess):
+        return False
+    except (psutil.AccessDenied, OSError, Exception):
+        # Can't introspect — don't second-guess _pid_alive's positive result.
+        return True
 
 
 # ─── Auto-Restart ──────────────────────────────────────────────────────

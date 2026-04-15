@@ -551,9 +551,12 @@
   const numVal=(id,def)=>parseFloat(val(id))||def||0;
   const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
   function toast(msg){if(window.showToast)window.showToast(msg);}
+  const esc=s=>(window.escapeHtml?window.escapeHtml(s):String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
 
-  const classificationBadge=c=>`<span class="so-badge so-badge-${c}">${c.replace(/_/g,' ').toUpperCase()}</span>`;
-  const categoryBadge=c=>`<span class="so-badge so-badge-${c}">${c}</span>`;
+  const classificationBadge=c=>`<span class="so-badge so-badge-${esc(c)}">${esc(String(c||'').replace(/_/g,' ').toUpperCase())}</span>`;
+  const categoryBadge=c=>`<span class="so-badge so-badge-${esc(c)}">${esc(c)}</span>`;
   function riskColor(score){
     if(score<=5)return'#22c55e';if(score<=10)return'#eab308';
     if(score<=15)return'#f97316';return'#ef4444';

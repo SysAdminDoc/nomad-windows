@@ -146,7 +146,10 @@ def tray_quit(icon, item):
             handler.flush()
         except Exception:
             pass
-    os._exit(0)
+    # sys.exit() runs normal interpreter shutdown (context managers, atexit,
+    # buffered writes) so any in-flight DB work committed via db_session()
+    # actually lands. os._exit() bypassed this and could drop WAL frames.
+    sys.exit(0)
 
 
 def setup_tray():

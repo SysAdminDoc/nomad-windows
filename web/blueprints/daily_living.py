@@ -6,6 +6,7 @@ import logging
 from datetime import datetime
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 _log = logging.getLogger(__name__)
 
@@ -163,7 +164,7 @@ def api_schedules_list():
                 (stype,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM daily_schedules ORDER BY id DESC').fetchall()
+            rows = db.execute('SELECT * FROM daily_schedules ORDER BY id DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -529,7 +530,7 @@ def api_clothing_delete(cid):
 def api_clothing_assessment():
     """Cold weather readiness assessment: counts by warmth rating, waterproof gear, gaps."""
     with db_session() as db:
-        rows = db.execute('SELECT * FROM clothing_inventory ORDER BY person').fetchall()
+        rows = db.execute('SELECT * FROM clothing_inventory ORDER BY person LIMIT ? OFFSET ?', get_pagination()).fetchall()
 
     items = [dict(r) for r in rows]
     people = {}
@@ -580,7 +581,7 @@ def api_sanitation_list():
                 (category,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM sanitation_supplies ORDER BY id DESC').fetchall()
+            rows = db.execute('SELECT * FROM sanitation_supplies ORDER BY id DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -666,7 +667,7 @@ def api_sanitation_delete(sid):
 def api_sanitation_projections():
     """Days of supply per item based on daily_usage_rate and current quantity."""
     with db_session() as db:
-        rows = db.execute('SELECT * FROM sanitation_supplies ORDER BY name').fetchall()
+        rows = db.execute('SELECT * FROM sanitation_supplies ORDER BY name LIMIT ? OFFSET ?', get_pagination()).fetchall()
 
     projections = []
     for r in rows:
@@ -716,7 +717,7 @@ def api_morale_list():
                 (person,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM morale_logs ORDER BY date DESC').fetchall()
+            rows = db.execute('SELECT * FROM morale_logs ORDER BY date DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -835,7 +836,7 @@ def api_sleep_list():
                 (person,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM sleep_logs ORDER BY date DESC').fetchall()
+            rows = db.execute('SELECT * FROM sleep_logs ORDER BY date DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -1000,7 +1001,7 @@ def api_performance_list():
                 (person,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM performance_checks ORDER BY date DESC').fetchall()
+            rows = db.execute('SELECT * FROM performance_checks ORDER BY date DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

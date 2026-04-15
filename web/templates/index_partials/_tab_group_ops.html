@@ -412,8 +412,11 @@
   const numVal=(id,def)=>parseFloat(val(id))||def||0;
   const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
   function toast(msg){if(window.showToast)window.showToast(msg);}
+  const esc=s=>(window.escapeHtml?window.escapeHtml(s):String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
 
-  const statusBadge=s=>`<span class="go-badge go-badge-${s}">${s}</span>`;
+  const statusBadge=s=>`<span class="go-badge go-badge-${esc(s)}">${esc(s)}</span>`;
   const severityColor={minor:'var(--go-green)',moderate:'var(--go-yellow)',major:'var(--go-orange)',destroyed:'var(--go-red)'};
   const icsColors={'201':'#3b82f6','202':'#8b5cf6','203':'#06b6d4','204':'#22c55e','205':'#f59e0b','206':'#ef4444','207':'#ec4899','208':'#f97316','209':'#14b8a6','210':'#6366f1','211':'#84cc16','213':'#a855f7','214':'#0ea5e9','215':'#e11d48'};
 

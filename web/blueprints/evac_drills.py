@@ -2,6 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 evac_drills_bp = Blueprint('evac_drills', __name__)
 
@@ -18,7 +19,7 @@ def api_evac_drills_list():
                 (evac_plan_id,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM evac_drill_runs ORDER BY started_at DESC').fetchall()
+            rows = db.execute('SELECT * FROM evac_drill_runs ORDER BY started_at DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

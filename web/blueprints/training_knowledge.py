@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, date
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 log = logging.getLogger(__name__)
 
@@ -214,7 +215,7 @@ def api_skills_matrix():
     """Cross-training matrix: per skill/category who can do it and at what level.
     Highlights single points of failure (skills held by only 1 person)."""
     with db_session() as db:
-        rows = db.execute('SELECT * FROM skill_trees ORDER BY category, skill_name').fetchall()
+        rows = db.execute('SELECT * FROM skill_trees ORDER BY category, skill_name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     matrix = {}
     for r in rows:
         key = r['skill_name']
@@ -264,7 +265,7 @@ def api_courses_list():
         if status:
             rows = db.execute('SELECT * FROM training_courses WHERE status = ? ORDER BY title', (status,)).fetchall()
         else:
-            rows = db.execute('SELECT * FROM training_courses ORDER BY title').fetchall()
+            rows = db.execute('SELECT * FROM training_courses ORDER BY title LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -597,7 +598,7 @@ def api_certifications_expiring():
 @training_knowledge_bp.route('/drills/templates')
 def api_drill_templates_list():
     with db_session() as db:
-        rows = db.execute('SELECT * FROM drill_templates ORDER BY name').fetchall()
+        rows = db.execute('SELECT * FROM drill_templates ORDER BY name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     result = []
     for r in rows:
         entry = dict(r)
@@ -942,7 +943,7 @@ def api_knowledge_packages_list():
                 'SELECT * FROM knowledge_packages WHERE person_name LIKE ? ORDER BY person_name, title',
                 (f'%{person}%',)).fetchall()
         else:
-            rows = db.execute('SELECT * FROM knowledge_packages ORDER BY person_name, title').fetchall()
+            rows = db.execute('SELECT * FROM knowledge_packages ORDER BY person_name, title LIMIT ? OFFSET ?', get_pagination()).fetchall()
     result = []
     for r in rows:
         entry = dict(r)

@@ -349,6 +349,10 @@
   const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
   const val=id=>($(id)||{}).value||'';
   const numVal=(id,def)=>parseFloat(val(id))||def||0;
+  // XSS guard: every user-sourced string rendered via innerHTML goes through esc().
+  const esc=s=>(window.escapeHtml?window.escapeHtml(s):String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
 
   /* ── Pregnancy ── */
   window.mpLoadPregnancies=function(){
@@ -357,8 +361,8 @@
       if(!items.length){el.innerHTML='<div class="mp-empty">No pregnancy records.</div>';return;}
       const badge={active:'mp-badge-active',delivered:'mp-badge-delivered',loss:'mp-badge-loss'};
       el.innerHTML=items.map(p=>`<div class="mp-list-item">
-        <div><strong>${p.patient_name}</strong> <span class="mp-badge ${badge[p.status]||''}" style="margin-left:6px">${p.status.toUpperCase()}</span>
-          <br><small style="color:var(--text-secondary)">Due: ${p.due_date||'--'} | G${p.gravida}P${p.para} | ${p.blood_type||'--'}</small></div>
+        <div><strong>${esc(p.patient_name)}</strong> <span class="mp-badge ${badge[p.status]||''}" style="margin-left:6px">${esc(String(p.status||'').toUpperCase())}</span>
+          <br><small style="color:var(--text-secondary)">Due: ${esc(p.due_date||'--')} | G${+p.gravida||0}P${+p.para||0} | ${esc(p.blood_type||'--')}</small></div>
         <div><button class="mp-btn mp-btn-danger" onclick="mpDeletePregnancy(${p.id})">x</button></div>
       </div>`).join('');
     });
@@ -380,8 +384,8 @@
       const el=$('mp-dent-list');
       if(!items.length){el.innerHTML='<div class="mp-empty">No dental records.</div>';return;}
       el.innerHTML=items.map(d=>`<div class="mp-list-item">
-        <div><strong>${d.patient_name}</strong> - Tooth #${d.tooth_number}
-          <br><small style="color:var(--text-secondary)">${d.condition} | Tx: ${d.treatment||'--'} | Pain: ${d.pain_level}/10 | ${d.treatment_date||'--'}</small></div>
+        <div><strong>${esc(d.patient_name)}</strong> - Tooth #${+d.tooth_number||0}
+          <br><small style="color:var(--text-secondary)">${esc(d.condition)} | Tx: ${esc(d.treatment||'--')} | Pain: ${+d.pain_level||0}/10 | ${esc(d.treatment_date||'--')}</small></div>
         <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteDental(${d.id})">x</button></div>
       </div>`).join('');
     });
@@ -404,8 +408,8 @@
       if(!items.length){el.innerHTML='<div class="mp-empty">No chronic conditions.</div>';return;}
       const badge={mild:'mp-badge-mild',moderate:'mp-badge-moderate',severe:'mp-badge-severe',critical:'mp-badge-critical'};
       el.innerHTML=items.map(c=>`<div class="mp-list-item">
-        <div><strong>${c.patient_name}</strong> - ${c.condition_name} <span class="mp-badge ${badge[c.severity]||''}" style="margin-left:6px">${c.severity.toUpperCase()}</span>
-          <br><small style="color:var(--text-secondary)">Stockpile: ${c.medication_stockpile_days} days</small></div>
+        <div><strong>${esc(c.patient_name)}</strong> - ${esc(c.condition_name)} <span class="mp-badge ${badge[c.severity]||''}" style="margin-left:6px">${esc(String(c.severity||'').toUpperCase())}</span>
+          <br><small style="color:var(--text-secondary)">Stockpile: ${+c.medication_stockpile_days||0} days</small></div>
         <div style="display:flex;gap:4px">
           <button class="mp-btn mp-btn-secondary" onclick="mpEditChronic(${c.id})">Edit</button>
           <button class="mp-btn mp-btn-danger" onclick="mpDeleteChronic(${c.id})">x</button>
@@ -418,8 +422,8 @@
       const el=$('mp-chr-alerts');
       if(!alerts.length){el.innerHTML='<div style="color:var(--mp-green);font-size:.85rem;padding:8px">All medication stockpiles adequate.</div>';return;}
       el.innerHTML=alerts.map(a=>`<div class="mp-alert-card">
-        <strong>${a.patient_name}</strong> - ${a.condition_name}
-        <br><small>Only <strong>${a.medication_stockpile_days} days</strong> of medication remaining</small>
+        <strong>${esc(a.patient_name)}</strong> - ${esc(a.condition_name)}
+        <br><small>Only <strong>${+a.medication_stockpile_days||0} days</strong> of medication remaining</small>
       </div>`).join('');
     });
   };
@@ -446,9 +450,9 @@
       const el=$('mp-vax-list');
       if(!items.length){el.innerHTML='<div class="mp-empty">No vaccination records.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mp-list-item">
-        <div><strong>${v.patient_name}</strong> - ${v.vaccine_name} (Dose ${v.dose_number})
-          <br><small style="color:var(--text-secondary)">Given: ${v.date_administered||'--'} | Next due: ${v.next_due||'--'}</small></div>
-        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteVax(${v.id})">x</button></div>
+        <div><strong>${esc(v.patient_name)}</strong> - ${esc(v.vaccine_name)} (Dose ${+v.dose_number||0})
+          <br><small style="color:var(--text-secondary)">Given: ${esc(v.date_administered||'--')} | Next due: ${esc(v.next_due||'--')}</small></div>
+        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteVax(${+v.id||0})">x</button></div>
       </div>`).join('');
     });
   };
@@ -457,8 +461,8 @@
       const el=$('mp-vax-due');
       if(!items.length){el.innerHTML='<div style="color:var(--mp-green);font-size:.85rem;padding:8px">No vaccinations due or overdue.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mp-alert-card">
-        <strong>${v.patient_name}</strong> - ${v.vaccine_name} (Dose ${v.dose_number})
-        <br><small>Due: <strong>${v.next_due}</strong></small>
+        <strong>${esc(v.patient_name)}</strong> - ${esc(v.vaccine_name)} (Dose ${+v.dose_number||0})
+        <br><small>Due: <strong>${esc(v.next_due)}</strong></small>
       </div>`).join('');
     });
   };
@@ -479,8 +483,8 @@
       const el=$('mp-mh-list');
       if(!items.length){el.innerHTML='<div class="mp-empty">No mental health records.</div>';return;}
       el.innerHTML=items.map(m=>`<div class="mp-list-item">
-        <div><strong>${m.patient_name}</strong> - ${m.check_date||'--'}
-          <br><small style="color:var(--text-secondary)">Mood: ${m.mood_score}/10 | Anxiety: ${m.anxiety_level}/10 | Sleep: ${m.sleep_hours}h | Energy: ${m.energy_level}/10</small></div>
+        <div><strong>${esc(m.patient_name)}</strong> - ${esc(m.check_date||'--')}
+          <br><small style="color:var(--text-secondary)">Mood: ${+m.mood_score||0}/10 | Anxiety: ${+m.anxiety_level||0}/10 | Sleep: ${+m.sleep_hours||0}h | Energy: ${+m.energy_level||0}/10</small></div>
         <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteMH(${m.id})">x</button></div>
       </div>`).join('');
     });
@@ -516,8 +520,8 @@
       const el=$('mp-vet-list');
       if(!items.length){el.innerHTML='<div class="mp-empty">No animal records.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mp-list-item">
-        <div><strong>${v.animal_name}</strong> (${v.species}${v.breed?' - '+v.breed:''})
-          <br><small style="color:var(--text-secondary)">${v.weight_lb}lb | ${v.condition||'--'} | Tx: ${v.treatment||'--'}</small></div>
+        <div><strong>${esc(v.animal_name)}</strong> (${esc(v.species)}${v.breed?' - '+esc(v.breed):''})
+          <br><small style="color:var(--text-secondary)">${+v.weight_lb||0}lb | ${esc(v.condition||'--')} | Tx: ${esc(v.treatment||'--')}</small></div>
         <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteVet(${v.id})">x</button></div>
       </div>`).join('');
     });
@@ -545,12 +549,12 @@
       const el=$('mp-herb-results');
       if(!items.length){el.innerHTML='<div class="mp-empty">No remedies found.</div>';return;}
       el.innerHTML=items.map(h=>`<div class="mp-herb-card">
-        <h4>${h.name}</h4>
-        ${h.common_names?'<div class="mp-herb-meta">Also: '+h.common_names+'</div>':''}
-        <div class="mp-herb-detail"><strong>Uses:</strong> ${h.uses||'--'}</div>
-        <div class="mp-herb-detail"><strong>Preparation:</strong> ${h.preparation||'--'}</div>
-        <div class="mp-herb-detail"><strong>Dosage:</strong> ${h.dosage||'--'}</div>
-        ${h.contraindications?'<div class="mp-herb-warn">Caution: '+h.contraindications+'</div>':''}
+        <h4>${esc(h.name)}</h4>
+        ${h.common_names?'<div class="mp-herb-meta">Also: '+esc(h.common_names)+'</div>':''}
+        <div class="mp-herb-detail"><strong>Uses:</strong> ${esc(h.uses||'--')}</div>
+        <div class="mp-herb-detail"><strong>Preparation:</strong> ${esc(h.preparation||'--')}</div>
+        <div class="mp-herb-detail"><strong>Dosage:</strong> ${esc(h.dosage||'--')}</div>
+        ${h.contraindications?'<div class="mp-herb-warn">Caution: '+esc(h.contraindications)+'</div>':''}
       </div>`).join('');
     });
   };

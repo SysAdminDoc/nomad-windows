@@ -4,6 +4,7 @@ route hazards/recon, vehicle loading plans, and go/no-go decision matrix."""
 import logging
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.blueprints import get_pagination
 
 _log = logging.getLogger(__name__)
 
@@ -191,7 +192,7 @@ def api_alt_vehicles_list():
                 'SELECT * FROM alt_vehicles WHERE vehicle_type = ? ORDER BY name', (vtype,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM alt_vehicles ORDER BY name').fetchall()
+            rows = db.execute('SELECT * FROM alt_vehicles ORDER BY name LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -272,7 +273,7 @@ def api_route_hazards_list():
                 (plan_id,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM route_hazards ORDER BY created_at DESC').fetchall()
+            rows = db.execute('SELECT * FROM route_hazards ORDER BY created_at DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 
@@ -352,7 +353,7 @@ def api_route_recon_list():
                 (plan_id,)
             ).fetchall()
         else:
-            rows = db.execute('SELECT * FROM route_recon ORDER BY recon_date DESC').fetchall()
+            rows = db.execute('SELECT * FROM route_recon ORDER BY recon_date DESC LIMIT ? OFFSET ?', get_pagination()).fetchall()
     return jsonify([dict(r) for r in rows])
 
 

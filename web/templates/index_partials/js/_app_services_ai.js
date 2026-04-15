@@ -930,17 +930,27 @@ async function saveBranch() {
 function previewChatImage() {
   const input = document.getElementById('chat-image-input');
   const preview = document.getElementById('chat-image-preview');
-  if (!input.files.length) { preview.style.display = 'none'; return; }
+  if (!input || !preview) return;
+  if (!input.files.length) { clearChatImage(); return; }
   preview.style.display = 'block';
   const file = input.files[0];
-  if (window._chatImagePreviewUrl) URL.revokeObjectURL(window._chatImagePreviewUrl);
+  if (window._chatImagePreviewUrl) window.revokeObjectUrlSafe?.(window._chatImagePreviewUrl);
   window._chatImagePreviewUrl = URL.createObjectURL(file);
-  preview.innerHTML = '<div class="chat-image-preview-row"><img src="' + window._chatImagePreviewUrl + '" class="chat-image-preview-thumb"> <span class="chat-image-preview-name">' + escapeHtml(file.name) + '</span> <span class="chat-image-preview-copy">Image will be sent with your next message using multimodal analysis.</span> <button class="btn btn-sm btn-ghost chat-image-preview-clear" type="button" data-chat-action="clear-chat-image" aria-label="Clear image">✕</button></div>';
+  preview.innerHTML = '<div class="chat-image-preview-row"><img src="' + window._chatImagePreviewUrl + '" class="chat-image-preview-thumb" alt="Preview of ' + escapeHtml(file.name) + '" width="40" height="40"> <span class="chat-image-preview-name">' + escapeHtml(file.name) + '</span> <span class="chat-image-preview-copy">Image will be sent with your next message using multimodal analysis.</span> <button class="btn btn-sm btn-ghost chat-image-preview-clear" type="button" data-chat-action="clear-chat-image" aria-label="Clear image">✕</button></div>';
 }
 
 function clearChatImage() {
-  document.getElementById('chat-image-input').value = '';
-  document.getElementById('chat-image-preview').style.display = 'none';
+  const input = document.getElementById('chat-image-input');
+  const preview = document.getElementById('chat-image-preview');
+  if (window._chatImagePreviewUrl) {
+    window.revokeObjectUrlSafe?.(window._chatImagePreviewUrl);
+    window._chatImagePreviewUrl = null;
+  }
+  if (input) input.value = '';
+  if (preview) {
+    preview.style.display = 'none';
+    preview.innerHTML = '';
+  }
 }
 
 async function sendChatWithImage() {

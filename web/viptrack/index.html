@@ -4,7 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>VIPTrack v0.0.1 - Military & VIP Flight Tracker</title>
-    <script>if(location.protocol!=='file:' && new URLSearchParams(location.search).get('embed')!=='nomad')document.write('<link rel="manifest" href="manifest.json">');</script>
+    <script>
+        if (location.protocol !== 'file:' && new URLSearchParams(location.search).get('embed') !== 'nomad') {
+            const manifestLink = document.createElement('link');
+            manifestLink.rel = 'manifest';
+            manifestLink.href = '/viptrack/manifest.webmanifest';
+            document.head.appendChild(manifestLink);
+        }
+    </script>
     <meta name="theme-color" content="#1a1a2e">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -259,15 +266,15 @@ body.day-mode .aircraft-marker.vip .sprite-icon { filter: brightness(0) invert(0
         @keyframes pulse-stale { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
         @keyframes pulse-offline { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
         .filter-divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; }
-        .search-box { width: 180px; padding: 6px 10px; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; outline: none; }
+        .search-box { width: 180px; padding: 6px 10px; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; }
         .search-box:focus { border-color: var(--accent); }
         .search-box::placeholder { color: var(--text-muted); }
         /* Enhanced Search Styles */
         .search-container { position: relative; z-index: 1100; }
         .search-input-wrapper { display: flex; align-items: center; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 8px; padding: 0 4px 0 10px; transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s; }
-        .search-input-wrapper:focus-within { border-color: var(--accent); background: rgba(128,128,128,0.25); }
+        .search-input-wrapper:focus-within { border-color: var(--accent); background: rgba(128,128,128,0.25); box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.16); }
         .search-icon { width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0; }
-        .search-container .search-box { width: 180px; padding: 8px; background: transparent; border: none; color: var(--text); font-size: 12px; outline: none; transition: width 0.2s; }
+        .search-container .search-box { width: 180px; padding: 8px; background: transparent; border: none; color: var(--text); font-size: 12px; transition: width 0.2s; }
         .search-container .search-box:focus { width: 240px; }
         .search-clear-btn { width: 20px; height: 20px; background: var(--text-muted); border: none; border-radius: 50%; color: var(--bg); font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         .search-clear-btn:hover { background: var(--text-dim); }
@@ -313,9 +320,9 @@ body.day-mode .aircraft-marker.vip .sprite-icon { filter: brightness(0) invert(0
         .filter-range { display: flex; align-items: center; gap: 8px; }
         .filter-range-sep { color: var(--text-muted); }
         .filter-input { width: 100px; padding: 8px 10px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; }
-        .filter-input:focus { border-color: var(--accent); outline: none; }
+        .filter-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.16); }
         .filter-input-full { width: 100%; padding: 8px 10px; background: var(--bg-darker); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; }
-        .filter-input-full:focus { border-color: var(--accent); outline: none; }
+        .filter-input-full:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.16); }
         .filter-checkboxes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
         .filter-checkbox { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--text-dim); cursor: pointer; }
         .filter-checkbox input { accent-color: var(--accent); }
@@ -483,15 +490,16 @@ body.day-mode .aircraft-marker.vip .sprite-icon { filter: brightness(0) invert(0
         .settings-title { font-weight: 600; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
         .setting-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
         .setting-label { font-size: 13px; }
-        .toggle { width: 44px; height: 24px; background: rgba(128,128,128,0.3); border-radius: 12px; position: relative; cursor: pointer; }
+        .toggle { width: 44px; height: 24px; background: rgba(128,128,128,0.3); border-radius: 12px; position: relative; cursor: pointer; border: none; padding: 0; appearance: none; -webkit-appearance: none; flex-shrink: 0; }
         .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; }
         .toggle.on { background: var(--accent); }
         .toggle.on::after { transform: translateX(20px); }
-        .setting-select { padding: 6px 10px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; outline: none; cursor: pointer; min-width: 140px; }
+        .toggle:focus-visible { box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.16); }
+        .setting-select { padding: 6px 10px; background: var(--bg-panel); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; cursor: pointer; min-width: 140px; }
         .setting-select option { background: var(--bg-panel); color: var(--text); padding: 8px; }
         .settings-section { border-top: 1px solid var(--border); margin-top: 12px; padding-top: 12px; }
         .settings-section-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
-        .settings-input { width: 100%; padding: 8px 10px; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; font-family: monospace; outline: none; margin-bottom: 8px; }
+        .settings-input { width: 100%; padding: 8px 10px; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; font-family: monospace; margin-bottom: 8px; }
         .settings-btn { width: 100%; padding: 8px 12px; background: var(--accent); border: none; border-radius: 6px; color: #000; font-size: 12px; font-weight: 600; cursor: pointer; margin-top: 8px; }
         .settings-btn.secondary { background: rgba(128,128,128,0.2); color: var(--text); }
         .api-status { font-size: 11px; padding: 6px 10px; border-radius: 4px; margin-top: 8px; text-align: center; }
@@ -533,7 +541,15 @@ body.day-mode .aircraft-marker.vip .sprite-icon { filter: brightness(0) invert(0
         .modal-overlay.show { display: flex; }
         .modal { background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 20px; width: 280px; }
         .modal-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
-        .modal-input { width: 100%; padding: 10px 12px; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; outline: none; margin-bottom: 16px; }
+        .modal-input { width: 100%; padding: 10px 12px; background: rgba(128,128,128,0.15); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; margin-bottom: 16px; }
+        .search-box:focus-visible,
+        .filter-input:focus-visible,
+        .filter-input-full:focus-visible,
+        .setting-select:focus-visible,
+        .settings-input:focus-visible,
+        .modal-input:focus-visible {
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.16);
+        }
         .modal-btns { display: flex; gap: 10px; }
         .modal-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; }
         .modal-btn.primary { background: var(--accent); color: #000; }
@@ -1372,216 +1388,37 @@ body.day-mode .aircraft-marker.vip .sprite-icon { filter: brightness(0) invert(0
         }
     </style>
 <script>
-// Inline PWA manifest for single-file deployment
-const manifest = {
-    name: 'VIPTrack - Military & VIP Flight Tracker',
-    short_name: 'VIPTrack',
-    description: 'Real-time military and VIP aircraft tracking with alerts',
-    start_url: window.location.href.split('?')[0],
-    display: 'standalone',
-    orientation: 'any',
-    background_color: '#1a1a2e',
-    theme_color: '#1a1a2e',
-    icons: [
-        {
-            src: 'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-16x16.png',
-            sizes: '16x16',
-            type: 'image/png'
-        },
-        {
-            src: 'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-32x32.png',
-            sizes: '32x32',
-            type: 'image/png'
-        },
-        {
-            src: 'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-48x48.png',
-            sizes: '48x48',
-            type: 'image/png'
-        },
-        {
-            src: 'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-128x128.png',
-            sizes: '128x128',
-            type: 'image/png',
-            purpose: 'any maskable'
-        }
-    ]
-};
-const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
-const manifestUrl = URL.createObjectURL(manifestBlob);
-document.querySelector('link[rel="manifest"]')?.setAttribute('href', manifestUrl);
-URL.revokeObjectURL(manifestUrl);
-</script>
-<script>
 window.VIPTRACK_URL_PARAMS = new URLSearchParams(window.location.search);
 window.VIPTRACK_EMBED_MODE = window.VIPTRACK_URL_PARAMS.get('embed') === 'nomad';
 window.VIPTRACK_SHARED_CONTEXT = ['hex', 'lat', 'lon', 'zoom'].some((key) => window.VIPTRACK_URL_PARAMS.has(key));
 
 // Service Worker Registration
 if ('serviceWorker' in navigator) {
+    const viptrackServiceWorkerUrl = new URL('/viptrack/sw.js', window.location.origin).href;
+    const viptrackScopeUrl = new URL('/viptrack/', window.location.origin).href;
+    const isViptrackRegistration = (registration) => {
+        const scope = registration?.scope || '';
+        const scriptUrl = registration?.active?.scriptURL || registration?.waiting?.scriptURL || registration?.installing?.scriptURL || '';
+        return scriptUrl.startsWith('blob:') || scope.startsWith(viptrackScopeUrl) || scriptUrl.includes('/viptrack/sw.js');
+    };
+
     window.addEventListener('load', async () => {
-        if (window.VIPTRACK_EMBED_MODE) {
-            try {
-                const regs = await navigator.serviceWorker.getRegistrations();
-                for (const registration of regs) {
-                    const scriptUrl = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || '';
-                    if (scriptUrl.startsWith('blob:') || scriptUrl.toLowerCase().includes('viptrack')) {
-                        await registration.unregister();
-                    }
-                }
-            } catch (error) {
-                console.debug('[VIPTrack] Embedded service worker cleanup skipped', error);
-            }
-            return;
-        }
         try {
-            // Clear old service workers first
             const regs = await navigator.serviceWorker.getRegistrations();
-            for (const r of regs) await r.unregister();
-            const swCode = `
-                const CACHE_NAME = 'viptrack-v4.15';
-                const STATIC_ASSETS = [
-                    '/viptrack/lib/leaflet.css',
-                    '/viptrack/lib/leaflet.js',
-                    '/viptrack/lib/pako.min.js',
-                    '/nukemap/data/offline_atlas.json',
-                    'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/silhouettes/aircraft.png',
-                    'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo.ico',
-                    'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-16x16.png',
-                    'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-32x32.png',
-                    'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-48x48.png',
-                    'https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-128x128.png'
-                ];
-                
-                self.addEventListener('install', event => {
-                    event.waitUntil(
-                        caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
-                    );
-                    self.skipWaiting();
-                });
-                
-                self.addEventListener('activate', event => {
-                    event.waitUntil(
-                        caches.keys().then(keys => 
-                            Promise.all(keys.filter(k => k !== CACHE_NAME && k !== CACHE_NAME + '-tiles').map(k => caches.delete(k)))
-                        )
-                    );
-                    self.clients.claim();
-                });
-                
-                self.addEventListener('fetch', event => {
-                    const url = new URL(event.request.url);
-                    
-                    // Network-first for live API data (ADS-B feeds, traces, weather)
-                    if (url.hostname.includes('airplanes.live') ||
-                        url.hostname.includes('opensky') || 
-                        url.hostname.includes('adsbexchange') ||
-                        url.hostname.includes('rainviewer') ||
-                        url.hostname.includes('planespotters') ||
-                        url.hostname.includes('wikipedia.org') ||
-                        url.pathname.includes('/traces/')) {
-                        event.respondWith(
-                            fetch(event.request).then(response => {
-                                if (response.ok) {
-                                    const clone = response.clone();
-                                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                                }
-                                return response;
-                            }).catch(() => caches.match(event.request))
-                        );
-                        return;
-                    }
-                    
-                    // Stale-while-revalidate for GitHub data files (CSVs, JSONs)
-                    if (url.hostname.includes('githubusercontent.com') && 
-                        (url.pathname.includes('/data/') || url.pathname.includes('/assets/'))) {
-                        event.respondWith(
-                            caches.match(event.request).then(cached => {
-                                const fetchPromise = fetch(event.request).then(response => {
-                                    if (response.ok) {
-                                        const clone = response.clone();
-                                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                                    }
-                                    return response;
-                                }).catch(() => cached);
-                                return cached || fetchPromise;
-                            })
-                        );
-                        return;
-                    }
-                    
-                    // Cache-first for bundled/static assets (Leaflet, pako, atlas, logos, sprites)
-                    if (STATIC_ASSETS.some(a => event.request.url.includes(a)) ||
-                        url.hostname.includes('cdnjs.cloudflare.com') ||
-                        (url.hostname.includes('githubusercontent.com') && url.pathname.includes('/logo/'))) {
-                        event.respondWith(
-                            caches.match(event.request).then(cached => {
-                                if (cached) return cached;
-                                return fetch(event.request).then(response => {
-                                    if (response.ok) {
-                                        const clone = response.clone();
-                                        caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                                    }
-                                    return response;
-                                });
-                            })
-                        );
-                        return;
-                    }
-                    
-                    // Cache map tiles with deferred LRU eviction
-                    if (url.hostname.includes('tile') || url.hostname.includes('mt0.google') ||
-                        url.hostname.includes('mt1.google') || url.hostname.includes('mt2.google') ||
-                        url.hostname.includes('mt3.google') || url.pathname.includes('/{z}/{x}/{y}')) {
-                        event.respondWith(
-                            caches.match(event.request).then(cached => {
-                                const fetchPromise = fetch(event.request).then(response => {
-                                    if (response.ok) {
-                                        const clone = response.clone();
-                                        caches.open(CACHE_NAME + '-tiles').then(cache => {
-                                            cache.put(event.request, clone);
-                                            // Deferred eviction - don't block tile delivery
-                                            if (typeof self.requestIdleCallback === 'function') {
-                                                self.requestIdleCallback(() => cache.keys().then(keys => {
-                                                    if (keys.length > 600) {
-                                                        const toDelete = keys.slice(0, keys.length - 500);
-                                                        toDelete.forEach(k => cache.delete(k));
-                                                    }
-                                                }));
-                                            } else {
-                                                setTimeout(() => cache.keys().then(keys => {
-                                                    if (keys.length > 600) {
-                                                        const toDelete = keys.slice(0, keys.length - 500);
-                                                        toDelete.forEach(k => cache.delete(k));
-                                                    }
-                                                }), 5000);
-                                            }
-                                        });
-                                    }
-                                    return response;
-                                }).catch(() => cached);
-                                return cached || fetchPromise;
-                            })
-                        );
-                        return;
-                    }
-                    
-                    // Default: network with cache fallback
-                    event.respondWith(
-                        fetch(event.request).then(response => {
-                            if (response.ok && event.request.method === 'GET') {
-                                const clone = response.clone();
-                                caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-                            }
-                            return response;
-                        }).catch(() => caches.match(event.request))
-                    );
-                });
-            `;
-            
-            const swBlob = new Blob([swCode], { type: 'application/javascript' });
-            const swUrl = URL.createObjectURL(swBlob);
-            const registration = await navigator.serviceWorker.register(swUrl, { scope: '/' });
-            URL.revokeObjectURL(swUrl);
+            const viptrackRegs = regs.filter(isViptrackRegistration);
+            if (window.VIPTRACK_EMBED_MODE) {
+                for (const registration of viptrackRegs) {
+                    await registration.unregister();
+                }
+                return;
+            }
+            for (const registration of viptrackRegs) {
+                const scriptUrl = registration.active?.scriptURL || registration.waiting?.scriptURL || registration.installing?.scriptURL || '';
+                if (scriptUrl.startsWith('blob:') || registration.scope !== viptrackScopeUrl) {
+                    await registration.unregister();
+                }
+            }
+            const registration = await navigator.serviceWorker.register(viptrackServiceWorkerUrl, { scope: '/viptrack/' });
             _dbg('ServiceWorker registered:', registration.scope);
         } catch (error) {
             _dbg('ServiceWorker registration failed:', error);
@@ -1593,7 +1430,7 @@ if ('serviceWorker' in navigator) {
 <body>
     <div class="loading-overlay" id="loading">
         <div class="loading-logo">
-            <img src="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-128x128.png" alt="VIPTrack">
+            <img src="https://raw.githubusercontent.com/SysAdminDoc/SkyTrack/refs/heads/main/assets/logo/SkyTrack_Logo-128x128.png" alt="VIPTrack" width="48" height="48">
             <span>VIPTrack<span class="version">v0.0.1</span></span>
         </div>
         <div class="spinner"></div>
@@ -1742,7 +1579,7 @@ if ('serviceWorker' in navigator) {
     </div>
     <div class="info-panel" id="infoPanel" role="dialog" aria-label="Aircraft Details">
         <div class="aircraft-photo" id="aircraftPhoto"><div class="no-photo">Loading…</div></div>
-        <div class="airline-banner" id="airlineBanner" style="display:none;"><img src="" alt=""></div>
+        <div class="airline-banner" id="airlineBanner" style="display:none;"><img src="" alt="" width="160" height="32"></div>
         <div class="info-quickglance" id="infoQuickGlance">
             <div class="info-qg-item"><div class="info-qg-val" id="qgCallsign">---</div><div class="info-qg-label">Flight</div></div>
             <div class="info-qg-item"><div class="info-qg-val" id="qgAlt">---</div><div class="info-qg-label">Altitude</div></div>
@@ -1930,31 +1767,31 @@ if ('serviceWorker' in navigator) {
         <div class="settings-title">Settings</div>
         <div class="settings-section">
             <div class="settings-section-title">Display Options</div>
-            <div class="setting-row"><span class="setting-label">Show Labels</span><div class="toggle" id="toggleLabels"></div></div>
-            <div class="setting-row"><span class="setting-label">Altitude-Colored Trails</span><div class="toggle on" id="toggleAltColors"></div></div>
-            <div class="setting-row"><span class="setting-label">Wikipedia Info</span><div class="toggle on" id="toggleWiki"></div></div>
+            <div class="setting-row"><span class="setting-label">Show Labels</span><button class="toggle" id="toggleLabels" type="button" role="switch" aria-checked="false" aria-label="Show Labels"></button></div>
+            <div class="setting-row"><span class="setting-label">Altitude-Colored Trails</span><button class="toggle on" id="toggleAltColors" type="button" role="switch" aria-checked="true" aria-label="Altitude-Colored Trails"></button></div>
+            <div class="setting-row"><span class="setting-label">Wikipedia Info</span><button class="toggle on" id="toggleWiki" type="button" role="switch" aria-checked="true" aria-label="Wikipedia Info"></button></div>
         </div>
         <div class="settings-section">
             <div class="settings-section-title">Trail Display</div>
             <div class="setting-row">
                 <span class="setting-label">Color By</span>
-                <select id="trailColorBy" class="setting-select">
+                <select id="trailColorBy" class="setting-select" aria-label="Trail color mode">
                     <option value="altitude">Altitude</option>
                     <option value="speed">Speed</option>
                     <option value="time">Time (Old to New)</option>
                     <option value="solid">Solid Color</option>
                 </select>
             </div>
-            <div class="setting-row"><span class="setting-label">Show Direction Arrows</span><div class="toggle on" id="toggleTrailArrows"></div></div>
+            <div class="setting-row"><span class="setting-label">Show Direction Arrows</span><button class="toggle on" id="toggleTrailArrows" type="button" role="switch" aria-checked="true" aria-label="Show Direction Arrows"></button></div>
         </div>
         <div class="settings-section">
             <div class="settings-section-title">Alerts</div>
-            <div class="setting-row"><span class="setting-label">Enable Alerts</span><div class="toggle on" id="toggleAlerts"></div></div>
-            <div class="setting-row"><span class="setting-label">Sound Effects</span><div class="toggle on" id="toggleAlertSounds"></div></div>
-            <div class="setting-row"><span class="setting-label">Browser Notifications</span><div class="toggle" id="toggleNotifications"></div></div>
+            <div class="setting-row"><span class="setting-label">Enable Alerts</span><button class="toggle on" id="toggleAlerts" type="button" role="switch" aria-checked="true" aria-label="Enable Alerts"></button></div>
+            <div class="setting-row"><span class="setting-label">Sound Effects</span><button class="toggle on" id="toggleAlertSounds" type="button" role="switch" aria-checked="true" aria-label="Sound Effects"></button></div>
+            <div class="setting-row"><span class="setting-label">Browser Notifications</span><button class="toggle" id="toggleNotifications" type="button" role="switch" aria-checked="false" aria-label="Browser Notifications"></button></div>
             <div class="setting-row">
                 <span class="setting-label">Military Alert Radius</span>
-                <select id="militaryAlertRadius" class="setting-select">
+                <select id="militaryAlertRadius" class="setting-select" aria-label="Military alert radius">
                     <option value="0">Disabled</option>
                     <option value="25">25 km</option>
                     <option value="50" selected>50 km</option>
@@ -6171,6 +6008,12 @@ if ('serviceWorker' in navigator) {
             }
         }
     }
+    function syncToggleSwitchState(id, checked) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('on', !!checked);
+        el.setAttribute('aria-checked', checked ? 'true' : 'false');
+    }
     function syncExpandedButtonState(id, expanded, labels) {
         const el = document.getElementById(id);
         if (!el) return;
@@ -6233,7 +6076,7 @@ if ('serviceWorker' in navigator) {
             e.stopPropagation();
             settings.showLabels = !settings.showLabels;
             syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' });
-            document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels);
+            syncToggleSwitchState('toggleLabels', settings.showLabels);
             saveSettings();
             updateMarkers();
         });
@@ -6451,9 +6294,9 @@ if ('serviceWorker' in navigator) {
         await alertSystem.init();
         
         // Set alert toggle states
-        document.getElementById('toggleAlerts')?.classList.toggle('on', alertSystem.enabled);
-        document.getElementById('toggleAlertSounds')?.classList.toggle('on', alertSystem.soundEnabled);
-        document.getElementById('toggleNotifications')?.classList.toggle('on', alertSystem.notificationsEnabled);
+        syncToggleSwitchState('toggleAlerts', alertSystem.enabled);
+        syncToggleSwitchState('toggleAlertSounds', alertSystem.soundEnabled);
+        syncToggleSwitchState('toggleNotifications', alertSystem.notificationsEnabled);
         if (document.getElementById('militaryAlertRadius')) {
             document.getElementById('militaryAlertRadius').value = alertSystem.militaryAlertRadius;
         }
@@ -7683,13 +7526,13 @@ if ('serviceWorker' in navigator) {
         );
         bindCoreViewActions();
         bindTopBarActions();
-        document.getElementById('toggleLabels').classList.toggle('on', settings.showLabels); document.getElementById('toggleLabels').addEventListener('click', function() { settings.showLabels = !settings.showLabels; this.classList.toggle('on', settings.showLabels); syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' }); saveSettings(); updateMarkers(); });
-        document.getElementById('toggleAltColors').classList.toggle('on', settings.altitudeColors); document.getElementById('toggleAltColors').addEventListener('click', function() { settings.altitudeColors = !settings.altitudeColors; this.classList.toggle('on', settings.altitudeColors); saveSettings(); if (selectedHex) loadTrail(selectedHex); });
-        document.getElementById('toggleWiki').classList.toggle('on', settings.showWiki); document.getElementById('toggleWiki').addEventListener('click', function() { settings.showWiki = !settings.showWiki; this.classList.toggle('on', settings.showWiki); saveSettings(); });
+        syncToggleSwitchState('toggleLabels', settings.showLabels); document.getElementById('toggleLabels').addEventListener('click', function() { settings.showLabels = !settings.showLabels; syncToggleSwitchState('toggleLabels', settings.showLabels); syncPressedButtonState('labelBtn', settings.showLabels, { on: 'Hide aircraft labels', off: 'Show aircraft labels' }); saveSettings(); updateMarkers(); });
+        syncToggleSwitchState('toggleAltColors', settings.altitudeColors); document.getElementById('toggleAltColors').addEventListener('click', function() { settings.altitudeColors = !settings.altitudeColors; syncToggleSwitchState('toggleAltColors', settings.altitudeColors); saveSettings(); if (selectedHex) loadTrail(selectedHex); });
+        syncToggleSwitchState('toggleWiki', settings.showWiki); document.getElementById('toggleWiki').addEventListener('click', function() { settings.showWiki = !settings.showWiki; syncToggleSwitchState('toggleWiki', settings.showWiki); saveSettings(); });
         document.getElementById('addBookmarkBtn').addEventListener('click', () => { document.getElementById('bookmarkModal').classList.add('show'); document.getElementById('bookmarkNameInput').value = ''; document.getElementById('bookmarkNameInput').focus(); });
         document.getElementById('bookmarkCancelBtn').addEventListener('click', () => document.getElementById('bookmarkModal').classList.remove('show'));
         document.getElementById('bookmarkSaveBtn').addEventListener('click', () => { const name = document.getElementById('bookmarkNameInput').value.trim(); if (name) { addBookmark(name); document.getElementById('bookmarkModal').classList.remove('show'); } else toast('Enter name'); });
-        document.getElementById('bookmarkNameInput').addEventListener('keypress', e => { if (e.key === 'Enter') { const name = e.target.value.trim(); if (name) { addBookmark(name); document.getElementById('bookmarkModal').classList.remove('show'); } } });
+        document.getElementById('bookmarkNameInput').addEventListener('keydown', e => { if (e.key === 'Enter') { const name = e.target.value.trim(); if (name) { e.preventDefault(); addBookmark(name); document.getElementById('bookmarkModal').classList.remove('show'); } } });
         document.getElementById('bookmarkModal').addEventListener('click', e => { if (e.target.id === 'bookmarkModal') document.getElementById('bookmarkModal').classList.remove('show'); });
         
         syncPrimaryFilterButtons(settings.filter);
@@ -7723,22 +7566,22 @@ if ('serviceWorker' in navigator) {
         // Alert settings handlers
         document.getElementById('toggleAlerts')?.addEventListener('click', function() {
             alertSystem.enabled = !alertSystem.enabled;
-            this.classList.toggle('on', alertSystem.enabled);
+            syncToggleSwitchState('toggleAlerts', alertSystem.enabled);
             alertSystem.saveSettings();
             toast(alertSystem.enabled ? 'Alerts enabled' : 'Alerts disabled');
         });
         document.getElementById('toggleAlertSounds')?.addEventListener('click', function() {
             alertSystem.soundEnabled = !alertSystem.soundEnabled;
-            this.classList.toggle('on', alertSystem.soundEnabled);
+            syncToggleSwitchState('toggleAlertSounds', alertSystem.soundEnabled);
             alertSystem.saveSettings();
         });
         document.getElementById('toggleNotifications')?.addEventListener('click', async function() {
             if (!alertSystem.notificationsEnabled) {
                 const granted = await alertSystem.requestNotificationPermission();
-                this.classList.toggle('on', granted);
+                syncToggleSwitchState('toggleNotifications', granted);
             } else {
                 alertSystem.notificationsEnabled = false;
-                this.classList.remove('on');
+                syncToggleSwitchState('toggleNotifications', false);
                 alertSystem.saveSettings();
                 toast('Notifications disabled');
             }
@@ -8739,6 +8582,7 @@ if ('serviceWorker' in navigator) {
                     this.options = { ...this.options, ...JSON.parse(saved) };
                 } catch(e) {}
             }
+            syncToggleSwitchState('toggleTrailArrows', this.options.showDirection);
             this.setupEventListeners();
         },
         
@@ -8755,8 +8599,8 @@ if ('serviceWorker' in navigator) {
             });
             
             document.getElementById('toggleTrailArrows')?.addEventListener('click', function() {
-                this.classList.toggle('on');
-                trailRenderer.options.showDirection = this.classList.contains('on');
+                trailRenderer.options.showDirection = !trailRenderer.options.showDirection;
+                syncToggleSwitchState('toggleTrailArrows', trailRenderer.options.showDirection);
                 trailRenderer.save();
             });
         },
@@ -8895,6 +8739,7 @@ if ('serviceWorker' in navigator) {
             }
         }
     };
+    trailRenderer.init();
 
     // ============ PHASE 11: EXTERNAL LINKS ============
     function updateExternalLinks(ac) {
@@ -9516,7 +9361,7 @@ if ('serviceWorker' in navigator) {
                 <div class="sheet-header">
                     <span class="sheet-title">Aircraft (<span id="listCount">0</span>)</span>
                     <div class="sheet-sort">
-                        <select id="listSort">
+                        <select id="listSort" aria-label="Sort aircraft list">
                             <option value="distance">Distance</option>
                             <option value="altitude">Altitude</option>
                             <option value="speed">Speed</option>

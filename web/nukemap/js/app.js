@@ -541,6 +541,36 @@ NM.queryUi = function(selector) {
   const root = document.getElementById('tab-nukemap') || document;
   return root.querySelector(selector);
 };
+NM.enhanceToggleRows = function() {
+  NM.queryUiAll('.toggle-row').forEach((toggleRow) => {
+    const input = toggleRow.querySelector('input[type="checkbox"]');
+    if (!input || toggleRow.dataset.nukemapToggleEnhanced === 'true') return;
+    const syncToggleRow = () => {
+      toggleRow.setAttribute('aria-checked', input.checked ? 'true' : 'false');
+      if (input.disabled) {
+        toggleRow.setAttribute('aria-disabled', 'true');
+        toggleRow.tabIndex = -1;
+      } else {
+        toggleRow.removeAttribute('aria-disabled');
+        toggleRow.tabIndex = 0;
+      }
+    };
+    toggleRow.dataset.nukemapToggleEnhanced = 'true';
+    toggleRow.setAttribute('role', 'switch');
+    if (input.id) toggleRow.dataset.toggleInput = input.id;
+    input.tabIndex = -1;
+    syncToggleRow();
+    input.addEventListener('change', syncToggleRow);
+    toggleRow.addEventListener('keydown', (event) => {
+      const isToggleKey = event.key === 'Enter' || event.key === ' ' || event.code === 'Space';
+      if (!isToggleKey) return;
+      event.preventDefault();
+      if (input.disabled) return;
+      input.checked = !input.checked;
+      input.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+};
 NM.protectOverlayInteractions = function(selectors) {
   if (!window.L?.DomEvent) return;
   selectors.forEach((selector) => {
@@ -1037,6 +1067,7 @@ function initControls() {
 
   updateYieldUI(NM.sliderToYield(+$('yield-slider').value));
   syncYieldInput(NM.sliderToYield(+$('yield-slider').value));
+  NM.enhanceToggleRows();
 
   // Burst buttons
   NM.queryUiAll('.burst-btn').forEach(b => b.addEventListener('click', () => {

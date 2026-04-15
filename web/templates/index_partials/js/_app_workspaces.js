@@ -2056,7 +2056,7 @@ function printMap() {
   const win = window.open('', '_blank');
   win.document.write('<html><head><title>NOMAD Map Print</title><style>body{margin:0;text-align:center;}img{max-width:100%;height:auto;}h3{font-family:system-ui;margin:8px;}.print-meta{font-size:11px;color:#666;}</style></head><body>');
         win.document.write('<h3>NOMAD Field Desk — Map Export</h3>');
-  win.document.write('<img src="' + canvas.toDataURL('image/png') + '">');
+  win.document.write('<img src="' + canvas.toDataURL('image/png') + '" alt="Map export preview" width="' + canvas.width + '" height="' + canvas.height + '">');
   win.document.write('<p class="print-meta">Printed ' + new Date().toLocaleString() + '</p>');
   win.document.write('</body></html>');
   win.document.close();
@@ -2451,4 +2451,3 @@ function printAppFrame() {
     toast('Cannot print this content — try opening it in a new browser tab instead', 'warning');
   }
 }
-

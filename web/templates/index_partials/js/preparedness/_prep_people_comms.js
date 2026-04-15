@@ -281,7 +281,7 @@ async function loadLanPresence() {
   const el = document.getElementById('lan-presence-list');
   if (!el) return;
   // Send our own heartbeat
-  safeFetch('/api/lan/presence/heartbeat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name: localStorage.getItem('nomad-node-name') || 'This Node', version: '{{ version }}'})});
+  safeFetch('/api/lan/presence/heartbeat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name: localStorage.getItem('nomad-node-name') || 'This Node', version: VERSION})});
   const nodes = await safeFetch('/api/lan/presence', {}, []);
   if (!nodes.length) {
     el.innerHTML = '<span class="utility-presence-pill utility-presence-pill-solo">Only you</span>';

@@ -282,7 +282,7 @@ function openReceiptScanner() {
         <input type="file" id="receipt-file-input" accept="image/*" capture="environment" class="is-hidden" data-change-action="handle-receipt-file-select">
       </div>
       <div id="receipt-preview-wrap" class="scan-preview-wrap is-hidden">
-        <img id="receipt-preview-img" class="scan-preview-image scan-preview-image-sm">
+        <img id="receipt-preview-img" class="scan-preview-image scan-preview-image-sm" alt="Receipt preview">
         <div class="scan-preview-actions">
           <button type="button" class="btn btn-sm btn-primary" id="receipt-scan-btn" data-prep-action="scan-receipt">Scan Receipt</button>
           <button type="button" class="btn btn-sm" data-prep-action="clear-receipt-preview">Clear</button>
@@ -296,7 +296,7 @@ function openReceiptScanner() {
         </div>
         <div class="scan-table-wrap">
           <table class="freq-table scan-results-table">
-            <thead><tr><th class="scan-check-col"><input type="checkbox" id="receipt-check-all" data-change-action="toggle-receipt-items" checked></th><th>Item Name</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
+            <thead><tr><th class="scan-check-col"><input type="checkbox" id="receipt-check-all" data-change-action="toggle-receipt-items" checked aria-label="Select all scanned receipt items"></th><th>Item Name</th><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
             <tbody id="receipt-items-tbody"></tbody>
           </table>
         </div>
@@ -330,7 +330,9 @@ function loadReceiptPreview(file) {
   _receiptFile = file;
   const reader = new FileReader();
   reader.onload = (e) => {
-    document.getElementById('receipt-preview-img').src = e.target.result;
+    const previewImg = document.getElementById('receipt-preview-img');
+    previewImg.src = e.target.result;
+    previewImg.alt = file?.name ? `Receipt preview for ${file.name}` : 'Receipt preview';
     document.getElementById('receipt-preview-wrap').style.display = 'block';
     document.getElementById('receipt-drop-zone').style.display = 'none';
     document.getElementById('receipt-results').style.display = 'none';
@@ -380,9 +382,9 @@ async function scanReceipt() {
     const tbody = document.getElementById('receipt-items-tbody');
     tbody.innerHTML = _receiptScanResults.map((item, i) => `
       <tr>
-        <td><input type="checkbox" class="receipt-item-check" data-idx="${i}" checked></td>
-        <td><input type="text" value="${escapeAttr(item.name)}" class="receipt-edit-name scan-table-input scan-table-input-name" data-idx="${i}"></td>
-        <td><input type="number" value="${item.quantity}" min="0" step="1" class="receipt-edit-qty scan-table-input scan-table-input-qty" data-idx="${i}"></td>
+        <td><input type="checkbox" class="receipt-item-check" data-idx="${i}" checked aria-label="Select receipt item ${i + 1}"></td>
+        <td><input type="text" value="${escapeAttr(item.name)}" class="receipt-edit-name scan-table-input scan-table-input-name" data-idx="${i}" aria-label="Receipt item name ${i + 1}"></td>
+        <td><input type="number" value="${item.quantity}" min="0" step="1" class="receipt-edit-qty scan-table-input scan-table-input-qty" data-idx="${i}" aria-label="Receipt quantity ${i + 1}"></td>
         <td class="scan-cell-right">$${item.unit_price.toFixed(2)}</td>
         <td class="scan-cell-right scan-cell-strong">$${item.total_price.toFixed(2)}</td>
       </tr>
@@ -458,7 +460,7 @@ function openVisionScanner() {
         <input type="file" id="vision-file-input" accept="image/*" capture="environment" class="is-hidden" data-change-action="handle-vision-file-select">
       </div>
       <div id="vision-preview-wrap" class="scan-preview-wrap is-hidden">
-        <img id="vision-preview-img" class="scan-preview-image scan-preview-image-lg">
+        <img id="vision-preview-img" class="scan-preview-image scan-preview-image-lg" alt="Supply image preview">
         <div class="scan-preview-actions">
           <button type="button" class="btn btn-sm btn-primary" id="vision-scan-btn" data-prep-action="scan-vision-image">&#128270; Analyze</button>
           <button type="button" class="btn btn-sm" data-prep-action="clear-vision-preview">Clear</button>
@@ -499,7 +501,9 @@ function loadVisionPreview(file) {
   _visionFile = file;
   const reader = new FileReader();
   reader.onload = (e) => {
-    document.getElementById('vision-preview-img').src = e.target.result;
+    const previewImg = document.getElementById('vision-preview-img');
+    previewImg.src = e.target.result;
+    previewImg.alt = file?.name ? `Supply image preview for ${file.name}` : 'Supply image preview';
     document.getElementById('vision-preview-wrap').style.display = 'block';
     document.getElementById('vision-drop-zone').style.display = 'none';
     document.getElementById('vision-results').style.display = 'none';
@@ -522,22 +526,50 @@ function _resizeImageForVision(file) {
   return new Promise((resolve) => {
     const MAX_DIM = 1024;
     const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    const cleanup = () => {
+      img.onload = null;
+      img.onerror = null;
+      img.removeAttribute('src');
+      window.revokeObjectUrlSafe?.(objectUrl);
+    };
     img.onload = () => {
       let w = img.width, h = img.height;
-      if (w <= MAX_DIM && h <= MAX_DIM) { resolve(file); return; }
+      if (!w || !h || (w <= MAX_DIM && h <= MAX_DIM)) {
+        cleanup();
+        resolve(file);
+        return;
+      }
       const scale = MAX_DIM / Math.max(w, h);
       w = Math.round(w * scale);
       h = Math.round(h * scale);
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
       const ctx = canvas.getContext('2d');
+      if (!ctx || typeof canvas.toBlob !== 'function') {
+        cleanup();
+        resolve(file);
+        return;
+      }
       ctx.drawImage(img, 0, 0, w, h);
       canvas.toBlob((blob) => {
-        resolve(new File([blob], file.name, {type: file.type || 'image/jpeg'}));
+        cleanup();
+        if (!(blob instanceof Blob)) {
+          resolve(file);
+          return;
+        }
+        try {
+          resolve(new File([blob], file.name, {type: blob.type || file.type || 'image/jpeg'}));
+        } catch (_) {
+          resolve(file);
+        }
       }, file.type || 'image/jpeg', 0.85);
     };
-    img.onerror = () => resolve(file);
-    img.src = URL.createObjectURL(file);
+    img.onerror = () => {
+      cleanup();
+      resolve(file);
+    };
+    img.src = objectUrl;
   });
 }
 
@@ -577,24 +609,24 @@ async function scanVisionImage() {
     grid.innerHTML = _visionScanResults.map((item, i) => `
       <div class="vision-item-card" data-idx="${i}">
         <div class="vision-item-head">
-          <input type="checkbox" class="vision-item-check" data-idx="${i}" checked>
-          <input type="text" value="${escapeAttr(item.name)}" class="vision-edit-name vision-field-control vision-field-name" data-idx="${i}">
+          <input type="checkbox" class="vision-item-check" data-idx="${i}" checked aria-label="Select detected inventory item ${i + 1}">
+          <input type="text" value="${escapeAttr(item.name)}" class="vision-edit-name vision-field-control vision-field-name" data-idx="${i}" aria-label="Detected item name ${i + 1}">
         </div>
         <div class="vision-item-grid">
           <div class="vision-field">
             <label class="vision-field-label">Quantity</label>
-            <input type="number" value="${item.quantity}" min="1" step="1" class="vision-edit-qty vision-field-control" data-idx="${i}">
+            <input type="number" value="${item.quantity}" min="1" step="1" class="vision-edit-qty vision-field-control" data-idx="${i}" aria-label="Detected item quantity ${i + 1}">
           </div>
           <div class="vision-field">
             <label class="vision-field-label">Category</label>
-            <select class="vision-edit-cat vision-field-control" data-idx="${i}">
+            <select class="vision-edit-cat vision-field-control" data-idx="${i}" aria-label="Detected item category ${i + 1}">
               ${catOpts.replace(`value="${escapeAttr(item.category)}"`, `value="${escapeAttr(item.category)}" selected`)}
             </select>
           </div>
         </div>
         <div class="vision-field">
           <label class="vision-field-label">Condition</label>
-          <select class="vision-edit-cond vision-field-control" data-idx="${i}">
+          <select class="vision-edit-cond vision-field-control" data-idx="${i}" aria-label="Detected item condition ${i + 1}">
             ${condOpts.replace(`value="${escapeAttr(item.condition)}"`, `value="${escapeAttr(item.condition)}" selected`)}
           </select>
         </div>

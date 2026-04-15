@@ -184,7 +184,8 @@ def start():
 
     from platform_utils import get_ollama_gpu_env
     env = get_ollama_gpu_env()
-    env['OLLAMA_HOST'] = f'0.0.0.0:{OLLAMA_PORT}'
+    from config import Config
+    env['OLLAMA_HOST'] = f'{Config.APP_HOST}:{OLLAMA_PORT}'
     env['OLLAMA_MODELS'] = models_dir
 
     from platform_utils import popen_kwargs

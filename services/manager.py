@@ -59,16 +59,20 @@ def get_services_dir():
 # ─── GPU Detection ────────────────────────────────────────────────────
 
 _gpu_info = None
+_gpu_lock = threading.Lock()
 
 
 def detect_gpu() -> dict:
     """Detect GPU type and capabilities (cross-platform)."""
-    from platform_utils import detect_gpu as _detect_gpu
     global _gpu_info
     if _gpu_info is not None:
         return _gpu_info
-    _gpu_info = _detect_gpu()
-    return _gpu_info
+    with _gpu_lock:
+        if _gpu_info is not None:
+            return _gpu_info
+        from platform_utils import detect_gpu as _detect_gpu
+        _gpu_info = _detect_gpu()
+        return _gpu_info
 
 
 def get_ollama_gpu_env() -> dict:
@@ -220,6 +224,15 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
     except Exception as e:
         log.error(f'Failed to update DB for {service_id}: {e}')
         proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        if proc.stdout:
+            try:
+                proc.stdout.close()
+            except Exception:
+                pass
         with _lock:
             _processes.pop(service_id, None)
         raise
@@ -284,8 +297,8 @@ def is_running(service_id: str) -> bool:
     """
     with _lock:
         proc = _processes.get(service_id)
-    if proc and proc.poll() is None:
-        return True
+        if proc and proc.poll() is None:
+            return True
 
     db = get_db()
     try:

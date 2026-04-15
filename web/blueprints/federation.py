@@ -346,7 +346,7 @@ def api_node_sync_receive():
                     log.warning('Federation sync insert failed for %s: %s', tname, e)
             imported[tname] = count
             total += count
-        db.commit()
+        # Do NOT commit yet — data + vector clocks must be atomic
 
         incoming_clocks = data.get('vector_clocks', {})
         if not isinstance(incoming_clocks, dict):
@@ -389,11 +389,11 @@ def api_node_sync_receive():
                     merged[node] = max(merged.get(node, 0), val)
                 db.execute('INSERT OR REPLACE INTO vector_clocks (table_name, row_hash, clock, last_node, updated_at) VALUES (?, ?, ?, ?, datetime("now"))',
                            (tname, row_hash, json.dumps(merged), source_node))
-        db.commit()
 
         db.execute('INSERT INTO sync_log (direction, peer_node_id, peer_name, peer_ip, tables_synced, items_count, status, conflicts_detected, conflict_details) VALUES (?,?,?,?,?,?,?,?,?)',
                    ('receive', source_node, source_name, request.remote_addr or '',
                     json.dumps(imported), total, 'success', len(conflicts), json.dumps(conflicts, default=str)))
+        # Single atomic commit: data + vector clocks + sync log
         db.commit()
 
     log_activity('sync_received', detail=f'From {source_name} ({source_node}): {total} items')

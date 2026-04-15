@@ -660,8 +660,10 @@ def _fetch_rss_feeds():
         for fut in as_completed(futures, timeout=90):
             try:
                 articles.extend(fut.result())
-            except Exception:
-                pass
+            except Exception as e:
+                feed = futures.get(fut)
+                feed_name = feed.get('name', '?') if feed else '?'
+                log.debug('RSS fetch worker failed for %s: %s', feed_name, e)
 
     if not articles:
         return

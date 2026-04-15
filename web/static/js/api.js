@@ -8,13 +8,15 @@ let _csrfToken = null;
 
 async function _fetchCsrfToken() {
     try {
-        const resp = await fetch('/api/csrf-token');
+        const ac = new AbortController();
+        setTimeout(() => ac.abort(), 5000);
+        const resp = await fetch('/api/csrf-token', { signal: ac.signal });
         if (resp.ok) {
             const data = await resp.json();
             _csrfToken = data.csrf_token;
         }
     } catch (e) {
-        console.warn('[API] Could not fetch CSRF token:', e.message);
+        if (e.name !== 'AbortError') console.warn('[API] Could not fetch CSRF token:', e.message);
     }
 }
 
@@ -42,6 +44,14 @@ async function apiFetch(url, options = {}) {
     // Don't set Content-Type for FormData
     if (options.body instanceof FormData) {
         delete mergedOptions.headers['Content-Type'];
+    }
+
+    // Default 30s timeout unless caller provides their own signal
+    let controller;
+    if (!mergedOptions.signal) {
+        controller = new AbortController();
+        setTimeout(() => controller.abort(), 30000);
+        mergedOptions.signal = controller.signal;
     }
 
     try {

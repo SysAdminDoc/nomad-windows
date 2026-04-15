@@ -1856,7 +1856,6 @@ if ('serviceWorker' in navigator) {
         refreshInterval: 6000,
         cacheExpiry: 300000,
         debug: (new URLSearchParams(window.location.search)).has('debug'),
-        defaultCredentials: { clientId: 'mparker-api-client', clientSecret: 'aPEAJUp6WgZuN7UZxX83BionDNsozUTF' },
         corsProxies: [
             url => 'https://api.codetabs.com/v1/proxy/?quest=' + encodeURIComponent(url),
             url => 'https://corsproxy.io/?' + encodeURIComponent(url),

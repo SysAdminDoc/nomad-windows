@@ -776,7 +776,8 @@ def start():
         log.warning('No ZIM files found — kiwix-serve needs content to run. Download a ZIM from the Library tab first.')
         raise RuntimeError('No content downloaded yet — add content from the Library tab before starting Kiwix')
 
-    args = ['--port', str(KIWIX_PORT), '--address', '0.0.0.0'] + zim_paths
+    from config import Config
+    args = ['--port', str(KIWIX_PORT), '--address', Config.APP_HOST] + zim_paths
     exe = get_exe_path()
 
     from platform_utils import popen_kwargs

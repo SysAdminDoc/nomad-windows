@@ -160,31 +160,31 @@ def get_config_value(key: str, default=None):
 def save_config(data: dict):
     global _config_cache, _config_mtime
     path = get_config_path()
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    tmp_path = path + '.tmp'
-    with open(tmp_path, 'w') as f:
-        json.dump(data, f, indent=2)
-        f.flush()
-        os.fsync(f.fileno())
-    import sys
-    try:
-        os.replace(tmp_path, path)
-    except PermissionError:
-        if sys.platform == 'win32':
-            # Windows: retry with backoff — antivirus may briefly lock the file
-            import time as _time
-            for _attempt in range(3):
-                _time.sleep(0.1 * (_attempt + 1))
-                try:
-                    os.replace(tmp_path, path)
-                    break
-                except PermissionError:
-                    if _attempt == 2:
-                        raise
-        else:
-            raise
-    # Update cache immediately so subsequent reads are consistent
     with _config_lock:
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        tmp_path = path + '.tmp'
+        with open(tmp_path, 'w') as f:
+            json.dump(data, f, indent=2)
+            f.flush()
+            os.fsync(f.fileno())
+        import sys
+        try:
+            os.replace(tmp_path, path)
+        except PermissionError:
+            if sys.platform == 'win32':
+                # Windows: retry with backoff — antivirus may briefly lock the file
+                import time as _time
+                for _attempt in range(3):
+                    _time.sleep(0.1 * (_attempt + 1))
+                    try:
+                        os.replace(tmp_path, path)
+                        break
+                    except PermissionError:
+                        if _attempt == 2:
+                            raise
+            else:
+                raise
+        # Update cache immediately so subsequent reads are consistent
         _config_cache = data
         try:
             _config_mtime = os.path.getmtime(path)

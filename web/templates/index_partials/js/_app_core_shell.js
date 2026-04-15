@@ -1202,13 +1202,22 @@ function showModal(html, {size, title, onClose} = {}) {
   });
   return overlay;
 }
-/** Safe fetch wrapper — returns parsed JSON or fallback on error. Usage: const data = await safeFetch('/api/foo', {}, []); */
+/** Safe fetch wrapper — returns parsed JSON or fallback on error. Includes 30s timeout. Usage: const data = await safeFetch('/api/foo', {}, []); */
 async function safeFetch(url, opts = {}, fallback = null) {
+  let controller;
   try {
+    if (!opts.signal) {
+      controller = new AbortController();
+      setTimeout(() => controller.abort(), 30000);
+      opts = Object.assign({}, opts, { signal: controller.signal });
+    }
     const r = await fetch(url, opts);
     if (!r.ok) { console.warn(`Fetch ${url} failed: ${r.status}`); return fallback; }
     return await r.json();
-  } catch(e) { console.warn(`Fetch ${url} error:`, e.message); return fallback; }
+  } catch(e) {
+    if (e.name !== 'AbortError') console.warn(`Fetch ${url} error:`, e.message);
+    return fallback;
+  }
 }
 function copyCode(btn) {
   const code = btn.previousElementSibling.textContent;

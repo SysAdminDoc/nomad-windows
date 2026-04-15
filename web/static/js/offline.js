@@ -32,7 +32,9 @@ const OfflineSync = {
   async fullSync() {
     if (!this._db) await this.init();
     try {
-      const resp = await fetch('/api/offline/snapshot');
+      const ac = new AbortController();
+      setTimeout(() => ac.abort(), 60000);
+      const resp = await fetch('/api/offline/snapshot', { signal: ac.signal });
       if (!resp.ok) throw new Error('Snapshot fetch failed');
       const data = await resp.json();
       for (const store of this.STORES) {
@@ -72,7 +74,9 @@ const OfflineSync = {
         req.onerror = () => resolve(null);
       });
       const since = meta ? meta.value : '2000-01-01T00:00:00';
-      const resp = await fetch(`/api/offline/changes-since?since=${encodeURIComponent(since)}`);
+      const ac2 = new AbortController();
+      setTimeout(() => ac2.abort(), 30000);
+      const resp = await fetch(`/api/offline/changes-since?since=${encodeURIComponent(since)}`, { signal: ac2.signal });
       if (!resp.ok) throw new Error('Changes fetch failed');
       const data = await resp.json();
       let totalChanges = 0;

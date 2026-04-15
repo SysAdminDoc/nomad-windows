@@ -22,6 +22,24 @@ from web.validation import validate_json
 from web.sql_safety import safe_table, safe_columns, build_update
 import web.state as _state
 from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_list as _safe_json_list, validate_download_url as _validate_download_url
+import posixpath as _posixpath
+
+
+def _sanitize_folder(raw):
+    """Sanitize a user-supplied folder path for media organization.
+
+    Collapses traversal sequences, rejects anything that escapes the root,
+    and strips leading/trailing slashes. Returns a clean relative path or ''.
+    """
+    if not raw:
+        return ''
+    # Normalize using posixpath to collapse .. and . regardless of OS
+    normed = _posixpath.normpath(raw.replace('\\', '/'))
+    # Reject any path that escapes root (starts with .. or is absolute)
+    if normed.startswith('..') or normed.startswith('/'):
+        return ''
+    # Strip surrounding slashes and dots for safety
+    return normed.strip('/').strip('.')
 
 try:
     from web.catalog import CHANNEL_CATALOG, CHANNEL_CATEGORIES
@@ -409,7 +427,7 @@ def api_videos_upload():
     file.save(filepath)
     filesize = os.path.getsize(filepath) if os.path.isfile(filepath) else 0
     category = request.form.get('category', 'general')
-    folder = request.form.get('folder', '').replace('..', '').strip('/')
+    folder = _sanitize_folder(request.form.get('folder', ''))
     title = request.form.get('title', filename.rsplit('.', 1)[0])
     with db_session() as db:
         cur = db.execute('INSERT INTO videos (title, filename, category, folder, filesize) VALUES (?, ?, ?, ?, ?)',
@@ -1502,7 +1520,7 @@ def api_audio_upload():
     filesize = os.path.getsize(filepath) if os.path.isfile(filepath) else 0
     title = request.form.get('title', filename.rsplit('.', 1)[0])
     category = request.form.get('category', 'general')
-    folder = request.form.get('folder', '').replace('..', '').strip('/')
+    folder = _sanitize_folder(request.form.get('folder', ''))
     artist = request.form.get('artist', '')
     with db_session() as db:
         cur = db.execute('INSERT INTO audio (title, filename, category, folder, artist, filesize) VALUES (?, ?, ?, ?, ?, ?)',
@@ -2091,7 +2109,7 @@ def api_books_upload():
     title = request.form.get('title', filename.rsplit('.', 1)[0])
     author = request.form.get('author', '')
     category = request.form.get('category', 'general')
-    folder = request.form.get('folder', '').replace('..', '').strip('/')
+    folder = _sanitize_folder(request.form.get('folder', ''))
     with db_session() as db:
         cur = db.execute('INSERT INTO books (title, author, filename, format, category, folder, filesize) VALUES (?, ?, ?, ?, ?, ?, ?)',
                          (title, author, filename, fmt, category, folder, filesize))

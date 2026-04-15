@@ -237,7 +237,9 @@ def sse_cleanup_stale_clients():
 
 def broadcast_event(event_type, data):
     """Send an event to all connected SSE clients."""
-    message = f"event: {event_type}\ndata: {json.dumps(data)}\n\n"
+    # Sanitize event_type: SSE event names must not contain newlines or colons
+    safe_type = str(event_type).replace('\n', '').replace('\r', '').strip()
+    message = f"event: {safe_type}\ndata: {json.dumps(data)}\n\n"
     now = time.time()
     with _sse_lock:
         dead = []

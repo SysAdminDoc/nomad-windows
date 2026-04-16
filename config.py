@@ -174,14 +174,23 @@ def save_config(data: dict):
             if sys.platform == 'win32':
                 # Windows: retry with backoff — antivirus may briefly lock the file
                 import time as _time
+                replaced = False
                 for _attempt in range(3):
                     _time.sleep(0.1 * (_attempt + 1))
                     try:
                         os.replace(tmp_path, path)
+                        replaced = True
                         break
                     except PermissionError:
-                        if _attempt == 2:
-                            raise
+                        pass
+                if not replaced:
+                    # Clean up stale .tmp before re-raising so future loads
+                    # don't accidentally recover an outdated temp file.
+                    try:
+                        os.remove(tmp_path)
+                    except OSError:
+                        pass
+                    raise PermissionError(f'Could not write config after retries: {path}')
             else:
                 raise
         # Update cache immediately so subsequent reads are consistent

@@ -16,14 +16,25 @@
     --go-orange: #f97316;
     --go-gray: #6b7280;
   }
-  #tab-group-ops .go-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-group-ops .go-header h2 { font-size:1.25rem; color:var(--go-accent); margin:0; }
-  #tab-group-ops .go-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-group-ops .go-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-group-ops .go-sub-tab.active { background:var(--go-accent-dim); border-color:var(--go-accent); color:var(--go-accent); }
+  #tab-group-ops .go-command-deck { display:grid; gap:12px; margin-bottom:16px; padding:18px 20px; border:1px solid color-mix(in srgb, var(--go-accent) 14%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--go-accent) 14%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 90%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08)); }
+  #tab-group-ops .go-command-deck-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  #tab-group-ops .go-command-copy { display:grid; gap:8px; max-width:min(760px, 100%); }
+  #tab-group-ops .go-command-title { margin:0; font-size:1.32rem; line-height:1.18; color:var(--text-primary,#eee); }
+  #tab-group-ops .go-command-text { margin:0; color:var(--text-secondary,#aaa); line-height:1.6; max-width:68ch; }
+  #tab-group-ops .go-command-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  #tab-group-ops .go-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-group-ops .go-command-pill { display:inline-flex; align-items:center; min-height:28px; padding:0 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--go-accent) 20%, var(--border,#333)); background:color-mix(in srgb, var(--go-accent) 10%, transparent); color:color-mix(in srgb, var(--go-accent) 44%, var(--text-primary,#f5f7ff)); font-size:.72rem; font-weight:600; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-group-ops .go-sub-tabs-shell { display:grid; gap:8px; margin-bottom:18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 84%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-group-ops .go-sub-tabs-label { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary,#aaa); font-weight:700; }
+  #tab-group-ops .go-sub-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-group-ops .go-sub-tab { min-height:36px; padding:8px 14px; border-radius:999px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-group-ops .go-sub-tab:hover { border-color:color-mix(in srgb, var(--go-accent) 22%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+  #tab-group-ops .go-sub-tab.active { background:color-mix(in srgb, var(--go-accent) 14%, var(--surface-solid, #121726)); border-color:color-mix(in srgb, var(--go-accent) 48%, var(--border,#333)); color:var(--go-accent); box-shadow:0 10px 24px color-mix(in srgb, var(--go-accent) 16%, transparent); }
+  #tab-group-ops .go-sub-tab:focus-visible,
+  #tab-group-ops .go-btn:focus-visible { outline:2px solid transparent; outline-offset:2px; box-shadow:0 0 0 2px color-mix(in srgb, var(--surface-solid,#151826) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--go-accent) 48%, transparent); }
   #tab-group-ops .go-panel { display:none; }
   #tab-group-ops .go-panel.active { display:block; }
-  #tab-group-ops .go-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-group-ops .go-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
   #tab-group-ops .go-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
   #tab-group-ops .go-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-group-ops .go-stat { text-align:center; padding:12px; }
@@ -35,7 +46,7 @@
   #tab-group-ops .go-form-row select,
   #tab-group-ops .go-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-group-ops .go-form-row .field { flex:1; min-width:140px; }
-  #tab-group-ops .go-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-group-ops .go-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-group-ops .go-btn-primary { background:var(--go-accent); color:#000; }
   #tab-group-ops .go-btn-danger { background:var(--go-red); color:#fff; }
   #tab-group-ops .go-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
@@ -61,7 +72,6 @@
   #tab-group-ops .go-badge-watch { background:rgba(234,179,8,.2); color:var(--go-yellow); }
   #tab-group-ops .go-badge-warning { background:rgba(249,115,22,.2); color:var(--go-orange); }
   #tab-group-ops .go-badge-emergency { background:rgba(239,68,68,.2); color:var(--go-red); }
-  #tab-group-ops .go-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
   #tab-group-ops .go-table { width:100%; border-collapse:collapse; font-size:.82rem; }
   #tab-group-ops .go-table th { text-align:left; padding:8px 10px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#444); background:rgba(0,0,0,.2); }
   #tab-group-ops .go-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); }
@@ -78,25 +88,53 @@
   #tab-group-ops .go-ics-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
   #tab-group-ops .go-members-expand { max-height:0; overflow:hidden; transition:max-height .3s ease; }
   #tab-group-ops .go-members-expand.open { max-height:500px; }
+  #tab-group-ops .go-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
+  @media (max-width: 860px) {
+    #tab-group-ops .go-command-deck { padding:16px; }
+    #tab-group-ops .go-command-actions { width:100%; justify-content:flex-start; }
+    #tab-group-ops .go-command-actions .go-btn { flex:1 1 160px; }
+  }
 </style>
 
-<div class="go-header">
-  <h2>Group Operations & Governance</h2>
+<div class="go-command-deck workspace-panel">
+  <div class="go-command-deck-head">
+    <div class="go-command-copy">
+      <h2 class="go-command-title">Coordinate pods, governance, and community response from one calm operations desk.</h2>
+      <p class="go-command-text">Move from staffing and duty coverage to disputes, incident forms, CERT teams, shelters, and public warnings without losing the operational picture.</p>
+    </div>
+    <div class="go-command-actions">
+      <button type="button" class="go-btn go-btn-secondary" data-go-panel-target="pods">Pods</button>
+      <button type="button" class="go-btn go-btn-secondary" data-go-panel-target="duties">Duty Roster</button>
+      <button type="button" class="go-btn go-btn-secondary" data-go-panel-target="disputes">Disputes</button>
+      <button type="button" class="go-btn go-btn-secondary" data-go-panel-target="civil-defense">Civil Defense</button>
+    </div>
+  </div>
+  <div class="go-command-pills" aria-hidden="true">
+    <span class="go-command-pill">Pods</span>
+    <span class="go-command-pill">Governance</span>
+    <span class="go-command-pill">Duty coverage</span>
+    <span class="go-command-pill">ICS forms</span>
+    <span class="go-command-pill">CERT teams</span>
+    <span class="go-command-pill">Community warnings</span>
+  </div>
 </div>
 
 <!-- Sub-tabs -->
-<div class="go-sub-tabs">
-  <button class="go-sub-tab active" data-go-panel="pods">Pods</button>
-  <button class="go-sub-tab" data-go-panel="governance">Governance</button>
-  <button class="go-sub-tab" data-go-panel="duties">Duties</button>
-  <button class="go-sub-tab" data-go-panel="disputes">Disputes</button>
-  <button class="go-sub-tab" data-go-panel="ics">ICS Forms</button>
-  <button class="go-sub-tab" data-go-panel="cert">CERT</button>
-  <button class="go-sub-tab" data-go-panel="civil-defense">Civil Def</button>
+<div class="go-sub-tabs-shell">
+  <div class="go-sub-tabs-label">Workflows</div>
+  <div class="go-sub-tabs" role="tablist" aria-label="Group operations sections">
+    <button type="button" class="go-sub-tab active" data-go-panel="pods" role="tab" aria-selected="true" aria-controls="go-panel-pods" id="go-tab-pods">Pods</button>
+    <button type="button" class="go-sub-tab" data-go-panel="governance" role="tab" aria-selected="false" aria-controls="go-panel-governance" id="go-tab-governance">Governance</button>
+    <button type="button" class="go-sub-tab" data-go-panel="duties" role="tab" aria-selected="false" aria-controls="go-panel-duties" id="go-tab-duties">Duty Roster</button>
+    <button type="button" class="go-sub-tab" data-go-panel="disputes" role="tab" aria-selected="false" aria-controls="go-panel-disputes" id="go-tab-disputes">Disputes</button>
+    <button type="button" class="go-sub-tab" data-go-panel="ics" role="tab" aria-selected="false" aria-controls="go-panel-ics" id="go-tab-ics">ICS Forms</button>
+    <button type="button" class="go-sub-tab" data-go-panel="cert" role="tab" aria-selected="false" aria-controls="go-panel-cert" id="go-tab-cert">CERT</button>
+    <button type="button" class="go-sub-tab" data-go-panel="civil-defense" role="tab" aria-selected="false" aria-controls="go-panel-civil-defense" id="go-tab-civil-defense">Civil Defense</button>
+  </div>
 </div>
 
 <!-- ── Pods Panel ────────────────────────────────────── -->
-<div class="go-panel active" id="go-panel-pods">
+<div class="go-panel active" id="go-panel-pods" role="tabpanel" tabindex="-1" aria-labelledby="go-tab-pods">
   <div class="go-grid" id="go-pod-stats"></div>
   <div class="go-card">
     <div class="go-card-title">Create Pod</div>
@@ -114,11 +152,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreatePod()">Create Pod</button></div>
     </div>
   </div>
-  <div id="go-pod-list"><div class="go-empty">Loading pods...</div></div>
+  <div id="go-pod-list"><div class="go-empty">Loading pods and staffing...</div></div>
 </div>
 
 <!-- ── Governance Panel ─────────────────────────────── -->
-<div class="go-panel" id="go-panel-governance">
+<div class="go-panel" id="go-panel-governance" role="tabpanel" tabindex="-1" aria-labelledby="go-tab-governance" hidden>
   <div class="go-card">
     <div class="go-card-title">Pod Selector</div>
     <div class="go-form-row">
@@ -141,11 +179,11 @@
   </div>
   <div class="go-card">
     <div class="go-card-title">Roles (by Authority)</div>
-    <div id="go-role-list"><div class="go-empty">Select a pod to view roles.</div></div>
+    <div id="go-role-list"><div class="go-empty">Choose a pod to review role coverage and assigned leaders.</div></div>
   </div>
   <div class="go-card">
     <div class="go-card-title">Chain of Command</div>
-    <div id="go-chain-view"><div class="go-empty">Select a pod to view chain of command.</div></div>
+    <div id="go-chain-view"><div class="go-empty">Choose a pod to review the current chain of command.</div></div>
   </div>
   <div class="go-card">
     <div class="go-card-title">Create SOP</div>
@@ -167,12 +205,12 @@
   </div>
   <div class="go-card">
     <div class="go-card-title">Standard Operating Procedures</div>
-    <div id="go-sop-list"><div class="go-empty">No SOPs created.</div></div>
+    <div id="go-sop-list"><div class="go-empty">No SOPs yet. Publish the first operating procedure above to give the team a shared playbook.</div></div>
   </div>
 </div>
 
 <!-- ── Duty Roster Panel ────────────────────────────── -->
-<div class="go-panel" id="go-panel-duties">
+<div class="go-panel" id="go-panel-duties" role="tabpanel" tabindex="-1" aria-labelledby="go-tab-duties" hidden>
   <div class="go-card">
     <div class="go-card-title">Create Duty Assignment</div>
     <div class="go-form-row">
@@ -204,11 +242,11 @@
     </div>
     <div class="field"><label>Filter Date</label><input name="go-duty-filter-date" id="go-duty-filter-date" type="date" onchange="goLoadDuties()"></div>
   </div>
-  <div id="go-duty-list" class="go-card"><div class="go-empty">Loading duties...</div></div>
+  <div id="go-duty-list" class="go-card"><div class="go-empty">Loading duty coverage...</div></div>
 </div>
 
 <!-- ── Disputes Panel ───────────────────────────────── -->
-<div class="go-panel" id="go-panel-disputes">
+<div class="go-panel" id="go-panel-disputes" role="tabpanel" tabindex="-1" aria-labelledby="go-tab-disputes" hidden>
   <div class="go-card">
     <div class="go-card-title">File Dispute</div>
     <div class="go-form-row">
@@ -226,7 +264,7 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateDispute()">File</button></div>
     </div>
   </div>
-  <div id="go-dispute-list" class="go-card"><div class="go-empty">Loading disputes...</div></div>
+  <div id="go-dispute-list" class="go-card"><div class="go-empty">Loading disputes and decisions...</div></div>
   <div class="go-card">
     <div class="go-card-title">Create Vote</div>
     <div class="go-form-row">
@@ -240,11 +278,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateVote()">Create Vote</button></div>
     </div>
   </div>
-  <div id="go-vote-list" class="go-card"><div class="go-empty">No active votes.</div></div>
+  <div id="go-vote-list" class="go-card"><div class="go-empty">No active votes yet. Open disputes with ballot options will appear here.</div></div>
 </div>
 
 <!-- ── ICS Forms Panel ──────────────────────────────── -->
-<div class="go-panel" id="go-panel-ics">
+<div class="go-panel" id="go-panel-ics" role="tabpanel" tabindex="-1" aria-labelledby="go-tab-ics" hidden>
   <div class="go-card">
     <div class="go-card-title">Create ICS Form</div>
     <div class="go-form-row">
@@ -283,7 +321,7 @@
 </div>
 
 <!-- ── CERT Panel ───────────────────────────────────── -->
-<div class="go-panel" id="go-panel-cert">
+<div class="go-panel" id="go-panel-cert" role="tabpanel" tabindex="-1" aria-labelledby="go-tab-cert" hidden>
   <div class="go-card">
     <div class="go-card-title">Create CERT Team</div>
     <div class="go-form-row">
@@ -302,7 +340,7 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateCERT()">Create Team</button></div>
     </div>
   </div>
-  <div id="go-cert-list" class="go-grid"><div class="go-empty">Loading CERT teams...</div></div>
+  <div id="go-cert-list" class="go-grid"><div class="go-empty">Loading CERT teams and response coverage...</div></div>
   <div class="go-card">
     <div class="go-card-title">Damage Assessment</div>
     <div class="go-form-row">
@@ -340,11 +378,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateDamageAssessment()">Submit</button></div>
     </div>
   </div>
-  <div id="go-da-list" class="go-card"><div class="go-empty">Loading assessments...</div></div>
+  <div id="go-da-list" class="go-card"><div class="go-empty">Loading damage assessments...</div></div>
 </div>
 
 <!-- ── Civil Defense Panel ──────────────────────────── -->
-<div class="go-panel" id="go-panel-civil-defense">
+<div class="go-panel" id="go-panel-civil-defense" role="tabpanel" tabindex="-1" aria-labelledby="go-tab-civil-defense" hidden>
   <div class="go-card">
     <div class="go-card-title">Register Shelter</div>
     <div class="go-form-row">
@@ -367,7 +405,7 @@
     </div>
   </div>
   <div id="go-shelter-capacity-summary" class="go-grid" style="margin-bottom:12px"></div>
-  <div id="go-shelter-list" class="go-card"><div class="go-empty">Loading shelters...</div></div>
+  <div id="go-shelter-list" class="go-card"><div class="go-empty">Loading shelters and capacity...</div></div>
   <div class="go-card">
     <div class="go-card-title">Issue Community Warning</div>
     <div class="go-form-row">
@@ -390,21 +428,39 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateWarning()">Issue Warning</button></div>
     </div>
   </div>
-  <div id="go-warning-list" class="go-card"><div class="go-empty">Loading warnings...</div></div>
+  <div id="go-warning-list" class="go-card"><div class="go-empty">Loading public warnings...</div></div>
 </div>
 
 <script>
 (function(){
   /* ── Sub-tab switching ── */
   const root = document.getElementById('tab-group-ops');
-  root.querySelectorAll('.go-sub-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.querySelectorAll('.go-sub-tab').forEach(b => b.classList.remove('active'));
-      root.querySelectorAll('.go-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = document.getElementById('go-panel-' + btn.dataset.goPanel);
-      if (panel) panel.classList.add('active');
+  function goActivatePanel(panelName, focusPanel = false) {
+    const nextButton = root.querySelector(`.go-sub-tab[data-go-panel="${panelName}"]`);
+    const nextPanel = document.getElementById('go-panel-' + panelName);
+    if (!nextButton || !nextPanel) return;
+
+    root.querySelectorAll('.go-sub-tab').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
     });
+    root.querySelectorAll('.go-panel').forEach(p => {
+      p.classList.remove('active');
+      p.hidden = true;
+    });
+
+    nextButton.classList.add('active');
+    nextButton.setAttribute('aria-selected', 'true');
+    nextPanel.classList.add('active');
+    nextPanel.hidden = false;
+    if (focusPanel) nextPanel.focus();
+  }
+
+  root.querySelectorAll('.go-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => goActivatePanel(btn.dataset.goPanel, true));
+  });
+  root.querySelectorAll('[data-go-panel-target]').forEach(btn => {
+    btn.addEventListener('click', () => goActivatePanel(btn.dataset.goPanelTarget, true));
   });
 
   const el=id=>document.getElementById(id);
@@ -438,7 +494,7 @@
     api('/api/group/pods').then(pods=>{
       populatePodSelects(pods);
       const list=el('go-pod-list');
-      if(!pods.length){list.innerHTML='<div class="go-empty">No pods created yet.</div>';return;}
+      if(!pods.length){list.innerHTML='<div class="go-empty">No pods yet. Create the first team above to anchor staffing, governance, and duty coverage.</div>';return;}
       list.innerHTML='<div class="go-grid">'+pods.map(p=>`<div class="go-card">
         <div style="display:flex;justify-content:space-between;align-items:start">
           <div><strong style="color:var(--go-accent)">${p.name}</strong> ${statusBadge(p.status||'active')}
@@ -469,7 +525,7 @@
         <div><strong>${m.name}</strong> <small style="color:var(--text-secondary,#aaa)">${m.role||''}</small></div>
         <button class="go-btn go-btn-danger" onclick="goRemoveMember(${m.id},${podId})">x</button>
       </div>`).join('')+'<div class="go-form-row" style="margin-top:8px"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="New member name"></div><div class="field" style="flex:0"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>'
-        :'<div class="go-empty" style="padding:12px">No members. <div class="go-form-row" style="margin-top:8px"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="Member name"></div><div class="field" style="flex:0"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>';
+        :'<div class="go-empty" style="padding:12px">No members assigned yet. <div class="go-form-row" style="margin-top:8px"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="Member name"></div><div class="field" style="flex:0"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>';
       wrap.classList.add('open');btn.textContent='Hide Members';
     });
   };
@@ -494,10 +550,10 @@
 
   /* ═══ GOVERNANCE ═══ */
   window.goLoadRoles=function(){
-    const podId=val('go-gov-pod');if(!podId){el('go-role-list').innerHTML='<div class="go-empty">Select a pod to view roles.</div>';el('go-chain-view').innerHTML='<div class="go-empty">Select a pod.</div>';return;}
+    const podId=val('go-gov-pod');if(!podId){el('go-role-list').innerHTML='<div class="go-empty">Choose a pod to review role coverage and assigned leaders.</div>';el('go-chain-view').innerHTML='<div class="go-empty">Choose a pod to build the chain of command.</div>';return;}
     api('/api/group/pods/'+podId+'/roles').then(roles=>{
       const list=el('go-role-list');
-      if(!roles.length){list.innerHTML='<div class="go-empty">No roles defined for this pod.</div>';return;}
+      if(!roles.length){list.innerHTML='<div class="go-empty">No roles are defined for this pod yet. Add the first leadership or support role above.</div>';return;}
       roles.sort((a,b)=>(a.authority_level||99)-(b.authority_level||99));
       list.innerHTML='<table class="go-table"><thead><tr><th>#</th><th>Title</th><th>Assigned To</th><th>Authority</th><th>Actions</th></tr></thead><tbody>'+
         roles.map((r,i)=>`<tr><td>${i+1}</td><td>${r.title}</td><td>${r.assigned_to||'Vacant'}</td><td>${r.authority_level||'-'}</td>
@@ -505,7 +561,7 @@
     });
     api('/api/group/pods/'+podId+'/chain-of-command').then(chain=>{
       const view=el('go-chain-view');
-      if(!chain.length){view.innerHTML='<div class="go-empty">No chain of command data.</div>';return;}
+      if(!chain.length){view.innerHTML='<div class="go-empty">No chain of command is mapped yet. Add a few roles to outline the escalation path.</div>';return;}
       view.innerHTML='<div class="go-chain">'+chain.map((c,i)=>`<div class="go-chain-node">
         <span class="rank">${i+1}</span><strong>${c.title}</strong><span style="color:var(--text-secondary,#aaa);margin-left:auto">${c.assigned_to||'Vacant'}</span>
       </div>`).join('')+'</div>';
@@ -526,7 +582,7 @@
   window.goLoadSOPs=function(){
     api('/api/group/sops').then(sops=>{
       const list=el('go-sop-list');
-      if(!sops.length){list.innerHTML='<div class="go-empty">No SOPs created.</div>';return;}
+      if(!sops.length){list.innerHTML='<div class="go-empty">No SOPs yet. Publish the first operating procedure above to give the team a shared playbook.</div>';return;}
       const catColor={security:'#ef4444',comms:'#06b6d4',medical:'#22c55e',logistics:'#f59e0b',operations:'#8b5cf6',admin:'#6b7280'};
       list.innerHTML=sops.map(s=>`<div class="go-list-item">
         <div><strong>${s.title}</strong> <span class="go-badge" style="background:rgba(255,255,255,.08);color:${catColor[s.category]||'#aaa'}">${s.category}</span>
@@ -554,7 +610,7 @@
     if(pod)url+='pod_id='+pod+'&';if(dt)url+='date='+dt+'&';
     api(url).then(duties=>{
       const list=el('go-duty-list');
-      if(!duties.length){list.innerHTML='<div class="go-empty">No duty assignments found.</div>';return;}
+      if(!duties.length){list.innerHTML='<div class="go-empty">No duty assignments yet. Schedule the first shift or watch rotation above.</div>';return;}
       list.innerHTML='<table class="go-table"><thead><tr><th>Date</th><th>Time</th><th>Assignee</th><th>Task</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
         duties.map(d=>`<tr><td>${d.date||''}</td><td>${d.start_time||''} - ${d.end_time||''}</td><td>${d.assignee||''}</td><td>${d.role||''}</td>
           <td>${statusBadge(d.status||'scheduled')}</td>
@@ -585,7 +641,7 @@
       const list=el('go-dispute-list');
       const sel=el('go-vote-dispute');
       sel.innerHTML='<option value="">-- Select Dispute --</option>'+disputes.filter(d=>d.status==='open').map(d=>`<option value="${d.id}">${d.title}</option>`).join('');
-      if(!disputes.length){list.innerHTML='<div class="go-empty">No disputes filed.</div>';return;}
+      if(!disputes.length){list.innerHTML='<div class="go-empty">No disputes have been logged. Formal issues and mediation history will appear here.</div>';return;}
       list.innerHTML=disputes.map(d=>`<div class="go-list-item">
         <div><strong>${d.title}</strong> ${statusBadge(d.status||'open')} <span class="go-badge go-badge-${d.severity||'low'}">${d.severity||'low'}</span>
           <br><small style="color:var(--text-secondary,#aaa)">Filed by: ${d.filed_by||'Unknown'}${d.description?' | '+d.description.substring(0,80):''}</small></div>
@@ -609,7 +665,7 @@
     api('/api/group/disputes').then(disputes=>{
       const container=el('go-vote-list');
       const openIds=disputes.filter(d=>d.status==='open').map(d=>d.id);
-      if(!openIds.length){container.innerHTML='<div class="go-empty">No open disputes with votes.</div>';return;}
+      if(!openIds.length){container.innerHTML='<div class="go-empty">No open disputes are ready for a vote.</div>';return;}
       Promise.all(openIds.map(id=>api('/api/group/disputes/'+id))).then(details=>{
         let html='';
         details.forEach(d=>{
@@ -630,7 +686,7 @@
             html+='</div>';
           });
         });
-        container.innerHTML=html||'<div class="go-empty">No votes created yet.</div>';
+        container.innerHTML=html||'<div class="go-empty">No votes have been launched yet. Create one from an open dispute above.</div>';
       });
     });
   };
@@ -678,7 +734,7 @@
   window.goLoadICSForms=function(){
     api('/api/group/ics-forms').then(forms=>{
       const list=el('go-ics-list');
-      if(!forms.length){list.innerHTML='<div class="go-empty">No ICS forms created.</div>';return;}
+      if(!forms.length){list.innerHTML='<div class="go-empty">No ICS forms yet. Capture the first incident document above.</div>';return;}
       list.innerHTML=forms.map(f=>{
         const color=icsColors[f.form_type]||'#6b7280';
         return `<div class="go-list-item">
@@ -710,7 +766,7 @@
   window.goLoadCERT=function(){
     api('/api/group/cert-teams').then(teams=>{
       const list=el('go-cert-list');
-      if(!teams.length){list.innerHTML='<div class="go-empty">No CERT teams created.</div>';return;}
+      if(!teams.length){list.innerHTML='<div class="go-empty">No CERT teams yet. Create the first response team above.</div>';return;}
       const specColor={search_rescue:'#3b82f6',medical:'#22c55e',fire_suppression:'#ef4444',logistics:'#f59e0b',communications:'#06b6d4',damage_assessment:'#8b5cf6'};
       list.innerHTML=teams.map(t=>`<div class="go-card">
         <div style="display:flex;justify-content:space-between;align-items:start">
@@ -734,7 +790,7 @@
   window.goLoadDamageAssessments=function(){
     api('/api/group/damage-assessments').then(items=>{
       const list=el('go-da-list');
-      if(!items.length){list.innerHTML='<div class="go-empty">No damage assessments submitted.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="go-empty">No damage assessments yet. The first field report will appear here.</div>';return;}
       list.innerHTML='<table class="go-table"><thead><tr><th>Location</th><th>Type</th><th>Severity</th><th>Occupants</th><th>Utilities</th><th>Assessor</th></tr></thead><tbody>'+
         items.map(a=>{
           const sc=severityColor[a.severity]||'var(--go-gray)';
@@ -760,7 +816,7 @@
   window.goLoadShelters=function(){
     api('/api/group/shelters').then(shelters=>{
       const list=el('go-shelter-list');
-      if(!shelters.length){list.innerHTML='<div class="go-empty">No shelters registered.</div>';return;}
+      if(!shelters.length){list.innerHTML='<div class="go-empty">No shelters registered yet. Add the first site above to track capacity and occupancy.</div>';return;}
       list.innerHTML=shelters.map(s=>{
         const pct=s.capacity>0?Math.round((s.occupancy||0)/s.capacity*100):0;
         const barColor=pct>=90?'var(--go-red)':pct>=70?'var(--go-yellow)':'var(--go-green)';
@@ -801,7 +857,7 @@
   window.goLoadWarnings=function(){
     api('/api/group/warnings').then(warnings=>{
       const list=el('go-warning-list');
-      if(!warnings.length){list.innerHTML='<div class="go-empty">No community warnings issued.</div>';return;}
+      if(!warnings.length){list.innerHTML='<div class="go-empty">No community warnings yet. Published alerts and advisories will appear here.</div>';return;}
       list.innerHTML=warnings.map(w=>`<div class="go-list-item">
         <div><span class="go-badge go-badge-${w.severity||'info'}">${(w.severity||'info').toUpperCase()}</span>
           <strong style="margin-left:6px">${w.title}</strong>

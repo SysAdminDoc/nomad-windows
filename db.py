@@ -200,7 +200,7 @@ def log_activity(event: str, service: str = None, detail: str = None, level: str
             conn.execute('INSERT INTO activity_log (event, service, detail, level) VALUES (?, ?, ?, ?)',
                          (event, service, detail, level))
             conn.commit()
-    except (sqlite3.OperationalError, sqlite3.InterfaceError) as e:
+    except sqlite3.Error as e:
         _log.debug(f'Failed to log activity: {e}')
 
 
@@ -214,10 +214,18 @@ def backup_db():
     from datetime import datetime
     backup_path = os.path.join(backup_dir, f'nomad_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db')
     # Use SQLite backup API for WAL-safe copies.
-    # PASSIVE checkpoint avoids blocking concurrent writers.
+    # TRUNCATE checkpoint flushes all WAL frames into the main DB and truncates
+    # the WAL file, guaranteeing backup() captures every committed transaction.
+    # Fall back to PASSIVE if the database is busy (avoids blocking writers
+    # indefinitely during normal operation — startup/shutdown backups are the
+    # only callers and contention there is rare).
     src = sqlite3.connect(db_path, timeout=30)
     try:
-        src.execute('PRAGMA wal_checkpoint(PASSIVE)')
+        try:
+            src.execute('PRAGMA wal_checkpoint(TRUNCATE)')
+        except sqlite3.OperationalError:
+            # Database is busy — PASSIVE checkpoint is still better than none.
+            src.execute('PRAGMA wal_checkpoint(PASSIVE)')
         dst = sqlite3.connect(backup_path)
         try:
             src.backup(dst)
@@ -283,7 +291,15 @@ def apply_migrations(conn):
                 sql = fh.read()
 
             try:
-                conn.executescript(sql)
+                # Execute each statement individually inside an explicit
+                # transaction so that partial failures roll back cleanly.
+                # conn.executescript() auto-commits after every statement,
+                # which would leave the schema half-applied on error.
+                conn.execute('BEGIN IMMEDIATE')
+                for stmt in sql.split(';'):
+                    stmt = stmt.strip()
+                    if stmt:
+                        conn.execute(stmt)
                 conn.execute(
                     'INSERT OR IGNORE INTO _migrations (filename) VALUES (?)', (filename,)
                 )
@@ -291,7 +307,10 @@ def apply_migrations(conn):
                 applied.add(filename)
                 _log.info('Migration applied: %s', filename)
             except Exception:
-                conn.rollback()
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
                 _log.exception('Migration FAILED: %s', filename)
                 raise
 

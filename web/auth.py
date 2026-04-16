@@ -39,10 +39,12 @@ def _auth_required():
 
 def _is_localhost():
     """Localhost requests bypass auth so the pywebview shell works.
-    Match flask-limiter's exemption list for consistency.
+
+    Uses the shared ``is_loopback_addr`` helper for robust detection — covers
+    127.0.0.0/8, ::1, and IPv4-mapped IPv6 like ::ffff:127.0.0.1.
     """
-    addr = (request.remote_addr or '').strip()
-    return addr in ('127.0.0.1', '::1', 'localhost')
+    from web.utils import is_loopback_addr
+    return is_loopback_addr((request.remote_addr or '').strip())
 
 
 def _resolve_session():

@@ -16,14 +16,25 @@
     --so-cyan: #06b6d4;
     --so-gray: #6b7280;
   }
-  #tab-security-opsec .so-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-security-opsec .so-header h2 { font-size:1.25rem; color:var(--so-accent); margin:0; }
-  #tab-security-opsec .so-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-security-opsec .so-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-security-opsec .so-sub-tab.active { background:var(--so-accent-dim); border-color:var(--so-accent); color:var(--so-accent); }
+  #tab-security-opsec .so-command-deck { display:grid; gap:12px; margin-bottom:16px; padding:18px 20px; border:1px solid color-mix(in srgb, var(--so-accent) 14%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--so-accent) 14%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 90%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08)); }
+  #tab-security-opsec .so-command-deck-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  #tab-security-opsec .so-command-copy { display:grid; gap:8px; max-width:min(780px, 100%); }
+  #tab-security-opsec .so-command-title { margin:0; font-size:1.32rem; line-height:1.18; color:var(--text-primary,#eee); }
+  #tab-security-opsec .so-command-text { margin:0; color:var(--text-secondary,#aaa); line-height:1.6; max-width:70ch; }
+  #tab-security-opsec .so-command-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  #tab-security-opsec .so-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-security-opsec .so-command-pill { display:inline-flex; align-items:center; min-height:28px; padding:0 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--so-accent) 20%, var(--border,#333)); background:color-mix(in srgb, var(--so-accent) 10%, transparent); color:color-mix(in srgb, var(--so-accent) 44%, var(--text-primary,#f5f7ff)); font-size:.72rem; font-weight:600; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-security-opsec .so-sub-tabs-shell { display:grid; gap:8px; margin-bottom:18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 84%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-security-opsec .so-sub-tabs-label { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary,#aaa); font-weight:700; }
+  #tab-security-opsec .so-sub-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-security-opsec .so-sub-tab { min-height:36px; padding:8px 14px; border-radius:999px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-security-opsec .so-sub-tab:hover { border-color:color-mix(in srgb, var(--so-accent) 22%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+  #tab-security-opsec .so-sub-tab.active { background:color-mix(in srgb, var(--so-accent) 14%, var(--surface-solid, #121726)); border-color:color-mix(in srgb, var(--so-accent) 48%, var(--border,#333)); color:var(--so-accent); box-shadow:0 10px 24px color-mix(in srgb, var(--so-accent) 16%, transparent); }
+  #tab-security-opsec .so-sub-tab:focus-visible,
+  #tab-security-opsec .so-btn:focus-visible { outline:2px solid transparent; outline-offset:2px; box-shadow:0 0 0 2px color-mix(in srgb, var(--surface-solid,#151826) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--so-accent) 48%, transparent); }
   #tab-security-opsec .so-panel { display:none; }
   #tab-security-opsec .so-panel.active { display:block; }
-  #tab-security-opsec .so-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-security-opsec .so-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
   #tab-security-opsec .so-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
   #tab-security-opsec .so-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-security-opsec .so-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
@@ -33,7 +44,7 @@
   #tab-security-opsec .so-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-security-opsec .so-form-row textarea { min-height:60px; resize:vertical; }
   #tab-security-opsec .so-form-row .field { flex:1; min-width:140px; }
-  #tab-security-opsec .so-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-security-opsec .so-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-security-opsec .so-btn-primary { background:var(--so-accent); color:#fff; }
   #tab-security-opsec .so-btn-danger { background:var(--so-red); color:#fff; }
   #tab-security-opsec .so-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
@@ -55,7 +66,7 @@
   #tab-security-opsec .so-badge-active { background:rgba(34,197,94,.2); color:var(--so-green); }
   #tab-security-opsec .so-badge-standby { background:rgba(234,179,8,.2); color:var(--so-yellow); }
   #tab-security-opsec .so-badge-inactive { background:rgba(107,114,128,.2); color:var(--so-gray); }
-  #tab-security-opsec .so-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-security-opsec .so-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
   #tab-security-opsec .so-table { width:100%; border-collapse:collapse; font-size:.82rem; }
   #tab-security-opsec .so-table th { text-align:left; padding:8px 10px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#444); background:rgba(0,0,0,.2); }
   #tab-security-opsec .so-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); }
@@ -87,24 +98,52 @@
   #tab-security-opsec .so-sig-category { padding:12px; border:1px solid var(--border,#333); border-radius:8px; margin-bottom:10px; }
   #tab-security-opsec .so-sig-category h4 { margin:0 0 8px; font-size:.88rem; color:var(--so-accent); }
   #tab-security-opsec .so-ref-item { padding:8px 12px; border-bottom:1px solid var(--border,#333); font-size:.82rem; color:var(--text-secondary,#ccc); }
+  @media (max-width: 920px) {
+    #tab-security-opsec .so-command-deck { padding:16px; }
+    #tab-security-opsec .so-command-actions { width:100%; justify-content:flex-start; }
+    #tab-security-opsec .so-command-actions .so-btn { flex:1 1 160px; }
+  }
 </style>
 
-<div class="so-header">
-  <h2>Security & OPSEC</h2>
+<div class="so-command-deck workspace-panel">
+  <div class="so-command-deck-head">
+    <div class="so-command-copy">
+      <h2 class="so-command-title">Protect access, track threats, and coordinate contamination response from one security desk.</h2>
+      <p class="so-command-text">Keep compartments, observation logs, signature discipline, night movement, and CBRN readiness aligned so defensive decisions stay calm under pressure.</p>
+    </div>
+    <div class="so-command-actions">
+      <button type="button" class="so-btn so-btn-secondary" data-so-panel-target="opsec">Compartments</button>
+      <button type="button" class="so-btn so-btn-secondary" data-so-panel-target="tactical">Threats</button>
+      <button type="button" class="so-btn so-btn-secondary" data-so-panel-target="oplog">Observation Log</button>
+      <button type="button" class="so-btn so-btn-secondary" data-so-panel-target="nightops">Night Movement</button>
+      <button type="button" class="so-btn so-btn-secondary" data-so-panel-target="cbrn-emp">CBRN & EMP</button>
+    </div>
+  </div>
+  <div class="so-command-pills" aria-hidden="true">
+    <span class="so-command-pill">OPSEC compartments</span>
+    <span class="so-command-pill">Threat matrix</span>
+    <span class="so-command-pill">Observation log</span>
+    <span class="so-command-pill">Signature control</span>
+    <span class="so-command-pill">Night movement</span>
+    <span class="so-command-pill">CBRN & EMP</span>
+  </div>
 </div>
 
 <!-- Sub-tabs -->
-<div class="so-sub-tabs">
-  <button class="so-sub-tab active" data-so-panel="opsec">OPSEC</button>
-  <button class="so-sub-tab" data-so-panel="tactical">Tactical</button>
-  <button class="so-sub-tab" data-so-panel="oplog">OP Log</button>
-  <button class="so-sub-tab" data-so-panel="signatures">Signatures</button>
-  <button class="so-sub-tab" data-so-panel="nightops">Night Ops</button>
-  <button class="so-sub-tab" data-so-panel="cbrn-emp">CBRN/EMP</button>
+<div class="so-sub-tabs-shell">
+  <div class="so-sub-tabs-label">Security workflows</div>
+  <div class="so-sub-tabs" role="tablist" aria-label="Security and OPSEC sections">
+    <button type="button" class="so-sub-tab active" data-so-panel="opsec" role="tab" aria-selected="true" aria-controls="so-panel-opsec" id="so-tab-opsec">OPSEC</button>
+    <button type="button" class="so-sub-tab" data-so-panel="tactical" role="tab" aria-selected="false" aria-controls="so-panel-tactical" id="so-tab-tactical">Threat Matrix</button>
+    <button type="button" class="so-sub-tab" data-so-panel="oplog" role="tab" aria-selected="false" aria-controls="so-panel-oplog" id="so-tab-oplog">Observation Log</button>
+    <button type="button" class="so-sub-tab" data-so-panel="signatures" role="tab" aria-selected="false" aria-controls="so-panel-signatures" id="so-tab-signatures">Signatures</button>
+    <button type="button" class="so-sub-tab" data-so-panel="nightops" role="tab" aria-selected="false" aria-controls="so-panel-nightops" id="so-tab-nightops">Night Movement</button>
+    <button type="button" class="so-sub-tab" data-so-panel="cbrn-emp" role="tab" aria-selected="false" aria-controls="so-panel-cbrn-emp" id="so-tab-cbrn-emp">CBRN & EMP</button>
+  </div>
 </div>
 
 <!-- ── OPSEC Panel ─────────────────────────────────────── -->
-<div class="so-panel active" id="so-panel-opsec">
+<div class="so-panel active" id="so-panel-opsec" role="tabpanel" tabindex="-1" aria-labelledby="so-tab-opsec">
   <!-- Compartments -->
   <div class="so-card">
     <div class="so-card-title">Add Compartment</div>
@@ -123,7 +162,7 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateCompartment()">Add</button></div>
     </div>
   </div>
-  <div class="so-grid" id="so-compartment-list"><div class="so-empty">Loading...</div></div>
+  <div class="so-grid" id="so-compartment-list"><div class="so-empty">Loading access compartments…</div></div>
 
   <!-- Checklists -->
   <div class="so-card" style="margin-top:16px">
@@ -136,7 +175,7 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateChecklist()">Create</button></div>
     </div>
   </div>
-  <div id="so-checklist-list"><div class="so-empty">No checklists yet.</div></div>
+  <div id="so-checklist-list"><div class="so-empty">No checklists yet. Seed the built-in audits or add your first checklist above.</div></div>
 
   <!-- Duress Signals & Cover Stories -->
   <div class="so-card" style="margin-top:16px">
@@ -152,11 +191,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateDuress()">Add</button></div>
     </div>
   </div>
-  <div id="so-duress-list"><div class="so-empty">No duress signals configured.</div></div>
+  <div id="so-duress-list"><div class="so-empty">No duress signals yet. Add the first covert phrase or cover story above.</div></div>
 </div>
 
 <!-- ── Tactical Panel ──────────────────────────────────── -->
-<div class="so-panel" id="so-panel-tactical">
+<div class="so-panel" id="so-panel-tactical" role="tabpanel" tabindex="-1" aria-labelledby="so-tab-tactical" hidden>
   <!-- Threat Matrix -->
   <div class="so-card">
     <div class="so-card-title">Add Threat</div>
@@ -195,7 +234,7 @@
     <div class="so-card-title">Threat Matrix</div>
     <div style="overflow-x:auto"><table class="so-table" id="so-threat-table">
       <thead><tr><th>Threat</th><th>Category</th><th>Likelihood</th><th>Impact</th><th>Risk Score</th><th>Mitigation</th><th>Actions</th></tr></thead>
-      <tbody id="so-threat-tbody"><tr><td colspan="7" class="so-empty">Loading...</td></tr></tbody>
+      <tbody id="so-threat-tbody"><tr><td colspan="7" class="so-empty">Loading threat matrix…</td></tr></tbody>
     </table></div>
   </div>
 
@@ -214,11 +253,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateOP()">Add Post</button></div>
     </div>
   </div>
-  <div id="so-op-list"><div class="so-empty">No observation posts.</div></div>
+  <div id="so-op-list"><div class="so-empty">No observation posts yet. Add the first post above to define sectors and staffing.</div></div>
 </div>
 
 <!-- ── OP Log Panel ────────────────────────────────────── -->
-<div class="so-panel" id="so-panel-oplog">
+<div class="so-panel" id="so-panel-oplog" role="tabpanel" tabindex="-1" aria-labelledby="so-tab-oplog" hidden>
   <div class="so-grid" id="so-oplog-stats"></div>
   <div class="so-card">
     <div class="so-card-title">New Observation Log Entry</div>
@@ -262,11 +301,11 @@
       </span>
     </div>
   </div>
-  <div id="so-log-list"><div class="so-empty">No log entries.</div></div>
+  <div id="so-log-list"><div class="so-empty">No observation log entries yet. Field reports and watch updates will appear here.</div></div>
 </div>
 
 <!-- ── Signatures Panel ────────────────────────────────── -->
-<div class="so-panel" id="so-panel-signatures">
+<div class="so-panel" id="so-panel-signatures" role="tabpanel" tabindex="-1" aria-labelledby="so-tab-signatures" hidden>
   <div class="so-card">
     <div class="so-card-title">Overall Concealment Score</div>
     <div id="so-concealment-gauge">
@@ -321,19 +360,19 @@
     <div style="flex:0 0 260px;min-width:220px">
       <div class="so-card">
         <div class="so-card-title">Reference Guide</div>
-        <div id="so-sig-guide"><div class="so-empty" style="padding:12px">Loading...</div></div>
+        <div id="so-sig-guide"><div class="so-empty" style="padding:12px">Loading signature discipline notes…</div></div>
       </div>
     </div>
   </div>
 </div>
 
 <!-- ── Night Ops Panel ─────────────────────────────────── -->
-<div class="so-panel" id="so-panel-nightops">
+<div class="so-panel" id="so-panel-nightops" role="tabpanel" tabindex="-1" aria-labelledby="so-tab-nightops" hidden>
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
     <div class="so-card" style="flex:1;min-width:200px;text-align:center">
       <div class="so-card-title">Moon Phase</div>
       <div id="so-moon-display" style="font-size:3rem">--</div>
-      <div id="so-moon-label" style="font-size:.85rem;color:var(--text-secondary,#aaa)">Loading...</div>
+      <div id="so-moon-label" style="font-size:.85rem;color:var(--text-secondary,#aaa)">Loading moon and illumination…</div>
     </div>
     <div class="so-card" style="flex:1;min-width:200px;text-align:center">
       <div class="so-card-title">Dark Adaptation Timer</div>
@@ -377,11 +416,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateNightOp()">Create Plan</button></div>
     </div>
   </div>
-  <div id="so-nightop-list"><div class="so-empty">No night operation plans.</div></div>
+  <div id="so-nightop-list"><div class="so-empty">No night movement plans yet. Add the first route, timing, and rally point above.</div></div>
 </div>
 
 <!-- ── CBRN/EMP Panel ──────────────────────────────────── -->
-<div class="so-panel" id="so-panel-cbrn-emp">
+<div class="so-panel" id="so-panel-cbrn-emp" role="tabpanel" tabindex="-1" aria-labelledby="so-tab-cbrn-emp" hidden>
   <!-- MOPP Level -->
   <div class="so-card" style="text-align:center">
     <div class="so-card-title">Current MOPP Level</div>
@@ -423,7 +462,7 @@
           <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateCBRNItem()">Add</button></div>
         </div>
       </div>
-      <div id="so-cbrn-list"><div class="so-empty">No CBRN equipment tracked.</div></div>
+      <div id="so-cbrn-list"><div class="so-empty">No CBRN equipment yet. Add the first detector, suit, or mask above.</div></div>
 
       <!-- Procedures -->
       <div class="so-card" style="margin-top:12px">
@@ -444,7 +483,7 @@
           <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateProcedure()">Add</button></div>
         </div>
       </div>
-      <div id="so-proc-list"><div class="so-empty">No procedures defined.</div></div>
+      <div id="so-proc-list"><div class="so-empty">No procedures yet. Seed the built-in playbooks or add your first response sequence above.</div></div>
     </div>
 
     <!-- Calculators + EMP -->
@@ -518,12 +557,12 @@
           <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateEMPItem()">Add</button></div>
         </div>
       </div>
-      <div id="so-emp-list"><div class="so-empty">No EMP inventory tracked.</div></div>
+      <div id="so-emp-list"><div class="so-empty">No EMP inventory yet. Add the first critical item above to assess protection gaps.</div></div>
 
       <!-- Grid Dependency Analysis -->
       <div class="so-card" style="margin-top:12px">
         <div class="so-card-title">Grid Dependency Analysis</div>
-        <div id="so-emp-analysis"><div class="so-empty" style="padding:12px">Loading...</div></div>
+        <div id="so-emp-analysis"><div class="so-empty" style="padding:12px">Loading protection analysis…</div></div>
       </div>
     </div>
   </div>
@@ -534,16 +573,39 @@
      ═══════════════════════════════════════════════════════════════════ -->
 <script>
 (function(){
-  /* ── Sub-tab switching ── */
   const root = document.getElementById('tab-security-opsec');
-  root.querySelectorAll('.so-sub-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.querySelectorAll('.so-sub-tab').forEach(b => b.classList.remove('active'));
-      root.querySelectorAll('.so-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = document.getElementById('so-panel-' + btn.dataset.soPanel);
-      if (panel) panel.classList.add('active');
+  const soTabs = Array.from(root.querySelectorAll('.so-sub-tab'));
+  const soPanels = Array.from(root.querySelectorAll('.so-panel'));
+
+  function soActivatePanel(panelName, focusPanel = false) {
+    const nextTab = root.querySelector(`.so-sub-tab[data-so-panel="${panelName}"]`);
+    const nextPanel = document.getElementById('so-panel-' + panelName);
+    if (!nextTab || !nextPanel) return;
+
+    soTabs.forEach((tab) => {
+      const active = tab === nextTab;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
     });
+
+    soPanels.forEach((panel) => {
+      const active = panel === nextPanel;
+      panel.classList.toggle('active', active);
+      if (active) {
+        panel.removeAttribute('hidden');
+      } else {
+        panel.setAttribute('hidden', '');
+      }
+    });
+
+    if (focusPanel) nextPanel.focus();
+  }
+
+  soTabs.forEach((btn) => {
+    btn.addEventListener('click', () => soActivatePanel(btn.dataset.soPanel, true));
+  });
+  root.querySelectorAll('[data-so-panel-target]').forEach((btn) => {
+    btn.addEventListener('click', () => soActivatePanel(btn.dataset.soPanelTarget, true));
   });
 
   const el=id=>document.getElementById(id);
@@ -571,7 +633,7 @@
   window.soLoadCompartments=function(){
     api('/api/security-ops/opsec/compartments').then(items=>{
       const list=el('so-compartment-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No compartments defined.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="so-empty">No compartments yet. Create the first compartment above to define access boundaries and member lists.</div>';return;}
       list.innerHTML=items.map(c=>`<div class="so-card">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div><strong>${c.name}</strong> ${classificationBadge(c.classification)}</div>
@@ -597,7 +659,7 @@
   window.soLoadChecklists=function(){
     api('/api/security-ops/opsec/checklists').then(items=>{
       const list=el('so-checklist-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No checklists yet. Use "Seed Default Checklists" to get started.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="so-empty">No checklists yet. Seed the built-in audits or add your first inspection flow above.</div>';return;}
       list.innerHTML=items.map(cl=>{
         const checkItems=(cl.items||[]);
         const done=checkItems.filter(i=>i.checked).length;
@@ -642,7 +704,7 @@
     api('/api/security-ops/opsec/compartments?type=duress').catch(()=>({items:[]})).then(data=>{
       const items=data.items||data||[];
       const duress=items.filter(i=>i.type==='duress_signal'||i.type==='cover_story');
-      if(!duress.length){list.innerHTML='<div class="so-empty">No duress signals configured.</div>';return;}
+      if(!duress.length){list.innerHTML='<div class="so-empty">No duress signals yet. Add the first covert phrase or cover story above.</div>';return;}
       list.innerHTML=duress.map(d=>`<div class="so-list-item">
         <div><span class="so-badge so-badge-${d.type==='duress_signal'?'need_to_know':'restricted'}">${d.type==='duress_signal'?'DURESS':'COVER'}</span>
           <strong style="margin-left:6px">${d.name||d.word}</strong>
@@ -665,7 +727,7 @@
   window.soLoadThreats=function(){
     api('/api/security-ops/threat-matrix').then(items=>{
       const tbody=el('so-threat-tbody');
-      if(!items.length){tbody.innerHTML='<tr><td colspan="7" class="so-empty">No threats defined.</td></tr>';return;}
+      if(!items.length){tbody.innerHTML='<tr><td colspan="7" class="so-empty">No threats logged yet. Add the first threat above to start scoring likelihood and impact.</td></tr>';return;}
       tbody.innerHTML=items.map(t=>{
         const score=(t.likelihood||1)*(t.impact||1);
         return`<tr>
@@ -694,7 +756,7 @@
   window.soLoadOPs=function(){
     api('/api/security-ops/observation-posts').then(items=>{
       const list=el('so-op-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No observation posts.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="so-empty">No observation posts yet. Add the first post above to define sectors and staffing.</div>';return;}
       list.innerHTML=items.map(op=>`<div class="so-list-item">
         <div>
           <span class="so-badge so-badge-${op.status||'active'}">${(op.status||'active').toUpperCase()}</span>
@@ -738,7 +800,7 @@
     if(catFilter)url+='category='+catFilter+'&';
     api(url).then(items=>{
       const list=el('so-log-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No log entries found.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="so-empty">No log entries match the current filters yet. Field reports and watch updates will appear here.</div>';return;}
       list.innerHTML=items.map(e=>`<div class="so-list-item" style="flex-wrap:wrap">
         <div style="flex:1">
           ${categoryBadge(e.category||'other')}
@@ -778,7 +840,11 @@
       Object.keys(byCat).forEach(cat=>{
         const list=el('so-sig-'+cat+'-list');
         if(!list)return;
-        if(!byCat[cat].length){list.innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa);padding:4px 0">No items</div>';return;}
+        if(!byCat[cat].length){
+          const labelMap={visual:'No visual exposures logged yet.',audio:'No audio exposures logged yet.',electronic:'No electronic exposures logged yet.',thermal:'No thermal exposures logged yet.'};
+          list.innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa);padding:4px 0">'+(labelMap[cat]||'No signature items logged yet.')+'</div>';
+          return;
+        }
         list.innerHTML=byCat[cat].map(s=>{
           totalIntensity+=(s.intensity||0);totalItems++;
           return`<div class="so-list-item">
@@ -817,9 +883,9 @@
   window.soLoadSigGuide=function(){
     api('/api/security-ops/signatures/guide').then(guide=>{
       const container=el('so-sig-guide');
-      if(!guide||!guide.length){container.innerHTML='<div class="so-ref-item">No reference data available.</div>';return;}
+      if(!guide||!guide.length){container.innerHTML='<div class="so-ref-item">Reference notes are not available yet.</div>';return;}
       container.innerHTML=guide.map(g=>`<div class="so-ref-item"><strong>${g.title||g.category}</strong><br>${g.description||g.text||''}</div>`).join('');
-    }).catch(()=>{el('so-sig-guide').innerHTML='<div class="so-ref-item">Could not load guide.</div>';});
+    }).catch(()=>{el('so-sig-guide').innerHTML='<div class="so-ref-item">Couldn\'t load the signature guide right now.</div>';});
   };
 
   /* ══════════════════════════════════════════════════════════
@@ -860,14 +926,14 @@
       el('so-moon-label').textContent=(data.moon_phase_name||'New Moon')+' — '+(data.illumination||0)+'% illumination';
     }).catch(()=>{
       el('so-moon-display').textContent='🌑';
-      el('so-moon-label').textContent='Could not load moon data';
+      el('so-moon-label').textContent='Couldn\'t load moon and illumination data right now.';
     });
   }
 
   window.soLoadNightOps=function(){
     api('/api/security-ops/night-ops').then(items=>{
       const list=el('so-nightop-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No night operation plans.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="so-empty">No night movement plans yet. Add the first route, timing, and rally point above.</div>';return;}
       list.innerHTML=items.map(op=>`<div class="so-card">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div><strong>${op.name}</strong> <small style="color:var(--text-secondary,#aaa)">${op.datetime||''}</small></div>
@@ -910,7 +976,7 @@
   window.soLoadCBRNEquipment=function(){
     api('/api/security-ops/cbrn/equipment').then(items=>{
       const list=el('so-cbrn-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No CBRN equipment tracked.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="so-empty">No CBRN equipment yet. Add the first detector, suit, or mask above.</div>';return;}
       list.innerHTML=items.map(i=>{
         const overdue=i.calibration_due&&new Date(i.calibration_due)<new Date();
         return`<div class="so-list-item">
@@ -935,7 +1001,7 @@
   window.soLoadProcedures=function(){
     api('/api/security-ops/cbrn/procedures').then(items=>{
       const list=el('so-proc-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No procedures defined.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="so-empty">No procedures yet. Seed the built-in playbooks or add your first response sequence above.</div>';return;}
       list.innerHTML=items.map(p=>`<div class="so-card">
         <div style="display:flex;justify-content:space-between;align-items:center">
           <div><strong>${p.name}</strong> <span class="so-badge so-badge-${p.type==='immediate_action'?'need_to_know':p.type==='decontamination'?'confidential':'restricted'}">${(p.type||'').replace(/_/g,' ')}</span></div>
@@ -983,7 +1049,7 @@
   window.soLoadEMPInventory=function(){
     api('/api/security-ops/emp/inventory').then(items=>{
       const list=el('so-emp-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No EMP inventory tracked.</div>';return;}
+      if(!items.length){list.innerHTML='<div class="so-empty">No EMP inventory yet. Add the first critical item above to assess protection gaps.</div>';return;}
       list.innerHTML=items.map(i=>{
         const protClass=i.protection==='protected'?'so-protected':i.protection==='partial'?'so-badge-confidential':'so-unprotected';
         const protIcon=i.protection==='protected'?'&#9679;':i.protection==='partial'?'&#9681;':'&#9675;';
@@ -1010,7 +1076,7 @@
   window.soLoadEMPAnalysis=function(){
     api('/api/security-ops/emp/analysis').then(data=>{
       const container=el('so-emp-analysis');
-      if(!data||(!data.categories&&!data.total)){container.innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa);padding:8px">No analysis data. Add EMP inventory items first.</div>';return;}
+      if(!data||(!data.categories&&!data.total)){container.innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa);padding:8px">Protection analysis will appear once a few EMP-critical items are tracked above.</div>';return;}
       const cats=data.categories||{};
       const total=data.total||0;
       const protectedPct=total?Math.round((data.protected||0)/total*100):0;
@@ -1021,7 +1087,7 @@
           <span><span class="so-protected">${info.protected||0}</span> / ${info.total||0} protected</span>
         </div>`).join('')+'</div>':''}
         ${data.critical_unprotected?'<div style="margin-top:8px;padding:8px;background:rgba(239,68,68,.15);border-radius:6px;font-size:.82rem;color:var(--so-red)"><strong>Warning:</strong> '+data.critical_unprotected+' critical item(s) unprotected</div>':''}`;
-    }).catch(()=>{el('so-emp-analysis').innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa)">Could not load analysis.</div>';});
+    }).catch(()=>{el('so-emp-analysis').innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa)">Couldn\'t load the protection analysis right now.</div>';});
   };
 
   /* ── Initial load when tab activates ── */

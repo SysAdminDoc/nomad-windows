@@ -255,7 +255,9 @@ class TorrentManager:
 
     def _ensure_monitor(self):
         with self._lock:
-            if not self._monitor_active:
+            # Check both flag and thread object to prevent duplicate monitors
+            # after a shutdown/restart cycle.
+            if not self._monitor_active and (self._monitor_thread is None or not self._monitor_thread.is_alive()):
                 self._monitor_active = True
                 t = threading.Thread(target=self._monitor_loop, daemon=True, name='torrent-monitor')
                 t.start()

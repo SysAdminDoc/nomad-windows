@@ -13,14 +13,25 @@
     --mp-amber: #f59e0b;
     --mp-blue: #3b82f6;
   }
-  #tab-medical-phase2 .mp-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-medical-phase2 .mp-header h2 { font-size:1.25rem; color:var(--mp-accent); margin:0; }
-  #tab-medical-phase2 .mp-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-medical-phase2 .mp-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-medical-phase2 .mp-sub-tab.active { background:var(--mp-accent-dim); border-color:var(--mp-accent); color:var(--mp-accent); }
+  #tab-medical-phase2 .mp-command-deck { display:grid; gap:12px; margin-bottom:16px; padding:18px 20px; border:1px solid color-mix(in srgb, var(--mp-accent) 14%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--mp-accent) 14%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 90%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08)); }
+  #tab-medical-phase2 .mp-command-deck-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  #tab-medical-phase2 .mp-command-copy { display:grid; gap:8px; max-width:min(760px, 100%); }
+  #tab-medical-phase2 .mp-command-title { margin:0; font-size:1.32rem; line-height:1.18; color:var(--text-primary,#eee); }
+  #tab-medical-phase2 .mp-command-text { margin:0; color:var(--text-secondary,#aaa); line-height:1.6; max-width:68ch; }
+  #tab-medical-phase2 .mp-command-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  #tab-medical-phase2 .mp-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-medical-phase2 .mp-command-pill { display:inline-flex; align-items:center; min-height:28px; padding:0 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--mp-accent) 20%, var(--border,#333)); background:color-mix(in srgb, var(--mp-accent) 10%, transparent); color:color-mix(in srgb, var(--mp-accent) 44%, var(--text-primary,#f5f7ff)); font-size:.72rem; font-weight:600; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-medical-phase2 .mp-sub-tabs-shell { display:grid; gap:8px; margin-bottom:18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 84%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-medical-phase2 .mp-sub-tabs-label { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary,#aaa); font-weight:700; }
+  #tab-medical-phase2 .mp-sub-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-medical-phase2 .mp-sub-tab { min-height:36px; padding:8px 14px; border-radius:999px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-medical-phase2 .mp-sub-tab:hover { border-color:color-mix(in srgb, var(--mp-accent) 22%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+  #tab-medical-phase2 .mp-sub-tab.active { background:color-mix(in srgb, var(--mp-accent) 14%, var(--surface-solid, #121726)); border-color:color-mix(in srgb, var(--mp-accent) 48%, var(--border,#333)); color:var(--mp-accent); box-shadow:0 10px 24px color-mix(in srgb, var(--mp-accent) 16%, transparent); }
+  #tab-medical-phase2 .mp-sub-tab:focus-visible,
+  #tab-medical-phase2 .mp-btn:focus-visible { outline:2px solid transparent; outline-offset:2px; box-shadow:0 0 0 2px color-mix(in srgb, var(--surface-solid,#151826) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--mp-accent) 48%, transparent); }
   #tab-medical-phase2 .mp-panel { display:none; }
   #tab-medical-phase2 .mp-panel.active { display:block; }
-  #tab-medical-phase2 .mp-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-medical-phase2 .mp-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
   #tab-medical-phase2 .mp-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
   #tab-medical-phase2 .mp-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-medical-phase2 .mp-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
@@ -29,7 +40,7 @@
   #tab-medical-phase2 .mp-form-row select,
   #tab-medical-phase2 .mp-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-medical-phase2 .mp-form-row .field { flex:1; min-width:140px; }
-  #tab-medical-phase2 .mp-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-medical-phase2 .mp-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-medical-phase2 .mp-btn-primary { background:var(--mp-accent); color:#fff; }
   #tab-medical-phase2 .mp-btn-danger { background:var(--mp-red); color:#fff; }
   #tab-medical-phase2 .mp-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
@@ -43,7 +54,7 @@
   #tab-medical-phase2 .mp-badge-moderate { background:rgba(245,158,11,.2); color:var(--mp-amber); }
   #tab-medical-phase2 .mp-badge-severe { background:rgba(239,68,68,.2); color:var(--mp-red); }
   #tab-medical-phase2 .mp-badge-critical { background:rgba(239,68,68,.35); color:#fca5a5; }
-  #tab-medical-phase2 .mp-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-medical-phase2 .mp-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
   #tab-medical-phase2 .mp-calc-result { background:var(--mp-accent-dim); border:1px solid var(--mp-accent); border-radius:8px; padding:14px; margin-top:10px; }
   #tab-medical-phase2 .mp-calc-result .val { font-size:1.2rem; font-weight:700; color:var(--mp-accent); }
   #tab-medical-phase2 .mp-alert-card { background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3); border-radius:8px; padding:12px; margin-bottom:10px; }
@@ -60,26 +71,55 @@
   #tab-medical-phase2 .mp-burns-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:8px; margin-bottom:10px; }
   #tab-medical-phase2 .mp-burns-region { display:flex; align-items:center; gap:6px; font-size:.82rem; color:var(--text-primary,#eee); }
   #tab-medical-phase2 .mp-burns-region input[type="checkbox"] { accent-color:var(--mp-accent); }
+  @media (max-width: 860px) {
+    #tab-medical-phase2 .mp-command-deck { padding:16px; }
+    #tab-medical-phase2 .mp-command-actions { width:100%; justify-content:flex-start; }
+    #tab-medical-phase2 .mp-command-actions .mp-btn { flex:1 1 160px; }
+  }
 </style>
 
-<div class="mp-header">
-  <h2>Medical Phase 2</h2>
+<div class="mp-command-deck workspace-panel">
+  <div class="mp-command-deck-head">
+    <div class="mp-command-copy">
+      <h2 class="mp-command-title">Track maternal care, chronic conditions, wellness, and veterinary support from one continuity desk.</h2>
+      <p class="mp-command-text">Move between pregnancy, dental, vaccination, mental health, animal care, herbal lookup, and field calculators without losing the patient-support picture.</p>
+    </div>
+    <div class="mp-command-actions">
+      <button type="button" class="mp-btn mp-btn-secondary" data-mp-panel-target="pregnancy">Maternal Care</button>
+      <button type="button" class="mp-btn mp-btn-secondary" data-mp-panel-target="chronic">Chronic Care</button>
+      <button type="button" class="mp-btn mp-btn-secondary" data-mp-panel-target="mental">Wellness</button>
+      <button type="button" class="mp-btn mp-btn-secondary" data-mp-panel-target="calculators">Field Calculators</button>
+    </div>
+  </div>
+  <div class="mp-command-pills" aria-hidden="true">
+    <span class="mp-command-pill">Pregnancy</span>
+    <span class="mp-command-pill">Dental</span>
+    <span class="mp-command-pill">Chronic care</span>
+    <span class="mp-command-pill">Vaccinations</span>
+    <span class="mp-command-pill">Mental health</span>
+    <span class="mp-command-pill">Veterinary</span>
+    <span class="mp-command-pill">Herbal lookup</span>
+    <span class="mp-command-pill">Calculators</span>
+  </div>
 </div>
 
 <!-- Sub-tabs -->
-<div class="mp-sub-tabs">
-  <button class="mp-sub-tab active" data-mp-panel="pregnancy">Pregnancy</button>
-  <button class="mp-sub-tab" data-mp-panel="dental">Dental</button>
-  <button class="mp-sub-tab" data-mp-panel="chronic">Chronic</button>
-  <button class="mp-sub-tab" data-mp-panel="vaccinations">Vaccinations</button>
-  <button class="mp-sub-tab" data-mp-panel="mental">Mental Health</button>
-  <button class="mp-sub-tab" data-mp-panel="vet">Vet</button>
-  <button class="mp-sub-tab" data-mp-panel="herbal">Herbal</button>
-  <button class="mp-sub-tab" data-mp-panel="calculators">Calculators</button>
+<div class="mp-sub-tabs-shell">
+  <div class="mp-sub-tabs-label">Workflows</div>
+  <div class="mp-sub-tabs" role="tablist" aria-label="Medical phase 2 sections">
+    <button type="button" class="mp-sub-tab active" data-mp-panel="pregnancy" role="tab" aria-selected="true" aria-controls="mp-panel-pregnancy" id="mp-tab-pregnancy">Pregnancy</button>
+    <button type="button" class="mp-sub-tab" data-mp-panel="dental" role="tab" aria-selected="false" aria-controls="mp-panel-dental" id="mp-tab-dental">Dental</button>
+    <button type="button" class="mp-sub-tab" data-mp-panel="chronic" role="tab" aria-selected="false" aria-controls="mp-panel-chronic" id="mp-tab-chronic">Chronic</button>
+    <button type="button" class="mp-sub-tab" data-mp-panel="vaccinations" role="tab" aria-selected="false" aria-controls="mp-panel-vaccinations" id="mp-tab-vaccinations">Vaccinations</button>
+    <button type="button" class="mp-sub-tab" data-mp-panel="mental" role="tab" aria-selected="false" aria-controls="mp-panel-mental" id="mp-tab-mental">Mental Health</button>
+    <button type="button" class="mp-sub-tab" data-mp-panel="vet" role="tab" aria-selected="false" aria-controls="mp-panel-vet" id="mp-tab-vet">Veterinary</button>
+    <button type="button" class="mp-sub-tab" data-mp-panel="herbal" role="tab" aria-selected="false" aria-controls="mp-panel-herbal" id="mp-tab-herbal">Herbal</button>
+    <button type="button" class="mp-sub-tab" data-mp-panel="calculators" role="tab" aria-selected="false" aria-controls="mp-panel-calculators" id="mp-tab-calculators">Calculators</button>
+  </div>
 </div>
 
 <!-- ── Pregnancy Panel ──────────────────────────────────── -->
-<div class="mp-panel active" id="mp-panel-pregnancy">
+<div class="mp-panel active" id="mp-panel-pregnancy" role="tabpanel" tabindex="-1" aria-labelledby="mp-tab-pregnancy">
   <div class="mp-card">
     <div class="mp-card-title">Add Pregnancy Record</div>
     <div class="mp-form-row">
@@ -104,11 +144,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreatePregnancy()">Add</button></div>
     </div>
   </div>
-  <div id="mp-preg-list" class="mp-card"><div class="mp-empty">Loading...</div></div>
+  <div id="mp-preg-list" class="mp-card"><div class="mp-empty">Loading maternal care records...</div></div>
 </div>
 
 <!-- ── Dental Panel ─────────────────────────────────────── -->
-<div class="mp-panel" id="mp-panel-dental">
+<div class="mp-panel" id="mp-panel-dental" role="tabpanel" tabindex="-1" aria-labelledby="mp-tab-dental" hidden>
   <div class="mp-card">
     <div class="mp-card-title">Add Dental Record</div>
     <div class="mp-form-row">
@@ -123,11 +163,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreateDental()">Add</button></div>
     </div>
   </div>
-  <div id="mp-dent-list" class="mp-card"><div class="mp-empty">Loading...</div></div>
+  <div id="mp-dent-list" class="mp-card"><div class="mp-empty">Loading dental records...</div></div>
 </div>
 
 <!-- ── Chronic Conditions Panel ──────────────────────────── -->
-<div class="mp-panel" id="mp-panel-chronic">
+<div class="mp-panel" id="mp-panel-chronic" role="tabpanel" tabindex="-1" aria-labelledby="mp-tab-chronic" hidden>
   <div class="mp-card">
     <div class="mp-card-title">Add Chronic Condition</div>
     <div class="mp-form-row">
@@ -147,13 +187,13 @@
   </div>
   <div class="mp-card">
     <div class="mp-card-title">Stockpile Alerts</div>
-    <div id="mp-chr-alerts"><div class="mp-empty">Loading alerts...</div></div>
+    <div id="mp-chr-alerts"><div class="mp-empty">Loading medication alerts...</div></div>
   </div>
-  <div id="mp-chr-list" class="mp-card"><div class="mp-empty">Loading...</div></div>
+  <div id="mp-chr-list" class="mp-card"><div class="mp-empty">Loading chronic care records...</div></div>
 </div>
 
 <!-- ── Vaccinations Panel ───────────────────────────────── -->
-<div class="mp-panel" id="mp-panel-vaccinations">
+<div class="mp-panel" id="mp-panel-vaccinations" role="tabpanel" tabindex="-1" aria-labelledby="mp-tab-vaccinations" hidden>
   <div class="mp-card">
     <div class="mp-card-title">Add Vaccination</div>
     <div class="mp-form-row">
@@ -169,13 +209,13 @@
   </div>
   <div class="mp-card">
     <div class="mp-card-title">Due / Overdue</div>
-    <div id="mp-vax-due"><div class="mp-empty">Loading...</div></div>
+    <div id="mp-vax-due"><div class="mp-empty">Loading due vaccinations...</div></div>
   </div>
-  <div id="mp-vax-list" class="mp-card"><div class="mp-empty">Loading...</div></div>
+  <div id="mp-vax-list" class="mp-card"><div class="mp-empty">Loading vaccination records...</div></div>
 </div>
 
 <!-- ── Mental Health Panel ──────────────────────────────── -->
-<div class="mp-panel" id="mp-panel-mental">
+<div class="mp-panel" id="mp-panel-mental" role="tabpanel" tabindex="-1" aria-labelledby="mp-tab-mental" hidden>
   <div class="mp-card">
     <div class="mp-card-title">Log Mental Health Check</div>
     <div class="mp-form-row">
@@ -198,11 +238,11 @@
     </div>
     <div id="mp-mh-trends"></div>
   </div>
-  <div id="mp-mh-list" class="mp-card"><div class="mp-empty">Loading...</div></div>
+  <div id="mp-mh-list" class="mp-card"><div class="mp-empty">Loading wellness check-ins...</div></div>
 </div>
 
 <!-- ── Vet Panel ────────────────────────────────────────── -->
-<div class="mp-panel" id="mp-panel-vet">
+<div class="mp-panel" id="mp-panel-vet" role="tabpanel" tabindex="-1" aria-labelledby="mp-tab-vet" hidden>
   <div class="mp-card">
     <div class="mp-card-title">Add Animal Record</div>
     <div class="mp-form-row">
@@ -225,14 +265,14 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreateVet()">Add</button></div>
     </div>
   </div>
-  <div id="mp-vet-list" class="mp-card"><div class="mp-empty">Loading...</div></div>
+  <div id="mp-vet-list" class="mp-card"><div class="mp-empty">Loading animal care records...</div></div>
 </div>
 
 <!-- ── Herbal Remedies Panel ────────────────────────────── -->
-<div class="mp-panel" id="mp-panel-herbal">
+<div class="mp-panel" id="mp-panel-herbal" role="tabpanel" tabindex="-1" aria-labelledby="mp-tab-herbal" hidden>
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
     <button class="mp-btn mp-btn-primary" onclick="mpSeedHerbal()">Seed Built-in Remedies</button>
-    <small style="color:var(--text-secondary)">Populates the database with common herbal remedies</small>
+    <small style="color:var(--text-secondary)">Load the built-in herbal reference set for faster offline lookup.</small>
   </div>
   <input class="mp-search-input" id="mp-herb-search" name="mp-herb-search" placeholder="Search remedies by name, use, or symptom..." oninput="mpHerbDebounce()">
   <div id="mp-herb-results" class="mp-grid"></div>
@@ -251,7 +291,7 @@
 </div>
 
 <!-- ── Calculators Panel ────────────────────────────────── -->
-<div class="mp-panel" id="mp-panel-calculators">
+<div class="mp-panel" id="mp-panel-calculators" role="tabpanel" tabindex="-1" aria-labelledby="mp-tab-calculators" hidden>
   <div class="mp-grid">
     <!-- IV Drip Rate -->
     <div class="mp-card">
@@ -335,14 +375,32 @@
 <script>
 (function(){
   const root = document.getElementById('tab-medical-phase2');
-  root.querySelectorAll('.mp-sub-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.querySelectorAll('.mp-sub-tab').forEach(b => b.classList.remove('active'));
-      root.querySelectorAll('.mp-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = document.getElementById('mp-panel-' + btn.dataset.mpPanel);
-      if (panel) panel.classList.add('active');
+  function mpActivatePanel(panelName, focusPanel = false) {
+    const nextButton = root.querySelector(`.mp-sub-tab[data-mp-panel="${panelName}"]`);
+    const nextPanel = document.getElementById('mp-panel-' + panelName);
+    if (!nextButton || !nextPanel) return;
+
+    root.querySelectorAll('.mp-sub-tab').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
     });
+    root.querySelectorAll('.mp-panel').forEach(p => {
+      p.classList.remove('active');
+      p.hidden = true;
+    });
+
+    nextButton.classList.add('active');
+    nextButton.setAttribute('aria-selected', 'true');
+    nextPanel.classList.add('active');
+    nextPanel.hidden = false;
+    if (focusPanel) nextPanel.focus();
+  }
+
+  root.querySelectorAll('.mp-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => mpActivatePanel(btn.dataset.mpPanel, true));
+  });
+  root.querySelectorAll('[data-mp-panel-target]').forEach(btn => {
+    btn.addEventListener('click', () => mpActivatePanel(btn.dataset.mpPanelTarget, true));
   });
 
   const $=id=>document.getElementById(id);
@@ -358,7 +416,7 @@
   window.mpLoadPregnancies=function(){
     api('/api/medical/pregnancies').then(items=>{
       const el=$('mp-preg-list');
-      if(!items.length){el.innerHTML='<div class="mp-empty">No pregnancy records.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mp-empty">No maternal care records yet. Add the first patient above to track due dates and care context.</div>';return;}
       const badge={active:'mp-badge-active',delivered:'mp-badge-delivered',loss:'mp-badge-loss'};
       el.innerHTML=items.map(p=>`<div class="mp-list-item">
         <div><strong>${esc(p.patient_name)}</strong> <span class="mp-badge ${badge[p.status]||''}" style="margin-left:6px">${esc(String(p.status||'').toUpperCase())}</span>
@@ -382,7 +440,7 @@
   window.mpLoadDental=function(){
     api('/api/medical/dental').then(items=>{
       const el=$('mp-dent-list');
-      if(!items.length){el.innerHTML='<div class="mp-empty">No dental records.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mp-empty">No dental records yet. Log the first tooth or treatment note above.</div>';return;}
       el.innerHTML=items.map(d=>`<div class="mp-list-item">
         <div><strong>${esc(d.patient_name)}</strong> - Tooth #${+d.tooth_number||0}
           <br><small style="color:var(--text-secondary)">${esc(d.condition)} | Tx: ${esc(d.treatment||'--')} | Pain: ${+d.pain_level||0}/10 | ${esc(d.treatment_date||'--')}</small></div>
@@ -405,7 +463,7 @@
   window.mpLoadChronic=function(){
     api('/api/medical/chronic').then(items=>{
       const el=$('mp-chr-list');
-      if(!items.length){el.innerHTML='<div class="mp-empty">No chronic conditions.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mp-empty">No chronic-care records yet. Add the first condition and medication buffer above.</div>';return;}
       const badge={mild:'mp-badge-mild',moderate:'mp-badge-moderate',severe:'mp-badge-severe',critical:'mp-badge-critical'};
       el.innerHTML=items.map(c=>`<div class="mp-list-item">
         <div><strong>${esc(c.patient_name)}</strong> - ${esc(c.condition_name)} <span class="mp-badge ${badge[c.severity]||''}" style="margin-left:6px">${esc(String(c.severity||'').toUpperCase())}</span>
@@ -420,7 +478,7 @@
   window.mpLoadChronicAlerts=function(){
     api('/api/medical/chronic/stockpile-alerts').then(alerts=>{
       const el=$('mp-chr-alerts');
-      if(!alerts.length){el.innerHTML='<div style="color:var(--mp-green);font-size:.85rem;padding:8px">All medication stockpiles adequate.</div>';return;}
+      if(!alerts.length){el.innerHTML='<div style="color:var(--mp-green);font-size:.85rem;padding:8px">Medication stockpiles look stable right now.</div>';return;}
       el.innerHTML=alerts.map(a=>`<div class="mp-alert-card">
         <strong>${esc(a.patient_name)}</strong> - ${esc(a.condition_name)}
         <br><small>Only <strong>${+a.medication_stockpile_days||0} days</strong> of medication remaining</small>
@@ -448,7 +506,7 @@
   window.mpLoadVax=function(){
     api('/api/medical/vaccinations').then(items=>{
       const el=$('mp-vax-list');
-      if(!items.length){el.innerHTML='<div class="mp-empty">No vaccination records.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mp-empty">No vaccination records yet. Add the first immunization above.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mp-list-item">
         <div><strong>${esc(v.patient_name)}</strong> - ${esc(v.vaccine_name)} (Dose ${+v.dose_number||0})
           <br><small style="color:var(--text-secondary)">Given: ${esc(v.date_administered||'--')} | Next due: ${esc(v.next_due||'--')}</small></div>
@@ -459,7 +517,7 @@
   window.mpLoadVaxDue=function(){
     api('/api/medical/vaccinations/due').then(items=>{
       const el=$('mp-vax-due');
-      if(!items.length){el.innerHTML='<div style="color:var(--mp-green);font-size:.85rem;padding:8px">No vaccinations due or overdue.</div>';return;}
+      if(!items.length){el.innerHTML='<div style="color:var(--mp-green);font-size:.85rem;padding:8px">No vaccinations are due or overdue right now.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mp-alert-card">
         <strong>${esc(v.patient_name)}</strong> - ${esc(v.vaccine_name)} (Dose ${+v.dose_number||0})
         <br><small>Due: <strong>${esc(v.next_due)}</strong></small>
@@ -481,7 +539,7 @@
   window.mpLoadMH=function(){
     api('/api/medical/mental-health').then(items=>{
       const el=$('mp-mh-list');
-      if(!items.length){el.innerHTML='<div class="mp-empty">No mental health records.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mp-empty">No wellness check-ins yet. Log the first mental health entry above.</div>';return;}
       el.innerHTML=items.map(m=>`<div class="mp-list-item">
         <div><strong>${esc(m.patient_name)}</strong> - ${esc(m.check_date||'--')}
           <br><small style="color:var(--text-secondary)">Mood: ${+m.mood_score||0}/10 | Anxiety: ${+m.anxiety_level||0}/10 | Sleep: ${+m.sleep_hours||0}h | Energy: ${+m.energy_level||0}/10</small></div>
@@ -493,7 +551,7 @@
     const p=val('mp-mh-trend-patient');if(!p)return;
     api('/api/medical/mental-health/trends?patient='+encodeURIComponent(p)).then(t=>{
       const el=$('mp-mh-trends');
-      if(!t||t.error){el.innerHTML='<div class="mp-empty">No trend data for this patient.</div>';return;}
+      if(!t||t.error){el.innerHTML='<div class="mp-empty">No trend data is available for this patient yet.</div>';return;}
       el.innerHTML=`<div class="mp-trend-row">
         <div class="mp-trend-stat"><div class="mp-trend-val">${t.avg_mood!=null?t.avg_mood.toFixed(1):'--'}</div><div class="mp-trend-label">Avg Mood</div></div>
         <div class="mp-trend-stat"><div class="mp-trend-val">${t.avg_anxiety!=null?t.avg_anxiety.toFixed(1):'--'}</div><div class="mp-trend-label">Avg Anxiety</div></div>
@@ -518,7 +576,7 @@
   window.mpLoadVet=function(){
     api('/api/medical/vet').then(items=>{
       const el=$('mp-vet-list');
-      if(!items.length){el.innerHTML='<div class="mp-empty">No animal records.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mp-empty">No veterinary records yet. Add the first animal or livestock entry above.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mp-list-item">
         <div><strong>${esc(v.animal_name)}</strong> (${esc(v.species)}${v.breed?' - '+esc(v.breed):''})
           <br><small style="color:var(--text-secondary)">${+v.weight_lb||0}lb | ${esc(v.condition||'--')} | Tx: ${esc(v.treatment||'--')}</small></div>
@@ -547,7 +605,7 @@
     const q=val('mp-herb-search');
     api('/api/medical/herbal'+(q?'?q='+encodeURIComponent(q):'')).then(items=>{
       const el=$('mp-herb-results');
-      if(!items.length){el.innerHTML='<div class="mp-empty">No remedies found.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mp-empty">No remedies match this search yet.</div>';return;}
       el.innerHTML=items.map(h=>`<div class="mp-herb-card">
         <h4>${esc(h.name)}</h4>
         ${h.common_names?'<div class="mp-herb-meta">Also: '+esc(h.common_names)+'</div>':''}

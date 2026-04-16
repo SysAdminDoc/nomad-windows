@@ -24,6 +24,7 @@ from web.sql_safety import safe_table
 from web.utils import (
     check_origin as _check_origin,
     hash_local_secret as _hash_local_secret,
+    is_loopback_addr as _is_loopback,
     local_secret_needs_rehash as _local_secret_needs_rehash,
     require_json_body as _require_json_body,
     safe_json_value as _safe_json_value,
@@ -141,7 +142,7 @@ def create_app():
         def _exempt_localhost():
             """Exempt localhost from rate limiting (desktop app)."""
             addr = get_remote_address()
-            return addr in ('127.0.0.1', '::1')
+            return _is_loopback(addr)
 
         # Stricter rate limit for POST/PUT/DELETE — audit H3.
         # Implemented as a per-client sliding-window counter so it actually
@@ -166,7 +167,7 @@ def create_app():
             if request.method not in ('POST', 'PUT', 'DELETE'):
                 return
             addr = get_remote_address()
-            if addr in ('127.0.0.1', '::1'):
+            if _is_loopback(addr):
                 return
             now = time.time()
             cutoff = now - _mutating_window
@@ -263,7 +264,7 @@ def create_app():
             return
         # Exempt localhost from token-based CSRF
         remote = request.remote_addr or ''
-        if remote in ('127.0.0.1', '::1', 'localhost'):
+        if _is_loopback(remote):
             return
         import hmac as _hmac
         from flask import session
@@ -326,7 +327,7 @@ def create_app():
         if request.method not in ('POST', 'PUT', 'DELETE'):
             return
         remote = request.remote_addr or ''
-        if remote in ('127.0.0.1', '::1', 'localhost'):
+        if _is_loopback(remote):
             return
         # LAN request with mutating method — check if auth is enabled
         try:
@@ -1530,7 +1531,7 @@ def create_app():
         """SSE endpoint — pushes real-time events to connected clients."""
         ip = request.remote_addr or 'unknown'
         now = time.time()
-        if ip not in ('127.0.0.1', '::1', 'localhost'):
+        if not _is_loopback(ip):
             with _sse_lock:
                 connects = _sse_connects.get(ip, [])
                 connects = [t for t in connects if now - t < 60]

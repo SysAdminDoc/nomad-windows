@@ -502,7 +502,9 @@ def is_portable_mode() -> bool:
     1. Presence of 'portable.marker' file next to the executable/script
     2. Whether the drive is removable (Windows) or mounted under /media (Linux)
     """
-    app_dir = os.path.dirname(os.path.abspath(sys.argv[0] if sys.argv[0] else __file__))
+    # Resolve symlinks so that a symlink from /media/... to a local path
+    # doesn't falsely trigger removable-drive detection.
+    app_dir = os.path.dirname(os.path.realpath(sys.argv[0] if sys.argv[0] else __file__))
 
     # Explicit marker file — most reliable method
     if os.path.isfile(os.path.join(app_dir, 'portable.marker')):
@@ -530,7 +532,7 @@ def is_portable_mode() -> bool:
 
 def get_portable_data_dir() -> str:
     """Get data directory for portable mode — same directory as the app."""
-    app_dir = os.path.dirname(os.path.abspath(sys.argv[0] if sys.argv[0] else __file__))
+    app_dir = os.path.dirname(os.path.realpath(sys.argv[0] if sys.argv[0] else __file__))
     data_dir = os.path.join(app_dir, 'nomad_data')
     os.makedirs(data_dir, exist_ok=True)
     return data_dir

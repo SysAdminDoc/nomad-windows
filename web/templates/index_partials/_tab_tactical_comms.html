@@ -12,14 +12,25 @@
     --tc-green: #22c55e;
     --tc-amber: #f59e0b;
   }
-  #tab-tactical-comms .tc-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-tactical-comms .tc-header h2 { font-size:1.25rem; color:var(--tc-accent); margin:0; }
-  #tab-tactical-comms .tc-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-tactical-comms .tc-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-tactical-comms .tc-sub-tab.active { background:var(--tc-accent-dim); border-color:var(--tc-accent); color:var(--tc-accent); }
+  #tab-tactical-comms .tc-command-deck { display:grid; gap:12px; margin-bottom:16px; padding:18px 20px; border:1px solid color-mix(in srgb, var(--tc-accent) 14%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--tc-accent) 14%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 90%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08)); }
+  #tab-tactical-comms .tc-command-deck-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  #tab-tactical-comms .tc-command-copy { display:grid; gap:8px; max-width:min(760px, 100%); }
+  #tab-tactical-comms .tc-command-title { margin:0; font-size:1.32rem; line-height:1.18; color:var(--text-primary,#eee); }
+  #tab-tactical-comms .tc-command-text { margin:0; color:var(--text-secondary,#aaa); line-height:1.6; max-width:68ch; }
+  #tab-tactical-comms .tc-command-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  #tab-tactical-comms .tc-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-tactical-comms .tc-command-pill { display:inline-flex; align-items:center; min-height:28px; padding:0 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--tc-accent) 20%, var(--border,#333)); background:color-mix(in srgb, var(--tc-accent) 10%, transparent); color:color-mix(in srgb, var(--tc-accent) 44%, var(--text-primary,#f5f7ff)); font-size:.72rem; font-weight:600; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-tactical-comms .tc-sub-tabs-shell { display:grid; gap:8px; margin-bottom:18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 84%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-tactical-comms .tc-sub-tabs-label { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary,#aaa); font-weight:700; }
+  #tab-tactical-comms .tc-sub-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-tactical-comms .tc-sub-tab { min-height:36px; padding:8px 14px; border-radius:999px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-tactical-comms .tc-sub-tab:hover { border-color:color-mix(in srgb, var(--tc-accent) 22%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+  #tab-tactical-comms .tc-sub-tab.active { background:color-mix(in srgb, var(--tc-accent) 14%, var(--surface-solid, #121726)); border-color:color-mix(in srgb, var(--tc-accent) 48%, var(--border,#333)); color:var(--tc-accent); box-shadow:0 10px 24px color-mix(in srgb, var(--tc-accent) 16%, transparent); }
+  #tab-tactical-comms .tc-sub-tab:focus-visible,
+  #tab-tactical-comms .tc-btn:focus-visible { outline:2px solid transparent; outline-offset:2px; box-shadow:0 0 0 2px color-mix(in srgb, var(--surface-solid,#151826) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--tc-accent) 48%, transparent); }
   #tab-tactical-comms .tc-panel { display:none; }
   #tab-tactical-comms .tc-panel.active { display:block; }
-  #tab-tactical-comms .tc-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-tactical-comms .tc-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
   #tab-tactical-comms .tc-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
   #tab-tactical-comms .tc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-tactical-comms .tc-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
@@ -28,38 +39,65 @@
   #tab-tactical-comms .tc-form-row select,
   #tab-tactical-comms .tc-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-tactical-comms .tc-form-row .field { flex:1; min-width:140px; }
-  #tab-tactical-comms .tc-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-tactical-comms .tc-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-tactical-comms .tc-btn-primary { background:var(--tc-accent); color:#000; }
   #tab-tactical-comms .tc-btn-danger { background:var(--tc-red); color:#fff; }
   #tab-tactical-comms .tc-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
   #tab-tactical-comms .tc-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
   #tab-tactical-comms .tc-list-item:last-child { border-bottom:none; }
   #tab-tactical-comms .tc-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
-  #tab-tactical-comms .tc-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
-  #tab-tactical-comms .tc-msg-template { background:var(--tc-accent-dim); border:1px solid var(--tc-accent); border-radius:8px; padding:14px; margin-bottom:10px; }
+  #tab-tactical-comms .tc-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
+  #tab-tactical-comms .tc-msg-template { background:linear-gradient(180deg, color-mix(in srgb, var(--tc-accent) 10%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--tc-accent) 28%, var(--border,#333)); border-radius:14px; padding:14px; margin-bottom:10px; }
   #tab-tactical-comms .tc-msg-template h4 { margin:0 0 6px; color:var(--tc-accent); font-size:.9rem; }
   #tab-tactical-comms .tc-msg-template pre { margin:6px 0 0; white-space:pre-wrap; font-size:.78rem; color:var(--text-secondary,#ccc); background:rgba(0,0,0,.3); padding:8px; border-radius:4px; }
   #tab-tactical-comms .tc-calc-result { background:var(--tc-accent-dim); border:1px solid var(--tc-accent); border-radius:8px; padding:14px; margin-top:10px; }
   #tab-tactical-comms .tc-calc-result .val { font-size:1.2rem; font-weight:700; color:var(--tc-accent); }
   #tab-tactical-comms .tc-beaufort td { padding:4px 8px; font-size:.78rem; border-bottom:1px solid var(--border,#333); }
   #tab-tactical-comms .tc-beaufort th { padding:4px 8px; font-size:.72rem; color:var(--text-secondary,#aaa); text-align:left; border-bottom:1px solid var(--border,#444); }
+  @media (max-width: 860px) {
+    #tab-tactical-comms .tc-command-deck { padding:16px; }
+    #tab-tactical-comms .tc-command-actions { width:100%; justify-content:flex-start; }
+    #tab-tactical-comms .tc-command-actions .tc-btn { flex:1 1 160px; }
+  }
 </style>
 
-<div class="tc-header">
-  <h2>Tactical Communications</h2>
+<div class="tc-command-deck workspace-panel">
+  <div class="tc-command-deck-head">
+    <div class="tc-command-copy">
+      <h2 class="tc-command-title">Keep radio plans, authentication, and field weather tools in one comms desk.</h2>
+      <p class="tc-command-text">Stage equipment, challenge-and-response sets, schedule windows, and standard message formats together so net traffic stays clear when conditions tighten.</p>
+    </div>
+    <div class="tc-command-actions">
+      <button type="button" class="tc-btn tc-btn-secondary" data-tc-panel-target="radios">Radios</button>
+      <button type="button" class="tc-btn tc-btn-secondary" data-tc-panel-target="auth">Auth Sets</button>
+      <button type="button" class="tc-btn tc-btn-secondary" data-tc-panel-target="nets">Net Schedules</button>
+      <button type="button" class="tc-btn tc-btn-secondary" data-tc-panel-target="messages">Templates</button>
+      <button type="button" class="tc-btn tc-btn-secondary" data-tc-panel-target="weather">Field Weather</button>
+    </div>
+  </div>
+  <div class="tc-command-pills" aria-hidden="true">
+    <span class="tc-command-pill">Radio inventory</span>
+    <span class="tc-command-pill">Auth codes</span>
+    <span class="tc-command-pill">Net schedules</span>
+    <span class="tc-command-pill">Message formats</span>
+    <span class="tc-command-pill">Weather calcs</span>
+  </div>
 </div>
 
 <!-- Sub-tabs -->
-<div class="tc-sub-tabs">
-  <button class="tc-sub-tab active" data-tc-panel="radios">Radio Equipment</button>
-  <button class="tc-sub-tab" data-tc-panel="auth">Auth Codes</button>
-  <button class="tc-sub-tab" data-tc-panel="nets">Net Schedules</button>
-  <button class="tc-sub-tab" data-tc-panel="messages">Message Formats</button>
-  <button class="tc-sub-tab" data-tc-panel="weather">Weather Calcs</button>
+<div class="tc-sub-tabs-shell">
+  <div class="tc-sub-tabs-label">Communications workflows</div>
+  <div class="tc-sub-tabs" role="tablist" aria-label="Tactical communications sections">
+    <button type="button" class="tc-sub-tab active" data-tc-panel="radios" role="tab" aria-selected="true" aria-controls="tc-panel-radios" id="tc-tab-radios">Radio Equipment</button>
+    <button type="button" class="tc-sub-tab" data-tc-panel="auth" role="tab" aria-selected="false" aria-controls="tc-panel-auth" id="tc-tab-auth">Auth Sets</button>
+    <button type="button" class="tc-sub-tab" data-tc-panel="nets" role="tab" aria-selected="false" aria-controls="tc-panel-nets" id="tc-tab-nets">Net Schedules</button>
+    <button type="button" class="tc-sub-tab" data-tc-panel="messages" role="tab" aria-selected="false" aria-controls="tc-panel-messages" id="tc-tab-messages">Message Formats</button>
+    <button type="button" class="tc-sub-tab" data-tc-panel="weather" role="tab" aria-selected="false" aria-controls="tc-panel-weather" id="tc-tab-weather">Field Weather</button>
+  </div>
 </div>
 
 <!-- ── Radio Equipment Panel ──────────────────────────── -->
-<div class="tc-panel active" id="tc-panel-radios">
+<div class="tc-panel active" id="tc-panel-radios" role="tabpanel" tabindex="-1" aria-labelledby="tc-tab-radios">
   <div class="tc-card">
     <div class="tc-card-title">Add Radio</div>
     <div class="tc-form-row">
@@ -91,11 +129,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcCreateRadio()">Add Radio</button></div>
     </div>
   </div>
-  <div id="tc-radio-list" class="tc-card"><div class="tc-empty">Loading...</div></div>
+  <div id="tc-radio-list" class="tc-card"><div class="tc-empty">Loading radio inventory…</div></div>
 </div>
 
 <!-- ── Auth Codes Panel ──────────────────────────────── -->
-<div class="tc-panel" id="tc-panel-auth">
+<div class="tc-panel" id="tc-panel-auth" role="tabpanel" tabindex="-1" aria-labelledby="tc-tab-auth" hidden>
   <div class="tc-card">
     <div class="tc-card-title">Create Authentication Code</div>
     <div class="tc-form-row">
@@ -113,11 +151,11 @@
     </div>
   </div>
   <div id="tc-auth-today" class="tc-card" style="display:none"></div>
-  <div id="tc-auth-list" class="tc-card"><div class="tc-empty">Loading...</div></div>
+  <div id="tc-auth-list" class="tc-card"><div class="tc-empty">Loading active authentication sets…</div></div>
 </div>
 
 <!-- ── Net Schedules Panel ───────────────────────────── -->
-<div class="tc-panel" id="tc-panel-nets">
+<div class="tc-panel" id="tc-panel-nets" role="tabpanel" tabindex="-1" aria-labelledby="tc-tab-nets" hidden>
   <div class="tc-card">
     <div class="tc-card-title">Add Net Schedule</div>
     <div class="tc-form-row">
@@ -138,20 +176,20 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcCreateNet()">Add Net</button></div>
     </div>
   </div>
-  <div id="tc-net-list" class="tc-card"><div class="tc-empty">Loading...</div></div>
+  <div id="tc-net-list" class="tc-card"><div class="tc-empty">Loading net schedules…</div></div>
 </div>
 
 <!-- ── Message Formats Panel ─────────────────────────── -->
-<div class="tc-panel" id="tc-panel-messages">
+<div class="tc-panel" id="tc-panel-messages" role="tabpanel" tabindex="-1" aria-labelledby="tc-tab-messages" hidden>
   <div style="margin-bottom:12px">
     <button class="tc-btn tc-btn-primary" onclick="tcSeedTemplates()">Seed Built-in Templates</button>
-    <small style="color:var(--text-secondary);margin-left:8px">Adds SITREP, MEDEVAC 9-Line, SALUTE, SPOT, ACE, LACE if not present</small>
+    <small style="color:var(--text-secondary);margin-left:8px">Loads SITREP, MEDEVAC 9-Line, SALUTE, SPOT, ACE, and LACE if they are not already available.</small>
   </div>
-  <div id="tc-msg-list"><div class="tc-empty">Loading message templates...</div></div>
+  <div id="tc-msg-list"><div class="tc-empty">Loading message templates…</div></div>
 </div>
 
 <!-- ── Weather Calculators Panel ─────────────────────── -->
-<div class="tc-panel" id="tc-panel-weather">
+<div class="tc-panel" id="tc-panel-weather" role="tabpanel" tabindex="-1" aria-labelledby="tc-tab-weather" hidden>
   <div class="tc-grid">
     <div class="tc-card">
       <div class="tc-card-title">Moon Phase</div>
@@ -207,14 +245,38 @@
 <script>
 (function(){
   const root = document.getElementById('tab-tactical-comms');
-  root.querySelectorAll('.tc-sub-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.querySelectorAll('.tc-sub-tab').forEach(b => b.classList.remove('active'));
-      root.querySelectorAll('.tc-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = document.getElementById('tc-panel-' + btn.dataset.tcPanel);
-      if (panel) panel.classList.add('active');
+  const tcTabs = Array.from(root.querySelectorAll('.tc-sub-tab'));
+  const tcPanels = Array.from(root.querySelectorAll('.tc-panel'));
+
+  function tcActivatePanel(panelName, focusPanel = false) {
+    const nextTab = root.querySelector(`.tc-sub-tab[data-tc-panel="${panelName}"]`);
+    const nextPanel = document.getElementById('tc-panel-' + panelName);
+    if (!nextTab || !nextPanel) return;
+
+    tcTabs.forEach((tab) => {
+      const active = tab === nextTab;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', active ? 'true' : 'false');
     });
+
+    tcPanels.forEach((panel) => {
+      const active = panel === nextPanel;
+      panel.classList.toggle('active', active);
+      if (active) {
+        panel.removeAttribute('hidden');
+      } else {
+        panel.setAttribute('hidden', '');
+      }
+    });
+
+    if (focusPanel) nextPanel.focus();
+  }
+
+  tcTabs.forEach((btn) => {
+    btn.addEventListener('click', () => tcActivatePanel(btn.dataset.tcPanel, true));
+  });
+  root.querySelectorAll('[data-tc-panel-target]').forEach((btn) => {
+    btn.addEventListener('click', () => tcActivatePanel(btn.dataset.tcPanelTarget, true));
   });
 
   const $=id=>document.getElementById(id);
@@ -226,7 +288,7 @@
   window.tcLoadRadios=function(){
     api('/api/radio-equipment').then(items=>{
       const el=$('tc-radio-list');
-      if(!items.length){el.innerHTML='<div class="tc-empty">No radio equipment registered.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="tc-empty">No radios are logged yet. Add the first handheld, base station, or repeater above.</div>';return;}
       const condColor={good:'#22c55e',fair:'#f59e0b',poor:'#f97316',inoperative:'#ef4444'};
       el.innerHTML=items.map(r=>`<div class="tc-list-item">
         <div><strong>${r.name}</strong> <span class="tc-badge" style="color:${condColor[r.condition]||'#aaa'};margin-left:6px">${r.condition}</span>
@@ -253,7 +315,7 @@
   window.tcLoadAuth=function(){
     api('/api/auth-codes').then(items=>{
       const el=$('tc-auth-list');
-      if(!items.length){el.innerHTML='<div class="tc-empty">No authentication codes configured.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="tc-empty">No authentication sets yet. Add the first challenge-and-response pair above.</div>';return;}
       el.innerHTML=items.map(a=>`<div class="tc-list-item">
         <div><strong>${a.code_set_name}</strong> <small style="color:var(--text-secondary)">${a.valid_date}</small>
           <br><small>Challenge: <strong>${a.challenge}</strong> → Response: <strong>${a.response}</strong></small>
@@ -266,7 +328,7 @@
       const el=$('tc-auth-today');
       if(!codes.length){el.style.display='none';return;}
       el.style.display='block';
-      el.innerHTML='<div class="tc-card-title" style="color:var(--tc-green)">TODAY\'S ACTIVE CODES</div>'+
+      el.innerHTML='<div class="tc-card-title" style="color:var(--tc-green)">Today\'s Active Codes</div>'+
         codes.map(c=>`<div style="margin-bottom:6px"><strong>${c.code_set_name}</strong>: ${c.challenge} → ${c.response}${c.duress_code?' <small style="color:var(--tc-red)">(Duress: '+c.duress_code+')</small>':''}</div>`).join('');
     });
   };
@@ -286,10 +348,10 @@
   window.tcLoadNets=function(){
     api('/api/net-schedules').then(items=>{
       const el=$('tc-net-list');
-      if(!items.length){el.innerHTML='<div class="tc-empty">No net schedules configured.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="tc-empty">No net schedules yet. Add the first check-in window above to publish frequency and control station.</div>';return;}
       el.innerHTML=items.map(n=>`<div class="tc-list-item">
         <div><strong>${n.name}</strong> <span class="tc-badge" style="margin-left:6px;color:${n.is_active?'var(--tc-green)':'var(--text-secondary)'}">${n.is_active?'ACTIVE':'OFF'}</span>
-          <br><small style="color:var(--text-secondary)">${n.net_type} · ${n.frequency||'No freq'} · ${n.start_time} · ${n.duration_min}min</small>
+          <br><small style="color:var(--text-secondary)">${n.net_type} · ${n.frequency||'Frequency pending'} · ${n.start_time} · ${n.duration_min}min</small>
           ${n.net_control?`<br><small>NCS: ${n.net_control}</small>`:''}</div>
         <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteNet(${n.id})">×</button></div>
       </div>`).join('');
@@ -311,13 +373,13 @@
   window.tcLoadMessages=function(){
     api('/api/message-templates').then(items=>{
       const el=$('tc-msg-list');
-      if(!items.length){el.innerHTML='<div class="tc-empty">No message templates. Click "Seed Built-in Templates" to add standard military formats.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="tc-empty">No message templates yet. Seed the built-in formats or add your own reporting standard above.</div>';return;}
       el.innerHTML=items.map(t=>`<div class="tc-msg-template">
         <h4>${t.name} <span class="tc-badge" style="color:var(--tc-accent);margin-left:4px">${t.template_type}</span>
           ${t.is_builtin?'<span class="tc-badge" style="color:var(--text-secondary);margin-left:4px">BUILT-IN</span>':''}
         </h4>
         <div style="font-size:.8rem;color:var(--text-secondary)">${t.instructions||''}</div>
-        <pre>${t.example||'No example'}</pre>
+        <pre>${t.example||'Example pending'}</pre>
         ${!t.is_builtin?`<button class="tc-btn tc-btn-danger" style="margin-top:8px" onclick="tcDeleteTemplate(${t.id})">Delete</button>`:''}
       </div>`).join('');
     });

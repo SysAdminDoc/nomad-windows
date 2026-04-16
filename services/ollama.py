@@ -194,13 +194,22 @@ def start():
         **popen_kwargs(cwd=get_install_dir(), env=env),
     )
 
-    from services.manager import register_process
+    from services.manager import register_process, unregister_process
     register_process(SERVICE_ID, proc)
 
     db = get_db()
     try:
         db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
         db.commit()
+    except Exception as e:
+        log.error(f'DB update failed for {SERVICE_ID}: {e} — killing orphaned process')
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        unregister_process(SERVICE_ID)
+        raise
     finally:
         db.close()
 
@@ -282,6 +291,7 @@ def pull_model(model_name: str):
     global _pull_progress
     _pull_progress = {'status': 'pulling', 'model': model_name, 'percent': 0, 'detail': 'Starting...'}
 
+    resp = None
     try:
         resp = requests.post(
             f'http://localhost:{OLLAMA_PORT}/api/pull',
@@ -361,6 +371,12 @@ def pull_model(model_name: str):
         _pull_progress = {'status': 'error', 'model': model_name, 'percent': 0, 'detail': detail}
         log.error(f'Model pull failed: {e}')
         return False
+    finally:
+        if resp is not None:
+            try:
+                resp.close()
+            except Exception:
+                pass
 
 
 def get_pull_progress():

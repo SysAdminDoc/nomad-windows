@@ -173,7 +173,9 @@ def extract_zip(zip_path: str, dest_dir: str):
             member_path = os.path.realpath(os.path.join(dest, member.filename))
             if not member_path.startswith(dest + os.sep) and member_path != dest:
                 raise ValueError(f'Zip Slip detected: {member.filename} escapes {dest_dir}')
-        zf.extractall(dest_dir)
+        # Use the resolved dest (realpath) for extraction to prevent TOCTOU
+        # where dest_dir is a symlink that changes between validation and extract.
+        zf.extractall(dest)
     os.remove(zip_path)
 
 
@@ -344,7 +346,7 @@ def _pid_matches_exe(pid: int, exe_path: str) -> bool:
         return os.path.basename(proc_exe) == expected
     except (psutil.NoSuchProcess, psutil.ZombieProcess):
         return False
-    except (psutil.AccessDenied, OSError, Exception):
+    except (psutil.AccessDenied, OSError):
         # Can't introspect — don't second-guess _pid_alive's positive result.
         return True
 

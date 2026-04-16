@@ -61,6 +61,7 @@ HOST = Config.APP_HOST
 
 _tray_icon = None
 _window = None
+_shutdown_event = threading.Event()  # Signals daemon threads to stop
 
 SERVICE_MODULES = None  # Lazy-loaded
 
@@ -105,6 +106,10 @@ def tray_quit(icon, item):
     """Graceful shutdown: ordered service stop, DB flush, then exit."""
     global _window
     log.info('Graceful shutdown initiated...')
+
+    # Signal all daemon threads (health_monitor, etc.) to stop
+    _shutdown_event.set()
+
     try:
         log_activity('app_shutdown', detail='User requested quit')
     except Exception:
@@ -137,9 +142,12 @@ def tray_quit(icon, item):
     except Exception as e:
         log.warning(f'Final DB backup failed: {e}')
 
-    icon.stop()
     if _window:
-        _window.destroy()
+        try:
+            _window.destroy()
+        except Exception:
+            pass
+    icon.stop()
     # Flush log handlers before exiting
     for handler in logging.getLogger().handlers:
         try:
@@ -194,19 +202,27 @@ def on_window_closing():
 
 
 def health_monitor():
-    """Background thread: detects crashed services and auto-restarts them."""
+    """Background thread: detects crashed services and auto-restarts them.
+
+    Respects _shutdown_event so the thread exits cleanly during graceful
+    shutdown rather than relying on daemon-thread force-kill.
+    """
     from services.manager import unregister_process, should_restart, record_restart, prune_completed_downloads
 
     # Wait long enough for auto_start_services to finish (Stirling can take 60s+)
-    time.sleep(90)
+    # Use Event.wait() instead of time.sleep() so we can be interrupted on shutdown.
+    if _shutdown_event.wait(timeout=90):
+        return
     mods = _get_service_modules()
 
-    while True:
+    while not _shutdown_event.is_set():
         db = None
         try:
             db = get_db()
             rows = db.execute('SELECT id FROM services WHERE running = 1 AND installed = 1').fetchall()
             for row in rows:
+                if _shutdown_event.is_set():
+                    break
                 sid = row['id']
                 mod = mods.get(sid)
                 if mod and not mod.running():
@@ -244,7 +260,10 @@ def health_monitor():
             prune_completed_downloads()
         except Exception:
             pass
-        time.sleep(10)
+        # Use Event.wait() so shutdown interrupts the sleep immediately
+        if _shutdown_event.wait(timeout=10):
+            break
+    log.info('Health monitor stopped')
 
 
 def first_run_check():
@@ -371,13 +390,20 @@ def main():
     )
 
     def _navigate_when_ready():
-        """Navigate to dashboard once Flask is serving."""
+        """Navigate to dashboard once Flask is serving.
+
+        Polls for up to ~30 seconds (100 × 0.3s) to accommodate slow DB
+        init or service startup. Respects _shutdown_event to avoid racing
+        against a closing window.
+        """
         import requests as rq
-        for _ in range(60):
+        for _ in range(100):
+            if _shutdown_event.is_set():
+                return
             try:
                 rq.get(f'http://127.0.0.1:{PORT}/api/health', timeout=1)
                 w = _window
-                if w:
+                if w and not _shutdown_event.is_set():
                     try:
                         w.load_url(start_url)
                     except Exception:
@@ -385,9 +411,9 @@ def main():
                 return
             except Exception:
                 time.sleep(0.3)
-        log.error('Flask not reachable after 18 seconds — showing error in window')
+        log.error('Flask not reachable after 30 seconds — showing error in window')
         w = _window
-        if w:
+        if w and not _shutdown_event.is_set():
             try:
                 w.load_html(f'<html><body style="margin:0;background:#060608;display:flex;align-items:center;justify-content:center;height:100vh;font-family:Segoe UI,sans-serif;"><div style="text-align:center;"><h1 style="color:#ff6b6b;font-size:20px;">{APP_SHORT_NAME} failed to start</h1><p style="color:#7f8791;font-size:14px;">The local web server did not respond. Check the log file for details.</p></div></body></html>')
             except Exception:

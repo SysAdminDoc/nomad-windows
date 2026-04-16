@@ -245,12 +245,22 @@ def api_set_data_dir():
 @system_bp.route('/api/wizard/setup', methods=['POST'])
 def api_wizard_setup():
     """Full turnkey setup — installs services, downloads content, pulls models."""
+    # Guard: prevent re-triggering if wizard is already running or setup is complete
+    snap = wizard_snapshot()
+    if snap.get('status') == 'running':
+        return jsonify({'error': 'Wizard is already running'}), 409
+    with db_session() as _chk:
+        _fr = _chk.execute("SELECT value FROM settings WHERE key = 'first_run_complete'").fetchone()
+        if _fr and _fr['value'] == '1':
+            return jsonify({'error': 'First-run setup already completed. Use individual service controls to make changes.'}), 400
+
     data = request.get_json() or {}
     services_list = data.get('services', ['ollama', 'kiwix', 'cyberchef', 'stirling'])
     zims = data.get('zims', [])
     models = data.get('models', ['llama3.2:3b'])
 
     def do_setup():
+      try:
         total = len(services_list) + len(zims) + len(models)
         wizard_reset(status='running', phase='services', total_items=total, overall_progress=0)
         done = 0
@@ -363,6 +373,12 @@ def api_wizard_setup():
             db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('first_run_complete', '1')")
             db.commit()
         wizard_update(status='complete', phase='done', overall_progress=100, current_item='Setup complete!')
+      except Exception as e:
+        # Catch-all so the wizard thread never dies silently — the user sees
+        # an error state instead of being stuck on "running" forever.
+        log.exception(f'Wizard setup crashed: {e}')
+        wizard_append_list_item('errors', f'Setup process crashed: {type(e).__name__}: {e}')
+        wizard_update(status='error', phase='failed', current_item='Setup failed — see errors above')
 
     threading.Thread(target=do_setup, daemon=True).start()
     return jsonify({'status': 'started'})
@@ -844,7 +860,9 @@ def api_backups_restore():
     data = request.get_json() or {}
     filename = data.get('filename', '')
     confirmed = bool(data.get('confirmed'))
-    if not filename or '..' in filename or '/' in filename or '\\' in filename:
+    # Use basename to strip any path components — safer than a character blacklist
+    filename = os.path.basename(filename) if filename else ''
+    if not filename:
         return jsonify({'error': 'Invalid filename'}), 400
     backup_dir = os.path.join(os.path.dirname(get_db_path()), 'backups')
     backup_path = os.path.join(backup_dir, filename)
@@ -1505,7 +1523,8 @@ def api_backup_restore():
     filename = data.get('filename', '')
     password = data.get('password', '')
 
-    if not filename or '..' in filename or '/' in filename or '\\' in filename:
+    filename = os.path.basename(filename) if filename else ''
+    if not filename:
         return jsonify({'error': 'Invalid filename'}), 400
 
     db_path = get_db_path()
@@ -1603,7 +1622,8 @@ def api_backup_restore():
 @system_bp.route('/api/system/backup/<filename>', methods=['DELETE'])
 def api_backup_delete(filename):
     """Delete a specific backup file."""
-    if not filename or '..' in filename or '/' in filename or '\\' in filename:
+    filename = os.path.basename(filename) if filename else ''
+    if not filename:
         return jsonify({'error': 'Invalid filename'}), 400
     if not filename.startswith('nomad_backup_'):
         return jsonify({'error': 'Invalid backup filename'}), 400
@@ -1704,7 +1724,13 @@ def api_auth_check():
             )
             db.commit()
     remote = request.remote_addr or ''
-    is_local = remote in ('127.0.0.1', '::1', 'localhost')
+    # Use ipaddress module for robust loopback detection (covers IPv4-mapped
+    # IPv6 like ::ffff:127.0.0.1, and any 127.x.x.x address).
+    try:
+        import ipaddress
+        is_local = ipaddress.ip_address(remote).is_loopback
+    except (ValueError, TypeError):
+        is_local = False
     enabled = bool(row and row['value'])
     return jsonify({'enabled': enabled, 'authenticated': (is_local or token_valid or not enabled)})
 
@@ -1798,11 +1824,16 @@ def api_health_score():
         breakdown = {}
 
         # Data coverage (25 points)
-        tables_to_check = ['inventory', 'contacts', 'patients', 'waypoints', 'notes', 'checklists']
+        _READINESS_TABLES = frozenset({'inventory', 'contacts', 'patients', 'waypoints', 'notes', 'checklists'})
+        tables_to_check = list(_READINESS_TABLES)
         populated = 0
         for t in tables_to_check:
             try:
-                count = db.execute(f'SELECT COUNT(*) FROM {t}').fetchone()[0]
+                # Table names are from a hardcoded allowlist — validate anyway
+                # to prevent future regressions if the set is ever sourced elsewhere.
+                if t not in _READINESS_TABLES:
+                    continue
+                count = db.execute(f'SELECT COUNT(*) FROM [{t}]').fetchone()[0]
                 if count > 0: populated += 1
             except Exception:
                 pass

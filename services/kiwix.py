@@ -786,13 +786,22 @@ def start():
         **popen_kwargs(cwd=os.path.dirname(exe)),
     )
 
-    from services.manager import register_process
+    from services.manager import register_process, unregister_process
     register_process(SERVICE_ID, proc)
 
     db = get_db()
     try:
         db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
         db.commit()
+    except Exception as e:
+        log.error(f'DB update failed for {SERVICE_ID}: {e} — killing orphaned process')
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        unregister_process(SERVICE_ID)
+        raise
     finally:
         db.close()
 

@@ -353,6 +353,8 @@ def api_node_sync_receive():
             incoming_clocks = {}
         conflicts = []
         for tname, hashes in incoming_clocks.items():
+            if tname not in ALLOWED:
+                continue
             if not isinstance(hashes, dict):
                 continue
             for row_hash, incoming_clock in hashes.items():
@@ -364,7 +366,7 @@ def api_node_sync_receive():
                         # Fetch actual local row data for conflict details
                         local_row_data = None
                         try:
-                            local_rows = db.execute(f'SELECT * FROM {tname} LIMIT 50000').fetchall()
+                            local_rows = db.execute(f'SELECT * FROM [{tname}] LIMIT 50000').fetchall()
                             for lr in local_rows:
                                 lr_dict = dict(lr)
                                 lr_dict.pop('id', None)
@@ -498,11 +500,12 @@ def api_node_conflict_resolve(conflict_id):
 
         if resolution == 'remote':
             tables_synced = _safe_json_object(row['tables_synced'], {})
+            RESOLVE_ALLOWED = {'inventory', 'contacts', 'checklists', 'notes', 'incidents', 'waypoints'}
             for conflict in conflicts:
                 tname = conflict.get('table', '')
                 incoming_clock = _safe_clock(conflict.get('incoming_clock'))
                 row_hash = conflict.get('row_hash', '')
-                if tname and row_hash:
+                if tname and row_hash and tname in RESOLVE_ALLOWED:
                     db.execute(
                         'INSERT OR REPLACE INTO vector_clocks (table_name, row_hash, clock, last_node, updated_at) VALUES (?, ?, ?, ?, datetime("now"))',
                         (tname, row_hash, json.dumps(incoming_clock), row['peer_node_id'])

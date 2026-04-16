@@ -2,6 +2,7 @@
 
 import hashlib
 import hmac
+import ipaddress as _ipaddress
 import json
 import logging
 import os
@@ -13,6 +14,19 @@ from html import escape as _html_escape
 log = logging.getLogger('nomad.web')
 _PBKDF2_PREFIX = 'pbkdf2$'
 _PBKDF2_ITERATIONS = 100_000
+
+
+def is_loopback_addr(addr: str) -> bool:
+    """True if *addr* is a loopback IP (127.0.0.0/8, ::1, ::ffff:127.x.x.x).
+
+    Uses the stdlib ``ipaddress`` module so every loopback variant is handled
+    correctly — avoids the bug where only '127.0.0.1' and '::1' were checked
+    while '::ffff:127.0.0.1' or '127.0.0.2' slipped through.
+    """
+    try:
+        return _ipaddress.ip_address(addr).is_loopback
+    except (ValueError, TypeError):
+        return False
 
 
 def esc(s):

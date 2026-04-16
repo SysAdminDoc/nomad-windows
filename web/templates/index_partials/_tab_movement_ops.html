@@ -12,14 +12,25 @@
     --mo-green: #22c55e;
     --mo-blue: #3b82f6;
   }
-  #tab-movement-ops .mo-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-movement-ops .mo-header h2 { font-size:1.25rem; color:var(--mo-accent); margin:0; }
-  #tab-movement-ops .mo-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-movement-ops .mo-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-movement-ops .mo-sub-tab.active { background:var(--mo-accent-dim); border-color:var(--mo-accent); color:var(--mo-accent); }
+  #tab-movement-ops .mo-command-deck { display:grid; gap:12px; margin-bottom:16px; padding:18px 20px; border:1px solid color-mix(in srgb, var(--mo-accent) 14%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--mo-accent) 14%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 90%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08)); }
+  #tab-movement-ops .mo-command-deck-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  #tab-movement-ops .mo-command-copy { display:grid; gap:8px; max-width:min(760px, 100%); }
+  #tab-movement-ops .mo-command-title { margin:0; font-size:1.32rem; line-height:1.18; color:var(--text-primary,#eee); }
+  #tab-movement-ops .mo-command-text { margin:0; color:var(--text-secondary,#aaa); line-height:1.6; max-width:68ch; }
+  #tab-movement-ops .mo-command-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  #tab-movement-ops .mo-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-movement-ops .mo-command-pill { display:inline-flex; align-items:center; min-height:28px; padding:0 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--mo-accent) 20%, var(--border,#333)); background:color-mix(in srgb, var(--mo-accent) 10%, transparent); color:color-mix(in srgb, var(--mo-accent) 44%, var(--text-primary,#f5f7ff)); font-size:.72rem; font-weight:600; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-movement-ops .mo-sub-tabs-shell { display:grid; gap:8px; margin-bottom:18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 84%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-movement-ops .mo-sub-tabs-label { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary,#aaa); font-weight:700; }
+  #tab-movement-ops .mo-sub-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-movement-ops .mo-sub-tab { min-height:36px; padding:8px 14px; border-radius:999px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-movement-ops .mo-sub-tab:hover { border-color:color-mix(in srgb, var(--mo-accent) 22%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+  #tab-movement-ops .mo-sub-tab.active { background:color-mix(in srgb, var(--mo-accent) 14%, var(--surface-solid, #121726)); border-color:color-mix(in srgb, var(--mo-accent) 48%, var(--border,#333)); color:var(--mo-accent); box-shadow:0 10px 24px color-mix(in srgb, var(--mo-accent) 16%, transparent); }
+  #tab-movement-ops .mo-sub-tab:focus-visible,
+  #tab-movement-ops .mo-btn:focus-visible { outline:2px solid transparent; outline-offset:2px; box-shadow:0 0 0 2px color-mix(in srgb, var(--surface-solid,#151826) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--mo-accent) 48%, transparent); }
   #tab-movement-ops .mo-panel { display:none; }
   #tab-movement-ops .mo-panel.active { display:block; }
-  #tab-movement-ops .mo-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-movement-ops .mo-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
   #tab-movement-ops .mo-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
   #tab-movement-ops .mo-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-movement-ops .mo-stat { text-align:center; padding:12px; }
@@ -31,7 +42,7 @@
   #tab-movement-ops .mo-form-row select,
   #tab-movement-ops .mo-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-movement-ops .mo-form-row .field { flex:1; min-width:140px; }
-  #tab-movement-ops .mo-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-movement-ops .mo-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-movement-ops .mo-btn-primary { background:var(--mo-accent); color:#000; }
   #tab-movement-ops .mo-btn-danger { background:var(--mo-red); color:#fff; }
   #tab-movement-ops .mo-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
@@ -42,27 +53,54 @@
   #tab-movement-ops .mo-badge-nogo { background:rgba(239,68,68,.2); color:var(--mo-red); }
   #tab-movement-ops .mo-badge-hold { background:rgba(245,158,11,.2); color:var(--mo-accent); }
   #tab-movement-ops .mo-badge-unknown { background:rgba(148,163,184,.2); color:#94a3b8; }
-  #tab-movement-ops .mo-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-movement-ops .mo-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
   #tab-movement-ops .mo-calc-result { background:var(--mo-accent-dim); border:1px solid var(--mo-accent); border-radius:8px; padding:14px; margin-top:10px; }
   #tab-movement-ops .mo-calc-result .val { font-size:1.2rem; font-weight:700; color:var(--mo-accent); }
+  @media (max-width: 860px) {
+    #tab-movement-ops .mo-command-deck { padding:16px; }
+    #tab-movement-ops .mo-command-actions { width:100%; justify-content:flex-start; }
+    #tab-movement-ops .mo-command-actions .mo-btn { flex:1 1 160px; }
+  }
 </style>
 
-<div class="mo-header">
-  <h2>Movement & Route Planning</h2>
+<div class="mo-command-deck workspace-panel">
+  <div class="mo-command-deck-head">
+    <div class="mo-command-copy">
+      <h2 class="mo-command-title">Plan routes, alternate transport, and departure criteria from one movement workspace.</h2>
+      <p class="mo-command-text">Stage movement plans, hazards, loading order, and go or no-go decisions in the same place so departures feel deliberate instead of rushed.</p>
+    </div>
+    <div class="mo-command-actions">
+      <button type="button" class="mo-btn mo-btn-secondary" data-mo-panel-target="plans">Routes</button>
+      <button type="button" class="mo-btn mo-btn-secondary" data-mo-panel-target="hazards">Hazards</button>
+      <button type="button" class="mo-btn mo-btn-secondary" data-mo-panel-target="loading">Loading</button>
+      <button type="button" class="mo-btn mo-btn-secondary" data-mo-panel-target="go-nogo">Go/No-Go</button>
+    </div>
+  </div>
+  <div class="mo-command-pills" aria-hidden="true">
+    <span class="mo-command-pill">Movement plans</span>
+    <span class="mo-command-pill">Alternate transport</span>
+    <span class="mo-command-pill">Route hazards</span>
+    <span class="mo-command-pill">Vehicle staging</span>
+    <span class="mo-command-pill">Decision matrix</span>
+    <span class="mo-command-pill">Calculators</span>
+  </div>
 </div>
 
 <!-- Sub-tabs -->
-<div class="mo-sub-tabs">
-  <button class="mo-sub-tab active" data-mo-panel="plans">Movement Plans</button>
-  <button class="mo-sub-tab" data-mo-panel="alt-vehicles">Alt Vehicles</button>
-  <button class="mo-sub-tab" data-mo-panel="hazards">Route Hazards</button>
-  <button class="mo-sub-tab" data-mo-panel="loading">Vehicle Loading</button>
-  <button class="mo-sub-tab" data-mo-panel="go-nogo">Go/No-Go</button>
-  <button class="mo-sub-tab" data-mo-panel="calculators">Calculators</button>
+<div class="mo-sub-tabs-shell">
+  <div class="mo-sub-tabs-label">Workflows</div>
+  <div class="mo-sub-tabs" role="tablist" aria-label="Movement operations sections">
+    <button type="button" class="mo-sub-tab active" data-mo-panel="plans" role="tab" aria-selected="true" aria-controls="mo-panel-plans" id="mo-tab-plans">Movement Plans</button>
+    <button type="button" class="mo-sub-tab" data-mo-panel="alt-vehicles" role="tab" aria-selected="false" aria-controls="mo-panel-alt-vehicles" id="mo-tab-alt-vehicles">Alt Vehicles</button>
+    <button type="button" class="mo-sub-tab" data-mo-panel="hazards" role="tab" aria-selected="false" aria-controls="mo-panel-hazards" id="mo-tab-hazards">Route Hazards</button>
+    <button type="button" class="mo-sub-tab" data-mo-panel="loading" role="tab" aria-selected="false" aria-controls="mo-panel-loading" id="mo-tab-loading">Vehicle Loading</button>
+    <button type="button" class="mo-sub-tab" data-mo-panel="go-nogo" role="tab" aria-selected="false" aria-controls="mo-panel-go-nogo" id="mo-tab-go-nogo">Go/No-Go</button>
+    <button type="button" class="mo-sub-tab" data-mo-panel="calculators" role="tab" aria-selected="false" aria-controls="mo-panel-calculators" id="mo-tab-calculators">Calculators</button>
+  </div>
 </div>
 
 <!-- ── Movement Plans Panel ──────────────────────────────── -->
-<div class="mo-panel active" id="mo-panel-plans">
+<div class="mo-panel active" id="mo-panel-plans" role="tabpanel" tabindex="-1" aria-labelledby="mo-tab-plans">
   <div class="mo-card">
     <div class="mo-card-title">New Movement Plan</div>
     <div class="mo-form-row">
@@ -98,11 +136,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCreatePlan()">Add Plan</button></div>
     </div>
   </div>
-  <div id="mo-plans-list" class="mo-card"><div class="mo-empty">Loading plans...</div></div>
+  <div id="mo-plans-list" class="mo-card"><div class="mo-empty">Loading movement plans...</div></div>
 </div>
 
 <!-- ── Alt Vehicles Panel ───────────────────────────────── -->
-<div class="mo-panel" id="mo-panel-alt-vehicles">
+<div class="mo-panel" id="mo-panel-alt-vehicles" role="tabpanel" tabindex="-1" aria-labelledby="mo-tab-alt-vehicles" hidden>
   <div class="mo-card">
     <div class="mo-card-title">Add Alternative Vehicle</div>
     <div class="mo-form-row">
@@ -134,11 +172,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCreateAltVehicle()">Add</button></div>
     </div>
   </div>
-  <div id="mo-av-list" class="mo-card"><div class="mo-empty">Loading...</div></div>
+  <div id="mo-av-list" class="mo-card"><div class="mo-empty">Loading alternate transport assets...</div></div>
 </div>
 
 <!-- ── Route Hazards Panel ──────────────────────────────── -->
-<div class="mo-panel" id="mo-panel-hazards">
+<div class="mo-panel" id="mo-panel-hazards" role="tabpanel" tabindex="-1" aria-labelledby="mo-tab-hazards" hidden>
   <div class="mo-card">
     <div class="mo-card-title">Log Route Hazard</div>
     <div class="mo-form-row">
@@ -165,11 +203,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCreateHazard()">Add</button></div>
     </div>
   </div>
-  <div id="mo-hz-list" class="mo-card"><div class="mo-empty">Loading...</div></div>
+  <div id="mo-hz-list" class="mo-card"><div class="mo-empty">Loading route hazards...</div></div>
 </div>
 
 <!-- ── Vehicle Loading Panel ────────────────────────────── -->
-<div class="mo-panel" id="mo-panel-loading">
+<div class="mo-panel" id="mo-panel-loading" role="tabpanel" tabindex="-1" aria-labelledby="mo-tab-loading" hidden>
   <div class="mo-card">
     <div class="mo-card-title">Vehicle Loading Plan</div>
     <div class="mo-form-row">
@@ -183,11 +221,11 @@
       <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCreateLoading()">Add</button></div>
     </div>
   </div>
-  <div id="mo-vl-list" class="mo-card"><div class="mo-empty">Loading...</div></div>
+  <div id="mo-vl-list" class="mo-card"><div class="mo-empty">Loading vehicle staging plans...</div></div>
 </div>
 
 <!-- ── Go/No-Go Panel ──────────────────────────────────── -->
-<div class="mo-panel" id="mo-panel-go-nogo">
+<div class="mo-panel" id="mo-panel-go-nogo" role="tabpanel" tabindex="-1" aria-labelledby="mo-tab-go-nogo" hidden>
   <div class="mo-card">
     <div class="mo-card-title">Go/No-Go Decision Criteria</div>
     <div class="mo-form-row">
@@ -208,11 +246,11 @@
     </div>
   </div>
   <div id="mo-gng-eval" class="mo-card" style="display:none"></div>
-  <div id="mo-gng-list" class="mo-card"><div class="mo-empty">Loading...</div></div>
+  <div id="mo-gng-list" class="mo-card"><div class="mo-empty">Loading departure criteria...</div></div>
 </div>
 
 <!-- ── Calculators Panel ───────────────────────────────── -->
-<div class="mo-panel" id="mo-panel-calculators">
+<div class="mo-panel" id="mo-panel-calculators" role="tabpanel" tabindex="-1" aria-labelledby="mo-tab-calculators" hidden>
   <div class="mo-grid">
     <div class="mo-card">
       <div class="mo-card-title">March Rate Calculator</div>
@@ -252,14 +290,32 @@
 (function(){
   /* ── Sub-tab switching ── */
   const root = document.getElementById('tab-movement-ops');
-  root.querySelectorAll('.mo-sub-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.querySelectorAll('.mo-sub-tab').forEach(b => b.classList.remove('active'));
-      root.querySelectorAll('.mo-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = document.getElementById('mo-panel-' + btn.dataset.moPanel);
-      if (panel) panel.classList.add('active');
+  function moActivatePanel(panelName, focusPanel = false) {
+    const nextButton = root.querySelector(`.mo-sub-tab[data-mo-panel="${panelName}"]`);
+    const nextPanel = document.getElementById('mo-panel-' + panelName);
+    if (!nextButton || !nextPanel) return;
+
+    root.querySelectorAll('.mo-sub-tab').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
     });
+    root.querySelectorAll('.mo-panel').forEach(p => {
+      p.classList.remove('active');
+      p.hidden = true;
+    });
+
+    nextButton.classList.add('active');
+    nextButton.setAttribute('aria-selected', 'true');
+    nextPanel.classList.add('active');
+    nextPanel.hidden = false;
+    if (focusPanel) nextPanel.focus();
+  }
+
+  root.querySelectorAll('.mo-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => moActivatePanel(btn.dataset.moPanel, true));
+  });
+  root.querySelectorAll('[data-mo-panel-target]').forEach(btn => {
+    btn.addEventListener('click', () => moActivatePanel(btn.dataset.moPanelTarget, true));
   });
 
   /* ── Helpers ── */
@@ -272,7 +328,7 @@
   window.moLoadPlans=function(){
     api('/api/movement-plans').then(plans=>{
       const el=$('mo-plans-list');
-      if(!plans.length){el.innerHTML='<div class="mo-empty">No movement plans yet. Create one above.</div>';return;}
+      if(!plans.length){el.innerHTML='<div class="mo-empty">No movement plans yet. Capture the first route above to anchor timing, distance, and movement method.</div>';return;}
       el.innerHTML=plans.map(p=>`<div class="mo-list-item">
         <div><strong>${p.name}</strong> <span class="mo-badge" style="margin-left:6px">${p.plan_type}</span>
           <br><small style="color:var(--text-secondary)">${p.origin||'?'} → ${p.destination||'?'} · ${p.distance_miles||0} mi · ${p.status}</small></div>
@@ -297,7 +353,7 @@
   window.moLoadAV=function(){
     api('/api/alt-vehicles').then(items=>{
       const el=$('mo-av-list');
-      if(!items.length){el.innerHTML='<div class="mo-empty">No alternative vehicles registered.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mo-empty">No alternate transport assets are registered yet. Add the first bike, animal, or watercraft above.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mo-list-item">
         <div><strong>${v.name}</strong> <span class="mo-badge" style="margin-left:6px">${v.vehicle_type}</span>
           <br><small style="color:var(--text-secondary)">Cap: ${v.capacity_lb}lb · Range: ${v.range_miles}mi · ${v.speed_mph}mph · ${v.condition}</small></div>
@@ -321,7 +377,7 @@
   window.moLoadHazards=function(){
     api('/api/route-hazards').then(items=>{
       const el=$('mo-hz-list');
-      if(!items.length){el.innerHTML='<div class="mo-empty">No route hazards logged.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mo-empty">No route hazards are logged yet. Add chokepoints, blockages, or bypass notes above.</div>';return;}
       const sevColor={low:'#22c55e',moderate:'#f59e0b',high:'#f97316',critical:'#ef4444'};
       el.innerHTML=items.map(h=>`<div class="mo-list-item">
         <div><strong>${h.name}</strong> <span class="mo-badge" style="color:${sevColor[h.severity]||'#aaa'};margin-left:6px">${h.severity}</span>
@@ -346,7 +402,7 @@
   window.moLoadVehicleLoading=function(){
     api('/api/vehicle-loading').then(items=>{
       const el=$('mo-vl-list');
-      if(!items.length){el.innerHTML='<div class="mo-empty">No vehicle loading plans.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mo-empty">No vehicle staging plans yet. Build the first loading order above.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mo-list-item">
         <div><strong>#${v.load_order} ${v.vehicle_name||'Vehicle'}</strong>
           <br><small style="color:var(--text-secondary)">Weight: ${v.total_weight_lb}/${v.max_weight_lb}lb · Fuel: ${v.fuel_level_pct}%</small></div>
@@ -370,7 +426,7 @@
   window.moLoadGoNogo=function(){
     api('/api/go-nogo').then(items=>{
       const el=$('mo-gng-list');
-      if(!items.length){el.innerHTML='<div class="mo-empty">No go/no-go criteria defined.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mo-empty">No go/no-go criteria are defined yet. Add the first departure gate above.</div>';return;}
       const statusBadge={go:'mo-badge-go',nogo:'mo-badge-nogo',hold:'mo-badge-hold',unknown:'mo-badge-unknown'};
       el.innerHTML=items.map(g=>`<div class="mo-list-item">
         <div><strong>${g.criterion}</strong> <span class="mo-badge ${statusBadge[g.current_status]||'mo-badge-unknown'}" style="margin-left:6px">${g.current_status.toUpperCase()}</span>

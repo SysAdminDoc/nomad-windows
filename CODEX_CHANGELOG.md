@@ -1,6 +1,6 @@
 # CODEX Change Log
 
-Last updated: 2026-04-15 (pass 11)
+Last updated: 2026-04-16 (pass 21b)
 
 Purpose: handoff notes for Claude or any follow-on agent so recent Codex work is easy to understand without reconstructing the full thread.
 
@@ -546,6 +546,100 @@ Repairs in:
 - updated `tests/test_csrf.py` to cover same-origin loopback behavior and block different-port localhost origins
 - extended `tests/test_blueprint_system.py` with PBKDF2 storage, legacy-hash upgrade, remote auth-check, remote mutation, malformed JSON, and invalid power-action coverage
 - ran `python -m pytest -q` (`928 passed`) and kept the earlier `npm run build` success as the frontend/build verification baseline for this pass
+
+## Pass 21 — Desktop lifecycle, DB safety, loopback hardening, and federation SQL injection fix
+
+Repairs in:
+
+- `nomad.py`
+- `db.py`
+- `services/manager.py`
+- `web/utils.py`
+- `web/auth.py`
+- `web/app.py`
+- `web/blueprints/system.py`
+- `web/blueprints/federation.py`
+- `services/ollama.py`
+- `services/stirling.py`
+- `services/kiwix.py`
+- `services/kolibri.py`
+- `services/qdrant.py`
+- `services/torrent.py`
+- `platform_utils.py`
+- `config.py`
+- `tests/test_pass21_hardening.py`
+
+**Desktop lifecycle hardening:**
+
+- added `_shutdown_event` (`threading.Event`) that signals all daemon threads to stop cleanly during graceful shutdown, replacing reliance on daemon-thread force-kill
+- rewrote `health_monitor()` to use `_shutdown_event.wait()` instead of `time.sleep()`, allowing immediate response to shutdown signals and preventing post-shutdown DB polling
+- taught `_navigate_when_ready()` to check `_shutdown_event` before touching the window, preventing race against a closing window; increased timeout from 18s to 30s to accommodate slow DB init
+- reordered shutdown: window is now destroyed before tray icon is stopped (avoids brief UI glitch where tray disappears while window is still visible)
+
+**Database safety improvements:**
+
+- upgraded `backup_db()` from `PRAGMA wal_checkpoint(PASSIVE)` to `TRUNCATE` with `PASSIVE` fallback — guarantees all committed WAL frames are in the main DB file before backup, preventing silent data loss
+- rewrote `apply_migrations()` to use `BEGIN IMMEDIATE` + individual `conn.execute()` calls instead of `conn.executescript()` — partial migration failures now roll back cleanly instead of leaving schema half-applied
+- widened `log_activity()` exception handler from `(OperationalError, InterfaceError)` to `sqlite3.Error` so unexpected DB errors in activity logging don't crash request handlers
+
+**Loopback detection (systemic fix):**
+
+- added `is_loopback_addr()` to `web/utils.py` using `ipaddress.ip_address().is_loopback` — correctly handles 127.0.0.0/8, ::1, ::ffff:127.0.0.1, and rejects 'localhost' string
+- replaced all 6 naive `in ('127.0.0.1', '::1', 'localhost')` checks across `web/app.py`, `web/auth.py`, and `web/blueprints/system.py` with the shared helper
+- fixes a real bypass where IPv4-mapped IPv6 loopback addresses (::ffff:127.0.0.1) were treated as remote LAN clients
+
+**Security fixes:**
+
+- **CRITICAL: SQL injection in federation sync** — `incoming_clocks` dict keys from untrusted peer data were used directly in `f'SELECT * FROM {tname}'` without validation; added `ALLOWED` set check and bracket-quoting
+- added table-name validation on conflict resolution path (`resolution == 'remote'`) to prevent stored-XSS-to-SQLi escalation through tampered sync_log entries
+- replaced character-blacklist path traversal checks (`'..' in filename`) with `os.path.basename()` across all 3 backup endpoints (confirm, restore, delete) — eliminates null-byte and encoding bypass vectors
+- hardened readiness-score SQL with frozen allowlist + bracket-quoting for defense-in-depth
+
+**Service manager fixes:**
+
+- fixed `extract_zip()` TOCTOU: extraction now uses the resolved realpath instead of the original `dest_dir`, preventing symlink races between validation and extraction
+- narrowed `_pid_matches_exe()` exception handler from `(AccessDenied, OSError, Exception)` to `(AccessDenied, OSError)` so unexpected errors are no longer silently masked
+
+**Regression coverage added (24 tests):**
+
+- `tests/test_pass21_hardening.py` covering: loopback detection (10 cases), backup path traversal (5 cases), auth check, federation table-name injection (2 cases), readiness score SQL, shutdown event, backup TRUNCATE checkpoint, migration transaction safety, log_activity exception scope, auth module loopback helper
+
+### Pass 21b — Wizard crash safety, service process cleanup, resource leak fixes
+
+Additional hardening fixes discovered during continued audit:
+
+**Wizard crash safety (`web/blueprints/system.py`):**
+
+- wrapped `do_setup()` daemon thread body in top-level `try/except` that catches all exceptions and sets `wizard_update(status='error', phase='failed', ...)` — prevents silent wizard death leaving users stuck on a spinning first-run screen
+- added re-trigger guard: rejects with 400 if `first_run_complete` is already set, rejects with 409 if wizard is already running
+
+**Service process orphan prevention (5 modules):**
+
+- `services/ollama.py`, `services/stirling.py`, `services/kiwix.py`, `services/kolibri.py`, `services/qdrant.py`: all `start()` functions now catch DB update failures after `subprocess.Popen()` and immediately terminate + unregister the orphaned process before re-raising — prevents untracked zombie processes when SQLite is locked or the DB write fails
+
+**Ollama response resource leak (`services/ollama.py`):**
+
+- `pull_model()`: added `resp = None` before try block and `finally: if resp is not None: resp.close()` — prevents file descriptor leak when streaming pull is interrupted by exception
+
+**Torrent monitor thread duplication (`services/torrent.py`):**
+
+- `_ensure_monitor()`: condition now checks both `_monitor_active` flag AND `_monitor_thread.is_alive()` — prevents duplicate monitor threads after a shutdown/restart cycle where the flag was cleared but the thread reference was stale
+
+**Portable mode symlink bypass (`platform_utils.py`):**
+
+- `is_portable_mode()` and `get_portable_data_dir()`: changed `os.path.abspath()` to `os.path.realpath()` — resolves symlinks before mount-point detection, preventing an attacker from tricking portable mode via a symlink to a different filesystem
+
+**Config temp file cleanup (`config.py`):**
+
+- `save_config()`: when the Windows retry loop exhausts 3 attempts, now explicitly removes the stale `.tmp` file before raising `PermissionError` — prevents future `load_config()` from recovering an outdated temp file as if it were valid
+
+**Regression coverage added (12 additional tests, 36 total in file):**
+
+- wizard crash wrapper source check, wizard rejects when already complete (400), wizard rejects when running (409)
+- ollama pull_model finally/resp.close() source check
+- service process cleanup for ollama/stirling/kiwix/kolibri/qdrant (5 tests)
+- portable mode realpath usage (2 tests)
+- config temp file cleanup source check
 
 ## Files With High Handoff Value
 

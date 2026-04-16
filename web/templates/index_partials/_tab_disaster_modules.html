@@ -15,14 +15,25 @@
     --dm-cyan: #06b6d4;
     --dm-gray: #6b7280;
   }
-  #tab-disaster-modules .dm-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-disaster-modules .dm-header h2 { font-size:1.25rem; color:var(--dm-accent); margin:0; }
-  #tab-disaster-modules .dm-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-disaster-modules .dm-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-disaster-modules .dm-sub-tab.active { background:var(--dm-accent-dim); border-color:var(--dm-accent); color:var(--dm-accent); }
+  #tab-disaster-modules .dm-command-deck { display:grid; gap:12px; margin-bottom:16px; padding:18px 20px; border:1px solid color-mix(in srgb, var(--dm-accent) 14%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--dm-accent) 14%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 90%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08)); }
+  #tab-disaster-modules .dm-command-deck-head { display:flex; justify-content:space-between; align-items:flex-start; gap:14px; flex-wrap:wrap; }
+  #tab-disaster-modules .dm-command-copy { display:grid; gap:8px; max-width:min(760px, 100%); }
+  #tab-disaster-modules .dm-command-title { margin:0; font-size:1.32rem; line-height:1.18; color:var(--text-primary,#eee); }
+  #tab-disaster-modules .dm-command-text { margin:0; color:var(--text-secondary,#aaa); line-height:1.6; max-width:68ch; }
+  #tab-disaster-modules .dm-command-actions { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; align-items:center; }
+  #tab-disaster-modules .dm-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-disaster-modules .dm-command-pill { display:inline-flex; align-items:center; min-height:28px; padding:0 10px; border-radius:999px; border:1px solid color-mix(in srgb, var(--dm-accent) 20%, var(--border,#333)); background:color-mix(in srgb, var(--dm-accent) 10%, transparent); color:color-mix(in srgb, var(--dm-accent) 44%, var(--text-primary,#f5f7ff)); font-size:.72rem; font-weight:600; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-disaster-modules .dm-sub-tabs-shell { display:grid; gap:8px; margin-bottom:18px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--surface2, #1d2232) 84%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-disaster-modules .dm-sub-tabs-label { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary,#aaa); font-weight:700; }
+  #tab-disaster-modules .dm-sub-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-disaster-modules .dm-sub-tab { min-height:36px; padding:8px 14px; border-radius:999px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-disaster-modules .dm-sub-tab:hover { border-color:color-mix(in srgb, var(--dm-accent) 22%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+  #tab-disaster-modules .dm-sub-tab.active { background:color-mix(in srgb, var(--dm-accent) 14%, var(--surface-solid, #121726)); border-color:color-mix(in srgb, var(--dm-accent) 48%, var(--border,#333)); color:var(--dm-accent); box-shadow:0 10px 24px color-mix(in srgb, var(--dm-accent) 16%, transparent); }
+  #tab-disaster-modules .dm-sub-tab:focus-visible,
+  #tab-disaster-modules .dm-btn:focus-visible { outline:2px solid transparent; outline-offset:2px; box-shadow:0 0 0 2px color-mix(in srgb, var(--surface-solid,#151826) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--dm-accent) 48%, transparent); }
   #tab-disaster-modules .dm-panel { display:none; }
   #tab-disaster-modules .dm-panel.active { display:block; }
-  #tab-disaster-modules .dm-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-disaster-modules .dm-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
   #tab-disaster-modules .dm-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
   #tab-disaster-modules .dm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-disaster-modules .dm-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
@@ -32,7 +43,7 @@
   #tab-disaster-modules .dm-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-disaster-modules .dm-form-row textarea { min-height:60px; resize:vertical; font-family:inherit; }
   #tab-disaster-modules .dm-form-row .field { flex:1; min-width:140px; }
-  #tab-disaster-modules .dm-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-disaster-modules .dm-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-disaster-modules .dm-btn-primary { background:var(--dm-accent); color:#000; }
   #tab-disaster-modules .dm-btn-danger { background:var(--dm-red); color:#fff; }
   #tab-disaster-modules .dm-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
@@ -40,7 +51,7 @@
   #tab-disaster-modules .dm-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
   #tab-disaster-modules .dm-list-item:last-child { border-bottom:none; }
   #tab-disaster-modules .dm-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
-  #tab-disaster-modules .dm-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
+  #tab-disaster-modules .dm-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
   #tab-disaster-modules .dm-table { width:100%; border-collapse:collapse; font-size:.82rem; }
   #tab-disaster-modules .dm-table th { text-align:left; padding:8px 10px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#444); background:rgba(0,0,0,.2); }
   #tab-disaster-modules .dm-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); vertical-align:middle; }
@@ -92,23 +103,50 @@
   #tab-disaster-modules .dm-checklist-item:last-child { border-bottom:none; }
   #tab-disaster-modules .dm-checklist-item input[type="checkbox"] { width:16px; height:16px; accent-color:var(--dm-accent); flex-shrink:0; }
   #tab-disaster-modules .dm-checklist-item.completed span { text-decoration:line-through; color:var(--text-secondary,#aaa); }
+  @media (max-width: 860px) {
+    #tab-disaster-modules .dm-command-deck { padding:16px; }
+    #tab-disaster-modules .dm-command-actions { width:100%; justify-content:flex-start; }
+    #tab-disaster-modules .dm-command-actions .dm-btn { flex:1 1 160px; }
+  }
 </style>
 
-<div class="dm-header">
-  <h2>Disaster-Specific Modules</h2>
+<div class="dm-command-deck workspace-panel">
+  <div class="dm-command-deck-head">
+    <div class="dm-command-copy">
+      <h2 class="dm-command-title">Stage disaster plans, hardening projects, and backup systems from one readiness workspace.</h2>
+      <p class="dm-command-text">Shift from scenario planning to energy resilience, construction, fortifications, and response checklists without losing what still needs attention.</p>
+    </div>
+    <div class="dm-command-actions">
+      <button type="button" class="dm-btn dm-btn-secondary" data-dm-panel-target="plans">Plans</button>
+      <button type="button" class="dm-btn dm-btn-secondary" data-dm-panel-target="energy">Backup Power</button>
+      <button type="button" class="dm-btn dm-btn-secondary" data-dm-panel-target="construction">Construction</button>
+      <button type="button" class="dm-btn dm-btn-secondary" data-dm-panel-target="checklists">Checklists</button>
+    </div>
+  </div>
+  <div class="dm-command-pills" aria-hidden="true">
+    <span class="dm-command-pill">Disaster plans</span>
+    <span class="dm-command-pill">Backup power</span>
+    <span class="dm-command-pill">Construction</span>
+    <span class="dm-command-pill">Materials</span>
+    <span class="dm-command-pill">Fortifications</span>
+    <span class="dm-command-pill">Checklists</span>
+  </div>
 </div>
 
 <!-- Sub-tabs -->
-<div class="dm-sub-tabs">
-  <button class="dm-sub-tab active" data-dm-panel="plans">Plans</button>
-  <button class="dm-sub-tab" data-dm-panel="energy">Energy</button>
-  <button class="dm-sub-tab" data-dm-panel="construction">Construction</button>
-  <button class="dm-sub-tab" data-dm-panel="fortifications">Fortifications</button>
-  <button class="dm-sub-tab" data-dm-panel="checklists">Checklists</button>
+<div class="dm-sub-tabs-shell">
+  <div class="dm-sub-tabs-label">Workflows</div>
+  <div class="dm-sub-tabs" role="tablist" aria-label="Disaster modules sections">
+    <button type="button" class="dm-sub-tab active" data-dm-panel="plans" role="tab" aria-selected="true" aria-controls="dm-panel-plans" id="dm-tab-plans">Plans</button>
+    <button type="button" class="dm-sub-tab" data-dm-panel="energy" role="tab" aria-selected="false" aria-controls="dm-panel-energy" id="dm-tab-energy">Energy</button>
+    <button type="button" class="dm-sub-tab" data-dm-panel="construction" role="tab" aria-selected="false" aria-controls="dm-panel-construction" id="dm-tab-construction">Construction</button>
+    <button type="button" class="dm-sub-tab" data-dm-panel="fortifications" role="tab" aria-selected="false" aria-controls="dm-panel-fortifications" id="dm-tab-fortifications">Fortifications</button>
+    <button type="button" class="dm-sub-tab" data-dm-panel="checklists" role="tab" aria-selected="false" aria-controls="dm-panel-checklists" id="dm-tab-checklists">Checklists</button>
+  </div>
 </div>
 
 <!-- ── Plans Panel ──────────────────────────────────────── -->
-<div class="dm-panel active" id="dm-panel-plans">
+<div class="dm-panel active" id="dm-panel-plans" role="tabpanel" tabindex="-1" aria-labelledby="dm-tab-plans">
   <div id="dm-plan-summary" class="dm-summary-row"></div>
 
   <!-- Filters -->
@@ -168,7 +206,7 @@
   </div>
 
   <!-- Plan list -->
-  <div id="dm-plan-list" class="dm-card"><div class="dm-empty">Loading plans...</div></div>
+  <div id="dm-plan-list" class="dm-card"><div class="dm-empty">Loading disaster plans...</div></div>
 
   <!-- Expanded plan detail -->
   <div id="dm-plan-detail" class="dm-card" style="display:none"></div>
@@ -178,19 +216,19 @@
     <button class="dm-btn dm-btn-secondary" onclick="dmSeedChecklists()">Seed Default Checklists</button>
     <div class="dm-card" style="margin-bottom:0">
       <div class="dm-card-title">Quick Reference</div>
-      <div id="dm-plan-reference"><div class="dm-empty">Loading reference data...</div></div>
+      <div id="dm-plan-reference"><div class="dm-empty">Loading quick-reference actions...</div></div>
     </div>
   </div>
 </div>
 
 <!-- ── Energy Panel ─────────────────────────────────────── -->
-<div class="dm-panel" id="dm-panel-energy">
+<div class="dm-panel" id="dm-panel-energy" role="tabpanel" tabindex="-1" aria-labelledby="dm-tab-energy" hidden>
   <div id="dm-energy-summary" class="dm-summary-row"></div>
 
   <!-- Energy systems table -->
   <div class="dm-card">
     <div class="dm-card-title">Alternative Energy Systems</div>
-    <div id="dm-energy-list"><div class="dm-empty">Loading energy systems...</div></div>
+    <div id="dm-energy-list"><div class="dm-empty">Loading backup energy systems...</div></div>
   </div>
 
   <!-- Add energy system -->
@@ -252,7 +290,7 @@
 </div>
 
 <!-- ── Construction Panel ───────────────────────────────── -->
-<div class="dm-panel" id="dm-panel-construction">
+<div class="dm-panel" id="dm-panel-construction" role="tabpanel" tabindex="-1" aria-labelledby="dm-tab-construction" hidden>
   <!-- Create project -->
   <div class="dm-card">
     <div class="dm-card-title">New Construction Project</div>
@@ -273,13 +311,13 @@
   </div>
 
   <!-- Project list -->
-  <div id="dm-con-list" class="dm-card"><div class="dm-empty">Loading projects...</div></div>
+  <div id="dm-con-list" class="dm-card"><div class="dm-empty">Loading construction projects...</div></div>
 
   <!-- Materials inventory -->
   <div class="dm-card">
     <div class="dm-card-title">Materials Inventory</div>
     <div id="dm-mat-low-stock" style="margin-bottom:8px"></div>
-    <div id="dm-mat-list"><div class="dm-empty">Loading materials...</div></div>
+    <div id="dm-mat-list"><div class="dm-empty">Loading material reserves...</div></div>
   </div>
 
   <!-- Add material -->
@@ -306,11 +344,11 @@
 </div>
 
 <!-- ── Fortifications Panel ─────────────────────────────── -->
-<div class="dm-panel" id="dm-panel-fortifications">
+<div class="dm-panel" id="dm-panel-fortifications" role="tabpanel" tabindex="-1" aria-labelledby="dm-tab-fortifications" hidden>
   <div id="dm-fort-assessment" class="dm-summary-row"></div>
 
   <!-- Fortification cards -->
-  <div id="dm-fort-list" class="dm-grid"><div class="dm-empty">Loading fortifications...</div></div>
+  <div id="dm-fort-list" class="dm-grid"><div class="dm-empty">Loading fortification status...</div></div>
 
   <!-- Add fortification -->
   <div class="dm-card">
@@ -339,7 +377,7 @@
 </div>
 
 <!-- ── Checklists Panel ─────────────────────────────────── -->
-<div class="dm-panel" id="dm-panel-checklists">
+<div class="dm-panel" id="dm-panel-checklists" role="tabpanel" tabindex="-1" aria-labelledby="dm-tab-checklists" hidden>
   <!-- Filters -->
   <div class="dm-card">
     <div class="dm-card-title">Filter Checklists</div>
@@ -365,7 +403,7 @@
   </div>
 
   <!-- Checklist items -->
-  <div id="dm-cl-list" class="dm-card"><div class="dm-empty">Loading checklists...</div></div>
+  <div id="dm-cl-list" class="dm-card"><div class="dm-empty">Loading readiness checklists...</div></div>
 </div>
 
 <script>
@@ -398,14 +436,32 @@
   }
 
   /* ── Sub-tab switching ── */
-  root.querySelectorAll('.dm-sub-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.querySelectorAll('.dm-sub-tab').forEach(b => b.classList.remove('active'));
-      root.querySelectorAll('.dm-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = el('dm-panel-' + btn.dataset.dmPanel);
-      if (panel) panel.classList.add('active');
+  function dmActivatePanel(panelName, focusPanel = false) {
+    const nextButton = root.querySelector(`.dm-sub-tab[data-dm-panel="${panelName}"]`);
+    const nextPanel = el('dm-panel-' + panelName);
+    if (!nextButton || !nextPanel) return;
+
+    root.querySelectorAll('.dm-sub-tab').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
     });
+    root.querySelectorAll('.dm-panel').forEach(p => {
+      p.classList.remove('active');
+      p.hidden = true;
+    });
+
+    nextButton.classList.add('active');
+    nextButton.setAttribute('aria-selected', 'true');
+    nextPanel.classList.add('active');
+    nextPanel.hidden = false;
+    if (focusPanel) nextPanel.focus();
+  }
+
+  root.querySelectorAll('.dm-sub-tab').forEach(btn => {
+    btn.addEventListener('click', () => dmActivatePanel(btn.dataset.dmPanel, true));
+  });
+  root.querySelectorAll('[data-dm-panel-target]').forEach(btn => {
+    btn.addEventListener('click', () => dmActivatePanel(btn.dataset.dmPanelTarget, true));
   });
 
   /* ═══════════════════════════════════════════════════════════
@@ -422,7 +478,7 @@
 
     api(url).then(plans => {
       const list = el('dm-plan-list');
-      if(!plans || !plans.length){ list.innerHTML = '<div class="dm-empty">No plans found. Create one above.</div>'; return; }
+      if(!plans || !plans.length){ list.innerHTML = '<div class="dm-empty">No plans yet. Build the first scenario above to anchor the rest of the workspace.</div>'; return; }
       list.innerHTML = plans.map(p => {
         const tc = disasterTypeColors[p.disaster_type] || '#f59e0b';
         const stColor = p.status === 'active' ? '#22c55e' : p.status === 'draft' ? '#f59e0b' : '#6b7280';
@@ -454,7 +510,7 @@
     // Reference
     api(API + '/plans/reference').then(ref => {
       const box = el('dm-plan-reference');
-      if(!ref || !ref.length){ box.innerHTML = '<div style="font-size:.82rem;color:var(--text-secondary,#aaa)">No reference data.</div>'; return; }
+      if(!ref || !ref.length){ box.innerHTML = '<div style="font-size:.82rem;color:var(--text-secondary,#aaa)">No quick-reference actions are available yet.</div>'; return; }
       box.innerHTML = ref.map(r => `<div style="padding:6px 0;border-bottom:1px solid var(--border,#333);font-size:.82rem">
         <span class="dm-badge dm-type-${r.disaster_type}" style="margin-right:6px">${(r.disaster_type||'').replace('_',' ')}</span>
         <strong>${r.action||''}</strong>
@@ -486,7 +542,7 @@
       const pct = totalItems ? Math.round(doneItems / totalItems * 100) : 0;
       box.innerHTML = `<div class="dm-card-title">${p.name}
         <span class="dm-badge dm-type-${p.disaster_type}" style="margin-left:8px">${(p.disaster_type||'').replace('_',' ')}</span></div>
-        <p style="font-size:.85rem;color:var(--text-secondary,#aaa);margin:0 0 12px">${p.description || 'No description.'}</p>
+        <p style="font-size:.85rem;color:var(--text-secondary,#aaa);margin:0 0 12px">${p.description || 'No summary has been added yet.'}</p>
         <div style="margin-bottom:10px"><strong style="font-size:.82rem">Checklist Progress: ${pct}%</strong>
           <div class="dm-progress"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
         </div>
@@ -494,7 +550,7 @@
           <input type="checkbox" name="dm-plan-cl-${c.id}" ${c.completed?'checked':''} onchange="dmToggleChecklist(${c.id},this.checked)">
           <span>${c.item_text}</span>
           <span class="dm-badge dm-cat-${c.category}" style="margin-left:auto">${(c.category||'').replace('_',' ')}</span>
-        </div>`).join('') : '<div class="dm-empty">No checklists for this plan.</div>'}`;
+        </div>`).join('') : '<div class="dm-empty">No checklists are attached to this plan yet.</div>'}`;
     });
   };
 
@@ -508,7 +564,7 @@
   function dmLoadEnergy(){
     api(API + '/energy').then(items => {
       const list = el('dm-energy-list');
-      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No energy systems tracked.</div>'; return; }
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No backup energy systems are tracked yet. Add the first one above.</div>'; return; }
       list.innerHTML = `<table class="dm-table"><thead><tr>
         <th>System</th><th>Type</th><th>Status</th><th>Output</th><th>Fuel</th><th></th>
       </tr></thead><tbody>${items.map(e => {
@@ -591,7 +647,7 @@
   function dmLoadConstruction(){
     api(API + '/construction').then(projects => {
       const list = el('dm-con-list');
-      if(!projects || !projects.length){ list.innerHTML = '<div class="dm-empty">No construction projects.</div>'; return; }
+      if(!projects || !projects.length){ list.innerHTML = '<div class="dm-empty">No construction projects yet. Capture the first build or retrofit above.</div>'; return; }
       list.innerHTML = projects.map(p => {
         const est = p.estimated_hours || 0;
         const done = p.hours_completed || 0;
@@ -619,7 +675,7 @@
   function dmLoadMaterials(){
     api(API.replace('/disaster','/disaster/materials')).then(items => {
       const list = el('dm-mat-list');
-      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No materials tracked.</div>'; return; }
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No material reserves are tracked yet. Add your first inventory item above.</div>'; return; }
       list.innerHTML = `<table class="dm-table"><thead><tr>
         <th>Material</th><th>Category</th><th>Qty</th><th>Unit</th><th>Min Stock</th><th></th>
       </tr></thead><tbody>${items.map(m => {
@@ -660,7 +716,7 @@
   window.dmViewMaterials = function(projectId){
     api(API + '/construction/' + projectId + '/materials').then(items => {
       const list = el('dm-mat-list');
-      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No materials linked to this project.</div>'; return; }
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No materials are linked to this project yet.</div>'; return; }
       list.innerHTML = `<table class="dm-table"><thead><tr>
         <th>Material</th><th>Category</th><th>Qty</th><th>Unit</th>
       </tr></thead><tbody>${items.map(m => `<tr>
@@ -687,7 +743,7 @@
   function dmLoadFortifications(){
     api(API + '/fortifications').then(items => {
       const list = el('dm-fort-list');
-      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No fortifications tracked.</div>'; return; }
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No fortifications yet. Add the first barrier, shelter, or hardened position above.</div>'; return; }
       list.innerHTML = items.map(f => {
         const condClass = 'dm-cond-' + (f.condition || 'fair');
         const condIcon = f.condition === 'good' ? '&#9679;' : f.condition === 'fair' ? '&#9681;' : '&#9675;';
@@ -750,7 +806,7 @@
 
     api(url).then(items => {
       const list = el('dm-cl-list');
-      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No checklist items found.</div>'; return; }
+      if(!items || !items.length){ list.innerHTML = '<div class="dm-empty">No checklist items match the current filters.</div>'; return; }
       // Group by plan
       const grouped = {};
       items.forEach(c => { const key = c.plan_name || 'Unassigned'; (grouped[key] = grouped[key] || []).push(c); });

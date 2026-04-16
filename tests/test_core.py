@@ -306,6 +306,73 @@ class TestErrorHandler:
         assert 'No morale check-ins yet. Start logging how the household is holding up.' in daily_text
         assert 'Not enough sleep data yet. Log a few more nights to build a reliable watch rotation.' in daily_text
 
+    def test_group_ops_and_disaster_modules_gain_premium_command_decks_and_accessible_panel_switching(self):
+        group_ops_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_group_ops.html').read_text(encoding='utf-8')
+        disaster_modules_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_disaster_modules.html').read_text(encoding='utf-8')
+
+        assert 'class="go-command-deck workspace-panel"' in group_ops_text
+        assert 'Coordinate pods, governance, and community response from one calm operations desk.' in group_ops_text
+        assert 'data-go-panel-target="civil-defense"' in group_ops_text
+        assert 'role="tablist" aria-label="Group operations sections"' in group_ops_text
+        assert 'function goActivatePanel(panelName, focusPanel = false)' in group_ops_text
+        assert 'id="go-tab-civil-defense">Civil Defense</button>' in group_ops_text
+        assert 'No pods yet. Create the first team above to anchor staffing, governance, and duty coverage.' in group_ops_text
+        assert 'No community warnings yet. Published alerts and advisories will appear here.' in group_ops_text
+
+        assert 'class="dm-command-deck workspace-panel"' in disaster_modules_text
+        assert 'Stage disaster plans, hardening projects, and backup systems from one readiness workspace.' in disaster_modules_text
+        assert 'data-dm-panel-target="checklists"' in disaster_modules_text
+        assert 'role="tablist" aria-label="Disaster modules sections"' in disaster_modules_text
+        assert 'function dmActivatePanel(panelName, focusPanel = false)' in disaster_modules_text
+        assert 'No plans yet. Build the first scenario above to anchor the rest of the workspace.' in disaster_modules_text
+        assert 'No fortifications yet. Add the first barrier, shelter, or hardened position above.' in disaster_modules_text
+        assert 'No checklist items match the current filters.' in disaster_modules_text
+
+    def test_medical_phase2_and_movement_ops_gain_premium_command_decks_and_accessible_panel_switching(self):
+        medical_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_medical_phase2.html').read_text(encoding='utf-8')
+        movement_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_movement_ops.html').read_text(encoding='utf-8')
+
+        assert 'class="mp-command-deck workspace-panel"' in medical_text
+        assert 'Track maternal care, chronic conditions, wellness, and veterinary support from one continuity desk.' in medical_text
+        assert 'data-mp-panel-target="calculators"' in medical_text
+        assert 'role="tablist" aria-label="Medical phase 2 sections"' in medical_text
+        assert 'function mpActivatePanel(panelName, focusPanel = false)' in medical_text
+        assert 'id="mp-tab-vet">Veterinary</button>' in medical_text
+        assert 'No maternal care records yet. Add the first patient above to track due dates and care context.' in medical_text
+        assert 'No wellness check-ins yet. Log the first mental health entry above.' in medical_text
+
+        assert 'class="mo-command-deck workspace-panel"' in movement_text
+        assert 'Plan routes, alternate transport, and departure criteria from one movement workspace.' in movement_text
+        assert 'data-mo-panel-target="go-nogo"' in movement_text
+        assert 'role="tablist" aria-label="Movement operations sections"' in movement_text
+        assert 'function moActivatePanel(panelName, focusPanel = false)' in movement_text
+        assert 'No movement plans yet. Capture the first route above to anchor timing, distance, and movement method.' in movement_text
+        assert 'No alternate transport assets are registered yet. Add the first bike, animal, or watercraft above.' in movement_text
+        assert 'No go/no-go criteria are defined yet. Add the first departure gate above.' in movement_text
+
+    def test_security_opsec_and_tactical_comms_gain_premium_command_decks_and_accessible_panel_switching(self):
+        security_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_security_opsec.html').read_text(encoding='utf-8')
+        comms_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_tab_tactical_comms.html').read_text(encoding='utf-8')
+
+        assert 'class="so-command-deck workspace-panel"' in security_text
+        assert 'Protect access, track threats, and coordinate contamination response from one security desk.' in security_text
+        assert 'data-so-panel-target="cbrn-emp"' in security_text
+        assert 'role="tablist" aria-label="Security and OPSEC sections"' in security_text
+        assert 'function soActivatePanel(panelName, focusPanel = false)' in security_text
+        assert 'id="so-tab-cbrn-emp">CBRN & EMP</button>' in security_text
+        assert 'No compartments yet. Create the first compartment above to define access boundaries and member lists.' in security_text
+        assert 'No EMP inventory yet. Add the first critical item above to assess protection gaps.' in security_text
+
+        assert 'class="tc-command-deck workspace-panel"' in comms_text
+        assert 'Keep radio plans, authentication, and field weather tools in one comms desk.' in comms_text
+        assert 'data-tc-panel-target="weather"' in comms_text
+        assert 'role="tablist" aria-label="Tactical communications sections"' in comms_text
+        assert 'function tcActivatePanel(panelName, focusPanel = false)' in comms_text
+        assert 'id="tc-tab-auth">Auth Sets</button>' in comms_text
+        assert 'No radios are logged yet. Add the first handheld, base station, or repeater above.' in comms_text
+        assert 'No net schedules yet. Add the first check-in window above to publish frequency and control station.' in comms_text
+        assert 'No message templates yet. Seed the built-in formats or add your own reporting standard above.' in comms_text
+
     def test_workspace_page_bootstraps_saved_language_before_runtime_init(self, client, db):
         db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('language', 'es')")
         db.commit()

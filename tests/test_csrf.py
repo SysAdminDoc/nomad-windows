@@ -25,18 +25,33 @@ class TestCSRFBlocking:
                           headers={'Origin': 'file://'})
         assert resp.status_code == 403
 
+    def test_post_from_localhost_different_port_blocked(self, client):
+        resp = client.post(
+            '/api/inventory',
+            json={'name': 'CSRF Test'},
+            base_url='http://127.0.0.1:8080',
+            headers={'Origin': 'http://localhost:3000'},
+        )
+        assert resp.status_code == 403
+
 
 class TestCSRFAllowed:
-    def test_post_from_localhost_allowed(self, client):
-        resp = client.post('/api/inventory',
-                          json={'name': 'Local Test'},
-                          headers={'Origin': 'http://localhost:5000'})
+    def test_post_from_same_origin_allowed(self, client):
+        resp = client.post(
+            '/api/inventory',
+            json={'name': 'Local Test'},
+            base_url='http://localhost:8080',
+            headers={'Origin': 'http://localhost:8080'},
+        )
         assert resp.status_code != 403
 
-    def test_post_from_127_allowed(self, client):
-        resp = client.post('/api/inventory',
-                          json={'name': 'Loopback Test'},
-                          headers={'Origin': 'http://127.0.0.1:5000'})
+    def test_post_from_loopback_alias_same_port_allowed(self, client):
+        resp = client.post(
+            '/api/inventory',
+            json={'name': 'Loopback Test'},
+            base_url='http://127.0.0.1:8080',
+            headers={'Origin': 'http://localhost:8080'},
+        )
         assert resp.status_code != 403
 
     def test_post_no_origin_allowed(self, client):

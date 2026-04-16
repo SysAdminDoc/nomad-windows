@@ -19,7 +19,11 @@ from web.state import (
     _mesh_state,
 )
 import web.state as _state
-from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_list as _safe_json_list
+from web.utils import (
+    clone_json_fallback as _clone_json_fallback,
+    get_query_int as _get_query_int,
+    safe_json_list as _safe_json_list,
+)
 
 log = logging.getLogger('nomad.web')
 
@@ -849,7 +853,7 @@ def api_mesh_status():
 def api_mesh_messages_list():
     """List recent mesh messages."""
     with db_session() as db:
-        limit = request.args.get('limit', 50, type=int)
+        limit = _get_query_int(request, 'limit', 50, minimum=1, maximum=200)
         rows = db.execute('SELECT * FROM mesh_messages ORDER BY timestamp DESC LIMIT ?', (limit,)).fetchall()
         return jsonify([dict(r) for r in rows])
 @comms_bp.route('/api/mesh/messages', methods=['POST'])

@@ -1,5 +1,6 @@
 """Tests for system-level routes: settings, i18n, system info, etc."""
 
+import hashlib
 import json
 
 
@@ -190,3 +191,99 @@ class TestDashboardAndBackupConfigFallbacks:
         assert isinstance(data, dict)
         assert data['categories']['planning']['score'] >= 0
         assert 'checklists' in data['categories']['planning']['detail']
+
+
+class TestSimpleLanAuth:
+    def test_set_password_stores_pbkdf2_hash(self, client, db):
+        resp = client.post('/api/auth/set-password', json={'password': 'field-pass'})
+
+        assert resp.status_code == 200
+        row = db.execute("SELECT value FROM settings WHERE key = 'auth_password'").fetchone()
+        assert row is not None
+        assert row['value'].startswith('pbkdf2$')
+        assert row['value'] != hashlib.sha256(b'field-pass').hexdigest()
+
+    def test_auth_check_accepts_valid_remote_token(self, client):
+        client.post('/api/auth/set-password', json={'password': 'field-pass'})
+
+        resp = client.get(
+            '/api/auth/check',
+            headers={'X-Auth-Token': 'field-pass'},
+            environ_overrides={'REMOTE_ADDR': '192.168.1.22'},
+        )
+
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['enabled'] is True
+        assert data['authenticated'] is True
+
+    def test_remote_mutation_requires_valid_auth_token(self, client):
+        client.post('/api/auth/set-password', json={'password': 'field-pass'})
+        remote_addr = '192.168.1.25'
+        base_url = f'http://{remote_addr}:8080'
+        csrf = client.get(
+            '/api/csrf-token',
+            base_url=base_url,
+            environ_overrides={'REMOTE_ADDR': remote_addr},
+        ).get_json()['csrf_token']
+
+        denied = client.post(
+            '/api/inventory',
+            json={'name': 'Denied Remote'},
+            base_url=base_url,
+            headers={'Origin': base_url, 'X-CSRF-Token': csrf},
+            environ_overrides={'REMOTE_ADDR': remote_addr},
+        )
+        allowed = client.post(
+            '/api/inventory',
+            json={'name': 'Allowed Remote'},
+            base_url=base_url,
+            headers={'Origin': base_url, 'X-CSRF-Token': csrf, 'X-Auth-Token': 'field-pass'},
+            environ_overrides={'REMOTE_ADDR': remote_addr},
+        )
+
+        assert denied.status_code == 403
+        assert denied.get_json()['error'] == 'Authentication required'
+        assert allowed.status_code == 201
+
+    def test_remote_mutation_accepts_legacy_hash_and_upgrades_it(self, client, db):
+        legacy = hashlib.sha256(b'legacy-pass').hexdigest()
+        db.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('auth_password', ?)",
+            (legacy,),
+        )
+        db.commit()
+        remote_addr = '192.168.1.30'
+        base_url = f'http://{remote_addr}:8080'
+        csrf = client.get(
+            '/api/csrf-token',
+            base_url=base_url,
+            environ_overrides={'REMOTE_ADDR': remote_addr},
+        ).get_json()['csrf_token']
+
+        resp = client.post(
+            '/api/inventory',
+            json={'name': 'Legacy Remote'},
+            base_url=base_url,
+            headers={'Origin': base_url, 'X-CSRF-Token': csrf, 'X-Auth-Token': 'legacy-pass'},
+            environ_overrides={'REMOTE_ADDR': remote_addr},
+        )
+
+        assert resp.status_code == 201
+        upgraded = db.execute("SELECT value FROM settings WHERE key = 'auth_password'").fetchone()['value']
+        assert upgraded.startswith('pbkdf2$')
+        assert upgraded != legacy
+
+
+class TestPowerActions:
+    def test_system_shutdown_rejects_invalid_action(self, client):
+        resp = client.post('/api/system/shutdown', json={'action': 'explode'})
+
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'action must be shutdown or reboot'
+
+    def test_system_shutdown_rejects_malformed_json(self, client):
+        resp = client.post('/api/system/shutdown', data='{bad', content_type='application/json')
+
+        assert resp.status_code == 400
+        assert resp.get_json()['error'] == 'Request body must be valid JSON'

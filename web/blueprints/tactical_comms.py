@@ -7,6 +7,7 @@ from datetime import datetime, date
 
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
+from web.utils import get_query_int as _get_query_int
 
 _log = logging.getLogger(__name__)
 
@@ -480,7 +481,7 @@ def api_message_templates_delete(tid):
 @tactical_comms_bp.route('/api/sent-messages')
 def api_sent_messages_list():
     ttype = request.args.get('type', '').strip()
-    limit = request.args.get('limit', 50, type=int)
+    limit = _get_query_int(request, 'limit', 50, minimum=1, maximum=200)
     with db_session() as db:
         if ttype:
             rows = db.execute(

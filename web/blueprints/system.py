@@ -24,8 +24,12 @@ from services.manager import (
 import config
 from web.utils import (
     clone_json_fallback as _clone_json_fallback,
+    get_query_int as _get_query_int,
+    hash_local_secret as _hash_local_secret,
+    local_secret_needs_rehash as _local_secret_needs_rehash,
     require_json_body as _require_json_body,
     safe_json_value as _safe_json_value,
+    verify_local_secret as _verify_local_secret,
 )
 from web.state import (
     _auto_backup_timer,
@@ -39,6 +43,13 @@ from web.state import (
 import web.state as _state
 
 log = logging.getLogger('nomad.web')
+
+
+def _format_host_for_url(host):
+    host = (host or '').strip()
+    if ':' in host and not host.startswith('['):
+        return f'[{host}]'
+    return host
 
 
 def _to_int(value, default=0):
@@ -543,7 +554,14 @@ def api_network():
     except Exception:
         pass
 
-    return jsonify({'online': online, 'lan_ip': lan_ip, 'dashboard_url': f'http://{lan_ip}:8080'})
+    bind_host = getattr(config.Config, 'APP_HOST', '127.0.0.1') or '127.0.0.1'
+    bind_port = getattr(config.Config, 'APP_PORT', 8080) or 8080
+    dashboard_host = bind_host if bind_host in {'127.0.0.1', 'localhost', '::1'} else lan_ip
+    return jsonify({
+        'online': online,
+        'lan_ip': lan_ip,
+        'dashboard_url': f'http://{_format_host_for_url(dashboard_host)}:{bind_port}',
+    })
 
 # [EXTRACTED to blueprint] KB upload/documents/status/search + helpers
 
@@ -552,7 +570,7 @@ def api_network():
 
 @system_bp.route('/api/activity')
 def api_activity():
-    limit = request.args.get('limit', 50, type=int)
+    limit = _get_query_int(request, 'limit', 50, minimum=1, maximum=500)
     filter_val = request.args.get('filter', '')
     with db_session() as db:
         if filter_val:
@@ -1652,8 +1670,12 @@ def api_backup_config_get():
 
 @system_bp.route('/api/system/shutdown', methods=['POST'])
 def api_system_shutdown():
-    data = request.get_json() or {}
-    action = data.get('action', 'shutdown')
+    data, error = _require_json_body(request)
+    if error:
+        return error
+    action = (data.get('action') or '').strip().lower()
+    if action not in {'shutdown', 'reboot'}:
+        return jsonify({'error': 'action must be shutdown or reboot'}), 400
     log_activity('system_power', detail=action)
     def do_power():
         import time as t
@@ -1672,16 +1694,25 @@ def api_system_shutdown():
 def api_auth_check():
     with db_session() as db:
         row = db.execute("SELECT value FROM settings WHERE key = 'auth_password'").fetchone()
+        stored = row['value'] if row else ''
+        token = request.headers.get('X-Auth-Token', '')
+        token_valid = _verify_local_secret(token, stored) if stored and token else False
+        if token_valid and _local_secret_needs_rehash(stored):
+            db.execute(
+                "INSERT OR REPLACE INTO settings (key, value) VALUES ('auth_password', ?)",
+                (_hash_local_secret(token),)
+            )
+            db.commit()
     remote = request.remote_addr or ''
     is_local = remote in ('127.0.0.1', '::1', 'localhost')
-    return jsonify({'enabled': bool(row and row['value']), 'authenticated': is_local or not (row and row['value'])})
+    enabled = bool(row and row['value'])
+    return jsonify({'enabled': enabled, 'authenticated': (is_local or token_valid or not enabled)})
 
 @system_bp.route('/api/auth/set-password', methods=['POST'])
 def api_auth_set_password():
     data = request.get_json() or {}
     password = data.get('password', '').strip()
-    import hashlib
-    hashed = hashlib.sha256(password.encode()).hexdigest() if password else ''
+    hashed = _hash_local_secret(password) if password else ''
     with db_session() as db:
         db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('auth_password', ?)", (hashed,))
         db.commit()

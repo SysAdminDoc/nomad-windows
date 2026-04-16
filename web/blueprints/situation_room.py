@@ -34,7 +34,12 @@ from datetime import datetime, timedelta
 import requests
 from flask import Blueprint, request, jsonify, current_app
 from db import db_session, log_activity
-from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_object as _safe_json_object
+from web.utils import (
+    clone_json_fallback as _clone_json_fallback,
+    get_query_int as _get_query_int,
+    safe_json_object as _safe_json_object,
+    safe_json_value as _safe_json_value,
+)
 
 situation_room_bp = Blueprint('situation_room', __name__)
 log = logging.getLogger('nomad.situation_room')
@@ -2446,8 +2451,8 @@ def api_sitroom_status():
 @situation_room_bp.route('/api/sitroom/news')
 def api_sitroom_news():
     category = request.args.get('category', '')
-    limit = min(request.args.get('limit', 100, type=int), 500)
-    offset = request.args.get('offset', 0, type=int)
+    limit = _get_query_int(request, 'limit', 100, minimum=1, maximum=500)
+    offset = _get_query_int(request, 'offset', 0, minimum=0)
     with db_session() as db:
         if category:
             rows = db.execute('SELECT * FROM sitroom_news WHERE category = ? ORDER BY cached_at DESC LIMIT ? OFFSET ?',
@@ -2463,11 +2468,8 @@ def api_sitroom_news():
 @situation_room_bp.route('/api/sitroom/events')
 def api_sitroom_events():
     event_type = request.args.get('type', '')
-    try:
-        limit = min(int(request.args.get('limit', 50)), 200)
-        offset = int(request.args.get('offset', 0))
-    except (ValueError, TypeError):
-        limit, offset = 50, 0
+    limit = _get_query_int(request, 'limit', 50, minimum=1, maximum=200)
+    offset = _get_query_int(request, 'offset', 0, minimum=0)
     with db_session() as db:
         if event_type:
             rows = db.execute('SELECT * FROM sitroom_events WHERE event_type = ? ORDER BY cached_at DESC LIMIT ? OFFSET ?',
@@ -2675,7 +2677,7 @@ def api_sitroom_markets():
 @situation_room_bp.route('/api/sitroom/aviation')
 def api_sitroom_aviation():
     """Return cached aircraft positions."""
-    limit = min(request.args.get('limit', 200, type=int), 500)
+    limit = _get_query_int(request, 'limit', 200, minimum=1, maximum=500)
     with db_session() as db:
         rows = db.execute('SELECT * FROM sitroom_aviation ORDER BY altitude_m DESC LIMIT ?', (limit,)).fetchall()
     return jsonify({'aircraft': [dict(r) for r in rows]})
@@ -2684,7 +2686,7 @@ def api_sitroom_aviation():
 @situation_room_bp.route('/api/sitroom/ships')
 def api_sitroom_ships():
     """Return cached vessel positions."""
-    limit = min(request.args.get('limit', 200, type=int), 500)
+    limit = _get_query_int(request, 'limit', 200, minimum=1, maximum=500)
     with db_session() as db:
         try:
             rows = db.execute('SELECT * FROM sitroom_ships ORDER BY speed_kn DESC LIMIT ?', (limit,)).fetchall()
@@ -2709,11 +2711,8 @@ def api_sitroom_space_weather():
 @situation_room_bp.route('/api/sitroom/volcanoes')
 def api_sitroom_volcanoes():
     """Return cached volcanic activity."""
-    try:
-        limit = min(int(request.args.get('limit', 50)), 200)
-        offset = int(request.args.get('offset', 0))
-    except (ValueError, TypeError):
-        limit, offset = 50, 0
+    limit = _get_query_int(request, 'limit', 50, minimum=1, maximum=200)
+    offset = _get_query_int(request, 'offset', 0, minimum=0)
     with db_session() as db:
         rows = db.execute('SELECT * FROM sitroom_volcanoes ORDER BY start_date DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
     return jsonify({'volcanoes': [dict(r) for r in rows]})
@@ -2894,7 +2893,7 @@ def api_sitroom_ai_briefing():
 
 @situation_room_bp.route('/api/sitroom/briefings')
 def api_sitroom_briefings():
-    limit = min(request.args.get('limit', 10, type=int), 50)
+    limit = _get_query_int(request, 'limit', 10, minimum=1, maximum=50)
     with db_session() as db:
         rows = db.execute('SELECT * FROM sitroom_briefings ORDER BY generated_at DESC LIMIT ?', (limit,)).fetchall()
     return jsonify({'briefings': [dict(r) for r in rows]})
@@ -2903,7 +2902,7 @@ def api_sitroom_briefings():
 @situation_room_bp.route('/api/sitroom/fires')
 def api_sitroom_fires():
     """Return cached fire detections."""
-    limit = min(request.args.get('limit', 200, type=int), 500)
+    limit = _get_query_int(request, 'limit', 200, minimum=1, maximum=500)
     with db_session() as db:
         rows = db.execute("SELECT * FROM sitroom_events WHERE event_type = 'fire' ORDER BY magnitude DESC LIMIT ?",
                           (limit,)).fetchall()
@@ -4471,7 +4470,7 @@ def api_sitroom_sector_performance():
 def api_sitroom_recent_earthquakes():
     """Return recent earthquakes with filtering."""
     min_mag = request.args.get('min_mag', 0, type=float)
-    limit = min(request.args.get('limit', 50, type=int), 200)
+    limit = _get_query_int(request, 'limit', 50, minimum=1, maximum=200)
     with db_session() as db:
         rows = db.execute(
             "SELECT * FROM sitroom_events WHERE event_type = 'earthquake' AND magnitude >= ? "

@@ -56,6 +56,17 @@ def get_services_dir():
     return svc_dir
 
 
+# Shared identity header for every outbound GitHub API call. GitHub
+# rejects requests without a User-Agent with HTTP 403, which surfaces as
+# a confusing "release not found" failure in the install flow. Setting
+# it here keeps every service module consistent.
+GITHUB_USER_AGENT = 'NOMAD-FieldDesk/1.0 (+https://github.com/SysAdminDoc)'
+GITHUB_API_HEADERS = {
+    'User-Agent': GITHUB_USER_AGENT,
+    'Accept': 'application/vnd.github+json',
+}
+
+
 # ─── GPU Detection ────────────────────────────────────────────────────
 
 _gpu_info = None
@@ -270,13 +281,14 @@ def stop_process(service_id: str) -> bool:
         row = db.execute('SELECT pid FROM services WHERE id = ?', (service_id,)).fetchone()
         if row and row['pid'] and not proc:
             # Only kill DB-tracked PID if we didn't already have a tracked process,
-            # to avoid killing a recycled PID
-            from platform_utils import pid_alive
+            # to avoid killing a recycled PID. Use kill_pid() so Windows uses
+            # taskkill instead of os.kill() (SIGTERM is not supported on Windows).
+            from platform_utils import pid_alive, kill_pid
             if pid_alive(row['pid']):
                 try:
-                    os.kill(row['pid'], signal.SIGTERM)
-                except (OSError, ProcessLookupError):
-                    pass
+                    kill_pid(row['pid'])
+                except Exception as e:
+                    log.debug('kill_pid(%s) failed: %s', row['pid'], e)
 
         db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (service_id,))
         db.commit()
@@ -354,7 +366,12 @@ def _pid_matches_exe(pid: int, exe_path: str) -> bool:
 # ─── Auto-Restart ──────────────────────────────────────────────────────
 
 def should_restart(service_id: str) -> bool:
-    """Check if a service should be auto-restarted (rate-limited)."""
+    """Check if a service should be auto-restarted (rate-limited).
+
+    NOTE: prefer `try_reserve_restart()` over the check-then-act pattern of
+    calling this followed by `record_restart()`. Two concurrent callers can
+    both pass this check before either records — defeating the cap.
+    """
     with _lock:
         now = time.time()
         timestamps = _restart_tracker.get(service_id, [])
@@ -372,6 +389,25 @@ def record_restart(service_id: str):
         if service_id not in _restart_tracker:
             _restart_tracker[service_id] = []
         _restart_tracker[service_id].append(time.time())
+
+
+def try_reserve_restart(service_id: str) -> bool:
+    """Atomic check-and-record: returns True if a restart slot was reserved.
+
+    Combines `should_restart` + `record_restart` under a single lock so two
+    crashes arriving within the restart-monitor tick cannot both slip past
+    the MAX_RESTARTS cap. Callers that use this do NOT need to call
+    `record_restart` afterwards.
+    """
+    with _lock:
+        now = time.time()
+        timestamps = [t for t in _restart_tracker.get(service_id, []) if now - t < RESTART_WINDOW]
+        if len(timestamps) >= MAX_RESTARTS:
+            _restart_tracker[service_id] = timestamps
+            return False
+        timestamps.append(now)
+        _restart_tracker[service_id] = timestamps
+        return True
 
 
 # ─── Dependency Management ─────────────────────────────────────────────

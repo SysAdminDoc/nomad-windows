@@ -550,7 +550,10 @@ def api_breeding_update(bid):
 @agriculture_bp.route('/breeding/due')
 def api_breeding_due():
     """Animals due within N days (default 30)."""
-    days = int(request.args.get('days', 30))
+    try:
+        days = max(1, min(3650, int(request.args.get('days', 30))))
+    except (TypeError, ValueError):
+        days = 30
     cutoff = (datetime.now() + timedelta(days=days)).strftime('%Y-%m-%d')
     today = datetime.now().strftime('%Y-%m-%d')
     with db_session() as db:

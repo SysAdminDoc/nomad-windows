@@ -88,7 +88,10 @@ class TestBroadcastEvent:
                     if q in _sse_clients:
                         _sse_clients.remove(q)
 
-    def test_broadcast_removes_full_queues(self, app):
+    def test_broadcast_drops_oldest_on_full_queue(self, app):
+        """Full queues now drop their oldest message and keep receiving new
+        ones rather than being evicted outright. Previously a single burst
+        could silently unsubscribe a slow consumer forever."""
         from web.state import broadcast_event, _sse_clients, _sse_lock
         full_q = queue.Queue(maxsize=1)
         full_q.put('filler')  # fill the queue
@@ -96,9 +99,13 @@ class TestBroadcastEvent:
             _sse_clients.append(full_q)
         try:
             broadcast_event('test', {'data': 'overflow'})
-            # Full queue should be removed
+            # Client remains subscribed
             with _sse_lock:
-                assert full_q not in _sse_clients
+                assert full_q in _sse_clients
+            # Queue now holds the newest message (oldest was dropped)
+            msg = full_q.get_nowait()
+            assert 'event: test' in msg
+            assert 'overflow' in msg
         finally:
             with _sse_lock:
                 if full_q in _sse_clients:

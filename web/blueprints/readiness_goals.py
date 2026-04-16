@@ -214,16 +214,43 @@ def _compute_current(db, goal):
         return row['total'] if row else 0
 
     elif src == 'custom_sql':
-        # Advanced: run arbitrary read-only query (must return single 'total' column)
-        if query:
-            try:
-                row = db.execute(query).fetchone()
-                return row[0] if row else 0
-            except Exception:
-                return 0
-        return 0
+        # Advanced: run arbitrary read-only query (must return single 'total' column).
+        # Restrict to a single SELECT/WITH without DDL/DML keywords — a stored
+        # custom_sql re-runs on every goal evaluation, so a malicious rule
+        # would replay forever (same risk as custom alert rules).
+        if not _is_safe_select(query):
+            return 0
+        try:
+            row = db.execute(query).fetchone()
+            return row[0] if row else 0
+        except Exception:
+            return 0
 
     return 0
+
+
+_FORBIDDEN_SQL_KEYWORDS = (
+    'insert', 'update', 'delete', 'drop', 'alter', 'create', 'attach',
+    'detach', 'replace', 'pragma', 'vacuum', 'reindex',
+)
+
+
+def _is_safe_select(query):
+    """Return True if *query* is a single read-only SELECT/WITH statement."""
+    if not isinstance(query, str):
+        return False
+    import re as _re
+    q = query.strip().rstrip(';').strip()
+    if not q or ';' in q:
+        return False
+    lowered = q.lower()
+    head = lowered.split(None, 1)[0] if lowered else ''
+    if head not in ('select', 'with'):
+        return False
+    for kw in _FORBIDDEN_SQL_KEYWORDS:
+        if _re.search(rf'\b{kw}\b', lowered):
+            return False
+    return True
 
 
 # ─── Readiness Presets (quick-start goal templates) ─────────────────

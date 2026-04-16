@@ -22,6 +22,23 @@ from web.state import _map_downloads
 import web.state as _state
 from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_list as _safe_json_list, safe_json_object as _safe_json_object, safe_id_list as _safe_id_list, validate_download_url as _validate_download_url
 
+import urllib.request as _urllib_request
+import urllib.error as _urllib_error
+
+
+class _NoRedirectHandler(_urllib_request.HTTPRedirectHandler):
+    """Block urllib's automatic redirect handling so the caller can re-
+    validate each hop against SSRF rules. Raises HTTPError instead of
+    silently following 3xx responses."""
+
+    def http_error_301(self, req, fp, code, msg, headers):
+        raise _urllib_error.HTTPError(req.full_url, code, msg, headers, fp)
+
+    http_error_302 = http_error_301
+    http_error_303 = http_error_301
+    http_error_307 = http_error_301
+    http_error_308 = http_error_301
+
 log = logging.getLogger('nomad.web')
 
 _CREATION_FLAGS = {'creationflags': 0x08000000} if sys.platform == 'win32' else {}
@@ -616,24 +633,65 @@ def api_maps_download_url():
                 and _map_downloads[dl_id].get('progress', 0) < 100:
             return jsonify({'error': 'Already downloading'}), 409
 
+    # Cap downloads at 5 GB by default — large enough for continent-scale
+    # PMTiles but prevents a hostile URL from filling the disk.
+    max_bytes = 5 * 1024 * 1024 * 1024
+
     def _dl_thread():
         import urllib.request
+        import urllib.error
         with _state_lock:
             _map_downloads[dl_id] = {'progress': 0, 'status': 'Connecting...', 'error': None}
         try:
             maps_dir = get_maps_dir()
             dest = os.path.join(maps_dir, filename)
-            req = urllib.request.Request(url, headers={'User-Agent': 'NOMADFieldDesk/1.0.0'})
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                total = int(resp.headers.get('Content-Length', 0))
+            # Custom opener: manually resolve redirects so we can re-run
+            # _validate_download_url on each hop. Default urllib redirects
+            # would let an attacker point a validated URL at a private-
+            # network target via HTTP 302.
+            current_url = url
+            for _ in range(5):  # cap redirect chain length
+                req = urllib.request.Request(
+                    current_url,
+                    headers={'User-Agent': 'NOMADFieldDesk/1.0.0'},
+                    method='GET',
+                )
+                try:
+                    resp = urllib.request.build_opener(
+                        _NoRedirectHandler()
+                    ).open(req, timeout=60)
+                except urllib.error.HTTPError as http_err:
+                    if http_err.code in (301, 302, 303, 307, 308):
+                        new_loc = http_err.headers.get('Location') or ''
+                        if not new_loc:
+                            raise
+                        from urllib.parse import urljoin
+                        current_url = urljoin(current_url, new_loc)
+                        _validate_download_url(current_url)  # re-validate target
+                        continue
+                    raise
+                break
+            else:
+                raise RuntimeError('Too many redirects')
+            try:
+                total = int(resp.headers.get('Content-Length', 0) or 0)
+                if total > max_bytes:
+                    raise RuntimeError(
+                        f'Download exceeds max size ({format_size(total)} > {format_size(max_bytes)})'
+                    )
                 downloaded = 0
                 with open(dest, 'wb') as f:
                     while True:
                         chunk = resp.read(1024 * 256)
                         if not chunk:
                             break
-                        f.write(chunk)
                         downloaded += len(chunk)
+                        if downloaded > max_bytes:
+                            # Server lied about Content-Length or omitted it.
+                            raise RuntimeError(
+                                f'Download exceeded {format_size(max_bytes)} limit'
+                            )
+                        f.write(chunk)
                         if total > 0:
                             pct = int(downloaded / total * 100)
                             speed = format_size(downloaded)
@@ -642,10 +700,22 @@ def api_maps_download_url():
                         else:
                             with _state_lock:
                                 _map_downloads[dl_id] = {'progress': 50, 'status': f'{format_size(downloaded)} downloaded', 'error': None}
+            finally:
+                try:
+                    resp.close()
+                except Exception:
+                    pass
             with _state_lock:
                 _map_downloads[dl_id] = {'progress': 100, 'status': f'Complete ({format_size(os.path.getsize(dest))})', 'error': None}
-        except Exception as e:
+        except Exception:
             log.exception('Map tile download failed for %s', dl_id)
+            # Clean up partial file so it is not served as a truncated tile set.
+            try:
+                dest_path = os.path.join(get_maps_dir(), filename)
+                if os.path.isfile(dest_path):
+                    os.remove(dest_path)
+            except OSError:
+                pass
             with _state_lock:
                 _map_downloads[dl_id] = {'progress': 0, 'status': 'Error', 'error': 'Download failed. Check logs for details.'}
 

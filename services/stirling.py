@@ -148,7 +148,8 @@ def install(callback=None):
 
     try:
         # Resolve download URL from GitHub releases
-        resp = req.get(STIRLING_RELEASE_API, timeout=15)
+        from services.manager import GITHUB_API_HEADERS
+        resp = req.get(STIRLING_RELEASE_API, timeout=15, headers=GITHUB_API_HEADERS)
         resp.raise_for_status()
         release = _safe_response_payload(resp, {})
         jar_url = None

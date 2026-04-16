@@ -236,18 +236,33 @@ def sse_cleanup_stale_clients():
 
 
 def broadcast_event(event_type, data):
-    """Send an event to all connected SSE clients."""
+    """Send an event to all connected SSE clients.
+
+    On queue back-pressure, drop the OLDEST queued message for that client and
+    push the newest — evicting the entire client (the prior behaviour) meant
+    one slow consumer could stop receiving updates forever after a single
+    burst. Dropping the oldest message preserves the connection and keeps the
+    client eventually consistent.
+    """
     # Sanitize event_type: SSE event names must not contain newlines or colons
     safe_type = str(event_type).replace('\n', '').replace('\r', '').strip()
-    message = f"event: {safe_type}\ndata: {json.dumps(data)}\n\n"
-    now = time.time()
+    try:
+        payload = json.dumps(data)
+    except (TypeError, ValueError):
+        # Refuse to crash the broadcaster on un-serializable payloads.
+        return
+    message = f"event: {safe_type}\ndata: {payload}\n\n"
     with _sse_lock:
-        dead = []
-        for q in _sse_clients:
+        for q in list(_sse_clients):
             try:
                 q.put_nowait(message)
             except queue.Full:
-                dead.append(q)
-        for q in dead:
-            _sse_clients.remove(q)
-            _sse_client_last_active.pop(id(q), None)
+                # Drop oldest, retry once; if still full, give up for this client.
+                try:
+                    q.get_nowait()
+                except queue.Empty:
+                    continue
+                try:
+                    q.put_nowait(message)
+                except queue.Full:
+                    pass

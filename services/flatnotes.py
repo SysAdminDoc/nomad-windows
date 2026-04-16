@@ -67,9 +67,12 @@ def install(callback=None):
                 if not python:
                     raise RuntimeError('Python 3 not found. Install Python 3.9+ to use FlatNotes.')
 
-            # Create venv
-            creation_flags = {'creationflags': 0x08000000} if sys.platform == 'win32' else {}
-            subprocess.run([python, '-m', 'venv', venv_dir], check=True, capture_output=True, **creation_flags)
+            # Create venv — use platform_utils helper so future platform
+            # changes propagate here automatically (previously this hardcoded
+            # the Windows CREATE_NO_WINDOW flag and duplicated the check).
+            from platform_utils import run_kwargs
+            subprocess.run([python, '-m', 'venv', venv_dir], check=True,
+                           **run_kwargs(capture_output=True))
 
             # Get pip path in venv
             if sys.platform == 'win32':
@@ -83,7 +86,7 @@ def install(callback=None):
 
             # Install flatnotes
             subprocess.run([pip, 'install', 'flatnotes'], check=True,
-                           capture_output=True, **creation_flags)
+                           **run_kwargs(capture_output=True))
 
             _download_progress[SERVICE_ID].update({'percent': 80, 'speed': 'Configuring...'})
 

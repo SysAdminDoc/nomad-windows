@@ -22,6 +22,7 @@ from services.manager import (
     get_service_resources, SERVICE_HEALTH_URLS, is_healthy,
 )
 import config
+from web.auth import require_auth
 from web.utils import (
     clone_json_fallback as _clone_json_fallback,
     get_query_int as _get_query_int,
@@ -1620,23 +1621,38 @@ def api_backup_restore():
     return jsonify({'status': 'ok', 'message': f'Restored from {filename}. Restart app to fully apply.'})
 
 @system_bp.route('/api/system/backup/<filename>', methods=['DELETE'])
+@require_auth('admin')
 def api_backup_delete(filename):
-    """Delete a specific backup file."""
+    """Delete a specific backup file.
+
+    Uses basename + whitelisted prefix + commonpath containment so an
+    attacker can't traverse out of the backups directory even if the URL
+    decoder passes through unexpected sequences.
+    """
     filename = os.path.basename(filename) if filename else ''
     if not filename:
         return jsonify({'error': 'Invalid filename'}), 400
     if not filename.startswith('nomad_backup_'):
         return jsonify({'error': 'Invalid backup filename'}), 400
+    # Reject any residual traversal characters — a belt-and-braces check on
+    # top of basename().
+    if '/' in filename or '\\' in filename or '\x00' in filename:
+        return jsonify({'error': 'Invalid filename'}), 400
     db_path = get_db_path()
-    backup_dir = os.path.join(os.path.dirname(db_path), 'backups')
-    backup_path = os.path.join(backup_dir, filename)
+    backup_dir = os.path.realpath(os.path.join(os.path.dirname(db_path), 'backups'))
+    backup_path = os.path.realpath(os.path.join(backup_dir, filename))
+    try:
+        if os.path.commonpath([backup_path, backup_dir]) != backup_dir:
+            return jsonify({'error': 'Invalid filename'}), 400
+    except ValueError:
+        return jsonify({'error': 'Invalid filename'}), 400
     if not os.path.isfile(backup_path):
         return jsonify({'error': 'Backup not found'}), 404
     try:
         os.remove(backup_path)
         log_activity('backup_deleted', detail=filename)
         return jsonify({'status': 'deleted'})
-    except Exception as e:
+    except Exception:
         log.exception('Backup delete failed')
         return jsonify({'error': 'Delete failed'}), 500
 
@@ -1689,7 +1705,10 @@ def api_backup_config_get():
 # ─── Emergency Broadcast ──────────────────────────────────────────
 
 @system_bp.route('/api/system/shutdown', methods=['POST'])
+@require_auth('admin')
 def api_system_shutdown():
+    """Shut down or reboot the host machine. Admin-only — a single HTTP
+    request on a LAN with auth disabled would otherwise power off the box."""
     data, error = _require_json_body(request)
     if error:
         return error
@@ -1930,14 +1949,29 @@ def api_system_db_check():
 
 
 @system_bp.route('/api/system/db-vacuum', methods=['POST'])
+@require_auth('admin')
 def api_system_db_vacuum():
-    """Run VACUUM and REINDEX to optimize the database."""
+    """Run VACUUM and REINDEX to optimize the database.
+
+    VACUUM holds an exclusive lock on the database — do not run concurrent
+    writes. The raw connection is wrapped in try/finally so the DB is not
+    left locked if VACUUM raises (previously a failed VACUUM leaked the
+    handle).
+    """
     import sqlite3
     path = get_db_path()
-    conn = sqlite3.connect(path, uri=path.startswith('file:'))
-    conn.execute('VACUUM')
-    conn.execute('REINDEX')
-    conn.close()
+    conn = sqlite3.connect(path, uri=path.startswith('file:'), timeout=30)
+    try:
+        conn.execute('VACUUM')
+        conn.execute('REINDEX')
+    except sqlite3.Error as e:
+        log.warning('VACUUM/REINDEX failed: %s', e)
+        return jsonify({'error': 'Database optimization failed'}), 500
+    finally:
+        try:
+            conn.close()
+        except Exception:
+            pass
     log_activity('db_vacuum', 'system', 'Database vacuumed and reindexed')
     return jsonify({'status': 'ok', 'message': 'VACUUM and REINDEX completed'})
 

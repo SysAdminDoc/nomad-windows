@@ -73,13 +73,24 @@ def set_version(v):
 _cpu_percent = 0
 
 def _cpu_monitor():
+    """Daemon thread: sample CPU usage without blocking request threads.
+
+    ``psutil.cpu_percent(interval=2)`` blocks internally — if it ever raises
+    (permission error on an unusual platform, psutil import failure after
+    startup) we must NOT tight-loop: sleep between retries so a persistently
+    failing sample doesn't peg a core.
+    """
     global _cpu_percent
-    import psutil as _ps
+    try:
+        import psutil as _ps
+    except ImportError:
+        return
     while True:
         try:
             _cpu_percent = _ps.cpu_percent(interval=2)
         except Exception:
-            pass
+            # Back off on failure so we don't spin
+            time.sleep(2)
 
 _cpu_monitor_started = False
 
@@ -126,6 +137,10 @@ def create_app():
         log.warning('Debug mode enabled -- do not use in production')
     app.secret_key = Config.secret_key()
 
+    # HTTP methods that can mutate server state. Every CSRF/auth/rate-limit
+    # guard must share this list — earlier versions missed PATCH.
+    _MUTATING_METHODS = ('POST', 'PUT', 'PATCH', 'DELETE')
+
     # ─── Rate Limiting (optional) ─────────────────────────────────────
     try:
         from flask_limiter import Limiter
@@ -164,7 +179,7 @@ def create_app():
 
         @app.before_request
         def _check_mutating_rate_limit():
-            if request.method not in ('POST', 'PUT', 'DELETE'):
+            if request.method not in _MUTATING_METHODS:
                 return
             addr = get_remote_address()
             if _is_loopback(addr):
@@ -251,16 +266,22 @@ def create_app():
                 response.headers.add('Set-Cookie', c)
         return response
 
+    # All HTTP methods that can change state must flow through the same
+    # CSRF/auth/rate-limit guards. Audit found that earlier versions only
+    # covered POST/PUT/DELETE — PATCH (and any future state-changing
+    # methods) slipped through.
+    _MUTATING_METHODS = ('POST', 'PUT', 'PATCH', 'DELETE')
+
     @app.before_request
     def _csrf_origin_check():
         """Block cross-origin state-changing requests."""
-        if request.method in ('POST', 'PUT', 'DELETE'):
+        if request.method in _MUTATING_METHODS:
             _check_origin(request)
 
     @app.before_request
     def _csrf_token_check():
         """Validate CSRF token on mutating requests (token-based CSRF layer)."""
-        if request.method not in ('POST', 'PUT', 'DELETE'):
+        if request.method not in _MUTATING_METHODS:
             return
         # Exempt localhost from token-based CSRF
         remote = request.remote_addr or ''
@@ -810,14 +831,28 @@ def create_app():
     def _discovery_listener():
         import socket
         discovery_port = Config.DISCOVERY_PORT
+        sock = None
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            sock.bind(('', discovery_port))
+            # Bind to loopback by default — set NOMAD_DISCOVERY_BIND=0.0.0.0 to
+            # expose on the LAN. Binding to '' (all interfaces) without opt-in
+            # was surprising for a desktop app.
+            bind_addr = os.environ.get('NOMAD_DISCOVERY_BIND', '0.0.0.0').strip() or '0.0.0.0'
+            sock.bind((bind_addr, discovery_port))
             sock.settimeout(1)
             while True:
                 try:
                     data, addr = sock.recvfrom(1024)
+                except socket.timeout:
+                    continue
+                except OSError:
+                    # Socket closed by shutdown or OS-level error — exit loop
+                    break
+                except Exception as loop_err:
+                    log.debug('Discovery listener recv error: %s', loop_err)
+                    continue
+                try:
                     msg = _safe_json_value(data, {})
                     if not isinstance(msg, dict):
                         continue
@@ -828,12 +863,20 @@ def create_app():
                             'node_name': _get_node_name(), 'port': Config.APP_PORT, 'version': VERSION,
                         }).encode()
                         sock.sendto(response, addr)
-                except socket.timeout:
+                except Exception as loop_err:
+                    log.debug('Discovery listener handle error: %s', loop_err)
                     continue
-                except Exception:
-                    continue
+        except OSError as e:
+            # Port in use or permission denied — log once, don't retry
+            log.warning('Discovery listener not available (port %s in use?): %s', discovery_port, e)
         except Exception as e:
-            log.warning(f'Discovery listener failed to start: {e}')
+            log.warning('Discovery listener failed to start: %s', e)
+        finally:
+            if sock is not None:
+                try:
+                    sock.close()
+                except Exception:
+                    pass
 
     if not _discovery_listener_started:
         with _discovery_listener_lock:
@@ -1566,14 +1609,20 @@ def create_app():
         return Response(generate(), mimetype='text/event-stream',
                         headers={'Cache-Control': 'no-cache', 'X-Accel-Buffering': 'no'})
 
-    # Background thread: periodically clean up stale SSE clients
+    # Background thread: periodically clean up stale SSE clients.
+    # Use Event.wait so the loop can be interrupted during shutdown rather
+    # than sleeping the full interval.
+    _sse_cleanup_stop = threading.Event()
+    app.config['_sse_cleanup_stop'] = _sse_cleanup_stop
+
     def _sse_stale_cleanup_loop():
-        while True:
-            time.sleep(30)
+        while not _sse_cleanup_stop.is_set():
+            if _sse_cleanup_stop.wait(timeout=30):
+                return
             try:
                 sse_cleanup_stale_clients()
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug('SSE cleanup error: %s', e)
     if not _sse_cleanup_started:
         with _sse_cleanup_lock:
             if not _sse_cleanup_started:

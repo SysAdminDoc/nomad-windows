@@ -33,6 +33,11 @@ def validate_json(schema):
             data = request.get_json(silent=True)
             if data is None:
                 return jsonify({'error': 'Request body must be valid JSON'}), 400
+            # JSON bodies may be lists, numbers, strings, or null — but our
+            # schemas target object bodies. Reject anything else up front so
+            # `_validate_data` doesn't crash on `data.get(field)`.
+            if not isinstance(data, dict):
+                return jsonify({'error': 'Request body must be a JSON object'}), 400
 
             errors = _validate_data(data, schema)
             if errors:
@@ -112,6 +117,8 @@ def validate_file_upload(allowed_extensions=None, max_size_mb=100):
         def upload_file():
             file = request.files['file']
     """
+    max_bytes = max_size_mb * 1024 * 1024
+
     def decorator(f):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
@@ -128,9 +135,19 @@ def validate_file_upload(allowed_extensions=None, max_size_mb=100):
                 if ext not in allowed_extensions:
                     return jsonify({'error': f'File type {ext} not allowed. Allowed: {", ".join(sorted(allowed_extensions))}'}), 400
 
-            # Check content length
-            if request.content_length and request.content_length > max_size_mb * 1024 * 1024:
-                return jsonify({'error': f'File too large. Maximum: {max_size_mb}MB'}), 400
+            # Reject early on Content-Length header, but also measure the
+            # actual stream — a client can send a misleading Content-Length.
+            if request.content_length and request.content_length > max_bytes:
+                return jsonify({'error': f'File too large. Maximum: {max_size_mb}MB'}), 413
+            try:
+                stream = file.stream
+                stream.seek(0, 2)
+                actual_size = stream.tell()
+                stream.seek(0)
+            except (OSError, AttributeError):
+                actual_size = 0
+            if actual_size > max_bytes:
+                return jsonify({'error': f'File too large. Maximum: {max_size_mb}MB'}), 413
 
             return f(*args, **kwargs)
         return wrapper

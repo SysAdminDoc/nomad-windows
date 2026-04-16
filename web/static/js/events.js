@@ -31,8 +31,14 @@ const NomadEvents = {
             const wrap = document.getElementById('sse-status');
             if (dot) dot.style.background = 'var(--red)';
             if (wrap) wrap.title = 'Real-time updates: disconnected \u2014 reconnecting...';
-            this._source.close();
-            this._source = null;
+            // Guard: onerror may fire after an explicit disconnect() cleared
+            // the source. Avoid null-deref, and avoid stacking reconnect
+            // timers if the browser fires errors in rapid succession.
+            if (this._source) {
+                try { this._source.close(); } catch (_) { /* ignore */ }
+                this._source = null;
+            }
+            if (this._reconnectTimer) { clearTimeout(this._reconnectTimer); this._reconnectTimer = null; }
             const jitter = Math.random() * this._reconnectDelay * 0.3;
             this._reconnectTimer = setTimeout(() => this.connect(), this._reconnectDelay + jitter);
             this._reconnectDelay = Math.min(this._reconnectDelay * 2, this._maxReconnectDelay);

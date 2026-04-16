@@ -91,18 +91,22 @@ def load_plugins(app):
 
             register_fn(app)
 
-            # Check for route conflicts with built-in routes
-            new_rules = _builtin_rules(app)
-            conflicts = new_rules - existing_rules
-            for rule in sorted(conflicts):
-                # Only warn if a plugin route shadows an existing built-in
-                if rule in existing_rules:
-                    log.warning(
-                        'Plugin %s: route %s conflicts with a built-in route',
-                        plugin_name, rule
-                    )
+            # Surface which routes the plugin added. Flask already raises an
+            # AssertionError on duplicate route registration, so there is no
+            # silent-shadow case to check here. Previously this block looked
+            # for `rule in existing_rules` against a set built from
+            # `new_rules - existing_rules` — always empty, making the warning
+            # unreachable.
+            new_rules = _builtin_rules(app) - existing_rules
+            if new_rules:
+                log.debug(
+                    'Plugin %s added %d route(s): %s',
+                    plugin_name, len(new_rules), ', '.join(sorted(new_rules))
+                )
+            existing_rules = _builtin_rules(app)
 
             entry['status'] = 'loaded'
+            entry['routes_added'] = sorted(new_rules)
             log.info('Plugin loaded: %s (%s)', plugin_name, plugin_path)
 
         except Exception as exc:

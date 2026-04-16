@@ -635,15 +635,31 @@ def api_vet_delete(vid):
 
 # ─── Clinical Calculators ──────────────────────────────────────────
 
+def _coerce_float(val, default):
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _coerce_int(val, default):
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return int(default)
+
+
 @medical_phase2_bp.route('/api/medical/calc/iv-rate', methods=['POST'])
 def api_calc_iv_rate():
     """Calculate IV drip rate: volume / time = rate."""
     data = request.get_json() or {}
-    volume_ml = float(data.get('volume_ml', 1000))
-    hours = float(data.get('hours', 8))
-    drop_factor = int(data.get('drop_factor', 20))  # drops per mL
+    volume_ml = _coerce_float(data.get('volume_ml', 1000), 1000)
+    hours = _coerce_float(data.get('hours', 8), 8)
+    drop_factor = _coerce_int(data.get('drop_factor', 20), 20)  # drops per mL
     if hours <= 0:
         return jsonify({'error': 'hours must be positive'}), 400
+    if volume_ml <= 0 or drop_factor <= 0:
+        return jsonify({'error': 'volume and drop_factor must be positive'}), 400
     ml_per_hour = volume_ml / hours
     drops_per_min = (volume_ml * drop_factor) / (hours * 60)
     return jsonify({
@@ -669,12 +685,14 @@ def api_calc_burns_bsa():
     affected = {}
     for region, pct in regions.items():
         if data.get(region):
-            fraction = float(data[region])  # 0-1 how much of that region is burned
-            area = pct * min(fraction, 1.0)
+            fraction = max(0.0, min(1.0, _coerce_float(data[region], 0)))  # 0-1
+            area = pct * fraction
             affected[region] = round(area, 1)
             total_bsa += area
     fluid_ml = 0
-    weight_kg = float(data.get('weight_kg', 70))
+    weight_kg = _coerce_float(data.get('weight_kg', 70), 70)
+    if weight_kg <= 0:
+        weight_kg = 70
     if total_bsa > 0:
         # Parkland formula: 4 mL × weight(kg) × %BSA
         fluid_ml = 4 * weight_kg * total_bsa
@@ -700,11 +718,14 @@ def api_calc_burns_bsa():
 def api_calc_apgar():
     """Calculate APGAR score for newborn assessment."""
     data = request.get_json() or {}
-    appearance = int(data.get('appearance', 0))  # 0=blue, 1=extremities blue, 2=pink
-    pulse = int(data.get('pulse', 0))  # 0=absent, 1=<100, 2=>100
-    grimace = int(data.get('grimace', 0))  # 0=none, 1=grimace, 2=cry
-    activity = int(data.get('activity', 0))  # 0=limp, 1=some flexion, 2=active
-    respiration = int(data.get('respiration', 0))  # 0=absent, 1=slow, 2=crying
+    # Clamp each component to 0-2 per APGAR scoring definition.
+    def _score(key):
+        return max(0, min(2, _coerce_int(data.get(key, 0), 0)))
+    appearance = _score('appearance')  # 0=blue, 1=extremities blue, 2=pink
+    pulse = _score('pulse')            # 0=absent, 1=<100, 2=>100
+    grimace = _score('grimace')        # 0=none, 1=grimace, 2=cry
+    activity = _score('activity')      # 0=limp, 1=some flexion, 2=active
+    respiration = _score('respiration')  # 0=absent, 1=slow, 2=crying
     total = appearance + pulse + grimace + activity + respiration
     if total >= 7:
         assessment = 'Normal — routine care'

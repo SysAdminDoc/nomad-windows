@@ -16,6 +16,7 @@ from db import db_session, get_db_path, log_activity
 from config import get_data_dir
 from services import ollama, qdrant
 from services.manager import format_size
+from web.auth import require_auth
 from web.state import _pull_queue, _pull_queue_lock
 from web.validation import validate_json
 from web.sql_safety import safe_columns
@@ -615,6 +616,11 @@ def api_conversation_branch_update(bid):
         return jsonify({'status': 'ok'})
 # ─── AI Image Input / Multimodal (v5.0 Phase 1) ─────────────────
 
+_MAX_AI_IMAGE_BYTES = 20 * 1024 * 1024  # 20 MB: comfortably covers camera JPEGs,
+                                         # tight enough to stop a 1-GB upload from
+                                         # consuming RAM during base64 encoding.
+
+
 @ai_bp.route('/api/ai/chat-with-image', methods=['POST'])
 def api_ai_chat_image():
     """Send a message with an image to a multimodal model (llava, gemma3, etc.)."""
@@ -624,15 +630,34 @@ def api_ai_chat_image():
     model = request.form.get('model', '')
     message = request.form.get('message', 'Describe this image.')
 
+    if not model:
+        return jsonify({'error': 'model required'}), 400
+
     # Get image as base64
     import base64
     if 'image' in request.files:
-        img_data = base64.b64encode(request.files['image'].read()).decode('utf-8')
+        img_file = request.files['image']
+        # Measure true stream size before loading into RAM — Content-Length
+        # from the client is advisory and request.files.read() would gladly
+        # load a 1-GB upload before we could reject it.
+        try:
+            img_file.stream.seek(0, 2)
+            img_size = img_file.stream.tell()
+            img_file.stream.seek(0)
+        except (OSError, AttributeError):
+            img_size = 0
+        if img_size > _MAX_AI_IMAGE_BYTES:
+            return jsonify({
+                'error': f'Image too large (max {_MAX_AI_IMAGE_BYTES // (1024*1024)} MB)'
+            }), 413
+        img_data = base64.b64encode(img_file.read()).decode('utf-8')
     else:
         img_data = request.form.get('image_base64', '')
-
-    if not model:
-        return jsonify({'error': 'model required'}), 400
+        # base64 expands binary by 4/3 — cap accordingly.
+        if len(img_data) > _MAX_AI_IMAGE_BYTES * 4 // 3 + 16:
+            return jsonify({
+                'error': f'Image too large (max {_MAX_AI_IMAGE_BYTES // (1024*1024)} MB decoded)'
+            }), 413
 
     try:
         import requests as _req
@@ -650,8 +675,8 @@ def api_ai_chat_image():
             answer = data.get('message', {}).get('content', 'No response')
             return jsonify({'answer': answer, 'model': model})
         return jsonify({'error': f'Model returned {resp.status_code}'}), 500
-    except Exception as e:
-        log.exception('Document query failed')
+    except Exception:
+        log.exception('AI image chat failed')
         return jsonify({'error': 'AI query failed'}), 500
 
 
@@ -1378,6 +1403,7 @@ def api_ai_execute_action():
 # ─── AI Memory ───────────────────────────────────────────────────
 
 @ai_bp.route('/api/ai/memory', methods=['GET'])
+@require_auth('user')
 def api_ai_memory_list():
     """List persistent AI memory facts."""
     with db_session() as db:
@@ -1387,8 +1413,15 @@ def api_ai_memory_list():
 
 
 @ai_bp.route('/api/ai/memory', methods=['POST'])
+@require_auth('admin')
 def api_ai_memory_save():
-    """Save a fact to AI memory."""
+    """Save a fact to AI memory.
+
+    AI memory is concatenated into every SITREP/chat system prompt, so
+    write-access is effectively prompt injection into all future AI
+    responses. Admin-gated in multi-user mode; local pywebview shell
+    bypasses via the loopback exemption.
+    """
     data = request.get_json() or {}
     fact = data.get('fact', '').strip()
     if not fact:
@@ -1411,6 +1444,7 @@ def api_ai_memory_save():
 
 
 @ai_bp.route('/api/ai/memory', methods=['DELETE'])
+@require_auth('admin')
 def api_ai_memory_clear():
     """Clear all AI memory."""
     with db_session() as db:

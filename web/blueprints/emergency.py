@@ -232,6 +232,16 @@ def api_evac_plans_create():
 
     plan_type = data.get('plan_type', 'evacuate')
     is_active = int(bool(data.get('is_active', 0)))
+    # Safe numeric coercion — raw float()/int() on user JSON raises 500 on
+    # non-numeric input. Fall back to 0 for malformed values.
+    try:
+        distance_miles = float(data.get('distance_miles', 0) or 0)
+    except (TypeError, ValueError):
+        distance_miles = 0.0
+    try:
+        estimated_time_min = int(data.get('estimated_time_min', 0) or 0)
+    except (TypeError, ValueError):
+        estimated_time_min = 0
     now_iso = datetime.now(timezone.utc).isoformat()
 
     with db_session() as db:
@@ -251,8 +261,8 @@ def api_evac_plans_create():
                 data.get('destination', ''),
                 data.get('primary_route', ''),
                 data.get('alternate_route', ''),
-                float(data.get('distance_miles', 0)),
-                int(data.get('estimated_time_min', 0)),
+                distance_miles,
+                estimated_time_min,
                 data.get('trigger_conditions', ''),
                 data.get('notes', ''),
                 now_iso,

@@ -65,7 +65,8 @@ def install(callback=None):
 
     try:
         # Resolve actual zip URL from GitHub releases API
-        _api_resp = requests.get(CYBERCHEF_RELEASE_API, timeout=15)
+        from services.manager import GITHUB_API_HEADERS
+        _api_resp = requests.get(CYBERCHEF_RELEASE_API, timeout=15, headers=GITHUB_API_HEADERS)
         _api_resp.raise_for_status()
         release = _safe_response_payload(_api_resp, {})
         zip_url = None
@@ -164,10 +165,26 @@ def start():
 def stop():
     global _httpd, _server_thread
     with _cyberchef_lock:
-        if _httpd:
-            _httpd.shutdown()
-            _httpd = None
+        httpd_local = _httpd
+        thread_local = _server_thread
+        _httpd = None
         _server_thread = None
+    # Shut down and release the socket outside the module lock so stop() can't
+    # deadlock against a serve_forever callback that calls back into us, and
+    # so the socket is freed even if the thread is slow to notice.
+    if httpd_local is not None:
+        try:
+            httpd_local.shutdown()
+        except Exception as e:
+            log.debug('CyberChef shutdown signal failed: %s', e)
+        try:
+            httpd_local.server_close()
+        except Exception as e:
+            log.debug('CyberChef server_close failed: %s', e)
+    if thread_local is not None and thread_local.is_alive():
+        thread_local.join(timeout=5)
+        if thread_local.is_alive():
+            log.warning('CyberChef server thread did not exit within 5s')
 
     db = get_db()
     try:

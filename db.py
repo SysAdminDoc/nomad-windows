@@ -205,7 +205,13 @@ def log_activity(event: str, service: str = None, detail: str = None, level: str
 
 
 def backup_db():
-    """Create a timestamped backup of the database using SQLite backup API."""
+    """Create a timestamped backup of the database using SQLite backup API.
+
+    Writes to a `.tmp` file first and atomically renames on success so that a
+    crash mid-backup can't leave behind a truncated file with the canonical
+    name. Backup files are chmod'd to 0o600 on POSIX to prevent sibling
+    users from reading them.
+    """
     db_path = get_db_path()
     if db_path.startswith('file:') or not os.path.isfile(db_path):
         return
@@ -213,36 +219,71 @@ def backup_db():
     os.makedirs(backup_dir, exist_ok=True)
     from datetime import datetime
     backup_path = os.path.join(backup_dir, f'nomad_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db')
+    tmp_path = backup_path + '.tmp'
     # Use SQLite backup API for WAL-safe copies.
     # TRUNCATE checkpoint flushes all WAL frames into the main DB and truncates
     # the WAL file, guaranteeing backup() captures every committed transaction.
     # Fall back to PASSIVE if the database is busy (avoids blocking writers
     # indefinitely during normal operation — startup/shutdown backups are the
-    # only callers and contention there is rare).
+    # only callers and contention there is rare). A PASSIVE checkpoint may
+    # leave a few uncommitted WAL frames outside the backup, which is an
+    # acceptable tradeoff for not blocking live writers.
     src = sqlite3.connect(db_path, timeout=30)
     try:
         try:
             src.execute('PRAGMA wal_checkpoint(TRUNCATE)')
         except sqlite3.OperationalError:
-            # Database is busy — PASSIVE checkpoint is still better than none.
-            src.execute('PRAGMA wal_checkpoint(PASSIVE)')
-        dst = sqlite3.connect(backup_path)
+            try:
+                src.execute('PRAGMA wal_checkpoint(PASSIVE)')
+            except sqlite3.OperationalError as e:
+                _log.debug('Backup checkpoint skipped: %s', e)
+        dst = sqlite3.connect(tmp_path)
         try:
             src.backup(dst)
         finally:
             dst.close()
-    finally:
+    except Exception:
+        # Roll back the half-written tmp file so we don't leak cruft.
+        try:
+            if os.path.isfile(tmp_path):
+                os.remove(tmp_path)
+        except OSError:
+            pass
         src.close()
-    # Prune old backups
-    backups = sorted(
-        [os.path.join(backup_dir, f) for f in os.listdir(backup_dir) if f.endswith('.db')],
-        key=os.path.getmtime,
-    )
+        raise
+    else:
+        src.close()
+    try:
+        os.replace(tmp_path, backup_path)
+    except OSError as e:
+        _log.warning('Could not finalize backup %s: %s', backup_path, e)
+        try:
+            os.remove(tmp_path)
+        except OSError:
+            pass
+        return
+    # POSIX: restrict backup readability to the current user.
+    if os.name == 'posix':
+        try:
+            os.chmod(backup_path, 0o600)
+        except OSError as e:
+            _log.debug('Could not chmod backup %s: %s', backup_path, e)
+    # Prune old backups (keep newest 5). Log failures — silent OS errors here
+    # have masked real issues (locked files, full disks) in past incidents.
+    try:
+        backups = sorted(
+            [os.path.join(backup_dir, f) for f in os.listdir(backup_dir)
+             if f.endswith('.db') and not f.endswith('.tmp.db')],
+            key=os.path.getmtime,
+        )
+    except OSError as e:
+        _log.warning('Could not list backup directory for pruning: %s', e)
+        return
     for old in backups[:-5]:
         try:
             os.remove(old)
-        except Exception:
-            pass
+        except OSError as e:
+            _log.warning('Failed to prune old backup %s: %s', old, e)
 
 
 def _get_migrations_dir():
@@ -5430,6 +5471,10 @@ def _migrate_access_logs(conn):
     `platform_access_log` to disambiguate from `access_log` (physical entry
     log used by security.py). Idempotent — if old table exists, copy rows
     into the new table and drop the old one. Safe to run on every startup.
+
+    Wraps copy + drop in an explicit BEGIN so a failure during DROP cannot
+    leave the old table drained into the new one but still lingering —
+    either both steps land or neither does.
     """
     try:
         old_exists = conn.execute(
@@ -5437,17 +5482,25 @@ def _migrate_access_logs(conn):
         ).fetchone()
         if not old_exists:
             return
-        # Both tables share the same schema; INSERT OR IGNORE preserves any
-        # rows the new table already has (in case of partial migrations).
-        conn.execute(
-            'INSERT OR IGNORE INTO platform_access_log '
-            '(id, user_id, action, resource, ip_address, user_agent, '
-            ' status_code, detail, created_at) '
-            'SELECT id, user_id, action, resource, ip_address, user_agent, '
-            ' status_code, detail, created_at FROM access_logs'
-        )
-        conn.execute('DROP TABLE access_logs')
-        conn.commit()
+        conn.execute('BEGIN IMMEDIATE')
+        try:
+            # Both tables share the same schema; INSERT OR IGNORE preserves any
+            # rows the new table already has (in case of partial migrations).
+            conn.execute(
+                'INSERT OR IGNORE INTO platform_access_log '
+                '(id, user_id, action, resource, ip_address, user_agent, '
+                ' status_code, detail, created_at) '
+                'SELECT id, user_id, action, resource, ip_address, user_agent, '
+                ' status_code, detail, created_at FROM access_logs'
+            )
+            conn.execute('DROP TABLE access_logs')
+            conn.commit()
+        except Exception:
+            try:
+                conn.rollback()
+            except Exception:
+                pass
+            raise
     except Exception as e:
         _log.warning('access_logs migration skipped: %s', e)
 

@@ -14,7 +14,10 @@ _log = logging.getLogger('nomad.nutrition')
 @nutrition_bp.route('/api/nutrition/search')
 def api_nutrition_search():
     q = request.args.get('q', '').strip()
-    limit = min(int(request.args.get('limit', 25)), 100)
+    try:
+        limit = min(max(1, int(request.args.get('limit', 25))), 100)
+    except (TypeError, ValueError):
+        limit = 25
     group = request.args.get('group', '')
 
     if not q and not group:

@@ -289,14 +289,57 @@ def _evaluate_condition(db, rule):
 
     elif ctype == 'custom_sql':
         query = action_data.get('query', '')
-        if query:
-            try:
-                row = db.execute(query).fetchone()
-                return row[0] if row else 0
-            except Exception:
-                return 0
+        if not _is_safe_select(query):
+            # Refuse anything that isn't a single read-only SELECT. Even though
+            # alert rules can only be created by authenticated local/LAN users,
+            # allowing arbitrary SQL through a stored rule is a persistent
+            # injection surface (and would let a single compromised rule
+            # silently DROP tables on every tick).
+            return 0
+        try:
+            row = db.execute(query).fetchone()
+            return row[0] if row else 0
+        except Exception:
+            return 0
 
     return 0
+
+
+_FORBIDDEN_SQL_KEYWORDS = (
+    'insert', 'update', 'delete', 'drop', 'alter', 'create', 'attach',
+    'detach', 'replace', 'pragma', 'vacuum', 'reindex',
+)
+
+
+def _is_safe_select(query):
+    """Return True if *query* is a single read-only SELECT/WITH statement.
+
+    Custom alert rules run on every evaluation tick, so a malicious or
+    mistakenly-destructive statement would be replayed forever. We accept
+    only a single statement that starts with SELECT or WITH ... SELECT,
+    rejects semicolons (no statement chaining), and refuses any DDL/DML
+    keyword even in subqueries.
+    """
+    if not isinstance(query, str):
+        return False
+    q = query.strip().rstrip(';').strip()
+    if not q:
+        return False
+    # No statement chaining
+    if ';' in q:
+        return False
+    lowered = q.lower()
+    head = lowered.split(None, 1)[0] if lowered else ''
+    if head not in ('select', 'with'):
+        return False
+    # Reject any forbidden keyword surrounded by word boundaries. This is a
+    # conservative check — it will refuse columns literally named "update"
+    # even when quoted, which is acceptable for a power-user feature.
+    import re as _re
+    for kw in _FORBIDDEN_SQL_KEYWORDS:
+        if _re.search(rf'\b{kw}\b', lowered):
+            return False
+    return True
 
 
 # ─── Summary ───────────────────────────────────────────────────────

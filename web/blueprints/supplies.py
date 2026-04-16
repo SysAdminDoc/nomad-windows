@@ -5,6 +5,7 @@ import logging
 
 from flask import Blueprint, request, jsonify, Response
 from db import db_session, log_activity
+from web.auth import require_auth
 from web.utils import require_json_body as _require_json_body, validate_bulk_ids as _validate_bulk_ids
 
 _log = logging.getLogger(__name__)
@@ -141,6 +142,7 @@ def api_skills_delete(sid):
         return jsonify({'ok': True})
 
 @supplies_bp.route('/api/skills/bulk-delete', methods=['POST'])
+@require_auth('admin')
 def api_skills_bulk_delete():
     data, error = _require_json_body(request)
     if error:
@@ -315,6 +317,7 @@ def api_ammo_delete(aid):
         return jsonify({'ok': True})
 
 @supplies_bp.route('/api/ammo/bulk-delete', methods=['POST'])
+@require_auth('admin')
 def api_ammo_bulk_delete():
     data, error = _require_json_body(request)
     if error:
@@ -439,6 +442,7 @@ def api_community_delete(cid):
         return jsonify({'ok': True})
 
 @supplies_bp.route('/api/community/bulk-delete', methods=['POST'])
+@require_auth('admin')
 def api_community_bulk_delete():
     data, error = _require_json_body(request)
     if error:
@@ -573,6 +577,7 @@ def api_fuel_delete(fid):
         return jsonify({'ok': True})
 
 @supplies_bp.route('/api/fuel/bulk-delete', methods=['POST'])
+@require_auth('admin')
 def api_fuel_bulk_delete():
     data, error = _require_json_body(request)
     if error:
@@ -658,6 +663,7 @@ def api_equipment_delete(eid):
         return jsonify({'ok': True})
 
 @supplies_bp.route('/api/equipment/bulk-delete', methods=['POST'])
+@require_auth('admin')
 def api_equipment_bulk_delete():
     data, error = _require_json_body(request)
     if error:

@@ -7,6 +7,7 @@ dist2/
 dist_release/
 build/
 .env
+.env.local
 .venv/
 venv/
 node_modules/
@@ -19,6 +20,33 @@ NOMADFieldDesk.exe
 ProjectNOMAD-Setup.exe
 ProjectNOMAD.exe
 .qdrant-initialized
+
+# Runtime data — never commit (would leak user data, credentials, or
+# large binary blobs and could overwrite a user's local DB on pull)
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+!test_runtime/**/*.db
+nomad.db
+data_dir/
+nomad_data/
+plugins_runtime/
+backups/
+motion_captures/
+kb_uploads/
+
+# Secrets / credentials — never commit
+*.pem
+*.key
+*.p12
+*.pfx
+credentials.json
+secrets.json
 
 # Screenshots & debug images
 screenshot*.png

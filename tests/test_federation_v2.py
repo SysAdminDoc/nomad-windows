@@ -185,7 +185,12 @@ class TestDeadDrop:
             data = resp.get_json()
             assert 'payload' in data
             assert data['payload']['type'] == 'nomad-deaddrop'
-            assert data['payload']['version'] == 2
+            # Envelope version bumped to 3 when PBKDF2 iterations moved
+            # from 100k → 600k; decrypt still accepts v2 for backward compat.
+            assert data['payload']['version'] >= 2
+            # v3 records the KDF work factor in the envelope
+            if data['payload']['version'] >= 3:
+                assert int(data['payload'].get('kdf_iter', 0)) >= 600_000
             assert 'filename' in data
         else:
             # cryptography package not available — that's OK

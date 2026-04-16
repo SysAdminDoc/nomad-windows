@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request, Response
 
 from db import get_db, db_session, log_activity
+from web.auth import require_auth
 from web.validation import validate_json
 from web.utils import (
     clone_json_fallback as _clone_json_fallback,
@@ -339,14 +340,24 @@ def api_incidents_clear():
 
 # ─── Proactive Alert System ─────────────────────────────────────────
 
+# Event signalled on app shutdown to break the alert engine loop cleanly,
+# rather than sleeping 300s and being force-killed by the daemon flag.
+_alert_stop_event = threading.Event()
+
+
+def stop_alert_engine():
+    """Signal the alert engine to exit its loop on next wake."""
+    _alert_stop_event.set()
+
+
 def _run_alert_checks():
     """Background alert engine — checks inventory, weather, incidents every 5 minutes."""
     if not _state.try_begin_alert_check():
         return
-    import time as _t
     try:
-        _t.sleep(30)  # Wait for app to initialize
-        while True:
+        if _alert_stop_event.wait(timeout=30):  # Wait for app to initialize
+            return
+        while not _alert_stop_event.is_set():
             db = None
             try:
                 alerts = []
@@ -495,7 +506,9 @@ def _run_alert_checks():
                 log.error(f'Alert engine error: {e}')
             finally:
                 _close_db_safely(db, 'alert engine')
-            _t.sleep(300)  # Check every 5 minutes
+            # Check every 5 minutes; Event.wait returns True if stop was signalled.
+            if _alert_stop_event.wait(timeout=300):
+                return
     finally:
         _state.set_alert_check_running(False)
 
@@ -670,6 +683,7 @@ def api_livestock_delete(lid):
     return jsonify({'status': 'deleted'})
 
 @preparedness_bp.route('/api/livestock/bulk-delete', methods=['POST'])
+@require_auth('admin')
 def api_livestock_bulk_delete():
     data, error = _require_json_body(request)
     if error:

@@ -409,6 +409,19 @@ def api_videos_list():
         videos.append(v)
     return jsonify(videos)
 
+_ALLOWED_VIDEO_EXTS = {
+    'mp4', 'mkv', 'webm', 'mov', 'm4v', 'avi', 'wmv', 'flv', 'mpg', 'mpeg',
+    'ogv', 'ts',
+}
+
+
+def _ext_allowed(filename, allowed_exts):
+    """True if *filename* has an extension in *allowed_exts* (case-insensitive)."""
+    if not filename or '.' not in filename:
+        return False
+    return filename.rsplit('.', 1)[1].lower() in allowed_exts
+
+
 @media_bp.route('/api/videos/upload', methods=['POST'])
 def api_videos_upload():
     if 'file' not in request.files:
@@ -420,15 +433,20 @@ def api_videos_upload():
     file.seek(0)
     if size > 500 * 1024 * 1024:
         return error_response('File too large (max 500MB)', 413)
-    filename = secure_filename(file.filename)
+    filename = secure_filename(file.filename or '')
     if not filename:
         return error_response('Invalid filename')
+    if not _ext_allowed(filename, _ALLOWED_VIDEO_EXTS):
+        return error_response(
+            'Unsupported video extension. Allowed: ' + ', '.join(sorted(_ALLOWED_VIDEO_EXTS)),
+            400,
+        )
     filepath = os.path.join(get_video_dir(), filename)
     file.save(filepath)
     filesize = os.path.getsize(filepath) if os.path.isfile(filepath) else 0
     category = request.form.get('category', 'general')
     folder = _sanitize_folder(request.form.get('folder', ''))
-    title = request.form.get('title', filename.rsplit('.', 1)[0])
+    title = request.form.get('title', filename.rsplit('.', 1)[0]) or filename.rsplit('.', 1)[0]
     with db_session() as db:
         cur = db.execute('INSERT INTO videos (title, filename, category, folder, filesize) VALUES (?, ?, ?, ?, ?)',
                          (title, filename, category, folder, filesize))

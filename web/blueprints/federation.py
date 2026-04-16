@@ -1091,6 +1091,9 @@ def api_federation_network_map():
 
 # ─── Dead Drop Encrypted Messaging ─────────────────────────────────
 
+_DEADDROP_KDF_ITERATIONS = 600_000  # OWASP 2023 minimum for PBKDF2-HMAC-SHA256
+
+
 @federation_bp.route('/api/deaddrop/compose', methods=['POST'])
 def api_deaddrop_compose():
     """Compose an encrypted message for dead drop exchange."""
@@ -1102,7 +1105,10 @@ def api_deaddrop_compose():
     if not message or not secret:
         return jsonify({'error': 'Message and shared secret are required'}), 400
     salt = _os.urandom(16)
-    key = hashlib.pbkdf2_hmac('sha256', secret.encode(), salt, 100000)
+    # Bumped from 100k → 600k iterations (OWASP 2023 minimum). Old payloads
+    # (version 2 with 100k) remain readable because the iteration count is
+    # re-derived from the stored header — see version 3 decrypt below.
+    key = hashlib.pbkdf2_hmac('sha256', secret.encode(), salt, _DEADDROP_KDF_ITERATIONS)
     try:
         from cryptography.hazmat.primitives.ciphers.aead import AESGCM
         nonce = _os.urandom(12)
@@ -1112,13 +1118,14 @@ def api_deaddrop_compose():
     except ImportError:
         return jsonify({'error': 'cryptography package not installed \u2014 run: pip install cryptography'}), 500
     payload = {
-        'version': 2,
+        'version': 3,
         'type': 'nomad-deaddrop',
         'from_node': _get_node_id(),
         'from_name': _get_node_name(),
         'recipient': recipient,
         'timestamp': time.strftime('%Y-%m-%dT%H:%M:%S'),
         'data': enc_data,
+        'kdf_iter': _DEADDROP_KDF_ITERATIONS,
         'checksum': hashlib.sha256(message.encode()).hexdigest()[:16]
     }
     return jsonify({'payload': payload, 'filename': f'deaddrop-{_get_node_id()[:4]}-{int(time.time())}.json'})
@@ -1126,7 +1133,14 @@ def api_deaddrop_compose():
 
 @federation_bp.route('/api/deaddrop/decrypt', methods=['POST'])
 def api_deaddrop_decrypt():
-    """Decrypt a dead drop message."""
+    """Decrypt a dead drop message.
+
+    Supports dead-drop envelopes v2 (PBKDF2 100k, AES-GCM) and v3
+    (PBKDF2 600k+, AES-GCM). The legacy v1 XOR-cipher path has been
+    removed — it provided zero confidentiality and silently downgraded
+    attackers' work factor to "read the message out". No v1 envelopes
+    should exist in real deployments.
+    """
     import hashlib, base64
     data = request.get_json() or {}
     payload = data.get('payload', {})
@@ -1138,20 +1152,28 @@ def api_deaddrop_decrypt():
     try:
         raw = base64.b64decode(payload['data'])
         version = payload.get('version', 1)
-        if version >= 2:
-            salt = raw[:16]
-            key = hashlib.pbkdf2_hmac('sha256', secret.encode(), salt, 100000)
-            try:
-                from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-                nonce = raw[16:28]
-                ciphertext = raw[28:]
-                aesgcm = AESGCM(key)
-                decrypted = aesgcm.decrypt(nonce, ciphertext, None).decode('utf-8')
-            except ImportError:
-                return jsonify({'error': 'cryptography package not installed \u2014 run: pip install cryptography'}), 500
+        if version < 2:
+            return jsonify({
+                'error': 'Legacy v1 dead-drop envelopes (XOR cipher) are no longer supported. Re-encrypt the message from the sender using the current client.',
+            }), 400
+        # v2 used a fixed 100k iterations; v3 stores the iteration count in
+        # the envelope so the work factor can evolve without breaking old
+        # messages. Cap to avoid DoS via huge iteration counts in payloads.
+        if version >= 3:
+            iterations = int(payload.get('kdf_iter', _DEADDROP_KDF_ITERATIONS))
+            iterations = max(100_000, min(iterations, 5_000_000))
         else:
-            key = hashlib.sha256(secret.encode()).digest()
-            decrypted = bytes(b ^ key[i % len(key)] for i, b in enumerate(raw)).decode('utf-8')
+            iterations = 100_000
+        salt = raw[:16]
+        key = hashlib.pbkdf2_hmac('sha256', secret.encode(), salt, iterations)
+        try:
+            from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+            nonce = raw[16:28]
+            ciphertext = raw[28:]
+            aesgcm = AESGCM(key)
+            decrypted = aesgcm.decrypt(nonce, ciphertext, None).decode('utf-8')
+        except ImportError:
+            return jsonify({'error': 'cryptography package not installed \u2014 run: pip install cryptography'}), 500
         expected = hashlib.sha256(decrypted.encode()).hexdigest()[:16]
         if expected != payload.get('checksum', ''):
             return jsonify({'error': 'Wrong secret or corrupted message'}), 400

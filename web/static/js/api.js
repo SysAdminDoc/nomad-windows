@@ -3,25 +3,34 @@
  * Replaces raw fetch() calls with consistent error handling.
  */
 
-// CSRF token — fetched once on load, included in all mutating requests
+// CSRF token — fetched once on load, included in all mutating requests.
+// `apiFetch` awaits this promise before issuing mutating requests so the
+// first POST/PUT/DELETE/PATCH after page load does not race the token fetch
+// and end up being rejected with 403 on LAN (localhost is exempt).
 let _csrfToken = null;
+let _csrfTokenPromise = null;
 
 async function _fetchCsrfToken() {
     try {
         const ac = new AbortController();
-        setTimeout(() => ac.abort(), 5000);
-        const resp = await fetch('/api/csrf-token', { signal: ac.signal });
-        if (resp.ok) {
-            const data = await resp.json();
-            _csrfToken = data.csrf_token;
+        const timer = setTimeout(() => ac.abort(), 5000);
+        try {
+            const resp = await fetch('/api/csrf-token', { signal: ac.signal });
+            if (resp.ok) {
+                const data = await resp.json();
+                _csrfToken = data.csrf_token;
+            }
+        } finally {
+            clearTimeout(timer);
         }
     } catch (e) {
         if (e.name !== 'AbortError') console.warn('[API] Could not fetch CSRF token:', e.message);
     }
 }
 
-// Fetch CSRF token on page load
-_fetchCsrfToken();
+// Kick off the fetch immediately so most requests find it resolved,
+// but hold onto the promise so callers can await if they win the race.
+_csrfTokenPromise = _fetchCsrfToken();
 
 async function apiFetch(url, options = {}) {
     const defaults = {

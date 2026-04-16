@@ -34,6 +34,26 @@ def esc(s):
     return _html_escape(str(s)) if s else ''
 
 
+_CSV_FORMULA_PREFIXES = ('=', '+', '-', '@', '\t', '\r')
+
+
+def csv_safe(value):
+    """Return *value* as a string with CSV-formula-injection neutralized.
+
+    If a value begins with a character Excel/Sheets treat as a formula
+    marker (``=``, ``+``, ``-``, ``@``, tab, carriage return), prepend a
+    single quote so the spreadsheet displays the raw text instead of
+    evaluating it. Passing untrusted DB contents through this helper before
+    writing a CSV export is a cheap, standard mitigation.
+    """
+    if value is None:
+        return ''
+    s = str(value)
+    if s and s[0] in _CSV_FORMULA_PREFIXES:
+        return "'" + s
+    return s
+
+
 def clone_json_fallback(fallback):
     """Return a shallow copy of a dict/list fallback, or the value unchanged."""
     if isinstance(fallback, dict):
@@ -241,10 +261,16 @@ def check_origin(req):
 def validate_download_url(url):
     """Validate that a download URL is safe (SSRF protection).
 
-    Raises ValueError if the URL uses a non-https scheme or points to a
-    private/internal IP address.
+    Raises ValueError if the URL uses an unsupported scheme, targets an
+    internal host, or resolves to a private/internal IP address.
+
+    Note: this is a best-effort check — there is a TOCTOU gap between the
+    DNS lookup here and the actual HTTP request (DNS rebinding attacks).
+    Callers that need strict safety should pin the resolved IP and use a
+    custom adapter that dials by IP with SNI.
     """
     import ipaddress
+    import socket
     from urllib.parse import urlparse
     parsed = urlparse(url)
     if parsed.scheme not in ('https', 'http'):
@@ -252,8 +278,17 @@ def validate_download_url(url):
     hostname = parsed.hostname or ''
     if hostname in ('localhost', '') or hostname.endswith('.local'):
         raise ValueError('URLs pointing to internal hosts are not allowed')
+    # Reject direct IP literals that are private/loopback before DNS
     try:
-        import socket
+        literal_ip = ipaddress.ip_address(hostname)
+    except ValueError:
+        literal_ip = None
+    if literal_ip is not None and (
+        literal_ip.is_private or literal_ip.is_loopback or literal_ip.is_link_local
+        or literal_ip.is_reserved or literal_ip.is_multicast or literal_ip.is_unspecified
+    ):
+        raise ValueError('URL targets a blocked IP range')
+    try:
         old_timeout = socket.getdefaulttimeout()
         socket.setdefaulttimeout(5)
         try:
@@ -263,7 +298,7 @@ def validate_download_url(url):
         for _family, _type, _proto, _canonname, sockaddr in resolved:
             ip = ipaddress.ip_address(sockaddr[0])
             if (ip.is_private or ip.is_loopback or ip.is_link_local
-                    or ip.is_reserved or ip.is_multicast):
+                    or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
                 raise ValueError('URL resolves to a blocked IP range')
     except (socket.gaierror, OSError):
         raise ValueError(f'Cannot resolve hostname: {hostname}')

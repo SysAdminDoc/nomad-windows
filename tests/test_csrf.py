@@ -19,6 +19,15 @@ class TestCSRFBlocking:
                             headers={'Origin': 'https://malicious.site'})
         assert resp.status_code == 403
 
+    def test_patch_from_foreign_origin_blocked(self, client):
+        # PATCH must be treated the same as POST/PUT/DELETE. Earlier versions
+        # of the app only guarded POST/PUT/DELETE, which let cross-origin
+        # PATCH requests slip through on routes like /api/videos/<int:vid>.
+        resp = client.patch('/api/videos/1',
+                           json={'title': 'CSRF Test'},
+                           headers={'Origin': 'https://evil.example.com'})
+        assert resp.status_code == 403
+
     def test_post_from_file_origin_blocked(self, client):
         resp = client.post('/api/contacts',
                           json={'name': 'Test'},

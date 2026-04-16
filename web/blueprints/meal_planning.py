@@ -244,7 +244,10 @@ def api_recipes_due_score():
 @meal_planning_bp.route('/api/inventory/burn-rates')
 def api_inventory_burn_rates():
     """Calculate actual consumption rates from consumption_log and project durations."""
-    days = int(request.args.get('days', 90))
+    try:
+        days = max(1, min(3650, int(request.args.get('days', 90))))
+    except (TypeError, ValueError):
+        days = 90
 
     with db_session() as db:
         # Aggregate consumption over the window
@@ -366,21 +369,31 @@ def api_inventory_audit_verify(audit_id):
     actual_qty = data.get('actual_qty')
     if item_id is None or actual_qty is None:
         return jsonify({'error': 'item_id and actual_qty required'}), 400
+    # Coerce up front — float(non-numeric) would otherwise raise 500.
+    try:
+        actual_qty_val = float(actual_qty)
+        item_id_val = int(item_id)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'item_id must be int, actual_qty must be numeric'}), 400
 
     with db_session() as db:
         row = db.execute(
             'SELECT * FROM inventory_audit_items WHERE id = ? AND audit_id = ?',
-            (item_id, audit_id)
+            (item_id_val, audit_id)
         ).fetchone()
         if not row:
             return jsonify({'error': 'not found'}), 404
 
-        discrepancy = abs(float(actual_qty) - float(row['expected_qty'])) > 0.01
+        try:
+            expected = float(row['expected_qty'])
+        except (TypeError, ValueError):
+            expected = 0.0
+        discrepancy = abs(actual_qty_val - expected) > 0.01
         db.execute('''
             UPDATE inventory_audit_items
             SET actual_qty = ?, verified = 1, discrepancy_notes = ?
             WHERE id = ?
-        ''', (actual_qty, data.get('notes', '') if discrepancy else '', item_id))
+        ''', (actual_qty_val, data.get('notes', '') if discrepancy else '', item_id_val))
 
         # Update audit totals
         verified = db.execute(

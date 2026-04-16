@@ -246,6 +246,10 @@ def _calculate_solar(lat, lng, date_str, panel_watts=100, panel_count=1, efficie
                         math.cos(lat_rad) * math.cos(decl_rad) * math.cos(hour_angle))
             if sin_elev <= 0:
                 continue
+            # Defensive clamp — floating-point error can push sin_elev
+            # fractionally above 1.0, which would raise ValueError from asin.
+            if sin_elev > 1.0:
+                sin_elev = 1.0
             elev = math.asin(sin_elev)
             elev_deg = math.degrees(elev)
             if elev_deg > 0:

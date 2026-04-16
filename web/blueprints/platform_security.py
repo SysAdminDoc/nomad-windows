@@ -1,6 +1,7 @@
 """Platform security — users, auth, sessions, access logs, deployment configs,
 performance metrics, and role management."""
 
+import hmac as _hmac
 import json
 import logging
 import hashlib
@@ -11,6 +12,8 @@ from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
+from web.auth import require_auth
+from web.utils import coerce_int as _coerce_int
 
 _log = logging.getLogger(__name__)
 
@@ -36,6 +39,16 @@ _USER_SAFE_COLUMNS = [
     'settings', 'created_at', 'updated_at',
 ]
 
+# Pre-computed PBKDF2 hash used as a decoy target when a username does not
+# exist, so the verification step takes comparable wall-clock time either way
+# (defeats username-enumeration timing side-channels).
+_DUMMY_HASH = (
+    'pbkdf2$'
+    + os.urandom(16).hex()
+    + '$'
+    + hashlib.pbkdf2_hmac('sha256', b'\x00' * 32, os.urandom(16), 100_000).hex()
+)
+
 
 # ─── Helpers ────────────────────────────────────────────────────────
 
@@ -48,18 +61,28 @@ def _hash_credential(value):
 
 def _verify_credential(value, stored_hash):
     """Verify a PIN or password against a stored hash.
-    Supports PBKDF2 (preferred) and legacy plain SHA-256."""
+    Supports PBKDF2 (preferred) and legacy plain SHA-256.
+
+    Uses ``hmac.compare_digest`` throughout so comparison time does not
+    depend on how many leading characters of the digest match — a real
+    timing side-channel for naive ``==`` comparison.
+    """
     if not value or not stored_hash:
         return False
     if stored_hash.startswith('pbkdf2$'):
         parts = stored_hash.split('$')
         if len(parts) != 3:
             return False
-        salt = bytes.fromhex(parts[1])
+        try:
+            salt = bytes.fromhex(parts[1])
+        except ValueError:
+            return False
         h = hashlib.pbkdf2_hmac('sha256', value.encode(), salt, 100_000)
-        return h.hex() == parts[2]
+        return _hmac.compare_digest(h.hex(), parts[2])
     # Legacy SHA-256 fallback
-    return hashlib.sha256(value.encode()).hexdigest() == stored_hash
+    return _hmac.compare_digest(
+        hashlib.sha256(value.encode()).hexdigest(), stored_hash
+    )
 
 
 def _needs_rehash(stored_hash):
@@ -111,6 +134,7 @@ def _get_current_session(db):
 # ═══════════════════════════════════════════════════════════════════════
 
 @platform_security_bp.route('/users')
+@require_auth('admin')
 def users_list():
     """List all users (exclude pin_hash and password_hash)."""
     with db_session() as db:
@@ -121,6 +145,7 @@ def users_list():
 
 
 @platform_security_bp.route('/users', methods=['POST'])
+@require_auth('admin')
 def users_create():
     """Create a new user."""
     data = request.get_json() or {}
@@ -164,6 +189,7 @@ def users_create():
 
 
 @platform_security_bp.route('/users/<int:uid>')
+@require_auth('admin')
 def users_get(uid):
     """Get a single user (exclude hashes)."""
     with db_session() as db:
@@ -174,6 +200,7 @@ def users_get(uid):
 
 
 @platform_security_bp.route('/users/<int:uid>', methods=['PUT'])
+@require_auth('admin')
 def users_update(uid):
     """Update a user. Rehash PIN/password if provided."""
     data = request.get_json() or {}
@@ -219,6 +246,7 @@ def users_update(uid):
 
 
 @platform_security_bp.route('/users/<int:uid>', methods=['DELETE'])
+@require_auth('admin')
 def users_delete(uid):
     """Delete a user and cascade their sessions."""
     with db_session() as db:
@@ -235,6 +263,7 @@ def users_delete(uid):
 
 
 @platform_security_bp.route('/users/<int:uid>/reset-pin', methods=['POST'])
+@require_auth('admin')
 def users_reset_pin(uid):
     """Reset a user's PIN to a new value."""
     data = request.get_json() or {}
@@ -273,7 +302,11 @@ def auth_login():
         user = db.execute(
             'SELECT * FROM app_users WHERE username = ?', (username,)
         ).fetchone()
+        # Always run a PBKDF2 verification pass to avoid a username-enumeration
+        # timing oracle. For missing users we verify the supplied secret against
+        # a throwaway dummy hash so wall-clock time matches the success path.
         if not user:
+            _verify_credential(pin or password, _DUMMY_HASH)
             return jsonify({'error': 'invalid credentials'}), 401
         if not user['is_active']:
             return jsonify({'error': 'account is disabled'}), 403
@@ -441,16 +474,21 @@ def auth_change_password():
 # ═══════════════════════════════════════════════════════════════════════
 
 @platform_security_bp.route('/sessions')
+@require_auth('admin')
 def sessions_list():
     """List active sessions."""
     with db_session() as db:
         rows = db.execute(
-            'SELECT * FROM app_sessions WHERE is_active = 1 ORDER BY created_at DESC'
+            'SELECT id, user_id, ip_address, user_agent, device_info, '
+            'expires_at, is_active, last_activity, created_at '
+            'FROM app_sessions WHERE is_active = 1 ORDER BY created_at DESC'
         ).fetchall()
+    # Never return raw session_token — that's the credential itself.
     return jsonify([dict(r) for r in rows])
 
 
 @platform_security_bp.route('/sessions/<int:sid>', methods=['DELETE'])
+@require_auth('admin')
 def sessions_revoke(sid):
     """Revoke a session by ID."""
     with db_session() as db:
@@ -466,6 +504,7 @@ def sessions_revoke(sid):
 
 
 @platform_security_bp.route('/sessions/cleanup', methods=['POST'])
+@require_auth('admin')
 def sessions_cleanup():
     """Expire old sessions past their expires_at."""
     now_str = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -487,18 +526,23 @@ def sessions_cleanup():
 # ═══════════════════════════════════════════════════════════════════════
 
 @platform_security_bp.route('/access-logs')
+@require_auth('admin')
 def access_logs_list():
     """List access logs with optional filters: ?user_id=, ?action=, ?limit=100."""
     user_id = request.args.get('user_id', '').strip()
     action = request.args.get('action', '').strip()
-    limit = int(request.args.get('limit', 100))
+    # Defensive int coercion — raw int() raises 500 on non-numeric input.
+    limit = _coerce_int(request.args.get('limit', 100), 100, minimum=1, maximum=1000)
     clauses, params = [], []
     if user_id:
+        uid = _coerce_int(user_id, None, minimum=0)
+        if uid is None:
+            return jsonify({'error': 'invalid user_id'}), 400
         clauses.append('user_id = ?')
-        params.append(int(user_id))
+        params.append(uid)
     if action:
         clauses.append('action = ?')
-        params.append(action)
+        params.append(action[:100])
     where = (' WHERE ' + ' AND '.join(clauses)) if clauses else ''
     params.append(limit)
     with db_session() as db:
@@ -510,9 +554,10 @@ def access_logs_list():
 
 
 @platform_security_bp.route('/access-logs', methods=['DELETE'])
+@require_auth('admin')
 def access_logs_clear():
     """Clear logs older than ?days=30."""
-    days = int(request.args.get('days', 30))
+    days = _coerce_int(request.args.get('days', 30), 30, minimum=1, maximum=36500)
     cutoff = (datetime.utcnow() - timedelta(days=days)).strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         r = db.execute(
@@ -526,6 +571,7 @@ def access_logs_clear():
 
 
 @platform_security_bp.route('/access-logs/summary')
+@require_auth('admin')
 def access_logs_summary():
     """Count by action type, most active users, recent failures."""
     with db_session() as db:
@@ -553,6 +599,7 @@ def access_logs_summary():
 # ═══════════════════════════════════════════════════════════════════════
 
 @platform_security_bp.route('/configs')
+@require_auth('admin')
 def configs_list():
     """List all deployment configs."""
     with db_session() as db:
@@ -563,6 +610,7 @@ def configs_list():
 
 
 @platform_security_bp.route('/configs', methods=['POST'])
+@require_auth('admin')
 def configs_create():
     """Create a deployment config."""
     data = request.get_json() or {}
@@ -592,6 +640,7 @@ def configs_create():
 
 
 @platform_security_bp.route('/configs/<int:cid>')
+@require_auth('admin')
 def configs_get(cid):
     """Get a single deployment config."""
     with db_session() as db:
@@ -604,6 +653,7 @@ def configs_get(cid):
 
 
 @platform_security_bp.route('/configs/<int:cid>', methods=['PUT'])
+@require_auth('admin')
 def configs_update(cid):
     """Update a deployment config."""
     data = request.get_json() or {}
@@ -634,6 +684,7 @@ def configs_update(cid):
 
 
 @platform_security_bp.route('/configs/<int:cid>', methods=['DELETE'])
+@require_auth('admin')
 def configs_delete(cid):
     """Delete a deployment config."""
     with db_session() as db:
@@ -680,17 +731,17 @@ def metrics_record():
 def metrics_list():
     """List metrics with optional ?type= and ?hours=24 filters."""
     metric_type = request.args.get('type', '').strip()
-    hours = int(request.args.get('hours', 24))
+    hours = _coerce_int(request.args.get('hours', 24), 24, minimum=1, maximum=24 * 365)
     cutoff = (datetime.utcnow() - timedelta(hours=hours)).strftime('%Y-%m-%dT%H:%M:%SZ')
     clauses = ['recorded_at >= ?']
     params = [cutoff]
     if metric_type:
         clauses.append('metric_type = ?')
-        params.append(metric_type)
+        params.append(metric_type[:50])
     where = ' WHERE ' + ' AND '.join(clauses)
     with db_session() as db:
         rows = db.execute(
-            f'SELECT * FROM performance_metrics{where} ORDER BY recorded_at DESC',
+            f'SELECT * FROM performance_metrics{where} ORDER BY recorded_at DESC LIMIT 5000',
             params
         ).fetchall()
     return jsonify([dict(r) for r in rows])
@@ -715,9 +766,10 @@ def metrics_summary():
 
 
 @platform_security_bp.route('/metrics/cleanup', methods=['DELETE'])
+@require_auth('admin')
 def metrics_cleanup():
     """Delete metrics older than ?days=7."""
-    days = int(request.args.get('days', 7))
+    days = _coerce_int(request.args.get('days', 7), 7, minimum=1, maximum=36500)
     cutoff = (datetime.utcnow() - timedelta(days=days)).strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         r = db.execute(

@@ -110,6 +110,14 @@ def tray_quit(icon, item):
     # Signal all daemon threads (health_monitor, etc.) to stop
     _shutdown_event.set()
 
+    # Signal app-level background threads with their own stop events so they
+    # don't have to be force-killed by daemon-thread teardown.
+    try:
+        from web.blueprints.preparedness import stop_alert_engine
+        stop_alert_engine()
+    except Exception as e:
+        log.debug(f'stop_alert_engine failed: {e}')
+
     try:
         log_activity('app_shutdown', detail='User requested quit')
     except Exception:
@@ -207,7 +215,7 @@ def health_monitor():
     Respects _shutdown_event so the thread exits cleanly during graceful
     shutdown rather than relying on daemon-thread force-kill.
     """
-    from services.manager import unregister_process, should_restart, record_restart, prune_completed_downloads
+    from services.manager import unregister_process, try_reserve_restart, prune_completed_downloads
 
     # Wait long enough for auto_start_services to finish (Stirling can take 60s+)
     # Use Event.wait() instead of time.sleep() so we can be interrupted on shutdown.
@@ -226,10 +234,9 @@ def health_monitor():
                 sid = row['id']
                 mod = mods.get(sid)
                 if mod and not mod.running():
-                    if should_restart(sid):
+                    if try_reserve_restart(sid):
                         log.warning(f'Service {sid} crashed — attempting auto-restart')
                         log_activity('service_crash_detected', sid, 'Attempting auto-restart', 'warning')
-                        record_restart(sid)
                         unregister_process(sid)
                         try:
                             mod.start()

@@ -15,6 +15,7 @@ from config import get_data_dir
 from db import db_session, log_activity
 from services import ollama
 from web.utils import safe_json_value as _safe_json_value
+from web.utils import get_query_int as _get_query_int
 
 log = logging.getLogger('nomad.web')
 
@@ -443,7 +444,7 @@ def api_benchmark_storage():
 def api_benchmark_results_history():
     """Get benchmark results history for charting."""
     test_type = request.args.get('type', '')
-    limit = min(request.args.get('limit', 20, type=int), 500)
+    limit = _get_query_int(request, 'limit', 20, minimum=1, maximum=500)
     with db_session() as db:
         if test_type:
             rows = db.execute('SELECT * FROM benchmark_results WHERE test_type = ? ORDER BY created_at DESC LIMIT ?', (test_type, limit)).fetchall()

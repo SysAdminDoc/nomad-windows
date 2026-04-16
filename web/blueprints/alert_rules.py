@@ -171,7 +171,7 @@ def api_alert_rules_evaluate():
 @alert_rules_bp.route('/api/alert-rules/triggers')
 def api_alert_rules_triggers():
     """History of rule triggers."""
-    limit = request.args.get('limit', 50, type=int)
+    limit, _ = get_pagination(default_limit=50, max_limit=500)
     with db_session() as db:
         rows = db.execute(
             '''SELECT t.*, r.name AS rule_name, r.severity, r.category

@@ -3,6 +3,7 @@
 from flask import Blueprint, request, jsonify
 from db import db_session, log_activity
 import json
+from web.utils import get_query_int as _get_query_int
 
 threat_intel_bp = Blueprint('threat_intel', __name__)
 
@@ -100,7 +101,7 @@ def api_threat_entries_list():
     category = request.args.get('category')
     severity = request.args.get('severity')
     active_only = request.args.get('active', '1')
-    limit = request.args.get('limit', 100, type=int)
+    limit = _get_query_int(request, 'limit', 100, minimum=1, maximum=500)
 
     clauses, params = [], []
     if category:
@@ -116,7 +117,7 @@ def api_threat_entries_list():
     with db_session() as db:
         rows = db.execute(
             f'SELECT * FROM threat_entries {where} ORDER BY severity_score DESC, created_at DESC LIMIT ?',
-            params + [limit]
+            tuple(params + [limit])
         ).fetchall()
     return jsonify([dict(r) for r in rows])
 

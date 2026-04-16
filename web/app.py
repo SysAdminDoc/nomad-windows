@@ -23,10 +23,13 @@ from db import get_db_path, db_session, init_db
 from web.sql_safety import safe_table
 from web.utils import (
     check_origin as _check_origin,
+    hash_local_secret as _hash_local_secret,
+    local_secret_needs_rehash as _local_secret_needs_rehash,
     require_json_body as _require_json_body,
     safe_json_value as _safe_json_value,
     safe_json_list as _safe_json_list,
     read_household_size as _read_household_size_setting,
+    verify_local_secret as _verify_local_secret,
 )
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
 
@@ -36,6 +39,10 @@ log = logging.getLogger('nomad.web')
 
 _db_bootstrap_lock = threading.Lock()
 _db_bootstrap_done = False
+_discovery_listener_lock = threading.Lock()
+_discovery_listener_started = False
+_sse_cleanup_lock = threading.Lock()
+_sse_cleanup_started = False
 
 SERVICE_MODULES = {
     'ollama': ollama,
@@ -98,6 +105,7 @@ def _load_bundle_manifest():
 
 def create_app():
     global _cpu_monitor_started, _db_bootstrap_done
+    global _discovery_listener_started, _sse_cleanup_started
     if not _db_bootstrap_done:
         with _db_bootstrap_lock:
             if not _db_bootstrap_done:
@@ -325,10 +333,16 @@ def create_app():
             with db_session() as db:
                 row = db.execute("SELECT value FROM settings WHERE key = 'auth_password'").fetchone()
             if row and row['value']:
-                import hashlib, hmac
                 token = request.headers.get('X-Auth-Token', '')
-                if not hmac.compare_digest(hashlib.sha256(token.encode()).hexdigest(), row['value']):
+                if not _verify_local_secret(token, row['value']):
                     return jsonify({'error': 'Authentication required'}), 403
+                if _local_secret_needs_rehash(row['value']):
+                    with db_session() as db:
+                        db.execute(
+                            "INSERT OR REPLACE INTO settings (key, value) VALUES ('auth_password', ?)",
+                            (_hash_local_secret(token),)
+                        )
+                        db.commit()
         except Exception as e:
             log.warning(f'Auth check failed (denying access): {e}')
             return jsonify({'error': 'Auth check failed'}), 403
@@ -820,7 +834,11 @@ def create_app():
         except Exception as e:
             log.warning(f'Discovery listener failed to start: {e}')
 
-    threading.Thread(target=_discovery_listener, daemon=True).start()
+    if not _discovery_listener_started:
+        with _discovery_listener_lock:
+            if not _discovery_listener_started:
+                threading.Thread(target=_discovery_listener, daemon=True).start()
+                _discovery_listener_started = True
 
     # ─── Scheduled Automatic Backups ──────────────────────────────────
 
@@ -1555,7 +1573,11 @@ def create_app():
                 sse_cleanup_stale_clients()
             except Exception:
                 pass
-    threading.Thread(target=_sse_stale_cleanup_loop, daemon=True).start()
+    if not _sse_cleanup_started:
+        with _sse_cleanup_lock:
+            if not _sse_cleanup_started:
+                threading.Thread(target=_sse_stale_cleanup_loop, daemon=True).start()
+                _sse_cleanup_started = True
 
     @app.route('/api/events/test')
     def event_test():

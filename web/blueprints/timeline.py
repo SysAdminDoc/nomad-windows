@@ -2,6 +2,7 @@
 
 from flask import Blueprint, request, jsonify
 from db import db_session
+from web.utils import get_query_int as _get_query_int
 
 timeline_bp = Blueprint('timeline', __name__)
 
@@ -271,7 +272,7 @@ def api_timeline():
 @timeline_bp.route('/api/timeline/upcoming')
 def api_timeline_upcoming():
     """Get the next N upcoming events from today forward."""
-    limit = request.args.get('limit', 20, type=int)
+    limit = _get_query_int(request, 'limit', 20, minimum=1, maximum=200)
     from datetime import date, timedelta
     today = date.today().isoformat()
     future = (date.today() + timedelta(days=180)).isoformat()

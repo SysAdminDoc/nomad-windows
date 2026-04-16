@@ -1,12 +1,18 @@
 """Shared utility functions for web routes and blueprints."""
 
+import hashlib
+import hmac
 import json
 import logging
+import os
 import platform
 import uuid as _uuid
+from urllib.parse import urlparse
 from html import escape as _html_escape
 
 log = logging.getLogger('nomad.web')
+_PBKDF2_PREFIX = 'pbkdf2$'
+_PBKDF2_ITERATIONS = 100_000
 
 
 def esc(s):
@@ -89,6 +95,60 @@ def require_json_body(req):
     return data, None
 
 
+def coerce_int(value, default, minimum=None, maximum=None):
+    """Safely coerce an integer and apply defensive bounds.
+
+    Invalid values fall back to ``default``. Values below ``minimum`` also
+    fall back to ``default`` when the default itself is in range; otherwise the
+    lower bound wins. Values above ``maximum`` are capped.
+    """
+    try:
+        result = int(value)
+    except (TypeError, ValueError):
+        result = default
+    if minimum is not None and result < minimum:
+        result = default if default >= minimum else minimum
+    if maximum is not None and result > maximum:
+        result = maximum
+    return result
+
+
+def get_query_int(req, name, default, minimum=None, maximum=None):
+    """Read and bound an integer query parameter from a Flask request."""
+    return coerce_int(req.args.get(name, default), default, minimum, maximum)
+
+
+def hash_local_secret(value):
+    """Hash a local auth secret using PBKDF2-SHA256 with a random salt."""
+    salt = os.urandom(16)
+    digest = hashlib.pbkdf2_hmac('sha256', value.encode(), salt, _PBKDF2_ITERATIONS)
+    return f'{_PBKDF2_PREFIX}{salt.hex()}${digest.hex()}'
+
+
+def local_secret_needs_rehash(stored_hash):
+    """Return True when a stored local auth secret uses the legacy SHA-256 format."""
+    return bool(stored_hash) and not str(stored_hash).startswith(_PBKDF2_PREFIX)
+
+
+def verify_local_secret(value, stored_hash):
+    """Verify a local auth secret against PBKDF2 or legacy SHA-256 storage."""
+    if not value or not stored_hash:
+        return False
+    stored_hash = str(stored_hash)
+    if stored_hash.startswith(_PBKDF2_PREFIX):
+        parts = stored_hash.split('$')
+        if len(parts) != 3:
+            return False
+        try:
+            salt = bytes.fromhex(parts[1])
+        except ValueError:
+            return False
+        digest = hashlib.pbkdf2_hmac('sha256', value.encode(), salt, _PBKDF2_ITERATIONS).hex()
+        return hmac.compare_digest(digest, parts[2])
+    legacy = hashlib.sha256(value.encode()).hexdigest()
+    return hmac.compare_digest(legacy, stored_hash)
+
+
 def close_db_safely(db, context='database connection'):
     """Best-effort DB close with debug logging instead of silent failure."""
     if not db:
@@ -113,11 +173,55 @@ def validate_bulk_ids(data):
 
 
 def check_origin(req):
-    """Block cross-origin state-changing requests (CSRF protection)."""
+    """Block cross-origin state-changing requests (CSRF protection).
+
+    Only the actual app origin is allowed. Loopback aliases are treated as the
+    same origin only when the scheme and port also match, which keeps the
+    desktop shell flexible without allowing unrelated localhost dev servers to
+    bypass CSRF checks.
+    """
+    import ipaddress
     origin = req.headers.get('Origin', '')
-    if origin and not origin.startswith(('http://localhost:', 'http://127.0.0.1:')):
-        from flask import abort
-        abort(403, 'Cross-origin request blocked')
+    if not origin:
+        return
+
+    parsed_origin = urlparse(origin)
+    parsed_request = urlparse(f'{req.scheme}://{req.host}')
+
+    def _port(parsed):
+        if parsed.port is not None:
+            return parsed.port
+        if parsed.scheme == 'https':
+            return 443
+        return 80
+
+    def _is_loopback(hostname):
+        host = (hostname or '').strip().lower()
+        if host == 'localhost':
+            return True
+        try:
+            return ipaddress.ip_address(host).is_loopback
+        except ValueError:
+            return False
+
+    same_origin = (
+        parsed_origin.scheme in ('http', 'https')
+        and parsed_origin.hostname
+        and parsed_origin.scheme == parsed_request.scheme
+        and parsed_origin.netloc.lower() == parsed_request.netloc.lower()
+    )
+    same_loopback_origin = (
+        parsed_origin.scheme in ('http', 'https')
+        and parsed_origin.scheme == parsed_request.scheme
+        and _is_loopback(parsed_origin.hostname)
+        and _is_loopback(parsed_request.hostname)
+        and _port(parsed_origin) == _port(parsed_request)
+    )
+    if same_origin or same_loopback_origin:
+        return
+
+    from flask import abort
+    abort(403, 'Cross-origin request blocked')
 
 
 def validate_download_url(url):

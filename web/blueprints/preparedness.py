@@ -12,6 +12,7 @@ from db import get_db, db_session, log_activity
 from web.validation import validate_json
 from web.utils import (
     clone_json_fallback as _clone_json_fallback,
+    get_query_int as _get_query_int,
     require_json_body as _require_json_body,
     safe_json_value as _safe_json_value,
     safe_json_list as _safe_json_list,
@@ -289,7 +290,7 @@ def api_preparedness_dashboard():
 @preparedness_bp.route('/api/incidents')
 def api_incidents_list():
     with db_session() as db:
-        limit = min(request.args.get('limit', 100, type=int), 500)
+        limit = _get_query_int(request, 'limit', 100, minimum=1, maximum=500)
         cat = request.args.get('category', '')
         query = 'SELECT * FROM incidents'
         params = []

@@ -16,7 +16,7 @@ from services.manager import (
     get_services_dir, ensure_dependencies,
 )
 from web.state import _installing, _installing_lock, _update_state
-from web.utils import clone_json_fallback as _clone_json_fallback
+from web.utils import clone_json_fallback as _clone_json_fallback, get_query_int as _get_query_int
 import web.state as _state
 
 log = logging.getLogger('nomad.web')
@@ -291,7 +291,7 @@ def api_service_logs(service_id):
     """Return captured stdout/stderr log lines for a service."""
     from services.manager import _service_logs
     lines = _service_logs.get(service_id, [])
-    tail = request.args.get('tail', 100, type=int)
+    tail = _get_query_int(request, 'tail', 100, minimum=1, maximum=500)
     return jsonify({'service': service_id, 'lines': lines[-tail:]})
 
 @services_bp.route('/api/services/logs/all')

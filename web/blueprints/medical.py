@@ -14,7 +14,7 @@ log = logging.getLogger('nomad.web')
 from config import get_data_dir
 from web.print_templates import render_print_document
 
-from web.utils import esc as _esc
+from web.utils import esc as _esc, get_query_int as _get_query_int
 
 medical_bp = Blueprint('medical', __name__)
 
@@ -918,7 +918,7 @@ def api_tccc_protocol():
 @medical_bp.route('/api/medical/vitals-trend/<int:patient_id>')
 def api_vitals_trend(patient_id):
     """Get vital signs history for trending chart."""
-    limit = request.args.get('limit', 50, type=int)
+    limit = _get_query_int(request, 'limit', 50, minimum=1, maximum=200)
     with db_session() as db:
         rows = db.execute(
             'SELECT bp_systolic, bp_diastolic, pulse, resp_rate, temp_f, spo2, pain_level, gcs, created_at FROM vitals_log WHERE patient_id = ? ORDER BY created_at DESC LIMIT ?',

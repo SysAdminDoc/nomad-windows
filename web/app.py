@@ -376,6 +376,50 @@ def create_app():
             response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
         return response
 
+    # Hand-picked CSP for a single-origin desktop/LAN app. `unsafe-inline`
+    # + `unsafe-eval` are required by the current UI (inline <script>/onclick
+    # handlers, Leaflet/Cesium wasm). `blob:` and `data:` accommodate
+    # offline tile previews and inline SVG favicons. Tightening further
+    # would require a sweep across templates to remove inline handlers.
+    _CSP_POLICY = (
+        "default-src 'self'; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; "
+        "style-src 'self' 'unsafe-inline'; "
+        "img-src 'self' data: blob: https:; "
+        "font-src 'self' data:; "
+        "connect-src 'self' blob: ws: http://127.0.0.1:* http://localhost:*; "
+        "media-src 'self' blob:; "
+        "worker-src 'self' blob:; "
+        "frame-src 'self'; "
+        "frame-ancestors 'none'; "
+        "base-uri 'self'; "
+        "form-action 'self'"
+    )
+
+    @app.after_request
+    def _set_security_headers(response):
+        """Apply defense-in-depth response headers.
+
+        X-Content-Type-Options blocks MIME sniffing; X-Frame-Options and
+        CSP's frame-ancestors stop clickjacking (redundant by design —
+        some engines honor only one); Referrer-Policy limits URL leakage
+        on outbound links. CSP is only set on HTML so it doesn't break
+        JSON/SSE clients that inspect response bodies.
+        """
+        # Always safe to set
+        response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+        response.headers.setdefault('X-Frame-Options', 'DENY')
+        response.headers.setdefault('Referrer-Policy', 'same-origin')
+        response.headers.setdefault(
+            'Permissions-Policy',
+            'camera=(self), microphone=(self), geolocation=(self), '
+            'interest-cohort=()',
+        )
+        ctype = response.content_type or ''
+        if 'text/html' in ctype:
+            response.headers.setdefault('Content-Security-Policy', _CSP_POLICY)
+        return response
+
     # ─── Pages ─────────────────────────────────────────────────────────
 
     workspace_pages = {

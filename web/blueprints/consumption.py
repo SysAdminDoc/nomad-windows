@@ -163,7 +163,12 @@ def api_consumption_summary():
             household_row = db.execute(
                 "SELECT value FROM settings WHERE key = 'household_size'"
             ).fetchone()
-            household_size = int(household_row['value']) if household_row else 2
+            # int(household_row['value']) would crash if the value is '', None,
+            # or non-numeric. Guard with try/except and a sane default.
+            try:
+                household_size = max(1, int(household_row['value'])) if household_row else 2
+            except (TypeError, ValueError):
+                household_size = 2
             return jsonify({
                 'source': 'setting',
                 'people': household_size,

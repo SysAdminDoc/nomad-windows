@@ -107,6 +107,21 @@ def sensors_list():
     return jsonify([dict(r) for r in rows])
 
 
+def _sensor_float(val, default):
+    """Coerce sensor thresholds/offsets; non-numeric input falls back to default."""
+    try:
+        return float(val)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def _sensor_int(val, default):
+    try:
+        return int(val)
+    except (TypeError, ValueError):
+        return int(default)
+
+
 @hardware_sensors_bp.route('/sensors', methods=['POST'])
 def sensors_create():
     """Create a new IoT sensor."""
@@ -130,11 +145,11 @@ def sensors_create():
              data.get('unit', SENSOR_TYPES.get(sensor_type, {}).get('unit', '')),
              data.get('current_value', ''),
              data.get('last_reading_at', ''),
-             float(data.get('min_threshold', 0)),
-             float(data.get('max_threshold', 0)),
+             _sensor_float(data.get('min_threshold', 0), 0),
+             _sensor_float(data.get('max_threshold', 0), 0),
              1 if data.get('alert_enabled') else 0,
-             float(data.get('calibration_offset', 0)),
-             int(data.get('battery_pct', 100)),
+             _sensor_float(data.get('calibration_offset', 0), 0),
+             _sensor_int(data.get('battery_pct', 100), 100),
              data.get('status', 'active'),
              (data.get('notes') or '')[:2000])
         )
@@ -210,6 +225,10 @@ def sensors_add_reading(sid):
     value = data.get('value')
     if value is None:
         return jsonify({'error': 'value is required'}), 400
+    try:
+        value_f = float(value)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'value must be numeric'}), 400
     now_str = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         sensor = db.execute('SELECT id, unit FROM iot_sensors WHERE id = ?', (sid,)).fetchone()
@@ -218,7 +237,7 @@ def sensors_add_reading(sid):
         db.execute(
             '''INSERT INTO iot_sensor_readings (sensor_id, value, raw_value, unit, quality, timestamp)
                VALUES (?,?,?,?,?,?)''',
-            (sid, float(value),
+            (sid, value_f,
              str(data.get('raw_value', value)),
              data.get('unit', sensor['unit'] or ''),
              data.get('quality', 'good'),

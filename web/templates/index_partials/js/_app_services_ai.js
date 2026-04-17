@@ -578,6 +578,7 @@ async function sendChat() {
   input.value = '';
   input.style.height = 'auto';
   _chatAbortCtrl = new AbortController();
+  sendBtn.setAttribute('aria-busy', 'true');
   sendBtn.disabled = true;
   stopBtn.style.display = '';
 
@@ -687,6 +688,7 @@ async function sendChat() {
   }
   isSending = false;
   _chatAbortCtrl = null;
+  sendBtn.removeAttribute('aria-busy');
   sendBtn.disabled = false;
   stopBtn.style.display = 'none';
   const regenBtn = document.getElementById('regen-btn');
@@ -718,7 +720,7 @@ function stopChat() {
     isSending = false;
     const sendBtn = document.getElementById('send-btn');
     const stopBtn = document.getElementById('stop-btn');
-    if (sendBtn) sendBtn.disabled = false;
+    if (sendBtn) { sendBtn.removeAttribute('aria-busy'); sendBtn.disabled = false; }
     if (stopBtn) stopBtn.style.display = 'none';
     if (chatMessages.length && chatMessages[chatMessages.length-1].role === 'assistant') {
       chatMessages[chatMessages.length-1].thinking = false;

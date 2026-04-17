@@ -35,6 +35,16 @@
   #tab-platform-security .ps-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-platform-security .ps-form-row textarea { resize:vertical; min-height:60px; font-family:monospace; font-size:.8rem; }
   #tab-platform-security .ps-form-row .field { flex:1; min-width:140px; }
+  #tab-platform-security .ps-overflow-x { overflow-x:auto; }
+  #tab-platform-security .ps-btn-pill { padding:4px 10px; }
+  #tab-platform-security .ps-btn-pill-spaced { padding:4px 10px; margin-right:4px; }
+  #tab-platform-security .ps-row-spaced-sm { margin-top:10px; display:flex; gap:8px; }
+  #tab-platform-security .ps-row-tight { display:flex; gap:8px; margin-top:6px; }
+  #tab-platform-security .ps-input { padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; width:100%; }
+  #tab-platform-security .ps-input-narrow { max-width:100px; margin:0; }
+  #tab-platform-security .ps-card-flush { margin-bottom:0; }
+  #tab-platform-security .ps-meta-text { font-size:.78rem; color:var(--text-secondary,#aaa); }
+  #tab-platform-security .ps-mono { font-family:monospace; font-size:.78rem; }
   #tab-platform-security .ps-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-platform-security .ps-btn-primary { background:var(--ps-accent); color:#fff; }
   #tab-platform-security .ps-btn-primary:hover { background:var(--ps-accent-hover); }
@@ -91,7 +101,7 @@
   <!-- User Table -->
   <div class="ps-card">
     <div class="ps-card-title">User Accounts</div>
-    <div style="overflow-x:auto;">
+    <div class="ps-overflow-x">
       <table class="ps-table">
         <thead>
           <tr><th>Username</th><th>Display Name</th><th>Role</th><th>Active</th><th>Last Login</th><th>Logins</th><th></th></tr>
@@ -124,7 +134,7 @@
         <textarea name="ps-user-permissions" id="ps-user-permissions" placeholder='{"can_edit": true, "can_delete": false}' rows="2"></textarea>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:6px;">
+    <div class="ps-row-tight">
       <button class="ps-btn ps-btn-primary" onclick="psAddUser()">Add User</button>
     </div>
   </div>
@@ -154,7 +164,7 @@
         <div class="ps-form-row">
           <div class="field"><label>New PIN</label><input name="ps-pin-new" id="ps-pin-new" type="password" placeholder="4-8 digits" maxlength="8"></div>
         </div>
-        <div style="margin-top:10px;display:flex;gap:8px;">
+        <div class="ps-row-spaced-sm">
           <button class="ps-btn ps-btn-primary" onclick="psResetPin()">Save PIN</button>
           <button class="ps-btn ps-btn-secondary" onclick="psClosePinModal()">Cancel</button>
         </div>
@@ -196,7 +206,7 @@
             <textarea name="ps-edit-permissions" id="ps-edit-permissions" rows="3"></textarea>
           </div>
         </div>
-        <div style="margin-top:10px;display:flex;gap:8px;">
+        <div class="ps-row-spaced-sm">
           <button class="ps-btn ps-btn-primary" onclick="psSaveEditUser()">Save</button>
           <button class="ps-btn ps-btn-secondary" onclick="psCloseEditModal()">Cancel</button>
         </div>
@@ -214,10 +224,10 @@
   <!-- Active Sessions -->
   <div class="ps-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span class="ps-card-title" style="margin-bottom:0">Active Sessions</span>
+      <span class="ps-card-title ps-card-flush">Active Sessions</span>
       <button class="ps-btn ps-btn-secondary" onclick="psCleanupSessions()">Cleanup Expired</button>
     </div>
-    <div style="overflow-x:auto;">
+    <div class="ps-overflow-x">
       <table class="ps-table">
         <thead>
           <tr><th>User</th><th>IP</th><th>Device</th><th>Created</th><th>Last Activity</th><th>Expires</th><th></th></tr>
@@ -270,7 +280,7 @@
         <button class="ps-btn ps-btn-secondary" onclick="psLoadLogs()">Refresh</button>
       </div>
     </div>
-    <div style="overflow-x:auto;">
+    <div class="ps-overflow-x">
       <table class="ps-table">
         <thead>
           <tr><th>Time</th><th>User</th><th>Action</th><th>Resource</th><th>IP</th><th>Status</th></tr>
@@ -282,8 +292,8 @@
     </div>
     <div style="display:flex;gap:8px;align-items:center;margin-top:10px;">
       <button class="ps-btn ps-btn-danger" onclick="psClearOldLogs()">Clear Old Logs</button>
-      <div class="field" style="max-width:100px;margin:0;"><input name="ps-log-clear-days" id="ps-log-clear-days" type="number" value="30" min="1" placeholder="days" style="padding:7px 10px;border-radius:6px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.85rem;width:100%;"></div>
-      <span style="font-size:.78rem;color:var(--text-secondary,#aaa);">days old</span>
+      <div class="field ps-input-narrow"><input name="ps-log-clear-days" id="ps-log-clear-days" type="number" value="30" min="1" placeholder="days" class="ps-input"></div>
+      <span class="ps-meta-text">days old</span>
     </div>
   </div>
 
@@ -297,7 +307,7 @@
   <!-- Config List -->
   <div class="ps-card">
     <div class="ps-card-title">Configurations</div>
-    <div id="ps-config-list" style="overflow-x:auto;">
+    <div id="ps-config-list" class="ps-overflow-x">
       <div class="ps-empty">Loading...</div>
     </div>
   </div>
@@ -331,7 +341,7 @@
         <textarea name="ps-config-data" id="ps-config-data" rows="4" placeholder='{"schedule": "0 2 * * *", "target": "/mnt/usb"}'></textarea>
       </div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:6px;">
+    <div class="ps-row-tight">
       <button class="ps-btn ps-btn-primary" onclick="psAddConfig()">Add Config</button>
     </div>
   </div>
@@ -371,7 +381,7 @@
             <textarea name="ps-cedit-data" id="ps-cedit-data" rows="5"></textarea>
           </div>
         </div>
-        <div style="margin-top:10px;display:flex;gap:8px;">
+        <div class="ps-row-spaced-sm">
           <button class="ps-btn ps-btn-primary" onclick="psSaveConfig()">Save</button>
           <button class="ps-btn ps-btn-secondary" onclick="psCloseConfigModal()">Cancel</button>
         </div>
@@ -397,7 +407,7 @@
   <!-- Metrics Table -->
   <div class="ps-card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-      <span class="ps-card-title" style="margin-bottom:0">Metrics</span>
+      <span class="ps-card-title ps-card-flush">Metrics</span>
       <div style="display:flex;gap:6px;align-items:center;">
         <select name="ps-metric-filter-type" id="ps-metric-filter-type" style="padding:5px 10px;border-radius:6px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.82rem;">
           <option value="">All Types</option>
@@ -412,7 +422,7 @@
         <button class="ps-btn ps-btn-secondary" onclick="psLoadMetrics()">Refresh</button>
       </div>
     </div>
-    <div style="overflow-x:auto;">
+    <div class="ps-overflow-x">
       <table class="ps-table">
         <thead>
           <tr><th>Type</th><th>Name</th><th>Value</th><th>Unit</th><th>Recorded</th></tr>
@@ -443,7 +453,7 @@
       <div class="field"><label>Value</label><input name="ps-metric-value" id="ps-metric-value" type="number" step="any" placeholder="123.45"></div>
       <div class="field"><label>Unit</label><input name="ps-metric-unit" id="ps-metric-unit" placeholder="ms"></div>
     </div>
-    <div style="display:flex;gap:8px;margin-top:6px;">
+    <div class="ps-row-tight">
       <button class="ps-btn ps-btn-primary" onclick="psRecordMetric()">Record</button>
     </div>
   </div>
@@ -452,8 +462,8 @@
   <div class="ps-card">
     <div style="display:flex;gap:8px;align-items:center;">
       <button class="ps-btn ps-btn-danger" onclick="psCleanupMetrics()">Cleanup Old Metrics</button>
-      <div class="field" style="max-width:100px;margin:0;"><input name="ps-metric-clear-days" id="ps-metric-clear-days" type="number" value="30" min="1" placeholder="days" style="padding:7px 10px;border-radius:6px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.85rem;width:100%;"></div>
-      <span style="font-size:.78rem;color:var(--text-secondary,#aaa);">days old</span>
+      <div class="field ps-input-narrow"><input name="ps-metric-clear-days" id="ps-metric-clear-days" type="number" value="30" min="1" placeholder="days" class="ps-input"></div>
+      <span class="ps-meta-text">days old</span>
     </div>
   </div>
 
@@ -522,9 +532,9 @@
         '<td><small>' + fmtDate(u.last_login) + '</small></td>' +
         '<td>' + (u.login_count || 0) + '</td>' +
         '<td style="white-space:nowrap;">' +
-          '<button class="ps-btn ps-btn-secondary" style="padding:4px 10px;margin-right:4px;" onclick="psOpenEditModal(' + u.id + ')">Edit</button>' +
-          '<button class="ps-btn ps-btn-secondary" style="padding:4px 10px;margin-right:4px;" onclick="psOpenPinModal(' + u.id + ')">PIN</button>' +
-          '<button class="ps-btn ps-btn-danger" style="padding:4px 10px;" onclick="psDeleteUser(' + u.id + ')">&times;</button>' +
+          '<button class="ps-btn ps-btn-secondary ps-btn-pill-spaced" onclick="psOpenEditModal(' + u.id + ')">Edit</button>' +
+          '<button class="ps-btn ps-btn-secondary ps-btn-pill-spaced" onclick="psOpenPinModal(' + u.id + ')">PIN</button>' +
+          '<button class="ps-btn ps-btn-danger ps-btn-pill" onclick="psDeleteUser(' + u.id + ')">&times;</button>' +
         '</td></tr>'
       ).join('');
       psPopulateLogUserFilter(items);
@@ -637,12 +647,12 @@
       c.innerHTML = items.map(s =>
         '<tr>' +
         '<td><strong>' + (s.username || s.user_id || '-') + '</strong></td>' +
-        '<td style="font-family:monospace;font-size:.78rem;">' + (s.ip_address || '-') + '</td>' +
+        '<td class="ps-mono">' + (s.ip_address || '-') + '</td>' +
         '<td>' + (s.device || '-') + '</td>' +
         '<td><small>' + fmtDate(s.created_at) + '</small></td>' +
         '<td><small>' + fmtDate(s.last_activity) + '</small></td>' +
         '<td><small>' + fmtDate(s.expires_at) + '</small></td>' +
-        '<td><button class="ps-btn ps-btn-danger" style="padding:4px 10px;" onclick="psRevokeSession(\'' + (s.token || s.id) + '\')">Revoke</button></td>' +
+        '<td><button class="ps-btn ps-btn-danger ps-btn-pill" onclick="psRevokeSession(\'' + (s.token || s.id) + '\')">Revoke</button></td>' +
         '</tr>'
       ).join('');
     });
@@ -682,7 +692,7 @@
           '<td>' + (l.username || l.user || '-') + '</td>' +
           '<td>' + (l.action || '-') + '</td>' +
           '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + (l.resource || '-') + '</td>' +
-          '<td style="font-family:monospace;font-size:.78rem;">' + (l.ip_address || '-') + '</td>' +
+          '<td class="ps-mono">' + (l.ip_address || '-') + '</td>' +
           '<td>' + (sc ? '<span class="ps-badge ' + scClass + '">' + sc + '</span>' : '-') + '</td>' +
           '</tr>';
       }).join('');
@@ -716,8 +726,8 @@
             (cfg.last_applied ? '<br><small style="color:var(--text-secondary,#666);">Last applied: ' + fmtDate(cfg.last_applied) + '</small>' : '') +
           '</div>' +
           '<div style="display:flex;gap:4px;white-space:nowrap;">' +
-            '<button class="ps-btn ps-btn-secondary" style="padding:4px 10px;" onclick="psOpenConfigModal(' + cfg.id + ')">Edit</button>' +
-            '<button class="ps-btn ps-btn-danger" style="padding:4px 10px;" onclick="psDeleteConfig(' + cfg.id + ')">&times;</button>' +
+            '<button class="ps-btn ps-btn-secondary ps-btn-pill" onclick="psOpenConfigModal(' + cfg.id + ')">Edit</button>' +
+            '<button class="ps-btn ps-btn-danger ps-btn-pill" onclick="psDeleteConfig(' + cfg.id + ')">&times;</button>' +
           '</div>' +
         '</div>';
       }).join('');

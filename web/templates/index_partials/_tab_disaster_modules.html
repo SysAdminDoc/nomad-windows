@@ -51,6 +51,21 @@
   #tab-disaster-modules .dm-tag-spacer-l { margin-left:8px; }
   #tab-disaster-modules .dm-row-tight { display:flex; gap:4px; }
   #tab-disaster-modules .dm-meta-text { font-size:.82rem; color:var(--text-secondary,#aaa); }
+  #tab-disaster-modules .dm-meta-spacer { margin-left:12px; color:var(--text-secondary,#aaa); }
+  #tab-disaster-modules .dm-meta-spacer-l { margin-left:12px; }
+  #tab-disaster-modules .dm-meta-spacer-auto { margin-left:auto; }
+  #tab-disaster-modules .dm-tag-spacer-xs { margin-left:4px; }
+  #tab-disaster-modules .dm-meta-tag-muted { color:var(--dm-gray); font-size:.75rem; }
+  #tab-disaster-modules .dm-fixed-180 { width:180px; }
+  #tab-disaster-modules .dm-row-padded-y { padding:6px 0; border-bottom:1px solid var(--border,#333); font-size:.82rem; }
+  #tab-disaster-modules .dm-row-spaced-md { margin-top:8px; font-size:.82rem; }
+  #tab-disaster-modules .dm-row-spaced-xs-meta { margin-top:6px; font-size:.8rem; color:var(--text-secondary,#aaa); }
+  #tab-disaster-modules .dm-row-spaced-xs-only { margin-top:6px; }
+  #tab-disaster-modules .dm-callout-info { margin-top:10px; padding:10px; background:rgba(59,130,246,.1); border-radius:6px; font-size:.85rem; }
+  #tab-disaster-modules .dm-callout-warn { margin-top:10px; padding:10px; background:rgba(245,158,11,.1); border-radius:6px; font-size:.85rem; }
+  #tab-disaster-modules .dm-callout-danger { padding:8px 12px; background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.3); border-radius:6px; font-size:.82rem; color:var(--dm-red); }
+  #tab-disaster-modules .dm-bar-fill[style*="--dm-bar-w"] { width:var(--dm-bar-w); }
+  #tab-disaster-modules .dm-bar-fill[style*="--dm-tone"] { background:var(--dm-tone); }
   #tab-disaster-modules .dm-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-disaster-modules .dm-btn-primary { background:var(--dm-accent); color:#000; }
   #tab-disaster-modules .dm-btn-danger { background:var(--dm-red); color:#fff; }
@@ -283,7 +298,7 @@
         <div class="field"><label>Outdoor Avg Temp (F)</label><input name="dm-heat-outdoor" id="dm-heat-outdoor" type="number" value="20"></div>
       </div>
       <button class="dm-btn dm-btn-primary" onclick="dmCalcHeating()">Calculate</button>
-      <div id="dm-heat-result" class="is-hidden" style="margin-top:10px; padding:10px; background:rgba(245,158,11,.1); border-radius:6px; font-size:.85rem;"></div>
+      <div id="dm-heat-result" class="is-hidden dm-callout-warn"></div>
     </div>
     <div class="dm-card">
       <div class="dm-card-title">Sandbag Calculator</div>
@@ -292,7 +307,7 @@
         <div class="field"><label>Wall Height (ft)</label><input name="dm-sand-height" id="dm-sand-height" type="number" placeholder="3"></div>
       </div>
       <button class="dm-btn dm-btn-primary" onclick="dmCalcSandbag()">Calculate</button>
-      <div id="dm-sand-result" class="is-hidden" style="margin-top:10px; padding:10px; background:rgba(59,130,246,.1); border-radius:6px; font-size:.85rem;"></div>
+      <div id="dm-sand-result" class="is-hidden dm-callout-info"></div>
     </div>
   </div>
 </div>
@@ -436,11 +451,11 @@
 
   function fmtDate(d){ if(!d) return '--'; const dt=new Date(d); return dt.toLocaleDateString(); }
   function inspectionBadge(dateStr){
-    if(!dateStr) return '<span style="color:var(--dm-gray);font-size:.75rem">No date</span>';
+    if(!dateStr) return '<span class="dm-meta-tag-muted">No date</span>';
     const diff=Math.ceil((new Date(dateStr)-Date.now())/864e5);
     if(diff<0) return `<span style="color:var(--dm-red);font-size:.75rem">Overdue by ${Math.abs(diff)}d</span>`;
     if(diff<=7) return `<span style="color:var(--dm-accent);font-size:.75rem">Due in ${diff}d</span>`;
-    return `<span style="color:var(--dm-gray);font-size:.75rem">${fmtDate(dateStr)}</span>`;
+    return `<span class="dm-meta-tag-muted">${fmtDate(dateStr)}</span>`;
   }
 
   /* ── Sub-tab switching ── */
@@ -495,7 +510,7 @@
             <span class="dm-badge dm-type-${p.disaster_type} dm-tag-spacer-r">${(p.disaster_type||'').replace('_',' ')}</span>
             <strong>${p.name}</strong>
             <span class="dm-badge" style="color:${stColor};margin-left:6px">${p.status}</span>
-            ${p.environment ? `<span class="dm-badge dm-env-${p.environment}" style="margin-left:4px">${p.environment}</span>` : ''}
+            ${p.environment ? `<span class="dm-badge dm-env-${p.environment} dm-tag-spacer-xs">${p.environment}</span>` : ''}
             <br><small class="tone-muted">Last reviewed: ${fmtDate(p.last_reviewed)}</small>
           </div>
           <div class="dm-row-tight">
@@ -519,7 +534,7 @@
     api(API + '/plans/reference').then(ref => {
       const box = el('dm-plan-reference');
       if(!ref || !ref.length){ box.innerHTML = '<div class="dm-meta-text">No quick-reference actions are available yet.</div>'; return; }
-      box.innerHTML = ref.map(r => `<div style="padding:6px 0;border-bottom:1px solid var(--border,#333);font-size:.82rem">
+      box.innerHTML = ref.map(r => `<div class="dm-row-padded-y">
         <span class="dm-badge dm-type-${r.disaster_type} dm-tag-spacer-r">${(r.disaster_type||'').replace('_',' ')}</span>
         <strong>${r.action||''}</strong>
         ${r.detail ? `<br><small class="tone-muted">${r.detail}</small>` : ''}
@@ -552,12 +567,12 @@
         <span class="dm-badge dm-type-${p.disaster_type} dm-tag-spacer-l">${(p.disaster_type||'').replace('_',' ')}</span></div>
         <p style="font-size:.85rem;color:var(--text-secondary,#aaa);margin:0 0 12px">${p.description || 'No summary has been added yet.'}</p>
         <div style="margin-bottom:10px"><strong style="font-size:.82rem">Checklist Progress: ${pct}%</strong>
-          <div class="dm-progress"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
+          <div class="dm-progress"><div class="dm-progress-fill dm-bar-fill" style="--dm-bar-w:${pct}%;--dm-tone:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
         </div>
         ${totalItems ? checklists.map(c => `<div class="dm-checklist-item ${c.completed?'completed':''}">
           <input type="checkbox" name="dm-plan-cl-${c.id}" ${c.completed?'checked':''} onchange="dmToggleChecklist(${c.id},this.checked)">
           <span>${c.item_text}</span>
-          <span class="dm-badge dm-cat-${c.category}" style="margin-left:auto">${(c.category||'').replace('_',' ')}</span>
+          <span class="dm-badge dm-cat-${c.category} dm-meta-spacer-auto">${(c.category||'').replace('_',' ')}</span>
         </div>`).join('') : '<div class="dm-empty">No checklists are attached to this plan yet.</div>'}`;
     });
   };
@@ -666,9 +681,9 @@
             <strong>${p.name}</strong>
             <span class="dm-badge" style="color:${stColor};margin-left:8px">${(p.status||'').replace('_',' ')}</span>
             ${p.description ? `<br><small class="tone-muted">${p.description}</small>` : ''}
-            <div style="margin-top:6px">
+            <div class="dm-row-spaced-xs-only">
               <small class="tone-muted">Labor: ${done}/${est} hrs (${pct}%)</small>
-              <div class="dm-progress" style="width:180px"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=100?'#22c55e':pct>=50?'#f59e0b':'#3b82f6'}"></div></div>
+              <div class="dm-progress dm-fixed-180"><div class="dm-progress-fill dm-bar-fill" style="--dm-bar-w:${pct}%;--dm-tone:${pct>=100?'#22c55e':pct>=50?'#f59e0b':'#3b82f6'}"></div></div>
             </div>
           </div>
           <div class="dm-row-tight">
@@ -702,7 +717,7 @@
     api(API.replace('/disaster','/disaster/materials') + '/low-stock').then(items => {
       const box = el('dm-mat-low-stock');
       if(!items || !items.length){ box.innerHTML = ''; return; }
-      box.innerHTML = `<div style="padding:8px 12px;background:rgba(239,68,68,.12);border:1px solid rgba(239,68,68,.3);border-radius:6px;font-size:.82rem;color:var(--dm-red)">
+      box.innerHTML = `<div class="dm-callout-danger">
         <strong>Low Stock Warnings:</strong> ${items.map(i => i.name).join(', ')}
       </div>`;
     });
@@ -763,12 +778,12 @@
             </div>
             <button class="dm-btn dm-btn-danger" onclick="dmDeleteFortification(${f.id})">Del</button>
           </div>
-          <div style="margin-top:8px;font-size:.82rem">
+          <div class="dm-row-spaced-md">
             <span class="${condClass}" title="Condition">${condIcon} ${f.condition || 'unknown'}</span>
-            <span style="margin-left:12px;color:var(--text-secondary,#aaa)">Capacity: ${f.capacity || '--'} persons</span>
-            <span style="margin-left:12px">${inspectionBadge(f.next_inspection)}</span>
+            <span class="dm-meta-spacer">Capacity: ${f.capacity || '--'} persons</span>
+            <span class="dm-meta-spacer-l">${inspectionBadge(f.next_inspection)}</span>
           </div>
-          ${f.notes ? `<div style="margin-top:6px;font-size:.8rem;color:var(--text-secondary,#aaa)">${f.notes}</div>` : ''}
+          ${f.notes ? `<div class="dm-row-spaced-xs-meta">${f.notes}</div>` : ''}
         </div>`;
       }).join('');
     });
@@ -828,7 +843,7 @@
             <strong style="font-size:.9rem">${planName}</strong>
             <span class="dm-meta-text">${done}/${total} (${pct}%)</span>
           </div>
-          <div class="dm-progress dm-row-spaced-sm"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
+          <div class="dm-progress dm-row-spaced-sm"><div class="dm-progress-fill dm-bar-fill" style="--dm-bar-w:${pct}%;--dm-tone:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
           ${checks.map(c => `<div class="dm-checklist-item ${c.completed?'completed':''}">
             <input type="checkbox" name="dm-cl-item-${c.id}" ${c.completed?'checked':''} onchange="dmToggleChecklist(${c.id},this.checked)">
             <span class="dm-field-grow">${c.item_text}</span>

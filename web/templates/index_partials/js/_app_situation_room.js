@@ -1277,7 +1277,7 @@ function _renderSitroomSavedDesks() {
   if (!list) return;
   const saved = _readSitroomSavedDesks();
   if (!saved.length) {
-    list.innerHTML = '<span class="sr-saved-desk-empty">No saved watchlists yet.</span>';
+    list.innerHTML = '<div class="sr-saved-desk-empty"><strong>No saved watchlists yet</strong><span>Save the current desk to keep its region, layers, and briefing posture ready for quick return.</span></div>';
     return;
   }
   list.innerHTML = saved.map(item => `
@@ -2936,7 +2936,10 @@ async function loadSitroomNews(append) {
   const more = document.getElementById('sitroom-news-more');
   if (!list) return;
   if (!d || !d.articles?.length) {
-    if (!append) { list.innerHTML = '<div class="sitroom-empty">No news cached — click Refresh Feeds</div>'; if (more) more.hidden = true; }
+    if (!append) {
+      list.innerHTML = buildSitroomEmptyState('Newswire standing by', 'This desk does not have cached headlines yet.', 'Refresh feeds to pull in the latest stories for the active desk.', {icon: '&#128240;'});
+      if (more) more.hidden = true;
+    }
     return;
   }
   // Deduplicate similar headlines (Jaccard similarity on word sets)
@@ -2952,7 +2955,7 @@ async function loadSitroomNews(append) {
     : prioritized.slice(0, SITROOM_NEWS_MAX);
   if (!prioritized.length) {
     if (!append) {
-      list.innerHTML = '<div class="sitroom-empty">No headlines match this regional preset yet. Try another preset or broaden the desk.</div>';
+      list.innerHTML = buildSitroomEmptyState('No headlines match this preset yet', 'The current regional preset is not surfacing stories for this desk right now.', 'Try another preset or broaden the desk if you want a wider watchfloor.', {icon: '&#127758;'});
       if (more) more.hidden = _sitroomNewsOffset >= (d.total || 0);
     }
     _renderSitroomNewsDeskBriefing(_sitroomNewsArticles, d.total || 0);
@@ -3396,7 +3399,10 @@ async function loadSitroomOutages() {
   const d = await safeFetch('/api/sitroom/internet-outages', {}, null);
   const el = document.getElementById('sitroom-outages-list');
   if (!el) return;
-  if (!d || !d.outages?.length) { el.innerHTML = '<div class="sr-empty">No internet disruptions</div>'; return; }
+  if (!d || !d.outages?.length) {
+    el.innerHTML = buildSitroomEmptyState('No major internet disruptions tracked', 'Nothing notable is currently cached for the active watchfloor.', 'Keep the desk refreshed for new outage intelligence.', {icon: '&#128246;'});
+    return;
+  }
   el.innerHTML = d.outages.map(o => {
     const det = _parseSitroomDetailJson(o.detail_json);
     return `<div class="sitroom-event-item">
@@ -4304,7 +4310,10 @@ async function loadSitroomCorrelations() {
   const d = await safeFetch('/api/sitroom/correlations', {}, null);
   const el = document.getElementById('sitroom-correlations');
   if (!el) return;
-  if (!d || !d.signals?.length) { el.innerHTML = '<div class="sr-empty">No cross-domain signals detected</div>'; return; }
+  if (!d || !d.signals?.length) {
+    el.innerHTML = buildSitroomEmptyState('No cross-source signals yet', 'This desk has not found overlapping patterns across the feeds currently in view.', 'Broaden the region, switch desk presets, or refresh after the next sweep.', {icon: '&#129517;'});
+    return;
+  }
   el.innerHTML = d.signals.map(s => {
     const det = _parseSitroomDetailJson(s.detail_json);
     return `<div class="sr-corr-signal" data-sev="${escapeAttr(det.severity || 'normal')}">
@@ -4394,7 +4403,10 @@ async function loadSitroomMonitors() {
   const d = await safeFetch('/api/sitroom/monitors', {}, null);
   const el = document.getElementById('sitroom-monitors');
   if (!el) return;
-  if (!d || !d.monitors?.length) { el.innerHTML = '<div class="sr-empty">No keyword monitors — click + ADD</div>'; return; }
+  if (!d || !d.monitors?.length) {
+    el.innerHTML = buildSitroomEmptyState('No keyword monitors yet', 'Add a monitor to keep specific people, places, or phrases visible across the incoming news flow.', 'Use + Add to create a persistent monitor for this desk.', {icon: '&#128269;'});
+    return;
+  }
   el.innerHTML = d.monitors.map(m => {
     let matchHtml = m.matches?.slice(0, 5).map(n =>
       `<div class="sr-monitor-match">${escapeHtml(n.title)}</div>`
@@ -4628,7 +4640,7 @@ async function openCountryDeepDive(country) {
   </div>
   ${summaryItems ? `<div class="sr-analysis-section"><div class="sr-analysis-section-title">Event Signals</div><div class="sr-analysis-list">${summaryItems}</div></div>` : ''}
   ${quakeItems ? `<div class="sr-analysis-section"><div class="sr-analysis-section-title">Seismic Activity</div><div class="sr-analysis-list">${quakeItems}</div></div>` : ''}
-  ${newsItems ? `<div class="sr-analysis-section"><div class="sr-analysis-section-title">Recent Intelligence</div><div class="sr-analysis-list">${newsItems}</div></div>` : '<div class="sr-empty">No intelligence signals for this country</div>'}`;
+  ${newsItems ? `<div class="sr-analysis-section"><div class="sr-analysis-section-title">Recent Intelligence</div><div class="sr-analysis-list">${newsItems}</div></div>` : buildSitroomEmptyState('No intelligence signals yet', 'This country does not have recent intelligence headlines attached to the current event mix.', 'Refresh the desk or broaden the region if you need more context.', {icon: '&#128270;'})}`;
   _openSitroomAnalysis({
     kicker: 'Country Deep Dive',
     title: country.toUpperCase(),
@@ -4637,25 +4649,50 @@ async function openCountryDeepDive(country) {
   });
 }
 
+function buildSitroomEmptyState(title, body = '', hint = '', options = {}) {
+  const toneClass = options.tone ? ` is-${options.tone}` : '';
+  const icon = options.icon || '&#9675;';
+  return `<div class="sr-empty sr-empty-rich${toneClass}">
+    <span class="sr-empty-icon" aria-hidden="true">${icon}</span>
+    <span class="sr-empty-copy">
+      <strong class="sr-empty-title">${escapeHtml(title)}</strong>
+      ${body ? `<span class="sr-empty-body">${escapeHtml(body)}</span>` : ''}
+      ${hint ? `<span class="sr-empty-hint">${escapeHtml(hint)}</span>` : ''}
+    </span>
+  </div>`;
+}
+
+function renderSitroomLivePlaceholder(title = 'Broadcast wall is on standby', body = 'Pick a live channel to open it in the player without leaving the desk.', hint = 'The shortcut row stays above so you can switch feeds quickly.') {
+  const player = document.getElementById('sr-live-player');
+  if (!player) return;
+  player.classList.add('is-empty');
+  player.innerHTML = buildSitroomEmptyState(title, body, hint, {icon: '&#128250;'});
+}
+
 /* ─── Live YouTube Channels ─── */
 let _sitroomChannelsLoaded = false;
 async function loadSitroomLiveChannels() {
   if (_sitroomChannelsLoaded) return;
   const d = await safeFetch('/api/sitroom/live-channels', {}, null);
   const btns = document.getElementById('sr-channel-btns');
-  if (!btns || !d || !d.channels?.length) return;
+  if (!btns) return;
+  if (!d || !d.channels?.length) {
+    btns.innerHTML = '<span class="sr-channel-empty">No live channels configured.</span>';
+    renderSitroomLivePlaceholder('Broadcast wall unavailable', 'No live channels are configured for this desk yet.', 'Add or sync a channel source to turn this panel into a live broadcast wall.');
+    _sitroomChannelsLoaded = true;
+    return;
+  }
   _sitroomChannelsLoaded = true;
   btns.innerHTML = d.channels.map((ch, i) =>
-    `<button class="sr-channel-btn${i === 0 ? ' active' : ''}" data-channel-idx="${i}" data-channel-vid="${escapeAttr(ch.video_id || '')}" data-channel-handle="${escapeAttr(ch.handle || '')}" title="${escapeAttr(ch.name)}">${escapeHtml(ch.name.split(' ')[0])}</button>`
+    `<button class="sr-channel-btn" data-channel-idx="${i}" data-channel-vid="${escapeAttr(ch.video_id || '')}" data-channel-handle="${escapeAttr(ch.handle || '')}" title="${escapeAttr(ch.name)}" aria-pressed="false">${escapeHtml(ch.name.split(' ')[0])}</button>`
   ).join('');
-  // Auto-play first channel with a known video_id
-  const first = d.channels.find(c => c.video_id);
-  if (first) _sitroomPlayChannel(first.video_id);
+  renderSitroomLivePlaceholder();
 }
 
 function _sitroomPlayChannel(videoId) {
   const player = document.getElementById('sr-live-player');
   if (!player || !videoId) return;
+  player.classList.remove('is-empty');
   player.innerHTML = `<iframe class="sr-live-iframe" src="https://www.youtube.com/embed/${encodeURIComponent(videoId)}?autoplay=1&mute=1&controls=1" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
 }
 
@@ -5418,10 +5455,18 @@ document.addEventListener('click', e => {
 document.addEventListener('click', e => {
   const btn = e.target.closest('.sr-channel-btn');
   if (!btn) return;
-  document.querySelectorAll('.sr-channel-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.sr-channel-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-pressed', 'false');
+  });
   btn.classList.add('active');
+  btn.setAttribute('aria-pressed', 'true');
   const vid = btn.dataset.channelVid;
-  if (vid) _sitroomPlayChannel(vid);
+  if (vid) {
+    _sitroomPlayChannel(vid);
+    return;
+  }
+  renderSitroomLivePlaceholder(`${btn.textContent.trim()} is not available yet`, 'This shortcut is present, but a playable live stream is not attached right now.', 'Choose another feed or try again later when the stream link is available.');
 });
 
 /* ─── P3: OREF Alerts Card ─── */
@@ -5430,7 +5475,7 @@ async function loadSitroomOrefAlerts() {
   if (!el) return;
   const d = await safeFetch('/api/sitroom/oref-alerts', {}, null);
   if (!d || !d.alerts || !d.alerts.length) {
-    el.innerHTML = '<div class="sitroom-empty">No active OREF alerts</div>';
+    el.innerHTML = buildSitroomEmptyState('No active OREF alerts', 'This desk is not tracking any active OREF alert traffic right now.', 'The panel will populate automatically when alerts are available.', {icon: '&#128276;'});
     return;
   }
   let html = '';
@@ -5450,7 +5495,10 @@ async function loadSitroomGdeltFull() {
   const el = document.getElementById('sitroom-gdelt-full');
   if (!el) return;
   const d = await safeFetch('/api/sitroom/gdelt-full', {}, null);
-  if (!d) { el.innerHTML = '<div class="sitroom-empty">No GDELT data</div>'; return; }
+  if (!d) {
+    el.innerHTML = buildSitroomEmptyState('No GDELT data cached', 'The desk does not have a current GDELT snapshot available.', 'Refresh feeds or try again after the next sync window.', {icon: '&#128202;'});
+    return;
+  }
   let html = '';
   if (d.volume && d.volume.timeline) {
     const series = d.volume.timeline;
@@ -5488,7 +5536,7 @@ async function loadSitroomGdeltFull() {
       html += '</div>';
     });
   }
-  el.innerHTML = html || '<div class="sitroom-empty">No GDELT data</div>';
+  el.innerHTML = html || buildSitroomEmptyState('No GDELT data cached', 'The desk does not have a current GDELT snapshot available.', 'Refresh feeds or try again after the next sync window.', {icon: '&#128202;'});
   _hydrateSitroomRuntimeVars(el);
 }
 

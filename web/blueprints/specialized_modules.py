@@ -1000,8 +1000,15 @@ def api_awards_list():
         params.append(person)
     badge_id = request.args.get('badge_id')
     if badge_id:
+        # Bare ``int(badge_id)`` crashes the endpoint with a 500 on any
+        # non-numeric query string. Coerce with a try/except and bail
+        # with a clean 400 instead.
+        try:
+            badge_id_int = int(badge_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'badge_id must be an integer'}), 400
         clauses.append('ba.badge_id = ?')
-        params.append(int(badge_id))
+        params.append(badge_id_int)
     where = f" WHERE {' AND '.join(clauses)}" if clauses else ''
     params += [limit, offset]
     with db_session() as db:
@@ -1436,8 +1443,12 @@ def api_flights_list():
     clauses, params = [], []
     drone_id = request.args.get('drone_id')
     if drone_id:
+        try:
+            drone_id_int = int(drone_id)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'drone_id must be an integer'}), 400
         clauses.append('df.drone_id = ?')
-        params.append(int(drone_id))
+        params.append(drone_id_int)
     where = f" WHERE {' AND '.join(clauses)}" if clauses else ''
     params += [limit, offset]
     with db_session() as db:

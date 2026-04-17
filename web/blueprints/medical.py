@@ -715,8 +715,26 @@ def api_dosage_calculator():
     data = request.get_json() or {}
     drug_name = data.get('drug', '').strip()
     patient_id = data.get('patient_id')
-    weight_kg = data.get('weight_kg')
-    age = data.get('age')
+
+    # Coerce age/weight up-front — a non-numeric value would otherwise hit
+    # ``age < drug['min_age']`` (TypeError in Py3) or
+    # ``per_kg * weight_kg`` (TypeError) and the whole safety check would
+    # crash out with a 500, which for a drug-dosage feature is unacceptable.
+    def _opt_float(raw):
+        if raw is None or raw == '':
+            return None
+        try:
+            value = float(raw)
+        except (TypeError, ValueError):
+            return None
+        # Bounds: reject absurd inputs rather than letting them through to
+        # weight-based dosing math.
+        if value < 0 or value > 1000:
+            return None
+        return value
+
+    weight_kg = _opt_float(data.get('weight_kg'))
+    age = _opt_float(data.get('age'))
 
     # Find the drug
     drug = None
@@ -736,11 +754,13 @@ def api_dosage_calculator():
         with db_session() as db:
             patient = db.execute('SELECT allergies, medications, age, weight_kg, name FROM patients WHERE id = ?', (patient_id,)).fetchone()
             if patient:
-                # Use patient age/weight if not explicitly provided
+                # Use patient age/weight if not explicitly provided — coerce
+                # defensively since the patients table accepts whatever the
+                # caller originally provided.
                 if age is None and patient['age']:
-                    age = patient['age']
+                    age = _opt_float(patient['age'])
                 if weight_kg is None and patient['weight_kg']:
-                    weight_kg = patient['weight_kg']
+                    weight_kg = _opt_float(patient['weight_kg'])
 
                 # Check allergies
                 allergies = _parse_json_list(patient['allergies'])

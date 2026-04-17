@@ -336,11 +336,24 @@ def apply_migrations(conn):
                 # transaction so that partial failures roll back cleanly.
                 # conn.executescript() auto-commits after every statement,
                 # which would leave the schema half-applied on error.
+                #
+                # Use ``sqlite3.complete_statement`` to handle statements
+                # containing embedded semicolons — e.g. CREATE TRIGGER
+                # ... BEGIN ...; ...; END; — which a naive ``sql.split(';')``
+                # would mangle into syntax errors.
                 conn.execute('BEGIN IMMEDIATE')
-                for stmt in sql.split(';'):
-                    stmt = stmt.strip()
-                    if stmt:
-                        conn.execute(stmt)
+                buffer = ''
+                for line in sql.splitlines(keepends=True):
+                    buffer += line
+                    if sqlite3.complete_statement(buffer):
+                        stmt = buffer.strip()
+                        if stmt:
+                            conn.execute(stmt)
+                        buffer = ''
+                # Trailing content without a final ; — treat as one statement
+                trailing = buffer.strip()
+                if trailing:
+                    conn.execute(trailing)
                 conn.execute(
                     'INSERT OR IGNORE INTO _migrations (filename) VALUES (?)', (filename,)
                 )

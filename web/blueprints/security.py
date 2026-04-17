@@ -67,13 +67,23 @@ def api_camera_ping(cid):
             return jsonify({'error': 'Camera not found'}), 404
         url = cam['url'] or cam.get('stream_url', '')
         is_reachable = False
+        # Only ping http(s) cameras. RTSP / ONVIF / file:// style URLs can't
+        # be probed with requests.head anyway, and restricting the scheme
+        # avoids coaxing the server into fetching arbitrary non-HTTP URLs
+        # on behalf of a LAN client.
         if url:
             try:
-                import requests as req
-                resp = req.head(url, timeout=5)
-                is_reachable = resp.status_code < 500
+                from urllib.parse import urlparse
+                scheme = urlparse(url).scheme.lower()
             except Exception:
-                pass
+                scheme = ''
+            if scheme in ('http', 'https'):
+                try:
+                    import requests as req
+                    resp = req.head(url, timeout=5, allow_redirects=False)
+                    is_reachable = resp.status_code < 500
+                except Exception:
+                    pass
         status = 'active' if is_reachable else 'offline'
         db.execute('UPDATE cameras SET status = ?, last_seen = datetime("now") WHERE id = ?', (status, cid))
         db.commit()

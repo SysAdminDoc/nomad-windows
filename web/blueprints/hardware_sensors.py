@@ -255,17 +255,23 @@ def sensors_add_reading(sid):
 def sensors_readings(sid):
     """Get readings for a sensor. Default last 24 hours, override with ?hours=."""
     try:
-        hours = max(1, int(request.args.get('hours', 24)))
+        # Cap at ~1 year so an enormous ?hours= value doesn't trigger a full
+        # readings-table scan with no other bound.
+        hours = max(1, min(int(request.args.get('hours', 24)), 24 * 365))
     except (ValueError, TypeError):
         hours = 24
+    try:
+        limit = max(1, min(int(request.args.get('limit', 5000)), 50000))
+    except (ValueError, TypeError):
+        limit = 5000
     cutoff = (datetime.utcnow() - timedelta(hours=hours)).strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         sensor = db.execute('SELECT id FROM iot_sensors WHERE id = ?', (sid,)).fetchone()
         if not sensor:
             return jsonify({'error': 'sensor not found'}), 404
         rows = db.execute(
-            'SELECT * FROM iot_sensor_readings WHERE sensor_id = ? AND created_at >= ? ORDER BY created_at DESC',
-            (sid, cutoff)
+            'SELECT * FROM iot_sensor_readings WHERE sensor_id = ? AND created_at >= ? ORDER BY created_at DESC LIMIT ?',
+            (sid, cutoff, limit)
         ).fetchall()
     return jsonify([dict(r) for r in rows])
 

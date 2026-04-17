@@ -130,25 +130,28 @@ class TorrentManager:
         if not info_hash:
             raise ValueError('Could not parse info hash from magnet link')
 
-        with self._lock:
-            if info_hash in self._handles:
-                # Already added — just resume if paused
-                h = self._handles[info_hash]
-                if h.is_valid():
-                    h.resume()
-                return info_hash
-
+        # Compute save_path outside the lock — it may create directories.
         save_path = self.get_save_dir()
-
-        ses = self._get_session()
-
         atp = lt.parse_magnet_uri(magnet)
         atp.save_path = save_path
         # Don't auto-manage so we control start/stop
         atp.flags &= ~lt.torrent_flags.auto_managed
         atp.flags |= lt.torrent_flags.sequential_download
 
+        # Single critical section covers the existence check AND the
+        # add_torrent call. Two concurrent add_magnet calls with the same
+        # hash previously passed the first check independently, released
+        # the lock, then both re-acquired it and called
+        # session.add_torrent() — libtorrent tolerates it but produces a
+        # transient duplicate_torrent alert and can leak meta entries.
         with self._lock:
+            if info_hash in self._handles:
+                h = self._handles[info_hash]
+                if h.is_valid():
+                    h.resume()
+                return info_hash
+
+            ses = self._get_session()  # RLock — nested acquisition is safe
             handle = ses.add_torrent(atp)
             handle.resume()
             self._handles[info_hash] = handle

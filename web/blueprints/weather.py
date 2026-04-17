@@ -65,11 +65,15 @@ def api_weather_trend():
 @weather_bp.route('/api/weather/readings', methods=['GET'])
 def api_weather_readings():
     """Get weather readings history for pressure graph."""
-    hours = request.args.get('hours', 48, type=int)
+    hours = request.args.get('hours', 48, type=int) or 48
+    # Bound to [1, 168] — a negative ``hours`` would generate a malformed
+    # SQLite modifier like ``datetime('now', '--5 hours')`` and silently
+    # return no rows; a huge value would scan the whole table.
+    hours = max(1, min(int(hours), 168))
     with db_session() as db:
         rows = db.execute(
-            "SELECT * FROM weather_readings WHERE created_at >= datetime('now', ? || ' hours') ORDER BY created_at ASC",
-            (f'-{min(hours, 168)}',)
+            "SELECT * FROM weather_readings WHERE created_at >= datetime('now', ? || ' hours') ORDER BY created_at ASC LIMIT 5000",
+            (f'-{hours}',)
         ).fetchall()
         return jsonify([dict(r) for r in rows])
 @weather_bp.route('/api/weather/readings', methods=['POST'])
@@ -290,10 +294,13 @@ def _evaluate_weather_action_rules(db):
         # Evaluate condition
         value = None
         ctype = rule['condition_type']
-        if ctype == 'pressure_drop' and len(readings) >= 3:
-            value = readings[0]['pressure_hpa'] - readings[-1]['pressure_hpa']  # negative = dropping
-        elif ctype == 'pressure_rise' and len(readings) >= 3:
-            value = readings[0]['pressure_hpa'] - readings[-1]['pressure_hpa']  # positive = rising
+        # Pressure delta needs both endpoints to be recorded — otherwise
+        # ``None - 1013.2`` raises TypeError and the whole rule loop dies.
+        if ctype in ('pressure_drop', 'pressure_rise') and len(readings) >= 3:
+            p_new = readings[0]['pressure_hpa']
+            p_old = readings[-1]['pressure_hpa']
+            if p_new is not None and p_old is not None:
+                value = p_new - p_old  # negative = dropping, positive = rising
         elif ctype == 'temp_high' and latest.get('temp_f') is not None:
             value = latest['temp_f']
         elif ctype == 'temp_low' and latest.get('temp_f') is not None:

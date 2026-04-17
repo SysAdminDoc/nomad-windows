@@ -66,12 +66,22 @@ def _auto_install_python():
 
     log.info('Auto-downloading portable Python 3.12...')
     try:
-        # Download embeddable Python
-        resp = requests.get(url, stream=True, timeout=30)
-        resp.raise_for_status()
-        with open(zip_path, 'wb') as f:
-            for chunk in resp.iter_content(chunk_size=65536):
-                f.write(chunk)
+        # Download embeddable Python. Explicit close in finally so the
+        # response socket is released even if writing the chunk stream
+        # raises — and so mock responses without a __exit__ still work.
+        resp = None
+        try:
+            resp = requests.get(url, stream=True, timeout=30)
+            resp.raise_for_status()
+            with open(zip_path, 'wb') as f:
+                for chunk in resp.iter_content(chunk_size=65536):
+                    f.write(chunk)
+        finally:
+            if resp is not None:
+                try:
+                    resp.close()
+                except Exception:
+                    pass
 
         log.info('Extracting Python...')
         extract_archive(zip_path, py_dir)
@@ -95,10 +105,18 @@ def _auto_install_python():
         # Install pip
         log.info('Installing pip...')
         get_pip = os.path.join(py_dir, 'get-pip.py')
-        resp = requests.get(GET_PIP_URL, timeout=30)
-        resp.raise_for_status()
-        with open(get_pip, 'wb') as f:
-            f.write(resp.content)
+        resp = None
+        try:
+            resp = requests.get(GET_PIP_URL, timeout=30)
+            resp.raise_for_status()
+            with open(get_pip, 'wb') as f:
+                f.write(resp.content)
+        finally:
+            if resp is not None:
+                try:
+                    resp.close()
+                except Exception:
+                    pass
 
         from platform_utils import run_kwargs
         result = subprocess.run(

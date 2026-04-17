@@ -202,15 +202,35 @@ def running():
     return is_running(SERVICE_ID) and check_port(QDRANT_PORT)
 
 
+def _close(resp):
+    """Best-effort response close — compatible with test-fixture mocks."""
+    if resp is None:
+        return
+    try:
+        resp.close()
+    except Exception:
+        pass
+
+
 def ensure_collection():
-    """Create the KB collection if it doesn't exist."""
+    """Create the KB collection if it doesn't exist.
+
+    Each response is closed in a ``finally`` so the response socket is
+    always released — the previous implementation leaked a file descriptor
+    per call, which accumulated quickly as the KB embedder pounded this
+    endpoint on every document upload.
+    """
+    r = None
     try:
         r = req.get(f'http://localhost:{QDRANT_PORT}/collections/{COLLECTION_NAME}', timeout=5)
         if r.status_code == 200:
             return True
     except Exception:
         pass
+    finally:
+        _close(r)
 
+    r = None
     try:
         r = req.put(
             f'http://localhost:{QDRANT_PORT}/collections/{COLLECTION_NAME}',
@@ -230,10 +250,13 @@ def ensure_collection():
     except Exception as e:
         log.error(f'Failed to create collection: {e}')
         return False
+    finally:
+        _close(r)
 
 
 def upsert_vectors(points: list[dict]):
     """Upsert points into the KB collection. Each point: {id, vector, payload}."""
+    r = None
     try:
         r = req.put(
             f'http://localhost:{QDRANT_PORT}/collections/{COLLECTION_NAME}/points',
@@ -247,10 +270,13 @@ def upsert_vectors(points: list[dict]):
     except Exception as e:
         log.error(f'Qdrant upsert failed: {e}')
         return False
+    finally:
+        _close(r)
 
 
 def search(vector: list[float], limit: int = 5, filter_params: dict | None = None) -> list[dict]:
     """Search the KB collection by vector similarity."""
+    r = None
     try:
         body = {
             'vector': vector,
@@ -270,11 +296,14 @@ def search(vector: list[float], limit: int = 5, filter_params: dict | None = Non
             return result if isinstance(result, list) else []
     except Exception as e:
         log.error(f'Qdrant search failed: {e}')
+    finally:
+        _close(r)
     return []
 
 
 def delete_by_doc_id(doc_id: int):
     """Delete all vectors for a given document ID."""
+    r = None
     try:
         r = req.post(
             f'http://localhost:{QDRANT_PORT}/collections/{COLLECTION_NAME}/points/delete',
@@ -292,10 +321,13 @@ def delete_by_doc_id(doc_id: int):
     except Exception as e:
         log.error(f'Qdrant delete failed: {e}')
         return False
+    finally:
+        _close(r)
 
 
 def get_collection_info():
     """Get collection stats."""
+    r = None
     try:
         r = req.get(f'http://localhost:{QDRANT_PORT}/collections/{COLLECTION_NAME}', timeout=5)
         if r.ok:
@@ -307,4 +339,6 @@ def get_collection_info():
             }
     except Exception:
         pass
+    finally:
+        _close(r)
     return {'points_count': 0, 'vectors_count': 0}

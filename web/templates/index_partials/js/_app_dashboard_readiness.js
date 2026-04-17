@@ -373,7 +373,7 @@ function openWidgetManager() {
     const sorted = [...config].sort((a, b) => a.order - b.order);
     list.innerHTML = sorted.map((w, i) => `
       <div class="widget-config-item" draggable="true" data-widget-idx="${i}" data-widget-id="${w.id}">
-        <span class="widget-drag-handle" title="Drag to reorder">&#9776;</span>
+        <span class="drag-handle widget-drag-handle" title="Drag to reorder" aria-label="Drag to reorder"></span>
         <span class="widget-config-icon">${escapeHtml(w.icon || '')}</span>
         <span class="widget-config-title">${escapeHtml(w.title || w.id)}</span>
         <select class="widget-size-select" data-field="size" data-change-action="update-widget-field" data-widget-id="${w.id}" data-widget-field="size">

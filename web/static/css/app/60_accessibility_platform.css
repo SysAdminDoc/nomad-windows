@@ -321,11 +321,10 @@ summary:focus-visible,
 .widget-config-item.dragging { opacity: 0.5; cursor: grabbing; }
 .widget-config-item.drag-over { border-color: var(--info); border-width: 2px; background: var(--info-dim); }
 .widget-drag-handle {
-  font-size: 14px;
-  color: var(--text-muted);
-  cursor: grab;
+  /* Visual is provided by the shared .drag-handle primitive
+     (premium/99_final_polish.css). Keep flex-shrink so the grip
+     never collapses inside the widget-config-item flex row. */
   flex-shrink: 0;
-  line-height: 1;
 }
 .widget-config-icon { font-size: 16px; flex-shrink: 0; width: 22px; text-align: center; }
 .widget-config-title { flex: 1; font-size: 12px; font-weight: 600; letter-spacing: 0.3px; }

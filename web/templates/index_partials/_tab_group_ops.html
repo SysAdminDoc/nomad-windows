@@ -46,6 +46,14 @@
   #tab-group-ops .go-form-row select,
   #tab-group-ops .go-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-group-ops .go-form-row .field { flex:1; min-width:140px; }
+  #tab-group-ops .go-form-row .field.go-field-action { align-self:flex-end; flex:0; }
+  #tab-group-ops .go-form-row .field.go-field-grow-3 { flex:3; }
+  #tab-group-ops .go-form-row .field.go-field-fixed { flex:0; }
+  #tab-group-ops .go-row-header { display:flex; justify-content:space-between; align-items:flex-start; }
+  #tab-group-ops .go-row-spaced { margin-top:8px; }
+  #tab-group-ops .go-tag-spacer { margin-left:6px; }
+  #tab-group-ops .go-tone-accent { color:var(--go-accent); }
+  #tab-group-ops .go-mini-input { padding:3px 6px; border-radius:4px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.78rem; }
   #tab-group-ops .go-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-group-ops .go-btn-primary { background:var(--go-accent); color:#000; }
   #tab-group-ops .go-btn-danger { background:var(--go-red); color:#fff; }
@@ -148,8 +156,8 @@
       </div>
     </div>
     <div class="go-form-row">
-      <div class="field" style="flex:3"><label>Description</label><textarea name="go-pod-desc" id="go-pod-desc" rows="2" placeholder="Pod mission / purpose"></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreatePod()">Create Pod</button></div>
+      <div class="field go-field-grow-3"><label>Description</label><textarea name="go-pod-desc" id="go-pod-desc" rows="2" placeholder="Pod mission / purpose"></textarea></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreatePod()">Create Pod</button></div>
     </div>
   </div>
   <div id="go-pod-list"><div class="go-empty">Loading pods and staffing...</div></div>
@@ -173,8 +181,8 @@
       <div class="field"><label>Assigned To</label><input name="go-role-assigned" id="go-role-assigned" placeholder="Member name"></div>
     </div>
     <div class="go-form-row">
-      <div class="field" style="flex:3"><label>Responsibilities</label><textarea name="go-role-responsibilities" id="go-role-responsibilities" rows="2" placeholder="Key responsibilities"></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateRole()">Add Role</button></div>
+      <div class="field go-field-grow-3"><label>Responsibilities</label><textarea name="go-role-responsibilities" id="go-role-responsibilities" rows="2" placeholder="Key responsibilities"></textarea></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreateRole()">Add Role</button></div>
     </div>
   </div>
   <div class="go-card">
@@ -199,8 +207,8 @@
       <div class="field"><label>Version</label><input name="go-sop-version" id="go-sop-version" value="1.0" placeholder="1.0"></div>
     </div>
     <div class="go-form-row">
-      <div class="field" style="flex:3"><label>Content</label><textarea name="go-sop-content" id="go-sop-content" rows="3" placeholder="SOP details..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateSOP()">Add SOP</button></div>
+      <div class="field go-field-grow-3"><label>Content</label><textarea name="go-sop-content" id="go-sop-content" rows="3" placeholder="SOP details..."></textarea></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreateSOP()">Add SOP</button></div>
     </div>
   </div>
   <div class="go-card">
@@ -232,8 +240,8 @@
       </div>
     </div>
     <div class="go-form-row">
-      <div class="field" style="flex:3"><label>Notes</label><textarea name="go-duty-notes" id="go-duty-notes" rows="2"></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateDuty()">Assign</button></div>
+      <div class="field go-field-grow-3"><label>Notes</label><textarea name="go-duty-notes" id="go-duty-notes" rows="2"></textarea></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreateDuty()">Assign</button></div>
     </div>
   </div>
   <div class="go-form-row">
@@ -260,8 +268,8 @@
       <div class="field"><label>Filed By</label><input name="go-dispute-filed-by" id="go-dispute-filed-by" placeholder="Your name"></div>
     </div>
     <div class="go-form-row">
-      <div class="field" style="flex:3"><label>Description</label><textarea name="go-dispute-desc" id="go-dispute-desc" rows="2" placeholder="Describe the dispute..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateDispute()">File</button></div>
+      <div class="field go-field-grow-3"><label>Description</label><textarea name="go-dispute-desc" id="go-dispute-desc" rows="2" placeholder="Describe the dispute..."></textarea></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreateDispute()">File</button></div>
     </div>
   </div>
   <div id="go-dispute-list" class="go-card"><div class="go-empty">Loading disputes and decisions...</div></div>
@@ -275,7 +283,7 @@
     </div>
     <div class="go-form-row">
       <div class="field"><label>Options (comma-separated)</label><input name="go-vote-options" id="go-vote-options" placeholder="Yes, No, Abstain"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateVote()">Create Vote</button></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreateVote()">Create Vote</button></div>
     </div>
   </div>
   <div id="go-vote-list" class="go-card"><div class="go-empty">No active votes yet. Open disputes with ballot options will appear here.</div></div>
@@ -314,7 +322,7 @@
     </div>
     <div id="go-ics-template-fields" class="go-form-row" style="flex-direction:column;gap:8px"></div>
     <div class="go-form-row">
-      <div class="field" style="flex:0"><button class="go-btn go-btn-primary" onclick="goCreateICSForm()">Create Form</button></div>
+      <div class="field go-field-fixed"><button class="go-btn go-btn-primary" onclick="goCreateICSForm()">Create Form</button></div>
     </div>
   </div>
   <div id="go-ics-list" class="go-card"><div class="go-empty">Loading ICS forms...</div></div>
@@ -337,7 +345,7 @@
     </div>
     <div class="go-form-row">
       <div class="field"><label>Members (comma-separated)</label><input name="go-cert-members" id="go-cert-members" placeholder="Alice, Bob, Charlie"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateCERT()">Create Team</button></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreateCERT()">Create Team</button></div>
     </div>
   </div>
   <div id="go-cert-list" class="go-grid"><div class="go-empty">Loading CERT teams and response coverage...</div></div>
@@ -374,8 +382,8 @@
       <div class="field"><label><input type="checkbox" name="go-da-util-comms" id="go-da-util-comms"> Comms</label></div>
     </div>
     <div class="go-form-row">
-      <div class="field" style="flex:3"><label>Notes</label><textarea name="go-da-notes" id="go-da-notes" rows="2" placeholder="Damage details, hazards..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateDamageAssessment()">Submit</button></div>
+      <div class="field go-field-grow-3"><label>Notes</label><textarea name="go-da-notes" id="go-da-notes" rows="2" placeholder="Damage details, hazards..."></textarea></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreateDamageAssessment()">Submit</button></div>
     </div>
   </div>
   <div id="go-da-list" class="go-card"><div class="go-empty">Loading damage assessments...</div></div>
@@ -400,8 +408,8 @@
       <div class="field"><label>Contact</label><input name="go-shelter-contact" id="go-shelter-contact" placeholder="Shelter manager"></div>
     </div>
     <div class="go-form-row">
-      <div class="field" style="flex:3"><label>Amenities</label><textarea name="go-shelter-amenities" id="go-shelter-amenities" rows="2" placeholder="Generator, water, medical supplies..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateShelter()">Register</button></div>
+      <div class="field go-field-grow-3"><label>Amenities</label><textarea name="go-shelter-amenities" id="go-shelter-amenities" rows="2" placeholder="Generator, water, medical supplies..."></textarea></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreateShelter()">Register</button></div>
     </div>
   </div>
   <div id="go-shelter-capacity-summary" class="go-grid" style="margin-bottom:12px"></div>
@@ -424,8 +432,8 @@
       <div class="field"><label>Area</label><input name="go-warning-area" id="go-warning-area" placeholder="All sectors"></div>
     </div>
     <div class="go-form-row">
-      <div class="field" style="flex:3"><label>Message</label><textarea name="go-warning-message" id="go-warning-message" rows="2" placeholder="Warning details..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="go-btn go-btn-primary" onclick="goCreateWarning()">Issue Warning</button></div>
+      <div class="field go-field-grow-3"><label>Message</label><textarea name="go-warning-message" id="go-warning-message" rows="2" placeholder="Warning details..."></textarea></div>
+      <div class="field go-field-action"><button class="go-btn go-btn-primary" onclick="goCreateWarning()">Issue Warning</button></div>
     </div>
   </div>
   <div id="go-warning-list" class="go-card"><div class="go-empty">Loading public warnings...</div></div>
@@ -496,14 +504,14 @@
       const list=el('go-pod-list');
       if(!pods.length){list.innerHTML='<div class="go-empty">No pods yet. Create the first team above to anchor staffing, governance, and duty coverage.</div>';return;}
       list.innerHTML='<div class="go-grid">'+pods.map(p=>`<div class="go-card">
-        <div style="display:flex;justify-content:space-between;align-items:start">
-          <div><strong style="color:var(--go-accent)">${p.name}</strong> ${statusBadge(p.status||'active')}
-            <br><small style="color:var(--text-secondary,#aaa)">Leader: ${p.leader||'Unassigned'} | Members: ${p.member_count||0}</small>
-            ${p.description?'<br><small style="color:var(--text-secondary,#888)">'+p.description+'</small>':''}
+        <div class="go-row-header">
+          <div><strong class="go-tone-accent">${p.name}</strong> ${statusBadge(p.status||'active')}
+            <br><small class="tone-muted">Leader: ${p.leader||'Unassigned'} | Members: ${p.member_count||0}</small>
+            ${p.description?'<br><small class="tone-muted">'+p.description+'</small>':''}
           </div>
           <div><button class="go-btn go-btn-danger" onclick="goDeletePod(${p.id})">x</button></div>
         </div>
-        <div style="margin-top:8px"><button class="go-btn go-btn-secondary" onclick="goToggleMembers(${p.id},this)">Show Members</button></div>
+        <div class="go-row-spaced"><button class="go-btn go-btn-secondary" onclick="goToggleMembers(${p.id},this)">Show Members</button></div>
         <div class="go-members-expand" id="go-pod-members-${p.id}"></div>
       </div>`).join('')+'</div>';
       goLoadPodStats();
@@ -522,10 +530,10 @@
     if(wrap.classList.contains('open')){wrap.classList.remove('open');btn.textContent='Show Members';return;}
     api('/api/group/pods/'+podId+'/members').then(members=>{
       wrap.innerHTML=members.length?'<div style="padding:8px 0">'+members.map(m=>`<div class="go-list-item">
-        <div><strong>${m.name}</strong> <small style="color:var(--text-secondary,#aaa)">${m.role||''}</small></div>
+        <div><strong>${m.name}</strong> <small class="tone-muted">${m.role||''}</small></div>
         <button class="go-btn go-btn-danger" onclick="goRemoveMember(${m.id},${podId})">x</button>
-      </div>`).join('')+'<div class="go-form-row" style="margin-top:8px"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="New member name"></div><div class="field" style="flex:0"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>'
-        :'<div class="go-empty" style="padding:12px">No members assigned yet. <div class="go-form-row" style="margin-top:8px"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="Member name"></div><div class="field" style="flex:0"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>';
+      </div>`).join('')+'<div class="go-form-row go-row-spaced"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="New member name"></div><div class="field go-field-fixed"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>'
+        :'<div class="go-empty" style="padding:12px">No members assigned yet. <div class="go-form-row go-row-spaced"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="Member name"></div><div class="field go-field-fixed"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>';
       wrap.classList.add('open');btn.textContent='Hide Members';
     });
   };
@@ -587,7 +595,7 @@
       list.innerHTML=sops.map(s=>`<div class="go-list-item">
         <div><strong>${s.title}</strong> <span class="go-badge" style="background:rgba(255,255,255,.08);color:${catColor[s.category]||'#aaa'}">${s.category}</span>
           <span class="go-badge go-badge-${s.status||'active'}">v${s.version||'1.0'}</span>
-          ${s.content?'<br><small style="color:var(--text-secondary,#888)">'+s.content.substring(0,120)+(s.content.length>120?'...':'')+'</small>':''}
+          ${s.content?'<br><small class="tone-muted">'+s.content.substring(0,120)+(s.content.length>120?'...':'')+'</small>':''}
         </div>
         <div><button class="go-btn go-btn-danger" onclick="goDeleteSOP(${s.id})">x</button></div>
       </div>`).join('');
@@ -614,7 +622,7 @@
       list.innerHTML='<table class="go-table"><thead><tr><th>Date</th><th>Time</th><th>Assignee</th><th>Task</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+
         duties.map(d=>`<tr><td>${d.date||''}</td><td>${d.start_time||''} - ${d.end_time||''}</td><td>${d.assignee||''}</td><td>${d.role||''}</td>
           <td>${statusBadge(d.status||'scheduled')}</td>
-          <td><select name="go-duty-chg-${d.id}" onchange="goUpdateDutyStatus(${d.id},this.value)" style="padding:3px 6px;border-radius:4px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.78rem">
+          <td><select name="go-duty-chg-${d.id}" onchange="goUpdateDutyStatus(${d.id},this.value)" class="go-mini-input">
             <option value="scheduled"${d.status==='scheduled'?' selected':''}>Scheduled</option><option value="active"${d.status==='active'?' selected':''}>Active</option>
             <option value="completed"${d.status==='completed'?' selected':''}>Completed</option><option value="missed"${d.status==='missed'?' selected':''}>Missed</option>
           </select> <button class="go-btn go-btn-danger" onclick="goDeleteDuty(${d.id})">x</button></td></tr>`).join('')+'</tbody></table>';
@@ -644,7 +652,7 @@
       if(!disputes.length){list.innerHTML='<div class="go-empty">No disputes have been logged. Formal issues and mediation history will appear here.</div>';return;}
       list.innerHTML=disputes.map(d=>`<div class="go-list-item">
         <div><strong>${d.title}</strong> ${statusBadge(d.status||'open')} <span class="go-badge go-badge-${d.severity||'low'}">${d.severity||'low'}</span>
-          <br><small style="color:var(--text-secondary,#aaa)">Filed by: ${d.filed_by||'Unknown'}${d.description?' | '+d.description.substring(0,80):''}</small></div>
+          <br><small class="tone-muted">Filed by: ${d.filed_by||'Unknown'}${d.description?' | '+d.description.substring(0,80):''}</small></div>
         <div>${d.status==='open'?'<button class="go-btn go-btn-secondary" onclick="goResolveDispute('+d.id+')">Resolve</button>':''}</div>
       </div>`).join('');
     });
@@ -678,10 +686,10 @@
               html+='<div class="go-vote-bar">'+Object.entries(v.results).map(([opt,cnt],i)=>{
                 const pct=Math.round(cnt/total*100);
                 return `<div style="width:${pct}%;background:${barColors[i%barColors.length]}" title="${opt}: ${cnt}">${pct>8?opt+' '+pct+'%':''}</div>`;
-              }).join('')+'</div><small style="color:var(--text-secondary,#aaa)">Total votes: '+total+'</small>';
+              }).join('')+'</div><small class="tone-muted">Total votes: '+total+'</small>';
             }
             if(v.status==='open'&&v.options){
-              html+='<div class="go-form-row" style="margin-top:8px">'+v.options.map(o=>`<button class="go-btn go-btn-secondary" onclick="goCastVote(${v.id},'${o.replace(/'/g,"\\'")}')">${o}</button>`).join('')+'</div>';
+              html+='<div class="go-form-row go-row-spaced">'+v.options.map(o=>`<button class="go-btn go-btn-secondary" onclick="goCastVote(${v.id},'${o.replace(/'/g,"\\'")}')">${o}</button>`).join('')+'</div>';
             }
             html+='</div>';
           });
@@ -739,10 +747,10 @@
         const color=icsColors[f.form_type]||'#6b7280';
         return `<div class="go-list-item">
           <div><span class="go-ics-badge" style="background:${color}22;color:${color};padding:2px 8px;border-radius:4px;font-size:.72rem;font-weight:600">ICS ${f.form_type}</span>
-            <strong style="margin-left:6px">${f.incident_name||'Untitled'}</strong> ${statusBadge(f.status||'draft')}
-            <br><small style="color:var(--text-secondary,#aaa)">Created: ${f.created_at||'Unknown'}</small></div>
+            <strong class="go-tag-spacer">${f.incident_name||'Untitled'}</strong> ${statusBadge(f.status||'draft')}
+            <br><small class="tone-muted">Created: ${f.created_at||'Unknown'}</small></div>
           <div>
-            <select name="go-ics-status-${f.id}" onchange="goUpdateICSStatus(${f.id},this.value)" style="padding:3px 6px;border-radius:4px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.78rem">
+            <select name="go-ics-status-${f.id}" onchange="goUpdateICSStatus(${f.id},this.value)" class="go-mini-input">
               <option value="draft"${f.status==='draft'?' selected':''}>Draft</option><option value="active"${f.status==='active'?' selected':''}>Active</option>
               <option value="archived"${f.status==='archived'?' selected':''}>Archived</option>
             </select></div></div>`;
@@ -769,11 +777,11 @@
       if(!teams.length){list.innerHTML='<div class="go-empty">No CERT teams yet. Create the first response team above.</div>';return;}
       const specColor={search_rescue:'#3b82f6',medical:'#22c55e',fire_suppression:'#ef4444',logistics:'#f59e0b',communications:'#06b6d4',damage_assessment:'#8b5cf6'};
       list.innerHTML=teams.map(t=>`<div class="go-card">
-        <div style="display:flex;justify-content:space-between;align-items:start">
-          <div><strong style="color:var(--go-accent)">${t.name}</strong>
+        <div class="go-row-header">
+          <div><strong class="go-tone-accent">${t.name}</strong>
             <span class="go-badge" style="background:${(specColor[t.specialty]||'#6b7280')}22;color:${specColor[t.specialty]||'#6b7280'}">${(t.specialty||'').replace(/_/g,' ')}</span>
-            <br><small style="color:var(--text-secondary,#aaa)">Leader: ${t.leader||'None'}</small>
-            ${t.members?'<br><small style="color:var(--text-secondary,#888)">Members: '+t.members+'</small>':''}
+            <br><small class="tone-muted">Leader: ${t.leader||'None'}</small>
+            ${t.members?'<br><small class="tone-muted">Members: '+t.members+'</small>':''}
           </div>
         </div>
       </div>`).join('');
@@ -823,7 +831,7 @@
         return `<div class="go-list-item" style="flex-direction:column;align-items:stretch">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <div><strong>${s.name}</strong> ${statusBadge(s.status||'active')}
-              <br><small style="color:var(--text-secondary,#aaa)">${s.location||''} | Contact: ${s.contact||'N/A'}</small></div>
+              <br><small class="tone-muted">${s.location||''} | Contact: ${s.contact||'N/A'}</small></div>
             <button class="go-btn go-btn-secondary" onclick="goEditShelterOccupancy(${s.id},${s.occupancy||0},${s.capacity})">Update</button>
           </div>
           <div class="go-capacity-bar"><div class="go-capacity-fill" style="width:${pct}%;background:${barColor}"></div>
@@ -860,8 +868,8 @@
       if(!warnings.length){list.innerHTML='<div class="go-empty">No community warnings yet. Published alerts and advisories will appear here.</div>';return;}
       list.innerHTML=warnings.map(w=>`<div class="go-list-item">
         <div><span class="go-badge go-badge-${w.severity||'info'}">${(w.severity||'info').toUpperCase()}</span>
-          <strong style="margin-left:6px">${w.title}</strong>
-          <br><small style="color:var(--text-secondary,#aaa)">${w.issued_by||''} | Area: ${w.area||'All'}${w.expires?' | Expires: '+w.expires:''}</small>
+          <strong class="go-tag-spacer">${w.title}</strong>
+          <br><small class="tone-muted">${w.issued_by||''} | Area: ${w.area||'All'}${w.expires?' | Expires: '+w.expires:''}</small>
           ${w.message?'<br><small style="color:var(--text-secondary,#ccc)">'+w.message.substring(0,150)+'</small>':''}
         </div>
         <div><button class="go-btn go-btn-secondary" onclick="goArchiveWarning(${w.id})">Archive</button></div>

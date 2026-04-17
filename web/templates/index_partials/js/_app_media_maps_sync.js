@@ -3578,8 +3578,8 @@ function confirmPower(btn, action) {
   if (!btn.dataset.confirm) {
     btn.dataset.confirm = '1';
     btn.textContent = `Confirm ${action}?`;
-      btn.style.background = 'var(--red)'; btn.style.color = getThemeCssVar('--text-inverse', '#fff');
-    setTimeout(() => { btn.textContent = action.charAt(0).toUpperCase() + action.slice(1); btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
+      btn.classList.add('is-confirming');
+    setTimeout(() => { btn.textContent = action.charAt(0).toUpperCase() + action.slice(1); btn.classList.remove('is-confirming'); delete btn.dataset.confirm; }, 3000);
     return;
   }
   hostPower(action);

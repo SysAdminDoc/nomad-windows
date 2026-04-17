@@ -510,8 +510,8 @@ async function deleteAllConvos() {
   if (btn && !btn.dataset.confirm) {
     btn.dataset.confirm = '1';
     btn.textContent = 'Click again to confirm';
-      btn.style.background = 'var(--red)'; btn.style.color = getThemeCssVar('--text-inverse', '#fff');
-    setTimeout(() => { btn.textContent = 'Delete All'; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
+      btn.classList.add('is-confirming');
+    setTimeout(() => { btn.textContent = 'Delete All'; btn.classList.remove('is-confirming'); delete btn.dataset.confirm; }, 3000);
     return;
   }
   try {

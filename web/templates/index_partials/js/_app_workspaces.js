@@ -88,8 +88,8 @@ async function deleteMap(filename, btn) {
     btn.dataset.confirm = '1';
     const orig = btn.textContent;
     btn.textContent = 'Confirm delete?';
-      btn.style.background = 'var(--red)'; btn.style.color = getThemeCssVar('--text-inverse', '#fff');
-    setTimeout(() => { btn.textContent = orig; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
+      btn.classList.add('is-confirming');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('is-confirming'); delete btn.dataset.confirm; }, 3000);
     return;
   }
   try {
@@ -814,8 +814,8 @@ function deleteModel(name, btn) {
   if (!btn.dataset.confirm) {
     btn.dataset.confirm = '1';
     btn.textContent = 'Confirm?';
-      btn.style.background = 'var(--red)'; btn.style.color = getThemeCssVar('--text-inverse', '#fff');
-    setTimeout(() => { btn.textContent = 'Delete'; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
+      btn.classList.add('is-confirming');
+    setTimeout(() => { btn.textContent = 'Delete'; btn.classList.remove('is-confirming'); delete btn.dataset.confirm; }, 3000);
     return;
   }
   apiPost('/api/ai/delete', {model: name}).then(d => {

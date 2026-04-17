@@ -1018,8 +1018,8 @@ function deleteVaultEntry(id, btn) {
   if (!btn.dataset.confirm) {
     btn.dataset.confirm = '1';
     btn.textContent = 'Confirm?';
-      btn.style.background = 'var(--red)'; btn.style.color = getThemeCssVar('--text-inverse', '#fff');
-    setTimeout(() => { btn.textContent = 'Delete'; btn.style.background = ''; btn.style.color = ''; delete btn.dataset.confirm; }, 3000);
+      btn.classList.add('is-confirming');
+    setTimeout(() => { btn.textContent = 'Delete'; btn.classList.remove('is-confirming'); delete btn.dataset.confirm; }, 3000);
     return;
   }
   apiDelete('/api/vault/' + id)

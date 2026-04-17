@@ -961,3 +961,15 @@ input.input-error::placeholder { color: var(--red); opacity: 0.6; }
   border-radius: 50%; animation: spin 0.6s linear infinite;
   margin-right: 6px; vertical-align: middle;
 }
+
+/* ─── Two-step confirm button state ───
+   JS flips `.is-confirming` on the first click (+text-change to
+   "Confirm delete?"), clears it + the dataset.confirm flag on the
+   second click or after a 3s timeout. Keeps the red styling theme-
+   driven instead of writing inline style.background/color. */
+.btn.is-confirming,
+button.is-confirming {
+  background: var(--red);
+  color: var(--text-inverse);
+  border-color: var(--red);
+}

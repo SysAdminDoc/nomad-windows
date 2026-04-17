@@ -456,4 +456,5 @@
 .notes-search input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: 6px; font-size: 11px; }
 .notes-search input:focus-visible { border-color: var(--accent); }
 
-@keyframes spin { to { transform: rotate(360deg); } }
+/* @keyframes spin centralized in premium/05_motion.css; also defined in
+   app/20_primary_workspaces.css for early-load consumers. */

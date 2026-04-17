@@ -1,5 +1,6 @@
 /* Premium CSS Manifest — keep import order stable; later files intentionally override earlier layers. */
 @import url("./premium/00_base.css");
+@import url("./premium/05_motion.css");
 @import url("./premium/10_refresh.css");
 @import url("./premium/20_workspaces.css");
 @import url("./premium/30_preparedness_ops.css");

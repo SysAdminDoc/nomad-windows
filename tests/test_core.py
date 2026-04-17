@@ -133,7 +133,7 @@ class TestErrorHandler:
         assert 'class="home-launch-deck"' in html
         assert 'class="home-launch-hero home-surface-panel"' in html
         assert 'COMMAND DESK' in html
-        assert 'Find the right desk, pick up where you left off, or start fresh.' in html
+        assert 'Find the desk you need and reopen work with context intact.' in html
         assert 'id="home-continue-panel" class="home-continue-panel home-surface-panel"' in html
         assert 'Pinned' in html
         assert 'Recent' in html
@@ -254,8 +254,8 @@ class TestErrorHandler:
         assert '.benchmark-empty-state' in premium_text
         assert 'Quick Return' in shell_text
         assert 'Suggested actions' in shell_text
-        assert 'Find the right desk, pick up where you left off, or start fresh.' in services_text
-        assert 'Pinned desks and recent surfaces stay staged here for quick return.' in services_text
+        assert 'Find the desk you need and reopen work with context intact.' in services_text
+        assert 'Pinned desks, startup desks, and recent return points stay staged here for quick re-entry.' in services_text
         assert 'Building your live dashboard...' in services_text
         assert 'Collecting live system metrics...' in settings_text
         assert 'No AI models are installed yet. Choose a recommended model below or download the full set.' in settings_text

@@ -579,7 +579,11 @@ async function setMode(mode) {
     applyModeVisibility();
     updateCopilotButtons();
     // Update settings mode panel
-    document.querySelectorAll('.mode-option').forEach(o => o.classList.toggle('active-mode', o.dataset.modeOpt === mode));
+    document.querySelectorAll('.mode-option').forEach(o => {
+      const active = o.dataset.modeOpt === mode;
+      o.classList.toggle('active-mode', active);
+      o.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
     const settingsLabel = document.getElementById('settings-mode-label');
     if (settingsLabel && _dashboardModeConfig) settingsLabel.textContent = _dashboardModeConfig.label || mode;
   } catch(e) {}

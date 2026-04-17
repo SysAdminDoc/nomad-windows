@@ -29,23 +29,56 @@
           <p class="settings-panel-copy settings-hero-text">Switch the overall operating posture before you tune the deeper system controls below.</p>
         </div>
         <div class="settings-mode-grid">
-          <div class="mode-option settings-mode-option" data-mode-opt="command" data-mode-select="command" role="button" tabindex="0">
-            <div class="settings-mode-icon">&#9876;</div>
-            <div class="settings-mode-title">Command Center</div>
-            <div class="settings-mode-copy">Full military-style ops dashboard. All modules visible, threat-level focus. 10 live widgets. Security, comms, and incidents prioritized.</div>
+          <div class="mode-option settings-mode-option" data-mode-opt="command" data-mode-select="command" role="button" tabindex="0" aria-pressed="false" aria-describedby="settings-mode-command-copy">
+            <div class="settings-mode-topline">
+              <div class="settings-mode-icon" aria-hidden="true">&#9876;</div>
+              <div class="settings-mode-badge">Full watchfloor</div>
+            </div>
+            <div class="settings-mode-title-block">
+              <div class="settings-mode-title">Command Center</div>
+              <div class="settings-mode-subtitle">Maximum coverage and the fastest switching</div>
+            </div>
+            <div id="settings-mode-command-copy" class="settings-mode-copy">Keep the full operational picture visible with security, comms, incidents, and live status surfaced together.</div>
+            <div class="settings-mode-metrics" aria-hidden="true">
+              <span class="settings-mode-metric"><strong>10</strong> live widgets</span>
+              <span class="settings-mode-metric">Threat-first</span>
+              <span class="settings-mode-metric">Best for active operations</span>
+            </div>
           </div>
-          <div class="mode-option settings-mode-option" data-mode-opt="homestead" data-mode-select="homestead" role="button" tabindex="0">
-            <div class="settings-mode-icon">&#127793;</div>
-            <div class="settings-mode-title">Homestead</div>
-            <div class="settings-mode-copy">Farm and self-reliance focus. Garden, weather, power, and livestock prioritized. 8 live widgets. AI asks about planting and harvests.</div>
+          <div class="mode-option settings-mode-option" data-mode-opt="homestead" data-mode-select="homestead" role="button" tabindex="0" aria-pressed="false" aria-describedby="settings-mode-homestead-copy">
+            <div class="settings-mode-topline">
+              <div class="settings-mode-icon" aria-hidden="true">&#127793;</div>
+              <div class="settings-mode-badge">Field rhythm</div>
+            </div>
+            <div class="settings-mode-title-block">
+              <div class="settings-mode-title">Homestead</div>
+              <div class="settings-mode-subtitle">Practical visibility for household resilience work</div>
+            </div>
+            <div id="settings-mode-homestead-copy" class="settings-mode-copy">Prioritize garden, weather, power, livestock, and household maintenance so the desk supports daily resilience work instead of overwhelming it.</div>
+            <div class="settings-mode-metrics" aria-hidden="true">
+              <span class="settings-mode-metric"><strong>8</strong> live widgets</span>
+              <span class="settings-mode-metric">Weather and power first</span>
+              <span class="settings-mode-metric">Best for routine planning</span>
+            </div>
           </div>
-          <div class="mode-option settings-mode-option" data-mode-opt="minimal" data-mode-select="minimal" role="button" tabindex="0">
-            <div class="settings-mode-icon">&#9679;</div>
-            <div class="settings-mode-title">Essentials</div>
-            <div class="settings-mode-copy">Streamlined basics only. Core survival modules: inventory, contacts, medical, and checklists. 4 live widgets. Minimal interface.</div>
+          <div class="mode-option settings-mode-option" data-mode-opt="minimal" data-mode-select="minimal" role="button" tabindex="0" aria-pressed="false" aria-describedby="settings-mode-minimal-copy">
+            <div class="settings-mode-topline">
+              <div class="settings-mode-icon" aria-hidden="true">&#9679;</div>
+              <div class="settings-mode-badge">Low clutter</div>
+            </div>
+            <div class="settings-mode-title-block">
+              <div class="settings-mode-title">Essentials</div>
+              <div class="settings-mode-subtitle">Only the core surfaces you need to keep moving</div>
+            </div>
+            <div id="settings-mode-minimal-copy" class="settings-mode-copy">Strip the interface back to inventory, contacts, medical, and checklists when clarity matters more than breadth.</div>
+            <div class="settings-mode-metrics" aria-hidden="true">
+              <span class="settings-mode-metric"><strong>4</strong> live widgets</span>
+              <span class="settings-mode-metric">Low-noise layout</span>
+              <span class="settings-mode-metric">Best for focused checklists</span>
+            </div>
           </div>
         </div>
-        <div class="settings-panel-copy settings-mini-note">Current: <strong id="settings-mode-label" class="settings-summary-accent">Command Center</strong> &middot; Keyboard: 1-9 switches tabs &middot; Ctrl+K command palette &middot; Ctrl+/ copilot</div>
+        <div class="settings-panel-copy settings-mini-note">Current operating mode: <strong id="settings-mode-label" class="settings-summary-accent">Command Center</strong> &middot; Shortcuts: 1-9 switch tabs, Ctrl+K opens the command palette, Ctrl+/ opens the copilot.</div>
       </div>
       <div class="settings-card settings-memory-card settings-span-full">
         <div class="settings-memory-head">
@@ -55,10 +88,10 @@
             <p class="settings-panel-copy settings-memory-text">Pinned contexts, recent desks, and quick-return paths are part of the product now, not hidden browser memory. Shape them here, then jump back in from Home, the sidebar, or the command palette.</p>
           </div>
           <div class="settings-memory-actions">
-            <button type="button" class="btn btn-sm btn-primary" id="settings-pin-current-context-btn" data-workspace-memory-action="toggle-current-pin">Pin Current Context</button>
-            <button type="button" class="btn btn-sm" id="settings-launch-current-context-btn" data-workspace-memory-action="set-launch-current">Set Launch Context</button>
-            <button type="button" class="btn btn-sm" id="settings-open-launch-context-btn" data-workspace-memory-action="open-launch">Open Launch Context</button>
-            <button type="button" class="btn btn-sm btn-ghost" id="settings-clear-launch-context-btn" data-workspace-memory-action="clear-launch">Clear Launch</button>
+            <button type="button" class="btn btn-sm btn-primary" id="settings-pin-current-context-btn" data-workspace-memory-action="toggle-current-pin">Pin This Desk</button>
+            <button type="button" class="btn btn-sm" id="settings-launch-current-context-btn" data-workspace-memory-action="set-launch-current">Make Startup Desk</button>
+            <button type="button" class="btn btn-sm" id="settings-open-launch-context-btn" data-workspace-memory-action="open-launch">Open Startup Desk</button>
+            <button type="button" class="btn btn-sm btn-ghost" id="settings-clear-launch-context-btn" data-workspace-memory-action="clear-launch">Clear Startup Desk</button>
             <button type="button" class="btn btn-sm" data-tab-target="services" data-scroll-target="home-continue-panel">Open Home Shelf</button>
             <button type="button" class="btn btn-sm" data-shell-action="toggle-command-palette">Command Palette</button>
           </div>
@@ -88,7 +121,7 @@
               <span class="settings-inline-label">What the app should reopen when no URL overrides it</span>
             </div>
             <div id="settings-memory-launch" class="settings-memory-list">
-              <div class="settings-empty-state">Choose a launch context so the desk reopens exactly where you usually begin.</div>
+              <div class="settings-empty-state"><strong>No startup desk set</strong><span>Choose the desk you want NOMAD to reopen when you launch the app without a saved URL override.</span></div>
             </div>
           </div>
           <div class="settings-memory-section">
@@ -97,7 +130,7 @@
               <span class="settings-inline-label">What the desk will reopen right now</span>
             </div>
             <div id="settings-memory-current" class="settings-memory-list">
-              <div class="settings-empty-state">Your live context appears here once you move beyond Home.</div>
+              <div class="settings-empty-state"><strong>No live desk yet</strong><span>Move into any working tab beyond Home and the active return point will appear here automatically.</span></div>
             </div>
           </div>
           <div class="settings-memory-section">
@@ -106,7 +139,7 @@
               <button type="button" class="btn btn-sm btn-ghost" data-workspace-memory-action="clear-pinned">Clear Pinned</button>
             </div>
             <div id="settings-memory-pinned" class="settings-memory-list">
-              <div class="settings-empty-state">Pinned contexts from Home appear here for quick relaunch.</div>
+              <div class="settings-empty-state"><strong>No desks pinned yet</strong><span>Pin the work surfaces you reopen often so they are always staged for one-click return.</span></div>
             </div>
           </div>
           <div class="settings-memory-section">
@@ -115,7 +148,7 @@
               <button type="button" class="btn btn-sm btn-ghost" data-workspace-memory-action="clear-recent">Clear Recent</button>
             </div>
             <div id="settings-memory-recent" class="settings-memory-list">
-              <div class="settings-empty-state">Recent contexts appear here as you move across desks and sub-workspaces.</div>
+              <div class="settings-empty-state"><strong>No recent return points yet</strong><span>Recent desks collect here automatically as you move through tabs, lanes, and sub-workspaces.</span></div>
             </div>
           </div>
         </div>

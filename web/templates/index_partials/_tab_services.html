@@ -6,13 +6,18 @@
     <div class="welcome-banner is-hidden" id="welcome-banner">
       <div class="welcome-banner-copy">
         <div class="section-header-label welcome-kicker">Offline Ready</div>
-        <h3 class="shimmer-text">Welcome to NOMAD</h3>
-        <p>A desktop field desk for preparedness planning, field reference, and local operations. Start by turning on the offline capabilities you want available first.</p>
+        <h3 class="shimmer-text">Bring the desk fully offline before you need it.</h3>
+        <p>NOMAD is your local operations desk for preparedness planning, field reference, and decision support. Start by enabling the capabilities you want available when bandwidth disappears.</p>
+        <div class="welcome-banner-metadata" aria-hidden="true">
+          <span class="welcome-banner-pill">Private by default</span>
+          <span class="welcome-banner-pill">Local-first tools</span>
+          <span class="welcome-banner-pill">Core services install in minutes</span>
+        </div>
       </div>
       <div class="welcome-banner-actions">
-        <button class="btn btn-primary welcome-banner-primary-action" data-install-service="ollama" title="A private AI you can ask questions — no internet needed (~310 MB)">Install Local AI (~310 MB)</button>
-        <button class="btn" data-install-service="kiwix" title="Wikipedia, medical guides, and survival references — all offline (~60 MB)">Install Offline Library (~60 MB)</button>
-        <button class="btn" data-install-service="cyberchef" title="Encryption, encoding, and data analysis tools (~30 MB)">Install Data Tools (~30 MB)</button>
+        <button class="btn btn-primary welcome-banner-primary-action" data-install-service="ollama" title="A private AI you can ask questions without internet access (~310 MB)">Install Private Copilot (~310 MB)</button>
+        <button class="btn" data-install-service="kiwix" title="Wikipedia, medical guides, and survival references stored locally (~60 MB)">Install Reference Library (~60 MB)</button>
+        <button class="btn" data-install-service="cyberchef" title="Encryption, encoding, and field data analysis tools kept offline (~30 MB)">Install Data Toolkit (~30 MB)</button>
       </div>
     </div>
 
@@ -51,8 +56,8 @@
           <div class="home-launch-head">
             <div class="home-launch-copy">
               <span class="section-header-label home-launch-kicker">COMMAND DESK</span>
-              <h2 class="home-launch-title">Find the right desk, pick up where you left off, or start fresh.</h2>
-              <p class="home-launch-text">Search the task, record, or workspace you need and move directly into it without retracing steps.</p>
+              <h2 class="home-launch-title">Find the desk you need and reopen work with context intact.</h2>
+              <p class="home-launch-text">Search tasks, records, tools, and workspaces, then drop directly back into the surface you need instead of retracing your last steps.</p>
             </div>
             <div class="home-launch-actions">
               <button class="btn btn-sm btn-primary compact-action-btn" data-shell-action="toggle-command-palette">Global Find</button>
@@ -120,14 +125,14 @@
         <div class="section-header home-section-header home-toolbar">
           <span class="section-header-label">RESUME</span>
           <div class="section-divider section-divider-grow"></div>
-          <button id="home-pin-current-context-btn" class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-home-context-action="toggle-pin-current" aria-pressed="false">Pin Current</button>
+          <button id="home-pin-current-context-btn" class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-home-context-action="toggle-pin-current" aria-pressed="false">Pin This Desk</button>
           <button class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-shell-action="toggle-command-palette">Command Palette</button>
         </div>
-        <div id="home-continue-summary" class="home-continue-summary">Pinned desks and recent surfaces stay staged here for quick return.</div>
+        <div id="home-continue-summary" class="home-continue-summary">Pinned desks, startup desks, and recent return points stay staged here for quick re-entry.</div>
         <div class="home-context-section">
           <div class="home-context-section-head">
-            <span class="home-context-section-title">Pinned</span>
-            <span class="home-context-section-copy">Keep your priority desks one click away.</span>
+            <span class="home-context-section-title">Pinned Desks</span>
+            <span class="home-context-section-copy">Keep the work surfaces you rely on most one click away from Home.</span>
           </div>
           <div id="home-pinned-grid" class="home-continue-grid home-continue-grid-pinned">
             <div class="home-continue-empty">Pin your current context to build a personal shelf.</div>
@@ -135,8 +140,8 @@
         </div>
         <div class="home-context-section">
           <div class="home-context-section-head">
-            <span class="home-context-section-title">Recent</span>
-            <span class="home-context-section-copy">Return to the desks and surfaces you were actively using last.</span>
+            <span class="home-context-section-title">Recent Return Points</span>
+            <span class="home-context-section-copy">Return to the desks and sub-workspaces you were actively using last.</span>
           </div>
           <div id="home-continue-grid" class="home-continue-grid">
             <div class="home-continue-empty">Recent workspaces and saved context will appear here as you use the desk.</div>

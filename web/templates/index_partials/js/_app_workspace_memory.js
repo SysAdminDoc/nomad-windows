@@ -1283,10 +1283,10 @@ function buildHomeContinueCard(entry, options = {}) {
     options.isLaunch ? 'is-launch' : '',
   ].filter(Boolean).join(' ');
   const meta = options.isLaunch
-    ? options.isCurrent ? 'Launch + active context' : 'Launch context'
-    : options.isCurrent ? 'Latest active context'
-      : options.isPinned ? 'Pinned for fast return'
-        : 'One click to return';
+    ? options.isCurrent ? 'Startup desk and live return point' : 'Opens automatically on startup'
+    : options.isCurrent ? 'Latest active desk'
+      : options.isPinned ? 'Pinned for instant return'
+        : 'Ready to reopen';
   return `<button type="button" class="${classes}" data-workspace-resume-key="${escapeAttr(entry.key)}">
     <span class="home-continue-icon" aria-hidden="true">${entry.icon || '&#8250;'}</span>
     <span class="home-continue-body">
@@ -1349,11 +1349,11 @@ function buildSettingsMemoryCard(entry, options = {}) {
     options.isLaunch ? 'is-launch' : '',
   ].filter(Boolean).join(' ');
   const meta = options.isLaunch
-    ? options.isCurrent ? 'Launch + active return point' : 'Launch context'
+    ? options.isCurrent ? 'Startup desk and live return point' : 'Opens automatically on startup'
     : options.isCurrent
-      ? 'Active return point'
+      ? 'Live return point'
       : options.isPinned
-        ? 'Pinned for fast re-entry'
+        ? 'Pinned for one-click re-entry'
         : 'Recent working context';
   return `<button type="button" class="${classes}" data-workspace-resume-key="${escapeAttr(entry.key)}">
     <span class="settings-memory-item-topline">
@@ -1366,6 +1366,10 @@ function buildSettingsMemoryCard(entry, options = {}) {
     <span class="settings-memory-item-copy">${escapeHtml(entry.subtitle || 'Resume workspace')}</span>
     <span class="settings-memory-item-meta">${escapeHtml(meta)}</span>
   </button>`;
+}
+
+function buildWorkspaceCollectionEmptyState(className, title, body) {
+  return `<div class="${className}"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(body)}</span></div>`;
 }
 
 function buildWorkspaceContextStateMarkup(current, descriptor, previous) {
@@ -1389,10 +1393,10 @@ function renderSidebarWorkspaceShelf() {
     .slice(0, 3);
   currentEl.innerHTML = current
     ? buildSidebarContextCard(current, {isCurrent: true, isPinned: isPinnedWorkspaceEntry(current.key), isLaunch: isLaunchWorkspaceEntry(current.key)})
-    : '<div class="sidebar-empty-state">Your current desk will appear here once you start moving through the workspace.</div>';
+    : buildWorkspaceCollectionEmptyState('sidebar-empty-state', 'No live desk yet', 'Your current desk appears here once you start moving through the workspace.');
   pinnedEl.innerHTML = pinned.length
     ? pinned.map(item => buildSidebarContextCard(item, {isPinned: true, isLaunch: isLaunchWorkspaceEntry(item.key)})).join('')
-    : '<div class="sidebar-empty-state">Pin contexts from Home to keep them parked here.</div>';
+    : buildWorkspaceCollectionEmptyState('sidebar-empty-state', 'No desks pinned', 'Pin contexts from Home to keep them parked here for quick return.');
 }
 
 function renderWorkspaceMemoryPanel() {
@@ -1425,20 +1429,20 @@ function renderWorkspaceMemoryPanel() {
   recentCountEl.textContent = String(state.recent.length);
   launchEl.innerHTML = launch
     ? buildSettingsMemoryCard(launch, {isPinned: true, isCurrent: currentLaunch, isLaunch: true})
-    : '<div class="settings-empty-state">Set a launch context to reopen directly into the desk you use most.</div>';
+    : buildWorkspaceCollectionEmptyState('settings-empty-state', 'No startup desk set', 'Choose a desk to reopen immediately when the app launches.');
   currentEl.innerHTML = current
     ? buildSettingsMemoryCard(current, {isCurrent: true, isPinned: currentPinned, isLaunch: currentLaunch})
-    : '<div class="settings-empty-state">Your active context will appear here as soon as you move beyond Home.</div>';
+    : buildWorkspaceCollectionEmptyState('settings-empty-state', 'No live desk yet', 'Move beyond Home and the active return point will appear here automatically.');
   pinnedEl.innerHTML = pinned.length
     ? pinned.map(item => buildSettingsMemoryCard(item, {isPinned: true, isCurrent: current?.key === item.key, isLaunch: isLaunchWorkspaceEntry(item.key)})).join('')
-    : '<div class="settings-empty-state">Pinned contexts from Home will show up here.</div>';
+    : buildWorkspaceCollectionEmptyState('settings-empty-state', 'No desks pinned', 'Pin the work surfaces you reopen often so they are always staged here.');
   recentEl.innerHTML = recent.length
     ? recent.map(item => buildSettingsMemoryCard(item, {isLaunch: isLaunchWorkspaceEntry(item.key)})).join('')
-    : '<div class="settings-empty-state">Recent contexts will appear here as you work across tabs and sub-workspaces.</div>';
+    : buildWorkspaceCollectionEmptyState('settings-empty-state', 'No recent return points yet', 'Recent desks appear here automatically as you move across tabs and sub-workspaces.');
   pinCurrentBtn.disabled = !current;
-  pinCurrentBtn.textContent = currentPinned ? 'Unpin Current Context' : 'Pin Current Context';
+  pinCurrentBtn.textContent = currentPinned ? 'Unpin This Desk' : 'Pin This Desk';
   launchCurrentBtn.disabled = !current;
-  launchCurrentBtn.textContent = currentLaunch ? 'Current Is Launch Context' : 'Set Launch Context';
+  launchCurrentBtn.textContent = currentLaunch ? 'Current Is Startup Desk' : 'Make Startup Desk';
   openLaunchBtn.disabled = !launch?.key;
   clearLaunchBtn.disabled = !launch?.key;
 }
@@ -1497,11 +1501,11 @@ function renderHomeContinueWorking() {
   if (!summaryEl || !gridEl || !pinnedEl || !pinCurrentBtn) return;
   const state = getWorkspaceResumeState();
   if (!state.current && !state.recent.length && !state.pinned.length) {
-    summaryEl.textContent = 'Pick up where you left off without rebuilding your mental map.';
-    pinnedEl.innerHTML = '<div class="home-continue-empty">Pin your current context to build a personal shelf.</div>';
-    gridEl.innerHTML = '<div class="home-continue-empty">Recent workspaces and saved context will appear here as you use the desk.</div>';
+    summaryEl.textContent = 'Desk memory comes online as soon as you start moving through the workspace.';
+    pinnedEl.innerHTML = buildWorkspaceCollectionEmptyState('home-continue-empty', 'No desks pinned yet', 'Pin a desk from any working surface to build a stable Home shelf.');
+    gridEl.innerHTML = buildWorkspaceCollectionEmptyState('home-continue-empty', 'No recent return points yet', 'Recent desks and saved context will appear here automatically as you use the desk.');
     pinCurrentBtn.disabled = true;
-    pinCurrentBtn.textContent = 'Pin Current Context';
+    pinCurrentBtn.textContent = 'Pin This Desk';
     pinCurrentBtn.setAttribute('aria-pressed', 'false');
     renderSidebarWorkspaceShelf();
     renderWorkspaceMemoryPanel();
@@ -1513,21 +1517,22 @@ function renderHomeContinueWorking() {
   const pinned = (state.pinned || []).slice(0, 5);
   const others = state.recent.filter(item => item.key !== current?.key && !pinned.some(pin => pin.key === item.key)).slice(0, 5);
   const currentPinned = current ? pinned.some(item => item.key === current.key) : false;
+  const currentLaunch = current ? isLaunchWorkspaceEntry(current.key) : false;
   summaryEl.textContent = current
-    ? `Last active context: ${current.title}. Keep frequently used desks pinned so return paths stay stable under pressure.`
-    : 'Your recent working contexts are ready to reopen.';
+    ? `Live desk: ${current.title}. Keep your startup desk and pinned return points close so reopening the app never feels like starting over.`
+    : 'Pinned and recent desks are ready to reopen.';
   pinnedEl.innerHTML = pinned.length
-    ? pinned.map(item => buildHomeContinueCard(item, {isPinned: true, isCurrent: current?.key === item.key})).join('')
-    : '<div class="home-continue-empty">Pin your current context to build a personal shelf.</div>';
+    ? pinned.map(item => buildHomeContinueCard(item, {isPinned: true, isCurrent: current?.key === item.key, isLaunch: isLaunchWorkspaceEntry(item.key)})).join('')
+    : buildWorkspaceCollectionEmptyState('home-continue-empty', 'No desks pinned yet', 'Pin the desks you reopen often so Home always has a stable set of return points.');
   gridEl.innerHTML = [
-    current && !currentPinned ? buildHomeContinueCard(current, {isCurrent: true}) : '',
-    ...others.map(item => buildHomeContinueCard(item)),
+    current && !currentPinned ? buildHomeContinueCard(current, {isCurrent: true, isLaunch: currentLaunch}) : '',
+    ...others.map(item => buildHomeContinueCard(item, {isLaunch: isLaunchWorkspaceEntry(item.key)})),
   ].filter(Boolean).join('');
   if (!gridEl.innerHTML) {
-    gridEl.innerHTML = '<div class="home-continue-empty">Recent contexts will collect here once you branch out from your pinned desks.</div>';
+    gridEl.innerHTML = buildWorkspaceCollectionEmptyState('home-continue-empty', 'No recent return points yet', 'Recent desks collect here once you branch out from your pinned return points.');
   }
   pinCurrentBtn.disabled = !current;
-  pinCurrentBtn.textContent = currentPinned ? 'Unpin Current Context' : 'Pin Current Context';
+  pinCurrentBtn.textContent = currentPinned ? 'Unpin This Desk' : 'Pin This Desk';
   pinCurrentBtn.setAttribute('aria-pressed', currentPinned ? 'true' : 'false');
   renderSidebarWorkspaceShelf();
   renderWorkspaceMemoryPanel();

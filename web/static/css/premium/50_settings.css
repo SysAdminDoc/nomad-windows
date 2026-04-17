@@ -132,6 +132,9 @@
 .settings-mode-grid {
   position: relative;
   z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 14px;
 }
 
 .settings-memory-card {
@@ -249,6 +252,12 @@
   border-color: color-mix(in srgb, var(--green) 22%, var(--border));
 }
 
+.settings-memory-card-item.is-launch {
+  border-color: color-mix(in srgb, var(--orange) 24%, var(--border));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--orange) 10%, transparent), var(--surface-overlay-soft));
+}
+
 .settings-memory-item-topline {
   display: flex;
   align-items: center;
@@ -321,14 +330,19 @@
   color: var(--text-muted);
   font-size: 10px;
   font-weight: 600;
+  line-height: 1.55;
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
 .settings-mode-option {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+  min-height: 220px;
   padding: 16px;
   cursor: pointer;
-  text-align: center;
+  text-align: left;
   transition:
     border-color 0.15s ease,
     background-color 0.15s ease,
@@ -345,8 +359,44 @@
 }
 
 .settings-mode-icon {
-  margin-bottom: 6px;
-  font-size: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  margin-bottom: 0;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: 22px;
+  box-shadow: inset 0 1px 0 var(--panel-highlight);
+}
+
+.settings-mode-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.settings-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settings-mode-title-block {
+  display: grid;
+  gap: 4px;
 }
 
 .settings-mode-title {
@@ -357,11 +407,44 @@
   color: var(--text);
 }
 
+.settings-mode-subtitle {
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
 .settings-mode-copy {
-  margin-top: 6px;
-  font-size: 10px;
-  line-height: 1.6;
+  margin-top: 0;
+  max-width: 32ch;
+  font-size: 11px;
+  line-height: 1.65;
   color: var(--text-muted);
+}
+
+.settings-mode-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+
+.settings-mode-metric {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--border-hover) 26%, var(--border));
+  background: color-mix(in srgb, var(--surface-solid) 94%, transparent);
+  color: var(--text-dim);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.settings-mode-metric strong {
+  margin-right: 4px;
+  color: var(--text);
+  font-size: 11px;
 }
 
 .settings-workspace .mode-option:hover {
@@ -369,6 +452,32 @@
   box-shadow: 0 16px 32px rgba(0,0,0,0.1);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--accent) 12%, transparent), var(--surface-overlay-soft)) !important;
+}
+
+.settings-workspace .mode-option:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 56%, transparent);
+  outline-offset: 3px;
+}
+
+.settings-workspace .mode-option.active-mode {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--border)) !important;
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 18%, transparent), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, transparent), var(--surface-overlay-soft)) !important;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 16%, transparent),
+    0 18px 36px rgba(0,0,0,0.12);
+}
+
+.settings-workspace .mode-option.active-mode .settings-mode-badge {
+  border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+.settings-workspace .mode-option.active-mode .settings-mode-subtitle {
+  color: var(--text);
 }
 
 .settings-workspace .setting-row {
@@ -449,6 +558,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.settings-mini-note {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  color: var(--text-dim);
+  font-size: 11px;
+  line-height: 1.65;
 }
 
 @media (max-width: 1100px) {

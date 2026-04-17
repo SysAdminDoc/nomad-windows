@@ -405,6 +405,7 @@ def create_app():
         "base-uri 'self'; "
         "form-action 'self'"
     )
+    _EMBED_CSP_POLICY = _CSP_POLICY.replace("frame-ancestors 'none'; ", "frame-ancestors 'self'; ")
 
     @app.after_request
     def _set_security_headers(response):
@@ -418,16 +419,17 @@ def create_app():
         """
         # Always safe to set
         response.headers.setdefault('X-Content-Type-Options', 'nosniff')
-        response.headers.setdefault('X-Frame-Options', 'DENY')
         response.headers.setdefault('Referrer-Policy', 'same-origin')
         response.headers.setdefault(
             'Permissions-Policy',
             'camera=(self), microphone=(self), geolocation=(self), '
             'interest-cohort=()',
         )
+        is_same_origin_embed = request.path.startswith('/viptrack/')
+        response.headers['X-Frame-Options'] = 'SAMEORIGIN' if is_same_origin_embed else 'DENY'
         ctype = response.content_type or ''
         if 'text/html' in ctype:
-            response.headers.setdefault('Content-Security-Policy', _CSP_POLICY)
+            response.headers['Content-Security-Policy'] = _EMBED_CSP_POLICY if is_same_origin_embed else _CSP_POLICY
         return response
 
     # ─── Pages ─────────────────────────────────────────────────────────

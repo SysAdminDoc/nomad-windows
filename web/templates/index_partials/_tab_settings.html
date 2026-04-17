@@ -253,9 +253,9 @@
               <select id="voice-voice-select" name="voice_voice" class="preset-select settings-select settings-input-sm" data-change-action="save-voice-prefs" aria-label="TTS voice">
                 <option value="">Default voice</option>
               </select>
-              <label class="settings-inline-label settings-input-sm" style="display:inline-flex;align-items:center;gap:4px;">
+              <label class="settings-inline-label settings-input-sm settings-inline-label-group">
                 Rate
-                <input type="range" id="voice-rate-slider" name="voice_rate" min="0.5" max="2" step="0.1" value="1" data-change-action="save-voice-prefs" aria-label="Speech rate" style="width:80px;">
+                <input type="range" id="voice-rate-slider" name="voice_rate" min="0.5" max="2" step="0.1" value="1" data-change-action="save-voice-prefs" aria-label="Speech rate" class="settings-range-inline">
               </label>
             </div>
           </div>
@@ -771,11 +771,11 @@
     <span class="copilot-voice-transcript" id="copilot-voice-transcript" aria-live="polite" hidden></span>
   </div>
   <div class="copilot-dock-bar">
-    <span class="copilot-dock-label">AI COPILOT</span>
+    <span class="copilot-dock-label">AI Copilot</span>
     <input type="text" id="copilot-input" name="copilot_query" data-enter-action="ask-copilot" aria-label="AI Copilot question input" autocomplete="off" placeholder="Ask about supplies, team, medical, or power… (Ctrl+/)">
     <button class="btn btn-sm copilot-voice-btn" type="button" data-shell-action="voice-input" data-voice-target="copilot-input" title="Voice input (single question)" id="copilot-voice-btn" aria-label="Voice input for copilot">&#127908;</button>
     <button class="btn btn-sm copilot-handsfree-btn" type="button" data-shell-action="toggle-handsfree" title="Hands-free conversation mode" id="copilot-handsfree-btn" aria-label="Toggle hands-free voice conversation" aria-pressed="false" data-state="idle">&#128266;</button>
-    <button class="btn btn-sm btn-primary copilot-ask-btn" type="button" data-shell-action="ask-copilot" aria-label="Ask AI Copilot">ASK</button>
+    <button class="btn btn-sm btn-primary copilot-ask-btn" type="button" data-shell-action="ask-copilot" aria-label="Ask AI Copilot">Ask</button>
     <div class="copilot-dock-tools" aria-label="Desk utilities">
       <button id="copilot-utility-chat-btn" class="btn btn-sm btn-ghost copilot-utility-btn" type="button" data-shell-action="toggle-lan-chat" aria-controls="lan-chat-panel" aria-expanded="false" aria-label="Open LAN chat">
         <span class="copilot-utility-btn-icon" aria-hidden="true">&#9993;</span>
@@ -800,7 +800,7 @@
   <div class="modal-card settings-modal-card settings-modal-card-md">
     <div class="modal-header settings-heading-row">
       <h3 class="settings-detail-title">CSV Data Import</h3>
-      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-shell-action="close-csv-import" aria-label="Close CSV import dialog">x</button>
+      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-shell-action="close-csv-import" aria-label="Close CSV import dialog">&times;</button>
     </div>
     <div class="modal-body settings-modal-body settings-stack">
       <div class="settings-field">

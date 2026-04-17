@@ -28,6 +28,13 @@
   #tab-land-assessment .la-form-row select,
   #tab-land-assessment .la-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-land-assessment .la-form-row .field { flex:1; min-width:140px; }
+  #tab-land-assessment .la-form-row .field.la-field-action { align-self:flex-end; flex:0; }
+  #tab-land-assessment .la-form-row .field.la-field-actions-row { align-self:flex-end; flex:0; display:flex; gap:6px; }
+  #tab-land-assessment .la-grid-full { grid-column:1/-1; }
+  #tab-land-assessment .la-row-spaced { margin-bottom:12px; }
+  #tab-land-assessment .la-hidden { display:none; }
+  #tab-land-assessment .la-tone-driven { color:var(--la-tone, inherit); }
+  #tab-land-assessment .la-tag-spacer { margin-left:6px; }
   #tab-land-assessment .la-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-land-assessment .la-btn-primary { background:var(--la-accent); color:#000; }
   #tab-land-assessment .la-btn-danger { background:var(--la-red); color:#fff; }
@@ -93,7 +100,7 @@
           <option value="owned">Owned</option><option value="sold">Sold</option>
         </select>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="la-btn la-btn-primary" onclick="laCreateProperty()">Add</button></div>
+      <div class="field la-field-action"><button class="la-btn la-btn-primary" onclick="laCreateProperty()">Add</button></div>
     </div>
   </div>
   <div id="la-prop-list" class="la-card"><div class="la-empty">Loading properties...</div></div>
@@ -107,13 +114,13 @@
       <div class="field"><label>Property</label>
         <select name="la-assess-prop" id="la-assess-prop"><option value="">-- Select Property --</option></select>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end;display:flex;gap:6px">
+      <div class="field la-field-actions-row">
         <button class="la-btn la-btn-secondary" onclick="laSeedCriteria()">Seed Default Criteria</button>
         <button class="la-btn la-btn-primary" onclick="laRecalcScore()">Recalculate Score</button>
       </div>
     </div>
   </div>
-  <div id="la-score-display" class="la-score-result" style="display:none"></div>
+  <div id="la-score-display" class="la-score-result la-hidden"></div>
   <div id="la-assess-list" class="la-card"><div class="la-empty">Select a property above.</div></div>
 </div>
 
@@ -149,7 +156,7 @@
         </select>
       </div>
       <div class="field"><label>Value Estimate ($)</label><input name="la-feat-value" id="la-feat-value" type="number" step="100" value="0"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="la-btn la-btn-primary" onclick="laCreateFeature()">Add</button></div>
+      <div class="field la-field-action"><button class="la-btn la-btn-primary" onclick="laCreateFeature()">Add</button></div>
     </div>
   </div>
   <div id="la-feat-list" class="la-card"><div class="la-empty">Select a property above.</div></div>
@@ -186,7 +193,7 @@
           <option value="completed">Completed</option>
         </select>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="la-btn la-btn-primary" onclick="laCreateDevPlan()">Add</button></div>
+      <div class="field la-field-action"><button class="la-btn la-btn-primary" onclick="laCreateDevPlan()">Add</button></div>
     </div>
   </div>
   <div id="la-dp-list" class="la-card"><div class="la-empty">Select a property above.</div></div>
@@ -194,10 +201,10 @@
 
 <!-- ── Compare Panel ────────────────────────────────────── -->
 <div class="la-panel" id="la-panel-compare">
-  <div style="margin-bottom:12px">
+  <div class="la-row-spaced">
     <button class="la-btn la-btn-primary" onclick="laLoadCompare()">Refresh Comparison</button>
   </div>
-  <div id="la-compare-list" class="la-compare-grid"><div class="la-empty" style="grid-column:1/-1">Click Refresh to load comparison data.</div></div>
+  <div id="la-compare-list" class="la-compare-grid"><div class="la-empty la-grid-full">Click Refresh to load comparison data.</div></div>
 </div>
 
 <script>
@@ -240,9 +247,9 @@
       const el=$('la-prop-list');
       if(!items.length){el.innerHTML='<div class="la-empty">No properties yet. Add one above.</div>';return;}
       el.innerHTML=items.map(p=>`<div class="la-list-item">
-        <div><strong>${p.name}</strong> <span class="la-badge" style="color:${statusColor[p.status]||'#aaa'};margin-left:6px">${p.status}</span>
-          <br><small style="color:var(--text-secondary)">${p.property_type} · ${p.acreage} ac · ${p.state||'--'}${p.distance_from_home?' · '+p.distance_from_home+' mi':''}</small>
-          ${p.total_score!=null?`<br><span class="la-score" style="color:${scoreColor(p.total_score)}">Score: ${p.total_score}</span>`:''}</div>
+        <div><strong>${p.name}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${statusColor[p.status]||'#aaa'}">${p.status}</span>
+          <br><small class="tone-muted">${p.property_type} · ${p.acreage} ac · ${p.state||'--'}${p.distance_from_home?' · '+p.distance_from_home+' mi':''}</small>
+          ${p.total_score!=null?`<br><span class="la-score la-tone-driven" style="--la-tone:${scoreColor(p.total_score)}">Score: ${p.total_score}</span>`:''}</div>
         <div><button class="la-btn la-btn-danger" onclick="laDeleteProperty(${p.id})">×</button></div>
       </div>`).join('');
     });
@@ -306,7 +313,7 @@
       const condColor={good:'#22c55e',fair:'#f59e0b',poor:'#f97316',needs_repair:'#ef4444',non_functional:'#ef4444'};
       el.innerHTML=items.map(f=>`<div class="la-list-item">
         <div><strong>${f.name}</strong> <span class="la-badge" style="color:${condColor[f.condition]||'#aaa'};margin-left:6px">${f.condition}</span>
-          <br><small style="color:var(--text-secondary)">${f.feature_type}${f.value_estimate?' · $'+Number(f.value_estimate).toLocaleString():''}</small></div>
+          <br><small class="tone-muted">${f.feature_type}${f.value_estimate?' · $'+Number(f.value_estimate).toLocaleString():''}</small></div>
         <div><button class="la-btn la-btn-danger" onclick="laDeleteFeature(${f.id})">×</button></div>
       </div>`).join('');
     });
@@ -332,8 +339,8 @@
     api('/api/properties/'+pid+'/dev-plans').then(items=>{
       if(!items.length){el.innerHTML='<div class="la-empty">No development plans for this property.</div>';return;}
       el.innerHTML=items.map(d=>`<div class="la-list-item">
-        <div><strong>${d.name}</strong> <span class="la-badge" style="color:${prioColor[d.priority]||'#aaa'};margin-left:6px">${d.priority}</span>
-          <br><small style="color:var(--text-secondary)">${d.category} · $${Number(d.estimated_cost||0).toLocaleString()} · ${d.status}</small></div>
+        <div><strong>${d.name}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${prioColor[d.priority]||'#aaa'}">${d.priority}</span>
+          <br><small class="tone-muted">${d.category} · $${Number(d.estimated_cost||0).toLocaleString()} · ${d.status}</small></div>
         <div><button class="la-btn la-btn-danger" onclick="laDeleteDevPlan(${d.id})">×</button></div>
       </div>`).join('');
     });
@@ -353,7 +360,7 @@
   window.laLoadCompare=function(){
     api('/api/properties/compare').then(items=>{
       const el=$('la-compare-list');
-      if(!items.length){el.innerHTML='<div class="la-empty" style="grid-column:1/-1">No properties to compare. Add at least two properties first.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="la-empty la-grid-full">No properties to compare. Add at least two properties first.</div>';return;}
       items.sort((a,b)=>(b.total_score||0)-(a.total_score||0));
       el.innerHTML=items.map((p,i)=>{
         let cats='';
@@ -361,7 +368,7 @@
         return `<div class="la-compare-card">
           <div class="rank">#${i+1}</div>
           <div class="prop-name">${p.name||'Property '+p.id}</div>
-          <div class="cat-row"><span class="cat-label">Total Score</span><span class="cat-val" style="color:${scoreColor(p.total_score||0)}">${p.total_score||'--'}</span></div>
+          <div class="cat-row"><span class="cat-label">Total Score</span><span class="cat-val la-tone-driven" style="--la-tone:${scoreColor(p.total_score||0)}">${p.total_score||'--'}</span></div>
           ${cats}
           <div class="cat-row"><span class="cat-label">Features</span><span class="cat-val">${p.features_count||0}</span></div>
           <div class="cat-row"><span class="cat-label">Dev Plans</span><span class="cat-val">${p.plans_count||0}</span></div>

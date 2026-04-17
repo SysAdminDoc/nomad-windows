@@ -54,9 +54,13 @@
     .ti-form-row textarea { min-height: 60px; resize: vertical; }
     .ti-form-group { flex: 1; min-width: 180px; }
     .ti-empty { text-align: center; padding: 40px; color: var(--ti-text-muted); font-size: 14px; }
+    .ti-scroll-shell { padding: 0 24px 24px; }
+    .ti-form-group.ti-field-grow-2 { flex: 2; }
+    .ti-row-actions { display: flex; gap: 8px; }
+    .ti-row-tight { display: flex; gap: 6px; }
   </style>
 
-  <div class="workspace-scroll-container" style="padding:0 24px 24px;">
+  <div class="workspace-scroll-container ti-scroll-shell">
     <div class="ti-deck">
       <h2>Threat Intelligence</h2>
       <p>Track, assess, and respond to threats affecting your area of operations.</p>
@@ -118,15 +122,15 @@
         <div class="ti-form-group"><label for="ti-entry-source">Source URL</label><input type="text" id="ti-entry-source" name="ti-entry-source" placeholder="https://..."></div>
       </div>
       <div class="ti-form-row">
-        <div class="ti-form-group" style="flex:2;"><label for="ti-entry-desc">Description</label><textarea id="ti-entry-desc" name="ti-entry-desc" placeholder="Threat description..."></textarea></div>
+        <div class="ti-form-group ti-field-grow-2"><label for="ti-entry-desc">Description</label><textarea id="ti-entry-desc" name="ti-entry-desc" placeholder="Threat description..."></textarea></div>
       </div>
       <div class="ti-form-row">
-        <div class="ti-form-group" style="flex:2;"><label for="ti-entry-impact">Impact Assessment</label><textarea id="ti-entry-impact" name="ti-entry-impact" placeholder="How does this affect your area?"></textarea></div>
+        <div class="ti-form-group ti-field-grow-2"><label for="ti-entry-impact">Impact Assessment</label><textarea id="ti-entry-impact" name="ti-entry-impact" placeholder="How does this affect your area?"></textarea></div>
       </div>
       <div class="ti-form-row">
-        <div class="ti-form-group" style="flex:2;"><label for="ti-entry-actions">Recommended Actions</label><textarea id="ti-entry-actions" name="ti-entry-actions" placeholder="What should be done?"></textarea></div>
+        <div class="ti-form-group ti-field-grow-2"><label for="ti-entry-actions">Recommended Actions</label><textarea id="ti-entry-actions" name="ti-entry-actions" placeholder="What should be done?"></textarea></div>
       </div>
-      <div style="display:flex;gap:8px;">
+      <div class="ti-row-actions">
         <button class="btn btn-sm btn-primary" type="button" onclick="saveThreatEntry()">Save Threat</button>
         <button class="btn btn-sm" type="button" onclick="document.getElementById('ti-entry-form-section').hidden=true">Cancel</button>
       </div>
@@ -156,9 +160,9 @@
         </div>
       </div>
       <div class="ti-form-row">
-        <div class="ti-form-group" style="flex:2;"><label for="ti-feed-url">URL</label><input type="text" id="ti-feed-url" name="ti-feed-url" placeholder="https://..."></div>
+        <div class="ti-form-group ti-field-grow-2"><label for="ti-feed-url">URL</label><input type="text" id="ti-feed-url" name="ti-feed-url" placeholder="https://..."></div>
       </div>
-      <div style="display:flex;gap:8px;">
+      <div class="ti-row-actions">
         <button class="btn btn-sm btn-primary" type="button" onclick="saveThreatFeed()">Save Feed</button>
         <button class="btn btn-sm" type="button" onclick="document.getElementById('ti-feed-form-section').hidden=true">Cancel</button>
       </div>
@@ -237,7 +241,7 @@
             <div class="ti-feed-name">${escapeHtml(f.name)}</div>
             <div class="ti-feed-meta">${escapeHtml(f.feed_type)} &middot; ${escapeHtml(f.category)}</div>
           </div>
-          <div style="display:flex;gap:6px;">
+          <div class="ti-row-tight">
             <button class="btn btn-xs" type="button" onclick="toggleThreatFeed(${f.id})">${f.enabled ? 'Disable' : 'Enable'}</button>
             <button class="btn btn-xs btn-danger" type="button" onclick="deleteThreatFeed(${f.id})">Delete</button>
           </div>

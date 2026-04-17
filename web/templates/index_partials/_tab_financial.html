@@ -345,6 +345,7 @@
         color: var(--fin-red);
         background: rgba(244, 67, 54, 0.12);
       }
+      #tab-financial .fin-stats-row.fin-row-spaced { margin-bottom: 14px; }
     </style>
 
     <div class="financial-command-deck">
@@ -848,7 +849,7 @@
             byType[t].value += parseFloat(m.purchase_price) || 0;
             byType[t].count++;
           });
-          let summary = '<div class="fin-stats-row" style="margin-bottom:14px">';
+          let summary = '<div class="fin-stats-row fin-row-spaced">';
           Object.keys(byType).forEach(t => {
             const badge = METAL_TYPE_BADGE[t] || 'fin-badge';
             summary += '<div class="fin-stat-card">'

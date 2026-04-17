@@ -2472,31 +2472,34 @@ async function loadBookCatalog() {
 }
 
 async function downloadCatalogItem(btn, url, folder, category) {
-  btn.disabled = true; btn.textContent = '...';
+  btn.setAttribute('aria-busy', 'true'); btn.disabled = true;
   try {
     const d = await apiPost('/api/ytdlp/download', {url, folder, category});
-    if (d.error) { toast(d.error, 'error'); btn.disabled = false; btn.textContent = 'Download'; return; }
+    btn.removeAttribute('aria-busy');
+    if (d.error) { toast(d.error, 'error'); btn.disabled = false; return; }
     btn.textContent = 'Queued'; pollMediaDownloads(d.id);
-  } catch(e) { toast('Failed', 'error'); btn.disabled = false; btn.textContent = 'Download'; }
+  } catch(e) { btn.removeAttribute('aria-busy'); btn.disabled = false; toast('Failed', 'error'); }
 }
 
 async function downloadCatalogAudio(btn, url, folder, category) {
-  btn.disabled = true; btn.textContent = '...';
+  btn.setAttribute('aria-busy', 'true'); btn.disabled = true;
   try {
     const d = await apiPost('/api/ytdlp/download-audio', {url, folder, category});
-    if (d.error) { toast(d.error, 'error'); btn.disabled = false; btn.textContent = 'Download'; return; }
+    btn.removeAttribute('aria-busy');
+    if (d.error) { toast(d.error, 'error'); btn.disabled = false; return; }
     btn.textContent = 'Queued'; pollMediaDownloads(d.id);
-  } catch(e) { toast('Failed', 'error'); btn.disabled = false; btn.textContent = 'Download'; }
+  } catch(e) { btn.removeAttribute('aria-busy'); btn.disabled = false; toast('Failed', 'error'); }
 }
 
 async function downloadRefBook(btn, item) {
-  btn.disabled = true; btn.textContent = '...';
+  btn.setAttribute('aria-busy', 'true'); btn.disabled = true;
   try {
     const d = await apiPost('/api/books/download-ref', item);
-    if (d.status === 'already_downloaded') { toast('Already downloaded', 'info'); btn.textContent = 'Downloaded'; btn.style.color = 'var(--green)'; return; }
-    if (d.error) { toast(d.error, 'error'); btn.disabled = false; btn.textContent = 'Download'; return; }
+    btn.removeAttribute('aria-busy');
+    if (d.status === 'already_downloaded') { toast('Already downloaded', 'info'); btn.textContent = 'Downloaded'; btn.classList.add('tone-success'); return; }
+    if (d.error) { toast(d.error, 'error'); btn.disabled = false; return; }
     btn.textContent = 'Downloading...'; pollMediaDownloads(d.id);
-  } catch(e) { toast('Failed', 'error'); btn.disabled = false; btn.textContent = 'Download'; }
+  } catch(e) { btn.removeAttribute('aria-busy'); btn.disabled = false; toast('Failed', 'error'); }
 }
 
 async function downloadAllCatalog() {

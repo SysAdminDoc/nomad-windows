@@ -1048,7 +1048,7 @@ async function wizLoadTiers() {
   }
   const tierOrder = ['essential','standard','maximum','custom'];
   const tierIcons = {essential:'&#9733;', standard:'&#9733;&#9733;', maximum:'&#9733;&#9733;&#9733;', custom:'&#9881;'};
-  const tierColors = {essential:'var(--green)', standard:'var(--accent)', maximum:'var(--purple)', custom:'var(--orange)'};
+  // Tier tone classes defined in premium/70_layout_hardening.css.
   // Add a virtual "custom" tier
   if (!_wizTiers['custom']) {
     _wizTiers['custom'] = {name:'Custom', desc:'Choose exactly which services, models, and content packs to install', services:[], zims:[], models:[], zim_count:0, est_size:'Varies'};
@@ -1059,14 +1059,15 @@ async function wizLoadTiers() {
     const detail = tid === 'custom'
       ? '<div class="wizard-tier-meta">Pick individual items below</div>'
       : `<div class="wizard-tier-meta">${t.services.length} tools + ${t.zim_count || t.zims.length} content packs + ${t.models.length} AI model${t.models.length>1?'s':''}</div>`;
+    const toneClass = 'tier-' + tid;
     return '<button type="button" class="wizard-tier-card' + (sel ? ' is-selected' : '') + '" data-shell-action="wiz-select-tier" data-tier-id="' + tid + '">'
       + '<div class="wizard-tier-copy">'
-      + '<div class="wizard-tier-title" style="color:' + tierColors[tid] + ';">' + tierIcons[tid] + ' ' + t.name + '</div>'
+      + '<div class="wizard-tier-title ' + toneClass + '">' + tierIcons[tid] + ' ' + t.name + '</div>'
       + '<div class="wizard-tier-desc">' + t.desc + '</div>'
       + detail
       + '</div>'
       + '<div class="wizard-tier-size">'
-      + '<div class="wizard-tier-size-value" style="color:' + tierColors[tid] + ';">' + t.est_size + '</div>'
+      + '<div class="wizard-tier-size-value ' + toneClass + '">' + t.est_size + '</div>'
       + (tid !== 'custom' ? '<div class="wizard-tier-size-label">estimated</div>' : '')
       + '</div>'
       + '</button>';

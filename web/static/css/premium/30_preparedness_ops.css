@@ -2278,6 +2278,8 @@
   min-width: 24px;
   font-weight: 700;
 }
+.prep-comms-dir.is-tx { color: var(--accent); }
+.prep-comms-dir.is-rx { color: var(--green); }
 
 .prep-comms-freq {
   min-width: 84px;

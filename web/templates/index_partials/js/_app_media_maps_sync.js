@@ -3689,10 +3689,10 @@ async function loadCommsLog() {
       const t = new Date(l.created_at);
       const ts = t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit',second:'2-digit'});
       const date = t.toLocaleDateString([], {month:'short',day:'numeric'});
-      const dirColor = l.direction === 'tx' ? 'var(--accent)' : 'var(--green)';
+      const dirClass = l.direction === 'tx' ? 'is-tx' : 'is-rx';
       return `<div class="prep-comms-row">
         <span class="prep-comms-meta">${date} ${ts}</span>
-        <span class="prep-comms-dir" style="color:${dirColor};">${l.direction.toUpperCase()}</span>
+        <span class="prep-comms-dir ${dirClass}">${l.direction.toUpperCase()}</span>
         <span class="prep-comms-freq">${escapeHtml(l.freq)}</span>
         <span class="prep-comms-call">${escapeHtml(l.callsign)}</span>
         ${l.signal_quality ? `<span class="prep-comms-signal">${l.signal_quality}</span>` : ''}

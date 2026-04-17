@@ -361,8 +361,20 @@ body.situation-room-active #quick-actions-menu {
   gap: 8px;
 }
 .sr-saved-desk-empty {
-  color: #72808a;
+  display: grid;
+  gap: 6px;
+  min-width: min(100%, 320px);
+  padding: 12px 14px;
+  border: 1px dashed #24303a;
+  border-radius: 14px;
+  background: rgba(9, 14, 17, 0.76);
+  color: #8a979f;
   font-size: 10px;
+  line-height: 1.55;
+}
+
+.sr-saved-desk-empty strong {
+  color: #dbe3e8;
 }
 .sr-saved-desk-chip {
   display: inline-flex;
@@ -1655,18 +1667,50 @@ body.situation-room-active #quick-actions-menu {
 .sr-load-more { width: 100%; text-align: center; padding: 4px; border-top: 1px solid var(--sr-border); font-size: 10px; }
 
 /* ─── Live Player ─── */
-.sr-live-player { background: #000; display: flex; align-items: center; justify-content: center; }
-.sr-live-player iframe { border-radius: 0; }
-.sr-live-iframe { width: 100%; height: 100%; border: 0; background: #000; }
-.sr-channel-btns { display: flex; gap: 2px; overflow-x: auto; max-width: 60%; }
-.sr-channel-btn {
-  font-family: inherit; font-size: 8px; font-weight: 600; letter-spacing: 0.04em;
-  padding: 2px 6px; border: 1px solid var(--sr-border); border-radius: 2px;
-  background: var(--sr-bg); color: var(--sr-text-dark); cursor: pointer; white-space: nowrap;
-  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+.sr-live-player {
+  position: relative;
+  min-height: 280px;
+  overflow: hidden;
+  border-top: 1px solid rgba(255,255,255,0.04);
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.sr-channel-btn:hover { background: var(--sr-panel-alt); color: var(--sr-text); }
-.sr-channel-btn.active { background: #cc2020; border-color: #cc2020; color: #fff; }
+
+.sr-live-player.is-empty {
+  background:
+    radial-gradient(circle at top right, rgba(74, 237, 196, 0.08), transparent 34%),
+    linear-gradient(180deg, rgba(7, 10, 13, 0.96), rgba(4, 7, 9, 0.98));
+}
+
+.sr-live-player iframe { border-radius: 0; }
+.sr-live-iframe { width: 100%; height: 100%; border: 0; background: #020304; }
+.sr-channel-btns { display: flex; gap: 6px; overflow-x: auto; max-width: 60%; padding-bottom: 2px; }
+
+.sr-channel-empty {
+  color: #6d7a84;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.sr-channel-btn {
+  font-family: inherit; font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 5px 10px; border: 1px solid #24313b; border-radius: 999px;
+  background: rgba(9, 14, 17, 0.88); color: #8d99a3; cursor: pointer; white-space: nowrap;
+  transition: background-color 0.12s ease, border-color 0.12s ease, color 0.12s ease, transform 0.12s ease;
+}
+
+.sr-channel-btn:hover { background: rgba(14, 20, 24, 0.96); border-color: #3a4a55; color: #e5edf2; transform: translateY(-1px); }
+
+.sr-channel-btn:focus-visible {
+  outline: 2px solid rgba(74, 237, 196, 0.4);
+  outline-offset: 2px;
+}
+
+.sr-channel-btn.active,
+.sr-channel-btn[aria-pressed="true"] { background: rgba(204, 32, 32, 0.16); border-color: rgba(204, 32, 32, 0.42); color: #fff; }
 
 /* ─── Feed Manager ─── */
 .sr-feed-form { display: flex; gap: 8px; padding: 12px 14px; flex-wrap: wrap; }

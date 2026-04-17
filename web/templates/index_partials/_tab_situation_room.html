@@ -67,7 +67,7 @@
         <button class="sr-btn sr-btn-ghost" data-sitroom-action="save-current-desk">Save Current Desk</button>
       </div>
       <div class="sr-saved-desk-list" id="sr-saved-desk-list">
-        <span class="sr-saved-desk-empty">No saved watchlists yet.</span>
+        <div class="sr-saved-desk-empty"><strong>No saved watchlists yet</strong><span>Save the current desk to preserve its region, layers, and briefing posture for quick return.</span></div>
       </div>
     </div>
 
@@ -340,8 +340,8 @@
           LIVE BROADCASTS
           <div class="sr-channel-btns" id="sr-channel-btns"></div>
         </div>
-        <div class="sr-card-body sr-live-player" id="sr-live-player">
-          <div class="sr-empty">Select a channel above</div>
+        <div class="sr-card-body sr-live-player is-empty" id="sr-live-player">
+          <div class="sr-empty"><strong>Broadcast wall is on standby</strong><span>Pick a live channel to open it in the player without leaving the desk.</span></div>
         </div>
       </div>
 
@@ -486,7 +486,7 @@
           AI STRATEGIC POSTURE
           <button class="sr-btn sr-btn-accent" id="sitroom-gen-briefing" data-sitroom-action="generate-briefing">GENERATE</button>
         </div>
-        <div id="sitroom-briefing-content" class="sr-card-body sr-scroll"><div class="sr-empty">Click GENERATE for AI intelligence briefing</div></div>
+        <div id="sitroom-briefing-content" class="sr-card-body sr-scroll"><div class="sr-empty"><strong>Strategic briefing ready on demand</strong><span>Generate an AI briefing when you want a fresh synthesis of the current desk.</span></div></div>
       </div>
 
       <!-- Keyword Monitors -->
@@ -495,7 +495,7 @@
           MY MONITORS
           <button class="sr-btn" data-sitroom-action="add-monitor">+ ADD</button>
         </div>
-        <div id="sitroom-monitors" class="sr-card-body sr-scroll"><div class="sr-empty">No keyword monitors</div></div>
+        <div id="sitroom-monitors" class="sr-card-body sr-scroll"><div class="sr-empty"><strong>No keyword monitors yet</strong><span>Add a monitor to keep specific people, places, or terms visible across the news flow.</span></div></div>
       </div>
 
       <!-- Economic Calendar -->
@@ -726,7 +726,7 @@
           DAILY MARKET BRIEF
           <button class="sr-btn" data-sitroom-action="gen-market-brief">GENERATE</button>
         </div>
-        <div id="sitroom-market-brief" class="sr-card-body sr-scroll"><div class="sr-empty">Click GENERATE</div></div>
+        <div id="sitroom-market-brief" class="sr-card-body sr-scroll"><div class="sr-empty"><strong>Market brief ready on demand</strong><span>Generate a focused market note when you want the desk to condense movement into a quick read.</span></div></div>
       </div>
 
       <!-- Unicorn Tracker -->
@@ -824,7 +824,7 @@
         <div class="sr-card-head">AI DEDUCTION PANEL
           <button class="sr-btn sr-btn-sm sr-btn-inline" data-sitroom-action="run-deduction">ANALYZE</button>
         </div>
-        <div id="sitroom-deduction" class="sr-card-body sr-scroll"><div class="sr-empty">Click ANALYZE for AI situation assessment</div></div>
+        <div id="sitroom-deduction" class="sr-card-body sr-scroll"><div class="sr-empty"><strong>Assessment panel ready</strong><span>Run the deduction panel when you want an AI read on what the current signal mix may imply.</span></div></div>
       </div>
 
       <!-- P3: Source Health (Circuit Breaker) -->

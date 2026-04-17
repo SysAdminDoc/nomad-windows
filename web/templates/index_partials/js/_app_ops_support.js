@@ -5041,10 +5041,10 @@ function updateCustomizeDensity() {
 function updateCustomizeMode() {
   const current = localStorage.getItem('nomad-mode') || 'command';
   document.querySelectorAll('[data-cust-mode]').forEach(el => {
+    const isActive = el.dataset.custMode === current;
     const check = el.querySelector('.cust-mode-check');
-    if (check) check.style.display = el.dataset.custMode === current ? 'inline' : 'none';
-    el.style.borderColor = el.dataset.custMode === current ? 'var(--accent)' : '';
-    el.style.background = el.dataset.custMode === current ? 'var(--accent-dim)' : '';
+    if (check) check.style.display = isActive ? 'inline' : 'none';
+    el.classList.toggle('is-active', isActive);
   });
 }
 

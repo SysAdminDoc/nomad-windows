@@ -984,3 +984,13 @@ button.is-added {
   color: var(--green);
   border-color: var(--green);
 }
+
+/* ─── Toggle-on button state ───
+   Drop-in state for toggle buttons (contour overlay, layers, etc.)
+   to signal their ON state without writing style.background inline. */
+.btn.is-active,
+button.is-active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent);
+}

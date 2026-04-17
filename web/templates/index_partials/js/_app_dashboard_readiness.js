@@ -798,12 +798,12 @@ async function loadReadinessScore() {
   try {
     const d = await safeFetch('/api/readiness-score', {}, null);
     if (!d || !d.categories) return;
-    const gradeColors = {A:'var(--green)',B:'var(--green)',C:'var(--warning)',D:'var(--orange)',F:'var(--red)'};
     gradeEl.textContent = d.grade;
-    gradeEl.style.color = gradeColors[d.grade] || 'var(--text)';
+    gradeEl.dataset.grade = d.grade || '';
     totalEl.textContent = `${d.total}/100`;
     fill.style.width = `${d.total}%`;
-    fill.style.background = d.total >= 80 ? 'var(--green)' : d.total >= 50 ? 'var(--orange)' : 'var(--red)';
+    fill.classList.remove('tone-success', 'tone-warning', 'tone-danger');
+    fill.classList.add(d.total >= 80 ? 'tone-success' : d.total >= 50 ? 'tone-warning' : 'tone-danger');
     const catLabels = {water:'Water',food:'Food',medical:'Medical',security:'Security',comms:'Communications',shelter:'Power & Land',planning:'Plans & Knowledge'};
     const catMax = {water:20,food:20,medical:15,security:10,comms:10,shelter:10,planning:15};
     const catLinks = {water:'inventory',food:'inventory',medical:'medical',security:'security',comms:'contacts',shelter:'power',planning:'checklists'};
@@ -1763,7 +1763,7 @@ function toggleContourOverlay() {
   if (!_map) { toast('Open the map first', 'warning'); return; }
   _contourVisible = !_contourVisible;
   const btn = document.getElementById('contour-btn');
-  if (btn) btn.style.background = _contourVisible ? 'var(--accent-dim)' : '';
+  if (btn) btn.classList.toggle('is-active', _contourVisible);
 
   if (_contourVisible) {
     loadContourOverlay();

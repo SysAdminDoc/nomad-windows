@@ -2276,7 +2276,7 @@ async function checkForUpdate() {
       }
       // Show download button in Settings About section
       if (dlBtn) { dlBtn.style.display = 'inline-flex'; }
-      if (statusEl) { statusEl.textContent = `v${u.latest} available`; statusEl.style.color = 'var(--green)'; }
+      if (statusEl) { statusEl.textContent = `v${u.latest} available`; statusEl.classList.add('tone-success'); }
     }
   } catch(e) {}
 }

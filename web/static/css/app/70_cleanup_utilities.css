@@ -973,3 +973,14 @@ button.is-confirming {
   color: var(--text-inverse);
   border-color: var(--red);
 }
+
+/* ─── Success acknowledgement state ───
+   Drop-in state for buttons that show a transient "Added!" /
+   "Saved!" / "Copied!" confirmation after a destructive or
+   add-to-list action. Pair with `disabled` to freeze the button. */
+.btn.is-added,
+button.is-added {
+  background: var(--green-dim);
+  color: var(--green);
+  border-color: var(--green);
+}

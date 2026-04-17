@@ -3938,8 +3938,7 @@ async function quickAddInvItem(item, control) {
     await apiPost('/api/inventory', {name:item.name, category:item.cat, unit:item.unit, quantity:item.qty, daily_usage:item.daily||0});
   } catch(e) { toast('Failed to add item', 'error'); return; }
   if (control) {
-    control.style.background = 'var(--green-dim)';
-    control.style.color = 'var(--green)';
+    control.classList.add('is-added');
     control.textContent = 'Added!';
     control.disabled = true;
   }

@@ -130,7 +130,7 @@ async function loadNeedsOverview() {
     const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(n.color) ? n.color : 'var(--accent)';
     const safeId = escapeAttr(id);
     return `
-    <div class="need-card" style="border-left:3px solid ${safeColor};" role="button" tabindex="0" data-shell-action="open-needs-detail" data-need-id="${safeId}">
+    <div class="need-card" style="--need-tone:${safeColor};" role="button" tabindex="0" data-shell-action="open-needs-detail" data-need-id="${safeId}">
       <div class="need-card-head">
         <span class="need-card-icon">${escapeHtml(n.icon)}</span>
         <span class="need-card-title">${escapeHtml(n.label)}</span>
@@ -830,7 +830,7 @@ async function loadReadinessNeeds() {
     const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(n.color) ? n.color : 'var(--accent)';
     const safeId = escapeAttr(id);
     return `
-    <div class="need-card" style="border-left:3px solid ${safeColor};" role="button" tabindex="0" data-shell-action="open-needs-detail" data-need-id="${safeId}">
+    <div class="need-card" style="--need-tone:${safeColor};" role="button" tabindex="0" data-shell-action="open-needs-detail" data-need-id="${safeId}">
       <div class="need-card-head">
         <span class="need-card-icon">${escapeHtml(n.icon)}</span>
         <span class="need-card-title">${escapeHtml(n.label)}</span>

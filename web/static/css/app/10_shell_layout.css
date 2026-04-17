@@ -225,6 +225,10 @@
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 12px 14px; cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  /* Per-need accent is pushed in via the --need-tone custom property
+     (see _app_dashboard_readiness.js renderers). Defaults to the base
+     border color so the rule stays inert until the variable is set. */
+  border-left: 3px solid var(--need-tone, var(--border));
 }
 .need-card:hover { border-color: var(--border-hover); transform: translateY(-1px); }
 .need-badge {
@@ -1264,6 +1268,7 @@
 .gauge-card:hover { transform: translateY(-1px); }
 .gauge-card .gauge-label { font-size: 11px; color: var(--text-dim); margin-bottom: 6px; }
 .gauge-card .gauge-value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.gauge-card .gauge-value.is-text { font-size: 16px; }
 .gauge-card .gauge-bar { height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
 .gauge-card .gauge-bar .fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
 .gauge-green .gauge-value { color: var(--green); }

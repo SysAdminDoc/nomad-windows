@@ -700,7 +700,7 @@ async function loadSystemInfo() {
       </div>
       <div class="gauge-card gauge-blue">
         <div class="gauge-label">Uptime</div>
-        <div class="gauge-value" style="font-size:16px;">${escapeHtml(s.uptime || '')}</div>
+        <div class="gauge-value is-text">${escapeHtml(s.uptime || '')}</div>
         <div class="gauge-bar"><div class="fill" style="width:100%"></div></div>
       </div>
     `;

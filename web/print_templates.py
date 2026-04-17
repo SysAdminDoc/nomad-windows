@@ -335,10 +335,15 @@ tbody tr:last-child td {{
   }}
 }}
 @media print {{
-  @page {{ size: {page_size} {orientation}; margin: 10mm; }}
+  @page {{ size: {page_size} {orientation}; margin: 12mm 10mm 14mm; }}
+  @page :first {{ margin-top: 14mm; }}
   body {{
     padding: 0;
     background: #ffffff;
+    /* Tighten body copy so paragraphs do not strand a single
+       line at the top or bottom of a page. */
+    orphans: 3;
+    widows: 3;
   }}
   .doc-shell {{
     max-width: none;
@@ -353,8 +358,41 @@ tbody tr:last-child td {{
   .doc-section,
   .doc-panel,
   .doc-table-shell,
-  .doc-check-item {{
+  .doc-check-item,
+  .doc-kv-row,
+  .doc-note-box {{
     page-break-inside: avoid;
+    break-inside: avoid-page;
+  }}
+  /* Repeat table chrome on every printed page so multi-page
+     rosters / inventories stay legible without scrolling back. */
+  thead {{
+    display: table-header-group;
+  }}
+  tfoot {{
+    display: table-footer-group;
+  }}
+  tr {{
+    page-break-inside: avoid;
+    break-inside: avoid-page;
+  }}
+  /* Headings should not be the last thing on a page. */
+  h1, h2, h3 {{
+    page-break-after: avoid;
+    break-after: avoid-page;
+  }}
+  /* Hide chrome that has no value on paper. */
+  .no-print {{
+    display: none !important;
+  }}
+  /* Class hooks for callers to force breaks where the layout demands. */
+  .page-break-before {{
+    page-break-before: always;
+    break-before: page;
+  }}
+  .page-break-after {{
+    page-break-after: always;
+    break-after: page;
   }}
 }}
 </style>

@@ -2754,7 +2754,7 @@ function renderFreqTable() {
         <td>${escapeHtml(f.description)}${f.notes ? ` <span class="runtime-inline-note">(${escapeHtml(f.notes)})</span>` : ''}</td>
         <td>${f.license_required ? '<span class="text-orange">YES</span>' : '<span class="text-green">NO</span>'}</td>
         <td class="runtime-priority-cell ${priColor === 'var(--green)' ? 'text-green' : priColor === 'var(--text-dim)' ? 'text-dim' : 'text-muted'}">${f.priority}</td>
-        <td><button type="button" class="btn btn-sm btn-ghost freq-delete-btn" data-prep-action="delete-freq" data-freq-id="${f.id}">&#10005;</button></td>
+        <td><button type="button" class="btn btn-sm btn-ghost freq-delete-btn" data-prep-action="delete-freq" data-freq-id="${f.id}" aria-label="Delete freq">&#10005;</button></td>
       </tr>`;
     }
   }
@@ -4187,7 +4187,7 @@ async function loadTasks() {
           </div>
           <div class="settings-record-actions">
             <button class="btn btn-sm settings-row-compact-btn" type="button" data-shell-action="complete-task" data-task-id="${t.id}" title="Complete">&#10003;</button>
-            <button class="btn btn-sm btn-danger settings-row-compact-btn" type="button" data-shell-action="delete-task" data-task-id="${t.id}">x</button>
+            <button class="btn btn-sm btn-danger settings-row-compact-btn" type="button" data-shell-action="delete-task" data-task-id="${t.id}" aria-label="Delete task">x</button>
           </div>
         </div>
         <div class="settings-record-foot">
@@ -4264,7 +4264,7 @@ async function loadWatchSchedules() {
           <div class="settings-record-actions">
             <button class="btn btn-sm settings-row-compact-btn" type="button" data-shell-action="view-watch-schedule" data-watch-id="${s.id}">View</button>
             <a class="btn btn-sm settings-row-compact-btn" href="/api/watch-schedules/${s.id}/print" target="_blank" rel="noopener noreferrer">Print</a>
-            <button class="btn btn-sm btn-danger settings-row-compact-btn" type="button" data-shell-action="delete-watch-schedule" data-watch-id="${s.id}">x</button>
+            <button class="btn btn-sm btn-danger settings-row-compact-btn" type="button" data-shell-action="delete-watch-schedule" data-watch-id="${s.id}" aria-label="Delete watch schedule">x</button>
           </div>
         </div>
       </div>`;
@@ -4640,7 +4640,7 @@ function _renderFamilyRow(m) {
       <div class="family-checkin-meta">${m.location ? escapeHtml(m.location) + ' · ' : ''}Updated ${escapeHtml(updated)}</div>
     </div>
     <div class="family-checkin-actions">${buttons}</div>
-    <button type="button" class="btn btn-sm btn-ghost family-checkin-del" data-shell-action="delete-family-member" data-member-id="${m.id}" data-member-name="${escapeAttr(m.name)}" title="Remove">x</button>
+    <button type="button" class="btn btn-sm btn-ghost family-checkin-del" data-shell-action="delete-family-member" data-member-id="${m.id}" data-member-name="${escapeAttr(m.name)}" title="Remove" aria-label="Remove">x</button>
   </div>`;
 }
 

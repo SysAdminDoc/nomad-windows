@@ -2400,7 +2400,7 @@ async function loadPreservationLog() {
       <td>${p.quantity} ${escapeHtml(p.unit)}</td>
       <td>${escapeHtml(p.batch_date||'—')}</td>
       <td>${p.shelf_life_months} months</td>
-      <td><button type="button" class="prep-record-delete" data-prep-action="delete-preservation" data-preservation-id="${p.id}" title="Delete batch">&#10005;</button></td>
+      <td><button type="button" class="prep-record-delete" data-prep-action="delete-preservation" data-preservation-id="${p.id}" title="Delete batch" aria-label="Delete batch">&#10005;</button></td>
     </tr>`).join('') + '</tbody></table></div>';
 }
 
@@ -2489,7 +2489,7 @@ async function loadPlots() {
           <div class="prep-record-main"><strong>${escapeHtml(p.name)}</strong> <span class="prep-inline-pill" style="--prep-pill-tone:var(--accent);">${escapeHtml(p.sun_exposure)} sun</span></div>
           <div class="prep-record-meta">${p.width_ft}x${p.length_ft} ft · ${p.width_ft * p.length_ft} sq ft${p.soil_type ? ' · ' + escapeHtml(p.soil_type) : ''}</div>
         </div>
-        <button type="button" class="prep-record-delete" data-prep-action="delete-plot" data-plot-id="${p.id}" title="Delete plot">&#10005;</button>
+        <button type="button" class="prep-record-delete" data-prep-action="delete-plot" data-plot-id="${p.id}" title="Delete plot" aria-label="Delete plot">&#10005;</button>
       </div>`).join('');
   } catch(e) {}
 }
@@ -2531,7 +2531,7 @@ async function loadSeeds() {
       seeds.map(s => {
         const viabTone = s.viability_pct === null ? 'var(--text-dim)' : s.viability_pct > 70 ? 'var(--green)' : s.viability_pct > 30 ? 'var(--orange)' : 'var(--red)';
         const viabLabel = s.viability_pct !== null ? s.viability_pct + '%' : 'Unknown';
-        return `<tr><td><strong>${escapeHtml(s.species)}</strong></td><td>${escapeHtml(s.variety||'')}</td><td>${s.quantity}</td><td>${s.year_harvested||'-'}</td><td><span class="prep-inline-pill" style="--prep-pill-tone:${viabTone};">${viabLabel}</span></td><td>${s.planting_season}</td><td>${s.days_to_maturity||'-'}</td><td><button type="button" class="prep-record-delete" data-prep-action="delete-seed" data-seed-id="${s.id}" title="Delete seed">&#10005;</button></td></tr>`;
+        return `<tr><td><strong>${escapeHtml(s.species)}</strong></td><td>${escapeHtml(s.variety||'')}</td><td>${s.quantity}</td><td>${s.year_harvested||'-'}</td><td><span class="prep-inline-pill" style="--prep-pill-tone:${viabTone};">${viabLabel}</span></td><td>${s.planting_season}</td><td>${s.days_to_maturity||'-'}</td><td><button type="button" class="prep-record-delete" data-prep-action="delete-seed" data-seed-id="${s.id}" title="Delete seed" aria-label="Delete seed">&#10005;</button></td></tr>`;
       }).join('') + '</tbody></table></div>';
   } catch(e) {}
 }
@@ -2674,7 +2674,7 @@ async function loadLivestockList() {
           </div>
           <div class="prep-camera-actions">
             <button type="button" class="btn btn-sm" data-prep-action="log-health-event" data-livestock-id="${a.id}" title="Log health event">Health</button>
-            <button type="button" class="prep-record-delete" data-prep-action="delete-livestock" data-livestock-id="${a.id}" title="Delete animal">&#10005;</button>
+            <button type="button" class="prep-record-delete" data-prep-action="delete-livestock" data-livestock-id="${a.id}" title="Delete animal" aria-label="Delete animal">&#10005;</button>
           </div>
         </div>`).join('')}
       </div>`

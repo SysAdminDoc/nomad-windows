@@ -1,0 +1,3054 @@
+/* ==========================================================================
+   Final premium polish layer — loads after 95_premium_polish.css.
+   System-level refinements only. No per-feature surface styling.
+   Pillars:
+     1. Consistent motion primitives (easing, duration, reduced-motion)
+     2. Unified focus, caret, selection, and scrollbar treatment
+     3. Cleaner disabled + loading states (removes grayscale filter)
+     4. Sharper hierarchy on modals, cards, badges, progress bars
+     5. Tabular numerics + kerning on data-dense surfaces
+     6. Subtle tactile hover/press feedback across all interactives
+   ========================================================================== */
+
+/* ─── Motion primitives (shared across components) ─── */
+:root,
+[data-theme] {
+  --ease-out-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-in-standard: cubic-bezier(0.4, 0, 1, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-micro: 100ms;
+  --duration-snappy: 180ms;
+  --duration-soft: 260ms;
+  --duration-slow: 420ms;
+  --elev-1: 0 1px 2px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
+  --elev-2: 0 4px 10px rgba(0,0,0,0.06), 0 10px 22px rgba(0,0,0,0.06);
+  --elev-3: 0 14px 28px rgba(0,0,0,0.10), 0 28px 54px rgba(0,0,0,0.08);
+  --elev-4: 0 24px 48px rgba(0,0,0,0.18), 0 44px 90px rgba(0,0,0,0.12);
+  --focus-ring-color: color-mix(in srgb, var(--accent) 52%, transparent);
+  --focus-ring-halo: color-mix(in srgb, var(--accent) 18%, transparent);
+  --kbd-bg: color-mix(in srgb, var(--surface-solid) 94%, var(--text) 6%);
+  --kbd-border: color-mix(in srgb, var(--border-hover) 50%, var(--border));
+  --pressable-press: 0.98;
+}
+
+/* ─── Cross-app font rendering + tabular defaults ─── */
+html {
+  -moz-osx-font-smoothing: grayscale;
+  text-size-adjust: 100%;
+}
+body {
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'tnum' 1, 'ss01' 1;
+  font-variant-numeric: tabular-nums;
+}
+/* Headings get proportional numerics so titles feel natural;
+   data contexts stay tabular (already enforced via var(--font-data)). */
+h1, h2, h3, h4, h5 {
+  font-variant-numeric: proportional-nums;
+  text-wrap: balance;
+  font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1, 'ss01' 1;
+}
+p, li, .home-launch-text, .settings-panel-copy, .workspace-context-summary,
+.toast-message, .modal-body, .cc-card .cc-desc {
+  text-wrap: pretty;
+  font-feature-settings: 'kern' 1, 'liga' 1;
+}
+
+/* ─── Selection + caret polish ─── */
+::selection {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--text);
+  text-shadow: none;
+}
+input, textarea, select, [contenteditable="true"] {
+  caret-color: var(--accent);
+}
+::placeholder {
+  color: color-mix(in srgb, var(--text-muted) 88%, transparent);
+  opacity: 1;
+  font-weight: 400;
+}
+
+/* ─── Global smooth focus — unifies box-shadow & outline treatments ─── */
+:focus-visible {
+  outline: none;
+}
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="menuitem"]:focus-visible,
+[role="tab"]:focus-visible,
+[role="option"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+/* Keep explicit box-shadow focus rings on polished interactives
+   (buttons, tabs, toolbar chips) from 95_premium_polish.css — don't double-ring. */
+.btn:focus-visible,
+.tab:focus-visible,
+.sr-btn:focus-visible,
+.sr-view-btn:focus-visible,
+.sr-desk-btn:focus-visible,
+.toast-close:focus-visible,
+.workspace-context-previous-btn:focus-visible,
+.workspace-context-quick-action:focus-visible,
+.home-mode-card:focus-visible,
+.home-doc-row:focus-visible,
+.settings-memory-card-item:focus-visible,
+.customize-theme-card:focus-visible,
+.customize-sortable-item:focus-visible,
+.ss-pill:focus-visible,
+.search-bar input:focus-visible,
+.settings-input:focus-visible,
+.settings-select:focus-visible,
+.settings-textarea:focus-visible {
+  outline: none !important;
+}
+
+/* ─── Scrollbar refinement — more tactile, still minimal ─── */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: color-mix(in srgb, var(--border-hover) 68%, transparent);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  border-radius: 999px;
+  transition: background-color var(--duration-snappy) var(--ease-out-standard);
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in srgb, var(--accent) 68%, transparent);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--border-hover) 60%, transparent) transparent;
+}
+/* Restore slim scrollbar in tight tracks (horizontal strips, rails). */
+.media-continue-items,
+.customize-panel-body,
+.sidebar {
+  scrollbar-width: thin;
+}
+
+/* ─── Cleaner disabled + busy states (no grayscale filter) ─── */
+.btn:disabled,
+.btn[disabled],
+.btn[aria-disabled="true"],
+button[disabled],
+input[disabled],
+select[disabled],
+textarea[disabled],
+.is-disabled {
+  filter: none !important;
+  opacity: 0.48;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none !important;
+  text-shadow: none;
+}
+/* Inputs remain interactive when disabled only for screen readers; stop hover shifts. */
+input[disabled],
+select[disabled],
+textarea[disabled] {
+  pointer-events: none;
+}
+[aria-busy="true"] {
+  cursor: progress;
+}
+
+/* ─── Button press feedback — unified tactile "click" ─── */
+.btn:not(:disabled):not([aria-disabled="true"]):active,
+.sr-btn:active,
+.tab:not(.active):active,
+.customize-theme-card:active,
+.home-mode-card:active,
+.home-doc-row:active,
+.settings-memory-card-item:active,
+.workspace-context-quick-action:active,
+.workspace-context-previous-btn:active,
+.sidebar-context-card:active,
+.ss-pill:active,
+.toast-close:active {
+  transform: translateY(0) scale(var(--pressable-press));
+  transition-duration: var(--duration-micro);
+}
+
+/* Ghost buttons shouldn't have the boxy surface feel on rest,
+   but keep a real surface on hover so the affordance is obvious. */
+.btn-ghost {
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+}
+.btn-ghost:hover {
+  background: color-mix(in srgb, var(--surface2) 82%, transparent);
+  border-color: color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+/* Primary button: crisper edge + slightly richer elevation system */
+.btn-primary {
+  border: 1px solid color-mix(in srgb, var(--accent) 58%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 24%, transparent),
+    0 1px 2px rgba(0,0,0,0.12),
+    0 12px 28px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.btn-primary:hover {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 30%, transparent),
+    0 2px 4px rgba(0,0,0,0.14),
+    0 18px 36px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.btn-primary:active {
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,0.18),
+    0 4px 10px color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+/* Danger button gains a proper variant fill when used as a call-to-action. */
+.btn-danger.btn-primary,
+.btn.btn-destructive {
+  color: var(--text-inverse);
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--red) 92%, black 0%),
+    color-mix(in srgb, var(--red) 78%, white 0%));
+  border-color: color-mix(in srgb, var(--red) 56%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+    0 10px 22px color-mix(in srgb, var(--red) 24%, transparent);
+}
+.btn-danger.btn-primary:hover,
+.btn.btn-destructive:hover {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 26%, transparent),
+    0 16px 32px color-mix(in srgb, var(--red) 30%, transparent);
+}
+
+/* ─── Links — predictable hover with accessible underline offset ─── */
+a {
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+  transition:
+    color var(--duration-snappy) var(--ease-out-standard),
+    text-decoration-color var(--duration-snappy) var(--ease-out-standard);
+}
+a:hover {
+  text-decoration-color: color-mix(in srgb, var(--accent) 72%, transparent);
+}
+
+/* ─── Modal hierarchy refresh ─── */
+.modal-overlay {
+  background: color-mix(in srgb, var(--overlay-scrim-strong) 92%, transparent);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
+  backdrop-filter: blur(8px) saturate(1.1);
+  animation: nomadFadeIn var(--duration-soft) var(--ease-out-standard);
+}
+.modal-card {
+  border-radius: 18px;
+  border-color: color-mix(in srgb, var(--border-hover) 32%, var(--border));
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--surface-solid) 98%, transparent),
+      color-mix(in srgb, var(--surface2) 90%, transparent));
+  box-shadow: var(--elev-4);
+  animation: nomadModalEnter var(--duration-soft) var(--ease-out-standard);
+}
+.modal-header {
+  padding-bottom: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+.modal-header h3 {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+.modal-body {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-dim);
+}
+.modal-footer {
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+.modal-close {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  line-height: 1;
+  transition:
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    color var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard);
+}
+.modal-close:hover {
+  background: color-mix(in srgb, var(--surface2) 82%, transparent);
+  color: var(--text);
+  transform: rotate(90deg);
+}
+
+@keyframes nomadFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes nomadModalEnter {
+  from { opacity: 0; transform: translateY(10px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Badge / status pill refinement ─── */
+.badge {
+  letter-spacing: 0.04em;
+  padding: 3px 9px;
+  font-size: 10.5px;
+  line-height: 1.45;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.badge .dot {
+  width: 6px;
+  height: 6px;
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 20%, transparent);
+}
+.badge.running {
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+  border-color: color-mix(in srgb, var(--green) 28%, transparent);
+}
+.badge.running .dot {
+  background: var(--green);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--green) 22%, transparent);
+}
+.badge.stopped {
+  background: color-mix(in srgb, var(--text-muted) 10%, transparent);
+  border-color: color-mix(in srgb, var(--text-muted) 22%, transparent);
+}
+
+/* Tab-icon stepper: rounded container on active for tactile feel. */
+.tab.active .tab-icon {
+  color: var(--accent);
+  transform: translateZ(0);
+}
+
+/* ─── Progress bar polish — animated shine for active fills ─── */
+.progress-bar {
+  background: color-mix(in srgb, var(--surface3) 90%, var(--border));
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+}
+.progress-bar .fill {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 10px color-mix(in srgb, var(--accent) 36%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 26%, transparent);
+}
+.progress-bar .fill::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in srgb, white 22%, transparent) 50%,
+    transparent 100%);
+  transform: translateX(-100%);
+  animation: nomadProgressShine 2.4s var(--ease-out-standard) infinite;
+}
+@keyframes nomadProgressShine {
+  to { transform: translateX(100%); }
+}
+
+/* ─── Toggle switch refresh — crisper thumb, smoother transition ─── */
+.toggle-switch {
+  width: 40px;
+  height: 22px;
+}
+.toggle-slider {
+  background: color-mix(in srgb, var(--surface3) 88%, var(--border));
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,0.12),
+    inset 0 -1px 0 color-mix(in srgb, white 8%, transparent);
+  transition:
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+}
+.toggle-slider::before {
+  height: 16px;
+  width: 16px;
+  left: 3px;
+  bottom: 3px;
+  background: color-mix(in srgb, var(--surface-solid) 92%, white 8%);
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.18),
+    0 0 0 1px color-mix(in srgb, black 10%, transparent);
+  transition:
+    transform var(--duration-snappy) var(--ease-spring),
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+}
+.toggle-switch input:checked + .toggle-slider {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, black 14%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.toggle-switch input:checked + .toggle-slider::before {
+  transform: translateX(18px);
+  background: #fff;
+  box-shadow:
+    0 3px 6px rgba(0,0,0,0.22),
+    0 0 0 1px color-mix(in srgb, black 8%, transparent);
+}
+.toggle-switch input:focus-visible + .toggle-slider {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 3px;
+}
+
+/* ─── Range sliders (shared across Settings) ─── */
+input[type="range"] {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 4px;
+  background: color-mix(in srgb, var(--surface3) 88%, var(--border));
+  border-radius: 999px;
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--surface-solid);
+  box-shadow:
+    0 2px 6px rgba(0,0,0,0.22),
+    0 0 0 3px transparent;
+  cursor: pointer;
+  transition:
+    box-shadow var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--surface-solid);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.22);
+  cursor: pointer;
+}
+input[type="range"]:hover::-webkit-slider-thumb {
+  box-shadow:
+    0 3px 10px rgba(0,0,0,0.24),
+    0 0 0 6px color-mix(in srgb, var(--accent) 14%, transparent);
+  transform: scale(1.08);
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 3px 10px rgba(0,0,0,0.24),
+    0 0 0 5px var(--focus-ring-halo);
+}
+
+/* ─── Native checkboxes / radios align with accent ─── */
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+/* ─── Inline keyboard keys (if used in shortcuts overlay / docs) ─── */
+kbd, .kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.6em;
+  padding: 1px 7px;
+  font-family: var(--font-data);
+  font-size: 0.82em;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--kbd-bg);
+  border: 1px solid var(--kbd-border);
+  border-bottom-width: 2px;
+  border-radius: 6px;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, black 5%, transparent);
+  white-space: nowrap;
+}
+
+/* ─── Inline code (if exposed anywhere) ─── */
+code {
+  font-family: var(--font-data);
+  font-size: 0.92em;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--surface2) 92%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+  color: var(--text);
+}
+
+/* ─── Empty state icon polish ─── */
+.empty-state {
+  color: var(--text-dim);
+}
+.empty-state-icon {
+  opacity: 0.7;
+  filter: drop-shadow(0 4px 10px color-mix(in srgb, var(--accent) 12%, transparent));
+}
+
+/* ─── Sidebar nav — finer tactile press + group label rhythm ─── */
+.sidebar-group-label {
+  padding: 18px 14px 6px;
+}
+.sidebar-group-title {
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.sidebar-group-copy {
+  display: block;
+  margin-top: 2px;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  opacity: 0.78;
+  line-height: 1.4;
+}
+
+/* Indent tab labels a touch so icons have breathing room without increasing row height. */
+.tab .tab-icon {
+  transition:
+    color var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard),
+    opacity var(--duration-snappy) var(--ease-out-standard);
+}
+.tab:hover .tab-icon {
+  color: var(--accent);
+  opacity: 1;
+  transform: translateX(1px);
+}
+
+/* ─── Cards — ensure overflow + position for contained effects.
+   The branded top accent bar is owned by premium/00_base.css
+   (.service-card::after, .cc-card::before) and app/10_shell_layout.css
+   (.live-widget::before) — do NOT override those here. ─── */
+.service-card,
+.cc-card,
+.live-widget,
+.modal-card,
+.shell-health-card,
+.wizard-card {
+  position: relative;
+}
+
+/* ─── Tabular numeric cells used across financial / inventory / metrics ─── */
+.gauge-value,
+.live-widget-value,
+.readiness-sustain-value,
+.bench-score .score-val,
+.bench-big,
+.cs-total,
+.cs-val,
+.gauge-card .gauge-value,
+.progress-info,
+.shell-status-inline,
+.ss-pill strong,
+.status-strip-time,
+.sidebar .version {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Strong but not heavy — numeric headlines should land cleanly. */
+.gauge-value,
+.readiness-sustain-value,
+.live-widget-value {
+  font-feature-settings: 'kern' 1, 'tnum' 1, 'cv11' 1;
+}
+
+/* ─── Toast stack: smoother entrance ─── */
+.toast {
+  animation: nomadToastIn var(--duration-soft) var(--ease-spring);
+}
+@keyframes nomadToastIn {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ─── Skeleton shimmer refinement (softer, less busy) ─── */
+.bento-skeleton::after,
+.skeleton-shimmer::after {
+  background: linear-gradient(90deg,
+    transparent 0%,
+    color-mix(in srgb, white 10%, transparent) 45%,
+    color-mix(in srgb, white 14%, transparent) 50%,
+    color-mix(in srgb, white 10%, transparent) 55%,
+    transparent 100%);
+  animation-duration: 1.8s;
+  animation-timing-function: var(--ease-out-standard);
+}
+
+/* ─── Alert bar accent stripe pulse is smoother ─── */
+.alert-bar-pulse {
+  animation-duration: 1.6s;
+  animation-timing-function: var(--ease-out-standard);
+}
+
+/* ─── Utility: .is-hidden should be universally hidden ─── */
+.is-hidden[class] {
+  display: none !important;
+}
+
+/* ─── Skip link polish (WCAG + premium feel) ─── */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  z-index: var(--z-emergency);
+  padding: 10px 16px;
+  background: var(--accent);
+  color: var(--text-inverse);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  box-shadow: var(--elev-3);
+  transition: top var(--duration-snappy) var(--ease-out-standard);
+}
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 16px;
+  text-decoration: none;
+  outline: 2px solid var(--text-inverse);
+  outline-offset: 3px;
+}
+
+/* ─── Print: calm, high-contrast field copy ─── */
+@media print {
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+    animation: none !important;
+    transition: none !important;
+  }
+  html, body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+  .sidebar,
+  .status-strip,
+  .alert-bar,
+  .workspace-context-bar,
+  .copilot-dock,
+  .broadcast-banner,
+  .toast,
+  #toast-container,
+  .skip-link {
+    display: none !important;
+  }
+  .main-content {
+    margin-left: 0 !important;
+    padding: 12mm !important;
+  }
+  .modal-overlay { position: static !important; background: transparent !important; }
+  .modal-card { box-shadow: none !important; border-color: #000 !important; }
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #555;
+  }
+}
+
+/* ─── Reduced motion: calm, predictable (final override) ─── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+  .progress-bar .fill::after,
+  .alert-bar-pulse,
+  .bento-skeleton::after,
+  .skeleton-shimmer::after,
+  .badge.running .dot,
+  .broadcast-banner,
+  .shimmer-text {
+    animation: none !important;
+  }
+  html { scroll-behavior: auto !important; }
+}
+
+/* ─── High-contrast preference: strengthen borders + focus rings ─── */
+@media (prefers-contrast: more) {
+  :root,
+  [data-theme] {
+    --border: color-mix(in srgb, var(--text) 38%, transparent);
+    --border-hover: color-mix(in srgb, var(--text) 56%, transparent);
+    --focus-ring-color: var(--accent);
+  }
+  .btn, .badge, .toast, .modal-card, .cc-card, .service-card,
+  .sidebar-context-card, .home-continue-card {
+    border-width: 1.5px;
+  }
+}
+
+/* ─── Forced-colors (Windows High Contrast) ─── */
+@media (forced-colors: active) {
+  .btn, .tab, .modal-card, .cc-card, .service-card,
+  .sidebar-context-card, .toast, .badge {
+    border: 1px solid CanvasText;
+  }
+  .btn-primary {
+    background: ButtonText;
+    color: ButtonFace;
+  }
+  :focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+}
+
+/* ==========================================================================
+   PASS 2 — deeper component polish
+   ========================================================================== */
+
+/* ─── Shortcuts dialog — lift to match the rest of the modal system ─── */
+.shortcuts-overlay {
+  background: color-mix(in srgb, var(--overlay-scrim-strong) 90%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(1.1);
+  backdrop-filter: blur(10px) saturate(1.1);
+  animation: nomadFadeIn var(--duration-soft) var(--ease-out-standard);
+}
+.shortcuts-dialog {
+  width: min(560px, 92vw);
+  padding: 22px 24px;
+  border-radius: calc(var(--radius) + 2px);
+  border-color: color-mix(in srgb, var(--border-hover) 32%, var(--border));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 9%, transparent), transparent 40%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 97%, transparent), color-mix(in srgb, var(--surface2) 92%, transparent));
+  box-shadow: var(--elev-4);
+  animation: nomadModalEnter var(--duration-soft) var(--ease-out-standard);
+}
+.shortcuts-header {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+.shortcuts-title {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+.shortcuts-close {
+  min-width: 30px;
+  padding: 0 10px !important;
+  font-size: 16px !important;
+  line-height: 1;
+}
+.shortcuts-grid {
+  gap: 10px 18px;
+  font-size: 12.5px;
+  line-height: 1.6;
+  align-items: center;
+}
+.shortcuts-grid > span {
+  color: var(--text-dim);
+}
+.shortcuts-grid .shortcuts-key,
+.shortcuts-key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.8em;
+  padding: 2px 10px !important;
+  font-family: var(--font-data) !important;
+  font-size: 11px !important;
+  font-weight: 700;
+  color: var(--text);
+  background: var(--kbd-bg) !important;
+  border: 1px solid var(--kbd-border) !important;
+  border-bottom-width: 2px !important;
+  border-radius: 6px !important;
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, black 5%, transparent);
+  white-space: nowrap;
+}
+
+/* ─── Wizard — richer first-run feel ─── */
+.wizard-overlay {
+  background: color-mix(in srgb, var(--overlay-scrim-strong) 92%, transparent);
+  animation: nomadFadeIn var(--duration-soft) var(--ease-out-standard);
+}
+.wizard-card {
+  animation: nomadModalEnter var(--duration-slow) var(--ease-out-standard);
+  border-radius: 22px;
+  border-color: color-mix(in srgb, var(--border-hover) 32%, var(--border));
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--accent) 12%, transparent), transparent 48%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 98%, transparent), color-mix(in srgb, var(--surface2) 92%, transparent));
+  box-shadow: var(--elev-4);
+}
+.wizard-card h2 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.wizard-card .subtitle {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  max-width: 52ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+.wiz-cap {
+  padding: 12px 14px;
+  border-radius: 12px;
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+}
+.wiz-cap:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-1);
+}
+.wiz-cap.selected {
+  border-color: color-mix(in srgb, var(--accent) 44%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 14%, transparent), color-mix(in srgb, var(--accent) 6%, transparent));
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent),
+    var(--elev-1);
+}
+.wizard-step .step-num {
+  font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 14%, transparent);
+}
+
+/* ─── Form controls — unified focus halo on raw inputs/selects/textareas
+   that otherwise only flip border-color (.chat-header, .chat-input-area,
+   .notes-editor, .wiz-cap select, generic settings controls). ─── */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring-halo);
+  outline: none;
+}
+/* But leave premium inputs alone — they already have custom halos. */
+.command-palette-input:focus-visible,
+.command-palette-input-shell:focus-within,
+.settings-input:focus-visible,
+.settings-select:focus-visible,
+.settings-textarea:focus-visible,
+.search-bar input:focus-visible,
+#sr-search-input:focus-visible {
+  box-shadow: none;
+}
+.command-palette-input-shell:focus-within {
+  box-shadow: 0 0 0 3px var(--focus-ring-halo) !important;
+}
+
+/* Consistent hover on raw text inputs/selects across the app. */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not(:disabled):hover,
+textarea:not(:disabled):hover,
+select:not(:disabled):hover {
+  border-color: color-mix(in srgb, var(--border-hover) 64%, var(--border));
+}
+
+/* Native select arrow cleanup (remove Windows glyph, draw consistent one).
+   Scoped to avoid clobbering custom-chromed selects already in the app
+   (.settings-select already owns its look; multi/sized selects keep native). */
+select:not(.settings-select):not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 9px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 26px;
+  color: var(--text);
+}
+select::-ms-expand { display: none; }
+
+/* ─── Chat composer + notes editor — crisper edges, accent caret ─── */
+.chat-input-area textarea,
+.notes-editor textarea,
+.notes-editor-header input {
+  caret-color: var(--accent);
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+}
+.chat-input-area textarea:focus-visible,
+.notes-editor textarea:focus-visible,
+.notes-editor-header input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus-ring-halo);
+  outline: none;
+}
+
+/* ─── Chat message action affordance (was 0.6 opacity on hover) ─── */
+.convo-item .convo-actions {
+  transition: opacity var(--duration-snappy) var(--ease-out-standard);
+}
+.convo-item:hover .convo-actions,
+.convo-item:focus-within .convo-actions {
+  opacity: 1;
+}
+.convo-item .convo-actions .convo-action-btn {
+  color: var(--text-muted);
+  transition:
+    color var(--duration-micro) var(--ease-out-standard),
+    background-color var(--duration-micro) var(--ease-out-standard);
+}
+.convo-item .convo-actions .convo-action-btn:hover,
+.convo-item .convo-actions .convo-action-btn:focus-visible {
+  color: var(--text);
+}
+.convo-item .convo-actions .convo-del:hover,
+.convo-item .convo-actions .convo-del:focus-visible {
+  color: var(--red);
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+}
+
+/* ─── Chat message bubbles — clearer sender differentiation ─── */
+.message .content {
+  background: color-mix(in srgb, var(--surface2) 88%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+.message.user .content {
+  background:
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--accent-dim) 88%, transparent),
+      color-mix(in srgb, var(--accent-dim) 56%, transparent));
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.message.assistant .avatar {
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface3));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.message.user .avatar {
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 22%, transparent);
+}
+
+/* ─── Inline spinner — lift to OS-level feel ─── */
+.spinner-inline {
+  border-width: 2px;
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  border-top-color: var(--accent);
+  box-shadow: 0 0 0 2px transparent;
+}
+
+/* ─── Tier tabs (catalog) — more deliberate pill feel ─── */
+.tier-tab {
+  padding: 4px 12px;
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition:
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    color var(--duration-snappy) var(--ease-out-standard),
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard);
+}
+.tier-tab:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--border-hover) 60%, var(--border));
+}
+.tier-tab.active {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  color: var(--text-inverse);
+  border-color: color-mix(in srgb, var(--accent) 56%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 20%, transparent),
+    0 8px 18px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+/* ─── Catalog items — refined list surface ─── */
+.catalog-item {
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard);
+}
+.catalog-item:hover {
+  border-color: var(--border-hover);
+  background: color-mix(in srgb, var(--surface2) 88%, transparent);
+  transform: translateX(2px);
+}
+
+/* ─── Region cards — unify with catalog, reduce visual noise ─── */
+.region-card {
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard);
+}
+.region-card:hover {
+  border-color: var(--border-hover);
+  background: color-mix(in srgb, var(--surface2) 80%, var(--surface));
+}
+
+/* ─── Contact cards: consistent surface on hover ─── */
+.contact-card {
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+}
+.contact-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-1);
+}
+
+/* ─── Help icons — proper focus ring (was missing) ─── */
+.help-icon:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* ─── Tab badges — soft pulse for presence, not frantic ─── */
+.tab-badge {
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+}
+.tab-badge.red {
+  animation: nomadBadgePulse 2.4s var(--ease-out-standard) infinite;
+}
+@keyframes nomadBadgePulse {
+  0%, 100% {
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 18%, transparent),
+      0 0 0 0 color-mix(in srgb, var(--red) 40%, transparent);
+  }
+  60% {
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 18%, transparent),
+      0 0 0 6px color-mix(in srgb, var(--red) 0%, transparent);
+  }
+}
+
+/* ─── Status strip: treat as a tactile pill bar ─── */
+.ss-pill {
+  transition:
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    color var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard);
+}
+.ss-pill:hover {
+  color: var(--text);
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  background: color-mix(in srgb, var(--accent-dim) 62%, var(--surface-solid));
+  transform: translateY(-1px);
+}
+.ss-pill strong {
+  color: var(--text);
+  font-weight: 700;
+}
+.ss-dot {
+  box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 22%, transparent);
+}
+
+/* ─── Search bar: polished affordance, brand-tinted placeholder ─── */
+.search-bar input {
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard);
+}
+.search-bar input::placeholder {
+  font-weight: 400;
+  color: color-mix(in srgb, var(--text-muted) 88%, transparent);
+}
+.search-bar input:hover {
+  border-color: color-mix(in srgb, var(--border-hover) 56%, var(--border));
+}
+.search-highlight {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: inherit;
+  font-weight: 600;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+
+/* ─── Broadcast banner: calmer pulse, not seizure-inducing ─── */
+.broadcast-banner {
+  animation-duration: 3.6s;
+  animation-timing-function: var(--ease-out-standard);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--red) 92%, black 0%), color-mix(in srgb, var(--red) 72%, black 0%));
+  color: var(--text-inverse);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.18);
+}
+
+/* ─── Settings toggle-switch container: consistent focus ─── */
+.toggle-switch:hover .toggle-slider {
+  box-shadow:
+    inset 0 1px 2px rgba(0,0,0,0.12),
+    inset 0 -1px 0 color-mix(in srgb, white 10%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.toggle-switch input:checked + .toggle-slider:hover {
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, black 14%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--accent) 36%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+/* ─── Horizontal rails (continue-watching etc.) — snap + overflow polish ─── */
+.media-continue-items,
+.continue-watching-row {
+  scroll-snap-type: x proximity;
+  scroll-padding: 8px;
+  overscroll-behavior-x: contain;
+}
+.media-continue-card {
+  scroll-snap-align: start;
+}
+
+/* ─── Dialog/aria-hidden cleanup: hide fully when hidden attr is set. ─── */
+[aria-hidden="true"][hidden] {
+  display: none !important;
+}
+
+/* ─── Ensure interactive <details> summaries look tactile ─── */
+details > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: 6px 8px;
+  border-radius: 8px;
+  transition: background-color var(--duration-snappy) var(--ease-out-standard);
+}
+details > summary::-webkit-details-marker { display: none; }
+details > summary:hover {
+  background: color-mix(in srgb, var(--surface2) 80%, transparent);
+}
+
+/* ─── Tactile rubberband on home-cards / mode-cards during active press ─── */
+.cc-card:active,
+.home-mode-card:active,
+.home-doc-row:active,
+.wiz-cap:active {
+  transform: translateY(0) scale(0.985);
+  transition-duration: var(--duration-micro);
+}
+
+/* ─── Bench-big numeric marquee: tighten gradient & enforce tabular nums ─── */
+.bench-big {
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+}
+.bench-big span {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover) 60%, var(--orange));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ─── Gauge cards: refined value hierarchy ─── */
+.gauge-card .gauge-value {
+  letter-spacing: -0.025em;
+  font-weight: 800;
+}
+
+/* ─── Settings card title: use brand accent-dim underline, not pure accent ─── */
+.settings-card h3 {
+  letter-spacing: -0.015em;
+}
+
+/* ─── Toast close hover (brighter in dark themes) ─── */
+:is([data-theme="nightops"], [data-theme="cyber"], [data-theme="redlight"]) .toast-close:hover {
+  background: color-mix(in srgb, var(--surface-solid) 94%, var(--accent-dim));
+}
+
+/* ─── Theme tokens that ride along with E-Ink: prevent decorated buttons
+   from inheriting gradients. The parent e-ink rule already handles most,
+   but some :active / :focus interactions slipped through. ─── */
+[data-theme="eink"] .btn-primary,
+[data-theme="eink"] .btn-primary:hover,
+[data-theme="eink"] .btn-primary:active,
+[data-theme="eink"] .toast,
+[data-theme="eink"] .tier-tab.active {
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  box-shadow: none !important;
+  border: 1px solid var(--text) !important;
+}
+[data-theme="eink"] .toggle-slider,
+[data-theme="eink"] .toggle-switch input:checked + .toggle-slider {
+  background: var(--surface3) !important;
+  border: 1px solid var(--text) !important;
+  box-shadow: none !important;
+}
+[data-theme="eink"] .toggle-switch input:checked + .toggle-slider {
+  background: var(--text) !important;
+}
+[data-theme="eink"] .toggle-slider::before {
+  background: var(--bg) !important;
+  border: 1px solid var(--text) !important;
+  box-shadow: none !important;
+}
+
+/* ─── Reduce motion: extend to the new progress/badge animations ─── */
+@media (prefers-reduced-motion: reduce) {
+  .tab-badge.red,
+  .message .content,
+  .ss-pill,
+  .tier-tab,
+  .catalog-item,
+  .region-card,
+  .contact-card,
+  .broadcast-banner {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ==========================================================================
+   PASS 3 — wide-net structural polish
+   ========================================================================== */
+
+/* ─── Tables (.freq-table + any raw <table>) — readable, modern, tabular ─── */
+table,
+.freq-table {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-variant-numeric: tabular-nums;
+}
+.freq-table {
+  border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.freq-table th {
+  background: color-mix(in srgb, var(--surface3) 72%, var(--surface2));
+  color: var(--text);
+  border: none;
+  border-bottom: 1px solid var(--border);
+  font-family: var(--font-label);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 9px 12px;
+}
+.freq-table td {
+  border: none;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+  padding: 7px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.freq-table tbody tr:nth-child(even) td {
+  background: color-mix(in srgb, var(--surface2) 32%, transparent);
+}
+.freq-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--accent-dim) 38%, var(--surface2)) !important;
+}
+.freq-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ─── Incident log — action discoverability + hazard semantics ─── */
+.incident-item {
+  transition:
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    border-color var(--duration-snappy) var(--ease-out-standard);
+}
+.incident-item:hover {
+  background: color-mix(in srgb, var(--surface2) 60%, transparent);
+}
+.incident-item .incident-del,
+.incident-del {
+  transition:
+    opacity var(--duration-snappy) var(--ease-out-standard),
+    color var(--duration-micro) var(--ease-out-standard),
+    background-color var(--duration-micro) var(--ease-out-standard);
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+.incident-item:hover .incident-del,
+.incident-item:focus-within .incident-del {
+  opacity: 1;
+}
+.incident-del:hover {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  opacity: 1 !important;
+}
+.incident-sev {
+  font-family: var(--font-label);
+  font-weight: 800;
+  font-size: 9.5px;
+  border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
+}
+.incident-sev.critical {
+  background:
+    repeating-linear-gradient(-45deg,
+      color-mix(in srgb, var(--red) 18%, transparent),
+      color-mix(in srgb, var(--red) 18%, transparent) 3px,
+      transparent 3px, transparent 6px),
+    color-mix(in srgb, var(--red-dim) 80%, transparent);
+  border-color: color-mix(in srgb, var(--red) 38%, transparent);
+}
+
+/* ─── Situation board cells — unified lift treatment ─── */
+.sit-cell {
+  transition:
+    transform var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    border-color var(--duration-snappy) var(--ease-out-standard);
+}
+.sit-cell:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--elev-1);
+}
+.sit-cell:active {
+  transform: translateY(0) scale(0.98);
+  transition-duration: var(--duration-micro);
+}
+
+/* ─── Alert items — subtle lift to signal actionability ─── */
+.alert-item {
+  transition:
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+  border: 1px solid transparent;
+}
+.alert-item:hover {
+  background: color-mix(in srgb, var(--surface2) 82%, transparent);
+  border-color: color-mix(in srgb, var(--border) 78%, transparent);
+  transform: translateY(-1px);
+  box-shadow: var(--elev-1);
+}
+
+/* ─── Calculator cards — stronger hierarchy + lift ─── */
+.calc-card {
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+}
+.calc-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elev-2);
+  border-color: var(--border-hover);
+}
+.calc-card h4 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.015em;
+}
+.calc-row input,
+.calc-row select {
+  min-width: 96px;
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+}
+.calc-result {
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--accent-dim) 98%, transparent),
+      color-mix(in srgb, var(--accent-dim) 62%, transparent));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 14%, transparent);
+  font-size: 13px;
+}
+.calc-result strong {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* ─── Check-item completed state — kinder treatment ─── */
+.check-item.checked {
+  opacity: 0.7;
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--green) 60%, transparent);
+  text-decoration-thickness: 1.5px;
+  color: var(--text-muted);
+}
+.check-cat {
+  font-family: var(--font-label);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+/* ─── Quantity adjuster — accessible touch target without layout bloat ─── */
+.qty-adj {
+  min-width: 22px;
+  min-height: 22px;
+  padding: 3px 6px !important;
+  font-size: 10px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── Customize panel: add a scrim pseudo-element (no HTML change needed) ─── */
+.customize-panel {
+  --drawer-scrim: rgba(0,0,0,0);
+}
+.customize-panel.open {
+  --drawer-scrim: color-mix(in srgb, var(--overlay-scrim) 82%, transparent);
+}
+.customize-panel::before {
+  content: "";
+  position: fixed;
+  inset: 0 var(--drawer-width, 420px) 0 0;
+  background: var(--drawer-scrim, rgba(0,0,0,0));
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity var(--duration-soft) var(--ease-out-standard);
+}
+.customize-panel.open::before {
+  opacity: 1;
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* ─── Tab content scroll anchor polish ─── */
+.tab-content {
+  scroll-margin-top: 24px;
+}
+.tab-content[id] {
+  scroll-margin-top: 32px;
+}
+
+/* ─── Preparedness mini progress bar — animated shine parity ─── */
+.prep-progress-bar {
+  background: color-mix(in srgb, var(--surface3) 90%, var(--border));
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+}
+.prep-progress-bar .fill {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    0 0 8px color-mix(in srgb, var(--green) 32%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 26%, transparent);
+}
+
+/* ─── Update banner refinement (sidebar update pill) ─── */
+.shell-update-banner {
+  border: 1px solid color-mix(in srgb, var(--green) 32%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Divider line polish (<hr> wherever used) ─── */
+hr {
+  border: 0;
+  height: 1px;
+  margin: 16px 0;
+  background: linear-gradient(90deg,
+    transparent,
+    color-mix(in srgb, var(--border-hover) 80%, var(--border)),
+    transparent);
+}
+
+/* ─── Default heading rhythm for h4/h5/h6 (globals only defined h1-h4) ─── */
+h5 {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+h6 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.4;
+  color: var(--text-dim);
+}
+
+/* ─── Strong / em refinement — don't let bold text wash out on dark themes ─── */
+strong, b {
+  font-weight: 700;
+  color: inherit;
+}
+em, i {
+  font-style: italic;
+}
+
+/* ─── Mark / highlight (global) ─── */
+mark {
+  background: color-mix(in srgb, var(--warning) 32%, transparent);
+  color: var(--text);
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+/* ─── Remove disabled dimming on sidebar nav active state (in case any
+   tab had an aria-disabled attr for context-dependent items). ─── */
+.tab.active[aria-disabled="true"],
+.tab.active:disabled {
+  opacity: 1;
+  pointer-events: none;
+}
+
+/* ─── Hair-thin focus ring on native checkbox/radio labels ─── */
+label:has(input[type="checkbox"]:focus-visible),
+label:has(input[type="radio"]:focus-visible) {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+/* ─── Hide redundant outline on wrappers when inner control already has one ─── */
+label:focus-within:has(input[type="checkbox"]:focus-visible),
+label:focus-within:has(input[type="radio"]:focus-visible) {
+  outline-offset: 4px;
+}
+
+/* ─── Sidebar footer actions: compact but tactile ─── */
+.sidebar-footer-actions .btn,
+.sidebar-footer-status .shell-status-inline,
+.sidebar-footer-status .shell-flag {
+  transition:
+    color var(--duration-snappy) var(--ease-out-standard),
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard);
+}
+.sidebar-footer-actions .btn:hover {
+  transform: translateY(-1px);
+}
+
+/* ─── Chat message overflow guards + word-break for extremely long tokens ─── */
+.message .content {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.message .content pre {
+  overflow-x: auto;
+  max-width: 100%;
+  scrollbar-width: thin;
+}
+.message .content a {
+  overflow-wrap: anywhere;
+}
+
+/* ─── Floating quick-action buttons: ensure consistent z-stack ─── */
+#quick-actions-menu,
+#timer-panel,
+#lan-chat-panel,
+#copilot-dock {
+  box-shadow: var(--elev-3);
+}
+#quick-actions-menu:not([hidden]),
+#timer-panel:not([hidden]),
+#lan-chat-panel:not([hidden]) {
+  animation: nomadToastIn var(--duration-soft) var(--ease-spring);
+}
+
+/* ─── Improve service-card-icon contrast in muted themes ─── */
+.service-card .service-card-icon {
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--accent) 16%, transparent));
+}
+
+/* ─── Active toggle focus loop bug: ensure focus-visible on the label
+   doesn't double-ring when the inner input is also focused. ─── */
+.toggle-switch:focus-within .toggle-slider {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 3px;
+}
+label:has(.toggle-switch input:focus-visible) {
+  outline: none !important;
+}
+
+/* ─── Consistency: remove legacy `opacity: 0 → 0.6` hover reveal pattern
+   wherever it survived (discoverability anti-pattern). ─── */
+.note-item .note-actions,
+.note-item .note-del,
+.contact-card .cc-actions,
+.incident-item .incident-del {
+  opacity: 1;
+}
+.incident-item .incident-del:not(:hover):not(:focus-visible) {
+  opacity: 0.55;
+}
+
+/* ─── Sit-board outer container: premium panel feel ─── */
+.sit-board {
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ─── Reduced motion + the new pass 3 rules ─── */
+@media (prefers-reduced-motion: reduce) {
+  .sit-cell,
+  .alert-item,
+  .calc-card,
+  .incident-item,
+  .customize-panel::before,
+  #quick-actions-menu:not([hidden]),
+  #timer-panel:not([hidden]),
+  #lan-chat-panel:not([hidden]) {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ─── E-ink additions — pass 3 surfaces ─── */
+[data-theme="eink"] .freq-table th,
+[data-theme="eink"] .calc-result,
+[data-theme="eink"] .incident-sev.critical {
+  background: var(--bg) !important;
+  border: 1px solid var(--text) !important;
+}
+[data-theme="eink"] .freq-table tbody tr:nth-child(even) td,
+[data-theme="eink"] .freq-table tbody tr:hover td {
+  background: var(--surface2) !important;
+}
+
+/* ==========================================================================
+   PASS 4 — touch-device + native-element polish
+   ========================================================================== */
+
+/* ─── Touch-only gating: remove sticky hover transforms on coarse pointers.
+   Mouse/pen stays, touch devices (no hover capability) don't get stuck. ─── */
+@media (hover: none) {
+  .btn:hover,
+  .sr-btn:hover,
+  .tab:hover,
+  .cc-card:hover,
+  .service-card:hover,
+  .sidebar-context-card:hover,
+  .home-mode-card:hover,
+  .home-doc-row:hover,
+  .settings-memory-card-item:hover,
+  .convo-item:hover,
+  .note-item:hover,
+  .prep-item:hover,
+  .media-folder-item:hover,
+  .catalog-item:hover,
+  .region-card:hover,
+  .contact-card:hover,
+  .alert-item:hover,
+  .sit-cell:hover,
+  .calc-card:hover,
+  .workspace-context-quick-action:hover,
+  .workspace-inspector-action:hover,
+  .sidebar-footer-actions .btn:hover,
+  .ss-pill:hover,
+  .wiz-cap:hover {
+    transform: none;
+  }
+}
+/* On coarse pointers, widen default touch target for inline controls. */
+@media (pointer: coarse) {
+  .btn,
+  .sr-btn,
+  .ss-pill,
+  .tab-badge,
+  .toast-close,
+  .modal-close {
+    min-height: 40px;
+  }
+  .qty-adj {
+    min-width: 32px !important;
+    min-height: 32px !important;
+    font-size: 11px !important;
+  }
+  .convo-item .convo-actions .convo-action-btn,
+  .incident-del,
+  .help-icon {
+    min-width: 28px;
+    min-height: 28px;
+  }
+}
+
+/* ─── Native <progress> element ─── */
+progress {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--surface3) 90%, var(--border));
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+}
+progress::-webkit-progress-bar {
+  background-color: color-mix(in srgb, var(--surface3) 90%, var(--border));
+  border-radius: 999px;
+}
+progress::-webkit-progress-value {
+  background: linear-gradient(90deg, var(--accent), var(--orange));
+  border-radius: 999px;
+  box-shadow:
+    0 0 8px color-mix(in srgb, var(--accent) 36%, transparent),
+    inset 0 1px 0 color-mix(in srgb, white 22%, transparent);
+  transition: all var(--duration-soft) var(--ease-out-standard);
+}
+progress::-moz-progress-bar {
+  background: linear-gradient(90deg, var(--accent), var(--orange));
+  border-radius: 999px;
+}
+progress:indeterminate::-webkit-progress-value {
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--accent) 60%, transparent) 50%,
+      transparent 100%);
+  animation: nomadProgressIndeterminate 1.4s var(--ease-out-standard) infinite;
+  background-size: 50% 100%;
+  background-repeat: no-repeat;
+}
+@keyframes nomadProgressIndeterminate {
+  0%   { background-position: -50% 0; }
+  100% { background-position: 150% 0; }
+}
+
+/* ─── Native <meter> element (readiness bars, etc.) ─── */
+meter {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface3) 90%, var(--border));
+}
+meter::-webkit-meter-bar {
+  background: color-mix(in srgb, var(--surface3) 90%, var(--border));
+  border: 0;
+  border-radius: 999px;
+}
+meter::-webkit-meter-optimum-value { background: var(--green); }
+meter::-webkit-meter-suboptimum-value { background: var(--orange); }
+meter::-webkit-meter-even-less-good-value { background: var(--red); }
+meter::-moz-meter-bar { background: var(--accent); }
+
+/* ─── File inputs — premium button-styled selector ─── */
+input[type="file"] {
+  padding: 6px 8px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+  color: var(--text-dim);
+  font-size: 12px;
+  cursor: pointer;
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard);
+}
+input[type="file"]:hover {
+  border-color: var(--border-hover);
+  background: color-mix(in srgb, var(--surface-solid) 96%, var(--accent-dim));
+}
+input[type="file"]::file-selector-button {
+  margin-right: 10px;
+  padding: 6px 12px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  color: var(--text-inverse);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 22%, transparent),
+    0 4px 10px color-mix(in srgb, var(--accent) 18%, transparent);
+  transition:
+    filter var(--duration-snappy) var(--ease-out-standard),
+    transform var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+}
+input[type="file"]::file-selector-button:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 28%, transparent),
+    0 6px 14px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+input[type="file"]::file-selector-button:active {
+  transform: translateY(0);
+}
+
+/* ─── Native <dialog> support (forward-compat) ─── */
+dialog {
+  border: 1px solid color-mix(in srgb, var(--border-hover) 32%, var(--border));
+  border-radius: 18px;
+  padding: 22px 24px;
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--surface-solid) 98%, transparent),
+      color-mix(in srgb, var(--surface2) 90%, transparent));
+  box-shadow: var(--elev-4);
+  color: var(--text);
+  max-width: min(90vw, 600px);
+}
+dialog::backdrop {
+  background: color-mix(in srgb, var(--overlay-scrim-strong) 88%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
+/* ─── Fieldset + legend (used in some form layouts) ─── */
+fieldset {
+  border: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin: 0 0 12px;
+}
+legend {
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 0 8px;
+}
+
+/* ─── Blockquote — consistent with chat blockquote ─── */
+blockquote {
+  margin: 8px 0;
+  padding: 8px 14px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent-dim) 56%, transparent);
+  border-radius: 0 10px 10px 0;
+  color: var(--text-dim);
+  font-size: 13px;
+  line-height: 1.55;
+}
+blockquote > *:first-child { margin-top: 0; }
+blockquote > *:last-child { margin-bottom: 0; }
+
+/* ─── Search input cancel button (Webkit) — themed glyph ─── */
+input[type="search"]::-webkit-search-cancel-button {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-left: 4px;
+  border-radius: 999px;
+  background: var(--text-muted);
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 6l12 12M6 18L18 6' stroke='black' stroke-width='3' stroke-linecap='round'/></svg>") center/8px 8px no-repeat;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M6 6l12 12M6 18L18 6' stroke='black' stroke-width='3' stroke-linecap='round'/></svg>") center/8px 8px no-repeat;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity var(--duration-snappy) var(--ease-out-standard), background-color var(--duration-snappy) var(--ease-out-standard);
+}
+input[type="search"]::-webkit-search-cancel-button:hover {
+  opacity: 1;
+  background: var(--red);
+}
+
+/* ─── <details> custom marker with rotating accent chevron.
+   Scoped to skip summaries that already render their own chevron
+   (existing .nav-chevron pattern in app/50_home_customize.css:73). ─── */
+details > summary:not(:has(.nav-chevron)):not(.shortcuts-title)::before {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 8px;
+  border-right: 2px solid var(--text-muted);
+  border-bottom: 2px solid var(--text-muted);
+  transform: rotate(-45deg);
+  transition: transform var(--duration-snappy) var(--ease-out-standard), border-color var(--duration-snappy) var(--ease-out-standard);
+  vertical-align: middle;
+}
+details[open] > summary:not(:has(.nav-chevron)):not(.shortcuts-title)::before {
+  transform: rotate(45deg);
+  border-color: var(--accent);
+}
+details > summary:not(:has(.nav-chevron)):not(.shortcuts-title):hover::before {
+  border-color: var(--accent);
+}
+
+/* ─── ARIA-pressed toggled state (for icon toggle buttons) ─── */
+button[aria-pressed="true"]:not(.btn-primary):not(.active):not(.is-current) {
+  background: color-mix(in srgb, var(--accent-dim) 70%, var(--surface-solid));
+  border-color: color-mix(in srgb, var(--accent) 34%, var(--border));
+  color: var(--accent);
+}
+
+/* ─── Scroll edge-shadow hinting on primary scrollable rails.
+   Uses the classic "scroll shadows" technique — background-attachment: local
+   + linear-gradient masks at top/bottom, revealing only when content overflows. ─── */
+.chat-messages,
+.notes-list,
+.convo-list,
+.prep-list,
+.media-folder-list,
+#media-folder-list,
+.alert-items,
+.search-results,
+.shell-health-list {
+  background-attachment: local, local, scroll, scroll;
+  background-image:
+    linear-gradient(var(--surface) 30%, transparent),
+    linear-gradient(transparent, var(--surface) 70%),
+    radial-gradient(farthest-side at 50% 0, rgba(0,0,0,0.10), transparent),
+    radial-gradient(farthest-side at 50% 100%, rgba(0,0,0,0.10), transparent);
+  background-repeat: no-repeat;
+  background-size: 100% 12px, 100% 12px, 100% 8px, 100% 8px;
+  background-position: top, bottom, top, bottom;
+}
+[data-theme="eink"] .chat-messages,
+[data-theme="eink"] .notes-list,
+[data-theme="eink"] .convo-list,
+[data-theme="eink"] .prep-list,
+[data-theme="eink"] .media-folder-list,
+[data-theme="eink"] .alert-items {
+  background-image: none;
+}
+
+/* ─── Voice-active state — themed colors + calmer pulse ─── */
+.voice-active {
+  animation-duration: 1.6s !important;
+  animation-timing-function: var(--ease-out-standard) !important;
+  box-shadow:
+    0 0 0 4px color-mix(in srgb, var(--red) 24%, transparent),
+    0 0 20px color-mix(in srgb, var(--red) 36%, transparent);
+}
+
+/* ─── Copilot handsfree states — theme-driven instead of hardcoded ─── */
+.copilot-handsfree-btn[data-state="thinking"] {
+  background: var(--warning-dim) !important;
+  color: var(--warning) !important;
+  border-color: var(--warning-border) !important;
+}
+.copilot-handsfree-btn[data-state="speaking"] {
+  background: var(--info-dim) !important;
+  color: var(--info) !important;
+  border-color: color-mix(in srgb, var(--info) 32%, var(--border)) !important;
+}
+.copilot-handsfree-btn[aria-pressed="true"]::after {
+  background: var(--green) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--green) 20%, transparent);
+}
+.copilot-voice-state-badge {
+  font-family: var(--font-data);
+}
+
+/* ─── Better ghost-on-accent: ensure .btn-ghost reads on colored surfaces ─── */
+.alert-bar .btn-ghost,
+.broadcast-banner .btn-ghost,
+.workspace-context-bar .btn-ghost,
+.readiness-panel .btn-ghost {
+  background: color-mix(in srgb, var(--surface-solid) 72%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
+}
+
+/* ─── Badges default to non-interactive; inline-flex aligned ─── */
+.badge {
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+}
+button.badge,
+a.badge,
+.badge.is-interactive {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+/* ─── AI "thinking" three-dot loader class (drop-in replacement for
+   the plain "Thinking…" text used in messages). Add via JS:
+   <span class="ai-dots"><span></span><span></span><span></span></span> ─── */
+.ai-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.ai-dots > span {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: currentColor;
+  opacity: 0.4;
+  animation: nomadThinkingDots 1.2s var(--ease-out-standard) infinite;
+}
+.ai-dots > span:nth-child(2) { animation-delay: 0.15s; }
+.ai-dots > span:nth-child(3) { animation-delay: 0.3s; }
+@keyframes nomadThinkingDots {
+  0%, 80%, 100% { opacity: 0.35; transform: translateY(0); }
+  40%           { opacity: 1;    transform: translateY(-2px); }
+}
+
+/* ─── Image fallback (broken or missing alt) — soft placeholder ─── */
+img {
+  max-width: 100%;
+  height: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+img[alt]:not([alt=""]) {
+  font-style: italic;
+}
+
+/* ─── Scroll-to-top affordance: arbitrary surfaces with [tabindex="0"]
+   shouldn't autoscroll on focus into a portion clipped by sticky headers. ─── */
+:target {
+  scroll-margin-top: 48px;
+}
+
+/* ─── Audio/video minimal consistency ─── */
+audio,
+video {
+  border-radius: 10px;
+  background: var(--surface-solid);
+}
+audio:focus-visible,
+video:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+}
+
+/* ─── Reduced motion — catch new pass 4 animations ─── */
+@media (prefers-reduced-motion: reduce) {
+  progress::-webkit-progress-value,
+  progress:indeterminate::-webkit-progress-value,
+  .ai-dots > span,
+  details > summary::before,
+  input[type="file"]::file-selector-button {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ─── E-ink pass 4 overrides ─── */
+[data-theme="eink"] progress::-webkit-progress-value,
+[data-theme="eink"] meter::-webkit-meter-optimum-value,
+[data-theme="eink"] meter::-webkit-meter-suboptimum-value,
+[data-theme="eink"] meter::-webkit-meter-even-less-good-value {
+  background: var(--text) !important;
+  box-shadow: none !important;
+}
+[data-theme="eink"] input[type="file"]::file-selector-button {
+  background: var(--text) !important;
+  color: var(--bg) !important;
+  box-shadow: none !important;
+  border: 1px solid var(--text) !important;
+}
+[data-theme="eink"] dialog,
+[data-theme="eink"] fieldset,
+[data-theme="eink"] blockquote {
+  background: var(--bg) !important;
+  border: 1px solid var(--text) !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   PASS 5 — RTL correctness + vendored-control polish + native HTML baseline
+   ========================================================================== */
+
+/* ─── RTL mirror for pass-1/2 translateX hover slides
+   (existing app rules in 95_premium_polish.css and 20_workspaces.css also
+   use translateX, but those are outside my scope — I mirror only mine). ─── */
+[dir="rtl"] .tab:hover .tab-icon {
+  transform: translateX(-1px);
+}
+[dir="rtl"] .catalog-item:hover {
+  transform: translateX(-2px);
+}
+[dir="rtl"] .convo-item .convo-actions {
+  margin-left: 0;
+  margin-right: auto;
+}
+[dir="rtl"] .modal-close:hover {
+  transform: rotate(-90deg);
+}
+[dir="rtl"] .toast {
+  border-left-width: 0 !important;
+  border-right-width: 1px;
+}
+[dir="rtl"] .toast.toast-success { box-shadow: inset -3px 0 0 var(--green), 0 20px 42px rgba(0, 0, 0, 0.2); }
+[dir="rtl"] .toast.toast-error   { box-shadow: inset -3px 0 0 var(--red),   0 20px 42px rgba(0, 0, 0, 0.2); }
+[dir="rtl"] .toast.toast-warning { box-shadow: inset -3px 0 0 var(--orange),0 20px 42px rgba(0, 0, 0, 0.2); }
+[dir="rtl"] .toast.toast-info    { box-shadow: inset -3px 0 0 var(--accent),0 20px 42px rgba(0, 0, 0, 0.2); }
+[dir="rtl"] blockquote {
+  border-left: 0;
+  border-right: 3px solid var(--accent);
+  border-radius: 10px 0 0 10px;
+}
+[dir="rtl"] details > summary:not(:has(.nav-chevron)):not(.shortcuts-title)::before {
+  margin-right: 0;
+  margin-left: 8px;
+  transform: rotate(135deg);
+}
+[dir="rtl"] details[open] > summary:not(:has(.nav-chevron)):not(.shortcuts-title)::before {
+  transform: rotate(-135deg);
+}
+[dir="rtl"] input[type="search"]::-webkit-search-cancel-button {
+  margin-left: 0;
+  margin-right: 4px;
+}
+[dir="rtl"] input[type="file"]::file-selector-button {
+  margin-right: 0;
+  margin-left: 10px;
+}
+
+/* ─── MapLibre GL controls — match app chrome (vendored CSS is generic) ─── */
+.maplibregl-ctrl-group {
+  border-radius: 12px !important;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border-hover) 32%, var(--border)) !important;
+  background: color-mix(in srgb, var(--surface-solid) 92%, transparent) !important;
+  box-shadow: var(--elev-2) !important;
+}
+.maplibregl-ctrl-group button {
+  background-color: transparent !important;
+  color: var(--text-dim) !important;
+  transition:
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    color var(--duration-snappy) var(--ease-out-standard);
+}
+.maplibregl-ctrl-group button:hover {
+  background-color: color-mix(in srgb, var(--accent-dim) 72%, var(--surface-solid)) !important;
+  color: var(--accent) !important;
+}
+.maplibregl-ctrl-group button:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: -2px;
+}
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent) !important;
+}
+.maplibregl-ctrl-attrib {
+  background: color-mix(in srgb, var(--surface-solid) 70%, transparent) !important;
+  color: var(--text-muted) !important;
+  border-top-left-radius: 10px;
+  padding: 2px 8px !important;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--accent) !important;
+}
+.maplibregl-ctrl-scale {
+  background: color-mix(in srgb, var(--surface-solid) 76%, transparent) !important;
+  border-color: var(--text-dim) !important;
+  color: var(--text) !important;
+  font-family: var(--font-data) !important;
+  font-size: 10px !important;
+  border-radius: 0 4px 4px 0;
+  padding: 1px 6px !important;
+}
+.maplibregl-popup-close-button {
+  color: var(--text-muted) !important;
+  font-size: 14px !important;
+  padding: 2px 6px !important;
+}
+.maplibregl-popup-close-button:hover {
+  background: color-mix(in srgb, var(--red-dim) 70%, transparent) !important;
+  color: var(--red) !important;
+  border-radius: 999px;
+}
+/* Don't re-theme inside Situation Room (it owns its own sr-* overrides). */
+#tab-situation-room .maplibregl-ctrl-group,
+#tab-situation-room .maplibregl-ctrl-attrib,
+#tab-situation-room .maplibregl-ctrl-scale,
+#tab-situation-room .maplibregl-popup-close-button {
+  all: revert;
+}
+
+/* ─── Leaflet controls — same treatment for VIPTrack / NukeMap surfaces ─── */
+.leaflet-bar,
+.leaflet-control {
+  border-radius: 12px !important;
+  box-shadow: var(--elev-2) !important;
+}
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background-color: color-mix(in srgb, var(--surface-solid) 94%, transparent) !important;
+  color: var(--text-dim) !important;
+  border-bottom-color: color-mix(in srgb, var(--border) 72%, transparent) !important;
+}
+.leaflet-bar a:hover {
+  background-color: color-mix(in srgb, var(--accent-dim) 72%, var(--surface-solid)) !important;
+  color: var(--accent) !important;
+}
+.leaflet-bar a:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: -2px;
+}
+.leaflet-bar a.leaflet-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.leaflet-control-attribution {
+  background: color-mix(in srgb, var(--surface-solid) 70%, transparent) !important;
+  color: var(--text-muted) !important;
+  border-radius: 8px 0 0 0;
+  padding: 2px 8px !important;
+}
+.leaflet-control-attribution a { color: var(--accent) !important; }
+.leaflet-popup-content-wrapper {
+  background: var(--surface-solid) !important;
+  color: var(--text) !important;
+  border: 1px solid color-mix(in srgb, var(--border-hover) 28%, var(--border)) !important;
+  box-shadow: var(--elev-3) !important;
+  border-radius: 12px !important;
+}
+.leaflet-popup-tip {
+  background: var(--surface-solid) !important;
+}
+.leaflet-popup-close-button {
+  color: var(--text-muted) !important;
+  padding: 6px 8px !important;
+}
+.leaflet-popup-close-button:hover { color: var(--red) !important; }
+.leaflet-tooltip {
+  background: var(--surface-solid) !important;
+  color: var(--text) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 74%, transparent) !important;
+  border-radius: 8px !important;
+  font-size: 11px !important;
+  padding: 4px 8px !important;
+  box-shadow: var(--elev-1) !important;
+}
+
+/* ─── Pre/code blocks — unified outside chat messages ─── */
+pre {
+  margin: 8px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface2) 92%, var(--surface3));
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  overflow-x: auto;
+  font-family: var(--font-data);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--text);
+  tab-size: 2;
+  -moz-tab-size: 2;
+}
+pre code {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  font-size: inherit;
+  color: inherit;
+}
+/* Leave chat message pre/code in peace — they have their own tight styling. */
+.message .content pre {
+  margin: 6px 0;
+  padding: 10px;
+}
+.message .content code {
+  background: var(--bg);
+}
+
+/* ─── Global list rhythm for raw ul/ol (not chat/menu lists) ─── */
+.container ul:not([class]),
+.container ol:not([class]),
+.message .content ul,
+.message .content ol,
+.modal-body ul,
+.modal-body ol,
+blockquote ul,
+blockquote ol {
+  margin: 6px 0;
+  padding-left: 22px;
+}
+[dir="rtl"] .container ul:not([class]),
+[dir="rtl"] .container ol:not([class]),
+[dir="rtl"] .modal-body ul,
+[dir="rtl"] .modal-body ol {
+  padding-left: 0;
+  padding-right: 22px;
+}
+.container ul:not([class]) li,
+.modal-body ul li,
+.message .content ul li {
+  list-style-type: disc;
+}
+.container ol:not([class]) li,
+.modal-body ol li,
+.message .content ol li {
+  list-style-type: decimal;
+}
+.container ul:not([class]) li::marker,
+.container ol:not([class]) li::marker,
+.modal-body ul li::marker,
+.modal-body ol li::marker,
+.message .content ul li::marker,
+.message .content ol li::marker {
+  color: color-mix(in srgb, var(--accent) 72%, var(--text-muted));
+}
+.container ul:not([class]) li + li,
+.container ol:not([class]) li + li,
+.modal-body ul li + li,
+.modal-body ol li + li {
+  margin-top: 4px;
+}
+
+/* ─── Global caption / small / figcaption / sub / sup ─── */
+caption,
+figcaption {
+  font-size: 11px;
+  color: var(--text-muted);
+  padding: 6px 0;
+  text-align: start;
+  caption-side: bottom;
+  font-style: italic;
+}
+small {
+  font-size: 0.86em;
+  color: var(--text-dim);
+}
+/* sub/sup should not disrupt line-height */
+sub, sup {
+  font-size: 0.75em;
+  line-height: 0;
+  position: relative;
+  vertical-align: baseline;
+}
+sup { top: -0.5em; }
+sub { bottom: -0.25em; }
+
+/* ─── ins / del semantic diff markers ─── */
+ins {
+  background: color-mix(in srgb, var(--green) 16%, transparent);
+  color: color-mix(in srgb, var(--green) 80%, var(--text));
+  text-decoration: none;
+  padding: 0 3px;
+  border-radius: 3px;
+}
+del {
+  background: color-mix(in srgb, var(--red) 16%, transparent);
+  color: color-mix(in srgb, var(--red) 80%, var(--text));
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+/* ─── abbr — hover-reveal with underline hint ─── */
+abbr[title] {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  text-decoration-color: color-mix(in srgb, var(--text-muted) 70%, transparent);
+  cursor: help;
+}
+
+/* ─── Placeholder-shown subtle contrast
+   (visually differentiate empty vs filled inputs). ─── */
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):placeholder-shown,
+textarea:placeholder-shown {
+  font-weight: 400;
+}
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not(:placeholder-shown),
+textarea:not(:placeholder-shown) {
+  font-weight: 500;
+}
+
+/* ─── Validation states — apply only after user interaction. ─── */
+input:not([type="checkbox"]):not([type="radio"]):user-invalid,
+textarea:user-invalid,
+select:user-invalid {
+  border-color: color-mix(in srgb, var(--red) 56%, var(--border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 14%, transparent);
+}
+input:not([type="checkbox"]):not([type="radio"]):user-valid:not(:placeholder-shown),
+textarea:user-valid:not(:placeholder-shown) {
+  border-color: color-mix(in srgb, var(--green) 44%, var(--border));
+}
+
+/* ─── Divider with inline label (.hr-with-label in any docs/guide pages) ─── */
+.hr-with-label {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  margin: 14px 0;
+  color: var(--text-muted);
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.hr-with-label::before,
+.hr-with-label::after {
+  content: "";
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--border-hover) 80%, var(--border)), transparent);
+}
+
+/* ─── Utility tone helpers (drop-in for any text that needs
+   semantic color without per-feature CSS). ─── */
+.tone-success { color: var(--green) !important; }
+.tone-warning { color: var(--orange) !important; }
+.tone-danger  { color: var(--red) !important; }
+.tone-info    { color: var(--info, var(--accent)) !important; }
+.tone-muted   { color: var(--text-muted) !important; }
+.tone-dim     { color: var(--text-dim) !important; }
+.text-tabular { font-variant-numeric: tabular-nums; }
+.text-compact { font-size: 11px; line-height: 1.45; }
+.text-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0,0,0,0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ─── Ensure skeleton shimmer has a calm fallback when bg-mix unsupported ─── */
+@supports not (color: color-mix(in srgb, white, black)) {
+  .bento-skeleton::after,
+  .skeleton-shimmer::after {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent);
+  }
+}
+
+/* ─── Reduced motion — catch pass 5 ─── */
+@media (prefers-reduced-motion: reduce) {
+  .maplibregl-ctrl-group button,
+  .leaflet-bar a {
+    transition: none !important;
+  }
+}
+
+/* ─── E-ink pass 5 simplifications ─── */
+[data-theme="eink"] ins,
+[data-theme="eink"] del {
+  background: var(--bg) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--text) !important;
+}
+[data-theme="eink"] .maplibregl-ctrl-group,
+[data-theme="eink"] .leaflet-bar {
+  background: var(--bg) !important;
+  border: 1px solid var(--text) !important;
+  box-shadow: none !important;
+}
+
+/* ==========================================================================
+   PASS 6 — cursor semantics, loading feedback, :has()-aware primitives
+   ========================================================================== */
+
+/* ─── Cursor semantics: communicate affordance at the OS level ─── */
+[aria-disabled="true"],
+.btn:disabled,
+.btn[disabled] {
+  cursor: not-allowed;
+}
+[contenteditable="true"],
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([readonly]),
+textarea:not([readonly]) {
+  cursor: text;
+}
+input[readonly],
+textarea[readonly] {
+  cursor: default;
+}
+[role="button"],
+button,
+select,
+summary,
+label[for],
+.tab,
+.cc-card,
+.service-card,
+.live-widget,
+.sit-cell,
+.sidebar-context-card,
+.sidebar-header,
+.catalog-item,
+.region-card,
+.contact-card,
+.check-item,
+.ss-pill,
+.toggle-switch,
+.toggle-slider,
+[data-tab],
+[data-tab-target] {
+  cursor: pointer;
+}
+[data-draggable="true"],
+[draggable="true"],
+.drag-handle {
+  cursor: grab;
+}
+[data-draggable="true"]:active,
+[draggable="true"]:active,
+.drag-handle:active,
+.dragging {
+  cursor: grabbing;
+}
+
+/* ─── Drag handle primitive (.drag-handle): 6-dot grip pattern ─── */
+.drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 24px;
+  color: var(--text-muted);
+  border-radius: 6px;
+  background:
+    radial-gradient(circle, currentColor 1.2px, transparent 1.6px) 3px 4px/6px 6px,
+    radial-gradient(circle, currentColor 1.2px, transparent 1.6px) 9px 4px/6px 6px,
+    radial-gradient(circle, currentColor 1.2px, transparent 1.6px) 3px 10px/6px 6px,
+    radial-gradient(circle, currentColor 1.2px, transparent 1.6px) 9px 10px/6px 6px,
+    radial-gradient(circle, currentColor 1.2px, transparent 1.6px) 3px 16px/6px 6px,
+    radial-gradient(circle, currentColor 1.2px, transparent 1.6px) 9px 16px/6px 6px;
+  background-repeat: no-repeat;
+  opacity: 0.6;
+  transition:
+    opacity var(--duration-snappy) var(--ease-out-standard),
+    color var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard);
+}
+.drag-handle:hover,
+.drag-handle:focus-visible {
+  opacity: 1;
+  color: var(--accent);
+  background-color: color-mix(in srgb, var(--accent-dim) 50%, transparent);
+}
+
+/* ─── Loading button state via aria-busy (works on any .btn) ─── */
+.btn[aria-busy="true"],
+button[aria-busy="true"] {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+  cursor: progress;
+}
+.btn[aria-busy="true"]::after,
+button[aria-busy="true"]::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  color: var(--text);
+}
+.btn-primary[aria-busy="true"]::after,
+button.btn-primary[aria-busy="true"]::after {
+  color: var(--text-inverse);
+}
+
+/* ─── :has()-aware panel alert border: any panel containing a danger/warning
+   pill lights up a contextual border so users don't miss the state. ─── */
+.home-surface-panel:has(.tone-danger),
+.service-card:has(.tone-danger),
+.readiness-panel:has(.tone-danger) {
+  border-color: color-mix(in srgb, var(--red) 40%, var(--border)) !important;
+}
+.home-surface-panel:has(.tone-warning),
+.service-card:has(.tone-warning) {
+  border-color: color-mix(in srgb, var(--orange) 36%, var(--border)) !important;
+}
+
+/* ─── :empty state hiding for optional container slots
+   (if a feature renders <div class="optional-slot"></div> empty, collapse it). ─── */
+.tab-badge:empty,
+.alert-bar-count:empty,
+.workspace-context-detail:empty,
+.workspace-context-group:empty {
+  display: none;
+}
+
+/* ─── Opt-in custom checkbox/radio primitive (.nomad-check).
+   For cases where `accent-color` isn't enough — richer animated tick. ─── */
+.nomad-check {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline-grid;
+  place-content: center;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  border: 1.5px solid color-mix(in srgb, var(--text-muted) 60%, var(--border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--surface-solid) 96%, transparent);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-snappy) var(--ease-out-standard),
+    background-color var(--duration-snappy) var(--ease-out-standard),
+    box-shadow var(--duration-snappy) var(--ease-out-standard);
+  flex-shrink: 0;
+}
+.nomad-check[type="radio"] {
+  border-radius: 999px;
+}
+.nomad-check:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+.nomad-check::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  transform: scale(0) rotate(-6deg);
+  transform-origin: center;
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+  background: var(--text-inverse);
+  transition: transform var(--duration-snappy) var(--ease-spring);
+}
+.nomad-check[type="radio"]::before {
+  width: 8px;
+  height: 8px;
+  clip-path: none;
+  border-radius: 999px;
+}
+.nomad-check:checked {
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
+  border-color: color-mix(in srgb, var(--accent) 60%, transparent);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.nomad-check:checked::before {
+  transform: scale(1) rotate(0);
+}
+.nomad-check:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 3px var(--focus-ring-halo),
+    0 2px 6px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.nomad-check:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Aria-expanded rotating indicator on toggle-triggers
+   (if a <button aria-expanded="false"> has a child .indicator). ─── */
+[aria-expanded] .indicator,
+[aria-expanded] .chevron-indicator {
+  transition: transform var(--duration-snappy) var(--ease-out-standard);
+}
+[aria-expanded="true"] .indicator,
+[aria-expanded="true"] .chevron-indicator {
+  transform: rotate(180deg);
+}
+
+/* ─── Text-selection within tables: accent-tinted row on selected [aria-selected] ─── */
+[aria-selected="true"] {
+  background: color-mix(in srgb, var(--accent-dim) 72%, var(--surface2)) !important;
+}
+tr[aria-selected="true"] td {
+  background: color-mix(in srgb, var(--accent-dim) 56%, transparent) !important;
+}
+
+/* ─── Active descendent highlight in listboxes (e.g. command palette) ─── */
+[role="listbox"] [role="option"][aria-current="true"],
+[role="listbox"] [role="option"]:hover {
+  background: color-mix(in srgb, var(--accent-dim) 78%, var(--surface-solid));
+  outline: none;
+}
+[role="listbox"] [role="option"][aria-current="true"]::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translateY(-50%) rotate(-45deg);
+  border-right: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+}
+[role="listbox"] [role="option"] {
+  position: relative;
+}
+[dir="rtl"] [role="listbox"] [role="option"][aria-current="true"]::after {
+  right: auto;
+  left: 12px;
+  transform: translateY(-50%) rotate(135deg);
+}
+
+/* ─── Cursor for interactive roles (pure ARIA-driven) ─── */
+[role="button"],
+[role="tab"],
+[role="menuitem"],
+[role="option"],
+[role="switch"] {
+  cursor: pointer;
+}
+[role="separator"] {
+  cursor: default;
+}
+
+/* ─── Prevent text selection on pure UI chrome (not content) ─── */
+.sidebar,
+.workspace-context-bar,
+.status-strip,
+.alert-bar,
+.broadcast-banner,
+.tab,
+.sit-cell,
+.badge:not(.is-selectable),
+.kbd,
+kbd {
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* But allow selection inside actual content panels. */
+.main-content .container,
+.modal-body,
+.message .content,
+.notes-editor,
+.shortcuts-grid span {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+/* ─── Abbreviation hover cursor (re-affirm; some themes clobber) ─── */
+abbr[title] { cursor: help; }
+
+/* ─── Reduced motion — pass 6 ─── */
+@media (prefers-reduced-motion: reduce) {
+  .btn[aria-busy="true"]::after,
+  button[aria-busy="true"]::after,
+  .nomad-check::before,
+  [aria-expanded] .indicator,
+  [aria-expanded] .chevron-indicator {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ─── E-ink pass 6 simplifications ─── */
+[data-theme="eink"] .nomad-check:checked {
+  background: var(--text) !important;
+  box-shadow: none !important;
+}
+[data-theme="eink"] .nomad-check::before {
+  background: var(--bg) !important;
+}
+[data-theme="eink"] .drag-handle:hover {
+  background-color: var(--surface2) !important;
+  color: var(--text) !important;
+}
+
+/* ==========================================================================
+   PASS 7 — professional print output + final niche polish
+   ========================================================================== */
+
+/* ─── Expanded print rules: keep tables/cards together, repeat headers,
+   control widows/orphans. Applies when users Ctrl+P any app tab. Does NOT
+   affect the dedicated /print routes in print_templates.py — those own
+   their own inline CSS. ─── */
+@media print {
+  @page {
+    size: letter portrait;
+    margin: 12mm 14mm;
+  }
+  @page :first {
+    margin-top: 10mm;
+  }
+
+  html, body {
+    font-size: 11.5pt;
+    line-height: 1.45;
+    color: #000 !important;
+  }
+
+  /* Better text rhythm for long-form reading */
+  p, li, td, dd {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Keep cards and record rows together */
+  .card,
+  .cc-card,
+  .service-card,
+  .live-widget,
+  .contact-card,
+  .calc-card,
+  .note-item,
+  .convo-item,
+  .catalog-item,
+  .region-card,
+  .incident-item,
+  .sit-cell,
+  .readiness-panel,
+  .home-surface-panel,
+  .home-doc-card,
+  .prep-list-card,
+  .freq-table,
+  .workspace-context-bar,
+  .workspace-inspector,
+  .alert-item,
+  pre,
+  blockquote,
+  figure,
+  .doc-section,
+  .doc-panel,
+  .doc-table-shell,
+  .doc-check-item,
+  .doc-kv-row {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Don't split a heading from the paragraph that follows */
+  h1, h2, h3, h4, h5, h6 {
+    break-after: avoid-page;
+    page-break-after: avoid;
+  }
+
+  /* Table headers repeat on every page */
+  table thead {
+    display: table-header-group;
+  }
+  table tfoot {
+    display: table-footer-group;
+  }
+  table tr {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Force colors to render exactly (badges, severity pills, alerts) */
+  .badge,
+  .tab-badge,
+  .incident-sev,
+  .alert-sev,
+  .sit-cell,
+  .check-cat,
+  .tone-success,
+  .tone-warning,
+  .tone-danger,
+  mark,
+  ins,
+  del {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide active-state chrome that shouldn't print */
+  .customize-panel,
+  #customize-panel,
+  #quick-actions-menu,
+  #timer-panel,
+  #lan-chat-panel,
+  #copilot-dock,
+  #command-palette-overlay,
+  #shortcuts-overlay,
+  .modal-close,
+  .toast-close,
+  .drag-handle,
+  .workspace-context-previous-btn,
+  button[aria-busy="true"],
+  .help-icon,
+  .spinner-inline,
+  .ai-dots,
+  .broadcast-banner,
+  .alert-bar-actions,
+  video,
+  audio,
+  iframe:not(.embedded-app-frame),
+  nav[aria-label="Main navigation"] {
+    display: none !important;
+  }
+
+  /* Utility class authors can opt pages in/out of printing */
+  .no-print { display: none !important; }
+  .print-only { display: block !important; }
+
+  /* Page break helpers for long reports */
+  .page-break-before { break-before: page; page-break-before: always; }
+  .page-break-after  { break-after: page;  page-break-after:  always; }
+  .page-break-avoid  { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Force a clean white page */
+  .main-content::before,
+  .main-content::after,
+  body::before {
+    display: none !important;
+  }
+
+  /* Links: show URL in parentheses (pass 1 did this; narrow to content here) */
+  .main-content a[href^="http"]::after,
+  .modal-body a[href^="http"]::after {
+    content: " [" attr(href) "]";
+    font-size: 9pt;
+    color: #444;
+    font-weight: normal;
+  }
+  /* Don't repeat URLs for internal anchors or tab targets */
+  .main-content a[href^="#"]::after,
+  .main-content a[href^="/"]::after,
+  .sidebar a::after {
+    content: none;
+  }
+}
+/* Screen only — the print-only helpers should hide outside print. */
+@media screen {
+  .print-only {
+    display: none !important;
+  }
+}
+
+/* ─── Final niche semantic elements ─── */
+dfn {
+  font-style: italic;
+  color: var(--text);
+  border-bottom: 1px dotted color-mix(in srgb, var(--accent) 60%, transparent);
+  padding-bottom: 0;
+}
+s,
+.strikethrough {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.2px;
+  text-decoration-color: color-mix(in srgb, var(--text-muted) 80%, transparent);
+}
+dl {
+  margin: 8px 0;
+}
+dt {
+  font-family: var(--font-label);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+dd {
+  margin: 0 0 10px 0;
+  color: var(--text);
+}
+dd + dt {
+  margin-top: 10px;
+}
+
+/* ─── :focus-within on form-row containers: subtle surface lift
+   when any child (input/select/textarea/button) is focused. ─── */
+.form-row:focus-within,
+.calc-row:focus-within,
+.setting-row:focus-within,
+.customize-row:focus-within,
+.workspace-toolbar:focus-within,
+.search-bar:focus-within {
+  border-radius: 10px;
+}
+.setting-row:focus-within {
+  background: color-mix(in srgb, var(--accent-dim) 32%, transparent);
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* ─── "Slot" utilities: flexible layout helpers (opt-in) ─── */
+.row-gap-xs  { row-gap: 4px; }
+.row-gap-sm  { row-gap: 8px; }
+.row-gap-md  { row-gap: 14px; }
+.row-gap-lg  { row-gap: 22px; }
+.col-gap-xs  { column-gap: 4px; }
+.col-gap-sm  { column-gap: 8px; }
+.col-gap-md  { column-gap: 14px; }
+.col-gap-lg  { column-gap: 22px; }
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-gap, 8px);
+}
+.inline-stack {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--inline-gap, 8px);
+}
+.full-bleed { width: 100%; }
+.truncate {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.text-2-line {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.text-3-line {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ─── Sticky section headers inside long scroll regions (opt-in) ─── */
+.sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: color-mix(in srgb, var(--surface-solid) 96%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+/* ─── Final E-Ink simplifications ─── */
+[data-theme="eink"] dt {
+  color: var(--text);
+}
+[data-theme="eink"] .sticky-header {
+  background: var(--bg) !important;
+  backdrop-filter: none !important;
+}

@@ -769,7 +769,7 @@ function renderChat() {
   for (let i = 0; i < chatMessages.length; i++) {
     const m = chatMessages[i];
     const av = m.role === 'user' ? 'U' : aiName.slice(0,2).toUpperCase();
-    const thinkHtml = m.thinking ? '<div class="thinking">Thinking...</div>' : '';
+    const thinkHtml = m.thinking ? '<div class="thinking">Thinking<span class="ai-dots" aria-hidden="true"><span></span><span></span><span></span></span></div>' : '';
     const content = m.role === 'assistant' ? renderMarkdown(m.content) : escapeHtml(m.content).replace(/\n/g,'<br>');
     // "What If" button on AI responses (not on branches being viewed — they can fork further from the convo they belong to)
     const whatIfBtn = (m.role === 'assistant' && m.content && !m.thinking && !currentBranchId) ? `<button class="msg-action-btn whatif-btn" type="button" data-chat-action="fork-what-if" data-message-index="${i}" title="Explore an alternative scenario from this point">What If?</button>` : '';

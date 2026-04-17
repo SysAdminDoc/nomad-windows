@@ -44,6 +44,16 @@
   #tab-security-opsec .so-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-security-opsec .so-form-row textarea { min-height:60px; resize:vertical; }
   #tab-security-opsec .so-form-row .field { flex:1; min-width:140px; }
+  #tab-security-opsec .so-form-row .field.so-field-action { align-self:flex-end; flex:0; }
+  #tab-security-opsec .so-row-header { display:flex; justify-content:space-between; align-items:center; }
+  #tab-security-opsec .so-row-actions { display:flex; gap:12px; flex-wrap:wrap; }
+  #tab-security-opsec .so-card-spaced { margin-top:16px; }
+  #tab-security-opsec .so-card-spaced-sm { margin-top:12px; }
+  #tab-security-opsec .so-stat-cell { flex:1; min-width:200px; text-align:center; }
+  #tab-security-opsec .so-overflow-x { overflow-x:auto; }
+  #tab-security-opsec .so-tag-spacer { margin-left:6px; }
+  #tab-security-opsec .so-meta-text { font-size:.82rem; color:var(--text-secondary,#aaa); }
+  #tab-security-opsec .so-callout { margin-top:8px; padding:10px; background:var(--so-accent-dim); border-radius:6px; font-size:.85rem; }
   #tab-security-opsec .so-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-security-opsec .so-btn-primary { background:var(--so-accent); color:#fff; }
   #tab-security-opsec .so-btn-danger { background:var(--so-red); color:#fff; }
@@ -159,26 +169,26 @@
     <div class="so-form-row">
       <div class="field"><label>Members (comma-separated)</label><input name="so-compartment-members" id="so-compartment-members" placeholder="Alpha, Bravo, Charlie"></div>
       <div class="field"><label>Description</label><input name="so-compartment-desc" id="so-compartment-desc" placeholder="Purpose of this compartment"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateCompartment()">Add</button></div>
+      <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateCompartment()">Add</button></div>
     </div>
   </div>
   <div class="so-grid" id="so-compartment-list"><div class="so-empty">Loading access compartments…</div></div>
 
   <!-- Checklists -->
-  <div class="so-card" style="margin-top:16px">
+  <div class="so-card so-card-spaced">
     <div class="so-card-title">Security Audit Checklists
       <button class="so-btn so-btn-secondary" style="float:right;font-size:.75rem" onclick="soSeedChecklists()">Seed Default Checklists</button>
     </div>
     <div class="so-form-row">
       <div class="field"><label>Checklist Name</label><input name="so-checklist-name" id="so-checklist-name" placeholder="Perimeter Audit"></div>
       <div class="field"><label>Items (one per line)</label><textarea name="so-checklist-items" id="so-checklist-items" placeholder="Check all entry points&#10;Verify locks&#10;Test alarm system"></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateChecklist()">Create</button></div>
+      <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateChecklist()">Create</button></div>
     </div>
   </div>
   <div id="so-checklist-list"><div class="so-empty">No checklists yet. Seed the built-in audits or add your first checklist above.</div></div>
 
   <!-- Duress Signals & Cover Stories -->
-  <div class="so-card" style="margin-top:16px">
+  <div class="so-card so-card-spaced">
     <div class="so-card-title">Duress Signals & Cover Stories</div>
     <div class="so-form-row">
       <div class="field"><label>Duress Code Word</label><input name="so-duress-word" id="so-duress-word" placeholder="Pineapple"></div>
@@ -188,7 +198,7 @@
         </select>
       </div>
       <div class="field"><label>Description</label><input name="so-duress-desc" id="so-duress-desc" placeholder="When spoken = under duress"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateDuress()">Add</button></div>
+      <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateDuress()">Add</button></div>
     </div>
   </div>
   <div id="so-duress-list"><div class="so-empty">No duress signals yet. Add the first covert phrase or cover story above.</div></div>
@@ -227,19 +237,19 @@
     </div>
     <div class="so-form-row">
       <div class="field"><label>Mitigation</label><textarea name="so-threat-mitigation" id="so-threat-mitigation" placeholder="Security patrols, perimeter alarms..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateThreat()">Add Threat</button></div>
+      <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateThreat()">Add Threat</button></div>
     </div>
   </div>
   <div class="so-card">
     <div class="so-card-title">Threat Matrix</div>
-    <div style="overflow-x:auto"><table class="so-table" id="so-threat-table">
+    <div class="so-overflow-x"><table class="so-table" id="so-threat-table">
       <thead><tr><th>Threat</th><th>Category</th><th>Likelihood</th><th>Impact</th><th>Risk Score</th><th>Mitigation</th><th>Actions</th></tr></thead>
       <tbody id="so-threat-tbody"><tr><td colspan="7" class="so-empty">Loading threat matrix…</td></tr></tbody>
     </table></div>
   </div>
 
   <!-- Observation Posts -->
-  <div class="so-card" style="margin-top:16px">
+  <div class="so-card so-card-spaced">
     <div class="so-card-title">Observation Posts</div>
     <div class="so-form-row">
       <div class="field"><label>Post Name</label><input name="so-op-name" id="so-op-name" placeholder="OP Alpha"></div>
@@ -250,7 +260,7 @@
         </select>
       </div>
       <div class="field"><label>Personnel</label><input name="so-op-personnel" id="so-op-personnel" placeholder="2"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateOP()">Add Post</button></div>
+      <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateOP()">Add Post</button></div>
     </div>
   </div>
   <div id="so-op-list"><div class="so-empty">No observation posts yet. Add the first post above to define sectors and staffing.</div></div>
@@ -281,7 +291,7 @@
       <div class="field"><label>Grid/Location</label><input name="so-log-grid" id="so-log-grid" placeholder="GR 123 456"></div>
       <div class="field"><label>Bearing</label><input name="so-log-bearing" id="so-log-bearing" placeholder="045"></div>
       <div class="field"><label>Distance</label><input name="so-log-distance" id="so-log-distance" placeholder="300m"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateLog()">Log Entry</button></div>
+      <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateLog()">Log Entry</button></div>
     </div>
   </div>
   <div class="so-card">
@@ -312,7 +322,7 @@
       <div class="so-gauge"><div class="so-gauge-fill" id="so-gauge-fill" style="width:0%;background:var(--so-green)"></div><div class="so-gauge-text" id="so-gauge-text">0 / 100 (Fully Concealed)</div></div>
     </div>
   </div>
-  <div style="display:flex;gap:12px;flex-wrap:wrap">
+  <div class="so-row-actions">
     <div style="flex:1;min-width:300px">
       <!-- Signature Categories -->
       <div class="so-sig-category" id="so-sig-visual">
@@ -321,7 +331,7 @@
           <div class="field"><label>Source</label><input name="so-vis-source" id="so-vis-source" placeholder="Campfire smoke"></div>
           <div class="field"><label>Intensity (1-10)</label><input name="so-vis-intensity" id="so-vis-intensity" type="number" min="1" max="10" value="5"></div>
           <div class="field"><label>Mitigation</label><input name="so-vis-mitigation" id="so-vis-mitigation" placeholder="Use smokeless fuel"></div>
-          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soAddSignature('visual')">Add</button></div>
+          <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soAddSignature('visual')">Add</button></div>
         </div>
         <div id="so-sig-visual-list"></div>
       </div>
@@ -331,7 +341,7 @@
           <div class="field"><label>Source</label><input name="so-aud-source" id="so-aud-source" placeholder="Generator noise"></div>
           <div class="field"><label>Intensity (1-10)</label><input name="so-aud-intensity" id="so-aud-intensity" type="number" min="1" max="10" value="5"></div>
           <div class="field"><label>Mitigation</label><input name="so-aud-mitigation" id="so-aud-mitigation" placeholder="Sound baffles, run daytime only"></div>
-          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soAddSignature('audio')">Add</button></div>
+          <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soAddSignature('audio')">Add</button></div>
         </div>
         <div id="so-sig-audio-list"></div>
       </div>
@@ -341,7 +351,7 @@
           <div class="field"><label>Source</label><input name="so-elec-source" id="so-elec-source" placeholder="Radio transmissions"></div>
           <div class="field"><label>Intensity (1-10)</label><input name="so-elec-intensity" id="so-elec-intensity" type="number" min="1" max="10" value="5"></div>
           <div class="field"><label>Mitigation</label><input name="so-elec-mitigation" id="so-elec-mitigation" placeholder="COMSEC schedule, burst tx"></div>
-          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soAddSignature('electronic')">Add</button></div>
+          <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soAddSignature('electronic')">Add</button></div>
         </div>
         <div id="so-sig-electronic-list"></div>
       </div>
@@ -351,7 +361,7 @@
           <div class="field"><label>Source</label><input name="so-therm-source" id="so-therm-source" placeholder="Exhaust vents"></div>
           <div class="field"><label>Intensity (1-10)</label><input name="so-therm-intensity" id="so-therm-intensity" type="number" min="1" max="10" value="5"></div>
           <div class="field"><label>Mitigation</label><input name="so-therm-mitigation" id="so-therm-mitigation" placeholder="IR screening, heat dispersal"></div>
-          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soAddSignature('thermal')">Add</button></div>
+          <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soAddSignature('thermal')">Add</button></div>
         </div>
         <div id="so-sig-thermal-list"></div>
       </div>
@@ -369,12 +379,12 @@
 <!-- ── Night Ops Panel ─────────────────────────────────── -->
 <div class="so-panel" id="so-panel-nightops" role="tabpanel" tabindex="-1" aria-labelledby="so-tab-nightops" hidden>
   <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
-    <div class="so-card" style="flex:1;min-width:200px;text-align:center">
+    <div class="so-card so-stat-cell">
       <div class="so-card-title">Moon Phase</div>
       <div id="so-moon-display" style="font-size:3rem">--</div>
       <div id="so-moon-label" style="font-size:.85rem;color:var(--text-secondary,#aaa)">Loading moon and illumination…</div>
     </div>
-    <div class="so-card" style="flex:1;min-width:200px;text-align:center">
+    <div class="so-card so-stat-cell">
       <div class="so-card-title">Dark Adaptation Timer</div>
       <div class="so-timer-display" id="so-timer-display">30:00</div>
       <div style="display:flex;gap:6px;justify-content:center">
@@ -382,7 +392,7 @@
         <button class="so-btn so-btn-secondary" onclick="soResetTimer()">Reset</button>
       </div>
     </div>
-    <div class="so-card" style="flex:1;min-width:200px;text-align:center">
+    <div class="so-card so-stat-cell">
       <div class="so-card-title">Ambient Light</div>
       <select name="so-ambient-light" id="so-ambient-light" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.85rem;margin-bottom:8px">
         <option value="full_moon">Full Moon</option><option value="half_moon">Half Moon</option>
@@ -413,7 +423,7 @@
     <div class="so-form-row">
       <div class="field"><label>Rally Point</label><input name="so-night-rally" id="so-night-rally" placeholder="GR 456 789"></div>
       <div class="field"><label>Personnel</label><input name="so-night-personnel" id="so-night-personnel" placeholder="Alpha team, 4 pax"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateNightOp()">Create Plan</button></div>
+      <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateNightOp()">Create Plan</button></div>
     </div>
   </div>
   <div id="so-nightop-list"><div class="so-empty">No night movement plans yet. Add the first route, timing, and rally point above.</div></div>
@@ -431,10 +441,10 @@
       <button class="so-btn so-mopp-3" onclick="soSetMOPP(3)" id="so-mopp-btn-3"><strong>MOPP 3</strong></button>
       <button class="so-btn so-mopp-4" onclick="soSetMOPP(4)" id="so-mopp-btn-4"><strong>MOPP 4</strong></button>
     </div>
-    <div id="so-mopp-desc" style="font-size:.82rem;color:var(--text-secondary,#aaa)">MOPP 0: All clear, no protective gear required</div>
+    <div id="so-mopp-desc" class="so-meta-text">MOPP 0: All clear, no protective gear required</div>
   </div>
 
-  <div style="display:flex;gap:12px;flex-wrap:wrap">
+  <div class="so-row-actions">
     <!-- CBRN Equipment -->
     <div style="flex:1;min-width:320px">
       <div class="so-card">
@@ -459,13 +469,13 @@
             </select>
           </div>
           <div class="field"><label>Calibration Due</label><input name="so-cbrn-cal-date" id="so-cbrn-cal-date" type="date"></div>
-          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateCBRNItem()">Add</button></div>
+          <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateCBRNItem()">Add</button></div>
         </div>
       </div>
       <div id="so-cbrn-list"><div class="so-empty">No CBRN equipment yet. Add the first detector, suit, or mask above.</div></div>
 
       <!-- Procedures -->
-      <div class="so-card" style="margin-top:12px">
+      <div class="so-card so-card-spaced-sm">
         <div class="so-card-title">CBRN Procedures
           <button class="so-btn so-btn-secondary" style="float:right;font-size:.75rem" onclick="soSeedProcedures()">Seed Built-in Procedures</button>
         </div>
@@ -480,7 +490,7 @@
         </div>
         <div class="so-form-row">
           <div class="field"><label>Steps</label><textarea name="so-proc-steps" id="so-proc-steps" placeholder="1. Don mask within 9 seconds&#10;2. Clear and seal&#10;3. Report to team lead"></textarea></div>
-          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateProcedure()">Add</button></div>
+          <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateProcedure()">Add</button></div>
         </div>
       </div>
       <div id="so-proc-list"><div class="so-empty">No procedures yet. Seed the built-in playbooks or add your first response sequence above.</div></div>
@@ -491,7 +501,7 @@
       <!-- Calculators -->
       <div class="so-card">
         <div class="so-card-title">KI Dosage Reference</div>
-        <div style="overflow-x:auto"><table class="so-table">
+        <div class="so-overflow-x"><table class="so-table">
           <thead><tr><th>Age Group</th><th>Dose (mg)</th><th>Tablets (130mg)</th><th>Notes</th></tr></thead>
           <tbody>
             <tr><td>Adults (18+)</td><td>130</td><td>1</td><td>Standard adult dose</td></tr>
@@ -509,9 +519,9 @@
           <div class="field"><label>Initial Dose Rate (R/hr)</label><input name="so-fallout-rate" id="so-fallout-rate" type="number" step="0.1" value="100"></div>
           <div class="field"><label>Hours Since Detonation</label><input name="so-fallout-hours" id="so-fallout-hours" type="number" min="1" value="1"></div>
           <div class="field"><label>Target Hours</label><input name="so-fallout-target" id="so-fallout-target" type="number" min="1" value="49"></div>
-          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCalcFallout()">Calculate</button></div>
+          <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCalcFallout()">Calculate</button></div>
         </div>
-        <div id="so-fallout-result" class="is-hidden" style="margin-top:8px;padding:10px;background:var(--so-accent-dim);border-radius:6px;font-size:.85rem"></div>
+        <div id="so-fallout-result" class="is-hidden so-callout"></div>
       </div>
       <div class="so-card">
         <div class="so-card-title">Decon Time Estimator</div>
@@ -523,13 +533,13 @@
             </select>
           </div>
           <div class="field"><label>Decon Stations</label><input name="so-decon-stations" id="so-decon-stations" type="number" min="1" value="1"></div>
-          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCalcDecon()">Calculate</button></div>
+          <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCalcDecon()">Calculate</button></div>
         </div>
-        <div id="so-decon-result" class="is-hidden" style="margin-top:8px;padding:10px;background:var(--so-accent-dim);border-radius:6px;font-size:.85rem"></div>
+        <div id="so-decon-result" class="is-hidden so-callout"></div>
       </div>
 
       <!-- EMP Inventory -->
-      <div class="so-card" style="margin-top:12px">
+      <div class="so-card so-card-spaced-sm">
         <div class="so-card-title">EMP-Sensitive Equipment</div>
         <div class="so-form-row">
           <div class="field"><label>Item</label><input name="so-emp-item" id="so-emp-item" placeholder="Handheld radio"></div>
@@ -554,13 +564,13 @@
               <option value="critical">Critical</option><option value="important">Important</option><option value="low">Low</option>
             </select>
           </div>
-          <div class="field" style="flex:0;align-self:flex-end"><button class="so-btn so-btn-primary" onclick="soCreateEMPItem()">Add</button></div>
+          <div class="field so-field-action"><button class="so-btn so-btn-primary" onclick="soCreateEMPItem()">Add</button></div>
         </div>
       </div>
       <div id="so-emp-list"><div class="so-empty">No EMP inventory yet. Add the first critical item above to assess protection gaps.</div></div>
 
       <!-- Grid Dependency Analysis -->
-      <div class="so-card" style="margin-top:12px">
+      <div class="so-card so-card-spaced-sm">
         <div class="so-card-title">Grid Dependency Analysis</div>
         <div id="so-emp-analysis"><div class="so-empty" style="padding:12px">Loading protection analysis…</div></div>
       </div>
@@ -635,7 +645,7 @@
       const list=el('so-compartment-list');
       if(!items.length){list.innerHTML='<div class="so-empty">No compartments yet. Create the first compartment above to define access boundaries and member lists.</div>';return;}
       list.innerHTML=items.map(c=>`<div class="so-card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="so-row-header">
           <div><strong>${c.name}</strong> ${classificationBadge(c.classification)}</div>
           <button class="so-btn so-btn-danger" onclick="soDeleteCompartment(${c.id})">Delete</button>
         </div>
@@ -666,7 +676,7 @@
         const total=checkItems.length;
         const pct=total?Math.round(done/total*100):0;
         return`<div class="so-card">
-          <div style="display:flex;justify-content:space-between;align-items:center">
+          <div class="so-row-header">
             <div><strong>${cl.name}</strong> <span class="so-score" style="color:${pct>=80?'var(--so-green)':pct>=50?'var(--so-yellow)':'var(--so-red)'}">${pct}%</span> <small>(${done}/${total})</small></div>
           </div>
           <div style="margin-top:8px">${checkItems.map((item,idx)=>`<div class="so-checklist-item">
@@ -707,8 +717,8 @@
       if(!duress.length){list.innerHTML='<div class="so-empty">No duress signals yet. Add the first covert phrase or cover story above.</div>';return;}
       list.innerHTML=duress.map(d=>`<div class="so-list-item">
         <div><span class="so-badge so-badge-${d.type==='duress_signal'?'need_to_know':'restricted'}">${d.type==='duress_signal'?'DURESS':'COVER'}</span>
-          <strong style="margin-left:6px">${d.name||d.word}</strong>
-          ${d.description?'<br><small style="color:var(--text-secondary,#aaa)">'+d.description+'</small>':''}
+          <strong class="so-tag-spacer">${d.name||d.word}</strong>
+          ${d.description?'<br><small class="tone-muted">'+d.description+'</small>':''}
         </div>
         <button class="so-btn so-btn-danger" onclick="soDeleteCompartment(${d.id})">Delete</button>
       </div>`).join('');
@@ -760,7 +770,7 @@
       list.innerHTML=items.map(op=>`<div class="so-list-item">
         <div>
           <span class="so-badge so-badge-${op.status||'active'}">${(op.status||'active').toUpperCase()}</span>
-          <strong style="margin-left:6px">${op.name}</strong>
+          <strong class="so-tag-spacer">${op.name}</strong>
           <small style="margin-left:8px;color:var(--text-secondary,#aaa)">Sector: ${op.sector||'--'} | Personnel: ${op.personnel||'--'}</small>
         </div>
         <div>
@@ -804,8 +814,8 @@
       list.innerHTML=items.map(e=>`<div class="so-list-item" style="flex-wrap:wrap">
         <div style="flex:1">
           ${categoryBadge(e.category||'other')}
-          <strong style="margin-left:6px">${e.description||''}</strong>
-          <br><small style="color:var(--text-secondary,#aaa)">
+          <strong class="so-tag-spacer">${e.description||''}</strong>
+          <br><small class="tone-muted">
             ${e.post_name?'Post: '+e.post_name+' | ':''}${e.grid?'Grid: '+e.grid+' | ':''}${e.bearing?'Brg: '+e.bearing+' | ':''}${e.distance?'Dist: '+e.distance+' | ':''}
             ${e.created_at||''}
           </small>
@@ -849,7 +859,7 @@
           totalIntensity+=(s.intensity||0);totalItems++;
           return`<div class="so-list-item">
             <div><strong>${s.source}</strong> <small>Intensity: ${s.intensity}/10</small>
-              ${s.mitigation?'<br><small style="color:var(--text-secondary,#aaa)">Mitigation: '+s.mitigation+'</small>':''}
+              ${s.mitigation?'<br><small class="tone-muted">Mitigation: '+s.mitigation+'</small>':''}
             </div>
             <button class="so-btn so-btn-danger" onclick="soDeleteSignature(${s.id})">Del</button>
           </div>`;
@@ -935,8 +945,8 @@
       const list=el('so-nightop-list');
       if(!items.length){list.innerHTML='<div class="so-empty">No night movement plans yet. Add the first route, timing, and rally point above.</div>';return;}
       list.innerHTML=items.map(op=>`<div class="so-card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div><strong>${op.name}</strong> <small style="color:var(--text-secondary,#aaa)">${op.datetime||''}</small></div>
+        <div class="so-row-header">
+          <div><strong>${op.name}</strong> <small class="tone-muted">${op.datetime||''}</small></div>
         </div>
         ${op.route?'<div style="font-size:.82rem;color:var(--text-secondary,#ccc);margin-top:6px">Route: '+op.route+'</div>':''}
         <div style="font-size:.78rem;color:var(--text-secondary,#aaa);margin-top:4px">
@@ -1003,7 +1013,7 @@
       const list=el('so-proc-list');
       if(!items.length){list.innerHTML='<div class="so-empty">No procedures yet. Seed the built-in playbooks or add your first response sequence above.</div>';return;}
       list.innerHTML=items.map(p=>`<div class="so-card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
+        <div class="so-row-header">
           <div><strong>${p.name}</strong> <span class="so-badge so-badge-${p.type==='immediate_action'?'need_to_know':p.type==='decontamination'?'confidential':'restricted'}">${(p.type||'').replace(/_/g,' ')}</span></div>
         </div>
         <pre style="margin:8px 0 0;white-space:pre-wrap;font-size:.78rem;color:var(--text-secondary,#ccc);background:rgba(0,0,0,.3);padding:8px;border-radius:4px">${p.steps||''}</pre>
@@ -1056,7 +1066,7 @@
         return`<div class="so-list-item">
           <div>
             <span class="${protClass}" title="${i.protection}">${protIcon}</span>
-            <strong style="margin-left:6px">${i.name}</strong>
+            <strong class="so-tag-spacer">${i.name}</strong>
             <small style="margin-left:6px;color:var(--text-secondary,#aaa)">${i.category||''} | Priority: ${i.priority||'low'}</small>
           </div>
           <button class="so-btn so-btn-danger" onclick="soDeleteEMPItem(${i.id})">Del</button>
@@ -1087,7 +1097,7 @@
           <span><span class="so-protected">${info.protected||0}</span> / ${info.total||0} protected</span>
         </div>`).join('')+'</div>':''}
         ${data.critical_unprotected?'<div style="margin-top:8px;padding:8px;background:rgba(239,68,68,.15);border-radius:6px;font-size:.82rem;color:var(--so-red)"><strong>Warning:</strong> '+data.critical_unprotected+' critical item(s) unprotected</div>':''}`;
-    }).catch(()=>{el('so-emp-analysis').innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa)">Couldn\'t load the protection analysis right now.</div>';});
+    }).catch(()=>{el('so-emp-analysis').innerHTML='<div class="so-meta-text">Couldn\'t load the protection analysis right now.</div>';});
   };
 
   /* ── Initial load when tab activates ── */

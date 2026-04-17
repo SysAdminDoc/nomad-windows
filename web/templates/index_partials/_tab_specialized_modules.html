@@ -34,6 +34,20 @@
   #tab-specialized-modules .sm-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-specialized-modules .sm-form-row textarea { min-height:60px; resize:vertical; font-family:inherit; }
   #tab-specialized-modules .sm-form-row .field { flex:1; min-width:140px; }
+  #tab-specialized-modules .sm-form-row .field.sm-field-action { align-self:flex-end; flex:0; }
+  #tab-specialized-modules .sm-form-row .field.sm-field-grow-2 { flex:2; }
+  #tab-specialized-modules .sm-field-grow { flex:1; }
+  #tab-specialized-modules .sm-row-header { display:flex; justify-content:space-between; align-items:flex-start; }
+  #tab-specialized-modules .sm-card-spaced { margin-top:16px; }
+  #tab-specialized-modules .sm-card-spaced-sm { margin-top:12px; }
+  #tab-specialized-modules .sm-card-spaced-xs { margin-top:10px; }
+  #tab-specialized-modules .sm-tag-spacer { margin-left:6px; }
+  #tab-specialized-modules .sm-tag-spacer-lg { margin-left:8px; }
+  #tab-specialized-modules .sm-meta-text { margin-left:6px; font-size:.78rem; color:var(--text-secondary,#aaa); }
+  #tab-specialized-modules .sm-meta-text-lg { margin-left:8px; font-size:.78rem; color:var(--text-secondary,#aaa); }
+  #tab-specialized-modules .sm-tag-muted { margin-left:6px; background:rgba(107,114,128,.2); color:#9ca3af; }
+  #tab-specialized-modules .sm-text-strong { color:var(--text-primary,#eee); }
+  #tab-specialized-modules .sm-tone-danger { color:var(--sm-red); font-weight:600; }
   #tab-specialized-modules .sm-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-specialized-modules .sm-btn-primary { background:var(--sm-accent); color:#000; }
   #tab-specialized-modules .sm-btn-danger { background:var(--sm-red); color:#fff; }
@@ -199,7 +213,7 @@
         </select>
       </div>
       <div class="field"><label>Notes</label><textarea name="sm-cache-notes" id="sm-cache-notes" rows="2" placeholder="Contents, access info..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateCache()">Add Cache</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateCache()">Add Cache</button></div>
     </div>
   </div>
 
@@ -220,7 +234,7 @@
       </div>
       <div class="field"><label>Budget ($)</label><input name="sm-procure-budget-amt" id="sm-procure-budget-amt" type="number" placeholder="500"></div>
       <div class="field"><label>Items (comma-separated)</label><input name="sm-procure-items" id="sm-procure-items" placeholder="Bandages, Antibiotics, Suture kit"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateProcureList()">Create List</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateProcureList()">Create List</button></div>
     </div>
   </div>
   <div id="sm-procure-list" class="sm-card"><div class="sm-empty">Loading procurement lists...</div></div>
@@ -251,13 +265,13 @@
       <div class="field"><label>Weight (lbs)</label><input name="sm-pet-weight" id="sm-pet-weight" type="number" placeholder="65"></div>
       <div class="field"><label>Food Supply (days)</label><input name="sm-pet-food-days" id="sm-pet-food-days" type="number" placeholder="30"></div>
       <div class="field"><label>Notes</label><textarea name="sm-pet-notes" id="sm-pet-notes" rows="2" placeholder="Medical needs, meds..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreatePet()">Add Pet</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreatePet()">Add Pet</button></div>
     </div>
   </div>
   <div id="sm-pet-list" class="sm-grid"></div>
 
   <!-- Youth programs -->
-  <div class="sm-card" style="margin-top:16px">
+  <div class="sm-card sm-card-spaced">
     <div class="sm-card-title">Youth Programs</div>
     <div class="sm-form-row">
       <div class="field"><label>Program Name</label><input name="sm-youth-name" id="sm-youth-name" placeholder="Junior Survival Skills"></div>
@@ -278,13 +292,13 @@
           <option value="completed">Completed</option><option value="suspended">Suspended</option>
         </select>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateYouthProgram()">Add Program</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateYouthProgram()">Add Program</button></div>
     </div>
   </div>
   <div id="sm-youth-list" class="sm-card"><div class="sm-empty">Loading youth programs...</div></div>
 
   <!-- End-of-life plans -->
-  <div class="sm-card" style="margin-top:16px">
+  <div class="sm-card sm-card-spaced">
     <div class="sm-card-title">End-of-Life Plans</div>
     <div class="sm-form-row">
       <div class="field"><label>Person Name</label><input name="sm-eol-person" id="sm-eol-person" placeholder="Full name"></div>
@@ -295,7 +309,7 @@
         </select>
       </div>
       <div class="field"><label>Wishes / Notes</label><textarea name="sm-eol-wishes" id="sm-eol-wishes" rows="2" placeholder="Burial preferences, directives..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateEOLPlan()">Add Plan</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateEOLPlan()">Add Plan</button></div>
     </div>
   </div>
   <div id="sm-eol-list" class="sm-card"><div class="sm-empty">Loading end-of-life plans...</div></div>
@@ -367,12 +381,12 @@
       </div>
     </div>
     <div class="sm-form-row">
-      <div class="field" style="flex:2"><label>Summary</label><textarea name="sm-intel-summary" id="sm-intel-summary" rows="2" placeholder="Key findings..."></textarea></div>
-      <div class="field" style="flex:2"><label>Analysis</label><textarea name="sm-intel-analysis" id="sm-intel-analysis" rows="2" placeholder="Assessment and implications..."></textarea></div>
+      <div class="field sm-field-grow-2"><label>Summary</label><textarea name="sm-intel-summary" id="sm-intel-summary" rows="2" placeholder="Key findings..."></textarea></div>
+      <div class="field sm-field-grow-2"><label>Analysis</label><textarea name="sm-intel-analysis" id="sm-intel-analysis" rows="2" placeholder="Assessment and implications..."></textarea></div>
     </div>
     <div class="sm-form-row">
       <div class="field"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" name="sm-intel-actionable" id="sm-intel-actionable" style="width:auto"> Actionable Intel</label></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateIntel()">Submit Report</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateIntel()">Submit Report</button></div>
     </div>
   </div>
 
@@ -405,7 +419,7 @@
         </select>
       </div>
       <div class="field"><label>Notes</label><textarea name="sm-fab-notes" id="sm-fab-notes" rows="2" placeholder="Design files, tolerances..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateFabProject()">Add Project</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateFabProject()">Add Project</button></div>
     </div>
   </div>
   <div id="sm-fab-list" class="sm-grid"></div>
@@ -432,13 +446,13 @@
           <option value="rare">Rare</option><option value="epic">Epic</option><option value="legendary">Legendary</option>
         </select>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateBadge()">Add Badge</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateBadge()">Add Badge</button></div>
     </div>
   </div>
   <div id="sm-badge-grid" class="sm-badge-grid"></div>
 
   <!-- Award badges -->
-  <div class="sm-card" style="margin-top:16px">
+  <div class="sm-card sm-card-spaced">
     <div class="sm-card-title">Award Badge</div>
     <div class="sm-form-row">
       <div class="field"><label>Badge</label>
@@ -446,12 +460,12 @@
       </div>
       <div class="field"><label>Person</label><input name="sm-award-person" id="sm-award-person" placeholder="Recipient name"></div>
       <div class="field"><label>Date</label><input name="sm-award-date" id="sm-award-date" type="date"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smAwardBadge()">Award</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smAwardBadge()">Award</button></div>
     </div>
   </div>
 
   <!-- Filter awards by person -->
-  <div class="sm-card" style="margin-top:12px">
+  <div class="sm-card sm-card-spaced-sm">
     <div class="sm-card-title">Awards</div>
     <div class="sm-form-row">
       <div class="field"><label>Filter Person</label><input name="sm-award-filter-person" id="sm-award-filter-person" placeholder="All" onchange="smLoadAwards()"></div>
@@ -460,7 +474,7 @@
   </div>
 
   <!-- Leaderboard -->
-  <div class="sm-card" style="margin-top:12px">
+  <div class="sm-card sm-card-spaced-sm">
     <div class="sm-card-title">Leaderboard</div>
     <div id="sm-leaderboard"><div class="sm-empty">Loading leaderboard...</div></div>
   </div>
@@ -496,7 +510,7 @@
     </div>
     <div class="sm-form-row">
       <div class="field" style="flex:3"><label>Tasks (one per line)</label><textarea name="sm-cal-tasks" id="sm-cal-tasks" rows="3" placeholder="Prepare soil&#10;Check seed inventory&#10;Water schedule"></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateEvent()">Add Event</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateEvent()">Add Event</button></div>
     </div>
   </div>
 
@@ -544,7 +558,7 @@
       <div class="field"><label>Issue Date</label><input name="sm-legal-issue-date" id="sm-legal-issue-date" type="date"></div>
       <div class="field"><label>Expiry Date</label><input name="sm-legal-expiry-date" id="sm-legal-expiry-date" type="date"></div>
       <div class="field"><label>Notes</label><textarea name="sm-legal-notes" id="sm-legal-notes" rows="2" placeholder="Filing location, numbers..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateLegalDoc()">Add Document</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateLegalDoc()">Add Document</button></div>
     </div>
   </div>
 
@@ -579,13 +593,13 @@
         </select>
       </div>
       <div class="field"><label>Notes</label><textarea name="sm-drone-notes" id="sm-drone-notes" rows="2" placeholder="Battery count, mods..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateDrone()">Add Drone</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateDrone()">Add Drone</button></div>
     </div>
   </div>
   <div id="sm-drone-list" class="sm-grid"></div>
 
   <!-- Flight log -->
-  <div class="sm-card" style="margin-top:16px">
+  <div class="sm-card sm-card-spaced">
     <div class="sm-card-title">Flight Log</div>
     <div class="sm-form-row">
       <div class="field"><label>Drone</label>
@@ -597,13 +611,13 @@
       <div class="field"><label>Mission</label><input name="sm-flight-mission" id="sm-flight-mission" placeholder="Perimeter recon"></div>
       <div class="field"><label>Duration (min)</label><input name="sm-flight-duration" id="sm-flight-duration" type="number" placeholder="25"></div>
       <div class="field"><label>Max Altitude (ft)</label><input name="sm-flight-altitude" id="sm-flight-altitude" type="number" placeholder="400"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateFlight()">Log Flight</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateFlight()">Log Flight</button></div>
     </div>
     <div id="sm-flight-list"><div class="sm-empty">Select a drone to view flights.</div></div>
   </div>
 
   <!-- Fitness tracker -->
-  <div class="sm-card" style="margin-top:16px">
+  <div class="sm-card sm-card-spaced">
     <div class="sm-card-title">Fitness Tracker</div>
     <div id="sm-fitness-stats" class="sm-stats-row"></div>
     <div class="sm-form-row">
@@ -634,7 +648,7 @@
           <option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
         </select>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="sm-btn sm-btn-primary" onclick="smCreateWorkout()">Log Workout</button></div>
+      <div class="field sm-field-action"><button class="sm-btn sm-btn-primary" onclick="smCreateWorkout()">Log Workout</button></div>
     </div>
     <div id="sm-fitness-list"><div class="sm-empty">Enter a name above to view workout history.</div></div>
   </div>
@@ -682,11 +696,11 @@
       list.innerHTML = items.map(c => {
         const condClass = 'sm-cond-' + (c.condition || 'good');
         return `<div class="sm-list-item">
-          <div style="flex:1">
+          <div class="sm-field-grow">
             <span class="sm-badge sm-type-${c.cache_type || c.type || 'supply'}">${(c.cache_type || c.type || 'supply').replace(/_/g,' ')}</span>
-            <strong style="margin-left:6px">${c.name}</strong>
-            <span class="sm-badge sm-sec-${c.security_level || 'basic'}" style="margin-left:6px">${(c.security_level || 'basic')}</span>
-            <br><small style="color:var(--text-secondary,#aaa)">${c.location || 'Unknown'} | <span class="${condClass}">${c.condition || 'good'}</span> | Checked: ${fmtDate(c.last_checked)}</small>
+            <strong class="sm-tag-spacer">${c.name}</strong>
+            <span class="sm-badge sm-sec-${c.security_level || 'basic'} sm-tag-spacer">${(c.security_level || 'basic')}</span>
+            <br><small class="tone-muted">${c.location || 'Unknown'} | <span class="${condClass}">${c.condition || 'good'}</span> | Checked: ${fmtDate(c.last_checked)}</small>
           </div>
           <div><button class="sm-btn sm-btn-danger" onclick="smDeleteCache(${c.id})">Del</button></div>
         </div>`;
@@ -732,13 +746,13 @@
         const barColor = pct >= 90 ? 'var(--sm-red)' : pct >= 70 ? 'var(--sm-yellow)' : 'var(--sm-green)';
         const itemCount = p.items_count || (p.items ? (typeof p.items === 'string' ? p.items.split(',').length : p.items.length) : 0);
         return `<div class="sm-list-item">
-          <div style="flex:1">
+          <div class="sm-field-grow">
             <span class="sm-badge sm-pri-${p.priority || 'medium'}">${(p.priority || 'medium')}</span>
-            <strong style="margin-left:6px">${p.name}</strong>
-            <span style="margin-left:8px;font-size:.78rem;color:var(--text-secondary,#aaa)">${itemCount} items</span>
-            <span class="sm-badge" style="margin-left:6px;background:rgba(107,114,128,.2);color:#9ca3af">${p.status || 'active'}</span>
+            <strong class="sm-tag-spacer">${p.name}</strong>
+            <span class="sm-meta-text-lg">${itemCount} items</span>
+            <span class="sm-badge sm-tag-muted">${p.status || 'active'}</span>
             <div style="margin-top:6px">
-              <small style="color:var(--text-secondary,#aaa)">$${spent.toLocaleString()} / $${budget.toLocaleString()}</small>
+              <small class="tone-muted">$${spent.toLocaleString()} / $${budget.toLocaleString()}</small>
               <div class="sm-progress"><div class="sm-progress-fill" style="width:${Math.min(pct,100)}%;background:${barColor}"></div></div>
             </div>
           </div>
@@ -779,11 +793,11 @@
         const lowFood = foodDays < 7;
         const icon = speciesIcons[p.species] || speciesIcons.other;
         return `<div class="sm-card ${lowFood ? 'sm-low-supply' : ''}">
-          <div style="display:flex;justify-content:space-between;align-items:start">
+          <div class="sm-row-header">
             <div>
               <span style="font-size:1.5rem;margin-right:6px">${icon}</span>
-              <strong style="color:var(--text-primary,#eee)">${p.name}</strong>
-              <br><small style="color:var(--text-secondary,#aaa)">${p.breed || p.species || ''} | Age: ${p.age || '?'}y | ${p.weight || '?'} lbs</small>
+              <strong class="sm-text-strong">${p.name}</strong>
+              <br><small class="tone-muted">${p.breed || p.species || ''} | Age: ${p.age || '?'}y | ${p.weight || '?'} lbs</small>
               <br><span class="sm-badge" style="background:${lowFood ? 'rgba(239,68,68,.2)' : 'rgba(34,197,94,.2)'};color:${lowFood ? '#ef4444' : '#22c55e'}">${foodDays}d food</span>
             </div>
             <button class="sm-btn sm-btn-danger" onclick="smDeletePet(${p.id})">Del</button>
@@ -816,10 +830,10 @@
       list.innerHTML = items.map(y => {
         const stColor = y.status === 'active' ? '#22c55e' : y.status === 'planned' ? '#3b82f6' : y.status === 'completed' ? '#6b7280' : '#ef4444';
         return `<div class="sm-list-item">
-          <div style="flex:1">
+          <div class="sm-field-grow">
             <strong>${y.name}</strong>
             <span class="sm-badge" style="background:${stColor}22;color:${stColor};margin-left:6px">${y.status || 'active'}</span>
-            <br><small style="color:var(--text-secondary,#aaa)">${(y.program_type||y.type||'').replace(/_/g,' ')} | Ages: ${y.age_range || '?'} | Instructor: ${y.instructor || 'TBD'}</small>
+            <br><small class="tone-muted">${(y.program_type||y.type||'').replace(/_/g,' ')} | Ages: ${y.age_range || '?'} | Instructor: ${y.instructor || 'TBD'}</small>
           </div>
           <button class="sm-btn sm-btn-danger" onclick="smDeleteYouthProgram(${y.id})">Del</button>
         </div>`;
@@ -849,10 +863,10 @@
       list.innerHTML = items.map(e => {
         const stColor = e.status === 'complete' ? '#22c55e' : e.status === 'needs_review' ? '#f59e0b' : '#6b7280';
         return `<div class="sm-list-item">
-          <div style="flex:1">
+          <div class="sm-field-grow">
             <strong>${e.person_name || e.person || ''}</strong>
             <span class="sm-badge" style="background:${stColor}22;color:${stColor};margin-left:6px">${(e.status || 'draft').replace(/_/g,' ')}</span>
-            <br><small style="color:var(--text-secondary,#aaa)">Updated: ${fmtDate(e.updated_at || e.last_updated)}</small>
+            <br><small class="tone-muted">Updated: ${fmtDate(e.updated_at || e.last_updated)}</small>
           </div>
           <button class="sm-btn sm-btn-danger" onclick="smDeleteEOLPlan(${e.id})">Del</button>
         </div>`;
@@ -893,7 +907,7 @@
         const classClass = 'sm-class-' + (i.classification || 'unclassified');
         return `<tr>
           <td><strong>${i.title}</strong>${i.actionable ? ' <span style="color:var(--sm-accent);font-size:.72rem">[ACTIONABLE]</span>' : ''}
-            ${i.pir ? '<br><small style="color:var(--text-secondary,#aaa)">PIR: ' + i.pir + '</small>' : ''}</td>
+            ${i.pir ? '<br><small class="tone-muted">PIR: ' + i.pir + '</small>' : ''}</td>
           <td><span class="sm-badge ${typeClass}">${(i.intel_type || '').toUpperCase()}</span></td>
           <td style="text-align:center;font-weight:600">${i.reliability || '?'}</td>
           <td><span class="sm-badge ${classClass}">${(i.classification || 'unclassified').replace(/_/g,' ')}</span></td>
@@ -949,13 +963,13 @@
         const typeClass = 'sm-fab-' + (f.fab_type || f.type || '3d_print');
         const stClass = 'sm-fabst-' + (f.status || 'planned');
         return `<div class="sm-card">
-          <div style="display:flex;justify-content:space-between;align-items:start">
+          <div class="sm-row-header">
             <div>
               <span class="sm-badge ${typeClass}">${(f.fab_type || f.type || '3d_print').replace(/_/g,' ')}</span>
-              <strong style="margin-left:6px">${f.name}</strong>
-              <span class="sm-badge ${stClass}" style="margin-left:6px">${(f.status || 'planned').replace(/_/g,' ')}</span>
-              <br><small style="color:var(--text-secondary,#aaa)">Material: ${f.material || 'N/A'} | Est: ${f.estimated_time || '?'}h</small>
-              ${f.notes ? '<br><small style="color:var(--text-secondary,#888)">' + f.notes + '</small>' : ''}
+              <strong class="sm-tag-spacer">${f.name}</strong>
+              <span class="sm-badge ${stClass} sm-tag-spacer">${(f.status || 'planned').replace(/_/g,' ')}</span>
+              <br><small class="tone-muted">Material: ${f.material || 'N/A'} | Est: ${f.estimated_time || '?'}h</small>
+              ${f.notes ? '<br><small class="tone-muted">' + f.notes + '</small>' : ''}
             </div>
             <button class="sm-btn sm-btn-danger" onclick="smDeleteFabProject(${f.id})">Del</button>
           </div>
@@ -1020,9 +1034,9 @@
       list.innerHTML = items.map(a => `<div class="sm-list-item">
         <div><span style="font-size:1.2rem;margin-right:4px">${a.badge_icon || ''}</span>
           <strong>${a.badge_name || 'Badge #' + a.badge_id}</strong>
-          <span style="margin-left:6px;font-size:.78rem;color:var(--text-secondary,#aaa)">to ${a.person}</span>
+          <span class="sm-meta-text">to ${a.person}</span>
         </div>
-        <small style="color:var(--text-secondary,#aaa)">${fmtDate(a.awarded_date || a.date)}</small>
+        <small class="tone-muted">${fmtDate(a.awarded_date || a.date)}</small>
       </div>`).join('');
     });
   };
@@ -1043,9 +1057,9 @@
       if(!items || !items.length){ box.innerHTML = '<div class="sm-empty">No awards given yet.</div>'; return; }
       box.innerHTML = items.map((p, i) => `<div class="sm-leaderboard-item">
         <div class="sm-lb-rank">${i + 1}</div>
-        <div style="flex:1">
-          <strong style="color:var(--text-primary,#eee)">${p.person}</strong>
-          <br><small style="color:var(--text-secondary,#aaa)">${p.badge_count || 0} badges</small>
+        <div class="sm-field-grow">
+          <strong class="sm-text-strong">${p.person}</strong>
+          <br><small class="tone-muted">${p.badge_count || 0} badges</small>
         </div>
         <div style="font-size:1.1rem;font-weight:700;color:var(--sm-accent)">${p.total_points || 0} pts</div>
       </div>`).join('');
@@ -1066,12 +1080,12 @@
       list.innerHTML = '<div class="sm-card-title">All Events</div>' + items.map(e => {
         const evtClass = 'sm-evt-' + (e.event_type || e.type || 'seasonal');
         return `<div class="sm-list-item">
-          <div style="flex:1">
+          <div class="sm-field-grow">
             <span class="sm-badge ${evtClass}">${(e.event_type || e.type || 'seasonal')}</span>
-            <strong style="margin-left:6px">${e.name}</strong>
-            <span style="margin-left:8px;font-size:.78rem;color:var(--text-secondary,#aaa)">${e.recurrence || 'once'}</span>
-            <br><small style="color:var(--text-secondary,#aaa)">${fmtDate(e.event_date || e.date)} | ${e.category || ''}</small>
-            ${e.description ? '<br><small style="color:var(--text-secondary,#888)">' + e.description.substring(0, 120) + '</small>' : ''}
+            <strong class="sm-tag-spacer">${e.name}</strong>
+            <span class="sm-meta-text-lg">${e.recurrence || 'once'}</span>
+            <br><small class="tone-muted">${fmtDate(e.event_date || e.date)} | ${e.category || ''}</small>
+            ${e.description ? '<br><small class="tone-muted">' + e.description.substring(0, 120) + '</small>' : ''}
           </div>
           <button class="sm-btn sm-btn-danger" onclick="smDeleteEvent(${e.id})">Del</button>
         </div>`;
@@ -1088,7 +1102,7 @@
         return `<div class="sm-list-item">
           <div>
             <span class="sm-badge sm-evt-${e.event_type || e.type || 'seasonal'}">${e.event_type || e.type || 'seasonal'}</span>
-            <strong style="margin-left:6px">${e.name}</strong>
+            <strong class="sm-tag-spacer">${e.name}</strong>
           </div>
           <span style="font-weight:600;${urgency}">${days !== null ? (days === 0 ? 'TODAY' : days + 'd') : fmtDate(e.event_date || e.date)}</span>
         </div>`;
@@ -1123,8 +1137,8 @@
         const days = daysUntil(d.expiry_date);
         let alert = '--';
         if(days !== null){
-          if(days < 0) alert = '<span style="color:var(--sm-red);font-weight:600">EXPIRED</span>';
-          else if(days <= 30) alert = '<span style="color:var(--sm-red);font-weight:600">' + days + 'd</span>';
+          if(days < 0) alert = '<span class="sm-tone-danger">EXPIRED</span>';
+          else if(days <= 30) alert = '<span class="sm-tone-danger">' + days + 'd</span>';
           else if(days <= 90) alert = '<span style="color:var(--sm-yellow)">' + days + 'd</span>';
           else alert = '<span style="color:var(--sm-green)">' + days + 'd</span>';
         }
@@ -1152,10 +1166,10 @@
         return `<div class="sm-list-item">
           <div>
             <span class="sm-badge sm-doc-${d.doc_type || d.type || 'id'}">${d.doc_type || d.type || 'id'}</span>
-            <strong style="margin-left:6px">${d.title}</strong>
-            <span style="margin-left:6px;font-size:.78rem;color:var(--text-secondary,#aaa)">${d.person || ''}</span>
+            <strong class="sm-tag-spacer">${d.title}</strong>
+            <span class="sm-meta-text">${d.person || ''}</span>
           </div>
-          <span style="color:var(--sm-red);font-weight:600">${urgency}</span>
+          <span class="sm-tone-danger">${urgency}</span>
         </div>`;
       }).join('');
     }).catch(() => { el('sm-legal-expiring-section').style.display = 'none'; });
@@ -1183,13 +1197,13 @@
       list.innerHTML = items.map(d => {
         const condClass = 'sm-drone-' + (d.condition || 'good');
         return `<div class="sm-card">
-          <div style="display:flex;justify-content:space-between;align-items:start">
+          <div class="sm-row-header">
             <div>
-              <strong style="color:var(--text-primary,#eee)">${d.name}</strong>
-              <span class="sm-badge" style="margin-left:6px;background:rgba(107,114,128,.2);color:#9ca3af">${(d.drone_type || d.type || 'quadcopter').replace(/_/g,' ')}</span>
+              <strong class="sm-text-strong">${d.name}</strong>
+              <span class="sm-badge sm-tag-muted">${(d.drone_type || d.type || 'quadcopter').replace(/_/g,' ')}</span>
               <span class="sm-badge ${condClass}" style="margin-left:4px">${d.condition || 'good'}</span>
-              <br><small style="color:var(--text-secondary,#aaa)">${d.manufacturer || ''} ${d.model || ''}</small>
-              <br><small style="color:var(--text-secondary,#aaa)">Flights: ${d.total_flights || 0} | Hours: ${d.total_hours || 0}</small>
+              <br><small class="tone-muted">${d.manufacturer || ''} ${d.model || ''}</small>
+              <br><small class="tone-muted">Flights: ${d.total_flights || 0} | Hours: ${d.total_hours || 0}</small>
             </div>
             <button class="sm-btn sm-btn-danger" onclick="smDeleteDrone(${d.id})">Del</button>
           </div>
@@ -1221,7 +1235,7 @@
     api(API + '/drones/' + droneId + '/flights').then(items => {
       const list = el('sm-flight-list');
       if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No flights logged for this drone.</div>'; return; }
-      list.innerHTML = `<table class="sm-table" style="margin-top:10px"><thead><tr>
+      list.innerHTML = `<table class="sm-table sm-card-spaced-xs"><thead><tr>
         <th>Date</th><th>Mission</th><th>Duration</th><th>Alt (ft)</th><th></th>
       </tr></thead><tbody>${items.map(f => `<tr>
         <td>${fmtDate(f.flight_date || f.date)}</td>
@@ -1255,7 +1269,7 @@
     api(API + '/fitness?person=' + encodeURIComponent(person)).then(items => {
       const list = el('sm-fitness-list');
       if(!items || !items.length){ list.innerHTML = '<div class="sm-empty">No workouts logged for ' + person + '.</div>'; return; }
-      list.innerHTML = `<table class="sm-table" style="margin-top:10px"><thead><tr>
+      list.innerHTML = `<table class="sm-table sm-card-spaced-xs"><thead><tr>
         <th>Date</th><th>Type</th><th>Activity</th><th>Duration</th><th>Dist</th><th>Reps/Sets/Wt</th><th>Cal</th><th>HR</th><th>RPE</th><th></th>
       </tr></thead><tbody>${items.map(w => {
         const fitClass = 'sm-fit-' + (w.workout_type || w.type || 'cardio');

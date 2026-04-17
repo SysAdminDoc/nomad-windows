@@ -1122,6 +1122,21 @@ select::-ms-expand { display: none; }
   letter-spacing: 0.02em;
   text-shadow: 0 1px 0 rgba(0,0,0,0.18);
 }
+/* Severity modifiers — JS adds .severity-info / .severity-warning /
+   .severity-critical per broadcast so the banner's background + color
+   tokens come from CSS, not inline style.background / style.color. */
+.broadcast-banner.severity-info {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+.broadcast-banner.severity-warning {
+  background: var(--orange-dim);
+  color: var(--orange);
+}
+.broadcast-banner.severity-critical {
+  background: var(--red-dim);
+  color: var(--red);
+}
 
 /* ─── Settings toggle-switch container: consistent focus ─── */
 .toggle-switch:hover .toggle-slider {

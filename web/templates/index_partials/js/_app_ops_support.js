@@ -924,11 +924,10 @@ async function pollBroadcast() {
     if (b.active && b.message) {
       // Don't re-show a dismissed broadcast
       if (_dismissedBroadcastTs === b.timestamp) return;
-      const colors = {info:'var(--accent)',warning:'var(--orange)',critical:'var(--red)'};
-      const bgs = {info:'var(--accent-dim)',warning:'var(--orange-dim)',critical:'var(--red-dim)'};
+      banner.classList.remove('severity-info', 'severity-warning', 'severity-critical');
+      const sev = b.severity === 'warning' || b.severity === 'critical' ? b.severity : 'info';
+      banner.classList.add('severity-' + sev);
       banner.style.display = 'block';
-      banner.style.background = bgs[b.severity] || bgs.info;
-      banner.style.color = colors[b.severity] || colors.info;
       banner.textContent = b.message;
       banner.title = 'Click to dismiss | ' + b.timestamp;
       // Play alert sound once per broadcast
@@ -1689,7 +1688,7 @@ async function loadCameras() {
     el.innerHTML = cameras.map(c => {
       let feedHtml = '';
       if (c.stream_type === 'mjpeg') {
-        feedHtml = `<img id="cam-feed-${c.id}" class="prep-camera-feed" src="${escapeAttr(c.url)}" onerror="this.style.background='var(--surface-solid)';this.alt='Camera offline';" alt="Live feed">`;
+        feedHtml = `<img id="cam-feed-${c.id}" class="prep-camera-feed" src="${escapeAttr(c.url)}" onerror="this.alt='Camera offline';" alt="Live feed">`;
       } else if (c.stream_type === 'snapshot') {
         feedHtml = `<img id="cam-feed-${c.id}" class="prep-camera-feed" src="${escapeAttr(c.url)}?t=${Date.now()}" onerror="this.alt='Camera offline';" alt="Snapshot">`;
       } else {

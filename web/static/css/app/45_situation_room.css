@@ -2456,10 +2456,8 @@ a.sr-feed-title:hover { color: #7fe8cf; }
 .maplibregl-popup-anchor-right .maplibregl-popup-tip { border-left-color: var(--sr-panel) !important; }
 
 /* ─── P4: Radar Loading Animation ─── */
-@keyframes sr-radar-sweep {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
+/* sr-radar-sweep keyframe defined once above (line ~1448) — identical
+   spin animation, no need to redeclare. */
 .sr-radar-loader {
   display: flex; align-items: center; justify-content: center;
   padding: 24px 0; color: var(--sr-text-hint);
@@ -2472,14 +2470,18 @@ a.sr-feed-title:hover { color: #7fe8cf; }
 }
 
 /* ─── P4: Skeleton Loader ─── */
-@keyframes sr-shimmer {
+/* Distinct from .sr-shimmer above — that uses a 200%-wide gradient and
+   the percentage-based sr-shimmer keyframe; this one uses a 400px-wide
+   gradient and a pixel-tuned keyframe so the sweep speed feels right
+   on the wider skeleton blocks. */
+@keyframes sr-skeleton-shimmer {
   0% { background-position: -200px 0; }
   100% { background-position: 200px 0; }
 }
 .sr-skeleton {
   background: linear-gradient(90deg, var(--sr-panel) 25%, var(--sr-border-subtle) 50%, var(--sr-panel) 75%);
   background-size: 400px 100%;
-  animation: sr-shimmer 1.5s infinite;
+  animation: sr-skeleton-shimmer 1.5s infinite;
   border-radius: 3px; height: 12px; margin: 6px 0;
 }
 .sr-skeleton-row { display: flex; gap: 8px; }

@@ -557,7 +557,7 @@ function renderLiveDashboard(d) {
       const sitEntries = Object.entries(d.situation || {});
       return `<div class="live-widget" role="button" tabindex="0" data-shell-action="toggle-widget-expand" data-widget-id="status">
         <div class="live-widget-label">SITUATION</div>
-        <div class="live-widget-value" style="color:${colors[worst]}">${labels[worst]}</div>
+        <div class="live-widget-value live-widget-value-toned" style="--widget-tone:${colors[worst]};">${labels[worst]}</div>
         <div class="live-widget-detail">${Object.keys(d.situation||{}).length} domains assessed</div>
       </div>`;
     },
@@ -566,7 +566,7 @@ function renderLiveDashboard(d) {
       const color = c.critical > 0 ? 'var(--red)' : c.active > 0 ? 'var(--orange)' : 'var(--green)';
       return `<div class="live-widget" role="button" tabindex="0" data-shell-action="toggle-alert-bar">
         <div class="live-widget-label">ALERTS</div>
-        <div class="live-widget-value" style="color:${color}">${c.active || 0}</div>
+        <div class="live-widget-value live-widget-value-toned" style="--widget-tone:${color};">${c.active || 0}</div>
         <div class="live-widget-detail">${c.critical||0} critical</div>
       </div>`;
     },
@@ -597,7 +597,7 @@ function renderLiveDashboard(d) {
       return `<div class="live-widget" role="button" tabindex="0" data-shell-action="toggle-widget-expand" data-widget-id="burn">
         <div class="live-widget-label">CRITICAL SUPPLY</div>
         <div class="live-widget-value live-widget-value-toned live-widget-value-compact" style="--widget-tone:${color};">${escapeHtml(worst.name)}</div>
-        <div class="live-widget-detail" style="color:${color}">${worst.days_left} days remaining</div>
+        <div class="live-widget-detail live-widget-detail-toned" style="--widget-tone:${color};">${worst.days_left} days remaining</div>
         <div id="widget-detail-burn" class="widget-detail widget-detail-shell is-hidden">
           ${burns.slice(0,5).map(b => `<div class="widget-detail-row"><span>${escapeHtml(b.name)}</span><span class="widget-detail-row-value-toned" style="--widget-tone:${b.days_left < 7 ? 'var(--red)' : 'var(--text-dim)'}">${b.days_left}d</span></div>`).join('')}
         </div>
@@ -608,7 +608,7 @@ function renderLiveDashboard(d) {
       const color = s.incidents_24h > 0 ? 'var(--red)' : 'var(--green)';
       return `<div class="live-widget live-widget-nav" role="button" tabindex="0" data-tab-target="preparedness" data-prep-sub="security" data-prep-delay="200">
         <div class="live-widget-label">SECURITY</div>
-        <div class="live-widget-value" style="color:${color}">${s.incidents_24h > 0 ? s.incidents_24h + ' INCIDENTS' : 'SECURE'}</div>
+        <div class="live-widget-value live-widget-value-toned" style="--widget-tone:${color};">${s.incidents_24h > 0 ? s.incidents_24h + ' INCIDENTS' : 'SECURE'}</div>
         <div class="live-widget-detail">${s.cameras||0} cameras &middot; ${s.access_24h||0} access events</div>
       </div>`;
     },

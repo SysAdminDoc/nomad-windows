@@ -43,6 +43,13 @@
   #tab-agriculture .ag-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-agriculture .ag-form-row textarea { resize:vertical; min-height:48px; font-family:inherit; }
   #tab-agriculture .ag-form-row .field { flex:1; min-width:140px; }
+  #tab-agriculture .ag-form-row .field.ag-field-action { align-self:flex-end; flex:0; }
+  #tab-agriculture .ag-row-right { text-align:right; }
+  #tab-agriculture .ag-tag-spacer { margin-left:6px; }
+  #tab-agriculture .ag-tone-accent { color:var(--ag-accent); }
+  #tab-agriculture .ag-row-spaced-xs { margin-top:4px; }
+  #tab-agriculture .ag-row-spaced { margin-top:16px; }
+  #tab-agriculture .ag-row-spaced-sm { margin-bottom:12px; }
   #tab-agriculture .ag-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-agriculture .ag-btn-primary { background:var(--ag-accent); color:#000; }
   #tab-agriculture .ag-btn-danger { background:var(--ag-red); color:#fff; }
@@ -152,7 +159,7 @@
           <option value="5">Zone 5</option>
         </select>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateGuild()">Add</button></div>
+      <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateGuild()">Add</button></div>
     </div>
     <div class="ag-form-row">
       <div class="field"><label>Notes</label><textarea name="ag-guild-notes" id="ag-guild-notes" rows="2" placeholder="Companion planting notes..."></textarea></div>
@@ -177,7 +184,7 @@
       </div>
       <div class="field"><label>Species</label><input name="ag-layer-species" id="ag-layer-species" placeholder="Comfrey"></div>
       <div class="field"><label>Role</label><input name="ag-layer-role" id="ag-layer-role" placeholder="Nitrogen fixer"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateLayer()">Add</button></div>
+      <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateLayer()">Add</button></div>
     </div>
   </div>
   <div id="ag-layer-list" class="ag-card"><div class="ag-empty">Select a guild to review its canopy, support species, and roles.</div></div>
@@ -220,7 +227,7 @@
       <div class="field"><label>After P</label><input name="ag-soil-p-after" id="ag-soil-p-after" type="number" step="1" placeholder="ppm"></div>
       <div class="field"><label>Before K</label><input name="ag-soil-k-before" id="ag-soil-k-before" type="number" step="1" placeholder="ppm"></div>
       <div class="field"><label>After K</label><input name="ag-soil-k-after" id="ag-soil-k-after" type="number" step="1" placeholder="ppm"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateSoil()">Add</button></div>
+      <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateSoil()">Add</button></div>
     </div>
     <div class="ag-form-row">
       <div class="field"><label>Notes</label><textarea name="ag-soil-notes" id="ag-soil-notes" rows="2" placeholder="Observations..."></textarea></div>
@@ -249,7 +256,7 @@
       </div>
       <div class="field"><label>Pruning Due</label><input name="ag-plant-prune-date" id="ag-plant-prune-date" type="date"></div>
       <div class="field"><label>Fertilize Due</label><input name="ag-plant-fert-date" id="ag-plant-fert-date" type="date"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreatePlant()">Add</button></div>
+      <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreatePlant()">Add</button></div>
     </div>
   </div>
   <div id="ag-plant-list" class="ag-card"><div class="ag-empty">Loading perennial registry...</div></div>
@@ -282,7 +289,7 @@
       <div class="field"><label>Due Date</label><input name="ag-breed-due" id="ag-breed-due" type="date"></div>
       <div class="field"><label>Offspring Count</label><input name="ag-breed-offspring" id="ag-breed-offspring" type="number" min="0" value="0"></div>
       <div class="field"><label>Notes</label><input name="ag-breed-notes" id="ag-breed-notes" placeholder="Optional notes"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateBreeding()">Add</button></div>
+      <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateBreeding()">Add</button></div>
     </div>
   </div>
   <div id="ag-breed-list" class="ag-card"><div class="ag-empty">Loading livestock breeding records...</div></div>
@@ -302,7 +309,7 @@
       <div class="field"><label>Cost ($)</label><input name="ag-feed-cost" id="ag-feed-cost" type="number" step="0.01" value="0"></div>
       <div class="field"><label>Date</label><input name="ag-feed-date" id="ag-feed-date" type="date"></div>
       <div class="field"><label>Notes</label><input name="ag-feed-notes" id="ag-feed-notes" placeholder="Optional"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateFeed()">Add</button></div>
+      <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateFeed()">Add</button></div>
     </div>
   </div>
   <div id="ag-feed-list" class="ag-card"><div class="ag-empty">Loading feed logs...</div></div>
@@ -330,14 +337,14 @@
       <div class="field"><label>Capacity / Rating</label><input name="ag-sys-capacity" id="ag-sys-capacity" placeholder="5kW, 200gal, etc."></div>
       <div class="field"><label>Maintenance Due</label><input name="ag-sys-maint-date" id="ag-sys-maint-date" type="date"></div>
       <div class="field"><label>Notes</label><input name="ag-sys-notes" id="ag-sys-notes" placeholder="Location, brand..."></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateSystem()">Add</button></div>
+      <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateSystem()">Add</button></div>
     </div>
   </div>
   <div id="ag-sys-dashboard" class="ag-grid"></div>
   <div id="ag-sys-list" class="ag-card"><div class="ag-empty">Loading homestead systems...</div></div>
 
   <!-- Aquaponics -->
-  <div class="ag-card" style="margin-top:16px">
+  <div class="ag-card ag-row-spaced">
     <div class="ag-card-title">Aquaponics Water Quality</div>
     <div class="ag-form-row">
       <div class="field"><label>System Name</label><input name="ag-aqua-name" id="ag-aqua-name" placeholder="Tilapia System A"></div>
@@ -346,7 +353,7 @@
       <div class="field"><label>Nitrite (ppm)</label><input name="ag-aqua-nitrite" id="ag-aqua-nitrite" type="number" step="0.01" placeholder="0.0"></div>
       <div class="field"><label>Nitrate (ppm)</label><input name="ag-aqua-nitrate" id="ag-aqua-nitrate" type="number" step="1" placeholder="0"></div>
       <div class="field"><label>Temp (F)</label><input name="ag-aqua-temp" id="ag-aqua-temp" type="number" step="0.1" placeholder="78"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateAquaponics()">Add</button></div>
+      <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateAquaponics()">Add</button></div>
     </div>
   </div>
   <div id="ag-aqua-list" class="ag-card"><div class="ag-empty">Loading aquaponics readings...</div></div>
@@ -377,7 +384,7 @@
       <div class="field"><label>Output Description</label><input name="ag-rec-output" id="ag-rec-output" placeholder="Finished compost, methane..."></div>
       <div class="field"><label>Capacity</label><input name="ag-rec-capacity" id="ag-rec-capacity" placeholder="50 gal, 3 cu yd..."></div>
       <div class="field"><label>Notes</label><input name="ag-rec-notes" id="ag-rec-notes" placeholder="Optional"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="ag-btn ag-btn-primary" onclick="agCreateRecycling()">Add</button></div>
+      <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateRecycling()">Add</button></div>
     </div>
   </div>
   <div id="ag-rec-summary" class="ag-summary-row"></div>
@@ -475,7 +482,7 @@
       box.innerHTML = items.map(g => `<div class="ag-list-item">
         <div><strong>${esc(g.name)}</strong> <small class="tone-muted">Central: ${esc(g.central_species || '--')} | Zone ${esc(g.zone || '--')}</small>
           ${g.notes ? `<br><small class="tone-muted">${esc(g.notes)}</small>` : ''}
-          <div style="margin-top:4px">${(g.layers || []).map(l => `<span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}: ${esc(l.species)}</span>`).join('')}</div>
+          <div class="ag-row-spaced-xs">${(g.layers || []).map(l => `<span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}: ${esc(l.species)}</span>`).join('')}</div>
         </div>
         <div style="display:flex;gap:4px">
           <button class="ag-btn ag-btn-secondary" onclick="agSelectGuild(${+g.id||0})">Layers</button>
@@ -513,7 +520,7 @@
           <td><span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}</span></td>
           <td>${esc(l.species || '--')}</td>
           <td>${esc(l.role || '--')}</td>
-          <td style="text-align:right"><button class="ag-btn ag-btn-danger" onclick="agDeleteLayer(${+l.id||0})">x</button></td>
+          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteLayer(${+l.id||0})">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -563,7 +570,7 @@
         }
         return `<div class="ag-list-item">
           <div><strong>${esc(s.name)}</strong>
-            <span class="ag-badge ${badge}" style="margin-left:6px">${esc(s.soil_type)}</span>
+            <span class="ag-badge ${badge} ag-tag-spacer">${esc(s.soil_type)}</span>
             <span class="ag-badge" style="color:${stColor};margin-left:4px">${esc(s.status)}</span>
             ${testHtml}
             ${s.notes ? `<br><small class="tone-muted">${esc(s.notes)}</small>` : ''}
@@ -611,7 +618,7 @@
           <td>${esc(p.date_planted || '--')}</td>
           <td>${dueTag(p.pruning_due)}</td>
           <td>${dueTag(p.fertilization_due)}</td>
-          <td style="text-align:right"><button class="ag-btn ag-btn-danger" onclick="agDeletePlant(${+p.id||0})">x</button></td>
+          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeletePlant(${+p.id||0})">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -638,7 +645,7 @@
       if (!items.length) { box.innerHTML = '<div class="ag-empty">No breeding records yet. Log the first pairing or cycle above.</div>'; return; }
       box.innerHTML = items.map(b => `<div class="ag-list-item">
         <div><strong>${esc(b.name)}</strong>
-          <span class="ag-badge ag-status-${esc(b.status)}" style="margin-left:6px">${esc(b.status)}</span>
+          <span class="ag-badge ag-status-${esc(b.status)} ag-tag-spacer">${esc(b.status)}</span>
           <br><small class="tone-muted">${esc(b.species || '--')} | Bred: ${esc(b.breed_date || '--')} | Due: ${esc(b.due_date || '--')} | Offspring: ${+b.offspring_count||0}</small>
           ${b.notes ? `<br><small class="tone-muted">${esc(b.notes)}</small>` : ''}
         </div>
@@ -680,7 +687,7 @@
           <td>${f.date || '--'}</td><td>${f.feed_type || '--'}</td>
           <td>${f.amount || 0}</td><td>$${Number(f.cost || 0).toFixed(2)}</td>
           <td>${f.notes || '--'}</td>
-          <td style="text-align:right"><button class="ag-btn ag-btn-danger" onclick="agDeleteFeed(${f.id})">x</button></td>
+          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteFeed(${f.id})">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
     api(API + '/feed/summary').then(data => {
@@ -745,7 +752,7 @@
             <td>${s.capacity || '--'}</td>
             <td><span style="color:${gaugeColor(pct)}">${pct}%</span></td>
             <td>${dueTag(s.maintenance_due)}</td>
-            <td style="text-align:right"><button class="ag-btn ag-btn-danger" onclick="agDeleteSystem(${s.id})">x</button></td>
+            <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteSystem(${s.id})">x</button></td>
           </tr>`;
         }).join('') + '</tbody></table>';
     });
@@ -777,7 +784,7 @@
           <td><span class="${wqClass('nitrate', a.nitrate)}">${a.nitrate ?? '--'}</span></td>
           <td>${a.temp ?? '--'}F</td>
           <td>${a.created_at || '--'}</td>
-          <td style="text-align:right"><button class="ag-btn ag-btn-danger" onclick="agDeleteAquaponics(${a.id})">x</button></td>
+          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteAquaponics(${a.id})">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -806,7 +813,7 @@
         const stColor = r.status === 'active' ? '#22c55e' : r.status === 'maintenance' ? '#f59e0b' : r.status === 'offline' ? '#ef4444' : '#94a3b8';
         return `<div class="ag-list-item">
           <div><strong>${r.name}</strong>
-            <span class="ag-badge ${badge}" style="margin-left:6px">${r.system_type}</span>
+            <span class="ag-badge ${badge} ag-tag-spacer">${r.system_type}</span>
             <span class="ag-badge" style="color:${stColor};margin-left:4px">${r.status}</span>
             <br><small class="tone-muted">In: ${r.input_desc || '--'} | Out: ${r.output_desc || '--'} | Cap: ${r.capacity || '--'}</small>
             ${r.notes ? `<br><small class="tone-muted">${r.notes}</small>` : ''}
@@ -837,13 +844,13 @@
       items.forEach(r => { (byType[r.system_type] = byType[r.system_type] || []).push(r); });
       box.innerHTML = Object.entries(byType).map(([type, systems]) => {
         const cls = recTypeClass[type] || '';
-        return `<div style="margin-bottom:12px">
+        return `<div class="ag-row-spaced-sm">
           <div class="ag-badge ${cls}" style="font-size:.82rem;padding:4px 10px;margin-bottom:6px">${type.replace('_', ' ').toUpperCase()}</div>
           ${systems.map(s => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:.82rem">
             <span style="color:var(--text-secondary,#aaa);min-width:120px">${s.input_desc || 'Input'}</span>
-            <span style="color:var(--ag-accent)">--></span>
+            <span class="ag-tone-accent">--></span>
             <strong style="color:var(--text-primary,#eee)">${s.name}</strong>
-            <span style="color:var(--ag-accent)">--></span>
+            <span class="ag-tone-accent">--></span>
             <span class="tone-muted">${s.output_desc || 'Output'}</span>
             <span class="ag-badge" style="color:${s.status === 'active' ? '#22c55e' : '#94a3b8'};margin-left:auto">${s.status}</span>
           </div>`).join('')}

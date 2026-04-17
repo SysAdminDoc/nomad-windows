@@ -145,6 +145,12 @@
     .wm-quality-badge.is-safe { background: rgba(52,211,153,0.15); color: var(--wm-green); }
     .wm-quality-badge.is-caution { background: rgba(251,146,60,0.15); color: var(--wm-orange); }
     .wm-quality-badge.is-unsafe { background: rgba(248,113,113,0.15); color: var(--wm-red); }
+    .wm-meta-text { font-size: 12px; color: var(--wm-text-dim); margin-bottom: 12px; }
+    .wm-row-spaced-sm { margin-bottom: 8px; }
+    .wm-text-strong { font-weight: 700; }
+    .wm-text-strong-accent { font-weight: 700; color: var(--wm-accent); }
+    .wm-tag-strong { font-weight: 600; white-space: nowrap; }
+    .wm-meta-foot { font-size: 11px; color: var(--wm-text-muted); margin-top: 8px; }
   </style>
 
   <!-- Hero header -->
@@ -400,10 +406,10 @@
     <!-- Budget Calculator -->
     <div class="settings-card">
       <h3>Water Budget Calculator</h3>
-      <p style="font-size:12px;color:var(--wm-text-dim);margin-bottom:12px;">
+      <p class="wm-meta-text">
         Estimate how much water you need based on people and duration.
       </p>
-      <div class="wm-form-grid" style="margin-bottom:8px;">
+      <div class="wm-form-grid wm-row-spaced-sm">
         <div class="wm-field">
           <label class="wm-field-label" for="wm-budget-people">People</label>
           <input id="wm-budget-people" type="number" min="1" max="100" value="4" class="wm-field-control" name="wm-budget-people">
@@ -420,7 +426,7 @@
     <!-- Purification Reference -->
     <div class="settings-card">
       <h3>Purification Reference</h3>
-      <p style="font-size:12px;color:var(--wm-text-dim);margin-bottom:12px;">
+      <p class="wm-meta-text">
         Common water purification methods and their effectiveness.
       </p>
       <div id="wm-purification-body">
@@ -902,12 +908,12 @@
         });
         html += '</tbody>';
         if (res.grand_total != null) {
-          html += '<tfoot><tr><td colspan="2" style="font-weight:700;">Grand Total</td>' +
-            '<td style="font-weight:700;color:var(--wm-accent);">' + fmtNum(res.grand_total) + ' gal</td></tr></tfoot>';
+          html += '<tfoot><tr><td colspan="2" class="wm-text-strong">Grand Total</td>' +
+            '<td class="wm-text-strong-accent">' + fmtNum(res.grand_total) + ' gal</td></tr></tfoot>';
         }
         html += '</table>';
         if (res.notes) {
-          html += '<p style="font-size:11px;color:var(--wm-text-muted);margin-top:8px;">' + escapeHtml(res.notes) + '</p>';
+          html += '<p class="wm-meta-foot">' + escapeHtml(res.notes) + '</p>';
         }
         html += '</div>';
         container.innerHTML = html;
@@ -934,7 +940,7 @@
         html += '<thead><tr><th>Method</th><th>Instructions</th><th>Effective Against</th><th>Limitations</th></tr></thead><tbody>';
         methods.forEach(function (m) {
           html += '<tr>' +
-            '<td style="font-weight:600;white-space:nowrap;">' + escapeHtml(m.method || '--') + '</td>' +
+            '<td class="wm-tag-strong">' + escapeHtml(m.method || '--') + '</td>' +
             '<td>' + escapeHtml(m.instructions || '--') + '</td>' +
             '<td>' + escapeHtml(m.effective_against || '--') + '</td>' +
             '<td>' + escapeHtml(m.limitations || '--') + '</td>' +

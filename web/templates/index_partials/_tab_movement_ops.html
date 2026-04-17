@@ -42,6 +42,13 @@
   #tab-movement-ops .mo-form-row select,
   #tab-movement-ops .mo-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-movement-ops .mo-form-row .field { flex:1; min-width:140px; }
+  #tab-movement-ops .mo-form-row .field.mo-field-action { align-self:flex-end; flex:0; }
+  #tab-movement-ops .mo-form-row .field.mo-field-grow-3 { flex:3; }
+  #tab-movement-ops .mo-row-tight { display:flex; gap:4px; }
+  #tab-movement-ops .mo-row-spaced-xs { margin-top:6px; }
+  #tab-movement-ops .mo-tag-spacer { margin-left:6px; }
+  #tab-movement-ops .mo-tone-info { color:var(--mo-blue); }
+  #tab-movement-ops .mo-hidden { display:none; }
   #tab-movement-ops .mo-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-movement-ops .mo-btn-primary { background:var(--mo-accent); color:#000; }
   #tab-movement-ops .mo-btn-danger { background:var(--mo-red); color:#fff; }
@@ -132,8 +139,8 @@
       </div>
     </div>
     <div class="mo-form-row">
-      <div class="field" style="flex:3"><label>Notes</label><textarea name="mo-plan-notes" id="mo-plan-notes" rows="2"></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCreatePlan()">Add Plan</button></div>
+      <div class="field mo-field-grow-3"><label>Notes</label><textarea name="mo-plan-notes" id="mo-plan-notes" rows="2"></textarea></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreatePlan()">Add Plan</button></div>
     </div>
   </div>
   <div id="mo-plans-list" class="mo-card"><div class="mo-empty">Loading movement plans...</div></div>
@@ -169,7 +176,7 @@
     </div>
     <div class="mo-form-row">
       <div class="field"><label>Storage Location</label><input name="mo-av-location" id="mo-av-location" placeholder="Garage"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCreateAltVehicle()">Add</button></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateAltVehicle()">Add</button></div>
     </div>
   </div>
   <div id="mo-av-list" class="mo-card"><div class="mo-empty">Loading alternate transport assets...</div></div>
@@ -200,7 +207,7 @@
     <div class="mo-form-row">
       <div class="field"><label>Description</label><input name="mo-hz-desc" id="mo-hz-desc" placeholder="Single-lane bridge, no bypass within 5mi"></div>
       <div class="field"><label>Bypass Route</label><input name="mo-hz-bypass" id="mo-hz-bypass" placeholder="Alt route via Hwy 12"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCreateHazard()">Add</button></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateHazard()">Add</button></div>
     </div>
   </div>
   <div id="mo-hz-list" class="mo-card"><div class="mo-empty">Loading route hazards...</div></div>
@@ -218,7 +225,7 @@
     </div>
     <div class="mo-form-row">
       <div class="field"><label>Notes</label><input name="mo-vl-notes" id="mo-vl-notes" placeholder="Bug-out bags first, then supplies"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCreateLoading()">Add</button></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateLoading()">Add</button></div>
     </div>
   </div>
   <div id="mo-vl-list" class="mo-card"><div class="mo-empty">Loading vehicle staging plans...</div></div>
@@ -242,10 +249,10 @@
     <div class="mo-form-row">
       <div class="field"><label>GO Threshold</label><input name="mo-gng-go" id="mo-gng-go" placeholder="All routes verified clear"></div>
       <div class="field"><label>NO-GO Threshold</label><input name="mo-gng-nogo" id="mo-gng-nogo" placeholder="Primary & alternate blocked"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCreateGoNogo()">Add</button></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateGoNogo()">Add</button></div>
     </div>
   </div>
-  <div id="mo-gng-eval" class="mo-card" style="display:none"></div>
+  <div id="mo-gng-eval" class="mo-card mo-hidden"></div>
   <div id="mo-gng-list" class="mo-card"><div class="mo-empty">Loading departure criteria...</div></div>
 </div>
 
@@ -270,9 +277,9 @@
             <option value="swamp">Swamp</option><option value="snow">Snow</option>
           </select>
         </div>
-        <div class="field" style="flex:0;align-self:flex-end"><button class="mo-btn mo-btn-primary" onclick="moCalcMarch()">Calculate</button></div>
+        <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCalcMarch()">Calculate</button></div>
       </div>
-      <div id="mo-march-result" class="mo-calc-result" style="display:none"></div>
+      <div id="mo-march-result" class="mo-calc-result mo-hidden"></div>
     </div>
     <div class="mo-card">
       <div class="mo-card-title">Pace Count Calculator</div>
@@ -280,8 +287,8 @@
         <div class="field"><label>Your Pace /100m</label><input name="mo-calc-pace" id="mo-calc-pace-val" type="number" value="65"></div>
         <div class="field"><label>Distance (m)</label><input name="mo-calc-meters" id="mo-calc-meters" type="number" value="1000"></div>
       </div>
-      <div style="margin-top:6px"><button class="mo-btn mo-btn-primary" onclick="moCalcPace()">Calculate</button></div>
-      <div id="mo-pace-result" class="mo-calc-result" style="display:none"></div>
+      <div class="mo-row-spaced-xs"><button class="mo-btn mo-btn-primary" onclick="moCalcPace()">Calculate</button></div>
+      <div id="mo-pace-result" class="mo-calc-result mo-hidden"></div>
     </div>
   </div>
 </div>
@@ -330,8 +337,8 @@
       const el=$('mo-plans-list');
       if(!plans.length){el.innerHTML='<div class="mo-empty">No movement plans yet. Capture the first route above to anchor timing, distance, and movement method.</div>';return;}
       el.innerHTML=plans.map(p=>`<div class="mo-list-item">
-        <div><strong>${p.name}</strong> <span class="mo-badge" style="margin-left:6px">${p.plan_type}</span>
-          <br><small style="color:var(--text-secondary)">${p.origin||'?'} → ${p.destination||'?'} · ${p.distance_miles||0} mi · ${p.status}</small></div>
+        <div><strong>${p.name}</strong> <span class="mo-badge mo-tag-spacer">${p.plan_type}</span>
+          <br><small class="tone-muted">${p.origin||'?'} → ${p.destination||'?'} · ${p.distance_miles||0} mi · ${p.status}</small></div>
         <div><button class="mo-btn mo-btn-danger" onclick="moDeletePlan(${p.id})">×</button></div>
       </div>`).join('');
     });
@@ -355,8 +362,8 @@
       const el=$('mo-av-list');
       if(!items.length){el.innerHTML='<div class="mo-empty">No alternate transport assets are registered yet. Add the first bike, animal, or watercraft above.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mo-list-item">
-        <div><strong>${v.name}</strong> <span class="mo-badge" style="margin-left:6px">${v.vehicle_type}</span>
-          <br><small style="color:var(--text-secondary)">Cap: ${v.capacity_lb}lb · Range: ${v.range_miles}mi · ${v.speed_mph}mph · ${v.condition}</small></div>
+        <div><strong>${v.name}</strong> <span class="mo-badge mo-tag-spacer">${v.vehicle_type}</span>
+          <br><small class="tone-muted">Cap: ${v.capacity_lb}lb · Range: ${v.range_miles}mi · ${v.speed_mph}mph · ${v.condition}</small></div>
         <div><button class="mo-btn mo-btn-danger" onclick="moDeleteAV(${v.id})">×</button></div>
       </div>`).join('');
     });
@@ -381,8 +388,8 @@
       const sevColor={low:'#22c55e',moderate:'#f59e0b',high:'#f97316',critical:'#ef4444'};
       el.innerHTML=items.map(h=>`<div class="mo-list-item">
         <div><strong>${h.name}</strong> <span class="mo-badge" style="color:${sevColor[h.severity]||'#aaa'};margin-left:6px">${h.severity}</span>
-          <br><small style="color:var(--text-secondary)">${h.hazard_type} · ${h.description||'No description'}</small>
-          ${h.bypass_route?`<br><small style="color:var(--mo-blue)">Bypass: ${h.bypass_route}</small>`:''}</div>
+          <br><small class="tone-muted">${h.hazard_type} · ${h.description||'No description'}</small>
+          ${h.bypass_route?`<br><small class="mo-tone-info">Bypass: ${h.bypass_route}</small>`:''}</div>
         <div><button class="mo-btn mo-btn-danger" onclick="moDeleteHazard(${h.id})">×</button></div>
       </div>`).join('');
     });
@@ -405,7 +412,7 @@
       if(!items.length){el.innerHTML='<div class="mo-empty">No vehicle staging plans yet. Build the first loading order above.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mo-list-item">
         <div><strong>#${v.load_order} ${v.vehicle_name||'Vehicle'}</strong>
-          <br><small style="color:var(--text-secondary)">Weight: ${v.total_weight_lb}/${v.max_weight_lb}lb · Fuel: ${v.fuel_level_pct}%</small></div>
+          <br><small class="tone-muted">Weight: ${v.total_weight_lb}/${v.max_weight_lb}lb · Fuel: ${v.fuel_level_pct}%</small></div>
         <div><button class="mo-btn mo-btn-danger" onclick="moDeleteLoading(${v.id})">×</button></div>
       </div>`).join('');
     });
@@ -429,9 +436,9 @@
       if(!items.length){el.innerHTML='<div class="mo-empty">No go/no-go criteria are defined yet. Add the first departure gate above.</div>';return;}
       const statusBadge={go:'mo-badge-go',nogo:'mo-badge-nogo',hold:'mo-badge-hold',unknown:'mo-badge-unknown'};
       el.innerHTML=items.map(g=>`<div class="mo-list-item">
-        <div><strong>${g.criterion}</strong> <span class="mo-badge ${statusBadge[g.current_status]||'mo-badge-unknown'}" style="margin-left:6px">${g.current_status.toUpperCase()}</span>
-          <br><small style="color:var(--text-secondary)">${g.category} · Weight: ${g.weight}</small></div>
-        <div style="display:flex;gap:4px">
+        <div><strong>${g.criterion}</strong> <span class="mo-badge ${statusBadge[g.current_status]||'mo-badge-unknown'} mo-tag-spacer">${g.current_status.toUpperCase()}</span>
+          <br><small class="tone-muted">${g.category} · Weight: ${g.weight}</small></div>
+        <div class="mo-row-tight">
           <button class="mo-btn mo-btn-secondary" onclick="moSetGoNogo(${g.id},'go')" title="Set GO">GO</button>
           <button class="mo-btn mo-btn-secondary" onclick="moSetGoNogo(${g.id},'nogo')" title="Set NO-GO">NO</button>
           <button class="mo-btn mo-btn-danger" onclick="moDeleteGoNogo(${g.id})">×</button>

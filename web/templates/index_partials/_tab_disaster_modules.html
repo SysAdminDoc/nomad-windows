@@ -43,6 +43,14 @@
   #tab-disaster-modules .dm-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-disaster-modules .dm-form-row textarea { min-height:60px; resize:vertical; font-family:inherit; }
   #tab-disaster-modules .dm-form-row .field { flex:1; min-width:140px; }
+  #tab-disaster-modules .dm-form-row .field.dm-field-action { align-self:flex-end; flex:0; }
+  #tab-disaster-modules .dm-field-grow { flex:1; }
+  #tab-disaster-modules .dm-row-right { text-align:right; }
+  #tab-disaster-modules .dm-row-spaced-sm { margin-bottom:8px; }
+  #tab-disaster-modules .dm-tag-spacer-r { margin-right:6px; }
+  #tab-disaster-modules .dm-tag-spacer-l { margin-left:8px; }
+  #tab-disaster-modules .dm-row-tight { display:flex; gap:4px; }
+  #tab-disaster-modules .dm-meta-text { font-size:.82rem; color:var(--text-secondary,#aaa); }
   #tab-disaster-modules .dm-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-disaster-modules .dm-btn-primary { background:var(--dm-accent); color:#000; }
   #tab-disaster-modules .dm-btn-danger { background:var(--dm-red); color:#fff; }
@@ -201,7 +209,7 @@
         </select>
       </div>
       <div class="field"><label>Description</label><textarea name="dm-plan-desc" id="dm-plan-desc" rows="2" placeholder="Plan overview..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreatePlan()">Create</button></div>
+      <div class="field dm-field-action"><button class="dm-btn dm-btn-primary" onclick="dmCreatePlan()">Create</button></div>
     </div>
   </div>
 
@@ -254,7 +262,7 @@
       <div class="field"><label>Output (watts)</label><input name="dm-energy-output" id="dm-energy-output" type="number" placeholder="500"></div>
       <div class="field"><label>Fuel Source</label><input name="dm-energy-fuel" id="dm-energy-fuel" placeholder="Hardwood, creek flow, etc."></div>
       <div class="field"><label>Notes</label><textarea name="dm-energy-notes" id="dm-energy-notes" rows="2" placeholder="Maintenance notes..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreateEnergy()">Add</button></div>
+      <div class="field dm-field-action"><button class="dm-btn dm-btn-primary" onclick="dmCreateEnergy()">Add</button></div>
     </div>
   </div>
 
@@ -306,7 +314,7 @@
     <div class="dm-form-row">
       <div class="field"><label>Hours Completed</label><input name="dm-con-hours-done" id="dm-con-hours-done" type="number" placeholder="0"></div>
       <div class="field"><label>Description</label><textarea name="dm-con-desc" id="dm-con-desc" rows="2" placeholder="Project details..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreateConstruction()">Create</button></div>
+      <div class="field dm-field-action"><button class="dm-btn dm-btn-primary" onclick="dmCreateConstruction()">Create</button></div>
     </div>
   </div>
 
@@ -316,7 +324,7 @@
   <!-- Materials inventory -->
   <div class="dm-card">
     <div class="dm-card-title">Materials Inventory</div>
-    <div id="dm-mat-low-stock" style="margin-bottom:8px"></div>
+    <div id="dm-mat-low-stock" class="dm-row-spaced-sm"></div>
     <div id="dm-mat-list"><div class="dm-empty">Loading material reserves...</div></div>
   </div>
 
@@ -338,7 +346,7 @@
     <div class="dm-form-row">
       <div class="field"><label>Unit</label><input name="dm-mat-unit" id="dm-mat-unit" placeholder="boards, bags, lbs..."></div>
       <div class="field"><label>Min Stock Level</label><input name="dm-mat-min" id="dm-mat-min" type="number" placeholder="10"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreateMaterial()">Add</button></div>
+      <div class="field dm-field-action"><button class="dm-btn dm-btn-primary" onclick="dmCreateMaterial()">Add</button></div>
     </div>
   </div>
 </div>
@@ -371,7 +379,7 @@
       <div class="field"><label>Capacity (persons)</label><input name="dm-fort-capacity" id="dm-fort-capacity" type="number" placeholder="10"></div>
       <div class="field"><label>Next Inspection</label><input name="dm-fort-inspection" id="dm-fort-inspection" type="date"></div>
       <div class="field"><label>Notes</label><textarea name="dm-fort-notes" id="dm-fort-notes" rows="2" placeholder="Construction details, materials..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="dm-btn dm-btn-primary" onclick="dmCreateFortification()">Add</button></div>
+      <div class="field dm-field-action"><button class="dm-btn dm-btn-primary" onclick="dmCreateFortification()">Add</button></div>
     </div>
   </div>
 </div>
@@ -483,14 +491,14 @@
         const tc = disasterTypeColors[p.disaster_type] || '#f59e0b';
         const stColor = p.status === 'active' ? '#22c55e' : p.status === 'draft' ? '#f59e0b' : '#6b7280';
         return `<div class="dm-list-item">
-          <div style="flex:1">
-            <span class="dm-badge dm-type-${p.disaster_type}" style="margin-right:6px">${(p.disaster_type||'').replace('_',' ')}</span>
+          <div class="dm-field-grow">
+            <span class="dm-badge dm-type-${p.disaster_type} dm-tag-spacer-r">${(p.disaster_type||'').replace('_',' ')}</span>
             <strong>${p.name}</strong>
             <span class="dm-badge" style="color:${stColor};margin-left:6px">${p.status}</span>
             ${p.environment ? `<span class="dm-badge dm-env-${p.environment}" style="margin-left:4px">${p.environment}</span>` : ''}
-            <br><small style="color:var(--text-secondary,#aaa)">Last reviewed: ${fmtDate(p.last_reviewed)}</small>
+            <br><small class="tone-muted">Last reviewed: ${fmtDate(p.last_reviewed)}</small>
           </div>
-          <div style="display:flex;gap:4px">
+          <div class="dm-row-tight">
             <button class="dm-btn dm-btn-secondary" onclick="dmExpandPlan(${p.id})">View</button>
             <button class="dm-btn dm-btn-danger" onclick="dmDeletePlan(${p.id})">Del</button>
           </div>
@@ -510,11 +518,11 @@
     // Reference
     api(API + '/plans/reference').then(ref => {
       const box = el('dm-plan-reference');
-      if(!ref || !ref.length){ box.innerHTML = '<div style="font-size:.82rem;color:var(--text-secondary,#aaa)">No quick-reference actions are available yet.</div>'; return; }
+      if(!ref || !ref.length){ box.innerHTML = '<div class="dm-meta-text">No quick-reference actions are available yet.</div>'; return; }
       box.innerHTML = ref.map(r => `<div style="padding:6px 0;border-bottom:1px solid var(--border,#333);font-size:.82rem">
-        <span class="dm-badge dm-type-${r.disaster_type}" style="margin-right:6px">${(r.disaster_type||'').replace('_',' ')}</span>
+        <span class="dm-badge dm-type-${r.disaster_type} dm-tag-spacer-r">${(r.disaster_type||'').replace('_',' ')}</span>
         <strong>${r.action||''}</strong>
-        ${r.detail ? `<br><small style="color:var(--text-secondary,#aaa)">${r.detail}</small>` : ''}
+        ${r.detail ? `<br><small class="tone-muted">${r.detail}</small>` : ''}
       </div>`).join('');
     });
   };
@@ -541,7 +549,7 @@
       const doneItems = checklists.filter(c => c.completed).length;
       const pct = totalItems ? Math.round(doneItems / totalItems * 100) : 0;
       box.innerHTML = `<div class="dm-card-title">${p.name}
-        <span class="dm-badge dm-type-${p.disaster_type}" style="margin-left:8px">${(p.disaster_type||'').replace('_',' ')}</span></div>
+        <span class="dm-badge dm-type-${p.disaster_type} dm-tag-spacer-l">${(p.disaster_type||'').replace('_',' ')}</span></div>
         <p style="font-size:.85rem;color:var(--text-secondary,#aaa);margin:0 0 12px">${p.description || 'No summary has been added yet.'}</p>
         <div style="margin-bottom:10px"><strong style="font-size:.82rem">Checklist Progress: ${pct}%</strong>
           <div class="dm-progress"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
@@ -570,12 +578,12 @@
       </tr></thead><tbody>${items.map(e => {
         const stClass = 'dm-status-' + (e.status||'offline');
         return `<tr>
-          <td><strong>${e.name}</strong>${e.notes ? `<br><small style="color:var(--text-secondary,#aaa)">${e.notes}</small>` : ''}</td>
+          <td><strong>${e.name}</strong>${e.notes ? `<br><small class="tone-muted">${e.notes}</small>` : ''}</td>
           <td>${(e.energy_type||e.type||'').replace('_',' ')}</td>
           <td><span class="${stClass}">&#9679; ${e.status}</span></td>
           <td>${e.output_watts ? e.output_watts + 'W' : '--'}</td>
           <td>${e.fuel_source || '--'}</td>
-          <td style="text-align:right"><button class="dm-btn dm-btn-danger" onclick="dmDeleteEnergy(${e.id})">Del</button></td>
+          <td class="dm-row-right"><button class="dm-btn dm-btn-danger" onclick="dmDeleteEnergy(${e.id})">Del</button></td>
         </tr>`;
       }).join('')}</tbody></table>`;
     });
@@ -623,7 +631,7 @@
     resultEl.innerHTML = `<strong>BTU/hour:</strong> ${Math.round(btuPerHour).toLocaleString()}<br>
       <strong>BTU/day:</strong> ${Math.round(btuPerDay).toLocaleString()}<br>
       <strong>Cords per season (~150 days):</strong> ${cordsPerSeason.toFixed(1)}<br>
-      <small style="color:var(--text-secondary,#aaa)">${sqft} sq ft, ${insulation} insulation, ${delta}F delta</small>`;
+      <small class="tone-muted">${sqft} sq ft, ${insulation} insulation, ${delta}F delta</small>`;
     resultEl.classList.remove('is-hidden');
   };
 
@@ -637,7 +645,7 @@
     const resultEl = el('dm-sand-result');
     resultEl.innerHTML = `<strong>Sandbags needed:</strong> ${bags.toLocaleString()}<br>
       <strong>Sand required:</strong> ~${sand_tons.toFixed(1)} tons (${Math.round(bags * 35).toLocaleString()} lbs)<br>
-      <small style="color:var(--text-secondary,#aaa)">${length}ft x ${height}ft wall, staggered placement</small>`;
+      <small class="tone-muted">${length}ft x ${height}ft wall, staggered placement</small>`;
     resultEl.classList.remove('is-hidden');
   };
 
@@ -657,13 +665,13 @@
           <div style="flex:1;min-width:200px">
             <strong>${p.name}</strong>
             <span class="dm-badge" style="color:${stColor};margin-left:8px">${(p.status||'').replace('_',' ')}</span>
-            ${p.description ? `<br><small style="color:var(--text-secondary,#aaa)">${p.description}</small>` : ''}
+            ${p.description ? `<br><small class="tone-muted">${p.description}</small>` : ''}
             <div style="margin-top:6px">
-              <small style="color:var(--text-secondary,#aaa)">Labor: ${done}/${est} hrs (${pct}%)</small>
+              <small class="tone-muted">Labor: ${done}/${est} hrs (${pct}%)</small>
               <div class="dm-progress" style="width:180px"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=100?'#22c55e':pct>=50?'#f59e0b':'#3b82f6'}"></div></div>
             </div>
           </div>
-          <div style="display:flex;gap:4px">
+          <div class="dm-row-tight">
             <button class="dm-btn dm-btn-secondary" onclick="dmViewMaterials(${p.id})">Materials</button>
             <button class="dm-btn dm-btn-danger" onclick="dmDeleteConstruction(${p.id})">Del</button>
           </div>
@@ -686,7 +694,7 @@
           <td>${m.quantity || 0}</td>
           <td>${m.unit || '--'}</td>
           <td>${m.min_stock || '--'}</td>
-          <td style="text-align:right"><button class="dm-btn dm-btn-danger" onclick="dmDeleteMaterial(${m.id})">Del</button></td>
+          <td class="dm-row-right"><button class="dm-btn dm-btn-danger" onclick="dmDeleteMaterial(${m.id})">Del</button></td>
         </tr>`;
       }).join('')}</tbody></table>`;
     });
@@ -751,7 +759,7 @@
           <div style="display:flex;justify-content:space-between;align-items:start">
             <div>
               <strong style="font-size:.95rem">${f.name}</strong>
-              <span class="dm-badge dm-prot-${f.protection_level}" style="margin-left:8px">${(f.protection_level||'').replace('_',' ')}</span>
+              <span class="dm-badge dm-prot-${f.protection_level} dm-tag-spacer-l">${(f.protection_level||'').replace('_',' ')}</span>
             </div>
             <button class="dm-btn dm-btn-danger" onclick="dmDeleteFortification(${f.id})">Del</button>
           </div>
@@ -818,12 +826,12 @@
         return `<div style="margin-bottom:16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <strong style="font-size:.9rem">${planName}</strong>
-            <span style="font-size:.82rem;color:var(--text-secondary,#aaa)">${done}/${total} (${pct}%)</span>
+            <span class="dm-meta-text">${done}/${total} (${pct}%)</span>
           </div>
-          <div class="dm-progress" style="margin-bottom:8px"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
+          <div class="dm-progress dm-row-spaced-sm"><div class="dm-progress-fill" style="width:${pct}%;background:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
           ${checks.map(c => `<div class="dm-checklist-item ${c.completed?'completed':''}">
             <input type="checkbox" name="dm-cl-item-${c.id}" ${c.completed?'checked':''} onchange="dmToggleChecklist(${c.id},this.checked)">
-            <span style="flex:1">${c.item_text}</span>
+            <span class="dm-field-grow">${c.item_text}</span>
             <span class="dm-badge dm-cat-${c.category}">${(c.category||'').replace('_',' ')}</span>
           </div>`).join('')}
         </div>`;

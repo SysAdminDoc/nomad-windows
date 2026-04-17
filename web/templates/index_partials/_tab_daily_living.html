@@ -54,6 +54,20 @@
   #tab-daily-living .dl-row-header .dl-card-title { margin:0; }
   #tab-daily-living .dl-checkbox-inline { display:flex; align-items:center; gap:6px; margin-top:18px; }
   #tab-daily-living .dl-row-tight { margin-top:8px; display:flex; gap:6px; }
+  #tab-daily-living .dl-row-flex-tight { display:flex; gap:6px; }
+  #tab-daily-living .dl-field-grow { flex:1; }
+  #tab-daily-living .dl-field-grow-2 { flex:2; }
+  #tab-daily-living .dl-field-action { align-self:flex-end; flex:0; }
+  #tab-daily-living .dl-btn-pill { flex:0; padding:4px 10px; }
+  #tab-daily-living .dl-row-spaced-xs { margin-top:6px; }
+  #tab-daily-living .dl-row-spaced-bottom-xs { margin-bottom:4px; }
+  #tab-daily-living .dl-row-spaced-bottom-sm { margin-bottom:10px; }
+  #tab-daily-living .dl-tag-accent { background:var(--dl-accent-dim); color:var(--dl-accent); }
+  #tab-daily-living .dl-meta-text { margin-top:8px; color:var(--text-secondary,#aaa); }
+  #tab-daily-living .dl-list-meta { margin:0; padding-left:18px; color:var(--text-secondary,#aaa); }
+  #tab-daily-living .dl-section-label { font-size:.78rem; color:var(--text-secondary,#aaa); display:block; margin-bottom:6px; }
+  #tab-daily-living .dl-nowrap { white-space:nowrap; }
+  #tab-daily-living .dl-faded { opacity:.5; }
   #tab-daily-living .dl-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-daily-living .dl-btn-primary { background:var(--dl-accent); color:#fff; }
   #tab-daily-living .dl-btn-primary:hover { background:var(--dl-accent-hover); }
@@ -241,7 +255,7 @@
         <option value="">All People</option>
       </select>
     </div>
-    <div class="field" style="align-self:flex-end;flex:0">
+    <div class="field dl-field-action">
       <button class="dl-btn dl-btn-secondary" onclick="dlLoadAssessment()">Cold Weather Assessment</button>
     </div>
   </div>
@@ -518,7 +532,7 @@
       </select>
     </div>
     <div class="field"><label>Search</label><input name="dl-recipe-search" id="dl-recipe-search" placeholder="Search recipes..." onkeyup="dlSearchRecipes()"></div>
-    <div class="field" style="align-self:flex-end;flex:0">
+    <div class="field dl-field-action">
       <button class="dl-btn dl-btn-success" onclick="dlSeedRecipes()">Seed Default Recipes</button>
     </div>
   </div>
@@ -558,10 +572,10 @@
     </div>
 
     <!-- Dynamic Ingredients -->
-    <div style="margin-bottom:10px;">
-      <label style="font-size:.78rem;color:var(--text-secondary,#aaa);display:block;margin-bottom:6px;">Ingredients</label>
+    <div class="dl-row-spaced-bottom-sm">
+      <label class="dl-section-label">Ingredients</label>
       <div id="dl-recipe-ingredients"></div>
-      <button class="dl-btn dl-btn-secondary" onclick="dlAddIngredientRow()" style="margin-top:6px;">+ Add Ingredient</button>
+      <button class="dl-btn dl-btn-secondary" onclick="dlAddIngredientRow()" class="dl-row-spaced-xs">+ Add Ingredient</button>
     </div>
 
     <button class="dl-btn dl-btn-primary" onclick="dlSaveRecipe()">Save Recipe</button>
@@ -662,9 +676,9 @@
       if (!items.length) { c.innerHTML = '<div class="dl-empty">No schedules yet. Build the first routine above so the household cadence is visible.</div>'; return; }
       c.innerHTML = items.map(function(s) {
         return '<div class="dl-list-item"><div><strong>' + s.name + '</strong> ' + typeBadge(s.type || 'normal') +
-          '<br><small style="color:var(--text-secondary)">' + (s.description || 'No description') +
+          '<br><small class="tone-muted">' + (s.description || 'No description') +
           ' &middot; ' + (s.active_days || []).join(', ') + '</small></div>' +
-          '<div style="display:flex;gap:6px;">' +
+          '<div class="dl-row-flex-tight">' +
           '<button class="dl-btn dl-btn-secondary" onclick="dlEditSchedule(' + s.id + ')">Edit</button>' +
           '<button class="dl-btn dl-btn-danger" onclick="dlDeleteSchedule(' + s.id + ')">&times;</button></div></div>';
       }).join('');
@@ -717,7 +731,7 @@
       box.innerHTML = '<div class="dl-card-title">Schedule Templates</div>' +
         templates.map(function(t) {
           return '<div class="dl-list-item"><div><strong>' + t.name + '</strong> ' + typeBadge(t.type || 'normal') +
-            '<br><small style="color:var(--text-secondary)">' + (t.description || '') + '</small></div>' +
+            '<br><small class="tone-muted">' + (t.description || '') + '</small></div>' +
             '<button class="dl-btn dl-btn-primary" onclick="dlApplyTemplate(' + t.id + ')">Apply</button></div>';
         }).join('');
     });
@@ -733,13 +747,13 @@
       var c = el('dl-chore-list');
       if (!items.length) { c.innerHTML = '<div class="dl-empty">No chores yet. Add the first recurring responsibility above.</div>'; return; }
       c.innerHTML = items.map(function(ch) {
-        var completedCls = ch.completed ? ' style="opacity:.5"' : '';
+        var completedCls = ch.completed ? ' class="dl-faded"' : '';
         return '<div class="dl-list-item"' + completedCls + '><div>' +
-          '<strong>' + ch.name + '</strong> <span class="dl-badge" style="background:var(--dl-accent-dim);color:var(--dl-accent)">' + ch.category + '</span>' +
+          '<strong>' + ch.name + '</strong> <span class="dl-badge dl-tag-accent">' + ch.category + '</span>' +
           ' <span class="dl-badge" style="background:var(--border,#333)">' + ch.frequency + '</span>' +
-          '<br><small style="color:var(--text-secondary)">Assigned: ' + (ch.assigned_to || 'Unassigned') +
+          '<br><small class="tone-muted">Assigned: ' + (ch.assigned_to || 'Unassigned') +
           ' &middot; ' + (ch.duration || 30) + 'min &middot; Priority: ' + (ch.priority || 'medium') + '</small></div>' +
-          '<div style="display:flex;gap:6px;">' +
+          '<div class="dl-row-flex-tight">' +
           (!ch.completed ? '<button class="dl-btn dl-btn-success" onclick="dlCompleteChore(' + ch.id + ')">Done</button>' : '') +
           '<button class="dl-btn dl-btn-secondary" onclick="dlEditChore(' + ch.id + ')">Edit</button>' +
           '<button class="dl-btn dl-btn-danger" onclick="dlDeleteChore(' + ch.id + ')">&times;</button></div></div>';
@@ -808,7 +822,7 @@
           '</div><div class="dl-recipe-meta">' + (it.person || '') + ' &middot; ' + (it.category || '').replace('_', ' ') +
           ' &middot; ' + (it.size || '-') + ' &middot; Qty: ' + (it.quantity || 1) + ' &middot; ' + (it.condition || 'good') +
           ' &middot; ' + (it.season || 'all') + '</div>' +
-          '<div style="margin-top:6px;">' + stars(it.warmth_rating || 1) + ' <small style="color:var(--text-secondary)">warmth</small></div>' +
+          '<div class="dl-row-spaced-xs">' + stars(it.warmth_rating || 1) + ' <small class="tone-muted">warmth</small></div>' +
           '<div class="dl-row-tight">' +
           '<button class="dl-btn dl-btn-secondary" onclick="dlEditClothing(' + it.id + ')">Edit</button>' +
           '<button class="dl-btn dl-btn-danger" onclick="dlDeleteClothing(' + it.id + ')">&times;</button></div></div>';
@@ -859,7 +873,7 @@
       var html = '<div class="dl-card-title">Cold Weather Assessment</div>';
       if (data.summary) html += '<p style="color:var(--text-primary,#eee);margin-bottom:8px;">' + data.summary + '</p>';
       if (data.gaps && data.gaps.length) {
-        html += '<div style="color:var(--dl-amber);font-weight:600;margin-bottom:4px;">Gaps Identified:</div><ul style="margin:0;padding-left:18px;color:var(--text-secondary,#aaa)">';
+        html += '<div style="color:var(--dl-amber);font-weight:600;margin-bottom:4px;">Gaps Identified:</div><ul class="dl-list-meta">';
         data.gaps.forEach(function(g) { html += '<li>' + g + '</li>'; });
         html += '</ul>';
       } else {
@@ -881,7 +895,7 @@
         alertBox.classList.remove('is-hidden');
         alertBox.innerHTML = '<div class="dl-card-title" style="color:var(--dl-red);">Low Stock Alerts (' + lowStock.length + ')</div>' +
           lowStock.map(function(s) {
-            return '<div style="margin-bottom:4px;"><strong class="dl-low-stock">' + s.name + '</strong> <small style="color:var(--text-secondary)">' +
+            return '<div class="dl-row-spaced-bottom-xs"><strong class="dl-low-stock">' + s.name + '</strong> <small class="tone-muted">' +
               s.quantity + ' / ' + s.min_stock + ' ' + (s.unit || '') + '</small></div>';
           }).join('');
       } else {
@@ -892,10 +906,10 @@
         items.map(function(s) {
           var daysLeft = s.daily_usage_rate > 0 ? Math.floor(s.quantity / s.daily_usage_rate) : '-';
           var lowCls = s.quantity < (s.min_stock || 0) ? ' class="dl-low-stock"' : '';
-          return '<tr><td' + lowCls + '>' + s.name + '</td><td><span class="dl-badge" style="background:var(--dl-accent-dim);color:var(--dl-accent)">' + (s.category || '') + '</span></td>' +
+          return '<tr><td' + lowCls + '>' + s.name + '</td><td><span class="dl-badge dl-tag-accent">' + (s.category || '') + '</span></td>' +
             '<td' + lowCls + '>' + s.quantity + '</td><td>' + (s.unit || '') + '</td><td>' + (s.min_stock || 0) + '</td>' +
             '<td>' + (s.daily_usage_rate || 0) + '</td><td>' + daysLeft + '</td><td>' + (s.expiration_date || '-') + '</td>' +
-            '<td style="white-space:nowrap"><button class="dl-btn dl-btn-secondary" onclick="dlEditSanitation(' + s.id + ')">Edit</button> ' +
+            '<td class="dl-nowrap"><button class="dl-btn dl-btn-secondary" onclick="dlEditSanitation(' + s.id + ')">Edit</button> ' +
             '<button class="dl-btn dl-btn-danger" onclick="dlDeleteSanitation(' + s.id + ')">&times;</button></td></tr>';
         }).join('') + '</tbody></table>';
     });
@@ -1086,7 +1100,7 @@
           return '<div class="dl-stat-card"><div class="dl-stat-val">' + riskBadge(p.risk_level || 'low') + '</div><div class="dl-stat-label">' + p.person + '</div></div>';
         }).join('') + '</div>';
       }
-      if (data.summary) html += '<p style="margin-top:8px;color:var(--text-secondary,#aaa)">' + data.summary + '</p>';
+      if (data.summary) html += '<p class="dl-meta-text">' + data.summary + '</p>';
       box.innerHTML = html;
     });
 
@@ -1125,10 +1139,10 @@
     var box = el('dl-recipe-ingredients');
     var row = document.createElement('div');
     row.className = 'dl-ingredient-row';
-    row.innerHTML = '<input name="dl-ingredient-name-' + ingredientCounter + '" placeholder="Ingredient" style="flex:2">' +
-      '<input name="dl-ingredient-qty-' + ingredientCounter + '" placeholder="Amount" style="flex:1">' +
-      '<input name="dl-ingredient-unit-' + ingredientCounter + '" placeholder="Unit" style="flex:1">' +
-      '<button class="dl-btn dl-btn-danger" onclick="this.parentElement.remove()" style="flex:0;padding:4px 10px">&times;</button>';
+    row.innerHTML = '<input name="dl-ingredient-name-' + ingredientCounter + '" placeholder="Ingredient" class="dl-field-grow-2">' +
+      '<input name="dl-ingredient-qty-' + ingredientCounter + '" placeholder="Amount" class="dl-field-grow">' +
+      '<input name="dl-ingredient-unit-' + ingredientCounter + '" placeholder="Unit" class="dl-field-grow">' +
+      '<button class="dl-btn dl-btn-danger" onclick="this.parentElement.remove()" class="dl-btn-pill">&times;</button>';
     box.appendChild(row);
     ingredientCounter++;
   };
@@ -1255,7 +1269,7 @@
         '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.cook_time || '-') + 'm</div><div class="dl-stat-label">Cook Time</div></div>' +
         '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.total_calories || '-') + '</div><div class="dl-stat-label">Total Calories</div></div>' +
         '<div class="dl-stat-card"><div class="dl-stat-val">' + (data.method || '-') + '</div><div class="dl-stat-label">Method</div></div>' +
-        '</div>' + (data.notes ? '<p style="margin-top:8px;color:var(--text-secondary,#aaa)">' + data.notes + '</p>' : '');
+        '</div>' + (data.notes ? '<p class="dl-meta-text">' + data.notes + '</p>' : '');
     });
   };
 

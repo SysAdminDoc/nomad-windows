@@ -129,35 +129,35 @@
   z-index: 1;
 }
 body.situation-room-active .container.container-situation-room {
-  max-width: none !important;
-  margin: 0 !important;
-  padding: 18px 24px 28px !important;
+  max-width: none;
+  margin: 0;
+  padding: 18px 24px 28px;
 }
 body.situation-room-active .main-content.situation-room-main {
-  padding-bottom: 28px !important;
+  padding-bottom: 28px;
 }
 body.situation-room-active .main-content.situation-room-main > .status-strip,
 body.situation-room-active .main-content.situation-room-main > #status-strip,
 body.situation-room-active .main-content.situation-room-main > .broadcast-banner,
 body.situation-room-active .main-content.situation-room-main > .alert-bar {
-  display: none !important;
+  display: none;
 }
 body.situation-room-active #copilot-dock,
 body.situation-room-active #lan-chat-panel,
 body.situation-room-active #timer-panel,
 body.situation-room-active #quick-actions-menu {
-  display: none !important;
+  display: none;
 }
 @media (max-width: 1280px) {
   body.situation-room-active .container.container-situation-room {
-    padding: 16px 18px 22px !important;
+    padding: 16px 18px 22px;
   }
 }
 @media (max-width: 900px) {
   body.situation-room-active .container.container-situation-room {
-    padding: 12px !important;
+    padding: 12px;
   }
-  #tab-situation-room {
+  body.situation-room-active #tab-situation-room {
     min-height: calc(100vh - 132px);
     border-radius: 18px;
   }
@@ -2610,204 +2610,210 @@ a.sr-feed-title:hover { color: #7fe8cf; }
 
 /* ═══════════════════════════════════════════════════════════
    DECLUTTER — Clean operational layout
+   These rules deliberately appear after the original card / header /
+   map definitions earlier in this file, so source-order is enough to
+   beat them at equal specificity. Selectors qualified with
+   `body.situation-room-active` already raise specificity above the
+   base layout in 10_shell_layout.css. !important is reserved for
+   counter-overriding inline styles (Maplibre, JS-set display) only.
    ═══════════════════════════════════════════════════════════ */
 
 /* Hide workspace chrome: analyst desk, desk presets, saved desks, posture bar */
-.sr-workspace-bar,
-.sr-desk-preset-bar,
-.sr-saved-desk-bar,
-.sr-posture-bar,
-.sr-layout-note,
-.sr-newsdesk-brief {
-  display: none !important;
+body.situation-room-active .sr-workspace-bar,
+body.situation-room-active .sr-desk-preset-bar,
+body.situation-room-active .sr-saved-desk-bar,
+body.situation-room-active .sr-posture-bar,
+body.situation-room-active .sr-layout-note,
+body.situation-room-active .sr-newsdesk-brief {
+  display: none;
 }
 
 /* workspace-context-bar + workspace-inspector hidden globally in 10_shell_layout.css */
 
 /* Hide map overlays — command brief, gradient scrim, legend, playback */
-.sr-map-command-brief,
-.sr-map-legend,
-.sr-playback {
-  display: none !important;
+body.situation-room-active .sr-map-command-brief,
+body.situation-room-active .sr-map-legend,
+body.situation-room-active .sr-playback {
+  display: none;
 }
-.sr-map-wrap::before,
-.sr-map-wrap::after {
-  display: none !important;
+body.situation-room-active .sr-map-wrap::before,
+body.situation-room-active .sr-map-wrap::after {
+  display: none;
 }
 
 /* Move layer toggle and 3D button outside the map area */
-.sr-layer-toggle-btn {
-  position: absolute !important;
-  top: auto !important;
-  bottom: 10px !important;
-  right: 10px !important;
-  z-index: 10 !important;
-  font-size: 8px !important;
-  padding: 5px 10px !important;
+body.situation-room-active .sr-layer-toggle-btn {
+  position: absolute;
+  top: auto;
+  bottom: 10px;
+  right: 10px;
+  z-index: 10;
+  font-size: 8px;
+  padding: 5px 10px;
   opacity: 0.7;
 }
-.sr-layer-toggle-btn:hover { opacity: 1; }
+body.situation-room-active .sr-layer-toggle-btn:hover { opacity: 1; }
 /* 3D globe button hidden — setProjection not in this MapLibre build */
-.sr-globe-btn-float {
-  display: none !important;
+body.situation-room-active .sr-globe-btn-float {
+  display: none;
 }
 
 /* ─── Full-width scalable layout ─── */
 body.situation-room-active .container.container-situation-room {
-  max-width: none !important;
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
 }
 body.situation-room-active .main-content.situation-room-main {
-  padding-bottom: 0 !important;
+  padding-bottom: 0;
 }
-#tab-situation-room {
-  border-radius: 0 !important;
-  border: none !important;
-  box-shadow: none !important;
-  width: 100% !important;
-  min-height: 100vh !important;
+body.situation-room-active #tab-situation-room {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+  width: 100%;
+  min-height: 100vh;
 }
 
 /* Compact header — single row, no subtitle */
-.sr-header {
-  padding: 6px 16px !important;
-  min-height: 36px !important;
-  gap: 6px 10px !important;
+body.situation-room-active .sr-header {
+  padding: 6px 16px;
+  min-height: 36px;
+  gap: 6px 10px;
 }
-.sr-subtitle {
-  display: none !important;
+body.situation-room-active .sr-subtitle {
+  display: none;
 }
-.sr-title {
-  font-size: 11px !important;
+body.situation-room-active .sr-title {
+  font-size: 11px;
 }
 
 /* ─── Breaking banner — faster, wider, badge as wall ─── */
-.sr-breaking {
-  height: 28px !important;
-  padding: 0 !important;
-  gap: 0 !important;
+body.situation-room-active .sr-breaking {
+  height: 28px;
+  padding: 0;
+  gap: 0;
   position: relative;
 }
-.sr-breaking-badge {
+body.situation-room-active .sr-breaking-badge {
   position: relative;
   z-index: 2;
-  flex-shrink: 0 !important;
-  padding: 4px 14px !important;
-  font-size: 10px !important;
-  letter-spacing: 0.18em !important;
-  background: #cc2020 !important;
+  flex-shrink: 0;
+  padding: 4px 14px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  background: #cc2020;
   height: 100%;
   display: flex;
   align-items: center;
-  border-radius: 0 !important;
+  border-radius: 0;
   box-shadow: 4px 0 12px rgba(0, 0, 0, 0.6);
 }
-.sr-breaking-scroll {
-  animation-duration: 40s !important;
+body.situation-room-active .sr-breaking-scroll {
+  animation-duration: 40s;
   padding-left: 14px;
 }
 
 /* ─── Map — full bleed, taller ─── */
-.sr-map-wrap {
-  margin: 0 !important;
-  border-radius: 0 !important;
-  min-height: clamp(360px, 50vh, 700px) !important;
-  height: clamp(360px, 50vh, 700px) !important;
-  border: none !important;
+body.situation-room-active .sr-map-wrap {
+  margin: 0;
+  border-radius: 0;
+  min-height: clamp(360px, 50vh, 700px);
+  height: clamp(360px, 50vh, 700px);
+  border: none;
 }
 
 /* Content shell flush */
-.sr-content-shell {
-  padding: 10px !important;
+body.situation-room-active .sr-content-shell {
+  padding: 10px;
 }
 
 /* ─── Uniform card grid — scales with monitor ─── */
-.sr-cards {
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr)) !important;
-  gap: 10px !important;
+body.situation-room-active .sr-cards {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 340px), 1fr));
+  gap: 10px;
 }
 
 /* All cards same height, no special sizing */
-.sr-card {
-  height: 320px !important;
-  border-radius: 12px !important;
+body.situation-room-active .sr-card {
+  height: 320px;
+  border-radius: 12px;
 }
-.sr-card-tall,
-.sr-card[data-card-size="tall"] {
-  height: 320px !important;
+body.situation-room-active .sr-card-tall,
+body.situation-room-active .sr-card[data-card-size="tall"] {
+  height: 320px;
 }
-.sr-card-wide,
-.sr-card[data-card-size="wide"],
-.sr-card-country-brief {
-  grid-column: span 1 !important;
-  grid-row: span 1 !important;
-  min-height: unset !important;
-  height: 320px !important;
+body.situation-room-active .sr-card-wide,
+body.situation-room-active .sr-card[data-card-size="wide"],
+body.situation-room-active .sr-card-country-brief {
+  grid-column: span 1;
+  grid-row: span 1;
+  min-height: unset;
+  height: 320px;
 }
-.sr-card[data-card-size="small"],
-.sr-card[data-card-size="compact"] {
-  height: 320px !important;
+body.situation-room-active .sr-card[data-card-size="small"],
+body.situation-room-active .sr-card[data-card-size="compact"] {
+  height: 320px;
 }
-.sr-card[data-card-size="full"] {
-  grid-column: span 1 !important;
-  height: 320px !important;
+body.situation-room-active .sr-card[data-card-size="full"] {
+  grid-column: span 1;
+  height: 320px;
 }
-.sr-card[data-card-size="half"] {
-  grid-column: span 1 !important;
-  height: 320px !important;
+body.situation-room-active .sr-card[data-card-size="half"] {
+  grid-column: span 1;
+  height: 320px;
 }
 
 /* Card head tighter */
-.sr-card-head {
-  padding: 10px 14px !important;
-  font-size: 10px !important;
-  min-height: unset !important;
+body.situation-room-active .sr-card-head {
+  padding: 10px 14px;
+  font-size: 10px;
+  min-height: unset;
 }
 
 /* Ticker strip tighter */
-.sr-ticker {
-  padding: 6px 14px !important;
-  gap: 6px !important;
+body.situation-room-active .sr-ticker {
+  padding: 6px 14px;
+  gap: 6px;
 }
 
 /* Market ribbon tighter */
-.sr-market-ribbon {
-  padding: 4px 14px !important;
+body.situation-room-active .sr-market-ribbon {
+  padding: 4px 14px;
 }
 
 /* ─── Wide monitor scaling ─── */
 @media (min-width: 2000px) {
-  .sr-cards {
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)) !important;
+  body.situation-room-active .sr-cards {
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
   }
-  .sr-map-wrap {
-    min-height: clamp(500px, 55vh, 900px) !important;
-    height: clamp(500px, 55vh, 900px) !important;
+  body.situation-room-active .sr-map-wrap {
+    min-height: clamp(500px, 55vh, 900px);
+    height: clamp(500px, 55vh, 900px);
   }
 }
 @media (min-width: 2560px) {
-  .sr-cards {
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)) !important;
+  body.situation-room-active .sr-cards {
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
   }
 }
 @media (max-width: 1100px) {
-  .sr-cards {
-    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)) !important;
+  body.situation-room-active .sr-cards {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
   }
 }
 @media (max-width: 700px) {
-  .sr-cards {
-    grid-template-columns: 1fr !important;
+  body.situation-room-active .sr-cards {
+    grid-template-columns: 1fr;
   }
-  .sr-card,
-  .sr-card-tall,
-  .sr-card-wide,
-  .sr-card[data-card-size] {
-    height: auto !important;
-    min-height: 240px !important;
-    grid-column: span 1 !important;
+  body.situation-room-active .sr-card,
+  body.situation-room-active .sr-card-tall,
+  body.situation-room-active .sr-card-wide,
+  body.situation-room-active .sr-card[data-card-size] {
+    height: auto;
+    min-height: 240px;
+    grid-column: span 1;
   }
 }
 

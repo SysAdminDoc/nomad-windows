@@ -596,6 +596,16 @@ FEED_CATEGORIES = sorted(set(f['category'] for f in ALL_FEEDS))
 # ─── RSS/Atom Parser ──────────────────────────────────────────────────
 def _parse_feed(xml_text, feed_name, feed_category):
     items = []
+    # Defuse against billion-laughs — stdlib ElementTree still expands
+    # internal entity declarations. RSS/Atom never legitimately ships
+    # with a DOCTYPE, so refusing one up-front closes a memory-blowup
+    # vector for feeds that are user-configurable. Same guard pattern
+    # as the GPX importers in maps.py + interoperability.py.
+    if isinstance(xml_text, str):
+        head = xml_text.lstrip()[:1024].lower()
+        if '<!doctype' in head or '<!entity' in head:
+            log.debug('Refusing RSS feed %s — contains DOCTYPE/ENTITY declaration', feed_name)
+            return items
     try:
         root = ET.fromstring(xml_text)
     except ET.ParseError:
@@ -631,6 +641,7 @@ def _parse_feed(xml_text, feed_name, feed_category):
 
 def _fetch_single_feed(feed):
     """Fetch a single RSS feed. Returns list of articles."""
+    resp = None
     try:
         resp = _http_session.get(feed['url'], timeout=_REQ_TIMEOUT, headers={
             **_REQ_HEADERS, 'Accept': 'application/rss+xml, application/xml, text/xml'})
@@ -638,6 +649,16 @@ def _fetch_single_feed(feed):
             return _parse_feed(resp.text, feed['name'], feed['category'])
     except Exception as e:
         log.debug(f"RSS fetch failed for {feed['name']}: {e}")
+    finally:
+        # Explicit close — the pooled ``requests.Session`` normally returns
+        # the connection to the pool on GC, but on an import-day storm of
+        # 50+ feeds per refresh that can leak sockets for seconds before
+        # GC runs.
+        if resp is not None:
+            try:
+                resp.close()
+            except Exception:
+                pass
     return []
 
 

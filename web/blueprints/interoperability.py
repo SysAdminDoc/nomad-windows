@@ -805,6 +805,10 @@ def api_import_waypoints_gpx():
     text = _get_upload_text()
     if not text or '<gpx' not in text.lower():
         return jsonify({'error': 'No valid GPX data found'}), 400
+    # Defuse against XML billion-laughs — parallel to maps.api_waypoints_import_gpx.
+    head = text.lstrip()[:1024].lower()
+    if '<!doctype' in head or '<!entity' in head:
+        return jsonify({'error': 'GPX file with DOCTYPE/ENTITY declarations is not allowed'}), 400
     wpts = _parse_xml_simple(text, 'wpt')
     imported = 0
     skipped = 0
@@ -814,9 +818,16 @@ def api_import_waypoints_gpx():
             lat = _safe_float(_xml_attr(wpt, 'lat'))
             lon = _safe_float(_xml_attr(wpt, 'lon'))
             name = _xml_tag_content(wpt, 'name') or f'GPX {lat:.4f},{lon:.4f}'
+            # Validate coordinate ranges. (0,0) is technically Null Island —
+            # flagging it here matches the prior behaviour and catches the
+            # far more common case of an unparsable `_safe_float` fallback.
             if lat == 0.0 and lon == 0.0:
                 skipped += 1
                 errors.append(f'{name}: invalid coordinates')
+                continue
+            if not (-90.0 <= lat <= 90.0) or not (-180.0 <= lon <= 180.0):
+                skipped += 1
+                errors.append(f'{name}: coordinates out of range')
                 continue
             ele = _safe_float(_xml_tag_content(wpt, 'ele')) or None
             desc = _xml_tag_content(wpt, 'desc')
@@ -858,22 +869,40 @@ def api_import_waypoints_geojson():
         features = [data]
     else:
         return jsonify({'error': 'Expected FeatureCollection or Feature'}), 400
+    if not isinstance(features, list):
+        return jsonify({'error': 'features must be a list'}), 400
+    # Cap feature count to prevent a hostile file from spawning a huge
+    # INSERT loop. A legitimate offline atlas rarely exceeds a few
+    # thousand waypoints in a single import.
+    GEOJSON_MAX_FEATURES = 10000
+    if len(features) > GEOJSON_MAX_FEATURES:
+        return jsonify({'error': f'Too many features (max {GEOJSON_MAX_FEATURES}) — split the file'}), 413
     imported = 0
     skipped = 0
     errors = []
     with db_session() as db:
         for feat in features:
-            geom = feat.get('geometry', {})
-            props = feat.get('properties', {})
+            if not isinstance(feat, dict):
+                skipped += 1
+                continue
+            geom = feat.get('geometry') or {}
+            props = feat.get('properties') or {}
+            if not isinstance(geom, dict) or not isinstance(props, dict):
+                skipped += 1
+                continue
             if geom.get('type') != 'Point':
                 skipped += 1
                 errors.append(f'Skipped non-Point geometry: {geom.get("type")}')
                 continue
             coords = geom.get('coordinates', [])
-            if len(coords) < 2:
+            if not isinstance(coords, list) or len(coords) < 2:
                 skipped += 1
                 continue
             lon, lat = _safe_float(coords[0]), _safe_float(coords[1])
+            if not (-90.0 <= lat <= 90.0) or not (-180.0 <= lon <= 180.0):
+                skipped += 1
+                errors.append(f'GeoJSON {lat},{lon}: coordinates out of range')
+                continue
             ele = _safe_float(coords[2]) if len(coords) > 2 else None
             name = props.get('name', f'GeoJSON {lat:.4f},{lon:.4f}')
             try:

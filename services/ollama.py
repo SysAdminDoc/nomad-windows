@@ -232,6 +232,7 @@ def running():
         return True
     # Fallback: PID tracking may be stale after app restart — check if Ollama API responds
     if check_port(OLLAMA_PORT):
+        resp = None
         try:
             resp = requests.get(f'http://localhost:{OLLAMA_PORT}/api/tags', timeout=2)
             if resp.ok:
@@ -240,6 +241,12 @@ def running():
                 return True
         except Exception:
             pass
+        finally:
+            if resp is not None:
+                try:
+                    resp.close()
+                except Exception:
+                    pass
     return False
 
 
@@ -274,6 +281,7 @@ def _adopt_running_instance():
 
 def list_models():
     """Get list of downloaded models."""
+    resp = None
     try:
         resp = requests.get(f'http://localhost:{OLLAMA_PORT}/api/tags', timeout=5)
         if resp.ok:
@@ -283,6 +291,15 @@ def list_models():
         log.debug('Ollama model list returned HTTP %s', resp.status_code)
     except (requests.RequestException, ValueError) as exc:
         log.debug('Could not list Ollama models: %s', exc)
+    finally:
+        # Always release the socket/FD. try/finally (rather than ``with``)
+        # keeps compatibility with test fixtures that return simple mock
+        # objects not implementing the context-manager protocol.
+        if resp is not None:
+            try:
+                resp.close()
+            except Exception:
+                pass
     return []
 
 
@@ -389,6 +406,13 @@ def delete_model(model_name: str) -> bool:
     if not re.match(r'^[a-zA-Z0-9._:/-]+$', model_name):
         log.warning('Invalid model name rejected: %s', model_name)
         return False
+    # Defensive length cap — the route already limits this, but callers
+    # that bypass the HTTP layer (tests, future helpers) shouldn't be
+    # able to flood Ollama with a multi-megabyte name.
+    if len(model_name) > 200:
+        log.warning('Model name exceeds 200 chars — rejected')
+        return False
+    resp = None
     try:
         resp = requests.delete(
             f'http://localhost:{OLLAMA_PORT}/api/delete',
@@ -399,6 +423,12 @@ def delete_model(model_name: str) -> bool:
     except Exception as e:
         log.error(f'Model delete failed: {e}')
         return False
+    finally:
+        if resp is not None:
+            try:
+                resp.close()
+            except Exception:
+                pass
 
 
 def chat(model: str, messages: list[dict], stream: bool = True):
@@ -429,5 +459,10 @@ def chat(model: str, messages: list[dict], stream: bool = True):
             finally:
                 resp.close()
         return _streaming_lines()
-    else:
+    # Non-streaming path — make sure the socket is released once we've
+    # materialised the JSON payload. Previously the caller never closed it
+    # and we leaked one FD per synchronous chat call.
+    try:
         return _safe_response_payload(resp, {})
+    finally:
+        resp.close()

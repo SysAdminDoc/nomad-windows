@@ -108,6 +108,11 @@ def api_ai_models():
 def api_ai_pull():
     data = request.get_json() or {}
     model_name = data.get('model', ollama.DEFAULT_MODEL)
+    if not isinstance(model_name, str) or not model_name.strip():
+        return jsonify({'error': 'Invalid model name'}), 400
+    model_name = model_name.strip()
+    if len(model_name) > 200:
+        return jsonify({'error': 'Model name too long'}), 400
 
     def do_pull():
         ollama.pull_model(model_name)
@@ -171,8 +176,12 @@ def api_ai_pull_progress():
 def api_ai_delete():
     data = request.get_json() or {}
     model_name = data.get('model')
-    if not model_name:
+    if not model_name or not isinstance(model_name, str):
         return jsonify({'error': 'No model specified'}), 400
+    # Defensive cap — prevents sending megabyte-sized names to Ollama, which
+    # would still reject them but log noisy errors.
+    if len(model_name) > 200:
+        return jsonify({'error': 'Model name too long'}), 400
     success = ollama.delete_model(model_name)
     if not success:
         return jsonify({'error': 'Failed to delete model'}), 500

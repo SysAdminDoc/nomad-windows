@@ -107,11 +107,22 @@ def _auto_install_java():
 
     log.info('Auto-downloading portable Java JRE 21 from Adoptium...')
     try:
-        resp = req.get(_get_jre_url(), stream=True, timeout=30, allow_redirects=True)
-        resp.raise_for_status()
-        with open(zip_path, 'wb') as f:
-            for chunk in resp.iter_content(chunk_size=65536):
-                f.write(chunk)
+        resp = None
+        try:
+            # Explicit close in finally so the response socket is freed
+            # even if writing the chunk stream raises. Avoids the ``with``
+            # form so test-fixture mocks without a __exit__ still work.
+            resp = req.get(_get_jre_url(), stream=True, timeout=30, allow_redirects=True)
+            resp.raise_for_status()
+            with open(zip_path, 'wb') as f:
+                for chunk in resp.iter_content(chunk_size=65536):
+                    f.write(chunk)
+        finally:
+            if resp is not None:
+                try:
+                    resp.close()
+                except Exception:
+                    pass
 
         log.info('Extracting JRE...')
         extract_archive(zip_path, jre_dir)

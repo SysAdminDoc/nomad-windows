@@ -2022,9 +2022,15 @@ def api_waypoints_import_gpx():
     except Exception:
         return jsonify({'error': 'GPX file is not valid UTF-8'}), 400
 
-    # XML parse with a defusedxml-style guard against billion-laughs /
-    # external-entity attacks. stdlib ElementTree already ignores DTDs, but
-    # we additionally refuse documents whose root element isn't <gpx>.
+    # Defuse against billion-laughs: stdlib ElementTree still parses
+    # internal entity declarations, so refuse any document that contains
+    # a DOCTYPE (real GPX never has one). Combined with the 50 MB cap
+    # and the <gpx> root-element requirement below, this closes the
+    # common XML-bomb vectors without pulling in defusedxml.
+    lowered_head = content.lstrip()[:1024].lower()
+    if '<!doctype' in lowered_head or '<!entity' in lowered_head:
+        return jsonify({'error': 'GPX file with DOCTYPE/ENTITY declarations is not allowed'}), 400
+
     import xml.etree.ElementTree as ET
     try:
         root = ET.fromstring(content)

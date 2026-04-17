@@ -71,6 +71,14 @@ def _validate_data(data, schema):
         if expected_type:
             # Normalise to tuple for isinstance check
             type_tuple = expected_type if isinstance(expected_type, tuple) else (expected_type,)
+            # In Python, bool is a subclass of int — so True/False would
+            # silently pass for numeric fields like ``quantity`` or
+            # ``price``. Reject booleans explicitly unless the schema
+            # actually asks for a bool.
+            if isinstance(value, bool) and bool not in type_tuple:
+                type_names = ', '.join(t.__name__ for t in type_tuple)
+                errors.append(f'{field} must be {type_names}')
+                continue
             # Allow int where float is expected
             if float in type_tuple and isinstance(value, int):
                 value = float(value)

@@ -112,8 +112,14 @@ def api_notes_export_json():
         payload = _json.dumps(notes_data, indent=2, default=str)
         return Response(payload, mimetype='application/json',
                        headers={'Content-Disposition': 'attachment; filename="nomad_notes_export.json"'})
-    except Exception as e:
-        return Response(f'{{"error": "{e}"}}', mimetype='application/json', status=500)
+    except Exception:
+        # Previous version interpolated the exception into a hand-rolled
+        # JSON string (``f'{{"error": "{e}"}}'``) which both leaked internal
+        # details and produced malformed JSON whenever the message
+        # contained a quote/newline. Use jsonify with a generic message.
+        import logging
+        logging.getLogger(__name__).exception('Notes JSON export failed')
+        return jsonify({'error': 'Export failed'}), 500
 
 
 @notes_bp.route('/api/notes/export-all')
@@ -299,7 +305,14 @@ def api_note_attachments(note_id):
     files = []
     for f in os.listdir(att_dir):
         fp = os.path.join(att_dir, f)
-        files.append({'filename': f, 'size': os.path.getsize(fp), 'path': f'/api/notes/{note_id}/attachments/{f}'})
+        # ``getsize`` raises FileNotFoundError on a file that was removed
+        # between listdir() and here — swallow and skip so a racing delete
+        # doesn't 500 the list endpoint.
+        try:
+            size = os.path.getsize(fp)
+        except OSError:
+            continue
+        files.append({'filename': f, 'size': size, 'path': f'/api/notes/{note_id}/attachments/{f}'})
     return jsonify(files)
 
 
@@ -325,10 +338,28 @@ def api_note_attachment_upload(note_id):
     f = request.files['file']
     if not f.filename:
         return jsonify({'error': 'Empty filename'}), 400
+    # Reject uploads to non-existent notes up-front — otherwise an attacker
+    # could spray orphan attachment directories keyed by made-up note IDs.
+    with db_session() as db:
+        row = db.execute('SELECT 1 FROM notes WHERE id = ?', (note_id,)).fetchone()
+    if not row:
+        return jsonify({'error': 'Note not found'}), 404
+    safe = secure_filename(f.filename)
+    # ``secure_filename`` returns '' for inputs that strip to nothing
+    # (e.g. "../" or "🎉.png"). Saving with an empty name would write to
+    # the directory path itself, which either fails cryptically or — on
+    # some filesystems — overwrites it.
+    if not safe:
+        return jsonify({'error': 'Filename not allowed'}), 400
     att_dir = os.path.join(get_data_dir(), 'attachments', 'notes', str(note_id))
     os.makedirs(att_dir, exist_ok=True)
-    safe = secure_filename(f.filename)
-    f.save(os.path.join(att_dir, safe))
+    dest = os.path.join(att_dir, safe)
+    # Defensive path check — if a fresh werkzeug release ever changed
+    # ``secure_filename`` semantics we still want to refuse traversal.
+    if not os.path.normcase(os.path.normpath(dest)).startswith(
+            os.path.normcase(os.path.normpath(att_dir)) + os.sep):
+        return jsonify({'error': 'Invalid path'}), 400
+    f.save(dest)
     return jsonify({'status': 'ok', 'filename': safe, 'path': f'/api/notes/{note_id}/attachments/{safe}'})
 
 

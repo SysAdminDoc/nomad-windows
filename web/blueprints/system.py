@@ -945,13 +945,24 @@ def api_backup_restore_alt():
 
 @system_bp.route('/api/logs')
 def api_logs():
-    """Return the last N lines of the application log file."""
+    """Return the last N lines of the application log file.
+
+    The launcher writes to ``{data_dir}/logs/nomad.log`` — the previous
+    version looked in ``{data_dir}/nomad.log`` and always returned
+    "Log file not found" to the Settings panel.
+    """
     try:
         lines_requested = min(int(request.args.get('lines', 100)), 500)
     except (ValueError, TypeError):
         lines_requested = 100
     try:
-        log_path = os.path.join(get_data_dir(), 'nomad.log')
+        data_dir = get_data_dir()
+        # Primary location (matches nomad.py's RotatingFileHandler path).
+        candidates = [
+            os.path.join(data_dir, 'logs', 'nomad.log'),
+            os.path.join(data_dir, 'nomad.log'),
+        ]
+        log_path = next((p for p in candidates if os.path.isfile(p)), candidates[0])
         if not os.path.isfile(log_path):
             return jsonify({'lines': [], 'path': log_path, 'error': 'Log file not found'})
         with open(log_path, 'r', errors='replace') as f:
@@ -1568,19 +1579,19 @@ def api_backup_restore():
     if not restore_data or restore_data[:16] != b'SQLite format 3\x00':
         return jsonify({'error': 'Invalid SQLite database file'}), 400
 
-    # Write to temp file first and validate
+    # Write to temp file first and validate. The prior version leaked the
+    # temp file whenever integrity-check or missing-tables returned a 400:
+    # the early ``return`` skipped the cleanup line below the try/finally.
     import tempfile
     temp_fd, temp_path = tempfile.mkstemp(suffix='.db')
     try:
         with os.fdopen(temp_fd, 'wb') as f:
             f.write(restore_data)
-        # Validate the backup
         test_conn = _sqlite3.connect(temp_path)
         try:
             integrity = test_conn.execute('PRAGMA integrity_check').fetchone()[0]
             if integrity != 'ok':
                 return jsonify({'error': f'Backup failed integrity check: {integrity}'}), 400
-            # Check critical tables exist
             tables = [r[0] for r in test_conn.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()]
             required = ['settings', 'inventory', 'contacts', 'activity_log']
             missing = [t for t in required if t not in tables]
@@ -1588,13 +1599,11 @@ def api_backup_restore():
                 return jsonify({'error': f'Backup missing tables: {", ".join(missing)}'}), 400
         finally:
             test_conn.close()
-        os.unlink(temp_path)
-    except Exception as e:
+    finally:
         try:
             os.unlink(temp_path)
         except OSError:
             pass
-        raise
 
     # Pre-restore safety backup
     pre_restore_path = db_path + '.pre-restore'

@@ -931,11 +931,22 @@ def api_drill_history_save():
         return jsonify({'error': 'drill_type too long'}), 400
     if len(data.get('title', '') or '') > 200:
         return jsonify({'error': 'title too long'}), 400
+    drill_type = data.get('drill_type', '')
+    # Coerce numeric fields up-front with a clean 400 on bad input, rather
+    # than funneling a ValueError through the generic 500 path below.
+    def _nn_int(raw, default=0):
+        try:
+            return max(0, int(raw))
+        except (TypeError, ValueError):
+            return default
+    tasks_total = _nn_int(data.get('tasks_total', 0))
+    tasks_completed = _nn_int(data.get('tasks_completed', 0))
+    duration_sec = _nn_int(data.get('duration_sec', 0))
+    # Completed can never exceed total — clamp so the drill-score math stays
+    # sane even if the client posts 10/5.
+    if tasks_completed > tasks_total:
+        tasks_completed = tasks_total
     try:
-        drill_type = data.get('drill_type', '')
-        tasks_total = int(data.get('tasks_total', 0))
-        tasks_completed = int(data.get('tasks_completed', 0))
-        duration_sec = int(data.get('duration_sec', 0))
         with db_session() as db:
             db.execute('INSERT INTO drill_history (drill_type, title, duration_sec, tasks_total, tasks_completed, notes) VALUES (?, ?, ?, ?, ?, ?)',
                        (drill_type, data.get('title', ''), duration_sec,
@@ -947,7 +958,7 @@ def api_drill_history_save():
             db.commit()
         return jsonify({'status': 'saved'}), 201
     except Exception as e:
-        log.error('Request failed: %s', e)
+        log.error('Drill save failed: %s', e)
         return jsonify({'error': 'Internal server error'}), 500
 
 

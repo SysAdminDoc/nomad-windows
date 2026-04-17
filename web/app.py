@@ -96,23 +96,28 @@ _cpu_monitor_started = False
 
 # ─── Build Bundle Manifest Helper ──────────────────────────────────────
 _bundle_manifest = None
+_bundle_manifest_mtime = None
 
 def _load_bundle_manifest():
     """Read the esbuild build manifest (web/static/dist/manifest.json).
 
     Returns a dict mapping logical names to hashed filenames, e.g.
     {"nomad.bundle.js": "nomad.bundle.a1b2c3d4.js"}.
-    Caches the result so the file is read only once per process.
+    Refreshes automatically when the manifest changes so rebuilt assets are
+    served without requiring a process restart.
     """
-    global _bundle_manifest
-    if _bundle_manifest is not None:
-        return _bundle_manifest
     manifest_path = os.path.join(os.path.dirname(__file__), 'static', 'dist', 'manifest.json')
+    global _bundle_manifest, _bundle_manifest_mtime
     try:
+        manifest_mtime = os.path.getmtime(manifest_path)
+        if _bundle_manifest is not None and _bundle_manifest_mtime == manifest_mtime:
+            return _bundle_manifest
         with open(manifest_path, 'r') as f:
             _bundle_manifest = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+        _bundle_manifest_mtime = manifest_mtime
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
         _bundle_manifest = {}
+        _bundle_manifest_mtime = None
     return _bundle_manifest
 
 def create_app():
@@ -344,8 +349,13 @@ def create_app():
     # ─── LAN Auth Guard ────────────────────────────────────────────────
     @app.before_request
     def check_lan_auth():
-        """Require auth token for state-changing LAN requests when password is set."""
-        if request.method not in ('POST', 'PUT', 'DELETE'):
+        """Require auth token for state-changing LAN requests when password is set.
+
+        Must mirror ``_MUTATING_METHODS`` — an earlier revision only checked
+        POST/PUT/DELETE, leaving PATCH as an unauthenticated back door on any
+        route that accepts it.
+        """
+        if request.method not in _MUTATING_METHODS:
             return
         remote = request.remote_addr or ''
         if _is_loopback(remote):
@@ -879,10 +889,12 @@ def create_app():
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            # Bind to loopback by default — set NOMAD_DISCOVERY_BIND=0.0.0.0 to
-            # expose on the LAN. Binding to '' (all interfaces) without opt-in
-            # was surprising for a desktop app.
-            bind_addr = os.environ.get('NOMAD_DISCOVERY_BIND', '0.0.0.0').strip() or '0.0.0.0'
+            # Bind to loopback by default — set NOMAD_DISCOVERY_BIND=0.0.0.0
+            # to expose on the LAN for multi-node discovery. Binding to
+            # '0.0.0.0' (all interfaces) without opt-in was surprising for a
+            # desktop app and exposed the discovery listener to the LAN even
+            # when federation was unused.
+            bind_addr = os.environ.get('NOMAD_DISCOVERY_BIND', '127.0.0.1').strip() or '127.0.0.1'
             sock.bind((bind_addr, discovery_port))
             sock.settimeout(1)
             while True:

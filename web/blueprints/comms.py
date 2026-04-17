@@ -55,10 +55,16 @@ def api_lan_transfer_send():
     except ValueError:
         return error_response('Invalid IP address format')
 
+    # ``secure_filename`` can reduce some inputs to an empty string — saving
+    # with a blank name would write *to the directory path itself*. Bail
+    # with a 400 instead of producing a cryptic OSError.
+    safe = secure_filename(f.filename or '')
+    if not safe:
+        return error_response('Filename not allowed')
+
     # Save locally first
     transfer_dir = os.path.join(get_data_dir(), 'transfers', 'outgoing')
     os.makedirs(transfer_dir, exist_ok=True)
-    safe = secure_filename(f.filename)
     local_path = os.path.join(transfer_dir, safe)
     f.save(local_path)
     file_size = os.path.getsize(local_path)
@@ -73,13 +79,24 @@ def api_lan_transfer_send():
     # Send in background
     def do_send():
         import requests as _req
+        # Use the app's configured port rather than hardcoding 8080 — the
+        # whole project is already Config.APP_PORT-aware elsewhere.
+        from config import Config as _Config
+        port = _Config.APP_PORT
         try:
             with open(local_path, 'rb') as fh:
-                port = 8080
-                _req.post(f'http://{peer_ip}:{port}/api/lan/transfer/receive',
-                          files={'file': (safe, fh)}, timeout=300)
+                resp = _req.post(f'http://{peer_ip}:{port}/api/lan/transfer/receive',
+                                 files={'file': (safe, fh)}, timeout=300)
+                try:
+                    ok = resp.ok
+                finally:
+                    try:
+                        resp.close()
+                    except Exception:
+                        pass
+            final_status = 'completed' if ok else 'failed'
             with db_session() as db2:
-                db2.execute('UPDATE lan_transfers SET status = ? WHERE id = ?', ('completed', tid))
+                db2.execute('UPDATE lan_transfers SET status = ? WHERE id = ?', (final_status, tid))
                 db2.commit()
         except Exception:
             with db_session() as db2:
@@ -94,11 +111,20 @@ def api_lan_transfer_receive():
     if 'file' not in request.files:
         return jsonify({'error': 'No file'}), 400
     f = request.files['file']
+    safe = secure_filename(f.filename or '')
+    # Refuse filenames that ``secure_filename`` stripped to empty — otherwise
+    # ``f.save(recv_dir)`` would try to save to the directory path itself.
+    if not safe:
+        return jsonify({'error': 'Filename not allowed'}), 400
     recv_dir = os.path.join(get_data_dir(), 'transfers', 'incoming')
     os.makedirs(recv_dir, exist_ok=True)
-    safe = secure_filename(f.filename)
-    f.save(os.path.join(recv_dir, safe))
-    file_size = os.path.getsize(os.path.join(recv_dir, safe))
+    dest = os.path.join(recv_dir, safe)
+    # Defensive traversal check even after secure_filename.
+    if not os.path.normcase(os.path.normpath(dest)).startswith(
+            os.path.normcase(os.path.normpath(recv_dir)) + os.sep):
+        return jsonify({'error': 'Invalid path'}), 400
+    f.save(dest)
+    file_size = os.path.getsize(dest)
 
     with db_session() as db:
         db.execute(

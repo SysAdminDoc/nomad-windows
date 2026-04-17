@@ -39,6 +39,25 @@ SERVICE_MODULES = {
 
 services_bp = Blueprint('services', __name__)
 
+# Per-service start/stop/restart lock. Individual ``mod.start()`` paths
+# bypass ``services/manager.start_process`` and spawn ``subprocess.Popen``
+# directly, so each service's own ``if running(): return`` check is a classic
+# TOCTOU race: two concurrent ``/api/services/<id>/start`` calls would both
+# pass the check and spawn duplicates before either registration fires.
+# Serialising at the HTTP boundary closes that window for every service
+# without having to refactor every start() implementation.
+_svc_action_locks: dict = {}
+_svc_action_locks_lock = threading.Lock()
+
+
+def _action_lock(service_id: str) -> threading.Lock:
+    with _svc_action_locks_lock:
+        lock = _svc_action_locks.get(service_id)
+        if lock is None:
+            lock = threading.Lock()
+            _svc_action_locks[service_id] = lock
+        return lock
+
 
 def _safe_response_json(response, fallback=None):
     if fallback is None:
@@ -59,12 +78,14 @@ def api_services():
         install_dir = os.path.join(get_services_dir(), sid)
         disk_used = format_size(get_dir_size(install_dir)) if installed else '0 B'
 
+        # Every service module defines its own `<NAME>_PORT` constant, so
+        # resolving by the conventional name is sufficient. The prior
+        # fallback loop looked up foreign port constants on each module
+        # (e.g. checking ``ollama.KIWIX_PORT``) which is always None and
+        # masked missing constants as silent ``port: null`` entries.
         port_val = getattr(mod, f'{sid.upper()}_PORT', None)
         if port_val is None:
-            for attr in ['OLLAMA_PORT', 'KIWIX_PORT', 'CYBERCHEF_PORT', 'KOLIBRI_PORT', 'QDRANT_PORT', 'STIRLING_PORT']:
-                port_val = getattr(mod, attr, None)
-                if port_val:
-                    break
+            log.debug('Service %s has no %s_PORT constant', sid, sid.upper())
 
         services.append({
             'id': sid,
@@ -107,6 +128,9 @@ def api_start_service(service_id):
         return jsonify({'error': 'Unknown service'}), 404
     if not mod.is_installed():
         return jsonify({'error': 'Not installed'}), 400
+    lock = _action_lock(service_id)
+    if not lock.acquire(timeout=1):
+        return jsonify({'error': 'Another start/stop/restart is in progress for this service'}), 409
     try:
         # Start dependencies first
         deps_started = ensure_dependencies(service_id, SERVICE_MODULES)
@@ -118,24 +142,34 @@ def api_start_service(service_id):
     except Exception as e:
         log.exception('Service start failed for %s', service_id)
         return jsonify({'error': 'Service start failed'}), 500
+    finally:
+        lock.release()
 
 @services_bp.route('/api/services/<service_id>/stop', methods=['POST'])
 def api_stop_service(service_id):
     mod = SERVICE_MODULES.get(service_id)
     if not mod:
         return jsonify({'error': 'Unknown service'}), 404
+    lock = _action_lock(service_id)
+    if not lock.acquire(timeout=1):
+        return jsonify({'error': 'Another start/stop/restart is in progress for this service'}), 409
     try:
         mod.stop()
         return jsonify({'status': 'stopped'})
     except Exception as e:
         log.exception('Service stop failed for %s', service_id)
         return jsonify({'error': 'Service stop failed'}), 500
+    finally:
+        lock.release()
 
 @services_bp.route('/api/services/<service_id>/restart', methods=['POST'])
 def api_restart_service(service_id):
     mod = SERVICE_MODULES.get(service_id)
     if not mod:
         return jsonify({'error': 'Unknown service'}), 404
+    lock = _action_lock(service_id)
+    if not lock.acquire(timeout=1):
+        return jsonify({'error': 'Another start/stop/restart is in progress for this service'}), 409
     try:
         mod.stop()
         time.sleep(1)
@@ -144,17 +178,26 @@ def api_restart_service(service_id):
     except Exception as e:
         log.exception('Service restart failed for %s', service_id)
         return jsonify({'error': 'Service restart failed'}), 500
+    finally:
+        lock.release()
 
 @services_bp.route('/api/services/<service_id>/uninstall', methods=['POST'])
 def api_uninstall_service(service_id):
     if service_id not in SERVICE_MODULES:
         return jsonify({'error': 'Unknown service'}), 404
+    # Uninstall also shares the start/stop action lock — running a stop while
+    # uninstalling could race on the process table and the install dir.
+    lock = _action_lock(service_id)
+    if not lock.acquire(timeout=1):
+        return jsonify({'error': 'Another start/stop/restart is in progress for this service'}), 409
     try:
         uninstall_service(service_id)
         return jsonify({'status': 'uninstalled'})
     except Exception as e:
         log.exception('Uninstall failed for %s', service_id)
         return jsonify({'error': 'Uninstall failed'}), 500
+    finally:
+        lock.release()
 
 @services_bp.route('/api/services/start-all', methods=['POST'])
 def api_start_all():

@@ -733,10 +733,17 @@ def download_zim(url: str, filename: str = None):
         raise ValueError('Only HTTP/HTTPS URLs are supported')
     if not filename:
         filename = url.split('/')[-1]
+    # Drop any query string / fragment that snuck into the filename.
+    filename = filename.split('?', 1)[0].split('#', 1)[0]
     # Sanitize filename to prevent path traversal
     filename = os.path.basename(filename)
     if not filename or '..' in filename:
         raise ValueError(f'Invalid ZIM filename: {filename}')
+    # Only permit ZIM archives here. Without this guard, a mirror link like
+    # ``.../malicious.exe`` would be saved inside the Kiwix library dir
+    # (where the UI later surfaces it as installed content).
+    if not filename.lower().endswith('.zim'):
+        raise ValueError(f'Only .zim files are allowed (got {filename})')
     lib_dir = os.path.abspath(get_library_dir())
     dest = os.path.abspath(os.path.join(lib_dir, filename))
     if not dest.startswith(lib_dir + os.sep):

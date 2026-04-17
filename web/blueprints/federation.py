@@ -352,6 +352,33 @@ def api_node_sync_receive():
         if not isinstance(incoming_clocks, dict):
             incoming_clocks = {}
         conflicts = []
+        # Lazily build a per-table hash → row map the first time we actually
+        # need one. The prior implementation re-read the whole table for
+        # every conflicting row, making sync O(rows_per_table × conflicts).
+        # With two peers exchanging a 10k-row inventory with 100 conflicting
+        # rows that was a million dict+hash operations per sync.
+        _local_row_cache: dict = {}
+
+        def _local_row_for(table_name, target_hash):
+            if table_name not in ALLOWED:
+                return None
+            cached = _local_row_cache.get(table_name)
+            if cached is None:
+                cached = {}
+                try:
+                    local_rows = db.execute(f'SELECT * FROM {table_name} LIMIT 50000').fetchall()
+                    for lr in local_rows:
+                        lr_dict = dict(lr)
+                        lr_dict.pop('id', None)
+                        lr_key = hashlib.sha256(
+                            json.dumps(lr_dict, sort_keys=True, default=str).encode()
+                        ).hexdigest()[:16]
+                        cached[lr_key] = lr_dict
+                except Exception:
+                    pass
+                _local_row_cache[table_name] = cached
+            return cached.get(target_hash)
+
         for tname, hashes in incoming_clocks.items():
             if tname not in ALLOWED:
                 continue
@@ -363,19 +390,7 @@ def api_node_sync_receive():
                 local_clock = _safe_clock(local_vc_row['clock'] if local_vc_row else None)
                 if local_vc_row:
                     if not _vc_dominates(local_clock, incoming_clock) and not _vc_dominates(incoming_clock, local_clock) and local_clock != incoming_clock:
-                        # Fetch actual local row data for conflict details
-                        local_row_data = None
-                        try:
-                            local_rows = db.execute(f'SELECT * FROM [{tname}] LIMIT 50000').fetchall()
-                            for lr in local_rows:
-                                lr_dict = dict(lr)
-                                lr_dict.pop('id', None)
-                                lr_key = hashlib.sha256(json.dumps(lr_dict, sort_keys=True, default=str).encode()).hexdigest()[:16]
-                                if lr_key == row_hash:
-                                    local_row_data = lr_dict
-                                    break
-                        except Exception:
-                            pass
+                        local_row_data = _local_row_for(tname, row_hash)
                         incoming_row_data = incoming_by_hash.get((tname, row_hash))
                         conflicts.append({
                             'table': tname,

@@ -156,8 +156,12 @@ def users_create():
     if role not in ROLES:
         return jsonify({'error': f'invalid role, must be one of: {", ".join(ROLES)}'}), 400
     pin = (data.get('pin') or '').strip()
+    if pin and (len(pin) < 4 or len(pin) > 32):
+        return jsonify({'error': 'pin must be 4–32 characters'}), 400
     pin_hash = _hash_pin(pin) if pin else ''
     password = (data.get('password') or '').strip()
+    if password and (len(password) < 6 or len(password) > 200):
+        return jsonify({'error': 'password must be 6–200 characters'}), 400
     password_hash = _hash_credential(password) if password else ''
     permissions = json.dumps(data.get('permissions', []))
     settings = json.dumps(data.get('settings', {}))
@@ -223,11 +227,15 @@ def users_update(uid):
     if 'pin' in data:
         pin = (data['pin'] or '').strip()
         if pin:
+            if len(pin) < 4 or len(pin) > 32:
+                return jsonify({'error': 'pin must be 4–32 characters'}), 400
             sets.append('pin_hash = ?')
             params.append(_hash_pin(pin))
     if 'password' in data:
         password = (data['password'] or '').strip()
         if password:
+            if len(password) < 6 or len(password) > 200:
+                return jsonify({'error': 'password must be 6–200 characters'}), 400
             sets.append('password_hash = ?')
             params.append(_hash_credential(password))
     if not sets:
@@ -438,24 +446,41 @@ def auth_session():
 
 @platform_security_bp.route('/auth/change-password', methods=['POST'])
 def auth_change_password():
-    """Change password for authenticated user."""
+    """Change password for authenticated user.
+
+    When the caller already has a password on file we require the current
+    one — the previous version silently skipped verification whenever
+    ``current_password`` was omitted from the body, so a stolen session
+    token was sufficient to take over the account.
+    """
     data = request.get_json() or {}
     new_password = (data.get('new_password') or '').strip()
+    # Enforce sane bounds so the downstream PBKDF2 doesn't see unbounded input.
     if not new_password:
         return jsonify({'error': 'new_password is required'}), 400
+    if len(new_password) < 6:
+        return jsonify({'error': 'new_password must be at least 6 characters'}), 400
+    if len(new_password) > 200:
+        return jsonify({'error': 'new_password is too long'}), 400
     with db_session() as db:
         sess, token = _get_current_session(db)
         if not sess:
             return jsonify({'error': 'invalid or expired session'}), 401
-        # Verify current password if provided
+        user = db.execute(
+            'SELECT password_hash FROM app_users WHERE id = ?', (sess['user_id'],)
+        ).fetchone()
+        if not user:
+            return jsonify({'error': 'user not found'}), 404
         current = (data.get('current_password') or '').strip()
-        if current:
-            user = db.execute(
-                'SELECT password_hash FROM app_users WHERE id = ?', (sess['user_id'],)
-            ).fetchone()
-            if user and user['password_hash']:
-                if not _verify_credential(current, user['password_hash']):
-                    return jsonify({'error': 'current password is incorrect'}), 401
+        # If the account already has a password, the current one MUST be
+        # provided and valid. Enrolling a fresh password (user['password_hash']
+        # is empty) is still allowed without a current password — e.g. a
+        # PIN-only account adding a password for the first time.
+        if user['password_hash']:
+            if not current:
+                return jsonify({'error': 'current_password is required'}), 400
+            if not _verify_credential(current, user['password_hash']):
+                return jsonify({'error': 'current password is incorrect'}), 401
         new_hash = _hash_credential(new_password)
         r = db.execute(
             "UPDATE app_users SET password_hash = ?, updated_at = datetime('now') WHERE id = ?",
@@ -463,6 +488,12 @@ def auth_change_password():
         )
         if r.rowcount == 0:
             return jsonify({'error': 'user not found'}), 404
+        # Revoke every OTHER active session for this user so a stolen token
+        # can't keep acting as the account after the password has changed.
+        db.execute(
+            "UPDATE app_sessions SET is_active = 0 WHERE user_id = ? AND id != ?",
+            (sess['user_id'], sess['id']),
+        )
         db.commit()
     log_activity('password_changed', service='platform_security',
                  detail=f'Password changed for user id={sess["user_id"]}')

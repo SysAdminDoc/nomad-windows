@@ -54,6 +54,22 @@
   #tab-security-opsec .so-tag-spacer { margin-left:6px; }
   #tab-security-opsec .so-meta-text { font-size:.82rem; color:var(--text-secondary,#aaa); }
   #tab-security-opsec .so-callout { margin-top:8px; padding:10px; background:var(--so-accent-dim); border-radius:6px; font-size:.85rem; }
+  #tab-security-opsec .so-card-pad { padding:12px; }
+  #tab-security-opsec .so-row-spaced-sm { margin-top:8px; }
+  #tab-security-opsec .so-row-padding-y { padding:6px 0; }
+  #tab-security-opsec .so-row-center { text-align:center; }
+  #tab-security-opsec .so-tag-right { float:right; font-size:.75rem; }
+  #tab-security-opsec .so-field-min-320 { flex:1; min-width:320px; }
+  #tab-security-opsec .so-input-narrow { width:16px; height:16px; accent-color:var(--so-green); }
+  #tab-security-opsec .so-input-full { width:100%; padding:8px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; margin-bottom:8px; }
+  #tab-security-opsec .so-input-mini-spaced { padding:4px 8px; border-radius:4px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.78rem; margin-left:4px; }
+  #tab-security-opsec .so-input-mini { padding:4px 8px; border-radius:4px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.78rem; }
+  #tab-security-opsec .so-cell-truncate { max-width:200px; font-size:.78rem; }
+  #tab-security-opsec .so-pre-block { margin:8px 0 0; white-space:pre-wrap; font-size:.78rem; color:var(--text-secondary,#ccc); background:rgba(0,0,0,.3); padding:8px; border-radius:4px; }
+  #tab-security-opsec .so-callout-danger { margin-top:8px; padding:8px; background:rgba(239,68,68,.15); border-radius:6px; font-size:.82rem; color:var(--so-red); }
+  #tab-security-opsec .so-bar-track-progress { width:0%; background:var(--so-green); }
+  #tab-security-opsec .so-bar-fill[style*="--so-bar-w"] { width:var(--so-bar-w); }
+  #tab-security-opsec .so-bar-fill[style*="--so-tone"] { background:var(--so-tone); }
   #tab-security-opsec .so-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-security-opsec .so-btn-primary { background:var(--so-accent); color:#fff; }
   #tab-security-opsec .so-btn-danger { background:var(--so-red); color:#fff; }
@@ -177,7 +193,7 @@
   <!-- Checklists -->
   <div class="so-card so-card-spaced">
     <div class="so-card-title">Security Audit Checklists
-      <button class="so-btn so-btn-secondary" style="float:right;font-size:.75rem" onclick="soSeedChecklists()">Seed Default Checklists</button>
+      <button class="so-btn so-btn-secondary so-tag-right" onclick="soSeedChecklists()">Seed Default Checklists</button>
     </div>
     <div class="so-form-row">
       <div class="field"><label>Checklist Name</label><input name="so-checklist-name" id="so-checklist-name" placeholder="Perimeter Audit"></div>
@@ -297,10 +313,10 @@
   <div class="so-card">
     <div class="so-card-title">Filter Logs
       <span style="float:right">
-        <select name="so-log-filter-post" id="so-log-filter-post" style="padding:4px 8px;border-radius:4px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.78rem">
+        <select name="so-log-filter-post" id="so-log-filter-post" class="so-input-mini">
           <option value="">All Posts</option>
         </select>
-        <select name="so-log-filter-category" id="so-log-filter-category" style="padding:4px 8px;border-radius:4px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.78rem;margin-left:4px">
+        <select name="so-log-filter-category" id="so-log-filter-category" class="so-input-mini-spaced">
           <option value="">All Categories</option>
           <option value="movement">Movement</option><option value="noise">Noise</option>
           <option value="light">Light</option><option value="vehicle">Vehicle</option>
@@ -319,7 +335,7 @@
   <div class="so-card">
     <div class="so-card-title">Overall Concealment Score</div>
     <div id="so-concealment-gauge">
-      <div class="so-gauge"><div class="so-gauge-fill" id="so-gauge-fill" style="width:0%;background:var(--so-green)"></div><div class="so-gauge-text" id="so-gauge-text">0 / 100 (Fully Concealed)</div></div>
+      <div class="so-gauge"><div class="so-gauge-fill" id="so-gauge-fill" class="so-bar-track-progress"></div><div class="so-gauge-text" id="so-gauge-text">0 / 100 (Fully Concealed)</div></div>
     </div>
   </div>
   <div class="so-row-actions">
@@ -370,7 +386,7 @@
     <div style="flex:0 0 260px;min-width:220px">
       <div class="so-card">
         <div class="so-card-title">Reference Guide</div>
-        <div id="so-sig-guide"><div class="so-empty" style="padding:12px">Loading signature discipline notes…</div></div>
+        <div id="so-sig-guide"><div class="so-empty so-card-pad">Loading signature discipline notes…</div></div>
       </div>
     </div>
   </div>
@@ -394,13 +410,13 @@
     </div>
     <div class="so-card so-stat-cell">
       <div class="so-card-title">Ambient Light</div>
-      <select name="so-ambient-light" id="so-ambient-light" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--border,#333);background:var(--input-bg,#12121f);color:var(--text-primary,#eee);font-size:.85rem;margin-bottom:8px">
+      <select name="so-ambient-light" id="so-ambient-light" class="so-input-full">
         <option value="full_moon">Full Moon</option><option value="half_moon">Half Moon</option>
         <option value="quarter_moon">Quarter Moon</option><option value="starlight">Starlight Only</option>
         <option value="overcast">Overcast / No Light</option>
       </select>
       <label style="font-size:.82rem;color:var(--text-secondary,#aaa);display:flex;align-items:center;gap:6px;justify-content:center">
-        <input type="checkbox" name="so-nvg-available" id="so-nvg-available" style="width:16px;height:16px;accent-color:var(--so-green)"> NVG Available
+        <input type="checkbox" name="so-nvg-available" id="so-nvg-available" class="so-input-narrow"> NVG Available
       </label>
     </div>
   </div>
@@ -432,7 +448,7 @@
 <!-- ── CBRN/EMP Panel ──────────────────────────────────── -->
 <div class="so-panel" id="so-panel-cbrn-emp" role="tabpanel" tabindex="-1" aria-labelledby="so-tab-cbrn-emp" hidden>
   <!-- MOPP Level -->
-  <div class="so-card" style="text-align:center">
+  <div class="so-card so-row-center">
     <div class="so-card-title">Current MOPP Level</div>
     <div style="display:flex;gap:8px;justify-content:center;margin:8px 0">
       <button class="so-btn so-mopp-0" onclick="soSetMOPP(0)" id="so-mopp-btn-0"><strong>MOPP 0</strong></button>
@@ -446,7 +462,7 @@
 
   <div class="so-row-actions">
     <!-- CBRN Equipment -->
-    <div style="flex:1;min-width:320px">
+    <div class="so-field-min-320">
       <div class="so-card">
         <div class="so-card-title">CBRN Equipment Inventory</div>
         <div class="so-form-row">
@@ -477,7 +493,7 @@
       <!-- Procedures -->
       <div class="so-card so-card-spaced-sm">
         <div class="so-card-title">CBRN Procedures
-          <button class="so-btn so-btn-secondary" style="float:right;font-size:.75rem" onclick="soSeedProcedures()">Seed Built-in Procedures</button>
+          <button class="so-btn so-btn-secondary so-tag-right" onclick="soSeedProcedures()">Seed Built-in Procedures</button>
         </div>
         <div class="so-form-row">
           <div class="field"><label>Procedure Name</label><input name="so-proc-name" id="so-proc-name" placeholder="Mask Drill"></div>
@@ -497,7 +513,7 @@
     </div>
 
     <!-- Calculators + EMP -->
-    <div style="flex:1;min-width:320px">
+    <div class="so-field-min-320">
       <!-- Calculators -->
       <div class="so-card">
         <div class="so-card-title">KI Dosage Reference</div>
@@ -572,7 +588,7 @@
       <!-- Grid Dependency Analysis -->
       <div class="so-card so-card-spaced-sm">
         <div class="so-card-title">Grid Dependency Analysis</div>
-        <div id="so-emp-analysis"><div class="so-empty" style="padding:12px">Loading protection analysis…</div></div>
+        <div id="so-emp-analysis"><div class="so-empty so-card-pad">Loading protection analysis…</div></div>
       </div>
     </div>
   </div>
@@ -679,7 +695,7 @@
           <div class="so-row-header">
             <div><strong>${cl.name}</strong> <span class="so-score" style="color:${pct>=80?'var(--so-green)':pct>=50?'var(--so-yellow)':'var(--so-red)'}">${pct}%</span> <small>(${done}/${total})</small></div>
           </div>
-          <div style="margin-top:8px">${checkItems.map((item,idx)=>`<div class="so-checklist-item">
+          <div class="so-row-spaced-sm">${checkItems.map((item,idx)=>`<div class="so-checklist-item">
             <input type="checkbox" name="so-cl-${cl.id}-${idx}" ${item.checked?'checked':''} onchange="soToggleCheckItem(${cl.id},${idx},this.checked)">
             <span style="font-size:.85rem;color:var(--text-primary,#eee)">${item.text||item}</span>
           </div>`).join('')}</div>
@@ -744,7 +760,7 @@
           <td>${t.name}</td><td>${t.category||''}</td>
           <td>${t.likelihood}</td><td>${t.impact}</td>
           <td><strong class="${riskClass(score)}" style="color:${riskColor(score)}">${score}</strong></td>
-          <td style="max-width:200px;font-size:.78rem">${t.mitigation||''}</td>
+          <td class="so-cell-truncate">${t.mitigation||''}</td>
           <td><button class="so-btn so-btn-danger" onclick="soDeleteThreat(${t.id})">Del</button></td>
         </tr>`;
       }).join('');
@@ -1016,7 +1032,7 @@
         <div class="so-row-header">
           <div><strong>${p.name}</strong> <span class="so-badge so-badge-${p.type==='immediate_action'?'need_to_know':p.type==='decontamination'?'confidential':'restricted'}">${(p.type||'').replace(/_/g,' ')}</span></div>
         </div>
-        <pre style="margin:8px 0 0;white-space:pre-wrap;font-size:.78rem;color:var(--text-secondary,#ccc);background:rgba(0,0,0,.3);padding:8px;border-radius:4px">${p.steps||''}</pre>
+        <pre class="so-pre-block">${p.steps||''}</pre>
       </div>`).join('');
     });
   };
@@ -1091,12 +1107,12 @@
       const total=data.total||0;
       const protectedPct=total?Math.round((data.protected||0)/total*100):0;
       container.innerHTML=`<div style="margin-bottom:8px"><strong>Protection Coverage:</strong> <span style="color:${protectedPct>=70?'var(--so-green)':protectedPct>=40?'var(--so-yellow)':'var(--so-red)'}">${protectedPct}%</span> of ${total} items protected</div>
-        <div class="so-gauge"><div class="so-gauge-fill" style="width:${protectedPct}%;background:${protectedPct>=70?'var(--so-green)':protectedPct>=40?'var(--so-yellow)':'var(--so-red)'}"></div><div class="so-gauge-text">${protectedPct}% Protected</div></div>
-        ${Object.keys(cats).length?'<div style="margin-top:10px;font-size:.82rem">'+Object.entries(cats).map(([cat,info])=>`<div class="so-list-item" style="padding:6px 0">
+        <div class="so-gauge"><div class="so-gauge-fill so-bar-fill" style="--so-bar-w:${protectedPct}%;--so-tone:${protectedPct>=70?'var(--so-green)':protectedPct>=40?'var(--so-yellow)':'var(--so-red)'}"></div><div class="so-gauge-text">${protectedPct}% Protected</div></div>
+        ${Object.keys(cats).length?'<div style="margin-top:10px;font-size:.82rem">'+Object.entries(cats).map(([cat,info])=>`<div class="so-list-item so-row-padding-y">
           <span>${cat}</span>
           <span><span class="so-protected">${info.protected||0}</span> / ${info.total||0} protected</span>
         </div>`).join('')+'</div>':''}
-        ${data.critical_unprotected?'<div style="margin-top:8px;padding:8px;background:rgba(239,68,68,.15);border-radius:6px;font-size:.82rem;color:var(--so-red)"><strong>Warning:</strong> '+data.critical_unprotected+' critical item(s) unprotected</div>':''}`;
+        ${data.critical_unprotected?'<div class="so-callout-danger"><strong>Warning:</strong> '+data.critical_unprotected+' critical item(s) unprotected</div>':''}`;
     }).catch(()=>{el('so-emp-analysis').innerHTML='<div class="so-meta-text">Couldn\'t load the protection analysis right now.</div>';});
   };
 

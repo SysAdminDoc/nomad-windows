@@ -642,8 +642,19 @@ textarea:focus {
   text-shadow: 0 2px 12px var(--accent-glow);
   font-family: var(--font-data, monospace);
 }
+/* Readiness grade + bar fill — JS sets data-grade on #rs-grade and a
+   tone class on #rs-bar-fill so colours come from CSS, not inline
+   style.color / style.background. */
+#rs-grade[data-grade="A"],
+#rs-grade[data-grade="B"]        { color: var(--green); }
+#rs-grade[data-grade="C"]        { color: var(--warning); }
+#rs-grade[data-grade="D"]        { color: var(--orange); }
+#rs-grade[data-grade="F"]        { color: var(--red); }
 #rs-bar { border-radius: 2px; height: 8px; }
 #rs-bar-fill { border-radius: 2px; box-shadow: 0 0 8px var(--accent-glow); }
+#rs-bar-fill.tone-success  { background: var(--green); }
+#rs-bar-fill.tone-warning  { background: var(--orange); }
+#rs-bar-fill.tone-danger   { background: var(--red); }
 
 /* ═══════════════════════════════════════════════════════════════
    WIZARD — Onboarding

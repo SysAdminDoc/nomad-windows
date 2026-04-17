@@ -40,6 +40,13 @@
   #tab-medical-phase2 .mp-form-row select,
   #tab-medical-phase2 .mp-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-medical-phase2 .mp-form-row .field { flex:1; min-width:140px; }
+  #tab-medical-phase2 .mp-form-row .field.mp-field-action { align-self:flex-end; flex:0; }
+  #tab-medical-phase2 .mp-row-spaced { margin-top:16px; }
+  #tab-medical-phase2 .mp-row-actions { display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap; align-items:center; }
+  #tab-medical-phase2 .mp-row-tight { display:flex; gap:4px; }
+  #tab-medical-phase2 .mp-tag-spacer { margin-left:6px; }
+  #tab-medical-phase2 .mp-callout-success { color:var(--mp-green); font-size:.85rem; padding:8px; }
+  #tab-medical-phase2 .mp-hidden { display:none; }
   #tab-medical-phase2 .mp-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-medical-phase2 .mp-btn-primary { background:var(--mp-accent); color:#fff; }
   #tab-medical-phase2 .mp-btn-danger { background:var(--mp-red); color:#fff; }
@@ -141,7 +148,7 @@
           <option value="active">Active</option><option value="delivered">Delivered</option><option value="loss">Loss</option>
         </select>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreatePregnancy()">Add</button></div>
+      <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCreatePregnancy()">Add</button></div>
     </div>
   </div>
   <div id="mp-preg-list" class="mp-card"><div class="mp-empty">Loading maternal care records...</div></div>
@@ -160,7 +167,7 @@
       <div class="field"><label>Treatment</label><input name="mp-dent-treatment" id="mp-dent-treatment" placeholder="Extraction, filling, etc."></div>
       <div class="field"><label>Pain Level (0-10)</label><input name="mp-dent-pain" id="mp-dent-pain" type="number" min="0" max="10" value="0"></div>
       <div class="field"><label>Treatment Date</label><input name="mp-dent-date" id="mp-dent-date" type="date"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreateDental()">Add</button></div>
+      <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCreateDental()">Add</button></div>
     </div>
   </div>
   <div id="mp-dent-list" class="mp-card"><div class="mp-empty">Loading dental records...</div></div>
@@ -182,7 +189,7 @@
     </div>
     <div class="mp-form-row">
       <div class="field"><label>Medication Stockpile (days)</label><input name="mp-chr-stockpile" id="mp-chr-stockpile" type="number" min="0" value="0"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreateChronic()">Add</button></div>
+      <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCreateChronic()">Add</button></div>
     </div>
   </div>
   <div class="mp-card">
@@ -204,7 +211,7 @@
     <div class="mp-form-row">
       <div class="field"><label>Dose Number</label><input name="mp-vax-dose" id="mp-vax-dose" type="number" min="1" value="1"></div>
       <div class="field"><label>Next Due</label><input name="mp-vax-next" id="mp-vax-next" type="date"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreateVax()">Add</button></div>
+      <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCreateVax()">Add</button></div>
     </div>
   </div>
   <div class="mp-card">
@@ -227,14 +234,14 @@
       <div class="field"><label>Anxiety Level (0-10)</label><input name="mp-mh-anxiety" id="mp-mh-anxiety" type="number" min="0" max="10" value="0"></div>
       <div class="field"><label>Sleep Hours</label><input name="mp-mh-sleep" id="mp-mh-sleep" type="number" min="0" max="24" step="0.5" value="7"></div>
       <div class="field"><label>Energy Level (1-10)</label><input name="mp-mh-energy" id="mp-mh-energy" type="number" min="1" max="10" value="5"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreateMH()">Add</button></div>
+      <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCreateMH()">Add</button></div>
     </div>
   </div>
   <div class="mp-card">
     <div class="mp-card-title">Trends</div>
     <div class="mp-form-row">
       <div class="field"><label>Patient</label><input name="mp-mh-trend-patient" id="mp-mh-trend-patient" placeholder="Enter patient name"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-secondary" onclick="mpLoadMHTrends()">Load Trends</button></div>
+      <div class="field mp-field-action"><button class="mp-btn mp-btn-secondary" onclick="mpLoadMHTrends()">Load Trends</button></div>
     </div>
     <div id="mp-mh-trends"></div>
   </div>
@@ -262,7 +269,7 @@
       <div class="field"><label>Weight (lb)</label><input name="mp-vet-weight" id="mp-vet-weight" type="number" min="0" step="0.1" value="0"></div>
       <div class="field"><label>Condition</label><input name="mp-vet-condition" id="mp-vet-condition" placeholder="Healthy, injured, etc."></div>
       <div class="field"><label>Treatment</label><input name="mp-vet-treatment" id="mp-vet-treatment" placeholder="Treatment details"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreateVet()">Add</button></div>
+      <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCreateVet()">Add</button></div>
     </div>
   </div>
   <div id="mp-vet-list" class="mp-card"><div class="mp-empty">Loading animal care records...</div></div>
@@ -270,13 +277,13 @@
 
 <!-- ── Herbal Remedies Panel ────────────────────────────── -->
 <div class="mp-panel" id="mp-panel-herbal" role="tabpanel" tabindex="-1" aria-labelledby="mp-tab-herbal" hidden>
-  <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center">
+  <div class="mp-row-actions">
     <button class="mp-btn mp-btn-primary" onclick="mpSeedHerbal()">Seed Built-in Remedies</button>
-    <small style="color:var(--text-secondary)">Load the built-in herbal reference set for faster offline lookup.</small>
+    <small class="tone-muted">Load the built-in herbal reference set for faster offline lookup.</small>
   </div>
   <input class="mp-search-input" id="mp-herb-search" name="mp-herb-search" placeholder="Search remedies by name, use, or symptom..." oninput="mpHerbDebounce()">
   <div id="mp-herb-results" class="mp-grid"></div>
-  <div class="mp-card" style="margin-top:16px">
+  <div class="mp-card mp-row-spaced">
     <div class="mp-card-title">Add Custom Remedy</div>
     <div class="mp-form-row">
       <div class="field"><label>Name</label><input name="mp-herb-name" id="mp-herb-name" placeholder="Herb name"></div>
@@ -285,7 +292,7 @@
     <div class="mp-form-row">
       <div class="field"><label>Preparation</label><input name="mp-herb-prep" id="mp-herb-prep" placeholder="Tea, tincture, poultice..."></div>
       <div class="field"><label>Dosage</label><input name="mp-herb-dosage" id="mp-herb-dosage" placeholder="1 cup 2x daily"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCreateHerbal()">Add</button></div>
+      <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCreateHerbal()">Add</button></div>
     </div>
   </div>
 </div>
@@ -307,9 +314,9 @@
             <option value="20" selected>20 (macro)</option><option value="60">60 (micro)</option>
           </select>
         </div>
-        <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCalcIV()">Calculate</button></div>
+        <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCalcIV()">Calculate</button></div>
       </div>
-      <div id="mp-iv-result" class="mp-calc-result" style="display:none"></div>
+      <div id="mp-iv-result" class="mp-calc-result mp-hidden"></div>
     </div>
 
     <!-- Burns BSA -->
@@ -327,9 +334,9 @@
       </div>
       <div class="mp-form-row">
         <div class="field"><label>Weight (kg)</label><input name="mp-burn-weight" id="mp-burn-weight" type="number" min="1" step="0.1" value="70"></div>
-        <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCalcBurns()">Calculate</button></div>
+        <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCalcBurns()">Calculate</button></div>
       </div>
-      <div id="mp-burn-result" class="mp-calc-result" style="display:none"></div>
+      <div id="mp-burn-result" class="mp-calc-result mp-hidden"></div>
     </div>
 
     <!-- APGAR -->
@@ -365,9 +372,9 @@
             <option value="0">0 - Absent</option><option value="1">1 - Slow/irregular</option><option value="2">2 - Good/crying</option>
           </select>
         </div>
-        <div class="field" style="flex:0;align-self:flex-end"><button class="mp-btn mp-btn-primary" onclick="mpCalcApgar()">Calculate</button></div>
+        <div class="field mp-field-action"><button class="mp-btn mp-btn-primary" onclick="mpCalcApgar()">Calculate</button></div>
       </div>
-      <div id="mp-apgar-result" class="mp-calc-result" style="display:none"></div>
+      <div id="mp-apgar-result" class="mp-calc-result mp-hidden"></div>
     </div>
   </div>
 </div>
@@ -419,8 +426,8 @@
       if(!items.length){el.innerHTML='<div class="mp-empty">No maternal care records yet. Add the first patient above to track due dates and care context.</div>';return;}
       const badge={active:'mp-badge-active',delivered:'mp-badge-delivered',loss:'mp-badge-loss'};
       el.innerHTML=items.map(p=>`<div class="mp-list-item">
-        <div><strong>${esc(p.patient_name)}</strong> <span class="mp-badge ${badge[p.status]||''}" style="margin-left:6px">${esc(String(p.status||'').toUpperCase())}</span>
-          <br><small style="color:var(--text-secondary)">Due: ${esc(p.due_date||'--')} | G${+p.gravida||0}P${+p.para||0} | ${esc(p.blood_type||'--')}</small></div>
+        <div><strong>${esc(p.patient_name)}</strong> <span class="mp-badge ${badge[p.status]||''} mp-tag-spacer">${esc(String(p.status||'').toUpperCase())}</span>
+          <br><small class="tone-muted">Due: ${esc(p.due_date||'--')} | G${+p.gravida||0}P${+p.para||0} | ${esc(p.blood_type||'--')}</small></div>
         <div><button class="mp-btn mp-btn-danger" onclick="mpDeletePregnancy(${p.id})">x</button></div>
       </div>`).join('');
     });
@@ -443,7 +450,7 @@
       if(!items.length){el.innerHTML='<div class="mp-empty">No dental records yet. Log the first tooth or treatment note above.</div>';return;}
       el.innerHTML=items.map(d=>`<div class="mp-list-item">
         <div><strong>${esc(d.patient_name)}</strong> - Tooth #${+d.tooth_number||0}
-          <br><small style="color:var(--text-secondary)">${esc(d.condition)} | Tx: ${esc(d.treatment||'--')} | Pain: ${+d.pain_level||0}/10 | ${esc(d.treatment_date||'--')}</small></div>
+          <br><small class="tone-muted">${esc(d.condition)} | Tx: ${esc(d.treatment||'--')} | Pain: ${+d.pain_level||0}/10 | ${esc(d.treatment_date||'--')}</small></div>
         <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteDental(${d.id})">x</button></div>
       </div>`).join('');
     });
@@ -466,9 +473,9 @@
       if(!items.length){el.innerHTML='<div class="mp-empty">No chronic-care records yet. Add the first condition and medication buffer above.</div>';return;}
       const badge={mild:'mp-badge-mild',moderate:'mp-badge-moderate',severe:'mp-badge-severe',critical:'mp-badge-critical'};
       el.innerHTML=items.map(c=>`<div class="mp-list-item">
-        <div><strong>${esc(c.patient_name)}</strong> - ${esc(c.condition_name)} <span class="mp-badge ${badge[c.severity]||''}" style="margin-left:6px">${esc(String(c.severity||'').toUpperCase())}</span>
-          <br><small style="color:var(--text-secondary)">Stockpile: ${+c.medication_stockpile_days||0} days</small></div>
-        <div style="display:flex;gap:4px">
+        <div><strong>${esc(c.patient_name)}</strong> - ${esc(c.condition_name)} <span class="mp-badge ${badge[c.severity]||''} mp-tag-spacer">${esc(String(c.severity||'').toUpperCase())}</span>
+          <br><small class="tone-muted">Stockpile: ${+c.medication_stockpile_days||0} days</small></div>
+        <div class="mp-row-tight">
           <button class="mp-btn mp-btn-secondary" onclick="mpEditChronic(${c.id})">Edit</button>
           <button class="mp-btn mp-btn-danger" onclick="mpDeleteChronic(${c.id})">x</button>
         </div>
@@ -478,7 +485,7 @@
   window.mpLoadChronicAlerts=function(){
     api('/api/medical/chronic/stockpile-alerts').then(alerts=>{
       const el=$('mp-chr-alerts');
-      if(!alerts.length){el.innerHTML='<div style="color:var(--mp-green);font-size:.85rem;padding:8px">Medication stockpiles look stable right now.</div>';return;}
+      if(!alerts.length){el.innerHTML='<div class="mp-callout-success">Medication stockpiles look stable right now.</div>';return;}
       el.innerHTML=alerts.map(a=>`<div class="mp-alert-card">
         <strong>${esc(a.patient_name)}</strong> - ${esc(a.condition_name)}
         <br><small>Only <strong>${+a.medication_stockpile_days||0} days</strong> of medication remaining</small>
@@ -509,7 +516,7 @@
       if(!items.length){el.innerHTML='<div class="mp-empty">No vaccination records yet. Add the first immunization above.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mp-list-item">
         <div><strong>${esc(v.patient_name)}</strong> - ${esc(v.vaccine_name)} (Dose ${+v.dose_number||0})
-          <br><small style="color:var(--text-secondary)">Given: ${esc(v.date_administered||'--')} | Next due: ${esc(v.next_due||'--')}</small></div>
+          <br><small class="tone-muted">Given: ${esc(v.date_administered||'--')} | Next due: ${esc(v.next_due||'--')}</small></div>
         <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteVax(${+v.id||0})">x</button></div>
       </div>`).join('');
     });
@@ -517,7 +524,7 @@
   window.mpLoadVaxDue=function(){
     api('/api/medical/vaccinations/due').then(items=>{
       const el=$('mp-vax-due');
-      if(!items.length){el.innerHTML='<div style="color:var(--mp-green);font-size:.85rem;padding:8px">No vaccinations are due or overdue right now.</div>';return;}
+      if(!items.length){el.innerHTML='<div class="mp-callout-success">No vaccinations are due or overdue right now.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mp-alert-card">
         <strong>${esc(v.patient_name)}</strong> - ${esc(v.vaccine_name)} (Dose ${+v.dose_number||0})
         <br><small>Due: <strong>${esc(v.next_due)}</strong></small>
@@ -542,7 +549,7 @@
       if(!items.length){el.innerHTML='<div class="mp-empty">No wellness check-ins yet. Log the first mental health entry above.</div>';return;}
       el.innerHTML=items.map(m=>`<div class="mp-list-item">
         <div><strong>${esc(m.patient_name)}</strong> - ${esc(m.check_date||'--')}
-          <br><small style="color:var(--text-secondary)">Mood: ${+m.mood_score||0}/10 | Anxiety: ${+m.anxiety_level||0}/10 | Sleep: ${+m.sleep_hours||0}h | Energy: ${+m.energy_level||0}/10</small></div>
+          <br><small class="tone-muted">Mood: ${+m.mood_score||0}/10 | Anxiety: ${+m.anxiety_level||0}/10 | Sleep: ${+m.sleep_hours||0}h | Energy: ${+m.energy_level||0}/10</small></div>
         <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteMH(${m.id})">x</button></div>
       </div>`).join('');
     });
@@ -579,7 +586,7 @@
       if(!items.length){el.innerHTML='<div class="mp-empty">No veterinary records yet. Add the first animal or livestock entry above.</div>';return;}
       el.innerHTML=items.map(v=>`<div class="mp-list-item">
         <div><strong>${esc(v.animal_name)}</strong> (${esc(v.species)}${v.breed?' - '+esc(v.breed):''})
-          <br><small style="color:var(--text-secondary)">${+v.weight_lb||0}lb | ${esc(v.condition||'--')} | Tx: ${esc(v.treatment||'--')}</small></div>
+          <br><small class="tone-muted">${+v.weight_lb||0}lb | ${esc(v.condition||'--')} | Tx: ${esc(v.treatment||'--')}</small></div>
         <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteVet(${v.id})">x</button></div>
       </div>`).join('');
     });

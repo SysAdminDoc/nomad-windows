@@ -46,6 +46,14 @@
   #tab-daily-living .dl-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-daily-living .dl-form-row textarea { min-height:60px; resize:vertical; }
   #tab-daily-living .dl-form-row .field { flex:1; min-width:140px; }
+  #tab-daily-living .dl-form-row .field.dl-field-action { align-self:flex-end; flex:0; }
+  #tab-daily-living .dl-form-row.dl-row-spaced { margin-bottom:12px; }
+  #tab-daily-living .dl-card.dl-card-spaced,
+  #tab-daily-living .dl-card-spaced { margin-top:16px; }
+  #tab-daily-living .dl-row-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  #tab-daily-living .dl-row-header .dl-card-title { margin:0; }
+  #tab-daily-living .dl-checkbox-inline { display:flex; align-items:center; gap:6px; margin-top:18px; }
+  #tab-daily-living .dl-row-tight { margin-top:8px; display:flex; gap:6px; }
   #tab-daily-living .dl-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-daily-living .dl-btn-primary { background:var(--dl-accent); color:#fff; }
   #tab-daily-living .dl-btn-primary:hover { background:var(--dl-accent-hover); }
@@ -161,24 +169,24 @@
           <label><input type="checkbox" name="dl-sched-day-sun" id="dl-sched-day-sun" checked> Sun</label>
         </div>
       </div>
-      <div class="field" style="align-self:flex-end;flex:0">
+      <div class="field dl-field-action">
         <button class="dl-btn dl-btn-primary" onclick="dlSaveSchedule()">Save Schedule</button>
       </div>
     </div>
   </div>
 
   <!-- Schedule List -->
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-    <span class="dl-card-title" style="margin:0">Schedules</span>
+  <div class="dl-row-header">
+    <span class="dl-card-title">Schedules</span>
     <button class="dl-btn dl-btn-secondary" onclick="dlLoadTemplates()">Load Templates</button>
   </div>
   <div id="dl-schedule-list" class="dl-card"><div class="dl-empty">Loading routines and schedules...</div></div>
   <div id="dl-schedule-templates" class="dl-card is-hidden"></div>
 
   <!-- Chores Section -->
-  <div class="dl-card" style="margin-top:16px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div class="dl-card-title" style="margin:0">Chores</div>
+  <div class="dl-card dl-card-spaced">
+    <div class="dl-row-header">
+      <div class="dl-card-title">Chores</div>
       <button class="dl-btn dl-btn-secondary" onclick="dlRotateChores()">Rotate All</button>
     </div>
     <input type="hidden" id="dl-chore-edit-id" name="dl-chore-edit-id" value="">
@@ -210,7 +218,7 @@
     </div>
     <div class="dl-form-row">
       <div class="field"><label>Instructions</label><textarea name="dl-chore-instructions" id="dl-chore-instructions" placeholder="Step-by-step details..."></textarea></div>
-      <div class="field" style="align-self:flex-end;flex:0">
+      <div class="field dl-field-action">
         <button class="dl-btn dl-btn-primary" onclick="dlSaveChore()">Save Chore</button>
       </div>
     </div>
@@ -227,7 +235,7 @@
   <div id="dl-clothing-assessment" class="dl-card is-hidden"></div>
 
   <!-- Filter -->
-  <div class="dl-form-row" style="margin-bottom:12px;">
+  <div class="dl-form-row dl-row-spaced">
     <div class="field"><label>Filter by Person</label>
       <select name="dl-clothing-filter" id="dl-clothing-filter" onchange="dlLoadClothing()">
         <option value="">All People</option>
@@ -276,8 +284,8 @@
     </div>
     <div class="dl-form-row">
       <div class="field"><label>Location</label><input name="dl-cloth-location" id="dl-cloth-location" placeholder="Closet A"></div>
-      <div class="field"><label style="display:flex;align-items:center;gap:6px;margin-top:18px;"><input type="checkbox" name="dl-cloth-waterproof" id="dl-cloth-waterproof"> Waterproof</label></div>
-      <div class="field" style="align-self:flex-end;flex:0">
+      <div class="field"><label class="dl-checkbox-inline"><input type="checkbox" name="dl-cloth-waterproof" id="dl-cloth-waterproof"> Waterproof</label></div>
+      <div class="field dl-field-action">
         <button class="dl-btn dl-btn-primary" onclick="dlSaveClothing()">Save Item</button>
       </div>
     </div>
@@ -324,7 +332,7 @@
       <div class="field"><label>Expiration Date</label><input name="dl-san-expires" id="dl-san-expires" type="date"></div>
     </div>
     <div class="dl-form-row">
-      <div class="field" style="align-self:flex-end;flex:0">
+      <div class="field dl-field-action">
         <button class="dl-btn dl-btn-primary" onclick="dlSaveSanitation()">Save Supply</button>
       </div>
     </div>
@@ -343,7 +351,7 @@
   <div id="dl-morale-trends" class="dl-stats-grid"></div>
 
   <!-- Person Filter -->
-  <div class="dl-form-row" style="margin-bottom:12px;">
+  <div class="dl-form-row dl-row-spaced">
     <div class="field"><label>Filter by Person</label>
       <select name="dl-morale-filter" id="dl-morale-filter" onchange="dlLoadMorale()">
         <option value="">All People</option>
@@ -398,7 +406,7 @@
       <div class="field"><label>Positive Notes</label><textarea name="dl-morale-positive" id="dl-morale-positive" placeholder="Good things today..."></textarea></div>
     </div>
     <div class="dl-form-row">
-      <div class="field" style="align-self:flex-end;flex:0">
+      <div class="field dl-field-action">
         <button class="dl-btn dl-btn-primary" onclick="dlSaveMorale()">Log Entry</button>
       </div>
     </div>
@@ -432,8 +440,8 @@
     </div>
     <div class="dl-form-row">
       <div class="field"><label>Interruptions</label><input name="dl-sleep-interruptions" id="dl-sleep-interruptions" type="number" value="0" min="0"></div>
-      <div class="field"><label style="display:flex;align-items:center;gap:6px;margin-top:18px;"><input type="checkbox" name="dl-sleep-watch" id="dl-sleep-watch"> Watch Duty</label></div>
-      <div class="field" style="align-self:flex-end;flex:0">
+      <div class="field"><label class="dl-checkbox-inline"><input type="checkbox" name="dl-sleep-watch" id="dl-sleep-watch"> Watch Duty</label></div>
+      <div class="field dl-field-action">
         <button class="dl-btn dl-btn-primary" onclick="dlSaveSleep()">Log Sleep</button>
       </div>
     </div>
@@ -443,16 +451,16 @@
   <div id="dl-sleep-list" class="dl-card"><div class="dl-empty">Loading sleep records...</div></div>
 
   <!-- Watch Optimizer -->
-  <div class="dl-card" style="margin-top:16px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div class="dl-card-title" style="margin:0">Watch Schedule Optimizer</div>
+  <div class="dl-card dl-card-spaced">
+    <div class="dl-row-header">
+      <div class="dl-card-title">Watch Schedule Optimizer</div>
       <button class="dl-btn dl-btn-primary" onclick="dlRunWatchOptimizer()">Generate Rotation</button>
     </div>
     <div id="dl-watch-result" class="dl-empty">Run a watch rotation once enough sleep data is in place.</div>
   </div>
 
   <!-- Performance Checks -->
-  <div class="dl-card" style="margin-top:16px;">
+  <div class="dl-card dl-card-spaced">
     <div class="dl-card-title">Performance Check</div>
     <div class="dl-form-row">
       <div class="field"><label>Person</label><input name="dl-perf-person" id="dl-perf-person" placeholder="Name"></div>
@@ -470,7 +478,7 @@
       <div class="field"><label>Physical Score (1-10)</label>
         <div class="dl-slider-wrap"><input type="range" name="dl-perf-physical" id="dl-perf-physical" min="1" max="10" value="7"><span class="dl-slider-val" id="dl-perf-physical-val">7</span></div>
       </div>
-      <div class="field" style="align-self:flex-end;flex:0">
+      <div class="field dl-field-action">
         <button class="dl-btn dl-btn-primary" onclick="dlSavePerformance()">Log Check</button>
       </div>
     </div>
@@ -492,7 +500,7 @@
 <div class="dl-panel" id="dl-panel-recipes" data-dl-panel-content="recipes" role="tabpanel" tabindex="-1" aria-labelledby="dl-tab-recipes" hidden>
 
   <!-- Recipe Filters -->
-  <div class="dl-form-row" style="margin-bottom:12px;">
+  <div class="dl-form-row dl-row-spaced">
     <div class="field"><label>Category</label>
       <select name="dl-recipe-filter-cat" id="dl-recipe-filter-cat" onchange="dlLoadRecipes()">
         <option value="">All Categories</option>
@@ -519,7 +527,7 @@
   <div id="dl-recipe-list" class="dl-grid"><div class="dl-empty">Loading grid-down recipes...</div></div>
 
   <!-- Add Recipe Form -->
-  <div class="dl-card" style="margin-top:16px;">
+  <div class="dl-card dl-card-spaced">
     <div class="dl-card-title">Add Recipe</div>
     <input type="hidden" id="dl-recipe-edit-id" name="dl-recipe-edit-id" value="">
     <div class="dl-form-row">
@@ -560,7 +568,7 @@
   </div>
 
   <!-- Fuel Calculator -->
-  <div class="dl-card" style="margin-top:16px;">
+  <div class="dl-card dl-card-spaced">
     <div class="dl-card-title">Fuel Calculator</div>
     <div class="dl-form-row">
       <div class="field"><label>Recipe</label>
@@ -569,7 +577,7 @@
         </select>
       </div>
       <div class="field"><label>Servings Override</label><input name="dl-fuel-servings" id="dl-fuel-servings" type="number" value="4" min="1"></div>
-      <div class="field" style="align-self:flex-end;flex:0">
+      <div class="field dl-field-action">
         <button class="dl-btn dl-btn-primary" onclick="dlCalculateFuel()">Calculate Fuel</button>
       </div>
     </div>
@@ -801,7 +809,7 @@
           ' &middot; ' + (it.size || '-') + ' &middot; Qty: ' + (it.quantity || 1) + ' &middot; ' + (it.condition || 'good') +
           ' &middot; ' + (it.season || 'all') + '</div>' +
           '<div style="margin-top:6px;">' + stars(it.warmth_rating || 1) + ' <small style="color:var(--text-secondary)">warmth</small></div>' +
-          '<div style="margin-top:8px;display:flex;gap:6px;">' +
+          '<div class="dl-row-tight">' +
           '<button class="dl-btn dl-btn-secondary" onclick="dlEditClothing(' + it.id + ')">Edit</button>' +
           '<button class="dl-btn dl-btn-danger" onclick="dlDeleteClothing(' + it.id + ')">&times;</button></div></div>';
       }).join('');
@@ -1154,7 +1162,7 @@
           '<div class="dl-recipe-meta">' + (r.category || '') + ' &middot; ' + (r.cooking_method || '').replace('_', ' ') +
           ' &middot; Prep: ' + (r.prep_time || 0) + 'm &middot; Cook: ' + (r.cook_time || 0) + 'm' +
           ' &middot; ' + (r.calories_per_serving || 0) + ' cal &middot; Serves ' + (r.servings || 1) + '</div>' +
-          '<div style="margin-top:8px;display:flex;gap:6px;">' +
+          '<div class="dl-row-tight">' +
           '<button class="dl-btn dl-btn-secondary" onclick="dlEditRecipe(' + r.id + ')">Edit</button>' +
           '<button class="dl-btn dl-btn-danger" onclick="dlDeleteRecipe(' + r.id + ')">&times;</button></div></div>';
       }).join('');
@@ -1178,7 +1186,7 @@
           '<div class="dl-recipe-title">' + methodIcon(r.cooking_method) + ' ' + r.name + '</div>' +
           '<div class="dl-recipe-meta">' + (r.category || '') + ' &middot; ' + (r.cooking_method || '').replace('_', ' ') +
           ' &middot; ' + (r.calories_per_serving || 0) + ' cal &middot; Serves ' + (r.servings || 1) + '</div>' +
-          '<div style="margin-top:8px;display:flex;gap:6px;">' +
+          '<div class="dl-row-tight">' +
           '<button class="dl-btn dl-btn-secondary" onclick="dlEditRecipe(' + r.id + ')">Edit</button>' +
           '<button class="dl-btn dl-btn-danger" onclick="dlDeleteRecipe(' + r.id + ')">&times;</button></div></div>';
       }).join('');

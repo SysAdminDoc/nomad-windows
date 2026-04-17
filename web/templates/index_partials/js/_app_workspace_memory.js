@@ -2284,12 +2284,16 @@ async function checkForUpdate() {
 /* ─── Self-Update Download ─── */
 async function downloadUpdate() {
   const btn = document.getElementById('update-download-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Downloading…'; }
+  if (btn) { btn.setAttribute('aria-busy', 'true'); btn.disabled = true; }
   const pbar = document.getElementById('update-progress-bar');
   if (pbar) pbar.style.display = 'block';
   try {
     await apiPost('/api/update-download');
-  } catch(e) { toast('Update download failed', 'error'); return; }
+  } catch(e) {
+    if (btn) { btn.removeAttribute('aria-busy'); btn.disabled = false; }
+    toast('Update download failed', 'error');
+    return;
+  }
   pollUpdateProgress();
 }
 
@@ -2328,7 +2332,7 @@ function pollUpdateProgress() {
       } else if (s.status === 'error') {
         stopUpdateProgressPoll();
         if (barEl) barEl.style.display = 'none';
-        if (btnEl) { btnEl.disabled = false; btnEl.textContent = 'Retry Download'; }
+        if (btnEl) { btnEl.removeAttribute('aria-busy'); btnEl.disabled = false; btnEl.textContent = 'Retry Download'; }
         toast('Update failed: ' + (s.error || 'Unknown error'), 'error');
       }
     } catch(e) { stopUpdateProgressPoll(); }

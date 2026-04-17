@@ -4811,8 +4811,8 @@ async function dismissAllAlerts() {
 async function generateAlertSummary() {
   const btn = document.getElementById('alert-summary-btn');
   const panel = document.getElementById('alert-summary-panel');
+  btn.setAttribute('aria-busy', 'true');
   btn.disabled = true;
-  btn.textContent = 'Analyzing...';
   panel.style.display = 'block';
   panel.textContent = 'Generating AI situation summary...';
   try {
@@ -4821,8 +4821,8 @@ async function generateAlertSummary() {
   } catch(e) {
     panel.textContent = 'Failed to generate summary';
   }
+  btn.removeAttribute('aria-busy');
   btn.disabled = false;
-  btn.textContent = 'AI Summary';
 }
 
 /* ─── Status Strip ─── */

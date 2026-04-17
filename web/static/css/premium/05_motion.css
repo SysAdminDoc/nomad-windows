@@ -1,0 +1,61 @@
+/* ─── Motion primitives ──────────────────────────────────────────────
+   Centralized keyframes for the shared animation vocabulary. Loads
+   right after 00_base so every later layer can reference them. The
+   originals in app/10, app/20, premium/00 still exist (cascade order
+   makes these versions authoritative); kept additive on purpose so
+   any local rule already aliasing one of these names keeps working.
+   ──────────────────────────────────────────────────────────────────── */
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes fadeSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cardEntrance {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.4; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes shimmerText {
+  0%   { background-position: 0% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes toast-enter {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+@keyframes pageIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Honour the global motion preference for any consumer of these
+   primitives — individual layers may add finer-grained overrides. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* Marker custom property other layers can read to suppress
+       motion-only flourishes without re-declaring the @media rule. */
+    --motion-allowed: 0;
+  }
+}

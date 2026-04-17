@@ -395,6 +395,45 @@ tbody tr:last-child td {{
     break-after: page;
   }}
 }}
+/* ─── Body utility classes (apply on screen + print) ───
+   Keeps the print blueprints free of one-off inline styles. */
+.doc-mt-6  {{ margin-top: 6px; }}
+.doc-mt-8  {{ margin-top: 8px; }}
+.doc-mt-10 {{ margin-top: 10px; }}
+.doc-mt-12 {{ margin-top: 12px; }}
+.doc-mt-16 {{ margin-top: 16px; }}
+.doc-mb-8  {{ margin-bottom: 8px; }}
+.doc-mb-12 {{ margin-bottom: 12px; }}
+.doc-text-lg {{ font-size: 18px; }}
+.doc-eyebrow-text {{
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}}
+.doc-page-break {{
+  /* Hint to the print engine to start a new page before this element. */
+  page-break-before: always;
+  break-before: page;
+}}
+.doc-panel-alert {{
+  border-color: #e9b7b7;
+  background: #fff5f5;
+  color: #7a1d1d;
+}}
+.doc-cell-fixed-60 {{ width: 60px; }}
+.doc-list-flat {{
+  margin: 0;
+  padding-left: 18px;
+}}
+.doc-signature-box {{
+  min-height: 120px;
+  border: 1px dashed #999;
+  padding: 4px;
+  margin: 4px 0;
+}}
+.doc-checkbox-cell {{
+  background: #fff;
+  border-style: solid;
+}}
 </style>
 </head>
 <body>

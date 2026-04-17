@@ -58,7 +58,7 @@ async function loadMaps() {
         ${r.downloaded
           ? `<div class="region-card-actions">
               <span class="region-card-size">${escapeHtml(r.size)}</span>
-              <button class="btn btn-sm btn-danger" type="button" data-map-action="delete-map" data-map-filename="${escapeAttr(r.id)}.pmtiles">x</button>
+              <button class="btn btn-sm btn-danger" type="button" data-map-action="delete-map" data-map-filename="${escapeAttr(r.id)}.pmtiles" aria-label="Delete map">x</button>
             </div>`
           : `<button class="btn btn-sm btn-primary btn-open-svc-compact" type="button" data-map-action="download-region" data-map-region="${escapeAttr(r.id)}">Download</button>`
         }

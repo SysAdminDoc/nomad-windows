@@ -428,7 +428,7 @@
       el.innerHTML=items.map(p=>`<div class="mp-list-item">
         <div><strong>${esc(p.patient_name)}</strong> <span class="mp-badge ${badge[p.status]||''} mp-tag-spacer">${esc(String(p.status||'').toUpperCase())}</span>
           <br><small class="tone-muted">Due: ${esc(p.due_date||'--')} | G${+p.gravida||0}P${+p.para||0} | ${esc(p.blood_type||'--')}</small></div>
-        <div><button class="mp-btn mp-btn-danger" onclick="mpDeletePregnancy(${p.id})">x</button></div>
+        <div><button class="mp-btn mp-btn-danger" onclick="mpDeletePregnancy(${p.id})" aria-label="Mp delete pregnancy">x</button></div>
       </div>`).join('');
     });
   };
@@ -451,7 +451,7 @@
       el.innerHTML=items.map(d=>`<div class="mp-list-item">
         <div><strong>${esc(d.patient_name)}</strong> - Tooth #${+d.tooth_number||0}
           <br><small class="tone-muted">${esc(d.condition)} | Tx: ${esc(d.treatment||'--')} | Pain: ${+d.pain_level||0}/10 | ${esc(d.treatment_date||'--')}</small></div>
-        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteDental(${d.id})">x</button></div>
+        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteDental(${d.id})" aria-label="Mp delete dental">x</button></div>
       </div>`).join('');
     });
   };
@@ -477,7 +477,7 @@
           <br><small class="tone-muted">Stockpile: ${+c.medication_stockpile_days||0} days</small></div>
         <div class="mp-row-tight">
           <button class="mp-btn mp-btn-secondary" onclick="mpEditChronic(${c.id})">Edit</button>
-          <button class="mp-btn mp-btn-danger" onclick="mpDeleteChronic(${c.id})">x</button>
+          <button class="mp-btn mp-btn-danger" onclick="mpDeleteChronic(${c.id})" aria-label="Mp delete chronic">x</button>
         </div>
       </div>`).join('');
     });
@@ -517,7 +517,7 @@
       el.innerHTML=items.map(v=>`<div class="mp-list-item">
         <div><strong>${esc(v.patient_name)}</strong> - ${esc(v.vaccine_name)} (Dose ${+v.dose_number||0})
           <br><small class="tone-muted">Given: ${esc(v.date_administered||'--')} | Next due: ${esc(v.next_due||'--')}</small></div>
-        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteVax(${+v.id||0})">x</button></div>
+        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteVax(${+v.id||0})" aria-label="Mp delete vax">x</button></div>
       </div>`).join('');
     });
   };
@@ -550,7 +550,7 @@
       el.innerHTML=items.map(m=>`<div class="mp-list-item">
         <div><strong>${esc(m.patient_name)}</strong> - ${esc(m.check_date||'--')}
           <br><small class="tone-muted">Mood: ${+m.mood_score||0}/10 | Anxiety: ${+m.anxiety_level||0}/10 | Sleep: ${+m.sleep_hours||0}h | Energy: ${+m.energy_level||0}/10</small></div>
-        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteMH(${m.id})">x</button></div>
+        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteMH(${m.id})" aria-label="Mp delete m h">x</button></div>
       </div>`).join('');
     });
   };
@@ -587,7 +587,7 @@
       el.innerHTML=items.map(v=>`<div class="mp-list-item">
         <div><strong>${esc(v.animal_name)}</strong> (${esc(v.species)}${v.breed?' - '+esc(v.breed):''})
           <br><small class="tone-muted">${+v.weight_lb||0}lb | ${esc(v.condition||'--')} | Tx: ${esc(v.treatment||'--')}</small></div>
-        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteVet(${v.id})">x</button></div>
+        <div><button class="mp-btn mp-btn-danger" onclick="mpDeleteVet(${v.id})" aria-label="Mp delete vet">x</button></div>
       </div>`).join('');
     });
   };

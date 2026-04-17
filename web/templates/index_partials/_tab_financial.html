@@ -783,7 +783,7 @@
               + '<td><strong>' + fmtCurrency(c.amount, c.currency) + '</strong></td>'
               + '<td>' + escapeHtml(c.location || '--') + '</td>'
               + '<td><span class="fin-badge">' + escapeHtml(c.currency || 'USD') + '</span></td>'
-              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinCash(' + c.id + ')" title="Delete">&#10005;</button></td>'
+              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinCash(' + c.id + ')" title="Delete" aria-label="Delete">&#10005;</button></td>'
               + '</tr>';
           });
           html += '</tbody></table>';
@@ -871,7 +871,7 @@
               + '<td>' + escapeHtml(m.purity || '--') + '</td>'
               + '<td>' + fmtCurrency(m.purchase_price) + '</td>'
               + '<td>' + escapeHtml(m.location || '--') + '</td>'
-              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinMetal(' + m.id + ')" title="Delete">&#10005;</button></td>'
+              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinMetal(' + m.id + ')" title="Delete" aria-label="Delete">&#10005;</button></td>'
               + '</tr>';
           });
           html += '</tbody></table>';
@@ -959,7 +959,7 @@
               + '<td>' + escapeHtml(b.unit || '--') + '</td>'
               + '<td>' + fmtCurrency(b.estimated_value) + '</td>'
               + '<td>' + escapeHtml(b.location || '--') + '</td>'
-              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinBarter(' + b.id + ')" title="Delete">&#10005;</button></td>'
+              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinBarter(' + b.id + ')" title="Delete" aria-label="Delete">&#10005;</button></td>'
               + '</tr>';
           });
           html += '</tbody></table>';
@@ -1038,7 +1038,7 @@
               + '<td>' + expiryHtml + '</td>'
               + '<td>' + escapeHtml(d.location || '--') + '</td>'
               + '<td>' + (d.digital_copy ? '<span class="fin-badge fin-badge-green">YES</span>' : '<span class="fin-badge">NO</span>') + '</td>'
-              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinDocument(' + d.id + ')" title="Delete">&#10005;</button></td>'
+              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinDocument(' + d.id + ')" title="Delete" aria-label="Delete">&#10005;</button></td>'
               + '</tr>';
           });
           html += '</tbody></table>';

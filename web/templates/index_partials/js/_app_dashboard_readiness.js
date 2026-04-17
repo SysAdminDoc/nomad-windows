@@ -1202,7 +1202,7 @@ async function loadWeatherRules() {
           <td class="text-size-11">${r.cooldown_minutes}m</td>
           <td class="text-size-11">${lastTrig}</td>
           <td><button type="button" class="btn btn-sm weather-rule-btn" data-prep-action="toggle-weather-rule" data-weather-rule-id="${r.id}">${r.enabled ? 'ON' : 'OFF'}</button></td>
-          <td><button type="button" class="btn btn-sm weather-rule-btn weather-rule-delete" data-prep-action="delete-weather-rule" data-weather-rule-id="${r.id}">X</button></td>
+          <td><button type="button" class="btn btn-sm weather-rule-btn weather-rule-delete" data-prep-action="delete-weather-rule" data-weather-rule-id="${r.id}" aria-label="Delete weather rule">X</button></td>
         </tr>`;
       }).join('') + '</tbody></table>';
   } catch (e) { el.innerHTML = '<div class="runtime-empty-error">Failed to load rules.</div>'; }

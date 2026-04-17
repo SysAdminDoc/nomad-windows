@@ -339,7 +339,7 @@
       el.innerHTML=plans.map(p=>`<div class="mo-list-item">
         <div><strong>${p.name}</strong> <span class="mo-badge mo-tag-spacer">${p.plan_type}</span>
           <br><small class="tone-muted">${p.origin||'?'} → ${p.destination||'?'} · ${p.distance_miles||0} mi · ${p.status}</small></div>
-        <div><button class="mo-btn mo-btn-danger" onclick="moDeletePlan(${p.id})">×</button></div>
+        <div><button class="mo-btn mo-btn-danger" onclick="moDeletePlan(${p.id})" aria-label="Mo delete plan">×</button></div>
       </div>`).join('');
     });
   };
@@ -364,7 +364,7 @@
       el.innerHTML=items.map(v=>`<div class="mo-list-item">
         <div><strong>${v.name}</strong> <span class="mo-badge mo-tag-spacer">${v.vehicle_type}</span>
           <br><small class="tone-muted">Cap: ${v.capacity_lb}lb · Range: ${v.range_miles}mi · ${v.speed_mph}mph · ${v.condition}</small></div>
-        <div><button class="mo-btn mo-btn-danger" onclick="moDeleteAV(${v.id})">×</button></div>
+        <div><button class="mo-btn mo-btn-danger" onclick="moDeleteAV(${v.id})" aria-label="Mo delete a v">×</button></div>
       </div>`).join('');
     });
   };
@@ -390,7 +390,7 @@
         <div><strong>${h.name}</strong> <span class="mo-badge" style="color:${sevColor[h.severity]||'#aaa'};margin-left:6px">${h.severity}</span>
           <br><small class="tone-muted">${h.hazard_type} · ${h.description||'No description'}</small>
           ${h.bypass_route?`<br><small class="mo-tone-info">Bypass: ${h.bypass_route}</small>`:''}</div>
-        <div><button class="mo-btn mo-btn-danger" onclick="moDeleteHazard(${h.id})">×</button></div>
+        <div><button class="mo-btn mo-btn-danger" onclick="moDeleteHazard(${h.id})" aria-label="Mo delete hazard">×</button></div>
       </div>`).join('');
     });
   };
@@ -413,7 +413,7 @@
       el.innerHTML=items.map(v=>`<div class="mo-list-item">
         <div><strong>#${v.load_order} ${v.vehicle_name||'Vehicle'}</strong>
           <br><small class="tone-muted">Weight: ${v.total_weight_lb}/${v.max_weight_lb}lb · Fuel: ${v.fuel_level_pct}%</small></div>
-        <div><button class="mo-btn mo-btn-danger" onclick="moDeleteLoading(${v.id})">×</button></div>
+        <div><button class="mo-btn mo-btn-danger" onclick="moDeleteLoading(${v.id})" aria-label="Mo delete loading">×</button></div>
       </div>`).join('');
     });
   };
@@ -441,7 +441,7 @@
         <div class="mo-row-tight">
           <button class="mo-btn mo-btn-secondary" onclick="moSetGoNogo(${g.id},'go')" title="Set GO">GO</button>
           <button class="mo-btn mo-btn-secondary" onclick="moSetGoNogo(${g.id},'nogo')" title="Set NO-GO">NO</button>
-          <button class="mo-btn mo-btn-danger" onclick="moDeleteGoNogo(${g.id})">×</button>
+          <button class="mo-btn mo-btn-danger" onclick="moDeleteGoNogo(${g.id})" aria-label="Mo delete go nogo">×</button>
         </div>
       </div>`).join('');
     });

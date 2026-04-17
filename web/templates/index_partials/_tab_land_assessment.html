@@ -250,7 +250,7 @@
         <div><strong>${p.name}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${statusColor[p.status]||'#aaa'}">${p.status}</span>
           <br><small class="tone-muted">${p.property_type} · ${p.acreage} ac · ${p.state||'--'}${p.distance_from_home?' · '+p.distance_from_home+' mi':''}</small>
           ${p.total_score!=null?`<br><span class="la-score la-tone-driven" style="--la-tone:${scoreColor(p.total_score)}">Score: ${p.total_score}</span>`:''}</div>
-        <div><button class="la-btn la-btn-danger" onclick="laDeleteProperty(${p.id})">×</button></div>
+        <div><button class="la-btn la-btn-danger" onclick="laDeleteProperty(${p.id})" aria-label="La delete property">×</button></div>
       </div>`).join('');
     });
   };
@@ -314,7 +314,7 @@
       el.innerHTML=items.map(f=>`<div class="la-list-item">
         <div><strong>${f.name}</strong> <span class="la-badge" style="color:${condColor[f.condition]||'#aaa'};margin-left:6px">${f.condition}</span>
           <br><small class="tone-muted">${f.feature_type}${f.value_estimate?' · $'+Number(f.value_estimate).toLocaleString():''}</small></div>
-        <div><button class="la-btn la-btn-danger" onclick="laDeleteFeature(${f.id})">×</button></div>
+        <div><button class="la-btn la-btn-danger" onclick="laDeleteFeature(${f.id})" aria-label="La delete feature">×</button></div>
       </div>`).join('');
     });
   };
@@ -341,7 +341,7 @@
       el.innerHTML=items.map(d=>`<div class="la-list-item">
         <div><strong>${d.name}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${prioColor[d.priority]||'#aaa'}">${d.priority}</span>
           <br><small class="tone-muted">${d.category} · $${Number(d.estimated_cost||0).toLocaleString()} · ${d.status}</small></div>
-        <div><button class="la-btn la-btn-danger" onclick="laDeleteDevPlan(${d.id})">×</button></div>
+        <div><button class="la-btn la-btn-danger" onclick="laDeleteDevPlan(${d.id})" aria-label="La delete dev plan">×</button></div>
       </div>`).join('');
     });
   };

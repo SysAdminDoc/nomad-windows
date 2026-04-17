@@ -1638,7 +1638,7 @@ function _torrentCardControls(t) {
               <span class="torrent-complete-label">&#10003; Complete</span>
               <div class="torrent-card-spacer"></div>
               <button class="btn btn-sm torrent-btn-compact" type="button" data-media-action="torrent-open-folder" data-torrent-hash="${escapeAttr(hash)}">Open Folder</button>
-              <button class="btn btn-sm torrent-btn-compact torrent-btn-muted" type="button" data-media-action="torrent-remove" data-torrent-hash="${escapeAttr(hash)}" title="Remove">&#10005;</button>
+              <button class="btn btn-sm torrent-btn-compact torrent-btn-muted" type="button" data-media-action="torrent-remove" data-torrent-hash="${escapeAttr(hash)}" title="Remove" aria-label="Remove">&#10005;</button>
             </div>`;
   }
 
@@ -1658,7 +1658,7 @@ function _torrentCardControls(t) {
       ${s.paused
         ? `<button class="btn btn-sm btn-primary torrent-btn-compact" type="button" data-media-action="torrent-resume" data-torrent-hash="${escapeAttr(hash)}">Resume</button>`
         : `<button class="btn btn-sm torrent-btn-compact" type="button" data-media-action="torrent-pause" data-torrent-hash="${escapeAttr(hash)}">Pause</button>`}
-      <button class="btn btn-sm torrent-btn-compact torrent-btn-muted" type="button" data-media-action="torrent-remove" data-torrent-hash="${escapeAttr(hash)}" title="Cancel">&#10005;</button>
+      <button class="btn btn-sm torrent-btn-compact torrent-btn-muted" type="button" data-media-action="torrent-remove" data-torrent-hash="${escapeAttr(hash)}" title="Cancel" aria-label="Cancel">&#10005;</button>
     </div>
   </div>`;
 }

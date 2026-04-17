@@ -304,7 +304,7 @@
         <div><strong>${r.name}</strong> <span class="tc-badge" style="color:${condColor[r.condition]||'#aaa'};margin-left:6px">${r.condition}</span>
           <br><small class="tone-muted">${r.radio_type} · ${r.model||'?'} · ${r.power_watts}W${r.assigned_to?' · '+r.assigned_to:''}</small>
           ${r.freq_range_low?`<br><small style="color:var(--tc-accent)">${r.freq_range_low}-${r.freq_range_high} MHz</small>`:''}</div>
-        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteRadio(${r.id})">×</button></div>
+        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteRadio(${r.id})" aria-label="Tc delete radio">×</button></div>
       </div>`).join('');
     });
   };
@@ -330,7 +330,7 @@
         <div><strong>${a.code_set_name}</strong> <small class="tone-muted">${a.valid_date}</small>
           <br><small>Challenge: <strong>${a.challenge}</strong> → Response: <strong>${a.response}</strong></small>
           ${a.running_password?'<br><small>Running PW: '+a.running_password+'</small>':''}</div>
-        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteAuth(${a.id})">×</button></div>
+        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteAuth(${a.id})" aria-label="Tc delete auth">×</button></div>
       </div>`).join('');
     });
     /* Today's codes */
@@ -363,7 +363,7 @@
         <div><strong>${n.name}</strong> <span class="tc-badge" style="margin-left:6px;color:${n.is_active?'var(--tc-green)':'var(--text-secondary)'}">${n.is_active?'ACTIVE':'OFF'}</span>
           <br><small class="tone-muted">${n.net_type} · ${n.frequency||'Frequency pending'} · ${n.start_time} · ${n.duration_min}min</small>
           ${n.net_control?`<br><small>NCS: ${n.net_control}</small>`:''}</div>
-        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteNet(${n.id})">×</button></div>
+        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteNet(${n.id})" aria-label="Tc delete net">×</button></div>
       </div>`).join('');
     });
   };

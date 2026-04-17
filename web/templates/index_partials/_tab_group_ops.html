@@ -509,7 +509,7 @@
             <br><small class="tone-muted">Leader: ${p.leader||'Unassigned'} | Members: ${p.member_count||0}</small>
             ${p.description?'<br><small class="tone-muted">'+p.description+'</small>':''}
           </div>
-          <div><button class="go-btn go-btn-danger" onclick="goDeletePod(${p.id})">x</button></div>
+          <div><button class="go-btn go-btn-danger" onclick="goDeletePod(${p.id})" aria-label="Go delete pod">x</button></div>
         </div>
         <div class="go-row-spaced"><button class="go-btn go-btn-secondary" onclick="goToggleMembers(${p.id},this)">Show Members</button></div>
         <div class="go-members-expand" id="go-pod-members-${p.id}"></div>
@@ -531,7 +531,7 @@
     api('/api/group/pods/'+podId+'/members').then(members=>{
       wrap.innerHTML=members.length?'<div style="padding:8px 0">'+members.map(m=>`<div class="go-list-item">
         <div><strong>${m.name}</strong> <small class="tone-muted">${m.role||''}</small></div>
-        <button class="go-btn go-btn-danger" onclick="goRemoveMember(${m.id},${podId})">x</button>
+        <button class="go-btn go-btn-danger" onclick="goRemoveMember(${m.id},${podId})" aria-label="Go remove member">x</button>
       </div>`).join('')+'<div class="go-form-row go-row-spaced"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="New member name"></div><div class="field go-field-fixed"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>'
         :'<div class="go-empty" style="padding:12px">No members assigned yet. <div class="go-form-row go-row-spaced"><div class="field"><input name="go-add-member-'+podId+'" id="go-add-member-'+podId+'" placeholder="Member name"></div><div class="field go-field-fixed"><button class="go-btn go-btn-primary" onclick="goAddMember('+podId+')">Add</button></div></div></div>';
       wrap.classList.add('open');btn.textContent='Hide Members';
@@ -565,7 +565,7 @@
       roles.sort((a,b)=>(a.authority_level||99)-(b.authority_level||99));
       list.innerHTML='<table class="go-table"><thead><tr><th>#</th><th>Title</th><th>Assigned To</th><th>Authority</th><th>Actions</th></tr></thead><tbody>'+
         roles.map((r,i)=>`<tr><td>${i+1}</td><td>${r.title}</td><td>${r.assigned_to||'Vacant'}</td><td>${r.authority_level||'-'}</td>
-          <td><button class="go-btn go-btn-danger" onclick="goDeleteRole(${r.id})">x</button></td></tr>`).join('')+'</tbody></table>';
+          <td><button class="go-btn go-btn-danger" onclick="goDeleteRole(${r.id})" aria-label="Go delete role">x</button></td></tr>`).join('')+'</tbody></table>';
     });
     api('/api/group/pods/'+podId+'/chain-of-command').then(chain=>{
       const view=el('go-chain-view');
@@ -597,7 +597,7 @@
           <span class="go-badge go-badge-${s.status||'active'}">v${s.version||'1.0'}</span>
           ${s.content?'<br><small class="tone-muted">'+s.content.substring(0,120)+(s.content.length>120?'...':'')+'</small>':''}
         </div>
-        <div><button class="go-btn go-btn-danger" onclick="goDeleteSOP(${s.id})">x</button></div>
+        <div><button class="go-btn go-btn-danger" onclick="goDeleteSOP(${s.id})" aria-label="Go delete s o p">x</button></div>
       </div>`).join('');
     });
   };
@@ -625,7 +625,7 @@
           <td><select name="go-duty-chg-${d.id}" onchange="goUpdateDutyStatus(${d.id},this.value)" class="go-mini-input">
             <option value="scheduled"${d.status==='scheduled'?' selected':''}>Scheduled</option><option value="active"${d.status==='active'?' selected':''}>Active</option>
             <option value="completed"${d.status==='completed'?' selected':''}>Completed</option><option value="missed"${d.status==='missed'?' selected':''}>Missed</option>
-          </select> <button class="go-btn go-btn-danger" onclick="goDeleteDuty(${d.id})">x</button></td></tr>`).join('')+'</tbody></table>';
+          </select> <button class="go-btn go-btn-danger" onclick="goDeleteDuty(${d.id})" aria-label="Go delete duty">x</button></td></tr>`).join('')+'</tbody></table>';
     });
   };
   window.goCreateDuty=function(){

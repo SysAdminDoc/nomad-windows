@@ -69,7 +69,7 @@ async function loadTimers() {
         <div class="timer-item-main"><div class="timer-item-name">${escapeHtml(t.name)}</div></div>
         <div class="timer-item-side">
           <span class="timer-item-time ${toneClass}">${label}</span>
-          <button class="btn btn-sm btn-danger timer-item-delete" type="button" data-shell-action="delete-timer" data-timer-id="${t.id}">x</button>
+          <button class="btn btn-sm btn-danger timer-item-delete" type="button" data-shell-action="delete-timer" data-timer-id="${t.id}" aria-label="Delete timer">x</button>
         </div>
       </div>`;
     }).join('');

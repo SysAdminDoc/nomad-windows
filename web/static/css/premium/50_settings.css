@@ -504,6 +504,14 @@
   border-radius: 999px;
   background: linear-gradient(135deg, var(--surface-solid), var(--accent));
 }
+/* Per-theme dot gradient — JS sets data-theme on #active-theme-dot so
+   the swatch hints at the current palette without writing a hardcoded
+   gradient into element.style.background from the THEME_COLORS map. */
+#active-theme-dot[data-theme="nomad"]    { background: linear-gradient(135deg, #f7f3ec, #8f6836); }
+#active-theme-dot[data-theme="nightops"] { background: linear-gradient(135deg, #0f141c, #d0a86d); }
+#active-theme-dot[data-theme="cyber"]    { background: linear-gradient(135deg, #0b1320, #71a8ff); }
+#active-theme-dot[data-theme="redlight"] { background: linear-gradient(135deg, #1a1212, #df855c); }
+#active-theme-dot[data-theme="eink"]     { background: linear-gradient(135deg, #ffffff, #111111); }
 
 .settings-theme-name {
   color: var(--text);

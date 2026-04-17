@@ -17,13 +17,9 @@ const THEME_NAMES = {
   redlight: 'Ember (Warm Dark)',
   eink: 'Paper (E-Ink)',
 };
-const THEME_COLORS = {
-  nomad: 'linear-gradient(135deg,#f7f3ec,#8f6836)',
-  nightops: 'linear-gradient(135deg,#0f141c,#d0a86d)',
-  cyber: 'linear-gradient(135deg,#0b1320,#71a8ff)',
-  redlight: 'linear-gradient(135deg,#1a1212,#df855c)',
-  eink: 'linear-gradient(135deg,#ffffff,#111111)',
-};
+// Theme swatches live in premium/50_settings.css — the dot gradient
+// is selected via #active-theme-dot[data-theme="..."] attribute
+// selectors so we no longer keep a duplicate JS colour map.
 
 function getThemeCssVar(name, fallback = '') {
   const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -531,7 +527,7 @@ function setDensity(level) {
 function updateThemeIndicator(theme) {
   const dot = document.getElementById('active-theme-dot');
   const label = document.getElementById('active-theme-label');
-  if (dot) dot.style.background = THEME_COLORS[theme] || '';
+  if (dot) dot.dataset.theme = theme || '';
   if (label) label.textContent = THEME_NAMES[theme] || theme;
 }
 // Keyboard support for theme buttons

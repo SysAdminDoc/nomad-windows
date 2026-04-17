@@ -4839,11 +4839,12 @@ async function updateStatusStrip() {
     const [svcs, inv, contacts, alerts] = results.map(r => r.value);
     const running = svcs.filter(s=>s.running).length;
     const installed = svcs.filter(s=>s.installed).length;
-    const el = (id,html,dotColor) => { const e = document.getElementById(id); if(e) { e.innerHTML = html; const dot = e.querySelector('.ss-dot'); if(dot && dotColor) dot.style.background = dotColor; } };
-    el('ss-services', `<span class="ss-dot"></span>Services: <strong>${running}/${installed}</strong>`, running>0?'var(--green)':'var(--text-muted)');
-    el('ss-inventory', `<span class="ss-dot"></span>Supplies: <strong>${inv.total||0}</strong>${inv.low_stock>0?` <span class="text-danger">(${inv.low_stock} low)</span>`:''}`, inv.low_stock>0?'var(--red)':'var(--accent)');
-    el('ss-contacts', `<span class="ss-dot"></span>Contacts: <strong>${contacts.length||0}</strong>`, contacts.length>0?'var(--green)':'var(--text-muted)');
-    el('ss-alerts', `<span class="ss-dot"></span>Alerts: <strong>${alerts.length}</strong>`, alerts.length>0?'var(--orange)':'var(--green)');
+    const dotCls = (tone) => tone ? ` ss-dot--${tone}` : '';
+    const el = (id,html) => { const e = document.getElementById(id); if(e) e.innerHTML = html; };
+    el('ss-services', `<span class="ss-dot${dotCls(running>0?'green':'muted')}"></span>Services: <strong>${running}/${installed}</strong>`);
+    el('ss-inventory', `<span class="ss-dot${dotCls(inv.low_stock>0?'red':'accent')}"></span>Supplies: <strong>${inv.total||0}</strong>${inv.low_stock>0?` <span class="text-danger">(${inv.low_stock} low)</span>`:''}`);
+    el('ss-contacts', `<span class="ss-dot${dotCls(contacts.length>0?'green':'muted')}"></span>Contacts: <strong>${contacts.length||0}</strong>`);
+    el('ss-alerts', `<span class="ss-dot${dotCls(alerts.length>0?'orange':'green')}"></span>Alerts: <strong>${alerts.length}</strong>`);
   } catch(e) {}
   // Update situation board status
   try {

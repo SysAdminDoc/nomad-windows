@@ -97,6 +97,9 @@
 .live-widget-value-toned {
   color: var(--widget-tone, var(--text));
 }
+.live-widget-detail-toned {
+  color: var(--widget-tone, var(--text-muted));
+}
 .live-widget-value-compact {
   font-size: 14px;
 }

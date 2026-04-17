@@ -4375,9 +4375,9 @@ async function loadPredictiveAlerts() {
       if (count) count.textContent = '(' + preds.length + ')';
     }
     const predHtml = preds.map(function(a) {
-      const sevColor = a.severity === 'critical' ? 'background:var(--red-dim);color:var(--red);' : 'background:var(--accent-dim);color:var(--accent);';
+      const sevClass = a.severity === 'critical' ? 'critical' : 'info';
       return '<div class="alert-item">'
-        + '<span class="alert-sev info" style="' + sevColor + '">PREDICTED</span>'
+        + '<span class="alert-sev ' + sevClass + '">PREDICTED</span>'
         + '<div class="alert-body">'
         + '<div class="alert-title">' + escapeHtml(a.title) + '</div>'
         + '<div class="alert-msg">' + escapeHtml(a.message) + '</div>'

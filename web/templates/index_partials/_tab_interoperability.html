@@ -42,6 +42,17 @@
   #tab-interoperability .io-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-interoperability .io-form-row textarea { min-height:120px; resize:vertical; font-family:monospace; font-size:.8rem; }
   #tab-interoperability .io-form-row .field { flex:1; min-width:140px; }
+  #tab-interoperability .io-form-row .field.io-field-action { align-self:flex-end; flex:0; }
+  #tab-interoperability .io-overflow-x { overflow-x:auto; }
+  #tab-interoperability .io-row-spaced-stats { display:flex; gap:20px; margin-bottom:10px; }
+  #tab-interoperability .io-row-right { text-align:right; margin-top:8px; }
+  #tab-interoperability .io-empty-row { text-align:center; color:var(--text-secondary,#aaa); }
+  #tab-interoperability .io-eyebrow { text-transform:uppercase; font-size:.72rem; font-weight:600; color:var(--io-accent); }
+  #tab-interoperability .io-meta-text { font-size:.78rem; color:var(--text-secondary,#aaa); }
+  #tab-interoperability .io-cell-truncate { max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  #tab-interoperability .io-list-indent { margin:6px 0; padding-left:20px; font-size:.8rem; }
+  #tab-interoperability .io-list-indent-sm { margin:4px 0; padding-left:20px; font-size:.8rem; }
+  #tab-interoperability .io-btn-pill { padding:3px 10px; font-size:.72rem; }
   #tab-interoperability .io-btn { min-height:34px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-interoperability .io-btn-primary { background:var(--io-accent); color:#fff; }
   #tab-interoperability .io-btn-primary:hover { background:var(--io-accent-hover); }
@@ -401,7 +412,7 @@
   <!-- Recent Exports -->
   <div class="io-card">
     <div class="io-card-title">Recent Exports</div>
-    <div style="overflow-x:auto;">
+    <div class="io-overflow-x">
       <table class="io-table" id="io-export-history-table" aria-label="Recent exports">
         <thead>
           <tr>
@@ -423,7 +434,7 @@
   <!-- Recent Imports -->
   <div class="io-card">
     <div class="io-card-title">Recent Imports</div>
-    <div style="overflow-x:auto;">
+    <div class="io-overflow-x">
       <table class="io-table" id="io-import-history-table" aria-label="Recent imports">
         <thead>
           <tr>
@@ -445,7 +456,7 @@
     </div>
   </div>
 
-  <div style="text-align:right;margin-top:8px;">
+  <div class="io-row-right">
     <button class="io-btn io-btn-secondary" onclick="ioLoadHistory()">Refresh</button>
   </div>
 
@@ -743,14 +754,14 @@
         var errors = data.errors || data.error_records || 0;
         var errorList = data.error_details || data.validation_errors || [];
 
-        var html = '<div style="display:flex;gap:20px;margin-bottom:10px;">' +
+        var html = '<div class="io-row-spaced-stats">' +
           '<div><span class="io-count-ok">' + imported + '</span> imported</div>' +
           '<div><span class="io-count">' + skipped + '</span> skipped</div>' +
           '<div><span class="io-count-err">' + errors + '</span> errors</div>' +
           '</div>';
 
         if (errorList.length) {
-          html += '<div style="margin-top:8px;"><strong style="color:var(--io-red);">Error Details:</strong><ul style="margin:6px 0;padding-left:20px;font-size:.8rem;">';
+          html += '<div style="margin-top:8px;"><strong style="color:var(--io-red);">Error Details:</strong><ul class="io-list-indent">';
           errorList.slice(0, 20).forEach(function(err) {
             html += '<li style="color:var(--text-secondary,#ccc)">' +
               (typeof err === 'string' ? err : (err.row ? 'Row ' + err.row + ': ' : '') + (err.message || JSON.stringify(err))) + '</li>';
@@ -804,7 +815,7 @@
       var valid = result.valid_count || 0;
       var invalid = result.error_count || 0;
 
-      var html = '<div style="display:flex;gap:20px;margin-bottom:10px;">' +
+      var html = '<div class="io-row-spaced-stats">' +
         '<div><span class="io-count-ok">' + valid + '</span> valid</div>' +
         '<div><span class="io-count-err">' + invalid + '</span> errors</div>' +
         '<div><span class="io-count">' + records.length + '</span> total rows</div>' +
@@ -812,7 +823,7 @@
 
       /* Error list */
       if (errors.length) {
-        html += '<div style="margin-bottom:10px;"><ul style="margin:4px 0;padding-left:20px;font-size:.8rem;">';
+        html += '<div style="margin-bottom:10px;"><ul class="io-list-indent-sm">';
         errors.slice(0, 15).forEach(function(err) {
           html += '<li style="color:var(--io-red)">' +
             (typeof err === 'string' ? err : 'Row ' + (err.row || '?') + ': ' + (err.message || JSON.stringify(err))) + '</li>';
@@ -823,7 +834,7 @@
       /* Preview table */
       if (records.length) {
         var cols = Object.keys(records[0]);
-        html += '<div style="overflow-x:auto;"><table class="io-preview-table"><thead><tr>';
+        html += '<div class="io-overflow-x"><table class="io-preview-table"><thead><tr>';
         cols.forEach(function(c) { html += '<th>' + c + '</th>'; });
         html += '</tr></thead><tbody>';
         records.slice(0, 50).forEach(function(row, idx) {
@@ -832,7 +843,7 @@
           cols.forEach(function(c) { html += '<td>' + (row[c] != null ? row[c] : '') + '</td>'; });
           html += '</tr>';
         });
-        if (records.length > 50) html += '<tr><td colspan="' + cols.length + '" style="text-align:center;color:var(--text-secondary,#aaa)">...and ' + (records.length - 50) + ' more rows</td></tr>';
+        if (records.length > 50) html += '<tr><td colspan="' + cols.length + '" class="io-empty-row">...and ' + (records.length - 50) + ' more rows</td></tr>';
         html += '</tbody></table></div>';
       }
 
@@ -903,11 +914,11 @@
       tbody.innerHTML = items.map(function(e) {
         return '<tr>' +
           '<td>' + (e.export_type || '-') + '</td>' +
-          '<td><span style="text-transform:uppercase;font-size:.72rem;font-weight:600;color:var(--io-accent)">' + (e.format || 'csv') + '</span></td>' +
+          '<td><span class="io-eyebrow">' + (e.format || 'csv') + '</span></td>' +
           '<td>' + (e.record_count || 0) + '</td>' +
           '<td>' + statusBadge(e.status) + '</td>' +
-          '<td style="font-size:.78rem;color:var(--text-secondary,#aaa)">' + fmtDate(e.created_at) + '</td>' +
-          '<td><button class="io-btn io-btn-danger" style="padding:3px 10px;font-size:.72rem;" onclick="ioDeleteExport(' + e.id + ')">&times;</button></td>' +
+          '<td class="io-meta-text">' + fmtDate(e.created_at) + '</td>' +
+          '<td><button class="io-btn io-btn-danger io-btn-pill" onclick="ioDeleteExport(' + e.id + ')">&times;</button></td>' +
           '</tr>';
       }).join('');
     }).catch(function() {
@@ -924,14 +935,14 @@
       tbody.innerHTML = items.map(function(i) {
         return '<tr>' +
           '<td>' + (i.import_type || '-') + '</td>' +
-          '<td><span style="text-transform:uppercase;font-size:.72rem;font-weight:600;color:var(--io-accent)">' + (i.format || 'csv') + '</span></td>' +
-          '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + (i.source_filename || '') + '">' + (i.source_filename || '-') + '</td>' +
+          '<td><span class="io-eyebrow">' + (i.format || 'csv') + '</span></td>' +
+          '<td class="io-cell-truncate" title="' + (i.source_filename || '') + '">' + (i.source_filename || '-') + '</td>' +
           '<td><span class="io-count-ok">' + (i.imported_records || 0) + '</span></td>' +
           '<td><span class="io-count">' + (i.skipped_records || 0) + '</span></td>' +
           '<td><span class="io-count-err">' + (i.error_records || 0) + '</span></td>' +
           '<td>' + statusBadge(i.status) + '</td>' +
-          '<td style="font-size:.78rem;color:var(--text-secondary,#aaa)">' + fmtDate(i.created_at) + '</td>' +
-          '<td><button class="io-btn io-btn-danger" style="padding:3px 10px;font-size:.72rem;" onclick="ioDeleteImport(' + i.id + ')">&times;</button></td>' +
+          '<td class="io-meta-text">' + fmtDate(i.created_at) + '</td>' +
+          '<td><button class="io-btn io-btn-danger io-btn-pill" onclick="ioDeleteImport(' + i.id + ')">&times;</button></td>' +
           '</tr>';
       }).join('');
     }).catch(function() {

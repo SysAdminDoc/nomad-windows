@@ -36,6 +36,14 @@
   #tab-hardware-sensors .hw-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-hardware-sensors .hw-form-row textarea { resize:vertical; min-height:48px; font-family:inherit; }
   #tab-hardware-sensors .hw-form-row .field { flex:1; min-width:140px; }
+  #tab-hardware-sensors .hw-form-row .field.hw-field-action { align-self:flex-end; flex:0; }
+  #tab-hardware-sensors .hw-field-grow { flex:1; }
+  #tab-hardware-sensors .hw-row-header { display:flex; justify-content:space-between; align-items:flex-start; }
+  #tab-hardware-sensors .hw-card-spaced-lg { margin-top:20px; }
+  #tab-hardware-sensors .hw-tone-accent { color:var(--hw-accent); }
+  #tab-hardware-sensors .hw-text-strong { font-size:1.3rem; font-weight:700; color:var(--text-primary,#eee); }
+  #tab-hardware-sensors .hw-overflow-x { overflow-x:auto; }
+  #tab-hardware-sensors .hw-mono { font-family:monospace; }
   #tab-hardware-sensors .hw-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-hardware-sensors .hw-btn-primary { background:var(--hw-accent); color:#000; }
   #tab-hardware-sensors .hw-btn-primary:hover { background:var(--hw-accent-hover); }
@@ -123,7 +131,7 @@
       <div class="field" style="display:flex;align-items:flex-end;gap:8px;min-width:auto">
         <label style="display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer"><input name="hw-sensor-alert" id="hw-sensor-alert" type="checkbox" checked> Enable Alerts</label>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddSensor()">Add Sensor</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-primary" onclick="hwAddSensor()">Add Sensor</button></div>
     </div>
   </div>
 
@@ -133,7 +141,7 @@
     <div class="hw-form-row">
       <div class="field"><label>Sensor</label><select name="hw-reading-sensor" id="hw-reading-sensor"><option value="">-- Select Sensor --</option></select></div>
       <div class="field"><label>Value</label><input name="hw-reading-value" id="hw-reading-value" type="number" step="any" placeholder="72.5"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddReading()">Record</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-primary" onclick="hwAddReading()">Record</button></div>
     </div>
   </div>
 
@@ -179,13 +187,13 @@
           <option value="endpoint">Endpoint</option>
         </select>
       </div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddNetDevice()">Add Device</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-primary" onclick="hwAddNetDevice()">Add Device</button></div>
     </div>
   </div>
 
   <div class="hw-card">
     <div class="hw-card-title">Device Table</div>
-    <div id="hw-net-list" style="overflow-x:auto"><div class="hw-empty">Loading network devices...</div></div>
+    <div id="hw-net-list" class="hw-overflow-x"><div class="hw-empty">Loading network devices...</div></div>
   </div>
 
   <div class="hw-card">
@@ -227,7 +235,7 @@
       <div class="field"><label>Altitude (m)</label><input name="hw-mesh-alt" id="hw-mesh-alt" type="number" step="any" placeholder="100"></div>
     </div>
     <div class="hw-form-row">
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddMeshNode()">Add Node</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-primary" onclick="hwAddMeshNode()">Add Node</button></div>
     </div>
   </div>
 
@@ -265,7 +273,7 @@
       <div class="field"><label>Longitude</label><input name="hw-wx-lon" id="hw-wx-lon" type="number" step="any" placeholder="-118.2437"></div>
       <div class="field"><label>Elevation (ft)</label><input name="hw-wx-elevation" id="hw-wx-elevation" type="number" step="any" placeholder="500"></div>
       <div class="field"><label>Polling Interval (s)</label><input name="hw-wx-interval" id="hw-wx-interval" type="number" placeholder="60"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddStation()">Add Station</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-primary" onclick="hwAddStation()">Add Station</button></div>
     </div>
   </div>
   <div class="hw-card">
@@ -274,7 +282,7 @@
   </div>
 
   <!-- GPS Devices -->
-  <div class="hw-card" style="margin-top:20px">
+  <div class="hw-card hw-card-spaced-lg">
     <div class="hw-card-title">Add GPS Device</div>
     <div class="hw-form-row">
       <div class="field"><label>Name</label><input name="hw-gps-name" id="hw-gps-name" placeholder="Handheld GPS"></div>
@@ -302,8 +310,8 @@
       <div class="field"><label>Baud Rate</label><input name="hw-gps-baud" id="hw-gps-baud" type="number" placeholder="9600"></div>
     </div>
     <div class="hw-form-row">
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddGPS()">Add GPS</button></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-success" onclick="hwRecordFix()">Record Fix</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-primary" onclick="hwAddGPS()">Add GPS</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-success" onclick="hwRecordFix()">Record Fix</button></div>
     </div>
   </div>
   <div class="hw-card">
@@ -312,7 +320,7 @@
   </div>
 
   <!-- Wearables -->
-  <div class="hw-card" style="margin-top:20px">
+  <div class="hw-card hw-card-spaced-lg">
     <div class="hw-card-title">Add Wearable Device</div>
     <div class="hw-form-row">
       <div class="field"><label>Name</label><input name="hw-wear-name" id="hw-wear-name" placeholder="Fitness Tracker"></div>
@@ -323,7 +331,7 @@
     <div class="hw-form-row">
       <div class="field"><label>Wearer</label><input name="hw-wear-wearer" id="hw-wear-wearer" placeholder="John"></div>
       <div class="field"><label>Connection</label><input name="hw-wear-connection" id="hw-wear-connection" placeholder="Bluetooth"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddWearable()">Add Wearable</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-primary" onclick="hwAddWearable()">Add Wearable</button></div>
     </div>
   </div>
   <div class="hw-card">
@@ -357,8 +365,8 @@
       <div class="field"><label>Config JSON</label><textarea name="hw-int-config" id="hw-int-config" rows="3" placeholder='{"custom_key": "value"}'></textarea></div>
     </div>
     <div class="hw-form-row">
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-primary" onclick="hwAddIntegration()">Add Integration</button></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hw-btn hw-btn-secondary" onclick="hwTestConnection()">Test Connection</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-primary" onclick="hwAddIntegration()">Add Integration</button></div>
+      <div class="field hw-field-action"><button class="hw-btn hw-btn-secondary" onclick="hwTestConnection()">Test Connection</button></div>
     </div>
   </div>
 
@@ -426,14 +434,14 @@
         const val = s.last_value != null ? s.last_value : '--';
         const unit = s.unit || '';
         const alert = s.alert_enabled ? ' [Alerts ON]' : '';
-        return '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-          '<div style="flex:1"><strong style="color:var(--hw-accent)">' + s.name + '</strong> ' + statusBadge(s.status) +
-          '<br><small style="color:var(--text-secondary,#aaa)">' + (s.sensor_type || '').replace(/_/g, ' ') +
+        return '<div class="hw-card"><div class="hw-row-header">' +
+          '<div class="hw-field-grow"><strong class="hw-tone-accent">' + s.name + '</strong> ' + statusBadge(s.status) +
+          '<br><small class="tone-muted">' + (s.sensor_type || '').replace(/_/g, ' ') +
           ' | ' + (s.protocol || '-') + ' | ' + (s.location || '-') + '</small>' +
-          '<br><span style="font-size:1.3rem;font-weight:700;color:var(--text-primary,#eee)">' + val + '</span>' +
-          ' <small style="color:var(--text-secondary,#aaa)">' + unit + '</small>' +
-          (s.battery_level != null ? '<br><small style="color:var(--text-secondary,#aaa)">Battery: ' + battBar(s.battery_level) + '</small>' : '') +
-          (s.threshold_min != null || s.threshold_max != null ? '<br><small style="color:var(--text-secondary,#aaa)">Range: ' + (s.threshold_min ?? '-') + ' - ' + (s.threshold_max ?? '-') + alert + '</small>' : '') +
+          '<br><span class="hw-text-strong">' + val + '</span>' +
+          ' <small class="tone-muted">' + unit + '</small>' +
+          (s.battery_level != null ? '<br><small class="tone-muted">Battery: ' + battBar(s.battery_level) + '</small>' : '') +
+          (s.threshold_min != null || s.threshold_max != null ? '<br><small class="tone-muted">Range: ' + (s.threshold_min ?? '-') + ' - ' + (s.threshold_max ?? '-') + alert + '</small>' : '') +
           '</div>' +
           '<button class="hw-btn hw-btn-danger" onclick="hwDeleteSensor(' + s.id + ')">&times;</button>' +
           '</div></div>';
@@ -480,9 +488,9 @@
         '<th>Name</th><th>Type</th><th>IP</th><th>Hostname</th><th>Status</th><th>Last Seen</th><th></th>' +
         '</tr></thead><tbody>' +
         items.map(d => '<tr>' +
-          '<td><strong>' + d.name + '</strong><br><small style="color:var(--text-secondary,#aaa)">' + (d.manufacturer || '') + ' ' + (d.model || '') + '</small></td>' +
+          '<td><strong>' + d.name + '</strong><br><small class="tone-muted">' + (d.manufacturer || '') + ' ' + (d.model || '') + '</small></td>' +
           '<td>' + (d.device_type || '-').replace(/_/g, ' ') + '</td>' +
-          '<td style="font-family:monospace">' + (d.ip_address || '-') + '</td>' +
+          '<td class="hw-mono">' + (d.ip_address || '-') + '</td>' +
           '<td>' + (d.hostname || '-') + '</td>' +
           '<td>' + statusBadge(d.status || 'unknown') + '</td>' +
           '<td><small>' + (d.last_seen || 'Never') + '</small></td>' +
@@ -537,16 +545,16 @@
       const c = el('hw-mesh-list');
       if (!items.length) { c.innerHTML = '<div class="hw-empty">No mesh nodes configured.</div>'; return; }
       c.innerHTML = items.map(n => {
-        return '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-          '<div style="flex:1"><strong style="color:var(--hw-accent)">' + (n.long_name || n.node_id) + '</strong>' +
-          (n.short_name ? ' <small style="color:var(--text-secondary,#aaa)">(' + n.short_name + ')</small>' : '') +
+        return '<div class="hw-card"><div class="hw-row-header">' +
+          '<div class="hw-field-grow"><strong class="hw-tone-accent">' + (n.long_name || n.node_id) + '</strong>' +
+          (n.short_name ? ' <small class="tone-muted">(' + n.short_name + ')</small>' : '') +
           ' ' + statusBadge(n.status) +
-          '<br><small style="color:var(--text-secondary,#aaa)">ID: ' + (n.node_id || '-') + ' | HW: ' + (n.hardware_model || '-') + ' | Role: ' + (n.role || '-') + '</small>' +
-          (n.battery_level != null ? '<br><small style="color:var(--text-secondary,#aaa)">Battery: ' + battBar(n.battery_level) + '</small>' : '') +
-          '<br><small style="color:var(--text-secondary,#aaa)">SNR: ' + (n.snr != null ? n.snr + ' dB' : '--') +
+          '<br><small class="tone-muted">ID: ' + (n.node_id || '-') + ' | HW: ' + (n.hardware_model || '-') + ' | Role: ' + (n.role || '-') + '</small>' +
+          (n.battery_level != null ? '<br><small class="tone-muted">Battery: ' + battBar(n.battery_level) + '</small>' : '') +
+          '<br><small class="tone-muted">SNR: ' + (n.snr != null ? n.snr + ' dB' : '--') +
           ' | RSSI: ' + (n.rssi != null ? n.rssi + ' dBm' : '--') +
           ' | Hops: ' + (n.hops != null ? n.hops : '--') + '</small>' +
-          (n.last_heard ? '<br><small style="color:var(--text-secondary,#aaa)">Last heard: ' + n.last_heard + '</small>' : '') +
+          (n.last_heard ? '<br><small class="tone-muted">Last heard: ' + n.last_heard + '</small>' : '') +
           '</div>' +
           '<button class="hw-btn hw-btn-danger" onclick="hwDeleteMeshNode(' + n.id + ')">&times;</button>' +
           '</div></div>';
@@ -578,13 +586,13 @@
     api(API + '/stations').then(items => {
       const c = el('hw-wx-list');
       if (!items.length) { c.innerHTML = '<div class="hw-empty">No weather stations configured.</div>'; return; }
-      c.innerHTML = items.map(s => '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-        '<div style="flex:1"><strong style="color:var(--hw-accent)">' + s.name + '</strong> ' + statusBadge(s.status) +
-        '<br><small style="color:var(--text-secondary,#aaa)">' + (s.brand || '') + ' ' + (s.model || '') + ' | ' + (s.protocol || '-') + '</small>' +
-        '<br><small style="color:var(--text-secondary,#aaa)">Location: ' + (s.location || '-') +
+      c.innerHTML = items.map(s => '<div class="hw-card"><div class="hw-row-header">' +
+        '<div class="hw-field-grow"><strong class="hw-tone-accent">' + s.name + '</strong> ' + statusBadge(s.status) +
+        '<br><small class="tone-muted">' + (s.brand || '') + ' ' + (s.model || '') + ' | ' + (s.protocol || '-') + '</small>' +
+        '<br><small class="tone-muted">Location: ' + (s.location || '-') +
         (s.latitude ? ' | ' + s.latitude + ', ' + s.longitude : '') +
         (s.elevation ? ' | Elev: ' + s.elevation + ' ft' : '') + '</small>' +
-        (s.polling_interval ? '<br><small style="color:var(--text-secondary,#aaa)">Polling: ' + s.polling_interval + 's</small>' : '') +
+        (s.polling_interval ? '<br><small class="tone-muted">Polling: ' + s.polling_interval + 's</small>' : '') +
         '</div>' +
         '<button class="hw-btn hw-btn-danger" onclick="hwDeleteStation(' + s.id + ')">&times;</button>' +
         '</div></div>').join('');
@@ -614,12 +622,12 @@
     api(API + '/gps').then(items => {
       const c = el('hw-gps-list');
       if (!items.length) { c.innerHTML = '<div class="hw-empty">No GPS devices added.</div>'; return; }
-      c.innerHTML = items.map(g => '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-        '<div style="flex:1"><strong style="color:var(--hw-accent)">' + g.name + '</strong> ' + statusBadge(g.status) +
-        '<br><small style="color:var(--text-secondary,#aaa)">' + (g.brand || '') + ' ' + (g.model || '') + ' | ' + (g.device_type || '-').replace(/_/g, ' ') + '</small>' +
-        '<br><small style="color:var(--text-secondary,#aaa)">Connection: ' + (g.connection_type || '-') +
+      c.innerHTML = items.map(g => '<div class="hw-card"><div class="hw-row-header">' +
+        '<div class="hw-field-grow"><strong class="hw-tone-accent">' + g.name + '</strong> ' + statusBadge(g.status) +
+        '<br><small class="tone-muted">' + (g.brand || '') + ' ' + (g.model || '') + ' | ' + (g.device_type || '-').replace(/_/g, ' ') + '</small>' +
+        '<br><small class="tone-muted">Connection: ' + (g.connection_type || '-') +
         (g.port ? ' | Port: ' + g.port : '') + (g.baud_rate ? ' | Baud: ' + g.baud_rate : '') + '</small>' +
-        (g.last_fix ? '<br><small style="color:var(--text-secondary,#aaa)">Last Fix: ' + g.last_fix_lat + ', ' + g.last_fix_lon + ' @ ' + g.last_fix + '</small>' : '') +
+        (g.last_fix ? '<br><small class="tone-muted">Last Fix: ' + g.last_fix_lat + ', ' + g.last_fix_lon + ' @ ' + g.last_fix + '</small>' : '') +
         '</div>' +
         '<button class="hw-btn hw-btn-danger" onclick="hwDeleteGPS(' + g.id + ')">&times;</button>' +
         '</div></div>').join('');
@@ -655,12 +663,12 @@
     api(API + '/wearables').then(items => {
       const c = el('hw-wear-list');
       if (!items.length) { c.innerHTML = '<div class="hw-empty">No wearable devices added.</div>'; return; }
-      c.innerHTML = items.map(w => '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-        '<div style="flex:1"><strong style="color:var(--hw-accent)">' + w.name + '</strong> ' + statusBadge(w.status) +
-        '<br><small style="color:var(--text-secondary,#aaa)">' + (w.brand || '') + ' ' + (w.model || '') + ' | ' + (w.device_type || '-') + '</small>' +
-        (w.wearer ? '<br><small style="color:var(--text-secondary,#aaa)">Wearer: ' + w.wearer + '</small>' : '') +
-        (w.connection_type ? '<br><small style="color:var(--text-secondary,#aaa)">Connection: ' + w.connection_type + '</small>' : '') +
-        (w.battery_level != null ? '<br><small style="color:var(--text-secondary,#aaa)">Battery: ' + battBar(w.battery_level) + '</small>' : '') +
+      c.innerHTML = items.map(w => '<div class="hw-card"><div class="hw-row-header">' +
+        '<div class="hw-field-grow"><strong class="hw-tone-accent">' + w.name + '</strong> ' + statusBadge(w.status) +
+        '<br><small class="tone-muted">' + (w.brand || '') + ' ' + (w.model || '') + ' | ' + (w.device_type || '-') + '</small>' +
+        (w.wearer ? '<br><small class="tone-muted">Wearer: ' + w.wearer + '</small>' : '') +
+        (w.connection_type ? '<br><small class="tone-muted">Connection: ' + w.connection_type + '</small>' : '') +
+        (w.battery_level != null ? '<br><small class="tone-muted">Battery: ' + battBar(w.battery_level) + '</small>' : '') +
         '</div>' +
         '<button class="hw-btn hw-btn-danger" onclick="hwDeleteWearable(' + w.id + ')">&times;</button>' +
         '</div></div>').join('');
@@ -692,12 +700,12 @@
       if (!items.length) { c.innerHTML = '<div class="hw-empty">No integrations configured.</div>'; return; }
       c.innerHTML = items.map(i => {
         const syncBadge = statusBadge(i.status || 'unknown');
-        return '<div class="hw-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-          '<div style="flex:1"><strong style="color:var(--hw-accent)">' + i.name + '</strong> ' + syncBadge +
-          '<br><small style="color:var(--text-secondary,#aaa)">' + (i.integration_type || '-').replace(/_/g, ' ') +
+        return '<div class="hw-card"><div class="hw-row-header">' +
+          '<div class="hw-field-grow"><strong class="hw-tone-accent">' + i.name + '</strong> ' + syncBadge +
+          '<br><small class="tone-muted">' + (i.integration_type || '-').replace(/_/g, ' ') +
           ' | ' + (i.endpoint_url || '-') + '</small>' +
-          (i.polling_interval ? '<br><small style="color:var(--text-secondary,#aaa)">Polling: ' + i.polling_interval + 's</small>' : '') +
-          (i.last_sync ? '<br><small style="color:var(--text-secondary,#aaa)">Last sync: ' + i.last_sync + '</small>' : '') +
+          (i.polling_interval ? '<br><small class="tone-muted">Polling: ' + i.polling_interval + 's</small>' : '') +
+          (i.last_sync ? '<br><small class="tone-muted">Last sync: ' + i.last_sync + '</small>' : '') +
           '</div>' +
           '<div style="display:flex;gap:4px">' +
           '<button class="hw-btn hw-btn-secondary" onclick="hwTestIntegration(' + i.id + ')">Test</button>' +

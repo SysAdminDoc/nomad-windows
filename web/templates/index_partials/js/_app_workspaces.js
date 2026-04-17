@@ -1707,20 +1707,24 @@ async function loadKBDocs() {
 
   // Update badge
   const badge = document.getElementById('kb-status-badge');
+  const setTone = (tone) => {
+    badge.classList.remove('tone-success', 'tone-danger', 'tone-muted');
+    if (tone) badge.classList.add(tone);
+  };
   try {
     const status = await safeFetch('/api/kb/status', {}, null);
     if (!status) throw new Error('kb status unavailable');
     if (status.qdrant_running) {
       const ct = status.collection?.points_count || 0;
       badge.textContent = ct > 0 ? `${ct} searchable passages` : 'Ready for documents';
-      badge.style.color = 'var(--green)';
+      setTone('tone-success');
     } else {
       badge.textContent = 'Document search not running';
-      badge.style.color = 'var(--red)';
+      setTone('tone-danger');
     }
   } catch(e) {
     badge.textContent = 'Document search unavailable';
-    badge.style.color = 'var(--text-muted)';
+    setTone('tone-muted');
   }
 }
 

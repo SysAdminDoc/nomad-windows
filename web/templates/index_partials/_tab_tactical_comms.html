@@ -39,6 +39,16 @@
   #tab-tactical-comms .tc-form-row select,
   #tab-tactical-comms .tc-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-tactical-comms .tc-form-row .field { flex:1; min-width:140px; }
+  #tab-tactical-comms .tc-form-row .field.tc-field-action { align-self:flex-end; flex:0; }
+  #tab-tactical-comms .tc-tone-success { color:var(--tc-green); }
+  #tab-tactical-comms .tc-row-spaced-sm { margin-top:8px; }
+  #tab-tactical-comms .tc-row-spaced-xs-bottom { margin-bottom:6px; }
+  #tab-tactical-comms .tc-row-spaced-bottom { margin-bottom:12px; }
+  #tab-tactical-comms .tc-grid-full { grid-column:1/-1; }
+  #tab-tactical-comms .tc-meta-text { font-size:.8rem; color:var(--text-secondary); }
+  #tab-tactical-comms .tc-meta-spacer { color:var(--text-secondary); margin-left:8px; }
+  #tab-tactical-comms .tc-flat-table { width:100%; border-collapse:collapse; }
+  #tab-tactical-comms .tc-hidden { display:none; }
   #tab-tactical-comms .tc-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-tactical-comms .tc-btn-primary { background:var(--tc-accent); color:#000; }
   #tab-tactical-comms .tc-btn-danger { background:var(--tc-red); color:#fff; }
@@ -126,7 +136,7 @@
     <div class="tc-form-row">
       <div class="field"><label>Assigned To</label><input name="tc-radio-assigned" id="tc-radio-assigned" placeholder=""></div>
       <div class="field"><label>Location</label><input name="tc-radio-location" id="tc-radio-location" placeholder="Comms bag"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcCreateRadio()">Add Radio</button></div>
+      <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcCreateRadio()">Add Radio</button></div>
     </div>
   </div>
   <div id="tc-radio-list" class="tc-card"><div class="tc-empty">Loading radio inventory…</div></div>
@@ -147,10 +157,10 @@
     <div class="tc-form-row">
       <div class="field"><label>Running Password</label><input name="tc-auth-running" id="tc-auth-running" placeholder="Optional"></div>
       <div class="field"><label>Duress Code</label><input name="tc-auth-duress" id="tc-auth-duress" placeholder="Optional"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcCreateAuth()">Add Code</button></div>
+      <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcCreateAuth()">Add Code</button></div>
     </div>
   </div>
-  <div id="tc-auth-today" class="tc-card" style="display:none"></div>
+  <div id="tc-auth-today" class="tc-card tc-hidden"></div>
   <div id="tc-auth-list" class="tc-card"><div class="tc-empty">Loading active authentication sets…</div></div>
 </div>
 
@@ -173,7 +183,7 @@
       <div class="field"><label>Start Time</label><input name="tc-net-time" id="tc-net-time" value="0800" placeholder="0800"></div>
       <div class="field"><label>Duration (min)</label><input name="tc-net-duration" id="tc-net-duration" type="number" value="30"></div>
       <div class="field"><label>Net Control</label><input name="tc-net-control" id="tc-net-control" placeholder="Callsign"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcCreateNet()">Add Net</button></div>
+      <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcCreateNet()">Add Net</button></div>
     </div>
   </div>
   <div id="tc-net-list" class="tc-card"><div class="tc-empty">Loading net schedules…</div></div>
@@ -181,9 +191,9 @@
 
 <!-- ── Message Formats Panel ─────────────────────────── -->
 <div class="tc-panel" id="tc-panel-messages" role="tabpanel" tabindex="-1" aria-labelledby="tc-tab-messages" hidden>
-  <div style="margin-bottom:12px">
+  <div class="tc-row-spaced-bottom">
     <button class="tc-btn tc-btn-primary" onclick="tcSeedTemplates()">Seed Built-in Templates</button>
-    <small style="color:var(--text-secondary);margin-left:8px">Loads SITREP, MEDEVAC 9-Line, SALUTE, SPOT, ACE, and LACE if they are not already available.</small>
+    <small class="tc-meta-spacer">Loads SITREP, MEDEVAC 9-Line, SALUTE, SPOT, ACE, and LACE if they are not already available.</small>
   </div>
   <div id="tc-msg-list"><div class="tc-empty">Loading message templates…</div></div>
 </div>
@@ -195,35 +205,35 @@
       <div class="tc-card-title">Moon Phase</div>
       <div class="tc-form-row">
         <div class="field"><label>Date (blank=today)</label><input name="tc-moon-date" id="tc-moon-date" type="date"></div>
-        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcMoonPhase()">Check</button></div>
+        <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcMoonPhase()">Check</button></div>
       </div>
-      <div id="tc-moon-result" class="tc-calc-result" style="display:none"></div>
+      <div id="tc-moon-result" class="tc-calc-result tc-hidden"></div>
     </div>
     <div class="tc-card">
       <div class="tc-card-title">Lightning Distance</div>
       <div class="tc-form-row">
         <div class="field"><label>Flash-to-Bang (sec)</label><input name="tc-lightning-sec" id="tc-lightning-sec" type="number" step="0.5" value="10"></div>
-        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcLightning()">Calculate</button></div>
+        <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcLightning()">Calculate</button></div>
       </div>
-      <div id="tc-lightning-result" class="tc-calc-result" style="display:none"></div>
+      <div id="tc-lightning-result" class="tc-calc-result tc-hidden"></div>
     </div>
     <div class="tc-card">
       <div class="tc-card-title">Wind Chill</div>
       <div class="tc-form-row">
         <div class="field"><label>Temp (°F)</label><input name="tc-wc-temp" id="tc-wc-temp" type="number" value="32"></div>
         <div class="field"><label>Wind (mph)</label><input name="tc-wc-wind" id="tc-wc-wind" type="number" value="15"></div>
-        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcWindChill()">Calculate</button></div>
+        <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcWindChill()">Calculate</button></div>
       </div>
-      <div id="tc-wc-result" class="tc-calc-result" style="display:none"></div>
+      <div id="tc-wc-result" class="tc-calc-result tc-hidden"></div>
     </div>
     <div class="tc-card">
       <div class="tc-card-title">Heat Index</div>
       <div class="tc-form-row">
         <div class="field"><label>Temp (°F)</label><input name="tc-hi-temp" id="tc-hi-temp" type="number" value="95"></div>
         <div class="field"><label>Humidity %</label><input name="tc-hi-humid" id="tc-hi-humid" type="number" value="60"></div>
-        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcHeatIndex()">Calculate</button></div>
+        <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcHeatIndex()">Calculate</button></div>
       </div>
-      <div id="tc-hi-result" class="tc-calc-result" style="display:none"></div>
+      <div id="tc-hi-result" class="tc-calc-result tc-hidden"></div>
     </div>
     <div class="tc-card">
       <div class="tc-card-title">Growing Degree Days</div>
@@ -231,11 +241,11 @@
         <div class="field"><label>High (°F)</label><input name="tc-gdd-high" id="tc-gdd-high" type="number" value="85"></div>
         <div class="field"><label>Low (°F)</label><input name="tc-gdd-low" id="tc-gdd-low" type="number" value="55"></div>
         <div class="field"><label>Base (°F)</label><input name="tc-gdd-base" id="tc-gdd-base" type="number" value="50"></div>
-        <div class="field" style="flex:0;align-self:flex-end"><button class="tc-btn tc-btn-primary" onclick="tcGDD()">Calculate</button></div>
+        <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcGDD()">Calculate</button></div>
       </div>
-      <div id="tc-gdd-result" class="tc-calc-result" style="display:none"></div>
+      <div id="tc-gdd-result" class="tc-calc-result tc-hidden"></div>
     </div>
-    <div class="tc-card" style="grid-column:1/-1">
+    <div class="tc-card tc-grid-full">
       <div class="tc-card-title">Beaufort Wind Scale Reference</div>
       <div id="tc-beaufort-table"></div>
     </div>
@@ -292,7 +302,7 @@
       const condColor={good:'#22c55e',fair:'#f59e0b',poor:'#f97316',inoperative:'#ef4444'};
       el.innerHTML=items.map(r=>`<div class="tc-list-item">
         <div><strong>${r.name}</strong> <span class="tc-badge" style="color:${condColor[r.condition]||'#aaa'};margin-left:6px">${r.condition}</span>
-          <br><small style="color:var(--text-secondary)">${r.radio_type} · ${r.model||'?'} · ${r.power_watts}W${r.assigned_to?' · '+r.assigned_to:''}</small>
+          <br><small class="tone-muted">${r.radio_type} · ${r.model||'?'} · ${r.power_watts}W${r.assigned_to?' · '+r.assigned_to:''}</small>
           ${r.freq_range_low?`<br><small style="color:var(--tc-accent)">${r.freq_range_low}-${r.freq_range_high} MHz</small>`:''}</div>
         <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteRadio(${r.id})">×</button></div>
       </div>`).join('');
@@ -317,7 +327,7 @@
       const el=$('tc-auth-list');
       if(!items.length){el.innerHTML='<div class="tc-empty">No authentication sets yet. Add the first challenge-and-response pair above.</div>';return;}
       el.innerHTML=items.map(a=>`<div class="tc-list-item">
-        <div><strong>${a.code_set_name}</strong> <small style="color:var(--text-secondary)">${a.valid_date}</small>
+        <div><strong>${a.code_set_name}</strong> <small class="tone-muted">${a.valid_date}</small>
           <br><small>Challenge: <strong>${a.challenge}</strong> → Response: <strong>${a.response}</strong></small>
           ${a.running_password?'<br><small>Running PW: '+a.running_password+'</small>':''}</div>
         <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteAuth(${a.id})">×</button></div>
@@ -328,8 +338,8 @@
       const el=$('tc-auth-today');
       if(!codes.length){el.style.display='none';return;}
       el.style.display='block';
-      el.innerHTML='<div class="tc-card-title" style="color:var(--tc-green)">Today\'s Active Codes</div>'+
-        codes.map(c=>`<div style="margin-bottom:6px"><strong>${c.code_set_name}</strong>: ${c.challenge} → ${c.response}${c.duress_code?' <small style="color:var(--tc-red)">(Duress: '+c.duress_code+')</small>':''}</div>`).join('');
+      el.innerHTML='<div class="tc-card-title tc-tone-success">Today\'s Active Codes</div>'+
+        codes.map(c=>`<div class="tc-row-spaced-xs-bottom"><strong>${c.code_set_name}</strong>: ${c.challenge} → ${c.response}${c.duress_code?' <small style="color:var(--tc-red)">(Duress: '+c.duress_code+')</small>':''}</div>`).join('');
     });
   };
   window.tcCreateAuth=function(){
@@ -351,7 +361,7 @@
       if(!items.length){el.innerHTML='<div class="tc-empty">No net schedules yet. Add the first check-in window above to publish frequency and control station.</div>';return;}
       el.innerHTML=items.map(n=>`<div class="tc-list-item">
         <div><strong>${n.name}</strong> <span class="tc-badge" style="margin-left:6px;color:${n.is_active?'var(--tc-green)':'var(--text-secondary)'}">${n.is_active?'ACTIVE':'OFF'}</span>
-          <br><small style="color:var(--text-secondary)">${n.net_type} · ${n.frequency||'Frequency pending'} · ${n.start_time} · ${n.duration_min}min</small>
+          <br><small class="tone-muted">${n.net_type} · ${n.frequency||'Frequency pending'} · ${n.start_time} · ${n.duration_min}min</small>
           ${n.net_control?`<br><small>NCS: ${n.net_control}</small>`:''}</div>
         <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteNet(${n.id})">×</button></div>
       </div>`).join('');
@@ -378,9 +388,9 @@
         <h4>${t.name} <span class="tc-badge" style="color:var(--tc-accent);margin-left:4px">${t.template_type}</span>
           ${t.is_builtin?'<span class="tc-badge" style="color:var(--text-secondary);margin-left:4px">BUILT-IN</span>':''}
         </h4>
-        <div style="font-size:.8rem;color:var(--text-secondary)">${t.instructions||''}</div>
+        <div class="tc-meta-text">${t.instructions||''}</div>
         <pre>${t.example||'Example pending'}</pre>
-        ${!t.is_builtin?`<button class="tc-btn tc-btn-danger" style="margin-top:8px" onclick="tcDeleteTemplate(${t.id})">Delete</button>`:''}
+        ${!t.is_builtin?`<button class="tc-btn tc-btn-danger tc-row-spaced-sm" onclick="tcDeleteTemplate(${t.id})">Delete</button>`:''}
       </div>`).join('');
     });
   };
@@ -397,7 +407,7 @@
     api('/api/weather/moon-phase'+(d?'?date='+d:'')).then(r=>{
       const el=$('tc-moon-result');el.style.display='block';
       el.innerHTML=`<span class="val">${r.phase}</span> (Day ${r.day_of_cycle})<br>
-        <small>Illumination: ${r.illumination_pct}% · ${r.good_for_night_ops?'<span style="color:var(--tc-green)">Good for night ops</span>':'<span style="color:var(--tc-amber)">High visibility — poor for covert movement</span>'}</small>`;
+        <small>Illumination: ${r.illumination_pct}% · ${r.good_for_night_ops?'<span class="tc-tone-success">Good for night ops</span>':'<span style="color:var(--tc-amber)">High visibility — poor for covert movement</span>'}</small>`;
     });
   };
   window.tcLightning=function(){
@@ -444,7 +454,7 @@
   function loadBeaufort(){
     api('/api/weather/beaufort').then(scale=>{
       const el=$('tc-beaufort-table');
-      el.innerHTML='<table class="tc-beaufort" style="width:100%;border-collapse:collapse"><thead><tr><th>Force</th><th>Description</th><th>MPH</th><th>Observable Effect</th></tr></thead><tbody>'+
+      el.innerHTML='<table class="tc-beaufort tc-flat-table"><thead><tr><th>Force</th><th>Description</th><th>MPH</th><th>Observable Effect</th></tr></thead><tbody>'+
         scale.map(s=>`<tr><td>${s.force}</td><td>${s.description}</td><td>${s.mph_range}</td><td>${s.observation}</td></tr>`).join('')+
         '</tbody></table>';
     });

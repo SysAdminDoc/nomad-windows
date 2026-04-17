@@ -508,15 +508,55 @@ gh release create v4.1.0 dist/ProjectNOMAD-Portable.exe ProjectNOMAD-Setup.exe -
 
 ## CSS Architecture
 - **Inline `<style>` in index.html** — Only theme CSS variables (8 lines). Prevents flash of unstyled content.
-- **web/static/css/app.css** — All base styles (themes, design system tokens, layout, sidebar + sub-menus, cards, forms, tables, responsive breakpoints, UI zoom levels, reduced-motion support)
+- **web/static/css/app.css** — Manifest that `@import`s the nine `app/*.css` layers in order (theme tokens → shell layout → primary / secondary / preparedness / situation-room / home-customize / accessibility / cleanup utilities). Each layer is single-purpose; cascade order is load-bearing (later files intentionally override earlier layers).
   - Design tokens: `--text-xs` through `--text-2xl` (7-step type scale), `--sp-1` through `--sp-8` (spacing), `--card-pad`, `--ui-zoom`
   - Responsive: 480px, 768px, 900px, 1000px, 1280px, 1440px, 2560px breakpoints
   - UI zoom: `html[data-zoom]` sets `--ui-zoom` → `html { font-size: calc(13px * var(--ui-zoom)) }`
   - Sidebar sub-menus: `.sidebar-sub` (hidden by default), `.sidebar-sub.open`, `.sidebar-sub-item`
   - Unified input focus: all inputs get `border-color: var(--accent)` + `box-shadow: 0 0 0 2px var(--accent-dim)` on focus
   - Keyboard accessibility: `focus-visible` outlines on all buttons, cards, tabs, links
-- **web/static/css/premium.css** — Visual polish overlay (tactical typography, hazard stripes, animations, shadows, hover effects, spring transitions, glass overlays, glow effects, print styles, customize panel backdrop blur, sidebar group labels, status pills, copilot dock command-line feel)
+- **web/static/css/premium.css** — Manifest that imports the twelve `premium/*.css` layers in order: `00_base` → `05_motion` → `10_refresh` → `20_workspaces` → `30_preparedness_ops` → `40_customize_maps` → `50_settings` → `60_benchmark_tools` → `70_layout_hardening` → `80_dark_theme_overrides` → `90_theme_consistency` → `95_premium_polish` → `99_final_polish`. Visual polish overlay on top of the app layers.
+  - `premium/05_motion.css` — **Single source of truth** for the animation vocabulary: `spin`, `fadeIn`, `fadeSlideIn`, `cardEntrance`, `pulse`, `shimmer`, `shimmerText`, `toast-enter`, `pageIn`. Local keyframes in `app/20_primary_workspaces.css`, `app/10_shell_layout.css`, and `premium/00_base.css` remain as early-load fallbacks.
+  - `premium/95_premium_polish.css` — tactical typography, hazard stripes, micro-interactions (Codex-authored, 727 lines).
+  - `premium/99_final_polish.css` — **Additive-only polish layer** (~3000 lines, seven passes): unified focus/caret/selection/scrollbars, native-element baselines (`<progress>`, `<meter>`, `<dialog>`, `<fieldset>`, `<blockquote>`, `<pre>`/`<code>`, `<details>`/`<summary>`, etc.), drop-in primitives (`.drag-handle`, `.nomad-check`, `.ai-dots`, `.tone-*`, `.text-*`, `.truncate`, `.text-2-line`, `.text-3-line`, `.stack`, `.inline-stack`, `.visually-hidden`, `.hr-with-label`, `.page-break-*`, `.no-print`, `.print-only`), ARIA-state styling (`aria-busy`, `aria-pressed`, `aria-selected`, `aria-current`, `aria-expanded`), full `prefers-reduced-motion` / `prefers-contrast` / `forced-colors` coverage, RTL mirrors, e-ink theme hardening, maplibre + leaflet control theming, `@page` + page-breaks + thead-repeat + orphans/widows for print. **Never edit existing files to integrate a polish idea; add it here.**
 - Build spec includes `('web/static', 'web/static')` which covers the css/ subdirectory.
+- `web/static/dist/` is the esbuild output (`nomad.bundle.*.{js,css}` + manifest). **Gitignored**; regenerate with `node esbuild.config.mjs` after CSS/JS changes.
+
+### Inline-style migration pattern (Codex-first, multi-agent)
+The `_tab_*.html` partials used to carry thousands of inline `style="..."` attributes. Active migration pattern: each tab has a scoped `<style>` block at the top with `#tab-xxx .xx-*` utility classes that absorb the recurring inline patterns, then the inline `style=` is replaced with the class name. Examples of canonical class names established per-tab: `xx-field-action` (align-self:flex-end; flex:0), `xx-row-header`, `xx-card-spaced`, `xx-tag-spacer`, `xx-meta-text`, `xx-tone-accent`, `xx-hidden` (display:none). **`.tone-muted` from the polish layer** replaces `style="color:var(--text-secondary,#aaa)"` across every tab.
+
+**Dynamic JS-rendered inline styles** (where the value depends on a data column — percentages, severity colors) use a CSS-variable-driven pattern: the template literal writes `style="--xx-tone:${color};--xx-width:${pct}%;"` onto a `.xx-bar-fill` or `.xx-tone-driven` element, and a CSS rule reads the variable back:
+
+```css
+#tab-xxx .xx-bar-fill[style*="--xx-tone"] { background: var(--xx-tone); }
+#tab-xxx .xx-bar-fill[style*="--xx-width"] { width: var(--xx-width); }
+```
+
+The template now carries *data*, not styling rules. Themes can override the CSS rules in one place without touching JS.
+
+**Widget-tone convention**: `_app_dashboard_readiness.js` widgets use `class="live-widget-value-toned"` + `style="--widget-tone:${color};"` (paired with `.live-widget-detail-toned` for detail lines). Don't burn `style="color:${c}"` into new widget renderers — set `--widget-tone` instead.
+
+**Nukemap exception**: `_tab_nukemap.html` has 70+ `style="display:none"` statics that JS toggles via `el.style.display = '' | 'block'`. Do NOT migrate those to a `.nuke-hidden` class without parallel JS edits — `style.display = ''` clears the inline style but the class would still apply, leaving the element hidden.
+
+### CSS specificity & !important policy
+- `app/45_situation_room.css` DECLUTTER block qualifies every selector with `body.situation-room-active` so source-order wins at equal specificity without `!important`. When reducing `!important`s elsewhere, use the same pattern: raise specificity with a host class, don't flag-stomp.
+- The 11 surviving `!important`s in `app/45_situation_room.css` all have a clear purpose: Maplibre popup inline-style defeats, `[hidden]` attribute fallbacks for JS-set displays, fullscreen map override, collapsed-card height counter. These are intentional; don't remove.
+- Override layers (`premium/50_settings.css`, `premium/70_layout_hardening.css`, `premium/80_dark_theme_overrides.css`, `premium/90_theme_consistency.css`, `premium/99_final_polish.css`) legitimately carry `!important` because their PURPOSE is to defeat earlier layers. Don't audit these for removal.
+- Theme overrides (`app/00_theme_tokens.css` eink block) and accessibility overrides (`app/60_accessibility_platform.css` reduced-motion / focus-visible / battery-saver / wiki-link) are also legitimate `!important` users.
+
+### UI primitives reference (from `premium/99_final_polish.css`)
+- `.drag-handle` — 6-dot grip pattern via radial gradients; grab/grabbing cursor; wire on reorder handles alongside existing `draggable="true"` elements. Used in widget config list — see `_app_dashboard_readiness.js:375`.
+- `.ai-dots` — three pulsing dots for "thinking" indicators; three `<span>` children. Wired into chat thinking state in `_app_services_ai.js:772`.
+- `.nomad-check` — accessible custom checkbox primitive (no native appearance).
+- `.tone-success / .tone-warning / .tone-danger / .tone-info / .tone-muted / .tone-dim` — semantic tone classes; prefer over inline `color:var(--xxx)`.
+- `.text-2-line / .text-3-line / .truncate` — line-clamp utilities.
+- `aria-busy="true"` on a `.btn` (or any `button`) — hides text via `color:transparent` and overlays a spinner via `::after`. Wired into long-running operations: refresh feeds, AI briefing, benchmarks, daily brief, alert summary, self-update.
+
+### Playwright coverage
+- `tests/ui/shell-workflows.spec.mjs` — 22 shell / workspace / theme specs.
+- `tests/ui/polish-primitives.spec.mjs` — 8 specs covering focus-visible ring, `aria-busy` spinner, `.ai-dots`, `.nomad-check`, `.drag-handle`, scrollbars, `.tone-*`, line-clamp.
+- `tests/ui/visual-tour.spec.mjs` — 17 routes × 5 themes = 85 screenshot specs. **Opt-in via `NOMAD_VISUAL_TOUR=1`.** Skipped by default so the 30-spec suite stays fast.
+- Default full run: 30 specs pass in ~50s. `tests/ui/shell-workflows.spec.mjs:669` (viptrack wide-frame) and the adjacent viptrack pause test are flaky in full-suite runs but always pass in isolation — known issue, re-run if it trips.
 
 ## Layout
 - **Sidebar navigation** (fixed left, 240px) with SVG icons + expandable sub-menus per tab

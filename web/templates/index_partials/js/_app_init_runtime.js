@@ -4493,7 +4493,7 @@ async function generateDailyBrief() {
   const body = document.getElementById('daily-brief-body');
   const btn = document.getElementById('daily-brief-gen-btn');
   if (!body) return;
-  if (btn) { btn.disabled = true; btn.textContent = 'Generating…'; }
+  if (btn) { btn.setAttribute('aria-busy', 'true'); btn.disabled = true; }
   body.innerHTML = '<div class="daily-brief-empty">Compiling brief…</div>';
   try {
     const d = await apiFetch('/api/brief/daily');
@@ -4501,7 +4501,7 @@ async function generateDailyBrief() {
   } catch (e) {
     body.innerHTML = '<div class="daily-brief-empty">Failed to compile brief.</div>';
   } finally {
-    if (btn) { btn.disabled = false; btn.textContent = 'Regenerate'; }
+    if (btn) { btn.removeAttribute('aria-busy'); btn.disabled = false; }
   }
 }
 

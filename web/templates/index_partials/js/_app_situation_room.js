@@ -3076,14 +3076,14 @@ function _showSitroomSkeletons() {
 /* ─── Refresh with polling ─── */
 async function refreshSitroomFeeds() {
   const btn = document.getElementById('sitroom-refresh-btn');
-  if (btn) { btn.disabled = true; btn.textContent = 'Refreshing...'; }
+  if (btn) { btn.setAttribute('aria-busy', 'true'); btn.disabled = true; }
   _showSitroomSkeletons();
   try {
     await apiPost('/api/sitroom/refresh');
     toast('Feed refresh started', 'info');
     _pollSitroomRefresh();
   } catch (e) { toast('Refresh failed', 'error'); }
-  finally { if (btn) { btn.disabled = false; btn.textContent = 'Refresh Feeds'; } }
+  finally { if (btn) { btn.removeAttribute('aria-busy'); btn.disabled = false; } }
 }
 
 function _pollSitroomRefresh() {
@@ -4382,7 +4382,7 @@ async function _generateAiBriefing() {
   const btn = document.getElementById('sitroom-gen-briefing');
   const el = document.getElementById('sitroom-briefing-content');
   if (!el) return;
-  if (btn) btn.disabled = true;
+  if (btn) { btn.setAttribute('aria-busy', 'true'); btn.disabled = true; }
   el.innerHTML = '<div class="sr-empty sr-empty-emphasis"><div class="sr-radar"></div><span>Generating intelligence briefing...</span></div>';
   try {
     const d = await apiPost('/api/sitroom/ai-briefing');
@@ -4394,7 +4394,7 @@ async function _generateAiBriefing() {
   } catch(e) {
     el.innerHTML = '<div class="sr-empty">Network error generating briefing</div>';
   } finally {
-    if (btn) btn.disabled = false;
+    if (btn) { btn.removeAttribute('aria-busy'); btn.disabled = false; }
   }
 }
 

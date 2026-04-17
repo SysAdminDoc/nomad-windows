@@ -417,6 +417,7 @@ async function runBenchmark(mode) {
   const progressEl = document.getElementById('bench-progress');
   const resultsEl = document.getElementById('bench-results');
   if (!runBtn || !progressEl || !resultsEl) return;
+  runBtn.setAttribute('aria-busy', 'true');
   runBtn.disabled = true;
   progressEl.style.display = 'block';
   resultsEl.innerHTML = '';
@@ -428,6 +429,7 @@ async function runBenchmark(mode) {
     }, 'Could not start benchmark');
     pollBenchmark();
   } catch (e) {
+    runBtn.removeAttribute('aria-busy');
     runBtn.disabled = false;
     progressEl.style.display = 'none';
     toast(e.message || 'Could not start benchmark', 'error');
@@ -455,7 +457,7 @@ function pollBenchmark() {
       if (_benchPoll) clearInterval(_benchPoll);
       _benchPoll = null;
       window.NomadShellRuntime?.stopInterval('benchmark.status');
-      if (runBtn) runBtn.disabled = false;
+      if (runBtn) { runBtn.removeAttribute('aria-busy'); runBtn.disabled = false; }
       if (progressEl) progressEl.style.display = 'none';
       if (s.status === 'complete' && s.results) showBenchResults(s.results);
       if (s.status === 'error') toast('Benchmark failed: ' + s.stage, 'error');
@@ -593,13 +595,17 @@ async function loadBenchHistory() {
 
 async function runAIBenchmark() {
   const btn = document.getElementById('bench-ai-btn');
-  if (btn) btn.disabled = true;
+  if (btn) { btn.setAttribute('aria-busy', 'true'); btn.disabled = true; }
   const modelSel = document.getElementById('model-select');
   const model = modelSel ? modelSel.value : '';
-  if (!model) { toast('Select an AI model first (go to AI Chat tab)', 'warning'); if (btn) btn.disabled = false; return; }
+  if (!model) {
+    toast('Select an AI model first (go to AI Chat tab)', 'warning');
+    if (btn) { btn.removeAttribute('aria-busy'); btn.disabled = false; }
+    return;
+  }
   toast('Running AI inference benchmark...', 'info');
   const r = await safeFetch('/api/benchmark/ai-inference', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({model})}, null);
-  if (btn) btn.disabled = false;
+  if (btn) { btn.removeAttribute('aria-busy'); btn.disabled = false; }
   if (r) {
     toast(`AI Benchmark: ${r.tokens_per_sec} tokens/sec (${r.model})`, 'success');
     loadBenchHistory();
@@ -610,10 +616,10 @@ async function runAIBenchmark() {
 
 async function runStorageBenchmark() {
   const btn = document.getElementById('bench-storage-btn');
-  if (btn) btn.disabled = true;
+  if (btn) { btn.setAttribute('aria-busy', 'true'); btn.disabled = true; }
   toast('Running storage I/O benchmark (32MB read/write)...', 'info');
   const r = await safeFetch('/api/benchmark/storage', {method:'POST'}, null);
-  if (btn) btn.disabled = false;
+  if (btn) { btn.removeAttribute('aria-busy'); btn.disabled = false; }
   if (r) {
     toast(`Storage: Read ${r.read_mbps} MB/s, Write ${r.write_mbps} MB/s`, 'success');
     loadBenchHistory();

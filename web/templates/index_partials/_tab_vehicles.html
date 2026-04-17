@@ -264,6 +264,14 @@
       .vehicle-range-block { grid-template-columns: 1fr; }
       .vehicles-dash-grid { grid-template-columns: 1fr 1fr; }
     }
+    .vh-meta-text { font-size: 12px; color: var(--vh-text-dim); margin-top: 2px; }
+    .vh-meta-leading { font-size: 12px; color: var(--vh-text-dim); line-height: 1.6; }
+    .vh-tone-danger { color: var(--vh-danger); }
+    .vh-bar-fill[style*="--vh-bar-h"] { height: var(--vh-bar-h); }
+    /* settings-grid block-mode: defeats the parent .settings-grid grid layout
+       when this tab needs a single-column flow — same intent as the inline
+       style="display:block" we used to write here. */
+    #tab-vehicles .settings-grid.is-block { display: block; }
   </style>
 
   <!-- Command Deck -->
@@ -276,7 +284,7 @@
     </div>
   </div>
 
-  <div class="settings-grid" style="display:block;">
+  <div class="settings-grid is-block">
 
     <!-- Dashboard Stats -->
     <div id="vehicles-dash" class="vehicles-dash-grid"></div>
@@ -291,7 +299,7 @@
       <div class="vehicle-detail-header">
         <div>
           <div class="vehicle-detail-title" id="vd-title"></div>
-          <div style="font-size:12px;color:var(--vh-text-dim);margin-top:2px;" id="vd-subtitle"></div>
+          <div class="vh-meta-text" id="vd-subtitle"></div>
         </div>
         <div class="vehicle-detail-actions">
           <button class="btn btn-sm" onclick="showVehicleForm(window._vdId)">Edit</button>
@@ -299,7 +307,7 @@
           <button class="btn btn-sm btn-ghost" onclick="closeVehicleDetail()">Close</button>
         </div>
       </div>
-      <div id="vd-info" style="font-size:12px;color:var(--vh-text-dim);line-height:1.6;"></div>
+      <div id="vd-info" class="vh-meta-leading"></div>
 
       <!-- Range Calculator -->
       <div class="vehicle-detail-section">
@@ -519,7 +527,7 @@
           <div class="vehicles-dash-stat-label">Total Vehicles</div>
         </div>
         <div class="vehicles-dash-stat">
-          <div class="vehicles-dash-stat-value" style="color:var(--vh-danger)">${fmt(bovCount)}</div>
+          <div class="vehicles-dash-stat-value vh-tone-danger">${fmt(bovCount)}</div>
           <div class="vehicles-dash-stat-label">Bug-Out Ready</div>
         </div>
         <div class="vehicles-dash-stat">
@@ -758,7 +766,7 @@
         const mpgs = entries.map(e => e.mpg || 0);
         const max = Math.max(...mpgs, 1);
         chartEl.innerHTML = mpgs.map((m, i) =>
-          `<div class="vehicle-econ-bar" style="height:${Math.round((m / max) * 100)}%" title="${m.toFixed(1)} mpg — ${fmtDate(entries[i].date)}"></div>`
+          `<div class="vehicle-econ-bar vh-bar-fill" style="--vh-bar-h:${Math.round((m / max) * 100)}%" title="${m.toFixed(1)} mpg — ${fmtDate(entries[i].date)}"></div>`
         ).join('');
         avgEl.textContent = data.average_mpg != null ? `Avg: ${Number(data.average_mpg).toFixed(1)} MPG` : '';
       } catch {

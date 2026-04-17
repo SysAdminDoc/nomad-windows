@@ -457,6 +457,18 @@
           grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
         }
       }
+      #tab-loadout .lo-row-padded { padding: 20px 0; }
+      #tab-loadout .lo-meta-text { font-size: 12px; color: var(--lo-text-dim); }
+      #tab-loadout .lo-meta-spacer { color: var(--lo-text-muted); margin-left: auto; font-weight: 400; }
+      #tab-loadout .lo-tone-danger { color: var(--lo-red); }
+      /* Dynamic widget tones / widths driven via CSS variables so JS can hand
+         in --lo-tone or --lo-width without burning hex into inline style. */
+      #tab-loadout .lo-tone-driven { color: var(--lo-tone, inherit); }
+      #tab-loadout .lo-bg-driven { background: var(--lo-tone, inherit); }
+      #tab-loadout .lo-weight-fill[style*="--lo-tone"],
+      #tab-loadout .lo-breakdown-fill[style*="--lo-tone"] { background: var(--lo-tone); }
+      #tab-loadout .lo-weight-fill[style*="--lo-width"],
+      #tab-loadout .lo-breakdown-fill[style*="--lo-width"] { width: var(--lo-width); }
     </style>
 
     <!-- Command deck header -->
@@ -651,7 +663,7 @@
           </div>
           <div class="lo-stat-card">
             <span class="lo-stat-label">Expiring Soon</span>
-            <span class="lo-stat-value" style="color:${d.items_expiring_soon > 0 ? 'var(--lo-orange)' : 'inherit'}">${d.items_expiring_soon || 0}</span>
+            <span class="lo-stat-value lo-tone-driven" style="--lo-tone:${d.items_expiring_soon > 0 ? 'var(--lo-orange)' : 'inherit'}">${d.items_expiring_soon || 0}</span>
           </div>
           <div class="lo-stat-card">
             <span class="lo-stat-label">Pack Status</span>
@@ -693,7 +705,7 @@
             </div>
             <div class="lo-weight-bar-shell">
               <div class="lo-weight-track">
-                <div class="lo-weight-fill" style="width:${pct.toFixed(1)}%;background:${overweight ? 'var(--lo-red)' : 'var(--lo-green)'}"></div>
+                <div class="lo-weight-fill" style="--lo-width:${pct.toFixed(1)}%;--lo-tone:${overweight ? 'var(--lo-red)' : 'var(--lo-green)'}"></div>
               </div>
               <div class="lo-weight-label">${currentLb} / ${targetLb} lb</div>
             </div>
@@ -854,9 +866,9 @@
           const color = CATEGORY_COLORS[cat] || '#9ca3af';
           itemsHtml += `<div class="lo-items-group">
             <div class="lo-items-group-header">
-              <span class="lo-cat-dot" style="background:${color}"></span>
-              <span style="color:${color}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
-              <span style="color:var(--lo-text-muted);margin-left:auto;font-weight:400">${groups[cat].length} item${groups[cat].length !== 1 ? 's' : ''}</span>
+              <span class="lo-cat-dot lo-bg-driven" style="--lo-tone:${color}"></span>
+              <span class="lo-tone-driven" style="--lo-tone:${color}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</span>
+              <span class="lo-meta-spacer">${groups[cat].length} item${groups[cat].length !== 1 ? 's' : ''}</span>
             </div>`;
           groups[cat].forEach(item => {
             const packed = item.is_packed || item.packed;
@@ -878,7 +890,7 @@
         });
 
         if (!items.length) {
-          itemsHtml = '<div class="lo-empty" style="padding:20px 0">No items in this bag yet.</div>';
+          itemsHtml = '<div class="lo-empty lo-row-padded">No items in this bag yet.</div>';
         }
 
         // Weight breakdown chart
@@ -894,7 +906,7 @@
               const lbs = ((c.weight_oz || 0) / 16).toFixed(1);
               return `<div class="lo-breakdown-row">
                 <span class="lo-breakdown-cat">${c.category}</span>
-                <div class="lo-breakdown-bar"><div class="lo-breakdown-fill" style="width:${pct}%;background:${color}"></div></div>
+                <div class="lo-breakdown-bar"><div class="lo-breakdown-fill" style="--lo-width:${pct}%;--lo-tone:${color}"></div></div>
                 <span class="lo-breakdown-val">${lbs} lb</span>
               </div>`;
             }).join('')}
@@ -905,7 +917,7 @@
           <div class="lo-detail-header">
             <div>
               <h3 class="lo-detail-title">${escapeHtml(bag.name)}</h3>
-              <div style="font-size:12px;color:var(--lo-text-dim);">
+              <div class="lo-meta-text">
                 ${bag.owner ? escapeHtml(bag.owner) + ' &middot; ' : ''}${BAG_TYPE_LABELS[(bag.bag_type || '').replace(/\s+/g, '-').toLowerCase()] || bag.bag_type || ''} &middot; Inspected: ${inspected}
                 ${bag.location ? ' &middot; ' + escapeHtml(bag.location) : ''}
               </div>
@@ -917,7 +929,7 @@
               <button class="btn btn-sm" onclick="cloneBag(${bag.id})">Clone</button>
               <button class="btn btn-sm" onclick="markInspected(${bag.id})">Mark Inspected</button>
               <button class="btn btn-sm" onclick="showBagForm(${bag.id})">Edit</button>
-              <button class="btn btn-sm" style="color:var(--lo-red)" onclick="deleteBag(${bag.id})">Delete</button>
+              <button class="btn btn-sm lo-tone-danger" onclick="deleteBag(${bag.id})">Delete</button>
               <button class="btn btn-sm" onclick="document.getElementById('lo-detail').classList.remove('is-open')">Close</button>
             </div>
           </div>
@@ -1090,7 +1102,7 @@
               const lbs = ((c.weight_oz || 0) / 16).toFixed(1);
               return `<div class="lo-breakdown-row">
                 <span class="lo-breakdown-cat">${c.category}</span>
-                <div class="lo-breakdown-bar"><div class="lo-breakdown-fill" style="width:${pct}%;background:${color}"></div></div>
+                <div class="lo-breakdown-bar"><div class="lo-breakdown-fill" style="--lo-width:${pct}%;--lo-tone:${color}"></div></div>
                 <span class="lo-breakdown-val">${lbs} lb</span>
               </div>`;
             }).join('')}

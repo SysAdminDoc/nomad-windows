@@ -329,7 +329,7 @@
   <div class="modal-card settings-modal-card settings-modal-card-md emergency-modal-card">
     <div class="modal-header settings-heading-row">
       <h3 class="settings-detail-title" id="emergency-enter-title">Enter Emergency Mode?</h3>
-      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-shell-action="close-emergency-modal" aria-label="Cancel">x</button>
+      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-shell-action="close-emergency-modal" aria-label="Cancel">&times;</button>
     </div>
     <div class="modal-body settings-modal-body">
       <p class="emergency-modal-copy">
@@ -346,7 +346,7 @@
         <input id="emergency-reason-input" name="emergency_reason_input" class="prep-field-control" maxlength="500" placeholder="e.g. Severe weather - tornado warning" autocomplete="off">
       </div>
       <div class="prep-form-actions">
-        <button class="btn btn-sm btn-primary emergency-modal-confirm" type="button" data-shell-action="confirm-emergency-enter">ACTIVATE</button>
+        <button class="btn btn-sm btn-primary emergency-modal-confirm" type="button" data-shell-action="confirm-emergency-enter">Activate Emergency Mode</button>
         <button class="btn btn-sm" type="button" data-shell-action="close-emergency-modal">Cancel</button>
       </div>
     </div>
@@ -358,7 +358,7 @@
   <div class="modal-card settings-modal-card settings-modal-card-md">
     <div class="modal-header settings-heading-row">
       <h3 class="settings-detail-title" id="emergency-exit-title">Exit Emergency Mode?</h3>
-      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-shell-action="close-emergency-exit-modal" aria-label="Cancel">x</button>
+      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-shell-action="close-emergency-exit-modal" aria-label="Cancel">&times;</button>
     </div>
     <div class="modal-body settings-modal-body">
       <p class="emergency-modal-copy">Close the emergency. A closeout entry will be written to the incident timeline with the total duration.</p>
@@ -367,8 +367,8 @@
         <textarea id="emergency-closeout-input" name="emergency_closeout_input" class="prep-field-control" rows="3" maxlength="2000" placeholder="What happened, what you did, what you'd do differently"></textarea>
       </div>
       <div class="prep-form-actions">
-        <button class="btn btn-sm btn-primary" type="button" data-shell-action="confirm-emergency-exit">Exit Emergency</button>
-        <button class="btn btn-sm" type="button" data-shell-action="close-emergency-exit-modal">Keep Active</button>
+        <button class="btn btn-sm btn-primary" type="button" data-shell-action="confirm-emergency-exit">Close Emergency</button>
+        <button class="btn btn-sm" type="button" data-shell-action="close-emergency-exit-modal">Stay in Emergency Mode</button>
       </div>
     </div>
   </div>
@@ -519,7 +519,7 @@
     <div class="alert-bar-actions">
       <button class="btn btn-sm" data-shell-action="generate-alert-summary" id="alert-summary-btn" title="AI situation summary">AI Summary</button>
       <button class="btn btn-sm" data-shell-action="dismiss-all-alerts">Dismiss All</button>
-      <button class="btn btn-sm btn-ghost alert-close-btn" data-shell-action="toggle-alert-bar" aria-label="Close alerts">x</button>
+      <button class="btn btn-sm btn-ghost alert-close-btn" data-shell-action="toggle-alert-bar" aria-label="Close alerts">&times;</button>
     </div>
   </div>
   <div id="alert-summary-panel" class="alert-summary-panel is-hidden"></div>

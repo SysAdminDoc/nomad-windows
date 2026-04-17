@@ -61,26 +61,26 @@
         <span class="section-header-label">SUSTAIN INTELLIGENCE</span>
         <div class="section-divider section-divider-grow"></div>
       </div>
-      <div class="readiness-sustain-strip" id="readiness-sustain-strip" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px;">
-        <div class="service-card" style="text-align:center;padding:14px;">
-          <div id="rs-food-days" style="font-size:26px;font-weight:700;color:var(--accent,#5b9fff);">—</div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Person-Days Food</div>
+      <div class="readiness-sustain-strip" id="readiness-sustain-strip">
+        <div class="service-card readiness-sustain-card">
+          <div id="rs-food-days" class="readiness-sustain-value">—</div>
+          <div class="readiness-sustain-label">Person-Days Food</div>
         </div>
-        <div class="service-card" style="text-align:center;padding:14px;">
-          <div id="rs-water-days" style="font-size:26px;font-weight:700;color:var(--accent,#5b9fff);">—</div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Days of Water</div>
+        <div class="service-card readiness-sustain-card">
+          <div id="rs-water-days" class="readiness-sustain-value">—</div>
+          <div class="readiness-sustain-label">Days of Water</div>
         </div>
-        <div class="service-card" style="text-align:center;padding:14px;">
-          <div id="rs-total-cal" style="font-size:26px;font-weight:700;color:var(--green,#34d399);">—</div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Total Calories</div>
+        <div class="service-card readiness-sustain-card">
+          <div id="rs-total-cal" class="readiness-sustain-value" data-tone="success">—</div>
+          <div class="readiness-sustain-label">Total Calories</div>
         </div>
-        <div class="service-card" style="text-align:center;padding:14px;">
-          <div id="rs-linked" style="font-size:26px;font-weight:700;color:var(--text-dim,#a3b2c7);">—</div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Linked Items</div>
+        <div class="service-card readiness-sustain-card">
+          <div id="rs-linked" class="readiness-sustain-value" data-tone="muted">—</div>
+          <div class="readiness-sustain-label">Linked Items</div>
         </div>
-        <div class="service-card" style="text-align:center;padding:14px;">
-          <div id="rs-filter-alerts" style="font-size:26px;font-weight:700;color:var(--text-dim,#a3b2c7);">—</div>
-          <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted,#888);margin-top:4px;">Filter Alerts</div>
+        <div class="service-card readiness-sustain-card">
+          <div id="rs-filter-alerts" class="readiness-sustain-value" data-tone="muted">—</div>
+          <div class="readiness-sustain-label">Filter Alerts</div>
         </div>
       </div>
       <script>
@@ -99,7 +99,7 @@
           if (alerts) {
             const el = document.getElementById('rs-filter-alerts');
             el.textContent = alerts.length;
-            if (alerts.length > 0) el.style.color = 'var(--orange,#fb923c)';
+            el.dataset.state = alerts.length > 0 ? 'alert' : 'ok';
           }
         }
         if (document.getElementById('tab-readiness')) loadSustainStrip();

@@ -36,6 +36,19 @@
   #tab-hunting-foraging .hf-form-row textarea { width:100%; padding:7px 10px; border-radius:6px; border:1px solid var(--border,#333); background:var(--input-bg,#12121f); color:var(--text-primary,#eee); font-size:.85rem; }
   #tab-hunting-foraging .hf-form-row textarea { resize:vertical; min-height:48px; font-family:inherit; }
   #tab-hunting-foraging .hf-form-row .field { flex:1; min-width:140px; }
+  #tab-hunting-foraging .hf-form-row .field.hf-field-action { align-self:flex-end; flex:0; }
+  #tab-hunting-foraging .hf-form-row .field.hf-field-fixed { flex:0; }
+  #tab-hunting-foraging .hf-field-grow { flex:1; }
+  #tab-hunting-foraging .hf-row-header { display:flex; justify-content:space-between; align-items:flex-start; }
+  #tab-hunting-foraging .hf-row-bottom-actions { display:flex; align-items:flex-end; gap:8px; min-width:auto; }
+  #tab-hunting-foraging .hf-checkbox-inline { display:flex; align-items:center; gap:4px; white-space:nowrap; cursor:pointer; }
+  #tab-hunting-foraging .hf-overflow-x { overflow-x:auto; }
+  #tab-hunting-foraging .hf-tone-accent { color:var(--hf-accent); }
+  #tab-hunting-foraging .hf-tone-danger { color:var(--hf-red); }
+  #tab-hunting-foraging .hf-btn-sm { padding:4px 10px; font-size:.75rem; }
+  #tab-hunting-foraging .hf-btn-xs { padding:3px 8px; font-size:.72rem; }
+  #tab-hunting-foraging .hf-row-spaced-sm { margin-top:6px; }
+  #tab-hunting-foraging .hf-tag-spacer-lg { margin-left:8px; }
   #tab-hunting-foraging .hf-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-hunting-foraging .hf-btn-primary { background:var(--hf-accent); color:#000; }
   #tab-hunting-foraging .hf-btn-danger { background:var(--hf-red); color:#fff; }
@@ -128,18 +141,18 @@
       <div class="field"><label>License/Tag</label><input name="hf-game-tag" id="hf-game-tag" placeholder="Tag #"></div>
       <div class="field"><label>Season</label><input name="hf-game-season" id="hf-game-season" placeholder="2026 Archery"></div>
       <div class="field"><label>Weather</label><input name="hf-game-weather" id="hf-game-weather" placeholder="Clear, 45F"></div>
-      <div class="field" style="display:flex;align-items:flex-end;gap:8px;min-width:auto">
-        <label style="display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer"><input name="hf-game-dressed" id="hf-game-dressed" type="checkbox"> Field Dressed</label>
+      <div class="field hf-row-bottom-actions">
+        <label class="hf-checkbox-inline"><input name="hf-game-dressed" id="hf-game-dressed" type="checkbox"> Field Dressed</label>
       </div>
     </div>
     <div class="hf-form-row">
       <div class="field"><label>Notes</label><textarea name="hf-game-notes" id="hf-game-notes" rows="2" placeholder="Additional notes..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddGame()">Log Harvest</button></div>
+      <div class="field hf-field-action"><button class="hf-btn hf-btn-primary" onclick="hfAddGame()">Log Harvest</button></div>
     </div>
   </div>
   <div class="hf-card">
     <div class="hf-card-title">Game Log</div>
-    <div id="hf-game-list" style="overflow-x:auto"><div class="hf-empty">Loading game log...</div></div>
+    <div id="hf-game-list" class="hf-overflow-x"><div class="hf-empty">Loading game log...</div></div>
   </div>
 
   <!-- Hunting Zones -->
@@ -160,7 +173,7 @@
       <div class="field"><label>Location/Terrain</label><input name="hf-zone-location" id="hf-zone-location" placeholder="GPS or description"></div>
       <div class="field"><label>Access Notes</label><input name="hf-zone-access" id="hf-zone-access" placeholder="Gate code, trail directions"></div>
       <div class="field"><label>Regulations</label><input name="hf-zone-regs" id="hf-zone-regs" placeholder="Antler restrictions, etc."></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddZone()">Add Zone</button></div>
+      <div class="field hf-field-action"><button class="hf-btn hf-btn-primary" onclick="hfAddZone()">Add Zone</button></div>
     </div>
   </div>
   <div id="hf-zone-list" class="hf-grid"></div>
@@ -203,18 +216,18 @@
     <div class="hf-form-row">
       <div class="field"><label>Weather</label><input name="hf-fish-weather" id="hf-fish-weather" placeholder="Overcast, 65F"></div>
       <div class="field"><label>Location</label><input name="hf-fish-location" id="hf-fish-location" placeholder="Lake, river, etc."></div>
-      <div class="field" style="display:flex;align-items:flex-end;gap:8px;min-width:auto">
-        <label style="display:flex;align-items:center;gap:4px;white-space:nowrap;cursor:pointer"><input name="hf-fish-kept" id="hf-fish-kept" type="checkbox" checked> Kept</label>
+      <div class="field hf-row-bottom-actions">
+        <label class="hf-checkbox-inline"><input name="hf-fish-kept" id="hf-fish-kept" type="checkbox" checked> Kept</label>
       </div>
     </div>
     <div class="hf-form-row">
       <div class="field"><label>Notes</label><textarea name="hf-fish-notes" id="hf-fish-notes" rows="2" placeholder="Additional notes..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddFishing()">Log Catch</button></div>
+      <div class="field hf-field-action"><button class="hf-btn hf-btn-primary" onclick="hfAddFishing()">Log Catch</button></div>
     </div>
   </div>
   <div class="hf-card">
     <div class="hf-card-title">Fishing Log</div>
-    <div id="hf-fish-list" style="overflow-x:auto"><div class="hf-empty">Loading fishing log...</div></div>
+    <div id="hf-fish-list" class="hf-overflow-x"><div class="hf-empty">Loading fishing log...</div></div>
   </div>
 </div>
 
@@ -261,12 +274,12 @@
       <div class="field"><label>Warnings</label><textarea name="hf-forage-warn" id="hf-forage-warn" rows="2" placeholder="Look-alikes, toxicity..."></textarea></div>
     </div>
     <div class="hf-form-row">
-      <div class="field" style="flex:0"><button class="hf-btn hf-btn-primary" onclick="hfAddForaging()">Log Item</button></div>
+      <div class="field hf-field-fixed"><button class="hf-btn hf-btn-primary" onclick="hfAddForaging()">Log Item</button></div>
     </div>
   </div>
   <div class="hf-card">
     <div class="hf-card-title">Foraging Log</div>
-    <div id="hf-forage-list" style="overflow-x:auto"><div class="hf-empty">Loading foraging log...</div></div>
+    <div id="hf-forage-list" class="hf-overflow-x"><div class="hf-empty">Loading foraging log...</div></div>
   </div>
 
   <!-- Wild Edibles Reference -->
@@ -274,7 +287,7 @@
     <div class="hf-card-title">Wild Edibles Reference</div>
     <div class="hf-form-row">
       <div class="field"><label>Search</label><input name="hf-edible-search" id="hf-edible-search" placeholder="Search by name..." oninput="hfSearchEdibles()"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-secondary" onclick="hfSeedEdibles()">Seed Default Edibles</button></div>
+      <div class="field hf-field-action"><button class="hf-btn hf-btn-secondary" onclick="hfSeedEdibles()">Seed Default Edibles</button></div>
     </div>
     <div id="hf-edible-list" class="hf-grid"><div class="hf-empty">Loading edibles reference...</div></div>
   </div>
@@ -313,7 +326,7 @@
       <div class="field"><label>Legal Notes</label><textarea name="hf-trap-legal" id="hf-trap-legal" rows="2" placeholder="Permit requirements, season restrictions..."></textarea></div>
     </div>
     <div class="hf-form-row">
-      <div class="field" style="flex:0"><button class="hf-btn hf-btn-primary" onclick="hfAddTrap()">Add Trap</button></div>
+      <div class="field hf-field-fixed"><button class="hf-btn hf-btn-primary" onclick="hfAddTrap()">Add Trap</button></div>
     </div>
   </div>
   <div id="hf-trap-list" class="hf-grid"><div class="hf-empty">Loading traps...</div></div>
@@ -345,7 +358,7 @@
     <div class="hf-form-row">
       <div class="field"><label>Tools Required</label><input name="hf-skill-tools" id="hf-skill-tools" placeholder="Knife, saw, forge..."></div>
       <div class="field"><label>Description</label><textarea name="hf-skill-desc" id="hf-skill-desc" rows="2" placeholder="Skill description..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddSkill()">Add Skill</button></div>
+      <div class="field hf-field-action"><button class="hf-btn hf-btn-primary" onclick="hfAddSkill()">Add Skill</button></div>
     </div>
   </div>
   <div id="hf-skill-list" class="hf-grid"><div class="hf-empty">Loading skills...</div></div>
@@ -368,7 +381,7 @@
       <div class="field"><label>Materials</label><input name="hf-proj-materials" id="hf-proj-materials" placeholder="Hide, salt, tannins..."></div>
       <div class="field"><label>Output Item</label><input name="hf-proj-output" id="hf-proj-output" placeholder="Tanned leather"></div>
       <div class="field"><label>Steps</label><textarea name="hf-proj-steps" id="hf-proj-steps" rows="2" placeholder="Step-by-step process..."></textarea></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddProject()">Add Project</button></div>
+      <div class="field hf-field-action"><button class="hf-btn hf-btn-primary" onclick="hfAddProject()">Add Project</button></div>
     </div>
   </div>
   <div id="hf-proj-list"><div class="hf-empty">Loading projects...</div></div>
@@ -402,8 +415,8 @@
       <div class="field"><label>Safety Notes</label><textarea name="hf-pres-safety" id="hf-pres-safety" rows="2" placeholder="Botulism risk, temperature requirements..."></textarea></div>
     </div>
     <div class="hf-form-row">
-      <div class="field" style="flex:0"><button class="hf-btn hf-btn-primary" onclick="hfAddPreservation()">Add Method</button></div>
-      <div class="field" style="flex:0"><button class="hf-btn hf-btn-secondary" onclick="hfSeedPreservation()">Seed Default Methods</button></div>
+      <div class="field hf-field-fixed"><button class="hf-btn hf-btn-primary" onclick="hfAddPreservation()">Add Method</button></div>
+      <div class="field hf-field-fixed"><button class="hf-btn hf-btn-secondary" onclick="hfSeedPreservation()">Seed Default Methods</button></div>
     </div>
   </div>
   <div id="hf-pres-list" class="hf-grid"><div class="hf-empty">Loading methods...</div></div>
@@ -436,7 +449,7 @@
       <div class="field"><label>Expiration Date</label><input name="hf-batch-exp" id="hf-batch-exp" type="date"></div>
       <div class="field"><label>Storage Location</label><input name="hf-batch-storage" id="hf-batch-storage" placeholder="Root cellar, pantry..."></div>
       <div class="field"><label>Processor</label><input name="hf-batch-processor" id="hf-batch-processor" placeholder="Name"></div>
-      <div class="field" style="flex:0;align-self:flex-end"><button class="hf-btn hf-btn-primary" onclick="hfAddBatch()">Log Batch</button></div>
+      <div class="field hf-field-action"><button class="hf-btn hf-btn-primary" onclick="hfAddBatch()">Log Batch</button></div>
     </div>
   </div>
   <div id="hf-batch-list"><div class="hf-empty">Loading batches...</div></div>
@@ -528,10 +541,10 @@
     api(API + '/zones').then(items => {
       const c = el('hf-zone-list');
       if (!items.length) { c.innerHTML = '<div class="hf-empty">No hunting zones defined.</div>'; return; }
-      c.innerHTML = items.map(z => '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-        '<div><strong style="color:var(--hf-accent)">' + esc(z.name) + '</strong> ' + statusBadge(z.zone_type) +
-        '<br><small style="color:var(--text-secondary,#aaa)">Species: ' + esc(z.target_species || '-') + ' | Season: ' + esc(z.season_dates || '-') + '</small>' +
-        '<br><small style="color:var(--text-secondary,#aaa)">' + esc(z.location || '') + (z.access_notes ? ' | ' + esc(z.access_notes) : '') + '</small></div>' +
+      c.innerHTML = items.map(z => '<div class="hf-card"><div class="hf-row-header">' +
+        '<div><strong class="hf-tone-accent">' + esc(z.name) + '</strong> ' + statusBadge(z.zone_type) +
+        '<br><small class="tone-muted">Species: ' + esc(z.target_species || '-') + ' | Season: ' + esc(z.season_dates || '-') + '</small>' +
+        '<br><small class="tone-muted">' + esc(z.location || '') + (z.access_notes ? ' | ' + esc(z.access_notes) : '') + '</small></div>' +
         '<button class="hf-btn hf-btn-danger" onclick="hfDeleteZone(' + (+z.id||0) + ')">&times;</button></div></div>').join('');
     });
   }
@@ -650,13 +663,13 @@
       c.innerHTML = items.map(e => {
         const parts = Array.isArray(e.edible_parts) ? e.edible_parts : (function(){ try { return JSON.parse(e.edible_parts || '[]'); } catch(_) { return []; } })();
         const preps = Array.isArray(e.preparation_methods) ? e.preparation_methods : (function(){ try { return JSON.parse(e.preparation_methods || '[]'); } catch(_) { return []; } })();
-        return '<div class="hf-card"><strong style="color:var(--hf-accent)">' + esc(e.common_name) + '</strong>' +
+        return '<div class="hf-card"><strong class="hf-tone-accent">' + esc(e.common_name) + '</strong>' +
           (e.scientific_name ? ' <em style="color:var(--text-secondary,#aaa);font-size:.82rem">' + esc(e.scientific_name) + '</em>' : '') +
           (e.toxicity_warnings ? '<span class="hf-warn-icon" title="' + esc(e.toxicity_warnings) + '"> [!]</span>' : '') +
-          '<br><small style="color:var(--text-secondary,#aaa)">Edible parts: ' + esc(parts.join(', ') || '-') + '</small>' +
-          (e.look_alikes ? '<br><small style="color:var(--hf-red)">Look-alikes: ' + esc(e.look_alikes) + '</small>' : '') +
-          '<br><small style="color:var(--text-secondary,#aaa)">Preparation: ' + esc(preps.join(', ') || '-') + '</small>' +
-          '<div style="margin-top:6px"><button class="hf-btn hf-btn-danger" style="padding:3px 8px;font-size:.72rem" onclick="hfDeleteEdible(' + (+e.id||0) + ')">&times;</button></div></div>';
+          '<br><small class="tone-muted">Edible parts: ' + esc(parts.join(', ') || '-') + '</small>' +
+          (e.look_alikes ? '<br><small class="hf-tone-danger">Look-alikes: ' + esc(e.look_alikes) + '</small>' : '') +
+          '<br><small class="tone-muted">Preparation: ' + esc(preps.join(', ') || '-') + '</small>' +
+          '<div class="hf-row-spaced-sm"><button class="hf-btn hf-btn-danger hf-btn-xs" onclick="hfDeleteEdible(' + (+e.id||0) + ')">&times;</button></div></div>';
       }).join('');
     });
   }
@@ -689,16 +702,16 @@
       /* Cards */
       c.innerHTML = items.map(t => {
         const overdue = t.check_date ? (new Date() - new Date(t.check_date)) / 3600000 > (t.check_frequency_hours || 24) : false;
-        return '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-          '<div><strong style="color:var(--hf-accent)">' + esc(t.name) + '</strong> ' + statusBadge(t.status) +
-          '<br><small style="color:var(--text-secondary,#aaa)">Type: ' + esc(String(t.trap_type || '-').replace(/_/g, ' ')) + ' | Target: ' + esc(t.target_species || '-') + '</small>' +
-          '<br><small style="color:var(--text-secondary,#aaa)">Location: ' + esc(t.location || '-') + ' | Bait: ' + esc(t.bait || '-') + '</small>' +
-          '<br><small style="color:var(--text-secondary,#aaa)">Last checked: ' + esc(t.check_date || 'never') +
-          (overdue ? ' <span style="color:var(--hf-red)">[OVERDUE]</span>' : '') +
+        return '<div class="hf-card"><div class="hf-row-header">' +
+          '<div><strong class="hf-tone-accent">' + esc(t.name) + '</strong> ' + statusBadge(t.status) +
+          '<br><small class="tone-muted">Type: ' + esc(String(t.trap_type || '-').replace(/_/g, ' ')) + ' | Target: ' + esc(t.target_species || '-') + '</small>' +
+          '<br><small class="tone-muted">Location: ' + esc(t.location || '-') + ' | Bait: ' + esc(t.bait || '-') + '</small>' +
+          '<br><small class="tone-muted">Last checked: ' + esc(t.check_date || 'never') +
+          (overdue ? ' <span class="hf-tone-danger">[OVERDUE]</span>' : '') +
           ' | Catches: ' + (+t.catches||0) + '</small></div>' +
           '<div style="display:flex;gap:4px;flex-direction:column">' +
-          '<button class="hf-btn hf-btn-primary" style="padding:4px 10px;font-size:.75rem" onclick="hfCheckTrap(' + (+t.id||0) + ')">Check</button>' +
-          '<button class="hf-btn hf-btn-danger" style="padding:4px 10px;font-size:.75rem" onclick="hfDeleteTrap(' + (+t.id||0) + ')">&times;</button>' +
+          '<button class="hf-btn hf-btn-primary hf-btn-sm" onclick="hfCheckTrap(' + (+t.id||0) + ')">Check</button>' +
+          '<button class="hf-btn hf-btn-danger hf-btn-sm" onclick="hfDeleteTrap(' + (+t.id||0) + ')">&times;</button>' +
           '</div></div></div>';
       }).join('');
     });
@@ -748,13 +761,13 @@
       if (!items.length) { c.innerHTML = '<div class="hf-empty">No trade skills tracked yet.</div>'; return; }
       c.innerHTML = items.map(s => {
         const pct = levelPct(s.skill_level);
-        return '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-          '<div style="flex:1"><strong style="color:var(--hf-accent)">' + s.skill_name + '</strong>' +
-          ' <small style="color:var(--text-secondary,#aaa)">' + (catIcons[s.category] || '') + ' ' + (s.category || '').replace(/_/g, ' ') + '</small>' +
-          (s.practitioner ? '<br><small style="color:var(--text-secondary,#aaa)">Practitioner: ' + s.practitioner + '</small>' : '') +
-          '<br><small style="color:var(--text-secondary,#aaa)">Level: ' + (s.skill_level || 'beginner') + ' | Projects: ' + (s.projects_completed || 0) + '</small>' +
+        return '<div class="hf-card"><div class="hf-row-header">' +
+          '<div class="hf-field-grow"><strong class="hf-tone-accent">' + s.skill_name + '</strong>' +
+          ' <small class="tone-muted">' + (catIcons[s.category] || '') + ' ' + (s.category || '').replace(/_/g, ' ') + '</small>' +
+          (s.practitioner ? '<br><small class="tone-muted">Practitioner: ' + s.practitioner + '</small>' : '') +
+          '<br><small class="tone-muted">Level: ' + (s.skill_level || 'beginner') + ' | Projects: ' + (s.projects_completed || 0) + '</small>' +
           '<div class="hf-level-bar"><div class="hf-level-fill" style="width:' + pct + '%"></div></div></div>' +
-          '<button class="hf-btn hf-btn-danger" style="margin-left:8px" onclick="hfDeleteSkill(' + s.id + ')">&times;</button>' +
+          '<button class="hf-btn hf-btn-danger hf-tag-spacer-lg" onclick="hfDeleteSkill(' + s.id + ')">&times;</button>' +
           '</div></div>';
       }).join('');
     });
@@ -786,8 +799,8 @@
         const skill = _skills.find(s => s.id === p.skill_id);
         const statusColor = p.status === 'completed' ? 'var(--hf-green)' : p.status === 'in_progress' ? 'var(--hf-amber)' : 'var(--text-secondary,#aaa)';
         return '<div class="hf-list-item"><div><strong>' + p.name + '</strong>' +
-          (skill ? ' <small style="color:var(--hf-accent)">(' + skill.skill_name + ')</small>' : '') +
-          '<br><small style="color:var(--text-secondary,#aaa)">Difficulty: ' + (p.difficulty || '-') + ' | Time: ' + (p.time_hours || 0) + 'h' +
+          (skill ? ' <small class="hf-tone-accent">(' + skill.skill_name + ')</small>' : '') +
+          '<br><small class="tone-muted">Difficulty: ' + (p.difficulty || '-') + ' | Time: ' + (p.time_hours || 0) + 'h' +
           (p.output_item ? ' | Output: ' + p.output_item : '') + '</small>' +
           '<br><small style="color:' + statusColor + '">' + (p.status || 'planned') + '</small></div>' +
           '<button class="hf-btn hf-btn-danger" onclick="hfDeleteProject(' + p.id + ')">&times;</button></div>';
@@ -830,11 +843,11 @@
       fillMethodSelect();
       const c = el('hf-pres-list');
       if (!items.length) { c.innerHTML = '<div class="hf-empty">No preservation methods. Use "Seed Default Methods" to populate.</div>'; return; }
-      c.innerHTML = items.map(m => '<div class="hf-card"><div style="display:flex;justify-content:space-between;align-items:start">' +
-        '<div><strong style="color:var(--hf-accent)">' + m.name + '</strong> ' + methodBadge(m.method_type) +
+      c.innerHTML = items.map(m => '<div class="hf-card"><div class="hf-row-header">' +
+        '<div><strong class="hf-tone-accent">' + m.name + '</strong> ' + methodBadge(m.method_type) +
         (m.safety_notes ? '<span class="hf-warn-icon" title="' + m.safety_notes + '"> [!]</span>' : '') +
-        '<br><small style="color:var(--text-secondary,#aaa)">Input: ' + (m.input_item || '-') + ' -> Output: ' + (m.output_item || '-') + '</small>' +
-        '<br><small style="color:var(--text-secondary,#aaa)">Shelf life: ' + (m.shelf_life_days || 0) + ' days | Yield: ' + (m.yield_ratio || 1.0) + 'x | Time: ' + (m.processing_time_hours || 0) + 'h</small></div>' +
+        '<br><small class="tone-muted">Input: ' + (m.input_item || '-') + ' -> Output: ' + (m.output_item || '-') + '</small>' +
+        '<br><small class="tone-muted">Shelf life: ' + (m.shelf_life_days || 0) + ' days | Yield: ' + (m.yield_ratio || 1.0) + 'x | Time: ' + (m.processing_time_hours || 0) + 'h</small></div>' +
         '<button class="hf-btn hf-btn-danger" onclick="hfDeletePreservation(' + m.id + ')">&times;</button></div></div>').join('');
     });
   }
@@ -873,12 +886,12 @@
         const method = _methods.find(m => m.id === b.method_id);
         const expired = b.expiration_date && new Date(b.expiration_date) < new Date();
         return '<div class="hf-list-item"><div><strong>' + (b.batch_name || 'Batch #' + b.id) + '</strong>' +
-          (method ? ' <small style="color:var(--hf-accent)">(' + method.name + ')</small>' : '') +
-          '<br><small style="color:var(--text-secondary,#aaa)">' + (b.date_processed || '-') +
+          (method ? ' <small class="hf-tone-accent">(' + method.name + ')</small>' : '') +
+          '<br><small class="tone-muted">' + (b.date_processed || '-') +
           ' | In: ' + (b.input_quantity || 0) + ' ' + (b.input_unit || 'lbs') +
           ' | Out: ' + (b.output_quantity || 0) + ' ' + (b.output_unit || 'jars') + '</small>' +
-          '<br><small style="color:var(--text-secondary,#aaa)">Exp: ' + (b.expiration_date || '-') +
-          (expired ? ' <span style="color:var(--hf-red)">[EXPIRED]</span>' : '') +
+          '<br><small class="tone-muted">Exp: ' + (b.expiration_date || '-') +
+          (expired ? ' <span class="hf-tone-danger">[EXPIRED]</span>' : '') +
           ' | Storage: ' + (b.storage_location || '-') +
           (b.processor ? ' | By: ' + b.processor : '') + '</small></div>' +
           '<button class="hf-btn hf-btn-danger" onclick="hfDeleteBatch(' + b.id + ')">&times;</button></div>';

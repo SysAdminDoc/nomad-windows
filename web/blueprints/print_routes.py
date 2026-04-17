@@ -586,23 +586,23 @@ def api_print_medical_cards():
         meds_html = _render_medication_chips(medications)
         card_grid += f'''<div class="doc-panel doc-panel-strong">
   <h2 class="doc-section-title">Medical Card</h2>
-  <div class="doc-note-box" style="background:#fff;border-style:solid;">
-    <div class="doc-strong" style="font-size:18px;">{_esc(record["name"])}</div>
-    <div style="margin-top:10px;" class="doc-chip-list">
+  <div class="doc-note-box doc-checkbox-cell">
+    <div class="doc-strong doc-text-lg">{_esc(record["name"])}</div>
+    <div class="doc-mt-10 doc-chip-list">
       <span class="doc-chip">DOB: {_esc(str(record.get("dob","\u2014")))}</span>
       <span class="doc-chip">Blood: {_esc(str(record.get("blood_type","\u2014")))}</span>
       <span class="doc-chip">Weight: {_esc(str(record.get("weight_kg","?")))} kg</span>
     </div>
-    <div style="margin-top:12px;">
-      <div class="doc-section-title" style="margin-bottom:8px;">Allergies</div>
+    <div class="doc-mt-12">
+      <div class="doc-section-title doc-mb-8">Allergies</div>
       <div class="doc-chip-list">{allergy_html}</div>
     </div>
-    <div style="margin-top:12px;">
-      <div class="doc-section-title" style="margin-bottom:8px;">Conditions</div>
+    <div class="doc-mt-12">
+      <div class="doc-section-title doc-mb-8">Conditions</div>
       <div class="doc-chip-list">{conditions_html}</div>
     </div>
-    <div style="margin-top:12px;">
-      <div class="doc-section-title" style="margin-bottom:8px;">Medications</div>
+    <div class="doc-mt-12">
+      <div class="doc-section-title doc-mb-8">Medications</div>
       <div class="doc-chip-list">{meds_html}</div>
     </div>
   </div>
@@ -1270,7 +1270,7 @@ def api_emergency_sheet():
                 )
                 notes_html = f'''<section class="doc-section">
   <h2 class="doc-section-title">Operator Notes</h2>
-  <div class="doc-note-box"><ul style="margin:0;padding-left:18px;">{note_list}</ul></div>
+  <div class="doc-note-box"><ul class="doc-list-flat">{note_list}</ul></div>
 </section>'''
     except Exception:
         pass
@@ -1296,7 +1296,7 @@ def api_emergency_sheet():
     <div class="doc-panel">
       <h2 class="doc-section-title">Supply Status</h2>
       {supply_html}
-      <div style="margin-top:12px;">{inventory_summary_html}</div>
+      <div class="doc-mt-12">{inventory_summary_html}</div>
     </div>
     <div class="doc-panel">
       <h2 class="doc-section-title">Waypoints &amp; Rally Points</h2>
@@ -1321,10 +1321,10 @@ def api_emergency_sheet():
 <section class="doc-section">
   <h2 class="doc-section-title">Quick Reference</h2>
   <div class="doc-grid-2">
-    <div class="doc-panel"><span class="doc-strong">Water</span><div style="margin-top:8px;">1 gal/person/day. Bleach: 8 drops/gal for clear water, 16 drops/gal for cloudy water. Wait 30 minutes.</div></div>
-    <div class="doc-panel"><span class="doc-strong">Food</span><div style="margin-top:8px;">Target 2,000 cal/person/day. Eat perishables first, then frozen, then shelf-stable stores.</div></div>
-    <div class="doc-panel"><span class="doc-strong">Radio</span><div style="margin-top:8px;">FRS Ch 1 for rally, Ch 3 for emergency, GMRS Ch 20 for emergency, HAM 146.520 MHz for calling.</div></div>
-    <div class="doc-panel"><span class="doc-strong">Medical</span><div style="margin-top:8px;">Use direct pressure for bleeding. Apply a tourniquet for uncontrolled limb bleeding and note the application time.</div></div>
+    <div class="doc-panel"><span class="doc-strong">Water</span><div class="doc-mt-8">1 gal/person/day. Bleach: 8 drops/gal for clear water, 16 drops/gal for cloudy water. Wait 30 minutes.</div></div>
+    <div class="doc-panel"><span class="doc-strong">Food</span><div class="doc-mt-8">Target 2,000 cal/person/day. Eat perishables first, then frozen, then shelf-stable stores.</div></div>
+    <div class="doc-panel"><span class="doc-strong">Radio</span><div class="doc-mt-8">FRS Ch 1 for rally, Ch 3 for emergency, GMRS Ch 20 for emergency, HAM 146.520 MHz for calling.</div></div>
+    <div class="doc-panel"><span class="doc-strong">Medical</span><div class="doc-mt-8">Use direct pressure for bleeding. Apply a tourniquet for uncontrolled limb bleeding and note the application time.</div></div>
   </div>
 </section>
 <section class="doc-section">
@@ -1470,10 +1470,10 @@ def api_print_operations_binder():
     <span class="doc-chip">Weight: {esc(str(p.get("weight_kg") or "?"))} kg</span>
     <span class="doc-chip">Blood: {esc(str(p.get("blood_type") or "-"))}</span>
   </div>
-  <div style="margin-top:12px;" class="doc-chip-list">{allergy_html}</div>
-  <div style="margin-top:12px;" class="doc-chip-list">{condition_html}</div>
-  <div style="margin-top:12px;" class="doc-chip-list">{medication_html}</div>
-  <div style="margin-top:12px;" class="doc-note-box">{esc(str(p.get("notes") or "No additional notes recorded."))}</div>
+  <div class="doc-mt-12 doc-chip-list">{allergy_html}</div>
+  <div class="doc-mt-12 doc-chip-list">{condition_html}</div>
+  <div class="doc-mt-12 doc-chip-list">{medication_html}</div>
+  <div class="doc-mt-12 doc-note-box">{esc(str(p.get("notes") or "No additional notes recorded."))}</div>
 </div>'''
         patient_cards_html += '</div>'
 
@@ -1506,7 +1506,7 @@ def api_print_operations_binder():
             items = _safe_json_list(cl.get('items'), [])
             panel = f'<div class="doc-panel"><h2 class="doc-section-title">{esc(cl["name"])}</h2>'
             if items:
-                panel += '<div class="doc-table-shell"><table><thead><tr><th style="width:60px;">Done</th><th>Task</th></tr></thead><tbody>'
+                panel += '<div class="doc-table-shell"><table><thead><tr><th class="doc-cell-fixed-60">Done</th><th>Task</th></tr></thead><tbody>'
                 for item in items:
                     if isinstance(item, dict):
                         text = item.get('text', item.get('name', str(item)))
@@ -1536,7 +1536,7 @@ def api_print_operations_binder():
         waypoint_html += '</tbody></table></div>'
         rally = [w for w in waypoints if (w.get('category', '') or '').lower() in ('rally', 'rally point', 'rallypoint')]
         if rally:
-            waypoint_html += '<div style="margin-top:12px;" class="doc-note-box">Rally points are present. Print the dedicated map view from the Maps workspace for terrain detail and route overlays.</div>'
+            waypoint_html += '<div class="doc-mt-12 doc-note-box">Rally points are present. Print the dedicated map view from the Maps workspace for terrain detail and route overlays.</div>'
 
     procedure_html = '<div class="doc-empty">No emergency procedures are documented yet.</div>'
     if procedures:
@@ -1571,7 +1571,7 @@ def api_print_operations_binder():
     </div>
   </div>
 </section>
-<section class="doc-section" style="page-break-before:always;">
+<section class="doc-section doc-page-break">
   <div class="doc-grid-2">
     <div class="doc-panel">
       <h2 class="doc-section-title">1. Emergency Contacts Directory</h2>
@@ -1583,34 +1583,34 @@ def api_print_operations_binder():
     </div>
   </div>
 </section>
-<section class="doc-section" style="page-break-before:always;">
+<section class="doc-section doc-page-break">
   <h2 class="doc-section-title">3. Medical Patient Cards</h2>
   {patient_cards_html}
 </section>
-<section class="doc-section" style="page-break-before:always;">
+<section class="doc-section doc-page-break">
   <h2 class="doc-section-title">4. Inventory Summary</h2>
   {inventory_cards}
 </section>
-<section class="doc-section" style="page-break-before:always;">
+<section class="doc-section doc-page-break">
   <h2 class="doc-section-title">5. Active Checklists</h2>
   {checklist_cards}
 </section>
-<section class="doc-section" style="page-break-before:always;">
+<section class="doc-section doc-page-break">
   <h2 class="doc-section-title">6. Waypoints and Rally Points</h2>
   {waypoint_html}
 </section>
-<section class="doc-section" style="page-break-before:always;">
+<section class="doc-section doc-page-break">
   <h2 class="doc-section-title">7. Emergency Procedures</h2>
   {procedure_html}
 </section>
-<section class="doc-section" style="page-break-before:always;">
+<section class="doc-section doc-page-break">
   <h2 class="doc-section-title">8. Family Emergency Plan</h2>
   {family_plan_html}
 </section>
 <section class="doc-section">
-  <div class="doc-note-box" style="border-color:#e9b7b7;background:#fff5f5;color:#7a1d1d;">
-    <div class="doc-strong" style="letter-spacing:0.12em;text-transform:uppercase;">Confidential Handling</div>
-    <div style="margin-top:6px;">Protect this binder accordingly and replace printed copies when the plan or roster changes.</div>
+  <div class="doc-note-box doc-panel-alert">
+    <div class="doc-strong doc-eyebrow-text">Confidential Handling</div>
+    <div class="doc-mt-6">Protect this binder accordingly and replace printed copies when the plan or roster changes.</div>
   </div>
 </section>
 <section class="doc-section">
@@ -1691,7 +1691,7 @@ def api_print_wallet_cards():
     elif self_contact:
         patient_name = self_contact['name']
     contact_list_html = ''.join(
-        f'<div style="margin-top:6px;"><span class="doc-strong">{i + 1}.</span> {esc(c["name"])}'
+        f'<div class="doc-mt-6"><span class="doc-strong">{i + 1}.</span> {esc(c["name"])}'
         f' ({esc(c.get("role","") or "Contact")}) - {esc(c["phone"])}</div>'
         for i, c in enumerate(ice_contacts[:3])
     ) or '<div class="doc-empty">No emergency contacts are on file.</div>'
@@ -1729,14 +1729,14 @@ def api_print_wallet_cards():
   <div class="doc-grid-3">
     <div class="doc-panel doc-panel-strong">
       <h2 class="doc-section-title">ICE Card</h2>
-      <div class="doc-note-box" style="background:#fff;border-style:solid;">
-        <div class="doc-strong" style="font-size:18px;">{esc(patient_name or "Unassigned")}</div>
-        <div style="margin-top:10px;" class="doc-chip-list">
+      <div class="doc-note-box doc-checkbox-cell">
+        <div class="doc-strong doc-text-lg">{esc(patient_name or "Unassigned")}</div>
+        <div class="doc-mt-10 doc-chip-list">
           <span class="doc-chip">Blood: {esc(blood_type or "?")}</span>
           <span class="doc-chip">Allergies</span>
         </div>
-        <div style="margin-top:10px;" class="doc-chip-list">{allergy_html}</div>
-        <div style="margin-top:12px;">
+        <div class="doc-mt-10 doc-chip-list">{allergy_html}</div>
+        <div class="doc-mt-12">
           <div class="doc-section-title" style="margin-bottom:6px;">Emergency Contacts</div>
           {contact_list_html}
         </div>
@@ -1746,15 +1746,15 @@ def api_print_wallet_cards():
       <h2 class="doc-section-title">Blood Type Card</h2>
       <div class="doc-note-box" style="background:#fff;border-style:solid;text-align:center;">
         <div style="font-size:44px;line-height:1;font-weight:800;color:#7a1520;">{esc(blood_type or "?")}</div>
-        <div style="margin-top:12px;" class="doc-strong">{esc(patient_name or "Name pending")}</div>
+        <div class="doc-mt-12 doc-strong">{esc(patient_name or "Name pending")}</div>
         <div class="doc-chip-list" style="margin-top:10px;justify-content:center;">{allergy_html}</div>
       </div>
     </div>
     <div class="doc-panel doc-panel-strong">
       <h2 class="doc-section-title">Medication Card</h2>
-      <div class="doc-note-box" style="background:#fff;border-style:solid;">
+      <div class="doc-note-box doc-checkbox-cell">
         <div class="doc-strong">Patient: {esc(patient_name or "Unassigned")}</div>
-        <div style="margin-top:12px;" class="doc-chip-list">{medication_html}</div>
+        <div class="doc-mt-12 doc-chip-list">{medication_html}</div>
       </div>
     </div>
     <div class="doc-panel">
@@ -1868,9 +1868,9 @@ def api_print_soi():
             profile_html += panel
 
     body = f'''<section class="doc-section">
-  <div class="doc-note-box" style="border-color:#e9b7b7;background:#fff5f5;color:#7a1d1d;">
-    <div class="doc-strong" style="letter-spacing:0.12em;text-transform:uppercase;">Restricted</div>
-    <div style="margin-top:6px;">Carry only as needed. Destroy when compromised, superseded, or no longer operationally relevant.</div>
+  <div class="doc-note-box doc-panel-alert">
+    <div class="doc-strong doc-eyebrow-text">Restricted</div>
+    <div class="doc-mt-6">Carry only as needed. Destroy when compromised, superseded, or no longer operationally relevant.</div>
   </div>
 </section>
 <section class="doc-section">
@@ -1891,7 +1891,7 @@ def api_print_soi():
         <tr><td>1800</td><td class="doc-strong">Evening Net</td><td>Planning and coordination</td></tr>
         <tr><td>2100</td><td class="doc-strong">Night Watch</td><td>Security check-in</td></tr>
       </tbody></table></div>
-      <div style="margin-top:10px;" class="doc-note-box">All times are local. Modify as needed and monitor the primary net continuously when conditions warrant it.</div>
+      <div class="doc-mt-10 doc-note-box">All times are local. Modify as needed and monitor the primary net continuously when conditions warrant it.</div>
     </div>
   </div>
 </section>
@@ -2306,11 +2306,11 @@ Adult: 0.3mg (EpiPen) | Child: 0.15mg (EpiPen Jr) | Infant: 0.01mg/kg</li>
 </table>
 
 <h2>Personal Notes</h2>
-<div style="min-height:120px;border:1px dashed #999;padding:4px;margin:4px 0;">
+<div class="doc-signature-box">
 <!-- Blank space for handwritten notes -->
 </div>
 
-<div class="footer" style="margin-top:16px;">
+<div class="footer doc-mt-16">
 <strong>NOMAD Field Desk</strong> — Offline Medical Reference Flipbook<br>
 ''' + f'Generated {__import__("time").strftime("%Y-%m-%d %H:%M")}' + '''<br>
 <em>This is a reference guide, not a substitute for medical training. Seek professional care when available.</em>

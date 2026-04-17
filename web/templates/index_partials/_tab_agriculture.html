@@ -486,7 +486,7 @@
         </div>
         <div style="display:flex;gap:4px">
           <button class="ag-btn ag-btn-secondary" onclick="agSelectGuild(${+g.id||0})">Layers</button>
-          <button class="ag-btn ag-btn-danger" onclick="agDeleteGuild(${+g.id||0})">x</button>
+          <button class="ag-btn ag-btn-danger" onclick="agDeleteGuild(${+g.id||0})" aria-label="Ag delete guild">x</button>
         </div>
       </div>`).join('');
     });
@@ -520,7 +520,7 @@
           <td><span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}</span></td>
           <td>${esc(l.species || '--')}</td>
           <td>${esc(l.role || '--')}</td>
-          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteLayer(${+l.id||0})">x</button></td>
+          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteLayer(${+l.id||0})" aria-label="Ag delete layer">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -575,7 +575,7 @@
             ${testHtml}
             ${s.notes ? `<br><small class="tone-muted">${esc(s.notes)}</small>` : ''}
           </div>
-          <div><button class="ag-btn ag-btn-danger" onclick="agDeleteSoil(${+s.id||0})">x</button></div>
+          <div><button class="ag-btn ag-btn-danger" onclick="agDeleteSoil(${+s.id||0})" aria-label="Ag delete soil">x</button></div>
         </div>`;
       }).join('');
     });
@@ -618,7 +618,7 @@
           <td>${esc(p.date_planted || '--')}</td>
           <td>${dueTag(p.pruning_due)}</td>
           <td>${dueTag(p.fertilization_due)}</td>
-          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeletePlant(${+p.id||0})">x</button></td>
+          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeletePlant(${+p.id||0})" aria-label="Ag delete plant">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -649,7 +649,7 @@
           <br><small class="tone-muted">${esc(b.species || '--')} | Bred: ${esc(b.breed_date || '--')} | Due: ${esc(b.due_date || '--')} | Offspring: ${+b.offspring_count||0}</small>
           ${b.notes ? `<br><small class="tone-muted">${esc(b.notes)}</small>` : ''}
         </div>
-        <div><button class="ag-btn ag-btn-danger" onclick="agDeleteBreeding(${+b.id||0})">x</button></div>
+        <div><button class="ag-btn ag-btn-danger" onclick="agDeleteBreeding(${+b.id||0})" aria-label="Ag delete breeding">x</button></div>
       </div>`).join('');
     });
     // Due dates
@@ -687,7 +687,7 @@
           <td>${f.date || '--'}</td><td>${f.feed_type || '--'}</td>
           <td>${f.amount || 0}</td><td>$${Number(f.cost || 0).toFixed(2)}</td>
           <td>${f.notes || '--'}</td>
-          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteFeed(${f.id})">x</button></td>
+          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteFeed(${f.id})" aria-label="Ag delete feed">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
     api(API + '/feed/summary').then(data => {
@@ -752,7 +752,7 @@
             <td>${s.capacity || '--'}</td>
             <td><span style="color:${gaugeColor(pct)}">${pct}%</span></td>
             <td>${dueTag(s.maintenance_due)}</td>
-            <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteSystem(${s.id})">x</button></td>
+            <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteSystem(${s.id})" aria-label="Ag delete system">x</button></td>
           </tr>`;
         }).join('') + '</tbody></table>';
     });
@@ -784,7 +784,7 @@
           <td><span class="${wqClass('nitrate', a.nitrate)}">${a.nitrate ?? '--'}</span></td>
           <td>${a.temp ?? '--'}F</td>
           <td>${a.created_at || '--'}</td>
-          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteAquaponics(${a.id})">x</button></td>
+          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteAquaponics(${a.id})" aria-label="Ag delete aquaponics">x</button></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -818,7 +818,7 @@
             <br><small class="tone-muted">In: ${r.input_desc || '--'} | Out: ${r.output_desc || '--'} | Cap: ${r.capacity || '--'}</small>
             ${r.notes ? `<br><small class="tone-muted">${r.notes}</small>` : ''}
           </div>
-          <div><button class="ag-btn ag-btn-danger" onclick="agDeleteRecycling(${r.id})">x</button></div>
+          <div><button class="ag-btn ag-btn-danger" onclick="agDeleteRecycling(${r.id})" aria-label="Ag delete recycling">x</button></div>
         </div>`;
       }).join('');
     });

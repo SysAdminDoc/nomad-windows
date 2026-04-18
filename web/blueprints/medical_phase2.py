@@ -21,8 +21,14 @@ MOOD_LABELS = {1: 'Very Low', 2: 'Low', 3: 'Below Average', 4: 'Slightly Low',
 SPECIES_LIST = ['dog', 'cat', 'horse', 'cow', 'goat', 'chicken', 'pig', 'sheep', 'rabbit', 'other']
 
 # Audit H2 — schemas for high-sensitivity patient data routes.
+#
+# Base schemas are partial-update-friendly (no `required` fields). The
+# *_CREATE variants layer on required fields for POST. This mirrors the
+# pattern established in contacts.py / vehicles.py / financial.py and
+# fixes the pre-v7.35 bug where PUTs against pregnancies / chronic /
+# vet records returned 400 whenever the caller omitted the name field.
 _PREGNANCY_SCHEMA = {
-    'patient_name': {'type': str, 'required': True, 'max_length': 200},
+    'patient_name': {'type': str, 'max_length': 200},
     'due_date': {'type': str, 'max_length': 50},
     'blood_type': {'type': str, 'max_length': 10},
     'gravida': {'type': int, 'min': 0, 'max': 30},
@@ -30,6 +36,10 @@ _PREGNANCY_SCHEMA = {
     'status': {'type': str, 'choices': ['active', 'delivered', 'loss']},
     'notes': {'type': str, 'max_length': 5000},
 }
+_PREGNANCY_CREATE_SCHEMA = dict(
+    _PREGNANCY_SCHEMA,
+    patient_name={'type': str, 'required': True, 'max_length': 200},
+)
 _DENTAL_SCHEMA = {
     'patient_name': {'type': str, 'required': True, 'max_length': 200},
     'tooth_number': {'type': int, 'min': 1, 'max': 32},
@@ -39,11 +49,16 @@ _DENTAL_SCHEMA = {
     'treatment_date': {'type': str, 'max_length': 50},
 }
 _CHRONIC_SCHEMA = {
-    'patient_name': {'type': str, 'required': True, 'max_length': 200},
-    'condition_name': {'type': str, 'required': True, 'max_length': 200},
+    'patient_name': {'type': str, 'max_length': 200},
+    'condition_name': {'type': str, 'max_length': 200},
     'severity': {'type': str, 'choices': CHRONIC_SEVERITIES},
     'medication_stockpile_days': {'type': int, 'min': 0, 'max': 36500},
 }
+_CHRONIC_CREATE_SCHEMA = dict(
+    _CHRONIC_SCHEMA,
+    patient_name={'type': str, 'required': True, 'max_length': 200},
+    condition_name={'type': str, 'required': True, 'max_length': 200},
+)
 _VAX_SCHEMA = {
     'patient_name': {'type': str, 'required': True, 'max_length': 200},
     'vaccine_name': {'type': str, 'required': True, 'max_length': 200},
@@ -52,13 +67,17 @@ _VAX_SCHEMA = {
     'next_due': {'type': str, 'max_length': 50},
 }
 _VET_SCHEMA = {
-    'animal_name': {'type': str, 'required': True, 'max_length': 200},
+    'animal_name': {'type': str, 'max_length': 200},
     'species': {'type': str, 'choices': SPECIES_LIST},
     'breed': {'type': str, 'max_length': 100},
     'weight_lb': {'type': (int, float), 'min': 0, 'max': 5000},
     'condition': {'type': str, 'max_length': 500},
     'treatment': {'type': str, 'max_length': 1000},
 }
+_VET_CREATE_SCHEMA = dict(
+    _VET_SCHEMA,
+    animal_name={'type': str, 'required': True, 'max_length': 200},
+)
 _MENTAL_SCHEMA = {
     'patient_name': {'type': str, 'required': True, 'max_length': 200},
     'check_date': {'type': str, 'max_length': 50},
@@ -118,7 +137,7 @@ def api_pregnancies_list():
 
 
 @medical_phase2_bp.route('/api/medical/pregnancies', methods=['POST'])
-@validate_json(_PREGNANCY_SCHEMA)
+@validate_json(_PREGNANCY_CREATE_SCHEMA)
 def api_pregnancies_create():
     data = request.get_json() or {}
     name = (data.get('patient_name') or '').strip()
@@ -176,7 +195,9 @@ def api_pregnancies_update(pid):
 @medical_phase2_bp.route('/api/medical/pregnancies/<int:pid>', methods=['DELETE'])
 def api_pregnancies_delete(pid):
     with db_session() as db:
-        db.execute('DELETE FROM pregnancies WHERE id = ?', (pid,))
+        r = db.execute('DELETE FROM pregnancies WHERE id = ?', (pid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'ok': True})
 
@@ -226,7 +247,9 @@ def api_dental_create():
 @medical_phase2_bp.route('/api/medical/dental/<int:did>', methods=['DELETE'])
 def api_dental_delete(did):
     with db_session() as db:
-        db.execute('DELETE FROM dental_records WHERE id = ?', (did,))
+        r = db.execute('DELETE FROM dental_records WHERE id = ?', (did,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'ok': True})
 
@@ -300,7 +323,9 @@ def api_herbal_create():
 @medical_phase2_bp.route('/api/medical/herbal/<int:hid>', methods=['DELETE'])
 def api_herbal_delete(hid):
     with db_session() as db:
-        db.execute('DELETE FROM herbal_remedies WHERE id = ?', (hid,))
+        r = db.execute('DELETE FROM herbal_remedies WHERE id = ?', (hid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'ok': True})
 
@@ -322,7 +347,7 @@ def api_chronic_list():
 
 
 @medical_phase2_bp.route('/api/medical/chronic', methods=['POST'])
-@validate_json(_CHRONIC_SCHEMA)
+@validate_json(_CHRONIC_CREATE_SCHEMA)
 def api_chronic_create():
     data = request.get_json() or {}
     name = (data.get('patient_name') or '').strip()
@@ -385,7 +410,9 @@ def api_chronic_update(cid):
 @medical_phase2_bp.route('/api/medical/chronic/<int:cid>', methods=['DELETE'])
 def api_chronic_delete(cid):
     with db_session() as db:
-        db.execute('DELETE FROM chronic_conditions WHERE id = ?', (cid,))
+        r = db.execute('DELETE FROM chronic_conditions WHERE id = ?', (cid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'ok': True})
 
@@ -450,7 +477,9 @@ def api_vaccinations_create():
 @medical_phase2_bp.route('/api/medical/vaccinations/<int:vid>', methods=['DELETE'])
 def api_vaccinations_delete(vid):
     with db_session() as db:
-        db.execute('DELETE FROM vaccinations WHERE id = ?', (vid,))
+        r = db.execute('DELETE FROM vaccinations WHERE id = ?', (vid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'ok': True})
 
@@ -520,7 +549,9 @@ def api_mental_health_create():
 @medical_phase2_bp.route('/api/medical/mental-health/<int:mid>', methods=['DELETE'])
 def api_mental_health_delete(mid):
     with db_session() as db:
-        db.execute('DELETE FROM mental_health_logs WHERE id = ?', (mid,))
+        r = db.execute('DELETE FROM mental_health_logs WHERE id = ?', (mid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'ok': True})
 
@@ -569,7 +600,7 @@ def api_vet_list():
 
 
 @medical_phase2_bp.route('/api/medical/vet', methods=['POST'])
-@validate_json(_VET_SCHEMA)
+@validate_json(_VET_CREATE_SCHEMA)
 def api_vet_create():
     data = request.get_json() or {}
     name = (data.get('animal_name') or '').strip()
@@ -628,7 +659,9 @@ def api_vet_update(vid):
 @medical_phase2_bp.route('/api/medical/vet/<int:vid>', methods=['DELETE'])
 def api_vet_delete(vid):
     with db_session() as db:
-        db.execute('DELETE FROM vet_records WHERE id = ?', (vid,))
+        r = db.execute('DELETE FROM vet_records WHERE id = ?', (vid,))
+        if r.rowcount == 0:
+            return jsonify({'error': 'not found'}), 404
         db.commit()
     return jsonify({'ok': True})
 

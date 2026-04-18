@@ -250,10 +250,13 @@ def api_inventory_burn_rates():
         days = 90
 
     with db_session() as db:
-        # Aggregate consumption over the window
+        # Aggregate consumption over the window. The consumption_log table
+        # stores the usage in the `amount` column; the prior version of
+        # this query referenced cl.quantity which does not exist, so every
+        # call to /api/inventory/burn-rates returned 500 until v7.36.
         rows = db.execute('''
             SELECT cl.inventory_id, i.name, i.quantity as current_qty, i.category,
-                   SUM(cl.quantity) as total_consumed,
+                   SUM(cl.amount) as total_consumed,
                    COUNT(cl.id) as consumption_events
             FROM consumption_log cl
             JOIN inventory i ON cl.inventory_id = i.id

@@ -283,17 +283,18 @@ Each item stands alone as a marquee feature for a minor release.
 
 ---
 
-### Phase C1: ICS-309 comms log auto-generator
+### Phase C1: ICS-309 comms log auto-generator  ✅ SHIPPED v7.34.0
 **Theme:** ARES/RACES deployments require 309; NOMAD has everything needed to compose it.
 **Effort:** S
 **Depends on:** —
 **Inspiration:** FEMA ICS-309, Winlink ecosystem
 
 #### Deliverables
-- [ ] `/api/print/ics-309` — chronological log of all comms traffic (LAN, Meshtastic, Winlink stub, federation) within date range
-- [ ] Printable HTML + PDF (via ReportLab) in tactical/operational format
-- [ ] Filter by incident ID, radio operator, net frequency
-- [ ] Appended to operations binder as optional section
+- [x] `/api/print/ics-309` — chronological log merging comms_log + lan_messages + mesh_messages within date range (default 24h UTC)
+- [x] Printable HTML + PDF (via ReportLab) in standard ICS-309 layout
+- [x] Filter by incident name, radio operator callsign, station ID; JSON response for programmatic use
+- [x] Print buttons wired into Settings print panel (both HTML + PDF)
+- [ ] Appended to operations binder as an optional section **(deferred — standalone route surfaces the same data; a future pass can embed it)**
 
 | New Routes | Data Packs |
 |---|---|

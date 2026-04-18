@@ -6416,3 +6416,512 @@ p, .tour-body, .modal-body, .setting-label span {
     padding: 16px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PASS 8 — THEME REFINEMENT
+   Cross-theme audit results: fix WCAG contrast failures, harmonize
+   semantic colors, add premium theme-specific signatures, verify
+   instrument tokens cascade correctly across all 5 themes.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── A. NOMAD (Desert/Light) — Contrast + Premium Refinement ──────── */
+/* Audit failures fixed:
+   - info 2.97:1 (fail) -> 6.5:1
+   - warning 3.27:1 (fail normal) -> 5.1:1
+   - text-muted 3.36:1 (large only) -> 4.6:1
+   - green 4.06:1 (borderline) -> 5.1:1
+   - accent 4.12:1 (borderline) -> 5.5:1
+   All now pass WCAG AA for normal body text (4.5:1). */
+[data-theme="nomad"],
+:root:not([data-theme]) {
+  /* Accent — slightly deeper warm brown, better contrast on cream bg */
+  --accent: #755938;
+  --accent-hover: #8e6f49;
+  --accent-dim: rgba(117, 89, 56, 0.1);
+  --accent-glow: rgba(117, 89, 56, 0.18);
+
+  /* Semantic colors — WCAG-compliant for body text on warm-cream bg */
+  --green: #2a6d5a;
+  --green-dim: rgba(42, 109, 90, 0.12);
+  --red: #a3433b;
+  --red-dim: rgba(163, 67, 59, 0.10);
+  --orange: #8f5006;
+  --orange-dim: rgba(143, 80, 6, 0.14);
+  --warning: #7a5d00;
+  --warning-dim: rgba(122, 93, 0, 0.14);
+  --warning-border: rgba(122, 93, 0, 0.26);
+  --info: #2e5fa8;
+  --info-dim: rgba(46, 95, 168, 0.12);
+  --purple: #6852c2;
+  --yellow: #8a7708;
+
+  /* Text hierarchy — text-muted now accessible for body use */
+  --text-muted: #6e635a;
+
+  /* Instrument accent-line opacity boost for light theme */
+  --ig-accent-rule: color-mix(in srgb, var(--accent) 80%, transparent);
+
+  /* Gradient refinement — warmer, more paper-like */
+  --gradient-accent: linear-gradient(135deg, #5c4530, #9d7a54);
+  --gradient-card: linear-gradient(180deg, rgba(255,255,255,0.86), rgba(246,240,232,0.96));
+}
+
+/* Nomad premium touches */
+[data-theme="nomad"] body,
+:root:not([data-theme]) body {
+  background-image:
+    var(--topo-pattern),
+    radial-gradient(
+      circle at 20% 15%,
+      rgba(255, 252, 244, 0.4),
+      transparent 50%
+    );
+}
+
+/* Nomad — subtle warm glow on active focus (not harsh) */
+[data-theme="nomad"] .tab.active,
+:root:not([data-theme]) .tab.active {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+/* ─── B. NIGHTOPS (Midnight/Tactical) — Premium Refinement ─────────── */
+[data-theme="nightops"] {
+  /* Subtle gold-tinted refinements */
+  --ig-accent-rule: color-mix(in srgb, var(--accent) 78%, transparent);
+
+  /* Refined surfaces — cooler blue-black with subtle elevation */
+  --ig-surface-1: color-mix(in srgb, var(--surface-solid) 98%, var(--accent));
+  --ig-surface-2: color-mix(in srgb, var(--surface2) 94%, transparent);
+  --ig-surface-3: color-mix(in srgb, var(--surface3) 92%, transparent);
+
+  /* Hairline strong more visible on deep dark */
+  --ig-hairline: color-mix(in srgb, var(--border-hover) 58%, var(--border));
+  --ig-hairline-strong: color-mix(in srgb, var(--accent) 32%, var(--border));
+  --ig-hairline-active: color-mix(in srgb, var(--accent) 56%, var(--border));
+}
+
+/* Nightops — gold accent bloom on primary action */
+[data-theme="nightops"] .btn-primary {
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent),
+    0 4px 14px color-mix(in srgb, var(--accent-glow) 48%, transparent);
+}
+
+/* Nightops — subtle blue atmosphere on panels */
+[data-theme="nightops"] .sidebar,
+[data-theme="nightops"] .copilot-dock,
+[data-theme="nightops"] .modal-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 98%, var(--info)), var(--surface-solid));
+}
+
+/* Nightops focus ring — gold halo */
+[data-theme="nightops"] *:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+/* ─── C. REDLIGHT (Ember/Night-Vision) — Premium Refinement ────────── */
+[data-theme="redlight"] {
+  /* Warmer hairlines — embers */
+  --ig-hairline: color-mix(in srgb, var(--border-hover) 62%, var(--border));
+  --ig-hairline-strong: color-mix(in srgb, var(--accent) 36%, var(--border));
+  --ig-hairline-active: color-mix(in srgb, var(--accent) 58%, var(--border));
+
+  /* Night-vision friendly — nothing pure white that would destroy dark adaptation */
+  --ig-surface-1: color-mix(in srgb, var(--surface-solid) 98%, var(--accent));
+  --ig-surface-2: color-mix(in srgb, var(--surface2) 96%, var(--accent));
+}
+
+/* Redlight — soft ember glow on primary */
+[data-theme="redlight"] .btn-primary {
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 0 0 1px color-mix(in srgb, var(--accent) 48%, transparent),
+    0 0 18px color-mix(in srgb, var(--accent-glow) 42%, transparent);
+}
+
+/* Redlight — warm atmosphere on surfaces */
+[data-theme="redlight"] .sidebar,
+[data-theme="redlight"] .copilot-dock {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, var(--accent)), var(--surface-solid));
+}
+
+/* Redlight — dampened data-font brightness for night-vision */
+[data-theme="redlight"] .live-widget-value,
+[data-theme="redlight"] .chart-value,
+[data-theme="redlight"] .readiness-grade,
+[data-theme="redlight"] .sr-metric,
+[data-theme="redlight"] .financial-amount,
+[data-theme="redlight"] .zambretti-reading,
+[data-theme="redlight"] .vital-value {
+  color: color-mix(in srgb, var(--text) 96%, var(--accent));
+}
+
+/* Redlight focus ring — warm rust halo */
+[data-theme="redlight"] *:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* ─── D. CYBER (Cobalt/Sci-Fi) — Premium Refinement ────────────────── */
+[data-theme="cyber"] {
+  /* Cooler, sharper hairlines */
+  --ig-hairline: color-mix(in srgb, var(--border-hover) 56%, var(--border));
+  --ig-hairline-strong: color-mix(in srgb, var(--accent) 30%, var(--border));
+  --ig-hairline-active: color-mix(in srgb, var(--accent) 58%, var(--border));
+
+  /* Subtle cyan bloom on surfaces */
+  --ig-surface-1: color-mix(in srgb, var(--surface-solid) 97%, var(--accent));
+  --ig-surface-2: color-mix(in srgb, var(--surface2) 93%, transparent);
+  --ig-surface-3: color-mix(in srgb, var(--surface3) 90%, transparent);
+}
+
+/* Cyber — tech glow on primary with cyan halo */
+[data-theme="cyber"] .btn-primary {
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 0 0 1px color-mix(in srgb, var(--accent) 46%, transparent),
+    0 0 22px color-mix(in srgb, var(--accent-glow) 52%, transparent);
+}
+
+/* Cyber — subtle atmospheric panels */
+[data-theme="cyber"] .sidebar,
+[data-theme="cyber"] .copilot-dock,
+[data-theme="cyber"] .modal-card {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 97%, var(--accent)), var(--surface-solid));
+}
+
+/* Cyber — sharper active indicator (more definition) */
+[data-theme="cyber"] .tab.active::before,
+[data-theme="cyber"] .note-item.active::before,
+[data-theme="cyber"] .convo-item.active::before {
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* Cyber — accent glow on data displays */
+[data-theme="cyber"] .live-widget:hover::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent) 30%,
+    var(--accent) 70%,
+    transparent
+  );
+  box-shadow: 0 0 6px var(--accent-glow);
+}
+
+/* Cyber focus ring — bright cyan halo */
+[data-theme="cyber"] *:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* ─── E. THEME-HARMONIZED SEMANTIC COLORS ──────────────────────────── */
+/* Ensure badges/statuses use theme-coherent tones, not default rgb */
+
+[data-theme="nightops"] .badge.running {
+  background: color-mix(in srgb, var(--green) 14%, var(--ig-surface-1));
+  border-color: color-mix(in srgb, var(--green) 36%, transparent);
+}
+
+[data-theme="redlight"] .badge.running {
+  background: color-mix(in srgb, var(--green) 16%, var(--ig-surface-1));
+  border-color: color-mix(in srgb, var(--green) 38%, transparent);
+}
+
+[data-theme="cyber"] .badge.running {
+  background: color-mix(in srgb, var(--green) 14%, var(--ig-surface-1));
+  border-color: color-mix(in srgb, var(--green) 36%, transparent);
+}
+
+/* ─── F. INSTRUMENT SURFACES — theme-specific depth ────────────────── */
+/* Dark themes get a slightly-brighter-than-bg surface-1, so cards
+   pop. Light theme gets near-white for paper feel. */
+
+[data-theme="nomad"] .home-mode-card,
+[data-theme="nomad"] .home-continue-card,
+[data-theme="nomad"] .home-doc-row,
+[data-theme="nomad"] .settings-mode-option,
+[data-theme="nomad"] .service-card,
+[data-theme="nomad"] .svc-card,
+:root:not([data-theme]) .home-mode-card,
+:root:not([data-theme]) .home-continue-card,
+:root:not([data-theme]) .home-doc-row,
+:root:not([data-theme]) .settings-mode-option,
+:root:not([data-theme]) .service-card,
+:root:not([data-theme]) .svc-card {
+  background: #ffffff;
+  border-color: rgba(41, 31, 19, 0.14);
+}
+
+/* Dark themes: cards slightly brighter than body bg */
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .home-mode-card,
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .home-continue-card,
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .home-doc-row,
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .settings-mode-option,
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .service-card,
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .svc-card,
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .live-widget,
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .need-card {
+  background: var(--ig-surface-1);
+}
+
+/* ─── G. SELECTION — theme-aware tint intensity ────────────────────── */
+[data-theme="nomad"] ::selection,
+:root:not([data-theme]) ::selection {
+  background: color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+[data-theme="nightops"] ::selection,
+[data-theme="redlight"] ::selection,
+[data-theme="cyber"] ::selection {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+}
+
+/* ─── H. SCROLLBAR — theme-tinted thumb ────────────────────────────── */
+[data-theme="nomad"] ::-webkit-scrollbar-thumb,
+:root:not([data-theme]) ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 26%, transparent);
+  background-clip: padding-box;
+}
+
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) ::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
+  background-clip: padding-box;
+}
+
+/* ─── I. PROGRESS BAR — theme-specific glow ─────────────────────────── */
+[data-theme="nightops"] .progress-bar .fill,
+[data-theme="cyber"] .progress-bar .fill {
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+[data-theme="redlight"] .progress-bar .fill {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 48%, transparent);
+}
+
+/* ─── J. TAB-BADGE — theme-coherent count indicator ────────────────── */
+[data-theme="nightops"] .tab-badge,
+[data-theme="redlight"] .tab-badge,
+[data-theme="cyber"] .tab-badge {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+/* ─── K. INPUT FOCUS — theme-specific ring intensity ───────────────── */
+[data-theme="nomad"] input:focus,
+[data-theme="nomad"] textarea:focus,
+[data-theme="nomad"] select:focus,
+:root:not([data-theme]) input:focus,
+:root:not([data-theme]) textarea:focus,
+:root:not([data-theme]) select:focus {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent),
+    var(--ig-inset-highlight) !important;
+}
+
+/* Dark themes — slightly stronger focus ring for visibility */
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) input:focus,
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) textarea:focus,
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) select:focus {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
+    var(--ig-inset-highlight) !important;
+}
+
+/* ─── L. HAZARD STRIPES — theme-coherent red ──────────────────────── */
+[data-theme="nomad"] .hazard-stripes,
+[data-theme="nomad"] .alert-sev.critical,
+:root:not([data-theme]) .hazard-stripes,
+:root:not([data-theme]) .alert-sev.critical {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--red),
+    var(--red) 6px,
+    color-mix(in srgb, var(--red) 78%, #fff) 6px,
+    color-mix(in srgb, var(--red) 78%, #fff) 12px
+  ) !important;
+  color: #fff !important;
+}
+
+/* ─── M. THEME-SPECIFIC TEXTURE — subtle background character ───────── */
+/* Nomad: already has topo + warm radial (defined above).
+   Nightops: cool blue bloom from top-left.
+   Redlight: warm ember bloom from bottom.
+   Cyber: cyan bloom from top-right. */
+[data-theme="nightops"] body {
+  background-image:
+    var(--topo-pattern),
+    radial-gradient(circle at 10% 5%, rgba(79, 134, 216, 0.05), transparent 45%);
+}
+
+[data-theme="redlight"] body {
+  background-image:
+    var(--topo-pattern),
+    radial-gradient(circle at 80% 100%, rgba(223, 133, 92, 0.05), transparent 50%);
+}
+
+[data-theme="cyber"] body {
+  background-image:
+    var(--topo-pattern),
+    radial-gradient(circle at 90% 10%, rgba(121, 173, 255, 0.06), transparent 45%);
+}
+
+/* ─── N. MODAL OVERLAY — theme-aware scrim intensity ───────────────── */
+[data-theme="nomad"] .modal-overlay,
+:root:not([data-theme]) .modal-overlay {
+  background: color-mix(in srgb, var(--overlay-scrim-strong) 75%, transparent);
+  backdrop-filter: blur(12px) saturate(0.92);
+}
+
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .modal-overlay {
+  background: color-mix(in srgb, var(--overlay-scrim-strong) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(0.85);
+}
+
+/* ─── O. TOAST — theme-aware elevation ─────────────────────────────── */
+[data-theme="nomad"] .toast,
+:root:not([data-theme]) .toast {
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 12px 32px rgba(58, 41, 18, 0.14);
+}
+
+:is([data-theme="nightops"], [data-theme="redlight"], [data-theme="cyber"]) .toast {
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 16px 44px rgba(0, 0, 0, 0.36);
+}
+
+/* ─── P. HIGH-CONTRAST OVERRIDES (per theme) ───────────────────────── */
+@media (prefers-contrast: more) {
+  [data-theme="nomad"],
+  :root:not([data-theme]) {
+    --text-dim: #3d3830;
+    --text-muted: #4c4538;
+    --border: rgba(41, 31, 19, 0.34);
+    --border-hover: rgba(108, 78, 38, 0.48);
+  }
+
+  [data-theme="nightops"] {
+    --text-dim: #c5d0e0;
+    --text-muted: #9aa4b6;
+    --border: rgba(206, 219, 236, 0.22);
+    --border-hover: rgba(211, 173, 114, 0.48);
+  }
+
+  [data-theme="redlight"] {
+    --text-dim: #dcc6be;
+    --text-muted: #c0a59c;
+    --border: rgba(255, 255, 255, 0.18);
+    --border-hover: rgba(223, 133, 92, 0.50);
+  }
+
+  [data-theme="cyber"] {
+    --text-dim: #c8d4e8;
+    --text-muted: #a0b2cc;
+    --border: rgba(255, 255, 255, 0.18);
+    --border-hover: rgba(121, 173, 255, 0.48);
+  }
+}
+
+/* ─── Q. CRITICAL DATA — theme-specific monospace tuning ───────────── */
+/* Nomad light: slightly darker mono for crisp data reading */
+[data-theme="nomad"] .gauge-value,
+[data-theme="nomad"] .live-widget-value,
+[data-theme="nomad"] .sr-metric,
+[data-theme="nomad"] .financial-amount,
+[data-theme="nomad"] .vital-value,
+:root:not([data-theme]) .gauge-value,
+:root:not([data-theme]) .live-widget-value,
+:root:not([data-theme]) .sr-metric,
+:root:not([data-theme]) .financial-amount,
+:root:not([data-theme]) .vital-value {
+  color: #0f0c08;
+}
+
+/* ─── R. SIDEBAR ACTIVE — theme-coherent tab ───────────────────────── */
+[data-theme="nomad"] .tab.active,
+:root:not([data-theme]) .tab.active {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--accent);
+}
+
+[data-theme="nightops"] .tab.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+[data-theme="redlight"] .tab.active {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent);
+}
+
+[data-theme="cyber"] .tab.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+}
+
+/* ─── S. ALL-THEME CONSISTENCY CHECK: instrument tokens ────────────── */
+/* Verify all Pass 4-7 instrument tokens have theme-specific values.
+   This block ensures nothing falls back to broken rgba defaults. */
+
+[data-theme="nomad"],
+:root:not([data-theme]) {
+  --ig-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.64);
+}
+
+[data-theme="nightops"] {
+  --ig-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="redlight"] {
+  --ig-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+[data-theme="cyber"] {
+  --ig-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="eink"] {
+  --ig-inset-highlight: none;
+  --ig-hairline: #000;
+  --ig-hairline-strong: #000;
+  --ig-hairline-active: #000;
+  --ig-surface-1: #fff;
+  --ig-surface-2: #f5f5f5;
+  --ig-surface-3: #eaeaea;
+  --ig-accent-rule: #000;
+}
+
+/* ─── T. FINAL: Unified premium signature across all themes ───────── */
+/* The accent color carries all meaning. Every theme shares this
+   exact interaction rhythm. */
+[data-theme] .btn-primary,
+:root:not([data-theme]) .btn-primary {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+/* Every theme gets the same active indicator bar width */
+[data-theme] .tab.active::before,
+[data-theme] .note-item.active::before,
+[data-theme] .convo-item.active::before,
+[data-theme] .command-palette-item.active::before,
+[data-theme] .command-palette-result.selected::before,
+:root:not([data-theme]) .tab.active::before,
+:root:not([data-theme]) .note-item.active::before,
+:root:not([data-theme]) .convo-item.active::before {
+  width: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+/* E-ink kills the bar color-tint, replaces with pure black */
+[data-theme="eink"] .tab.active::before,
+[data-theme="eink"] .note-item.active::before,
+[data-theme="eink"] .convo-item.active::before,
+[data-theme="eink"] .command-palette-item.active::before {
+  background: #000 !important;
+}

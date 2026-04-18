@@ -28,12 +28,19 @@ SPECIES_LIST = ['dog', 'cat', 'horse', 'cow', 'goat', 'chicken', 'pig', 'sheep',
 # fixes the pre-v7.35 bug where PUTs against pregnancies / chronic /
 # vet records returned 400 whenever the caller omitted the name field.
 _PREGNANCY_SCHEMA = {
-    'patient_name': {'type': str, 'max_length': 200},
+    'patient_name': {'type': str, 'min_length': 1, 'max_length': 200},
     'due_date': {'type': str, 'max_length': 50},
+    'conception_date': {'type': str, 'max_length': 50},
     'blood_type': {'type': str, 'max_length': 10},
+    'rh_factor': {'type': str, 'max_length': 10},
     'gravida': {'type': int, 'min': 0, 'max': 30},
     'para': {'type': int, 'min': 0, 'max': 30},
+    'risk_factors': {'type': (str, list), 'max_length': 5000},
+    'prenatal_visits': {'type': (str, list), 'max_length': 5000},
+    'birth_plan': {'type': str, 'max_length': 5000},
+    'supply_checklist': {'type': (str, list), 'max_length': 5000},
     'status': {'type': str, 'choices': ['active', 'delivered', 'loss']},
+    'outcome': {'type': str, 'max_length': 500},
     'notes': {'type': str, 'max_length': 5000},
 }
 _PREGNANCY_CREATE_SCHEMA = dict(
@@ -49,10 +56,19 @@ _DENTAL_SCHEMA = {
     'treatment_date': {'type': str, 'max_length': 50},
 }
 _CHRONIC_SCHEMA = {
-    'patient_name': {'type': str, 'max_length': 200},
-    'condition_name': {'type': str, 'max_length': 200},
+    'patient_name': {'type': str, 'min_length': 1, 'max_length': 200},
+    'condition_name': {'type': str, 'min_length': 1, 'max_length': 200},
     'severity': {'type': str, 'choices': CHRONIC_SEVERITIES},
+    'diagnosed_date': {'type': str, 'max_length': 50},
+    'medications': {'type': (str, list), 'max_length': 5000},
     'medication_stockpile_days': {'type': int, 'min': 0, 'max': 36500},
+    'weaning_protocol': {'type': str, 'max_length': 5000},
+    'alternative_treatments': {'type': (str, list), 'max_length': 5000},
+    'monitoring_schedule': {'type': str, 'max_length': 2000},
+    'emergency_protocol': {'type': str, 'max_length': 5000},
+    'last_checkup': {'type': str, 'max_length': 50},
+    'status': {'type': str, 'choices': ['active', 'managed', 'resolved']},
+    'notes': {'type': str, 'max_length': 5000},
 }
 _CHRONIC_CREATE_SCHEMA = dict(
     _CHRONIC_SCHEMA,
@@ -67,12 +83,19 @@ _VAX_SCHEMA = {
     'next_due': {'type': str, 'max_length': 50},
 }
 _VET_SCHEMA = {
-    'animal_name': {'type': str, 'max_length': 200},
+    'animal_name': {'type': str, 'min_length': 1, 'max_length': 200},
     'species': {'type': str, 'choices': SPECIES_LIST},
     'breed': {'type': str, 'max_length': 100},
     'weight_lb': {'type': (int, float), 'min': 0, 'max': 5000},
+    'age_years': {'type': (int, float), 'min': 0, 'max': 100},
     'condition': {'type': str, 'max_length': 500},
     'treatment': {'type': str, 'max_length': 1000},
+    'treatment_date': {'type': str, 'max_length': 50},
+    'medications': {'type': (str, list), 'max_length': 5000},
+    'vaccinations': {'type': (str, list), 'max_length': 5000},
+    'provider': {'type': str, 'max_length': 200},
+    'next_due': {'type': str, 'max_length': 50},
+    'notes': {'type': str, 'max_length': 5000},
 }
 _VET_CREATE_SCHEMA = dict(
     _VET_SCHEMA,
@@ -153,9 +176,9 @@ def api_pregnancies_create():
             (name, data.get('due_date', ''), data.get('conception_date', ''),
              data.get('blood_type', ''), data.get('rh_factor', ''),
              data.get('gravida', 1), data.get('para', 0),
-             str(data.get('risk_factors', '[]')),
+             json.dumps(data.get('risk_factors', [])) if isinstance(data.get('risk_factors'), list) else data.get('risk_factors', '[]'),
              data.get('birth_plan', ''),
-             str(data.get('supply_checklist', '[]')),
+             json.dumps(data.get('supply_checklist', [])) if isinstance(data.get('supply_checklist'), list) else data.get('supply_checklist', '[]'),
              data.get('status', 'active'), data.get('notes', ''))
         )
         db.commit()
@@ -178,7 +201,7 @@ def api_pregnancies_update(pid):
         if k in data:
             sets.append(f'{k} = ?')
             v = data[k]
-            vals.append(str(v) if isinstance(v, (list, dict)) else v)
+            vals.append(json.dumps(v) if isinstance(v, (list, dict)) else v)
     if not sets:
         return jsonify({'error': 'nothing to update'}), 400
     sets.append("updated_at = CURRENT_TIMESTAMP")
@@ -307,10 +330,10 @@ def api_herbal_create():
                 identification, is_builtin, notes)
                VALUES (?,?,?,?,?,?,?,?,?,?,0,?)''',
             (name, data.get('common_names', ''),
-             str(data.get('uses', '[]')),
+             json.dumps(data.get('uses', [])) if isinstance(data.get('uses'), list) else data.get('uses', '[]'),
              data.get('preparation', ''), data.get('dosage', ''),
-             str(data.get('contraindications', '[]')),
-             str(data.get('interactions', '[]')),
+             json.dumps(data.get('contraindications', [])) if isinstance(data.get('contraindications'), list) else data.get('contraindications', '[]'),
+             json.dumps(data.get('interactions', [])) if isinstance(data.get('interactions'), list) else data.get('interactions', '[]'),
              data.get('season', 'all'), data.get('habitat', ''),
              data.get('identification', ''), data.get('notes', ''))
         )
@@ -364,10 +387,10 @@ def api_chronic_create():
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
             (name, condition, data.get('severity', 'moderate'),
              data.get('diagnosed_date', ''),
-             str(data.get('medications', '[]')),
+             json.dumps(data.get('medications', [])) if isinstance(data.get('medications'), list) else data.get('medications', '[]'),
              data.get('medication_stockpile_days', 0),
              data.get('weaning_protocol', ''),
-             str(data.get('alternative_treatments', '[]')),
+             json.dumps(data.get('alternative_treatments', [])) if isinstance(data.get('alternative_treatments'), list) else data.get('alternative_treatments', '[]'),
              data.get('monitoring_schedule', ''),
              data.get('emergency_protocol', ''),
              data.get('status', 'active'), data.get('notes', ''))
@@ -393,7 +416,7 @@ def api_chronic_update(cid):
         if k in data:
             sets.append(f'{k} = ?')
             v = data[k]
-            vals.append(str(v) if isinstance(v, (list, dict)) else v)
+            vals.append(json.dumps(v) if isinstance(v, (list, dict)) else v)
     if not sets:
         return jsonify({'error': 'nothing to update'}), 400
     sets.append("updated_at = CURRENT_TIMESTAMP")
@@ -535,9 +558,9 @@ def api_mental_health_create():
              data.get('anxiety_level', 0),
              data.get('sleep_hours', 7), data.get('sleep_quality', 'fair'),
              data.get('appetite', 'normal'), data.get('energy_level', 5),
-             str(data.get('stress_sources', '[]')),
-             str(data.get('coping_strategies', '[]')),
-             str(data.get('warning_signs', '[]')),
+             json.dumps(data.get('stress_sources', [])) if isinstance(data.get('stress_sources'), list) else data.get('stress_sources', '[]'),
+             json.dumps(data.get('coping_strategies', [])) if isinstance(data.get('coping_strategies'), list) else data.get('coping_strategies', '[]'),
+             json.dumps(data.get('warning_signs', [])) if isinstance(data.get('warning_signs'), list) else data.get('warning_signs', '[]'),
              data.get('provider_notes', ''), data.get('notes', ''))
         )
         db.commit()
@@ -617,8 +640,8 @@ def api_vet_create():
              data.get('weight_lb', 0), data.get('age_years', 0),
              data.get('condition', ''), data.get('treatment', ''),
              data.get('treatment_date', ''),
-             str(data.get('medications', '[]')),
-             str(data.get('vaccinations', '[]')),
+             json.dumps(data.get('medications', [])) if isinstance(data.get('medications'), list) else data.get('medications', '[]'),
+             json.dumps(data.get('vaccinations', [])) if isinstance(data.get('vaccinations'), list) else data.get('vaccinations', '[]'),
              data.get('provider', ''), data.get('next_due', ''),
              data.get('notes', ''))
         )
@@ -642,7 +665,7 @@ def api_vet_update(vid):
         if k in data:
             sets.append(f'{k} = ?')
             v = data[k]
-            vals.append(str(v) if isinstance(v, (list, dict)) else v)
+            vals.append(json.dumps(v) if isinstance(v, (list, dict)) else v)
     if not sets:
         return jsonify({'error': 'nothing to update'}), 400
     sets.append("updated_at = CURRENT_TIMESTAMP")

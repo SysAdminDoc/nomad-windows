@@ -34,7 +34,7 @@ _METALS_SCHEMA = {
 # contacts.py and vehicles.py and fixes the bug where a barter PUT
 # without an explicit name was rejected 400.
 _BARTER_SCHEMA = {
-    'name': {'type': str, 'max_length': 200},
+    'name': {'type': str, 'min_length': 1, 'max_length': 200},
     'category': {'type': str, 'max_length': 50},
     'quantity': {'type': (int, float), 'min': 0, 'max': 1_000_000},
     'unit': {'type': str, 'max_length': 20},

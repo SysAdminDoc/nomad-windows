@@ -150,33 +150,25 @@ def api_alert_rules_evaluate():
             is_triggered = _compare(current_value, comp, threshold)
 
             if is_triggered:
-                # Check cooldown (CURRENT_TIMESTAMP stores UTC)
-                if rule['last_triggered']:
-                    from datetime import datetime, timedelta, timezone
-                    try:
-                        raw = rule['last_triggered']
-                        # SQLite CURRENT_TIMESTAMP writes 'YYYY-MM-DD HH:MM:SS'
-                        # which fromisoformat() accepts on 3.11+ but not 3.10.
-                        # Swap the space for 'T' to be 3.10-compatible.
-                        if ' ' in raw and 'T' not in raw:
-                            raw = raw.replace(' ', 'T', 1)
-                        last = datetime.fromisoformat(raw)
-                        if last.tzinfo is not None:
-                            last = last.replace(tzinfo=None)
-                        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
-                        if now_utc - last < timedelta(minutes=rule['cooldown_minutes']):
-                            continue  # Still in cooldown
-                    except (ValueError, TypeError):
-                        pass
+                # Atomic cooldown check-and-set: only claim the trigger if
+                # last_triggered is still old enough (or NULL).  This prevents
+                # concurrent evaluate() calls from double-firing the same rule.
+                cooldown_minutes = rule['cooldown_minutes']
+                claimed = db.execute(
+                    '''UPDATE alert_rules
+                       SET last_triggered = CURRENT_TIMESTAMP
+                       WHERE id = ? AND (
+                           last_triggered IS NULL
+                           OR last_triggered = ''
+                           OR CAST((julianday(CURRENT_TIMESTAMP) - julianday(last_triggered)) * 1440 AS REAL) >= ?
+                       )''',
+                    (rule['id'], cooldown_minutes)
+                )
+                if claimed.rowcount == 0:
+                    continue  # Another caller already claimed it, or still in cooldown
 
                 rule['current_value'] = round(current_value, 2) if isinstance(current_value, float) else current_value
                 triggered.append(rule)
-
-                # Update last_triggered
-                db.execute(
-                    'UPDATE alert_rules SET last_triggered = CURRENT_TIMESTAMP WHERE id = ?',
-                    (rule['id'],)
-                )
                 # Log trigger
                 db.execute(
                     '''INSERT INTO alert_rule_triggers
@@ -310,15 +302,20 @@ def _evaluate_condition(db, rule):
     elif ctype == 'custom_sql':
         query = action_data.get('query', '')
         if not _is_safe_select(query):
-            # Refuse anything that isn't a single read-only SELECT. Even though
-            # alert rules can only be created by authenticated local/LAN users,
-            # allowing arbitrary SQL through a stored rule is a persistent
-            # injection surface (and would let a single compromised rule
-            # silently DROP tables on every tick).
             return 0
         try:
-            row = db.execute(query).fetchone()
-            return row[0] if row else 0
+            import time as _time
+            _deadline = _time.monotonic() + _CUSTOM_SQL_TIMEOUT
+
+            def _check_timeout():
+                return 1 if _time.monotonic() > _deadline else 0
+
+            db.set_progress_handler(_check_timeout, 1000)
+            try:
+                row = db.execute(query).fetchone()
+                return row[0] if row else 0
+            finally:
+                db.set_progress_handler(None, 0)
         except Exception:
             return 0
 
@@ -328,7 +325,10 @@ def _evaluate_condition(db, rule):
 _FORBIDDEN_SQL_KEYWORDS = (
     'insert', 'update', 'delete', 'drop', 'alter', 'create', 'attach',
     'detach', 'replace', 'pragma', 'vacuum', 'reindex',
+    'load_extension', 'savepoint',
 )
+
+_CUSTOM_SQL_TIMEOUT = 5  # seconds
 
 
 def _is_safe_select(query):

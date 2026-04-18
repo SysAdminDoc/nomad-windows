@@ -203,3 +203,147 @@ class TestPrintDocuments:
         assert 'Watch Schedule - Night Watch' in html
         assert 'Shift Assignments' in html
         assert 'Rotate radios and perimeter notes at each handoff.' in html
+
+
+class TestICS309:
+    """Phase C1: ICS-309 Communications Log — HTML, JSON, and PDF.
+
+    Verifies the default 24h window, multi-source merge of comms_log +
+    lan_messages + mesh_messages, operator filter (which correctly
+    excludes LAN/mesh traffic because operators filter only radio),
+    explicit date window, direction-based from/to mapping, and the
+    PDF endpoint's graceful fallback when reportlab is missing."""
+
+    def test_ics309_html_renders_with_no_traffic(self, client):
+        resp = client.get('/api/print/ics-309')
+        assert resp.status_code == 200
+        html = resp.get_data(as_text=True)
+        assert 'ICS-309' in html
+        assert 'Chronological Log' in html
+        assert 'No comms traffic recorded' in html
+
+    def test_ics309_json_shape(self, client):
+        resp = client.get('/api/print/ics-309?format=json')
+        assert resp.status_code == 200
+        data = resp.get_json()
+        assert data['entry_count'] == 0
+        assert data['entries'] == []
+        assert 'operational_period' in data
+        assert 'from' in data['operational_period']
+        assert 'to' in data['operational_period']
+
+    def test_ics309_merges_all_three_sources(self, client, db):
+        db.execute(
+            "INSERT INTO comms_log (freq, callsign, direction, message, created_at) "
+            "VALUES ('146.520', 'W1AW', 'rx', 'Net check-in', datetime('now', '-1 hour'))"
+        )
+        db.execute(
+            "INSERT INTO lan_messages (sender, content, created_at) "
+            "VALUES ('Alice', 'Moving to rally point', datetime('now', '-30 minutes'))"
+        )
+        db.execute(
+            "INSERT INTO mesh_messages (from_node, to_node, message, channel, timestamp) "
+            "VALUES ('NODE1', 'BROADCAST', 'Mesh hello', 'primary', datetime('now', '-15 minutes'))"
+        )
+        db.commit()
+        resp = client.get('/api/print/ics-309?format=json')
+        data = resp.get_json()
+        assert data['entry_count'] == 3
+        sources = {e['source'] for e in data['entries']}
+        assert sources == {'radio', 'lan', 'mesh'}
+        times = [e['time'] for e in data['entries']]
+        assert times == sorted(times)
+
+    def test_ics309_operator_filter_restricts_to_comms_log(self, client, db):
+        db.execute(
+            "INSERT INTO comms_log (freq, callsign, direction, message, created_at) "
+            "VALUES ('146.520', 'W1AW', 'rx', 'hello', datetime('now', '-1 hour'))"
+        )
+        db.execute(
+            "INSERT INTO comms_log (freq, callsign, direction, message, created_at) "
+            "VALUES ('146.520', 'K7XYZ', 'rx', 'hello too', datetime('now', '-30 minutes'))"
+        )
+        db.execute(
+            "INSERT INTO lan_messages (sender, content, created_at) "
+            "VALUES ('Alice', 'LAN msg', datetime('now', '-1 hour'))"
+        )
+        db.commit()
+        resp = client.get('/api/print/ics-309?format=json&operator=W1AW')
+        data = resp.get_json()
+        assert data['entry_count'] == 1
+        assert data['entries'][0]['from_station'] == 'W1AW'
+        assert data['entries'][0]['source'] == 'radio'
+
+    def test_ics309_window_excludes_old_traffic(self, client, db):
+        db.execute(
+            "INSERT INTO comms_log (freq, callsign, direction, message, created_at) "
+            "VALUES ('146.520', 'OLD', 'rx', 'ancient', datetime('now', '-48 hours'))"
+        )
+        db.execute(
+            "INSERT INTO comms_log (freq, callsign, direction, message, created_at) "
+            "VALUES ('146.520', 'NEW', 'rx', 'recent', datetime('now', '-2 hours'))"
+        )
+        db.commit()
+        resp = client.get('/api/print/ics-309?format=json')
+        data = resp.get_json()
+        callsigns = {e['from_station'] for e in data['entries']}
+        assert 'NEW' in callsigns
+        assert 'OLD' not in callsigns
+
+    def test_ics309_incident_and_station_rendered(self, client):
+        resp = client.get(
+            '/api/print/ics-309?incident=Hurricane%20Alpha&station=K7NOMAD&operator=W1AW'
+        )
+        assert resp.status_code == 200
+        html = resp.get_data(as_text=True)
+        assert 'Hurricane Alpha' in html
+        assert 'K7NOMAD' in html
+        assert 'W1AW' in html
+
+    def test_ics309_direction_flips_from_to(self, client, db):
+        db.execute(
+            "INSERT INTO comms_log (freq, callsign, direction, message, created_at) "
+            "VALUES ('146.520', 'W1AW', 'tx', 'go ahead', datetime('now', '-1 hour'))"
+        )
+        db.execute(
+            "INSERT INTO comms_log (freq, callsign, direction, message, created_at) "
+            "VALUES ('146.520', 'K7XYZ', 'rx', 'copy that', datetime('now', '-30 minutes'))"
+        )
+        db.commit()
+        resp = client.get('/api/print/ics-309?format=json')
+        entries = resp.get_json()['entries']
+        tx_row = next(e for e in entries if 'go ahead' in e['message'])
+        rx_row = next(e for e in entries if 'copy that' in e['message'])
+        assert tx_row['from_station'] == 'SELF'
+        assert tx_row['to_station'] == 'W1AW'
+        assert rx_row['from_station'] == 'K7XYZ'
+        assert rx_row['to_station'] == 'SELF'
+
+    def test_ics309_explicit_window(self, client, db):
+        db.execute(
+            "INSERT INTO comms_log (freq, callsign, direction, message, created_at) "
+            "VALUES ('146.520', 'W1AW', 'rx', 'in range', '2025-01-02 12:00:00')"
+        )
+        db.execute(
+            "INSERT INTO comms_log (freq, callsign, direction, message, created_at) "
+            "VALUES ('146.520', 'K7XYZ', 'rx', 'out of range', '2025-02-15 09:00:00')"
+        )
+        db.commit()
+        resp = client.get(
+            '/api/print/ics-309?format=json&from=2025-01-01&to=2025-01-03'
+        )
+        data = resp.get_json()
+        callsigns = {e['from_station'] for e in data['entries']}
+        assert 'W1AW' in callsigns
+        assert 'K7XYZ' not in callsigns
+
+    def test_ics309_pdf_returns_200_or_graceful_500(self, client):
+        resp = client.get('/api/print/pdf/ics-309')
+        assert resp.status_code in (200, 500)
+        if resp.status_code == 200:
+            assert resp.headers.get('Content-Type', '').startswith('application/pdf')
+            body = resp.get_data()
+            assert body.startswith(b'%PDF-')
+        else:
+            err = resp.get_json()
+            assert 'reportlab' in err.get('error', '').lower()

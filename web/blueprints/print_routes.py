@@ -3,7 +3,7 @@
 import json
 import platform
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, Response
 
 from db import db_session
@@ -2319,3 +2319,421 @@ Adult: 0.3mg (EpiPen) | Child: 0.15mg (EpiPen Jr) | Infant: 0.01mg/kg</li>
 
 </body></html>'''
     return Response(html, mimetype='text/html')
+
+
+# ═════════════════════════════════════════════════════════════════════
+# Phase C1 — ICS-309 Communications Log (ROADMAP-v9 Tier C)
+#
+# ARES/RACES deployments require an ICS-309 chronological radio log for
+# every operational period. NOMAD already captures traffic across three
+# independent channels (local radio via comms_log, LAN chat via
+# lan_messages, Meshtastic bridge via mesh_messages) but there was no
+# way to emit a combined dated log in the standard 309 format. These
+# routes merge the three sources, optionally filter by date range,
+# incident, or operator, and render either HTML (for inline-frame view
+# or browser print) or PDF (for formal field delivery).
+# ═════════════════════════════════════════════════════════════════════
+
+
+def _parse_ics309_window(raw_from, raw_to):
+    """Parse ?from=&to= into (from_iso, to_iso) datetime strings.
+
+    Inputs accepted: full ISO 8601 or bare YYYY-MM-DD.  Missing values
+    default to a 24-hour window ending now (standard ARES operational
+    period).  Returns tuple of (from_dt, to_dt) as datetime objects and
+    (from_iso, to_iso) as sqlite-friendly strings.
+
+    Timezone note: SQLite ``CURRENT_TIMESTAMP`` stores UTC, which is what
+    all NOMAD timestamp columns use.  We therefore default to UTC for the
+    window so it lines up with the stored data.  Explicit ``from``/``to``
+    query params are treated as UTC for consistency and self-serve
+    reproducibility across operators in different timezones."""
+    to_dt = None
+    if raw_to:
+        for fmt in ('%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y-%m-%d'):
+            try:
+                to_dt = datetime.strptime(raw_to, fmt)
+                break
+            except ValueError:
+                continue
+    if to_dt is None:
+        to_dt = datetime.now(timezone.utc).replace(tzinfo=None)
+
+    from_dt = None
+    if raw_from:
+        for fmt in ('%Y-%m-%dT%H:%M:%S', '%Y-%m-%dT%H:%M', '%Y-%m-%d'):
+            try:
+                from_dt = datetime.strptime(raw_from, fmt)
+                break
+            except ValueError:
+                continue
+    if from_dt is None:
+        from_dt = to_dt - timedelta(hours=24)
+
+    return (
+        from_dt,
+        to_dt,
+        from_dt.strftime('%Y-%m-%d %H:%M:%S'),
+        to_dt.strftime('%Y-%m-%d %H:%M:%S'),
+    )
+
+
+def _fetch_ics309_entries(db, from_iso, to_iso, operator=None):
+    """Merge comms_log + lan_messages + mesh_messages into a single
+    chronologically-sorted list of dicts shaped like ICS-309 rows:
+    {time, from_station, to_station, channel, message, source}.
+
+    `operator`, if provided, restricts comms_log to rows whose callsign
+    matches (case-insensitive substring) and leaves the LAN/mesh
+    sources unfiltered."""
+    entries = []
+
+    # comms_log — local radio operator log (most authoritative source)
+    comms_sql = (
+        "SELECT created_at, freq, callsign, direction, message, signal_quality "
+        "FROM comms_log WHERE created_at BETWEEN ? AND ? "
+    )
+    params = [from_iso, to_iso]
+    if operator:
+        comms_sql += "AND LOWER(callsign) LIKE LOWER(?) "
+        params.append(f'%{operator}%')
+    comms_sql += "ORDER BY created_at"
+    for r in db.execute(comms_sql, params).fetchall():
+        direction = (r['direction'] or 'rx').lower()
+        # ICS-309 uses From / To columns; map direction to the right field
+        from_station = r['callsign'] if direction == 'rx' else 'SELF'
+        to_station = 'SELF' if direction == 'rx' else r['callsign']
+        msg = r['message'] or ''
+        if r['signal_quality']:
+            msg = f'{msg}  (sig: {r["signal_quality"]})' if msg else f'(sig: {r["signal_quality"]})'
+        entries.append({
+            'time':         str(r['created_at']),
+            'from_station': from_station or 'UNKNOWN',
+            'to_station':   to_station or 'NET',
+            'channel':      r['freq'] or '',
+            'message':      msg,
+            'source':       'radio',
+        })
+
+    # lan_messages — LAN chat, always ingress from 'sender' to 'team'
+    if not operator:
+        for r in db.execute(
+            "SELECT created_at, sender, content, msg_type "
+            "FROM lan_messages WHERE created_at BETWEEN ? AND ? "
+            "ORDER BY created_at",
+            (from_iso, to_iso),
+        ).fetchall():
+            entries.append({
+                'time':         str(r['created_at']),
+                'from_station': r['sender'] or 'Anonymous',
+                'to_station':   'LAN',
+                'channel':      f'LAN ({r["msg_type"] or "text"})',
+                'message':      r['content'] or '',
+                'source':       'lan',
+            })
+
+        # mesh_messages — Meshtastic bridge
+        for r in db.execute(
+            "SELECT timestamp, from_node, to_node, message, channel, rssi, snr "
+            "FROM mesh_messages WHERE timestamp BETWEEN ? AND ? "
+            "ORDER BY timestamp",
+            (from_iso, to_iso),
+        ).fetchall():
+            msg = r['message'] or ''
+            sig_parts = []
+            if r['rssi'] is not None:
+                sig_parts.append(f'RSSI {r["rssi"]}')
+            if r['snr'] is not None:
+                sig_parts.append(f'SNR {r["snr"]}')
+            if sig_parts:
+                msg = f'{msg}  ({", ".join(sig_parts)})' if msg else f'({", ".join(sig_parts)})'
+            entries.append({
+                'time':         str(r['timestamp']),
+                'from_station': r['from_node'] or 'UNKNOWN',
+                'to_station':   r['to_node'] or 'BROADCAST',
+                'channel':      f'MESH {r["channel"] or ""}'.strip(),
+                'message':      msg,
+                'source':       'mesh',
+            })
+
+    entries.sort(key=lambda e: e['time'])
+    return entries
+
+
+@print_routes_bp.route('/api/print/ics-309')
+def api_print_ics309():
+    """ICS-309 chronological comms log (HTML or JSON).
+
+    Query params:
+        from      — ISO date/datetime, default: 24h before `to`
+        to        — ISO date/datetime, default: now
+        incident  — incident name (free text, rendered in the header only)
+        operator  — radio operator callsign substring (filters comms_log)
+        station   — station ID / net control (rendered in header)
+        format    — 'html' (default) or 'json'
+    """
+    from flask import request
+    raw_from = request.args.get('from', '').strip()
+    raw_to = request.args.get('to', '').strip()
+    incident = request.args.get('incident', '').strip() or 'NOT SPECIFIED'
+    operator = request.args.get('operator', '').strip()
+    station = request.args.get('station', '').strip() or 'NOMAD Field Desk'
+    fmt = request.args.get('format', 'html').lower()
+
+    from_dt, to_dt, from_iso, to_iso = _parse_ics309_window(raw_from, raw_to)
+    with db_session() as db:
+        entries = _fetch_ics309_entries(db, from_iso, to_iso, operator=operator or None)
+
+    if fmt == 'json':
+        return jsonify({
+            'incident':           incident,
+            'operator':           operator,
+            'station':            station,
+            'operational_period': {'from': from_iso, 'to': to_iso},
+            'entry_count':        len(entries),
+            'entries':            entries,
+        })
+
+    # HTML render
+    now = datetime.now().strftime('%Y-%m-%d %H:%M')
+    header_rows = [
+        ('1. Incident Name',              incident),
+        ('2. Operational Period (From)',  from_dt.strftime('%Y-%m-%d %H:%M')),
+        ('   Operational Period (To)',    to_dt.strftime('%Y-%m-%d %H:%M')),
+        ('3. Radio Operator Name',        operator or 'NOT SPECIFIED'),
+        ('4. Station ID / Net Control',   station),
+    ]
+    header_html = '<div class="doc-kv">'
+    for k, v in header_rows:
+        header_html += (
+            '<div class="doc-kv-row">'
+            f'<div class="doc-kv-key">{_esc(k)}</div>'
+            f'<div>{_esc(v)}</div>'
+            '</div>'
+        )
+    header_html += '</div>'
+
+    if entries:
+        body_rows = []
+        for e in entries:
+            body_rows.append(
+                '<tr>'
+                f'<td>{_esc(e["time"])}</td>'
+                f'<td class="doc-strong">{_esc(e["from_station"])}</td>'
+                f'<td class="doc-strong">{_esc(e["to_station"])}</td>'
+                f'<td>{_esc(e["channel"])}</td>'
+                f'<td>{_esc(e["message"])}</td>'
+                f'<td class="doc-mono">{_esc(e["source"])}</td>'
+                '</tr>'
+            )
+        entries_html = (
+            '<div class="doc-table-shell"><table>'
+            '<thead><tr>'
+            '<th>Date / Time</th><th>From</th><th>To</th>'
+            '<th>Channel / Freq</th><th>Message / Subject</th><th>Src</th>'
+            '</tr></thead>'
+            f'<tbody>{"".join(body_rows)}</tbody>'
+            '</table></div>'
+        )
+    else:
+        entries_html = _render_empty(
+            'No comms traffic recorded in this operational period. '
+            'Extend the window, remove the operator filter, or log radio '
+            'traffic via the Tactical Comms tab.'
+        )
+
+    source_counts = {}
+    for e in entries:
+        source_counts[e['source']] = source_counts.get(e['source'], 0) + 1
+    src_line = ', '.join(f'{k}: {v}' for k, v in sorted(source_counts.items())) or 'none'
+
+    body = f'''
+<section class="doc-section">
+  <h2 class="doc-section-title">Incident &amp; Operator</h2>
+  {header_html}
+</section>
+<section class="doc-section">
+  <h2 class="doc-section-title">5. Chronological Log</h2>
+  {entries_html}
+</section>
+<section class="doc-section">
+  <div class="doc-grid-2">
+    <div class="doc-panel">
+      <h2 class="doc-section-title">6. Prepared By</h2>
+      <div class="doc-signature-box"></div>
+      <div class="doc-kv-row">
+        <div class="doc-kv-key">Name / Callsign</div><div>{_esc(operator or '______________________')}</div>
+      </div>
+      <div class="doc-kv-row">
+        <div class="doc-kv-key">Signature</div><div>______________________</div>
+      </div>
+      <div class="doc-kv-row">
+        <div class="doc-kv-key">Date / Time</div><div>{_esc(now)}</div>
+      </div>
+    </div>
+    <div class="doc-panel">
+      <h2 class="doc-section-title">Source Summary</h2>
+      <div class="doc-kv-row"><div class="doc-kv-key">Entries</div><div>{len(entries)}</div></div>
+      <div class="doc-kv-row"><div class="doc-kv-key">Sources</div><div>{_esc(src_line)}</div></div>
+      <div class="doc-kv-row"><div class="doc-kv-key">Period (UTC local)</div><div>{_esc(from_iso)} &rarr; {_esc(to_iso)}</div></div>
+    </div>
+  </div>
+</section>
+<section class="doc-section">
+  <div class="doc-footer">
+    <span>ICS-309 equivalent — consolidated from radio, LAN, and mesh traffic.</span>
+    <span>Print in landscape for legibility.</span>
+  </div>
+</section>'''
+
+    html = render_print_document(
+        'ICS-309 Communications Log',
+        'Chronological comms record for one operational period. Filed by the radio operator / net-control station.',
+        body,
+        eyebrow='NOMAD Field Desk — ICS-309',
+        meta_items=[
+            f'Generated {now}',
+            f'Entries: {len(entries)}',
+            f'Sources: {src_line}',
+        ],
+        stat_items=[
+            ('Radio',  source_counts.get('radio', 0)),
+            ('LAN',    source_counts.get('lan', 0)),
+            ('Mesh',   source_counts.get('mesh', 0)),
+            ('Total',  len(entries)),
+        ],
+        accent_start='#16324a',
+        accent_end='#34788e',
+        max_width='1280px',
+        page_size='Letter',
+        landscape=True,
+    )
+    return Response(html, mimetype='text/html')
+
+
+@print_routes_bp.route('/api/print/pdf/ics-309')
+def api_print_pdf_ics309():
+    """PDF render of the ICS-309 log, matching the HTML output."""
+    from flask import request
+    rl = _pdf_setup()
+    if rl is None:
+        return jsonify({'error': 'reportlab not installed', 'hint': 'pip install reportlab'}), 500
+
+    io, letter, inch = rl['io'], rl['letter'], rl['inch']
+    ParagraphStyle, colors = rl['ParagraphStyle'], rl['colors']
+    SimpleDocTemplate, Table, TableStyle = rl['SimpleDocTemplate'], rl['Table'], rl['TableStyle']
+    Paragraph, Spacer = rl['Paragraph'], rl['Spacer']
+
+    raw_from = request.args.get('from', '').strip()
+    raw_to = request.args.get('to', '').strip()
+    incident = request.args.get('incident', '').strip() or 'NOT SPECIFIED'
+    operator = request.args.get('operator', '').strip()
+    station = request.args.get('station', '').strip() or 'NOMAD Field Desk'
+
+    from_dt, to_dt, from_iso, to_iso = _parse_ics309_window(raw_from, raw_to)
+    with db_session() as db:
+        entries = _fetch_ics309_entries(db, from_iso, to_iso, operator=operator or None)
+
+    # Landscape letter — wider rows accommodate the message column
+    landscape_letter = (letter[1], letter[0])
+    buf = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=landscape_letter,
+        topMargin=0.4 * inch, bottomMargin=0.4 * inch,
+        leftMargin=0.4 * inch, rightMargin=0.4 * inch,
+        title='ICS-309 Communications Log',
+    )
+
+    h1 = ParagraphStyle('Title', fontName='Courier-Bold', fontSize=14, leading=16, alignment=1, spaceAfter=4)
+    h2 = ParagraphStyle('Hdr',   fontName='Courier-Bold', fontSize=9,  leading=11)
+    body_st = ParagraphStyle('Body',  fontName='Courier', fontSize=8, leading=10)
+    small_st = ParagraphStyle('Small', fontName='Courier', fontSize=7, leading=9, textColor=colors.grey)
+
+    elements = []
+    elements.append(Paragraph('ICS-309 -- COMMUNICATIONS LOG', h1))
+    elements.append(Paragraph(f'Generated {datetime.now().strftime("%Y-%m-%d %H:%M")}', small_st))
+    elements.append(Spacer(1, 8))
+
+    # Incident header as 2-col table
+    hdr_data = [
+        ['1. Incident Name',              incident],
+        ['2. Operational Period (From)',  from_dt.strftime('%Y-%m-%d %H:%M')],
+        ['   Operational Period (To)',    to_dt.strftime('%Y-%m-%d %H:%M')],
+        ['3. Radio Operator',             operator or 'NOT SPECIFIED'],
+        ['4. Station ID / Net Control',   station],
+    ]
+    hdr_table = Table(hdr_data, colWidths=[2.3 * inch, 7.9 * inch])
+    hdr_table.setStyle(TableStyle([
+        ('FONT',      (0, 0), (-1, -1), 'Courier', 9),
+        ('FONT',      (0, 0), (0, -1),  'Courier-Bold', 9),
+        ('BOX',       (0, 0), (-1, -1), 1, colors.black),
+        ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.grey),
+        ('LEFTPADDING',  (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING',   (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+    ]))
+    elements.append(hdr_table)
+    elements.append(Spacer(1, 10))
+
+    elements.append(Paragraph('5. Chronological Log', h2))
+    elements.append(Spacer(1, 4))
+
+    log_data = [['Date / Time', 'From', 'To', 'Channel', 'Message', 'Src']]
+    for e in entries:
+        log_data.append([
+            Paragraph(_esc(e['time']),         body_st),
+            Paragraph(_esc(e['from_station']), body_st),
+            Paragraph(_esc(e['to_station']),   body_st),
+            Paragraph(_esc(e['channel']),      body_st),
+            Paragraph(_esc(e['message']),      body_st),
+            Paragraph(_esc(e['source']),       body_st),
+        ])
+
+    log_table = Table(
+        log_data,
+        colWidths=[1.3 * inch, 1.0 * inch, 1.0 * inch, 1.2 * inch, 5.4 * inch, 0.5 * inch],
+        repeatRows=1,
+    )
+    log_table.setStyle(TableStyle([
+        ('FONT',        (0, 0), (-1, 0), 'Courier-Bold', 8),
+        ('BACKGROUND',  (0, 0), (-1, 0), colors.lightgrey),
+        ('BOX',         (0, 0), (-1, -1), 0.75, colors.black),
+        ('INNERGRID',   (0, 0), (-1, -1), 0.25, colors.grey),
+        ('VALIGN',      (0, 0), (-1, -1), 'TOP'),
+        ('LEFTPADDING',  (0, 0), (-1, -1), 3),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 3),
+        ('TOPPADDING',   (0, 0), (-1, -1), 2),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+    ]))
+    if len(log_data) == 1:
+        elements.append(Paragraph('(no entries)', small_st))
+    else:
+        elements.append(log_table)
+
+    elements.append(Spacer(1, 12))
+    elements.append(Paragraph('6. Prepared By', h2))
+    sig_data = [
+        ['Name / Callsign', operator or '______________________'],
+        ['Signature',       '______________________'],
+        ['Date / Time',     datetime.now().strftime('%Y-%m-%d %H:%M')],
+    ]
+    sig_table = Table(sig_data, colWidths=[1.8 * inch, 5.0 * inch])
+    sig_table.setStyle(TableStyle([
+        ('FONT', (0, 0), (-1, -1), 'Courier', 9),
+        ('BOX',  (0, 0), (-1, -1), 0.75, colors.black),
+        ('INNERGRID', (0, 0), (-1, -1), 0.25, colors.grey),
+        ('LEFTPADDING',  (0, 0), (-1, -1), 4),
+        ('RIGHTPADDING', (0, 0), (-1, -1), 4),
+    ]))
+    elements.append(sig_table)
+
+    doc.build(elements)
+    buf.seek(0)
+    return Response(
+        buf.read(), mimetype='application/pdf',
+        headers={
+            'Content-Disposition':
+            f'attachment; filename="NOMAD-ICS-309-{datetime.now().strftime("%Y%m%d-%H%M")}.pdf"'
+        },
+    )

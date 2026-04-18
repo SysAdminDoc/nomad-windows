@@ -29,8 +29,12 @@ _METALS_SCHEMA = {
     'location': {'type': str, 'max_length': 200},
     'notes': {'type': str, 'max_length': 2000},
 }
+# Partial-update-friendly: no `required` fields. The CREATE variant
+# adds `name` as required for POST. This mirrors the pattern used by
+# contacts.py and vehicles.py and fixes the bug where a barter PUT
+# without an explicit name was rejected 400.
 _BARTER_SCHEMA = {
-    'name': {'type': str, 'required': True, 'max_length': 200},
+    'name': {'type': str, 'max_length': 200},
     'category': {'type': str, 'max_length': 50},
     'quantity': {'type': (int, float), 'min': 0, 'max': 1_000_000},
     'unit': {'type': str, 'max_length': 20},
@@ -38,6 +42,10 @@ _BARTER_SCHEMA = {
     'location': {'type': str, 'max_length': 200},
     'notes': {'type': str, 'max_length': 2000},
 }
+_BARTER_CREATE_SCHEMA = dict(
+    _BARTER_SCHEMA,
+    name={'type': str, 'required': True, 'max_length': 200},
+)
 _DOCUMENTS_SCHEMA = {
     'doc_type': {'type': str, 'max_length': 50},
     'description': {'type': str, 'max_length': 500},
@@ -264,7 +272,7 @@ def api_barter_list():
 
 @financial_bp.route('/api/financial/barter', methods=['POST'])
 @require_auth('admin')
-@validate_json(_BARTER_SCHEMA)
+@validate_json(_BARTER_CREATE_SCHEMA)
 def api_barter_create():
     data = request.get_json() or {}
     category = data.get('category', 'other')

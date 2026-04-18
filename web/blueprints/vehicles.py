@@ -1,7 +1,12 @@
 """Vehicle & Bug-Out Vehicle Manager — CRUD, maintenance, fuel log, and readiness calculators."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+
+def _utc_now():
+    """Naive UTC datetime — matches how SQLite CURRENT_TIMESTAMP stores."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 from flask import Blueprint, request, jsonify
 
@@ -9,8 +14,14 @@ from db import db_session, log_activity
 from web.validation import validate_json
 
 # Audit H2 — vehicle data validation.
+#
+# The base schemas are partial-update-friendly (no `required` fields).
+# Separate `_CREATE` schemas layer `required=True` on top for the POST
+# routes. This mirrors the pattern in contacts.py / inventory.py and
+# fixes the bug where PUT used to reject partial updates that omitted
+# `name` / `service_type`.
 _VEHICLE_SCHEMA = {
-    'name': {'type': str, 'required': True, 'max_length': 200},
+    'name': {'type': str, 'max_length': 200},
     'year': {'type': int, 'min': 1900, 'max': 2100},
     'make': {'type': str, 'max_length': 100},
     'model': {'type': str, 'max_length': 100},
@@ -27,8 +38,12 @@ _VEHICLE_SCHEMA = {
     'role': {'type': str, 'max_length': 50},
     'notes': {'type': str, 'max_length': 5000},
 }
+_VEHICLE_CREATE_SCHEMA = dict(
+    _VEHICLE_SCHEMA,
+    name={'type': str, 'required': True, 'max_length': 200},
+)
 _MAINTENANCE_SCHEMA = {
-    'service_type': {'type': str, 'required': True, 'max_length': 100},
+    'service_type': {'type': str, 'max_length': 100},
     'service_date': {'type': str, 'max_length': 50},
     'mileage': {'type': (int, float), 'min': 0, 'max': 10_000_000},
     'next_due_mileage': {'type': (int, float), 'min': 0, 'max': 10_000_000},
@@ -36,6 +51,10 @@ _MAINTENANCE_SCHEMA = {
     'cost': {'type': (int, float), 'min': 0, 'max': 1_000_000},
     'notes': {'type': str, 'max_length': 2000},
 }
+_MAINTENANCE_CREATE_SCHEMA = dict(
+    _MAINTENANCE_SCHEMA,
+    service_type={'type': str, 'required': True, 'max_length': 100},
+)
 from web.sql_safety import safe_columns
 
 _log = logging.getLogger(__name__)
@@ -72,7 +91,7 @@ def api_vehicles_list():
 
 
 @vehicles_bp.route('/api/vehicles', methods=['POST'])
-@validate_json(_VEHICLE_SCHEMA)
+@validate_json(_VEHICLE_CREATE_SCHEMA)
 def api_vehicles_create():
     data = request.get_json() or {}
     name = (data.get('name') or '').strip()
@@ -186,7 +205,7 @@ def api_maintenance_list(vid):
 
 
 @vehicles_bp.route('/api/vehicles/<int:vid>/maintenance', methods=['POST'])
-@validate_json(_MAINTENANCE_SCHEMA)
+@validate_json(_MAINTENANCE_CREATE_SCHEMA)
 def api_maintenance_create(vid):
     data = request.get_json() or {}
     service_type = (data.get('service_type') or '').strip()
@@ -392,10 +411,10 @@ def api_vehicles_fuel_economy(vid):
 
 @vehicles_bp.route('/api/vehicles/dashboard')
 def api_vehicles_dashboard():
-    today = datetime.utcnow().strftime('%Y-%m-%d')
-    thirty_days = (datetime.utcnow() + timedelta(days=30)).strftime('%Y-%m-%d')
-    sixty_days = (datetime.utcnow() + timedelta(days=60)).strftime('%Y-%m-%d')
-    thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).strftime('%Y-%m-%d')
+    today = _utc_now().strftime('%Y-%m-%d')
+    thirty_days = (_utc_now() + timedelta(days=30)).strftime('%Y-%m-%d')
+    sixty_days = (_utc_now() + timedelta(days=60)).strftime('%Y-%m-%d')
+    thirty_days_ago = (_utc_now() - timedelta(days=30)).strftime('%Y-%m-%d')
     with db_session() as db:
         # Total vehicles
         total = db.execute('SELECT COUNT(*) AS cnt FROM vehicles').fetchone()['cnt']
@@ -519,7 +538,7 @@ def api_vehicles_dashboard():
 
 @vehicles_bp.route('/api/vehicles/summary')
 def api_vehicles_summary():
-    today = datetime.utcnow().strftime('%Y-%m-%d')
+    today = _utc_now().strftime('%Y-%m-%d')
     with db_session() as db:
         total = db.execute('SELECT COUNT(*) AS cnt FROM vehicles').fetchone()['cnt']
         bugout = db.execute(

@@ -72,6 +72,17 @@ def api_alert_rules_create():
 @alert_rules_bp.route('/api/alert-rules/<int:rid>', methods=['PUT'])
 def api_alert_rules_update(rid):
     data = request.get_json() or {}
+    # POST validates condition_type and comparison against allowlists; PUT
+    # originally skipped those checks, which let a bad value silently break
+    # evaluate(). Validate here with the same rules POST uses.
+    if 'condition_type' in data and data['condition_type'] not in CONDITION_SOURCES:
+        return jsonify({
+            'error': f'Unknown condition_type. Valid: {", ".join(CONDITION_SOURCES.keys())}'
+        }), 400
+    if 'comparison' in data and data['comparison'] not in COMPARISONS:
+        return jsonify({
+            'error': f'Unknown comparison. Valid: {", ".join(COMPARISONS.keys())}'
+        }), 400
     with db_session() as db:
         existing = db.execute('SELECT id FROM alert_rules WHERE id = ?', (rid,)).fetchone()
         if not existing:
@@ -84,6 +95,8 @@ def api_alert_rules_update(rid):
                 val = data[col]
                 if col == 'action_data' and isinstance(val, dict):
                     val = json.dumps(val)
+                elif col == 'enabled':
+                    val = 1 if val else 0
                 sets.append(f'{col} = ?')
                 vals.append(val)
         if not sets:
@@ -139,12 +152,19 @@ def api_alert_rules_evaluate():
             if is_triggered:
                 # Check cooldown (CURRENT_TIMESTAMP stores UTC)
                 if rule['last_triggered']:
-                    from datetime import datetime, timedelta
+                    from datetime import datetime, timedelta, timezone
                     try:
-                        last = datetime.fromisoformat(rule['last_triggered'])
+                        raw = rule['last_triggered']
+                        # SQLite CURRENT_TIMESTAMP writes 'YYYY-MM-DD HH:MM:SS'
+                        # which fromisoformat() accepts on 3.11+ but not 3.10.
+                        # Swap the space for 'T' to be 3.10-compatible.
+                        if ' ' in raw and 'T' not in raw:
+                            raw = raw.replace(' ', 'T', 1)
+                        last = datetime.fromisoformat(raw)
                         if last.tzinfo is not None:
                             last = last.replace(tzinfo=None)
-                        if datetime.utcnow() - last < timedelta(minutes=rule['cooldown_minutes']):
+                        now_utc = datetime.now(timezone.utc).replace(tzinfo=None)
+                        if now_utc - last < timedelta(minutes=rule['cooldown_minutes']):
                             continue  # Still in cooldown
                     except (ValueError, TypeError):
                         pass

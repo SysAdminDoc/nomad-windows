@@ -3157,3 +3157,1087 @@ input[type="radio"]:checked::after {
     min-height: 36px;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PASS 5 — FLAGSHIP SURFACES: Dedicated instrument polish for the
+   surfaces users spend 80% of their time on.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── A. SITUATION ROOM — operator-grade intel console ─────────────── */
+#tab-situation-room {
+  --sr-card-radius: 10px;
+  --sr-card-pad: 12px;
+}
+
+body.situation-room-active {
+  background: var(--bg);
+}
+
+/* Header — tighter, more confident */
+#tab-situation-room .sr-header {
+  padding: 12px 16px !important;
+  border: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+#tab-situation-room .sr-title {
+  font-size: 18px;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+}
+
+#tab-situation-room .sr-clock {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+}
+
+#tab-situation-room .sr-threat-badge {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  padding: 3px 10px;
+  border-radius: 4px;
+  min-height: 20px;
+  line-height: 1.2;
+}
+
+/* Breaking banner — refined */
+#tab-situation-room .sr-breaking {
+  border-radius: 0;
+  border-top: 1px solid var(--ig-hairline-strong);
+  border-bottom: 1px solid var(--ig-hairline-strong);
+  padding: 6px 0;
+  margin: 0 0 10px;
+}
+
+#tab-situation-room .sr-breaking-badge {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  padding: 2px 10px;
+  border-radius: 3px;
+  background: var(--red);
+  color: var(--text-inverse);
+  box-shadow: none;
+}
+
+/* View navigation — tab pill row, instrument discipline */
+#tab-situation-room .sr-view-nav {
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-2);
+  margin-bottom: 10px;
+}
+
+#tab-situation-room .sr-view-btn,
+#tab-situation-room .sr-desk-btn,
+#tab-situation-room .sr-posture-template-btn {
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+#tab-situation-room .sr-view-btn[aria-pressed="true"],
+#tab-situation-room .sr-view-btn.active {
+  background: var(--ig-surface-1);
+  color: var(--text);
+  border-color: var(--ig-hairline);
+  box-shadow: var(--ig-inset-highlight);
+}
+
+#tab-situation-room .sr-view-btn:hover:not([aria-pressed="true"]) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-solid) 52%, transparent);
+}
+
+/* SR cards — uniform instrument readout */
+#tab-situation-room .sr-card {
+  border: 1px solid var(--ig-hairline);
+  border-radius: var(--sr-card-radius);
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+  padding: 0;
+  overflow: hidden;
+  transition: border-color var(--ig-duration-base) var(--ig-ease);
+}
+
+#tab-situation-room .sr-card:hover {
+  border-color: var(--ig-hairline-strong);
+}
+
+#tab-situation-room .sr-card-header {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+#tab-situation-room .sr-card-title {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+#tab-situation-room .sr-card-body {
+  padding: var(--sr-card-pad);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* SR data freshness badge */
+#tab-situation-room .sr-freshness-badge {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  padding: 1px 6px;
+  border-radius: 3px;
+  min-height: 14px;
+  line-height: 1.4;
+}
+
+#tab-situation-room .sr-freshness-live {
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+  color: var(--green);
+  border: 1px solid color-mix(in srgb, var(--green) 32%, transparent);
+}
+
+#tab-situation-room .sr-freshness-cached {
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+  color: var(--info);
+  border: 1px solid color-mix(in srgb, var(--info) 28%, transparent);
+}
+
+#tab-situation-room .sr-freshness-stale {
+  background: color-mix(in srgb, var(--warning) 12%, transparent);
+  color: var(--warning);
+  border: 1px solid color-mix(in srgb, var(--warning) 28%, transparent);
+}
+
+/* SR news items */
+#tab-situation-room .sr-news-item,
+#tab-situation-room .sr-event-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 44%, transparent);
+  transition: background-color var(--ig-duration-micro) var(--ig-ease);
+}
+
+#tab-situation-room .sr-news-item:hover,
+#tab-situation-room .sr-event-item:hover {
+  background: color-mix(in srgb, var(--accent) 5%, transparent);
+}
+
+#tab-situation-room .sr-news-item:last-child,
+#tab-situation-room .sr-event-item:last-child {
+  border-bottom: none;
+}
+
+#tab-situation-room .sr-news-title {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+
+#tab-situation-room .sr-news-source,
+#tab-situation-room .sr-news-time {
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* SR mini metrics row */
+#tab-situation-room .sr-metric {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+#tab-situation-room .sr-metric-label {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.82;
+}
+
+/* SR market ribbon */
+#tab-situation-room .sr-market-ribbon {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+  padding: 6px 10px;
+  margin-bottom: 10px;
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* SR map container */
+#tab-situation-room .sr-map-container,
+#tab-situation-room #sitroom-map {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 12px;
+  box-shadow: var(--ig-inset-highlight);
+  overflow: hidden;
+}
+
+/* ─── B. AI CHAT — instrument-grade messaging surface ──────────────── */
+.chat-container {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 14px;
+  background: var(--ig-surface-1);
+  overflow: hidden;
+}
+
+.convo-sidebar {
+  border-right: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+  border-radius: 0;
+}
+
+.convo-sidebar-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ig-hairline);
+}
+
+.convo-item {
+  padding: 10px 12px;
+  border-radius: 8px;
+  margin: 2px 6px;
+  transition: all var(--ig-duration-micro) var(--ig-ease);
+  cursor: pointer;
+  position: relative;
+}
+
+.convo-item:hover {
+  background: color-mix(in srgb, var(--surface-solid) 52%, transparent);
+}
+
+.convo-item.active {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  color: var(--text);
+}
+
+.convo-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+
+.convo-item-title {
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.35;
+}
+
+.convo-item-meta {
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Message bubbles — instrument precision */
+.message {
+  padding: 10px 12px;
+  gap: 10px;
+}
+
+.message .avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  background: var(--ig-surface-2);
+  border: 1px solid var(--ig-hairline);
+  color: var(--text);
+}
+
+.message.user .avatar {
+  background: color-mix(in srgb, var(--accent) 20%, var(--ig-surface-2));
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+
+.message.assistant .avatar {
+  background: color-mix(in srgb, var(--green) 16%, var(--ig-surface-2));
+  color: var(--green);
+  border-color: color-mix(in srgb, var(--green) 28%, var(--border));
+}
+
+.message .content {
+  font-size: 13px;
+  line-height: 1.62;
+  padding: 10px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+}
+
+.message.user .content {
+  background: color-mix(in srgb, var(--accent) 6%, var(--ig-surface-1));
+  border-color: color-mix(in srgb, var(--accent) 18%, var(--border));
+  border-bottom-right-radius: 4px;
+}
+
+.message.assistant .content {
+  border-bottom-left-radius: 4px;
+}
+
+.message .content code {
+  font-family: var(--font-data, monospace);
+  font-size: 11.5px;
+  padding: 1px 6px;
+  background: color-mix(in srgb, var(--surface2) 72%, transparent);
+  border: 1px solid var(--ig-hairline);
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+.message .content pre {
+  font-family: var(--font-data, monospace);
+  font-size: 11.5px;
+  padding: 10px 12px;
+  background: var(--ig-surface-2);
+  border: 1px solid var(--ig-hairline);
+  border-radius: 8px;
+  overflow-x: auto;
+  line-height: 1.55;
+}
+
+.message .content pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--text);
+}
+
+/* Chat input */
+.chat-input-area {
+  border-top: 1px solid var(--ig-hairline);
+  padding: 10px 12px;
+  background: var(--ig-surface-1);
+}
+
+.chat-input-area textarea {
+  min-height: 40px;
+  max-height: 160px;
+  font-size: 13px;
+  line-height: 1.55;
+  border-radius: 10px;
+}
+
+/* RAG citations */
+.rag-citation {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+  border-radius: 999px;
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: all var(--ig-duration-micro) var(--ig-ease);
+}
+
+.rag-citation:hover {
+  border-color: var(--ig-hairline-strong);
+  background: color-mix(in srgb, var(--accent) 8%, var(--ig-surface-2));
+  color: var(--accent);
+}
+
+/* ─── C. PREPAREDNESS DATA ROWS — the daily surface ────────────────── */
+/* All 25 sub-tabs share row patterns — unify them */
+.inventory-row,
+.contact-card,
+.patient-card,
+.freq-row,
+.checklist-item,
+.equipment-row,
+.fuel-row,
+.ammo-row,
+.incident-row,
+.task-item,
+.skill-row,
+.livestock-row,
+.seed-card,
+.preservation-row,
+.waypoint-card,
+.note-item,
+.vault-entry,
+.community-resource,
+.radiation-row,
+.family-row {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  padding: 10px 12px;
+  box-shadow: none;
+}
+
+.inventory-row:hover,
+.contact-card:hover,
+.patient-card:hover,
+.freq-row:hover,
+.checklist-item:hover,
+.equipment-row:hover,
+.fuel-row:hover,
+.ammo-row:hover,
+.incident-row:hover,
+.task-item:hover,
+.skill-row:hover,
+.livestock-row:hover,
+.seed-card:hover,
+.preservation-row:hover,
+.waypoint-card:hover,
+.vault-entry:hover,
+.community-resource:hover,
+.radiation-row:hover,
+.family-row:hover {
+  border-color: var(--ig-hairline-strong);
+  background: color-mix(in srgb, var(--accent) 3%, var(--ig-surface-1));
+}
+
+/* Left-border tone indicators (alert/risk/watch/low-stock) */
+.inventory-row-alert,
+.inventory-row-risk {
+  border-left: 2px solid var(--red);
+  padding-left: 10px;
+}
+
+.inventory-row-watch {
+  border-left: 2px solid var(--warning);
+  padding-left: 10px;
+}
+
+.inventory-row-low {
+  border-left: 2px solid var(--orange);
+  padding-left: 10px;
+}
+
+/* Row meta — data display */
+.inventory-row-meta,
+.equipment-meta,
+.contact-meta,
+.task-meta,
+.waypoint-meta {
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Row title */
+.inventory-row-name,
+.contact-name,
+.patient-name,
+.checklist-name,
+.equipment-name,
+.task-title,
+.waypoint-name,
+.freq-name {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+/* Category navigation — instrument toggle strip */
+.prep-category-btn {
+  min-height: 36px;
+  padding: 6px 14px;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  color: var(--text-dim);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  box-shadow: var(--ig-inset-highlight);
+  position: relative;
+  transition: all var(--ig-duration-base) var(--ig-ease);
+}
+
+.prep-category-btn:hover {
+  border-color: var(--ig-hairline-strong);
+  color: var(--text);
+}
+
+.prep-category-btn.active {
+  background: var(--ig-surface-1);
+  border-color: var(--ig-hairline-active);
+  color: var(--accent);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 0 0 1px var(--accent);
+}
+
+.prep-category-btn.active::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 1px;
+}
+
+/* Prep sub-tab row — refined */
+.prep-subtabs,
+.prep-subtab-row {
+  gap: 4px;
+  padding: 4px;
+  background: var(--ig-surface-2);
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+}
+
+.prep-subtab {
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.prep-subtab:hover:not(.active) {
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface-solid) 52%, transparent);
+}
+
+.prep-subtab.active {
+  background: var(--ig-surface-1);
+  color: var(--accent);
+  border-color: var(--ig-hairline);
+  box-shadow: var(--ig-inset-highlight);
+}
+
+/* ─── D. HOME WIDGET GRID — premium dashboard ──────────────────────── */
+.live-widget {
+  padding: 12px 14px;
+  min-height: 92px;
+  cursor: pointer;
+}
+
+.live-widget-label {
+  margin-bottom: 6px;
+}
+
+.live-widget-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  margin-bottom: 2px;
+}
+
+.live-widget-detail {
+  font-size: 10.5px;
+  letter-spacing: 0.01em;
+}
+
+.live-widget-spark-canvas {
+  margin-top: 6px;
+  opacity: 0.72;
+  transition: opacity var(--ig-duration-base) var(--ig-ease);
+}
+
+.live-widget:hover .live-widget-spark-canvas {
+  opacity: 1;
+}
+
+/* Service card refinement */
+.service-card,
+.svc-card {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 12px;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+  padding: 14px 16px;
+  transition: all var(--ig-duration-base) var(--ig-ease);
+}
+
+.service-card:hover,
+.svc-card:hover {
+  border-color: var(--ig-hairline-strong);
+  transform: translateY(-1px);
+}
+
+.svc-running {
+  border-left: 2px solid var(--green);
+  padding-left: 14px;
+}
+
+.svc-stopped {
+  border-left: 2px solid color-mix(in srgb, var(--text-muted) 42%, transparent);
+  padding-left: 14px;
+}
+
+.svc-not-installed {
+  border: 1px dashed var(--ig-hairline);
+  opacity: 0.82;
+}
+
+.svc-not-installed:hover {
+  opacity: 1;
+  border-style: dashed;
+}
+
+.service-name,
+.svc-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.service-desc,
+.svc-desc {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: 2px;
+}
+
+/* Needs coverage card */
+.need-card {
+  padding: 12px 14px;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+  position: relative;
+  overflow: hidden;
+  transition: all var(--ig-duration-base) var(--ig-ease);
+  cursor: pointer;
+}
+
+.need-card:hover {
+  border-color: var(--ig-hairline-strong);
+  transform: translateY(-1px);
+}
+
+.need-card .need-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.need-card .need-pct {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.need-progress {
+  height: 3px;
+  border-radius: 0;
+  background: transparent;
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+.need-progress .fill {
+  height: 100%;
+  background: var(--accent);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 42%, transparent);
+  transition: width 0.5s var(--ig-ease);
+}
+
+/* Activity feed */
+.activity-item {
+  padding: 8px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 44%, transparent);
+  transition: background-color var(--ig-duration-micro) var(--ig-ease);
+}
+
+.activity-item:hover {
+  background: color-mix(in srgb, var(--surface2) 36%, transparent);
+}
+
+.activity-item:last-child {
+  border-bottom: none;
+}
+
+.activity-time {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+.activity-desc {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ─── E. NOTES WORKSPACE — writing desk refinement ─────────────────── */
+.notes-layout {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+}
+
+.notes-sidebar {
+  border-radius: 0;
+  border-right: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+  box-shadow: none;
+}
+
+.notes-sidebar-header {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--ig-hairline);
+}
+
+.notes-editor {
+  border-radius: 0;
+  border: none;
+  background: var(--ig-surface-1);
+  box-shadow: none;
+}
+
+.notes-editor-header {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--ig-hairline);
+  gap: 8px;
+}
+
+#note-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 4px 8px;
+}
+
+#note-title:focus {
+  border-color: var(--ig-hairline) !important;
+  background: var(--ig-surface-2) !important;
+}
+
+#note-tags {
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 0.01em;
+}
+
+#note-content {
+  font-size: 13px;
+  line-height: 1.72;
+  padding: 14px 18px;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  resize: none;
+}
+
+/* ─── F. MAPS UI — instrument controls ─────────────────────────────── */
+.maplibregl-ctrl-group,
+.leaflet-bar {
+  border: 1px solid var(--ig-hairline) !important;
+  border-radius: 8px !important;
+  background: var(--ig-surface-1) !important;
+  box-shadow: var(--ig-inset-highlight) !important;
+  overflow: hidden;
+}
+
+.maplibregl-ctrl-group button,
+.leaflet-bar a {
+  background: transparent !important;
+  color: var(--text) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--ig-hairline) !important;
+  transition: background-color var(--ig-duration-micro) var(--ig-ease) !important;
+}
+
+.maplibregl-ctrl-group button:last-child,
+.leaflet-bar a:last-child {
+  border-bottom: none !important;
+}
+
+.maplibregl-ctrl-group button:hover,
+.leaflet-bar a:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent) !important;
+  color: var(--accent) !important;
+}
+
+.maplibregl-popup-content,
+.leaflet-popup-content-wrapper {
+  border: 1px solid var(--ig-hairline) !important;
+  background: var(--ig-surface-1) !important;
+  border-radius: 10px !important;
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 12px 32px rgba(0,0,0,0.22) !important;
+  padding: 10px 12px !important;
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+}
+
+/* ─── G. SETTINGS — instrument control panel ───────────────────────── */
+.toggle-switch {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--ig-surface-2);
+  border: 1px solid var(--ig-hairline);
+  transition: all var(--ig-duration-base) var(--ig-ease);
+  cursor: pointer;
+  display: inline-block;
+}
+
+.toggle-switch .toggle-slider,
+.toggle-switch::before {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--text-muted);
+  transition: all var(--ig-duration-base) var(--ig-ease);
+}
+
+.toggle-switch.active,
+.toggle-switch[data-on="true"],
+input[type="checkbox"]:checked + .toggle-switch {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.toggle-switch.active::before,
+.toggle-switch[data-on="true"]::before {
+  transform: translateX(16px);
+  background: var(--text-inverse);
+}
+
+/* Setting row */
+.setting-row {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 42%, transparent);
+  padding: 10px 0;
+}
+
+.setting-row:last-child {
+  border-bottom: none;
+}
+
+.setting-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.005em;
+}
+
+.setting-label span,
+.setting-helper {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* ─── H. WIZARD / ONBOARDING ───────────────────────────────────────── */
+.wizard-card,
+.onboarding-panel {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 14px;
+  background: var(--ig-surface-1);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 16px 48px rgba(0,0,0,0.16);
+  padding: 20px 22px;
+}
+
+.wizard-step-indicator {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+}
+
+.wizard-step-dot {
+  width: 24px;
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--surface2) 72%, transparent);
+  transition: background-color var(--ig-duration-base) var(--ig-ease);
+}
+
+.wizard-step-dot.active {
+  background: var(--accent);
+}
+
+.wizard-step-dot.complete {
+  background: var(--green);
+}
+
+/* ─── I. ALERT STACK — floating toast column ───────────────────────── */
+.sr-alert-stack,
+.toast-container {
+  padding: 12px;
+  gap: 8px;
+}
+
+.sr-alert-card {
+  border: 1px solid var(--ig-hairline-strong);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 8px 24px rgba(0,0,0,0.18);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.sr-alert-card.severity-critical {
+  border-color: color-mix(in srgb, var(--red) 44%, var(--border));
+  background: color-mix(in srgb, var(--red) 5%, var(--ig-surface-1));
+}
+
+.sr-alert-card.severity-warning {
+  border-color: color-mix(in srgb, var(--warning) 44%, var(--border));
+  background: color-mix(in srgb, var(--warning) 5%, var(--ig-surface-1));
+}
+
+.sr-alert-card.severity-info {
+  border-color: color-mix(in srgb, var(--info) 44%, var(--border));
+  background: color-mix(in srgb, var(--info) 5%, var(--ig-surface-1));
+}
+
+/* ─── J. MEDIA LIBRARY GRID — cleaner media cards ──────────────────── */
+.media-card,
+.video-card,
+.audio-card,
+.book-card,
+.channel-card {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 12px;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+  overflow: hidden;
+  transition: all var(--ig-duration-base) var(--ig-ease);
+}
+
+.media-card:hover,
+.video-card:hover,
+.audio-card:hover,
+.book-card:hover,
+.channel-card:hover {
+  border-color: var(--ig-hairline-strong);
+  transform: translateY(-1px);
+}
+
+.media-card-title,
+.video-title,
+.audio-title,
+.book-title,
+.channel-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.media-card-meta,
+.video-meta,
+.audio-meta,
+.book-meta {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* ─── K. E-INK PRESERVATION — Pass 5 surfaces ──────────────────────── */
+[data-theme="eink"] #tab-situation-room .sr-card,
+[data-theme="eink"] .service-card,
+[data-theme="eink"] .live-widget,
+[data-theme="eink"] .need-card,
+[data-theme="eink"] .message .content,
+[data-theme="eink"] .inventory-row,
+[data-theme="eink"] .contact-card,
+[data-theme="eink"] .prep-category-btn,
+[data-theme="eink"] .toggle-switch {
+  box-shadow: none !important;
+  background: #fff !important;
+  border: 1px solid #000 !important;
+  border-radius: 2px !important;
+}
+
+[data-theme="eink"] .prep-category-btn.active::after,
+[data-theme="eink"] .tab.active::before,
+[data-theme="eink"] .convo-item.active::before,
+[data-theme="eink"] .note-item.active::before {
+  background: #000 !important;
+}
+
+[data-theme="eink"] .live-widget-value,
+[data-theme="eink"] .sr-metric,
+[data-theme="eink"] .need-pct {
+  color: #000 !important;
+}

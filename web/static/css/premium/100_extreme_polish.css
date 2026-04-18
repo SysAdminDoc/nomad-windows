@@ -4241,3 +4241,1151 @@ input[type="checkbox"]:checked + .toggle-switch {
 [data-theme="eink"] .need-pct {
   color: #000 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PASS 6 — AUXILIARY SURFACES & MICRO-POLISH
+   Command palette, charts, customize panel, tools, library, utility
+   FABs, mobile nav, skeleton loaders, form validation states.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. COMMAND PALETTE (Ctrl+K) — power-user entry point ─────────── */
+.command-palette-overlay {
+  backdrop-filter: blur(14px) saturate(0.85);
+  -webkit-backdrop-filter: blur(14px) saturate(0.85);
+  background: color-mix(in srgb, var(--overlay-scrim-strong) 85%, transparent);
+}
+
+.command-palette,
+.command-palette-card {
+  border: 1px solid var(--ig-hairline-strong);
+  border-radius: 14px;
+  background: var(--ig-surface-1);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 32px 72px rgba(0, 0, 0, 0.36);
+  width: min(620px, 92vw);
+  max-height: min(72vh, 560px);
+  overflow: hidden;
+}
+
+.command-palette-search {
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid var(--ig-hairline);
+}
+
+.command-palette-search input {
+  min-height: 36px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0;
+  letter-spacing: -0.005em;
+}
+
+.command-palette-search input:focus {
+  outline: none !important;
+}
+
+.command-palette-results {
+  overflow-y: auto;
+  padding: 6px;
+  max-height: 480px;
+}
+
+.command-palette-item,
+.command-palette-result {
+  padding: 9px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12.5px;
+  line-height: 1.4;
+  transition: background-color var(--ig-duration-micro) var(--ig-ease);
+  position: relative;
+}
+
+.command-palette-item:hover,
+.command-palette-result:hover,
+.command-palette-item.active,
+.command-palette-result.selected {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.command-palette-item.active::before,
+.command-palette-result.selected::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 10px;
+  bottom: 10px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+
+.command-palette-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 5px;
+  border: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+  border-radius: 4px;
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-dim);
+  box-shadow: inset 0 -1px 0 var(--ig-hairline);
+}
+
+.command-palette-section-label {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  opacity: 0.82;
+  padding: 10px 14px 4px;
+}
+
+/* ─── 2. KEYBOARD SHORTCUTS DIALOG (?) ─────────────────────────────── */
+.shortcuts-overlay,
+.shortcuts-dialog {
+  border: 1px solid var(--ig-hairline-strong);
+  border-radius: 14px;
+  background: var(--ig-surface-1);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 32px 72px rgba(0, 0, 0, 0.34);
+}
+
+.shortcuts-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 36%, transparent);
+  font-size: 12px;
+}
+
+.shortcuts-row:last-child {
+  border-bottom: none;
+}
+
+.shortcuts-row kbd,
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 20px;
+  padding: 0 6px;
+  border: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+  border-radius: 4px;
+  font-family: var(--font-data, monospace);
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: 0.02em;
+  box-shadow:
+    inset 0 -1px 0 var(--ig-hairline),
+    0 1px 0 rgba(0,0,0,0.04);
+}
+
+/* ─── 3. CUSTOMIZE PANEL (right-side slide-out) ────────────────────── */
+.customize-overlay {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: color-mix(in srgb, var(--overlay-scrim) 60%, transparent);
+}
+
+.customize-panel {
+  border-left: 1px solid var(--ig-hairline-strong);
+  background: var(--ig-surface-1);
+  box-shadow: -24px 0 64px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(24px) saturate(1.06);
+  -webkit-backdrop-filter: blur(24px) saturate(1.06);
+}
+
+.customize-panel-header {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+}
+
+.customize-panel-title {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.customize-section {
+  padding: 14px 18px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 36%, transparent);
+}
+
+.customize-section-title {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.customize-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  font-size: 12.5px;
+}
+
+/* Theme grid selector */
+.theme-grid,
+.customize-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px;
+}
+
+.theme-card,
+.customize-theme-card {
+  aspect-ratio: 1;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 8px;
+  cursor: pointer;
+  position: relative;
+  transition: all var(--ig-duration-base) var(--ig-ease);
+  overflow: hidden;
+}
+
+.theme-card:hover,
+.customize-theme-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--ig-hairline-strong);
+}
+
+.theme-card.active,
+.customize-theme-card.active {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.theme-card.active::after,
+.customize-theme-card.active::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--ig-surface-1);
+}
+
+/* Sortable list */
+.sortable-item {
+  padding: 8px 10px;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 8px;
+  background: var(--ig-surface-1);
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  cursor: grab;
+  transition: all var(--ig-duration-micro) var(--ig-ease);
+}
+
+.sortable-item:hover {
+  border-color: var(--ig-hairline-strong);
+  background: color-mix(in srgb, var(--surface2) 52%, transparent);
+}
+
+.sortable-item.dragging,
+.sortable-item:active {
+  cursor: grabbing;
+  opacity: 0.72;
+}
+
+/* ─── 4. CHARTS & DATA VISUALIZATION ───────────────────────────────── */
+.chart-container,
+.nomad-chart-wrap {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  padding: 12px 14px;
+  box-shadow: var(--ig-inset-highlight);
+}
+
+.chart-title {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.chart-value {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  margin-bottom: 2px;
+}
+
+.chart-delta {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  letter-spacing: 0.01em;
+}
+
+.chart-delta.up {
+  color: var(--green);
+}
+
+.chart-delta.down {
+  color: var(--red);
+}
+
+.sparkline-canvas {
+  width: 100%;
+  height: 40px;
+  display: block;
+  margin-top: 6px;
+  opacity: 0.78;
+  transition: opacity var(--ig-duration-base) var(--ig-ease);
+}
+
+.chart-container:hover .sparkline-canvas {
+  opacity: 1;
+}
+
+/* Chart legend */
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 10px;
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+.chart-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.chart-legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+/* ─── 5. TOOLS TAB — calculator & reference cards ──────────────────── */
+.tool-card,
+.calc-card,
+.cc-card,
+.ref-card {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  padding: 14px;
+  box-shadow: var(--ig-inset-highlight);
+  transition: all var(--ig-duration-base) var(--ig-ease);
+}
+
+.tool-card:hover,
+.calc-card:hover,
+.cc-card:hover,
+.ref-card:hover {
+  border-color: var(--ig-hairline-strong);
+  transform: translateY(-1px);
+}
+
+.tool-card-title,
+.calc-card-title,
+.cc-card-title,
+.cc-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  margin-bottom: 4px;
+}
+
+.tool-card-desc,
+.calc-card-desc,
+.cc-desc {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* Calculator output */
+.cc-total,
+.cc-val,
+.calc-result,
+.calc-output {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text);
+  padding: 8px 12px;
+  background: var(--ig-surface-2);
+  border: 1px solid var(--ig-hairline);
+  border-radius: 8px;
+  display: inline-block;
+}
+
+/* DTMF tone grid */
+.dtmf-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  max-width: 280px;
+}
+
+.dtmf-btn {
+  aspect-ratio: 1;
+  border: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-1);
+  border-radius: 8px;
+  font-family: var(--font-data, monospace);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  box-shadow: var(--ig-inset-highlight);
+  transition: all var(--ig-duration-micro) var(--ig-ease);
+}
+
+.dtmf-btn:hover {
+  border-color: var(--ig-hairline-strong);
+  background: color-mix(in srgb, var(--accent) 6%, var(--ig-surface-1));
+  color: var(--accent);
+}
+
+.dtmf-btn:active {
+  transform: scale(0.96);
+  background: color-mix(in srgb, var(--accent) 14%, var(--ig-surface-1));
+}
+
+/* Compass */
+.compass-container,
+.compass-rose {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 999px;
+  background: var(--ig-surface-1);
+  box-shadow:
+    var(--ig-inset-highlight),
+    inset 0 0 24px color-mix(in srgb, var(--accent) 6%, transparent);
+}
+
+/* ─── 6. LIBRARY / KB — document list & tiers ──────────────────────── */
+.library-doc-row,
+.kb-doc-row,
+.document-row {
+  padding: 10px 12px;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  transition: all var(--ig-duration-base) var(--ig-ease);
+  box-shadow: none;
+}
+
+.library-doc-row:hover,
+.kb-doc-row:hover,
+.document-row:hover {
+  border-color: var(--ig-hairline-strong);
+  background: color-mix(in srgb, var(--accent) 3%, var(--ig-surface-1));
+}
+
+.library-doc-title,
+.kb-doc-title,
+.document-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.library-doc-meta,
+.kb-doc-meta,
+.document-meta {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  letter-spacing: 0.01em;
+}
+
+/* Wikipedia tier cards */
+.wiki-tier-card,
+.tier-card {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 12px;
+  background: var(--ig-surface-1);
+  padding: 14px 16px;
+  position: relative;
+  transition: all var(--ig-duration-base) var(--ig-ease);
+  box-shadow: var(--ig-inset-highlight);
+}
+
+.wiki-tier-card:hover,
+.tier-card:hover {
+  border-color: var(--ig-hairline-strong);
+  transform: translateY(-1px);
+}
+
+.wiki-tier-card.installed,
+.tier-card.installed {
+  border-color: color-mix(in srgb, var(--green) 34%, var(--border));
+  background: color-mix(in srgb, var(--green) 4%, var(--ig-surface-1));
+}
+
+.wiki-tier-card.installed::before,
+.tier-card.installed::before {
+  content: "✓";
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 999px;
+  background: var(--green);
+  color: var(--text-inverse);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.tier-name {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.tier-size {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--accent);
+  letter-spacing: 0.01em;
+}
+
+.tier-desc {
+  font-size: 11.5px;
+  color: var(--text-dim);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+
+/* ─── 7. UTILITY FABS (LAN Chat, Quick Actions, Timers) ────────────── */
+.fab,
+.lan-chat-fab,
+.quick-actions-fab,
+.timers-fab,
+.shell-alert-btn {
+  border: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-1);
+  border-radius: 999px;
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 6px 20px rgba(0, 0, 0, 0.14);
+  transition: all var(--ig-duration-base) var(--ig-ease);
+}
+
+.fab:hover,
+.lan-chat-fab:hover,
+.quick-actions-fab:hover,
+.timers-fab:hover {
+  border-color: var(--ig-hairline-strong);
+  background: color-mix(in srgb, var(--accent) 8%, var(--ig-surface-1));
+  transform: translateY(-1px);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
+/* Utility panels (slide-out FAB contents) */
+.utility-panel,
+.lan-chat-panel,
+.quick-actions-menu,
+.timer-panel,
+.utility-actions-menu {
+  border: 1px solid var(--ig-hairline-strong);
+  border-radius: 14px;
+  background: var(--ig-surface-1);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 24px 60px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(20px) saturate(1.08);
+  -webkit-backdrop-filter: blur(20px) saturate(1.08);
+}
+
+.utility-panel-header,
+.lan-chat-header,
+.timer-panel-header {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+}
+
+.utility-panel-title,
+.lan-chat-title,
+.timer-panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* LAN chat messages */
+.lan-msg {
+  padding: 8px 12px;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  margin-bottom: 4px;
+  background: var(--ig-surface-1);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.lan-msg.self {
+  background: color-mix(in srgb, var(--accent) 8%, var(--ig-surface-1));
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.lan-sender {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  display: block;
+  margin-bottom: 2px;
+}
+
+/* Timer items */
+.timer-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  margin-bottom: 6px;
+}
+
+.timer-name {
+  font-size: 12px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.timer-remaining {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--accent);
+}
+
+.timer-item.expired .timer-remaining {
+  color: var(--red);
+}
+
+/* ─── 8. MOBILE BOTTOM NAV (< 768px) ───────────────────────────────── */
+@media (max-width: 768px) {
+  #mobile-tab-bar,
+  #mobile-bottom-nav {
+    border-top: 1px solid var(--ig-hairline-strong);
+    background: var(--ig-surface-1);
+    backdrop-filter: blur(24px) saturate(1.08);
+    -webkit-backdrop-filter: blur(24px) saturate(1.08);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.14);
+  }
+
+  .mobile-tab,
+  .mobile-nav-item {
+    min-height: 48px;
+    padding: 6px 10px;
+    border-radius: 10px;
+    color: var(--text-dim);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    position: relative;
+    transition: all var(--ig-duration-micro) var(--ig-ease);
+  }
+
+  .mobile-tab.active,
+  .mobile-nav-item.active {
+    color: var(--accent);
+  }
+
+  .mobile-tab.active::before,
+  .mobile-nav-item.active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 20px;
+    height: 2px;
+    border-radius: 0 0 2px 2px;
+    background: var(--accent);
+    transform: translateX(-50%);
+  }
+
+  .mobile-tab-icon,
+  .mobile-nav-icon {
+    display: block;
+    margin-bottom: 2px;
+    transition: transform var(--ig-duration-base) var(--ig-ease);
+  }
+
+  .mobile-tab:active .mobile-tab-icon {
+    transform: scale(0.92);
+  }
+}
+
+/* ─── 9. SKELETON LOADERS — unified shimmer ────────────────────────── */
+.skeleton,
+.skeleton-bar,
+.skeleton-text,
+.skeleton-card,
+.bento-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--ig-surface-2) 0%,
+    color-mix(in srgb, var(--surface-solid) 86%, var(--accent)) 50%,
+    var(--ig-surface-2) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: 6px;
+  animation: ig-skeleton-shimmer 1.6s var(--ig-ease) infinite;
+  border: 1px solid var(--ig-hairline);
+  color: transparent;
+  pointer-events: none;
+  user-select: none;
+}
+
+@keyframes ig-skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.skeleton-text {
+  height: 12px;
+  margin: 4px 0;
+}
+
+.skeleton-bar {
+  height: 20px;
+  margin: 6px 0;
+}
+
+.skeleton-card {
+  height: 120px;
+  padding: 14px;
+  display: grid;
+  gap: 8px;
+}
+
+/* ─── 10. DOWNLOAD QUEUE BANNER ────────────────────────────────────── */
+.download-banner,
+#download-queue-banner {
+  border: 1px solid var(--ig-hairline-strong);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+  padding: 10px 14px;
+  margin-bottom: 10px;
+}
+
+.download-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 36%, transparent);
+}
+
+.download-item:last-child {
+  border-bottom: none;
+}
+
+.download-name {
+  font-size: 12px;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.download-progress {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  min-width: 48px;
+  text-align: right;
+}
+
+.download-speed {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: var(--text-muted);
+  min-width: 72px;
+  text-align: right;
+}
+
+/* ─── 11. BENCHMARK — system health gauges ─────────────────────────── */
+.bench-card,
+.benchmark-gauge {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 12px;
+  background: var(--ig-surface-1);
+  padding: 16px;
+  box-shadow: var(--ig-inset-highlight);
+  transition: all var(--ig-duration-base) var(--ig-ease);
+}
+
+.bench-card:hover,
+.benchmark-gauge:hover {
+  border-color: var(--ig-hairline-strong);
+}
+
+.bench-grade,
+.bench-score .score-val {
+  font-family: var(--font-data, monospace);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.bench-grade.grade-a { color: var(--green); }
+.bench-grade.grade-b { color: color-mix(in srgb, var(--green) 70%, var(--yellow)); }
+.bench-grade.grade-c { color: var(--warning); }
+.bench-grade.grade-d { color: var(--orange); }
+.bench-grade.grade-f { color: var(--red); }
+
+.bench-label {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  opacity: 0.82;
+}
+
+.bench-recommendation {
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent) 5%, var(--ig-surface-1));
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-top: 12px;
+}
+
+/* ─── 12. FORM VALIDATION STATES ───────────────────────────────────── */
+.input-error,
+input.error,
+textarea.error,
+select.error,
+input[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--red) !important;
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 0 0 3px color-mix(in srgb, var(--red) 16%, transparent) !important;
+}
+
+.input-success,
+input.success,
+input[aria-valid="true"] {
+  border-color: var(--green) !important;
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 0 0 3px color-mix(in srgb, var(--green) 14%, transparent) !important;
+}
+
+.input-error-message,
+.form-error {
+  font-size: 11px;
+  color: var(--red);
+  margin-top: 4px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.input-error-message::before,
+.form-error::before {
+  content: "⚠";
+  font-size: 12px;
+}
+
+.input-success-message,
+.form-success {
+  font-size: 11px;
+  color: var(--green);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+.input-helper,
+.form-helper {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  line-height: 1.4;
+}
+
+/* ─── 13. TAG & CHIP SYSTEM ────────────────────────────────────────── */
+.tag,
+.chip,
+.note-tag,
+.contact-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  min-height: 20px;
+  border: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+  border-radius: 999px;
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
+  cursor: default;
+  transition: all var(--ig-duration-micro) var(--ig-ease);
+}
+
+.tag:hover,
+.chip:hover,
+.note-tag:hover {
+  border-color: var(--ig-hairline-strong);
+  color: var(--text);
+}
+
+.tag.active,
+.chip.active {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 32%, var(--border));
+  color: var(--accent);
+}
+
+.tag .tag-remove,
+.chip .chip-remove {
+  margin-left: 2px;
+  opacity: 0.6;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
+.tag:hover .tag-remove,
+.chip:hover .chip-remove {
+  opacity: 1;
+}
+
+/* ─── 14. DROPDOWN MENU ────────────────────────────────────────────── */
+.dropdown,
+.dropdown-menu,
+.context-menu {
+  border: 1px solid var(--ig-hairline-strong);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 12px 32px rgba(0, 0, 0, 0.2);
+  padding: 4px;
+  min-width: 180px;
+  backdrop-filter: blur(16px) saturate(1.06);
+  -webkit-backdrop-filter: blur(16px) saturate(1.06);
+}
+
+.dropdown-item,
+.dropdown-menu-item,
+.context-menu-item {
+  padding: 7px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color var(--ig-duration-micro) var(--ig-ease);
+}
+
+.dropdown-item:hover,
+.dropdown-menu-item:hover,
+.context-menu-item:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text);
+}
+
+.dropdown-item.danger,
+.dropdown-menu-item.danger {
+  color: var(--red);
+}
+
+.dropdown-item.danger:hover {
+  background: color-mix(in srgb, var(--red) 10%, transparent);
+}
+
+.dropdown-divider {
+  height: 1px;
+  margin: 4px 2px;
+  background: var(--ig-hairline);
+}
+
+/* ─── 15. TOOLTIP ──────────────────────────────────────────────────── */
+[data-tooltip]:hover::after,
+.tooltip {
+  content: attr(data-tooltip);
+  position: absolute;
+  padding: 5px 8px;
+  border: 1px solid var(--ig-hairline-strong);
+  background: var(--ig-surface-1);
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text);
+  white-space: nowrap;
+  z-index: var(--z-tooltip, 9500);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 8px 20px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+}
+
+/* ─── 16. MICRO-INTERACTION: press feedback ────────────────────────── */
+.pressable:active,
+.btn:active,
+.tab:active,
+.prep-subtab:active,
+.prep-category-btn:active,
+.dtmf-btn:active,
+.mode-btn:active,
+.theme-btn:active {
+  transform: scale(0.97);
+}
+
+/* ─── 17. LINK STYLING — subtle, purposeful ────────────────────────── */
+a:not(.btn):not(.tab):not(.mobile-tab):not(.sidebar-sub-item):not([class*="-link"]) {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--ig-duration-micro) var(--ig-ease);
+}
+
+a:not(.btn):not(.tab):not(.mobile-tab):not(.sidebar-sub-item):hover {
+  border-bottom-color: var(--accent);
+  text-decoration: none;
+}
+
+/* ─── 18. CODE INLINE (body text, not chat) ────────────────────────── */
+:not(.message) > code,
+:not(.message) code:not(pre code) {
+  font-family: var(--font-data, monospace);
+  font-size: 0.92em;
+  padding: 1px 6px;
+  background: var(--ig-surface-2);
+  border: 1px solid var(--ig-hairline);
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+/* ─── 19. BLOCKQUOTE ───────────────────────────────────────────────── */
+blockquote {
+  margin: 8px 0;
+  padding: 8px 14px;
+  border-left: 2px solid var(--accent);
+  background: color-mix(in srgb, var(--surface2) 42%, transparent);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-dim);
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* ─── 20. E-INK PRESERVATION — Pass 6 surfaces ─────────────────────── */
+[data-theme="eink"] .command-palette,
+[data-theme="eink"] .shortcuts-dialog,
+[data-theme="eink"] .customize-panel,
+[data-theme="eink"] .chart-container,
+[data-theme="eink"] .tool-card,
+[data-theme="eink"] .calc-card,
+[data-theme="eink"] .wiki-tier-card,
+[data-theme="eink"] .tier-card,
+[data-theme="eink"] .utility-panel,
+[data-theme="eink"] .dropdown,
+[data-theme="eink"] .tag,
+[data-theme="eink"] .chip,
+[data-theme="eink"] .timer-item,
+[data-theme="eink"] .lan-msg,
+[data-theme="eink"] .bench-card {
+  background: #fff !important;
+  border: 1px solid #000 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+[data-theme="eink"] .skeleton,
+[data-theme="eink"] .skeleton-bar,
+[data-theme="eink"] .skeleton-text,
+[data-theme="eink"] .skeleton-card {
+  animation: none !important;
+  background: #f0f0f0 !important;
+  border: 1px solid #999 !important;
+}
+
+[data-theme="eink"] .mobile-tab.active::before,
+[data-theme="eink"] .command-palette-item.active::before {
+  background: #000 !important;
+}

@@ -5397,6 +5397,105 @@ def _init_db_inner(conn):
     _create_indexes(conn)
     _create_fts5_tables(conn)
     _seed_upc_database(conn)
+    _create_rag_scope_table(conn)
+    _seed_rag_scope(conn)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# v7.33.0 — Phase A3: RAG scope manager
+#
+# Before A3, build_situation_context() in web/blueprints/ai.py hard-coded 10
+# tables. Financial, vehicles, loadouts, water, garden, tasks, checklists,
+# waypoints and ~80 others were invisible to the LLM. A3 makes the scope
+# data-driven: every table the LLM can see lives in rag_scope, with per-table
+# enabled/weight/max_rows configurable from Settings.
+#
+# The 10 pre-existing tables are seeded as builtins with their previous
+# behaviour preserved (enabled=1, weight mirrors the old emission order).
+# Additional high-value tables are seeded disabled so users opt them in.
+# ═══════════════════════════════════════════════════════════════════════════
+
+# (table_name, label, enabled, weight, max_rows, formatter, columns_json)
+# weight is the emission order — higher ranks first in the RAG payload.
+_RAG_SCOPE_DEFAULTS = [
+    # Pre-A3 builtins — order matches the original build_situation_context()
+    ('inventory',       'INVENTORY',             1, 100, 10, 'builtin', None),
+    ('contacts',        'TEAM CONTACTS',         1,  95, 10, 'builtin', None),
+    ('patients',        'PATIENTS',              1,  90, 10, 'builtin', None),
+    ('fuel_storage',    'FUEL',                  1,  85, 10, 'builtin', None),
+    ('ammo_inventory',  'AMMO',                  1,  80, 10, 'builtin', None),
+    ('equipment_log',   'EQUIPMENT',             1,  75, 10, 'builtin', None),
+    ('alerts',          'ACTIVE ALERTS',         1,  70, 10, 'builtin', None),
+    ('weather_log',     'WEATHER',               1,  65,  1, 'builtin', None),
+    ('power_log',       'POWER',                 1,  60,  1, 'builtin', None),
+    ('incidents',       'RECENT INCIDENTS (24h)',1,  55,  5, 'builtin', None),
+    # High-value tables seeded disabled; user opts in via Settings
+    ('scheduled_tasks', 'SCHEDULED TASKS',       0,  50, 10, 'generic',
+        '["title","due_date","priority","category","status"]'),
+    ('checklists',      'CHECKLISTS',            0,  48, 10, 'generic',
+        '["name","category","completed"]'),
+    ('waypoints',       'WAYPOINTS',             0,  46, 15, 'generic',
+        '["name","category","lat","lng","elevation"]'),
+    ('vehicles',        'VEHICLES',              0,  44, 10, 'generic',
+        '["name","make","model","year","fuel_type","tank_gal","mpg","status"]'),
+    ('loadouts',        'LOADOUTS',              0,  42, 10, 'generic',
+        '["name","type","person_id","last_inspected"]'),
+    ('water_storage',   'WATER STORAGE',         0,  40, 10, 'generic',
+        '["container","capacity_gal","fill_date","treatment_method","location"]'),
+    ('garden_plots',    'GARDEN PLOTS',          0,  38, 10, 'generic',
+        '["name","crop","planted_date","harvest_date","status"]'),
+    ('livestock',       'LIVESTOCK',             0,  36, 10, 'generic',
+        '["name","species","breed","birth_date","status"]'),
+    ('financial_reserves','FINANCIAL RESERVES',  0,  34, 10, 'generic',
+        '["type","denomination","amount","location","value_estimate"]'),
+    ('preservation_batches','PRESERVATION',      0,  32, 10, 'generic',
+        '["method","contents","date","quantity","status"]'),
+    ('evacuation_plans','EVAC PLANS',            0,  30, 10, 'generic',
+        '["name","tier","is_active"]'),
+    ('watch_schedules', 'WATCH SCHEDULE',        0,  28, 10, 'generic',
+        '["name","start_time","end_time","assigned_to"]'),
+    ('family_checkins', 'FAMILY CHECK-INS',      0,  26, 10, 'generic',
+        '["member_name","status","last_contact"]'),
+    ('comms_log',       'COMMS LOG',             0,  24, 15, 'generic',
+        '["from_callsign","to_callsign","frequency","timestamp","message"]'),
+    ('skills',          'SKILLS',                0,  22, 20, 'generic',
+        '["name","proficiency","person","last_practiced"]'),
+]
+
+
+def _create_rag_scope_table(conn):
+    """v7.33.0: rag_scope drives AI context injection."""
+    conn.executescript('''
+        CREATE TABLE IF NOT EXISTS rag_scope (
+            table_name  TEXT PRIMARY KEY,
+            label       TEXT NOT NULL,
+            enabled     INTEGER NOT NULL DEFAULT 1,
+            weight      INTEGER NOT NULL DEFAULT 50,
+            max_rows    INTEGER NOT NULL DEFAULT 10,
+            formatter   TEXT    NOT NULL DEFAULT 'generic',
+            columns_json TEXT,
+            source      TEXT    NOT NULL DEFAULT 'builtin',
+            updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
+
+
+def _seed_rag_scope(conn):
+    """Idempotent seed — INSERT OR IGNORE preserves user-edited rows.
+    New defaults added in later releases land on upgrade automatically."""
+    rows = [
+        (table_name, label, enabled, weight, max_rows, formatter, columns_json, 'builtin')
+        for (table_name, label, enabled, weight, max_rows, formatter, columns_json)
+        in _RAG_SCOPE_DEFAULTS
+    ]
+    conn.executemany(
+        '''INSERT OR IGNORE INTO rag_scope
+           (table_name, label, enabled, weight, max_rows, formatter, columns_json, source)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+        rows,
+    )
+    conn.commit()
 
 
 def _create_fts5_tables(conn):

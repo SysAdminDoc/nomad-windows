@@ -108,18 +108,18 @@ These four phases close the biggest gaps between what the codebase *claims* to s
 
 ---
 
-### Phase A3: AI RAG scope manager
+### Phase A3: AI RAG scope manager  ✅ SHIPPED v7.33.0
 **Theme:** Unlock the 80+ tables the LLM can't currently see.
 **Effort:** S
 **Depends on:** —
 
 #### Deliverables
-- [ ] Replace hardcoded context-builder in `ai.py::_get_context_for_last_message()` with a registry
-- [ ] `rag_scope` table — table_name, enabled (bool), weight (0-10), max_rows, include_columns JSON
-- [ ] Settings UI: checkbox grid of all 95+ tables with per-table weight + row cap
-- [ ] "Add my own documents" — file upload → Qdrant embed → included in RAG context
-- [ ] `/api/ai/rag/preview` — show exactly what context will be injected for a given query (debug)
-- [ ] Default scope config seeded for 20 high-value tables; user can tune
+- [x] Replace hardcoded context-builder in `ai.py::build_situation_context()` with scope-driven registry
+- [x] `rag_scope` table — table_name, label, enabled, weight, max_rows, formatter, columns_json, source
+- [x] Settings UI: compact card with per-row enable/weight/max-rows + Reset + Preview
+- [x] `/api/ai/rag/preview` — shows exact injected payload for debugging (detail_level=full|summary)
+- [x] Default scope config seeded: 10 builtins (enabled) + 15 extended tables (disabled, opt-in)
+- [ ] "Add my own documents" — file upload → Qdrant embed → RAG context **(deferred — existing KB module already covers this via /api/ai/chat `knowledge_base: true`; a future pass could unify the UX)**
 
 | New Tables | New Routes | Data Packs |
 |---|---|---|

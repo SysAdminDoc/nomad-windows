@@ -5389,3 +5389,1030 @@ blockquote {
 [data-theme="eink"] .command-palette-item.active::before {
   background: #000 !important;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PASS 7 — FINAL REFINEMENTS
+   Print styles, tour/onboarding, specialty tabs, status indicators,
+   error boundary, and the last 5% that separates good from exceptional.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ─── 1. PRINT STYLES — 9 printable field documents ────────────────── */
+@media print {
+  /* Page setup */
+  @page {
+    size: letter;
+    margin: 0.5in 0.5in 0.6in 0.5in;
+  }
+
+  @page :first {
+    margin-top: 0.75in;
+  }
+
+  /* Reset everything to print-clean */
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    font-family: 'Georgia', 'Times New Roman', serif !important;
+    font-size: 11pt !important;
+    line-height: 1.45 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide shell chrome */
+  .sidebar,
+  .copilot-dock,
+  #mobile-tab-bar,
+  #mobile-bottom-nav,
+  .fab,
+  .lan-chat-fab,
+  .quick-actions-fab,
+  .timers-fab,
+  .shell-alert-btn,
+  .toast-container,
+  .status-strip,
+  .workspace-context-bar,
+  .tab-badge,
+  .no-print,
+  button:not(.print-include),
+  .btn:not(.print-include),
+  nav:not(.print-include),
+  .modal-overlay {
+    display: none !important;
+  }
+
+  /* Main content full width */
+  .main-content {
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+  }
+
+  /* Print header */
+  .print-header,
+  .doc-header {
+    border-bottom: 2pt solid #000;
+    padding-bottom: 8pt;
+    margin-bottom: 12pt;
+    page-break-after: avoid;
+  }
+
+  .print-title,
+  .doc-title {
+    font-family: 'Georgia', serif !important;
+    font-size: 18pt !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.01em !important;
+    margin: 0 0 4pt 0 !important;
+    color: #000 !important;
+  }
+
+  .print-subtitle,
+  .doc-subtitle {
+    font-size: 11pt !important;
+    color: #333 !important;
+    font-weight: 400 !important;
+    margin: 0 !important;
+  }
+
+  .print-meta,
+  .doc-meta {
+    font-family: 'Courier New', monospace !important;
+    font-size: 9pt !important;
+    color: #444 !important;
+    letter-spacing: 0.01em !important;
+    margin-top: 4pt !important;
+  }
+
+  /* Print tables */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 10pt !important;
+    margin: 8pt 0 !important;
+    page-break-inside: auto !important;
+  }
+
+  thead {
+    display: table-header-group !important;
+  }
+
+  tr {
+    page-break-inside: avoid !important;
+  }
+
+  th {
+    background: #f0f0f0 !important;
+    color: #000 !important;
+    font-family: 'Georgia', serif !important;
+    font-size: 9pt !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.04em !important;
+    text-transform: uppercase !important;
+    border-bottom: 1.5pt solid #000 !important;
+    padding: 5pt 8pt !important;
+    text-align: left !important;
+  }
+
+  td {
+    border-bottom: 0.5pt solid #999 !important;
+    padding: 5pt 8pt !important;
+    vertical-align: top !important;
+  }
+
+  /* Section headings */
+  h1, h2, h3, h4 {
+    font-family: 'Georgia', serif !important;
+    color: #000 !important;
+    page-break-after: avoid !important;
+    orphans: 3 !important;
+    widows: 3 !important;
+  }
+
+  h1 { font-size: 18pt !important; margin: 14pt 0 6pt !important; }
+  h2 {
+    font-size: 14pt !important;
+    margin: 12pt 0 4pt !important;
+    border-bottom: 0.5pt solid #999 !important;
+    padding-bottom: 2pt !important;
+  }
+  h3 { font-size: 12pt !important; margin: 10pt 0 3pt !important; }
+  h4 { font-size: 11pt !important; margin: 8pt 0 2pt !important; }
+
+  /* Wallet cards — grid layout for cut-out */
+  .wallet-card,
+  .wallet-cards-grid .card {
+    border: 1pt solid #000 !important;
+    padding: 10pt !important;
+    page-break-inside: avoid !important;
+    width: 3.5in !important;
+    height: 2.125in !important;
+    display: inline-block !important;
+    margin: 0 4pt 4pt 0 !important;
+    background: #fff !important;
+    box-sizing: border-box !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* SOI (Signal Operating Instructions) — classified style */
+  .soi-doc {
+    font-family: 'Courier New', monospace !important;
+  }
+
+  .soi-classification {
+    text-align: center !important;
+    border: 2pt solid #000 !important;
+    padding: 4pt !important;
+    margin: 6pt 0 !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.1em !important;
+  }
+
+  /* Frequency tables — monospace for radio data */
+  .freq-table,
+  .soi-freq-table {
+    font-family: 'Courier New', monospace !important;
+  }
+
+  /* Page breaks */
+  .page-break,
+  .page-break-before {
+    page-break-before: always !important;
+  }
+
+  .page-break-avoid {
+    page-break-inside: avoid !important;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+
+  /* Field document footer */
+  .print-footer {
+    margin-top: 18pt;
+    padding-top: 6pt;
+    border-top: 0.5pt solid #666;
+    font-family: 'Courier New', monospace;
+    font-size: 8pt;
+    color: #666;
+    text-align: center;
+  }
+}
+
+/* ─── 2. TOUR / FIRST-RUN ONBOARDING ───────────────────────────────── */
+.tour-overlay,
+.tour-backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--overlay-scrim-strong) 72%, transparent);
+  backdrop-filter: blur(4px) saturate(0.9);
+  -webkit-backdrop-filter: blur(4px) saturate(0.9);
+  z-index: var(--z-modal-stack, 10000);
+}
+
+.tour-card,
+.tour-card-shell {
+  position: fixed;
+  max-width: 360px;
+  border: 1px solid var(--ig-hairline-strong);
+  border-radius: 14px;
+  background: var(--ig-surface-1);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 24px 60px rgba(0, 0, 0, 0.32);
+  padding: 18px 20px;
+  z-index: calc(var(--z-modal-stack, 10000) + 1);
+}
+
+.tour-step-badge {
+  display: inline-block;
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+
+.tour-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin: 0 0 6px;
+  line-height: 1.25;
+}
+
+.tour-body,
+.tour-text {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+}
+
+.tour-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.tour-dots {
+  display: flex;
+  gap: 4px;
+}
+
+.tour-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--border-hover) 56%, transparent);
+  transition: background-color var(--ig-duration-base) var(--ig-ease);
+}
+
+.tour-dot.active {
+  background: var(--accent);
+  width: 14px;
+  border-radius: 3px;
+}
+
+/* Highlight spotlight */
+.tour-spotlight {
+  position: fixed;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  box-shadow:
+    0 0 0 9999px color-mix(in srgb, var(--overlay-scrim-strong) 64%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--accent) 28%, transparent);
+  pointer-events: none;
+  transition: all 0.32s var(--ig-ease);
+  z-index: calc(var(--z-modal-stack, 10000) + 2);
+}
+
+/* ─── 3. STATUS INDICATORS — battery, offline, real-time ───────────── */
+.shell-status-inline,
+.shell-flag {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  min-height: 22px;
+  padding: 0 9px;
+  border: 1px solid var(--ig-hairline);
+  background: var(--ig-surface-2);
+  color: var(--text-dim);
+  border-radius: 999px;
+}
+
+.shell-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--red);
+  box-shadow: 0 0 6px currentColor;
+}
+
+.shell-status-dot.online,
+.shell-status-dot.connected {
+  background: var(--green);
+  animation: ig-dot-pulse 2.4s var(--ig-ease) infinite;
+}
+
+.shell-status-dot.warning,
+.shell-status-dot.degraded {
+  background: var(--warning);
+}
+
+.shell-status-dot.offline,
+.shell-status-dot.disconnected {
+  background: var(--red);
+}
+
+.shell-flag-accent {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--ig-surface-2));
+}
+
+/* Battery saver indicator */
+body.battery-saver {
+  --ig-duration-micro: 0ms;
+  --ig-duration-base: 0ms;
+  --ig-duration-slow: 0ms;
+}
+
+body.battery-saver .sidebar,
+body.battery-saver .copilot-dock,
+body.battery-saver .modal-card,
+body.battery-saver .command-palette,
+body.battery-saver .customize-panel {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.battery-saver *,
+body.battery-saver *::before,
+body.battery-saver *::after {
+  animation: none !important;
+  transition: none !important;
+}
+
+/* SSE / real-time indicator */
+.rt-indicator,
+.sse-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.rt-indicator::before,
+.sse-indicator::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 5px currentColor;
+  animation: ig-dot-pulse 2s var(--ig-ease) infinite;
+}
+
+/* ─── 4. BROADCAST BANNER — emergency/info alerts ──────────────────── */
+.broadcast-banner {
+  border-top: 1px solid var(--ig-hairline-strong);
+  border-bottom: 1px solid var(--ig-hairline-strong);
+  padding: 8px 16px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  text-align: center;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+}
+
+.broadcast-banner.severity-critical,
+.broadcast-banner.is-critical {
+  background: color-mix(in srgb, var(--red) 14%, var(--ig-surface-1));
+  border-color: color-mix(in srgb, var(--red) 44%, var(--border));
+  color: var(--red);
+}
+
+.broadcast-banner.severity-warning,
+.broadcast-banner.is-warning {
+  background: color-mix(in srgb, var(--warning) 14%, var(--ig-surface-1));
+  border-color: color-mix(in srgb, var(--warning) 44%, var(--border));
+  color: var(--warning);
+}
+
+.broadcast-banner.severity-info,
+.broadcast-banner.is-info {
+  background: color-mix(in srgb, var(--info) 12%, var(--ig-surface-1));
+  border-color: color-mix(in srgb, var(--info) 36%, var(--border));
+  color: var(--info);
+}
+
+/* ─── 5. SPECIALTY TABS — Weather, Medical, Garden, Financial ──────── */
+/* Weather — Zambretti barometer */
+.zambretti-reading,
+.barometer-reading {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.pressure-trend-indicator {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.pressure-trend-indicator.rising {
+  background: color-mix(in srgb, var(--green) 14%, transparent);
+  color: var(--green);
+  border: 1px solid color-mix(in srgb, var(--green) 32%, transparent);
+}
+
+.pressure-trend-indicator.falling {
+  background: color-mix(in srgb, var(--red) 14%, transparent);
+  color: var(--red);
+  border: 1px solid color-mix(in srgb, var(--red) 32%, transparent);
+}
+
+.pressure-trend-indicator.steady {
+  background: var(--ig-surface-2);
+  color: var(--text-dim);
+  border: 1px solid var(--ig-hairline);
+}
+
+/* Medical — patient card */
+.patient-triage-card {
+  border-left: 3px solid var(--ig-hairline);
+  padding-left: 14px;
+}
+
+.patient-triage-card.triage-immediate,
+.patient-triage-card.triage-red {
+  border-left-color: var(--red);
+  background: color-mix(in srgb, var(--red) 4%, var(--ig-surface-1));
+}
+
+.patient-triage-card.triage-delayed,
+.patient-triage-card.triage-yellow {
+  border-left-color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 4%, var(--ig-surface-1));
+}
+
+.patient-triage-card.triage-minor,
+.patient-triage-card.triage-green {
+  border-left-color: var(--green);
+  background: color-mix(in srgb, var(--green) 3%, var(--ig-surface-1));
+}
+
+.patient-triage-card.triage-expectant,
+.patient-triage-card.triage-black {
+  border-left-color: var(--text-muted);
+  background: color-mix(in srgb, var(--text-muted) 5%, var(--ig-surface-1));
+  opacity: 0.82;
+}
+
+/* Vital signs display */
+.vital-sign {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+}
+
+.vital-value {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.vital-unit {
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+.vital-label {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  display: block;
+  margin-bottom: 2px;
+}
+
+.vital-warning .vital-value {
+  color: var(--warning);
+}
+
+.vital-critical .vital-value {
+  color: var(--red);
+}
+
+/* Garden — plot visualization */
+.garden-plot-visual {
+  border: 1px solid var(--ig-hairline);
+  border-radius: 10px;
+  background: var(--ig-surface-1);
+  padding: 12px;
+}
+
+.garden-zone-badge {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--green) 12%, transparent);
+  color: var(--green);
+  border: 1px solid color-mix(in srgb, var(--green) 28%, transparent);
+}
+
+/* Financial — amount display */
+.financial-amount {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.financial-amount-sm {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* ─── 6. ERROR BOUNDARY / CRASH UI ─────────────────────────────────── */
+.error-boundary,
+.error-screen {
+  max-width: 480px;
+  margin: 48px auto;
+  padding: 24px 28px;
+  border: 1px solid color-mix(in srgb, var(--red) 32%, var(--border));
+  border-radius: 14px;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+  text-align: left;
+}
+
+.error-boundary-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--red);
+  margin: 0 0 8px;
+}
+
+.error-boundary-message {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  margin: 0 0 14px;
+}
+
+.error-boundary-details {
+  font-family: var(--font-data, monospace);
+  font-size: 11px;
+  padding: 10px 12px;
+  background: var(--ig-surface-2);
+  border: 1px solid var(--ig-hairline);
+  border-radius: 8px;
+  color: var(--text-muted);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
+/* ─── 7. CONNECTION STATES — offline/degraded banners ──────────────── */
+.offline-indicator,
+.connection-lost-banner {
+  background: color-mix(in srgb, var(--warning) 10%, var(--ig-surface-1));
+  border: 1px solid color-mix(in srgb, var(--warning) 32%, var(--border));
+  color: var(--warning);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 11.5px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.offline-indicator::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+/* ─── 8. CONTEXT MENU (right-click) ────────────────────────────────── */
+.context-menu {
+  min-width: 200px;
+}
+
+.context-menu-header {
+  font-family: var(--font-label, var(--font-ui));
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 6px 10px 4px;
+  opacity: 0.82;
+}
+
+.context-menu-shortcut {
+  margin-left: auto;
+  font-family: var(--font-data, monospace);
+  font-size: 10px;
+  color: var(--text-muted);
+  letter-spacing: 0.02em;
+}
+
+/* ─── 9. NUMERIC INPUT — stepper refinement ────────────────────────── */
+.numeric-stepper,
+.qty-stepper {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+}
+
+.numeric-stepper button,
+.qty-stepper button {
+  width: 30px;
+  min-height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--ig-duration-micro) var(--ig-ease);
+}
+
+.numeric-stepper button:hover,
+.qty-stepper button:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+}
+
+.numeric-stepper button:active,
+.qty-stepper button:active {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.numeric-stepper input,
+.qty-stepper input {
+  width: 54px;
+  border: none !important;
+  border-left: 1px solid var(--ig-hairline) !important;
+  border-right: 1px solid var(--ig-hairline) !important;
+  background: transparent !important;
+  font-family: var(--font-data, monospace) !important;
+  font-variant-numeric: tabular-nums !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  text-align: center;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+}
+
+.numeric-stepper input:focus,
+.qty-stepper input:focus {
+  box-shadow: inset 0 0 0 1px var(--accent) !important;
+}
+
+/* ─── 10. MODE OPTION CARD (Command Center / Homestead / Essentials) ─ */
+.mode-option {
+  position: relative;
+  padding: 14px 16px;
+  border: 1px solid var(--ig-hairline);
+  border-radius: 12px;
+  background: var(--ig-surface-1);
+  box-shadow: var(--ig-inset-highlight);
+  cursor: pointer;
+  transition: all var(--ig-duration-base) var(--ig-ease);
+}
+
+.mode-option:hover {
+  border-color: var(--ig-hairline-strong);
+  transform: translateY(-1px);
+}
+
+.mode-option[aria-pressed="true"],
+.mode-option.active {
+  border-color: var(--accent);
+  box-shadow:
+    var(--ig-inset-highlight),
+    0 0 0 1px var(--accent);
+}
+
+.mode-option[aria-pressed="true"]::after,
+.mode-option.active::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 2px var(--ig-surface-1);
+}
+
+.mode-option[aria-pressed="true"]::before,
+.mode-option.active::before {
+  content: "";
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: var(--text-inverse);
+  z-index: 1;
+}
+
+/* ─── 11. READINESS GRADE — big letter grade display ───────────────── */
+.readiness-grade {
+  font-family: var(--font-display, var(--font-ui));
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.readiness-grade.grade-a { color: var(--green); }
+.readiness-grade.grade-b { color: color-mix(in srgb, var(--green) 70%, var(--yellow)); }
+.readiness-grade.grade-c { color: var(--warning); }
+.readiness-grade.grade-d { color: var(--orange); }
+.readiness-grade.grade-f { color: var(--red); }
+
+.readiness-score {
+  font-family: var(--font-data, monospace);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  letter-spacing: 0.02em;
+}
+
+/* ─── 12. HELP ICON — contextual (?) ───────────────────────────────── */
+.help-icon,
+.help-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--ig-surface-2);
+  border: 1px solid var(--ig-hairline);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  cursor: help;
+  transition: all var(--ig-duration-micro) var(--ig-ease);
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+.help-icon:hover,
+.help-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--ig-surface-2));
+}
+
+/* ─── 13. KEYBOARD FOCUS TRAP HINT ─────────────────────────────────── */
+.modal-card:focus-within,
+.command-palette:focus-within,
+.shortcuts-dialog:focus-within,
+.customize-panel:focus-within {
+  /* Visual hint that this surface has focus trap active */
+  outline: none;
+}
+
+/* ─── 14. HAZARD STRIPES — critical alert indicator ────────────────── */
+.hazard-stripes,
+.alert-sev.critical {
+  background: repeating-linear-gradient(
+    135deg,
+    var(--red),
+    var(--red) 6px,
+    color-mix(in srgb, var(--red) 88%, #000) 6px,
+    color-mix(in srgb, var(--red) 88%, #000) 12px
+  ) !important;
+  color: #fff !important;
+  border-color: color-mix(in srgb, var(--red) 64%, #000) !important;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+/* ─── 15. ACCESSIBILITY — skip link ────────────────────────────────── */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  padding: 10px 14px;
+  background: var(--accent);
+  color: var(--text-inverse);
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  text-decoration: none;
+  z-index: 99999;
+  transition: top var(--ig-duration-base) var(--ig-ease);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  top: 16px;
+  outline: 2px solid var(--text-inverse);
+  outline-offset: 2px;
+}
+
+/* ─── 16. HIGH CONTRAST MODE ───────────────────────────────────────── */
+@media (prefers-contrast: more) {
+  :root {
+    --ig-hairline: var(--text);
+    --ig-hairline-strong: var(--text);
+    --ig-hairline-active: var(--accent);
+  }
+
+  .btn,
+  .tab,
+  input,
+  textarea,
+  select {
+    border-width: 2px !important;
+  }
+
+  .tab.active::before,
+  .note-item.active::before {
+    width: 3px !important;
+  }
+}
+
+/* ─── 17. FORCED COLORS (Windows high contrast) ────────────────────── */
+@media (forced-colors: active) {
+  .btn,
+  .tab,
+  .modal-card,
+  .card,
+  input,
+  textarea,
+  select {
+    border: 1px solid CanvasText !important;
+    background: Canvas !important;
+    color: CanvasText !important;
+  }
+
+  .btn-primary,
+  .tab.active {
+    background: Highlight !important;
+    color: HighlightText !important;
+    border-color: Highlight !important;
+  }
+}
+
+/* ─── 18. E-INK PRESERVATION — Pass 7 surfaces ─────────────────────── */
+[data-theme="eink"] .tour-card,
+[data-theme="eink"] .broadcast-banner,
+[data-theme="eink"] .patient-triage-card,
+[data-theme="eink"] .garden-plot-visual,
+[data-theme="eink"] .error-boundary,
+[data-theme="eink"] .numeric-stepper,
+[data-theme="eink"] .mode-option {
+  background: #fff !important;
+  border: 1px solid #000 !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+[data-theme="eink"] .hazard-stripes,
+[data-theme="eink"] .alert-sev.critical {
+  background: repeating-linear-gradient(
+    135deg,
+    #000,
+    #000 4px,
+    #fff 4px,
+    #fff 8px
+  ) !important;
+  color: #000 !important;
+  text-shadow: 0 0 2px #fff;
+}
+
+[data-theme="eink"] .tour-spotlight {
+  border: 3px solid #000 !important;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.4) !important;
+}
+
+[data-theme="eink"] .readiness-grade {
+  color: #000 !important;
+}
+
+/* ─── 19. FINAL TYPOGRAPHY MICRO-TUNE ──────────────────────────────── */
+/* Optical size adjustment for variable fonts when available */
+body {
+  font-feature-settings: 'kern' 1, 'liga' 1, 'tnum' 0, 'calt' 1;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings get optical sizing */
+h1, h2, h3, h4, h5, h6 {
+  font-feature-settings: 'kern' 1, 'liga' 1, 'ss01' 1;
+  text-wrap: balance;
+}
+
+/* Prevent orphaned words in small text */
+p, .tour-body, .modal-body, .setting-label span {
+  text-wrap: pretty;
+}
+
+/* ─── 20. RESPONSIVE FINE-TUNE ─────────────────────────────────────── */
+@media (min-width: 2560px) {
+  /* Ultra-wide monitors — scale up thoughtfully */
+  body {
+    font-size: calc(13px * var(--ui-zoom) * 1.08);
+  }
+
+  #tab-situation-room {
+    max-width: 2400px;
+    margin: 0 auto;
+  }
+
+  .readiness-grade {
+    font-size: 80px;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Phone-size tightening */
+  .modal-card {
+    padding: 14px;
+    border-radius: 12px;
+  }
+
+  .readiness-grade {
+    font-size: 48px;
+  }
+
+  .live-widget-value,
+  .chart-value {
+    font-size: 18px;
+  }
+
+  .home-launch-title,
+  .welcome-banner h3 {
+    font-size: 18px;
+  }
+
+  .wizard-card,
+  .onboarding-panel {
+    padding: 16px;
+  }
+}

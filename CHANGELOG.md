@@ -2,6 +2,21 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.37.0] — Premium polish: CSS system coherence pass
+
+System-level cleanup across the premium CSS stack after 14 prior polish rounds. No feature changes; all edits are cosmetic/structural refinements to how existing surfaces render.
+
+### Fixed
+- **`.btn-primary` duplicate definition collision** — `premium/95_premium_polish.css` declared `border-color: transparent` and a single-layer shadow that was silently overridden by the richer multi-layer treatment in `premium/99_final_polish.css` (inset highlight + shadow + accent glow). The 95 block is now reduced to just the gradient fill it uniquely owns; border/shadow/hover system lives in 99 alone. Eliminates a small DPI-dependent rendering jitter on first-paint under some themes.
+- **Focus-ring token split** — `--premium-focus-ring` / `--premium-focus-shadow` (95) and `--focus-ring-color` / `--focus-ring-halo` (99) were two parallel systems. The 95 tokens now reference the 99 halo/ring colors via cascade fallback, so all focus treatments share a single source of truth and stay in sync when accent color changes.
+- **Hard-coded high z-index values** — replaced raw `10000` / `15000` / `20000` / `100000` declarations with named tokens in `app/00_theme_tokens.css`: `--z-modal-stack` (10000, modal + wizard + photo viewer), `--z-app-overlay` (15000, settings modals above feature modals), `--z-frame-overlay` (20000, customize/edit frame), `--z-command-palette` (100000, always topmost). Six sites updated across `20_primary_workspaces.css`, `30_preparedness_ops.css`, `50_settings.css`, `70_layout_hardening.css`.
+- **`transition: all` on `<progress>` fill** — `99_final_polish.css:1749` was the only remaining `transition: all` in the premium layer stack. Replaced with explicit `width`/`background-color`/`box-shadow` list so compositor doesn't animate unrelated properties when the bar fills.
+- **Aggressive display-heading letter-spacing** — `.home-launch-title` / `.settings-command-title` / `.settings-panel-title` / `.workspace-context-title` were tightened to `-0.045em`, over 2× the tracking used on `.modal-header h3` (`-0.015em`) and `.wizard-card h2` (`-0.025em`). Unified to `-0.025em` so large tactical titles don't visibly out-compress their modal/wizard counterparts.
+- **Reduced-motion entrance-animation snap** — the universal `*, *::before, *::after { animation-duration: 0.001ms }` override at `99_final_polish.css:681` covers most cases but slide/scale entrance keyframes on `.modal-card`, `.wizard-card`, `.command-palette-overlay`, `.settings-modal-card`, `.shortcuts-dialog`, `.toast` now get an explicit `animation: none !important` so they land on their final state instantly instead of compositing a micro-frame of mid-animation geometry.
+
+### Stats
+- 6 CSS files changed, 1 Python file bumped. No behavior/runtime changes — all adjustments are style-layer. Test suite unaffected.
+
 ## [v7.28.0] — Auth foundation + validation expansion (Roadmap H2/H4 + M1/M2)
 
 ### H4 — Authentication enforcement layer

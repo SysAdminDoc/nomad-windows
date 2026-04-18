@@ -3,8 +3,10 @@
 
 :root,
 [data-theme] {
-  --premium-focus-ring: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
-  --premium-focus-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 38%, transparent), 0 18px 36px rgba(0, 0, 0, 0.12);
+  /* --focus-ring-color + --focus-ring-halo are declared in 99_final_polish.css;
+     referenced here via cascade so all focus treatments share a single source of truth. */
+  --premium-focus-ring: 0 0 0 3px var(--focus-ring-halo, color-mix(in srgb, var(--accent) 18%, transparent));
+  --premium-focus-shadow: 0 0 0 1px var(--focus-ring-color, color-mix(in srgb, var(--accent) 38%, transparent)), 0 18px 36px rgba(0, 0, 0, 0.12);
   --premium-panel-border: color-mix(in srgb, var(--border-hover) 34%, var(--border));
   --premium-panel-fill:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 9%, transparent), transparent 42%),
@@ -114,15 +116,13 @@ h3,
   box-shadow: none !important;
 }
 
+/* .btn-primary gradient fill — shadow/border/hover system lives in 99_final_polish.css */
 .btn-primary {
   background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent-hover) 78%, white 22%));
-  border-color: transparent;
-  box-shadow: 0 14px 28px color-mix(in srgb, var(--accent) 20%, transparent);
 }
 
 .btn-primary:hover {
   filter: none;
-  box-shadow: 0 18px 34px color-mix(in srgb, var(--accent) 24%, transparent);
 }
 
 .btn-ghost {
@@ -298,7 +298,9 @@ h3,
 .settings-command-title,
 .settings-panel-title,
 .workspace-context-title {
-  letter-spacing: -0.045em;
+  /* Unified display-heading tracking. Matches modal h3 (-0.015em) and wizard h2 (-0.025em)
+     for coherent optical tightening across premium surfaces. */
+  letter-spacing: -0.025em;
 }
 
 .home-launch-meta,

@@ -309,7 +309,9 @@
 
 /* ─── Z-Index Scale ─── */
 :root {
-  /* Layering order (bottom to top) */
+  /* Layering order (bottom to top).
+     Lower tier is for dropdowns/overlays/toasts that sit on top of normal content.
+     Upper tier is for full-screen modals and system-level overlays. */
   --z-base: 1;
   --z-dropdown: 100;
   --z-sticky: 500;
@@ -318,6 +320,14 @@
   --z-toast: 9000;
   --z-tooltip: 9500;
   --z-emergency: 10000;
+  /* Full-screen modal stack — modal backdrop, wizards, photo/TCCC viewers. */
+  --z-modal-stack: 10000;
+  /* App-level overlays that sit above feature modals (settings dialogs, confirm). */
+  --z-app-overlay: 15000;
+  /* App frame overlay (customize/edit mode) — above everything except command surfaces. */
+  --z-frame-overlay: 20000;
+  /* Command palette — always topmost, beats every other overlay. */
+  --z-command-palette: 100000;
 }
 
 /* ─── Design System: Typography Scale ─── */

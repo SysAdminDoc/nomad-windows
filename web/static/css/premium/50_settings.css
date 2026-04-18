@@ -1566,7 +1566,7 @@
 .command-palette-overlay {
   position: fixed;
   inset: 0;
-  z-index: 100000;
+  z-index: var(--z-command-palette, 100000);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -2527,7 +2527,7 @@
 }
 
 .settings-modal-overlay {
-  z-index: 15000;
+  z-index: var(--z-app-overlay, 15000);
 }
 
 .settings-modal-card {

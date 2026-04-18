@@ -52,6 +52,7 @@
         letter-spacing: -0.03em;
         color: var(--fin-text);
         margin: 0;
+        text-wrap: balance;
       }
       #tab-financial .financial-command-deck p {
         font-size: 13px;
@@ -92,6 +93,7 @@
         font-weight: 800;
         color: var(--fin-text);
         letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
       }
       #tab-financial .fin-stat-value.accent { color: var(--fin-accent); }
       #tab-financial .fin-stat-value.green { color: var(--fin-green); }
@@ -156,6 +158,7 @@
         font-weight: 800;
         color: var(--fin-green);
         letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
       }
 
       /* ── Tables ── */
@@ -163,6 +166,7 @@
         width: 100%;
         border-collapse: collapse;
         font-size: 13px;
+        font-variant-numeric: tabular-nums;
       }
       #tab-financial .fin-table th {
         text-align: left;
@@ -298,6 +302,7 @@
         font-weight: 800;
         color: var(--fin-accent);
         letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
       }
       #tab-financial .fin-cpd-label {
         font-size: 13px;
@@ -319,10 +324,22 @@
 
       /* ── Empty States ── */
       #tab-financial .fin-empty {
+        display: grid;
+        gap: 6px;
+        place-items: center;
         text-align: center;
         padding: 28px 16px;
         font-size: 13px;
         color: var(--fin-text-muted);
+      }
+      #tab-financial .fin-empty strong {
+        color: var(--fin-text);
+        font-size: 14px;
+        line-height: 1.35;
+      }
+      #tab-financial .fin-empty span {
+        max-width: 54ch;
+        line-height: 1.55;
       }
 
       /* ── Delete button ── */
@@ -330,20 +347,33 @@
         display: flex;
         gap: 6px;
         align-items: center;
+        justify-content: flex-end;
       }
       #tab-financial .fin-btn-delete {
-        border: none;
-        background: none;
-        color: var(--fin-text-muted);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        padding: 0;
+        border: 1px solid rgba(244, 67, 54, 0.22);
+        background: rgba(244, 67, 54, 0.08);
+        color: var(--fin-red);
         cursor: pointer;
         font-size: 14px;
-        padding: 2px 6px;
-        border-radius: 6px;
-        transition: color 0.15s, background 0.15s;
+        border-radius: 9px;
+        touch-action: manipulation;
+        transition: color 0.15s, background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.15s;
       }
       #tab-financial .fin-btn-delete:hover {
-        color: var(--fin-red);
-        background: rgba(244, 67, 54, 0.12);
+        color: #fff;
+        background: rgba(244, 67, 54, 0.18);
+        border-color: rgba(244, 67, 54, 0.34);
+        transform: translateY(-1px);
+      }
+      #tab-financial .fin-btn-delete:focus-visible {
+        outline: 2px solid transparent;
+        box-shadow: 0 0 0 2px var(--fin-surface-solid), 0 0 0 4px rgba(113, 168, 255, 0.3);
       }
       #tab-financial .fin-stats-row.fin-row-spaced { margin-bottom: 14px; }
     </style>
@@ -351,7 +381,7 @@
     <div class="financial-command-deck">
       <div class="section-header-label">FINANCIAL RESILIENCE</div>
       <h2>Financial Preparedness</h2>
-      <p>Track cash reserves, precious metals, barter goods, and critical documents.</p>
+      <p>Track liquid reserves, hard assets, trade stock, and critical paperwork in one operational view.</p>
       <div class="financial-command-actions">
         <button class="btn btn-primary" onclick="showFinForm('cash')">+ Cash</button>
         <button class="btn btn-ghost" onclick="showFinForm('metal')">+ Metal</button>
@@ -456,12 +486,12 @@
             <input type="text" id="fin-cash-currency" name="currency" value="USD" placeholder="USD">
           </div>
           <div class="fin-form-actions">
-            <button class="btn btn-sm btn-primary" onclick="saveFinCash()">Save</button>
+            <button class="btn btn-sm btn-primary" onclick="saveFinCash()">Save Cash</button>
             <button class="btn btn-sm btn-ghost" onclick="hideFinForm('cash')">Cancel</button>
           </div>
         </div>
         <div id="fin-cash-list">
-          <div class="fin-empty">No cash entries yet. Add your first reserve above.</div>
+          <div class="fin-empty"><strong>No cash reserves yet</strong><span>Add the first reserve above so the liquidity picture starts from a real baseline.</span></div>
         </div>
       </div>
 
@@ -515,12 +545,12 @@
             <input type="text" id="fin-metal-location" name="location" placeholder="e.g. Safe deposit box">
           </div>
           <div class="fin-form-actions">
-            <button class="btn btn-sm btn-primary" onclick="saveFinMetal()">Save</button>
+            <button class="btn btn-sm btn-primary" onclick="saveFinMetal()">Save Metal</button>
             <button class="btn btn-sm btn-ghost" onclick="hideFinForm('metal')">Cancel</button>
           </div>
         </div>
         <div id="fin-metals-list">
-          <div class="fin-empty">No metals tracked. Add your precious metal holdings above.</div>
+          <div class="fin-empty"><strong>No metals tracked yet</strong><span>Add precious metal holdings above so hard-asset coverage is visible next to liquid reserves.</span></div>
         </div>
       </div>
 
@@ -572,14 +602,14 @@
             <input type="text" id="fin-barter-location" name="location" placeholder="e.g. Garage cache">
           </div>
           <div class="fin-form-actions">
-            <button class="btn btn-sm btn-primary" onclick="saveFinBarter()">Save</button>
+            <button class="btn btn-sm btn-primary" onclick="saveFinBarter()">Save Barter</button>
             <button class="btn btn-sm btn-ghost" onclick="hideFinForm('barter')">Cancel</button>
           </div>
         </div>
         <!-- Barter category groups -->
         <div id="fin-barter-groups" class="fin-barter-groups"></div>
         <div id="fin-barter-list">
-          <div class="fin-empty">No barter goods tracked. Build your trade stock above.</div>
+          <div class="fin-empty"><strong>No barter stock yet</strong><span>Build trade inventory above so exchange value stays visible before a shortage forces it.</span></div>
         </div>
       </div>
 
@@ -640,12 +670,12 @@
             </label>
           </div>
           <div class="fin-form-actions">
-            <button class="btn btn-sm btn-primary" onclick="saveFinDocument()">Save</button>
+            <button class="btn btn-sm btn-primary" onclick="saveFinDocument()">Save Document</button>
             <button class="btn btn-sm btn-ghost" onclick="hideFinForm('document')">Cancel</button>
           </div>
         </div>
         <div id="fin-docs-list">
-          <div class="fin-empty">No documents tracked. Secure your critical paperwork above.</div>
+          <div class="fin-empty"><strong>No critical documents tracked yet</strong><span>Log the paperwork that would be hardest to replace so renewals and safe storage stay visible.</span></div>
         </div>
       </div>
 
@@ -688,6 +718,16 @@
           alcohol_tobacco: 'Alcohol & Tobacco', batteries: 'Batteries & Power',
           clothing: 'Clothing & Fabric', seeds: 'Seeds & Agriculture', other: 'Other'
         };
+        const escapeText = (value) => (window.escapeHtml ? window.escapeHtml(value) : String(value == null ? '' : value)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;'));
+        const finEmpty = (title, body) => '<div class="fin-empty"><strong>' + escapeText(title) + '</strong><span>' + escapeText(body) + '</span></div>';
+        const finDeleteButton = (action, label) => '<button type="button" class="fin-btn-delete" onclick="' + action + '" data-item-label="' + escapeText(label) + '" title="Delete ' + escapeText(label) + '" aria-label="Delete ' + escapeText(label) + '">&times;</button>';
+        const finDeleteLabel = (action, fallback) => document.querySelector('[onclick="' + action + '"]')?.getAttribute('data-item-label') || fallback;
+        const finConfirmDelete = (label) => window.confirm('Delete ' + label + '? This removes it from the financial workspace.');
 
         /* ── Form Visibility ── */
         window.showFinForm = function (type) {
@@ -767,7 +807,7 @@
         function renderCash(items) {
           const el = $('fin-cash-list');
           if (!items.length) {
-            el.innerHTML = '<div class="fin-empty">No cash entries yet. Add your first reserve above.</div>';
+            el.innerHTML = finEmpty('No cash reserves yet', 'Add the first reserve above so the liquidity picture starts from a real baseline.');
             return;
           }
           let byLocation = {};
@@ -783,7 +823,7 @@
               + '<td><strong>' + fmtCurrency(c.amount, c.currency) + '</strong></td>'
               + '<td>' + escapeHtml(c.location || '--') + '</td>'
               + '<td><span class="fin-badge">' + escapeHtml(c.currency || 'USD') + '</span></td>'
-              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinCash(' + c.id + ')" title="Delete" aria-label="Delete">&#10005;</button></td>'
+              + '<td class="fin-row-actions">' + finDeleteButton('deleteFinCash(' + c.id + ')', c.denomination || 'cash reserve') + '</td>'
               + '</tr>';
           });
           html += '</tbody></table>';
@@ -812,6 +852,8 @@
         };
 
         window.deleteFinCash = async function (id) {
+          const label = finDeleteLabel('deleteFinCash(' + id + ')', 'this cash reserve');
+          if (!finConfirmDelete(label)) return;
           try {
             await apiDelete('/api/financial/cash/' + id);
             toast('Cash entry removed', 'success');
@@ -837,7 +879,7 @@
         function renderMetals(items) {
           const el = $('fin-metals-list');
           if (!items.length) {
-            el.innerHTML = '<div class="fin-empty">No metals tracked. Add your precious metal holdings above.</div>';
+            el.innerHTML = finEmpty('No metals tracked yet', 'Add precious metal holdings above so hard-asset coverage is visible next to liquid reserves.');
             return;
           }
           /* Summary by type */
@@ -871,7 +913,7 @@
               + '<td>' + escapeHtml(m.purity || '--') + '</td>'
               + '<td>' + fmtCurrency(m.purchase_price) + '</td>'
               + '<td>' + escapeHtml(m.location || '--') + '</td>'
-              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinMetal(' + m.id + ')" title="Delete" aria-label="Delete">&#10005;</button></td>'
+              + '<td class="fin-row-actions">' + finDeleteButton('deleteFinMetal(' + m.id + ')', m.description || (m.metal_type || 'metal') + ' holding') + '</td>'
               + '</tr>';
           });
           html += '</tbody></table>';
@@ -902,6 +944,8 @@
         };
 
         window.deleteFinMetal = async function (id) {
+          const label = finDeleteLabel('deleteFinMetal(' + id + ')', 'this metal holding');
+          if (!finConfirmDelete(label)) return;
           try {
             await apiDelete('/api/financial/metals/' + id);
             toast('Metal entry removed', 'success');
@@ -947,7 +991,7 @@
           const el = $('fin-barter-list');
           renderBarterGroups(items);
           if (!items.length) {
-            el.innerHTML = '<div class="fin-empty">No barter goods tracked. Build your trade stock above.</div>';
+            el.innerHTML = finEmpty('No barter stock yet', 'Build trade inventory above so exchange value stays visible before a shortage forces it.');
             return;
           }
           let html = '<table class="fin-table"><thead><tr><th>Item</th><th>Category</th><th>Qty</th><th>Unit</th><th>Est. Value</th><th>Location</th><th></th></tr></thead><tbody>';
@@ -959,7 +1003,7 @@
               + '<td>' + escapeHtml(b.unit || '--') + '</td>'
               + '<td>' + fmtCurrency(b.estimated_value) + '</td>'
               + '<td>' + escapeHtml(b.location || '--') + '</td>'
-              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinBarter(' + b.id + ')" title="Delete" aria-label="Delete">&#10005;</button></td>'
+              + '<td class="fin-row-actions">' + finDeleteButton('deleteFinBarter(' + b.id + ')', b.name || 'barter item') + '</td>'
               + '</tr>';
           });
           html += '</tbody></table>';
@@ -988,6 +1032,8 @@
         };
 
         window.deleteFinBarter = async function (id) {
+          const label = finDeleteLabel('deleteFinBarter(' + id + ')', 'this barter item');
+          if (!finConfirmDelete(label)) return;
           try {
             await apiDelete('/api/financial/barter/' + id);
             toast('Barter item removed', 'success');
@@ -1011,7 +1057,7 @@
         function renderDocuments(items) {
           const el = $('fin-docs-list');
           if (!items.length) {
-            el.innerHTML = '<div class="fin-empty">No documents tracked. Secure your critical paperwork above.</div>';
+            el.innerHTML = finEmpty('No critical documents tracked yet', 'Log the paperwork that would be hardest to replace so renewals and safe storage stay visible.');
             return;
           }
           const now = new Date();
@@ -1038,7 +1084,7 @@
               + '<td>' + expiryHtml + '</td>'
               + '<td>' + escapeHtml(d.location || '--') + '</td>'
               + '<td>' + (d.digital_copy ? '<span class="fin-badge fin-badge-green">YES</span>' : '<span class="fin-badge">NO</span>') + '</td>'
-              + '<td class="fin-row-actions"><button class="fin-btn-delete" onclick="deleteFinDocument(' + d.id + ')" title="Delete" aria-label="Delete">&#10005;</button></td>'
+              + '<td class="fin-row-actions">' + finDeleteButton('deleteFinDocument(' + d.id + ')', d.description || DOC_TYPE_LABELS[d.doc_type] || 'document record') + '</td>'
               + '</tr>';
           });
           html += '</tbody></table>';
@@ -1068,6 +1114,8 @@
         };
 
         window.deleteFinDocument = async function (id) {
+          const label = finDeleteLabel('deleteFinDocument(' + id + ')', 'this document record');
+          if (!finConfirmDelete(label)) return;
           try {
             await apiDelete('/api/financial/documents/' + id);
             toast('Document removed', 'success');

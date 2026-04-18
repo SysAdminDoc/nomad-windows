@@ -54,7 +54,7 @@ async function loadTimers() {
     const timerList = Array.isArray(timers) ? timers : [];
     const el = document.getElementById('timer-list');
     if (!timerList.length) {
-      el.innerHTML = utilityEmptyState('No active timers. Start one above.');
+      el.innerHTML = utilityEmptyState('No active timers', 'Start one above to keep medication, watch changes, cooking, or purification windows from slipping.');
       return;
     }
     el.innerHTML = timerList.map(t => {
@@ -63,13 +63,13 @@ async function loadTimers() {
       const m = Math.floor((rem % 3600) / 60);
       const s = rem % 60;
       const timeStr = h > 0 ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${m}:${String(s).padStart(2,'0')}`;
-      const label = t.done ? 'DONE' : timeStr;
+      const label = t.done ? 'Ready' : timeStr;
       const toneClass = t.done ? 'timer-item-time-done' : rem < 60 ? 'timer-item-time-danger' : rem < 300 ? 'timer-item-time-warning' : '';
       return `<div class="timer-item${t.done ? ' is-done' : ''}">
         <div class="timer-item-main"><div class="timer-item-name">${escapeHtml(t.name)}</div></div>
         <div class="timer-item-side">
           <span class="timer-item-time ${toneClass}">${label}</span>
-          <button class="btn btn-sm btn-danger timer-item-delete" type="button" data-shell-action="delete-timer" data-timer-id="${t.id}" aria-label="Delete timer">x</button>
+          <button class="btn btn-sm btn-danger timer-item-delete" type="button" data-shell-action="delete-timer" data-timer-id="${t.id}" aria-label="Delete ${escapeAttr(t.name)} timer">&times;</button>
         </div>
       </div>`;
     }).join('');
@@ -87,12 +87,12 @@ async function loadTimers() {
 }
 
 async function createTimer() {
-  const name = document.getElementById('timer-name').value.trim() || 'Timer';
+  const name = document.getElementById('timer-name').value.trim() || 'Quick Timer';
   const mins = parseInt(document.getElementById('timer-mins').value) || 30;
   try {
     await apiPost('/api/timers', {name, duration_sec: mins * 60});
     document.getElementById('timer-name').value = '';
-    document.getElementById('timer-mins').value = '';
+    document.getElementById('timer-mins').value = String(mins);
     toast('Timer "' + name + '" started (' + mins + 'm)', 'success');
     loadTimers();
   } catch(e) { toast('Failed to create timer', 'error'); }

@@ -52,11 +52,19 @@
   #tab-tactical-comms .tc-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-tactical-comms .tc-btn-primary { background:var(--tc-accent); color:#000; }
   #tab-tactical-comms .tc-btn-danger { background:var(--tc-red); color:#fff; }
+  #tab-tactical-comms .tc-btn-danger-quiet { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.24); color:var(--tc-red); }
+  #tab-tactical-comms .tc-btn-danger-quiet:hover { background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.36); color:#fff; }
+  #tab-tactical-comms .tc-btn-icon { min-width:36px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
   #tab-tactical-comms .tc-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
-  #tab-tactical-comms .tc-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
-  #tab-tactical-comms .tc-list-item:last-child { border-bottom:none; }
+  #tab-tactical-comms .tc-list-item { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:12px 14px; margin-bottom:10px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:14px; background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); box-shadow:inset 0 1px 0 color-mix(in srgb, white 5%, transparent); }
+  #tab-tactical-comms .tc-list-item:last-child { margin-bottom:0; }
+  #tab-tactical-comms .tc-list-copy { display:grid; gap:4px; min-width:0; }
+  #tab-tactical-comms .tc-list-meta { font-size:.8rem; color:var(--text-secondary,#aaa); line-height:1.55; }
+  #tab-tactical-comms .tc-row-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
   #tab-tactical-comms .tc-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
-  #tab-tactical-comms .tc-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
+  #tab-tactical-comms .tc-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; display:grid; gap:6px; justify-items:center; }
+  #tab-tactical-comms .tc-empty strong { color:var(--text-primary,#eee); font-size:.96rem; font-weight:700; letter-spacing:-.01em; }
+  #tab-tactical-comms .tc-empty span { max-width:42ch; color:var(--text-secondary,#aaa); }
   #tab-tactical-comms .tc-msg-template { background:linear-gradient(180deg, color-mix(in srgb, var(--tc-accent) 10%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--tc-accent) 28%, var(--border,#333)); border-radius:14px; padding:14px; margin-bottom:10px; }
   #tab-tactical-comms .tc-msg-template h4 { margin:0 0 6px; color:var(--tc-accent); font-size:.9rem; }
   #tab-tactical-comms .tc-msg-template pre { margin:6px 0 0; white-space:pre-wrap; font-size:.78rem; color:var(--text-secondary,#ccc); background:rgba(0,0,0,.3); padding:8px; border-radius:4px; }
@@ -136,10 +144,10 @@
     <div class="tc-form-row">
       <div class="field"><label>Assigned To</label><input name="tc-radio-assigned" id="tc-radio-assigned" placeholder=""></div>
       <div class="field"><label>Location</label><input name="tc-radio-location" id="tc-radio-location" placeholder="Comms bag"></div>
-      <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcCreateRadio()">Add Radio</button></div>
+      <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcCreateRadio()">Save Radio</button></div>
     </div>
   </div>
-  <div id="tc-radio-list" class="tc-card"><div class="tc-empty">Loading radio inventory…</div></div>
+  <div id="tc-radio-list" class="tc-card"><div class="tc-empty"><strong>Loading radio inventory</strong><span>Reviewing equipment type, condition, power output, and assignment.</span></div></div>
 </div>
 
 <!-- ── Auth Codes Panel ──────────────────────────────── -->
@@ -157,11 +165,11 @@
     <div class="tc-form-row">
       <div class="field"><label>Running Password</label><input name="tc-auth-running" id="tc-auth-running" placeholder="Optional"></div>
       <div class="field"><label>Duress Code</label><input name="tc-auth-duress" id="tc-auth-duress" placeholder="Optional"></div>
-      <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcCreateAuth()">Add Code</button></div>
+      <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcCreateAuth()">Save Auth Set</button></div>
     </div>
   </div>
   <div id="tc-auth-today" class="tc-card tc-hidden"></div>
-  <div id="tc-auth-list" class="tc-card"><div class="tc-empty">Loading active authentication sets…</div></div>
+  <div id="tc-auth-list" class="tc-card"><div class="tc-empty"><strong>Loading active authentication sets</strong><span>Gathering challenges, responses, and the current daily code picture.</span></div></div>
 </div>
 
 <!-- ── Net Schedules Panel ───────────────────────────── -->
@@ -183,10 +191,10 @@
       <div class="field"><label>Start Time</label><input name="tc-net-time" id="tc-net-time" value="0800" placeholder="0800"></div>
       <div class="field"><label>Duration (min)</label><input name="tc-net-duration" id="tc-net-duration" type="number" value="30"></div>
       <div class="field"><label>Net Control</label><input name="tc-net-control" id="tc-net-control" placeholder="Callsign"></div>
-      <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcCreateNet()">Add Net</button></div>
+      <div class="field tc-field-action"><button class="tc-btn tc-btn-primary" onclick="tcCreateNet()">Save Net Schedule</button></div>
     </div>
   </div>
-  <div id="tc-net-list" class="tc-card"><div class="tc-empty">Loading net schedules…</div></div>
+  <div id="tc-net-list" class="tc-card"><div class="tc-empty"><strong>Loading net schedules</strong><span>Reviewing timing, frequency, and current net-control coverage.</span></div></div>
 </div>
 
 <!-- ── Message Formats Panel ─────────────────────────── -->
@@ -195,7 +203,7 @@
     <button class="tc-btn tc-btn-primary" onclick="tcSeedTemplates()">Seed Built-in Templates</button>
     <small class="tc-meta-spacer">Loads SITREP, MEDEVAC 9-Line, SALUTE, SPOT, ACE, and LACE if they are not already available.</small>
   </div>
-  <div id="tc-msg-list"><div class="tc-empty">Loading message templates…</div></div>
+  <div id="tc-msg-list"><div class="tc-empty"><strong>Loading message templates</strong><span>Gathering standard reporting formats and built-in field examples.</span></div></div>
 </div>
 
 <!-- ── Weather Calculators Panel ─────────────────────── -->
@@ -292,19 +300,26 @@
   const $=id=>document.getElementById(id);
   const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
   const val=id=>($(id)||{}).value||'';
-  const numVal=(id,def)=>parseFloat(val(id))||def||0;
+  const esc = typeof escapeHtml === 'function' ? escapeHtml : s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const numVal=(id,def)=>{
+    const parsed = parseFloat(val(id));
+    return Number.isFinite(parsed) ? parsed : (def ?? 0);
+  };
+  const tcEmpty=(title,body)=>`<div class="tc-empty"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
+  const tcDeleteButton=(action,label)=>`<button type="button" class="tc-btn tc-btn-icon tc-btn-danger-quiet" onclick='${action}' title="Delete ${esc(label)}" aria-label="Delete ${esc(label)}">&times;</button>`;
+  const tcConfirmDelete=label=>window.confirm(`Delete ${label}? This removes it from the tactical communications workspace.`);
 
   /* ── Radio Equipment ── */
   window.tcLoadRadios=function(){
     api('/api/radio-equipment').then(items=>{
       const el=$('tc-radio-list');
-      if(!items.length){el.innerHTML='<div class="tc-empty">No radios are logged yet. Add the first handheld, base station, or repeater above.</div>';return;}
+      if(!items.length){el.innerHTML=tcEmpty('No radios logged yet', 'Add the first handheld, base station, or repeater above to anchor the communications inventory.');return;}
       const condColor={good:'#22c55e',fair:'#f59e0b',poor:'#f97316',inoperative:'#ef4444'};
       el.innerHTML=items.map(r=>`<div class="tc-list-item">
-        <div><strong>${r.name}</strong> <span class="tc-badge" style="color:${condColor[r.condition]||'#aaa'};margin-left:6px">${r.condition}</span>
-          <br><small class="tone-muted">${r.radio_type} · ${r.model||'?'} · ${r.power_watts}W${r.assigned_to?' · '+r.assigned_to:''}</small>
-          ${r.freq_range_low?`<br><small style="color:var(--tc-accent)">${r.freq_range_low}-${r.freq_range_high} MHz</small>`:''}</div>
-        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteRadio(${r.id})" aria-label="Tc delete radio">×</button></div>
+        <div class="tc-list-copy"><div><strong>${esc(r.name)}</strong> <span class="tc-badge" style="color:${condColor[r.condition]||'#aaa'};margin-left:6px">${esc(r.condition)}</span></div>
+          <div class="tc-list-meta">${esc(r.radio_type)} · ${esc(r.model||'?')} · ${r.power_watts}W${r.assigned_to?' · '+esc(r.assigned_to):''}</div>
+          ${r.freq_range_low?`<div class="tc-list-meta" style="color:var(--tc-accent)">${r.freq_range_low}-${r.freq_range_high} MHz</div>`:''}</div>
+        <div class="tc-row-actions">${tcDeleteButton(`tcDeleteRadio(${r.id}, ${JSON.stringify(r.name || 'radio')})`, r.name || 'radio')}</div>
       </div>`).join('');
     });
   };
@@ -317,7 +332,8 @@
         assigned_to:val('tc-radio-assigned'),location:val('tc-radio-location')})
     }).then(()=>{$('tc-radio-name').value='';$('tc-radio-model').value='';tcLoadRadios();});
   };
-  window.tcDeleteRadio=function(id){
+  window.tcDeleteRadio=function(id,label){
+    if(!tcConfirmDelete(label || 'radio')) return;
     api('/api/radio-equipment/'+id,{method:'DELETE'}).then(()=>tcLoadRadios());
   };
 
@@ -325,12 +341,12 @@
   window.tcLoadAuth=function(){
     api('/api/auth-codes').then(items=>{
       const el=$('tc-auth-list');
-      if(!items.length){el.innerHTML='<div class="tc-empty">No authentication sets yet. Add the first challenge-and-response pair above.</div>';return;}
+      if(!items.length){el.innerHTML=tcEmpty('No authentication sets yet', 'Add the first challenge-and-response pair above to establish the daily code picture.');return;}
       el.innerHTML=items.map(a=>`<div class="tc-list-item">
-        <div><strong>${a.code_set_name}</strong> <small class="tone-muted">${a.valid_date}</small>
-          <br><small>Challenge: <strong>${a.challenge}</strong> → Response: <strong>${a.response}</strong></small>
-          ${a.running_password?'<br><small>Running PW: '+a.running_password+'</small>':''}</div>
-        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteAuth(${a.id})" aria-label="Tc delete auth">×</button></div>
+        <div class="tc-list-copy"><div><strong>${esc(a.code_set_name)}</strong> <small class="tone-muted">${esc(a.valid_date)}</small></div>
+          <div class="tc-list-meta">Challenge: <strong>${esc(a.challenge)}</strong> → Response: <strong>${esc(a.response)}</strong></div>
+          ${a.running_password?'<div class="tc-list-meta">Running PW: '+esc(a.running_password)+'</div>':''}</div>
+        <div class="tc-row-actions">${tcDeleteButton(`tcDeleteAuth(${a.id}, ${JSON.stringify(a.code_set_name || 'authentication set')})`, a.code_set_name || 'authentication set')}</div>
       </div>`).join('');
     });
     /* Today's codes */
@@ -339,7 +355,7 @@
       if(!codes.length){el.style.display='none';return;}
       el.style.display='block';
       el.innerHTML='<div class="tc-card-title tc-tone-success">Today\'s Active Codes</div>'+
-        codes.map(c=>`<div class="tc-row-spaced-xs-bottom"><strong>${c.code_set_name}</strong>: ${c.challenge} → ${c.response}${c.duress_code?' <small style="color:var(--tc-red)">(Duress: '+c.duress_code+')</small>':''}</div>`).join('');
+        codes.map(c=>`<div class="tc-row-spaced-xs-bottom"><strong>${esc(c.code_set_name)}</strong>: ${esc(c.challenge)} → ${esc(c.response)}${c.duress_code?' <small style="color:var(--tc-red)">(Duress: '+esc(c.duress_code)+')</small>':''}</div>`).join('');
     });
   };
   window.tcCreateAuth=function(){
@@ -350,7 +366,8 @@
         running_password:val('tc-auth-running'),duress_code:val('tc-auth-duress')})
     }).then(()=>{$('tc-auth-challenge').value='';$('tc-auth-response').value='';tcLoadAuth();});
   };
-  window.tcDeleteAuth=function(id){
+  window.tcDeleteAuth=function(id,label){
+    if(!tcConfirmDelete(label || 'authentication set')) return;
     api('/api/auth-codes/'+id,{method:'DELETE'}).then(()=>tcLoadAuth());
   };
 
@@ -358,12 +375,12 @@
   window.tcLoadNets=function(){
     api('/api/net-schedules').then(items=>{
       const el=$('tc-net-list');
-      if(!items.length){el.innerHTML='<div class="tc-empty">No net schedules yet. Add the first check-in window above to publish frequency and control station.</div>';return;}
+      if(!items.length){el.innerHTML=tcEmpty('No net schedules yet', 'Add the first check-in window above to publish frequency and control station.');return;}
       el.innerHTML=items.map(n=>`<div class="tc-list-item">
-        <div><strong>${n.name}</strong> <span class="tc-badge" style="margin-left:6px;color:${n.is_active?'var(--tc-green)':'var(--text-secondary)'}">${n.is_active?'ACTIVE':'OFF'}</span>
-          <br><small class="tone-muted">${n.net_type} · ${n.frequency||'Frequency pending'} · ${n.start_time} · ${n.duration_min}min</small>
-          ${n.net_control?`<br><small>NCS: ${n.net_control}</small>`:''}</div>
-        <div><button class="tc-btn tc-btn-danger" onclick="tcDeleteNet(${n.id})" aria-label="Tc delete net">×</button></div>
+        <div class="tc-list-copy"><div><strong>${esc(n.name)}</strong> <span class="tc-badge" style="margin-left:6px;color:${n.is_active?'var(--tc-green)':'var(--text-secondary)'}">${n.is_active?'ACTIVE':'OFF'}</span></div>
+          <div class="tc-list-meta">${esc(n.net_type)} · ${esc(n.frequency||'Frequency pending')} · ${esc(n.start_time)} · ${n.duration_min} min</div>
+          ${n.net_control?`<div class="tc-list-meta">NCS: ${esc(n.net_control)}</div>`:''}</div>
+        <div class="tc-row-actions">${tcDeleteButton(`tcDeleteNet(${n.id}, ${JSON.stringify(n.name || 'net schedule')})`, n.name || 'net schedule')}</div>
       </div>`).join('');
     });
   };
@@ -375,7 +392,8 @@
         net_control:val('tc-net-control')})
     }).then(()=>{$('tc-net-name').value='';tcLoadNets();});
   };
-  window.tcDeleteNet=function(id){
+  window.tcDeleteNet=function(id,label){
+    if(!tcConfirmDelete(label || 'net schedule')) return;
     api('/api/net-schedules/'+id,{method:'DELETE'}).then(()=>tcLoadNets());
   };
 
@@ -383,21 +401,22 @@
   window.tcLoadMessages=function(){
     api('/api/message-templates').then(items=>{
       const el=$('tc-msg-list');
-      if(!items.length){el.innerHTML='<div class="tc-empty">No message templates yet. Seed the built-in formats or add your own reporting standard above.</div>';return;}
+      if(!items.length){el.innerHTML=tcEmpty('No message templates yet', 'Seed the built-in formats or add your own reporting standard above.');return;}
       el.innerHTML=items.map(t=>`<div class="tc-msg-template">
-        <h4>${t.name} <span class="tc-badge" style="color:var(--tc-accent);margin-left:4px">${t.template_type}</span>
+        <h4>${esc(t.name)} <span class="tc-badge" style="color:var(--tc-accent);margin-left:4px">${esc(t.template_type)}</span>
           ${t.is_builtin?'<span class="tc-badge" style="color:var(--text-secondary);margin-left:4px">BUILT-IN</span>':''}
         </h4>
-        <div class="tc-meta-text">${t.instructions||''}</div>
-        <pre>${t.example||'Example pending'}</pre>
-        ${!t.is_builtin?`<button class="tc-btn tc-btn-danger tc-row-spaced-sm" onclick="tcDeleteTemplate(${t.id})">Delete</button>`:''}
+        <div class="tc-meta-text">${esc(t.instructions||'')}</div>
+        <pre>${esc(t.example||'Example pending')}</pre>
+        ${!t.is_builtin?`<div class="tc-row-actions tc-row-spaced-sm">${tcDeleteButton(`tcDeleteTemplate(${t.id}, ${JSON.stringify(t.name || 'message template')})`, t.name || 'message template')}</div>`:''}
       </div>`).join('');
     });
   };
   window.tcSeedTemplates=function(){
     api('/api/message-templates/seed',{method:'POST'}).then(r=>{tcLoadMessages();});
   };
-  window.tcDeleteTemplate=function(id){
+  window.tcDeleteTemplate=function(id,label){
+    if(!tcConfirmDelete(label || 'message template')) return;
     api('/api/message-templates/'+id,{method:'DELETE'}).then(()=>tcLoadMessages());
   };
 

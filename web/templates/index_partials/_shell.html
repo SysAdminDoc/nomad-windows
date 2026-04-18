@@ -5,7 +5,7 @@
     <div class="sidebar-brand-copy">
       <span class="sidebar-brand-kicker">Field Operations Desk</span>
       <h1>NOMAD</h1>
-      <span class="sidebar-brand-subtitle">Preparedness, intelligence, and offline systems</span>
+      <span class="sidebar-brand-subtitle">Preparedness, intelligence, and offline execution in one desktop workspace</span>
       <span class="version">v{{ version }}</span>
     </div>
   </a>
@@ -252,16 +252,16 @@
   <div id="sidebar-context-hub" class="sidebar-context-hub">
     <div class="sidebar-context-head">
       <div class="sidebar-context-copy">
-        <span class="sidebar-context-kicker">Quick Return</span>
-        <p class="sidebar-context-text">Keep your pinned desks and live context one click away.</p>
+        <span class="sidebar-context-kicker">Desk Shelf</span>
+        <p class="sidebar-context-text">Keep your pinned desks and live context close enough that returning feels instant.</p>
       </div>
     </div>
     <div class="sidebar-context-section">
-      <span class="sidebar-context-label">Pinned</span>
+      <span class="sidebar-context-label">Pinned Desks</span>
       <div class="sidebar-context-list" id="sidebar-context-pinned"></div>
     </div>
     <div class="sidebar-context-section">
-      <span class="sidebar-context-label">Recent</span>
+      <span class="sidebar-context-label">Live Return Point</span>
       <div class="sidebar-context-current" id="sidebar-context-current"></div>
     </div>
   </div>
@@ -343,7 +343,7 @@
       </ul>
       <div class="prep-field">
         <label class="prep-field-label" for="emergency-reason-input">Reason (shown on banner + timeline)</label>
-        <input id="emergency-reason-input" name="emergency_reason_input" class="prep-field-control" maxlength="500" placeholder="e.g. Severe weather - tornado warning" autocomplete="off">
+        <input id="emergency-reason-input" name="emergency_reason_input" class="prep-field-control" maxlength="500" placeholder="e.g. Tornado warning, wildfire evacuation, flood response…" autocomplete="off">
       </div>
       <div class="prep-form-actions">
         <button class="btn btn-sm btn-primary emergency-modal-confirm" type="button" data-shell-action="confirm-emergency-enter">Activate Emergency Mode</button>
@@ -364,7 +364,7 @@
       <p class="emergency-modal-copy">Close the emergency. A closeout entry will be written to the incident timeline with the total duration.</p>
       <div class="prep-field">
         <label class="prep-field-label" for="emergency-closeout-input">Closeout note (optional — appended to the incident)</label>
-        <textarea id="emergency-closeout-input" name="emergency_closeout_input" class="prep-field-control" rows="3" maxlength="2000" placeholder="What happened, what you did, what you'd do differently"></textarea>
+        <textarea id="emergency-closeout-input" name="emergency_closeout_input" class="prep-field-control" rows="3" maxlength="2000" placeholder="What happened, what you did, and what should change next time…"></textarea>
       </div>
       <div class="prep-form-actions">
         <button class="btn btn-sm btn-primary" type="button" data-shell-action="confirm-emergency-exit">Close Emergency</button>

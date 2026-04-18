@@ -176,8 +176,11 @@ let _lanPresencePoll = null;
 let _lanLastId = 0;
 let _lanChatCompact = true;
 
-function utilityEmptyState(message) {
-  return `<div class="utility-empty-state">${escapeHtml(message)}</div>`;
+function utilityEmptyState(titleOrMessage, body = '') {
+  if (body) {
+    return `<div class="utility-empty-state"><strong>${escapeHtml(titleOrMessage)}</strong><span>${escapeHtml(body)}</span></div>`;
+  }
+  return `<div class="utility-empty-state"><span>${escapeHtml(titleOrMessage)}</span></div>`;
 }
 
 function startLanMessagePolling() {
@@ -279,14 +282,17 @@ function toggleLanChat() {
 
 async function loadLanPresence() {
   const el = document.getElementById('lan-presence-list');
+  const statusEl = document.getElementById('lan-chat-status');
   if (!el) return;
   // Send our own heartbeat
   safeFetch('/api/lan/presence/heartbeat', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name: localStorage.getItem('nomad-node-name') || 'This Node', version: VERSION})});
   const nodes = await safeFetch('/api/lan/presence', {}, []);
   if (!nodes.length) {
+    if (statusEl) statusEl.textContent = 'This desk only';
     el.innerHTML = '<span class="utility-presence-pill utility-presence-pill-solo">Only you</span>';
     return;
   }
+  if (statusEl) statusEl.textContent = `${nodes.length + 1} desks online`;
   el.innerHTML = nodes.map(n => `<span class="utility-presence-pill"><span class="utility-presence-dot"></span><span>${escapeHtml(n.node_name)}</span></span>`).join('');
 }
 
@@ -316,7 +322,7 @@ async function pollLanMessages() {
 async function renderLanMessages(msgs) {
   const el = document.getElementById('lan-chat-messages');
   if (!msgs.length) {
-    el.innerHTML = utilityEmptyState('No messages yet. Anyone on the local network can chat here.');
+    el.innerHTML = utilityEmptyState('No messages yet', 'Anyone on the same local network can coordinate here as soon as another NOMAD desk comes online.');
     return;
   }
   const rendered = await Promise.all(msgs.map(m => renderLanMsg(m)));
@@ -335,7 +341,7 @@ async function sendLanMsg() {
   const input = document.getElementById('lan-chat-input');
   const content = input.value.trim();
   if (!content) return;
-  const sender = document.getElementById('lan-chat-name').value.trim() || 'Anonymous';
+  const sender = document.getElementById('lan-chat-name').value.trim() || 'Field Desk';
   input.value = '';
   const encrypt = document.getElementById('lan-encrypt-toggle')?.checked;
   const finalContent = encrypt ? await encryptLanMessage(content) : content;
@@ -348,7 +354,7 @@ async function sendLanMsg() {
     el.insertAdjacentHTML('beforeend', html);
     _lanLastId = msg.id;
     el.scrollTop = el.scrollHeight;
-  } catch(e) { toast('Failed to send', 'error'); }
+  } catch(e) { toast('Message not sent. Check local network availability and try again.', 'error'); }
 }
 
 async function loadLanChannels() {

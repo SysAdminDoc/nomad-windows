@@ -52,15 +52,23 @@
   #tab-movement-ops .mo-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-movement-ops .mo-btn-primary { background:var(--mo-accent); color:#000; }
   #tab-movement-ops .mo-btn-danger { background:var(--mo-red); color:#fff; }
+  #tab-movement-ops .mo-btn-danger-quiet { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.24); color:var(--mo-red); }
+  #tab-movement-ops .mo-btn-danger-quiet:hover { background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.36); color:#fff; }
+  #tab-movement-ops .mo-btn-icon { min-width:36px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
   #tab-movement-ops .mo-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
-  #tab-movement-ops .mo-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
-  #tab-movement-ops .mo-list-item:last-child { border-bottom:none; }
+  #tab-movement-ops .mo-list-item { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:12px 14px; margin-bottom:10px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:14px; background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); box-shadow:inset 0 1px 0 color-mix(in srgb, white 5%, transparent); }
+  #tab-movement-ops .mo-list-item:last-child { margin-bottom:0; }
+  #tab-movement-ops .mo-list-copy { display:grid; gap:4px; min-width:0; }
+  #tab-movement-ops .mo-list-meta { font-size:.8rem; color:var(--text-secondary,#aaa); line-height:1.55; }
+  #tab-movement-ops .mo-row-actions { display:flex; gap:6px; align-items:center; flex-wrap:wrap; justify-content:flex-end; }
   #tab-movement-ops .mo-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
   #tab-movement-ops .mo-badge-go { background:rgba(34,197,94,.2); color:var(--mo-green); }
   #tab-movement-ops .mo-badge-nogo { background:rgba(239,68,68,.2); color:var(--mo-red); }
   #tab-movement-ops .mo-badge-hold { background:rgba(245,158,11,.2); color:var(--mo-accent); }
   #tab-movement-ops .mo-badge-unknown { background:rgba(148,163,184,.2); color:#94a3b8; }
-  #tab-movement-ops .mo-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
+  #tab-movement-ops .mo-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; display:grid; gap:6px; justify-items:center; }
+  #tab-movement-ops .mo-empty strong { color:var(--text-primary,#eee); font-size:.96rem; font-weight:700; letter-spacing:-.01em; }
+  #tab-movement-ops .mo-empty span { max-width:42ch; color:var(--text-secondary,#aaa); }
   #tab-movement-ops .mo-calc-result { background:var(--mo-accent-dim); border:1px solid var(--mo-accent); border-radius:8px; padding:14px; margin-top:10px; }
   #tab-movement-ops .mo-calc-result .val { font-size:1.2rem; font-weight:700; color:var(--mo-accent); }
   @media (max-width: 860px) {
@@ -140,10 +148,10 @@
     </div>
     <div class="mo-form-row">
       <div class="field mo-field-grow-3"><label>Notes</label><textarea name="mo-plan-notes" id="mo-plan-notes" rows="2"></textarea></div>
-      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreatePlan()">Add Plan</button></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreatePlan()">Save Plan</button></div>
     </div>
   </div>
-  <div id="mo-plans-list" class="mo-card"><div class="mo-empty">Loading movement plans...</div></div>
+  <div id="mo-plans-list" class="mo-card"><div class="mo-empty"><strong>Loading movement plans</strong><span>Pulling route timing, status, and movement method into the workspace.</span></div></div>
 </div>
 
 <!-- ── Alt Vehicles Panel ───────────────────────────────── -->
@@ -176,10 +184,10 @@
     </div>
     <div class="mo-form-row">
       <div class="field"><label>Storage Location</label><input name="mo-av-location" id="mo-av-location" placeholder="Garage"></div>
-      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateAltVehicle()">Add</button></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateAltVehicle()">Save Asset</button></div>
     </div>
   </div>
-  <div id="mo-av-list" class="mo-card"><div class="mo-empty">Loading alternate transport assets...</div></div>
+  <div id="mo-av-list" class="mo-card"><div class="mo-empty"><strong>Loading alternate transport</strong><span>Reviewing backup mobility assets, storage locations, and carrying capacity.</span></div></div>
 </div>
 
 <!-- ── Route Hazards Panel ──────────────────────────────── -->
@@ -207,10 +215,10 @@
     <div class="mo-form-row">
       <div class="field"><label>Description</label><input name="mo-hz-desc" id="mo-hz-desc" placeholder="Single-lane bridge, no bypass within 5mi"></div>
       <div class="field"><label>Bypass Route</label><input name="mo-hz-bypass" id="mo-hz-bypass" placeholder="Alt route via Hwy 12"></div>
-      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateHazard()">Add</button></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateHazard()">Log Hazard</button></div>
     </div>
   </div>
-  <div id="mo-hz-list" class="mo-card"><div class="mo-empty">Loading route hazards...</div></div>
+  <div id="mo-hz-list" class="mo-card"><div class="mo-empty"><strong>Loading route hazards</strong><span>Checking chokepoints, bypass notes, and severity across known routes.</span></div></div>
 </div>
 
 <!-- ── Vehicle Loading Panel ────────────────────────────── -->
@@ -225,10 +233,10 @@
     </div>
     <div class="mo-form-row">
       <div class="field"><label>Notes</label><input name="mo-vl-notes" id="mo-vl-notes" placeholder="Bug-out bags first, then supplies"></div>
-      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateLoading()">Add</button></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateLoading()">Save Loading Plan</button></div>
     </div>
   </div>
-  <div id="mo-vl-list" class="mo-card"><div class="mo-empty">Loading vehicle staging plans...</div></div>
+  <div id="mo-vl-list" class="mo-card"><div class="mo-empty"><strong>Loading vehicle staging plans</strong><span>Reviewing load order, fuel status, and maximum carry weight.</span></div></div>
 </div>
 
 <!-- ── Go/No-Go Panel ──────────────────────────────────── -->
@@ -249,11 +257,11 @@
     <div class="mo-form-row">
       <div class="field"><label>GO Threshold</label><input name="mo-gng-go" id="mo-gng-go" placeholder="All routes verified clear"></div>
       <div class="field"><label>NO-GO Threshold</label><input name="mo-gng-nogo" id="mo-gng-nogo" placeholder="Primary & alternate blocked"></div>
-      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateGoNogo()">Add</button></div>
+      <div class="field mo-field-action"><button class="mo-btn mo-btn-primary" onclick="moCreateGoNogo()">Save Criterion</button></div>
     </div>
   </div>
   <div id="mo-gng-eval" class="mo-card mo-hidden"></div>
-  <div id="mo-gng-list" class="mo-card"><div class="mo-empty">Loading departure criteria...</div></div>
+  <div id="mo-gng-list" class="mo-card"><div class="mo-empty"><strong>Loading departure criteria</strong><span>Gathering go and no-go gates, weight, and current decision status.</span></div></div>
 </div>
 
 <!-- ── Calculators Panel ───────────────────────────────── -->
@@ -328,18 +336,25 @@
   /* ── Helpers ── */
   const $=id=>document.getElementById(id);
   const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
+  const esc = typeof escapeHtml === 'function' ? escapeHtml : s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const val=id=>($(id)||{}).value||'';
-  const numVal=(id,def)=>parseFloat(val(id))||def||0;
+  const numVal=(id,def)=>{
+    const parsed = parseFloat(val(id));
+    return Number.isFinite(parsed) ? parsed : (def ?? 0);
+  };
+  const moEmpty=(title, body)=>`<div class="mo-empty"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
+  const moDeleteButton=(action,label)=>`<button type="button" class="mo-btn mo-btn-icon mo-btn-danger-quiet" onclick='${action}' title="Delete ${esc(label)}" aria-label="Delete ${esc(label)}">&times;</button>`;
+  const moConfirmDelete=label=>window.confirm(`Delete ${label}? This removes it from the movement workspace.`);
 
   /* ── Movement Plans ── */
   window.moLoadPlans=function(){
     api('/api/movement-plans').then(plans=>{
       const el=$('mo-plans-list');
-      if(!plans.length){el.innerHTML='<div class="mo-empty">No movement plans yet. Capture the first route above to anchor timing, distance, and movement method.</div>';return;}
+      if(!plans.length){el.innerHTML=moEmpty('No movement plans yet', 'Capture the first route above to anchor timing, distance, and movement method.');return;}
       el.innerHTML=plans.map(p=>`<div class="mo-list-item">
-        <div><strong>${p.name}</strong> <span class="mo-badge mo-tag-spacer">${p.plan_type}</span>
-          <br><small class="tone-muted">${p.origin||'?'} → ${p.destination||'?'} · ${p.distance_miles||0} mi · ${p.status}</small></div>
-        <div><button class="mo-btn mo-btn-danger" onclick="moDeletePlan(${p.id})" aria-label="Mo delete plan">×</button></div>
+        <div class="mo-list-copy"><div><strong>${esc(p.name)}</strong> <span class="mo-badge mo-tag-spacer">${esc(p.plan_type)}</span></div>
+          <div class="mo-list-meta">${esc(p.origin||'?')} → ${esc(p.destination||'?')} · ${p.distance_miles||0} mi · ${esc(p.status)}</div></div>
+        <div class="mo-row-actions">${moDeleteButton(`moDeletePlan(${p.id}, ${JSON.stringify(p.name || 'movement plan')})`, p.name || 'movement plan')}</div>
       </div>`).join('');
     });
   };
@@ -352,7 +367,8 @@
         pace_count_per_100m:numVal('mo-plan-pace',65),night_movement:numVal('mo-plan-night')})
     }).then(()=>{$('mo-plan-name').value='';moLoadPlans();});
   };
-  window.moDeletePlan=function(id){
+  window.moDeletePlan=function(id, label){
+    if(!moConfirmDelete(label || 'movement plan')) return;
     api('/api/movement-plans/'+id,{method:'DELETE'}).then(()=>moLoadPlans());
   };
 
@@ -360,11 +376,11 @@
   window.moLoadAV=function(){
     api('/api/alt-vehicles').then(items=>{
       const el=$('mo-av-list');
-      if(!items.length){el.innerHTML='<div class="mo-empty">No alternate transport assets are registered yet. Add the first bike, animal, or watercraft above.</div>';return;}
+      if(!items.length){el.innerHTML=moEmpty('No alternate transport assets yet', 'Add the first bike, animal, watercraft, or other backup mobility option above.');return;}
       el.innerHTML=items.map(v=>`<div class="mo-list-item">
-        <div><strong>${v.name}</strong> <span class="mo-badge mo-tag-spacer">${v.vehicle_type}</span>
-          <br><small class="tone-muted">Cap: ${v.capacity_lb}lb · Range: ${v.range_miles}mi · ${v.speed_mph}mph · ${v.condition}</small></div>
-        <div><button class="mo-btn mo-btn-danger" onclick="moDeleteAV(${v.id})" aria-label="Mo delete a v">×</button></div>
+        <div class="mo-list-copy"><div><strong>${esc(v.name)}</strong> <span class="mo-badge mo-tag-spacer">${esc(v.vehicle_type)}</span></div>
+          <div class="mo-list-meta">Cap: ${v.capacity_lb} lb · Range: ${v.range_miles} mi · ${v.speed_mph} mph · ${esc(v.condition)}</div></div>
+        <div class="mo-row-actions">${moDeleteButton(`moDeleteAV(${v.id}, ${JSON.stringify(v.name || 'alternate transport asset')})`, v.name || 'alternate transport asset')}</div>
       </div>`).join('');
     });
   };
@@ -376,7 +392,8 @@
         speed_mph:numVal('mo-av-speed'),storage_location:val('mo-av-location')})
     }).then(()=>{$('mo-av-name').value='';moLoadAV();});
   };
-  window.moDeleteAV=function(id){
+  window.moDeleteAV=function(id, label){
+    if(!moConfirmDelete(label || 'alternate transport asset')) return;
     api('/api/alt-vehicles/'+id,{method:'DELETE'}).then(()=>moLoadAV());
   };
 
@@ -384,13 +401,13 @@
   window.moLoadHazards=function(){
     api('/api/route-hazards').then(items=>{
       const el=$('mo-hz-list');
-      if(!items.length){el.innerHTML='<div class="mo-empty">No route hazards are logged yet. Add chokepoints, blockages, or bypass notes above.</div>';return;}
+      if(!items.length){el.innerHTML=moEmpty('No route hazards logged yet', 'Add chokepoints, blockages, or bypass notes above so the route picture stays current.');return;}
       const sevColor={low:'#22c55e',moderate:'#f59e0b',high:'#f97316',critical:'#ef4444'};
       el.innerHTML=items.map(h=>`<div class="mo-list-item">
-        <div><strong>${h.name}</strong> <span class="mo-badge" style="color:${sevColor[h.severity]||'#aaa'};margin-left:6px">${h.severity}</span>
-          <br><small class="tone-muted">${h.hazard_type} · ${h.description||'No description'}</small>
-          ${h.bypass_route?`<br><small class="mo-tone-info">Bypass: ${h.bypass_route}</small>`:''}</div>
-        <div><button class="mo-btn mo-btn-danger" onclick="moDeleteHazard(${h.id})" aria-label="Mo delete hazard">×</button></div>
+        <div class="mo-list-copy"><div><strong>${esc(h.name)}</strong> <span class="mo-badge" style="color:${sevColor[h.severity]||'#aaa'};margin-left:6px">${esc(h.severity)}</span></div>
+          <div class="mo-list-meta">${esc(h.hazard_type)} · ${esc(h.description||'No description')}</div>
+          ${h.bypass_route?`<div class="mo-list-meta mo-tone-info">Bypass: ${esc(h.bypass_route)}</div>`:''}</div>
+        <div class="mo-row-actions">${moDeleteButton(`moDeleteHazard(${h.id}, ${JSON.stringify(h.name || 'route hazard')})`, h.name || 'route hazard')}</div>
       </div>`).join('');
     });
   };
@@ -401,7 +418,8 @@
         description:val('mo-hz-desc'),bypass_route:val('mo-hz-bypass')})
     }).then(()=>{$('mo-hz-name').value='';moLoadHazards();});
   };
-  window.moDeleteHazard=function(id){
+  window.moDeleteHazard=function(id, label){
+    if(!moConfirmDelete(label || 'route hazard')) return;
     api('/api/route-hazards/'+id,{method:'DELETE'}).then(()=>moLoadHazards());
   };
 
@@ -409,11 +427,11 @@
   window.moLoadVehicleLoading=function(){
     api('/api/vehicle-loading').then(items=>{
       const el=$('mo-vl-list');
-      if(!items.length){el.innerHTML='<div class="mo-empty">No vehicle staging plans yet. Build the first loading order above.</div>';return;}
+      if(!items.length){el.innerHTML=moEmpty('No vehicle staging plans yet', 'Build the first loading order above to make departure loading calmer and faster.');return;}
       el.innerHTML=items.map(v=>`<div class="mo-list-item">
-        <div><strong>#${v.load_order} ${v.vehicle_name||'Vehicle'}</strong>
-          <br><small class="tone-muted">Weight: ${v.total_weight_lb}/${v.max_weight_lb}lb · Fuel: ${v.fuel_level_pct}%</small></div>
-        <div><button class="mo-btn mo-btn-danger" onclick="moDeleteLoading(${v.id})" aria-label="Mo delete loading">×</button></div>
+        <div class="mo-list-copy"><div><strong>#${v.load_order} ${esc(v.vehicle_name||'Vehicle')}</strong></div>
+          <div class="mo-list-meta">Weight: ${v.total_weight_lb}/${v.max_weight_lb} lb · Fuel: ${v.fuel_level_pct}%</div></div>
+        <div class="mo-row-actions">${moDeleteButton(`moDeleteLoading(${v.id}, ${JSON.stringify(v.vehicle_name || 'vehicle staging plan')})`, v.vehicle_name || 'vehicle staging plan')}</div>
       </div>`).join('');
     });
   };
@@ -425,7 +443,8 @@
         notes:val('mo-vl-notes')})
     }).then(()=>{$('mo-vl-vehicle').value='';moLoadVehicleLoading();});
   };
-  window.moDeleteLoading=function(id){
+  window.moDeleteLoading=function(id, label){
+    if(!moConfirmDelete(label || 'vehicle staging plan')) return;
     api('/api/vehicle-loading/'+id,{method:'DELETE'}).then(()=>moLoadVehicleLoading());
   };
 
@@ -433,15 +452,15 @@
   window.moLoadGoNogo=function(){
     api('/api/go-nogo').then(items=>{
       const el=$('mo-gng-list');
-      if(!items.length){el.innerHTML='<div class="mo-empty">No go/no-go criteria are defined yet. Add the first departure gate above.</div>';return;}
+      if(!items.length){el.innerHTML=moEmpty('No go/no-go criteria yet', 'Add the first departure gate above to make launch decisions more explicit and repeatable.');return;}
       const statusBadge={go:'mo-badge-go',nogo:'mo-badge-nogo',hold:'mo-badge-hold',unknown:'mo-badge-unknown'};
       el.innerHTML=items.map(g=>`<div class="mo-list-item">
-        <div><strong>${g.criterion}</strong> <span class="mo-badge ${statusBadge[g.current_status]||'mo-badge-unknown'} mo-tag-spacer">${g.current_status.toUpperCase()}</span>
-          <br><small class="tone-muted">${g.category} · Weight: ${g.weight}</small></div>
-        <div class="mo-row-tight">
+        <div class="mo-list-copy"><div><strong>${esc(g.criterion)}</strong> <span class="mo-badge ${statusBadge[g.current_status]||'mo-badge-unknown'} mo-tag-spacer">${esc((g.current_status || 'unknown').toUpperCase())}</span></div>
+          <div class="mo-list-meta">${esc(g.category)} · Weight: ${g.weight}</div></div>
+        <div class="mo-row-actions">
           <button class="mo-btn mo-btn-secondary" onclick="moSetGoNogo(${g.id},'go')" title="Set GO">GO</button>
           <button class="mo-btn mo-btn-secondary" onclick="moSetGoNogo(${g.id},'nogo')" title="Set NO-GO">NO</button>
-          <button class="mo-btn mo-btn-danger" onclick="moDeleteGoNogo(${g.id})" aria-label="Mo delete go nogo">×</button>
+          ${moDeleteButton(`moDeleteGoNogo(${g.id}, ${JSON.stringify(g.criterion || 'go or no-go criterion')})`, g.criterion || 'go or no-go criterion')}
         </div>
       </div>`).join('');
     });
@@ -459,7 +478,8 @@
       body:JSON.stringify({current_status:status,last_updated:new Date().toISOString()})
     }).then(()=>moLoadGoNogo());
   };
-  window.moDeleteGoNogo=function(id){
+  window.moDeleteGoNogo=function(id, label){
+    if(!moConfirmDelete(label || 'go or no-go criterion')) return;
     api('/api/go-nogo/'+id,{method:'DELETE'}).then(()=>moLoadGoNogo());
   };
 

@@ -4,8 +4,8 @@
       <div class="notes-command-deck-head">
         <div class="notes-command-copy">
           <div class="section-header-label notes-command-kicker">WORKING NOTES</div>
-          <h2 class="notes-command-title">Capture decisions, field observations, and reference material without losing the thread.</h2>
-          <p class="notes-command-text">Keep your note shelf, editor, templates, and backlinks in one writing workspace that feels more like a desk and less like a text box.</p>
+          <h2 class="notes-command-title">Keep observations, decisions, and reference notes in one focused writing desk.</h2>
+          <p class="notes-command-text">Write in Markdown, reopen drafts quickly, and keep templates, tags, and backlinks close enough that capture stays effortless.</p>
         </div>
         <div class="notes-command-actions">
           <button type="button" class="btn btn-sm btn-primary" data-note-action="create-note">New Note</button>
@@ -14,6 +14,7 @@
         </div>
       </div>
       <div class="notes-command-pills">
+        <span class="notes-command-pill">Focused editor</span>
         <span class="notes-command-pill">Markdown</span>
         <span class="notes-command-pill">Templates</span>
         <span class="notes-command-pill">Backlinks</span>
@@ -23,10 +24,10 @@
     <div class="notes-layout">
       <div class="notes-sidebar">
         <div class="notes-sidebar-header workspace-toolbar workspace-heading-row">
-          <span class="notes-panel-title">Notes</span>
+          <span class="notes-panel-title">Note Shelf</span>
           <div class="workspace-toolbar-actions">
             <a class="btn btn-sm" href="/api/notes/export-all" title="Export all as ZIP">Export All</a>
-            <button class="btn btn-sm btn-primary" data-note-action="create-note">+ New</button>
+            <button class="btn btn-sm btn-primary" data-note-action="create-note">New</button>
             <div class="notes-template-shell">
               <button class="btn btn-sm" data-note-action="toggle-note-templates">Template</button>
               <div id="note-template-dropdown" class="notes-template-dropdown is-hidden">
@@ -35,12 +36,12 @@
             </div>
           </div>
         </div>
-        <div class="notes-search"><input id="notes-search" type="search" name="notes_search" autocomplete="off" aria-label="Search notes" placeholder="Search notes..." data-input-action="filter-notes"></div>
-        <div class="notes-list" id="notes-list"><div class="sidebar-empty-state">No notes yet. Click + New to create one.</div></div>
+        <div class="notes-search"><input id="notes-search" type="search" name="notes_search" autocomplete="off" aria-label="Search notes" placeholder="Search titles, tags, and note text" data-input-action="filter-notes"></div>
+        <div class="notes-list" id="notes-list"><div class="sidebar-empty-state"><strong>No notes yet</strong><span>Create a note to start building a local shelf of decisions, references, and field observations.</span></div></div>
       </div>
       <div class="notes-editor">
         <div class="notes-editor-header workspace-toolbar">
-          <input id="note-title" name="note_title" aria-label="Note title" autocomplete="off" placeholder="Note title..." data-input-action="note-title">
+          <input id="note-title" name="note_title" aria-label="Note title" autocomplete="off" placeholder="Untitled note" data-input-action="note-title">
           <input id="note-tags" name="note_tags" class="notes-inline-input notes-inline-tags" aria-label="Note tags" autocomplete="off" placeholder="Tags (comma-separated)" data-input-action="note-tags">
           <button class="btn btn-sm" data-note-action="toggle-note-pin" id="note-pin-btn" title="Pin/unpin note">Pin</button>
           <button class="btn btn-sm" data-note-action="toggle-note-preview" id="note-preview-btn">Preview</button>
@@ -51,7 +52,7 @@
           <span class="notes-backlinks-label">Backlinks:</span> <span id="note-backlinks-list"></span>
         </div>
         <div class="notes-editor-split">
-          <textarea id="note-content" name="note_content" placeholder="Start writing (Markdown supported)..." data-input-action="note-content"></textarea>
+          <textarea id="note-content" name="note_content" placeholder="Capture the decision, observation, or reference you want to keep. Markdown supported." data-input-action="note-content"></textarea>
           <span id="note-word-count" class="notes-word-count"></span>
           <div class="notes-preview is-hidden" id="note-preview"></div>
         </div>

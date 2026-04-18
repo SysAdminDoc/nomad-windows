@@ -28,12 +28,11 @@
          toggles `.is-hidden` based on installed ZIM count. -->
     <div id="kiwix-preflight-banner" class="workspace-panel workspace-panel-tight workspace-panel-accent is-hidden" role="status" aria-live="polite">
       <div class="workspace-toolbar workspace-heading-row">
-        <span class="workspace-panel-title">&#9888; Kiwix needs content before it can start</span>
+        <span class="workspace-panel-title">&#9888; Kiwix Needs Content Before It Can Start</span>
       </div>
       <div class="workspace-copy">
-        The Kiwix service serves offline Wikipedia and reference ZIM files. You haven't installed any yet &mdash;
-        pick a Wikipedia tier below (Essentials is the smallest at ~3 GB) and Kiwix will start automatically
-        once the download completes.
+        The Kiwix service serves offline Wikipedia and reference ZIM files. No content is installed yet, so start with a Wikipedia tier below.
+        Essentials is the lightest option at roughly 3 GB, and Kiwix will come online automatically after the download completes.
       </div>
       <div class="workspace-toolbar workspace-toolbar-actions">
         <button type="button" class="btn btn-sm btn-primary" data-zim-tier="essential">Install Essentials (~3 GB)</button>
@@ -46,7 +45,7 @@
       <div class="workspace-toolbar workspace-heading-row">
         <div>
           <div class="workspace-kicker">WIKIPEDIA OFFLINE</div>
-          <div class="workspace-note">Choose your Wikipedia edition based on available storage</div>
+          <div class="workspace-note">Choose the edition that matches your storage budget and coverage needs.</div>
         </div>
       </div>
       <div id="wiki-tier-options" class="workspace-auto-grid"></div>
@@ -62,11 +61,11 @@
 
     <!-- Bulk Download Buttons -->
     <div class="workspace-toolbar library-toolbar">
-      <button class="btn btn-sm btn-primary" data-zim-tier="essential" title="Core references: Wikipedia, survival, medical (~3 GB)">Download All Essentials (~3 GB)</button>
-      <button class="btn btn-sm" data-zim-tier="standard" title="Essentials + repair guides, cooking, agriculture (~15 GB)">Download Standard (~15 GB)</button>
-      <button class="btn btn-sm" data-zim-tier="comprehensive" title="Complete collection including history, science, tech (~80+ GB)">Download Everything (~80+ GB)</button>
+      <button class="btn btn-sm btn-primary" data-zim-tier="essential" title="Core references: Wikipedia, survival, medical (~3 GB)">Essentials (~3 GB)</button>
+      <button class="btn btn-sm" data-zim-tier="standard" title="Essentials + repair guides, cooking, agriculture (~15 GB)">Standard (~15 GB)</button>
+      <button class="btn btn-sm" data-zim-tier="comprehensive" title="Complete collection including history, science, tech (~80+ GB)">Full Shelf (~80+ GB)</button>
       <button class="btn btn-sm" data-library-action="check-content-updates" title="Check if any installed content has newer versions">Check Updates</button>
-      <button class="btn btn-sm layout-inline-end" data-library-action="refresh-offline-content">Refresh</button>
+      <button class="btn btn-sm layout-inline-end" data-library-action="refresh-offline-content">Refresh Shelf</button>
     </div>
 
     <!-- Active Downloads Queue -->
@@ -80,17 +79,20 @@
     <!-- Document Library -->
     <div id="doc-library" class="settings-card workspace-panel workspace-panel-tight">
       <div class="workspace-toolbar workspace-heading-row">
-        <h3>Document Library (PDF/ePub/Text)</h3>
+        <div class="library-doc-heading">
+          <h3>Document Library</h3>
+          <p class="library-doc-intro">Keep SOPs, manuals, field guides, and personal notes alongside your offline reference packs for one dependable shelf.</p>
+        </div>
         <div class="workspace-toolbar-actions">
           <input type="file" id="pdf-upload" name="library_document_upload" accept=".pdf,.epub,.txt,.md" data-change-action="upload-pdf" class="is-hidden">
-          <button class="btn btn-sm btn-primary" data-click-target="pdf-upload">Upload Document</button>
+          <button class="btn btn-sm btn-primary" data-click-target="pdf-upload">Add Document</button>
         </div>
       </div>
-      <div id="pdf-list" class="workspace-copy"><div class="workspace-empty-copy">No documents uploaded yet. Click "Upload Document" to add PDFs, ePubs, or text files for offline reading.</div></div>
+      <div id="pdf-list" class="workspace-copy" aria-live="polite"><div class="workspace-empty-copy"><strong>No Documents Yet</strong><span>Add PDFs, ePubs, or text files to build a dependable local shelf for reading and reference.</span></div></div>
       <div id="pdf-viewer" class="workspace-stack is-hidden">
         <div class="workspace-toolbar workspace-heading-row">
           <span id="pdf-viewer-title" class="workspace-panel-title"></span>
-          <button class="btn btn-sm" data-library-action="close-pdf-viewer">Close</button>
+          <button class="btn btn-sm" data-library-action="close-pdf-viewer">Back to Shelf</button>
         </div>
         <iframe id="pdf-iframe" class="workspace-frame workspace-frame-light"></iframe>
       </div>

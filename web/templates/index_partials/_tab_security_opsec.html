@@ -75,6 +75,10 @@
   #tab-security-opsec .so-btn-danger { background:var(--so-red); color:#fff; }
   #tab-security-opsec .so-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
   #tab-security-opsec .so-btn-success { background:var(--so-green); color:#000; }
+  #tab-security-opsec .so-btn-icon { width:34px; min-width:34px; min-height:34px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; font-size:1rem; line-height:1; }
+  #tab-security-opsec .so-btn-danger-quiet { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.24); color:var(--so-red); }
+  #tab-security-opsec .so-btn-danger-quiet:hover { background:rgba(239,68,68,.14); border-color:rgba(239,68,68,.36); color:#fff; }
+  #tab-security-opsec .so-action-cluster { display:inline-flex; align-items:center; justify-content:flex-end; gap:6px; flex-wrap:wrap; }
   #tab-security-opsec .so-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
   #tab-security-opsec .so-list-item:last-child { border-bottom:none; }
   #tab-security-opsec .so-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
@@ -92,7 +96,10 @@
   #tab-security-opsec .so-badge-active { background:rgba(34,197,94,.2); color:var(--so-green); }
   #tab-security-opsec .so-badge-standby { background:rgba(234,179,8,.2); color:var(--so-yellow); }
   #tab-security-opsec .so-badge-inactive { background:rgba(107,114,128,.2); color:var(--so-gray); }
-  #tab-security-opsec .so-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
+  #tab-security-opsec .so-empty { display:grid; gap:6px; place-items:center; text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
+  #tab-security-opsec .so-empty strong { color:var(--text-primary,#eee); font-size:.94rem; line-height:1.35; }
+  #tab-security-opsec .so-empty span { max-width:52ch; }
+  #tab-security-opsec .so-empty-cell { padding:0 !important; }
   #tab-security-opsec .so-table { width:100%; border-collapse:collapse; font-size:.82rem; }
   #tab-security-opsec .so-table th { text-align:left; padding:8px 10px; font-size:.72rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#444); background:rgba(0,0,0,.2); }
   #tab-security-opsec .so-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); }
@@ -636,12 +643,21 @@
 
   const el=id=>document.getElementById(id);
   const val=id=>(el(id)||{}).value||'';
-  const numVal=(id,def)=>parseFloat(val(id))||def||0;
+  const numVal=(id,def)=>{
+    const raw=val(id);
+    const parsed=parseFloat(raw);
+    return Number.isFinite(parsed)?parsed:(def??0);
+  };
   const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
   function toast(msg){if(window.showToast)window.showToast(msg);}
   const esc=s=>(window.escapeHtml?window.escapeHtml(s):String(s==null?'':s)
     .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+  const soEmpty=(title,body)=>'<div class="so-empty"><strong>'+esc(title)+'</strong><span>'+esc(body)+'</span></div>';
+  const soEmptyRow=(colspan,title,body)=>'<tr><td colspan="'+colspan+'" class="so-empty-cell">'+soEmpty(title,body)+'</td></tr>';
+  const soDeleteButton=(action,label)=>'<button type="button" class="so-btn so-btn-icon so-btn-danger-quiet" onclick="'+action+'" data-item-label="'+esc(label)+'" title="Delete '+esc(label)+'" aria-label="Delete '+esc(label)+'">&times;</button>';
+  const soDeleteLabel=(action,fallback)=>root.querySelector('[onclick="'+action+'"]')?.getAttribute('data-item-label')||fallback;
+  const soConfirmDelete=label=>window.confirm('Delete '+label+'? This removes it from the security workspace.');
 
   const classificationBadge=c=>`<span class="so-badge so-badge-${esc(c)}">${esc(String(c||'').replace(/_/g,' ').toUpperCase())}</span>`;
   const categoryBadge=c=>`<span class="so-badge so-badge-${esc(c)}">${esc(c)}</span>`;
@@ -659,11 +675,11 @@
   window.soLoadCompartments=function(){
     api('/api/security-ops/opsec/compartments').then(items=>{
       const list=el('so-compartment-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No compartments yet. Create the first compartment above to define access boundaries and member lists.</div>';return;}
+      if(!items.length){list.innerHTML=soEmpty('No compartments yet', 'Create the first compartment above to define access boundaries and member lists.');return;}
       list.innerHTML=items.map(c=>`<div class="so-card">
         <div class="so-row-header">
           <div><strong>${c.name}</strong> ${classificationBadge(c.classification)}</div>
-          <button class="so-btn so-btn-danger" onclick="soDeleteCompartment(${c.id})">Delete</button>
+          <div class="so-action-cluster">${soDeleteButton('soDeleteCompartment(' + c.id + ')', c.name || 'compartment')}</div>
         </div>
         ${c.description?'<div style="font-size:.82rem;color:var(--text-secondary,#aaa);margin-top:4px">'+c.description+'</div>':''}
         ${c.members?'<div style="font-size:.78rem;margin-top:6px;color:var(--text-secondary,#ccc)">Members: '+c.members+'</div>':''}
@@ -678,6 +694,8 @@
     }).then(()=>{el('so-compartment-name').value='';el('so-compartment-desc').value='';toast('Compartment created');soLoadCompartments();});
   };
   window.soDeleteCompartment=function(id){
+    const label=soDeleteLabel('soDeleteCompartment(' + id + ')','compartment');
+    if(!soConfirmDelete(label)) return;
     api('/api/security-ops/opsec/compartments/'+id,{method:'DELETE'}).then(()=>{toast('Compartment deleted');soLoadCompartments();});
   };
 
@@ -730,13 +748,13 @@
     api('/api/security-ops/opsec/compartments?type=duress').catch(()=>({items:[]})).then(data=>{
       const items=data.items||data||[];
       const duress=items.filter(i=>i.type==='duress_signal'||i.type==='cover_story');
-      if(!duress.length){list.innerHTML='<div class="so-empty">No duress signals yet. Add the first covert phrase or cover story above.</div>';return;}
+      if(!duress.length){list.innerHTML=soEmpty('No duress signals yet', 'Add the first covert phrase or cover story above.');return;}
       list.innerHTML=duress.map(d=>`<div class="so-list-item">
         <div><span class="so-badge so-badge-${d.type==='duress_signal'?'need_to_know':'restricted'}">${d.type==='duress_signal'?'DURESS':'COVER'}</span>
           <strong class="so-tag-spacer">${d.name||d.word}</strong>
           ${d.description?'<br><small class="tone-muted">'+d.description+'</small>':''}
         </div>
-        <button class="so-btn so-btn-danger" onclick="soDeleteCompartment(${d.id})">Delete</button>
+        <div class="so-action-cluster">${soDeleteButton('soDeleteCompartment(' + d.id + ')', (d.name||d.word||'duress item'))}</div>
       </div>`).join('');
     });
   };
@@ -753,7 +771,7 @@
   window.soLoadThreats=function(){
     api('/api/security-ops/threat-matrix').then(items=>{
       const tbody=el('so-threat-tbody');
-      if(!items.length){tbody.innerHTML='<tr><td colspan="7" class="so-empty">No threats logged yet. Add the first threat above to start scoring likelihood and impact.</td></tr>';return;}
+      if(!items.length){tbody.innerHTML=soEmptyRow(7, 'No threats logged yet', 'Add the first threat above to start scoring likelihood and impact.');return;}
       tbody.innerHTML=items.map(t=>{
         const score=(t.likelihood||1)*(t.impact||1);
         return`<tr>
@@ -761,7 +779,7 @@
           <td>${t.likelihood}</td><td>${t.impact}</td>
           <td><strong class="${riskClass(score)}" style="color:${riskColor(score)}">${score}</strong></td>
           <td class="so-cell-truncate">${t.mitigation||''}</td>
-          <td><button class="so-btn so-btn-danger" onclick="soDeleteThreat(${t.id})">Del</button></td>
+          <td class="so-action-cluster">${soDeleteButton('soDeleteThreat(' + t.id + ')', t.name || 'threat')}</td>
         </tr>`;
       }).join('');
     });
@@ -775,6 +793,8 @@
     }).then(()=>{el('so-threat-name').value='';el('so-threat-mitigation').value='';toast('Threat added');soLoadThreats();});
   };
   window.soDeleteThreat=function(id){
+    const label=soDeleteLabel('soDeleteThreat(' + id + ')','threat');
+    if(!soConfirmDelete(label)) return;
     api('/api/security-ops/threat-matrix/'+id,{method:'DELETE'}).then(()=>{toast('Threat removed');soLoadThreats();});
   };
 
@@ -867,8 +887,14 @@
         const list=el('so-sig-'+cat+'-list');
         if(!list)return;
         if(!byCat[cat].length){
-          const labelMap={visual:'No visual exposures logged yet.',audio:'No audio exposures logged yet.',electronic:'No electronic exposures logged yet.',thermal:'No thermal exposures logged yet.'};
-          list.innerHTML='<div style="font-size:.82rem;color:var(--text-secondary,#aaa);padding:4px 0">'+(labelMap[cat]||'No signature items logged yet.')+'</div>';
+          const labelMap={
+            visual:['No visual exposures logged yet','Track visible telltales like smoke, glare, and movement cues here.'],
+            audio:['No audio exposures logged yet','Log generators, tools, voices, or other sound signatures here.'],
+            electronic:['No electronic exposures logged yet','Track RF, device, and comms exposure that could reveal activity here.'],
+            thermal:['No thermal exposures logged yet','Log heat-producing sources and mitigation steps here.']
+          };
+          const [title, body] = labelMap[cat] || ['No signature items logged yet', 'Add the first exposure above to measure visibility and mitigation.'];
+          list.innerHTML=soEmpty(title, body);
           return;
         }
         list.innerHTML=byCat[cat].map(s=>{
@@ -877,7 +903,7 @@
             <div><strong>${s.source}</strong> <small>Intensity: ${s.intensity}/10</small>
               ${s.mitigation?'<br><small class="tone-muted">Mitigation: '+s.mitigation+'</small>':''}
             </div>
-            <button class="so-btn so-btn-danger" onclick="soDeleteSignature(${s.id})">Del</button>
+            <div class="so-action-cluster">${soDeleteButton('soDeleteSignature(' + s.id + ')', s.source || 'signature item')}</div>
           </div>`;
         }).join('');
       });
@@ -904,6 +930,8 @@
     }).then(()=>{el('so-'+p+'-source').value='';el('so-'+p+'-mitigation').value='';toast('Signature added');soLoadSignatures();});
   };
   window.soDeleteSignature=function(id){
+    const label=soDeleteLabel('soDeleteSignature(' + id + ')','signature item');
+    if(!soConfirmDelete(label)) return;
     api('/api/security-ops/signatures/'+id,{method:'DELETE'}).then(()=>{toast('Signature removed');soLoadSignatures();});
   };
   window.soLoadSigGuide=function(){
@@ -1075,7 +1103,7 @@
   window.soLoadEMPInventory=function(){
     api('/api/security-ops/emp/inventory').then(items=>{
       const list=el('so-emp-list');
-      if(!items.length){list.innerHTML='<div class="so-empty">No EMP inventory yet. Add the first critical item above to assess protection gaps.</div>';return;}
+      if(!items.length){list.innerHTML=soEmpty('No EMP inventory yet', 'Add the first critical item above to assess protection gaps.');return;}
       list.innerHTML=items.map(i=>{
         const protClass=i.protection==='protected'?'so-protected':i.protection==='partial'?'so-badge-confidential':'so-unprotected';
         const protIcon=i.protection==='protected'?'&#9679;':i.protection==='partial'?'&#9681;':'&#9675;';
@@ -1085,7 +1113,7 @@
             <strong class="so-tag-spacer">${i.name}</strong>
             <small style="margin-left:6px;color:var(--text-secondary,#aaa)">${i.category||''} | Priority: ${i.priority||'low'}</small>
           </div>
-          <button class="so-btn so-btn-danger" onclick="soDeleteEMPItem(${i.id})">Del</button>
+          <div class="so-action-cluster">${soDeleteButton('soDeleteEMPItem(' + i.id + ')', i.name || 'EMP item')}</div>
         </div>`;
       }).join('');
     });
@@ -1097,6 +1125,8 @@
     }).then(()=>{el('so-emp-item').value='';toast('EMP item added');soLoadEMPInventory();});
   };
   window.soDeleteEMPItem=function(id){
+    const label=soDeleteLabel('soDeleteEMPItem(' + id + ')','EMP item');
+    if(!soConfirmDelete(label)) return;
     api('/api/security-ops/emp/inventory/'+id,{method:'DELETE'}).then(()=>{toast('Item removed');soLoadEMPInventory();});
   };
   window.soLoadEMPAnalysis=function(){

@@ -305,19 +305,19 @@ async function loadModels() {
     const sel = document.getElementById('model-select');
     if (!sel) return;
     if (!models.length) {
-      sel.innerHTML = '<option value="">No models yet — click "+ Get Model"</option>';
+      sel.innerHTML = '<option value="">No models yet. Use Add Model above.</option>';
       setChatReady(false, 'No AI models downloaded');
       startChatReadyPoll();
     } else {
       sel.innerHTML = models.map(m => `<option value="${escapeAttr(m.name)}">${escapeHtml(m.name)} (${(m.size/1e9).toFixed(1)}GB)</option>`).join('');
       // Pre-warm the model — send a tiny request to load it into VRAM
-      setChatReady(false, 'Loading AI model into memory...');
+      setChatReady(false, 'Loading AI model into memory…');
       warmupModel(models[0].name);
     }
   } catch(e) {
     const sel = document.getElementById('model-select');
     if (sel) sel.innerHTML = '<option value="">Failed to load models</option>';
-    setChatReady(false, 'AI service starting...');
+    setChatReady(false, 'AI service starting…');
     startChatReadyPoll();
   }
 }
@@ -345,7 +345,7 @@ function setChatReady(ready, reason) {
   const btn = document.getElementById('send-btn');
   const input = document.getElementById('chat-input');
   if (btn) btn.disabled = !ready;
-  if (input) { input.disabled = !ready; input.placeholder = ready ? 'Type a message... (Enter to send, Shift+Enter for newline, drop files)' : (reason || 'AI service starting...'); }
+  if (input) { input.disabled = !ready; input.placeholder = ready ? 'Ask a question, sketch a plan, or drop a file… (Enter to send, Shift+Enter for newline)' : (reason || 'AI service starting…'); }
   if (ready) stopChatReadyPoll();
 }
 
@@ -358,7 +358,7 @@ function startChatReadyPoll() {
         stopChatReadyPoll();
         const sel = document.getElementById('model-select');
         sel.innerHTML = models.map(m => `<option value="${escapeAttr(m.name)}">${escapeHtml(m.name)} (${(m.size/1e9).toFixed(1)}GB)</option>`).join('');
-        setChatReady(false, 'Loading AI model into memory...');
+        setChatReady(false, 'Loading AI model into memory…');
         warmupModel(models[0].name);
       }
     } catch {}
@@ -446,7 +446,7 @@ function renderConvoList() {
   const el = document.getElementById('convo-list');
   if (!el) return;
   if (!allConvos.length) {
-    el.innerHTML = '<div class="sidebar-empty-state convo-list-empty">No conversations yet</div>';
+    el.innerHTML = '<div class="sidebar-empty-state convo-list-empty"><strong>No Conversations Yet</strong><span>Start a new chat to keep plans, research, and branches organized here.</span></div>';
     return;
   }
   el.innerHTML = allConvos.map(c => {
@@ -456,7 +456,7 @@ function renderConvoList() {
       <span class="convo-title">${escapeHtml(c.title)}${branchBadge}</span>
       <span class="convo-actions">
         <button type="button" class="convo-action-btn" data-chat-action="rename-conversation" data-convo-id="${c.id}" data-stop-propagation aria-label="Rename conversation" title="Rename">&#9998;</button>
-        <button type="button" class="convo-action-btn convo-del" data-chat-action="delete-conversation" data-convo-id="${c.id}" data-stop-propagation aria-label="Delete conversation" title="Delete">x</button>
+        <button type="button" class="convo-action-btn convo-del" data-chat-action="delete-conversation" data-convo-id="${c.id}" data-stop-propagation aria-label="Delete conversation" title="Delete">&times;</button>
       </span>
     </div>`;
   }).join('');
@@ -465,7 +465,7 @@ async function newConversation() {
   const modelSelect = document.getElementById('model-select');
   const model = modelSelect?.value || '';
   try {
-    const c = await fetchJsonStrict('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Chat', model})}, 'Failed to create conversation');
+    const c = await fetchJsonStrict('/api/conversations', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:'New Conversation', model})}, 'Failed to create conversation');
     await loadConversations();
     selectConvo(c.id);
   } catch(e) { toast(e.message || 'Failed to create conversation', 'error'); }
@@ -477,7 +477,7 @@ async function selectConvo(id) {
   parentConvoId = null;
   branchMsgIdx = null;
   const chatInput = document.getElementById('chat-input');
-  if (chatInput) chatInput.placeholder = 'Type a message... (Enter to send, Shift+Enter for newline, drop files)';
+  if (chatInput) chatInput.placeholder = 'Ask a question, sketch a plan, or drop a file… (Enter to send, Shift+Enter for newline)';
   try {
     const c = await fetchJsonStrict(`/api/conversations/${id}`, {}, 'Failed to load conversation');
     chatMessages = safeJsonParse(c.messages, []);
@@ -552,8 +552,9 @@ async function saveConversation() {
   const payload = {model, messages: chatMessages};
   // Only set title for brand-new conversations (no custom title yet)
   const convoEl = document.querySelector(`.convo-item[data-convo-id="${currentConvoId}"]`);
-  if (!convoEl || convoEl.textContent.trim() === 'New Chat') {
-    payload.title = chatMessages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Chat';
+  const convoTitle = convoEl?.querySelector('.convo-title')?.childNodes?.[0]?.textContent?.trim() || '';
+  if (!convoEl || ['New Chat', 'New Conversation'].includes(convoTitle)) {
+    payload.title = chatMessages.find(m => m.role === 'user')?.content.slice(0, 50) || 'New Conversation';
   }
   await fetchJsonStrict(`/api/conversations/${currentConvoId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
     body:JSON.stringify(payload)}, 'Failed to save conversation');
@@ -563,7 +564,7 @@ async function saveConversation() {
 async function sendChat() {
   if (isSending) return;
   if (document.getElementById('chat-image-input')?.files?.length) { await sendChatWithImage(); return; }
-  if (!_chatReady) { toast('AI service is still starting. Please wait...', 'info'); return; }
+  if (!_chatReady) { toast('AI service is still starting. Please wait…', 'info'); return; }
   const input = document.getElementById('chat-input');
   const modelSelect = document.getElementById('model-select');
   const sendBtn = document.getElementById('send-btn');
@@ -669,7 +670,7 @@ async function sendChat() {
   } catch(e) {
     clearTimeout(_chatTimeout);
     if (e.name !== 'AbortError') {
-      chatMessages[chatMessages.length-1].content = 'Could not reach the AI. Attempting to start the service automatically...';
+      chatMessages[chatMessages.length-1].content = 'Could not reach the AI. Attempting to start the service automatically…';
       chatMessages[chatMessages.length-1].thinking = false;
       renderChat();
       // Auto-start Ollama
@@ -785,7 +786,7 @@ function renderChat() {
     const kbBadge = (m.role === 'assistant' && m.kb_used && !m.thinking && !m.citations?.length) ? '<div class="chat-kb-badge-row"><span class="chat-kb-badge">&#128218; Knowledge Base</span></div>' : '';
     html += `<div class="message ${m.role}" data-content="${escapeAttr(m.content)}"><div class="avatar">${av}</div><div class="content">${content}${sourcesHtml}${citationsHtml}${kbBadge}${thinkHtml}${copyAction}</div></div>`;
   }
-  c.innerHTML = `<div class="empty-state chat-empty-state-compact" id="chat-empty" hidden><div class="icon chat-empty-icon-shell"><span class="chat-empty-avatar">${escapeHtml(aiName.slice(0,2).toUpperCase())}</span></div><p class="chat-empty-heading">Start a conversation</p><p class="chat-empty-copy">Ask a question or start a new branch when you're ready.</p></div>` + html;
+  c.innerHTML = `<div class="empty-state chat-empty-state-compact" id="chat-empty" hidden><div class="icon chat-empty-icon-shell"><span class="chat-empty-avatar">${escapeHtml(aiName.slice(0,2).toUpperCase())}</span></div><p class="chat-empty-heading">Start a Private Thread</p><p class="chat-empty-copy">Ask for a plan, analysis, or draft. The current model, prompt, and library toggles apply to this conversation.</p><div class="chat-empty-highlights"><span class="chat-empty-highlight">Local Model</span><span class="chat-empty-highlight">Memory Aware</span><span class="chat-empty-highlight">Document Ready</span></div></div>` + html;
   c.scrollTop = c.scrollHeight;
   // Update chat stats
   const stats = document.getElementById('chat-stats');
@@ -831,7 +832,7 @@ async function forkWhatIf(messageIndex) {
   // Focus the main chat input and set placeholder hint
   const input = document.getElementById('chat-input');
   if (input) {
-    input.placeholder = 'Enter an alternative question or scenario to explore...';
+    input.placeholder = 'Enter an alternative question or scenario to explore…';
     input.focus();
   }
 }
@@ -858,7 +859,7 @@ function returnToMainConversation() {
   branchMsgIdx = null;
   // Restore the chat input placeholder
   const input = document.getElementById('chat-input');
-  if (input) input.placeholder = 'Type a message... (Enter to send, Shift+Enter for newline, drop files)';
+  if (input) input.placeholder = 'Ask a question, sketch a plan, or drop a file… (Enter to send, Shift+Enter for newline)';
   selectConvo(cid);
 }
 
@@ -882,7 +883,7 @@ async function toggleBranchPanel() {
   if (panel.classList.contains('open')) { panel.classList.remove('open'); return; }
   const cid = currentBranchId ? parentConvoId : currentConvoId;
   if (!cid) return;
-  panel.innerHTML = '<div class="branch-panel-header">Loading...</div>';
+  panel.innerHTML = '<div class="branch-panel-header">Loading…</div>';
   panel.classList.add('open');
   const branches = await safeFetch('/api/conversations/' + cid + '/branches', {}, []);
   if (!branches.length) {
@@ -973,7 +974,7 @@ async function sendChatWithImage() {
 
   // Show user message with image preview
   chatMessages.push({role:'user', content: msg + ' [image attached]'});
-  chatMessages.push({role:'assistant', content:'Analyzing image...', thinking: true});
+  chatMessages.push({role:'assistant', content:'Analyzing image…', thinking: true});
   renderChat();
 
   const r = await safeFetch('/api/ai/chat-with-image', {method: 'POST', body: fd}, null);

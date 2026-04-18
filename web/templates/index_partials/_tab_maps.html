@@ -21,8 +21,8 @@
       </div>
     </div>
     <div class="map-controls workspace-toolbar">
-      <span class="map-controls-title">Offline Maps</span>
-      <button class="btn btn-sm" id="map-toggle-btn" data-map-action="toggle-map-view">Show Map</button>
+      <span class="map-controls-title">Map Room</span>
+      <button class="btn btn-sm" id="map-toggle-btn" data-map-action="toggle-map-view">Open Live Map</button>
       <button class="btn btn-sm is-hidden" data-map-action="drop-pin" id="pin-btn">Drop Pin</button>
       <button class="btn btn-sm is-hidden" id="measure-btn" data-map-action="toggle-measure">Measure</button>
       <button class="btn btn-sm btn-primary is-hidden" data-map-action="save-waypoint" id="save-wp-btn">Save Waypoint</button>
@@ -52,12 +52,16 @@
       <span id="map-coords" class="map-coords"></span>
     </div>
     <div id="map-viewer" class="map-viewer-shell workspace-stack is-hidden">
+      <div class="map-live-note">
+        <strong>Live Navigation</strong>
+        <span>Search by place or jump to coordinates, then save waypoints, bookmarks, and routes for offline use later.</span>
+      </div>
       <div class="map-search">
-        <input id="map-search-input" type="search" name="map_search" autocomplete="off" aria-label="Search location on map" placeholder="Search location or enter lat,lng...">
+        <input id="map-search-input" type="search" name="map_search" autocomplete="off" aria-label="Search location on map" placeholder="Search a place or enter lat,lng…">
         <button type="button" data-map-action="search-map" aria-label="Search map location">Go</button>
       </div>
               <div class="map-geocode-shell">
-                <input id="geocode-input" type="search" name="geocode_search" class="input map-geocode-input" aria-label="Geocode search" placeholder="Search locations..." data-input-action="geocode-search" autocomplete="off">
+                <input id="geocode-input" type="search" name="geocode_search" class="input map-geocode-input" aria-label="Geocode search" placeholder="Search locations…" data-input-action="geocode-search" autocomplete="off">
 <div id="geocode-results" class="map-geocode-results is-hidden"></div>
               </div>
       <div id="measure-result" class="map-measure-pill workspace-callout map-measure-panel is-hidden">
@@ -76,13 +80,21 @@
     <div id="map-management">
       <div class="map-management-grid">
         <div class="settings-card map-surface">
-          <h3 class="workspace-toolbar workspace-heading-row">Download Regional Maps <button class="help-icon" data-help="maps" title="Maps guide">?</button>
-            <button class="btn btn-sm btn-primary" data-map-action="download-all-maps">Download All Regions</button>
-          </h3>
-          <p class="map-download-copy">Download offline maps for your region. Select an area below and it will be available for navigation without internet. The download tool is installed automatically on first use.</p>
+          <div class="workspace-toolbar workspace-heading-row map-section-head">
+            <div class="map-section-intro">
+              <div class="map-section-heading-row">
+                <h3 class="map-section-heading">Download Regional Maps</h3>
+                <button class="help-icon" data-help="maps" title="Maps guide">?</button>
+              </div>
+              <p class="map-section-copy">Stage the regions you need before you travel. Downloaded areas stay ready for route planning and navigation without a network.</p>
+            </div>
+            <div class="workspace-toolbar-actions">
+              <button class="btn btn-sm btn-primary" data-map-action="download-all-maps">Download All Regions</button>
+            </div>
+          </div>
           <div id="map-download-status" class="map-download-status is-hidden">
             <div class="workspace-toolbar workspace-heading-row">
-              <span id="map-dl-label">Downloading...</span>
+              <span id="map-dl-label">Downloading…</span>
               <span id="map-dl-pct" class="map-download-pct"></span>
             </div>
             <div class="map-progress-track">
@@ -92,31 +104,54 @@
           <div class="region-grid" id="region-grid"></div>
         </div>
         <div class="settings-card map-surface">
-          <h3>Downloaded Maps</h3>
-          <div id="map-files-list"><span class="workspace-empty-copy">No maps downloaded yet.</span></div>
-          <h3 class="map-section-title">Import Maps</h3>
+          <div class="map-section-stack">
+            <div class="map-section-intro">
+              <h3 class="map-section-heading">Downloaded Maps</h3>
+              <p class="map-section-copy">Your local PMTiles files appear here so you can confirm coverage and prune anything you no longer need.</p>
+            </div>
+            <div id="map-files-list" aria-live="polite"><div class="workspace-empty-copy map-files-empty"><strong>No Offline Maps Yet</strong><span>Download a region or import a PMTiles file to keep local coverage ready for navigation and route planning.</span></div></div>
+          </div>
+          <div class="map-section-stack">
+            <div class="map-section-intro">
+              <h3 class="map-section-heading">Import Maps</h3>
+              <p class="map-section-copy">Bring in a direct download or a file you already staged elsewhere so it becomes part of the same offline shelf.</p>
+            </div>
           <div class="workspace-toolbar map-action-row">
-            <input id="map-url-input" type="url" name="map_download_url" class="map-import-input" autocomplete="url" aria-label="Map download URL" placeholder="Paste a map download URL...">
-            <button class="btn btn-sm btn-primary" data-map-action="download-map-url">Download URL</button>
+            <input id="map-url-input" type="url" name="map_download_url" class="map-import-input" autocomplete="url" aria-label="Map download URL" placeholder="Paste a map download URL…">
+            <button class="btn btn-sm btn-primary" data-map-action="download-map-url">Download From URL</button>
           </div>
           <div class="workspace-toolbar map-action-row">
-            <input id="map-file-input" name="map_file_path" class="map-import-input" autocomplete="off" aria-label="Local map file path" placeholder="Local map file path">
-            <button class="btn btn-sm" data-map-action="import-map-file">Import File</button>
+            <input id="map-file-input" name="map_file_path" class="map-import-input" autocomplete="off" aria-label="Local map file path" placeholder="Enter a local map file path">
+            <button class="btn btn-sm" data-map-action="import-map-file">Import Local File</button>
           </div>
-          <h3 class="map-section-title">Waypoint Distances</h3>
-          <div id="wp-distance-matrix" class="workspace-copy workspace-copy-scroll workspace-copy-compact"><span class="workspace-empty-copy">Save waypoints to see distance matrix.</span></div>
+          </div>
+          <div class="map-section-stack">
+          <div class="map-section-intro">
+            <h3 class="map-section-heading">Waypoint Distances</h3>
+            <p class="map-section-copy">Once waypoints are saved, compare travel distance between each location from one compact matrix.</p>
+          </div>
+          <div id="wp-distance-matrix" class="workspace-copy workspace-copy-scroll workspace-copy-compact"><div class="workspace-empty-copy runtime-empty-note"><strong>No Waypoints Yet</strong><span>Save at least two waypoints from the live map to compare travel distance across your key locations.</span></div></div>
           <div class="workspace-toolbar map-action-row">
             <button class="btn btn-sm" data-map-action="refresh-waypoint-distances">Refresh</button>
             <a class="btn btn-sm" href="/api/waypoints/export-gpx">Export GPX</a>
             <input type="file" id="gpx-import-input" name="gpx_import_file" accept=".gpx" data-change-action="import-gpx-file" class="is-hidden">
             <button class="btn btn-sm" data-click-target="gpx-import-input">Import GPX</button>
           </div>
+          </div>
         </div>
       </div>
       <!-- Saved Routes -->
       <div class="settings-card map-surface workspace-stack-section">
-        <h3 class="workspace-toolbar workspace-heading-row">Saved Routes <button class="btn btn-sm" data-map-action="load-saved-routes">Refresh</button></h3>
-        <div id="saved-routes-list"><span class="workspace-empty-copy">No routes saved yet. Create routes by selecting waypoints.</span></div>
+        <div class="workspace-toolbar workspace-heading-row map-section-head">
+          <div class="map-section-intro">
+            <h3 class="map-section-heading">Saved Routes</h3>
+            <p class="map-section-copy">Routes keep multi-stop travel plans ready for review, timing, and elevation checks.</p>
+          </div>
+          <div class="workspace-toolbar-actions">
+            <button class="btn btn-sm" data-map-action="load-saved-routes">Refresh</button>
+          </div>
+        </div>
+        <div id="saved-routes-list" aria-live="polite"><div class="workspace-empty-copy saved-route-empty"><strong>No Routes Yet</strong><span>Build a route from saved waypoints to keep travel plans, timing, and terrain review ready from one place.</span></div></div>
             <div id="elevation-profile-chart" class="map-surface-inline workspace-stack-section map-elevation-detail is-hidden">
               <div class="workspace-toolbar workspace-heading-row">
                 <span class="map-elevation-title">Elevation Profile</span>
@@ -128,16 +163,28 @@
       </div>
       <!-- Map Bookmarks -->
       <div class="settings-card map-surface workspace-stack-section">
-        <h3 class="workspace-toolbar workspace-heading-row">Map Bookmarks <button class="btn btn-sm" data-map-action="render-map-bookmarks">Refresh</button></h3>
-        <div id="map-bookmarks-list"><span class="workspace-empty-copy">No bookmarks saved. Click Bookmark while viewing the map.</span></div>
+        <div class="workspace-toolbar workspace-heading-row map-section-head">
+          <div class="map-section-intro">
+            <h3 class="map-section-heading">Map Bookmarks</h3>
+            <p class="map-section-copy">Save recurring launch points, shelters, rally spots, and other locations you want one tap away.</p>
+          </div>
+          <div class="workspace-toolbar-actions">
+            <button class="btn btn-sm" data-map-action="render-map-bookmarks">Refresh</button>
+          </div>
+        </div>
+        <div id="map-bookmarks-list" aria-live="polite"><div class="workspace-empty-copy map-bookmark-empty"><strong>No Bookmarks Yet</strong><span>Save a bookmark from the live map to keep rally points, shelters, and recurring destinations close at hand.</span></div></div>
       </div>
       <!-- Alternative Map Sources Catalog -->
       <div class="settings-card map-surface workspace-stack-section">
-        <h3 class="workspace-toolbar workspace-heading-row">
-          Alternative Map Sources
-          <button class="btn btn-sm" data-map-action="toggle-map-sources">Show/Hide</button>
-        </h3>
-        <p class="map-import-copy">Additional map data from various providers. Most files work directly with the built-in map viewer.</p>
+        <div class="workspace-toolbar workspace-heading-row map-section-head">
+          <div class="map-section-intro">
+            <h3 class="map-section-heading">Alternative Map Sources</h3>
+            <p class="map-section-copy">Browse extra providers when you need specialty coverage, different formats, or a backup source for a region.</p>
+          </div>
+          <div class="workspace-toolbar-actions">
+            <button class="btn btn-sm" data-map-action="toggle-map-sources">Toggle Catalog</button>
+          </div>
+        </div>
         <div id="map-sources-catalog" hidden></div>
       </div>
     </div>
@@ -147,8 +194,8 @@
 <div id="route-planner-modal" class="modal-overlay is-hidden" role="dialog" aria-modal="true" aria-labelledby="route-planner-title" data-backdrop-close="route-planner-modal">
   <div class="modal-card settings-modal-card settings-modal-card-lg">
     <div class="modal-header settings-heading-row">
-      <h3 class="settings-detail-title" id="route-planner-title">Route Plan</h3>
-      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-map-action="close-route-planner" aria-label="Close route planner">x</button>
+      <h3 class="settings-detail-title" id="route-planner-title">Route Planner</h3>
+      <button class="btn btn-sm btn-ghost settings-modal-close" type="button" data-map-action="close-route-planner" aria-label="Close route planner">&times;</button>
     </div>
     <div class="modal-body settings-modal-body">
       <div id="route-planner-inputs">
@@ -179,4 +226,3 @@
     </div>
   </div>
 </div>
-

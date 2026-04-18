@@ -12,14 +12,24 @@
     --la-amber: #f59e0b;
     --la-blue: #3b82f6;
   }
-  #tab-land-assessment .la-header { display:flex; align-items:center; gap:12px; margin-bottom:18px; }
-  #tab-land-assessment .la-header h2 { font-size:1.25rem; color:var(--la-accent); margin:0; }
-  #tab-land-assessment .la-sub-tabs { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; }
-  #tab-land-assessment .la-sub-tab { padding:6px 14px; border-radius:6px; border:1px solid var(--border,#333); background:transparent; color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
-  #tab-land-assessment .la-sub-tab.active { background:var(--la-accent-dim); border-color:var(--la-accent); color:var(--la-accent); }
+  #tab-land-assessment .la-command-deck { display:grid; gap:12px; margin-bottom:18px; padding:20px 22px; border:1px solid color-mix(in srgb, var(--la-accent) 16%, var(--border,#333)); border-radius:24px; background:radial-gradient(circle at top right, color-mix(in srgb, var(--la-accent) 14%, transparent), transparent 42%), linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 96%, transparent), color-mix(in srgb, var(--card-bg,#1a1a2e) 92%, transparent)); box-shadow:var(--shadow-panel, 0 18px 34px rgba(0,0,0,.1)); }
+  #tab-land-assessment .la-command-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; }
+  #tab-land-assessment .la-command-copy { display:grid; gap:8px; max-width:min(760px, 100%); }
+  #tab-land-assessment .la-command-title { margin:0; font-size:1.32rem; line-height:1.16; color:var(--text-primary,#eee); text-wrap:balance; }
+  #tab-land-assessment .la-command-text { margin:0; color:var(--text-secondary,#aaa); line-height:1.6; max-width:68ch; }
+  #tab-land-assessment .la-command-pills { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-land-assessment .la-command-pill { display:inline-flex; align-items:center; min-height:30px; padding:0 11px; border-radius:999px; border:1px solid color-mix(in srgb, var(--la-accent) 18%, var(--border,#333)); background:color-mix(in srgb, var(--la-accent) 10%, transparent); color:color-mix(in srgb, var(--la-accent) 52%, var(--text-primary,#eee)); font-size:.72rem; font-weight:700; letter-spacing:.02em; box-shadow:inset 0 1px 0 color-mix(in srgb, white 10%, transparent); }
+  #tab-land-assessment .la-sub-tabs-shell { display:grid; gap:8px; margin-bottom:16px; padding:12px 14px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:18px; background:linear-gradient(180deg, color-mix(in srgb, var(--surface-solid, #151826) 92%, transparent), color-mix(in srgb, var(--card-bg,#1a1a2e) 86%, transparent)); box-shadow:inset 0 1px 0 color-mix(in srgb, white 8%, transparent); }
+  #tab-land-assessment .la-sub-tabs-label { font-size:.72rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-secondary,#aaa); font-weight:700; }
+  #tab-land-assessment .la-sub-tabs { display:flex; gap:8px; flex-wrap:wrap; }
+  #tab-land-assessment .la-sub-tab { min-height:36px; padding:8px 14px; border-radius:999px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 94%, transparent); color:var(--text-secondary,#aaa); cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-land-assessment .la-sub-tab:hover { border-color:color-mix(in srgb, var(--la-accent) 22%, var(--border,#333)); color:var(--text-primary,#eee); transform:translateY(-1px); }
+  #tab-land-assessment .la-sub-tab.active { background:color-mix(in srgb, var(--la-accent) 14%, var(--surface-solid, #121726)); border-color:color-mix(in srgb, var(--la-accent) 48%, var(--border,#333)); color:var(--la-accent); box-shadow:0 10px 24px color-mix(in srgb, var(--la-accent) 16%, transparent); }
+  #tab-land-assessment .la-sub-tab:focus-visible,
+  #tab-land-assessment .la-btn:focus-visible { outline:2px solid transparent; outline-offset:2px; box-shadow:0 0 0 2px color-mix(in srgb, var(--surface-solid,#151826) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--la-accent) 42%, transparent); }
   #tab-land-assessment .la-panel { display:none; }
   #tab-land-assessment .la-panel.active { display:block; }
-  #tab-land-assessment .la-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; margin-bottom:12px; }
+  #tab-land-assessment .la-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; margin-bottom:14px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
   #tab-land-assessment .la-card-title { font-size:.95rem; font-weight:600; color:var(--text-primary,#eee); margin-bottom:8px; }
   #tab-land-assessment .la-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; }
   #tab-land-assessment .la-form-row { display:flex; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
@@ -35,48 +45,76 @@
   #tab-land-assessment .la-hidden { display:none; }
   #tab-land-assessment .la-tone-driven { color:var(--la-tone, inherit); }
   #tab-land-assessment .la-tag-spacer { margin-left:6px; }
-  #tab-land-assessment .la-btn { padding:7px 16px; border-radius:6px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
+  #tab-land-assessment .la-btn { min-height:36px; padding:7px 16px; border-radius:12px; border:none; cursor:pointer; font-size:.82rem; font-weight:600; transition:background-color .15s,border-color .15s,color .15s,box-shadow .15s,transform .15s; }
   #tab-land-assessment .la-btn-primary { background:var(--la-accent); color:#000; }
-  #tab-land-assessment .la-btn-danger { background:var(--la-red); color:#fff; }
   #tab-land-assessment .la-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
-  #tab-land-assessment .la-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
-  #tab-land-assessment .la-list-item:last-child { border-bottom:none; }
+  #tab-land-assessment .la-list-item { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:14px; background:color-mix(in srgb, var(--surface-solid, #121726) 82%, transparent); margin-bottom:10px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 4%, transparent); }
+  #tab-land-assessment .la-list-item:last-child { margin-bottom:0; }
+  #tab-land-assessment .la-list-copy { min-width:0; display:grid; gap:4px; }
+  #tab-land-assessment .la-list-copy small { line-height:1.55; word-break:break-word; }
+  #tab-land-assessment .la-row-actions { display:flex; gap:8px; align-items:center; }
+  #tab-land-assessment .la-btn-danger-quiet { background:color-mix(in srgb, var(--la-red) 10%, transparent); border:1px solid color-mix(in srgb, var(--la-red) 28%, transparent); color:color-mix(in srgb, var(--la-red) 72%, var(--text-primary,#eee)); }
+  #tab-land-assessment .la-btn-danger-quiet:hover,
+  #tab-land-assessment .la-btn-danger-quiet:focus-visible { background:color-mix(in srgb, var(--la-red) 16%, transparent); border-color:color-mix(in srgb, var(--la-red) 42%, transparent); color:#fff2f2; }
+  #tab-land-assessment .la-btn-icon { min-width:32px; min-height:32px; padding:0; display:inline-flex; align-items:center; justify-content:center; border-radius:999px; font-size:16px; line-height:1; }
   #tab-land-assessment .la-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
-  #tab-land-assessment .la-empty { text-align:center; padding:40px; color:var(--text-secondary,#aaa); font-size:.9rem; }
-  #tab-land-assessment .la-score { display:inline-block; padding:2px 8px; border-radius:4px; font-weight:700; font-size:.82rem; }
+  #tab-land-assessment .la-empty { display:grid; gap:6px; justify-items:center; text-align:center; padding:26px 20px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; border-radius:14px; border:1px dashed color-mix(in srgb, var(--border,#333) 84%, transparent); background:color-mix(in srgb, var(--surface-solid, #121726) 70%, transparent); }
+  #tab-land-assessment .la-empty strong { color:var(--text-primary,#eee); font-size:.94rem; }
+  #tab-land-assessment .la-empty span { max-width:56ch; }
+  #tab-land-assessment .la-score { display:inline-block; padding:2px 8px; border-radius:4px; font-weight:700; font-size:.82rem; font-variant-numeric:tabular-nums; }
   #tab-land-assessment .la-compare-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; }
-  #tab-land-assessment .la-compare-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:16px; }
-  #tab-land-assessment .la-compare-card .rank { font-size:1.4rem; font-weight:700; color:var(--la-accent); }
+  #tab-land-assessment .la-compare-card { background:linear-gradient(180deg, color-mix(in srgb, var(--card-bg,#1a1a2e) 96%, transparent), color-mix(in srgb, var(--surface2,#1d2232) 88%, transparent)); border:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); border-radius:16px; padding:16px; box-shadow:inset 0 1px 0 color-mix(in srgb, white 6%, transparent); }
+  #tab-land-assessment .la-compare-card .rank { font-size:1.4rem; font-weight:700; color:var(--la-accent); font-variant-numeric:tabular-nums; }
   #tab-land-assessment .la-compare-card .prop-name { font-size:1rem; font-weight:600; color:var(--text-primary,#eee); margin:4px 0 8px; }
-  #tab-land-assessment .la-compare-card .cat-row { display:flex; justify-content:space-between; font-size:.8rem; padding:3px 0; border-bottom:1px solid var(--border,#333); }
+  #tab-land-assessment .la-compare-card .cat-row { display:flex; justify-content:space-between; gap:16px; font-size:.8rem; padding:4px 0; border-bottom:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); }
   #tab-land-assessment .la-compare-card .cat-row:last-child { border-bottom:none; }
   #tab-land-assessment .la-compare-card .cat-label { color:var(--text-secondary,#aaa); }
-  #tab-land-assessment .la-compare-card .cat-val { color:var(--text-primary,#eee); font-weight:600; }
-  #tab-land-assessment .la-slider-row { display:flex; align-items:center; gap:8px; padding:8px 14px; border-bottom:1px solid var(--border,#333); }
+  #tab-land-assessment .la-compare-card .cat-val { color:var(--text-primary,#eee); font-weight:600; font-variant-numeric:tabular-nums; }
+  #tab-land-assessment .la-slider-row { display:flex; align-items:center; gap:8px; padding:10px 14px; border-bottom:1px solid color-mix(in srgb, var(--border,#333) 88%, transparent); }
   #tab-land-assessment .la-slider-row:last-child { border-bottom:none; }
   #tab-land-assessment .la-slider-row input[type=range] { flex:1; accent-color:var(--la-accent); }
   #tab-land-assessment .la-slider-row .crit-name { flex:2; font-size:.85rem; color:var(--text-primary,#eee); }
   #tab-land-assessment .la-slider-row .crit-weight { font-size:.72rem; color:var(--text-secondary,#aaa); min-width:50px; }
-  #tab-land-assessment .la-slider-row .crit-val { font-size:.9rem; font-weight:700; color:var(--la-accent); min-width:24px; text-align:center; }
-  #tab-land-assessment .la-score-result { background:var(--la-accent-dim); border:1px solid var(--la-accent); border-radius:8px; padding:14px; margin-top:10px; }
-  #tab-land-assessment .la-score-result .val { font-size:1.4rem; font-weight:700; color:var(--la-accent); }
+  #tab-land-assessment .la-slider-row .crit-val { font-size:.9rem; font-weight:700; color:var(--la-accent); min-width:24px; text-align:center; font-variant-numeric:tabular-nums; }
+  #tab-land-assessment .la-score-result { background:var(--la-accent-dim); border:1px solid var(--la-accent); border-radius:14px; padding:14px; margin-top:10px; }
+  #tab-land-assessment .la-score-result .val { font-size:1.4rem; font-weight:700; color:var(--la-accent); font-variant-numeric:tabular-nums; }
+  #tab-land-assessment .la-score-result small { line-height:1.55; }
+  @media (max-width: 860px) {
+    #tab-land-assessment .la-command-deck { padding:18px; }
+    #tab-land-assessment .la-list-item { align-items:flex-start; flex-direction:column; }
+    #tab-land-assessment .la-row-actions { width:100%; justify-content:flex-end; }
+  }
 </style>
 
-<div class="la-header">
-  <h2>Land Assessment</h2>
+<div class="la-command-deck workspace-panel">
+  <div class="la-command-head">
+    <div class="la-command-copy">
+      <h2 class="la-command-title">Evaluate candidate properties, log practical assets, and keep development tradeoffs visible before money or labor gets committed.</h2>
+      <p class="la-command-text">Use this workspace to compare land options, score resilience criteria, inventory on-site features, and track the work required to make a property viable.</p>
+    </div>
+  </div>
+  <div class="la-command-pills" aria-hidden="true">
+    <span class="la-command-pill">Property scoring</span>
+    <span class="la-command-pill">Feature inventory</span>
+    <span class="la-command-pill">Development cost</span>
+    <span class="la-command-pill">Side-by-side comparison</span>
+  </div>
 </div>
 
 <!-- Sub-tabs -->
-<div class="la-sub-tabs">
-  <button class="la-sub-tab active" data-la-panel="properties">Properties</button>
-  <button class="la-sub-tab" data-la-panel="assessments">Assessments</button>
-  <button class="la-sub-tab" data-la-panel="features">Features</button>
-  <button class="la-sub-tab" data-la-panel="devplans">Dev Plans</button>
-  <button class="la-sub-tab" data-la-panel="compare">Compare</button>
+<div class="la-sub-tabs-shell">
+  <div class="la-sub-tabs-label">Workflows</div>
+  <div class="la-sub-tabs" role="tablist" aria-label="Land assessment sections">
+    <button type="button" class="la-sub-tab active" data-la-panel="properties" role="tab" aria-selected="true" aria-controls="la-panel-properties" id="la-tab-properties">Properties</button>
+    <button type="button" class="la-sub-tab" data-la-panel="assessments" role="tab" aria-selected="false" aria-controls="la-panel-assessments" id="la-tab-assessments">Assessments</button>
+    <button type="button" class="la-sub-tab" data-la-panel="features" role="tab" aria-selected="false" aria-controls="la-panel-features" id="la-tab-features">Features</button>
+    <button type="button" class="la-sub-tab" data-la-panel="devplans" role="tab" aria-selected="false" aria-controls="la-panel-devplans" id="la-tab-devplans">Dev Plans</button>
+    <button type="button" class="la-sub-tab" data-la-panel="compare" role="tab" aria-selected="false" aria-controls="la-panel-compare" id="la-tab-compare">Compare</button>
+  </div>
 </div>
 
 <!-- ── Properties Panel ─────────────────────────────────── -->
-<div class="la-panel active" id="la-panel-properties">
+<div class="la-panel active" id="la-panel-properties" role="tabpanel" tabindex="-1" aria-labelledby="la-tab-properties">
   <div class="la-card">
     <div class="la-card-title">Add Property</div>
     <div class="la-form-row">
@@ -100,14 +138,14 @@
           <option value="owned">Owned</option><option value="sold">Sold</option>
         </select>
       </div>
-      <div class="field la-field-action"><button class="la-btn la-btn-primary" onclick="laCreateProperty()">Add</button></div>
+      <div class="field la-field-action"><button type="button" class="la-btn la-btn-primary" onclick="laCreateProperty()">Save Property</button></div>
     </div>
   </div>
-  <div id="la-prop-list" class="la-card"><div class="la-empty">Loading properties...</div></div>
+  <div id="la-prop-list" class="la-card" aria-live="polite"><div class="la-empty"><strong>Loading properties…</strong><span>Gathering saved sites, status, acreage, and current score signals.</span></div></div>
 </div>
 
 <!-- ── Assessments Panel ────────────────────────────────── -->
-<div class="la-panel" id="la-panel-assessments">
+<div class="la-panel" id="la-panel-assessments" role="tabpanel" tabindex="-1" aria-labelledby="la-tab-assessments" hidden>
   <div class="la-card">
     <div class="la-card-title">Property Assessment Criteria</div>
     <div class="la-form-row">
@@ -115,17 +153,17 @@
         <select name="la-assess-prop" id="la-assess-prop"><option value="">-- Select Property --</option></select>
       </div>
       <div class="field la-field-actions-row">
-        <button class="la-btn la-btn-secondary" onclick="laSeedCriteria()">Seed Default Criteria</button>
-        <button class="la-btn la-btn-primary" onclick="laRecalcScore()">Recalculate Score</button>
+        <button type="button" class="la-btn la-btn-secondary" onclick="laSeedCriteria()">Seed Core Criteria</button>
+        <button type="button" class="la-btn la-btn-primary" onclick="laRecalcScore()">Recalculate Score</button>
       </div>
     </div>
   </div>
-  <div id="la-score-display" class="la-score-result la-hidden"></div>
-  <div id="la-assess-list" class="la-card"><div class="la-empty">Select a property above.</div></div>
+  <div id="la-score-display" class="la-score-result la-hidden" aria-live="polite"></div>
+  <div id="la-assess-list" class="la-card" aria-live="polite"><div class="la-empty"><strong>Select a property</strong><span>Pick a saved site to review scoring criteria and weight the tradeoffs.</span></div></div>
 </div>
 
 <!-- ── Features Panel ───────────────────────────────────── -->
-<div class="la-panel" id="la-panel-features">
+<div class="la-panel" id="la-panel-features" role="tabpanel" tabindex="-1" aria-labelledby="la-tab-features" hidden>
   <div class="la-card">
     <div class="la-card-title">Add Feature</div>
     <div class="la-form-row">
@@ -156,14 +194,14 @@
         </select>
       </div>
       <div class="field"><label>Value Estimate ($)</label><input name="la-feat-value" id="la-feat-value" type="number" step="100" value="0"></div>
-      <div class="field la-field-action"><button class="la-btn la-btn-primary" onclick="laCreateFeature()">Add</button></div>
+      <div class="field la-field-action"><button type="button" class="la-btn la-btn-primary" onclick="laCreateFeature()">Save Feature</button></div>
     </div>
   </div>
-  <div id="la-feat-list" class="la-card"><div class="la-empty">Select a property above.</div></div>
+  <div id="la-feat-list" class="la-card" aria-live="polite"><div class="la-empty"><strong>Select a property</strong><span>Choose a site to review water, access, structures, and other logged assets.</span></div></div>
 </div>
 
 <!-- ── Dev Plans Panel ──────────────────────────────────── -->
-<div class="la-panel" id="la-panel-devplans">
+<div class="la-panel" id="la-panel-devplans" role="tabpanel" tabindex="-1" aria-labelledby="la-tab-devplans" hidden>
   <div class="la-card">
     <div class="la-card-title">Add Development Plan</div>
     <div class="la-form-row">
@@ -193,37 +231,80 @@
           <option value="completed">Completed</option>
         </select>
       </div>
-      <div class="field la-field-action"><button class="la-btn la-btn-primary" onclick="laCreateDevPlan()">Add</button></div>
+      <div class="field la-field-action"><button type="button" class="la-btn la-btn-primary" onclick="laCreateDevPlan()">Save Plan</button></div>
     </div>
   </div>
-  <div id="la-dp-list" class="la-card"><div class="la-empty">Select a property above.</div></div>
+  <div id="la-dp-list" class="la-card" aria-live="polite"><div class="la-empty"><strong>Select a property</strong><span>Use development plans to track what the site still needs before it is ready.</span></div></div>
 </div>
 
 <!-- ── Compare Panel ────────────────────────────────────── -->
-<div class="la-panel" id="la-panel-compare">
+<div class="la-panel" id="la-panel-compare" role="tabpanel" tabindex="-1" aria-labelledby="la-tab-compare" hidden>
   <div class="la-row-spaced">
-    <button class="la-btn la-btn-primary" onclick="laLoadCompare()">Refresh Comparison</button>
+    <button type="button" class="la-btn la-btn-primary" onclick="laLoadCompare()">Refresh Comparison</button>
   </div>
-  <div id="la-compare-list" class="la-compare-grid"><div class="la-empty la-grid-full">Click Refresh to load comparison data.</div></div>
+  <div id="la-compare-list" class="la-compare-grid" aria-live="polite"><div class="la-empty la-grid-full"><strong>Comparison is ready when you are</strong><span>Refresh this view to rank saved properties by overall score, feature count, and development cost.</span></div></div>
 </div>
 
 <script>
 (function(){
   const root = document.getElementById('tab-land-assessment');
-  root.querySelectorAll('.la-sub-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-      root.querySelectorAll('.la-sub-tab').forEach(b => b.classList.remove('active'));
-      root.querySelectorAll('.la-panel').forEach(p => p.classList.remove('active'));
-      btn.classList.add('active');
-      const panel = document.getElementById('la-panel-' + btn.dataset.laPanel);
-      if (panel) panel.classList.add('active');
-    });
-  });
-
   const $=id=>document.getElementById(id);
   const api=(url,opts)=>fetch(url,opts).then(r=>r.json());
   const val=id=>($(id)||{}).value||'';
-  const numVal=(id,def)=>parseFloat(val(id))||def||0;
+  const numVal=(id,def)=>{
+    const parsed = parseFloat(val(id));
+    return Number.isFinite(parsed) ? parsed : (def ?? 0);
+  };
+  const esc=s=>(window.escapeHtml?window.escapeHtml(s):String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;'));
+  const laNumberFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+  const laMoneyFormatter = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 });
+  const laLabel=value=>String(value||'Unknown').replace(/_/g,' ');
+  const laEmpty=(title, body, extraClass='')=>`<div class="${['la-empty', extraClass].filter(Boolean).join(' ')}"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
+  const laDeleteButton=(action, label)=>`<button type="button" class="la-btn la-btn-danger-quiet la-btn-icon" onclick="${action}" aria-label="${esc(label)}">&times;</button>`;
+  const laConfirmDelete=label=>window.confirm(`Delete ${label}? This removes it from land assessment.`);
+  const laNumber=value=>laNumberFormatter.format(Number(value)||0);
+  const laMoney=value=>`$${laMoneyFormatter.format(Number(value)||0)}`;
+
+  function laActivatePanel(panelName, focusPanel = false) {
+    const nextButton = root.querySelector(`.la-sub-tab[data-la-panel="${panelName}"]`);
+    const nextPanel = document.getElementById('la-panel-' + panelName);
+    if (!nextButton || !nextPanel) return;
+    root.querySelectorAll('.la-sub-tab').forEach(btn => {
+      btn.classList.remove('active');
+      btn.setAttribute('aria-selected', 'false');
+      btn.setAttribute('tabindex', '-1');
+    });
+    root.querySelectorAll('.la-panel').forEach(panel => {
+      panel.classList.remove('active');
+      panel.hidden = true;
+    });
+    nextButton.classList.add('active');
+    nextButton.setAttribute('aria-selected', 'true');
+    nextButton.setAttribute('tabindex', '0');
+    nextPanel.classList.add('active');
+    nextPanel.hidden = false;
+    if (focusPanel) nextPanel.focus();
+  }
+
+  const tabs = Array.from(root.querySelectorAll('.la-sub-tab'));
+  tabs.forEach((btn, index) => {
+    btn.setAttribute('tabindex', btn.classList.contains('active') ? '0' : '-1');
+    btn.addEventListener('click', () => laActivatePanel(btn.dataset.laPanel, true));
+    btn.addEventListener('keydown', event => {
+      let nextIndex = index;
+      if (event.key === 'ArrowRight') nextIndex = (index + 1) % tabs.length;
+      else if (event.key === 'ArrowLeft') nextIndex = (index - 1 + tabs.length) % tabs.length;
+      else if (event.key === 'Home') nextIndex = 0;
+      else if (event.key === 'End') nextIndex = tabs.length - 1;
+      else return;
+      event.preventDefault();
+      const nextTab = tabs[nextIndex];
+      laActivatePanel(nextTab.dataset.laPanel);
+      nextTab.focus();
+    });
+  });
 
   function scoreColor(s){return s>=8?'#22c55e':s>=5?'#f59e0b':s>=3?'#f97316':'#ef4444';}
   const statusColor={prospect:'#3b82f6',under_contract:'#f59e0b',owned:'#22c55e',sold:'#94a3b8'};
@@ -234,24 +315,38 @@
   function fillPropSelects(){
     ['la-assess-prop','la-feat-prop','la-dp-prop'].forEach(id=>{
       const el=$(id);if(!el)return;
-      const cur=el.value;
+      const cur=String(el.value||'');
       el.innerHTML='<option value="">-- Select Property --</option>'+
-        _props.map(p=>`<option value="${p.id}"${p.id==cur?' selected':''}>${p.name}</option>`).join('');
+        _props.map(p=>`<option value="${Number(p.id)||0}"${String(p.id)===cur?' selected':''}>${esc(p.name||`Property ${p.id}`)}</option>`).join('');
     });
   }
 
   /* ── Properties ── */
   window.laLoadProperties=function(){
+    const el=$('la-prop-list');
+    el.innerHTML=laEmpty('Loading properties…', 'Gathering saved sites, status, acreage, and current score signals.');
     api('/api/properties').then(items=>{
-      _props=items;fillPropSelects();
-      const el=$('la-prop-list');
-      if(!items.length){el.innerHTML='<div class="la-empty">No properties yet. Add one above.</div>';return;}
-      el.innerHTML=items.map(p=>`<div class="la-list-item">
-        <div><strong>${p.name}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${statusColor[p.status]||'#aaa'}">${p.status}</span>
-          <br><small class="tone-muted">${p.property_type} · ${p.acreage} ac · ${p.state||'--'}${p.distance_from_home?' · '+p.distance_from_home+' mi':''}</small>
-          ${p.total_score!=null?`<br><span class="la-score la-tone-driven" style="--la-tone:${scoreColor(p.total_score)}">Score: ${p.total_score}</span>`:''}</div>
-        <div><button class="la-btn la-btn-danger" onclick="laDeleteProperty(${p.id})" aria-label="La delete property">×</button></div>
-      </div>`).join('');
+      _props=Array.isArray(items)?items:[];fillPropSelects();
+      if(!_props.length){el.innerHTML=laEmpty('No properties saved', 'Add the first candidate site above to compare acreage, distance, and readiness.');return;}
+      el.innerHTML=_props.map(p=>{
+        const status=laLabel(p.status);
+        const propertyType=laLabel(p.property_type);
+        const acreage=`${laNumber(p.acreage)} ac`;
+        const distance=Number(p.distance_from_home);
+        const distanceText=Number.isFinite(distance)&&distance>0?`${laNumber(distance)} mi from home`:'Distance not set';
+        const stateText=p.state?esc(p.state):'State not set';
+        const scoreMarkup=p.total_score!=null?`<span class="la-score la-tone-driven" style="--la-tone:${scoreColor(Number(p.total_score)||0)}">Score ${laNumber(p.total_score)}</span>`:'';
+        return `<div class="la-list-item">
+          <div class="la-list-copy">
+            <div><strong>${esc(p.name||`Property ${p.id}`)}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${statusColor[p.status]||'#aaa'}">${esc(status)}</span></div>
+            <small class="tone-muted">${esc(propertyType)} · ${acreage} · ${stateText} · ${distanceText}</small>
+            ${scoreMarkup}
+          </div>
+          <div class="la-row-actions">${laDeleteButton(`laDeleteProperty(${Number(p.id)||0})`, 'Delete property')}</div>
+        </div>`;
+      }).join('');
+    }).catch(()=>{
+      el.innerHTML=laEmpty('Properties unavailable', 'The property list could not be refreshed right now. Try again in a moment.');
     });
   };
   window.laCreateProperty=function(){
@@ -263,6 +358,7 @@
     }).then(()=>{$('la-prop-name').value='';laLoadProperties();});
   };
   window.laDeleteProperty=function(id){
+    if(!laConfirmDelete('this property')) return;
     api('/api/properties/'+id,{method:'DELETE'}).then(()=>laLoadProperties());
   };
 
@@ -272,15 +368,19 @@
   window.laLoadAssessments=function(){
     const pid=val('la-assess-prop');
     const el=$('la-assess-list');
-    if(!pid){el.innerHTML='<div class="la-empty">Select a property above.</div>';$('la-score-display').style.display='none';return;}
+    if(!pid){el.innerHTML=laEmpty('Select a property', 'Pick a saved site to review scoring criteria and weight the tradeoffs.');$('la-score-display').style.display='none';return;}
+    el.innerHTML=laEmpty('Loading assessments…', 'Bringing in the criteria that shape this property score.');
     api('/api/properties/'+pid+'/assessments').then(items=>{
-      if(!items.length){el.innerHTML='<div class="la-empty">No criteria yet. Click "Seed Default Criteria" to populate.</div>';return;}
-      el.innerHTML=items.map(a=>`<div class="la-slider-row" data-assess-id="${a.id}">
-        <span class="crit-name">${a.criterion_name}</span>
-        <span class="crit-weight">wt: ${a.weight}</span>
-        <input type="range" min="1" max="10" value="${a.score}" name="la-criterion-score" oninput="this.nextElementSibling.textContent=this.value" onchange="laUpdateScore(${a.id},this.value)">
-        <span class="crit-val">${a.score}</span>
+      const rows=Array.isArray(items)?items:[];
+      if(!rows.length){el.innerHTML=laEmpty('No criteria yet', 'Seed the core criteria to start scoring access, water, terrain, and resilience tradeoffs.');return;}
+      el.innerHTML=rows.map(a=>`<div class="la-slider-row" data-assess-id="${Number(a.id)||0}">
+        <span class="crit-name">${esc(a.criterion_name||'Criterion')}</span>
+        <span class="crit-weight">wt: ${laNumber(a.weight)}</span>
+        <input type="range" min="1" max="10" value="${Number(a.score)||1}" name="la-criterion-score" aria-label="${esc((a.criterion_name||'Criterion') + ' score')}" oninput="this.nextElementSibling.textContent=this.value" onchange="laUpdateScore(${Number(a.id)||0},this.value)">
+        <span class="crit-val">${laNumber(a.score)}</span>
       </div>`).join('');
+    }).catch(()=>{
+      el.innerHTML=laEmpty('Assessments unavailable', 'Criteria could not be loaded right now. Refresh the workspace and try again.');
     });
   };
   window.laUpdateScore=function(assessId,score){
@@ -295,8 +395,8 @@
     const pid=val('la-assess-prop');if(!pid)return;
     api('/api/properties/'+pid+'/score',{method:'POST'}).then(r=>{
       const el=$('la-score-display');el.style.display='block';
-      el.innerHTML=`<span class="val">${r.total_score}</span> overall score` +
-        (r.category_scores?'<br><small>'+Object.entries(r.category_scores).map(([k,v])=>`${k}: ${v}`).join(' · ')+'</small>':'');
+      el.innerHTML=`<span class="val">${laNumber(r.total_score)}</span> overall score` +
+        (r.category_scores?'<br><small>'+Object.entries(r.category_scores).map(([k,v])=>`${esc(laLabel(k))}: ${laNumber(v)}`).join(' · ')+'</small>':'');
       laLoadProperties();
     });
   };
@@ -307,15 +407,21 @@
   window.laLoadFeatures=function(){
     const pid=val('la-feat-prop');
     const el=$('la-feat-list');
-    if(!pid){el.innerHTML='<div class="la-empty">Select a property above.</div>';return;}
+    if(!pid){el.innerHTML=laEmpty('Select a property', 'Choose a site to review water, access, structures, and other logged assets.');return;}
+    el.innerHTML=laEmpty('Loading features…', 'Pulling the on-site assets and infrastructure notes for this property.');
     api('/api/properties/'+pid+'/features').then(items=>{
-      if(!items.length){el.innerHTML='<div class="la-empty">No features logged for this property.</div>';return;}
+      const rows=Array.isArray(items)?items:[];
+      if(!rows.length){el.innerHTML=laEmpty('No features logged', 'Track wells, structures, roads, gardens, and power assets to understand what is already in place.');return;}
       const condColor={good:'#22c55e',fair:'#f59e0b',poor:'#f97316',needs_repair:'#ef4444',non_functional:'#ef4444'};
-      el.innerHTML=items.map(f=>`<div class="la-list-item">
-        <div><strong>${f.name}</strong> <span class="la-badge" style="color:${condColor[f.condition]||'#aaa'};margin-left:6px">${f.condition}</span>
-          <br><small class="tone-muted">${f.feature_type}${f.value_estimate?' · $'+Number(f.value_estimate).toLocaleString():''}</small></div>
-        <div><button class="la-btn la-btn-danger" onclick="laDeleteFeature(${f.id})" aria-label="La delete feature">×</button></div>
+      el.innerHTML=rows.map(f=>`<div class="la-list-item">
+        <div class="la-list-copy">
+          <div><strong>${esc(f.name||'Feature')}</strong> <span class="la-badge" style="color:${condColor[f.condition]||'#aaa'};margin-left:6px">${esc(laLabel(f.condition))}</span></div>
+          <small class="tone-muted">${esc(laLabel(f.feature_type))}${Number(f.value_estimate)>0?' · '+laMoney(f.value_estimate):''}</small>
+        </div>
+        <div class="la-row-actions">${laDeleteButton(`laDeleteFeature(${Number(f.id)||0})`, 'Delete feature')}</div>
       </div>`).join('');
+    }).catch(()=>{
+      el.innerHTML=laEmpty('Features unavailable', 'Feature inventory could not be loaded right now. Try again in a moment.');
     });
   };
   window.laCreateFeature=function(){
@@ -326,6 +432,7 @@
     }).then(()=>{$('la-feat-name').value='';laLoadFeatures();});
   };
   window.laDeleteFeature=function(id){
+    if(!laConfirmDelete('this feature')) return;
     api('/api/features/'+id,{method:'DELETE'}).then(()=>laLoadFeatures());
   };
 
@@ -335,14 +442,20 @@
   window.laLoadDevPlans=function(){
     const pid=val('la-dp-prop');
     const el=$('la-dp-list');
-    if(!pid){el.innerHTML='<div class="la-empty">Select a property above.</div>';return;}
+    if(!pid){el.innerHTML=laEmpty('Select a property', 'Use development plans to track what the site still needs before it is ready.');return;}
+    el.innerHTML=laEmpty('Loading plans…', 'Bringing in infrastructure, water, power, and security work still on the board.');
     api('/api/properties/'+pid+'/dev-plans').then(items=>{
-      if(!items.length){el.innerHTML='<div class="la-empty">No development plans for this property.</div>';return;}
-      el.innerHTML=items.map(d=>`<div class="la-list-item">
-        <div><strong>${d.name}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${prioColor[d.priority]||'#aaa'}">${d.priority}</span>
-          <br><small class="tone-muted">${d.category} · $${Number(d.estimated_cost||0).toLocaleString()} · ${d.status}</small></div>
-        <div><button class="la-btn la-btn-danger" onclick="laDeleteDevPlan(${d.id})" aria-label="La delete dev plan">×</button></div>
+      const rows=Array.isArray(items)?items:[];
+      if(!rows.length){el.innerHTML=laEmpty('No development plans yet', 'Add the first improvement plan to track budget, priority, and readiness work for this site.');return;}
+      el.innerHTML=rows.map(d=>`<div class="la-list-item">
+        <div class="la-list-copy">
+          <div><strong>${esc(d.name||'Development plan')}</strong> <span class="la-badge la-tone-driven la-tag-spacer" style="--la-tone:${prioColor[d.priority]||'#aaa'}">${esc(laLabel(d.priority))}</span></div>
+          <small class="tone-muted">${esc(laLabel(d.category))} · ${laMoney(d.estimated_cost)} · ${esc(laLabel(d.status))}</small>
+        </div>
+        <div class="la-row-actions">${laDeleteButton(`laDeleteDevPlan(${Number(d.id)||0})`, 'Delete development plan')}</div>
       </div>`).join('');
+    }).catch(()=>{
+      el.innerHTML=laEmpty('Development plans unavailable', 'The plan list could not be refreshed right now. Try again in a moment.');
     });
   };
   window.laCreateDevPlan=function(){
@@ -353,28 +466,33 @@
     }).then(()=>{$('la-dp-name').value='';laLoadDevPlans();});
   };
   window.laDeleteDevPlan=function(id){
+    if(!laConfirmDelete('this development plan')) return;
     api('/api/dev-plans/'+id,{method:'DELETE'}).then(()=>laLoadDevPlans());
   };
 
   /* ── Compare ── */
   window.laLoadCompare=function(){
+    const el=$('la-compare-list');
+    el.innerHTML=laEmpty('Loading comparison…', 'Ranking saved properties by score, features, and development cost.', 'la-grid-full');
     api('/api/properties/compare').then(items=>{
-      const el=$('la-compare-list');
-      if(!items.length){el.innerHTML='<div class="la-empty la-grid-full">No properties to compare. Add at least two properties first.</div>';return;}
-      items.sort((a,b)=>(b.total_score||0)-(a.total_score||0));
-      el.innerHTML=items.map((p,i)=>{
+      const rows=Array.isArray(items)?items:[];
+      if(!rows.length){el.innerHTML=laEmpty('No properties to compare', 'Add at least two saved properties so the comparison view can rank tradeoffs side by side.', 'la-grid-full');return;}
+      rows.sort((a,b)=>(b.total_score||0)-(a.total_score||0));
+      el.innerHTML=rows.map((p,i)=>{
         let cats='';
-        if(p.category_scores){cats=Object.entries(p.category_scores).map(([k,v])=>`<div class="cat-row"><span class="cat-label">${k}</span><span class="cat-val">${v}</span></div>`).join('');}
+        if(p.category_scores){cats=Object.entries(p.category_scores).map(([k,v])=>`<div class="cat-row"><span class="cat-label">${esc(laLabel(k))}</span><span class="cat-val">${laNumber(v)}</span></div>`).join('');}
         return `<div class="la-compare-card">
           <div class="rank">#${i+1}</div>
-          <div class="prop-name">${p.name||'Property '+p.id}</div>
-          <div class="cat-row"><span class="cat-label">Total Score</span><span class="cat-val la-tone-driven" style="--la-tone:${scoreColor(p.total_score||0)}">${p.total_score||'--'}</span></div>
+          <div class="prop-name">${esc(p.name||('Property '+p.id))}</div>
+          <div class="cat-row"><span class="cat-label">Total Score</span><span class="cat-val la-tone-driven" style="--la-tone:${scoreColor(p.total_score||0)}">${p.total_score!=null?laNumber(p.total_score):'--'}</span></div>
           ${cats}
-          <div class="cat-row"><span class="cat-label">Features</span><span class="cat-val">${p.features_count||0}</span></div>
-          <div class="cat-row"><span class="cat-label">Dev Plans</span><span class="cat-val">${p.plans_count||0}</span></div>
-          <div class="cat-row"><span class="cat-label">Total Dev Cost</span><span class="cat-val">$${Number(p.total_dev_cost||0).toLocaleString()}</span></div>
+          <div class="cat-row"><span class="cat-label">Features</span><span class="cat-val">${laNumber(p.features_count)}</span></div>
+          <div class="cat-row"><span class="cat-label">Dev Plans</span><span class="cat-val">${laNumber(p.plans_count)}</span></div>
+          <div class="cat-row"><span class="cat-label">Total Dev Cost</span><span class="cat-val">${laMoney(p.total_dev_cost)}</span></div>
         </div>`;
       }).join('');
+    }).catch(()=>{
+      el.innerHTML=laEmpty('Comparison unavailable', 'The ranking view could not be refreshed right now. Try again in a moment.', 'la-grid-full');
     });
   };
 

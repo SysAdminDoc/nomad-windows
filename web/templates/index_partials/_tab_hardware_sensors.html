@@ -381,7 +381,11 @@
   const root = document.getElementById('tab-hardware-sensors');
   const el  = id => document.getElementById(id);
   const val = id => el(id)?.value?.trim() || '';
-  const numVal = (id, def) => parseFloat(val(id)) || def || 0;
+  const numVal = (id, def) => {
+    const raw = val(id);
+    const parsed = parseFloat(raw);
+    return Number.isFinite(parsed) ? parsed : (def ?? 0);
+  };
   const api = (url, opts) => fetch(url, opts).then(r => r.json());
   const post = (url, body) => api(url, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const put  = (url, body) => api(url, {method:'PUT',  headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});

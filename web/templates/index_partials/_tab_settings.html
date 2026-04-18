@@ -3,21 +3,21 @@
       <div class="settings-command-deck-head">
         <div class="settings-command-copy">
           <div class="section-header-label settings-command-kicker">SYSTEM CONTROL</div>
-          <h2 class="settings-command-title">Tune the platform without losing the operational picture.</h2>
-          <p class="settings-command-text">Models, sync, security, and backups live here in one clear workspace, so you can harden the desk without chasing scattered admin panels.</p>
+          <h2 class="settings-command-title">Tune the desk without losing the operational picture.</h2>
+          <p class="settings-command-text">Models, resilience, sync, security, and health live here in one control room so maintenance feels deliberate instead of scattered.</p>
         </div>
         <div class="settings-command-actions">
-          <button type="button" class="btn btn-sm btn-primary" data-shell-action="pull-all-models">Pull Recommended Models</button>
-          <button type="button" class="btn btn-sm" data-shell-action="discover-peers">Scan for Nodes</button>
-          <button type="button" class="btn btn-sm" data-shell-action="full-backup">Create Backup</button>
+          <button type="button" class="btn btn-sm btn-primary" data-shell-action="pull-all-models">Pull Core Models</button>
+          <button type="button" class="btn btn-sm" data-shell-action="discover-peers">Discover Nearby Nodes</button>
+          <button type="button" class="btn btn-sm" data-shell-action="full-backup">Create Recovery Point</button>
         </div>
       </div>
       <div class="settings-command-pills">
-        <span class="settings-command-pill">Desk modes</span>
+        <span class="settings-command-pill">Modes</span>
+        <span class="settings-command-pill">Desk memory</span>
         <span class="settings-command-pill">Models</span>
-        <span class="settings-command-pill">Sync</span>
         <span class="settings-command-pill">Backups</span>
-        <span class="settings-command-pill">Logs &amp; health</span>
+        <span class="settings-command-pill">Health</span>
       </div>
     </div>
     <div class="settings-grid settings-workspace-grid">
@@ -25,8 +25,8 @@
       <div class="settings-card settings-hero-card settings-span-full">
         <div class="settings-hero-header">
           <div class="workspace-kicker">WORKSPACE MODES</div>
-          <h3 class="settings-hero-title">Choose how this desk behaves under load</h3>
-          <p class="settings-panel-copy settings-hero-text">Switch the overall operating posture before you tune the deeper system controls below.</p>
+          <h3 class="settings-hero-title">Set the operating posture for this desk</h3>
+          <p class="settings-panel-copy settings-hero-text">Choose the overall behavior first, then tune the deeper controls below to match how you actually work.</p>
         </div>
         <div class="settings-mode-grid">
           <div class="mode-option settings-mode-option" data-mode-opt="command" data-mode-select="command" role="button" tabindex="0" aria-pressed="false" aria-describedby="settings-mode-command-copy">
@@ -84,8 +84,8 @@
         <div class="settings-memory-head">
           <div class="settings-memory-copy">
             <div class="workspace-kicker">DESK MEMORY</div>
-            <h3 class="settings-hero-title settings-memory-title">Keep your working contexts stable and easy to return to.</h3>
-            <p class="settings-panel-copy settings-memory-text">Pinned contexts, recent desks, and quick-return paths are part of the product now, not hidden browser memory. Shape them here, then jump back in from Home, the sidebar, or the command palette.</p>
+            <h3 class="settings-hero-title settings-memory-title">Keep your return points stable, explicit, and easy to trust.</h3>
+            <p class="settings-panel-copy settings-memory-text">Pinned desks, startup context, and recent return points live in the product now instead of browser luck. Shape them here, then reopen them from Home, the sidebar, or the command palette.</p>
           </div>
           <div class="settings-memory-actions">
             <button type="button" class="btn btn-sm btn-primary" id="settings-pin-current-context-btn" data-workspace-memory-action="toggle-current-pin">Pin This Desk</button>
@@ -201,6 +201,7 @@
       </div>
       <div class="settings-card settings-preferences-card">
         <h3>Preferences <button class="help-icon" data-help="settings" title="Settings guide">?</button></h3>
+        <p class="settings-panel-copy settings-preferences-intro">Adjust appearance, behavior, voice, and local defaults from one calm control surface.</p>
         <div>
           <!-- Appearance (always visible) -->
           <div class="setting-row">

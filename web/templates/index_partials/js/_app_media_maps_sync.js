@@ -2886,7 +2886,7 @@ function renderMapBookmarks() {
   // Render in the map management area if visible
   let el = document.getElementById('map-bookmarks-list');
   if (!el) return;
-  if (!bookmarks.length) { el.innerHTML = '<span class="map-bookmark-empty">No bookmarks saved. Click Bookmark while viewing the map.</span>'; return; }
+  if (!bookmarks.length) { el.innerHTML = '<div class="workspace-empty-copy map-bookmark-empty"><strong>No Bookmarks Yet</strong><span>Save a bookmark from the live map to keep rally points, shelters, and recurring destinations close at hand.</span></div>'; return; }
   el.innerHTML = bookmarks.map((b, i) => `
     <div class="map-bookmark-row">
       <button type="button" class="map-bookmark-link" data-map-action="goto-bookmark" data-bookmark-index="${i}">${escapeHtml(b.name)}</button>
@@ -3593,16 +3593,19 @@ async function hostPower(action) {
 
 /* ─── PDF Library ─── */
 async function loadPDFList() {
+  const el = document.getElementById('pdf-list');
+  if (!el) return;
   try {
     const files = await _fetchJson('/api/library/pdfs');
-    const el = document.getElementById('pdf-list');
-    if (!files.length) { el.innerHTML = '<span class="library-pdf-empty">No documents uploaded. Click Upload to add PDFs, ePubs, or text files.</span>'; return; }
+    if (!files.length) { el.innerHTML = '<div class="workspace-empty-copy library-pdf-empty"><strong>No Documents Yet</strong><span>Add PDFs, ePubs, or text files to keep manuals, notes, and reference material ready offline.</span></div>'; return; }
     el.innerHTML = files.map(f => `
       <div class="library-pdf-row">
         <button type="button" class="library-pdf-link" data-library-action="view-pdf-item" data-pdf-filename="${escapeAttr(f.filename)}">${escapeHtml(f.filename)} <span class="library-pdf-meta">(${f.size})</span></button>
         <button type="button" class="library-pdf-delete" data-library-action="delete-pdf-item" data-pdf-filename="${escapeAttr(f.filename)}" aria-label="Delete document ${escapeAttr(f.filename)}">&times;</button>
       </div>`).join('');
-  } catch(e) {}
+  } catch(e) {
+    el.innerHTML = '<div class="workspace-empty-copy library-pdf-empty"><strong>Document Shelf Unavailable</strong><span>We could not load your local documents just now. Refresh the shelf or try again in a moment.</span></div>';
+  }
 }
 async function uploadPDF() {
   const input = document.getElementById('pdf-upload');

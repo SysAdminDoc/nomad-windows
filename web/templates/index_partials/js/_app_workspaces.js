@@ -58,7 +58,7 @@ async function loadMaps() {
         ${r.downloaded
           ? `<div class="region-card-actions">
               <span class="region-card-size">${escapeHtml(r.size)}</span>
-              <button class="btn btn-sm btn-danger" type="button" data-map-action="delete-map" data-map-filename="${escapeAttr(r.id)}.pmtiles" aria-label="Delete map">x</button>
+              <button class="btn btn-sm btn-danger" type="button" data-map-action="delete-map" data-map-filename="${escapeAttr(r.id)}.pmtiles" aria-label="Delete map ${escapeAttr(r.name)}">&times;</button>
             </div>`
           : `<button class="btn btn-sm btn-primary btn-open-svc-compact" type="button" data-map-action="download-region" data-map-region="${escapeAttr(r.id)}">Download</button>`
         }
@@ -67,7 +67,7 @@ async function loadMaps() {
   `).join('');
 
   if (!files.length) {
-    filesEl.innerHTML = '<span class="map-files-empty">No maps downloaded yet.</span>';
+    filesEl.innerHTML = '<div class="workspace-empty-copy map-files-empty"><strong>No Offline Maps Yet</strong><span>Download a region or import a PMTiles file to keep local coverage ready for navigation and route planning.</span></div>';
   } else {
     filesEl.innerHTML = files.map(f => `
       <div class="model-item">
@@ -985,13 +985,13 @@ async function wizLoadDrives() {
   try {
     drives = await _workspaceFetchJson('/api/drives', {}, 'Could not scan storage locations');
   } catch (_) {
-    el.innerHTML = '<div class="utility-empty-state">Unable to list storage locations right now. You can retry or enter a custom path.</div>';
-    setWizardStorageStatus('Storage scan failed. Enter a custom path or retry.', false);
+    el.innerHTML = '<div class="utility-empty-state"><strong>Storage scan unavailable</strong><span>Enter a custom path for now, or retry once the desk can read available drives again.</span></div>';
+    setWizardStorageStatus('Storage scan unavailable. Enter a custom path to keep moving.', false);
     return;
   }
   if (!Array.isArray(drives) || !drives.length) {
-    el.innerHTML = '<div class="utility-empty-state">No writable drives were detected yet. Enter a custom path to continue.</div>';
-    setWizardStorageStatus('Enter a custom path to continue.', false);
+    el.innerHTML = '<div class="utility-empty-state"><strong>No writable drives detected</strong><span>Choose a specific folder path to continue, then revisit storage options later if you need to.</span></div>';
+    setWizardStorageStatus('Choose a custom path to continue.', false);
     return;
   }
   let bestDrive = drives[0];
@@ -1027,7 +1027,7 @@ function wizSetCustomPath() {
     return;
   }
   _wizDrivePath = path.endsWith('\\') ? path : path + '\\';
-  setWizardStorageStatus('Custom path: ' + _wizDrivePath + 'NOMADFieldDesk\\', true);
+  setWizardStorageStatus('Desk data will be stored at: ' + _wizDrivePath + 'NOMADFieldDesk\\', true);
 }
 
 // Custom tier selection state
@@ -1041,7 +1041,7 @@ async function wizLoadTiers() {
   try {
     _wizTiers = await _workspaceFetchJson('/api/content-tiers', {}, 'Could not load setup profiles');
   } catch (_) {
-    el.innerHTML = '<div class="utility-empty-state">Could not load setup profiles. Retry from Services or come back later.</div>';
+    el.innerHTML = '<div class="utility-empty-state"><strong>Setup profiles unavailable</strong><span>Retry from Home or continue later when the desk can reach the profile catalog again.</span></div>';
     setWizardSectionVisibility('wiz-tier-detail', false);
     setWizardSectionVisibility('wiz-custom-panel', false);
     return;
@@ -1270,12 +1270,12 @@ function wizPollProgress() {
       if (!overallFillEl || !overallPctEl || !currentItemEl || !itemFillEl || !itemPctEl || !miniPctEl || !miniFillEl || !miniItemEl || !phaseLabelEl || !completedListEl) return;
       overallFillEl.style.width = s.overall_progress + '%';
       overallPctEl.textContent = s.overall_progress + '%';
-      currentItemEl.textContent = s.current_item || '...';
+      currentItemEl.textContent = s.current_item || 'Starting…';
       itemFillEl.style.width = s.item_progress + '%';
       itemPctEl.textContent = s.item_progress + '%';
       miniPctEl.textContent = s.overall_progress + '%';
       miniFillEl.style.width = s.overall_progress + '%';
-      miniItemEl.textContent = s.current_item || '...';
+      miniItemEl.textContent = s.current_item || 'Starting…';
 
       const phaseNames = {services:'Installing tools...', starting:'Starting services...', content:'Downloading offline content...', models:'Downloading AI models...', done:'Complete!'};
       phaseLabelEl.textContent = phaseNames[s.phase] || s.phase;
@@ -1325,7 +1325,7 @@ function wizPollProgress() {
 function wizSkipToComplete() {
   stopWizardProgressPoll();
   persistOnboardingComplete();
-  wizShowComplete({completed:[], errors:['Setup was skipped — you can install services and content manually from the Services and Library tabs.']});
+  wizShowComplete({completed:[], errors:['Setup was finished later. You can still install missing tools, models, and content from Home, Library, or Settings whenever the desk is ready.']});
 }
 
 async function wizShowComplete(state) {
@@ -1699,7 +1699,7 @@ async function loadKBDocs() {
     return `<div class="kb-doc-item kb-doc-item-stack">
       <div class="kb-doc-head">
         <span class="kb-doc-main">${escapeHtml(d.filename)} ${catBadge} <span class="kb-doc-status ${statusClass}">${d.status}${d.chunks_count ? ' ('+d.chunks_count+' chunks)' : ''}</span></span>
-        <span class="kb-doc-actions">${analyzeBtn}${detailBtn}<button type="button" class="convo-action-btn convo-del" data-chat-action="delete-kb-doc" data-doc-id="${d.id}" title="Delete document" aria-label="Delete document">x</button></span>
+        <span class="kb-doc-actions">${analyzeBtn}${detailBtn}<button type="button" class="convo-action-btn convo-del" data-chat-action="delete-kb-doc" data-doc-id="${d.id}" title="Delete document" aria-label="Delete document">&times;</button></span>
       </div>
       ${summary}
     </div>`;
@@ -1995,7 +1995,7 @@ function toggleMapView() {
   if (!viewerEl || !managementEl || !toggleBtn) return;
   viewerEl.style.display = _mapVisible ? 'block' : 'none';
   managementEl.style.display = _mapVisible ? 'none' : 'block';
-  toggleBtn.textContent = _mapVisible ? 'Manage Maps' : 'Show Map';
+  toggleBtn.textContent = _mapVisible ? 'Back to Map Shelf' : 'Open Live Map';
   ['pin-btn','measure-btn','clear-pins-btn','save-wp-btn','draw-zone-btn','gpx-btn','property-btn','print-map-btn','bookmark-btn','bearing-btn','style-btn'].forEach(id => {
     const control = document.getElementById(id);
     if (control) control.style.display = _mapVisible ? '' : 'none';
@@ -2298,7 +2298,7 @@ function filterConvos() {
   const filtered = allConvos.filter(c => c.title.toLowerCase().includes(q));
   const el = document.getElementById('convo-list');
   if (!el) return;
-  if (!filtered.length) { el.innerHTML = '<div class="sidebar-empty-state convo-search-empty">No matches</div>'; return; }
+  if (!filtered.length) { el.innerHTML = '<div class="sidebar-empty-state convo-search-empty"><strong>No Matches</strong><span>Try a shorter keyword or start a new thread for the task you have in mind.</span></div>'; return; }
   el.innerHTML = filtered.map(c => {
     const branchBadge = (c.branch_count && c.branch_count > 0) ? `<span class="convo-branch-badge" title="${c.branch_count} branch${c.branch_count>1?'es':''}">${c.branch_count}</span>` : '';
     return `
@@ -2306,7 +2306,7 @@ function filterConvos() {
       <span class="convo-title">${escapeHtml(c.title)}${branchBadge}</span>
       <span class="convo-actions">
         <button type="button" class="convo-action-btn" data-chat-action="rename-conversation" data-convo-id="${c.id}" data-stop-propagation aria-label="Rename conversation" title="Rename">&#9998;</button>
-        <button type="button" class="convo-action-btn convo-del" data-chat-action="delete-conversation" data-convo-id="${c.id}" data-stop-propagation aria-label="Delete conversation" title="Delete">x</button>
+        <button type="button" class="convo-action-btn convo-del" data-chat-action="delete-conversation" data-convo-id="${c.id}" data-stop-propagation aria-label="Delete conversation" title="Delete">&times;</button>
       </span>
     </div>`;
   }).join('');

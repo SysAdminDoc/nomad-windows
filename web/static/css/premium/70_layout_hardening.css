@@ -3300,7 +3300,7 @@ body {
   display: none;
   position: fixed;
   inset: 0;
-  z-index: 20000;
+  z-index: var(--z-frame-overlay, 20000);
   flex-direction: column;
   padding: clamp(10px, 1.8vw, 18px);
   background: rgba(0,0,0,0.8);

@@ -696,6 +696,19 @@ code {
   .shimmer-text {
     animation: none !important;
   }
+  /* Entrance animations snap to final state rather than playing at 0.001ms.
+     Covers modal, wizard, command palette, settings dialogs, and toast slide-ins. */
+  .modal-card,
+  .modal-overlay,
+  .wizard-card,
+  .wizard-overlay,
+  .command-palette-overlay,
+  .command-palette,
+  .settings-modal-card,
+  .shortcuts-dialog,
+  .toast {
+    animation: none !important;
+  }
   html { scroll-behavior: auto !important; }
 }
 
@@ -1746,7 +1759,10 @@ progress::-webkit-progress-value {
   box-shadow:
     0 0 8px color-mix(in srgb, var(--accent) 36%, transparent),
     inset 0 1px 0 color-mix(in srgb, white 22%, transparent);
-  transition: all var(--duration-soft) var(--ease-out-standard);
+  transition:
+    width var(--duration-soft) var(--ease-out-standard),
+    background-color var(--duration-soft) var(--ease-out-standard),
+    box-shadow var(--duration-soft) var(--ease-out-standard);
 }
 progress::-moz-progress-bar {
   background: linear-gradient(90deg, var(--accent), var(--orange));

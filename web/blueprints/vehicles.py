@@ -21,7 +21,7 @@ from web.validation import validate_json
 # fixes the bug where PUT used to reject partial updates that omitted
 # `name` / `service_type`.
 _VEHICLE_SCHEMA = {
-    'name': {'type': str, 'max_length': 200},
+    'name': {'type': str, 'min_length': 1, 'max_length': 200},
     'year': {'type': int, 'min': 1900, 'max': 2100},
     'make': {'type': str, 'max_length': 100},
     'model': {'type': str, 'max_length': 100},
@@ -43,7 +43,7 @@ _VEHICLE_CREATE_SCHEMA = dict(
     name={'type': str, 'required': True, 'max_length': 200},
 )
 _MAINTENANCE_SCHEMA = {
-    'service_type': {'type': str, 'max_length': 100},
+    'service_type': {'type': str, 'min_length': 1, 'max_length': 100},
     'service_date': {'type': str, 'max_length': 50},
     'mileage': {'type': (int, float), 'min': 0, 'max': 10_000_000},
     'next_due_mileage': {'type': (int, float), 'min': 0, 'max': 10_000_000},

@@ -69,7 +69,7 @@ def api_recipe_create():
         recipe_id = cur.lastrowid
 
         for ing in data.get('ingredients', []):
-            if not ing.get('name'):
+            if not isinstance(ing, dict) or not ing.get('name'):
                 continue
             db.execute('''
                 INSERT INTO recipe_ingredients (recipe_id, inventory_id, fdc_id, name, quantity, unit, optional)
@@ -113,7 +113,7 @@ def api_recipe_update(rid):
         if 'ingredients' in data:
             db.execute('DELETE FROM recipe_ingredients WHERE recipe_id = ?', (rid,))
             for ing in data['ingredients']:
-                if not ing.get('name'):
+                if not isinstance(ing, dict) or not ing.get('name'):
                     continue
                 db.execute('''
                     INSERT INTO recipe_ingredients (recipe_id, inventory_id, fdc_id, name, quantity, unit, optional)
@@ -216,9 +216,9 @@ def api_recipes_due_score():
             for ing in ingredients:
                 if ing['expiration']:
                     try:
-                        from datetime import datetime
+                        from datetime import datetime, timezone
                         exp = datetime.strptime(ing['expiration'], '%Y-%m-%d')
-                        days = (exp - datetime.now()).days
+                        days = (exp - datetime.now(timezone.utc).replace(tzinfo=None)).days
                         if days < min_days_to_expire:
                             min_days_to_expire = days
                             has_expiring = True

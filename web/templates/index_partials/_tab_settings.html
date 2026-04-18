@@ -831,4 +831,94 @@
       <button class="btn btn-sm btn-primary is-hidden" id="csv-import-btn" type="button" data-shell-action="execute-csv-import">Import Data</button>
     </div>
   </div>
+
+  <!-- Phase A3 — AI RAG scope manager -->
+  <style>
+    #rag-scope-panel .rag-scope-row {
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: var(--surface2, rgba(0,0,0,0.15));
+    }
+    #rag-scope-panel .rag-scope-row-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    #rag-scope-panel .rag-scope-row-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    #rag-scope-panel .rag-scope-row-toggle code {
+      font-size: 0.85em;
+    }
+    #rag-scope-panel .rag-scope-row-pills {
+      display: inline-flex;
+      gap: 6px;
+    }
+    #rag-scope-panel .rag-scope-row-controls {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    #rag-scope-panel .rag-scope-row-controls label {
+      display: inline-flex;
+      flex-direction: column;
+      font-size: 0.85em;
+      gap: 2px;
+    }
+    #rag-scope-panel .rag-scope-row-controls input[type="number"] {
+      width: 90px;
+    }
+    #rag-scope-panel .rag-scope-row-cols {
+      margin-top: 6px;
+      font-size: 0.8em;
+      word-break: break-all;
+    }
+    #rag-scope-preview {
+      white-space: pre-wrap;
+      font-family: var(--font-data, monospace);
+      font-size: 0.85em;
+      max-height: 360px;
+      overflow: auto;
+      padding: 10px;
+      background: var(--surface-solid, var(--surface, rgba(0,0,0,0.2)));
+      border: 1px solid var(--border, rgba(255,255,255,0.08));
+      border-radius: 6px;
+      min-height: 40px;
+    }
+    #rag-scope-status[data-tone="success"] { color: var(--green, #5ac26d); }
+    #rag-scope-status[data-tone="danger"]  { color: var(--red,   #e06062); }
+    #rag-scope-status[data-tone="neutral"] { color: var(--text-secondary, #aaa); }
+  </style>
+  <div class="settings-card settings-span-full" id="rag-scope-panel">
+    <div class="settings-hero-header">
+      <div>
+        <h3 class="settings-hero-title">AI RAG scope</h3>
+        <p class="settings-panel-copy">
+          Pick which database tables the AI sees as context. Builtin tables use curated formatters;
+          generic tables dump the configured columns. Weight controls emission order; max-rows caps
+          each section. Disabled rows contribute zero context.
+        </p>
+      </div>
+      <div class="settings-stack settings-stack-inline">
+        <button type="button" id="rag-scope-preview-btn" class="btn btn-sm">Preview context</button>
+        <button type="button" id="rag-scope-refresh-btn" class="btn btn-sm btn-ghost">Refresh</button>
+        <button type="button" id="rag-scope-reset-btn" class="btn btn-sm btn-ghost">Reset builtins</button>
+      </div>
+    </div>
+    <div id="rag-scope-status" data-tone="neutral"></div>
+    <div id="rag-scope-body" class="settings-stack"></div>
+    <details class="settings-stack">
+      <summary>Show last generated context payload</summary>
+      <div id="rag-scope-preview" aria-live="polite">(click <strong>Preview context</strong> to generate)</div>
+    </details>
+  </div>
 </div>

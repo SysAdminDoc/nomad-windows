@@ -21,3 +21,5 @@
 {% include 'index_partials/js/_app_ops_support.js' %}
 
 {% include 'index_partials/js/_app_init_runtime.js' %}
+
+{% include 'index_partials/js/_app_rag_scope.js' %}

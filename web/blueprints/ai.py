@@ -224,90 +224,277 @@ def _safe_memory_entries(val):
             normalized.append({'fact': fact})
     return normalized
 
+# ═══════════════════════════════════════════════════════════════════════════
+# v7.33.0 — Phase A3: RAG scope manager
+#
+# Before A3 the RAG context builder was a hard-coded waterfall over 10 tables.
+# It now reads `rag_scope` rows (table_name, label, enabled, weight, max_rows,
+# formatter) and dispatches to either a per-table builtin formatter
+# (preserving the original output verbatim) or a generic formatter that runs
+# SELECT over a user-configured column set. 90+ other tables become
+# visible to the LLM by toggling scope entries in Settings.
+# ═══════════════════════════════════════════════════════════════════════════
+
+_RAG_IDENT_RE = re.compile(r'^[a-zA-Z_]\w*$')
+
+
+def _rag_inventory(db, max_rows):
+    rows = db.execute(
+        'SELECT name, quantity, unit, category, daily_usage, min_quantity, expiration '
+        'FROM inventory ORDER BY category, name LIMIT ?',
+        (max_rows,),
+    ).fetchall()
+    if not rows:
+        return ''
+    lines = []
+    for r in rows:
+        line = f'{r["name"]}: {r["quantity"]} {r["unit"]} ({r["category"]})'
+        if r['daily_usage'] and r['daily_usage'] > 0:
+            days = round(r['quantity'] / r['daily_usage'], 1)
+            line += f' — {days} days supply at {r["daily_usage"]}/day'
+        if r['min_quantity'] and r['quantity'] <= r['min_quantity']:
+            line += ' [LOW STOCK]'
+        if r['expiration']:
+            line += f' expires {r["expiration"]}'
+        lines.append(line)
+    return 'INVENTORY:\n' + '\n'.join(lines)
+
+
+def _rag_contacts(db, max_rows):
+    rows = db.execute(
+        'SELECT name, role, skills, phone, callsign, blood_type FROM contacts LIMIT ?',
+        (max_rows,),
+    ).fetchall()
+    if not rows:
+        return ''
+    lines = [
+        f'{c["name"]} — {c["role"] or "unassigned"}'
+        + (f', skills: {c["skills"]}' if c["skills"] else '')
+        + (f', callsign: {c["callsign"]}' if c["callsign"] else '')
+        + (f', blood: {c["blood_type"]}' if c["blood_type"] else '')
+        for c in rows
+    ]
+    return 'TEAM CONTACTS:\n' + '\n'.join(lines)
+
+
+def _rag_patients(db, max_rows):
+    rows = db.execute(
+        'SELECT name, age, weight_kg, blood_type, allergies, conditions, medications '
+        'FROM patients LIMIT ?',
+        (max_rows,),
+    ).fetchall()
+    if not rows:
+        return ''
+    lines = []
+    for p in rows:
+        line = f'{p["name"]}'
+        if p['age']:
+            line += f', age {p["age"]}'
+        if p['blood_type']:
+            line += f', blood {p["blood_type"]}'
+        allg = _safe_json_list(p['allergies'])
+        if allg:
+            line += f', ALLERGIES: {", ".join(allg)}'
+        cond = _safe_json_list(p['conditions'])
+        if cond:
+            line += f', conditions: {", ".join(cond)}'
+        meds = _safe_json_list(p['medications'])
+        if meds:
+            line += f', meds: {", ".join(meds)}'
+        lines.append(line)
+    return 'PATIENTS:\n' + '\n'.join(lines)
+
+
+def _rag_fuel(db, max_rows):
+    rows = db.execute(
+        'SELECT fuel_type, quantity, unit, location FROM fuel_storage LIMIT ?',
+        (max_rows,),
+    ).fetchall()
+    if not rows:
+        return ''
+    return 'FUEL: ' + ', '.join(
+        f'{f["fuel_type"]}: {f["quantity"]} {f["unit"]} at {f["location"]}' for f in rows
+    )
+
+
+def _rag_ammo(db, max_rows):
+    rows = db.execute(
+        'SELECT caliber, quantity, location FROM ammo_inventory LIMIT ?',
+        (max_rows,),
+    ).fetchall()
+    if not rows:
+        return ''
+    return 'AMMO: ' + ', '.join(
+        f'{a["caliber"]}: {a["quantity"]} rounds ({a["location"]})' for a in rows
+    )
+
+
+def _rag_equipment(db, max_rows):
+    rows = db.execute(
+        "SELECT name, status, next_service FROM equipment_log "
+        "WHERE next_service != '' ORDER BY next_service LIMIT ?",
+        (max_rows,),
+    ).fetchall()
+    if not rows:
+        return ''
+    return 'EQUIPMENT: ' + ', '.join(
+        f'{e["name"]}: {e["status"]}, service due {e["next_service"]}' for e in rows
+    )
+
+
+def _rag_alerts(db, max_rows):
+    rows = db.execute(
+        'SELECT title, severity, message FROM alerts WHERE dismissed = 0 LIMIT ?',
+        (max_rows,),
+    ).fetchall()
+    if not rows:
+        return ''
+    return 'ACTIVE ALERTS:\n' + '\n'.join(
+        f'[{a["severity"]}] {a["title"]}: {(a["message"] or "")[:100]}' for a in rows
+    )
+
+
+def _rag_weather(db, max_rows):
+    # max_rows usually 1 — latest reading
+    row = db.execute(
+        'SELECT * FROM weather_log ORDER BY created_at DESC LIMIT ?',
+        (max_rows,),
+    ).fetchone()
+    if not row:
+        return ''
+    return f'WEATHER: {dict(row)}'
+
+
+def _rag_power(db, max_rows):
+    row = db.execute(
+        'SELECT * FROM power_log ORDER BY created_at DESC LIMIT ?',
+        (max_rows,),
+    ).fetchone()
+    if not row:
+        return ''
+    return (
+        f'POWER: Battery {row["battery_soc"] or "?"}%, '
+        f'Solar {row["solar_watts"] or 0}W, Load {row["load_watts"] or 0}W'
+    )
+
+
+def _rag_incidents(db, max_rows):
+    rows = db.execute(
+        "SELECT severity, category, description FROM incidents "
+        "WHERE created_at >= datetime('now', '-24 hours') "
+        "ORDER BY created_at DESC LIMIT ?",
+        (max_rows,),
+    ).fetchall()
+    if not rows:
+        return ''
+    return 'RECENT INCIDENTS (24h): ' + ' | '.join(
+        f'[{r["severity"]}] {r["category"]}: {(r["description"] or "")[:60]}' for r in rows
+    )
+
+
+_BUILTIN_RAG_FORMATTERS = {
+    'inventory':      _rag_inventory,
+    'contacts':       _rag_contacts,
+    'patients':       _rag_patients,
+    'fuel_storage':   _rag_fuel,
+    'ammo_inventory': _rag_ammo,
+    'equipment_log':  _rag_equipment,
+    'alerts':         _rag_alerts,
+    'weather_log':    _rag_weather,
+    'power_log':      _rag_power,
+    'incidents':      _rag_incidents,
+}
+
+
+def _rag_generic(db, table_name, columns, label, max_rows):
+    """Generic formatter for user-added tables. Validates table+columns
+    against live PRAGMA schema before building the SELECT — defense in depth
+    against SQL injection even though table_name comes from rag_scope which
+    is admin-gated."""
+    if not _RAG_IDENT_RE.match(table_name):
+        return ''
+    if not columns:
+        return ''
+    try:
+        live_cols = {r['name'] for r in db.execute(f'PRAGMA table_info({table_name})').fetchall()}
+    except Exception:
+        return ''
+    if not live_cols:
+        return ''
+    safe = [c for c in columns if c in live_cols and _RAG_IDENT_RE.match(c)]
+    if not safe:
+        return ''
+    try:
+        rows = db.execute(
+            f'SELECT {", ".join(safe)} FROM {table_name} LIMIT ?',
+            (int(max_rows),),
+        ).fetchall()
+    except Exception:
+        return ''
+    if not rows:
+        return ''
+    lines = []
+    for row in rows:
+        parts = []
+        for col in safe:
+            val = row[col]
+            if val in (None, ''):
+                continue
+            parts.append(f'{col}={val}')
+        if parts:
+            lines.append(' | '.join(parts))
+    if not lines:
+        return ''
+    return f'{label}:\n' + '\n'.join(lines)
+
+
+def _rag_scope_rows(db):
+    """Return enabled rag_scope rows ordered for emission. Returns [] if the
+    table is missing (pre-migration DB) so the LLM still works on a stale DB."""
+    try:
+        return db.execute(
+            'SELECT table_name, label, weight, max_rows, formatter, columns_json '
+            'FROM rag_scope WHERE enabled = 1 '
+            'ORDER BY weight DESC, table_name ASC'
+        ).fetchall()
+    except Exception as e:
+        log.debug(f'rag_scope unavailable: {e}')
+        return []
+
+
 def build_situation_context(db, detail_level='full') -> list[str]:
-    """Build rich situation context from DB for AI consumption.
-    detail_level: 'summary' for compact context (chat), 'full' for copilot queries.
-    Returns a list of context section strings."""
+    """Build rich situation context from DB for AI consumption, driven by
+    the `rag_scope` table. Each enabled row contributes one section.
+
+    detail_level:
+      - 'full'    — honors each row's configured max_rows as-is
+      - 'summary' — caps each row's max_rows at 10 for a compact payload
+                    (used for chat, where latency + token cost matter)
+    Returns an ordered list of context section strings (weight DESC)."""
     ctx_parts = []
-    limit = 10 if detail_level == 'summary' else 200
+    summary_cap = 10 if detail_level == 'summary' else None
 
-    # Inventory with burn rates
-    inv = db.execute('SELECT name, quantity, unit, category, daily_usage, min_quantity, expiration FROM inventory ORDER BY category, name LIMIT ?', (limit,)).fetchall()
-    if inv:
-        inv_lines = []
-        for r in inv:
-            line = f'{r["name"]}: {r["quantity"]} {r["unit"]} ({r["category"]})'
-            if r['daily_usage'] and r['daily_usage'] > 0:
-                days = round(r['quantity'] / r['daily_usage'], 1)
-                line += f' — {days} days supply at {r["daily_usage"]}/day'
-            if r['min_quantity'] and r['quantity'] <= r['min_quantity']:
-                line += ' [LOW STOCK]'
-            if r['expiration']:
-                line += f' expires {r["expiration"]}'
-            inv_lines.append(line)
-        ctx_parts.append('INVENTORY:\n' + '\n'.join(inv_lines))
+    for r in _rag_scope_rows(db):
+        table_name = r['table_name']
+        max_rows = int(r['max_rows'] or 10)
+        if summary_cap is not None and max_rows > summary_cap:
+            max_rows = summary_cap
+        if max_rows < 1:
+            max_rows = 1
 
-    # Contacts with skills and roles
-    contacts = db.execute('SELECT name, role, skills, phone, callsign, blood_type FROM contacts LIMIT ?', (limit,)).fetchall()
-    if contacts:
-        c_lines = [f'{c["name"]} — {c["role"] or "unassigned"}' +
-                   (f', skills: {c["skills"]}' if c.get('skills') else '') +
-                   (f', callsign: {c["callsign"]}' if c.get('callsign') else '') +
-                   (f', blood: {c["blood_type"]}' if c.get('blood_type') else '')
-                   for c in contacts]
-        ctx_parts.append('TEAM CONTACTS:\n' + '\n'.join(c_lines))
+        formatter = r['formatter'] or 'generic'
+        try:
+            if formatter == 'builtin' and table_name in _BUILTIN_RAG_FORMATTERS:
+                section = _BUILTIN_RAG_FORMATTERS[table_name](db, max_rows)
+            else:
+                cols = _safe_json_list(r['columns_json']) if r['columns_json'] else []
+                section = _rag_generic(db, table_name, cols, r['label'], max_rows)
+        except Exception as e:
+            log.debug(f'RAG formatter failed for {table_name}: {e}')
+            section = ''
 
-    # Patients with medical details
-    patients = db.execute('SELECT name, age, weight_kg, blood_type, allergies, conditions, medications FROM patients LIMIT ?', (limit,)).fetchall()
-    if patients:
-        p_lines = []
-        for p in patients:
-            line = f'{p["name"]}'
-            if p['age']: line += f', age {p["age"]}'
-            if p['blood_type']: line += f', blood {p["blood_type"]}'
-            allg = _safe_json_list(p['allergies'])
-            if allg: line += f', ALLERGIES: {", ".join(allg)}'
-            cond = _safe_json_list(p['conditions'])
-            if cond: line += f', conditions: {", ".join(cond)}'
-            meds = _safe_json_list(p['medications'])
-            if meds: line += f', meds: {", ".join(meds)}'
-            p_lines.append(line)
-        ctx_parts.append('PATIENTS:\n' + '\n'.join(p_lines))
-
-    # Fuel storage
-    fuel = db.execute('SELECT fuel_type, quantity, unit, location FROM fuel_storage LIMIT ?', (limit,)).fetchall()
-    if fuel:
-        ctx_parts.append('FUEL: ' + ', '.join(f'{f["fuel_type"]}: {f["quantity"]} {f["unit"]} at {f["location"]}' for f in fuel))
-
-    # Ammo
-    ammo = db.execute('SELECT caliber, quantity, location FROM ammo_inventory LIMIT ?', (limit,)).fetchall()
-    if ammo:
-        ctx_parts.append('AMMO: ' + ', '.join(f'{a["caliber"]}: {a["quantity"]} rounds ({a["location"]})' for a in ammo))
-
-    # Equipment
-    equip = db.execute("SELECT name, status, next_service FROM equipment_log WHERE next_service != '' ORDER BY next_service LIMIT 10").fetchall()
-    if equip:
-        ctx_parts.append('EQUIPMENT: ' + ', '.join(f'{e["name"]}: {e["status"]}, service due {e["next_service"]}' for e in equip))
-
-    # Active alerts
-    alerts = db.execute('SELECT title, severity, message FROM alerts WHERE dismissed = 0 LIMIT 10').fetchall()
-    if alerts:
-        ctx_parts.append('ACTIVE ALERTS:\n' + '\n'.join(f'[{a["severity"]}] {a["title"]}: {a["message"][:100]}' for a in alerts))
-
-    # Weather
-    wx = db.execute('SELECT * FROM weather_log ORDER BY created_at DESC LIMIT 1').fetchone()
-    if wx:
-        ctx_parts.append(f'WEATHER: {dict(wx)}')
-
-    # Power
-    pwr = db.execute('SELECT * FROM power_log ORDER BY created_at DESC LIMIT 1').fetchone()
-    if pwr:
-        ctx_parts.append(f'POWER: Battery {pwr["battery_soc"] or "?"}%, Solar {pwr["solar_watts"] or 0}W, Load {pwr["load_watts"] or 0}W')
-
-    # Recent incidents
-    incidents = db.execute("SELECT severity, category, description FROM incidents WHERE created_at >= datetime('now', '-24 hours') ORDER BY created_at DESC LIMIT 5").fetchall()
-    if incidents:
-        ctx_parts.append('RECENT INCIDENTS (24h): ' + ' | '.join(f'[{r["severity"]}] {r["category"]}: {r["description"][:60]}' for r in incidents))
+        if section:
+            ctx_parts.append(section)
 
     return ctx_parts
 
@@ -1461,3 +1648,199 @@ def api_ai_memory_clear():
         db.commit()
     log_activity('ai_memory_cleared', 'ai', 'All AI memories cleared')
     return jsonify({'status': 'cleared'})
+
+
+# ─── RAG scope manager (Phase A3) ─────────────────────────────────────────
+
+def _rag_scope_row_to_dict(row):
+    return {
+        'table_name':   row['table_name'],
+        'label':        row['label'],
+        'enabled':      bool(row['enabled']),
+        'weight':       int(row['weight']),
+        'max_rows':     int(row['max_rows']),
+        'formatter':    row['formatter'],
+        'columns_json': row['columns_json'],
+        'source':       row['source'],
+    }
+
+
+@ai_bp.route('/api/ai/rag/scope', methods=['GET'])
+def api_ai_rag_scope_list():
+    """Return all rag_scope entries ordered by weight (emission order)."""
+    with db_session() as db:
+        try:
+            rows = db.execute(
+                'SELECT table_name, label, enabled, weight, max_rows, '
+                'formatter, columns_json, source FROM rag_scope '
+                'ORDER BY weight DESC, table_name ASC'
+            ).fetchall()
+        except Exception:
+            rows = []
+    return jsonify({'scope': [_rag_scope_row_to_dict(r) for r in rows]})
+
+
+@ai_bp.route('/api/ai/rag/scope', methods=['POST'])
+@require_auth('admin')
+def api_ai_rag_scope_update():
+    """Update a single rag_scope row, or create a custom entry.
+
+    Request body:
+        table_name (required, identifier)
+        label        (optional — required on custom-insert)
+        enabled      (optional, 0/1/bool)
+        weight       (optional, int)
+        max_rows     (optional, int, clamped to 1..500)
+        formatter    (optional, 'builtin' | 'generic'; defaults to 'generic')
+        columns_json (optional, JSON array of column names)
+    """
+    data = request.get_json(silent=True) or {}
+    table_name = str(data.get('table_name') or '').strip()
+    if not table_name or not _RAG_IDENT_RE.match(table_name):
+        return jsonify({'error': 'Invalid table_name'}), 400
+
+    with db_session() as db:
+        existing = db.execute(
+            'SELECT * FROM rag_scope WHERE table_name = ?',
+            (table_name,),
+        ).fetchone()
+
+        if existing is None:
+            # Custom insert — require label so the section has a header
+            label = str(data.get('label') or '').strip()
+            if not label:
+                return jsonify({'error': 'label is required for a new scope entry'}), 400
+            # Verify the table actually exists in the live schema before persisting
+            try:
+                live = db.execute(f'PRAGMA table_info({table_name})').fetchall()
+            except Exception:
+                live = []
+            if not live:
+                return jsonify({'error': f'Unknown table: {table_name}'}), 400
+
+            enabled = 1 if bool(data.get('enabled', True)) else 0
+            weight = int(data.get('weight', 20))
+            max_rows = max(1, min(500, int(data.get('max_rows', 10))))
+            formatter = data.get('formatter', 'generic')
+            if formatter not in ('builtin', 'generic'):
+                formatter = 'generic'
+            cols = data.get('columns_json')
+            if isinstance(cols, list):
+                cols = json.dumps(cols)
+            elif cols is not None and not isinstance(cols, str):
+                cols = None
+            db.execute(
+                '''INSERT INTO rag_scope
+                   (table_name, label, enabled, weight, max_rows, formatter, columns_json, source)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, 'custom')''',
+                (table_name, label, enabled, weight, max_rows, formatter, cols),
+            )
+            db.commit()
+            log_activity('rag_scope_created', 'ai', f'Added custom RAG table: {table_name}')
+            return jsonify({'status': 'created', 'table_name': table_name})
+
+        # Update path — only update fields explicitly provided
+        sets, params = [], []
+        if 'enabled' in data:
+            sets.append('enabled = ?')
+            params.append(1 if bool(data['enabled']) else 0)
+        if 'weight' in data:
+            try:
+                sets.append('weight = ?')
+                params.append(int(data['weight']))
+            except (TypeError, ValueError):
+                return jsonify({'error': 'weight must be integer'}), 400
+        if 'max_rows' in data:
+            try:
+                params.append(max(1, min(500, int(data['max_rows']))))
+                sets.append('max_rows = ?')
+            except (TypeError, ValueError):
+                return jsonify({'error': 'max_rows must be integer'}), 400
+        if 'label' in data:
+            label = str(data['label'] or '').strip()
+            if label:
+                sets.append('label = ?')
+                params.append(label)
+        if 'columns_json' in data:
+            cols = data['columns_json']
+            if isinstance(cols, list):
+                cols = json.dumps(cols)
+            elif cols is not None and not isinstance(cols, str):
+                cols = None
+            sets.append('columns_json = ?')
+            params.append(cols)
+
+        if not sets:
+            return jsonify({'error': 'No updatable fields in request'}), 400
+
+        sets.append("updated_at = CURRENT_TIMESTAMP")
+        params.append(table_name)
+        db.execute(
+            f'UPDATE rag_scope SET {", ".join(sets)} WHERE table_name = ?',
+            params,
+        )
+        db.commit()
+    log_activity('rag_scope_updated', 'ai', f'Updated RAG scope: {table_name}')
+    return jsonify({'status': 'updated', 'table_name': table_name})
+
+
+@ai_bp.route('/api/ai/rag/scope/<table_name>', methods=['DELETE'])
+@require_auth('admin')
+def api_ai_rag_scope_delete(table_name):
+    """Delete a custom scope entry. Builtin entries cannot be deleted —
+    disable them instead (so the seeder won't re-create an entry that was
+    intentionally removed)."""
+    if not _RAG_IDENT_RE.match(table_name or ''):
+        return jsonify({'error': 'Invalid table_name'}), 400
+    with db_session() as db:
+        row = db.execute(
+            'SELECT source FROM rag_scope WHERE table_name = ?',
+            (table_name,),
+        ).fetchone()
+        if not row:
+            return jsonify({'error': 'Not found'}), 404
+        if row['source'] != 'custom':
+            return jsonify({'error': 'Cannot delete builtin entry — disable it instead'}), 400
+        db.execute('DELETE FROM rag_scope WHERE table_name = ?', (table_name,))
+        db.commit()
+    log_activity('rag_scope_deleted', 'ai', f'Removed custom RAG table: {table_name}')
+    return jsonify({'status': 'deleted'})
+
+
+@ai_bp.route('/api/ai/rag/scope/reset', methods=['POST'])
+@require_auth('admin')
+def api_ai_rag_scope_reset():
+    """Reset all builtin entries to defaults. Leaves custom entries intact."""
+    from db import _RAG_SCOPE_DEFAULTS  # local import to avoid circularity at module load
+    with db_session() as db:
+        for (table_name, label, enabled, weight, max_rows, formatter, columns_json) in _RAG_SCOPE_DEFAULTS:
+            db.execute(
+                '''UPDATE rag_scope
+                   SET label = ?, enabled = ?, weight = ?, max_rows = ?,
+                       formatter = ?, columns_json = ?,
+                       updated_at = CURRENT_TIMESTAMP
+                   WHERE table_name = ? AND source = 'builtin' ''',
+                (label, enabled, weight, max_rows, formatter, columns_json, table_name),
+            )
+        db.commit()
+    log_activity('rag_scope_reset', 'ai', 'RAG scope reset to defaults')
+    return jsonify({'status': 'reset'})
+
+
+@ai_bp.route('/api/ai/rag/preview', methods=['GET'])
+def api_ai_rag_preview():
+    """Return the exact context the LLM would receive, for debugging.
+    ?detail_level=summary|full (default 'full')."""
+    detail = request.args.get('detail_level', 'full')
+    if detail not in ('summary', 'full'):
+        detail = 'full'
+    with db_session() as db:
+        sections = build_situation_context(db, detail_level=detail)
+    payload = '\n\n'.join(sections)
+    return jsonify({
+        'detail_level':  detail,
+        'section_count': len(sections),
+        'char_count':    len(payload),
+        'sections':      sections,
+        'payload':       payload,
+    })

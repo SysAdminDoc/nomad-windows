@@ -6,12 +6,12 @@
     <div class="welcome-banner is-hidden" id="welcome-banner">
       <div class="welcome-banner-copy">
         <div class="section-header-label welcome-kicker">Offline Ready</div>
-        <h3 class="shimmer-text">Bring the desk fully offline before you need it.</h3>
-        <p>NOMAD is your local operations desk for preparedness planning, field reference, and decision support. Start by enabling the capabilities you want available when bandwidth disappears.</p>
+        <h3 class="shimmer-text">Stand up the desk before the network becomes the problem.</h3>
+        <p>NOMAD is your local-first operations workspace for planning, reference, and decision support. Start by installing the core services you want close at hand when bandwidth disappears or cloud tools stop being dependable.</p>
         <div class="welcome-banner-metadata" aria-hidden="true">
+          <span class="welcome-banner-pill">Runs on your machine</span>
           <span class="welcome-banner-pill">Private by default</span>
-          <span class="welcome-banner-pill">Local-first tools</span>
-          <span class="welcome-banner-pill">Core services install in minutes</span>
+          <span class="welcome-banner-pill">Core setup in one sitting</span>
         </div>
       </div>
       <div class="welcome-banner-actions">
@@ -56,8 +56,8 @@
           <div class="home-launch-head">
             <div class="home-launch-copy">
               <span class="section-header-label home-launch-kicker">COMMAND DESK</span>
-              <h2 class="home-launch-title">Find the desk you need and reopen work with context intact.</h2>
-              <p class="home-launch-text">Search tasks, records, tools, and workspaces, then drop directly back into the surface you need instead of retracing your last steps.</p>
+              <h2 class="home-launch-title">Reopen the right desk instantly, with your context already waiting.</h2>
+              <p class="home-launch-text">Search tasks, notes, tools, people, and saved desks, then jump straight back into the work instead of rebuilding your place from memory.</p>
             </div>
             <div class="home-launch-actions">
               <button class="btn btn-sm btn-primary compact-action-btn" data-shell-action="toggle-command-palette">Global Find</button>
@@ -71,7 +71,8 @@
           </div>
           <div class="home-launch-meta">
             <span class="home-launch-chip">Ctrl+K from any desk</span>
-            <span class="home-launch-chip">Pinned and recent work stay in sync</span>
+            <span class="home-launch-chip">Search notes, tools, and desks together</span>
+            <span class="home-launch-chip">Pinned and recent shelves stay in sync</span>
           </div>
         </div>
 
@@ -79,7 +80,7 @@
           <div class="section-header home-section-header home-toolbar">
             <span class="section-header-label">WORK LANES</span>
             <div class="section-divider section-divider-grow"></div>
-            <div class="home-mode-rail-copy">Open the lane that matches the task in front of you.</div>
+            <div class="home-mode-rail-copy">Choose the lane that matches the decision you are making right now.</div>
           </div>
           <div class="home-mode-grid">
             <button type="button" class="home-mode-card" data-tab-target="readiness">
@@ -128,11 +129,11 @@
           <button id="home-pin-current-context-btn" class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-home-context-action="toggle-pin-current" aria-pressed="false">Pin This Desk</button>
           <button class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-shell-action="toggle-command-palette">Command Palette</button>
         </div>
-        <div id="home-continue-summary" class="home-continue-summary">Pinned desks, startup desks, and recent return points stay staged here for quick re-entry.</div>
+        <div id="home-continue-summary" class="home-continue-summary">Pinned desks, startup desks, and recent return points stay staged here so re-entry feels immediate.</div>
         <div class="home-context-section">
           <div class="home-context-section-head">
             <span class="home-context-section-title">Pinned Desks</span>
-            <span class="home-context-section-copy">Keep the work surfaces you rely on most one click away from Home.</span>
+            <span class="home-context-section-copy">Keep the work surfaces you rely on most parked on Home for repeat access.</span>
           </div>
           <div id="home-pinned-grid" class="home-continue-grid home-continue-grid-pinned">
             <div class="home-continue-empty">Pin your current context to build a personal shelf.</div>
@@ -141,7 +142,7 @@
         <div class="home-context-section">
           <div class="home-context-section-head">
             <span class="home-context-section-title">Recent Return Points</span>
-            <span class="home-context-section-copy">Return to the desks and sub-workspaces you were actively using last.</span>
+            <span class="home-context-section-copy">Jump back into the last desks, tabs, and sub-workspaces you were actively using.</span>
           </div>
           <div id="home-continue-grid" class="home-continue-grid">
             <div class="home-continue-empty">Recent workspaces and saved context will appear here as you use the desk.</div>
@@ -160,7 +161,7 @@
           <div class="section-divider section-divider-grow"></div>
           <button class="btn btn-sm btn-ghost section-header-action compact-action-btn" data-shell-action="open-widget-manager" title="Configure dashboard widgets">&#9881; Widgets</button>
         </div>
-        <div id="live-dashboard" class="dashboard-grid home-surface-grid"><div class="prep-empty-state">Assembling your live dashboard.</div></div>
+        <div id="live-dashboard" class="dashboard-grid home-surface-grid"><div class="prep-empty-state"><strong>Assembling the dashboard</strong><span>Live signals, services, and quick metrics will settle here once the desk finishes loading.</span></div></div>
       </div>
       <div id="needs-overview" class="home-panel-group home-needs-overview">
         <div class="section-header home-section-header home-toolbar">
@@ -168,7 +169,7 @@
           <div class="section-divider section-divider-grow"></div>
           <button class="btn btn-sm section-header-action compact-action-btn" data-tab-target="readiness">Score</button>
         </div>
-        <div id="needs-grid" class="home-surface-grid home-needs-grid"><div class="prep-empty-state">Preparedness gaps appear here once inventory, contacts, and checklists are in place.</div></div>
+        <div id="needs-grid" class="home-surface-grid home-needs-grid"><div class="prep-empty-state"><strong>No priority gaps yet</strong><span>Preparedness gaps appear here once inventory, contacts, and checklists are populated enough to score confidently.</span></div></div>
       </div>
     </div>
 
@@ -253,7 +254,7 @@
           <a class="btn btn-sm" href="/api/brief/daily/print" target="_blank" rel="noopener" title="Open printable version">Print</a>
         </div>
         <div id="daily-brief-body" class="daily-brief-body">
-          <div class="daily-brief-empty">A one-page snapshot of weather, proximity alerts, inventory gaps, tasks, and household status. Click <strong>Generate</strong> when you want a fresh daily view.</div>
+          <div class="daily-brief-empty"><strong>Generate a fresh brief</strong><span>Get a one-page snapshot of weather, proximity alerts, inventory gaps, tasks, and household status whenever you want a current read.</span></div>
         </div>
       </div>
     </div>
@@ -384,7 +385,7 @@
             <button class="btn btn-sm compact-action-btn" data-shell-action="refresh-activity">Refresh</button>
           </div>
         </div>
-        <div id="activity-feed" class="activity-feed-shell"><div class="activity-feed-empty">Collecting recent desk activity.</div></div>
+        <div id="activity-feed" class="activity-feed-shell"><div class="activity-feed-empty"><strong>Collecting recent activity</strong><span>Service events, updates, and important desk changes will gather here as the workspace wakes up.</span></div></div>
       </div>
     </div>
   </div>

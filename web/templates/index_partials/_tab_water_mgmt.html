@@ -4,9 +4,11 @@
   <style>
     #tab-water-mgmt {
       --wm-accent: var(--accent, #5b9fff);
+      --wm-accent-dim: color-mix(in srgb, var(--wm-accent) 18%, transparent);
       --wm-card-bg: var(--card-bg, #1a1a2e);
       --wm-surface: var(--surface, rgba(24, 29, 36, 0.84));
       --wm-surface2: var(--surface2, #1d2430);
+      --wm-surface3: var(--surface3, #222d3a);
       --wm-border: var(--border, rgba(255, 255, 255, 0.08));
       --wm-text: var(--text, #edf2f7);
       --wm-text-dim: var(--text-dim, #a3b2c7);
@@ -16,28 +18,84 @@
       --wm-red: var(--red, #f87171);
     }
     .water-command-deck {
-      padding: 24px 0 16px;
+      display: grid;
+      gap: 12px;
+      padding: clamp(16px, 2vw, 24px);
+      margin-bottom: 16px;
+      border: 1px solid color-mix(in srgb, var(--wm-accent) 14%, var(--wm-border));
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--wm-accent) 14%, transparent), transparent 42%),
+        linear-gradient(180deg, color-mix(in srgb, var(--wm-surface) 96%, transparent), color-mix(in srgb, var(--wm-surface2) 88%, transparent));
+      box-shadow: var(--shadow-panel, 0 18px 34px rgba(0,0,0,.08));
+    }
+    .water-command-deck-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .water-command-copy {
+      display: grid;
+      gap: 8px;
+      max-width: min(760px, 100%);
     }
     .water-command-deck h2 {
       font-size: 20px; font-weight: 800; letter-spacing: -0.03em;
-      color: var(--wm-text); margin: 6px 0 4px;
+      color: var(--wm-text); margin: 0; text-wrap: balance;
     }
     .water-command-deck p {
-      font-size: 13px; color: var(--wm-text-dim); margin: 0 0 14px;
+      font-size: 13px; color: var(--wm-text-dim); margin: 0; line-height: 1.55;
     }
     .water-command-actions {
+      display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: flex-end;
+    }
+    .water-command-pills {
       display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .water-command-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--wm-accent) 20%, var(--wm-border));
+      background: color-mix(in srgb, var(--wm-accent) 10%, transparent);
+      color: color-mix(in srgb, var(--wm-accent) 44%, var(--wm-text));
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
+    }
+    .water-command-actions .btn,
+    .wm-form-actions .btn,
+    #wm-purification-body .btn {
+      min-height: 36px;
+      touch-action: manipulation;
+    }
+    .water-command-actions .btn:focus-visible,
+    .wm-form-actions .btn:focus-visible,
+    #wm-purification-body .btn:focus-visible,
+    .wm-btn-delete:focus-visible {
+      outline: 2px solid transparent;
+      outline-offset: 2px;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--wm-surface2) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--wm-accent) 48%, transparent);
     }
     .water-stats-row {
       display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
       gap: 14px; margin-bottom: 20px;
     }
     .water-stat-card {
-      background: var(--wm-card-bg); border-radius: 10px; padding: 16px;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--wm-card-bg) 96%, transparent), color-mix(in srgb, var(--wm-surface2) 88%, transparent));
+      border-radius: 14px; padding: 16px;
       text-align: center; border: 1px solid var(--wm-border);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
     }
     .water-stat-value {
       font-size: 28px; font-weight: 700; color: var(--wm-accent);
+      font-variant-numeric: tabular-nums;
     }
     .water-stat-value.is-warning { color: var(--wm-orange); }
     .water-stat-value.is-critical { color: var(--wm-red); }
@@ -50,7 +108,7 @@
       overflow-x: auto; margin-top: 10px;
     }
     .water-table {
-      width: 100%; border-collapse: collapse; font-size: 12px;
+      width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums;
     }
     .water-table th {
       text-align: left; padding: 8px 10px; font-size: 10px;
@@ -68,12 +126,33 @@
     .water-table .wm-actions-cell {
       white-space: nowrap; text-align: right;
     }
-    .water-table .wm-actions-cell button {
-      margin-left: 4px;
+    .water-table .wm-actions-cell .wm-row-actions {
+      display: inline-flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 6px;
+      flex-wrap: wrap;
     }
     .water-empty {
-      padding: 20px; text-align: center; color: var(--wm-text-muted);
+      display: grid;
+      gap: 6px;
+      place-items: center;
+      padding: 20px;
+      text-align: center;
+      color: var(--wm-text-muted);
       font-size: 13px;
+      line-height: 1.6;
+    }
+    .water-empty strong {
+      color: var(--wm-text);
+      font-size: 14px;
+      line-height: 1.35;
+    }
+    .water-empty span {
+      max-width: 54ch;
+    }
+    .water-empty-cell {
+      padding: 0 !important;
     }
     .wm-form-overlay {
       display: none; margin-top: 12px; padding: 16px;
@@ -121,7 +200,7 @@
       margin-top: 12px; padding: 14px; border-radius: 8px;
       background: var(--wm-card-bg); border: 1px solid var(--wm-border);
     }
-    .wm-budget-result table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .wm-budget-result table { width: 100%; border-collapse: collapse; font-size: 12px; font-variant-numeric: tabular-nums; }
     .wm-budget-result th, .wm-budget-result td {
       padding: 6px 10px; text-align: left; border-bottom: 1px solid var(--wm-border);
     }
@@ -151,18 +230,59 @@
     .wm-text-strong-accent { font-weight: 700; color: var(--wm-accent); }
     .wm-tag-strong { font-weight: 600; white-space: nowrap; }
     .wm-meta-foot { font-size: 11px; color: var(--wm-text-muted); margin-top: 8px; }
+    .wm-btn-delete {
+      width: 32px;
+      min-width: 32px;
+      min-height: 32px;
+      padding: 0;
+      border: 1px solid rgba(248,113,113,0.24);
+      border-radius: 10px;
+      background: rgba(248,113,113,0.08);
+      color: var(--wm-red);
+      font-size: 18px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background-color .15s ease, border-color .15s ease, color .15s ease, transform .15s ease;
+    }
+    .wm-btn-delete:hover {
+      background: rgba(248,113,113,0.14);
+      border-color: rgba(248,113,113,0.36);
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    @media (max-width: 720px) {
+      .water-command-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+      .water-command-actions .btn {
+        flex: 1 1 160px;
+      }
+    }
   </style>
 
   <!-- Hero header -->
   <div class="water-command-deck">
-    <div class="section-header-label">HYDRATION SECURITY</div>
-    <h2>Water Management</h2>
-    <p>Track storage, filtration, sources, and daily water budgets.</p>
-    <div class="water-command-actions">
-      <button class="btn btn-sm btn-primary" onclick="showWaterForm('storage')">+ Storage</button>
-      <button class="btn btn-sm btn-ghost" onclick="showWaterForm('filter')">+ Filter</button>
-      <button class="btn btn-sm btn-ghost" onclick="showWaterForm('source')">+ Source</button>
-      <button class="btn btn-sm btn-ghost" onclick="showWaterForm('quality')">+ Quality Test</button>
+    <div class="water-command-deck-head">
+      <div class="water-command-copy">
+        <div class="section-header-label">HYDRATION SECURITY</div>
+        <h2>Water Management</h2>
+        <p>Track stored water, filtration life, fallback sources, purification guidance, and testing history from one calmer logistics surface.</p>
+      </div>
+      <div class="water-command-actions">
+        <button class="btn btn-sm btn-primary" onclick="showWaterForm('storage')">+ Storage</button>
+        <button class="btn btn-sm btn-ghost" onclick="showWaterForm('filter')">+ Filter</button>
+        <button class="btn btn-sm btn-ghost" onclick="showWaterForm('source')">+ Source</button>
+        <button class="btn btn-sm btn-ghost" onclick="showWaterForm('quality')">+ Quality Test</button>
+      </div>
+    </div>
+    <div class="water-command-pills" aria-hidden="true">
+      <span class="water-command-pill">Storage</span>
+      <span class="water-command-pill">Filters</span>
+      <span class="water-command-pill">Sources</span>
+      <span class="water-command-pill">Budgets</span>
+      <span class="water-command-pill">Purification</span>
+      <span class="water-command-pill">Quality tests</span>
     </div>
   </div>
 
@@ -246,7 +366,7 @@
         <input type="hidden" id="wm-storage-edit-id" value="">
         <div class="wm-form-actions">
           <button class="btn btn-sm btn-ghost" onclick="hideWaterForm('storage')">Cancel</button>
-          <button class="btn btn-sm btn-primary" onclick="saveWaterStorage()">Save</button>
+          <button class="btn btn-sm btn-primary" onclick="saveWaterStorage()">Save Storage</button>
         </div>
       </div>
       <div class="water-table-wrap">
@@ -257,7 +377,7 @@
             </tr>
           </thead>
           <tbody id="wm-storage-tbody">
-            <tr><td colspan="9" class="water-empty">No storage entries yet. Click "+ Storage" to start tracking.</td></tr>
+            <tr><td colspan="9" class="water-empty-cell"><div class="water-empty"><strong>No storage entries yet</strong><span>Add the first container above to track stored gallons, capacity, and refill cadence.</span></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -310,7 +430,7 @@
         <input type="hidden" id="wm-filter-edit-id" value="">
         <div class="wm-form-actions">
           <button class="btn btn-sm btn-ghost" onclick="hideWaterForm('filter')">Cancel</button>
-          <button class="btn btn-sm btn-primary" onclick="saveWaterFilter()">Save</button>
+          <button class="btn btn-sm btn-primary" onclick="saveWaterFilter()">Save Filter</button>
         </div>
       </div>
       <div class="water-table-wrap">
@@ -321,7 +441,7 @@
             </tr>
           </thead>
           <tbody id="wm-filter-tbody">
-            <tr><td colspan="6" class="water-empty">No filters tracked. Click "+ Filter" to add.</td></tr>
+            <tr><td colspan="6" class="water-empty-cell"><div class="water-empty"><strong>No filters tracked yet</strong><span>Add the first filter above to monitor life remaining, replacement dates, and maintenance notes.</span></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -386,7 +506,7 @@
         <input type="hidden" id="wm-source-edit-id" value="">
         <div class="wm-form-actions">
           <button class="btn btn-sm btn-ghost" onclick="hideWaterForm('source')">Cancel</button>
-          <button class="btn btn-sm btn-primary" onclick="saveWaterSource()">Save</button>
+          <button class="btn btn-sm btn-primary" onclick="saveWaterSource()">Save Source</button>
         </div>
       </div>
       <div class="water-table-wrap">
@@ -397,7 +517,7 @@
             </tr>
           </thead>
           <tbody id="wm-source-tbody">
-            <tr><td colspan="7" class="water-empty">No sources logged. Click "+ Source" to add.</td></tr>
+            <tr><td colspan="7" class="water-empty-cell"><div class="water-empty"><strong>No fallback sources logged yet</strong><span>Add wells, rain catchment, hauled water, or surface sources above to compare reliability and treatment needs.</span></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -430,7 +550,11 @@
         Common water purification methods and their effectiveness.
       </p>
       <div id="wm-purification-body">
-        <button class="btn btn-sm" onclick="loadPurificationRef()">Load Reference Table</button>
+        <div class="water-empty">
+          <strong>Load the purification reference</strong>
+          <span>Open the treatment table to compare methods, effectiveness, and limitations before conditions degrade.</span>
+          <button class="btn btn-sm" onclick="loadPurificationRef()">Load Reference Table</button>
+        </div>
       </div>
     </div>
 
@@ -483,7 +607,7 @@
         </div>
         <div class="wm-form-actions">
           <button class="btn btn-sm btn-ghost" onclick="hideWaterForm('quality')">Cancel</button>
-          <button class="btn btn-sm btn-primary" onclick="saveWaterQuality()">Save</button>
+          <button class="btn btn-sm btn-primary" onclick="saveWaterQuality()">Save Quality Test</button>
         </div>
       </div>
       <div class="water-table-wrap">
@@ -494,7 +618,7 @@
             </tr>
           </thead>
           <tbody id="wm-quality-tbody">
-            <tr><td colspan="9" class="water-empty">No quality tests recorded. Click "+ Quality Test" to log one.</td></tr>
+            <tr><td colspan="9" class="water-empty-cell"><div class="water-empty"><strong>No quality tests recorded yet</strong><span>Log the first reading above to keep treatment confidence grounded in actual results.</span></div></td></tr>
           </tbody>
         </table>
       </div>
@@ -563,6 +687,27 @@
       return '<span class="wm-quality-badge ' + cls + '">' + label + '</span>';
     }
 
+    function wmEmpty(title, body) {
+      return '<div class="water-empty"><strong>' + escapeHtml(title) + '</strong><span>' + escapeHtml(body) + '</span></div>';
+    }
+
+    function wmEmptyRow(colspan, title, body) {
+      return '<tr><td colspan="' + colspan + '" class="water-empty-cell">' + wmEmpty(title, body) + '</td></tr>';
+    }
+
+    function wmDeleteButton(action, label) {
+      return '<button type="button" class="wm-btn-delete" onclick="' + action + '" data-item-label="' + escapeHtml(label) + '" title="Delete ' + escapeHtml(label) + '" aria-label="Delete ' + escapeHtml(label) + '">&times;</button>';
+    }
+
+    function wmDeleteLabel(action, fallback) {
+      const button = document.querySelector('[onclick="' + action + '"]');
+      return button ? button.getAttribute('data-item-label') || fallback : fallback;
+    }
+
+    function wmConfirmDelete(label) {
+      return window.confirm('Delete ' + label + '? This removes it from the water workspace.');
+    }
+
     /* ------------------------------------------------------------------ */
     /*  Dashboard                                                          */
     /* ------------------------------------------------------------------ */
@@ -606,7 +751,7 @@
       const tbody = $('wm-storage-tbody');
       if (!tbody) return;
       if (!_storageItems.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="water-empty">No storage entries yet. Click "+ Storage" to start tracking.</td></tr>';
+        tbody.innerHTML = wmEmptyRow(9, 'No storage entries yet', 'Add the first container above to track stored gallons, capacity, and refill cadence.');
         return;
       }
       tbody.innerHTML = _storageItems.map(function (s) {
@@ -621,8 +766,10 @@
           '<td>' + escapeHtml(s.date_filled || '--') + '</td>' +
           '<td>' + escapeHtml(s.notes || '') + '</td>' +
           '<td class="wm-actions-cell">' +
-            '<button class="btn btn-sm" onclick="editWaterStorage(' + s.id + ')">Edit</button>' +
-            '<button class="btn btn-sm btn-ghost" onclick="deleteWaterStorage(' + s.id + ')">Del</button>' +
+            '<div class="wm-row-actions">' +
+              '<button class="btn btn-sm" onclick="editWaterStorage(' + s.id + ')">Edit</button>' +
+              wmDeleteButton('deleteWaterStorage(' + s.id + ')', s.name || 'storage entry') +
+            '</div>' +
           '</td></tr>';
       }).join('');
     }
@@ -668,7 +815,8 @@
     };
 
     window.deleteWaterStorage = async function (id) {
-      if (!confirm('Delete this storage entry?')) return;
+      const label = wmDeleteLabel('deleteWaterStorage(' + id + ')', 'storage entry');
+      if (!wmConfirmDelete(label)) return;
       try {
         await apiDelete('/api/water/storage/' + id);
         toast('Storage deleted.', 'success');
@@ -686,7 +834,7 @@
       const tbody = $('wm-filter-tbody');
       if (!tbody) return;
       if (!_filterItems.length) {
-        tbody.innerHTML = '<tr><td colspan="6" class="water-empty">No filters tracked. Click "+ Filter" to add.</td></tr>';
+        tbody.innerHTML = wmEmptyRow(6, 'No filters tracked yet', 'Add the first filter above to monitor life remaining, replacement dates, and maintenance notes.');
         return;
       }
       tbody.innerHTML = _filterItems.map(function (f) {
@@ -700,8 +848,10 @@
           '<td>' + escapeHtml(f.replace_by || '--') + '</td>' +
           '<td>' + escapeHtml(f.notes || '') + '</td>' +
           '<td class="wm-actions-cell">' +
-            '<button class="btn btn-sm" onclick="editWaterFilter(' + f.id + ')">Edit</button>' +
-            '<button class="btn btn-sm btn-ghost" onclick="deleteWaterFilter(' + f.id + ')">Del</button>' +
+            '<div class="wm-row-actions">' +
+              '<button class="btn btn-sm" onclick="editWaterFilter(' + f.id + ')">Edit</button>' +
+              wmDeleteButton('deleteWaterFilter(' + f.id + ')', f.name || 'filter') +
+            '</div>' +
           '</td></tr>';
       }).join('');
     }
@@ -747,7 +897,8 @@
     };
 
     window.deleteWaterFilter = async function (id) {
-      if (!confirm('Delete this filter?')) return;
+      const label = wmDeleteLabel('deleteWaterFilter(' + id + ')', 'filter');
+      if (!wmConfirmDelete(label)) return;
       try {
         await apiDelete('/api/water/filters/' + id);
         toast('Filter deleted.', 'success');
@@ -765,7 +916,7 @@
       const tbody = $('wm-source-tbody');
       if (!tbody) return;
       if (!_sourceItems.length) {
-        tbody.innerHTML = '<tr><td colspan="7" class="water-empty">No sources logged. Click "+ Source" to add.</td></tr>';
+        tbody.innerHTML = wmEmptyRow(7, 'No fallback sources logged yet', 'Add wells, rain catchment, hauled water, or surface sources above to compare reliability and treatment needs.');
         return;
       }
       tbody.innerHTML = _sourceItems.map(function (s) {
@@ -777,8 +928,10 @@
           '<td>' + formatTreatment(s.treatment_required) + '</td>' +
           '<td>' + fmtNum(s.estimated_gal_per_day) + '</td>' +
           '<td class="wm-actions-cell">' +
-            '<button class="btn btn-sm" onclick="editWaterSource(' + s.id + ')">Edit</button>' +
-            '<button class="btn btn-sm btn-ghost" onclick="deleteWaterSource(' + s.id + ')">Del</button>' +
+            '<div class="wm-row-actions">' +
+              '<button class="btn btn-sm" onclick="editWaterSource(' + s.id + ')">Edit</button>' +
+              wmDeleteButton('deleteWaterSource(' + s.id + ')', s.name || 'water source') +
+            '</div>' +
           '</td></tr>';
       }).join('');
     }
@@ -824,7 +977,8 @@
     };
 
     window.deleteWaterSource = async function (id) {
-      if (!confirm('Delete this water source?')) return;
+      const label = wmDeleteLabel('deleteWaterSource(' + id + ')', 'water source');
+      if (!wmConfirmDelete(label)) return;
       try {
         await apiDelete('/api/water/sources/' + id);
         toast('Source deleted.', 'success');
@@ -842,7 +996,7 @@
       const tbody = $('wm-quality-tbody');
       if (!tbody) return;
       if (!_qualityTests.length) {
-        tbody.innerHTML = '<tr><td colspan="9" class="water-empty">No quality tests recorded. Click "+ Quality Test" to log one.</td></tr>';
+        tbody.innerHTML = wmEmptyRow(9, 'No quality tests recorded yet', 'Log the first reading above to keep treatment confidence grounded in actual results.');
         return;
       }
       tbody.innerHTML = _qualityTests.map(function (q) {
@@ -891,11 +1045,11 @@
       const days   = numVal('wm-budget-days', 14);
       const container = $('wm-budget-result');
       if (!container) return;
-      container.innerHTML = '<div class="water-empty">Calculating...</div>';
+      container.innerHTML = wmEmpty('Calculating Water Budget', 'Comparing daily demand across the selected number of people and days.');
       try {
         const res = await apiFetch('/api/water/budget?people=' + people + '&days=' + days);
         if (!res || typeof res !== 'object') {
-          container.innerHTML = '<div class="water-empty">No data returned.</div>';
+          container.innerHTML = wmEmpty('Budget data unavailable', 'The calculator did not return a result for the selected inputs.');
           return;
         }
         let html = '<div class="wm-budget-result"><table>';
@@ -918,7 +1072,7 @@
         html += '</div>';
         container.innerHTML = html;
       } catch (e) {
-        container.innerHTML = '<div class="water-empty">Failed to load budget: ' + escapeHtml(e.message || String(e)) + '</div>';
+        container.innerHTML = wmEmpty('Could not load the water budget', e.message || String(e));
       }
     };
 
@@ -928,12 +1082,12 @@
     window.loadPurificationRef = async function () {
       const container = $('wm-purification-body');
       if (!container) return;
-      container.innerHTML = '<div class="water-empty">Loading...</div>';
+      container.innerHTML = wmEmpty('Loading Purification Reference', 'Gathering treatment methods, effectiveness, and limitations.');
       try {
         const res = await apiFetch('/api/water/purification-reference');
         const methods = (res && res.methods) ? res.methods : res;
         if (!Array.isArray(methods) || !methods.length) {
-          container.innerHTML = '<div class="water-empty">No purification data available.</div>';
+          container.innerHTML = wmEmpty('No purification reference available', 'Reference methods are not available right now.');
           return;
         }
         let html = '<table class="wm-purification-table">';
@@ -949,7 +1103,7 @@
         html += '</tbody></table>';
         container.innerHTML = html;
       } catch (e) {
-        container.innerHTML = '<div class="water-empty">Failed to load reference: ' + escapeHtml(e.message || String(e)) + '</div>';
+        container.innerHTML = wmEmpty('Could not load the purification reference', e.message || String(e));
       }
     };
 

@@ -19,19 +19,44 @@
 
     /* Command Deck */
     .vehicles-command-deck {
-      display: grid; gap: 6px;
-      padding: 18px 0 10px;
+      display: grid; gap: 12px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+      border: 1px solid color-mix(in srgb, var(--vh-accent) 16%, var(--vh-border));
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--vh-accent) 14%, transparent), transparent 42%),
+        linear-gradient(180deg, color-mix(in srgb, var(--vh-surface) 96%, transparent), color-mix(in srgb, var(--vh-surface2) 90%, transparent));
+      box-shadow: var(--shadow-panel, 0 18px 34px rgba(0,0,0,0.08));
+    }
+    .vehicles-command-deck-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 14px; flex-wrap: wrap;
+    }
+    .vehicles-command-copy {
+      display: grid; gap: 8px; max-width: min(760px, 100%);
     }
     .vehicles-command-deck .section-header-label { margin-bottom: 2px; }
     .vehicles-command-deck h2 {
       font-size: 20px; font-weight: 800; letter-spacing: -0.03em;
-      color: var(--vh-text); margin: 0;
+      color: var(--vh-text); margin: 0; text-wrap: balance;
     }
     .vehicles-command-deck p {
-      font-size: 13px; color: var(--vh-text-dim); margin: 0; line-height: 1.5;
+      font-size: 13px; color: var(--vh-text-dim); margin: 0; line-height: 1.6; max-width: 68ch;
     }
     .vehicles-command-actions {
-      display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;
+      display: flex; gap: 8px; flex-wrap: wrap; align-items: center; justify-content: flex-end;
+    }
+    .vehicles-command-pills {
+      display: flex; gap: 8px; flex-wrap: wrap;
+    }
+    .vehicles-command-pill {
+      display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px;
+      border-radius: 999px; border: 1px solid color-mix(in srgb, var(--vh-accent) 20%, var(--vh-border));
+      background: color-mix(in srgb, var(--vh-accent) 10%, transparent);
+      color: color-mix(in srgb, var(--vh-accent) 44%, var(--vh-text));
+      font-size: 11px; font-weight: 600; letter-spacing: 0.02em;
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
     }
 
     /* Dashboard Stats */
@@ -40,13 +65,15 @@
       gap: 10px; margin-bottom: 14px;
     }
     .vehicles-dash-stat {
-      background: var(--vh-surface); border: 1px solid var(--vh-border);
+      background: linear-gradient(180deg, color-mix(in srgb, var(--vh-surface) 96%, transparent), color-mix(in srgb, var(--vh-surface2) 90%, transparent));
+      border: 1px solid var(--vh-border);
       border-radius: var(--radius, 10px); padding: 14px 16px;
       display: flex; flex-direction: column; gap: 4px;
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
     }
     .vehicles-dash-stat-value {
       font-size: 24px; font-weight: 800; color: var(--vh-text);
-      font-family: var(--font-data, monospace);
+      font-family: var(--font-data, monospace); font-variant-numeric: tabular-nums;
     }
     .vehicles-dash-stat-value.is-alert { color: var(--vh-danger); }
     .vehicles-dash-stat-value.is-ok { color: var(--vh-success); }
@@ -63,11 +90,17 @@
     .vehicle-card {
       background: var(--vh-surface); border: 1px solid var(--vh-border);
       border-radius: var(--radius, 10px); padding: 16px; cursor: pointer;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
     }
     .vehicle-card:hover {
       border-color: color-mix(in srgb, var(--vh-accent) 40%, var(--vh-border));
       box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+      transform: translateY(-1px);
+    }
+    .vehicle-card:focus-visible {
+      outline: 2px solid transparent; outline-offset: 2px;
+      border-color: color-mix(in srgb, var(--vh-accent) 54%, var(--vh-border));
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--vh-surface2) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--vh-accent) 36%, transparent);
     }
     .vehicle-card-head {
       display: flex; align-items: flex-start; justify-content: space-between;
@@ -112,7 +145,7 @@
     }
     .vehicle-card-stat-val {
       font-size: 13px; font-weight: 700; color: var(--vh-text);
-      font-family: var(--font-data, monospace);
+      font-family: var(--font-data, monospace); font-variant-numeric: tabular-nums;
     }
     .vehicle-card-actions {
       display: flex; gap: 6px; margin-top: 10px; justify-content: flex-end;
@@ -132,7 +165,7 @@
     .vehicle-detail-title {
       font-size: 18px; font-weight: 800; color: var(--vh-text);
     }
-    .vehicle-detail-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .vehicle-detail-actions { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
 
     /* Sub-sections in detail */
     .vehicle-detail-section {
@@ -160,6 +193,7 @@
     .vehicles-table td {
       padding: 7px 8px; color: var(--vh-text-dim);
       border-bottom: 1px solid color-mix(in srgb, var(--vh-border) 50%, transparent);
+      font-variant-numeric: tabular-nums;
     }
     .vehicles-table tr:hover td { color: var(--vh-text); }
     .vehicles-table .td-actions { white-space: nowrap; text-align: right; }
@@ -178,7 +212,7 @@
     }
     .vehicle-range-stat-value {
       font-size: 20px; font-weight: 800; color: var(--vh-text);
-      font-family: var(--font-data, monospace);
+      font-family: var(--font-data, monospace); font-variant-numeric: tabular-nums;
     }
 
     /* Fuel Economy Trend */
@@ -193,7 +227,7 @@
     .vehicle-econ-bar:hover { opacity: 0.8; }
     .vehicle-econ-avg {
       font-size: 13px; font-weight: 700; color: var(--vh-accent);
-      font-family: var(--font-data, monospace); margin-top: 6px;
+      font-family: var(--font-data, monospace); font-variant-numeric: tabular-nums; margin-top: 6px;
     }
 
     /* Modal/Form overrides */
@@ -254,7 +288,39 @@
 
     .vehicles-empty-state {
       text-align: center; padding: 32px 16px; color: var(--vh-text-muted);
-      font-size: 13px;
+      font-size: 13px; display: grid; gap: 6px; justify-items: center; line-height: 1.6;
+    }
+    .vehicles-empty-state strong {
+      color: var(--vh-text); font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+    }
+    .vehicles-empty-state span {
+      max-width: 42ch; color: var(--vh-text-dim);
+    }
+    .vehicles-empty-cell {
+      padding: 0 !important; border-bottom: none !important;
+    }
+    .vehicles-action-cluster {
+      display: inline-flex; align-items: center; gap: 6px; justify-content: flex-end;
+    }
+    .vehicles-btn-icon {
+      min-width: 34px; min-height: 34px; padding: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 10px;
+    }
+    .vehicles-btn-danger-quiet {
+      background: rgba(245,101,101,.08);
+      border: 1px solid rgba(245,101,101,.24);
+      color: var(--vh-danger);
+    }
+    .vehicles-btn-danger-quiet:hover {
+      background: rgba(245,101,101,.14);
+      border-color: rgba(245,101,101,.36);
+      color: #fff;
+    }
+    .vehicles-btn-danger-quiet:focus-visible,
+    .vehicles-btn-icon:focus-visible {
+      outline: 2px solid transparent; outline-offset: 2px;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--vh-surface2) 82%, transparent), 0 0 0 4px color-mix(in srgb, var(--vh-danger) 28%, transparent);
     }
 
     @media (max-width: 700px) {
@@ -263,6 +329,8 @@
       .vehicles-field.span-2 { grid-column: span 1; }
       .vehicle-range-block { grid-template-columns: 1fr; }
       .vehicles-dash-grid { grid-template-columns: 1fr 1fr; }
+      .vehicles-command-deck { padding: 16px; }
+      .vehicles-command-actions { width: 100%; justify-content: flex-start; }
     }
     .vh-meta-text { font-size: 12px; color: var(--vh-text-dim); margin-top: 2px; }
     .vh-meta-leading { font-size: 12px; color: var(--vh-text-dim); line-height: 1.6; }
@@ -276,11 +344,22 @@
 
   <!-- Command Deck -->
   <div class="vehicles-command-deck">
-    <div class="section-header-label">MOBILITY &amp; TRANSPORT</div>
-    <h2>Vehicles</h2>
-    <p>Manage vehicles, maintenance, fuel, and bug-out readiness.</p>
-    <div class="vehicles-command-actions">
-      <button class="btn btn-primary" onclick="showVehicleForm()">+ Vehicle</button>
+    <div class="vehicles-command-deck-head">
+      <div class="vehicles-command-copy">
+        <div class="section-header-label">MOBILITY &amp; TRANSPORT</div>
+        <h2>Keep every vehicle, service interval, and range estimate ready from one calmer mobility workspace.</h2>
+        <p>Track primary vehicles, maintenance runway, fuel history, and bug-out readiness with clearer status feedback and faster access to the next action.</p>
+      </div>
+      <div class="vehicles-command-actions">
+        <button class="btn btn-primary" onclick="showVehicleForm()">Add Vehicle</button>
+      </div>
+    </div>
+    <div class="vehicles-command-pills" aria-hidden="true">
+      <span class="vehicles-command-pill">Bug-out readiness</span>
+      <span class="vehicles-command-pill">Maintenance history</span>
+      <span class="vehicles-command-pill">Fuel trend</span>
+      <span class="vehicles-command-pill">Range planning</span>
+      <span class="vehicles-command-pill">Compliance dates</span>
     </div>
   </div>
 
@@ -291,7 +370,7 @@
 
     <!-- Vehicle Cards -->
     <div id="vehicles-card-list" class="vehicles-card-grid">
-      <div class="vehicles-empty-state">Loading vehicles...</div>
+      <div class="vehicles-empty-state"><strong>Loading vehicles</strong><span>Gathering fleet records, maintenance runway, and bug-out readiness details.</span></div>
     </div>
 
     <!-- Vehicle Detail Panel (hidden until vehicle selected) -->
@@ -303,7 +382,7 @@
         </div>
         <div class="vehicle-detail-actions">
           <button class="btn btn-sm" onclick="showVehicleForm(window._vdId)">Edit</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteVehicle(window._vdId)">Delete</button>
+          <button class="btn btn-sm vehicles-btn-danger-quiet" onclick="deleteVehicle(window._vdId, (document.getElementById('vd-title') || {}).textContent || 'vehicle')">Delete Vehicle</button>
           <button class="btn btn-sm btn-ghost" onclick="closeVehicleDetail()">Close</button>
         </div>
       </div>
@@ -498,6 +577,10 @@
     const fmt = n => n == null ? '--' : Number(n).toLocaleString();
     const fmtMoney = n => n == null ? '--' : '$' + Number(n).toFixed(2);
     const fmtDate = d => { if (!d) return '--'; const dt = new Date(d); return isNaN(dt) ? d : dt.toLocaleDateString(); };
+    const vehicleEmpty = (title, body) => `<div class="vehicles-empty-state"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
+    const vehicleEmptyRow = (colspan, title, body) => `<tr><td colspan="${colspan}" class="vehicles-empty-cell">${vehicleEmpty(title, body)}</td></tr>`;
+    const vehicleDeleteButton = (action, label) => `<button type="button" class="btn btn-sm vehicles-btn-icon vehicles-btn-danger-quiet" onclick='${action}' title="Delete ${esc(label)}" aria-label="Delete ${esc(label)}">&times;</button>`;
+    const vehicleConfirmDelete = (label, context) => window.confirm(`Delete ${label}?${context ? ` ${context}` : ''}`);
 
     /* ══════════════════════════════════════
        1. loadVehicles — main init
@@ -512,7 +595,7 @@
         renderVehicleCards(Array.isArray(vehicles) ? vehicles : vehicles.vehicles || []);
       } catch (e) {
         console.error('[Vehicles] load error', e);
-        $('vehicles-card-list').innerHTML = '<div class="vehicles-empty-state">Failed to load vehicles. Check connection.</div>';
+        $('vehicles-card-list').innerHTML = vehicleEmpty('Could not load vehicles', 'Check the connection and try again. Your fleet data was not changed.');
       }
     };
 
@@ -545,17 +628,18 @@
       const el = $('vehicles-card-list');
       if (!el) return;
       if (!list.length) {
-        el.innerHTML = '<div class="vehicles-empty-state">No vehicles yet. Click "+ Vehicle" to add your first.</div>';
+        el.innerHTML = vehicleEmpty('No vehicles yet', 'Add the first vehicle to start tracking maintenance, fuel history, and readiness.');
         return;
       }
       el.innerHTML = list.map(v => {
         const ymm = [v.year, v.make, v.model].filter(Boolean).join(' ');
+        const label = v.name || ymm || 'vehicle';
         const range = (v.tank_capacity_gal && v.mpg) ? Math.round(v.tank_capacity_gal * v.mpg) : null;
-        return `<div class="vehicle-card" onclick="showVehicleDetail(${v.id})" tabindex="0" role="button"
-                     aria-label="${esc(v.name || ymm)}">
+        return `<div class="vehicle-card" onclick="showVehicleDetail(${v.id})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();showVehicleDetail(${v.id});}" tabindex="0" role="button"
+                     aria-label="${esc(label)}">
           <div class="vehicle-card-head">
             <div>
-              <div class="vehicle-card-name">${esc(v.name || ymm || 'Unnamed')}</div>
+              <div class="vehicle-card-name">${esc(label)}</div>
               ${ymm ? `<div class="vehicle-card-subtitle">${esc(ymm)}</div>` : ''}
             </div>
             <span class="vehicle-card-role" data-role="${esc(v.role || 'daily')}">${esc((v.role || 'daily').toUpperCase())}</span>
@@ -565,9 +649,9 @@
             <div><div class="vehicle-card-stat-label">Fuel</div><div class="vehicle-card-stat-val">${esc((v.fuel_type || 'gas').charAt(0).toUpperCase() + (v.fuel_type || 'gas').slice(1))}</div></div>
             <div><div class="vehicle-card-stat-label">Range</div><div class="vehicle-card-stat-val">${range ? fmt(range) + ' mi' : '--'}</div></div>
           </div>
-          <div class="vehicle-card-actions">
+          <div class="vehicle-card-actions vehicles-action-cluster">
             <button class="btn btn-sm" onclick="event.stopPropagation();showVehicleForm(${v.id})">Edit</button>
-            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation();deleteVehicle(${v.id})">Del</button>
+            ${vehicleDeleteButton(`event.stopPropagation();deleteVehicle(${v.id}, ${JSON.stringify(label)})`, label)}
           </div>
         </div>`;
       }).join('');
@@ -662,8 +746,9 @@
     /* ══════════════════════════════════════
        4. deleteVehicle — DELETE with confirm
        ══════════════════════════════════════ */
-    window.deleteVehicle = async function deleteVehicle(id) {
-      if (!confirm('Delete this vehicle and all its records? This cannot be undone.')) return;
+    window.deleteVehicle = async function deleteVehicle(id, label) {
+      const target = label || 'vehicle';
+      if (!vehicleConfirmDelete(target, 'This removes the vehicle and all related maintenance and fuel records.')) return;
       try {
         await apiDelete(`/api/vehicles/${id}`);
         toast('Vehicle deleted', 'success');
@@ -681,6 +766,14 @@
       window._vdId = id;
       const panel = $('vehicle-detail');
       panel.classList.remove('is-hidden');
+      $('vd-title').textContent = 'Loading vehicle…';
+      $('vd-subtitle').textContent = '';
+      $('vd-info').textContent = 'Gathering specs, compliance dates, and readiness history.';
+      $('vd-range').innerHTML = vehicleEmpty('Loading range estimate', 'Calculating tank size, average economy, and expected runway.');
+      $('vd-econ-chart').innerHTML = '';
+      $('vd-econ-avg').textContent = 'Loading fuel economy trend…';
+      $('vd-maintenance').innerHTML = vehicleEmpty('Loading maintenance history', 'Reviewing service intervals, mileage, and due status.');
+      $('vd-fuel-log').innerHTML = vehicleEmpty('Loading fuel history', 'Collecting recent fill-ups, odometer readings, and fuel cost data.');
 
       try {
         const v = await apiFetch(`/api/vehicles/${id}`);
@@ -746,7 +839,7 @@
             <div class="vehicle-range-stat-value">${esc(r.fuel_type || '--')}</div>
           </div>`;
       } catch (e) {
-        el.innerHTML = '<div class="vehicles-empty-state">Range data unavailable</div>';
+        el.innerHTML = vehicleEmpty('Range estimate unavailable', 'Add tank capacity and average fuel economy to calculate expected runway.');
       }
     };
 
@@ -760,7 +853,7 @@
         const entries = data.entries || [];
         if (!entries.length) {
           chartEl.innerHTML = '';
-          avgEl.textContent = 'No fuel economy data yet';
+          avgEl.textContent = 'No recent fuel economy trend yet';
           return;
         }
         const mpgs = entries.map(e => e.mpg || 0);
@@ -783,7 +876,7 @@
         const list = await apiFetch(`/api/vehicles/${id}/maintenance`);
         const items = Array.isArray(list) ? list : list.records || [];
         if (!items.length) {
-          el.innerHTML = '<div class="vehicles-empty-state">No service records yet.</div>';
+          el.innerHTML = vehicleEmpty('No service records yet', 'Add the first service entry to track mileage, cost, and next due reminders.');
           return;
         }
         el.innerHTML = `<table class="vehicles-table">
@@ -794,14 +887,14 @@
             <td>${fmt(m.mileage)}</td>
             <td>${m.cost != null ? fmtMoney(m.cost) : '--'}</td>
             <td>${esc(m.status || '--')}</td>
-            <td class="td-actions">
+            <td class="td-actions vehicles-action-cluster">
               <button class="btn btn-sm" onclick="showMaintenanceForm(${id}, ${m.id})">Edit</button>
-              <button class="btn btn-sm btn-danger" onclick="deleteMaintenance(${id}, ${m.id})">Del</button>
+              ${vehicleDeleteButton(`deleteMaintenance(${id}, ${m.id}, ${JSON.stringify(m.service_type || 'service record')})`, m.service_type || 'service record')}
             </td>
           </tr>`).join('')}</tbody>
         </table>`;
       } catch {
-        el.innerHTML = '<div class="vehicles-empty-state">Failed to load maintenance records.</div>';
+        el.innerHTML = vehicleEmpty('Could not load maintenance history', 'Check the connection and try again. No service records were changed.');
       }
     }
 
@@ -813,7 +906,7 @@
         const list = await apiFetch(`/api/vehicles/${id}/fuel`);
         const items = Array.isArray(list) ? list : list.entries || [];
         if (!items.length) {
-          el.innerHTML = '<div class="vehicles-empty-state">No fuel entries yet.</div>';
+          el.innerHTML = vehicleEmpty('No fuel entries yet', 'Log the first fill-up to start tracking range, cost, and consumption history.');
           return;
         }
         el.innerHTML = `<table class="vehicles-table">
@@ -828,7 +921,7 @@
           </tr>`).join('')}</tbody>
         </table>`;
       } catch {
-        el.innerHTML = '<div class="vehicles-empty-state">Failed to load fuel log.</div>';
+        el.innerHTML = vehicleEmpty('Could not load fuel history', 'Check the connection and try again. Your logged fill-ups were not changed.');
       }
     }
 
@@ -913,8 +1006,9 @@
     };
 
     /* ── Delete maintenance ───────────── */
-    window.deleteMaintenance = async function deleteMaintenance(vehicleId, mid) {
-      if (!confirm('Delete this service record?')) return;
+    window.deleteMaintenance = async function deleteMaintenance(vehicleId, mid, label) {
+      const target = label || 'service record';
+      if (!vehicleConfirmDelete(target, 'This removes it from the maintenance history for this vehicle.')) return;
       try {
         await apiDelete(`/api/vehicles/maintenance/${mid}`);
         toast('Service record deleted', 'success');

@@ -241,6 +241,7 @@ test('setup wizard advances cleanly and restores from the mini banner', async ({
 
   await expect(page.locator('#wizard')).toBeVisible();
   await expect(page.locator('#wiz-page-1')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Start Guided Setup' })).toBeVisible();
 
   await page.click('[data-shell-action="wiz-go-page"][data-wiz-page="2"]');
   await expect(page.locator('#wiz-page-2')).toBeVisible();
@@ -314,6 +315,7 @@ test('escape closes visible shell surfaces without leaving stale utility state b
 
   await page.evaluate(() => toggleShortcutsHelp(true));
   await expect(page.locator('#shortcuts-overlay')).toBeVisible();
+  await expect(page.locator('.shortcuts-copy')).toContainText('Keep your hands on the keyboard');
   await page.keyboard.press('Escape');
   await expect(page.locator('#shortcuts-overlay')).toBeHidden();
 
@@ -324,6 +326,8 @@ test('escape closes visible shell surfaces without leaving stale utility state b
 
   await page.evaluate(() => toggleLanChat());
   await expect(page.locator('#lan-chat-panel')).toBeVisible();
+  await expect(page.locator('#lan-chat-panel')).toHaveAttribute('role', 'complementary');
+  await expect(page.locator('#lan-chat-subtitle')).toContainText('Local-only handoffs');
   await expect.poll(async () => page.evaluate(() => (typeof _lanChatOpen !== 'undefined' ? _lanChatOpen : null))).toBe(true);
   await page.keyboard.press('Escape');
   await expect(page.locator('#lan-chat-panel')).toBeHidden();
@@ -331,6 +335,7 @@ test('escape closes visible shell surfaces without leaving stale utility state b
 
   await page.evaluate(() => toggleQuickActions());
   await expect(page.locator('#quick-actions-menu')).toBeVisible();
+  await expect(page.locator('.utility-actions-menu-title')).toContainText('Quick Capture');
   await expect.poll(async () => page.evaluate(() => (typeof _qaOpen !== 'undefined' ? _qaOpen : null))).toBe(true);
   await page.keyboard.press('Escape');
   await expect(page.locator('#quick-actions-menu')).toBeHidden();
@@ -338,6 +343,8 @@ test('escape closes visible shell surfaces without leaving stale utility state b
 
   await page.evaluate(() => toggleTimerPanel());
   await expect(page.locator('#timer-panel')).toBeVisible();
+  await expect(page.locator('#timer-panel')).toHaveAttribute('role', 'complementary');
+  await expect(page.locator('#timer-panel-subtitle')).toContainText('Start short operational reminders');
   await expect.poll(async () => page.evaluate(() => (typeof _timerPanelOpen !== 'undefined' ? _timerPanelOpen : null))).toBe(true);
   await page.keyboard.press('Escape');
   await expect(page.locator('#timer-panel')).toBeHidden();

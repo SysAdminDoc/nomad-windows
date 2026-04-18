@@ -54,11 +54,18 @@
   #tab-agriculture .ag-btn-primary { background:var(--ag-accent); color:#000; }
   #tab-agriculture .ag-btn-danger { background:var(--ag-red); color:#fff; }
   #tab-agriculture .ag-btn-secondary { background:var(--border,#333); color:var(--text-primary,#eee); }
+  #tab-agriculture .ag-btn-icon { min-width:36px; padding:0; display:inline-flex; align-items:center; justify-content:center; font-size:1.08rem; line-height:1; }
+  #tab-agriculture .ag-btn-danger-quiet { border:1px solid color-mix(in srgb, var(--ag-red) 26%, var(--border,#333)); background:color-mix(in srgb, var(--ag-red) 14%, transparent); color:color-mix(in srgb, white 84%, var(--ag-red)); }
+  #tab-agriculture .ag-btn-danger-quiet:hover { background:color-mix(in srgb, var(--ag-red) 22%, transparent); border-color:color-mix(in srgb, var(--ag-red) 44%, var(--border,#333)); transform:translateY(-1px); }
+  #tab-agriculture .ag-action-cluster { display:flex; gap:6px; align-items:center; justify-content:flex-end; flex-wrap:wrap; }
+  #tab-agriculture .ag-panel-intro { margin:0 0 14px; max-width:70ch; color:var(--text-secondary,#aaa); line-height:1.58; }
   #tab-agriculture .ag-list-item { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; border-bottom:1px solid var(--border,#333); }
   #tab-agriculture .ag-list-item:last-child { border-bottom:none; }
   #tab-agriculture .ag-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem; font-weight:600; }
   #tab-agriculture .ag-due-tag { font-size:.75rem; }
-  #tab-agriculture .ag-empty { text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
+  #tab-agriculture .ag-empty { display:grid; gap:6px; justify-items:center; text-align:center; padding:24px 18px; color:var(--text-secondary,#aaa); font-size:.9rem; line-height:1.6; }
+  #tab-agriculture .ag-empty strong { color:var(--text-primary,#eee); font-size:.95rem; font-weight:700; }
+  #tab-agriculture .ag-empty span { max-width:56ch; }
   #tab-agriculture .ag-table { width:100%; border-collapse:collapse; font-size:.82rem; }
   #tab-agriculture .ag-table th { text-align:left; padding:8px 10px; font-size:.7rem; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); border-bottom:1px solid var(--border,#333); font-weight:600; }
   #tab-agriculture .ag-table td { padding:8px 10px; border-bottom:1px solid var(--border,#333); color:var(--text-primary,#eee); vertical-align:middle; }
@@ -147,6 +154,7 @@
 
 <!-- ── Food Forest Panel ─────────────────────────────────── -->
 <div class="ag-panel active" id="ag-panel-food-forest" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-food-forest">
+  <p class="ag-panel-intro">Sketch the planting structure first, then layer in companions, support species, and projected yields so the long-term canopy plan stays easy to read.</p>
   <div class="ag-card">
     <div class="ag-card-title">Create Guild</div>
     <div class="ag-form-row">
@@ -162,10 +170,10 @@
       <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateGuild()">Add</button></div>
     </div>
     <div class="ag-form-row">
-      <div class="field"><label>Notes</label><textarea name="ag-guild-notes" id="ag-guild-notes" rows="2" placeholder="Companion planting notes..."></textarea></div>
+      <div class="field"><label>Notes</label><textarea name="ag-guild-notes" id="ag-guild-notes" rows="2" placeholder="Companion planting notes…"></textarea></div>
     </div>
   </div>
-  <div id="ag-guild-list" class="ag-card"><div class="ag-empty">Loading food-forest guilds...</div></div>
+  <div id="ag-guild-list" class="ag-card"><div class="ag-empty"><strong>Loading Guilds…</strong><span>Pulling planting structure, zones, and companion notes into the workspace.</span></div></div>
 
   <!-- Layer form -->
   <div class="ag-card">
@@ -198,6 +206,7 @@
 
 <!-- ── Soil & Land Panel ─────────────────────────────────── -->
 <div class="ag-panel" id="ag-panel-soil" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-soil" hidden>
+  <p class="ag-panel-intro">Track how each soil intervention changes the ground over time so amendments, land shaping, and recovery projects stay measurable.</p>
   <div class="ag-card">
     <div class="ag-card-title">New Soil Project</div>
     <div class="ag-form-row">
@@ -230,14 +239,15 @@
       <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateSoil()">Add</button></div>
     </div>
     <div class="ag-form-row">
-      <div class="field"><label>Notes</label><textarea name="ag-soil-notes" id="ag-soil-notes" rows="2" placeholder="Observations..."></textarea></div>
+      <div class="field"><label>Notes</label><textarea name="ag-soil-notes" id="ag-soil-notes" rows="2" placeholder="Observations…"></textarea></div>
     </div>
   </div>
-  <div id="ag-soil-list" class="ag-card"><div class="ag-empty">Loading soil recovery projects...</div></div>
+  <div id="ag-soil-list" class="ag-card"><div class="ag-empty"><strong>Loading Soil Projects…</strong><span>Reviewing recovery efforts, status, and before-and-after field notes.</span></div></div>
 </div>
 
 <!-- ── Perennials Panel ──────────────────────────────────── -->
 <div class="ag-panel" id="ag-panel-perennials" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-perennials" hidden>
+  <p class="ag-panel-intro">Keep long-term plantings visible in one registry so maintenance timing, health, and placement decisions stay coordinated.</p>
   <div class="ag-card">
     <div class="ag-card-title">Register Plant</div>
     <div class="ag-form-row">
@@ -259,11 +269,12 @@
       <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreatePlant()">Add</button></div>
     </div>
   </div>
-  <div id="ag-plant-list" class="ag-card"><div class="ag-empty">Loading perennial registry...</div></div>
+  <div id="ag-plant-list" class="ag-card"><div class="ag-empty"><strong>Loading Perennial Registry…</strong><span>Bringing in established plantings, health status, and maintenance timing.</span></div></div>
 </div>
 
 <!-- ── Livestock Panel ───────────────────────────────────── -->
 <div class="ag-panel" id="ag-panel-livestock" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-livestock" hidden>
+  <p class="ag-panel-intro">Capture breeding cycles, due dates, and feed changes in one place so animal care stays predictable even during busy seasons.</p>
   <!-- Breeding records -->
   <div class="ag-card">
     <div class="ag-card-title">Add Breeding Record</div>
@@ -292,19 +303,19 @@
       <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateBreeding()">Add</button></div>
     </div>
   </div>
-  <div id="ag-breed-list" class="ag-card"><div class="ag-empty">Loading livestock breeding records...</div></div>
+  <div id="ag-breed-list" class="ag-card"><div class="ag-empty"><strong>Loading Breeding Records…</strong><span>Gathering pairings, due dates, and status history for the herd or flock.</span></div></div>
 
   <!-- Due dates -->
   <div class="ag-card">
     <div class="ag-card-title">Upcoming Due Dates</div>
-    <div id="ag-breed-due-list"><div class="ag-empty">Calculating upcoming breeding windows...</div></div>
+    <div id="ag-breed-due-list"><div class="ag-empty"><strong>Calculating Due Dates…</strong><span>Checking the upcoming windows that need attention next.</span></div></div>
   </div>
 
   <!-- Feed tracking -->
   <div class="ag-card">
     <div class="ag-card-title">Feed Log</div>
     <div class="ag-form-row">
-      <div class="field"><label>Feed Type</label><input name="ag-feed-type" id="ag-feed-type" placeholder="Hay, grain, pellets..."></div>
+      <div class="field"><label>Feed Type</label><input name="ag-feed-type" id="ag-feed-type" placeholder="Hay, grain, pellets…"></div>
       <div class="field"><label>Amount (lbs)</label><input name="ag-feed-amount" id="ag-feed-amount" type="number" step="0.1" value="0"></div>
       <div class="field"><label>Cost ($)</label><input name="ag-feed-cost" id="ag-feed-cost" type="number" step="0.01" value="0"></div>
       <div class="field"><label>Date</label><input name="ag-feed-date" id="ag-feed-date" type="date"></div>
@@ -312,12 +323,13 @@
       <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateFeed()">Add</button></div>
     </div>
   </div>
-  <div id="ag-feed-list" class="ag-card"><div class="ag-empty">Loading feed logs...</div></div>
+  <div id="ag-feed-list" class="ag-card"><div class="ag-empty"><strong>Loading Feed Logs…</strong><span>Reviewing ration changes, quantities, and cost trends.</span></div></div>
   <div id="ag-feed-summary" class="ag-summary-row"></div>
 </div>
 
 <!-- ── Systems Panel ─────────────────────────────────────── -->
 <div class="ag-panel" id="ag-panel-systems" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-systems" hidden>
+  <p class="ag-panel-intro">Monitor supporting infrastructure alongside aquaponics readings so repairs, capacity, and condition stay visible before they become urgent.</p>
   <!-- Homestead infrastructure -->
   <div class="ag-card">
     <div class="ag-card-title">Add Homestead System</div>
@@ -336,12 +348,12 @@
     <div class="ag-form-row">
       <div class="field"><label>Capacity / Rating</label><input name="ag-sys-capacity" id="ag-sys-capacity" placeholder="5kW, 200gal, etc."></div>
       <div class="field"><label>Maintenance Due</label><input name="ag-sys-maint-date" id="ag-sys-maint-date" type="date"></div>
-      <div class="field"><label>Notes</label><input name="ag-sys-notes" id="ag-sys-notes" placeholder="Location, brand..."></div>
+      <div class="field"><label>Notes</label><input name="ag-sys-notes" id="ag-sys-notes" placeholder="Location, brand…"></div>
       <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateSystem()">Add</button></div>
     </div>
   </div>
   <div id="ag-sys-dashboard" class="ag-grid"></div>
-  <div id="ag-sys-list" class="ag-card"><div class="ag-empty">Loading homestead systems...</div></div>
+  <div id="ag-sys-list" class="ag-card"><div class="ag-empty"><strong>Loading Homestead Systems…</strong><span>Reviewing condition, capacity, and upcoming maintenance commitments.</span></div></div>
 
   <!-- Aquaponics -->
   <div class="ag-card ag-row-spaced">
@@ -356,11 +368,12 @@
       <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateAquaponics()">Add</button></div>
     </div>
   </div>
-  <div id="ag-aqua-list" class="ag-card"><div class="ag-empty">Loading aquaponics readings...</div></div>
+  <div id="ag-aqua-list" class="ag-card"><div class="ag-empty"><strong>Loading Aquaponics Readings…</strong><span>Checking recent water-quality logs and system conditions.</span></div></div>
 </div>
 
 <!-- ── Recycling Panel ───────────────────────────────────── -->
 <div class="ag-panel" id="ag-panel-recycling" role="tabpanel" tabindex="-1" aria-labelledby="ag-tab-recycling" hidden>
+  <p class="ag-panel-intro">Map how inputs become useful outputs so compost, greywater, rain capture, and reuse loops feel like one coordinated system.</p>
   <div class="ag-card">
     <div class="ag-card-title">Add Recycling System</div>
     <div class="ag-form-row">
@@ -380,15 +393,15 @@
       </div>
     </div>
     <div class="ag-form-row">
-      <div class="field"><label>Input Description</label><input name="ag-rec-input" id="ag-rec-input" placeholder="Food scraps, yard waste..."></div>
-      <div class="field"><label>Output Description</label><input name="ag-rec-output" id="ag-rec-output" placeholder="Finished compost, methane..."></div>
-      <div class="field"><label>Capacity</label><input name="ag-rec-capacity" id="ag-rec-capacity" placeholder="50 gal, 3 cu yd..."></div>
+      <div class="field"><label>Input Description</label><input name="ag-rec-input" id="ag-rec-input" placeholder="Food scraps, yard waste…"></div>
+      <div class="field"><label>Output Description</label><input name="ag-rec-output" id="ag-rec-output" placeholder="Finished compost, methane…"></div>
+      <div class="field"><label>Capacity</label><input name="ag-rec-capacity" id="ag-rec-capacity" placeholder="50 gal, 3 cu yd…"></div>
       <div class="field"><label>Notes</label><input name="ag-rec-notes" id="ag-rec-notes" placeholder="Optional"></div>
       <div class="field ag-field-action"><button class="ag-btn ag-btn-primary" onclick="agCreateRecycling()">Add</button></div>
     </div>
   </div>
   <div id="ag-rec-summary" class="ag-summary-row"></div>
-  <div id="ag-rec-list" class="ag-card"><div class="ag-empty">Loading recycling systems...</div></div>
+  <div id="ag-rec-list" class="ag-card"><div class="ag-empty"><strong>Loading Recycling Systems…</strong><span>Collecting loop details, current status, and capacity notes.</span></div></div>
 
   <!-- Input/Output flow visualization -->
   <div class="ag-card">
@@ -403,7 +416,12 @@
   if (!root) return;
   const el = id => document.getElementById(id);
   const val = id => el(id)?.value || '';
-  const numVal = (id, def) => parseFloat(val(id)) || def || 0;
+  const numVal = (id, def = 0) => {
+    const raw = val(id);
+    if (raw === '') return def ?? 0;
+    const parsed = Number(raw);
+    return Number.isFinite(parsed) ? parsed : (def ?? 0);
+  };
   const api = (url, opts) => fetch(url, opts).then(r => r.json());
   const toast = msg => { if (window.showToast) window.showToast(msg); };
   const API = '/api/agriculture';
@@ -418,6 +436,8 @@
   const layerClass = {canopy:'layer-canopy', understory:'layer-understory', shrub:'layer-shrub', herbaceous:'layer-herbaceous', ground_cover:'layer-ground_cover', vine:'layer-vine', root:'layer-root'};
   const recTypeClass = {compost:'rec-compost', greywater:'rec-greywater', biogas:'rec-biogas', rainwater:'rec-rainwater', material_reuse:'rec-material_reuse'};
   const soilTypeClass = {hugelkultur:'soil-hugelkultur', swale:'soil-swale', sheet_mulch:'soil-sheet_mulch', biochar:'soil-biochar', cover_crop:'soil-cover_crop', compost:'soil-compost'};
+  const agEmpty = (title, body) => `<div class="ag-empty"><strong>${esc(title)}</strong><span>${esc(body)}</span></div>`;
+  const agConfirmDelete = label => window.confirm(`Remove this ${label}? This can't be undone.`);
 
   function gaugeColor(pct) { return pct >= 75 ? '#22c55e' : pct >= 50 ? '#f59e0b' : pct >= 25 ? '#fb923c' : '#ef4444'; }
   function wqClass(param, v) {
@@ -478,15 +498,15 @@
     api(API + '/food-forest/guilds').then(items => {
       _guilds = items; fillGuildSelect();
       const box = el('ag-guild-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No guilds yet. Start with the first planting guild above to anchor the layout.</div>'; return; }
+      if (!items.length) { box.innerHTML = agEmpty('No Guilds Yet', 'Start with the first planting guild above to anchor the layout and companion plan.'); return; }
       box.innerHTML = items.map(g => `<div class="ag-list-item">
         <div><strong>${esc(g.name)}</strong> <small class="tone-muted">Central: ${esc(g.central_species || '--')} | Zone ${esc(g.zone || '--')}</small>
           ${g.notes ? `<br><small class="tone-muted">${esc(g.notes)}</small>` : ''}
           <div class="ag-row-spaced-xs">${(g.layers || []).map(l => `<span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}: ${esc(l.species)}</span>`).join('')}</div>
         </div>
-        <div style="display:flex;gap:4px">
+        <div class="ag-action-cluster">
           <button class="ag-btn ag-btn-secondary" onclick="agSelectGuild(${+g.id||0})">Layers</button>
-          <button class="ag-btn ag-btn-danger" onclick="agDeleteGuild(${+g.id||0})" aria-label="Ag delete guild">x</button>
+          <button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteGuild(${+g.id||0})" aria-label="Remove guild" title="Remove guild">&times;</button>
         </div>
       </div>`).join('');
     });
@@ -500,6 +520,7 @@
   };
 
   window.agDeleteGuild = function(id) {
+    if (!agConfirmDelete('guild')) return;
     api(API + '/food-forest/guilds/' + id, {method:'DELETE'}).then(() => { agLoadGuilds(); toast('Guild deleted'); });
   };
 
@@ -512,15 +533,15 @@
   window.agLoadLayers = function(guildId) {
     const gid = guildId || val('ag-layer-guild');
     const box = el('ag-layer-list');
-    if (!gid) { box.innerHTML = '<div class="ag-empty">Select a guild to review its canopy, support species, and roles.</div>'; return; }
+    if (!gid) { box.innerHTML = agEmpty('Choose a Guild', 'Select a guild to review its canopy, support species, and companion roles.'); return; }
     api(API + '/food-forest/layers?guild_id=' + gid).then(items => {
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No support layers yet. Add canopy, shrub, or ground-cover species above.</div>'; return; }
+      if (!items.length) { box.innerHTML = agEmpty('No Layers Yet', 'Add canopy, shrub, vine, or ground-cover species above to flesh out the guild.'); return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Layer</th><th>Species</th><th>Role</th><th></th></tr></thead><tbody>' +
         items.map(l => `<tr>
           <td><span class="ag-layer-chip ${layerClass[l.layer_type] || ''}">${esc(l.layer_type)}</span></td>
           <td>${esc(l.species || '--')}</td>
           <td>${esc(l.role || '--')}</td>
-          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteLayer(${+l.id||0})" aria-label="Ag delete layer">x</button></td>
+          <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteLayer(${+l.id||0})" aria-label="Remove layer" title="Remove layer">&times;</button></div></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -533,15 +554,16 @@
   };
 
   window.agDeleteLayer = function(id) {
+    if (!agConfirmDelete('layer')) return;
     api(API + '/food-forest/layers/' + id, {method:'DELETE'}).then(() => { agLoadLayers(); agLoadGuilds(); });
   };
 
   window.agLoadYield = function(guildId) {
     const gid = guildId || val('ag-layer-guild');
     const box = el('ag-yield-timeline');
-    if (!gid) { box.innerHTML = '<div class="ag-empty">Select a guild to review its projected yield rhythm.</div>'; return; }
+    if (!gid) { box.innerHTML = agEmpty('Choose a Guild', 'Select a guild to review its projected seasonal yield rhythm.'); return; }
     api(API + '/food-forest/yield-timeline?guild_id=' + gid).then(data => {
-      if (!data || !data.length) { box.innerHTML = '<div class="ag-empty">No yield projection is available for this guild yet. Add a few layers to build the seasonal view.</div>'; return; }
+      if (!data || !data.length) { box.innerHTML = agEmpty('No Yield Projection Yet', 'Add a few companion layers to build the first seasonal view for this guild.'); return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Year</th><th>Species</th><th>Expected Yield</th><th>Unit</th></tr></thead><tbody>' +
         data.map(y => `<tr><td>${esc(y.year || '--')}</td><td>${esc(y.species || '--')}</td><td>${esc(y.expected_yield || '--')}</td><td>${esc(y.unit || '--')}</td></tr>`).join('') +
         '</tbody></table>';
@@ -556,7 +578,7 @@
   window.agLoadSoil = function() {
     api(API + '/soil').then(items => {
       const box = el('ag-soil-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No soil projects yet. Capture the first recovery or improvement effort above.</div>'; return; }
+      if (!items.length) { box.innerHTML = agEmpty('No Soil Projects Yet', 'Capture the first recovery or improvement effort above to start a measurable baseline.'); return; }
       box.innerHTML = items.map(s => {
         const badge = soilTypeClass[s.soil_type] || '';
         const stColor = soilStatusColor[s.status] || '#aaa';
@@ -575,7 +597,7 @@
             ${testHtml}
             ${s.notes ? `<br><small class="tone-muted">${esc(s.notes)}</small>` : ''}
           </div>
-          <div><button class="ag-btn ag-btn-danger" onclick="agDeleteSoil(${+s.id||0})" aria-label="Ag delete soil">x</button></div>
+          <div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteSoil(${+s.id||0})" aria-label="Remove soil project" title="Remove soil project">&times;</button></div>
         </div>`;
       }).join('');
     });
@@ -599,6 +621,7 @@
   };
 
   window.agDeleteSoil = function(id) {
+    if (!agConfirmDelete('soil project')) return;
     api(API + '/soil/' + id, {method:'DELETE'}).then(() => { agLoadSoil(); toast('Soil project deleted'); });
   };
 
@@ -608,7 +631,7 @@
   window.agLoadPlants = function() {
     api(API + '/perennials').then(items => {
       const box = el('ag-plant-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No perennials registered yet. Add the first long-term planting above.</div>'; return; }
+      if (!items.length) { box.innerHTML = agEmpty('No Perennials Yet', 'Add the first long-term planting above so care timing and placement stay visible.'); return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Health</th><th>Name</th><th>Species</th><th>Location</th><th>Planted</th><th>Pruning</th><th>Fertilize</th><th></th></tr></thead><tbody>' +
         items.map(p => `<tr>
           <td><span class="ag-health-dot" style="background:${healthColor[p.health] || '#9ca3af'}"></span>${esc(p.health || '--')}</td>
@@ -618,7 +641,7 @@
           <td>${esc(p.date_planted || '--')}</td>
           <td>${dueTag(p.pruning_due)}</td>
           <td>${dueTag(p.fertilization_due)}</td>
-          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeletePlant(${+p.id||0})" aria-label="Ag delete plant">x</button></td>
+          <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeletePlant(${+p.id||0})" aria-label="Remove plant" title="Remove plant">&times;</button></div></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -633,6 +656,7 @@
   };
 
   window.agDeletePlant = function(id) {
+    if (!agConfirmDelete('plant')) return;
     api(API + '/perennials/' + id, {method:'DELETE'}).then(() => { agLoadPlants(); toast('Plant removed'); });
   };
 
@@ -642,20 +666,20 @@
   window.agLoadBreeding = function() {
     api(API + '/breeding').then(items => {
       const box = el('ag-breed-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No breeding records yet. Log the first pairing or cycle above.</div>'; return; }
+      if (!items.length) { box.innerHTML = agEmpty('No Breeding Records Yet', 'Log the first pairing or cycle above to keep livestock timing visible.'); return; }
       box.innerHTML = items.map(b => `<div class="ag-list-item">
         <div><strong>${esc(b.name)}</strong>
           <span class="ag-badge ag-status-${esc(b.status)} ag-tag-spacer">${esc(b.status)}</span>
           <br><small class="tone-muted">${esc(b.species || '--')} | Bred: ${esc(b.breed_date || '--')} | Due: ${esc(b.due_date || '--')} | Offspring: ${+b.offspring_count||0}</small>
           ${b.notes ? `<br><small class="tone-muted">${esc(b.notes)}</small>` : ''}
         </div>
-        <div><button class="ag-btn ag-btn-danger" onclick="agDeleteBreeding(${+b.id||0})" aria-label="Ag delete breeding">x</button></div>
+        <div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteBreeding(${+b.id||0})" aria-label="Remove breeding record" title="Remove breeding record">&times;</button></div>
       </div>`).join('');
     });
     // Due dates
     api(API + '/breeding/due').then(items => {
       const box = el('ag-breed-due-list');
-      if (!items || !items.length) { box.innerHTML = '<div class="ag-empty">No upcoming breeding windows are scheduled yet.</div>'; return; }
+      if (!items || !items.length) { box.innerHTML = agEmpty('No Due Dates Scheduled', 'The next breeding window will appear here once records include expected dates.'); return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Animal</th><th>Species</th><th>Due</th><th>Status</th></tr></thead><tbody>' +
         items.map(b => `<tr>
           <td>${esc(b.name)}</td><td>${esc(b.species || '--')}</td>
@@ -675,19 +699,20 @@
   };
 
   window.agDeleteBreeding = function(id) {
+    if (!agConfirmDelete('breeding record')) return;
     api(API + '/breeding/' + id, {method:'DELETE'}).then(() => { agLoadBreeding(); toast('Record deleted'); });
   };
 
   window.agLoadFeed = function() {
     api(API + '/feed').then(items => {
       const box = el('ag-feed-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No feed entries yet. Log the first ration or adjustment above.</div>'; return; }
+      if (!items.length) { box.innerHTML = agEmpty('No Feed Entries Yet', 'Log the first ration or adjustment above to start tracking usage and cost.'); return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Date</th><th>Type</th><th>Amount (lbs)</th><th>Cost</th><th>Notes</th><th></th></tr></thead><tbody>' +
         items.map(f => `<tr>
           <td>${f.date || '--'}</td><td>${f.feed_type || '--'}</td>
           <td>${f.amount || 0}</td><td>$${Number(f.cost || 0).toFixed(2)}</td>
           <td>${f.notes || '--'}</td>
-          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteFeed(${f.id})" aria-label="Ag delete feed">x</button></td>
+          <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteFeed(${f.id})" aria-label="Remove feed entry" title="Remove feed entry">&times;</button></div></td>
         </tr>`).join('') + '</tbody></table>';
     });
     api(API + '/feed/summary').then(data => {
@@ -710,6 +735,7 @@
   };
 
   window.agDeleteFeed = function(id) {
+    if (!agConfirmDelete('feed entry')) return;
     api(API + '/feed/' + id, {method:'DELETE'}).then(() => { agLoadFeed(); toast('Feed entry deleted'); });
   };
 
@@ -742,7 +768,7 @@
     // Full list
     api(API + '/homestead').then(items => {
       const box = el('ag-sys-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No homestead systems are registered yet. Add water, power, or growing systems above.</div>'; return; }
+      if (!items.length) { box.innerHTML = agEmpty('No Systems Yet', 'Add water, power, or growing systems above so condition and maintenance stay visible.'); return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>Name</th><th>Type</th><th>Capacity</th><th>Condition</th><th>Maintenance</th><th></th></tr></thead><tbody>' +
         items.map(s => {
           const pct = s.condition ?? 100;
@@ -752,7 +778,7 @@
             <td>${s.capacity || '--'}</td>
             <td><span style="color:${gaugeColor(pct)}">${pct}%</span></td>
             <td>${dueTag(s.maintenance_due)}</td>
-            <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteSystem(${s.id})" aria-label="Ag delete system">x</button></td>
+            <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteSystem(${s.id})" aria-label="Remove system" title="Remove system">&times;</button></div></td>
           </tr>`;
         }).join('') + '</tbody></table>';
     });
@@ -767,6 +793,7 @@
   };
 
   window.agDeleteSystem = function(id) {
+    if (!agConfirmDelete('system')) return;
     api(API + '/homestead/' + id, {method:'DELETE'}).then(() => { agLoadSystems(); toast('System removed'); });
   };
 
@@ -774,7 +801,7 @@
   window.agLoadAquaponics = function() {
     api(API + '/aquaponics').then(items => {
       const box = el('ag-aqua-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No aquaponics readings yet. The first water-quality trend will appear here.</div>'; return; }
+      if (!items.length) { box.innerHTML = agEmpty('No Aquaponics Readings Yet', 'The first water-quality trend will appear here once the system is logged.'); return; }
       box.innerHTML = '<table class="ag-table"><thead><tr><th>System</th><th>pH</th><th>Ammonia</th><th>Nitrite</th><th>Nitrate</th><th>Temp</th><th>Recorded</th><th></th></tr></thead><tbody>' +
         items.map(a => `<tr>
           <td><strong>${a.name || '--'}</strong></td>
@@ -784,7 +811,7 @@
           <td><span class="${wqClass('nitrate', a.nitrate)}">${a.nitrate ?? '--'}</span></td>
           <td>${a.temp ?? '--'}F</td>
           <td>${a.created_at || '--'}</td>
-          <td class="ag-row-right"><button class="ag-btn ag-btn-danger" onclick="agDeleteAquaponics(${a.id})" aria-label="Ag delete aquaponics">x</button></td>
+          <td class="ag-row-right"><div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteAquaponics(${a.id})" aria-label="Remove aquaponics reading" title="Remove aquaponics reading">&times;</button></div></td>
         </tr>`).join('') + '</tbody></table>';
     });
   };
@@ -798,6 +825,7 @@
   };
 
   window.agDeleteAquaponics = function(id) {
+    if (!agConfirmDelete('aquaponics reading')) return;
     api(API + '/aquaponics/' + id, {method:'DELETE'}).then(() => { agLoadAquaponics(); toast('Reading deleted'); });
   };
 
@@ -807,7 +835,7 @@
   window.agLoadRecycling = function() {
     api(API + '/recycling').then(items => {
       const box = el('ag-rec-list');
-      if (!items.length) { box.innerHTML = '<div class="ag-empty">No recycling systems yet. Add compost, greywater, biogas, or reuse loops above.</div>'; return; }
+      if (!items.length) { box.innerHTML = agEmpty('No Recycling Systems Yet', 'Add compost, greywater, biogas, or reuse loops above to make the whole cycle visible.'); return; }
       box.innerHTML = items.map(r => {
         const badge = recTypeClass[r.system_type] || '';
         const stColor = r.status === 'active' ? '#22c55e' : r.status === 'maintenance' ? '#f59e0b' : r.status === 'offline' ? '#ef4444' : '#94a3b8';
@@ -818,7 +846,7 @@
             <br><small class="tone-muted">In: ${r.input_desc || '--'} | Out: ${r.output_desc || '--'} | Cap: ${r.capacity || '--'}</small>
             ${r.notes ? `<br><small class="tone-muted">${r.notes}</small>` : ''}
           </div>
-          <div><button class="ag-btn ag-btn-danger" onclick="agDeleteRecycling(${r.id})" aria-label="Ag delete recycling">x</button></div>
+          <div class="ag-action-cluster"><button type="button" class="ag-btn ag-btn-icon ag-btn-danger-quiet" onclick="agDeleteRecycling(${r.id})" aria-label="Remove recycling system" title="Remove recycling system">&times;</button></div>
         </div>`;
       }).join('');
     });
@@ -839,7 +867,7 @@
   function agLoadRecFlow() {
     api(API + '/recycling').then(items => {
       const box = el('ag-rec-flow');
-      if (!items || !items.length) { box.innerHTML = '<div class="ag-empty">Add recycling systems to reveal how nutrients, water, and materials loop together.</div>'; return; }
+      if (!items || !items.length) { box.innerHTML = agEmpty('No Resource Loop Yet', 'Add recycling systems to reveal how nutrients, water, and materials move together.'); return; }
       const byType = {};
       items.forEach(r => { (byType[r.system_type] = byType[r.system_type] || []).push(r); });
       box.innerHTML = Object.entries(byType).map(([type, systems]) => {
@@ -869,6 +897,7 @@
   };
 
   window.agDeleteRecycling = function(id) {
+    if (!agConfirmDelete('recycling system')) return;
     api(API + '/recycling/' + id, {method:'DELETE'}).then(() => { agLoadRecycling(); toast('System removed'); });
   };
 

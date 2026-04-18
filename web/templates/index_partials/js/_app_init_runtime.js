@@ -1744,7 +1744,7 @@ async function loadSavedRoutes() {
   try {
     const routes = await safeFetch('/api/maps/routes', {}, []);
     if (!routes || routes.length === 0) {
-      container.innerHTML = '<span class="settings-empty-state saved-route-empty">No routes saved yet. Create routes by selecting waypoints.</span>';
+      container.innerHTML = '<div class="settings-empty-state saved-route-empty"><strong>No Routes Yet</strong><span>Build a route from saved waypoints to keep travel plans, timing, and terrain review ready from one place.</span></div>';
       document.getElementById('elevation-profile-panel').style.display = 'none';
       return;
     }
@@ -1767,7 +1767,7 @@ async function loadSavedRoutes() {
         '</div>' +
       '</div>';
     }).join('');
-  } catch(e) { container.innerHTML = '<span class="settings-empty-state saved-route-empty">Failed to load routes.</span>'; }
+  } catch(e) { container.innerHTML = '<div class="settings-empty-state saved-route-empty"><strong>Routes Could Not Be Loaded</strong><span>Refresh the route shelf and try again. Saved waypoints and route plans should return here once the workspace reconnects.</span></div>'; }
 }
 
 async function deleteSavedRoute(routeId) {
@@ -4489,17 +4489,29 @@ async function executeCSVImport() {
 }
 
 /* ─── Daily Operations Brief (v7.7.0) ─── */
+function renderInlineWorkspaceEmptyState(className, title, body) {
+  return `<div class="${className}"><strong>${escapeHtml(title)}</strong><span>${escapeHtml(body)}</span></div>`;
+}
+
 async function generateDailyBrief() {
   const body = document.getElementById('daily-brief-body');
   const btn = document.getElementById('daily-brief-gen-btn');
   if (!body) return;
   if (btn) { btn.setAttribute('aria-busy', 'true'); btn.disabled = true; }
-  body.innerHTML = '<div class="daily-brief-empty">Compiling brief…</div>';
+  body.innerHTML = renderInlineWorkspaceEmptyState(
+    'daily-brief-empty',
+    'Compiling the brief',
+    'Pulling together weather, alerts, tasks, and household context for a fresh operating snapshot.'
+  );
   try {
     const d = await apiFetch('/api/brief/daily');
     body.innerHTML = _renderDailyBrief(d);
   } catch (e) {
-    body.innerHTML = '<div class="daily-brief-empty">Failed to compile brief.</div>';
+    body.innerHTML = renderInlineWorkspaceEmptyState(
+      'daily-brief-empty',
+      'Brief unavailable',
+      'The desk could not compile a fresh brief right now. Try again in a moment.'
+    );
   } finally {
     if (btn) { btn.removeAttribute('aria-busy'); btn.disabled = false; }
   }
@@ -4584,7 +4596,11 @@ function _renderDailyBrief(d) {
   }
 
   if (!blocks.length) {
-    return '<div class="daily-brief-empty">Brief compiled but no notable signal — quiet day.</div>';
+    return renderInlineWorkspaceEmptyState(
+      'daily-brief-empty',
+      'Quiet signal picture',
+      'The brief compiled successfully, but nothing unusual is standing out right now.'
+    );
   }
   const ts = d.generated_at ? new Date(d.generated_at).toLocaleString() : '';
   return blocks.join('') + `<div class="daily-brief-footer">Compiled ${escapeHtml(ts)}</div>`;
@@ -4607,12 +4623,20 @@ async function loadFamilyCheckins() {
     const d = await apiFetch('/api/family-checkins');
     _renderFamilySummary(d.summary || {}, d.total || 0);
     if (!d.members || !d.members.length) {
-      list.innerHTML = '<div class="family-checkin-empty">No family members added yet. Click <strong>+ Add</strong> to set up a check-in slot for each person in your household.</div>';
+      list.innerHTML = renderInlineWorkspaceEmptyState(
+        'family-checkin-empty',
+        'No household check-ins yet',
+        'Add each person you want on the board so status changes, drills, and accountability stay easy to track.'
+      );
       return;
     }
     list.innerHTML = d.members.map(m => _renderFamilyRow(m)).join('');
   } catch (e) {
-    list.innerHTML = '<div class="family-checkin-empty">Unable to load check-in board.</div>';
+    list.innerHTML = renderInlineWorkspaceEmptyState(
+      'family-checkin-empty',
+      'Check-in board unavailable',
+      'The desk could not load household status right now. Refresh and try again.'
+    );
   }
 }
 
@@ -5496,4 +5520,3 @@ document.querySelectorAll('.customize-sortable-item[onclick], .customize-theme-c
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); item.click(); }
   });
 });
-

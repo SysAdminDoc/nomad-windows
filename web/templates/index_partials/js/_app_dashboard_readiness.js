@@ -125,7 +125,10 @@ async function loadNeedsOverview() {
   const el = document.getElementById('needs-grid');
   if (!el) return;
   const data = await safeFetch('/api/needs', {}, {});
-  if (!data || !Object.keys(data).length) { el.innerHTML = ''; return; }
+  if (!data || !Object.keys(data).length) {
+    el.innerHTML = '<div class="workspace-empty-copy readiness-needs-empty"><strong>No Coverage Data Yet</strong><span>Add supplies, contacts, or guides in Preparedness and this view will show which categories have real support behind them.</span></div>';
+    return;
+  }
   el.innerHTML = Object.entries(data).map(([id, n]) => {
     const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(n.color) ? n.color : 'var(--accent)';
     const safeId = escapeAttr(id);
@@ -825,7 +828,10 @@ async function loadReadinessNeeds() {
   const el = document.getElementById('readiness-needs-grid');
   if (!el) return;
   const data = await safeFetch('/api/needs', {}, {});
-  if (!data || !Object.keys(data).length) { el.innerHTML = ''; return; }
+  if (!data || !Object.keys(data).length) {
+    el.innerHTML = '<div class="workspace-empty-copy readiness-needs-empty"><strong>No Coverage Data Yet</strong><span>Add supplies, contacts, or guides in Preparedness and this view will show which categories have real support behind them.</span></div>';
+    return;
+  }
   el.innerHTML = Object.entries(data).map(([id, n]) => {
     const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(n.color) ? n.color : 'var(--accent)';
     const safeId = escapeAttr(id);
@@ -1934,4 +1940,3 @@ function barcodeToInventory(code) {
     barcodeInput.value = code;
   }, 300);
 }
-

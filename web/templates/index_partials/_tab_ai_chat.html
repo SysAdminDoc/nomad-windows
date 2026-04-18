@@ -4,15 +4,19 @@
     <div class="chat-layout">
       <div class="convo-sidebar">
         <div class="convo-sidebar-header">
-          <span>Conversations</span>
-          <button class="btn btn-sm btn-primary" data-chat-action="new-conversation">+ New</button>
+          <span>Conversation Shelf</span>
+          <button class="btn btn-sm btn-primary" data-chat-action="new-conversation">New Chat</button>
+        </div>
+        <div class="convo-sidebar-intro">
+          <strong>Private Threads</strong>
+          <span>Keep plans, branches, and exports organized by task. Everything on this shelf stays local to this device.</span>
         </div>
         <div class="convo-search">
-          <input id="convo-search" type="search" name="conversation_search" autocomplete="off" aria-label="Search conversations" placeholder="Search chats..." data-input-action="filter-convos">
+          <input id="convo-search" type="search" name="conversation_search" autocomplete="off" aria-label="Search conversations" placeholder="Search conversations…" data-input-action="filter-convos">
         </div>
-        <div class="convo-list" id="convo-list"><div class="sidebar-empty-state">Your conversations will appear here</div></div>
+        <div class="convo-list" id="convo-list" aria-live="polite"><div class="sidebar-empty-state"><strong>No Conversations Yet</strong><span>Start a new chat to keep research, drafts, and decision branches organized here.</span></div></div>
         <div class="convo-sidebar-footer">
-          <button class="btn btn-sm btn-danger workspace-btn-block" data-chat-action="delete-all-convos">Delete All</button>
+          <button class="btn btn-sm btn-danger workspace-btn-block" data-chat-action="delete-all-convos">Clear History</button>
         </div>
       </div>
       <div class="chat-container">
@@ -55,10 +59,10 @@
               <option value="scenario_medical">Scenario: Medical Emergency</option>
               <option value="scenario_evacuation">Scenario: Evacuation</option>
               <option disabled>--- Advanced ---</option>
-              <option value="custom">Write Your Own Prompt...</option>
+              <option value="custom">Write Your Own Prompt…</option>
             </select>
-            <button class="btn btn-sm" data-chat-action="toggle-model-picker">+ Download AI Model</button>
-            <button class="btn btn-sm" data-chat-action="export-conversation" title="Export to Markdown">Export</button>
+            <button class="btn btn-sm" data-chat-action="toggle-model-picker">Add Model</button>
+            <button class="btn btn-sm" data-chat-action="export-conversation" title="Export to Markdown">Export Markdown</button>
             <div class="chat-branch-shell">
               <button class="btn btn-sm is-hidden" id="branches-btn" data-chat-action="toggle-branch-panel" title="View conversation branches">Branches <span id="branches-count-badge" class="convo-branch-badge is-hidden">0</span></button>
               <div class="branch-panel" id="branch-panel"></div>
@@ -78,29 +82,30 @@
           </div>
           <div id="pull-progress-bar" class="chat-header-progress is-hidden">
             <div class="progress-bar"><div class="fill is-zero-width" id="pull-fill"></div></div>
-            <div class="progress-info"><span id="pull-detail">...</span><span id="pull-pct">0%</span></div>
+            <div class="progress-info"><span id="pull-detail">…</span><span id="pull-pct">0%</span></div>
           </div>
         </div>
         <div id="model-picker-panel" class="chat-inline-panel is-hidden">
           <div class="chat-inline-panel-header">
-            <span class="chat-inline-panel-title">Download an AI Model <button class="help-icon" data-help="models-guide" title="Which model should I choose?">?</button> <span class="chat-inline-panel-note">(downloaded once, works forever offline)</span></span>
+            <span class="chat-inline-panel-title">Download Local Models <button class="help-icon" data-help="models-guide" title="Which model should I choose?">?</button> <span class="chat-inline-panel-note">Download once, keep ready offline.</span></span>
             <div class="chat-inline-panel-actions">
               <button class="btn btn-sm btn-primary" data-chat-action="pull-all-models" title="Download all recommended models one at a time">Download All Recommended</button>
-              <button class="btn btn-sm btn-ghost chat-inline-close-btn" type="button" data-chat-action="toggle-model-picker" aria-label="Close model download panel">x</button>
+              <button class="btn btn-sm btn-ghost chat-inline-close-btn" type="button" data-chat-action="toggle-model-picker" aria-label="Close model download panel">&times;</button>
             </div>
           </div>
           <div id="model-picker-list" class="chat-inline-panel-grid"></div>
           <div class="chat-inline-panel-row">
-            <input id="custom-model-input" name="custom_model_name" class="chat-inline-input" autocomplete="off" aria-label="Custom model name" placeholder="Or type a model name (e.g. phi3:mini)">
+            <input id="custom-model-input" name="custom_model_name" class="chat-inline-input" autocomplete="off" aria-label="Custom model name" placeholder="Or type a model name (for example: phi3:mini)">
             <button class="btn btn-sm btn-primary" data-chat-action="pull-custom-model">Download</button>
           </div>
         </div>
         <div id="custom-prompt-panel" class="chat-inline-panel is-hidden">
           <div class="chat-inline-panel-header">
             <span class="chat-inline-panel-title">Custom System Prompt</span>
-            <button class="btn btn-sm btn-ghost chat-inline-close-btn" type="button" data-chat-action="toggle-custom-prompt" aria-label="Close custom prompt editor">x</button>
+            <button class="btn btn-sm btn-ghost chat-inline-close-btn" type="button" data-chat-action="toggle-custom-prompt" aria-label="Close custom prompt editor">&times;</button>
           </div>
-          <textarea id="custom-prompt-text" name="custom_prompt_text" class="chat-inline-textarea" placeholder="e.g. You are a preparedness expert. Always prioritize practical survival advice..."></textarea>
+          <div class="chat-inline-panel-copy">Shape the assistant’s tone, constraints, and expertise for the current thread.</div>
+          <textarea id="custom-prompt-text" name="custom_prompt_text" class="chat-inline-textarea" placeholder="For example: You are a preparedness expert. Prioritize practical survival advice with calm, direct steps…"></textarea>
           <div class="chat-inline-panel-actions">
             <button class="btn btn-sm btn-primary" data-chat-action="save-custom-prompt">Save & Apply</button>
             <button class="btn btn-sm" data-chat-action="clear-custom-prompt">Clear</button>
@@ -110,8 +115,8 @@
           <label class="kb-toggle" title="When enabled, the AI can see your inventory, contacts, weather, and alerts to give personalized advice"><input type="checkbox" id="sit-context-toggle" name="include_prep_data"> Include My Prep Data</label>
           <label class="kb-toggle"><input type="checkbox" id="kb-toggle" name="use_document_library" data-change-action="toggle-kb"> My Documents</label>
           <input type="file" id="kb-file-input" name="kb_document_upload" accept=".pdf,.txt,.md,.csv" data-change-action="upload-kb-file" class="is-hidden">
-          <button class="btn btn-sm" data-click-target="kb-file-input">Upload Doc</button>
-          <button class="btn btn-sm" data-chat-action="analyze-all-docs" title="AI: classify, summarize, and extract entities from all documents">Analyze All</button>
+          <button class="btn btn-sm" data-click-target="kb-file-input">Add Document</button>
+          <button class="btn btn-sm" data-chat-action="analyze-all-docs" title="AI: classify, summarize, and extract entities from all documents">Analyze Library</button>
           <span id="kb-status-badge" class="chat-status-badge"></span>
           <div class="kb-docs kb-docs-list-shell is-hidden" id="kb-docs-list"></div>
         </div>
@@ -150,7 +155,7 @@
         </div>
         <div id="chat-file-context" class="chat-context-strip is-hidden">
           <span id="chat-file-name"></span>
-          <button type="button" class="chat-file-clear" data-chat-action="clear-chat-file" aria-label="Remove attached chat file">x</button>
+          <button type="button" class="chat-file-clear" data-chat-action="clear-chat-file" aria-label="Remove attached chat file">&times;</button>
         </div>
         <div id="chat-image-preview" class="chat-context-strip is-hidden"></div>
         <div class="chat-input-area" id="chat-input-area">
@@ -158,7 +163,7 @@
           <button class="btn btn-sm btn-ghost chat-attach-btn" data-click-target="chat-file-input" title="Attach file for AI context" aria-label="Attach file">&#128206;</button>
           <input type="file" id="chat-image-input" name="chat_image" accept="image/*" data-change-action="preview-chat-image" class="is-hidden">
           <button type="button" class="btn btn-sm btn-ghost chat-attach-btn" data-click-target="chat-image-input" aria-label="Send image to AI" title="Send image to multimodal model">&#128247;</button>
-          <textarea id="chat-input" name="chat_input" aria-label="Chat message input" placeholder="Type a message... (Enter to send, Shift+Enter for newline, drop files)" rows="1"></textarea>
+          <textarea id="chat-input" name="chat_input" aria-label="Chat message input" placeholder="Ask a question, sketch a plan, or drop a file… (Enter to send, Shift+Enter for newline)" rows="1"></textarea>
           <button class="btn btn-primary" data-chat-action="send-chat" id="send-btn">Send</button>
           <button class="btn btn-stop is-hidden" data-chat-action="stop-chat" id="stop-btn">Stop</button>
           <button class="btn btn-sm is-hidden" data-chat-action="regenerate-chat" id="regen-btn" title="Regenerate last response">Retry</button>

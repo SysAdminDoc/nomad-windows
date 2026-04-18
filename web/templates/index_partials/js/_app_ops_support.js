@@ -1401,7 +1401,7 @@ async function loadWPDistances() {
   try {
     const d = await apiFetch('/api/waypoints/distances');
     const el = document.getElementById('wp-distance-matrix');
-    if (!d.points.length) { el.innerHTML = '<span class="runtime-empty-note">No waypoints saved.</span>'; return; }
+    if (!d.points.length) { el.innerHTML = '<div class="workspace-empty-copy runtime-empty-note"><strong>No Waypoints Yet</strong><span>Save at least two waypoints from the live map to compare travel distance across your key locations.</span></div>'; return; }
     let html = '<table class="freq-table"><thead><tr><th></th>';
     d.points.forEach(p => html += `<th class="runtime-table-head-compact" title="${escapeHtml(p.name)}">${escapeHtml(p.name.slice(0,8))}</th>`);
     html += '</tr></thead><tbody>';

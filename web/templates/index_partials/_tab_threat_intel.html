@@ -13,15 +13,59 @@
       --ti-orange: var(--orange, #fb923c);
       --ti-red: var(--red, #f87171);
     }
-    .ti-deck { padding: 24px 0 16px; }
-    .ti-deck h2 { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; color: var(--ti-text); margin: 6px 0 4px; }
-    .ti-deck p { font-size: 13px; color: var(--ti-text-dim); margin: 0 0 14px; }
+    .ti-deck {
+      display: grid;
+      gap: 14px;
+      padding: 22px 22px 18px;
+      margin: 24px 0 18px;
+      border: 1px solid color-mix(in srgb, var(--ti-accent) 16%, var(--ti-border));
+      border-radius: 24px;
+      background:
+        radial-gradient(circle at top right, color-mix(in srgb, var(--ti-accent) 14%, transparent), transparent 42%),
+        linear-gradient(180deg, color-mix(in srgb, var(--ti-surface) 94%, transparent), color-mix(in srgb, var(--ti-card-bg) 92%, transparent));
+      box-shadow: var(--shadow-panel, 0 18px 34px rgba(0, 0, 0, 0.12));
+    }
+    .ti-command-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
+    .ti-command-copy { display: grid; gap: 8px; max-width: min(760px, 100%); }
+    .ti-deck h2 { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.12; color: var(--ti-text); margin: 0; text-wrap: balance; }
+    .ti-deck p { font-size: 13px; color: var(--ti-text-dim); line-height: 1.6; margin: 0; max-width: 66ch; }
     .ti-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .ti-command-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .ti-command-pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 0 11px;
+      border-radius: 999px;
+      border: 1px solid color-mix(in srgb, var(--ti-accent) 18%, var(--ti-border));
+      background: color-mix(in srgb, var(--ti-accent) 10%, transparent);
+      color: color-mix(in srgb, var(--ti-accent) 48%, var(--ti-text));
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
+    }
     .ti-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; margin-bottom: 20px; }
-    .ti-stat-card { background: var(--ti-card-bg); border-radius: 10px; padding: 16px; text-align: center; border: 1px solid var(--ti-border); }
-    .ti-stat-value { font-size: 28px; font-weight: 700; color: var(--ti-accent); }
+    .ti-stat-card {
+      background: linear-gradient(180deg, color-mix(in srgb, var(--ti-card-bg) 97%, transparent), color-mix(in srgb, var(--ti-surface) 92%, transparent));
+      border-radius: 16px;
+      padding: 16px;
+      text-align: center;
+      border: 1px solid color-mix(in srgb, var(--ti-border) 84%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+    }
+    .ti-stat-value { font-size: 28px; font-weight: 700; color: var(--ti-accent); font-variant-numeric: tabular-nums; }
     .ti-stat-label { font-size: 11px; color: var(--ti-text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 4px; }
-    .ti-threat-level { font-size: 16px; font-weight: 800; padding: 10px 20px; border-radius: 8px; text-align: center; margin-bottom: 16px; }
+    .ti-threat-level {
+      font-size: 16px;
+      font-weight: 800;
+      padding: 12px 20px;
+      border-radius: 16px;
+      text-align: center;
+      margin-bottom: 18px;
+      border: 1px solid color-mix(in srgb, currentColor 18%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 10%, transparent);
+    }
     .ti-threat-level.NORMAL { background: rgba(52,211,153,0.15); color: var(--ti-green); }
     .ti-threat-level.LOW { background: rgba(91,159,255,0.15); color: var(--ti-accent); }
     .ti-threat-level.GUARDED { background: rgba(251,146,60,0.15); color: var(--ti-orange); }
@@ -29,45 +73,128 @@
     .ti-threat-level.CRITICAL { background: rgba(248,113,113,0.35); color: #ff4444; }
     .ti-section { margin-bottom: 20px; }
     .ti-section h3 { font-size: 14px; font-weight: 700; color: var(--ti-text); margin-bottom: 10px; }
-    .ti-entry { padding: 14px 16px; background: var(--ti-card-bg); border-radius: 8px; border: 1px solid var(--ti-border); margin-bottom: 8px; }
-    .ti-entry-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-    .ti-entry-title { font-size: 14px; font-weight: 600; color: var(--ti-text); }
+    .ti-entry {
+      display: grid;
+      gap: 10px;
+      padding: 16px 18px;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--ti-card-bg) 97%, transparent), color-mix(in srgb, var(--ti-surface) 92%, transparent));
+      border-radius: 16px;
+      border: 1px solid color-mix(in srgb, var(--ti-border) 84%, transparent);
+      margin-bottom: 10px;
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+    }
+    .ti-entry-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .ti-entry-title { font-size: 15px; font-weight: 700; color: var(--ti-text); text-wrap: balance; }
     .ti-entry-severity { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; }
     .ti-entry-severity.critical { background: rgba(248,113,113,0.25); color: #ff4444; }
     .ti-entry-severity.high { background: rgba(248,113,113,0.15); color: var(--ti-red); }
     .ti-entry-severity.medium { background: rgba(251,146,60,0.15); color: var(--ti-orange); }
     .ti-entry-severity.low { background: rgba(91,159,255,0.15); color: var(--ti-accent); }
     .ti-entry-severity.info { background: rgba(52,211,153,0.15); color: var(--ti-green); }
-    .ti-entry-meta { font-size: 12px; color: var(--ti-text-muted); margin-bottom: 6px; }
-    .ti-entry-desc { font-size: 13px; color: var(--ti-text-dim); line-height: 1.5; }
-    .ti-entry-actions { display: flex; gap: 6px; margin-top: 8px; }
+    .ti-entry-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 12px;
+      font-size: 12px;
+      color: var(--ti-text-muted);
+      line-height: 1.45;
+    }
+    .ti-entry-meta span { min-width: 0; }
+    .ti-entry-desc { font-size: 13px; color: var(--ti-text-dim); line-height: 1.6; word-break: break-word; }
+    .ti-entry-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
     .ti-cat-chart { display: flex; flex-wrap: wrap; gap: 10px; }
     .ti-cat-tag { font-size: 12px; padding: 4px 10px; border-radius: 4px; background: var(--ti-surface); color: var(--ti-text-dim); border: 1px solid var(--ti-border); }
     .ti-cat-tag strong { color: var(--ti-text); margin-left: 4px; }
     .ti-feeds-list { display: flex; flex-direction: column; gap: 6px; }
-    .ti-feed { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--ti-card-bg); border-radius: 8px; border: 1px solid var(--ti-border); }
-    .ti-feed-name { font-size: 13px; font-weight: 600; color: var(--ti-text); }
-    .ti-feed-meta { font-size: 11px; color: var(--ti-text-muted); }
+    .ti-feed {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      background: linear-gradient(180deg, color-mix(in srgb, var(--ti-card-bg) 97%, transparent), color-mix(in srgb, var(--ti-surface) 92%, transparent));
+      border-radius: 16px;
+      border: 1px solid color-mix(in srgb, var(--ti-border) 84%, transparent);
+      box-shadow: inset 0 1px 0 color-mix(in srgb, white 5%, transparent);
+    }
+    .ti-feed-copy { display: grid; gap: 4px; min-width: 0; }
+    .ti-feed-name { font-size: 13px; font-weight: 700; color: var(--ti-text); }
+    .ti-feed-meta { font-size: 11px; color: var(--ti-text-muted); line-height: 1.5; word-break: break-word; }
+    .ti-feed-status { color: var(--ti-text-dim); }
     .ti-form-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
     .ti-form-row label { font-size: 12px; color: var(--ti-text-dim); display: block; margin-bottom: 3px; }
     .ti-form-row input, .ti-form-row select, .ti-form-row textarea { font-size: 13px; padding: 7px 10px; border-radius: 6px; border: 1px solid var(--ti-border); background: var(--ti-surface); color: var(--ti-text); width: 100%; }
     .ti-form-row textarea { min-height: 60px; resize: vertical; }
     .ti-form-group { flex: 1; min-width: 180px; }
-    .ti-empty { text-align: center; padding: 40px; color: var(--ti-text-muted); font-size: 14px; }
+    .ti-empty {
+      display: grid;
+      gap: 6px;
+      justify-items: center;
+      text-align: center;
+      padding: 28px 22px;
+      color: var(--ti-text-muted);
+      font-size: 14px;
+      border-radius: 16px;
+      border: 1px dashed color-mix(in srgb, var(--ti-border) 85%, transparent);
+      background: color-mix(in srgb, var(--ti-surface) 72%, transparent);
+    }
+    .ti-empty strong { color: var(--ti-text); font-size: 14px; }
+    .ti-empty span { max-width: 52ch; line-height: 1.55; }
+    .ti-empty-inline { width: 100%; }
     .ti-scroll-shell { padding: 0 24px 24px; }
     .ti-form-group.ti-field-grow-2 { flex: 2; }
     .ti-row-actions { display: flex; gap: 8px; }
     .ti-row-tight { display: flex; gap: 6px; }
+    .ti-btn-danger-quiet {
+      background: color-mix(in srgb, var(--ti-red) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--ti-red) 28%, transparent);
+      color: color-mix(in srgb, var(--ti-red) 72%, var(--ti-text));
+    }
+    .ti-btn-danger-quiet:hover,
+    .ti-btn-danger-quiet:focus-visible {
+      background: color-mix(in srgb, var(--ti-red) 16%, transparent);
+      border-color: color-mix(in srgb, var(--ti-red) 42%, transparent);
+      color: #fff2f2;
+    }
+    .ti-btn-icon {
+      min-width: 30px;
+      min-height: 30px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      font-size: 16px;
+      line-height: 1;
+    }
+    @media (max-width: 860px) {
+      .ti-deck { padding: 18px; }
+      .ti-feed,
+      .ti-entry-header { align-items: stretch; }
+      .ti-feed { flex-direction: column; }
+      .ti-row-tight,
+      .ti-entry-actions { width: 100%; }
+    }
   </style>
 
   <div class="workspace-scroll-container ti-scroll-shell">
     <div class="ti-deck">
-      <h2>Threat Intelligence</h2>
-      <p>Track, assess, and respond to threats affecting your area of operations.</p>
-      <div class="ti-actions">
-        <button class="btn btn-sm btn-primary" type="button" onclick="showThreatEntryForm()">+ Add Threat</button>
-        <button class="btn btn-sm" type="button" onclick="showThreatFeedForm()">+ Add Feed</button>
-        <button class="btn btn-sm" type="button" onclick="loadThreatIntel()">Refresh</button>
+      <div class="ti-command-head">
+        <div class="ti-command-copy">
+          <h2>Threat Intelligence</h2>
+          <p>Watch the operating picture, surface the items that need action, and keep signal sources organized without losing credibility or response clarity.</p>
+        </div>
+        <div class="ti-actions">
+          <button class="btn btn-sm btn-primary" type="button" onclick="showThreatEntryForm()">Add Threat</button>
+          <button class="btn btn-sm" type="button" onclick="showThreatFeedForm()">Add Feed</button>
+          <button class="btn btn-sm" type="button" onclick="loadThreatIntel()">Refresh View</button>
+        </div>
+      </div>
+      <div class="ti-command-pills" aria-hidden="true">
+        <span class="ti-command-pill">Severity tracking</span>
+        <span class="ti-command-pill">Feed hygiene</span>
+        <span class="ti-command-pill">Response planning</span>
+        <span class="ti-command-pill">Area awareness</span>
       </div>
     </div>
 
@@ -94,7 +221,7 @@
       <div class="ti-form-row">
         <div class="ti-form-group"><label for="ti-entry-title">Title</label><input type="text" id="ti-entry-title" name="ti-entry-title" placeholder="Threat title"></div>
         <div class="ti-form-group"><label for="ti-entry-category">Category</label>
-          <select id="ti-entry-category" name="ti-entry-category">
+          <select id="ti-entry-category" name="ti-entry-category" autocomplete="off">
             <option value="natural_disaster">Natural Disaster</option>
             <option value="civil_unrest">Civil Unrest</option>
             <option value="infrastructure">Infrastructure</option>
@@ -108,7 +235,7 @@
           </select>
         </div>
         <div class="ti-form-group"><label for="ti-entry-severity">Severity</label>
-          <select id="ti-entry-severity" name="ti-entry-severity">
+          <select id="ti-entry-severity" name="ti-entry-severity" autocomplete="off">
             <option value="info">Info</option>
             <option value="low">Low</option>
             <option value="medium" selected>Medium</option>
@@ -118,17 +245,17 @@
         </div>
       </div>
       <div class="ti-form-row">
-        <div class="ti-form-group"><label for="ti-entry-location">Location</label><input type="text" id="ti-entry-location" name="ti-entry-location" placeholder="Affected area"></div>
-        <div class="ti-form-group"><label for="ti-entry-source">Source URL</label><input type="text" id="ti-entry-source" name="ti-entry-source" placeholder="https://..."></div>
+        <div class="ti-form-group"><label for="ti-entry-location">Location</label><input type="text" id="ti-entry-location" name="ti-entry-location" placeholder="Affected area" autocomplete="off"></div>
+        <div class="ti-form-group"><label for="ti-entry-source">Source URL</label><input type="url" id="ti-entry-source" name="ti-entry-source" placeholder="https://example.com" autocomplete="off"></div>
       </div>
       <div class="ti-form-row">
-        <div class="ti-form-group ti-field-grow-2"><label for="ti-entry-desc">Description</label><textarea id="ti-entry-desc" name="ti-entry-desc" placeholder="Threat description..."></textarea></div>
+        <div class="ti-form-group ti-field-grow-2"><label for="ti-entry-desc">Description</label><textarea id="ti-entry-desc" name="ti-entry-desc" placeholder="Describe the threat…"></textarea></div>
       </div>
       <div class="ti-form-row">
-        <div class="ti-form-group ti-field-grow-2"><label for="ti-entry-impact">Impact Assessment</label><textarea id="ti-entry-impact" name="ti-entry-impact" placeholder="How does this affect your area?"></textarea></div>
+        <div class="ti-form-group ti-field-grow-2"><label for="ti-entry-impact">Impact Assessment</label><textarea id="ti-entry-impact" name="ti-entry-impact" placeholder="Explain likely impact on your area…"></textarea></div>
       </div>
       <div class="ti-form-row">
-        <div class="ti-form-group ti-field-grow-2"><label for="ti-entry-actions">Recommended Actions</label><textarea id="ti-entry-actions" name="ti-entry-actions" placeholder="What should be done?"></textarea></div>
+        <div class="ti-form-group ti-field-grow-2"><label for="ti-entry-actions">Recommended Actions</label><textarea id="ti-entry-actions" name="ti-entry-actions" placeholder="List the next steps you want operators to take…"></textarea></div>
       </div>
       <div class="ti-row-actions">
         <button class="btn btn-sm btn-primary" type="button" onclick="saveThreatEntry()">Save Threat</button>
@@ -140,9 +267,9 @@
     <div class="ti-section" id="ti-feed-form-section" hidden>
       <h3>Add Threat Feed</h3>
       <div class="ti-form-row">
-        <div class="ti-form-group"><label for="ti-feed-name">Feed Name</label><input type="text" id="ti-feed-name" name="ti-feed-name" placeholder="Feed name"></div>
+        <div class="ti-form-group"><label for="ti-feed-name">Feed Name</label><input type="text" id="ti-feed-name" name="ti-feed-name" placeholder="Feed name" autocomplete="off"></div>
         <div class="ti-form-group"><label for="ti-feed-type">Type</label>
-          <select id="ti-feed-type" name="ti-feed-type">
+          <select id="ti-feed-type" name="ti-feed-type" autocomplete="off">
             <option value="manual">Manual</option>
             <option value="rss">RSS</option>
             <option value="api">API</option>
@@ -150,7 +277,7 @@
           </select>
         </div>
         <div class="ti-form-group"><label for="ti-feed-cat">Category</label>
-          <select id="ti-feed-cat" name="ti-feed-cat">
+          <select id="ti-feed-cat" name="ti-feed-cat" autocomplete="off">
             <option value="natural_disaster">Natural Disaster</option>
             <option value="civil_unrest">Civil Unrest</option>
             <option value="infrastructure">Infrastructure</option>
@@ -160,7 +287,7 @@
         </div>
       </div>
       <div class="ti-form-row">
-        <div class="ti-form-group ti-field-grow-2"><label for="ti-feed-url">URL</label><input type="text" id="ti-feed-url" name="ti-feed-url" placeholder="https://..."></div>
+        <div class="ti-form-group ti-field-grow-2"><label for="ti-feed-url">URL</label><input type="url" id="ti-feed-url" name="ti-feed-url" placeholder="https://example.com" autocomplete="off"></div>
       </div>
       <div class="ti-row-actions">
         <button class="btn btn-sm btn-primary" type="button" onclick="saveThreatFeed()">Save Feed</button>
@@ -171,17 +298,50 @@
     <!-- Recent Threats -->
     <div class="ti-section">
       <h3>Active Threats</h3>
-      <div id="ti-entry-list"><div class="ti-empty">Loading threats...</div></div>
+      <div id="ti-entry-list" aria-live="polite"><div class="ti-empty"><strong>Loading threats…</strong><span>Pulling unresolved threats and recent reporting for this workspace.</span></div></div>
     </div>
 
     <!-- Feeds -->
     <div class="ti-section">
       <h3>Intelligence Feeds</h3>
-      <div class="ti-feeds-list" id="ti-feeds-list"><div class="ti-empty">No feeds configured.</div></div>
+      <div class="ti-feeds-list" id="ti-feeds-list" aria-live="polite"><div class="ti-empty"><strong>Loading feeds…</strong><span>Checking the sources that help keep this threat picture current.</span></div></div>
     </div>
   </div>
 
   <script>
+  const tiEsc = s => window.escapeHtml ? window.escapeHtml(s) : String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  const tiDateFormatter = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  const tiThreatLevels = new Set(['NORMAL', 'LOW', 'GUARDED', 'ELEVATED', 'CRITICAL']);
+  const tiSeverities = new Set(['info', 'low', 'medium', 'high', 'critical']);
+  function tiEmpty(title, body, extraClass = '') {
+    const className = ['ti-empty', extraClass].filter(Boolean).join(' ');
+    return `<div class="${className}"><strong>${tiEsc(title)}</strong><span>${tiEsc(body)}</span></div>`;
+  }
+  function tiDeleteButton(action, label) {
+    return `<button class="btn btn-xs ti-btn-danger-quiet ti-btn-icon" type="button" onclick="${action}" aria-label="${tiEsc(label)}">&times;</button>`;
+  }
+  function tiConfirmDelete(label) {
+    return window.confirm(`Delete ${label}? This removes it from the threat workspace.`);
+  }
+  function tiLabel(value) {
+    return String(value || 'Unknown').replace(/_/g, ' ');
+  }
+  function tiFormatDate(value) {
+    if (!value) return 'Date unavailable';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? tiEsc(String(value).substring(0, 10)) : tiDateFormatter.format(date);
+  }
+  function tiSeverityClass(value) {
+    const severity = String(value || '').toLowerCase();
+    return tiSeverities.has(severity) ? severity : 'info';
+  }
+  function tiThreatLevelClass(value) {
+    const level = String(value || 'NORMAL').toUpperCase();
+    return tiThreatLevels.has(level) ? level : 'NORMAL';
+  }
+
   function loadThreatIntel() {
     loadThreatDashboard();
     loadThreatEntries();
@@ -191,8 +351,9 @@
   async function loadThreatDashboard() {
     try {
       const data = await apiFetch('/api/threat-intel/dashboard');
-      document.getElementById('ti-threat-level').textContent = 'Threat Level: ' + (data.threat_level || 'NORMAL');
-      document.getElementById('ti-threat-level').className = 'ti-threat-level ' + (data.threat_level || 'NORMAL');
+      const threatLevel = tiThreatLevelClass(data.threat_level);
+      document.getElementById('ti-threat-level').textContent = 'Threat Level: ' + threatLevel;
+      document.getElementById('ti-threat-level').className = 'ti-threat-level ' + threatLevel;
       document.getElementById('ti-stat-active').textContent = data.active_threats || 0;
       document.getElementById('ti-stat-critical').textContent = (data.by_severity || {}).critical || 0;
       document.getElementById('ti-stat-high').textContent = (data.by_severity || {}).high || 0;
@@ -200,56 +361,72 @@
       const catChart = document.getElementById('ti-cat-chart');
       if (data.by_category && data.by_category.length > 0) {
         catChart.innerHTML = data.by_category.map(c =>
-          `<span class="ti-cat-tag">${escapeHtml(c.category.replace(/_/g, ' '))}<strong>${c.count}</strong></span>`
+          `<span class="ti-cat-tag">${tiEsc(tiLabel(c.category))}<strong>${Number(c.count || 0)}</strong></span>`
         ).join('');
       } else {
-        catChart.innerHTML = '<span class="ti-cat-tag">No active threats</span>';
+        catChart.innerHTML = tiEmpty('No active threats', 'Resolved items and feed inputs will keep this picture useful when conditions change.', 'ti-empty-inline');
       }
-    } catch (e) { console.error('Threat dashboard error:', e); }
+    } catch (e) {
+      document.getElementById('ti-cat-chart').innerHTML = tiEmpty('Dashboard unavailable', 'The threat summary could not be refreshed right now. Try again in a moment.', 'ti-empty-inline');
+      console.error('Threat dashboard error:', e);
+    }
   }
 
   async function loadThreatEntries() {
+    const list = document.getElementById('ti-entry-list');
+    list.innerHTML = tiEmpty('Loading threats…', 'Pulling unresolved threats and recent reporting for this workspace.');
     try {
       const entries = await apiFetch('/api/threat-intel/entries');
-      const list = document.getElementById('ti-entry-list');
       if (entries && entries.length > 0) {
         list.innerHTML = entries.map(e => `<div class="ti-entry">
           <div class="ti-entry-header">
-            <span class="ti-entry-title">${escapeHtml(e.title)}</span>
-            <span class="ti-entry-severity ${escapeHtml(e.severity)}">${escapeHtml(e.severity)}</span>
+            <span class="ti-entry-title">${tiEsc(e.title)}</span>
+            <span class="ti-entry-severity ${tiSeverityClass(e.severity)}">${tiEsc(tiLabel(e.severity))}</span>
           </div>
-          <div class="ti-entry-meta">${escapeHtml(e.category.replace(/_/g, ' '))} &middot; ${escapeHtml(e.location || 'No location')} &middot; ${escapeHtml((e.created_at || '').substring(0, 10))}</div>
-          ${e.description ? `<div class="ti-entry-desc">${escapeHtml(e.description)}</div>` : ''}
+          <div class="ti-entry-meta">
+            <span>${tiEsc(tiLabel(e.category))}</span>
+            <span>${tiEsc(e.location || 'Location not set')}</span>
+            <span>${tiEsc(tiFormatDate(e.created_at))}</span>
+          </div>
+          ${e.description ? `<div class="ti-entry-desc">${tiEsc(e.description)}</div>` : ''}
           <div class="ti-entry-actions">
-            <button class="btn btn-xs" type="button" onclick="resolveThreat(${e.id})">${e.resolved ? 'Reopen' : 'Resolve'}</button>
-            <button class="btn btn-xs btn-danger" type="button" onclick="deleteThreat(${e.id})">Delete</button>
+            <button class="btn btn-xs" type="button" onclick="resolveThreat(${e.id})">${e.resolved ? 'Reopen Threat' : 'Resolve Threat'}</button>
+            ${tiDeleteButton(`deleteThreat(${e.id})`, `Delete threat ${String(e.title || 'entry')}`)}
           </div>
         </div>`).join('');
       } else {
-        list.innerHTML = '<div class="ti-empty">No active threats. Stay vigilant.</div>';
+        list.innerHTML = tiEmpty('No active threats', 'This board is clear right now. Add new reporting or keep feeds current to maintain confidence.');
       }
-    } catch (e) { console.error('Threat entries error:', e); }
+    } catch (e) {
+      list.innerHTML = tiEmpty('Threats unavailable', 'The threat list could not be loaded right now. Refresh the workspace and try again.');
+      console.error('Threat entries error:', e);
+    }
   }
 
   async function loadThreatFeeds() {
+    const list = document.getElementById('ti-feeds-list');
+    list.innerHTML = tiEmpty('Loading feeds…', 'Checking the sources that help keep this threat picture current.');
     try {
       const feeds = await apiFetch('/api/threat-intel/feeds');
-      const list = document.getElementById('ti-feeds-list');
       if (feeds && feeds.length > 0) {
         list.innerHTML = feeds.map(f => `<div class="ti-feed">
-          <div>
-            <div class="ti-feed-name">${escapeHtml(f.name)}</div>
-            <div class="ti-feed-meta">${escapeHtml(f.feed_type)} &middot; ${escapeHtml(f.category)}</div>
+          <div class="ti-feed-copy">
+            <div class="ti-feed-name">${tiEsc(f.name)}</div>
+            <div class="ti-feed-meta">${tiEsc(tiLabel(f.feed_type))} &middot; ${tiEsc(tiLabel(f.category))}</div>
+            <div class="ti-feed-meta ti-feed-status">${f.enabled ? 'Source active' : 'Source paused'}</div>
           </div>
           <div class="ti-row-tight">
-            <button class="btn btn-xs" type="button" onclick="toggleThreatFeed(${f.id})">${f.enabled ? 'Disable' : 'Enable'}</button>
-            <button class="btn btn-xs btn-danger" type="button" onclick="deleteThreatFeed(${f.id})">Delete</button>
+            <button class="btn btn-xs" type="button" onclick="toggleThreatFeed(${f.id})">${f.enabled ? 'Pause Feed' : 'Enable Feed'}</button>
+            ${tiDeleteButton(`deleteThreatFeed(${f.id})`, `Delete feed ${String(f.name || 'source')}`)}
           </div>
         </div>`).join('');
       } else {
-        list.innerHTML = '<div class="ti-empty">No feeds configured yet.</div>';
+        list.innerHTML = tiEmpty('No feeds configured', 'Add a manual source, API, or scraper so incoming signals stay organized here.');
       }
-    } catch (e) { console.error('Threat feeds error:', e); }
+    } catch (e) {
+      list.innerHTML = tiEmpty('Feeds unavailable', 'The source list could not be refreshed right now. Try again in a moment.');
+      console.error('Threat feeds error:', e);
+    }
   }
 
   function showThreatEntryForm() {
@@ -266,7 +443,7 @@
 
   async function saveThreatEntry() {
     const title = document.getElementById('ti-entry-title').value.trim();
-    if (!title) { toast('Title required', 'error'); return; }
+    if (!title) { toast('Add a threat title before saving.', 'error'); return; }
     try {
       await apiPost('/api/threat-intel/entries', {
         title,
@@ -285,14 +462,14 @@
       document.getElementById('ti-entry-actions').value = '';
       document.getElementById('ti-entry-location').value = '';
       document.getElementById('ti-entry-source').value = '';
-      toast('Threat entry added', 'success');
+      toast('Threat saved', 'success');
       loadThreatIntel();
-    } catch (e) { toast('Failed to save threat', 'error'); }
+    } catch (e) { toast('Threat could not be saved. Check the details and try again.', 'error'); }
   }
 
   async function saveThreatFeed() {
     const name = document.getElementById('ti-feed-name').value.trim();
-    if (!name) { toast('Name required', 'error'); return; }
+    if (!name) { toast('Add a feed name before saving.', 'error'); return; }
     try {
       await apiPost('/api/threat-intel/feeds', {
         name,
@@ -303,9 +480,9 @@
       document.getElementById('ti-feed-form-section').hidden = true;
       document.getElementById('ti-feed-name').value = '';
       document.getElementById('ti-feed-url').value = '';
-      toast('Feed added', 'success');
+      toast('Feed saved', 'success');
       loadThreatFeeds();
-    } catch (e) { toast('Failed to save feed', 'error'); }
+    } catch (e) { toast('Feed could not be saved. Check the source details and try again.', 'error'); }
   }
 
   async function resolveThreat(id) {
@@ -317,27 +494,29 @@
   }
 
   async function deleteThreat(id) {
+    if (!tiConfirmDelete('this threat')) return;
     try {
       await apiDelete('/api/threat-intel/entries/' + id);
       toast('Threat deleted', 'success');
       loadThreatIntel();
-    } catch (e) { toast('Failed to delete threat', 'error'); }
+    } catch (e) { toast('Threat could not be deleted. Try again in a moment.', 'error'); }
   }
 
   async function toggleThreatFeed(id) {
     try {
       await apiPost('/api/threat-intel/feeds/' + id + '/toggle');
-      toast('Feed toggled', 'success');
+      toast('Feed status updated', 'success');
       loadThreatFeeds();
-    } catch (e) { toast('Failed to toggle feed', 'error'); }
+    } catch (e) { toast('Feed status could not be updated right now.', 'error'); }
   }
 
   async function deleteThreatFeed(id) {
+    if (!tiConfirmDelete('this feed')) return;
     try {
       await apiDelete('/api/threat-intel/feeds/' + id);
       toast('Feed deleted', 'success');
       loadThreatFeeds();
-    } catch (e) { toast('Failed to delete feed', 'error'); }
+    } catch (e) { toast('Feed could not be deleted. Try again in a moment.', 'error'); }
   }
   </script>
 </div>

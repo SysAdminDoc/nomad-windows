@@ -332,14 +332,67 @@
 
 /* ─── Design System: Typography Scale ─── */
 :root {
-  /* 7-step type scale (1.25 ratio) */
+  /* 11-step type scale — covers all component sizes without hardcoding */
+  --text-2xs: 9px;
   --text-xs: 10px;
   --text-sm: 11px;
+  --text-sm-md: 12px;
   --text-base: 13px;
   --text-md: 14px;
+  --text-md-lg: 15px;
   --text-lg: 16px;
   --text-xl: 20px;
   --text-2xl: 24px;
+  --text-3xl: 28px;
+  --text-4xl: 32px;
+
+  /* ─── Transition Duration Scale ─── */
+  --duration-micro: 0.1s;
+  --duration-fast: 0.15s;
+  --duration-snappy: 0.18s;
+  --duration-normal: 0.25s;
+  --duration-mid: 0.3s;
+  --duration-slow: 0.5s;
+  --duration-slower: 1s;
+  --duration-slowest: 1.5s;
+
+  /* ─── Easing Functions ─── */
+  --easing-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --easing-accelerate: cubic-bezier(0.4, 0, 1, 1);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ─── Border Radius Scale ─── */
+  --radius-2xs: 2px;
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius: 12px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
+  --radius-full: 999px;
+
+  /* ─── Opacity Scale ─── */
+  --opacity-disabled: 0.4;
+  --opacity-muted: 0.5;
+  --opacity-secondary: 0.7;
+  --opacity-subtle: 0.8;
+
+  /* ─── Elevation Shadows ─── */
+  --elev-1: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --elev-2: 0 4px 12px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.04);
+  --elev-3: 0 12px 32px rgba(0,0,0,0.10), 0 2px 6px rgba(0,0,0,0.04);
+  --elev-4: 0 24px 64px rgba(0,0,0,0.16), 0 4px 12px rgba(0,0,0,0.06);
+
+  /* ─── Focus Ring ─── */
+  --focus-ring: 2px solid var(--accent);
+  --focus-offset: 2px;
+  --focus-shadow: 0 0 0 4px var(--accent-dim);
+
+  /* ─── Touch Targets ─── */
+  --touch-min: 44px;
+
   /* Unified spacing (4px base unit) */
   --sp-1: 4px;
   --sp-2: 8px;
@@ -347,13 +400,17 @@
   --sp-4: 16px;
   --sp-5: 20px;
   --sp-6: 24px;
+  --sp-7: 28px;
   --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
   /* Card padding (unified) */
   --card-pad: 16px;
   --card-pad-sm: 12px;
   /* UI zoom factor (adjustable via Settings) */
   --ui-zoom: 1;
-  /* Spacing scale */
+  /* Spacing scale (semantic aliases) */
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;

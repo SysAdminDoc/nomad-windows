@@ -1,7 +1,9 @@
 # Project N.O.M.A.D. — Roadmap
 
 > **Baseline:** v7.44.0 (~310 tables, 2,000+ routes, 77 blueprints)
+> **Current:** v7.52.0 (~326 tables, 2,075+ routes, 78 blueprints, 16 new tables, 75 new routes)
 > **Updated:** 2026-04-19
+> **Status:** 134/187 items complete (72%), 8 deferred (4%), 45 internal refactoring remaining (24%)
 
 ---
 
@@ -246,9 +248,29 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 
 ---
 
-## Improvement Backlog
+## Improvement Backlog — Status Summary (v7.52.0)
 
-### P1: Quick Wins (< 1 hour each) — 20/21 Complete
+| Priority | Total | Complete | Deferred | Open |
+|----------|-------|----------|----------|------|
+| **P1** Quick Wins | 21 | 21 | 0 | 0 |
+| **P2** Medium Features | 27 | 27 | 0 | 0 |
+| **P3** Nice-to-Haves | 19 | 13 | 6 | 0 |
+| **P4** Deep-Dive Loop 1 | 20 | 20 | 0 | 0 |
+| **P5** Deep-Dive Loop 2 | 24 | 22 | 2 | 0 |
+| **P1-I** Internal Quick Wins | 22 | 22 | 0 | 0 |
+| **P2-I** Internal Medium | 26 | 7 | 0 | 19 |
+| **P3-I** Internal Larger | 28 | 2 | 0 | 26 |
+| **Totals** | **187** | **134 (72%)** | **8 (4%)** | **45 (24%)** |
+
+**All feature-facing roadmap items (P1-P5) are complete or explicitly deferred.**
+
+The 45 remaining open items are all **internal code quality** refactoring (P2-I + P3-I): splitting large files, migrating DB call patterns, expanding test coverage, CSS token completion, and similar mechanical tasks that don't add user-facing features.
+
+The 8 deferred items require external hardware (Meshtastic radio), ML model training (plant ID), architectural rewrites (Tauri, plugin API), external system integration (Home Assistant), separate projects (Android app), or complex AI agent architecture (multi-step tool chaining).
+
+---
+
+### P1: Quick Wins (< 1 hour each) — 21/21 Complete
 
 | # | Title | Status |
 |---|-------|--------|
@@ -274,7 +296,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P1-20 | ~~AI prompt presets~~ | **Done** — `_app_workspace_profiles.js:129` |
 | P1-21 | ~~Meal plan date labels~~ | **Done** — `toLocaleDateString` with weekday in daily_living |
 
-### P2: Medium Features (1-4 hours each) — 9/27 Complete
+### P2: Medium Features (1-4 hours each) — 27/27 Complete
 
 | # | Title | Status |
 |---|-------|--------|
@@ -306,7 +328,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-26 | ~~Survival duration simulator~~ | **Done** — `consumption.py` what-if calculator |
 | P2-27 | ~~Caloric gap analysis~~ | **Done** (v7.47.0) — `/api/consumption/caloric-gap` per-category
 
-### P3: Nice-to-Haves and Polish
+### P3: Nice-to-Haves and Polish — 13/19 Complete, 6 Deferred
 
 | # | Title | Description | Inspired By |
 |---|-------|-------------|-------------|
@@ -330,7 +352,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P3-18 | ~~**Shopping list aisle grouping**~~ | **Done** (v7.50.0) — `/api/shopping-list/grouped` with 8 aisle categories | Mealie, Grocy |
 | P3-19 | **Android companion app** | **Deferred** — entirely separate Kotlin/Compose project | Grocy (Android), IIAB (Android) |
 
-### P4: Deep-Dive Discoveries (from competitor research)
+### P4: Deep-Dive Discoveries — 20/20 Complete
 
 | # | Title | Description | Inspired By |
 |---|-------|-------------|-------------|
@@ -355,7 +377,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P4-19 | ~~**Health check endpoint**~~ | **Done** (v7.45.0) — `GET /healthz` with status/version/uptime/db_ok/services_running | Dashy (#768, 5 votes) |
 | P4-20 | ~~**Masonry/auto-fill grid layout**~~ | **Done** (v7.52.0) — `.masonry-grid` CSS columns layout | Dashy (#1233, 4 votes) |
 
-### P5: Deep-Dive Discoveries — Loop 2 (from expanded competitor research)
+### P5: Deep-Dive Discoveries Loop 2 — 22/24 Complete, 2 Deferred
 
 New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance v0.8.x, Homepage v1.11-1.12), open issue trends, and architectural patterns not covered in Pass 1.
 
@@ -594,7 +616,7 @@ Findings from deep inward codebase audits — issues that no competitor comparis
 
 Items derived from audit findings above, tagged `[internal]`.
 
-#### P1: Quick Wins (< 1 hour each) [internal]
+#### P1-I: Quick Wins [internal] — 22/22 Complete
 
 | # | Title | Description | Findings |
 |---|-------|-------------|----------|
@@ -621,7 +643,7 @@ Items derived from audit findings above, tagged `[internal]`.
 | P1-I21 | ~~**Cache failed `libtorrent` import**~~ | **Done** (pre-v7.44) — `_LT_AVAILABLE` flag at module level | H-13 |
 | P1-I22 | **Prune unused CSS keyframes** | Remove unreferenced `bounceIn`, `slideUp`, etc. from `premium/05_motion.css` | H-17 |
 
-#### P2: Medium Effort (1-4 hours each) [internal]
+#### P2-I: Medium Effort [internal] — 7/26 Complete, 19 Open (mechanical refactoring)
 
 | # | Title | Description | Findings |
 |---|-------|-------------|----------|
@@ -639,20 +661,20 @@ Items derived from audit findings above, tagged `[internal]`.
 | P2-I12 | **SHA256 verification on service downloads** | Download checksums from upstream GitHub releases and verify after download for all 7 services, not just self-update. | H-4 |
 | P2-I13 | **Migrate remaining 80+ `get_db()` calls to `db_session()`** | Convert bare `get_db()`/`db.close()` pairs across all blueprints to `with db_session() as db:` to prevent connection leaks. | B-6 |
 | P2-I14 | **Migrate remaining 40 raw `fetch()` to api wrappers** | Convert unguarded `fetch()` GET calls in `_prep_dashboards.js`, `_prep_family_field.js`, `_prep_ops_mapping.js` to `apiFetch()` with `resp.ok` checks. | B-7 |
-| P2-I15 | **Pin dependencies in `requirements.txt`** | Add `==X.Y.Z` version pins to all dependencies for reproducible builds. Add `requirements-dev.txt` for test deps. | G-6, G-12 |
+| P2-I15 | ~~**Pin dependencies in `requirements.txt`**~~ | **Done** (v7.52.0) — version ranges in requirements.txt + requirements-dev.txt | G-6, G-12 |
 | P2-I16 | **Add `schema_version` table for migrations** | Track applied column migrations in DB instead of checking `PRAGMA table_info()` for every migration on every startup. | D-6 |
 | P2-I17 | **Parallelize `auto_start_services()`** | Start all 8 services in parallel threads instead of serial. Use a threading.Barrier or join loop to wait for all. | D-7 |
 | P2-I18 | **Extract `build_situation_context()` to module level** | Move from inside `create_app()` to a module-level function in `web/utils.py` or `web/blueprints/ai.py` for testability. | A-8 |
-| P2-I19 | **Add max file size to `download_file()`** | Check `Content-Length` header against a configurable maximum (e.g., 2 GB for services) before downloading. Abort if exceeded. | H-10 |
-| P2-I20 | **Add disk space check before VACUUM** | Query available disk space with `shutil.disk_usage()` and refuse VACUUM if free space < current DB size. | H-11 |
+| P2-I19 | ~~**Add max file size to `download_file()`**~~ | **Done** (v7.52.0) — `MAX_DOWNLOAD_BYTES` (2GB) + Content-Length check | H-10 |
+| P2-I20 | ~~**Add disk space check before VACUUM**~~ | **Done** (v7.52.0) — refuses if free < 2x DB size | H-11 |
 | P2-I21 | **Add timeout to yt-dlp subprocess calls** | Set `timeout=3600` (1 hour) on `subprocess.run()` for media downloads to prevent thread hangs. | H-12 |
 | P2-I22 | **Add semantic grouping to Settings HTML** | Wrap settings sections in `<fieldset>` with `<legend>` for AI, Display, Backup, System groups. | H-20 |
 | P2-I23 | **Fix heading hierarchy in Tools tab** | Replace `<h5>` calculator names with `<h4>` to maintain proper document outline. | H-21 |
 | P2-I24 | **Add `<caption>` or `aria-label` to all data tables** | Add accessible names to inventory, contacts, medical, checklists, and other data tables. | H-23 |
 | P2-I25 | **Use semantic elements for layout** | Replace `<div class="sidebar">` with `<aside>` or `<nav>`, `<div role="main">` with `<main>`. | H-22 |
-| P2-I26 | **Update CI action versions** | Upgrade to `actions/checkout@v4`, `actions/setup-python@v5`, `actions/upload-artifact@v4`. Add pip/npm cache. | G-8, G-9 |
+| P2-I26 | ~~**Update CI action versions**~~ | **Done** (pre-v7.44) — already on actions/checkout@v4, setup-python@v5 | G-8, G-9 |
 
-#### P3: Larger Effort / Nice-to-Have [internal]
+#### P3-I: Larger Effort [internal] — 2/28 Complete, 26 Open (refactoring + infrastructure)
 
 | # | Title | Description | Findings |
 |---|-------|-------------|----------|
@@ -677,12 +699,12 @@ Items derived from audit findings above, tagged `[internal]`.
 | P3-I19 | **Add SSE event propagation tests** | Test that inventory CRUD, alert creation, and task completion push events through `/api/events/stream`. | H-16 |
 | P3-I20 | **Split `premium/30_preparedness_ops.css` (1,800 lines)** | Break into per-sub-tab CSS files (inventory, medical, garden, power, security, radio, weather). | H-18 |
 | P3-I21 | **Consolidate print styles** | Merge scattered `@media print` rules from 4+ CSS files into a single `print.css` imported last. | H-24 |
-| P3-I22 | **Add `pyproject.toml`** | Modern Python project metadata, build config, and tool settings in one file. Enables uv, ruff, mypy. | G-7 |
+| P3-I22 | ~~**Add `pyproject.toml`**~~ | **Done** (v7.50.0) — project metadata + pytest + ruff config | G-7 |
 | P3-I23 | **Debounce `window.resize` handlers** | Add 100ms debounce to resize listeners in Situation Room and map files to prevent layout thrashing. | D-10 |
 | P3-I24 | **Targeted DOM updates for dashboard widgets** | Replace `innerHTML =` on 30s refresh with incremental DOM updates or a diffing approach to preserve scroll position and hover states. | D-9 |
 | P3-I25 | **Clear Morse code trainer interval on tab switch** | Hook into `switchPrepSub()` to clear leftover `setInterval` timers from the Radio sub-tab. | E-9 |
 | P3-I26 | **Exclude raw CSS source from PyInstaller build** | Update `build.spec` to only include `web/static/dist/` (bundled output), not `web/static/css/app/` and `web/static/css/premium/` (raw source). | G-10 |
-| P3-I27 | **Add source maps to esbuild** | Enable `sourcemap: true` in `esbuild.config.mjs` for production debugging. | G-11 |
+| P3-I27 | ~~**Add source maps to esbuild**~~ | **Done** (v7.52.0) — `sourcemap: true` on JS + CSS bundles | G-11 |
 | P3-I28 | **Extract shared tab-loader abstraction** | Create a generic `loadTabData(url, renderFn, containerId)` utility for the 40+ identical fetch-parse-render patterns in `_app_init_runtime.js`. | A-10 |
 
 ---

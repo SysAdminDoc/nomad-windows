@@ -82,7 +82,7 @@ async function loadInventory() {
     _cachedInvItems = items;
     const tbody = document.getElementById('inv-tbody');
     if (!items.length) {
-      tbody.innerHTML = '<tr><td colspan="10" class="prep-table-empty">No items found.</td></tr>';
+      tbody.innerHTML = '<tr><td colspan="10" class="prep-table-empty"><div style="text-align:center;padding:24px 0"><div style="font-size:36px;margin-bottom:8px;opacity:0.5">&#128230;</div><strong>No items found</strong><p class="tone-muted" style="margin:8px 0">Start tracking your supplies, food, water, and gear.</p><button type="button" class="btn btn-sm btn-primary" data-prep-action="show-inv-form">Add First Item</button></div></td></tr>';
       document.getElementById('inv-tfoot').innerHTML = '';
     } else {
       const today = new Date().toISOString().slice(0,10);

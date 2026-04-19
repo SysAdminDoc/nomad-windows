@@ -2,6 +2,17 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.47.0] — Auth Proxy, Caloric Gap, Security Hardening
+
+### Added
+- **Auth proxy support (P4-15)** — set `NOMAD_AUTH_PROXY=1` to trust `X-Forwarded-User` and `X-Remote-User` headers from reverse proxies (Authelia, Caddy forward_auth, nginx). Optional `X-Forwarded-Role` header maps to NOMAD roles (admin/user/viewer/guest). Enables seamless LAN multi-user without NOMAD's own session tokens.
+- **Caloric gap analysis (P2-27)** — new `GET /api/consumption/caloric-gap` endpoint. Compares total stored calories vs daily household need per food category. Returns coverage days, 30-day gap in calories, per-category breakdown, and water coverage. Builds on existing consumption profiles and nutrition links.
+- **Security notice in README (P5-17)** — prominent security blockquote with guidance on reverse proxy, NOMAD_ALLOWED_HOSTS, and NOMAD_AUTH_REQUIRED for LAN deployments.
+
+### Verified Already Complete
+- P2-20 (task assignment to contacts) — `assigned_to` column already in `scheduled_tasks` table with full API support.
+- P1-12 (confirm before bulk ops) — media batch delete already has count confirmation dialog.
+
 ## [v7.46.0] — Security, Search Bangs, CPU Temp, CI Hardening
 
 ### Added

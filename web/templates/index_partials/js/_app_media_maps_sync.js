@@ -3528,7 +3528,7 @@ function toggleNotifications() {
 
 function sendNotification(title, body) {
   if (_notifsEnabled && 'Notification' in window && Notification.permission === 'granted') {
-    new Notification(title, {body, icon: '/favicon.ico'});
+    new Notification(title, {body, icon: '/static/logo.png'});
   }
 }
 

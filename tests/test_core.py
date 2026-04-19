@@ -102,7 +102,7 @@ class TestErrorHandler:
     def test_index_page_shell_controls(self, client):
         html = self._html(client, '/')
         assert '<title>Home · NOMAD Field Desk v' in html
-        assert 'src="/static/nomad-mark.svg"' in html
+        assert 'src="/static/logo.png"' in html
         assert 'alt="NOMAD logo"' in html
         assert 'class="sidebar-brand-kicker">Field Operations Desk<' in html
         assert 'class="sidebar-group-title">Briefing<' in html
@@ -1645,11 +1645,11 @@ class TestErrorHandler:
         manifest = (REPO_ROOT / 'web' / 'static' / 'manifest.json').read_text(encoding='utf-8')
         assert '"name": "NOMAD Field Desk"' in manifest
         assert '"short_name": "NOMAD"' in manifest
-        assert '/static/nomad-mark.svg' in manifest
+        assert '/static/logo-192.png' in manifest
 
     def test_desktop_branding_assets_exist(self):
         assert (REPO_ROOT / 'icon.ico').is_file()
-        assert (REPO_ROOT / 'nomad-mark.png').is_file()
+        assert (REPO_ROOT / 'logo.png').is_file()
         assert (REPO_ROOT / 'web' / 'static' / 'logo.png').is_file()
 
     def test_packaging_files_use_nomad_field_desk_branding(self):

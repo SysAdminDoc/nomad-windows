@@ -2526,7 +2526,13 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_county ON fema_nri_counties(state_fips, county_fips)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_state ON fema_nri_counties(state_name)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_risk ON fema_nri_counties(risk_score DESC)',
-        # v7.44.0 — SAR, codeplug, Shamir, scheduled reports, data packs
+        # v7.44.0 — Epi, evidence, IOC, SAR, codeplug, Shamir, scheduled reports, data packs
+        'CREATE INDEX IF NOT EXISTS idx_epi_line_list_onset ON epi_line_list(onset_date)',
+        'CREATE INDEX IF NOT EXISTS idx_epi_line_list_outcome ON epi_line_list(outcome)',
+        'CREATE INDEX IF NOT EXISTS idx_evidence_ledger_type ON evidence_ledger(evidence_type)',
+        'CREATE INDEX IF NOT EXISTS idx_ioc_tracker_type ON ioc_tracker(ioc_type)',
+        'CREATE INDEX IF NOT EXISTS idx_ioc_tracker_status ON ioc_tracker(status)',
+        'CREATE INDEX IF NOT EXISTS idx_ioc_tracker_tactic ON ioc_tracker(attack_tactic)',
         'CREATE INDEX IF NOT EXISTS idx_sar_clue_log_sector ON sar_clue_log(sector)',
         'CREATE INDEX IF NOT EXISTS idx_sar_clue_log_type ON sar_clue_log(clue_type)',
         'CREATE INDEX IF NOT EXISTS idx_sar_containment_sector ON sar_containment(sector)',
@@ -3000,6 +3006,59 @@ def _create_data_foundation_tables(conn):
             community_resilience REAL DEFAULT 0,
             hazard_scores TEXT DEFAULT '{}',
             UNIQUE(state_fips, county_fips)
+        );
+
+        /* ─── Epi Line List (household epidemiology) ─── */
+        CREATE TABLE IF NOT EXISTS epi_line_list (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            age INTEGER,
+            sex TEXT DEFAULT '',
+            onset_date TEXT DEFAULT '',
+            symptoms TEXT DEFAULT '',
+            diagnosis TEXT DEFAULT '',
+            outcome TEXT DEFAULT 'active',
+            isolation_start TEXT DEFAULT '',
+            isolation_end TEXT DEFAULT '',
+            exposure_source TEXT DEFAULT '',
+            household TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Evidence Ledger (chain of custody) ─── */
+        CREATE TABLE IF NOT EXISTS evidence_ledger (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            description TEXT NOT NULL,
+            evidence_type TEXT DEFAULT 'physical',
+            location TEXT DEFAULT '',
+            lat REAL,
+            lng REAL,
+            collected_by TEXT DEFAULT '',
+            chain_of_custody TEXT DEFAULT '[]',
+            integrity_hash TEXT DEFAULT '',
+            photo_ref TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            logged_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── IOC Tracker (indicators of compromise) ─── */
+        CREATE TABLE IF NOT EXISTS ioc_tracker (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            value TEXT NOT NULL,
+            ioc_type TEXT NOT NULL,
+            source TEXT DEFAULT '',
+            confidence TEXT DEFAULT 'medium',
+            tlp TEXT DEFAULT 'amber',
+            attack_tactic TEXT DEFAULT '',
+            attack_technique TEXT DEFAULT '',
+            attack_id TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            first_seen TEXT DEFAULT '',
+            last_seen TEXT DEFAULT '',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
         /* ─── SAR Clue Log + Containment ─── */

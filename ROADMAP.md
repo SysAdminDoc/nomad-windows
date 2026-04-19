@@ -165,30 +165,20 @@ CBRN, alpine, forensics, threat intel depth.
 
 ---
 
-### 5.1 — Gaussian Plume Estimator (ALOHA-style)
-**Effort:** L
+### 5.1 — Gaussian Plume Estimator (ALOHA-style) --- COMPLETE (v7.44.0)
+Pasquill-Gifford dispersion model (6 stability classes). Downwind concentration at multiple distances. Hazard corridor GeoJSON output for map overlay.
 
-Chemical/radiological plume dispersion modeling. Wind-driven hazard corridor visualization on map.
+### 5.2 — Household Epi Line List + Rt Tracker --- COMPLETE (v7.44.0)
+Full CRUD line list with onset dates, symptoms, isolation tracking. Reproduction number (Rt) estimation via ratio method. Epidemic curve endpoint. New `epi_line_list` table.
 
-### 5.2 — Household Epi Line List + Rt Tracker
-**Effort:** M
+### 5.3 — Avalanche ATES + Elevation-Banded Weather --- COMPLETE (v7.44.0)
+ATES 3-class terrain rating from slope, traps, forest cover. Aspect risk assessment (N-face persistent slab). Elevation band classification (alpine/treeline/below). Essential gear list.
 
-Household-level epidemic tracking. Reproduction number estimation. Quarantine timeline management.
+### 5.4 — Chain-of-Custody Evidence Ledger --- COMPLETE (v7.44.0)
+SHA-256 integrity hash on collection. Custody transfer chain (append-only JSON). Hash verification endpoint. New `evidence_ledger` table.
 
-### 5.3 — Avalanche ATES + Elevation-Banded Weather
-**Effort:** M
-
-Avalanche terrain exposure scoring. Elevation-banded weather forecasts for mountain operations.
-
-### 5.4 — Chain-of-Custody Evidence Ledger
-**Effort:** S
-
-Timestamped, hash-verified evidence chain for post-incident documentation.
-
-### 5.5 — MISP-lite IOC Ingest + ATT&CK Mapping
-**Effort:** M
-
-Import threat intelligence indicators. Map to MITRE ATT&CK framework. Extends existing threat_intel blueprint.
+### 5.5 — MISP-lite IOC Ingest + ATT&CK Mapping --- COMPLETE (v7.44.0)
+IOC CRUD with 9 indicator types. ATT&CK tactic/technique/ID mapping. Heat-map matrix endpoint. TLP classification. New `ioc_tracker` table + 3 indexes.
 
 ---
 

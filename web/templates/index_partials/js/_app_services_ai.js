@@ -450,24 +450,71 @@ async function loadConversations() {
   allConvos = Array.isArray(d) ? d : [];
   renderConvoList();
 }
+let _convoTagFilter = '';
+
 function renderConvoList() {
   const el = document.getElementById('convo-list');
   if (!el) return;
   if (!allConvos.length) {
     el.innerHTML = '<div class="sidebar-empty-state convo-list-empty"><strong>No Conversations Yet</strong><span>Start a new chat to keep plans, research, and branches organized here.</span></div>';
+    _updateConvoTagFilterDropdown();
     return;
   }
-  el.innerHTML = allConvos.map(c => {
+  const filtered = _convoTagFilter
+    ? allConvos.filter(c => Array.isArray(c.tags) && c.tags.includes(_convoTagFilter))
+    : allConvos;
+  if (!filtered.length) {
+    el.innerHTML = '<div class="sidebar-empty-state convo-list-empty"><strong>No Matches</strong><span>No conversations with this tag.</span></div>';
+    _updateConvoTagFilterDropdown();
+    return;
+  }
+  el.innerHTML = filtered.map(c => {
     const branchBadge = (c.branch_count && c.branch_count > 0) ? `<span class="convo-branch-badge" title="${c.branch_count} branch${c.branch_count>1?'es':''}">${c.branch_count}</span>` : '';
+    const tags = Array.isArray(c.tags) && c.tags.length
+      ? `<span class="convo-tags">${c.tags.map(t => `<span class="convo-tag-chip">${escapeHtml(t)}</span>`).join('')}</span>`
+      : '';
     return `
     <div class="convo-item ${c.id===currentConvoId?'active':''}" data-convo-id="${c.id}" data-chat-action="select-conversation" data-chat-dblclick="rename-conversation" role="button" tabindex="0">
-      <span class="convo-title">${escapeHtml(c.title)}${branchBadge}</span>
+      <span class="convo-title">${escapeHtml(c.title)}${branchBadge}</span>${tags}
       <span class="convo-actions">
+        <button type="button" class="convo-action-btn" data-chat-action="tag-conversation" data-convo-id="${c.id}" data-stop-propagation aria-label="Tag conversation" title="Tag">&#9873;</button>
         <button type="button" class="convo-action-btn" data-chat-action="rename-conversation" data-convo-id="${c.id}" data-stop-propagation aria-label="Rename conversation" title="Rename">&#9998;</button>
         <button type="button" class="convo-action-btn convo-del" data-chat-action="delete-conversation" data-convo-id="${c.id}" data-stop-propagation aria-label="Delete conversation" title="Delete">&times;</button>
       </span>
     </div>`;
   }).join('');
+  _updateConvoTagFilterDropdown();
+}
+
+function _updateConvoTagFilterDropdown() {
+  const sel = document.getElementById('convo-tag-filter');
+  if (!sel) return;
+  const allTags = new Set();
+  allConvos.forEach(c => { if (Array.isArray(c.tags)) c.tags.forEach(t => allTags.add(t)); });
+  const sorted = [...allTags].sort();
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">All tags</option>' + sorted.map(t =>
+    `<option value="${escapeAttr(t)}"${t === prev ? ' selected' : ''}>${escapeHtml(t)}</option>`
+  ).join('');
+}
+
+async function tagConversation(cid) {
+  const convo = allConvos.find(c => c.id === cid);
+  if (!convo) return;
+  const current = Array.isArray(convo.tags) ? convo.tags.join(', ') : '';
+  const input = prompt('Tags (comma-separated):\nExamples: medical, inventory, planning, security', current);
+  if (input === null) return;
+  const tags = input.split(',').map(t => t.trim()).filter(Boolean);
+  try {
+    await fetchJsonStrict(`/api/conversations/${cid}`, {
+      method: 'PUT',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({tags})
+    }, 'Failed to update tags');
+    const c = allConvos.find(x => x.id === cid);
+    if (c) c.tags = tags;
+    renderConvoList();
+  } catch(e) { toast(e.message || 'Failed to tag conversation', 'error'); }
 }
 async function newConversation() {
   const modelSelect = document.getElementById('model-select');

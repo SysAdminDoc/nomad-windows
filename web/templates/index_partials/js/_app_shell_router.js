@@ -373,6 +373,7 @@ document.addEventListener('click', e => {
       case 'import-doc-entities': importDocEntities(Number(control.dataset.docId)); break;
       case 'select-conversation': selectConvo(Number(control.dataset.convoId)); break;
       case 'rename-conversation': renameConvo(Number(control.dataset.convoId)); break;
+      case 'tag-conversation': tagConversation(Number(control.dataset.convoId)); break;
       case 'delete-conversation': deleteConvo(Number(control.dataset.convoId)); break;
       case 'new-conversation': newConversation(); break;
       case 'delete-all-convos': deleteAllConvos(); break;
@@ -1007,6 +1008,7 @@ document.addEventListener('change', e => {
   if (!control) return;
   switch (control.dataset.changeAction) {
     case 'apply-preset': applyPreset(); break;
+    case 'filter-convo-tag': _convoTagFilter = control.value || ''; renderConvoList(); break;
     case 'toggle-kb': toggleKB(); break;
     case 'upload-kb-file': uploadKBFile(); break;
     case 'handle-chat-file-select': handleChatFileSelect(); break;

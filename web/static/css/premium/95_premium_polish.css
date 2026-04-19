@@ -529,6 +529,21 @@ h3,
   font-size: 12px;
   line-height: 1.5;
 }
+.toast-action-btn {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  background: transparent;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.toast-action-btn:hover { background: var(--accent); color: var(--bg); }
 
 .toast-close {
   width: 28px;

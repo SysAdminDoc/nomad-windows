@@ -53,11 +53,19 @@ jobs:
             libgirepository1.0-dev libcairo2-dev pkg-config \
             libappindicator3-dev gir1.2-appindicator3-0.1
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
       - name: Install Python dependencies
         run: pip install -r requirements.txt "pyinstaller>=6.0,<7.0" pytest
 
       - name: Run tests
         run: pytest tests/ -x -q --tb=short
+
+      - name: Build frontend bundle
+        run: npm ci && node esbuild.config.mjs
 
       - name: Build binary
         run: pyinstaller build.spec

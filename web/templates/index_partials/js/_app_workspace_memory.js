@@ -1951,7 +1951,42 @@ function normalizePaletteQuery(value) {
   return String(value || '').trim().toLowerCase();
 }
 
+/* ─── Search Bangs (P4-06) ─── */
+const _SEARCH_BANGS = {
+  '/i ': 'inventory', '/inv ': 'inventory',
+  '/c ': 'contact', '/con ': 'contact',
+  '/n ': 'note', '/not ': 'note',
+  '/m ': 'patient', '/med ': 'patient',
+  '/w ': 'waypoint', '/map ': 'waypoint',
+  '/f ': 'frequency', '/freq ': 'frequency',
+  '/d ': 'document', '/doc ': 'document',
+  '/t ': 'checklist', '/task ': 'checklist',
+  '/e ': 'equipment', '/eq ': 'equipment',
+  '/a ': 'ammo',
+  '/s ': 'skill',
+};
+
+function _parseSearchBang(q) {
+  const lower = q.toLowerCase();
+  for (const [prefix, type] of Object.entries(_SEARCH_BANGS)) {
+    if (lower.startsWith(prefix)) return { type, query: q.slice(prefix.length).trim() };
+  }
+  return null;
+}
+
 async function fetchUnifiedSearchPayload(q) {
+  const bang = _parseSearchBang(q);
+  if (bang && bang.query) {
+    const payload = await safeFetch(`/api/search/all?q=${encodeURIComponent(bang.query)}`, {}, null);
+    if (!payload) return null;
+    // Filter to only the banged type
+    const filtered = {};
+    for (const key of Object.keys(payload)) {
+      const items = payload[key] || [];
+      filtered[key] = items.filter(item => (item.type || key.replace(/s$/, '')) === bang.type);
+    }
+    return filtered;
+  }
   return await safeFetch(`/api/search/all?q=${encodeURIComponent(q)}`, {}, null);
 }
 

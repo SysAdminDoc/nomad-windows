@@ -35,47 +35,30 @@ All 5 Tier 1 data pack importers built. Regional profile auto-populates from dat
 
 ---
 
-### 1.2 — Nutritional Intelligence & Water Management
-**Effort:** L | **Depends on:** 1.1 | **Refs:** features.md SS2.1/SS51/SS1.4
+### 1.2 — Nutritional Intelligence & Water Management --- COMPLETE (pre-existing)
+**Effort:** L | **Depends on:** 1.1
 
-1. **Inventory nutritional tracking** — Link items to USDA FoodData. Calories/macros per item. "Person-days of food" calculator.
-2. **Micronutrient gap analysis** — Days of adequate Vitamin C/D/A, iron, calcium, zinc. Deficiency risk timeline. Traffic-light indicators.
-3. **Macro ratio dashboard** — Pie chart of stores by macronutrient. Dietary restriction flagging per person.
-4. **Per-person consumption profiles** — Activity-adjusted caloric needs. "What if" group size changes.
-5. **Water management system** — `water_storage`, `water_filters`, `water_sources` tables. Daily water budget calculator. Purification method reference. Filter life tracking.
-
-| Tables | Routes | Data Packs |
-|--------|--------|------------|
-| ~5 | ~20 | USDA SR Legacy (from 1.1) |
+All backend APIs built: nutrition search/link/summary/gaps (8 routes), water storage/filters/sources/quality/budget/alerts (22 routes), consumption profiles with what-if calculator (8 routes). Person-days-of-food calculation in `/api/nutrition/summary`. Micronutrient gap analysis with 10 nutrients and traffic-light indicators. 16 tables, 54 routes total.
 
 ---
 
-### 1.3 — Advanced Inventory & Consumption Modeling
-**Effort:** M | **Depends on:** 1.2 | **Refs:** features.md SS16.1/SS51.2/SS51.3/SS2.1
+### 1.3 — Advanced Inventory & Consumption Modeling --- COMPLETE (pre-existing)
+**Effort:** M | **Depends on:** 1.2
 
-1. **Container/kit management** — `containers` table with nesting. Assign items to containers. Kit builder with completeness %. "Grab bag" quick-filter.
-2. **Consumption rate learning** — Track actual usage over time. Personalized burn rate models. Auto-reorder point calculation.
-3. **Physical inventory features** — Weight/volume tracking. Audit mode. Standardization advisor. Substitute mapping.
-4. **Meal planning from inventory** — Link recipes to food stocks. "Meals remaining" calculator. "Due Score" recipe prioritization (cook what expires soonest).
-
-| Tables | Routes | Data Packs |
-|--------|--------|------------|
-| ~4 | ~20 | None |
+All backend APIs built: meal planning with recipes/burn-rates/due-score/meals-remaining (16 routes), inventory audit workflow, substitute mapping, standardization advisor. Container/kit management is the only remaining sub-item (deferred).
 
 ---
 
-### 1.4 — AI Phase 2 & Automation
+### 1.4 — AI Phase 2 & Automation --- MOSTLY COMPLETE
 **Effort:** XL | **Refs:** features.md SS3.1/SS53/SS17/SS2.7
 
-1. **Full RAG over all NOMAD data** — AI answers questions using actual inventory, contacts, plans, medical, water, vehicles, loadouts. Foundation exists (v7.33.0 RAG scope manager) — this expands it to full conversational intelligence.
-2. **AI-powered recommendations** — "You're short on X based on household + regional threats." Seasonal preparation advisor. Readiness improvement advisor.
-3. **Custom alert rules engine enhancement** — Compound IF/THEN conditions. Visual rule builder. Alert actions: push, SSE, sound, incident, checklist. Acknowledgment tracking. Foundation exists (`alert_rules` table) — this adds the visual builder and compound logic.
-4. **Automated reports** — Scheduled daily ops brief, weekly readiness summary, monthly inventory audit. Auto-distribute to federation peers.
-5. **Calendar/timeline unified view** — All dates across all modules. Calendar widget on Home. Task dependency chains. Morning briefing from due/overdue tasks.
+Already built: RAG scope manager (v7.33.0, data-driven, 25 tables), SITREP generation, AI action execution (two-phase commit), persistent AI memory, alert rules engine (25 condition types, 4 action types, cooldown logic), timeline unified view (17 event types, upcoming/overdue/summary routes). v7.44.0 adds scheduled reports (background SITREP generator, report history, schedule config).
 
-| Tables | Routes | Data Packs |
-|--------|--------|------------|
-| ~4 | ~25 | None |
+Remaining:
+- Visual alert rules builder (UI form, not raw API)
+- Compound alert conditions (AND/OR logic)
+- AI-powered recommendations engine (seasonal, readiness improvement)
+- Auto-distribute reports to federation peers
 
 ---
 

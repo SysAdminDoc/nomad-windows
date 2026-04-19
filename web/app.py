@@ -877,6 +877,10 @@ def create_app():
     from web.blueprints.preparedness import start_alert_engine, preparedness_bp  # noqa: F401 — preparedness_bp re-used at registration site
     start_alert_engine()
 
+    # Start scheduled report generator (if enabled in settings)
+    from web.blueprints.scheduled_reports import _ensure_scheduler
+    _ensure_scheduler()
+
     # ─── Multi-Node Federation ─────────────────────────────────────────
 
     import uuid as _uuid
@@ -1553,6 +1557,8 @@ def create_app():
     app.register_blueprint(regional_profile_bp)
     app.register_blueprint(nutrition_bp)
     app.register_blueprint(pack_importers_bp)
+    from web.blueprints.scheduled_reports import scheduled_reports_bp
+    app.register_blueprint(scheduled_reports_bp)
 
     # ─── v7.12.0 — Nutritional Intelligence & Water Expansion (Phase 2) ──
     from web.blueprints.consumption import consumption_bp

@@ -803,3 +803,412 @@ def api_torrent_widget():
         })
     except Exception:
         return jsonify({'total': 0, 'active': 0, 'downloading': 0, 'seeding': 0})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P2-16: Map Bookmark/Favorite Locations
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/maps/bookmarks')
+def api_map_bookmarks_list():
+    with db_session() as db:
+        rows = db.execute('SELECT * FROM map_bookmarks ORDER BY name').fetchall()
+        return jsonify([dict(r) for r in rows])
+
+
+@roadmap_bp.route('/api/maps/bookmarks', methods=['POST'])
+def api_map_bookmark_create():
+    d = request.get_json() or {}
+    name = (d.get('name') or '').strip()
+    if not name:
+        return error_response('Name is required')
+    with db_session() as db:
+        cur = db.execute(
+            'INSERT INTO map_bookmarks (name, lat, lng, zoom, icon, notes) VALUES (?, ?, ?, ?, ?, ?)',
+            (name, d.get('lat', 0), d.get('lng', 0), d.get('zoom', 12), d.get('icon', 'star'), d.get('notes', ''))
+        )
+        db.commit()
+        return jsonify({'id': cur.lastrowid}), 201
+
+
+@roadmap_bp.route('/api/maps/bookmarks/<int:bid>', methods=['DELETE'])
+def api_map_bookmark_delete(bid):
+    with db_session() as db:
+        if db.execute('DELETE FROM map_bookmarks WHERE id = ?', (bid,)).rowcount == 0:
+            return error_response('Not found', 404)
+        db.commit()
+        return jsonify({'status': 'deleted'})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P2-23: Per-Conversation Knowledge Scope
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/conversations/<int:cid>/kb-scope', methods=['PUT'])
+def api_conversation_kb_scope(cid):
+    """Set which KB workspaces are active for a conversation."""
+    d = request.get_json() or {}
+    scopes = d.get('kb_scopes', [])
+    with db_session() as db:
+        row = db.execute('SELECT id FROM conversations WHERE id = ?', (cid,)).fetchone()
+        if not row:
+            return error_response('Conversation not found', 404)
+        db.execute('UPDATE conversations SET kb_scope = ? WHERE id = ?', (json.dumps(scopes), cid))
+        db.commit()
+        return jsonify({'status': 'updated', 'kb_scopes': scopes})
+
+
+@roadmap_bp.route('/api/conversations/<int:cid>/kb-scope')
+def api_conversation_kb_scope_get(cid):
+    with db_session() as db:
+        row = db.execute('SELECT kb_scope FROM conversations WHERE id = ?', (cid,)).fetchone()
+        if not row:
+            return error_response('Conversation not found', 404)
+        try:
+            scopes = json.loads(row['kb_scope'] or '[]')
+        except (json.JSONDecodeError, TypeError):
+            scopes = []
+        return jsonify({'kb_scopes': scopes})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P2-24: URL-Based Recipe Import
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/recipes/import-url', methods=['POST'])
+def api_recipe_import_url():
+    """Scrape recipe from URL using JSON-LD structured data."""
+    d = request.get_json() or {}
+    url = (d.get('url') or '').strip()
+    if not url:
+        return error_response('URL is required')
+    import requests as _req
+    try:
+        resp = _req.get(url, timeout=15, headers={'User-Agent': 'NOMAD/1.0'})
+        resp.raise_for_status()
+        html = resp.text
+    except Exception:
+        return error_response('Failed to fetch URL')
+    # Parse JSON-LD recipe
+    import re
+    recipe_data = None
+    for match in re.finditer(r'<script[^>]*type=["\']application/ld\+json["\'][^>]*>(.*?)</script>', html, re.DOTALL):
+        try:
+            ld = json.loads(match.group(1))
+            items = ld if isinstance(ld, list) else [ld]
+            for item in items:
+                if isinstance(item, dict) and item.get('@type') in ('Recipe', ['Recipe']):
+                    recipe_data = item
+                    break
+                if isinstance(item, dict) and '@graph' in item:
+                    for g in item['@graph']:
+                        if isinstance(g, dict) and g.get('@type') in ('Recipe', ['Recipe']):
+                            recipe_data = g
+                            break
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if recipe_data:
+            break
+    if not recipe_data:
+        return error_response('No recipe found in page structured data')
+    name = recipe_data.get('name', 'Imported Recipe')[:200]
+    ingredients = []
+    for ing in recipe_data.get('recipeIngredient', []):
+        if isinstance(ing, str):
+            ingredients.append({'name': ing[:200], 'quantity': 1, 'unit': '', 'calories_per_unit': 0})
+    instructions = ''
+    inst = recipe_data.get('recipeInstructions', [])
+    if isinstance(inst, list):
+        steps = []
+        for step in inst:
+            if isinstance(step, str):
+                steps.append(step)
+            elif isinstance(step, dict):
+                steps.append(step.get('text', ''))
+        instructions = '\n'.join(f'{i+1}. {s}' for i, s in enumerate(steps) if s)
+    elif isinstance(inst, str):
+        instructions = inst
+    with db_session() as db:
+        cur = db.execute(
+            'INSERT INTO recipes (name, instructions, source_url, notes) VALUES (?, ?, ?, ?)',
+            (name, instructions[:10000], url, f'Imported from {url}')
+        )
+        rid = cur.lastrowid
+        for ing in ingredients[:100]:
+            db.execute(
+                'INSERT INTO recipe_ingredients (recipe_id, name, quantity, unit) VALUES (?, ?, ?, ?)',
+                (rid, ing['name'], ing['quantity'], ing['unit'])
+            )
+        db.commit()
+    log_activity('recipe_imported', name)
+    return jsonify({'id': rid, 'name': name, 'ingredients_count': len(ingredients)})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P4-05: Custom API Widget Renderer
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/widgets/custom-api', methods=['POST'])
+def api_custom_api_widget():
+    """Fetch any JSON API and return the result for widget rendering."""
+    d = request.get_json() or {}
+    url = (d.get('url') or '').strip()
+    if not url:
+        return error_response('URL is required')
+    from web.utils import is_loopback_addr
+    import requests as _req
+    try:
+        r = _req.get(url, timeout=10, headers={'Accept': 'application/json'})
+        data = r.json()
+    except Exception:
+        return error_response('Failed to fetch or parse API response')
+    return jsonify({'status': r.status_code, 'data': data})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P4-12: Favicon Auto-Fetch
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/favicon')
+def api_favicon_fetch():
+    """Fetch favicon for a given URL."""
+    url = request.args.get('url', '').strip()
+    if not url:
+        return error_response('URL is required')
+    from urllib.parse import urlparse
+    parsed = urlparse(url)
+    base = f'{parsed.scheme}://{parsed.netloc}'
+    favicon_url = f'{base}/favicon.ico'
+    import requests as _req
+    try:
+        r = _req.get(favicon_url, timeout=5, stream=True)
+        if r.ok and r.headers.get('content-type', '').startswith('image'):
+            import base64
+            data = base64.b64encode(r.content[:100000]).decode()
+            return jsonify({'favicon': f'data:{r.headers["content-type"]};base64,{data}'})
+    except Exception:
+        pass
+    return jsonify({'favicon': None})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P5-04: Prompt Version Control
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/ai/prompts/<int:pid>/versions')
+def api_prompt_versions(pid):
+    with db_session() as db:
+        rows = db.execute(
+            'SELECT * FROM ai_prompt_versions WHERE prompt_id = ? ORDER BY version DESC', (pid,)
+        ).fetchall()
+        return jsonify([dict(r) for r in rows])
+
+
+@roadmap_bp.route('/api/ai/prompts/<int:pid>/versions', methods=['POST'])
+def api_prompt_version_create(pid):
+    d = request.get_json() or {}
+    content = d.get('content', '')
+    if not content:
+        return error_response('Content is required')
+    with db_session() as db:
+        last = db.execute(
+            'SELECT MAX(version) as v FROM ai_prompt_versions WHERE prompt_id = ?', (pid,)
+        ).fetchone()
+        next_ver = (last['v'] or 0) + 1
+        db.execute(
+            'INSERT INTO ai_prompt_versions (prompt_id, version, content, commit_message) VALUES (?, ?, ?, ?)',
+            (pid, next_ver, content, d.get('commit_message', ''))
+        )
+        db.commit()
+        return jsonify({'version': next_ver}), 201
+
+
+@roadmap_bp.route('/api/ai/prompts/<int:pid>/versions/<int:ver>/rollback', methods=['POST'])
+def api_prompt_version_rollback(pid, ver):
+    with db_session() as db:
+        row = db.execute(
+            'SELECT content FROM ai_prompt_versions WHERE prompt_id = ? AND version = ?', (pid, ver)
+        ).fetchone()
+        if not row:
+            return error_response('Version not found', 404)
+        return jsonify({'content': row['content'], 'rolled_back_to': ver})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P5-07: 2FA/TOTP Authentication
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/auth/totp/setup', methods=['POST'])
+def api_totp_setup():
+    """Generate a TOTP secret and provisioning URI."""
+    d = request.get_json() or {}
+    user_id = d.get('user_id', 0)
+    try:
+        import pyotp
+    except ImportError:
+        return error_response('pyotp not installed — run: pip install pyotp')
+    secret = pyotp.random_base32()
+    totp = pyotp.TOTP(secret)
+    uri = totp.provisioning_uri(name=d.get('username', 'nomad'), issuer_name='NOMAD Field Desk')
+    # Generate 8 backup codes
+    import secrets
+    backup_codes = [secrets.token_hex(4).upper() for _ in range(8)]
+    with db_session() as db:
+        db.execute('DELETE FROM totp_secrets WHERE user_id = ?', (user_id,))
+        db.execute(
+            'INSERT INTO totp_secrets (user_id, secret, backup_codes) VALUES (?, ?, ?)',
+            (user_id, secret, json.dumps(backup_codes))
+        )
+        db.commit()
+    return jsonify({'secret': secret, 'provisioning_uri': uri, 'backup_codes': backup_codes})
+
+
+@roadmap_bp.route('/api/auth/totp/verify', methods=['POST'])
+def api_totp_verify():
+    """Verify a TOTP code."""
+    d = request.get_json() or {}
+    user_id = d.get('user_id', 0)
+    code = (d.get('code') or '').strip()
+    if not code:
+        return error_response('Code is required')
+    try:
+        import pyotp
+    except ImportError:
+        return error_response('pyotp not installed')
+    with db_session() as db:
+        row = db.execute('SELECT * FROM totp_secrets WHERE user_id = ?', (user_id,)).fetchone()
+        if not row:
+            return error_response('TOTP not configured for this user', 404)
+        totp = pyotp.TOTP(row['secret'])
+        if totp.verify(code, valid_window=1):
+            if not row['verified']:
+                db.execute('UPDATE totp_secrets SET verified = 1 WHERE user_id = ?', (user_id,))
+                db.commit()
+            return jsonify({'valid': True})
+        # Check backup codes
+        try:
+            backups = json.loads(row['backup_codes'] or '[]')
+        except (json.JSONDecodeError, TypeError):
+            backups = []
+        if code.upper() in backups:
+            backups.remove(code.upper())
+            db.execute('UPDATE totp_secrets SET backup_codes = ? WHERE user_id = ?',
+                       (json.dumps(backups), user_id))
+            db.commit()
+            return jsonify({'valid': True, 'backup_code_used': True, 'remaining_backups': len(backups)})
+        return jsonify({'valid': False}), 401
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P5-08: KB Archive Upload Auto-Extract
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/kb/upload-archive', methods=['POST'])
+def api_kb_upload_archive():
+    """Upload ZIP/TAR containing docs, auto-extract and index into KB."""
+    if 'file' not in request.files:
+        return error_response('No file provided')
+    f = request.files['file']
+    fname = f.filename or ''
+    workspace = request.form.get('workspace', 'default')
+    import tempfile
+    import zipfile
+    import tarfile
+    from config import get_data_dir
+    kb_dir = os.path.join(get_data_dir(), 'kb_uploads', workspace)
+    os.makedirs(kb_dir, exist_ok=True)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(fname)[1]) as tmp:
+        f.save(tmp.name)
+        tmp_path = tmp.name
+    extracted = []
+    try:
+        if zipfile.is_zipfile(tmp_path):
+            with zipfile.ZipFile(tmp_path, 'r') as zf:
+                for name in zf.namelist()[:500]:
+                    if name.endswith('/'):
+                        continue
+                    safe_name = os.path.basename(name)
+                    if not safe_name:
+                        continue
+                    dest = os.path.join(kb_dir, safe_name)
+                    with zf.open(name) as src, open(dest, 'wb') as dst:
+                        dst.write(src.read(50 * 1024 * 1024))  # 50MB per file cap
+                    extracted.append(safe_name)
+        elif tarfile.is_tarfile(tmp_path):
+            with tarfile.open(tmp_path, 'r:*') as tf:
+                for member in tf.getmembers()[:500]:
+                    if not member.isfile():
+                        continue
+                    safe_name = os.path.basename(member.name)
+                    if not safe_name:
+                        continue
+                    dest = os.path.join(kb_dir, safe_name)
+                    src = tf.extractfile(member)
+                    if src:
+                        with open(dest, 'wb') as dst:
+                            dst.write(src.read(50 * 1024 * 1024))
+                    extracted.append(safe_name)
+        else:
+            return error_response('Unsupported archive format (use ZIP or TAR)')
+    finally:
+        os.unlink(tmp_path)
+    # Register in documents table
+    with db_session() as db:
+        for name in extracted:
+            db.execute(
+                "INSERT INTO documents (filename, status, doc_category) VALUES (?, 'ready', ?)",
+                (name, workspace)
+            )
+        db.commit()
+    log_activity('kb_archive_imported', f'{len(extracted)} files to {workspace}')
+    return jsonify({'extracted': len(extracted), 'files': extracted[:50], 'workspace': workspace})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P5-14: Self-Signed Cert Trust for Federation
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/federation/cert-trust', methods=['PUT'])
+def api_federation_cert_trust():
+    """Toggle self-signed cert trust for a federation peer."""
+    d = request.get_json() or {}
+    peer_id = d.get('peer_id')
+    allow_insecure = d.get('allow_insecure', False)
+    if not peer_id:
+        return error_response('peer_id is required')
+    with db_session() as db:
+        db.execute(
+            'UPDATE federation_peers SET allow_insecure = ? WHERE id = ?',
+            (1 if allow_insecure else 0, peer_id)
+        )
+        db.commit()
+        return jsonify({'status': 'updated', 'allow_insecure': allow_insecure})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P5-15: Per-Page/Tab Access Control
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/settings/tab-permissions')
+def api_tab_permissions():
+    """Get per-tab access control config."""
+    with db_session() as db:
+        row = db.execute("SELECT value FROM settings WHERE key = 'tab_permissions'").fetchone()
+        try:
+            perms = json.loads(row['value']) if row else {}
+        except (json.JSONDecodeError, TypeError):
+            perms = {}
+        return jsonify(perms)
+
+
+@roadmap_bp.route('/api/settings/tab-permissions', methods=['PUT'])
+def api_tab_permissions_update():
+    """Set per-tab access control — {tab_name: [allowed_roles]}."""
+    d = request.get_json() or {}
+    with db_session() as db:
+        db.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES ('tab_permissions', ?)",
+            (json.dumps(d),)
+        )
+        db.commit()
+        return jsonify({'status': 'updated'})

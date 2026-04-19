@@ -293,15 +293,15 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-13 | **Inline survival quick-reference** | Open |
 | P2-14 | **Multi-user profiles** | Open |
 | P2-15 | **Inventory item photos gallery** | Open |
-| P2-16 | **Map bookmark/favorite locations** | Open |
+| P2-16 | ~~Map bookmark/favorite locations~~ | **Done** (v7.49.0) — map_bookmarks CRUD |
 | P2-17 | **Notification center panel** | Open |
 | P2-18 | **CSV export for all entities** | Open — only some entities have export |
 | P2-19 | **Inventory fractional quantities** | Open |
 | P2-20 | ~~Task assignment to contacts~~ | **Done** — `assigned_to` column + filter in tasks.py |
 | P2-21 | ~~Battery/consumable tracker~~ | **Done** (v7.48.0) — battery_tracker CRUD |
 | P2-22 | ~~AI model management UI~~ | **Done** — `ai.py` model pull/delete/info routes |
-| P2-23 | **Per-conversation knowledge scope** | Open |
-| P2-24 | **URL-based recipe import** | Open |
+| P2-23 | ~~Per-conversation knowledge scope~~ | **Done** (v7.49.0) — kb_scope column + GET/PUT |
+| P2-24 | ~~URL-based recipe import~~ | **Done** (v7.49.0) — JSON-LD scraping + auto-import |
 | P2-25 | **Meal plan calendar view** | Open |
 | P2-26 | ~~Survival duration simulator~~ | **Done** — `consumption.py` what-if calculator |
 | P2-27 | ~~Caloric gap analysis~~ | **Done** (v7.47.0) — `/api/consumption/caloric-gap` per-category
@@ -338,14 +338,14 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P4-02 | ~~**Preconfigured dashboard templates**~~ | **Done** (v7.48.0) — dashboard_templates table + CRUD + export/import | Glance (preconfigured pages) |
 | P4-03 | ~~**Exportable/importable dashboard config**~~ | **Done** (v7.48.0) — `/api/dashboard/config/export` + `/import` JSON | Glance (config-as-code), Dashy (cloud backup) |
 | P4-04 | ~~**Calendar widget with ICS/CalDAV support**~~ | **Done** (v7.48.0) — calendar_events CRUD + ICS file import | Glance (#94, 15 votes), Homepage (calendar widget), Dashy (#1201, 10 votes) |
-| P4-05 | **Custom API widget renderer** | Generic widget type that fetches any JSON API endpoint (internal or external) and renders results using a user-defined HTML/Mustache template; acts as an extensibility escape hatch | Glance (custom-api widget), Homepage (customapi widget), Dashy (API response widget) |
+| P4-05 | ~~**Custom API widget renderer**~~ | **Done** (v7.49.0) — `/api/widgets/custom-api` fetches + returns any JSON API | Glance (custom-api widget), Homepage (customapi widget), Dashy (API response widget) |
 | P4-06 | ~~**Search bangs / module shortcuts**~~ | **Done** (v7.46.0) — `/i`, `/c`, `/n`, `/m`, `/w`, `/f`, `/d`, `/t`, `/e`, `/a`, `/s` prefixes in command palette | Dashy (search bangs) |
 | P4-07 | **Right-click context menus on dashboard elements** | Right-click any service card, widget, inventory item, or contact for contextual actions (Edit, Delete, Copy, Open, Pin) instead of navigating to a separate edit view | Dashy (right-click edit) |
 | P4-08 | **Minimal startpage mode** | A stripped-down view showing only search bar, clock, bookmarks grid, and service status indicators; usable as a browser start page; toggle via Settings or URL parameter `?view=minimal` | Dashy (minimal view) |
 | P4-09 | **Workspace/tiled multi-panel view** | Open 2-4 NOMAD modules simultaneously in a tiled iframe layout (e.g., Map + Inventory + Contacts side-by-side); useful for multi-monitor or ultrawide setups | Dashy (workspace view) |
 | P4-10 | ~~**Auto theme switching (day/night schedule)**~~ | **Done** (v7.45.0) — uses `/api/sun` sunrise/sunset data, falls back to 9pm-6am | Glance (#674, 9 votes) |
 | P4-11 | **Service opening methods** | Service cards offer multiple launch options: open in new tab, open in modal/iframe overlay, open in workspace panel, copy URL to clipboard; right-click or dropdown selector per service | Dashy (opening methods) |
-| P4-12 | **Favicon auto-fetch for services and bookmarks** | Automatically fetch and cache favicons from service URLs for display on service cards and any bookmark/link widgets; fall back to generated identicon | Homepage (#174, 11 votes), Dashy (favicon icon type) |
+| P4-12 | ~~**Favicon auto-fetch for services and bookmarks**~~ | **Done** (v7.49.0) — `/api/favicon?url=` returns base64 favicon | Homepage (#174, 11 votes), Dashy (favicon icon type) |
 | P4-13 | ~~**CPU/GPU temperature monitoring**~~ | **Done** (v7.46.0) — `cpu_temp` in `/api/system` via psutil `sensors_temperatures()` | Homepage (#86, 16 votes) |
 | P4-14 | ~~**Torrent status dashboard widget**~~ | **Done** (v7.48.0) — `/api/dashboard/torrent-widget` | Homepage (Deluge widget, #190, 25 votes) |
 | P4-15 | ~~**Auth proxy / header authentication**~~ | **Done** (v7.47.0) — `NOMAD_AUTH_PROXY=1` trusts `X-Forwarded-User` + `X-Forwarded-Role` | Dashy (#981, 11 votes), Glance (#905, 9 votes) |
@@ -364,23 +364,23 @@ New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance
 | P5-01 | ~~**AI Skills / domain expertise profiles**~~ | **Done** (v7.48.0) — `ai_skills` table with CRUD, system_prompt + kb_scope fields | Open WebUI (Skills, v0.8.0, #21312) |
 | P5-02 | **AI message queuing** | Allow typing follow-up messages while AI is streaming a response; queue and auto-combine on completion; prevents losing train of thought during long generations | Open WebUI (Message queuing, v0.8.0) |
 | P5-03 | ~~**AI usage analytics dashboard**~~ | **Done** (v7.48.0) — `ai_usage_log` table + `/api/ai/usage` analytics + daily breakdown | Open WebUI (Analytics dashboard, v0.8.0, #21106) |
-| P5-04 | **Prompt version control** | Prompt presets get version history with commit messages, diff viewer, and rollback; store versions in `ai_prompt_versions` table | Open WebUI (Prompt version control, v0.8.0, #20945) |
+| P5-04 | ~~**Prompt version control**~~ | **Done** (v7.49.0) — `ai_prompt_versions` table + version/rollback API | Open WebUI (Prompt version control, v0.8.0, #20945) |
 | P5-05 | **AI citation deep-links** | When AI cites a KB document, clicking the citation badge scrolls to the relevant passage with text highlighting instead of just opening the document | Open WebUI (Citation deep-links, v0.7.0, #20116) |
 | P5-06 | **AI multi-step tool chaining** | AI autonomously chains multiple actions in sequence (search KB -> query inventory -> create note -> generate report) without user re-prompting; replace regex-based action parsing with structured tool definitions | Open WebUI (Native function calling, v0.7.0, #19397) |
-| P5-07 | **2FA/TOTP authentication** | Add TOTP-based two-factor authentication for LAN multi-user deployments; pyotp library; QR code provisioning; backup recovery codes | Open WebUI (#1225, 58 votes) |
-| P5-08 | **KB archive upload auto-extract** | Upload ZIP/TAR containing multiple PDFs/docs; auto-extract and index all contents into a KB workspace in one operation | Open WebUI (#16151, 11 votes) |
+| P5-07 | ~~**2FA/TOTP authentication**~~ | **Done** (v7.49.0) — TOTP setup/verify + 8 backup codes via pyotp | Open WebUI (#1225, 58 votes) |
+| P5-08 | ~~**KB archive upload auto-extract**~~ | **Done** (v7.49.0) — `/api/kb/upload-archive` ZIP/TAR extract + register | Open WebUI (#16151, 11 votes) |
 | P5-09 | **KB image import with OCR** | Import images directly into knowledge base with automatic OCR text extraction; store both image and extracted text for RAG | Open WebUI (#13137, 35 votes) |
 | P5-10 | ~~**User-configurable URL monitor widget**~~ | **Done** (v7.48.0) — `url_monitors` CRUD + manual check route | Glance (Monitor widget) |
 | P5-11 | ~~**Todo/task dashboard widget**~~ | **Done** (v7.48.0) — `/api/dashboard/tasks-widget` overdue + upcoming | Glance (Todo widget) |
 | P5-12 | **Web page change detection** | Monitor specific URLs for content changes (government advisories, supply availability, weather warnings); store diffs; alert on change; useful for offline-to-online transition monitoring | Glance (ChangeDetection.io widget) |
 | P5-13 | ~~**OPML/subscription import for RSS**~~ | **Done** (v7.48.0) — `/api/feeds/import-opml` with dedup | Glance (#302, 8 votes — YouTube/Twitch import) |
-| P5-14 | **Self-signed cert trust for federation** | Allow federation peers with self-signed SSL certificates to be trusted via explicit certificate pinning or an `allow-insecure` flag per peer | Glance (#739, 9 votes — custom API allow-insecure) |
-| P5-15 | **Per-page/tab access control** | In LAN multi-user mode, restrict which tabs/pages each user can see; e.g., hide Situation Room from family members, restrict Settings to admin | Glance (#694, 7 votes), Open WebUI (per-user resource sharing) |
+| P5-14 | ~~**Self-signed cert trust for federation**~~ | **Done** (v7.49.0) — `allow_insecure` flag per peer via API | Glance (#739, 9 votes — custom API allow-insecure) |
+| P5-15 | ~~**Per-page/tab access control**~~ | **Done** (v7.49.0) — `tab_permissions` setting with role-based tab visibility | Glance (#694, 7 votes), Open WebUI (per-user resource sharing) |
 | P5-16 | ~~**Host header validation**~~ | **Done** (v7.46.0) — `NOMAD_ALLOWED_HOSTS` env var, `_host_header_check()` before_request | Homepage (HOMEPAGE_ALLOWED_HOSTS) |
 | P5-17 | ~~**Security notice in README**~~ | **Done** (v7.47.0) — prominent security blockquote with NOMAD_ALLOWED_HOSTS + NOMAD_AUTH_REQUIRED guidance | Homepage (Security Notice) |
-| P5-18 | **Test coverage tracking in CI** | Add coverage reporting (pytest-cov + Codecov badge) to CI pipeline; baseline coverage visibility for the 775+ test suite | Homepage (Codecov badge) |
-| P5-19 | **Release drafter automation** | GitHub Actions workflow that auto-generates release notes from commit messages and PR labels, reducing manual release effort | Homepage (release-drafter) |
-| P5-20 | **CONTRIBUTING.md with widget/blueprint guide** | Formal contribution guide explaining how to add a new dashboard widget or Flask blueprint; lower barrier for community contributions | Homepage (200+ contributors), Glance (contributing guidelines) |
+| P5-18 | ~~**Test coverage tracking in CI**~~ | **Done** (v7.49.0) — pytest-cov + XML report in build.yml | Homepage (Codecov badge) |
+| P5-19 | ~~**Release drafter automation**~~ | **Done** (v7.49.0) — `.github/release-drafter.yml` config | Homepage (release-drafter) |
+| P5-20 | ~~**CONTRIBUTING.md with widget/blueprint guide**~~ | **Done** (v7.49.0) — full guide with blueprint + widget examples | Homepage (200+ contributors), Glance (contributing guidelines) |
 | P5-21 | **Active task sidebar indicator** | Show which AI conversations have active/pending tasks running (e.g., SITREP generation, action execution) with a visual indicator in the conversation list sidebar | Open WebUI (Active task indicator, v0.8.0) |
 | P5-22 | **Fuzzy settings search with keyword aliases** | Extend P1-07's basic filter with fuzzy matching and keyword aliases (e.g., typing "whisper" finds Audio settings, "rag" finds AI Documents); cross-category search, not just per-section filtering | Open WebUI (Settings search, v0.7.0, #20434) |
 | P5-23 | **Bcrypt password hashing for auth** | Upgrade from PBKDF2-SHA256 to bcrypt for credential hashing; add brute-force rate limiting on login attempts | Glance (bcrypt + brute-force protection) |

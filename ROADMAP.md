@@ -234,14 +234,14 @@ K1 Skew-T viewer, K2 Blitzortung lightning overlay, K3 NWS AFD parser, K4 FARSIT
 **Regional Packs:**
 M1 Canada (ECCC + GeoGratis), M2 UK (Met Office + OS), M3 EU Copernicus, M4 Australia (BOM + Geoscience AU)
 
-**Leadership & Doctrine:**
-L1 OODA loop tracker, L2 AAR template engine, L3 Cynefin domain classifier
+**Leadership & Doctrine:** --- ALL COMPLETE (v7.44.0)
+L1 OODA loop tracker (CRUD + cycle time), L2 AAR template engine (Army 4-question + sustains/improves), L3 Cynefin domain classifier (5 domains + guided classification)
 
 **Economy & Recovery:**
 O1 Multi-party barter network ledger, O2 Hyperinflation reference, O3 Microgrid black-start SOP
 
-**Transportation:**
-P1 Pack-animal load calculator, P2 Canoe/kayak portage planner, P3 E-bike range calculator
+**Transportation:** --- ALL COMPLETE (v7.44.0)
+P1 Pack-animal load calculator (5 species), P2 Canoe/kayak portage planner, P3 E-bike range calculator (4 terrains × 5 assist levels)
 
 **Comms Depth:**
 R1 NTS radiogram handling, R2 ALE/VARA/Winlink, R3 FLDIGI macro library, AU1-AU6 shortwave/ARES/SKYWARN directories
@@ -258,18 +258,18 @@ U1-U7 Generator, heater, inverter, water pump, refrigeration, firearm maintenanc
 **Drill & Exercise:**
 V1-V5 Scenario library, tabletop engine, functional exercises, federation drills, difficulty scaler
 
-**Navigation (GPS-denied):**
-AJ1-AJ9 Shadow-stick solver, celestial navigation, dead-reckoning, terrain association, offline star map
+**Navigation (GPS-denied):** --- PARTIAL (v7.44.0)
+~~AJ1~~ Shadow-stick compass solver DONE, ~~AJ5~~ Dead-reckoning error budget DONE. Remaining: AJ2-AJ4 celestial nav, AJ6-AJ9 sextant/terrain/star map
 
 **Foraging & Game Processing:**
 AI1-AI8 Offline plant-ID, foraging calendar, deadly-lookalike ledger, toxicity decision tree
 AK1-AK10 Field-dressing SOPs, yield calculator, aging matrix, fish regs, aquaponics
 
-**Outdoor Cooking:**
-AL1-AL8 Fire-heat chart, Dutch-oven coal calculator, rocket-stove design, solar-oven curves, altitude canning
+**Outdoor Cooking:** --- PARTIAL (v7.44.0)
+~~AL2~~ Dutch-oven coal calculator DONE, ~~AL5~~ Altitude boiling + canning safety DONE. Remaining: AL1 fire-heat chart, AL3 rocket-stove, AL4 solar-oven, AL6-AL8
 
-**Financial Preparedness:**
-AT1-AT7 Portfolio stress-test, insurance audit, debt calculator, emergency-fund tiers, credit freeze calendar
+**Financial Preparedness:** --- PARTIAL (v7.44.0)
+~~AT3~~ Debt elimination (snowball/avalanche) DONE, ~~AT4~~ Emergency fund tier calculator DONE. Remaining: AT1 portfolio stress-test, AT2 insurance audit, AT5-AT7
 
 **Environmental Monitoring:**
 Z1-Z6 Indoor air station, dew-point/mold index, pollen feed, private-well baseline, heritage hazards, soil safety

@@ -62,8 +62,22 @@ All notable changes to project-nomad-desktop will be documented in this file.
 - **Reunification cascade** — configurable plan with primary/secondary rally points, out-of-area contact, code words (safe/duress/evacuating), cascade order, meeting times.
 - **Skill-transfer ledger** — CRUD tracking teacher→student knowledge transfer with proficiency levels and hours. Bus factor endpoint identifies single-point-of-failure skills. New `skill_transfers` table.
 
+### Tier 8 — Deep Domain Expansions (selected)
+- **OODA loop tracker** — CRUD for decision cycles with observe/orient/decide/act phases, outcome logging, cycle time tracking. New `ooda_cycles` table.
+- **AAR template engine** — Army 4-question After Action Report (What was planned? What happened? Why? What next?). Sustains/improves lists, action items, participant roster. New `aar_reports` table.
+- **Cynefin domain classifier** — 5-domain reference (Clear/Complicated/Complex/Chaotic/Confused) with guided classification from situational indicators.
+- **Pack-animal load calculator** — 5 species (horse, mule, donkey, llama, goat) with max load, daily range, water/feed requirements, terrain factors.
+- **Canoe/kayak portage planner** — weight distribution, back-and-forth walking distance, time estimate.
+- **E-bike range calculator** — 4 terrain types, 5 assist levels, weight factor, battery runtime.
+- **Dutch-oven coal calculator** — diameter-based coal count with top/bottom split for baking temperatures.
+- **Altitude boiling + canning safety** — boiling point by elevation, canning PSI adjustment, cooking time factor.
+- **Emergency fund tier calculator** — 6-tier (1-24 months) progress tracker with months-to-next-tier estimate.
+- **Debt elimination calculator** — snowball and avalanche methods with month-by-month payoff simulation.
+- **Shadow-stick compass** — step-by-step GPS-denied navigation with hemisphere-aware instructions.
+- **Dead-reckoning error budget** — pace count + compass error → error circle radius. Terrain factors, navigation tips.
+
 ### Stats
-- 5 data pack importers, 16 new tables, 21 new indexes, 90+ new routes. Tiers 1-7 substantially complete.
+- 5 data pack importers, 18 new tables, 21 new indexes, 105+ new routes. Tiers 1-8 substantially complete.
 
 ## [v7.43.0]
 

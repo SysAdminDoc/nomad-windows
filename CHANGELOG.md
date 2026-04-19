@@ -2,6 +2,29 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.49.0] — 13 More Roadmap Items + CI/Docs
+
+### Added
+- **Map bookmark/favorites (P2-16)** — `map_bookmarks` CRUD for quick-jump saved locations.
+- **Per-conversation KB scope (P2-23)** — `kb_scope` JSON column on conversations with GET/PUT API.
+- **URL-based recipe import (P2-24)** — `/api/recipes/import-url` scrapes JSON-LD structured data from recipe websites.
+- **Custom API widget (P4-05)** — `/api/widgets/custom-api` fetches any JSON API for dashboard widget rendering.
+- **Favicon auto-fetch (P4-12)** — `/api/favicon?url=` returns base64-encoded favicon for services/bookmarks.
+- **Prompt version control (P5-04)** — `ai_prompt_versions` table with version history, commit messages, and rollback.
+- **2FA/TOTP authentication (P5-07)** — TOTP setup with provisioning URI, verification with 1-window tolerance, 8 backup recovery codes. Requires `pyotp`.
+- **KB archive upload (P5-08)** — `/api/kb/upload-archive` extracts ZIP/TAR contents into KB workspace (up to 500 files, 50MB each).
+- **Self-signed cert trust (P5-14)** — `allow_insecure` flag per federation peer for self-signed SSL certificates.
+- **Per-page access control (P5-15)** — `tab_permissions` setting maps tab names to allowed role lists.
+- **Test coverage in CI (P5-18)** — `pytest-cov` with XML + terminal coverage reports in build pipeline.
+- **Release drafter (P5-19)** — `.github/release-drafter.yml` auto-generates release notes from PR labels.
+- **CONTRIBUTING.md (P5-20)** — full contribution guide with blueprint + widget + testing examples.
+
+### New Tables (3)
+`map_bookmarks`, `ai_prompt_versions`, `totp_secrets`
+
+### Stats
+62 API routes in `roadmap_features.py` (1,143 lines). 16 total new tables across v7.48.0-v7.49.0.
+
 ## [v7.48.0] — Massive Feature Batch: 18 Roadmap Items
 
 ### Added

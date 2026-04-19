@@ -1248,16 +1248,19 @@ def create_app():
             q_escaped = q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
             like = f'%{q_escaped}%'
             esc = "ESCAPE '\\'"
-            # FTS5 MATCH expression: escape embedded double quotes then wrap
-            # the whole query in double quotes for phrase/prefix handling.
-            fts_q = '"' + q.replace('"', '""') + '"' + '*'
+            # FTS5 MATCH expression: strip special chars, double-quote the
+            # query for phrase matching, and append * for prefix search.
+            import re as _re
+            _fts_clean = _re.sub(r'[*"():^{}~\[\]]', '', q).strip()
+            fts_q = '"' + _fts_clean.replace('"', '') + '"' + '*' if _fts_clean else None
             use_fts = False
-            try:
-                use_fts = db.execute(
-                    "SELECT 1 FROM sqlite_master WHERE type='table' AND name='notes_fts'"
-                ).fetchone() is not None
-            except Exception:
-                use_fts = False
+            if fts_q:
+                try:
+                    use_fts = db.execute(
+                        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='notes_fts'"
+                    ).fetchone() is not None
+                except Exception:
+                    use_fts = False
             # Single UNION ALL — 1 round-trip instead of 14
             if use_fts:
                 _search_parts = [

@@ -1,5 +1,6 @@
 """SQLite database for service state and settings."""
 
+import atexit
 import sqlite3
 import os
 import glob
@@ -25,6 +26,8 @@ except (ValueError, TypeError):
 _pool: 'queue.Queue[sqlite3.Connection]' = queue.Queue(maxsize=_POOL_SIZE) if _POOL_SIZE > 0 else None
 _pool_lock = threading.Lock()
 _pool_db_path: str = None  # pool is keyed by db path; clears on change
+
+atexit.register(lambda: _pool_clear())
 
 
 def _pool_clear():
@@ -154,6 +157,11 @@ def pool_stats():
     if _pool is None:
         return {'enabled': False, 'size': 0, 'capacity': 0}
     return {'enabled': True, 'size': _pool.qsize(), 'capacity': _POOL_SIZE}
+
+
+def pool_shutdown():
+    """Drain and close all pooled connections. Call at process exit."""
+    _pool_clear()
 
 
 @contextmanager

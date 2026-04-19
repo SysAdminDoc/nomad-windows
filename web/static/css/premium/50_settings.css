@@ -12,7 +12,7 @@
   display: grid;
   gap: 10px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 40%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 92%, transparent));
@@ -63,11 +63,11 @@
   align-items: center;
   min-height: 24px;
   padding: 0 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -79,12 +79,12 @@
   border: 1px solid color-mix(in srgb, var(--border-hover) 34%, var(--border)) !important;
   background: var(--surface-overlay) !important;
   box-shadow: var(--shadow-panel);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
 }
 
 .settings-workspace .settings-card > h3,
 .settings-panel-header {
-  font-size: 12px !important;
+  font-size: var(--text-sm-md, 12px) !important;
   font-weight: 800 !important;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -182,13 +182,13 @@
   gap: 6px;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: var(--surface-overlay-soft);
 }
 
 .settings-memory-stat-label {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -196,7 +196,7 @@
 
 .settings-memory-stat-value {
   color: var(--text);
-  font-size: 18px;
+  font-size: var(--text-lg, 18px);
   line-height: 1.2;
 }
 
@@ -223,7 +223,7 @@
   width: 100%;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: var(--surface-overlay-soft);
   color: inherit;
   text-align: left;
@@ -278,7 +278,7 @@
   justify-content: center;
   width: 22px;
   height: 22px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent);
   flex-shrink: 0;
@@ -287,7 +287,7 @@
 .settings-memory-item-title {
   min-width: 0;
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 700;
   line-height: 1.4;
 }
@@ -297,11 +297,11 @@
   align-items: center;
   min-height: 20px;
   padding: 0 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -322,13 +322,13 @@
 
 .settings-memory-item-copy {
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.45;
 }
 
 .settings-memory-item-meta {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 600;
   line-height: 1.55;
   letter-spacing: 0.04em;
@@ -365,10 +365,10 @@
   width: 42px;
   height: 42px;
   margin-bottom: 0;
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent);
-  font-size: 22px;
+  font-size: var(--text-xl, 22px);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
 
@@ -384,11 +384,11 @@
   align-items: center;
   min-height: 24px;
   padding: 0 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -400,7 +400,7 @@
 }
 
 .settings-mode-title {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 800;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -409,14 +409,14 @@
 
 .settings-mode-subtitle {
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.45;
 }
 
 .settings-mode-copy {
   margin-top: 0;
   max-width: 32ch;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.65;
   color: var(--text-muted);
 }
@@ -433,18 +433,18 @@
   align-items: center;
   min-height: 24px;
   padding: 0 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid color-mix(in srgb, var(--border-hover) 26%, var(--border));
   background: color-mix(in srgb, var(--surface-solid) 94%, transparent);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   line-height: 1;
 }
 
 .settings-mode-metric strong {
   margin-right: 4px;
   color: var(--text);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .settings-workspace .mode-option:hover {
@@ -501,7 +501,7 @@
 .settings-theme-dot {
   width: 10px;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: linear-gradient(135deg, var(--surface-solid), var(--accent));
 }
 /* Per-theme dot gradient — JS sets data-theme on #active-theme-dot so
@@ -544,12 +544,12 @@
   padding: 4px 0;
   cursor: pointer;
   list-style: none;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
 .settings-collapsible-chevron {
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
 }
 
 .settings-collapsible-body {
@@ -573,7 +573,7 @@
   padding-top: 12px;
   border-top: 1px solid color-mix(in srgb, var(--border) 84%, transparent);
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.65;
 }
 
@@ -596,7 +596,7 @@
 }
 
 .settings-path-value {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   word-break: break-all;
 }
 
@@ -663,7 +663,7 @@
 #sync-log-list,
 #conflict-list {
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
@@ -696,7 +696,7 @@
 .training-empty-state {
   padding: 8px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .training-record {
@@ -706,7 +706,7 @@
   flex-wrap: wrap;
   padding: 6px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .training-record:last-child {
@@ -733,8 +733,8 @@
   align-items: center;
   justify-content: center;
   padding: 1px 6px;
-  border-radius: 999px;
-  font-size: 9px;
+  border-radius: var(--radius-full, 999px);
+  font-size: var(--text-2xs, 9px);
   font-family: var(--font-data, monospace);
 }
 
@@ -764,7 +764,7 @@
 }
 
 .training-run-btn {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .settings-form-shell,
@@ -784,7 +784,7 @@
 .settings-form-grid-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
   align-items: start;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .settings-field {
@@ -804,7 +804,7 @@
 .settings-field-label {
   display: block;
   margin: 0;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   line-height: 1.4;
   color: var(--text-dim);
@@ -816,11 +816,11 @@
   width: 100%;
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
   background: var(--surface-field);
   color: var(--text);
   padding: 7px 10px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
 
@@ -864,7 +864,7 @@
 
 .settings-list-copy,
 .settings-result-copy {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   color: var(--text-dim);
 }
 
@@ -876,7 +876,7 @@
 .system-gauges-loading,
 .model-list-empty,
 .log-viewer-empty {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .system-gauges-loading {
@@ -920,7 +920,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .settings-backup-main {
@@ -938,7 +938,7 @@
 
 .settings-backup-flag {
   margin-left: 4px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--orange);
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -946,7 +946,7 @@
 
 .settings-backup-time {
   margin-top: 2px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
@@ -958,7 +958,7 @@
 }
 
 .prep-template-meta {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
@@ -968,7 +968,7 @@
 
 .settings-summary-total {
   margin-bottom: 8px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   color: var(--text-dim);
 }
 
@@ -982,7 +982,7 @@
 
 .settings-summary-note {
   margin-top: 8px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-muted);
   line-height: 1.6;
 }
@@ -1007,9 +1007,9 @@
 }
 
 .settings-row-pill {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   padding: 2px 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: var(--accent-dim);
   color: var(--accent);
 }
@@ -1020,12 +1020,12 @@
 }
 
 .settings-row-meta {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
 .settings-row-detail {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-dim);
 }
 
@@ -1038,7 +1038,7 @@
   gap: 10px;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-overlay-soft);
   box-shadow:
     inset 0 1px 0 var(--panel-highlight),
@@ -1070,8 +1070,8 @@
   align-items: center;
   min-height: 24px;
   padding: 0 10px;
-  border-radius: 999px;
-  font-size: 10px;
+  border-radius: var(--radius-full, 999px);
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1093,7 +1093,7 @@
 }
 
 .settings-sync-log-icon {
-  font-size: 15px;
+  font-size: var(--text-md-lg, 15px);
   font-weight: 700;
 }
 
@@ -1107,7 +1107,7 @@
 
 .settings-row-compact-btn {
   padding: 2px 6px !important;
-  font-size: 10px !important;
+  font-size: var(--text-xs, 10px) !important;
 }
 
 .settings-console-panel .settings-panel-header,
@@ -1120,7 +1120,7 @@
   overflow-y: auto;
   margin-top: 8px;
   font-family: var(--font-data, monospace);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.6;
 }
 
@@ -1166,7 +1166,7 @@
 
 .settings-panel-copy {
   margin: 0 0 10px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   color: var(--text-dim);
   line-height: 1.7;
 }
@@ -1181,12 +1181,12 @@
 
 .settings-detail-title {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
 }
 
 .settings-detail-meta {
   margin-bottom: 8px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim);
 }
 
@@ -1208,7 +1208,7 @@
 
 .download-banner-icon {
   flex: 0 0 auto;
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
 }
 
 .download-banner-body {
@@ -1223,7 +1223,7 @@
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .download-banner-label {
@@ -1259,13 +1259,13 @@
 }
 
 .library-update-title {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 600;
   color: var(--text);
 }
 
 .library-update-meta {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
@@ -1276,7 +1276,7 @@
   gap: 8px;
   padding: 12px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-overlay-soft);
 }
 
@@ -1290,13 +1290,13 @@
 }
 
 .wiki-tier-title {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   color: var(--text);
 }
 
 .wiki-tier-copy {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
@@ -1309,13 +1309,13 @@
 }
 
 .wiki-tier-size {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 600;
   color: var(--wiki-tier-tone, var(--accent));
 }
 
 .wiki-tier-installed {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 600;
   color: var(--green);
 }
@@ -1347,12 +1347,12 @@
 
 .generated-modal-head h3 {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
 }
 
 .generated-modal-copy {
   margin-bottom: 12px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim);
   line-height: 1.6;
 }
@@ -1376,7 +1376,7 @@
 }
 
 .settings-exercise-copy {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim);
 }
 
@@ -1384,7 +1384,7 @@
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
@@ -1402,7 +1402,7 @@
 }
 
 .settings-exercise-log-entry {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-dim);
 }
 
@@ -1432,7 +1432,7 @@
 }
 
 .settings-inline-label {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim);
 }
 
@@ -1460,7 +1460,7 @@
 }
 
 .settings-slider-value {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim);
   min-width: 1.5em;
 }
@@ -1474,7 +1474,7 @@
 .settings-subsection-title {
   display: block;
   margin-bottom: 6px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   color: var(--text-dim);
 }
@@ -1484,7 +1484,7 @@
 }
 
 .settings-update-status {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
   font-weight: 400;
 }
@@ -1498,13 +1498,13 @@
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 4px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .settings-progress-track {
   height: 6px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: var(--surface2);
 }
 
@@ -1532,7 +1532,7 @@
 }
 
 .settings-version-pill {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   font-weight: 700;
   color: var(--accent);
 }
@@ -1542,14 +1542,14 @@
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 8px;
   margin: 12px 0;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .settings-summary-card {
   min-width: 0;
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
   line-height: 1.65;
@@ -1626,7 +1626,7 @@
   margin: 8px 0 0;
   max-width: 62ch;
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   line-height: 1.5;
 }
 
@@ -1653,7 +1653,7 @@
 
 .command-palette-input-icon {
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
 }
 
 .command-palette-input {
@@ -1662,7 +1662,7 @@
   background: transparent;
   border: none;
   color: var(--text);
-  font-size: 16px;
+  font-size: var(--text-lg, 16px);
   line-height: 1.4;
   padding: 4px 0;
 }
@@ -1683,7 +1683,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-muted);
 }
 
@@ -1727,7 +1727,7 @@
 
 .command-palette-preview-text {
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   line-height: 1.65;
 }
 
@@ -1742,11 +1742,11 @@
   align-items: center;
   min-height: 24px;
   padding: 0 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1784,7 +1784,7 @@
 
 .command-palette-preview-value {
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.55;
 }
 
@@ -1799,11 +1799,11 @@
   align-items: center;
   min-height: 30px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
   color: var(--text);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1854,7 +1854,7 @@
 }
 
 .command-palette-count {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-dim);
 }
 
@@ -1890,10 +1890,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
   background: color-mix(in srgb, var(--accent-dim) 62%, transparent);
   color: var(--accent);
-  font-size: 15px;
+  font-size: var(--text-md-lg, 15px);
   font-weight: 700;
 }
 
@@ -1905,7 +1905,7 @@
 
 .command-palette-item-title {
   min-width: 0;
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
   font-weight: 700;
   color: var(--text);
   white-space: nowrap;
@@ -1915,7 +1915,7 @@
 
 .command-palette-item-subtitle {
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -1923,7 +1923,7 @@
 }
 
 .command-palette-item-meta {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1935,7 +1935,7 @@
   border: 1px dashed color-mix(in srgb, var(--border) 82%, transparent);
   border-radius: calc(var(--radius-sm, 10px) + 2px);
   color: var(--text-muted);
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   line-height: 1.5;
 }
 
@@ -1946,7 +1946,7 @@
 }
 
 .shell-command-icon {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1;
 }
 
@@ -1985,12 +1985,12 @@
 
 .shortcuts-title {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--text-lg, 16px);
 }
 
 .shortcuts-close {
   padding: 2px 8px !important;
-  font-size: 18px !important;
+  font-size: var(--text-lg, 18px) !important;
 }
 
 .shortcuts-search {
@@ -2001,12 +2001,12 @@
   border-radius: var(--radius);
   background: var(--surface2);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 .shortcuts-search:focus { border-color: var(--accent); outline: none; }
 
 .shortcuts-section-title {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -2018,7 +2018,7 @@
 .shortcuts-section + .shortcuts-section { margin-top: 14px; }
 
 .shortcuts-no-results {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   color: var(--text-secondary);
   text-align: center;
   padding: 16px 0;
@@ -2028,19 +2028,19 @@
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 6px 16px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .shortcuts-key {
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
   background: var(--surface2);
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .settings-about-copy > p:first-of-type {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
 }
 
 .settings-mini-note {
@@ -2076,7 +2076,7 @@
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 400;
   color: var(--text-muted);
 }
@@ -2085,7 +2085,7 @@
   display: inline-block;
   width: 8px;
   height: 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: var(--text-muted);
 }
 
@@ -2100,15 +2100,15 @@
 .settings-conflict-badge {
   background: var(--red);
   color: var(--text-inverse);
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   padding: 1px 8px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
 }
 
 .settings-sync-log-shell {
   max-height: 200px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .settings-conflict-shell {
@@ -2117,7 +2117,7 @@
 
 .settings-sync-log-icon {
   color: var(--settings-log-tone, var(--accent));
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
   font-weight: 700;
 }
 
@@ -2127,7 +2127,7 @@
 
 .settings-conflict-card {
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   overflow: hidden;
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
@@ -2152,10 +2152,10 @@
 
 .settings-conflict-count {
   padding: 2px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: var(--orange);
   color: var(--text-inverse);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
 }
 
@@ -2167,7 +2167,7 @@
 }
 
 .settings-conflict-detail-title {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   color: var(--text);
 }
@@ -2180,7 +2180,7 @@
 
 .settings-conflict-panel {
   padding: 8px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius, 12px);
   border-left: 3px solid var(--settings-conflict-tone, var(--accent));
   background: var(--surface);
 }
@@ -2191,21 +2191,21 @@
 
 .settings-conflict-panel-title {
   margin-bottom: 4px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   color: var(--settings-conflict-tone, var(--accent));
 }
 
 .settings-conflict-pre {
   margin: 0;
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   white-space: pre-wrap;
   word-break: break-all;
 }
 
 .settings-conflict-footnote {
   margin-top: 4px;
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   color: var(--text-muted);
 }
 
@@ -2225,12 +2225,12 @@
 }
 
 .settings-merge-editor-copy {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim);
 }
 
 .settings-merge-editor-note {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
@@ -2243,13 +2243,13 @@
 
 .settings-merge-editor-label {
   min-width: 100px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 600;
 }
 
 .settings-merge-editor-side {
   min-width: 50px;
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
 }
 
 .settings-merge-editor-side-local {
@@ -2262,7 +2262,7 @@
 
 .settings-merge-editor-input {
   width: 80px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   padding: 3px 6px;
 }
 
@@ -2281,7 +2281,7 @@
   min-width: min(280px, calc(100vw - 32px));
   padding: 10px 16px;
   border: 1px solid var(--accent);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: var(--surface-overlay-soft);
   box-shadow: 0 18px 42px rgba(22,14,5,0.28);
   z-index: var(--z-toast, 9000);
@@ -2300,7 +2300,7 @@
 }
 
 .wizard-mini-label {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2308,7 +2308,7 @@
 }
 
 .wizard-mini-pct {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
@@ -2316,7 +2316,7 @@
   display: block;
   height: 4px;
   overflow: hidden;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: var(--surface2);
 }
 
@@ -2330,14 +2330,14 @@
 .wizard-mini-item {
   display: block;
   margin-top: 4px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-dim);
 }
 
 .wizard-mini-note {
   display: block;
   margin-top: 2px;
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   color: var(--text-muted);
 }
 
@@ -2350,21 +2350,21 @@
   top: 4px;
   right: 44px;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
   background: var(--surface3);
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   padding: 2px 8px;
   cursor: pointer;
 }
 
 .copilot-voice-btn {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   padding: 4px 8px;
 }
 
 .copilot-handsfree-btn {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   padding: 4px 8px;
   position: relative;
 }
@@ -2405,13 +2405,13 @@
   align-items: center;
   gap: 10px;
   padding: 4px 12px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   min-height: 22px;
 }
 .copilot-voice-state-badge {
   display: inline-block;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2451,11 +2451,11 @@
 }
 
 .copilot-ask-btn {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .copilot-quick-btn {
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
 }
 
 .copilot-quick-btns {
@@ -2472,7 +2472,7 @@
   padding: 8px 0 8px 10px;
   border-left: 3px solid var(--accent);
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.6;
 }
 
@@ -2487,7 +2487,7 @@
 
 .copilot-answer-error {
   color: var(--red);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .copilot-source-row {
@@ -2496,7 +2496,7 @@
   flex-wrap: wrap;
   align-items: center;
   margin-top: 4px;
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   color: var(--text-muted);
 }
 
@@ -2506,7 +2506,7 @@
 
 .copilot-source-chip {
   padding: 1px 5px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: var(--surface3);
   color: var(--text-muted);
 }
@@ -2515,7 +2515,7 @@
   padding: 12px;
   text-align: center;
   color: var(--green);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .copilot-suggestion-list {
@@ -2528,7 +2528,7 @@
   align-items: flex-start;
   padding: 4px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.4;
 }
 
@@ -2538,7 +2538,7 @@
 
 .copilot-suggestion-icon {
   flex-shrink: 0;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .copilot-suggestion-icon-critical {
@@ -2574,14 +2574,14 @@
 }
 
 .settings-modal-close {
-  font-size: 16px;
+  font-size: var(--text-lg, 16px);
   padding: 2px 8px;
 }
 
 .settings-modal-body {
   display: grid;
   gap: 10px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .settings-field-label-strong {
@@ -2589,7 +2589,7 @@
 }
 
 .settings-file-input {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .settings-csv-mapping {
@@ -2597,7 +2597,7 @@
   grid-template-columns: 1fr auto 1fr;
   gap: 6px;
   align-items: center;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .settings-csv-select {
@@ -2605,17 +2605,17 @@
   color: var(--text);
   border: 1px solid var(--border);
   padding: 3px 6px;
-  border-radius: 4px;
-  font-size: 11px;
+  border-radius: var(--radius-xs, 4px);
+  font-size: var(--text-sm, 11px);
 }
 
 .settings-csv-preview {
   overflow-x: auto;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .settings-sitrep-body {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.7;
   font-family: var(--font-data, monospace);
   white-space: pre-wrap;
@@ -2629,7 +2629,7 @@
 
 .settings-inline-status {
   padding: 10px 12px;
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   border: 1px solid var(--border);
   background: var(--surface-field);
   color: var(--text-dim);
@@ -2674,8 +2674,8 @@
   height: 18px;
   display: inline-grid;
   place-items: center;
-  border-radius: 999px;
-  font-size: 11px;
+  border-radius: var(--radius-full, 999px);
+  font-size: var(--text-sm, 11px);
   font-weight: 800;
   flex-shrink: 0;
   margin-top: 1px;
@@ -2698,13 +2698,13 @@
 }
 
 .settings-check-name {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 700;
   color: var(--text);
 }
 
 .settings-check-meta {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-muted);
   overflow-wrap: anywhere;
 }
@@ -2725,7 +2725,7 @@
 .settings-port-indicator {
   width: 10px;
   height: 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   flex-shrink: 0;
   box-shadow: 0 0 0 3px var(--panel-highlight);
 }
@@ -2745,14 +2745,14 @@
 }
 
 .settings-port-name {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 700;
   color: var(--text);
 }
 
 .settings-port-meta,
 .settings-port-reading {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-muted);
 }
 
@@ -2788,7 +2788,7 @@
 
 .ai-memory-heading {
   margin-bottom: 8px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 700;
   color: var(--text);
 }
@@ -2797,7 +2797,7 @@
   margin-bottom: 8px;
   display: grid;
   gap: 6px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .ai-memory-entry {
@@ -2834,7 +2834,7 @@
   border-radius: var(--radius-sm);
   background: var(--surface2);
   color: var(--text);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .ai-memory-input::placeholder {
@@ -2844,7 +2844,7 @@
 .ai-memory-delete {
   min-width: 28px;
   padding: 1px 6px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   line-height: 1.25;
 }
 
@@ -2864,7 +2864,7 @@
 }
 
 .health-card-label {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   text-transform: uppercase;
   color: var(--text-dim, var(--subtext0));
   letter-spacing: 0.5px;
@@ -2872,14 +2872,14 @@
 }
 
 .health-card-value {
-  font-size: 16px;
+  font-size: var(--text-lg, 16px);
   font-weight: 600;
   margin-top: 2px;
   color: var(--text);
 }
 
 .health-card-detail {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim, var(--subtext0));
   margin-top: 2px;
   line-height: 1.4;

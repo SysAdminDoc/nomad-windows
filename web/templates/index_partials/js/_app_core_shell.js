@@ -1375,3 +1375,28 @@ document.addEventListener('keydown', e => {
   }
   // Ctrl/Cmd+K — handled by _app_workspaces.js toggleCommandPalette()
 });
+
+/* ─── Collapsible Sidebar Groups ─── */
+(function() {
+  let collapsed = {};
+  try { collapsed = JSON.parse(localStorage.getItem('nomad-sidebar-collapsed')) || {}; } catch(_) {}
+  function applySidebarGroupState(groupEl, isCollapsed) {
+    let sibling = groupEl.nextElementSibling;
+    while (sibling && !sibling.matches('[data-sidebar-group]') && !sibling.matches('.sidebar-context-hub, .sidebar-footer')) {
+      sibling.style.display = isCollapsed ? 'none' : '';
+      sibling = sibling.nextElementSibling;
+    }
+    groupEl.setAttribute('aria-expanded', !isCollapsed);
+    groupEl.classList.toggle('sidebar-group-collapsed', isCollapsed);
+  }
+  document.querySelectorAll('[data-sidebar-group]').forEach(groupEl => {
+    const id = groupEl.dataset.sidebarGroup;
+    if (collapsed[id]) applySidebarGroupState(groupEl, true);
+    groupEl.addEventListener('click', () => {
+      collapsed[id] = !collapsed[id];
+      applySidebarGroupState(groupEl, collapsed[id]);
+      try { localStorage.setItem('nomad-sidebar-collapsed', JSON.stringify(collapsed)); } catch(_) {}
+    });
+    groupEl.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); groupEl.click(); } });
+  });
+})();

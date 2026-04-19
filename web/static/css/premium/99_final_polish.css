@@ -3084,6 +3084,16 @@ dd + dt {
   backdrop-filter: none !important;
 }
 
+/* ── Collapsible sidebar groups ── */
+.sidebar-group-label[data-sidebar-group] { cursor: pointer; }
+.sidebar-group-label[data-sidebar-group]::after {
+  content: '\25BE'; font-size: 0.8em; opacity: 0.5; margin-left: auto; transition: transform var(--duration-fast, 150ms) ease;
+}
+.sidebar-group-label[data-sidebar-group].sidebar-group-collapsed::after {
+  transform: rotate(-90deg);
+}
+.sidebar-group-label[data-sidebar-group]:hover { opacity: 0.85; }
+
 /* ── Sortable table headers ── */
 .sortable-th { cursor: pointer; user-select: none; position: relative; white-space: nowrap; }
 .sortable-th::after { content: ''; display: inline-block; width: 0; margin-left: 4px; }

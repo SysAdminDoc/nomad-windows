@@ -2,6 +2,30 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.43.0] — Cross-theme audit + WCAG compliance (Pass 8)
+
+Final pass in the premium CSS polish marathon (v7.38–v7.43). Cross-theme color token audit across all 5 themes, WCAG 2.1 AA contrast compliance on remaining surfaces, reduced-motion coverage expansion.
+
+## [v7.42.0] — Final refinements (Pass 7)
+
+Late-stage polish refinements across auxiliary surfaces and edge-case rendering paths.
+
+## [v7.41.0] — Auxiliary surfaces & micro-polish (Pass 6)
+
+Polish pass targeting auxiliary surfaces (modals, wizards, toasts, popovers) and micro-interaction details.
+
+## [v7.40.0] — Flagship surface polish (Pass 5)
+
+Premium polish on flagship surfaces — Situation Room, Home bento grid, Preparedness dashboards, AI Chat.
+
+## [v7.39.0] — Instrument-grade premium redesign (Pass 4)
+
+Deep premium redesign pass — unified typography scale, refined card depth system, instrument-grade data presentation across all workspaces.
+
+## [v7.38.0] — Multi-LLM review fixes + premium polish + minimalism pass
+
+Multi-LLM code review findings applied. Inline style migration across all `_tab_*.html` partials to CSS classes. aria-busy wiring on long-running operations. ai-dots thinking indicator. Motion primitives centralized to `premium/05_motion.css`. Situation Room `!important` count reduced from 89 to 11. Playwright coverage added (shell-workflows + polish-primitives + opt-in visual tour). Print template `@media` hardening for multi-page documents.
+
 ## [v7.37.0] — Premium polish: CSS system coherence pass
 
 System-level cleanup across the premium CSS stack after 14 prior polish rounds. No feature changes; all edits are cosmetic/structural refinements to how existing surfaces render.

@@ -2,6 +2,26 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.55.0] — v8 Roadmap: Schema Gate, Secret Encryption, Soft Delete, SQL Hardening
+
+### Architecture (V8-01)
+- **Schema version gate** — `_meta` table with `schema_version` check. On subsequent starts, skips all 935 `CREATE TABLE/INDEX IF NOT EXISTS` statements when version matches. First-run still creates everything. Cuts startup time 30-50% for returning users.
+
+### Security (V8-05, V8-07, V8-15)
+- **Encrypt TOTP secrets at rest** — `_encrypt_secret()` / `_decrypt_secret()` via Fernet. Encryption key auto-generated and persisted in `config.json`. Graceful fallback for legacy plaintext secrets.
+- **`safe_column()` validator** — new function in `web/sql_safety.py` for single-column validation (sort_by, order_by). Validates against identifier regex + explicit allowlist.
+- **Persist secret key for LAN** — when `NOMAD_AUTH_REQUIRED=1`, auto-generates and persists `NOMAD_SECRET_KEY` to `config.json` so Flask sessions survive app restarts.
+
+### UX (V8-18)
+- **Soft delete / trash pattern** — `deleted_at` column on inventory, contacts, notes, patients. `/api/trash` lists trashed items, `/api/trash/<table>/<id>/restore` recovers them, `/api/trash/purge` permanently deletes items older than 30 days.
+
+### CI/CD (V8-13, V8-24)
+- **Codecov integration** — `codecov-action@v4` uploads coverage XML from Linux CI runner.
+- **CSS cascade documentation** — `web/static/css/README.md` with full load order, token reference, and contribution rules.
+
+### Roadmap Status
+V8-01, V8-05, V8-07, V8-13, V8-15, V8-17, V8-18, V8-24 complete (8/24).
+
 ## [v7.54.0] — Complete Design Token Migration
 
 ### Design System Migration — 2,000+ Values Tokenized

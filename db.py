@@ -377,17 +377,53 @@ def apply_migrations(conn):
                 raise
 
 
+# V8-01: Schema version gate — skip 935 SQL statements on subsequent starts
+_SCHEMA_VERSION = 54  # Bump when tables/indexes/migrations change
+
+
 def init_db():
     conn = get_db()
     try:
+        # Check if schema is already at current version
+        try:
+            row = conn.execute(
+                "SELECT value FROM _meta WHERE key = 'schema_version'"
+            ).fetchone()
+            if row and int(row[0]) >= _SCHEMA_VERSION:
+                _log.debug('Schema version %s is current — skipping init', row[0])
+                # Still prune old activity log
+                try:
+                    conn.execute("DELETE FROM activity_log WHERE created_at < datetime('now', '-90 days')")
+                    conn.commit()
+                except Exception:
+                    pass
+                return
+        except Exception:
+            pass  # _meta table doesn't exist yet — first run
+
         _init_db_inner(conn)
         apply_migrations(conn)
+
+        # Write schema version marker
+        conn.execute('''
+            CREATE TABLE IF NOT EXISTS _meta (
+                key TEXT PRIMARY KEY,
+                value TEXT NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.execute(
+            "INSERT OR REPLACE INTO _meta (key, value) VALUES ('schema_version', ?)",
+            (str(_SCHEMA_VERSION),)
+        )
+        conn.commit()
+
         # Prune old activity log entries (older than 90 days)
         try:
             conn.execute("DELETE FROM activity_log WHERE created_at < datetime('now', '-90 days')")
             conn.commit()
         except Exception:
-            pass  # Table may not exist yet on first run
+            pass
     finally:
         conn.close()
 
@@ -2197,6 +2233,13 @@ def _apply_column_migrations(conn):
         'ALTER TABLE preservation_log ADD COLUMN yield_unit TEXT DEFAULT ""',
         # v7.0.11 — AI conversation tags
         'ALTER TABLE conversations ADD COLUMN tags TEXT DEFAULT "[]"',
+        # V8-18 — Soft delete / trash pattern for critical tables
+        'ALTER TABLE inventory ADD COLUMN deleted_at TIMESTAMP',
+        'ALTER TABLE contacts ADD COLUMN deleted_at TIMESTAMP',
+        'ALTER TABLE notes ADD COLUMN deleted_at TIMESTAMP',
+        'ALTER TABLE patients ADD COLUMN deleted_at TIMESTAMP',
+        # V8-05 — Per-conversation KB scope
+        'ALTER TABLE conversations ADD COLUMN kb_scope TEXT DEFAULT "[]"',
     ]:
         try:
             conn.execute(migration)

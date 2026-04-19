@@ -49,7 +49,7 @@ class Config:
     """Central configuration with environment variable overrides."""
 
     # --- App Identity ---
-    VERSION = os.environ.get('NOMAD_VERSION', '7.54.0')
+    VERSION = os.environ.get('NOMAD_VERSION', '7.55.0')
 
     # --- Upload / Content Limits ---
     MAX_CONTENT_LENGTH = _env_int('NOMAD_MAX_CONTENT_LENGTH', 100 * 1024 * 1024)  # 100 MB
@@ -95,10 +95,29 @@ class Config:
 
     @classmethod
     def secret_key(cls):
-        """Return a secret key, generating one if not configured."""
+        """Return a secret key, generating and persisting one if not configured.
+
+        V8-15: When auth is required for LAN, persist the key to config.json
+        so sessions survive app restarts.
+        """
         if not cls.SECRET_KEY:
-            cls.SECRET_KEY = os.urandom(32).hex()
-            log.debug('No NOMAD_SECRET_KEY set — generated random secret key for this session')
+            # Check config.json for a persisted key
+            saved = get_config_value('secret_key', '')
+            if saved:
+                cls.SECRET_KEY = saved
+            else:
+                cls.SECRET_KEY = os.urandom(32).hex()
+                # Persist if auth mode is active (LAN deployments need stable sessions)
+                if os.environ.get('NOMAD_AUTH_REQUIRED', '0').strip() in ('1', 'true', 'yes', 'on'):
+                    try:
+                        data = load_config()
+                        data['secret_key'] = cls.SECRET_KEY
+                        save_config(data)
+                        log.info('Generated and persisted secret key for LAN auth mode')
+                    except Exception:
+                        log.debug('Could not persist secret key — sessions will reset on restart')
+                else:
+                    log.debug('No NOMAD_SECRET_KEY set — generated ephemeral key for this session')
         return cls.SECRET_KEY
 
 # Config cache — avoids re-reading config.json from disk on every get_data_dir() call

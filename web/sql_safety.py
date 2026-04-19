@@ -66,6 +66,19 @@ def build_update(table, data_dict, allowed_columns, where_col='id', where_val=No
     return sql, params
 
 
+def safe_column(name, allowed_set):
+    """V8-07: Validate a single column name against an allowlist.
+
+    Use for sort_by, order_by, and other single-column dynamic SQL.
+    Returns the validated name or raises ValueError.
+    """
+    if not name or not _IDENT_RE.match(name):
+        raise ValueError(f'Invalid column name: {name!r}')
+    if name not in allowed_set:
+        raise ValueError(f'Column {name!r} not in allowed set')
+    return name
+
+
 def build_insert(table, data_dict, allowed_columns):
     """Build a safe INSERT statement with parameterized values.
 

@@ -4936,6 +4936,23 @@ function updateTabBadges() {
     });
   }
 
+  // Overdue tasks badge on Settings tab
+  safeFetch('/api/tasks/due', {}, []).then(tasks => {
+    if (!Array.isArray(tasks)) return;
+    const overdue = tasks.filter(t => t.status !== 'completed' && t.due_date && t.due_date < new Date().toISOString().slice(0,10)).length;
+    const settingsTab = document.querySelector('.tab[data-tab="settings"]');
+    if (!settingsTab) return;
+    let taskBadge = document.getElementById('badge-settings');
+    if (!taskBadge) {
+      taskBadge = document.createElement('span');
+      taskBadge.id = 'badge-settings';
+      taskBadge.className = 'tab-badge is-hidden';
+      settingsTab.appendChild(taskBadge);
+    }
+    if (overdue > 0) { taskBadge.textContent = overdue; taskBadge.className = 'tab-badge red'; }
+    else { taskBadge.className = 'tab-badge is-hidden'; }
+  }).catch(() => {});
+
   // AI Chat badge: green dot if Ollama running, red dot if not
   if (!aiBadge) return;
   const applyAiBadge = (svcs) => {

@@ -9,7 +9,7 @@ async function loadContacts() {
     if (!q) _cachedContacts = contacts;
     const el = document.getElementById('contacts-grid');
     if (!contacts.length) {
-      el.innerHTML = '<div class="prep-empty-state prep-empty-state-wide">No contacts yet. Add your emergency contacts, team members, and neighbors.</div>';
+      el.innerHTML = '<div class="prep-empty-state prep-empty-state-wide"><div style="font-size:36px;margin-bottom:8px;opacity:0.5">&#128101;</div><strong>No contacts yet</strong><p class="tone-muted" style="margin:8px 0">Add your emergency contacts, team members, and neighbors to build your communication network.</p><button type="button" class="btn btn-sm btn-primary" data-prep-action="show-contact-form">Add First Contact</button></div>';
       return;
     }
     el.innerHTML = contacts.map(c => {

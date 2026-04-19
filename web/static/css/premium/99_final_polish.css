@@ -545,6 +545,8 @@ code {
 .sidebar-group-label.sidebar-group-collapsed::before {
   transform: rotate(-90deg);
 }
+/* Sidebar drag reorder (P1-17) */
+.sidebar-dragging { opacity: 0.4; }
 
 /* Indent tab labels a touch so icons have breathing room without increasing row height. */
 .tab .tab-icon {

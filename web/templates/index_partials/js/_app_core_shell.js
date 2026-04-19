@@ -1494,3 +1494,64 @@ document.addEventListener('click', e => {
     });
   });
 })();
+
+/* ─── Sidebar Tab Reorder within Groups (P1-17) ─── */
+(function initSidebarDragReorder() {
+  const KEY = 'nomad-sidebar-order';
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(_e) {}
+
+  const groups = [];
+  let currentGroup = null;
+  document.querySelectorAll('#sidebar-nav > *').forEach(el => {
+    if (el.classList.contains('sidebar-group-label')) {
+      const title = (el.querySelector('.sidebar-group-title')?.textContent || '').trim().toLowerCase().replace(/\s+/g, '-');
+      currentGroup = { label: el, id: title, tabs: [] };
+      groups.push(currentGroup);
+    } else if (el.classList.contains('tab') && currentGroup) {
+      currentGroup.tabs.push(el);
+    }
+  });
+
+  groups.forEach(group => {
+    if (group.tabs.length < 2) return;
+
+    // Restore saved order
+    const order = saved[group.id];
+    if (Array.isArray(order)) {
+      const tabMap = {};
+      group.tabs.forEach(t => { tabMap[t.dataset.tab] = t; });
+      const parent = group.tabs[0].parentNode;
+      const anchor = group.tabs[group.tabs.length - 1].nextSibling;
+      order.forEach(tabId => { if (tabMap[tabId]) parent.insertBefore(tabMap[tabId], anchor); });
+    }
+
+    // Enable drag
+    group.tabs.forEach(tab => {
+      tab.setAttribute('draggable', 'true');
+      tab.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', tab.dataset.tab);
+        e.dataTransfer.effectAllowed = 'move';
+        tab.classList.add('sidebar-dragging');
+      });
+      tab.addEventListener('dragend', () => tab.classList.remove('sidebar-dragging'));
+      tab.addEventListener('dragover', e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; });
+      tab.addEventListener('drop', e => {
+        e.preventDefault();
+        const fromId = e.dataTransfer.getData('text/plain');
+        const fromEl = document.querySelector('#sidebar-nav .tab[data-tab="' + fromId + '"]');
+        if (!fromEl || fromEl === tab) return;
+        const rect = tab.getBoundingClientRect();
+        if (e.clientY > rect.top + rect.height / 2) tab.parentNode.insertBefore(fromEl, tab.nextSibling);
+        else tab.parentNode.insertBefore(fromEl, tab);
+        // Persist
+        const newOrder = [];
+        document.querySelectorAll('#sidebar-nav > .tab').forEach(t => {
+          if (group.tabs.some(gt => gt.dataset.tab === t.dataset.tab)) newOrder.push(t.dataset.tab);
+        });
+        saved[group.id] = newOrder;
+        try { localStorage.setItem(KEY, JSON.stringify(saved)); } catch(_e2) {}
+      });
+    });
+  });
+})();

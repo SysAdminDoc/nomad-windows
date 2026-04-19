@@ -112,7 +112,7 @@ async function loadInventory() {
           <td>
             <div class="inventory-qty-stack">
               <button type="button" class="qty-adj" data-prep-action="adjust-inv-qty" data-inv-id="${i.id}" data-delta="-1" title="Decrease quantity" aria-label="Decrease quantity for ${escapeAttr(i.name)}">&#9660;</button>
-              <span class="inventory-qty-value">${i.quantity} ${escapeHtml(i.unit)}</span>
+              <span class="inventory-qty-value" data-inv-id="${i.id}" data-inv-qty="${i.quantity}" title="Double-click to edit">${i.quantity} ${escapeHtml(i.unit)}</span>
               <button type="button" class="qty-adj" data-prep-action="adjust-inv-qty" data-inv-id="${i.id}" data-delta="1" title="Increase quantity" aria-label="Increase quantity for ${escapeAttr(i.name)}">&#9650;</button>
             </div>
           </td>
@@ -927,3 +927,35 @@ function _updateRecentScans() {
     return '<div class="scan-recent-item"><span>' + escapeHtml(s.name) + '</span><span class="scan-recent-code">' + escapeHtml(s.upc) + '</span></div>';
   }).join('');
 }
+
+/* ─── Inline Quantity Edit (P1-08) ─── */
+document.addEventListener('dblclick', function(e) {
+  const span = e.target.closest('.inventory-qty-value[data-inv-id]');
+  if (!span || span.querySelector('input')) return;
+  const id = span.dataset.invId;
+  const currentQty = span.dataset.invQty || '0';
+  const origText = span.textContent;
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.value = currentQty;
+  input.style.cssText = 'width:60px;text-align:center;font-size:inherit;padding:2px 4px';
+  input.min = '0';
+  span.textContent = '';
+  span.appendChild(input);
+  input.focus();
+  input.select();
+
+  function commit() {
+    const newQty = parseInt(input.value, 10);
+    if (isNaN(newQty) || newQty < 0) { span.textContent = origText; return; }
+    if (String(newQty) === currentQty) { span.textContent = origText; return; }
+    apiPut('/api/inventory/' + id, { quantity: newQty })
+      .then(function() { loadInventory(); })
+      .catch(function() { span.textContent = origText; toast('Failed to update quantity', 'error'); });
+  }
+  input.addEventListener('blur', commit);
+  input.addEventListener('keydown', function(ev) {
+    if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+    if (ev.key === 'Escape') { span.textContent = origText; }
+  });
+});

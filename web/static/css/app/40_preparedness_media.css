@@ -376,7 +376,7 @@
 }
 .media-folder-item.active { background: var(--accent); color: var(--text-inverse); font-weight: 600; }
 .media-folder-item.active .media-folder-count { background: color-mix(in srgb, var(--text-inverse) 18%, transparent); color: var(--text-inverse); }
-.media-folder-count { font-size: var(--text-xs, 10px); background: var(--surface2); padding: 1px 6px; border-radius: 10px; color: var(--text-muted); }
+.media-folder-count { font-size: var(--text-xs, 10px); background: var(--surface2); padding: 1px 6px; border-radius: var(--radius-sm, 10px); color: var(--text-muted); }
 .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
 .media-card { background: var(--surface); border-radius: var(--radius); overflow: hidden; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; border: 1px solid var(--border); }
 .media-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
@@ -1203,7 +1203,7 @@ body.emergency-mode::before {
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
-  border-radius: 12px;
+  border-radius: var(--radius, 12px);
   font-size: var(--text-sm, 11px);
   font-weight: 700;
   letter-spacing: 0.06em;

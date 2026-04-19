@@ -40,7 +40,7 @@
   overflow: hidden;
   position: relative;
   border: 1px solid var(--sr-border);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl, 24px);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42);
   isolation: isolate;
 }
@@ -159,7 +159,7 @@ body.situation-room-active #quick-actions-menu {
   }
   body.situation-room-active #tab-situation-room {
     min-height: calc(100vh - 132px);
-    border-radius: 18px;
+    border-radius: var(--radius-lg, 18px);
   }
 }
 
@@ -381,7 +381,7 @@ body.situation-room-active #quick-actions-menu {
   align-items: flex-start;
   gap: 8px;
   padding: 8px 10px 8px 12px;
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   border: 1px solid #24303a;
   background: rgba(9, 14, 17, 0.88);
   color: #b0bcc5;
@@ -643,7 +643,7 @@ body.situation-room-active #quick-actions-menu {
   min-height: 120px;
   padding: 16px 18px;
   border: 1px solid #1e2831;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: linear-gradient(180deg, rgba(18, 24, 29, 0.96), rgba(12, 16, 20, 0.96));
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 14px 26px rgba(0,0,0,0.18);
 }
@@ -900,7 +900,7 @@ body.situation-room-active #quick-actions-menu {
   gap: 10px;
   padding: 18px 20px;
   border: 1px solid rgba(64, 85, 99, 0.62);
-  border-radius: 22px;
+  border-radius: var(--radius-2xl, 22px);
   background: linear-gradient(180deg, rgba(8, 13, 16, 0.9), rgba(6, 10, 13, 0.72));
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(18px);
@@ -1714,7 +1714,7 @@ body.situation-room-active #quick-actions-menu {
 
 /* ─── Feed Manager ─── */
 .sr-feed-form { display: flex; gap: 8px; padding: 12px 14px; flex-wrap: wrap; }
-.sr-input { padding: 8px 10px; font-family: inherit; font-size: var(--text-sm, 11px); border: 1px solid #2c3840; border-radius: 10px; background: var(--sr-bg); color: var(--sr-text); }
+.sr-input { padding: 8px 10px; font-family: inherit; font-size: var(--text-sm, 11px); border: 1px solid #2c3840; border-radius: var(--radius-sm, 10px); background: var(--sr-bg); color: var(--sr-text); }
 .sr-input:focus-visible { border-color: var(--sr-accent-dim); box-shadow: 0 0 0 1px color-mix(in srgb, var(--sr-accent-dim) 25%, transparent); }
 .sr-input-grow { flex: 1; min-width: 140px; }
 .sr-select { padding: 5px 10px; font-family: inherit; font-size: var(--text-xs, 10px); border: 1px solid #2c3840; border-radius: var(--radius-full, 999px); background: var(--sr-bg); color: #a4afb7; }
@@ -2284,7 +2284,7 @@ a.sr-feed-title:hover { color: #7fe8cf; }
 .sr-story-modal[hidden] { display: none; }
 .sr-story-content {
   width: clamp(560px, 62vw, 760px); max-width: 100%; max-height: 82vh; background: linear-gradient(180deg, #12171c 0%, #0d1217 100%);
-  border: 1px solid #27313a; border-radius: 24px; box-shadow: 0 28px 70px rgba(0,0,0,0.52);
+  border: 1px solid #27313a; border-radius: var(--radius-2xl, 24px); box-shadow: 0 28px 70px rgba(0,0,0,0.52);
   display: flex; flex-direction: column; overflow: hidden;
 }
 .sr-story-header { padding: 20px 22px 16px; border-bottom: 1px solid #27313a; display: grid; grid-template-columns: auto 1fr auto; align-items: flex-start; gap: 12px; }
@@ -2570,7 +2570,7 @@ a.sr-feed-title:hover { color: #7fe8cf; }
     max-width: calc(100% - 28px);
     gap: 8px;
     padding: 14px 16px;
-    border-radius: 18px;
+    border-radius: var(--radius-lg, 18px);
   }
   .sr-map-command-title {
     max-width: none;
@@ -2740,7 +2740,7 @@ body.situation-room-active .sr-cards {
 /* All cards same height, no special sizing */
 body.situation-room-active .sr-card {
   height: 320px;
-  border-radius: 12px;
+  border-radius: var(--radius, 12px);
 }
 body.situation-room-active .sr-card-tall,
 body.situation-room-active .sr-card[data-card-size="tall"] {
@@ -2837,7 +2837,7 @@ body.situation-room-active .sr-market-ribbon {
 .sitroom-skeleton-bar {
   display: inline-block;
   height: 10px;
-  border-radius: 5px;
+  border-radius: var(--radius-xs, 5px);
   flex: 0 0 30%;
   background: linear-gradient(90deg,
     color-mix(in srgb, var(--border, #333) 55%, transparent),
@@ -2877,7 +2877,7 @@ body.situation-room-active .sr-market-ribbon {
   font-family: var(--font-data, 'Cascadia Code', monospace);
   background: var(--sr-accent-bg, rgba(74, 237, 196, 0.12));
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
 }
 .sr-proximity-rings {
   display: grid;

@@ -84,7 +84,7 @@
 .message.assistant .avatar { background: var(--surface3); color: var(--accent); }
 .message .content {
   background: var(--surface2); padding: 8px 12px;
-  border-radius: 9px; font-size: 12.5px; line-height: 1.5;
+  border-radius: var(--radius-sm, 9px); font-size: 12.5px; line-height: 1.5;
   max-width: 80%; word-break: break-word;
 }
 .message .content pre { background: var(--bg); padding: 10px; border-radius: var(--radius-sm, 6px); overflow-x: auto; margin: 6px 0; font-size: var(--text-sm-md, 12px); }
@@ -323,7 +323,7 @@
 .catalog-section h4 { font-size: var(--text-base, 13px); color: var(--accent); margin-bottom: 4px; font-weight: 600; }
 .tier-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
 .tier-tab {
-  padding: 3px 10px; font-size: var(--text-xs, 10px); border-radius: 10px;
+  padding: 3px 10px; font-size: var(--text-xs, 10px); border-radius: var(--radius-sm, 10px);
   background: var(--surface2); color: var(--text-dim); border: none; cursor: pointer;
   text-transform: capitalize;
 }
@@ -633,7 +633,7 @@
   display: inline-flex;
   align-items: center;
   padding: 2px 8px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm, 10px);
   font-size: var(--text-xs, 10px);
   color: var(--text);
   background: var(--kb-entity-tone-soft, rgba(63,45,23,0.08));

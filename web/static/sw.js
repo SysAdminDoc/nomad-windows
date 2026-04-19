@@ -7,7 +7,8 @@ const STATIC_ASSETS = [
   // Manifest & top-level assets
   '/static/manifest.json',
   '/static/logo.png',
-  '/static/nomad-mark.svg',
+  '/static/logo-192.png',
+  '/static/logo-512.png',
   // App CSS
   '/static/css/app.css',
   '/static/css/app/00_theme_tokens.css',

@@ -598,27 +598,27 @@ Items derived from audit findings above, tagged `[internal]`.
 
 | # | Title | Description | Findings |
 |---|-------|-------------|----------|
-| P1-I01 | **Extract `_safe_int`/`_safe_float`/`_utc_now` to utils.py** | Move duplicated helpers to `web/utils.py`, update all 10+ blueprint imports | A-1, A-3 |
-| P1-I02 | **Remove `_esc` redefinitions** | Delete local `_esc` helpers in blueprints, import `esc` from `web/utils.py` | A-2 |
+| P1-I01 | ~~**Extract `_safe_int`/`_safe_float`/`_utc_now` to utils.py**~~ | **Done** (pre-v7.44) — already centralized in `web/utils.py` | A-1, A-3 |
+| P1-I02 | ~~**Remove `_esc` redefinitions**~~ | **Done** (pre-v7.44) — blueprints import `esc` from `web/utils.py` | A-2 |
 | P1-I03 | **Strip 190+ `console.log` from production JS** | Search-and-remove or gate behind `if(DEBUG)` flag across all JS files | F-1 |
-| P1-I04 | **Add `proc.kill()` fallback in `stop_process()`** | After `proc.wait(10)` timeout, call `proc.kill()` then `proc.wait(5)` to prevent zombies | E-3 |
-| P1-I05 | **Add lock to `_download_progress` in manager.py** | Wrap dict access in `threading.Lock` for thread-safe read/write | C-3 |
-| P1-I06 | **Add lock to `_service_logs` in manager.py** | Wrap dict access in `threading.Lock` for thread-safe read/write | C-4 |
-| P1-I07 | **Skip redundant PRAGMAs on pooled connections** | Set `foreign_keys`/`busy_timeout`/`cache_size` once on connection creation, not on every `get_db()` call | D-1 |
-| P1-I08 | **FTS5 search input sanitization** | Strip/escape FTS5 special characters (`*`, `"`, `NEAR`, `OR`, `AND`, `NOT`) from user search queries before MATCH | D-4 |
-| P1-I09 | **Fix `get_db()` connection leak on PRAGMA failure** | Add try/except around PRAGMAs with `conn.close()` in the except handler | E-6 |
-| P1-I10 | **Close DB pool connections on shutdown** | Add `atexit` handler or shutdown hook to drain and close all pool connections | E-2 |
+| P1-I04 | ~~**Add `proc.kill()` fallback in `stop_process()`**~~ | **Done** (pre-v7.44) — escalates SIGTERM→SIGKILL after 10s | E-3 |
+| P1-I05 | ~~**Add lock to `_download_progress` in manager.py**~~ | **Done** (pre-v7.44) — `_dl_progress_lock` exists | C-3 |
+| P1-I06 | ~~**Add lock to `_service_logs` in manager.py**~~ | **Done** (pre-v7.44) — `_svc_logs_lock` exists | C-4 |
+| P1-I07 | ~~**Skip redundant PRAGMAs on pooled connections**~~ | **Done** (pre-v7.44) — WAL uses double-checked locking, once per process | D-1 |
+| P1-I08 | ~~**FTS5 search input sanitization**~~ | **Done** (pre-v7.44) — double-quoted phrase matching strips special chars | D-4 |
+| P1-I09 | ~~**Fix `get_db()` connection leak on PRAGMA failure**~~ | **Done** (pre-v7.44) — try/except with conn.close() | E-6 |
+| P1-I10 | ~~**Close DB pool connections on shutdown**~~ | **Done** (pre-v7.44) — pool has proper cleanup patterns | E-2 |
 | P1-I11 | **Service health URLs respect configured ports** | Read port from config/env instead of hardcoding in `SERVICE_HEALTH_URLS` dict | H-2 |
-| P1-I12 | **Delete dead `_wizard_state` from state.py** | Remove unused wizard state dict until onboarding wizard (P2-01) is built | H-1 |
-| P1-I13 | **Add `timeout=15` to all Situation Room HTTP requests** | Add `timeout` parameter to all 34 `_http_session.get()` calls in sitroom workers to prevent thread hangs | H-7 |
-| P1-I14 | **Add `f.flush(); os.fsync()` before `os.replace()` in config.py** | Prevent incomplete temp file on crash during config save | H-8 |
-| P1-I15 | **Use configured Ollama port in ai.py** | Replace hardcoded `http://localhost:11434` with port from config/service module constant | H-9 |
-| P1-I16 | **Add lock to `_event_subscribers` in state.py** | Prevent `RuntimeError: list changed size` during `_broadcast_event()` iteration | C-6 |
-| P1-I17 | **Cancel previous AI stream on new message** | Use `AbortController` in AI chat to abort the previous `fetch()` stream before starting a new one | F-10 |
-| P1-I18 | **Add `try-catch` around `fetch()` in `apiFetch()`** | Catch `TypeError` for offline/DNS-failure and return a structured error instead of propagating | F-9 |
-| P1-I19 | **Fix SSE reconnect backoff** | Don't reset `_reconnectDelay` on connect; only reset after a sustained (>30s) successful connection | F-12 |
-| P1-I20 | **Add NukeMap iframe `title` attribute** | Set `title="Nuclear effects map"` for screen reader context | H-27 |
-| P1-I21 | **Cache failed `libtorrent` import** | Set a flag after first ImportError so subsequent calls skip the retry | H-13 |
+| P1-I12 | **Delete dead `_wizard_state` from state.py** | Wizard state IS used (has locking); onboarding wizard exists | H-1 |
+| P1-I13 | ~~**Add `timeout=15` to all Situation Room HTTP requests**~~ | **Done** (pre-v7.44) — all 40+ HTTP calls have timeouts | H-7 |
+| P1-I14 | ~~**Add `f.flush(); os.fsync()` before `os.replace()` in config.py**~~ | **Done** (pre-v7.44) — save_config() has flush+fsync | H-8 |
+| P1-I15 | ~~**Use configured Ollama port in ai.py**~~ | **Done** (v7.45.0) — 3 calls now use `ollama.OLLAMA_PORT` | H-9 |
+| P1-I16 | ~~**Add lock to `_event_subscribers` in state.py**~~ | **Done** (pre-v7.44) — `_sse_lock` guards all SSE ops | C-6 |
+| P1-I17 | ~~**Cancel previous AI stream on new message**~~ | **Done** (pre-v7.44) — AbortController per message | F-10 |
+| P1-I18 | ~~**Add `try-catch` around `fetch()` in `apiFetch()`**~~ | **Done** (v7.45.0) — structured network error with status:0 | F-9 |
+| P1-I19 | ~~**Fix SSE reconnect backoff**~~ | **Done** (v7.45.0) — resets only after 30s sustained connection | F-12 |
+| P1-I20 | ~~**Add NukeMap iframe `title` attribute**~~ | **N/A** — NukeMap is inline DOM, not an iframe | H-27 |
+| P1-I21 | ~~**Cache failed `libtorrent` import**~~ | **Done** (pre-v7.44) — `_LT_AVAILABLE` flag at module level | H-13 |
 | P1-I22 | **Prune unused CSS keyframes** | Remove unreferenced `bounceIn`, `slideUp`, etc. from `premium/05_motion.css` | H-17 |
 
 #### P2: Medium Effort (1-4 hours each) [internal]

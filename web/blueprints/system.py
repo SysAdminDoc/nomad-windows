@@ -108,6 +108,31 @@ def _get_cpu_percent():
 
 system_bp = Blueprint('system', __name__)
 
+_app_start_time = time.time()
+
+
+@system_bp.route('/healthz')
+def api_healthz():
+    """Lightweight health check for external monitors (UptimeKuma, Prometheus)."""
+    db_ok = False
+    try:
+        with db_session() as db:
+            db.execute('SELECT 1').fetchone()
+            db_ok = True
+    except Exception:
+        pass
+    running_count = sum(1 for mod in (ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes) if mod.is_installed() and mod.running())
+    status = 'healthy' if db_ok else 'degraded'
+    code = 200 if db_ok else 503
+    return jsonify({
+        'status': status,
+        'version': config.Config.VERSION,
+        'uptime': int(time.time() - _app_start_time),
+        'db_ok': db_ok,
+        'services_running': running_count,
+    }), code
+
+
 @system_bp.route('/api/settings')
 def api_settings():
     with db_session() as db:

@@ -90,9 +90,16 @@ async function apiFetch(url, options = {}) {
         return await resp.json();
     } catch (err) {
         if (err.status) throw err; // Re-throw API errors
-        // Network error
+        // Network-level error (offline, DNS failure, timeout)
+        const netErr = new Error(
+            err.name === 'AbortError' ? 'Request timed out'
+            : 'Network error — check your connection'
+        );
+        netErr.status = 0;
+        netErr.network = true;
+        netErr.data = { error: netErr.message };
         console.error('[API]', url, err.message);
-        throw err;
+        throw netErr;
     }
 }
 

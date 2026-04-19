@@ -3811,8 +3811,23 @@ let _nightModeApplied = false;
 function checkNightMode() {
   const autoNight = localStorage.getItem('nomad-auto-night');
   if (autoNight !== '1') return;
-  const hour = new Date().getHours();
-  const isNight = hour >= 21 || hour < 6; // 9pm - 6am
+  // Use sunrise/sunset data if available (from /api/sun), else fall back to 9pm-6am
+  let isNight;
+  try {
+    if (typeof _sunData === 'object' && _sunData && _sunData.sunrise && _sunData.sunset) {
+      const now = new Date();
+      const mins = now.getHours() * 60 + now.getMinutes();
+      const [sh, sm] = _sunData.sunrise.split(':').map(Number);
+      const [eh, em] = _sunData.sunset.split(':').map(Number);
+      isNight = mins < sh * 60 + sm || mins >= eh * 60 + em;
+    } else {
+      const hour = new Date().getHours();
+      isNight = hour >= 21 || hour < 6;
+    }
+  } catch (_) {
+    const hour = new Date().getHours();
+    isNight = hour >= 21 || hour < 6;
+  }
   const currentTheme = localStorage.getItem('nomad-theme') || 'nomad';
   if (isNight && !_nightModeApplied) {
     _nightModeApplied = true;

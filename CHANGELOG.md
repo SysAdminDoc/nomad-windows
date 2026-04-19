@@ -2,6 +2,23 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.45.0] — Internal Audit Quick Wins + UX Improvements
+
+### Fixed
+- **`apiFetch()` network error handling (P1-I18)** — network-level `TypeError` (offline, DNS failure, timeout) now returns a structured error with `status: 0` and `network: true` flag instead of re-throwing the raw exception. Callers get meaningful error messages ("Request timed out" / "Network error — check your connection").
+- **SSE reconnect flap protection (P1-I19)** — `_reconnectDelay` no longer resets to 1000ms immediately on `onopen()`. Now waits 30s of sustained connection before resetting backoff, preventing rapid connect/disconnect cycles from flooding the server.
+- **Ollama port hardcoding (P1-I15)** — 3 API calls in `ai.py` (model info, vision chat, model details) now use `ollama.OLLAMA_PORT` constant instead of hardcoded `localhost:11434`. Training job route already used the constant.
+
+### Added
+- **`/healthz` endpoint (P4-19)** — lightweight health check returning `{status, version, uptime, db_ok, services_running}` for external monitors (UptimeKuma, Prometheus, etc.). Returns 200 when healthy, 503 when DB is unreachable.
+- **Sunrise/sunset-aware auto night mode (P4-10)** — auto night-mode now uses actual sunrise/sunset times from `/api/sun` when location data is available, instead of hardcoded 9pm-6am. Falls back to time-based logic when sun data is unavailable.
+
+### Internal Audit Verification
+Verified 12 additional P1-I items were already resolved in prior releases (v7.29-v7.44): shared helpers centralized in utils.py (I01/I02), sitroom HTTP timeouts (I13), AI stream AbortController (I17), process kill escalation (I04), thread locks on manager dicts (I05/I06), PRAGMA optimization (I07), config fsync (I14), SSE subscriber locking (I16), NukeMap inline DOM (I20), libtorrent import cache (I21), FTS5 double-quote sanitization (I08).
+
+### Verified P1 Features Already Implemented
+Confirmed 15 P1 roadmap items already shipped: loading skeletons (P1-01), favicon badge (P1-05), collapsible sidebar groups (P1-06), settings search (P1-07), inline quantity edit (P1-08), print preview in-app (P1-10), relative timestamps (P1-11), auto-focus Ctrl+K (P1-13), inventory sort persistence (P1-14), service uptime (P1-15), expiry countdown badges (P1-16), sidebar reorder (P1-17), click-to-copy (P1-18), AI prompt presets (P1-20), tab badge counts (P1-04), keyboard shortcuts overlay (P1-03).
+
 ## [v7.44.0] — Phase 1.1: Data Foundation & Localization
 
 ### Added

@@ -26,6 +26,8 @@ _processes: dict[str, subprocess.Popen] = {}
 _download_progress: dict[str, dict] = {}
 _service_logs: dict[str, deque] = {}
 _lock = threading.Lock()
+_dl_progress_lock = threading.Lock()
+_svc_logs_lock = threading.Lock()
 
 # Service dependency graph: service -> list of services it requires
 DEPENDENCIES = {
@@ -108,10 +110,11 @@ def download_file(url: str, dest: str, service_id: str = '') -> str:
     if os.path.isfile(dest):
         partial_size = os.path.getsize(dest)
 
-    _download_progress[service_id] = {
-        'percent': 0, 'status': 'downloading', 'error': None,
-        'speed': '', 'downloaded': partial_size, 'total': 0,
-    }
+    with _dl_progress_lock:
+        _download_progress[service_id] = {
+            'percent': 0, 'status': 'downloading', 'error': None,
+            'speed': '', 'downloaded': partial_size, 'total': 0,
+        }
 
     try:
         headers = {}
@@ -122,10 +125,11 @@ def download_file(url: str, dest: str, service_id: str = '') -> str:
         resp = requests.get(url, stream=True, timeout=30, headers=headers)
 
         if resp.status_code == 416:
-            _download_progress[service_id] = {
-                'percent': 100, 'status': 'complete', 'error': None,
-                'speed': '', 'downloaded': partial_size, 'total': partial_size,
-            }
+            with _dl_progress_lock:
+                _download_progress[service_id] = {
+                    'percent': 100, 'status': 'complete', 'error': None,
+                    'speed': '', 'downloaded': partial_size, 'total': partial_size,
+                }
             return dest
 
         if partial_size > 0 and resp.status_code != 206:
@@ -152,25 +156,28 @@ def download_file(url: str, dest: str, service_id: str = '') -> str:
                 else:
                     speed_str = f'{speed:.0f} B/s'
 
-                _download_progress[service_id].update({
-                    'percent': min(int(downloaded / total * 100), 100) if total > 0 else 0,
-                    'speed': speed_str,
-                    'downloaded': downloaded,
-                    'total': total,
-                })
+                with _dl_progress_lock:
+                    _download_progress[service_id].update({
+                        'percent': min(int(downloaded / total * 100), 100) if total > 0 else 0,
+                        'speed': speed_str,
+                        'downloaded': downloaded,
+                        'total': total,
+                    })
 
-        _download_progress[service_id] = {
-            'percent': 100, 'status': 'complete', 'error': None,
-            'speed': '', 'downloaded': total, 'total': total,
-            '_finished_at': time.time(),
-        }
+        with _dl_progress_lock:
+            _download_progress[service_id] = {
+                'percent': 100, 'status': 'complete', 'error': None,
+                'speed': '', 'downloaded': total, 'total': total,
+                '_finished_at': time.time(),
+            }
         return dest
     except Exception as e:
-        _download_progress[service_id] = {
-            'percent': 0, 'status': 'error', 'error': str(e),
-            'speed': '', 'downloaded': 0, 'total': 0,
-            '_finished_at': time.time(),
-        }
+        with _dl_progress_lock:
+            _download_progress[service_id] = {
+                'percent': 0, 'status': 'error', 'error': str(e),
+                'speed': '', 'downloaded': 0, 'total': 0,
+                '_finished_at': time.time(),
+            }
         # Keep partial file for resume on next attempt
         log.warning(f'Download failed for {service_id}, partial file kept for resume: {e}')
         raise
@@ -215,7 +222,8 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
 
         # Start background thread to read output into _service_logs
         # NOTE: service logs may contain filesystem paths — acceptable for local desktop app
-        log_deque = _service_logs.setdefault(service_id, deque(maxlen=500))
+        with _svc_logs_lock:
+            log_deque = _service_logs.setdefault(service_id, deque(maxlen=500))
         def _read_output():
             try:
                 for line in iter(proc.stdout.readline, b''):
@@ -511,27 +519,30 @@ def unregister_process(service_id: str):
 
 
 def get_download_progress(service_id: str) -> dict:
-    return _download_progress.get(service_id, {
-        'percent': 0, 'status': 'idle', 'error': None,
-        'speed': '', 'downloaded': 0, 'total': 0,
-    })
+    with _dl_progress_lock:
+        return _download_progress.get(service_id, {
+            'percent': 0, 'status': 'idle', 'error': None,
+            'speed': '', 'downloaded': 0, 'total': 0,
+        })
 
 
 def prune_completed_downloads(max_age: float = 3600):
     """Remove download progress entries that completed/errored more than max_age seconds ago."""
     now = time.time()
-    stale = [
-        k for k, v in _download_progress.items()
-        if v.get('status') in ('complete', 'error')
-        and v.get('_finished_at', 0) and now - v['_finished_at'] > max_age
-    ]
-    for k in stale:
-        _download_progress.pop(k, None)
+    with _dl_progress_lock:
+        stale = [
+            k for k, v in _download_progress.items()
+            if v.get('status') in ('complete', 'error')
+            and v.get('_finished_at', 0) and now - v['_finished_at'] > max_age
+        ]
+        for k in stale:
+            _download_progress.pop(k, None)
 
 
 def get_service_logs(service_id: str) -> list[str]:
     """Return a snapshot of captured stdout/stderr lines for a service."""
-    return list(_service_logs.get(service_id, []))
+    with _svc_logs_lock:
+        return list(_service_logs.get(service_id, []))
 
 
 def check_port(port: int) -> bool:
@@ -623,10 +634,12 @@ def uninstall_service(service_id: str) -> bool:
     finally:
         db.close()
         # Always clean up tracking state, even if DB delete failed
-        _download_progress.pop(service_id, None)
+        with _dl_progress_lock:
+            _download_progress.pop(service_id, None)
         with _lock:
-            _service_logs.pop(service_id, None)
             _restart_tracker.pop(service_id, None)
+        with _svc_logs_lock:
+            _service_logs.pop(service_id, None)
 
     log_activity('service_uninstalled', service_id)
     log.info(f'Uninstalled {service_id}')

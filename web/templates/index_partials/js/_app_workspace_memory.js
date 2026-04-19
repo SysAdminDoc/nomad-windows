@@ -2118,10 +2118,11 @@ async function loadLogViewer() {
     el.innerHTML = filtered.map(a => {
       const t = new Date(a.created_at);
       const ts = t.toLocaleString([], {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      const rel = typeof timeAgo === 'function' ? timeAgo(a.created_at) : '';
       const badge = a.level === 'error' ? 'ERR' : a.level === 'warning' ? 'WRN' : 'INF';
       const badgeClass = a.level === 'error' ? 'settings-log-badge-error' : a.level === 'warning' ? 'settings-log-badge-warning' : 'settings-log-badge-info';
       return `<div class="settings-log-row">
-        <span class="settings-log-time">${ts}</span>
+        <span class="settings-log-time" title="${ts}">${rel || ts}</span>
         <span class="settings-log-badge ${badgeClass}">${badge}</span>
         <span class="settings-log-service">${escapeHtml(a.service||'-')}</span>
         <span>${escapeHtml(a.event.replace(/_/g,' '))}${a.detail ? ' — '+escapeHtml(a.detail) : ''}</span>
@@ -2245,10 +2246,11 @@ async function loadActivity() {
       const t = new Date(a.created_at);
       const time = t.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
       const date = t.toLocaleDateString([], {month:'short',day:'numeric'});
+      const rel = typeof timeAgo === 'function' ? timeAgo(a.created_at) : '';
       const event = a.event.replace(/_/g, ' ');
       const eventToneClass = a.level === 'error' ? 'activity-event-error' : a.level === 'warning' ? 'activity-event-warning' : 'activity-event-info';
       return `<div class="activity-item">
-        <span class="activity-time">${date} ${time}</span>
+        <span class="activity-time" title="${date} ${time}">${rel || (date + ' ' + time)}</span>
         <span class="activity-event ${eventToneClass}">${event}</span>
         ${a.service ? `<span class="activity-service-tag">${escapeHtml(a.service)}</span>` : ''}
         ${a.detail ? `<span class="activity-detail">${escapeHtml(a.detail)}</span>` : ''}

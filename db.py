@@ -2526,7 +2526,9 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_county ON fema_nri_counties(state_fips, county_fips)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_state ON fema_nri_counties(state_name)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_risk ON fema_nri_counties(risk_score DESC)',
-        # v7.44.0 — NOAA stations, frost dates, hardiness zones
+        # v7.44.0 — Scheduled reports, NOAA stations, frost dates, hardiness zones
+        'CREATE INDEX IF NOT EXISTS idx_scheduled_reports_type ON scheduled_reports(report_type)',
+        'CREATE INDEX IF NOT EXISTS idx_scheduled_reports_generated ON scheduled_reports(generated_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_noaa_stations_state ON noaa_stations(state)',
         'CREATE INDEX IF NOT EXISTS idx_noaa_stations_icao ON noaa_stations(icao)',
         'CREATE INDEX IF NOT EXISTS idx_noaa_frost_dates_station ON noaa_frost_dates(station_id)',
@@ -2991,6 +2993,20 @@ def _create_data_foundation_tables(conn):
             community_resilience REAL DEFAULT 0,
             hazard_scores TEXT DEFAULT '{}',
             UNIQUE(state_fips, county_fips)
+        );
+
+        /* ─── Scheduled Reports (AI-generated SITREPs + history) ─── */
+        CREATE TABLE IF NOT EXISTS scheduled_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            report_type TEXT NOT NULL DEFAULT 'sitrep',
+            title TEXT NOT NULL,
+            content TEXT DEFAULT '',
+            context_snapshot TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            trigger TEXT DEFAULT 'manual',
+            status TEXT DEFAULT 'complete',
+            word_count INTEGER DEFAULT 0,
+            generated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
         /* ─── NOAA Weather Stations Directory ─── */

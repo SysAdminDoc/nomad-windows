@@ -14,9 +14,11 @@ All notable changes to project-nomad-desktop will be documented in this file.
 - **3 new lookup routes** — `/api/region/hardiness/<zip>`, `/api/region/frost-dates?lat=&lng=`, `/api/region/nearest-station?lat=&lng=`.
 - **3 new tables** — `noaa_stations`, `noaa_frost_dates`, `usda_hardiness_zones` with 6 new indexes.
 - **Pack importer framework** — `/api/data-packs/<id>/import` triggers background import, `/api/data-packs/<id>/import/status` polls progress.
+- **Scheduled reports system** — new `scheduled_reports` blueprint with background SITREP generator. Configurable schedule (1-168 hour interval). Report history with search/detail/delete. On-demand generation via `/api/reports/generate`. Schedule config via `/api/reports/schedule`. Background scheduler thread checks every 5 minutes, generates SITREP when due. Failed reports saved with `status: failed` for visibility.
+- **`scheduled_reports` table** — report_type, title, content, context_snapshot, model, trigger (manual/scheduled), status, word_count, generated_at. 2 indexes.
 
 ### Stats
-- 5 data pack importers, 3 new tables, 6 new indexes, 3 new lookup routes. All 5 Tier 1 data packs now have working import pipelines. Nutrition blueprint (search, link, summary, micronutrient gaps) was already built — this adds the data that powers it.
+- 5 data pack importers, 4 new tables, 8 new indexes, 10+ new routes. All 5 Tier 1 data packs now have working import pipelines. Scheduled report generation closes the automation gap in AI Phase 2. Phases 1.2 and 1.3 confirmed already complete (54 routes across water_mgmt, consumption, nutrition, meal_planning).
 
 ## [v7.43.0] — Cross-theme audit + WCAG compliance (Pass 8)
 

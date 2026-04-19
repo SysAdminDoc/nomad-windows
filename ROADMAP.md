@@ -40,6 +40,123 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 
 ---
 
+## Deep Dive: Glance (~32k stars)
+
+**Repo**: [glanceapp/glance](https://github.com/glanceapp/glance) | **Latest**: v0.8.4 (2025-06-10) | **Stack**: Go, single binary (<20 MB), vanilla JS, YAML config
+
+### What They Do Better
+
+1. **Declarative YAML configuration with hot-reload** — Config changes take effect on save without restart. Glance never touches a database for layout; everything is a flat YAML file. This makes backup, version control, and sharing trivial. NOMAD's widget/dashboard config is scattered across localStorage, DB settings, and JS objects.
+2. **`$include` directive for modular configs** — Users split config into `home.yml`, `videos.yml`, `homelab.yml` and compose them. Encourages reuse and sharing of preconfigured page templates (Glance ships 3: Startpage, Markets, Gaming).
+3. **Community widgets ecosystem** — Separate [community-widgets](https://github.com/glanceapp/community-widgets) repo lets users contribute custom widget types without forking the main project. Plugin boundary is well-defined (custom-api widget + extension widget + HTML widget + iframe widget).
+4. **Icon library system** — 4 icon packs via prefix (`si:`, `sh:`, `di:`, `mdi:`) from CDN, plus `auto-invert` for theme-aware icons. NOMAD uses inline SVGs and emoji; no unified icon vocabulary.
+5. **Extreme resource efficiency** — <20 MB binary, minimal RAM. Pages load in ~1s. No background workers unless explicitly configured. Cache TTLs are per-widget, not global.
+6. **Preconfigured page templates** — Ship-ready layouts (Startpage, Markets, Gaming) that users copy-paste. Lowers the "blank canvas" intimidation factor.
+7. **Environment variable injection anywhere** — `${ENV_VAR}` syntax works in any YAML value, plus Docker secrets support via `${secret:name}` and file-based secrets via `${readFileFromEnv:VAR}`.
+
+### Top Feature Requests (by thumbs-up)
+
+| Votes | Issue | NOMAD Relevance |
+|-------|-------|-----------------|
+| 23 | Auto-refresh page/widget content on interval (#327) | NOMAD has SSE + polling but no per-widget configurable refresh intervals |
+| 17 | Translation/i18n support (#61) | NOMAD has 10 languages but only 56 keys; Glance has none yet — opportunity to lead |
+| 15 | Calendar events / CalDAV support (#94, #902) | NOMAD has no calendar integration; could add offline ICS/CalDAV reader |
+| 13 | Miniflux RSS reader integration (#313) | NOMAD's Situation Room has RSS but not personal feed reader integration |
+| 12 | Proxmox monitoring (#349) | Infrastructure monitoring not in scope but shows demand for system metrics |
+| 11 | GitHub Trending widget (#72) | Interesting for Knowledge/Intel section |
+| 11 | GUI config editor (#221) | NOMAD has customize panel but no visual widget/page layout editor |
+| 10 | Swipe navigation on mobile (#128) | NOMAD's mobile bottom nav could benefit from swipe between tabs |
+| 10 | Address-bar-style search (#229) | NOMAD's Ctrl+K search could act as URL bar for services |
+| 9 | Automatic theme switching (day/night) (#674) | NOMAD has night mode but it's manual; could auto-switch by sunrise/sunset |
+| 9 | OIDC/SSO authentication (#905) | NOMAD has basic auth; OIDC would help LAN multi-user deployments |
+
+### Architectural Decisions to Adopt
+
+- **Per-widget cache TTL**: Each widget declares its own cache lifetime instead of a global refresh rate. More efficient for mixed-frequency data.
+- **Config-as-code philosophy**: Exportable/importable dashboard config files make sharing setups between users trivial.
+- **Preconfigured templates**: Ship ready-to-use page layouts that new users can start from instead of building from scratch.
+
+---
+
+## Deep Dive: Homepage (~29.6k stars)
+
+**Repo**: [gethomepage/homepage](https://github.com/gethomepage/homepage) | **Latest**: v1.12.3 (2026-04-01) | **Stack**: Next.js, statically generated, YAML config
+
+### What They Do Better
+
+1. **150+ service widget integrations** — From Plex to Proxmox to Sonarr to Home Assistant, Homepage has pre-built widgets for essentially every self-hosted app. Each widget knows the service's API and displays relevant stats (active streams, queue sizes, storage usage). NOMAD manages 8 services but doesn't integrate with external self-hosted apps.
+2. **Docker auto-discovery via labels** — Services running in Docker are automatically detected and added to the dashboard via container labels. Zero manual configuration for new services.
+3. **Full i18n via Crowdin** — 40+ languages with community translations managed through Crowdin, ensuring coverage stays current. NOMAD's 10 languages with 56 keys is thin by comparison.
+4. **Proxied API requests** — All backend API calls are server-side proxied, keeping API keys hidden from the browser. This is a strong security pattern NOMAD could adopt for federation/external API calls.
+5. **Statically generated pages** — Next.js static generation means instant page loads. While NOMAD's Flask+SSR approach is different, the lesson is clear: minimize client-side rendering for dashboard views.
+6. **Bookmark groups with favicons** — Quick-launch bookmark sections with auto-fetched favicons. Simple but highly useful for a command center.
+7. **Custom API widget** — A generic widget that can query any JSON API and render results with a configurable template. This is the extensibility escape hatch that avoids needing a plugin system.
+8. **Resource widgets (CPU/RAM/disk/uptime)** — Built-in system monitoring widgets with clean, consistent presentation. GPU temperature was a top request (#86, 16 votes).
+9. **Calendar widget with iCal support** — Displays upcoming events from any iCal/CalDAV feed. Practical for ops planning.
+
+### Top Feature Requests (closed issues, by thumbs-up)
+
+| Votes | Issue | NOMAD Relevance |
+|-------|-------|-----------------|
+| 25 | Deluge widget (#190) | Shows demand for torrent client status widgets — NOMAD has built-in torrent but no dashboard widget |
+| 19 | Audiobookshelf widget (#525) | Media library integration demand |
+| 16 | CPU temperature (#86) | NOMAD shows CPU% but not temp; psutil can read temps on Linux |
+| 15 | Sonarr calendar widget (#242) | Calendar/scheduling demand |
+| 15 | Server uptime display (#240) | Already in NOMAD backlog as P1-15 |
+| 12 | Config variables (#60) | Glance solved this; NOMAD should too |
+| 11 | Favicon auto-fetch for bookmarks (#174) | Useful for service links/bookmarks |
+| 10 | Home Assistant integration (#683) | Already in NOMAD backlog as P3-15 |
+| 8 | Custom widget support (#467) | Generic widget renderer for arbitrary APIs |
+
+### Architectural Decisions to Adopt
+
+- **Server-side API proxying**: Never expose API keys to the browser. Route all external API calls through the Flask backend.
+- **Widget integration manifest**: Each widget is a self-contained module with a defined interface. Makes adding new integrations systematic.
+- **Crowdin for i18n management**: Professional translation management instead of manual JSON file editing.
+
+---
+
+## Deep Dive: Dashy (~24.7k stars)
+
+**Repo**: [Lissy93/dashy](https://github.com/Lissy93/dashy) | **Latest**: 3.3.0 (2026-04-15) | **Stack**: Vue.js, Node.js, YAML config, Docker
+
+### What They Do Better
+
+1. **Visual config editor with live preview** — Right-click any section to edit it. Enter "Edit Mode" to click any part of the page and modify it inline. Changes preview instantly before saving. This is the gold standard for dashboard configuration UX.
+2. **Multi-view architecture** — Three distinct views: Default (full dashboard), Minimal (browser startpage), and Workspace (multi-app simultaneous view with iframe panels). NOMAD could offer a "Startpage" minimal view.
+3. **70+ built-in widgets** — Clock, weather, RSS, crypto, stocks, system info, Pi-Hole, Proxmox, Nextcloud, code stats, flight data, sports scores, XKCD, NASA APOD, GitHub trending, vulnerability feeds, exchange rates, public holidays, transit status, and more. Many are fun/lifestyle widgets that make the dashboard feel personal.
+4. **Comprehensive icon system** — Font Awesome, Simple Icons, selfh.st homelab icons, Material Icons, emoji, generative identicons, URL images, and local files. Auto-favicon fetching from service URLs.
+5. **SSO/OIDC authentication** — Full Keycloak integration with multi-user access, per-user permissions (admin vs read-only guest), and granular visibility controls per section/item.
+6. **Cloud backup & sync** — E2E encrypted config backup to Cloudflare Workers/KV. Restore on any instance. Config portability without self-hosting a sync server.
+7. **Opening methods** — Items can open in: new tab, same tab, modal popup, workspace iframe, or copy URL to clipboard. Right-click for all options. NOMAD services only open in new tabs.
+8. **Search bangs** — Prefix-based search routing: `/r` → Reddit, `/w` → Wikipedia, `!so` → StackOverflow. Customizable per-user.
+9. **Custom hotkeys per item** — Assign number keys 0-9 to frequently used services for instant launch.
+10. **30+ community-translated languages** — Including Pirate (arr!). Human-translated, not auto-generated.
+
+### Top Feature Requests (by thumbs-up)
+
+| Votes | Issue | NOMAD Relevance |
+|-------|-------|-----------------|
+| 11 | Header authentication (#981) | Auth proxy support (Authelia/Authentik) — useful for LAN multi-user |
+| 10 | Calendar widget (#1201) | Third time this appears across competitors — clear demand |
+| 6 | Font Awesome v6 (#1424) | Icon library versioning |
+| 5 | qBittorrent queue widget (#1122) | Torrent status widget demand — NOMAD has torrent built in |
+| 5 | Health check endpoint (#768) | `/healthz` endpoint for monitoring Dashy itself |
+| 4 | Random image/video background (#721) | Cosmetic personalization |
+| 4 | Masonry layout (#1233) | Pinterest-style auto-filling grid layout |
+| 3 | Notes widget (#636) | Note-taking on dashboard — NOMAD already has full Notes module |
+| 3 | Dual URL per item (#820) | Internal vs external URL for same service |
+
+### Architectural Decisions to Adopt
+
+- **Right-click context menus**: Every dashboard element has a context menu with Edit, Move, Delete, Open In... options. Much faster than navigating to a settings page.
+- **Workspace/iframe multi-app view**: Open multiple services simultaneously in tiled iframes. Useful for monitoring multiple NOMAD modules side by side.
+- **Search bangs**: Custom search shortcuts that route to specific tools/modules. Could map `/i` → inventory search, `/m` → medical, `/c` → contacts.
+- **Cloud-synced config backup**: E2E encrypted config backup for federation/multi-node deployments.
+- **Minimal startpage mode**: A stripped-down view showing only bookmarks + search + clock for use as a browser start page.
+
+---
+
 ## Improvement Backlog
 
 ### P1: Quick Wins (< 1 hour each)
@@ -110,6 +227,31 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P3-13 | **Regional content packs** | Pre-configured data bundles for Canada (ECCC), UK (Met Office), EU (Copernicus), Australia (BOM) with localized weather sources | IIAB |
 | P3-14 | **Lightweight/minimal mode** | Startup flag or setting to disable Situation Room, heavy services, and background workers for Raspberry Pi / low-RAM hardware | Glance, Survive-AI |
 | P3-15 | **Home Assistant integration** | MQTT or REST bridge to expose NOMAD sensor data (power, weather, inventory counts) to Home Assistant | Grocy, Meshtastic HA |
+
+### P4: Deep-Dive Discoveries (from competitor research loop 2)
+
+| # | Title | Description | Inspired By |
+|---|-------|-------------|-------------|
+| P4-01 | **Per-widget refresh intervals** | Let each dashboard widget declare its own auto-refresh interval (e.g., weather 30min, alerts 60s, services 10s) instead of a single global refresh rate; store in widget config | Glance (per-widget cache TTL) |
+| P4-02 | **Preconfigured dashboard templates** | Ship 3-5 ready-to-use dashboard layouts (Minimal Startpage, Full Command Center, Homestead, Field Ops, Family Hub) that users select on first run or from Settings; each template pre-configures visible tabs, widget order, and theme | Glance (preconfigured pages) |
+| P4-03 | **Exportable/importable dashboard config** | Export entire dashboard configuration (visible tabs, widget layout, theme, sidebar order, zoom level) as a single JSON/YAML file; import on another instance or share with community | Glance (config-as-code), Dashy (cloud backup) |
+| P4-04 | **Calendar widget with ICS/CalDAV support** | Offline calendar widget displaying events from local `.ics` files or cached CalDAV feeds; show upcoming events on home dashboard; integrate with task scheduler due dates | Glance (#94, 15 votes), Homepage (calendar widget), Dashy (#1201, 10 votes) |
+| P4-05 | **Custom API widget renderer** | Generic widget type that fetches any JSON API endpoint (internal or external) and renders results using a user-defined HTML/Mustache template; acts as an extensibility escape hatch | Glance (custom-api widget), Homepage (customapi widget), Dashy (API response widget) |
+| P4-06 | **Search bangs / module shortcuts** | Ctrl+K search supports prefix shortcuts: `/i query` searches inventory, `/m` medical, `/c` contacts, `/n` notes, `/w` waypoints, `/f` frequencies; user-configurable in Settings | Dashy (search bangs) |
+| P4-07 | **Right-click context menus on dashboard elements** | Right-click any service card, widget, inventory item, or contact for contextual actions (Edit, Delete, Copy, Open, Pin) instead of navigating to a separate edit view | Dashy (right-click edit) |
+| P4-08 | **Minimal startpage mode** | A stripped-down view showing only search bar, clock, bookmarks grid, and service status indicators; usable as a browser start page; toggle via Settings or URL parameter `?view=minimal` | Dashy (minimal view) |
+| P4-09 | **Workspace/tiled multi-panel view** | Open 2-4 NOMAD modules simultaneously in a tiled iframe layout (e.g., Map + Inventory + Contacts side-by-side); useful for multi-monitor or ultrawide setups | Dashy (workspace view) |
+| P4-10 | **Auto theme switching (day/night schedule)** | Automatically switch between dark and light themes based on sunrise/sunset times (already have `/api/sun` endpoint) or a user-defined schedule; configurable in Settings | Glance (#674, 9 votes) |
+| P4-11 | **Service opening methods** | Service cards offer multiple launch options: open in new tab, open in modal/iframe overlay, open in workspace panel, copy URL to clipboard; right-click or dropdown selector per service | Dashy (opening methods) |
+| P4-12 | **Favicon auto-fetch for services and bookmarks** | Automatically fetch and cache favicons from service URLs for display on service cards and any bookmark/link widgets; fall back to generated identicon | Homepage (#174, 11 votes), Dashy (favicon icon type) |
+| P4-13 | **CPU/GPU temperature monitoring** | Add CPU and GPU temperature readings to system info (psutil `sensors_temperatures()` on Linux, WMI on Windows); display on System Health card with high-temp alerts | Homepage (#86, 16 votes) |
+| P4-14 | **Torrent status dashboard widget** | Home page widget showing active torrent count, total download/upload speed, seeding ratio, and storage used; leverages existing TorrentManager API | Homepage (Deluge widget, #190, 25 votes) |
+| P4-15 | **Auth proxy / header authentication** | Support `X-Forwarded-User` and `X-Remote-User` headers from auth proxies (Authelia, Authentik, Caddy forward_auth) for seamless LAN multi-user without NOMAD's own auth | Dashy (#981, 11 votes), Glance (#905, 9 votes) |
+| P4-16 | **Mobile swipe navigation** | Swipe left/right between tabs on mobile (touch event handlers on `.content` area); visual tab indicator dots; configurable gesture sensitivity | Glance (#128, 10 votes) |
+| P4-17 | **Icon library system** | Unified icon prefix system for all UI elements: `fa:` (Font Awesome), `si:` (Simple Icons), `mdi:` (Material Design Icons), `emoji:`, `url:` (custom image URL); replaces current mix of inline SVGs and emoji | Glance (4 icon prefixes), Dashy (7 icon types) |
+| P4-18 | **Config environment variable injection** | Support `${ENV_VAR}` syntax in NOMAD config.json for secrets, API keys, and per-deployment overrides; useful for federation nodes with different credentials | Glance (env var injection), Homepage (env vars in YAML) |
+| P4-19 | **Health check endpoint** | `GET /healthz` returns 200 with JSON `{status, uptime, db_ok, services_count}` for external monitoring tools (UptimeKuma, Prometheus, etc.) to monitor NOMAD itself | Dashy (#768, 5 votes) |
+| P4-20 | **Masonry/auto-fill grid layout** | Alternative dashboard layout where cards auto-fill available space in a masonry pattern (no fixed rows); especially useful for varying-height widgets on ultrawide monitors | Dashy (#1233, 4 votes) |
 
 ---
 

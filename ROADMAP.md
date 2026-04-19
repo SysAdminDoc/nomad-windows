@@ -284,19 +284,19 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-04 | ~~Recipe-driven consumption~~ | **Done** (v7.48.0) — recipes CRUD + cook route auto-deducts |
 | P2-05 | ~~Equipment maintenance scheduler~~ | **Done** — `vehicles.py` maintenance tracking + overdue alerts |
 | P2-06 | **Drag-and-drop widget reorder** | Open |
-| P2-07 | **OpenAPI/Swagger spec** | Open |
-| P2-08 | **Expanded i18n coverage** | Open — currently 56 keys, need 200+ |
+| P2-07 | ~~OpenAPI/Swagger spec~~ | **Done** (v7.51.0) — auto-generated `/api/openapi.json` + Swagger UI at `/api/docs` |
+| P2-08 | ~~Expanded i18n coverage~~ | **Done** (v7.51.0) — 56→210+ keys (buttons, errors, empty states, labels, status) |
 | P2-09 | ~~Inventory location hierarchy~~ | **Done** (v7.48.0) — nested locations with tree API |
 | P2-10 | ~~Scheduled report export~~ | **Done** — CSV export + ReportLab PDF |
 | P2-11 | ~~Content pack browser~~ | **Done** — `specialized_modules.py` content pack CRUD |
 | P2-12 | ~~Service health history graph~~ | **Done** (v7.48.0) — service_health_log table + history API |
-| P2-13 | **Inline survival quick-reference** | Open |
+| P2-13 | ~~Inline survival quick-reference~~ | **Done** (v7.51.0) — 10 reference cards (water, fire, shelter, first aid, nav, signals, food, knots, weather, radio) |
 | P2-14 | ~~Multi-user profiles~~ | **Done** (v7.50.0) — list profiles via app_users API |
 | P2-15 | **Inventory item photos gallery** | Open |
 | P2-16 | ~~Map bookmark/favorite locations~~ | **Done** (v7.49.0) — map_bookmarks CRUD |
 | P2-17 | **Notification center panel** | Open |
 | P2-18 | ~~CSV export for all entities~~ | **Done** (v7.50.0) — generic `/api/export/csv/<table>` |
-| P2-19 | **Inventory fractional quantities** | Open |
+| P2-19 | ~~Inventory fractional quantities~~ | **Done** (pre-existing) — schema already accepts `(int, float)` for quantity |
 | P2-20 | ~~Task assignment to contacts~~ | **Done** — `assigned_to` column + filter in tasks.py |
 | P2-21 | ~~Battery/consumable tracker~~ | **Done** (v7.48.0) — battery_tracker CRUD |
 | P2-22 | ~~AI model management UI~~ | **Done** — `ai.py` model pull/delete/info routes |
@@ -325,8 +325,8 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P3-13 | **Regional content packs** | Pre-configured data bundles for Canada (ECCC), UK (Met Office), EU (Copernicus), Australia (BOM) with localized weather sources | IIAB |
 | P3-14 | ~~**Lightweight/minimal mode**~~ | **Done** (v7.48.0) — `NOMAD_MINIMAL_MODE=1` config flag | Glance, Survive-AI |
 | P3-15 | **Home Assistant integration** | MQTT or REST bridge to expose NOMAD sensor data (power, weather, inventory counts) to Home Assistant | Grocy, Meshtastic HA |
-| P3-16 | **AI model comparison view** | Side-by-side responses from two models on the same prompt for evaluating model quality | Open WebUI |
-| P3-17 | **AI function/tool calling** | Let AI execute structured actions via defined Python functions (query inventory, check weather, calculate dosage) instead of regex-based action parsing | Open WebUI |
+| P3-16 | ~~**AI model comparison view**~~ | **Done** (v7.51.0) — `/api/ai/compare` sends same prompt to 2 models | Open WebUI |
+| P3-17 | ~~**AI function/tool calling**~~ | **Done** (v7.51.0) — 6 tools (query_inventory, check_weather, count_contacts, get_alerts, search_notes, calculate_dosage) via `/api/ai/tools` | Open WebUI |
 | P3-18 | ~~**Shopping list aisle grouping**~~ | **Done** (v7.50.0) — `/api/shopping-list/grouped` with 8 aisle categories | Mealie, Grocy |
 | P3-19 | **Android companion app** | Lightweight Android app for barcode scanning, inventory lookup, and checklist access that syncs with desktop instance via LAN API | Grocy (Android), IIAB (Android) |
 

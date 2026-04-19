@@ -1381,3 +1381,194 @@ def api_upgrade_password_hash():
         db.execute('UPDATE app_users SET password_hash = ? WHERE id = ?', (hashed, user_id))
         db.commit()
     return jsonify({'status': 'upgraded', 'algorithm': 'bcrypt'})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P2-07: OpenAPI/Swagger Spec (auto-generated)
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/docs')
+def api_docs_redirect():
+    """Redirect to Swagger UI."""
+    return '''<!DOCTYPE html><html><head><title>NOMAD API Docs</title>
+    <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5/swagger-ui.css">
+    </head><body><div id="swagger-ui"></div>
+    <script src="https://unpkg.com/swagger-ui-dist@5/swagger-ui-bundle.js"></script>
+    <script>SwaggerUIBundle({url:"/api/openapi.json",dom_id:"#swagger-ui"})</script>
+    </body></html>'''
+
+
+@roadmap_bp.route('/api/openapi.json')
+def api_openapi_spec():
+    """Auto-generate OpenAPI 3.0 spec from registered Flask routes."""
+    from flask import current_app
+    paths = {}
+    for rule in current_app.url_map.iter_rules():
+        if not rule.rule.startswith('/api/'):
+            continue
+        if rule.rule in ('/api/openapi.json', '/api/docs'):
+            continue
+        path = rule.rule.replace('<int:', '{').replace('<', '{').replace('>', '}')
+        methods = {}
+        for method in rule.methods - {'OPTIONS', 'HEAD'}:
+            methods[method.lower()] = {
+                'summary': rule.endpoint.replace('_', ' ').title(),
+                'responses': {'200': {'description': 'Success'}},
+                'tags': [rule.endpoint.split('.')[0] if '.' in rule.endpoint else 'general'],
+            }
+        if methods:
+            paths[path] = methods
+    spec = {
+        'openapi': '3.0.3',
+        'info': {
+            'title': 'NOMAD Field Desk API',
+            'version': '7.50.0',
+            'description': 'Offline-first preparedness command center API',
+        },
+        'paths': paths,
+    }
+    return jsonify(spec)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P2-13: Inline Survival Quick-Reference Cards
+# ═══════════════════════════════════════════════════════════════════════
+
+SURVIVAL_REFERENCE = [
+    {'id': 'water', 'title': 'Water Purification', 'category': 'essentials', 'content': 'BOILING: Rolling boil for 1 minute (3 min above 6,500 ft). CHEMICAL: 2 drops bleach per quart, wait 30 min. FILTER: 0.2 micron ceramic/hollow fiber. SOLAR: SODIS in clear PET bottles, 6 hours full sun. SIGNS OF BAD WATER: cloudiness, odor, surface film, algae.'},
+    {'id': 'fire', 'title': 'Fire Starting', 'category': 'essentials', 'content': 'TINDER: dry grass, birch bark, dryer lint, cotton balls with petroleum jelly. KINDLING: pencil-thick dry sticks. FUEL: wrist-thick dry wood. METHODS: ferro rod + scraper, magnifying lens, bow drill (spindle + fireboard + socket + bow), hand drill. FIRE LAY: teepee for quick light, log cabin for coals, star fire for long burn.'},
+    {'id': 'shelter', 'title': 'Emergency Shelter', 'category': 'essentials', 'content': 'PRIORITIES: protection from wind/rain/cold > comfort. DEBRIS HUT: frame of ridge pole + ribs, 3ft thick debris insulation, small entrance. TARP: A-frame with 550 cord ridge line, stake corners. SNOW: quinzhee (pile snow 5ft, let sinter 2hrs, hollow out), snow trench with tarp cover. LOCATION: avoid hilltops (wind), valley floors (cold air pools), dead trees, flood zones.'},
+    {'id': 'firstaid', 'title': 'First Aid Essentials', 'category': 'medical', 'content': 'BLEEDING: Direct pressure 10 min, elevate, tourniquet 2-3 inches above wound if life-threatening. BURNS: Cool running water 10-20 min, cover with clean cloth, never pop blisters. FRACTURE: Splint above and below break, pad bony prominences. CPR: 30 compressions (2 inch depth) : 2 breaths, 100-120/min. CHOKING: 5 back blows, 5 abdominal thrusts (Heimlich).'},
+    {'id': 'navigation', 'title': 'GPS-Denied Navigation', 'category': 'skills', 'content': 'COMPASS: Hold level, align needle to N, orient map to match. SHADOW STICK: Plant stick, mark tip, wait 15 min, mark again. Line between marks = E-W (first mark is W). SUN: Rises roughly E, sets roughly W. At solar noon, shadows point N (northern hemisphere). STARS: Polaris = tip of Little Dipper handle, always due north. Southern Cross: extend long axis 4.5x to find south celestial pole.'},
+    {'id': 'signals', 'title': 'Signaling & Rescue', 'category': 'skills', 'content': 'INTERNATIONAL DISTRESS: 3 of anything (3 fires, 3 whistle blasts, 3 gunshots). GROUND-TO-AIR: V = need assistance, X = need medical, I = need supplies, arrow = traveling this direction. SIGNAL MIRROR: Flash toward aircraft/rescue, sweep horizon. WHISTLE: 3 short blasts, pause, repeat. SMOKE: Green branches on fire for white smoke (day), bright fire for night.'},
+    {'id': 'food', 'title': 'Wild Edibles & Foraging', 'category': 'food', 'content': 'UNIVERSAL EDIBILITY TEST: 8-hour fast, skin contact test (15 min), lip test (15 min), tongue test (15 min), chew test (15 min), swallow small amount, wait 8 hours. SAFE BETS: dandelion (all parts), cattail (shoots, pollen, roots), pine (needles for tea, inner bark), acorns (leach tannins in water). NEVER EAT: white/yellow berries, mushrooms without 100% ID, plants with milky sap (except dandelion).'},
+    {'id': 'knots', 'title': 'Essential Knots', 'category': 'skills', 'content': 'BOWLINE: fixed loop that won\'t slip. CLOVE HITCH: quick temporary attachment to pole. TAUT-LINE HITCH: adjustable tension on guy lines. TRUCKER\'S HITCH: 3:1 mechanical advantage for securing loads. FIGURE-8 ON A BIGHT: strong fixed loop for climbing/rescue. SQUARE KNOT: joining two ropes of equal diameter (not for critical loads). PRUSIK: friction hitch for ascending rope.'},
+    {'id': 'weather', 'title': 'Weather Prediction', 'category': 'skills', 'content': 'PRESSURE FALLING: storm approaching (barometer drops >3mb/3hr = severe). WIND SHIFT: backing wind (counterclockwise) = approaching low. CLOUDS: cirrus → cirrostratus → altostratus → nimbostratus = rain in 24-36 hrs. RED SKY: morning = moisture + approaching weather; evening = clearing. ANIMALS: birds flying low, insects close to ground = low pressure/rain coming.'},
+    {'id': 'radio', 'title': 'Emergency Radio Frequencies', 'category': 'comms', 'content': 'FRS CH1: 462.5625 MHz (license-free, 2W). GMRS CH1: 462.5625 MHz (license required, 50W). 2M CALL: 146.520 MHz (national simplex). 70CM CALL: 446.000 MHz. MARINE CH16: 156.800 MHz (distress). CB CH9: 27.065 MHz (emergency). CB CH19: 27.185 MHz (trucker/travel). NOAA WX: 162.400-162.550 MHz (7 channels). MURS CH1: 151.820 MHz (license-free, 2W).'},
+]
+
+@roadmap_bp.route('/api/reference/survival')
+def api_survival_reference():
+    """Return built-in survival quick-reference cards."""
+    category = request.args.get('category', '')
+    q = request.args.get('q', '').lower()
+    cards = SURVIVAL_REFERENCE
+    if category:
+        cards = [c for c in cards if c['category'] == category]
+    if q:
+        cards = [c for c in cards if q in c['title'].lower() or q in c['content'].lower()]
+    return jsonify(cards)
+
+
+@roadmap_bp.route('/api/reference/survival/<card_id>')
+def api_survival_reference_card(card_id):
+    for card in SURVIVAL_REFERENCE:
+        if card['id'] == card_id:
+            return jsonify(card)
+    return error_response('Card not found', 404)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P3-16: AI Model Comparison View
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/ai/compare', methods=['POST'])
+def api_ai_compare():
+    """Send same prompt to two models and return both responses."""
+    d = request.get_json() or {}
+    model_a = d.get('model_a', '')
+    model_b = d.get('model_b', '')
+    prompt = d.get('prompt', '')
+    if not model_a or not model_b or not prompt:
+        return error_response('model_a, model_b, and prompt are required')
+    from services import ollama
+    results = {}
+    for label, model in [('a', model_a), ('b', model_b)]:
+        try:
+            resp = ollama.chat(model=model, messages=[{'role': 'user', 'content': prompt}], stream=False)
+            results[label] = {
+                'model': model,
+                'response': resp.get('message', {}).get('content', '') if isinstance(resp, dict) else str(resp),
+                'error': None,
+            }
+        except Exception as e:
+            results[label] = {'model': model, 'response': '', 'error': str(type(e).__name__)}
+    return jsonify(results)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P3-17: AI Function/Tool Calling
+# ═══════════════════════════════════════════════════════════════════════
+
+AI_TOOLS = {
+    'query_inventory': {
+        'description': 'Search inventory items by name or category',
+        'params': ['query'],
+        'handler': lambda db, p: [dict(r) for r in db.execute(
+            "SELECT id, name, category, quantity, expiration FROM inventory WHERE name LIKE ? OR category LIKE ? LIMIT 20",
+            (f'%{p["query"]}%', f'%{p["query"]}%')
+        ).fetchall()],
+    },
+    'check_weather': {
+        'description': 'Get latest weather readings',
+        'params': [],
+        'handler': lambda db, p: [dict(r) for r in db.execute(
+            'SELECT * FROM weather_log ORDER BY created_at DESC LIMIT 5'
+        ).fetchall()],
+    },
+    'count_contacts': {
+        'description': 'Count contacts by role',
+        'params': [],
+        'handler': lambda db, p: [dict(r) for r in db.execute(
+            'SELECT role, COUNT(*) as count FROM contacts GROUP BY role ORDER BY count DESC'
+        ).fetchall()],
+    },
+    'get_alerts': {
+        'description': 'Get active alerts',
+        'params': [],
+        'handler': lambda db, p: [dict(r) for r in db.execute(
+            'SELECT * FROM alerts WHERE dismissed = 0 ORDER BY created_at DESC LIMIT 20'
+        ).fetchall()],
+    },
+    'search_notes': {
+        'description': 'Search notes by title or content',
+        'params': ['query'],
+        'handler': lambda db, p: [dict(r) for r in db.execute(
+            "SELECT id, title, SUBSTR(content, 1, 200) as excerpt FROM notes WHERE title LIKE ? OR content LIKE ? LIMIT 10",
+            (f'%{p["query"]}%', f'%{p["query"]}%')
+        ).fetchall()],
+    },
+    'calculate_dosage': {
+        'description': 'Calculate medication dosage by weight',
+        'params': ['drug', 'weight_kg'],
+        'handler': lambda db, p: {'drug': p.get('drug', ''), 'weight_kg': float(p.get('weight_kg', 70)),
+                                   'note': 'Consult medical professional. This is reference only.'},
+    },
+}
+
+@roadmap_bp.route('/api/ai/tools')
+def api_ai_tools_list():
+    """List available AI function tools."""
+    return jsonify([{
+        'name': name,
+        'description': tool['description'],
+        'params': tool['params'],
+    } for name, tool in AI_TOOLS.items()])
+
+
+@roadmap_bp.route('/api/ai/tools/<tool_name>', methods=['POST'])
+def api_ai_tool_call(tool_name):
+    """Execute an AI tool/function call."""
+    if tool_name not in AI_TOOLS:
+        return error_response(f'Unknown tool: {tool_name}', 404)
+    d = request.get_json() or {}
+    tool = AI_TOOLS[tool_name]
+    for param in tool['params']:
+        if param not in d:
+            return error_response(f'Missing required parameter: {param}')
+    with db_session() as db:
+        try:
+            result = tool['handler'](db, d)
+            return jsonify({'tool': tool_name, 'result': result})
+        except Exception as e:
+            return error_response(f'Tool execution failed')

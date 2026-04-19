@@ -2,6 +2,18 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.51.0] — OpenAPI, AI Tools, Survival Reference, i18n Expansion
+
+### Added
+- **OpenAPI/Swagger spec (P2-07)** — auto-generated `/api/openapi.json` from Flask routes. Swagger UI at `/api/docs`.
+- **Expanded i18n (P2-08)** — 56 → 210+ translation keys covering buttons, errors, empty states, labels, status, confirmations, toasts, and time units.
+- **Inline survival quick-reference (P2-13)** — 10 built-in reference cards: water purification, fire starting, shelter, first aid, navigation, signaling, wild edibles, knots, weather prediction, emergency radio frequencies. Searchable via `/api/reference/survival`.
+- **AI model comparison (P3-16)** — `/api/ai/compare` sends same prompt to two models and returns both responses side-by-side.
+- **AI function/tool calling (P3-17)** — 6 structured tools (query_inventory, check_weather, count_contacts, get_alerts, search_notes, calculate_dosage) callable via `/api/ai/tools/<name>`. Replaces regex-based action parsing for structured operations.
+
+### Verified Already Complete
+- P2-19 (fractional quantities) — schema already accepts `(int, float)` since v7.32.0.
+
 ## [v7.50.0] — Final Backend Batch: CSV Export, Aisle Grouping, OCR, Change Detection
 
 ### Added

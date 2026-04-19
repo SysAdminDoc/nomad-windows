@@ -462,6 +462,22 @@ def api_system():
     gpu_name = _gpu.get('name', 'None detected')
     gpu_vram = f'{_gpu["vram_mb"]} MB' if _gpu.get('vram_mb') else ''
 
+    # CPU/GPU temperature (P4-13)
+    cpu_temp = None
+    try:
+        temps = psutil.sensors_temperatures()
+        if temps:
+            for name in ('coretemp', 'k10temp', 'cpu_thermal', 'acpitz'):
+                if name in temps and temps[name]:
+                    cpu_temp = round(temps[name][0].current, 1)
+                    break
+            if cpu_temp is None:
+                first = next(iter(temps.values()), [])
+                if first:
+                    cpu_temp = round(first[0].current, 1)
+    except (AttributeError, Exception):
+        pass  # sensors_temperatures() not available on Windows/macOS
+
     # Disk partitions
     disk_devices = []
     try:
@@ -502,6 +518,7 @@ def api_system():
         'cpu_cores': cpu_count,
         'cpu_cores_physical': cpu_count_phys,
         'cpu_percent': cpu_percent,
+        'cpu_temp': cpu_temp,
         'ram_total': format_size(mem.total) if mem else 'Unknown',
         'ram_used': format_size(mem.used) if mem else 'Unknown',
         'ram_available': format_size(mem.available) if mem else 'Unknown',

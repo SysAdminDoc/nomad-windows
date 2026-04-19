@@ -2,6 +2,19 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.46.0] — Security, Search Bangs, CPU Temp, CI Hardening
+
+### Added
+- **Search bangs in command palette (P4-06)** — type `/i water` to search only inventory, `/c smith` for contacts, `/n todo` for notes. 11 bang prefixes: `/i` inventory, `/c` contacts, `/n` notes, `/m` medical, `/w` waypoints, `/f` frequencies, `/d` documents, `/t` checklists, `/e` equipment, `/a` ammo, `/s` skills.
+- **CPU temperature monitoring (P4-13)** — `cpu_temp` field in `/api/system` response. Uses psutil `sensors_temperatures()` with fallback chain (coretemp, k10temp, cpu_thermal, acpitz). Available on Linux; gracefully returns `null` on Windows/macOS.
+- **Host header validation (P5-16)** — set `NOMAD_ALLOWED_HOSTS=nomad.local,192.168.1.50` to reject requests with unexpected Host headers. Prevents DNS rebinding attacks on LAN deployments. Localhost always exempt. Disabled by default.
+
+### Changed
+- **CI esbuild step (P2-I09)** — `build.yml` now runs `npm ci && node esbuild.config.mjs` before PyInstaller build, ensuring `web/static/dist/` is always fresh in CI artifacts. Node.js 20 added to build matrix.
+
+### Roadmap Audit
+Comprehensive audit of all P1-P5, UX, and internal items against codebase. Marked 34 additional items as complete that were implemented but not tracked: P1-02, P1-03, P1-04, P1-09, P1-12, P1-16, P1-19, P1-21, P2-01, P2-02, P2-03, P2-05, P2-10, P2-11, P2-22, P2-26, P3-04, P1-I03, P1-I11, P1-I12, P2-I08, and others.
+
 ## [v7.45.0] — Internal Audit Quick Wins + UX Improvements
 
 ### Fixed

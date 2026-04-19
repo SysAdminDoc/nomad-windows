@@ -277,6 +277,23 @@ def create_app():
     # methods) slipped through.
     _MUTATING_METHODS = ('POST', 'PUT', 'PATCH', 'DELETE')
 
+    # ─── Host Header Validation (P5-16) ─────────────────────────────
+    _allowed_hosts_raw = os.environ.get('NOMAD_ALLOWED_HOSTS', '')
+    _allowed_hosts = set(
+        h.strip().lower() for h in _allowed_hosts_raw.split(',') if h.strip()
+    ) if _allowed_hosts_raw else None
+
+    @app.before_request
+    def _host_header_check():
+        """Reject requests with unexpected Host headers (DNS rebinding protection).
+        Only active when NOMAD_ALLOWED_HOSTS is set (comma-separated list)."""
+        if _allowed_hosts is None:
+            return
+        host = (request.host or '').split(':')[0].lower()
+        if host not in _allowed_hosts and not _is_loopback(request.remote_addr or ''):
+            from flask import abort
+            abort(403, 'Host not allowed')
+
     @app.before_request
     def _csrf_origin_check():
         """Block cross-origin state-changing requests."""

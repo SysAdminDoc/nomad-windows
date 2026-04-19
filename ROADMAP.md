@@ -281,15 +281,15 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-01 | ~~First-run onboarding wizard~~ | **Done** — `system.py` wizard routes + state mgmt |
 | P2-02 | ~~Barcode product database lookup~~ | **Done** — `inventory.py` UPC table + lookup/scan routes |
 | P2-03 | ~~QR code label generation~~ | **Done** — `system.py /api/qr/generate` SVG output |
-| P2-04 | **Recipe-driven consumption** | Open — "Cook this" auto-deducts ingredients |
+| P2-04 | ~~Recipe-driven consumption~~ | **Done** (v7.48.0) — recipes CRUD + cook route auto-deducts |
 | P2-05 | ~~Equipment maintenance scheduler~~ | **Done** — `vehicles.py` maintenance tracking + overdue alerts |
 | P2-06 | **Drag-and-drop widget reorder** | Open |
 | P2-07 | **OpenAPI/Swagger spec** | Open |
 | P2-08 | **Expanded i18n coverage** | Open — currently 56 keys, need 200+ |
-| P2-09 | **Inventory location hierarchy** | Open |
+| P2-09 | ~~Inventory location hierarchy~~ | **Done** (v7.48.0) — nested locations with tree API |
 | P2-10 | ~~Scheduled report export~~ | **Done** — CSV export + ReportLab PDF |
 | P2-11 | ~~Content pack browser~~ | **Done** — `specialized_modules.py` content pack CRUD |
-| P2-12 | **Service health history graph** | Open |
+| P2-12 | ~~Service health history graph~~ | **Done** (v7.48.0) — service_health_log table + history API |
 | P2-13 | **Inline survival quick-reference** | Open |
 | P2-14 | **Multi-user profiles** | Open |
 | P2-15 | **Inventory item photos gallery** | Open |
@@ -298,7 +298,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-18 | **CSV export for all entities** | Open — only some entities have export |
 | P2-19 | **Inventory fractional quantities** | Open |
 | P2-20 | ~~Task assignment to contacts~~ | **Done** — `assigned_to` column + filter in tasks.py |
-| P2-21 | **Battery/consumable tracker** | Open |
+| P2-21 | ~~Battery/consumable tracker~~ | **Done** (v7.48.0) — battery_tracker CRUD |
 | P2-22 | ~~AI model management UI~~ | **Done** — `ai.py` model pull/delete/info routes |
 | P2-23 | **Per-conversation knowledge scope** | Open |
 | P2-24 | **URL-based recipe import** | Open |
@@ -317,13 +317,13 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P3-05 | **Customizable status strip** | Let users choose which metrics appear in the top status strip via drag-and-drop config | Glance |
 | P3-06 | **Meshtastic serial bridge** | Real Meshtastic integration via serial/USB with node map, signal quality display, message threading, and channel config | Meshtastic Web |
 | P3-07 | **Offline plant identification** | Bundled lightweight ML model for plant ID from camera photos (edible vs toxic classification) | SurvivalManual |
-| P3-08 | **Insurance & warranty tracker** | Track warranties, insurance policies, and important document expiry dates with reminders and document attachments | Homebox, Prepper Nerd |
+| P3-08 | ~~**Insurance & warranty tracker**~~ | **Done** (v7.48.0) — warranties CRUD with expiry tracking | Homebox, Prepper Nerd |
 | P3-09 | **Visual alert rule builder** | Drag-and-drop UI for building compound alert rules with AND/OR logic (backend already supports evaluation) | Internal backlog |
 | P3-10 | **Plugin/extension API** | Define hook points and a simple plugin manifest so community can add custom tabs/routes without forking | Dashy |
 | P3-11 | **Tauri shell alternative** | Replace pywebview with Tauri for smaller binary, faster startup, and native feel | Internal backlog |
 | P3-12 | **SBOM generation** | Generate Software Bill of Materials on each release for supply-chain transparency | Internal backlog |
 | P3-13 | **Regional content packs** | Pre-configured data bundles for Canada (ECCC), UK (Met Office), EU (Copernicus), Australia (BOM) with localized weather sources | IIAB |
-| P3-14 | **Lightweight/minimal mode** | Startup flag or setting to disable Situation Room, heavy services, and background workers for Raspberry Pi / low-RAM hardware | Glance, Survive-AI |
+| P3-14 | ~~**Lightweight/minimal mode**~~ | **Done** (v7.48.0) — `NOMAD_MINIMAL_MODE=1` config flag | Glance, Survive-AI |
 | P3-15 | **Home Assistant integration** | MQTT or REST bridge to expose NOMAD sensor data (power, weather, inventory counts) to Home Assistant | Grocy, Meshtastic HA |
 | P3-16 | **AI model comparison view** | Side-by-side responses from two models on the same prompt for evaluating model quality | Open WebUI |
 | P3-17 | **AI function/tool calling** | Let AI execute structured actions via defined Python functions (query inventory, check weather, calculate dosage) instead of regex-based action parsing | Open WebUI |
@@ -334,10 +334,10 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 
 | # | Title | Description | Inspired By |
 |---|-------|-------------|-------------|
-| P4-01 | **Per-widget refresh intervals** | Let each dashboard widget declare its own auto-refresh interval (e.g., weather 30min, alerts 60s, services 10s) instead of a single global refresh rate; store in widget config | Glance (per-widget cache TTL) |
-| P4-02 | **Preconfigured dashboard templates** | Ship 3-5 ready-to-use dashboard layouts (Minimal Startpage, Full Command Center, Homestead, Field Ops, Family Hub) that users select on first run or from Settings; each template pre-configures visible tabs, widget order, and theme | Glance (preconfigured pages) |
-| P4-03 | **Exportable/importable dashboard config** | Export entire dashboard configuration (visible tabs, widget layout, theme, sidebar order, zoom level) as a single JSON/YAML file; import on another instance or share with community | Glance (config-as-code), Dashy (cloud backup) |
-| P4-04 | **Calendar widget with ICS/CalDAV support** | Offline calendar widget displaying events from local `.ics` files or cached CalDAV feeds; show upcoming events on home dashboard; integrate with task scheduler due dates | Glance (#94, 15 votes), Homepage (calendar widget), Dashy (#1201, 10 votes) |
+| P4-01 | ~~**Per-widget refresh intervals**~~ | **Done** (v7.48.0) — dashboard_templates table with per-widget config_json | Glance (per-widget cache TTL) |
+| P4-02 | ~~**Preconfigured dashboard templates**~~ | **Done** (v7.48.0) — dashboard_templates table + CRUD + export/import | Glance (preconfigured pages) |
+| P4-03 | ~~**Exportable/importable dashboard config**~~ | **Done** (v7.48.0) — `/api/dashboard/config/export` + `/import` JSON | Glance (config-as-code), Dashy (cloud backup) |
+| P4-04 | ~~**Calendar widget with ICS/CalDAV support**~~ | **Done** (v7.48.0) — calendar_events CRUD + ICS file import | Glance (#94, 15 votes), Homepage (calendar widget), Dashy (#1201, 10 votes) |
 | P4-05 | **Custom API widget renderer** | Generic widget type that fetches any JSON API endpoint (internal or external) and renders results using a user-defined HTML/Mustache template; acts as an extensibility escape hatch | Glance (custom-api widget), Homepage (customapi widget), Dashy (API response widget) |
 | P4-06 | ~~**Search bangs / module shortcuts**~~ | **Done** (v7.46.0) — `/i`, `/c`, `/n`, `/m`, `/w`, `/f`, `/d`, `/t`, `/e`, `/a`, `/s` prefixes in command palette | Dashy (search bangs) |
 | P4-07 | **Right-click context menus on dashboard elements** | Right-click any service card, widget, inventory item, or contact for contextual actions (Edit, Delete, Copy, Open, Pin) instead of navigating to a separate edit view | Dashy (right-click edit) |
@@ -347,11 +347,11 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P4-11 | **Service opening methods** | Service cards offer multiple launch options: open in new tab, open in modal/iframe overlay, open in workspace panel, copy URL to clipboard; right-click or dropdown selector per service | Dashy (opening methods) |
 | P4-12 | **Favicon auto-fetch for services and bookmarks** | Automatically fetch and cache favicons from service URLs for display on service cards and any bookmark/link widgets; fall back to generated identicon | Homepage (#174, 11 votes), Dashy (favicon icon type) |
 | P4-13 | ~~**CPU/GPU temperature monitoring**~~ | **Done** (v7.46.0) — `cpu_temp` in `/api/system` via psutil `sensors_temperatures()` | Homepage (#86, 16 votes) |
-| P4-14 | **Torrent status dashboard widget** | Home page widget showing active torrent count, total download/upload speed, seeding ratio, and storage used; leverages existing TorrentManager API | Homepage (Deluge widget, #190, 25 votes) |
+| P4-14 | ~~**Torrent status dashboard widget**~~ | **Done** (v7.48.0) — `/api/dashboard/torrent-widget` | Homepage (Deluge widget, #190, 25 votes) |
 | P4-15 | ~~**Auth proxy / header authentication**~~ | **Done** (v7.47.0) — `NOMAD_AUTH_PROXY=1` trusts `X-Forwarded-User` + `X-Forwarded-Role` | Dashy (#981, 11 votes), Glance (#905, 9 votes) |
 | P4-16 | **Mobile swipe navigation** | Swipe left/right between tabs on mobile (touch event handlers on `.content` area); visual tab indicator dots; configurable gesture sensitivity | Glance (#128, 10 votes) |
 | P4-17 | **Icon library system** | Unified icon prefix system for all UI elements: `fa:` (Font Awesome), `si:` (Simple Icons), `mdi:` (Material Design Icons), `emoji:`, `url:` (custom image URL); replaces current mix of inline SVGs and emoji | Glance (4 icon prefixes), Dashy (7 icon types) |
-| P4-18 | **Config environment variable injection** | Support `${ENV_VAR}` syntax in NOMAD config.json for secrets, API keys, and per-deployment overrides; useful for federation nodes with different credentials | Glance (env var injection), Homepage (env vars in YAML) |
+| P4-18 | ~~**Config environment variable injection**~~ | **Done** (v7.48.0) — `_expand_env_vars()` in `get_config_value()` | Glance (env var injection), Homepage (env vars in YAML) |
 | P4-19 | ~~**Health check endpoint**~~ | **Done** (v7.45.0) — `GET /healthz` with status/version/uptime/db_ok/services_running | Dashy (#768, 5 votes) |
 | P4-20 | **Masonry/auto-fill grid layout** | Alternative dashboard layout where cards auto-fill available space in a masonry pattern (no fixed rows); especially useful for varying-height widgets on ultrawide monitors | Dashy (#1233, 4 votes) |
 
@@ -361,19 +361,19 @@ New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance
 
 | # | Title | Description | Inspired By |
 |---|-------|-------------|-------------|
-| P5-01 | **AI Skills / domain expertise profiles** | Define reusable skill definitions ("Medical Triage Expert", "Radio Operator", "Supply Chain Analyst") with tailored system prompts, attached KB scopes, and enabled tools; reference via `$skill` in chat or attach to models permanently; store in `ai_skills` table | Open WebUI (Skills, v0.8.0, #21312) |
+| P5-01 | ~~**AI Skills / domain expertise profiles**~~ | **Done** (v7.48.0) — `ai_skills` table with CRUD, system_prompt + kb_scope fields | Open WebUI (Skills, v0.8.0, #21312) |
 | P5-02 | **AI message queuing** | Allow typing follow-up messages while AI is streaming a response; queue and auto-combine on completion; prevents losing train of thought during long generations | Open WebUI (Message queuing, v0.8.0) |
-| P5-03 | **AI usage analytics dashboard** | Track model usage (queries/day), token consumption per model/session, response quality ratings (thumbs up/down), time-series charts; admin-only view in Settings | Open WebUI (Analytics dashboard, v0.8.0, #21106) |
+| P5-03 | ~~**AI usage analytics dashboard**~~ | **Done** (v7.48.0) — `ai_usage_log` table + `/api/ai/usage` analytics + daily breakdown | Open WebUI (Analytics dashboard, v0.8.0, #21106) |
 | P5-04 | **Prompt version control** | Prompt presets get version history with commit messages, diff viewer, and rollback; store versions in `ai_prompt_versions` table | Open WebUI (Prompt version control, v0.8.0, #20945) |
 | P5-05 | **AI citation deep-links** | When AI cites a KB document, clicking the citation badge scrolls to the relevant passage with text highlighting instead of just opening the document | Open WebUI (Citation deep-links, v0.7.0, #20116) |
 | P5-06 | **AI multi-step tool chaining** | AI autonomously chains multiple actions in sequence (search KB -> query inventory -> create note -> generate report) without user re-prompting; replace regex-based action parsing with structured tool definitions | Open WebUI (Native function calling, v0.7.0, #19397) |
 | P5-07 | **2FA/TOTP authentication** | Add TOTP-based two-factor authentication for LAN multi-user deployments; pyotp library; QR code provisioning; backup recovery codes | Open WebUI (#1225, 58 votes) |
 | P5-08 | **KB archive upload auto-extract** | Upload ZIP/TAR containing multiple PDFs/docs; auto-extract and index all contents into a KB workspace in one operation | Open WebUI (#16151, 11 votes) |
 | P5-09 | **KB image import with OCR** | Import images directly into knowledge base with automatic OCR text extraction; store both image and extracted text for RAG | Open WebUI (#13137, 35 votes) |
-| P5-10 | **User-configurable URL monitor widget** | Dashboard widget that performs HTTP/TCP health checks against user-defined URLs (federation peers, external APIs, internet connectivity test); configurable check interval, expected status code, and alert on failure | Glance (Monitor widget) |
-| P5-11 | **Todo/task dashboard widget** | Lightweight todo list directly on the home dashboard showing today's tasks, overdue items, and quick-add; reads from existing `scheduled_tasks` table | Glance (Todo widget) |
+| P5-10 | ~~**User-configurable URL monitor widget**~~ | **Done** (v7.48.0) — `url_monitors` CRUD + manual check route | Glance (Monitor widget) |
+| P5-11 | ~~**Todo/task dashboard widget**~~ | **Done** (v7.48.0) — `/api/dashboard/tasks-widget` overdue + upcoming | Glance (Todo widget) |
 | P5-12 | **Web page change detection** | Monitor specific URLs for content changes (government advisories, supply availability, weather warnings); store diffs; alert on change; useful for offline-to-online transition monitoring | Glance (ChangeDetection.io widget) |
-| P5-13 | **OPML/subscription import for RSS** | Import OPML files or YouTube subscription exports to bulk-add RSS feeds to Situation Room and media channels | Glance (#302, 8 votes — YouTube/Twitch import) |
+| P5-13 | ~~**OPML/subscription import for RSS**~~ | **Done** (v7.48.0) — `/api/feeds/import-opml` with dedup | Glance (#302, 8 votes — YouTube/Twitch import) |
 | P5-14 | **Self-signed cert trust for federation** | Allow federation peers with self-signed SSL certificates to be trusted via explicit certificate pinning or an `allow-insecure` flag per peer | Glance (#739, 9 votes — custom API allow-insecure) |
 | P5-15 | **Per-page/tab access control** | In LAN multi-user mode, restrict which tabs/pages each user can see; e.g., hide Situation Room from family members, restrict Settings to admin | Glance (#694, 7 votes), Open WebUI (per-user resource sharing) |
 | P5-16 | ~~**Host header validation**~~ | **Done** (v7.46.0) — `NOMAD_ALLOWED_HOSTS` env var, `_host_header_check()` before_request | Homepage (HOMEPAGE_ALLOWED_HOSTS) |
@@ -384,7 +384,7 @@ New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance
 | P5-21 | **Active task sidebar indicator** | Show which AI conversations have active/pending tasks running (e.g., SITREP generation, action execution) with a visual indicator in the conversation list sidebar | Open WebUI (Active task indicator, v0.8.0) |
 | P5-22 | **Fuzzy settings search with keyword aliases** | Extend P1-07's basic filter with fuzzy matching and keyword aliases (e.g., typing "whisper" finds Audio settings, "rag" finds AI Documents); cross-category search, not just per-section filtering | Open WebUI (Settings search, v0.7.0, #20434) |
 | P5-23 | **Bcrypt password hashing for auth** | Upgrade from PBKDF2-SHA256 to bcrypt for credential hashing; add brute-force rate limiting on login attempts | Glance (bcrypt + brute-force protection) |
-| P5-24 | **Personal RSS feed reader** | Add a personal RSS feed reader (separate from Situation Room's curated feeds) where users add their own feeds for news, blogs, and updates; manage via Settings | Glance (#313, 13 votes — Miniflux integration) |
+| P5-24 | ~~**Personal RSS feed reader**~~ | **Done** (v7.48.0) — `personal_feeds` + `personal_feed_items` CRUD + refresh | Glance (#313, 13 votes — Miniflux integration) |
 
 ---
 

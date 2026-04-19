@@ -1668,6 +1668,10 @@ def create_app():
     from web.blueprints.specialized_modules import specialized_modules_bp
     app.register_blueprint(specialized_modules_bp)
 
+    # ─── Roadmap Features (v7.47.0+) ──────────────────────────────────
+    from web.blueprints.roadmap_features import roadmap_bp
+    app.register_blueprint(roadmap_bp)
+
     # ─── User Plugins ─────────────────────────────────────────────────
     from web.plugins import load_plugins
     load_plugins(app)

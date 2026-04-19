@@ -2,6 +2,30 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.53.0] — Premium Design System Polish Pass
+
+### Design Token Expansion (`00_theme_tokens.css`)
+- **Typography scale**: 7 → 12 steps. Added `--text-2xs` (9px), `--text-sm-md` (12px), `--text-md-lg` (15px), `--text-3xl` (28px), `--text-4xl` (32px). Covers all component sizes without hardcoding.
+- **Transition duration scale**: 2 → 8 steps. Added `--duration-micro` (0.1s), `--duration-snappy` (0.18s), `--duration-mid` (0.3s), `--duration-slow` (0.5s), `--duration-slower` (1s), `--duration-slowest` (1.5s). Unified timing language.
+- **Easing functions**: Added `--easing-decelerate`, `--easing-accelerate`, `--easing-spring` alongside existing `--easing-standard`.
+- **Border radius scale**: 4 → 9 steps. Added `--radius-2xs` (2px), `--radius-xs` (4px), `--radius-md` (14px), `--radius-lg` (18px), `--radius-2xl` (24px), `--radius-full` (999px).
+- **Opacity scale**: New. `--opacity-disabled` (0.4), `--opacity-muted` (0.5), `--opacity-secondary` (0.7), `--opacity-subtle` (0.8).
+- **Elevation shadows**: New 4-level scale (`--elev-1` through `--elev-4`) for consistent card/modal/dropdown depth.
+- **Focus system**: New `--focus-ring`, `--focus-offset`, `--focus-shadow` tokens for unified keyboard focus.
+- **Touch targets**: New `--touch-min: 44px` utility token.
+- **Spacing**: Added `--sp-7` (28px), `--sp-10` (40px), `--sp-12` (48px), `--sp-16` (64px).
+
+### Premium Polish (`99_final_polish.css`)
+- **Unified card base**: Cards (`cc-card`, `service-card`, `gauge-card`, `settings-card`) now share consistent hover elevation (`--elev-2`), border-color transition, and press scale effect.
+- **Unified input focus**: All text inputs, selects, and textareas get consistent `border-color + box-shadow` focus ring using `--focus-shadow` token.
+- **Button refinements**: All buttons get `--radius-sm` radius, press scale on active, proper disabled state with `--opacity-disabled`, explicit primary/danger focus-visible styles.
+- **Empty state polish**: Standardized padding, icon opacity, font size, and line height across all empty state variants.
+- **Modal elevation**: Modals and wizards use `--elev-4` instead of hardcoded shadows. Proper `--radius-lg`/`--radius-xl`.
+- **Scrollbar consistency**: Unified 5px width/height on all scrollbars.
+- **Context menu refinement**: Proper animation, elevation shadow, rounded inner items, hover/active states.
+- **Notification drawer**: Elevation shadow from token, proper transition easing, hover state on items.
+- **All v7.52.0 CSS primitives** migrated from hardcoded values to design tokens: border-radius, spacing, durations, shadows, z-indexes, opacity.
+
 ## [v7.52.0] — Frontend Primitives, Internal Hardening, Roadmap Completion
 
 ### Added (Frontend CSS/JS)

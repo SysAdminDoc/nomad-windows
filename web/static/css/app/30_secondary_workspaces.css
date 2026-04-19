@@ -64,7 +64,7 @@
 }
 .alert-sev {
   font-size: var(--text-2xs, 9px); text-transform: uppercase; letter-spacing: 0.5px; padding: 2px 8px;
-  border-radius: 4px; font-weight: 700; flex-shrink: 0; min-width: 60px; text-align: center;
+  border-radius: var(--radius-xs, 4px); font-weight: 700; flex-shrink: 0; min-width: 60px; text-align: center;
 }
 .alert-sev.critical { background: var(--red-dim); color: var(--red); }
 .alert-sev.warning { background: var(--orange-dim); color: var(--orange); }
@@ -120,9 +120,9 @@
 .guide-result-actions { display: flex; gap: 8px; margin-top: 16px; }
 
 /* ─── Service Error Display ─── */
-.svc-error { color: var(--red); font-size: var(--text-sm, 11px); margin-top: 8px; padding: 8px 10px; background: var(--red-dim); border-radius: 8px; line-height: 1.5; }
+.svc-error { color: var(--red); font-size: var(--text-sm, 11px); margin-top: 8px; padding: 8px 10px; background: var(--red-dim); border-radius: var(--radius-sm, 8px); line-height: 1.5; }
 .svc-error a { color: var(--red); text-decoration: underline; cursor: pointer; font-weight: 600; }
-.svc-prereq { font-size: var(--text-sm, 11px); color: var(--orange); margin-bottom: 8px; padding: 6px 10px; background: var(--orange-dim); border-radius: 8px; }
+.svc-prereq { font-size: var(--text-sm, 11px); color: var(--orange); margin-bottom: 8px; padding: 6px 10px; background: var(--orange-dim); border-radius: var(--radius-sm, 8px); }
 .svc-prereq a { color: var(--orange); text-decoration: underline; }
 
 .cipher-output-btn,
@@ -178,7 +178,7 @@
 .ics-log-delete-btn {
   padding: 1px 5px;
   font-size: var(--text-xs, 10px);
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
 }
 
 .prep-inline-delete-btn {
@@ -192,7 +192,7 @@
 .welcome-banner p { color: var(--text-dim); font-size: var(--text-base, 13px); margin-bottom: 16px; }
 
 /* ─── Inline Rename ─── */
-.convo-rename-input { background: var(--surface2); border: 1px solid var(--accent); color: var(--text); padding: 4px 8px; border-radius: 4px; font-size: var(--text-sm-md, 12px); width: 100%; }
+.convo-rename-input { background: var(--surface2); border: 1px solid var(--accent); color: var(--text); padding: 4px 8px; border-radius: var(--radius-xs, 4px); font-size: var(--text-sm-md, 12px); width: 100%; }
 
 /* ─── Markdown Tables ─── */
 .message .content table, .notes-preview table { border-collapse: collapse; margin: 8px 0; width: 100%; font-size: var(--text-sm-md, 12px); }
@@ -207,7 +207,7 @@
   position: absolute; top: 6px; right: 6px;
   background: var(--surface3); border: 1px solid var(--border);
   color: var(--text-dim); font-size: var(--text-xs, 10px); padding: 2px 8px;
-  border-radius: 4px; cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s;
+  border-radius: var(--radius-xs, 4px); cursor: pointer; opacity: 0; transition: opacity 0.15s, background 0.15s;
 }
 .code-wrap:hover .code-copy-btn { opacity: 1; }
 .code-copy-btn:hover { background: var(--accent); color: var(--text-inverse); border-color: var(--accent); }
@@ -220,7 +220,7 @@
 .msg-action-btn {
   background: var(--surface3); border: 1px solid var(--border);
   color: var(--text-muted); font-size: var(--text-xs, 10px); padding: 2px 8px;
-  border-radius: 4px; cursor: pointer;
+  border-radius: var(--radius-xs, 4px); cursor: pointer;
 }
 .msg-action-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
 .msg-action-btn.whatif-btn { color: var(--orange, #e08020); border-color: var(--orange, #e08020); }
@@ -237,7 +237,7 @@
   gap: 4px;
   font-size: var(--text-2xs, 9px);
   padding: 3px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
   background: var(--surface3);
   color: var(--text-muted);
   font-family: var(--font-data, monospace);
@@ -266,7 +266,7 @@
   gap: 4px;
   font-size: var(--text-2xs, 9px);
   padding: 2px 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
   background: var(--accent-dim);
   color: var(--accent);
   font-family: var(--font-data, monospace);
@@ -280,7 +280,7 @@
   justify-content: center;
   min-width: 40px;
   min-height: 40px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: var(--accent-dim);
   font-size: var(--text-md, 14px);
   font-weight: 700;
@@ -295,7 +295,7 @@
 .chat-image-preview-thumb {
   width: 40px;
   height: 40px;
-  border-radius: 4px;
+  border-radius: var(--radius-xs, 4px);
   object-fit: cover;
   flex-shrink: 0;
 }
@@ -332,7 +332,7 @@
 .branch-banner .branch-return-btn {
   background: var(--surface3); border: 1px solid var(--border);
   color: var(--text); font-size: var(--text-xs, 10px); padding: 2px 10px;
-  border-radius: 4px; cursor: pointer; margin-left: auto;
+  border-radius: var(--radius-xs, 4px); cursor: pointer; margin-left: auto;
 }
 .branch-banner .branch-return-btn:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
 
@@ -360,7 +360,7 @@
   color: var(--text);
   border: 1px solid var(--border);
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: var(--radius-sm, 6px);
   font-size: var(--text-sm-md, 12px);
 }
 .map-zone-actions {
@@ -384,7 +384,7 @@
 }
 .branch-panel-item {
   padding: 8px 14px; cursor: pointer; border-bottom: 1px solid var(--border);
-  transition: background 0.1s;
+  transition: background var(--duration-micro);
 }
 .branch-panel-item:last-child { border-bottom: none; }
 .branch-panel-item:hover { background: var(--surface2); }
@@ -398,7 +398,7 @@
 /* ─── Branch Count Badge ─── */
 .convo-branch-badge {
   background: var(--orange-dim); color: var(--orange, #e08020);
-  font-size: var(--text-2xs, 9px); padding: 1px 5px; border-radius: 8px;
+  font-size: var(--text-2xs, 9px); padding: 1px 5px; border-radius: var(--radius-sm, 8px);
   font-weight: 600; flex-shrink: 0; margin-left: 4px;
 }
 
@@ -453,7 +453,7 @@
 
 /* ─── Notes Search ─── */
 .notes-search { padding: 6px 8px; border-bottom: 1px solid var(--border); }
-.notes-search input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: 6px; font-size: var(--text-sm, 11px); }
+.notes-search input { width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); padding: 7px 10px; border-radius: var(--radius-sm, 6px); font-size: var(--text-sm, 11px); }
 .notes-search input:focus-visible { border-color: var(--accent); }
 
 /* @keyframes spin centralized in premium/05_motion.css; also defined in

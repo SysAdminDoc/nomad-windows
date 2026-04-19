@@ -155,7 +155,7 @@ async function loadIncidents() {
     if (!Array.isArray(items)) throw new Error('invalid incidents payload');
     const el = document.getElementById('incidents-list');
     if (!items.length) {
-      el.innerHTML = '<div class="prep-empty-state"><div class="empty-state-card"><div class="empty-state-icon">&#128196;</div><div class="empty-state-title">No incidents logged</div><div class="empty-state-text">Track events during emergencies here. Log what happened, when, and what actions were taken for your after-action review.</div><button type="button" class="btn btn-sm btn-primary" data-prep-action="add-incident">+ Log Incident</button></div></div>';
+      el.innerHTML = '<div class="prep-empty-state"><div class="empty-state-card"><div class="empty-state-icon">&#128196;</div><div class="empty-state-title">No incidents logged</div><div class="empty-state-text">Track events during emergencies here. Log what happened, when, and what actions were taken for your after-action review.</div><button type="button" class="btn btn-sm btn-primary" data-prep-action="log-incident">+ Log Incident</button></div></div>';
       return;
     }
     const criticalCount = items.filter(i => i.severity === 'critical').length;

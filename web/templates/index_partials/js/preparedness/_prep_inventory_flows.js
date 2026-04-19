@@ -91,13 +91,24 @@ function sortInventoryBy(col) {
 function _updateInvSortIndicators() {
   document.querySelectorAll('#inv-table th[data-inv-sort]').forEach(th => {
     th.classList.remove('sort-asc', 'sort-desc');
-    if (th.dataset.invSort === _invSortCol) th.classList.add(_invSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+    if (th.dataset.invSort === _invSortCol) {
+      th.classList.add(_invSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+      th.setAttribute('aria-sort', _invSortDir === 'asc' ? 'ascending' : 'descending');
+    } else {
+      th.removeAttribute('aria-sort');
+    }
   });
 }
 
 document.getElementById('inv-table')?.addEventListener('click', e => {
   const th = e.target.closest('th[data-inv-sort]');
   if (th) sortInventoryBy(th.dataset.invSort);
+});
+document.getElementById('inv-table')?.addEventListener('keydown', e => {
+  if (e.key === 'Enter' || e.key === ' ') {
+    const th = e.target.closest('th[data-inv-sort]');
+    if (th) { e.preventDefault(); sortInventoryBy(th.dataset.invSort); }
+  }
 });
 
 /* ─── Inline quantity editing ─── */
@@ -112,14 +123,15 @@ document.getElementById('inv-table')?.addEventListener('dblclick', e => {
   if (!item) return;
   const origText = qtyVal.textContent;
   const input = document.createElement('input');
-  input.type = 'number'; input.min = '0'; input.step = '1';
+  input.type = 'number'; input.min = '0'; input.step = 'any';
   input.value = item.quantity; input.className = 'inv-inline-qty-input';
   input.style.cssText = 'width:60px;text-align:center;';
+  input.setAttribute('aria-label', `Edit quantity for ${item.name || 'item'}`);
   qtyVal.textContent = '';
   qtyVal.appendChild(input);
   input.focus(); input.select();
   const commit = async () => {
-    const newQty = parseInt(input.value);
+    const newQty = parseFloat(input.value);
     if (isNaN(newQty) || newQty < 0 || newQty === item.quantity) { qtyVal.textContent = origText; return; }
     try {
       await apiPut(`/api/inventory/${itemId}`, { quantity: newQty });
@@ -128,10 +140,11 @@ document.getElementById('inv-table')?.addEventListener('dblclick', e => {
       toast('Quantity updated', 'success');
     } catch(_) { qtyVal.textContent = origText; toast('Failed to update quantity', 'error'); }
   };
-  input.addEventListener('blur', commit, { once: true });
+  let cancelled = false;
+  input.addEventListener('blur', () => { if (!cancelled) commit(); }, { once: true });
   input.addEventListener('keydown', ev => {
     if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
-    if (ev.key === 'Escape') { qtyVal.textContent = origText; }
+    if (ev.key === 'Escape') { cancelled = true; qtyVal.textContent = origText; input.blur(); }
   });
 });
 async function loadInventory() {
@@ -143,7 +156,7 @@ async function loadInventory() {
   const tbody = document.getElementById('inv-tbody');
   if (tbody && !_cachedInvItems.length) tbody.innerHTML = Array(3).fill('<tr><td colspan="10"><div class="skeleton skeleton-card"></div></td></tr>').join('');
   try {
-    const items = await safeFetch(url, {}, []);
+    let items = await safeFetch(url, {}, []);
     if (!Array.isArray(items)) throw new Error('invalid inventory payload');
     _cachedInvItems = items;
     items = _sortInventoryItems(items);

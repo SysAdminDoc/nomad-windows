@@ -10,7 +10,7 @@ async function loadContacts() {
     const contacts = await apiFetch(url);
     if (!q) _cachedContacts = contacts;
     if (!contacts.length) {
-      el.innerHTML = '<div class="prep-empty-state prep-empty-state-wide"><div class="empty-state-card"><div class="empty-state-icon">&#128101;</div><div class="empty-state-title">No contacts yet</div><div class="empty-state-text">Add emergency contacts, team members, and neighbors. Include callsigns, frequencies, and rally points for field coordination.</div><button type="button" class="btn btn-sm btn-primary" data-prep-action="add-contact">+ Add Contact</button></div></div>';
+      el.innerHTML = '<div class="prep-empty-state prep-empty-state-wide"><div class="empty-state-card"><div class="empty-state-icon">&#128101;</div><div class="empty-state-title">No contacts yet</div><div class="empty-state-text">Add emergency contacts, team members, and neighbors. Include callsigns, frequencies, and rally points for field coordination.</div><button type="button" class="btn btn-sm btn-primary" data-prep-action="show-contact-form">+ Add Contact</button></div></div>';
       return;
     }
     el.innerHTML = contacts.map(c => {

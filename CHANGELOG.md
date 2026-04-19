@@ -2,6 +2,22 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.44.0] — Phase 1.1: Data Foundation & Localization
+
+### Added
+- **FEMA NRI importer** — downloads county-level hazard risk data (18 hazard types, ~3,200 counties) from hazards.fema.gov and bulk-loads into `fema_nri_counties` table. Background-threaded with progress polling.
+- **USDA FoodData SR Legacy importer** — downloads 7,793 foods with full macro/micronutrient data from fdc.nal.usda.gov into `nutrition_foods` and `nutrition_nutrients` tables.
+- **NOAA Weather Stations importer** — downloads ISD station history (~12K US stations) into new `noaa_stations` table.
+- **NOAA Frost Dates importer** — generates frost date data from NOAA Climate Normals or latitude-based approximation into new `noaa_frost_dates` table. Growing season days calculated per station.
+- **USDA Hardiness Zones importer** — downloads ZIP-to-zone lookup from PRISM into new `usda_hardiness_zones` table.
+- **Regional profile auto-populate** — saving a profile with ZIP/lat/lng now auto-fills: hardiness zone (from ZIP), FEMA risk scores (from county), frost dates (nearest station), nearest NWS station.
+- **3 new lookup routes** — `/api/region/hardiness/<zip>`, `/api/region/frost-dates?lat=&lng=`, `/api/region/nearest-station?lat=&lng=`.
+- **3 new tables** — `noaa_stations`, `noaa_frost_dates`, `usda_hardiness_zones` with 6 new indexes.
+- **Pack importer framework** — `/api/data-packs/<id>/import` triggers background import, `/api/data-packs/<id>/import/status` polls progress.
+
+### Stats
+- 5 data pack importers, 3 new tables, 6 new indexes, 3 new lookup routes. All 5 Tier 1 data packs now have working import pipelines. Nutrition blueprint (search, link, summary, micronutrient gaps) was already built — this adds the data that powers it.
+
 ## [v7.43.0] — Cross-theme audit + WCAG compliance (Pass 8)
 
 Final pass in the premium CSS polish marathon (v7.38–v7.43). Cross-theme color token audit across all 5 themes, WCAG 2.1 AA contrast compliance on remaining surfaces, reduced-motion coverage expansion.

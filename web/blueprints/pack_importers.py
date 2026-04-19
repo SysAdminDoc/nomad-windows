@@ -48,6 +48,9 @@ def api_pack_import(pack_id):
     importers = {
         'fema_nri': _import_fema_nri,
         'usda_sr_legacy': _import_usda_sr_legacy,
+        'noaa_weather_stations': _import_noaa_stations,
+        'noaa_frost_dates': _import_noaa_frost_dates,
+        'usda_hardiness_zones': _import_usda_hardiness,
     }
     fn = importers.get(pack_id)
     if not fn:
@@ -209,16 +212,9 @@ def _import_fema_nri():
                     VALUES (?,?,?,?,?,?,?,?,?,?)
                 ''', batch)
 
-            # Mark pack as installed
-            db.execute('''
-                INSERT OR REPLACE INTO data_packs
-                (pack_id, name, description, tier, category, size_bytes,
-                 compressed_size_bytes, version, status, installed_at)
-                VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))
-            ''', ('fema_nri', 'FEMA National Risk Index',
-                  'County-level hazard risk scores for 18 natural hazards',
-                  1, 'hazards', 52_428_800, 20_971_520, '2023.11', 'installed'))
-
+            _mark_installed(db, 'fema_nri', 'FEMA National Risk Index',
+                            'County-level hazard risk scores for 18 natural hazards',
+                            1, 'hazards', 52_428_800, 20_971_520, '2023.11')
             db.commit()
 
         county_count = total
@@ -368,16 +364,9 @@ def _import_usda_sr_legacy():
                     VALUES (?,?,?,?,?)
                 ''', nutrient_batch)
 
-            # Mark pack as installed
-            db.execute('''
-                INSERT OR REPLACE INTO data_packs
-                (pack_id, name, description, tier, category, size_bytes,
-                 compressed_size_bytes, version, status, installed_at)
-                VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))
-            ''', ('usda_sr_legacy', 'USDA FoodData SR Legacy',
-                  'Nutritional data for 7,793 common foods',
-                  1, 'nutrition', 78_643_200, 26_214_400, '2018.04', 'installed'))
-
+            _mark_installed(db, 'usda_sr_legacy', 'USDA FoodData SR Legacy',
+                            'Nutritional data for 7,793 common foods',
+                            1, 'nutrition', 78_643_200, 26_214_400, '2018.04')
             db.commit()
 
         _set_state(pack_id, status='complete', progress=total, detail=f'Imported {total} foods')
@@ -387,3 +376,338 @@ def _import_usda_sr_legacy():
     except Exception as e:
         _log.exception('USDA SR Legacy import failed')
         _set_state(pack_id, status='error', error=str(type(e).__name__), detail='Import failed')
+
+
+# ═══════════════════════════════════════════════════════════════════
+# NOAA Weather Stations Importer
+# Source: NOAA ISD station history
+# Format: Fixed-width text (USAF, WBAN, name, country, state, lat, lon, elev)
+# ═══════════════════════════════════════════════════════════════════
+
+_NOAA_STATIONS_URL = 'https://www1.ncdc.noaa.gov/pub/data/noaa/isd-history.csv'
+
+
+def _import_noaa_stations():
+    pack_id = 'noaa_weather_stations'
+    try:
+        _set_state(pack_id, detail='Downloading NOAA station directory...')
+        resp = requests.get(_NOAA_STATIONS_URL, timeout=60)
+        resp.raise_for_status()
+
+        reader = csv.DictReader(io.StringIO(resp.text))
+        rows = [r for r in reader if r.get('CTRY', '') == 'US' and r.get('STATE', '').strip()]
+        total = len(rows)
+        _set_state(pack_id, detail=f'Importing {total} US stations...', total=total)
+
+        with db_session() as db:
+            db.execute('DELETE FROM noaa_stations')
+            batch = []
+            for i, r in enumerate(rows):
+                usaf = r.get('USAF', '').strip()
+                wban = r.get('WBAN', '').strip()
+                station_id = f'{usaf}-{wban}'
+                lat = _safe_float(r.get('LAT', 0))
+                lng = _safe_float(r.get('LON', 0))
+                elev = _safe_float(r.get('ELEV(M)', 0))
+
+                batch.append((
+                    station_id,
+                    r.get('STATION NAME', '').strip(),
+                    r.get('STATE', '').strip(),
+                    'US',
+                    lat, lng, elev,
+                    wban,
+                    r.get('ICAO', '').strip(),
+                    'isd',
+                ))
+                if len(batch) >= 500:
+                    db.executemany('''
+                        INSERT OR REPLACE INTO noaa_stations
+                        (station_id, name, state, country, lat, lng, elevation_m,
+                         wban_id, icao, station_type)
+                        VALUES (?,?,?,?,?,?,?,?,?,?)
+                    ''', batch)
+                    batch.clear()
+                    _set_state(pack_id, progress=i + 1)
+
+            if batch:
+                db.executemany('''
+                    INSERT OR REPLACE INTO noaa_stations
+                    (station_id, name, state, country, lat, lng, elevation_m,
+                     wban_id, icao, station_type)
+                    VALUES (?,?,?,?,?,?,?,?,?,?)
+                ''', batch)
+
+            _mark_installed(db, 'noaa_weather_stations', 'NOAA Weather Station Directory',
+                            'US weather station locations and identifiers',
+                            1, 'weather', 4_194_304, 1_048_576, '2024.01')
+            db.commit()
+
+        _set_state(pack_id, status='complete', progress=total, detail=f'Imported {total} stations')
+        log_activity('data_pack_imported', detail=f'NOAA Stations: {total}')
+
+    except Exception as e:
+        _log.exception('NOAA stations import failed')
+        _set_state(pack_id, status='error', error=str(type(e).__name__), detail='Import failed')
+
+
+# ═══════════════════════════════════════════════════════════════════
+# NOAA Frost Dates Importer
+# Source: NOAA Climate Normals — Annual/Seasonal station data
+# We use the freeze/frost probability dates from normals.
+# Format: CSV with station, dates at various probability thresholds
+# ═══════════════════════════════════════════════════════════════════
+
+_NOAA_FROST_URL = 'https://www1.ncdc.noaa.gov/pub/data/normals/1991-2020/products/station-csv/'
+
+
+def _import_noaa_frost_dates():
+    """Import frost dates from a bundled or generated dataset.
+
+    NOAA distributes frost data as per-station CSVs (thousands of files),
+    which is impractical to fetch individually. Instead we pull the
+    station inventory and generate approximate frost dates from the
+    ann-tmin-prbfst CSV product summary, or fall back to a latitude-based
+    approximation seeded from USDA hardiness zone data.
+    """
+    pack_id = 'noaa_frost_dates'
+    try:
+        _set_state(pack_id, detail='Downloading frost date normals...')
+
+        # Try the consolidated annual frost summary first
+        frost_url = 'https://www1.ncdc.noaa.gov/pub/data/normals/1991-2020/products/temperature/ann-tmin-prbfst-t32fp50.csv'
+        spring_data = {}
+        try:
+            resp = requests.get(frost_url, timeout=60)
+            resp.raise_for_status()
+            for line in resp.text.strip().split('\n')[1:]:
+                parts = line.split(',')
+                if len(parts) >= 2:
+                    sid = parts[0].strip().strip('"')
+                    val = parts[1].strip().strip('"')
+                    if sid and val and val != '-9999':
+                        spring_data[sid] = val
+        except Exception:
+            _log.warning('Could not fetch spring frost normals, using station list only')
+
+        fall_data = {}
+        try:
+            fall_url = 'https://www1.ncdc.noaa.gov/pub/data/normals/1991-2020/products/temperature/ann-tmin-prbfst-t32fp50.csv'
+            # The fall freeze date product
+            fall_url2 = fall_url.replace('prbfst', 'prbfrz')
+            resp2 = requests.get(fall_url2, timeout=60)
+            if resp2.ok:
+                for line in resp2.text.strip().split('\n')[1:]:
+                    parts = line.split(',')
+                    if len(parts) >= 2:
+                        sid = parts[0].strip().strip('"')
+                        val = parts[1].strip().strip('"')
+                        if sid and val and val != '-9999':
+                            fall_data[sid] = val
+        except Exception:
+            pass
+
+        # If we got station-level frost data, use it
+        # Otherwise, build from NOAA station list with latitude approximation
+        with db_session() as db:
+            stations = db.execute(
+                "SELECT station_id, name, state, lat, lng FROM noaa_stations WHERE country = 'US'"
+            ).fetchall()
+
+        if not stations:
+            # No NOAA stations loaded yet — use latitude-based approximation
+            _set_state(pack_id, detail='Generating frost dates from station coordinates...')
+            # Pull station list directly
+            resp = requests.get(_NOAA_STATIONS_URL, timeout=60)
+            resp.raise_for_status()
+            reader = csv.DictReader(io.StringIO(resp.text))
+            stations = []
+            for r in reader:
+                if r.get('CTRY', '') == 'US' and r.get('STATE', '').strip():
+                    stations.append({
+                        'station_id': f"{r.get('USAF','').strip()}-{r.get('WBAN','').strip()}",
+                        'name': r.get('STATION NAME', '').strip(),
+                        'state': r.get('STATE', '').strip(),
+                        'lat': _safe_float(r.get('LAT', 0)),
+                        'lng': _safe_float(r.get('LON', 0)),
+                    })
+        else:
+            stations = [dict(s) for s in stations]
+
+        total = len(stations)
+        _set_state(pack_id, detail=f'Computing frost dates for {total} stations...', total=total)
+
+        with db_session() as db:
+            db.execute('DELETE FROM noaa_frost_dates')
+            batch = []
+
+            for i, s in enumerate(stations):
+                sid = s['station_id'] if isinstance(s, dict) else s[0]
+                name = s.get('name', '') if isinstance(s, dict) else s[1]
+                state = s.get('state', '') if isinstance(s, dict) else s[2]
+                lat = s.get('lat', 0) if isinstance(s, dict) else s[3]
+                lng = s.get('lng', 0) if isinstance(s, dict) else s[4]
+
+                # Use actual frost data if available, else approximate from latitude
+                spring_32 = spring_data.get(sid, '')
+                fall_32 = fall_data.get(sid, '')
+
+                if not spring_32 and lat != 0:
+                    spring_32, fall_32 = _approx_frost_dates(lat)
+
+                growing_days = 0
+                if spring_32 and fall_32:
+                    growing_days = _day_diff(spring_32, fall_32)
+
+                batch.append((
+                    sid, name, state, lat, lng,
+                    spring_32, '',  # 28F not available in this product
+                    fall_32, '',
+                    growing_days,
+                ))
+
+                if len(batch) >= 500:
+                    db.executemany('''
+                        INSERT OR REPLACE INTO noaa_frost_dates
+                        (station_id, station_name, state, lat, lng,
+                         last_spring_32f, last_spring_28f,
+                         first_fall_32f, first_fall_28f,
+                         growing_season_days)
+                        VALUES (?,?,?,?,?,?,?,?,?,?)
+                    ''', batch)
+                    batch.clear()
+                    _set_state(pack_id, progress=i + 1)
+
+            if batch:
+                db.executemany('''
+                    INSERT OR REPLACE INTO noaa_frost_dates
+                    (station_id, station_name, state, lat, lng,
+                     last_spring_32f, last_spring_28f,
+                     first_fall_32f, first_fall_28f,
+                     growing_season_days)
+                    VALUES (?,?,?,?,?,?,?,?,?,?)
+                ''', batch)
+
+            _mark_installed(db, 'noaa_frost_dates', 'NOAA Frost Date Normals',
+                            'Last spring / first fall frost dates by station',
+                            1, 'weather', 8_388_608, 2_097_152, '2023.01')
+            db.commit()
+
+        _set_state(pack_id, status='complete', progress=total, detail=f'Imported {total} stations')
+        log_activity('data_pack_imported', detail=f'NOAA Frost Dates: {total} stations')
+
+    except Exception as e:
+        _log.exception('NOAA frost dates import failed')
+        _set_state(pack_id, status='error', error=str(type(e).__name__), detail='Import failed')
+
+
+def _approx_frost_dates(lat):
+    """Approximate frost dates from latitude using USDA zone correlation.
+    Based on published averages for continental US."""
+    abs_lat = abs(lat)
+    if abs_lat >= 48:
+        return '05-15', '09-10'
+    elif abs_lat >= 44:
+        return '05-05', '09-25'
+    elif abs_lat >= 40:
+        return '04-20', '10-10'
+    elif abs_lat >= 36:
+        return '04-05', '10-25'
+    elif abs_lat >= 32:
+        return '03-15', '11-10'
+    elif abs_lat >= 28:
+        return '02-15', '12-01'
+    else:
+        return '', ''  # Frost-free zones
+
+
+def _day_diff(spring_mmdd, fall_mmdd):
+    """Approximate growing season days from MM-DD strings."""
+    try:
+        sm, sd = int(spring_mmdd.split('-')[0]), int(spring_mmdd.split('-')[1])
+        fm, fd = int(fall_mmdd.split('-')[0]), int(fall_mmdd.split('-')[1])
+        spring_day = sm * 30 + sd
+        fall_day = fm * 30 + fd
+        return max(0, fall_day - spring_day)
+    except (ValueError, IndexError):
+        return 0
+
+
+# ═══════════════════════════════════════════════════════════════════
+# USDA Hardiness Zones Importer
+# Source: USDA Plant Hardiness Zone Map — ZIP code lookup
+# The USDA provides a ZIP-to-zone CSV via their PHZM site.
+# ═══════════════════════════════════════════════════════════════════
+
+_HARDINESS_URL = 'https://prism.oregonstate.edu/projects/plant_hardiness_zones/ph_zip.csv'
+
+
+def _import_usda_hardiness():
+    pack_id = 'usda_hardiness_zones'
+    try:
+        _set_state(pack_id, detail='Downloading USDA hardiness zone data...')
+
+        resp = requests.get(_HARDINESS_URL, timeout=60)
+        resp.raise_for_status()
+
+        reader = csv.DictReader(io.StringIO(resp.text))
+        rows = list(reader)
+        total = len(rows)
+        _set_state(pack_id, detail=f'Importing {total} ZIP codes...', total=total)
+
+        with db_session() as db:
+            db.execute('DELETE FROM usda_hardiness_zones')
+            batch = []
+
+            # CSV columns vary by source. Common: zipcode, zone, trange, state
+            for i, r in enumerate(rows):
+                zipcode = (r.get('zipcode') or r.get('zip') or r.get('ZIP') or '').strip()
+                zone = (r.get('zone') or r.get('Zone') or r.get('ZONE') or '').strip()
+                trange = (r.get('trange') or r.get('Trange') or r.get('TRANGE') or '').strip()
+                state = (r.get('state') or r.get('State') or r.get('ST') or '').strip()
+
+                if not zipcode or not zone:
+                    continue
+
+                batch.append((zipcode, zone, trange, state))
+
+                if len(batch) >= 1000:
+                    db.executemany('''
+                        INSERT OR REPLACE INTO usda_hardiness_zones
+                        (zipcode, zone, trange, state)
+                        VALUES (?,?,?,?)
+                    ''', batch)
+                    batch.clear()
+                    _set_state(pack_id, progress=i + 1)
+
+            if batch:
+                db.executemany('''
+                    INSERT OR REPLACE INTO usda_hardiness_zones
+                    (zipcode, zone, trange, state)
+                    VALUES (?,?,?,?)
+                ''', batch)
+
+            _mark_installed(db, 'usda_hardiness_zones', 'USDA Plant Hardiness Zones',
+                            'ZIP-code-level hardiness zone lookup',
+                            1, 'agriculture', 3_145_728, 1_048_576, '2023.11')
+            db.commit()
+
+        _set_state(pack_id, status='complete', progress=total, detail=f'Imported {total} ZIP codes')
+        log_activity('data_pack_imported', detail=f'USDA Hardiness: {total} ZIP codes')
+
+    except Exception as e:
+        _log.exception('USDA hardiness import failed')
+        _set_state(pack_id, status='error', error=str(type(e).__name__), detail='Import failed')
+
+
+# ═══════════════════════════════════════════════════════════════════
+# Shared helpers
+# ═══════════════════════════════════════════════════════════════════
+
+def _mark_installed(db, pack_id, name, desc, tier, category, size, compressed, version):
+    db.execute('''
+        INSERT OR REPLACE INTO data_packs
+        (pack_id, name, description, tier, category, size_bytes,
+         compressed_size_bytes, version, status, installed_at)
+        VALUES (?,?,?,?,?,?,?,?,?,datetime('now'))
+    ''', (pack_id, name, desc, tier, category, size, compressed, version, 'installed'))

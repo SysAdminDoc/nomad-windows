@@ -1548,9 +1548,11 @@ def create_app():
     from web.blueprints.data_packs import data_packs_bp
     from web.blueprints.regional_profile import regional_profile_bp
     from web.blueprints.nutrition import nutrition_bp
+    from web.blueprints.pack_importers import pack_importers_bp
     app.register_blueprint(data_packs_bp)
     app.register_blueprint(regional_profile_bp)
     app.register_blueprint(nutrition_bp)
+    app.register_blueprint(pack_importers_bp)
 
     # ─── v7.12.0 — Nutritional Intelligence & Water Expansion (Phase 2) ──
     from web.blueprints.consumption import consumption_bp

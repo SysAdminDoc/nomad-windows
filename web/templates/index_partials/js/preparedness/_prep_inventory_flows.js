@@ -99,6 +99,41 @@ document.getElementById('inv-table')?.addEventListener('click', e => {
   const th = e.target.closest('th[data-inv-sort]');
   if (th) sortInventoryBy(th.dataset.invSort);
 });
+
+/* ─── Inline quantity editing ─── */
+document.getElementById('inv-table')?.addEventListener('dblclick', e => {
+  const qtyVal = e.target.closest('.inventory-qty-value');
+  if (!qtyVal || qtyVal.querySelector('input')) return;
+  const row = qtyVal.closest('tr');
+  const editBtn = row?.querySelector('[data-prep-action="edit-inv-item"]');
+  const itemId = editBtn?.dataset.invId;
+  if (!itemId) return;
+  const item = _cachedInvItems.find(i => String(i.id) === String(itemId));
+  if (!item) return;
+  const origText = qtyVal.textContent;
+  const input = document.createElement('input');
+  input.type = 'number'; input.min = '0'; input.step = '1';
+  input.value = item.quantity; input.className = 'inv-inline-qty-input';
+  input.style.cssText = 'width:60px;text-align:center;';
+  qtyVal.textContent = '';
+  qtyVal.appendChild(input);
+  input.focus(); input.select();
+  const commit = async () => {
+    const newQty = parseInt(input.value);
+    if (isNaN(newQty) || newQty < 0 || newQty === item.quantity) { qtyVal.textContent = origText; return; }
+    try {
+      await apiPut(`/api/inventory/${itemId}`, { quantity: newQty });
+      item.quantity = newQty;
+      qtyVal.textContent = newQty + ' ' + (item.unit || '');
+      toast('Quantity updated', 'success');
+    } catch(_) { qtyVal.textContent = origText; toast('Failed to update quantity', 'error'); }
+  };
+  input.addEventListener('blur', commit, { once: true });
+  input.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+    if (ev.key === 'Escape') { qtyVal.textContent = origText; }
+  });
+});
 async function loadInventory() {
   const cat = document.getElementById('inv-cat-filter').value;
   const q = document.getElementById('inv-search').value.trim();

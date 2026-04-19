@@ -29,13 +29,13 @@
 .prep-reference-scroll-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .prep-reference-script-block {
   display: grid;
   gap: 2px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-family: var(--font-data, monospace);
   line-height: 1.8;
   background: var(--surface2);
@@ -74,7 +74,7 @@
 .tool-drill-step-copy {
   flex: 1;
   min-width: 0;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.5;
 }
 
@@ -82,7 +82,7 @@
 .library-pdf-empty {
   display: block;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .map-bookmark-row,
@@ -93,7 +93,7 @@
   gap: 12px;
   padding: 6px 0;
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .map-bookmark-link,
@@ -125,7 +125,7 @@
 
 .library-pdf-meta {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .map-bookmark-delete,
@@ -136,7 +136,7 @@
   padding: 0;
   margin: 0;
   color: var(--red);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1;
   cursor: pointer;
   flex: 0 0 auto;
@@ -145,13 +145,13 @@
 .shopping-list-shell {
   display: grid;
   gap: 4px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .shopping-list-category {
   margin-top: 8px;
   color: var(--accent);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -177,12 +177,12 @@
 
 .shopping-list-reason {
   color: var(--orange);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .planner-result-head {
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   font-weight: 600;
 }
 
@@ -190,7 +190,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .planner-result-item {
@@ -213,7 +213,7 @@
   color: var(--text);
   border: 1px solid var(--border);
   font-family: var(--font-data, monospace);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   word-break: break-all;
   user-select: all;
 }
@@ -350,53 +350,53 @@
 .copy-dim-note {
   margin-top: 4px;
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .copy-dim-note-block {
   margin-bottom: 8px;
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .copy-dim-note-compact {
   margin-top: 8px;
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .copy-warning-note-compact {
   margin-top: 8px;
   color: var(--orange);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
 }
 
 .copy-footnote-dim {
   margin-top: 6px;
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .copy-body-compact {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.7;
 }
 
 .text-size-10 {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .text-size-11 {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .text-size-12 {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .text-size-13 {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
 }
 
 .text-center {
@@ -457,7 +457,7 @@
 .readiness-grade-total-copy {
   margin-top: 4px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .readiness-grade-bar-fill {
@@ -490,13 +490,13 @@
 
 .theme-preview-title {
   margin-bottom: 4px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 700;
 }
 
 .theme-preview-subtitle {
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .customize-theme-card--eink .theme-preview-subtitle {
@@ -536,23 +536,23 @@
 .runtime-empty-note {
   display: block;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .runtime-table-head-compact {
   max-width: 60px;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
 }
 
 .runtime-table-label-compact {
   font-weight: 500;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .runtime-table-cell-compact {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .runtime-table-cell-center {
@@ -565,12 +565,12 @@
 
 .runtime-inline-note {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
 }
 
 .runtime-mono-cell {
   font-family: var(--font-data, monospace);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .runtime-mono-cell-strong {
@@ -585,13 +585,13 @@
 
 .runtime-empty-error {
   color: var(--red);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .runtime-progress-count {
   margin-top: 6px;
   color: var(--accent);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .checklist-group-head {
@@ -613,7 +613,7 @@
 
 .runtime-status-installed {
   color: var(--green);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .network-status-inline {
@@ -646,7 +646,7 @@
   border-bottom: 1px solid var(--red);
   background: var(--red-dim);
   color: var(--red);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 600;
   text-align: center;
 }
@@ -669,7 +669,7 @@
 
 .weather-trend-prediction {
   margin-top: 6px;
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   font-weight: 500;
 }
 
@@ -679,11 +679,11 @@
 
 .weather-rule-condition {
   font-family: var(--font-data, monospace);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .weather-rule-action {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   text-transform: uppercase;
 }
@@ -691,12 +691,12 @@
 .weather-history-empty,
 .weather-rules-empty {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .coords-result-block {
   font-family: var(--font-data, monospace);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 2;
 }
 
@@ -717,28 +717,28 @@
 
 .inventory-checkout-chip {
   color: var(--orange);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 600;
 }
 
 .inventory-days-cell {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 500;
 }
 
 .inventory-expiration-cell {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .inventory-notes-cell {
   max-width: 120px;
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .note-template-item-icon {
-  font-size: 16px;
+  font-size: var(--text-lg, 16px);
 }
 
 .note-template-item-label {
@@ -759,7 +759,7 @@
 
 .activity-service-tag {
   color: var(--accent);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .note-backlink-link {
@@ -769,24 +769,24 @@
 .service-hint-note {
   margin-bottom: 8px;
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .tour-content-title {
   margin-bottom: 6px;
-  font-size: 15px;
+  font-size: var(--text-md-lg, 15px);
 }
 
 .tour-content-copy {
   color: var(--text-dim);
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   line-height: 1.6;
 }
 
 .alert-dismiss-link {
   margin-right: 4px;
   color: var(--info, #4f86d8);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   cursor: pointer;
 }
 
@@ -797,13 +797,13 @@
 .antenna-result-meta {
   margin-top: 6px;
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .antenna-result-note {
   margin-top: 4px;
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 /* Skeleton loading */

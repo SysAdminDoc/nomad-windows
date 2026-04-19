@@ -1965,7 +1965,7 @@
 }
 
 .shortcuts-dialog {
-  width: min(500px, 90vw);
+  width: min(560px, 90vw);
   max-height: 80vh;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -1991,6 +1991,37 @@
 .shortcuts-close {
   padding: 2px 8px !important;
   font-size: 18px !important;
+}
+
+.shortcuts-search {
+  width: 100%;
+  padding: 6px 10px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface2);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+.shortcuts-search:focus { border-color: var(--accent); outline: none; }
+
+.shortcuts-section-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border);
+}
+.shortcuts-section + .shortcuts-section { margin-top: 14px; }
+
+.shortcuts-no-results {
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 16px 0;
 }
 
 .shortcuts-grid {

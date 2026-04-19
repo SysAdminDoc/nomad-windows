@@ -1494,7 +1494,9 @@ function toggleShortcutsHelp(force) {
   if (show) {
     _shortcutsReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setShellVisibility(el, true);
-    requestAnimationFrame(() => el.querySelector('.shortcuts-close')?.focus());
+    const searchInput = document.getElementById('shortcuts-search');
+    if (searchInput) { searchInput.value = ''; _filterShortcuts(''); }
+    requestAnimationFrame(() => (searchInput || el.querySelector('.shortcuts-close'))?.focus());
     return;
   }
   setShellVisibility(el, false);
@@ -1503,6 +1505,32 @@ function toggleShortcutsHelp(force) {
   if (returnFocus && returnFocus.isConnected && typeof returnFocus.focus === 'function') {
     requestAnimationFrame(() => returnFocus.focus());
   }
+}
+
+document.getElementById('shortcuts-search')?.addEventListener('input', e => _filterShortcuts(e.target.value));
+
+function _filterShortcuts(query) {
+  const q = query.toLowerCase().trim();
+  const sections = document.querySelectorAll('#shortcuts-sections .shortcuts-section');
+  const noResults = document.getElementById('shortcuts-no-results');
+  let anyVisible = false;
+  sections.forEach(section => {
+    const grid = section.querySelector('.shortcuts-grid');
+    if (!grid) return;
+    const pairs = grid.querySelectorAll('kbd');
+    let sectionVisible = false;
+    pairs.forEach(kbd => {
+      const desc = kbd.nextElementSibling;
+      const text = (kbd.textContent + ' ' + (desc?.textContent || '')).toLowerCase();
+      const match = !q || text.includes(q);
+      kbd.style.display = match ? '' : 'none';
+      if (desc) desc.style.display = match ? '' : 'none';
+      if (match) sectionVisible = true;
+    });
+    section.style.display = sectionVisible ? '' : 'none';
+    if (sectionVisible) anyVisible = true;
+  });
+  if (noResults) noResults.hidden = anyVisible;
 }
 
 /* ─── Daily Journal ─── */

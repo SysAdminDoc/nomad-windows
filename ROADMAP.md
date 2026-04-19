@@ -304,6 +304,159 @@ Issues identified from competitor analysis and UX review of the current app.
 
 ---
 
+## Internal Audit
+
+Findings from a deep inward codebase audit — issues that no competitor comparison would reveal. Grouped by category with severity and actionable backlog items at the end.
+
+### A. Code Duplication & Missing Abstractions
+
+| # | Finding | Scope | Severity |
+|---|---------|-------|----------|
+| A-1 | **`_safe_int()` / `_safe_float()` duplicated in 8+ blueprints** — independently defined in inventory.py, medical.py, security.py, power.py, supplies.py, hardware_sensors.py, situation_room.py, and others. Identical logic each time. Should live in `web/utils.py` once. | Backend | Medium |
+| A-2 | **`_esc()` redefined in 3+ blueprints** despite `esc()` existing in `web/utils.py` — routes_advanced.py, situation_room.py, and others define their own local `_esc` helper. | Backend | Low |
+| A-3 | **`_utc_now()` defined independently in alert_rules.py and vehicles.py** — should be a shared utility in `web/utils.py`. | Backend | Low |
+| A-4 | **No shared validation framework** — 11 blueprints define their own `_*_SCHEMA` dicts with ad-hoc validation logic. No common `validate_payload(data, schema)` utility. Each blueprint reinvents field type checking, max_length enforcement, and required-field logic. | Backend | High |
+| A-5 | **No base class or protocol for service modules** — 7 service modules (ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes) share a similar `download()/start()/stop()/running()/uninstall()` interface but have no ABC or Protocol. Missing methods are only caught at runtime. | Services | Medium |
+| A-6 | **`db.py _create_indexes()` is 593 lines** — a single function containing 611 `CREATE INDEX IF NOT EXISTS` statements. Should be split into per-module helpers (e.g., `_create_inventory_indexes()`, `_create_medical_indexes()`). | Backend | Medium |
+| A-7 | **Dual SSE endpoints** — `/api/alerts/stream` and `/api/events/stream` are separate endpoints with separate subscriber lists. Could be unified into a single multiplexed SSE stream with event types. | Backend | Low |
+
+### B. Consistency Gaps Across Blueprints
+
+| # | Finding | Scope | Severity |
+|---|---------|-------|----------|
+| B-1 | **34 of 45+ mutating blueprints lack input validation** — only ~11 blueprints (contacts, inventory, alert_rules, vehicles, financial, loadout, water_mgmt, medical_phase2, meal_planning, threat_intel, tactical_comms) have schema validation. The remaining 34 accept raw JSON without field-type or bounds checking. | Backend | High |
+| B-2 | **57 of 59 blueprints lack auth gating** — only contacts.py and inventory.py enforce `require_auth('admin')`. If `NOMAD_AUTH_REQUIRED=1` is set for LAN multi-user, all other mutation endpoints are unprotected. | Backend | High |
+| B-3 | **~34 blueprints with mutations don't call `log_activity()`** — only ~7 blueprints (contacts, inventory, supplies, kit_builder, kiwix, notes, medical) log mutations. Changes to garden, vehicles, tasks, power, family, checklists, and 27 other modules are invisible in the activity log. | Backend | Medium |
+| B-4 | **~17 blueprints lack pagination on list endpoints** — agriculture, daily_living, disaster_modules, evac_drills, exercises, group_ops, hunting_foraging, interoperability, kb, kit_builder, land_assessment, movement_ops, nutrition, regional_profile, security_opsec, timeline, training_knowledge. | Backend | Medium |
+| B-5 | **~14 blueprints have DELETE routes without 404 checks** — agriculture, daily_living, disaster_modules, evac_drills, exercises, group_ops, hunting_foraging, land_assessment, movement_ops, nutrition, regional_profile, security_opsec, specialized_modules, training_knowledge. They return 200 even when the target resource doesn't exist. | Backend | Medium |
+
+### C. Thread Safety & Concurrency
+
+| # | Finding | Scope | Severity |
+|---|---------|-------|----------|
+| C-1 | **`_api_cache` in app.py is a plain dict without locking** — accessed from multiple request threads. Cache eviction (check size, iterate, delete) is not atomic. | Backend | Medium |
+| C-2 | **`_ttl_cache` in state.py is not thread-safe** — `cached_get()`/`cached_set()` can race on concurrent requests. | Backend | Medium |
+| C-3 | **`_download_progress` in manager.py lacks a lock** — written by download threads, read by API request threads and health monitor. | Services | Medium |
+| C-4 | **`_service_logs` in manager.py lacks a lock** — written by log reader threads, read by API request threads. | Services | Medium |
+| C-5 | **SSE `_sse_subscribers` list has no lock** — appended from request threads, iterated from alert engine thread. | Backend | Low |
+
+### D. Performance Issues
+
+| # | Finding | Scope | Severity |
+|---|---------|-------|----------|
+| D-1 | **`get_db()` executes 3 PRAGMAs on every connection** — `foreign_keys`, `busy_timeout`, `cache_size` run on every `get_db()` call, including pooled connections that already have them set. Only WAL uses a once-per-process flag. | Backend | Medium |
+| D-2 | **611 indexes checked on every startup** — `_create_indexes()` runs all 611 `CREATE INDEX IF NOT EXISTS` on every launch. Even checking existence is measurable on large databases. | Backend | Low |
+| D-3 | **`api_search_all()` searches 14+ entity types every time** — no early-exit optimization. If user only needs inventory results, they still pay for searching contacts, notes, waypoints, etc. | Backend | Low |
+| D-4 | **FTS5 MATCH queries don't sanitize special characters** — `*`, `"`, `NEAR`, `OR` in search input can cause unexpected FTS5 behavior or errors. | Backend | Medium |
+| D-5 | **Situation Room fires 34 fetch workers simultaneously** — no prioritization or lazy-loading. All data sources fetch on tab open regardless of viewport position. | Frontend | Medium |
+
+### E. Resource Leaks & Cleanup
+
+| # | Finding | Scope | Severity |
+|---|---------|-------|----------|
+| E-1 | **SSE stale subscribers accumulate** — clients that connect but never read fill their queue (maxsize=50), alerts are silently dropped via `put_nowait`, but the subscriber is never pruned until disconnect. | Backend | Medium |
+| E-2 | **DB connection pool not closed on shutdown** — pool connections are garbage-collected rather than explicitly closed, risking dirty WAL state. | Backend | Medium |
+| E-3 | **`stop_process()` doesn't call `kill()` after wait timeout** — if `proc.wait(10)` times out, the process is logged as a warning but continues running as a potential zombie. | Services | Medium |
+| E-4 | **No PID files for managed services** — if `nomad.py` crashes, all managed service processes become unrecoverable orphans with no tracking mechanism. | Services | Medium |
+| E-5 | **Abandoned `.part` download files never expire** — partial downloads are preserved for resume but have no TTL. They persist indefinitely on disk. | Services | Low |
+| E-6 | **`get_db()` leaks connection if PRAGMAs fail** — if `sqlite3.connect()` succeeds but a subsequent PRAGMA fails (e.g., read-only filesystem), no close in except handler. | Backend | Low |
+
+### F. Frontend Quality
+
+| # | Finding | Scope | Severity |
+|---|---------|-------|----------|
+| F-1 | **190+ `console.log` statements in production JS** — scattered across all major JS files. Largest offender: `_app_situation_room.js` (63 occurrences). Should be removed or gated behind a debug flag. | Frontend | Medium |
+| F-2 | **280+ inline `style=` attributes in templates** — active migration to CSS classes is documented but has significant backlog. Largest: `_tab_nukemap.html` (70+, documented exception), `_tab_settings.html` (~50+), `_tab_tools.html` (~40). | Frontend | Low |
+| F-3 | **7 JS files over 1,000 lines** — `_app_situation_room.js` (11,237), `_app_init_runtime.js` (~4,100), `_app_workspace_memory.js` (~2,912), `_app_media_maps_sync.js` (~2,650), `_app_services_ai.js` (~2,440), `_prep_calcs_misc.js` (~1,500), `_app_dashboard_readiness.js` (~1,500). | Frontend | Medium |
+| F-4 | **No JS module system** — all JS files are concatenated into the HTML template. Every top-level `let`/`const`/`function` is effectively global. This creates TDZ hazards (documented gotcha) and namespace pollution (~50+ global variables per major file). | Frontend | High |
+| F-5 | **500+ hardcoded English strings** — i18n system has only 56 keys per language. Button labels, section headers, error messages, toast messages, and empty states are all hardcoded English. | Frontend | Medium |
+| F-6 | **CSS design token adoption incomplete** — some files still use raw transition durations (`0.2s`/`0.3s`) instead of `var(--duration-fast)`/`var(--duration-normal)`, and raw font-family values instead of `var(--font-data)`. | Frontend | Low |
+| F-7 | **Event listener accumulation risk** — situation room adds map/card event listeners on tab switch without deduplication guards. Re-opening the tab may accumulate redundant listeners. | Frontend | Low |
+| F-8 | **Accessibility gaps** — status dots rely on color alone (no icon/text pairing), `tone-muted`/`tone-dim` may not meet WCAG AA contrast on dark backgrounds, map interactions lack keyboard alternatives. | Frontend | Medium |
+
+### G. CI/CD & Build
+
+| # | Finding | Scope | Severity |
+|---|---------|-------|----------|
+| G-1 | **CI has no test step** — `build.yml` builds the executable and installer but never runs `pytest`. Broken code produces release artifacts. | CI/CD | High |
+| G-2 | **CI has no esbuild step** — if `web/static/dist/` (esbuild output) is gitignored, the CI must run `npm install && node esbuild.config.mjs` before PyInstaller. Currently it doesn't. | CI/CD | High |
+| G-3 | **CI only builds Windows** — no Linux AppImage or macOS dmg despite cross-platform support in the code and `platform_utils.py`. | CI/CD | Medium |
+| G-4 | **No artifact smoke test** — after building, the workflow doesn't verify the exe runs (e.g., `--self-test` flag). | CI/CD | Medium |
+| G-5 | **5 hardcoded service version strings** — kiwix (3.7.0), cyberchef (10.19.4), kolibri (0.17.3), qdrant (v1.12.6), stirling (0.36.6). Require manual updates when upstream releases. No automated version-check mechanism. | Services | Low |
+
+### H. Miscellaneous
+
+| # | Finding | Scope | Severity |
+|---|---------|-------|----------|
+| H-1 | **`_wizard_state` in state.py is dead** — only used by the onboarding wizard which doesn't exist yet (ROADMAP P2-01). | Backend | Low |
+| H-2 | **Service health check URLs use hardcoded ports** — if a user changes a service port via config, health checks silently fail against the old port. | Services | Medium |
+| H-3 | **No service dependency graph** — services can be started in any order, but AI features need Ollama + Qdrant. No dependency declaration or ordered startup. | Services | Low |
+| H-4 | **No checksum verification on service downloads** — only self-update downloads verify SHA256. All 7 service downloads are trust-on-first-download. | Services | Medium |
+| H-5 | **situation_room.py is 5,400+ lines** — the single largest file in the project (149 routes, 34 workers). Previously identified for splitting but never done. | Backend | Medium |
+| H-6 | **Alert engine has no retry/restart** — if `_run_alert_engine` crashes with an exception, it logs and the interval continues, but persistent failures (e.g., DB corruption) silently stop alerting forever. | Backend | Low |
+
+---
+
+### Internal Audit Backlog
+
+Items derived from audit findings above, tagged `[internal]`.
+
+#### P1: Quick Wins (< 1 hour each) [internal]
+
+| # | Title | Description | Findings |
+|---|-------|-------------|----------|
+| P1-I01 | **Extract `_safe_int`/`_safe_float`/`_utc_now` to utils.py** | Move duplicated helpers to `web/utils.py`, update all 10+ blueprint imports | A-1, A-3 |
+| P1-I02 | **Remove `_esc` redefinitions** | Delete local `_esc` helpers in blueprints, import `esc` from `web/utils.py` | A-2 |
+| P1-I03 | **Strip 190+ `console.log` from production JS** | Search-and-remove or gate behind `if(DEBUG)` flag across all JS files | F-1 |
+| P1-I04 | **Add `proc.kill()` fallback in `stop_process()`** | After `proc.wait(10)` timeout, call `proc.kill()` then `proc.wait(5)` to prevent zombies | E-3 |
+| P1-I05 | **Add lock to `_download_progress` in manager.py** | Wrap dict access in `threading.Lock` for thread-safe read/write | C-3 |
+| P1-I06 | **Add lock to `_service_logs` in manager.py** | Wrap dict access in `threading.Lock` for thread-safe read/write | C-4 |
+| P1-I07 | **Skip redundant PRAGMAs on pooled connections** | Set `foreign_keys`/`busy_timeout`/`cache_size` once on connection creation, not on every `get_db()` call | D-1 |
+| P1-I08 | **FTS5 search input sanitization** | Strip/escape FTS5 special characters (`*`, `"`, `NEAR`, `OR`, `AND`, `NOT`) from user search queries before MATCH | D-4 |
+| P1-I09 | **Fix `get_db()` connection leak on PRAGMA failure** | Add try/except around PRAGMAs with `conn.close()` in the except handler | E-6 |
+| P1-I10 | **Close DB pool connections on shutdown** | Add `atexit` handler or shutdown hook to drain and close all pool connections | E-2 |
+| P1-I11 | **Service health URLs respect configured ports** | Read port from config/env instead of hardcoding in `SERVICE_HEALTH_URLS` dict | H-2 |
+| P1-I12 | **Delete dead `_wizard_state` from state.py** | Remove unused wizard state dict until onboarding wizard (P2-01) is built | H-1 |
+
+#### P2: Medium Effort (1-4 hours each) [internal]
+
+| # | Title | Description | Findings |
+|---|-------|-------------|----------|
+| P2-I01 | **Shared validation framework** | Create `web/validation.py` with a `validate_payload(data, schema)` utility that handles type checking, max_length, numeric bounds, required fields. Migrate existing `_*_SCHEMA` blueprints first, then add schemas to the 34 unvalidated ones. | A-4, B-1 |
+| P2-I02 | **Extend auth gating to all mutation endpoints** | Apply `require_auth('admin')` decorator to POST/PUT/DELETE routes across all 57 unprotected blueprints. Use a decorator that's a no-op when auth is disabled (desktop default). | B-2 |
+| P2-I03 | **Activity logging for remaining 34 blueprints** | Add `log_activity()` calls to mutations in garden, vehicles, tasks, power, family, checklists, medical_phase2, and 27 others. Use a decorator/middleware pattern to reduce boilerplate. | B-3 |
+| P2-I04 | **Pagination for remaining 17 blueprints** | Apply `get_pagination()` to list endpoints in agriculture, daily_living, disaster_modules, evac_drills, exercises, group_ops, hunting_foraging, interoperability, kb, kit_builder, land_assessment, movement_ops, nutrition, regional_profile, security_opsec, timeline, training_knowledge. | B-4 |
+| P2-I05 | **DELETE 404 hardening for 14 blueprints** | Add `rowcount == 0 → 404` checks to DELETE routes in the 14 identified blueprints. | B-5 |
+| P2-I06 | **Split `_create_indexes()` into per-module functions** | Break 593-line function into `_create_inventory_indexes()`, `_create_medical_indexes()`, etc. for maintainability. | A-6 |
+| P2-I07 | **Service module Protocol/ABC** | Define a `ServiceProtocol` (Python Protocol class) with `download()`, `start()`, `stop()`, `running()`, `uninstall()` methods. Type-check all 7 service modules against it. | A-5 |
+| P2-I08 | **Add CI test step** | Add `pytest` run before PyInstaller build in `.github/workflows/build.yml`. Fail the workflow on test failures. | G-1 |
+| P2-I09 | **Add CI esbuild step** | Add `npm ci && node esbuild.config.mjs` step before PyInstaller in CI workflow. | G-2 |
+| P2-I10 | **Thread-safe caches** | Replace `_api_cache` dict in app.py and `_ttl_cache` dict in state.py with `threading.Lock`-protected access or use `functools.lru_cache` / `cachetools.TTLCache`. | C-1, C-2 |
+| P2-I11 | **SSE subscriber pruning** | Proactively remove stale SSE subscribers (queue full for >60s or last keepalive >60s ago) in the alert engine loop. | E-1, C-5 |
+| P2-I12 | **SHA256 verification on service downloads** | Download checksums from upstream GitHub releases and verify after download for all 7 services, not just self-update. | H-4 |
+
+#### P3: Larger Effort / Nice-to-Have [internal]
+
+| # | Title | Description | Findings |
+|---|-------|-------------|----------|
+| P3-I01 | **Split situation_room.py (5,400 lines)** | Break into 4-5 sub-blueprints: `sitroom_data.py` (workers/fetchers), `sitroom_api.py` (routes), `sitroom_map.py` (map layers/points), `sitroom_analysis.py` (AI deduction/signals/clustering). | H-5 |
+| P3-I02 | **Split large JS files** | Code-split `_app_situation_room.js` (11,237 lines), `_app_init_runtime.js` (4,100), `_app_workspace_memory.js` (2,912) into focused modules. Requires adopting a JS module system or lazy-loading pattern. | F-3 |
+| P3-I03 | **JS module system** | Migrate from concatenated globals to ES modules or an IIFE-based module pattern. Eliminates TDZ hazards, reduces global namespace pollution, enables tree-shaking. | F-4 |
+| P3-I04 | **Expand i18n from 56 to 300+ keys** | Audit all hardcoded English strings in templates/JS. Prioritize: button labels, section headers, error messages, empty states, toast messages. | F-5 |
+| P3-I05 | **Inline style migration backlog** | Continue migrating 280+ remaining inline `style=` attributes to CSS classes following the documented migration pattern in CLAUDE.md. Exclude NukeMap (70+ intentional). | F-2 |
+| P3-I06 | **CSS design token completion** | Audit remaining raw values (transition durations, font-family, colors) and replace with design tokens from `00_theme_tokens.css`. | F-6 |
+| P3-I07 | **Cross-platform CI** | Add Linux (AppImage) and macOS (dmg) build jobs to `.github/workflows/build.yml`. | G-3 |
+| P3-I08 | **CI smoke test** | After building, run the exe with `--self-test` flag (or equivalent) to verify it launches without crash. | G-4 |
+| P3-I09 | **PID file tracking for managed services** | Write PID files on service start, check for orphans on NOMAD startup, offer to reclaim or kill. Prevents unrecoverable orphan processes after crash. | E-4 |
+| P3-I10 | **Lazy-load Situation Room cards** | Use IntersectionObserver to only fetch data for cards visible in the viewport. Prioritize above-the-fold cards (map, breaking news, market ticker). | D-5 |
+| P3-I11 | **WCAG AA contrast audit** | Verify `tone-muted`/`tone-dim` meet 4.5:1 contrast ratio on all theme backgrounds. Add icon/text pairing to color-only status indicators. Add keyboard alternatives for map interactions. | F-8 |
+| P3-I12 | **Automated service version checking** | Query GitHub releases API for kiwix, cyberchef, kolibri, qdrant, stirling on startup (or weekly) to detect available updates without hardcoded version bumps. | G-5 |
+| P3-I13 | **Expired partial download cleanup** | Add a TTL (e.g., 7 days) to `.part` files. Prune on startup or via health monitor. | E-5 |
+| P3-I14 | **Situation Room lazy fetch deduplication** | Guard against re-adding event listeners on repeated tab switches in `_app_situation_room.js`. Track listener registration state. | F-7 |
+| P3-I15 | **Unify dual SSE endpoints** | Merge `/api/alerts/stream` and `/api/events/stream` into a single `/api/sse` endpoint with event-type multiplexing. Reduces client connections and subscriber management overhead. | A-7 |
+
+---
+
 ## Explicit Omissions
 
 These items are intentionally excluded from the roadmap:

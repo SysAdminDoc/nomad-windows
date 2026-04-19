@@ -136,18 +136,18 @@
 }
 .media-continue-icon {
   margin-bottom: 4px;
-  font-size: 20px;
+  font-size: var(--text-xl, 20px);
 }
 .media-continue-title {
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 600;
 }
 .media-continue-meta {
   margin-top: 2px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 .media-continue-progress {
@@ -180,14 +180,14 @@
 /* --- Section Dividers & Vertical Rhythm --- */
 .section-header {
   display: flex; align-items: center; gap: 10px;
-  font-size: 9px; font-weight: 800; text-transform: uppercase;
+  font-size: var(--text-2xs, 9px); font-weight: 800; text-transform: uppercase;
   letter-spacing: 1px; color: var(--text-muted);
   font-family: var(--font-data, monospace);
   margin-bottom: 14px; padding-top: 8px;
 }
 .section-header .section-line { flex: 1; height: 1px; background: var(--border); }
 .section-header-label {
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -245,7 +245,7 @@
   border-radius: var(--radius);
   font-weight: 600;
   text-decoration: none;
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
 }
 .skip-nav:focus, .skip-link:focus { top: 8px; }
 :focus-visible {
@@ -287,7 +287,7 @@ summary:focus-visible,
 .battery-saver .card { box-shadow: none !important; }
 .battery-critical .topo-bg { background-image: none !important; }
 #battery-indicator {
-  font-size: 10px; font-weight: 600; display: none; margin-left: 8px;
+  font-size: var(--text-xs, 10px); font-weight: 600; display: none; margin-left: 8px;
 }
 
 /* === Dashboard Widget Configuration === */
@@ -326,15 +326,15 @@ summary:focus-visible,
      never collapses inside the widget-config-item flex row. */
   flex-shrink: 0;
 }
-.widget-config-icon { font-size: 16px; flex-shrink: 0; width: 22px; text-align: center; }
-.widget-config-title { flex: 1; font-size: 12px; font-weight: 600; letter-spacing: 0.3px; }
+.widget-config-icon { font-size: var(--text-lg, 16px); flex-shrink: 0; width: 22px; text-align: center; }
+.widget-config-title { flex: 1; font-size: var(--text-sm-md, 12px); font-weight: 600; letter-spacing: 0.3px; }
 .widget-size-select {
   background: var(--surface2, var(--surface));
   color: var(--text);
   border: 1px solid var(--border);
   padding: 3px 6px;
   border-radius: 4px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   flex-shrink: 0;
 }
 .widget-toggle { flex-shrink: 0; }

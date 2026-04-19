@@ -585,14 +585,14 @@ html[data-zoom="xlarge"] { --ui-zoom: 1.3; }
 .ss-pill {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 12px;
+  gap: var(--sp-2, 8px);
+  padding: var(--sp-1, 4px) var(--sp-3, 12px);
   background: var(--surface2);
   border: 1px solid var(--border);
-  border-radius: 20px;
-  font-size: 11px;
+  border-radius: var(--radius-xl, 20px);
+  font-size: var(--text-sm, 11px);
   cursor: pointer;
-  transition: border-color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+  transition: border-color var(--duration-fast) var(--easing-standard), background-color var(--duration-fast) var(--easing-standard), transform var(--duration-fast) var(--easing-standard);
   white-space: nowrap;
   color: var(--text-muted);
   font: inherit;
@@ -608,7 +608,7 @@ html[data-zoom="xlarge"] { --ui-zoom: 1.3; }
 .ss-pill .ss-dot {
   width: 6px;
   height: 6px;
-  border-radius: 50%;
+  border-radius: var(--radius-full, 50%);
   flex-shrink: 0;
 }
 .ss-pill strong {
@@ -620,7 +620,7 @@ html[data-zoom="xlarge"] { --ui-zoom: 1.3; }
 .bento-grid {
   display: grid;
   grid-template-columns: 3fr 2fr;
-  gap: 20px;
+  gap: var(--sp-5, 20px);
   margin-bottom: 28px;
 }
 .bento-full { grid-column: 1 / -1; }
@@ -755,29 +755,26 @@ html[data-zoom="xlarge"] { --ui-zoom: 1.3; }
   bottom: 0;
   width: 420px;
   max-width: 90vw;
-  z-index: 9601;
+  z-index: var(--z-frame-overlay, 20000);
   background: var(--surface-solid);
   border-left: 1px solid var(--border);
-  box-shadow: -8px 0 40px rgba(0,0,0,0.25);
+  box-shadow: var(--elev-4, -8px 0 40px rgba(0,0,0,0.25));
   overflow-y: auto;
   overscroll-behavior: contain;
   transform: translateX(100%);
-  /* Delay visibility change until the slide-out transform completes
-     so the close animation is actually visible to the user. */
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0.3s;
+  transition: transform var(--duration-mid) var(--easing-standard), visibility 0s linear var(--duration-mid);
 }
 .customize-panel.open {
   visibility: visible;
   pointer-events: auto;
   transform: translateX(0);
-  /* On open, visibility must flip immediately so the slide-in is seen. */
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), visibility 0s linear 0s;
+  transition: transform var(--duration-mid) var(--easing-standard), visibility 0s linear 0s;
 }
 .customize-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: var(--sp-5, 20px) var(--sp-6, 24px);
   border-bottom: 1px solid var(--border);
   position: sticky;
   top: 0;
@@ -785,26 +782,26 @@ html[data-zoom="xlarge"] { --ui-zoom: 1.3; }
   z-index: 1;
 }
 .customize-panel-header h2 {
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1px;
 }
 .customize-panel-body {
-  padding: 20px 24px;
+  padding: var(--sp-5, 20px) var(--sp-6, 24px);
 }
 .customize-section {
-  margin-bottom: 28px;
+  margin-bottom: var(--sp-7, 28px);
 }
 .customize-section-title {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 1.2px;
   color: var(--accent);
   font-family: var(--font-data, monospace);
-  margin-bottom: 14px;
-  padding-bottom: 6px;
+  margin-bottom: var(--sp-4, 16px);
+  padding-bottom: var(--sp-2, 8px);
   border-bottom: 1px solid var(--border);
 }
 .customize-row {

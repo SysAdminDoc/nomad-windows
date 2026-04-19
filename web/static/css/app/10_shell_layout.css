@@ -535,24 +535,24 @@
   padding: var(--density-sidebar-footer-pad);
   border-top: 1px solid var(--border);
   position: relative;
-  z-index: 101;
+  z-index: calc(var(--z-dropdown, 100) + 1);
   background: color-mix(in srgb, var(--sidebar-bg) 92%, transparent);
 }
 .sidebar-footer-meta {
   display: grid;
-  gap: 6px;
+  gap: var(--sp-2, 8px);
 }
 .sidebar-footer-actions,
 .sidebar-footer-status {
   display: flex;
-  gap: 6px;
+  gap: var(--sp-2, 8px);
   align-items: center;
   flex-wrap: wrap;
   min-width: 0;
   -webkit-app-region: no-drag;
 }
 .sidebar-footer-status {
-  gap: 6px;
+  gap: var(--sp-2, 8px);
 }
 
 /* ─── Layout ─── */

@@ -5,14 +5,14 @@
   align-items: center;
   padding: 4px 6px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
   -webkit-app-region: no-drag;
 }
 .theme-btn {
   width: 18px;
   height: 18px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid rgba(255,255,255,0.22);
   cursor: pointer;
   transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
@@ -39,18 +39,18 @@
   align-items: center;
   padding: 4px 6px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
   -webkit-app-region: no-drag;
 }
 .mode-btn {
   width: 26px;
   height: 26px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+  transition: background-color var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard), color var(--duration-fast) var(--easing-standard), transform var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard);
   font-size: var(--text-sm-md, 12px);
   display: flex;
   align-items: center;
@@ -72,7 +72,7 @@
 .live-widget {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 18px 20px; cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  transition: border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), transform var(--duration-fast) var(--easing-standard);
   position: relative; overflow: hidden;
 }
 .live-widget::before {
@@ -188,14 +188,14 @@
 .calorie-track-bar {
   height: 6px;
   background: var(--surface3);
-  border-radius: 3px;
+  border-radius: var(--radius-2xs, 3px);
   overflow: hidden;
 }
 .calorie-track-fill {
   width: var(--calorie-pct, 0%);
   height: 100%;
   background: var(--calorie-tone, var(--accent));
-  border-radius: 3px;
+  border-radius: var(--radius-2xs, 3px);
   transition: width 0.3s;
 }
 .calorie-track-entry {
@@ -224,7 +224,7 @@
 .need-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 12px 14px; cursor: pointer;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  transition: border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), transform var(--duration-fast) var(--easing-standard);
   /* Per-need accent is pushed in via the --need-tone custom property
      (see _app_dashboard_readiness.js renderers). Defaults to the base
      border color so the rule stays inert until the variable is set. */
@@ -233,7 +233,7 @@
 .need-card:hover { border-color: var(--border-hover); transform: translateY(-1px); }
 .need-badge {
   font-size: var(--text-2xs, 9px); font-weight: 700; font-family: var(--font-data, monospace);
-  background: var(--surface2); color: var(--text-muted); padding: 2px 6px; border-radius: 3px;
+  background: var(--surface2); color: var(--text-muted); padding: 2px 6px; border-radius: var(--radius-2xs, 3px);
   letter-spacing: 0.3px;
 }
 .need-card-head {
@@ -482,7 +482,7 @@
   justify-content: center;
   width: 20px;
   height: 20px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent);
   flex-shrink: 0;
@@ -499,7 +499,7 @@
   align-items: center;
   min-height: 20px;
   padding: 0 7px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: color-mix(in srgb, var(--surface2) 92%, transparent);
   border: 1px solid var(--border);
   color: var(--text-muted);
@@ -621,7 +621,7 @@
   align-items: center;
   min-height: 22px;
   padding: 0 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   font-size: var(--text-2xs, 9px);
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -649,7 +649,7 @@
   align-items: center;
   min-height: 24px;
   padding: 0 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid color-mix(in srgb, var(--border) 86%, transparent);
   background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
   color: var(--text-muted);
@@ -684,7 +684,7 @@
   align-items: center;
   min-height: 22px;
   padding: 0 9px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
   color: var(--text-dim);
@@ -693,7 +693,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+  transition: transform var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), color var(--duration-fast) var(--easing-standard);
 }
 .workspace-context-previous-btn:hover {
   transform: translateY(-1px);
@@ -753,7 +753,7 @@
   align-items: center;
   min-height: 30px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
   background: color-mix(in srgb, var(--accent-dim) 55%, var(--surface-solid));
   color: var(--text);
@@ -762,7 +762,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  transition: transform var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), background-color var(--duration-fast) var(--easing-standard);
 }
 .workspace-context-quick-action:hover {
   transform: translateY(-1px);
@@ -885,7 +885,7 @@
   width: 8px;
   height: 8px;
   margin-top: 6px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: var(--accent);
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--accent) 14%, transparent);
 }
@@ -912,7 +912,7 @@
   align-items: center;
   min-height: 32px;
   padding: 0 13px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
   background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
   color: var(--text);
@@ -921,7 +921,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   cursor: pointer;
-  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  transition: transform var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), background-color var(--duration-fast) var(--easing-standard);
 }
 .workspace-inspector-action:hover {
   transform: translateY(-1px);
@@ -999,7 +999,7 @@
   top: 4px;
   bottom: 4px;
   width: 3px;
-  border-radius: 2px;
+  border-radius: var(--radius-2xs, 2px);
   background: var(--accent);
 }
 .tab.active .tab-icon { opacity: 1; color: var(--accent); }
@@ -1024,7 +1024,7 @@
   padding: 20px;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+  transition: transform var(--duration-normal) var(--easing-standard), box-shadow var(--duration-normal) var(--easing-standard), background-color var(--duration-normal) var(--easing-standard), color var(--duration-normal) var(--easing-standard), border-color var(--duration-normal) var(--easing-standard);
   min-height: 156px;
   display: flex;
   flex-direction: column;
@@ -1063,8 +1063,8 @@
 .services-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--density-grid-gap); }
 .service-card {
   background: var(--surface); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
-  border: 1px solid var(--border); border-radius: 14px; padding: var(--density-service-card-pad);
-  transition: transform 0.25s ease, border-color 0.25s, box-shadow 0.25s;
+  border: 1px solid var(--border); border-radius: var(--radius-md, 14px); padding: var(--density-service-card-pad);
+  transition: transform var(--duration-normal) var(--easing-standard), border-color 0.25s, box-shadow 0.25s;
   animation: cardEntrance 0.4s ease backwards;
 }
 .service-card:nth-child(1) { animation-delay: 0s; }
@@ -1087,7 +1087,7 @@
 
 .badge {
   display: inline-flex; align-items: center; gap: 5px;
-  padding: 3px 10px; border-radius: 20px;
+  padding: 3px 10px; border-radius: var(--radius-xl, 20px);
   font-size: var(--text-sm, 11px); font-weight: 600; letter-spacing: 0.3px;
 }
 .badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
@@ -1102,11 +1102,11 @@
 
 /* ─── Buttons ─── */
 .btn {
-  padding: var(--density-btn-pad); border-radius: 8px;
+  padding: var(--density-btn-pad); border-radius: var(--radius-sm, 8px);
   border: 1px solid var(--border); background: var(--surface2);
   color: var(--text); font-size: var(--text-sm, 11px); font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+  transition: background-color var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard), color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), transform var(--duration-fast) var(--easing-standard);
   white-space: nowrap;
   line-height: 1.2;
 }
@@ -1186,7 +1186,7 @@
   align-items: center;
   min-height: 28px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
   color: var(--text-dim);
@@ -1219,7 +1219,7 @@
   justify-content: space-between;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: color-mix(in srgb, var(--surface2) 76%, transparent);
 }
 .shell-health-row-main {
@@ -1254,23 +1254,23 @@
 
 /* ─── Progress ─── */
 .progress-wrap { margin-top: 10px; }
-.progress-bar { width: 100%; height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
-.progress-bar .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--orange)); transition: width 0.3s; border-radius: 2px; box-shadow: 0 0 8px var(--accent-glow); }
+.progress-bar { width: 100%; height: 4px; background: var(--surface3); border-radius: var(--radius-2xs, 2px); overflow: hidden; }
+.progress-bar .fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--orange)); transition: width 0.3s; border-radius: var(--radius-2xs, 2px); box-shadow: 0 0 8px var(--accent-glow); }
 .progress-info { display: flex; justify-content: space-between; font-size: var(--text-sm, 11px); color: var(--text-dim); margin-top: 4px; }
 
 /* ─── Gauge ─── */
 .gauge-row { display: flex; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
 .gauge-card {
   flex: 1; min-width: 140px; background: var(--surface); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
-  border: 1px solid var(--border); border-radius: 14px; padding: 14px; text-align: center;
+  border: 1px solid var(--border); border-radius: var(--radius-md, 14px); padding: 14px; text-align: center;
   transition: transform 0.2s;
 }
 .gauge-card:hover { transform: translateY(-1px); }
 .gauge-card .gauge-label { font-size: var(--text-sm, 11px); color: var(--text-dim); margin-bottom: 6px; }
 .gauge-card .gauge-value { font-size: var(--text-3xl, 28px); font-weight: 700; margin-bottom: 4px; }
 .gauge-card .gauge-value.is-text { font-size: var(--text-lg, 16px); }
-.gauge-card .gauge-bar { height: 4px; background: var(--surface3); border-radius: 2px; overflow: hidden; }
-.gauge-card .gauge-bar .fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+.gauge-card .gauge-bar { height: 4px; background: var(--surface3); border-radius: var(--radius-2xs, 2px); overflow: hidden; }
+.gauge-card .gauge-bar .fill { height: 100%; border-radius: var(--radius-2xs, 2px); transition: width 0.5s; }
 .gauge-green .gauge-value { color: var(--green); }
 .gauge-green .fill { background: var(--green); }
 .gauge-orange .gauge-value { color: var(--orange); }

@@ -68,10 +68,10 @@ Features that make NOMAD unique among survival/preparedness tools.
 
 ---
 
-### 2.1 — Reticulum / LXMF Mesh Transport
+### 2.1 — Reticulum / LXMF Mesh Transport --- COMPLETE (v7.44.0)
 **Effort:** L
 
-Pure-Python mesh networking for PACE comms. Reticulum transport layer + LXMF messaging. Enables true off-grid node-to-node communication without internet. Highest external-audit recommendation.
+RNS service manager with identity creation, LXMF messaging, announce/discovery. Mesh routes in comms blueprint wired to RNS transport with graceful fallback when not installed. Incoming messages auto-stored + SSE broadcast. Supports direct + propagation delivery modes.
 
 ### 2.2 — SDR Sidecar Service
 **Effort:** M

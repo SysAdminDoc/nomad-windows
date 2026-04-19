@@ -103,6 +103,7 @@
   #tab-daily-living .dl-slider-val { min-width:24px; text-align:center; font-weight:600; color:var(--dl-accent); font-size:.85rem; }
   #tab-daily-living .dl-day-checks { display:flex; gap:8px; flex-wrap:wrap; }
   #tab-daily-living .dl-day-checks label { font-size:.78rem; display:flex; align-items:center; gap:3px; color:var(--text-secondary,#aaa); cursor:pointer; }
+  #tab-daily-living .dl-date-header { font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--text-secondary,#aaa); padding:10px 0 4px; border-bottom:1px solid var(--border,#333); margin-bottom:6px; grid-column:1/-1; }
   #tab-daily-living .dl-recipe-card { background:var(--card-bg,#1a1a2e); border:1px solid var(--border,#333); border-radius:10px; padding:14px; }
   #tab-daily-living .dl-recipe-title { font-weight:600; color:var(--text-primary,#eee); margin-bottom:4px; }
   #tab-daily-living .dl-recipe-meta { font-size:.75rem; color:var(--text-secondary,#aaa); }
@@ -1181,6 +1182,15 @@
     return ingredients;
   }
 
+  function _dlDateLabel(dateStr) {
+    if (!dateStr) return '';
+    try {
+      var d = new Date(dateStr);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleDateString([], {weekday:'long', year:'numeric', month:'short', day:'numeric'});
+    } catch(e) { return ''; }
+  }
+
   window.dlLoadRecipes = function() {
     var cat = val('dl-recipe-filter-cat');
     var method = val('dl-recipe-filter-method');
@@ -1191,8 +1201,12 @@
     api(url).then(function(items) {
       var c = el('dl-recipe-list');
       if (!items.length) { c.innerHTML = dlEmpty('No Recipes Yet', 'Add the first grid-down meal plan above to build your cooking shelf.'); return; }
+      var lastDate = '';
       c.innerHTML = items.map(function(r) {
-        return '<div class="dl-recipe-card">' +
+        var header = '';
+        var label = _dlDateLabel(r.created_at);
+        if (label && label !== lastDate) { lastDate = label; header = '<div class="dl-date-header">' + label + '</div>'; }
+        return header + '<div class="dl-recipe-card">' +
           '<div class="dl-recipe-title">' + methodIcon(r.cooking_method) + ' ' + r.name + '</div>' +
           '<div class="dl-recipe-meta">' + (r.category || '') + ' &middot; ' + (r.cooking_method || '').replace('_', ' ') +
           ' &middot; Prep: ' + (r.prep_time || 0) + 'm &middot; Cook: ' + (r.cook_time || 0) + 'm' +

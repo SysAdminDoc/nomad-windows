@@ -1376,6 +1376,36 @@ document.addEventListener('keydown', e => {
   // Ctrl/Cmd+K — handled by _app_workspaces.js toggleCommandPalette()
 });
 
+/* ─── Favicon Dynamic Badge (P1-05) ─── */
+let _faviconBadgeCount = 0;
+function updateFaviconBadge(count) {
+  if (count === _faviconBadgeCount) return;
+  _faviconBadgeCount = count;
+  const canvas = document.createElement('canvas');
+  canvas.width = 32; canvas.height = 32;
+  const ctx = canvas.getContext('2d');
+  const img = new Image();
+  img.onload = () => {
+    ctx.drawImage(img, 0, 0, 32, 32);
+    if (count > 0) {
+      const text = count > 99 ? '99+' : String(count);
+      ctx.fillStyle = '#e53935';
+      ctx.beginPath();
+      ctx.arc(24, 8, 10, 0, 2 * Math.PI);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, 24, 8);
+    }
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) { link = document.createElement('link'); link.rel = 'icon'; document.head.appendChild(link); }
+    link.href = canvas.toDataURL('image/png');
+  };
+  img.src = '/static/logo.png';
+}
+
 /* ─── Click-to-Copy on Data Cells (P1-18) ─── */
 function copyToClipboard(text, label) {
   if (!text) return;

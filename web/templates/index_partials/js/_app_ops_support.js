@@ -4907,6 +4907,14 @@ function updateTabBadges() {
     });
   }
 
+  // Favicon badge: total actionable count
+  if (d) {
+    const inv = d.inventory || {};
+    const alerts = d.alerts || {};
+    const faviconCount = (inv.low_stock || 0) + (inv.expiring_30d || 0) + (alerts.active || 0);
+    if (typeof updateFaviconBadge === 'function') updateFaviconBadge(faviconCount);
+  }
+
   // AI Chat badge: green dot if Ollama running, red dot if not
   if (!aiBadge) return;
   const applyAiBadge = (svcs) => {

@@ -1376,6 +1376,43 @@ document.addEventListener('keydown', e => {
   // Ctrl/Cmd+K — handled by _app_workspaces.js toggleCommandPalette()
 });
 
+/* ─── Click-to-Copy on Data Cells (P1-18) ─── */
+function copyToClipboard(text, label) {
+  if (!text) return;
+  navigator.clipboard.writeText(text).then(() => {
+    if (typeof toast === 'function') toast('Copied' + (label ? ': ' + label : ''), 'info');
+  }).catch(() => {
+    if (typeof toast === 'function') toast('Copy failed', 'error');
+  });
+}
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-copy]');
+  if (el) {
+    e.preventDefault();
+    copyToClipboard(el.dataset.copy, el.dataset.copyLabel || '');
+  }
+});
+
+/* ─── Settings Search/Filter (P1-07) ─── */
+(function initSettingsSearch() {
+  const input = document.getElementById('settings-search-input');
+  if (!input) return;
+  let debounce;
+  input.addEventListener('input', () => {
+    clearTimeout(debounce);
+    debounce = setTimeout(() => {
+      const q = input.value.toLowerCase().trim();
+      const cards = document.querySelectorAll('#tab-settings .settings-card');
+      cards.forEach(card => {
+        if (!q) { card.style.display = ''; return; }
+        const text = (card.textContent || '').toLowerCase();
+        card.style.display = text.includes(q) ? '' : 'none';
+      });
+    }, 200);
+  });
+})();
+
 /* ─── Collapsible Sidebar Groups (P1-06) ─── */
 (function initSidebarGroupCollapse() {
   const KEY = 'nomad-sidebar-collapsed';

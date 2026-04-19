@@ -1,11 +1,92 @@
 # Project N.O.M.A.D. — Roadmap
 
 > **Baseline:** v7.44.0 (~310 tables, 2,000+ routes, 77 blueprints)
-> **Current:** v7.52.0 (~326 tables, 2,075+ routes, 78 blueprints, 16 new tables, 75 new routes)
+> **Current:** v7.54.0 (~326 tables, 2,075+ routes, 78 blueprints, 2,000+ CSS values tokenized)
 > **Updated:** 2026-04-19
-> **Status:** 134/187 items complete (72%), 8 deferred (4%), 45 internal refactoring remaining (24%)
+> **Prior feature backlog:** 134/187 items complete (72%), 8 deferred (4%), 45 internal refactoring remaining (24%)
 
 ---
+
+## v8 Improvement Roadmap
+
+Product-quality improvements identified from a deep architecture, security, performance, UX, testing, and documentation audit. Organized by impact tier.
+
+### Tier 1: Critical — User-Facing Impact
+
+| # | Title | Description | Status |
+|---|-------|-------------|--------|
+| V8-01 | **Schema version gate** | Add `_meta` table with `schema_version`. On startup, check version — if it matches, skip all 935 `CREATE TABLE/INDEX IF NOT EXISTS` statements. Only run full `_init_db_inner()` when version is missing or outdated. Could cut startup time 30-50%. | Open |
+| V8-02 | **Progressive disclosure** | Don't show all 35+ tabs by default. Start new users with 5-7 core tabs (Home, Inventory, Medical, Maps, AI, Settings). Advanced modules appear as data is populated or explicitly enabled via customize panel. Situation Room should NOT be the default landing for fresh installs — use Home. | Open |
+| V8-03 | **Lazy tab loading** | Stop rendering all 61 HTML partials into a single 58,000-line DOM. Inject tab HTML on first activation. Keep sidebar nav static. Reduces initial DOM parse, memory footprint, and eliminates ID collision risk. | Open |
+
+### Tier 2: High — Security & Reliability
+
+| # | Title | Description | Status |
+|---|-------|-------------|--------|
+| V8-04 | **innerHTML audit — newer blueprints** | 315 `innerHTML =` across 20 files. Core modules are audited but agriculture (33), daily_living (37), land_assessment (25), data_foundation (6) are not individually verified. Adopt a sanitization wrapper or audit each assignment. | Open |
+| V8-05 | **Encrypt TOTP/API secrets at rest** | `totp_secrets.secret` and `api_key` columns store crypto material as plaintext. Encrypt using existing Fernet capability before DB write, decrypt on read. | Open |
+| V8-06 | **Blueprint test coverage** | ~40 of 72 blueprints lack test suites. Especially: `roadmap_features.py` (75 routes, 0 tests), `agriculture.py`, `disaster_modules.py`, `daily_living.py`, `hunting_foraging.py`, `hardware_sensors.py`, `specialized_modules.py`. Add at minimum smoke tests (list + create + get + delete) for each. | Open |
+| V8-07 | **f-string SQL column hardening** | 105 `f"SELECT/INSERT/UPDATE/DELETE` across 22 files. All use allowlists but some are local variables, not module-level constants. Extract to `frozenset` constants. Add `safe_column()` validator in `web/sql_safety.py`. | Open |
+
+### Tier 3: High — Architecture
+
+| # | Title | Description | Status |
+|---|-------|-------------|--------|
+| V8-08 | **Split db.py into package** | 6,255-line monolith → `db/` package: `db/__init__.py` (exports), `db/core.py` (get_db, pool, session), `db/schema_core.py`, `db/schema_comms.py`, `db/schema_medical.py`, etc. Keep `init_db()` as orchestrator. | Open |
+| V8-09 | **Split create_app()** | 1,655-line god function → extract: `web/middleware.py` (CSRF, rate limit, host validation), `web/blueprint_registry.py` (72 imports + registrations), `web/error_handlers.py`. `create_app()` becomes a thin orchestrator. | Open |
+| V8-10 | **Cache rendered template** | `index.html` renders 61 partials + 13 JS files (58,000 lines) on every page load. Cache the rendered output in memory — it's largely static (only version, language, bundle hashes vary). Invalidate on language/version change. | Open |
+| V8-11 | **Lazy blueprint registration** | 72 blueprints imported eagerly in `create_app()`. Use Flask's deferred import pattern or group into domain packages. Import on first request to the URL prefix, not at startup. | Open |
+
+### Tier 4: Medium — Developer Experience & Quality
+
+| # | Title | Description | Status |
+|---|-------|-------------|--------|
+| V8-12 | **Frontend unit tests** | 32,779 lines of JS, 850+ functions, zero unit tests. Add a test framework (vitest or jest via jsdom) for critical functions: `escapeHtml`, `safeFetch`, `timeAgo`, `parseInventoryCommand`, `_parseSearchBang`. Start with the functions that have had bugs. | Open |
+| V8-13 | **Publish coverage to Codecov** | CI runs `pytest-cov` but doesn't upload results. Add `codecov/codecov-action@v4` step and badge to README. Establish baseline and track regression. | Open |
+| V8-14 | **Module-level column allowlists** | Several blueprints define `allowed = [...]` inside route handler functions. Move to module-level `ALLOWED_FIELDS = frozenset({...})` constants for auditability and consistency. | Open |
+| V8-15 | **Persist secret key for LAN** | When `NOMAD_AUTH_REQUIRED=1`, auto-generate and persist `NOMAD_SECRET_KEY` to `config.json` if not set. Currently regenerates per launch, invalidating sessions. | Open |
+| V8-16 | **File-based DB integration test** | Add a test that exercises `create_app()` + `init_db()` against a real file-based SQLite database. Verifies WAL mode, pooling, and startup lifecycle. | Open |
+
+### Tier 5: Nice-to-Have — Polish & Edge Cases
+
+| # | Title | Description | Status |
+|---|-------|-------------|--------|
+| V8-17 | **Situation Room thread pool** | 34 HTTP workers parse responses simultaneously. Constrain to `ThreadPoolExecutor(max_workers=8)` to bound peak memory on Raspberry Pi / low-RAM devices. | Open |
+| V8-18 | **Soft delete / trash pattern** | The undo system has a 10-entry deque with 30s TTL. After that, deletions are permanent. Add a `deleted_at` soft-delete column on critical tables (inventory, contacts, notes, medical) with a "Trash" view and 30-day auto-purge. | Open |
+| V8-19 | **Mobile prep tab navigation** | 25 prep sub-tabs in 5 categories overflow on small screens. Add a mobile-specific accordion or sheet-based navigation for the two-tier category → sub-tab pattern. | Open |
+| V8-20 | **Standalone docs site** | The 41-section in-app guide exists but no searchable external documentation. Generate a static site (MkDocs or Docusaurus) from markdown for the non-technical preparedness audience. | Open |
+| V8-21 | **macOS code signing** | macOS build produces unsigned binary. Gatekeeper warns "unidentified developer." Add Apple Developer certificate signing to CI or document the notarization process. | Open |
+| V8-22 | **Auto-update checksum parity** | SHA256 verification exists for Windows self-update downloads but not Linux/macOS. Apply the same pattern cross-platform. | Open |
+| V8-23 | **Seeded test data isolation** | `init_db()` seeds UPC database and RAG scope defaults that tests implicitly depend on. Add explicit test fixtures that don't rely on seeded state. | Open |
+| V8-24 | **CSS cascade documentation** | 21 CSS files with explicit load-order dependencies (documented in CLAUDE.md but not committed). Add a `web/static/css/README.md` explaining the cascade architecture for contributors. | Open |
+
+### Summary
+
+| Tier | Items | Theme |
+|------|-------|-------|
+| **1 — Critical** | 3 | Startup speed, UX simplicity, memory |
+| **2 — High** | 4 | Security hardening, test coverage |
+| **3 — High** | 4 | Architecture decomposition |
+| **4 — Medium** | 5 | Dev experience, quality infrastructure |
+| **5 — Nice-to-have** | 8 | Edge cases, distribution, docs |
+| **Total** | **24** | |
+
+### What's Already Done Well
+
+These strengths should be preserved during any refactoring:
+
+- Token-driven design system (2,000+ values reference CSS custom properties)
+- 15+ security audit rounds (SQL injection, XSS, path traversal, CSRF all addressed)
+- Connection pooling with health validation and dirty-state rejection
+- Thread safety with dedicated locks per concern
+- Accessibility (skip-link, focus-visible, aria, reduced-motion, RTL, battery-saver)
+- Offline-first architecture (IndexedDB, service worker, PWA)
+- Comprehensive 303-table data model covering an extraordinarily broad domain
+- 1,357 tests across 80 files with per-test DB isolation
+
+---
+
+## Prior Feature Backlog (v7.44.0 → v7.54.0)
 
 ## Competitor Analysis
 

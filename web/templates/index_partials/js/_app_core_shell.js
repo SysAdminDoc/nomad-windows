@@ -1375,3 +1375,40 @@ document.addEventListener('keydown', e => {
   }
   // Ctrl/Cmd+K — handled by _app_workspaces.js toggleCommandPalette()
 });
+
+/* ─── Collapsible Sidebar Groups (P1-06) ─── */
+(function initSidebarGroupCollapse() {
+  const KEY = 'nomad-sidebar-collapsed';
+  let collapsed = {};
+  try { collapsed = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(_) {}
+
+  document.querySelectorAll('.sidebar-group-label').forEach((label, idx) => {
+    const groupId = (label.querySelector('.sidebar-group-title')?.textContent || '').trim().toLowerCase().replace(/\s+/g, '-') || ('group-' + idx);
+    label.style.cursor = 'pointer';
+    label.setAttribute('role', 'button');
+    label.setAttribute('aria-expanded', collapsed[groupId] ? 'false' : 'true');
+
+    // Collect sibling tab buttons until next group label
+    const siblings = [];
+    let el = label.nextElementSibling;
+    while (el && !el.classList.contains('sidebar-group-label')) {
+      siblings.push(el);
+      el = el.nextElementSibling;
+    }
+
+    function applyState(isCollapsed) {
+      siblings.forEach(s => { s.style.display = isCollapsed ? 'none' : ''; });
+      label.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+      label.classList.toggle('sidebar-group-collapsed', isCollapsed);
+    }
+
+    if (collapsed[groupId]) applyState(true);
+
+    label.addEventListener('click', () => {
+      const nowCollapsed = !collapsed[groupId];
+      collapsed[groupId] = nowCollapsed;
+      applyState(nowCollapsed);
+      try { localStorage.setItem(KEY, JSON.stringify(collapsed)); } catch(_) {}
+    });
+  });
+})();

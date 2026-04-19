@@ -531,6 +531,20 @@ code {
   opacity: 0.78;
   line-height: 1.4;
 }
+/* Collapsible sidebar groups (P1-06) */
+.sidebar-group-label.sidebar-group-collapsed .sidebar-group-copy { display: none; }
+.sidebar-group-label::before {
+  content: "\25BE"; /* small down triangle */
+  position: absolute;
+  right: 14px;
+  top: 18px;
+  font-size: 10px;
+  color: var(--text-dim);
+  transition: transform var(--duration-snappy, 0.15s) var(--ease-out-standard, ease);
+}
+.sidebar-group-label.sidebar-group-collapsed::before {
+  transform: rotate(-90deg);
+}
 
 /* Indent tab labels a touch so icons have breathing room without increasing row height. */
 .tab .tab-icon {

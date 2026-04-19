@@ -449,7 +449,7 @@
 }
 
 .readiness-grade-value-display {
-  font-size: 48px;
+  font-size: var(--text-4xl, 48px);
   font-weight: 800;
   line-height: 1;
 }
@@ -603,7 +603,7 @@
 }
 
 .empty-state-icon-muted {
-  font-size: 32px;
+  font-size: var(--text-4xl, 32px);
   opacity: 0.2;
 }
 
@@ -663,7 +663,7 @@
 }
 
 .weather-trend-value {
-  font-size: 18px;
+  font-size: var(--text-lg, 18px);
   font-weight: 700;
 }
 
@@ -791,7 +791,7 @@
 }
 
 .antenna-result-value {
-  font-size: 18px;
+  font-size: var(--text-lg, 18px);
 }
 
 .antenna-result-meta {

@@ -1040,7 +1040,7 @@
   transform: translateY(-3px);
   box-shadow: var(--shadow);
 }
-.cc-card .cc-icon { margin-bottom: 8px; opacity: 0.9; font-size: 30px; }
+.cc-card .cc-icon { margin-bottom: 8px; opacity: 0.9; font-size: var(--text-3xl, 30px); }
 .cc-card .cc-title { font-size: var(--text-lg, 16px); font-weight: 700; margin-bottom: 2px; }
 .cc-card .cc-sub { font-size: var(--text-xs, 10px); opacity: 0.8; margin-bottom: 6px; }
 .cc-card .cc-desc { font-size: var(--text-sm, 11px); opacity: 0.85; line-height: 1.4; }

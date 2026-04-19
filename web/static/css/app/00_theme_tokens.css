@@ -333,6 +333,7 @@
 /* ─── Design System: Typography Scale ─── */
 :root {
   /* 11-step type scale — covers all component sizes without hardcoding */
+  --text-3xs: 7px;
   --text-2xs: 9px;
   --text-xs: 10px;
   --text-sm: 11px;

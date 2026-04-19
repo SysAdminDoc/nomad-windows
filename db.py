@@ -2526,7 +2526,8 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_county ON fema_nri_counties(state_fips, county_fips)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_state ON fema_nri_counties(state_name)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_risk ON fema_nri_counties(risk_score DESC)',
-        # v7.44.0 — Scheduled reports, NOAA stations, frost dates, hardiness zones
+        # v7.44.0 — Shamir, scheduled reports, NOAA stations, frost dates, hardiness zones
+        'CREATE INDEX IF NOT EXISTS idx_shamir_shares_id ON shamir_shares(share_id)',
         'CREATE INDEX IF NOT EXISTS idx_scheduled_reports_type ON scheduled_reports(report_type)',
         'CREATE INDEX IF NOT EXISTS idx_scheduled_reports_generated ON scheduled_reports(generated_at DESC)',
         'CREATE INDEX IF NOT EXISTS idx_noaa_stations_state ON noaa_stations(state)',
@@ -2993,6 +2994,18 @@ def _create_data_foundation_tables(conn):
             community_resilience REAL DEFAULT 0,
             hazard_scores TEXT DEFAULT '{}',
             UNIQUE(state_fips, county_fips)
+        );
+
+        /* ─── Shamir Secret Sharing (split metadata only — no secrets stored) ─── */
+        CREATE TABLE IF NOT EXISTS shamir_shares (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            share_id TEXT NOT NULL UNIQUE,
+            label TEXT DEFAULT 'Untitled',
+            threshold INTEGER NOT NULL,
+            num_shares INTEGER NOT NULL,
+            secret_hash TEXT DEFAULT '',
+            secret_length INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
         /* ─── Scheduled Reports (AI-generated SITREPs + history) ─── */

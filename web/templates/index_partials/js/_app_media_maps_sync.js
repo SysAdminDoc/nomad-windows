@@ -446,7 +446,7 @@ function updateBatchCount() {
 
 async function batchDeleteMedia() {
   if (!_mediaSelected.size) return;
-  if (!confirm('Delete selected items? This cannot be undone.')) return;
+  if (!confirm('Delete ' + _mediaSelected.size + ' selected item' + (_mediaSelected.size > 1 ? 's' : '') + '? This cannot be undone.')) return;
   try {
     const d = await apiPost('/api/media/batch-delete', {type: _mediaSub, ids: [..._mediaSelected]});
     toast('Deleted ' + d.count + ' items', 'warning');

@@ -19,7 +19,7 @@ from web.validation import validate_json, validate_file_upload
 from web.auth import require_auth
 from config import get_data_dir
 from web.state import broadcast_event
-from web.utils import esc as _esc, clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, check_origin as _check_origin, read_household_size as _read_household_size_setting
+from web.utils import esc as _esc, clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, check_origin as _check_origin, read_household_size as _read_household_size_setting, safe_float as _safe_float, safe_int as _safe_int
 
 log = logging.getLogger('nomad.web')
 
@@ -35,20 +35,6 @@ def _extract_json_array(raw_text):
     except (json.JSONDecodeError, TypeError, ValueError):
         return []
     return parsed if isinstance(parsed, list) else []
-
-
-def _safe_float(value, default=0.0):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return default
-
-
-def _safe_int(value, default=0):
-    try:
-        return int(float(value))
-    except (TypeError, ValueError):
-        return default
 
 
 inventory_bp = Blueprint('inventory', __name__)

@@ -7,12 +7,11 @@ import json
 import logging
 import os
 from datetime import datetime
-from html import escape as _esc
-
 from flask import Blueprint, request, jsonify, Response
 
 from db import db_session, log_activity
 from web.print_templates import render_print_document
+from web.utils import esc as _esc, safe_float as _safe_float, safe_int as _safe_int
 
 _log = logging.getLogger(__name__)
 
@@ -51,20 +50,6 @@ def _safe_str(val, default=''):
     if val is None:
         return default
     return str(val)
-
-
-def _safe_float(val, default=0.0):
-    try:
-        return float(val)
-    except (TypeError, ValueError):
-        return default
-
-
-def _safe_int(val, default=0):
-    try:
-        return int(float(val))
-    except (TypeError, ValueError):
-        return default
 
 
 def _safe_json_list(val, default=None):

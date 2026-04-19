@@ -1,17 +1,13 @@
 """Vehicle & Bug-Out Vehicle Manager — CRUD, maintenance, fuel log, and readiness calculators."""
 
 import logging
-from datetime import datetime, timedelta, timezone
-
-
-def _utc_now():
-    """Naive UTC datetime — matches how SQLite CURRENT_TIMESTAMP stores."""
-    return datetime.now(timezone.utc).replace(tzinfo=None)
+from datetime import timedelta
 
 from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
 from web.validation import validate_json
+from web.utils import utc_now as _utc_now
 
 # Audit H2 — vehicle data validation.
 #

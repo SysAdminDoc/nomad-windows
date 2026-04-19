@@ -9,7 +9,7 @@ import threading
 import subprocess
 import shutil
 import logging
-from html import escape as esc
+from web.utils import esc
 
 from flask import Blueprint, request, jsonify, Response
 from werkzeug.utils import secure_filename

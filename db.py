@@ -3008,6 +3008,18 @@ def _create_data_foundation_tables(conn):
             UNIQUE(state_fips, county_fips)
         );
 
+        /* ─── Humanure Composting Batches ─── */
+        CREATE TABLE IF NOT EXISTS humanure_batches (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            bin_name TEXT DEFAULT 'Bin A',
+            started_at TEXT DEFAULT '',
+            carbon_source TEXT DEFAULT 'sawdust',
+            temps TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'active',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         /* ─── Epi Line List (household epidemiology) ─── */
         CREATE TABLE IF NOT EXISTS epi_line_list (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

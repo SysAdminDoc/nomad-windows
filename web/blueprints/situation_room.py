@@ -39,6 +39,7 @@ from web.utils import (
     get_query_int as _get_query_int,
     safe_json_object as _safe_json_object,
     safe_json_value as _safe_json_value,
+    safe_float as _safe_float,
 )
 
 situation_room_bp = Blueprint('situation_room', __name__)
@@ -71,14 +72,6 @@ def _fetch_with_retry(url, timeout=10, retries=2, **kwargs):
                 raise
             time.sleep(0.5 * (2 ** attempt))
     return None
-
-
-def _safe_float(val, default=0):
-    """Convert value to float, returning default on failure."""
-    try:
-        return float(val)
-    except (ValueError, TypeError):
-        return default
 
 
 def _safe_response_json(response, fallback=None):

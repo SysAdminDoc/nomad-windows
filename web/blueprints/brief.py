@@ -26,18 +26,13 @@ import logging
 from datetime import datetime, timezone, timedelta
 
 from flask import Blueprint, request, jsonify, Response
-from html import escape as _esc
 
 from db import db_session
 from web.print_templates import render_print_document
+from web.utils import esc as _esc, safe_float as _safe_float
 
 brief_bp = Blueprint('brief', __name__)
 log = logging.getLogger('nomad.brief')
-
-
-def _safe_float(v, default=None):
-    try: return float(v) if v not in (None, '') else default
-    except (TypeError, ValueError): return default
 
 
 def _get_home_coords(db):
@@ -46,8 +41,8 @@ def _get_home_coords(db):
     ).fetchall()
     s = {r['key']: r['value'] for r in rows}
     return (
-        _safe_float(s.get('latitude')),
-        _safe_float(s.get('longitude')),
+        _safe_float(s.get('latitude'), None),
+        _safe_float(s.get('longitude'), None),
         s.get('node_name') or 'NOMAD Node',
     )
 

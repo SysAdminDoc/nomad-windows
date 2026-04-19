@@ -8,6 +8,7 @@ import logging
 import os
 import platform
 import uuid as _uuid
+from datetime import datetime, timezone
 from urllib.parse import urlparse
 from html import escape as _html_escape
 
@@ -32,6 +33,27 @@ def is_loopback_addr(addr: str) -> bool:
 def esc(s):
     """Escape HTML for print/template output (None-safe)."""
     return _html_escape(str(s)) if s else ''
+
+
+def safe_int(value, default=0):
+    """Safely convert a value to int, returning *default* on failure."""
+    try:
+        return int(float(value))
+    except (TypeError, ValueError):
+        return default
+
+
+def safe_float(value, default=0.0):
+    """Safely convert a value to float, returning *default* on failure."""
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def utc_now():
+    """Naive UTC datetime — matches how SQLite CURRENT_TIMESTAMP stores."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 _CSV_FORMULA_PREFIXES = ('=', '+', '-', '@', '\t', '\r')

@@ -10,6 +10,7 @@ from web.blueprints import get_pagination
 from web.sql_safety import safe_columns
 from web.validation import validate_json
 from web.auth import require_auth
+from web.utils import safe_float as _safe_float
 
 # Reusable validation schemas — audit H2.
 _CASH_SCHEMA = {
@@ -75,13 +76,6 @@ BARTER_CATEGORIES = [
     'alcohol', 'tobacco', 'ammo', 'batteries', 'fuel',
     'medical', 'tools', 'food', 'hygiene', 'other',
 ]
-
-
-def _safe_float(value, default=0.0):
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return default
 
 
 def _get_setting(db, key, default=None):

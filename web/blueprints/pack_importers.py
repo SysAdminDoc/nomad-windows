@@ -17,6 +17,7 @@ import requests
 from db import db_session, log_activity
 from flask import Blueprint, jsonify
 import config
+from web.utils import safe_float as _safe_float
 
 pack_importers_bp = Blueprint('pack_importers', __name__)
 _log = logging.getLogger('nomad.pack_importers')
@@ -125,13 +126,6 @@ _NRI_SCORE_COLS = {
     'WFIR_RISKS': 'wildfire',
     'WNTW_RISKS': 'winter_weather',
 }
-
-
-def _safe_float(val, default=0.0):
-    try:
-        return float(val)
-    except (TypeError, ValueError):
-        return default
 
 
 def _import_fema_nri():

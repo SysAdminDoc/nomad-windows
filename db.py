@@ -2526,7 +2526,10 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_county ON fema_nri_counties(state_fips, county_fips)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_state ON fema_nri_counties(state_name)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_risk ON fema_nri_counties(risk_score DESC)',
-        # v7.44.0 — Shamir, scheduled reports, NOAA stations, frost dates, hardiness zones
+        # v7.44.0 — Codeplug, Shamir, scheduled reports, NOAA stations, frost dates, hardiness zones
+        'CREATE INDEX IF NOT EXISTS idx_codeplug_zones_radio ON codeplug_zones(radio_id)',
+        'CREATE INDEX IF NOT EXISTS idx_codeplug_channels_radio ON codeplug_channels(radio_id)',
+        'CREATE INDEX IF NOT EXISTS idx_codeplug_channels_zone ON codeplug_channels(zone_id)',
         'CREATE INDEX IF NOT EXISTS idx_shamir_shares_id ON shamir_shares(share_id)',
         'CREATE INDEX IF NOT EXISTS idx_scheduled_reports_type ON scheduled_reports(report_type)',
         'CREATE INDEX IF NOT EXISTS idx_scheduled_reports_generated ON scheduled_reports(generated_at DESC)',
@@ -2994,6 +2997,45 @@ def _create_data_foundation_tables(conn):
             community_resilience REAL DEFAULT 0,
             hazard_scores TEXT DEFAULT '{}',
             UNIQUE(state_fips, county_fips)
+        );
+
+        /* ─── Codeplug Builder (radio programming) ─── */
+        CREATE TABLE IF NOT EXISTS codeplug_radios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            brand TEXT DEFAULT '',
+            model TEXT DEFAULT '',
+            max_channels INTEGER DEFAULT 128,
+            freq_range_mhz TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS codeplug_zones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            radio_id INTEGER NOT NULL REFERENCES codeplug_radios(id) ON DELETE CASCADE,
+            name TEXT NOT NULL,
+            sort_order INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS codeplug_channels (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            radio_id INTEGER NOT NULL REFERENCES codeplug_radios(id) ON DELETE CASCADE,
+            zone_id INTEGER REFERENCES codeplug_zones(id) ON DELETE SET NULL,
+            channel_number INTEGER DEFAULT 1,
+            name TEXT DEFAULT '',
+            frequency_mhz REAL NOT NULL,
+            offset_mhz REAL DEFAULT 0,
+            offset_dir TEXT DEFAULT '',
+            tone_mode TEXT DEFAULT '',
+            ctcss_tone TEXT DEFAULT '',
+            dcs_code TEXT DEFAULT '',
+            power TEXT DEFAULT 'High',
+            mode TEXT DEFAULT 'FM',
+            bandwidth_khz REAL DEFAULT 25,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
         /* ─── Shamir Secret Sharing (split metadata only — no secrets stored) ─── */

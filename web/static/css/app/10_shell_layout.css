@@ -404,7 +404,7 @@
 }
 .sidebar-context-kicker {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -412,7 +412,7 @@
 }
 .sidebar-context-text {
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.35;
 }
 .sidebar-context-home-btn {
@@ -420,11 +420,11 @@
 }
 .sidebar-context-section {
   display: grid;
-  gap: 8px;
+  gap: var(--sp-2, 8px);
 }
 .sidebar-context-label {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -433,29 +433,29 @@
 .sidebar-context-current,
 .sidebar-context-list {
   display: grid;
-  gap: 8px;
+  gap: var(--sp-2, 8px);
 }
 .sidebar-context-card {
   display: grid;
-  gap: 6px;
+  gap: var(--sp-2, 8px);
   width: 100%;
-  padding: 9px 10px;
+  padding: var(--sp-3, 12px);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius, 12px);
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  transition: border-color var(--duration-fast) var(--easing-standard), transform var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), background-color var(--duration-fast) var(--easing-standard);
 }
 .sidebar-context-card:hover {
   border-color: var(--border-hover);
   transform: translateY(-1px);
-  box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+  box-shadow: var(--elev-2, 0 10px 24px rgba(0,0,0,0.08));
 }
 .sidebar-context-card:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset, 2px);
 }
 .sidebar-context-card.is-current {
   border-color: color-mix(in srgb, var(--accent) 34%, transparent);
@@ -490,7 +490,7 @@
 .sidebar-context-title {
   min-width: 0;
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 700;
   line-height: 1.35;
 }
@@ -960,17 +960,17 @@
 /* ─── Nav Items (sidebar) ─── */
 .tab {
   position: relative;
-  display: flex; align-items: center; gap: 10px;
-  padding: 11px 14px; cursor: pointer; color: var(--text-dim);
-  font-size: 13px; font-weight: 650;
-  transition: color 0.25s cubic-bezier(0.4,0,0.2,1), background-color 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1), transform 0.25s cubic-bezier(0.4,0,0.2,1);
-  background: none; border: 1px solid transparent; border-radius: 14px;
+  display: flex; align-items: center; gap: var(--sp-3, 12px);
+  padding: var(--sp-3, 12px) var(--sp-4, 16px); cursor: pointer; color: var(--text-dim);
+  font-size: var(--text-base, 13px); font-weight: 650;
+  transition: color var(--duration-normal) var(--easing-standard), background-color var(--duration-normal) var(--easing-standard), box-shadow var(--duration-normal) var(--easing-standard), transform var(--duration-normal) var(--easing-standard);
+  background: none; border: 1px solid transparent; border-radius: var(--radius-md, 14px);
   white-space: nowrap; width: 100%; text-align: left; min-height: var(--density-tab-min-height);
 }
 .tab .tab-icon {
-  width: 20px;
-  height: 20px;
-  opacity: 0.8;
+  width: var(--sp-5, 20px);
+  height: var(--sp-5, 20px);
+  opacity: var(--opacity-subtle, 0.8);
   flex-shrink: 0;
   display: flex;
   align-items: center;
@@ -981,7 +981,7 @@
   background: color-mix(in srgb, var(--surface-solid) 74%, transparent);
   border-color: var(--border);
 }
-.tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.tab:focus-visible { outline: var(--focus-ring); outline-offset: -2px; }
 .tab.active {
   color: var(--text);
   background:
@@ -1003,7 +1003,7 @@
   background: var(--accent);
 }
 .tab.active .tab-icon { opacity: 1; color: var(--accent); }
-.tab-badge { background:var(--red); color:var(--text-inverse); font-size:9px; font-weight:700; min-width:16px; height:16px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; padding:0 4px; margin-left:auto; }
+.tab-badge { background:var(--red); color:var(--text-inverse); font-size:var(--text-2xs, 9px); font-weight:700; min-width:16px; height:16px; border-radius:var(--radius-sm, 6px); display:inline-flex; align-items:center; justify-content:center; padding:0 var(--sp-1, 4px); margin-left:auto; }
 .tab-badge.green { background:var(--green); }
 .tab-badge.red { background:var(--red); }
 .tab-content { display: none; animation: fadeSlideIn 0.3s ease; }

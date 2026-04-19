@@ -3,11 +3,11 @@
 @media (max-width: 1000px) { .home-two-col { grid-template-columns: 1fr !important; } }
 details[open] > summary .nav-chevron { transform: rotate(90deg); }
 details > summary::-webkit-details-marker { display: none; }
-#home-quick-nav .cc-card { padding: 12px; min-height: unset; }
-#home-quick-nav .cc-card .cc-icon { margin-bottom: 4px; }
+#home-quick-nav .cc-card { padding: var(--sp-3, 12px); min-height: unset; }
+#home-quick-nav .cc-card .cc-icon { margin-bottom: var(--sp-1, 4px); }
 
 /* ─── Torrent Category Filter Buttons ─── */
-.torrent-cat-btn { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 4px 10px; border-radius: 3px; }
+.torrent-cat-btn { font-size: var(--text-xs, 10px); font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: var(--sp-1, 4px) var(--sp-3, 12px); border-radius: var(--radius-2xs, 2px); }
 .torrent-cat-btn.active { background: var(--accent); color: var(--text-inverse); border-color: var(--accent); box-shadow: 0 1px 6px var(--accent-glow); }
 @media (max-width: 900px) {
   .media-layout { flex-direction: column; height: auto; }
@@ -25,11 +25,11 @@ details > summary::-webkit-details-marker { display: none; }
 .sidebar-sub-item {
   display: block;
   position: relative;
-  padding: 6px 14px 6px 48px;
-  font-size: 11px;
+  padding: var(--sp-2, 8px) var(--sp-4, 16px) var(--sp-2, 8px) var(--sp-12, 48px);
+  font-size: var(--text-sm, 11px);
   color: var(--text-muted);
   cursor: pointer;
-  transition: color 0.1s ease, background-color 0.1s ease;
+  transition: color var(--duration-micro) var(--easing-standard), background-color var(--duration-micro) var(--easing-standard);
   text-decoration: none;
   border-radius: 0;
   line-height: 1.4;

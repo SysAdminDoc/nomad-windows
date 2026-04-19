@@ -868,46 +868,160 @@ def api_serial_status():
 # [EXTRACTED to blueprint] Sensor chart route
 
 
-# ─── Meshtastic Bridge Stub (Phase 14) ────────────────────────────
+# ─── Reticulum / LXMF Mesh Transport ─────────────────────────────
 
 @comms_bp.route('/api/mesh/status')
 def api_mesh_status():
-    """Return mesh radio status — stub returns disconnected defaults."""
+    """Return mesh transport status — Reticulum if available, else stub."""
+    from services import reticulum as rns_svc
+    if rns_svc.available():
+        status = rns_svc.get_status()
+        # Update shared state for status board
+        _mesh_state['connected'] = status.get('running', False)
+        _mesh_state['my_node_id'] = status.get('identity', '!local')
+        return jsonify(status)
     return jsonify(_mesh_state)
+
+
+@comms_bp.route('/api/mesh/start', methods=['POST'])
+def api_mesh_start():
+    """Start the Reticulum mesh transport."""
+    from services import reticulum as rns_svc
+    if not rns_svc.available():
+        return jsonify({'error': 'RNS not installed. Install with: pip install rns lxmf'}), 503
+
+    if rns_svc.running():
+        return jsonify({'status': 'already_running', **rns_svc.get_status()})
+
+    data = request.get_json() or {}
+    transport = bool(data.get('transport', False))
+
+    try:
+        rns_svc.start(transport=transport)
+        _mesh_state['connected'] = True
+        _mesh_state['my_node_id'] = rns_svc.get_identity_hash() or '!local'
+        log_activity('mesh_started', detail=f'Identity: {_mesh_state["my_node_id"][:12]}')
+        return jsonify({'status': 'started', **rns_svc.get_status()})
+    except Exception as e:
+        return jsonify({'error': 'Mesh start failed'}), 500
+
+
+@comms_bp.route('/api/mesh/stop', methods=['POST'])
+def api_mesh_stop():
+    """Stop the Reticulum mesh transport."""
+    from services import reticulum as rns_svc
+    rns_svc.stop()
+    _mesh_state['connected'] = False
+    log_activity('mesh_stopped')
+    return jsonify({'status': 'stopped'})
+
+
+@comms_bp.route('/api/mesh/announce', methods=['POST'])
+def api_mesh_announce():
+    """Announce this node on the mesh network."""
+    from services import reticulum as rns_svc
+    if not rns_svc.running():
+        return jsonify({'error': 'Mesh not running'}), 503
+
+    data = request.get_json() or {}
+    display_name = data.get('name', 'NOMAD Node')
+    ok = rns_svc.announce(display_name)
+    if ok:
+        log_activity('mesh_announced', detail=display_name)
+        return jsonify({'status': 'announced', 'name': display_name})
+    return jsonify({'error': 'Announce failed'}), 500
+
 
 @comms_bp.route('/api/mesh/messages')
 def api_mesh_messages_list():
-    """List recent mesh messages."""
+    """List recent mesh messages (stored locally from LXMF + local sends)."""
     with db_session() as db:
         limit = _get_query_int(request, 'limit', 50, minimum=1, maximum=200)
         rows = db.execute('SELECT * FROM mesh_messages ORDER BY timestamp DESC LIMIT ?', (limit,)).fetchall()
         return jsonify([dict(r) for r in rows])
+
+
 @comms_bp.route('/api/mesh/messages', methods=['POST'])
 def api_mesh_messages_send():
-    """Send a mesh message — stub stores locally."""
+    """Send a mesh message via LXMF (or store locally if mesh not running)."""
+    from services import reticulum as rns_svc
     data = request.get_json() or {}
     message = data.get('message', '')
-    channel = data.get('channel', 'LongFast')
-    to_node = data.get('to_node', '^all')
+    channel = data.get('channel', 'lxmf')
+    to_node = data.get('to_node', '')
+    title = data.get('title', '')
+
     if not message:
         return jsonify({'error': 'message is required'}), 400
+
+    my_id = rns_svc.get_identity_hash() if rns_svc.running() else '!local'
+
+    # Store locally
     with db_session() as db:
         cur = db.execute(
             'INSERT INTO mesh_messages (from_node, to_node, message, channel) VALUES (?, ?, ?, ?)',
-            ('!local', to_node, message, channel))
+            (my_id, to_node or '^all', message, channel))
         db.commit()
         msg_id = cur.lastrowid
         row = db.execute('SELECT * FROM mesh_messages WHERE id = ?', (msg_id,)).fetchone()
-    if not _mesh_state['connected']:
-        return jsonify({'status': 'queued', 'note': 'No mesh radio connected — message stored locally', 'message': dict(row)}), 202
-    return jsonify({'status': 'sent', 'message': dict(row)}), 201
+
+    # Try to deliver via LXMF if mesh is running and destination specified
+    if rns_svc.running() and to_node and to_node != '^all':
+        result = rns_svc.send_message(to_node, message, title=title)
+        return jsonify({
+            'status': result.get('status', 'error'),
+            'delivery': result,
+            'message': dict(row),
+        }), 201 if result.get('status') == 'sent' else 202
+
+    if not rns_svc.running():
+        return jsonify({
+            'status': 'queued',
+            'note': 'Mesh not running — message stored locally',
+            'message': dict(row),
+        }), 202
+
+    return jsonify({'status': 'stored', 'message': dict(row)}), 201
+
 
 @comms_bp.route('/api/mesh/nodes')
 def api_mesh_nodes():
-    """List visible mesh nodes — stub returns empty when no hardware."""
-    if not _mesh_state['connected']:
-        return jsonify({'nodes': [], 'note': 'No mesh radio connected. Connect via Web Serial API in the frontend.'})
-    return jsonify({'nodes': []})
+    """List known mesh peers — from RNS destination table + stored nodes."""
+    from services import reticulum as rns_svc
+
+    nodes = []
+
+    # RNS known peers (live)
+    if rns_svc.running():
+        for peer in rns_svc.get_known_peers():
+            nodes.append({
+                'source': 'rns',
+                'node_id': peer['hash'][:16] if peer.get('hash') else '',
+                'hash': peer.get('hash', ''),
+                'hops': peer.get('hops', 0),
+                'last_heard': peer.get('timestamp', 0),
+                'status': 'online',
+            })
+
+    # Stored mesh nodes (from DB — Meshtastic or manually added)
+    with db_session() as db:
+        rows = db.execute('SELECT * FROM mesh_nodes ORDER BY last_heard DESC LIMIT 100').fetchall()
+        for r in rows:
+            nodes.append({
+                'source': 'stored',
+                **dict(r),
+            })
+
+    return jsonify({'nodes': nodes, 'mesh_running': rns_svc.running()})
+
+
+@comms_bp.route('/api/mesh/peers')
+def api_mesh_peers():
+    """List known LXMF peers with announce data."""
+    from services import reticulum as rns_svc
+    if not rns_svc.running():
+        return jsonify({'peers': [], 'mesh_running': False})
+    return jsonify({'peers': rns_svc.get_known_peers(), 'mesh_running': True})
 
 # ─── Comms Status Board (Phase 14) ────────────────────────────────
 

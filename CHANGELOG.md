@@ -21,8 +21,10 @@ All notable changes to project-nomad-desktop will be documented in this file.
 - **Shamir Secret Sharing vault** — pure-Python GF(256) implementation with no external dependencies. Split secrets into N shares with M-of-N reconstruction threshold. `/api/shamir/split` generates hex-encoded shares, `/api/shamir/reconstruct` recovers the original secret with hash verification. Metadata tracked in `shamir_shares` table (no secrets stored server-side). Supports labels, 2-10 threshold, up to 254 shares.
 - **Warrant canary + dead-man's switch** — configurable signed statement with renewal interval (1-720 hours). `/api/canary` status endpoint detects expiry (dead-man trigger). `/api/canary/renew` resets the timer with new SHA-256 signature. `/api/canary/revoke` for duress signaling. Dead-man's switch actions configurable via `/api/canary/deadman-actions` (alert_federation, broadcast_message, lock_vault, export_data, clear_sensitive). All stored in settings table.
 
+- **Reticulum / LXMF mesh transport** — new `services/reticulum.py` service manager. Pure-Python RNS integration with identity management (create/load keypair), LXMF message router (encrypted, delay-tolerant), peer discovery via announce, and incoming message callback with SSE broadcast. Comms blueprint mesh routes (`/api/mesh/*`) upgraded from stubs to real RNS transport: start/stop, announce, send via LXMF with direct + propagation fallback, peer listing from RNS destination table. Graceful degradation when `rns`/`lxmf` packages not installed — all routes return informative errors, no crashes.
+
 ### Stats
-- 5 data pack importers, 5 new tables, 9 new indexes, 20+ new routes. Tier 1 complete (data foundation + nutrition/water/consumption/AI automation all built). Tier 2 started (Shamir vault + warrant canary).
+- 5 data pack importers, 5 new tables, 9 new indexes, 25+ new routes. Tier 1 complete. Tier 2: Shamir vault, warrant canary, and Reticulum mesh transport done.
 
 ## [v7.43.0] — Cross-theme audit + WCAG compliance (Pass 8)
 

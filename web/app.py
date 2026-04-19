@@ -1571,8 +1571,12 @@ def create_app():
     app.register_blueprint(homestead_bp)
     from web.blueprints.health_family import health_family_bp
     from web.blueprints.tier8_tools import tier8_bp
+    from web.blueprints.remaining_calcs import remaining_calcs_bp
+    from web.blueprints.remaining_refs import remaining_refs_bp
     app.register_blueprint(health_family_bp)
     app.register_blueprint(tier8_bp)
+    app.register_blueprint(remaining_calcs_bp)
+    app.register_blueprint(remaining_refs_bp)
 
     # ─── v7.12.0 — Nutritional Intelligence & Water Expansion (Phase 2) ──
     from web.blueprints.consumption import consumption_bp

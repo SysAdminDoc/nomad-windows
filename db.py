@@ -2526,7 +2526,10 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_county ON fema_nri_counties(state_fips, county_fips)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_state ON fema_nri_counties(state_name)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_risk ON fema_nri_counties(risk_score DESC)',
-        # v7.44.0 — Codeplug, Shamir, scheduled reports, NOAA stations, frost dates, hardiness zones
+        # v7.44.0 — SAR, codeplug, Shamir, scheduled reports, data packs
+        'CREATE INDEX IF NOT EXISTS idx_sar_clue_log_sector ON sar_clue_log(sector)',
+        'CREATE INDEX IF NOT EXISTS idx_sar_clue_log_type ON sar_clue_log(clue_type)',
+        'CREATE INDEX IF NOT EXISTS idx_sar_containment_sector ON sar_containment(sector)',
         'CREATE INDEX IF NOT EXISTS idx_codeplug_zones_radio ON codeplug_zones(radio_id)',
         'CREATE INDEX IF NOT EXISTS idx_codeplug_channels_radio ON codeplug_channels(radio_id)',
         'CREATE INDEX IF NOT EXISTS idx_codeplug_channels_zone ON codeplug_channels(zone_id)',
@@ -2997,6 +3000,35 @@ def _create_data_foundation_tables(conn):
             community_resilience REAL DEFAULT 0,
             hazard_scores TEXT DEFAULT '{}',
             UNIQUE(state_fips, county_fips)
+        );
+
+        /* ─── SAR Clue Log + Containment ─── */
+        CREATE TABLE IF NOT EXISTS sar_clue_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            description TEXT NOT NULL,
+            clue_type TEXT DEFAULT 'physical',
+            lat REAL,
+            lng REAL,
+            elevation_ft REAL,
+            found_by TEXT DEFAULT '',
+            sector TEXT DEFAULT '',
+            significance TEXT DEFAULT 'medium',
+            photo_ref TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            found_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        CREATE TABLE IF NOT EXISTS sar_containment (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sector TEXT NOT NULL UNIQUE,
+            status TEXT DEFAULT 'uncleared',
+            pod REAL DEFAULT 0,
+            searchers INTEGER DEFAULT 0,
+            search_type TEXT DEFAULT 'hasty',
+            started_at TEXT DEFAULT '',
+            completed_at TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
 
         /* ─── Codeplug Builder (radio programming) ─── */

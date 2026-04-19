@@ -59,10 +59,10 @@ jobs:
           node-version: '20'
 
       - name: Install Python dependencies
-        run: pip install -r requirements.txt "pyinstaller>=6.0,<7.0" pytest
+        run: pip install -r requirements.txt "pyinstaller>=6.0,<7.0" pytest pytest-cov
 
-      - name: Run tests
-        run: pytest tests/ -x -q --tb=short
+      - name: Run tests with coverage
+        run: pytest tests/ -x -q --tb=short --cov=web --cov=db --cov-report=xml --cov-report=term-missing
 
       - name: Build frontend bundle
         run: npm ci && node esbuild.config.mjs

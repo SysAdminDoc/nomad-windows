@@ -884,8 +884,16 @@ def api_conversations_list():
     except (ValueError, TypeError):
         limit, offset = 50, 0
     with db_session() as db:
-        convos = db.execute('SELECT id, title, model, created_at, updated_at, branch_count FROM conversations ORDER BY updated_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
-    return jsonify([dict(c) for c in convos])
+        convos = db.execute('SELECT id, title, model, tags, created_at, updated_at, branch_count FROM conversations ORDER BY updated_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
+    result = []
+    for c in convos:
+        d = dict(c)
+        try:
+            d['tags'] = json.loads(d.get('tags') or '[]')
+        except (json.JSONDecodeError, TypeError):
+            d['tags'] = []
+        result.append(d)
+    return jsonify(result)
 
 @ai_bp.route('/api/conversations', methods=['POST'])
 def api_conversations_create():
@@ -920,7 +928,13 @@ def api_conversations_update(cid):
             update_data['model'] = data['model']
         if 'messages' in data:
             update_data['messages'] = json.dumps(_safe_message_list(data['messages']))
-        filtered = safe_columns(update_data, ['title', 'model', 'messages'])
+        if 'tags' in data:
+            tags = data['tags']
+            if isinstance(tags, list):
+                update_data['tags'] = json.dumps([str(t)[:50] for t in tags[:20]])
+            elif isinstance(tags, str):
+                update_data['tags'] = tags
+        filtered = safe_columns(update_data, ['title', 'model', 'messages', 'tags'])
         if filtered:
             set_clause = ', '.join(f'{col} = ?' for col in filtered)
             vals = list(filtered.values())

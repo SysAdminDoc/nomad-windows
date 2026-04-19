@@ -4948,8 +4948,8 @@ function updateTabBadges() {
   if (settingsBadge) {
     safeFetch('/api/tasks/due', {}, []).then(due => {
       const overdue = Array.isArray(due) ? due.filter(t => {
-        if (!t.due_date) return false;
-        return new Date(t.due_date) < new Date();
+        if (!t.next_due) return false;
+        return new Date(t.next_due) < new Date();
       }).length : 0;
       if (overdue > 0) { settingsBadge.textContent = overdue; settingsBadge.style.display = ''; settingsBadge.className = 'tab-badge red'; }
       else { settingsBadge.style.display = 'none'; }

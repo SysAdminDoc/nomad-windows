@@ -242,7 +242,7 @@ function openPendingPopup(title, loadingMessage = 'Preparing document…') {
     openAppFrameHTML(title, loadingHtml);
     // Return a proxy object that replacePopupHtml can use
     const iframe = document.getElementById('app-frame-iframe');
-    return { document: iframe?.contentDocument || null, _nomadAppFrame: true, close() {} };
+    return { document: iframe?.contentDocument || null, _nomadAppFrame: true, close() {}, print() { iframe?.contentWindow?.print(); } };
   }
   const popup = window.open('', '_blank');
   if (!popup) return null;

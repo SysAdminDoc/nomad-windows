@@ -953,9 +953,10 @@ document.addEventListener('dblclick', function(e) {
       .then(function() { loadInventory(); })
       .catch(function() { span.textContent = origText; toast('Failed to update quantity', 'error'); });
   }
-  input.addEventListener('blur', commit);
+  let cancelled = false;
+  input.addEventListener('blur', function() { if (!cancelled) commit(); });
   input.addEventListener('keydown', function(ev) {
     if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
-    if (ev.key === 'Escape') { span.textContent = origText; }
+    if (ev.key === 'Escape') { cancelled = true; span.textContent = origText; input.blur(); }
   });
 });

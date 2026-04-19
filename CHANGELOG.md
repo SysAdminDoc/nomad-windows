@@ -2,6 +2,20 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.50.0] — Final Backend Batch: CSV Export, Aisle Grouping, OCR, Change Detection
+
+### Added
+- **Multi-user profiles API (P2-14)** — `/api/profiles` lists users with preferences from `app_users` table.
+- **Generic CSV export (P2-18)** — `/api/export/csv/<table_name>` exports any validated table as CSV with safe_table validation. Up to 10K rows.
+- **Shopping list aisle grouping (P3-18)** — `/api/shopping-list/grouped` categorizes items into 8 store aisles (Produce, Dairy, Meat, Canned, Pharmacy, Water, Hardware, Hygiene).
+- **KB image import with OCR (P5-09)** — `/api/kb/import-image` saves image to KB workspace and runs Tesseract OCR text extraction (graceful fallback when unavailable).
+- **Web page change detection (P5-12)** — `/api/monitors/<id>/snapshot` fetches page, computes SHA-256 hash, compares to stored hash, reports `changed: true/false`.
+- **Bcrypt password upgrade (P5-23)** — `/api/auth/upgrade-hash` upgrades user password hash from PBKDF2 to bcrypt (12 rounds). Requires `bcrypt` pip package.
+- **pyproject.toml (P3-12/P3-I22)** — Modern Python project metadata with pytest and ruff config.
+
+### Stats
+71 API routes in `roadmap_features.py` (1,360+ lines).
+
 ## [v7.49.0] — 13 More Roadmap Items + CI/Docs
 
 ### Added

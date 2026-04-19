@@ -54,8 +54,16 @@ All notable changes to project-nomad-desktop will be documented in this file.
 - **Beekeeping varroa calendar** — 12-month management calendar with latitude adjustment. 5 treatment methods with temperature windows. Mite count thresholds.
 - **Livestock drug withdrawal timer** — 10 common drugs with meat/milk/egg withdrawal periods. Date calculator showing safe harvest dates and days remaining.
 
+### Tier 7 — Health, Community & Family
+- **Pediatric Broselow-equivalent dose engine** — 10 color zones (grey through tan), 7 drugs with weight-based dosing. Input by weight_kg or length_cm. Volume calculations from concentration. Max dose caps.
+- **Chronic condition grid-down playbooks** — 6 conditions (T1/T2 diabetes, hypertension, asthma, epilepsy, hypothyroidism). Each with critical supplies, grid-down protocol, rationing strategy, substitutions.
+- **Wilderness medicine decision trees** — 5 trees (wound assessment, chest injury, anaphylaxis, hypothermia, snakebite). Step-by-step yes/no clinical decision paths.
+- **Child ID packet generator** — NCMEC-style CRUD with 14 fields (physical description, blood type, allergies, meds, identifying marks, fingerprint/photo refs, emergency contacts). New `child_id_packets` table.
+- **Reunification cascade** — configurable plan with primary/secondary rally points, out-of-area contact, code words (safe/duress/evacuating), cascade order, meeting times.
+- **Skill-transfer ledger** — CRUD tracking teacher→student knowledge transfer with proficiency levels and hours. Bus factor endpoint identifies single-point-of-failure skills. New `skill_transfers` table.
+
 ### Stats
-- 5 data pack importers, 14 new tables, 21 new indexes, 75+ new routes. Tiers 1-6 substantially complete.
+- 5 data pack importers, 16 new tables, 21 new indexes, 90+ new routes. Tiers 1-7 substantially complete.
 
 ## [v7.43.0]
 

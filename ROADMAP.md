@@ -208,17 +208,17 @@ Medical depth, psychosocial support, family continuity.
 
 ---
 
-### 7.1 — Pediatric Broselow-Equivalent Dose Engine | M
-### 7.2 — Chronic Condition Grid-Down Playbooks | M
-### 7.3 — Wilderness Medicine Decision Trees | L
-### 7.4 — CISM Debrief Wizard | M
-### 7.5 — Grief Protocol + Age-Banded Explainer Cards | S
-### 7.6 — Sustained-Ops Sleep Hygiene Tracker | S
-### 7.7 — NCMEC-style Child ID Packet Generator | S
-### 7.8 — Reunification Cascade | M
-### 7.9 — Homeschool Curriculum Tracker | M
-### 7.10 — Skill-Transfer Ledger | S
-### 7.11 — State-Specific Legal Doc Vault | M
+### 7.1 — Pediatric Broselow-Equivalent Dose Engine --- COMPLETE (v7.44.0)
+### 7.2 — Chronic Condition Grid-Down Playbooks --- COMPLETE (v7.44.0)
+### 7.3 — Wilderness Medicine Decision Trees --- COMPLETE (v7.44.0)
+### 7.4 — CISM Debrief Wizard | M — Not started
+### 7.5 — Grief Protocol + Age-Banded Explainer Cards | S — Not started
+### 7.6 — Sustained-Ops Sleep Hygiene Tracker | S — pre-existing (sleep_logs table + daily_living)
+### 7.7 — NCMEC-style Child ID Packet Generator --- COMPLETE (v7.44.0)
+### 7.8 — Reunification Cascade --- COMPLETE (v7.44.0)
+### 7.9 — Homeschool Curriculum Tracker | M — Not started
+### 7.10 — Skill-Transfer Ledger --- COMPLETE (v7.44.0)
+### 7.11 — State-Specific Legal Doc Vault | M — pre-existing (vault_entries + legal docs in specialized_modules)
 
 ---
 

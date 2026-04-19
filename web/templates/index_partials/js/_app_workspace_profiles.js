@@ -125,3 +125,82 @@ function clearCustomPrompt() {
   systemPresetSelect.value = '';
   toggleCustomPrompt(false);
 }
+
+/* ─── Prompt Templates (P1-20) ─── */
+function _loadPromptPresets() {
+  try { return JSON.parse(localStorage.getItem('nomad-prompt-presets') || '[]'); }
+  catch { return []; }
+}
+
+function _savePromptPresets(presets) {
+  localStorage.setItem('nomad-prompt-presets', JSON.stringify(presets));
+}
+
+function togglePromptPresets() {
+  const menu = document.getElementById('prompt-presets-menu');
+  if (!menu) return;
+  const show = menu.hidden;
+  menu.hidden = !show;
+  if (show) _renderPromptPresetList();
+}
+
+function _renderPromptPresetList() {
+  const list = document.getElementById('prompt-presets-list');
+  if (!list) return;
+  const presets = _loadPromptPresets();
+  if (!presets.length) {
+    list.innerHTML = '<div class="prompt-presets-empty">No saved templates yet. Type a prompt and click + Save.</div>';
+    return;
+  }
+  list.innerHTML = presets.map((p, i) => `<div class="prompt-preset-item">
+    <button type="button" class="btn btn-sm btn-ghost prompt-preset-use" data-prompt-idx="${i}" title="${escapeAttr(p.text.substring(0, 100))}">${escapeHtml(p.name)}</button>
+    <button type="button" class="btn btn-sm btn-ghost prompt-preset-del" data-prompt-del="${i}" aria-label="Delete template" title="Delete">&times;</button>
+  </div>`).join('');
+}
+
+function savePromptPreset() {
+  const input = document.getElementById('chat-input');
+  if (!input || !input.value.trim()) { toast('Type a prompt first, then save it as a template', 'warn'); return; }
+  const name = prompt('Template name:', input.value.trim().substring(0, 40));
+  if (!name) return;
+  const presets = _loadPromptPresets();
+  presets.push({ name: name.trim(), text: input.value.trim() });
+  _savePromptPresets(presets);
+  _renderPromptPresetList();
+  toast('Prompt template saved');
+}
+
+function usePromptPreset(idx) {
+  const presets = _loadPromptPresets();
+  if (idx < 0 || idx >= presets.length) return;
+  const input = document.getElementById('chat-input');
+  if (input) { input.value = presets[idx].text; input.focus(); }
+  const menu = document.getElementById('prompt-presets-menu');
+  if (menu) menu.hidden = true;
+}
+
+function useBuiltinPreset(text) {
+  const input = document.getElementById('chat-input');
+  if (input) { input.value = text; input.focus(); }
+  const menu = document.getElementById('prompt-presets-menu');
+  if (menu) menu.hidden = true;
+}
+
+function deletePromptPreset(idx) {
+  const presets = _loadPromptPresets();
+  if (idx < 0 || idx >= presets.length) return;
+  presets.splice(idx, 1);
+  _savePromptPresets(presets);
+  _renderPromptPresetList();
+}
+
+document.addEventListener('click', e => {
+  const useBtn = e.target.closest('[data-prompt-idx]');
+  if (useBtn) { usePromptPreset(Number(useBtn.dataset.promptIdx)); return; }
+  const delBtn = e.target.closest('[data-prompt-del]');
+  if (delBtn) { deletePromptPreset(Number(delBtn.dataset.promptDel)); return; }
+  const builtinBtn = e.target.closest('[data-prompt-text]');
+  if (builtinBtn) { useBuiltinPreset(builtinBtn.dataset.promptText); return; }
+  const menu = document.getElementById('prompt-presets-menu');
+  if (menu && !menu.hidden && !e.target.closest('.prompt-presets-shell')) { menu.hidden = true; }
+});

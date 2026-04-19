@@ -220,7 +220,15 @@ function renderPopupStatus(popup, title, message, tone = 'info') {
 }
 
 function replacePopupHtml(popup, html) {
-  if (!popup || popup.closed || typeof html !== 'string') return false;
+  if (!popup || typeof html !== 'string') return false;
+  // P1-10: Handle in-app frame proxy from openPendingPopup
+  if (popup._nomadAppFrame) {
+    const iframe = document.getElementById('app-frame-iframe');
+    if (iframe && typeof writeIframeHtml === 'function') return writeIframeHtml(iframe, html);
+    try { const doc = iframe?.contentDocument; if (doc) { doc.open(); doc.write(html); doc.close(); return true; } } catch(_) {}
+    return false;
+  }
+  if (popup.closed) return false;
   popup.document.open();
   popup.document.write(html);
   popup.document.close();
@@ -228,6 +236,14 @@ function replacePopupHtml(popup, html) {
 }
 
 function openPendingPopup(title, loadingMessage = 'Preparing document…') {
+  // P1-10: Prefer in-app frame over new window for print preview
+  if (typeof openAppFrameHTML === 'function') {
+    const loadingHtml = `<!DOCTYPE html><html><head><title>${escapeHtml(title)}</title><style>body{background:#1a1a2e;color:#e0e0e0;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}.loader{text-align:center}.spin{width:32px;height:32px;border:3px solid #333;border-top:3px solid #4f9cf7;border-radius:50%;animation:s .8s linear infinite}@keyframes s{to{transform:rotate(360deg)}}</style></head><body><div class="loader"><div class="spin"></div><p>${escapeHtml(loadingMessage)}</p></div></body></html>`;
+    openAppFrameHTML(title, loadingHtml);
+    // Return a proxy object that replacePopupHtml can use
+    const iframe = document.getElementById('app-frame-iframe');
+    return { document: iframe?.contentDocument || null, _nomadAppFrame: true, close() {} };
+  }
   const popup = window.open('', '_blank');
   if (!popup) return null;
   renderPopupStatus(popup, title, loadingMessage, 'info');

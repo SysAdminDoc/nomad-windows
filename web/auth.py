@@ -85,6 +85,27 @@ def _resolve_session():
         return dict(user), token
 
 
+def _resolve_proxy_user():
+    """Check for auth proxy headers (P4-15: Authelia, Caddy forward_auth, nginx).
+
+    Only trusted when NOMAD_AUTH_PROXY=1 is set. Returns a synthetic user dict
+    or None. The proxy is responsible for authentication — NOMAD trusts the
+    forwarded identity without re-validation.
+    """
+    if os.environ.get('NOMAD_AUTH_PROXY', '0').strip() not in ('1', 'true', 'yes', 'on'):
+        return None
+    username = (
+        request.headers.get('X-Forwarded-User', '').strip()
+        or request.headers.get('X-Remote-User', '').strip()
+    )
+    if not username:
+        return None
+    role = request.headers.get('X-Forwarded-Role', 'user').strip().lower()
+    if role not in _ROLE_RANK:
+        role = 'user'
+    return {'id': 0, 'username': username, 'role': role}
+
+
 def require_auth(role='user'):
     """Decorator: require an authenticated session with at least `role`.
 
@@ -97,7 +118,8 @@ def require_auth(role='user'):
 
     In desktop mode this is a no-op. In multi-user mode it returns 401 if
     no valid session is found, or 403 if the session role is below `role`.
-    Localhost is always exempt.
+    Localhost is always exempt. Auth proxy headers are trusted when
+    NOMAD_AUTH_PROXY=1 is set.
     """
     min_rank = _ROLE_RANK.get(role, _ROLE_RANK['user'])
 
@@ -105,9 +127,12 @@ def require_auth(role='user'):
         @functools.wraps(f)
         def wrapper(*args, **kwargs):
             if not _auth_required() or _is_localhost():
-                # Desktop mode or local request — pass through. Set a
-                # synthetic g.current_user so downstream code can rely on it.
                 g.current_user = {'id': 0, 'username': 'local', 'role': 'admin'}
+                return f(*args, **kwargs)
+            # Auth proxy (P4-15): trust X-Forwarded-User from reverse proxy
+            proxy_user = _resolve_proxy_user()
+            if proxy_user:
+                g.current_user = proxy_user
                 return f(*args, **kwargs)
             user, _token = _resolve_session()
             if not user:

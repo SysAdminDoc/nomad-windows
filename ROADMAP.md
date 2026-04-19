@@ -297,14 +297,14 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-17 | **Notification center panel** | Open |
 | P2-18 | **CSV export for all entities** | Open — only some entities have export |
 | P2-19 | **Inventory fractional quantities** | Open |
-| P2-20 | **Task assignment to contacts** | Open |
+| P2-20 | ~~Task assignment to contacts~~ | **Done** — `assigned_to` column + filter in tasks.py |
 | P2-21 | **Battery/consumable tracker** | Open |
 | P2-22 | ~~AI model management UI~~ | **Done** — `ai.py` model pull/delete/info routes |
 | P2-23 | **Per-conversation knowledge scope** | Open |
 | P2-24 | **URL-based recipe import** | Open |
 | P2-25 | **Meal plan calendar view** | Open |
 | P2-26 | ~~Survival duration simulator~~ | **Done** — `consumption.py` what-if calculator |
-| P2-27 | **Caloric gap analysis** | Open
+| P2-27 | ~~Caloric gap analysis~~ | **Done** (v7.47.0) — `/api/consumption/caloric-gap` per-category
 
 ### P3: Nice-to-Haves and Polish
 
@@ -348,7 +348,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P4-12 | **Favicon auto-fetch for services and bookmarks** | Automatically fetch and cache favicons from service URLs for display on service cards and any bookmark/link widgets; fall back to generated identicon | Homepage (#174, 11 votes), Dashy (favicon icon type) |
 | P4-13 | ~~**CPU/GPU temperature monitoring**~~ | **Done** (v7.46.0) — `cpu_temp` in `/api/system` via psutil `sensors_temperatures()` | Homepage (#86, 16 votes) |
 | P4-14 | **Torrent status dashboard widget** | Home page widget showing active torrent count, total download/upload speed, seeding ratio, and storage used; leverages existing TorrentManager API | Homepage (Deluge widget, #190, 25 votes) |
-| P4-15 | **Auth proxy / header authentication** | Support `X-Forwarded-User` and `X-Remote-User` headers from auth proxies (Authelia, Authentik, Caddy forward_auth) for seamless LAN multi-user without NOMAD's own auth | Dashy (#981, 11 votes), Glance (#905, 9 votes) |
+| P4-15 | ~~**Auth proxy / header authentication**~~ | **Done** (v7.47.0) — `NOMAD_AUTH_PROXY=1` trusts `X-Forwarded-User` + `X-Forwarded-Role` | Dashy (#981, 11 votes), Glance (#905, 9 votes) |
 | P4-16 | **Mobile swipe navigation** | Swipe left/right between tabs on mobile (touch event handlers on `.content` area); visual tab indicator dots; configurable gesture sensitivity | Glance (#128, 10 votes) |
 | P4-17 | **Icon library system** | Unified icon prefix system for all UI elements: `fa:` (Font Awesome), `si:` (Simple Icons), `mdi:` (Material Design Icons), `emoji:`, `url:` (custom image URL); replaces current mix of inline SVGs and emoji | Glance (4 icon prefixes), Dashy (7 icon types) |
 | P4-18 | **Config environment variable injection** | Support `${ENV_VAR}` syntax in NOMAD config.json for secrets, API keys, and per-deployment overrides; useful for federation nodes with different credentials | Glance (env var injection), Homepage (env vars in YAML) |
@@ -377,7 +377,7 @@ New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance
 | P5-14 | **Self-signed cert trust for federation** | Allow federation peers with self-signed SSL certificates to be trusted via explicit certificate pinning or an `allow-insecure` flag per peer | Glance (#739, 9 votes — custom API allow-insecure) |
 | P5-15 | **Per-page/tab access control** | In LAN multi-user mode, restrict which tabs/pages each user can see; e.g., hide Situation Room from family members, restrict Settings to admin | Glance (#694, 7 votes), Open WebUI (per-user resource sharing) |
 | P5-16 | ~~**Host header validation**~~ | **Done** (v7.46.0) — `NOMAD_ALLOWED_HOSTS` env var, `_host_header_check()` before_request | Homepage (HOMEPAGE_ALLOWED_HOSTS) |
-| P5-17 | **Security notice in README** | Add prominent security notice explaining that LAN-exposed instances should sit behind a reverse proxy with auth/TLS, matching Homepage's security posture documentation | Homepage (Security Notice) |
+| P5-17 | ~~**Security notice in README**~~ | **Done** (v7.47.0) — prominent security blockquote with NOMAD_ALLOWED_HOSTS + NOMAD_AUTH_REQUIRED guidance | Homepage (Security Notice) |
 | P5-18 | **Test coverage tracking in CI** | Add coverage reporting (pytest-cov + Codecov badge) to CI pipeline; baseline coverage visibility for the 775+ test suite | Homepage (Codecov badge) |
 | P5-19 | **Release drafter automation** | GitHub Actions workflow that auto-generates release notes from commit messages and PR labels, reducing manual release effort | Homepage (release-drafter) |
 | P5-20 | **CONTRIBUTING.md with widget/blueprint guide** | Formal contribution guide explaining how to add a new dashboard widget or Flask blueprint; lower barrier for community contributions | Homepage (200+ contributors), Glance (contributing guidelines) |

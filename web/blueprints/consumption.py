@@ -263,6 +263,66 @@ def api_consumption_what_if():
     })
 
 
+# ─── Caloric Gap Analysis (P2-27) ─────────────────────────────────
+
+@consumption_bp.route('/api/consumption/caloric-gap')
+def api_caloric_gap():
+    """Compare stored calories vs daily need per food category."""
+    with db_session() as db:
+        # Daily caloric need from profiles or household_size
+        profiles = db.execute('SELECT * FROM consumption_profiles').fetchall()
+        if profiles:
+            daily_cal_need = sum(p['daily_calories'] or 2000 for p in profiles)
+            daily_water_need = sum(p['daily_water_gal'] or 0.5 for p in profiles)
+            people = len(profiles)
+        else:
+            row = db.execute("SELECT value FROM settings WHERE key = 'household_size'").fetchone()
+            try:
+                people = max(1, int(row['value'])) if row else 2
+            except (TypeError, ValueError):
+                people = 2
+            daily_cal_need = people * 2000
+            daily_water_need = people * 0.5
+
+        # Per-category caloric inventory
+        cats = db.execute('''
+            SELECT i.category,
+                   COUNT(*) as items,
+                   COALESCE(SUM(i.quantity), 0) as total_qty,
+                   COALESCE(SUM(i.quantity * COALESCE(l.servings_per_item, 1) * COALESCE(l.calories_per_serving, 0)), 0) as total_cal
+            FROM inventory i
+            LEFT JOIN inventory_nutrition_link l ON i.id = l.inventory_id
+            GROUP BY i.category
+            ORDER BY total_cal DESC
+        ''').fetchall()
+
+        total_stored_cal = sum(c['total_cal'] for c in cats)
+        coverage_days = round(total_stored_cal / daily_cal_need, 1) if daily_cal_need > 0 else 0
+
+        # Water
+        water_row = db.execute('SELECT COALESCE(SUM(current_gallons), 0) as total FROM water_storage').fetchone()
+        total_water = water_row['total'] or 0
+        water_days = round(total_water / daily_water_need, 1) if daily_water_need > 0 else 0
+
+        return jsonify({
+            'people': people,
+            'daily_calories_needed': daily_cal_need,
+            'daily_water_gal_needed': round(daily_water_need, 2),
+            'total_stored_calories': round(total_stored_cal),
+            'total_water_gallons': round(total_water, 1),
+            'food_coverage_days': coverage_days,
+            'water_coverage_days': water_days,
+            'gap_calories': max(0, round(daily_cal_need * 30 - total_stored_cal)),
+            'gap_description': f'{"Surplus" if coverage_days >= 30 else f"Need {max(0, round(daily_cal_need * 30 - total_stored_cal)):,} more cal for 30-day coverage"}',
+            'categories': [{
+                'category': c['category'] or 'Uncategorized',
+                'items': c['items'],
+                'total_calories': round(c['total_cal']),
+                'coverage_days': round(c['total_cal'] / daily_cal_need, 1) if daily_cal_need > 0 else 0,
+            } for c in cats],
+        })
+
+
 # ─── Helpers ──────────────────────────────────────────────────────
 
 def _format_profile(row):

@@ -2709,10 +2709,15 @@ function toggleCommandPalette(force) {
     }
     _commandPaletteReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     setShellVisibility(overlay, true);
-    input.value = '';
     clearTimeout(_commandPaletteTimer);
-    renderCommandPalette('');
-    requestAnimationFrame(() => input.focus());
+    if (input.value) {
+      renderCommandPalette(input.value);
+      requestAnimationFrame(() => { input.focus(); input.select(); });
+    } else {
+      input.value = '';
+      renderCommandPalette('');
+      requestAnimationFrame(() => input.focus());
+    }
     return;
   }
   setShellVisibility(overlay, false);

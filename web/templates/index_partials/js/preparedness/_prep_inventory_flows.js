@@ -54,6 +54,51 @@ function calcPower() {
 
 /* ─── Inventory ─── */
 let _cachedInvItems = [];
+let _invSortCol = null;
+let _invSortDir = 'asc';
+try {
+  const saved = JSON.parse(localStorage.getItem('nomad-inv-sort'));
+  if (saved && saved.col) { _invSortCol = saved.col; _invSortDir = saved.dir || 'asc'; }
+} catch(_) {}
+
+function _sortInventoryItems(items) {
+  if (!_invSortCol) return items;
+  const col = _invSortCol;
+  const dir = _invSortDir === 'desc' ? -1 : 1;
+  const today = new Date().toISOString().slice(0,10);
+  return [...items].sort((a, b) => {
+    let va, vb;
+    if (col === 'days_left') {
+      const daysA = a.daily_usage > 0 ? a.quantity / a.daily_usage : (a.expiration ? Math.round((new Date(a.expiration) - new Date(today)) / 86400000) : Infinity);
+      const daysB = b.daily_usage > 0 ? b.quantity / b.daily_usage : (b.expiration ? Math.round((new Date(b.expiration) - new Date(today)) / 86400000) : Infinity);
+      return (daysA - daysB) * dir;
+    }
+    va = a[col]; vb = b[col];
+    if (col === 'quantity' || col === 'cost') return ((va || 0) - (vb || 0)) * dir;
+    va = (va || '').toString().toLowerCase(); vb = (vb || '').toString().toLowerCase();
+    return va < vb ? -dir : va > vb ? dir : 0;
+  });
+}
+
+function sortInventoryBy(col) {
+  if (_invSortCol === col) { _invSortDir = _invSortDir === 'asc' ? 'desc' : 'asc'; }
+  else { _invSortCol = col; _invSortDir = 'asc'; }
+  try { localStorage.setItem('nomad-inv-sort', JSON.stringify({col: _invSortCol, dir: _invSortDir})); } catch(_) {}
+  _updateInvSortIndicators();
+  loadInventory();
+}
+
+function _updateInvSortIndicators() {
+  document.querySelectorAll('#inv-table th[data-inv-sort]').forEach(th => {
+    th.classList.remove('sort-asc', 'sort-desc');
+    if (th.dataset.invSort === _invSortCol) th.classList.add(_invSortDir === 'asc' ? 'sort-asc' : 'sort-desc');
+  });
+}
+
+document.getElementById('inv-table')?.addEventListener('click', e => {
+  const th = e.target.closest('th[data-inv-sort]');
+  if (th) sortInventoryBy(th.dataset.invSort);
+});
 async function loadInventory() {
   const cat = document.getElementById('inv-cat-filter').value;
   const q = document.getElementById('inv-search').value.trim();
@@ -64,6 +109,8 @@ async function loadInventory() {
     const items = await safeFetch(url, {}, []);
     if (!Array.isArray(items)) throw new Error('invalid inventory payload');
     _cachedInvItems = items;
+    items = _sortInventoryItems(items);
+    _updateInvSortIndicators();
     const tbody = document.getElementById('inv-tbody');
     if (!items.length) {
       tbody.innerHTML = '<tr><td colspan="10" class="prep-table-empty">No items found.</td></tr>';

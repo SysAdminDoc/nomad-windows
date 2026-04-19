@@ -1376,6 +1376,21 @@ document.addEventListener('keydown', e => {
   // Ctrl/Cmd+K — handled by _app_workspaces.js toggleCommandPalette()
 });
 
+/* ─── Loading Skeletons (P1-01) ─── */
+function showTabSkeletons(containerId, count) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const rows = [];
+  for (let i = 0; i < (count || 3); i++) {
+    rows.push(`<div class="skeleton-row" style="display:flex;gap:12px;margin-bottom:12px">
+      <div class="skeleton" style="width:40%;height:16px;border-radius:4px"></div>
+      <div class="skeleton" style="width:25%;height:16px;border-radius:4px"></div>
+      <div class="skeleton" style="width:20%;height:16px;border-radius:4px"></div>
+    </div>`);
+  }
+  el.innerHTML = rows.join('');
+}
+
 /* ─── Favicon Dynamic Badge (P1-05) ─── */
 let _faviconBadgeCount = 0;
 function updateFaviconBadge(count) {

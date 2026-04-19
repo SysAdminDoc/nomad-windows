@@ -8,7 +8,7 @@
   display: grid;
   gap: 10px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 40%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 92%, transparent));
@@ -59,11 +59,11 @@
   align-items: center;
   min-height: 28px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid color-mix(in srgb, var(--accent) 10%, var(--border));
   background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 600;
   letter-spacing: 0.02em;
   text-transform: none;
@@ -72,7 +72,7 @@
 
 .benchmark-workspace .settings-card > h3,
 .tools-workspace .tools-card:not(.tools-launch-card) > h3 {
-  font-size: 15px !important;
+  font-size: var(--text-md-lg, 15px) !important;
   font-weight: 700 !important;
   letter-spacing: 0.02em;
   text-transform: none;
@@ -123,7 +123,7 @@
 .benchmark-intro,
 .tools-card-intro {
   margin: 0 0 10px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.5;
   color: var(--text-dim);
 }
@@ -148,7 +148,7 @@
 .benchmark-toolbar-shell {
   padding: 10px 12px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
@@ -172,12 +172,12 @@
   min-height: 36px;
   padding: 5px 7px 5px 9px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius, 12px);
   background: var(--surface-overlay-soft);
 }
 
 .benchmark-label {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -186,11 +186,11 @@
 .benchmark-tag-input,
 .mesh-compose-input {
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius, 12px);
   background: var(--surface-field);
   color: var(--text);
   padding: 8px 12px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
 
@@ -218,7 +218,7 @@
   margin-bottom: 16px;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-overlay-soft);
 }
 
@@ -239,7 +239,7 @@
 .benchmark-history-summary,
 .benchmark-history-shell {
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
@@ -252,7 +252,7 @@
 }
 
 .benchmark-run-summary-kicker {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -260,7 +260,7 @@
 }
 
 .benchmark-run-summary-title {
-  font-size: 18px;
+  font-size: var(--text-lg, 18px);
   font-weight: 700;
   line-height: 1.2;
   color: var(--text);
@@ -270,7 +270,7 @@
 .benchmark-result-note {
   color: var(--text-dim);
   line-height: 1.6;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .benchmark-result-note {
@@ -290,7 +290,7 @@
 }
 
 .benchmark-history-stat-label {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -298,7 +298,7 @@
 }
 
 .benchmark-history-stat-value {
-  font-size: 22px;
+  font-size: var(--text-xl, 22px);
   line-height: 1;
   color: var(--text);
 }
@@ -311,9 +311,9 @@
   display: block;
   padding: 14px 16px;
   border: 1px dashed var(--border-hover);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-overlay-soft);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   color: var(--text-muted);
   text-align: center;
   line-height: 1.55;
@@ -337,13 +337,13 @@
 .benchmark-subsystem-cell {
   padding: 14px 10px;
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: var(--surface-overlay-soft);
   text-align: center;
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
 .benchmark-subsystem-letter {
-  font-size: 32px;
+  font-size: var(--text-4xl, 32px);
   font-weight: 800;
   line-height: 1;
   background: linear-gradient(135deg, var(--accent), var(--orange));
@@ -353,7 +353,7 @@
 }
 .benchmark-subsystem-label {
   margin-top: 6px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -363,30 +363,30 @@
   padding: 14px 18px;
   border: 1px solid var(--border);
   border-left: 3px solid var(--accent);
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: var(--surface-overlay-soft);
 }
 .benchmark-model-recommend-kicker {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--text-muted);
   margin-bottom: 4px;
 }
 .benchmark-model-recommend-name {
-  font-size: 16px;
+  font-size: var(--text-lg, 16px);
   font-weight: 700;
   color: var(--text);
 }
 .benchmark-model-recommend-size {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 500;
   color: var(--text-muted);
   margin-left: 6px;
 }
 .benchmark-model-recommend-why {
   margin-top: 4px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   color: var(--text-dim);
   line-height: 1.45;
 }
@@ -394,12 +394,12 @@
   margin-top: 12px;
   padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: var(--radius, 12px);
   background: var(--surface-overlay-soft);
 }
 .benchmark-advanced-details > summary {
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.04em;
@@ -417,7 +417,7 @@
 }
 
 .benchmark-score-caption {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -430,7 +430,7 @@
 
 .benchmark-workspace .bench-score {
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   padding: 12px 10px;
   background: var(--surface-overlay-soft);
   box-shadow:
@@ -439,12 +439,12 @@
 }
 
 .benchmark-workspace .bench-score .score-val {
-  font-size: 24px;
+  font-size: var(--text-2xl, 24px);
 }
 
 .benchmark-workspace .bench-score .score-label {
   margin-top: 4px;
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -452,7 +452,7 @@
 .benchmark-history-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .benchmark-history-table th,
@@ -462,7 +462,7 @@
 }
 
 .benchmark-history-table th {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -479,7 +479,7 @@
 
 .benchmark-delta {
   margin-left: 4px;
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   font-weight: 700;
 }
 
@@ -498,7 +498,7 @@
 
 .benchmark-subheading {
   margin-bottom: 8px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -542,7 +542,7 @@
   display: grid;
   gap: 10px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 40%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 92%, transparent));
@@ -593,11 +593,11 @@
   align-items: center;
   min-height: 24px;
   padding: 0 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
   color: var(--text-dim);
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -616,7 +616,7 @@
 }
 
 .tools-inline-note {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-muted);
 }
 
@@ -673,7 +673,7 @@
 .compass-needle {
   width: 4px;
   height: 56px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: linear-gradient(var(--red) 50%, rgba(97,82,60,0.38) 50%);
   transform-origin: center center;
   transition: transform 0.3s;
@@ -682,7 +682,7 @@
 
 .compass-mark {
   position: absolute;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
 }
 
@@ -711,12 +711,12 @@
 }
 
 .compass-reading {
-  font-size: 28px;
+  font-size: var(--text-3xl, 28px);
 }
 
 .compass-subreading,
 .compass-axis-label {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-muted);
 }
 
@@ -724,7 +724,7 @@
   min-width: 140px;
   padding: 16px 18px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
   text-align: center;
@@ -732,7 +732,7 @@
 
 .compass-tilt-label {
   margin-bottom: 6px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -740,7 +740,7 @@
 }
 
 .compass-tilt-reading {
-  font-size: 22px;
+  font-size: var(--text-xl, 22px);
 }
 
 .compass-tilt-reading-secondary {
@@ -779,7 +779,7 @@
 .tools-launch-title {
   justify-content: flex-start;
   margin-bottom: 10px;
-  font-size: 16px !important;
+  font-size: var(--text-lg, 16px) !important;
 }
 
 .tools-launch-title-alert {
@@ -791,7 +791,7 @@
 }
 
 .tools-launch-icon {
-  font-size: 20px;
+  font-size: var(--text-xl, 20px);
 }
 
 .tools-launch-btn {
@@ -813,7 +813,7 @@
 
 .tools-launch-meta {
   align-self: center;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.6;
   color: var(--text-muted);
 }
@@ -824,9 +824,9 @@
   gap: 6px;
   padding: 7px 12px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   background: var(--surface-overlay-soft);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -856,7 +856,7 @@
 .tools-subsection-text {
   margin: 0;
   max-width: 62ch;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.65;
   color: var(--text-dim);
 }
@@ -875,7 +875,7 @@
 
 .mesh-nodes-grid > * {
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
@@ -894,10 +894,10 @@
   margin-top: 10px;
   padding: 12px 14px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: var(--surface-field);
   box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-family: var(--font-data, monospace);
   color: var(--text);
 }
@@ -913,14 +913,14 @@
   align-items: start;
   padding: 8px 10px;
   border: 1px solid rgba(255,255,255,0.05);
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: rgba(255,255,255,0.03);
   color: inherit;
 }
 
 .mesh-log-entry-time,
 .mesh-log-entry-label {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
@@ -973,7 +973,7 @@
   margin-top: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.7;
   color: var(--text-dim);
 }
@@ -1012,12 +1012,12 @@
 
 .drill-card-title {
   margin-bottom: 6px;
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   color: var(--text);
 }
 
 .drill-card-copy {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.65;
   color: var(--text-dim);
 }
@@ -1026,7 +1026,7 @@
 .scenario-phase-card,
 .scenario-history-shell {
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-xl, 20px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
@@ -1048,14 +1048,14 @@
 
 .drill-active-title,
 .scenario-phase-title {
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
   font-weight: 700;
   color: var(--text);
 }
 
 .drill-active-timer {
   font-family: var(--font-data, monospace);
-  font-size: 22px;
+  font-size: var(--text-xl, 22px);
   font-weight: 700;
   color: var(--accent);
 }
@@ -1071,7 +1071,7 @@
   gap: 4px;
   padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
@@ -1080,7 +1080,7 @@
 .drill-history-kicker,
 .scenario-history-kicker,
 .scenario-phase-stat-kicker {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1091,7 +1091,7 @@
 .drill-history-value,
 .scenario-history-value,
 .scenario-phase-stat-value {
-  font-size: 18px;
+  font-size: var(--text-lg, 18px);
   line-height: 1.1;
   color: var(--text);
 }
@@ -1100,7 +1100,7 @@
 .drill-history-note,
 .scenario-history-note,
 .scenario-phase-stat-note {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.55;
   color: var(--text-dim);
 }
@@ -1116,7 +1116,7 @@
 .drill-steps {
   display: grid;
   gap: 10px;
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.7;
 }
 
@@ -1127,7 +1127,7 @@
   align-items: start;
   padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
   cursor: pointer;
@@ -1151,7 +1151,7 @@
 }
 
 .drill-step-index {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1164,19 +1164,19 @@
 }
 
 .drill-step-title {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   line-height: 1.6;
   color: var(--text);
 }
 
 .drill-step-status {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim);
 }
 
 .tools-history-list,
 .scenario-history-shell {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .tools-history-stack {
@@ -1202,7 +1202,7 @@
 
 .scenario-selector-grid .guide-tile {
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: var(--surface-overlay-soft);
   box-shadow:
     inset 0 1px 0 var(--panel-highlight),
@@ -1250,13 +1250,13 @@
   gap: 4px;
   padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
 
 .scenario-phase-meta {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-muted);
@@ -1277,14 +1277,14 @@
 .scenario-phase-name,
 .scenario-complication-title {
   margin-bottom: 8px;
-  font-size: 15px;
+  font-size: var(--text-md-lg, 15px);
   color: var(--accent);
 }
 
 .scenario-phase-copy,
 .scenario-complication-copy {
   margin-bottom: 16px;
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   line-height: 1.7;
   color: var(--text);
 }
@@ -1292,7 +1292,7 @@
 .scenario-phase-prompt,
 .scenario-complication-label {
   margin-bottom: 10px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -1326,18 +1326,18 @@
 }
 
 .scenario-loading-icon {
-  font-size: 28px;
+  font-size: var(--text-3xl, 28px);
   color: var(--orange);
 }
 
 .scenario-loading-copy {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
 }
 
 .scenario-complication-card {
   padding: 20px;
   border: 2px solid color-mix(in srgb, var(--orange) 30%, var(--border));
-  border-radius: 20px;
+  border-radius: var(--radius-xl, 20px);
   background: color-mix(in srgb, var(--orange) 12%, var(--surface-solid));
   box-shadow:
     inset 0 1px 0 var(--panel-highlight),
@@ -1357,17 +1357,17 @@
 }
 
 .scenario-complete-icon {
-  font-size: 36px;
+  font-size: var(--text-4xl, 36px);
   margin-bottom: 8px;
 }
 
 .scenario-complete-title {
-  font-size: 16px;
+  font-size: var(--text-lg, 16px);
   font-weight: 600;
 }
 
 .scenario-complete-copy {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   color: var(--text-dim);
 }
 
@@ -1391,13 +1391,13 @@
 }
 
 .scenario-score-value {
-  font-size: 48px;
+  font-size: var(--text-4xl, 48px);
   font-weight: 800;
   color: var(--accent);
 }
 
 .scenario-score-total {
-  font-size: 20px;
+  font-size: var(--text-xl, 20px);
   color: var(--text-muted);
 }
 
@@ -1414,31 +1414,31 @@
 }
 
 .scenario-score-label {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   color: var(--text-dim);
 }
 
 .scenario-section-title {
   margin-bottom: 8px;
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
   color: var(--accent);
 }
 
 .scenario-section-title-small {
   margin-bottom: 8px;
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   color: var(--text);
 }
 
 .scenario-aar-copy {
   margin-bottom: 16px;
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   line-height: 1.7;
   white-space: pre-line;
 }
 
 .scenario-decision-list {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim);
 }
 
@@ -1466,7 +1466,7 @@
 
 .scenario-history-empty {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
 }
 
 .scenario-history-score {
@@ -1485,7 +1485,7 @@
   gap: 10px;
   padding: 16px 18px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: var(--surface-overlay-soft);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
@@ -1501,14 +1501,14 @@
 
 .drill-history-date,
 .scenario-history-date {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-muted);
 }
 
 .drill-history-title,
 .scenario-history-title {
   margin: 2px 0 0;
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
   color: var(--text);
 }
 
@@ -1520,8 +1520,8 @@
   min-width: 74px;
   min-height: 34px;
   padding: 0 12px;
-  border-radius: 999px;
-  font-size: 12px;
+  border-radius: var(--radius-full, 999px);
+  font-size: var(--text-sm-md, 12px);
   font-weight: 700;
   border: 1px solid currentColor;
   background: color-mix(in srgb, currentColor 10%, transparent);
@@ -1540,10 +1540,10 @@
   align-items: center;
   min-height: 28px;
   padding: 0 10px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid var(--border);
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-dim);
 }
 
@@ -1583,7 +1583,7 @@
   }
 
   .settings-workspace .settings-card {
-    border-radius: 18px;
+    border-radius: var(--radius-lg, 18px);
     padding: 18px !important;
   }
 
@@ -1755,7 +1755,7 @@
   .benchmark-history-table,
   .tools-history-list .freq-table,
   .scenario-history-shell .freq-table {
-    font-size: 11px;
+    font-size: var(--text-sm, 11px);
   }
 
   .benchmark-history-card,

@@ -214,7 +214,7 @@ body {
 .sidebar-header {
   margin: 12px 12px 0;
   border: 1px solid var(--surface-stroke);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl, 24px);
   background: var(--surface-raised);
   box-shadow:
     inset 0 1px 0 var(--panel-highlight),
@@ -225,7 +225,7 @@ body {
   width: 52px;
   height: 52px;
   padding: 10px;
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background: var(--surface-raised-strong);
   border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--surface-stroke));
   box-shadow:
@@ -244,7 +244,7 @@ body {
 }
 
 .sidebar-header h1 {
-  font-size: 18px;
+  font-size: var(--text-lg, 18px);
   letter-spacing: 0.16em;
 }
 
@@ -258,7 +258,7 @@ body {
 .sidebar-header .version {
   margin-top: 4px;
   padding: 3px 8px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid var(--surface-stroke);
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
   color: var(--text-muted);
@@ -281,7 +281,7 @@ body {
 }
 
 .sidebar-group-title {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.18em;
 }
 
@@ -297,7 +297,7 @@ body {
   gap: 12px;
   padding: 10px 12px;
   min-height: 46px;
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   font-size: 12.5px;
   letter-spacing: 0.01em;
   text-transform: none;
@@ -308,7 +308,7 @@ body {
   top: 8px;
   bottom: 8px;
   width: 2px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   opacity: 0;
   background: transparent;
 }
@@ -316,7 +316,7 @@ body {
 .tab .tab-icon {
   width: 32px;
   height: 32px;
-  border-radius: 12px;
+  border-radius: var(--radius, 12px);
   border: 1px solid color-mix(in srgb, var(--border-hover) 18%, var(--border));
   background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
   color: var(--text-muted);
@@ -370,7 +370,7 @@ body {
 .sidebar-context-hub {
   margin: 8px 12px 0;
   padding: 16px;
-  border-radius: 24px;
+  border-radius: var(--radius-2xl, 24px);
   border-color: var(--surface-stroke);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 12%, transparent), transparent 42%),
@@ -387,21 +387,21 @@ body {
 .sidebar-context-kicker,
 .sidebar-context-label {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.14em;
 }
 
 .sidebar-context-text {
   max-width: 28ch;
   color: color-mix(in srgb, var(--text-dim) 92%, var(--text));
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.58;
   text-wrap: pretty;
 }
 
 .sidebar-context-card {
   padding: 11px 12px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   border-color: color-mix(in srgb, var(--border-hover) 18%, var(--border));
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 86%, transparent));
@@ -419,7 +419,7 @@ body {
   margin: 12px 10px 10px;
   padding: 14px;
   border: 1px solid var(--surface-stroke);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl, 24px);
   background: var(--surface-raised);
   box-shadow:
     inset 0 1px 0 var(--panel-highlight),
@@ -461,7 +461,7 @@ body {
 .mode-switcher {
   padding: 6px;
   border-color: var(--surface-stroke);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: color-mix(in srgb, var(--surface-solid) 86%, transparent);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
@@ -481,8 +481,8 @@ body {
 .mode-btn {
   width: 30px;
   height: 30px;
-  border-radius: 12px;
-  font-size: 13px;
+  border-radius: var(--radius, 12px);
+  font-size: var(--text-base, 13px);
 }
 
 .mode-btn.active {
@@ -496,16 +496,16 @@ body {
 
 .mode-label {
   padding-left: 4px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.12em;
 }
 
 .sidebar-customize-btn {
   padding: 12px 14px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   border-color: var(--surface-stroke);
   background: var(--surface-raised);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -529,7 +529,7 @@ body {
 .customize-section,
 .customize-theme-card,
 .customize-sortable-item {
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
 }
 
 .btn {
@@ -594,7 +594,7 @@ button.btn.btn-sm {
 }
 
 .section-header-label {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.14em;
   color: var(--text-muted);
 }
@@ -605,7 +605,7 @@ button.btn.btn-sm {
   border-color: color-mix(in srgb, var(--accent) 10%, var(--surface-stroke));
   background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.04em;
   text-transform: none;
   box-shadow: inset 0 1px 0 var(--panel-highlight);
@@ -615,7 +615,7 @@ button.btn.btn-sm {
   margin-top: 18px;
   padding: 18px 20px;
   border-color: var(--surface-stroke);
-  border-radius: 24px;
+  border-radius: var(--radius-2xl, 24px);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 14%, transparent), transparent 40%),
     var(--surface-raised);
@@ -637,7 +637,7 @@ button.btn.btn-sm {
 ) {
   min-height: 26px;
   padding: 0 10px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.06em;
   text-transform: none;
   font-family: var(--font-label, "Segoe UI", sans-serif);
@@ -700,7 +700,7 @@ button.btn.btn-sm {
   .home-modal-card,
   .shell-health-card
 ) {
-  border-radius: 24px;
+  border-radius: var(--radius-2xl, 24px);
   border-color: var(--surface-stroke);
   background: var(--surface-raised) !important;
   box-shadow:
@@ -758,11 +758,11 @@ button.btn.btn-sm {
   align-items: center;
   min-height: 28px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--surface-stroke));
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   font-weight: 700;
   letter-spacing: 0.04em;
 }
@@ -787,7 +787,7 @@ button.btn.btn-sm {
 
 .home-launch-text {
   max-width: 60ch;
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   line-height: 1.65;
 }
 
@@ -798,7 +798,7 @@ button.btn.btn-sm {
 
 .home-search-shell {
   border-color: var(--surface-stroke-strong);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: var(--surface-raised-strong);
   box-shadow:
     inset 0 1px 0 var(--panel-highlight),
@@ -810,7 +810,7 @@ button.btn.btn-sm {
   padding: 0 12px;
   border-color: color-mix(in srgb, var(--accent) 10%, var(--surface-stroke));
   background: color-mix(in srgb, var(--surface-solid) 94%, transparent);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.04em;
   text-transform: none;
 }
@@ -823,7 +823,7 @@ button.btn.btn-sm {
 .home-mode-card {
   min-height: 110px;
   padding: 14px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   border-color: var(--surface-stroke);
   background: var(--surface-raised-strong);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
@@ -839,7 +839,7 @@ button.btn.btn-sm {
 .home-continue-icon {
   width: 42px;
   height: 42px;
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
 
@@ -850,12 +850,12 @@ button.btn.btn-sm {
 }
 
 .home-mode-title {
-  font-size: 15px;
+  font-size: var(--text-md-lg, 15px);
   letter-spacing: -0.02em;
 }
 
 .home-mode-copy {
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.55;
 }
 
@@ -875,7 +875,7 @@ button.btn.btn-sm {
 .home-continue-card {
   min-height: 118px;
   padding: 16px;
-  border-radius: 20px;
+  border-radius: var(--radius-xl, 20px);
 }
 
 .home-continue-card:hover {
@@ -894,7 +894,7 @@ button.btn.btn-sm {
 }
 
 .services-console-kicker {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
 }
 
 .cc-card,
@@ -913,12 +913,12 @@ button.btn.btn-sm {
 
 .cc-card .cc-icon {
   margin-bottom: 6px;
-  font-size: 22px;
+  font-size: var(--text-xl, 22px);
 }
 
 .cc-card .cc-sub {
   margin-bottom: 2px;
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.08em;
   opacity: 0.9;
 }
@@ -949,14 +949,14 @@ button.btn.btn-sm {
 .activity-feed-shell {
   padding: 10px 12px;
   border: 1px solid var(--surface-stroke);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: var(--surface-raised-strong);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
 
 .activity-filter-select {
   min-height: 32px;
-  border-radius: 12px;
+  border-radius: var(--radius, 12px);
   border-color: var(--surface-stroke);
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
 }
@@ -1016,11 +1016,11 @@ button.btn.btn-sm {
 .home-launch-chip {
   min-height: 28px;
   padding: 0 12px;
-  border-radius: 999px;
+  border-radius: var(--radius-full, 999px);
   border-color: color-mix(in srgb, var(--accent) 8%, var(--surface-stroke));
   background: color-mix(in srgb, var(--surface-solid) 92%, transparent);
   color: var(--text-dim);
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   letter-spacing: 0.04em;
   text-transform: none;
 }
@@ -1037,7 +1037,7 @@ button.btn.btn-sm {
 .home-mode-card {
   min-height: 92px;
   padding: 12px 13px;
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 94%, transparent), color-mix(in srgb, var(--surface2) 84%, transparent));
 }
@@ -1093,7 +1093,7 @@ button.btn.btn-sm {
 .home-continue-card {
   min-height: 102px;
   padding: 14px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
 }
 
 .home-continue-card.is-launch {
@@ -1119,7 +1119,7 @@ button.btn.btn-sm {
 .services-console-block {
   gap: 8px;
   padding: 14px 15px;
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   border-color: color-mix(in srgb, var(--surface-stroke) 84%, transparent);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 92%, transparent), color-mix(in srgb, var(--surface2) 84%, transparent));
@@ -1138,7 +1138,7 @@ button.btn.btn-sm {
 
 .service-card {
   padding: 15px 15px 14px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 94%, transparent), color-mix(in srgb, var(--surface2) 86%, transparent)) !important;
 }
@@ -1166,7 +1166,7 @@ button.btn.btn-sm {
   min-height: 70px;
   padding: 12px 14px;
   border: 1px solid var(--surface-stroke);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 94%, transparent), color-mix(in srgb, var(--surface2) 84%, transparent));
   color: var(--text);
@@ -1199,10 +1199,10 @@ button.home-doc-row {
   height: 40px;
   display: grid;
   place-items: center;
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: color-mix(in srgb, var(--accent-dim) 74%, var(--surface-solid));
   color: var(--accent);
-  font-size: 18px;
+  font-size: var(--text-lg, 18px);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
 
@@ -1214,19 +1214,19 @@ button.home-doc-row {
 
 .home-doc-row-title {
   font-family: var(--font-display, "Segoe UI", sans-serif);
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
   letter-spacing: -0.02em;
 }
 
 .home-doc-row-meta {
   color: var(--text-dim);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   line-height: 1.45;
 }
 
 .home-doc-row-action {
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: var(--text-2xs, 9px);
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -1269,11 +1269,11 @@ button.home-doc-row {
   margin: 0;
   padding: 16px 18px;
   border: 1px dashed color-mix(in srgb, var(--surface-stroke) 86%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 94%, transparent), color-mix(in srgb, var(--surface2) 82%, transparent));
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--text-sm-md, 12px);
   line-height: 1.65;
   text-align: center;
   text-wrap: pretty;
@@ -1322,10 +1322,10 @@ button.home-doc-row {
   place-items: center;
   width: 42px;
   height: 42px;
-  border-radius: 14px;
+  border-radius: var(--radius-md, 14px);
   background: color-mix(in srgb, var(--accent) 12%, transparent);
   color: var(--accent);
-  font-size: 20px;
+  font-size: var(--text-xl, 20px);
   box-shadow: inset 0 1px 0 var(--panel-highlight);
 }
 
@@ -1337,7 +1337,7 @@ button.home-doc-row {
 
 .sr-empty-title {
   color: var(--text);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1349,7 +1349,7 @@ button.home-doc-row {
 
 .sr-empty-hint {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .system-gauges-loading {
@@ -1433,7 +1433,7 @@ button.home-doc-row {
   }
 
   .sidebar-group-title {
-    font-size: 9px;
+    font-size: var(--text-2xs, 9px);
     letter-spacing: 0.16em;
   }
 
@@ -1442,7 +1442,7 @@ button.home-doc-row {
     gap: 0;
     min-height: 48px;
     padding: 12px 8px;
-    border-radius: 16px;
+    border-radius: var(--radius, 16px);
     font-size: 0;
   }
 

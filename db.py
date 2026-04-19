@@ -2195,6 +2195,8 @@ def _apply_column_migrations(conn):
         'ALTER TABLE preservation_log ADD COLUMN success INTEGER DEFAULT 1',
         'ALTER TABLE preservation_log ADD COLUMN yield_amount REAL DEFAULT 0',
         'ALTER TABLE preservation_log ADD COLUMN yield_unit TEXT DEFAULT ""',
+        # v7.0.11 — AI conversation tags
+        'ALTER TABLE conversations ADD COLUMN tags TEXT DEFAULT "[]"',
     ]:
         try:
             conn.execute(migration)

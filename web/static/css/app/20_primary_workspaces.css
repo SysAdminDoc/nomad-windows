@@ -37,6 +37,10 @@
   background: var(--surface2);
 }
 .convo-item .convo-actions .convo-del { color: var(--red); }
+.convo-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
+.convo-tag-chip { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: var(--accent-dim, rgba(100,100,255,.15)); color: var(--accent); line-height: 1.3; }
+.convo-tag-filter { padding: 0 8px 6px; }
+.convo-tag-filter select { width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface2); color: var(--text-primary); }
 .convo-sidebar-footer { padding: 8px; border-top: 1px solid var(--border); }
 
 .chat-container {

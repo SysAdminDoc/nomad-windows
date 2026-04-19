@@ -14,6 +14,11 @@
         <div class="convo-search">
           <input id="convo-search" type="search" name="conversation_search" autocomplete="off" aria-label="Search conversations" placeholder="Search conversations…" data-input-action="filter-convos">
         </div>
+        <div class="convo-tag-filter">
+          <select id="convo-tag-filter" name="convo_tag_filter" aria-label="Filter by tag" data-change-action="filter-convo-tag">
+            <option value="">All tags</option>
+          </select>
+        </div>
         <div class="convo-list" id="convo-list" aria-live="polite"><div class="sidebar-empty-state"><strong>No Conversations Yet</strong><span>Start a new chat to keep research, drafts, and decision branches organized here.</span></div></div>
         <div class="convo-sidebar-footer">
           <button class="btn btn-sm btn-danger workspace-btn-block" data-chat-action="delete-all-convos">Clear History</button>

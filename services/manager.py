@@ -51,6 +51,9 @@ MAX_RESTARTS = 3
 RESTART_WINDOW = 300  # seconds
 _restart_tracker: dict[str, list[float]] = {}  # service_id -> list of restart timestamps
 
+# Service start timestamps for uptime display
+_start_times: dict[str, float] = {}  # service_id -> time.time() when started
+
 
 def get_services_dir():
     svc_dir = os.path.join(get_data_dir(), 'services')
@@ -260,6 +263,7 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
     finally:
         db.close()
 
+    _start_times[service_id] = time.time()
     log_activity('service_started', service_id, f'PID {proc.pid}')
     return proc.pid
 
@@ -305,6 +309,7 @@ def stop_process(service_id: str) -> bool:
 
     with _lock:
         _processes.pop(service_id, None)
+    _start_times.pop(service_id, None)
     log_activity('service_stopped', service_id)
     return True
 
@@ -537,6 +542,14 @@ def prune_completed_downloads(max_age: float = 3600):
         ]
         for k in stale:
             _download_progress.pop(k, None)
+
+
+def get_service_uptime(service_id: str) -> float | None:
+    """Return seconds since service was started, or None if not running."""
+    started = _start_times.get(service_id)
+    if started is None:
+        return None
+    return time.time() - started
 
 
 def get_service_logs(service_id: str) -> list[str]:

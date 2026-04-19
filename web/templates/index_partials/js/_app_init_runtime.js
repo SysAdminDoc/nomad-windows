@@ -2748,7 +2748,7 @@ function renderFreqTable() {
     for (const f of freqs) {
       const priColor = f.priority >= 8 ? 'var(--green)' : f.priority >= 5 ? 'var(--text-dim)' : 'var(--text-muted)';
       html += `<tr>
-        <td class="runtime-mono-cell-strong">${f.frequency.toFixed(4)}</td>
+        <td class="runtime-mono-cell-strong" style="cursor:pointer" data-copy="${f.frequency.toFixed(4)}" data-copy-label="${f.frequency.toFixed(4)} MHz" title="Click to copy">${f.frequency.toFixed(4)}</td>
         <td>${escapeHtml(f.mode)}</td>
         <td class="text-strong">${escapeHtml(f.service)}</td>
         <td>${escapeHtml(f.description)}${f.notes ? ` <span class="runtime-inline-note">(${escapeHtml(f.notes)})</span>` : ''}</td>

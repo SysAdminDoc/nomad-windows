@@ -14,9 +14,9 @@ async function loadContacts() {
     }
     el.innerHTML = contacts.map(c => {
       let fields = '';
-      if (c.callsign) fields += `<div class="cc-field"><strong>Callsign:</strong> ${escapeHtml(c.callsign)}</div>`;
-      if (c.phone) fields += `<div class="cc-field"><strong>Phone:</strong> ${escapeHtml(c.phone)}</div>`;
-      if (c.freq) fields += `<div class="cc-field"><strong>Freq:</strong> ${escapeHtml(c.freq)}</div>`;
+      if (c.callsign) fields += `<div class="cc-field"><strong>Callsign:</strong> <span style="cursor:pointer" data-copy="${escapeAttr(c.callsign)}" data-copy-label="callsign" title="Click to copy">${escapeHtml(c.callsign)}</span></div>`;
+      if (c.phone) fields += `<div class="cc-field"><strong>Phone:</strong> <span style="cursor:pointer" data-copy="${escapeAttr(c.phone)}" data-copy-label="phone" title="Click to copy">${escapeHtml(c.phone)}</span></div>`;
+      if (c.freq) fields += `<div class="cc-field"><strong>Freq:</strong> <span style="cursor:pointer" data-copy="${escapeAttr(c.freq)}" data-copy-label="frequency" title="Click to copy">${escapeHtml(c.freq)}</span></div>`;
       if (c.skills) fields += `<div class="cc-field"><strong>Skills:</strong> ${escapeHtml(c.skills)}</div>`;
       if (c.rally_point) fields += `<div class="cc-field"><strong>Rally:</strong> ${escapeHtml(c.rally_point)}</div>`;
       if (c.blood_type) fields += `<div class="cc-field"><strong>Blood:</strong> ${escapeHtml(c.blood_type)}</div>`;

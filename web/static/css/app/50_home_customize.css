@@ -248,7 +248,7 @@ details summary .nav-chevron { transition: transform var(--duration-fast) var(--
   gap: 8px;
   padding: var(--density-panel-pad);
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: color-mix(in srgb, var(--surface-solid) 82%, transparent);
 }
 
@@ -418,7 +418,7 @@ details summary .nav-chevron { transition: transform var(--duration-fast) var(--
   align-items: center;
   min-height: 76px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   border: 1px dashed color-mix(in srgb, var(--border-hover) 28%, var(--border));
   color: var(--text-muted);
   background: color-mix(in srgb, var(--surface-solid) 80%, transparent);
@@ -935,7 +935,7 @@ html[data-zoom="xlarge"] { --ui-zoom: 1.3; }
     linear-gradient(180deg, rgba(255,255,255,0.08), transparent 70%),
     color-mix(in srgb, var(--surface-solid) 90%, transparent);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   color: var(--text);
   font-size: var(--text-sm, 11px);
   font-weight: 700;

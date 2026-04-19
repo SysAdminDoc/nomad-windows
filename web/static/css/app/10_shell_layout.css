@@ -592,7 +592,7 @@
   margin: 16px 42px 0;
   padding: 16px 18px;
   border: 1px solid color-mix(in srgb, var(--border) 90%, transparent);
-  border-radius: 22px;
+  border-radius: var(--radius-2xl, 22px);
   background:
     radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 42%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 92%, transparent));
@@ -793,7 +793,7 @@
   margin: 12px 42px 0;
   padding: 18px 20px 20px;
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  border-radius: 22px;
+  border-radius: var(--radius-2xl, 22px);
   background:
     radial-gradient(circle at top left, color-mix(in srgb, var(--accent) 9%, transparent), transparent 38%),
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 97%, transparent), color-mix(in srgb, var(--surface2) 94%, transparent));
@@ -855,7 +855,7 @@
   gap: 10px;
   padding: 14px 16px;
   border: 1px solid color-mix(in srgb, var(--border) 88%, transparent);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: color-mix(in srgb, var(--surface-solid) 82%, transparent);
 }
 .workspace-inspector-section-title {
@@ -894,7 +894,7 @@
 }
 .workspace-inspector-spotlight {
   padding: 12px 14px;
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
   background: color-mix(in srgb, var(--accent-dim) 45%, var(--surface-solid));
   color: var(--text-dim);
@@ -1020,7 +1020,7 @@
   background: var(--gradient-card);
   color: var(--text);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: var(--radius, 16px);
   padding: 20px;
   text-align: center;
   cursor: pointer;
@@ -1145,7 +1145,7 @@
   overflow: auto;
   overscroll-behavior: contain;
   border: 1px solid color-mix(in srgb, var(--border-hover) 50%, var(--border));
-  border-radius: 24px;
+  border-radius: var(--radius-2xl, 24px);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 96%, transparent), color-mix(in srgb, var(--surface2) 90%, transparent));
   box-shadow: var(--shadow-floating);
@@ -1205,7 +1205,7 @@
   gap: 10px;
   padding: 14px;
   border: 1px solid var(--border);
-  border-radius: 18px;
+  border-radius: var(--radius-lg, 18px);
   background: color-mix(in srgb, var(--surface-solid) 86%, transparent);
 }
 .shell-health-list {

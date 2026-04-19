@@ -4943,6 +4943,19 @@ function updateTabBadges() {
     if (typeof updateFaviconBadge === 'function') updateFaviconBadge(faviconCount);
   }
 
+  // Settings badge: overdue tasks count
+  const settingsBadge = document.getElementById('badge-settings');
+  if (settingsBadge) {
+    safeFetch('/api/tasks/due', {}, []).then(due => {
+      const overdue = Array.isArray(due) ? due.filter(t => {
+        if (!t.due_date) return false;
+        return new Date(t.due_date) < new Date();
+      }).length : 0;
+      if (overdue > 0) { settingsBadge.textContent = overdue; settingsBadge.style.display = ''; settingsBadge.className = 'tab-badge red'; }
+      else { settingsBadge.style.display = 'none'; }
+    });
+  }
+
   // AI Chat badge: green dot if Ollama running, red dot if not
   if (!aiBadge) return;
   const applyAiBadge = (svcs) => {

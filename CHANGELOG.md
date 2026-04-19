@@ -36,8 +36,15 @@ All notable changes to project-nomad-desktop will be documented in this file.
 - **Maritime tide predictor** — `/api/calculators/tides` simplified lunar harmonic model. High/low tide times, spring/neap detection, moon phase. Includes navigation disclaimer.
 - **Aviation density altitude** — `/api/calculators/density-altitude` with pressure altitude, density altitude (Koch chart), takeoff roll estimation, weight factor, runway adequacy check, safety warnings.
 
+### Tier 5 — Specialized Threats
+- **Gaussian plume estimator** — `/api/calculators/plume` Pasquill-Gifford atmospheric dispersion model (6 stability classes A-F). Calculates downwind centerline concentration at configurable distances. Returns sigma_y/sigma_z, plume width, mg/m3, ppm. Generates hazard corridor GeoJSON for map overlay.
+- **Household epi line list + Rt tracker** — full CRUD `/api/epi/cases` with onset dates, symptoms, diagnosis, isolation tracking, exposure source. `/api/epi/rt` estimates reproduction number via ratio method with configurable window. `/api/epi/curve` for epidemic curve charting. New `epi_line_list` table.
+- **Avalanche ATES calculator** — `/api/calculators/avalanche-ates` rates terrain to 3-class ATES from slope angle, terrain traps, forest cover. Aspect risk (N-face persistent slab), elevation band classification (alpine/treeline/below-treeline), essential gear list.
+- **Chain-of-custody evidence ledger** — `/api/evidence` CRUD with SHA-256 integrity hash on collection. `/api/evidence/<id>/transfer` appends custody transfers (append-only JSON chain). `/api/evidence/<id>/verify` re-computes hash for tamper detection. New `evidence_ledger` table.
+- **IOC tracker + ATT&CK mapping** — `/api/ioc` CRUD for 9 indicator types (IP, domain, URL, hash, email, CVE, etc.). MITRE ATT&CK tactic/technique/ID fields. `/api/ioc/attack-matrix` groups by tactic for heat-map. TLP classification. New `ioc_tracker` table + 3 indexes.
+
 ### Stats
-- 5 data pack importers, 10 new tables, 15 new indexes, 45+ new routes. Tiers 1-4 substantially complete.
+- 5 data pack importers, 13 new tables, 21 new indexes, 60+ new routes. Tiers 1-5 substantially complete.
 
 ## [v7.43.0]
 

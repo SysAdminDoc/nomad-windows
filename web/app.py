@@ -1561,10 +1561,12 @@ def create_app():
     from web.blueprints.shamir_vault import shamir_vault_bp
     from web.blueprints.field_tools import field_tools_bp
     from web.blueprints.field_ops import field_ops_bp
+    from web.blueprints.specialized_threats import specialized_threats_bp
     app.register_blueprint(scheduled_reports_bp)
     app.register_blueprint(shamir_vault_bp)
     app.register_blueprint(field_tools_bp)
     app.register_blueprint(field_ops_bp)
+    app.register_blueprint(specialized_threats_bp)
 
     # ─── v7.12.0 — Nutritional Intelligence & Water Expansion (Phase 2) ──
     from web.blueprints.consumption import consumption_bp

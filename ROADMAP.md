@@ -1,299 +1,215 @@
 # Project N.O.M.A.D. — Roadmap
 
-> **Baseline:** v7.43.0 (264 tables, 1,628+ routes, 59 blueprints, 1,357 tests)
+> **Baseline:** v7.44.0 (~295 tables, 1,850+ routes, 72 blueprints)
 > **Updated:** 2026-04-18
-> **Structure:** 8 priority tiers, each phase independently shippable.
 > **Effort:** S (1 session), M (2-3), L (4-6), XL (7+)
 
----
-
-## What's Done
-
-All 20 original feature phases (v7.6.0-v7.26.0) are complete. Post-feature work includes:
-- Hardening passes v7.27.0-v7.28.0 (pagination, auth, validation, XSS, activity logging)
-- FTS5 full-text search + connection pool (v7.29.0)
-- Pagination completion across all 19 blueprints (v7.30.0)
-- Activity logging completion (v7.31.0)
-- Deep security audits, waves 1-2 (v7.32.0)
-- AI RAG scope manager (v7.33.0)
-- ICS-309 communications log generator (v7.34.0)
-- Test coverage for 10 blueprints (v7.35.0-v7.36.0)
-- Premium CSS polish marathon, 8 passes (v7.37.0-v7.43.0)
+Everything below is **not yet built**. Pick by interest or user demand.
 
 ---
 
-## Tier 1: Unfinished Core (from original roadmap)
+## AI & Automation (remaining from Phase 1.4)
 
-These are the remaining phases from the original v8 roadmap that were never built. They fill the biggest functional gaps.
-
----
-
-### 1.1 — Data Foundation & Localization --- COMPLETE (v7.44.0)
-**Effort:** L | **Refs:** features.md SS54, datasources.md SS1/SS8/SS17
-
-All 5 Tier 1 data pack importers built. Regional profile auto-populates from data packs on save. Nutrition blueprint (search, link, summary, micronutrient gaps) wired to USDA data. 3 new tables, 6 indexes, 3 lookup routes, 5 importers.
+- **Visual alert rules builder** (M) — drag-and-drop UI for the existing alert_rules engine (25 condition types already work via API)
+- **Compound alert conditions** (M) — AND/OR logic for multi-condition rules
+- **AI-powered recommendations engine** (L) — "You're short on X based on household + regional threats." Seasonal prep advisor
+- **Auto-distribute reports to federation peers** (S) — push scheduled SITREPs to trusted peers via sync
 
 ---
 
-### 1.2 — Nutritional Intelligence & Water Management --- COMPLETE (pre-existing)
-**Effort:** L | **Depends on:** 1.1
+## Platform & Infrastructure
 
-All backend APIs built: nutrition search/link/summary/gaps (8 routes), water storage/filters/sources/quality/budget/alerts (22 routes), consumption profiles with what-if calculator (8 routes). Person-days-of-food calculation in `/api/nutrition/summary`. Micronutrient gap analysis with 10 nutrients and traffic-light indicators. 16 tables, 54 routes total.
-
----
-
-### 1.3 — Advanced Inventory & Consumption Modeling --- COMPLETE (pre-existing)
-**Effort:** M | **Depends on:** 1.2
-
-All backend APIs built: meal planning with recipes/burn-rates/due-score/meals-remaining (16 routes), inventory audit workflow, substitute mapping, standardization advisor. Container/kit management is the only remaining sub-item (deferred).
+- **SDR sidecar service** (M) — software-defined radio integration, frequency scanning, waterfall display
+- **Node-RED-style flow editor** (L) — visual canvas for alert rules with connected condition/action nodes
+- **Perceptual-hash + C2PA on OSINT images** (M) — manipulated imagery detection in Situation Room feeds
+- **Plugin API upgrade + scaffold generator** (L) — full SDK, CLI generator, hook points for routes/tables/UI
+- **Mobile PWA functional offline sync** (L) — upgrade IndexedDB foundation to full offline-first with conflict resolution
+- **Container/kit management** (M) — nested containers table, assign items to bins, kit completeness %
 
 ---
 
-### 1.4 — AI Phase 2 & Automation --- MOSTLY COMPLETE
-**Effort:** XL | **Refs:** features.md SS3.1/SS53/SS17/SS2.7
+## Field Operations
 
-Already built: RAG scope manager (v7.33.0, data-driven, 25 tables), SITREP generation, AI action execution (two-phase commit), persistent AI memory, alert rules engine (25 condition types, 4 action types, cooldown logic), timeline unified view (17 event types, upcoming/overdue/summary routes). v7.44.0 adds scheduled reports (background SITREP generator, report history, schedule config).
-
-Remaining:
-- Visual alert rules builder (UI form, not raw API)
-- Compound alert conditions (AND/OR logic)
-- AI-powered recommendations engine (seasonal, readiness improvement)
-- Auto-distribute reports to federation peers
+- **SAR probability grid** (L) — Koester ISRID statistical data + grid calculation engine
+- **Terrain-cost range rings** (M) — travel-time rings accounting for slope/vegetation (requires DEM data + weighted Dijkstra)
+- **iOverlander + community POI ingest** (M) — import water sources, campsites, fuel for overland route planning
+- **AIS/ADS-B deconfliction view** (M) — merged ship/aircraft track display (extends existing Situation Room feeds)
 
 ---
 
-## Tier 2: High Differentiation
+## Homestead
 
-Features that make NOMAD unique among survival/preparedness tools.
-
----
-
-### 2.1 — Reticulum / LXMF Mesh Transport --- COMPLETE (v7.44.0)
-**Effort:** L
-
-RNS service manager with identity creation, LXMF messaging, announce/discovery. Mesh routes in comms blueprint wired to RNS transport with graceful fallback when not installed. Incoming messages auto-stored + SSE broadcast. Supports direct + propagation delivery modes.
-
-### 2.2 — SDR Sidecar Service
-**Effort:** M
-
-Software-defined radio integration. Frequency scanning, signal identification, spectrum waterfall display.
-
-### 2.3 — Shamir Secret Sharing Vault --- COMPLETE (v7.44.0)
-Pure-Python GF(256) Shamir SSS. Split/reconstruct API with hash verification. Metadata in `shamir_shares` table.
-
-### 2.4 — Warrant Canary + Dead-Man's Switch --- COMPLETE (v7.44.0)
-Signed canary with configurable renewal interval. Dead-man's switch with 5 action types. Revoke for duress signaling.
-
-### 2.5 — Node-RED-style Flow Editor for Alert Rules
-**Effort:** L
-
-Visual drag-and-drop flow editor for the alert rules engine. Replaces form-based rule creation with a canvas of connected condition/action nodes.
+- **SSURGO soil profile cache** (M) — USDA soil survey data import + lookup by location
+- **Pedigree + breeding cycle tracker** (M) — livestock lineage, heat cycles, gestation countdown
 
 ---
 
-## Tier 3: Polish & Ecosystem
+## Health & Family
+
+- **CISM debrief wizard** (M) — Critical Incident Stress Management guided debrief workflow
+- **Grief protocol + age-banded explainer cards** (S) — age-appropriate loss communication templates
+- **Homeschool curriculum tracker** (M) — subject progress, lesson plans, grade tracking
 
 ---
 
-### 3.1 — Codeplug Builder with Per-Radio Zones --- COMPLETE (v7.44.0)
-Full CRUD for radios, zones, channels. Import frequencies from freq_database. CHIRP CSV export with zone comments. 3 new tables + 3 indexes.
+## Weather & Earth Science
 
-### 3.2 — Propagation-Aware HF Scheduler --- COMPLETE (v7.44.0)
-24-hour HF propagation schedule with 10 bands, season/SFI factors, noise weighting. Band recommendation endpoint with net schedule cross-reference.
-
-### 3.3 — Perceptual-Hash + C2PA on OSINT Images
-**Effort:** M
-
-Detect manipulated OSINT imagery. Content authenticity verification. Duplicate/near-duplicate detection across Situation Room feeds.
-
-### 3.4 — Rainwater Catchment Calculator --- COMPLETE (v7.44.0)
-Roof area + rainfall → annual yield, tank sizing (with standard sizes), first-flush diverter volume, monthly breakdown, material efficiency guide, self-sufficiency analysis.
-
-### 3.5 — Plugin API Upgrade + Scaffold Generator
-**Effort:** L
-
-Expand the existing plugin foundation (v7.22.0) with a full SDK. CLI scaffold generator for new plugins. Hook points for routes, tables, UI panels.
-
-### 3.6 — Mobile PWA Functional Offline Sync
-**Effort:** L
-
-Upgrade existing PWA + IndexedDB foundation to full offline-first sync. Conflict resolution. Background sync on reconnect.
-
-### 3.7 — First-Run Regional Profile Wizard --- COMPLETE (v7.44.0)
-Setup status endpoint with 4-step checklist (location, data packs, threats, household). Reports completion per step + data pack install detail. Auto-populate wired in Phase 1.1.
+- K1 Skew-T / upper-air viewer (M) — MetPy-based atmospheric sounding display
+- K2 Blitzortung lightning overlay (M) — cached lightning strike positions on map
+- K3 NWS Area Forecast Discussion parser (S) — extract key phrases from AFD text
+- K4 FARSITE-lite wildfire spread (L) — simplified fire spread model from wind + fuel + slope
 
 ---
 
-## Tier 4: Field Operations
+## Regional Expansion Packs
 
-SAR, overland, maritime, aviation specializations.
-
----
-
-### 4.1 — ICS-205/205A Comms Plan Auto-Builder --- COMPLETE (v7.44.0)
-Auto-generates ICS-205 from radio equipment + frequencies + net schedules + contacts. JSON + printable HTML output.
-
-### 4.2 — SAR Probability Grid (Koester ISRID)
-**Effort:** L — Not started. Requires ISRID statistical data + grid calculation engine.
-
-### 4.3 — Clue Log + Containment Tracker --- COMPLETE (v7.44.0)
-Georeferenced clue CRUD with GeoJSON export for map overlay. Containment sector tracking with POD, searcher count, search type. 2 new tables + 3 indexes.
-
-### 4.4 — Overland Tire Pressure + Payload Advisor --- COMPLETE (v7.44.0)
-8 terrain types with PSI adjustment factors. Front/rear split. Payload capacity tracking with overload warning.
-
-### 4.5 — Terrain-Cost Range Rings
-**Effort:** M — Not started. Requires DEM data + weighted Dijkstra.
-
-### 4.6 — iOverlander + Community POI Ingest
-**Effort:** M — Not started. Requires iOverlander API integration.
-
-### 4.7 — Maritime: Tide + Current Predictor --- COMPLETE (v7.44.0)
-Simplified lunar harmonic model with spring/neap detection. NOT for navigation — approximation only.
-
-### 4.8 — Aviation: Density Altitude + Takeoff Distance --- COMPLETE (v7.44.0)
-Pressure altitude, density altitude, Koch chart takeoff roll estimation. Weight factor, runway adequacy check, safety warnings.
-
-### 4.9 — AIS/ADS-B Deconfliction View
-**Effort:** M — Not started. Extends existing Situation Room feeds.
+- M1 Canada (M) — ECCC weather + GeoGratis topo data
+- M2 UK (M) — Met Office + Ordnance Survey
+- M3 EU Copernicus (M) — satellite earth observation data
+- M4 Australia (M) — BOM weather + Geoscience AU hazards
 
 ---
 
-## Tier 5: Specialized Threats & Environment
+## Economy & Recovery
 
-CBRN, alpine, forensics, threat intel depth.
-
----
-
-### 5.1 — Gaussian Plume Estimator (ALOHA-style) --- COMPLETE (v7.44.0)
-Pasquill-Gifford dispersion model (6 stability classes). Downwind concentration at multiple distances. Hazard corridor GeoJSON output for map overlay.
-
-### 5.2 — Household Epi Line List + Rt Tracker --- COMPLETE (v7.44.0)
-Full CRUD line list with onset dates, symptoms, isolation tracking. Reproduction number (Rt) estimation via ratio method. Epidemic curve endpoint. New `epi_line_list` table.
-
-### 5.3 — Avalanche ATES + Elevation-Banded Weather --- COMPLETE (v7.44.0)
-ATES 3-class terrain rating from slope, traps, forest cover. Aspect risk assessment (N-face persistent slab). Elevation band classification (alpine/treeline/below). Essential gear list.
-
-### 5.4 — Chain-of-Custody Evidence Ledger --- COMPLETE (v7.44.0)
-SHA-256 integrity hash on collection. Custody transfer chain (append-only JSON). Hash verification endpoint. New `evidence_ledger` table.
-
-### 5.5 — MISP-lite IOC Ingest + ATT&CK Mapping --- COMPLETE (v7.44.0)
-IOC CRUD with 9 indicator types. ATT&CK tactic/technique/ID mapping. Heat-map matrix endpoint. TLP classification. New `ioc_tracker` table + 3 indexes.
+- O1 Multi-party barter network ledger (M) — track trades across community members
+- O2 Hyperinflation + historical recovery reference (S) — case studies and planning guides
+- O3 Microgrid black-start SOP (S) — step-by-step generator → grid restoration procedure
 
 ---
 
-## Tier 6: Homestead & Off-Grid Depth
+## Comms Depth
 
-Calculators and trackers for self-sufficient living.
-
----
-
-### 6.1 — Greywater Branched-Drain Designer --- COMPLETE (v7.44.0)
-### 6.2 — Humanure Thermophilic Tracker --- COMPLETE (v7.44.0)
-### 6.3 — Wood BTU + Cord Ledger --- COMPLETE (v7.44.0)
-### 6.4 — Passive Solar Sun-Path Plotter --- COMPLETE (v7.44.0)
-### 6.5 — Battery Bank Cycle-Life Model --- COMPLETE (v7.44.0)
-### 6.6 — Food Preservation Safety Math --- COMPLETE (v7.44.0)
-### 6.7 — SSURGO Soil Profile Cache | M — Not started (requires SSURGO data import)
-### 6.8 — Seed-Saving Isolation Distance Planner --- COMPLETE (v7.44.0)
-### 6.9 — Beekeeping Varroa Calendar --- COMPLETE (v7.44.0)
-### 6.10 — Livestock Drug + Withdrawal Timer --- COMPLETE (v7.44.0)
-### 6.11 — Pedigree + Breeding Cycle Tracker | M — Not started
+- R1 NTS radiogram + formal traffic handling (M)
+- R2 ALE / VARA / Pat Winlink integration (L)
+- R3 FLDIGI macro library + net control scripts (M)
+- AU1-AU6 Shortwave/ARES/SKYWARN directories (S each)
 
 ---
 
-## Tier 7: Health, Community & Family
+## Developer & Platform
 
-Medical depth, psychosocial support, family continuity.
-
----
-
-### 7.1 — Pediatric Broselow-Equivalent Dose Engine --- COMPLETE (v7.44.0)
-### 7.2 — Chronic Condition Grid-Down Playbooks --- COMPLETE (v7.44.0)
-### 7.3 — Wilderness Medicine Decision Trees --- COMPLETE (v7.44.0)
-### 7.4 — CISM Debrief Wizard | M — Not started
-### 7.5 — Grief Protocol + Age-Banded Explainer Cards | S — Not started
-### 7.6 — Sustained-Ops Sleep Hygiene Tracker | S — pre-existing (sleep_logs table + daily_living)
-### 7.7 — NCMEC-style Child ID Packet Generator --- COMPLETE (v7.44.0)
-### 7.8 — Reunification Cascade --- COMPLETE (v7.44.0)
-### 7.9 — Homeschool Curriculum Tracker | M — Not started
-### 7.10 — Skill-Transfer Ledger --- COMPLETE (v7.44.0)
-### 7.11 — State-Specific Legal Doc Vault | M — pre-existing (vault_entries + legal docs in specialized_modules)
+- S1 Property-based + fuzz test harness (M)
+- S2 Contract + chaos + perf regression tests (L)
+- S3 Mutation testing on life-safety calculators (M)
+- S4 WCAG 2.2 AA deep audit (L)
+- S10 Reproducible builds + SBOM + transparency log (L)
+- S12 nomad-cli companion tool (M)
+- S14 Tauri alternative shell + WASM calculators (XL)
 
 ---
 
-## Tier 8: Deep Domain Expansions
+## AI & Simulation
 
-Cherry-pick as needed. Each is independently shippable.
+- T1 Role-persona prompt library (S) — pre-built AI personas for different advisory roles
+- T2 OPORD autofill engine (M) — generate operations orders from existing data
+- T5 Evacuation Monte Carlo simulator (L) — probabilistic evacuation outcome modeling
+- T7 Bayesian inventory burn forecaster (M) — probabilistic supply duration predictions
+- T8 Fault Tree Analysis engine (M) — failure mode modeling for critical systems
 
 ---
 
-**Weather & Earth Science:**
-K1 Skew-T viewer, K2 Blitzortung lightning overlay, K3 NWS AFD parser, K4 FARSITE-lite wildfire spread
+## Hardware Reference Catalogs
 
-**Regional Packs:**
-M1 Canada (ECCC + GeoGratis), M2 UK (Met Office + OS), M3 EU Copernicus, M4 Australia (BOM + Geoscience AU)
+- U1-U7 (S each) — Generator, heater/stove, inverter/charge-controller, water pump, refrigeration, firearm maintenance, lifetime-tool catalogs
 
-**Leadership & Doctrine:** --- ALL COMPLETE (v7.44.0)
-L1 OODA loop tracker (CRUD + cycle time), L2 AAR template engine (Army 4-question + sustains/improves), L3 Cynefin domain classifier (5 domains + guided classification)
+---
 
-**Economy & Recovery:**
-O1 Multi-party barter network ledger, O2 Hyperinflation reference, O3 Microgrid black-start SOP
+## Drill & Exercise Engine
 
-**Transportation:** --- ALL COMPLETE (v7.44.0)
-P1 Pack-animal load calculator (5 species), P2 Canoe/kayak portage planner, P3 E-bike range calculator (4 terrains × 5 assist levels)
+- V1 Scenario library + inject-timer (M)
+- V2 Tabletop exercise engine (M)
+- V3 Functional exercise engine (L)
+- V4 Federation drill orchestrator (M)
+- V5 Difficulty scaler (S)
 
-**Comms Depth:**
-R1 NTS radiogram handling, R2 ALE/VARA/Winlink, R3 FLDIGI macro library, AU1-AU6 shortwave/ARES/SKYWARN directories
+---
 
-**Developer & Platform:**
-S1 Property-based + fuzz tests, S2 Contract + chaos + perf regression, S3 Mutation testing on life-safety calcs, S4 WCAG 2.2 AA audit, S10 Reproducible builds + SBOM, S12 nomad-cli companion, S14 Tauri alternative shell
+## Navigation (GPS-denied)
 
-**AI & Simulation:**
-T1 Role-persona prompt library, T2 OPORD autofill, T5 Evacuation Monte Carlo, T7 Bayesian inventory burn forecaster, T8 Fault Tree Analysis
+- AJ2 Polaris-altitude latitude + Southern Cross (S)
+- AJ3 Lunar azimuth table (S)
+- AJ4 Sun-angle clock (no-watch time) (S)
+- AJ6 Improvised sextant + HO-249 tables (M)
+- AJ7 Terrain-association route builder (M)
+- AJ8 Barometric altimeter calibration (S)
+- AJ9 Offline star map (M)
 
-**Hardware Catalogs:**
-U1-U7 Generator, heater, inverter, water pump, refrigeration, firearm maintenance, lifetime-tool catalogs
+---
 
-**Drill & Exercise:**
-V1-V5 Scenario library, tabletop engine, functional exercises, federation drills, difficulty scaler
+## Foraging & Game Processing
 
-**Navigation (GPS-denied):** --- PARTIAL (v7.44.0)
-~~AJ1~~ Shadow-stick compass solver DONE, ~~AJ5~~ Dead-reckoning error budget DONE. Remaining: AJ2-AJ4 celestial nav, AJ6-AJ9 sextant/terrain/star map
+- AI1-AI8 (M-L) — Offline plant-ID model, regional foraging calendar, deadly-lookalike ledger, toxicity decision tree, spore-print atlas, HAB/shellfish overlay, famine-food reference, ethnobotanical vault
+- AK1-AK10 (S-M each) — Field-dressing SOPs, live-weight yield calculator, aging climate matrix, offal/zoonosis, hide processing, humane dispatch, fish regs/bite predictor, toxic fish ID, aquaponics, fish preservation
 
-**Foraging & Game Processing:**
-AI1-AI8 Offline plant-ID, foraging calendar, deadly-lookalike ledger, toxicity decision tree
-AK1-AK10 Field-dressing SOPs, yield calculator, aging matrix, fish regs, aquaponics
+---
 
-**Outdoor Cooking:** --- PARTIAL (v7.44.0)
-~~AL2~~ Dutch-oven coal calculator DONE, ~~AL5~~ Altitude boiling + canning safety DONE. Remaining: AL1 fire-heat chart, AL3 rocket-stove, AL4 solar-oven, AL6-AL8
+## Outdoor Cooking
 
-**Financial Preparedness:** --- PARTIAL (v7.44.0)
-~~AT3~~ Debt elimination (snowball/avalanche) DONE, ~~AT4~~ Emergency fund tier calculator DONE. Remaining: AT1 portfolio stress-test, AT2 insurance audit, AT5-AT7
+- AL1 Fire-heat temperature chart (S)
+- AL3 Rocket-stove design + fuel efficiency math (M)
+- AL4 Solar-oven performance curve (S)
+- AL6 Pit cooking SOP (S)
+- AL7 Haybox retained-heat calculator (S)
+- AL8 Bulk-cooking math + foil-packet reference (S)
 
-**Environmental Monitoring:**
-Z1-Z6 Indoor air station, dew-point/mold index, pollen feed, private-well baseline, heritage hazards, soil safety
+---
 
-**Medical Depth II:**
-AA1-AA10 Wilderness-med progression, SOAP notes, improvised splint reference, PPE doffing, quarantine roster
+## Financial Preparedness
 
-**Water Quality:**
-AC1-AC6 Potability test-strip workflow, well yield test, Legionella guard, cistern sizing
+- AT1 Portfolio stress-test scenarios (M)
+- AT2 Insurance coverage audit (S)
+- AT5 Asset-portability classifier (S)
+- AT6 Credit freeze calendar (S)
+- AT7 Income diversification tracker (M)
 
-**Community Health:**
-AD1-AD9 Pod health pulse, mutual-aid queue, sick-call roster, K6/PHQ-2 check-in, oral history capture
+---
 
-**OPSEC/Privacy:**
-AE1-AE7 Cover-story templates, social-footprint audit, EXIF scrubber, gray-man checklist
+## Environmental Monitoring
 
-**Biosecurity:**
-AR1-AR7 Avian-flu SOP, farm biosecurity zones, carcass disposal matrix, vaccination calendar
+- Z1-Z6 (S-M each) — Indoor air station adapter, dew-point/mold index, pollen feed, private-well baseline, heritage hazards (lead/asbestos), garden soil safety
 
-**Digital Asset Sovereignty:**
-AP1-AP7 BIP39 seed vault, hardware wallet ledger, multi-sig quorum, crypto estate plan, 2FA reset kit
+---
 
-**SOHO Business Continuity:**
-AQ1-AQ6 Client notification cascade, revenue buffer calculator, COOP plan template
+## Medical Depth II
+
+- AA1-AA10 (S-M each) — Wilderness-med progression ladder, SOAP note journal, scenario library, improvised splint reference, evacuation decision matrix, PPE doffing SOP, home isolation zone builder, decontamination product matrix, quarantine roster, transmission route reference
+
+---
+
+## Water Quality
+
+- AC1-AC6 (S-M each) — Potability test-strip workflow, well yield test, Legionella guard, boil-order feed, cistern cleaning + first-flush sizing, source complexity ladder
+
+---
+
+## Community Health
+
+- AD1-AD9 (S-M each) — Pod health pulse, stock mosaic (opt-in), mutual-aid queue, sick-call roster, post-event welfare census, K6/PHQ-2 anonymous check-in, after-action archive, historical crisis case library, oral history capture
+
+---
+
+## OPSEC / Privacy
+
+- AE1-AE7 (S each) — Cover-story template library, social-footprint self-audit, address privacy scorer, EXIF scrubber, gray-man checklist, vehicle-profile audit, compartmentalization ledger
+
+---
+
+## Biosecurity
+
+- AR1-AR7 (S-M each) — Avian-flu response SOP, farm biosecurity zone layout, 21-day quarantine protocol, carcass disposal matrix, zoonosis register, vector-ID cards, vaccination calendar
+
+---
+
+## Digital Asset Sovereignty
+
+- AP1-AP7 (S-M each) — BIP39/SLIP39 seed vault, hardware wallet ledger, multi-sig quorum map, crypto estate plan, U2F/FIDO2 key registry, cold-storage air-gap SOP, 2FA reset kit
+
+---
+
+## SOHO Business Continuity
+
+- AQ1-AQ6 (S-M each) — Client notification cascade, revenue buffer calculator, workstation redundancy matrix, COOP plan template, business dependency graph, offline invoice archive
 
 ---
 
@@ -305,14 +221,3 @@ AQ1-AQ6 Client notification cascade, revenue buffer calculator, COOP plan templa
 - Full-depth theology / scripture libraries
 - Interactive flint-knapping / flintlock guides
 - Offline Google Translate competitor
-
----
-
-## Build Principles
-
-1. **One phase per session block.** Complete and commit one before starting the next.
-2. **Ship incrementally.** Every phase produces a working, testable increment. Bump version on completion.
-3. **Data packs before features.** If a phase requires bundled data, build the data integration first.
-4. **Blueprints, not monolith.** Each new module is a Flask blueprint in `web/blueprints/`.
-5. **Test critical paths.** Add pytest tests for every new CRUD API. Target: 20-30 new tests per phase.
-6. **Update docs after every phase.** Keep CLAUDE.md, README, CHANGELOG, and this roadmap in sync.

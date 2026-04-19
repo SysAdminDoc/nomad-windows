@@ -116,7 +116,7 @@
   text-align: center; height: 100%; color: var(--text-dim); gap: 8px; padding: 28px 16px;
   font-size: var(--text-base, 13px);
 }
-.empty-state .icon { font-size: 44px; opacity: 0.45; margin-bottom: 8px; }
+.empty-state .icon { font-size: var(--text-4xl, 44px); opacity: 0.45; margin-bottom: 8px; }
 .empty-state p { font-size: var(--text-base, 13px); max-width: 320px; text-align: center; line-height: 1.5; }
 .empty-state .btn { margin-top: 8px; }
 
@@ -354,7 +354,7 @@
 }
 .bench-score .score-val { font-size: var(--text-xl, 22px); font-weight: 700; color: var(--accent); }
 .bench-score .score-label { font-size: var(--text-xs, 10px); color: var(--text-dim); margin-top: 2px; }
-.bench-big { font-size: 56px; font-weight: 800; margin: 16px 0; }
+.bench-big { font-size: var(--text-4xl, 56px); font-weight: 800; margin: 16px 0; }
 .bench-big span { background: linear-gradient(135deg, var(--accent), var(--orange)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; }
 
 /* ─── LAN Info ─── */
@@ -585,7 +585,7 @@
   align-items: center;
   padding: 1px 5px;
   border-radius: var(--radius-2xs, 3px);
-  font-size: 8px;
+  font-size: var(--text-3xs, 8px);
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;

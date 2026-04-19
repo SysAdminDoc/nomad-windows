@@ -355,7 +355,7 @@ details summary .nav-chevron { transition: transform var(--duration-fast) var(--
   border-radius: var(--radius-md, 14px);
   background: color-mix(in srgb, var(--accent-dim) 70%, var(--surface-solid));
   color: var(--accent);
-  font-size: 18px;
+  font-size: var(--text-lg, 18px);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
@@ -554,7 +554,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 /* ─── Responsive: Tablet (768-900px) ─── */
 @media (max-width: 900px) {
   .home-launch-deck { grid-template-columns: 1fr; }
-  .prep-cat-btn:not(.prep-scenario-card) { padding: 5px 10px !important; font-size: 10px !important; }
+  .prep-cat-btn:not(.prep-scenario-card) { padding: 5px 10px !important; font-size: var(--text-xs, 10px) !important; }
   .home-continue-grid,
   .home-continue-grid-pinned { grid-template-columns: 1fr; }
 }

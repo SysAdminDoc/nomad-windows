@@ -228,7 +228,7 @@
 @media (max-width: 480px) {
   .sit-board { grid-template-columns: repeat(2, 1fr); gap: 4px; }
   #cmd-dashboard { grid-template-columns: repeat(2, 1fr); }
-  .prep-cat-btn { padding: 5px 10px !important; font-size: 10px !important; }
+  .prep-cat-btn { padding: 5px 10px !important; font-size: var(--text-xs, 10px) !important; }
   .home-two-col { grid-template-columns: 1fr !important; }
 }
 
@@ -238,7 +238,7 @@
 
 /* ─── Prep Category Nav: Narrow Width ─── */
 @media (max-width: 768px) {
-  .prep-cat-btn { padding: 5px 10px !important; font-size: 10px !important; letter-spacing: 0 !important; }
+  .prep-cat-btn { padding: 5px 10px !important; font-size: var(--text-xs, 10px) !important; letter-spacing: 0 !important; }
   .calc-grid { grid-template-columns: 1fr !important; }
   .torrent-grid { grid-template-columns: 1fr !important; }
 }
@@ -536,7 +536,7 @@
   align-items: center;
   gap: 12px;
 }
-.calc-moon-icon { font-size: 36px; }
+.calc-moon-icon { font-size: var(--text-4xl, 36px); }
 .calc-moon-title { font-size: var(--text-lg, 16px); font-weight: 700; }
 .calc-moon-meta { font-size: var(--text-sm-md, 12px); color: var(--text-dim); }
 .calc-moon-note,

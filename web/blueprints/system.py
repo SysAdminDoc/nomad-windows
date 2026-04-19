@@ -2011,6 +2011,14 @@ def api_system_db_vacuum():
     """
     import sqlite3
     path = get_db_path()
+    # P2-I20: Disk space check — VACUUM creates a full copy of the DB
+    try:
+        db_size = os.path.getsize(path) if not path.startswith('file:') else 0
+        disk = shutil.disk_usage(os.path.dirname(path) or '.')
+        if db_size > 0 and disk.free < db_size * 2:
+            return jsonify({'error': f'Insufficient disk space ({format_size(disk.free)} free, need ~{format_size(db_size * 2)})'}), 507
+    except Exception:
+        pass  # proceed anyway on stat failure
     conn = sqlite3.connect(path, uri=path.startswith('file:'), timeout=30)
     try:
         conn.execute('VACUUM')

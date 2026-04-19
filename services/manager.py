@@ -99,11 +99,16 @@ def get_ollama_gpu_env() -> dict:
 
 # ─── Download with Resume ─────────────────────────────────────────────
 
-def download_file(url: str, dest: str, service_id: str = '') -> str:
+MAX_DOWNLOAD_BYTES = 2 * 1024 * 1024 * 1024  # 2 GB default cap (P2-I19)
+
+
+def download_file(url: str, dest: str, service_id: str = '',
+                  max_bytes: int = 0) -> str:
     """Download a file with progress tracking, speed display, and resume support."""
     parsed = urlparse(url)
     if parsed.scheme not in ('http', 'https'):
         raise ValueError(f'Unsupported URL scheme: {parsed.scheme}')
+    cap = max_bytes or MAX_DOWNLOAD_BYTES
     dest_dir = os.path.dirname(dest)
     if dest_dir:
         os.makedirs(dest_dir, exist_ok=True)
@@ -141,6 +146,8 @@ def download_file(url: str, dest: str, service_id: str = '') -> str:
         resp.raise_for_status()
 
         total = int(resp.headers.get('content-length', 0)) + partial_size
+        if total > cap:
+            raise ValueError(f'File too large ({total} bytes > {cap} byte limit)')
         downloaded = partial_size
         start_time = time.time()
 

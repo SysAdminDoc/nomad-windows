@@ -92,7 +92,7 @@ if (jsFiles.length > 0) {
       entryPoints: [tmpEntry],
       bundle: true,
       minify: IS_PROD,
-      sourcemap: false,
+      sourcemap: true,
       outfile: join(OUT_DIR, "nomad.bundle.js"),
       format: "iife",
       target: ["es2020"],
@@ -133,7 +133,7 @@ if (cssFiles.length > 0) {
       entryPoints: [tmpCssEntry],
       bundle: true,
       minify: IS_PROD,
-      sourcemap: false,
+      sourcemap: true,
       outfile: join(OUT_DIR, "nomad.bundle.css"),
       logLevel: "info",
     });

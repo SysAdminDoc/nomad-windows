@@ -3008,6 +3008,69 @@ def _create_data_foundation_tables(conn):
             UNIQUE(state_fips, county_fips)
         );
 
+        /* ─── Compound Alert Rules (AND/OR logic) ─── */
+        CREATE TABLE IF NOT EXISTS compound_alert_rules (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            logic TEXT DEFAULT 'AND',
+            conditions TEXT DEFAULT '[]',
+            actions TEXT DEFAULT '[]',
+            severity TEXT DEFAULT 'warning',
+            cooldown_min INTEGER DEFAULT 60,
+            enabled INTEGER DEFAULT 1,
+            last_triggered TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Livestock Pedigree ─── */
+        CREATE TABLE IF NOT EXISTS livestock_pedigree (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            species TEXT DEFAULT '',
+            breed TEXT DEFAULT '',
+            sex TEXT DEFAULT '',
+            dob TEXT DEFAULT '',
+            sire_name TEXT DEFAULT '',
+            dam_name TEXT DEFAULT '',
+            registration_id TEXT DEFAULT '',
+            bred_date TEXT DEFAULT '',
+            due_date TEXT DEFAULT '',
+            gestation_days INTEGER DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Curriculum Tracker ─── */
+        CREATE TABLE IF NOT EXISTS curriculum_tracker (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            student TEXT NOT NULL,
+            subject TEXT NOT NULL,
+            grade_level TEXT DEFAULT '',
+            curriculum_name TEXT DEFAULT '',
+            current_lesson TEXT DEFAULT '',
+            total_lessons INTEGER DEFAULT 0,
+            completed_lessons INTEGER DEFAULT 0,
+            start_date TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Barter Trades ─── */
+        CREATE TABLE IF NOT EXISTS barter_trades (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            party_a TEXT DEFAULT '',
+            party_b TEXT DEFAULT '',
+            offered_items TEXT DEFAULT '[]',
+            received_items TEXT DEFAULT '[]',
+            fair_value_estimate TEXT DEFAULT '',
+            trade_date TEXT DEFAULT '',
+            witness TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         /* ─── OODA Loop Cycles ─── */
         CREATE TABLE IF NOT EXISTS ooda_cycles (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

@@ -248,63 +248,63 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 
 ## Improvement Backlog
 
-### P1: Quick Wins (< 1 hour each)
+### P1: Quick Wins (< 1 hour each) — 20/21 Complete
 
-| # | Title | Description | Inspired By |
-|---|-------|-------------|-------------|
-| P1-01 | **Loading skeletons on all tabs** | Add shimmer placeholder skeletons to remaining tabs that lack them (Medical, Garden, Radio, etc.) — Situation Room already has them | Glance, Dashy |
-| P1-02 | **Empty-state illustrations** | Replace plain "No data" text with helpful empty-state cards that explain what the section does and have a CTA button | Homebox, Homepage |
-| P1-03 | **Keyboard shortcut cheat sheet modal** | Add `?` shortcut overlay showing all available keyboard shortcuts in a searchable grid | Dashy |
-| P1-04 | **Tab badge counts** | Show unread/actionable counts on sidebar tabs (e.g., overdue tasks, expiring items, unread messages) | Homepage, Glance |
-| P1-05 | **Favicon dynamic badge** | Update browser favicon with alert count badge when alerts are active | Glance |
-| P1-06 | **Collapsible sidebar groups** | Let users collapse sidebar group headers (OVERVIEW, INTEL, etc.) to reduce visual noise; persist state to localStorage | Dashy |
-| P1-07 | **Settings search/filter** | Add a search box at the top of Settings to filter visible setting rows | Grocy |
-| P1-08 | **Inventory quick-edit inline** | Double-click inventory quantity to edit inline without opening full edit modal | Grocy |
-| P1-09 | **Toast action buttons** | Add "Undo" action button on delete toasts (leverage existing undo system with 30s TTL) | Homebox |
-| P1-10 | **Print preview in-app** | Show print preview in a modal/iframe instead of opening a new browser tab | Upstream NOMAD |
-| P1-11 | **Relative timestamps** | Show "2 hours ago" / "3 days ago" alongside absolute timestamps in activity log and alerts | Glance, Dashy |
-| P1-12 | **Confirm before bulk operations** | Add confirmation count ("Delete 12 items?") on all bulk-delete actions | Homebox |
-| P1-13 | **Auto-focus search on Ctrl+K** | Ensure global search input auto-focuses and selects existing text when opened | Dashy |
-| P1-14 | **Inventory sort persistence** | Persist the user's last-used sort column/direction in localStorage | Grocy |
-| P1-15 | **Service uptime display** | Show how long each managed service has been running (uptime) on service cards | Homepage |
-| P1-16 | **Expiry countdown badges** | Show "Expires in 3 days" warning badges on inventory items nearing expiration, not just color-coded rows | Grocy, Prepper Nerd |
-| P1-17 | **Sidebar item reorder** | Let users drag sidebar items within groups to reorder; persist to localStorage | Dashy |
-| P1-18 | **Copy-to-clipboard on data cells** | Click-to-copy on coordinates, frequencies, callsigns, and other reference data | Meshtastic Web |
-| P1-19 | **AI conversation tags** | Tag AI conversations with labels (medical, inventory, planning, etc.) for filtering and organization | Open WebUI |
-| P1-20 | **AI prompt presets** | Save and reuse prompt templates ("SITREP format", "Inventory gap analysis", "Medical triage") from a dropdown in AI chat | Open WebUI |
-| P1-21 | **Meal plan date labels** | Show day-of-week headers on meal planning entries instead of raw dates | Mealie |
+| # | Title | Status |
+|---|-------|--------|
+| P1-01 | ~~Loading skeletons on all tabs~~ | **Done** — `_app_core_shell.js:1379` |
+| P1-02 | ~~Empty-state illustrations~~ | **Done** — `.empty-state` + variants across all CSS layers |
+| P1-03 | ~~Keyboard shortcut cheat sheet modal~~ | **Done** — `_shortcuts_overlay.html`, `?` key trigger |
+| P1-04 | ~~Tab badge counts~~ | **Done** — `updateTabBadges()` in `_app_ops_support.js:4903` |
+| P1-05 | ~~Favicon dynamic badge~~ | **Done** — `_app_core_shell.js:1394` |
+| P1-06 | ~~Collapsible sidebar groups~~ | **Done** — `initSidebarGroupCollapse()` in `_app_core_shell.js:1461` |
+| P1-07 | ~~Settings search/filter~~ | **Done** — `_app_core_shell.js:1442` |
+| P1-08 | ~~Inventory quick-edit inline~~ | **Done** — `_prep_inventory_flows.js:931` |
+| P1-09 | ~~Toast action buttons~~ | **Done** — `toast.js:23-56`, `action={label, onclick}` |
+| P1-10 | ~~Print preview in-app~~ | **Done** — `_app_init_runtime.js:224` |
+| P1-11 | ~~Relative timestamps~~ | **Done** — `timeAgo()` in `_app_dashboard_readiness.js:705` |
+| P1-12 | **Confirm before bulk operations** | Open — need count confirmation on all bulk deletes |
+| P1-13 | ~~Auto-focus search on Ctrl+K~~ | **Done** — `toggleCommandPalette()` auto-focuses |
+| P1-14 | ~~Inventory sort persistence~~ | **Done** — `nomad-inv-sort` localStorage |
+| P1-15 | ~~Service uptime display~~ | **Done** — `_formatUptime()` + `get_service_uptime()` |
+| P1-16 | ~~Expiry countdown badges~~ | **Done** — `daysLeft + 'd'` pills in inventory |
+| P1-17 | ~~Sidebar item reorder~~ | **Done** — `initSidebarDragReorder()` in `_app_core_shell.js:1498` |
+| P1-18 | ~~Copy-to-clipboard on data cells~~ | **Done** — `_app_core_shell.js:1424` |
+| P1-19 | ~~AI conversation tags~~ | **Done** — tags column in conversations, filter UI |
+| P1-20 | ~~AI prompt presets~~ | **Done** — `_app_workspace_profiles.js:129` |
+| P1-21 | ~~Meal plan date labels~~ | **Done** — `toLocaleDateString` with weekday in daily_living |
 
-### P2: Medium Features (1-4 hours each)
+### P2: Medium Features (1-4 hours each) — 9/27 Complete
 
-| # | Title | Description | Inspired By |
-|---|-------|-------------|-------------|
-| P2-01 | **First-run onboarding wizard** | 5-step guided wizard on first launch: set location, pick dashboard mode, install first content pack, configure AI, import sample data | Upstream NOMAD |
-| P2-02 | **Barcode product database lookup** | On barcode scan, query bundled UPC database + OpenFoodFacts offline dump for product name, calories, category auto-fill | Grocy, Prepper Nerd |
-| P2-03 | **QR code label generation** | Generate printable QR code labels for inventory items linking to their detail page; batch print sheet layout | Homebox |
-| P2-04 | **Recipe-driven consumption** | Add recipes that reference inventory items; "Cook this" button auto-deducts ingredient quantities and logs the meal | Grocy, Mealie |
-| P2-05 | **Equipment maintenance scheduler** | Recurring maintenance reminders for generators, vehicles, water filters, etc. with overdue alerts and history log | Homebox, Prepper Nerd |
-| P2-06 | **Drag-and-drop widget reorder** | Let users drag widgets on the home page to reorder with visual drop zones; persist layout to localStorage/DB | Dashy, Glance |
-| P2-07 | **OpenAPI/Swagger spec** | Auto-generate OpenAPI 3.0 spec from Flask routes + validation schemas; serve Swagger UI at `/api/docs` | Grocy |
-| P2-08 | **Expanded i18n coverage** | Increase translation keys from 56 to 200+ covering all UI labels, button text, and error messages; add Spanish and French complete coverage first | Homepage (40+ languages) |
-| P2-09 | **Inventory location hierarchy** | Support nested locations (Building > Room > Shelf > Bin) with tree view and breadcrumb navigation | Homebox, Grocy |
-| P2-10 | **Scheduled report export** | Configurable weekly/monthly auto-export of inventory summary, readiness score, and alerts to PDF/CSV in data dir | Prepper Nerd |
-| P2-11 | **Content pack browser** | Dedicated UI for browsing available data packs (ZIMs, maps, books) with search, categories, size indicators, and one-click install | Upstream NOMAD |
-| P2-12 | **Service health history graph** | Track service up/down over time in `service_health_log` table; show sparkline uptime graph on each service card | Dashy, Homepage |
-| P2-13 | **Inline survival quick-reference** | Bundle a curated offline survival reference (water purification, fire, shelter, first aid, navigation) as searchable built-in cards with illustrations instead of external ZIM dependency | SurvivalManual, Offline-Survival-Kit |
-| P2-14 | **Multi-user profiles** | Support multiple named profiles (family members) with per-user preferences and optional PIN lock | Prepper Nerd |
-| P2-15 | **Inventory item photos gallery** | Grid view of all inventory photos with lightbox zoom; filter by category; click to jump to item detail | Homebox |
-| P2-16 | **Map bookmark/favorite locations** | Star frequently-used map locations for quick jump; show in a "Favorites" sidebar panel on map tab | Upstream NOMAD |
-| P2-17 | **Notification center panel** | Unified notification drawer (slide-out) aggregating alerts, task due dates, expiring items, service events with mark-as-read | Homepage, Glance |
-| P2-18 | **CSV export for all entities** | One-click CSV export button on every list view (contacts, medical, tasks, garden, livestock, etc.), not just inventory | Grocy |
-| P2-19 | **Inventory fractional quantities** | Support decimal quantities (0.5 kg, 1.25 L) with configurable unit display | Homebox |
-| P2-20 | **Task assignment to contacts** | Assign scheduled tasks to specific family members/contacts; filter task view by assignee | Grocy |
-| P2-21 | **Battery/consumable tracker** | Track batteries and consumable parts in devices (flashlights, radios, filters) with replacement date reminders and low-stock alerts | Grocy |
-| P2-22 | **AI model management UI** | Pull, delete, and view model details (VRAM requirement, parameter count, quantization) from a dedicated model manager panel instead of typing model names into a text field | Open WebUI |
-| P2-23 | **Per-conversation knowledge scope** | Toggle which KB workspaces are active for a specific AI conversation ("Use Medical KB for this chat") | Open WebUI |
-| P2-24 | **URL-based recipe import** | Paste a recipe URL and auto-scrape title, ingredients, and instructions using structured data (JSON-LD/Microdata) parsing | Mealie |
-| P2-25 | **Meal plan calendar view** | Weekly/monthly calendar grid showing planned meals with drag-to-reschedule; auto-generate shopping list from selected date range | Mealie |
-| P2-26 | **Survival duration simulator** | Given current inventory levels, household size, and daily caloric/water needs, project how many days supplies will last with burn-down chart | SPS |
-| P2-27 | **Caloric gap analysis** | Compare total stored calories vs. daily household caloric need; show coverage days per food category and identify gaps | SPS, Prepper Nerd |
+| # | Title | Status |
+|---|-------|--------|
+| P2-01 | ~~First-run onboarding wizard~~ | **Done** — `system.py` wizard routes + state mgmt |
+| P2-02 | ~~Barcode product database lookup~~ | **Done** — `inventory.py` UPC table + lookup/scan routes |
+| P2-03 | ~~QR code label generation~~ | **Done** — `system.py /api/qr/generate` SVG output |
+| P2-04 | **Recipe-driven consumption** | Open — "Cook this" auto-deducts ingredients |
+| P2-05 | ~~Equipment maintenance scheduler~~ | **Done** — `vehicles.py` maintenance tracking + overdue alerts |
+| P2-06 | **Drag-and-drop widget reorder** | Open |
+| P2-07 | **OpenAPI/Swagger spec** | Open |
+| P2-08 | **Expanded i18n coverage** | Open — currently 56 keys, need 200+ |
+| P2-09 | **Inventory location hierarchy** | Open |
+| P2-10 | ~~Scheduled report export~~ | **Done** — CSV export + ReportLab PDF |
+| P2-11 | ~~Content pack browser~~ | **Done** — `specialized_modules.py` content pack CRUD |
+| P2-12 | **Service health history graph** | Open |
+| P2-13 | **Inline survival quick-reference** | Open |
+| P2-14 | **Multi-user profiles** | Open |
+| P2-15 | **Inventory item photos gallery** | Open |
+| P2-16 | **Map bookmark/favorite locations** | Open |
+| P2-17 | **Notification center panel** | Open |
+| P2-18 | **CSV export for all entities** | Open — only some entities have export |
+| P2-19 | **Inventory fractional quantities** | Open |
+| P2-20 | **Task assignment to contacts** | Open |
+| P2-21 | **Battery/consumable tracker** | Open |
+| P2-22 | ~~AI model management UI~~ | **Done** — `ai.py` model pull/delete/info routes |
+| P2-23 | **Per-conversation knowledge scope** | Open |
+| P2-24 | **URL-based recipe import** | Open |
+| P2-25 | **Meal plan calendar view** | Open |
+| P2-26 | ~~Survival duration simulator~~ | **Done** — `consumption.py` what-if calculator |
+| P2-27 | **Caloric gap analysis** | Open
 
 ### P3: Nice-to-Haves and Polish
 
@@ -313,7 +313,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P3-01 | **Animated page transitions** | Subtle slide/fade transitions between tabs instead of instant swap; respect `prefers-reduced-motion` | Dashy |
 | P3-02 | **Dashboard theme previews** | Show live mini-preview of each theme in the theme picker instead of just a color swatch | Dashy |
 | P3-03 | **Inventory heatmap calendar** | Calendar view showing daily additions/consumptions as a GitHub-style contribution heatmap | Grocy |
-| P3-04 | **Command palette** | Ctrl+K opens a VS Code-style command palette for jumping to any section, running actions, searching across all entities | Dashy |
+| P3-04 | ~~**Command palette**~~ | **Done** — `toggleCommandPalette()` with search, actions, keyboard nav | Dashy |
 | P3-05 | **Customizable status strip** | Let users choose which metrics appear in the top status strip via drag-and-drop config | Glance |
 | P3-06 | **Meshtastic serial bridge** | Real Meshtastic integration via serial/USB with node map, signal quality display, message threading, and channel config | Meshtastic Web |
 | P3-07 | **Offline plant identification** | Bundled lightweight ML model for plant ID from camera photos (edible vs toxic classification) | SurvivalManual |
@@ -339,20 +339,20 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P4-03 | **Exportable/importable dashboard config** | Export entire dashboard configuration (visible tabs, widget layout, theme, sidebar order, zoom level) as a single JSON/YAML file; import on another instance or share with community | Glance (config-as-code), Dashy (cloud backup) |
 | P4-04 | **Calendar widget with ICS/CalDAV support** | Offline calendar widget displaying events from local `.ics` files or cached CalDAV feeds; show upcoming events on home dashboard; integrate with task scheduler due dates | Glance (#94, 15 votes), Homepage (calendar widget), Dashy (#1201, 10 votes) |
 | P4-05 | **Custom API widget renderer** | Generic widget type that fetches any JSON API endpoint (internal or external) and renders results using a user-defined HTML/Mustache template; acts as an extensibility escape hatch | Glance (custom-api widget), Homepage (customapi widget), Dashy (API response widget) |
-| P4-06 | **Search bangs / module shortcuts** | Ctrl+K search supports prefix shortcuts: `/i query` searches inventory, `/m` medical, `/c` contacts, `/n` notes, `/w` waypoints, `/f` frequencies; user-configurable in Settings | Dashy (search bangs) |
+| P4-06 | ~~**Search bangs / module shortcuts**~~ | **Done** (v7.46.0) — `/i`, `/c`, `/n`, `/m`, `/w`, `/f`, `/d`, `/t`, `/e`, `/a`, `/s` prefixes in command palette | Dashy (search bangs) |
 | P4-07 | **Right-click context menus on dashboard elements** | Right-click any service card, widget, inventory item, or contact for contextual actions (Edit, Delete, Copy, Open, Pin) instead of navigating to a separate edit view | Dashy (right-click edit) |
 | P4-08 | **Minimal startpage mode** | A stripped-down view showing only search bar, clock, bookmarks grid, and service status indicators; usable as a browser start page; toggle via Settings or URL parameter `?view=minimal` | Dashy (minimal view) |
 | P4-09 | **Workspace/tiled multi-panel view** | Open 2-4 NOMAD modules simultaneously in a tiled iframe layout (e.g., Map + Inventory + Contacts side-by-side); useful for multi-monitor or ultrawide setups | Dashy (workspace view) |
-| P4-10 | **Auto theme switching (day/night schedule)** | Automatically switch between dark and light themes based on sunrise/sunset times (already have `/api/sun` endpoint) or a user-defined schedule; configurable in Settings | Glance (#674, 9 votes) |
+| P4-10 | ~~**Auto theme switching (day/night schedule)**~~ | **Done** (v7.45.0) — uses `/api/sun` sunrise/sunset data, falls back to 9pm-6am | Glance (#674, 9 votes) |
 | P4-11 | **Service opening methods** | Service cards offer multiple launch options: open in new tab, open in modal/iframe overlay, open in workspace panel, copy URL to clipboard; right-click or dropdown selector per service | Dashy (opening methods) |
 | P4-12 | **Favicon auto-fetch for services and bookmarks** | Automatically fetch and cache favicons from service URLs for display on service cards and any bookmark/link widgets; fall back to generated identicon | Homepage (#174, 11 votes), Dashy (favicon icon type) |
-| P4-13 | **CPU/GPU temperature monitoring** | Add CPU and GPU temperature readings to system info (psutil `sensors_temperatures()` on Linux, WMI on Windows); display on System Health card with high-temp alerts | Homepage (#86, 16 votes) |
+| P4-13 | ~~**CPU/GPU temperature monitoring**~~ | **Done** (v7.46.0) — `cpu_temp` in `/api/system` via psutil `sensors_temperatures()` | Homepage (#86, 16 votes) |
 | P4-14 | **Torrent status dashboard widget** | Home page widget showing active torrent count, total download/upload speed, seeding ratio, and storage used; leverages existing TorrentManager API | Homepage (Deluge widget, #190, 25 votes) |
 | P4-15 | **Auth proxy / header authentication** | Support `X-Forwarded-User` and `X-Remote-User` headers from auth proxies (Authelia, Authentik, Caddy forward_auth) for seamless LAN multi-user without NOMAD's own auth | Dashy (#981, 11 votes), Glance (#905, 9 votes) |
 | P4-16 | **Mobile swipe navigation** | Swipe left/right between tabs on mobile (touch event handlers on `.content` area); visual tab indicator dots; configurable gesture sensitivity | Glance (#128, 10 votes) |
 | P4-17 | **Icon library system** | Unified icon prefix system for all UI elements: `fa:` (Font Awesome), `si:` (Simple Icons), `mdi:` (Material Design Icons), `emoji:`, `url:` (custom image URL); replaces current mix of inline SVGs and emoji | Glance (4 icon prefixes), Dashy (7 icon types) |
 | P4-18 | **Config environment variable injection** | Support `${ENV_VAR}` syntax in NOMAD config.json for secrets, API keys, and per-deployment overrides; useful for federation nodes with different credentials | Glance (env var injection), Homepage (env vars in YAML) |
-| P4-19 | **Health check endpoint** | `GET /healthz` returns 200 with JSON `{status, uptime, db_ok, services_count}` for external monitoring tools (UptimeKuma, Prometheus, etc.) to monitor NOMAD itself | Dashy (#768, 5 votes) |
+| P4-19 | ~~**Health check endpoint**~~ | **Done** (v7.45.0) — `GET /healthz` with status/version/uptime/db_ok/services_running | Dashy (#768, 5 votes) |
 | P4-20 | **Masonry/auto-fill grid layout** | Alternative dashboard layout where cards auto-fill available space in a masonry pattern (no fixed rows); especially useful for varying-height widgets on ultrawide monitors | Dashy (#1233, 4 votes) |
 
 ### P5: Deep-Dive Discoveries — Loop 2 (from expanded competitor research)
@@ -376,7 +376,7 @@ New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance
 | P5-13 | **OPML/subscription import for RSS** | Import OPML files or YouTube subscription exports to bulk-add RSS feeds to Situation Room and media channels | Glance (#302, 8 votes — YouTube/Twitch import) |
 | P5-14 | **Self-signed cert trust for federation** | Allow federation peers with self-signed SSL certificates to be trusted via explicit certificate pinning or an `allow-insecure` flag per peer | Glance (#739, 9 votes — custom API allow-insecure) |
 | P5-15 | **Per-page/tab access control** | In LAN multi-user mode, restrict which tabs/pages each user can see; e.g., hide Situation Room from family members, restrict Settings to admin | Glance (#694, 7 votes), Open WebUI (per-user resource sharing) |
-| P5-16 | **Host header validation** | Add `NOMAD_ALLOWED_HOSTS` config to reject requests with unexpected Host headers when running on LAN; prevent DNS rebinding attacks | Homepage (HOMEPAGE_ALLOWED_HOSTS) |
+| P5-16 | ~~**Host header validation**~~ | **Done** (v7.46.0) — `NOMAD_ALLOWED_HOSTS` env var, `_host_header_check()` before_request | Homepage (HOMEPAGE_ALLOWED_HOSTS) |
 | P5-17 | **Security notice in README** | Add prominent security notice explaining that LAN-exposed instances should sit behind a reverse proxy with auth/TLS, matching Homepage's security posture documentation | Homepage (Security Notice) |
 | P5-18 | **Test coverage tracking in CI** | Add coverage reporting (pytest-cov + Codecov badge) to CI pipeline; baseline coverage visibility for the 775+ test suite | Homepage (Codecov badge) |
 | P5-19 | **Release drafter automation** | GitHub Actions workflow that auto-generates release notes from commit messages and PR labels, reducing manual release effort | Homepage (release-drafter) |
@@ -600,7 +600,7 @@ Items derived from audit findings above, tagged `[internal]`.
 |---|-------|-------------|----------|
 | P1-I01 | ~~**Extract `_safe_int`/`_safe_float`/`_utc_now` to utils.py**~~ | **Done** (pre-v7.44) — already centralized in `web/utils.py` | A-1, A-3 |
 | P1-I02 | ~~**Remove `_esc` redefinitions**~~ | **Done** (pre-v7.44) — blueprints import `esc` from `web/utils.py` | A-2 |
-| P1-I03 | **Strip 190+ `console.log` from production JS** | Search-and-remove or gate behind `if(DEBUG)` flag across all JS files | F-1 |
+| P1-I03 | ~~**Strip 190+ `console.log` from production JS**~~ | **Done** — zero `console.log` in production JS | F-1 |
 | P1-I04 | ~~**Add `proc.kill()` fallback in `stop_process()`**~~ | **Done** (pre-v7.44) — escalates SIGTERM→SIGKILL after 10s | E-3 |
 | P1-I05 | ~~**Add lock to `_download_progress` in manager.py**~~ | **Done** (pre-v7.44) — `_dl_progress_lock` exists | C-3 |
 | P1-I06 | ~~**Add lock to `_service_logs` in manager.py**~~ | **Done** (pre-v7.44) — `_svc_logs_lock` exists | C-4 |
@@ -608,7 +608,7 @@ Items derived from audit findings above, tagged `[internal]`.
 | P1-I08 | ~~**FTS5 search input sanitization**~~ | **Done** (pre-v7.44) — double-quoted phrase matching strips special chars | D-4 |
 | P1-I09 | ~~**Fix `get_db()` connection leak on PRAGMA failure**~~ | **Done** (pre-v7.44) — try/except with conn.close() | E-6 |
 | P1-I10 | ~~**Close DB pool connections on shutdown**~~ | **Done** (pre-v7.44) — pool has proper cleanup patterns | E-2 |
-| P1-I11 | **Service health URLs respect configured ports** | Read port from config/env instead of hardcoding in `SERVICE_HEALTH_URLS` dict | H-2 |
+| P1-I11 | ~~**Service health URLs respect configured ports**~~ | **Done** — `_get_service_port()` + port templating in health URLs | H-2 |
 | P1-I12 | **Delete dead `_wizard_state` from state.py** | Wizard state IS used (has locking); onboarding wizard exists | H-1 |
 | P1-I13 | ~~**Add `timeout=15` to all Situation Room HTTP requests**~~ | **Done** (pre-v7.44) — all 40+ HTTP calls have timeouts | H-7 |
 | P1-I14 | ~~**Add `f.flush(); os.fsync()` before `os.replace()` in config.py**~~ | **Done** (pre-v7.44) — save_config() has flush+fsync | H-8 |
@@ -632,8 +632,8 @@ Items derived from audit findings above, tagged `[internal]`.
 | P2-I05 | **DELETE 404 hardening for 14 blueprints** | Add `rowcount == 0 -> 404` checks to DELETE routes in the 14 identified blueprints. | B-5 |
 | P2-I06 | **Split `_create_indexes()` into per-module functions** | Break 593-line function into `_create_inventory_indexes()`, `_create_medical_indexes()`, etc. for maintainability. | A-6 |
 | P2-I07 | **Service module Protocol/ABC** | Define a `ServiceProtocol` (Python Protocol class) with `download()`, `start()`, `stop()`, `running()`, `uninstall()` methods. Type-check all 7 service modules against it. | A-5 |
-| P2-I08 | **Add CI test step** | Add `pytest` run before PyInstaller build in `.github/workflows/build.yml`. Fail the workflow on test failures. | G-1 |
-| P2-I09 | **Add CI esbuild step** | Add `npm ci && node esbuild.config.mjs` step before PyInstaller in CI workflow. | G-2 |
+| P2-I08 | ~~**Add CI test step**~~ | **Done** — `build.yml` runs pytest on all 3 platforms before build | G-1 |
+| P2-I09 | ~~**Add CI esbuild step**~~ | **Done** (v7.46.0) — Node.js 20 setup + `npm ci && node esbuild.config.mjs` before build | G-2 |
 | P2-I10 | **Thread-safe caches** | Replace `_api_cache` dict in app.py and `_ttl_cache` dict in state.py with `threading.Lock`-protected access or use `functools.lru_cache` / `cachetools.TTLCache`. | C-1, C-2 |
 | P2-I11 | **SSE subscriber pruning** | Proactively remove stale SSE subscribers (queue full for >60s or last keepalive >60s ago) in the alert engine loop. | E-1, C-5 |
 | P2-I12 | **SHA256 verification on service downloads** | Download checksums from upstream GitHub releases and verify after download for all 7 services, not just self-update. | H-4 |

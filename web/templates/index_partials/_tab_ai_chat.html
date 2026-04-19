@@ -168,6 +168,21 @@
           <button class="btn btn-sm btn-ghost chat-attach-btn" data-click-target="chat-file-input" title="Attach file for AI context" aria-label="Attach file">&#128206;</button>
           <input type="file" id="chat-image-input" name="chat_image" accept="image/*" data-change-action="preview-chat-image" class="is-hidden">
           <button type="button" class="btn btn-sm btn-ghost chat-attach-btn" data-click-target="chat-image-input" aria-label="Send image to AI" title="Send image to multimodal model">&#128247;</button>
+          <div class="prompt-presets-shell">
+            <button type="button" class="btn btn-sm btn-ghost chat-attach-btn" id="prompt-presets-btn" data-chat-action="toggle-prompt-presets" aria-label="Prompt templates" title="Prompt templates">&#9776;</button>
+            <div id="prompt-presets-menu" class="prompt-presets-menu" hidden>
+              <div class="prompt-presets-header">
+                <span class="prompt-presets-title">Prompt Templates</span>
+                <button type="button" class="btn btn-sm btn-ghost" data-chat-action="save-prompt-preset" title="Save current input as template">+ Save</button>
+              </div>
+              <div id="prompt-presets-list" class="prompt-presets-list"></div>
+              <div class="prompt-presets-builtins">
+                <button type="button" class="btn btn-sm btn-ghost prompt-preset-builtin" data-prompt-text="Generate a SITREP (Situation Report) covering current inventory status, active alerts, recent activity, and recommended next actions.">SITREP Format</button>
+                <button type="button" class="btn btn-sm btn-ghost prompt-preset-builtin" data-prompt-text="Analyze my current inventory and identify gaps in preparedness. Compare against recommended supplies for a 30-day scenario and list what I need to acquire.">Inventory Gap Analysis</button>
+                <button type="button" class="btn btn-sm btn-ghost prompt-preset-builtin" data-prompt-text="Review the current medical supplies and patient records. Identify any expiring medications, low-stock medical items, and recommend a triage priority list.">Medical Triage Review</button>
+              </div>
+            </div>
+          </div>
           <textarea id="chat-input" name="chat_input" aria-label="Chat message input" placeholder="Ask a question, sketch a plan, or drop a file… (Enter to send, Shift+Enter for newline)" rows="1"></textarea>
           <button class="btn btn-primary" data-chat-action="send-chat" id="send-btn">Send</button>
           <button class="btn btn-stop is-hidden" data-chat-action="stop-chat" id="stop-btn">Stop</button>

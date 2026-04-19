@@ -385,6 +385,8 @@ document.addEventListener('click', e => {
       case 'toggle-custom-prompt': toggleCustomPrompt(); break;
       case 'save-custom-prompt': saveCustomPrompt(); break;
       case 'clear-custom-prompt': clearCustomPrompt(); break;
+      case 'toggle-prompt-presets': togglePromptPresets(); break;
+      case 'save-prompt-preset': savePromptPreset(); break;
       case 'analyze-all-docs': analyzeAllDocs(); break;
       case 'return-main-conversation': returnToMainConversation(); break;
       case 'clear-chat-file': clearChatFile(); break;

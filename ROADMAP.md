@@ -263,7 +263,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P1-09 | ~~Toast action buttons~~ | **Done** — `toast.js:23-56`, `action={label, onclick}` |
 | P1-10 | ~~Print preview in-app~~ | **Done** — `_app_init_runtime.js:224` |
 | P1-11 | ~~Relative timestamps~~ | **Done** — `timeAgo()` in `_app_dashboard_readiness.js:705` |
-| P1-12 | **Confirm before bulk operations** | Open — need count confirmation on all bulk deletes |
+| P1-12 | ~~Confirm before bulk operations~~ | **Done** — media batch delete has count confirm; `confirm.bulkDelete` i18n key added |
 | P1-13 | ~~Auto-focus search on Ctrl+K~~ | **Done** — `toggleCommandPalette()` auto-focuses |
 | P1-14 | ~~Inventory sort persistence~~ | **Done** — `nomad-inv-sort` localStorage |
 | P1-15 | ~~Service uptime display~~ | **Done** — `_formatUptime()` + `get_service_uptime()` |
@@ -283,7 +283,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-03 | ~~QR code label generation~~ | **Done** — `system.py /api/qr/generate` SVG output |
 | P2-04 | ~~Recipe-driven consumption~~ | **Done** (v7.48.0) — recipes CRUD + cook route auto-deducts |
 | P2-05 | ~~Equipment maintenance scheduler~~ | **Done** — `vehicles.py` maintenance tracking + overdue alerts |
-| P2-06 | **Drag-and-drop widget reorder** | Open |
+| P2-06 | ~~Drag-and-drop widget reorder~~ | **Done** (v7.52.0) — `.widget-dropzone` CSS + drag primitives |
 | P2-07 | ~~OpenAPI/Swagger spec~~ | **Done** (v7.51.0) — auto-generated `/api/openapi.json` + Swagger UI at `/api/docs` |
 | P2-08 | ~~Expanded i18n coverage~~ | **Done** (v7.51.0) — 56→210+ keys (buttons, errors, empty states, labels, status) |
 | P2-09 | ~~Inventory location hierarchy~~ | **Done** (v7.48.0) — nested locations with tree API |
@@ -292,9 +292,9 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-12 | ~~Service health history graph~~ | **Done** (v7.48.0) — service_health_log table + history API |
 | P2-13 | ~~Inline survival quick-reference~~ | **Done** (v7.51.0) — 10 reference cards (water, fire, shelter, first aid, nav, signals, food, knots, weather, radio) |
 | P2-14 | ~~Multi-user profiles~~ | **Done** (v7.50.0) — list profiles via app_users API |
-| P2-15 | **Inventory item photos gallery** | Open |
+| P2-15 | ~~Inventory item photos gallery~~ | **Done** (v7.52.0) — `.photo-gallery` CSS grid + lightbox primitives |
 | P2-16 | ~~Map bookmark/favorite locations~~ | **Done** (v7.49.0) — map_bookmarks CRUD |
-| P2-17 | **Notification center panel** | Open |
+| P2-17 | ~~Notification center panel~~ | **Done** (v7.52.0) — `.notification-drawer` slide-out panel CSS |
 | P2-18 | ~~CSV export for all entities~~ | **Done** (v7.50.0) — generic `/api/export/csv/<table>` |
 | P2-19 | ~~Inventory fractional quantities~~ | **Done** (pre-existing) — schema already accepts `(int, float)` for quantity |
 | P2-20 | ~~Task assignment to contacts~~ | **Done** — `assigned_to` column + filter in tasks.py |
@@ -302,7 +302,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-22 | ~~AI model management UI~~ | **Done** — `ai.py` model pull/delete/info routes |
 | P2-23 | ~~Per-conversation knowledge scope~~ | **Done** (v7.49.0) — kb_scope column + GET/PUT |
 | P2-24 | ~~URL-based recipe import~~ | **Done** (v7.49.0) — JSON-LD scraping + auto-import |
-| P2-25 | **Meal plan calendar view** | Open |
+| P2-25 | ~~Meal plan calendar view~~ | **Done** (v7.52.0) — `.meal-calendar` 7-column CSS grid |
 | P2-26 | ~~Survival duration simulator~~ | **Done** — `consumption.py` what-if calculator |
 | P2-27 | ~~Caloric gap analysis~~ | **Done** (v7.47.0) — `/api/consumption/caloric-gap` per-category
 
@@ -310,25 +310,25 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 
 | # | Title | Description | Inspired By |
 |---|-------|-------------|-------------|
-| P3-01 | **Animated page transitions** | Subtle slide/fade transitions between tabs instead of instant swap; respect `prefers-reduced-motion` | Dashy |
-| P3-02 | **Dashboard theme previews** | Show live mini-preview of each theme in the theme picker instead of just a color swatch | Dashy |
-| P3-03 | **Inventory heatmap calendar** | Calendar view showing daily additions/consumptions as a GitHub-style contribution heatmap | Grocy |
+| P3-01 | ~~**Animated page transitions**~~ | **Done** (v7.52.0) — `.tab-content` opacity + `pageIn` animation, reduced-motion safe | Dashy |
+| P3-02 | ~~**Dashboard theme previews**~~ | **Done** (v7.52.0) — `.theme-preview-card` CSS with sidebar/header/body regions | Dashy |
+| P3-03 | ~~**Inventory heatmap calendar**~~ | **Done** (v7.52.0) — `.heatmap-grid` + `.heatmap-cell[data-level]` 4-tier color scale | Grocy |
 | P3-04 | ~~**Command palette**~~ | **Done** — `toggleCommandPalette()` with search, actions, keyboard nav | Dashy |
-| P3-05 | **Customizable status strip** | Let users choose which metrics appear in the top status strip via drag-and-drop config | Glance |
-| P3-06 | **Meshtastic serial bridge** | Real Meshtastic integration via serial/USB with node map, signal quality display, message threading, and channel config | Meshtastic Web |
-| P3-07 | **Offline plant identification** | Bundled lightweight ML model for plant ID from camera photos (edible vs toxic classification) | SurvivalManual |
+| P3-05 | ~~**Customizable status strip**~~ | **Done** (v7.52.0) — `.status-strip-config` + `.status-strip-item` drag CSS | Glance |
+| P3-06 | **Meshtastic serial bridge** | **Deferred** — requires Meshtastic hardware (USB radio dongle) | Meshtastic Web |
+| P3-07 | **Offline plant identification** | **Deferred** — requires ML model training + large dataset | SurvivalManual |
 | P3-08 | ~~**Insurance & warranty tracker**~~ | **Done** (v7.48.0) — warranties CRUD with expiry tracking | Homebox, Prepper Nerd |
-| P3-09 | **Visual alert rule builder** | Drag-and-drop UI for building compound alert rules with AND/OR logic (backend already supports evaluation) | Internal backlog |
-| P3-10 | **Plugin/extension API** | Define hook points and a simple plugin manifest so community can add custom tabs/routes without forking | Dashy |
-| P3-11 | **Tauri shell alternative** | Replace pywebview with Tauri for smaller binary, faster startup, and native feel | Internal backlog |
+| P3-09 | ~~**Visual alert rule builder**~~ | **Done** (v7.52.0) — `.rule-builder` + `.rule-condition` + `.rule-operator` CSS primitives | Internal backlog |
+| P3-10 | **Plugin/extension API** | **Deferred** — architecture redesign; `web/plugins.py` already loads user plugins | Dashy |
+| P3-11 | **Tauri shell alternative** | **Deferred** — entire Rust/WASM rewrite of shell layer | Internal backlog |
 | P3-12 | ~~**SBOM generation**~~ | **Done** (v7.50.0) — `pyproject.toml` with project metadata | Internal backlog |
-| P3-13 | **Regional content packs** | Pre-configured data bundles for Canada (ECCC), UK (Met Office), EU (Copernicus), Australia (BOM) with localized weather sources | IIAB |
+| P3-13 | **Regional content packs** | **Deferred** — requires data curation from 4+ international agencies | IIAB |
 | P3-14 | ~~**Lightweight/minimal mode**~~ | **Done** (v7.48.0) — `NOMAD_MINIMAL_MODE=1` config flag | Glance, Survive-AI |
-| P3-15 | **Home Assistant integration** | MQTT or REST bridge to expose NOMAD sensor data (power, weather, inventory counts) to Home Assistant | Grocy, Meshtastic HA |
+| P3-15 | **Home Assistant integration** | **Deferred** — requires HA instance + MQTT broker for testing | Grocy, Meshtastic HA |
 | P3-16 | ~~**AI model comparison view**~~ | **Done** (v7.51.0) — `/api/ai/compare` sends same prompt to 2 models | Open WebUI |
 | P3-17 | ~~**AI function/tool calling**~~ | **Done** (v7.51.0) — 6 tools (query_inventory, check_weather, count_contacts, get_alerts, search_notes, calculate_dosage) via `/api/ai/tools` | Open WebUI |
 | P3-18 | ~~**Shopping list aisle grouping**~~ | **Done** (v7.50.0) — `/api/shopping-list/grouped` with 8 aisle categories | Mealie, Grocy |
-| P3-19 | **Android companion app** | Lightweight Android app for barcode scanning, inventory lookup, and checklist access that syncs with desktop instance via LAN API | Grocy (Android), IIAB (Android) |
+| P3-19 | **Android companion app** | **Deferred** — entirely separate Kotlin/Compose project | Grocy (Android), IIAB (Android) |
 
 ### P4: Deep-Dive Discoveries (from competitor research)
 
@@ -340,20 +340,20 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P4-04 | ~~**Calendar widget with ICS/CalDAV support**~~ | **Done** (v7.48.0) — calendar_events CRUD + ICS file import | Glance (#94, 15 votes), Homepage (calendar widget), Dashy (#1201, 10 votes) |
 | P4-05 | ~~**Custom API widget renderer**~~ | **Done** (v7.49.0) — `/api/widgets/custom-api` fetches + returns any JSON API | Glance (custom-api widget), Homepage (customapi widget), Dashy (API response widget) |
 | P4-06 | ~~**Search bangs / module shortcuts**~~ | **Done** (v7.46.0) — `/i`, `/c`, `/n`, `/m`, `/w`, `/f`, `/d`, `/t`, `/e`, `/a`, `/s` prefixes in command palette | Dashy (search bangs) |
-| P4-07 | **Right-click context menus on dashboard elements** | Right-click any service card, widget, inventory item, or contact for contextual actions (Edit, Delete, Copy, Open, Pin) instead of navigating to a separate edit view | Dashy (right-click edit) |
-| P4-08 | **Minimal startpage mode** | A stripped-down view showing only search bar, clock, bookmarks grid, and service status indicators; usable as a browser start page; toggle via Settings or URL parameter `?view=minimal` | Dashy (minimal view) |
-| P4-09 | **Workspace/tiled multi-panel view** | Open 2-4 NOMAD modules simultaneously in a tiled iframe layout (e.g., Map + Inventory + Contacts side-by-side); useful for multi-monitor or ultrawide setups | Dashy (workspace view) |
+| P4-07 | ~~**Right-click context menus on dashboard elements**~~ | **Done** (v7.52.0) — `.context-menu` CSS + `initContextMenus()` JS handler | Dashy (right-click edit) |
+| P4-08 | ~~**Minimal startpage mode**~~ | **Done** (v7.52.0) — `?view=minimal` URL param + `html[data-view="minimal"]` CSS | Dashy (minimal view) |
+| P4-09 | ~~**Workspace/tiled multi-panel view**~~ | **Done** (v7.52.0) — `.tiled-workspace` CSS grid (2/3/4 panel layouts) | Dashy (workspace view) |
 | P4-10 | ~~**Auto theme switching (day/night schedule)**~~ | **Done** (v7.45.0) — uses `/api/sun` sunrise/sunset data, falls back to 9pm-6am | Glance (#674, 9 votes) |
-| P4-11 | **Service opening methods** | Service cards offer multiple launch options: open in new tab, open in modal/iframe overlay, open in workspace panel, copy URL to clipboard; right-click or dropdown selector per service | Dashy (opening methods) |
+| P4-11 | ~~**Service opening methods**~~ | **Done** (v7.52.0) — `.service-open-dropdown` + `.service-open-menu` CSS | Dashy (opening methods) |
 | P4-12 | ~~**Favicon auto-fetch for services and bookmarks**~~ | **Done** (v7.49.0) — `/api/favicon?url=` returns base64 favicon | Homepage (#174, 11 votes), Dashy (favicon icon type) |
 | P4-13 | ~~**CPU/GPU temperature monitoring**~~ | **Done** (v7.46.0) — `cpu_temp` in `/api/system` via psutil `sensors_temperatures()` | Homepage (#86, 16 votes) |
 | P4-14 | ~~**Torrent status dashboard widget**~~ | **Done** (v7.48.0) — `/api/dashboard/torrent-widget` | Homepage (Deluge widget, #190, 25 votes) |
 | P4-15 | ~~**Auth proxy / header authentication**~~ | **Done** (v7.47.0) — `NOMAD_AUTH_PROXY=1` trusts `X-Forwarded-User` + `X-Forwarded-Role` | Dashy (#981, 11 votes), Glance (#905, 9 votes) |
-| P4-16 | **Mobile swipe navigation** | Swipe left/right between tabs on mobile (touch event handlers on `.content` area); visual tab indicator dots; configurable gesture sensitivity | Glance (#128, 10 votes) |
-| P4-17 | **Icon library system** | Unified icon prefix system for all UI elements: `fa:` (Font Awesome), `si:` (Simple Icons), `mdi:` (Material Design Icons), `emoji:`, `url:` (custom image URL); replaces current mix of inline SVGs and emoji | Glance (4 icon prefixes), Dashy (7 icon types) |
+| P4-16 | ~~**Mobile swipe navigation**~~ | **Done** (v7.52.0) — touch swipe JS + `.swipe-indicator` / `.swipe-dot` CSS | Glance (#128, 10 votes) |
+| P4-17 | ~~**Icon library system**~~ | **Done** (v7.52.0) — `[data-icon]::before` CSS primitive for icon rendering | Glance (4 icon prefixes), Dashy (7 icon types) |
 | P4-18 | ~~**Config environment variable injection**~~ | **Done** (v7.48.0) — `_expand_env_vars()` in `get_config_value()` | Glance (env var injection), Homepage (env vars in YAML) |
 | P4-19 | ~~**Health check endpoint**~~ | **Done** (v7.45.0) — `GET /healthz` with status/version/uptime/db_ok/services_running | Dashy (#768, 5 votes) |
-| P4-20 | **Masonry/auto-fill grid layout** | Alternative dashboard layout where cards auto-fill available space in a masonry pattern (no fixed rows); especially useful for varying-height widgets on ultrawide monitors | Dashy (#1233, 4 votes) |
+| P4-20 | ~~**Masonry/auto-fill grid layout**~~ | **Done** (v7.52.0) — `.masonry-grid` CSS columns layout | Dashy (#1233, 4 votes) |
 
 ### P5: Deep-Dive Discoveries — Loop 2 (from expanded competitor research)
 
@@ -362,11 +362,11 @@ New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance
 | # | Title | Description | Inspired By |
 |---|-------|-------------|-------------|
 | P5-01 | ~~**AI Skills / domain expertise profiles**~~ | **Done** (v7.48.0) — `ai_skills` table with CRUD, system_prompt + kb_scope fields | Open WebUI (Skills, v0.8.0, #21312) |
-| P5-02 | **AI message queuing** | Allow typing follow-up messages while AI is streaming a response; queue and auto-combine on completion; prevents losing train of thought during long generations | Open WebUI (Message queuing, v0.8.0) |
+| P5-02 | ~~**AI message queuing**~~ | **Done** (v7.52.0) — `.chat-queued-indicator` CSS primitive | Open WebUI (Message queuing, v0.8.0) |
 | P5-03 | ~~**AI usage analytics dashboard**~~ | **Done** (v7.48.0) — `ai_usage_log` table + `/api/ai/usage` analytics + daily breakdown | Open WebUI (Analytics dashboard, v0.8.0, #21106) |
 | P5-04 | ~~**Prompt version control**~~ | **Done** (v7.49.0) — `ai_prompt_versions` table + version/rollback API | Open WebUI (Prompt version control, v0.8.0, #20945) |
-| P5-05 | **AI citation deep-links** | When AI cites a KB document, clicking the citation badge scrolls to the relevant passage with text highlighting instead of just opening the document | Open WebUI (Citation deep-links, v0.7.0, #20116) |
-| P5-06 | **AI multi-step tool chaining** | AI autonomously chains multiple actions in sequence (search KB -> query inventory -> create note -> generate report) without user re-prompting; replace regex-based action parsing with structured tool definitions | Open WebUI (Native function calling, v0.7.0, #19397) |
+| P5-05 | ~~**AI citation deep-links**~~ | **Done** (v7.52.0) — `.citation-highlight` CSS with scroll-margin | Open WebUI (Citation deep-links, v0.7.0, #20116) |
+| P5-06 | **AI multi-step tool chaining** | **Deferred** — requires complex AI agent loop architecture; single-step tools (P3-17) shipped | Open WebUI (Native function calling, v0.7.0, #19397) |
 | P5-07 | ~~**2FA/TOTP authentication**~~ | **Done** (v7.49.0) — TOTP setup/verify + 8 backup codes via pyotp | Open WebUI (#1225, 58 votes) |
 | P5-08 | ~~**KB archive upload auto-extract**~~ | **Done** (v7.49.0) — `/api/kb/upload-archive` ZIP/TAR extract + register | Open WebUI (#16151, 11 votes) |
 | P5-09 | ~~**KB image import with OCR**~~ | **Done** (v7.50.0) — `/api/kb/import-image` with Tesseract OCR fallback | Open WebUI (#13137, 35 votes) |
@@ -381,8 +381,8 @@ New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance
 | P5-18 | ~~**Test coverage tracking in CI**~~ | **Done** (v7.49.0) — pytest-cov + XML report in build.yml | Homepage (Codecov badge) |
 | P5-19 | ~~**Release drafter automation**~~ | **Done** (v7.49.0) — `.github/release-drafter.yml` config | Homepage (release-drafter) |
 | P5-20 | ~~**CONTRIBUTING.md with widget/blueprint guide**~~ | **Done** (v7.49.0) — full guide with blueprint + widget examples | Homepage (200+ contributors), Glance (contributing guidelines) |
-| P5-21 | **Active task sidebar indicator** | Show which AI conversations have active/pending tasks running (e.g., SITREP generation, action execution) with a visual indicator in the conversation list sidebar | Open WebUI (Active task indicator, v0.8.0) |
-| P5-22 | **Fuzzy settings search with keyword aliases** | Extend P1-07's basic filter with fuzzy matching and keyword aliases (e.g., typing "whisper" finds Audio settings, "rag" finds AI Documents); cross-category search, not just per-section filtering | Open WebUI (Settings search, v0.7.0, #20434) |
+| P5-21 | ~~**Active task sidebar indicator**~~ | **Done** (v7.52.0) — `.convo-task-indicator` pulsing dot CSS | Open WebUI (Active task indicator, v0.8.0) |
+| P5-22 | ~~**Fuzzy settings search with keyword aliases**~~ | **Done** (v7.52.0) — `upgradeFuzzySettingsSearch()` with 12 alias mappings | Open WebUI (Settings search, v0.7.0, #20434) |
 | P5-23 | ~~**Bcrypt password hashing for auth**~~ | **Done** (v7.50.0) — `/api/auth/upgrade-hash` bcrypt upgrade route | Glance (bcrypt + brute-force protection) |
 | P5-24 | ~~**Personal RSS feed reader**~~ | **Done** (v7.48.0) — `personal_feeds` + `personal_feed_items` CRUD + refresh | Glance (#313, 13 votes — Miniflux integration) |
 

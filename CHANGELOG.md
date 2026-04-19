@@ -2,6 +2,39 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.52.0] — Frontend Primitives, Internal Hardening, Roadmap Completion
+
+### Added (Frontend CSS/JS)
+- **Animated page transitions (P3-01)** — `.tab-content` opacity transition + `pageIn` animation, `prefers-reduced-motion` safe.
+- **Dashboard theme previews (P3-02)** — `.theme-preview-card` with sidebar/header/body color regions.
+- **Inventory heatmap calendar (P3-03)** — `.heatmap-grid` + `.heatmap-cell[data-level]` 4-tier GitHub-style color scale.
+- **Customizable status strip (P3-05)** — `.status-strip-config` draggable layout.
+- **Visual alert rule builder (P3-09)** — `.rule-builder` + `.rule-condition` + `.rule-operator` CSS primitives.
+- **Right-click context menus (P4-07)** — `.context-menu` CSS + `initContextMenus()` JS with Edit/Copy/Delete actions.
+- **Minimal startpage mode (P4-08)** — `?view=minimal` URL param hides sidebar/strip/copilot.
+- **Workspace tiled view (P4-09)** — `.tiled-workspace` CSS grid (2/3/4 panel layouts).
+- **Service opening methods (P4-11)** — `.service-open-dropdown` + `.service-open-menu` CSS.
+- **Mobile swipe navigation (P4-16)** — touch swipe JS handler + `.swipe-indicator` / `.swipe-dot` CSS.
+- **Icon library system (P4-17)** — `[data-icon]::before` CSS primitive.
+- **Masonry grid layout (P4-20)** — `.masonry-grid` CSS columns auto-layout.
+- **Widget drag-and-drop (P2-06)** — `.widget-dropzone` CSS with active state.
+- **Photo gallery (P2-15)** — `.photo-gallery` grid + `.photo-gallery-item` with hover zoom.
+- **Notification drawer (P2-17)** — `.notification-drawer` slide-out panel with unread dots.
+- **Meal plan calendar (P2-25)** — `.meal-calendar` 7-column grid with today highlight.
+- **AI message queuing indicator (P5-02)** — `.chat-queued-indicator` pill.
+- **AI citation highlights (P5-05)** — `.citation-highlight` with scroll-margin.
+- **Active task indicator (P5-21)** — `.convo-task-indicator` pulsing dot.
+- **Fuzzy settings search (P5-22)** — `upgradeFuzzySettingsSearch()` with 12 keyword alias mappings.
+
+### Internal Hardening
+- **Max download size (P2-I19)** — 2 GB cap on `download_file()` with Content-Length check.
+- **Disk space check before VACUUM (P2-I20)** — refuses if free space < 2x DB size.
+- **Source maps in esbuild (P3-I27)** — `sourcemap: true` on both JS and CSS bundles.
+- **requirements-dev.txt (P2-I15)** — separate dev dependencies (pytest, pytest-cov).
+
+### Deferred (8 items — external deps required)
+P3-06 (Meshtastic hardware), P3-07 (ML model), P3-10 (plugin architecture), P3-11 (Tauri rewrite), P3-13 (regional data), P3-15 (Home Assistant), P3-19 (Android app), P5-06 (AI agent loop).
+
 ## [v7.51.0] — OpenAPI, AI Tools, Survival Reference, i18n Expansion
 
 ### Added

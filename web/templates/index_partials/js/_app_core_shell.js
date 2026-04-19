@@ -1555,3 +1555,105 @@ document.addEventListener('click', e => {
     });
   });
 })();
+
+/* ─── P4-08: Minimal Startpage Mode ─── */
+(function initMinimalMode() {
+  if (new URLSearchParams(location.search).get('view') === 'minimal') {
+    document.documentElement.setAttribute('data-view', 'minimal');
+  }
+})();
+
+/* ─── P4-07: Right-Click Context Menus ─── */
+(function initContextMenus() {
+  let _menu = null;
+  function showContextMenu(x, y, items) {
+    hideContextMenu();
+    _menu = document.createElement('div');
+    _menu.className = 'context-menu visible';
+    _menu.style.left = Math.min(x, window.innerWidth - 200) + 'px';
+    _menu.style.top = Math.min(y, window.innerHeight - 200) + 'px';
+    items.forEach(item => {
+      if (item === '---') {
+        _menu.insertAdjacentHTML('beforeend', '<div class="context-menu-divider"></div>');
+        return;
+      }
+      const el = document.createElement('div');
+      el.className = 'context-menu-item';
+      el.textContent = item.label;
+      el.addEventListener('click', () => { hideContextMenu(); item.action(); });
+      _menu.appendChild(el);
+    });
+    document.body.appendChild(_menu);
+  }
+  function hideContextMenu() { if (_menu) { _menu.remove(); _menu = null; } }
+  document.addEventListener('click', hideContextMenu);
+  document.addEventListener('contextmenu', (e) => {
+    const card = e.target.closest('.service-card, .inventory-row, .contact-row, .note-item, .convo-item');
+    if (!card) return;
+    e.preventDefault();
+    const items = [
+      {label: 'Edit', action: () => { const edit = card.querySelector('[data-action="edit"], .edit-btn'); if (edit) edit.click(); }},
+      {label: 'Copy Name', action: () => { const name = card.querySelector('.service-name, .inventory-name, td:first-child')?.textContent; if (name) navigator.clipboard.writeText(name.trim()); }},
+      '---',
+      {label: 'Delete', action: () => { const del = card.querySelector('[data-action="delete"], .delete-btn'); if (del) del.click(); }},
+    ];
+    showContextMenu(e.clientX, e.clientY, items);
+  });
+  window._showContextMenu = showContextMenu;
+})();
+
+/* ─── P5-22: Fuzzy Settings Search with Aliases ─── */
+(function upgradeFuzzySettingsSearch() {
+  const ALIASES = {
+    'whisper': ['audio', 'voice', 'speech'],
+    'rag': ['ai', 'documents', 'knowledge', 'context'],
+    'dark': ['theme', 'appearance', 'display'],
+    'light': ['theme', 'appearance', 'display'],
+    'proxy': ['auth', 'authentication', 'security'],
+    'model': ['ai', 'ollama', 'chat'],
+    'backup': ['restore', 'export', 'data'],
+    'password': ['auth', 'security', 'login'],
+    'language': ['i18n', 'translation', 'locale'],
+    'zoom': ['scale', 'size', 'display'],
+    'notification': ['alert', 'sound', 'push'],
+    'update': ['version', 'download', 'release'],
+  };
+  const input = document.getElementById('settings-search');
+  if (!input) return;
+  const origHandler = input.oninput;
+  input.addEventListener('input', () => {
+    const q = (input.value || '').toLowerCase().trim();
+    if (!q) return;
+    // Expand aliases
+    let expanded = [q];
+    for (const [alias, targets] of Object.entries(ALIASES)) {
+      if (q.includes(alias)) expanded.push(...targets);
+    }
+    // Fuzzy: also match substrings
+    document.querySelectorAll('.settings-section, .settings-row').forEach(el => {
+      const text = (el.textContent || '').toLowerCase();
+      const match = expanded.some(term => text.includes(term));
+      el.style.display = match ? '' : 'none';
+    });
+  });
+})();
+
+/* ─── P4-16: Mobile Swipe Navigation ─── */
+(function initSwipeNav() {
+  if (window.innerWidth > 768) return;
+  let startX = 0, startY = 0;
+  const content = document.querySelector('.container');
+  if (!content) return;
+  const tabs = Array.from(document.querySelectorAll('#sidebar-nav .tab')).filter(t => t.style.display !== 'none');
+  content.addEventListener('touchstart', (e) => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, {passive: true});
+  content.addEventListener('touchend', (e) => {
+    const dx = e.changedTouches[0].clientX - startX;
+    const dy = e.changedTouches[0].clientY - startY;
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+    const current = document.querySelector('#sidebar-nav .tab.active');
+    const idx = tabs.indexOf(current);
+    if (idx < 0) return;
+    const next = dx < 0 ? tabs[idx + 1] : tabs[idx - 1];
+    if (next) next.click();
+  }, {passive: true});
+})();

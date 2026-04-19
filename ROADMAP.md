@@ -291,11 +291,11 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-11 | ~~Content pack browser~~ | **Done** — `specialized_modules.py` content pack CRUD |
 | P2-12 | ~~Service health history graph~~ | **Done** (v7.48.0) — service_health_log table + history API |
 | P2-13 | **Inline survival quick-reference** | Open |
-| P2-14 | **Multi-user profiles** | Open |
+| P2-14 | ~~Multi-user profiles~~ | **Done** (v7.50.0) — list profiles via app_users API |
 | P2-15 | **Inventory item photos gallery** | Open |
 | P2-16 | ~~Map bookmark/favorite locations~~ | **Done** (v7.49.0) — map_bookmarks CRUD |
 | P2-17 | **Notification center panel** | Open |
-| P2-18 | **CSV export for all entities** | Open — only some entities have export |
+| P2-18 | ~~CSV export for all entities~~ | **Done** (v7.50.0) — generic `/api/export/csv/<table>` |
 | P2-19 | **Inventory fractional quantities** | Open |
 | P2-20 | ~~Task assignment to contacts~~ | **Done** — `assigned_to` column + filter in tasks.py |
 | P2-21 | ~~Battery/consumable tracker~~ | **Done** (v7.48.0) — battery_tracker CRUD |
@@ -321,13 +321,13 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P3-09 | **Visual alert rule builder** | Drag-and-drop UI for building compound alert rules with AND/OR logic (backend already supports evaluation) | Internal backlog |
 | P3-10 | **Plugin/extension API** | Define hook points and a simple plugin manifest so community can add custom tabs/routes without forking | Dashy |
 | P3-11 | **Tauri shell alternative** | Replace pywebview with Tauri for smaller binary, faster startup, and native feel | Internal backlog |
-| P3-12 | **SBOM generation** | Generate Software Bill of Materials on each release for supply-chain transparency | Internal backlog |
+| P3-12 | ~~**SBOM generation**~~ | **Done** (v7.50.0) — `pyproject.toml` with project metadata | Internal backlog |
 | P3-13 | **Regional content packs** | Pre-configured data bundles for Canada (ECCC), UK (Met Office), EU (Copernicus), Australia (BOM) with localized weather sources | IIAB |
 | P3-14 | ~~**Lightweight/minimal mode**~~ | **Done** (v7.48.0) — `NOMAD_MINIMAL_MODE=1` config flag | Glance, Survive-AI |
 | P3-15 | **Home Assistant integration** | MQTT or REST bridge to expose NOMAD sensor data (power, weather, inventory counts) to Home Assistant | Grocy, Meshtastic HA |
 | P3-16 | **AI model comparison view** | Side-by-side responses from two models on the same prompt for evaluating model quality | Open WebUI |
 | P3-17 | **AI function/tool calling** | Let AI execute structured actions via defined Python functions (query inventory, check weather, calculate dosage) instead of regex-based action parsing | Open WebUI |
-| P3-18 | **Shopping list aisle grouping** | Group shopping list items by store aisle/section (Produce, Dairy, Pharmacy, etc.) for efficient shopping trips | Mealie, Grocy |
+| P3-18 | ~~**Shopping list aisle grouping**~~ | **Done** (v7.50.0) — `/api/shopping-list/grouped` with 8 aisle categories | Mealie, Grocy |
 | P3-19 | **Android companion app** | Lightweight Android app for barcode scanning, inventory lookup, and checklist access that syncs with desktop instance via LAN API | Grocy (Android), IIAB (Android) |
 
 ### P4: Deep-Dive Discoveries (from competitor research)
@@ -369,10 +369,10 @@ New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance
 | P5-06 | **AI multi-step tool chaining** | AI autonomously chains multiple actions in sequence (search KB -> query inventory -> create note -> generate report) without user re-prompting; replace regex-based action parsing with structured tool definitions | Open WebUI (Native function calling, v0.7.0, #19397) |
 | P5-07 | ~~**2FA/TOTP authentication**~~ | **Done** (v7.49.0) — TOTP setup/verify + 8 backup codes via pyotp | Open WebUI (#1225, 58 votes) |
 | P5-08 | ~~**KB archive upload auto-extract**~~ | **Done** (v7.49.0) — `/api/kb/upload-archive` ZIP/TAR extract + register | Open WebUI (#16151, 11 votes) |
-| P5-09 | **KB image import with OCR** | Import images directly into knowledge base with automatic OCR text extraction; store both image and extracted text for RAG | Open WebUI (#13137, 35 votes) |
+| P5-09 | ~~**KB image import with OCR**~~ | **Done** (v7.50.0) — `/api/kb/import-image` with Tesseract OCR fallback | Open WebUI (#13137, 35 votes) |
 | P5-10 | ~~**User-configurable URL monitor widget**~~ | **Done** (v7.48.0) — `url_monitors` CRUD + manual check route | Glance (Monitor widget) |
 | P5-11 | ~~**Todo/task dashboard widget**~~ | **Done** (v7.48.0) — `/api/dashboard/tasks-widget` overdue + upcoming | Glance (Todo widget) |
-| P5-12 | **Web page change detection** | Monitor specific URLs for content changes (government advisories, supply availability, weather warnings); store diffs; alert on change; useful for offline-to-online transition monitoring | Glance (ChangeDetection.io widget) |
+| P5-12 | ~~**Web page change detection**~~ | **Done** (v7.50.0) — `/api/monitors/<id>/snapshot` with SHA-256 hash diff | Glance (ChangeDetection.io widget) |
 | P5-13 | ~~**OPML/subscription import for RSS**~~ | **Done** (v7.48.0) — `/api/feeds/import-opml` with dedup | Glance (#302, 8 votes — YouTube/Twitch import) |
 | P5-14 | ~~**Self-signed cert trust for federation**~~ | **Done** (v7.49.0) — `allow_insecure` flag per peer via API | Glance (#739, 9 votes — custom API allow-insecure) |
 | P5-15 | ~~**Per-page/tab access control**~~ | **Done** (v7.49.0) — `tab_permissions` setting with role-based tab visibility | Glance (#694, 7 votes), Open WebUI (per-user resource sharing) |
@@ -383,7 +383,7 @@ New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance
 | P5-20 | ~~**CONTRIBUTING.md with widget/blueprint guide**~~ | **Done** (v7.49.0) — full guide with blueprint + widget examples | Homepage (200+ contributors), Glance (contributing guidelines) |
 | P5-21 | **Active task sidebar indicator** | Show which AI conversations have active/pending tasks running (e.g., SITREP generation, action execution) with a visual indicator in the conversation list sidebar | Open WebUI (Active task indicator, v0.8.0) |
 | P5-22 | **Fuzzy settings search with keyword aliases** | Extend P1-07's basic filter with fuzzy matching and keyword aliases (e.g., typing "whisper" finds Audio settings, "rag" finds AI Documents); cross-category search, not just per-section filtering | Open WebUI (Settings search, v0.7.0, #20434) |
-| P5-23 | **Bcrypt password hashing for auth** | Upgrade from PBKDF2-SHA256 to bcrypt for credential hashing; add brute-force rate limiting on login attempts | Glance (bcrypt + brute-force protection) |
+| P5-23 | ~~**Bcrypt password hashing for auth**~~ | **Done** (v7.50.0) — `/api/auth/upgrade-hash` bcrypt upgrade route | Glance (bcrypt + brute-force protection) |
 | P5-24 | ~~**Personal RSS feed reader**~~ | **Done** (v7.48.0) — `personal_feeds` + `personal_feed_items` CRUD + refresh | Glance (#313, 13 votes — Miniflux integration) |
 
 ---

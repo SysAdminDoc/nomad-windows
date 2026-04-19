@@ -1212,3 +1212,172 @@ def api_tab_permissions_update():
         )
         db.commit()
         return jsonify({'status': 'updated'})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P2-14: Multi-User Profiles
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/profiles')
+def api_profiles_list():
+    with db_session() as db:
+        rows = db.execute('SELECT id, username, role, display_name, preferences FROM app_users ORDER BY username').fetchall()
+        return jsonify([{**dict(r), 'preferences': json.loads(r['preferences'] or '{}') if r['preferences'] else {}} for r in rows])
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P2-18: CSV Export for All Entities
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/export/csv/<table_name>')
+def api_generic_csv_export(table_name):
+    """Export any table as CSV (uses safe_table validation)."""
+    import csv
+    from web.sql_safety import safe_table
+    validated = safe_table(table_name)
+    if not validated:
+        return error_response('Invalid table name', 400)
+    with db_session() as db:
+        rows = db.execute(f'SELECT * FROM {validated} LIMIT 10000').fetchall()
+        if not rows:
+            return Response('', mimetype='text/csv',
+                           headers={'Content-Disposition': f'attachment; filename="{validated}.csv"'})
+        buf = io.StringIO()
+        writer = csv.writer(buf)
+        writer.writerow(rows[0].keys())
+        for r in rows:
+            writer.writerow([str(v) if v is not None else '' for v in tuple(r)])
+        return Response(buf.getvalue(), mimetype='text/csv',
+                       headers={'Content-Disposition': f'attachment; filename="{validated}.csv"'})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P3-18: Shopping List Aisle Grouping
+# ═══════════════════════════════════════════════════════════════════════
+
+AISLE_MAP = {
+    'Produce': ['vegetable', 'fruit', 'lettuce', 'tomato', 'potato', 'onion', 'garlic', 'pepper', 'carrot', 'apple', 'banana'],
+    'Dairy': ['milk', 'cheese', 'yogurt', 'butter', 'cream', 'egg'],
+    'Meat & Protein': ['chicken', 'beef', 'pork', 'fish', 'turkey', 'sausage', 'bacon', 'protein'],
+    'Canned & Dry Goods': ['canned', 'beans', 'rice', 'pasta', 'soup', 'cereal', 'oat', 'flour'],
+    'Pharmacy': ['medicine', 'vitamin', 'bandage', 'ibuprofen', 'acetaminophen', 'antibiotic', 'gauze'],
+    'Water & Beverages': ['water', 'juice', 'coffee', 'tea', 'drink'],
+    'Batteries & Hardware': ['battery', 'flashlight', 'tool', 'tape', 'rope', 'wire'],
+    'Hygiene': ['soap', 'shampoo', 'toothpaste', 'tissue', 'sanitizer', 'toilet'],
+}
+
+@roadmap_bp.route('/api/shopping-list/grouped')
+def api_shopping_list_grouped():
+    """Return shopping list items grouped by store aisle."""
+    with db_session() as db:
+        items = db.execute('SELECT * FROM shopping_list ORDER BY item_name').fetchall()
+        grouped = {}
+        for item in items:
+            name_lower = (item['item_name'] or '').lower()
+            aisle = 'Other'
+            for aisle_name, keywords in AISLE_MAP.items():
+                if any(kw in name_lower for kw in keywords):
+                    aisle = aisle_name
+                    break
+            grouped.setdefault(aisle, []).append(dict(item))
+        return jsonify(grouped)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P5-09: KB Image Import with OCR
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/kb/import-image', methods=['POST'])
+def api_kb_import_image():
+    """Import image to KB with optional OCR text extraction."""
+    if 'file' not in request.files:
+        return error_response('No file provided')
+    f = request.files['file']
+    workspace = request.form.get('workspace', 'default')
+    from config import get_data_dir
+    kb_dir = os.path.join(get_data_dir(), 'kb_uploads', workspace)
+    os.makedirs(kb_dir, exist_ok=True)
+    fname = os.path.basename(f.filename or 'image.png')
+    dest = os.path.join(kb_dir, fname)
+    f.save(dest)
+    # Try OCR
+    extracted_text = ''
+    try:
+        from PIL import Image
+        import pytesseract
+        img = Image.open(dest)
+        extracted_text = pytesseract.image_to_string(img)
+    except ImportError:
+        extracted_text = '[OCR unavailable — install Pillow + pytesseract]'
+    except Exception as e:
+        extracted_text = f'[OCR failed: {type(e).__name__}]'
+    with db_session() as db:
+        db.execute(
+            "INSERT INTO documents (filename, status, doc_category, content) VALUES (?, 'ready', ?, ?)",
+            (fname, workspace, extracted_text[:50000])
+        )
+        db.commit()
+    log_activity('kb_image_imported', fname)
+    return jsonify({'filename': fname, 'ocr_text_length': len(extracted_text), 'workspace': workspace})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P5-12: Web Page Change Detection
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/monitors/<int:mid>/snapshot', methods=['POST'])
+def api_monitor_snapshot(mid):
+    """Fetch page content and compare to last snapshot for changes."""
+    with db_session() as db:
+        mon = db.execute('SELECT * FROM url_monitors WHERE id = ?', (mid,)).fetchone()
+        if not mon:
+            return error_response('Not found', 404)
+    import requests as _req
+    import hashlib
+    try:
+        r = _req.get(mon['url'], timeout=15)
+        content = r.text[:500000]
+        content_hash = hashlib.sha256(content.encode()).hexdigest()
+    except Exception:
+        return error_response('Failed to fetch page')
+    # Compare to stored hash
+    with db_session() as db:
+        last = db.execute(
+            "SELECT value FROM settings WHERE key = ?", (f'monitor_hash_{mid}',)
+        ).fetchone()
+        old_hash = last['value'] if last else None
+        changed = old_hash is not None and old_hash != content_hash
+        db.execute(
+            "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+            (f'monitor_hash_{mid}', content_hash)
+        )
+        db.commit()
+    return jsonify({
+        'changed': changed,
+        'hash': content_hash,
+        'previous_hash': old_hash,
+        'content_length': len(content),
+    })
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# P5-23: Bcrypt Password Hashing (upgrade path)
+# ═══════════════════════════════════════════════════════════════════════
+
+@roadmap_bp.route('/api/auth/upgrade-hash', methods=['POST'])
+def api_upgrade_password_hash():
+    """Upgrade a user's password hash from PBKDF2 to bcrypt."""
+    d = request.get_json() or {}
+    user_id = d.get('user_id')
+    password = d.get('password', '')
+    if not user_id or not password:
+        return error_response('user_id and password are required')
+    try:
+        import bcrypt
+    except ImportError:
+        return error_response('bcrypt not installed — run: pip install bcrypt')
+    hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=12)).decode('utf-8')
+    with db_session() as db:
+        db.execute('UPDATE app_users SET password_hash = ? WHERE id = ?', (hashed, user_id))
+        db.commit()
+    return jsonify({'status': 'upgraded', 'algorithm': 'bcrypt'})

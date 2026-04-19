@@ -2526,6 +2526,13 @@ def _create_indexes(conn):
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_county ON fema_nri_counties(state_fips, county_fips)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_state ON fema_nri_counties(state_name)',
         'CREATE INDEX IF NOT EXISTS idx_fema_nri_risk ON fema_nri_counties(risk_score DESC)',
+        # v7.44.0 — NOAA stations, frost dates, hardiness zones
+        'CREATE INDEX IF NOT EXISTS idx_noaa_stations_state ON noaa_stations(state)',
+        'CREATE INDEX IF NOT EXISTS idx_noaa_stations_icao ON noaa_stations(icao)',
+        'CREATE INDEX IF NOT EXISTS idx_noaa_frost_dates_station ON noaa_frost_dates(station_id)',
+        'CREATE INDEX IF NOT EXISTS idx_noaa_frost_dates_state ON noaa_frost_dates(state)',
+        'CREATE INDEX IF NOT EXISTS idx_usda_hardiness_zipcode ON usda_hardiness_zones(zipcode)',
+        'CREATE INDEX IF NOT EXISTS idx_usda_hardiness_zone ON usda_hardiness_zones(zone)',
         # v7.12.0 — Consumption profiles & water budget
         'CREATE INDEX IF NOT EXISTS idx_consumption_profiles_type ON consumption_profiles(profile_type)',
         'CREATE INDEX IF NOT EXISTS idx_water_budget_category ON water_budget(category)',
@@ -2984,6 +2991,46 @@ def _create_data_foundation_tables(conn):
             community_resilience REAL DEFAULT 0,
             hazard_scores TEXT DEFAULT '{}',
             UNIQUE(state_fips, county_fips)
+        );
+
+        /* ─── NOAA Weather Stations Directory ─── */
+        CREATE TABLE IF NOT EXISTS noaa_stations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            station_id TEXT NOT NULL UNIQUE,
+            name TEXT NOT NULL,
+            state TEXT DEFAULT '',
+            country TEXT DEFAULT 'US',
+            lat REAL DEFAULT 0,
+            lng REAL DEFAULT 0,
+            elevation_m REAL DEFAULT 0,
+            wban_id TEXT DEFAULT '',
+            icao TEXT DEFAULT '',
+            station_type TEXT DEFAULT ''
+        );
+
+        /* ─── NOAA Frost Dates (per station) ─── */
+        CREATE TABLE IF NOT EXISTS noaa_frost_dates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            station_id TEXT NOT NULL,
+            station_name TEXT DEFAULT '',
+            state TEXT DEFAULT '',
+            lat REAL DEFAULT 0,
+            lng REAL DEFAULT 0,
+            last_spring_32f TEXT DEFAULT '',
+            last_spring_28f TEXT DEFAULT '',
+            first_fall_32f TEXT DEFAULT '',
+            first_fall_28f TEXT DEFAULT '',
+            growing_season_days INTEGER DEFAULT 0,
+            UNIQUE(station_id)
+        );
+
+        /* ─── USDA Hardiness Zones (ZIP lookup) ─── */
+        CREATE TABLE IF NOT EXISTS usda_hardiness_zones (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            zipcode TEXT NOT NULL UNIQUE,
+            zone TEXT NOT NULL,
+            trange TEXT DEFAULT '',
+            state TEXT DEFAULT ''
         );
     ''')
     conn.commit()

@@ -1577,6 +1577,8 @@ def create_app():
     app.register_blueprint(tier8_bp)
     app.register_blueprint(remaining_calcs_bp)
     app.register_blueprint(remaining_refs_bp)
+    from web.blueprints.remaining_features import remaining_features_bp
+    app.register_blueprint(remaining_features_bp)
 
     # ─── v7.12.0 — Nutritional Intelligence & Water Expansion (Phase 2) ──
     from web.blueprints.consumption import consumption_bp

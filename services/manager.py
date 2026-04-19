@@ -567,24 +567,62 @@ def wait_for_port(port: int, timeout: float = 30, interval: float = 1.0) -> bool
     return False
 
 
-# Service health endpoints — used by is_healthy() for deeper checks
-SERVICE_HEALTH_URLS = {
-    'ollama': ('http://127.0.0.1:11434/api/tags', 200),
-    'kiwix': ('http://127.0.0.1:8888/', 200),
-    'qdrant': ('http://127.0.0.1:6333/healthz', 200),
-    'stirling': ('http://127.0.0.1:8443/', 200),
-    'cyberchef': ('http://127.0.0.1:8889/', 200),
+# Service health endpoint templates — {port} is replaced at runtime
+# so health checks follow any port changes in service modules.
+_SERVICE_HEALTH_TEMPLATES = {
+    'ollama': ('http://127.0.0.1:{port}/api/tags', 200),
+    'kiwix': ('http://127.0.0.1:{port}/', 200),
+    'qdrant': ('http://127.0.0.1:{port}/healthz', 200),
+    'stirling': ('http://127.0.0.1:{port}/', 200),
+    'cyberchef': ('http://127.0.0.1:{port}/', 200),
 }
+
+# Default ports — overridden by service module constants when available
+_DEFAULT_SERVICE_PORTS = {
+    'ollama': 11434,
+    'kiwix': 8888,
+    'qdrant': 6333,
+    'stirling': 8443,
+    'cyberchef': 8889,
+}
+
+
+def _get_service_port(service_id: str) -> int:
+    """Return the configured port for a service, falling back to default."""
+    try:
+        if service_id == 'ollama':
+            from services.ollama import OLLAMA_PORT
+            return OLLAMA_PORT
+        elif service_id == 'kiwix':
+            from services.kiwix import KIWIX_PORT
+            return KIWIX_PORT
+        elif service_id == 'qdrant':
+            from services.qdrant import QDRANT_PORT
+            return QDRANT_PORT
+        elif service_id == 'stirling':
+            from services.stirling import STIRLING_PORT
+            return STIRLING_PORT
+        elif service_id == 'cyberchef':
+            from services.cyberchef import CYBERCHEF_PORT
+            return CYBERCHEF_PORT
+    except (ImportError, AttributeError):
+        pass
+    return _DEFAULT_SERVICE_PORTS.get(service_id, 0)
 
 
 def is_healthy(service_id: str, timeout: float = 3.0) -> bool:
     """Check if a service is alive AND responding on its HTTP endpoint."""
     if not is_running(service_id):
         return False
-    health = SERVICE_HEALTH_URLS.get(service_id)
-    if not health:
+    template = _SERVICE_HEALTH_TEMPLATES.get(service_id)
+    if not template:
         return True  # No health endpoint defined — PID check is all we can do
-    url, expected_status = health
+    url_template, expected_status = template
+    port = _get_service_port(service_id)
+    if not port:
+        return True
+    url = url_template.format(port=port)
+    health = (url, expected_status)
     try:
         resp = requests.get(url, timeout=timeout)
         return resp.status_code == expected_status

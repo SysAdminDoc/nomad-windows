@@ -25,6 +25,7 @@ log = logging.getLogger('nomad.manager')
 _processes: dict[str, subprocess.Popen] = {}
 _download_progress: dict[str, dict] = {}
 _service_logs: dict[str, deque] = {}
+_start_times: dict[str, float] = {}
 _lock = threading.Lock()
 
 # Service dependency graph: service -> list of services it requires
@@ -229,6 +230,7 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
         threading.Thread(target=_read_output, daemon=True).start()
 
         _processes[service_id] = proc
+        _start_times[service_id] = time.time()
 
     db = get_db()
     try:
@@ -502,12 +504,19 @@ def register_process(service_id: str, proc: subprocess.Popen):
     """Thread-safe registration of a process started by individual service modules."""
     with _lock:
         _processes[service_id] = proc
+        _start_times[service_id] = time.time()
 
 
 def unregister_process(service_id: str):
     """Thread-safe removal of a process entry."""
     with _lock:
         _processes.pop(service_id, None)
+        _start_times.pop(service_id, None)
+
+
+def get_start_time(service_id: str):
+    """Return the epoch start time for a service, or None."""
+    return _start_times.get(service_id)
 
 
 def get_download_progress(service_id: str) -> dict:

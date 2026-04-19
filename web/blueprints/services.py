@@ -13,7 +13,7 @@ from db import db_session, log_activity
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
 from services.manager import (
     get_download_progress, get_dir_size, format_size, uninstall_service,
-    get_services_dir, ensure_dependencies,
+    get_services_dir, ensure_dependencies, get_start_time,
 )
 from web.state import _installing, _installing_lock, _update_state
 from web.utils import clone_json_fallback as _clone_json_fallback, get_query_int as _get_query_int
@@ -87,14 +87,17 @@ def api_services():
         if port_val is None:
             log.debug('Service %s has no %s_PORT constant', sid, sid.upper())
 
+        is_running = mod.running() if installed else False
+        started_at = get_start_time(sid) if is_running else None
         services.append({
             'id': sid,
             'name': getattr(mod, 'SERVICE_ID', sid),
             'installed': installed,
-            'running': mod.running() if installed else False,
+            'running': is_running,
             'port': port_val,
             'progress': get_download_progress(sid),
             'disk_used': disk_used,
+            'started_at': started_at,
         })
     return jsonify(services)
 

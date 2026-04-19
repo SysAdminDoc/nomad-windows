@@ -18,7 +18,10 @@ const NomadEvents = {
         this._source = new EventSource('/api/events/stream');
 
         this._source.onopen = () => {
-            this._reconnectDelay = 1000;
+            // Only reset backoff after sustained connection (30s) to prevent
+            // rapid connect/disconnect flapping from flooding the server.
+            if (this._sustainedTimer) clearTimeout(this._sustainedTimer);
+            this._sustainedTimer = setTimeout(() => { this._reconnectDelay = 1000; }, 30000);
             console.debug('[SSE] Connected');
             const dot = document.getElementById('sse-dot');
             const wrap = document.getElementById('sse-status');

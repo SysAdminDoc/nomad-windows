@@ -736,7 +736,7 @@ def api_context_usage():
     if model:
         try:
             import requests as req
-            r = req.post('http://localhost:11434/api/show', json={'name': model}, timeout=5)
+            r = req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/show', json={'name': model}, timeout=5)
             if r.ok:
                 info = _safe_response_payload(r, {})
                 params = info.get('parameters', '')
@@ -857,7 +857,7 @@ def api_ai_chat_image():
 
     try:
         import requests as _req
-        resp = _req.post('http://localhost:11434/api/chat', json={
+        resp = _req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/chat', json={
             'model': model,
             'messages': [{
                 'role': 'user',
@@ -1103,7 +1103,7 @@ def api_ai_model_info(model_name):
     """Get detailed model info for model cards."""
     try:
         import requests as _req
-        r = _req.post(f'http://localhost:11434/api/show', json={'name': model_name}, timeout=5)
+        r = _req.post(f'http://localhost:{ollama.OLLAMA_PORT}/api/show', json={'name': model_name}, timeout=5)
         if r.ok:
             data = _safe_response_payload(r, {})
             details = data.get('details', {})

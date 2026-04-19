@@ -3008,6 +3008,39 @@ def _create_data_foundation_tables(conn):
             UNIQUE(state_fips, county_fips)
         );
 
+        /* ─── OODA Loop Cycles ─── */
+        CREATE TABLE IF NOT EXISTS ooda_cycles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            situation TEXT NOT NULL,
+            observe TEXT DEFAULT '',
+            orient TEXT DEFAULT '',
+            decide TEXT DEFAULT '',
+            act TEXT DEFAULT '',
+            outcome TEXT DEFAULT '',
+            cycle_time_min REAL DEFAULT 0,
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── After Action Reports ─── */
+        CREATE TABLE IF NOT EXISTS aar_reports (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            event_name TEXT NOT NULL,
+            event_date TEXT DEFAULT '',
+            facilitator TEXT DEFAULT '',
+            participants TEXT DEFAULT '[]',
+            q1_plan TEXT DEFAULT '',
+            q2_happened TEXT DEFAULT '',
+            q3_why TEXT DEFAULT '',
+            q4_improve TEXT DEFAULT '',
+            sustains TEXT DEFAULT '[]',
+            improves TEXT DEFAULT '[]',
+            action_items TEXT DEFAULT '[]',
+            status TEXT DEFAULT 'draft',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         /* ─── Child ID Packets ─── */
         CREATE TABLE IF NOT EXISTS child_id_packets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

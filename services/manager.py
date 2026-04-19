@@ -515,6 +515,7 @@ def register_process(service_id: str, proc: subprocess.Popen):
     """Thread-safe registration of a process started by individual service modules."""
     with _lock:
         _processes[service_id] = proc
+    _start_times.setdefault(service_id, time.time())
 
 
 def unregister_process(service_id: str):
@@ -582,7 +583,7 @@ def wait_for_port(port: int, timeout: float = 30, interval: float = 1.0) -> bool
 
 # Service health endpoint templates — {port} is replaced at runtime
 # so health checks follow any port changes in service modules.
-_SERVICE_HEALTH_TEMPLATES = {
+SERVICE_HEALTH_URLS = _SERVICE_HEALTH_TEMPLATES = {
     'ollama': ('http://127.0.0.1:{port}/api/tags', 200),
     'kiwix': ('http://127.0.0.1:{port}/', 200),
     'qdrant': ('http://127.0.0.1:{port}/healthz', 200),

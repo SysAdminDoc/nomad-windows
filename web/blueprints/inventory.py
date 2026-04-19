@@ -68,7 +68,15 @@ def api_inventory_list():
             params.extend([f'%{search}%'] * 3)
         if clauses:
             query += ' WHERE ' + ' AND '.join(clauses)
-        query += ' ORDER BY category, name LIMIT ? OFFSET ?'
+        # Sort support
+        SORT_COLS = {'name', 'category', 'quantity', 'cost', 'location', 'expiration', 'daily_usage'}
+        sort_by = request.args.get('sort_by', '')
+        sort_dir = 'DESC' if request.args.get('sort_dir', 'asc').lower() == 'desc' else 'ASC'
+        if sort_by in SORT_COLS:
+            query += f' ORDER BY {sort_by} {sort_dir}, name ASC'
+        else:
+            query += ' ORDER BY category, name'
+        query += ' LIMIT ? OFFSET ?'
         params.extend([limit, offset])
         rows = db.execute(query, params).fetchall()
     return jsonify([dict(r) for r in rows])

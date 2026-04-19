@@ -11,36 +11,65 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 
 | Project | Stars | Category | What They Do Better | Missing from NOMAD |
 |---------|-------|----------|--------------------|--------------------|
-| [Crosstalk-Solutions/project-nomad](https://github.com/Crosstalk-Solutions/project-nomad) | ~22k | Upstream (Docker) | Polished onboarding wizard, content-pack marketplace UI, one-click Docker deploy, wider community & YouTube ecosystem (475K subscribers) | Content-pack download UI comparable to an app store; guided first-run experience with progress tracking |
-| [grocy/grocy](https://github.com/grocy/grocy) | ~8.8k | Household ERP | Barcode-to-product lookup via OpenFoodFacts, recipe-driven consumption (auto-deduct ingredients), chore scheduling with user assignment, battery replacement tracker, full Swagger UI API docs, Home Assistant integration | Recipe-driven auto-consumption, product database lookup, chore/maintenance scheduler with assignees, HA integration |
+| [Crosstalk-Solutions/project-nomad](https://github.com/Crosstalk-Solutions/project-nomad) | ~24.4k | Upstream (Docker) | Polished onboarding wizard, content-pack marketplace UI, one-click Docker deploy, wider community & YouTube ecosystem (475K subscribers) | Content-pack download UI comparable to an app store; guided first-run experience with progress tracking |
+| [open-webui/open-webui](https://github.com/open-webui/open-webui) | ~132k | AI Chat Frontend | Model builder UI, RAG with 9 vector DB backends, web search injection (15+ providers), Python function calling, image generation (DALL-E/ComfyUI), RBAC + LDAP/SSO, persistent artifacts/tools workspace, conversation tagging & filtering, knowledge collections, SCIM provisioning | Model management UI (pull/create/delete from web), RAG web search injection, AI function/tool calling, conversation tags & filters, knowledge collection management, model comparison side-by-side |
+| [grocy/grocy](https://github.com/grocy/grocy) | ~9.0k | Household ERP | Barcode-to-product lookup via OpenFoodFacts, recipe-driven consumption (auto-deduct ingredients), chore scheduling with user assignment, battery replacement tracker, full Swagger UI API docs, Home Assistant integration | Recipe-driven auto-consumption, product database lookup, chore/maintenance scheduler with assignees, HA integration |
 | [sysadminsmedia/homebox](https://github.com/sysadminsmedia/homebox) | ~5.7k | Home Inventory | QR code label printing per item, warranty & maintenance schedule tracking, receipt/document attachments per item, ultra-light resource usage (~50 MB RAM), nested tag hierarchies (parent/child), fractional quantities, OpenTelemetry tracing | QR label generation per inventory item, warranty tracking fields, nested tag trees, fractional quantities |
-| [glanceapp/glance](https://github.com/glanceapp/glance) | ~32k | Dashboard | YAML-based widget config (no code), clean card-based layout with consistent spacing, RSS/Reddit/HN/GitHub/weather widgets with minimal setup, single binary in Go (~50 MB RAM), responsive mobile-first design | Declarative widget configuration file, cleaner card density on home page, drastically lower resource usage |
-| [gethomepage/homepage](https://github.com/gethomepage/homepage) | ~29.6k | Dashboard | 100+ service integrations with live status, Docker auto-discovery, bookmarks/quick-launch groups, per-widget refresh intervals, i18n with 40+ languages | Service health widget auto-discovery, bookmark groups, deeper i18n (NOMAD has 10 languages / 56 keys) |
+| [glanceapp/glance](https://github.com/glanceapp/glance) | ~33k | Dashboard | YAML-based widget config (no code), clean card-based layout with consistent spacing, RSS/Reddit/HN/GitHub/weather widgets with minimal setup, single binary in Go (~50 MB RAM), responsive mobile-first design | Declarative widget configuration file, cleaner card density on home page, drastically lower resource usage |
+| [gethomepage/homepage](https://github.com/gethomepage/homepage) | ~30k | Dashboard | 150+ service integrations with live status, Docker auto-discovery, bookmarks/quick-launch groups, per-widget refresh intervals, i18n with 40+ languages | Service health widget auto-discovery, bookmark groups, deeper i18n (NOMAD has 10 languages / 56 keys) |
 | [Lissy93/dashy](https://github.com/Lissy93/dashy) | ~24.7k | Dashboard | Visual UI config editor (no YAML), 50+ built-in widgets, multi-page workspaces, icon packs, status checks with history graph, Keycloak/OIDC auth | Visual drag-and-drop dashboard editor, status check history graphs, icon pack system |
-| [iiab/iiab](https://github.com/iiab/iiab) | ~1.8k | Offline Knowledge | Multi-language content packs with regional catalogs, Kolibri + Sugarizer + Moodle integration, mesh networking support, SD-card-ready images for Raspberry Pi | Regional content catalogs with language filters, education platform integrations |
+| [mealie-recipes/mealie](https://github.com/mealie-recipes/mealie) | ~12k | Meal Planning | URL-based recipe import (paste URL, auto-scrape), multi-household support, shopping list with aisle grouping, nutritional info per recipe, mobile-friendly Vue UI, webhook integrations, meal plan calendar view | URL-based recipe import, shopping list aisle grouping, meal plan calendar view, nutritional breakdown per recipe |
+| [iiab/iiab](https://github.com/iiab/iiab) | ~1.8k | Offline Knowledge | Multi-language content packs with regional catalogs, Kolibri + Sugarizer + Moodle integration, mesh networking support, SD-card-ready images for Raspberry Pi, Android deployment via Termux | Regional content catalogs with language filters, education platform integrations, Android deployment |
 | [ligi/SurvivalManual](https://github.com/ligi/SurvivalManual) | ~2.5k | Survival Reference | Illustrated survival manual with offline search, chapter-based navigation, lightweight (single APK), community translations | Illustrated inline survival reference content (NOMAD links to external books/ZIMs instead) |
+| [PrepSoft/SPS](https://prepsoftsystems.com/) | N/A | Prep Platform | Built-in SIP phone for local comms, 60+ offline calculators, food storage nutritional tracking with caloric needs calculator, survival simulations (supply duration modeling), Raspberry Pi deployment | SIP/VoIP local comms, survival duration simulation engine, caloric needs vs storage gap analysis |
 | [Prepper Nerd UPS](https://prepper-nerd.com/) | Commercial | Prep Inventory | Barcode scanning with auto-fill (description, calories, servings), calorie-per-day burn-down dashboard, insurance/warranty tracker, personalized prep coaching, Excel/PDF export scheduling | Auto-fill from barcode product database, insurance tracker, scheduled report exports |
 | [meshtastic/web](https://github.com/meshtastic/web) | ~1.5k | Mesh Comms | Real-time node map with signal quality, message threading, channel management UI, Bluetooth/serial/HTTP transport selection, position sharing, Home Assistant integration | Direct Meshtastic serial integration (NOMAD has stub), signal quality visualization |
 | [s-samarth/survive-ai](https://github.com/s-samarth/survive-ai) | New | Offline AI Survival | On-device AI (Gemma 2B, 4 GB RAM), RAG-grounded answers with citations from curated survival docs, conflict-zone + wilderness focus, ~500 MB total footprint | Lighter AI fallback model option for low-spec hardware; RAG specifically tuned for survival docs |
-| [ShAd0wZi/Offline-Survival-KIt](https://github.com/ShAd0wZi/Offline-Survival-KIt) | New | Survival PWA | Zero-dependency React PWA, 6 pre-loaded illustrated survival guides, one-click "Download All" for offline sync, instant search, extremely lightweight | Bundled illustrated step-by-step survival guides as first-class content (not external ZIM) |
 | [sahana/eden](https://github.com/sahana/eden) | ~21 | Emergency Mgmt | ICS/NIMS incident command integration, volunteer management, shelter/camp tracking, missing persons registry, formal humanitarian coordination workflows | Formal ICS organizational charts, volunteer skill matching at scale, shelter capacity tracking |
 
 ### Key Gaps Identified
 
-1. **Onboarding & First-Run** — No guided setup wizard; new users face a wall of 33+ tabs
-2. **Inventory UX** — No barcode-to-product database lookup, no QR label printing, no recipe-driven auto-consumption
-3. **Dashboard configurability** — Widget layout is code-driven, not user-configurable beyond show/hide toggles
-4. **i18n depth** — 10 languages with only 56 keys each; competitors offer 40+ languages with full coverage
-5. **Maintenance scheduling** — No recurring maintenance reminders for equipment/vehicles/generators
-6. **Data export scheduling** — No automated periodic export (email/file) of inventory or reports
-7. **API documentation** — No Swagger/OpenAPI spec for the 2,000+ routes
-8. **Survival reference content** — Relies on external ZIMs; no built-in illustrated quick-reference
-9. **Meshtastic integration** — Stub only; no real serial/BLE bridge
-10. **Resource footprint** — Glance runs in 50 MB RAM; NOMAD has no lightweight/minimal mode for constrained hardware
+1. **AI Chat UX** — Open WebUI (132k stars) sets the bar: model management UI, conversation tags/filters, knowledge collections, function calling, side-by-side model comparison. NOMAD's AI chat is functional but basic by comparison.
+2. **Onboarding & First-Run** — No guided setup wizard; new users face a wall of 33+ tabs
+3. **Inventory UX** — No barcode-to-product database lookup, no QR label printing, no recipe-driven auto-consumption
+4. **Meal Planning** — Mealie (12k stars) shows the standard: URL-based recipe import, shopping list with aisle grouping, meal plan calendar. NOMAD has basic meal planning but lacks recipe import and calendar view.
+5. **Dashboard configurability** — Widget layout is code-driven, not user-configurable beyond show/hide toggles
+6. **i18n depth** — 10 languages with only 56 keys each; competitors offer 40+ languages with full coverage
+7. **Maintenance scheduling** — No recurring maintenance reminders for equipment/vehicles/generators
+8. **Data export scheduling** — No automated periodic export (email/file) of inventory or reports
+9. **API documentation** — No Swagger/OpenAPI spec for the 2,000+ routes
+10. **Survival reference content** — Relies on external ZIMs; no built-in illustrated quick-reference
+11. **Meshtastic integration** — Stub only; no real serial/BLE bridge
+12. **Resource footprint** — Glance runs in 50 MB RAM; NOMAD has no lightweight/minimal mode for constrained hardware
+13. **Local comms** — SPS has built-in SIP phone for grid-down voice comms; NOMAD only has text-based LAN chat
 
 ---
 
-## Deep Dive: Glance (~32k stars)
+## Deep Dive: Open WebUI (~132k stars)
+
+**Repo**: [open-webui/open-webui](https://github.com/open-webui/open-webui) | **Stack**: SvelteKit, Python, Docker
+
+### What They Do Better
+
+1. **Model management UI** — Pull, create, delete, and configure models from the web interface. Modelfile builder with live preview. NOMAD requires navigating to a settings sub-panel and typing model names.
+2. **Knowledge collections** — Named document collections (not just a flat KB). Users create "Medical", "Radio", "Survival" collections and attach them to specific conversations. NOMAD has KB workspaces but they're not attachable per-conversation.
+3. **Conversation organization** — Tags, folders, pinning, archiving, search with filters (by model, date range, tag). NOMAD has flat conversation list with basic search.
+4. **Function calling / tools** — Users write Python functions that LLMs can call. Built-in code editor. Enables structured actions (query APIs, run calculations) without hardcoding them into the backend.
+5. **Model comparison** — Side-by-side responses from two models on the same prompt. Useful for evaluating which model works best for survival/medical queries.
+6. **Web search RAG injection** — 15+ search providers (SearXNG, Brave, etc.) inject web results into context. When online, this dramatically improves answer quality. NOMAD's RAG is purely local documents.
+7. **Artifacts system** — Persistent key-value store for AI-generated content (journals, trackers, leaderboards). Conversations can create and reference persistent state.
+8. **RBAC + SSO** — Full role-based access control, LDAP/AD integration, OAuth. Critical for LAN multi-user deployments that NOMAD's basic auth can't serve.
+
+### Features to Adopt (Practical for NOMAD)
+
+- **Conversation tags & folders** — Low effort, high UX impact. Tag conversations by topic (medical, inventory, planning).
+- **Per-conversation knowledge attachment** — "Use Medical KB for this conversation" toggle.
+- **Model card UI with recommendations** — Show VRAM requirements, speed benchmarks, and use-case tags per model.
+- **Prompt templates/presets** — Save and reuse prompt templates ("SITREP format", "Inventory gap analysis", "Medical triage").
+
+---
+
+## Deep Dive: Glance (~33k stars)
 
 **Repo**: [glanceapp/glance](https://github.com/glanceapp/glance) | **Latest**: v0.8.4 (2025-06-10) | **Stack**: Go, single binary (<20 MB), vanilla JS, YAML config
 
@@ -78,7 +107,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 
 ---
 
-## Deep Dive: Homepage (~29.6k stars)
+## Deep Dive: Homepage (~30k stars)
 
 **Repo**: [gethomepage/homepage](https://github.com/gethomepage/homepage) | **Latest**: v1.12.3 (2026-04-01) | **Stack**: Next.js, statically generated, YAML config
 
@@ -181,6 +210,9 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P1-16 | **Expiry countdown badges** | Show "Expires in 3 days" warning badges on inventory items nearing expiration, not just color-coded rows | Grocy, Prepper Nerd |
 | P1-17 | **Sidebar item reorder** | Let users drag sidebar items within groups to reorder; persist to localStorage | Dashy |
 | P1-18 | **Copy-to-clipboard on data cells** | Click-to-copy on coordinates, frequencies, callsigns, and other reference data | Meshtastic Web |
+| P1-19 | **AI conversation tags** | Tag AI conversations with labels (medical, inventory, planning, etc.) for filtering and organization | Open WebUI |
+| P1-20 | **AI prompt presets** | Save and reuse prompt templates ("SITREP format", "Inventory gap analysis", "Medical triage") from a dropdown in AI chat | Open WebUI |
+| P1-21 | **Meal plan date labels** | Show day-of-week headers on meal planning entries instead of raw dates | Mealie |
 
 ### P2: Medium Features (1-4 hours each)
 
@@ -189,7 +221,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-01 | **First-run onboarding wizard** | 5-step guided wizard on first launch: set location, pick dashboard mode, install first content pack, configure AI, import sample data | Upstream NOMAD |
 | P2-02 | **Barcode product database lookup** | On barcode scan, query bundled UPC database + OpenFoodFacts offline dump for product name, calories, category auto-fill | Grocy, Prepper Nerd |
 | P2-03 | **QR code label generation** | Generate printable QR code labels for inventory items linking to their detail page; batch print sheet layout | Homebox |
-| P2-04 | **Recipe-driven consumption** | Add recipes that reference inventory items; "Cook this" button auto-deducts ingredient quantities and logs the meal | Grocy |
+| P2-04 | **Recipe-driven consumption** | Add recipes that reference inventory items; "Cook this" button auto-deducts ingredient quantities and logs the meal | Grocy, Mealie |
 | P2-05 | **Equipment maintenance scheduler** | Recurring maintenance reminders for generators, vehicles, water filters, etc. with overdue alerts and history log | Homebox, Prepper Nerd |
 | P2-06 | **Drag-and-drop widget reorder** | Let users drag widgets on the home page to reorder with visual drop zones; persist layout to localStorage/DB | Dashy, Glance |
 | P2-07 | **OpenAPI/Swagger spec** | Auto-generate OpenAPI 3.0 spec from Flask routes + validation schemas; serve Swagger UI at `/api/docs` | Grocy |
@@ -207,6 +239,12 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P2-19 | **Inventory fractional quantities** | Support decimal quantities (0.5 kg, 1.25 L) with configurable unit display | Homebox |
 | P2-20 | **Task assignment to contacts** | Assign scheduled tasks to specific family members/contacts; filter task view by assignee | Grocy |
 | P2-21 | **Battery/consumable tracker** | Track batteries and consumable parts in devices (flashlights, radios, filters) with replacement date reminders and low-stock alerts | Grocy |
+| P2-22 | **AI model management UI** | Pull, delete, and view model details (VRAM requirement, parameter count, quantization) from a dedicated model manager panel instead of typing model names into a text field | Open WebUI |
+| P2-23 | **Per-conversation knowledge scope** | Toggle which KB workspaces are active for a specific AI conversation ("Use Medical KB for this chat") | Open WebUI |
+| P2-24 | **URL-based recipe import** | Paste a recipe URL and auto-scrape title, ingredients, and instructions using structured data (JSON-LD/Microdata) parsing | Mealie |
+| P2-25 | **Meal plan calendar view** | Weekly/monthly calendar grid showing planned meals with drag-to-reschedule; auto-generate shopping list from selected date range | Mealie |
+| P2-26 | **Survival duration simulator** | Given current inventory levels, household size, and daily caloric/water needs, project how many days supplies will last with burn-down chart | SPS |
+| P2-27 | **Caloric gap analysis** | Compare total stored calories vs. daily household caloric need; show coverage days per food category and identify gaps | SPS, Prepper Nerd |
 
 ### P3: Nice-to-Haves and Polish
 
@@ -227,8 +265,12 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P3-13 | **Regional content packs** | Pre-configured data bundles for Canada (ECCC), UK (Met Office), EU (Copernicus), Australia (BOM) with localized weather sources | IIAB |
 | P3-14 | **Lightweight/minimal mode** | Startup flag or setting to disable Situation Room, heavy services, and background workers for Raspberry Pi / low-RAM hardware | Glance, Survive-AI |
 | P3-15 | **Home Assistant integration** | MQTT or REST bridge to expose NOMAD sensor data (power, weather, inventory counts) to Home Assistant | Grocy, Meshtastic HA |
+| P3-16 | **AI model comparison view** | Side-by-side responses from two models on the same prompt for evaluating model quality | Open WebUI |
+| P3-17 | **AI function/tool calling** | Let AI execute structured actions via defined Python functions (query inventory, check weather, calculate dosage) instead of regex-based action parsing | Open WebUI |
+| P3-18 | **Shopping list aisle grouping** | Group shopping list items by store aisle/section (Produce, Dairy, Pharmacy, etc.) for efficient shopping trips | Mealie, Grocy |
+| P3-19 | **Android companion app** | Lightweight Android app for barcode scanning, inventory lookup, and checklist access that syncs with desktop instance via LAN API | Grocy (Android), IIAB (Android) |
 
-### P4: Deep-Dive Discoveries (from competitor research loop 2)
+### P4: Deep-Dive Discoveries (from competitor research)
 
 | # | Title | Description | Inspired By |
 |---|-------|-------------|-------------|
@@ -301,6 +343,15 @@ Issues identified from competitor analysis and UX review of the current app.
 | U-16 | **No progress indicator for large operations** — content pack downloads show progress, but DB operations (vacuum, import) don't | Add progress bar or spinner for any operation taking >1 second |
 | U-17 | **Situation Room initial load** — 34 fetch workers fire simultaneously on tab open | Prioritize above-the-fold cards; lazy-load below-fold cards on scroll into view (IntersectionObserver) |
 | U-18 | **Service start feedback delay** — clicking "Start" on a service shows no immediate feedback | Show immediate "Starting..." state with spinner; poll health endpoint |
+
+### AI Chat UX (inspired by Open WebUI)
+
+| # | Issue | Recommendation |
+|---|-------|----------------|
+| U-19 | **Flat conversation list** — no way to organize or filter conversations | Add tags, pinning, archiving, and search-by-model/date filters |
+| U-20 | **Model selection is a text dropdown** — no information about model capabilities or requirements | Show model cards with VRAM requirement, speed rating, and recommended use-case tags |
+| U-21 | **No conversation context indicator** — user can't see which KB workspaces or RAG scope is active | Show active knowledge sources as badges in chat header |
+| U-22 | **AI action parsing is regex-based** — fragile natural language parsing for structured actions | Migrate to structured function calling with defined schemas for inventory/medical/waypoint actions |
 
 ---
 

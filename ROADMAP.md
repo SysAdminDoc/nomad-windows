@@ -28,18 +28,10 @@ These are the remaining phases from the original v8 roadmap that were never buil
 
 ---
 
-### 1.1 — Data Foundation & Localization
+### 1.1 — Data Foundation & Localization --- COMPLETE (v7.44.0)
 **Effort:** L | **Refs:** features.md SS54, datasources.md SS1/SS8/SS17
 
-1. **Data Pack manager UI** — Settings section for downloading/managing offline datasets. Tier 1 auto-bundled (~75 MB), Tier 2/3 as expansion packs. Version tracking, update checking.
-2. **Regional profile system** — Setup wizard: Country > state > county > ZIP. Auto-resolve USDA hardiness zone, FEMA risk scores, nearest NWS station. `regional_profile` table.
-3. **FEMA NRI integration** — Bundle county-level hazard scoring (~20 MB). `/api/region/threats`, `/api/region/profile`.
-4. **USDA FoodData SR Legacy** — Bundle 7,793 foods (~25 MB). `/api/nutrition/search`, `/api/nutrition/lookup/<fdc_id>`. `nutrition_foods`, `nutrition_nutrients` tables.
-5. **Regional content adaptation** — Threat-weighted readiness scoring, auto-surfaced regional checklists, auto-configured weather stations.
-
-| Tables | Routes | Data Packs |
-|--------|--------|------------|
-| ~5 | ~15 | FEMA NRI, USDA SR Legacy, NOAA frost dates, NOAA weather stations |
+All 5 Tier 1 data pack importers built. Regional profile auto-populates from data packs on save. Nutrition blueprint (search, link, summary, micronutrient gaps) wired to USDA data. 3 new tables, 6 indexes, 3 lookup routes, 5 importers.
 
 ---
 

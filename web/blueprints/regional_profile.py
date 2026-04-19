@@ -90,9 +90,84 @@ def api_region_profile_save():
         ))
         db.commit()
 
+    # Auto-populate from data packs if available
+    enriched = {}
+    zip_code = data.get('zip_code', '').strip()
+    county = data.get('county', '').strip()
+
+    with db_session() as db:
+        profile = db.execute(
+            'SELECT id FROM regional_profile WHERE is_active = 1 ORDER BY id DESC LIMIT 1'
+        ).fetchone()
+        if profile:
+            profile_id = profile['id']
+
+            # Auto-fill hardiness zone from ZIP
+            if zip_code:
+                hz = db.execute(
+                    'SELECT zone, trange FROM usda_hardiness_zones WHERE zipcode = ?',
+                    (zip_code,)
+                ).fetchone()
+                if hz:
+                    db.execute('UPDATE regional_profile SET usda_zone = ? WHERE id = ?',
+                               (hz['zone'], profile_id))
+                    enriched['usda_zone'] = hz['zone']
+
+            # Auto-fill FEMA risk scores from county
+            if county and state:
+                state_name = US_STATES.get(state, state)
+                nri = db.execute(
+                    'SELECT risk_score, risk_rating, hazard_scores FROM fema_nri_counties WHERE county_name = ? AND state_name = ? LIMIT 1',
+                    (county, state_name)
+                ).fetchone()
+                if nri:
+                    db.execute('UPDATE regional_profile SET fema_risk_scores = ? WHERE id = ?',
+                               (nri['hazard_scores'], profile_id))
+                    enriched['fema_risk_score'] = nri['risk_score']
+                    enriched['fema_risk_rating'] = nri['risk_rating']
+
+            # Auto-fill frost dates from nearest station
+            if data.get('lat') and data.get('lng'):
+                lat, lng = float(data['lat']), float(data['lng'])
+                frost = db.execute(
+                    '''SELECT station_name, last_spring_32f, first_fall_32f, growing_season_days,
+                              lat, lng,
+                              ((lat - ?) * (lat - ?) + (lng - ?) * (lng - ?)) AS dist2
+                       FROM noaa_frost_dates
+                       WHERE last_spring_32f != '' AND first_fall_32f != ''
+                       ORDER BY dist2 LIMIT 1''',
+                    (lat, lat, lng, lng)
+                ).fetchone()
+                if frost:
+                    db.execute('''UPDATE regional_profile
+                                  SET frost_date_last = ?, frost_date_first = ?
+                                  WHERE id = ?''',
+                               (frost['last_spring_32f'], frost['first_fall_32f'], profile_id))
+                    enriched['frost_date_last'] = frost['last_spring_32f']
+                    enriched['frost_date_first'] = frost['first_fall_32f']
+                    enriched['growing_season_days'] = frost['growing_season_days']
+
+            # Auto-fill nearest NWS station
+            if data.get('lat') and data.get('lng'):
+                station = db.execute(
+                    '''SELECT station_id, name, state, lat, lng,
+                              ((lat - ?) * (lat - ?) + (lng - ?) * (lng - ?)) AS dist2
+                       FROM noaa_stations
+                       ORDER BY dist2 LIMIT 1''',
+                    (lat, lat, lng, lng)
+                ).fetchone()
+                if station:
+                    db.execute('''UPDATE regional_profile
+                                  SET nearest_nws_station = ?, nearest_nws_station_name = ?
+                                  WHERE id = ?''',
+                               (station['station_id'], station['name'], profile_id))
+                    enriched['nearest_station'] = station['name']
+
+            db.commit()
+
     log_activity('regional_profile_configured',
-                 detail=f"Region: {state} {data.get('county', '')} {data.get('zip_code', '')}")
-    return jsonify({'status': 'saved'}), 201
+                 detail=f"Region: {state} {data.get('county', '')} {zip_code}")
+    return jsonify({'status': 'saved', 'enriched': enriched}), 201
 
 
 @regional_profile_bp.route('/api/region/profile', methods=['PUT'])
@@ -263,6 +338,74 @@ def api_region_readiness_weights():
             weights[cat] = weights.get(cat, 1.0) + (score / 100.0)
 
     return jsonify({'adjusted': True, 'source': 'fema_auto', 'weights': weights})
+
+
+# ─── Hardiness zone lookup ────────────────────────────────────────
+
+@regional_profile_bp.route('/api/region/hardiness/<zipcode>')
+def api_region_hardiness(zipcode):
+    with db_session() as db:
+        row = db.execute(
+            'SELECT zone, trange, state FROM usda_hardiness_zones WHERE zipcode = ?',
+            (zipcode.strip(),)
+        ).fetchone()
+    if not row:
+        return jsonify({'found': False})
+    return jsonify({'found': True, 'zone': row['zone'], 'trange': row['trange'], 'state': row['state']})
+
+
+# ─── Frost dates lookup (nearest to lat/lng) ─────────────────────
+
+@regional_profile_bp.route('/api/region/frost-dates')
+def api_region_frost_dates():
+    try:
+        lat = float(request.args.get('lat', 0))
+        lng = float(request.args.get('lng', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'lat and lng required'}), 400
+    if lat == 0 and lng == 0:
+        return jsonify({'error': 'lat and lng required'}), 400
+
+    with db_session() as db:
+        row = db.execute(
+            '''SELECT station_id, station_name, state, lat, lng,
+                      last_spring_32f, first_fall_32f, growing_season_days
+               FROM noaa_frost_dates
+               WHERE last_spring_32f != ''
+               ORDER BY ((lat - ?) * (lat - ?) + (lng - ?) * (lng - ?))
+               LIMIT 1''',
+            (lat, lat, lng, lng)
+        ).fetchone()
+
+    if not row:
+        return jsonify({'found': False})
+    return jsonify({'found': True, **dict(row)})
+
+
+# ─── Nearest weather station lookup ──────────────────────────────
+
+@regional_profile_bp.route('/api/region/nearest-station')
+def api_region_nearest_station():
+    try:
+        lat = float(request.args.get('lat', 0))
+        lng = float(request.args.get('lng', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'lat and lng required'}), 400
+    if lat == 0 and lng == 0:
+        return jsonify({'error': 'lat and lng required'}), 400
+
+    with db_session() as db:
+        row = db.execute(
+            '''SELECT station_id, name, state, lat, lng, icao, elevation_m
+               FROM noaa_stations
+               ORDER BY ((lat - ?) * (lat - ?) + (lng - ?) * (lng - ?))
+               LIMIT 1''',
+            (lat, lat, lng, lng)
+        ).fetchone()
+
+    if not row:
+        return jsonify({'found': False})
+    return jsonify({'found': True, **dict(row)})
 
 
 # ─── Helpers ──────────────────────────────────────────────────────

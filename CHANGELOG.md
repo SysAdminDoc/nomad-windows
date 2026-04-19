@@ -29,8 +29,17 @@ All notable changes to project-nomad-desktop will be documented in this file.
 - **Rainwater catchment calculator** — `/api/calculators/rainwater` takes roof area + rainfall → annual yield, recommended tank size (snaps to standard sizes), first-flush diverter volume, monthly surplus/deficit breakdown, material efficiency guide, self-sufficiency determination.
 - **First-run setup wizard** — `/api/region/setup-status` returns 4-step checklist (location, data packs, threats, household) with per-step completion status and data pack install detail.
 
+### Tier 4 — Field Operations
+- **ICS-205 comms plan auto-builder** — `/api/ics/comms-plan` generates ICS-205 from radio equipment, freq_database, net schedules, and contacts. JSON + printable HTML (`/api/ics/comms-plan/print`). Auto-populates channels, equipment roster, operator list, net schedule.
+- **SAR clue log + containment tracker** — `/api/sar/clues` CRUD with georeferencing. GeoJSON export for map overlay. Containment sector tracking with POD (probability of detection), searcher count, search type. 2 new tables (`sar_clue_log`, `sar_containment`) + 3 indexes.
+- **Overland tire pressure + payload advisor** — `/api/calculators/tire-pressure` with 8 terrain types (highway through ice). Front/rear PSI split, payload capacity tracking, overload warning.
+- **Maritime tide predictor** — `/api/calculators/tides` simplified lunar harmonic model. High/low tide times, spring/neap detection, moon phase. Includes navigation disclaimer.
+- **Aviation density altitude** — `/api/calculators/density-altitude` with pressure altitude, density altitude (Koch chart), takeoff roll estimation, weight factor, runway adequacy check, safety warnings.
+
 ### Stats
-- 5 data pack importers, 8 new tables, 12 new indexes, 35+ new routes. Tiers 1-3 substantially complete.
+- 5 data pack importers, 10 new tables, 15 new indexes, 45+ new routes. Tiers 1-4 substantially complete.
+
+## [v7.43.0]
 
 ## [v7.43.0] — Cross-theme audit + WCAG compliance (Pass 8)
 

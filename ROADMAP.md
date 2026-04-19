@@ -130,50 +130,32 @@ SAR, overland, maritime, aviation specializations.
 
 ---
 
-### 4.1 — ICS-205/205A Comms Plan Auto-Builder
-**Effort:** M
-
-Generate ICS comms plans from existing radio equipment, frequencies, and net schedules.
+### 4.1 — ICS-205/205A Comms Plan Auto-Builder --- COMPLETE (v7.44.0)
+Auto-generates ICS-205 from radio equipment + frequencies + net schedules + contacts. JSON + printable HTML output.
 
 ### 4.2 — SAR Probability Grid (Koester ISRID)
-**Effort:** L
+**Effort:** L — Not started. Requires ISRID statistical data + grid calculation engine.
 
-Hasty search probability mapping based on lost-person behavior statistics. Search sector prioritization.
+### 4.3 — Clue Log + Containment Tracker --- COMPLETE (v7.44.0)
+Georeferenced clue CRUD with GeoJSON export for map overlay. Containment sector tracking with POD, searcher count, search type. 2 new tables + 3 indexes.
 
-### 4.3 — Clue Log + Containment Tracker
-**Effort:** M
-
-Georeferenced clue logging for SAR operations. Containment probability tracking.
-
-### 4.4 — Overland Tire Pressure + Payload Advisor
-**Effort:** S
-
-Terrain-based tire pressure recommendations. Vehicle payload calculator with CG estimation.
+### 4.4 — Overland Tire Pressure + Payload Advisor --- COMPLETE (v7.44.0)
+8 terrain types with PSI adjustment factors. Front/rear split. Payload capacity tracking with overload warning.
 
 ### 4.5 — Terrain-Cost Range Rings
-**Effort:** M
-
-Travel-time range rings accounting for terrain slope, vegetation, and trail conditions (not just Euclidean distance).
+**Effort:** M — Not started. Requires DEM data + weighted Dijkstra.
 
 ### 4.6 — iOverlander + Community POI Ingest
-**Effort:** M
+**Effort:** M — Not started. Requires iOverlander API integration.
 
-Import community-contributed points of interest (water sources, campsites, fuel) for overland route planning.
+### 4.7 — Maritime: Tide + Current Predictor --- COMPLETE (v7.44.0)
+Simplified lunar harmonic model with spring/neap detection. NOT for navigation — approximation only.
 
-### 4.7 — Maritime: Tide + Current Predictor (XTide)
-**Effort:** M
-
-Offline tide predictions. Current estimation for coastal navigation planning.
-
-### 4.8 — Aviation: Density Altitude + Takeoff Distance
-**Effort:** S
-
-Density altitude calculator. Takeoff/landing distance estimation for bush flying.
+### 4.8 — Aviation: Density Altitude + Takeoff Distance --- COMPLETE (v7.44.0)
+Pressure altitude, density altitude, Koch chart takeoff roll estimation. Weight factor, runway adequacy check, safety warnings.
 
 ### 4.9 — AIS/ADS-B Deconfliction View
-**Effort:** M
-
-Merged ship/aircraft track display for coastal and airfield situational awareness. Extends existing Situation Room AIS/ADS-B feeds.
+**Effort:** M — Not started. Extends existing Situation Room feeds.
 
 ---
 

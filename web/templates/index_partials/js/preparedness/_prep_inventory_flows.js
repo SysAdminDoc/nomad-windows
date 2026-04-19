@@ -946,9 +946,9 @@ document.addEventListener('dblclick', function(e) {
   input.select();
 
   function commit() {
-    const newQty = parseInt(input.value, 10);
+    const newQty = parseFloat(input.value);
     if (isNaN(newQty) || newQty < 0) { span.textContent = origText; return; }
-    if (String(newQty) === currentQty) { span.textContent = origText; return; }
+    if (newQty === parseFloat(currentQty)) { span.textContent = origText; return; }
     apiPut('/api/inventory/' + id, { quantity: newQty })
       .then(function() { loadInventory(); })
       .catch(function() { span.textContent = origText; toast('Failed to update quantity', 'error'); });

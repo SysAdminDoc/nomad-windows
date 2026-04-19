@@ -4837,6 +4837,8 @@ async function dismissAlert(id) {
 }
 
 async function dismissAllAlerts() {
+  const count = document.getElementById('alert-items')?.children.length || 0;
+  if (count > 0 && !confirm(`Dismiss all ${count} alert${count !== 1 ? 's' : ''}?`)) return;
   try {
     await apiPost('/api/alerts/dismiss-all');
     const panel = document.getElementById('alert-summary-panel');

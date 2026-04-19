@@ -1,5 +1,5 @@
 /* ─── AI Chat ─── */
-.chat-layout { display: flex; gap: 12px; height: calc(100vh - 164px); min-height: 420px; }
+.chat-layout { display: flex; gap: var(--sp-3, 12px); height: calc(100vh - 164px); min-height: 420px; }
 .convo-sidebar {
   width: 220px; background: var(--surface); border: 1px solid var(--border);
   border-radius: var(--radius); display: flex; flex-direction: column; flex-shrink: 0;
@@ -8,11 +8,11 @@
   padding: 10px 12px; border-bottom: 1px solid var(--border);
   display: flex; justify-content: space-between; align-items: center;
 }
-.convo-sidebar-header span { font-weight: 600; font-size: 13px; }
+.convo-sidebar-header span { font-weight: 600; font-size: var(--text-base, 13px); }
 .convo-list { flex: 1; overflow-y: auto; padding: 6px; }
 .convo-item {
-  padding: 10px 12px; border-radius: 6px; cursor: pointer;
-  font-size: 12px; margin-bottom: 1px; transition: background 0.1s;
+  padding: var(--sp-3, 12px); border-radius: var(--radius-sm, 6px); cursor: pointer;
+  font-size: var(--text-sm-md, 12px); margin-bottom: 1px; transition: background var(--duration-micro, 0.1s);
   display: flex; justify-content: space-between; align-items: center; gap: 4px;
 }
 .convo-item:hover { background: var(--surface2); }
@@ -38,7 +38,7 @@
 }
 .convo-item .convo-actions .convo-del { color: var(--red); }
 .convo-tags { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 2px; }
-.convo-tag-chip { font-size: 9px; padding: 1px 5px; border-radius: 3px; background: var(--accent-dim, rgba(100,100,255,.15)); color: var(--accent); line-height: 1.3; }
+.convo-tag-chip { font-size: var(--text-2xs, 9px); padding: 1px 5px; border-radius: var(--radius-2xs, 2px); background: var(--accent-dim, rgba(100,100,255,.15)); color: var(--accent); line-height: 1.3; }
 .convo-tag-filter { padding: 0 8px 6px; }
 .convo-tag-filter select { width: 100%; padding: 4px 6px; font-size: 11px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface2); color: var(--text-primary); }
 

@@ -17,8 +17,12 @@ All notable changes to project-nomad-desktop will be documented in this file.
 - **Scheduled reports system** — new `scheduled_reports` blueprint with background SITREP generator. Configurable schedule (1-168 hour interval). Report history with search/detail/delete. On-demand generation via `/api/reports/generate`. Schedule config via `/api/reports/schedule`. Background scheduler thread checks every 5 minutes, generates SITREP when due. Failed reports saved with `status: failed` for visibility.
 - **`scheduled_reports` table** — report_type, title, content, context_snapshot, model, trigger (manual/scheduled), status, word_count, generated_at. 2 indexes.
 
+### Tier 2 — High Differentiation
+- **Shamir Secret Sharing vault** — pure-Python GF(256) implementation with no external dependencies. Split secrets into N shares with M-of-N reconstruction threshold. `/api/shamir/split` generates hex-encoded shares, `/api/shamir/reconstruct` recovers the original secret with hash verification. Metadata tracked in `shamir_shares` table (no secrets stored server-side). Supports labels, 2-10 threshold, up to 254 shares.
+- **Warrant canary + dead-man's switch** — configurable signed statement with renewal interval (1-720 hours). `/api/canary` status endpoint detects expiry (dead-man trigger). `/api/canary/renew` resets the timer with new SHA-256 signature. `/api/canary/revoke` for duress signaling. Dead-man's switch actions configurable via `/api/canary/deadman-actions` (alert_federation, broadcast_message, lock_vault, export_data, clear_sensitive). All stored in settings table.
+
 ### Stats
-- 5 data pack importers, 4 new tables, 8 new indexes, 10+ new routes. All 5 Tier 1 data packs now have working import pipelines. Scheduled report generation closes the automation gap in AI Phase 2. Phases 1.2 and 1.3 confirmed already complete (54 routes across water_mgmt, consumption, nutrition, meal_planning).
+- 5 data pack importers, 5 new tables, 9 new indexes, 20+ new routes. Tier 1 complete (data foundation + nutrition/water/consumption/AI automation all built). Tier 2 started (Shamir vault + warrant canary).
 
 ## [v7.43.0] — Cross-theme audit + WCAG compliance (Pass 8)
 

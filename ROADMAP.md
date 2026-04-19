@@ -78,15 +78,11 @@ Pure-Python mesh networking for PACE comms. Reticulum transport layer + LXMF mes
 
 Software-defined radio integration. Frequency scanning, signal identification, spectrum waterfall display.
 
-### 2.3 — Shamir Secret Sharing Vault
-**Effort:** S
+### 2.3 — Shamir Secret Sharing Vault --- COMPLETE (v7.44.0)
+Pure-Python GF(256) Shamir SSS. Split/reconstruct API with hash verification. Metadata in `shamir_shares` table.
 
-Split critical secrets (encryption keys, passwords) across N parties with M-of-N reconstruction. Integrate with existing encrypted vault.
-
-### 2.4 — Warrant Canary + Dead-Man's Switch
-**Effort:** S
-
-Periodic signed "all clear" messages. Auto-trigger actions if not renewed within window. Federation-aware distribution.
+### 2.4 — Warrant Canary + Dead-Man's Switch --- COMPLETE (v7.44.0)
+Signed canary with configurable renewal interval. Dead-man's switch with 5 action types. Revoke for duress signaling.
 
 ### 2.5 — Node-RED-style Flow Editor for Alert Rules
 **Effort:** L

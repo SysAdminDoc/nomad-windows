@@ -47,7 +47,7 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 
 ## Deep Dive: Open WebUI (~132k stars)
 
-**Repo**: [open-webui/open-webui](https://github.com/open-webui/open-webui) | **Stack**: SvelteKit, Python, Docker
+**Repo**: [open-webui/open-webui](https://github.com/open-webui/open-webui) | **Latest**: v0.8.12 (2026-03-27) | **Stack**: SvelteKit, Python, Docker/pip
 
 ### What They Do Better
 
@@ -59,6 +59,34 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 6. **Web search RAG injection** — 15+ search providers (SearXNG, Brave, etc.) inject web results into context. When online, this dramatically improves answer quality. NOMAD's RAG is purely local documents.
 7. **Artifacts system** — Persistent key-value store for AI-generated content (journals, trackers, leaderboards). Conversations can create and reference persistent state.
 8. **RBAC + SSO** — Full role-based access control, LDAP/AD integration, OAuth. Critical for LAN multi-user deployments that NOMAD's basic auth can't serve.
+9. **Skills system (v0.8.0)** — Reusable AI skill definitions with instructions, referenced via `$` command or attached to models. Separates domain expertise from conversation context. NOMAD hardcodes domain knowledge in system prompts.
+10. **Analytics dashboard (v0.8.0)** — Admin analytics with model usage stats, token consumption per user/model, activity rankings, and time-series charts. NOMAD has no AI usage tracking.
+11. **Message queuing (v0.8.0)** — Queue follow-up messages while AI generates, auto-combined and sent on completion. NOMAD blocks input during generation.
+12. **Prompt version control (v0.8.0)** — Prompts have full version history with commit messages, diffs, and rollback. NOMAD prompt presets have no versioning.
+13. **Native built-in tools (v0.7.0)** — AI autonomously searches KB, notes, past chats, and web without user manually attaching files. Models can chain multi-step workflows (research + save note + generate image). NOMAD's AI action parsing is regex-based and single-step.
+14. **Clickable citation deep-links (v0.7.0)** — Citations link directly to the relevant portion of source documents with text highlighting. NOMAD shows citation badges but doesn't jump to the exact passage.
+15. **Cloud storage integration (v0.8.0)** — Native Google Drive and OneDrive/SharePoint file pickers for document import. Not relevant for offline-first, but the pattern of pluggable storage backends is.
+16. **OpenTelemetry observability (v0.8.0)** — Built-in tracing, metrics, and logs for production monitoring. NOMAD has basic file logging only.
+
+### Top Feature Requests (by thumbs-up, open issues)
+
+| Votes | Issue | NOMAD Relevance |
+|-------|-------|-----------------|
+| 58 | 2FA/MFA TOTP support (#1225) | Strong demand for auth hardening; NOMAD's auth is basic |
+| 56 | OpenAI real-time API (#5894) | Voice/streaming API; NOMAD has voice input but no real-time streaming voice |
+| 50 | Data sources (#5872) | External data feeds injected into AI context; mirrors NOMAD's RAG scope concept |
+| 39 | Auth control for shared chats (#2904) | Granular sharing permissions; NOMAD has no chat sharing |
+| 39 | File upload without backend processing (#12228) | Users want to attach files as-is without chunking; useful for field documents |
+| 35 | Knowledge Base image import + OCR (#13137) | Image-to-text in KB; NOMAD has OCR pipeline but not image KB support |
+| 32 | Nextcloud integration (#12724) | Self-hosted cloud storage integration demand |
+| 25 | Native companion mobile app (#8414) | High demand for mobile app; NOMAD has PWA but no native app |
+| 15 | Confirming inputs to MCP/tools (#16940) | User approval before AI executes actions; NOMAD added `confirmed:true` pattern |
+| 14 | More keyboard shortcuts (#1008) | Power user demand for keyboard-driven workflows |
+| 14 | Notes feature (#13464) | Persistent notes separate from chat; NOMAD already has full Notes module |
+| 13 | Shared links management (#2890) | Centralized link/bookmark management |
+| 11 | Admin dashboard (#1450) | Usage analytics for admins |
+| 11 | Channels enhancement (#8050) | Team messaging channels; NOMAD has LAN chat channels |
+| 11 | Compressed archive uploads (#16151) | Upload ZIP/TAR and auto-extract for KB; NOMAD lacks this |
 
 ### Features to Adopt (Practical for NOMAD)
 
@@ -66,6 +94,10 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 - **Per-conversation knowledge attachment** — "Use Medical KB for this conversation" toggle.
 - **Model card UI with recommendations** — Show VRAM requirements, speed benchmarks, and use-case tags per model.
 - **Prompt templates/presets** — Save and reuse prompt templates ("SITREP format", "Inventory gap analysis", "Medical triage").
+- **AI Skills / domain expertise definitions** — Define reusable skill profiles ("Medical Triage Expert", "Radio Operator", "Supply Chain Analyst") with tailored system prompts and attached KB scopes.
+- **Message queuing during generation** — Allow typing follow-up while AI is streaming; queue and send automatically.
+- **AI usage analytics** — Track which models are used, token consumption over time, response quality ratings.
+- **Archive upload auto-extract for KB** — Upload ZIP/TAR containing PDFs/docs, auto-extract and index all contents into KB workspace.
 
 ---
 
@@ -82,6 +114,12 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 5. **Extreme resource efficiency** — <20 MB binary, minimal RAM. Pages load in ~1s. No background workers unless explicitly configured. Cache TTLs are per-widget, not global.
 6. **Preconfigured page templates** — Ship-ready layouts (Startpage, Markets, Gaming) that users copy-paste. Lowers the "blank canvas" intimidation factor.
 7. **Environment variable injection anywhere** — `${ENV_VAR}` syntax works in any YAML value, plus Docker secrets support via `${secret:name}` and file-based secrets via `${readFileFromEnv:VAR}`.
+8. **28 widget types with consistent interface** — RSS, Videos, Hacker News, Lobsters, Reddit, Search, Group, Split Column, Custom API, Extension, Weather, Todo, Monitor, Releases, Docker Containers, DNS Stats, Server Stats, Repository, Bookmarks, ChangeDetection.io, Clock, Calendar, Markets, Twitch Channels, Twitch top games, iframe, HTML. Each widget has a `cache` property for per-widget TTL. NOMAD's dashboard widgets are hardcoded with no user-definable types.
+9. **Todo widget** — Built-in todo list widget on the dashboard. Simple but practical for daily task visibility alongside feeds and monitors.
+10. **Monitor widget** — HTTP/TCP/ICMP health checks with status display. Each monitor has configurable URL, expected status code, and check interval. NOMAD has service health checks but not user-configurable endpoint monitoring.
+11. **ChangeDetection.io integration** — Monitor web pages for changes. Useful for tracking government advisories, supply availability, or regulatory updates — relevant for preparedness.
+12. **Strict no-dependency, no-package.json philosophy** — Contributing guidelines explicitly forbid `package.json` and new dependencies. Forces minimal, maintainable code. NOMAD has 30+ pip dependencies.
+13. **Authentication with hashed passwords + brute-force protection** — Built-in basic auth with bcrypt hashing and rate limiting. Simple but effective. NOMAD's auth is a flat token comparison.
 
 ### Top Feature Requests (by thumbs-up)
 
@@ -94,22 +132,30 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | 12 | Proxmox monitoring (#349) | Infrastructure monitoring not in scope but shows demand for system metrics |
 | 11 | GitHub Trending widget (#72) | Interesting for Knowledge/Intel section |
 | 11 | GUI config editor (#221) | NOMAD has customize panel but no visual widget/page layout editor |
+| 10 | YouTube proxy support (#479) | YouTube widgets bypass region blocks; NOMAD's media downloader could benefit |
 | 10 | Swipe navigation on mobile (#128) | NOMAD's mobile bottom nav could benefit from swipe between tabs |
 | 10 | Address-bar-style search (#229) | NOMAD's Ctrl+K search could act as URL bar for services |
+| 9 | Custom API allow-insecure (#739) | Self-signed cert support for internal APIs; relevant for LAN federation |
 | 9 | Automatic theme switching (day/night) (#674) | NOMAD has night mode but it's manual; could auto-switch by sunrise/sunset |
-| 9 | OIDC/SSO authentication (#905) | NOMAD has basic auth; OIDC would help LAN multi-user deployments |
+| 9 | Calendar *arr integration (#90) | Media calendar integration; shows demand for calendar-based views |
+| 8 | YouTube/Twitch import subscriptions (#302) | Bulk import from existing accounts; NOMAD could import OPML/subscription lists |
+| 7 | Per-page user access control (#694) | Page-level auth; relevant for NOMAD's multi-user LAN scenario |
+| 6 | Auto-create default config on first start (#589) | First-run config generation; NOMAD should generate sensible defaults |
 
 ### Architectural Decisions to Adopt
 
 - **Per-widget cache TTL**: Each widget declares its own cache lifetime instead of a global refresh rate. More efficient for mixed-frequency data.
 - **Config-as-code philosophy**: Exportable/importable dashboard config files make sharing setups between users trivial.
 - **Preconfigured templates**: Ship ready-to-use page layouts that new users can start from instead of building from scratch.
+- **Widget type abstraction**: Each widget is a self-contained unit with shared properties (title, cache TTL, CSS class) plus type-specific config. NOMAD should formalize a widget interface.
+- **Monitor widget pattern**: User-configurable URL health checks are broadly useful — monitor federation peers, external APIs, local services, even internet connectivity.
+- **No-build frontend**: Glance's vanilla JS approach means zero build step, instant dev iteration. NOMAD's esbuild step adds friction; consider whether the bundle is worth it for the frontend complexity level.
 
 ---
 
 ## Deep Dive: Homepage (~30k stars)
 
-**Repo**: [gethomepage/homepage](https://github.com/gethomepage/homepage) | **Latest**: v1.12.3 (2026-04-01) | **Stack**: Next.js, statically generated, YAML config
+**Repo**: [gethomepage/homepage](https://github.com/gethomepage/homepage) | **Latest**: v1.12.3 (2026-04-01) | **Stack**: Next.js 16, statically generated, YAML config, Crowdin i18n
 
 ### What They Do Better
 
@@ -122,6 +168,12 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 7. **Custom API widget** — A generic widget that can query any JSON API and render results with a configurable template. This is the extensibility escape hatch that avoids needing a plugin system.
 8. **Resource widgets (CPU/RAM/disk/uptime)** — Built-in system monitoring widgets with clean, consistent presentation. GPU temperature was a top request (#86, 16 votes).
 9. **Calendar widget with iCal support** — Displays upcoming events from any iCal/CalDAV feed. Practical for ops planning.
+10. **Aggressive security posture** — Explicit security notice in README: "if reachable from any untrusted network, it MUST sit behind a reverse proxy that enforces authentication, TLS, and strictly validates Host headers." NOMAD should have similar prominent security guidance for LAN deployments.
+11. **Block highlighting with units** — Resource widgets support raw value display with configurable units and threshold-based color highlighting. Clean pattern for NOMAD's power/inventory/weather dashboard widgets.
+12. **Codecov integration** — Test coverage badge in README backed by CI coverage reports. NOMAD has no coverage tracking despite 775+ tests.
+13. **Release drafter automation** — GitHub Actions auto-generate release notes from PR labels. NOMAD's releases are manual.
+14. **200+ contributors** — Healthy contributor pipeline via clear CONTRIBUTING.md, focused PR scope, and well-defined widget interface that makes first contributions easy.
+15. **`HOMEPAGE_ALLOWED_HOSTS` security** — Explicit host validation to prevent DNS rebinding attacks. NOMAD binds to localhost by default but has no host header validation for LAN mode.
 
 ### Top Feature Requests (closed issues, by thumbs-up)
 
@@ -132,9 +184,14 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | 16 | CPU temperature (#86) | NOMAD shows CPU% but not temp; psutil can read temps on Linux |
 | 15 | Sonarr calendar widget (#242) | Calendar/scheduling demand |
 | 15 | Server uptime display (#240) | Already in NOMAD backlog as P1-15 |
+| 12 | Uptime Kuma widget (#123) | Status page / uptime monitoring demand; NOMAD could expose /healthz for external monitors |
 | 12 | Config variables (#60) | Glance solved this; NOMAD should too |
+| 11 | Layout options for bookmarks (#601) | Configurable grid/list layout for bookmark sections |
 | 11 | Favicon auto-fetch for bookmarks (#174) | Useful for service links/bookmarks |
 | 10 | Home Assistant integration (#683) | Already in NOMAD backlog as P3-15 |
+| 10 | OpenMediaVault widget (#268) | NAS storage monitoring demand |
+| 10 | Calendar *arr widget (#654) | Second request for media calendar; confirms calendar widget demand |
+| 9 | qBittorrent widget (#152) | Yet another torrent client widget request — validates NOMAD's P4-14 |
 | 8 | Custom widget support (#467) | Generic widget renderer for arbitrary APIs |
 
 ### Architectural Decisions to Adopt
@@ -142,6 +199,9 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 - **Server-side API proxying**: Never expose API keys to the browser. Route all external API calls through the Flask backend.
 - **Widget integration manifest**: Each widget is a self-contained module with a defined interface. Makes adding new integrations systematic.
 - **Crowdin for i18n management**: Professional translation management instead of manual JSON file editing.
+- **Host header validation**: Add `NOMAD_ALLOWED_HOSTS` config to reject requests with unexpected Host headers when running on LAN.
+- **Release drafter**: Automate changelog generation from commit/PR labels in CI workflow.
+- **CONTRIBUTING.md with widget guide**: Lower the barrier for community contributions by documenting how to add a new widget type or blueprint with a focused tutorial.
 
 ---
 
@@ -294,6 +354,37 @@ NOMAD Desktop occupies a unique niche: an offline-first, all-in-one preparedness
 | P4-18 | **Config environment variable injection** | Support `${ENV_VAR}` syntax in NOMAD config.json for secrets, API keys, and per-deployment overrides; useful for federation nodes with different credentials | Glance (env var injection), Homepage (env vars in YAML) |
 | P4-19 | **Health check endpoint** | `GET /healthz` returns 200 with JSON `{status, uptime, db_ok, services_count}` for external monitoring tools (UptimeKuma, Prometheus, etc.) to monitor NOMAD itself | Dashy (#768, 5 votes) |
 | P4-20 | **Masonry/auto-fill grid layout** | Alternative dashboard layout where cards auto-fill available space in a masonry pattern (no fixed rows); especially useful for varying-height widgets on ultrawide monitors | Dashy (#1233, 4 votes) |
+
+### P5: Deep-Dive Discoveries — Loop 2 (from expanded competitor research)
+
+New items discovered from analyzing recent releases (Open WebUI v0.7-0.8, Glance v0.8.x, Homepage v1.11-1.12), open issue trends, and architectural patterns not covered in Pass 1.
+
+| # | Title | Description | Inspired By |
+|---|-------|-------------|-------------|
+| P5-01 | **AI Skills / domain expertise profiles** | Define reusable skill definitions ("Medical Triage Expert", "Radio Operator", "Supply Chain Analyst") with tailored system prompts, attached KB scopes, and enabled tools; reference via `$skill` in chat or attach to models permanently; store in `ai_skills` table | Open WebUI (Skills, v0.8.0, #21312) |
+| P5-02 | **AI message queuing** | Allow typing follow-up messages while AI is streaming a response; queue and auto-combine on completion; prevents losing train of thought during long generations | Open WebUI (Message queuing, v0.8.0) |
+| P5-03 | **AI usage analytics dashboard** | Track model usage (queries/day), token consumption per model/session, response quality ratings (thumbs up/down), time-series charts; admin-only view in Settings | Open WebUI (Analytics dashboard, v0.8.0, #21106) |
+| P5-04 | **Prompt version control** | Prompt presets get version history with commit messages, diff viewer, and rollback; store versions in `ai_prompt_versions` table | Open WebUI (Prompt version control, v0.8.0, #20945) |
+| P5-05 | **AI citation deep-links** | When AI cites a KB document, clicking the citation badge scrolls to the relevant passage with text highlighting instead of just opening the document | Open WebUI (Citation deep-links, v0.7.0, #20116) |
+| P5-06 | **AI multi-step tool chaining** | AI autonomously chains multiple actions in sequence (search KB -> query inventory -> create note -> generate report) without user re-prompting; replace regex-based action parsing with structured tool definitions | Open WebUI (Native function calling, v0.7.0, #19397) |
+| P5-07 | **2FA/TOTP authentication** | Add TOTP-based two-factor authentication for LAN multi-user deployments; pyotp library; QR code provisioning; backup recovery codes | Open WebUI (#1225, 58 votes) |
+| P5-08 | **KB archive upload auto-extract** | Upload ZIP/TAR containing multiple PDFs/docs; auto-extract and index all contents into a KB workspace in one operation | Open WebUI (#16151, 11 votes) |
+| P5-09 | **KB image import with OCR** | Import images directly into knowledge base with automatic OCR text extraction; store both image and extracted text for RAG | Open WebUI (#13137, 35 votes) |
+| P5-10 | **User-configurable URL monitor widget** | Dashboard widget that performs HTTP/TCP health checks against user-defined URLs (federation peers, external APIs, internet connectivity test); configurable check interval, expected status code, and alert on failure | Glance (Monitor widget) |
+| P5-11 | **Todo/task dashboard widget** | Lightweight todo list directly on the home dashboard showing today's tasks, overdue items, and quick-add; reads from existing `scheduled_tasks` table | Glance (Todo widget) |
+| P5-12 | **Web page change detection** | Monitor specific URLs for content changes (government advisories, supply availability, weather warnings); store diffs; alert on change; useful for offline-to-online transition monitoring | Glance (ChangeDetection.io widget) |
+| P5-13 | **OPML/subscription import for RSS** | Import OPML files or YouTube subscription exports to bulk-add RSS feeds to Situation Room and media channels | Glance (#302, 8 votes — YouTube/Twitch import) |
+| P5-14 | **Self-signed cert trust for federation** | Allow federation peers with self-signed SSL certificates to be trusted via explicit certificate pinning or an `allow-insecure` flag per peer | Glance (#739, 9 votes — custom API allow-insecure) |
+| P5-15 | **Per-page/tab access control** | In LAN multi-user mode, restrict which tabs/pages each user can see; e.g., hide Situation Room from family members, restrict Settings to admin | Glance (#694, 7 votes), Open WebUI (per-user resource sharing) |
+| P5-16 | **Host header validation** | Add `NOMAD_ALLOWED_HOSTS` config to reject requests with unexpected Host headers when running on LAN; prevent DNS rebinding attacks | Homepage (HOMEPAGE_ALLOWED_HOSTS) |
+| P5-17 | **Security notice in README** | Add prominent security notice explaining that LAN-exposed instances should sit behind a reverse proxy with auth/TLS, matching Homepage's security posture documentation | Homepage (Security Notice) |
+| P5-18 | **Test coverage tracking in CI** | Add coverage reporting (pytest-cov + Codecov badge) to CI pipeline; baseline coverage visibility for the 775+ test suite | Homepage (Codecov badge) |
+| P5-19 | **Release drafter automation** | GitHub Actions workflow that auto-generates release notes from commit messages and PR labels, reducing manual release effort | Homepage (release-drafter) |
+| P5-20 | **CONTRIBUTING.md with widget/blueprint guide** | Formal contribution guide explaining how to add a new dashboard widget or Flask blueprint; lower barrier for community contributions | Homepage (200+ contributors), Glance (contributing guidelines) |
+| P5-21 | **Active task sidebar indicator** | Show which AI conversations have active/pending tasks running (e.g., SITREP generation, action execution) with a visual indicator in the conversation list sidebar | Open WebUI (Active task indicator, v0.8.0) |
+| P5-22 | **Fuzzy settings search with keyword aliases** | Extend P1-07's basic filter with fuzzy matching and keyword aliases (e.g., typing "whisper" finds Audio settings, "rag" finds AI Documents); cross-category search, not just per-section filtering | Open WebUI (Settings search, v0.7.0, #20434) |
+| P5-23 | **Bcrypt password hashing for auth** | Upgrade from PBKDF2-SHA256 to bcrypt for credential hashing; add brute-force rate limiting on login attempts | Glance (bcrypt + brute-force protection) |
+| P5-24 | **Personal RSS feed reader** | Add a personal RSS feed reader (separate from Situation Room's curated feeds) where users add their own feeds for news, blogs, and updates; manage via Settings | Glance (#313, 13 votes — Miniflux integration) |
 
 ---
 

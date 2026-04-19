@@ -3008,6 +3008,41 @@ def _create_data_foundation_tables(conn):
             UNIQUE(state_fips, county_fips)
         );
 
+        /* ─── Child ID Packets ─── */
+        CREATE TABLE IF NOT EXISTS child_id_packets (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            dob TEXT DEFAULT '',
+            height_in REAL,
+            weight_lb REAL,
+            hair_color TEXT DEFAULT '',
+            eye_color TEXT DEFAULT '',
+            blood_type TEXT DEFAULT '',
+            allergies TEXT DEFAULT '',
+            medications TEXT DEFAULT '',
+            identifying_marks TEXT DEFAULT '',
+            fingerprint_ref TEXT DEFAULT '',
+            photo_ref TEXT DEFAULT '',
+            emergency_contacts TEXT DEFAULT '[]',
+            notes TEXT DEFAULT '',
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
+        /* ─── Skill Transfer Ledger ─── */
+        CREATE TABLE IF NOT EXISTS skill_transfers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            skill TEXT NOT NULL,
+            teacher TEXT NOT NULL,
+            student TEXT NOT NULL,
+            proficiency_before TEXT DEFAULT 'none',
+            proficiency_after TEXT DEFAULT 'basic',
+            hours REAL DEFAULT 0,
+            method TEXT DEFAULT 'hands-on',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+
         /* ─── Humanure Composting Batches ─── */
         CREATE TABLE IF NOT EXISTS humanure_batches (
             id INTEGER PRIMARY KEY AUTOINCREMENT,

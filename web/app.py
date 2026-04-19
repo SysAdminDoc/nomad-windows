@@ -1569,6 +1569,8 @@ def create_app():
     app.register_blueprint(field_ops_bp)
     app.register_blueprint(specialized_threats_bp)
     app.register_blueprint(homestead_bp)
+    from web.blueprints.health_family import health_family_bp
+    app.register_blueprint(health_family_bp)
 
     # ─── v7.12.0 — Nutritional Intelligence & Water Expansion (Phase 2) ──
     from web.blueprints.consumption import consumption_bp

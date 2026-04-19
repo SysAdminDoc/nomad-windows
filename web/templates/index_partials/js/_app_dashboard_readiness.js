@@ -514,6 +514,7 @@ async function loadLiveDashboard() {
   const liveDashboard = document.getElementById('live-dashboard');
   const widgetContainer = document.getElementById('dash-live-widgets');
   if (!workspace && !liveDashboard && !widgetContainer) return;
+  if (widgetContainer && !widgetContainer.children.length) widgetContainer.innerHTML = Array(4).fill('<div class="skeleton skeleton-card" style="height:120px"></div>').join('');
   const data = await safeFetch('/api/dashboard/live', {}, null);
   if (!data) return;
   _liveDashData = data;

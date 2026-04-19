@@ -140,6 +140,8 @@ async function loadInventory() {
   let url = '/api/inventory?';
   if (cat) url += `category=${encodeURIComponent(cat)}&`;
   if (q) url += `q=${encodeURIComponent(q)}&`;
+  const tbody = document.getElementById('inv-tbody');
+  if (tbody && !_cachedInvItems.length) tbody.innerHTML = Array(3).fill('<tr><td colspan="10"><div class="skeleton skeleton-card"></div></td></tr>').join('');
   try {
     const items = await safeFetch(url, {}, []);
     if (!Array.isArray(items)) throw new Error('invalid inventory payload');

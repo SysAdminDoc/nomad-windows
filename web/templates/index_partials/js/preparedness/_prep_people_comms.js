@@ -4,10 +4,11 @@ async function loadContacts() {
   const q = document.getElementById('contact-search').value.trim();
   let url = '/api/contacts';
   if (q) url += `?q=${encodeURIComponent(q)}`;
+  const el = document.getElementById('contacts-grid');
+  if (el && !el.children.length) el.innerHTML = Array(3).fill('<div class="skeleton skeleton-card"></div>').join('');
   try {
     const contacts = await apiFetch(url);
     if (!q) _cachedContacts = contacts;
-    const el = document.getElementById('contacts-grid');
     if (!contacts.length) {
       el.innerHTML = '<div class="prep-empty-state prep-empty-state-wide">No contacts yet. Add your emergency contacts, team members, and neighbors.</div>';
       return;

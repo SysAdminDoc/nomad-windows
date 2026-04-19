@@ -87,6 +87,8 @@ def api_services():
         if port_val is None:
             log.debug('Service %s has no %s_PORT constant', sid, sid.upper())
 
+        from services.manager import get_service_uptime
+        uptime_secs = get_service_uptime(sid)
         services.append({
             'id': sid,
             'name': getattr(mod, 'SERVICE_ID', sid),
@@ -95,6 +97,7 @@ def api_services():
             'port': port_val,
             'progress': get_download_progress(sid),
             'disk_used': disk_used,
+            'uptime': int(uptime_secs) if uptime_secs is not None else None,
         })
     return jsonify(services)
 

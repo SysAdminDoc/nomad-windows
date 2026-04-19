@@ -1,4 +1,12 @@
 /* ─── Services ─── */
+function _formatUptime(secs) {
+  if (secs < 60) return secs + 's';
+  if (secs < 3600) return Math.floor(secs / 60) + 'm';
+  const h = Math.floor(secs / 3600);
+  const m = Math.floor((secs % 3600) / 60);
+  return h + 'h ' + m + 'm';
+}
+
 const SVC_ICONS = {
   ollama: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a7 7 0 0 0-7 7c0 3.5 2.5 6.5 7 13 4.5-6.5 7-9.5 7-13a7 7 0 0 0-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>',
   kiwix: '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M8 7h8M8 11h5"/></svg>',
@@ -135,7 +143,7 @@ async function loadServices(servicesData = null) {
         </div>
         <p class="desc">${info.desc}</p>
         ${prereqHtml}${hintHtml}${tipHtml}
-        <div class="meta"><span>${s.disk_used && s.disk_used !== '0 B' ? 'Using '+s.disk_used : ''}</span>${s.running ? '<span class="service-card-ready">Ready</span>' : ''}</div>
+        <div class="meta"><span>${s.disk_used && s.disk_used !== '0 B' ? 'Using '+s.disk_used : ''}</span>${s.running && s.uptime != null ? '<span class="service-card-uptime">Up ' + _formatUptime(s.uptime) + '</span>' : ''}${s.running ? '<span class="service-card-ready">Ready</span>' : ''}</div>
         ${progressHtml}${errorHtml}
         <div class="card-actions">${actions}</div>
       </div>`;

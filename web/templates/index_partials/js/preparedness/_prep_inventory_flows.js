@@ -54,12 +54,28 @@ function calcPower() {
 
 /* ─── Inventory ─── */
 let _cachedInvItems = [];
+let _invSortCol = 'name';
+let _invSortDir = 'asc';
+try {
+  const saved = JSON.parse(localStorage.getItem('nomad-inv-sort') || '{}');
+  if (saved.col) _invSortCol = saved.col;
+  if (saved.dir) _invSortDir = saved.dir;
+} catch(_) {}
+
+function setInvSort(col) {
+  if (_invSortCol === col) _invSortDir = _invSortDir === 'asc' ? 'desc' : 'asc';
+  else { _invSortCol = col; _invSortDir = 'asc'; }
+  try { localStorage.setItem('nomad-inv-sort', JSON.stringify({col: _invSortCol, dir: _invSortDir})); } catch(_) {}
+  loadInventory();
+}
+
 async function loadInventory() {
   const cat = document.getElementById('inv-cat-filter').value;
   const q = document.getElementById('inv-search').value.trim();
   let url = '/api/inventory?';
   if (cat) url += `category=${encodeURIComponent(cat)}&`;
   if (q) url += `q=${encodeURIComponent(q)}&`;
+  if (_invSortCol) url += `sort_by=${encodeURIComponent(_invSortCol)}&sort_dir=${_invSortDir}&`;
   try {
     const items = await safeFetch(url, {}, []);
     if (!Array.isArray(items)) throw new Error('invalid inventory payload');
@@ -104,7 +120,7 @@ async function loadInventory() {
           <td class="text-size-11 inventory-meta-text">${itemCost > 0 ? '$'+itemCost.toFixed(2) : '-'}</td>
           <td class="text-size-11 inventory-meta-text">${escapeHtml(i.location || '-')}</td>
           <td class="text-size-11 inventory-meta-text">${escapeHtml(i.lot_number || '-')}</td>
-          <td class="inventory-expiration-cell"><span class="inventory-status-pill ${expirationToneClass}">${i.expiration || '-'}</span></td>
+          <td class="inventory-expiration-cell"><span class="inventory-status-pill ${expirationToneClass}">${expired ? 'Expired' : expDays !== null && expDays <= 30 ? 'In ' + expDays + 'd' : i.expiration || '-'}</span></td>
           <td class="inventory-notes-cell"><span class="inventory-notes-copy">${escapeHtml(i.notes || '—')}</span></td>
           <td class="prep-row-actions inventory-actions"><button type="button" class="prep-action-link" data-prep-action="edit-inv-item" data-inv-id="${i.id}">edit</button><button type="button" class="prep-action-link prep-action-link-danger" data-prep-action="delete-inv-item" data-inv-id="${i.id}" aria-label="Delete ${escapeAttr(i.name)}">x</button></td>
         </tr>`;

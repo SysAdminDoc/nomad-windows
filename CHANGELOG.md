@@ -2,6 +2,34 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.48.0] — Massive Feature Batch: 18 Roadmap Items
+
+### Added
+- **Recipe-driven consumption (P2-04)** — `recipes` + `recipe_ingredients` tables, CRUD routes, `/api/recipes/<id>/cook` auto-deducts inventory ingredients with multiplier support.
+- **Inventory location hierarchy (P2-09)** — `inventory_locations` table with `parent_id` for nesting. Tree view endpoint at `/api/inventory/locations/tree`.
+- **Service health history (P2-12)** — `service_health_log` table. `/api/services/health-history/<id>` with configurable time window (1-720 hours).
+- **Battery/consumable tracker (P2-21)** — `battery_tracker` CRUD with expected life days, installed date, and last-checked tracking.
+- **Insurance & warranty tracker (P3-08)** — `warranties` CRUD with expiry dates, policy numbers, and document paths.
+- **Lightweight/minimal mode (P3-14)** — `NOMAD_MINIMAL_MODE=1` config flag for Raspberry Pi / low-RAM hardware.
+- **Per-widget refresh intervals (P4-01)** — `dashboard_templates` table stores per-widget config including refresh intervals.
+- **Dashboard templates (P4-02)** — CRUD for preconfigured dashboard layouts.
+- **Dashboard config export/import (P4-03)** — `/api/dashboard/config/export` downloads full config as JSON; `/api/dashboard/config/import` restores it.
+- **Calendar with ICS import (P4-04)** — `calendar_events` table, CRUD, and `/api/calendar/import-ics` for VCALENDAR file import (up to 500 events).
+- **Torrent dashboard widget (P4-14)** — `/api/dashboard/torrent-widget` returns active/downloading/seeding counts.
+- **Config env var injection (P4-18)** — `${ENV_VAR}` syntax in config.json values, expanded by `get_config_value()`.
+- **AI Skills profiles (P5-01)** — `ai_skills` table with name, system_prompt, kb_scope. Full CRUD for reusable domain expertise definitions.
+- **AI usage analytics (P5-03)** — `ai_usage_log` table. `/api/ai/usage` returns per-model query counts, token totals, daily breakdown over configurable period.
+- **URL monitor widget (P5-10)** — `url_monitors` CRUD with manual check trigger. Tracks response time, status code, consecutive failures.
+- **Todo/task dashboard widget (P5-11)** — `/api/dashboard/tasks-widget` returns overdue + upcoming tasks for home dashboard.
+- **OPML import for RSS (P5-13)** — `/api/feeds/import-opml` bulk-imports RSS feeds from OPML files with duplicate detection.
+- **Personal RSS reader (P5-24)** — `personal_feeds` + `personal_feed_items` tables. CRUD, per-feed refresh with RSS 2.0 + Atom parsing.
+
+### New Tables (12)
+`recipes`, `recipe_ingredients`, `inventory_locations`, `service_health_log`, `battery_tracker`, `warranties`, `ai_skills`, `ai_usage_log`, `url_monitors`, `personal_feeds`, `personal_feed_items`, `calendar_events`, `dashboard_templates`
+
+### Stats
+45 new API routes in `web/blueprints/roadmap_features.py` (683 lines). 13 new database tables.
+
 ## [v7.47.0] — Auth Proxy, Caloric Gap, Security Hardening
 
 ### Added

@@ -49,7 +49,7 @@ class Config:
     """Central configuration with environment variable overrides."""
 
     # --- App Identity ---
-    VERSION = os.environ.get('NOMAD_VERSION', '7.47.0')
+    VERSION = os.environ.get('NOMAD_VERSION', '7.48.0')
 
     # --- Upload / Content Limits ---
     MAX_CONTENT_LENGTH = _env_int('NOMAD_MAX_CONTENT_LENGTH', 100 * 1024 * 1024)  # 100 MB
@@ -85,6 +85,9 @@ class Config:
     # --- Rate Limiting ---
     RATELIMIT_DEFAULT = os.environ.get('NOMAD_RATELIMIT_DEFAULT', '200/minute')
     RATELIMIT_MUTATING = os.environ.get('NOMAD_RATELIMIT_MUTATING', '60/minute')
+
+    # --- Minimal Mode (P3-14) ---
+    MINIMAL_MODE = os.environ.get('NOMAD_MINIMAL_MODE', '0').strip() in ('1', 'true', 'yes', 'on')
 
     # --- Misc Magic Numbers ---
     CPU_MONITOR_INTERVAL = _env_int('NOMAD_CPU_MONITOR_INTERVAL', 2)
@@ -152,9 +155,21 @@ def load_config() -> dict:
         return _config_cache if _config_cache is not None else {}
 
 
+def _expand_env_vars(value):
+    """P4-18: Expand ${ENV_VAR} placeholders in config string values."""
+    if not isinstance(value, str) or '${' not in value:
+        return value
+    import re
+    def _replace(m):
+        var_name = m.group(1)
+        return os.environ.get(var_name, m.group(0))
+    return re.sub(r'\$\{([A-Za-z_][A-Za-z0-9_]*)\}', _replace, value)
+
+
 def get_config_value(key: str, default=None):
-    """Get a single config value with a default."""
-    return load_config().get(key, default)
+    """Get a single config value with a default. Expands ${ENV_VAR} in strings."""
+    val = load_config().get(key, default)
+    return _expand_env_vars(val)
 
 
 def save_config(data: dict):

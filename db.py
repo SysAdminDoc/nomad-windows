@@ -5754,6 +5754,7 @@ def _init_db_inner(conn):
     _create_hardware_sensors_tables(conn)
     _create_platform_security_tables(conn)
     _create_specialized_modules_tables(conn)
+    _create_roadmap_v747_tables(conn)
     _apply_column_migrations(conn)
     _migrate_access_logs(conn)
     _create_indexes(conn)
@@ -5761,6 +5762,146 @@ def _init_db_inner(conn):
     _seed_upc_database(conn)
     _create_rag_scope_table(conn)
     _seed_rag_scope(conn)
+
+
+def _create_roadmap_v747_tables(conn):
+    """v7.47.0+ roadmap tables: recipes, inventory locations, service health log,
+    battery tracker, warranties, AI skills, AI usage, URL monitors, personal feeds,
+    user profiles, calendar events."""
+    conn.executescript('''
+        CREATE TABLE IF NOT EXISTS recipes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            servings INTEGER DEFAULT 4,
+            prep_time_min INTEGER DEFAULT 0,
+            cook_time_min INTEGER DEFAULT 0,
+            instructions TEXT DEFAULT '',
+            source_url TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS recipe_ingredients (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
+            inventory_id INTEGER REFERENCES inventory(id) ON DELETE SET NULL,
+            name TEXT NOT NULL,
+            quantity REAL DEFAULT 1,
+            unit TEXT DEFAULT '',
+            calories_per_unit REAL DEFAULT 0
+        );
+        CREATE TABLE IF NOT EXISTS inventory_locations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            parent_id INTEGER REFERENCES inventory_locations(id) ON DELETE SET NULL,
+            description TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS service_health_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            service_id TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'up',
+            response_ms INTEGER DEFAULT 0,
+            checked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS battery_tracker (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device_name TEXT NOT NULL,
+            battery_type TEXT DEFAULT '',
+            quantity INTEGER DEFAULT 1,
+            installed_date TEXT DEFAULT '',
+            expected_life_days INTEGER DEFAULT 365,
+            last_checked TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS warranties (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            item_name TEXT NOT NULL,
+            category TEXT DEFAULT 'equipment',
+            purchase_date TEXT DEFAULT '',
+            expiry_date TEXT DEFAULT '',
+            provider TEXT DEFAULT '',
+            policy_number TEXT DEFAULT '',
+            coverage TEXT DEFAULT '',
+            document_path TEXT DEFAULT '',
+            notes TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS ai_skills (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            system_prompt TEXT DEFAULT '',
+            kb_scope TEXT DEFAULT '',
+            icon TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS ai_usage_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            model TEXT NOT NULL,
+            tokens_in INTEGER DEFAULT 0,
+            tokens_out INTEGER DEFAULT 0,
+            duration_ms INTEGER DEFAULT 0,
+            rating INTEGER DEFAULT 0,
+            conversation_id INTEGER,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS url_monitors (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            url TEXT NOT NULL,
+            method TEXT DEFAULT 'GET',
+            expected_status INTEGER DEFAULT 200,
+            check_interval_sec INTEGER DEFAULT 300,
+            last_status INTEGER,
+            last_checked TIMESTAMP,
+            last_response_ms INTEGER,
+            consecutive_failures INTEGER DEFAULT 0,
+            enabled INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS personal_feeds (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            url TEXT NOT NULL,
+            category TEXT DEFAULT 'general',
+            last_fetched TIMESTAMP,
+            item_count INTEGER DEFAULT 0,
+            enabled INTEGER DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS personal_feed_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            feed_id INTEGER NOT NULL REFERENCES personal_feeds(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            link TEXT DEFAULT '',
+            summary TEXT DEFAULT '',
+            published TIMESTAMP,
+            read INTEGER DEFAULT 0,
+            cached_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS calendar_events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            title TEXT NOT NULL,
+            start_time TIMESTAMP NOT NULL,
+            end_time TIMESTAMP,
+            all_day INTEGER DEFAULT 0,
+            location TEXT DEFAULT '',
+            description TEXT DEFAULT '',
+            source TEXT DEFAULT 'manual',
+            source_url TEXT DEFAULT '',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+        CREATE TABLE IF NOT EXISTS dashboard_templates (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            config_json TEXT NOT NULL DEFAULT '{}',
+            is_builtin INTEGER DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    ''')
+    conn.commit()
 
 
 # ═══════════════════════════════════════════════════════════════════════════

@@ -3537,6 +3537,10 @@ html[data-view="minimal"] .main-content {
   margin-left: auto; flex-shrink: 0;
 }
 
+/* ─── Settings Search Field (replaces inline styles) ─── */
+.settings-search-bar { padding: var(--sp-2, 8px) 0; }
+.settings-search-field { width: 100%; max-width: 400px; }
+
 /* ─── Status Strip Polish ─── */
 .status-strip-config {
   display: flex; flex-wrap: wrap; gap: var(--sp-2);

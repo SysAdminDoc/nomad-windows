@@ -1035,7 +1035,45 @@ def api_prompt_version_rollback(pid, ver):
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# P5-07: 2FA/TOTP Authentication
+# ═══════════════════════════════════════════════════════════════════════
+# V8-05: Encrypt secrets at rest via Fernet
+# ═══════════════════════════════════════════════════════════════════════
+
+def _get_fernet():
+    """Get or create a Fernet instance for encrypting secrets at rest."""
+    try:
+        from cryptography.fernet import Fernet
+    except ImportError:
+        return None
+    from config import get_config_value, load_config
+    import config as _cfg
+    key = get_config_value('encryption_key', '')
+    if not key:
+        key = Fernet.generate_key().decode()
+        data = load_config()
+        data['encryption_key'] = key
+        _cfg.save_config(data)
+    return Fernet(key.encode() if isinstance(key, str) else key)
+
+
+def _encrypt_secret(plaintext):
+    f = _get_fernet()
+    if not f:
+        return plaintext  # graceful degradation
+    return f.encrypt(plaintext.encode()).decode()
+
+
+def _decrypt_secret(ciphertext):
+    f = _get_fernet()
+    if not f or not ciphertext:
+        return ciphertext
+    try:
+        return f.decrypt(ciphertext.encode()).decode()
+    except Exception:
+        return ciphertext  # not encrypted (legacy) — return as-is
+
+
+# P5-07: 2FA/TOTP Authentication (V8-05: encrypted at rest)
 # ═══════════════════════════════════════════════════════════════════════
 
 @roadmap_bp.route('/api/auth/totp/setup', methods=['POST'])
@@ -1050,14 +1088,13 @@ def api_totp_setup():
     secret = pyotp.random_base32()
     totp = pyotp.TOTP(secret)
     uri = totp.provisioning_uri(name=d.get('username', 'nomad'), issuer_name='NOMAD Field Desk')
-    # Generate 8 backup codes
-    import secrets
-    backup_codes = [secrets.token_hex(4).upper() for _ in range(8)]
+    import secrets as _secrets
+    backup_codes = [_secrets.token_hex(4).upper() for _ in range(8)]
     with db_session() as db:
         db.execute('DELETE FROM totp_secrets WHERE user_id = ?', (user_id,))
         db.execute(
             'INSERT INTO totp_secrets (user_id, secret, backup_codes) VALUES (?, ?, ?)',
-            (user_id, secret, json.dumps(backup_codes))
+            (user_id, _encrypt_secret(secret), json.dumps(backup_codes))
         )
         db.commit()
     return jsonify({'secret': secret, 'provisioning_uri': uri, 'backup_codes': backup_codes})
@@ -1079,7 +1116,7 @@ def api_totp_verify():
         row = db.execute('SELECT * FROM totp_secrets WHERE user_id = ?', (user_id,)).fetchone()
         if not row:
             return error_response('TOTP not configured for this user', 404)
-        totp = pyotp.TOTP(row['secret'])
+        totp = pyotp.TOTP(_decrypt_secret(row['secret']))
         if totp.verify(code, valid_window=1):
             if not row['verified']:
                 db.execute('UPDATE totp_secrets SET verified = 1 WHERE user_id = ?', (user_id,))
@@ -1381,6 +1418,61 @@ def api_upgrade_password_hash():
         db.execute('UPDATE app_users SET password_hash = ? WHERE id = ?', (hashed, user_id))
         db.commit()
     return jsonify({'status': 'upgraded', 'algorithm': 'bcrypt'})
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# V8-18: Soft Delete / Trash Pattern
+# ═══════════════════════════════════════════════════════════════════════
+
+_TRASH_TABLES = frozenset({'inventory', 'contacts', 'notes', 'patients'})
+
+@roadmap_bp.route('/api/trash')
+def api_trash_list():
+    """List soft-deleted items across all trashable tables."""
+    with db_session() as db:
+        results = {}
+        for table in _TRASH_TABLES:
+            try:
+                rows = db.execute(
+                    f'SELECT id, name, deleted_at FROM {table} WHERE deleted_at IS NOT NULL ORDER BY deleted_at DESC LIMIT 100'
+                ).fetchall()
+                if rows:
+                    name_col = 'name' if table != 'patients' else 'name'
+                    results[table] = [{'id': r['id'], 'name': r[name_col], 'deleted_at': r['deleted_at']} for r in rows]
+            except Exception:
+                pass  # deleted_at column may not exist yet
+        return jsonify(results)
+
+
+@roadmap_bp.route('/api/trash/<table>/<int:item_id>/restore', methods=['POST'])
+def api_trash_restore(table, item_id):
+    """Restore a soft-deleted item."""
+    if table not in _TRASH_TABLES:
+        return error_response('Invalid table', 400)
+    with db_session() as db:
+        rc = db.execute(f'UPDATE {table} SET deleted_at = NULL WHERE id = ? AND deleted_at IS NOT NULL', (item_id,)).rowcount
+        if rc == 0:
+            return error_response('Item not found in trash', 404)
+        db.commit()
+        log_activity('trash_restored', f'{table}:{item_id}')
+        return jsonify({'status': 'restored'})
+
+
+@roadmap_bp.route('/api/trash/purge', methods=['POST'])
+def api_trash_purge():
+    """Permanently delete all trashed items older than 30 days."""
+    with db_session() as db:
+        total = 0
+        for table in _TRASH_TABLES:
+            try:
+                rc = db.execute(
+                    f"DELETE FROM {table} WHERE deleted_at IS NOT NULL AND deleted_at < datetime('now', '-30 days')"
+                ).rowcount
+                total += rc
+            except Exception:
+                pass
+        db.commit()
+        return jsonify({'purged': total})
 
 
 # ═══════════════════════════════════════════════════════════════════════

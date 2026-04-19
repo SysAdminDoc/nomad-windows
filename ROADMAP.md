@@ -188,17 +188,17 @@ Calculators and trackers for self-sufficient living.
 
 ---
 
-### 6.1 — Greywater Branched-Drain Designer | S
-### 6.2 — Humanure Thermophilic Tracker | S
-### 6.3 — Wood BTU + Cord Ledger | S
-### 6.4 — Passive Solar Sun-Path Plotter | M
-### 6.5 — Battery Bank Cycle-Life Model | M
-### 6.6 — Food Preservation Safety Math (cure, ferment, grain) | M
-### 6.7 — SSURGO Soil Profile Cache | M
-### 6.8 — Seed-Saving Isolation Distance Planner | S
-### 6.9 — Beekeeping Varroa Calendar | S
-### 6.10 — Livestock Drug + Withdrawal Timer | S
-### 6.11 — Pedigree + Breeding Cycle Tracker | M
+### 6.1 — Greywater Branched-Drain Designer --- COMPLETE (v7.44.0)
+### 6.2 — Humanure Thermophilic Tracker --- COMPLETE (v7.44.0)
+### 6.3 — Wood BTU + Cord Ledger --- COMPLETE (v7.44.0)
+### 6.4 — Passive Solar Sun-Path Plotter --- COMPLETE (v7.44.0)
+### 6.5 — Battery Bank Cycle-Life Model --- COMPLETE (v7.44.0)
+### 6.6 — Food Preservation Safety Math --- COMPLETE (v7.44.0)
+### 6.7 — SSURGO Soil Profile Cache | M — Not started (requires SSURGO data import)
+### 6.8 — Seed-Saving Isolation Distance Planner --- COMPLETE (v7.44.0)
+### 6.9 — Beekeeping Varroa Calendar --- COMPLETE (v7.44.0)
+### 6.10 — Livestock Drug + Withdrawal Timer --- COMPLETE (v7.44.0)
+### 6.11 — Pedigree + Breeding Cycle Tracker | M — Not started
 
 ---
 

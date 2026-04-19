@@ -43,8 +43,19 @@ All notable changes to project-nomad-desktop will be documented in this file.
 - **Chain-of-custody evidence ledger** — `/api/evidence` CRUD with SHA-256 integrity hash on collection. `/api/evidence/<id>/transfer` appends custody transfers (append-only JSON chain). `/api/evidence/<id>/verify` re-computes hash for tamper detection. New `evidence_ledger` table.
 - **IOC tracker + ATT&CK mapping** — `/api/ioc` CRUD for 9 indicator types (IP, domain, URL, hash, email, CVE, etc.). MITRE ATT&CK tactic/technique/ID fields. `/api/ioc/attack-matrix` groups by tactic for heat-map. TLP classification. New `ioc_tracker` table + 3 indexes.
 
+### Tier 6 — Homestead & Off-Grid Depth
+- **Greywater branched-drain designer** — pipe sizing, mulch basin dimensions, soil infiltration rates (6 soil types), plant recommendations. Biocompatible soap guidance.
+- **Humanure thermophilic tracker** — batch CRUD with temperature logging. Tracks thermophilic threshold (131°F for 3+ days). New `humanure_batches` table.
+- **Wood BTU reference + heating calculator** — 20 wood species BTU/cord database. Heating needs calculator from sqft, insulation quality, HDD, stove efficiency. Cord estimate + cost range.
+- **Passive solar sun-path** — hourly altitude/azimuth from lat/lng/date. Sunrise/sunset, solar noon, declination. Overhang sizing calculation for passive solar design.
+- **Battery bank cycle-life model** — 6 chemistries (FLA, AGM, gel, LiFePO4, NMC, NiFe). Sizing from daily kWh + autonomy. Cycle life estimation with DOD correction. Cost per cycle.
+- **Food preservation safety math** — curing salt calculator (Prague #1/#2, equilibrium brine) with FDA nitrite limits. Fermentation brine calculator with temperature guide.
+- **Seed-saving isolation distance** — 17 crop reference with pollination method, isolation distance, viability years.
+- **Beekeeping varroa calendar** — 12-month management calendar with latitude adjustment. 5 treatment methods with temperature windows. Mite count thresholds.
+- **Livestock drug withdrawal timer** — 10 common drugs with meat/milk/egg withdrawal periods. Date calculator showing safe harvest dates and days remaining.
+
 ### Stats
-- 5 data pack importers, 13 new tables, 21 new indexes, 60+ new routes. Tiers 1-5 substantially complete.
+- 5 data pack importers, 14 new tables, 21 new indexes, 75+ new routes. Tiers 1-6 substantially complete.
 
 ## [v7.43.0]
 

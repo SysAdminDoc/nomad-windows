@@ -23,8 +23,14 @@ All notable changes to project-nomad-desktop will be documented in this file.
 
 - **Reticulum / LXMF mesh transport** — new `services/reticulum.py` service manager. Pure-Python RNS integration with identity management (create/load keypair), LXMF message router (encrypted, delay-tolerant), peer discovery via announce, and incoming message callback with SSE broadcast. Comms blueprint mesh routes (`/api/mesh/*`) upgraded from stubs to real RNS transport: start/stop, announce, send via LXMF with direct + propagation fallback, peer listing from RNS destination table. Graceful degradation when `rns`/`lxmf` packages not installed — all routes return informative errors, no crashes.
 
+### Tier 3 — Polish & Ecosystem
+- **Codeplug builder** — full CRUD for radios, zones, channels. Import frequencies from `freq_database` into zones. CHIRP-compatible CSV export with zone names as comments. 3 new tables (`codeplug_radios`, `codeplug_zones`, `codeplug_channels`) + 3 indexes.
+- **Propagation-aware HF scheduler** — 24-hour propagation schedule for 10 HF bands with season factor, solar flux index, and noise weighting. `/api/propagation/recommend` suggests best bands for current conditions with net schedule cross-reference.
+- **Rainwater catchment calculator** — `/api/calculators/rainwater` takes roof area + rainfall → annual yield, recommended tank size (snaps to standard sizes), first-flush diverter volume, monthly surplus/deficit breakdown, material efficiency guide, self-sufficiency determination.
+- **First-run setup wizard** — `/api/region/setup-status` returns 4-step checklist (location, data packs, threats, household) with per-step completion status and data pack install detail.
+
 ### Stats
-- 5 data pack importers, 5 new tables, 9 new indexes, 25+ new routes. Tier 1 complete. Tier 2: Shamir vault, warrant canary, and Reticulum mesh transport done.
+- 5 data pack importers, 8 new tables, 12 new indexes, 35+ new routes. Tiers 1-3 substantially complete.
 
 ## [v7.43.0] — Cross-theme audit + WCAG compliance (Pass 8)
 

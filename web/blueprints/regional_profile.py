@@ -340,6 +340,73 @@ def api_region_readiness_weights():
     return jsonify({'adjusted': True, 'source': 'fema_auto', 'weights': weights})
 
 
+# ─── First-run setup wizard ─────────────────────────────────────
+
+@regional_profile_bp.route('/api/region/setup-status')
+def api_region_setup_status():
+    """Check if first-run setup is needed. Returns setup steps with completion status."""
+    with db_session() as db:
+        profile = db.execute(
+            'SELECT * FROM regional_profile WHERE is_active = 1 ORDER BY id DESC LIMIT 1'
+        ).fetchone()
+
+        # Check data pack install status
+        packs = db.execute(
+            "SELECT pack_id, status FROM data_packs WHERE status = 'installed'"
+        ).fetchall()
+        installed_packs = {r['pack_id'] for r in packs}
+
+        # Check if nutrition data is populated
+        food_count = db.execute('SELECT COUNT(*) as c FROM nutrition_foods').fetchone()['c']
+        nri_count = db.execute('SELECT COUNT(*) as c FROM fema_nri_counties').fetchone()['c']
+
+    has_profile = profile is not None and profile['state']
+    has_location = profile is not None and (profile['lat'] or profile['zip_code'])
+
+    steps = [
+        {
+            'id': 'location',
+            'title': 'Set your location',
+            'description': 'Country, state, county, and ZIP code for regional personalization',
+            'complete': has_location,
+        },
+        {
+            'id': 'data_packs',
+            'title': 'Install data packs',
+            'description': 'Download FEMA hazard data and USDA nutrition database',
+            'complete': 'fema_nri' in installed_packs and 'usda_sr_legacy' in installed_packs,
+            'detail': {
+                'fema_nri': nri_count > 0,
+                'usda_sr_legacy': food_count > 0,
+                'noaa_weather_stations': 'noaa_weather_stations' in installed_packs,
+                'noaa_frost_dates': 'noaa_frost_dates' in installed_packs,
+                'usda_hardiness_zones': 'usda_hardiness_zones' in installed_packs,
+            },
+        },
+        {
+            'id': 'threats',
+            'title': 'Review regional threats',
+            'description': 'See FEMA hazard scores for your county and adjust readiness weights',
+            'complete': has_profile and bool(_safe_json_parse(profile.get('fema_risk_scores', '{}'))),
+        },
+        {
+            'id': 'household',
+            'title': 'Set household size',
+            'description': 'Number of people for consumption calculations',
+            'complete': True,  # Has a default, always "complete"
+        },
+    ]
+
+    all_complete = all(s['complete'] for s in steps)
+
+    return jsonify({
+        'setup_needed': not all_complete,
+        'all_complete': all_complete,
+        'steps': steps,
+        'profile_configured': has_profile,
+    })
+
+
 # ─── Hardiness zone lookup ────────────────────────────────────────
 
 @regional_profile_bp.route('/api/region/hardiness/<zipcode>')

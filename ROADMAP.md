@@ -95,25 +95,19 @@ Visual drag-and-drop flow editor for the alert rules engine. Replaces form-based
 
 ---
 
-### 3.1 — Codeplug Builder with Per-Radio Zones
-**Effort:** M
+### 3.1 — Codeplug Builder with Per-Radio Zones --- COMPLETE (v7.44.0)
+Full CRUD for radios, zones, channels. Import frequencies from freq_database. CHIRP CSV export with zone comments. 3 new tables + 3 indexes.
 
-Build radio codeplugs (channel/zone/scan-list configs) for common radios. CHIRP CSV export. Per-radio zone assignment.
-
-### 3.2 — Propagation-Aware HF Scheduler
-**Effort:** M
-
-HF propagation prediction integrated with net schedules. Recommend best frequencies for time-of-day and solar conditions.
+### 3.2 — Propagation-Aware HF Scheduler --- COMPLETE (v7.44.0)
+24-hour HF propagation schedule with 10 bands, season/SFI factors, noise weighting. Band recommendation endpoint with net schedule cross-reference.
 
 ### 3.3 — Perceptual-Hash + C2PA on OSINT Images
 **Effort:** M
 
 Detect manipulated OSINT imagery. Content authenticity verification. Duplicate/near-duplicate detection across Situation Room feeds.
 
-### 3.4 — Rainwater Catchment Calculator
-**Effort:** S
-
-Roof area + local rainfall data = estimated annual yield. Tank sizing. First-flush diverter sizing.
+### 3.4 — Rainwater Catchment Calculator --- COMPLETE (v7.44.0)
+Roof area + rainfall → annual yield, tank sizing (with standard sizes), first-flush diverter volume, monthly breakdown, material efficiency guide, self-sufficiency analysis.
 
 ### 3.5 — Plugin API Upgrade + Scaffold Generator
 **Effort:** L
@@ -125,10 +119,8 @@ Expand the existing plugin foundation (v7.22.0) with a full SDK. CLI scaffold ge
 
 Upgrade existing PWA + IndexedDB foundation to full offline-first sync. Conflict resolution. Background sync on reconnect.
 
-### 3.7 — First-Run Regional Profile Wizard
-**Effort:** S | **Depends on:** 1.1
-
-Guided first-run experience that configures regional profile, downloads appropriate data packs, and pre-configures threat-weighted readiness scoring.
+### 3.7 — First-Run Regional Profile Wizard --- COMPLETE (v7.44.0)
+Setup status endpoint with 4-step checklist (location, data packs, threats, household). Reports completion per step + data pack install detail. Auto-populate wired in Phase 1.1.
 
 ---
 

@@ -131,13 +131,15 @@ def api_family_checkins_update(mid):
             status = (data.get('status') or '').lower()
             if status not in _VALID_STATUS:
                 return jsonify({'error': f'status must be one of {list(_VALID_STATUS)}'}), 400
-            fields.append('status = ?'); params.append(status)
+            fields.append('status = ?')
+            params.append(status)
         for key in ('location', 'note', 'phone', 'name'):
             if key in data:
                 val = (data.get(key) or '').strip()[:2000]
                 if key == 'name' and not val:
                     return jsonify({'error': 'name cannot be empty'}), 400
-                fields.append(f'{key} = ?'); params.append(val)
+                fields.append(f'{key} = ?')
+                params.append(val)
         if not fields:
             return jsonify({'error': 'no fields to update'}), 400
         fields.append("updated_at = CURRENT_TIMESTAMP")

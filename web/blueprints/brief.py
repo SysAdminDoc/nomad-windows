@@ -270,8 +270,10 @@ def api_brief_daily_print():
             f'<td>{esc(str(r.get("quantity","") or ""))} / {esc(str(r.get("min_quantity","") or ""))} {esc(str(r.get("unit","") or ""))}</td></tr>'
             for r in low
         )
-        exp_section = f'<div class="doc-panel"><h2 class="doc-section-title">Expiring (14 days)</h2>{"<div class=\"doc-table-shell\"><table><thead><tr><th>Item</th><th>Expires</th><th>Qty</th></tr></thead><tbody>" + exp_html + "</tbody></table></div>" if exp else "<div class=\"doc-empty\">Nothing expiring.</div>"}</div>'
-        low_section = f'<div class="doc-panel"><h2 class="doc-section-title">Low Stock</h2>{"<div class=\"doc-table-shell\"><table><thead><tr><th>Item</th><th>Qty / Min</th></tr></thead><tbody>" + low_html + "</tbody></table></div>" if low else "<div class=\"doc-empty\">All above minimum.</div>"}</div>'
+        _exp_inner = '<div class="doc-table-shell"><table><thead><tr><th>Item</th><th>Expires</th><th>Qty</th></tr></thead><tbody>' + exp_html + '</tbody></table></div>' if exp else '<div class="doc-empty">Nothing expiring.</div>'
+        exp_section = f'<div class="doc-panel"><h2 class="doc-section-title">Expiring (14 days)</h2>{_exp_inner}</div>'
+        _low_inner = '<div class="doc-table-shell"><table><thead><tr><th>Item</th><th>Qty / Min</th></tr></thead><tbody>' + low_html + '</tbody></table></div>' if low else '<div class="doc-empty">All above minimum.</div>'
+        low_section = f'<div class="doc-panel"><h2 class="doc-section-title">Low Stock</h2>{_low_inner}</div>'
         body_parts.append(f'<section class="doc-section"><div class="doc-grid-2">{exp_section}{low_section}</div></section>')
 
     tasks = (sections.get('tasks') or {}).get('due_today') or []
@@ -310,11 +312,15 @@ def api_brief_daily_print():
 
     # Stats for the header strip
     stat_items = []
-    if prox: stat_items.append(('Proximity events', prox.get('count', 0)))
-    if inv: stat_items.append(('Expiring (14d)', len(exp)))
-    if inv: stat_items.append(('Low stock', len(low)))
+    if prox:
+        stat_items.append(('Proximity events', prox.get('count', 0)))
+    if inv:
+        stat_items.append(('Expiring (14d)', len(exp)))
+    if inv:
+        stat_items.append(('Low stock', len(low)))
     stat_items.append(('Tasks today', len(tasks)))
-    if family: stat_items.append(('Family', family.get('total', 0)))
+    if family:
+        stat_items.append(('Family', family.get('total', 0)))
 
     html = render_print_document(
         'Daily Operations Brief',

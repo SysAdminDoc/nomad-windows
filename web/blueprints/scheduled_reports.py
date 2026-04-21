@@ -104,10 +104,13 @@ def api_report_schedule_save():
     data = request.get_json() or {}
     schedule = {
         'enabled': bool(data.get('enabled', False)),
-        'interval_hours': max(1, min(168, int(data.get('interval_hours', 24)))),
         'model': data.get('model', ''),
         'last_run': data.get('last_run', ''),
     }
+    try:
+        schedule['interval_hours'] = max(1, min(168, int(data.get('interval_hours', 24))))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'interval_hours must be an integer between 1 and 168'}), 400
     with db_session() as db:
         db.execute(
             "INSERT OR REPLACE INTO settings (key, value) VALUES ('report_schedule', ?)",
@@ -156,11 +159,8 @@ def _get_schedule():
         if row:
             return json.loads(row['value'])
     except Exception:
-        pass
+        _log.warning('Failed to read report schedule from DB; using defaults', exc_info=True)
     return _default_schedule()
-
-
-def _ensure_scheduler():
     global _report_thread
     if _report_thread and _report_thread.is_alive():
         return
@@ -309,11 +309,8 @@ RULES:
                 ''', ('sitrep', f'SITREP — FAILED', 'Generation failed', model, trigger, 'failed', 0))
                 db.commit()
         except Exception:
-            pass
+            _log.warning('Failed to save failure record for SITREP generation', exc_info=True)
         return None
-
-
-def _build_sitrep_context(db):
     """Build context sections for SITREP — mirrors ai.py logic."""
     parts = []
 

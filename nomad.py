@@ -214,14 +214,24 @@ def health_monitor():
 
     Respects _shutdown_event so the thread exits cleanly during graceful
     shutdown rather than relying on daemon-thread force-kill.
+
+    Backoff: each successive restart attempt for a service doubles the delay
+    (5s → 10s → 20s) before trying again, capped at MAX_RESTARTS within
+    RESTART_WINDOW. This prevents a service that crashes immediately on
+    startup from consuming all restart slots in under 30 seconds with no
+    indication of the real error.
     """
-    from services.manager import unregister_process, try_reserve_restart, prune_completed_downloads
+    from services.manager import unregister_process, try_reserve_restart, prune_completed_downloads, MAX_RESTARTS
 
     # Wait long enough for auto_start_services to finish (Stirling can take 60s+)
     # Use Event.wait() instead of time.sleep() so we can be interrupted on shutdown.
     if _shutdown_event.wait(timeout=90):
         return
     mods = _get_service_modules()
+
+    # Per-service restart attempt counter for exponential backoff
+    # Resets when the service starts successfully.
+    _restart_attempt: dict[str, int] = {}
 
     while not _shutdown_event.is_set():
         db = None
@@ -235,25 +245,38 @@ def health_monitor():
                 mod = mods.get(sid)
                 if mod and not mod.running():
                     if try_reserve_restart(sid):
-                        log.warning(f'Service {sid} crashed — attempting auto-restart')
-                        log_activity('service_crash_detected', sid, 'Attempting auto-restart', 'warning')
+                        attempt = _restart_attempt.get(sid, 0)
+                        # Exponential backoff: 5s, 10s, 20s (capped at 20s)
+                        backoff = min(5 * (2 ** attempt), 20)
+                        log.warning(
+                            'Service %s crashed — auto-restart in %ds (attempt %d)',
+                            sid, backoff, attempt + 1,
+                        )
+                        log_activity('service_crash_detected', sid, f'Restart attempt {attempt + 1}', 'warning')
+                        _restart_attempt[sid] = attempt + 1
+                        if _shutdown_event.wait(timeout=backoff):
+                            break
                         unregister_process(sid)
                         try:
                             mod.start()
                             log.info(f'Service {sid} auto-restarted successfully')
                             log_activity('service_autorestarted', sid)
+                            _restart_attempt.pop(sid, None)  # Reset backoff on success
                         except Exception as e:
                             log.error(f'Auto-restart failed for {sid}: {e}')
                             log_activity('service_autorestart_failed', sid, str(e), 'error')
                             db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (sid,))
                             db.commit()
                     else:
-                        from services.manager import MAX_RESTARTS
                         log.error(f'Service {sid} crashed — restart limit reached ({MAX_RESTARTS} in 5min)')
                         log_activity('service_restart_limit', sid, 'Max restarts exceeded', 'error')
                         db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (sid,))
                         db.commit()
                         unregister_process(sid)
+                        _restart_attempt.pop(sid, None)
+                else:
+                    # Service is healthy — clear any stale backoff counter
+                    _restart_attempt.pop(sid, None)
         except Exception as e:
             log.error(f'Health monitor error: {e}')
         finally:

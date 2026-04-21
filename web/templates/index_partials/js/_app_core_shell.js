@@ -49,7 +49,7 @@ function getThemePalette() {
 /* ─── Skeleton Loading ─── */
 function showSkeleton(container, count = 6) {
   if (!container) return;
-  container.innerHTML = Array(count).fill('<div class="skeleton-card"><div class="skeleton-line" style="width:60%"></div><div class="skeleton-line" style="width:80%"></div><div class="skeleton-line" style="width:40%"></div></div>').join('');
+  container.innerHTML = Array(count).fill('<div class="skeleton-card"><div class="skeleton-line skeleton-line-60"></div><div class="skeleton-line skeleton-line-80"></div><div class="skeleton-line skeleton-line-40"></div></div>').join('');
 }
 
 function inferButtonAriaLabel(button, text) {
@@ -1382,10 +1382,10 @@ function showTabSkeletons(containerId, count) {
   if (!el) return;
   const rows = [];
   for (let i = 0; i < (count || 3); i++) {
-    rows.push(`<div class="skeleton-row" style="display:flex;gap:12px;margin-bottom:12px">
-      <div class="skeleton" style="width:40%;height:16px;border-radius:4px"></div>
-      <div class="skeleton" style="width:25%;height:16px;border-radius:4px"></div>
-      <div class="skeleton" style="width:20%;height:16px;border-radius:4px"></div>
+    rows.push(`<div class="skeleton-table-row">
+      <div class="skeleton skeleton-cell-lg"></div>
+      <div class="skeleton skeleton-cell-md"></div>
+      <div class="skeleton skeleton-cell-sm"></div>
     </div>`);
   }
   el.innerHTML = rows.join('');

@@ -70,7 +70,7 @@ input, textarea, select, [contenteditable="true"] {
 
 /* ─── Global smooth focus — unifies box-shadow & outline treatments ─── */
 :focus-visible {
-  outline: none;
+  outline: 0;
 }
 button:focus-visible,
 a:focus-visible,
@@ -107,7 +107,7 @@ summary:focus-visible {
 .settings-input:focus-visible,
 .settings-select:focus-visible,
 .settings-textarea:focus-visible {
-  outline: none !important;
+  outline: 0 !important;
 }
 
 /* ─── Scrollbar refinement — more tactile, still minimal ─── */
@@ -427,7 +427,7 @@ input[type="range"] {
   height: 4px;
   background: color-mix(in srgb, var(--surface3) 88%, var(--border));
   border-radius: var(--radius-full, 999px);
-  outline: none;
+  outline: 0;
 }
 input[type="range"]::-webkit-slider-thumb {
   appearance: none;
@@ -888,7 +888,7 @@ textarea:focus-visible,
 select:focus-visible {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--focus-ring-halo);
-  outline: none;
+  outline: 0;
 }
 /* But leave premium inputs alone — they already have custom halos. */
 .command-palette-input:focus-visible,
@@ -945,7 +945,7 @@ select::-ms-expand { display: none; }
 .notes-editor-header input:focus-visible {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--focus-ring-halo);
-  outline: none;
+  outline: 0;
 }
 
 /* ─── Chat message action affordance (was 0.6 opacity on hover) ─── */
@@ -1648,7 +1648,7 @@ label:focus-within:has(input[type="radio"]:focus-visible) {
   outline-offset: 3px;
 }
 label:has(.toggle-switch input:focus-visible) {
-  outline: none !important;
+  outline: 0 !important;
 }
 
 /* ─── Consistency: remove legacy `opacity: 0 → 0.6` hover reveal pattern
@@ -2711,7 +2711,7 @@ button.btn-primary[aria-busy="true"]::after {
   transform: scale(1) rotate(0);
 }
 .nomad-check:focus-visible {
-  outline: none;
+  outline: 0;
   box-shadow:
     0 0 0 3px var(--focus-ring-halo),
     0 2px 6px color-mix(in srgb, var(--accent) 28%, transparent);
@@ -2744,7 +2744,7 @@ tr[aria-selected="true"] td {
 [role="listbox"] [role="option"][aria-current="true"],
 [role="listbox"] [role="option"]:hover {
   background: color-mix(in srgb, var(--accent-dim) 78%, var(--surface-solid));
-  outline: none;
+  outline: 0;
 }
 [role="listbox"] [role="option"][aria-current="true"]::after {
   content: "";
@@ -3140,14 +3140,14 @@ select:focus-visible,
 textarea:focus-visible {
   border-color: var(--accent);
   box-shadow: var(--focus-shadow, 0 0 0 4px var(--accent-dim));
-  outline: none;
+  outline: 0;
   transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
 }
 
 /* ─── Button Refinements ─── */
 .btn {
   border-radius: var(--radius-sm, 6px);
-  transition: all var(--duration-fast) var(--easing-standard);
+  transition: color var(--duration-fast) var(--easing-standard), background-color var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), opacity var(--duration-fast) var(--easing-standard), transform var(--duration-fast) var(--easing-standard);
 }
 .btn:active:not(:disabled) {
   transform: scale(var(--pressable-press, 0.98));
@@ -3314,7 +3314,7 @@ html[data-view="minimal"] .main-content {
     width: 6px; height: 6px;
     border-radius: var(--radius-full);
     background: var(--text-dim);
-    transition: all var(--duration-fast) var(--easing-standard);
+    transition: color var(--duration-fast) var(--easing-standard), background-color var(--duration-fast) var(--easing-standard), border-color var(--duration-fast) var(--easing-standard), box-shadow var(--duration-fast) var(--easing-standard), opacity var(--duration-fast) var(--easing-standard), transform var(--duration-fast) var(--easing-standard);
   }
   .swipe-dot.active {
     background: var(--accent);
@@ -3476,7 +3476,7 @@ html[data-view="minimal"] .main-content {
   padding: var(--sp-2);
   text-align: center; cursor: pointer;
   color: var(--text-dim);
-  transition: all var(--duration-fast);
+  transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast), box-shadow var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast);
 }
 .rule-add-btn:hover {
   border-color: var(--accent); color: var(--accent);
@@ -3551,7 +3551,7 @@ html[data-view="minimal"] .main-content {
   border: 1px solid var(--border);
   border-radius: var(--radius-xs);
   font-size: var(--text-xs);
-  transition: all var(--duration-fast);
+  transition: color var(--duration-fast), background-color var(--duration-fast), border-color var(--duration-fast), box-shadow var(--duration-fast), opacity var(--duration-fast), transform var(--duration-fast);
 }
 .status-strip-item:active { cursor: grabbing; }
 .status-strip-item.dragging { opacity: var(--opacity-muted); }

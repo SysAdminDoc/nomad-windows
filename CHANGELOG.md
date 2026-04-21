@@ -2,7 +2,19 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
-## [v7.55.0] — v8 Roadmap: Schema Gate, Secret Encryption, Soft Delete, SQL Hardening
+## [v7.55.1] — Frontend Security & UX Hardening
+
+### Security
+- **XSS: Journal mood badge** (`_app_ops_support.js`) — `e.mood` was injected into `innerHTML` without escaping. User-entered mood values are now passed through `escapeHtml()`.
+- **XSS: Medical reference table headers** (`_app_init_runtime.js`) — Column header keys from `data.items[0]` were inserted raw. Now escaped with `escapeHtml(k.replace(/_/g,' '))`.
+- **XSS: LAN QR modal URL** (`_app_init_runtime.js`) — `${url}` in `innerHTML` template was unescaped. Wrapped in `escapeHtml(url)`.
+
+### Bug Fixes
+- **CSRF race condition** (`api.js`) — `apiFetch` documented that it awaits `_csrfTokenPromise` before sending mutating requests, but the code didn't. Fixed: POST/PUT/DELETE/PATCH now awaits the initial token fetch if `_csrfToken` is not yet populated, preventing 403s on LAN for the very first mutating request after page load.
+- **Double-submit: `sendBroadcast`** (`_app_ops_support.js`) — Broadcast send button is now disabled with `aria-busy` during the async request and re-enabled in a `finally` block, preventing duplicate broadcasts on rapid clicks.
+- **Double-submit: `submitJournal`** (`_app_ops_support.js`) — Journal "Log Entry" button is now disabled with `aria-busy` during submission and re-enabled in `finally`, preventing duplicate journal entries.
+
+
 
 ### Architecture (V8-01)
 - **Schema version gate** — `_meta` table with `schema_version` check. On subsequent starts, skips all 935 `CREATE TABLE/INDEX IF NOT EXISTS` statements when version matches. First-run still creates everything. Cuts startup time 30-50% for returning users.

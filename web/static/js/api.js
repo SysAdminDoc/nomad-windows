@@ -44,10 +44,13 @@ async function apiFetch(url, options = {}) {
         headers: { ...defaults.headers, ...(options.headers || {}) },
     };
 
-    // Include CSRF token on mutating requests
+    // Include CSRF token on mutating requests.
+    // Await the initial fetch if it hasn't resolved yet — prevents a 403 on
+    // LAN when the first POST wins the race against the token fetch.
     const method = (mergedOptions.method || 'GET').toUpperCase();
-    if (_csrfToken && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
-        mergedOptions.headers['X-CSRF-Token'] = _csrfToken;
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(method)) {
+        if (!_csrfToken && _csrfTokenPromise) await _csrfTokenPromise;
+        if (_csrfToken) mergedOptions.headers['X-CSRF-Token'] = _csrfToken;
     }
 
     // Don't set Content-Type for FormData

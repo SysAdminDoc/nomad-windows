@@ -95,9 +95,11 @@ def api_weather_reading_add():
         # Auto-evaluate weather action rules
         try:
             _evaluate_weather_action_rules(db)
-        except Exception:
-            pass
+        except Exception as e:
+            log.warning('Weather action rule evaluation failed: %s', e)
         return jsonify({'status': 'ok', 'prediction': prediction}), 201
+
+
 @weather_bp.route('/api/weather/predict')
 def api_weather_predict():
     """Get current Zambretti weather prediction."""

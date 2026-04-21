@@ -152,8 +152,8 @@ def api_emergency_enter():
         db.commit()
         try:
             log_activity('emergency_enter', f'Emergency mode activated: {reason}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     _broadcast('emergency_enter', {'reason': reason, 'started_at': now_iso})
     return jsonify({
@@ -198,8 +198,8 @@ def api_emergency_exit():
         db.commit()
         try:
             log_activity('emergency_exit', f'Emergency mode deactivated ({duration_str})')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     _broadcast('emergency_exit', {'duration_hours': duration})
     return jsonify({
@@ -273,8 +273,8 @@ def api_evac_plans_create():
         db.commit()
         try:
             log_activity('evac_plan_create', f'Created evac plan: {name}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'id': plan_id, 'name': name}), 201
 
@@ -338,8 +338,8 @@ def api_evac_plan_update(pid):
         db.commit()
         try:
             log_activity('evac_plan_update', f'Updated evac plan id={pid}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'updated': True, 'id': pid})
 
@@ -360,8 +360,8 @@ def api_evac_plan_delete(pid):
         db.commit()
         try:
             log_activity('evac_plan_delete', f'Deleted evac plan: {existing["name"]}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'deleted': True, 'id': pid})
 
@@ -385,8 +385,8 @@ def api_evac_plan_activate(pid):
         db.commit()
         try:
             log_activity('evac_plan_activate', f'Activated evac plan: {existing["name"]}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'activated': True, 'id': pid, 'name': existing['name']})
 
@@ -461,8 +461,8 @@ def api_rally_point_create(pid):
         db.commit()
         try:
             log_activity('rally_point_create', f'Created rally point: {name}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'id': point_id, 'name': name}), 201
 
@@ -502,8 +502,8 @@ def api_rally_point_update(rid):
         db.commit()
         try:
             log_activity('rally_point_update', f'Updated rally point id={rid}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'updated': True, 'id': rid})
 
@@ -522,8 +522,8 @@ def api_rally_point_delete(rid):
         db.commit()
         try:
             log_activity('rally_point_delete', f'Deleted rally point id={rid}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'deleted': True, 'id': rid})
 
@@ -584,8 +584,8 @@ def api_assignment_create(pid):
         db.commit()
         try:
             log_activity('evac_assignment_create', f'Assigned {person_name} to evac plan')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'id': assignment_id, 'person_name': person_name}), 201
 
@@ -612,8 +612,8 @@ def api_assignment_update(aid):
         db.commit()
         try:
             log_activity('evac_assignment_update', f'Updated assignment id={aid}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'updated': True, 'id': aid})
 
@@ -632,8 +632,8 @@ def api_assignment_delete(aid):
         db.commit()
         try:
             log_activity('evac_assignment_delete', f'Deleted assignment id={aid}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'deleted': True, 'id': aid})
 
@@ -656,8 +656,8 @@ def api_assignment_checkin(aid):
         db.commit()
         try:
             log_activity('evac_checkin', f'{existing["person_name"]} checked in')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'checked_in': True, 'id': aid, 'checked_in_at': now_iso})
 
@@ -679,8 +679,8 @@ def api_evac_plan_reset_checkins(pid):
         db.commit()
         try:
             log_activity('evac_reset_checkins', f'Reset check-ins for plan: {plan["name"]}')
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('log_activity failed: %s', e)
 
     return jsonify({'reset': True, 'plan_id': pid})
 

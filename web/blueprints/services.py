@@ -15,7 +15,7 @@ from services.manager import (
     get_download_progress, get_dir_size, format_size, uninstall_service,
     get_services_dir, ensure_dependencies,
 )
-from web.state import _installing, _installing_lock, _update_state
+from web.state import _installing, _installing_lock, _update_state, get_update_state, set_update_state
 from web.utils import clone_json_fallback as _clone_json_fallback, get_query_int as _get_query_int
 import web.state as _state
 
@@ -351,20 +351,20 @@ def api_service_logs_all():
 def api_update_download():
     """Download the latest release from GitHub."""
     def do_update():
-        _state._update_state = {'status': 'checking', 'progress': 0, 'error': None, 'path': None}
+        set_update_state(status='checking', progress=0, error=None, path=None)
         try:
             import requests as rq
             resp = rq.get('https://api.github.com/repos/SysAdminDoc/project-nomad-desktop/releases/latest', timeout=15)
             if not resp.ok:
-                _state._update_state = {'status': 'error', 'progress': 0, 'error': 'Cannot reach GitHub', 'path': None}
+                set_update_state(status='error', progress=0, error='Cannot reach GitHub', path=None)
                 return
             data = _safe_response_json(resp, {})
             if not isinstance(data, dict):
-                _state._update_state = {'status': 'error', 'progress': 0, 'error': 'Malformed release metadata', 'path': None}
+                set_update_state(status='error', progress=0, error='Malformed release metadata', path=None)
                 return
             assets = data.get('assets')
             if not isinstance(assets, list):
-                _state._update_state = {'status': 'error', 'progress': 0, 'error': 'Malformed release metadata', 'path': None}
+                set_update_state(status='error', progress=0, error='Malformed release metadata', path=None)
                 return
 
             # Find the right asset for this platform
@@ -391,10 +391,10 @@ def api_update_download():
             if not asset and assets:
                 asset = next((a for a in assets if isinstance(a, dict) and isinstance(a.get('browser_download_url'), str) and a.get('name')), None)
             if not asset:
-                _state._update_state = {'status': 'error', 'progress': 0, 'error': 'No download found for your platform', 'path': None}
+                set_update_state(status='error', progress=0, error='No download found for your platform', path=None)
                 return
 
-            _state._update_state['status'] = 'downloading'
+            set_update_state(status='downloading')
             url = asset['browser_download_url']
             fname = asset['name']
             import tempfile, hashlib
@@ -414,15 +414,15 @@ def api_update_download():
                     checksums_asset = a
                     break
             if not checksums_asset:
-                _state._update_state = {'status': 'error', 'progress': 0,
-                                        'error': 'Release is missing SHA256SUMS.txt — update refused',
-                                        'path': None}
+                set_update_state(status='error', progress=0,
+                                 error='Release is missing SHA256SUMS.txt — update refused',
+                                 path=None)
                 return
 
             sums_resp = rq.get(checksums_asset['browser_download_url'], timeout=15)
             if not sums_resp.ok:
-                _state._update_state = {'status': 'error', 'progress': 0,
-                                        'error': 'Could not fetch SHA256SUMS.txt', 'path': None}
+                set_update_state(status='error', progress=0,
+                                 error='Could not fetch SHA256SUMS.txt', path=None)
                 return
             expected_hash = None
             for line in (sums_resp.text or '').splitlines():
@@ -431,8 +431,8 @@ def api_update_download():
                     expected_hash = parts[0].lower()
                     break
             if not expected_hash or len(expected_hash) != 64:
-                _state._update_state = {'status': 'error', 'progress': 0,
-                                        'error': f'No SHA256 entry found for {fname}', 'path': None}
+                set_update_state(status='error', progress=0,
+                                 error=f'No SHA256 entry found for {fname}', path=None)
                 return
 
             dl_resp = rq.get(url, stream=True, timeout=30)
@@ -445,7 +445,7 @@ def api_update_download():
                     f.write(chunk)
                     hasher.update(chunk)
                     downloaded += len(chunk)
-                    _state._update_state['progress'] = int(downloaded / total * 100) if total > 0 else 0
+                    set_update_state(progress=int(downloaded / total * 100) if total > 0 else 0)
 
             actual_hash = hasher.hexdigest().lower()
             if actual_hash != expected_hash:
@@ -456,30 +456,30 @@ def api_update_download():
                 except OSError:
                     pass
                 log.error('Update checksum mismatch: expected %s, got %s', expected_hash, actual_hash)
-                _state._update_state = {'status': 'error', 'progress': 0,
-                                        'error': 'Checksum verification failed — file deleted',
-                                        'path': None}
+                set_update_state(status='error', progress=0,
+                                 error='Checksum verification failed — file deleted',
+                                 path=None)
                 return
 
-            _state._update_state = {'status': 'complete', 'progress': 100, 'error': None, 'path': dest,
-                                    'sha256': actual_hash}
+            set_update_state(status='complete', progress=100, error=None, path=dest,
+                             sha256=actual_hash)
             log_activity('update_downloaded', detail=f'{data.get("tag_name", "?")} → {fname} (sha256 OK)')
 
         except Exception as e:
             log.exception('Update download failed')
-            _state._update_state = {'status': 'error', 'progress': 0, 'error': 'Update download failed', 'path': None}
+            set_update_state(status='error', progress=0, error='Update download failed', path=None)
 
     threading.Thread(target=do_update, daemon=True).start()
     return jsonify({'status': 'started'})
 
 @services_bp.route('/api/update-download/status')
 def api_update_download_status():
-    return jsonify(_state._update_state)
+    return jsonify(get_update_state())
 
 @services_bp.route('/api/update-download/open', methods=['POST'])
 def api_update_download_open():
     """Open the downloaded update file."""
-    path = _state._update_state.get('path')
+    path = get_update_state().get('path')
     if not path or not os.path.isfile(path):
         return jsonify({'error': 'No update downloaded'}), 404
     from platform_utils import open_folder

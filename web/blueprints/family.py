@@ -33,8 +33,8 @@ def _broadcast(event_type, payload):
     try:
         from web.app import _broadcast_event
         _broadcast_event(event_type, payload)
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug('SSE broadcast failed (%s): %s', event_type, e)
 
 
 def _row_to_dict(row):
@@ -105,8 +105,8 @@ def api_family_checkins_create():
         row = db.execute('SELECT * FROM family_checkins WHERE id = ?', (cur.lastrowid,)).fetchone()
     try:
         log_activity('family_checkin_create', f'Added family member: {name}')
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug('log_activity failed: %s', e)
     _broadcast('family_checkin', {'action': 'create', 'name': name, 'status': status})
     return jsonify(_row_to_dict(row)), 201
 

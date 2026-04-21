@@ -196,7 +196,7 @@ def api_node_sync_push():
     import ipaddress as _ipa
     try:
         ip_obj = _ipa.ip_address(peer_ip)
-        if ip_obj.is_loopback or ip_obj.is_private or ip_obj.is_link_local or ip_obj.is_reserved or ip_obj.is_unspecified:
+        if ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved or ip_obj.is_unspecified:
             return jsonify({'error': 'Invalid peer IP address'}), 400
     except ValueError:
         return jsonify({'error': 'Invalid IP address format'}), 400
@@ -429,7 +429,7 @@ def api_node_sync_pull():
     import ipaddress as _ipa
     try:
         ip_obj = _ipa.ip_address(peer_ip)
-        if ip_obj.is_loopback or ip_obj.is_private or ip_obj.is_link_local or ip_obj.is_reserved or ip_obj.is_unspecified:
+        if ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved or ip_obj.is_unspecified:
             return jsonify({'error': 'Invalid peer IP address'}), 400
     except ValueError:
         return jsonify({'error': 'Invalid IP address format'}), 400
@@ -736,7 +736,7 @@ def api_federation_peer_add():
         import ipaddress as _ipa
         try:
             ip_obj = _ipa.ip_address(peer_ip)
-            if ip_obj.is_loopback or ip_obj.is_private or ip_obj.is_link_local or ip_obj.is_reserved or ip_obj.is_unspecified:
+            if ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_reserved or ip_obj.is_unspecified:
                 return jsonify({'error': 'Invalid peer IP address (private/reserved)'}), 400
         except ValueError:
             return jsonify({'error': 'Invalid IP address format'}), 400

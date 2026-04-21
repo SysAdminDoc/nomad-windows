@@ -1501,7 +1501,10 @@ function toggleShortcutsHelp(force) {
     setShellVisibility(el, true);
     const searchInput = document.getElementById('shortcuts-search');
     if (searchInput) { searchInput.value = ''; _filterShortcuts(''); }
-    requestAnimationFrame(() => (searchInput || el.querySelector('.shortcuts-close'))?.focus());
+    requestAnimationFrame(() => {
+      if (searchInput) { searchInput.focus(); return; }
+      el.querySelector('.shortcuts-close')?.focus();
+    });
     return;
   }
   setShellVisibility(el, false);

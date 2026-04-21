@@ -16,7 +16,7 @@ from services.manager import format_size
 from web.state import (
     _broadcast,
     _serial_state, _serial_conn,
-    _mesh_state,
+    _mesh_state, get_mesh_state, set_mesh_state,
 )
 import web.state as _state
 from web.utils import (
@@ -312,7 +312,9 @@ def api_comms_freq_create():
                     data.get('service', ''), data.get('description', ''), data.get('region', 'US'),
                     data.get('license_required', 0), data.get('priority', 0), data.get('notes', '')))
         db.commit()
-        return jsonify({'status': 'created'})
+        return jsonify({'status': 'created'}), 201
+
+
 @comms_bp.route('/api/comms/frequencies/<int:fid>', methods=['DELETE'])
 def api_comms_freq_delete(fid):
     with db_session() as db:
@@ -829,20 +831,22 @@ def api_serial_connect():
         return jsonify({'error': 'port is required'}), 400
     try:
         import serial
-        if _serial_conn['conn'] and _serial_conn['conn'].is_open:
-            _serial_conn['conn'].close()
-        conn = serial.Serial(port, baudrate=baud, timeout=2)
-        _serial_conn['conn'] = conn
-        _serial_state.update({
-            'connected': True, 'port': port, 'baud': baud,
-            'protocol': protocol, 'error': None,
-        })
+        from web.state import _serial_lock
+        with _serial_lock:
+            if _serial_conn['conn'] and _serial_conn['conn'].is_open:
+                _serial_conn['conn'].close()
+            conn = serial.Serial(port, baudrate=baud, timeout=2)
+            _serial_conn['conn'] = conn
+            _serial_state.update({
+                'connected': True, 'port': port, 'baud': baud,
+                'protocol': protocol, 'error': None,
+            })
         log_activity('serial_connected', 'serial', f'{port} @ {baud}')
         return jsonify({'status': 'connected', 'port': port, 'baud': baud, 'protocol': protocol})
     except ImportError:
         return jsonify({'error': 'pyserial not installed. Run: pip install pyserial'}), 500
     except Exception as e:
-        _serial_state.update({'connected': False, 'error': str(e)})
+        set_serial_state(connected=False, error=str(e))
         import logging
         logging.getLogger(__name__).exception('Serial connect failed')
         return jsonify({'error': 'Serial connection failed'}), 500
@@ -850,20 +854,22 @@ def api_serial_connect():
 @comms_bp.route('/api/serial/disconnect', methods=['POST'])
 def api_serial_disconnect():
     """Disconnect from serial port."""
-    if _serial_conn['conn']:
-        try:
-            _serial_conn['conn'].close()
-        except Exception:
-            pass
-        _serial_conn['conn'] = None
-    _serial_state.update({'connected': False, 'port': None, 'baud': None, 'protocol': None, 'error': None})
+    from web.state import _serial_lock
+    with _serial_lock:
+        if _serial_conn['conn']:
+            try:
+                _serial_conn['conn'].close()
+            except Exception:
+                pass
+            _serial_conn['conn'] = None
+        _serial_state.update({'connected': False, 'port': None, 'baud': None, 'protocol': None, 'error': None})
     log_activity('serial_disconnected', 'serial')
     return jsonify({'status': 'disconnected'})
 
 @comms_bp.route('/api/serial/status')
 def api_serial_status():
     """Get serial connection status and last reading."""
-    return jsonify(_serial_state)
+    return jsonify(get_serial_state())
 
 # [EXTRACTED to blueprint] Sensor chart route
 
@@ -876,11 +882,12 @@ def api_mesh_status():
     from services import reticulum as rns_svc
     if rns_svc.available():
         status = rns_svc.get_status()
-        # Update shared state for status board
-        _mesh_state['connected'] = status.get('running', False)
-        _mesh_state['my_node_id'] = status.get('identity', '!local')
+        set_mesh_state(
+            connected=status.get('running', False),
+            my_node_id=status.get('identity', '!local'),
+        )
         return jsonify(status)
-    return jsonify(_mesh_state)
+    return jsonify(get_mesh_state())
 
 
 @comms_bp.route('/api/mesh/start', methods=['POST'])
@@ -898,9 +905,9 @@ def api_mesh_start():
 
     try:
         rns_svc.start(transport=transport)
-        _mesh_state['connected'] = True
-        _mesh_state['my_node_id'] = rns_svc.get_identity_hash() or '!local'
-        log_activity('mesh_started', detail=f'Identity: {_mesh_state["my_node_id"][:12]}')
+        node_id = rns_svc.get_identity_hash() or '!local'
+        set_mesh_state(connected=True, my_node_id=node_id)
+        log_activity('mesh_started', detail=f'Identity: {node_id[:12]}')
         return jsonify({'status': 'started', **rns_svc.get_status()})
     except Exception as e:
         return jsonify({'error': 'Mesh start failed'}), 500
@@ -911,7 +918,7 @@ def api_mesh_stop():
     """Stop the Reticulum mesh transport."""
     from services import reticulum as rns_svc
     rns_svc.stop()
-    _mesh_state['connected'] = False
+    set_mesh_state(connected=False)
     log_activity('mesh_stopped')
     return jsonify({'status': 'stopped'})
 
@@ -1035,20 +1042,20 @@ def api_comms_status_board():
         try:
             peers = db.execute('SELECT * FROM federation_peers ORDER BY last_seen DESC').fetchall()
             lan_peers = [dict(p) for p in peers]
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('status_board: federation_peers query failed: %s', e)
 
         # Mesh nodes
         mesh_nodes = []
-        mesh_status = dict(_mesh_state)
+        mesh_status = get_mesh_state()
 
         # Federation peers
         fed_peers = []
         try:
             rows = db.execute("SELECT * FROM federation_peers WHERE trust_level != 'blocked' ORDER BY last_seen DESC LIMIT 500").fetchall()
             fed_peers = [dict(r) for r in rows]
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('status_board: fed_peers query failed: %s', e)
 
         # Recent comms log
         recent_comms = []
@@ -1056,8 +1063,8 @@ def api_comms_status_board():
             since = (datetime.now() - timedelta(hours=24)).strftime('%Y-%m-%d %H:%M:%S')
             rows = db.execute('SELECT * FROM comms_log WHERE created_at >= ? ORDER BY created_at DESC LIMIT 50', (since,)).fetchall()
             recent_comms = [dict(r) for r in rows]
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('status_board: comms_log query failed: %s', e)
 
         # Active frequencies from radio profiles
         active_freqs = []
@@ -1072,16 +1079,16 @@ def api_comms_status_board():
                         'channel': ch.get('name', ''),
                         'frequency': ch.get('frequency', ''),
                     })
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('status_board: radio_profiles query failed: %s', e)
 
         # Recent mesh messages
         mesh_msgs = []
         try:
             rows = db.execute('SELECT * FROM mesh_messages ORDER BY timestamp DESC LIMIT 20').fetchall()
             mesh_msgs = [dict(r) for r in rows]
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug('status_board: mesh_messages query failed: %s', e)
 
         return jsonify({
         'lan_peers': lan_peers,

@@ -669,10 +669,8 @@ def _fetch_rss_feeds():
         with db_session() as db:
             custom = db.execute('SELECT name, url, category FROM sitroom_custom_feeds WHERE enabled = 1').fetchall()
             feeds.extend([{'name': r['name'], 'url': r['url'], 'category': r['category']} for r in custom])
-    except Exception:
-        pass
-
-    # Parallel fetch with ThreadPoolExecutor
+    except Exception as e:
+        log.warning('Failed to load custom feeds from DB: %s', e)
     articles = []
     with ThreadPoolExecutor(max_workers=8) as pool:
         futures = {pool.submit(_fetch_single_feed, f): f for f in feeds}
@@ -846,10 +844,8 @@ def _fetch_market_data():
                 prev = meta.get('previousClose', 0)
                 change = ((price - prev) / prev * 100) if prev else 0
                 markets.append({'symbol': name, 'price': price, 'change_24h': round(change, 2), 'market_type': 'sector', 'label': sym})
-        except Exception:
-            pass
-
-    # Crypto (CoinGecko)
+        except Exception as e:
+            log.debug('Yahoo Finance sector ETF %s failed: %s', sym, e)
     try:
         resp = _fetch_with_retry('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,binancecoin,ripple,cardano,dogecoin&vs_currencies=usd&include_24hr_change=true',
                                  timeout=_REQ_TIMEOUT, headers=_REQ_HEADERS)
@@ -4029,13 +4025,8 @@ def api_sitroom_stock_analysis(symbol):
             ts = data.get('chart', {}).get('result', [{}])[0]
             closes = (ts.get('indicators', {}).get('quote', [{}])[0].get('close') or [])
             result['price_history'] = [round(c, 2) if c else None for c in closes[-30:]]
-    except Exception:
-        pass
-
-    return jsonify(result)
-
-
-@situation_room_bp.route('/api/sitroom/consumer-prices')
+    except Exception as e:
+        log.debug('Yahoo Finance chart fetch for %s failed: %s', symbol, e)
 def api_sitroom_consumer_prices():
     """Return consumer price comparison data (Big Mac + fuel)."""
     result = {'bigmac': [], 'fuel': []}
@@ -4845,10 +4836,8 @@ def api_sitroom_risk_radar():
             try:
                 kp = payload.get('latest', [None, None, None, None, '0'])
                 space_risk = min(10, int(float(kp[4] if len(kp) > 4 else 0)))
-            except Exception:
-                pass
-
-    def _scale(val, low, high):
+            except Exception as e:
+                log.debug('Failed to parse KP index for risk radar: %s', e)
         return min(10, max(0, int((val - low) / max(1, high - low) * 10)))
 
     return jsonify({
@@ -4962,9 +4951,8 @@ def api_sitroom_ai_models():
         from services import ollama as _ollama_svc
         model_list = _ollama_svc.list_models()
         models = [m.get('name', m.get('model', '')) for m in (model_list if isinstance(model_list, list) else [])]
-    except Exception:
-        pass
-    ai_features = {
+    except Exception as e:
+        log.debug('Failed to list Ollama models for sitroom: %s', e)
         'strategic_briefing': bool(models),
         'country_brief': bool(models),
         'deduction_panel': bool(models),

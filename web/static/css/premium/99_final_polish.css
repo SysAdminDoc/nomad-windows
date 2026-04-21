@@ -318,7 +318,7 @@ a:hover {
 .badge {
   letter-spacing: 0.04em;
   padding: 3px 9px;
-  font-size: 10.5px;
+  font-size: var(--text-xs, 10px);
   line-height: 1.45;
   border: 1px solid color-mix(in srgb, currentColor 22%, transparent);
   background: color-mix(in srgb, currentColor 12%, transparent);
@@ -513,6 +513,7 @@ code {
 
 /* ─── Sidebar nav — finer tactile press + group label rhythm ─── */
 .sidebar-group-label {
+  position: relative; /* required: anchors the ::before triangle */
   padding: 18px 14px 6px;
 }
 .sidebar-group-title {
@@ -526,7 +527,7 @@ code {
 .sidebar-group-copy {
   display: block;
   margin-top: 2px;
-  font-size: 10.5px;
+  font-size: var(--text-xs, 10px);
   color: var(--text-muted);
   opacity: 0.78;
   line-height: 1.4;

@@ -816,6 +816,13 @@
   animation: skeleton-pulse 1.5s ease-in-out infinite;
   transition: opacity 0.3s ease;
 }
+.skeleton-line-40 { width: 40%; }
+.skeleton-line-60 { width: 60%; }
+.skeleton-line-80 { width: 80%; }
+.skeleton-table-row { display: flex; gap: 12px; margin-bottom: 12px; }
+.skeleton-cell-lg { width: 40%; height: 16px; border-radius: 4px; }
+.skeleton-cell-md { width: 25%; height: 16px; border-radius: 4px; }
+.skeleton-cell-sm { width: 20%; height: 16px; border-radius: 4px; }
 @keyframes skeleton-pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
 
 /* ─── Touch Target Compliance ─────────────────────────────────────── */

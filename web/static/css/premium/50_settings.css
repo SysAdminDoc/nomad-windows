@@ -2003,7 +2003,7 @@
   color: var(--text-primary);
   font-size: var(--text-sm-md, 12px);
 }
-.shortcuts-search:focus { border-color: var(--accent); outline: none; }
+.shortcuts-search:focus { border-color: var(--accent); outline: 0; }
 
 .shortcuts-section-title {
   font-size: var(--text-xs, 10px);

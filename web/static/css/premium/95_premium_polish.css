@@ -103,7 +103,7 @@ h3,
 .sr-layer-preset-btn:focus-visible,
 .sr-newsdesk-mode-btn:focus-visible,
 .sr-region-btn:focus-visible {
-  outline: none !important;
+  outline: 0 !important;
   box-shadow: var(--premium-focus-ring), var(--premium-focus-shadow) !important;
 }
 

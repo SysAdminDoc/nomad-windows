@@ -727,10 +727,14 @@ def _calculate_scenario_score(decisions, scenario_type, duration_sec=None):
 
     # Speed (20 points max) - faster is better
     if duration_sec and duration_sec > 0:
-        if duration_sec < 300: breakdown['speed'] = 20       # Under 5 min
-        elif duration_sec < 600: breakdown['speed'] = 15     # Under 10 min
-        elif duration_sec < 900: breakdown['speed'] = 10     # Under 15 min
-        else: breakdown['speed'] = 5
+        if duration_sec < 300:
+            breakdown['speed'] = 20       # Under 5 min
+        elif duration_sec < 600:
+            breakdown['speed'] = 15     # Under 10 min
+        elif duration_sec < 900:
+            breakdown['speed'] = 10     # Under 15 min
+        else:
+            breakdown['speed'] = 5
     else:
         breakdown['speed'] = 10  # No timer, middle score
     score += breakdown['speed']

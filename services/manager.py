@@ -248,7 +248,25 @@ def start_process(service_id: str, exe_path, args: list[str] = None,
 
         _processes[service_id] = proc
 
-    db = get_db()
+    try:
+        db = get_db()
+    except Exception as e:
+        # DB unavailable — kill and untrack the just-launched process so
+        # we don't leave a running orphan that nothing knows how to stop.
+        log.error(f'Failed to open DB after starting {service_id}: {e}')
+        proc.terminate()
+        try:
+            proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+        if proc.stdout:
+            try:
+                proc.stdout.close()
+            except Exception:
+                pass
+        with _lock:
+            _processes.pop(service_id, None)
+        raise
     try:
         db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, service_id))
         db.commit()
@@ -388,10 +406,17 @@ def _pid_matches_exe(pid: int, exe_path: str) -> bool:
 def should_restart(service_id: str) -> bool:
     """Check if a service should be auto-restarted (rate-limited).
 
-    NOTE: prefer `try_reserve_restart()` over the check-then-act pattern of
-    calling this followed by `record_restart()`. Two concurrent callers can
-    both pass this check before either records — defeating the cap.
+    DEPRECATED: Use `try_reserve_restart()` instead. This function has a
+    TOCTOU race — two concurrent callers can both pass the check before
+    either records a restart, defeating the cap. It is kept only for
+    backward compatibility with any external callers.
     """
+    import warnings
+    warnings.warn(
+        'should_restart() has a TOCTOU race; use try_reserve_restart() instead.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
     with _lock:
         now = time.time()
         timestamps = _restart_tracker.get(service_id, [])

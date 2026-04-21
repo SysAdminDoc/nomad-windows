@@ -181,6 +181,14 @@ def db_session():
             conn.rollback()
         except Exception:
             pass
+        # Clear flask.g binding so teardown_appcontext doesn't try to
+        # close an already-closed connection and generate a needless exception.
+        try:
+            from flask import g, has_app_context
+            if has_app_context() and getattr(g, '_db_conn', None) is conn:
+                g._db_conn = None
+        except Exception:
+            pass
         # Don't return a possibly-broken conn to the pool
         try:
             conn.close()
@@ -2244,8 +2252,13 @@ def _apply_column_migrations(conn):
         try:
             conn.execute(migration)
             conn.commit()
-        except sqlite3.OperationalError:
-            pass  # Column already exists
+        except sqlite3.OperationalError as e:
+            # Only silently skip the expected "duplicate column name" case.
+            # Any other OperationalError (disk full, corrupt page, malformed
+            # SQL) should propagate so the caller knows the schema is broken.
+            if 'duplicate column name' not in str(e).lower():
+                _log.error('Column migration FAILED (%s): %s', migration[:80], e)
+                raise
 
 
 def _create_indexes(conn):

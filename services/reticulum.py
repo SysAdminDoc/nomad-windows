@@ -178,7 +178,12 @@ def stop():
     with _lock:
         if _lxmf_router:
             try:
-                _lxmf_router.__del__()
+                # Prefer the official teardown hook; fall back to __del__ only
+                # if the installed version doesn't expose it.
+                if hasattr(_lxmf_router, 'teardown'):
+                    _lxmf_router.teardown()
+                elif hasattr(_lxmf_router, 'exit_handler'):
+                    _lxmf_router.exit_handler()
             except Exception:
                 pass
             _lxmf_router = None

@@ -326,10 +326,14 @@ def _evaluate_weather_action_rules(db):
         threshold = rule['threshold']
         comp = rule['comparison']
         matched = False
-        if comp == 'lt' and value < threshold: matched = True
-        elif comp == 'gt' and value > threshold: matched = True
-        elif comp == 'lte' and value <= threshold: matched = True
-        elif comp == 'gte' and value >= threshold: matched = True
+        if comp == 'lt' and value < threshold:
+            matched = True
+        elif comp == 'gt' and value > threshold:
+            matched = True
+        elif comp == 'lte' and value <= threshold:
+            matched = True
+        elif comp == 'gte' and value >= threshold:
+            matched = True
 
         if matched:
             action_data = _safe_json_object(rule['action_data'], {})

@@ -163,12 +163,18 @@ def _evaluate_single_condition(db, cond):
 def _compare(value, op, threshold):
     try:
         v, t = float(value), float(threshold)
-        if op == 'lt': return v < t
-        if op == 'lte': return v <= t
-        if op == 'gt': return v > t
-        if op == 'gte': return v >= t
-        if op == 'eq': return v == t
-        if op == 'ne': return v != t
+        if op == 'lt':
+            return v < t
+        if op == 'lte':
+            return v <= t
+        if op == 'gt':
+            return v > t
+        if op == 'gte':
+            return v >= t
+        if op == 'eq':
+            return v == t
+        if op == 'ne':
+            return v != t
     except (TypeError, ValueError):
         pass
     return False

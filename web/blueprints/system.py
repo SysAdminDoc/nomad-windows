@@ -1847,7 +1847,8 @@ def api_system_health():
                 count = db.execute(query).fetchone()['c']
                 health['coverage'][key] = {'count': count, 'label': label, 'active': count > 0}
                 total_items += count
-                if count > 0: modules_active += 1
+                if count > 0:
+                    modules_active += 1
             except Exception:
                 health['coverage'][key] = {'count': 0, 'label': label, 'active': False}
 
@@ -1861,13 +1862,17 @@ def api_system_health():
         from datetime import datetime, timedelta
         today = datetime.now().strftime('%Y-%m-%d')
         expired = db.execute("SELECT COUNT(*) as c FROM inventory WHERE expiration != '' AND expiration < ?", (today,)).fetchone()['c']
-        if expired > 0: health['issues'].append({'type': 'warning', 'msg': f'{expired} items have expired'})
+        if expired > 0:
+            health['issues'].append({'type': 'warning', 'msg': f'{expired} items have expired'})
         low = db.execute('SELECT COUNT(*) as c FROM inventory WHERE quantity <= min_quantity AND min_quantity > 0').fetchone()['c']
-        if low > 0: health['issues'].append({'type': 'warning', 'msg': f'{low} items are below minimum stock'})
+        if low > 0:
+            health['issues'].append({'type': 'warning', 'msg': f'{low} items are below minimum stock'})
         overdue = db.execute("SELECT COUNT(*) as c FROM equipment_log WHERE next_service != '' AND next_service <= ?", (today,)).fetchone()['c']
-        if overdue > 0: health['issues'].append({'type': 'warning', 'msg': f'{overdue} equipment items overdue for service'})
+        if overdue > 0:
+            health['issues'].append({'type': 'warning', 'msg': f'{overdue} equipment items overdue for service'})
         crit_alerts = db.execute("SELECT COUNT(*) as c FROM alerts WHERE dismissed = 0 AND severity = 'critical'").fetchone()['c']
-        if crit_alerts > 0: health['issues'].append({'type': 'critical', 'msg': f'{crit_alerts} unresolved critical alerts'})
+        if crit_alerts > 0:
+            health['issues'].append({'type': 'critical', 'msg': f'{crit_alerts} unresolved critical alerts'})
 
         # DB integrity
         try:
@@ -1901,7 +1906,8 @@ def api_health_score():
                 if t not in _READINESS_TABLES:
                     continue
                 count = db.execute(f'SELECT COUNT(*) FROM [{t}]').fetchone()[0]
-                if count > 0: populated += 1
+                if count > 0:
+                    populated += 1
             except Exception:
                 pass
         coverage = round((populated / len(tables_to_check)) * 25)
@@ -1922,10 +1928,14 @@ def api_health_score():
                 from datetime import datetime, timedelta
                 backup_dt = datetime.fromisoformat(last_backup['latest'])
                 hours_ago = (datetime.now() - backup_dt).total_seconds() / 3600
-                if hours_ago < 24: breakdown['backup'] = 15
-                elif hours_ago < 48: breakdown['backup'] = 10
-                elif hours_ago < 168: breakdown['backup'] = 5
-                else: breakdown['backup'] = 0
+                if hours_ago < 24:
+                    breakdown['backup'] = 15
+                elif hours_ago < 48:
+                    breakdown['backup'] = 10
+                elif hours_ago < 168:
+                    breakdown['backup'] = 5
+                else:
+                    breakdown['backup'] = 0
             else:
                 breakdown['backup'] = 0
         except Exception:
@@ -1936,10 +1946,14 @@ def api_health_score():
         try:
             usage = shutil.disk_usage(config.get_data_dir())
             free_pct = (usage.free / usage.total) * 100
-            if free_pct > 20: breakdown['disk'] = 10
-            elif free_pct > 10: breakdown['disk'] = 7
-            elif free_pct > 5: breakdown['disk'] = 3
-            else: breakdown['disk'] = 0
+            if free_pct > 20:
+                breakdown['disk'] = 10
+            elif free_pct > 10:
+                breakdown['disk'] = 7
+            elif free_pct > 5:
+                breakdown['disk'] = 3
+            else:
+                breakdown['disk'] = 0
         except Exception:
             breakdown['disk'] = 5
         score += breakdown['disk']

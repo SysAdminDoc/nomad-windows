@@ -589,8 +589,8 @@ def api_print_medical_cards():
   <div class="doc-note-box doc-checkbox-cell">
     <div class="doc-strong doc-text-lg">{_esc(record["name"])}</div>
     <div class="doc-mt-10 doc-chip-list">
-      <span class="doc-chip">DOB: {_esc(str(record.get("dob","\u2014")))}</span>
-      <span class="doc-chip">Blood: {_esc(str(record.get("blood_type","\u2014")))}</span>
+      <span class="doc-chip">DOB: {_esc(str(record.get("dob", "—")))}</span>
+      <span class="doc-chip">Blood: {_esc(str(record.get("blood_type", "—")))}</span>
       <span class="doc-chip">Weight: {_esc(str(record.get("weight_kg","?")))} kg</span>
     </div>
     <div class="doc-mt-12">

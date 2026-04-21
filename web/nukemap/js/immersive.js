@@ -224,7 +224,7 @@ NM.GPSSafe = {
         this._analyze(map, lat, lng);
       },
       (err) => {
-        document.getElementById('gps-result').innerHTML = `<div style="color:var(--red);font-size:11px">Location error: ${err.message}</div>`;
+        document.getElementById('gps-result').innerHTML = `<div style="color:var(--red);font-size:11px">Location error: ${NM.esc(err.message)}</div>`;
       },
       {enableHighAccuracy: true, timeout: 10000}
     );

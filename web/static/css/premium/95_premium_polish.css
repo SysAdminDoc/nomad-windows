@@ -70,7 +70,7 @@ h3,
   min-height: 32px;
   padding: 5px 12px;
   border-radius: var(--radius-sm, 10px);
-  font-size: 10.5px;
+  font-size: var(--text-xs, 10px);
 }
 
 .btn:hover,

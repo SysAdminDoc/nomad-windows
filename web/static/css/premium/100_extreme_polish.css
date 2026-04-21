@@ -1,0 +1,122 @@
+/* ==========================================================================
+   NOMAD Field Desk — 100 Extreme Polish
+   Final visual refinement layer. Loaded after all other premium CSS.
+   Scope: Tokenization fixes, layout correctness, cohesion improvements,
+          accessibility hardening, premium micro-details.
+   ========================================================================== */
+
+/* ─── 1. Settings section headers: 12px all-caps is hard to scan ─────────── */
+.settings-workspace .settings-card > h3,
+.settings-panel-header {
+  font-size: var(--text-base, 13px) !important;
+  letter-spacing: 0.06em !important;
+}
+
+/* ─── 2. Chat message bubbles: warmer radius + user/assistant distinction ─── */
+.message .content {
+  border-radius: var(--radius-md, 14px) !important;
+}
+.message.user .content {
+  border-radius: var(--radius-md, 14px) var(--radius-sm, 6px) var(--radius-sm, 6px) var(--radius-md, 14px) !important;
+}
+.message.assistant .content {
+  border-radius: var(--radius-sm, 6px) var(--radius-md, 14px) var(--radius-md, 14px) var(--radius-md, 14px) !important;
+}
+
+/* ─── 3. Prompt presets: fix invalid --text-secondary token reference ─────── */
+.prompt-presets-empty,
+.prompt-preset-builtin {
+  color: var(--text-muted) !important;
+}
+
+/* ─── 4. Prompt presets menu: use elevation system instead of raw shadow ──── */
+.prompt-presets-menu {
+  box-shadow: var(--elev-3) !important;
+}
+
+/* ─── 5. Toast: flex layout for icon + message alignment ─────────────────── */
+.toast {
+  display: flex !important;
+  align-items: center !important;
+  min-width: 260px;
+  max-width: min(440px, 88vw);
+}
+
+/* ─── 6. Disabled state: reconcile 95 (0.58) vs 99 (0.48) — use 99's value ─ */
+.btn:disabled,
+button:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled,
+[aria-disabled="true"] {
+  opacity: var(--opacity-disabled, 0.48);
+  cursor: not-allowed;
+}
+
+/* ─── 7. Active tab stripe: add subtle glow to reinforce selection ────────── */
+.tab.active::before {
+  box-shadow: 0 0 6px color-mix(in srgb, var(--accent) 52%, transparent);
+}
+
+/* ─── 8. Live widget hover: inner accent ring for depth ──────────────────── */
+.live-widget:hover {
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent),
+    var(--shadow, 0 4px 20px rgba(0,0,0,0.14)) !important;
+}
+
+/* ─── 9. CC cards: richer hover depth to match the lift ─────────────────── */
+.cc-card:hover {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--accent) 20%, transparent),
+    var(--shadow, 0 4px 20px rgba(0,0,0,0.14)) !important;
+}
+
+/* ─── 10. Search input: inner shadow communicates focus depth ────────────── */
+.search-bar input,
+.map-search input {
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.06);
+  transition: border-color var(--duration-fast) var(--easing-standard),
+              box-shadow var(--duration-fast) var(--easing-standard);
+}
+.search-bar input:focus-visible,
+.map-search input:focus-visible {
+  box-shadow: var(--focus-shadow, 0 0 0 3px var(--accent-dim)),
+              inset 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* ─── 11. Empty state: consistent centering across all surfaces ──────────── */
+.empty-state {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 160px;
+  text-align: center;
+  gap: var(--sp-3, 12px);
+}
+
+/* ─── 12. Skeleton shimmer: tie animation speed to the token system ──────── */
+.skeleton,
+.bento-skeleton {
+  animation-duration: var(--duration-slowest, 1500ms);
+}
+
+/* ─── 13. Prefers-reduced-motion: harden all animations globally ─────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .skeleton,
+  .bento-skeleton::after,
+  .shimmer-text {
+    animation: none !important;
+    background: var(--surface3) !important;
+    -webkit-text-fill-color: var(--text-dim) !important;
+  }
+}

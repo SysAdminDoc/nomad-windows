@@ -1,6 +1,8 @@
 """Kiwix service — offline Wikipedia and reference libraries."""
 
+import ipaddress
 import os
+import socket
 import subprocess
 import time
 import logging
@@ -731,6 +733,20 @@ def download_zim(url: str, filename: str = None):
     """Download a ZIM file to the library directory."""
     if not url.startswith(('http://', 'https://')):
         raise ValueError('Only HTTP/HTTPS URLs are supported')
+    # Block private/loopback IPs even when called outside the web layer.
+    # The web blueprint validates via validate_download_url(), but this guard
+    # ensures defense-in-depth for any future direct callers (plugins, CLI, etc.).
+    try:
+        from urllib.parse import urlparse
+        hostname = urlparse(url).hostname or ''
+        for info in socket.getaddrinfo(hostname, None):
+            ip = ipaddress.ip_address(info[4][0])
+            if ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_private or ip.is_unspecified:
+                raise ValueError(f'Download URL resolves to a private/internal address: {ip}')
+    except ValueError:
+        raise
+    except Exception as exc:
+        raise ValueError(f'Unable to validate download URL host: {exc}') from exc
     if not filename:
         filename = url.split('/')[-1]
     # Drop any query string / fragment that snuck into the filename.

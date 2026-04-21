@@ -1294,7 +1294,7 @@ def api_print_vehicle_cards():
                 page-break-inside:avoid;max-width:400px;display:inline-block;vertical-align:top;margin-right:14px;">
   <div style="font-weight:700;font-size:14px;margin-bottom:6px;">{_esc(_safe_str(v["name"]))}</div>
   <table style="font-size:11px;width:100%;border-collapse:collapse;">
-    <tr><td style="padding:2px 6px;color:#666;">Year/Make/Model</td><td style="padding:2px 6px;">{_safe_str(v["year"])} {_esc(_safe_str(v["make"]))} {_esc(_safe_str(v["model"]))}</td></tr>
+    <tr><td style="padding:2px 6px;color:#666;">Year/Make/Model</td><td style="padding:2px 6px;">{_esc(_safe_str(v["year"]))} {_esc(_safe_str(v["make"]))} {_esc(_safe_str(v["model"]))}</td></tr>
     <tr><td style="padding:2px 6px;color:#666;">VIN</td><td style="padding:2px 6px;font-family:monospace;">{_esc(_safe_str(v["vin"]))}</td></tr>
     <tr><td style="padding:2px 6px;color:#666;">Plate</td><td style="padding:2px 6px;">{_esc(_safe_str(v["plate"]))}</td></tr>
     <tr><td style="padding:2px 6px;color:#666;">Color</td><td style="padding:2px 6px;">{_esc(_safe_str(v["color"]))}</td></tr>
@@ -1367,7 +1367,7 @@ def api_print_medication_cards():
                 page-break-inside:avoid;max-width:400px;display:inline-block;vertical-align:top;margin-right:14px;">
   <div style="font-weight:700;font-size:14px;margin-bottom:4px;">{_esc(_safe_str(p["name"]))}</div>
   <div style="font-size:11px;color:#666;margin-bottom:8px;">
-    {_safe_str(p["sex"])} | Age: {_safe_str(p["age"])} | Blood: {_esc(_safe_str(p["blood_type"]))}
+    {_esc(_safe_str(p["sex"]))} | Age: {_esc(_safe_str(p["age"]))} | Blood: {_esc(_safe_str(p["blood_type"]))}
   </div>
   <div style="font-size:11px;margin-bottom:4px;"><strong>Allergies:</strong> <span style="color:#c33;">{_esc(allergy_str)}</span></div>
   <div style="font-size:11px;margin-bottom:6px;"><strong>Conditions:</strong> {_esc(condition_str)}</div>

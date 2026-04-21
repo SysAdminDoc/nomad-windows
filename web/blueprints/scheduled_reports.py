@@ -161,6 +161,9 @@ def _get_schedule():
     except Exception:
         _log.warning('Failed to read report schedule from DB; using defaults', exc_info=True)
     return _default_schedule()
+
+
+def _ensure_scheduler():
     global _report_thread
     if _report_thread and _report_thread.is_alive():
         return

@@ -749,22 +749,24 @@ def api_comms_profiles_delete(pid):
         return jsonify({'status': 'deleted'})
 @comms_bp.route('/api/broadcast')
 def api_broadcast_get():
-    return jsonify(_broadcast)
+    return jsonify(get_broadcast())
 
 @comms_bp.route('/api/broadcast', methods=['POST'])
 def api_broadcast_set():
     data = request.get_json() or {}
-    _broadcast['active'] = True
-    _broadcast['message'] = (data.get('message', '') or '')[:500]
-    _broadcast['severity'] = data.get('severity', 'info')
-    _broadcast['timestamp'] = time.strftime('%Y-%m-%dT%H:%M:%S')
-    log_activity('broadcast_sent', detail=_broadcast['message'][:100])
+    msg = (data.get('message', '') or '')[:500]
+    state = set_broadcast(
+        active=True,
+        message=msg,
+        severity=data.get('severity', 'info'),
+        timestamp=time.strftime('%Y-%m-%dT%H:%M:%S'),
+    )
+    log_activity('broadcast_sent', detail=state['message'][:100])
     return jsonify({'status': 'sent'})
 
 @comms_bp.route('/api/broadcast/clear', methods=['POST'])
 def api_broadcast_clear():
-    _broadcast['active'] = False
-    _broadcast['message'] = ''
+    set_broadcast(active=False, message='')
     return jsonify({'status': 'cleared'})
 
 # ─── Resource Allocation Planner ──────────────────────────────────

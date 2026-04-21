@@ -120,8 +120,8 @@ class TestErrorHandler:
         assert 'window.NOMAD_ALLOW_LAUNCH_RESTORE = true;' in html
         assert 'window.NOMAD_FIRST_RUN_COMPLETE = false;' in html
         assert 'window.NOMAD_WIZARD_SHOULD_LAUNCH = true;' in html
-        assert 'Welcome to NOMAD' in html
-        assert 'Start Using NOMAD' in html
+        assert 'Stand up the desk before the network becomes the problem.' in html
+        assert 'Start Guided Setup' in html
         assert 'data-tab-target="services"' in html
         assert 'id="gs-resume-setup-btn"' in html
         assert 'id="gs-onboarding-note"' in html

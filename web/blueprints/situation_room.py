@@ -4030,6 +4030,11 @@ def api_sitroom_stock_analysis(symbol):
             result['price_history'] = [round(c, 2) if c else None for c in closes[-30:]]
     except Exception as e:
         log.debug('Yahoo Finance chart fetch for %s failed: %s', symbol, e)
+
+    return jsonify(result)
+
+
+@situation_room_bp.route('/api/sitroom/consumer-prices')
 def api_sitroom_consumer_prices():
     """Return consumer price comparison data (Big Mac + fuel)."""
     result = {'bigmac': [], 'fuel': []}
@@ -4855,6 +4860,8 @@ def api_sitroom_risk_radar():
                 space_risk = min(10, int(float(kp[4] if len(kp) > 4 else 0)))
             except Exception as e:
                 log.debug('Failed to parse KP index for risk radar: %s', e)
+
+    def _scale(val, low, high):
         return min(10, max(0, int((val - low) / max(1, high - low) * 10)))
 
     return jsonify({

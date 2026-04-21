@@ -6101,7 +6101,18 @@ def _create_fts5_tables(conn):
         ('waypoints_fts', 'waypoints', ['name', 'category', 'notes']),
     ]
 
+    import re as _re
+    _fts_ident = _re.compile(r'^[a-z_][a-z0-9_]*$')
+
     for fts_table, src_table, cols in specs:
+        # Guard against future dynamic expansion: validate all identifiers
+        if not _fts_ident.match(fts_table) or not _fts_ident.match(src_table):
+            _log.error('FTS5 setup: invalid table name %r / %r — skipping', fts_table, src_table)
+            continue
+        invalid_cols = [c for c in cols if not _fts_ident.match(c)]
+        if invalid_cols:
+            _log.error('FTS5 setup: invalid column names %r in %r — skipping', invalid_cols, fts_table)
+            continue
         cols_csv = ', '.join(cols)
         new_cols_csv = ', '.join('new.' + c for c in cols)
         old_cols_csv = ', '.join('old.' + c for c in cols)

@@ -477,7 +477,7 @@ def api_videos_update(vid):
         if 'title' in data:
             db.execute('UPDATE videos SET title = ? WHERE id = ?', (data['title'], vid))
         if 'folder' in data:
-            db.execute('UPDATE videos SET folder = ? WHERE id = ?', (data['folder'], vid))
+            db.execute('UPDATE videos SET folder = ? WHERE id = ?', (_sanitize_folder(data['folder']), vid))
         if 'category' in data:
             db.execute('UPDATE videos SET category = ? WHERE id = ?', (data['category'], vid))
         db.commit()
@@ -1565,6 +1565,8 @@ def api_audio_delete(aid):
 @media_bp.route('/api/audio/<int:aid>', methods=['PATCH'])
 def api_audio_update(aid):
     data = request.get_json() or {}
+    if 'folder' in data:
+        data['folder'] = _sanitize_folder(data['folder'])
     ALLOWED_COLS = ['title', 'folder', 'category', 'artist', 'album']
     filtered = safe_columns(data, ALLOWED_COLS)
     if not filtered:
@@ -2153,6 +2155,8 @@ def api_books_delete(bid):
 @media_bp.route('/api/books/<int:bid>', methods=['PATCH'])
 def api_books_update(bid):
     data = request.get_json() or {}
+    if 'folder' in data:
+        data['folder'] = _sanitize_folder(data['folder'])
     ALLOWED_COLS = ['title', 'folder', 'category', 'author', 'last_position']
     filtered = safe_columns(data, ALLOWED_COLS)
     if not filtered:

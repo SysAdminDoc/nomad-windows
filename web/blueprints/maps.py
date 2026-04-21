@@ -425,6 +425,11 @@ def _get_pmtiles_cli():
         log.error('No %s %s asset found in go-pmtiles release', plat_key, arch_key)
         return None
     log.info('Downloading pmtiles CLI from %s', url)
+    try:
+        _validate_download_url(url)
+    except ValueError as e:
+        log.error('pmtiles CLI download URL blocked by SSRF guard: %s', e)
+        return None
     req = urllib.request.Request(url, headers={'User-Agent': 'NOMADFieldDesk/1.0.0'})
     with urllib.request.urlopen(req, timeout=120) as resp:
         data = resp.read()
@@ -1973,9 +1978,9 @@ def api_waypoints_gpx():
     gpx = '<?xml version="1.0" encoding="UTF-8"?>\n<gpx version="1.1" creator="NOMADFieldDesk">\n'
     for w in rows:
         gpx += f'  <wpt lat="{w["lat"]}" lon="{w["lng"]}">\n'
-        gpx += f'    <name>{_esc(w["name"])}</name>\n'
-        gpx += f'    <desc>{_esc(w["notes"])}</desc>\n'
-        gpx += f'    <type>{_esc(w["category"])}</type>\n'
+        gpx += f'    <name>{esc(w["name"])}</name>\n'
+        gpx += f'    <desc>{esc(w["notes"])}</desc>\n'
+        gpx += f'    <type>{esc(w["category"])}</type>\n'
         gpx += f'  </wpt>\n'
     gpx += '</gpx>'
     return Response(gpx, mimetype='application/gpx+xml',

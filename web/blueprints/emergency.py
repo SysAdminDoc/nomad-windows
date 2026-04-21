@@ -74,8 +74,10 @@ def _write_state(db, **kwargs):
 
 
 def _parse_int(v):
-    try: return int(v) if v not in (None, '') else None
-    except (TypeError, ValueError): return None
+    try:
+        return int(v) if v not in (None, '') else None
+    except (TypeError, ValueError):
+        return None
 
 
 def _duration_hours(started_iso):

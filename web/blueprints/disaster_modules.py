@@ -149,11 +149,14 @@ def api_plans_list():
     st = request.args.get('status', '').strip()
     clauses, vals = [], []
     if dt:
-        clauses.append('disaster_type = ?'); vals.append(dt)
+        clauses.append('disaster_type = ?')
+        vals.append(dt)
     if et:
-        clauses.append('environment_type = ?'); vals.append(et)
+        clauses.append('environment_type = ?')
+        vals.append(et)
     if st:
-        clauses.append('status = ?'); vals.append(st)
+        clauses.append('status = ?')
+        vals.append(st)
     where = (' WHERE ' + ' AND '.join(clauses)) if clauses else ''
     with db_session() as db:
         rows = db.execute(f'SELECT * FROM disaster_plans{where} ORDER BY name', vals).fetchall()
@@ -263,11 +266,14 @@ def api_checklists_list():
     st = request.args.get('status', '').strip()
     clauses, vals = [], []
     if plan_id:
-        clauses.append('plan_id = ?'); vals.append(plan_id)
+        clauses.append('plan_id = ?')
+        vals.append(plan_id)
     if cat:
-        clauses.append('category = ?'); vals.append(cat)
+        clauses.append('category = ?')
+        vals.append(cat)
     if st:
-        clauses.append('status = ?'); vals.append(st)
+        clauses.append('status = ?')
+        vals.append(st)
     where = (' WHERE ' + ' AND '.join(clauses)) if clauses else ''
     with db_session() as db:
         rows = db.execute(f'SELECT * FROM disaster_checklists{where} ORDER BY title', vals).fetchall()
@@ -317,7 +323,8 @@ def api_checklists_update(cid):
         items = data['items']
         checked = sum(1 for i in items if i.get('checked'))
         pct = int(checked / len(items) * 100) if items else 0
-        sets.append('completion_pct = ?'); vals.append(pct)
+        sets.append('completion_pct = ?')
+        vals.append(pct)
         # Auto-status
         if pct >= 100:
             sets.append("status = 'complete'")
@@ -456,9 +463,11 @@ def api_construction_list():
     st = request.args.get('status', '').strip()
     clauses, vals = [], []
     if pt:
-        clauses.append('project_type = ?'); vals.append(pt)
+        clauses.append('project_type = ?')
+        vals.append(pt)
     if st:
-        clauses.append('status = ?'); vals.append(st)
+        clauses.append('status = ?')
+        vals.append(st)
     where = (' WHERE ' + ' AND '.join(clauses)) if clauses else ''
     with db_session() as db:
         rows = db.execute(f'SELECT * FROM construction_projects{where} ORDER BY priority, name', vals).fetchall()
@@ -636,9 +645,11 @@ def api_fortifications_list():
     st = request.args.get('status', '').strip()
     clauses, vals = [], []
     if ft:
-        clauses.append('fortification_type = ?'); vals.append(ft)
+        clauses.append('fortification_type = ?')
+        vals.append(ft)
     if st:
-        clauses.append('status = ?'); vals.append(st)
+        clauses.append('status = ?')
+        vals.append(st)
     where = (' WHERE ' + ' AND '.join(clauses)) if clauses else ''
     with db_session() as db:
         rows = db.execute(f'SELECT * FROM fortifications{where} ORDER BY name', vals).fetchall()
@@ -718,7 +729,8 @@ def api_fortifications_assessment():
         by_level[pl] = by_level.get(pl, 0) + 1
         c = r['condition']
         if c in cond_scores:
-            cond_total += cond_scores[c]; cond_count += 1
+            cond_total += cond_scores[c]
+            cond_count += 1
         li = r['last_inspection'] or ''
         if li and li < cutoff:
             overdue += 1

@@ -141,6 +141,10 @@ def start():
     env = os.environ.copy()
     env['FLATNOTES_PATH'] = data_dir
     env['FLATNOTES_PORT'] = str(FLATNOTES_PORT)
+    # Bind to the same interface as the rest of NOMAD so FlatNotes is not
+    # inadvertently exposed to the LAN when auth is disabled.
+    from config import Config
+    env['FLATNOTES_HOST'] = Config.APP_HOST
     # Disable authentication for local use
     env['FLATNOTES_AUTH_TYPE'] = 'none'
 

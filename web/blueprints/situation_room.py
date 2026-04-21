@@ -2567,8 +2567,10 @@ def _get_home_coords(db):
     ).fetchall()
     s = {r['key']: r['value'] for r in rows}
     def _f(v):
-        try: return float(v) if v not in (None, '') else None
-        except (TypeError, ValueError): return None
+        try:
+            return float(v) if v not in (None, '') else None
+        except (TypeError, ValueError):
+            return None
     radius = _f(s.get('proximity_radius_km')) or 500.0
     return _f(s.get('latitude')), _f(s.get('longitude')), radius
 
@@ -2622,7 +2624,8 @@ def api_sitroom_proximity():
     by_type = {}
     for r in rows:
         try:
-            lat = float(r['lat']); lng = float(r['lng'])
+            lat = float(r['lat'])
+            lng = float(r['lng'])
         except (TypeError, ValueError):
             continue
         dist = _haversine_km(home_lat, home_lng, lat, lng)
@@ -4219,13 +4222,20 @@ def api_sitroom_market_regime():
 
     # Compute regime
     score = 0
-    if signals.get('vix', 20) > 25: score -= 2
-    elif signals.get('vix', 20) < 15: score += 2
-    if signals.get('fear_greed', 50) < 25: score -= 2
-    elif signals.get('fear_greed', 50) > 75: score += 2
-    if signals.get('avg_index_change', 0) > 1: score += 1
-    elif signals.get('avg_index_change', 0) < -1: score -= 1
-    if signals.get('gold_change', 0) > 1.5: score -= 1  # Flight to safety
+    if signals.get('vix', 20) > 25:
+        score -= 2
+    elif signals.get('vix', 20) < 15:
+        score += 2
+    if signals.get('fear_greed', 50) < 25:
+        score -= 2
+    elif signals.get('fear_greed', 50) > 75:
+        score += 2
+    if signals.get('avg_index_change', 0) > 1:
+        score += 1
+    elif signals.get('avg_index_change', 0) < -1:
+        score -= 1
+    if signals.get('gold_change', 0) > 1.5:
+        score -= 1  # Flight to safety
 
     regime = 'RISK-ON' if score >= 2 else 'RISK-OFF' if score <= -2 else 'NEUTRAL'
     return jsonify({'regime': regime, 'score': score, 'signals': signals})
@@ -4660,8 +4670,10 @@ def api_sitroom_sentiment_timeline():
             timeline[hour] = {'pos': 0, 'neg': 0, 'total': 0}
         title_l = d['title'].lower()
         timeline[hour]['total'] += 1
-        if any(w in title_l for w in positive): timeline[hour]['pos'] += 1
-        if any(w in title_l for w in negative): timeline[hour]['neg'] += 1
+        if any(w in title_l for w in positive):
+            timeline[hour]['pos'] += 1
+        if any(w in title_l for w in negative):
+            timeline[hour]['neg'] += 1
     return jsonify({'timeline': [{'hour': k, **v} for k, v in sorted(timeline.items())]})
 
 
@@ -4672,17 +4684,22 @@ def api_sitroom_threat_level():
     with db_session() as db:
         # Active conflicts
         conflicts = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type IN ('conflict', 'ucdp_conflict', 'oref_alert')").fetchone()[0]
-        if conflicts > 20: score += 2
-        elif conflicts > 10: score += 1
+        if conflicts > 20:
+            score += 2
+        elif conflicts > 10:
+            score += 1
         # Large earthquakes
         big_quakes = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'earthquake' AND magnitude >= 6").fetchone()[0]
-        if big_quakes > 0: score += 1
+        if big_quakes > 0:
+            score += 1
         # Market stress
         vix = db.execute("SELECT price FROM sitroom_markets WHERE LOWER(symbol) LIKE '%vix%' LIMIT 1").fetchone()
-        if vix and dict(vix)['price'] > 30: score += 1
+        if vix and dict(vix)['price'] > 30:
+            score += 1
         # Active fires
         fires = db.execute("SELECT COUNT(*) FROM sitroom_events WHERE event_type = 'fire'").fetchone()[0]
-        if fires > 400: score += 1
+        if fires > 400:
+            score += 1
     level = min(5, max(1, score))
     labels = {1: 'LOW', 2: 'GUARDED', 3: 'ELEVATED', 4: 'HIGH', 5: 'SEVERE'}
     return jsonify({'level': level, 'label': labels[level], 'score': score})
@@ -4953,6 +4970,7 @@ def api_sitroom_ai_models():
         models = [m.get('name', m.get('model', '')) for m in (model_list if isinstance(model_list, list) else [])]
     except Exception as e:
         log.debug('Failed to list Ollama models for sitroom: %s', e)
+    ai_features = {
         'strategic_briefing': bool(models),
         'country_brief': bool(models),
         'deduction_panel': bool(models),
@@ -5405,12 +5423,14 @@ def api_sitroom_country_timeline_visual(country):
     for r in events:
         d = dict(r)
         day = d.get('day', 'unknown')
-        if day not in days: days[day] = {'events': [], 'news': []}
+        if day not in days:
+            days[day] = {'events': [], 'news': []}
         days[day]['events'].append(d)
     for r in news:
         d = dict(r)
         day = d.get('day', 'unknown')
-        if day not in days: days[day] = {'events': [], 'news': []}
+        if day not in days:
+            days[day] = {'events': [], 'news': []}
         days[day]['news'].append(d)
     timeline = [{'date': k, 'events': v['events'][:5], 'news': v['news'][:5],
                   'event_count': len(v['events']), 'news_count': len(v['news'])}
@@ -5537,8 +5557,10 @@ def api_sitroom_escalation_tracker():
     deesc_count = 0
     for r in rows:
         title_l = dict(r)['title'].lower()
-        if any(w in title_l for w in escalation_words): esc_count += 1
-        if any(w in title_l for w in deescalation_words): deesc_count += 1
+        if any(w in title_l for w in escalation_words):
+            esc_count += 1
+        if any(w in title_l for w in deescalation_words):
+            deesc_count += 1
     direction = 'escalating' if esc_count > deesc_count * 1.5 else 'de-escalating' if deesc_count > esc_count * 1.5 else 'stable'
     return jsonify({
         'direction': direction,

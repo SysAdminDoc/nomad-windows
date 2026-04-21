@@ -14,7 +14,12 @@ from config import get_data_dir, Config
 from platform_utils import get_data_base
 from db import db_session, log_activity
 from services import ollama, qdrant, stirling
-from web.state import _embed_state, _ocr_pipeline_state, _ocr_processed_files, _OCR_PROCESSED_MAX
+from web.state import (
+    _embed_state, _ocr_pipeline_state, _ocr_processed_files, _OCR_PROCESSED_MAX,
+    set_embed_state, get_embed_state,
+    ocr_check_and_add_file, ocr_increment_processed, ocr_increment_errors,
+    set_ocr_pipeline_state, get_ocr_pipeline_state,
+)
 from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_list as _safe_json_list
 
 log = logging.getLogger('nomad.web')
@@ -282,27 +287,26 @@ def api_kb_upload():
     # Start embedding in background
     def do_embed():
         import web.state as _ws
-        _ws._embed_state.clear()
-        _ws._embed_state.update({'status': 'processing', 'doc_id': doc_id, 'progress': 0, 'detail': f'Processing {filename}...'})
+        _ws.set_embed_state(status='processing', doc_id=doc_id, progress=0, detail=f'Processing {filename}...')
         with db_session() as db2:
           try:
-            _ws._embed_state['detail'] = 'Checking embedding model...'
+            _ws.set_embed_state(detail='Checking embedding model...')
             models = ollama.list_models()
             model_names = [m['name'] for m in models]
             if EMBED_MODEL not in model_names and EMBED_MODEL.split(':')[0] not in [m.split(':')[0] for m in model_names]:
-                _ws._embed_state['detail'] = f'Pulling {EMBED_MODEL}...'
+                _ws.set_embed_state(detail=f'Pulling {EMBED_MODEL}...')
                 ollama.pull_model(EMBED_MODEL)
 
-            _ws._embed_state.update({'progress': 20, 'detail': 'Extracting text...'})
+            _ws.set_embed_state(progress=20, detail='Extracting text...')
             text = extract_text_from_file(filepath, content_type)
             if not text.strip():
                 raise ValueError('No text could be extracted from file')
 
-            _ws._embed_state.update({'progress': 30, 'detail': 'Chunking text...'})
+            _ws.set_embed_state(progress=30, detail='Chunking text...')
             chunks = chunk_text(text)
             total = len(chunks)
 
-            _ws._embed_state.update({'progress': 40, 'detail': f'Embedding {total} chunks...'})
+            _ws.set_embed_state(progress=40, detail=f'Embedding {total} chunks...')
             batch_size = 8
             all_points = []
             import hashlib
@@ -322,15 +326,14 @@ def api_kb_upload():
                         }
                     })
                 pct = 40 + int(60 * min(i + batch_size, total) / total)
-                _ws._embed_state.update({'progress': pct, 'detail': f'Embedded {min(i+batch_size, total)}/{total} chunks'})
+                _ws.set_embed_state(progress=pct, detail=f'Embedded {min(i+batch_size, total)}/{total} chunks')
 
             qdrant.upsert_vectors(all_points)
 
             db2.execute('UPDATE documents SET status = ?, chunks_count = ? WHERE id = ?',
                         ('ready', total, doc_id))
             db2.commit()
-            _ws._embed_state.clear()
-            _ws._embed_state.update({'status': 'complete', 'doc_id': doc_id, 'progress': 100, 'detail': f'{filename}: {total} chunks embedded'})
+            _ws.set_embed_state(status='complete', doc_id=doc_id, progress=100, detail=f'{filename}: {total} chunks embedded')
 
             threading.Thread(target=_analyze_document, args=(doc_id, text, filename), daemon=True).start()
 
@@ -339,8 +342,7 @@ def api_kb_upload():
             err_msg = 'Embedding failed'
             db2.execute('UPDATE documents SET status = ?, error = ? WHERE id = ?', ('error', err_msg, doc_id))
             db2.commit()
-            _ws._embed_state.clear()
-            _ws._embed_state.update({'status': 'error', 'doc_id': doc_id, 'progress': 0, 'detail': err_msg})
+            _ws.set_embed_state(status='error', doc_id=doc_id, progress=0, detail=err_msg)
     threading.Thread(target=do_embed, daemon=True).start()
     return jsonify({'status': 'uploading', 'doc_id': doc_id}), 201
 
@@ -379,7 +381,7 @@ def api_kb_document_delete(doc_id):
 @kb_bp.route('/api/kb/status')
 def api_kb_status():
     info = qdrant.get_collection_info() if qdrant.running() else {'points_count': 0}
-    return jsonify({**_embed_state, 'collection': info, 'qdrant_running': qdrant.running()})
+    return jsonify({**get_embed_state(), 'collection': info, 'qdrant_running': qdrant.running()})
 
 
 @kb_bp.route('/api/kb/search', methods=['POST'])
@@ -608,7 +610,7 @@ def _ocr_pipeline_scan():
             if ext not in ('pdf', 'txt', 'md', 'csv', 'html'):
                 continue
             file_key = f'{ws["id"]}:{fpath}:{os.path.getmtime(fpath)}'
-            if file_key in _ocr_processed_files:
+            if not ocr_check_and_add_file(file_key):
                 continue
 
             try:
@@ -646,24 +648,20 @@ def _ocr_pipeline_scan():
                         (safe_name, content_type, file_size, 'pending', f'watch:{ws["name"]}')
                     )
                     db2.commit()
-                _ocr_processed_files.add(file_key)
-                if len(_ocr_processed_files) > _OCR_PROCESSED_MAX:
-                    # Shed half to avoid re-processing everything after eviction
-                    to_remove = list(_ocr_processed_files)[:len(_ocr_processed_files) // 2]
-                    _ocr_processed_files.difference_update(to_remove)
-                _ocr_pipeline_state['processed'] += 1
+                # file_key was already added atomically by ocr_check_and_add_file
+                ocr_increment_processed()
                 log_activity('ocr_pipeline', 'import', f'Auto-imported {safe_name} from {ws["name"]}')
             except Exception as e:
-                _ocr_pipeline_state['errors'] += 1
+                ocr_increment_errors()
                 log.warning(f'Auto-OCR pipeline error for {fname}: {e}')
 
-    _ocr_pipeline_state['last_scan'] = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    set_ocr_pipeline_state(last_scan=datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 
 def _ocr_pipeline_loop():
     """Background loop that scans watch folders every 60 seconds."""
-    _ocr_pipeline_state['running'] = True
-    while _ocr_pipeline_state['running']:
+    set_ocr_pipeline_state(running=True)
+    while get_ocr_pipeline_state()['running']:
         try:
             _ocr_pipeline_scan()
         except Exception as e:
@@ -673,12 +671,12 @@ def _ocr_pipeline_loop():
 
 @kb_bp.route('/api/kb/ocr-pipeline/status')
 def api_ocr_pipeline_status():
-    return jsonify(_ocr_pipeline_state)
+    return jsonify(get_ocr_pipeline_state())
 
 
 @kb_bp.route('/api/kb/ocr-pipeline/start', methods=['POST'])
 def api_ocr_pipeline_start():
-    if _ocr_pipeline_state['running']:
+    if get_ocr_pipeline_state()['running']:
         return jsonify({'status': 'already_running'})
     t = threading.Thread(target=_ocr_pipeline_loop, daemon=True, name='ocr-pipeline')
     t.start()
@@ -687,7 +685,7 @@ def api_ocr_pipeline_start():
 
 @kb_bp.route('/api/kb/ocr-pipeline/stop', methods=['POST'])
 def api_ocr_pipeline_stop():
-    _ocr_pipeline_state['running'] = False
+    set_ocr_pipeline_state(running=False)
     return jsonify({'status': 'stopped'})
 
 
@@ -695,4 +693,4 @@ def api_ocr_pipeline_stop():
 def api_ocr_pipeline_scan_now():
     """Trigger an immediate scan of watch folders."""
     _ocr_pipeline_scan()
-    return jsonify({'status': 'scanned', 'processed': _ocr_pipeline_state['processed']})
+    return jsonify({'status': 'scanned', 'processed': get_ocr_pipeline_state()['processed']})

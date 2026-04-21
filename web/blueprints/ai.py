@@ -113,6 +113,8 @@ def api_ai_pull():
     model_name = model_name.strip()
     if len(model_name) > 200:
         return jsonify({'error': 'Model name too long'}), 400
+    if not re.match(r'^[a-zA-Z0-9._:/-]+$', model_name):
+        return jsonify({'error': 'Model name contains invalid characters'}), 400
 
     def do_pull():
         ollama.pull_model(model_name)

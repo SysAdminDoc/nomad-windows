@@ -193,7 +193,8 @@ def api_benchmark_run():
 
             if mode in ('full', 'system'):
                 # CPU benchmark — prime calculation
-                with _benchmark_lock: _benchmark_state.update({'progress': 10, 'stage': 'CPU benchmark...'})
+                with _benchmark_lock:
+                    _benchmark_state.update({'progress': 10, 'stage': 'CPU benchmark...'})
                 start = time.time()
                 count = 0
                 while time.time() - start < 10:
@@ -205,7 +206,8 @@ def api_benchmark_run():
                 results['cpu_score'] = round(cpu_score)
 
                 # Memory benchmark — sequential allocation
-                with _benchmark_lock: _benchmark_state.update({'progress': 30, 'stage': 'Memory benchmark...'})
+                with _benchmark_lock:
+                    _benchmark_state.update({'progress': 30, 'stage': 'Memory benchmark...'})
                 start = time.time()
                 block_size = 1024 * 1024  # 1MB
                 blocks = 0
@@ -218,7 +220,8 @@ def api_benchmark_run():
                 results['memory_score'] = round(mem_score)
 
                 # Disk benchmark
-                with _benchmark_lock: _benchmark_state.update({'progress': 50, 'stage': 'Disk benchmark...'})
+                with _benchmark_lock:
+                    _benchmark_state.update({'progress': 50, 'stage': 'Disk benchmark...'})
                 test_dir = os.path.join(get_data_dir(), 'benchmark')
                 os.makedirs(test_dir, exist_ok=True)
                 test_file = os.path.join(test_dir, 'bench.tmp')
@@ -235,7 +238,8 @@ def api_benchmark_run():
                 results['disk_write_score'] = round(written / write_elapsed / (1024 * 1024)) if write_elapsed > 0 else 0
 
                 # Read
-                with _benchmark_lock: _benchmark_state.update({'progress': 65, 'stage': 'Disk read benchmark...'})
+                with _benchmark_lock:
+                    _benchmark_state.update({'progress': 65, 'stage': 'Disk read benchmark...'})
                 start = time.time()
                 read_bytes = 0
                 with open(test_file, 'rb') as f:
@@ -254,7 +258,8 @@ def api_benchmark_run():
                     pass
 
             if mode in ('full', 'ai'):
-                with _benchmark_lock: _benchmark_state.update({'progress': 80, 'stage': 'AI benchmark...'})
+                with _benchmark_lock:
+                    _benchmark_state.update({'progress': 80, 'stage': 'AI benchmark...'})
                 results['ai_tps'] = 0
                 results['ai_ttft'] = 0
 
@@ -292,7 +297,8 @@ def api_benchmark_run():
                             log.error(f'AI benchmark failed: {e}')
 
             # Calculate NOMAD Score (0-100, weighted)
-            with _benchmark_lock: _benchmark_state.update({'progress': 95, 'stage': 'Calculating score...'})
+            with _benchmark_lock:
+                _benchmark_state.update({'progress': 95, 'stage': 'Calculating score...'})
 
             def norm(val, ref):
                 if val <= 0:

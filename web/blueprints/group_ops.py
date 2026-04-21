@@ -355,11 +355,14 @@ def api_sops_list():
         q = 'SELECT * FROM governance_sops WHERE 1=1'
         params = []
         if pod_id:
-            q += ' AND pod_id = ?'; params.append(pod_id)
+            q += ' AND pod_id = ?'
+            params.append(pod_id)
         if category:
-            q += ' AND category = ?'; params.append(category)
+            q += ' AND category = ?'
+            params.append(category)
         if status:
-            q += ' AND status = ?'; params.append(status)
+            q += ' AND status = ?'
+            params.append(status)
         q += ' ORDER BY title'
         rows = db.execute(q, params).fetchall()
     return jsonify([dict(r) for r in rows])
@@ -442,11 +445,14 @@ def api_duties_list():
         q = 'SELECT * FROM duty_roster WHERE 1=1'
         params = []
         if pod_id:
-            q += ' AND pod_id = ?'; params.append(pod_id)
+            q += ' AND pod_id = ?'
+            params.append(pod_id)
         if day:
-            q += ' AND date(shift_start) = ?'; params.append(day)
+            q += ' AND date(shift_start) = ?'
+            params.append(day)
         if status:
-            q += ' AND status = ?'; params.append(status)
+            q += ' AND status = ?'
+            params.append(status)
         q += ' ORDER BY shift_start'
         rows = db.execute(q, params).fetchall()
     return jsonify([dict(r) for r in rows])
@@ -538,9 +544,11 @@ def api_disputes_list():
         q = 'SELECT * FROM disputes WHERE 1=1'
         params = []
         if pod_id:
-            q += ' AND pod_id = ?'; params.append(pod_id)
+            q += ' AND pod_id = ?'
+            params.append(pod_id)
         if status:
-            q += ' AND status = ?'; params.append(status)
+            q += ' AND status = ?'
+            params.append(status)
         q += ' ORDER BY created_at DESC'
         rows = db.execute(q, params).fetchall()
     return jsonify([_format_dispute(r) for r in rows])
@@ -715,9 +723,11 @@ def api_ics_forms_list():
         q = 'SELECT * FROM ics_forms WHERE 1=1'
         params = []
         if pod_id:
-            q += ' AND pod_id = ?'; params.append(pod_id)
+            q += ' AND pod_id = ?'
+            params.append(pod_id)
         if form_type:
-            q += ' AND form_type = ?'; params.append(form_type)
+            q += ' AND form_type = ?'
+            params.append(form_type)
         q += ' ORDER BY created_at DESC'
         rows = db.execute(q, params).fetchall()
     return jsonify([_format_ics(r) for r in rows])
@@ -807,9 +817,11 @@ def api_cert_teams_list():
         q = 'SELECT * FROM cert_teams WHERE 1=1'
         params = []
         if pod_id:
-            q += ' AND pod_id = ?'; params.append(pod_id)
+            q += ' AND pod_id = ?'
+            params.append(pod_id)
         if status:
-            q += ' AND status = ?'; params.append(status)
+            q += ' AND status = ?'
+            params.append(status)
         q += ' ORDER BY team_name'
         rows = db.execute(q, params).fetchall()
     return jsonify([_format_cert(r) for r in rows])
@@ -877,9 +889,11 @@ def api_damage_assessments_list():
         q = 'SELECT * FROM damage_assessments WHERE 1=1'
         params = []
         if pod_id:
-            q += ' AND pod_id = ?'; params.append(pod_id)
+            q += ' AND pod_id = ?'
+            params.append(pod_id)
         if cert_team_id:
-            q += ' AND cert_team_id = ?'; params.append(cert_team_id)
+            q += ' AND cert_team_id = ?'
+            params.append(cert_team_id)
         q += ' ORDER BY assessment_date DESC'
         rows = db.execute(q, params).fetchall()
     return jsonify([_format_damage(r) for r in rows])
@@ -933,9 +947,11 @@ def api_shelters_list():
         q = 'SELECT * FROM shelters WHERE 1=1'
         params = []
         if pod_id:
-            q += ' AND pod_id = ?'; params.append(pod_id)
+            q += ' AND pod_id = ?'
+            params.append(pod_id)
         if status:
-            q += ' AND status = ?'; params.append(status)
+            q += ' AND status = ?'
+            params.append(status)
         q += ' ORDER BY name'
         rows = db.execute(q, params).fetchall()
     return jsonify([_format_shelter(r) for r in rows])
@@ -1049,9 +1065,11 @@ def api_warnings_list():
         q = 'SELECT * FROM community_warnings WHERE 1=1'
         params = []
         if pod_id:
-            q += ' AND pod_id = ?'; params.append(pod_id)
+            q += ' AND pod_id = ?'
+            params.append(pod_id)
         if status:
-            q += ' AND status = ?'; params.append(status)
+            q += ' AND status = ?'
+            params.append(status)
         q += ' ORDER BY issued_at DESC'
         rows = db.execute(q, params).fetchall()
     return jsonify([_format_warning(r) for r in rows])

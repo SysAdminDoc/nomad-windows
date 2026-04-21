@@ -76,7 +76,8 @@ class Config:
 
     # --- Map Extensions ---
     ALLOWED_MAP_EXTENSIONS = set(
-        os.environ.get('NOMAD_ALLOWED_MAP_EXTENSIONS', 'pmtiles,mbtiles').split(',')
+        e for e in os.environ.get('NOMAD_ALLOWED_MAP_EXTENSIONS', 'pmtiles,mbtiles').split(',')
+        if e.strip()
     )
 
     # --- Security ---

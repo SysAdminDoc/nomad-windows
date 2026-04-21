@@ -398,9 +398,11 @@ def api_kit_builder_add_to_shopping():
     added = 0
     with db_session() as db:
         for it in raw_items:
-            if not isinstance(it, dict): continue
+            if not isinstance(it, dict):
+                continue
             name = (it.get('name') or '').strip()
-            if not name: continue
+            if not name:
+                continue
             try:
                 qty = float(it.get('quantity', 1))
             except (TypeError, ValueError):

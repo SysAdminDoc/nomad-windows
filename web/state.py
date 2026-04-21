@@ -142,24 +142,43 @@ _auto_backup_timer = {'timer': None}
 
 # ─── Emergency Broadcast ─────────────────────────────────────────────
 _broadcast = {'active': False, 'message': '', 'severity': 'info', 'timestamp': ''}
+_broadcast_lock = threading.Lock()
+
+
+def get_broadcast():
+    """Return a snapshot of the broadcast state under lock."""
+    with _broadcast_lock:
+        return dict(_broadcast)
+
+
+def set_broadcast(active, message='', severity='info', timestamp=''):
+    """Atomically update all broadcast fields under lock."""
+    with _broadcast_lock:
+        _broadcast['active'] = active
+        _broadcast['message'] = message
+        _broadcast['severity'] = severity
+        _broadcast['timestamp'] = timestamp
+        return dict(_broadcast)
+
 
 # ─── Self-Update Download ────────────────────────────────────────────
 _update_state = {'status': 'idle', 'progress': 0, 'error': None, 'path': None}
 _update_state_lock = threading.Lock()
 
 
-def get_update_state() -> dict:
-    """Return a shallow copy of the current self-update state."""
+def get_update_state():
     with _update_state_lock:
         return dict(_update_state)
 
 
-def set_update_state(**updates):
-    """Merge keyword updates into the self-update state dict (thread-safe partial update)."""
+def set_update_state(**kwargs):
     with _update_state_lock:
-        _update_state.update(updates)
+        _update_state.update(kwargs)
+        return dict(_update_state)
+
 
 # ─── Serial / Meshtastic ─────────────────────────────────────────────
+_serial_lock = threading.Lock()
 _serial_state = {
     'connected': False, 'port': None, 'baud': None,
     'protocol': None, 'last_reading': None, 'error': None,
@@ -169,31 +188,91 @@ _mesh_state = {
     'connected': False, 'node_count': 0, 'channel': 'LongFast',
     'my_node_id': '!local', 'firmware': None,
 }
-_mesh_state_lock = threading.Lock()
 
 
-def get_mesh_state() -> dict:
-    """Return a shallow copy of the current mesh state."""
-    with _mesh_state_lock:
+def get_serial_state():
+    with _serial_lock:
+        return dict(_serial_state)
+
+
+def set_serial_state(**kwargs):
+    with _serial_lock:
+        _serial_state.update(kwargs)
+        return dict(_serial_state)
+
+
+def get_mesh_state():
+    with _serial_lock:
         return dict(_mesh_state)
 
 
-def set_mesh_state(**updates):
-    """Merge keyword updates into the mesh state dict (thread-safe partial update)."""
-    with _mesh_state_lock:
-        _mesh_state.update(updates)
+def set_mesh_state(**kwargs):
+    with _serial_lock:
+        _mesh_state.update(kwargs)
+        return dict(_mesh_state)
 
 # ─── Motion Detection ────────────────────────────────────────────────
 _motion_detectors = {}  # keyed by camera_id
 _motion_config = {'threshold': 25, 'check_interval': 2, 'cooldown': 60}
 
 # ─── RAG / Embedding ────────────────────────────────────────────────
+_embed_lock = threading.Lock()
 _embed_state = {'status': 'idle', 'doc_id': None, 'progress': 0, 'detail': ''}
 
+
+def get_embed_state():
+    with _embed_lock:
+        return dict(_embed_state)
+
+
+def set_embed_state(**kwargs):
+    with _embed_lock:
+        _embed_state.update(kwargs)
+        return dict(_embed_state)
+
+
 # ─── Auto-OCR Pipeline ───────────────────────────────────────────────
+_ocr_lock = threading.Lock()
 _ocr_pipeline_state = {'running': False, 'processed': 0, 'errors': 0, 'last_scan': None}
 _ocr_processed_files = set()
 _OCR_PROCESSED_MAX = 10000  # Cap to prevent unbounded memory growth
+
+
+def get_ocr_pipeline_state():
+    with _ocr_lock:
+        return dict(_ocr_pipeline_state)
+
+
+def set_ocr_pipeline_state(**kwargs):
+    with _ocr_lock:
+        _ocr_pipeline_state.update(kwargs)
+        return dict(_ocr_pipeline_state)
+
+
+def ocr_check_and_add_file(file_key):
+    """Atomically check whether file_key has been processed, and mark it if not.
+
+    Returns True if the file is new (caller should process it), False if it
+    was already tracked.  Also prunes the set when it exceeds the cap.
+    """
+    with _ocr_lock:
+        if file_key in _ocr_processed_files:
+            return False
+        _ocr_processed_files.add(file_key)
+        if len(_ocr_processed_files) > _OCR_PROCESSED_MAX:
+            to_remove = list(_ocr_processed_files)[:len(_ocr_processed_files) // 2]
+            _ocr_processed_files.difference_update(to_remove)
+        return True
+
+
+def ocr_increment_processed():
+    with _ocr_lock:
+        _ocr_pipeline_state['processed'] += 1
+
+
+def ocr_increment_errors():
+    with _ocr_lock:
+        _ocr_pipeline_state['errors'] += 1
 
 # ─── SSE Event Bus ────────────────────────────────────────────────────
 from config import Config

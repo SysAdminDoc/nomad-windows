@@ -1027,7 +1027,8 @@ def api_maps_route_plan():
     data = request.get_json() or {}
     route_id = data.get('route_id')
     if not isinstance(route_id, int):
-        try: route_id = int(route_id)
+        try:
+            route_id = int(route_id)
         except (TypeError, ValueError):
             return jsonify({'error': 'route_id required'}), 400
 

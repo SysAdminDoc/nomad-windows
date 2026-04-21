@@ -55,11 +55,14 @@ def api_notes_update(note_id):
 @notes_bp.route('/api/notes/<int:note_id>', methods=['DELETE'])
 def api_notes_delete(note_id):
     with db_session() as db:
+        # Check existence FIRST — deleting related rows before the existence
+        # check and then returning 404 without a commit leaves uncommitted DELETEs
+        # on a pooled connection, which can bleed into the next request's transaction.
+        if not db.execute('SELECT 1 FROM notes WHERE id = ?', (note_id,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
         db.execute('DELETE FROM note_tags WHERE note_id = ?', (note_id,))
         db.execute('DELETE FROM note_links WHERE source_note_id = ? OR target_note_id = ?', (note_id, note_id))
-        r = db.execute('DELETE FROM notes WHERE id = ?', (note_id,))
-        if r.rowcount == 0:
-            return jsonify({'error': 'not found'}), 404
+        db.execute('DELETE FROM notes WHERE id = ?', (note_id,))
         db.commit()
         return jsonify({'status': 'deleted'})
 # --- Notes Pin/Tag ---

@@ -240,10 +240,9 @@ def api_drives():
                     'free_str': format_size(usage.free),
                 })
             except Exception:
-                pass
-    except Exception:
-        pass
-    return jsonify(drives)
+                pass  # individual mountpoint may be unavailable (network drive, etc.)
+    except Exception as e:
+        log.debug('disk_partitions failed: %s', e)
 
 @system_bp.route('/api/settings/data-dir', methods=['POST'])
 def api_set_data_dir():
@@ -494,11 +493,9 @@ def api_system():
                     'percent': usage.percent,
                 })
             except Exception:
-                pass
-    except Exception:
-        pass
-
-    # Uptime
+                pass  # individual mountpoint may be unavailable
+    except Exception as e:
+        log.debug('disk_partitions failed: %s', e)
     try:
         uptime_secs = time.time() - psutil.boot_time()
         days = int(uptime_secs // 86400)

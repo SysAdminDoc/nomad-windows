@@ -1626,7 +1626,7 @@ function showLanQR() {
     <div class="generated-modal-card lan-qr-modal-card">
       <h3 class="lan-qr-title">Scan to Connect on LAN</h3>
       <p class="lan-qr-copy">Any device on your local network can open NOMAD at:</p>
-      <div class="lan-qr-url">${url}</div>
+      <div class="lan-qr-url">${escapeHtml(url)}</div>
       <canvas id="qr-canvas" width="200" height="200" class="lan-qr-canvas"></canvas>
       <button type="button" class="btn btn-sm" data-shell-action="close-lan-qr">Close</button>
     </div>`;
@@ -1743,7 +1743,7 @@ async function loadMedRef(category) {
     '<div class="prep-table-wrap">' +
     '<table class="freq-table prep-data-table">' +
     '<thead><tr>' +
-    Object.keys(data.items[0]).map(k => '<th>' + k.replace(/_/g,' ') + '</th>').join('') +
+    Object.keys(data.items[0]).map(k => '<th>' + escapeHtml(k.replace(/_/g,' ')) + '</th>').join('') +
     '</tr></thead><tbody>' +
     data.items.map(item =>
       '<tr>' +

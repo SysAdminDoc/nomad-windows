@@ -18,7 +18,7 @@ from db import db_session, log_activity
 from services.manager import format_size, get_services_dir
 from config import get_data_dir
 from web.print_templates import render_print_document
-from web.state import _map_downloads
+from web.state import _map_downloads, _map_downloads_lock
 import web.state as _state
 from web.utils import clone_json_fallback as _clone_json_fallback, safe_json_value as _safe_json_value, safe_json_list as _safe_json_list, safe_json_object as _safe_json_object, safe_id_list as _safe_id_list, validate_download_url as _validate_download_url
 

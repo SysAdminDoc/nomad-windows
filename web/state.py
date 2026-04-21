@@ -107,6 +107,7 @@ def wizard_snapshot():
 
 # ─── Offline Map Downloads ───────────────────────────────────────────
 _map_downloads = {}  # {region_id: {'progress': 0-100, 'status': str, 'error': str|None}}
+_map_downloads_lock = threading.Lock()
 
 # ─── yt-dlp Media Downloads ──────────────────────────────────────────
 _ytdlp_downloads = {}  # id -> {status, percent, title, speed, error}
@@ -144,6 +145,19 @@ _broadcast = {'active': False, 'message': '', 'severity': 'info', 'timestamp': '
 
 # ─── Self-Update Download ────────────────────────────────────────────
 _update_state = {'status': 'idle', 'progress': 0, 'error': None, 'path': None}
+_update_state_lock = threading.Lock()
+
+
+def get_update_state() -> dict:
+    """Return a shallow copy of the current self-update state."""
+    with _update_state_lock:
+        return dict(_update_state)
+
+
+def set_update_state(**updates):
+    """Merge keyword updates into the self-update state dict (thread-safe partial update)."""
+    with _update_state_lock:
+        _update_state.update(updates)
 
 # ─── Serial / Meshtastic ─────────────────────────────────────────────
 _serial_state = {
@@ -155,6 +169,19 @@ _mesh_state = {
     'connected': False, 'node_count': 0, 'channel': 'LongFast',
     'my_node_id': '!local', 'firmware': None,
 }
+_mesh_state_lock = threading.Lock()
+
+
+def get_mesh_state() -> dict:
+    """Return a shallow copy of the current mesh state."""
+    with _mesh_state_lock:
+        return dict(_mesh_state)
+
+
+def set_mesh_state(**updates):
+    """Merge keyword updates into the mesh state dict (thread-safe partial update)."""
+    with _mesh_state_lock:
+        _mesh_state.update(updates)
 
 # ─── Motion Detection ────────────────────────────────────────────────
 _motion_detectors = {}  # keyed by camera_id

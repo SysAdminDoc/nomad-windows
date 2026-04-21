@@ -892,11 +892,16 @@ async function sendBroadcast() {
   const msg = messageInput.value.trim();
   if (!msg) { toast('Enter a message', 'warning'); return; }
   const severity = severityInput.value;
+  const btn = document.querySelector('[data-prep-action="send-broadcast"]');
+  if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
   try {
     await apiPost('/api/broadcast', {message: msg, severity});
     toast('Broadcast sent to all LAN devices', 'warning');
     messageInput.value = '';
   } catch(e) { toast('Failed to send broadcast', 'error'); }
+  finally {
+    if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); }
+  }
 }
 
 async function clearBroadcast() {
@@ -1549,7 +1554,7 @@ async function loadJournal() {
       const date = t.toLocaleDateString([], {weekday:'short', month:'short', day:'numeric'});
       const time = t.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
       const moodColors = {good:'var(--green)',okay:'var(--accent)',stressed:'var(--orange)',alert:'var(--red)',tired:'var(--text-muted)',motivated:'var(--accent)'};
-      const moodBadge = e.mood ? `<span class="journal-mood-badge" style="--journal-mood-tone:${moodColors[e.mood]||'var(--text-dim)'};">${e.mood}</span>` : '';
+      const moodBadge = e.mood ? `<span class="journal-mood-badge" style="--journal-mood-tone:${moodColors[e.mood]||'var(--text-dim)'};">${escapeHtml(e.mood)}</span>` : '';
       const tagBadges = e.tags ? e.tags.split(',').map(t => t.trim()).filter(Boolean).map(t => `<span class="journal-tag-badge">${escapeHtml(t)}</span>`).join('') : '';
       return `<div class="contact-card journal-card">
         <div class="journal-card-head">
@@ -1578,6 +1583,8 @@ async function submitJournal() {
   if (!entry) { toast('Write something first', 'warning'); return; }
   const mood = moodInput.value;
   const tags = tagsInput.value.trim();
+  const btn = document.querySelector('[data-prep-action="submit-journal"]');
+  if (btn) { btn.disabled = true; btn.setAttribute('aria-busy', 'true'); }
   try {
     await apiPost('/api/journal', {entry, mood, tags});
     entryInput.value = '';
@@ -1586,6 +1593,9 @@ async function submitJournal() {
     toast('Journal entry logged', 'success');
     loadJournal();
   } catch(e) { toast('Failed to save entry', 'error'); }
+  finally {
+    if (btn) { btn.disabled = false; btn.removeAttribute('aria-busy'); }
+  }
 }
 
 function exportJournal() {

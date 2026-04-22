@@ -7,7 +7,7 @@ import threading
 import logging
 from services.manager import (
     get_services_dir, download_file, check_port, start_process, stop_process,
-    is_running as _is_running, _download_progress
+    is_running as _is_running, _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -52,11 +52,13 @@ def install(callback=None):
     os.makedirs(install_dir, exist_ok=True)
     venv_dir = os.path.join(install_dir, 'venv')
 
-    _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'downloading', 'error': None, 'speed': '', 'downloaded': 0, 'total': 0}
+    with _dl_progress_lock:
+        _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'downloading', 'error': None, 'speed': '', 'downloaded': 0, 'total': 0}
 
     def do_install():
         try:
-            _download_progress[SERVICE_ID].update({'percent': 10, 'status': 'downloading', 'speed': 'Creating venv...'})
+            with _dl_progress_lock:
+                _download_progress[SERVICE_ID].update({'percent': 10, 'status': 'downloading', 'speed': 'Creating venv...'})
 
             # Find Python executable
             python = sys.executable
@@ -82,13 +84,15 @@ def install(callback=None):
                 pip = os.path.join(venv_dir, 'bin', 'pip')
                 venv_python = os.path.join(venv_dir, 'bin', 'python')
 
-            _download_progress[SERVICE_ID].update({'percent': 30, 'speed': 'Installing flatnotes...'})
+            with _dl_progress_lock:
+                _download_progress[SERVICE_ID].update({'percent': 30, 'speed': 'Installing flatnotes...'})
 
             # Install flatnotes
             subprocess.run([pip, 'install', 'flatnotes'], check=True,
                            **run_kwargs(capture_output=True))
 
-            _download_progress[SERVICE_ID].update({'percent': 80, 'speed': 'Configuring...'})
+            with _dl_progress_lock:
+                _download_progress[SERVICE_ID].update({'percent': 80, 'speed': 'Configuring...'})
 
             # Create data directory
             _get_data_dir()
@@ -109,12 +113,14 @@ def install(callback=None):
             finally:
                 db.close()
 
-            _download_progress[SERVICE_ID] = {'percent': 100, 'status': 'complete', 'error': None}
+            with _dl_progress_lock:
+                _download_progress[SERVICE_ID] = {'percent': 100, 'status': 'complete', 'error': None}
             log.info('FlatNotes installed successfully')
 
         except Exception as e:
             log.error(f'FlatNotes install failed: {e}')
-            _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'error', 'error': str(e)}
+            with _dl_progress_lock:
+                _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'error', 'error': str(e)}
             raise
 
     do_install()

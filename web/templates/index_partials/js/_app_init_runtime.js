@@ -286,17 +286,23 @@ function refreshSettingsWorkspacePanels() {
 window.refreshServicesWorkspacePanels = refreshServicesWorkspacePanels;
 window.refreshSettingsWorkspacePanels = refreshSettingsWorkspacePanels;
 
+function loadStartupWorkspaceCore(tabId) {
+  if (!tabId) return;
+  if (tabId === 'services') {
+    loadServicesWorkspaceCore();
+    return;
+  }
+  requestAnimationFrame(() => {
+    const startupTab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+    if (startupTab && typeof activateWorkspaceTab === 'function') activateWorkspaceTab(startupTab);
+  });
+}
+
 // Critical: only load the visible workspace up front.
 const _startupWorkspaceTab = getActiveWorkspaceTab();
-// Mark startup tab as initialized so activateWorkspaceTab skips redundant heavy init.
-if (typeof _tabInitialized !== 'undefined') _tabInitialized[_startupWorkspaceTab] = true;
-if (_startupWorkspaceTab === 'services') {
-  loadServicesWorkspaceCore();
-}
-// Situation Room is heavy; only boot it on routes where it is actually active.
-if (_startupWorkspaceTab === 'situation-room') {
-  requestAnimationFrame(() => { initSituationRoom(); });
-}
+// Mark Home as initialized because it uses the lighter startup path below.
+if (typeof _tabInitialized !== 'undefined' && _startupWorkspaceTab === 'services') _tabInitialized[_startupWorkspaceTab] = true;
+loadStartupWorkspaceCore(_startupWorkspaceTab);
 // Defer secondary workspace data so non-home launches do not fetch hidden panels.
 setTimeout(() => {
   const _c = e => console.warn('[Init]', e.message || e);

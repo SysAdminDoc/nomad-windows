@@ -519,14 +519,14 @@ def api_sent_messages_create():
 @tactical_comms_bp.route('/api/sent-messages/<int:sid>/ack', methods=['POST'])
 def api_sent_messages_ack(sid):
     with db_session() as db:
+        if not db.execute('SELECT id FROM sent_messages WHERE id = ?', (sid,)).fetchone():
+            return jsonify({'error': 'not found'}), 404
         db.execute(
             "UPDATE sent_messages SET acknowledged = 1, acknowledged_at = CURRENT_TIMESTAMP WHERE id = ?",
             (sid,)
         )
         db.commit()
         row = db.execute('SELECT * FROM sent_messages WHERE id = ?', (sid,)).fetchone()
-    if not row:
-        return jsonify({'error': 'not found'}), 404
     return jsonify(dict(row))
 
 
@@ -585,7 +585,10 @@ def api_moon_phase():
 def api_lightning_distance():
     """Calculate lightning distance from flash-to-bang time."""
     data = request.get_json() or {}
-    seconds = float(data.get('seconds', 0))
+    try:
+        seconds = float(data.get('seconds', 0))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'seconds must be a number'}), 400
     if seconds < 0:
         return jsonify({'error': 'seconds must be positive'}), 400
     miles = seconds / 5.0
@@ -617,9 +620,12 @@ def api_beaufort_scale():
 def api_growing_degree_days():
     """Calculate Growing Degree Days (GDD) from daily temps."""
     data = request.get_json() or {}
-    high_f = float(data.get('high_f', 0))
-    low_f = float(data.get('low_f', 0))
-    base_f = float(data.get('base_f', 50))
+    try:
+        high_f = float(data.get('high_f', 0))
+        low_f = float(data.get('low_f', 0))
+        base_f = float(data.get('base_f', 50))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'high_f, low_f, base_f must be numbers'}), 400
     avg = (high_f + low_f) / 2.0
     gdd = max(0, avg - base_f)
     return jsonify({
@@ -635,8 +641,11 @@ def api_growing_degree_days():
 def api_wind_chill():
     """Calculate wind chill index."""
     data = request.get_json() or {}
-    temp_f = float(data.get('temp_f', 32))
-    wind_mph = float(data.get('wind_mph', 10))
+    try:
+        temp_f = float(data.get('temp_f', 32))
+        wind_mph = float(data.get('wind_mph', 10))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'temp_f and wind_mph must be numbers'}), 400
     if temp_f > 50 or wind_mph < 3:
         return jsonify({'wind_chill_f': temp_f, 'note': 'Wind chill not applicable above 50F or below 3mph wind'})
     wc = (35.74 + 0.6215 * temp_f
@@ -662,8 +671,11 @@ def api_wind_chill():
 def api_heat_index():
     """Calculate heat index from temperature and humidity."""
     data = request.get_json() or {}
-    temp_f = float(data.get('temp_f', 80))
-    humidity = float(data.get('humidity_pct', 50))
+    try:
+        temp_f = float(data.get('temp_f', 80))
+        humidity = float(data.get('humidity_pct', 50))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'temp_f and humidity_pct must be numbers'}), 400
     if temp_f < 80:
         return jsonify({'heat_index_f': temp_f, 'note': 'Heat index not significant below 80F'})
     # Rothfusz regression

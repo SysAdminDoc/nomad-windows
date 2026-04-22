@@ -156,6 +156,8 @@ def download_file(url: str, dest: str, service_id: str = '',
             for chunk in resp.iter_content(chunk_size=65536):
                 f.write(chunk)
                 downloaded += len(chunk)
+                if downloaded > cap:
+                    raise ValueError(f'Download exceeded size limit ({cap} bytes)')
                 elapsed = time.time() - start_time
                 speed = (downloaded - partial_size) / elapsed if elapsed > 0 else 0
 
@@ -360,7 +362,10 @@ def is_running(service_id: str) -> bool:
 
     if row and row['pid']:
         if _pid_alive(row['pid']) and _pid_matches_exe(row['pid'], row['exe_path']):
-            # Re-register the process so we track it going forward
+            # Process is alive via DB-tracked PID. We can't reconstruct a
+            # Popen handle from just a PID, but we CAN seed _start_times so
+            # uptime calculations are valid on the next call.
+            _start_times.setdefault(service_id, time.time())
             return True
 
     return False
@@ -633,26 +638,36 @@ _DEFAULT_SERVICE_PORTS = {
 }
 
 
+# Maps service_id -> (module_path, constant_name) for port resolution.
+# Add new services here — no if/elif chains needed.
+_SERVICE_PORT_ATTRS: dict[str, tuple[str, str]] = {
+    'ollama':     ('services.ollama',    'OLLAMA_PORT'),
+    'kiwix':      ('services.kiwix',     'KIWIX_PORT'),
+    'qdrant':     ('services.qdrant',    'QDRANT_PORT'),
+    'stirling':   ('services.stirling',  'STIRLING_PORT'),
+    'cyberchef':  ('services.cyberchef', 'CYBERCHEF_PORT'),
+    'flatnotes':  ('services.flatnotes', 'FLATNOTES_PORT'),
+    'kolibri':    ('services.kolibri',   'KOLIBRI_PORT'),
+    # 'torrent' intentionally absent — libtorrent is an embedded library,
+    # not an HTTP server on a port.
+}
+
+
 def _get_service_port(service_id: str) -> int:
-    """Return the configured port for a service, falling back to default."""
-    try:
-        if service_id == 'ollama':
-            from services.ollama import OLLAMA_PORT
-            return OLLAMA_PORT
-        elif service_id == 'kiwix':
-            from services.kiwix import KIWIX_PORT
-            return KIWIX_PORT
-        elif service_id == 'qdrant':
-            from services.qdrant import QDRANT_PORT
-            return QDRANT_PORT
-        elif service_id == 'stirling':
-            from services.stirling import STIRLING_PORT
-            return STIRLING_PORT
-        elif service_id == 'cyberchef':
-            from services.cyberchef import CYBERCHEF_PORT
-            return CYBERCHEF_PORT
-    except (ImportError, AttributeError):
-        pass
+    """Return the configured port for a service, falling back to default.
+
+    Uses lazy imports to avoid circular import cycles (each service module
+    imports from manager at its own top level).
+    """
+    entry = _SERVICE_PORT_ATTRS.get(service_id)
+    if entry:
+        module_path, attr = entry
+        try:
+            import importlib
+            mod = importlib.import_module(module_path)
+            return int(getattr(mod, attr))
+        except (ImportError, AttributeError, TypeError, ValueError):
+            pass
     return _DEFAULT_SERVICE_PORTS.get(service_id, 0)
 
 

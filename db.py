@@ -234,7 +234,7 @@ def backup_db():
     backup_dir = os.path.join(os.path.dirname(db_path), 'backups')
     os.makedirs(backup_dir, exist_ok=True)
     from datetime import datetime
-    backup_path = os.path.join(backup_dir, f'nomad_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db')
+    backup_path = os.path.join(backup_dir, f'nomad_backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.db')
     tmp_path = backup_path + '.tmp'
     # Use SQLite backup API for WAL-safe copies.
     # TRUNCATE checkpoint flushes all WAL frames into the main DB and truncates

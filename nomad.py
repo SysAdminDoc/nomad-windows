@@ -53,7 +53,7 @@ import pystray
 from PIL import Image, ImageDraw
 from config import APP_DISPLAY_NAME, APP_SHORT_NAME, Config, get_data_dir
 from web.app import create_app, set_version
-from db import init_db, get_db, log_activity, backup_db
+from db import init_db, get_db, db_session, log_activity, backup_db
 
 VERSION = Config.VERSION
 PORT = Config.APP_PORT
@@ -234,57 +234,73 @@ def health_monitor():
     _restart_attempt: dict[str, int] = {}
 
     while not _shutdown_event.is_set():
-        db = None
+        # Fetch the list of services that should be running, then immediately
+        # release the DB connection.  Restart attempts involve a backoff sleep
+        # (up to 20 s) followed by mod.start() (up to 30 s for Ollama's port
+        # probe), so holding a pool slot idle that long is wasteful and can
+        # starve request handlers on a 4-slot pool.
+        rows = []
         try:
-            db = get_db()
-            rows = db.execute('SELECT id FROM services WHERE running = 1 AND installed = 1').fetchall()
-            for row in rows:
-                if _shutdown_event.is_set():
-                    break
-                sid = row['id']
-                mod = mods.get(sid)
-                if mod and not mod.running():
-                    if try_reserve_restart(sid):
-                        attempt = _restart_attempt.get(sid, 0)
-                        # Exponential backoff: 5s, 10s, 20s (capped at 20s)
-                        backoff = min(5 * (2 ** attempt), 20)
-                        log.warning(
-                            'Service %s crashed — auto-restart in %ds (attempt %d)',
-                            sid, backoff, attempt + 1,
-                        )
-                        log_activity('service_crash_detected', sid, f'Restart attempt {attempt + 1}', 'warning')
-                        _restart_attempt[sid] = attempt + 1
-                        if _shutdown_event.wait(timeout=backoff):
-                            break
-                        unregister_process(sid)
-                        try:
-                            mod.start()
-                            log.info(f'Service {sid} auto-restarted successfully')
-                            log_activity('service_autorestarted', sid)
-                            _restart_attempt.pop(sid, None)  # Reset backoff on success
-                        except Exception as e:
-                            log.error(f'Auto-restart failed for {sid}: {e}')
-                            log_activity('service_autorestart_failed', sid, str(e), 'error')
-                            db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (sid,))
-                            db.commit()
-                    else:
-                        log.error(f'Service {sid} crashed — restart limit reached ({MAX_RESTARTS} in 5min)')
-                        log_activity('service_restart_limit', sid, 'Max restarts exceeded', 'error')
-                        db.execute('UPDATE services SET running = 0, pid = NULL WHERE id = ?', (sid,))
-                        db.commit()
-                        unregister_process(sid)
-                        _restart_attempt.pop(sid, None)
-                else:
-                    # Service is healthy — clear any stale backoff counter
-                    _restart_attempt.pop(sid, None)
+            with db_session() as db:
+                rows = db.execute(
+                    'SELECT id FROM services WHERE running = 1 AND installed = 1'
+                ).fetchall()
         except Exception as e:
-            log.error(f'Health monitor error: {e}')
-        finally:
-            if db:
-                try:
-                    db.close()
-                except Exception:
-                    pass
+            log.error(f'Health monitor DB read error: {e}')
+
+        for row in rows:
+            if _shutdown_event.is_set():
+                break
+            sid = row['id']
+            mod = mods.get(sid)
+            if mod and not mod.running():
+                if try_reserve_restart(sid):
+                    attempt = _restart_attempt.get(sid, 0)
+                    # Exponential backoff: 5s, 10s, 20s (capped at 20s)
+                    backoff = min(5 * (2 ** attempt), 20)
+                    log.warning(
+                        'Service %s crashed — auto-restart in %ds (attempt %d)',
+                        sid, backoff, attempt + 1,
+                    )
+                    log_activity('service_crash_detected', sid, f'Restart attempt {attempt + 1}', 'warning')
+                    _restart_attempt[sid] = attempt + 1
+                    if _shutdown_event.wait(timeout=backoff):
+                        break
+                    unregister_process(sid)
+                    try:
+                        mod.start()
+                        log.info(f'Service {sid} auto-restarted successfully')
+                        log_activity('service_autorestarted', sid)
+                        _restart_attempt.pop(sid, None)  # Reset backoff on success
+                    except Exception as e:
+                        log.error(f'Auto-restart failed for {sid}: {e}')
+                        log_activity('service_autorestart_failed', sid, str(e), 'error')
+                        try:
+                            with db_session() as db:
+                                db.execute(
+                                    'UPDATE services SET running = 0, pid = NULL WHERE id = ?',
+                                    (sid,),
+                                )
+                                db.commit()
+                        except Exception as db_e:
+                            log.error('Failed to mark %s stopped in DB: %s', sid, db_e)
+                else:
+                    log.error(f'Service {sid} crashed — restart limit reached ({MAX_RESTARTS} in 5min)')
+                    log_activity('service_restart_limit', sid, 'Max restarts exceeded', 'error')
+                    try:
+                        with db_session() as db:
+                            db.execute(
+                                'UPDATE services SET running = 0, pid = NULL WHERE id = ?',
+                                (sid,),
+                            )
+                            db.commit()
+                    except Exception as db_e:
+                        log.error('Failed to mark %s stopped in DB: %s', sid, db_e)
+                    unregister_process(sid)
+                    _restart_attempt.pop(sid, None)
+            else:
+                # Service is healthy — clear any stale backoff counter
+                _restart_attempt.pop(sid, None)
         # Prune stale download progress entries to prevent unbounded dict growth
         try:
             prune_completed_downloads()

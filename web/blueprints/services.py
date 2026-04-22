@@ -280,9 +280,11 @@ def api_services_health_summary():
 @services_bp.route('/api/downloads/active')
 def api_downloads_active():
     """Return ALL active downloads across all services in one view."""
-    from services.manager import _download_progress
+    from services.manager import _download_progress, _dl_progress_lock
     downloads = []
-    for key, prog in dict(_download_progress).items():
+    with _dl_progress_lock:
+        snapshot = dict(_download_progress)
+    for key, prog in snapshot.items():
         if prog.get('status') in ('downloading', 'extracting'):
             # Classify download type
             if key.startswith('kiwix-zim-'):

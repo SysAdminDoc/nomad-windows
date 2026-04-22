@@ -592,9 +592,11 @@ def api_ai_chat():
     if system_prompt:
         messages = [{'role': 'system', 'content': system_prompt}] + messages
 
-    # Trim messages to fit within context window
-    system_tokens = _estimate_tokens(system_prompt)
-    messages = _trim_messages_to_fit(messages, max_tokens=4096, system_tokens=system_tokens)
+    # Trim messages to fit within context window. system_tokens is not passed
+    # separately because the system message is already prepended to `messages`
+    # and _trim_messages_to_fit() deducts it internally. Passing it again
+    # would cause a double-subtraction, halving the effective context budget.
+    messages = _trim_messages_to_fit(messages, max_tokens=4096)
 
     def generate():
         try:
@@ -1603,7 +1605,11 @@ def api_ai_execute_action():
         })
 
     # Execute phase — user has explicitly confirmed.
-    row_id = exec_fn()
+    try:
+        row_id = exec_fn()
+    except Exception:
+        log.exception('AI action execution failed for action_type=%s', action_type)
+        return jsonify({'error': 'Action failed — database write error. Check logs for details.'}), 500
     return jsonify({
         'status': 'executed',
         'action': action_type,

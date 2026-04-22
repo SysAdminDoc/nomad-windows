@@ -42,18 +42,24 @@
       <div class="notes-editor">
         <div class="notes-editor-header workspace-toolbar">
           <input id="note-title" name="note_title" aria-label="Note title" autocomplete="off" placeholder="Untitled note" data-input-action="note-title">
-          <input id="note-tags" name="note_tags" class="notes-inline-input notes-inline-tags" aria-label="Note tags" autocomplete="off" placeholder="Tags (comma-separated)" data-input-action="note-tags">
+          <input id="note-tags" name="note_tags" class="notes-inline-input notes-inline-tags" aria-label="Note tags" autocomplete="off" placeholder="Tags such as ops, logistics, radio" data-input-action="note-tags">
           <button class="btn btn-sm" data-note-action="toggle-note-pin" id="note-pin-btn" title="Pin/unpin note">Pin</button>
           <button class="btn btn-sm" data-note-action="toggle-note-preview" id="note-preview-btn">Preview</button>
           <button class="btn btn-sm" data-note-action="export-current-note" title="Download as .md">Export</button>
           <button class="btn btn-sm btn-danger" data-note-action="delete-note">Delete</button>
+        </div>
+        <div class="notes-editor-status-row">
+          <div id="note-active-meta" class="notes-editor-meta">Create or open a note to start a stable local writing thread.</div>
+          <div class="notes-editor-status-group">
+            <span id="note-save-state" class="notes-save-state" data-state="idle">Ready</span>
+            <span id="note-word-count" class="notes-word-count"></span>
+          </div>
         </div>
         <div id="note-backlinks" class="notes-backlinks-strip is-hidden">
           <span class="notes-backlinks-label">Backlinks:</span> <span id="note-backlinks-list"></span>
         </div>
         <div class="notes-editor-split">
           <textarea id="note-content" name="note_content" placeholder="Capture the decision, observation, or reference you want to keep. Markdown supported." data-input-action="note-content"></textarea>
-          <span id="note-word-count" class="notes-word-count"></span>
           <div class="notes-preview is-hidden" id="note-preview"></div>
         </div>
       </div>

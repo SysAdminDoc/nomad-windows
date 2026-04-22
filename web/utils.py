@@ -169,6 +169,24 @@ def coerce_int(value, default, minimum=None, maximum=None):
     return result
 
 
+def coerce_float(value, default, minimum=None, maximum=None):
+    """Safely coerce a float and apply defensive bounds.
+
+    Invalid values fall back to ``default``. Values below ``minimum`` also
+    fall back to ``default`` when the default itself is in range; otherwise the
+    lower bound wins. Values above ``maximum`` are capped.
+    """
+    try:
+        result = float(value)
+    except (TypeError, ValueError):
+        result = default
+    if minimum is not None and result < minimum:
+        result = default if default >= minimum else minimum
+    if maximum is not None and result > maximum:
+        result = maximum
+    return result
+
+
 def get_query_int(req, name, default, minimum=None, maximum=None):
     """Read and bound an integer query parameter from a Flask request."""
     return coerce_int(req.args.get(name, default), default, minimum, maximum)

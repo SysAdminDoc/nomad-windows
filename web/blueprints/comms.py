@@ -15,6 +15,8 @@ from config import get_data_dir
 from services.manager import format_size
 from web.state import (
     _broadcast,
+    get_broadcast,
+    set_broadcast,
     _serial_state, _serial_conn,
     _mesh_state, get_mesh_state, set_mesh_state,
 )
@@ -216,6 +218,8 @@ def api_lan_messages():
             rows = db.execute('SELECT * FROM lan_messages ORDER BY id DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
             rows = list(reversed(rows))
         return jsonify([dict(r) for r in rows])
+
+
 @comms_bp.route('/api/lan/messages', methods=['POST'])
 def api_lan_send():
     data = request.get_json() or {}
@@ -230,6 +234,8 @@ def api_lan_send():
         db.commit()
         msg = db.execute('SELECT * FROM lan_messages WHERE id = ?', (cur.lastrowid,)).fetchone()
         return jsonify(dict(msg)), 201
+
+
 @comms_bp.route('/api/lan/messages/clear', methods=['POST'])
 def api_lan_clear():
     with db_session() as db:
@@ -237,6 +243,8 @@ def api_lan_clear():
         db.commit()
         log_activity('lan_messages_cleared', detail='Cleared LAN messages')
         return jsonify({'status': 'cleared'})
+
+
 # ─── LAN Enhancements (v5.0 Phase 10) ──────────────────────────
 
 @comms_bp.route('/api/lan/channels')
@@ -251,6 +259,8 @@ def api_lan_channels():
             db.commit()
             channels = [{'name': ch} for ch in ['General', 'Security', 'Medical', 'Logistics']]
         return jsonify(channels)
+
+
 @comms_bp.route('/api/lan/channels', methods=['POST'])
 def api_lan_channel_create():
     """Create a LAN chat channel."""
@@ -263,6 +273,8 @@ def api_lan_channel_create():
                    (name, d.get('description', '')))
         db.commit()
         return jsonify({'status': 'ok'})
+
+
 @comms_bp.route('/api/lan/presence')
 def api_lan_presence():
     """List known LAN nodes and their status."""
@@ -271,6 +283,8 @@ def api_lan_presence():
             "SELECT * FROM lan_presence WHERE last_seen >= datetime('now', '-5 minutes') ORDER BY node_name LIMIT 500"
         ).fetchall()
         return jsonify([dict(r) for r in rows])
+
+
 @comms_bp.route('/api/lan/presence/heartbeat', methods=['POST'])
 def api_lan_heartbeat():
     """Register/update LAN presence."""
@@ -288,6 +302,8 @@ def api_lan_heartbeat():
         )
         db.commit()
         return jsonify({'status': 'ok'})
+
+
 @comms_bp.route('/api/comms/frequencies')
 def api_comms_frequencies():
     try:
@@ -647,6 +663,8 @@ def api_comms_schedules_list():
     with db_session() as db:
         rows = db.execute('SELECT * FROM comms_schedules WHERE active = 1 ORDER BY check_in_time LIMIT 5000').fetchall()
         return jsonify([dict(r) for r in rows])
+
+
 @comms_bp.route('/api/comms/schedules', methods=['POST'])
 def api_comms_schedules_create():
     d = request.json or {}
@@ -656,6 +674,8 @@ def api_comms_schedules_create():
         db.commit()
         row = db.execute('SELECT * FROM comms_schedules WHERE id = ?', (cur.lastrowid,)).fetchone()
         return jsonify(dict(row)), 201
+
+
 @comms_bp.route('/api/comms/schedules/<int:sid>', methods=['DELETE'])
 def api_comms_schedules_delete(sid):
     with db_session() as db:
@@ -664,6 +684,8 @@ def api_comms_schedules_delete(sid):
             return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'deleted': True})
+
+
 @comms_bp.route('/api/comms/schedules/overdue', methods=['GET'])
 def api_comms_schedules_overdue():
     with db_session() as db:
@@ -692,17 +714,20 @@ def api_comms_bridge():
     d = request.json or {}
     msg = d.get('message', '')
     source = d.get('source', 'lan')  # 'lan' or 'mesh'
+    sender = d.get('sender', 'Bridge')[:50]
     with db_session() as db:
         if source == 'lan':
-            # Bridge LAN message to mesh
+            # Bridge LAN message to mesh (mesh content limit = 200 chars)
             db.execute('INSERT INTO mesh_messages (content, sender, source) VALUES (?, ?, ?)',
-                (msg[:200], d.get('sender', 'Bridge'), 'bridged'))
+                (msg[:200], sender, 'bridged'))
         else:
-            # Bridge mesh message to LAN
+            # Bridge mesh message to LAN (LAN content limit matches api_lan_send = 2000 chars)
             db.execute('INSERT INTO lan_messages (content, sender, source) VALUES (?, ?, ?)',
-                (msg, d.get('sender', 'Bridge'), 'bridged'))
+                (msg[:2000], sender, 'bridged'))
         db.commit()
         return jsonify({'bridged': True})
+
+
 @comms_bp.route('/api/comms/dashboard')
 def api_comms_dashboard():
     """Comms status overview — last contacts, active frequencies, mesh status."""
@@ -717,6 +742,8 @@ def api_comms_dashboard():
             'radio_contacts': contacts_with_radio,
             'radio_profiles': profiles,
         })
+
+
 @comms_bp.route('/api/comms/radio-profiles')
 def api_comms_profiles_list():
     with db_session() as db:
@@ -727,6 +754,8 @@ def api_comms_profiles_list():
             entry['channels'] = _normalize_radio_channels(entry.get('channels'))
             profiles.append(entry)
         return jsonify(profiles)
+
+
 @comms_bp.route('/api/comms/radio-profiles', methods=['POST'])
 def api_comms_profiles_create():
     data = request.get_json() or {}
@@ -739,6 +768,8 @@ def api_comms_profiles_create():
                    ))
         db.commit()
         return jsonify({'status': 'created'})
+
+
 @comms_bp.route('/api/comms/radio-profiles/<int:pid>', methods=['DELETE'])
 def api_comms_profiles_delete(pid):
     with db_session() as db:
@@ -747,6 +778,8 @@ def api_comms_profiles_delete(pid):
             return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'deleted'})
+
+
 @comms_bp.route('/api/broadcast')
 def api_broadcast_get():
     return jsonify(get_broadcast())
@@ -782,6 +815,8 @@ def api_comms_log_list():
     with db_session() as db:
         rows = db.execute('SELECT * FROM comms_log ORDER BY created_at DESC LIMIT ? OFFSET ?', (limit, offset)).fetchall()
         return jsonify([dict(r) for r in rows])
+
+
 @comms_bp.route('/api/comms-log', methods=['POST'])
 def api_comms_log_create():
     data = request.get_json() or {}
@@ -792,6 +827,8 @@ def api_comms_log_create():
         db.commit()
         row = db.execute('SELECT * FROM comms_log WHERE id = ?', (cur.lastrowid,)).fetchone()
         return jsonify(dict(row)), 201
+
+
 @comms_bp.route('/api/comms-log/<int:lid>', methods=['DELETE'])
 def api_comms_log_delete(lid):
     with db_session() as db:

@@ -6,6 +6,9 @@ from web.blueprints import get_pagination
 
 evac_drills_bp = Blueprint('evac_drills', __name__)
 
+_EVAC_DRILL_RUNS_ALLOWED_FIELDS = frozenset({'name', 'drill_type', 'status', 'participants', 'target_time_sec',
+                                              'weather_conditions', 'notes', 'score', 'after_action_notes'})
+
 
 # ─── Drill Runs CRUD ──────────────────────────────────────────────
 
@@ -56,8 +59,7 @@ def api_evac_drills_update(did):
         existing = db.execute('SELECT id FROM evac_drill_runs WHERE id = ?', (did,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['name', 'drill_type', 'status', 'participants', 'target_time_sec',
-                    'weather_conditions', 'notes', 'score', 'after_action_notes']
+        allowed = _EVAC_DRILL_RUNS_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:

@@ -47,6 +47,20 @@ DEFAULT_CRITERIA = [
     ('Game / hunting potential', 'wildlife', 0.6),
 ]
 
+_PROPERTIES_ALLOWED_FIELDS = frozenset({
+    'name', 'property_type', 'address', 'county', 'state', 'lat', 'lng',
+    'acreage', 'purchase_price', 'current_value', 'ownership', 'access_road',
+    'distance_from_home_miles', 'travel_time_hours', 'nearest_town',
+    'nearest_town_miles', 'population_density', 'zoning', 'water_rights',
+    'mineral_rights', 'total_score', 'status', 'notes',
+})
+_PROPERTY_ASSESSMENTS_ALLOWED_FIELDS = frozenset({'criterion', 'category', 'score', 'weight', 'notes', 'assessed_date'})
+_DEVELOPMENT_PLANS_ALLOWED_FIELDS = frozenset({
+    'name', 'category', 'priority', 'estimated_cost', 'actual_cost',
+    'start_date', 'target_date', 'completed_date', 'status',
+    'impact_score', 'description', 'materials', 'notes',
+})
+
 
 # ─── Properties CRUD ────────────────────────────────────────────────
 
@@ -117,13 +131,7 @@ def api_properties_detail(pid):
 @land_assessment_bp.route('/api/properties/<int:pid>', methods=['PUT'])
 def api_properties_update(pid):
     data = request.get_json() or {}
-    allowed = [
-        'name', 'property_type', 'address', 'county', 'state', 'lat', 'lng',
-        'acreage', 'purchase_price', 'current_value', 'ownership', 'access_road',
-        'distance_from_home_miles', 'travel_time_hours', 'nearest_town',
-        'nearest_town_miles', 'population_density', 'zoning', 'water_rights',
-        'mineral_rights', 'total_score', 'status', 'notes',
-    ]
+    allowed = _PROPERTIES_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -215,7 +223,7 @@ def api_assessments_create(pid):
 @land_assessment_bp.route('/api/property-assessments/<int:aid>', methods=['PUT'])
 def api_assessments_update(aid):
     data = request.get_json() or {}
-    allowed = ['criterion', 'category', 'score', 'weight', 'notes', 'assessed_date']
+    allowed = _PROPERTY_ASSESSMENTS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -349,11 +357,7 @@ def api_dev_plans_create(pid):
 @land_assessment_bp.route('/api/development-plans/<int:did>', methods=['PUT'])
 def api_dev_plans_update(did):
     data = request.get_json() or {}
-    allowed = [
-        'name', 'category', 'priority', 'estimated_cost', 'actual_cost',
-        'start_date', 'target_date', 'completed_date', 'status',
-        'impact_score', 'description', 'materials', 'notes',
-    ]
+    allowed = _DEVELOPMENT_PLANS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:

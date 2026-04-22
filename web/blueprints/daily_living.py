@@ -12,6 +12,22 @@ _log = logging.getLogger(__name__)
 
 daily_living_bp = Blueprint('daily_living', __name__, url_prefix='/api/daily-living')
 
+_DAILY_SCHEDULES_ALLOWED_FIELDS = frozenset({'name', 'schedule_type', 'description', 'assigned_to',
+                                             'start_date', 'end_date', 'status'})
+_CHORE_ASSIGNMENTS_ALLOWED_FIELDS = frozenset({'schedule_id', 'chore_name', 'category', 'assigned_to',
+                                               'frequency', 'time_slot', 'duration_minutes', 'priority',
+                                               'instructions', 'rotation_group', 'last_completed', 'status'})
+_CLOTHING_INVENTORY_ALLOWED_FIELDS = frozenset({'person', 'item_name', 'category', 'size', 'quantity',
+                                                'condition', 'season', 'warmth_rating', 'material',
+                                                'location', 'notes'})
+_SANITATION_SUPPLIES_ALLOWED_FIELDS = frozenset({'name', 'category', 'quantity', 'unit', 'min_stock',
+                                                 'daily_usage_rate', 'persons_served', 'location',
+                                                 'expiration_date', 'notes'})
+_GRID_DOWN_RECIPES_ALLOWED_FIELDS = frozenset({'name', 'category', 'cooking_method', 'prep_time_minutes',
+                                               'cook_time_minutes', 'servings', 'calories_per_serving',
+                                               'protein_per_serving', 'instructions', 'water_required_ml',
+                                               'fuel_required', 'rating', 'notes'})
+
 # ─── Work/Rest Reference Data ──────────────────────────────────────────
 
 WORK_REST_REFERENCE = {
@@ -222,8 +238,7 @@ def api_schedules_update(sid):
         existing = db.execute('SELECT * FROM daily_schedules WHERE id = ?', (sid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['name', 'schedule_type', 'description', 'assigned_to',
-                    'start_date', 'end_date', 'status']
+        allowed = _DAILY_SCHEDULES_ALLOWED_FIELDS
         updates = []
         values = []
         for key in allowed:
@@ -334,9 +349,7 @@ def api_chores_update(cid):
         existing = db.execute('SELECT * FROM chore_assignments WHERE id = ?', (cid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['schedule_id', 'chore_name', 'category', 'assigned_to',
-                    'frequency', 'time_slot', 'duration_minutes', 'priority',
-                    'instructions', 'rotation_group', 'last_completed', 'status']
+        allowed = _CHORE_ASSIGNMENTS_ALLOWED_FIELDS
         updates = []
         values = []
         for key in allowed:
@@ -488,9 +501,7 @@ def api_clothing_update(cid):
         existing = db.execute('SELECT * FROM clothing_inventory WHERE id = ?', (cid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['person', 'item_name', 'category', 'size', 'quantity',
-                    'condition', 'season', 'warmth_rating', 'material',
-                    'location', 'notes']
+        allowed = _CLOTHING_INVENTORY_ALLOWED_FIELDS
         updates = []
         values = []
         for key in allowed:
@@ -628,9 +639,7 @@ def api_sanitation_update(sid):
         existing = db.execute('SELECT * FROM sanitation_supplies WHERE id = ?', (sid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['name', 'category', 'quantity', 'unit', 'min_stock',
-                    'daily_usage_rate', 'persons_served', 'location',
-                    'expiration_date', 'notes']
+        allowed = _SANITATION_SUPPLIES_ALLOWED_FIELDS
         updates = []
         values = []
         for key in allowed:
@@ -1190,10 +1199,7 @@ def api_recipes_update(rid):
         existing = db.execute('SELECT * FROM grid_down_recipes WHERE id = ?', (rid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['name', 'category', 'cooking_method', 'prep_time_minutes',
-                    'cook_time_minutes', 'servings', 'calories_per_serving',
-                    'protein_per_serving', 'instructions', 'water_required_ml',
-                    'fuel_required', 'rating', 'notes']
+        allowed = _GRID_DOWN_RECIPES_ALLOWED_FIELDS
         updates = []
         values = []
         for key in allowed:

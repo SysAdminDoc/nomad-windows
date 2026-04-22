@@ -562,6 +562,14 @@ def create_app():
 
     _first_run_cache: dict = {'value': False, 'expires': 0.0}
 
+    # V8-10: Short-lived cache for rendered workspace page HTML.
+    # Key: (tab_id, lang, bundle_js, active_media_sub, allow_launch_restore, first_run_complete)
+    # TTL: 5 s — picks up language or first-run state changes quickly while
+    # avoiding redundant Jinja2 renders on rapid tab switches.
+    _page_render_cache: dict = {}
+    _page_render_lock = threading.Lock()
+    _PAGE_CACHE_TTL = 5.0
+
     def _is_first_run_complete():
         now = time.monotonic()
         if now < _first_run_cache['expires']:
@@ -585,10 +593,21 @@ def create_app():
         if tab_id == 'media':
             requested_media_sub = (request.args.get('media') or '').strip().lower()
             active_media_sub = requested_media_sub if requested_media_sub in {'channels', 'videos', 'audio', 'books', 'torrents'} else 'channels'
-        return render_template(
+
+        bundle_js = manifest.get('nomad.bundle.js', '')
+        lang = _get_current_language()
+        cache_key = (tab_id, lang, bundle_js, active_media_sub, allow_launch_restore, first_run_complete)
+
+        now = time.monotonic()
+        with _page_render_lock:
+            cached = _page_render_cache.get(cache_key)
+            if cached and now < cached[0]:
+                return cached[1]
+
+        html = render_template(
             'workspace_page.html',
             version=VERSION,
-            bundle_js=manifest.get('nomad.bundle.js', ''),
+            bundle_js=bundle_js,
             bundle_css=manifest.get('nomad.bundle.css', ''),
             active_tab=tab_id,
             page_title=meta['title'],
@@ -599,6 +618,16 @@ def create_app():
             wizard_should_launch=(tab_id == 'services' and not first_run_complete),
             active_media_sub=active_media_sub,
         )
+
+        with _page_render_lock:
+            # Prune stale entries when cache grows large (>200 keys is abnormal)
+            if len(_page_render_cache) > 200:
+                stale = [k for k, (exp, _) in _page_render_cache.items() if now >= exp]
+                for k in stale:
+                    del _page_render_cache[k]
+            _page_render_cache[cache_key] = (now + _PAGE_CACHE_TTL, html)
+
+        return html
 
     @app.route('/app-runtime.js')
     def app_runtime_js():

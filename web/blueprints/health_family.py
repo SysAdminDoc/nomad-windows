@@ -21,6 +21,10 @@ from db import db_session, log_activity
 health_family_bp = Blueprint('health_family', __name__)
 _log = logging.getLogger('nomad.health_family')
 
+_CHILD_ID_PACKETS_ALLOWED_FIELDS = frozenset({'name', 'dob', 'height_in', 'weight_lb', 'hair_color', 'eye_color',
+                                              'blood_type', 'allergies', 'medications', 'identifying_marks',
+                                              'fingerprint_ref', 'photo_ref', 'notes'})
+
 
 # ═══════════════════════════════════════════════════════════════════
 # 7.1 — Pediatric Broselow-Equivalent Dose Engine
@@ -348,9 +352,7 @@ def api_child_id_create():
 @health_family_bp.route('/api/family/child-id/<int:cid>', methods=['PUT'])
 def api_child_id_update(cid):
     data = request.get_json() or {}
-    allowed = ['name', 'dob', 'height_in', 'weight_lb', 'hair_color', 'eye_color',
-               'blood_type', 'allergies', 'medications', 'identifying_marks',
-               'fingerprint_ref', 'photo_ref', 'notes']
+    allowed = _CHILD_ID_PACKETS_ALLOWED_FIELDS
     updates = []
     values = []
     for k in allowed:

@@ -62,3 +62,92 @@ def db(app):
     conn = get_db()
     yield conn
     conn.close()
+
+
+# ─── V8-23: Explicit seed fixtures ───────────────────────────────────────────
+# Tests that need seeded rows should declare these fixtures explicitly rather
+# than relying on init_db() side-effects. This makes data dependencies visible
+# in the test signature.
+
+@pytest.fixture()
+def seed_upc_entry(db):
+    """Insert a single known UPC entry for tests that exercise UPC lookup.
+
+    Returns the inserted row as a dict with keys: upc, name, category, brand,
+    size, unit, default_shelf_life_days.
+    """
+    entry = {
+        'upc': '000000000001',
+        'name': 'Test Item',
+        'category': 'Test',
+        'brand': 'TestBrand',
+        'size': '1 oz',
+        'unit': 'each',
+        'default_shelf_life_days': 365,
+    }
+    db.execute(
+        '''INSERT OR IGNORE INTO upc_database
+           (upc, name, category, brand, size, unit, default_shelf_life_days)
+           VALUES (:upc, :name, :category, :brand, :size, :unit, :default_shelf_life_days)''',
+        entry,
+    )
+    db.commit()
+    return entry
+
+
+@pytest.fixture()
+def seed_rag_scope_row(db):
+    """Insert a single known rag_scope row for tests that exercise RAG context.
+
+    Returns the inserted row as a dict with keys matching the rag_scope schema.
+    """
+    import json
+    row = {
+        'table_name': '_test_rag_table',
+        'label': 'Test RAG Table',
+        'enabled': 1,
+        'weight': 1,
+        'max_rows': 10,
+        'formatter': 'default',
+        'columns_json': json.dumps(['id', 'name']),
+        'source': 'test',
+    }
+    db.execute(
+        '''INSERT OR IGNORE INTO rag_scope
+           (table_name, label, enabled, weight, max_rows, formatter, columns_json, source)
+           VALUES (:table_name, :label, :enabled, :weight, :max_rows,
+                   :formatter, :columns_json, :source)''',
+        row,
+    )
+    db.commit()
+    return row
+
+
+@pytest.fixture()
+def assert_upc_seeded(db):
+    """Assert that init_db() has seeded the UPC database.
+
+    Use this fixture in tests that need the full seeded UPC set but want to
+    declare that dependency explicitly rather than assuming init_db() ran.
+    """
+    count = db.execute('SELECT COUNT(*) FROM upc_database').fetchone()[0]
+    assert count > 0, (
+        "upc_database is empty — init_db() seed did not run. "
+        "Ensure the 'app' fixture is listed before this fixture."
+    )
+    return count
+
+
+@pytest.fixture()
+def assert_rag_scope_seeded(db):
+    """Assert that init_db() has seeded the rag_scope defaults.
+
+    Use this fixture in tests that need the full default RAG scope rows but
+    want to declare that dependency explicitly.
+    """
+    count = db.execute('SELECT COUNT(*) FROM rag_scope').fetchone()[0]
+    assert count > 0, (
+        "rag_scope is empty — init_db() seed did not run. "
+        "Ensure the 'app' fixture is listed before this fixture."
+    )
+    return count

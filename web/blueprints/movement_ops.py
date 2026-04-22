@@ -22,6 +22,35 @@ PLAN_TYPES = ['foot', 'vehicle', 'convoy', 'mixed', 'waterborne']
 ROAD_CONDITIONS = ['excellent', 'good', 'passable', 'degraded', 'impassable']
 THREAT_LEVELS = ['none', 'low', 'moderate', 'elevated', 'high', 'extreme']
 
+_MOVEMENT_PLANS_ALLOWED_FIELDS = frozenset({
+    'name', 'plan_type', 'origin', 'origin_lat', 'origin_lng',
+    'destination', 'destination_lat', 'destination_lng', 'distance_miles',
+    'pace_count_per_100m', 'march_rate_mph', 'estimated_hours', 'rest_plan',
+    'water_stops', 'waypoints', 'convoy_sop', 'convoy_order', 'comm_plan',
+    'hand_signals', 'night_movement', 'vehicle_id', 'evac_plan_id',
+    'status', 'notes',
+})
+_ALT_VEHICLES_ALLOWED_FIELDS = frozenset({
+    'name', 'vehicle_type', 'capacity_lb', 'range_miles', 'speed_mph',
+    'fuel_type', 'fuel_consumption', 'feed_requirements', 'condition',
+    'maintenance_due', 'storage_location', 'notes',
+})
+_ROUTE_HAZARDS_ALLOWED_FIELDS = frozenset({
+    'movement_plan_id', 'name', 'hazard_type', 'lat', 'lng', 'severity',
+    'description', 'bypass_route', 'seasonal', 'active_months',
+    'last_verified', 'notes',
+})
+_VEHICLE_LOADING_PLANS_ALLOWED_FIELDS = frozenset({
+    'evac_plan_id', 'vehicle_id', 'vehicle_name', 'load_order',
+    'assigned_persons', 'assigned_bags', 'assigned_items',
+    'total_weight_lb', 'max_weight_lb', 'fuel_level_pct', 'notes',
+})
+_GO_NOGO_MATRIX_ALLOWED_FIELDS = frozenset({
+    'evac_plan_id', 'criterion', 'category', 'weight',
+    'go_threshold', 'nogo_threshold', 'current_value',
+    'current_status', 'data_source', 'last_updated', 'notes',
+})
+
 
 # ─── Movement Plans CRUD ─────────────────────────────────────────────
 
@@ -85,14 +114,7 @@ def api_movement_plans_detail(pid):
 @movement_ops_bp.route('/api/movement-plans/<int:pid>', methods=['PUT'])
 def api_movement_plans_update(pid):
     data = request.get_json() or {}
-    allowed = [
-        'name', 'plan_type', 'origin', 'origin_lat', 'origin_lng',
-        'destination', 'destination_lat', 'destination_lng', 'distance_miles',
-        'pace_count_per_100m', 'march_rate_mph', 'estimated_hours', 'rest_plan',
-        'water_stops', 'waypoints', 'convoy_sop', 'convoy_order', 'comm_plan',
-        'hand_signals', 'night_movement', 'vehicle_id', 'evac_plan_id',
-        'status', 'notes',
-    ]
+    allowed = _MOVEMENT_PLANS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -225,11 +247,7 @@ def api_alt_vehicles_create():
 @movement_ops_bp.route('/api/alt-vehicles/<int:vid>', methods=['PUT'])
 def api_alt_vehicles_update(vid):
     data = request.get_json() or {}
-    allowed = [
-        'name', 'vehicle_type', 'capacity_lb', 'range_miles', 'speed_mph',
-        'fuel_type', 'fuel_consumption', 'feed_requirements', 'condition',
-        'maintenance_due', 'storage_location', 'notes',
-    ]
+    allowed = _ALT_VEHICLES_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -307,11 +325,7 @@ def api_route_hazards_create():
 @movement_ops_bp.route('/api/route-hazards/<int:hid>', methods=['PUT'])
 def api_route_hazards_update(hid):
     data = request.get_json() or {}
-    allowed = [
-        'movement_plan_id', 'name', 'hazard_type', 'lat', 'lng', 'severity',
-        'description', 'bypass_route', 'seasonal', 'active_months',
-        'last_verified', 'notes',
-    ]
+    allowed = _ROUTE_HAZARDS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -447,11 +461,7 @@ def api_vehicle_loading_create():
 @movement_ops_bp.route('/api/vehicle-loading/<int:lid>', methods=['PUT'])
 def api_vehicle_loading_update(lid):
     data = request.get_json() or {}
-    allowed = [
-        'evac_plan_id', 'vehicle_id', 'vehicle_name', 'load_order',
-        'assigned_persons', 'assigned_bags', 'assigned_items',
-        'total_weight_lb', 'max_weight_lb', 'fuel_level_pct', 'notes',
-    ]
+    allowed = _VEHICLE_LOADING_PLANS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -527,11 +537,7 @@ def api_go_nogo_create():
 @movement_ops_bp.route('/api/go-nogo/<int:gid>', methods=['PUT'])
 def api_go_nogo_update(gid):
     data = request.get_json() or {}
-    allowed = [
-        'evac_plan_id', 'criterion', 'category', 'weight',
-        'go_threshold', 'nogo_threshold', 'current_value',
-        'current_status', 'data_source', 'last_updated', 'notes',
-    ]
+    allowed = _GO_NOGO_MATRIX_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:

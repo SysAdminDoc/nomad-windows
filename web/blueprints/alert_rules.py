@@ -27,6 +27,9 @@ CONDITION_SOURCES = {
 COMPARISONS = {'lt': '<', 'lte': '<=', 'gt': '>', 'gte': '>=', 'eq': '=', 'ne': '!='}
 ACTIONS = ['alert', 'sse_event', 'log_activity', 'set_emergency_level']
 
+_ALERT_RULES_ALLOWED_FIELDS = frozenset({'name', 'condition_type', 'threshold', 'comparison', 'action_type',
+                                          'action_data', 'enabled', 'cooldown_minutes', 'severity', 'category', 'description'})
+
 
 # ─── Rules CRUD ────────────────────────────────────────────────────
 
@@ -87,8 +90,7 @@ def api_alert_rules_update(rid):
         existing = db.execute('SELECT id FROM alert_rules WHERE id = ?', (rid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['name', 'condition_type', 'threshold', 'comparison', 'action_type',
-                    'action_data', 'enabled', 'cooldown_minutes', 'severity', 'category', 'description']
+        allowed = _ALERT_RULES_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:

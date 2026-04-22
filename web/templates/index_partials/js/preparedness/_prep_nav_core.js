@@ -274,6 +274,12 @@ function showPrepCategory(cat) {
     const isActive = active && active.id === 'psub-' + t.id;
     return '<button type="button" class="prep-subtab' + (isActive ? ' active' : '') + '" data-psub="' + t.id + '" data-prep-sub-switch="' + t.id + '">' + t.label + '</button>';
   }).join('');
+  // Sync mobile select with current sub-tab options
+  const activeSub = (function() {
+    const el = document.querySelector('.prep-sub.active');
+    return el ? el.id.replace('psub-', '') : '';
+  }());
+  _syncMobileSubSelect(group, activeSub);
   // If no tab in this category is active, activate the first one
   const activeInCat = group.tabs.find(function(t) {
     const el = document.getElementById('psub-' + t.id);
@@ -303,6 +309,9 @@ function switchPrepSub(sub) {
   if (cat !== _currentPrepCat) showPrepCategory(cat);
   document.querySelectorAll('.prep-subtab').forEach(b => b.classList.toggle('active', b.dataset.psub === sub));
   document.querySelectorAll('.prep-sub').forEach(p => p.classList.toggle('active', p.id === 'psub-' + sub));
+  // Sync mobile select value
+  const mobileSelect = document.getElementById('prep-mobile-sub-select');
+  if (mobileSelect && mobileSelect.value !== sub) mobileSelect.value = sub;
   rememberPrepWorkspace(sub);
   renderPrepWorkspaceHub();
   if (sub === 'incidents') loadIncidents();
@@ -581,4 +590,21 @@ document.addEventListener('click', event => {
     renderPrepWorkspaceHub();
     toast(isPinned ? 'Workspace pinned' : 'Workspace unpinned', isPinned ? 'success' : 'info');
   }
+});
+
+/* ─── Mobile sub-tab select (V8-19) ─── */
+
+// Rebuild the mobile <select> to match the current category's tabs
+function _syncMobileSubSelect(group, activeSub) {
+  const sel = document.getElementById('prep-mobile-sub-select');
+  if (!sel) return;
+  sel.innerHTML = group.tabs.map(function(t) {
+    return '<option value="' + t.id + '"' + (activeSub === t.id ? ' selected' : '') + '>' + t.label + '</option>';
+  }).join('');
+}
+
+// Delegated change handler — fires switchPrepSub when the mobile select changes
+document.addEventListener('change', function(event) {
+  var sel = event.target.closest('#prep-mobile-sub-select');
+  if (sel && sel.value) switchPrepSub(sel.value);
 });

@@ -1,0 +1,87 @@
+site_name: N.O.M.A.D. Field Desk
+site_description: Offline-first preparedness and field-operations desktop app
+site_url: https://sysadmindoc.github.io/project-nomad-desktop/
+repo_url: https://github.com/SysAdminDoc/project-nomad-desktop
+repo_name: SysAdminDoc/project-nomad-desktop
+
+theme:
+  name: material
+  palette:
+    - scheme: slate
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    - scheme: default
+      primary: teal
+      accent: cyan
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.details
+
+nav:
+  - Home: index.md
+  - Getting Started: guide/01-getting-started.md
+  - Features:
+    - Home Dashboard: guide/02-home-dashboard.md
+    - Readiness Score: guide/03-readiness-score.md
+    - AI Assistant: guide/04-ai-assistant.md
+    - Information Library: guide/05-library.md
+    - Offline Maps: guide/06-maps.md
+    - Notes: guide/07-notes.md
+    - Tools: guide/08-tools.md
+    - Proactive Alerts: guide/10-alerts.md
+    - Themes: guide/13-themes.md
+    - Settings & Backup: guide/14-settings.md
+  - Preparedness:
+    - Overview (25 Sub-Tabs): guide/09-preparedness.md
+    - Medical Module: guide/30-medical.md
+    - Food Production: guide/31-food-production.md
+    - Power Management: guide/32-power.md
+    - Security Module: guide/33-security.md
+    - Weather Tracking: guide/34-weather.md
+    - Communications & Radio: guide/35-comms.md
+    - Secure Vault: guide/36-vault.md
+    - Training Scenarios: guide/37-scenarios-deep.md
+    - Calculators Reference: guide/26-calculators.md
+    - Inventory Best Practices: guide/21-inventory-best-practices.md
+  - Multi-Device:
+    - LAN & Multi-Device: guide/23-lan.md
+    - Connecting Systems: guide/11-sync.md
+  - Advanced:
+    - Task Scheduler: guide/38-task-scheduler.md
+    - AI Memory System: guide/39-ai-memory.md
+    - AI Model Guide: guide/20-ai-models.md
+    - Printable Reports: guide/22-printable-reports.md
+    - Printable Field Documents: guide/40-printable-field-docs.md
+    - NukeMap Guide: guide/27-nukemap.md
+    - Notes Guide: guide/28-notes-guide.md
+    - Diagnostics: guide/15-diagnostics.md
+    - Data & Privacy: guide/17-data-privacy.md
+  - Reference:
+    - Day One Checklist: guide/19-day-one.md
+    - Common Use Cases: guide/25-use-cases.md
+    - Troubleshooting: guide/18-troubleshooting.md
+    - FAQ: guide/29-faq.md
+    - Glossary: guide/41-glossary.md
+    - Keyboard Shortcuts: guide/16-keyboard-shortcuts.md
+    - Understanding Services: guide/24-services.md
+    - Training Scenarios: guide/12-scenarios.md
+    - Database Schema: schema.md
+    - NukeMap Offline Atlas: nukemap-offline-atlas.md

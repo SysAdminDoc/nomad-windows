@@ -53,8 +53,8 @@ Product-quality improvements identified from a deep architecture, security, perf
 |---|-------|-------------|--------|
 | V8-17 | ~~**Situation Room thread pool**~~ | **Done** (pre-existing) — already uses `ThreadPoolExecutor(max_workers=8)` | Open |
 | V8-18 | ~~**Soft delete / trash pattern**~~ | **Done** (v7.55.0) — `deleted_at` on 4 tables + trash/restore/purge API | Open |
-| V8-19 | **Mobile prep tab navigation** | 25 prep sub-tabs in 5 categories overflow on small screens. Add a mobile-specific accordion or sheet-based navigation for the two-tier category → sub-tab pattern. | Open |
-| V8-20 | **Standalone docs site** | The 41-section in-app guide exists but no searchable external documentation. Generate a static site (MkDocs or Docusaurus) from markdown for the non-technical preparedness audience. | Open |
+| V8-19 | **Mobile prep tab navigation** | 25 prep sub-tabs in 5 categories overflow on small screens. Add a mobile-specific accordion or sheet-based navigation for the two-tier category → sub-tab pattern. | Done v7.59.0 |
+| V8-20 | **Standalone docs site** | The 41-section in-app guide exists but no searchable external documentation. Generate a static site (MkDocs or Docusaurus) from markdown for the non-technical preparedness audience. | Done v7.59.0 |
 | V8-21 | **macOS code signing** | macOS build produces unsigned binary. Gatekeeper warns "unidentified developer." Add Apple Developer certificate signing to CI or document the notarization process. | Open |
 | V8-22 | **Auto-update checksum parity** | SHA256 verification exists for Windows self-update downloads but not Linux/macOS. Apply the same pattern cross-platform. | Open |
 | V8-23 | **Seeded test data isolation** | `init_db()` seeds UPC database and RAG scope defaults that tests implicitly depend on. Add explicit test fixtures that don't rely on seeded state. | Open |

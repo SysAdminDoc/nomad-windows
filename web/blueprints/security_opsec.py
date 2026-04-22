@@ -9,6 +9,32 @@ from db import db_session, log_activity
 
 security_opsec_bp = Blueprint('security_opsec', __name__, url_prefix='/api/security-ops')
 
+_OPSEC_COMPARTMENTS_ALLOWED_FIELDS = frozenset({'name', 'description', 'classification', 'authorized_persons',
+                                                'cover_story', 'duress_signal', 'review_date', 'status', 'notes'})
+_OPSEC_CHECKLISTS_ALLOWED_FIELDS = frozenset({'compartment_id', 'title', 'category', 'items', 'last_audit_date',
+                                              'next_audit_date', 'audited_by', 'score', 'status'})
+_THREAT_MATRIX_ALLOWED_FIELDS = frozenset({'threat_name', 'threat_type', 'likelihood', 'impact', 'vulnerability',
+                                           'countermeasure', 'status', 'assigned_to', 'review_date'})
+_OBSERVATION_POSTS_ALLOWED_FIELDS = frozenset({'name', 'location', 'coordinates', 'type', 'fields_of_fire',
+                                               'dead_space', 'sectors', 'equipment', 'communication',
+                                               'status', 'assigned_to', 'notes'})
+_NIGHT_OPS_PLANS_ALLOWED_FIELDS = frozenset({'name', 'operation_date', 'moonrise', 'moonset', 'moon_phase',
+                                             'moon_illumination', 'ambient_light_level', 'dark_adaptation_minutes',
+                                             'nvg_required', 'movement_routes', 'rally_points', 'signals',
+                                             'notes', 'status'})
+_CBRN_EQUIPMENT_ALLOWED_FIELDS = frozenset({'equipment_name', 'equipment_type', 'model', 'serial_number',
+                                            'calibration_date', 'calibration_due', 'condition', 'assigned_to',
+                                            'location', 'quantity', 'notes'})
+_EMP_INVENTORY_ALLOWED_FIELDS = frozenset({'item_name', 'category', 'description', 'protection_method',
+                                           'is_protected', 'grid_dependent', 'manual_alternative', 'priority',
+                                           'location', 'quantity', 'tested_date', 'notes'})
+_SIGNATURE_ASSESSMENT_JSON_COLS = frozenset({
+    'visual_signatures', 'audio_signatures', 'electronic_signatures', 'thermal_signatures',
+})
+_SIGNATURE_ASSESSMENT_ALLOWED_FIELDS = frozenset({
+    'location', 'assessment_date', 'overall_score', 'recommendations', 'assessed_by', 'status',
+}) | _SIGNATURE_ASSESSMENT_JSON_COLS
+
 
 def _jp(val):
     """Parse a JSON array column."""
@@ -190,8 +216,7 @@ def api_compartments_update(cid):
         existing = db.execute('SELECT id FROM opsec_compartments WHERE id = ?', (cid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['name', 'description', 'classification', 'authorized_persons',
-                    'cover_story', 'duress_signal', 'review_date', 'status', 'notes']
+        allowed = _OPSEC_COMPARTMENTS_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:
@@ -283,8 +308,7 @@ def api_checklists_update(cid):
         existing = db.execute('SELECT id FROM opsec_checklists WHERE id = ?', (cid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['compartment_id', 'title', 'category', 'items', 'last_audit_date',
-                    'next_audit_date', 'audited_by', 'score', 'status']
+        allowed = _OPSEC_CHECKLISTS_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:
@@ -393,8 +417,7 @@ def api_threat_matrix_update(tid):
         existing = db.execute('SELECT id FROM threat_matrix WHERE id = ?', (tid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['threat_name', 'threat_type', 'likelihood', 'impact', 'vulnerability',
-                    'countermeasure', 'status', 'assigned_to', 'review_date']
+        allowed = _THREAT_MATRIX_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:
@@ -490,8 +513,7 @@ def api_observation_posts_update(pid):
         existing = db.execute('SELECT id FROM observation_posts WHERE id = ?', (pid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['name', 'location', 'coordinates', 'type', 'fields_of_fire', 'dead_space',
-                    'sectors', 'equipment', 'communication', 'status', 'assigned_to', 'notes']
+        allowed = _OBSERVATION_POSTS_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:
@@ -643,9 +665,8 @@ def api_signatures_update(sid):
         existing = db.execute('SELECT id FROM signature_assessments WHERE id = ?', (sid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        json_cols = ('visual_signatures', 'audio_signatures', 'electronic_signatures', 'thermal_signatures')
-        allowed = ['location', 'assessment_date'] + list(json_cols) + [
-            'overall_score', 'recommendations', 'assessed_by', 'status']
+        json_cols = _SIGNATURE_ASSESSMENT_JSON_COLS
+        allowed = _SIGNATURE_ASSESSMENT_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:
@@ -757,10 +778,7 @@ def api_night_ops_update(nid):
             return jsonify({'error': 'Not found'}), 404
         json_arr_cols = ('movement_routes', 'rally_points')
         json_obj_cols = ('signals',)
-        allowed = ['name', 'operation_date', 'moonrise', 'moonset', 'moon_phase',
-                    'moon_illumination', 'ambient_light_level', 'dark_adaptation_minutes',
-                    'nvg_required', 'movement_routes', 'rally_points', 'signals',
-                    'notes', 'status']
+        allowed = _NIGHT_OPS_PLANS_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:
@@ -907,9 +925,7 @@ def api_cbrn_equipment_update(eid):
         existing = db.execute('SELECT id FROM cbrn_equipment WHERE id = ?', (eid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['equipment_name', 'equipment_type', 'model', 'serial_number',
-                    'calibration_date', 'calibration_due', 'condition', 'assigned_to',
-                    'location', 'quantity', 'notes']
+        allowed = _CBRN_EQUIPMENT_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:
@@ -1123,9 +1139,7 @@ def api_emp_inventory_update(eid):
         existing = db.execute('SELECT id FROM emp_inventory WHERE id = ?', (eid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['item_name', 'category', 'description', 'protection_method',
-                    'is_protected', 'grid_dependent', 'manual_alternative', 'priority',
-                    'location', 'quantity', 'tested_date', 'notes']
+        allowed = _EMP_INVENTORY_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:

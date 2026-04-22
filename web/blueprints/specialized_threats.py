@@ -19,6 +19,9 @@ from db import db_session, log_activity
 specialized_threats_bp = Blueprint('specialized_threats2', __name__)
 _log = logging.getLogger('nomad.specialized_threats')
 
+_EPI_LINE_LIST_ALLOWED_FIELDS = frozenset({'name', 'age', 'sex', 'onset_date', 'symptoms', 'diagnosis', 'outcome',
+                                           'isolation_start', 'isolation_end', 'exposure_source', 'household', 'notes'})
+
 
 # ═══════════════════════════════════════════════════════════════════
 # 5.1 — Gaussian Plume Estimator
@@ -210,8 +213,7 @@ def api_epi_case_create():
 @specialized_threats_bp.route('/api/epi/cases/<int:case_id>', methods=['PUT'])
 def api_epi_case_update(case_id):
     data = request.get_json() or {}
-    allowed = ['name', 'age', 'sex', 'onset_date', 'symptoms', 'diagnosis', 'outcome',
-               'isolation_start', 'isolation_end', 'exposure_source', 'household', 'notes']
+    allowed = _EPI_LINE_LIST_ALLOWED_FIELDS
     updates = []
     values = []
     for k in allowed:

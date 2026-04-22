@@ -42,6 +42,8 @@ _CONTACT_SCHEMA = {
 }
 _CONTACT_CREATE_SCHEMA = dict(_CONTACT_SCHEMA, name={'type': str, 'required': True, 'max_length': 200})
 
+_CONTACTS_ALLOWED_FIELDS = frozenset({'name', 'callsign', 'role', 'skills', 'phone', 'freq', 'email', 'address', 'rally_point', 'blood_type', 'medical_notes', 'notes'})
+
 
 # ─── Contacts CRUD ────────────────────────────────────────────────────
 
@@ -98,7 +100,7 @@ def api_contacts_update(cid):
     with db_session() as db:
         if not db.execute('SELECT 1 FROM contacts WHERE id = ?', (cid,)).fetchone():
             return jsonify({'error': 'not found'}), 404
-        allowed = ['name', 'callsign', 'role', 'skills', 'phone', 'freq', 'email', 'address', 'rally_point', 'blood_type', 'medical_notes', 'notes']
+        allowed = _CONTACTS_ALLOWED_FIELDS
         filtered = safe_columns(data, allowed)
         if not filtered:
             return jsonify({'error': 'No fields'}), 400

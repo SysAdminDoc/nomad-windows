@@ -102,6 +102,10 @@ _INVENTORY_SCHEMA = {
 }
 _INVENTORY_CREATE_SCHEMA = dict(_INVENTORY_SCHEMA, name={'type': str, 'required': True, 'max_length': 500})
 
+_INVENTORY_ALLOWED_FIELDS = frozenset({'name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'barcode', 'cost', 'notes', 'calories_per_unit', 'protein_g', 'fat_g', 'carbs_g', 'weight_oz', 'container_id'})
+_INVENTORY_CONTAINERS_ALLOWED_FIELDS = frozenset({'name', 'container_type', 'location', 'parent_container_id',
+                                                  'weight_capacity_lb', 'volume_capacity_cf', 'notes'})
+
 
 @inventory_bp.route('/api/inventory', methods=['POST'])
 @require_auth('admin')
@@ -126,7 +130,7 @@ def api_inventory_create():
 @validate_json(_INVENTORY_SCHEMA)
 def api_inventory_update(item_id):
     data = request.get_json() or {}
-    allowed = ['name', 'category', 'quantity', 'unit', 'min_quantity', 'daily_usage', 'location', 'expiration', 'barcode', 'cost', 'notes', 'calories_per_unit', 'protein_g', 'fat_g', 'carbs_g', 'weight_oz', 'container_id']
+    allowed = _INVENTORY_ALLOWED_FIELDS
     filtered = safe_columns(data, allowed)
     if not filtered:
         return jsonify({'error': 'No fields to update'}), 400
@@ -1523,8 +1527,7 @@ def api_containers_get(cid):
 def api_containers_update(cid):
     """Update a container (allowed-list pattern)."""
     data = request.get_json() or {}
-    allowed = ['name', 'container_type', 'location', 'parent_container_id',
-               'weight_capacity_lb', 'volume_capacity_cf', 'notes']
+    allowed = _INVENTORY_CONTAINERS_ALLOWED_FIELDS
     filtered = safe_columns(data, allowed)
     if not filtered:
         return jsonify({'error': 'No fields to update'}), 400

@@ -14,6 +14,47 @@ _log = logging.getLogger(__name__)
 specialized_modules_bp = Blueprint('specialized_modules', __name__,
                                    url_prefix='/api/specialized')
 
+_PETS_ALLOWED_FIELDS = frozenset({'name', 'species', 'breed', 'age_years', 'weight_lbs',
+                                   'microchip_id', 'medical_conditions', 'medications',
+                                   'vaccination_dates', 'food_type', 'daily_food_amount',
+                                   'food_supply_days', 'veterinarian', 'evacuation_carrier',
+                                   'temperament', 'special_needs', 'photo_ref', 'status', 'notes'})
+_END_OF_LIFE_PLANS_ALLOWED_FIELDS = frozenset({'person', 'plan_type', 'wishes', 'medical_directives', 'organ_donor',
+                                               'body_disposition', 'memorial_wishes', 'important_documents',
+                                               'digital_accounts', 'beneficiaries', 'executor', 'attorney',
+                                               'insurance_info', 'last_updated_by', 'status', 'notes'})
+_PROCUREMENT_LISTS_ALLOWED_FIELDS = frozenset({'name', 'list_type', 'priority', 'items', 'budget', 'spent',
+                                               'supplier', 'due_date', 'assigned_to', 'status', 'notes'})
+_INTEL_COLLECTION_ALLOWED_FIELDS = frozenset({'title', 'intel_type', 'priority_info_req', 'source',
+                                              'source_reliability', 'info_credibility', 'classification',
+                                              'date_collected', 'location', 'summary', 'raw_data', 'analysis',
+                                              'actionable', 'dissemination', 'expiry_date', 'status'})
+_FABRICATION_PROJECTS_ALLOWED_FIELDS = frozenset({'name', 'project_type', 'description', 'file_path', 'material',
+                                                  'material_amount', 'printer_model', 'print_settings',
+                                                  'estimated_time_hours', 'actual_time_hours', 'copies_made',
+                                                  'priority', 'status', 'notes'})
+_SUPPLY_CACHES_ALLOWED_FIELDS = frozenset({'name', 'cache_type', 'location_description', 'gps_coords',
+                                           'access_instructions', 'concealment_method', 'container_type',
+                                           'contents', 'last_checked', 'condition', 'known_by',
+                                           'expiration_date', 'security_level', 'notes'})
+_YOUTH_PROGRAMS_ALLOWED_FIELDS = frozenset({'name', 'program_type', 'age_range', 'description', 'curriculum',
+                                            'materials_needed', 'instructor', 'schedule', 'participants',
+                                            'skills_taught', 'progress_notes', 'status'})
+_BADGES_ALLOWED_FIELDS = frozenset({'name', 'category', 'description', 'icon', 'criteria', 'points', 'rarity'})
+_SEASONAL_EVENTS_ALLOWED_FIELDS = frozenset({'name', 'event_type', 'date', 'recurrence', 'description',
+                                             'tasks', 'reminders', 'category', 'completed', 'notes'})
+_LEGAL_DOCUMENTS_ALLOWED_FIELDS = frozenset({'title', 'doc_type', 'person', 'issuing_authority',
+                                             'document_number', 'issue_date', 'expiry_date', 'file_path',
+                                             'storage_location', 'renewal_reminder', 'notes'})
+_DRONES_ALLOWED_FIELDS = frozenset({'name', 'drone_type', 'manufacturer', 'model', 'serial_number',
+                                    'registration', 'weight_grams', 'max_flight_time_min',
+                                    'max_range_m', 'camera_specs', 'battery_count', 'battery_type',
+                                    'firmware_version', 'total_flights', 'total_flight_hours',
+                                    'last_flight', 'condition', 'notes'})
+_CONTENT_PACKS_ALLOWED_FIELDS = frozenset({'name', 'pack_type', 'version', 'author', 'description',
+                                           'contents_manifest', 'size_bytes', 'install_date',
+                                           'source_url', 'checksum', 'status', 'notes'})
+
 
 # ── helpers ────────────────────────────────────────────────────────────
 
@@ -129,10 +170,7 @@ def api_caches_get(cid):
 @specialized_modules_bp.route('/caches/<int:cid>', methods=['PUT'])
 def api_caches_update(cid):
     data = request.get_json() or {}
-    allowed = ['name', 'cache_type', 'location_description', 'gps_coords',
-               'access_instructions', 'concealment_method', 'container_type',
-               'contents', 'last_checked', 'condition', 'known_by',
-               'expiration_date', 'security_level', 'notes']
+    allowed = _SUPPLY_CACHES_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -237,11 +275,7 @@ def api_pets_get(pid):
 @specialized_modules_bp.route('/pets/<int:pid>', methods=['PUT'])
 def api_pets_update(pid):
     data = request.get_json() or {}
-    allowed = ['name', 'species', 'breed', 'age_years', 'weight_lbs',
-               'microchip_id', 'medical_conditions', 'medications',
-               'vaccination_dates', 'food_type', 'daily_food_amount',
-               'food_supply_days', 'veterinarian', 'evacuation_carrier',
-               'temperament', 'special_needs', 'photo_ref', 'status', 'notes']
+    allowed = _PETS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -360,9 +394,7 @@ def api_youth_get(yid):
 @specialized_modules_bp.route('/youth/<int:yid>', methods=['PUT'])
 def api_youth_update(yid):
     data = request.get_json() or {}
-    allowed = ['name', 'program_type', 'age_range', 'description', 'curriculum',
-               'materials_needed', 'instructor', 'schedule', 'participants',
-               'skills_taught', 'progress_notes', 'status']
+    allowed = _YOUTH_PROGRAMS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -464,10 +496,7 @@ def api_eol_get(eid):
 @specialized_modules_bp.route('/eol/<int:eid>', methods=['PUT'])
 def api_eol_update(eid):
     data = request.get_json() or {}
-    allowed = ['person', 'plan_type', 'wishes', 'medical_directives', 'organ_donor',
-               'body_disposition', 'memorial_wishes', 'important_documents',
-               'digital_accounts', 'beneficiaries', 'executor', 'attorney',
-               'insurance_info', 'last_updated_by', 'status', 'notes']
+    allowed = _END_OF_LIFE_PLANS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -572,8 +601,7 @@ def api_procurement_get(pid):
 @specialized_modules_bp.route('/procurement/<int:pid>', methods=['PUT'])
 def api_procurement_update(pid):
     data = request.get_json() or {}
-    allowed = ['name', 'list_type', 'priority', 'items', 'budget', 'spent',
-               'supplier', 'due_date', 'assigned_to', 'status', 'notes']
+    allowed = _PROCUREMENT_LISTS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -696,10 +724,7 @@ def api_intel_get(iid):
 @specialized_modules_bp.route('/intel/<int:iid>', methods=['PUT'])
 def api_intel_update(iid):
     data = request.get_json() or {}
-    allowed = ['title', 'intel_type', 'priority_info_req', 'source',
-               'source_reliability', 'info_credibility', 'classification',
-               'date_collected', 'location', 'summary', 'raw_data', 'analysis',
-               'actionable', 'dissemination', 'expiry_date', 'status']
+    allowed = _INTEL_COLLECTION_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -829,10 +854,7 @@ def api_fabrication_get(fid):
 @specialized_modules_bp.route('/fabrication/<int:fid>', methods=['PUT'])
 def api_fabrication_update(fid):
     data = request.get_json() or {}
-    allowed = ['name', 'project_type', 'description', 'file_path', 'material',
-               'material_amount', 'printer_model', 'print_settings',
-               'estimated_time_hours', 'actual_time_hours', 'copies_made',
-               'priority', 'status', 'notes']
+    allowed = _FABRICATION_PROJECTS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -922,8 +944,7 @@ def api_badges_get(bid):
 @specialized_modules_bp.route('/badges/<int:bid>', methods=['PUT'])
 def api_badges_update(bid):
     data = request.get_json() or {}
-    allowed = ['name', 'category', 'description', 'icon', 'criteria',
-               'points', 'rarity']
+    allowed = _BADGES_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -1161,8 +1182,7 @@ def api_calendar_get(eid):
 @specialized_modules_bp.route('/calendar/<int:eid>', methods=['PUT'])
 def api_calendar_update(eid):
     data = request.get_json() or {}
-    allowed = ['name', 'event_type', 'date', 'recurrence', 'description',
-               'tasks', 'reminders', 'category', 'completed', 'notes']
+    allowed = _SEASONAL_EVENTS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -1277,9 +1297,7 @@ def api_legal_get(lid):
 @specialized_modules_bp.route('/legal/<int:lid>', methods=['PUT'])
 def api_legal_update(lid):
     data = request.get_json() or {}
-    allowed = ['title', 'doc_type', 'person', 'issuing_authority',
-               'document_number', 'issue_date', 'expiry_date', 'file_path',
-               'storage_location', 'renewal_reminder', 'notes']
+    allowed = _LEGAL_DOCUMENTS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -1393,11 +1411,7 @@ def api_drones_get(did):
 @specialized_modules_bp.route('/drones/<int:did>', methods=['PUT'])
 def api_drones_update(did):
     data = request.get_json() or {}
-    allowed = ['name', 'drone_type', 'manufacturer', 'model', 'serial_number',
-               'registration', 'weight_grams', 'max_flight_time_min',
-               'max_range_m', 'camera_specs', 'battery_count', 'battery_type',
-               'firmware_version', 'total_flights', 'total_flight_hours',
-               'last_flight', 'condition', 'notes']
+    allowed = _DRONES_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -1747,9 +1761,7 @@ def api_content_packs_get(pid):
 @specialized_modules_bp.route('/content-packs/<int:pid>', methods=['PUT'])
 def api_content_packs_update(pid):
     data = request.get_json() or {}
-    allowed = ['name', 'pack_type', 'version', 'author', 'description',
-               'contents_manifest', 'size_bytes', 'install_date',
-               'source_url', 'checksum', 'status', 'notes']
+    allowed = _CONTENT_PACKS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:

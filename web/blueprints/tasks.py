@@ -18,6 +18,8 @@ log = logging.getLogger('nomad.web')
 
 tasks_bp = Blueprint('tasks', __name__)
 
+_SCHEDULED_TASKS_ALLOWED_FIELDS = frozenset({'name', 'category', 'recurrence', 'next_due', 'assigned_to', 'notes'})
+
 
 def _normalize_watch_personnel(value):
     personnel = []
@@ -143,7 +145,7 @@ def api_tasks_create():
 def api_tasks_update(task_id):
     data = request.get_json() or {}
     with db_session() as db:
-        allowed = ['name', 'category', 'recurrence', 'next_due', 'assigned_to', 'notes']
+        allowed = _SCHEDULED_TASKS_ALLOWED_FIELDS
         filtered = safe_columns(data, allowed)
         if not filtered:
             return jsonify({'error': 'No fields to update'}), 400

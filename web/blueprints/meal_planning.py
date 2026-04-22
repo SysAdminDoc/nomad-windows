@@ -10,6 +10,9 @@ from web.blueprints import get_pagination
 meal_planning_bp = Blueprint('meal_planning', __name__)
 _log = logging.getLogger('nomad.meal_planning')
 
+_RECIPES_ALLOWED_FIELDS = frozenset({'name', 'category', 'servings', 'prep_time_min', 'cook_time_min',
+                                     'method', 'instructions', 'calories_per_serving', 'notes'})
+
 
 # ═══════ RECIPES CRUD ═══════════════════════════════════════════
 
@@ -86,8 +89,7 @@ def api_recipe_create():
 @meal_planning_bp.route('/api/recipes/<int:rid>', methods=['PUT'])
 def api_recipe_update(rid):
     data = request.get_json() or {}
-    allowed = ['name', 'category', 'servings', 'prep_time_min', 'cook_time_min',
-               'method', 'instructions', 'calories_per_serving', 'notes']
+    allowed = _RECIPES_ALLOWED_FIELDS
     updates = []
     values = []
     for key in allowed:

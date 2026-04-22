@@ -2,6 +2,16 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.57.0] — V8 Blueprint Coverage & App Factory Refactor
+
+### Architecture (V8-09, V8-11)
+- **Middleware extracted** (`web/middleware.py`) — All `before_request`, `after_request`, `teardown_appcontext`, and `errorhandler` hooks extracted from `create_app()` into `setup_middleware(app)`. Covers: rate limiting, CSRF origin/token checks, host header validation, LAN auth guard, security headers (CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy), DB connection cleanup, and global error handlers. `MUTATING_METHODS`, `_CSP_POLICY`, and `_EMBED_CSP_POLICY` are now module-level constants.
+- **Blueprint registry** (`web/blueprint_registry.py`) — All 72 blueprint imports and `register_blueprint()` calls extracted into `register_blueprints(app)`. Also manages `start_alert_engine()`, `_ensure_scheduler()`, and `load_plugins(app)`. Blueprint imports are deferred inside the function body (lazy-on-call).
+- `create_app()` reduced from 1,822 lines to 1,362 lines (net −460 lines).
+
+### Testing (V8-06)
+- **Blueprint test coverage** — Added 15 new test files covering 131 routes across previously untested blueprints: contacts, tasks, checklists, notes, medical, weather, power, services, security, agriculture, evac_drills, readiness_goals, group_ops, health_family, daily_living. All 131 tests pass.
+
 ## [v7.56.0] — V8 Architecture & DX Hardening
 
 ### Architecture (V8-10, V8-11-prep)

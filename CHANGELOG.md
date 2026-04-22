@@ -2,6 +2,19 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.58.0] — V8-12: Frontend Unit Tests
+
+### Developer Experience (V8-12)
+- **Frontend unit tests** (vitest) — Added `tests/js/utils.test.js` with 48 tests covering 5 critical utility functions:
+  - `escapeHtml` (8 tests) — null/undefined handling, HTML entity escaping, XSS payload
+  - `formatBytes` (5 tests) — B/KB/MB/GB formatting
+  - `timeAgo` (5 tests) — "Just now", minutes, hours, days boundaries
+  - `parseInventoryCommand` (18 tests) — action detection, quantity/unit/location parsing, 8-category classification
+  - `parseSearchBang` (12 tests) — all bang prefixes, case-insensitivity, query trimming
+- `vitest.config.mjs` configured with jsdom environment
+- `package.json` adds vitest v2, @vitest/coverage-v8, jsdom to devDependencies; adds `test` and `test:watch` scripts
+- `tests/js/utils.js` — pure-JS extraction of template functions for unit testing (logic-identical to template source)
+
 ## [v7.57.0] — V8 Blueprint Coverage & App Factory Refactor
 
 ### Architecture (V8-09, V8-11)

@@ -5,12 +5,17 @@
   "scripts": {
     "build": "node esbuild.config.mjs",
     "dev": "echo 'Dev mode: using raw ES modules'",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "visual:install": "playwright install chromium",
     "visual:test": "playwright test --config=playwright.config.mjs",
     "visual:test:list": "playwright test --config=playwright.config.mjs --list"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",
-    "esbuild": "^0.20.0"
+    "esbuild": "^0.20.0",
+    "vitest": "^2.0.0",
+    "@vitest/coverage-v8": "^2.0.0",
+    "jsdom": "^24.0.0"
   }
 }

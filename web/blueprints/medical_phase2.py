@@ -20,6 +20,23 @@ MOOD_LABELS = {1: 'Very Low', 2: 'Low', 3: 'Below Average', 4: 'Slightly Low',
                9: 'Excellent', 10: 'Peak'}
 SPECIES_LIST = ['dog', 'cat', 'horse', 'cow', 'goat', 'chicken', 'pig', 'sheep', 'rabbit', 'other']
 
+_PREGNANCIES_ALLOWED_FIELDS = frozenset({
+    'patient_name', 'due_date', 'conception_date', 'blood_type', 'rh_factor',
+    'gravida', 'para', 'risk_factors', 'prenatal_visits', 'birth_plan',
+    'supply_checklist', 'status', 'outcome', 'notes',
+})
+_CHRONIC_CONDITIONS_ALLOWED_FIELDS = frozenset({
+    'patient_name', 'condition_name', 'severity', 'diagnosed_date',
+    'medications', 'medication_stockpile_days', 'weaning_protocol',
+    'alternative_treatments', 'monitoring_schedule', 'emergency_protocol',
+    'last_checkup', 'status', 'notes',
+})
+_VET_RECORDS_ALLOWED_FIELDS = frozenset({
+    'animal_name', 'species', 'breed', 'weight_lb', 'age_years',
+    'condition', 'treatment', 'treatment_date', 'medications',
+    'vaccinations', 'provider', 'next_due', 'notes',
+})
+
 # Audit H2 — schemas for high-sensitivity patient data routes.
 #
 # Base schemas are partial-update-friendly (no `required` fields). The
@@ -191,11 +208,7 @@ def api_pregnancies_create():
 @validate_json(_PREGNANCY_SCHEMA)
 def api_pregnancies_update(pid):
     data = request.get_json() or {}
-    allowed = [
-        'patient_name', 'due_date', 'conception_date', 'blood_type', 'rh_factor',
-        'gravida', 'para', 'risk_factors', 'prenatal_visits', 'birth_plan',
-        'supply_checklist', 'status', 'outcome', 'notes',
-    ]
+    allowed = _PREGNANCIES_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -405,12 +418,7 @@ def api_chronic_create():
 @validate_json(_CHRONIC_SCHEMA)
 def api_chronic_update(cid):
     data = request.get_json() or {}
-    allowed = [
-        'patient_name', 'condition_name', 'severity', 'diagnosed_date',
-        'medications', 'medication_stockpile_days', 'weaning_protocol',
-        'alternative_treatments', 'monitoring_schedule', 'emergency_protocol',
-        'last_checkup', 'status', 'notes',
-    ]
+    allowed = _CHRONIC_CONDITIONS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -655,11 +663,7 @@ def api_vet_create():
 @validate_json(_VET_SCHEMA)
 def api_vet_update(vid):
     data = request.get_json() or {}
-    allowed = [
-        'animal_name', 'species', 'breed', 'weight_lb', 'age_years',
-        'condition', 'treatment', 'treatment_date', 'medications',
-        'vaccinations', 'provider', 'next_due', 'notes',
-    ]
+    allowed = _VET_RECORDS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:

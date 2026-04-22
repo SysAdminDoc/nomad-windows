@@ -16,6 +16,8 @@ log = logging.getLogger(__name__)
 
 security_bp = Blueprint('security', __name__)
 
+_PERIMETER_ZONES_ALLOWED_FIELDS = frozenset({'name', 'zone_type', 'boundary_geojson', 'threat_level', 'color', 'notes', 'camera_ids', 'waypoint_ids', 'alert_on_entry', 'alert_on_exit'})
+
 
 # ─── Security Cameras CRUD ─────────────────────────────────────────
 
@@ -210,7 +212,7 @@ def api_security_zones_update(zid):
     with db_session() as db:
         if not db.execute('SELECT 1 FROM perimeter_zones WHERE id = ?', (zid,)).fetchone():
             return jsonify({'error': 'not found'}), 404
-        allowed = ['name', 'zone_type', 'boundary_geojson', 'threat_level', 'color', 'notes', 'camera_ids', 'waypoint_ids', 'alert_on_entry', 'alert_on_exit']
+        allowed = _PERIMETER_ZONES_ALLOWED_FIELDS
         update_data = {}
         for col in ['name', 'zone_type', 'boundary_geojson', 'threat_level', 'color', 'notes']:
             if col in data:

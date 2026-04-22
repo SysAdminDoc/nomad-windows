@@ -5,6 +5,14 @@ from db import get_db, db_session, log_activity
 
 water_mgmt_bp = Blueprint('water_mgmt', __name__)
 
+_WATER_STORAGE_ALLOWED_FIELDS = frozenset({'name', 'container_type', 'capacity_gallons', 'current_gallons',
+                                           'fill_date', 'treatment_method', 'location', 'expiration', 'notes'})
+_WATER_FILTERS_ALLOWED_FIELDS = frozenset({'name', 'filter_type', 'brand', 'max_gallons', 'gallons_processed',
+                                           'install_date', 'replacement_date', 'status', 'notes'})
+_WATER_SOURCES_ALLOWED_FIELDS = frozenset({'name', 'source_type', 'lat', 'lng', 'waypoint_id', 'flow_rate_gph',
+                                           'potable', 'treatment_required', 'seasonal', 'notes'})
+_WATER_BUDGET_ALLOWED_FIELDS = frozenset({'category', 'daily_gallons', 'per_person', 'notes', 'enabled'})
+
 
 # ─── Water Storage CRUD ─────────────────────────────────────────────
 
@@ -47,8 +55,7 @@ def api_water_storage_create():
 @water_mgmt_bp.route('/api/water/storage/<int:sid>', methods=['PUT'])
 def api_water_storage_update(sid):
     data = request.get_json() or {}
-    allowed = ['name', 'container_type', 'capacity_gallons', 'current_gallons',
-               'fill_date', 'treatment_method', 'location', 'expiration', 'notes']
+    allowed = _WATER_STORAGE_ALLOWED_FIELDS
     updates = []
     values = []
     for key in allowed:
@@ -112,8 +119,7 @@ def api_water_filters_create():
 @water_mgmt_bp.route('/api/water/filters/<int:fid>', methods=['PUT'])
 def api_water_filters_update(fid):
     data = request.get_json() or {}
-    allowed = ['name', 'filter_type', 'brand', 'max_gallons', 'gallons_processed',
-               'install_date', 'replacement_date', 'status', 'notes']
+    allowed = _WATER_FILTERS_ALLOWED_FIELDS
     updates = []
     values = []
     for key in allowed:
@@ -180,8 +186,7 @@ def api_water_sources_create():
 @water_mgmt_bp.route('/api/water/sources/<int:sid>', methods=['PUT'])
 def api_water_sources_update(sid):
     data = request.get_json() or {}
-    allowed = ['name', 'source_type', 'lat', 'lng', 'waypoint_id', 'flow_rate_gph',
-               'potable', 'treatment_required', 'seasonal', 'notes']
+    allowed = _WATER_SOURCES_ALLOWED_FIELDS
     updates = []
     values = []
     for key in allowed:
@@ -484,7 +489,7 @@ def api_water_budget_update():
     if not cat_id:
         return jsonify({'error': 'id required'}), 400
 
-    allowed = ['category', 'daily_gallons', 'per_person', 'notes', 'enabled']
+    allowed = _WATER_BUDGET_ALLOWED_FIELDS
     updates = []
     values = []
     for key in allowed:

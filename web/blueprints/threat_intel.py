@@ -13,6 +13,11 @@ THREAT_CATEGORIES = [
     'cyber', 'pandemic', 'economic', 'military', 'environmental', 'other'
 ]
 
+_THREAT_FEEDS_ALLOWED_FIELDS = frozenset({'name', 'feed_type', 'url', 'category', 'refresh_interval_min', 'enabled', 'notes'})
+_THREAT_ENTRIES_ALLOWED_FIELDS = frozenset({'title', 'description', 'category', 'severity', 'severity_score',
+                                            'source_url', 'location', 'lat', 'lng', 'tags',
+                                            'impact_assessment', 'recommended_actions', 'resolved'})
+
 
 # ─── Threat Feeds CRUD ────────────────────────────────────────────
 
@@ -52,7 +57,7 @@ def api_threat_feeds_update(fid):
         existing = db.execute('SELECT id FROM threat_feeds WHERE id = ?', (fid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['name', 'feed_type', 'url', 'category', 'refresh_interval_min', 'enabled', 'notes']
+        allowed = _THREAT_FEEDS_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:
@@ -155,9 +160,7 @@ def api_threat_entries_update(eid):
         existing = db.execute('SELECT id FROM threat_entries WHERE id = ?', (eid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['title', 'description', 'category', 'severity', 'severity_score',
-                    'source_url', 'location', 'lat', 'lng', 'tags',
-                    'impact_assessment', 'recommended_actions', 'resolved']
+        allowed = _THREAT_ENTRIES_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:

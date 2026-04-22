@@ -138,6 +138,27 @@ DEFAULT_CHECKLISTS = {
     ],
 }
 
+_DISASTER_PLANS_ALLOWED_FIELDS = frozenset({'name', 'disaster_type', 'environment_type', 'description',
+                                            'trigger_conditions', 'immediate_actions', 'sustained_actions',
+                                            'resources_required', 'shelter_plan', 'evacuation_triggers',
+                                            'communication_plan', 'estimated_duration', 'personnel_assignments',
+                                            'last_reviewed', 'status'})
+_DISASTER_CHECKLISTS_ALLOWED_FIELDS = frozenset({'plan_id', 'title', 'category', 'items', 'assigned_to',
+                                                 'due_date', 'status'})
+_ENERGY_SYSTEMS_ALLOWED_FIELDS = frozenset({'name', 'energy_type', 'location', 'capacity', 'fuel_source',
+                                            'output_rating', 'efficiency_pct', 'installation_date', 'condition',
+                                            'maintenance_schedule', 'inventory_link', 'notes'})
+_CONSTRUCTION_PROJECTS_ALLOWED_FIELDS = frozenset({'name', 'project_type', 'location', 'description', 'materials',
+                                                   'labor_hours_estimated', 'labor_hours_actual', 'start_date',
+                                                   'target_date', 'completion_date', 'assigned_to', 'blueprint_ref',
+                                                   'status', 'priority', 'notes'})
+_BUILDING_MATERIALS_ALLOWED_FIELDS = frozenset({'name', 'category', 'quantity', 'unit', 'location',
+                                                'cost_per_unit', 'supplier', 'min_stock', 'notes'})
+_FORTIFICATIONS_ALLOWED_FIELDS = frozenset({'name', 'fortification_type', 'location', 'protection_level',
+                                            'dimensions', 'materials_used', 'capacity_persons',
+                                            'construction_time_hours', 'condition', 'last_inspection',
+                                            'vulnerabilities', 'improvements_needed', 'status', 'notes'})
+
 # ═════════════════════════════════════════════════════════════════════
 #  DISASTER PLANS
 # ═════════════════════════════════════════════════════════════════════
@@ -212,11 +233,7 @@ def api_plans_create():
 @disaster_modules_bp.route('/plans/<int:pid>', methods=['PUT'])
 def api_plans_update(pid):
     data = request.get_json() or {}
-    allowed = ['name', 'disaster_type', 'environment_type', 'description',
-               'trigger_conditions', 'immediate_actions', 'sustained_actions',
-               'resources_required', 'shelter_plan', 'evacuation_triggers',
-               'communication_plan', 'estimated_duration', 'personnel_assignments',
-               'last_reviewed', 'status']
+    allowed = _DISASTER_PLANS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -308,8 +325,7 @@ def api_checklists_create():
 @disaster_modules_bp.route('/checklists/<int:cid>', methods=['PUT'])
 def api_checklists_update(cid):
     data = request.get_json() or {}
-    allowed = ['plan_id', 'title', 'category', 'items', 'assigned_to',
-               'due_date', 'status']
+    allowed = _DISASTER_CHECKLISTS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -412,9 +428,7 @@ def api_energy_create():
 @disaster_modules_bp.route('/energy/<int:eid>', methods=['PUT'])
 def api_energy_update(eid):
     data = request.get_json() or {}
-    allowed = ['name', 'energy_type', 'location', 'capacity', 'fuel_source',
-               'output_rating', 'efficiency_pct', 'installation_date', 'condition',
-               'maintenance_schedule', 'inventory_link', 'notes']
+    allowed = _ENERGY_SYSTEMS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -504,10 +518,7 @@ def api_construction_create():
 @disaster_modules_bp.route('/construction/<int:cid>', methods=['PUT'])
 def api_construction_update(cid):
     data = request.get_json() or {}
-    allowed = ['name', 'project_type', 'location', 'description', 'materials',
-               'labor_hours_estimated', 'labor_hours_actual', 'start_date',
-               'target_date', 'completion_date', 'assigned_to', 'blueprint_ref',
-               'status', 'priority', 'notes']
+    allowed = _CONSTRUCTION_PROJECTS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -603,8 +614,7 @@ def api_materials_create():
 @disaster_modules_bp.route('/materials/<int:mid>', methods=['PUT'])
 def api_materials_update(mid):
     data = request.get_json() or {}
-    allowed = ['name', 'category', 'quantity', 'unit', 'location',
-               'cost_per_unit', 'supplier', 'min_stock', 'notes']
+    allowed = _BUILDING_MATERIALS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -686,10 +696,7 @@ def api_fortifications_create():
 @disaster_modules_bp.route('/fortifications/<int:fid>', methods=['PUT'])
 def api_fortifications_update(fid):
     data = request.get_json() or {}
-    allowed = ['name', 'fortification_type', 'location', 'protection_level',
-               'dimensions', 'materials_used', 'capacity_persons',
-               'construction_time_hours', 'condition', 'last_inspection',
-               'vulnerabilities', 'improvements_needed', 'status', 'notes']
+    allowed = _FORTIFICATIONS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:

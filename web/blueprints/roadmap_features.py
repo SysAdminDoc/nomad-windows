@@ -19,6 +19,11 @@ from web.blueprints import get_pagination, error_response
 roadmap_bp = Blueprint('roadmap_features', __name__)
 _log = logging.getLogger('nomad.roadmap')
 
+_RECIPES_ROADMAP_ALLOWED_FIELDS = frozenset({'name', 'servings', 'prep_time_min', 'cook_time_min', 'instructions', 'source_url', 'notes'})
+_BATTERY_TRACKER_ALLOWED_FIELDS = frozenset({'device_name', 'battery_type', 'quantity', 'installed_date', 'expected_life_days', 'last_checked', 'notes'})
+_WARRANTIES_ALLOWED_FIELDS = frozenset({'item_name', 'category', 'purchase_date', 'expiry_date', 'provider', 'policy_number', 'coverage', 'document_path', 'notes'})
+_AI_SKILLS_ALLOWED_FIELDS = frozenset({'name', 'description', 'system_prompt', 'kb_scope', 'icon'})
+
 
 # ═══════════════════════════════════════════════════════════════════════
 # P2-04: Recipe-Driven Consumption
@@ -77,7 +82,7 @@ def api_recipe_update(rid):
         row = db.execute('SELECT id FROM recipes WHERE id = ?', (rid,)).fetchone()
         if not row:
             return error_response('Recipe not found', 404)
-        allowed = ['name', 'servings', 'prep_time_min', 'cook_time_min', 'instructions', 'source_url', 'notes']
+        allowed = _RECIPES_ROADMAP_ALLOWED_FIELDS
         sets = []
         vals = []
         for col in allowed:
@@ -239,7 +244,7 @@ def api_battery_update(bid):
     with db_session() as db:
         if not db.execute('SELECT id FROM battery_tracker WHERE id = ?', (bid,)).fetchone():
             return error_response('Not found', 404)
-        allowed = ['device_name', 'battery_type', 'quantity', 'installed_date', 'expected_life_days', 'last_checked', 'notes']
+        allowed = _BATTERY_TRACKER_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in d:
@@ -296,7 +301,7 @@ def api_warranty_update(wid):
     with db_session() as db:
         if not db.execute('SELECT id FROM warranties WHERE id = ?', (wid,)).fetchone():
             return error_response('Not found', 404)
-        allowed = ['item_name', 'category', 'purchase_date', 'expiry_date', 'provider', 'policy_number', 'coverage', 'document_path', 'notes']
+        allowed = _WARRANTIES_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in d:
@@ -350,7 +355,7 @@ def api_ai_skill_update(sid):
     with db_session() as db:
         if not db.execute('SELECT id FROM ai_skills WHERE id = ?', (sid,)).fetchone():
             return error_response('Not found', 404)
-        allowed = ['name', 'description', 'system_prompt', 'kb_scope', 'icon']
+        allowed = _AI_SKILLS_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in d:

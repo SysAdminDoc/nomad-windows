@@ -34,6 +34,10 @@ NRI_HAZARD_TYPES = [
     'volcanic_activity', 'wildfire', 'winter_weather',
 ]
 
+_REGIONAL_PROFILE_ALLOWED_FIELDS = frozenset({'name', 'country', 'state', 'county', 'zip_code', 'lat', 'lng',
+                                              'usda_zone', 'frost_date_last', 'frost_date_first',
+                                              'nearest_nws_station', 'nearest_nws_station_name', 'notes'})
+
 
 # ─── Get active profile ──────────────────────────────────────────
 
@@ -180,9 +184,7 @@ def api_region_profile_update():
         if not row:
             return jsonify({'error': 'No active profile'}), 404
 
-        allowed = ['name', 'country', 'state', 'county', 'zip_code', 'lat', 'lng',
-                    'usda_zone', 'frost_date_last', 'frost_date_first',
-                    'nearest_nws_station', 'nearest_nws_station_name', 'notes']
+        allowed = _REGIONAL_PROFILE_ALLOWED_FIELDS
         updates = []
         values = []
         for key in allowed:

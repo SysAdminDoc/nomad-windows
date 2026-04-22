@@ -13,6 +13,37 @@ _log = logging.getLogger(__name__)
 
 agriculture_bp = Blueprint('agriculture', __name__, url_prefix='/api/agriculture')
 
+_FOOD_FOREST_GUILDS_ALLOWED_FIELDS = frozenset({'name', 'description', 'central_species', 'support_species',
+                                                'nitrogen_fixers', 'dynamic_accumulators', 'pest_confusers',
+                                                'ground_covers', 'notes'})
+_FOOD_FOREST_LAYERS_ALLOWED_FIELDS = frozenset({'design_name', 'layer_type', 'species', 'spacing_ft',
+                                                'mature_height_ft', 'yield_per_year', 'years_to_production',
+                                                'guild_id', 'notes'})
+_SOIL_PROJECTS_ALLOWED_FIELDS = frozenset({'name', 'project_type', 'location', 'dimensions', 'materials',
+                                           'start_date', 'completion_date', 'soil_test_before',
+                                           'soil_test_after', 'status', 'notes'})
+_PERENNIAL_PLANTS_ALLOWED_FIELDS = frozenset({'name', 'species', 'variety', 'plant_type', 'planted_date',
+                                              'location', 'rootstock', 'pollinator_group', 'years_to_bearing',
+                                              'estimated_yield', 'last_pruned', 'last_fertilized',
+                                              'health_status', 'notes'})
+_MULTI_YEAR_PLANS_ALLOWED_FIELDS = frozenset({'name', 'description', 'start_year', 'end_year', 'goals',
+                                              'milestones', 'carrying_capacity_persons', 'land_acres',
+                                              'climate_zone', 'adaptation_strategies', 'status', 'notes'})
+_BREEDING_RECORDS_ALLOWED_FIELDS = frozenset({'animal_name', 'species', 'breed', 'sex', 'sire', 'dam',
+                                              'birth_date', 'breeding_date', 'expected_due', 'offspring_count',
+                                              'offspring_names', 'genetic_notes', 'health_at_breeding',
+                                              'status', 'notes'})
+_HOMESTEAD_SYSTEMS_ALLOWED_FIELDS = frozenset({'system_name', 'system_type', 'location', 'capacity',
+                                               'current_reading', 'last_maintenance', 'next_maintenance',
+                                               'condition', 'metrics', 'notes'})
+_AQUAPONICS_SYSTEMS_ALLOWED_FIELDS = frozenset({'name', 'system_type', 'location', 'fish_species', 'fish_count',
+                                                'plant_species', 'water_volume_gal', 'ph_level', 'ammonia_ppm',
+                                                'nitrite_ppm', 'nitrate_ppm', 'temperature_f',
+                                                'last_water_change', 'feeding_schedule', 'status', 'notes'})
+_RECYCLING_SYSTEMS_ALLOWED_FIELDS = frozenset({'name', 'system_type', 'location', 'capacity', 'input_sources',
+                                               'output_products', 'processing_time_days', 'current_status',
+                                               'last_turned', 'temperature_f', 'metrics', 'notes'})
+
 
 def _jp(val):
     """Parse JSON array column."""
@@ -84,9 +115,7 @@ def api_guilds_create():
 @agriculture_bp.route('/food-forest/guilds/<int:gid>', methods=['PUT'])
 def api_guilds_update(gid):
     data = request.get_json() or {}
-    allowed = ['name', 'description', 'central_species', 'support_species',
-               'nitrogen_fixers', 'dynamic_accumulators', 'pest_confusers',
-               'ground_covers', 'notes']
+    allowed = _FOOD_FOREST_GUILDS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -162,9 +191,7 @@ def api_layers_create():
 @agriculture_bp.route('/food-forest/layers/<int:lid>', methods=['PUT'])
 def api_layers_update(lid):
     data = request.get_json() or {}
-    allowed = ['design_name', 'layer_type', 'species', 'spacing_ft',
-               'mature_height_ft', 'yield_per_year', 'years_to_production',
-               'guild_id', 'notes']
+    allowed = _FOOD_FOREST_LAYERS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -259,9 +286,7 @@ def api_soil_create():
 @agriculture_bp.route('/soil/<int:sid>', methods=['PUT'])
 def api_soil_update(sid):
     data = request.get_json() or {}
-    allowed = ['name', 'project_type', 'location', 'dimensions', 'materials',
-               'start_date', 'completion_date', 'soil_test_before',
-               'soil_test_after', 'status', 'notes']
+    allowed = _SOIL_PROJECTS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -344,10 +369,7 @@ def api_perennials_create():
 @agriculture_bp.route('/perennials/<int:pid>', methods=['PUT'])
 def api_perennials_update(pid):
     data = request.get_json() or {}
-    allowed = ['name', 'species', 'variety', 'plant_type', 'planted_date',
-               'location', 'rootstock', 'pollinator_group', 'years_to_bearing',
-               'estimated_yield', 'last_pruned', 'last_fertilized',
-               'health_status', 'notes']
+    allowed = _PERENNIAL_PLANTS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -423,9 +445,7 @@ def api_plans_create():
 @agriculture_bp.route('/plans/<int:pid>', methods=['PUT'])
 def api_plans_update(pid):
     data = request.get_json() or {}
-    allowed = ['name', 'description', 'start_year', 'end_year', 'goals',
-               'milestones', 'carrying_capacity_persons', 'land_acres',
-               'climate_zone', 'adaptation_strategies', 'status', 'notes']
+    allowed = _MULTI_YEAR_PLANS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -523,10 +543,7 @@ def api_breeding_create():
 @agriculture_bp.route('/breeding/<int:bid>', methods=['PUT'])
 def api_breeding_update(bid):
     data = request.get_json() or {}
-    allowed = ['animal_name', 'species', 'breed', 'sex', 'sire', 'dam',
-               'birth_date', 'breeding_date', 'expected_due', 'offspring_count',
-               'offspring_names', 'genetic_notes', 'health_at_breeding',
-               'status', 'notes']
+    allowed = _BREEDING_RECORDS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -677,9 +694,7 @@ def api_homestead_create():
 @agriculture_bp.route('/homestead/<int:hid>', methods=['PUT'])
 def api_homestead_update(hid):
     data = request.get_json() or {}
-    allowed = ['system_name', 'system_type', 'location', 'capacity',
-               'current_reading', 'last_maintenance', 'next_maintenance',
-               'condition', 'metrics', 'notes']
+    allowed = _HOMESTEAD_SYSTEMS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -781,10 +796,7 @@ def api_aquaponics_create():
 @agriculture_bp.route('/aquaponics/<int:aid>', methods=['PUT'])
 def api_aquaponics_update(aid):
     data = request.get_json() or {}
-    allowed = ['name', 'system_type', 'location', 'fish_species', 'fish_count',
-               'plant_species', 'water_volume_gal', 'ph_level', 'ammonia_ppm',
-               'nitrite_ppm', 'nitrate_ppm', 'temperature_f',
-               'last_water_change', 'feeding_schedule', 'status', 'notes']
+    allowed = _AQUAPONICS_SYSTEMS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -901,9 +913,7 @@ def api_recycling_create():
 @agriculture_bp.route('/recycling/<int:rid>', methods=['PUT'])
 def api_recycling_update(rid):
     data = request.get_json() or {}
-    allowed = ['name', 'system_type', 'location', 'capacity', 'input_sources',
-               'output_products', 'processing_time_days', 'current_status',
-               'last_turned', 'temperature_f', 'metrics', 'notes']
+    allowed = _RECYCLING_SYSTEMS_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:

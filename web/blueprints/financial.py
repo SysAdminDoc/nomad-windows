@@ -64,13 +64,13 @@ financial_bp = Blueprint('financial', __name__)
 
 # ─── Helpers ──────────────────────────────────────────────────────────
 
-CASH_ALLOWED = ['denomination', 'amount', 'location', 'currency', 'notes']
-METALS_ALLOWED = ['metal_type', 'form', 'description', 'weight_oz', 'purity',
-                  'purchase_price', 'location', 'notes']
-BARTER_ALLOWED = ['name', 'category', 'quantity', 'unit', 'estimated_value',
-                  'location', 'notes']
-DOCUMENTS_ALLOWED = ['doc_type', 'description', 'account_number', 'institution',
-                     'expiration', 'location', 'digital_copy', 'notes']
+CASH_ALLOWED = frozenset({'denomination', 'amount', 'location', 'currency', 'notes'})
+METALS_ALLOWED = frozenset({'metal_type', 'form', 'description', 'weight_oz', 'purity',
+                            'purchase_price', 'location', 'notes'})
+BARTER_ALLOWED = frozenset({'name', 'category', 'quantity', 'unit', 'estimated_value',
+                            'location', 'notes'})
+DOCUMENTS_ALLOWED = frozenset({'doc_type', 'description', 'account_number', 'institution',
+                               'expiration', 'location', 'digital_copy', 'notes'})
 
 BARTER_CATEGORIES = [
     'alcohol', 'tobacco', 'ammo', 'batteries', 'fuel',

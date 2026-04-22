@@ -15,6 +15,44 @@ _log = logging.getLogger(__name__)
 
 hardware_sensors_bp = Blueprint('hardware_sensors', __name__, url_prefix='/api/hardware')
 
+_IOT_SENSORS_ALLOWED_FIELDS = frozenset({
+    'name', 'sensor_type', 'protocol', 'device_id', 'location', 'topic',
+    'unit', 'current_value', 'last_reading_at', 'min_threshold',
+    'max_threshold', 'alert_enabled', 'calibration_offset', 'battery_pct',
+    'status', 'notes',
+})
+_NETWORK_DEVICES_ALLOWED_FIELDS = frozenset({
+    'name', 'device_type', 'ip_address', 'mac_address', 'hostname',
+    'manufacturer', 'model', 'firmware_version', 'location', 'vlan',
+    'role', 'port_count', 'uplink_to', 'last_seen', 'status', 'notes',
+})
+_MESH_NODES_ALLOWED_FIELDS = frozenset({
+    'node_id', 'long_name', 'short_name', 'hardware_model', 'firmware_version',
+    'role', 'latitude', 'longitude', 'altitude_m', 'battery_level', 'voltage',
+    'channel_utilization', 'air_util_tx', 'snr', 'rssi', 'hops_away',
+    'last_heard', 'status', 'notes',
+})
+_WEATHER_STATIONS_ALLOWED_FIELDS = frozenset({
+    'name', 'station_type', 'brand', 'model', 'protocol', 'ip_address',
+    'api_key', 'location', 'latitude', 'longitude', 'elevation_ft',
+    'polling_interval_sec', 'last_poll', 'current_data', 'status', 'notes',
+})
+_GPS_DEVICES_ALLOWED_FIELDS = frozenset({
+    'name', 'device_type', 'brand', 'model', 'serial_number',
+    'connection_type', 'port', 'baud_rate', 'last_fix_lat', 'last_fix_lon',
+    'last_fix_alt', 'last_fix_time', 'accuracy_m', 'satellites',
+    'battery_pct', 'status', 'notes',
+})
+_WEARABLE_DEVICES_ALLOWED_FIELDS = frozenset({
+    'name', 'device_type', 'brand', 'model', 'wearer', 'connection_type',
+    'last_sync', 'battery_pct', 'current_data', 'status', 'notes',
+})
+_INTEGRATION_CONFIGS_ALLOWED_FIELDS = frozenset({
+    'name', 'integration_type', 'endpoint_url', 'api_key', 'username',
+    'auth_token', 'config_json', 'polling_interval_sec', 'last_sync',
+    'sync_count', 'status', 'error_message', 'notes',
+})
+
 
 # ─── Reference Constants ─────────────────────────────────────────────
 
@@ -180,12 +218,7 @@ def sensors_get(sid):
 def sensors_update(sid):
     """Update an IoT sensor."""
     data = request.get_json() or {}
-    allowed = [
-        'name', 'sensor_type', 'protocol', 'device_id', 'location', 'topic',
-        'unit', 'current_value', 'last_reading_at', 'min_threshold',
-        'max_threshold', 'alert_enabled', 'calibration_offset', 'battery_pct',
-        'status', 'notes',
-    ]
+    allowed = _IOT_SENSORS_ALLOWED_FIELDS
     sets, params = [], []
     for col in allowed:
         if col in data:
@@ -374,11 +407,7 @@ def network_get(did):
 def network_update(did):
     """Update a network device."""
     data = request.get_json() or {}
-    allowed = [
-        'name', 'device_type', 'ip_address', 'mac_address', 'hostname',
-        'manufacturer', 'model', 'firmware_version', 'location', 'vlan',
-        'role', 'port_count', 'uplink_to', 'last_seen', 'status', 'notes',
-    ]
+    allowed = _NETWORK_DEVICES_ALLOWED_FIELDS
     sets, params = [], []
     for col in allowed:
         if col in data:
@@ -552,12 +581,7 @@ def mesh_get(mid):
 def mesh_update(mid):
     """Update a mesh node."""
     data = request.get_json() or {}
-    allowed = [
-        'node_id', 'long_name', 'short_name', 'hardware_model', 'firmware_version',
-        'role', 'latitude', 'longitude', 'altitude_m', 'battery_level', 'voltage',
-        'channel_utilization', 'air_util_tx', 'snr', 'rssi', 'hops_away',
-        'last_heard', 'status', 'notes',
-    ]
+    allowed = _MESH_NODES_ALLOWED_FIELDS
     sets, params = [], []
     for col in allowed:
         if col in data:
@@ -719,11 +743,7 @@ def weather_get(wid):
 def weather_update(wid):
     """Update a weather station."""
     data = request.get_json() or {}
-    allowed = [
-        'name', 'station_type', 'brand', 'model', 'protocol', 'ip_address',
-        'api_key', 'location', 'latitude', 'longitude', 'elevation_ft',
-        'polling_interval_sec', 'last_poll', 'current_data', 'status', 'notes',
-    ]
+    allowed = _WEATHER_STATIONS_ALLOWED_FIELDS
     sets, params = [], []
     for col in allowed:
         if col in data:
@@ -826,12 +846,7 @@ def gps_get(gid):
 def gps_update(gid):
     """Update a GPS device."""
     data = request.get_json() or {}
-    allowed = [
-        'name', 'device_type', 'brand', 'model', 'serial_number',
-        'connection_type', 'port', 'baud_rate', 'last_fix_lat', 'last_fix_lon',
-        'last_fix_alt', 'last_fix_time', 'accuracy_m', 'satellites',
-        'battery_pct', 'status', 'notes',
-    ]
+    allowed = _GPS_DEVICES_ALLOWED_FIELDS
     sets, params = [], []
     for col in allowed:
         if col in data:
@@ -986,10 +1001,7 @@ def wearables_get(wid):
 def wearables_update(wid):
     """Update a wearable device."""
     data = request.get_json() or {}
-    allowed = [
-        'name', 'device_type', 'brand', 'model', 'wearer', 'connection_type',
-        'last_sync', 'battery_pct', 'current_data', 'status', 'notes',
-    ]
+    allowed = _WEARABLE_DEVICES_ALLOWED_FIELDS
     sets, params = [], []
     for col in allowed:
         if col in data:
@@ -1106,11 +1118,7 @@ def integrations_get(iid):
 def integrations_update(iid):
     """Update an integration config."""
     data = request.get_json() or {}
-    allowed = [
-        'name', 'integration_type', 'endpoint_url', 'api_key', 'username',
-        'auth_token', 'config_json', 'polling_interval_sec', 'last_sync',
-        'sync_count', 'status', 'error_message', 'notes',
-    ]
+    allowed = _INTEGRATION_CONFIGS_ALLOWED_FIELDS
     sets, params = [], []
     for col in allowed:
         if col in data:

@@ -36,6 +36,9 @@ DIETARY_RESTRICTION_OPTIONS = [
     'diabetic', 'renal_diet', 'keto', 'paleo',
 ]
 
+_CONSUMPTION_PROFILES_ALLOWED_FIELDS = frozenset({'name', 'profile_type', 'age_years', 'weight_lb', 'activity_level',
+                                                   'daily_calories', 'daily_water_gal', 'notes'})
+
 
 # ─── CRUD ─────────────────────────────────────────────────────────
 
@@ -99,8 +102,7 @@ def api_profile_create():
 @consumption_bp.route('/api/consumption/profiles/<int:pid>', methods=['PUT'])
 def api_profile_update(pid):
     data = request.get_json() or {}
-    allowed = ['name', 'profile_type', 'age_years', 'weight_lb', 'activity_level',
-               'daily_calories', 'daily_water_gal', 'notes']
+    allowed = _CONSUMPTION_PROFILES_ALLOWED_FIELDS
     updates = []
     values = []
     for key in allowed:

@@ -57,15 +57,15 @@ _log = logging.getLogger(__name__)
 
 vehicles_bp = Blueprint('vehicles', __name__)
 
-VEHICLE_ALLOWED = [
+VEHICLE_ALLOWED = frozenset({
     'name', 'year', 'make', 'model', 'vin', 'fuel_type', 'tank_capacity_gal',
     'mpg', 'odometer', 'color', 'plate', 'insurance_exp', 'registration_exp',
     'location', 'role', 'notes',
-]
-MAINTENANCE_ALLOWED = [
+})
+MAINTENANCE_ALLOWED = frozenset({
     'service_type', 'description', 'mileage', 'cost', 'service_date',
     'next_due_date', 'next_due_mileage', 'status', 'notes',
-]
+})
 VALID_FUEL_TYPES = {'gasoline', 'diesel', 'electric', 'hybrid', 'propane'}
 VALID_ROLES = {'daily', 'bugout', 'backup', 'utility'}
 VALID_MAINT_STATUSES = {'completed', 'scheduled', 'overdue'}

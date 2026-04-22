@@ -6,6 +6,9 @@ from web.blueprints import get_pagination
 
 readiness_goals_bp = Blueprint('readiness_goals', __name__)
 
+_READINESS_GOALS_ALLOWED_FIELDS = frozenset({'name', 'category', 'target_days', 'target_quantity', 'target_unit',
+                                             'metric_source', 'metric_query', 'priority', 'notes'})
+
 
 # ─── Readiness Goals CRUD ──────────────────────────────────────────
 
@@ -46,8 +49,7 @@ def api_readiness_goals_update(gid):
         existing = db.execute('SELECT id FROM readiness_goals WHERE id = ?', (gid,)).fetchone()
         if not existing:
             return jsonify({'error': 'Not found'}), 404
-        allowed = ['name', 'category', 'target_days', 'target_quantity', 'target_unit',
-                    'metric_source', 'metric_query', 'priority', 'notes']
+        allowed = _READINESS_GOALS_ALLOWED_FIELDS
         sets, vals = [], []
         for col in allowed:
             if col in data:

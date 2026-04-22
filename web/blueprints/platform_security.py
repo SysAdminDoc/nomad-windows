@@ -39,6 +39,9 @@ _USER_SAFE_COLUMNS = [
     'settings', 'created_at', 'updated_at',
 ]
 
+_APP_USERS_ALLOWED_FIELDS = frozenset({'display_name', 'role', 'permissions', 'is_active', 'settings', 'locked_until'})
+_DEPLOYMENT_CONFIGS_ALLOWED_FIELDS = frozenset({'name', 'config_type', 'description', 'config_data', 'is_active', 'applied_at', 'notes'})
+
 # Pre-computed PBKDF2 hash used as a decoy target when a username does not
 # exist, so the verification step takes comparable wall-clock time either way
 # (defeats username-enumeration timing side-channels).
@@ -208,10 +211,7 @@ def users_get(uid):
 def users_update(uid):
     """Update a user. Rehash PIN/password if provided."""
     data = request.get_json() or {}
-    allowed = [
-        'display_name', 'role', 'permissions', 'is_active',
-        'settings', 'locked_until',
-    ]
+    allowed = _APP_USERS_ALLOWED_FIELDS
     sets, params = [], []
     for col in allowed:
         if col in data:
@@ -688,7 +688,7 @@ def configs_get(cid):
 def configs_update(cid):
     """Update a deployment config."""
     data = request.get_json() or {}
-    allowed = ['name', 'config_type', 'description', 'config_data', 'is_active', 'applied_at', 'notes']
+    allowed = _DEPLOYMENT_CONFIGS_ALLOWED_FIELDS
     sets, params = [], []
     for col in allowed:
         if col in data:

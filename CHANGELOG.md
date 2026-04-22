@@ -2,6 +2,20 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.56.0] — V8 Architecture & DX Hardening
+
+### Architecture (V8-10, V8-11-prep)
+- **Template render cache** (`web/app.py`) — `_render_workspace_page()` now caches rendered HTML with a 5-second TTL using a thread-safe `dict` + `Lock`. Cache key covers `tab_id`, language, bundle hash, media sub-tab, first-run state. Evicts entries after 200-key high-water mark.
+- **Progressive disclosure groundwork** (V8-02) — Shell nav tab buttons now render `id="tab-X"` only for the active tab (via Jinja conditional). `workspace-inspector` panel suppressed on the home/services page.
+
+### Developer Experience (V8-14, V8-16, V8-23)
+- **Module-level column allowlists** (V8-14) — 95 function-level `allowed = [...]` lists across 29 blueprint files refactored to module-level `frozenset` constants (`_TABLE_ALLOWED_FIELDS`). Eliminates per-request list allocation; frozensets allow O(1) membership tests.
+- **File-based DB integration tests** (V8-16) — `tests/test_db_integration.py` with 10 tests covering real-file SQLite: WAL mode, schema gate, connection pool stats, Flask startup, foreign-key enforcement, seed data.
+- **Seeded test data isolation** (V8-23) — `conftest.py` gains `seed_upc_entry`, `seed_rag_scope_row`, `assert_upc_seeded`, `assert_rag_scope_seeded` fixtures to make seed-data dependencies explicit.
+
+### CI/CD (V8-21)
+- **macOS code signing** — `build.yml` gains "Sign macOS binary" step: decodes `MACOS_CERT_BASE64` → temporary keychain → `codesign --force --options runtime` → `xcrun notarytool submit --wait` (if Apple credentials present). Step is a no-op when secrets are absent.
+
 ## [v7.55.1] — Frontend Security & UX Hardening
 
 ### Security

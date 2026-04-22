@@ -110,6 +110,50 @@ jobs:
         if: runner.os != 'Windows'
         run: chmod +x dist/NOMADFieldDesk
 
+      # macOS: sign binary if Apple Developer certificate is configured
+      - name: Sign macOS binary
+        if: runner.os == 'macOS'
+        env:
+          MACOS_CERT_BASE64: ${{ secrets.MACOS_CERT_BASE64 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          MACOS_KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_ID_PASSWORD: ${{ secrets.APPLE_ID_PASSWORD }}
+        run: |
+          if [ -z "$MACOS_CERT_BASE64" ]; then
+            echo "No macOS signing certificate configured — skipping code signing"
+            exit 0
+          fi
+          echo "$MACOS_CERT_BASE64" | base64 --decode > /tmp/macos_cert.p12
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain"
+          security create-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import /tmp/macos_cert.p12 -P "$MACOS_CERT_PASSWORD" \
+            -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple: \
+            -s -k "$MACOS_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychain -d user -s "$KEYCHAIN_PATH"
+          codesign --force --options runtime \
+            --sign "Developer ID Application: $APPLE_TEAM_ID" \
+            dist/NOMADFieldDesk
+          echo "Code signing complete"
+          # Notarize if Apple ID credentials are provided
+          if [ -n "$APPLE_ID" ] && [ -n "$APPLE_ID_PASSWORD" ] && [ -n "$APPLE_TEAM_ID" ]; then
+            echo "Submitting for notarization..."
+            ditto -c -k --keepParent dist/NOMADFieldDesk /tmp/NOMADFieldDesk-notarize.zip
+            xcrun notarytool submit /tmp/NOMADFieldDesk-notarize.zip \
+              --apple-id "$APPLE_ID" \
+              --password "$APPLE_ID_PASSWORD" \
+              --team-id "$APPLE_TEAM_ID" \
+              --wait
+            echo "Notarization complete"
+          else
+            echo "Apple ID credentials not set — skipping notarization"
+          fi
+          rm -f /tmp/macos_cert.p12 /tmp/NOMADFieldDesk-notarize.zip
+
       # Linux: build AppImage from PyInstaller binary
       - name: Build AppImage
         if: runner.os == 'Linux'

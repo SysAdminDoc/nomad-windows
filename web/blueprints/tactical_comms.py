@@ -17,6 +17,23 @@ RADIO_TYPES = ['handheld', 'mobile', 'base', 'repeater', 'sdr', 'satellite', 'hf
 NET_TYPES = ['daily', 'weekly', 'emergency', 'convoy', 'guard']
 SIGNAL_QUALITY = ['excellent', 'good', 'fair', 'poor', 'no_contact']
 
+_RADIO_EQUIPMENT_ALLOWED_FIELDS = frozenset({
+    'name', 'model', 'serial_number', 'radio_type', 'freq_range_low',
+    'freq_range_high', 'power_watts', 'battery_type', 'battery_count',
+    'antenna', 'firmware_version', 'programmed_channels', 'condition',
+    'assigned_to', 'location', 'last_tested', 'notes',
+})
+_NET_SCHEDULES_ALLOWED_FIELDS = frozenset({
+    'name', 'net_type', 'frequency', 'backup_frequency', 'day_of_week',
+    'start_time', 'duration_min', 'net_control', 'call_order',
+    'protocol', 'is_active', 'notes',
+})
+_AUTH_CODES_ALLOWED_FIELDS = frozenset({
+    'code_set_name', 'valid_date', 'challenge', 'response',
+    'running_password', 'number_combination', 'duress_code',
+    'is_active', 'notes',
+})
+
 # Built-in military message format templates
 BUILTIN_TEMPLATES = [
     {
@@ -129,12 +146,7 @@ def api_radio_equipment_create():
 @tactical_comms_bp.route('/api/radio-equipment/<int:rid>', methods=['PUT'])
 def api_radio_equipment_update(rid):
     data = request.get_json() or {}
-    allowed = [
-        'name', 'model', 'serial_number', 'radio_type', 'freq_range_low',
-        'freq_range_high', 'power_watts', 'battery_type', 'battery_count',
-        'antenna', 'firmware_version', 'programmed_channels', 'condition',
-        'assigned_to', 'location', 'last_tested', 'notes',
-    ]
+    allowed = _RADIO_EQUIPMENT_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -217,11 +229,7 @@ def api_auth_codes_create():
 @tactical_comms_bp.route('/api/auth-codes/<int:aid>', methods=['PUT'])
 def api_auth_codes_update(aid):
     data = request.get_json() or {}
-    allowed = [
-        'code_set_name', 'valid_date', 'challenge', 'response',
-        'running_password', 'number_combination', 'duress_code',
-        'is_active', 'notes',
-    ]
+    allowed = _AUTH_CODES_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:
@@ -309,11 +317,7 @@ def api_net_schedules_create():
 @tactical_comms_bp.route('/api/net-schedules/<int:nid>', methods=['PUT'])
 def api_net_schedules_update(nid):
     data = request.get_json() or {}
-    allowed = [
-        'name', 'net_type', 'frequency', 'backup_frequency', 'day_of_week',
-        'start_time', 'duration_min', 'net_control', 'call_order',
-        'protocol', 'is_active', 'notes',
-    ]
+    allowed = _NET_SCHEDULES_ALLOWED_FIELDS
     sets, vals = [], []
     for k in allowed:
         if k in data:

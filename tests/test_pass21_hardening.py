@@ -258,7 +258,16 @@ class TestServiceProcessCleanup:
         assert 'proc.terminate()' in source, f'{module_name}.start() missing proc.terminate() on DB error'
 
     def test_ollama_cleanup(self):
-        self._check_service_start('ollama')
+        # ollama.start() delegates to manager.start_process(), which owns
+        # DB-failure cleanup for all services that use it.  Verify the
+        # cleanup contract is satisfied there.
+        import inspect
+        from services import manager
+        source = inspect.getsource(manager.start_process)
+        assert 'proc.terminate()' in source, 'manager.start_process() missing proc.terminate() on DB error'
+        # unregister_process is the old per-service cleanup pattern;
+        # start_process() uses _processes.pop() instead — verify that.
+        assert '_processes.pop(' in source, 'manager.start_process() missing _processes.pop() cleanup on DB error'
 
     def test_stirling_cleanup(self):
         self._check_service_start('stirling')

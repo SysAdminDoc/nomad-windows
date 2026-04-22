@@ -67,7 +67,11 @@ async function bootWorkspace(page, theme, path = '/') {
   }, theme);
   await page.goto(path, { waitUntil: 'domcontentloaded' });
   await page.waitForSelector('#main-content');
-  await page.addStyleTag({ content: STABLE_CAPTURE_CSS });
+  try {
+    await page.addStyleTag({ content: STABLE_CAPTURE_CSS });
+  } catch (_) {
+    // Some embedded workspaces enforce a stricter CSP; the screenshot-stabilizing CSS is optional there.
+  }
   await page.waitForTimeout(250);
 }
 
@@ -176,6 +180,21 @@ test('desktop shell layout stays ordered and command palette works globally', as
     body: await page.screenshot({ fullPage: false }),
     contentType: 'image/png',
   });
+});
+
+test('workspace pages surface contextual guidance outside home', async ({ page }) => {
+  await bootWorkspace(page, 'nightops', '/assistant');
+
+  await expect(page.locator('#workspace-context-bar')).toBeVisible();
+  await expect(page.locator('#workspace-context-title')).toContainText('Copilot');
+
+  const guideButton = page.locator('#workspace-context-guide-btn');
+  await expect(guideButton).toBeVisible();
+  await guideButton.click();
+
+  await expect(page.locator('#workspace-inspector')).toBeVisible();
+  await expect(page.locator('#workspace-inspector-title')).toContainText('Copilot');
+  await expect(guideButton).toHaveAttribute('aria-expanded', 'true');
 });
 
 test('setup wizard advances cleanly and restores from the mini banner', async ({ page }) => {
@@ -434,7 +453,8 @@ test('knowledge workspaces stay usable without workspace guide chrome', async ({
   await page.locator('.tab[data-tab="notes"]').click();
   await expect(page.locator('#tab-notes')).toBeVisible();
   await expect(page.locator('[data-workspace-guide-target]')).toHaveCount(0);
-  await expect(page.locator('#workspace-inspector')).toHaveCount(0);
+  await expect(page.locator('#workspace-context-bar')).toBeHidden();
+  await expect(page.locator('#workspace-inspector')).toBeHidden();
   await expect(page.getByRole('button', { name: 'New Note' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Use Template' })).toBeVisible();
   await expect(page.locator('#notes-search')).toBeVisible();
@@ -473,7 +493,7 @@ test('workspace navigation uses dedicated routes instead of one giant mounted pa
   });
 });
 
-test('media channel browser renders the channel catalog instead of staying hidden', async ({ page }) => {
+test('media workspace exposes browsing and download controls on direct routes', async ({ page }) => {
   await page.route('**/api/channels/catalog', async (route) => {
     await route.fulfill({
       status: 200,
@@ -508,22 +528,50 @@ test('media channel browser renders the channel catalog instead of staying hidde
   await bootWorkspace(page, 'nightops', '/media?tab=media');
 
   await expect(page.locator('#tab-media')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Browse Channels' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Open Books' })).toBeVisible();
   await expect(page.locator('#channel-browser')).toBeVisible();
-  await expect(page.locator('#channel-list')).toBeVisible();
-  await expect(page.locator('#yt-video-results')).toBeHidden();
-  await expect.poll(async () => page.locator('#channel-list .channel-browser-card').count()).toBe(2);
   await expect(page.locator('#channel-list')).toContainText('Primitive Technology');
-  await expect(page.locator('#channel-count')).toContainText('2 channels across 2 categories');
+  await expect(page.locator('#media-topbar')).toBeHidden();
+  await expect(page.locator('.media-sidebar')).toBeHidden();
+  await expect(page.locator('#media-content-area')).toBeHidden();
+});
 
-  const state = await page.evaluate(() => ({
-    browserHidden: document.getElementById('channel-browser')?.classList.contains('is-hidden') ?? true,
-    listHidden: document.getElementById('channel-list')?.classList.contains('is-hidden') ?? true,
-    resultsHidden: document.getElementById('yt-video-results')?.classList.contains('is-hidden') ?? false,
-  }));
+test('library route opens the document viewer instead of leaving it hidden', async ({ page }) => {
+  await page.route('**/api/kiwix/zims', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await page.route('**/api/kiwix/catalog', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await page.route('**/api/kiwix/wikipedia-options', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/json', body: '[]' });
+  });
+  await page.route('**/api/library/pdfs', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify([
+        { filename: 'Field Guide 01.pdf', size: '1.2 MB' },
+      ]),
+    });
+  });
+  await page.route('**/api/library/serve/**', async (route) => {
+    await route.fulfill({ status: 200, contentType: 'application/pdf', body: '' });
+  });
 
-  expect(state.browserHidden).toBeFalsy();
-  expect(state.listHidden).toBeFalsy();
-  expect(state.resultsHidden).toBeTruthy();
+  await bootWorkspace(page, 'nightops', '/library?tab=kiwix-library');
+
+  await expect(page.locator('#tab-kiwix-library')).toBeVisible();
+  const documentButton = page.locator('.library-pdf-link', { hasText: 'Field Guide 01.pdf' });
+  await expect(documentButton).toBeVisible();
+
+  await documentButton.click();
+
+  await expect(page.locator('#pdf-viewer')).toBeVisible();
+  await expect(page.locator('#pdf-list')).toBeHidden();
+  await expect(page.locator('#pdf-viewer-title')).toHaveText('Field Guide 01.pdf');
+  await expect(page.locator('#pdf-iframe')).toHaveAttribute('src', /Field%20Guide%2001\.pdf$/);
 });
 
 test('nukemap fills the wide workspace frame and follows the active shell theme', async ({ page }, testInfo) => {

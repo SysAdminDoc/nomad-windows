@@ -1,7 +1,12 @@
+  {% set media_boot_sub = active_media_sub|default('channels') %}
+  {% set media_uses_browser = media_boot_sub in ['channels', 'torrents'] %}
+  {% set media_url_placeholder = 'Paste URL to download audio (YouTube, SoundCloud, etc.)...' if media_boot_sub == 'audio' else ('Not applicable for books — use Upload or browse the Reference Library' if media_boot_sub == 'books' else 'Paste YouTube URL to download video...') %}
+  {% set media_download_label = 'Download Audio' if media_boot_sub == 'audio' else 'Download' %}
+  {% set media_catalog_label = 'Audio Catalog' if media_boot_sub == 'audio' else ('Reference Library' if media_boot_sub == 'books' else 'Video Catalog') %}
   <div id="tab-media" class="tab-content workspace-stack{% if active_tab == 'media' %} active{% endif %}">
     <div class="media-layout">
       <!-- Folder Sidebar -->
-      <div class="media-sidebar">
+      <div class="media-sidebar{% if media_uses_browser %} is-hidden{% endif %}"{% if media_uses_browser %} hidden{% endif %}>
         <div class="media-sidebar-head">
           <div class="media-sidebar-title">Folders</div>
           <button class="btn btn-sm btn-primary media-sidebar-create-btn" data-media-action="create-folder">+ New Folder</button>
@@ -47,23 +52,23 @@
         </div>
         <!-- Sub-Tab Bar -->
         <div class="media-subtabs workspace-toolbar">
-          <button class="media-subtab active" data-msub="channels" data-media-sub-switch="channels">
+          <button class="media-subtab{% if media_boot_sub == 'channels' %} active{% endif %}" data-msub="channels" data-media-sub-switch="channels">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
             Channels <span class="media-subtab-count" id="mst-channels">210</span>
           </button>
-          <button class="media-subtab" data-msub="videos" data-media-sub-switch="videos">
+          <button class="media-subtab{% if media_boot_sub == 'videos' %} active{% endif %}" data-msub="videos" data-media-sub-switch="videos">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
             Videos <span class="media-subtab-count" id="mst-videos"></span>
           </button>
-          <button class="media-subtab" data-msub="audio" data-media-sub-switch="audio">
+          <button class="media-subtab{% if media_boot_sub == 'audio' %} active{% endif %}" data-msub="audio" data-media-sub-switch="audio">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
             Audio <span class="media-subtab-count" id="mst-audio"></span>
           </button>
-          <button class="media-subtab" data-msub="books" data-media-sub-switch="books">
+          <button class="media-subtab{% if media_boot_sub == 'books' %} active{% endif %}" data-msub="books" data-media-sub-switch="books">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             Books <span class="media-subtab-count" id="mst-books"></span>
           </button>
-          <button class="media-subtab" data-msub="torrents" data-media-sub-switch="torrents">
+          <button class="media-subtab{% if media_boot_sub == 'torrents' %} active{% endif %}" data-msub="torrents" data-media-sub-switch="torrents">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Torrents <span class="media-subtab-count">152</span>
           </button>
@@ -72,10 +77,10 @@
         </div>
 
         <!-- Top Bar -->
-        <div class="media-topbar" id="media-topbar">
+        <div class="media-topbar{% if media_uses_browser %} is-hidden{% endif %}" id="media-topbar"{% if media_uses_browser %} hidden{% endif %}>
           <div class="media-topbar-main">
-            <input type="url" id="media-url-input" name="media_url_input" class="media-input media-url-input" placeholder="Paste YouTube URL to download..." autocomplete="url" aria-label="Media download URL">
-            <button class="btn btn-sm btn-primary" id="media-dl-btn" data-media-action="download-url">Download</button>
+            <input type="url" id="media-url-input" name="media_url_input" class="media-input media-url-input" placeholder="{{ media_url_placeholder }}" autocomplete="url" aria-label="Media download URL">
+            <button class="btn btn-sm btn-primary{% if media_boot_sub == 'books' %} is-hidden{% endif %}" id="media-dl-btn" data-media-action="download-url"{% if media_boot_sub == 'books' %} hidden{% endif %}>{{ media_download_label }}</button>
             <input type="file" id="media-file-upload" name="media_file_upload" class="media-file-upload is-hidden" multiple data-change-action="upload-media-files">
             <button class="btn btn-sm" data-click-target="media-file-upload">Upload File</button>
             <select id="media-cat-select" name="media_cat_select" class="preset-select media-cat-select" aria-label="Media category">
@@ -83,7 +88,7 @@
               <option value="repair">Repair</option><option value="bushcraft">Bushcraft</option><option value="cooking">Cooking</option>
               <option value="radio">Radio</option><option value="farming">Farming</option><option value="defense">Defense</option>
             </select>
-            <button class="btn btn-sm" data-media-action="toggle-catalog" id="media-catalog-btn">Catalog</button>
+            <button class="btn btn-sm" data-media-action="toggle-catalog" id="media-catalog-btn">{{ media_catalog_label }}</button>
           </div>
           <div class="media-topbar-actions">
             <select id="media-sort" name="media_sort" class="preset-select media-sort-select" data-change-action="change-media-sort" aria-label="Sort media items">
@@ -120,6 +125,7 @@
         <div id="dl-queue-panel" class="media-inline-panel media-inline-panel-scroll media-inline-panel-scroll-queue is-hidden">
           <div class="media-inline-panel-head media-inline-panel-head-tight">
             <span class="media-inline-title">Downloads</span>
+            <span id="dl-queue-summary" class="media-inline-meta"></span>
             <button class="btn btn-sm btn-ghost media-close-btn-sm" type="button" data-media-action="toggle-queue" aria-label="Close downloads panel">x</button>
           </div>
           <div id="dl-queue-list" class="media-inline-list media-inline-list-compact"></div>
@@ -151,7 +157,7 @@
         </div>
 
         <!-- Content Area -->
-        <div id="media-content-area" class="media-content-area">
+        <div id="media-content-area" class="media-content-area{% if media_uses_browser %} is-hidden{% endif %}"{% if media_uses_browser %} hidden{% endif %}>
           <div id="media-continue" class="media-inline-panel media-continue-shell media-continue-panel is-hidden">
             <div class="workspace-toolbar media-section-heading">
               <span class="section-header-label">CONTINUE WATCHING</span>
@@ -163,7 +169,7 @@
         </div>
 
         <!-- Channel Browser -->
-        <div id="channel-browser" class="media-browser-region is-hidden">
+        <div id="channel-browser" class="media-browser-region{% if media_boot_sub != 'channels' %} is-hidden{% endif %}"{% if media_boot_sub != 'channels' %} hidden{% endif %}>
           <div class="media-browser-toolbar">
             <span class="media-browser-title">Survival Channels</span>
             <span class="media-browser-meta" id="channel-count">210 channels &middot; 26 categories</span>
@@ -193,7 +199,7 @@
         </div>
 
         <!-- Torrent Library Browser -->
-        <div id="torrent-browser" class="media-browser-region is-hidden">
+        <div id="torrent-browser" class="media-browser-region{% if media_boot_sub != 'torrents' %} is-hidden{% endif %}"{% if media_boot_sub != 'torrents' %} hidden{% endif %}>
 
           <!-- Header bar -->
           <div class="media-browser-toolbar">

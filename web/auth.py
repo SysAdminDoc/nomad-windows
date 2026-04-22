@@ -64,8 +64,8 @@ def _resolve_session():
     if not token:
         return None, None
     with db_session() as db:
-        from datetime import datetime
-        now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
         sess = db.execute(
             'SELECT * FROM app_sessions WHERE session_token = ? AND is_active = 1',
             (token,),

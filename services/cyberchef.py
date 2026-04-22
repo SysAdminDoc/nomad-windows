@@ -6,7 +6,7 @@ import threading
 import logging
 import requests
 from services.manager import (
-    get_services_dir, download_file, check_port, _download_progress
+    get_services_dir, download_file, check_port, _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -61,7 +61,8 @@ def install(callback=None):
     os.makedirs(install_dir, exist_ok=True)
     zip_path = os.path.join(install_dir, 'CyberChef.zip')
 
-    _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'downloading', 'error': None, 'speed': '', 'downloaded': 0, 'total': 0}
+    with _dl_progress_lock:
+        _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'downloading', 'error': None, 'speed': '', 'downloaded': 0, 'total': 0}
 
     try:
         # Resolve actual zip URL from GitHub releases API
@@ -87,7 +88,8 @@ def install(callback=None):
             zip_url = first_asset['browser_download_url']
         download_file(zip_url, zip_path, SERVICE_ID)
 
-        _download_progress[SERVICE_ID]['status'] = 'extracting'
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID]['status'] = 'extracting'
         from platform_utils import _safe_zip_extract
         import zipfile
         with zipfile.ZipFile(zip_path, 'r') as zf:
@@ -109,11 +111,13 @@ def install(callback=None):
         finally:
             db.close()
 
-        _download_progress[SERVICE_ID] = {'percent': 100, 'status': 'complete', 'error': None}
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {'percent': 100, 'status': 'complete', 'error': None}
         log.info('CyberChef installed successfully')
 
     except Exception as e:
-        _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'error', 'error': str(e)}
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {'percent': 0, 'status': 'error', 'error': str(e)}
         raise
 
 

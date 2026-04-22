@@ -219,7 +219,12 @@ def create_app():
     except ImportError:
         from translations import SUPPORTED_LANGUAGES, TRANSLATIONS
 
+    _lang_cache: dict = {'value': 'en', 'expires': 0.0}
+
     def _get_current_language():
+        now = time.monotonic()
+        if now < _lang_cache['expires']:
+            return _lang_cache['value']
         lang = 'en'
         try:
             with db_session() as db:
@@ -227,7 +232,10 @@ def create_app():
                 lang = (row['value'] if row else 'en') or 'en'
         except Exception:
             lang = 'en'
-        return lang if lang in SUPPORTED_LANGUAGES else 'en'
+        lang = lang if lang in SUPPORTED_LANGUAGES else 'en'
+        _lang_cache['value'] = lang
+        _lang_cache['expires'] = now + 5.0
+        return lang
 
     def _get_template_i18n_context():
         current_lang = _get_current_language()
@@ -270,12 +278,6 @@ def create_app():
             for c in new_cookies:
                 response.headers.add('Set-Cookie', c)
         return response
-
-    # All HTTP methods that can change state must flow through the same
-    # CSRF/auth/rate-limit guards. Audit found that earlier versions only
-    # covered POST/PUT/DELETE — PATCH (and any future state-changing
-    # methods) slipped through.
-    _MUTATING_METHODS = ('POST', 'PUT', 'PATCH', 'DELETE')
 
     # ─── Host Header Validation (P5-16) ─────────────────────────────
     _allowed_hosts_raw = os.environ.get('NOMAD_ALLOWED_HOSTS', '')
@@ -558,19 +560,31 @@ def create_app():
 
     workspace_routes = {tab: meta['route'] for tab, meta in workspace_pages.items()}
 
+    _first_run_cache: dict = {'value': False, 'expires': 0.0}
+
     def _is_first_run_complete():
+        now = time.monotonic()
+        if now < _first_run_cache['expires']:
+            return _first_run_cache['value']
         try:
             with db_session() as db:
                 row = db.execute("SELECT value FROM settings WHERE key = 'first_run_complete'").fetchone()
         except Exception:
             row = None
         value = (row['value'] if row else '') or ''
-        return str(value).strip().lower() in ('1', 'true', 'yes', 'on')
+        result = str(value).strip().lower() in ('1', 'true', 'yes', 'on')
+        _first_run_cache['value'] = result
+        _first_run_cache['expires'] = now + 10.0
+        return result
 
     def _render_workspace_page(tab_id, allow_launch_restore=False):
         meta = workspace_pages[tab_id]
         manifest = _load_bundle_manifest()
         first_run_complete = _is_first_run_complete()
+        active_media_sub = None
+        if tab_id == 'media':
+            requested_media_sub = (request.args.get('media') or '').strip().lower()
+            active_media_sub = requested_media_sub if requested_media_sub in {'channels', 'videos', 'audio', 'books', 'torrents'} else 'channels'
         return render_template(
             'workspace_page.html',
             version=VERSION,
@@ -583,6 +597,7 @@ def create_app():
             allow_launch_restore=allow_launch_restore,
             first_run_complete=first_run_complete,
             wizard_should_launch=(tab_id == 'services' and not first_run_complete),
+            active_media_sub=active_media_sub,
         )
 
     @app.route('/app-runtime.js')

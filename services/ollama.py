@@ -2,13 +2,12 @@
 
 import json
 import os
-import subprocess
 import time
 import logging
 import requests
 from services.manager import (
     get_services_dir, download_file, start_process, stop_process,
-    is_running, check_port, _download_progress
+    is_running, check_port, _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -114,16 +113,18 @@ def install(callback=None):
     os.makedirs(install_dir, exist_ok=True)
     from platform_utils import IS_WINDOWS, extract_archive, make_executable
 
-    _download_progress[SERVICE_ID] = {
-        'percent': 0, 'status': 'downloading', 'error': None,
-        'speed': '', 'downloaded': 0, 'total': 0,
-    }
+    with _dl_progress_lock:
+        _download_progress[SERVICE_ID] = {
+            'percent': 0, 'status': 'downloading', 'error': None,
+            'speed': '', 'downloaded': 0, 'total': 0,
+        }
 
     try:
         arc_ext = '.zip' if IS_WINDOWS else '.tgz'
         arc_path = os.path.join(install_dir, 'ollama' + arc_ext)
         download_file(_get_ollama_url(), arc_path, SERVICE_ID)
-        _download_progress[SERVICE_ID]['status'] = 'extracting'
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID]['status'] = 'extracting'
         extract_archive(arc_path, install_dir)
         make_executable(get_exe_path())
 
@@ -141,17 +142,19 @@ def install(callback=None):
         finally:
             db.close()
 
-        _download_progress[SERVICE_ID] = {
-            'percent': 100, 'status': 'complete', 'error': None,
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 100, 'status': 'complete', 'error': None,
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.info('Ollama installed successfully')
 
     except Exception as e:
-        _download_progress[SERVICE_ID] = {
-            'percent': 0, 'status': 'error', 'error': str(e),
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 0, 'status': 'error', 'error': str(e),
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.error(f'Ollama install failed: {e}')
         raise
 
@@ -188,39 +191,16 @@ def start():
     env['OLLAMA_HOST'] = f'{Config.APP_HOST}:{OLLAMA_PORT}'
     env['OLLAMA_MODELS'] = models_dir
 
-    from platform_utils import popen_kwargs
-    proc = subprocess.Popen(
-        [get_exe_path(), 'serve'],
-        **popen_kwargs(cwd=get_install_dir(), env=env),
-    )
-
-    from services.manager import register_process, unregister_process
-    register_process(SERVICE_ID, proc)
-
-    db = get_db()
-    try:
-        db.execute('UPDATE services SET running = 1, pid = ? WHERE id = ?', (proc.pid, SERVICE_ID))
-        db.commit()
-    except Exception as e:
-        log.error(f'DB update failed for {SERVICE_ID}: {e} — killing orphaned process')
-        proc.terminate()
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            proc.kill()
-        unregister_process(SERVICE_ID)
-        raise
-    finally:
-        db.close()
+    pid = start_process(SERVICE_ID, get_exe_path(), args=['serve'], cwd=get_install_dir(), env=env)
 
     for _ in range(30):
         if check_port(OLLAMA_PORT):
-            log.info(f'Ollama running on port {OLLAMA_PORT} (PID {proc.pid})')
-            return proc.pid
+            log.info(f'Ollama running on port {OLLAMA_PORT} (PID {pid})')
+            return pid
         time.sleep(1)
 
     log.warning('Ollama started but port not yet responding')
-    return proc.pid
+    return pid
 
 
 def stop():

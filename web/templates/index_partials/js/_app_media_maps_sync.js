@@ -10,7 +10,8 @@ let _mediaDlPoll = null;
 let _mediaDlPollDelay = null;
 let _mediaDlWatchId = null;
 let _mediaYtdlpInstallPoll = null;
-let _mediaSub = 'channels'; // videos | audio | books | channels
+let _mediaSub = window.NOMAD_MEDIA_START_SUB || 'channels'; // videos | audio | books | channels
+window.NOMAD_MEDIA_ACTIVE_SUB = _mediaSub;
 let _mediaBookRendition = null;
 let _mediaSort = 'title'; // title | date | size | favorited
 let _mediaSortDir = 'asc';
@@ -154,8 +155,15 @@ function startMediaDownloadPolling(watchId) {
 
 function switchMediaSub(sub) {
   _mediaSub = sub;
+  window.NOMAD_MEDIA_ACTIVE_SUB = _mediaSub;
   _mediaFolder = '';
-  if (typeof syncWorkspaceUrlState === 'function') syncWorkspaceUrlState();
+  if (typeof syncWorkspaceUrlState === 'function') {
+    try {
+      syncWorkspaceUrlState();
+    } catch (error) {
+      console.warn('Unable to sync media workspace URL state', error);
+    }
+  }
   document.querySelectorAll('.media-subtab').forEach(b => b.classList.toggle('active', b.dataset.msub === sub));
   const urlInput = document.getElementById('media-url-input');
   const fileInput = document.getElementById('media-file-upload');
@@ -2306,27 +2314,56 @@ function toggleDlQueue() {
 }
 
 async function refreshDlQueue() {
+  const summaryEl = document.getElementById('dl-queue-summary');
   try {
     const all = await _fetchJson('/api/ytdlp/progress');
     const el = document.getElementById('dl-queue-list');
     const entries = Object.entries(all);
+    const active = entries.filter(([, p]) => ['downloading', 'queued', 'merging', 'fetching info', 'starting'].includes(p.status));
+    const failed = entries.filter(([, p]) => p.status === 'error');
+    const completed = entries.filter(([, p]) => p.status === 'complete');
     if (!entries.length) {
-      el.innerHTML = '<div class="media-inline-empty">No downloads</div>';
+      if (summaryEl) summaryEl.textContent = 'Queue empty';
+      el.innerHTML = '<div class="media-inline-empty">No downloads yet. New video, audio, and catalog downloads will appear here while they run.</div>';
       return;
+    }
+    if (summaryEl) {
+      const summaryParts = [];
+      if (active.length) summaryParts.push(`${active.length} active`);
+      if (failed.length) summaryParts.push(`${failed.length} failed`);
+      if (completed.length) summaryParts.push(`${completed.length} done`);
+      summaryEl.textContent = summaryParts.join(' · ') || `${entries.length} tracked`;
     }
     el.innerHTML = entries.map(([id, p]) => {
       const tone = p.status === 'complete' ? 'success' : p.status === 'error' ? 'danger' : 'progress';
       const pct = p.status === 'complete' ? 100 : (p.percent || 0);
+      const statusLabel = p.status === 'complete'
+        ? 'Done'
+        : p.status === 'error'
+        ? 'Failed'
+        : p.status === 'queued'
+        ? 'Queued'
+        : p.status === 'merging'
+        ? 'Finalizing'
+        : p.status === 'fetching info'
+        ? 'Checking source'
+        : p.status === 'starting'
+        ? 'Starting'
+        : `${pct}%`;
       return `<div class="media-download-item">
         <div class="media-download-head">
           <span class="media-download-title">${escapeHtml(p.title || 'Download #' + id)}</span>
-          <span class="media-download-status" data-tone="${tone}">${p.status === 'complete' ? 'Done' : p.status === 'error' ? 'Failed' : pct + '%'}</span>
+          <span class="media-download-status" data-tone="${tone}">${statusLabel}</span>
         </div>
-        ${p.status === 'downloading' ? `<div class="media-download-progress"><div class="media-download-progress-bar" style="--media-progress-width:${pct}%;"></div></div>` : ''}
-        ${p.speed ? `<div class="media-download-speed">${p.speed}</div>` : ''}
+        ${['downloading', 'queued', 'merging', 'fetching info', 'starting'].includes(p.status) ? `<div class="media-download-progress"><div class="media-download-progress-bar" style="--media-progress-width:${pct}%;"></div></div>` : ''}
+        ${(p.speed || p.error || p.status) ? `<div class="media-download-speed">${escapeHtml(p.error || [p.status, p.speed].filter(Boolean).join(' · '))}</div>` : ''}
       </div>`;
     }).join('');
-  } catch {}
+  } catch {
+    if (summaryEl) summaryEl.textContent = 'Queue unavailable';
+    const el = document.getElementById('dl-queue-list');
+    if (el) el.innerHTML = '<div class="media-inline-empty">Could not load the download queue right now. Try again in a moment.</div>';
+  }
 }
 
 async function subscribeChannel(url, name, category) {
@@ -3597,13 +3634,18 @@ async function loadPDFList() {
   if (!el) return;
   try {
     const files = await _fetchJson('/api/library/pdfs');
-    if (!files.length) { el.innerHTML = '<div class="workspace-empty-copy library-pdf-empty"><strong>No Documents Yet</strong><span>Add PDFs, ePubs, or text files to keep manuals, notes, and reference material ready offline.</span></div>'; return; }
+    if (!files.length) {
+      closePDFViewer();
+      el.innerHTML = '<div class="workspace-empty-copy library-pdf-empty"><strong>No Documents Yet</strong><span>Add PDFs, ePubs, or text files to keep manuals, notes, and reference material ready offline.</span></div>';
+      return;
+    }
     el.innerHTML = files.map(f => `
       <div class="library-pdf-row">
         <button type="button" class="library-pdf-link" data-library-action="view-pdf-item" data-pdf-filename="${escapeAttr(f.filename)}">${escapeHtml(f.filename)} <span class="library-pdf-meta">(${f.size})</span></button>
         <button type="button" class="library-pdf-delete" data-library-action="delete-pdf-item" data-pdf-filename="${escapeAttr(f.filename)}" aria-label="Delete document ${escapeAttr(f.filename)}">&times;</button>
       </div>`).join('');
   } catch(e) {
+    closePDFViewer();
     el.innerHTML = '<div class="workspace-empty-copy library-pdf-empty"><strong>Document Shelf Unavailable</strong><span>We could not load your local documents just now. Refresh the shelf or try again in a moment.</span></div>';
   }
 }
@@ -3622,12 +3664,32 @@ async function uploadPDF() {
     loadPDFList();
   } catch(e) { toast(`Upload failed: ${e?.data?.error || e?.message || 'check your connection'}`, 'error'); }
 }
-function viewPDF(filename) {
-  document.getElementById('pdf-viewer').style.display = 'block';
-  document.getElementById('pdf-viewer-title').textContent = filename;
-  document.getElementById('pdf-iframe').src = `/api/library/serve/${filename}`;
+function setPdfViewerVisible(visible) {
+  const viewer = document.getElementById('pdf-viewer');
+  const list = document.getElementById('pdf-list');
+  if (viewer) {
+    viewer.classList.toggle('is-hidden', !visible);
+    viewer.hidden = !visible;
+    if (visible) viewer.style.removeProperty('display');
+    else viewer.style.display = 'none';
+  }
+  if (list) {
+    list.classList.toggle('is-hidden', visible);
+    list.hidden = visible;
+    if (visible) list.style.display = 'none';
+    else list.style.removeProperty('display');
+  }
 }
-function closePDFViewer() { document.getElementById('pdf-viewer').style.display = 'none'; document.getElementById('pdf-iframe').src = ''; }
+function viewPDF(filename) {
+  setPdfViewerVisible(true);
+  document.getElementById('pdf-viewer-title').textContent = filename;
+  document.getElementById('pdf-iframe').src = `/api/library/serve/${encodeURIComponent(filename)}`;
+  document.getElementById('pdf-viewer')?.scrollIntoView({block: 'start', behavior: 'smooth'});
+}
+function closePDFViewer() {
+  setPdfViewerVisible(false);
+  document.getElementById('pdf-iframe').src = '';
+}
 async function deletePDF(filename) {
   if (!confirm('Delete this document?')) return;
   try {

@@ -307,7 +307,10 @@ def api_canary_configure():
 
     data = request.get_json() or {}
     statement = data.get('statement', '').strip()
-    interval_hours = max(1, min(720, int(data.get('interval_hours', 168))))
+    try:
+        interval_hours = max(1, min(720, int(data.get('interval_hours', 168))))
+    except (TypeError, ValueError):
+        interval_hours = 168
 
     if not statement:
         return jsonify({'error': 'statement is required'}), 400

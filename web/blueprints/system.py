@@ -243,6 +243,7 @@ def api_drives():
                 pass  # individual mountpoint may be unavailable (network drive, etc.)
     except Exception as e:
         log.debug('disk_partitions failed: %s', e)
+    return jsonify(drives)
 
 @system_bp.route('/api/settings/data-dir', methods=['POST'])
 def api_set_data_dir():

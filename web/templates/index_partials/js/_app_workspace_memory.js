@@ -73,8 +73,17 @@ function getWorkspaceGroupLabel(tab) {
   return WORKSPACE_GROUP_LABELS[tab] || 'Workspace';
 }
 
+function getActiveWorkspaceTabId() {
+  return window.NOMAD_ACTIVE_TAB || document.querySelector('.tab.active')?.dataset.tab || document.body?.dataset?.workspacePage || 'situation-room';
+}
+
+function getActiveMediaSub() {
+  const mediaSub = window.NOMAD_MEDIA_ACTIVE_SUB || window.NOMAD_MEDIA_START_SUB || '';
+  return mediaSub || 'channels';
+}
+
 function buildWorkspaceResumeEntry() {
-  const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'situation-room';
+  const activeTab = getActiveWorkspaceTabId();
   if (activeTab === 'services') return null;
 
   const tabMeta = WORKSPACE_TAB_META[activeTab] || {label: humanizeWorkspaceSlug(activeTab), icon: '&#8250;', summary: 'Resume workspace.'};
@@ -93,8 +102,8 @@ function buildWorkspaceResumeEntry() {
     };
   }
 
-  if (activeTab === 'media' && typeof _mediaSub !== 'undefined') {
-    const mediaSub = _mediaSub || 'videos';
+  if (activeTab === 'media') {
+    const mediaSub = getActiveMediaSub();
     const mediaMeta = MEDIA_SUB_META[mediaSub] || {label: humanizeWorkspaceSlug(mediaSub)};
     return {
       key: `media:${mediaSub}`,
@@ -142,7 +151,7 @@ function buildWorkspaceResumeEntry() {
 }
 
 function buildWorkspaceContextDescriptor() {
-  const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'situation-room';
+  const activeTab = getActiveWorkspaceTabId();
   const tabMeta = WORKSPACE_TAB_META[activeTab] || {label: humanizeWorkspaceSlug(activeTab), summary: 'Resume workspace.'};
   const descriptor = {
     group: getWorkspaceGroupLabel(activeTab),
@@ -167,8 +176,9 @@ function buildWorkspaceContextDescriptor() {
     return descriptor;
   }
 
-  if (activeTab === 'media' && typeof _mediaSub !== 'undefined') {
-    const mediaMeta = MEDIA_SUB_META[_mediaSub] || {label: humanizeWorkspaceSlug(_mediaSub)};
+  if (activeTab === 'media') {
+    const mediaSub = getActiveMediaSub();
+    const mediaMeta = MEDIA_SUB_META[mediaSub] || {label: humanizeWorkspaceSlug(mediaSub)};
     descriptor.detail = `Media · ${mediaMeta.label}`;
     descriptor.summary = `${mediaMeta.label} inside the offline media workspace.`;
     return descriptor;
@@ -208,8 +218,7 @@ function buildWorkspaceContextDescriptor() {
 }
 
 function getActiveWorkspaceGuideKey() {
-  const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'situation-room';
-  return activeTab;
+  return getActiveWorkspaceTabId();
 }
 
 function focusWorkspaceElement(id) {
@@ -249,7 +258,7 @@ function buildWorkspaceGuideConfig(target = '') {
   const key = target || getActiveWorkspaceGuideKey();
   const descriptor = buildWorkspaceContextDescriptor();
   const contextActions = getWorkspaceContextActions();
-  const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'situation-room';
+  const activeTab = getActiveWorkspaceTabId();
   const baseGuide = {
     target: key,
     kicker: 'WORKSPACE GUIDE',
@@ -837,7 +846,8 @@ function renderWorkspaceInspector() {
 
 function openWorkspaceInspector(target = '') {
   const inspector = document.getElementById('workspace-inspector');
-  if (!inspector) return;
+  const contextBar = document.getElementById('workspace-context-bar');
+  if (!inspector || contextBar?.hidden) return;
   _workspaceInspectorTarget = target || getActiveWorkspaceGuideKey();
   inspector.hidden = false;
   renderWorkspaceInspector();
@@ -850,8 +860,13 @@ function closeWorkspaceInspector() {
   renderWorkspaceInspector();
 }
 
+function shouldShowWorkspaceContextBar(activeTab, descriptor) {
+  if (!descriptor?.title) return false;
+  return !['services', 'situation-room', 'kiwix-library', 'notes', 'media'].includes(activeTab);
+}
+
 function getWorkspaceContextActions() {
-  const activeTab = document.querySelector('.tab.active')?.dataset.tab || 'situation-room';
+  const activeTab = getActiveWorkspaceTabId();
   if (activeTab === 'situation-room') {
     return [
       {
@@ -1089,11 +1104,7 @@ function pickPreferredWorkspaceResumeState(localState, serverState) {
 }
 
 function refreshWorkspaceResumeUi() {
-  if (typeof renderHomeContinueWorking === 'function') {
-    renderHomeContinueWorking();
-    if (typeof renderWorkspaceInspector === 'function') renderWorkspaceInspector();
-    return;
-  }
+  if (typeof renderHomeContinueWorking === 'function') renderHomeContinueWorking();
   if (typeof renderSidebarWorkspaceShelf === 'function') renderSidebarWorkspaceShelf();
   if (typeof renderWorkspaceMemoryPanel === 'function') renderWorkspaceMemoryPanel();
   if (typeof renderWorkspaceContextBar === 'function') renderWorkspaceContextBar();
@@ -1448,6 +1459,7 @@ function renderWorkspaceMemoryPanel() {
 }
 
 function renderWorkspaceContextBar() {
+  const bar = document.getElementById('workspace-context-bar');
   const groupEl = document.getElementById('workspace-context-group');
   const detailEl = document.getElementById('workspace-context-detail');
   const stateEl = document.getElementById('workspace-context-state');
@@ -1458,8 +1470,19 @@ function renderWorkspaceContextBar() {
   const launchBtn = document.getElementById('workspace-context-launch-btn');
   const pinBtn = document.getElementById('workspace-context-pin-btn');
   const quickActionsEl = document.getElementById('workspace-context-quick-actions');
-  if (!groupEl || !detailEl || !stateEl || !previousBtn || !titleEl || !summaryEl || !launchBtn || !pinBtn || !quickActionsEl) return;
+  if (!bar || !groupEl || !detailEl || !stateEl || !previousBtn || !titleEl || !summaryEl || !launchBtn || !pinBtn || !quickActionsEl) return;
+  const activeTab = getActiveWorkspaceTabId();
   const descriptor = buildWorkspaceContextDescriptor();
+  const shouldShow = shouldShowWorkspaceContextBar(activeTab, descriptor);
+  if (typeof setShellVisibility === 'function') {
+    setShellVisibility(bar, shouldShow);
+  } else {
+    bar.hidden = !shouldShow;
+  }
+  if (!shouldShow) {
+    closeWorkspaceInspector();
+    return;
+  }
   const current = descriptor.trackableEntry;
   const state = getWorkspaceResumeState();
   const previous = getPreviousWorkspaceResumeEntry(state, current?.key || '');
@@ -1805,8 +1828,8 @@ function syncWorkspaceUrlState() {
     params.delete('prep');
   }
 
-  if (activeTab === 'media' && typeof _mediaSub !== 'undefined') {
-    params.set('media', _mediaSub);
+  if (activeTab === 'media') {
+    params.set('media', getActiveMediaSub());
   } else {
     params.delete('media');
   }
@@ -2468,8 +2491,15 @@ async function checkContentUpdates() {
     if (!Array.isArray(updates)) throw new Error('check-updates failed');
     const panel = document.getElementById('content-updates-panel');
     const itemsEl = document.getElementById('content-update-items');
-    if (!updates.length) { panel.style.display = 'none'; toast('All content is up to date', 'success'); return; }
+    const metaEl = document.getElementById('content-updates-meta');
+    if (!updates.length) {
+      panel.style.display = 'none';
+      if (metaEl) metaEl.textContent = '';
+      toast('All content is up to date', 'success');
+      return;
+    }
     panel.style.display = 'block';
+    if (metaEl) metaEl.textContent = `${updates.length} available`;
     itemsEl.innerHTML = updates.map(u =>
       '<div class="library-update-row">' +
         '<div class="library-update-copy">' +
@@ -2969,4 +2999,3 @@ window.addEventListener('storage', event => {
 
 renderHomeContinueWorking();
 renderWorkspaceInspector();
-

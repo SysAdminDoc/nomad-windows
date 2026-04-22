@@ -7,7 +7,8 @@ import time
 import logging
 import shutil
 from services.manager import (
-    get_services_dir, stop_process, is_running, check_port, _download_progress
+    get_services_dir, stop_process, is_running, check_port,
+    _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -167,22 +168,25 @@ def install(callback=None):
     install_dir = get_install_dir()
     os.makedirs(install_dir, exist_ok=True)
 
-    _download_progress[SERVICE_ID] = {
-        'percent': 0, 'status': 'downloading', 'error': None,
-        'speed': 'pip install...', 'downloaded': 0, 'total': 0,
-    }
+    with _dl_progress_lock:
+        _download_progress[SERVICE_ID] = {
+            'percent': 0, 'status': 'downloading', 'error': None,
+            'speed': 'pip install...', 'downloaded': 0, 'total': 0,
+        }
 
     try:
         # Ensure we have a Python interpreter
         try:
             py = _python_exe()
         except RuntimeError:
-            _download_progress[SERVICE_ID].update({'percent': 5, 'speed': 'Installing Python runtime...'})
+            with _dl_progress_lock:
+                _download_progress[SERVICE_ID].update({'percent': 5, 'speed': 'Installing Python runtime...'})
             py = _auto_install_python()
             if not py:
                 raise RuntimeError('Could not install portable Python — check internet connection')
 
-        _download_progress[SERVICE_ID].update({'percent': 10, 'speed': 'Installing Kolibri...'})
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID].update({'percent': 10, 'speed': 'Installing Kolibri...'})
 
         from platform_utils import run_kwargs as _run_kwargs
         result = subprocess.run(
@@ -200,7 +204,8 @@ def install(callback=None):
             if result.returncode != 0:
                 raise RuntimeError(f'pip install failed: {result.stderr}')
 
-        _download_progress[SERVICE_ID].update({'percent': 80, 'speed': 'Provisioning...'})
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID].update({'percent': 80, 'speed': 'Provisioning...'})
 
         # Run initial provisioning
         env = os.environ.copy()
@@ -228,23 +233,28 @@ def install(callback=None):
         finally:
             db.close()
 
-        _download_progress[SERVICE_ID] = {
-            'percent': 100, 'status': 'complete', 'error': None,
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 100, 'status': 'complete', 'error': None,
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.info('Kolibri installed successfully')
 
     except Exception as e:
-        _download_progress[SERVICE_ID] = {
-            'percent': 0, 'status': 'error', 'error': str(e),
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 0, 'status': 'error', 'error': str(e),
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.error(f'Kolibri install failed: {e}')
         raise
 
 
 def start():
     """Start Kolibri server."""
+    if running():
+        log.info('Kolibri is already running')
+        return
     if not is_installed():
         raise RuntimeError('Kolibri is not installed')
 

@@ -2,6 +2,25 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.59.0] — V8-19: Mobile Prep Nav + V8-20: Docs Site
+
+### UX (V8-19)
+- **Mobile sub-tab navigation** — Preparedness sub-tab button bar replaced with a compact `<select>` at ≤600px viewport width, enabling one-handed workspace switching on phones and small tablets
+- Scenario grid compacts to 2-column at 480–600px and single-column below 420px, preventing card overflow on narrow screens
+- Workbench strip (Resume / Pinned Workspaces) stacks vertically at ≤600px instead of hiding; all workspace functionality preserved
+- Verbose prep heading copy hidden at ≤600px to maximize content area
+- `_syncMobileSubSelect()` helper keeps the `<select>` in sync whenever `showPrepCategory()` rebuilds the lane tab bar
+- `switchPrepSub()` keeps mobile select value in sync on direct tab navigation
+- Delegated `change` listener routes mobile select changes through `switchPrepSub()` so all existing load hooks fire normally
+
+### Documentation (V8-20)
+- **Standalone MkDocs docs site** — `mkdocs.yml` with Material for MkDocs theme (dark/light toggle, tabs, search)
+- `docs/guide/` — 41 markdown files extracted from the in-app Help Guide covering every feature section
+- `docs/index.md` — landing page with feature summary and quick-navigation links
+- `requirements-docs.txt` — `mkdocs>=1.6`, `mkdocs-material>=9.5`
+- `.github/workflows/docs.yml` — CI workflow: builds and deploys to GitHub Pages on every push to `master` that touches `docs/`, `mkdocs.yml`, or `requirements-docs.txt`
+- `scripts/extract_guide_to_docs.py` — idempotent extraction script to regenerate `docs/guide/` from the in-app guide source; handles steps, tips, warnings, and tables
+
 ## [v7.58.0] — V8-12: Frontend Unit Tests
 
 ### Developer Experience (V8-12)

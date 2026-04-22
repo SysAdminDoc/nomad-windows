@@ -1290,3 +1290,51 @@ body.emergency-mode::before {
   .family-checkin-row { grid-template-columns: 1fr; gap: 6px; }
   .family-checkin-del { justify-self: flex-end; }
 }
+
+/* ─── Mobile Prep Sub-Tab Navigation (V8-19) ─── */
+
+/* Default: hide mobile select, show button bar */
+.prep-mobile-sub-select { display: none; }
+
+@media (max-width: 600px) {
+  /* Replace button strip with a compact select */
+  #prep-subtab-bar { display: none; }
+  .prep-mobile-sub-select {
+    display: block;
+    width: 100%;
+    padding: 10px 36px 10px 14px;
+    margin-top: 6px;
+    border-radius: var(--radius-sm, 6px);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text);
+    font-size: var(--text-base, 13px);
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+  }
+  /* Hide verbose copy under the sub-tabs label */
+  .prep-subtabs-copy { display: none; }
+  /* Collapse scenario focus copy to save vertical space */
+  .prep-scenario-focus-copy { display: none; }
+  /* Compact workbench strip: stack the two panels vertically */
+  .prep-workbench-strip { flex-direction: column; gap: 8px; }
+  .prep-workbench-summary { display: none; }
+  .prep-workbench-head { flex-wrap: wrap; gap: 6px; }
+  /* 2-column scenario grid for 480–600px window width */
+  .prep-scenario-grid { grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+  .prep-scenario-card { min-height: 72px !important; padding: 10px 12px !important; }
+  .prep-scenario-copy { display: none !important; }
+  .prep-scenario-tags { display: none !important; }
+}
+
+@media (max-width: 420px) {
+  /* Single-column on very small handsets */
+  .prep-scenario-grid { grid-template-columns: 1fr !important; }
+  .prep-scenario-card { min-height: 56px !important; }
+}

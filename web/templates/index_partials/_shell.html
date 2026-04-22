@@ -596,12 +596,31 @@
     </div>
     <div id="workspace-context-quick-actions" class="workspace-context-quick-actions"></div>
     <div class="workspace-context-meta-actions">
+      <button id="workspace-context-guide-btn" type="button" class="btn btn-sm btn-ghost" data-workspace-context-action="open-guide" aria-expanded="false" aria-controls="workspace-inspector">Workspace Guide</button>
       <button id="workspace-context-launch-btn" type="button" class="btn btn-sm" data-workspace-context-action="set-launch">Set Launch Context</button>
       <button id="workspace-context-pin-btn" type="button" class="btn btn-sm btn-primary" data-workspace-context-action="toggle-pin">Pin Current Context</button>
       <button type="button" class="btn btn-sm" data-tab-target="services" data-scroll-target="home-continue-panel">Open Home Shelf</button>
       <button type="button" class="btn btn-sm btn-ghost" data-shell-action="toggle-command-palette">Command Palette</button>
     </div>
   </div>
+</div>
+
+<div id="workspace-inspector" class="workspace-inspector" hidden>
+  <div class="workspace-inspector-head">
+    <div class="workspace-inspector-copy">
+      <div id="workspace-inspector-kicker" class="workspace-inspector-kicker">WORKSPACE GUIDE</div>
+      <div class="workspace-inspector-title-row">
+        <div id="workspace-inspector-title" class="workspace-inspector-title">Workspace Guide</div>
+        <div id="workspace-inspector-meta" class="workspace-inspector-meta"></div>
+      </div>
+      <div id="workspace-inspector-summary" class="workspace-inspector-summary">Use this panel for quick orientation and the next best actions in the current workspace.</div>
+    </div>
+    <div class="workspace-inspector-head-actions">
+      <button type="button" class="btn btn-sm btn-ghost" data-workspace-guide-action="close" aria-label="Close workspace guide">Close</button>
+    </div>
+  </div>
+  <div id="workspace-inspector-body" class="workspace-inspector-body"></div>
+  <div id="workspace-inspector-actions" class="workspace-inspector-actions"></div>
 </div>
 
 <div class="container">

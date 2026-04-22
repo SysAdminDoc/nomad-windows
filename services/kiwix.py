@@ -9,7 +9,7 @@ import logging
 import requests
 from services.manager import (
     get_services_dir, download_file, start_process, stop_process,
-    is_running, check_port, _download_progress
+    is_running, check_port, _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -651,15 +651,17 @@ def install(callback=None):
     arc_ext = '.zip' if IS_WINDOWS else '.tar.gz'
     arc_path = os.path.join(install_dir, 'kiwix-tools' + arc_ext)
 
-    _download_progress[SERVICE_ID] = {
-        'percent': 0, 'status': 'downloading kiwix-tools', 'error': None,
-        'speed': '', 'downloaded': 0, 'total': 0,
-    }
+    with _dl_progress_lock:
+        _download_progress[SERVICE_ID] = {
+            'percent': 0, 'status': 'downloading kiwix-tools', 'error': None,
+            'speed': '', 'downloaded': 0, 'total': 0,
+        }
 
     try:
         download_file(_get_kiwix_url(), arc_path, SERVICE_ID)
 
-        _download_progress[SERVICE_ID]['status'] = 'extracting'
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID]['status'] = 'extracting'
         extract_archive(arc_path, install_dir)
         make_executable(get_exe_path())
 
@@ -678,17 +680,19 @@ def install(callback=None):
         finally:
             db.close()
 
-        _download_progress[SERVICE_ID] = {
-            'percent': 100, 'status': 'complete', 'error': None,
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 100, 'status': 'complete', 'error': None,
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.info('Kiwix installed successfully')
 
     except Exception as e:
-        _download_progress[SERVICE_ID] = {
-            'percent': 0, 'status': 'error', 'error': str(e),
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 0, 'status': 'error', 'error': str(e),
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.error(f'Kiwix install failed: {e}')
         raise
 

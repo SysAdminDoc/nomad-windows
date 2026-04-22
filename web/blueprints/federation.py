@@ -106,7 +106,14 @@ def _sign_payload(data_str, private_key_hex):
 
 
 def _verify_signature(data_str, signature, public_key_hex):
-    """Verify signature against a known peer public key using HMAC-SHA256."""
+    """Verify signature against a known peer public key using HMAC-SHA256.
+
+    NOTE: This function is intentionally not called on incoming sync requests.
+    Mutual trust is enforced by requiring the peer to exist in the
+    federation_peers table with an accepted trust_level.  Full HMAC signature
+    verification is a planned hardening step once a key-exchange handshake is
+    added to the peer-add flow.
+    """
     expected = hmac.new(bytes.fromhex(public_key_hex), data_str.encode(), hashlib.sha256).hexdigest()
     return hmac.compare_digest(expected, signature)
 
@@ -178,7 +185,7 @@ def api_node_announce():
     """Respond to a discovery broadcast (called by peers via HTTP as fallback)."""
     return jsonify({
         'type': 'nomad_announce', 'node_id': _get_node_id(),
-        'node_name': _get_node_name(), 'port': 8080, 'version': _get_version(),
+        'node_name': _get_node_name(), 'port': Config.APP_PORT, 'version': _get_version(),
     })
 
 
@@ -438,7 +445,7 @@ def api_node_sync_pull():
 
     try:
         r = req.post(f'http://{peer_ip}:{peer_port}/api/node/sync-push',
-                    json={'ip': request.host.split(':')[0], 'port': 8080}, timeout=30)
+                    json={'ip': request.host.split(':')[0], 'port': Config.APP_PORT}, timeout=30)
         return jsonify({'status': 'pull_requested', 'peer': peer_ip})
     except Exception as e:
         return jsonify({'error': f'Pull failed: {e}'}), 500
@@ -743,7 +750,7 @@ def api_federation_peer_add():
     with db_session() as db:
         db.execute('INSERT OR REPLACE INTO federation_peers (node_id, node_name, trust_level, ip, port, lat, lng) VALUES (?,?,?,?,?,?,?)',
                    (node_id, data.get('node_name', ''), data.get('trust_level', 'observer'),
-                    peer_ip, data.get('port', 8080),
+                    peer_ip, data.get('port', Config.APP_PORT),
                     data.get('lat'), data.get('lng')))
         db.commit()
     return jsonify({'status': 'added'})

@@ -77,8 +77,34 @@ window.NOMAD_WORKSPACE_ROUTES = {{ workspace_routes|tojson }};
 window.NOMAD_ALLOW_LAUNCH_RESTORE = {{ allow_launch_restore|tojson }};
 window.NOMAD_FIRST_RUN_COMPLETE = {{ first_run_complete|tojson }};
 window.NOMAD_WIZARD_SHOULD_LAUNCH = {{ wizard_should_launch|tojson }};
+window.NOMAD_MEDIA_START_SUB = {{ active_media_sub|tojson }};
 window.NOMAD_VERSION = {{ version|tojson }};
 </script>
 <script src="/app-runtime.js?v={{ version }}"></script>
+<script>
+(() => {
+  let initialized = false;
+
+  function initializeWorkspacePage() {
+    if (initialized) return;
+    initialized = true;
+
+    const tabId = window.NOMAD_ACTIVE_TAB || document.body?.dataset?.workspacePage || '';
+    if (!tabId || tabId === 'services') return;
+
+    window.requestAnimationFrame(() => {
+      if (typeof openWorkspaceTab === 'function') {
+        openWorkspaceTab(tabId);
+        return;
+      }
+      const tab = document.querySelector(`.tab[data-tab="${tabId}"]`);
+      if (tab && typeof activateWorkspaceTab === 'function') activateWorkspaceTab(tab);
+    });
+  }
+
+  if (document.readyState === 'complete') initializeWorkspacePage();
+  else window.addEventListener('load', initializeWorkspacePage, { once: true });
+})();
+</script>
 </body>
 </html>

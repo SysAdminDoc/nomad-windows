@@ -289,60 +289,62 @@ def api_kb_upload():
         import web.state as _ws
         _ws.set_embed_state(status='processing', doc_id=doc_id, progress=0, detail=f'Processing {filename}...')
         with db_session() as db2:
-          try:
-            _ws.set_embed_state(detail='Checking embedding model...')
-            models = ollama.list_models()
-            model_names = [m['name'] for m in models]
-            if EMBED_MODEL not in model_names and EMBED_MODEL.split(':')[0] not in [m.split(':')[0] for m in model_names]:
-                _ws.set_embed_state(detail=f'Pulling {EMBED_MODEL}...')
-                ollama.pull_model(EMBED_MODEL)
+            try:
+                _ws.set_embed_state(detail='Checking embedding model...')
+                models = ollama.list_models()
+                model_names = [m['name'] for m in models]
+                if EMBED_MODEL not in model_names and EMBED_MODEL.split(':')[0] not in [m.split(':')[0] for m in model_names]:
+                    _ws.set_embed_state(detail=f'Pulling {EMBED_MODEL}...')
+                    ollama.pull_model(EMBED_MODEL)
 
-            _ws.set_embed_state(progress=20, detail='Extracting text...')
-            text = extract_text_from_file(filepath, content_type)
-            if not text.strip():
-                raise ValueError('No text could be extracted from file')
+                _ws.set_embed_state(progress=20, detail='Extracting text...')
+                text = extract_text_from_file(filepath, content_type)
+                if not text.strip():
+                    raise ValueError('No text could be extracted from file')
 
-            _ws.set_embed_state(progress=30, detail='Chunking text...')
-            chunks = chunk_text(text)
-            total = len(chunks)
+                _ws.set_embed_state(progress=30, detail='Chunking text...')
+                chunks = chunk_text(text)
+                total = len(chunks)
 
-            _ws.set_embed_state(progress=40, detail=f'Embedding {total} chunks...')
-            batch_size = 8
-            all_points = []
-            import hashlib
-            for i in range(0, total, batch_size):
-                batch = chunks[i:i + batch_size]
-                vectors = embed_text(batch)
-                for j, (chunk, vec) in enumerate(zip(batch, vectors)):
-                    point_id = int(hashlib.md5(f'{doc_id}:{i+j}'.encode()).hexdigest()[:8], 16)
-                    all_points.append({
-                        'id': point_id,
-                        'vector': vec,
-                        'payload': {
-                            'doc_id': doc_id,
-                            'filename': filename,
-                            'chunk_index': i + j,
-                            'text': chunk,
-                        }
-                    })
-                pct = 40 + int(60 * min(i + batch_size, total) / total)
-                _ws.set_embed_state(progress=pct, detail=f'Embedded {min(i+batch_size, total)}/{total} chunks')
+                _ws.set_embed_state(progress=40, detail=f'Embedding {total} chunks...')
+                batch_size = 8
+                all_points = []
+                import hashlib
+                for i in range(0, total, batch_size):
+                    batch = chunks[i:i + batch_size]
+                    vectors = embed_text(batch)
+                    for j, (chunk, vec) in enumerate(zip(batch, vectors)):
+                        point_id = int.from_bytes(
+                            hashlib.md5(f'{doc_id}:{i+j}'.encode()).digest()[:8], 'big'
+                        )
+                        all_points.append({
+                            'id': point_id,
+                            'vector': vec,
+                            'payload': {
+                                'doc_id': doc_id,
+                                'filename': filename,
+                                'chunk_index': i + j,
+                                'text': chunk,
+                            }
+                        })
+                    pct = 40 + int(60 * min(i + batch_size, total) / total)
+                    _ws.set_embed_state(progress=pct, detail=f'Embedded {min(i+batch_size, total)}/{total} chunks')
 
-            qdrant.upsert_vectors(all_points)
+                qdrant.upsert_vectors(all_points)
 
-            db2.execute('UPDATE documents SET status = ?, chunks_count = ? WHERE id = ?',
-                        ('ready', total, doc_id))
-            db2.commit()
-            _ws.set_embed_state(status='complete', doc_id=doc_id, progress=100, detail=f'{filename}: {total} chunks embedded')
+                db2.execute('UPDATE documents SET status = ?, chunks_count = ? WHERE id = ?',
+                            ('ready', total, doc_id))
+                db2.commit()
+                _ws.set_embed_state(status='complete', doc_id=doc_id, progress=100, detail=f'{filename}: {total} chunks embedded')
 
-            threading.Thread(target=_analyze_document, args=(doc_id, text, filename), daemon=True).start()
+                threading.Thread(target=_analyze_document, args=(doc_id, text, filename), daemon=True).start()
 
-          except Exception as e:
-            log.exception('Embedding failed for doc %s', doc_id)
-            err_msg = 'Embedding failed'
-            db2.execute('UPDATE documents SET status = ?, error = ? WHERE id = ?', ('error', err_msg, doc_id))
-            db2.commit()
-            _ws.set_embed_state(status='error', doc_id=doc_id, progress=0, detail=err_msg)
+            except Exception as e:
+                log.exception('Embedding failed for doc %s', doc_id)
+                err_msg = 'Embedding failed'
+                db2.execute('UPDATE documents SET status = ?, error = ? WHERE id = ?', ('error', err_msg, doc_id))
+                db2.commit()
+                _ws.set_embed_state(status='error', doc_id=doc_id, progress=0, detail=err_msg)
     threading.Thread(target=do_embed, daemon=True).start()
     return jsonify({'status': 'uploading', 'doc_id': doc_id}), 201
 
@@ -532,6 +534,8 @@ def api_kb_import_entities(doc_id):
         total = imported['contacts'] + imported['inventory'] + imported['waypoints']
         log_activity('entity_import', 'documents', f'Imported {total} entities from doc #{doc_id}')
         return jsonify({'status': 'imported', 'results': imported, 'total_imported': total})
+
+
 @kb_bp.route('/api/kb/analyze-all', methods=['POST'])
 def api_kb_analyze_all():
     """Analyze all unanalyzed documents."""
@@ -564,6 +568,8 @@ def api_kb_workspaces():
     with db_session() as db:
         rows = db.execute('SELECT * FROM kb_workspaces ORDER BY name LIMIT ? OFFSET ?', (limit, offset)).fetchall()
         return jsonify([dict(r) for r in rows])
+
+
 @kb_bp.route('/api/kb/workspaces', methods=['POST'])
 def api_kb_workspace_create():
     """Create a KB workspace."""
@@ -579,6 +585,8 @@ def api_kb_workspace_create():
         db.commit()
         wid = db.execute('SELECT last_insert_rowid()').fetchone()[0]
         return jsonify({'id': wid, 'status': 'ok'}), 201
+
+
 @kb_bp.route('/api/kb/workspaces/<int:wid>', methods=['DELETE'])
 def api_kb_workspace_delete(wid):
     """Delete a KB workspace."""
@@ -588,6 +596,8 @@ def api_kb_workspace_delete(wid):
             return jsonify({'error': 'not found'}), 404
         db.commit()
         return jsonify({'status': 'ok'})
+
+
 # ─── Auto-OCR Pipeline ─────────────────────────────────────────────
 
 def _ocr_pipeline_scan():

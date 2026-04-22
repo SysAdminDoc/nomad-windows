@@ -7,7 +7,8 @@ import time
 import logging
 import requests as req
 from services.manager import (
-    get_services_dir, download_file, stop_process, is_running, check_port, _download_progress
+    get_services_dir, download_file, stop_process, is_running, check_port,
+    _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -152,10 +153,11 @@ def install(callback=None):
     os.makedirs(install_dir, exist_ok=True)
     jar_path = os.path.join(install_dir, 'Stirling-PDF.jar')
 
-    _download_progress[SERVICE_ID] = {
-        'percent': 0, 'status': 'downloading', 'error': None,
-        'speed': '', 'downloaded': 0, 'total': 0,
-    }
+    with _dl_progress_lock:
+        _download_progress[SERVICE_ID] = {
+            'percent': 0, 'status': 'downloading', 'error': None,
+            'speed': '', 'downloaded': 0, 'total': 0,
+        }
 
     try:
         # Resolve download URL from GitHub releases
@@ -189,7 +191,8 @@ def install(callback=None):
 
         # Auto-install Java if not found
         if not _find_java():
-            _download_progress[SERVICE_ID].update({'status': 'installing Java runtime...', 'percent': 90})
+            with _dl_progress_lock:
+                _download_progress[SERVICE_ID].update({'status': 'installing Java runtime...', 'percent': 90})
             _auto_install_java()
 
         db = get_db()
@@ -207,17 +210,19 @@ def install(callback=None):
         finally:
             db.close()
 
-        _download_progress[SERVICE_ID] = {
-            'percent': 100, 'status': 'complete', 'error': None,
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 100, 'status': 'complete', 'error': None,
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.info('Stirling-PDF installed successfully')
 
     except Exception as e:
-        _download_progress[SERVICE_ID] = {
-            'percent': 0, 'status': 'error', 'error': str(e),
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 0, 'status': 'error', 'error': str(e),
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.error(f'Stirling-PDF install failed: {e}')
         raise
 

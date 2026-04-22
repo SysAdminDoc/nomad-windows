@@ -32,6 +32,7 @@ from flask import Blueprint, request, jsonify, current_app
 
 from db import db_session, log_activity
 from web.blueprints import get_pagination
+from web.utils import coerce_int as _ci
 
 emergency_bp = Blueprint('emergency', __name__)
 log = logging.getLogger('nomad.emergency')
@@ -454,7 +455,7 @@ def api_rally_point_create(pid):
                 lat,
                 lng,
                 data.get('point_type', 'assembly'),
-                int(data.get('sequence_order', 0)),
+                _ci(data.get('sequence_order', 0), 0, minimum=0),
                 data.get('notes', ''),
                 now_iso,
             ),

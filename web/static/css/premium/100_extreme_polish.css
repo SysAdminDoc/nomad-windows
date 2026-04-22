@@ -120,3 +120,347 @@ textarea:disabled,
     -webkit-text-fill-color: var(--text-dim) !important;
   }
 }
+
+/* ─── 14. Workspace guidance: finish the shell guidance layer with calm structure ─ */
+.workspace-context-bar {
+  position: relative;
+  align-items: stretch;
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.workspace-context-copy,
+.workspace-context-actions {
+  position: relative;
+  z-index: 1;
+}
+
+.workspace-context-actions {
+  align-content: start;
+}
+
+.workspace-context-meta-actions {
+  align-items: center;
+}
+
+#workspace-context-guide-btn {
+  background: color-mix(in srgb, var(--accent-dim) 60%, var(--surface-solid));
+  border-color: color-mix(in srgb, var(--accent) 26%, var(--border));
+}
+
+#workspace-context-guide-btn[aria-expanded="true"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.workspace-inspector {
+  margin-top: 14px;
+  border-color: color-mix(in srgb, var(--accent) 20%, var(--border));
+  background:
+    radial-gradient(circle at top right, color-mix(in srgb, var(--accent) 10%, transparent), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-solid) 98%, transparent), color-mix(in srgb, var(--surface2) 94%, transparent));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent),
+    0 20px 48px rgba(0, 0, 0, 0.18);
+}
+
+/* ─── 15. Home workspace: stronger rhythm, calmer re-entry, clearer scan paths ─ */
+@media (min-width: 1200px) {
+  .home-continue-panel {
+    position: sticky;
+    top: calc(var(--stacked-top-offset, 0px) + 22px);
+  }
+}
+
+.home-launch-hero,
+.home-continue-panel > .workspace-panel,
+.home-context-section {
+  overflow: hidden;
+}
+
+.home-context-section + .home-context-section {
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--border) 72%, transparent);
+}
+
+.home-continue-summary {
+  max-width: 54ch;
+}
+
+.home-continue-empty {
+  min-height: 92px;
+  align-items: flex-start;
+}
+
+/* ─── 16. Copilot workspace: cleaner control density and steadier composition ─── */
+.chat-layout {
+  align-items: stretch;
+}
+
+.convo-sidebar {
+  width: min(292px, 100%);
+}
+
+.convo-sidebar-header,
+.convo-sidebar-footer {
+  background: color-mix(in srgb, var(--surface-solid) 94%, transparent);
+}
+
+.convo-sidebar-intro {
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--border) 70%, transparent);
+  border-radius: var(--radius-lg, 18px);
+  background: color-mix(in srgb, var(--surface2) 70%, transparent);
+}
+
+.convo-list {
+  padding: 10px;
+}
+
+.convo-item {
+  border: 1px solid transparent;
+  border-radius: var(--radius-md, 14px);
+}
+
+.convo-item.active {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--accent-glow) 14%, transparent);
+}
+
+.chat-header {
+  gap: 14px;
+}
+
+.chat-header-control-strip {
+  row-gap: 10px;
+}
+
+.chat-header-state {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent-dim) 54%, var(--surface-solid));
+}
+
+#chat-empty {
+  min-height: 240px;
+  gap: 14px;
+}
+
+.chat-empty-copy {
+  max-width: 52ch;
+}
+
+.chat-input-area {
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+  padding-block: 12px;
+  background: linear-gradient(180deg, color-mix(in srgb, transparent 0%, transparent), color-mix(in srgb, var(--bg) 96%, transparent) 28%, var(--bg) 100%);
+}
+
+/* ─── 17. Settings workspace: make maintenance feel more composed than crowded ─ */
+.settings-search-bar {
+  position: sticky;
+  top: calc(var(--stacked-top-offset, 0px) + 16px);
+  z-index: 4;
+}
+
+.settings-search-field {
+  min-height: 46px;
+}
+
+.settings-command-actions,
+.settings-memory-actions {
+  row-gap: 10px;
+}
+
+.settings-memory-stat {
+  border-color: color-mix(in srgb, var(--border) 76%, transparent);
+  background: color-mix(in srgb, var(--surface-solid) 90%, transparent);
+}
+
+.settings-empty-state,
+.system-gauges-loading {
+  min-height: 96px;
+  justify-content: center;
+  align-items: flex-start !important;
+  border: 1px dashed color-mix(in srgb, var(--border-hover) 28%, var(--border));
+  border-radius: var(--radius-lg, 18px);
+  background: color-mix(in srgb, var(--surface-solid) 82%, transparent);
+}
+
+@media (max-width: 1100px) {
+  .workspace-context-bar {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ─── 18. Secondary workspaces: add trust cues and calmer writing/reference flow ─ */
+.notes-command-actions,
+.library-command-actions,
+.media-command-actions {
+  row-gap: 10px;
+}
+
+.notes-layout,
+.media-layout {
+  align-items: stretch;
+}
+
+.notes-sidebar,
+.notes-editor,
+.library-command-deck,
+#kiwix-preflight-banner,
+#wiki-tier-selector,
+#content-updates-panel,
+#zim-download-queue,
+#doc-library,
+.media-sidebar,
+.media-main {
+  overflow: hidden;
+}
+
+.notes-sidebar {
+  width: min(292px, 100%);
+}
+
+.notes-editor-header {
+  row-gap: 10px;
+}
+
+#note-title {
+  min-width: 220px;
+}
+
+#note-tags {
+  min-width: 220px;
+}
+
+.notes-editor-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 10px 14px 0;
+  color: var(--text-muted);
+}
+
+.notes-editor-meta {
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.notes-editor-status-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.notes-save-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: var(--radius-full, 999px);
+  border: 1px solid color-mix(in srgb, var(--border-hover) 28%, var(--border));
+  background: color-mix(in srgb, var(--surface-solid) 88%, transparent);
+  color: var(--text-muted);
+  font-size: var(--text-2xs, 9px);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.notes-save-state[data-state="dirty"] {
+  border-color: color-mix(in srgb, var(--amber, #f4b860) 26%, var(--border));
+  color: color-mix(in srgb, var(--amber, #f4b860) 76%, var(--text));
+}
+
+.notes-save-state[data-state="saving"] {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  color: var(--accent);
+}
+
+.notes-save-state[data-state="saved"] {
+  border-color: color-mix(in srgb, var(--ok, #69c27d) 24%, var(--border));
+  color: color-mix(in srgb, var(--ok, #69c27d) 76%, var(--text));
+}
+
+.notes-save-state[data-state="error"] {
+  border-color: color-mix(in srgb, var(--danger, #f06b6b) 24%, var(--border));
+  color: color-mix(in srgb, var(--danger, #f06b6b) 76%, var(--text));
+}
+
+.notes-word-count {
+  padding: 0;
+  color: var(--text-muted);
+}
+
+.library-command-deck,
+#kiwix-preflight-banner,
+#wiki-tier-selector,
+#content-updates-panel,
+#zim-download-queue,
+#doc-library {
+  box-shadow: inset 0 1px 0 var(--panel-highlight), var(--shadow-panel);
+}
+
+#kiwix-preflight-banner .workspace-copy,
+#content-updates-panel .workspace-copy,
+#doc-library .library-doc-intro {
+  max-width: 68ch;
+  line-height: 1.6;
+}
+
+#content-updates-meta,
+#zim-queue-meta {
+  margin-left: auto;
+  text-align: right;
+}
+
+.media-sidebar {
+  width: min(252px, 100%);
+}
+
+.media-command-deck {
+  border-bottom-color: color-mix(in srgb, var(--border) 78%, transparent);
+}
+
+.media-crosssearch {
+  max-width: 760px;
+}
+
+.media-browser-toolbar,
+.media-topbar,
+.media-subtabs {
+  row-gap: 10px;
+}
+
+#dl-queue-summary {
+  margin-left: auto;
+}
+
+.media-browser-region,
+#media-content-area,
+#dl-queue-panel,
+#media-catalog-panel,
+#media-ytdlp-banner,
+#media-dl-progress {
+  border-top: 1px solid color-mix(in srgb, var(--border) 74%, transparent);
+}
+
+.media-inline-empty {
+  line-height: 1.6;
+}
+
+@media (max-width: 980px) {
+  .notes-editor-status-row {
+    align-items: flex-start;
+  }
+
+  #note-title,
+  #note-tags {
+    min-width: min(100%, 220px);
+  }
+}

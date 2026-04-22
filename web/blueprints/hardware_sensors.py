@@ -9,6 +9,7 @@ from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
 from web.blueprints import get_pagination
+from web.utils import coerce_int as _ci, coerce_float as _cf
 
 _log = logging.getLogger(__name__)
 
@@ -347,8 +348,8 @@ def network_create():
              (data.get('location') or '')[:200],
              (data.get('vlan') or '')[:50],
              data.get('role', 'infrastructure'),
-             int(data.get('port_count', 0)),
-             int(data.get('uplink_to', 0)),
+             _ci(data.get('port_count', 0), 0),
+             _ci(data.get('uplink_to', 0), 0),
              data.get('last_seen', ''),
              data.get('status', 'online'),
              (data.get('notes') or '')[:2000])
@@ -517,16 +518,16 @@ def mesh_create():
                  (data.get('hardware_model') or '')[:100],
                  (data.get('firmware_version') or '')[:50],
                  data.get('role', 'client'),
-                 float(data.get('latitude', 0)),
-                 float(data.get('longitude', 0)),
-                 float(data.get('altitude_m', 0)),
-                 int(data.get('battery_level', 0)),
-                 float(data.get('voltage', 0)),
-                 float(data.get('channel_utilization', 0)),
-                 float(data.get('air_util_tx', 0)),
-                 float(data.get('snr', 0)),
-                 int(data.get('rssi', 0)),
-                 int(data.get('hops_away', 0)),
+                 _cf(data.get('latitude', 0), 0.0),
+                 _cf(data.get('longitude', 0), 0.0),
+                 _cf(data.get('altitude_m', 0), 0.0),
+                 _ci(data.get('battery_level', 0), 0),
+                 _cf(data.get('voltage', 0), 0.0),
+                 _cf(data.get('channel_utilization', 0), 0.0),
+                 _cf(data.get('air_util_tx', 0), 0.0),
+                 _cf(data.get('snr', 0), 0.0),
+                 _ci(data.get('rssi', 0), 0),
+                 _ci(data.get('hops_away', 0), 0),
                  data.get('last_heard', ''),
                  data.get('status', 'online'),
                  (data.get('notes') or '')[:2000])
@@ -684,10 +685,10 @@ def weather_create():
              (data.get('ip_address') or '')[:45],
              (data.get('api_key') or '')[:500],
              (data.get('location') or '')[:200],
-             float(data.get('latitude', 0)),
-             float(data.get('longitude', 0)),
-             float(data.get('elevation_ft', 0)),
-             int(data.get('polling_interval_sec', 60)),
+             _cf(data.get('latitude', 0), 0.0),
+             _cf(data.get('longitude', 0), 0.0),
+             _cf(data.get('elevation_ft', 0), 0.0),
+             _ci(data.get('polling_interval_sec', 60), 60, minimum=1),
              data.get('last_poll', ''),
              current_data,
              data.get('status', 'active'),
@@ -794,14 +795,14 @@ def gps_create():
              (data.get('serial_number') or '')[:100],
              data.get('connection_type', 'usb'),
              (data.get('port') or '')[:50],
-             int(data.get('baud_rate', 9600)),
-             float(data.get('last_fix_lat', 0)),
-             float(data.get('last_fix_lon', 0)),
-             float(data.get('last_fix_alt', 0)),
+             _ci(data.get('baud_rate', 9600), 9600, minimum=0),
+             _cf(data.get('last_fix_lat', 0), 0.0),
+             _cf(data.get('last_fix_lon', 0), 0.0),
+             _cf(data.get('last_fix_alt', 0), 0.0),
              data.get('last_fix_time', ''),
-             float(data.get('accuracy_m', 0)),
-             int(data.get('satellites', 0)),
-             int(data.get('battery_pct', 100)),
+             _cf(data.get('accuracy_m', 0), 0.0),
+             _ci(data.get('satellites', 0), 0, minimum=0),
+             _ci(data.get('battery_pct', 100), 100, minimum=0, maximum=100),
              data.get('status', 'disconnected'),
              (data.get('notes') or '')[:2000])
         )
@@ -871,6 +872,11 @@ def gps_record_fix(gid):
     lon = data.get('lon') or data.get('longitude')
     if lat is None or lon is None:
         return jsonify({'error': 'lat and lon are required'}), 400
+    try:
+        lat_f = float(lat)
+        lon_f = float(lon)
+    except (TypeError, ValueError):
+        return jsonify({'error': 'lat and lon must be numeric'}), 400
     now_str = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
     with db_session() as db:
         device = db.execute('SELECT id FROM gps_devices WHERE id = ?', (gid,)).fetchone()
@@ -882,11 +888,11 @@ def gps_record_fix(gid):
                last_fix_time = ?, accuracy_m = ?, satellites = ?,
                status = 'fix', updated_at = datetime('now')
                WHERE id = ?''',
-            (float(lat), float(lon),
-             float(data.get('alt', data.get('altitude', 0))),
+            (lat_f, lon_f,
+             _cf(data.get('alt', data.get('altitude', 0)), 0.0),
              data.get('timestamp', now_str),
-             float(data.get('accuracy_m', 0)),
-             int(data.get('satellites', 0)),
+             _cf(data.get('accuracy_m', 0), 0.0),
+             _ci(data.get('satellites', 0), 0, minimum=0),
              gid)
         )
         db.commit()
@@ -950,7 +956,7 @@ def wearables_create():
              (data.get('wearer') or '')[:200],
              data.get('connection_type', 'bluetooth'),
              data.get('last_sync', ''),
-             int(data.get('battery_pct', 100)),
+             _ci(data.get('battery_pct', 100), 100, minimum=0, maximum=100),
              current_data,
              data.get('status', 'paired'),
              (data.get('notes') or '')[:2000])
@@ -1068,9 +1074,9 @@ def integrations_create():
              (data.get('username') or '')[:200],
              (data.get('auth_token') or '')[:1000],
              config_json,
-             int(data.get('polling_interval_sec', 60)),
+             _ci(data.get('polling_interval_sec', 60), 60, minimum=1),
              data.get('last_sync', ''),
-             int(data.get('sync_count', 0)),
+             _ci(data.get('sync_count', 0), 0, minimum=0),
              data.get('status', 'disabled'),
              (data.get('error_message') or '')[:2000],
              (data.get('notes') or '')[:2000])

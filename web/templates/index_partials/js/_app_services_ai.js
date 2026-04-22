@@ -1211,6 +1211,7 @@ async function loadZimDownloads() {
     const completed = entries.filter(([,v]) => v.status === 'complete');
     const queueEl = document.getElementById('zim-download-queue');
     const itemsEl = document.getElementById('zim-queue-items');
+    const metaEl = document.getElementById('zim-queue-meta');
     // Show success toasts for newly completed downloads
     completed.forEach(([filename]) => {
       if (!window._zimCompletedSet) window._zimCompletedSet = new Set();
@@ -1236,10 +1237,18 @@ async function loadZimDownloads() {
     if (errors.length && _cachedCatalog) renderFullCatalog(_cachedCatalog);
     if (!active.length && !errors.length) {
       queueEl.style.display = 'none';
+      if (metaEl) metaEl.textContent = '';
       stopZimQueuePoll();
       return;
     }
     queueEl.style.display = 'block';
+    if (metaEl) {
+      const summaryParts = [];
+      if (active.length) summaryParts.push(`${active.length} active`);
+      if (errors.length) summaryParts.push(`${errors.length} issue${errors.length === 1 ? '' : 's'}`);
+      if (completed.length) summaryParts.push(`${completed.length} ready`);
+      metaEl.textContent = summaryParts.join(' · ');
+    }
     let html = active.map(([filename, p]) => `
       <div class="zim-queue-item">
         <div class="zq-name">${escapeHtml(filename)}</div>

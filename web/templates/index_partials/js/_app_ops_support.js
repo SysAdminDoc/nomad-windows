@@ -861,7 +861,10 @@ async function toggleNotePin() {
   try {
     await apiPost(`/api/notes/${currentNoteId}/pin`, {pinned:newPinned});
     n.pinned = newPinned;
+    n.updated_at = new Date().toISOString();
     pinBtn.textContent = newPinned ? 'Unpin' : 'Pin';
+    updateNoteEditorMeta(n);
+    setNoteSaveState('saved', newPinned ? 'Pinned' : 'Unpinned');
     toast(newPinned ? 'Note pinned' : 'Note unpinned', 'success');
     await loadNotes();
   } catch(e) { console.error(e); toast(e?.data?.error || 'Failed to update note', 'error'); }
@@ -870,17 +873,27 @@ async function toggleNotePin() {
 let _tagSaveTimer;
 function autoSaveNoteTags() {
   clearTimeout(_tagSaveTimer);
+  setNoteSaveState('dirty');
   _tagSaveTimer = setTimeout(async () => {
     if (!currentNoteId) return;
     const tagsInput = document.getElementById('note-tags');
     if (!tagsInput) return;
     const tags = tagsInput.value;
+    setNoteSaveState('saving');
     try {
       await apiPut('/api/notes/' + currentNoteId + '/tags', {tags});
       const n = allNotes.find(n => n.id === currentNoteId);
-      if (n) n.tags = tags;
+      if (n) {
+        n.tags = tags;
+        n.updated_at = new Date().toISOString();
+      }
       renderNotesList();
-    } catch(e) { toast('Failed to save tags', 'error'); }
+      updateNoteEditorMeta(n);
+      setNoteSaveState('saved');
+    } catch(e) {
+      setNoteSaveState('error');
+      toast('Failed to save tags', 'error');
+    }
   }, 500);
 }
 

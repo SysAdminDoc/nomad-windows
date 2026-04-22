@@ -2435,7 +2435,12 @@ def refresh_all_feeds():
             with _state_lock:
                 _fetch_running = False
 
-    threading.Thread(target=_worker, daemon=True).start()
+    try:
+        threading.Thread(target=_worker, daemon=True).start()
+    except Exception:
+        with _state_lock:
+            _fetch_running = False
+        raise
     return True
 
 
@@ -2835,9 +2840,9 @@ def api_sitroom_add_feed():
 def api_sitroom_delete_feed(feed_id):
     with db_session() as db:
         r = db.execute('DELETE FROM sitroom_custom_feeds WHERE id = ?', (feed_id,))
-        db.commit()
         if r.rowcount == 0:
             return jsonify({'error': 'Feed not found'}), 404
+        db.commit()
     return jsonify({'deleted': True})
 
 
@@ -3506,21 +3511,21 @@ def api_sitroom_live_channels():
 def api_sitroom_monitors():
     """Return keyword monitor list and matches."""
     with db_session() as db:
-        # Ensure table exists
+        # Ensure table exists on first access before POST has ever been called
         db.execute('''CREATE TABLE IF NOT EXISTS sitroom_monitors
             (id INTEGER PRIMARY KEY, keyword TEXT NOT NULL, color TEXT DEFAULT '#4aedc4',
              created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)''')
         monitors = db.execute('SELECT * FROM sitroom_monitors ORDER BY created_at DESC LIMIT 200').fetchall()
-        db.commit()
-
-    results = []
-    for m in monitors:
-        kw = m['keyword'].lower()
-        with db_session() as db:
+        # Resolve matches within the same session to avoid N+1 connections
+        results = []
+        for m in monitors:
+            kw = m['keyword'].lower()
             matches = db.execute(
-                "SELECT title, link, category, source_name FROM sitroom_news WHERE LOWER(title) LIKE ? ORDER BY cached_at DESC LIMIT 10",
-                (f'%{kw}%',)).fetchall()
-        results.append({**dict(m), 'matches': [dict(r) for r in matches], 'match_count': len(matches)})
+                "SELECT title, link, category, source_name FROM sitroom_news "
+                "WHERE LOWER(title) LIKE ? ORDER BY cached_at DESC LIMIT 10",
+                (f'%{kw}%',),
+            ).fetchall()
+            results.append({**dict(m), 'matches': [dict(r) for r in matches], 'match_count': len(matches)})
 
     return jsonify({'monitors': results})
 

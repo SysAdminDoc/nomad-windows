@@ -6,7 +6,8 @@ import time
 import logging
 import requests as req
 from services.manager import (
-    get_services_dir, download_file, stop_process, is_running, check_port, _download_progress
+    get_services_dir, download_file, stop_process, is_running, check_port,
+    _download_progress, _dl_progress_lock,
 )
 from db import get_db
 
@@ -77,10 +78,11 @@ def install(callback=None):
     arc_ext = '.zip' if IS_WINDOWS else '.tar.gz'
     zip_path = os.path.join(install_dir, 'qdrant' + arc_ext)
 
-    _download_progress[SERVICE_ID] = {
-        'percent': 0, 'status': 'downloading', 'error': None,
-        'speed': '', 'downloaded': 0, 'total': 0,
-    }
+    with _dl_progress_lock:
+        _download_progress[SERVICE_ID] = {
+            'percent': 0, 'status': 'downloading', 'error': None,
+            'speed': '', 'downloaded': 0, 'total': 0,
+        }
 
     try:
         # Resolve download URL from GitHub releases
@@ -103,7 +105,8 @@ def install(callback=None):
 
         download_file(zip_url, zip_path, SERVICE_ID)
 
-        _download_progress[SERVICE_ID]['status'] = 'extracting'
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID]['status'] = 'extracting'
         extract_archive(zip_path, install_dir)
         make_executable(get_exe_path())
 
@@ -122,17 +125,19 @@ def install(callback=None):
         finally:
             db.close()
 
-        _download_progress[SERVICE_ID] = {
-            'percent': 100, 'status': 'complete', 'error': None,
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 100, 'status': 'complete', 'error': None,
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.info('Qdrant installed successfully')
 
     except Exception as e:
-        _download_progress[SERVICE_ID] = {
-            'percent': 0, 'status': 'error', 'error': str(e),
-            'speed': '', 'downloaded': 0, 'total': 0,
-        }
+        with _dl_progress_lock:
+            _download_progress[SERVICE_ID] = {
+                'percent': 0, 'status': 'error', 'error': str(e),
+                'speed': '', 'downloaded': 0, 'total': 0,
+            }
         log.error(f'Qdrant install failed: {e}')
         raise
 

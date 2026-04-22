@@ -250,6 +250,66 @@ async function loadMapSources() {
 
 /* ─── Notes ─── */
 let allNotes = [];
+const _noteSaveStateLabels = {
+  idle: 'Ready',
+  dirty: 'Unsaved changes',
+  saving: 'Saving...',
+  saved: 'Saved',
+  error: 'Save failed',
+};
+
+function _getActiveNoteRecord() {
+  return allNotes.find(note => note.id === currentNoteId) || null;
+}
+
+function setNoteSaveState(state = 'idle', text = '') {
+  const el = document.getElementById('note-save-state');
+  if (!el) return;
+  const nextState = state || 'idle';
+  el.dataset.state = nextState;
+  el.textContent = text || _noteSaveStateLabels[nextState] || _noteSaveStateLabels.idle;
+}
+
+function formatNoteTimestamp(value) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function updateNoteEditorMeta(note = null, options = {}) {
+  const metaEl = document.getElementById('note-active-meta');
+  if (!metaEl) return;
+  const emptyMessage = options.emptyMessage || 'Create or open a note to start a stable local writing thread.';
+  if (!note) {
+    metaEl.textContent = emptyMessage;
+    return;
+  }
+  const bits = [];
+  if (note.pinned) bits.push('Pinned');
+  const stamp = formatNoteTimestamp(note.updated_at);
+  bits.push(stamp ? `Updated ${stamp}` : 'Draft note');
+  const tags = String(note.tags || '')
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(Boolean);
+  if (tags.length) bits.push(`${tags.length} tag${tags.length === 1 ? '' : 's'}`);
+  metaEl.textContent = bits.join(' · ');
+}
+
+function getFilteredNotes(query = '') {
+  const normalized = String(query || '').trim().toLowerCase();
+  if (!normalized) return Array.isArray(allNotes) ? allNotes : [];
+  return (Array.isArray(allNotes) ? allNotes : []).filter(note =>
+    [note.title, note.tags, note.content].some(value => String(value || '').toLowerCase().includes(normalized))
+  );
+}
+
 async function loadNotes() {
   const notesList = document.getElementById('notes-list');
   if (notesList && (!allNotes || allNotes.length === 0)) notesList.innerHTML = Array(4).fill('<div class="skeleton skeleton-card notes-skeleton"></div>').join('');
@@ -258,6 +318,7 @@ async function loadNotes() {
     allNotes = Array.isArray(notes) ? notes : (allNotes || []);
   } catch(e) { allNotes = allNotes || []; }
   renderNotesList();
+  if (currentNoteId) updateNoteEditorMeta(_getActiveNoteRecord());
 }
 function renderNoteListHtml(items, emptyText) {
   return items.map(n => `
@@ -266,16 +327,16 @@ function renderNoteListHtml(items, emptyText) {
         ${n.pinned ? '<span class="note-pin" title="Pinned">&#9733;</span>' : ''}
         <div class="note-title">${escapeHtml(n.title||'Untitled')}</div>
       </div>
-      <div class="note-date">${n.tags ? '<span class="note-tag-list">' + n.tags.split(',').map(t=>t.trim()).filter(t=>t).map(t=>'<span class="note-tag-badge">'+escapeHtml(t)+'</span>').join('') + '</span> ' : ''}${new Date(n.updated_at).toLocaleDateString()}</div>
+      <div class="note-date">${n.tags ? '<span class="note-tag-list">' + n.tags.split(',').map(t=>t.trim()).filter(t=>t).map(t=>'<span class="note-tag-badge">'+escapeHtml(t)+'</span>').join('') + '</span> ' : ''}${escapeHtml(formatNoteTimestamp(n.updated_at) || 'Draft note')}</div>
     </div>
   `).join('') || `<div class="notes-empty-state">${emptyText}</div>`;
 }
 function renderNotesList() {
   const list = document.getElementById('notes-list');
   if (!list) return;
-  const q = (document.getElementById('notes-search')?.value || '').toLowerCase();
-  let filtered = q ? allNotes.filter(n => (n.title||'').toLowerCase().includes(q) || (n.tags||'').toLowerCase().includes(q)) : allNotes;
-  list.innerHTML = renderNoteListHtml(filtered, 'No notes yet');
+  const q = document.getElementById('notes-search')?.value || '';
+  const filtered = getFilteredNotes(q);
+  list.innerHTML = renderNoteListHtml(filtered, q.trim() ? 'No matches' : 'No notes yet');
 }
 function selectNote(id) {
   currentNoteId = id;
@@ -293,6 +354,8 @@ function selectNote(id) {
   }
   renderNotesList();
   updateNoteWordCount();
+  updateNoteEditorMeta(n);
+  setNoteSaveState('saved', n ? 'Saved' : 'Ready');
   loadNoteBacklinks(id);
 }
 async function createNote() {
@@ -300,6 +363,7 @@ async function createNote() {
   if (!n || !n.id) { toast('Failed to create note', 'error'); return; }
   await loadNotes();
   selectNote(n.id);
+  setNoteSaveState('saved', 'Draft created');
 }
 function exportCurrentNote() {
   if (!currentNoteId) { toast('No note selected', 'warning'); return; }
@@ -367,25 +431,28 @@ async function deleteNote() {
   if (!currentNoteId) return;
   const titleInput = document.getElementById('note-title');
   const contentInput = document.getElementById('note-content');
-  if (!titleInput || !contentInput) return;
+  const tagsInput = document.getElementById('note-tags');
+  if (!titleInput || !contentInput || !tagsInput) return;
   try {
     await _workspaceFetchOk(`/api/notes/${currentNoteId}`, {method:'DELETE'}, 'Failed to delete note');
     currentNoteId = null;
     titleInput.value = '';
     contentInput.value = '';
+    tagsInput.value = '';
+    updateNoteEditorMeta(null);
+    updateNoteWordCount();
+    setNoteSaveState('idle', 'Ready');
     await loadNotes();
   } catch (e) {
     toast(e.message || 'Failed to delete note', 'error');
   }
 }
 function filterNotes() {
-  const searchInput = document.getElementById('notes-search');
   const list = document.getElementById('notes-list');
+  const searchInput = document.getElementById('notes-search');
   if (!searchInput || !list) return;
-  const q = searchInput.value.toLowerCase();
-  if (!q) { renderNotesList(); return; }
-  const filtered = allNotes.filter(n => (n.title||'').toLowerCase().includes(q) || (n.content||'').toLowerCase().includes(q));
-  list.innerHTML = renderNoteListHtml(filtered, 'No matches');
+  const filtered = getFilteredNotes(searchInput.value);
+  list.innerHTML = renderNoteListHtml(filtered, searchInput.value.trim() ? 'No matches' : 'No notes yet');
 }
 
 function updateNoteWordCount() {
@@ -393,21 +460,35 @@ function updateNoteWordCount() {
   const words = text.trim() ? text.trim().split(/\s+/).length : 0;
   const chars = text.length;
   const el = document.getElementById('note-word-count');
-  if (el) el.textContent = words > 0 ? `${words} words | ${chars} chars` : '';
+  if (el) el.textContent = words > 0 ? `${words} words · ${chars} chars` : '0 words';
 }
 
 function autoSaveNote() {
   if (!currentNoteId) return;
+  setNoteSaveState('dirty');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     const titleInput = document.getElementById('note-title');
     const contentInput = document.getElementById('note-content');
     if (!titleInput || !contentInput) return;
+    setNoteSaveState('saving');
     try {
       await _workspaceFetchOk(`/api/notes/${currentNoteId}`, {method:'PUT', headers:{'Content-Type':'application/json'},
         body:JSON.stringify({title:titleInput.value, content:contentInput.value})}, 'Note save failed');
+      const note = _getActiveNoteRecord();
+      if (note) {
+        note.title = titleInput.value;
+        note.content = contentInput.value;
+        note.updated_at = new Date().toISOString();
+      }
+      renderNotesList();
+      updateNoteEditorMeta(note);
+      setNoteSaveState('saved');
       await loadNotes();
-    } catch(e) { toast(e.message || 'Note save failed', 'error'); }
+    } catch(e) {
+      setNoteSaveState('error');
+      toast(e.message || 'Note save failed', 'error');
+    }
   }, 500);
 }
 

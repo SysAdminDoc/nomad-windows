@@ -13,7 +13,7 @@ from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
 from web.auth import require_auth
-from web.utils import coerce_int as _coerce_int
+from web.utils import coerce_int as _coerce_int, coerce_float as _coerce_float
 
 _log = logging.getLogger(__name__)
 
@@ -749,7 +749,7 @@ def metrics_record():
                VALUES (?,?,?,?,?)''',
             (metric_type,
              metric_name,
-             float(data.get('value', 0)),
+             _coerce_float(data.get('value', 0), 0.0),
              data.get('unit', 'ms'),
              context)
         )

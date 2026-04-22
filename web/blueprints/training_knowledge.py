@@ -8,6 +8,7 @@ from flask import Blueprint, request, jsonify
 
 from db import db_session, log_activity
 from web.blueprints import get_pagination
+from web.utils import coerce_int as _ci, coerce_float as _cf
 
 log = logging.getLogger(__name__)
 
@@ -157,7 +158,7 @@ def api_skills_create():
     data = request.get_json() or {}
     if not data.get('person_name') or not data.get('skill_name'):
         return jsonify({'error': 'person_name and skill_name required'}), 400
-    level = max(1, min(5, int(data.get('level', 1))))
+    level = max(1, min(5, _ci(data.get('level', 1), 1, minimum=1, maximum=5)))
     with db_session() as db:
         cur = db.execute(
             '''INSERT INTO skill_trees (person_name, skill_name, category, level, prerequisites,
@@ -305,8 +306,8 @@ def api_courses_create():
                instructor, max_students, prerequisites_text, materials_needed, status)
                VALUES (?,?,?,?,?,?,?,?,?,?)''',
             (data['title'], data.get('description', ''), data.get('category', ''),
-             difficulty, float(data.get('estimated_hours', 0)),
-             data.get('instructor', ''), int(data.get('max_students', 0)),
+             difficulty, _cf(data.get('estimated_hours', 0), 0.0, minimum=0.0),
+             data.get('instructor', ''), _ci(data.get('max_students', 0), 0, minimum=0),
              data.get('prerequisites_text', ''), data.get('materials_needed', ''), status))
         db.commit()
         cid = cur.lastrowid
@@ -430,7 +431,7 @@ def api_lessons_create(cid):
                duration_minutes, lesson_type, materials, objectives, completed_by)
                VALUES (?,?,?,?,?,?,?,?,?)''',
             (cid, int(lesson_number), data['title'], data.get('content', ''),
-             int(data.get('duration_minutes', 0)), lesson_type,
+             _ci(data.get('duration_minutes', 0), 0, minimum=0), lesson_type,
              data.get('materials', ''), json.dumps(data.get('objectives', [])),
              json.dumps(data.get('completed_by', []))))
         db.commit()
@@ -526,7 +527,7 @@ def api_certifications_create():
                VALUES (?,?,?,?,?,?,?,?,?)''',
             (data['person_name'], data['certification_name'],
              data.get('issuing_authority', ''), data.get('date_earned', ''),
-             data.get('expiration_date', ''), int(data.get('renewal_interval_days', 0)),
+             data.get('expiration_date', ''), _ci(data.get('renewal_interval_days', 0), 0, minimum=0),
              status, data.get('document_ref', ''), data.get('notes', '')))
         db.commit()
         cid = cur.lastrowid
@@ -623,8 +624,8 @@ def api_drill_templates_create():
                VALUES (?,?,?,?,?,?,?,?,?)''',
             (data['name'], drill_type, data.get('description', ''),
              json.dumps(data.get('phases', [])), json.dumps(data.get('grading_criteria', [])),
-             int(data.get('estimated_duration_minutes', 0)),
-             int(data.get('personnel_required', 0)),
+             _ci(data.get('estimated_duration_minutes', 0), 0, minimum=0),
+             _ci(data.get('personnel_required', 0), 0, minimum=0),
              data.get('equipment_needed', ''), 0))
         db.commit()
         tid = cur.lastrowid
@@ -831,8 +832,8 @@ def api_flashcards_create():
                VALUES (?,?,?,?,?,?,?,?,?,?,?,?)''',
             (data.get('deck_name', 'Default'), data.get('category', ''),
              data['front_text'], data['back_text'],
-             max(1, min(5, int(data.get('difficulty', 1)))),
-             int(data.get('interval_days', 1)), float(data.get('ease_factor', 2.5)),
+             max(1, min(5, _ci(data.get('difficulty', 1), 1, minimum=1, maximum=5))),
+             _ci(data.get('interval_days', 1), 1, minimum=1), _cf(data.get('ease_factor', 2.5), 2.5),
              data.get('next_review', _today_str()),
              0, 0, None, json.dumps(data.get('tags', []))))
         db.commit()
@@ -975,7 +976,7 @@ def api_knowledge_packages_create():
              json.dumps(data.get('contacts_referenced', [])),
              data.get('critical_knowledge', ''), data.get('contingency_plans', ''),
              data.get('last_reviewed', ''),
-             int(data.get('review_interval_days', 90)), status))
+             _ci(data.get('review_interval_days', 90), 90, minimum=1), status))
         db.commit()
         kid = cur.lastrowid
     log_activity('knowledge_package_created', service='training',

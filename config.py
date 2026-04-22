@@ -82,6 +82,7 @@ class Config:
 
     # --- Security ---
     SECRET_KEY = os.environ.get('NOMAD_SECRET_KEY', '')
+    _SECRET_KEY_LOCK = threading.Lock()
 
     # --- Rate Limiting ---
     RATELIMIT_DEFAULT = os.environ.get('NOMAD_RATELIMIT_DEFAULT', '200/minute')
@@ -101,7 +102,11 @@ class Config:
         V8-15: When auth is required for LAN, persist the key to config.json
         so sessions survive app restarts.
         """
-        if not cls.SECRET_KEY:
+        if cls.SECRET_KEY:
+            return cls.SECRET_KEY
+        with cls._SECRET_KEY_LOCK:
+            if cls.SECRET_KEY:  # double-checked locking
+                return cls.SECRET_KEY
             # Check config.json for a persisted key
             saved = get_config_value('secret_key', '')
             if saved:
@@ -146,19 +151,19 @@ def load_config() -> dict:
     path = get_config_path()
     with _config_lock:
         if not os.path.isfile(path):
-            return _config_cache if _config_cache is not None else {}
+            return dict(_config_cache) if _config_cache is not None else {}
         try:
             mtime = os.path.getmtime(path)
         except OSError:
-            return _config_cache if _config_cache is not None else {}
-        # Return cached version if file hasn't changed
+            return dict(_config_cache) if _config_cache is not None else {}
+        # Return a shallow copy so callers cannot mutate the live cache.
         if _config_cache is not None and mtime == _config_mtime:
-            return _config_cache
+            return dict(_config_cache)
         try:
             with open(path, 'r') as f:
                 _config_cache = json.load(f)
                 _config_mtime = mtime
-                return _config_cache
+                return dict(_config_cache)
         except (json.JSONDecodeError, OSError) as e:
             log.warning(f'Could not load config from {path}: {e}')
             # Try recovering from .tmp backup
@@ -169,10 +174,10 @@ def load_config() -> dict:
                         data = json.load(f)
                     log.info(f'Recovered config from {tmp_path}')
                     _config_cache = data
-                    return data
+                    return dict(data)
                 except (json.JSONDecodeError, OSError):
                     pass
-        return _config_cache if _config_cache is not None else {}
+        return dict(_config_cache) if _config_cache is not None else {}
 
 
 def _expand_env_vars(value):
@@ -228,8 +233,9 @@ def save_config(data: dict):
                     raise PermissionError(f'Could not write config after retries: {path}')
             else:
                 raise
-        # Update cache immediately so subsequent reads are consistent
-        _config_cache = data
+        # Update cache immediately so subsequent reads are consistent.
+        # Store a copy so the caller's dict and the cache are independent.
+        _config_cache = dict(data)
         try:
             _config_mtime = os.path.getmtime(path)
         except OSError:

@@ -8,11 +8,11 @@
           <button class="btn btn-sm btn-primary" data-chat-action="new-conversation">New Chat</button>
         </div>
         <div class="convo-sidebar-intro">
-          <strong>Private Threads</strong>
-          <span>Keep plans, branches, and exports organized by task. Everything on this shelf stays local to this device.</span>
+          <strong>Local Threads</strong>
+          <span>Keep plans, branches, and exports organized by task. Everything on this shelf stays on this device.</span>
         </div>
         <div class="convo-search">
-          <input id="convo-search" type="search" name="conversation_search" autocomplete="off" aria-label="Search conversations" placeholder="Search conversations…" data-input-action="filter-convos">
+          <input id="convo-search" type="search" name="conversation_search" autocomplete="off" aria-label="Search conversations" placeholder="Search threads, titles, and recent work…" data-input-action="filter-convos">
         </div>
         <div class="convo-tag-filter">
           <select id="convo-tag-filter" name="convo_tag_filter" aria-label="Filter by tag" data-change-action="filter-convo-tag">
@@ -31,7 +31,7 @@
               <div class="section-header-label chat-header-kicker">COPILOT WORKSPACE</div>
               <div class="chat-header-title-row">
                 <div class="chat-header-title">Plan, analyze, and decide from one calm workspace.</div>
-                <div class="chat-header-state">Private + Local</div>
+                <div class="chat-header-state">Local only</div>
               </div>
               <div class="chat-header-copy">Use models, presets, memory, and your local knowledge base without leaving the app.</div>
             </div>
@@ -66,8 +66,8 @@
               <option disabled>--- Advanced ---</option>
               <option value="custom">Write Your Own Prompt…</option>
             </select>
-            <button class="btn btn-sm" data-chat-action="toggle-model-picker">Add Model</button>
-            <button class="btn btn-sm" data-chat-action="export-conversation" title="Export to Markdown">Export Markdown</button>
+            <button class="btn btn-sm" data-chat-action="toggle-model-picker">Get Models</button>
+            <button class="btn btn-sm" data-chat-action="export-conversation" title="Export to Markdown">Export</button>
             <div class="chat-branch-shell">
               <button class="btn btn-sm is-hidden" id="branches-btn" data-chat-action="toggle-branch-panel" title="View conversation branches">Branches <span id="branches-count-badge" class="convo-branch-badge is-hidden">0</span></button>
               <div class="branch-panel" id="branch-panel"></div>
@@ -135,8 +135,8 @@
             <div class="icon chat-empty-icon-shell">
               <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" class="chat-empty-icon"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
             </div>
-            <p class="chat-empty-heading">Your Private AI Assistant</p>
-            <p class="chat-empty-copy">Runs entirely on your computer — nothing sent to the internet. Try a starter below or type your own question.</p>
+            <p class="chat-empty-heading">Your Local Analysis Desk</p>
+            <p class="chat-empty-copy">Runs entirely on this device with your local models and documents. Start with a prompt below or sketch your own question.</p>
             <div class="chat-empty-highlights">
               <span class="chat-empty-highlight">Local models</span>
               <span class="chat-empty-highlight">Prep-aware answers</span>
@@ -192,4 +192,3 @@
       </div>
     </div>
   </div>
-

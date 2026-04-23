@@ -49,7 +49,7 @@ class Config:
     """Central configuration with environment variable overrides."""
 
     # --- App Identity ---
-    VERSION = os.environ.get('NOMAD_VERSION', '7.59.0')
+    VERSION = os.environ.get('NOMAD_VERSION', '7.60.0')
 
     # --- Upload / Content Limits ---
     MAX_CONTENT_LENGTH = _env_int('NOMAD_MAX_CONTENT_LENGTH', 100 * 1024 * 1024)  # 100 MB
@@ -203,10 +203,19 @@ def save_config(data: dict):
     with _config_lock:
         os.makedirs(os.path.dirname(path), exist_ok=True)
         tmp_path = path + '.tmp'
-        with open(tmp_path, 'w') as f:
-            json.dump(data, f, indent=2)
-            f.flush()
-            os.fsync(f.fileno())
+        try:
+            with open(tmp_path, 'w') as f:
+                json.dump(data, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())
+        except (TypeError, ValueError, OSError):
+            # json.dump or fsync raised — clean up the partial tmp file
+            # so a later load_config() doesn't recover truncated data.
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
+            raise
         import sys
         try:
             os.replace(tmp_path, path)

@@ -806,6 +806,7 @@ class TestErrorHandler:
         ops_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_ops_support.js').read_text(encoding='utf-8')
         workspaces_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
         memory_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspace_memory.js').read_text(encoding='utf-8')
+        wizard_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_setup_wizard.js').read_text(encoding='utf-8')
 
         assert "NomadShellRuntime?.stopInterval('services.install-progress')" in services_ai_text
         assert "NomadShellRuntime.startInterval('services.install-progress'" in services_ai_text
@@ -830,10 +831,12 @@ class TestErrorHandler:
         assert "cameras.filter(c => c.stream_type === 'snapshot').forEach(c => {" not in ops_text
         assert "NomadShellRuntime.startInterval('shell.auto-backup'" in ops_text
 
-        assert "NomadShellRuntime.startInterval('wizard.progress'" in workspaces_text
+        # Wizard polling moved to _app_setup_wizard.js when the setup wizard
+        # was split out of _app_workspaces.js. KB polling stayed behind.
+        assert "NomadShellRuntime.startInterval('wizard.progress'" in wizard_text
+        assert "NomadShellRuntime?.stopInterval('wizard.progress')" in wizard_text
         assert "NomadShellRuntime.startInterval('ai-chat.kb-embed'" in workspaces_text
         assert "NomadShellRuntime.startInterval(`ai-chat.kb-analyze.${id}`" in workspaces_text
-        assert "NomadShellRuntime?.stopInterval('wizard.progress')" in workspaces_text
         assert "NomadShellRuntime.startInterval('settings.update-download'" in memory_text
         assert "NomadShellRuntime?.stopInterval('settings.update-download')" in memory_text
 
@@ -854,18 +857,21 @@ class TestErrorHandler:
         readiness_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_dashboard_readiness.js').read_text(encoding='utf-8')
         services_ai_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
         workspaces_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js').read_text(encoding='utf-8')
+        wizard_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_setup_wizard.js').read_text(encoding='utf-8')
 
         assert 'id="gs-resume-setup-btn"' in services_text
         assert 'id="gs-onboarding-note"' in services_text
         assert 'id="wiz-mini-banner"' in overlays_text
         assert "window.NOMAD_FIRST_RUN_COMPLETE === false" in readiness_text
         assert "window.NOMAD_FIRST_RUN_COMPLETE === false" in services_ai_text
-        assert 'setWizardSectionVisibility(' in workspaces_text
-        assert 'persistOnboardingComplete()' in workspaces_text
-        assert 'clearWizardUrlFlag()' in workspaces_text
-        assert "apiPost('/api/settings/wizard-complete')" in workspaces_text
-        assert "setShellVisibility(document.getElementById('wiz-mini-banner'), true);" in workspaces_text
-        assert "setShellVisibility(document.getElementById('wiz-mini-banner'), false);" in workspaces_text
+        # Setup wizard helpers live in _app_setup_wizard.js now — guided tour
+        # stays in _app_workspaces.js since it's independent of wizard state.
+        assert 'setWizardSectionVisibility(' in wizard_text
+        assert 'persistOnboardingComplete()' in wizard_text
+        assert 'clearWizardUrlFlag()' in wizard_text
+        assert "apiPost('/api/settings/wizard-complete')" in wizard_text
+        assert "setShellVisibility(document.getElementById('wiz-mini-banner'), true);" in wizard_text
+        assert "setShellVisibility(document.getElementById('wiz-mini-banner'), false);" in wizard_text
         assert "const TOUR_SESSION_KEY = 'nomad-guided-tour-state';" in workspaces_text
         assert "const TOUR_FOCUS_KEY = 'nomad-guided-tour-focus';" in workspaces_text
         assert "_writeTourSession(_tourStep);" in workspaces_text
@@ -1144,8 +1150,10 @@ class TestErrorHandler:
         assert "if (!titleEl || !iframe || !overlay) return;" in workspaces_text
         assert "if (!iframe || !titleEl || !overlay) return;" in workspaces_text
         assert "if (!overlay || !iframe) return;" in workspaces_text
-        assert "if (!overallFillEl || !overallPctEl || !currentItemEl || !itemFillEl || !itemPctEl || !miniPctEl || !miniFillEl || !miniItemEl || !phaseLabelEl || !completedListEl) return;" in workspaces_text
-        assert "if (!lanUrlEl || !summaryEl || !errorSummaryEl) return;" in workspaces_text
+        # Wizard progress-poll DOM guard lives in _app_setup_wizard.js now.
+        wizard_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_setup_wizard.js').read_text(encoding='utf-8')
+        assert "if (!overallFillEl || !overallPctEl || !currentItemEl || !itemFillEl || !itemPctEl || !miniPctEl || !miniFillEl || !miniItemEl || !phaseLabelEl || !completedListEl) return;" in wizard_text
+        assert "if (!lanUrlEl || !summaryEl || !errorSummaryEl) return;" in wizard_text
         assert "if (!tourOverlay) return;" in workspaces_text
         assert "if (!contentEl || !stepNumEl || !nextBtn || !card) return;" in workspaces_text
 
@@ -1592,14 +1600,23 @@ class TestErrorHandler:
         manifest = REPO_ROOT / 'web' / 'templates' / 'index_partials' / '_app_inline.js'
         workspaces = REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspaces.js'
         memory = REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_workspace_memory.js'
+        wizard = REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_setup_wizard.js'
 
         manifest_text = manifest.read_text(encoding='utf-8')
         workspaces_lines = workspaces.read_text(encoding='utf-8').count('\n') + 1
         memory_lines = memory.read_text(encoding='utf-8').count('\n') + 1
+        wizard_lines = wizard.read_text(encoding='utf-8').count('\n') + 1
 
         assert "{% include 'index_partials/js/_app_workspace_memory.js' %}" in manifest_text
+        assert "{% include 'index_partials/js/_app_setup_wizard.js' %}" in manifest_text
         assert workspaces_lines < 2500, f'workspace runtime still too large: {workspaces_lines} lines'
         assert memory_lines > 500, f'workspace memory runtime looks unexpectedly small: {memory_lines} lines'
+        # Setup wizard was extracted out of _app_workspaces.js; guard against
+        # someone accidentally reverting that by inlining it back in.
+        assert wizard_lines > 100, f'setup wizard runtime looks unexpectedly small: {wizard_lines} lines'
+        assert 'function setWizardSectionVisibility' not in workspaces.read_text(encoding='utf-8'), (
+            'Setup wizard is back in _app_workspaces.js — it should live in _app_setup_wizard.js'
+        )
 
     def test_index_page_runtime_shell_blocks(self, client):
         home_html = self._html(client, '/')

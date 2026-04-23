@@ -2977,11 +2977,11 @@
   margin-top: 8px;
   padding: 10px 12px;
   border-radius: var(--radius, 12px);
-  border: 1px solid rgba(244,67,54,0.16);
-  background: rgba(244,67,54,0.08);
+  border: 1px solid color-mix(in srgb, var(--red) 16%, transparent);
+  background: var(--red-dim);
   font-size: var(--text-sm, 11px);
   line-height: 1.65;
-  color: #9a2f2f;
+  color: var(--red);
 }
 
 .prep-reference-table-compact {
@@ -2991,15 +2991,15 @@
 }
 
 .prep-reference-good {
-  color: #7dca7d;
+  color: var(--green);
 }
 
 .prep-reference-bad {
-  color: #ca7d7d;
+  color: var(--red);
 }
 
 .prep-reference-priority-row {
-  background: rgba(255,215,0,0.05);
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
 }
 
 .prep-reference-priority-value {
@@ -3752,27 +3752,27 @@
 }
 
 .prep-triage-static-card-black {
-  --prep-triage-tone: #888;
-  --prep-triage-copy: #888;
-  --prep-triage-bg: #111;
+  --prep-triage-tone: var(--text-muted);
+  --prep-triage-copy: var(--text-muted);
+  --prep-triage-bg: var(--surface3);
 }
 
 .prep-triage-static-card-red {
-  --prep-triage-tone: #ff3333;
-  --prep-triage-copy: #ff8888;
-  --prep-triage-bg: #2a1111;
+  --prep-triage-tone: var(--red);
+  --prep-triage-copy: color-mix(in srgb, var(--red) 65%, var(--text));
+  --prep-triage-bg: color-mix(in srgb, var(--red) 18%, var(--surface-solid));
 }
 
 .prep-triage-static-card-yellow {
-  --prep-triage-tone: #ffdd33;
-  --prep-triage-copy: #ffee88;
-  --prep-triage-bg: #2a2a11;
+  --prep-triage-tone: var(--warning);
+  --prep-triage-copy: color-mix(in srgb, var(--warning) 65%, var(--text));
+  --prep-triage-bg: color-mix(in srgb, var(--warning) 18%, var(--surface-solid));
 }
 
 .prep-triage-static-card-green {
-  --prep-triage-tone: #33ff33;
-  --prep-triage-copy: #88ff88;
-  --prep-triage-bg: #112a11;
+  --prep-triage-tone: var(--green);
+  --prep-triage-copy: color-mix(in srgb, var(--green) 65%, var(--text));
+  --prep-triage-bg: color-mix(in srgb, var(--green) 18%, var(--surface-solid));
 }
 
 .prep-triage-step-result {
@@ -3780,19 +3780,19 @@
 }
 
 .prep-triage-step-result-black {
-  color: #888;
+  color: var(--text-muted);
 }
 
 .prep-triage-step-result-red {
-  color: #ff3333;
+  color: var(--red);
 }
 
 .prep-triage-step-result-yellow {
-  color: #ffdd33;
+  color: var(--warning);
 }
 
 .prep-triage-step-result-green {
-  color: #33ff33;
+  color: var(--green);
 }
 
 .prep-triage-column {

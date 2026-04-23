@@ -740,7 +740,7 @@
 .kit-builder-summary {
   margin-bottom: 12px;
   padding: 12px;
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
   border-radius: var(--radius-sm, 6px);
   border: 1px solid var(--border);
 }
@@ -775,12 +775,12 @@
   color: var(--text-muted);
   margin-top: 4px;
 }
-.kit-stat-gap { border-color: rgba(255, 87, 87, 0.5); }
-.kit-stat-gap .kit-stat-num { color: #ff5757; }
-.kit-stat-partial { border-color: rgba(255, 200, 87, 0.5); }
-.kit-stat-partial .kit-stat-num { color: #ffc857; }
-.kit-stat-have { border-color: rgba(74, 237, 196, 0.5); }
-.kit-stat-have .kit-stat-num { color: #4aedc4; }
+.kit-stat-gap { border-color: color-mix(in srgb, var(--red) 50%, transparent); }
+.kit-stat-gap .kit-stat-num { color: var(--red); }
+.kit-stat-partial { border-color: color-mix(in srgb, var(--warning) 50%, transparent); }
+.kit-stat-partial .kit-stat-num { color: var(--warning); }
+.kit-stat-have { border-color: color-mix(in srgb, var(--green) 50%, transparent); }
+.kit-stat-have .kit-stat-num { color: var(--green); }
 .kit-builder-filters {
   display: flex;
   gap: 14px;
@@ -833,20 +833,20 @@
   text-transform: uppercase;
 }
 .kit-item-gap .kit-item-status {
-  background: rgba(255, 87, 87, 0.15);
-  color: #ff5757;
+  background: var(--red-dim);
+  color: var(--red);
 }
 .kit-item-partial .kit-item-status {
-  background: rgba(255, 200, 87, 0.15);
-  color: #ffc857;
+  background: var(--warning-dim);
+  color: var(--warning);
 }
 .kit-item-have .kit-item-status {
-  background: rgba(74, 237, 196, 0.15);
-  color: #4aedc4;
+  background: var(--green-dim);
+  color: var(--green);
 }
-.kit-item-gap { border-left: 3px solid #ff5757; }
-.kit-item-partial { border-left: 3px solid #ffc857; }
-.kit-item-have { border-left: 3px solid #4aedc4; }
+.kit-item-gap { border-left: 3px solid var(--red); }
+.kit-item-partial { border-left: 3px solid var(--warning); }
+.kit-item-have { border-left: 3px solid var(--green); }
 @media (max-width: 768px) {
   .kit-item { grid-template-columns: 1fr 60px 70px; }
   .kit-item-weight { display: none; }
@@ -923,12 +923,12 @@
   align-items: center;
   padding: 8px 10px;
   border-left: 3px solid var(--accent);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
   border-radius: var(--radius-xs, 4px);
 }
 .route-plan-milestone-dark {
-  border-left-color: #5c6bc0;
-  background: rgba(92, 107, 192, 0.1);
+  border-left-color: var(--info);
+  background: var(--info-dim);
 }
 .route-plan-mile-num {
   width: 26px;
@@ -944,8 +944,8 @@
   flex-shrink: 0;
 }
 .route-plan-milestone-dark .route-plan-mile-num {
-  background: rgba(92, 107, 192, 0.25);
-  color: #9fa8da;
+  background: color-mix(in srgb, var(--info) 25%, transparent);
+  color: var(--info);
 }
 .route-plan-mile-name {
   font-weight: 600;
@@ -1001,9 +1001,9 @@
   width: 100%;
   margin-top: 6px;
   padding: 10px 12px;
-  background: rgba(255, 87, 87, 0.1);
-  color: #ff5757;
-  border: 1px solid rgba(255, 87, 87, 0.4);
+  background: var(--red-dim);
+  color: var(--red);
+  border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
   border-radius: var(--radius-sm, 6px);
   font-weight: 700;
   letter-spacing: 0.1em;
@@ -1012,13 +1012,13 @@
   transition: background-color 0.15s, border-color 0.15s;
 }
 .sidebar-emergency-btn:hover {
-  background: rgba(255, 87, 87, 0.2);
-  border-color: #ff5757;
+  background: color-mix(in srgb, var(--red) 20%, transparent);
+  border-color: var(--red);
 }
 .sidebar-emergency-btn:focus-visible {
-  background: rgba(255, 87, 87, 0.2);
-  border-color: #ff5757;
-  box-shadow: 0 0 0 2px rgba(255, 87, 87, 0.5);
+  background: color-mix(in srgb, var(--red) 20%, transparent);
+  border-color: var(--red);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--red) 50%, transparent);
 }
 .sidebar-emergency-btn svg { width: 18px; height: 18px; flex-shrink: 0; }
 .sidebar-emergency-btn-label { flex: 1; text-align: left; }
@@ -1029,9 +1029,12 @@
   left: 240px;  /* match sidebar width */
   right: 0;
   z-index: var(--z-emergency, 10000);
-  background: linear-gradient(90deg, #ff5757, #c92a2a);
+  /* Emergency banner is intentionally a high-saturation red in every theme — it
+     signals a safety-critical alert and must read as danger even in light,
+     cobalt, or e-ink themes. White foreground pairs for maximum contrast. */
+  background: linear-gradient(90deg, var(--red), color-mix(in srgb, var(--red) 70%, black));
   color: #fff;
-  box-shadow: 0 2px 12px rgba(201, 42, 42, 0.6);
+  box-shadow: 0 2px 12px color-mix(in srgb, var(--red) 60%, transparent);
   animation: emergency-banner-pulse 2s ease-in-out infinite;
 }
 .emergency-banner.is-hidden { display: none; }
@@ -1065,7 +1068,7 @@
 }
 .emergency-banner-exit {
   background: #fff;
-  color: #c92a2a;
+  color: var(--red);
   font-weight: 800;
   letter-spacing: 0.1em;
   border: none;
@@ -1073,11 +1076,11 @@
 }
 .emergency-banner-exit:hover,
 .emergency-banner-exit:focus-visible {
-  background: #ffe5e5;
+  background: color-mix(in srgb, var(--red) 12%, #fff);
 }
 @keyframes emergency-banner-pulse {
-  0%, 100% { box-shadow: 0 2px 12px rgba(201, 42, 42, 0.6); }
-  50%      { box-shadow: 0 2px 22px rgba(255, 87, 87, 0.9); }
+  0%, 100% { box-shadow: 0 2px 12px color-mix(in srgb, var(--red) 60%, transparent); }
+  50%      { box-shadow: 0 2px 22px color-mix(in srgb, var(--red) 90%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
   .emergency-banner { animation: none; }
@@ -1099,11 +1102,11 @@ body.emergency-mode::before {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  box-shadow: inset 0 0 0 3px rgba(255, 87, 87, 0.35);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--red) 35%, transparent);
 }
 .emergency-modal-card {
-  border: 2px solid #ff5757;
-  box-shadow: 0 0 0 4px rgba(255, 87, 87, 0.2), 0 20px 60px rgba(0, 0, 0, 0.6);
+  border: 2px solid var(--red);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 20%, transparent), var(--shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.6));
 }
 .emergency-modal-copy {
   font-size: var(--text-base, 13px);
@@ -1119,7 +1122,7 @@ body.emergency-mode::before {
   line-height: 1.7;
 }
 .emergency-modal-confirm {
-  background: linear-gradient(90deg, #ff5757, #c92a2a);
+  background: linear-gradient(90deg, var(--red), color-mix(in srgb, var(--red) 70%, black));
   color: #fff;
   font-weight: 800;
   letter-spacing: 0.12em;
@@ -1148,7 +1151,7 @@ body.emergency-mode::before {
 .daily-brief-block {
   padding: 10px 12px;
   border-left: 3px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
   border-radius: var(--radius-xs, 4px);
   font-size: var(--text-sm-md, 12px);
   line-height: 1.6;
@@ -1161,11 +1164,11 @@ body.emergency-mode::before {
   color: var(--text);
   margin-bottom: 4px;
 }
-.daily-brief-block-ok { border-left-color: #4aedc4; }
-.daily-brief-block-warn { border-left-color: #ffc857; }
+.daily-brief-block-ok { border-left-color: var(--green); }
+.daily-brief-block-warn { border-left-color: var(--warning); }
 .daily-brief-block-alert {
-  border-left-color: #ff5757;
-  background: rgba(255, 87, 87, 0.08);
+  border-left-color: var(--red);
+  background: var(--red-dim);
 }
 .daily-brief-list {
   margin: 4px 0 0 18px;
@@ -1210,13 +1213,13 @@ body.emergency-mode::before {
   font-family: var(--font-data, 'Cascadia Code', monospace);
 }
 .family-checkin-chip strong { font-size: var(--text-md, 14px); }
-.family-checkin-chip-ok { background: rgba(74, 237, 196, 0.15); color: #4aedc4; }
-.family-checkin-chip-en_route { background: rgba(120, 180, 255, 0.15); color: #8ac7ff; }
-.family-checkin-chip-needs_help { background: rgba(255, 200, 87, 0.15); color: #ffc857; }
-.family-checkin-chip-unaccounted { background: rgba(255, 87, 87, 0.2); color: #ff5757; animation: family-pulse 1.5s ease-in-out infinite; }
+.family-checkin-chip-ok { background: var(--green-dim); color: var(--green); }
+.family-checkin-chip-en_route { background: var(--info-dim); color: var(--info); }
+.family-checkin-chip-needs_help { background: var(--warning-dim); color: var(--warning); }
+.family-checkin-chip-unaccounted { background: color-mix(in srgb, var(--red) 20%, transparent); color: var(--red); animation: family-pulse 1.5s ease-in-out infinite; }
 @keyframes family-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 87, 87, 0); }
-  50%      { box-shadow: 0 0 0 4px rgba(255, 87, 87, 0.3); }
+  0%, 100% { box-shadow: 0 0 0 0 transparent; }
+  50%      { box-shadow: 0 0 0 4px color-mix(in srgb, var(--red) 30%, transparent); }
 }
 @media (prefers-reduced-motion: reduce) {
   .family-checkin-chip-unaccounted { animation: none; }
@@ -1240,13 +1243,13 @@ body.emergency-mode::before {
   align-items: center;
   padding: 8px 10px;
   border-left: 3px solid var(--border);
-  background: rgba(255, 255, 255, 0.02);
+  background: color-mix(in srgb, var(--text) 3%, transparent);
   border-radius: var(--radius-xs, 4px);
 }
-.family-checkin-row-ok { border-left-color: #4aedc4; }
-.family-checkin-row-en_route { border-left-color: #8ac7ff; }
-.family-checkin-row-needs_help { border-left-color: #ffc857; }
-.family-checkin-row-unaccounted { border-left-color: #ff5757; background: rgba(255, 87, 87, 0.08); }
+.family-checkin-row-ok { border-left-color: var(--green); }
+.family-checkin-row-en_route { border-left-color: var(--info); }
+.family-checkin-row-needs_help { border-left-color: var(--warning); }
+.family-checkin-row-unaccounted { border-left-color: var(--red); background: var(--red-dim); }
 .family-checkin-name { font-weight: 700; color: var(--text); font-size: var(--text-base, 13px); }
 .family-checkin-phone {
   font-family: var(--font-data, 'Cascadia Code', monospace);
@@ -1277,11 +1280,11 @@ body.emergency-mode::before {
   cursor: pointer;
   transition: background-color var(--duration-micro);
 }
-.family-status-btn:hover { background: rgba(255, 255, 255, 0.05); }
-.family-status-btn.is-active.family-status-btn-ok { background: rgba(74, 237, 196, 0.2); color: #4aedc4; border-color: #4aedc4; }
-.family-status-btn.is-active.family-status-btn-en_route { background: rgba(120, 180, 255, 0.2); color: #8ac7ff; border-color: #8ac7ff; }
-.family-status-btn.is-active.family-status-btn-needs_help { background: rgba(255, 200, 87, 0.2); color: #ffc857; border-color: #ffc857; }
-.family-status-btn.is-active.family-status-btn-unaccounted { background: rgba(255, 87, 87, 0.2); color: #ff5757; border-color: #ff5757; }
+.family-status-btn:hover { background: var(--surface-field-soft, rgba(128, 128, 128, 0.08)); }
+.family-status-btn.is-active.family-status-btn-ok { background: color-mix(in srgb, var(--green) 20%, transparent); color: var(--green); border-color: var(--green); }
+.family-status-btn.is-active.family-status-btn-en_route { background: color-mix(in srgb, var(--info) 20%, transparent); color: var(--info); border-color: var(--info); }
+.family-status-btn.is-active.family-status-btn-needs_help { background: color-mix(in srgb, var(--warning) 20%, transparent); color: var(--warning); border-color: var(--warning); }
+.family-status-btn.is-active.family-status-btn-unaccounted { background: color-mix(in srgb, var(--red) 20%, transparent); color: var(--red); border-color: var(--red); }
 .family-checkin-del {
   padding: 2px 6px;
   font-size: var(--text-sm-md, 12px);

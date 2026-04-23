@@ -41,6 +41,80 @@ _PG_COEFFS = {
 }
 
 
+# ═══════════════════════════════════════════════════════════════════
+# CE-12 — Hazmat / CBRN Agent Reference (read-only)
+# Defensive recognition / triage / decon reference sourced from
+# NIOSH Pocket Guide, DOT ERG 2024, AIHA ERPG, CDC/USAMRIID datasheets.
+# No synthesis, weaponization, or exploit content.
+# ═══════════════════════════════════════════════════════════════════
+
+_HAZMAT_ALLOWED_CATEGORIES = frozenset({
+    'chemical', 'biological', 'radiological', 'nerve_agent', 'blister_agent',
+})
+
+
+def _load_hazmat_agents():
+    """Lazy import; returns [] if seed module is missing."""
+    try:
+        from seeds.hazmat_agents import HAZMAT_AGENTS
+        return HAZMAT_AGENTS
+    except Exception as exc:  # pragma: no cover - only hit if seeds/ absent
+        _log.warning('hazmat_agents seed unavailable: %s', exc)
+        return []
+
+
+@specialized_threats_bp.route('/api/hazmat/agents')
+def api_hazmat_agents_list():
+    """Return hazmat agent reference entries.
+
+    Query params:
+        category — filter by category (chemical, biological, radiological,
+                   nerve_agent, blister_agent).
+        q        — case-insensitive substring match on name/id/symptoms.
+    """
+    agents = _load_hazmat_agents()
+    category = (request.args.get('category') or '').strip().lower()
+    query = (request.args.get('q') or '').strip().lower()
+
+    out = agents
+    if category and category in _HAZMAT_ALLOWED_CATEGORIES:
+        out = [a for a in out if a.get('category') == category]
+    if query:
+        out = [
+            a for a in out
+            if query in a.get('name', '').lower()
+            or query in a.get('id', '').lower()
+            or query in a.get('symptoms', '').lower()
+        ]
+
+    categories = sorted({a.get('category', '') for a in agents if a.get('category')})
+    return jsonify({
+        'count': len(out),
+        'total': len(agents),
+        'categories': categories,
+        'agents': out,
+        'sources': [
+            'NIOSH Pocket Guide to Chemical Hazards',
+            'DOT Emergency Response Guidebook (ERG) 2024',
+            'AIHA Emergency Response Planning Guidelines (ERPG)',
+            'CDC NIOSH IDLH Values',
+            'USAMRIID Medical Management of Biological Casualties',
+        ],
+        'disclaimer': 'Educational reference only — field response requires trained HAZMAT / HMRT personnel with proper PPE and IC authority.',
+    })
+
+
+@specialized_threats_bp.route('/api/hazmat/agents/<agent_id>')
+def api_hazmat_agent_detail(agent_id):
+    """Return a single hazmat agent entry by ID, or 404."""
+    agents = _load_hazmat_agents()
+    target = (agent_id or '').strip().lower()
+    for a in agents:
+        if a.get('id', '').lower() == target:
+            return jsonify(a)
+    return jsonify({'error': 'Agent not found'}), 404
+
+
 @specialized_threats_bp.route('/api/calculators/plume', methods=['POST'])
 def api_plume_estimator():
     """Gaussian plume dispersion model.

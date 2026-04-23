@@ -308,10 +308,30 @@ def api_herbal_list():
 
 @medical_phase2_bp.route('/api/medical/herbal/seed', methods=['POST'])
 def api_herbal_seed():
-    """Seed built-in herbal remedies reference database."""
+    """Seed built-in herbal remedies reference database.
+
+    v7.62 (CE-15): merges the original inline ``BUILTIN_HERBS`` (10) with
+    the expanded ``seeds.medicinal_herbs.HERBS`` (50). Seed is idempotent
+    — each row is keyed by (name, is_builtin=1) and skipped if present.
+    """
+    # Gather the combined list — inline first, then seed module extends it.
+    combined = list(BUILTIN_HERBS)
+    try:
+        from seeds.medicinal_herbs import HERBS as _SEED_HERBS
+        names_seen = {row[0] for row in combined}
+        for row in _SEED_HERBS:
+            if row[0] not in names_seen:
+                combined.append(row)
+                names_seen.add(row[0])
+    except Exception as exc:
+        import logging as _logging
+        _logging.getLogger('nomad.medical').warning(
+            'Herb seed module unavailable — using inline-only list: %s', exc
+        )
+
     seeded = 0
     with db_session() as db:
-        for name, common, uses, prep, dose, contra, season, habitat in BUILTIN_HERBS:
+        for name, common, uses, prep, dose, contra, season, habitat in combined:
             exists = db.execute(
                 'SELECT id FROM herbal_remedies WHERE name = ? AND is_builtin = 1',
                 (name,)
@@ -326,7 +346,7 @@ def api_herbal_seed():
                 )
                 seeded += 1
         db.commit()
-    return jsonify({'seeded': seeded, 'total_builtin': len(BUILTIN_HERBS)})
+    return jsonify({'seeded': seeded, 'total_builtin': len(combined)})
 
 
 @medical_phase2_bp.route('/api/medical/herbal', methods=['POST'])

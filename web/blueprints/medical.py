@@ -385,6 +385,39 @@ DOSAGE_GUIDE = [
      'interval_hours': 24},
 ]
 
+# v7.62 (CE-03 / CE-04 / CE-13 / CE-15): Merge richer field-medicine
+# reference from the seeds package. Drugs keyed by name — seed entries
+# replace legacy ones where names collide (seed data has more fields like
+# brand_names, pregnancy_category, shelf_life_years). Interactions are
+# appended + deduplicated by (drug1-lower, drug2-lower) with seed severity
+# winning on conflict.
+try:
+    from seeds.medications import (
+        MEDICATIONS as _SEED_MEDICATIONS,
+        INTERACTIONS as _SEED_INTERACTIONS,
+    )
+    _by_name = {d['drug'].lower(): d for d in DOSAGE_GUIDE}
+    for _entry in _SEED_MEDICATIONS:
+        _by_name[_entry['drug'].lower()] = _entry
+    DOSAGE_GUIDE = list(_by_name.values())
+
+    _seen = set()
+    _merged_inter = []
+    for _tup in _SEED_INTERACTIONS + DRUG_INTERACTIONS:
+        _key = (_tup[0].lower(), _tup[1].lower())
+        _rkey = (_tup[1].lower(), _tup[0].lower())
+        if _key in _seen or _rkey in _seen:
+            continue
+        _seen.add(_key)
+        _merged_inter.append(_tup)
+    DRUG_INTERACTIONS = _merged_inter
+except Exception as _exc:
+    import logging as _logging
+    _logging.getLogger('nomad.medical').warning(
+        'Seed medications unavailable — using inline-only list: %s', _exc
+    )
+
+
 # ─── TCCC Protocol ───────────────────────────────────────────────────
 
 TCCC_MARCH = [
@@ -678,6 +711,88 @@ def api_patient_card(pid):
         wounds = [dict(r) for r in db.execute('SELECT * FROM wound_log WHERE patient_id = ? ORDER BY created_at DESC LIMIT 100', (pid,)).fetchall()]
     html = _render_patient_card_html(dict(patient), vitals, wounds, pid)
     return Response(html, mimetype='text/html')
+
+
+# ─── Pediatric Growth + Weight Estimation (CE-13, v7.62) ───────────
+
+@medical_bp.route('/api/medical/pediatric-growth')
+def api_pediatric_growth_chart():
+    """Return CDC/WHO growth percentiles (CE-13).
+
+    Newborn through 18 yr. Each row: age label + age months + 3rd /
+    50th / 97th-percentile weight in kg + 50th-percentile height in cm.
+    Used by the pediatric-dosing helper and by clinicians wanting a
+    quick benchmark of "is this child's weight normal?"
+    """
+    try:
+        from seeds.medications import PEDIATRIC_MILESTONES
+    except Exception as exc:
+        return jsonify({'error': f'growth data unavailable: {exc}'}), 500
+    return jsonify({
+        'source': 'WHO 0-24 mo + CDC 2-20 yr',
+        'rows': [
+            {
+                'age_label': lbl, 'age_months': am,
+                'weight_p3_kg': p3, 'weight_p50_kg': p50,
+                'weight_p97_kg': p97, 'height_p50_cm': h,
+            }
+            for (lbl, am, p3, p50, p97, h) in PEDIATRIC_MILESTONES
+        ],
+    })
+
+
+@medical_bp.route('/api/medical/pediatric-weight-estimate')
+def api_pediatric_weight_estimate():
+    """Estimate pediatric weight from age (CE-13).
+
+    Query params:
+        age_years — decimal age, 0-18 (required)
+
+    Returns the Broselow-style weight band + estimated weight in kg.
+    Used when a real scale isn't available during a field response.
+    Falls back with a clear 400 error if age is out of pediatric range
+    so callers can route to adult dosing instead.
+    """
+    try:
+        from seeds.medications import (
+            PEDIATRIC_WEIGHT_BANDS,
+            estimate_pediatric_weight,
+        )
+    except Exception as exc:
+        return jsonify({'error': f'weight bands unavailable: {exc}'}), 500
+
+    try:
+        age_years = float(request.args.get('age_years', ''))
+    except (TypeError, ValueError):
+        return jsonify({'error': 'age_years is required (decimal 0-18)'}), 400
+    if age_years < 0:
+        return jsonify({'error': 'age_years cannot be negative'}), 400
+    if age_years >= 18:
+        return jsonify({
+            'error': 'Patient is age 18+ — use adult dosing.',
+            'age_years': age_years,
+        }), 400
+
+    est = estimate_pediatric_weight(age_years)
+    if est is None:
+        return jsonify({'error': 'Age out of pediatric range'}), 400
+    # Identify which band the age falls into for display.
+    band = next(
+        (b for b in PEDIATRIC_WEIGHT_BANDS if b[1] <= age_years < b[2]),
+        None,
+    )
+    return jsonify({
+        'age_years': age_years,
+        'estimated_weight_kg': est,
+        'band_label': band[0] if band else '',
+        'band_age_floor_yr': band[1] if band else None,
+        'band_age_ceiling_yr': band[2] if band else None,
+        'method': 'Broselow-style weight bands',
+        'caveat': (
+            'Estimate only. Actual weight always wins. 3rd-97th-%tile '
+            'range can be ±30 % of the 50th-%tile estimate.'
+        ),
+    })
 
 
 # ─── Drug Interactions Check ────────────────────────────────────────

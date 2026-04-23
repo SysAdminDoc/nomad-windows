@@ -138,6 +138,17 @@ DEFAULT_CHECKLISTS = {
     ],
 }
 
+# Merge-on-import: prefer the v7.63 expanded seed (20-25 items each) when
+# available, fall back to the inline 5-item stubs above. Keeps old installs
+# working even if seeds/ is missing. See seeds/disaster_checklists.py.
+try:
+    from seeds.disaster_checklists import EXPANDED_CHECKLISTS as _EXP_CHECKS
+    for _dt, _items in _EXP_CHECKS.items():
+        if _items:
+            DEFAULT_CHECKLISTS[_dt] = list(_items)
+except Exception:
+    pass
+
 _DISASTER_PLANS_ALLOWED_FIELDS = frozenset({'name', 'disaster_type', 'environment_type', 'description',
                                             'trigger_conditions', 'immediate_actions', 'sustained_actions',
                                             'resources_required', 'shelter_plan', 'evacuation_triggers',

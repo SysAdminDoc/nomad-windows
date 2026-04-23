@@ -97,6 +97,100 @@ BEAUFORT_SCALE = [
 ]
 
 
+# ─── Radio Reference Cards (CE-14, v7.61) ──────────────────────────
+
+@tactical_comms_bp.route('/api/radio/reference')
+def api_radio_reference():
+    """Return static radio reference cards in one payload (CE-14).
+
+    Phonetic alphabets (NATO + LAPD), full International Morse with prosigns,
+    US voice prowords with usage examples, RST reporting, common Q-codes,
+    digital-mode comparison card, and the US General-class HF band plan.
+    All read-only — no DB round-trip.
+    """
+    try:
+        from seeds import radio_reference as rr
+    except Exception as exc:
+        return jsonify({'error': f'radio reference unavailable: {exc}'}), 500
+
+    return jsonify({
+        'phonetic': {
+            'nato': rr.NATO_PHONETIC,
+            'lapd': rr.LAPD_PHONETIC,
+        },
+        'morse': {
+            'code': rr.MORSE_CODE,
+            'prosigns': [
+                {'prosign': p, 'morse': m, 'meaning': meaning}
+                for (p, m, meaning) in rr.MORSE_PROSIGNS
+            ],
+        },
+        'prowords': [
+            {'proword': p, 'meaning': m, 'example': ex}
+            for (p, m, ex) in rr.PROWORDS
+        ],
+        'rst': {
+            'readability': [{'score': s, 'meaning': m} for (s, m) in rr.RST_READABILITY],
+            'strength':    [{'score': s, 'meaning': m} for (s, m) in rr.RST_STRENGTH],
+            'tone':        [{'score': s, 'meaning': m} for (s, m) in rr.RST_TONE],
+        },
+        'q_codes': [
+            {'code': c, 'meaning': m} for (c, m) in rr.Q_CODES
+        ],
+        'digital_modes': [
+            {
+                'name': n, 'category': cat, 'bandwidth': bw,
+                'typical_frequency': tf, 'throughput': tp,
+                'best_for': bf, 'notes': notes,
+            }
+            for (n, cat, bw, tf, tp, bf, notes) in rr.DIGITAL_MODES
+        ],
+        'hf_band_plan_us_general': [
+            {'band': b, 'range_mhz': r, 'modes': m, 'notes': n}
+            for (b, r, m, n) in rr.HF_BAND_PLAN_US_GEN
+        ],
+    })
+
+
+@tactical_comms_bp.route('/api/radio/phonetic')
+def api_radio_phonetic():
+    """NATO + LAPD phonetic alphabets — quick lookup route."""
+    try:
+        from seeds.radio_reference import NATO_PHONETIC, LAPD_PHONETIC
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+    return jsonify({'nato': NATO_PHONETIC, 'lapd': LAPD_PHONETIC})
+
+
+@tactical_comms_bp.route('/api/radio/morse/<text>')
+def api_radio_morse_translate(text):
+    """Translate text → Morse (letters, digits, basic punctuation)."""
+    try:
+        from seeds.radio_reference import MORSE_CODE
+    except Exception as exc:
+        return jsonify({'error': str(exc)}), 500
+    upper = (text or '').upper()
+    if len(upper) > 500:
+        return jsonify({'error': 'Text too long (500 char max)'}), 400
+    # Words separated by " / ", letters by " "
+    words = upper.split(' ')
+    encoded = []
+    unknown = []
+    for word in words:
+        letters = []
+        for ch in word:
+            if ch in MORSE_CODE:
+                letters.append(MORSE_CODE[ch])
+            elif ch.strip():
+                unknown.append(ch)
+        encoded.append(' '.join(letters))
+    return jsonify({
+        'input': text,
+        'morse': ' / '.join(encoded),
+        'unknown_chars': sorted(set(unknown)),
+    })
+
+
 # ─── Radio Equipment CRUD ───────────────────────────────────────────
 
 @tactical_comms_bp.route('/api/radio-equipment')

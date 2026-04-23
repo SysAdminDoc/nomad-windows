@@ -1,8 +1,8 @@
 # Project N.O.M.A.D. — Roadmap
 
 > **Baseline:** v7.44.0 (~310 tables, 2,000+ routes, 77 blueprints)
-> **Current:** v7.54.0 (~326 tables, 2,075+ routes, 78 blueprints, 2,000+ CSS values tokenized)
-> **Updated:** 2026-04-19
+> **Current:** v7.60.0 (~326 tables, 2,100+ routes, 78 blueprints, `seeds/` package — 13 content modules shipped)
+> **Updated:** 2026-04-23
 > **Prior feature backlog:** 134/187 items complete (72%), 8 deferred (4%), 45 internal refactoring remaining (24%)
 
 ---
@@ -829,3 +829,99 @@ Items that are buildable but require specific external libraries or hardware.
 - **Reproducible builds + SBOM** — build system hardening
 - **WCAG 2.2 AA deep audit** — comprehensive accessibility pass
 - **Offline plant-ID model** — ML model training/integration
+
+---
+
+## Content-Expansion Backlog (Module Review, 2026-04-22)
+
+> Content-gap audit across all 78 blueprints + catalogs + templates. NOMAD ships strong *structure* (42 calculators, 51 reference cards, 14 checklists, 15 printables, 633 curated media items) but several modules ship **empty reference tables** where the schema exists but no seed data does. New users hit those empty tables on day one and the module looks broken. Priority = close the "empty engine" gaps first.
+>
+> **Effort legend:** S = < 1 day content authoring; M = 1-3 days; L = 3-7 days (assumes domain expert available, integration is small).
+> **Status legend:** `Open` / `In Progress` / `Done` / `Deferred`.
+>
+> **Progress (v7.60):** 15 / 40 shipped (38%). Done: CE-01, CE-02, CE-03, CE-04, CE-05 (pre-existing), CE-06, CE-07, CE-10, CE-11, CE-12, CE-13, CE-14, CE-15, CE-16, CE-19.
+> **New infrastructure:** `seeds/` package pattern — reference data lives in `seeds/*.py` modules, seed functions in `db.py` do `INSERT OR IGNORE` idempotent inserts. Prevents `db.py` bloat as more content lands. Static (non-DB) reference tables like radio reference, water purification, appliance wattage, and loadout templates follow the same pattern — `seeds/*.py` + a blueprint route that wires the data to the UI.
+
+### CE-Tier 1: Empty-Engine Seed Data (user-blocking)
+
+These modules have functioning logic but ship zero reference data, so the module looks broken or hobbled to a new user.
+
+| # | Title | Module | Effort | Status |
+|---|-------|--------|--------|--------|
+| CE-01 | ~~**Seed planting calendar**~~ **Done** (v7.61) — 47 crops × 8 USDA zones (3-10) = 1,069 rows in `seeds/planting_calendar.py` → `_seed_planting_calendar()`. Programmatic: baseline crop timing × zone offsets (cold zones = later spring / earlier fall; warm zones reversed). Each row carries yield_per_sqft + calories_per_lb + days_to_harvest. Min-zone gating keeps long-season crops (sweet potato, eggplant) out of zones too cold to grow them. | `garden.py` | M | Done |
+| CE-02 | ~~**Seed companion-plant database**~~ **Done** (v7.60) — 92 directed pairs in `seeds/companion_plants.py` → `_seed_companion_plants()` in db.py. Covers tomato/brassica/three-sisters/allium/nightshade + universal helpers (marigold/nasturtium/borage/dill/yarrow) + universals (fennel/black walnut). | `garden.py` | S | Done |
+| CE-03 | ~~**Add `DOSAGE_GUIDE` with 40+ common field meds**~~ **Done** (v7.62) — expanded from 8 → 47 drugs via `seeds/medications.py` merged into the existing in-module list. New rows carry adult + pediatric weight-based dosing, max daily, contraindications, pregnancy category (FDA A/B/C/D/X), shelf-life (military SLEP data), and brand names. Covers NSAIDs, analgesics, GI (loperamide/ORS/ondansetron/bismuth/famotidine), allergy (diphenhydramine/cetirizine/loratadine/epinephrine/prednisone/albuterol), antibiotics (amoxicillin/Augmentin/azithromycin/doxycycline/ciprofloxacin/metronidazole/cephalexin/Bactrim), cardiac (lisinopril/losartan/metoprolol/atorvastatin/nitroglycerin), diabetes (metformin/glucose/glucagon), trauma (TXA/lidocaine/ketamine/naloxone), mental (diazepam/hydroxyzine), topical (triple-antibiotic/mupirocin/silvadene/hydrocortisone/erythromycin-eye), and prophylaxis (KI/vitamin K/permethrin). | `medical.py` | M | Done |
+| CE-04 | ~~**Add `DRUG_INTERACTIONS` matrix**~~ **Done** (v7.62) — expanded from 26 → 78 pairs via `seeds/medications.py` merged into existing list. Covers NSAID stacking, anticoagulant interactions (warfarin + cipro/metronidazole/Bactrim/Vit K/fish oil/ginkgo/garlic/amoxicillin/doxycycline), opioid/CNS depressant stacking (oxycodone+alcohol/benzos/gabapentin), serotonin syndrome (SSRI+MAOI/triptans/St John's Wort/linezolid/DXM), ACE/ARB/potassium stacking, beta-blocker interactions, statin interactions (grapefruit, macrolides, fibrates), nitroglycerin+PDE5 contraindication, KI+lithium, St. John's Wort CYP induction, grapefruit CYP3A4 inhibition. Severity graded major/moderate/minor. | `medical.py` | M | Done |
+| CE-05 | ~~**Seed radio-frequency directory**~~ **Already done** — `web.blueprints.comms._seed_frequencies()` lazy-seeds ~340 entries on first GET /api/comms/frequencies (verified by `tests/test_radio.py::TestFrequencies::test_list_frequencies`). The "zero entries" claim in the original review was wrong. `seeds/frequencies.py` (v7.60) holds 77 curated entries with richer metadata — keep as a future consolidation candidate (see CE-05a). | `tactical_comms.py` | — | Done |
+| CE-05a | **Consolidate freq seed into `seeds/` package** — move the large inline seed in `comms._seed_frequencies()` to the `seeds/frequencies.py` module pattern so all reference data lives in one place. Zero behavior change, pure refactor. | `comms.py` / `seeds/` | S | Open |
+| CE-06 | ~~**Seed appliance-wattage reference table**~~ **Done** (v7.60) — 84 items across 10 categories in `seeds/appliance_wattage.py` (Refrigeration, Laundry, HVAC, Well/Plumbing, Medical, Comms/IT, Lighting, Power tools, Yard, Small misc). Exposed via new `GET /api/power/appliance-wattage` with items + category groupings. Each row carries running W, surge W, typical hours/day, notes. | `power.py` | S | Done |
+| CE-07 | ~~**Seed 15 weather-action rule templates**~~ **Done** (v7.60) — 15 rules in `seeds/weather_action_rules.py` → `_seed_weather_action_rules()`. Covers pressure drop / severe low, freeze / hard freeze / extreme cold, heat / extreme heat, high / damaging / severe wind, mold-risk RH, flash-flood rain rate, AQI unhealthy / hazardous, lightning proximity. Each rule stores a JSON action_data with severity + actionable message. | `weather.py` | S | Done |
+| CE-08 | **Ship 40-60 grid-down recipes** (hardtack, pemmican, jerky, rice-and-beans, no-knead bread, canned-food casseroles, fermented vegetables, rehydrated-meal templates, pickled eggs) with no-cook / open-fire / rocket-stove variants. | `meal_planning.py` | L | Open |
+| CE-09 | **Ship 40-60 KB articles** covering water purification, fire, shelter, knots, CPR/Heimlich, tourniquet, land nav, improvised antenna, canning/fermentation, husbandry basics, cold/heat injuries, envenomation, sanitation, OPSEC. KB currently ships empty. | `kb.py` | L | Open |
+| CE-10 | ~~**Ship 20-30 loadout bag templates**~~ **Done** (v7.61) — 15 curated templates in `seeds/loadout_templates.py`: 72-hr adult + child, EDC, get-home (short/long), INCH, vehicle (temperate/winter/desert), IFAK+, canoe/boat, winter-mountain, desert 72-hr, backcountry 3-day, urban/apartment. Each template has target weight + bag-level config + 15-40 items with category + weight + notes. Exposed via `GET /api/loadout/templates` (read) and `POST /api/loadout/templates/launch` (one-shot "create bag from template" in a single transaction). | `loadout.py` | M | Done |
+
+### CE-Tier 2: Missing Critical Reference
+
+High-impact additions where a module has partial coverage but misses reference data serious users expect.
+
+| # | Title | Module | Effort | Status |
+|---|-------|--------|--------|--------|
+| CE-11 | **Expand disaster checklists from 5 → 20-25 items each** (earthquake, hurricane, tornado, wildfire, flood, pandemic, EMP, economic collapse, volcanic, drought). Current defaults are stubs. | `disaster_modules.py` | M | Open |
+| CE-12 | ~~**Add hazmat / bio-agent / chem-agent reference tables**~~ **Done** (v7.63) — `seeds/hazmat_agents.py` ships 17 agents across chemical / nerve / blister / biological / radiological categories (chlorine, ammonia, HCN, phosgene, H2S, sarin/GB, VX, mustard HD, lewisite, chloropicrin, anthrax, smallpox, plague, botulinum, ricin, Cs-137, I-131). Each row carries CAS + UN numbers, IDLH, ERPG-1/2/3, symptoms, route, decon, first aid, antidote, PPE level, evac distance, sources (NIOSH / DOT ERG 2024 / AIHA / CDC / USAMRIID). Exposed via `GET /api/hazmat/agents` (list + category filter + q search) and `GET /api/hazmat/agents/<id>` (detail). Read-only defensive reference only — no synthesis/weaponization content. | `specialized_threats.py` | M | Done |
+| CE-13 | ~~**Add pediatric growth-chart percentiles + weight-based dosing helper**~~ **Done** (v7.62) — `seeds/medications.py` ships `PEDIATRIC_MILESTONES` (23 rows, newborn → 18 yr, 3rd/50th/97th %ile weight + 50th %ile height per WHO 0-24 mo + CDC 2-20 yr), `PEDIATRIC_WEIGHT_BANDS` (20 Broselow-style bands), and `estimate_pediatric_weight(age_years)` helper for when a scale isn't available. Exposed via `GET /api/medical/pediatric-growth` (full chart) + `GET /api/medical/pediatric-weight-estimate?age_years=N` (quick band lookup). | `medical.py` | S | Done |
+| CE-14 | ~~**Add phonetic alphabet / Morse chart / proword glossary / RST reference / digital-mode card**~~ **Done** (v7.61) — `seeds/radio_reference.py` ships NATO + LAPD phonetic alphabets, full International Morse (letters/digits/punctuation + 10 prosigns), 31 US voice prowords with usage examples, 3-axis RST scale (readability / strength / tone), 21 Q-codes, 16 digital-mode comparison card (CW/FT8/FT4/JS8/PSK31/RTTY/VARA/Pactor/APRS/Winlink/DMR/D-STAR/C4FM/P25/SSTV/Meshtastic), and the US General-class HF band plan. Exposed via `GET /api/radio/reference` (bundle), `GET /api/radio/phonetic` (quick lookup), and `GET /api/radio/morse/<text>` (translator). | `tactical_comms.py` | S | Done |
+| CE-15 | ~~**Add 40+ medicinal herbs**~~ **Done** (v7.62) — `seeds/medicinal_herbs.py` extends original 10 to 50 species (61 total entries). Added: Peppermint, Spearmint, Rosemary, Sage, Thyme, Oregano, Lavender, Lemon Balm, Valerian, Passionflower, Skullcap, Hops, Dandelion, Burdock, Nettle, Mullein, Horehound, Goldenseal, Goldenrod, Uva Ursi, Red Clover, Raspberry Leaf, Black Cohosh, Blue Cohosh, Shepherd's Purse, Cramp Bark, Wild Lettuce, Catnip, Bee Balm, Lemongrass, Mugwort, Wormwood, Cayenne, Astragalus, Ashwagandha, Holy Basil, Turmeric, Slippery Elm, Marshmallow, Mallow, Violet, Chickweed, Cleavers, Yellow Dock, Oregon Grape, Usnea, St. John's Wort, Kava, Ginkgo, American Ginseng, Meadowsweet. Every row carries scientific name + uses + preparation + dosing + contraindications + season + habitat. Seed is both auto-run at init_db AND via existing `POST /api/medical/herbal/seed`. | `medical_phase2.py` | M | Done |
+| CE-16 | ~~**Seed 40 garden pest-guide entries**~~ **Done** (v7.60) — 38 entries in `seeds/pest_guide.py` → `_seed_pest_guide()`. Covers 19 insects (aphid → earwig), 2 mollusk/nematode, 12 diseases (early/late blight, powdery/downy mildew, fusarium/verticillium, TSWV, septoria, cedar-apple rust, fire blight, club root, bacterial wilt), 4 vertebrate pests (deer, rabbit, vole, groundhog), 2 physiological disorders. Each row carries symptoms + IPM-first treatment + prevention. | `garden.py` | S | Done |
+| CE-17 | **Seed ~100 seed-catalog varieties** (variety × days-to-maturity × yield estimate) for the garden planting engine. | `garden.py` | M | Open |
+| CE-18 | **Add game identification key + CWD/trichinella/giardia risk matrix** (toxic lookalikes: chokecherry vs pin cherry, wild carrot vs hemlock, morel vs false-morel). | `hunting_foraging.py` | M | Open |
+| CE-19 | ~~**Add purification-method reference**~~ **Done** (v7.61) — `seeds/water_purification.py` ships 10 methods (boil, bleach, iodine, CLO2, ceramic, hollow-fiber, RO, UV, SODIS, distillation) with removes / does_not_remove / equipment / time / cost / pros / cons / best_for; CDC boil times by altitude band; bleach + iodine dose charts (1 qt → 275 gal IBC) with clear + cloudy-water doses; iodine medical contraindications; 9-class contaminant-response matrix (bacteria / viruses / protozoa / Crypto / heavy metals / salts / VOCs / radiological / turbidity) with recommended methods. Replaces prior 6-method stub at `GET /api/water/purification-reference` — backward-compatible shape. | `water_mgmt.py` | S | Done |
+| CE-20 | **Add APT / threat-actor catalog** with MITRE ATT&CK TTP mapping (Lazarus, APT28, APT29, Turla, Carbanak, Scattered Spider, Volt Typhoon, etc.). | `threat_intel.py` | M | Open |
+
+### CE-Tier 3: Checklist + Drill + Guide Expansion
+
+| # | Title | Module | Effort | Status |
+|---|-------|--------|--------|--------|
+| CE-21 | **Add eldercare emergency kit template** (mobility aids, chronic Rx stockpile, oxygen/dialysis backup, hearing-aid batteries, cognitive safety). | `checklist_templates_data.py` | S | Open |
+| CE-22 | **Add pet evacuation kit template** (carrier, food 7d, meds, vaccine records, ID photo, muzzle, calming aids). | `checklist_templates_data.py` | S | Open |
+| CE-23 | **Add business-continuity checklist** (remote-work gear, payroll failover, customer list backup, supplier alternates). | `checklist_templates_data.py` | S | Open |
+| CE-24 | **Add multi-household-pod template** (skills inventory, resource-pooling agreement, comms schedule, conflict-resolution). | `checklist_templates_data.py` | S | Open |
+| CE-25 | **Add apartment-dweller 72-hr template** (no-yard constraints: tub storage, window-sill stove, stairs evac). | `checklist_templates_data.py` | S | Open |
+| CE-26 | **Add active-shooter response template** (Run-Hide-Fight, doors/windows, LE interaction). | `checklist_templates_data.py` | S | Open |
+| CE-27 | **Add chemical-spill SIP template** (seal gaps, HVAC shutdown, interior-room selection). | `checklist_templates_data.py` | S | Open |
+| CE-28 | **Add 15 more drill scenarios** (tornado, active-shooter lockdown, CBRN SIP, multi-family reunion, mass-casualty bombing, cyberattack/ICS, EMP cold-start, house fire at night w/ pets, winter shelter, child-missing, intruder at night, vehicle breakdown in hostile weather, water contamination, grid-down 14-day, market-run panic). | `training_knowledge.py` | M | Open |
+| CE-29 | **Add missing decision guides** (medical differential — fever+rash / cough+hemoptysis / chest pain; envenomation; psychological crisis; group decision-making; animal attack; navigation failure; leadership crisis; crop failure; supply-chain failure; infrastructure failure). Brings 10 → ~21 (matches CLAUDE.md claim). | `web/templates/.../_app_ops_support.js` | M | Open |
+| CE-30 | **Add missing reference cards** (snake/spider/scorpion ID by region; edible-vs-toxic plant lookalikes; mushroom lookalikes; weather cloud severity; trauma triage; pediatric vitals; elder dosing; pet first-aid; mental-health crisis; envenomation field response). | `_guides.html` / templates | M | Open |
+
+### CE-Tier 4: Calculators, Print Docs, Doc Gaps
+
+| # | Title | Module | Effort | Status |
+|---|-------|--------|--------|--------|
+| CE-31 | **Add water purification calculators** (filter cartridge life; bleach ppm by container; boil time at altitude; SODIS duration). | calculators | S | Open |
+| CE-32 | **Add food-preservation calculators** (canning time by altitude+food+jar; smoking temp/time; drying RH curves). | calculators | S | Open |
+| CE-33 | **Add fermentation calculators** (salt ppm for lacto; sugar for mead/wine; pH safety thresholds). | calculators | S | Open |
+| CE-34 | **Add expense burn-rate / reorder-point / supply-chain calculators**. | calculators | S | Open |
+| CE-35 | **Add wind-chill / heat-index / compost C:N / beekeeping calculators**. | calculators | S | Open |
+| CE-36 | **Add damage-assessment form** (structure / utilities / inventory / insurance claim prep photos). | `print_routes.py` | S | Open |
+| CE-37 | **Add family-meeting agenda / community-resource inventory / skill-proficiency matrix / evacuation-plan map print templates**. | `print_routes.py` | M | Open |
+| CE-38 | **Seed ICS form examples** (wildfire / flood / civil-unrest / chem-spill sample fills) so new users see completed forms. | `group_ops.py` | S | Open |
+| CE-39 | **Add docs pages for:** federation setup, service-install troubleshooting matrix, power/solar wiring, backup-restore runbook, upgrade/migration guide. | `docs/` | M | Open |
+| CE-40 | **Add cascade calling tree / family-reunion / child-check-in / role-taxonomy templates**. | `contacts.py` / `family.py` | S | Open |
+
+### Proposed Release Sequencing
+
+Group the items into focused content-authoring passes so each release has a coherent theme:
+
+- **v7.60 "First Harvest + Infrastructure"** → ✅ CE-02 (companion plants, 92 pairs) + ✅ CE-06 (appliance wattage, 84 loads) + ✅ CE-07 (weather rules, 15 templates) + ✅ CE-16 (pest guide, 38 entries) + `seeds/` package pattern established.
+- **v7.61 "First Harvest II + Radio + Water"** → ✅ CE-01 (planting calendar, 1,069 rows across 47 crops × 8 zones) + ✅ CE-10 (15 loadout templates + launch-to-bag endpoint) + ✅ CE-14 (radio reference: NATO/LAPD phonetic, Morse + prosigns, 31 prowords, RST, Q-codes, 16 digital modes, US HF band plan) + ✅ CE-19 (water purification reference: 10 methods, CDC boil times, bleach/iodine dosing, 9-class contaminant response).
+- **v7.62 "Field Medicine"** → ✅ CE-03 (DOSAGE_GUIDE 8→47 meds with pregnancy category + shelf life) + ✅ CE-04 (DRUG_INTERACTIONS 26→78 pairs) + ✅ CE-13 (pediatric growth chart + Broselow-style weight bands + weight estimator API) + ✅ CE-15 (medicinal herbs 10→61). Auto-seed on init_db; seeds/medications.py + seeds/medicinal_herbs.py centralize the data out of blueprint files.
+- **v7.63 "Knowledge Base"** → CE-08 (grid-down recipes) + CE-09 (40-60 KB articles) + CE-11 (expanded disaster checklists) + CE-12 (hazmat/bio/chem agent reference). Large content pass; sets NOMAD apart on out-of-box usability.
+- **v7.64 "Checklists + Drills"** → CE-21 through CE-30. Adult-scenario coverage (elderly, pets, business, multi-household) + drill library expansion + missing decision guides/cards.
+- **v7.65 "Polish + Tools"** → CE-17 (seed catalog) + CE-18 (game ID) + CE-20 (APT catalog) + CE-31 through CE-40. Calculators, print docs, doc gaps, ICS examples, contacts templates. Also **CE-05a**: consolidate the 340-entry inline freq seed in `comms.py` into the `seeds/` pattern.
+
+Each release is scoped so a single focused content-authoring pass (by a domain expert) plus short engineering integration can ship it. None touches core architecture.
+
+### Tracking Rules
+
+- When an item ships, flip `Open` → `Done` in the table and add the release tag + one-line completion note (match the P1/P2 checkbox pattern used higher in this file).
+- If an item is explicitly rejected or superseded, flip to `Deferred` with a one-line reason — don't delete.
+- When adding a new content-gap item, prefix the ID with `CE-` and keep the module + effort + status columns populated so the sequencing stays scannable.

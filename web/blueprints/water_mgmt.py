@@ -359,49 +359,82 @@ def api_water_budget():
     })
 
 
-# ─── Purification Reference ─────────────────────────────────────────
+# ─── Purification Reference (CE-19, v7.61) ─────────────────────────
 
 @water_mgmt_bp.route('/api/water/purification-reference')
 def api_water_purification_reference():
-    methods = [
-        {
-            'method': 'Boiling',
-            'instructions': 'Rolling boil for 1 minute (3 min above 6,562 ft / 2,000 m)',
-            'kills': 'Bacteria, viruses, protozoa',
-            'limitations': 'Does not remove chemicals or heavy metals',
-        },
-        {
-            'method': 'Bleach (sodium hypochlorite)',
-            'instructions': '8 drops (1/8 tsp) per gallon of clear water, 16 drops for cloudy. Wait 30 min.',
-            'kills': 'Bacteria, viruses',
-            'limitations': 'Less effective against Cryptosporidium. Use unscented 5-8.25% bleach only.',
-        },
-        {
-            'method': 'Iodine tablets',
-            'instructions': '1 tablet per quart, wait 30 min (cold/cloudy water: 2 tablets, wait 60 min)',
-            'kills': 'Bacteria, viruses, Giardia',
-            'limitations': 'Not effective against Cryptosporidium. Not for pregnant women or thyroid conditions.',
-        },
-        {
-            'method': 'UV (SteriPEN)',
-            'instructions': 'Stir pen in 1L for 90 seconds',
-            'kills': 'Bacteria, viruses, protozoa',
-            'limitations': 'Requires clear water. Battery dependent.',
-        },
-        {
-            'method': 'Filtration (0.1 micron)',
-            'instructions': 'Pump or gravity-feed through filter',
-            'kills': 'Bacteria, protozoa',
-            'limitations': 'Most filters do NOT remove viruses. Check filter rating.',
-        },
-        {
-            'method': 'SODIS (solar disinfection)',
-            'instructions': 'Fill clear PET bottle, lay in direct sun for 6+ hours (2 days if cloudy)',
-            'kills': 'Bacteria, viruses, protozoa',
-            'limitations': 'Requires clear water and strong sunlight. Slow.',
-        },
-    ]
-    return jsonify(methods)
+    """Return water-purification reference tables (CE-19, v7.61).
+
+    Previously a minimal 6-method stub; now backed by
+    ``seeds.water_purification`` — 10 methods with what each removes /
+    doesn't + equipment + time + cost, plus boil-times by altitude,
+    bleach + iodine dose charts by volume, iodine contraindications,
+    and a contaminant-class response matrix.
+
+    Backward-compatible shape: still returns ``{methods: [...]}``
+    (the frontend in ``_tab_water_mgmt.html`` already falls back to
+    ``res`` if ``res.methods`` is absent), and each method row carries
+    the legacy ``method / instructions / effective_against /
+    limitations`` keys alongside the new richer fields.
+    """
+    try:
+        from seeds import water_purification as wp
+    except Exception as exc:
+        return jsonify({'error': f'water reference unavailable: {exc}'}), 500
+
+    # Build backward-compatible method rows.
+    methods = []
+    for m in wp.METHODS:
+        legacy_instructions = f"{m['equipment']} Treat: {m['time_to_treat']}"
+        legacy_effective = ', '.join(m['removes'])
+        legacy_limitations = 'Does not remove: ' + ', '.join(m['does_not_remove'])
+        methods.append({
+            # Legacy shape
+            'method': m['name'],
+            'instructions': legacy_instructions,
+            'effective_against': legacy_effective,
+            'kills': legacy_effective,
+            'limitations': legacy_limitations,
+            # Richer v7.61 shape
+            'name': m['name'],
+            'removes': m['removes'],
+            'does_not_remove': m['does_not_remove'],
+            'equipment': m['equipment'],
+            'time_to_treat': m['time_to_treat'],
+            'cost_usd': m['cost_usd'],
+            'pros': m['pros'],
+            'cons': m['cons'],
+            'best_for': m['best_for'],
+        })
+
+    return jsonify({
+        'methods': methods,
+        'boil_times': [
+            {
+                'altitude_ft': ft, 'altitude_m': m,
+                'minutes_rolling_boil': mins, 'notes': notes,
+            }
+            for (ft, m, mins, notes) in wp.BOIL_TIMES
+        ],
+        'bleach_dosing': [
+            {
+                'volume_label': label, 'volume_liters': liters,
+                'clear_water_drops': clear, 'cloudy_water_drops': cloudy,
+                'notes': notes,
+            }
+            for (label, liters, clear, cloudy, notes) in wp.BLEACH_DOSING
+        ],
+        'iodine_dosing': [
+            {
+                'volume_label': label, 'volume_liters': liters,
+                'clear_water_drops': clear, 'cloudy_water_drops': cloudy,
+                'notes': notes,
+            }
+            for (label, liters, clear, cloudy, notes) in wp.IODINE_DOSING
+        ],
+        'iodine_contraindications': wp.IODINE_CONTRAINDICATIONS,
+        'contaminant_response': wp.CONTAMINANT_RESPONSE,
+    })
 
 
 # ─── Summary (external consumption) ─────────────────────────────────

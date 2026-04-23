@@ -350,8 +350,18 @@ def broadcast_event(event_type, data):
     burst. Dropping the oldest message preserves the connection and keeps the
     client eventually consistent.
     """
-    # Sanitize event_type: SSE event names must not contain newlines or colons
-    safe_type = str(event_type).replace('\n', '').replace('\r', '').strip()
+    # Sanitize event_type: SSE event names must not contain newlines or colons.
+    # A colon in an SSE `event:` line would be parsed as a field separator by
+    # the browser's EventSource and mis-route the frame as a comment, so strip
+    # it too. Also drop raw control characters — the SSE spec allows only
+    # printable chars in field values.
+    safe_type = (
+        str(event_type)
+        .replace('\n', '').replace('\r', '').replace(':', '')
+        .strip()
+    )
+    if not safe_type:
+        safe_type = 'message'
     try:
         payload = json.dumps(data)
     except (TypeError, ValueError):

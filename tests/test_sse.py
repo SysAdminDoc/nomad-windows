@@ -88,6 +88,41 @@ class TestBroadcastEvent:
                     if q in _sse_clients:
                         _sse_clients.remove(q)
 
+    def test_broadcast_sanitizes_event_type(self, app):
+        """Event names with colons/newlines would corrupt the SSE wire format —
+        a colon in the event: line is parsed as a field separator and a
+        newline ends the frame early. Both must be stripped before sending.
+        Empty post-sanitize names fall back to 'message' so the frame is still
+        valid SSE."""
+        from web.state import broadcast_event, _sse_clients, _sse_lock
+        q = queue.Queue(maxsize=50)
+        with _sse_lock:
+            _sse_clients.append(q)
+        try:
+            broadcast_event('nasty:type\nwith\rbreaks', {'k': 'v'})
+            msg = q.get_nowait()
+            assert 'event: nastytypewithbreaks' in msg
+            # No colon or CR/LF may remain on the event line
+            first_line = msg.split('\n', 1)[0]
+            assert ':' in first_line  # only the "event:" prefix separator
+            assert first_line.count(':') == 1
+        finally:
+            with _sse_lock:
+                if q in _sse_clients:
+                    _sse_clients.remove(q)
+        # Empty event type falls back to 'message'
+        q2 = queue.Queue(maxsize=50)
+        with _sse_lock:
+            _sse_clients.append(q2)
+        try:
+            broadcast_event(':::', {'k': 'v'})
+            msg = q2.get_nowait()
+            assert 'event: message' in msg
+        finally:
+            with _sse_lock:
+                if q2 in _sse_clients:
+                    _sse_clients.remove(q2)
+
     def test_broadcast_drops_oldest_on_full_queue(self, app):
         """Full queues now drop their oldest message and keep receiving new
         ones rather than being evicted outright. Previously a single burst

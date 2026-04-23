@@ -5,6 +5,7 @@ is in place. Import side effects (alert engine, scheduler) are also handled here
 """
 
 import logging
+import os
 
 log = logging.getLogger('nomad.web')
 
@@ -213,13 +214,21 @@ def register_blueprints(app):
     app.register_blueprint(roadmap_bp)
 
     # ─── Preparedness (registered after alert engine start) ───────────────
+    # Under pytest the alert engine races with per-test ``init_db()`` in
+    # conftest and causes intermittent ``database table is locked:
+    # sqlite_master`` errors when ``ALTER TABLE`` runs while the daemon
+    # thread is opening a connection against the new test DB. Skip the
+    # background thread entirely during tests — blueprints + routes still
+    # register, just without the long-running loop.
     from web.blueprints.preparedness import start_alert_engine, preparedness_bp
-    start_alert_engine()
+    if not app.config.get('TESTING') and 'PYTEST_CURRENT_TEST' not in os.environ:
+        start_alert_engine()
     app.register_blueprint(preparedness_bp)
 
     # ─── Scheduled reports ───────────────────────────────────────────────
     from web.blueprints.scheduled_reports import _ensure_scheduler
-    _ensure_scheduler()
+    if not app.config.get('TESTING') and 'PYTEST_CURRENT_TEST' not in os.environ:
+        _ensure_scheduler()
 
     # ─── User Plugins ─────────────────────────────────────────────────────
     from web.plugins import load_plugins

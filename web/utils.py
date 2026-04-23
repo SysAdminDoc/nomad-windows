@@ -31,8 +31,17 @@ def is_loopback_addr(addr: str) -> bool:
 
 
 def esc(s):
-    """Escape HTML for print/template output (None-safe)."""
-    return _html_escape(str(s)) if s else ''
+    """Escape HTML for print/template output (None-safe).
+
+    Bug fix: the prior ``if s`` gate treated every falsy value — including
+    ``0``, ``False``, ``''``, empty list/dict — as None, rendering them as
+    an empty string. That silently lost legitimate zero values from printed
+    inventory counts, medical dosages, and JSON summaries. Only ``None`` is
+    a sentinel for "no value"; everything else must round-trip.
+    """
+    if s is None:
+        return ''
+    return _html_escape(str(s))
 
 
 def safe_int(value, default=0):
@@ -328,20 +337,34 @@ def validate_download_url(url):
         or literal_ip.is_reserved or literal_ip.is_multicast or literal_ip.is_unspecified
     ):
         raise ValueError('URL targets a blocked IP range')
-    try:
-        old_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(5)
+    # Resolve on a short-lived background thread so we get a bounded wait
+    # without mutating the process-wide default socket timeout — the prior
+    # implementation used ``socket.setdefaulttimeout(5)`` which leaks into
+    # every other thread's connections for the duration of the DNS lookup.
+    import threading as _threading
+    _dns_result = {'addrs': None, 'error': None}
+
+    def _resolve():
         try:
-            resolved = socket.getaddrinfo(hostname, None)
-        finally:
-            socket.setdefaulttimeout(old_timeout)
-        for _family, _type, _proto, _canonname, sockaddr in resolved:
+            _dns_result['addrs'] = socket.getaddrinfo(hostname, None)
+        except (socket.gaierror, OSError) as exc:
+            _dns_result['error'] = exc
+
+    t = _threading.Thread(target=_resolve, daemon=True)
+    t.start()
+    t.join(timeout=5.0)
+    if t.is_alive() or _dns_result['addrs'] is None:
+        if _dns_result['error']:
+            raise ValueError(f'Cannot resolve hostname: {hostname}')
+        raise ValueError(f'DNS resolution timeout for {hostname}')
+    for _family, _type, _proto, _canonname, sockaddr in _dns_result['addrs']:
+        try:
             ip = ipaddress.ip_address(sockaddr[0])
-            if (ip.is_private or ip.is_loopback or ip.is_link_local
-                    or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
-                raise ValueError('URL resolves to a blocked IP range')
-    except (socket.gaierror, OSError):
-        raise ValueError(f'Cannot resolve hostname: {hostname}')
+        except (ValueError, IndexError):
+            continue
+        if (ip.is_private or ip.is_loopback or ip.is_link_local
+                or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+            raise ValueError('URL resolves to a blocked IP range')
     return url
 
 

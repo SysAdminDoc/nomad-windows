@@ -175,7 +175,19 @@ def _setup_host_validation(app):
     def _host_header_check():
         if _allowed_hosts is None:
             return
-        host = (request.host or '').split(':')[0].lower()
+        raw = (request.host or '').lower().strip()
+        # IPv6 literals are wrapped in brackets (RFC 3986 §3.2.2):
+        # ``[::1]:8080``. A naive ``split(':')[0]`` returned ``[`` and broke
+        # the check for every IPv6 host. Extract the literal between
+        # brackets, falling back to split-at-last-colon for IPv4/hostname.
+        if raw.startswith('['):
+            end = raw.find(']')
+            host = raw[1:end] if end > 0 else raw.lstrip('[').split(':')[0]
+        elif ':' in raw:
+            # ``host:port`` — port always on the right. rsplit for safety.
+            host = raw.rsplit(':', 1)[0]
+        else:
+            host = raw
         if host not in _allowed_hosts and not _is_loopback(request.remote_addr or ''):
             abort(403, 'Host not allowed')
 

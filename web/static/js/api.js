@@ -58,16 +58,23 @@ async function apiFetch(url, options = {}) {
         delete mergedOptions.headers['Content-Type'];
     }
 
-    // Default 30s timeout unless caller provides their own signal
+    // Default 30s timeout unless caller provides their own signal.
+    // Capture the timer handle so we can clear it when the fetch settles —
+    // without the clear, every successful call leaves a timer armed for
+    // 30s that will eventually no-op-abort an already-settled controller
+    // and keep the callback alive (preventing short-lived GC wins in
+    // long-running UI sessions).
     let controller;
+    let timeoutHandle;
     if (!mergedOptions.signal) {
         controller = new AbortController();
-        setTimeout(() => controller.abort(), 30000);
+        timeoutHandle = setTimeout(() => controller.abort(), 30000);
         mergedOptions.signal = controller.signal;
     }
 
     try {
         const resp = await fetch(url, mergedOptions);
+        if (timeoutHandle) { clearTimeout(timeoutHandle); timeoutHandle = null; }
 
         if (!resp.ok) {
             let errorData;
@@ -90,8 +97,24 @@ async function apiFetch(url, options = {}) {
             return resp;
         }
 
-        return await resp.json();
+        // Empty-body success (204 No Content, or a 200 with Content-Length: 0
+        // from routes that use ``return '', 200``) must not blow up ``json()``.
+        // The prior code threw TypeError on parse and was reported upward as
+        // a generic "Network error" even though the request completed fine.
+        if (resp.status === 204 || resp.headers.get('content-length') === '0') {
+            return {};
+        }
+        const text = await resp.text();
+        if (!text) return {};
+        try {
+            return JSON.parse(text);
+        } catch {
+            // Non-JSON success body — return the raw text under a stable key
+            // rather than crash the caller.
+            return { _raw: text };
+        }
     } catch (err) {
+        if (timeoutHandle) { clearTimeout(timeoutHandle); timeoutHandle = null; }
         if (err.status) throw err; // Re-throw API errors
         // Network-level error (offline, DNS failure, timeout)
         const netErr = new Error(

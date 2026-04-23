@@ -2,6 +2,30 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.60.1] — Deep Audit Hardening Pass
+
+Eight concrete bugs fixed across backend, frontend, services layer, and test harness. No behavior changes; every fix is a correctness or defensive-hardening improvement. 22 new regression tests in `tests/test_audit_hardening.py`.
+
+### Correctness
+- **`web.utils.esc()` silently dropped every falsy value** — `esc(0)` returned `''`, losing legitimate zero values from printed inventory counts, medical dosages, RST tone scores. Now only `None` is treated as absent; `0`, `False`, `''`, `[]`, `{}` all round-trip to their string forms.
+- **`web.static.js.api.js` empty-body responses crashed `apiFetch`** — a 204 No Content or a 200 with `Content-Length: 0` (from routes that return `'', 200`) threw `SyntaxError` inside `resp.json()` and bubbled up as a generic "Network error" to the user. Now checks status/content-length and returns `{}` for intentionally empty bodies, returns `{_raw: text}` for non-JSON success bodies.
+
+### Concurrency & Thread Safety
+- **`web.utils.validate_download_url` leaked 5s socket timeout into every thread** — the prior implementation used `socket.setdefaulttimeout(5)` around `getaddrinfo()`, a process-wide mutation that altered the default timeout for every other concurrent socket connect for the duration of the DNS lookup. Replaced with a bounded background-thread `join(timeout=5.0)` so only this call's DNS is capped.
+- **`web.static.js.api.js` leaked timeout callbacks** — the 30s default abort-timer was armed but never cleared on successful responses; long-running UI sessions accumulated arm-then-no-op callbacks. `clearTimeout(timeoutHandle)` now runs on both success and failure paths.
+
+### Reliability & Input Validation
+- **`web.state.broadcast_event` sanitization missed control bytes** — only `\n`, `\r`, and `:` were stripped from SSE event names. Raw control bytes (NUL, BEL, tab, DEL, etc.) pass through to the wire and corrupt downstream proxies. Now strips all of `U+0000..U+001F` + DEL + `:` and coerces non-string event types to `str`. Extracted into `_sanitize_sse_event_type()` for reuse.
+- **`web.state.broadcast_event` silently dropped unserializable payloads** — `json.dumps(data)` with no `default` raised `TypeError` for common values (datetime, set, bytes, Decimal, Path) and the whole event was discarded with no trace. New `_json_default()` handles those types; circular refs now emit a `{'_unserializable': True, 'type': ...}` envelope so listeners still see the event.
+- **`web.middleware._host_header_check` broke for IPv6 literal hosts** — a naive `host.split(':')[0]` yielded `[` for `[::1]:8080` and silently failed the allow-host check for every IPv6 client. Now extracts the literal between brackets for IPv6 and uses `rsplit(':', 1)` for IPv4/hostname so the port is always split from the right.
+
+### Platform Robustness
+- **`services.manager.download_file` had no read timeout** — `timeout=30` on a streaming request applies only to initial connect; a server that stalled mid-body (TCP keepalives but no data) blocked the download worker indefinitely. Now uses tuple timeout `(30, 60)` so each read is bounded.
+- **`services.manager.uninstall_service` leaked directories on Windows** — `shutil.rmtree(ignore_errors=True)` swallowed antivirus/explorer-held-handle errors and returned with the directory still on disk, making the next install think the service was already present. New `_rmtree_with_retry()` helper retries up to 5 times with backoff and writes a `.delete-pending` marker if cleanup still fails.
+
+### Test Infrastructure
+- **Alert engine + scheduler now skip startup under pytest** — the daemon threads in `_run_alert_checks` and `_ensure_scheduler` raced with per-test `init_db()` migrations in `conftest.py` and caused intermittent `database table is locked: sqlite_master` errors during the full suite run. `blueprint_registry` now gates thread startup on `app.config['TESTING']` / `PYTEST_CURRENT_TEST`. Full suite is now deterministic.
+
 ## [v7.60.0] — Content Expansion: Seeds Package + Field Medicine + CBRN Reference
 
 ### Infrastructure — `seeds/` package pattern established

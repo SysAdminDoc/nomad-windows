@@ -341,6 +341,61 @@ def sse_cleanup_stale_clients():
     return len(stale)
 
 
+# Any char in U+0000..U+001F (except the SSE frame delimiters we explicitly
+# handle below) is illegal in an SSE field value. We also strip DEL (U+007F)
+# defensively. Colons are excluded separately because they have semantic
+# meaning in the ``event:`` line header.
+_SSE_EVENT_DROP = {chr(c) for c in range(0x00, 0x20)} | {'\x7f', ':'}
+
+
+def _sanitize_sse_event_type(event_type):
+    """Return an SSE-safe event name.
+
+    SSE is line-delimited: CR/LF ends a frame, leading ``:`` introduces a
+    comment, and raw control bytes can corrupt the stream for downstream
+    proxies. We also reject non-string types up front so a misuse like
+    ``broadcast_event(None, {...})`` doesn't explode in the pipeline.
+    """
+    if not isinstance(event_type, str):
+        try:
+            event_type = str(event_type)
+        except Exception:
+            return 'message'
+    cleaned = ''.join(ch for ch in event_type if ch not in _SSE_EVENT_DROP).strip()
+    return cleaned or 'message'
+
+
+def _json_default(obj):
+    """Fallback JSON encoder for common non-primitive types.
+
+    Keeps ``broadcast_event`` from silently dropping payloads that include
+    ``datetime``, ``set``, ``bytes``, ``Decimal``, or ``Path`` — all of which
+    show up routinely in blueprint responses. Anything we can't map is coerced
+    to ``str(obj)`` so the client still gets *something* instead of nothing.
+    """
+    import datetime as _dt
+    from decimal import Decimal
+    if isinstance(obj, (_dt.datetime, _dt.date, _dt.time)):
+        return obj.isoformat()
+    if isinstance(obj, _dt.timedelta):
+        return obj.total_seconds()
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, (set, frozenset)):
+        return list(obj)
+    if isinstance(obj, (bytes, bytearray)):
+        try:
+            return obj.decode('utf-8', errors='replace')
+        except Exception:
+            return repr(obj)
+    # Last-resort string coercion — better to emit *something* than drop
+    # the whole event and leave the UI stale.
+    try:
+        return str(obj)
+    except Exception:
+        return None
+
+
 def broadcast_event(event_type, data):
     """Send an event to all connected SSE clients.
 
@@ -350,23 +405,17 @@ def broadcast_event(event_type, data):
     burst. Dropping the oldest message preserves the connection and keeps the
     client eventually consistent.
     """
-    # Sanitize event_type: SSE event names must not contain newlines or colons.
-    # A colon in an SSE `event:` line would be parsed as a field separator by
-    # the browser's EventSource and mis-route the frame as a comment, so strip
-    # it too. Also drop raw control characters — the SSE spec allows only
-    # printable chars in field values.
-    safe_type = (
-        str(event_type)
-        .replace('\n', '').replace('\r', '').replace(':', '')
-        .strip()
-    )
-    if not safe_type:
-        safe_type = 'message'
+    safe_type = _sanitize_sse_event_type(event_type)
     try:
-        payload = json.dumps(data)
-    except (TypeError, ValueError):
-        # Refuse to crash the broadcaster on un-serializable payloads.
-        return
+        payload = json.dumps(data, default=_json_default)
+    except (TypeError, ValueError, RecursionError):
+        # Payload is genuinely unserializable even with fallbacks
+        # (e.g. circular reference or a lock object). Emit an envelope so
+        # listeners still see the event, rather than dropping silently.
+        try:
+            payload = json.dumps({'_unserializable': True, 'type': type(data).__name__})
+        except Exception:
+            return
     message = f"event: {safe_type}\ndata: {payload}\n\n"
     with _sse_lock:
         for q in list(_sse_clients):

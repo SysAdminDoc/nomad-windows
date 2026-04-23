@@ -130,7 +130,14 @@ def download_file(url: str, dest: str, service_id: str = '',
             headers['Range'] = f'bytes={partial_size}-'
             log.info(f'Resuming download for {service_id} from {partial_size} bytes')
 
-        resp = requests.get(url, stream=True, timeout=30, headers=headers)
+        # Tuple timeout: (connect, read) — a single scalar applies to the
+        # INITIAL connect only when streaming. Without an explicit read
+        # timeout, a TCP connection that stalls mid-body (server still
+        # dribbling keepalives) would block the download worker forever,
+        # leaving the UI with a stuck "Downloading…" status.
+        resp = requests.get(
+            url, stream=True, timeout=(30, 60), headers=headers,
+        )
 
         if resp.status_code == 416:
             with _dl_progress_lock:
@@ -718,13 +725,51 @@ def format_size(size_bytes: int) -> str:
     return f'{size_bytes} B'
 
 
+def _rmtree_with_retry(path: str, attempts: int = 5, delay: float = 0.25) -> bool:
+    """Best-effort recursive delete that survives transient Windows locks.
+
+    On Windows, a just-stopped process can leave file handles held for a few
+    hundred milliseconds after ``Popen.terminate()`` returns — antivirus
+    scanners, explorer.exe thumbnail cache, and indexers compound this.
+    ``shutil.rmtree(ignore_errors=True)`` swallows the error and returns
+    with the directory still on disk, so the next install thinks the
+    service is already present.
+
+    Retries up to *attempts* times with exponential-ish backoff. On the
+    final failure, a stubborn ``.delete-pending`` marker is left so the
+    next startup can retry cleanup instead of silently succeeding.
+    """
+    import time as _time
+    if not os.path.isdir(path):
+        return True
+    last_exc = None
+    for attempt in range(attempts):
+        try:
+            shutil.rmtree(path)
+            return True
+        except OSError as exc:
+            last_exc = exc
+            _time.sleep(delay * (attempt + 1))
+    # Final best-effort — ignore_errors to clean what we can.
+    shutil.rmtree(path, ignore_errors=True)
+    if os.path.isdir(path):
+        log.warning('Could not fully remove %s after %d attempts: %s',
+                    path, attempts, last_exc)
+        try:
+            with open(os.path.join(path, '.delete-pending'), 'w') as f:
+                f.write(f'retry at next startup: {last_exc}')
+        except OSError:
+            pass
+        return False
+    return True
+
+
 def uninstall_service(service_id: str) -> bool:
     """Uninstall a service by removing its files and DB entry."""
     stop_process(service_id)
 
     install_dir = os.path.join(get_services_dir(), service_id)
-    if os.path.isdir(install_dir):
-        shutil.rmtree(install_dir, ignore_errors=True)
+    _rmtree_with_retry(install_dir)
 
     db = get_db()
     try:

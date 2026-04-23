@@ -34,6 +34,39 @@ def _resolve_map_center(value):
 
 # ─── Power Devices CRUD ─────────────────────────────────────────────
 
+@power_bp.route('/api/power/appliance-wattage')
+def api_power_appliance_wattage():
+    """Return the static appliance-wattage reference table (CE-06, v7.60).
+
+    Used by the autonomy / solar-sizing calculators + the "add load" picker
+    so the user chooses from a realistic catalog instead of guessing watts.
+    The data is static reference — no DB round-trip, no user edits.
+    """
+    try:
+        from seeds.appliance_wattage import APPLIANCE_WATTAGE
+    except Exception:
+        return jsonify({'items': [], 'categories': []})
+
+    items = []
+    for (name, category, running_w, surge_w, hours, notes) in APPLIANCE_WATTAGE:
+        items.append({
+            'name': name,
+            'category': category,
+            'running_watts': running_w,
+            'surge_watts': surge_w,
+            'typical_hours_per_day': hours,
+            'notes': notes,
+        })
+    # Preserve insertion order of first-seen category so UI groupings stay stable.
+    categories, seen = [], set()
+    for it in items:
+        c = it['category']
+        if c not in seen:
+            categories.append(c)
+            seen.add(c)
+    return jsonify({'items': items, 'categories': categories, 'count': len(items)})
+
+
 @power_bp.route('/api/power/devices')
 def api_power_devices():
     with db_session() as db:

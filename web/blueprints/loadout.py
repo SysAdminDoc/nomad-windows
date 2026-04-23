@@ -60,6 +60,122 @@ def _item_not_found():
     return jsonify({'error': 'Item not found'}), 404
 
 
+# ─── Loadout Templates (CE-10, v7.61) ──────────────────────────────
+
+@loadout_bp.route('/api/loadout/templates')
+def api_loadout_templates():
+    """Return curated loadout bag templates (CE-10, v7.61).
+
+    15 templates covering 72-hr adult/kid, EDC, get-home short/long, INCH,
+    vehicle (temperate/winter/desert), IFAK+, canoe/boat, winter mountain,
+    desert 72-hr, backcountry 3-day, urban/apartment. Each template has a
+    bag-level config (name, type, season, target weight, description,
+    use_case) and an item list (name, category, quantity, weight_oz, notes).
+
+    The UI offers "create bag from template" — it reads this endpoint, lets
+    the user pick one, then POSTs the bag to /api/loadout/bags and each item
+    to /api/loadout/bags/<id>/items.
+    """
+    try:
+        from seeds.loadout_templates import LOADOUT_TEMPLATES
+    except Exception as exc:
+        return jsonify({'error': f'loadout templates unavailable: {exc}'}), 500
+
+    out = []
+    for t in LOADOUT_TEMPLATES:
+        total_oz = sum((it[2] or 1) * (it[3] or 0) for it in t['items'])
+        out.append({
+            'name': t['name'],
+            'bag_type': t['bag_type'],
+            'season': t['season'],
+            'target_weight_lb': t['target_weight_lb'],
+            'description': t['description'],
+            'use_case': t['use_case'],
+            'item_count': len(t['items']),
+            'computed_weight_oz': round(total_oz, 1),
+            'computed_weight_lb': round(total_oz / 16.0, 1),
+            'items': [
+                {
+                    'name': name, 'category': cat, 'quantity': qty,
+                    'weight_oz': w, 'notes': notes,
+                }
+                for (name, cat, qty, w, notes) in t['items']
+            ],
+        })
+    return jsonify({'count': len(out), 'templates': out})
+
+
+@loadout_bp.route('/api/loadout/templates/launch', methods=['POST'])
+def api_loadout_templates_launch():
+    """Create a bag + populate it from a template in a single transaction.
+
+    Request body:
+        {"template_name": "72-Hour Bag — Adult",
+         "owner": "optional",
+         "location": "optional",
+         "rename_to": "optional override"}
+
+    The newly-created bag's id is returned along with the count of items
+    added. Items are created with packed=0 so the user can check them off
+    as they assemble the bag.
+    """
+    data = request.get_json() or {}
+    template_name = (data.get('template_name') or '').strip()
+    if not template_name:
+        return jsonify({'error': 'template_name is required'}), 400
+
+    try:
+        from seeds.loadout_templates import LOADOUT_TEMPLATES
+    except Exception as exc:
+        return jsonify({'error': f'loadout templates unavailable: {exc}'}), 500
+
+    template = next(
+        (t for t in LOADOUT_TEMPLATES if t['name'] == template_name),
+        None,
+    )
+    if template is None:
+        return jsonify({'error': f'template not found: {template_name}'}), 404
+
+    bag_name = (data.get('rename_to') or '').strip() or template['name']
+    owner = (data.get('owner') or '').strip()
+    location = (data.get('location') or '').strip()
+
+    with db_session() as db:
+        cur = db.execute(
+            'INSERT INTO loadout_bags (name, owner, bag_type, season, '
+            'target_weight_lb, location, notes) '
+            'VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (
+                bag_name, owner, template['bag_type'], template['season'],
+                template['target_weight_lb'], location,
+                f"Created from template: {template['name']}\n\n"
+                f"{template['description']}\n\nUse case: {template['use_case']}",
+            ),
+        )
+        bag_id = cur.lastrowid
+        for (name, cat, qty, w, notes) in template['items']:
+            db.execute(
+                'INSERT INTO loadout_items (bag_id, name, category, '
+                'quantity, weight_oz, packed, notes) '
+                'VALUES (?, ?, ?, ?, ?, 0, ?)',
+                (bag_id, name, cat, qty, w, notes),
+            )
+        db.commit()
+
+    try:
+        log_activity('loadout_template_launched', template_name,
+                     f'bag_id={bag_id}, items={len(template["items"])}')
+    except Exception:
+        pass
+
+    return jsonify({
+        'status': 'created',
+        'bag_id': bag_id,
+        'item_count': len(template['items']),
+        'template_name': template['name'],
+    }), 201
+
+
 # ─── Bag CRUD ─────────────────────────────────────────────────────────
 
 @loadout_bp.route('/api/loadout/bags')

@@ -69,10 +69,16 @@ SERVICE_MODULES = None  # Lazy-loaded
 def _get_service_modules():
     global SERVICE_MODULES
     if SERVICE_MODULES is None:
-        from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling
+        # Must include every service listed in services.manager.DEPENDENCIES —
+        # get_shutdown_order() iterates DEPENDENCIES, and tray_quit() maps each
+        # id back here to call mod.stop(). A missing entry silently skipped the
+        # stop call, leaking the process on graceful shutdown (flatnotes was the
+        # original offender; torrent has its own shutdown path below).
+        from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
         SERVICE_MODULES = {
             'ollama': ollama, 'kiwix': kiwix, 'cyberchef': cyberchef,
             'kolibri': kolibri, 'qdrant': qdrant, 'stirling': stirling,
+            'flatnotes': flatnotes,
         }
     return SERVICE_MODULES
 

@@ -2,6 +2,47 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.60.0] — Content Expansion: Seeds Package + Field Medicine + CBRN Reference
+
+### Infrastructure — `seeds/` package pattern established
+Reference data now lives in per-topic modules under `seeds/` with idempotent `_seed_*()` functions in `db.py`. Keeps `db.py` from ballooning as content grows. First landing: 13 seed modules covering companion plants, weather action rules, pest guide, planting calendar, medicinal herbs, appliance wattage, loadout templates, radio reference, water purification, frequencies, medications, disaster checklists, and hazmat agents.
+
+### Content — CE Tier 1 & 2
+- **CE-01: Planting calendar** — 47 crops × 8 USDA zones = 1,069 rows with yield / calories / days-to-harvest (`seeds/planting_calendar.py`).
+- **CE-02: Companion plants** — 92 directed pairs covering tomato, brassica, three-sisters, nightshade, and universal helpers (`seeds/companion_plants.py`).
+- **CE-03 / CE-04: Field medicine** — DOSAGE_GUIDE expanded from 8 to 47 drugs; DRUG_INTERACTIONS from 26 to 78 pairs. Pregnancy category, shelf-life, pediatric weight-based dosing, contraindications (`seeds/medications.py`).
+- **CE-06: Appliance wattage** — 84 loads across 10 categories with running / surge watts + typical hours/day, exposed via `/api/power/appliance-wattage`.
+- **CE-07: Weather action rules** — 15 default rule templates (freeze, heat, wind, flash-flood rain, lightning, AQI, mold-risk) with severity-graded action messages.
+- **CE-10: Loadout templates** — 15 curated bag templates (72-hr adult/child, EDC, get-home, INCH, vehicle variants, IFAK+, winter-mountain, desert, canoe/boat, urban) with per-item weight. `POST /api/loadout/templates/launch` creates bag + items in one transaction.
+- **CE-11: Disaster checklists** — 20-25 items per disaster type (earthquake, hurricane, tornado, wildfire, flood, pandemic, EMP, volcanic, drought, economic collapse) replacing 5-item stubs.
+- **CE-12: Hazmat / CBRN reference** — 22 agents across chemical, nerve, blister, biological, radiological (chlorine, ammonia, HCN, phosgene, H2S, sarin, VX, mustard, lewisite, anthrax, smallpox, plague, botulinum, Cs-137, I-131, etc.). Each row carries CAS / UN number, IDLH, ERPG-1/2/3, symptoms, route, decon, first aid, antidote, PPE level, evac distance. Sourced from NIOSH, DOT ERG 2024, AIHA, CDC, USAMRIID. Read-only defensive reference exposed via `/api/hazmat/agents` (list + filter + search) and `/api/hazmat/agents/<id>`.
+- **CE-13: Pediatric growth + weight estimation** — WHO 0-24mo + CDC 2-20yr percentile curves, 20 Broselow-style weight bands, `estimate_pediatric_weight(age_years)` helper, exposed via `/api/medical/pediatric-growth` and `/api/medical/pediatric-weight-estimate`.
+- **CE-14: Radio reference cards** — NATO + LAPD phonetic alphabets, full International Morse + prosigns, 31 US voice prowords, 3-axis RST, 21 Q-codes, 16 digital-mode comparison card, US General-class HF band plan. Exposed via `/api/radio/reference`, `/api/radio/phonetic`, `/api/radio/morse/<text>`.
+- **CE-15: Medicinal herbs** — Expanded from 10 to 50+ species (peppermint, valerian, goldenseal, usnea, St. John's Wort, kava, ashwagandha, turmeric, etc.) with uses, preparation, dosing, contraindications, season, habitat.
+- **CE-16: Pest guide** — 38 entries covering insects, mollusks, diseases (early/late blight, powdery mildew, fire blight), vertebrate pests, physiological disorders with IPM-first treatment.
+- **CE-19: Water purification reference** — 10 methods (boil, bleach, iodine, CLO2, ceramic, hollow-fiber, RO, UV, SODIS, distillation) with removes / does_not_remove / equipment / time / cost; CDC boil-times by altitude; bleach + iodine dose charts (1 qt → 275 gal IBC); iodine contraindications; 9-class contaminant-response matrix. Legacy `/api/water/purification-reference` shape preserved (`{methods: [...], boil_times, bleach_dosing, iodine_dosing, ...}`) with every legacy key still present on each row.
+
+### Architecture
+- **Setup wizard extracted** — `_app_setup_wizard.js` (499 lines) split out of `_app_workspaces.js` to keep that file under the per-module size ceiling. Wizard-only state (`_wiz*`) and helpers moved over; guided-tour stays behind.
+- **`nomad.py` SERVICE_MODULES hardened** — flatnotes added so `tray_quit()` actually stops the child process on graceful shutdown (every id in `services.manager.DEPENDENCIES` except `torrent` now maps to a module). Test enforces this invariant.
+
+### Security / Reliability
+- **SSE event-type sanitization** — `broadcast_event()` strips colons, CR/LF, and control characters from event names (a colon in an SSE `event:` line is parsed as a field separator; CR/LF ends the frame early). Empty names fall back to `message`.
+- **`config.save_config()` crash cleanup** — partial tmp file is removed when `json.dump` or `os.fsync` raises so a later `load_config()` can't recover truncated data.
+- **`get_node_id()` race-safe** — concurrent first-call requests converge on a single stored value via `INSERT OR IGNORE` + re-read (previously racing callers each minted their own UUID).
+- **`flatnotes` install timeouts** — `venv` creation (300s) and `pip install flatnotes` (600s) now capped so a wedged network doesn't leave the UI spinning indefinitely.
+
+### Theme tokens
+- **`--surface-tint-*` tokens** in `00_theme_tokens.css` produce direction-aware overlays via `color-mix()` — subtle darkening in light themes, subtle lightening in dark themes.
+- **Theme-token migration** — `sr-alert-toast`, `.kit-stat-*`, `.kit-item-status`, `.copilot-handsfree-btn`, `.copilot-voice-state-badge` swapped hardcoded hex for semantic tokens (`--red`, `--green`, `--warning`, `--info`) so theme switches carry through.
+- **Theme coverage test** — new `tests/test_theme_coverage.py` enforces every declared theme defines the full semantic token set and that kit-builder / daily-brief / family-checkin / triage-step status colors route through semantic tokens.
+
+### Tests
+- 68 new content-seed tests (`tests/test_content_seeds.py`) covering all seed modules, idempotency, and the new reference endpoints.
+- SSE event-type sanitization tests in `test_sse.py`.
+- `nomad.SERVICE_MODULES` completeness tests in `test_pass21_hardening.py`.
+- Wizard-split regression guards in `test_core.py`.
+
 ## [v7.59.0] — V8-19: Mobile Prep Nav + V8-20: Docs Site
 
 ### UX (V8-19)

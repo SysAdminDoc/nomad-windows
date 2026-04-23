@@ -263,11 +263,19 @@ class TestVetRecords:
 
 class TestHerbalRemedies:
     def test_seed_populates_builtin_set(self, client):
+        """v7.62: init_db auto-seeds the built-in herbs, so the POST endpoint
+        is a no-op that reports total_builtin >= 40 (CE-15 expanded from 10
+        original + 50 new = 60-ish total, deduplicated by name)."""
         resp = client.post('/api/medical/herbal/seed')
         assert resp.status_code == 200
         data = resp.get_json()
-        assert data['seeded'] >= 10
-        assert data['total_builtin'] == data['seeded']
+        assert data['total_builtin'] >= 40, (
+            f'Expected ≥ 40 built-in herbs; got {data["total_builtin"]}'
+        )
+        # `seeded` is the count of *new* inserts this call — may be 0 if
+        # init_db already seeded (the common case in tests), or a positive
+        # number on a DB where only the inline 10 existed before.
+        assert data['seeded'] >= 0
 
     def test_seed_is_idempotent(self, client):
         client.post('/api/medical/herbal/seed')

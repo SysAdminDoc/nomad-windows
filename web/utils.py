@@ -346,16 +346,26 @@ def validate_download_url(url):
 
 
 def get_node_id():
-    """Get or create a persistent node ID for federation."""
+    """Get or create a persistent node ID for federation.
+
+    Uses ``INSERT OR IGNORE`` + re-read so concurrent first-call requests
+    converge on a single stored value. A bare ``INSERT OR REPLACE`` with
+    two racing callers would have each caller mint a different UUID and
+    overwrite the other — each returning a value that disagrees with the
+    value subsequently persisted in the DB.
+    """
     from db import db_session
     with db_session() as db:
         row = db.execute("SELECT value FROM settings WHERE key = 'node_id'").fetchone()
         if row and row['value']:
             return row['value']
         node_id = str(_uuid.uuid4())[:8]
-        db.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('node_id', ?)", (node_id,))
+        db.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('node_id', ?)", (node_id,))
         db.commit()
-        return node_id
+        # Re-read in case another request inserted first — we want the
+        # canonical stored value, not the one we just tried to insert.
+        row = db.execute("SELECT value FROM settings WHERE key = 'node_id'").fetchone()
+        return row['value'] if row and row['value'] else node_id
 
 
 def get_node_name():

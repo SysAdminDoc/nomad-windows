@@ -386,7 +386,7 @@ def apply_migrations(conn):
 
 
 # V8-01: Schema version gate — skip 935 SQL statements on subsequent starts
-_SCHEMA_VERSION = 54  # Bump when tables/indexes/migrations change
+_SCHEMA_VERSION = 57  # v7.62: CE-03/04/13/15 Field Medicine — expanded meds, interactions, pediatric, 50 herbs
 
 
 def init_db():
@@ -5818,6 +5818,15 @@ def _init_db_inner(conn):
     _seed_upc_database(conn)
     _create_rag_scope_table(conn)
     _seed_rag_scope(conn)
+    # Content-expansion seeds (roadmap CE-tier 1, v7.60 + v7.61 + v7.62)
+    # NOTE: freq_database is lazy-seeded on first GET /api/comms/frequencies
+    # by web.blueprints.comms._seed_frequencies(). Don't pre-fill here or the
+    # lazy path's empty-check skips and we lose ~260 of the 340 entries.
+    _seed_companion_plants(conn)
+    _seed_weather_action_rules(conn)
+    _seed_pest_guide(conn)
+    _seed_planting_calendar(conn)
+    _seed_medicinal_herbs(conn)
 
 
 def _create_roadmap_v747_tables(conn):
@@ -6320,3 +6329,200 @@ def _seed_upc_database(conn):
             pass
     conn.commit()
     _log.info(f'Seeded UPC database with {len(items)} items')
+
+
+# ─── Content-Expansion Seeds (CE-tier 1, v7.60) ──────────────────────
+# Reference data lives in ``seeds/*.py`` modules so db.py doesn't balloon.
+# Each seeder is idempotent — INSERT OR IGNORE + COUNT-based early exit.
+
+def _seed_freq_database(conn):
+    """Seed freq_database with ~70 canonical field frequencies (CE-05)."""
+    count = conn.execute('SELECT COUNT(*) FROM freq_database').fetchone()[0]
+    if count > 0:
+        return
+    try:
+        from seeds.frequencies import FREQUENCIES
+    except Exception as e:
+        _log.warning('Frequency seed module unavailable — skipping: %s', e)
+        return
+    for row in FREQUENCIES:
+        try:
+            conn.execute(
+                'INSERT OR IGNORE INTO freq_database '
+                '(frequency, mode, bandwidth, service, description, region, '
+                'license_required, priority, notes) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                row,
+            )
+        except Exception as exc:
+            _log.debug('freq_database seed row skipped (%s): %s', row[0], exc)
+    conn.commit()
+    _log.info('Seeded freq_database with %d frequencies', len(FREQUENCIES))
+
+
+def _seed_companion_plants(conn):
+    """Seed companion_plants with ~100 directed pairs (CE-02)."""
+    count = conn.execute('SELECT COUNT(*) FROM companion_plants').fetchone()[0]
+    if count > 0:
+        return
+    try:
+        from seeds.companion_plants import COMPANION_PLANTS
+    except Exception as e:
+        _log.warning('Companion-plants seed module unavailable — skipping: %s', e)
+        return
+    for row in COMPANION_PLANTS:
+        try:
+            conn.execute(
+                'INSERT OR IGNORE INTO companion_plants '
+                '(plant_a, plant_b, relationship, notes) VALUES (?, ?, ?, ?)',
+                row,
+            )
+        except Exception as exc:
+            _log.debug('companion_plants seed row skipped (%s↔%s): %s',
+                       row[0], row[1], exc)
+    conn.commit()
+    _log.info('Seeded companion_plants with %d pairs', len(COMPANION_PLANTS))
+
+
+def _seed_weather_action_rules(conn):
+    """Seed weather_action_rules with 15 default thresholds (CE-07)."""
+    count = conn.execute(
+        'SELECT COUNT(*) FROM weather_action_rules'
+    ).fetchone()[0]
+    if count > 0:
+        return
+    try:
+        from seeds.weather_action_rules import rules_for_insert
+    except Exception as e:
+        _log.warning('Weather-rule seed module unavailable — skipping: %s', e)
+        return
+    rows = rules_for_insert()
+    for row in rows:
+        try:
+            conn.execute(
+                'INSERT OR IGNORE INTO weather_action_rules '
+                '(name, condition_type, threshold, comparison, action_type, '
+                'action_data, enabled, cooldown_minutes) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                row,
+            )
+        except Exception as exc:
+            _log.debug('weather_action_rules seed row skipped (%s): %s',
+                       row[0], exc)
+    conn.commit()
+    _log.info('Seeded weather_action_rules with %d templates', len(rows))
+
+
+def _seed_pest_guide(conn):
+    """Seed pest_guide with ~40 pests + diseases + disorders (CE-16)."""
+    count = conn.execute('SELECT COUNT(*) FROM pest_guide').fetchone()[0]
+    if count > 0:
+        return
+    try:
+        from seeds.pest_guide import PESTS
+    except Exception as e:
+        _log.warning('Pest-guide seed module unavailable — skipping: %s', e)
+        return
+    for row in PESTS:
+        try:
+            conn.execute(
+                'INSERT OR IGNORE INTO pest_guide '
+                '(name, pest_type, affects, symptoms, treatment, prevention, '
+                'image_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                row,
+            )
+        except Exception as exc:
+            _log.debug('pest_guide seed row skipped (%s): %s', row[0], exc)
+    conn.commit()
+    _log.info('Seeded pest_guide with %d entries', len(PESTS))
+
+
+def _seed_medicinal_herbs(conn):
+    """Seed herbal_remedies with 50 common herbs (CE-15, v7.62).
+
+    Pulls from both the inline BUILTIN_HERBS (original 10) and the
+    seeds.medicinal_herbs.HERBS module (40 more), deduplicated by name.
+    Idempotent: skip-if-name-already-exists rather than INSERT OR IGNORE,
+    because herbal_remedies has no UNIQUE(name) constraint (user-added
+    herbs allowed to share names).
+    """
+    # If there are already built-in herbs seeded, assume prior seeding.
+    count = conn.execute(
+        "SELECT COUNT(*) FROM herbal_remedies WHERE is_builtin = 1"
+    ).fetchone()[0]
+    if count >= 40:
+        return
+    combined = []
+    seen = set()
+    try:
+        from web.blueprints.medical_phase2 import BUILTIN_HERBS
+        for row in BUILTIN_HERBS:
+            if row[0] not in seen:
+                combined.append(row)
+                seen.add(row[0])
+    except Exception as e:
+        _log.warning('Inline BUILTIN_HERBS unavailable — skipping: %s', e)
+    try:
+        from seeds.medicinal_herbs import HERBS as _SEED_HERBS
+        for row in _SEED_HERBS:
+            if row[0] not in seen:
+                combined.append(row)
+                seen.add(row[0])
+    except Exception as e:
+        _log.warning('Medicinal-herbs seed module unavailable: %s', e)
+
+    if not combined:
+        return
+
+    inserted = 0
+    for (name, common, uses, prep, dose, contra, season, habitat) in combined:
+        existing = conn.execute(
+            'SELECT id FROM herbal_remedies WHERE name = ? AND is_builtin = 1',
+            (name,),
+        ).fetchone()
+        if existing:
+            continue
+        try:
+            conn.execute(
+                'INSERT INTO herbal_remedies '
+                '(name, common_names, uses, preparation, dosage, '
+                'contraindications, season, habitat, is_builtin) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)',
+                (name, common, uses, prep, dose, contra, season, habitat),
+            )
+            inserted += 1
+        except Exception as exc:
+            _log.debug('herbal_remedies seed row skipped (%s): %s', name, exc)
+    conn.commit()
+    _log.info('Seeded herbal_remedies with %d entries (total %d built-in)',
+              inserted, len(combined))
+
+
+def _seed_planting_calendar(conn):
+    """Seed planting_calendar — 45 crops × 8 USDA zones (CE-01)."""
+    count = conn.execute(
+        'SELECT COUNT(*) FROM planting_calendar'
+    ).fetchone()[0]
+    if count > 0:
+        return
+    try:
+        from seeds.planting_calendar import planting_rows
+    except Exception as e:
+        _log.warning('Planting-calendar seed module unavailable — skipping: %s', e)
+        return
+    inserted = 0
+    for row in planting_rows():
+        try:
+            conn.execute(
+                'INSERT OR IGNORE INTO planting_calendar '
+                '(crop, zone, month, action, notes, yield_per_sqft, '
+                'calories_per_lb, days_to_harvest) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+                row,
+            )
+            inserted += 1
+        except Exception as exc:
+            _log.debug('planting_calendar seed row skipped (%s z%s m%s): %s',
+                       row[0], row[1], row[2], exc)
+    conn.commit()
+    _log.info('Seeded planting_calendar with %d rows', inserted)

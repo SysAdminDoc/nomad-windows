@@ -72,9 +72,11 @@ def install(callback=None):
             # Create venv — use platform_utils helper so future platform
             # changes propagate here automatically (previously this hardcoded
             # the Windows CREATE_NO_WINDOW flag and duplicated the check).
+            # Timeouts prevent the install from hanging the UI indefinitely
+            # if the system Python or pip network is wedged.
             from platform_utils import run_kwargs
             subprocess.run([python, '-m', 'venv', venv_dir], check=True,
-                           **run_kwargs(capture_output=True))
+                           timeout=300, **run_kwargs(capture_output=True))
 
             # Get pip path in venv
             if sys.platform == 'win32':
@@ -87,9 +89,11 @@ def install(callback=None):
             with _dl_progress_lock:
                 _download_progress[SERVICE_ID].update({'percent': 30, 'speed': 'Installing flatnotes...'})
 
-            # Install flatnotes
+            # Install flatnotes — PyPI resolver can legitimately take a few
+            # minutes on slow links, but we cap at 10 min so a wedged pip
+            # doesn't leave the install status spinning forever.
             subprocess.run([pip, 'install', 'flatnotes'], check=True,
-                           **run_kwargs(capture_output=True))
+                           timeout=600, **run_kwargs(capture_output=True))
 
             with _dl_progress_lock:
                 _download_progress[SERVICE_ID].update({'percent': 80, 'speed': 'Configuring...'})

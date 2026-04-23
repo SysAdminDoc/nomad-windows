@@ -6,6 +6,43 @@ import threading
 import pytest
 
 
+# ─── nomad.SERVICE_MODULES covers every service ID ──────────────────
+
+class TestServiceModulesCoverage:
+    """nomad._get_service_modules() must return a module for every service
+    id in services.manager.DEPENDENCIES. get_shutdown_order() iterates that
+    dict and tray_quit() looks each id up in SERVICE_MODULES — a missing
+    entry silently orphans the process on graceful quit."""
+
+    def test_every_service_id_has_a_module(self):
+        import nomad
+        from services.manager import DEPENDENCIES
+
+        # Reset the lazy cache so the test isn't affected by prior imports.
+        nomad.SERVICE_MODULES = None
+        mods = nomad._get_service_modules()
+
+        # torrent has its own shutdown path (services.torrent.get_manager)
+        # so it's intentionally excluded from the tray_quit loop; every
+        # *other* dependency id must map to a module.
+        expected = set(DEPENDENCIES.keys()) - {'torrent'}
+        missing = expected - set(mods.keys())
+        assert not missing, (
+            f'nomad.SERVICE_MODULES is missing entries: {missing}. '
+            'tray_quit() will silently skip mod.stop() for these on graceful '
+            'shutdown, leaving the child processes orphaned.'
+        )
+
+    def test_every_returned_module_exposes_stop(self):
+        import nomad
+        nomad.SERVICE_MODULES = None
+        mods = nomad._get_service_modules()
+        for sid, mod in mods.items():
+            assert hasattr(mod, 'stop'), f'{sid} module has no stop()'
+            assert hasattr(mod, 'running'), f'{sid} module has no running()'
+            assert hasattr(mod, 'is_installed'), f'{sid} module has no is_installed()'
+
+
 # ─── is_loopback_addr (unified loopback helper) ──────────────────────
 
 class TestIsLoopbackAddr:

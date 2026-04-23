@@ -310,16 +310,23 @@ class TestWaterBudgetCalculators:
 
 class TestWaterPurificationReference:
     def test_purification_reference_payload_shape(self, client):
+        # CE-19 (v7.61): response is now a dict {methods: [...], boil_times,
+        # bleach_dosing, iodine_dosing, ...}. Each method row preserves the
+        # legacy method / instructions / kills / limitations keys alongside
+        # richer fields (removes, does_not_remove, equipment, time_to_treat).
         data = client.get('/api/water/purification-reference').get_json()
-        assert isinstance(data, list)
-        assert len(data) >= 5
-        for entry in data:
+        assert isinstance(data, dict)
+        methods_list = data['methods']
+        assert isinstance(methods_list, list)
+        assert len(methods_list) >= 5
+        for entry in methods_list:
             assert 'method' in entry
             assert 'instructions' in entry
             assert 'kills' in entry
             assert 'limitations' in entry
-        methods = {e['method'] for e in data}
-        assert 'Boiling' in methods
+        methods = {e['method'] for e in methods_list}
+        # v7.61 renamed methods to richer labels — match by prefix.
+        assert any(m.lower().startswith(('boil', 'rolling boil')) for m in methods)
 
 
 class TestWaterFilterAlerts:

@@ -391,6 +391,19 @@
   --focus-offset: 2px;
   --focus-shadow: 0 0 0 4px var(--accent-dim);
 
+  /* ─── Theme-adaptive surface tints ─────────────────────────────────
+     These produce a subtle overlay whose contrast direction flips
+     automatically with the theme: a slight darkening in light themes,
+     a slight lightening in dark themes. Use these instead of raw
+     rgba(255,255,255,0.x) so nested surfaces stay readable in every
+     theme — the previous hardcoded whites rendered as no-op tints in
+     light themes and blown-out layers in e-ink.
+  */
+  --surface-tint-subtle: color-mix(in srgb, var(--text) 3%, transparent);
+  --surface-tint-soft:   color-mix(in srgb, var(--text) 6%, transparent);
+  --surface-tint-hover:  color-mix(in srgb, var(--text) 8%, transparent);
+  --surface-tint-strong: color-mix(in srgb, var(--text) 12%, transparent);
+
   /* ─── Touch Targets ─── */
   --touch-min: 44px;
 

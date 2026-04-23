@@ -2374,12 +2374,12 @@
   animation: copilot-pulse 1.4s ease-in-out infinite;
 }
 .copilot-handsfree-btn[data-state="thinking"] {
-  background: rgba(255, 200, 87, 0.18);
-  color: #ffc857;
+  background: var(--warning-dim);
+  color: var(--warning);
 }
 .copilot-handsfree-btn[data-state="speaking"] {
-  background: rgba(120, 180, 255, 0.18);
-  color: #8ac7ff;
+  background: var(--info-dim);
+  color: var(--info);
 }
 .copilot-handsfree-btn[aria-pressed="true"]::after {
   content: '';
@@ -2424,12 +2424,12 @@
   color: var(--accent, #4aedc4);
 }
 .copilot-voice-state-badge[data-state="thinking"] {
-  background: rgba(255, 200, 87, 0.18);
-  color: #ffc857;
+  background: var(--warning-dim);
+  color: var(--warning);
 }
 .copilot-voice-state-badge[data-state="speaking"] {
-  background: rgba(120, 180, 255, 0.18);
-  color: #8ac7ff;
+  background: var(--info-dim);
+  color: var(--info);
 }
 .copilot-voice-transcript {
   flex: 1;

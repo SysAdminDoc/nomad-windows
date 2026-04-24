@@ -66,3 +66,6 @@ CLAUDE.md
 CODEX_CHANGELOG.md
 docs/schema.md
 .ai-improve-logs/
+.claude/
+.factory/
+*.bak

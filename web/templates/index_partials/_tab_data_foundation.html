@@ -287,9 +287,12 @@
       else if (action === 'uninstall') window.dfUninstallPack(packId);
     });
 
+    // encodeURIComponent() guards against a future pack-registry change
+    // (or a drift-introduced /#? character in pack_id) silently shifting
+    // the POST target to an unintended endpoint. No-op for current IDs.
     window.dfInstallPack = async function(packId) {
       try {
-        await api.post('/api/data-packs/' + packId + '/install', {});
+        await api.post('/api/data-packs/' + encodeURIComponent(packId) + '/install', {});
         showToast('Pack installed', 'success');
         loadPacks();
       } catch(e) { showToast('Install failed', 'error'); }
@@ -297,7 +300,7 @@
 
     window.dfUninstallPack = async function(packId) {
       try {
-        await api.post('/api/data-packs/' + packId + '/uninstall', {});
+        await api.post('/api/data-packs/' + encodeURIComponent(packId) + '/uninstall', {});
         showToast('Pack removed', 'info');
         loadPacks();
       } catch(e) { showToast('Uninstall failed', 'error'); }

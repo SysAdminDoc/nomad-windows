@@ -52,6 +52,7 @@ def setup_middleware(app):
     _setup_rate_limiting(app)
     _setup_csrf(app)
     _setup_host_validation(app)
+    _setup_auth_required_api_guard(app)
     _setup_lan_auth(app)
     _setup_security_headers(app)
     _setup_db_cleanup(app)
@@ -194,11 +195,51 @@ def _setup_host_validation(app):
 
 # ─── LAN Auth Guard ───────────────────────────────────────────────────────────
 
+def _setup_auth_required_api_guard(app):
+    """Require session auth for non-loopback API reads in multi-user mode."""
+
+    _public_api_paths = {
+        '/api/csrf-token',
+        '/api/health',
+    }
+
+    def _auth_required():
+        return os.environ.get('NOMAD_AUTH_REQUIRED', '0').strip() in ('1', 'true', 'yes', 'on')
+
+    @app.before_request
+    def _check_global_api_auth():
+        if not _auth_required():
+            return
+        if request.method == 'OPTIONS':
+            return
+        if not request.path.startswith('/api/'):
+            return
+        if request.path in _public_api_paths:
+            return
+        if _is_loopback(request.remote_addr or ''):
+            return
+
+        from flask import g
+        from web.auth import _resolve_proxy_user, _resolve_session
+
+        proxy_user = _resolve_proxy_user()
+        if proxy_user:
+            g.current_user = proxy_user
+            return
+        user, _token = _resolve_session()
+        if user:
+            g.current_user = user
+            return
+        return jsonify({'error': 'Authentication required'}), 401
+
+
 def _setup_lan_auth(app):
     """Require auth token for state-changing LAN requests when password is set."""
 
     @app.before_request
     def check_lan_auth():
+        if os.environ.get('NOMAD_AUTH_REQUIRED', '0').strip() in ('1', 'true', 'yes', 'on'):
+            return
         if request.method not in MUTATING_METHODS:
             return
         remote = request.remote_addr or ''

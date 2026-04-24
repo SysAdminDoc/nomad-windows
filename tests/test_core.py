@@ -1629,7 +1629,10 @@ class TestErrorHandler:
         notes_html = self._html(client, '/notes')
         assert 'data-note-action="create-note"' in notes_html
         assert 'data-workspace-guide-target="notes"' not in notes_html
-        assert 'src="/app-runtime.js?v=' in notes_html
+        assert (
+            'src="/static/dist/nomad.runtime.' in notes_html
+            or 'src="/app-runtime.js?v=' in notes_html
+        )
 
         runtime_js = self._html(client, '/app-runtime.js?v=test')
         assert 'data-note-action="select-note"' in runtime_js

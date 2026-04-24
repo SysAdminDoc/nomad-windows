@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Linux system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            python3-gi gir1.2-webkit2-4.1 gobject-introspection \
+            libgirepository1.0-dev libcairo2-dev pkg-config \
+            libappindicator3-dev gir1.2-appindicator3-0.1
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt -r requirements-dev.txt
+
+      - name: Install Node dependencies
+        run: npm ci
+
+      - name: Run Python tests
+        run: pytest tests/ -x -q --tb=short
+
+      - name: Run JavaScript tests
+        run: npm test
+
+      - name: Build frontend bundle
+        run: npm run build
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run UI smoke tests
+        run: npx playwright test --config=playwright.config.mjs tests/ui/polish-primitives.spec.mjs

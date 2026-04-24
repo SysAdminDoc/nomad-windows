@@ -147,6 +147,10 @@
 <script>
 window.NOMAD_VERSION = {{ version|tojson }};
 </script>
+{% if runtime_js %}
+<script src="/static/dist/{{ runtime_js }}"></script>
+{% else %}
 <script src="/app-runtime.js?v={{ version }}"></script>
+{% endif %}
 </body>
 </html>

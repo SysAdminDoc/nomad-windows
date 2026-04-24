@@ -234,3 +234,76 @@ class TestSituationRoomResilience:
 
         assert resp.status_code == 200
         assert resp.get_json()['debt'] == {}
+
+
+# ─── H-13 _parse_feed malformed-input resilience ─────────────────────────────
+
+class TestParseFeedResilience:
+    """_parse_feed is called from 4 different fetch workers with ``resp.text``
+    payloads that come from untrusted RSS/Atom feed authors. A single raise
+    inside it aborts an entire concurrent pool of fetch workers via the
+    `as_completed` path. These tests pin that _parse_feed returns an empty
+    list for every shape of malformed input instead of propagating.
+    """
+
+    def test_parse_feed_rejects_doctype_declaration(self):
+        """Billion-laughs vector: ET.fromstring still expands internal
+        entities. RSS/Atom never legitimately ships with a DOCTYPE, so the
+        parser short-circuits and returns []. Memory blowup closed.
+        """
+        from web.blueprints.situation_room import _parse_feed
+
+        payload = '''<?xml version="1.0"?>
+<!DOCTYPE rss [<!ENTITY lol "lol">]>
+<rss><channel><item><title>&lol;</title></channel></rss>'''
+        assert _parse_feed(payload, 'evil', 'Test') == []
+
+    def test_parse_feed_rejects_entity_without_doctype(self):
+        """Belt-and-braces: a bare ENTITY declaration upstream of <rss> also
+        goes through the guard — parser substring match is loose enough to
+        catch pre-<rss> ENTITY payloads.
+        """
+        from web.blueprints.situation_room import _parse_feed
+
+        payload = '<!ENTITY a "x"><rss><channel></channel></rss>'
+        assert _parse_feed(payload, 'evil2', 'Test') == []
+
+    def test_parse_feed_empty_string_returns_empty_list(self):
+        """Empty input goes to ET.fromstring → ParseError → [] (caught)."""
+        from web.blueprints.situation_room import _parse_feed
+
+        assert _parse_feed('', 'empty', 'Test') == []
+
+    def test_parse_feed_non_xml_garbage_returns_empty_list(self):
+        """Random bytes / HTML / JSON masquerading as a feed must not raise.
+
+        Real-world cause: some CDNs return an HTML "you hit a rate limit"
+        page with a 200 status + text/html content-type. The worker calls
+        _parse_feed on whatever came back.
+        """
+        from web.blueprints.situation_room import _parse_feed
+
+        for garbage in (
+            '<html><body>429 Too Many Requests</body></html>',
+            '{"error": "rate limited"}',
+            'Gibberish that is not XML at all',
+            '<rss><channel>unclosed',  # truncated mid-stream
+        ):
+            assert _parse_feed(garbage, 'garbage', 'Test') == [], (
+                f'_parse_feed must return [] for malformed payload: {garbage[:60]!r}'
+            )
+
+    def test_parse_feed_rss_with_missing_title_is_skipped(self):
+        """RSS items without a <title> are silently dropped (title is the
+        primary key in our UPSERT), not raising on `None.strip()`.
+        """
+        from web.blueprints.situation_room import _parse_feed
+
+        payload = '''<rss><channel>
+          <item><title>keep this</title><link>https://ex/1</link></item>
+          <item><link>https://ex/2</link></item>
+        </channel></rss>'''
+        items = _parse_feed(payload, 'mixed', 'Test')
+        assert len(items) == 1
+        assert items[0]['title'] == 'keep this'
+        assert items[0]['link'] == 'https://ex/1'

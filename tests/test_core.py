@@ -1211,7 +1211,11 @@ class TestErrorHandler:
         services_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_services_ai.js').read_text(encoding='utf-8')
         sitroom_text = (REPO_ROOT / 'web' / 'templates' / 'index_partials' / 'js' / '_app_situation_room.js').read_text(encoding='utf-8')
         ai_text = (REPO_ROOT / 'web' / 'blueprints' / 'ai.py').read_text(encoding='utf-8')
-        app_text = (REPO_ROOT / 'web' / 'app.py').read_text(encoding='utf-8')
+        # H-14: the aggregation routes (readiness-score, planner, etc.) that
+        # exercise the shared helpers moved to web/aggregation.py. The pins
+        # below follow the code — they still enforce that the helpers are
+        # actually used at the call sites, just at the new location.
+        app_text = (REPO_ROOT / 'web' / 'aggregation.py').read_text(encoding='utf-8')
         background_text = (REPO_ROOT / 'web' / 'background.py').read_text(encoding='utf-8')
         medical_text = (REPO_ROOT / 'web' / 'blueprints' / 'medical.py').read_text(encoding='utf-8')
         maps_text = (REPO_ROOT / 'web' / 'blueprints' / 'maps.py').read_text(encoding='utf-8')

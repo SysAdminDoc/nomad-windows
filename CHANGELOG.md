@@ -4,6 +4,15 @@ All notable changes to project-nomad-desktop will be documented in this file.
 
 ## [Unreleased]
 
+- **H-14 continuation — `create_app()` final thinning (663 → 56 lines).** The v7.65.0 H-14 pass extracted pages + background threads + SSE routes; this follow-up pass extracts the remaining self-contained concerns so the factory is a thin orchestrator:
+  - `web/aggregation.py` (NEW, ~440 L) — `SURVIVAL_NEEDS` constant + seven cross-module aggregation routes (`/api/needs`, `/api/needs/<need_id>`, `/api/guides/context`, `/api/planner/calculate`, `/api/readiness-score`, `/api/data-summary`, `/api/search/all`). Shared TTL cache now comes from the module-level `web.state.cached_get` / `cached_set` helpers (the old `_cached` / `_set_cache` closure aliases are gone).
+  - `web/bundled_assets.py` (NEW, ~100 L) — NukeMap + VIPTrack static serving with a shared `_resolve_bundle_dir` (frozen / sibling / cwd / external-repo fallback) and `_serve_within` (commonpath-based path-traversal guard that also treats Windows different-drive `ValueError` as forbidden, matching prior behavior exactly).
+  - `web/root_routes.py` (NEW, ~60 L) — `/sw.js`, `/favicon.ico`, `/api/offline/snapshot`, `/api/offline/changes-since`. **Fixes a latent crash**: `/favicon.ico` used `Response(...)` but `Response` was never imported at `web/app.py:9`, so the route would have 500'd on first hit. The new module imports `Response` explicitly from `flask`.
+  - `web/app.py::create_app()` — now 56 lines; the whole file is 148 lines (from 754). `app.url_map` rule count unchanged at 1866.
+  - `tests/test_core.py` — the three `app_text`-based regression pins (`from web.utils import`, `_require_json_body(request)`, `_safe_json_list(cl['items'], [])`) now read `web/aggregation.py` instead of `web/app.py` — they follow the code to its new home so the pins still enforce the same shared-helpers contract.
+  - Targeted suites (`test_core`, `test_lazy_blueprints`, `test_data_summary`, `test_broadcast_regressions`, `test_emergency`): 92/92 green. Full pytest sweep: 1634/1634 green. vitest: 63/63 green.
+- **`fix: emergency._broadcast imports broadcast_event from web.state`** (commit `a35f901`) — completes the v7.65.0 emergency-mode SSE claim. `web/blueprints/emergency.py` was still doing `from web.app import _broadcast_event` while `family.py` was already switched; this brings the two modules to parity. Covered by the existing `tests/test_broadcast_regressions.py` (4/4) and `tests/test_emergency.py` (9/9).
+
 ## [v7.65.0] — Factory-Loop Run: create_app() thinning + lazy blueprints + SSE broadcast fix (2026-04-24)
 
 Three-iteration autonomous factory-loop run. Three long-pending architecture + correctness items close: `create_app()` drops from 1243 to 663 lines (H-14), the two heaviest blueprints now lazy-register on first hit (H-09 / V8-11, ~40 ms / 8% boot saving), and the silently-broken SSE broadcast path for Emergency mode + Family check-in is fixed end-to-end with regression tests. 11 new test assertions land across the run (7 lazy-blueprint + 4 broadcast).

@@ -98,6 +98,23 @@ def _safe_response_json(response, fallback=None):
 
 media_bp = Blueprint('media', __name__)
 
+# Module-level column allowlists (V8-14) — per-media-type metadata field
+# whitelists for PUT /api/media/<type>/<id>. Shared base + type-specific
+# extras. Keep in sync with videos/audio/books schemas in db.py.
+ALLOWED_MEDIA_META_FIELDS = frozenset({'title', 'category', 'notes', 'description'})
+ALLOWED_AUDIO_META_EXTRAS = frozenset({'artist', 'album'})
+ALLOWED_BOOK_META_EXTRAS = frozenset({'author', 'description'})
+
+
+def _allowed_media_meta_fields(media_type):
+    """Return the effective allowlist for a given media type."""
+    if media_type == 'audio':
+        return ALLOWED_MEDIA_META_FIELDS | ALLOWED_AUDIO_META_EXTRAS
+    if media_type == 'book':
+        return ALLOWED_MEDIA_META_FIELDS | ALLOWED_BOOK_META_EXTRAS
+    return ALLOWED_MEDIA_META_FIELDS
+
+
 @media_bp.route('/api/media/video/<int:vid>/thumbnail', methods=['POST'])
 def api_video_thumbnail(vid):
     """Generate a thumbnail for a video using FFmpeg."""
@@ -2423,11 +2440,7 @@ def api_media_metadata_update(media_type, media_id):
     if not table:
         return jsonify({'error': 'Invalid media type'}), 400
     d = request.json or {}
-    allowed = {'title', 'category', 'notes', 'description'}
-    if media_type == 'audio':
-        allowed.update({'artist', 'album'})
-    if media_type == 'book':
-        allowed.update({'author', 'description'})
+    allowed = _allowed_media_meta_fields(media_type)
     filtered = safe_columns(d, allowed)
     if not filtered:
         return jsonify({'error': 'No valid fields'}), 400

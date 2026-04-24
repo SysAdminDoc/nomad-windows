@@ -47,6 +47,12 @@ _state_lock = threading.Lock()
 
 maps_bp = Blueprint('maps', __name__)
 
+# Module-level column allowlist (V8-14) — auditable field whitelist for
+# PUT /api/waypoints/<id>. Keep in sync with the waypoints schema in db.py.
+ALLOWED_WAYPOINT_FIELDS = frozenset({
+    'name', 'lat', 'lng', 'category', 'notes', 'elevation_m', 'icon',
+})
+
 
 def _normalize_track_coordinates(value):
     coords = []
@@ -807,8 +813,7 @@ def api_waypoints_delete(wid):
 def api_waypoint_update(wid):
     """Update a waypoint. Accepts any of: name, lat, lng, category, notes, elevation_m, icon."""
     data = request.get_json() or {}
-    allowed = {'name', 'lat', 'lng', 'category', 'notes', 'elevation_m', 'icon'}
-    fields = {k: v for k, v in data.items() if k in allowed}
+    fields = {k: v for k, v in data.items() if k in ALLOWED_WAYPOINT_FIELDS}
     if not fields:
         return jsonify({'error': 'No valid fields provided'}), 400
     # Validate coordinates if provided

@@ -4,6 +4,7 @@ import json
 import os
 import time
 import logging
+import threading
 import requests
 from services.manager import (
     get_services_dir, download_file, start_process, stop_process,
@@ -21,6 +22,11 @@ def _get_ollama_url():
 DEFAULT_MODEL = 'llama3.2:3b'
 
 _pull_progress = {'status': 'idle', 'model': '', 'percent': 0, 'detail': ''}
+
+# Serializes concurrent start()/stop() so a second caller can't race past the
+# double-start guard and kill our own port holder while the first call is
+# still mid-launch. Also pairs with the guard inside start() itself.
+_start_lock = threading.Lock()
 
 RECOMMENDED_MODELS = [
     # Small (under 4GB) — fast, practical knowledge
@@ -59,11 +65,25 @@ def _load_stream_json_line(line):
 
 
 def _safe_response_payload(response, fallback=None):
+    """Parse a Response body as JSON with a caller-supplied fallback.
+
+    Narrowed from bare ``Exception`` to the real failure surface:
+    ``ValueError`` covers both ``json.JSONDecodeError`` and the
+    ``requests.exceptions.JSONDecodeError`` subclass;
+    ``TypeError`` / ``AttributeError`` cover a malformed Response object.
+    A programming error (NameError, ImportError) must still surface.
+    """
     if fallback is None:
         fallback = {}
+    if response is None:
+        if isinstance(fallback, dict):
+            return dict(fallback)
+        if isinstance(fallback, list):
+            return list(fallback)
+        return fallback
     try:
         parsed = response.json()
-    except Exception:
+    except (ValueError, TypeError, AttributeError):
         if isinstance(fallback, dict):
             return dict(fallback)
         if isinstance(fallback, list):
@@ -160,38 +180,69 @@ def install(callback=None):
 
 
 def start():
-    """Start Ollama server."""
+    """Start Ollama server. No-op when our instance is already running.
+
+    Concurrent callers serialize on ``_start_lock`` only for the mutating
+    critical section (guard check → port reclaim → launch). The lock is
+    released BEFORE the ~30 s port-responsiveness poll so a concurrent
+    ``stop()`` or ``running()`` caller (e.g. shutdown handler, UI status
+    tick) isn't blocked up to 30 s waiting for the launch confirmation.
+    """
     if not is_installed():
         raise RuntimeError('Ollama is not installed')
 
-    models_dir = get_models_dir()
+    pid = None
+    with _start_lock:
+        # Fast path: our tracked instance is alive and the port answers.
+        # Return the PID we already registered instead of relaunching.
+        if is_running(SERVICE_ID) and check_port(OLLAMA_PORT):
+            db = get_db()
+            try:
+                row = db.execute(
+                    'SELECT pid FROM services WHERE id = ?', (SERVICE_ID,)
+                ).fetchone()
+                registered_pid = row['pid'] if row and row['pid'] else None
+            finally:
+                db.close()
+            if registered_pid:
+                log.debug(
+                    'Ollama already running (PID %s) — start() returning existing instance',
+                    registered_pid,
+                )
+                return registered_pid
+            # Port answers but we have no PID — fall through to adoption below.
 
-    # If something is already on our port, kill it so we can start with correct OLLAMA_MODELS
-    if check_port(OLLAMA_PORT):
-        from platform_utils import find_pid_on_port
-        holder_pid = find_pid_on_port(OLLAMA_PORT)
-        db = get_db()
-        try:
-            row = db.execute('SELECT pid FROM services WHERE id = ?', (SERVICE_ID,)).fetchone()
-            registered_pid = row['pid'] if row and row['pid'] else None
-        finally:
-            db.close()
-        if holder_pid and holder_pid == registered_pid:
-            log.info(f'Port {OLLAMA_PORT} held by our own registered PID {holder_pid} — stopping stale instance')
-        elif holder_pid:
-            log.warning(f'Port {OLLAMA_PORT} held by external PID {holder_pid} (not ours) — killing to reclaim port')
-        else:
-            log.info(f'Port {OLLAMA_PORT} in use — stopping existing process')
-        _kill_port_holder(OLLAMA_PORT)
-        time.sleep(1)
+        models_dir = get_models_dir()
 
-    from platform_utils import get_ollama_gpu_env
-    env = get_ollama_gpu_env()
-    from config import Config
-    env['OLLAMA_HOST'] = f'{Config.APP_HOST}:{OLLAMA_PORT}'
-    env['OLLAMA_MODELS'] = models_dir
+        # If something is already on our port (not tracked as ours), reclaim it.
+        if check_port(OLLAMA_PORT):
+            from platform_utils import find_pid_on_port
+            holder_pid = find_pid_on_port(OLLAMA_PORT)
+            db = get_db()
+            try:
+                row = db.execute('SELECT pid FROM services WHERE id = ?', (SERVICE_ID,)).fetchone()
+                registered_pid = row['pid'] if row and row['pid'] else None
+            finally:
+                db.close()
+            if holder_pid and holder_pid == registered_pid:
+                log.info(f'Port {OLLAMA_PORT} held by our own registered PID {holder_pid} — stopping stale instance')
+            elif holder_pid:
+                log.warning(f'Port {OLLAMA_PORT} held by external PID {holder_pid} (not ours) — killing to reclaim port')
+            else:
+                log.info(f'Port {OLLAMA_PORT} in use — stopping existing process')
+            _kill_port_holder(OLLAMA_PORT)
+            time.sleep(1)
 
-    pid = start_process(SERVICE_ID, get_exe_path(), args=['serve'], cwd=get_install_dir(), env=env)
+        from platform_utils import get_ollama_gpu_env
+        env = get_ollama_gpu_env()
+        from config import Config
+        env['OLLAMA_HOST'] = f'{Config.APP_HOST}:{OLLAMA_PORT}'
+        env['OLLAMA_MODELS'] = models_dir
+
+        pid = start_process(SERVICE_ID, get_exe_path(), args=['serve'], cwd=get_install_dir(), env=env)
+    # ── lock released — the process is launched + tracked; from here the
+    # only work left is waiting for the port to answer, which must NOT
+    # block other callers (stop, running, UI heartbeat).
 
     for _ in range(30):
         if check_port(OLLAMA_PORT):
@@ -204,6 +255,9 @@ def start():
 
 
 def stop():
+    # stop_process has its own internal _lock in services.manager — we don't
+    # need to take _start_lock here; doing so would risk deadlock if the
+    # shutdown path is ever called while a launch is polling the port.
     return stop_process(SERVICE_ID)
 
 
@@ -427,9 +481,11 @@ def chat(model: str, messages: list[dict], stream: bool = True):
     try:
         resp.raise_for_status()
     except requests.HTTPError as e:
+        # Always release the socket before raising — earlier the 404 branch
+        # bailed without closing, leaking one FD per model-not-found call.
+        resp.close()
         if e.response is not None and e.response.status_code == 404:
             raise RuntimeError(f'Model "{model}" not found. Pull it first from the AI Models tab.')
-        resp.close()
         raise
 
     if stream:

@@ -1,7 +1,7 @@
 <div align="center">
 <img src="logo.png" width="140" height="140"/>
 
-# NOMAD Field Desk v7.64.0
+# NOMAD Field Desk v7.65.0
 
 ### Your Personal Intelligence & Preparedness Command Center
 

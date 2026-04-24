@@ -26,6 +26,8 @@ const IS_PROD = process.env.NODE_ENV !== "development";
 const JS_DIR = "web/static/js";
 const CSS_DIR = "web/static/css";
 const OUT_DIR = "web/static/dist";
+const TEMPLATE_DIR = "web/templates";
+const RUNTIME_TEMPLATE = "web/templates/index_partials/_app_inline.js";
 
 // Ensure output directory exists
 if (!existsSync(OUT_DIR)) {
@@ -58,7 +60,7 @@ function contentHash(filePath, length = 8) {
 function cleanOldBundles() {
   if (!existsSync(OUT_DIR)) return;
   for (const f of readdirSync(OUT_DIR)) {
-    if (f.startsWith("nomad.bundle.")) {
+    if (f.startsWith("nomad.bundle.") || f.startsWith("nomad.runtime.")) {
       try {
         unlinkSync(join(OUT_DIR, f));
       } catch {
@@ -72,6 +74,25 @@ function cleanOldBundles() {
 cleanOldBundles();
 
 const manifest = {};
+
+/**
+ * Resolve the small subset of Jinja include syntax used by the app-runtime
+ * template so the largest browser code path is parsed and minified by esbuild.
+ */
+function renderRuntimeTemplate(filePath, stack = []) {
+  if (stack.includes(filePath)) {
+    throw new Error(`Circular runtime include: ${[...stack, filePath].join(" -> ")}`);
+  }
+  const source = readFileSync(filePath, "utf8");
+  const includeRe = /{%\s*include\s+['"]([^'"]+)['"]\s*%}/g;
+  return source.replace(includeRe, (_match, includePath) => {
+    const childPath = join(TEMPLATE_DIR, includePath);
+    if (!existsSync(childPath)) {
+      throw new Error(`Runtime include not found: ${includePath}`);
+    }
+    return `\n${renderRuntimeTemplate(childPath, [...stack, filePath])}\n`;
+  });
+}
 
 // -- Bundle JS ---------------------------------------------------------------
 if (jsFiles.length > 0) {
@@ -113,6 +134,38 @@ if (jsFiles.length > 0) {
     const hashedName = `nomad.bundle.${hash}.js`;
     renameSync(outFile, join(OUT_DIR, hashedName));
     manifest["nomad.bundle.js"] = hashedName;
+  }
+}
+
+// -- Build app runtime JS ----------------------------------------------------
+if (existsSync(RUNTIME_TEMPLATE)) {
+  const tmpRuntimeEntry = join(OUT_DIR, "_runtime_entry.js");
+  writeFileSync(tmpRuntimeEntry, renderRuntimeTemplate(RUNTIME_TEMPLATE));
+
+  try {
+    await esbuild.build({
+      entryPoints: [tmpRuntimeEntry],
+      bundle: false,
+      minify: IS_PROD,
+      sourcemap: true,
+      outfile: join(OUT_DIR, "nomad.runtime.js"),
+      target: ["es2020"],
+      logLevel: "info",
+    });
+  } finally {
+    try {
+      unlinkSync(tmpRuntimeEntry);
+    } catch {
+      // ignore
+    }
+  }
+
+  const outRuntime = join(OUT_DIR, "nomad.runtime.js");
+  if (existsSync(outRuntime)) {
+    const hash = contentHash(outRuntime);
+    const hashedName = `nomad.runtime.${hash}.js`;
+    renameSync(outRuntime, join(OUT_DIR, hashedName));
+    manifest["nomad.runtime.js"] = hashedName;
   }
 }
 

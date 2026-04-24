@@ -351,6 +351,7 @@ def create_app():
             'workspace_page.html',
             version=VERSION,
             bundle_js=bundle_js,
+            runtime_js=manifest.get('nomad.runtime.js', ''),
             bundle_css=manifest.get('nomad.bundle.css', ''),
             active_tab=tab_id,
             page_title=meta['title'],

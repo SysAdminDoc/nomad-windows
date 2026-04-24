@@ -80,7 +80,11 @@ window.NOMAD_WIZARD_SHOULD_LAUNCH = {{ wizard_should_launch|tojson }};
 window.NOMAD_MEDIA_START_SUB = {{ active_media_sub|tojson }};
 window.NOMAD_VERSION = {{ version|tojson }};
 </script>
+{% if runtime_js %}
+<script src="/static/dist/{{ runtime_js }}"></script>
+{% else %}
 <script src="/app-runtime.js?v={{ version }}"></script>
+{% endif %}
 <script>
 (() => {
   let initialized = false;

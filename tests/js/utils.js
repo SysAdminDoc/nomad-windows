@@ -14,6 +14,36 @@ export function escapeHtml(s) {
   return _escDiv.innerHTML;
 }
 
+// ─── html`` / trustedHTML / safeSetHTML (V8-04 — _app_core_shell.js) ──────
+// Tagged template helper that auto-escapes interpolations. Mirrors the
+// implementation in _app_core_shell.js exactly so the unit tests pin the
+// shipped behaviour.
+export function html(strings, ...values) {
+  let out = '';
+  for (let i = 0; i < strings.length; i++) {
+    out += strings[i];
+    if (i < values.length) {
+      const v = values[i];
+      if (v && typeof v === 'object'
+          && Object.prototype.hasOwnProperty.call(v, '__nomadTrustedHTML__')
+          && v.__nomadTrustedHTML__ === true) {
+        out += v.value;
+      } else {
+        out += escapeHtml(v);
+      }
+    }
+  }
+  return out;
+}
+
+export function trustedHTML(s) {
+  return { __nomadTrustedHTML__: true, value: String(s == null ? '' : s) };
+}
+
+export function safeSetHTML(el, str) {
+  if (el) el.innerHTML = (str == null ? '' : String(str));
+}
+
 // ─── formatBytes (_app_core_shell.js) ─────────────────────────────────────────
 export function formatBytes(b) {
   if (b >= 1073741824) return (b / 1073741824).toFixed(1) + ' GB';

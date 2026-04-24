@@ -4,6 +4,10 @@ All notable changes to project-nomad-desktop will be documented in this file.
 
 ## [Unreleased]
 
+## [v7.65.0] — Factory-Loop Run: create_app() thinning + lazy blueprints + SSE broadcast fix (2026-04-24)
+
+Three-iteration autonomous factory-loop run. Three long-pending architecture + correctness items close: `create_app()` drops from 1243 to 663 lines (H-14), the two heaviest blueprints now lazy-register on first hit (H-09 / V8-11, ~40 ms / 8% boot saving), and the silently-broken SSE broadcast path for Emergency mode + Family check-in is fixed end-to-end with regression tests. 11 new test assertions land across the run (7 lazy-blueprint + 4 broadcast).
+
 ### `_broadcast` SSE silent-failure fix + regression suite (factory-loop iter 3, 2026-04-24)
 
 Fixes a long-standing latent bug in `web/blueprints/emergency.py::_broadcast` and `web/blueprints/family.py::_broadcast`. Both modules previously did:

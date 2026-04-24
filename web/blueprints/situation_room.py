@@ -947,7 +947,7 @@ def _fetch_market_data():
             markets.append({'symbol': 'FEAR_GREED', 'price': int(fg.get('value', 50)),
                             'change_24h': 0, 'market_type': 'sentiment',
                             'label': fg.get('value_classification', 'Neutral')})
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as e:
         log.debug(f"Fear/Greed failed: {e}")
 
     if not markets:
@@ -974,7 +974,7 @@ def _fetch_conflict_data():
         if not resp.ok:
             return
         data = _safe_response_json(resp, {})
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         log.debug(f"GDACS failed: {e}")
         return
 
@@ -1081,7 +1081,7 @@ def _fetch_ais_ships():
                             'type': props.get('shipType', props.get('type', '')),
                             'flag': props.get('flagCountry', props.get('flag', '')),
                         })
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError, IndexError, TypeError) as e:
         log.debug(f"AIS DK fetch failed: {e}")
 
     # If DK API didn't return data, try NOAA NDBC (buoys with some vessel data)
@@ -1090,7 +1090,7 @@ def _fetch_ais_ships():
             resp = _http_session.get('https://www.marinetraffic.com/en/data/?asset_type=vessels&columns=flag,shipname,mmsi,lat_of_latest_position,lon_of_latest_position,speed,heading',
                                 timeout=12, headers={**_REQ_HEADERS, 'Accept': 'application/json'})
             # This may not work without auth, silently fail
-        except Exception:
+        except requests.RequestException:
             pass
 
     if not ships:
@@ -1129,7 +1129,7 @@ def _fetch_space_weather():
             current_scales = scales.get('0', {}) if isinstance(scales, dict) else {}
             if isinstance(current_scales, dict) and current_scales:
                 datasets['noaa_scales'] = current_scales  # Current conditions
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         log.debug(f"NOAA scales failed: {e}")
 
     # Kp index (geomagnetic activity)
@@ -1140,7 +1140,7 @@ def _fetch_space_weather():
             kp_data = _safe_response_json(resp, [])
             if kp_data:
                 datasets['kp_index'] = {'latest': kp_data[-1], 'recent': kp_data[-8:]}
-    except Exception as e:
+    except (requests.RequestException, ValueError, IndexError, TypeError) as e:
         log.debug(f"NOAA Kp failed: {e}")
 
     # Solar flare probabilities
@@ -1151,7 +1151,7 @@ def _fetch_space_weather():
             probs = _safe_response_json(resp, [])
             if probs:
                 datasets['solar_probs'] = probs[-1]
-    except Exception as e:
+    except (requests.RequestException, ValueError, IndexError, TypeError) as e:
         log.debug(f"NOAA solar probs failed: {e}")
 
     # Active space weather alerts
@@ -1162,7 +1162,7 @@ def _fetch_space_weather():
             alerts = _safe_response_json(resp, [])
             if isinstance(alerts, list) and alerts:
                 datasets['sw_alerts'] = alerts[:10]
-    except Exception as e:
+    except (requests.RequestException, ValueError) as e:
         log.debug(f"NOAA alerts failed: {e}")
 
     if not datasets:
@@ -1191,7 +1191,7 @@ def _fetch_volcanoes():
         if not resp.ok:
             return
         data = _safe_response_json(resp, {})
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         log.debug(f"Volcano fetch failed: {e}")
         return
 
@@ -1228,7 +1228,7 @@ def _fetch_predictions():
         if not resp.ok:
             return
         markets = _safe_response_json(resp, [])
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         log.debug(f"Polymarket failed: {e}")
         return
 
@@ -1268,7 +1268,7 @@ def _fetch_fires():
                             timeout=30, headers=_REQ_HEADERS)
         if not resp.ok:
             return
-    except Exception as e:
+    except requests.RequestException as e:
         log.debug(f"NASA FIRMS fetch failed: {e}")
         return
 

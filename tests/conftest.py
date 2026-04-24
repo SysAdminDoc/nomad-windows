@@ -27,7 +27,10 @@ def app():
     # Point config at temp directory before any imports touch it
     import config
     config._config_cache = {'db_path': db_uri, 'data_dir': str(data_dir)}
-    config._config_mtime = float('inf')  # prevent re-read from disk
+    try:
+        config._config_mtime = os.path.getmtime(config.get_config_path())
+    except OSError:
+        config._config_mtime = 0
 
     # Keep one connection open so the shared in-memory database persists
     import sqlite3

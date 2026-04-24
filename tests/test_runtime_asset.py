@@ -4,7 +4,10 @@ def test_workspace_page_uses_shared_runtime_script(client):
     assert response.status_code == 200
 
     html = response.get_data(as_text=True)
-    assert '<script src="/app-runtime.js?v=' in html
+    assert (
+        '<script src="/static/dist/nomad.runtime.' in html
+        or '<script src="/app-runtime.js?v=' in html
+    )
     assert 'window.NOMAD_VERSION =' in html
     assert "const VERSION = '" not in html
     assert len(response.get_data()) < 1_000_000

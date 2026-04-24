@@ -1341,7 +1341,7 @@ def _fetch_internet_outages():
                     'end': item.get('endDate', ''),
                     'scope': item.get('scope', ''),
                 })
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError, AttributeError) as e:
         log.debug(f"Cloudflare Radar failed: {e}")
 
     # Fallback: IODA (Internet Outage Detection and Analysis) from Georgia Tech
@@ -1359,7 +1359,7 @@ def _fetch_internet_outages():
                         'end': '',
                         'scope': alert.get('level', ''),
                     })
-        except Exception as e:
+        except (requests.RequestException, ValueError, KeyError, AttributeError) as e:
             log.debug(f"IODA fallback failed: {e}")
 
     if not outages:
@@ -1450,7 +1450,7 @@ def _fetch_disease_outbreaks():
         if not resp.ok:
             return
         items = _parse_feed(resp.text, 'WHO DON', 'Health')
-    except Exception as e:
+    except (requests.RequestException, ET.ParseError, ValueError) as e:
         log.debug(f"WHO outbreaks fetch failed: {e}")
         return
 
@@ -1484,7 +1484,7 @@ def _fetch_radiation():
         if not resp.ok:
             return
         data = _safe_response_json(resp, [])
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         log.debug(f"Safecast radiation fetch failed: {e}")
         return
 
@@ -1525,7 +1525,7 @@ def _fetch_gdelt_trending():
         if not resp.ok:
             return
         data = _safe_response_json(resp, {})
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         log.debug(f"GDELT trending fetch failed: {e}")
         return
 
@@ -1592,7 +1592,7 @@ def _fetch_ucdp_conflicts():
                                   timeout=15, headers=_REQ_HEADERS,
                                   params={'pagesize': 50, 'page': 0})
         data = _safe_response_json(resp, {})
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError) as e:
         log.debug(f"UCDP fetch failed: {e}")
         return
 
@@ -1645,7 +1645,7 @@ def _fetch_cyber_threats():
                     'source': 'CISA KEV',
                     'severity': 'high',
                 })
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError, AttributeError) as e:
         log.debug(f"CISA KEV fetch failed: {e}")
 
     # CISA advisories RSS
@@ -1663,7 +1663,7 @@ def _fetch_cyber_threats():
                     'severity': 'medium',
                     'link': a.get('link', ''),
                 })
-    except Exception as e:
+    except (requests.RequestException, ET.ParseError, ValueError, KeyError) as e:
         log.debug(f"CISA advisories fetch failed: {e}")
 
     if not items:
@@ -1697,7 +1697,7 @@ def _fetch_yield_curve():
             return
         payload = _safe_response_json(resp, {})
         data = payload.get('data', []) if isinstance(payload, dict) else []
-    except Exception as e:
+    except (requests.RequestException, ValueError, KeyError, AttributeError) as e:
         log.debug(f"Yield curve fetch failed: {e}")
         return
 

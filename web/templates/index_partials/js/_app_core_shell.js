@@ -1161,6 +1161,42 @@ const FormStateRecovery = {
 let _escDiv = null;
 function escapeHtml(s) { if (s == null) return ''; if (!_escDiv) _escDiv = document.createElement('div'); _escDiv.textContent = s; return _escDiv.innerHTML; }
 function escapeAttr(s) { return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;').replace(/</g,'&lt;'); }
+
+/* ─── safe-HTML primitives (V8-04) ───────────────────────────────────────
+ * `html` is a tagged-template helper that auto-escapes every ${…} interpolation
+ * so template literals can't inject unescaped user data. Use it wherever you
+ * would otherwise write `el.innerHTML = \`…${userVal}…\`` or `.innerHTML += …`.
+ *
+ *   el.innerHTML = html`<div class="card">${user.name}</div>`;
+ *
+ * If a specific interpolation is already trusted HTML you built from escaped
+ * parts, wrap it with trustedHTML() to opt out of escaping for that slot only:
+ *
+ *   const row = html`<tr><td>${user.name}</td></tr>`;
+ *   container.innerHTML = html`<table>${trustedHTML(row)}</table>`;
+ *
+ * safeSetHTML(el, str) is a thin wrapper so the call site reads explicitly as
+ * a "set innerHTML" action (helps `grep safeSetHTML` find every XSS entry).
+ */
+function html(strings, ...values) {
+  let out = '';
+  for (let i = 0; i < strings.length; i++) {
+    out += strings[i];
+    if (i < values.length) {
+      const v = values[i];
+      if (v && typeof v === 'object'
+          && Object.prototype.hasOwnProperty.call(v, '__nomadTrustedHTML__')
+          && v.__nomadTrustedHTML__ === true) {
+        out += v.value;
+      } else {
+        out += escapeHtml(v);
+      }
+    }
+  }
+  return out;
+}
+function trustedHTML(s) { return { __nomadTrustedHTML__: true, value: String(s == null ? '' : s) }; }
+function safeSetHTML(el, str) { if (el) el.innerHTML = (str == null ? '' : String(str)); }
 function showModal(html, {size, title, onClose} = {}) {
   const triggerEl = document.activeElement;
   const overlay = document.createElement('div');

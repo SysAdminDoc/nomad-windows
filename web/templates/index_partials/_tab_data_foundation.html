@@ -240,15 +240,18 @@
         document.getElementById('df-packs-tier1').textContent = summary.tier1_total;
 
         const grid = document.getElementById('df-packs-grid');
-        grid.innerHTML = '';
-        packs.forEach(p => {
+        // V8-04 pilot: use html`` tagged template + safeSetHTML so every
+        // interpolation is escape-by-default. Wire action handlers via
+        // data-* attributes + a single delegated click listener below,
+        // not inline onclick with string-interpolated arguments (that was
+        // an attribute-injection hole if pack_id ever contained a quote).
+        const pieces = packs.map(p => {
           const installed = p.status === 'installed';
-          const tierClass = 'tier-' + p.tier;
-          grid.innerHTML += `
+          return html`
             <div class="df-pack-card" data-pack-id="${p.pack_id}">
               <div class="df-pack-header">
                 <div class="df-pack-name">${p.name}</div>
-                <span class="df-pack-tier ${tierClass}">Tier ${p.tier}</span>
+                <span class="df-pack-tier tier-${p.tier}">Tier ${p.tier}</span>
               </div>
               <div class="df-pack-desc">${p.description}</div>
               <div class="df-pack-meta">
@@ -261,15 +264,28 @@
                 <span class="df-meta-text-sm">${installed ? 'Installed' : 'Available'}</span>
               </div>
               <div class="df-pack-actions df-row-spaced-sm">
-                ${installed
-                  ? `<button class="btn btn-sm btn-danger" onclick="dfUninstallPack('${p.pack_id}')">Uninstall</button>`
-                  : `<button class="btn btn-sm btn-primary" onclick="dfInstallPack('${p.pack_id}')">Install</button>`
-                }
+                <button class="btn btn-sm ${installed ? 'btn-danger' : 'btn-primary'}"
+                        data-pack-action="${installed ? 'uninstall' : 'install'}"
+                        data-pack-id="${p.pack_id}">
+                  ${installed ? 'Uninstall' : 'Install'}
+                </button>
               </div>
             </div>`;
         });
+        safeSetHTML(grid, pieces.join(''));
       } catch(e) { console.error('Data packs load error', e); }
     }
+
+    // Delegated handler replaces per-row inline onclick — no argument
+    // interpolation into attribute strings, no XSS via quote injection.
+    document.getElementById('df-packs-grid')?.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-pack-action]');
+      if (!btn) return;
+      const action = btn.getAttribute('data-pack-action');
+      const packId = btn.getAttribute('data-pack-id');
+      if (action === 'install') window.dfInstallPack(packId);
+      else if (action === 'uninstall') window.dfUninstallPack(packId);
+    });
 
     window.dfInstallPack = async function(packId) {
       try {
@@ -319,19 +335,24 @@
         if (!data.configured || !data.threats?.length) { document.getElementById('df-threats-section').classList.add('is-hidden'); return; }
         document.getElementById('df-threats-section').classList.remove('is-hidden');
         const grid = document.getElementById('df-threats-grid');
-        grid.innerHTML = '';
-        data.threats.forEach(t => {
+        const rows = data.threats.map(t => {
           const cls = t.score >= 80 ? 'very-high' : (t.score >= 60 ? 'high' : (t.score >= 40 ? 'moderate' : 'low'));
           const color = t.score >= 80 ? 'var(--df-red)' : (t.score >= 60 ? 'var(--df-orange)' : (t.score >= 40 ? 'var(--df-accent)' : 'var(--df-text-muted)'));
-          grid.innerHTML += `
+          const hazardLabel = String(t.hazard || '').replace(/_/g, ' ');
+          // Clamp score to [0,100] numerically BEFORE interpolation so CSS
+          // custom properties can't receive injected text masquerading as
+          // a value (belt-and-braces; html`` already escapes the string).
+          const scorePct = Math.min(Math.max(Number(t.score) || 0, 0), 100);
+          return html`
             <div class="df-threat-bar">
               <div class="df-threat-bar-head">
-                <span class="df-threat-bar-name">${t.hazard.replace(/_/g, ' ')}</span>
+                <span class="df-threat-bar-name">${hazardLabel}</span>
                 <span class="df-threat-bar-score ${cls}">${t.rating}</span>
               </div>
-              <div class="df-threat-track"><div class="df-threat-fill df-bar-fill" style="--df-bar-w:${Math.min(t.score,100)}%;--df-tone:${color};"></div></div>
+              <div class="df-threat-track"><div class="df-threat-fill df-bar-fill" style="--df-bar-w:${scorePct}%;--df-tone:${color};"></div></div>
             </div>`;
         });
+        safeSetHTML(grid, rows.join(''));
       } catch(e) {}
     }
 
@@ -374,17 +395,21 @@
       try {
         const data = await api.get('/api/nutrition/gaps');
         const list = document.getElementById('df-gaps-list');
-        if (!data.has_data) { list.innerHTML = '<div class="df-empty">Link inventory items to nutrition data to see gap analysis.</div>'; return; }
-        list.innerHTML = '';
-        data.gaps.forEach(g => {
-          const pct = Math.min(g.days_supply / 30 * 100, 100);
-          list.innerHTML += `
+        if (!data.has_data) {
+          safeSetHTML(list, html`<div class="df-empty">Link inventory items to nutrition data to see gap analysis.</div>`);
+          return;
+        }
+        const rows = data.gaps.map(g => {
+          const pct = Math.min(Math.max(Number(g.days_supply) / 30 * 100, 0), 100);
+          const toneVar = g.status === 'red' ? 'red' : g.status === 'amber' ? 'orange' : 'green';
+          return html`
             <div class="df-gap-row">
               <div class="df-gap-name">${g.nutrient}</div>
               <div class="df-gap-track"><div class="df-gap-fill ${g.status} df-bar-fill" style="--df-bar-w:${pct}%"></div></div>
-              <div class="df-gap-days" style="color:var(--df-${g.status === 'red' ? 'red' : g.status === 'amber' ? 'orange' : 'green'});">${g.days_supply}d</div>
+              <div class="df-gap-days" style="color:var(--df-${toneVar});">${g.days_supply}d</div>
             </div>`;
         });
+        safeSetHTML(list, rows.join(''));
       } catch(e) {}
     }
 
@@ -400,18 +425,19 @@
       try {
         const results = await api.get('/api/nutrition/search?q=' + encodeURIComponent(q));
         const container = document.getElementById('df-food-results');
-        if (!results.length) { container.innerHTML = '<div class="df-empty">No foods found.</div>'; return; }
-        container.innerHTML = '';
-        results.forEach(f => {
-          container.innerHTML += `
+        if (!results.length) {
+          safeSetHTML(container, html`<div class="df-empty">No foods found.</div>`);
+          return;
+        }
+        const rows = results.map(f => html`
             <div class="df-food-item" data-fdc-id="${f.fdc_id}">
               <div>
                 <div class="df-food-name">${f.description}</div>
                 <div class="df-food-meta">${f.food_group} &middot; ${f.serving_size}${f.serving_unit} serving</div>
               </div>
               <div class="df-food-cal">${f.calories} cal</div>
-            </div>`;
-        });
+            </div>`);
+        safeSetHTML(container, rows.join(''));
       } catch(e) {}
     }
 

@@ -41,7 +41,7 @@ Product-quality improvements identified from a deep architecture, security, perf
 
 | # | Title | Description | Status |
 |---|-------|-------------|--------|
-| V8-12 | **Frontend unit tests** | 32,779 lines of JS, 850+ functions, zero unit tests. Add a test framework (vitest or jest via jsdom) for critical functions: `escapeHtml`, `safeFetch`, `timeAgo`, `parseInventoryCommand`, `_parseSearchBang`. Start with the functions that have had bugs. | Open |
+| V8-12 | ~~**Frontend unit tests**~~ | **Done** (v7.58.0) — vitest + jsdom wired in `package.json`; `tests/js/utils.test.js` (238 lines, 48 assertions) covers the 5 named critical functions: `escapeHtml`, `formatBytes`, `timeAgo`, `parseInventoryCommand`, `parseSearchBang`. `safeFetch` is exercised indirectly via Playwright shell-workflow specs. | Done v7.58.0 |
 | V8-13 | ~~**Publish coverage to Codecov**~~ | **Done** (v7.55.0) — `codecov-action@v4` in build.yml | Open |
 | V8-14 | ~~**Module-level column allowlists**~~ | **Done** (v7.61.0) — hoisted to `ALLOWED_EVAC_PLAN_FIELDS` / `ALLOWED_EVAC_RALLY_FIELDS` / `ALLOWED_EVAC_ASSIGNMENT_FIELDS` (emergency.py), `ALLOWED_WAYPOINT_FIELDS` (maps.py), `ALLOWED_MEDIA_META_FIELDS` + per-type extras (media.py). Regression-pinned in `tests/test_allowlists.py`. | Done v7.61.0 |
 | V8-15 | ~~**Persist secret key for LAN**~~ | **Done** (v7.55.0) — auto-persist to config.json when auth required | Open |
@@ -83,6 +83,33 @@ These strengths should be preserved during any refactoring:
 - Offline-first architecture (IndexedDB, service worker, PWA)
 - Comprehensive 303-table data model covering an extraordinarily broad domain
 - 1,357 tests across 80 files with per-test DB isolation
+
+---
+
+## v7.62.0+ Hardening Targets (factory-loop iteration 1 — 2026-04-24)
+
+Replenish set for this pass. Derived from the Known Remaining Issues list (see repo CLAUDE.md + memory), Tier-3 architecture work, and audit carry-over. Each item is P0 or P1 and scoped so build/tests stay green per commit.
+
+| # | Title | Source | Priority | Status |
+|---|-------|--------|----------|--------|
+| H-01 | **ollama.py double-start guard** — concurrent/repeat `start()` calls currently kill our own port holder and relaunch. Serialize under a module `_start_lock` and short-circuit when `is_running() && check_port()` report our instance. | Known Remaining Issue | P1 | Open |
+| H-02 | **manager.py start_process atomicity audit** — verify check+Popen both held under `_lock` (current code appears correct; needs regression test pinning the invariant so a future edit can't re-introduce the race). | Known Remaining Issue | P1 | Open |
+| H-03 | **Narrow `except Exception` in Situation-Room fetch workers** — top 5-10 hot paths that currently swallow everything silently; tighten to `(requests.RequestException, ValueError, KeyError, TypeError)` and log at debug. | Known Remaining Issue | P1 | Open |
+| H-04 | ~~**V8-12 status reconciliation**~~ | **Done** (v7.62.0) — verified vitest + 48 assertions cover `escapeHtml` / `formatBytes` / `timeAgo` / `parseInventoryCommand` / `parseSearchBang`. V8-12 row in the Tier-4 table flipped to Done. | Done v7.62.0 |
+| H-05 | **V8-04 pilot — innerHTML sanitization wrapper** — introduce a shared `safeSetHTML(el, html)` (escape-by-default, opt-in trusted) plus a lint rule/regex test that flags raw `.innerHTML =` in net-new template code. Apply to `_tab_data_foundation.html` as the pilot. | V8-04 | P0 | Open |
+| H-06 | **`get_db()` try/finally scan** — automated AST walker surfaces every `get_db()` call that doesn't pair with a `try/finally` or `db_session()`. First pass produces a ranked list in `docs/db-leak-audit.md`; subsequent iterations convert. | Known Remaining Issue | P1 | Open |
+| H-07 | **services/ollama.py resp close coverage** — three `resp = requests.get/post` paths already use try/finally; verify `chat()` streaming generator also releases on generator-close (not just completion). Add test. | Known Remaining Issue | P1 | Open |
+| H-08 | **V8-09 split `create_app()`** — 1,363 lines → `web/middleware.py` + `web/blueprint_registry.py` + `web/error_handlers.py`. Keep `create_app()` a thin orchestrator. Deferred to iteration 2 to keep iteration 1 low-risk. | V8-09 | P0 | Open |
+| H-09 | **V8-11 lazy blueprint registration** — depends on H-08; defer to iteration 3. | V8-11 | P1 | Open |
+| H-10 | **V8-04 remaining tabs** — post-pilot, audit `agriculture` (34), `daily_living` (37), `land_assessment` (25), `specialized_modules` (44), `security_opsec` (33), `group_ops` (33), `medical_phase2` (32), `disaster_modules` (28). Batch across iterations 2-3. | V8-04 | P0 | Open |
+
+### Iteration cadence (3-iteration target run)
+
+- **Iter 1 → v7.62.0** — H-01, H-02, H-03, H-04, H-05, H-07 (low-risk hardening + V8-04 pilot).
+- **Iter 2 → v7.63.0** — H-08, H-10 batch 1 (agriculture + daily_living + land_assessment), H-06 scan.
+- **Iter 3 → v7.64.0** — H-09, H-10 batch 2 (specialized_modules + security_opsec + group_ops + medical_phase2 + disaster_modules), remaining bare-except narrowing.
+
+Scope guards honored: no cloud sync, no telemetry, no new top-level tabs, no Docker-as-default, no macOS signing without Apple creds, no force-push, no touching vendored NukeMap/VIPTrack/MapLibre assets.
 
 ---
 

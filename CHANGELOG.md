@@ -2,6 +2,55 @@
 
 All notable changes to project-nomad-desktop will be documented in this file.
 
+## [v7.62.0] — Factory-Loop Iteration 1: Hardening + V8-04 Pilot (2026-04-24)
+
+Targeted hardening pass driven by the factory-loop recipe. Closes V8-12 (frontend unit tests — verified vitest + 48 assertions cover the 5 named critical functions), launches the V8-04 innerHTML-audit pilot (3 new escape-safe primitives + migration of `_tab_data_foundation.html`), ships two concurrency fixes in `services/ollama.py`, plugs a `chat()` FD leak, narrows 9 swallowing `except Exception` sites in Situation-Room fetch workers, and pins the existing `services/manager.py::start_process` atomicity invariant with an AST-based regression test.
+
+### H-01 / H-02 — Ollama double-start guard + manager atomicity pin
+
+`services/ollama.py::start()` now serializes concurrent callers on a module-level `_start_lock` and short-circuits when `is_running(SERVICE_ID) and check_port(OLLAMA_PORT)` are both true: it returns the registered PID from the `services` row instead of killing its own port holder and relaunching. Prior behavior on repeat `start()` was the double-start / self-kill cycle. The lock is **released before** the ~30 s port-responsiveness poll so a concurrent `stop()` / `running()` / shutdown handler isn't blocked up to 30 s waiting on launch confirmation. `stop()` deliberately does NOT take `_start_lock` — it delegates to `services.manager.stop_process`, which has its own `_lock`. Taking both would risk a deadlock if shutdown is invoked during startup.
+
+`tests/test_services_ollama.py` (NEW — 5 assertions):
+- `test_start_noop_when_already_running` — the short-circuit returns the registered PID and never touches `_kill_port_holder` / `start_process`.
+- `test_start_lock_serializes_concurrent_callers` — 5 threads calling `start()` against a simulated 50 ms Popen all receive the same PID, only one launch happens, zero self-kills.
+- `test_manager_start_process_check_and_popen_live_in_same_with_lock_block` — AST-based invariant: walks `services.manager.start_process`, finds the `ast.With` node whose context expression is `_lock`, verifies **both** the `<proc>.poll() is None` liveness check AND the `subprocess.Popen(...)` call are descendants of the same lock block. A future refactor that splits them across two lock blocks fails the test.
+- `test_chat_stream_closes_on_early_abandonment` / `test_chat_stream_closes_on_full_iteration` — the streaming generator's `finally` releases the underlying `requests.Response` on both explicit `gen.close()` after partial iteration and full stream exhaustion.
+
+### H-07 — `chat()` 404 FD leak fixed
+
+When Ollama returns `404` for a missing model, `chat()` previously raised a `RuntimeError` without closing the response, leaking one socket FD per model-not-found call. Close now runs before the raise in both branches of `raise_for_status()` handling. `_safe_response_payload` also now handles a `None` response defensively.
+
+### H-03 — Situation Room bare-except narrowing (partial, 9 sites)
+
+`web/blueprints/situation_room.py` — narrowed 9 bare `except Exception` sites in fetch workers and helpers (64 → 55 total): `_fetch_with_retry` (dropped redundant `(requests.RequestException, Exception)`), `_safe_response_json`, `_fetch_single_feed`, `_fetch_earthquakes`, `_fetch_weather_alerts`, `_fetch_market_data` (3 inline sites in yahoo indices / yahoo sectors / coingecko / metals outer + 1 DB read inner). New exception set per site is a subset of `(requests.RequestException, ValueError, KeyError, IndexError, TypeError, AttributeError, ET.ParseError, sqlite3.Error)`. A programming bug (NameError, ImportError) now surfaces instead of being swallowed per-fetch. The silent `try: resp.close() except Exception: pass` passes inside `finally` blocks were intentionally kept broad — a socket-shutdown error must not mask a real fetch error. 55 bare-except sites remain; batches 2-3 scheduled for iterations 2-3.
+
+### H-05 — V8-04 innerHTML sanitization pilot
+
+New escape-by-default primitives in `web/templates/index_partials/js/_app_core_shell.js`:
+- `html\`…${v}…\`` — tagged template, runs every interpolation through `escapeHtml`.
+- `trustedHTML(s)` — sentinel marker so a caller can opt a specific slot out of escaping (e.g. a row string already built from escaped parts). The check uses `Object.prototype.hasOwnProperty.call(v, '__nomadTrustedHTML__')` so a hypothetical `Object.prototype.__nomadTrustedHTML__ = true` pollution attack can't downgrade every interpolation.
+- `safeSetHTML(el, str)` — thin wrapper around `el.innerHTML = …` with null-safe coercion; reads explicitly at call sites as the "set innerHTML" action.
+
+Mirrored into `tests/js/utils.js` and covered by 15 new vitest assertions (now 63 total passing), including a prototype-pollution regression that temporarily installs `__nomadTrustedHTML__ = true` on `Object.prototype` and verifies a plain `{}` still escapes instead of short-circuiting.
+
+Pilot migration in `web/templates/index_partials/_tab_data_foundation.html`: all 10 `.innerHTML = template` / `.innerHTML += template` sites in `loadPacks` / `loadThreats` / `loadGaps` / `searchFoods` converted to `safeSetHTML(el, html\`…\`)` with per-row `.map().join('')`. Inline `onclick="dfInstallPack('${p.pack_id}')"` attribute interpolation replaced with a delegated click listener reading `data-pack-action` + `data-pack-id` attributes — closes the attribute-injection hole if `pack_id` ever contained a quote. Numeric CSS custom-property interpolations clamped with `Math.min(Math.max(Number(x) || 0, 0), 100)` as belt-and-braces. Only `dfInstallPack` / `dfUninstallPack` call sites in the repo are inside this tab; no stragglers.
+
+### H-04 — V8-12 frontend unit tests — status reconciliation
+
+Verified the v7.58.0 work already covers every named function in the V8-12 description: `tests/js/utils.test.js` has 48 assertions (now 63 with the new primitives) against `escapeHtml`, `formatBytes`, `timeAgo`, `parseInventoryCommand`, `parseSearchBang`. Row flipped to **Done v7.58.0** in the Tier-4 table. `safeFetch` is exercised indirectly via the Playwright shell-workflow suite.
+
+### Audit + counter-audit
+
+Pre-release code-review pass surfaced 3 HIGH / 10 MED / 7 LOW findings against the iteration 1 diff. HIGH fixes shipped in this version: (1) `chat()` 404 FD leak, (2) `_start_lock` no longer held across the 30 s port poll, (3) Situation-Room narrowing explicitly flagged as partial rather than "done". MED fixes: (4) manager atomicity test rebuilt on AST walking instead of fragile string slicing, (5) prototype-pollution guard added to `html\`\``, (6) grep verified no extra `dfInstallPack` / `dfUninstallPack` call sites. LOW fixes: `_safe_response_payload` narrowed to `(ValueError, TypeError, AttributeError)`, H-04 row reconciled with Done state.
+
+### Test/build gate summary
+
+- pytest adjacent suite (7 files, 145 assertions) — green in 50 s.
+- vitest — 63/63 assertions green.
+- esbuild — bundle + CSS built clean.
+- `create_app()` smoke — 72 blueprints register without error.
+- Full pytest suite (1,368+ assertions) has a pre-existing isolation-order flake in `tests/test_garden.py::test_create_plot` unrelated to this change set — the test passes standalone.
+
 ## [v7.61.0] — Test Coverage + Roadmap Convergence (2026-04-24)
 
 Five V8 roadmap items closed in a single pass. Two were already shipped and verified during this iteration's audit (`V8-10` template cache, `V8-22` checksum parity); three required real work (`V8-14` allowlist hoist, `V8-16` file-backed DB integration test, `V8-23` seeded test data isolation). All 11 new tests pass green; related blueprint suites unaffected.

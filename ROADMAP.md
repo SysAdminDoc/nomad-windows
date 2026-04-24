@@ -952,3 +952,35 @@ Each release is scoped so a single focused content-authoring pass (by a domain e
 - Seed-pack distribution (NOMAD `seeds/` package, 13 modules shipped) — informs how to release curated content bundles without shipping them inside the exe; each seed is a downloadable ZIP registered at runtime
 - pywebview bridge boundary — anything mutating state goes through a single `api.py` surface; keeps JS honest about which calls leave the renderer. Audit across 77 blueprints on next release.
 - Hybrid Flask blueprints + Streamlit panes — evaluate allowing data-science-style panes to embed alongside hand-authored blueprints so operators can rapidly prototype analytics without touching the main UI framework
+
+## Implementation Deep Dive (Round 3)
+
+### Reference Implementations to Study
+- **miahnelson/flask_pywebview_pyinstaller** — https://github.com/miahnelson/flask_pywebview_pyinstaller — minimal repo specifically demonstrating Flask + pywebview + PyInstaller single-file exe pipeline; direct reference architecture for N.O.M.A.D.'s packaging.
+- **ClimenteA/pywebview-flask-boilerplate-for-python-desktop-apps** — https://github.com/ClimenteA/pywebview-flask-boilerplate-for-python-desktop-apps — mid-size app boilerplate with static/ and templates/; reference for multi-blueprint Flask layout inside a desktop shell.
+- **BBurgarella/FlaskGPT** — https://github.com/BBurgarella/FlaskGPT — concrete Flask + pywebview + SQLite credentials example; shows port-selection and server-thread coordination.
+- **r0x0r/pywebview `examples/flask_app`** — https://github.com/r0x0r/pywebview/tree/master/examples — canonical Flask + pywebview bootstrap; start Flask in daemon thread, then `webview.start()`.
+- **volcan01010 gist (desktop DB frontend)** — https://gist.github.com/volcan01010/0e0fc53d6a512e1bbffc59037c25e872 — <100-line SQLAlchemy + Flask desktop DB pattern.
+- **Tiangolo/FastAPI `full-stack-fastapi-template`** — https://github.com/tiangolo/full-stack-fastapi-template — reference for 77-blueprint decomposition if migrating off Flask; Pydantic + SQLModel patterns scale past 300 tables better than SQLAlchemy-only.
+- **pallets/flask `src/flask/blueprints.py`** — https://github.com/pallets/flask/blob/main/src/flask/blueprints.py — authoritative blueprint registration semantics (needed to diagnose 77-blueprint route collisions).
+- **pywebview `docs/guide/api.html`** — https://pywebview.flowrl.com/guide/api.html — `webview.start(func, args, gui='edgechromium')` — force Edge WebView2 on Windows for consistent JS support.
+
+### Known Pitfalls from Similar Projects
+- Flask dev server in production desktop build is noisy + single-threaded — switch to `waitress` (`from waitress import serve; serve(app, host='127.0.0.1', port=0)`) before shipping.
+- pywebview + Flask race: if `webview.start()` fires before Flask's socket is listening, user sees blank window — poll `127.0.0.1:<port>` with `socket.connect_ex` until success, max 5s.
+- PyInstaller + Flask: dynamic imports of blueprints break without `--collect-submodules nomad.blueprints` or similar; symptom is "404 on every route".
+- SQLite WAL files break if user copies the `.db` without the `-wal`/`-shm` siblings — document backup flow OR disable WAL (`PRAGMA journal_mode=DELETE`) and accept the concurrency hit.
+- pywebview JS bridge (`window.pywebview.api.*`) serializes through JSON — returning non-serializable types (datetimes, Decimal) silently yields `null`; serialize at the boundary.
+- ~310 tables + SQLAlchemy ORM = slow `MetaData.reflect()` at startup; use declarative classes with explicit `__tablename__` instead of reflect, and lazy-import blueprint modules.
+- 2,000+ routes: Flask's URL map is O(n) per request — chunk registration by domain (bookmarks.*, travel.*, etc.) and use `url_map.strict_slashes = False` consistently to avoid redirect loops.
+- Edge WebView2 runtime may be missing on older Win10 LTSC; ship the evergreen bootstrapper or pre-install via MSI.
+
+### Library Integration Checklist
+- `Flask==3.1.0` — key API: `Blueprint(__name__, url_prefix='/x')`; gotcha: 3.x removed `before_first_request`; use `app.before_serving` + `@app.cli` or a once-flag in `before_request`.
+- `pywebview==5.3.2` — https://pypi.org/project/pywebview — `webview.create_window(title, url)` + `webview.start(gui='edgechromium', debug=False)`. Gotcha: `gui='edgechromium'` requires WebView2 runtime; bundle installer.
+- `waitress==3.0.2` — production WSGI for desktop; `serve(app, host='127.0.0.1', port=port, threads=8)`. Gotcha: no HTTP/2, fine for localhost.
+- `SQLAlchemy==2.0.36` — 2.x syntax `select(User).where(...)` — 1.x `Query` API still works but deprecated. Gotcha: `create_engine('sqlite:///...')` + `connect_args={'check_same_thread': False}` for multi-threaded Flask.
+- `Flask-SQLAlchemy==3.1.1` — key API: `db.session.execute(select(...))`. Gotcha: requires Flask 2.3+; pin matched pair.
+- `pywin32==308` — pywebview dep on Windows; PyInstaller hook `--collect-submodules pywin32`.
+- `pyinstaller==6.11.1` — spec essentials: `--add-data "static;static" --add-data "templates;templates" --collect-submodules <package>`, runtime hook for `multiprocessing.freeze_support()` (CLAUDE.md global rule).
+- `python-dotenv==1.0.1` — load `.env` before `Flask(__name__)`; gotcha: PyInstaller one-file expands to `_MEIPASS`, so `.env` path must be resolved relative to `sys.executable` not `__file__`.

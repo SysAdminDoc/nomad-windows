@@ -525,44 +525,46 @@
 
     api(url).then(plans => {
       const list = el('dm-plan-list');
-      if(!plans || !plans.length){ list.innerHTML = dmEmpty('No disaster plans yet', 'Create the first scenario above to anchor checklists, references, and review cadence.'); return; }
-      list.innerHTML = plans.map(p => {
-        const tc = disasterTypeColors[p.disaster_type] || '#f59e0b';
+      if(!plans || !plans.length){ safeSetHTML(list, dmEmpty('No disaster plans yet', 'Create the first scenario above to anchor checklists, references, and review cadence.')); return; }
+      const built = plans.map(p => {
         const stColor = p.status === 'active' ? '#22c55e' : p.status === 'draft' ? '#f59e0b' : '#6b7280';
-        return `<div class="dm-list-item">
+        const envBadge = p.environment ? html`<span class="dm-badge dm-env-${p.environment} dm-tag-spacer-xs">${p.environment}</span>` : '';
+        return html`<div class="dm-list-item">
           <div class="dm-field-grow">
             <span class="dm-badge dm-type-${p.disaster_type} dm-tag-spacer-r">${(p.disaster_type||'').replace('_',' ')}</span>
             <strong>${p.name}</strong>
             <span class="dm-badge" style="color:${stColor};margin-left:6px">${p.status}</span>
-            ${p.environment ? `<span class="dm-badge dm-env-${p.environment} dm-tag-spacer-xs">${p.environment}</span>` : ''}
+            ${trustedHTML(envBadge)}
             <br><small class="tone-muted">Last reviewed: ${fmtDate(p.last_reviewed)}</small>
           </div>
           <div class="dm-action-cluster">
-            <button type="button" class="dm-btn dm-btn-secondary" onclick="dmExpandPlan(${p.id})">View</button>
-            ${dmDeleteButton(`dmDeletePlan(${p.id})`, p.name || 'plan')}
+            <button type="button" class="dm-btn dm-btn-secondary" onclick="dmExpandPlan(${Number(p.id)||0})">View</button>
+            ${trustedHTML(dmDeleteButton(`dmDeletePlan(${Number(p.id)||0})`, p.name || 'plan'))}
           </div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, built.join(''));
     });
     // Summary
     api(API + '/summary').then(data => {
       const box = el('dm-plan-summary');
-      if(!data){ box.innerHTML = ''; return; }
-      box.innerHTML = `
+      if(!data){ safeSetHTML(box, ''); return; }
+      safeSetHTML(box, html`
         <div class="dm-summary-card"><div class="dm-summary-val">${data.total_plans||0}</div><div class="dm-summary-label">Plans</div></div>
         <div class="dm-summary-card"><div class="dm-summary-val">${data.active_plans||0}</div><div class="dm-summary-label">Active</div></div>
         <div class="dm-summary-card"><div class="dm-summary-val">${data.total_checklists||0}</div><div class="dm-summary-label">Checklists</div></div>
-        <div class="dm-summary-card"><div class="dm-summary-val">${data.completion_pct||0}%</div><div class="dm-summary-label">Completion</div></div>`;
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.completion_pct||0}%</div><div class="dm-summary-label">Completion</div></div>`);
     });
     // Reference
     api(API + '/plans/reference').then(ref => {
       const box = el('dm-plan-reference');
-      if(!ref || !ref.length){ box.innerHTML = dmEmpty('No quick-reference actions yet', 'Seed default checklists or create a plan to populate field-ready reminders here.'); return; }
-      box.innerHTML = ref.map(r => `<div class="dm-row-padded-y">
+      if(!ref || !ref.length){ safeSetHTML(box, dmEmpty('No quick-reference actions yet', 'Seed default checklists or create a plan to populate field-ready reminders here.')); return; }
+      const built = ref.map(r => html`<div class="dm-row-padded-y">
         <span class="dm-badge dm-type-${r.disaster_type} dm-tag-spacer-r">${(r.disaster_type||'').replace('_',' ')}</span>
         <strong>${r.action||''}</strong>
-        ${r.detail ? `<br><small class="tone-muted">${r.detail}</small>` : ''}
-      </div>`).join('');
+        ${r.detail ? html`<br><small class="tone-muted">${r.detail}</small>` : ''}
+      </div>`);
+      safeSetHTML(box, built.join(''));
     });
   };
 
@@ -589,17 +591,24 @@
       const totalItems = checklists.length;
       const doneItems = checklists.filter(c => c.completed).length;
       const pct = totalItems ? Math.round(doneItems / totalItems * 100) : 0;
-      box.innerHTML = `<div class="dm-card-title">${p.name}
+      let listMarkup;
+      if(totalItems){
+        const parts = checklists.map(c => html`<div class="dm-checklist-item ${c.completed?'completed':''}">
+          <input type="checkbox" name="dm-plan-cl-${Number(c.id)||0}" ${trustedHTML(c.completed?'checked':'')} onchange="dmToggleChecklist(${Number(c.id)||0},this.checked)">
+          <span>${c.item_text}</span>
+          <span class="dm-badge dm-cat-${c.category} dm-meta-spacer-auto">${(c.category||'').replace('_',' ')}</span>
+        </div>`);
+        listMarkup = parts.join('');
+      } else {
+        listMarkup = dmEmpty('No checklists attached yet', 'Seed defaults or add checklist items so this plan has concrete next actions.');
+      }
+      safeSetHTML(box, html`<div class="dm-card-title">${p.name}
         <span class="dm-badge dm-type-${p.disaster_type} dm-tag-spacer-l">${(p.disaster_type||'').replace('_',' ')}</span></div>
         <p style="font-size:.85rem;color:var(--text-secondary,#aaa);margin:0 0 12px">${p.description || 'No summary captured yet.'}</p>
         <div style="margin-bottom:10px"><strong style="font-size:.82rem">Checklist Progress: ${pct}%</strong>
           <div class="dm-progress"><div class="dm-progress-fill dm-bar-fill" style="--dm-bar-w:${pct}%;--dm-tone:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
         </div>
-        ${totalItems ? checklists.map(c => `<div class="dm-checklist-item ${c.completed?'completed':''}">
-          <input type="checkbox" name="dm-plan-cl-${c.id}" ${c.completed?'checked':''} onchange="dmToggleChecklist(${c.id},this.checked)">
-          <span>${c.item_text}</span>
-          <span class="dm-badge dm-cat-${c.category} dm-meta-spacer-auto">${(c.category||'').replace('_',' ')}</span>
-        </div>`).join('') : dmEmpty('No checklists attached yet', 'Seed defaults or add checklist items so this plan has concrete next actions.')}`;
+        ${trustedHTML(listMarkup)}`);
     });
   };
 
@@ -613,34 +622,33 @@
   function dmLoadEnergy(){
     api(API + '/energy').then(items => {
       const list = el('dm-energy-list');
-      if(!items || !items.length){ list.innerHTML = dmEmpty('No backup energy systems yet', 'Add the first resilient power source above so outages have a documented fallback.'); return; }
-      list.innerHTML = `<table class="dm-table"><thead><tr>
-        <th>System</th><th>Type</th><th>Status</th><th>Output</th><th>Fuel</th><th></th>
-      </tr></thead><tbody>${items.map(e => {
+      if(!items || !items.length){ safeSetHTML(list, dmEmpty('No backup energy systems yet', 'Add the first resilient power source above so outages have a documented fallback.')); return; }
+      const rows = items.map(e => {
         const stClass = 'dm-status-' + (e.status||'offline');
         const actionCell = e.status === 'offline'
-          ? '<span class="dm-meta-tag-muted">Offline</span>'
-          : `<button type="button" class="dm-btn dm-btn-secondary" onclick="dmSetEnergyOffline(${e.id})" title="Mark ${esc(e.name || 'system')} as offline" aria-label="Mark ${esc(e.name || 'system')} as offline">Set Offline</button>`;
-        return `<tr>
-          <td><strong>${e.name}</strong>${e.notes ? `<br><small class="tone-muted">${e.notes}</small>` : ''}</td>
+          ? html`<span class="dm-meta-tag-muted">Offline</span>`
+          : html`<button type="button" class="dm-btn dm-btn-secondary" onclick="dmSetEnergyOffline(${Number(e.id)||0})" title="Mark ${e.name || 'system'} as offline" aria-label="Mark ${e.name || 'system'} as offline">Set Offline</button>`;
+        return html`<tr>
+          <td><strong>${e.name}</strong>${e.notes ? html`<br><small class="tone-muted">${e.notes}</small>` : ''}</td>
           <td>${(e.energy_type||e.type||'').replace('_',' ')}</td>
-          <td><span class="${stClass}">&#9679; ${e.status}</span></td>
+          <td><span class="${stClass}">${trustedHTML('&#9679;')} ${e.status}</span></td>
           <td>${e.output_watts ? e.output_watts + 'W' : '--'}</td>
           <td>${e.fuel_source || '--'}</td>
-          <td class="dm-row-right"><div class="dm-action-cluster">${actionCell}</div></td>
+          <td class="dm-row-right"><div class="dm-action-cluster">${trustedHTML(actionCell)}</div></td>
         </tr>`;
-      }).join('')}</tbody></table>`;
+      });
+      safeSetHTML(list, '<table class="dm-table"><thead><tr><th>System</th><th>Type</th><th>Status</th><th>Output</th><th>Fuel</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
     // Summary
     api(API + '/energy/summary').then(data => {
       const box = el('dm-energy-summary');
-      if(!data){ box.innerHTML = ''; return; }
-      box.innerHTML = `
+      if(!data){ safeSetHTML(box, ''); return; }
+      safeSetHTML(box, html`
         <div class="dm-summary-card"><div class="dm-summary-val">${data.total||0}</div><div class="dm-summary-label">Systems</div></div>
         <div class="dm-summary-card"><div class="dm-summary-val dm-status-operational">${data.operational||0}</div><div class="dm-summary-label">Operational</div></div>
         <div class="dm-summary-card"><div class="dm-summary-val dm-status-degraded">${data.degraded||0}</div><div class="dm-summary-label">Degraded</div></div>
         <div class="dm-summary-card"><div class="dm-summary-val dm-status-offline">${data.offline||0}</div><div class="dm-summary-label">Offline</div></div>
-        <div class="dm-summary-card"><div class="dm-summary-val">${data.total_watts||0}W</div><div class="dm-summary-label">Total Output</div></div>`;
+        <div class="dm-summary-card"><div class="dm-summary-val">${data.total_watts||0}W</div><div class="dm-summary-label">Total Output</div></div>`);
     });
   }
 
@@ -674,10 +682,10 @@
     const btuPerCord = 20000000; // avg hardwood cord
     const cordsPerSeason = (btuPerDay * 150) / btuPerCord; // ~150 day heating season
     const resultEl = el('dm-heat-result');
-    resultEl.innerHTML = `<strong>BTU/hour:</strong> ${Math.round(btuPerHour).toLocaleString()}<br>
+    safeSetHTML(resultEl, html`<strong>BTU/hour:</strong> ${Math.round(btuPerHour).toLocaleString()}<br>
       <strong>BTU/day:</strong> ${Math.round(btuPerDay).toLocaleString()}<br>
       <strong>Cords per season (~150 days):</strong> ${cordsPerSeason.toFixed(1)}<br>
-      <small class="tone-muted">${sqft} sq ft, ${insulation} insulation, ${delta}F delta</small>`;
+      <small class="tone-muted">${sqft} sq ft, ${insulation} insulation, ${delta}F delta</small>`);
     resultEl.classList.remove('is-hidden');
   };
 
@@ -689,9 +697,9 @@
     const bags = Math.ceil(length * height * 6);
     const sand_tons = (bags * 35) / 2000; // ~35 lbs per bag
     const resultEl = el('dm-sand-result');
-    resultEl.innerHTML = `<strong>Sandbags needed:</strong> ${bags.toLocaleString()}<br>
+    safeSetHTML(resultEl, html`<strong>Sandbags needed:</strong> ${bags.toLocaleString()}<br>
       <strong>Sand required:</strong> ~${sand_tons.toFixed(1)} tons (${Math.round(bags * 35).toLocaleString()} lbs)<br>
-      <small class="tone-muted">${length}ft x ${height}ft wall, staggered placement</small>`;
+      <small class="tone-muted">${length}ft x ${height}ft wall, staggered placement</small>`);
     resultEl.classList.remove('is-hidden');
   };
 
@@ -701,56 +709,58 @@
   function dmLoadConstruction(){
     api(API + '/construction').then(projects => {
       const list = el('dm-con-list');
-      if(!projects || !projects.length){ list.innerHTML = dmEmpty('No construction projects yet', 'Capture the first build or retrofit above so labor and materials stay visible.'); return; }
-      list.innerHTML = projects.map(p => {
+      if(!projects || !projects.length){ safeSetHTML(list, dmEmpty('No construction projects yet', 'Capture the first build or retrofit above so labor and materials stay visible.')); return; }
+      const built = projects.map(p => {
         const est = p.estimated_hours || 0;
         const done = p.hours_completed || 0;
         const pct = est ? Math.round(done / est * 100) : 0;
         const stColor = p.status === 'complete' ? '#22c55e' : p.status === 'in_progress' ? '#f59e0b' : '#6b7280';
-        return `<div class="dm-list-item" style="flex-wrap:wrap">
+        return html`<div class="dm-list-item" style="flex-wrap:wrap">
           <div style="flex:1;min-width:200px">
             <strong>${p.name}</strong>
             <span class="dm-badge" style="color:${stColor};margin-left:8px">${(p.status||'').replace('_',' ')}</span>
-            ${p.description ? `<br><small class="tone-muted">${p.description}</small>` : ''}
+            ${p.description ? html`<br><small class="tone-muted">${p.description}</small>` : ''}
             <div class="dm-row-spaced-xs-only">
               <small class="tone-muted">Labor: ${done}/${est} hrs (${pct}%)</small>
               <div class="dm-progress dm-fixed-180"><div class="dm-progress-fill dm-bar-fill" style="--dm-bar-w:${pct}%;--dm-tone:${pct>=100?'#22c55e':pct>=50?'#f59e0b':'#3b82f6'}"></div></div>
             </div>
           </div>
           <div class="dm-action-cluster">
-            <button type="button" class="dm-btn dm-btn-secondary" onclick="dmViewMaterials(${p.id})">Materials</button>
-            ${dmDeleteButton(`dmDeleteConstruction(${p.id})`, p.name || 'construction project')}
+            <button type="button" class="dm-btn dm-btn-secondary" onclick="dmViewMaterials(${Number(p.id)||0})">Materials</button>
+            ${trustedHTML(dmDeleteButton(`dmDeleteConstruction(${Number(p.id)||0})`, p.name || 'construction project'))}
           </div>
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, built.join(''));
     });
   }
 
   function dmLoadMaterials(){
     api(API.replace('/disaster','/disaster/materials')).then(items => {
       const list = el('dm-mat-list');
-      if(!items || !items.length){ list.innerHTML = dmEmpty('No material reserves yet', 'Add the first inventory item above so low-stock warnings can start doing useful work.'); return; }
-      list.innerHTML = `<table class="dm-table"><thead><tr>
-        <th>Material</th><th>Category</th><th>Qty</th><th>Unit</th><th>Min Stock</th><th></th>
-      </tr></thead><tbody>${items.map(m => {
+      if(!items || !items.length){ safeSetHTML(list, dmEmpty('No material reserves yet', 'Add the first inventory item above so low-stock warnings can start doing useful work.')); return; }
+      const rows = items.map(m => {
         const low = m.min_stock && m.quantity <= m.min_stock;
-        return `<tr class="${low ? 'dm-low-stock' : ''}">
-          <td><strong>${m.name}</strong>${low ? ' <span style="color:var(--dm-red);font-size:.72rem;font-weight:600">LOW</span>' : ''}</td>
+        const lowFlag = low ? html` <span style="color:var(--dm-red);font-size:.72rem;font-weight:600">LOW</span>` : '';
+        return html`<tr class="${low ? 'dm-low-stock' : ''}">
+          <td><strong>${m.name}</strong>${trustedHTML(lowFlag)}</td>
           <td>${m.category || '--'}</td>
           <td>${m.quantity || 0}</td>
           <td>${m.unit || '--'}</td>
           <td>${m.min_stock || '--'}</td>
-          <td class="dm-row-right"><div class="dm-action-cluster">${dmDeleteButton(`dmDeleteMaterial(${m.id})`, m.name || 'material')}</div></td>
+          <td class="dm-row-right"><div class="dm-action-cluster">${trustedHTML(dmDeleteButton(`dmDeleteMaterial(${Number(m.id)||0})`, m.name || 'material'))}</div></td>
         </tr>`;
-      }).join('')}</tbody></table>`;
+      });
+      safeSetHTML(list, '<table class="dm-table"><thead><tr><th>Material</th><th>Category</th><th>Qty</th><th>Unit</th><th>Min Stock</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
     // Low stock warnings
     api(API.replace('/disaster','/disaster/materials') + '/low-stock').then(items => {
       const box = el('dm-mat-low-stock');
-      if(!items || !items.length){ box.innerHTML = ''; return; }
-      box.innerHTML = `<div class="dm-callout-danger">
-        <strong>Low Stock Warnings:</strong> ${items.map(i => i.name).join(', ')}
-      </div>`;
+      if(!items || !items.length){ safeSetHTML(box, ''); return; }
+      const namesEsc = items.map(i => html`${i.name}`).join(', ');
+      safeSetHTML(box, html`<div class="dm-callout-danger">
+        <strong>Low Stock Warnings:</strong> ${trustedHTML(namesEsc)}
+      </div>`);
     });
   }
 
@@ -772,12 +782,11 @@
   window.dmViewMaterials = function(projectId){
     api(API + '/construction/' + projectId + '/materials').then(items => {
       const list = el('dm-mat-list');
-      if(!items || !items.length){ list.innerHTML = dmEmpty('No linked materials yet', 'This project does not have inventory tied to it yet. Add or assign materials to keep planning grounded.'); return; }
-      list.innerHTML = `<table class="dm-table"><thead><tr>
-        <th>Material</th><th>Category</th><th>Qty</th><th>Unit</th>
-      </tr></thead><tbody>${items.map(m => `<tr>
+      if(!items || !items.length){ safeSetHTML(list, dmEmpty('No linked materials yet', 'This project does not have inventory tied to it yet. Add or assign materials to keep planning grounded.')); return; }
+      const rows = items.map(m => html`<tr>
         <td>${m.name}</td><td>${m.category||'--'}</td><td>${m.quantity||0}</td><td>${m.unit||'--'}</td>
-      </tr>`).join('')}</tbody></table>`;
+      </tr>`);
+      safeSetHTML(list, '<table class="dm-table"><thead><tr><th>Material</th><th>Category</th><th>Qty</th><th>Unit</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>');
     });
   };
 
@@ -801,38 +810,40 @@
   function dmLoadFortifications(){
     api(API + '/fortifications').then(items => {
       const list = el('dm-fort-list');
-      if(!items || !items.length){ list.innerHTML = dmEmpty('No fortifications yet', 'Add the first barrier, shelter, or hardened position above to establish a real protection baseline.'); return; }
-      list.innerHTML = items.map(f => {
+      if(!items || !items.length){ safeSetHTML(list, dmEmpty('No fortifications yet', 'Add the first barrier, shelter, or hardened position above to establish a real protection baseline.')); return; }
+      const built = items.map(f => {
         const condClass = 'dm-cond-' + (f.condition || 'fair');
-        const condIcon = f.condition === 'good' ? '&#9679;' : f.condition === 'fair' ? '&#9681;' : '&#9675;';
-        return `<div class="dm-card">
+        const condIconRaw = f.condition === 'good' ? '&#9679;' : f.condition === 'fair' ? '&#9681;' : '&#9675;';
+        const inspBadgeRaw = inspectionBadge(f.next_inspection);
+        return html`<div class="dm-card">
           <div style="display:flex;justify-content:space-between;align-items:start">
             <div>
               <strong style="font-size:.95rem">${f.name}</strong>
               <span class="dm-badge dm-prot-${f.protection_level} dm-tag-spacer-l">${(f.protection_level||'').replace('_',' ')}</span>
             </div>
-            ${dmDeleteButton(`dmDeleteFortification(${f.id})`, f.name || 'fortification')}
+            ${trustedHTML(dmDeleteButton(`dmDeleteFortification(${Number(f.id)||0})`, f.name || 'fortification'))}
           </div>
           <div class="dm-row-spaced-md">
-            <span class="${condClass}" title="Condition">${condIcon} ${f.condition || 'unknown'}</span>
+            <span class="${condClass}" title="Condition">${trustedHTML(condIconRaw)} ${f.condition || 'unknown'}</span>
             <span class="dm-meta-spacer">Capacity: ${f.capacity || '--'} persons</span>
-            <span class="dm-meta-spacer-l">${inspectionBadge(f.next_inspection)}</span>
+            <span class="dm-meta-spacer-l">${trustedHTML(inspBadgeRaw)}</span>
           </div>
-          ${f.notes ? `<div class="dm-row-spaced-xs-meta">${f.notes}</div>` : ''}
+          ${f.notes ? html`<div class="dm-row-spaced-xs-meta">${f.notes}</div>` : ''}
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, built.join(''));
     });
     // Assessment summary
     api(API + '/fortifications/assessment').then(data => {
       const box = el('dm-fort-assessment');
-      if(!data){ box.innerHTML = ''; return; }
-      box.innerHTML = `
+      if(!data){ safeSetHTML(box, ''); return; }
+      safeSetHTML(box, html`
         <div class="dm-summary-card"><div class="dm-summary-val">${data.total||0}</div><div class="dm-summary-label">Fortifications</div></div>
         <div class="dm-summary-card"><div class="dm-summary-val dm-cond-good">${data.good_condition||0}</div><div class="dm-summary-label">Good</div></div>
         <div class="dm-summary-card"><div class="dm-summary-val dm-cond-fair">${data.fair_condition||0}</div><div class="dm-summary-label">Fair</div></div>
         <div class="dm-summary-card"><div class="dm-summary-val dm-cond-poor">${data.poor_condition||0}</div><div class="dm-summary-label">Poor</div></div>
         <div class="dm-summary-card"><div class="dm-summary-val">${data.total_capacity||0}</div><div class="dm-summary-label">Total Capacity</div></div>
-        <div class="dm-summary-card"><div class="dm-summary-val" style="color:${(data.inspections_due||0)>0?'var(--dm-red)':'var(--dm-green)'}">${data.inspections_due||0}</div><div class="dm-summary-label">Inspections Due</div></div>`;
+        <div class="dm-summary-card"><div class="dm-summary-val" style="color:${(data.inspections_due||0)>0?'var(--dm-red)':'var(--dm-green)'}">${data.inspections_due||0}</div><div class="dm-summary-label">Inspections Due</div></div>`);
     });
   }
 
@@ -866,35 +877,37 @@
 
     api(url).then(items => {
       const list = el('dm-cl-list');
-      if(!items || !items.length){ list.innerHTML = dmEmpty('No checklist items match', 'Adjust the filters or seed defaults to bring the next relevant checklist back into view.'); return; }
+      if(!items || !items.length){ safeSetHTML(list, dmEmpty('No checklist items match', 'Adjust the filters or seed defaults to bring the next relevant checklist back into view.')); return; }
       // Group by plan
       const grouped = {};
       items.forEach(c => { const key = c.plan_name || 'Unassigned'; (grouped[key] = grouped[key] || []).push(c); });
 
-      list.innerHTML = Object.entries(grouped).map(([planName, checks]) => {
+      const groups = Object.entries(grouped).map(([planName, checks]) => {
         const total = checks.length;
         const done = checks.filter(c => c.completed).length;
         const pct = total ? Math.round(done / total * 100) : 0;
-        return `<div style="margin-bottom:16px">
+        const itemParts = checks.map(c => html`<div class="dm-checklist-item ${c.completed?'completed':''}">
+            <input type="checkbox" name="dm-cl-item-${Number(c.id)||0}" ${trustedHTML(c.completed?'checked':'')} onchange="dmToggleChecklist(${Number(c.id)||0},this.checked)">
+            <span class="dm-field-grow">${c.item_text}</span>
+            <span class="dm-badge dm-cat-${c.category}">${(c.category||'').replace('_',' ')}</span>
+          </div>`);
+        return html`<div style="margin-bottom:16px">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
             <strong style="font-size:.9rem">${planName}</strong>
             <span class="dm-meta-text">${done}/${total} (${pct}%)</span>
           </div>
           <div class="dm-progress dm-row-spaced-sm"><div class="dm-progress-fill dm-bar-fill" style="--dm-bar-w:${pct}%;--dm-tone:${pct>=80?'#22c55e':pct>=40?'#f59e0b':'#ef4444'}"></div></div>
-          ${checks.map(c => `<div class="dm-checklist-item ${c.completed?'completed':''}">
-            <input type="checkbox" name="dm-cl-item-${c.id}" ${c.completed?'checked':''} onchange="dmToggleChecklist(${c.id},this.checked)">
-            <span class="dm-field-grow">${c.item_text}</span>
-            <span class="dm-badge dm-cat-${c.category}">${(c.category||'').replace('_',' ')}</span>
-          </div>`).join('')}
+          ${trustedHTML(itemParts.join(''))}
         </div>`;
-      }).join('');
+      });
+      safeSetHTML(list, groups.join(''));
     });
     // Populate plan filter dropdown
     api(API + '/plans').then(plans => {
       const sel = el('dm-cl-filter-plan');
       const current = sel.value;
-      const opts = '<option value="">All Plans</option>' + (plans||[]).map(p => `<option value="${p.id}">${p.name}</option>`).join('');
-      sel.innerHTML = opts;
+      const opts = (plans||[]).map(p => html`<option value="${Number(p.id)||0}">${p.name}</option>`);
+      safeSetHTML(sel, '<option value="">All Plans</option>' + opts.join(''));
       sel.value = current;
     });
   };

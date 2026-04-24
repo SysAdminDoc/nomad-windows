@@ -194,16 +194,16 @@ def register_blueprints(app):
     app.register_blueprint(interoperability_bp)
 
     # ─── v7.23.0 — Hunting, Foraging & Wild Food ──────────────────────────
-    from web.blueprints.hunting_foraging import hunting_foraging_bp
-    app.register_blueprint(hunting_foraging_bp)
+    # DEFERRED: hunting_foraging_bp is lazy-loaded on first /api/hunting hit
+    # via web/lazy_blueprints.py (H-09 / V8-11). ~14 ms of boot cost avoided.
 
     # ─── v7.24.0 — Hardware, Sensors & Mesh ──────────────────────────────
     from web.blueprints.hardware_sensors import hardware_sensors_bp
     app.register_blueprint(hardware_sensors_bp)
 
     # ─── Platform Security ────────────────────────────────────────────────
-    from web.blueprints.platform_security import platform_security_bp
-    app.register_blueprint(platform_security_bp)
+    # DEFERRED: platform_security_bp is lazy-loaded on first /api/platform hit
+    # via web/lazy_blueprints.py (H-09 / V8-11). ~21 ms of boot cost avoided.
 
     # ─── Specialized Modules ──────────────────────────────────────────────
     from web.blueprints.specialized_modules import specialized_modules_bp

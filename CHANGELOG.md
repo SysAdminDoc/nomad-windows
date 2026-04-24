@@ -4,6 +4,16 @@ All notable changes to project-nomad-desktop will be documented in this file.
 
 ## [Unreleased]
 
+### H-09 / V8-11 — Lazy blueprint registration for cold blueprints (factory-loop iter 2, 2026-04-24)
+
+Long-open architecture item. Two blueprints (`platform_security` at ~21 ms and `hunting_foraging` at ~14 ms per `python -X importtime`) dominate boot but neither is on the dashboard landing path. They are now lazy-loaded on the first request to their URL prefix, shaving a measured **~40 ms (8%)** off `create_app()` — median boot drops from ~514 ms to ~474 ms across three subprocess samples.
+
+- **`web/lazy_blueprints.py`** (NEW) — `LazyBlueprintDispatcher` is WSGI middleware that peeks at `PATH_INFO`, matches against a `DEFERRED_BLUEPRINTS` prefix map, lazily imports and registers the matching blueprint, then forwards the request to Flask's original `wsgi_app`. By the time Flask matches the URL, the routes exist, so the cold-hit request returns the same response as a warmed path. Flask's post-first-request registration guard (`_got_first_request`) is briefly flipped during `register_blueprint` and restored immediately.
+- **Concurrency safety** — the initial implementation had a race where a third thread arriving between a winner's `pending.pop()` and its `register_blueprint()` would observe an empty pending map, skip the load path, and forward to a Flask URL map that hadn't finished updating — a 404 on what should have been a 200. Fix: the prefix stays in `_pending` until `register_blueprint` has fully returned; only then is the entry deleted. All three state transitions (get, register, delete) happen under the same `threading.Lock()`, giving a clean happens-before to late-arriving threads. Confirmed via an 8-way barrier-synchronized concurrent-hit test (`tests/test_lazy_blueprints.py::test_concurrent_first_hits_register_exactly_once`).
+- **`tests/test_lazy_blueprints.py`** (NEW, 7 tests) — pins: deferred modules are not imported during `create_app()`; first hit to `/api/platform/*` lazy-registers `platform_security_bp`; first hit to `/api/hunting/*` lazy-registers `hunting_foraging_bp`; duplicate registration never occurs; unrelated requests don't trigger a load; 8 concurrent cold hits all return 200 with exactly one registration; prefix match is path-separator bounded so `/api/platformOTHER` doesn't match `/api/platform`.
+- **`web/blueprint_registry.py`** — removed eager imports of the two deferred blueprints (replaced with sentinel comments pointing at the lazy registration path).
+- **`web/app.py`** — wraps `app.wsgi_app` with `LazyBlueprintDispatcher(app, DEFERRED_BLUEPRINTS)` after eager registration completes.
+
 ### H-14 — `create_app()` thinning (factory-loop iter 1, 2026-04-24)
 
 Long-pending V8-09 carry-over. `web/app.py::create_app()` body shrinks from **1243 → 663 lines** (47% reduction) by extracting four self-contained concerns into dedicated modules. No behavior change — every workspace route, i18n endpoint, and SSE route returns identical responses.

@@ -206,6 +206,106 @@ def test_manager_start_process_check_and_popen_live_in_same_with_lock_block():
     )
 
 
+# ─── H-11 ollama.start() guard placement (AST regression) ───────────────────
+
+def test_ollama_start_takes_start_lock_before_launch_work():
+    """Pin the invariant that every code path in ``ollama.start()`` that
+    reaches ``start_process(...)`` goes through a ``with _start_lock:`` block
+    first. A refactor that moves ``start_process(...)`` outside the lock —
+    or past an early-return in a new branch — would reintroduce the
+    concurrent double-start / self-kill race H-01 closed.
+
+    The check walks every ``ast.Call`` to ``start_process`` in the function
+    body and verifies each such call has a ``with _start_lock:`` ancestor.
+    """
+    import ast
+    import inspect
+    import textwrap
+    from services import ollama
+
+    src = textwrap.dedent(inspect.getsource(ollama.start))
+    tree = ast.parse(src)
+    fn = tree.body[0]
+    assert isinstance(fn, ast.FunctionDef) and fn.name == 'start'
+
+    # Walk the function and collect every start_process() call + a running
+    # set of enclosing With(_start_lock) nodes. An ancestor-map walker is
+    # lighter than ast.walk + ancestor tracking; we recurse explicitly.
+    problems: list[str] = []
+
+    def _walk(node: ast.AST, with_stack: list[ast.With]):
+        # Is this a start_process call? If so, demand an enclosing With(_start_lock).
+        if (isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == 'start_process'):
+            owned = any(
+                any(isinstance(it.context_expr, ast.Name)
+                    and it.context_expr.id == '_start_lock'
+                    for it in w.items)
+                for w in with_stack
+            )
+            if not owned:
+                problems.append(
+                    f'start_process() call at line {node.lineno} is not '
+                    f'inside a `with _start_lock:` block'
+                )
+        new_stack = with_stack + [node] if isinstance(node, ast.With) else with_stack
+        for child in ast.iter_child_nodes(node):
+            _walk(child, new_stack)
+
+    _walk(fn, [])
+    assert not problems, '\n'.join(problems)
+
+
+def test_ollama_start_has_short_circuit_guard_first_in_lock():
+    """Further invariant: inside the `with _start_lock:` block, the FIRST
+    control-flow branch must be the short-circuit guard (``if is_running(...)
+    and check_port(...)``). Future edits that reorder launch work above the
+    guard would reintroduce the double-kill bug even while holding the lock.
+    """
+    import ast
+    import inspect
+    import textwrap
+    from services import ollama
+
+    src = textwrap.dedent(inspect.getsource(ollama.start))
+    tree = ast.parse(src)
+    fn = tree.body[0]
+
+    with_nodes = [
+        n for n in ast.walk(fn)
+        if isinstance(n, ast.With)
+        and any(isinstance(it.context_expr, ast.Name)
+                and it.context_expr.id == '_start_lock'
+                for it in n.items)
+    ]
+    assert with_nodes, 'no `with _start_lock:` block in ollama.start()'
+
+    # Use the first such block; the first statement inside it must be an If
+    # whose test calls is_running() AND check_port().
+    first_with = with_nodes[0]
+    first_stmt = first_with.body[0]
+    assert isinstance(first_stmt, ast.If), (
+        'first statement under `with _start_lock:` must be the short-circuit '
+        '`if is_running(...) and check_port(...):` guard'
+    )
+
+    def _mentions_call(test_node: ast.AST, name: str) -> bool:
+        for child in ast.walk(test_node):
+            if (isinstance(child, ast.Call)
+                    and isinstance(child.func, ast.Name)
+                    and child.func.id == name):
+                return True
+        return False
+
+    assert _mentions_call(first_stmt.test, 'is_running'), (
+        'short-circuit guard must check is_running(); got a different test'
+    )
+    assert _mentions_call(first_stmt.test, 'check_port'), (
+        'short-circuit guard must check check_port(); got a different test'
+    )
+
+
 # ─── H-07 chat stream abandonment releases the response ──────────────────────
 
 def test_chat_stream_closes_on_early_abandonment(monkeypatch):

@@ -1,9 +1,23 @@
 """Regression tests for Pass 21 hardening — lifecycle, DB safety, loopback
 detection, path traversal, and federation table-name validation."""
 
+import os
+import sys
 import threading
 
 import pytest
+
+
+# ``import nomad`` pulls in ``webview`` and ``pystray``, which on Linux query
+# the X display at module-import time (Xlib.error.DisplayNameError: Bad
+# display name "" on headless CI runners). Skip the two ``import nomad``
+# tests when no DISPLAY is set on Linux — the invariants they pin are
+# exercised on Windows/macOS CI and local dev machines.
+_HEADLESS_LINUX = sys.platform.startswith('linux') and not os.environ.get('DISPLAY')
+requires_display = pytest.mark.skipif(
+    _HEADLESS_LINUX,
+    reason='nomad.py imports webview/pystray which need an X display on Linux',
+)
 
 
 # ─── nomad.SERVICE_MODULES covers every service ID ──────────────────
@@ -14,6 +28,7 @@ class TestServiceModulesCoverage:
     dict and tray_quit() looks each id up in SERVICE_MODULES — a missing
     entry silently orphans the process on graceful quit."""
 
+    @requires_display
     def test_every_service_id_has_a_module(self):
         import nomad
         from services.manager import DEPENDENCIES
@@ -33,6 +48,7 @@ class TestServiceModulesCoverage:
             'shutdown, leaving the child processes orphaned.'
         )
 
+    @requires_display
     def test_every_returned_module_exposes_stop(self):
         import nomad
         nomad.SERVICE_MODULES = None

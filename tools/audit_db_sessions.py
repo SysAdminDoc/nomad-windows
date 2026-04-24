@@ -139,12 +139,20 @@ class _DbCallVisitor(ast.NodeVisitor):
         if with_node and _call_inside_with_items(with_node, call):
             return
 
-        # Case 2 — ``db = get_db()``. Look for a Try ancestor whose
-        # finalbody closes ``db``. If present, safe. If absent, leak.
+        # Case 2 — ``db = get_db()``. Look for:
+        #   (a) an enclosing Try whose finalbody closes the target, OR
+        #   (b) the NEXT statement sibling being a Try whose finalbody
+        #       closes the target. This is the common legacy pattern:
+        #           db = get_db()
+        #           try:
+        #               ...
+        #           finally:
+        #               db.close()
+        #       Without sibling-checking the classifier would false-positive
+        #       every such block, drowning the real leaks in noise.
         assign_node = self._nearest_ancestor(ast.Assign)
         target_name: str | None = None
         if assign_node and isinstance(assign_node.value, ast.Call) and assign_node.value is call:
-            # Take the simple-Name target, if any (``db = ...``).
             for tgt in assign_node.targets:
                 if isinstance(tgt, ast.Name):
                     target_name = tgt.id
@@ -153,13 +161,53 @@ class _DbCallVisitor(ast.NodeVisitor):
                 try_node = self._nearest_ancestor(ast.Try)
                 if try_node and _try_closes_target(try_node, target_name):
                     return
-                # Assigned but never closed in a finally.
+                sibling_try = self._next_sibling_try(assign_node)
+                if sibling_try and _try_closes_target(sibling_try, target_name):
+                    return
+                # Broader heuristic — the target has a close() call SOMEWHERE
+                # in the enclosing function body. Catches the "define inside
+                # an outer try, close in a downstream sibling try" pattern
+                # (services/manager.py::start_process), which neither the
+                # ancestor nor immediate-sibling checks cover. False negatives
+                # are possible for cleanup-skipping branches, but an audit
+                # tool is useless if it floods the reviewer with known-safe
+                # patterns — prefer precision on the real leaks.
+                fn_node = self._enclosing_function_node()
+                if fn_node is not None and _function_body_closes_target(
+                    fn_node, assign_node, target_name
+                ):
+                    return
+                # Assigned but never closed in a finally — real leak.
                 self._record(call, 'assigned-but-not-closed')
                 return
 
         # Case 3 — bare call used inline (``get_db().execute(...)``). The
         # returned Connection is discarded after the chained expression.
         self._record(call, 'bare-call')
+
+    def _enclosing_function_node(self) -> ast.AST | None:
+        for anc in reversed(self._ancestors[:-1]):
+            if isinstance(anc, (ast.FunctionDef, ast.AsyncFunctionDef)):
+                return anc
+        return None
+
+    def _next_sibling_try(self, assign_node: ast.Assign) -> ast.Try | None:
+        """Return the statement immediately AFTER ``assign_node`` in its
+        enclosing block, iff that statement is an ``ast.Try``.
+
+        The enclosing block is the ``.body`` / ``.orelse`` / ``.finalbody``
+        list on the closest ancestor that has one. We scan the ancestor
+        chain to find which list contains ``assign_node``.
+        """
+        for anc in reversed(self._ancestors[:-1]):
+            for attr in ('body', 'orelse', 'finalbody'):
+                block = getattr(anc, attr, None)
+                if isinstance(block, list) and assign_node in block:
+                    idx = block.index(assign_node)
+                    if idx + 1 < len(block) and isinstance(block[idx + 1], ast.Try):
+                        return block[idx + 1]
+                    return None
+        return None
 
     def _record(self, call: ast.Call, severity: str) -> None:
         line = call.lineno
@@ -182,15 +230,80 @@ def _call_inside_with_items(with_node: ast.AST, call: ast.Call) -> bool:
     return False
 
 
+def _function_body_closes_target(fn_node: ast.AST, assign_node: ast.Assign,
+                                 target: str) -> bool:
+    """True if anywhere in ``fn_node.body`` *after* ``assign_node`` there is
+    a call that releases ``target`` (via ``.close()`` or a helper like
+    ``_close_db_safely(target, …)``).
+
+    Intentionally loose: an audit tool is only useful if it distinguishes
+    real leaks from known-safe patterns. A cleanup-skipping branch still
+    flags as a false negative here, but is far rarer than the "cleanup
+    happens in a downstream Try" pattern this check is meant to recognise.
+    """
+    close_markers = ('close', 'release', 'dispose')
+    # Find the assign_node's position in fn_node.body so we only scan forward.
+    try:
+        start = fn_node.body.index(assign_node)
+    except ValueError:
+        # assign_node nested deeper than top-level; scan the whole function.
+        start = -1
+
+    stmts = fn_node.body[start + 1:] if start >= 0 else fn_node.body
+    for stmt in stmts:
+        for node in ast.walk(stmt):
+            if not isinstance(node, ast.Call):
+                continue
+            # <target>.close()
+            if (isinstance(node.func, ast.Attribute)
+                    and node.func.attr == 'close'
+                    and isinstance(node.func.value, ast.Name)
+                    and node.func.value.id == target):
+                return True
+            # helper(<target>, ...) where helper name hints close/release.
+            if (isinstance(node.func, ast.Name)
+                    and node.args
+                    and isinstance(node.args[0], ast.Name)
+                    and node.args[0].id == target
+                    and any(m in node.func.id.lower() for m in close_markers)):
+                return True
+    return False
+
+
 def _try_closes_target(try_node: ast.Try, target: str) -> bool:
-    """True if ``try_node.finalbody`` contains ``<target>.close()``."""
+    """True if ``try_node.finalbody`` releases the target connection.
+
+    Recognises three shapes:
+        * Direct method call:   ``<target>.close()``
+        * Project wrapper:      ``_close_db_safely(<target>, …)``
+                                ``close_db(<target>)`` / ``release(<target>)``
+        * Any Call that takes ``<target>`` as its first positional argument
+          and whose name contains ``close`` or ``release`` (catches future
+          helper names without having to patch this tool every time).
+    """
+    close_helper_markers = ('close', 'release', 'dispose')
+
+    def _is_target_close(node: ast.AST) -> bool:
+        if not isinstance(node, ast.Call):
+            return False
+        # 1. <target>.close()
+        if (isinstance(node.func, ast.Attribute)
+                and node.func.attr == 'close'
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == target):
+            return True
+        # 2/3. helper(<target>, ...) where helper name hints close/release.
+        if (isinstance(node.func, ast.Name)
+                and node.args
+                and isinstance(node.args[0], ast.Name)
+                and node.args[0].id == target
+                and any(m in node.func.id.lower() for m in close_helper_markers)):
+            return True
+        return False
+
     for stmt in try_node.finalbody:
         for descendant in ast.walk(stmt):
-            if (isinstance(descendant, ast.Call)
-                    and isinstance(descendant.func, ast.Attribute)
-                    and descendant.func.attr == 'close'
-                    and isinstance(descendant.func.value, ast.Name)
-                    and descendant.func.value.id == target):
+            if _is_target_close(descendant):
                 return True
     return False
 
@@ -256,6 +369,14 @@ def format_markdown(reports: list[FileReport]) -> str:
     lines.append('')
     lines.append('- **assigned-but-not-closed** — `db = get_db()` without a `try/finally` that closes `db`. Highest priority; the worker holds a live connection for the caller\'s lifetime.')
     lines.append('- **bare-call** — `get_db().execute(...)` as an expression. The connection is abandoned after the chained call; the pool will eventually reclaim it but transactions may linger.')
+    lines.append('')
+    lines.append('## Known-safe patterns (not leaks)')
+    lines.append('')
+    lines.append('These shapes still appear in the table because the classifier is deliberately precise, but they are intentional:')
+    lines.append('')
+    lines.append('- `db.py::_pool_acquire` returning `get_db()` — the pool function\'s contract is to hand ownership of a fresh connection to its caller, which then returns it via the `db_session()` context manager on exit. The pool itself can\'t close what it\'s yielding.')
+    lines.append('- `tests/test_db_safety.py::test_get_db_*` — tests that exercise `get_db()`\'s OWN cleanup-on-failure behaviour. Skipping close in the test body is the scenario under test.')
+    lines.append('- `tests/conftest.py::db` fixture — a "keeper" connection that persists for the shared in-memory SQLite URI throughout the fixture\'s lifetime, then closes on teardown via ``yield`` semantics.')
     lines.append('')
     if not reports:
         lines.append('_No findings._ Repo is clean under the AST classifier.')

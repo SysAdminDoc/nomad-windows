@@ -24,6 +24,7 @@ from web.blueprint_registry import register_blueprints
 from web.pages import register_pages
 from web.background import start_discovery_listener, start_auto_backup, start_sse_cleanup
 from web.sse_routes import register_sse_routes
+from web.lazy_blueprints import LazyBlueprintDispatcher, DEFERRED_BLUEPRINTS
 from services import ollama, kiwix, cyberchef, kolibri, qdrant, stirling, flatnotes
 
 log = logging.getLogger('nomad.web')
@@ -744,5 +745,10 @@ def create_app():
     start_sse_cleanup(app)
 
     # i18n routes (/api/i18n/*) live in web/pages.py alongside language state.
+
+    # ─── Lazy blueprints (H-09 / V8-11) ───────────────────────────────
+    # Wrap AFTER all eager registrations so the dispatcher's forwarded call
+    # resolves against the final Flask WSGI app.
+    app.wsgi_app = LazyBlueprintDispatcher(app, DEFERRED_BLUEPRINTS)
 
     return app
